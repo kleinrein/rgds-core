@@ -1,0 +1,5 @@
+Nunito from google/fonts
+Commit: 7085eb89a950e85db5b166b7a58d414544b4140c
+Path: ofl/nunito/Nunito[wght].ttf
+License: SIL Open Font License 1.1 (OFL.txt)
+Unmodified source font; UI atlases generated at weight 600.
