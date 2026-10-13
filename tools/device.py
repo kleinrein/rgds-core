@@ -15,75 +15,7 @@ Q = shlex.quote
 
 # The uploader verifies archive structure and every release hash before executing
 # uploaded Python code. Updates stage into our folder and retain the old build.
-REMOTE_INSTALL = r'''
-import hashlib, json, os, platform, re, shutil, stat, sys, zipfile
-from pathlib import Path
-sys.dont_write_bytecode = True
-root, archive_path = map(Path, sys.argv[1:])
-if sys.version_info < (3,8) or platform.machine() not in ('aarch64', 'arm64'):
-    raise SystemExit('Need Linux AArch64 and Python 3.8+; keep stock and capture inventory.')
-allowed_apps = {'Try RGDS.sh','RGDS Probe.sh','RGDS Inventory.sh','RGDS Recovery.sh'}
-with zipfile.ZipFile(archive_path) as archive:
-    entries = archive.infolist()
-    if sum(e.file_size for e in entries) > 256*1024*1024:
-        raise ValueError('Package exceeds size limit')
-    names = [e.filename for e in entries]
-    if len(names) != len(set(names)):
-        raise ValueError('Duplicate archive entries')
-    build = archive.read('rgds/state/active').decode().strip()
-    if not re.fullmatch(r'[a-z0-9][a-z0-9.-]{0,100}',build):
-        raise ValueError('Invalid build ID')
-    prefix = 'rgds/releases/' + build + '/'
-    manifest = json.loads(archive.read(prefix+'manifest.json'))
-    if manifest.get('build') != build or manifest.get('schema') != 1 or manifest.get('project') != 'rgds' or manifest.get('target') != 'aarch64-linux-gnu':
-        raise ValueError('Wrong manifest')
-    for e in entries:
-        p = Path(e.filename)
-        if p.is_absolute() or '..' in p.parts or '\\' in e.filename or stat.S_ISLNK(e.external_attr >> 16):
-            raise ValueError('Unsafe archive path')
-        permitted = e.filename.startswith(prefix) or e.filename.startswith('rgds/docs/') or e.filename in ('rgds/main.sh','rgds/inventory.sh','rgds/state/active') or (p.parent == Path('Roms/APPS') and p.name in allowed_apps)
-        if not permitted or e.is_dir():
-            raise ValueError('Unexpected package entry: '+e.filename)
-    actual = {n[len(prefix):] for n in names if n.startswith(prefix) and n != prefix+'manifest.json'}
-    files = manifest.get('files',{})
-    if actual != set(files) or 'bin/rgds-launcher' not in files:
-        raise ValueError('Manifest file list mismatch')
-    for name, digest in files.items():
-        if not re.fullmatch(r'[0-9a-f]{64}',digest) or hashlib.sha256(archive.read(prefix+name)).hexdigest() != digest:
-            raise ValueError('SHA-256 mismatch: '+name)
-    stage = root/'inbox'/('stage-'+build)
-    if stage.exists(): shutil.rmtree(stage)
-    stage.mkdir(parents=True)
-    for e in entries:
-        destination = stage/e.filename
-        destination.parent.mkdir(parents=True,exist_ok=True)
-        destination.write_bytes(archive.read(e))
-        destination.chmod(0o755 if (e.external_attr >> 16)&0o111 else 0o644)
-app = stage/'rgds/releases'/build
-sys.path.insert(0,str(app/'runtime'))
-from activate import activate, stop_session, verify_release
-verify_release(app)
-stop_session(root/'userdata')
-destination = root/'releases'/build
-destination.parent.mkdir(parents=True,exist_ok=True)
-if destination.exists():
-    verify_release(destination)
-else:
-    app.rename(destination)
-# Only private development deployment updates these tiny bootstrap files.
-for name in ('main.sh','inventory.sh'):
-    if (root/name).exists():
-        (root/'state').mkdir(exist_ok=True)
-        shutil.copy2(root/name,root/'state'/(name+'.previous'))
-    shutil.copy2(stage/'rgds'/name,root/name)
-apps = root.parent/'Roms/APPS'
-apps.mkdir(parents=True,exist_ok=True)
-for source in (stage/'Roms/APPS').iterdir(): shutil.copy2(source,apps/source.name)
-activate(root,build,stop=False)
-shutil.rmtree(stage)
-archive_path.unlink()
-print('Activated '+build+'. Run make run or APPS > RGDS Probe / Try RGDS.')
-'''
+REMOTE_INSTALL = (ROOT / "packaging/install_package.py").read_text()
 
 def target(value):
     if not value or value.startswith("-") or not re.fullmatch(r"[A-Za-z0-9_.:@\[\]-]+", value):
@@ -91,7 +23,7 @@ def target(value):
     return value if "@" in value else "root@" + value
 
 def ssh(device, command, batch=False, **kwargs):
-    options = ["-o", "ConnectTimeout=5", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2"]
+    options = ["-o", "IPQoS=none", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2"]
     if batch:
         options += ["-o", "BatchMode=yes"]
     return subprocess.run(["ssh", *options, device, command], check=True, **kwargs)
@@ -251,17 +183,39 @@ def start_dev_session(device, root):
 def active_command(root, action):
     return "RGDS_ID=$(cat " + Q(str(root / "state/active")) + "); case \"$RGDS_ID\" in ''|*[!a-z0-9.-]*|.*) exit 1;; esac; python3 -B " + Q(str(root / "releases")) + '/"$RGDS_ID"/runtime/activate.py ' + action + " --root " + Q(str(root))
 
+def configured_root(device, sd_root=None):
+    """An explicit mount wins; otherwise follow the configured installation, even in stock mode."""
+    if sd_root is not None:
+        if not sd_root.is_absolute() or ".." in sd_root.parts:
+            raise ValueError("--sd-root must be an absolute mount path without ..")
+        return sd_root / "rgds"
+    script = r"""
+import json
+from pathlib import Path
+root=Path('/mnt/mmc/rgds')
+try:
+ c=Path('/userdata/rgds-boot');v=json.loads((c/'config.json').read_text())
+ if not isinstance(v,dict):raise ValueError('Invalid configuration')
+ p=Path(v.get('root',''))
+ if v.get('mode') in ('rgds','stock') and p.is_absolute() and '..' not in p.parts and '\n' not in str(p) and (p/'main.sh').is_file():root=p
+except (OSError,ValueError,TypeError):pass
+print(root)
+"""
+    result=ssh(device,"python3 -B -",batch=True,input=script,text=True,capture_output=True)
+    root=Path(result.stdout.strip())
+    if not root.is_absolute() or ".." in root.parts or "\n" in str(root):raise ValueError("Invalid configured RGDS root")
+    print("Using RGDS installation: " + str(root))
+    return root
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("inventory", "deploy", "run", "logs", "rollback", "status", "doctor"))
     parser.add_argument("--device", required=True)
-    parser.add_argument("--sd-root", default="/mnt/mmc", type=Path)
+    parser.add_argument("--sd-root", default=None, type=Path)
     parser.add_argument("--dev", action="store_true", help="Start with the live theme override")
     args = parser.parse_args()
     device = target(args.device)
-    if not args.sd_root.is_absolute() or ".." in args.sd_root.parts:
-        raise ValueError("--sd-root must be an absolute mount path without ..")
-    root = args.sd_root / "rgds"
+    root = configured_root(device, args.sd_root)
     if args.action == "inventory":
         result = ssh(device, "sh -s", input=(ROOT / "runtime/inventory.sh").read_text(), text=True, capture_output=True)
         path = ROOT / "docs" / ("device-inventory-" + datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + ".txt")

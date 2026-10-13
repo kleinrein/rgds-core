@@ -1,35 +1,72 @@
-# ScreenScraper artwork
+# Artwork sources
 
-Players enter their own ScreenScraper username and password in Settings → Library → Artwork & ScreenScraper. The app verifies the account before remembering it. A touch keyboard and controller navigation are available on the device; a desktop keyboard also works. Fetch missing artwork runs in the background, displays progress and can be stopped. Cached artwork remains available offline and after sign-out. Starting a game ends an unfinished background job so it does not compete with emulation.
+Settings → Library → Artwork sources now defaults to **Automatic**.
+Select a source, then **Fetch missing artwork**. No developer credentials or
+player account are required for GameTDB or Libretro. The job runs in the
+background, can be stopped, and keeps completed downloads for offline browsing.
 
-The top screen displays box art and playtime. The bottom strip uses icons from the ROM's DS banner, so icons do not depend on logging in or scraping. Titles and icons for ZIP games are indexed in the background. Missing or invalid banners use a neutral DS icon. Playtime records emulator-session duration with 30-second checkpoints and a final update on exit; it includes emulator pause/menu time. Kernel suspend time is excluded by the monotonic clock. Existing hours from another frontend are not imported.
+- **GameTDB** matches the four-character game code in the DS header, including
+  inside a ZIP containing one DS game. It prefers the game's regional cover.
+- **Libretro** tries the ROM filename, then a normalized title against the public
+  DS thumbnail index, then resolves the exact header game code through Libretro's
+  public No-Intro catalog. This also handles renamed or localized dumps. It keeps
+  sequel numbers, prefers the ROM's region and refuses ambiguous title matches.
+  Unknown/homebrew titles may still have no published cover.
+- **Automatic** tries GameTDB and falls back to Libretro.
 
-## Configure the project once
 
-[ScreenScraper API v2](https://www.screenscraper.fr/webapi2.php) requires application credentials (`devid`, `devpassword`, `softname`) in addition to a signed-in player's credentials (`ssid`, `sspassword`). Register/request legitimate developer credentials for this project. They are configured by the project maintainer; ordinary players only use their personal account. This implementation does not borrow another frontend's application identity.
+Only game codes or titles are requested from the public providers; ROM contents
+are never uploaded. Requests are serial with at least half a second between
+public requests, verified HTTPS, host-restricted redirects and bounded downloads.
+Transient public-service failures are retried once; an unavailable host cools
+down for a minute so an offline library does not make the same slow request for
+every game. A failed game does not abort the remaining collection. Existing art
+is skipped. Public covers preserve existing titles/year/developer
+metadata and record attribution in the item's `info.ini`. Cover attribution is
+shown on the top display. Credentials are never sent to public providers.
 
-After deploying this build, run the interactive local setup tool. Passwords are prompted privately and sent through SSH stdin, rather than appearing in command arguments:
+Sources: [GameTDB DS](https://www.gametdb.com/DS/Downloads) and
+[Libretro thumbnails](https://docs.libretro.com/guides/roms-playlists-thumbnails/).
+On October 11 both providers downloaded and decoded three real device covers
+without credentials. A later **local-only** audit downloaded and decoded covers
+for all 62 previously observed game codes on the Mac; four deliberately renamed
+Norwegian-title fixtures also resolved through Libretro's exact serial catalog.
+This is provider coverage evidence, not a later device deployment or UI acceptance.
+ROM banner icons remain available without networking.
 
-```sh
-python3 tools/configure_scraper.py --device root@192.168.68.118
-```
+## Unmatched games and corrections
 
-For a desktop setup:
+The job shows how many covers are available, how many have no match and how many
+need retrying. **Review unmatched** opens games in the current collection that lack
+artwork or had an error. Select a game to inspect its last result. You can also use
+**Game options → Artwork** directly. **Matching title** supplies an exact or normalized
+Libretro title; **Fetch artwork** retries just that game. **Use ROM identity** clears
+the correction and returns to automatic game-code/filename matching. These actions
+do not rename ROMs, change library keys or move saves. A failed replacement keeps
+the existing cover.
 
-```sh
-python3 tools/configure_scraper.py --data build/dev
-```
+Public title/cover catalogs are cached for seven days and can fall back to the
+previous cache during an outage. Covers retain aspect ratio and are capped at
+384 pixels on the longest edge before BMP storage. This reduces SD reads and GPU
+texture memory while covering the launcher's displayed sizes. Completed results
+survive cancellation in each game's `artwork-status.ini`; `scraper/report.json`
+contains the last job's audit. Fetch missing artwork resumes using existing covers.
 
-Desktop image conversion requires the SDL2_image library. It is already on the inventoried stock RG DS card. Install SDL2_image through your normal package manager if you want to scrape on the host. Rendering ROM icons, viewing cached BMP artwork, running ordinary builds and using the device do not require a new host dependency.
+## Play history and storage
 
-The client also accepts `SCREENSCRAPER_DEVID` and `SCREENSCRAPER_DEVPASSWORD` in its process environment for development. Do not put real credentials into source files, shell command arguments, screenshots or Git. Private configuration files are ignored by Git. The setup tool is a development mechanism; a future public build must provide its legitimate app identity as part of release provisioning.
+Home shows game count, total sessions (Times played), time played and the last
+played title for Games, Favourites and Recently played. Game details show that
+game's session count. These use existing local records; historical statistics
+from other frontends are not imported. Playtime includes paused/menu time and
+excludes kernel suspend time through the monotonic clock.
 
-## Storage and matching
+Artwork, metadata and play history remain in `userdata/library/<game-key>/`.
+The key follows the canonical ROM path, so moving a ROM creates a different key.
+Release updates retain the existing library data.
 
-On the stock card, credentials are stored with file mode 0600 inside `/userdata/rgds/private/`, whose mode is 0700. That ext4 partition supports permissions; the `/mnt/mmc` FAT partition does not. Host credentials live under the chosen data folder's `private/` directory. Passwords are never written to public status files or request logs. The client uses verified HTTPS and rejects redirects to other hosts.
+## ScreenScraper availability
 
-Artwork, public metadata and playtime are under `rgds/userdata/library/<game-key>/`. The key is derived from the canonical ROM path. A release update keeps these files; moving/renaming a ROM currently gives it a new key. Metadata and artwork are written separately and atomically, so a failed request retains completed downloads.
-
-ROM matching sends CRC32, MD5, SHA-1, size and filename to the Nintendo DS system endpoint. For a ZIP with one DS game, it hashes the contained game rather than the ZIP container. Europe, US, world and Japan are tried in that order when selecting regional names and front box art. Requests run serially and honour the user's advertised per-minute limit, with at least two seconds between requests. Quota, authentication, missing-game and network failures produce short UI messages. Downloads are size-bounded and artwork is normalized to BMP using the installed SDL_image decoder.
-
-End-to-end live authentication and downloads still require project credentials. The automated tests cover request construction, matching, quota pacing, password redaction, private-file permissions, redirects, cache reuse, cancellation, ZIP banners and playtime without making real service requests.
+ScreenScraper has been removed from the source picker and runtime CLI. Previous
+selections migrate to Automatic. The old adapter remains in the source tree for
+possible future use, but login/logout and provider selection are unavailable.
+Existing downloaded artwork is preserved. No account setup is needed.

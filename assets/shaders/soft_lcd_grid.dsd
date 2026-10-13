@@ -1,0 +1,20 @@
+<!-- Original RGDS shader; same license as the RGDS project. One texture sample. -->
+// Original RGDS single-sample GLES2 preset. No history buffers or extra passes.
+<vertex>
+attribute vec2 a_vertex_coordinate;
+attribute vec2 a_texture_coordinate;
+varying vec2 v_texture_coordinate;
+void main(){v_texture_coordinate=a_texture_coordinate;gl_Position=vec4(a_vertex_coordinate,0.0,1.0);}
+</vertex>
+<fragment>
+uniform sampler2D u_texture;
+uniform vec4 u_texture_size;
+varying vec2 v_texture_coordinate;
+void main(){
+    vec4 pixel=texture2D(u_texture,v_texture_coordinate);
+    vec2 pixel_position=fract(v_texture_coordinate*u_texture_size.zw);
+    vec2 edge=smoothstep(vec2(0.04),vec2(0.23),pixel_position);
+    pixel.rgb*=0.90+0.10*edge.x*edge.y;
+    gl_FragColor=pixel;
+}
+</fragment>

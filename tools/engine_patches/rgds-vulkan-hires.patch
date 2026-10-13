@@ -1,0 +1,875 @@
+--- a/src/core/gpu/engine2d.cpp
++++ b/src/core/gpu/engine2d.cpp
+@@ -13,6 +13,9 @@
+ #include <cstdio>
+ #include <cstdlib>
+ #include <cstring>
++#if defined(__aarch64__)
++#include <arm_neon.h>
++#endif
+ 
+ namespace ds::gpu {
+ 
+@@ -236,6 +239,146 @@
+   prof::add(prof::C_2D_FULL_SECOND, 1);
+   { DS_PROF(SELECT); select_layers(); }
+   { DS_PROF(EFFECTS); colour_effects(); }
++}
++
++// Resolve the 2D priority stack once. A new 3D sample can only be the
++// first layer, second layer, or hidden behind both. This saves reselecting
++// every sprite/background for every enhanced subpixel.
++namespace {
++inline Pixel blend(Pixel a, Pixel b, u32 eva, u32 evb) {
++  u32 r = (((a & 0x00003F) * eva) + ((b & 0x00003F) * evb) + 0x000008) >> 4;
++  u32 g = ((((a & 0x003F00) * eva) + ((b & 0x003F00) * evb) + 0x000800) >> 4) & 0x007F00;
++  u32 bl = ((((a & 0x3F0000) * eva) + ((b & 0x3F0000) * evb) + 0x080000) >> 4) & 0x7F0000;
++  if (r > 0x3F) r = 0x3F;
++  if (g > 0x3F00) g = 0x3F00;
++  if (bl > 0x3F0000) bl = 0x3F0000;
++  return r | g | bl | 0xFF000000;
++}
++
++// 3D/2D blend with the 3D layer's 5-bit alpha (alpha+1 of 32).
++inline Pixel blend_3d(Pixel a, Pixel b) {
++  const u32 eva = ((a >> 24) & 0x1F) + 1, evb = 32 - eva;
++  if (eva == 32) return a;
++  u32 r = (((a & 0x00003F) * eva) + ((b & 0x00003F) * evb) + 0x000010) >> 5;
++  u32 g = ((((a & 0x003F00) * eva) + ((b & 0x003F00) * evb) + 0x001000) >> 5) & 0x007F00;
++  u32 bl = ((((a & 0x3F0000) * eva) + ((b & 0x3F0000) * evb) + 0x100000) >> 5) & 0x7F0000;
++  if (r > 0x3F) r = 0x3F;
++  if (g > 0x3F00) g = 0x3F00;
++  if (bl > 0x3F0000) bl = 0x3F0000;
++  return r | g | bl | 0xFF000000;
++}
++
++inline Pixel brighten(Pixel v, u32 factor, u32 bias) {
++  u32 rb = v & 0x3F003F, g = v & 0x003F00;
++  rb += (((((0x3F003F - rb) * factor) + (bias * 0x010001)) >> 4) & 0x3F003F);
++  g  += (((((0x003F00 - g) * factor) + (bias * 0x000100)) >> 4) & 0x003F00);
++  return rb | g | 0xFF000000;
++}
++inline Pixel darken(Pixel v, u32 factor, u32 bias) {
++  u32 rb = v & 0x3F003F, g = v & 0x003F00;
++  rb -= ((((rb * factor) + (bias * 0x010001)) >> 4) & 0x3F003F);
++  g  -= ((((g * factor) + (bias * 0x000100)) >> 4) & 0x003F00);
++  return rb | g | 0xFF000000;
++}
++
++}
++
++void Engine2D::prepare_3d_sublines() {
++  const bool saved = bg_[0].any;
++  bg_[0].any = false;
++  select_layers();
++  bg_[0].any = saved;
++  auto& p = enhanced_plan_;
++  p.top = top_; p.second = second_; p.top_id = top_id_; p.second_id = second_id_;
++  p.kind = top_kind_; p.alpha = top_alpha_;
++  // Compile the native pixel's layer/effect rules once. High-resolution
++  // samples vary only the 3D colour and coverage, never these DS rules.
++  kern::active::composite_line(cur_.bldcnt, cur_.eva, cur_.evb, cur_.evy,
++      p.top.data(), p.second.data(), p.top_id.data(), p.kind.data(), p.alpha.data(),
++      p.second_id.data(), win_.data(), p.absent.data());
++  const u32 effect = (cur_.bldcnt >> 6) & 3;
++  const u32 rank3d = (cur_.bgcnt[0] & 3) * 5 + 1;
++  for (u32 x = 0; x < 256; ++x) {
++    auto rank = [&](u8 tid) -> u32 {
++      if (tid <= T_BG3) return (cur_.bgcnt[tid] & 3) * 5 + 1 + tid;
++      if (tid <= T_OBJ_DIRECT) return (obj_attr_[x] & OA_PRIO) * 5;
++      return 30;
++    };
++    const u8 front = !(win_[x] & L_BG0) ? 2 : rank(top_tid_[x]) > rank3d ? 0 : rank(second_tid_[x]) > rank3d ? 1 : 2;
++    p.front[x] = front; p.op[x] = Keep2D; p.constant[x] = p.absent[x];
++    if (front == 0) {
++      p.op[x] = Replace3D;
++      if (cur_.bldcnt & (u32(p.top_id[x]) << 8)) p.op[x] = Blend3D;
++      else if ((cur_.bldcnt & L_BG0) && (win_[x] & 0x20)) {
++        if (effect == 2) p.op[x] = Brighten3D;
++        if (effect == 3) p.op[x] = Darken3D;
++      }
++    } else if (front == 1) {
++      p.constant[x] = p.top[x];
++      const bool target = cur_.bldcnt & (L_BG0 << 8);
++      const bool obj = p.kind[x] == K_OBJ_SEMI || p.kind[x] == K_OBJ_BITMAP;
++      const bool fx = (cur_.bldcnt & p.top_id[x]) && (win_[x] & 0x20);
++      if (target && (obj || (fx && effect == 1))) {
++        p.op[x] = BlendOver3D;
++        p.ea[x] = p.kind[x] == K_OBJ_BITMAP ? p.alpha[x] : cur_.eva;
++        p.eb[x] = p.kind[x] == K_OBJ_BITMAP ? 16-p.ea[x] : cur_.evb;
++      } else if (fx) {
++        if (effect == 2) p.constant[x] = brighten(p.top[x], cur_.evy, 8);
++        if (effect == 3) p.constant[x] = darken(p.top[x], cur_.evy, 7);
++      }
++    }
++  }
++  for (u32 x = 0; x < 256; x += 4)
++    p.block[x/4] = p.op[x] == p.op[x+1] && p.op[x] == p.op[x+2] && p.op[x] == p.op[x+3] ? u8(p.op[x]) : 255;
++}
++
++void Engine2D::composite_3d_subline(const Pixel* line, Pixel* output) {
++  const auto& p = enhanced_plan_;
++  for (u32 start = 0; start < 256; start += 4) {
++#if defined(__aarch64__)
++    const u8 op = p.block[start/4];
++    if (op <= Blend3D) {
++      const uint32x4_t a = vld1q_u32(line+start), alpha = vshrq_n_u32(a,24);
++      uint32x4_t value = a;
++      if (op == Keep2D) value = vld1q_u32(p.constant.data()+start);
++      else if (op == Blend3D) {
++        const uint32x4_t b = vld1q_u32(p.top.data()+start);
++        const uint32x4_t ea = vaddq_u32(vandq_u32(alpha,vdupq_n_u32(31)),vdupq_n_u32(1));
++        const uint32x4_t eb = vsubq_u32(vdupq_n_u32(32),ea);
++        const uint32x4_t rbmask=vdupq_n_u32(0x3F003F), gmask=vdupq_n_u32(0x003F00);
++        const uint32x4_t rb=vandq_u32(vshrq_n_u32(vaddq_u32(vaddq_u32(vmulq_u32(vandq_u32(a,rbmask),ea),vmulq_u32(vandq_u32(b,rbmask),eb)),vdupq_n_u32(0x100010)),5),rbmask);
++        const uint32x4_t g=vandq_u32(vshrq_n_u32(vaddq_u32(vaddq_u32(vmulq_u32(vandq_u32(a,gmask),ea),vmulq_u32(vandq_u32(b,gmask),eb)),vdupq_n_u32(0x001000)),5),gmask);
++        value=vbslq_u32(vceqq_u32(ea,vdupq_n_u32(32)),a,vorrq_u32(vorrq_u32(rb,g),vdupq_n_u32(0xFF000000)));
++      }
++      value=vbslq_u32(vcgtq_u32(alpha,vdupq_n_u32(0)),value,vld1q_u32(p.absent.data()+start));
++      vst1q_u32(enhanced_out_.data()+start,value);
++      continue;
++    }
++#endif
++    for (u32 x = start; x < start + 4; ++x) {
++    Pixel value = p.absent[x];
++    if (line[x] >> 24) switch (p.op[x]) {
++      case Keep2D: value = p.constant[x]; break;
++      case Replace3D: value = line[x]; break;
++      case Blend3D: value = blend_3d(line[x], p.top[x]); break;
++      case Brighten3D: value = brighten(line[x], cur_.evy, 8); break;
++      case Darken3D: value = darken(line[x], cur_.evy, 7); break;
++      case BlendOver3D: value = blend(p.top[x], line[x], p.ea[x], p.eb[x]); break;
++    }
++    enhanced_out_[x] = value;
++  }
++  }
++  kern::active::output_line(enhanced_out_.data(), master_bright(), output);
++  // Opt-in reference check runs the original full layer selection. Never
++  // enabled by normal play; useful for new blending/window regressions.
++  static const bool verify = std::getenv("DS_VERIFY_HIRES") != nullptr;
++  if (verify) {
++    const auto native = out_; const auto bg = bg_[0]; const Pixel* old = line3d_;
++    line3d_ = line; draw_bg_3d(); select_layers(); colour_effects();
++    alignas(16) Pixel expected[256]; kern::active::output_line(out_.data(), master_bright(), expected);
++    if (std::memcmp(output, expected, sizeof expected)) { std::fprintf(stderr, "enhanced compositor differs from native layer selection\n"); std::abort(); }
++    line3d_ = old; bg_[0] = bg; out_ = native;
++  }
+ }
+ 
+ // Whether any pixel of the line could be changed by the colour-effects pass.
+--- a/src/core/gpu/engine2d.h
++++ b/src/core/gpu/engine2d.h
+@@ -69,6 +69,9 @@
+   void pre_draw(u32 line, bool frame_reset) { regs_.pre_draw(line, frame_reset); }   // HBlank, before drawing `line`
+   void render_sprites(u32 line);           // runs one line ahead
+   void render_line(u32 line);
++  bool enhanced_3d() const { return !num_ && cur_.enabled && !cur_.forced_blank && (cur_.dispcnt & 8) && (cur_.layer_enable & 1); }
++  void prepare_3d_sublines();
++  void composite_3d_subline(const Pixel* line, Pixel* output);
+   void post_draw(bool frame_reset) { regs_.post_draw(frame_reset); }       // HBlank, after drawing
+ 
+   // Top byte non-zero for every drawn pixel (display capture's alpha).
+@@ -139,6 +142,16 @@
+   alignas(16) std::array<u8, 256> top_id_{}, top_kind_{}, top_alpha_{}, second_id_{};
+   alignas(16) std::array<Pixel, 256> out_{};
+   const Pixel* line3d_ = nullptr;
++  enum EnhancedOp : u8 { Keep2D, Replace3D, Blend3D, Brighten3D, Darken3D, BlendOver3D };
++  struct EnhancedPlan {
++    std::array<Pixel, 256> top, second;
++    std::array<u8, 256> top_id, second_id, kind, alpha, front;
++    std::array<Pixel, 256> absent, constant;
++    std::array<EnhancedOp, 256> op;
++    std::array<u8, 64> block;
++    std::array<u8, 256> ea, eb;
++  } enhanced_plan_;
++  std::array<Pixel, 256> enhanced_out_;
+ 
+   const VramMap& vram() const;
+   const VramMap* vm_override_ = nullptr;
+--- a/src/core/gpu/gpu.cpp
++++ b/src/core/gpu/gpu.cpp
+@@ -50,6 +50,10 @@
+ 
+ void Gpu::reset() {
+   join_worker();
++  presentation_smooth_ = !std::getenv("RGDS_3D_SMOOTH") || std::atoi(std::getenv("RGDS_3D_SMOOTH")) != 0;
++  const char* scale = std::getenv("RGDS_VK_SCALE");
++  if (scale && std::atoi(scale) > 1) for (auto& image : enhanced_) image.assign(PRESENT_W * PRESENT_H, 0xFF000000);
++  else for (auto& image : enhanced_) image.clear();
+   disarm_trap();
+   line_ = 0; hblank_done_ = false;
+   lazy_frame_ = false; per_line_[0] = per_line_[1] = false;
+@@ -825,12 +829,115 @@
+       else { output_b(dst); expand_colours(dst); }
+     }
+   } else { for (u32 i = 0; i < 256; ++i) dst[i] = 0xFF000000; }
++  if (!enhanced_[screen].empty()) output_enhanced(e, line, dst);
+   if (scaled) {
+     if (e == 1 && bscale_defer_ && bscale_n_ < SCREEN_H) {
+       StashedLine& st = bscale_[bscale_n_++];
+       st.line = line; st.screen = screen;
+       std::memcpy(st.px, dst, sizeof st.px);
+     } else emit_scaled(screen, line, dst);
++  }
++}
++
++// Compose only the panel's samples (640x480) from the larger 3D target.
++// This bounds CPU blending work even at 5x, while all native DS readbacks
++// remain on the independent native raster. 2D art retains its original grid.
++bool Gpu::set_presentation(int scale, bool smooth, std::string* why) {
++  if (scale < 1 || scale > 5) return false;
++  quiesce();
++  // Allocate before changing the renderer, so failures keep the old picture.
++  if (scale > 1) for (auto& image : enhanced_) if (image.empty()) image.assign(PRESENT_W * PRESENT_H, 0xFF000000);
++  if (!nds_.gpu3d.renderer().set_display_scale(static_cast<u32>(scale), why)) return false;
++  presentation_smooth_ = smooth;
++  enhanced_screen_[0] = enhanced_screen_[1] = false;
++  if (scale == 1) for (auto& image : enhanced_) image.clear();
++  // Refers only to the new resources (CPU until its first enhanced frame).
++  ref3d_ = nds_.gpu3d.frame_ref(false);
++  return true;
++}
++
++void Gpu::output_enhanced(int e, u32 line, const u32* native) {
++  Engine2D& en = engine[e];
++  if (line == 0) enhanced_screen_[en.screen()] = false;
++  if (e != 0) return;
++  u32* image = enhanced_[en.screen()].data();
++  const u32 y0 = line * PRESENT_H / SCREEN_H, y1 = (line + 1) * PRESENT_H / SCREEN_H;
++  bool detail = e == 0 && screens_on_ && ((en.dispcnt() >> 16) & 3) == 1 &&
++                      en.enhanced_3d() && ref3d_.hires && ref3d_.scale > 1;
++  // Fully transparent 3D rows cannot change this native 2D result. Check
++  // both rasters: a high-resolution edge can cover a native-empty pixel,
++  // and a native edge can disappear at the enhanced sample positions.
++  if (detail) {
++    u32 occupied = 0;
++    for (u32 x = 0; x < SCREEN_W; ++x) occupied |= line3d_[x];
++    if (!(occupied >> 24)) {
++      const u32 first = std::min(line * ref3d_.scale, (4*y0+1)*ref3d_.scale/10);
++      const u32 last = std::max((line+1)*ref3d_.scale, (4*(y1-1)+3)*ref3d_.scale/10+1);
++      const u32 n = SCREEN_W * ref3d_.scale * (last-first);
++      const u32* band = ref3d_.hires + first * SCREEN_W * ref3d_.scale;
++      occupied = 0;
++      for (u32 x = 0; x < n; ++x) occupied |= band[x];
++    }
++    detail = (occupied >> 24) != 0;
++  }
++  const u32 scale = ref3d_.scale;
++  const bool filter = presentation_smooth_ && scale >= 3;
++  if (detail) {
++    en.prepare_3d_sublines(); enhanced_screen_[en.screen()] = true;
++    sample_plan_.update(scale, nds_.gpu3d.display_xpos(), filter);
++  }
++  u32 previous_sy = ~0u;
++  for (u32 y = y0; y < y1; ++y) {
++    u32* dst = image + y * PRESENT_W;
++    if (!detail) {
++      if (y != y0) std::memcpy(dst, image + y0 * PRESENT_W, PRESENT_W * sizeof(u32));
++      else for (u32 x = 0; x < SCREEN_W; ++x)
++        for (u32 dx = x * PRESENT_W / SCREEN_W; dx < (x + 1) * PRESENT_W / SCREEN_W; ++dx) dst[dx] = native[x];
++      continue;
++    }
++    // At 5x this is an exact 2x2 box resolve to the 640x480 panel. At
++    // 3x/4x use the same four evenly spaced footprint samples. The DS
++    // priority/window plan still belongs to its original 2D pixel.
++    const u32 fy0=(4*y+1)*scale/10, fy1=(4*y+3)*scale/10;
++    const u32* row0=ref3d_.hires+fy0*SCREEN_W*scale;
++    const u32* row1=ref3d_.hires+fy1*SCREEN_W*scale;
++    const u32 sy = line * scale + (2 * (y - y0) + 1) * scale / (2 * (y1 - y0));
++    // Nearest sampling can select the same source row twice on a 2x
++    // image. The DS layer plan is identical within this native scanline.
++    if (!filter && sy == previous_sy) { std::memcpy(dst, dst-PRESENT_W, PRESENT_W*sizeof(u32)); continue; }
++    previous_sy = sy;
++    const u32* row = ref3d_.hires + sy * SCREEN_W * scale;
++    alignas(16) u32 samples[SCREEN_W], composed[SCREEN_W];
++    for (u32 phase = 0; phase < (PRESENT_W + SCREEN_W - 1) / SCREEN_W; ++phase) {
++      // At 2x, the third panel pixel of odd DS columns samples exactly
++      // the same texel as their second pixel. Reuse the composed value.
++      if (scale == 2 && phase == 2) {
++        for (u32 x = 0; x < SCREEN_W/2; ++x) dst[5*x+4] = composed[2*x+1];
++        continue;
++      }
++      const auto& taps = sample_plan_.phase[phase];
++      // Only odd DS columns own a third panel pixel at 640/256.
++      // Reuse the unused even-column samples; composition is pixel-local.
++      const u32 begin = phase == 2 ? 1 : 0, step = phase == 2 ? 2 : 1;
++      for (u32 x = begin; x < SCREEN_W; x += step) {
++        const auto tap = taps[x];
++        if (filter) {
++          const u32 a=tap.first!=rgds::SamplePlan::absent?row0[tap.first]:0;
++          const u32 b=tap.second!=rgds::SamplePlan::absent?row0[tap.second]:0;
++          const u32 c=tap.first!=rgds::SamplePlan::absent?row1[tap.first]:0;
++          const u32 d=tap.second!=rgds::SamplePlan::absent?row1[tap.second]:0;
++          samples[x]=kern::rgds_filter4(a,b,c,d);
++        } else samples[x] = tap.first!=rgds::SamplePlan::absent?row[tap.first]:0;
++      }
++      en.composite_3d_subline(samples, composed);
++      if (phase == 2) {
++        for (u32 x = 0; x < SCREEN_W/2; ++x) dst[5*x+4] = composed[2*x+1];
++      } else {
++        for (u32 x = 0; x < SCREEN_W/2; ++x) {
++          dst[5*x+phase] = composed[2*x]; dst[5*x+phase+2] = composed[2*x+1];
++        }
++      }
++    }
+   }
+ }
+ 
+--- a/src/core/gpu/gpu.h
++++ b/src/core/gpu/gpu.h
+@@ -1,4 +1,5 @@
+ #include <vector>
++#include <string>
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ // DSperate - Nintendo DS emulator. Copyright (C) 2026 DSperate contributors.
+ #pragma once
+@@ -9,6 +10,7 @@
+ #include "core/gpu/vram_map.h"
+ #include "core/gpu/line_worker.h"
+ #include "core/gpu/render3d.h"
++#include "rgds_sample_plan.hpp"
+ #include "core/profile.h"
+ 
+ #include <array>
+@@ -85,6 +87,10 @@
+   void vram_remap_end(bool trapped);  // after: re-arm it
+   void set_lazy(bool on) { lazy_enabled_ = on; }   // off: per-line rendering (tests)
+ 
++  bool set_presentation(int scale, bool smooth, std::string* why = nullptr);
++  static constexpr u32 PRESENT_W = 640, PRESENT_H = 480;
++  bool enhanced_screen(int screen) const { return enhanced_screen_[screen]; }
++  const u32* enhanced_framebuffer(int screen) const { return enhanced_[screen].empty() ? nullptr : enhanced_[screen].data(); }
+   const u32* framebuffer(int screen) const { return fb_[screen].data(); }   // 0 = top, 1 = bottom
+ 
+   // A screen the frontend does not show. Its driving engine skips drawing but
+@@ -367,6 +373,11 @@
+ private:
+   static void worker_job(void* self);
+ 
++  bool presentation_smooth_ = true;
++  bool enhanced_screen_[2] = {};
++  std::vector<u32> enhanced_[2];
++  rgds::SamplePlan sample_plan_;
++  void output_enhanced(int e, u32 line, const u32* native);
+   void output_engine(int e, u32 line);
+   void emit_scaled(int screen, u32 line, const u32* src);
+   void output_a(u32 line, u32* dst);
+--- a/src/core/gpu/gpu3d.h
++++ b/src/core/gpu/gpu3d.h
+@@ -120,6 +120,7 @@
+   void render_frame();      // VCount 215: rasterise the latched frame
+   // Force next frame to rasterise even if unchanged (frameskip left the picture stale).
+   void note_raster_skipped() { render_stale_ = true; }
++  u32 display_xpos() const { return render_xpos_; }
+   Renderer3D::FrameRef frame_ref(bool allow_lag = true) const { return renderer_.frame_ref(allow_lag); }
+   u64 last_raster_ns() const { return renderer_.last_band_sum_ns(); }
+   const u32* line(const Renderer3D::FrameRef& f, u32 y);
+--- a/src/core/gpu/kernels.h
++++ b/src/core/gpu/kernels.h
+@@ -13,6 +13,31 @@
+ // palette kernel are multiples of 8.
+ 
+ namespace ds::gpu::kern {
++
++// Display-only four-sample resolve. DS alpha 0 means absent; present alpha
++// uses (a+1)/32. Average premultiplied colours so transparent edge texels
++// cannot produce dark fringes. Native guest pixels never use this filter.
++inline Pixel rgds_filter4(Pixel a, Pixel b, Pixel c, Pixel d) {
++  // Supersampling often lands inside one flat polygon or texture texel.
++  if (a == b && a == c && a == d) return (a >> 24) ? a : 0;
++  const u32 aa=a>>24, ab=b>>24, ac=c>>24, ad=d>>24;
++  if (aa==ab && aa==ac && aa==ad) {
++    if (!aa) return 0;
++    const u32 rb=(((a&0xFF00FF)+(b&0xFF00FF)+(c&0xFF00FF)+(d&0xFF00FF)+0x020002)>>2)&0xFF00FF;
++    const u32 g=(((a&0xFF00)+(b&0xFF00)+(c&0xFF00)+(d&0xFF00)+0x0200)>>2)&0xFF00;
++    return (aa<<24)|rb|g;
++  }
++  const u32 wa=aa?aa+1:0, wb=ab?ab+1:0, wc=ac?ac+1:0, wd=ad?ad+1:0;
++  const u32 total=wa+wb+wc+wd, coverage=(total+2)/4;
++  // The DS blend representation has no present alpha below 2/32.
++  if (coverage<2) return 0;
++  u32 out=(coverage-1)<<24;
++  for (u32 shift=0;shift<24;shift+=8) {
++    u32 sum=((a>>shift)&63)*wa+((b>>shift)&63)*wb+((c>>shift)&63)*wc+((d>>shift)&63)*wd;
++    out|=((sum+total/2)/total)<<shift;
++  }
++  return out;
++}
+ 
+ // Direct colour (BGR555, bit 15 ignored) resolves by arithmetic, not table:
+ // `direct_table()` is a sentinel the resolve kernels compare against.
+--- a/src/core/gpu/render3d.cpp
++++ b/src/core/gpu/render3d.cpp
+@@ -406,6 +406,9 @@
+ }
+ 
+ void Renderer3D::reset() {
++  gpu_job_wait();
++  if (lean_) lean_->wait_all();
++  gpu_frame_ = false;
+   color_.fill(0); depth_.fill(0); attr_.fill(0); out_[0].fill(0); out_[1].fill(0);
+   stencil_.fill(0);
+   prev_shadow_mask_.fill(false);
+@@ -2773,8 +2776,9 @@
+   }
+   texels_in_ = &poly_texels_;
+   if (gpu_dump_path_ && nds_.frame_count == gpu_dump_frame_) gpu_dump(gx, polys, npoly);
+-  if (gpu_on_ && gpu_submit(gx, polys, npoly)) { gpu_frame_ = true; pending_bands_ = 0; return; }
+-  gpu_frame_ = false;
++  // Native raster remains the guest-visible reference (capture, states and
++  // readback). The enhanced image is display-only, running alongside it.
++  gpu_frame_ = gpu_on_ && gpu_submit(gx, polys, npoly);
+   if (prof::enabled && !prep_done) { prof::add_timed(prof::R3D_PREP, prof::now_ns() - t_prep0); prep_done = true; }
+ 
+   u32 nb = band_count(live);
+@@ -2942,13 +2946,11 @@
+ Renderer3D::FrameRef Renderer3D::frame_ref(bool allow_lag) const {
+   FrameRef f;
+   f.gen = gen_;
+-  if (gpu_frame_ && lean_ && lean_->has_frame()) {
+-    // A GPU frame: no bands to wait for; the record (the newest the GPU has
+-    // finished, or, allowed, the one before) is picked at the first line
+-    // read.
+-    f.nbins = 0; f.gpu = true; f.allow_lag = allow_lag; f.out = nullptr;
+-    return f;
+-  }
++  // Read the matching frame, never substitute yesterday's 3D over today's
++  // 2D. Guest-visible pixels still come from the native reference raster.
++  f.gpu = gpu_frame_ && lean_;
++  f.scale = f.gpu ? gpu_scale_ : 1;
++  f.allow_lag = false;
+   f.nbins = pending_bands_;
+   if (pending_bands_) f.bin_y = bin_y_;
+   f.out = out_[display_].data();
+@@ -2960,6 +2962,26 @@
+   aa_ = on;
+   // The GPU raster's MSAA is fixed at its creation: rebuild it for the new setting.
+   if (gpu_on_ && lean_ && lean_->msaa() != on) { set_gpu(false); gpu_job_wait(); lean_.reset(); set_gpu(true); }
++}
++
++bool Renderer3D::set_display_scale(u32 scale, std::string* why) {
++  if (scale < 1 || scale > 5) return false;
++  if (scale == 1 && !gpu_on_) return true;
++  if (scale > 1 && gpu_on_ && gpu_scale_ == scale) return true;
++  // The caller has joined both 2D workers. Finish CPU/GPU reads before
++  // replacing their host-only resources; guest geometry and state are kept.
++  sync_all(); gpu_job_wait();
++  if (lean_) lean_->wait_all();
++  if (scale == 1) { gpu_on_ = false; gpu_frame_ = false; return true; }
++  if (!vk_dev_) vk_dev_ = vk::Device::shared(why);
++  if (!vk_dev_) return false;
++  // Keep the old renderer intact if allocation or pipeline creation fails.
++  auto next = vk::Lean::create(*vk_dev_, aa_, why, scale);
++  if (!next || !next->ready()) return false;
++  lean_ = std::move(next); gpu_scale_ = scale;
++  gpu_resident_.clear(); gpu_arena_top_ = 0; gpu_frame_ = false;
++  gpu_job_start(); gpu_on_ = true;
++  return true;
+ }
+ 
+ bool Renderer3D::set_gpu(bool on, std::string* why) {
+@@ -2968,7 +2990,11 @@
+   std::string reason;
+   if (!vk_dev_) vk_dev_ = vk::Device::shared(&reason);
+   if (!vk_dev_) { if (why) *why = reason; return false; }
+-  if (!lean_) lean_ = vk::Lean::create(*vk_dev_, aa_, &reason);
++  if (!lean_) {
++    const char* scale = std::getenv("RGDS_VK_SCALE");
++    gpu_scale_ = scale ? static_cast<u32>(std::clamp(std::atoi(scale), 1, 5)) : 1;
++    lean_ = vk::Lean::create(*vk_dev_, aa_, &reason, gpu_scale_);
++  }
+   if (!lean_ || !lean_->ready()) { lean_.reset(); if (why) *why = reason; return false; }
+   lean_->wait_all(); gpu_resident_.clear(); gpu_arena_top_ = 0;
+   gpu_job_start();
+@@ -3086,14 +3112,10 @@
+ // draws. Reads nothing render() changes (the ref carries the cut/generation),
+ // so it can run on the compositor thread while emulation dispatches the next frame.
+ void Renderer3D::sync_line(const FrameRef& f, s32 y) {
+-  if (f.gpu) {
+-    if (!f.out) {
+-      const double t0 = g_gpu_trace.on ? now_ms() : 0;
+-      gpu_job_wait();
+-      f.out = lean_->newest_ready(f.allow_lag);
+-      if (g_gpu_trace.on) { const double w = now_ms() - t0; g_gpu_trace.wait_ms += w; g_gpu_trace.wait_max = std::max(g_gpu_trace.wait_max, w); if (w > 0.2) ++g_gpu_trace.waited; }
+-    }
+-    return;
++  if (f.gpu && !f.hires) {
++    const double t0 = g_gpu_trace.on ? now_ms() : 0;
++    if (gpu_job_wait()) f.hires = lean_->newest_ready(false);
++    if (g_gpu_trace.on) { const double w = now_ms() - t0; g_gpu_trace.wait_ms += w; g_gpu_trace.wait_max = std::max(g_gpu_trace.wait_max, w); if (w > 0.2) ++g_gpu_trace.waited; }
+   }
+   if (!f.nbins || !pool_) return;
+   u32 b = 0;
+@@ -3302,7 +3324,7 @@
+ template <class S> void Renderer3D::sync_output(S& s) {
+   sync_all();
+   if constexpr (S::reading) { reset(); texcache_.clear(); }
+-  if constexpr (!S::reading) { if (gpu_frame_ && lean_) { gpu_job_wait(); if (const u32* g = lean_->newest_ready(false)) std::memcpy(out_[display_].data(), g, sizeof(u32) * 256 * 192); } }
++  // States store the native raster; enhanced GPU pixels never enter guest state.
+   s.begin("R3DO");
+   s.fields(rendered_once_, out_[display_]);   // reset() above leaves display_ at 0 on a load
+   s.end();
+--- a/src/core/gpu/render3d.h
++++ b/src/core/gpu/render3d.h
+@@ -79,6 +79,7 @@
+   // May decline (no Vulkan); `why` takes the reason. Coordinator only.
+   bool set_gpu(bool on, std::string* why = nullptr);
+   bool gpu_active() const { return gpu_on_; }
++  bool set_display_scale(u32 scale, std::string* why = nullptr);
+ private:
+   NDS& nds_;
+   // Holds a whole chunk of scanlines at once (render_chunk draws chunk at a
+@@ -370,6 +371,8 @@
+     // ref is taken at the start of the display frame: the GPU gets the lines
+     // before the compositor's batch as well (see sync_line).
+     mutable const u32* out = nullptr;
++    mutable const u32* hires = nullptr;
++    u32 scale = 1;
+     bool gpu = false, allow_lag = true;
+     u64 gen = 0;
+     u32 nbins = 0;
+@@ -412,6 +415,7 @@
+   void gpu_job_start();
+   void gpu_job_post(u32 np, u32 nv, u32 ntex, const vk::GpuFrame& f);
+   bool gpu_job_wait();   // the last posted submit's result (true: on the GPU)
++  u32 gpu_scale_ = 1;
+   bool gpu_on_ = false;
+   bool gpu_frame_ = false;   // the last drawn frame went to the GPU: lean_ holds the picture, not out_[]
+   struct GpuResident { u32 off = 0, words = 0, version = 0; };
+--- a/src/core/gpu/vk/vk_lean.cpp
++++ b/src/core/gpu/vk/vk_lean.cpp
+@@ -8,7 +8,7 @@
+ namespace ds::gpu::vk {
+ struct Lean::Impl {};
+ Lean::~Lean() = default;
+-std::unique_ptr<Lean> Lean::create(Device&, bool, std::string* why) { if (why) *why = "built without Vulkan"; return nullptr; }
++std::unique_ptr<Lean> Lean::create(Device&, bool, std::string* why, u32) { if (why) *why = "built without Vulkan"; return nullptr; }
+ bool Lean::msaa() const { return false; }
+ GpuPoly* Lean::poly_buffer() { return nullptr; }
+ GpuVert* Lean::vert_buffer() { return nullptr; }
+@@ -40,7 +40,7 @@
+ namespace ds::gpu::vk {
+ 
+ namespace {
+-constexpr u32 W = 256, H = 192;
++
+ constexpr u32 kTexelWords = 2u << 20;   // 8 MB of decoded texels
+ constexpr u32 kMaxDraws = 4096;
+ // Stencil layout: bit 7 drawn, bit 6 shadow mask, bit 5 the last write was
+@@ -60,6 +60,7 @@
+   const Api* api = nullptr;
+   Device* dev = nullptr;
+   bool msaa = false, timing = false;
++  u32 width = 256, height = 192, scale = 1;
+   double tick_ns = 0;
+   VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
+ 
+@@ -144,8 +145,9 @@
+ Lean::Stats Lean::stats(bool reset) { std::lock_guard<std::mutex> lk(d_->m); Stats s = d_->st; if (reset) d_->st = Stats{}; return s; }
+ static double now_ms() { return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+ 
+-std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why) {
++std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32 scale) {
+   auto fail_null = [&](const char* m) { if (why) *why = m; return nullptr; };
++  if (scale < 1 || scale > 5) return fail_null("internal scale must be 1..5");
+   const DeviceInternal* vk = dev.internal();
+   if (!vk || !vk->api) return fail_null("no Vulkan context");
+   const Api& a = *vk->api;
+@@ -154,6 +156,11 @@
+   self->d_ = std::make_unique<Impl>();
+   Impl& d = *self->d_;
+   d.vk = vk; d.api = &a; d.dev = &dev;
++  d.scale = scale; d.width = 256 * scale; d.height = 192 * scale;
++  VkPhysicalDeviceProperties props{}; a.vkGetPhysicalDeviceProperties(vk->phys, &props);
++  if (d.width > props.limits.maxFramebufferWidth || d.height > props.limits.maxFramebufferHeight ||
++      d.width > props.limits.maxImageDimension2D || d.height > props.limits.maxImageDimension2D)
++    return fail_null("internal resolution exceeds GPU limits");
+   auto fail = [&](const char* m) { if (why) *why = m; return nullptr; };
+   d.msaa = msaa && dev.limits().msaa4 && !(std::getenv("DS_LEAN_MSAA") && std::atoi(std::getenv("DS_LEAN_MSAA")) == 0);   // DS_LEAN_MSAA=0: off regardless (debug)
+   const VkSampleCountFlagBits samples = d.msaa ? VK_SAMPLE_COUNT_4_BIT : VK_SAMPLE_COUNT_1_BIT;
+@@ -167,7 +174,7 @@
+     d.polys[i] = dev.alloc(sizeof(GpuPoly) * DS_MAX_POLYS, Access::CpuWrite);
+     d.verts[i] = dev.alloc(sizeof(GpuVert) * DS_MAX_VERTS, Access::CpuWrite);
+     d.post[i] = dev.alloc(sizeof(GpuPost), Access::CpuWrite);
+-    d.out[i] = dev.alloc(sizeof(u32) * W * H, Access::CpuRead);
++    d.out[i] = dev.alloc(sizeof(u32) * d.width * d.height, Access::CpuRead);
+     if (!d.polys[i] || !d.verts[i] || !d.post[i] || !d.out[i]) return fail("buffer allocation");
+   }
+   {
+@@ -226,7 +233,7 @@
+   // Images.
+   VkPhysicalDeviceMemoryProperties mp{}; a.vkGetPhysicalDeviceMemoryProperties(vk->phys, &mp);
+   auto make_image = [&](VkFormat fmt, VkImageUsageFlags usage, VkImageAspectFlags aspect, Impl::Img& o, VkSampleCountFlagBits smp) {
+-    VkImageCreateInfo ii{}; ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO; ii.imageType = VK_IMAGE_TYPE_2D; ii.format = fmt; ii.extent = {W, H, 1};
++    VkImageCreateInfo ii{}; ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO; ii.imageType = VK_IMAGE_TYPE_2D; ii.format = fmt; ii.extent = {d.width, d.height, 1};
+     ii.mipLevels = 1; ii.arrayLayers = 1; ii.samples = smp; ii.tiling = VK_IMAGE_TILING_OPTIMAL; ii.usage = usage;
+     ii.sharingMode = VK_SHARING_MODE_EXCLUSIVE; ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+     if (a.vkCreateImage(vk->dev, &ii, nullptr, &o.img) != VK_SUCCESS) return false;
+@@ -295,7 +302,7 @@
+     VkRenderPassCreateInfo rpi{}; rpi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO; rpi.attachmentCount = 4; rpi.pAttachments = at; rpi.subpassCount = 2; rpi.pSubpasses = sp; rpi.dependencyCount = 2; rpi.pDependencies = dep;
+     if (a.vkCreateRenderPass(vk->dev, &rpi, nullptr, &d.rp) != VK_SUCCESS) return fail("render pass");
+     VkImageView views[4] = {d.col_ms.view, d.ds_ms.view, d.res.view, d.fog_ms.view};
+-    VkFramebufferCreateInfo fbi{}; fbi.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO; fbi.renderPass = d.rp; fbi.attachmentCount = 4; fbi.pAttachments = views; fbi.width = W; fbi.height = H; fbi.layers = 1;
++    VkFramebufferCreateInfo fbi{}; fbi.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO; fbi.renderPass = d.rp; fbi.attachmentCount = 4; fbi.pAttachments = views; fbi.width = d.width; fbi.height = d.height; fbi.layers = 1;
+     if (a.vkCreateFramebuffer(vk->dev, &fbi, nullptr, &d.fb) != VK_SUCCESS) return fail("framebuffer");
+   }
+ 
+@@ -310,7 +317,7 @@
+     const bool stencil_only = kind == P_MASK_CLEAR || kind == P_SHADOW_PREP;
+     VkPipelineVertexInputStateCreateInfo vin{}; vin.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+     VkPipelineInputAssemblyStateCreateInfo ia{}; ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO; ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+-    VkViewport vp{0.f, 0.f, static_cast<float>(W), static_cast<float>(H), 0.f, 1.f}; VkRect2D sc{{0, 0}, {W, H}};
++    VkViewport vp{0.f, 0.f, static_cast<float>(d.width), static_cast<float>(d.height), 0.f, 1.f}; VkRect2D sc{{0, 0}, {d.width, d.height}};
+     VkPipelineViewportStateCreateInfo vps{}; vps.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO; vps.viewportCount = 1; vps.pViewports = &vp; vps.scissorCount = 1; vps.pScissors = &sc;
+     VkPipelineRasterizationStateCreateInfo rs{}; rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO; rs.polygonMode = VK_POLYGON_MODE_FILL; rs.cullMode = VK_CULL_MODE_NONE; rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; rs.lineWidth = 1.f;
+     VkPipelineMultisampleStateCreateInfo ms{}; ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO; ms.rasterizationSamples = samples;
+@@ -371,7 +378,7 @@
+     st[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT; st[1].module = d.mod_res; st[1].pName = "main";
+     VkPipelineVertexInputStateCreateInfo vin{}; vin.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+     VkPipelineInputAssemblyStateCreateInfo ia{}; ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO; ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+-    VkViewport vp{0.f, 0.f, static_cast<float>(W), static_cast<float>(H), 0.f, 1.f}; VkRect2D sc{{0, 0}, {W, H}};
++    VkViewport vp{0.f, 0.f, static_cast<float>(d.width), static_cast<float>(d.height), 0.f, 1.f}; VkRect2D sc{{0, 0}, {d.width, d.height}};
+     VkPipelineViewportStateCreateInfo vps{}; vps.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO; vps.viewportCount = 1; vps.pViewports = &vp; vps.scissorCount = 1; vps.pScissors = &sc;
+     VkPipelineRasterizationStateCreateInfo rs{}; rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO; rs.polygonMode = VK_POLYGON_MODE_FILL; rs.cullMode = VK_CULL_MODE_NONE; rs.lineWidth = 1.f;
+     VkPipelineMultisampleStateCreateInfo ms{}; ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO; ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+@@ -399,7 +406,7 @@
+     }
+   }
+   self->ready_ = true;
+-  std::fprintf(stderr, "gpu lean: 1x%s, %s depth/stencil\n", d.msaa ? " with 4x MSAA" : " (no MSAA)", d.ds_format == VK_FORMAT_D24_UNORM_S8_UINT ? "D24S8" : "D32S8");
++  std::fprintf(stderr, "gpu lean: %ux (%ux%u)%s, %s depth/stencil\n", d.scale, d.width, d.height, d.msaa ? " with 4x MSAA" : " (no MSAA)", d.ds_format == VK_FORMAT_D24_UNORM_S8_UINT ? "D24S8" : "D32S8");
+   return self;
+ }
+ 
+@@ -424,7 +431,7 @@
+   std::memcpy(d.post[slot].ptr, &d.host_post, sizeof(GpuPost));
+   d.dev->flush(d.post[slot], 0, sizeof(GpuPost));
+ 
+-  GpuFrame f = fin;
++  GpuFrame f = fin; f.scale = d.scale;
+   const bool wbuf = (f.flags & DS_FF_WBUFFER) != 0;
+   GpuPoly* gpw = d.host_polys.data();
+   const GpuPoly* gp = gpw;
+@@ -472,7 +479,7 @@
+     cv[1].depthStencil.stencil = ca ? (S_DRAWN | code[(f.clear_attr >> 24) & 0x3F]) : 0;
+     cv[3].color.float32[0] = (f.clear_attr & 0x8000) ? 1.f : 0.f;   // the rear plane's fog bit
+   }
+-  VkRenderPassBeginInfo rbi{}; rbi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; rbi.renderPass = d.rp; rbi.framebuffer = d.fb; rbi.renderArea = {{0, 0}, {W, H}}; rbi.clearValueCount = 4; rbi.pClearValues = cv;
++  VkRenderPassBeginInfo rbi{}; rbi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; rbi.renderPass = d.rp; rbi.framebuffer = d.fb; rbi.renderArea = {{0, 0}, {d.width, d.height}}; rbi.clearValueCount = 4; rbi.pClearValues = cv;
+   a.vkCmdBeginRenderPass(cb, &rbi, VK_SUBPASS_CONTENTS_INLINE);
+   a.vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, d.layout, 0, 1, &d.set[slot], 0, nullptr);
+   a.vkCmdPushConstants(cb, d.layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GpuFrame), &f);
+@@ -560,7 +567,7 @@
+   a.vkCmdDraw(cb, 3, 1, 0, 0);
+   a.vkCmdEndRenderPass(cb);
+   // The record to the CPU-readable buffer.
+-  VkBufferImageCopy rg{}; rg.bufferRowLength = W; rg.bufferImageHeight = H; rg.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}; rg.imageExtent = {W, H, 1};
++  VkBufferImageCopy rg{}; rg.bufferRowLength = d.width; rg.bufferImageHeight = d.height; rg.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}; rg.imageExtent = {d.width, d.height, 1};
+   a.vkCmdCopyImageToBuffer(cb, d.res.img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_buf(d.out[slot]), 1, &rg);
+   VkMemoryBarrier mb{}; mb.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER; mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; mb.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+   a.vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
+@@ -587,7 +594,7 @@
+ static void finish_slot(Lean::Impl& d, u32 slot) {
+   const Api& a = *d.api;
+   d.fence_live[slot] = false;
+-  d.dev->invalidate(d.out[slot], 0, sizeof(u32) * W * H);
++  d.dev->invalidate(d.out[slot], 0, sizeof(u32) * d.width * d.height);
+   d.valid[slot] = true;
+   if (d.timing) {
+     u64 t[2] = {0, 0};
+--- a/src/core/gpu/vk/vk_lean.h
++++ b/src/core/gpu/vk/vk_lean.h
+@@ -21,7 +21,7 @@
+ class Lean {
+ public:
+   // `msaa`: 4x MSAA where the device has it (video.aa on the GPU raster); else 1 sample.
+-  static std::unique_ptr<Lean> create(Device& dev, bool msaa, std::string* why = nullptr);
++  static std::unique_ptr<Lean> create(Device& dev, bool msaa, std::string* why = nullptr, u32 scale = 1);
+   ~Lean();
+   Lean(const Lean&) = delete;
+   Lean& operator=(const Lean&) = delete;
+@@ -45,7 +45,7 @@
+   bool submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& f);
+   void wait();
+   void wait_all();   // every frame in flight done; the texel arena may be rewritten from the start
+-  // 256*192 words: RGB666 in bits 0-21, 5-bit alpha in bits 24-28 (the CPU raster's layout).
++  // (256*scale)*(192*scale) words: RGB666 in bits 0-21, 5-bit alpha in bits 24-28 (the CPU raster's layout).
+   const u32* output();
+   // The lag rule: the newest frame if the GPU has finished it; else, when
+   // `allow_lag`, the frame before it (one frame of latency instead of a
+--- a/src/frontend/headless/main.cpp
++++ b/src/frontend/headless/main.cpp
+@@ -360,7 +360,7 @@
+   if (replay && !direct)
+     std::fprintf(stderr, "warning: --replay without --direct boots the firmware, not the ROM;"
+                          " the replay will not reproduce the recorded session\n");
+-  std::fprintf(stderr, "RG DS Core 1.0.0 (%s%s)\n",
++  std::fprintf(stderr, "DSperate 1.0.0 (%s%s)\n",
+ #if DSPERATE_JIT
+               "jit",
+ #else
+@@ -423,7 +423,7 @@
+         std::string http_err;
+         std::shared_ptr<ds::cheevos::Backend> http = dsi_offline ? nullptr : std::shared_ptr<ds::cheevos::Backend>(ds::cheevos::make_curl_backend(http_err));
+         if (http) fetch = [http](const std::string& url, std::vector<ds::u8>& body) {
+-          const ds::cheevos::Response resp = http->perform({url, {}, {}}, "RG DS Core");
++          const ds::cheevos::Response resp = http->perform({url, {}, {}}, "DSperate");
+           if (resp.status != 200) return false;
+           body.assign(resp.body.begin(), resp.body.end());
+           return true;
+@@ -830,6 +830,22 @@
+       const auto ref = nds.gpu3d.frame_ref(false);
+       for (int y = 0; y < static_cast<int>(ds::SCREEN_H); ++y) std::fwrite(nds.gpu3d.line(ref, static_cast<ds::u32>(y)), 4, ds::SCREEN_W, rec3d_out);
+     }
++    if (i+1 == frames) {
++      if (const char* path=std::getenv("RGDS_DUMP_ENHANCED")) {
++        FILE* out=std::fopen(path,"wb");
++        if (!out) { std::perror("enhanced capture"); return 1; }
++        for (unsigned screen=0;screen<2;++screen) {
++          const auto* enhanced=nds.gpu.enhanced_framebuffer(screen);
++          if (enhanced && nds.gpu.enhanced_screen(screen))
++            std::fwrite(enhanced,4,ds::gpu::Gpu::PRESENT_W*ds::gpu::Gpu::PRESENT_H,out);
++          else for(unsigned y=0;y<ds::gpu::Gpu::PRESENT_H;++y) for(unsigned x=0;x<ds::gpu::Gpu::PRESENT_W;++x) {
++            auto pixel=nds.gpu.framebuffer(screen)[((2*y+1)*ds::SCREEN_H/(2*ds::gpu::Gpu::PRESENT_H))*ds::SCREEN_W+(2*x+1)*ds::SCREEN_W/(2*ds::gpu::Gpu::PRESENT_W)];
++            std::fwrite(&pixel,4,1,out);
++          }
++        }
++        if (std::fclose(out)) return 1;
++      }
++    }
+     if (hash_out) {
+       auto fnv = [](const ds::u32* p) { ds::u64 h = 1469598103934665603ull; for (ds::u32 k = 0; k < ds::SCREEN_W * ds::SCREEN_H; ++k) h = (h ^ p[k]) * 1099511628211ull; return h; };
+       std::fprintf(hash_out, "%d %016llx %016llx\n", i, (unsigned long long)fnv(nds.gpu.framebuffer(0)), (unsigned long long)fnv(nds.gpu.framebuffer(1)));
+--- a/src/frontend/sdl/display.cpp
++++ b/src/frontend/sdl/display.cpp
+@@ -292,6 +292,7 @@
+     // The core's framebuffers are 0xAARRGGBB words: ARGB8888.
+     tex_[i] = SDL_CreateTexture(ren_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(SCREEN_W), static_cast<int>(SCREEN_H));
+     if (!tex_[i]) { std::fprintf(stderr, "SDL_CreateTexture: %s\n", SDL_GetError()); return false; }
++    texture_width_[i] = SCREEN_W; texture_height_[i] = SCREEN_H;
+   }
+   layout();
+ 
+@@ -461,7 +462,16 @@
+   for (int k = 0; k < nf; ++k) owners[k]->job_ = stage_job;
+ }
+ 
+-void Display::draw(const u32* const fb[SCREENS]) {
++void Display::draw(const u32* const fb[SCREENS], u32 width, u32 height, const bool* enhanced) {
++  if (ren_) for (int i = 0; i < SCREENS; ++i) {
++    const u32 w = !enhanced || enhanced[i] ? width : SCREEN_W;
++    const u32 h = !enhanced || enhanced[i] ? height : SCREEN_H;
++    if (w == texture_width_[i] && h == texture_height_[i]) continue;
++    SDL_Texture* next = SDL_CreateTexture(ren_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
++    if (!next) return;
++    SDL_DestroyTexture(tex_[i]); tex_[i] = next;
++    texture_width_[i] = w; texture_height_[i] = h;
++  }
+   sync();
+   if (gpu_) { draw_gpu(fb); return; }
+   if (disp_) {
+@@ -478,7 +488,7 @@
+   for (int i = 0; i < nviews_; ++i) {
+     const View& v = views_[i];
+     if (!v.shown) continue;
+-    SDL_UpdateTexture(tex_[v.screen], nullptr, fb[v.screen], static_cast<int>(SCREEN_W) * 4);
++    SDL_UpdateTexture(tex_[v.screen], nullptr, fb[v.screen], static_cast<int>(texture_width_[v.screen]) * 4);
+     // Textures are per screen, not per view, so the alpha mod is scoped to
+     // the inset's copy or a screen swap would carry it to the large view.
+     const bool translucent = !v.direct && inset_alpha_ < 255;
+--- a/src/frontend/sdl/display.h
++++ b/src/frontend/sdl/display.h
+@@ -47,7 +47,8 @@
+   bool open(const char* title, int scale, bool fullscreen, bool linear, bool vsync, const Layout& layout, int only_screen = -1, int display_index = 0);
+   void close();
+ 
+-  void draw(const u32* const fb[SCREENS]);
++  void draw(const u32* const fb[SCREENS], u32 width = SCREEN_W, u32 height = SCREEN_H, const bool* enhanced = nullptr);
++  bool enhanced_present() const { return ren_ != nullptr; }
+   // The frame loop's present: each GPU-presenting window of `ds` takes the
+   // frame on the present thread (present_thread.h) and this returns once the
+   // frame is copied out, so `fb` may change straight after. The others draw
+@@ -221,6 +222,7 @@
+ 
+   SDL_Window*   win_ = nullptr;
+   SDL_Renderer* ren_ = nullptr;
++  u32 texture_width_[SCREENS] = {SCREEN_W, SCREEN_W}, texture_height_[SCREENS] = {SCREEN_H, SCREEN_H};
+   SDL_Texture*  tex_[SCREENS] = {nullptr, nullptr};
+   View          views_[SCREENS] = {};
+   int           nviews_ = SCREENS;
+--- a/src/frontend/sdl/main.cpp
++++ b/src/frontend/sdl/main.cpp
+@@ -1276,7 +1276,16 @@
+     const char* g = std::getenv("DS_GPU3D");
+     const bool want = g ? std::atoi(g) != 0 : cfg.flag("video.gpu3d", false);
+     nds.gpu3d.renderer().set_aa(aa_on(cfg.str("video.aa", "false")));   // before the raster starts: its MSAA is fixed at creation
+-    if (want) { std::string why; if (!nds.gpu3d.renderer().set_gpu(true, &why)) std::fprintf(stderr, "gpu3d: unavailable (%s), drawing on the CPU\n", why.c_str()); else std::fprintf(stderr, "gpu3d: on\n"); }
++    if (want) {
++      std::string why;
++      if (!nds.gpu3d.renderer().set_gpu(true, &why)) {
++        std::fprintf(stderr, "RG DS: high-resolution renderer unavailable (%s). Select Native in Graphics.\n", why.c_str());
++        SDL_Quit(); return 1;
++      }
++      const char* requested=std::getenv("RGDS_VK_SCALE");
++      const int scale=requested?std::clamp(std::atoi(requested),1,5):1;
++      std::fprintf(stderr, "gpu3d: on; RG DS true %dx 3D (%dx%d), 640x480 panel\n",scale,256*scale,192*scale);
++    }
+   }
+   // Let fullscreen windows take their final size before the ROM loads (see
+   // Display::settle_step); bounded, in case no configure comes.
+@@ -1607,6 +1616,7 @@
+   bool was_fast = false, was_ff_raster = false;
+   // Keep an A/B switch for device profiling; this changes host rendering only.
+   const bool ff_raster_enabled = !std::getenv("DS_FF_RASTER") || std::atoi(std::getenv("DS_FF_RASTER")) != 0;
++  std::vector<u32> cursor_enhanced_fb;
+   std::vector<u32> cursor_fb(ds::SCREEN_W * ds::SCREEN_H);   // bottom screen with the pen crosshair
+   // Status UI belongs to RG DS; state hotkeys retain diagnostic logging.
+   auto show_slot = [](const std::string& text) { std::fprintf(stderr, "state: %s\n", text.c_str()); };
+@@ -1722,6 +1732,21 @@
+   // for the ones started lazily.
+   ds::place_current_thread(ds::ThreadRole::Emu);
+   ds::place_foreign_threads();
++  rgds::graphics_handler = [&](int scale, bool smooth, int skip) {
++    std::string why;
++    if (!nds.gpu.set_presentation(scale, smooth, &why)) {
++      std::fprintf(stderr, "RG DS graphics: keeping current renderer: %s\n", why.c_str());
++      return false;
++    }
++    fs_limit = skip; fs_left = fs_blocks = fs_drawn_run = 0;
++    fs_in_skip = false; fs_debt_ms = 0; nds.gpu.set_frame_skip(false);
++    const auto value = std::to_string(scale);
++    setenv("RGDS_VK_SCALE", value.c_str(), 1);
++    setenv("RGDS_3D_SMOOTH", smooth ? "1" : "0", 1);
++    pacer.reset();
++    std::fprintf(stderr, "RG DS graphics applied: %dx, smoothing %d, frameskip %d\n", scale, smooth, skip);
++    return true;
++  };
+   while (!input.quit() && !g_signalled && (frame_limit == 0 || frames < static_cast<u64>(frame_limit))) {
+     if (frames == 120) ds::place_foreign_threads();
+     SDL_Event e;
+@@ -2022,8 +2047,23 @@
+           int rt_pol = 0; sched_param rt_sp{};
+           const bool drop_rt = present_nort && pthread_getschedparam(pthread_self(), &rt_pol, &rt_sp) == 0 && (rt_pol == SCHED_RR || rt_pol == SCHED_FIFO);
+           if (drop_rt) { sched_param z{}; sched_setscheduler(0, SCHED_OTHER, &z); }
+-          display.draw(fb);
+-          if (dual_window) display2.draw(fb);
++          const bool enhanced_screen[2] = {nds.gpu.enhanced_screen(0), nds.gpu.enhanced_screen(1)};
++          const u32* enhanced[2] = {enhanced_screen[0] ? nds.gpu.enhanced_framebuffer(0) : fb[0], enhanced_screen[1] ? nds.gpu.enhanced_framebuffer(1) : fb[1]};
++          if (cursor && enhanced_screen[1]) {
++            cursor_enhanced_fb.assign(enhanced[1], enhanced[1] + ds::gpu::Gpu::PRESENT_W * ds::gpu::Gpu::PRESENT_H);
++            std::array<u16, ds::SCREEN_W+1> runs{}; runs.back() = ds::gpu::Gpu::PRESENT_W;
++            draw_cursor(CursorDst{cursor_enhanced_fb.data(), ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, runs.data()}, input.stylus_x(), input.stylus_y(), cursor_size);
++            enhanced[1] = cursor_enhanced_fb.data();
++          }
++          const bool detail = enhanced[0] && enhanced[1] &&
++                              display.enhanced_present() && (!dual_window || display2.enhanced_present());
++          if (detail) {
++            display.draw(enhanced, ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, enhanced_screen);
++            if (dual_window) display2.draw(enhanced, ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, enhanced_screen);
++          } else {
++            display.draw(fb);
++            if (dual_window) display2.draw(fb);
++          }
+           if (drop_rt) sched_setscheduler(0, rt_pol, &rt_sp);
+         }
+       }

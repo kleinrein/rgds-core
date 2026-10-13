@@ -6,6 +6,15 @@ import tempfile
 import time
 
 
+def process_identity(pid):
+    try:
+        content = Path("/proc") / str(pid) / "stat"
+        # comm can contain spaces and parentheses; fields after its last ')' are fixed.
+        return content.read_text().rsplit(")", 1)[1].split()[19]
+    except (OSError, IndexError):
+        return None
+
+
 def write_record(path, record):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

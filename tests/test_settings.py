@@ -4,6 +4,7 @@ from pathlib import Path
 import struct
 import subprocess
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +24,8 @@ class SettingsTests(unittest.TestCase):
         self.bmp = self.root / "screen.bmp"
 
     def run_preview(self, script=None, extra=()):
-        args = [str(BINARY), "--preview", "--state", str(self.state), "--preferences", str(self.prefs),
+        entry = [] if "--home" in extra else ["--library"]
+        args = [str(BINARY), "--preview", *entry, "--state", str(self.state), "--preferences", str(self.prefs),
                 "--screenshot", str(self.bmp)]
         if script:
             path = self.root / "input.txt"
@@ -42,8 +44,8 @@ class SettingsTests(unittest.TestCase):
         offset = struct.unpack_from("<I", data, 10)[0]
         width, height = struct.unpack_from("<ii", data, 18)
         stride = width * 4
-        row = abs(height) - 1 if height > 0 else 0
-        b, g, r = data[offset + row * stride:offset + row * stride + 3]
+        row = abs(height) - 1 - 101 if height > 0 else 101
+        b, g, r = data[offset + row * stride + 4:offset + row * stride + 7]
         return r, g, b
 
     def test_keyboard_changes_appearance_and_back_never_exits_inside_settings(self):
@@ -61,34 +63,35 @@ class SettingsTests(unittest.TestCase):
 460 key S
 500 key Escape
 """)
-        self.assertEqual(self.prefs.read_text(), "schema=1\nmode=dark\nfont=pixel\ncore=0\n")
-        self.assertEqual(self.state.read_text(), '1 3 2 ""\n')
-        self.assertEqual(self.background(result), (16, 26, 44))
+        self.assertEqual(self.prefs.read_text(), "schema=1\nmode=dark\nfont=pixel\ncore=1\nauto_load=1\nauto_save=1\n")
+        self.assertEqual(self.state.read_text().splitlines()[0], '1 3 2 ""')
+        self.assertEqual(self.background(result), (12, 17, 26))
 
     def test_touch_choices_save_immediately_and_persist_on_next_launch(self):
-        result = self.run_preview("""20 tap 577 49
-60 tap 240 104
-100 tap 440 140
-140 tap 440 244
-180 tap 140 244
-220 tap 51 44
-260 tap 240 160
-300 tap 240 165
-340 tap 51 44
-380 tap 51 44
+        result = self.run_preview("""20 key S
+60 click 240 128
+100 click 440 148
+140 click 440 205
+180 click 140 205
+220 click 72 452
+260 click 240 211
+300 click 240 128
+340 click 72 452
+380 click 72 452
 420 key Escape
 """)
-        self.assertEqual(self.prefs.read_text(), "schema=1\nmode=dark\nfont=rounded\ncore=0\n")
-        self.assertEqual(self.state.read_text(), '1 3 2 ""\n')
-        self.assertEqual(self.background(result), (16, 26, 44))
+        self.assertEqual(self.prefs.read_text(), "schema=1\nmode=dark\nfont=rounded\ncore=1\nauto_load=1\nauto_save=1\n")
+        self.assertEqual(self.state.read_text().splitlines()[0], '1 3 2 ""')
+        self.assertEqual(self.background(result), (12, 17, 26))
         restarted = self.run_preview()
-        self.assertEqual(self.background(restarted), (16, 26, 44))
+        self.assertEqual(self.background(restarted), (12, 17, 26))
 
     def test_placeholders_cannot_change_preferences_or_game_selection(self):
         self.run_preview("""20 key S
 60 key Down
 80 key Down
 90 key Down
+95 key Down
 100 key Return
 140 key Right
 180 key A
@@ -100,38 +103,218 @@ class SettingsTests(unittest.TestCase):
 """)
         self.assertFalse(self.prefs.exists())
         self.assertFalse(self.system_prefs.exists())
-        self.assertEqual(self.state.read_text(), '1 3 2 ""\n')
+        self.assertEqual(self.state.read_text().splitlines()[0], '1 3 2 ""')
+
+    def test_sound_slider_mute_and_restart_share_one_saved_level(self):
+        self.run_preview("20 key Right\n30 key-up Right\n60 key Return\n100 key Return\n140 key Left\n160 key-up Left\n",
+                         extra=("--settings", "--section", "sound"))
+        volume = self.root / "volume.ini"
+        self.assertEqual(volume.read_text(), "schema=1\nvolume=25\n")
+        self.run_preview("20 tap 56 219\n60 drag 320 219\n100 drag 700 219\n140 release\n180 drag 56 219\n",
+                         extra=("--settings", "--section", "sound"))
+        self.assertEqual(volume.read_text(), "schema=1\nvolume=100\n")
+        self.run_preview("20 key Left\n60 key-up Left\n", extra=("--settings", "--section", "sound"))
+        self.assertEqual(volume.read_text(), "schema=1\nvolume=95\n")
+
+    def test_held_slider_key_repeats_and_release_stops_changes(self):
+        volume = self.root / "volume.ini"
+        volume.write_text("schema=1\nvolume=50\n")
+        self.run_preview("20 key Right\n620 key-up Right\n", extra=("--settings", "--section", "sound"))
+        level = int(volume.read_text().split("volume=")[1])
+        self.assertGreater(level, 55)
+        self.assertLess(level, 100)
+
+    def test_game_options_favourites_and_view_extensions_keep_base_preferences_readable(self):
+        self.run_preview("20 key X\n60 key A\n100 key Down\n140 key A\n180 key Down\n220 key A\n240 key Down\n250 key A\n260 key Down\n280 key Down\n300 key A\n320 key Escape\n340 key Y\n400 key Right\n450 key A\n500 key Escape\n")
+        options=next((self.root/"library").glob("*/game.ini")).read_text()
+        self.assertIn("favourite=1",options);self.assertIn("core=0",options);self.assertIn("filter=1",options)
+        self.assertIn("view=1\n",(self.root/"ui.ini").read_text())
+        self.assertNotIn("view=",self.prefs.read_text())
+        self.run_preview("20 key X\n60 key A\n100 key Escape\n")
+        self.assertIn("favourite=0",next((self.root/"library").glob("*/game.ini")).read_text())
+
+    def test_each_engine_uses_the_same_quick_menu_and_back_resumes(self):
+        bottoms=[]
+        (self.root/'ui.ini').write_text('schema=1\nanimations=0\n')
+        for core in ("drastic","dsperate","nnddss","melonds"):
+            self.state.write_text('1 3 2 ""\n')
+            data=self.run_preview(extra=("--game-menu","--game-core",core))
+            offset=struct.unpack_from("<I",data,10)[0]
+            bottoms.append(data[offset:offset+640*480*4])
+        self.assertEqual(bottoms[0],bottoms[1]);self.assertEqual(bottoms[1],bottoms[2])
+        self.run_preview("20 tap 120 198\n60 key Escape\n",extra=("--game-menu","--game-core","dsperate"))
+        self.assertFalse((self.root/"session/core.json").exists())
+
+    def test_wifi_password_keyboard_masks_and_cancel_does_not_store_credentials(self):
+        self.run_preview("600 key Down\n650 key Return\n1000 key Down\n1050 key Down\n1100 key Return\n1200 text private-test-password\n1300 key Escape\n",
+                         extra=("--settings","--section","connectivity"))
+        for path in (self.root/"device").glob("*"):
+            if path.is_file():self.assertNotIn("private-test-password",path.read_text())
+        self.assertIn("wifi=1",(self.root/"device/status.ini").read_text())
+
+    def test_animation_switch_is_saved_without_changing_the_default_theme(self):
+        self.run_preview("20 key Down\n60 key Down\n100 key Down\n140 key A\n200 key A\n",
+                         extra=("--settings","--section","theme"))
+        self.assertIn("animations=0",(self.root/"ui.ini").read_text())
+        self.assertIn("mode=light",self.prefs.read_text())
+
+    def test_named_view_and_options_buttons_work_in_child_game_list(self):
+        self.run_preview("20 click 475 48\n100 key Right\n160 key Right\n220 key A\n260 key Escape\n300 key S\n")
+        self.assertIn("view=2", (self.root / "ui.ini").read_text())
+        self.assertTrue(self.state.read_text().endswith("1 0 0\n"))
+        self.state.write_text('1 3 2 ""\n')
+        self.run_preview("20 key Y\n70 key Left\n120 key Left\n170 key A\n210 key Escape\n240 click 560 48\n300 key A\n")
+        self.assertIn("favourite=1", next((self.root / "library").glob("*/game.ini")).read_text())
+
+    def test_full_shader_picker_saves_high_ids_globally_and_for_a_cartridge(self):
+        select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(20))
+        self.run_preview("20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last + "1100 key A\n",extra=("--settings","--section","library"))
+        self.assertIn("filter=20",(self.root/"ui.ini").read_text())
+        self.state.write_text('1 3 2 ""\n')
+        select_last = "".join(f"{180 + index * 40} key Right\n" for index in range(21))
+        self.run_preview("20 key X\n60 key Down\n100 key Down\n140 key A\n" + select_last + "1100 key A\n")
+        self.assertIn("filter=20",next((self.root/"library").glob("*/game.ini")).read_text())
+
+    def test_dsperate_picker_offers_the_full_preset_pack(self):
+        self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
+        self.run_preview("20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key A\n",extra=("--settings","--section","library"))
+        self.assertIn("filter=2",(self.root/"ui.ini").read_text())
+
+    def test_shader_scrollbar_drag_selects_the_last_shader_without_paging(self):
+        self.run_preview("20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 tap 614 130\n260 drag 614 410\n300 release\n340 click 160 378\n", extra=("--settings", "--section", "library"))
+        self.assertIn("filter=20",(self.root/"ui.ini").read_text())
+
+    def test_shader_focus_restores_during_rebuilds_and_scrolls_into_view(self):
+        select_last = "".join(f"{220 + index * 40} key Down\n" for index in range(14))
+        self.run_preview("20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last, extra=("--settings", "--section", "library"))
+        self.assertIn("20 2 14\nshader 0\n",self.state.read_text())
+        self.assertTrue(self.state.read_text().endswith("shader-preview 0 2 0.5\n"))
+        self.run_preview("20 click 160 378\n")
+        self.assertIn("filter=14", (self.root / "ui.ini").read_text())
+
+    def test_shader_left_and_right_move_one_item(self):
+        self.run_preview("20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key Left\n340 key A\n", extra=("--settings", "--section", "library"))
+        self.assertIn("filter=1", (self.root / "ui.ini").read_text())
+
+    def test_settings_scrollbar_reaches_system_and_footer_keeps_focus_visible(self):
+        self.run_preview("20 tap 614 130\n60 drag 614 410\n100 release\n140 click 160 138\n180 click 72 452\n220 click 550 452\n", extra=("--settings",))
+        self.assertTrue(self.state.read_text().endswith("9 5 0\n"))
+        self.assertFalse(self.system_prefs.exists())
+
+    def test_threaded_3d_only_writes_a_setting_on_drastic(self):
+        for core in ("drastic","dsperate","nnddss","melonds"):
+            with self.subTest(core=core):
+                self.state.write_text('1 3 2 ""\n')
+                for path in (self.root/"library").glob("*/game.ini"):path.unlink()
+                self.run_preview("20 click 120 280\n60 key Down\n100 key Down\n140 key Down\n180 key Right\n",
+                                 extra=("--game-menu","--game-core",core))
+                saved=list((self.root/"library").glob("*/game.ini"))
+                if core=="drastic":
+                    self.assertEqual(len(saved),1)
+                    self.assertIn("threaded_3d=0\n",saved[0].read_text())
+                else:self.assertEqual(saved,[],"Automatic threading must not save an ineffective toggle")
+
+    def test_in_game_shader_button_opens_options_for_the_active_engine(self):
+        for core,expected in (("drastic",3),("dsperate",3),("nnddss",3),("melonds",3)):
+            with self.subTest(core=core):
+                self.state.write_text('1 3 2 ""\n')
+                for path in (self.root/"library").glob("*/game.ini"):path.unlink()
+                self.run_preview("20 click 520 200\n60 key Right\n100 key Right\n140 key Right\n180 key Right\n220 key A\n",
+                                 extra=("--game-menu","--game-core",core))
+                saved=next((self.root/"library").glob("*/game.ini")).read_text()
+                self.assertIn("filter="+str(expected)+"\n",saved)
+                focus=4
+                self.assertIn(f"20 0 {focus}\nshader 1\n",self.state.read_text(), "Applying a shader must keep the picker open")
+                self.assertTrue(self.state.read_text().endswith("shader-preview 0 2 0.5\n"))
+                self.run_preview("20 key Escape\n", extra=("--game-menu", "--game-core", core))
+                self.assertTrue(self.state.read_text().endswith("12 0 3\n"), "Back from the restored picker must return to the shared pause menu")
+
+    def test_shader_choice_then_explicit_restart_saves_and_ends_the_pause_menu(self):
+        path = self.root / "shader-restart.txt"
+        path.write_text("20 click 520 200\n60 key Right\n100 key Right\n140 key A\n180 key Escape\n220 key Down\n260 key Down\n300 key Left\n340 key Left\n380 key A\n")
+        for core in ("drastic", "dsperate", "nnddss"):
+            with self.subTest(core=core):
+                self.state.write_text('1 3 2 ""\n')
+                for saved in (self.root / "library").glob("*/game.ini"):
+                    saved.unlink()
+                began = time.monotonic()
+                result = subprocess.run([str(BINARY), "--preview", "--game-menu", "--game-core", core,
+                    "--preferences", str(self.prefs), "--state", str(self.state), "--data", str(self.root),
+                    "--input-script", str(path), "--seconds", "5"], cwd=ROOT,
+                    env=dict(os.environ, SDL_VIDEODRIVER="dummy"), capture_output=True, text=True, timeout=3)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertLess(time.monotonic() - began, 2)
+                self.assertIn("filter=1\n", next((self.root / "library").glob("*/game.ini")).read_text())
+
+    def test_dsperate_default_shader_requests_the_full_global_preset(self):
+        self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
+        (self.root / "ui.ini").write_text("schema=1\nanimations=0\nfilter=14\nview=0\n")
+        script = self.root / "default-shader.txt"
+        script.write_text("20 click 520 200\n60 key A\n")
+        result = subprocess.run([str(BINARY), "--preview", "--game-menu", "--game-core", "dsperate",
+            "--preferences", str(self.prefs), "--data", str(self.root), "--state", str(self.state),
+            "--input-script", str(script), "--seconds", "1"], cwd=ROOT,
+            env=dict(os.environ, SDL_VIDEODRIVER="dummy"), capture_output=True, text=True, timeout=4)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Shader request (preview): shader:14", result.stdout)
+        self.assertIn("filter=-1\n", next((self.root / "library").glob("*/game.ini")).read_text())
+        self.assertIn("filter=14\n", (self.root / "ui.ini").read_text())
+
+    def test_return_home_button_closes_each_shared_game_menu(self):
+        path=self.root/"return-home.txt"
+        path.write_text("20 key Down\n60 key Down\n100 key Down\n140 key Down\n160 key Right\n180 key A\n")
+        for core in ("drastic","dsperate","nnddss","melonds"):
+            with self.subTest(core=core):
+                began=time.monotonic()
+                result=subprocess.run([str(BINARY),"--preview","--game-menu","--game-core",core,
+                    "--preferences",str(self.prefs),"--data",str(self.root),"--input-script",str(path),"--seconds","5"],
+                    cwd=ROOT,env=dict(os.environ,SDL_VIDEODRIVER="dummy"),capture_output=True,text=True,timeout=3)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                self.assertLess(time.monotonic()-began,2,"Return home must end the pause UI, not wait out the preview timeout")
 
     def test_power_sleep_preferences_and_simulated_sleep_keep_selection(self):
-        self.run_preview("""20 key Right
+        self.run_preview("""20 key A
+40 key Right
 60 key Right
+80 key A
 100 key Down
+120 key A
 140 key Right
 180 key Right
+200 key A
 220 key Down
 260 key Right
 300 key Down
+330 key Down
 340 key Return
-380 key Escape
-420 key Escape
-460 key Escape
+900 key Escape
+1100 key Escape
+1300 key Escape
 """, extra=("--settings", "--section", "power"))
-        self.assertEqual(self.system_prefs.read_text(), "schema=1\npower=2\nbrightness=60\nidle=2\nlid=1\n")
+        self.assertEqual(self.system_prefs.read_text(), "schema=1\npower=2\nbrightness=60\nidle=2\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n")
         self.assertFalse(self.prefs.exists())
-        self.assertEqual(self.state.read_text(), '1 3 2 ""\n')
-        self.run_preview("20 key Left\n60 key Escape\n100 key Escape\n140 key Escape\n",
+        self.assertEqual(self.state.read_text().splitlines()[0], '1 3 2 ""')
+        self.run_preview("20 key A\n40 key Left\n50 key A\n60 key Escape\n100 key Escape\n140 key Escape\n",
                          extra=("--settings", "--section", "power"))
         self.assertIn("power=1\n", self.system_prefs.read_text())
-        self.assertIn("idle=2\nlid=1\n", self.system_prefs.read_text())
+        self.assertIn("idle=2\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n", self.system_prefs.read_text())
+
+    def test_new_settings_enable_lid_sleep_but_existing_off_stays_off(self):
+        script = "20 key A\n40 key Right\n60 key A\n"
+        self.run_preview(script, extra=("--settings", "--section", "power"))
+        self.assertIn("lid=1\n", self.system_prefs.read_text())
+        self.system_prefs.write_text("schema=1\npower=0\nbrightness=60\nidle=0\nlid=0\n")
+        self.run_preview(script, extra=("--settings", "--section", "power"))
+        self.assertIn("lid=0\n", self.system_prefs.read_text())
 
     def test_touch_brightness_slider_clamps_and_back_returns_to_appearance(self):
-        self.run_preview("""20 tap 200 333
+        self.run_preview("""20 click 200 255
 60 tap 596 219
 100 key Right
 140 tap 44 219
 180 key Left
 220 key Right
-260 tap 51 44
+260 click 72 452
 """, extra=("--settings", "--section", "theme"))
         self.assertIn("brightness=10\n", self.system_prefs.read_text())
         self.assertTrue(self.state.read_text().endswith("2 0 2\n"))
@@ -144,9 +327,15 @@ class SettingsTests(unittest.TestCase):
         self.system_prefs.write_text("schema=1\npower=999\nbrightness=0\nidle=99\nlid=2\n")
         self.run_preview(extra=("--settings", "--section", "power"))
         self.assertIn("power=999", self.system_prefs.read_text())
-        self.run_preview("20 key Right\n60 key Escape\n100 key Escape\n140 key Escape\n",
+        self.run_preview("20 key A\n40 key Right\n50 key A\n60 key Escape\n100 key Escape\n140 key Escape\n",
                          extra=("--settings", "--section", "power"))
-        self.assertEqual(self.system_prefs.read_text(), "schema=1\npower=1\nbrightness=60\nidle=0\nlid=0\n")
+        self.assertEqual(self.system_prefs.read_text(), "schema=1\npower=1\nbrightness=60\nidle=0\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n")
+
+    def test_saved_battery_percentage_choice_survives_other_system_changes(self):
+        self.system_prefs.write_text("schema=1\npower=0\nbrightness=60\nidle=0\nlid=0\nbattery_percent=0\ntimezone=Europe/Oslo\n")
+        self.run_preview("20 key A\n40 key Right\n60 key A\n", extra=("--settings", "--section", "power"))
+        self.assertIn("power=1\n", self.system_prefs.read_text())
+        self.assertIn("battery_percent=0\n", self.system_prefs.read_text())
 
     def test_brightness_drag_clamps_and_release_stops_changes(self):
         self.run_preview("""20 tap 56 219
@@ -163,13 +352,13 @@ class SettingsTests(unittest.TestCase):
 
     def test_older_placeholder_power_state_opens_working_controls(self):
         self.state.write_text('1 3 2 ""\n3 1 0\n')
-        self.run_preview("20 key Right\n60 key Escape\n100 key Escape\n140 key Escape\n")
+        self.run_preview("20 key A\n40 key Right\n50 key A\n60 key Escape\n100 key Escape\n140 key Escape\n")
         self.assertIn("power=1\n", self.system_prefs.read_text())
 
     def test_malformed_preferences_fall_back_without_crashing(self):
         self.prefs.write_text("schema=1\nmode=corrupt\nfont=anything\n")
         image = self.run_preview()
-        self.assertEqual(self.background(image), (241, 245, 251))
+        self.assertEqual(self.background(image), (242, 245, 247))
         self.assertEqual(self.prefs.read_text(), "schema=1\nmode=corrupt\nfont=anything\n")
 
     def test_settings_and_font_variants_render_in_both_modes(self):
@@ -180,8 +369,13 @@ class SettingsTests(unittest.TestCase):
                     with self.subTest(mode=mode, font=font, section=section):
                         self.state.write_text('1 3 2 ""\n')
                         image = self.run_preview(extra=("--settings", "--section", section, "--mode", mode, "--font", font))
-                        self.assertEqual(self.background(image), (16, 26, 44) if mode == "dark" else (241, 245, 251))
-                        shades[font] = len(set(image[10000:]))
+                        self.assertEqual(self.background(image), (12, 17, 26) if mode == "dark" else (242, 245, 247))
+                        # Measure only the section title: rich icons/status glyphs
+                        # are antialiased independently of the selected text font.
+                        offset = struct.unpack_from("<I", image, 10)[0]
+                        width, height = struct.unpack_from("<ii", image, 18)
+                        shades[font] = len({image[offset+((height-1-y if height>0 else y)*width+x)*4:offset+((height-1-y if height>0 else y)*width+x)*4+3]
+                                            for y in range(254, 286) for x in range(28, 612)})
                 self.assertGreater(shades["rounded"], shades["pixel"], "Rounded text should have antialiased edges")
 
 

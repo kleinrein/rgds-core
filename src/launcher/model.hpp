@@ -10,11 +10,29 @@
 namespace rgds {
 namespace fs = std::filesystem;
 struct Game { std::string title; fs::path path; bool demo = false; };
-inline constexpr const char* core_ids[] = {"drastic", "dsperate", "nnddss"};
-inline constexpr const char* core_names[] = {"DraStic", "DSperate", "NNDDSS"};
+inline constexpr const char* core_ids[] = {"drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"};
+inline constexpr const char* core_names[] = {"DraStic", "DSperate", "NNDDSS", "melonDS", "RG DS Experimental"};
+inline constexpr int core_count = sizeof(core_ids)/sizeof(core_ids[0]);
 inline std::string lower(std::string s) {
     for (char& c : s) if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
     return s;
+}
+inline std::string library_title(std::string name) {
+    // Remove recognized dump tags, retaining meaningful parenthetical titles.
+    for(size_t at=0;(at=name.find('(',at))!=std::string::npos;){
+        auto end=name.find(')',at);if(end==std::string::npos)break;
+        auto tag=lower(name.substr(at+1,end-at-1));
+        bool language=!tag.empty();for(size_t i=0;i<tag.size();i++)if(i%3==2?tag[i]!=',':tag[i]<'a' || tag[i]>'z')language=false;
+        language=language && tag.size()%3==2;
+        const std::vector<std::string> regions={"usa","europe","japan","world","australia","canada","france","germany","italy","spain","korea","china","taiwan","norway","denmark","sweden","netherlands","united kingdom","scandinavia","russia","ndsi enhanced"};
+        if(language || tag.rfind("rev ",0)==0 || std::find(regions.begin(),regions.end(),tag)!=regions.end())name.erase(at,end-at+1);else at=end+1;
+    }
+    if(name.size()>5 && std::all_of(name.begin(),name.begin()+4,[](char c){return c>='0' && c<='9';})){
+        auto start=name.find_first_not_of(' ',4);if(start!=std::string::npos && (name[start]=='-' || name[start]=='.'))name.erase(0,start+1);
+    }
+    std::string clean;bool space=false;for(char c:name){if(c==' ' || c=='\t'){space=!clean.empty();continue;}if(space)clean+=' ';clean+=c;space=false;}
+    if(clean.size()>5 && clean.compare(clean.size()-5,5,", The")==0)clean="The "+clean.substr(0,clean.size()-5);
+    return clean.empty()?name:clean;
 }
 inline std::vector<Game> scan(const std::vector<fs::path>& roots) {
     std::map<std::string, Game> unique;
@@ -53,19 +71,19 @@ struct Model {
         auto n = static_cast<long>(games.size());
         selected = static_cast<size_t>((static_cast<long>(selected) + delta % n + n) % n);
     }
-    void next_core() { core = (core + 1) % 3; }
+    void next_core() { core = (core + 1) % core_count; }
 };
 struct Color { unsigned char r, g, b; };
 using Theme = std::map<std::string, Color>;
 inline Theme default_theme() {
-    return {{"background", {241,245,251}}, {"panel",{255,255,255}}, {"ink",{32,48,74}},
-        {"muted",{95,113,140}}, {"accent",{45,112,227}}, {"line",{219,228,240}}, {"slot",{229,237,248}},
-        {"on_accent",{255,255,255}}, {"focus",{231,240,255}}};
+    return {{"background", {242,245,247}}, {"panel",{255,255,255}}, {"ink",{45,57,68}},
+        {"muted",{108,124,138}}, {"accent",{44,137,218}}, {"line",{191,204,215}}, {"slot",{221,230,237}},
+        {"on_accent",{255,255,255}}, {"focus",{224,240,252}}};
 }
 inline Theme default_dark_theme() {
-    return {{"background",{16,26,44}}, {"panel",{26,40,64}}, {"ink",{231,238,251}},
-        {"muted",{158,176,204}}, {"accent",{142,184,255}}, {"line",{44,62,89}}, {"slot",{35,52,78}},
-        {"on_accent",{16,26,44}}, {"focus",{36,57,88}}};
+    return {{"background",{12,17,26}}, {"panel",{23,32,46}}, {"ink",{233,244,255}},
+        {"muted",{145,167,190}}, {"accent",{78,187,255}}, {"line",{45,67,90}}, {"slot",{17,26,39}},
+        {"on_accent",{7,21,36}}, {"focus",{26,61,89}}};
 }
 inline Theme load_theme(const fs::path& path,Theme t = default_theme()) {
     if (path.empty()) return t;

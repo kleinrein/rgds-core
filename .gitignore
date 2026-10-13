@@ -12,7 +12,11 @@ userdata/
 *.pem
 *.key
 __pycache__/
+# Retired local reference; prevent accidental reintroduction.
 simpleos-source/
 docs/device-inventory-*.txt
 screenscraper-app.json
 screenscraper-account.json
+
+vendor/engines/
+vendor/drastic/

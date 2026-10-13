@@ -49,7 +49,7 @@ class RecordTests(unittest.TestCase):
             prefix = """import platform,sys,pathlib
 sys.platform = 'linux'
 platform.machine = lambda: 'aarch64'
-real_Path = pathlib.Path
+real_Path = type(pathlib.Path())
 pathlib.Path = lambda *p: real_Path(sys.argv[1])/'no-lock' if p == ('/tmp/rgds-session.lock',) else real_Path(*p)
 """
             import subprocess

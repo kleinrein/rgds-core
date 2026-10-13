@@ -1,0 +1,698 @@
+# UTF-8 source\ttranslation. One entry per line.	
+3D rendering automatically uses worker threads.	3D-rendering använder automatiskt arbetstrådar.
+3D resolution	3D-upplösning
+3D threading changed for this session. Settings storage is unavailable.	3D-trådning ändrad för denna session. Inställningar kan inte sparas.
+3D threading changed. No restart needed.	3D-trådning ändrad. Ingen omstart behövs.
+A  Apply	A  Verkställ
+A  Done	A  Klar
+A  Play	A  Spela
+A / Start	A / Start
+A gentle scanline pattern with original colours.	Ett diskret linjemönster med originalfärger.
+A natural colour and contrast treatment.	Naturliga färger och kontraster.
+A screen style for this cartridge	En skärmstil för denna kassett
+A stronger LCD texture and scanline look.	Tydligare LCD-struktur och skanningslinjer.
+A subtle handheld LCD pixel pattern.	Ett diskret pixelmönster från en bärbar LCD-skärm.
+A subtle pixel grid with a bright, readable image.	Ett diskret pixelrutnät med ljus och tydlig bild.
+Add your DS games to fetch their artwork.	Lägg till dina DS-spel för att hämta omslag.
+After	Efter
+All games	Alla spel
+Amber	Bärnsten
+Anbernic / Escape cancels	Anbernic / Escape avbryter
+Anbernic startup is unavailable in RGDS OS.	Anbernic-start är inte tillgänglig i RGDS OS.
+Animations	Animationer
+Applies immediately. Higher clocks use more battery.	Gäller direkt. Högre klockfrekvenser drar mer batteri.
+Applies immediately. Your game keeps its progress.	Gäller direkt. Dina spelframsteg behålls.
+Apply	Verkställ
+Applying shader…	Tillämpar shader…
+Artwork	Omslag
+Artwork & ScreenScraper	Omslag
+Artwork source	Omslagskälla
+Artwork sources	Omslagskällor
+Auto-load state	Läs in spelläge automatiskt
+Auto-save on exit	Spara automatiskt vid avslut
+Automatic	Automatisk
+Automatic (free)	Automatisk
+Available networks	Tillgängliga nätverk
+B  Cancel	B  Avbryt
+B  Close	B  Stäng
+BACK HOME	TILL HEMSKÄRMEN
+Back	Tillbaka
+Balance battery life and speed	Balansera batteritid och hastighet
+Balanced	Balanserad
+Battery	Batteri
+Battery percentage	Batteriprocent
+Battery saver	Batterisparläge
+Before	Före
+Before you play	Innan du spelar
+Binding unchanged.	Knappkopplingen är oförändrad.
+Boot	Uppstart
+Boot into	Starta med
+Both screens	Båda skärmarna
+Bottom display	Nedre skärmen
+Box art, titles and game details	Omslag, titlar och spelinformation
+Brightness	Ljusstyrka
+Browser layout	Bibliotekslayout
+Build, storage and device address	Version, lagring och enhetsadress
+Button	Knapp
+Button layout	Knapplayout
+Button {0}	Knapp {0}
+Buttons and the game menu shortcut	Knappar och genväg till spelmenyn
+COLOUR MODE	FÄRGLÄGE
+Cancel	Avbryt
+Cartridges	Kassetter
+Changes immediately. Map a button in Controls for quick access.	Ändras direkt. Tilldela en knapp under Kontroller för snabb åtkomst.
+Changing 3D threading…	Ändrar 3D-trådning…
+Changing speed…	Ändrar hastighet…
+Check the current connection	Kontrollera aktuell anslutning
+Checkpoint loaded	Kontrollpunkt inläst
+Checkpoint loaded (preview)	Kontrollpunkt inläst (förhandsvisning)
+Checkpoint loaded.	Kontrollpunkt inläst.
+Checkpoint saved	Kontrollpunkt sparad
+Checkpoint saved (preview)	Kontrollpunkt sparad (förhandsvisning)
+Checkpoint saved.	Kontrollpunkt sparad.
+Choose Anbernic or RG DS startup.	Välj att starta med Anbernic eller RG DS.
+Choose an option	Välj ett alternativ
+Choose native or a sharper 3D image	Välj originalupplösning eller skarpare 3D-bild
+Choose the core for this cartridge	Välj kärna för denna kassett
+Choose the display backend for the next DraStic launch. DSperate stays your default.	Välj visningsmotor för nästa DraStic-start. DSperate förblir standard.
+Choose what opens when you power on	Välj vad som öppnas vid start
+Clear	Rensa
+Clear temporary cache	Rensa tillfällig cache
+Clear temporary game files?	Rensa tillfälliga spelfiler?
+Close	Stäng
+Close the handheld to sleep	Stäng locket för viloläge
+Colour treatment inspired by the original DS display.	Färgbehandling inspirerad av den ursprungliga DS-skärmen.
+Compare	Jämför
+Confirm	Bekräfta
+Connect	Anslut
+Connected	Ansluten
+Connected.	Ansluten.
+Connecting…	Ansluter…
+Connectivity	Anslutningar
+Continue	Fortsätt
+Continue where you left off	Fortsätt där du slutade
+Control unavailable on this device	Kontrollen saknas på denna enhet
+Controls	Kontroller
+Controls saved for this game.	Kontroller sparade för detta spel.
+Cool crisp	Svalt och klart
+Cool whites with a small contrast boost.	Svala vita toner med något högre kontrast.
+Could not apply brightness	Kunde inte ändra ljusstyrkan
+Could not apply saved brightness	Kunde inte tillämpa sparad ljusstyrka
+Could not apply saved power mode	Kunde inte tillämpa sparat strömläge
+Could not apply setting - see log	Kunde inte tillämpa inställningen - se loggen
+Could not apply this shader.	Kunde inte tillämpa denna shader.
+Could not apply volume	Kunde inte ändra volymen
+Could not bring the Wi-Fi adapter up. Try again.	Kunde inte starta Wi-Fi-adaptern. Försök igen.
+Could not change 3D threading. Your game is unchanged.	Kunde inte ändra 3D-trådning. Ditt spel är oförändrat.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	Kunde inte bekräfta vald Wi-Fi-anslutning. Sök och försök igen.
+Could not enable lid wake	Kunde inte aktivera väckning med locket
+Could not load. Resume, retry, or return without saving.	Kunde inte läsa in. Fortsätt, försök igen eller återvänd utan att spara.
+Could not read this collection. Try again.	Kunde inte läsa samlingen. Försök igen.
+Could not restore previous hardware setting	Kunde inte återställa föregående maskinvaruinställning
+Could not save all settings. Check storage.	Kunde inte spara alla inställningar. Kontrollera lagringen.
+Could not save brightness	Kunde inte spara ljusstyrkan
+Could not save controls. Check writable storage.	Kunde inte spara kontroller. Kontrollera att lagringen är skrivbar.
+Could not save game settings. Previous values kept.	Kunde inte spara spelinställningar. Föregående värden behålls.
+Could not save matching title.	Kunde inte spara matchande titel.
+Could not save settings	Kunde inte spara inställningar
+Could not save timezone	Kunde inte spara tidszon
+Could not save volume	Kunde inte spara volymen
+Could not save. Resume, retry, or return without saving.	Kunde inte spara. Fortsätt, försök igen eller återvänd utan att spara.
+Could not send game action	Kunde inte skicka spelåtgärden
+Could not set volume - see log	Kunde inte ställa in volymen - se loggen
+Could not sleep - see log	Kunde inte gå i viloläge - se loggen
+Could not sleep. Reopen the lid and try again.	Kunde inte gå i viloläge. Öppna locket och försök igen.
+Could not start artwork service	Kunde inte starta omslagstjänsten
+Could not start library scan	Kunde inte starta bibliotekssökningen
+Could not write controls	Kunde inte skriva kontrollinställningar
+Counts display updates, not emulation speed. Changes immediately.	Räknar skärmuppdateringar, inte emuleringshastighet. Ändras direkt.
+Counts emulated game frames. Changes immediately.	Räknar emulerade spelbilder. Ändras direkt.
+Covers	Omslag
+Custom	Anpassad
+DEFAULT THEME - CHECK LOG	STANDARDTEMA - SE LOGGEN
+DS rounded	DS rundad
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: rekommenderas för vardagsspel. Originalupplösning är standard.
+Dark	Mörk
+Default	Standard
+Default emulator	Standardemulator
+Default shader	Standardshader
+Delete	Radera
+Desktop preview	Skrivbordsförhandsvisning
+Development build	Utvecklingsversion
+Device address	Enhetsadress
+Device information	Enhetsinformation
+Display FPS	Skärmens FPS
+Done	Klar
+Down	Ned
+DraStic backend	DraStic-motor
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: ett alternativ för spel som behöver det. Sparfiler hålls åtskilda.
+ERROR	FEL
+ERROR: Could not restore settings	FEL: Kunde inte återställa inställningar
+ERROR: Could not restore settings - see log	FEL: Kunde inte återställa inställningar - se loggen
+Emulator	Emulator
+Emulator settings	Emulatorinställningar
+Engine managed	Styrs av motorn
+Enter here	Skriv här
+Enter password	Ange lösenord
+Enter your username and password	Ange ditt användarnamn och lösenord
+Every game in this collection has artwork.	Alla spel i samlingen har omslag.
+FPS changed for this session. Settings storage is unavailable.	FPS ändrad för denna session. Inställningar kan inte sparas.
+FPS counter enabled.	FPS-räknare aktiverad.
+FPS counter hidden.	FPS-räknare dold.
+Fast	Snabb
+Fast-forward	Snabbspolning
+Fast-forward button	Snabbspolningsknapp
+Fast-forward enabled.	Snabbspolning aktiverad.
+Fast-forward is unavailable for this emulator.	Snabbspolning saknas för denna emulator.
+Fast-forward style	Snabbspolningsläge
+Favourite	Favorit
+Favourites	Favoriter
+Fetch artwork	Hämta omslag
+Fetch missing artwork	Hämta saknade omslag
+Find and connect to a nearby network	Hitta och anslut till ett nätverk i närheten
+Finishing the system request	Slutför systembegäran
+Follow your default button layout	Följ din standardlayout för knappar
+Following your global controls.	Följer dina globala kontroller.
+Follows your Library default. Each emulator keeps its own saves.	Följer bibliotekets standard. Varje emulator har egna sparfiler.
+Frameskip	Bildhopp
+Free space	Ledigt utrymme
+Free space while keeping your saves	Frigör utrymme och behåll sparfiler
+Game FPS	Spelets FPS
+Game emulator	Spelets emulator
+Game emulator saved.	Spelets emulator sparad.
+Game menu	Spelmeny
+Game options	Spelalternativ
+Game options saved	Spelalternativ sparade
+GameTDB (free)	GameTDB
+Games	Spel
+Give your eyes and hands a break.	Låt ögon och händer vila en stund.
+Global	Global
+Global controls saved.	Globala kontroller sparade.
+Hold	Håll in
+Home shortcut	Hemgenväg
+Inherit	Ärv
+Inherited	Ärvd
+Jump to letter	Hoppa till bokstav
+Keep a checkpoint when returning home	Spara en kontrollpunkt vid återgång hem
+Keep playing	Fortsätt spela
+Keep this game in Favourites	Behåll spelet bland favoriter
+Kernel	Kärna
+Key {0}	Tangent {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + båda färgeffekterna
+LCD pixels with natural colour and contrast.	LCD-pixlar med naturliga färger och kontraster.
+LCD pixels with the DS colour treatment.	LCD-pixlar med DS-färgbehandling.
+LCD pixels, DS colour and Natural Vision together.	LCD-pixlar, DS-färger och Natural Vision tillsammans.
+Language	Språk
+Launch cancelled	Start avbruten
+Left	Vänster
+Left stick	Vänster styrspak
+Left-handed	Vänsterhänt
+Less than a minute	Mindre än en minut
+Library	Bibliotek
+Library scan exceeded its limit	Bibliotekssökningen överskred sin gräns
+Library scan failed	Bibliotekssökningen misslyckades
+Libretro (free)	Libretro
+Light	Ljus
+List	Lista
+Live background	Levande bakgrund
+Load	Läs in
+Load requested. Resume to check your game.	Inläsning begärd. Fortsätt för att kontrollera spelet.
+Load state	Läs in spelläge
+Loading checkpoint…	Läser in kontrollpunkt…
+Looking for networks…	Söker efter nätverk…
+Magnified detail	Förstorad detalj
+Manage builds and temporary files	Hantera versioner och tillfälliga filer
+Matching title	Matchande titel
+Matching title saved. Choose Fetch artwork.	Matchande titel sparad. Välj Hämta omslag.
+Menu idle sleep	Viloläge vid inaktiv meny
+Mute	Stäng av ljud
+Muted	Ljud av
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: ett kompatibilitetsalternativ. Prova DSperate först för hastighet.
+Native	Original
+Native is faster; 2x uses more GPU time. Save & restart applies it.	Original är snabbare; 2x kräver mer GPU-tid. Spara och starta om för att tillämpa.
+Native output	Originalupplösning
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	Nätverk är avstängt. Slå på Wi-Fi för att aktivera det.
+Never	Aldrig
+Next emulator	Nästa emulator
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Ingen Wi-Fi-adapter. Slå på Wi-Fi för att initiera den.
+No button detected. Try again when you're ready.	Ingen knapp upptäcktes. Försök igen när du är redo.
+No checkpoint saved for this emulator yet.	Ingen kontrollpunkt sparad för denna emulator ännu.
+No cover yet	Inget omslag ännu
+No favourites yet	Inga favoriter ännu
+No games	Inga spel
+No games in this collection.	Inga spel i samlingen.
+No networks found	Inga nätverk hittades
+No previous build available.	Ingen tidigare version tillgänglig.
+No recent games yet	Inga nyligen spelade spel ännu
+Normal	Normal
+Normal speed.	Normal hastighet.
+Not available	Inte tillgänglig
+Not connected	Inte ansluten
+Not played yet	Inte spelat ännu
+OPEN	ÖPPNA
+Off	Av
+Off (smooth)	Av (mjukt)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Av ger mjuka rörelser. Bildhopp kan öka hastigheten. Starta om för att tillämpa.
+Off keeps the original picture.	Av behåller originalbilden.
+On	På
+Open	Öppna
+Open menu	Öppna meny
+Open the Anbernic menu	Öppna Anbernic-menyn
+Options	Alternativ
+Original pixels	Originalpixlar
+Original pixels and colours.	Originalpixlar och originalfärger.
+PLAY	SPELA
+Password	Lösenord
+Pause when you need to.	Ta en paus när du behöver.
+Paused	Pausat
+Performance	Prestanda
+Pixel classic	Klassiska pixlar
+Play at a comfortable volume.	Spela med behaglig volym.
+Please keep your handheld on	Låt enheten vara påslagen
+Pocket green	Fickgrönt
+Power	Ström
+Power mode	Strömläge
+Power off	Stäng av
+Power off your handheld?	Stäng av enheten?
+Power profile	Strömprofil
+Powering off…	Stänger av…
+Preparing controls…	Förbereder kontroller…
+Preparing the launcher	Förbereder startmenyn
+Preparing the library…	Förbereder biblioteket…
+Preparing your cartridges…	Förbereder dina kassetter…
+Preparing your library…	Förbereder ditt bibliotek…
+Press a button for {0}	Tryck på en knapp för {0}
+Press a button…	Tryck på en knapp…
+Preview	Förhandsvisning
+Preview Wi-Fi	Förhandsvisa Wi-Fi
+Preview and choose your screen style	Förhandsvisa och välj skärmstil
+Preview game	Förhandsvisa spel
+Preview unavailable	Förhandsvisning saknas
+Previous build selected. Return to stock, then open RGDS again.	Tidigare version vald. Återgå till originalmenyn och öppna sedan RGDS igen.
+Profile	Profil
+READY	REDO
+REVIEW YOUR CHOICE	GRANSKA DITT VAL
+RGDS build	RGDS-version
+ROUNDED FONT UNAVAILABLE	RUNDAT TYPSNITT SAKNAS
+Recents	Senaste
+Reduce rendering work when needed	Minska renderingsarbetet vid behov
+Refresh	Uppdatera
+Refresh connection	Uppdatera anslutning
+Release for options	Släpp för alternativ
+Remap	Tilldela om
+Request cancelled.	Begäran avbruten.
+Request failed. Check the connection or device log and try again.	Begäran misslyckades. Kontrollera anslutningen eller enhetsloggen och försök igen.
+Reset	Återställ
+Rest after a period of inactivity	Vila efter en tids inaktivitet
+Restart	Starta om
+Restart menu	Starta om menyn
+Restart the RGDS menu?	Starta om RGDS-menyn?
+Restart the device?	Starta om enheten?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	Omstart använder {0}. Sparfiler och kontrollpunkter hålls åtskilda per emulator.
+Restarting…	Startar om…
+Restore defaults	Återställ standardvärden
+Restore the last installed RGDS build	Återställ senast installerade RGDS-version
+Restoring settings	Återställer inställningar
+Restoring settings…	Återställer inställningar…
+Resume	Fortsätt
+Resume game	Fortsätt spela
+Return	Återvänd
+Return home	Till hemskärmen
+Return home before changing startup.	Gå till hemskärmen innan du ändrar uppstart.
+Return home from your game first.	Lämna spelet och gå till hemskärmen först.
+Return to game	Tillbaka till spelet
+Return to stock	Till originalmenyn
+Return to the original button layout	Återgå till ursprunglig knapplayout
+Return to the stock menu?	Återgå till originalmenyn?
+Return without saving	Återvänd utan att spara
+Returning home…	Återgår till hemskärmen…
+Review unmatched	Granska omatchade
+Right	Höger
+Right stick	Höger styrspak
+Rollback simulated.	Återställning simulerad.
+START	START
+Save	Spara
+Save & restart	Spara och starta om
+Save & restart applies Threaded 3D.	Spara och starta om tillämpar trådad 3D.
+Save & restart keeps your checkpoint and applies pending settings.	Spara och starta om behåller kontrollpunkten och tillämpar väntande inställningar.
+Save a report for troubleshooting	Spara en rapport för felsökning
+Save device report	Spara enhetsrapport
+Save state	Spara spelläge
+Save your checkpoint and restart	Spara kontrollpunkten och starta om
+Saved	Sparat
+Saved - desktop simulation	Sparat - skrivbordssimulering
+Saved for the next Standard DraStic launch.	Sparat för nästa start av Standard DraStic.
+Saved network	Sparat nätverk
+Saved · {0}	Sparat · {0}
+Saved. Applies on your next DraStic launch.	Sparat. Gäller vid nästa DraStic-start.
+Saved. Save & restart applies screen order.	Sparat. Spara och starta om tillämpar skärmordningen.
+Saved. Save & restart applies this change.	Sparat. Spara och starta om tillämpar ändringen.
+Saved. Save & restart changes the emulator.	Sparat. Spara och starta om byter emulator.
+Saving before restarting…	Sparar före omstart…
+Saving before returning home…	Sparar före återgång hem…
+Saving checkpoint before restarting…	Sparar kontrollpunkt före omstart…
+Saving checkpoint…	Sparar kontrollpunkt…
+Saving your progress…	Sparar dina framsteg…
+Scan	Sök
+Scene	Scen
+Screen brightness	Skärmens ljusstyrka
+Screen order	Skärmordning
+ScreenScraper needs project credentials and your account	ScreenScraper behöver projektuppgifter och ditt konto
+Select	Välj
+Select a network again and enter its password.	Välj ett nätverk igen och ange lösenordet.
+Select a network again.	Välj ett nätverk igen.
+Selected	Vald
+Sets Standard DraStic screen order for this game. Save & restart applies it.	Ställer in skärmordning i Standard DraStic för spelet. Spara och starta om för att tillämpa.
+Settings	Inställningar
+Settings saved	Inställningar sparade
+Shader	Shader
+Shader applied.	Shader tillämpad.
+Shader change requested (preview)	Shaderbyte begärt (förhandsvisning)
+Shader saved	Shader sparad
+Shader saved for next launch	Shader sparad för nästa start
+Shader saved. Restart this game to apply it.	Shader sparad. Starta om spelet för att tillämpa den.
+Shader studio	Shaderstudio
+Shaders	Shaders
+Sharp + NDS Color	Skarp + NDS Color
+Sharp + Natural Vision	Skarp + Natural Vision
+Sharp + both colours	Skarp + båda färgeffekterna
+Sharp bilinear	Skarp bilinjär
+Sharp pixel edges with smoother scaling.	Skarpa pixelkanter med mjukare skalning.
+Sharp scaling with natural colour and contrast.	Skarp skalning med naturliga färger och kontraster.
+Sharp scaling with the DS colour treatment.	Skarp skalning med DS-färgbehandling.
+Sharp scaling, DS colour and Natural Vision together.	Skarp skalning, DS-färger och Natural Vision tillsammans.
+Shift	Skift
+Shortcut action	Genvägsåtgärd
+Show the charge in the status bar	Visa laddningsnivå i statusfältet
+Show the welcome screen at startup	Visa välkomstskärmen vid start
+Sign in	Logga in
+Sign out	Logga ut
+Signing in…	Loggar in…
+Simulated handheld	Simulerad enhet
+Sleep	Viloläge
+Sleep now	Vila nu
+Sleep on lid close	Vila när locket stängs
+Sleep simulated - press any control	Viloläge simulerat - tryck på valfri knapp
+Sleep simulated - settings retained	Viloläge simulerat - inställningar behållna
+Sleep unavailable on this device	Viloläge saknas på denna enhet
+Sleeping - use Power to wake	Vilar - väck med strömknappen
+Soft LCD grid	Mjukt LCD-rutnät
+Soft green monochrome with full-resolution detail.	Mjukt grönt monokromt med detaljer i full upplösning.
+Soft scanlines	Mjuka skanningslinjer
+Sound	Ljud
+Space	Mellanslag
+Standard	Standard
+Standard DraStic only. Applies on the next launch; game saves are kept.	Endast Standard DraStic. Gäller nästa start; sparfiler behålls.
+Standard screen order	Standardordning för skärmar
+Start	Start
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	Starta RG DS automatiskt vid framtida uppstarter?
+Start with a familiar layout	Börja med en välbekant layout
+Start, then Anbernic	Start, sedan Anbernic
+Startup	Uppstart
+Startup choice saved.	Uppstartsval sparat.
+Startup choice simulated.	Uppstartsval simulerat.
+Startup is managed by RGDS OS.	Uppstart hanteras av RGDS OS.
+Stock	Original
+Stock firmware	Originalsystem
+Stop fetching	Stoppa hämtning
+Stop fetching before editing the match.	Stoppa hämtningen innan du ändrar matchningen.
+Stop scraping	Stoppa bildhämtning
+Stop scraping before changing source	Stoppa bildhämtningen innan du byter källa
+Stopping after this request	Stoppar efter denna begäran
+Stopping after this request.	Stoppar efter denna begäran.
+Storage read-only - use internal RGDS	Lagringen är skrivskyddad - använd intern RGDS
+SuperDrastic (experimental)	SuperDrastic (experimentell)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic använder för närvarande originalupplösning. Ditt standardval av shader behålls.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic har egen pausmeny och visningsmotor. Experimentell; tester på RG DS återstår.
+Swapped	Ombytta
+System	System
+THEME ERROR - RETAINED CURRENT	TEMAFEL - BEHÅLLER AKTUELLT
+THEME RELOADED	TEMA INLÄST PÅ NYTT
+TYPEFACE	TYPSNITT
+Temporary game cache cleared. Saves and artwork are kept.	Tillfällig spelcache rensad. Sparfiler och omslag behålls.
+The checkpoint did not finish saving.	Kontrollpunkten sparades inte färdigt.
+The emulator did not finish. Resume, retry, or return without saving.	Emulatorn blev inte klar. Fortsätt, försök igen eller återvänd utan att spara.
+The game menu did not respond. Resume or return without saving.	Spelmenyn svarade inte. Fortsätt eller återvänd utan att spara.
+The zFast LCD texture with both colour treatments.	LCD-strukturen från zFast med båda färgeffekterna.
+The zFast LCD texture with natural colour and contrast.	LCD-strukturen från zFast med naturliga färger och kontraster.
+The zFast LCD texture with the DS colour treatment.	LCD-strukturen från zFast med DS-färgbehandling.
+Theme	Tema
+Theme & display	Tema och skärm
+This emulator does not expose a frameskip setting.	Denna emulator har ingen inställning för bildhopp.
+This emulator uses native resolution. No resolution switch is available.	Denna emulator använder originalupplösning. Upplösningen kan inte ändras.
+This engine does not expose a threading switch.	Denna motor har ingen inställning för trådning.
+This engine has no live threading control.	Denna motor kan inte ändra trådning under spel.
+This game	Detta spel
+This network requires an enterprise profile.	Detta nätverk kräver en företagsprofil.
+This request did not finish. Please try again.	Begäran slutfördes inte. Försök igen.
+This shader is unavailable for the current emulator.	Denna shader är inte tillgänglig för aktuell emulator.
+Threaded 3D	Trådad 3D
+Time played	Speltid
+Timezone	Tidszon
+Toggle	Växla
+Top display	Övre skärmen
+Touch	Pekning
+Touch indicator	Pekindikator
+Touch to continue	Tryck för att fortsätta
+Touch {0}	Pekning {0}
+Try saving again	Försök spara igen
+Turn Wi-Fi off?	Stäng av Wi-Fi?
+Turn Wi-Fi on first.	Slå på Wi-Fi först.
+Turn Wi-Fi on to find networks.	Slå på Wi-Fi för att hitta nätverk.
+Turning Wi-Fi off…	Stänger av Wi-Fi…
+Turning Wi-Fi on…	Slår på Wi-Fi…
+Typeface	Typsnitt
+Unassigned	Ej tilldelad
+Unavailable	Otillgänglig
+Unmatched artwork	Omslag utan matchning
+Unmute	Slå på ljud
+Updates & recovery	Uppdatering och återställning
+Use ROM identity	Använd ROM-identitet
+Use an additional rendering thread	Använd en extra renderingstråd
+Use default ({0})	Använd standard ({0})
+Use global controls	Använd globala kontroller
+Use previous build	Använd tidigare version
+Use the previous RGDS build?	Använd tidigare RGDS-version?
+Used by games without an override	Används av spel utan eget val
+Username	Användarnamn
+View	Vy
+Volume	Volym
+Volume control unavailable	Volymkontroll saknas
+WAITING FOR INPUT	VÄNTAR PÅ INMATNING
+Warm monochrome with preserved highlight detail.	Varmt monokromt med bevarade detaljer i ljusa partier.
+Warm paper	Varmt papper
+Warm whites and softened contrast for evening play.	Varma vita toner och mjukare kontrast för kvällsspel.
+Welcome back	Välkommen tillbaka
+What the shortcut opens	Vad genvägen öppnar
+Where this layout applies	Var denna layout gäller
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi-adaptern är inte redo. Kontrollera drivrutinen eller starta om enheten.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi-adaptern är inte redo. Slå på Wi-Fi för att försöka igen.
+Wi-Fi did not turn on. Try again.	Wi-Fi slogs inte på. Försök igen.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi blockeras av maskinvaran. Starta om enheten och försök igen.
+Wi-Fi is still on. Try turning it off again.	Wi-Fi är fortfarande på. Försök stänga av det igen.
+Wi-Fi is unavailable.	Wi-Fi är inte tillgängligt.
+Wi-Fi off.	Wi-Fi av.
+Wi-Fi on.	Wi-Fi på.
+Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi-begäran misslyckades. Kontrollera lösenord och signal, försök sedan igen.
+Wi-Fi request timed out. Check signal and try again.	Wi-Fi-begäran tog för lång tid. Kontrollera signalen och försök igen.
+Wi-Fi service is unavailable.	Wi-Fi-tjänsten är inte tillgänglig.
+With shader	Med shader
+Working…	Arbetar…
+X Scene   Y Compare	X Scen   Y Jämför
+X Scene / Y Compare	X Scen / Y Jämför
+Your cartridges go here	Dina kassetter visas här
+Your home screen after powering on	Din hemskärm efter uppstart
+Your local time and date	Din lokala tid och datum
+Your menu shortcut	Din menygenväg
+Your shader choice is still available.	Ditt val av shader är fortfarande tillgängligt.
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + båda färgeffekterna
+{0} (experimental)	{0} (experimentell)
+{0} (recommended)	{0} (rekommenderad)
+{0} frames	{0} bildrutor
+{0} games	{0} spel
+{0} settings	Inställningar för {0}
+Up	Upp
+Times played	Speltillfällen
+Last played	Senast spelat
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	Redo att hämta omslag.
+Icon style	Ikonstil
+Simple pixel	Enkla pixlar
+Rich	Detaljerad
+Statistics	Statistik
+Games played	Spel som spelats
+Most played	Mest spelat
+Preparing your statistics…	Förbereder din statistik…
+Play a game to start your statistics.	Spela ett spel för att börja samla statistik.
+Installed version	Installerad version
+Check for updates	Sök efter uppdateringar
+Restart & install	Starta om och installera
+Download update	Hämta uppdatering
+Pause download	Pausa hämtning
+Release notes	Versionsnyheter
+Discard update	Kasta uppdatering
+No release notes yet.	Inga versionsnyheter ännu.
+Restart and install the update?	Starta om och installera uppdateringen?
+Check for updates when you are ready.	Sök efter uppdateringar när du är redo.
+Updates will be available when the release channel opens.	Uppdateringar blir tillgängliga när versionskanalen öppnar.
+Checking for updates…	Söker efter uppdateringar…
+You are up to date.	Du har senaste versionen.
+A new version is ready to download.	En ny version är klar att hämta.
+This version failed to start. Waiting for a newer update.	Denna version kunde inte starta. Väntar på en nyare uppdatering.
+Downloading update…	Hämtar uppdatering…
+Verifying update…	Verifierar uppdatering…
+Preparing update…	Förbereder uppdatering…
+Ready to restart. Your previous version is kept for recovery.	Redo att starta om. Din tidigare version sparas för återställning.
+Restarting into the update…	Startar den uppdaterade versionen…
+Checking the new version…	Kontrollerar den nya versionen…
+Update installed.	Uppdatering installerad.
+The update could not start. Your previous version was restored.	Uppdateringen kunde inte starta. Din tidigare version återställdes.
+Download paused. Retry to continue.	Hämtning pausad. Försök igen för att fortsätta.
+Update discarded. Your installed version is unchanged.	Uppdateringen kastad. Din installerade version är oförändrad.
+Connect the charger before installing an update.	Anslut laddaren innan du installerar en uppdatering.
+There is not enough free space for this update.	Det finns inte tillräckligt med ledigt utrymme för uppdateringen.
+Exit your game before installing an update.	Avsluta spelet innan du installerar en uppdatering.
+Install the latest SD installer before this update.	Installera det senaste SD-installationsprogrammet före denna uppdatering.
+Restart RG DS Core before installing the update.	Starta om RG DS Core innan du installerar uppdateringen.
+Download interrupted. Retry to continue.	Hämtning avbruten. Försök igen för att fortsätta.
+An update is already prepared. Install it or discard it first.	En uppdatering är redan förberedd. Installera eller kasta den först.
+Another update is already running.	En annan uppdatering pågår redan.
+Update information has expired or the device clock is incorrect.	Uppdateringsinformationen har gått ut eller enhetens klocka är fel.
+This stock firmware has not been validated for updates.	Detta originalsystem har inte verifierats för uppdateringar.
+Update verification failed. Check for updates again.	Verifieringen misslyckades. Sök efter uppdateringar igen.
+Update failed. Check Wi-Fi and try again.	Uppdateringen misslyckades. Kontrollera Wi-Fi och försök igen.
+Stable	Stabil
+Testing	Testning
+Save to slot	Spara på plats
+Import slot	Importera sparfil
+Load slot	Läs in sparplats
+Export slot	Exportera sparfil
+Undo overwrite	Ångra överskrivning
+Undo load	Ångra inläsning
+Import help	Importhjälp
+Save slot	Sparplats
+Replace this save?	Ersätt denna sparfil?
+Replace	Ersätt
+Load this save?	Läs in denna sparfil?
+Blow into microphone	Blås i mikrofonen
+Close and open DS lid	Stäng och öppna DS-locket
+DS language	DS-språk
+Real microphone	Fysisk mikrofon
+Japanese	Japanska
+English	Engelska
+French	Franska
+German	Tyska
+Italian	Italienska
+Spanish	Spanska
+2 seconds	2 sekunder
+In game	I spelet
+Restart the game to apply DS settings.	Starta om spelet för att tillämpa DS-inställningarna.
+Could not save DS settings.	Kunde inte spara DS-inställningar.
+Search	Sök
+Save gallery	Spargalleri
+Search and filters	Sökning och filter
+Add your games	Lägg till dina spel
+DS controls	DS-kontroller
+Back up all saves	Säkerhetskopiera alla sparfiler
+Resume after power off	Fortsätt efter avstängning
+Slot	Plats
+Empty slot	Tom plats
+Search games	Sök efter spel
+Filter	Filter
+Clear search and filters	Rensa sökning och filter
+Missing artwork	Saknade omslag
+Where to put games	Var ska spelen läggas?
+Scan for games	Sök efter nya spel
+Automatic updates	Automatiska uppdateringar
+Download automatically	Hämta automatiskt
+Check automatically	Kontrollera automatiskt
+Update available in Maintenance	Uppdatering finns under Underhåll
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopiera .rgdssave.zip-filer till userdata/imports. Importer måste matcha spelet och emulatorn.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopiera .nds-filer eller DS ZIP-arkiv till Roms/NDS på spelkortet. Spel ingår inte. Sparfiler finns kvar i userdata.
+Save backup created in userdata/exports.	Säkerhetskopia skapad i userdata/exports.
+Slot exported to userdata/exports.	Sparplats exporterad till userdata/exports.
+Save library updated.	Sparbibliotek uppdaterat.
+Save overwrite undone.	Överskrivning ångrad.
+Current progress could not be saved. No slot was changed.	Aktuella framsteg kunde inte sparas. Ingen sparplats ändrades.
+DS controls are unavailable for this engine.	DS-kontroller saknas för denna motor.
+Your DS library starts here	Ditt DS-bibliotek börjar här
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopiera .nds- eller DS ZIP-filer till Roms/NDS på spelkortet och välj Sök efter nya spel.
+Use the engine's native controls for microphone and DS settings.	Använd motorns egna kontroller för mikrofon och DS-inställningar.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Fysisk mikrofon är på som standard. Blås- och lockåtgärder återgår till spelet i två sekunder. Språkbyten gäller efter omstart.
+Save slots	Sparplatser
+Load slots	Läs in sparplatser
+Unplayed	Ospelat
+Played	Spelat
+Filtered	Filtrerat
+No matching games	Inga matchande spel
+No matches. Use View to change filters.	Inga träffar. Ändra filter under Vy.
+Reset state	Återställ spelläge
+Restart without loading a state?	Starta om utan att läsa in ett spelläge?
+Restart from the title screen. In-game saves and save slots are kept.	Starta om från titelskärmen. Sparfiler i spelet och sparplatser behålls.
+Microphone, simulated blowing, lid and DS language.	Mikrofon, simulerad blåsning, lock och DS-språk.
+Test microphone	Testa mikrofon
+Test	Test
+Live input	Aktuell ljudnivå
+Quiet	Tyst
+Loud	Högt
+Listening…	Lyssnar…
+Microphone unavailable	Mikrofon saknas
+Audio is not recorded or saved.	Ljud spelas inte in eller sparas.
+Test the microphone on your handheld.	Testa mikrofonen på enheten.
+Return home before testing the physical microphone.	Gå till hemskärmen innan du testar den fysiska mikrofonen.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blås eller prata i mikrofonen. Se nivån stiga och sedan sjunka när du slutar.
+No filter	Inget filter
+Quick search	Snabbsökning
+Y  Quick search	Y  Snabbsökning
+X  Filters	X  Filter
+Y Search / X Filters	Y Sök / X Filter
+A  Search	A  Sök
+A  Jump	A  Hoppa
+Edit search	Ändra sökning
+Clear filters	Rensa filter
+Try another title or clear your filters	Prova en annan titel eller rensa filtren
+Type a game title…	Skriv en speltitel…
+Finding games…	Letar efter spel…
+Searching…	Söker…
+Search in	Sök i
+Try a shorter title or clear your filter.	Prova en kortare titel eller rensa filtret.
+A Key / Start Search / B Cancel	A Tangent / Start Sök / B Avbryt
+Tap to type, or use the D-pad and A	Tryck för att skriva, eller använd styrkorset och A
+X Delete / Start Search	X Radera / Start Sök
+X Delete / Start Done	X Radera / Start Klar
+No letters to jump to. Search for another game.	Inga bokstäver att hoppa till. Sök efter ett annat spel.
+{0} match	{0} träff
+{0} matches	{0} träffar
+{0} matching game	{0} matchande spel
+{0} matching games	{0} matchande spel
+{0} game	{0} spel
+Interface animations	Gränssnittsanimeringar
+View transitions	Vyövergångar
+Small touches, scrolling and startup motion	Små effekter, rullning och uppstartsrörelser
+Springy menu changes with a colourful wobble	Studsande menybyten med färgglada rörelser
+Transitions	Övergångar
+Subtle	Diskret
+Menu sounds	Menyljud
+Effects volume	Effektvolym
+Preview sound	Prova ett ljud
+A little handheld magic	Lite handhållen magi
+Playful sounds for browsing, choosing and starting games.	Lekfulla ljud när du bläddrar, väljer och startar spel.
+Turn on menu sounds to hear the previews.	Slå på menyljud för att prova ljuden.
+Some menu sounds are unavailable.	Vissa menyljud är inte tillgängliga.
+Menu audio is unavailable on this device.	Menyljud är inte tillgängligt på den här enheten.
+Menu sounds are unavailable.	Menyljud är inte tillgängliga.
+Close lid	Stäng locket
+Open lid	Öppna locket
+Spring	Fjäder
+Push	Skjut
+Transition style	Övergångsstil
+Animate pages with the selected style	Animera sidor med vald stil
+Slide into pages; slide back to return	Skjut in sidor; skjut tillbaka för att återvända

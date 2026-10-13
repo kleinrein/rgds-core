@@ -36,6 +36,11 @@ class Fixture(unittest.TestCase):
         path.parent.mkdir(parents=True)
         path.write_text("#!/bin/sh\nexit 0\n")
         path.chmod(0o755)
+        if core == 'nnddss':
+            shutil.copytree(ROOT / 'assets/nnddss', self.app / 'assets/nnddss', dirs_exist_ok=True)
+            fonts = self.app / 'assets/fonts/source'
+            fonts.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / 'assets/fonts/source/Nunito.ttf', fonts / 'Nunito.ttf')
         return path
     def release(self, name):
         app = self.root / "releases" / name
@@ -55,12 +60,111 @@ class Fixture(unittest.TestCase):
         return path
 
 class EmulatorTests(Fixture):
+    def test_code_refresh_streams_and_detects_same_size_same_mtime_changes(self):
+        source = self.root/'component.so'; target = self.root/'installed.so'
+        source.write_bytes(b'a' * (1024*1024) + b'original')
+        emulators.copy_component(source, target)
+        stamp = target.stat()
+        with patch.object(Path, 'read_bytes', side_effect=AssertionError('Whole-file allocation')):
+            emulators.copy_component(source, target)
+            self.assertEqual(target.stat().st_ino, stamp.st_ino)
+            with source.open('r+b') as stream:
+                stream.seek(-8, 2); stream.write(b'changed!')
+            os.utime(source, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+            emulators.copy_component(source, target)
+        self.assertEqual(target.read_bytes(), source.read_bytes())
+        self.assertFalse(target.with_name(target.name+'.partial').exists())
+
+    def test_failed_code_refresh_keeps_previous_component_and_cleans_partial(self):
+        source=self.root/'component.so';target=self.root/'installed.so'
+        source.write_bytes(b'new code');target.write_bytes(b'old code')
+        def interrupted(source, destination):
+            destination.write_bytes(b'partial');raise OSError('Card full')
+        with patch.object(emulators.shutil, 'copyfile', side_effect=interrupted):
+            with self.assertRaises(OSError):emulators.copy_component(source,target)
+        self.assertEqual(target.read_bytes(),b'old code')
+        self.assertFalse(target.with_name(target.name+'.partial').exists())
+
+    def test_fresh_restart_skips_autoload_without_deleting_checkpoint(self):
+        from fields import write_fields
+        rom=self.root/'game.nds';rom.write_bytes(b'0123456789abTEST'+bytes(512))
+        hook=self.app/'emulators/hooks/librgdsbridge.so';hook.parent.mkdir(parents=True);hook.write_bytes(b'bridge')
+        for core in emulators.CORES:
+            self.binary(core)
+            automatic=self.data/'library'/emulators.game_key(rom)/('auto-'+core+'.dss')
+            automatic.parent.mkdir(parents=True,exist_ok=True);automatic.write_bytes(b'keep checkpoint')
+            with patch.dict(os.environ,{'RGDS_FORCE_AUTOLOAD':'1'}):
+                plan=emulators.launch_plan(core,self.app,self.data,rom,fresh_start=True)
+            self.assertNotIn('--load-state',plan['command']);self.assertNotEqual(plan['env'].get('RGDS_AUTOLOAD'),'1');self.assertNotEqual(plan['env'].get('RGDS_NATIVE_AUTOLOAD'),'1')
+            self.assertEqual(automatic.read_bytes(),b'keep checkpoint')
+    def test_fresh_restart_is_one_shot_and_keeps_current_engine(self):
+        with patch.object(emulators,'_run_once',side_effect=[77,75,0]) as launch:
+            self.assertEqual(emulators.run('melonds',self.app,self.data,self.root/'game.nds'),0)
+        calls=launch.call_args_list
+        self.assertEqual([c.kwargs['fresh_start'] for c in calls],[False,True,False])
+        self.assertEqual(calls[1].args[0],'melonds')
+
+    def test_ds_input_choices_reach_supported_engine_profiles(self):
+        from fields import write_fields
+        from library import game_key
+        rom=self.root/'game.nds'
+        write_fields(self.data/'library'/game_key(rom)/'ds-input.ini',dict(language=3,microphone=0))
+        for core in ('dsperate','melonds'):
+            self.binary(core)
+            with patch.dict(os.environ,{},clear=True):plan=emulators.launch_plan(core,self.app,self.data,rom)
+            self.assertEqual(plan['env']['RGDS_DS_LANGUAGE'],'3');self.assertEqual(plan['env']['RGDS_MICROPHONE'],'0')
+        config=(self.data/'emulators/dsperate/config.ini').read_text()
+        self.assertIn('language = 3',config);self.assertIn('mic = false',config);self.assertIn('mic_dev = plughw:0,0',config)
+
+    def test_dsperate_uses_embedded_bios_even_with_stale_native_paths(self):
+        self.binary("dsperate")
+        config = self.data / 'emulators/dsperate/config.ini'
+        config.parent.mkdir(parents=True)
+        config.write_text('[paths]\nbios7=/mnt/vendor/old.bin\nfirmware=/oem/old.bin\n')
+        with patch.object(emulators, 'stock_file', side_effect=AssertionError('stock lookup')), \
+             patch.dict(os.environ, {}, clear=True):
+            plan = emulators.launch_plan('dsperate', self.app, self.data, self.root/'game.nds')
+        for switch in ('--bios7', '--bios9', '--firmware'):
+            self.assertEqual(plan['command'][plan['command'].index(switch)+1], '')
+        self.assertNotIn('/mnt/', plan['env']['LD_LIBRARY_PATH'])
+        self.assertNotIn('/oem/', plan['env']['LD_LIBRARY_PATH'])
+
+    def test_mixer_failure_prevents_emulator_start_and_cleans_activity_marker(self):
+        self.binary("drastic")
+        rom = self.root / "game.nds";rom.write_bytes(b"game")
+        with patch.object(emulators, "VolumeWatch") as watch, \
+             patch.object(emulators.subprocess, "Popen") as spawn:
+            watch.return_value.start.side_effect = ValueError("Mixer unavailable")
+            with self.assertRaisesRegex(ValueError, "Mixer unavailable"):
+                emulators.run("drastic", self.app, self.data, rom)
+            spawn.assert_not_called()
+            watch.return_value.close.assert_called_once()
+        self.assertFalse((self.data / "session/core.json").exists())
+        diagnostic=(self.data/'logs/drastic.log').read_text()
+        self.assertIn('Runtime error: Mixer unavailable',diagnostic)
+
+    def test_automatic_state_import_preserves_the_previous_manual_slot(self):
+        self.binary("drastic")
+        hook = self.app / "emulators/hooks/librgdsbridge.so"
+        hook.parent.mkdir(parents=True);hook.write_bytes(b"fixture hook")
+        rom = self.root / "game.nds"
+        slot = self.data / "emulators/drastic/savestates/game_1.dss"
+        slot.parent.mkdir(parents=True);slot.write_bytes(b"manual state")
+        automatic = self.data / "library" / emulators.game_key(rom) / "auto-drastic.dss"
+        automatic.parent.mkdir(parents=True);automatic.write_bytes(b"automatic state")
+        plan = emulators.launch_plan("drastic", self.app, self.data, rom)
+        backups = list((automatic.parent / "manual-state-backups/drastic").glob("*.dss"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_bytes(), b"manual state")
+        self.assertEqual(slot.read_bytes(), b"automatic state")
+        self.assertEqual(plan["env"]["RGDS_AUTOLOAD"], "1")
+
     def test_all_three_engines_have_distinct_launch_arguments(self):
         rom = self.root / "A game; $(echo nope).nds"
         for core in emulators.CORES:
             binary = self.binary(core)
             plan = emulators.launch_plan(core, self.app, self.data, rom, prepare=False)
-            self.assertEqual(plan["command"][0], str(binary.resolve()))
+            self.assertEqual(plan["command"][0], str(self.data/'emulators/nnddss/nnddss') if core=='nnddss' else str(binary.resolve()))
             self.assertIn(str(rom), plan["command"])
             if core == "dsperate":
                 self.assertIn("--dual-window", plan["command"])
@@ -124,21 +228,71 @@ class EmulatorTests(Fixture):
         self.assertEqual(result, existing)
         self.assertEqual((existing / "assets/config.ini").read_text(), "custom=true\n")
         self.assertEqual(save.read_bytes(), b"save")
-        self.assertEqual((existing / "User/system/nds_bios_arm7.bin").read_bytes(), b"bios")
+
+        replacement = (ROOT / 'assets/nnddss/freebios/drastic_bios_arm7.bin').read_bytes()
+        self.assertEqual((existing / "User/system/nds_bios_arm7.bin").read_bytes(), replacement)
+        self.assertEqual((existing/'nnddss').read_bytes(),binary.read_bytes())
+        self.assertEqual((existing/'assets/bios/drastic_bios_arm7.bin').read_bytes(), replacement)
+        with patch.object(emulators,'STOCK_DIRS',(stock,)):
+            plan=emulators.launch_plan('nnddss',self.app,self.data,self.root/'game.nds')
+        self.assertEqual(Path(plan['command'][0]).parent,existing)
+        self.assertTrue((Path(plan['command'][0]).parent/'assets/bios/drastic_bios_arm9.bin').is_file())
+        self.assertEqual(plan['env']['NNDDSS_FAST_UPLOAD'],'0')
+        self.assertEqual(plan['env']['NNDDSS_DATA_ROOT'],str(existing))
+        self.assertIn(str(existing/'lib'),plan['env']['LD_LIBRARY_PATH'].split(':'))
+        self.assertNotIn(str(binary.parent/'lib'),plan['env']['LD_LIBRARY_PATH'].split(':'))
+        self.assertEqual(plan['env']['RGDS_SHADER_DIR'],str(self.app/'emulators/shaders'))
+        self.assertEqual(emulators.read_fields(existing/'assets/config.ini')['fx_enable'],'0')
+        hook=self.app/'emulators/hooks/librgdsbridge.so';hook.parent.mkdir(parents=True);hook.write_bytes(b'fixture')
+        automatic=self.data/'library'/emulators.game_key(self.root/'game.nds')/'auto-nnddss.dss'
+        automatic.parent.mkdir(parents=True);automatic.write_bytes(b'checkpoint')
+        with patch.object(emulators,'STOCK_DIRS',(stock,)):
+            plan=emulators.launch_plan('nnddss',self.app,self.data,self.root/'game.nds')
+        self.assertTrue(plan['env']['RGDS_STATE_SLOT'].endswith('game_8.dss'))
+        self.assertEqual((existing/'User/savestates/game_8.dss').read_bytes(),b'checkpoint')
         library.write_bytes(b"updated core")
         with patch.object(emulators, "STOCK_DIRS", (stock,)):
             emulators.prepare_nnddss(self.app, self.data, binary)
         self.assertEqual((existing / "lib/libnnddss.so").read_bytes(), b"updated core")
         self.assertEqual(save.read_bytes(), b"save")
 
+    def test_nnddss_ignores_drastic_and_repairs_assets_from_owned_package(self):
+        binary=self.binary("nnddss")
+        drastic=self.binary("drastic")
+        system=drastic.parent/'system';system.mkdir()
+        for name in ('drastic_bios_arm7.bin','drastic_bios_arm9.bin','nds_firmware.bin'):
+            (system/name).write_bytes(name.encode())
+        (drastic.parent/'game_database.xml').write_bytes(b'database')
+        root=self.data/'emulators/nnddss'
+        (root/'assets/bios').mkdir(parents=True)
+        (root/'assets/bios/drastic_bios_arm7.bin').touch()
+        fonts=root/'assets/fonts';fonts.mkdir()
+        for name in ('orbitron.ttf','SourceHanSansSC-Normal.ttf'):(fonts/name).write_bytes(b'font')
+        owned=self.app/'assets/emulator-profiles/nnddss.ini';owned.parent.mkdir(parents=True)
+        owned.write_text('fx_enable=0\ncustom_profile=1\n')
+        optional = self.data / 'bios/nnddss'; optional.mkdir(parents=True)
+        (optional / 'game_database.xml').write_bytes(b'user database')
+        with patch.object(emulators,'stock_file',side_effect=AssertionError('stock access')),patch.dict(os.environ,{},clear=True):
+            result=emulators.prepare_nnddss(self.app,self.data,binary)
+        self.assertEqual((result/'assets/bios/drastic_bios_arm7.bin').read_bytes(), (ROOT / 'assets/nnddss/freebios/drastic_bios_arm7.bin').read_bytes())
+        self.assertFalse((result/'User/system/nds_firmware_modified.bin').exists())
+        self.assertEqual((result/'User/game_database.xml').read_bytes(),b'user database')
+        self.assertEqual((result/'assets/fonts/orbitron.ttf').read_bytes(), (ROOT / 'assets/fonts/source/Nunito.ttf').read_bytes())
+        self.assertEqual(emulators.read_fields(result/'assets/config.ini')['custom_profile'],'1')
+        self.assertTrue((result/'User/config').is_dir())
+        self.assertFalse(list(result.rglob('*.partial')))
+
     def test_actual_subprocess_receives_rom_path_as_one_literal_argument(self):
         binary = self.binary("drastic")
-        binary.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$HOME/result.txt"\n')
+        binary.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$HOME/result.txt"\nprintf "%s" "$RGDS_VOLUME_KEYS" > "$HOME/volume-keys.txt"\n')
         rom = self.root / "A game; $(echo nope).nds"
         rom.write_bytes(b"game")
-        result = emulators.run("drastic", self.app.resolve(), self.data.resolve(), rom)
+        with patch.object(emulators, "VolumeWatch") as volume:
+            volume.return_value.descriptors = []
+            result = emulators.run("drastic", self.app.resolve(), self.data.resolve(), rom)
         self.assertEqual(result, 0)
-        self.assertEqual((binary.parent / "result.txt").read_text(), str(rom.resolve()) + "\n")
+        self.assertEqual((self.data / "emulators/drastic/result.txt").read_text(), str(rom.resolve()) + "\n")
+        self.assertEqual((self.data / "emulators/drastic/volume-keys.txt").read_text(), "0")
         self.assertFalse((self.data / "session/core.json").exists())
 
     def test_activity_checks_start_time_and_refuses_unreadable_records(self):
@@ -152,6 +306,18 @@ class EmulatorTests(Fixture):
         marker.write_text("broken")
         with self.assertRaisesRegex(ValueError, "Unreadable"):
             emulators.core_running(self.data)
+
+    def test_engine_startup_error_is_captured_before_returning_home(self):
+        binary=self.binary('drastic')
+        binary.write_text('#!/bin/sh\nprintf "missing runtime dependency\\n" >&2\nexit 17\n')
+        rom=self.root/'game.nds';rom.write_bytes(b'game')
+        with patch.object(emulators,'VolumeWatch') as volume:
+            volume.return_value.descriptors=[]
+            self.assertEqual(emulators.run('drastic',self.app,self.data,rom),17)
+        output=(self.data/'logs/drastic.log').read_text()
+        self.assertIn('missing runtime dependency',output)
+        self.assertIn('Exit code: 17',output)
+        self.assertFalse((self.data/'session/core.json').exists())
 
 class ActivationTests(Fixture):
     def test_activation_and_rollback_keep_user_data(self):
@@ -195,6 +361,19 @@ class ActivationTests(Fixture):
             kill.assert_not_called()
 
 class SessionTests(Fixture):
+    def test_frontend_releases_audio_and_returns_through_its_stock_supervisor(self):
+        record = {"pid": 123, "start": "old", "restart": True,
+                  "arguments": ["/stock/menu"], "cwd": "/stock", "environment": {"HOME": "/root"}}
+        with patch.object(session, "frontend_alive", side_effect=[True, False]), \
+             patch.object(session.os, "kill") as kill:
+            session.stop_frontends([record])
+            kill.assert_called_once_with(123, session.signal.SIGTERM)
+        with patch.object(session, "restore_stock") as restore_stock, \
+             patch.object(session.subprocess, "Popen") as spawn:
+            session.restore([record], lease="owned flag")
+            restore_stock.assert_called_once_with("owned flag")
+            spawn.assert_not_called()
+
     def test_new_session_cannot_replace_a_pending_recovery_lock(self):
         lock = self.root / "session.lock"
         lock.mkdir()

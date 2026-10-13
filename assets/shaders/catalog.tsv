@@ -1,0 +1,22 @@
+# Stable ID	Name	File stem	Asset ID	Description
+0	Off	off	0	Original pixels and colours.
+1	Sharp bilinear	sharp_bilinear	2	Sharp pixel edges with smoother scaling.
+2	LCD1x	lcd1x	1	A subtle handheld LCD pixel pattern.
+3	zFast LCD	zfast_lcd	3	A stronger LCD texture and scanline look.
+4	NDS Color	nds_color	4	Colour treatment inspired by the original DS display.
+5	Natural Vision	natural_vision	5	A natural colour and contrast treatment.
+6	LCD + NDS Color	lcd1x+nds_color	6	LCD pixels with the DS colour treatment.
+7	LCD + Natural Vision	lcd1x+natural_vision	7	LCD pixels with natural colour and contrast.
+8	LCD + both colours	lcd1x+nds_color+natural_vision	8	LCD pixels, DS colour and Natural Vision together.
+9	Sharp + NDS Color	sharp_bilinear+nds_color	9	Sharp scaling with the DS colour treatment.
+10	Sharp + Natural Vision	sharp_bilinear+natural_vision	10	Sharp scaling with natural colour and contrast.
+11	Sharp + both colours	sharp_bilinear+nds_color+natural_vision	11	Sharp scaling, DS colour and Natural Vision together.
+12	zFast + NDS Color	zfast_lcd+nds_color	12	The zFast LCD texture with the DS colour treatment.
+13	zFast + Natural Vision	zfast_lcd+natural_vision	13	The zFast LCD texture with natural colour and contrast.
+14	zFast + both colours	zfast_lcd+nds_color+natural_vision	14	The zFast LCD texture with both colour treatments.
+15	Soft scanlines	soft_scanlines	15	A gentle scanline pattern with original colours.
+16	Warm paper	warm_paper	16	Warm whites and softened contrast for evening play.
+17	Cool crisp	cool_crisp	17	Cool whites with a small contrast boost.
+18	Pocket green	pocket_green	18	Soft green monochrome with full-resolution detail.
+19	Amber	amber	19	Warm monochrome with preserved highlight detail.
+20	Soft LCD grid	soft_lcd_grid	20	A subtle pixel grid with a bright, readable image.

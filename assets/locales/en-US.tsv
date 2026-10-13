@@ -1,0 +1,698 @@
+# UTF-8 source\ttranslation. One entry per line.	
+3D rendering automatically uses worker threads.	3D rendering automatically uses worker threads.
+3D resolution	3D resolution
+3D threading changed for this session. Settings storage is unavailable.	3D threading changed for this session. Settings storage is unavailable.
+3D threading changed. No restart needed.	3D threading changed. No restart needed.
+A  Apply	A  Apply
+A  Done	A  Done
+A  Play	A  Play
+A / Start	A / Start
+A gentle scanline pattern with original colours.	A gentle scanline pattern with original colors.
+A natural colour and contrast treatment.	A natural color and contrast treatment.
+A screen style for this cartridge	A screen style for this cartridge
+A stronger LCD texture and scanline look.	A stronger LCD texture and scanline look.
+A subtle handheld LCD pixel pattern.	A subtle handheld LCD pixel pattern.
+A subtle pixel grid with a bright, readable image.	A subtle pixel grid with a bright, readable image.
+Add your DS games to fetch their artwork.	Add your DS games to fetch their artwork.
+After	After
+All games	All games
+Amber	Amber
+Anbernic / Escape cancels	Anbernic / Escape cancels
+Anbernic startup is unavailable in RGDS OS.	Anbernic startup is unavailable in RGDS OS.
+Animations	Animations
+Applies immediately. Higher clocks use more battery.	Applies immediately. Higher clocks use more battery.
+Applies immediately. Your game keeps its progress.	Applies immediately. Your game keeps its progress.
+Apply	Apply
+Applying shader…	Applying shader…
+Artwork	Artwork
+Artwork & ScreenScraper	Artwork
+Artwork source	Artwork source
+Artwork sources	Artwork sources
+Auto-load state	Auto-load state
+Auto-save on exit	Auto-save on exit
+Automatic	Automatic
+Automatic (free)	Automatic
+Available networks	Available networks
+B  Cancel	B  Cancel
+B  Close	B  Close
+BACK HOME	BACK HOME
+Back	Back
+Balance battery life and speed	Balance battery life and speed
+Balanced	Balanced
+Battery	Battery
+Battery percentage	Battery percentage
+Battery saver	Battery saver
+Before	Before
+Before you play	Before you play
+Binding unchanged.	Binding unchanged.
+Boot	Boot
+Boot into	Boot into
+Both screens	Both screens
+Bottom display	Bottom display
+Box art, titles and game details	Box art, titles and game details
+Brightness	Brightness
+Browser layout	Browser layout
+Build, storage and device address	Build, storage and device address
+Button	Button
+Button layout	Button layout
+Button {0}	Button {0}
+Buttons and the game menu shortcut	Buttons and the game menu shortcut
+COLOUR MODE	COLOR MODE
+Cancel	Cancel
+Cartridges	Cartridges
+Changes immediately. Map a button in Controls for quick access.	Changes immediately. Map a button in Controls for quick access.
+Changing 3D threading…	Changing 3D threading…
+Changing speed…	Changing speed…
+Check the current connection	Check the current connection
+Checkpoint loaded	Checkpoint loaded
+Checkpoint loaded (preview)	Checkpoint loaded (preview)
+Checkpoint loaded.	Checkpoint loaded.
+Checkpoint saved	Checkpoint saved
+Checkpoint saved (preview)	Checkpoint saved (preview)
+Checkpoint saved.	Checkpoint saved.
+Choose Anbernic or RG DS startup.	Choose Anbernic or RG DS startup.
+Choose an option	Choose an option
+Choose native or a sharper 3D image	Choose native or a sharper 3D image
+Choose the core for this cartridge	Choose the core for this cartridge
+Choose the display backend for the next DraStic launch. DSperate stays your default.	Choose the display backend for the next DraStic launch. DSperate stays your default.
+Choose what opens when you power on	Choose what opens when you power on
+Clear	Clear
+Clear temporary cache	Clear temporary cache
+Clear temporary game files?	Clear temporary game files?
+Close	Close
+Close the handheld to sleep	Close the handheld to sleep
+Colour treatment inspired by the original DS display.	Color treatment inspired by the original DS display.
+Compare	Compare
+Confirm	Confirm
+Connect	Connect
+Connected	Connected
+Connected.	Connected.
+Connecting…	Connecting…
+Connectivity	Connectivity
+Continue	Continue
+Continue where you left off	Continue where you left off
+Control unavailable on this device	Control unavailable on this device
+Controls	Controls
+Controls saved for this game.	Controls saved for this game.
+Cool crisp	Cool crisp
+Cool whites with a small contrast boost.	Cool whites with a small contrast boost.
+Could not apply brightness	Could not apply brightness
+Could not apply saved brightness	Could not apply saved brightness
+Could not apply saved power mode	Could not apply saved power mode
+Could not apply setting - see log	Could not apply setting - see log
+Could not apply this shader.	Could not apply this shader.
+Could not apply volume	Could not apply volume
+Could not bring the Wi-Fi adapter up. Try again.	Could not bring the Wi-Fi adapter up. Try again.
+Could not change 3D threading. Your game is unchanged.	Could not change 3D threading. Your game is unchanged.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	Could not confirm the selected Wi-Fi connection. Scan and try again.
+Could not enable lid wake	Could not enable lid wake
+Could not load. Resume, retry, or return without saving.	Could not load. Resume, retry, or return without saving.
+Could not read this collection. Try again.	Could not read this collection. Try again.
+Could not restore previous hardware setting	Could not restore previous hardware setting
+Could not save all settings. Check storage.	Could not save all settings. Check storage.
+Could not save brightness	Could not save brightness
+Could not save controls. Check writable storage.	Could not save controls. Check writable storage.
+Could not save game settings. Previous values kept.	Could not save game settings. Previous values kept.
+Could not save matching title.	Could not save matching title.
+Could not save settings	Could not save settings
+Could not save timezone	Could not save timezone
+Could not save volume	Could not save volume
+Could not save. Resume, retry, or return without saving.	Could not save. Resume, retry, or return without saving.
+Could not send game action	Could not send game action
+Could not set volume - see log	Could not set volume - see log
+Could not sleep - see log	Could not sleep - see log
+Could not sleep. Reopen the lid and try again.	Could not sleep. Reopen the lid and try again.
+Could not start artwork service	Could not start artwork service
+Could not start library scan	Could not start library scan
+Could not write controls	Could not write controls
+Counts display updates, not emulation speed. Changes immediately.	Counts display updates, not emulation speed. Changes immediately.
+Counts emulated game frames. Changes immediately.	Counts emulated game frames. Changes immediately.
+Covers	Covers
+Custom	Custom
+DEFAULT THEME - CHECK LOG	DEFAULT THEME - CHECK LOG
+DS rounded	DS rounded
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: recommended for everyday play. Native resolution is the default.
+Dark	Dark
+Default	Default
+Default emulator	Default emulator
+Default shader	Default shader
+Delete	Delete
+Desktop preview	Desktop preview
+Development build	Development build
+Device address	Device address
+Device information	Device information
+Display FPS	Display FPS
+Done	Done
+Down	Down
+DraStic backend	DraStic backend
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: an alternative for games that need it. Saves stay separate.
+ERROR	ERROR
+ERROR: Could not restore settings	ERROR: Could not restore settings
+ERROR: Could not restore settings - see log	ERROR: Could not restore settings - see log
+Emulator	Emulator
+Emulator settings	Emulator settings
+Engine managed	Engine managed
+Enter here	Enter here
+Enter password	Enter password
+Enter your username and password	Enter your username and password
+Every game in this collection has artwork.	Every game in this collection has artwork.
+FPS changed for this session. Settings storage is unavailable.	FPS changed for this session. Settings storage is unavailable.
+FPS counter enabled.	FPS counter enabled.
+FPS counter hidden.	FPS counter hidden.
+Fast	Fast
+Fast-forward	Fast-forward
+Fast-forward button	Fast-forward button
+Fast-forward enabled.	Fast-forward enabled.
+Fast-forward is unavailable for this emulator.	Fast-forward is unavailable for this emulator.
+Fast-forward style	Fast-forward style
+Favourite	Favourite
+Favourites	Favorites
+Fetch artwork	Fetch artwork
+Fetch missing artwork	Fetch missing artwork
+Find and connect to a nearby network	Find and connect to a nearby network
+Finishing the system request	Finishing the system request
+Follow your default button layout	Follow your default button layout
+Following your global controls.	Following your global controls.
+Follows your Library default. Each emulator keeps its own saves.	Follows your Library default. Each emulator keeps its own saves.
+Frameskip	Frameskip
+Free space	Free space
+Free space while keeping your saves	Free space while keeping your saves
+Game FPS	Game FPS
+Game emulator	Game emulator
+Game emulator saved.	Game emulator saved.
+Game menu	Game menu
+Game options	Game options
+Game options saved	Game options saved
+GameTDB (free)	GameTDB
+Games	Games
+Give your eyes and hands a break.	Give your eyes and hands a break.
+Global	Global
+Global controls saved.	Global controls saved.
+Hold	Hold
+Home shortcut	Home shortcut
+Inherit	Inherit
+Inherited	Inherited
+Jump to letter	Jump to letter
+Keep a checkpoint when returning home	Keep a checkpoint when returning home
+Keep playing	Keep playing
+Keep this game in Favourites	Keep this game in Favourites
+Kernel	Kernel
+Key {0}	Key {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + both colors
+LCD pixels with natural colour and contrast.	LCD pixels with natural color and contrast.
+LCD pixels with the DS colour treatment.	LCD pixels with the DS color treatment.
+LCD pixels, DS colour and Natural Vision together.	LCD pixels, DS color and Natural Vision together.
+Language	Language
+Launch cancelled	Launch cancelled
+Left	Left
+Left stick	Left stick
+Left-handed	Left-handed
+Less than a minute	Less than a minute
+Library	Library
+Library scan exceeded its limit	Library scan exceeded its limit
+Library scan failed	Library scan failed
+Libretro (free)	Libretro
+Light	Light
+List	List
+Live background	Live background
+Load	Load
+Load requested. Resume to check your game.	Load requested. Resume to check your game.
+Load state	Load state
+Loading checkpoint…	Loading checkpoint…
+Looking for networks…	Looking for networks…
+Magnified detail	Magnified detail
+Manage builds and temporary files	Manage builds and temporary files
+Matching title	Matching title
+Matching title saved. Choose Fetch artwork.	Matching title saved. Choose Fetch artwork.
+Menu idle sleep	Menu idle sleep
+Mute	Mute
+Muted	Muted
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: a compatibility option. Try DSperate first for speed.
+Native	Native
+Native is faster; 2x uses more GPU time. Save & restart applies it.	Native is faster; 2x uses more GPU time. Save & restart applies it.
+Native output	Native output
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	Networking is disabled. Turn Wi-Fi on to enable it.
+Never	Never
+Next emulator	Next emulator
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	No Wi-Fi adapter. Turn Wi-Fi on to initialize it.
+No button detected. Try again when you're ready.	No button detected. Try again when you're ready.
+No checkpoint saved for this emulator yet.	No checkpoint saved for this emulator yet.
+No cover yet	No cover yet
+No favourites yet	No favourites yet
+No games	No games
+No games in this collection.	No games in this collection.
+No networks found	No networks found
+No previous build available.	No previous build available.
+No recent games yet	No recent games yet
+Normal	Normal
+Normal speed.	Normal speed.
+Not available	Not available
+Not connected	Not connected
+Not played yet	Not played yet
+OPEN	OPEN
+Off	Off
+Off (smooth)	Off (smooth)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Off gives smooth motion. Skipping frames can help speed. Restart to apply.
+Off keeps the original picture.	Off keeps the original picture.
+On	On
+Open	Open
+Open menu	Open menu
+Open the Anbernic menu	Open the Anbernic menu
+Options	Options
+Original pixels	Original pixels
+Original pixels and colours.	Original pixels and colors.
+PLAY	PLAY
+Password	Password
+Pause when you need to.	Pause when you need to.
+Paused	Paused
+Performance	Performance
+Pixel classic	Pixel classic
+Play at a comfortable volume.	Play at a comfortable volume.
+Please keep your handheld on	Please keep your handheld on
+Pocket green	Pocket green
+Power	Power
+Power mode	Power mode
+Power off	Power off
+Power off your handheld?	Power off your handheld?
+Power profile	Power profile
+Powering off…	Powering off…
+Preparing controls…	Preparing controls…
+Preparing the launcher	Preparing the launcher
+Preparing the library…	Preparing the library…
+Preparing your cartridges…	Preparing your cartridges…
+Preparing your library…	Preparing your library…
+Press a button for {0}	Press a button for {0}
+Press a button…	Press a button…
+Preview	Preview
+Preview Wi-Fi	Preview Wi-Fi
+Preview and choose your screen style	Preview and choose your screen style
+Preview game	Preview game
+Preview unavailable	Preview unavailable
+Previous build selected. Return to stock, then open RGDS again.	Previous build selected. Return to stock, then open RGDS again.
+Profile	Profile
+READY	READY
+REVIEW YOUR CHOICE	REVIEW YOUR CHOICE
+RGDS build	RGDS build
+ROUNDED FONT UNAVAILABLE	ROUNDED FONT UNAVAILABLE
+Recents	Recents
+Reduce rendering work when needed	Reduce rendering work when needed
+Refresh	Refresh
+Refresh connection	Refresh connection
+Release for options	Release for options
+Remap	Remap
+Request cancelled.	Request cancelled.
+Request failed. Check the connection or device log and try again.	Request failed. Check the connection or device log and try again.
+Reset	Reset
+Rest after a period of inactivity	Rest after a period of inactivity
+Restart	Restart
+Restart menu	Restart menu
+Restart the RGDS menu?	Restart the RGDS menu?
+Restart the device?	Restart the device?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	Restart uses {0}. Saves and checkpoints stay separate per emulator.
+Restarting…	Restarting…
+Restore defaults	Restore defaults
+Restore the last installed RGDS build	Restore the last installed RGDS build
+Restoring settings	Restoring settings
+Restoring settings…	Restoring settings…
+Resume	Resume
+Resume game	Resume game
+Return	Return
+Return home	Return home
+Return home before changing startup.	Return home before changing startup.
+Return home from your game first.	Return home from your game first.
+Return to game	Return to game
+Return to stock	Return to stock
+Return to the original button layout	Return to the original button layout
+Return to the stock menu?	Return to the stock menu?
+Return without saving	Return without saving
+Returning home…	Returning home…
+Review unmatched	Review unmatched
+Right	Right
+Right stick	Right stick
+Rollback simulated.	Rollback simulated.
+START	START
+Save	Save
+Save & restart	Save & restart
+Save & restart applies Threaded 3D.	Save & restart applies Threaded 3D.
+Save & restart keeps your checkpoint and applies pending settings.	Save & restart keeps your checkpoint and applies pending settings.
+Save a report for troubleshooting	Save a report for troubleshooting
+Save device report	Save device report
+Save state	Save state
+Save your checkpoint and restart	Save your checkpoint and restart
+Saved	Saved
+Saved - desktop simulation	Saved - desktop simulation
+Saved for the next Standard DraStic launch.	Saved for the next Standard DraStic launch.
+Saved network	Saved network
+Saved · {0}	Saved · {0}
+Saved. Applies on your next DraStic launch.	Saved. Applies on your next DraStic launch.
+Saved. Save & restart applies screen order.	Saved. Save & restart applies screen order.
+Saved. Save & restart applies this change.	Saved. Save & restart applies this change.
+Saved. Save & restart changes the emulator.	Saved. Save & restart changes the emulator.
+Saving before restarting…	Saving before restarting…
+Saving before returning home…	Saving before returning home…
+Saving checkpoint before restarting…	Saving checkpoint before restarting…
+Saving checkpoint…	Saving checkpoint…
+Saving your progress…	Saving your progress…
+Scan	Scan
+Scene	Scene
+Screen brightness	Screen brightness
+Screen order	Screen order
+ScreenScraper needs project credentials and your account	ScreenScraper needs project credentials and your account
+Select	Select
+Select a network again and enter its password.	Select a network again and enter its password.
+Select a network again.	Select a network again.
+Selected	Selected
+Sets Standard DraStic screen order for this game. Save & restart applies it.	Sets Standard DraStic screen order for this game. Save & restart applies it.
+Settings	Settings
+Settings saved	Settings saved
+Shader	Shader
+Shader applied.	Shader applied.
+Shader change requested (preview)	Shader change requested (preview)
+Shader saved	Shader saved
+Shader saved for next launch	Shader saved for next launch
+Shader saved. Restart this game to apply it.	Shader saved. Restart this game to apply it.
+Shader studio	Shader studio
+Shaders	Shaders
+Sharp + NDS Color	Sharp + NDS Color
+Sharp + Natural Vision	Sharp + Natural Vision
+Sharp + both colours	Sharp + both colors
+Sharp bilinear	Sharp bilinear
+Sharp pixel edges with smoother scaling.	Sharp pixel edges with smoother scaling.
+Sharp scaling with natural colour and contrast.	Sharp scaling with natural color and contrast.
+Sharp scaling with the DS colour treatment.	Sharp scaling with the DS color treatment.
+Sharp scaling, DS colour and Natural Vision together.	Sharp scaling, DS color and Natural Vision together.
+Shift	Shift
+Shortcut action	Shortcut action
+Show the charge in the status bar	Show the charge in the status bar
+Show the welcome screen at startup	Show the welcome screen at startup
+Sign in	Sign in
+Sign out	Sign out
+Signing in…	Signing in…
+Simulated handheld	Simulated handheld
+Sleep	Sleep
+Sleep now	Sleep now
+Sleep on lid close	Sleep on lid close
+Sleep simulated - press any control	Sleep simulated - press any control
+Sleep simulated - settings retained	Sleep simulated - settings retained
+Sleep unavailable on this device	Sleep unavailable on this device
+Sleeping - use Power to wake	Sleeping - use Power to wake
+Soft LCD grid	Soft LCD grid
+Soft green monochrome with full-resolution detail.	Soft green monochrome with full-resolution detail.
+Soft scanlines	Soft scanlines
+Sound	Sound
+Space	Space
+Standard	Standard
+Standard DraStic only. Applies on the next launch; game saves are kept.	Standard DraStic only. Applies on the next launch; game saves are kept.
+Standard screen order	Standard screen order
+Start	Start
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	Start RG DS automatically on future boots?
+Start with a familiar layout	Start with a familiar layout
+Start, then Anbernic	Start, then Anbernic
+Startup	Startup
+Startup choice saved.	Startup choice saved.
+Startup choice simulated.	Startup choice simulated.
+Startup is managed by RGDS OS.	Startup is managed by RGDS OS.
+Stock	Stock
+Stock firmware	Stock firmware
+Stop fetching	Stop fetching
+Stop fetching before editing the match.	Stop fetching before editing the match.
+Stop scraping	Stop scraping
+Stop scraping before changing source	Stop scraping before changing source
+Stopping after this request	Stopping after this request
+Stopping after this request.	Stopping after this request.
+Storage read-only - use internal RGDS	Storage read-only - use internal RGDS
+SuperDrastic (experimental)	SuperDrastic (experimental)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic currently uses native output. Your standard shader choice is kept.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.
+Swapped	Swapped
+System	System
+THEME ERROR - RETAINED CURRENT	THEME ERROR - RETAINED CURRENT
+THEME RELOADED	THEME RELOADED
+TYPEFACE	TYPEFACE
+Temporary game cache cleared. Saves and artwork are kept.	Temporary game cache cleared. Saves and artwork are kept.
+The checkpoint did not finish saving.	The checkpoint did not finish saving.
+The emulator did not finish. Resume, retry, or return without saving.	The emulator did not finish. Resume, retry, or return without saving.
+The game menu did not respond. Resume or return without saving.	The game menu did not respond. Resume or return without saving.
+The zFast LCD texture with both colour treatments.	The zFast LCD texture with both color treatments.
+The zFast LCD texture with natural colour and contrast.	The zFast LCD texture with natural color and contrast.
+The zFast LCD texture with the DS colour treatment.	The zFast LCD texture with the DS color treatment.
+Theme	Theme
+Theme & display	Theme & display
+This emulator does not expose a frameskip setting.	This emulator does not expose a frameskip setting.
+This emulator uses native resolution. No resolution switch is available.	This emulator uses native resolution. No resolution switch is available.
+This engine does not expose a threading switch.	This engine does not expose a threading switch.
+This engine has no live threading control.	This engine has no live threading control.
+This game	This game
+This network requires an enterprise profile.	This network requires an enterprise profile.
+This request did not finish. Please try again.	This request did not finish. Please try again.
+This shader is unavailable for the current emulator.	This shader is unavailable for the current emulator.
+Threaded 3D	Threaded 3D
+Time played	Time played
+Timezone	Timezone
+Toggle	Toggle
+Top display	Top display
+Touch	Touch
+Touch indicator	Touch indicator
+Touch to continue	Touch to continue
+Touch {0}	Touch {0}
+Try saving again	Try saving again
+Turn Wi-Fi off?	Turn Wi-Fi off?
+Turn Wi-Fi on first.	Turn Wi-Fi on first.
+Turn Wi-Fi on to find networks.	Turn Wi-Fi on to find networks.
+Turning Wi-Fi off…	Turning Wi-Fi off…
+Turning Wi-Fi on…	Turning Wi-Fi on…
+Typeface	Typeface
+Unassigned	Unassigned
+Unavailable	Unavailable
+Unmatched artwork	Unmatched artwork
+Unmute	Unmute
+Updates & recovery	Updates & recovery
+Use ROM identity	Use ROM identity
+Use an additional rendering thread	Use an additional rendering thread
+Use default ({0})	Use default ({0})
+Use global controls	Use global controls
+Use previous build	Use previous build
+Use the previous RGDS build?	Use the previous RGDS build?
+Used by games without an override	Used by games without an override
+Username	Username
+View	View
+Volume	Volume
+Volume control unavailable	Volume control unavailable
+WAITING FOR INPUT	WAITING FOR INPUT
+Warm monochrome with preserved highlight detail.	Warm monochrome with preserved highlight detail.
+Warm paper	Warm paper
+Warm whites and softened contrast for evening play.	Warm whites and softened contrast for evening play.
+Welcome back	Welcome back
+What the shortcut opens	What the shortcut opens
+Where this layout applies	Where this layout applies
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.
+Wi-Fi did not turn on. Try again.	Wi-Fi did not turn on. Try again.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi is blocked by the hardware. Restart the handheld and try again.
+Wi-Fi is still on. Try turning it off again.	Wi-Fi is still on. Try turning it off again.
+Wi-Fi is unavailable.	Wi-Fi is unavailable.
+Wi-Fi off.	Wi-Fi off.
+Wi-Fi on.	Wi-Fi on.
+Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi request failed. Check the password and signal, then try again.
+Wi-Fi request timed out. Check signal and try again.	Wi-Fi request timed out. Check signal and try again.
+Wi-Fi service is unavailable.	Wi-Fi service is unavailable.
+With shader	With shader
+Working…	Working…
+X Scene   Y Compare	X Scene   Y Compare
+X Scene / Y Compare	X Scene / Y Compare
+Your cartridges go here	Your cartridges go here
+Your home screen after powering on	Your home screen after powering on
+Your local time and date	Your local time and date
+Your menu shortcut	Your menu shortcut
+Your shader choice is still available.	Your shader choice is still available.
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + both colors
+{0} (experimental)	{0} (experimental)
+{0} (recommended)	{0} (recommended)
+{0} frames	{0} frames
+{0} games	{0} games
+{0} settings	{0} settings
+Up	Up
+Times played	Times played
+Last played	Last played
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	Ready to fetch artwork.
+Icon style	Icon style
+Simple pixel	Simple pixel
+Rich	Rich
+Statistics	Statistics
+Games played	Games played
+Most played	Most played
+Preparing your statistics…	Preparing your statistics…
+Play a game to start your statistics.	Play a game to start your statistics.
+Installed version	Installed version
+Check for updates	Check for updates
+Restart & install	Restart & install
+Download update	Download update
+Pause download	Pause download
+Release notes	Release notes
+Discard update	Discard update
+No release notes yet.	No release notes yet.
+Restart and install the update?	Restart and install the update?
+Check for updates when you are ready.	Check for updates when you are ready.
+Updates will be available when the release channel opens.	Updates will be available when the release channel opens.
+Checking for updates…	Checking for updates…
+You are up to date.	You are up to date.
+A new version is ready to download.	A new version is ready to download.
+This version failed to start. Waiting for a newer update.	This version failed to start. Waiting for a newer update.
+Downloading update…	Downloading update…
+Verifying update…	Verifying update…
+Preparing update…	Preparing update…
+Ready to restart. Your previous version is kept for recovery.	Ready to restart. Your previous version is kept for recovery.
+Restarting into the update…	Restarting into the update…
+Checking the new version…	Checking the new version…
+Update installed.	Update installed.
+The update could not start. Your previous version was restored.	The update could not start. Your previous version was restored.
+Download paused. Retry to continue.	Download paused. Retry to continue.
+Update discarded. Your installed version is unchanged.	Update discarded. Your installed version is unchanged.
+Connect the charger before installing an update.	Connect the charger before installing an update.
+There is not enough free space for this update.	There is not enough free space for this update.
+Exit your game before installing an update.	Exit your game before installing an update.
+Install the latest SD installer before this update.	Install the latest SD installer before this update.
+Restart RG DS Core before installing the update.	Restart RG DS Core before installing the update.
+Download interrupted. Retry to continue.	Download interrupted. Retry to continue.
+An update is already prepared. Install it or discard it first.	An update is already prepared. Install it or discard it first.
+Another update is already running.	Another update is already running.
+Update information has expired or the device clock is incorrect.	Update information has expired or the device clock is incorrect.
+This stock firmware has not been validated for updates.	This stock firmware has not been validated for updates.
+Update verification failed. Check for updates again.	Update verification failed. Check for updates again.
+Update failed. Check Wi-Fi and try again.	Update failed. Check Wi-Fi and try again.
+Stable	Stable
+Testing	Testing
+Save to slot	Save to slot
+Import slot	Import slot
+Load slot	Load slot
+Export slot	Export slot
+Undo overwrite	Undo overwrite
+Undo load	Undo load
+Import help	Import help
+Save slot	Save slot
+Replace this save?	Replace this save?
+Replace	Replace
+Load this save?	Load this save?
+Blow into microphone	Blow into microphone
+Close and open DS lid	Close and open DS lid
+DS language	DS language
+Real microphone	Real microphone
+Japanese	Japanese
+English	English
+French	French
+German	German
+Italian	Italian
+Spanish	Spanish
+2 seconds	2 seconds
+In game	In game
+Restart the game to apply DS settings.	Restart the game to apply DS settings.
+Could not save DS settings.	Could not save DS settings.
+Search	Search
+Save gallery	Save gallery
+Search and filters	Search and filters
+Add your games	Add your games
+DS controls	DS controls
+Back up all saves	Back up all saves
+Resume after power off	Resume after power off
+Slot	Slot
+Empty slot	Empty slot
+Search games	Search games
+Filter	Filter
+Clear search and filters	Clear search and filters
+Missing artwork	Missing artwork
+Where to put games	Where to put games
+Scan for games	Scan for games
+Automatic updates	Automatic updates
+Download automatically	Download automatically
+Check automatically	Check automatically
+Update available in Maintenance	Update available in Maintenance
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.
+Save backup created in userdata/exports.	Save backup created in userdata/exports.
+Slot exported to userdata/exports.	Slot exported to userdata/exports.
+Save library updated.	Save library updated.
+Save overwrite undone.	Save overwrite undone.
+Current progress could not be saved. No slot was changed.	Current progress could not be saved. No slot was changed.
+DS controls are unavailable for this engine.	DS controls are unavailable for this engine.
+Your DS library starts here	Your DS library starts here
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.
+Use the engine's native controls for microphone and DS settings.	Use the engine's native controls for microphone and DS settings.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.
+Save slots	Save slots
+Load slots	Load slots
+Unplayed	Unplayed
+Played	Played
+Filtered	Filtered
+No matching games	No matching games
+No matches. Use View to change filters.	No matches. Use View to change filters.
+Reset state	Reset state
+Restart without loading a state?	Restart without loading a state?
+Restart from the title screen. In-game saves and save slots are kept.	Restart from the title screen. In-game saves and save slots are kept.
+Microphone, simulated blowing, lid and DS language.	Microphone, simulated blowing, lid and DS language.
+Test microphone	Test microphone
+Test	Test
+Live input	Live input
+Quiet	Quiet
+Loud	Loud
+Listening…	Listening…
+Microphone unavailable	Microphone unavailable
+Audio is not recorded or saved.	Audio is not recorded or saved.
+Test the microphone on your handheld.	Test the microphone on your handheld.
+Return home before testing the physical microphone.	Return home before testing the physical microphone.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blow or speak into the microphone. Watch the level rise, then fall when you stop.
+No filter	No filter
+Quick search	Quick search
+Y  Quick search	Y  Quick search
+X  Filters	X  Filters
+Y Search / X Filters	Y Search / X Filters
+A  Search	A  Search
+A  Jump	A  Jump
+Edit search	Edit search
+Clear filters	Clear filters
+Try another title or clear your filters	Try another title or clear your filters
+Type a game title…	Type a game title…
+Finding games…	Finding games…
+Searching…	Searching…
+Search in	Search in
+Try a shorter title or clear your filter.	Try a shorter title or clear your filter.
+A Key / Start Search / B Cancel	A Key / Start Search / B Cancel
+Tap to type, or use the D-pad and A	Tap to type, or use the D-pad and A
+X Delete / Start Search	X Delete / Start Search
+X Delete / Start Done	X Delete / Start Done
+No letters to jump to. Search for another game.	No letters to jump to. Search for another game.
+{0} match	{0} match
+{0} matches	{0} matches
+{0} matching game	{0} matching game
+{0} matching games	{0} matching games
+{0} game	{0} game
+Interface animations	Interface animations
+View transitions	View transitions
+Small touches, scrolling and startup motion	Small touches, scrolling and startup motion
+Springy menu changes with a colourful wobble	Springy menu changes with a colourful wobble
+Transitions	Transitions
+Subtle	Subtle
+Menu sounds	Menu sounds
+Effects volume	Effects volume
+Preview sound	Preview sound
+A little handheld magic	A little handheld magic
+Playful sounds for browsing, choosing and starting games.	Playful sounds for browsing, choosing and starting games.
+Turn on menu sounds to hear the previews.	Turn on menu sounds to hear the previews.
+Some menu sounds are unavailable.	Some menu sounds are unavailable.
+Menu audio is unavailable on this device.	Menu audio is unavailable on this device.
+Menu sounds are unavailable.	Menu sounds are unavailable.
+Close lid	Close lid
+Open lid	Open lid
+Spring	Spring
+Push	Push
+Transition style	Transition style
+Animate pages with the selected style	Animate pages with the selected style
+Slide into pages; slide back to return	Slide into pages; slide back to return

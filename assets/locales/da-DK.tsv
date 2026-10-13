@@ -1,0 +1,698 @@
+# UTF-8 source\ttranslation. One entry per line.	
+3D rendering automatically uses worker threads.	3D-gengivelse bruger automatisk arbejdstråde.
+3D resolution	3D-opløsning
+3D threading changed for this session. Settings storage is unavailable.	3D-tråde ændret for denne session. Indstillinger kan ikke gemmes.
+3D threading changed. No restart needed.	3D-tråde ændret. Genstart er ikke nødvendig.
+A  Apply	A  Anvend
+A  Done	A  Færdig
+A  Play	A  Spil
+A / Start	A / Start
+A gentle scanline pattern with original colours.	Et diskret linjemønster med originale farver.
+A natural colour and contrast treatment.	Naturlige farver og kontraster.
+A screen style for this cartridge	En skærmstil til denne spilkassette
+A stronger LCD texture and scanline look.	Tydeligere LCD-struktur og scanningslinjer.
+A subtle handheld LCD pixel pattern.	Et diskret pixelmønster fra en håndholdt LCD-skærm.
+A subtle pixel grid with a bright, readable image.	Et diskret pixelgitter med et lyst og tydeligt billede.
+Add your DS games to fetch their artwork.	Tilføj dine DS-spil for at hente omslag.
+After	Efter
+All games	Alle spil
+Amber	Rav
+Anbernic / Escape cancels	Anbernic / Escape annullerer
+Anbernic startup is unavailable in RGDS OS.	Anbernic-opstart er ikke tilgængelig i RGDS OS.
+Animations	Animationer
+Applies immediately. Higher clocks use more battery.	Gælder straks. Højere clockfrekvenser bruger mere batteri.
+Applies immediately. Your game keeps its progress.	Gælder straks. Dine spilfremskridt bevares.
+Apply	Anvend
+Applying shader…	Anvender shader…
+Artwork	Omslag
+Artwork & ScreenScraper	Omslag
+Artwork source	Omslagskilde
+Artwork sources	Omslagskilder
+Auto-load state	Indlæs spiltilstand automatisk
+Auto-save on exit	Gem automatisk ved afslutning
+Automatic	Automatisk
+Automatic (free)	Automatisk
+Available networks	Tilgængelige netværk
+B  Cancel	B  Annuller
+B  Close	B  Luk
+BACK HOME	TIL STARTSKÆRMEN
+Back	Tilbage
+Balance battery life and speed	Balancer batteritid og hastighed
+Balanced	Balanceret
+Battery	Batteri
+Battery percentage	Batteriprocent
+Battery saver	Batterisparer
+Before	Før
+Before you play	Før du spiller
+Binding unchanged.	Knaptildelingen er uændret.
+Boot	Opstart
+Boot into	Start med
+Both screens	Begge skærme
+Bottom display	Nederste skærm
+Box art, titles and game details	Omslag, titler og spiloplysninger
+Brightness	Lysstyrke
+Browser layout	Bibliotekslayout
+Build, storage and device address	Version, lager og enhedsadresse
+Button	Knap
+Button layout	Knaplayout
+Button {0}	Knap {0}
+Buttons and the game menu shortcut	Knapper og genvej til spilmenuen
+COLOUR MODE	FARVETILSTAND
+Cancel	Annuller
+Cartridges	Spilkassetter
+Changes immediately. Map a button in Controls for quick access.	Ændres straks. Tildel en knap under Styring for hurtig adgang.
+Changing 3D threading…	Ændrer 3D-tråde…
+Changing speed…	Ændrer hastighed…
+Check the current connection	Kontroller den aktuelle forbindelse
+Checkpoint loaded	Kontrolpunkt indlæst
+Checkpoint loaded (preview)	Kontrolpunkt indlæst (forhåndsvisning)
+Checkpoint loaded.	Kontrolpunkt indlæst.
+Checkpoint saved	Kontrolpunkt gemt
+Checkpoint saved (preview)	Kontrolpunkt gemt (forhåndsvisning)
+Checkpoint saved.	Kontrolpunkt gemt.
+Choose Anbernic or RG DS startup.	Vælg at starte med Anbernic eller RG DS.
+Choose an option	Vælg en mulighed
+Choose native or a sharper 3D image	Vælg original opløsning eller et skarpere 3D-billede
+Choose the core for this cartridge	Vælg kerne til denne spilkassette
+Choose the display backend for the next DraStic launch. DSperate stays your default.	Vælg visningsmotor til næste DraStic-start. DSperate forbliver standard.
+Choose what opens when you power on	Vælg, hvad der åbnes ved opstart
+Clear	Ryd
+Clear temporary cache	Ryd midlertidig cache
+Clear temporary game files?	Ryd midlertidige spilfiler?
+Close	Luk
+Close the handheld to sleep	Luk låget for dvale
+Colour treatment inspired by the original DS display.	Farvebehandling inspireret af den originale DS-skærm.
+Compare	Sammenlign
+Confirm	Bekræft
+Connect	Forbind
+Connected	Forbundet
+Connected.	Forbundet.
+Connecting…	Opretter forbindelse…
+Connectivity	Forbindelser
+Continue	Fortsæt
+Continue where you left off	Fortsæt, hvor du slap
+Control unavailable on this device	Styringen er ikke tilgængelig på denne enhed
+Controls	Styring
+Controls saved for this game.	Styring gemt for dette spil.
+Cool crisp	Køligt og klart
+Cool whites with a small contrast boost.	Kølige hvide toner med lidt højere kontrast.
+Could not apply brightness	Kunne ikke ændre lysstyrken
+Could not apply saved brightness	Kunne ikke anvende den gemte lysstyrke
+Could not apply saved power mode	Kunne ikke anvende den gemte strømtilstand
+Could not apply setting - see log	Kunne ikke anvende indstillingen - se loggen
+Could not apply this shader.	Kunne ikke anvende denne shader.
+Could not apply volume	Kunne ikke ændre lydstyrken
+Could not bring the Wi-Fi adapter up. Try again.	Kunne ikke starte Wi-Fi-adapteren. Prøv igen.
+Could not change 3D threading. Your game is unchanged.	Kunne ikke ændre 3D-tråde. Dit spil er uændret.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	Kunne ikke bekræfte den valgte Wi-Fi-forbindelse. Søg, og prøv igen.
+Could not enable lid wake	Kunne ikke aktivere vækning med låget
+Could not load. Resume, retry, or return without saving.	Kunne ikke indlæse. Fortsæt, prøv igen, eller vend tilbage uden at gemme.
+Could not read this collection. Try again.	Kunne ikke læse samlingen. Prøv igen.
+Could not restore previous hardware setting	Kunne ikke gendanne den tidligere hardwareindstilling
+Could not save all settings. Check storage.	Kunne ikke gemme alle indstillinger. Kontroller lageret.
+Could not save brightness	Kunne ikke gemme lysstyrken
+Could not save controls. Check writable storage.	Kunne ikke gemme styring. Kontroller, at lageret er skrivbart.
+Could not save game settings. Previous values kept.	Kunne ikke gemme spilindstillinger. Tidligere værdier bevares.
+Could not save matching title.	Kunne ikke gemme den matchende titel.
+Could not save settings	Kunne ikke gemme indstillinger
+Could not save timezone	Kunne ikke gemme tidszone
+Could not save volume	Kunne ikke gemme lydstyrken
+Could not save. Resume, retry, or return without saving.	Kunne ikke gemme. Fortsæt, prøv igen, eller vend tilbage uden at gemme.
+Could not send game action	Kunne ikke sende spilhandlingen
+Could not set volume - see log	Kunne ikke indstille lydstyrken - se loggen
+Could not sleep - see log	Kunne ikke gå i dvale - se loggen
+Could not sleep. Reopen the lid and try again.	Kunne ikke gå i dvale. Åbn låget, og prøv igen.
+Could not start artwork service	Kunne ikke starte omslagstjenesten
+Could not start library scan	Kunne ikke starte bibliotekssøgningen
+Could not write controls	Kunne ikke skrive styreindstillinger
+Counts display updates, not emulation speed. Changes immediately.	Tæller skærmopdateringer, ikke emuleringshastighed. Ændres straks.
+Counts emulated game frames. Changes immediately.	Tæller emulerede spilbilleder. Ændres straks.
+Covers	Omslag
+Custom	Tilpasset
+DEFAULT THEME - CHECK LOG	STANDARDTEMA - SE LOGGEN
+DS rounded	DS afrundet
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: anbefales til dagligt spil. Original opløsning er standard.
+Dark	Mørk
+Default	Standard
+Default emulator	Standardemulator
+Default shader	Standardshader
+Delete	Slet
+Desktop preview	Forhåndsvisning på computer
+Development build	Udviklingsversion
+Device address	Enhedsadresse
+Device information	Enhedsoplysninger
+Display FPS	Skærmens FPS
+Done	Færdig
+Down	Ned
+DraStic backend	DraStic-motor
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: et alternativ til spil, der har brug for det. Gemte spil holdes adskilt.
+ERROR	FEJL
+ERROR: Could not restore settings	FEJL: Kunne ikke gendanne indstillinger
+ERROR: Could not restore settings - see log	FEJL: Kunne ikke gendanne indstillinger - se loggen
+Emulator	Emulator
+Emulator settings	Emulatorindstillinger
+Engine managed	Styres af motoren
+Enter here	Skriv her
+Enter password	Indtast adgangskode
+Enter your username and password	Indtast dit brugernavn og din adgangskode
+Every game in this collection has artwork.	Alle spil i samlingen har omslag.
+FPS changed for this session. Settings storage is unavailable.	FPS ændret for denne session. Indstillinger kan ikke gemmes.
+FPS counter enabled.	FPS-tæller aktiveret.
+FPS counter hidden.	FPS-tæller skjult.
+Fast	Hurtig
+Fast-forward	Hurtig fremspoling
+Fast-forward button	Fremspolingsknap
+Fast-forward enabled.	Hurtig fremspoling aktiveret.
+Fast-forward is unavailable for this emulator.	Hurtig fremspoling er ikke tilgængelig for denne emulator.
+Fast-forward style	Fremspolingstilstand
+Favourite	Favorit
+Favourites	Favoritter
+Fetch artwork	Hent omslag
+Fetch missing artwork	Hent manglende omslag
+Find and connect to a nearby network	Find og opret forbindelse til et netværk i nærheden
+Finishing the system request	Afslutter systemanmodningen
+Follow your default button layout	Følg dit standardlayout for knapper
+Following your global controls.	Følger din globale styring.
+Follows your Library default. Each emulator keeps its own saves.	Følger bibliotekets standard. Hver emulator har sine egne gemte spil.
+Frameskip	Billedspring
+Free space	Ledig plads
+Free space while keeping your saves	Frigør plads, og behold gemte spil
+Game FPS	Spillets FPS
+Game emulator	Spillets emulator
+Game emulator saved.	Spillets emulator gemt.
+Game menu	Spilmenu
+Game options	Spilmuligheder
+Game options saved	Spilmuligheder gemt
+GameTDB (free)	GameTDB
+Games	Spil
+Give your eyes and hands a break.	Giv dine øjne og hænder en pause.
+Global	Global
+Global controls saved.	Global styring gemt.
+Hold	Hold nede
+Home shortcut	Genvej til startskærmen
+Inherit	Nedarv
+Inherited	Nedarvet
+Jump to letter	Hop til bogstav
+Keep a checkpoint when returning home	Gem et kontrolpunkt ved retur til startskærmen
+Keep playing	Fortsæt med at spille
+Keep this game in Favourites	Behold spillet i Favoritter
+Kernel	Kerne
+Key {0}	Tast {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + begge farveeffekter
+LCD pixels with natural colour and contrast.	LCD-pixels med naturlige farver og kontraster.
+LCD pixels with the DS colour treatment.	LCD-pixels med DS-farvebehandling.
+LCD pixels, DS colour and Natural Vision together.	LCD-pixels, DS-farver og Natural Vision sammen.
+Language	Sprog
+Launch cancelled	Start annulleret
+Left	Venstre
+Left stick	Venstre styrepind
+Left-handed	Venstrehåndet
+Less than a minute	Mindre end et minut
+Library	Bibliotek
+Library scan exceeded its limit	Bibliotekssøgningen overskred sin grænse
+Library scan failed	Bibliotekssøgningen mislykkedes
+Libretro (free)	Libretro
+Light	Lys
+List	Liste
+Live background	Levende baggrund
+Load	Indlæs
+Load requested. Resume to check your game.	Indlæsning anmodet. Fortsæt for at kontrollere spillet.
+Load state	Indlæs spiltilstand
+Loading checkpoint…	Indlæser kontrolpunkt…
+Looking for networks…	Søger efter netværk…
+Magnified detail	Forstørret detalje
+Manage builds and temporary files	Administrer versioner og midlertidige filer
+Matching title	Matchende titel
+Matching title saved. Choose Fetch artwork.	Matchende titel gemt. Vælg Hent omslag.
+Menu idle sleep	Dvale ved inaktiv menu
+Mute	Slå lyd fra
+Muted	Lyd slået fra
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: en kompatibilitetsmulighed. Prøv først DSperate for hastighed.
+Native	Original
+Native is faster; 2x uses more GPU time. Save & restart applies it.	Original er hurtigere; 2x bruger mere GPU-tid. Gem og genstart for at anvende.
+Native output	Original opløsning
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	Netværk er deaktiveret. Slå Wi-Fi til for at aktivere det.
+Never	Aldrig
+Next emulator	Næste emulator
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Ingen Wi-Fi-adapter. Slå Wi-Fi til for at initialisere den.
+No button detected. Try again when you're ready.	Ingen knap registreret. Prøv igen, når du er klar.
+No checkpoint saved for this emulator yet.	Intet kontrolpunkt gemt for denne emulator endnu.
+No cover yet	Intet omslag endnu
+No favourites yet	Ingen favoritter endnu
+No games	Ingen spil
+No games in this collection.	Ingen spil i samlingen.
+No networks found	Ingen netværk fundet
+No previous build available.	Ingen tidligere version tilgængelig.
+No recent games yet	Ingen nylige spil endnu
+Normal	Normal
+Normal speed.	Normal hastighed.
+Not available	Ikke tilgængelig
+Not connected	Ikke forbundet
+Not played yet	Ikke spillet endnu
+OPEN	ÅBN
+Off	Fra
+Off (smooth)	Fra (jævnt)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Fra giver jævn bevægelse. Billedspring kan øge hastigheden. Genstart for at anvende.
+Off keeps the original picture.	Fra bevarer det originale billede.
+On	Til
+Open	Åbn
+Open menu	Åbn menu
+Open the Anbernic menu	Åbn Anbernic-menuen
+Options	Muligheder
+Original pixels	Originale pixels
+Original pixels and colours.	Originale pixels og farver.
+PLAY	SPIL
+Password	Adgangskode
+Pause when you need to.	Hold pause, når du har brug for det.
+Paused	På pause
+Performance	Ydeevne
+Pixel classic	Klassiske pixels
+Play at a comfortable volume.	Spil med en behagelig lydstyrke.
+Please keep your handheld on	Lad enheden være tændt
+Pocket green	Lommegrøn
+Power	Strøm
+Power mode	Strømtilstand
+Power off	Sluk
+Power off your handheld?	Sluk enheden?
+Power profile	Strømprofil
+Powering off…	Slukker…
+Preparing controls…	Forbereder styring…
+Preparing the launcher	Forbereder startmenuen
+Preparing the library…	Forbereder biblioteket…
+Preparing your cartridges…	Forbereder dine spilkassetter…
+Preparing your library…	Forbereder dit bibliotek…
+Press a button for {0}	Tryk på en knap til {0}
+Press a button…	Tryk på en knap…
+Preview	Forhåndsvisning
+Preview Wi-Fi	Forhåndsvis Wi-Fi
+Preview and choose your screen style	Forhåndsvis og vælg din skærmstil
+Preview game	Forhåndsvis spil
+Preview unavailable	Forhåndsvisning ikke tilgængelig
+Previous build selected. Return to stock, then open RGDS again.	Tidligere version valgt. Vend tilbage til originalmenuen, og åbn derefter RGDS igen.
+Profile	Profil
+READY	KLAR
+REVIEW YOUR CHOICE	GENNEMGÅ DIT VALG
+RGDS build	RGDS-version
+ROUNDED FONT UNAVAILABLE	AFRUNDET SKRIFTTYPE MANGLER
+Recents	Seneste
+Reduce rendering work when needed	Reducer gengivelsesarbejdet efter behov
+Refresh	Opdater
+Refresh connection	Opdater forbindelse
+Release for options	Slip for muligheder
+Remap	Tildel igen
+Request cancelled.	Anmodning annulleret.
+Request failed. Check the connection or device log and try again.	Anmodningen mislykkedes. Kontroller forbindelsen eller enhedsloggen, og prøv igen.
+Reset	Nulstil
+Rest after a period of inactivity	Gå i dvale efter inaktivitet
+Restart	Genstart
+Restart menu	Genstart menuen
+Restart the RGDS menu?	Genstart RGDS-menuen?
+Restart the device?	Genstart enheden?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	Genstart bruger {0}. Gemte spil og kontrolpunkter holdes adskilt pr. emulator.
+Restarting…	Genstarter…
+Restore defaults	Gendan standardværdier
+Restore the last installed RGDS build	Gendan den sidst installerede RGDS-version
+Restoring settings	Gendanner indstillinger
+Restoring settings…	Gendanner indstillinger…
+Resume	Fortsæt
+Resume game	Fortsæt spil
+Return	Vend tilbage
+Return home	Til startskærmen
+Return home before changing startup.	Gå til startskærmen, før du ændrer opstart.
+Return home from your game first.	Forlad spillet, og gå til startskærmen først.
+Return to game	Tilbage til spillet
+Return to stock	Til originalmenuen
+Return to the original button layout	Gå tilbage til det originale knaplayout
+Return to the stock menu?	Vend tilbage til originalmenuen?
+Return without saving	Vend tilbage uden at gemme
+Returning home…	Vender tilbage til startskærmen…
+Review unmatched	Gennemgå uden match
+Right	Højre
+Right stick	Højre styrepind
+Rollback simulated.	Tilbagerulning simuleret.
+START	START
+Save	Gem
+Save & restart	Gem og genstart
+Save & restart applies Threaded 3D.	Gem og genstart anvender 3D med tråde.
+Save & restart keeps your checkpoint and applies pending settings.	Gem og genstart bevarer dit kontrolpunkt og anvender ventende indstillinger.
+Save a report for troubleshooting	Gem en rapport til fejlfinding
+Save device report	Gem enhedsrapport
+Save state	Gem spiltilstand
+Save your checkpoint and restart	Gem dit kontrolpunkt, og genstart
+Saved	Gemt
+Saved - desktop simulation	Gemt - computersimulering
+Saved for the next Standard DraStic launch.	Gemt til næste start af Standard DraStic.
+Saved network	Gemt netværk
+Saved · {0}	Gemt · {0}
+Saved. Applies on your next DraStic launch.	Gemt. Gælder ved næste DraStic-start.
+Saved. Save & restart applies screen order.	Gemt. Gem og genstart anvender skærmrækkefølgen.
+Saved. Save & restart applies this change.	Gemt. Gem og genstart anvender ændringen.
+Saved. Save & restart changes the emulator.	Gemt. Gem og genstart skifter emulator.
+Saving before restarting…	Gemmer før genstart…
+Saving before returning home…	Gemmer før retur til startskærmen…
+Saving checkpoint before restarting…	Gemmer kontrolpunkt før genstart…
+Saving checkpoint…	Gemmer kontrolpunkt…
+Saving your progress…	Gemmer dine fremskridt…
+Scan	Søg
+Scene	Scene
+Screen brightness	Skærmens lysstyrke
+Screen order	Skærmrækkefølge
+ScreenScraper needs project credentials and your account	ScreenScraper kræver projektoplysninger og din konto
+Select	Vælg
+Select a network again and enter its password.	Vælg et netværk igen, og indtast adgangskoden.
+Select a network again.	Vælg et netværk igen.
+Selected	Valgt
+Sets Standard DraStic screen order for this game. Save & restart applies it.	Indstiller skærmrækkefølgen i Standard DraStic for spillet. Gem og genstart for at anvende.
+Settings	Indstillinger
+Settings saved	Indstillinger gemt
+Shader	Shader
+Shader applied.	Shader anvendt.
+Shader change requested (preview)	Shaderskift anmodet (forhåndsvisning)
+Shader saved	Shader gemt
+Shader saved for next launch	Shader gemt til næste start
+Shader saved. Restart this game to apply it.	Shader gemt. Genstart spillet for at anvende den.
+Shader studio	Shaderstudie
+Shaders	Shaders
+Sharp + NDS Color	Skarp + NDS Color
+Sharp + Natural Vision	Skarp + Natural Vision
+Sharp + both colours	Skarp + begge farveeffekter
+Sharp bilinear	Skarp bilineær
+Sharp pixel edges with smoother scaling.	Skarpe pixelkanter med jævnere skalering.
+Sharp scaling with natural colour and contrast.	Skarp skalering med naturlige farver og kontraster.
+Sharp scaling with the DS colour treatment.	Skarp skalering med DS-farvebehandling.
+Sharp scaling, DS colour and Natural Vision together.	Skarp skalering, DS-farver og Natural Vision sammen.
+Shift	Skift
+Shortcut action	Genvejshandling
+Show the charge in the status bar	Vis batteriniveau i statuslinjen
+Show the welcome screen at startup	Vis velkomstskærmen ved opstart
+Sign in	Log ind
+Sign out	Log ud
+Signing in…	Logger ind…
+Simulated handheld	Simuleret enhed
+Sleep	Dvale
+Sleep now	Dvale nu
+Sleep on lid close	Dvale, når låget lukkes
+Sleep simulated - press any control	Dvale simuleret - tryk på en vilkårlig knap
+Sleep simulated - settings retained	Dvale simuleret - indstillinger bevaret
+Sleep unavailable on this device	Dvale er ikke tilgængelig på denne enhed
+Sleeping - use Power to wake	I dvale - væk med tændknappen
+Soft LCD grid	Blødt LCD-gitter
+Soft green monochrome with full-resolution detail.	Blød grøn monokrom med detaljer i fuld opløsning.
+Soft scanlines	Bløde scanningslinjer
+Sound	Lyd
+Space	Mellemrum
+Standard	Standard
+Standard DraStic only. Applies on the next launch; game saves are kept.	Kun Standard DraStic. Gælder ved næste start; gemte spil bevares.
+Standard screen order	Standardrækkefølge for skærme
+Start	Start
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	Start RG DS automatisk ved fremtidige opstarter?
+Start with a familiar layout	Start med et velkendt layout
+Start, then Anbernic	Start, derefter Anbernic
+Startup	Opstart
+Startup choice saved.	Opstartsvalg gemt.
+Startup choice simulated.	Opstartsvalg simuleret.
+Startup is managed by RGDS OS.	Opstart styres af RGDS OS.
+Stock	Original
+Stock firmware	Original firmware
+Stop fetching	Stop hentning
+Stop fetching before editing the match.	Stop hentningen, før du ændrer matchet.
+Stop scraping	Stop billedhentning
+Stop scraping before changing source	Stop billedhentningen, før du skifter kilde
+Stopping after this request	Stopper efter denne anmodning
+Stopping after this request.	Stopper efter denne anmodning.
+Storage read-only - use internal RGDS	Lageret er skrivebeskyttet - brug intern RGDS
+SuperDrastic (experimental)	SuperDrastic (eksperimentel)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic bruger i øjeblikket original opløsning. Dit standardvalg af shader bevares.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic har egen pausemenu og visningsmotor. Eksperimentel; test på RG DS afventer.
+Swapped	Ombyttet
+System	System
+THEME ERROR - RETAINED CURRENT	TEMAFEJL - BEHOLDER AKTUELT
+THEME RELOADED	TEMA GENINDLÆST
+TYPEFACE	SKRIFTTYPE
+Temporary game cache cleared. Saves and artwork are kept.	Midlertidig spilcache ryddet. Gemte spil og omslag bevares.
+The checkpoint did not finish saving.	Kontrolpunktet blev ikke gemt færdigt.
+The emulator did not finish. Resume, retry, or return without saving.	Emulatoren blev ikke færdig. Fortsæt, prøv igen, eller vend tilbage uden at gemme.
+The game menu did not respond. Resume or return without saving.	Spilmenuen svarede ikke. Fortsæt, eller vend tilbage uden at gemme.
+The zFast LCD texture with both colour treatments.	LCD-strukturen fra zFast med begge farveeffekter.
+The zFast LCD texture with natural colour and contrast.	LCD-strukturen fra zFast med naturlige farver og kontraster.
+The zFast LCD texture with the DS colour treatment.	LCD-strukturen fra zFast med DS-farvebehandling.
+Theme	Tema
+Theme & display	Tema og skærm
+This emulator does not expose a frameskip setting.	Denne emulator har ingen indstilling for billedspring.
+This emulator uses native resolution. No resolution switch is available.	Denne emulator bruger original opløsning. Opløsningen kan ikke ændres.
+This engine does not expose a threading switch.	Denne motor har ingen indstilling for tråde.
+This engine has no live threading control.	Denne motor kan ikke ændre tråde under spil.
+This game	Dette spil
+This network requires an enterprise profile.	Dette netværk kræver en virksomhedsprofil.
+This request did not finish. Please try again.	Anmodningen blev ikke afsluttet. Prøv igen.
+This shader is unavailable for the current emulator.	Denne shader er ikke tilgængelig for den aktuelle emulator.
+Threaded 3D	3D med tråde
+Time played	Spilletid
+Timezone	Tidszone
+Toggle	Skift
+Top display	Øverste skærm
+Touch	Berøring
+Touch indicator	Berøringsindikator
+Touch to continue	Tryk for at fortsætte
+Touch {0}	Berøring {0}
+Try saving again	Prøv at gemme igen
+Turn Wi-Fi off?	Slå Wi-Fi fra?
+Turn Wi-Fi on first.	Slå Wi-Fi til først.
+Turn Wi-Fi on to find networks.	Slå Wi-Fi til for at finde netværk.
+Turning Wi-Fi off…	Slår Wi-Fi fra…
+Turning Wi-Fi on…	Slår Wi-Fi til…
+Typeface	Skrifttype
+Unassigned	Ikke tildelt
+Unavailable	Ikke tilgængelig
+Unmatched artwork	Omslag uden match
+Unmute	Slå lyd til
+Updates & recovery	Opdatering og gendannelse
+Use ROM identity	Brug ROM-identitet
+Use an additional rendering thread	Brug en ekstra gengivelsestråd
+Use default ({0})	Brug standard ({0})
+Use global controls	Brug global styring
+Use previous build	Brug tidligere version
+Use the previous RGDS build?	Brug den tidligere RGDS-version?
+Used by games without an override	Bruges af spil uden eget valg
+Username	Brugernavn
+View	Visning
+Volume	Lydstyrke
+Volume control unavailable	Lydstyrkestyring ikke tilgængelig
+WAITING FOR INPUT	VENTER PÅ INPUT
+Warm monochrome with preserved highlight detail.	Varm monokrom med bevarede detaljer i lyse områder.
+Warm paper	Varmt papir
+Warm whites and softened contrast for evening play.	Varme hvide toner og blødere kontrast til aftenspil.
+Welcome back	Velkommen tilbage
+What the shortcut opens	Hvad genvejen åbner
+Where this layout applies	Hvor dette layout gælder
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi-adapteren er ikke klar. Kontroller driveren, eller genstart enheden.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi-adapteren er ikke klar. Slå Wi-Fi til for at prøve igen.
+Wi-Fi did not turn on. Try again.	Wi-Fi blev ikke slået til. Prøv igen.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi er blokeret af hardwaren. Genstart enheden, og prøv igen.
+Wi-Fi is still on. Try turning it off again.	Wi-Fi er stadig slået til. Prøv at slå det fra igen.
+Wi-Fi is unavailable.	Wi-Fi er ikke tilgængeligt.
+Wi-Fi off.	Wi-Fi slået fra.
+Wi-Fi on.	Wi-Fi slået til.
+Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi-anmodningen mislykkedes. Kontroller adgangskoden og signalet, og prøv igen.
+Wi-Fi request timed out. Check signal and try again.	Wi-Fi-anmodningen tog for lang tid. Kontroller signalet, og prøv igen.
+Wi-Fi service is unavailable.	Wi-Fi-tjenesten er ikke tilgængelig.
+With shader	Med shader
+Working…	Arbejder…
+X Scene   Y Compare	X Scene   Y Sammenlign
+X Scene / Y Compare	X Scene / Y Sammenlign
+Your cartridges go here	Dine spilkassetter vises her
+Your home screen after powering on	Din startskærm efter opstart
+Your local time and date	Din lokale tid og dato
+Your menu shortcut	Din menugenvej
+Your shader choice is still available.	Dit valg af shader er stadig tilgængeligt.
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + begge farveeffekter
+{0} (experimental)	{0} (eksperimentel)
+{0} (recommended)	{0} (anbefalet)
+{0} frames	{0} billeder
+{0} games	{0} spil
+{0} settings	Indstillinger for {0}
+Up	Op
+Times played	Spilsessioner
+Last played	Sidst spillet
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	Klar til at hente omslag.
+Icon style	Ikonstil
+Simple pixel	Enkle pixels
+Rich	Detaljeret
+Statistics	Statistik
+Games played	Spillede spil
+Most played	Mest spillet
+Preparing your statistics…	Forbereder din statistik…
+Play a game to start your statistics.	Spil et spil for at begynde din statistik.
+Installed version	Installeret version
+Check for updates	Søg efter opdateringer
+Restart & install	Genstart og installer
+Download update	Hent opdatering
+Pause download	Sæt hentning på pause
+Release notes	Versionsnyheder
+Discard update	Kassér opdatering
+No release notes yet.	Ingen versionsnyheder endnu.
+Restart and install the update?	Genstart og installer opdateringen?
+Check for updates when you are ready.	Søg efter opdateringer, når du er klar.
+Updates will be available when the release channel opens.	Opdateringer bliver tilgængelige, når udgivelseskanalen åbner.
+Checking for updates…	Søger efter opdateringer…
+You are up to date.	Du har den nyeste version.
+A new version is ready to download.	En ny version er klar til hentning.
+This version failed to start. Waiting for a newer update.	Denne version kunne ikke starte. Venter på en nyere opdatering.
+Downloading update…	Henter opdatering…
+Verifying update…	Verificerer opdatering…
+Preparing update…	Forbereder opdatering…
+Ready to restart. Your previous version is kept for recovery.	Klar til genstart. Din tidligere version gemmes til gendannelse.
+Restarting into the update…	Starter den opdaterede version…
+Checking the new version…	Kontrollerer den nye version…
+Update installed.	Opdatering installeret.
+The update could not start. Your previous version was restored.	Opdateringen kunne ikke starte. Din tidligere version blev gendannet.
+Download paused. Retry to continue.	Hentning sat på pause. Prøv igen for at fortsætte.
+Update discarded. Your installed version is unchanged.	Opdateringen kasseret. Din installerede version er uændret.
+Connect the charger before installing an update.	Tilslut opladeren, før du installerer en opdatering.
+There is not enough free space for this update.	Der er ikke nok ledig plads til opdateringen.
+Exit your game before installing an update.	Afslut spillet, før du installerer en opdatering.
+Install the latest SD installer before this update.	Installer det nyeste SD-installationsprogram før denne opdatering.
+Restart RG DS Core before installing the update.	Genstart RG DS Core, før du installerer opdateringen.
+Download interrupted. Retry to continue.	Hentning afbrudt. Prøv igen for at fortsætte.
+An update is already prepared. Install it or discard it first.	En opdatering er allerede klar. Installer eller kassér den først.
+Another update is already running.	En anden opdatering kører allerede.
+Update information has expired or the device clock is incorrect.	Opdateringsoplysningerne er udløbet, eller enhedens ur er forkert.
+This stock firmware has not been validated for updates.	Denne originale firmware er ikke valideret til opdateringer.
+Update verification failed. Check for updates again.	Verificeringen mislykkedes. Søg efter opdateringer igen.
+Update failed. Check Wi-Fi and try again.	Opdateringen mislykkedes. Kontroller Wi-Fi, og prøv igen.
+Stable	Stabil
+Testing	Test
+Save to slot	Gem på plads
+Import slot	Importer gemt spil
+Load slot	Indlæs gemt spil
+Export slot	Eksporter gemt spil
+Undo overwrite	Fortryd overskrivning
+Undo load	Fortryd indlæsning
+Import help	Importhjælp
+Save slot	Gemmeplads
+Replace this save?	Erstat dette gemte spil?
+Replace	Erstat
+Load this save?	Indlæs dette gemte spil?
+Blow into microphone	Pust i mikrofonen
+Close and open DS lid	Luk og åbn DS-låget
+DS language	DS-sprog
+Real microphone	Fysisk mikrofon
+Japanese	Japansk
+English	Engelsk
+French	Fransk
+German	Tysk
+Italian	Italiensk
+Spanish	Spansk
+2 seconds	2 sekunder
+In game	I spillet
+Restart the game to apply DS settings.	Genstart spillet for at anvende DS-indstillingerne.
+Could not save DS settings.	Kunne ikke gemme DS-indstillinger.
+Search	Søg
+Save gallery	Galleri med gemte spil
+Search and filters	Søgning og filtre
+Add your games	Tilføj dine spil
+DS controls	DS-styring
+Back up all saves	Sikkerhedskopiér alle gemte spil
+Resume after power off	Fortsæt efter slukning
+Slot	Plads
+Empty slot	Tom plads
+Search games	Søg efter spil
+Filter	Filter
+Clear search and filters	Ryd søgning og filtre
+Missing artwork	Manglende omslag
+Where to put games	Hvor skal spillene placeres?
+Scan for games	Søg efter nye spil
+Automatic updates	Automatiske opdateringer
+Download automatically	Hent automatisk
+Check automatically	Kontroller automatisk
+Update available in Maintenance	Opdatering klar under Vedligeholdelse
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopiér .rgdssave.zip-filer til userdata/imports. Importer skal matche spillet og emulatoren.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopiér .nds-filer eller DS ZIP-arkiver til Roms/NDS på spilkortet. Spil medfølger ikke. Gemte spil forbliver i userdata.
+Save backup created in userdata/exports.	Sikkerhedskopi oprettet i userdata/exports.
+Slot exported to userdata/exports.	Gemmeplads eksporteret til userdata/exports.
+Save library updated.	Bibliotek med gemte spil opdateret.
+Save overwrite undone.	Overskrivning fortrudt.
+Current progress could not be saved. No slot was changed.	Aktuelle fremskridt kunne ikke gemmes. Ingen gemmeplads blev ændret.
+DS controls are unavailable for this engine.	DS-styring er ikke tilgængelig for denne motor.
+Your DS library starts here	Dit DS-bibliotek starter her
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopiér .nds- eller DS ZIP-filer til Roms/NDS på spilkortet, og vælg Søg efter nye spil.
+Use the engine's native controls for microphone and DS settings.	Brug motorens egen styring til mikrofon og DS-indstillinger.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Fysisk mikrofon er slået til som standard. Puste- og låghandlinger vender tilbage til spillet i to sekunder. Sprogændringer gælder efter genstart.
+Save slots	Gemmepladser
+Load slots	Indlæs spil
+Unplayed	Ikke spillet
+Played	Spillet
+Filtered	Filtreret
+No matching games	Ingen matchende spil
+No matches. Use View to change filters.	Ingen resultater. Skift filtre under Visning.
+Reset state	Nulstil spiltilstand
+Restart without loading a state?	Genstart uden at indlæse en spiltilstand?
+Restart from the title screen. In-game saves and save slots are kept.	Genstart fra titelskærmen. Gemte spil og gemmepladser bevares.
+Microphone, simulated blowing, lid and DS language.	Mikrofon, simuleret pust, låg og DS-sprog.
+Test microphone	Test mikrofon
+Test	Test
+Live input	Aktuelt lydniveau
+Quiet	Stille
+Loud	Højt
+Listening…	Lytter…
+Microphone unavailable	Mikrofon ikke tilgængelig
+Audio is not recorded or saved.	Lyd optages eller gemmes ikke.
+Test the microphone on your handheld.	Test mikrofonen på enheden.
+Return home before testing the physical microphone.	Gå til startskærmen, før du tester den fysiske mikrofon.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Pust eller tal i mikrofonen. Se niveauet stige og falde, når du stopper.
+No filter	Intet filter
+Quick search	Hurtigsøgning
+Y  Quick search	Y  Hurtigsøgning
+X  Filters	X  Filtre
+Y Search / X Filters	Y Søg / X Filtre
+A  Search	A  Søg
+A  Jump	A  Hop
+Edit search	Rediger søgning
+Clear filters	Ryd filtre
+Try another title or clear your filters	Prøv en anden titel, eller ryd filtrene
+Type a game title…	Skriv en spiltitel…
+Finding games…	Finder spil…
+Searching…	Søger…
+Search in	Søg i
+Try a shorter title or clear your filter.	Prøv en kortere titel, eller ryd filteret.
+A Key / Start Search / B Cancel	A Tast / Start Søg / B Annuller
+Tap to type, or use the D-pad and A	Tryk for at skrive, eller brug styrekrydset og A
+X Delete / Start Search	X Slet / Start Søg
+X Delete / Start Done	X Slet / Start Færdig
+No letters to jump to. Search for another game.	Ingen bogstaver at hoppe til. Søg efter et andet spil.
+{0} match	{0} resultat
+{0} matches	{0} resultater
+{0} matching game	{0} matchende spil
+{0} matching games	{0} matchende spil
+{0} game	{0} spil
+Interface animations	Grænsefladeanimationer
+View transitions	Visningsovergange
+Small touches, scrolling and startup motion	Små effekter, rulning og opstartsbevægelse
+Springy menu changes with a colourful wobble	Fjedrende menuskift med farverige bevægelser
+Transitions	Overgange
+Subtle	Diskret
+Menu sounds	Menulyde
+Effects volume	Effektlydstyrke
+Preview sound	Prøv en lyd
+A little handheld magic	Lidt håndholdt magi
+Playful sounds for browsing, choosing and starting games.	Legende lyde, når du bladrer, vælger og starter spil.
+Turn on menu sounds to hear the previews.	Slå menulyde til for at prøve lydene.
+Some menu sounds are unavailable.	Nogle menulyde er ikke tilgængelige.
+Menu audio is unavailable on this device.	Menulyde er ikke tilgængelige på denne enhed.
+Menu sounds are unavailable.	Menulyde er ikke tilgængelige.
+Close lid	Luk låget
+Open lid	Åbn låget
+Spring	Fjeder
+Push	Skub
+Transition style	Overgangsstil
+Animate pages with the selected style	Animer sider med den valgte stil
+Slide into pages; slide back to return	Skub ind på sider; skub tilbage for at gå tilbage

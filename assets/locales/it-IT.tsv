@@ -1,0 +1,698 @@
+# Italiano
+3D rendering automatically uses worker threads.	Il rendering 3D usa automaticamente thread di lavoro.
+3D resolution	Risoluzione 3D
+3D threading changed for this session. Settings storage is unavailable.	Thread 3D modificati per questa sessione. Salvataggio impostazioni non disponibile.
+3D threading changed. No restart needed.	Thread 3D modificati. Nessun riavvio necessario.
+A  Apply	A  Applica
+A  Done	A  Fatto
+A  Play	A  Gioca
+A / Start	A / Start
+A gentle scanline pattern with original colours.	Linee di scansione leggere con i colori originali.
+A natural colour and contrast treatment.	Colori e contrasto naturali.
+A screen style for this cartridge	Uno stile video per questa cartuccia
+A stronger LCD texture and scanline look.	Trama LCD e linee di scansione più marcate.
+A subtle handheld LCD pixel pattern.	Una leggera trama LCD da console portatile.
+A subtle pixel grid with a bright, readable image.	Una griglia di pixel leggera con immagine luminosa e leggibile.
+Add your DS games to fetch their artwork.	Aggiungi i tuoi giochi DS per scaricare le copertine.
+After	Dopo
+All games	Tutti i giochi
+Amber	Ambra
+Anbernic / Escape cancels	Anbernic / Esc annulla
+Anbernic startup is unavailable in RGDS OS.	L'avvio Anbernic non è disponibile in RGDS OS.
+Animations	Animazioni
+Applies immediately. Higher clocks use more battery.	Effetto immediato. Frequenze più alte consumano più batteria.
+Applies immediately. Your game keeps its progress.	Effetto immediato. I progressi di gioco sono mantenuti.
+Apply	Applica
+Applying shader…	Applicazione filtro…
+Artwork	Copertine
+Artwork & ScreenScraper	Copertine
+Artwork source	Fonte copertine
+Artwork sources	Fonti copertine
+Auto-load state	Caricamento automatico
+Auto-save on exit	Salva all'uscita
+Automatic	Automatico
+Automatic (free)	Automatico
+Available networks	Reti disponibili
+B  Cancel	B  Annulla
+B  Close	B  Chiudi
+BACK HOME	TORNA ALLA HOME
+Back	Indietro
+Balance battery life and speed	Equilibrio tra autonomia e velocità
+Balanced	Bilanciato
+Battery	Batteria
+Battery percentage	Percentuale batteria
+Battery saver	Risparmio energetico
+Before	Prima
+Before you play	Prima di giocare
+Binding unchanged.	Assegnazione invariata.
+Boot	Avvio
+Boot into	Avvia con
+Both screens	Entrambi gli schermi
+Bottom display	Schermo inferiore
+Box art, titles and game details	Copertine, titoli e dettagli dei giochi
+Brightness	Luminosità
+Browser layout	Vista libreria
+Build, storage and device address	Versione, memoria e indirizzo del dispositivo
+Button	Pulsante
+Button layout	Mappa pulsanti
+Button {0}	Pulsante {0}
+Buttons and the game menu shortcut	Pulsanti e scorciatoia del menu di gioco
+COLOUR MODE	MODALITÀ COLORE
+Cancel	Annulla
+Cartridges	Cartucce
+Changes immediately. Map a button in Controls for quick access.	Effetto immediato. Assegna un pulsante in Comandi per l'accesso rapido.
+Changing 3D threading…	Modifica thread 3D…
+Changing speed…	Modifica velocità…
+Check the current connection	Controlla la connessione attuale
+Checkpoint loaded	Stato caricato
+Checkpoint loaded (preview)	Stato caricato (anteprima)
+Checkpoint loaded.	Stato caricato.
+Checkpoint saved	Stato salvato
+Checkpoint saved (preview)	Stato salvato (anteprima)
+Checkpoint saved.	Stato salvato.
+Choose Anbernic or RG DS startup.	Scegli l'avvio Anbernic o RG DS.
+Choose an option	Scegli un'opzione
+Choose native or a sharper 3D image	Scegli la risoluzione nativa o un 3D più nitido
+Choose the core for this cartridge	Scegli l'emulatore per questa cartuccia
+Choose the display backend for the next DraStic launch. DSperate stays your default.	Scegli il backend video per il prossimo avvio di DraStic. DSperate resta predefinito.
+Choose what opens when you power on	Scegli cosa aprire all'accensione
+Clear	Cancella
+Clear temporary cache	Svuota cache temporanea
+Clear temporary game files?	Eliminare i file temporanei dei giochi?
+Close	Chiudi
+Close the handheld to sleep	Chiudi la console per sospenderla
+Colour treatment inspired by the original DS display.	Colori ispirati allo schermo DS originale.
+Compare	Confronta
+Confirm	Conferma
+Connect	Connetti
+Connected	Connesso
+Connected.	Connesso.
+Connecting…	Connessione…
+Connectivity	Connettività
+Continue	Continua
+Continue where you left off	Riprendi da dove eri rimasto
+Control unavailable on this device	Comando non disponibile su questo dispositivo
+Controls	Comandi
+Controls saved for this game.	Comandi salvati per questo gioco.
+Cool crisp	Freddo nitido
+Cool whites with a small contrast boost.	Bianchi freddi con un leggero aumento del contrasto.
+Could not apply brightness	Impossibile applicare la luminosità
+Could not apply saved brightness	Impossibile applicare la luminosità salvata
+Could not apply saved power mode	Impossibile applicare il profilo energetico salvato
+Could not apply setting - see log	Impossibile applicare l'impostazione: consulta il registro
+Could not apply this shader.	Impossibile applicare questo filtro.
+Could not apply volume	Impossibile applicare il volume
+Could not bring the Wi-Fi adapter up. Try again.	Impossibile attivare l'adattatore Wi-Fi. Riprova.
+Could not change 3D threading. Your game is unchanged.	Impossibile modificare i thread 3D. Il gioco è invariato.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	Impossibile confermare la connessione Wi-Fi scelta. Cerca e riprova.
+Could not enable lid wake	Impossibile attivare il risveglio all'apertura
+Could not load. Resume, retry, or return without saving.	Caricamento non riuscito. Riprendi, riprova o esci senza salvare.
+Could not read this collection. Try again.	Impossibile leggere questa raccolta. Riprova.
+Could not restore previous hardware setting	Impossibile ripristinare l'impostazione hardware precedente
+Could not save all settings. Check storage.	Impossibile salvare tutte le impostazioni. Controlla la memoria.
+Could not save brightness	Impossibile salvare la luminosità
+Could not save controls. Check writable storage.	Impossibile salvare i comandi. Controlla che la memoria sia scrivibile.
+Could not save game settings. Previous values kept.	Impossibile salvare le impostazioni del gioco. Valori precedenti mantenuti.
+Could not save matching title.	Impossibile salvare il titolo di ricerca.
+Could not save settings	Impossibile salvare le impostazioni
+Could not save timezone	Impossibile salvare il fuso orario
+Could not save volume	Impossibile salvare il volume
+Could not save. Resume, retry, or return without saving.	Salvataggio non riuscito. Riprendi, riprova o esci senza salvare.
+Could not send game action	Impossibile inviare il comando al gioco
+Could not set volume - see log	Impossibile impostare il volume: consulta il registro
+Could not sleep - see log	Impossibile sospendere: consulta il registro
+Could not sleep. Reopen the lid and try again.	Impossibile sospendere. Riapri la console e riprova.
+Could not start artwork service	Impossibile avviare il servizio copertine
+Could not start library scan	Impossibile avviare la scansione della libreria
+Could not write controls	Impossibile scrivere i comandi
+Counts display updates, not emulation speed. Changes immediately.	Conta gli aggiornamenti dello schermo, non la velocità di emulazione. Effetto immediato.
+Counts emulated game frames. Changes immediately.	Conta i fotogrammi emulati del gioco. Effetto immediato.
+Covers	Copertine
+Custom	Personalizzato
+DEFAULT THEME - CHECK LOG	TEMA PREDEFINITO: CONSULTA IL REGISTRO
+DS rounded	DS arrotondato
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: consigliato per l'uso quotidiano. Risoluzione nativa predefinita.
+Dark	Scuro
+Default	Predefinito
+Default emulator	Emulatore predefinito
+Default shader	Filtro predefinito
+Delete	Elimina
+Desktop preview	Anteprima desktop
+Development build	Versione di sviluppo
+Device address	Indirizzo dispositivo
+Device information	Informazioni dispositivo
+Display FPS	FPS schermo
+Done	Fatto
+Down	Giù
+DraStic backend	Backend DraStic
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: un'alternativa per i giochi che ne hanno bisogno. Salvataggi separati.
+ERROR	ERRORE
+ERROR: Could not restore settings	ERRORE: ripristino impostazioni non riuscito
+ERROR: Could not restore settings - see log	ERRORE: ripristino non riuscito, consulta il registro
+Emulator	Emulatore
+Emulator settings	Impostazioni emulatore
+Engine managed	Gestito dall'emulatore
+Enter here	Scrivi qui
+Enter password	Inserisci password
+Enter your username and password	Inserisci nome utente e password
+Every game in this collection has artwork.	Ogni gioco in questa raccolta ha una copertina.
+FPS changed for this session. Settings storage is unavailable.	FPS modificati per questa sessione. Salvataggio impostazioni non disponibile.
+FPS counter enabled.	Contatore FPS attivato.
+FPS counter hidden.	Contatore FPS nascosto.
+Fast	Veloce
+Fast-forward	Avanzamento rapido
+Fast-forward button	Pulsante avanzamento rapido
+Fast-forward enabled.	Avanzamento rapido attivato.
+Fast-forward is unavailable for this emulator.	Avanzamento rapido non disponibile per questo emulatore.
+Fast-forward style	Tipo avanzamento rapido
+Favourite	Preferito
+Favourites	Preferiti
+Fetch artwork	Scarica copertina
+Fetch missing artwork	Scarica copertine mancanti
+Find and connect to a nearby network	Trova una rete vicina e connettiti
+Finishing the system request	Completamento richiesta di sistema
+Follow your default button layout	Usa la mappa pulsanti predefinita
+Following your global controls.	Uso dei comandi globali.
+Follows your Library default. Each emulator keeps its own saves.	Segue il valore predefinito della libreria. Ogni emulatore ha i propri salvataggi.
+Frameskip	Salto fotogrammi
+Free space	Spazio libero
+Free space while keeping your saves	Libera spazio mantenendo i salvataggi
+Game FPS	FPS gioco
+Game emulator	Emulatore gioco
+Game emulator saved.	Emulatore del gioco salvato.
+Game menu	Menu di gioco
+Game options	Opzioni gioco
+Game options saved	Opzioni di gioco salvate
+GameTDB (free)	GameTDB
+Games	Giochi
+Give your eyes and hands a break.	Fai riposare gli occhi e le mani.
+Global	Globale
+Global controls saved.	Comandi globali salvati.
+Hold	Tieni premuto
+Home shortcut	Scorciatoia Home
+Inherit	Eredita
+Inherited	Ereditato
+Jump to letter	Vai alla lettera
+Keep a checkpoint when returning home	Salva uno stato quando torni alla Home
+Keep playing	Continua a giocare
+Keep this game in Favourites	Mantieni questo gioco nei Preferiti
+Kernel	Kernel
+Key {0}	Tasto {0}
+LCD + NDS Color	LCD + Colore NDS
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + entrambi i colori
+LCD pixels with natural colour and contrast.	Pixel LCD con colori e contrasto naturali.
+LCD pixels with the DS colour treatment.	Pixel LCD con i colori del DS.
+LCD pixels, DS colour and Natural Vision together.	Pixel LCD, colori DS e Natural Vision insieme.
+Language	Lingua
+Launch cancelled	Avvio annullato
+Left	Sinistra
+Left stick	Stick sinistro
+Left-handed	Mancino
+Less than a minute	Meno di un minuto
+Library	Libreria
+Library scan exceeded its limit	La scansione della libreria ha superato il limite
+Library scan failed	Scansione della libreria non riuscita
+Libretro (free)	Libretro
+Light	Chiaro
+List	Elenco
+Live background	Sfondo dal vivo
+Load	Carica
+Load requested. Resume to check your game.	Caricamento richiesto. Riprendi per controllare il gioco.
+Load state	Carica stato
+Loading checkpoint…	Caricamento stato…
+Looking for networks…	Ricerca reti…
+Magnified detail	Dettaglio ingrandito
+Manage builds and temporary files	Gestisci versioni e file temporanei
+Matching title	Titolo di ricerca
+Matching title saved. Choose Fetch artwork.	Titolo di ricerca salvato. Scegli Scarica copertina.
+Menu idle sleep	Sospensione menu inattivo
+Mute	Silenzia
+Muted	Audio disattivato
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: opzione di compatibilità. Prova prima DSperate per la velocità.
+Native	Nativa
+Native is faster; 2x uses more GPU time. Save & restart applies it.	Nativa è più veloce; 2x usa più GPU. Salva e riavvia per applicare.
+Native output	Uscita nativa
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	Rete disattivata. Attiva il Wi-Fi per abilitarla.
+Never	Mai
+Next emulator	Prossimo emulatore
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Adattatore Wi-Fi assente. Attiva il Wi-Fi per inizializzarlo.
+No button detected. Try again when you're ready.	Nessun pulsante rilevato. Riprova quando sei pronto.
+No checkpoint saved for this emulator yet.	Nessuno stato salvato per questo emulatore.
+No cover yet	Nessuna copertina
+No favourites yet	Nessun preferito
+No games	Nessun gioco
+No games in this collection.	Nessun gioco in questa raccolta.
+No networks found	Nessuna rete trovata
+No previous build available.	Nessuna versione precedente disponibile.
+No recent games yet	Nessun gioco recente
+Normal	Normale
+Normal speed.	Velocità normale.
+Not available	Non disponibile
+Not connected	Non connesso
+Not played yet	Mai giocato
+OPEN	APRI
+Off	No
+Off (smooth)	No (fluido)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	No offre movimenti fluidi. Saltare fotogrammi può velocizzare. Riavvia per applicare.
+Off keeps the original picture.	No mantiene l'immagine originale.
+On	Sì
+Open	Apri
+Open menu	Apri menu
+Open the Anbernic menu	Apri il menu Anbernic
+Options	Opzioni
+Original pixels	Pixel originali
+Original pixels and colours.	Pixel e colori originali.
+PLAY	GIOCA
+Password	Password
+Pause when you need to.	Fai una pausa quando ne hai bisogno.
+Paused	In pausa
+Performance	Prestazioni
+Pixel classic	Pixel classico
+Play at a comfortable volume.	Gioca a un volume confortevole.
+Please keep your handheld on	Lascia accesa la console
+Pocket green	Verde tascabile
+Power	Alimentazione
+Power mode	Modalità energetica
+Power off	Spegni
+Power off your handheld?	Spegnere la console?
+Power profile	Profilo energetico
+Powering off…	Spegnimento…
+Preparing controls…	Preparazione comandi…
+Preparing the launcher	Preparazione menu
+Preparing the library…	Preparazione libreria…
+Preparing your cartridges…	Preparazione cartucce…
+Preparing your library…	Preparazione della tua libreria…
+Press a button for {0}	Premi un pulsante per {0}
+Press a button…	Premi un pulsante…
+Preview	Anteprima
+Preview Wi-Fi	Anteprima Wi-Fi
+Preview and choose your screen style	Prova e scegli lo stile dello schermo
+Preview game	Gioco di anteprima
+Preview unavailable	Anteprima non disponibile
+Previous build selected. Return to stock, then open RGDS again.	Versione precedente selezionata. Torna al menu originale, poi riapri RGDS.
+Profile	Profilo
+READY	PRONTO
+REVIEW YOUR CHOICE	CONTROLLA LA SCELTA
+RGDS build	Versione RGDS
+ROUNDED FONT UNAVAILABLE	CARATTERE ARROTONDATO NON DISPONIBILE
+Recents	Giocati di recente
+Reduce rendering work when needed	Riduci il carico grafico quando serve
+Refresh	Aggiorna
+Refresh connection	Aggiorna connessione
+Release for options	Rilascia per le opzioni
+Remap	Riassegna
+Request cancelled.	Richiesta annullata.
+Request failed. Check the connection or device log and try again.	Richiesta non riuscita. Controlla la connessione o il registro del dispositivo e riprova.
+Reset	Ripristina
+Rest after a period of inactivity	Sospendi dopo un periodo di inattività
+Restart	Riavvia
+Restart menu	Riavvia menu
+Restart the RGDS menu?	Riavviare il menu RGDS?
+Restart the device?	Riavviare il dispositivo?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	Il riavvio usa {0}. I salvataggi restano separati per emulatore.
+Restarting…	Riavvio…
+Restore defaults	Ripristina predefiniti
+Restore the last installed RGDS build	Ripristina l'ultima versione RGDS installata
+Restoring settings	Ripristino impostazioni
+Restoring settings…	Ripristino impostazioni…
+Resume	Riprendi
+Resume game	Riprendi gioco
+Return	Torna
+Return home	Torna alla Home
+Return home before changing startup.	Torna alla Home prima di cambiare l'avvio.
+Return home from your game first.	Prima torna alla Home dal gioco.
+Return to game	Torna al gioco
+Return to stock	Menu originale
+Return to the original button layout	Ripristina la mappa pulsanti originale
+Return to the stock menu?	Tornare al menu originale?
+Return without saving	Esci senza salvare
+Returning home…	Ritorno alla Home…
+Review unmatched	Rivedi senza copertina
+Right	Destra
+Right stick	Stick destro
+Rollback simulated.	Ripristino simulato.
+START	AVVIA
+Save	Salva
+Save & restart	Salva e riavvia
+Save & restart applies Threaded 3D.	Salva e riavvia applica i thread 3D.
+Save & restart keeps your checkpoint and applies pending settings.	Salva e riavvia mantiene lo stato e applica le modifiche in sospeso.
+Save a report for troubleshooting	Salva un rapporto per diagnosticare i problemi
+Save device report	Salva rapporto dispositivo
+Save state	Salva stato
+Save your checkpoint and restart	Salva lo stato e riavvia
+Saved	Salvato
+Saved - desktop simulation	Salvato: simulazione desktop
+Saved for the next Standard DraStic launch.	Salvato per il prossimo avvio di DraStic standard.
+Saved network	Rete salvata
+Saved · {0}	Salvata · {0}
+Saved. Applies on your next DraStic launch.	Salvato. Si applica al prossimo avvio di DraStic.
+Saved. Save & restart applies screen order.	Salvato. Salva e riavvia applica l'ordine degli schermi.
+Saved. Save & restart applies this change.	Salvato. Salva e riavvia applica la modifica.
+Saved. Save & restart changes the emulator.	Salvato. Salva e riavvia cambia l'emulatore.
+Saving before restarting…	Salvataggio prima del riavvio…
+Saving before returning home…	Salvataggio prima di tornare alla Home…
+Saving checkpoint before restarting…	Salvataggio stato prima del riavvio…
+Saving checkpoint…	Salvataggio stato…
+Saving your progress…	Salvataggio progressi…
+Scan	Cerca
+Scene	Scena
+Screen brightness	Luminosità schermi
+Screen order	Ordine schermi
+ScreenScraper needs project credentials and your account	ScreenScraper richiede le credenziali del progetto e il tuo account
+Select	Scegli
+Select a network again and enter its password.	Seleziona di nuovo una rete e inserisci la password.
+Select a network again.	Seleziona di nuovo una rete.
+Selected	Selezionato
+Sets Standard DraStic screen order for this game. Save & restart applies it.	Imposta l'ordine degli schermi di DraStic standard per questo gioco. Salva e riavvia per applicare.
+Settings	Impostazioni
+Settings saved	Impostazioni salvate
+Shader	Filtro
+Shader applied.	Filtro applicato.
+Shader change requested (preview)	Cambio filtro richiesto (anteprima)
+Shader saved	Filtro salvato
+Shader saved for next launch	Filtro salvato per il prossimo avvio
+Shader saved. Restart this game to apply it.	Filtro salvato. Riavvia il gioco per applicarlo.
+Shader studio	Studio filtri
+Shaders	Filtri
+Sharp + NDS Color	Nitido + Colore NDS
+Sharp + Natural Vision	Nitido + Natural Vision
+Sharp + both colours	Nitido + entrambi i colori
+Sharp bilinear	Bilineare nitido
+Sharp pixel edges with smoother scaling.	Bordi dei pixel nitidi con ridimensionamento più fluido.
+Sharp scaling with natural colour and contrast.	Ridimensionamento nitido con colori e contrasto naturali.
+Sharp scaling with the DS colour treatment.	Ridimensionamento nitido con i colori del DS.
+Sharp scaling, DS colour and Natural Vision together.	Ridimensionamento nitido, colori DS e Natural Vision insieme.
+Shift	Maiusc
+Shortcut action	Azione scorciatoia
+Show the charge in the status bar	Mostra la carica nella barra di stato
+Show the welcome screen at startup	Mostra la schermata di benvenuto all'avvio
+Sign in	Accedi
+Sign out	Esci
+Signing in…	Accesso…
+Simulated handheld	Console simulata
+Sleep	Sospendi
+Sleep now	Sospendi ora
+Sleep on lid close	Sospendi alla chiusura
+Sleep simulated - press any control	Sospensione simulata: premi un comando
+Sleep simulated - settings retained	Sospensione simulata: impostazioni mantenute
+Sleep unavailable on this device	Sospensione non disponibile su questo dispositivo
+Sleeping - use Power to wake	Sospeso: premi Power per riattivare
+Soft LCD grid	Griglia LCD leggera
+Soft green monochrome with full-resolution detail.	Monocromatico verde tenue con dettagli a piena risoluzione.
+Soft scanlines	Linee di scansione leggere
+Sound	Audio
+Space	Spazio
+Standard	Standard
+Standard DraStic only. Applies on the next launch; game saves are kept.	Solo DraStic standard. Si applica al prossimo avvio; i salvataggi sono mantenuti.
+Standard screen order	Ordine schermi standard
+Start	Start
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	Avviare RG DS automaticamente alle prossime accensioni?
+Start with a familiar layout	Parti da una mappa familiare
+Start, then Anbernic	Start, poi Anbernic
+Startup	Avvio
+Startup choice saved.	Scelta di avvio salvata.
+Startup choice simulated.	Scelta di avvio simulata.
+Startup is managed by RGDS OS.	L'avvio è gestito da RGDS OS.
+Stock	Originale
+Stock firmware	Firmware originale
+Stop fetching	Ferma download
+Stop fetching before editing the match.	Ferma il download prima di modificare la ricerca.
+Stop scraping	Ferma ricerca
+Stop scraping before changing source	Ferma la ricerca prima di cambiare fonte
+Stopping after this request	Arresto dopo questa richiesta
+Stopping after this request.	Arresto dopo questa richiesta.
+Storage read-only - use internal RGDS	Memoria in sola lettura: usa RGDS interno
+SuperDrastic (experimental)	SuperDrastic (sperimentale)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic usa l'uscita nativa. La scelta del filtro standard è mantenuta.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic usa il proprio menu di pausa e sistema video. Sperimentale; test RG DS in attesa.
+Swapped	Invertito
+System	Sistema
+THEME ERROR - RETAINED CURRENT	ERRORE TEMA: MANTENUTO QUELLO ATTUALE
+THEME RELOADED	TEMA RICARICATO
+TYPEFACE	CARATTERE
+Temporary game cache cleared. Saves and artwork are kept.	Cache temporanea dei giochi svuotata. Salvataggi e copertine mantenuti.
+The checkpoint did not finish saving.	Il salvataggio dello stato non è stato completato.
+The emulator did not finish. Resume, retry, or return without saving.	L'emulatore non ha terminato. Riprendi, riprova o esci senza salvare.
+The game menu did not respond. Resume or return without saving.	Il menu di gioco non ha risposto. Riprendi o esci senza salvare.
+The zFast LCD texture with both colour treatments.	La trama LCD zFast con entrambi i trattamenti colore.
+The zFast LCD texture with natural colour and contrast.	La trama LCD zFast con colori e contrasto naturali.
+The zFast LCD texture with the DS colour treatment.	La trama LCD zFast con i colori del DS.
+Theme	Tema
+Theme & display	Tema e schermo
+This emulator does not expose a frameskip setting.	Questo emulatore non offre il salto dei fotogrammi.
+This emulator uses native resolution. No resolution switch is available.	Questo emulatore usa la risoluzione nativa. Non è possibile cambiarla.
+This engine does not expose a threading switch.	Questo emulatore non offre un'opzione per i thread.
+This engine has no live threading control.	Questo emulatore non permette di cambiare i thread durante il gioco.
+This game	Questo gioco
+This network requires an enterprise profile.	Questa rete richiede un profilo aziendale.
+This request did not finish. Please try again.	La richiesta non è stata completata. Riprova.
+This shader is unavailable for the current emulator.	Questo filtro non è disponibile per l'emulatore attuale.
+Threaded 3D	Thread 3D
+Time played	Tempo di gioco
+Timezone	Fuso orario
+Toggle	Alterna
+Top display	Schermo superiore
+Touch	Tocco
+Touch indicator	Indicatore tocco
+Touch to continue	Tocca per continuare
+Touch {0}	Tocco {0}
+Try saving again	Riprova a salvare
+Turn Wi-Fi off?	Disattivare il Wi-Fi?
+Turn Wi-Fi on first.	Prima attiva il Wi-Fi.
+Turn Wi-Fi on to find networks.	Attiva il Wi-Fi per cercare le reti.
+Turning Wi-Fi off…	Disattivazione Wi-Fi…
+Turning Wi-Fi on…	Attivazione Wi-Fi…
+Typeface	Carattere
+Unassigned	Non assegnato
+Unavailable	Non disponibile
+Unmatched artwork	Copertine mancanti
+Unmute	Riattiva audio
+Updates & recovery	Aggiornamenti e ripristino
+Use ROM identity	Usa identità ROM
+Use an additional rendering thread	Usa un thread di rendering aggiuntivo
+Use default ({0})	Usa predefinito ({0})
+Use global controls	Usa comandi globali
+Use previous build	Usa versione precedente
+Use the previous RGDS build?	Usare la versione RGDS precedente?
+Used by games without an override	Usato dai giochi senza impostazioni specifiche
+Username	Nome utente
+View	Visualizza
+Volume	Volume
+Volume control unavailable	Controllo volume non disponibile
+WAITING FOR INPUT	IN ATTESA DI UN COMANDO
+Warm monochrome with preserved highlight detail.	Monocromatico caldo con dettagli nelle zone luminose.
+Warm paper	Carta calda
+Warm whites and softened contrast for evening play.	Bianchi caldi e contrasto attenuato per giocare la sera.
+Welcome back	Bentornato
+What the shortcut opens	Cosa apre la scorciatoia
+Where this layout applies	Dove si applica questa mappa
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Adattatore Wi-Fi non pronto. Controlla il driver del sistema o riavvia la console.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Adattatore Wi-Fi non pronto. Attiva il Wi-Fi per riprovare.
+Wi-Fi did not turn on. Try again.	Il Wi-Fi non si è attivato. Riprova.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Il Wi-Fi è bloccato dall'hardware. Riavvia la console e riprova.
+Wi-Fi is still on. Try turning it off again.	Il Wi-Fi è ancora attivo. Prova a disattivarlo di nuovo.
+Wi-Fi is unavailable.	Wi-Fi non disponibile.
+Wi-Fi off.	Wi-Fi disattivato.
+Wi-Fi on.	Wi-Fi attivato.
+Wi-Fi request failed. Check the password and signal, then try again.	Richiesta Wi-Fi non riuscita. Controlla password e segnale, poi riprova.
+Wi-Fi request timed out. Check signal and try again.	Richiesta Wi-Fi scaduta. Controlla il segnale e riprova.
+Wi-Fi service is unavailable.	Servizio Wi-Fi non disponibile.
+With shader	Con filtro
+Working…	Operazione in corso…
+X Scene   Y Compare	X Scena   Y Confronta
+X Scene / Y Compare	X Scena / Y Confronta
+Your cartridges go here	Le tue cartucce vanno qui
+Your home screen after powering on	La Home dopo l'accensione
+Your local time and date	Ora e data locali
+Your menu shortcut	Scorciatoia del menu
+Your shader choice is still available.	La tua scelta del filtro è ancora disponibile.
+zFast + NDS Color	zFast + Colore NDS
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + entrambi i colori
+{0} (experimental)	{0} (sperimentale)
+{0} (recommended)	{0} (consigliato)
+{0} frames	{0} fotogrammi
+{0} games	{0} giochi
+{0} settings	Impostazioni {0}
+Up	Su
+Times played	Sessioni
+Last played	Ultimo giocato
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	Pronto per scaricare le copertine.
+Icon style	Stile icone
+Simple pixel	Pixel semplici
+Rich	Dettagliate
+Statistics	Statistiche
+Games played	Giochi giocati
+Most played	Più giocati
+Preparing your statistics…	Preparazione statistiche…
+Play a game to start your statistics.	Gioca per iniziare le statistiche.
+Installed version	Versione installata
+Check for updates	Cerca aggiornamenti
+Restart & install	Riavvia e installa
+Download update	Scarica aggiornamento
+Pause download	Pausa download
+Release notes	Note di versione
+Discard update	Scarta aggiornamento
+No release notes yet.	Nessuna nota di versione.
+Restart and install the update?	Riavviare e installare l'aggiornamento?
+Check for updates when you are ready.	Cerca aggiornamenti quando vuoi.
+Updates will be available when the release channel opens.	Gli aggiornamenti saranno disponibili all'apertura del canale.
+Checking for updates…	Ricerca aggiornamenti…
+You are up to date.	Hai la versione più recente.
+A new version is ready to download.	Una nuova versione è pronta da scaricare.
+This version failed to start. Waiting for a newer update.	Questa versione non si è avviata. In attesa di un nuovo aggiornamento.
+Downloading update…	Download aggiornamento…
+Verifying update…	Verifica aggiornamento…
+Preparing update…	Preparazione aggiornamento…
+Ready to restart. Your previous version is kept for recovery.	Pronto al riavvio. La versione precedente resta disponibile per il ripristino.
+Restarting into the update…	Riavvio con l'aggiornamento…
+Checking the new version…	Verifica della nuova versione…
+Update installed.	Aggiornamento installato.
+The update could not start. Your previous version was restored.	L'aggiornamento non si è avviato. La versione precedente è stata ripristinata.
+Download paused. Retry to continue.	Download in pausa. Riprova per continuare.
+Update discarded. Your installed version is unchanged.	Aggiornamento scartato. La versione installata non cambia.
+Connect the charger before installing an update.	Collega il caricatore prima di installare un aggiornamento.
+There is not enough free space for this update.	Spazio libero insufficiente per questo aggiornamento.
+Exit your game before installing an update.	Esci dal gioco prima di installare un aggiornamento.
+Install the latest SD installer before this update.	Usa l'ultimo programma di installazione SD prima di questo aggiornamento.
+Restart RG DS Core before installing the update.	Riavvia RG DS Core prima di installare l'aggiornamento.
+Download interrupted. Retry to continue.	Download interrotto. Riprova per continuare.
+An update is already prepared. Install it or discard it first.	Un aggiornamento è già pronto. Installalo o scartalo prima.
+Another update is already running.	Un altro aggiornamento è già in corso.
+Update information has expired or the device clock is incorrect.	Le informazioni sono scadute o l'orologio del dispositivo è errato.
+This stock firmware has not been validated for updates.	Questo firmware originale non è stato verificato per gli aggiornamenti.
+Update verification failed. Check for updates again.	Verifica non riuscita. Cerca di nuovo gli aggiornamenti.
+Update failed. Check Wi-Fi and try again.	Aggiornamento non riuscito. Controlla il Wi-Fi e riprova.
+Stable	Stabile
+Testing	Test
+Save to slot	Salva nello slot
+Import slot	Importa salvataggio
+Load slot	Carica salvataggio
+Export slot	Esporta salvataggio
+Undo overwrite	Annulla sovrascrittura
+Undo load	Annulla caricamento
+Import help	Guida all'importazione
+Save slot	Slot di salvataggio
+Replace this save?	Sostituire il salvataggio?
+Replace	Sostituisci
+Load this save?	Caricare il salvataggio?
+Blow into microphone	Soffia nel microfono
+Close and open DS lid	Chiudi e apri il DS
+DS language	Lingua del DS
+Real microphone	Microfono reale
+Japanese	Giapponese
+English	Inglese
+French	Francese
+German	Tedesco
+Italian	Italiano
+Spanish	Spagnolo
+2 seconds	2 secondi
+In game	Nel gioco
+Restart the game to apply DS settings.	Riavvia il gioco per applicare le impostazioni DS.
+Could not save DS settings.	Impossibile salvare le impostazioni DS.
+Search	Cerca
+Save gallery	Galleria salvataggi
+Search and filters	Ricerca e filtri
+Add your games	Aggiungi i tuoi giochi
+DS controls	Funzioni DS
+Back up all saves	Copia di tutti i salvataggi
+Resume after power off	Riprendi dopo lo spegnimento
+Slot	Slot
+Empty slot	Slot vuoto
+Search games	Cerca giochi
+Filter	Filtro
+Clear search and filters	Cancella ricerca e filtri
+Missing artwork	Copertina mancante
+Where to put games	Dove mettere i giochi
+Scan for games	Scansiona giochi
+Automatic updates	Aggiornamenti automatici
+Download automatically	Scarica automaticamente
+Check automatically	Verifica automaticamente
+Update available in Maintenance	Aggiornamento in Manutenzione
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Copia i file .rgdssave.zip in userdata/imports. Gioco ed emulatore devono corrispondere.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Copia i file .nds o gli archivi ZIP DS in Roms/NDS sulla scheda. Giochi non inclusi. I salvataggi restano in userdata.
+Save backup created in userdata/exports.	Copia creata in userdata/exports.
+Slot exported to userdata/exports.	Salvataggio esportato in userdata/exports.
+Save library updated.	Salvataggi aggiornati.
+Save overwrite undone.	Sovrascrittura annullata.
+Current progress could not be saved. No slot was changed.	Impossibile salvare i progressi. Nessuno slot modificato.
+DS controls are unavailable for this engine.	Funzioni DS non disponibili per questo emulatore.
+Your DS library starts here	La tua libreria DS inizia qui
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Copia i file .nds o ZIP DS in Roms/NDS sulla scheda, poi scegli Scansiona giochi.
+Use the engine's native controls for microphone and DS settings.	Usa i controlli dell'emulatore per microfono e impostazioni DS.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Il microfono reale è attivo. Soffio e coperchio durano due secondi nel gioco. Riavvia per cambiare lingua.
+Save slots	Slot salvataggi
+Load slots	Carica salvataggi
+Unplayed	Mai giocati
+Played	Giocati
+Filtered	Filtrati
+No matching games	Nessun gioco corrispondente
+No matches. Use View to change filters.	Nessun risultato. Cambia i filtri in Vista.
+Reset state	Reimposta stato
+Restart without loading a state?	Riavviare senza caricare uno stato?
+Restart from the title screen. In-game saves and save slots are kept.	Riavvia dalla schermata iniziale. I salvataggi del gioco e gli slot vengono conservati.
+Microphone, simulated blowing, lid and DS language.	Microfono, soffio simulato, coperchio e lingua DS.
+Test microphone	Prova microfono
+Test	Prova
+Live input	Ingresso in tempo reale
+Quiet	Basso
+Loud	Alto
+Listening…	In ascolto…
+Microphone unavailable	Microfono non disponibile
+Audio is not recorded or saved.	L'audio non viene registrato né salvato.
+Test the microphone on your handheld.	Prova il microfono sulla console.
+Return home before testing the physical microphone.	Torna alla schermata iniziale prima di provare il microfono fisico.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Soffia o parla nel microfono. Il livello sale e poi scende quando smetti.
+No filter	Nessun filtro
+Quick search	Ricerca rapida
+Y  Quick search	Y  Ricerca rapida
+X  Filters	X  Filtri
+Y Search / X Filters	Y Cerca / X Filtri
+A  Search	A  Cerca
+A  Jump	A  Vai
+Edit search	Modifica ricerca
+Clear filters	Cancella filtri
+Try another title or clear your filters	Prova un altro titolo o cancella i filtri
+Type a game title…	Scrivi il titolo di un gioco…
+Finding games…	Ricerca giochi…
+Searching…	Ricerca…
+Search in	Cerca in
+Try a shorter title or clear your filter.	Prova un titolo più breve o cancella il filtro.
+A Key / Start Search / B Cancel	A Tasto / Start Cerca / B Annulla
+Tap to type, or use the D-pad and A	Tocca o usa la croce direzionale e A
+X Delete / Start Search	X Cancella / Start Cerca
+X Delete / Start Done	X Cancella / Start Fine
+No letters to jump to. Search for another game.	Nessuna lettera disponibile. Cerca un altro gioco.
+{0} match	{0} risultato
+{0} matches	{0} risultati
+{0} matching game	{0} gioco trovato
+{0} matching games	{0} giochi trovati
+{0} game	{0} gioco
+Interface animations	Animazioni interfaccia
+View transitions	Transizioni tra viste
+Small touches, scrolling and startup motion	Piccoli effetti, scorrimento e avvio
+Springy menu changes with a colourful wobble	Cambi di menu con rimbalzi colorati
+Transitions	Transizioni
+Subtle	Discreto
+Menu sounds	Suoni dei menu
+Effects volume	Volume effetti
+Preview sound	Ascolta un suono
+A little handheld magic	Un po’ di magia portatile
+Playful sounds for browsing, choosing and starting games.	Suoni giocosi per sfogliare, scegliere e avviare i giochi.
+Turn on menu sounds to hear the previews.	Attiva i suoni dei menu per ascoltarli.
+Some menu sounds are unavailable.	Alcuni suoni dei menu non sono disponibili.
+Menu audio is unavailable on this device.	I suoni dei menu non sono disponibili su questo dispositivo.
+Menu sounds are unavailable.	I suoni dei menu non sono disponibili.
+Close lid	Chiudi il coperchio
+Open lid	Apri il coperchio
+Spring	Molla
+Push	Scorrimento
+Transition style	Stile transizione
+Animate pages with the selected style	Anima le pagine con lo stile scelto
+Slide into pages; slide back to return	Scorri nelle pagine; scorri indietro per tornare

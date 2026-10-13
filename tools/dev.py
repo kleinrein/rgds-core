@@ -133,22 +133,23 @@ class DeviceQueue:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", help="Enable SSH watch mode, e.g. root@192.168.1.42")
-    parser.add_argument("--sd-root", type=Path, default=Path("/mnt/mmc"))
+    parser.add_argument("--sd-root", type=Path, default=None)
     parser.add_argument("--theme", type=Path, default=ROOT / "themes/default/light.ini")
     parser.add_argument("--rom-dir", type=Path, action="append", default=[])
     args = parser.parse_args()
     args.theme = args.theme.resolve()
     if not args.theme.is_file():
         raise ValueError("Theme file is missing: " + str(args.theme))
-    if not args.sd_root.is_absolute() or ".." in args.sd_root.parts:
+    if args.sd_root is not None and (not args.sd_root.is_absolute() or ".." in args.sd_root.parts):
         raise ValueError("--sd-root must be an absolute mount path without ..")
     on_device = args.device is not None
     queue = None
     if on_device:
         address = transport.target(args.device)
         # Do not enter an unattended password or unknown-host prompt.
-        transport.status(address, args.sd_root / "rgds", batch=True)
-        queue = DeviceQueue(address, args.sd_root / "rgds", args.theme)
+        install_root = transport.configured_root(address, args.sd_root)
+        transport.status(address, install_root, batch=True)
+        queue = DeviceQueue(address, install_root, args.theme)
     now = time.monotonic()
     sources = Changes(snapshot(source_paths(on_device, args.theme)), now)
     themes = Changes(snapshot([args.theme]), now)

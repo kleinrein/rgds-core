@@ -1,5 +1,6 @@
 """Development-loop failures must preserve the running build and active games."""
 import io
+import json
 import os
 from pathlib import Path
 import struct
@@ -143,7 +144,7 @@ class LiveThemeTests(unittest.TestCase):
             prefs = root / "preferences.ini"
             prefs.write_text("schema=1\nmode=dark\nfont=rounded\n")
             bmp = root / "screen.bmp"
-            command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--watch-assets", "--themes", str(root),
+            command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--themes", str(root),
                        "--theme", str(light), "--preferences", str(prefs), "--screenshot", str(bmp), "--seconds", "5"]
             child = subprocess.Popen(command, env=dict(os.environ, SDL_VIDEODRIVER="dummy"), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             try:
@@ -167,7 +168,7 @@ class LiveThemeTests(unittest.TestCase):
             theme, state, bmp = (root / name for name in ("live.ini", "state.txt", "screen.bmp"))
             theme.write_text("schema=1\nbackground=112233\n")
             state.write_text('1 2 1 ""\n')
-            command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--watch-assets", "--theme", str(theme),
+            command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--theme", str(theme),
                        "--state", str(state), "--preferences", str(root / "preferences.ini"), "--screenshot", str(bmp), "--seconds", "6"]
             env = dict(os.environ, SDL_VIDEODRIVER="dummy")
             child = subprocess.Popen(command, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -202,8 +203,8 @@ class LiveThemeTests(unittest.TestCase):
         width, height = struct.unpack_from("<ii", data, 18)
         bits = struct.unpack_from("<H", data, 28)[0]
         stride = ((width * bits + 31) // 32) * 4
-        row = abs(height) - 1 if height > 0 else 0
-        b, g, r = data[offset + row * stride:offset + row * stride + 3]
+        row = abs(height) - 1 - 101 if height > 0 else 101
+        b, g, r = data[offset + row * stride + 4:offset + row * stride + 7]
         return r, g, b
 
     def wait_color(self, path, expected, child):
@@ -221,3 +222,40 @@ class LiveThemeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ConfiguredRootTests(unittest.TestCase):
+    def test_remote_selection_keeps_configured_root_in_stock_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            control = Path(temporary) / 'control'
+            control.mkdir()
+            root = Path(temporary) / 'internal install/rgds'
+            root.mkdir(parents=True)
+            (root / 'main.sh').touch()
+
+            def remote(device_name, command, **kwargs):
+                script = kwargs['input'].replace('/userdata/rgds-boot', str(control))
+                return subprocess.run([sys.executable, '-B', '-'], input=script,
+                                      text=True, capture_output=True, check=True)
+
+            for mode in ('stock', 'rgds'):
+                with self.subTest(mode=mode):
+                    (control / 'config.json').write_text(json.dumps(dict(root=str(root), mode=mode)))
+                    with patch.object(device, 'ssh', side_effect=remote), patch('sys.stdout', new_callable=io.StringIO):
+                        self.assertEqual(device.configured_root('root@device'), root)
+            for content in ('[]', '{broken', json.dumps(dict(root='relative', mode='stock'))):
+                (control / 'config.json').write_text(content)
+                with patch.object(device, 'ssh', side_effect=remote), patch('sys.stdout', new_callable=io.StringIO):
+                    self.assertEqual(device.configured_root('root@device'), Path('/mnt/mmc/rgds'))
+
+    def test_default_follows_boot_root_and_explicit_mount_does_not_probe(self):
+        with patch.object(device,'ssh',return_value=subprocess.CompletedProcess([],0,'/userdata/rgds-device-test/rgds\n','')) as ssh, patch('sys.stdout',new_callable=io.StringIO):
+            self.assertEqual(device.configured_root('root@device'),Path('/userdata/rgds-device-test/rgds'))
+            ssh.assert_called_once()
+            ssh.reset_mock()
+            self.assertEqual(device.configured_root('root@device',Path('/mnt/SDCARD')),Path('/mnt/SDCARD/rgds'))
+            ssh.assert_not_called()
+
+    def test_invalid_remote_path_cannot_become_a_deploy_target(self):
+        for value in ('relative/path','/mnt/../etc','/safe\n/other'):
+            with patch.object(device,'ssh',return_value=subprocess.CompletedProcess([],0,value,'')):
+                with self.assertRaises(ValueError):device.configured_root('root@device')

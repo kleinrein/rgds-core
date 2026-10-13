@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import struct
 import zipfile
+from fields import read_fields, write_fields
 
 
 def game_key(rom):
@@ -11,29 +12,6 @@ def game_key(rom):
     for byte in str(Path(rom).resolve()).encode("utf-8"):
         value = ((value ^ byte) * 1099511628211) & 0xffffffffffffffff
     return "%016x" % value
-
-
-def read_fields(path):
-    try:
-        return dict(line.split("=", 1) for line in path.read_text().splitlines() if "=" in line)
-    except (OSError, UnicodeError):
-        return {}
-
-
-def write_fields(path, fields):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, pending = tempfile.mkstemp(prefix=".pending-", dir=path.parent)
-    try:
-        with os.fdopen(fd, "w") as stream:
-            for key, value in fields.items():
-                clean = str(value).replace("\n", " ").replace("\r", " ")
-                stream.write(key + "=" + clean + "\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(pending, path)
-    finally:
-        Path(pending).unlink(missing_ok=True)
 
 
 def playtime(data, rom):

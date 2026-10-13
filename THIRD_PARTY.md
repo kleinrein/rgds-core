@@ -1,21 +1,32 @@
 # Development package provenance
 
-The original supplied package remains unchanged at `simpleos-source/`. It is ignored by Git. The SD artifact built here is a private development package for the owner's device, not a public firmware release.
+The historical SimpleOS reference copy has been removed from this repository. Required private emulator payloads and community shaders are separately provisioned into the ignored `vendor/engines/` bundle; retained contributor notices remain below. The SD artifact built here is a private development package for device testing, not a public firmware release. The repository does not yet include a project-wide license; the SimpleOS notice below applies only to the historical material it covers and must not be treated as a license for all RGDS source.
 
 | Component | Source | Treatment |
 | --- | --- | --- |
-| SimpleOS integration reference and profiles | [boorngos/SimpleOS](https://github.com/boorngos/SimpleOS), supplied package version `20260927`. | Published project license is MIT; preserve its contributor notice for imported material. |
+| Network file sharing | [Samba](https://github.com/samba-team/samba/tree/samba-4.25.0), pinned version 4.25.0 and source SHA-256 in `tools/build_samba.py`. | GPL-3.0-or-later ARM64 source build. The private package includes the full corresponding source, a small relocation patch, build recipe, license, build/ABI records and copyright notices for private runtime libraries under `services/samba/`. SMB1, printing, directory services and firmware installation are disabled. |
+| Historical integration reference | [boorngos/SimpleOS](https://github.com/boorngos/SimpleOS), supplied package version `20260927`. | Published project license is MIT; its contributor notice is retained below for previously imported material. No SimpleOS runtime scripts, profiles or compatibility/shader hooks are required or bundled. |
 | DraStic and Nintendo BIOS | Existing official Anbernic Linux card. | Not included in source or ZIP. The runtime locates existing stock files. |
-| DSperate | Local `system/bin/dsperate`, with local `system/dsperate/LICENSE` and `NOTICE.txt`; upstream [beebono/DSperate](https://github.com/beebono/DSperate). | The supplied notice identifies GPLv3 and version 3.0.0. Its notice/license are copied with the binary. Establish matching source/build provenance before a public redistribution. |
-| NNDDSS and its shim libraries | Local `system/nnddss_payload/`. | Copied for private testing with the device owner. This package supplies no separate license/source record for the payload; resolve component provenance before a public release. |
+| Private independent-image DraStic application | Owner's existing AArch64 executable/display-touch adapter, imported separately with `tools/capture_drastic.py` or `tools/provision_drastic.py`. | Not stored in Git. Exact inventory/ELF hashes; private testing only. OS libraries, BIOS dumps and user saves are excluded. This is a proprietary application import, not a source rebuild or resolved public redistribution license. |
+| DSperate | Upstream [beebono/DSperate](https://github.com/beebono/DSperate), pinned commit `1b76c355109c9f7576363ccc023927b3137d3c6f`. | Source-built Linux AArch64 engine with JIT/NEON/LTO and Cortex-A55 tuning. GPL-3.0-or-later license, corresponding patched source, host build driver, portability patch and build hashes accompany the binary. The supplied binary stays in the reference bundle and is excluded from new packages. |
+| melonDS engine and original RGDS frontend | Upstream [melonDS-emu/melonDS](https://github.com/melonDS-emu/melonDS), pinned commit `906e9ebb27da8c6a715cd7abab4abfe8a8d29427`. | Unmodified GPL-3.0-or-later core with ARM64 JIT/LTO and an original RGDS SDL frontend under GPL-3.0-or-later. Packaged at `emulators/melonds/` with upstream license, full corresponding core/frontend source archive and hashed build record. Uses upstream FreeBIOS/generated firmware; no Qt, downloaded games or Nintendo BIOS. Synthetic ARM64 VM checks are separate from pending handheld/retail-game acceptance. |
+| NNDDSS and its shim libraries | Local `system/nnddss_payload/`. | Supplied binaries for private testing. Runtime applies a SHA-256-gated replacement of two loader configuration path strings, pointing at owned files. This is not a source rebuild; payload provenance remains unresolved for public release. |
+| NNDDSS replacement BIOS | [melonDS FreeBIOS](https://github.com/melonDS-emu/melonDS/tree/1124603369ce72986b7469bb6fa3520bcb58ab5e/freebios), Gilead Kutnick. | BSD-2-Clause replacement implementation, not a Nintendo dump. Original source and notice, LLVM syntax adaptations, build commands and hashes ship under `assets/nnddss/`. Upstream makefiles are CC0-1.0. |
+| NNDDSS save-chip fallback | [melonDS ROMList.cpp](https://github.com/melonDS-emu/melonDS/blob/906e9ebb27da8c6a715cd7abab4abfe8a8d29427/src/ROMList.cpp), same pinned core commit as above. | GPL-3.0-or-later game-code, ROM-size and save-chip data. Original input sources, license and reproducible conversion script ship in `assets/nnddss/save-types/`. Runtime creates one exact-header compatibility entry per selected game; no stock game database is copied. Unknown and NAND chips are not guessed, and user databases take precedence. |
+| NNDDSS font aliases | The same bundled Nunito font listed below. | Fixed loader filenames `orbitron.ttf` and `SourceHanSansSC-Normal.ttf` receive Nunito, not those original fonts. The wrapper is set to English; CJK glyph coverage is not claimed. |
 | Shaders | Local `system/shaders/` and NNDDSS payload shader files. | Keep supplied README/attribution; audit individual notices before public packaging. |
-| SDL2 | Installed host library and headers; existing vendor device library. | Runtime library is not copied into the ZIP. SDL's own notices remain with its headers/library. |
+| SDL2 | Installed host library and headers; existing vendor device library. DSperate links against a source-built SDK pinned to official SDL2 2.32.10. | DSperate's SDK is link-time only; standard adapters use the card SDL. SuperDrastic bundles a separate private SDL 2.32.10 runtime with dummy video, software rendering, Linux joystick/input and ALSA. Its zlib license, pinned source archive, build options, ABI and hashes accompany the library. |
 | Nunito (DS rounded option) | [Google Fonts Nunito](https://github.com/google/fonts/tree/main/ofl/nunito); exact commit in `assets/fonts/source/PROVENANCE.txt`. | SIL Open Font License 1.1. Unmodified variable source font, full license and baked weight-600 atlases are bundled. This is a DS-inspired alternative, not Nintendo's original font. |
-| New UI | Source in this workspace. | Original vector shapes, probe bitmap font and palettes; no Nintendo or ROCKNIXDS theme artwork/sounds copied. |
+| New UI and native integration | Source in this workspace. | Original launcher, vector shapes, probe font/palettes, shared bridge/menu/audio/GL filters, input routing, startup warning and owned engine profiles. No Nintendo or ROCKNIXDS theme artwork/sounds copied. Profile keys were checked against engine source or its supplied configuration interface. |
 | ScreenScraper artwork and metadata | Downloaded on user request through [ScreenScraper API v2](https://www.screenscraper.fr/webapi2.php). | Cached per user and credited on the top screen. No downloaded artwork or account credentials are bundled in releases. |
-| DS banner icons/titles | Read from the owner's local ROM files. | Displayed locally, with ZIP icon caching. No game icons or ROMs are included in releases. |
+| Shader studio reference scenes and UI icons | Original repository code in `tools/build_shader_previews.py` and `src/launcher/settings_visual.hpp`. | Three original scenes, rendered through the attributed supplied presets on host SwiftShader GLES2 and stored losslessly. No game screenshots or third-party character artwork included. Source/pixel hashes and renderer provenance accompany the previews. |
+| DS banner icons/titles | Read from a user's local ROM files. | Displayed locally, with ZIP icon caching. No game icons or ROMs are included in releases. |
 
-SimpleOS's published notice for imported profiles:
+Historical MIT notice retained for the material it covers:
+
+Packages additionally record each ELF component’s SHA-256, source label and required GLIBC versions. Packaging reads the independent `vendor/engines` bundle with exact inventory verification. The one-time importer excludes OS scripts, compatibility hooks, Python/shell helpers, BIOS and ROMs. External engine binaries, loaders/shims and community preset data remain third-party components, rather than RGDS's emulation implementation.
+
+The DSperate v3.0.0 source is pinned at [commit `1b76c355109c9f7576363ccc023927b3137d3c6f`](https://github.com/beebono/DSperate/tree/1b76c355109c9f7576363ccc023927b3137d3c6f), including `src/frontend/sdl/main.cpp`, `input.cpp` and `configs/default.ini` for hotkeys and state filenames. `tools/build_engines.py` applies recorded Clang portability edits in an isolated build checkout, builds with Zig, and packages corresponding source and notices alongside the executable. DraStic/NNDDSS are not represented as source-built RGDS engines. Wi-Fi commands follow the [NetworkManager nmcli manual](https://networkmanager.dev/docs/api/latest/nmcli.html).
 
 ```text
 MIT License
@@ -39,3 +50,113 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+
+## Optional public artwork services
+
+GameTDB DS covers (https://www.gametdb.com/DS/Downloads) and Libretro thumbnails
+(https://github.com/libretro-thumbnails/libretro-thumbnails) are fetched only on
+request into the player's writable cache. They require no RGDS app identity or
+player login. Provider attribution is retained per cover and shown in the UI.
+Cover scans remain the property of their respective rights holders; public
+availability is not a grant to relicense them as RGDS assets. Downloaded test
+covers are not included in the release package. Renamed-title matching downloads
+Libretro's public No-Intro DS serial/name catalog on demand from
+https://github.com/libretro/libretro-database/blob/master/metadat/no-intro/Nintendo%20-%20Nintendo%20DS.dat
+into the player's optional cache; it is not bundled or relicensed by RGDS.
+
+`assets/shaders/soft_scanlines.dsd`, `warm_paper.dsd`, `cool_crisp.dsd`,
+`pocket_green.dsd`, `amber.dsd` and `soft_lcd_grid.dsd` are
+original RGDS single-sample effects, separate from the supplied shader presets.
+
+
+## ROCKNIXDS review and DraStic startup adaptation
+
+`src/platform/drastic_threads.hpp` adapts the helper-thread initialization barrier
+from [ROCKNIXDS patch 5e14c95a](https://github.com/JorreFog/ROCKNIXDS/blob/8b8f72cd70f0d198612ea8e6651fae71664aa97b/dsflip/superdrastic-0.5.0-beta.1-rocknixds.7.patch).
+It applies only to the recognized DraStic executable build ID and two helper
+entry points. It does not include SuperDrastic’s display backend, rasterizer,
+CPU governor or its binaries. RGDS adds exact identity gating, independent gate
+lifetimes, successful-initialization counting and a monotonic timeout. The idle
+polling investigation also informed RGDS’s independently written event wait.
+
+This notice is included in every application package:
+
+```text
+MIT License
+
+Copyright (c) 2026 JorreFog and the ROCKNIXDS contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## Optional SuperDrastic backend
+
+The private package includes a locally compiled SuperDrastic `0.5.0-beta.1` from
+https://github.com/JorreFog/SuperDrastic at commit
+`930c4c5bb3e904557cd8cc42a01a4e27834f5ba1`, tree
+`6d2d72fdc27ac2010ca73f3d604f1e6e9e5d7722`. The tracked input hash is
+`92d936303f349ba2a8f078c28e29d7a2f822b13894f503814b606c9b03075056`.
+
+Upstream code is MIT licensed, copyright 2026 JorreFog. Its `LICENSE` and
+`THIRD_PARTY.md` accompany the library, including rcheevos, stb, ARM rasterizer
+references and shader/FSR notices as recorded by upstream. Its full pinned
+source, RGDS patch/build driver and native adapter source accompany the build
+in `emulators/superdrastic/source.tar.gz`; SHA-256s and ABI are in `build.json`.
+The exact-build helper-thread adaptation above is also compiled into this
+backend; its ROCKNIXDS MIT notice continues to apply. The optional library does
+not include or relicense the proprietary DraStic executable.
+
+RGDS adaptations add its command/exit protocol, fixed menu navigation, hardware
+status/control bridge, spaced native profile compatibility, disabled implicit achievement login, readiness ordering,
+independent auto-save policy and original launcher supervision. Upstream runner,
+updater and service/clock scripts are not executed. The alternative rasterizer
+is compiled as part of upstream but disabled in this profile. See
+[SUPERDRASTIC.md](docs/SUPERDRASTIC.md) for integration boundaries and acceptance.
+
+SuperDrastic's private SDL source archive is pinned to SHA-256
+`5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165` from
+[SDL release 2.32.10](https://github.com/libsdl-org/SDL/releases/tag/release-2.32.10).
+`emulators/superdrastic/sdl` contains the runtime, original `LICENSE.txt`, full
+source archive and build record. SDL uses the zlib license. This runtime is
+selected only for SuperDrastic; it does not replace the OS library. DSperate's
+RGDS patch additionally exports a completed-emulation-frame counter; no frames
+are fabricated from display refreshes.
+
+## RG DS Experimental fork
+
+The optional `rgds-experimental` engine is a modified build of the same pinned
+GPL-3.0-or-later DSperate source. Original RGDS stylus changes are GPL-3.0-or-later.
+Packages include its LICENSE, NOTICE, complete modified upstream source and
+build recipe. See [fork documentation](src/experimental/rgds/README.md). No NooDS,
+melonDS or NNDDSS implementation has been copied into this fork.
+
+The optional enhanced binary also includes the modified upstream Vulkan
+rasterizer under GPL-3.0-or-later, its full source and build recipes in
+`vulkan-source.tar.gz`. The process-local PanVK/kbase driver is built from
+[FristOneRR-Admin/FristOneRR-Panvk-Source](https://github.com/FristOneRR-Admin/FristOneRR-Panvk-Source)
+at `efd07bab401b263a9ac114560ecdb9a2934f5d43`; complete modified driver source
+is in `panvk-source.tar.gz`, with Mesa's per-file license headers and notices.
+The Ubuntu arm64 Vulkan loader (`libvulkan1` 1.3.275.0-1build1) is Apache-2.0/MIT;
+its copyright notice, full license texts and the private zstd notice are in the
+engine's `lib` directory. No system driver or loader is replaced.
+
+## Menu sound assets
+
+`assets/sounds/*.wav` contains edited versions of four original source families generated with Suno v6-mini in the user’s account on 2026-10-12. Source URLs, the observed Free account plan and reproduction details are recorded in [docs/MENU_SOUNDS.md](docs/MENU_SOUNDS.md). No Nintendo audio recordings were used.

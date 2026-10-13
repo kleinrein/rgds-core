@@ -9,15 +9,16 @@
 // Load the device's vendor SDL rather than shipping a replacement display stack.
 // Only APIs present in SDL 2.0.10 and later are used.
 #define RGDS_SDL_FUNCTIONS(X) \
- X(Init) X(Quit) X(SetMainReady) X(GetError) X(GetVersion) X(GetCurrentVideoDriver) \
+ X(InitSubSystem) X(QuitSubSystem) X(OpenAudioDevice) X(CloseAudioDevice) X(PauseAudioDevice) X(LockAudioDevice) X(UnlockAudioDevice) X(LoadWAV_RW) X(FreeWAV) \
+ X(Init) X(Quit) X(SetMainReady) X(GetError) X(ClearError) X(GetVersion) X(GetCurrentVideoDriver) \
  X(GetNumVideoDisplays) X(GetDisplayName) X(GetDisplayBounds) X(CreateWindow) \
- X(DestroyWindow) X(GetWindowID) X(GetWindowSize) X(SetWindowFullscreen) \
- X(CreateRenderer) X(DestroyRenderer) X(RenderSetLogicalSize) X(SetRenderDrawColor) \
- X(RenderClear) X(RenderFillRect) X(RenderDrawRect) X(RenderDrawLine) X(RenderPresent) \
+ X(DestroyWindow) X(GetWindowID) X(GetWindowSize) X(SetWindowFullscreen) X(GL_SetAttribute) \
+ X(CreateRenderer) X(CreateSoftwareRenderer) X(GetRendererInfo) X(DestroyRenderer) X(RenderSetLogicalSize) X(SetRenderDrawColor) X(SetRenderDrawBlendMode) \
+ X(RenderClear) X(RenderFillRect) X(RenderDrawRect) X(RenderDrawLine) X(RenderPresent) X(RenderFlush) \
  X(RenderReadPixels) X(GetRendererOutputSize) X(CreateRGBSurfaceWithFormat) X(FreeSurface) X(RWFromFile) \
- X(SaveBMP_RW) X(WaitEventTimeout) X(PollEvent) X(GetTicks) X(NumJoysticks) \
+ X(SaveBMP_RW) X(WaitEventTimeout) X(PollEvent) X(Delay) X(GetTicks) X(NumJoysticks) \
  X(JoystickOpen) X(JoystickClose) X(JoystickName) X(SetHint) \
- X(CreateTextureFromSurface) X(DestroyTexture) X(SetTextureBlendMode) X(SetTextureColorMod) X(RenderCopy) X(PushEvent) X(GetKeyFromName) \
+ X(CreateTexture) X(SetRenderTarget) X(RenderCopyEx) X(CreateTextureFromSurface) X(DestroyTexture) X(SetTextureBlendMode) X(SetTextureColorMod) X(RenderCopy) X(PushEvent) X(GetKeyFromName) \
  X(LoadBMP_RW) X(SetTextureAlphaMod) X(StartTextInput) X(StopTextInput) X(RenderSetClipRect)
 
 struct Sdl {

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cmath>
 #include <tuple>
+#include <initializer_list>
 
 namespace rgds {
 // Fixed, bundled font data only. No host fonts or additional device libraries.
@@ -14,11 +15,22 @@ class RoundedFont {
     fs::path directory;
     std::map<int,Atlas> atlases;
     std::map<std::pair<SDL_Renderer*,int>,SDL_Texture*> textures;
+    size_t bytes_loaded=0;
+    // Five shipped atlases cover all typography. Other requested point sizes
+    // use proportional glyph metrics and the closest atlas, without creating
+    // a separate texture or loading an unbounded collection of font files.
+    static int baked_size(int size) {
+        constexpr std::array<int,5> sizes={16,20,24,28,36};
+        int selected=sizes.front();
+        for(int candidate:sizes)if(std::abs(candidate-size)<=std::abs(selected-size))selected=candidate;
+        return selected;
+    }
     static unsigned read32(std::ifstream& f) {
         unsigned char b[4];if(!f.read(reinterpret_cast<char*>(b),4))throw std::runtime_error("Truncated font atlas");
         return b[0]|(unsigned(b[1])<<8)|(unsigned(b[2])<<16)|(unsigned(b[3])<<24);
     }
     Atlas& atlas(int size) {
+        size=baked_size(size);
         auto found=atlases.find(size);if(found!=atlases.end())return found->second;
         std::ifstream file(directory/("rounded-"+std::to_string(size)+".rgf"),std::ios::binary);
         char magic[4];if(!file.read(magic,4) || std::string(magic,4)!="RGF1")throw std::runtime_error("Rounded font atlas unavailable");
@@ -37,9 +49,11 @@ class RoundedFont {
         if(!a.glyphs.count('?'))throw std::runtime_error("Font fallback glyph missing");
         a.alpha.resize(static_cast<size_t>(a.width)*a.height);
         if(!file.read(reinterpret_cast<char*>(a.alpha.data()),a.alpha.size()))throw std::runtime_error("Truncated font bitmap");
+        bytes_loaded+=20+count*32+a.alpha.size();
         return atlases.emplace(size,std::move(a)).first->second;
     }
     SDL_Texture* texture(SDL_Renderer* r,int size) {
+        size=baked_size(size);
         auto key=std::make_pair(r,size);auto found=textures.find(key);if(found!=textures.end())return found->second;
         auto& a=atlas(size);auto* surface=s.CreateRGBSurfaceWithFormat(0,a.width,a.height,32,SDL_PIXELFORMAT_RGBA32);
         if(!surface)throw std::runtime_error(s.GetError());
@@ -55,7 +69,9 @@ public:
     RoundedFont(Sdl& api,fs::path path):s(api),directory(std::move(path)){}
     ~RoundedFont(){clear();}
     void clear(){for(auto entry:textures)s.DestroyTexture(entry.second);textures.clear();}
-    void check(){for(int size:{16,20,24,28,36})atlas(size);}
+    void check(std::initializer_list<int> sizes={16,20,24,28,36}){for(int size:sizes)atlas(size);}
+    size_t loaded_atlases()const{return atlases.size();}
+    size_t loaded_bytes()const{return bytes_loaded;}
     static std::vector<unsigned> codepoints(const std::string& value,int limit=1000) {
         std::vector<unsigned> out;
         for(size_t i=0;i<value.size() && static_cast<int>(out.size())<limit;) {
@@ -72,23 +88,29 @@ public:
         return out;
     }
     float width(const std::string& value,int size,int limit=1000) {
-        auto& a=atlas(size);float width=0;
-        for(auto cp:codepoints(value,limit)){auto it=a.glyphs.find(cp);if(it==a.glyphs.end())it=a.glyphs.find('?');width+=it->second.advance/64.0f;}
+        auto& a=atlas(size);float width=0,scale=float(size)/baked_size(size);
+        for(auto cp:codepoints(value,limit)){auto it=a.glyphs.find(cp);if(it==a.glyphs.end())it=a.glyphs.find('?');width+=it->second.advance/64.0f*scale;}
         return width;
+    }
+    std::pair<int,int> ink_bounds(const std::string& value,int size) {
+        auto& a=atlas(size);float scale=float(size)/baked_size(size);int top=10000,bottom=-10000;
+        for(auto cp:codepoints(value)){auto it=a.glyphs.find(cp);if(it==a.glyphs.end())it=a.glyphs.find('?');const auto& g=it->second;if(!g.h)continue;
+            int y=int(std::round((a.ascent+g.top)*scale));top=std::min(top,y);bottom=std::max(bottom,y+int(std::round(g.h*scale)));}
+        return bottom<top?std::pair<int,int>{0,0}:std::pair<int,int>{top,bottom};
     }
     void draw(SDL_Renderer* r,const std::string& value,int x,int y,int size,Color color,int limit,int max_width) {
         auto& a=atlas(size);auto* image=texture(r,size);s.SetTextureColorMod(image,color.r,color.g,color.b);
-        auto chars=codepoints(value,limit);float total=width(value,size,limit);
+        auto chars=codepoints(value,limit);float total=width(value,size,limit),scale=float(size)/baked_size(size);
         const bool clipped=total>max_width;float pen=static_cast<float>(x);
         float ellipsis=width("...",size);
         for(auto cp:chars) {
             auto it=a.glyphs.find(cp);if(it==a.glyphs.end())it=a.glyphs.find('?');auto g=it->second;
-            if(clipped && pen-x+g.advance/64.0f>max_width-ellipsis){
+            if(clipped && pen-x+g.advance/64.0f*scale>max_width-ellipsis){
                 draw(r,"...",static_cast<int>(pen),y,size,color,3,static_cast<int>(ellipsis)+1);break;
             }
-            SDL_Rect source{g.x,g.y,g.w,g.h},dest{static_cast<int>(std::round(pen))+g.left,y+a.ascent+g.top,g.w,g.h};
+            SDL_Rect source{g.x,g.y,g.w,g.h},dest{static_cast<int>(std::round(pen+g.left*scale)),y+static_cast<int>(std::round((a.ascent+g.top)*scale)),static_cast<int>(std::round(g.w*scale)),static_cast<int>(std::round(g.h*scale))};
             if(g.w && g.h)s.RenderCopy(r,image,&source,&dest);
-            pen+=g.advance/64.0f;
+            pen+=g.advance/64.0f*scale;
         }
     }
 };

@@ -1,5 +1,28 @@
 # Save-to-refresh development
 
+## Prerequisites and private payloads
+
+The host preview needs Python 3.9+, a C++17 compiler and SDL2 development files (`sdl2-config` on the host). Device launcher/bridge builds use Zig 0.13; source-built engines also need CMake and Ninja. Ordinary builds use checked-in fonts/previews. Regenerating assets needs Pillow and, for shader previews, host EGL/GLES2. Update signing needs OpenSSL 3.
+
+Packaging requires an independently provisioned, ignored `vendor/engines/` bundle. The retired SimpleOS reference tree is not required. The one-time importer takes an owner-supplied system payload directory containing `bin/dsperate`, `nnddss_payload/nnddss` and community `shaders/`, retains notices and verifies an exact inventory:
+
+```sh
+python3 tools/provision_engines.py --source /path/to/owner-supplied/system
+make build-device
+make build-melonds
+make build-superdrastic
+make package
+make installer
+```
+
+Do not fetch unspecified proprietary payloads. Provisioning does not resolve redistribution rights; see [third-party provenance](../THIRD_PARTY.md). The supplied DSperate binary is excluded from new packages in favor of the source build. DraStic uses the compatible stock card installation. Source builders record pinned commits, patched corresponding source, toolchain inputs and hashes; packaging rejects stale or changed build outputs. [SuperDrastic](SUPERDRASTIC.md) has additional Linux builder requirements.
+
+Community shader data lives in `vendor/engines/shaders/`; original RGDS effects and the catalog live in `assets/shaders/`. `tools/build_shader_previews.py --shader-dir /path/to/presets` can use another explicit community pack. Tests and preview generation no longer use the retired reference tree.
+
+See [performance measurement](PERFORMANCE.md) for repeatable host/device checks and [the documentation index](README.md) for current guides. Dated implementation history is retained in [the archive](archive/README.md).
+
+## Host preview loop
+
 Start the local loop from this repository:
 
 ```sh
@@ -16,7 +39,7 @@ Keep it running while you edit. The native SDL preview uses the same renderer as
 | Enter an invalid theme colour | The current theme stays visible; the error appears in the terminal. The next valid save reloads. |
 | Press Escape/B in the preview | Settings goes back one level. From the library, the preview closes; a source save opens it again. Ctrl+C ends the watcher. |
 
-The current theme format controls nine palette colours plus a `mode=light|dark` hint. Geometry, controls, text and interaction changes live in `src/launcher/main.cpp`; those use the rebuild loop. Artwork and richer theme layouts are later UI work. This is automatic refresh for a native application: theme changes stay in the same process, while compiled code needs a process restart.
+The current theme format controls nine palette colours plus a `mode=light|dark` hint. Geometry, controls, text and interaction changes live in `src/launcher/main.cpp`; those use the rebuild loop. This is automatic refresh for a native application: theme changes stay in the same process, while compiled code needs a process restart.
 
 Pick the dark palette or scan real game filenames:
 
@@ -27,9 +50,11 @@ python3 tools/dev.py --rom-dir /path/to/your/NDS --theme themes/default/light.in
 
 Preview never starts an emulator. Its remembered selection/core is stored under the ignored `build/dev/` directory. To edit the live launcher sources in Codex, start with `src/launcher/main.cpp` and the selected `.ini` theme file.
 
-Open Settings with S or the gear, or launch it directly with `make settings`. Theme & display offers Light/Dark and DS rounded/Pixel classic. Touch the choice directly, or use up/down to focus a row and left/right to choose. A toggles the focused choice; B goes back. Choices apply immediately and are saved in `build/dev/preferences.ini`, or `rgds/userdata/preferences.ini` on the device. A saved colour-mode choice takes precedence over the initial `THEME` file selection; choose the matching mode in Settings to see the palette you are editing.
+Open Settings with S from the desktop preview, or launch it directly with `make settings`. On device, use Select or Menu/Anbernic at home. Theme & display offers Light/Dark and DS rounded/Pixel classic. Touch the choice directly, or use up/down to focus a row and left/right to choose. A toggles the focused choice; B goes back. Choices apply immediately and are saved in `build/dev/preferences.ini`, or `rgds/userdata/preferences.ini` on the device. A saved colour-mode choice takes precedence over the initial `THEME` file selection; choose the matching mode in Settings to see the palette you are editing.
 
-Power and screen brightness now have working controls with desktop simulation and device capability checks. Library offers the default emulator and ScreenScraper artwork/account controls. Sound, Connectivity, System, favourites/recent games and home layout/wallpaper remain labelled Later.
+Power and brightness have desktop simulation and device capability checks. Sound has a shared slider/mute; System has timezone, device information and local recovery. Connectivity scans and joins Wi-Fi, shows its IP address, and toggles session-scoped SMB sharing using the bundled service. Sharing details contains the address and temporary login; the desktop preview simulates the toggle without opening a server. See [device setup](DEVICE_SETUP.md#wi-fi-and-network-file-sharing). Library offers emulator/filter defaults, automatic checkpoint preferences and ScreenScraper. X/long press opens cartridge options; Y cycles All/Favourites/Recent. Theme settings can disable animations and the touch indicator independently. Theme & display → Animations also offers optional Spring and Push transition styles. Spring keeps the playful menu motion; Push slides level pages in from the right and reveals the parent from the left on Back, with a short parallax movement. The style is saved as `view_transition_style=spring|push` in `ui.ini`; existing preferences keep Spring and the current transition toggle. Push uses three reusable 640×480 render targets, including the last displayed composition so rapid navigation can interrupt a transition without queuing input. It settles in 300 ms and returns to idle; renderers without target support use immediate navigation.
+
+`make game-menu` opens the shared in-game screen on the desktop. It uses the same renderer and settings as home, with simulated save/load actions. `--game-core drastic|dsperate|nnddss|melonds` changes its engine label; all four share the RGDS controls. Preview opens no emulator and no audio device.
 
 DS rounded uses the bundled, open-licensed Nunito font at weight 600. Native rendering reads prebuilt alpha atlases, so the card requires no additional font library. Latin/Latin-1 text is covered. To regenerate the atlases after a deliberate font change, run `tools/bake_font.py` with a Python environment containing Pillow. The font source, exact upstream commit, license and generated atlases live under `assets/fonts/`. Ordinary builds do not need Pillow or font downloads.
 
@@ -40,8 +65,8 @@ First prepare official Linux, run Inventory and Probe as described in [DEVICE_SE
 The unattended watcher requires SSH key authentication and an already verified host key. Connect manually first, then check that this exits without prompting:
 
 ```sh
-ssh root@192.168.1.42
-ssh -o BatchMode=yes root@192.168.1.42 true
+ssh root@192.0.2.10
+ssh -o BatchMode=yes root@192.0.2.10 true
 ```
 
 Exit the first SSH session before running the second command. If the second needs a password, install your existing public SSH key on the stock development card before starting the watcher. Do not disable host-key verification. If keys are not ready, `make deploy` and `make run` still support an interactive SSH connection.
@@ -49,14 +74,14 @@ Exit the first SSH session before running the second command. If the second need
 Start save-to-device refresh:
 
 ```sh
-make dev-device DEVICE=root@192.168.1.42
+make dev-device DEVICE=root@192.0.2.10
 ```
 
 The first successful build uploads the private package and starts a temporary development session. Later source saves build and upload a new release; runtime and packaging edits also trigger a device build. Theme-only saves transfer the small selected `.ini` file into `rgds/userdata/dev/theme.ini`, which the running menu reloads. Hashed release contents stay intact. Colours can therefore be tuned without packaging all the cores again.
 
-While a game is running, changes stay queued. Exit through the emulator's own menu; the watcher applies the newest queued build after the game returns. The installer takes the activity lock and checks again before stopping our menu, covering a game launch that races the watcher. Saves, ROMs and emulator configuration are retained. The watcher only recognizes games launched through our session; use the stock development card and our launcher for this workflow.
+While a game is running, changes stay queued, including while the common pause menu is open. Choose Return home there; the watcher applies the newest build after the game exits. The installer takes the activity lock and checks again before stopping our menu, covering a launch that races the watcher. Saves, ROMs and emulator configuration are retained. Use our launcher/session for this workflow.
 
-Connection failures retain the candidate and retry after five seconds while the watcher continues watching local edits. A failed device launch stops the watcher and prints logs, keeping recovery bounded. A `userdata/boot_stock` recovery marker prevents the watcher from starting another session. Ctrl+C stops watching; it leaves the current device session available. B returns from our menu to stock.
+Connection failures retain the candidate and retry after five seconds while the watcher continues watching local edits. A failed device launch stops the watcher and prints logs, keeping recovery bounded. A `userdata/boot_stock` recovery marker prevents the watcher from starting another session. Ctrl+C stops watching; it leaves the current device session available. B returns through the menu hierarchy; leaving the library stays in RG DS Core. Use the startup/recovery controls for stock handoff.
 
 Python cache writes are disabled during staging, verification and runtime startup. Release directories must remain identical to their manifests; generated `__pycache__` / `.pyc` files are not exempted from verification. An older watcher that reports `Unlisted files in release` during first deployment must be stopped and restarted after updating the tools. The repaired installer recreates its staging directory before checking it.
 
@@ -65,20 +90,88 @@ Activity records now use flushed temporary files and atomic replacement. Readers
 Useful commands in a second terminal:
 
 ```sh
-make logs DEVICE=root@192.168.1.42
-make status DEVICE=root@192.168.1.42
-make rollback DEVICE=root@192.168.1.42
-make run-dev DEVICE=root@192.168.1.42
+make logs DEVICE=root@192.0.2.10
+make status DEVICE=root@192.0.2.10
+make rollback DEVICE=root@192.0.2.10
+make run-dev DEVICE=root@192.0.2.10
 ```
 
 Stop `make dev-device` before manual rollback, otherwise a pending development build may be applied again. Rollback switches the release; `make run-dev` starts it with the existing live theme. `make run` uses the theme inside the release instead. Delete `rgds/userdata/dev/theme.ini` while our session is stopped to reset the live override. Use `SD_ROOT=/actual/mount` if the inventory shows a different mount than `/mnt/mmc`.
 
-Restart the watcher after modifying `tools/dev.py` or `tools/device.py`; those Python modules are loaded by the watcher itself. The watcher watches renderer/runtime/theme files and build inputs, rather than arbitrary files in the repository. New emulator payloads in `simpleos-source/` require a manual package build and provenance review.
+Stop the watcher before manual emulator/hardware tests too. Use `runtime/session.py --root /mnt/mmc/rgds --core drastic --rom '/path/to/game.nds'` on the device for a direct test under the same recovery guardian. Substitute `dsperate` or `nnddss`. Packaging is serialized with a filesystem lock, and ZIP/latest outputs are replaced atomically; two local package requests cannot delete one another's staging files.
 
-Code deployments transfer the complete private package, including all three emulator adapters and the bundled font. Theme refresh is small and fast. A live override's `mode` hint identifies the palette it edits; switch to that colour mode in Settings to see it. Measure code-to-screen latency on your Wi-Fi connection before setting performance targets. Hardware input, display orientation, sleep/wake, emulator return, and actual rendering smoothness still need testing on the stock card.
+For a quiet hardware test, open Settings → Sound and select Mute before launching. The saved level follows all engines, and physical volume keys work during play. Increase it deliberately after confirming muted startup and return. The 2026-10-07 volume fix has offline coverage but has not yet been checked on hardware.
+
+The game runner owns the menu process and both hardware menu keys. By default it pauses the owned engine process and draws the menu in its own GPU windows. A first-frame timeout restores the game if menu rendering fails. The optional live background uses shared canvases and is opt-in. The bridge filters Guide/Home before legacy handlers see them and discards queued input from the menu when play resumes. GPIO button ordering on the recorded ANBERNIC device places raw joystick button 8 at Linux code 312; code 316 belongs to another stick button. Generic controller Guide remains code 316. This mapping and the process/display handoff need device confirmation.
+
+Checkpoint saves acknowledge a changed, stable expected engine slot and flush the independent checkpoint before replacement. A failed save keeps the prior checkpoint and presents retry/resume/return-without-saving. DraStic, DSperate and NNDDSS load replies acknowledge dispatch; melonDS returns its native checkpoint-load result. Actual restored game progress still needs hardware checks. [NEXT_DEVICE_TEST.md](NEXT_DEVICE_TEST.md) records the remaining acceptance checks. Keep these distinctions when reporting test results.
+
+Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so older development builds can still read the base appearance file. Per-cartridge overrides and favourite flags live in `userdata/library/<key>/game.ini`. The versioned IDs in `assets/shaders/catalog.tsv` preserve Off/Sharp/LCD at 0/1/2 and add the full supplied pack. Both launcher and Python adapters read that catalog. DraStic maps to the supplied shader IDs, NNDDSS compiles the supplied `.dsd` GLSL in its running context, and DSperate/melonDS use the shared SDL/GLES shader path. All four paths support the current 20 effects plus Off. The paged picker has descriptions, a current-selection mark and per-game Default inheritance. Library choices take effect on launch; in-game choices update the running renderer and keep the picker open. NNDDSS post-processes the completed display frame before the overlay, so it does not depend on its startup-only shader loader. Actual appearance and frame pacing must still be checked on the Mali driver. The picker remembers its page during the development rebuild loop.
+
+Restart the watcher after modifying `tools/dev.py` or `tools/device.py`; those Python modules are loaded by the watcher itself. The watcher watches renderer/runtime/theme files and build inputs, rather than arbitrary files in the repository. New emulator payloads must be provisioned into the separate engine bundle, then packaged and provenance-reviewed. The historical SimpleOS reference copy is no longer part of the repository.
+
+Code deployments transfer the complete private package, including all four emulator adapters and the bundled font. Theme refresh is small and fast. A live override's `mode` hint identifies the palette it edits; switch to that colour mode in Settings to see it. Measure code-to-screen latency on your Wi-Fi connection before setting performance targets. Hardware input, display orientation, sleep/wake, emulator return, and actual rendering smoothness still need testing on the stock card.
 
 ## Refining the interface
 
-Use the preview for palette, spacing, hierarchy and navigation ideas, then check the same change on the actual panels. The current icon strip animates with a 190 ms eased slide, a small selection lift, and 150 ms settings transitions. It redraws during transitions and then returns to event/clock-driven idle rendering. Dragging tracks the pointer until release, and swipes never launch a game. The full-width map shows the visible library range and supports seeking. Emulator choice is in Library settings; the top screen reads cached artwork and playtime. Favourites and per-game overrides remain later work.
+Use the preview for palette, spacing, hierarchy and navigation ideas, then check the same change on the actual panels. The current icon strip animates with a 190 ms eased slide, a small selection lift, and 150 ms settings transitions. It redraws during transitions and returns to event/clock-driven idle rendering. Dragging tracks the pointer until release, and swipes never launch a game. The DSi-style title balloon, raised cartridges and integrated START frame retain these gestures. Range arrows step/wrap and the centre seeks. Footer view buttons remain available when empty. Queued releases/back actions are handled before held-key repeat, including under slow capture frames.
+
+The status bar groups `%m/%d  %H:%M`, renders segmented battery state/charging and keeps the optional percentage. Dark mode has its own charcoal/cyan palette, with matching settings and game-menu surfaces. Gradients use a small fixed set of vector bands; no bitmap UI or extra rendering dependency is added. Confirm readability, contrast, animation frame time and physical battery/charging behavior on the actual panels.
+
+Starting a cartridge fades the library under a small eight-block DS-inspired loader. There is no card or loading text. The overlay has a 110 ms eased entrance and an 80 ms exit. ROM preparation, helper shutdown and pending controls advance through the normal event loop; B and window-close remain responsive. A ready engine interrupts the entrance, fades the UI into the theme's neutral background, then receives the display handoff after SDL closes. There is no minimum loading hold on device. Preview shows preparation for 650 ms, then fades back to the library; cancellation and errors also return to the library. Disabling animations skips both transitions and keeps the loader static. Eight native rectangles draw the loader, with no textures or per-frame allocations. Repeated START presses and navigation are ignored during preparation. Direct runtime launches do not require the display handshake.
+
+Touch contact gets a small ring (toggle Touch indicator under Theme & display), selected cartridges depress while held, and the existing 600 ms hold gesture shows progress followed by “Release for options”. A swipe cancels that cue. Release fades the contact away; focus loss and cancelled gestures clear it. With animations disabled, contact and loading feedback stay static. Feedback geometry is cached, animation redraws are capped at roughly 60 Hz, and a stationary hold returns to idle once the cue completes. Host SDL tests cover the display handshake, duplicate launch input, touch cleanup, reduced motion and return; panel handoff and frame pacing still need confirmation on device.
+
+The horizontal rail has glossy primary-colour caret buttons with 84×71 touch targets. Its thumb expands and spreads its grip while captured, even if the finger moves outside the rail or the touch indicator is disabled. Press feedback eases in over 100 ms and releases over 180 ms; disabling animations keeps immediate static pressed states. Settled controls return to idle rendering. Grabbing the thumb preserves the contact offset instead of jumping to a different selection; tapping the track seeks and the carets retain step/wrap navigation. Empty and single-item rails use a muted appearance. SDL regression checks cover both palettes, release/focus-loss cleanup and dragging; physical touch feel and frame pacing still need handheld verification.
 
 For an explicit one-shot hardware capture, create `rgds/userdata/session/capture-request` while our launcher runs. The next frame writes `ui-snapshot-top.bmp` and `ui-snapshot-bottom.bmp` in the same directory and removes the request. This is a development-only filesystem control; the launcher does not continuously capture screens. Password entry remains masked. Profile animation frame time on the device before adding further effects.
+
+
+The default SSH root follows the configured installation even when automatic
+startup is disabled or Startup is set to stock. Omit `SD_ROOT` to keep APPS, boot
+and deployment on the same release; specify it only when deliberately testing
+another installation. Installation also refreshes existing RG DS Core and Probe
+entries on the stock card mounts, so internal-storage deployments update the
+entries actually opened by the stock menu. See
+[stock recovery and polish](archive/STOCK_POLISH_2026-10-11.md) for the October 11 evidence.
+
+## Fourth engine and local verification
+
+`make build-melonds` builds the pinned ARM64 melonDS core and SDL frontend; `make package` includes it with DSperate and NNDDSS while retaining the stock DraStic adapter. Engine IDs 0–2 are unchanged; melonDS is 3. [Integration details](archive/MELONDS_INTEGRATION_2026-10-11.md) separate synthetic VM checks from pending handheld acceptance. The optional local Ubuntu VM supports these executable checks; it is not an Armbian image builder. The old OS build and flash targets have been removed.
+
+For local launch/menu work, build the host launcher and run the focused checks:
+
+```sh
+python3 -B tools/build.py host
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=tests:runtime python3 -m unittest \
+  test_launch_preparation test_nnddss_independent test_game_menu \
+  test_game_menu_ui test_shader_pixels test_melonds_integration
+```
+
+`test_shader_pixels` uses a real host EGL/GLES implementation (Mesa or the
+installed Android emulator's SwiftShader libraries); it does not run games.
+If the shader pipeline changes, regenerate previews with
+`tools/build_shader_previews.py` using a Python environment with Pillow, then
+validate/package normally. Preview manifests bind to the exact pipeline source.
+
+`tools/benchmark_runtime_idle.py --nnddss-app /path/to/unpacked/release --output
+build/runtime-overhead.json` measures repeat preparation of that release in a
+temporary home without running the engine. See [measurement boundaries](archive/LAUNCH_MENU_POLISH_2026-10-11.md).
+Keep core/user saves out of benchmark fixtures. No deploy watcher or hardware
+command is needed for these checks. [Save locations](SAVES.md) and
+[engine candidates](EMULATOR_OPTIONS.md) document the current boundaries.
+
+The [DraStic add-on/settings review](archive/DRASTIC_ADDONS_2026-10-11.md) pins both
+candidate repositories without executing their installers. Run
+`PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=tests:runtime python3 -m unittest test_emulator_settings_ui test_settings_interactions`
+after building the host launcher to exercise disabled options, picker cancel/apply,
+default inheritance, restart selection and failed preference writes. The tests
+drive real SDL input with temporary data; they do not launch handheld emulators.
+
+## Optional SuperDrastic backend
+
+`make build-superdrastic` builds the pinned ARM64 library in local Linux (the existing
+Lima builder on this Mac). `make package` validates and includes it with source
+and notices. Nothing deploys until a separate device command is requested.
+See [SUPERDRASTIC.md](SUPERDRASTIC.md) for prerequisites, local tests and the
+remaining display/save/performance acceptance gates. DSperate stays the default.

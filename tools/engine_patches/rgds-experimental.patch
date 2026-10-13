@@ -1,0 +1,254 @@
+--- a/src/frontend/sdl/input.h
++++ b/src/frontend/sdl/input.h
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ // DSperate - Nintendo DS emulator. Copyright (C) 2026 DSperate contributors.
+ #pragma once
++#include "rgds_stylus.hpp"
+ #include "core/io/io.h"
+ #include "core/input/input_log.h"
+ 
+@@ -196,6 +197,7 @@
+   // for reset/leave, so this stick must not fire them mid-rebind.
+   u32  face_stick_ = 0;
+   u32  menu_fb_held_ = 0, menu_fb_pressed_ = 0;  // menu-only fallback, for orphaned bindings
++  rgds_experimental::Stylus rgds_stylus_;
+   bool touching_ = false, touched_ = false;
+   int  touch_x_ = 0, touch_y_ = 0;
+   bool quit_ = false;
+--- a/src/frontend/sdl/input.cpp
++++ b/src/frontend/sdl/input.cpp
+@@ -954,13 +954,13 @@
+   // Mouse copies of touches (SDL_TOUCH_MOUSEID) are skipped: the finger
+   // events carry the touch, and the copy goes to whichever window has focus.
+   case SDL_MOUSEBUTTONDOWN:
+-    if (e.button.which != SDL_TOUCH_MOUSEID && e.button.button == SDL_BUTTON_LEFT) touch_at(e.button.x, e.button.y, owner(e.button.windowID));
++    if (!rgds_stylus_.held() && e.button.which != SDL_TOUCH_MOUSEID && e.button.button == SDL_BUTTON_LEFT) touch_at(e.button.x, e.button.y, owner(e.button.windowID));
+     break;
+   case SDL_MOUSEMOTION:
+-    if (e.motion.which != SDL_TOUCH_MOUSEID && (e.motion.state & SDL_BUTTON_LMASK)) touch_at(e.motion.x, e.motion.y, owner(e.motion.windowID));
++    if (!rgds_stylus_.held() && e.motion.which != SDL_TOUCH_MOUSEID && (e.motion.state & SDL_BUTTON_LMASK)) touch_at(e.motion.x, e.motion.y, owner(e.motion.windowID));
+     break;
+   case SDL_MOUSEBUTTONUP:
+-    if (e.button.which != SDL_TOUCH_MOUSEID && e.button.button == SDL_BUTTON_LEFT) touching_ = false;
++    if (!rgds_stylus_.held() && e.button.which != SDL_TOUCH_MOUSEID && e.button.button == SDL_BUTTON_LEFT) touching_ = false;
+     break;
+ 
+   // SDL reports touch normalised to the window, or to the device when it
+@@ -971,11 +971,19 @@
+     if (!d) break;
+     int w = 0, h = 0;
+     d->output_size(w, h);
+-    touch_at(static_cast<int>(e.tfinger.x * w), static_cast<int>(e.tfinger.y * h), *d);
++    if (w <= 0 || h <= 0 || !std::isfinite(e.tfinger.x) || !std::isfinite(e.tfinger.y)) break;
++    const int x = rgds_experimental::Stylus::pixel(e.tfinger.x, w);
++    const int y = rgds_experimental::Stylus::pixel(e.tfinger.y, h);
++    if (e.type == SDL_FINGERDOWN) {
++      int screen = 0, sx = 0, sy = 0;
++      if (!d->map_point(x, y, screen, sx, sy) || screen != 1) break;
++      if (!rgds_stylus_.down(e.tfinger.touchId, e.tfinger.fingerId)) break;
++    } else if (!rgds_stylus_.owns(e.tfinger.touchId, e.tfinger.fingerId)) break;
++    touch_at(x, y, *d);
+     break;
+   }
+   case SDL_FINGERUP:
+-    if (finger_target(e.tfinger, display, second)) touching_ = false;
++    if (rgds_stylus_.up(e.tfinger.touchId, e.tfinger.fingerId)) touching_ = false;
+     break;
+ 
+   case SDL_WINDOWEVENT:
+--- a/src/frontend/sdl/main.cpp
++++ b/src/frontend/sdl/main.cpp
+@@ -1919,7 +1919,9 @@
+   const bool autosave_png = autosave_png_cfg != "false" && autosave_png_cfg != "0" && !autosave_png_cfg.empty();
+   bool ff_toggle = cfg.flag("emu.fast_forward", false);
+   int ff_speed = cfg.num("emu.ff_speed", 0), ff_skip = cfg.num("emu.ff_skip", 3);
+-  bool was_fast = false;
++  bool was_fast = false, was_ff_raster = false;
++  // Keep an A/B switch for device profiling; this changes host rendering only.
++  const bool ff_raster_enabled = !std::getenv("DS_FF_RASTER") || std::atoi(std::getenv("DS_FF_RASTER")) != 0;
+   std::vector<u32> cursor_fb(ds::SCREEN_W * ds::SCREEN_H);   // bottom screen with the pen crosshair
+   std::vector<u32> osd_fb(ds::SCREEN_W * ds::SCREEN_H);      // primary screen with the slot digit / FPS counter
+   std::vector<u32> flash_fb[2] = {std::vector<u32>(ds::SCREEN_W * ds::SCREEN_H), std::vector<u32>(ds::SCREEN_W * ds::SCREEN_H)};   // both screens under the screenshot flash
+@@ -3437,14 +3439,24 @@
+       fast = false;
+     }
+     if (fast != was_fast) { was_fast = fast; pacer.reset(); }
++    // FF's presentation cadence can also save invisible raster work. Capture
++    // and FIFO frames always render: their pixels can be read by the guest.
++    nds.gpu.set_frameskip_capture(fast ? false : fs_capture);
++    const bool ff_raster = fast && ff_raster_enabled && ff_skip > 0 &&
++                          !pause_pending && !shot_pending && nds.gpu.frame_skip_safe();
++    if (ff_raster != was_ff_raster) {
++      was_ff_raster = ff_raster;
++      fs_left = fs_blocks = 0; fs_in_skip = false; fs_drawn_run = 0;
++    }
++    const int render_skip_limit = ff_raster ? std::max(fs_limit, ff_skip) : fs_limit;
+     // Policy decides for the frame after the one about to run; what the
+     // core settled for this one governs the present.
+-    if (fs_limit > 0) {
++    if (render_skip_limit > 0) {
+       const int period = nds.gpu.display_phase_period();
+       // Limit counts blocks, not frames: on a game whose screens take a
+       // whole period to come round, frameskip=3 skips three periods per
+       // drawn one, the same ratio a period-1 game gets.
+-      const int max_blocks = fs_limit;
++      const int max_blocks = render_skip_limit;
+       if (period > 1 && !fs_period_warned) {
+         fs_period_warned = true;
+         std::fprintf(stderr, "frameskip: this game drives its screens over %d frames, so it skips %d of every %d\n",
+@@ -3453,7 +3465,7 @@
+       if (fs_left == 0) {                         // a block ended: pick the next one
+         // Fixed skips its blocks whatever the clock says; adaptive skips only
+         // while it is behind, and both stop at the limit and draw a period.
+-        const bool want = !fs_adaptive || fs_debt_ms > frame_budget_ms * 0.5;
++        const bool want = ff_raster || !fs_adaptive || fs_debt_ms > frame_budget_ms * 0.5;
+         const bool skip = max_blocks > 0 && want && fs_blocks < max_blocks;
+         fs_blocks = skip ? fs_blocks + 1 : 0;
+         fs_in_skip = skip;
+@@ -3461,11 +3473,13 @@
+       }
+       --fs_left;
+       nds.gpu.set_frame_skip(fs_in_skip);
++    } else {
++      nds.gpu.set_frame_skip(false);
+     }
+     const bool skipped = nds.gpu.will_skip_frame();
+     // Games that render one screen per frame (the other via capture) show one
+     // stale screen right after a skip; draw the block through and present its last frame.
+-    const int fs_period = fs_limit > 0 ? nds.gpu.display_phase_period() : 1;
++    const int fs_period = render_skip_limit > 0 ? nds.gpu.display_phase_period() : 1;
+     if (skipped) { ++fs_skipped; fs_drawn_run = 0; } else ++fs_drawn_run;
+     const bool fs_partial = fs_period > 1 && fs_drawn_run < fs_period;
+     // Say why frameskip is doing nothing, once, rather than looking broken.
+@@ -3473,7 +3487,7 @@
+       std::fprintf(stderr, "frameskip: this game display-captures its frames, which cannot be skipped exactly;\n"
+                            "           drop --no-frameskip-capture (or [emu] frameskip_capture = true) to skip them anyway\n");
+     const bool present = pause_pending || shot_pending ? !skipped
+-                                       : (!skipped && !fs_partial && (!fast || ff_skip <= 0 || frames % static_cast<u64>(ff_skip + 1) == 0));
++                                       : (!skipped && !fs_partial && (ff_raster || !fast || ff_skip <= 0 || frames % static_cast<u64>(ff_skip + 1) == 0));
+     // Translucent PiP inset comes up to opaque while touched, holds
+     // pip_touch_hold frames, then fades back. Only when the inset IS the bottom screen.
+     {
+--- a/src/core/gpu/gpu.h
++++ b/src/core/gpu/gpu.h
+@@ -116,6 +116,7 @@
+     if (static_cast<int>((addr >> 17) & 7) == read_trap_bank_) { prof::add(prof::C_2D_A_JOIN_READS, 1); join_worker(JoinSite::Trap); }
+   }
+   bool will_skip_frame() const { return skip_frame_; }
++  bool frame_skip_safe() const { return skippable(); }
+ 
+   // A frontend-owned, panel-sized destination for one screen. When set, the
+   // output stage scales each line into it as produced instead of filling fb_.
+--- a/src/core/gpu/gpu.cpp
++++ b/src/core/gpu/gpu.cpp
+@@ -545,6 +545,10 @@
+   run_fifo_ = uses_fifo() || nds_.dma.in_mode(Cpu::ARM9, dma::MODE9_DISPLAY_FIFO);
+   if (capcnt_ & (1u << 31)) capture_on_ = true;
+   if (capture_on_) capture_recent_ = CAPTURE_STICKY; else if (capture_recent_) --capture_recent_;
++  // RGDS: capture/FIFO may become active after the line-215 skip decision.
++  // Materialize that deferred raster before taking its frame reference; the
++  // captured VRAM must contain this frame, even during fast forward.
++  if (skip_next_ && !skippable()) nds_.gpu3d.render_frame();
+   // 3D frame this display frame reads, latched here since the raster moves on
+   // at line 215 while the compositor may still be reading it.
+   ref3d_ = nds_.gpu3d.frame_ref(!capture_on_);   // a capture frame reads the 3D of this frame, never the one before
+--- a/tests/gpu_test.cpp
++++ b/tests/gpu_test.cpp
+@@ -436,7 +436,33 @@
+   }
+ }
+ 
++// Capture is enabled in VBlank *after* the raster skip was scheduled. A
++// native framebuffer comparison alone misses this: compare captured VRAM.
++static void test_late_capture_after_raster_skip() {
++  std::vector<u8> expected;
++  for (bool skip : {false, true}) {
++    NDS n;
++    n.bus.dma_write16(Cpu::ARM9, 0x04000304, 0x820F);
++    n.bus.dma_write16(Cpu::ARM9, 0x04000240, 0x0080); // A is LCDC/capture target
++    n.bus.dma_write32(Cpu::ARM9, 0x04000350, 0x001F001F); // red, alpha31
++    n.gpu3d.vblank();
++    n.gpu.set_frameskip_capture(false);
++    n.gpu.set_frame_skip(skip);
++    run_display_frame(n, [](NDS&, u32, bool){});
++    // The deferred 3D frame must be ready when capture starts at line 0.
++    n.bus.dma_write32(Cpu::ARM9, 0x04000064, (1u<<31)|(1u<<24)|(3u<<20));
++    n.gpu.set_frame_skip(false);
++    run_display_frame(n, [](NDS&, u32, bool){});
++    const u8* v = n.bus.vram_bank(0);
++    if (!skip) {
++      expected.assign(v, v + 256*192*2);
++      CHECK_EQ(unsigned(v[0]) | (unsigned(v[1])<<8), 0x801Fu);
++    } else CHECK(std::memcmp(expected.data(), v, expected.size()) == 0);
++  }
++}
++
+ int main() {
++  test_late_capture_after_raster_skip();
+   test_vram_views();
+   test_text_bg_and_backdrop();
+   test_sprites_and_window();
+--- a/src/core/gpu/gpu3d.cpp
++++ b/src/core/gpu/gpu3d.cpp
+@@ -635,7 +635,9 @@
+       else if (matrix_mode_ == 3) { op(tex_.data()); }
+       else {
+         op(pos_.data());
+-        if (matrix_mode_ == 2) op(vec_.data()); else clip_dirty_ = true;
++        if (matrix_mode_ == 2) op(vec_.data());
++        // Position changes invalidate the combined transform in mode 2 too.
++        clip_dirty_ = true;
+       }
+     };
+     switch (cmd) {
+--- a/tests/gpu3d_test.cpp
++++ b/tests/gpu3d_test.cpp
+@@ -83,6 +83,39 @@
+   CHECK_EQ(r32(nds, 0x0400062C), 0x1000u);
+ }
+ 
++// A position/vector (mode 2) matrix write must invalidate the combined
++// projection/position cache even when an earlier vertex already populated it.
++// Mario Kart draws successive wheels with this path: a stale cache puts the
++// next wheel on top of the previous one in both software and Vulkan output.
++static void test_mode2_matrix_cache() {
++  const u32 commands[] = {0x16, 0x17, 0x18, 0x19, 0x1A, 0x1C};
++  for (u32 cmd : commands) {
++    NDS nds; power_on(nds);
++    w32(nds, CMD(0x10), 2);
++    w32(nds, CMD(0x15), 0);
++    auto position = [&] {
++      w32(nds, CMD(0x71), 0x10001000);
++      w32(nds, CMD(0x71), 0x1000);
++      advance(nds, 1000);
++    };
++    position();
++    CHECK_EQ(r32(nds, 0x04000620), 0x1000u); // populate identity cache
++    if (cmd == 0x1C) {
++      w32(nds, CMD(cmd), 0x1000); w32(nds, CMD(cmd), 0); w32(nds, CMD(cmd), 0);
++    } else {
++      const int rows = cmd == 0x16 || cmd == 0x18 ? 4 : 3;
++      const int columns = cmd == 0x1A ? 3 : 4;
++      for (int c = 0; c < columns; ++c) for (int r = 0; r < rows; ++r)
++        w32(nds, CMD(cmd), c == r ? (c == 0 ? 0x2000 : 0x1000) : 0);
++    }
++    position();
++    CHECK_EQ(r32(nds, 0x04000620), 0x2000u);
++    CHECK_EQ(r32(nds, 0x04000624), 0x1000u);
++    CHECK_EQ(r32(nds, 0x04000628), 0x1000u);
++    CHECK_EQ(r32(nds, 0x0400062C), 0x1000u);
++  }
++}
++
+ // Orthographic projection so clip-space X/Y map directly to the screen.
+ static void ortho(NDS& nds) {
+   w32(nds, CMD(0x10), 0);
+@@ -136,6 +169,7 @@
+   test_gxstat_synthesis();
+   test_gxstat_swap_busy();
+   test_matrix_stack();
++  test_mode2_matrix_cache();
+   test_flat_quad();
+   test_final_pass();
+   if (failures) { std::fprintf(stderr, "%d failure(s)\n", failures); return 1; }

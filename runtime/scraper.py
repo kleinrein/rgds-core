@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""ScreenScraper API v2 client. Credentials stay out of argv, logs and SD exports."""
+"""Background artwork service using public, account-free providers."""
 import argparse
 import ctypes
 import ctypes.util
+import errno
 from datetime import datetime, timezone
 import getpass
 import hashlib
@@ -207,15 +208,29 @@ def image_to_bmp(content, path):
     if not surface: raise ScraperError("The downloaded artwork could not be decoded.")
     path.parent.mkdir(parents=True, exist_ok=True)
     pending = path.with_suffix(".pending.bmp")
+    reduced = None
     try:
         size = ctypes.cast(surface, ctypes.POINTER(Surface)).contents
         if size.w < 1 or size.h < 1 or size.w * size.h > 4 * 1024**2:
             raise ScraperError("Artwork dimensions exceed the limit.")
+        if max(size.w, size.h) > 384:
+            ratio = 384 / max(size.w, size.h)
+            sdl.SDL_CreateRGBSurface.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32]
+            sdl.SDL_CreateRGBSurface.restype = ctypes.c_void_p
+            sdl.SDL_UpperBlitScaled.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+            sdl.SDL_UpperBlitScaled.restype = ctypes.c_int
+            sdl.SDL_SetSurfaceBlendMode.argtypes = [ctypes.c_void_p, ctypes.c_int]
+            reduced = sdl.SDL_CreateRGBSurface(0, max(1, round(size.w * ratio)), max(1, round(size.h * ratio)), 32, 0xff0000, 0xff00, 0xff, 0xff000000)
+            if not reduced: raise ScraperError("Could not prepare the downloaded artwork.")
+            sdl.SDL_SetSurfaceBlendMode(surface, 0)
+            if sdl.SDL_UpperBlitScaled(surface, None, reduced, None) != 0:
+                raise ScraperError("Could not resize the downloaded artwork.")
         destination = sdl.SDL_RWFromFile(os.fsencode(pending), b"wb")
-        if not destination or sdl.SDL_SaveBMP_RW(surface, destination, 1) != 0:
+        if not destination or sdl.SDL_SaveBMP_RW(reduced or surface, destination, 1) != 0:
             raise ScraperError("Could not save the downloaded artwork.")
         pending.replace(path)
     finally:
+        if reduced: sdl.SDL_FreeSurface(reduced)
         sdl.SDL_FreeSurface(surface); pending.unlink(missing_ok=True)
 
 
@@ -226,66 +241,90 @@ def games(roots):
 
 def scrape(data, client, roms, force=False):
     folder = data / "scraper"
-    total, completed, missing = len(roms), 0, 0
-    for rom in roms:
-        if (folder / "cancel").exists():
-            write_fields(folder / "status.ini", {"state": "cancelled", "message": "Scraping stopped.", "completed": completed, "total": total}); return
-        item = data / "library" / game_key(rom)
-        write_fields(folder / "status.ini", {"state": "scraping", "message": "Fetching artwork", "completed": completed, "total": total, "game": rom.stem})
-        if force or not (item / "box.bmp").exists():
-            try:
-                game = client.game(rom)
-                fields = metadata(game)
-                write_fields(item / "info.ini", fields)
-                media = game.get("medias", [])
-                region = next((region for region in REGIONS if any(m.get("type") == "box-2D" and m.get("region") == region for m in media)), "wor")
-                raw = client.request("mediaJeu.php", {"systemeid": SYSTEM, "jeuid": game["id"], "media": "box-2D(" + region + ")", "maxwidth": 480, "maxheight": 480, "outputformat": "png"}, media=True)
-                image_to_bmp(raw, item / "box.bmp")
-            except NotFound:
-                missing += 1
-        completed += 1
-    message = "Artwork is up to date." if missing == 0 else "Finished. No artwork found for %d games." % missing
-    write_fields(folder / "status.ini", {"state": "done", "message": message, "completed": completed, "total": total, "missing": missing})
+    total, completed, missing, failed, cached, downloaded = len(roms), 0, 0, 0, 0, 0
+    report = []
+
+    def publish(state, message, game=""):
+        write_fields(folder / "status.ini", {"state": state, "message": message,
+                     "completed": completed, "total": total, "missing": missing,
+                     "failed": failed, "cached": cached, "downloaded": downloaded, "game": game}, durable=False)
+
+    try:
+        for rom in roms:
+            if (folder / "cancel").exists(): raise KeyboardInterrupt()
+            item = data / "library" / game_key(rom)
+            publish("scraping", "Fetching artwork", rom.stem)
+            outcome = {"game": rom.stem, "key": game_key(rom), "state": "cached", "message": "Artwork already available."}
+            if not force and (item / "box.bmp").exists():
+                cached += 1
+            else:
+                try:
+                    if hasattr(client, "artwork"):
+                        override = read_fields(item / "artwork.ini").get("match_title", "")
+                        raw, fields = client.artwork(rom, name_override=override) if override else client.artwork(rom)
+                    else:
+                        game = client.game(rom)
+                        fields = metadata(game)
+                        media = game.get("medias", [])
+                        region = next((region for region in REGIONS if any(m.get("type") == "box-2D" and m.get("region") == region for m in media)), "wor")
+                        raw = client.request("mediaJeu.php", {"systemeid": SYSTEM, "jeuid": game["id"], "media": "box-2D(" + region + ")", "maxwidth": 384, "maxheight": 384, "outputformat": "png"}, media=True)
+                    image_to_bmp(raw, item / "box.bmp")
+                    existing = read_fields(item / "info.ini")
+                    existing.update(fields)
+                    write_fields(item / "info.ini", existing)
+                    downloaded += 1
+                    outcome.update(state="downloaded", message="Artwork saved.", provider=fields.get("provider", ""))
+                except NotFound as error:
+                    missing += 1
+                    outcome.update(state="missing", message=str(error) or "No matching cover found.")
+                except ScraperError as error:
+                    failed += 1
+                    outcome.update(state="error", message=str(error))
+                except (OSError, ValueError, zipfile.BadZipFile, RuntimeError) as error:
+                    if isinstance(error, OSError) and error.errno in (errno.ENOSPC, errno.EROFS): raise
+                    failed += 1
+                    outcome.update(state="error", message="Could not read this game or save its artwork. Existing artwork is retained.")
+            # Per-game results power Review unmatched and survive cancellation.
+            write_fields(item / "artwork-status.ini", outcome, durable=False)
+            report.append(outcome)
+            completed += 1
+        message = "%d / %d covers available." % (cached + downloaded, total)
+        if missing or failed: message += " %d unmatched, %d to retry." % (missing, failed)
+        publish("done", message)
+    except KeyboardInterrupt:
+        publish("cancelled", "Stopped. %d / %d games checked; fetch missing artwork to continue." % (completed, total))
+    finally:
+        folder.mkdir(parents=True, exist_ok=True)
+        pending = folder / "report.pending.json"
+        pending.write_text(json.dumps({"schema": 1, "total": total, "completed": completed, "results": report}, ensure_ascii=False, indent=2) + "\n")
+        pending.replace(folder / "report.json")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("setup-app", "status", "login", "logout", "scrape", "index"))
+    parser.add_argument("action", choices=("status", "scrape", "index"))
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--private-dir", type=Path)
     parser.add_argument("--rom-dir", type=Path, action="append", default=[])
     parser.add_argument("--stdin", action="store_true")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--rom", type=Path, help="Fetch one game without scanning the library")
+    parser.add_argument("--provider", choices=("auto", "gametdb", "libretro"), default="auto")
     args = parser.parse_args()
     folder = args.private_dir or private_root(args.data)
     status = args.data / "scraper/status.ini"
     try:
         if args.action == "index":
             for rom in games(args.rom_dir): index_banner(args.data, rom)
-        elif args.action == "setup-app":
-            config = json.load(sys.stdin) if args.stdin else {"devid": input("Project developer ID: "), "devpassword": getpass.getpass("Project developer password: ")}
-            if not all(isinstance(config.get(k), str) and config[k] for k in ("devid", "devpassword")):
-                raise ScraperError("Both application credentials are required.")
-            save_private(folder / "screenscraper-app.json", {k: config[k] for k in ("devid", "devpassword")})
-            write_fields(status, {"state": "signed_out", "message": "Ready to sign in."})
         elif args.action == "status":
-            app, account = read_private(folder / "screenscraper-app.json"), read_private(folder / "screenscraper-account.json")
-            ready = bool((app.get("devid") and app.get("devpassword")) or (os.environ.get("SCREENSCRAPER_DEVID") and os.environ.get("SCREENSCRAPER_DEVPASSWORD")))
-            write_fields(status, {"state": "signed_in" if ready and account.get("ssid") else "signed_out" if ready else "needs_setup",
-                                  "message": "Ready to fetch artwork." if ready else "ScreenScraper is not configured for this build yet.", "username": account.get("ssid", "")})
-        elif args.action == "logout":
-            (folder / "screenscraper-account.json").unlink(missing_ok=True)
-            write_fields(status, {"state": "signed_out", "message": "Signed out. Cached artwork stays available."})
-        elif args.action == "login":
-            raw = json.load(sys.stdin)
-            account = {"ssid": raw.get("username", ""), "sspassword": raw.get("password", "")}
-            client = Client(credentials(folder, account)); client.login()
-            save_private(folder / "screenscraper-account.json", account)
-            write_fields(status, {"state": "signed_in", "message": "Ready to fetch artwork.", "username": account["ssid"]})
+            previous = read_fields(status)
+            if previous.get("state") not in ("done", "cancelled") and not (previous.get("state") == "error" and "completed" in previous):
+                write_fields(status, {"state": "ready", "message": "Ready to fetch artwork.", "provider": args.provider})
         else:
             (args.data / "scraper/cancel").unlink(missing_ok=True)
-            client = Client(credentials(folder)); client.login()
-            scrape(args.data, client, games(args.rom_dir), args.force)
+            from public_artwork import PublicClient
+            client = PublicClient(args.provider, cache=args.data / "scraper/catalogs", cancelled=lambda: (args.data / "scraper/cancel").exists())
+            scrape(args.data, client, [args.rom.resolve()] if args.rom else games(args.rom_dir), args.force)
         return 0
     except KeyboardInterrupt:
         if args.action != "index": write_fields(status, {"state": "cancelled", "message": "Scraping stopped."})
@@ -298,5 +337,6 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.modules["scraper"] = sys.modules[__name__]
     signal.signal(signal.SIGTERM, lambda _s, _f: (_ for _ in ()).throw(KeyboardInterrupt()))
     sys.exit(main())

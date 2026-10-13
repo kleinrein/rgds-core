@@ -1,0 +1,698 @@
+# UTF-8 source\ttranslation. One entry per line.
+3D rendering automatically uses worker threads.	Kết xuất 3D tự động dùng các luồng xử lý.
+3D resolution	Độ phân giải 3D
+3D threading changed for this session. Settings storage is unavailable.	Đã đổi luồng 3D cho phiên này. Không thể lưu cài đặt.
+3D threading changed. No restart needed.	Đã đổi luồng 3D. Không cần khởi động lại.
+A  Apply	A  Áp dụng
+A  Done	A  Xong
+A  Play	A  Chơi
+A / Start	A / Start
+A gentle scanline pattern with original colours.	Vạch quét nhẹ với màu gốc.
+A natural colour and contrast treatment.	Màu sắc và độ tương phản tự nhiên.
+A screen style for this cartridge	Kiểu màn hình cho băng trò chơi này
+A stronger LCD texture and scanline look.	Kết cấu LCD và vạch quét đậm hơn.
+A subtle handheld LCD pixel pattern.	Hoa văn điểm ảnh LCD cầm tay nhẹ.
+A subtle pixel grid with a bright, readable image.	Lưới điểm ảnh nhẹ với hình ảnh sáng, rõ.
+Add your DS games to fetch their artwork.	Thêm trò chơi DS để tải ảnh bìa.
+After	Sau
+All games	Tất cả trò chơi
+Amber	Hổ phách
+Anbernic / Escape cancels	Anbernic / Escape để hủy
+Anbernic startup is unavailable in RGDS OS.	Không có khởi động Anbernic trong RGDS OS.
+Animations	Hoạt ảnh
+Applies immediately. Higher clocks use more battery.	Áp dụng ngay. Xung nhịp cao hơn tiêu thụ nhiều pin hơn.
+Applies immediately. Your game keeps its progress.	Áp dụng ngay. Tiến trình trò chơi được giữ lại.
+Apply	Áp dụng
+Applying shader…	Đang áp dụng bộ lọc…
+Artwork	Ảnh bìa
+Artwork & ScreenScraper	Ảnh bìa
+Artwork source	Nguồn ảnh bìa
+Artwork sources	Các nguồn ảnh bìa
+Auto-load state	Tự động tải trạng thái
+Auto-save on exit	Tự động lưu khi thoát
+Automatic	Tự động
+Automatic (free)	Tự động
+Available networks	Mạng khả dụng
+B  Cancel	B  Hủy
+B  Close	B  Đóng
+BACK HOME	VỀ TRANG CHỦ
+Back	Quay lại
+Balance battery life and speed	Cân bằng thời lượng pin và tốc độ
+Balanced	Cân bằng
+Battery	Pin
+Battery percentage	Phần trăm pin
+Battery saver	Tiết kiệm pin
+Before	Trước
+Before you play	Trước khi chơi
+Binding unchanged.	Gán nút không đổi.
+Boot	Khởi động
+Boot into	Khởi động vào
+Both screens	Cả hai màn hình
+Bottom display	Màn hình dưới
+Box art, titles and game details	Ảnh bìa, tên và thông tin trò chơi
+Brightness	Độ sáng
+Browser layout	Bố cục thư viện
+Build, storage and device address	Phiên bản, bộ nhớ và địa chỉ thiết bị
+Button	Nút
+Button layout	Bố cục nút
+Button {0}	Nút {0}
+Buttons and the game menu shortcut	Các nút và phím tắt menu trò chơi
+COLOUR MODE	CHẾ ĐỘ MÀU
+Cancel	Hủy
+Cartridges	Băng trò chơi
+Changes immediately. Map a button in Controls for quick access.	Áp dụng ngay. Gán nút trong Điều khiển để truy cập nhanh.
+Changing 3D threading…	Đang đổi luồng 3D…
+Changing speed…	Đang đổi tốc độ…
+Check the current connection	Kiểm tra kết nối hiện tại
+Checkpoint loaded	Đã tải trạng thái
+Checkpoint loaded (preview)	Đã tải trạng thái (xem trước)
+Checkpoint loaded.	Đã tải trạng thái.
+Checkpoint saved	Đã lưu trạng thái
+Checkpoint saved (preview)	Đã lưu trạng thái (xem trước)
+Checkpoint saved.	Đã lưu trạng thái.
+Choose Anbernic or RG DS startup.	Chọn khởi động Anbernic hoặc RG DS.
+Choose an option	Chọn một tùy chọn
+Choose native or a sharper 3D image	Chọn hình ảnh 3D gốc hoặc sắc nét hơn
+Choose the core for this cartridge	Chọn trình giả lập cho băng này
+Choose the display backend for the next DraStic launch. DSperate stays your default.	Chọn cách hiển thị cho lần chạy DraStic tiếp theo. DSperate vẫn là mặc định.
+Choose what opens when you power on	Chọn nội dung mở khi bật máy
+Clear	Xóa
+Clear temporary cache	Xóa bộ nhớ đệm tạm
+Clear temporary game files?	Xóa các tệp trò chơi tạm?
+Close	Đóng
+Close the handheld to sleep	Gập máy để chuyển sang chế độ ngủ
+Colour treatment inspired by the original DS display.	Màu sắc lấy cảm hứng từ màn hình DS gốc.
+Compare	So sánh
+Confirm	Xác nhận
+Connect	Kết nối
+Connected	Đã kết nối
+Connected.	Đã kết nối.
+Connecting…	Đang kết nối…
+Connectivity	Kết nối mạng
+Continue	Tiếp tục
+Continue where you left off	Tiếp tục từ chỗ đã dừng
+Control unavailable on this device	Không có điều khiển trên thiết bị này
+Controls	Điều khiển
+Controls saved for this game.	Đã lưu điều khiển cho trò chơi này.
+Cool crisp	Lạnh và nét
+Cool whites with a small contrast boost.	Màu trắng lạnh với độ tương phản tăng nhẹ.
+Could not apply brightness	Không thể áp dụng độ sáng
+Could not apply saved brightness	Không thể áp dụng độ sáng đã lưu
+Could not apply saved power mode	Không thể áp dụng chế độ nguồn đã lưu
+Could not apply setting - see log	Không thể áp dụng cài đặt – xem nhật ký
+Could not apply this shader.	Không thể áp dụng bộ lọc này.
+Could not apply volume	Không thể áp dụng âm lượng
+Could not bring the Wi-Fi adapter up. Try again.	Không thể bật bộ điều hợp Wi-Fi. Hãy thử lại.
+Could not change 3D threading. Your game is unchanged.	Không thể đổi luồng 3D. Trò chơi không thay đổi.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	Không thể xác nhận kết nối Wi-Fi đã chọn. Quét và thử lại.
+Could not enable lid wake	Không thể bật đánh thức khi mở nắp
+Could not load. Resume, retry, or return without saving.	Không thể tải. Tiếp tục, thử lại hoặc quay về không lưu.
+Could not read this collection. Try again.	Không thể đọc bộ sưu tập này. Hãy thử lại.
+Could not restore previous hardware setting	Không thể khôi phục cài đặt phần cứng trước
+Could not save all settings. Check storage.	Không thể lưu mọi cài đặt. Kiểm tra bộ nhớ.
+Could not save brightness	Không thể lưu độ sáng
+Could not save controls. Check writable storage.	Không thể lưu điều khiển. Kiểm tra quyền ghi bộ nhớ.
+Could not save game settings. Previous values kept.	Không thể lưu cài đặt trò chơi. Giữ các giá trị trước.
+Could not save matching title.	Không thể lưu tên đối chiếu.
+Could not save settings	Không thể lưu cài đặt
+Could not save timezone	Không thể lưu múi giờ
+Could not save volume	Không thể lưu âm lượng
+Could not save. Resume, retry, or return without saving.	Không thể lưu. Tiếp tục, thử lại hoặc quay về không lưu.
+Could not send game action	Không thể gửi lệnh trò chơi
+Could not set volume - see log	Không thể đặt âm lượng – xem nhật ký
+Could not sleep - see log	Không thể ngủ – xem nhật ký
+Could not sleep. Reopen the lid and try again.	Không thể ngủ. Mở lại nắp và thử lại.
+Could not start artwork service	Không thể chạy dịch vụ ảnh bìa
+Could not start library scan	Không thể bắt đầu quét thư viện
+Could not write controls	Không thể ghi điều khiển
+Counts display updates, not emulation speed. Changes immediately.	Đếm lần cập nhật màn hình, không phải tốc độ giả lập. Áp dụng ngay.
+Counts emulated game frames. Changes immediately.	Đếm khung hình trò chơi giả lập. Áp dụng ngay.
+Covers	Ảnh bìa
+Custom	Tùy chỉnh
+DEFAULT THEME - CHECK LOG	GIAO DIỆN MẶC ĐỊNH – XEM NHẬT KÝ
+DS rounded	DS bo tròn
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: khuyên dùng hằng ngày. Độ phân giải gốc là mặc định.
+Dark	Tối
+Default	Mặc định
+Default emulator	Trình giả lập mặc định
+Default shader	Bộ lọc mặc định
+Delete	Xóa
+Desktop preview	Xem trước trên máy tính
+Development build	Bản phát triển
+Device address	Địa chỉ thiết bị
+Device information	Thông tin thiết bị
+Display FPS	FPS màn hình
+Done	Xong
+Down	Xuống
+DraStic backend	Cách hiển thị DraStic
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: lựa chọn cho các trò chơi cần nó. Các bản lưu được giữ riêng.
+ERROR	LỖI
+ERROR: Could not restore settings	LỖI: không thể khôi phục cài đặt
+ERROR: Could not restore settings - see log	LỖI: không thể khôi phục cài đặt – xem nhật ký
+Emulator	Trình giả lập
+Emulator settings	Cài đặt trình giả lập
+Engine managed	Do trình giả lập quản lý
+Enter here	Nhập tại đây
+Enter password	Nhập mật khẩu
+Enter your username and password	Nhập tên người dùng và mật khẩu
+Every game in this collection has artwork.	Mọi trò chơi trong bộ sưu tập này đều có ảnh bìa.
+FPS changed for this session. Settings storage is unavailable.	Đã đổi FPS cho phiên này. Không thể lưu cài đặt.
+FPS counter enabled.	Đã bật bộ đếm FPS.
+FPS counter hidden.	Đã ẩn bộ đếm FPS.
+Fast	Nhanh
+Fast-forward	Tua nhanh
+Fast-forward button	Nút tua nhanh
+Fast-forward enabled.	Đã bật tua nhanh.
+Fast-forward is unavailable for this emulator.	Trình giả lập này không hỗ trợ tua nhanh.
+Fast-forward style	Kiểu tua nhanh
+Favourite	Yêu thích
+Favourites	Yêu thích
+Fetch artwork	Tải ảnh bìa
+Fetch missing artwork	Tải ảnh bìa còn thiếu
+Find and connect to a nearby network	Tìm và kết nối mạng gần đây
+Finishing the system request	Đang hoàn tất yêu cầu hệ thống
+Follow your default button layout	Dùng bố cục nút mặc định
+Following your global controls.	Đang dùng điều khiển chung.
+Follows your Library default. Each emulator keeps its own saves.	Dùng mặc định của thư viện. Mỗi trình giả lập có bản lưu riêng.
+Frameskip	Bỏ khung hình
+Free space	Dung lượng trống
+Free space while keeping your saves	Giải phóng dung lượng và giữ bản lưu
+Game FPS	FPS trò chơi
+Game emulator	Trình giả lập trò chơi
+Game emulator saved.	Đã lưu trình giả lập trò chơi.
+Game menu	Menu trò chơi
+Game options	Tùy chọn trò chơi
+Game options saved	Đã lưu tùy chọn trò chơi
+GameTDB (free)	GameTDB
+Games	Trò chơi
+Give your eyes and hands a break.	Cho mắt và tay nghỉ ngơi.
+Global	Chung
+Global controls saved.	Đã lưu điều khiển chung.
+Hold	Giữ
+Home shortcut	Phím tắt trang chủ
+Inherit	Kế thừa
+Inherited	Đã kế thừa
+Jump to letter	Chuyển đến chữ cái
+Keep a checkpoint when returning home	Giữ trạng thái khi về trang chủ
+Keep playing	Tiếp tục chơi
+Keep this game in Favourites	Giữ trò chơi này trong Yêu thích
+Kernel	Nhân hệ thống
+Key {0}	Phím {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + cả hai màu
+LCD pixels with natural colour and contrast.	Điểm ảnh LCD với màu và độ tương phản tự nhiên.
+LCD pixels with the DS colour treatment.	Điểm ảnh LCD với màu DS.
+LCD pixels, DS colour and Natural Vision together.	Điểm ảnh LCD, màu DS và Natural Vision kết hợp.
+Language	Ngôn ngữ
+Launch cancelled	Đã hủy khởi chạy
+Left	Trái
+Left stick	Cần trái
+Left-handed	Thuận tay trái
+Less than a minute	Dưới một phút
+Library	Thư viện
+Library scan exceeded its limit	Quét thư viện vượt giới hạn
+Library scan failed	Quét thư viện thất bại
+Libretro (free)	Libretro
+Light	Sáng
+List	Danh sách
+Live background	Nền động
+Load	Tải
+Load requested. Resume to check your game.	Đã yêu cầu tải. Tiếp tục để kiểm tra trò chơi.
+Load state	Tải trạng thái
+Loading checkpoint…	Đang tải trạng thái…
+Looking for networks…	Đang tìm mạng…
+Magnified detail	Chi tiết phóng to
+Manage builds and temporary files	Quản lý phiên bản và tệp tạm
+Matching title	Tên đối chiếu
+Matching title saved. Choose Fetch artwork.	Đã lưu tên đối chiếu. Chọn Tải ảnh bìa.
+Menu idle sleep	Ngủ khi menu không hoạt động
+Mute	Tắt tiếng
+Muted	Đã tắt tiếng
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: lựa chọn tương thích. Thử DSperate trước để có tốc độ tốt hơn.
+Native	Gốc
+Native is faster; 2x uses more GPU time. Save & restart applies it.	Độ phân giải gốc nhanh hơn; 2x dùng GPU nhiều hơn. Lưu và khởi động lại để áp dụng.
+Native output	Hình ảnh gốc
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	Mạng đã tắt. Bật Wi-Fi để sử dụng.
+Never	Không bao giờ
+Next emulator	Trình giả lập tiếp theo
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Không có bộ điều hợp Wi-Fi. Bật Wi-Fi để khởi tạo.
+No button detected. Try again when you're ready.	Không phát hiện nút. Thử lại khi sẵn sàng.
+No checkpoint saved for this emulator yet.	Chưa có trạng thái cho trình giả lập này.
+No cover yet	Chưa có ảnh bìa
+No favourites yet	Chưa có trò chơi yêu thích
+No games	Không có trò chơi
+No games in this collection.	Không có trò chơi trong bộ sưu tập này.
+No networks found	Không tìm thấy mạng
+No previous build available.	Không có phiên bản trước.
+No recent games yet	Chưa có trò chơi gần đây
+Normal	Bình thường
+Normal speed.	Tốc độ bình thường.
+Not available	Không khả dụng
+Not connected	Chưa kết nối
+Not played yet	Chưa chơi
+OPEN	MỞ
+Off	Tắt
+Off (smooth)	Tắt (mượt)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Tắt để chuyển động mượt. Bỏ khung hình có thể tăng tốc. Khởi động lại để áp dụng.
+Off keeps the original picture.	Tắt để giữ hình ảnh gốc.
+On	Bật
+Open	Mở
+Open menu	Mở menu
+Open the Anbernic menu	Mở menu Anbernic
+Options	Tùy chọn
+Original pixels	Điểm ảnh gốc
+Original pixels and colours.	Điểm ảnh và màu sắc gốc.
+PLAY	CHƠI
+Password	Mật khẩu
+Pause when you need to.	Tạm dừng khi cần.
+Paused	Đã tạm dừng
+Performance	Hiệu năng
+Pixel classic	Điểm ảnh cổ điển
+Play at a comfortable volume.	Chơi với âm lượng dễ chịu.
+Please keep your handheld on	Hãy giữ máy luôn bật
+Pocket green	Xanh bỏ túi
+Power	Nguồn
+Power mode	Chế độ nguồn
+Power off	Tắt máy
+Power off your handheld?	Tắt máy cầm tay?
+Power profile	Cấu hình nguồn
+Powering off…	Đang tắt máy…
+Preparing controls…	Đang chuẩn bị điều khiển…
+Preparing the launcher	Đang chuẩn bị trình khởi chạy
+Preparing the library…	Đang chuẩn bị thư viện…
+Preparing your cartridges…	Đang chuẩn bị băng trò chơi…
+Preparing your library…	Đang chuẩn bị thư viện của bạn…
+Press a button for {0}	Nhấn nút cho {0}
+Press a button…	Nhấn một nút…
+Preview	Xem trước
+Preview Wi-Fi	Xem trước Wi-Fi
+Preview and choose your screen style	Xem trước và chọn kiểu màn hình
+Preview game	Trò chơi xem trước
+Preview unavailable	Không thể xem trước
+Previous build selected. Return to stock, then open RGDS again.	Đã chọn phiên bản trước. Về menu gốc rồi mở lại RGDS.
+Profile	Cấu hình
+READY	SẴN SÀNG
+REVIEW YOUR CHOICE	KIỂM TRA LỰA CHỌN
+RGDS build	Phiên bản RGDS
+ROUNDED FONT UNAVAILABLE	KHÔNG CÓ PHÔNG BO TRÒN
+Recents	Gần đây
+Reduce rendering work when needed	Giảm tải kết xuất khi cần
+Refresh	Làm mới
+Refresh connection	Làm mới kết nối
+Release for options	Thả để xem tùy chọn
+Remap	Gán lại
+Request cancelled.	Đã hủy yêu cầu.
+Request failed. Check the connection or device log and try again.	Yêu cầu thất bại. Kiểm tra kết nối hoặc nhật ký thiết bị rồi thử lại.
+Reset	Đặt lại
+Rest after a period of inactivity	Ngủ sau một thời gian không hoạt động
+Restart	Khởi động lại
+Restart menu	Khởi động lại menu
+Restart the RGDS menu?	Khởi động lại menu RGDS?
+Restart the device?	Khởi động lại thiết bị?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	Khởi động lại dùng {0}. Bản lưu và trạng thái được giữ riêng theo trình giả lập.
+Restarting…	Đang khởi động lại…
+Restore defaults	Khôi phục mặc định
+Restore the last installed RGDS build	Khôi phục phiên bản RGDS cài gần nhất
+Restoring settings	Đang khôi phục cài đặt
+Restoring settings…	Đang khôi phục cài đặt…
+Resume	Tiếp tục
+Resume game	Tiếp tục trò chơi
+Return	Quay về
+Return home	Về trang chủ
+Return home before changing startup.	Về trang chủ trước khi đổi khởi động.
+Return home from your game first.	Hãy về trang chủ từ trò chơi trước.
+Return to game	Về trò chơi
+Return to stock	Về menu gốc
+Return to the original button layout	Khôi phục bố cục nút gốc
+Return to the stock menu?	Về menu gốc?
+Return without saving	Quay về không lưu
+Returning home…	Đang về trang chủ…
+Review unmatched	Kiểm tra mục chưa khớp
+Right	Phải
+Right stick	Cần phải
+Rollback simulated.	Mô phỏng khôi phục.
+START	BẮT ĐẦU
+Save	Lưu
+Save & restart	Lưu và khởi động lại
+Save & restart applies Threaded 3D.	Lưu và khởi động lại áp dụng 3D đa luồng.
+Save & restart keeps your checkpoint and applies pending settings.	Lưu và khởi động lại giữ trạng thái và áp dụng cài đặt đang chờ.
+Save a report for troubleshooting	Lưu báo cáo để khắc phục sự cố
+Save device report	Lưu báo cáo thiết bị
+Save state	Lưu trạng thái
+Save your checkpoint and restart	Lưu trạng thái và khởi động lại
+Saved	Đã lưu
+Saved - desktop simulation	Đã lưu – mô phỏng trên máy tính
+Saved for the next Standard DraStic launch.	Đã lưu cho lần chạy DraStic Standard tiếp theo.
+Saved network	Mạng đã lưu
+Saved · {0}	Đã lưu · {0}
+Saved. Applies on your next DraStic launch.	Đã lưu. Áp dụng ở lần chạy DraStic tiếp theo.
+Saved. Save & restart applies screen order.	Đã lưu. Lưu và khởi động lại để áp dụng thứ tự màn hình.
+Saved. Save & restart applies this change.	Đã lưu. Lưu và khởi động lại để áp dụng thay đổi này.
+Saved. Save & restart changes the emulator.	Đã lưu. Lưu và khởi động lại để đổi trình giả lập.
+Saving before restarting…	Đang lưu trước khi khởi động lại…
+Saving before returning home…	Đang lưu trước khi về trang chủ…
+Saving checkpoint before restarting…	Đang lưu trạng thái trước khi khởi động lại…
+Saving checkpoint…	Đang lưu trạng thái…
+Saving your progress…	Đang lưu tiến trình…
+Scan	Quét
+Scene	Cảnh
+Screen brightness	Độ sáng màn hình
+Screen order	Thứ tự màn hình
+ScreenScraper needs project credentials and your account	ScreenScraper cần thông tin dự án và tài khoản của bạn
+Select	Chọn
+Select a network again and enter its password.	Chọn lại mạng và nhập mật khẩu.
+Select a network again.	Chọn lại mạng.
+Selected	Đã chọn
+Sets Standard DraStic screen order for this game. Save & restart applies it.	Đặt thứ tự màn hình DraStic Standard cho trò chơi này. Lưu và khởi động lại để áp dụng.
+Settings	Cài đặt
+Settings saved	Đã lưu cài đặt
+Shader	Bộ lọc
+Shader applied.	Đã áp dụng bộ lọc.
+Shader change requested (preview)	Đã yêu cầu đổi bộ lọc (xem trước)
+Shader saved	Đã lưu bộ lọc
+Shader saved for next launch	Đã lưu bộ lọc cho lần chạy tiếp theo
+Shader saved. Restart this game to apply it.	Đã lưu bộ lọc. Khởi động lại trò chơi để áp dụng.
+Shader studio	Xưởng bộ lọc
+Shaders	Bộ lọc
+Sharp + NDS Color	Sắc nét + NDS Color
+Sharp + Natural Vision	Sắc nét + Natural Vision
+Sharp + both colours	Sắc nét + cả hai màu
+Sharp bilinear	Song tuyến tính sắc nét
+Sharp pixel edges with smoother scaling.	Cạnh điểm ảnh sắc nét với phóng hình mượt hơn.
+Sharp scaling with natural colour and contrast.	Phóng hình sắc nét với màu và độ tương phản tự nhiên.
+Sharp scaling with the DS colour treatment.	Phóng hình sắc nét với màu DS.
+Sharp scaling, DS colour and Natural Vision together.	Phóng hình sắc nét, màu DS và Natural Vision kết hợp.
+Shift	Shift
+Shortcut action	Tác vụ phím tắt
+Show the charge in the status bar	Hiện mức pin trên thanh trạng thái
+Show the welcome screen at startup	Hiện màn hình chào khi khởi động
+Sign in	Đăng nhập
+Sign out	Đăng xuất
+Signing in…	Đang đăng nhập…
+Simulated handheld	Máy cầm tay mô phỏng
+Sleep	Ngủ
+Sleep now	Ngủ ngay
+Sleep on lid close	Ngủ khi gập nắp
+Sleep simulated - press any control	Ngủ mô phỏng – nhấn nút bất kỳ
+Sleep simulated - settings retained	Ngủ mô phỏng – giữ cài đặt
+Sleep unavailable on this device	Thiết bị này không hỗ trợ ngủ
+Sleeping - use Power to wake	Đang ngủ – dùng Power để đánh thức
+Soft LCD grid	Lưới LCD mềm
+Soft green monochrome with full-resolution detail.	Đơn sắc xanh nhẹ với chi tiết đầy đủ.
+Soft scanlines	Vạch quét mềm
+Sound	Âm thanh
+Space	Dấu cách
+Standard	Standard
+Standard DraStic only. Applies on the next launch; game saves are kept.	Chỉ DraStic Standard. Áp dụng lần chạy sau; giữ bản lưu trò chơi.
+Standard screen order	Thứ tự màn hình Standard
+Start	Bắt đầu
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	Tự động chạy RG DS khi bật máy sau này?
+Start with a familiar layout	Bắt đầu với bố cục quen thuộc
+Start, then Anbernic	Start, rồi Anbernic
+Startup	Khởi động
+Startup choice saved.	Đã lưu lựa chọn khởi động.
+Startup choice simulated.	Đã mô phỏng lựa chọn khởi động.
+Startup is managed by RGDS OS.	RGDS OS quản lý khởi động.
+Stock	Gốc
+Stock firmware	Phần mềm hệ thống gốc
+Stop fetching	Dừng tải
+Stop fetching before editing the match.	Dừng tải trước khi sửa đối chiếu.
+Stop scraping	Dừng tải ảnh bìa
+Stop scraping before changing source	Dừng tải trước khi đổi nguồn
+Stopping after this request	Dừng sau yêu cầu này
+Stopping after this request.	Dừng sau yêu cầu này.
+Storage read-only - use internal RGDS	Bộ nhớ chỉ đọc – dùng RGDS nội bộ
+SuperDrastic (experimental)	SuperDrastic (thử nghiệm)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic dùng hình ảnh gốc. Lựa chọn bộ lọc chuẩn được giữ lại.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic có menu tạm dừng và cách hiển thị riêng. Thử nghiệm; chưa kiểm thử RG DS.
+Swapped	Đã đảo
+System	Hệ thống
+THEME ERROR - RETAINED CURRENT	LỖI GIAO DIỆN – GIỮ HIỆN TẠI
+THEME RELOADED	ĐÃ TẢI LẠI GIAO DIỆN
+TYPEFACE	KIỂU CHỮ
+Temporary game cache cleared. Saves and artwork are kept.	Đã xóa bộ nhớ đệm trò chơi tạm. Giữ bản lưu và ảnh bìa.
+The checkpoint did not finish saving.	Chưa lưu xong trạng thái.
+The emulator did not finish. Resume, retry, or return without saving.	Trình giả lập chưa hoàn tất. Tiếp tục, thử lại hoặc quay về không lưu.
+The game menu did not respond. Resume or return without saving.	Menu trò chơi không phản hồi. Tiếp tục hoặc quay về không lưu.
+The zFast LCD texture with both colour treatments.	Kết cấu LCD zFast với cả hai kiểu màu.
+The zFast LCD texture with natural colour and contrast.	Kết cấu LCD zFast với màu và độ tương phản tự nhiên.
+The zFast LCD texture with the DS colour treatment.	Kết cấu LCD zFast với màu DS.
+Theme	Giao diện
+Theme & display	Giao diện và màn hình
+This emulator does not expose a frameskip setting.	Trình giả lập này không có cài đặt bỏ khung hình.
+This emulator uses native resolution. No resolution switch is available.	Trình giả lập này dùng độ phân giải gốc. Không thể đổi độ phân giải.
+This engine does not expose a threading switch.	Trình giả lập này không có tùy chọn luồng.
+This engine has no live threading control.	Trình giả lập này không có điều khiển luồng trực tiếp.
+This game	Trò chơi này
+This network requires an enterprise profile.	Mạng này cần cấu hình doanh nghiệp.
+This request did not finish. Please try again.	Yêu cầu chưa hoàn tất. Hãy thử lại.
+This shader is unavailable for the current emulator.	Bộ lọc này không dùng được với trình giả lập hiện tại.
+Threaded 3D	3D đa luồng
+Time played	Thời gian chơi
+Timezone	Múi giờ
+Toggle	Chuyển
+Top display	Màn hình trên
+Touch	Chạm
+Touch indicator	Chỉ báo chạm
+Touch to continue	Chạm để tiếp tục
+Touch {0}	Chạm {0}
+Try saving again	Thử lưu lại
+Turn Wi-Fi off?	Tắt Wi-Fi?
+Turn Wi-Fi on first.	Hãy bật Wi-Fi trước.
+Turn Wi-Fi on to find networks.	Bật Wi-Fi để tìm mạng.
+Turning Wi-Fi off…	Đang tắt Wi-Fi…
+Turning Wi-Fi on…	Đang bật Wi-Fi…
+Typeface	Kiểu chữ
+Unassigned	Chưa gán
+Unavailable	Không khả dụng
+Unmatched artwork	Ảnh bìa chưa khớp
+Unmute	Bật tiếng
+Updates & recovery	Cập nhật và khôi phục
+Use ROM identity	Dùng nhận dạng ROM
+Use an additional rendering thread	Dùng thêm một luồng kết xuất
+Use default ({0})	Dùng mặc định ({0})
+Use global controls	Dùng điều khiển chung
+Use previous build	Dùng phiên bản trước
+Use the previous RGDS build?	Dùng phiên bản RGDS trước?
+Used by games without an override	Dùng cho trò chơi không có cài đặt riêng
+Username	Tên người dùng
+View	Chế độ xem
+Volume	Âm lượng
+Volume control unavailable	Không có điều khiển âm lượng
+WAITING FOR INPUT	ĐANG CHỜ THAO TÁC
+Warm monochrome with preserved highlight detail.	Đơn sắc ấm giữ chi tiết vùng sáng.
+Warm paper	Giấy ấm
+Warm whites and softened contrast for evening play.	Màu trắng ấm và tương phản nhẹ để chơi buổi tối.
+Welcome back	Chào mừng trở lại
+What the shortcut opens	Nội dung phím tắt mở
+Where this layout applies	Phạm vi áp dụng bố cục này
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Bộ điều hợp Wi-Fi chưa sẵn sàng. Kiểm tra trình điều khiển hoặc khởi động lại máy.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Bộ điều hợp Wi-Fi chưa sẵn sàng. Bật Wi-Fi để thử lại.
+Wi-Fi did not turn on. Try again.	Wi-Fi chưa bật được. Hãy thử lại.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Phần cứng chặn Wi-Fi. Khởi động lại máy và thử lại.
+Wi-Fi is still on. Try turning it off again.	Wi-Fi vẫn bật. Thử tắt lại.
+Wi-Fi is unavailable.	Wi-Fi không khả dụng.
+Wi-Fi off.	Wi-Fi đã tắt.
+Wi-Fi on.	Wi-Fi đã bật.
+Wi-Fi request failed. Check the password and signal, then try again.	Yêu cầu Wi-Fi thất bại. Kiểm tra mật khẩu và tín hiệu rồi thử lại.
+Wi-Fi request timed out. Check signal and try again.	Yêu cầu Wi-Fi hết thời gian. Kiểm tra tín hiệu và thử lại.
+Wi-Fi service is unavailable.	Dịch vụ Wi-Fi không khả dụng.
+With shader	Có bộ lọc
+Working…	Đang xử lý…
+X Scene   Y Compare	X Cảnh   Y So sánh
+X Scene / Y Compare	X Cảnh / Y So sánh
+Your cartridges go here	Băng trò chơi của bạn ở đây
+Your home screen after powering on	Trang chủ sau khi bật máy
+Your local time and date	Giờ và ngày địa phương
+Your menu shortcut	Phím tắt menu của bạn
+Your shader choice is still available.	Lựa chọn bộ lọc vẫn khả dụng.
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + cả hai màu
+{0} (experimental)	{0} (thử nghiệm)
+{0} (recommended)	{0} (khuyên dùng)
+{0} frames	{0} khung hình
+{0} games	{0} trò chơi
+{0} settings	Cài đặt {0}
+Up	Lên
+Times played	Số lần chơi
+Last played	Lần chơi gần nhất
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	Sẵn sàng tải ảnh bìa.
+Icon style	Kiểu biểu tượng
+Simple pixel	Điểm ảnh đơn giản
+Rich	Chi tiết
+Statistics	Thống kê
+Games played	Trò chơi đã chơi
+Most played	Chơi nhiều nhất
+Preparing your statistics…	Đang chuẩn bị thống kê…
+Play a game to start your statistics.	Chơi một trò chơi để bắt đầu thống kê.
+Installed version	Phiên bản đã cài
+Check for updates	Kiểm tra cập nhật
+Restart & install	Khởi động lại và cài
+Download update	Tải cập nhật
+Pause download	Tạm dừng tải
+Release notes	Ghi chú phát hành
+Discard update	Hủy bản cập nhật
+No release notes yet.	Chưa có ghi chú phát hành.
+Restart and install the update?	Khởi động lại và cài bản cập nhật?
+Check for updates when you are ready.	Kiểm tra cập nhật khi sẵn sàng.
+Updates will be available when the release channel opens.	Sẽ có cập nhật khi kênh phát hành mở.
+Checking for updates…	Đang kiểm tra cập nhật…
+You are up to date.	Bạn đã dùng bản mới nhất.
+A new version is ready to download.	Có phiên bản mới sẵn sàng tải.
+This version failed to start. Waiting for a newer update.	Phiên bản này không chạy được. Đang chờ bản cập nhật mới hơn.
+Downloading update…	Đang tải cập nhật…
+Verifying update…	Đang xác minh cập nhật…
+Preparing update…	Đang chuẩn bị cập nhật…
+Ready to restart. Your previous version is kept for recovery.	Sẵn sàng khởi động lại. Giữ phiên bản trước để khôi phục.
+Restarting into the update…	Đang khởi động bản cập nhật…
+Checking the new version…	Đang kiểm tra phiên bản mới…
+Update installed.	Đã cài cập nhật.
+The update could not start. Your previous version was restored.	Bản cập nhật không chạy được. Đã khôi phục phiên bản trước.
+Download paused. Retry to continue.	Đã tạm dừng tải. Thử lại để tiếp tục.
+Update discarded. Your installed version is unchanged.	Đã hủy bản cập nhật. Phiên bản đã cài không đổi.
+Connect the charger before installing an update.	Cắm sạc trước khi cài bản cập nhật.
+There is not enough free space for this update.	Không đủ dung lượng trống cho bản cập nhật này.
+Exit your game before installing an update.	Thoát trò chơi trước khi cài bản cập nhật.
+Install the latest SD installer before this update.	Cài bộ cài SD mới nhất trước bản cập nhật này.
+Restart RG DS Core before installing the update.	Khởi động lại RG DS Core trước khi cài cập nhật.
+Download interrupted. Retry to continue.	Tải bị gián đoạn. Thử lại để tiếp tục.
+An update is already prepared. Install it or discard it first.	Đã có bản cập nhật sẵn sàng. Hãy cài hoặc hủy trước.
+Another update is already running.	Một bản cập nhật khác đang chạy.
+Update information has expired or the device clock is incorrect.	Thông tin cập nhật hết hạn hoặc đồng hồ thiết bị sai.
+This stock firmware has not been validated for updates.	Phần mềm hệ thống gốc này chưa được xác nhận hỗ trợ cập nhật.
+Update verification failed. Check for updates again.	Xác minh cập nhật thất bại. Hãy kiểm tra cập nhật lại.
+Update failed. Check Wi-Fi and try again.	Cập nhật thất bại. Kiểm tra Wi-Fi và thử lại.
+Stable	Ổn định
+Testing	Thử nghiệm
+Save to slot	Lưu vào ô
+Import slot	Nhập ô lưu
+Load slot	Tải ô lưu
+Export slot	Xuất ô lưu
+Undo overwrite	Hoàn tác ghi đè
+Undo load	Hoàn tác tải
+Import help	Trợ giúp nhập
+Save slot	Ô lưu
+Replace this save?	Thay bản lưu này?
+Replace	Thay thế
+Load this save?	Tải bản lưu này?
+Blow into microphone	Thổi vào micrô
+Close and open DS lid	Gập và mở nắp DS
+DS language	Ngôn ngữ DS
+Real microphone	Micrô thật
+Japanese	Tiếng Nhật
+English	Tiếng Anh
+French	Tiếng Pháp
+German	Tiếng Đức
+Italian	Tiếng Ý
+Spanish	Tiếng Tây Ban Nha
+2 seconds	2 giây
+In game	Trong trò chơi
+Restart the game to apply DS settings.	Khởi động lại trò chơi để áp dụng cài đặt DS.
+Could not save DS settings.	Không thể lưu cài đặt DS.
+Search	Tìm kiếm
+Save gallery	Kho trạng thái
+Search and filters	Tìm kiếm và bộ lọc
+Add your games	Thêm trò chơi
+DS controls	Điều khiển DS
+Back up all saves	Sao lưu mọi bản lưu
+Resume after power off	Tiếp tục sau khi tắt máy
+Slot	Ô
+Empty slot	Ô trống
+Search games	Tìm trò chơi
+Filter	Bộ lọc
+Clear search and filters	Xóa tìm kiếm và bộ lọc
+Missing artwork	Thiếu ảnh bìa
+Where to put games	Nơi đặt trò chơi
+Scan for games	Quét trò chơi
+Automatic updates	Cập nhật tự động
+Download automatically	Tự động tải
+Check automatically	Tự động kiểm tra
+Update available in Maintenance	Có cập nhật trong Bảo trì
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Chép tệp .rgdssave.zip vào userdata/imports. Phải khớp trò chơi và trình giả lập.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Chép tệp .nds hoặc DS ZIP vào Roms/NDS trên thẻ trò chơi. Không kèm trò chơi. Bản lưu ở userdata.
+Save backup created in userdata/exports.	Đã tạo bản sao lưu trong userdata/exports.
+Slot exported to userdata/exports.	Đã xuất ô lưu vào userdata/exports.
+Save library updated.	Đã cập nhật thư viện bản lưu.
+Save overwrite undone.	Đã hoàn tác ghi đè bản lưu.
+Current progress could not be saved. No slot was changed.	Không thể lưu tiến trình. Không thay đổi ô nào.
+DS controls are unavailable for this engine.	Trình giả lập này không hỗ trợ điều khiển DS.
+Your DS library starts here	Thư viện DS bắt đầu từ đây
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Chép tệp .nds hoặc DS ZIP vào Roms/NDS trên thẻ trò chơi rồi chọn Quét trò chơi.
+Use the engine's native controls for microphone and DS settings.	Dùng điều khiển gốc của trình giả lập cho micrô và cài đặt DS.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Micrô thật mặc định bật. Thổi và thao tác nắp quay về trò chơi trong hai giây. Đổi ngôn ngữ áp dụng sau khi khởi động lại.
+Save slots	Các ô lưu
+Load slots	Tải ô lưu
+Unplayed	Chưa chơi
+Played	Đã chơi
+Filtered	Đã lọc
+No matching games	Không có trò chơi khớp
+No matches. Use View to change filters.	Không có kết quả. Dùng Chế độ xem để đổi bộ lọc.
+Reset state	Đặt lại trạng thái
+Restart without loading a state?	Khởi động lại không tải trạng thái?
+Restart from the title screen. In-game saves and save slots are kept.	Khởi động từ màn hình tiêu đề. Giữ bản lưu trong trò chơi và các ô lưu.
+Microphone, simulated blowing, lid and DS language.	Micrô, thổi mô phỏng, nắp và ngôn ngữ DS.
+Test microphone	Thử micrô
+Test	Thử
+Live input	Tín hiệu trực tiếp
+Quiet	Nhỏ
+Loud	Lớn
+Listening…	Đang nghe…
+Microphone unavailable	Micrô không khả dụng
+Audio is not recorded or saved.	Âm thanh không được ghi hay lưu.
+Test the microphone on your handheld.	Thử micrô trên máy cầm tay.
+Return home before testing the physical microphone.	Về trang chủ trước khi thử micrô thật.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Thổi hoặc nói vào micrô. Mức tín hiệu tăng rồi giảm khi dừng.
+No filter	Không có bộ lọc
+Quick search	Tìm nhanh
+Y  Quick search	Y  Tìm nhanh
+X  Filters	X  Bộ lọc
+Y Search / X Filters	Y Tìm / X Bộ lọc
+A  Search	A  Tìm
+A  Jump	A  Chuyển
+Edit search	Sửa tìm kiếm
+Clear filters	Xóa bộ lọc
+Try another title or clear your filters	Thử tên khác hoặc xóa bộ lọc
+Type a game title…	Nhập tên trò chơi…
+Finding games…	Đang tìm trò chơi…
+Searching…	Đang tìm kiếm…
+Search in	Tìm trong
+Try a shorter title or clear your filter.	Thử tên ngắn hơn hoặc xóa bộ lọc.
+A Key / Start Search / B Cancel	A Phím / Start Tìm / B Hủy
+Tap to type, or use the D-pad and A	Chạm để nhập hoặc dùng phím điều hướng và A
+X Delete / Start Search	X Xóa / Start Tìm
+X Delete / Start Done	X Xóa / Start Xong
+No letters to jump to. Search for another game.	Không có chữ cái để chuyển đến. Tìm trò chơi khác.
+{0} match	{0} kết quả
+{0} matches	{0} kết quả
+{0} matching game	{0} trò chơi khớp
+{0} matching games	{0} trò chơi khớp
+{0} game	{0} trò chơi
+Interface animations	Hoạt ảnh giao diện
+View transitions	Chuyển cảnh
+Small touches, scrolling and startup motion	Hiệu ứng nhỏ, cuộn và chuyển động khởi động
+Springy menu changes with a colourful wobble	Đổi menu đàn hồi với dao động nhiều màu
+Transitions	Chuyển tiếp
+Subtle	Nhẹ
+Menu sounds	Âm thanh menu
+Effects volume	Âm lượng hiệu ứng
+Preview sound	Nghe thử âm thanh
+A little handheld magic	Một chút phép màu cầm tay
+Playful sounds for browsing, choosing and starting games.	Âm thanh vui khi duyệt, chọn và khởi chạy trò chơi.
+Turn on menu sounds to hear the previews.	Bật âm thanh menu để nghe thử.
+Some menu sounds are unavailable.	Một số âm thanh menu không khả dụng.
+Menu audio is unavailable on this device.	Thiết bị này không hỗ trợ âm thanh menu.
+Menu sounds are unavailable.	Âm thanh menu không khả dụng.
+Close lid	Gập nắp
+Open lid	Mở nắp
+Spring	Lò xo
+Push	Trượt
+Transition style	Kiểu chuyển cảnh
+Animate pages with the selected style	Tạo hoạt ảnh trang theo kiểu đã chọn
+Slide into pages; slide back to return	Trượt vào trang; trượt ngược để quay lại
