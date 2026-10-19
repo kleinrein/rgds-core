@@ -1,6 +1,8 @@
 {
   "schema": 1,
   "channel": "stable",
-  "feed": "",
-  "keys": {}
+  "feed": "https://github.com/kleinrein/rgds-core/releases/latest/download/stable.json",
+  "keys": {
+    "release-2026": "769fef760e9297b35b5480805817fdc71b12133912049031ebc049b2ec8d6d95"
+  }
 }

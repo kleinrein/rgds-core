@@ -1,55 +1,63 @@
 # RG DS Core
 
-A fast, friendly home for your Nintendo DS games on the **Anbernic RG DS**, built on the stock Linux firmware. It boots straight into a DSi-style library, plays games in **DSCore**, our tuned DS emulator with sharp 2×–5× 3D, and sleeps when you close the lid.
+A DSi-style home for your Nintendo DS games on the **Anbernic RG DS**, on the stock Linux firmware. Boots straight into your library, plays games in **DSCore**, our emulator with sharp 2×–5× 3D, and sleeps when you close the lid.
 
-![The home screen, the library in dark mode and the list view](docs/images/screens.png)
+![Home screen, the library and the in-game menu, captured on an RG DS](docs/images/screens.png)
 
-> **Community preview.** Tested on the standard RG DS. RG DS Plus support is built in, but nobody has tried it on real hardware yet. Plus owners, [please help test](docs/RG_DS_PLUS.md).
+> **Community preview.** Tested on the standard RG DS. RG DS Plus support is built in but untested on hardware. Plus owners, [please help test](docs/RG_DS_PLUS.md).
 
 ## Highlights
 
-- **Two-screen library:** cartridge, cover and list views; search, A–Z jump, favourites, recents and play time. Cover art downloads by itself.
-- **DSCore emulator:** GPU-rendered 3D at native, 2×, 3×, 4× or 5×; switch resolution mid-game; 20 shaders and LCD filters; fast-forward.
-- **One menu for every game:** pause, nine checkpoints per game with previews, undo, a game switcher and save backups.
-- **Choose your emulator per game:** DSCore (default), DraStic, DSperate, melonDS and NNDDSS.
-- **Make it yours:** light or dark, accent colours, high contrast, rounded or pixel fonts, rich or pixel icons, page transitions, menu sounds and 14 languages.
-- **PictoChat:** an original chat pad on the Home screen. Four Wi-Fi rooms with other RG DS Core handhelds, pens, rainbow ink, stamps and an on-screen keyboard. No BIOS or Nintendo files, and it cannot talk to a real DS. See [PictoChat](docs/PICTOCHAT.md).
-- **Safe updates:** signed over-the-air updates. A broken update rolls itself back.
+- **Library:** cartridges, covers or a list. Search, A–Z jump, favourites, recents, play time. Covers download by themselves.
+- **DSCore:** 3D at native to 5×, switchable mid-game. 20 shaders and LCD filters. Fast-forward.
+- **One menu in every game:** pause, nine checkpoints with previews, game switcher, save backups.
+- **Other engines per game:** DraStic, DSperate, melonDS, NNDDSS.
+- **Your look:** light or dark, accent colours, high contrast, rounded or pixel fonts, menu sounds, 14 languages.
+- **PictoChat:** our own chat pad. Wi-Fi rooms between RG DS Core handhelds, pens, stamps, rainbow ink. No Nintendo files. [More](docs/PICTOCHAT.md).
+- **Safe updates:** signed over-the-air updates that roll back if they fail.
+
+![Cartridge, cover and list views](docs/images/library.png)
+
+![Light theme home, favourites, and the Theme & display settings](docs/images/settings.png)
+
+![PictoChat lobby and a chat room](docs/images/pictochat.png)
 
 ## DSCore performance
 
-DSCore started as a fork of the [DSperate](dscore/FORK.md) emulator. On the RG DS's Mali-G52 it renders 3D through Vulkan, composes both screens on separate threads and presents off the emulation thread.
+DSCore is a fork of [DSperate](dscore/FORK.md). 3D goes through Vulkan on the Mali-G52, both screens are composed off the emulation thread.
 
-| Game, scene                                       | Native | 2×      | 3×  |
-| ------------------------------------------------- | ------ | ------- | --- |
-| Mario Kart DS, race                               | 60     | 60      | 60  |
-| Mario Kart DS, Cheep Cheep Beach (lap 3, ink)     | 60     | 60 (56) | —   |
-| Metroid Prime Hunters, intro                      | 60     | 60      | —   |
-| Kingdom Hearts 358/2 Days and Re:coded, intro     | 60     | 60      | —   |
-| Golden Sun: Dark Dawn, intro                      | 60     | 56      | —   |
-| Zelda: Phantom Hourglass, intro                   | 60     | 54      | —   |
-| Zelda: Spirit Tracks, intro                       | 60     | 47      | —   |
+![Mario Kart DS and New Super Mario Bros in DSCore, and the Graphics page](docs/images/dscore.png)
 
-Emulated frames per second on a standard RG DS, audio muted (October 2026). **Adaptive 2×** keeps the frame rate: when the GPU falls behind in a heavy moment, DSCore draws that stretch at native resolution and returns to 2× as soon as it can (the number in brackets is without it). Switching between 2× and 5× mid-game takes about 0.1 s; the engine starts in under 2 s even at high resolution. [How we measure](docs/PERFORMANCE.md).
+| Game, scene                                   | Native | 2×      | 3×  |
+| --------------------------------------------- | ------ | ------- | --- |
+| Mario Kart DS, race                           | 60     | 60      | 60  |
+| Mario Kart DS, Cheep Cheep Beach, lap 3, ink  | 60     | 60 (56) | —   |
+| Metroid Prime Hunters, intro                  | 60     | 60      | —   |
+| Kingdom Hearts 358/2 Days and Re:coded, intro | 60     | 60      | —   |
+| Golden Sun: Dark Dawn, intro                  | 60     | 56      | —   |
+| Zelda: Phantom Hourglass, intro               | 60     | 54      | —   |
+| Zelda: Spirit Tracks, intro                   | 60     | 47      | —   |
+
+Emulated fps, standard RG DS, October 2026. **Adaptive 2×** (default) drops to native for heavy moments and comes back; the bracket is without it. Changing resolution mid-game takes 0.1 s. [How we measure](docs/PERFORMANCE.md).
 
 ## Install
 
-You need the RG DS's **stock Linux card** and a computer to copy files.
+You need the RG DS's **stock Linux card** and a computer.
 
-1. Download `RG-DS-Core-Installer-<version>.zip` from the releases page.
-2. Extract it to the root of the games card. Merge its `Roms/` folder and copy `RGDS-Install/` next to it.
-3. On the handheld, open **APPS → Install RG DS Core**. It installs, opens and starts on future boots.
-4. Put your `.nds` files in `Roms/NDS`.
+1. Download `RG-DS-Core-Installer-<version>.zip` from [releases](https://github.com/kleinrein/rgds-core/releases).
+2. Extract to the root of the games card: merge `Roms/`, copy `RGDS-Install/` next to it.
+3. On the handheld: **APPS → Install RG DS Core**. It installs, opens and starts on every boot.
+4. Put `.nds` files in `Roms/NDS`.
 
-Updates arrive over Wi-Fi under **Settings → System → Updates & recovery**. Saves and settings are always kept. **APPS → RGDS Recovery** brings back the stock menu. More detail: [installing](docs/SD_FLASH.md), [first-time card setup](docs/DEVICE_SETUP.md), [saves](docs/SAVES.md).
+Updates arrive over Wi-Fi: **Settings → System → Updates & recovery**. Saves and settings are kept. **APPS → RGDS Recovery** brings the stock menu back. Details: [installing](docs/SD_FLASH.md), [card setup](docs/DEVICE_SETUP.md), [saves](docs/SAVES.md).
 
-**Controls:** A opens or plays, B goes back, Y opens View, X opens game Options, and L2/R2 jump by letter. In a game, the Home button opens the RG DS Core menu.
+**Controls:** A plays, B goes back, Y is View, X is Options, L2/R2 jump by letter. In a game, Home opens the menu.
 
 ## Good to know
 
-- Games, BIOS files and cover art are not included. DSCore runs without BIOS files.
-- Each emulator keeps its own saves; switching engines does not move your progress.
-- Hotel Dusk: Room 215 does not boot in DSCore yet, so it starts in DraStic by default.
+- No games, BIOS files or cover art included. DSCore needs no BIOS.
+- Each engine keeps its own saves.
+- Hotel Dusk: Room 215 does not boot in DSCore yet; it starts in DraStic.
 
 ## For developers
 
@@ -60,6 +68,6 @@ make package        # application package (needs the engine payloads)
 make installer      # drop-on-card installer
 ```
 
-See [development](docs/DEVELOPMENT.md), the [documentation index](docs/README.md) and [releasing with automatic updates](docs/OTA.md). The emulator lives in [`dscore/`](dscore/README.md).
+See [development](docs/DEVELOPMENT.md), the [documentation index](docs/README.md) and [releases with automatic updates](docs/OTA.md). The emulator lives in [`dscore/`](dscore/README.md).
 
 AI tools helped write the code, documentation and artwork, so keep backups of your saves. Third-party components keep their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).
