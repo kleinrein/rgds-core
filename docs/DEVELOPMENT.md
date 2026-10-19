@@ -104,15 +104,76 @@ For a quiet hardware test, open Settings → Sound and select Mute before launch
 
 The game runner owns the menu process and both hardware menu keys. By default it pauses the owned engine process and draws the menu in its own GPU windows. A first-frame timeout restores the game if menu rendering fails. The optional live background uses shared canvases and is opt-in. The bridge filters Guide/Home before legacy handlers see them and discards queued input from the menu when play resumes. GPIO button ordering on the recorded ANBERNIC device places raw joystick button 8 at Linux code 312; code 316 belongs to another stick button. Generic controller Guide remains code 316. This mapping and the process/display handoff need device confirmation.
 
-Checkpoint saves acknowledge a changed, stable expected engine slot and flush the independent checkpoint before replacement. A failed save keeps the prior checkpoint and presents retry/resume/return-without-saving. DraStic, DSperate and NNDDSS load replies acknowledge dispatch; melonDS returns its native checkpoint-load result. Actual restored game progress still needs hardware checks. [NEXT_DEVICE_TEST.md](NEXT_DEVICE_TEST.md) records the remaining acceptance checks. Keep these distinctions when reporting test results.
+Checkpoint saves acknowledge a changed, stable expected engine slot and flush the independent checkpoint before replacement. A failed save keeps the prior checkpoint and presents retry/resume/return-without-saving. DraStic, DSperate and NNDDSS load replies acknowledge dispatch; melonDS returns its native checkpoint-load result. Actual restored game progress still needs hardware checks. [NEXT_DEVICE_TEST.md](archive/NEXT_DEVICE_TEST.md) records the remaining acceptance checks. Keep these distinctions when reporting test results.
 
-Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so older development builds can still read the base appearance file. Per-cartridge overrides and favourite flags live in `userdata/library/<key>/game.ini`. The versioned IDs in `assets/shaders/catalog.tsv` preserve Off/Sharp/LCD at 0/1/2 and add the full supplied pack. Both launcher and Python adapters read that catalog. DraStic maps to the supplied shader IDs, NNDDSS compiles the supplied `.dsd` GLSL in its running context, and DSperate/melonDS use the shared SDL/GLES shader path. All four paths support the current 20 effects plus Off. The paged picker has descriptions, a current-selection mark and per-game Default inheritance. Library choices take effect on launch; in-game choices update the running renderer and keep the picker open. NNDDSS post-processes the completed display frame before the overlay, so it does not depend on its startup-only shader loader. Actual appearance and frame pacing must still be checked on the Mali driver. The picker remembers its page during the development rebuild loop.
+Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so older development builds can still read the base appearance file. Per-cartridge overrides and favourite flags live in `userdata/library/<key>/game.ini`. The versioned IDs in `assets/shaders/catalog.tsv` preserve Off/Sharp/LCD at 0/1/2 and add the full supplied pack. Both launcher and Python adapters read that catalog. DraStic maps to the supplied shader IDs, NNDDSS compiles the supplied `.dsd` GLSL in its running context, and DSperate/melonDS use the shared SDL/GLES shader path. All four paths support the current 28 effects plus Off. The picker is a Home-style carousel in six groups (Original, DS screens, Natural, Vivid, Pixel art, Moods): Left/Right browse, Up/Down, L/R or the group chips jump between groups, each tile shows its preset at 1:1 from the packaged previews, and per-game Default inheritance is kept. The eight original presets added on 18 October 2026 (DS Classic, DS Lite, Natural glow, Vivid LCD, Natural/Vivid smooth, Pixel beads, Glossy tiles) draw their pixel structure on the DS's own 256×192 grid, anti-aliased from `u_target_size`, so they hold up at the RG DS's 2.5× and the Plus's 4× and fade out below 2×. Library choices take effect on launch; in-game choices update the running renderer and keep the picker open. NNDDSS post-processes the completed display frame before the overlay, so it does not depend on its startup-only shader loader. Actual appearance and frame pacing must still be checked on the Mali driver. The picker remembers its page during the development rebuild loop.
 
 Restart the watcher after modifying `tools/dev.py` or `tools/device.py`; those Python modules are loaded by the watcher itself. The watcher watches renderer/runtime/theme files and build inputs, rather than arbitrary files in the repository. New emulator payloads must be provisioned into the separate engine bundle, then packaged and provenance-reviewed. The historical SimpleOS reference copy is no longer part of the repository.
 
 Code deployments transfer the complete private package, including all four emulator adapters and the bundled font. Theme refresh is small and fast. A live override's `mode` hint identifies the palette it edits; switch to that colour mode in Settings to see it. Measure code-to-screen latency on your Wi-Fi connection before setting performance targets. Hardware input, display orientation, sleep/wake, emulator return, and actual rendering smoothness still need testing on the stock card.
 
 ## Refining the interface
+
+### The 2026-10-15 polish pass
+
+- **Depth everywhere.** `glossy_pill`, `raised_pill`, `sunken_track`, `footer_button` and
+  `secondary_button` in `main.cpp` draw every button, toggle, segmented choice, slider,
+  footer and sheet control the same way (shadow, glass band, crisp top line, 2 px sink
+  while pressed). New controls go through them; a flat `round_rect` button is a bug.
+- **The vertical rail** (`draw_scrollbar`) matches the horizontal one: a recessed groove
+  with a pip per page over a shelf, a glossy thumb with an engraved grip that widens
+  while held. The list layout, pickers and detail sheets all use it.
+- **Games screen.** The collection dropdown and search field are gone: the header's first
+  row shows the collection (or the active search), the count and a search glyph, and a
+  tap on it opens search; a tap on the title row opens the view sheet. Y / X hints sit in
+  the lower corners of the top screen; L2 jumps to a letter and R2 searches (Q / E on a
+  keyboard), and a second press closes what the first opened. Play count and time under
+  the cover share one centre line (`centred_label_y`).
+- **Background loading.** `Media` runs one loader thread that reads and decodes covers and
+  cartridge banners (`request`, `adopt`); the main thread only creates textures, and a
+  user event wakes an idle menu when a load lands. The selected cartridge is still
+  prepared in place; ten neighbours (fourteen in the list) and five covers each way are
+  requested nearest first, so a first fast scroll no longer waits on the card. Covers on
+  their way show a blank card, not "No cover yet".
+- **Top panel skips.** On the library pages the upper screen repaints only when its
+  `top_signature` changes (and at least every two seconds); transitions and browsing
+  animate the lower screen alone. `top_skips` is in the cache report.
+- **Home layout** (Theme & display): the carousel, or the **DSi column** with the last
+  played game on top, the categories as wide tiles, a brightness / mark / statistics bar
+  below, and the DSi's clock and calendar on the upper screen. **Background** adds the
+  DSi's ruled grid behind every screen. **Touch gestures** (off by default): swipe up from
+  the bottom edge for Home, in from the left edge for Back. Saved in `ui.ini` as
+  `home_layout`, `background` and `gestures`.
+- **Settings.** System has a Time format (24-hour / 12-hour, `time_format` in
+  `system.ini`); Sound is laid out as cards like every other page; Connectivity's upper
+  screen is a live status card (green while connected with IP and signal, a spinner while
+  connecting or scanning, the service's message when it failed); Statistics has a ring of
+  the played share with the hours inside, tiles, the most played game, and medals for the
+  top three. Transition speeds are now 0.55 / 1 / 1.7 of the base duration.
+- **Status bar.** The Wi-Fi-off glyph has quiet arcs and dot with a solid slash, in both
+  the bitmap and pixel styles.
+- **Second pass (same day).** The PictoChat room follows the DS arrangement (tools down
+  the left, names under the pad, the keyboard narrowed to 90 % with Send, the arrows and
+  Leave beside it); favourites wear a heart badge on the cover stage and on every tile;
+  switching gestures on opens an intro sheet, a handle at the bottom edge rises with the
+  finger, a Back disc slides in from the left and a ring marks a fired gesture; Date and
+  Time format sit under Timezone; the vertical rail lost its hover growth; the Library
+  view sheet outlines and tints the current choice in the accent; the DSi column's clock
+  and calendar share one height and the grid is graph paper (4, 16 and 64 px).
+- **19 October 2026.** Holding Up or Down repeats in every list and picker
+  (320 ms, then 130, 75 and 45 ms steps, the same `HoldRepeat` as Left/Right;
+  the poll tells vertical from horizontal by ±2). The grid background now runs behind
+  Settings on both screens and behind PictoChat's lower screen. Edge gestures work in
+  PictoChat's room picker and name screen, not inside a room, where the edges belong to
+  the chat; an edge touch that does not travel is still a tap. In preview input scripts a
+  `key` the script never releases is a tap, so only `key` … `key-up` pairs hold.
+- **Shutdown.** Power off and Restart fade both screens to the background, show the mark
+  in a turning ring with "Powering off…" / "Restarting…", and ignore input until the
+  system takes over (`begin_shutdown`, `shutdown_overlay`); a failed request lifts the
+  veil. In the DSi column, Down from the full-width tiles returns to the column you were
+  in. The top-panel signature carries the battery's charge phase, so charging no longer
+  keeps the loop dirty while the upper screen is skipped.
+
 
 Use the preview for palette, spacing, hierarchy and navigation ideas, then check the same change on the actual panels. The current icon strip animates with a 190 ms eased slide, a small selection lift, and 150 ms settings transitions. It redraws during transitions and returns to event/clock-driven idle rendering. Dragging tracks the pointer until release, and swipes never launch a game. The DSi-style title balloon, raised cartridges and integrated START frame retain these gestures. Range arrows step/wrap and the centre seeks. Footer view buttons remain available when empty. Queued releases/back actions are handled before held-key repeat, including under slow capture frames.
 
@@ -159,7 +220,7 @@ build/runtime-overhead.json` measures repeat preparation of that release in a
 temporary home without running the engine. See [measurement boundaries](archive/LAUNCH_MENU_POLISH_2026-10-11.md).
 Keep core/user saves out of benchmark fixtures. No deploy watcher or hardware
 command is needed for these checks. [Save locations](SAVES.md) and
-[engine candidates](EMULATOR_OPTIONS.md) document the current boundaries.
+[engine candidates](archive/EMULATOR_OPTIONS.md) document the current boundaries.
 
 The [DraStic add-on/settings review](archive/DRASTIC_ADDONS_2026-10-11.md) pins both
 candidate repositories without executing their installers. Run

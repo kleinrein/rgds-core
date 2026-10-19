@@ -16,12 +16,12 @@ class RgdsFrontendTests(unittest.TestCase):
             cpp = folder/'test.cpp'; cpp.write_text(source)
             binary = folder/'test'
             subprocess.run(['clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '-Werror',
-                            '-I'+str(ROOT/'src'), str(cpp), '-o', str(binary)], check=True)
+                            '-I'+str(ROOT/'dscore/src'), str(cpp), '-o', str(binary)], check=True)
             subprocess.run([str(binary), str(folder)], check=True, timeout=15)
 
     def test_pause_requests_owned_menu_and_failure_does_not_publish_partial_request(self):
         self.compile_run(r'''
-#include "experimental/rgds/frontend_ui.hpp"
+#include "frontend/sdl/rgds_frontend_ui.hpp"
 #include <cassert>
 #include <filesystem>
 int main(int, char** argv) {
@@ -45,9 +45,51 @@ int main(int, char** argv) {
 }
 ''')
 
+    def test_live_menu_holds_while_input_is_blocked_and_reads_the_overlay_sequence(self):
+        self.compile_run(r'''
+#include "frontend/sdl/rgds_frontend_ui.hpp"
+#include <cassert>
+#include <cstdint>
+#include <filesystem>
+#include <thread>
+int main(int, char** argv) {
+  namespace fs = std::filesystem;
+  const auto control = fs::path(argv[1])/"control", frame = fs::path(argv[1])/"menu.frame";
+  setenv("RGDS_CONTROL_FILE", control.c_str(), 1);
+  setenv("RGDS_MENU_LIVE", "1", 1);
+  setenv("RGDS_OVERLAY_FILE", frame.c_str(), 1);
+  assert(!rgds::menu_hold());
+  assert(rgds::overlay_sequence() == 0);   // the menu helper has not made the frame yet
+  std::ofstream(control.string()+".blocked").close();
+  std::this_thread::sleep_for(std::chrono::milliseconds(25));
+  assert(rgds::menu_hold());
+  fs::remove(control.string()+".blocked");
+  assert(rgds::menu_hold());               // polled at most every 20 ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(25));
+  assert(!rgds::menu_hold());
+  const uint32_t header[16] = {0x52474453, 640, 480, 6, 1};
+  { std::ofstream out(frame, std::ios::binary); out.write(reinterpret_cast<const char*>(header), sizeof header); }
+  assert(rgds::overlay_sequence() == 6);
+}
+''')
+
+    def test_menu_hold_is_off_without_a_live_menu(self):
+        self.compile_run(r'''
+#include "frontend/sdl/rgds_frontend_ui.hpp"
+#include <cassert>
+#include <filesystem>
+int main(int, char** argv) {
+  const auto control = std::filesystem::path(argv[1])/"control";
+  setenv("RGDS_CONTROL_FILE", control.c_str(), 1);
+  setenv("RGDS_MENU_LIVE", "0", 1);
+  std::ofstream(control.string()+".blocked").close();
+  assert(!rgds::menu_hold());   // the paused menu SIGSTOPs this engine instead
+}
+''')
+
     def test_all_scales_scroll_offsets_and_modes_preserve_original_sample_addresses(self):
         self.compile_run(r'''
-#include "experimental/rgds/sample_plan.hpp"
+#include "core/gpu/rgds_sample_plan.hpp"
 #include <cassert>
 #include <cstdio>
 int main() {

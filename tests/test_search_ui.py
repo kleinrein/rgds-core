@@ -92,7 +92,7 @@ class SearchUITests(unittest.TestCase):
     def test_clear_cancels_pending_results_and_preserves_collection(self):
         write_fields(self.mario / "game.ini", dict(favourite=1))
         r = self.run_ui("100 click 270 46\n250 text missing\n400 key Return\n"
-                        "450 click 389 46\n", view=1)
+                        "450 click 593 46\n", view=1)
         self.assertFalse(r["discovery_active"])
         self.assertEqual(r["filtered_games"], 1)
 
@@ -150,12 +150,21 @@ class SearchUITests(unittest.TestCase):
     def test_enter_tab_and_escape_keys_are_functional(self):
         r = self.run_ui("100 click 270 46\n250 text mario\n500 click 589 298\n")
         self.assertEqual(r["search_query"], "mario")
-        r = self.run_ui("100 click 270 46\n250 text zelda\n400 click 41 252\n"
-                        "550 joy-down 0\n580 joy-up 0\n")
+        r = self.run_ui("100 click 270 46\n250 text zelda\n400 key Tab\n420 key-up Tab\n"
+                        "550 joy-down 0\n580 joy-up 0\n")   # Tab jumps to the Search key, A presses it
         self.assertEqual(r["search_query"], "zelda")
         r = self.run_ui("100 click 270 46\n250 text missing\n500 click 41 392\n")
         self.assertEqual(r["page"], 0)
         self.assertFalse(r["discovery_active"])
+
+    def test_accents_layer_types_accented_letters_and_returns_to_the_letters(self):
+        # The key where Tab used to be opens the accents, as in PictoChat; it shows ABC while they are open.
+        r = self.run_ui("100 click 270 46\n200 click 41 252\n300 click 471 252\n"   # accents, then e-acute
+                        "400 click 41 252\n500 click 95 252\n600 click 550 392\n")  # back to letters, then q
+        self.assertEqual(r["search_query"], "\u00e9q")
+        r = self.run_ui("100 click 270 46\n200 click 41 252\n300 click 50 344\n"   # accents, Shift
+                        "400 click 471 252\n500 click 550 392\n")
+        self.assertEqual(r["search_query"], "\u00c9")
 
     def test_footer_submit_does_not_type_the_selected_key(self):
         r = self.run_ui("100 click 270 46\n250 text zelda\n500 click 530 451\n")

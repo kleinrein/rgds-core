@@ -28,7 +28,7 @@ class ShaderPreviewValidationTests(unittest.TestCase):
     def test_valid_previews_validate_without_optional_python_packages_or_graphics(self):
         manifest=self.validate();self.assertEqual(len(manifest['scenes']),3);self.assertGreater(manifest['packed_bytes'],0)
         result=subprocess.run([sys.executable,'-I','-S',str(ROOT/'tools/validate_shader_previews.py'),str(self.previews),'--shader-folder',str(self.shaders),'--pipeline',str(self.pipeline)],capture_output=True,text=True,timeout=10)
-        self.assertEqual(result.returncode,0,result.stdout+result.stderr);self.assertIn('63 exact GLES previews',result.stdout)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr);self.assertIn('87 exact GLES previews',result.stdout)
 
     def test_stale_pipeline_and_shader_sources_cannot_be_packaged(self):
         self.pipeline.write_bytes(self.pipeline.read_bytes()+b'\n// changed pipeline\n')

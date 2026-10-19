@@ -22,9 +22,9 @@ class GapClosureUiTests(unittest.TestCase):
  def test_first_run_help_is_reachable_from_library_settings(self):
   r=self.run_ui(['Down']*8+['A'],mode='settings');self.assertEqual(r['page'],30)
  def test_quick_resume_is_persisted_from_startup_settings(self):
-  self.run_ui(['Down']*5+['A']+['Down']*3+['A'],mode='system');self.assertEqual(read_fields(self.data/'experience.ini')['quick_resume'],'1')
+  self.run_ui(['Down']*7+['A']+['Down']*3+['A'],mode='system');self.assertEqual(read_fields(self.data/'experience.ini')['quick_resume'],'1')
  def test_automatic_download_setting_is_persisted(self):
-  self.run_ui(['Down']*3+['A']+['Down']*6+['A','Down','A'],mode='system');self.assertEqual(read_fields(self.data/'experience.ini')['auto_update'],'2')
+  self.run_ui(['Down']*5+['A']+['Down']*6+['A','Down','A'],mode='system');self.assertEqual(read_fields(self.data/'experience.ini')['auto_update'],'2')
  def test_export_import_picker_has_no_duplicate_and_lists_archive(self):
   archive=self.data/'imports/test.rgdssave.zip';archive.parent.mkdir();archive.touch()
   r=self.run_ui(['X']+['Down']*5+['A','A','A'],mode='library');self.assertEqual(r['page'],28);self.assertEqual(r['picker_title'],'Import slot');self.assertTrue(r['picker_open'])

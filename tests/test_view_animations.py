@@ -116,7 +116,7 @@ class ViewAnimationUITests(unittest.TestCase):
             self.assertEqual(report['element_moves'], 0)
 
     def test_touch_toggle_persists_and_keyboard_disables(self):
-        report = self.run_ui('100 click 180 301\n250 click 180 240\n', ('--settings', '--section', 'theme'))
+        report = self.run_ui('100 click 180 240\n', ('--settings', '--section', 'motion'))
         self.assertTrue(report['view_animations'])
         self.assertIn('view_animations=1\n', (self.root/'ui.ini').read_text())
         self.assertGreater(report['view_animation_frames'], 0)
@@ -165,10 +165,10 @@ class ViewAnimationUITests(unittest.TestCase):
 
     def test_touch_during_view_motion_still_opens_the_visible_control(self):
         self.enable()
-        # Theme enters at 100 ms. At 340 ms the visible Animations row is
+        # Theme enters at 100 ms. At 340 ms the visible Accent colour row is
         # settling close to its final centre; the inverse map tracks both layers.
-        report = self.run_ui('100 key A\n340 click 300 301\n')
-        self.assertEqual(report['page'], 33)  # Motion
+        report = self.run_ui('100 key A\n340 click 300 211\n')
+        self.assertEqual(report['page'], 37)  # Colours
         self.assertEqual(report['view_transitions'], 2)
         self.assert_settled(report)
 
@@ -181,7 +181,7 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assert_settled(report)
 
     def test_push_selection_is_optional_and_persists_with_touch_and_controller(self):
-        report = self.run_ui('100 click 180 301\n250 click 520 335\n', ('--settings', '--section', 'theme'))
+        report = self.run_ui('100 click 430 290\n', ('--settings', '--section', 'motion'))
         self.assertEqual(report['view_transition_style'], 'push')
         self.assertFalse(report['view_animations'])  # Choosing a style leaves motion off.
         self.assertIn('view_transition_style=push\n', (self.root/'ui.ini').read_text())
@@ -190,11 +190,27 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertFalse(report['view_animations'])
         report = self.run_ui('100 key Right\n', ())
         self.assertEqual(report['view_transition_style'], 'push')
+        report = self.run_ui('100 key Right\n', ())
+        self.assertEqual(report['view_transition_style'], 'zoom')
+        self.assertIn('view_transition_style=zoom\n', (self.root/'ui.ini').read_text())
         self.assert_settled(report)
+
+    def test_zoom_navigation_composites_and_speed_persists(self):
+        self.enable(style='zoom')
+        script = '100 key A\n550 click 300 211\n1000 key Escape\n1450 key Escape\n'
+        report = self.run_ui(script, seconds=3)
+        self.assertEqual(report['view_transition_style'], 'zoom')
+        self.assertEqual(report['view_transitions'], 4)
+        self.assertGreater(report['push_animation_frames'], 20)
+        self.assertEqual(report['element_moves'], 0)
+        self.assert_settled(report)
+        # Speed: the fourth card; Left picks Snappy and is saved.
+        self.run_ui('100 click 320 372\n', ('--settings', '--section', 'motion'))
+        self.assertIn('view_transition_speed=snappy\n', (self.root/'ui.ini').read_text())
 
     def test_push_parent_navigation_and_idle(self):
         self.enable(style='push')
-        script = '100 key A\n550 click 300 301\n1000 key Escape\n1450 key Escape\n'
+        script = '100 key A\n550 click 300 211\n1000 key Escape\n1450 key Escape\n'
         report = self.run_ui(script, seconds=3)
         self.assertEqual(report['view_transition_style'], 'push')
         self.assertEqual(report['view_transitions'], 4)
@@ -226,8 +242,8 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertEqual(report['page'], 2)  # The old Settings page is still visible on the left.
         self.assertEqual(report['view_transitions'], 1)
         self.assert_settled(report)
-        report = self.run_ui('100 key A\n280 click 312 301\n')
-        self.assertEqual(report['page'], 33)  # Visible Animations control during the push.
+        report = self.run_ui('100 key A\n280 click 312 211\n')
+        self.assertEqual(report['page'], 37)  # Visible Accent colour row during the push.
         self.assertGreaterEqual(report['view_transitions'], 2)
         self.assert_settled(report)
 

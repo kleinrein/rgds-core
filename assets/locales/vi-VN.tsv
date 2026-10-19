@@ -133,6 +133,7 @@ DEFAULT THEME - CHECK LOG	GIAO DIỆN MẶC ĐỊNH – XEM NHẬT KÝ
 DS rounded	DS bo tròn
 DSperate: recommended for everyday play. Native resolution is the default.	DSperate: khuyên dùng hằng ngày. Độ phân giải gốc là mặc định.
 Dark	Tối
+Date format	Định dạng ngày
 Default	Mặc định
 Default emulator	Trình giả lập mặc định
 Default shader	Bộ lọc mặc định
@@ -696,3 +697,142 @@ Push	Trượt
 Transition style	Kiểu chuyển cảnh
 Animate pages with the selected style	Tạo hoạt ảnh trang theo kiểu đã chọn
 Slide into pages; slide back to return	Trượt vào trang; trượt ngược để quay lại
+Accent colour	Màu nhấn
+FAVOURITE COLOUR	MÀU YÊU THÍCH
+Classic	Cổ điển
+Classic blue	Xanh cổ điển
+High contrast	Độ tương phản cao
+PREVIEW	XEM TRƯỚC
+Selected row	Hàng đang chọn
+Switches and values	Công tắc và giá trị
+Grey	Xám
+Brown	Nâu
+Red	Đỏ
+Pink	Hồng
+Orange	Cam
+Yellow	Vàng
+Lime	Xanh chanh
+Green	Xanh lá
+Dark green	Xanh lá đậm
+Sea green	Xanh ngọc biển
+Turquoise	Xanh ngọc
+Blue	Xanh dương
+Dark blue	Xanh dương đậm
+Purple	Tím
+Violet	Tím violet
+Magenta	Hồng cánh sen
+Network file sharing	Chia sẻ tệp qua mạng
+Open on this Wi-Fi	Mở trên Wi-Fi này
+Password protected	Bảo vệ bằng mật khẩu
+File sharing on. Find "RG DS" under Network.	Đã bật chia sẻ tệp. Tìm "RG DS" trong mục Mạng.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: trình giả lập gốc. DSCore bổ sung bản sửa lỗi và tốc độ.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: khuyên dùng. Nhanh nhất, có sửa lỗi nắp, bút cảm ứng và 3D, cùng 3D 2x–5x tùy chọn.
+DSCore 3D resolution	Độ phân giải 3D của DSCore
+Native (fastest)	Gốc (nhanh nhất)
+2x sharper	Sắc nét 2x
+3x sharper	Sắc nét 3x
+4x (experimental)	4x (thử nghiệm)
+5x (experimental)	5x (thử nghiệm)
+Colour mode	Chế độ màu
+Draw and chat with nearby handhelds	Vẽ và trò chuyện với máy ở gần
+Wi-Fi connected	Wi-Fi đã kết nối
+No Wi-Fi: you can still draw	Không có Wi-Fi: bạn vẫn có thể vẽ
+Press A to open	Nhấn A để mở
+Type your name	Nhập tên của bạn
+You appear like this to others	Đây là cách người khác thấy bạn
+Starting…	Đang khởi động…
+Chat is unavailable: you can still draw	Không dùng được trò chuyện: bạn vẫn có thể vẽ
+Nobody else is nearby yet	Chưa có ai ở gần
+1 person nearby	1 người ở gần
+{0} people nearby	{0} người ở gần
+Your colour	Màu của bạn
+Leave	Rời đi
+Your name	Tên của bạn
+Send	Gửi
+You are in Room {0}	Bạn đang ở phòng {0}
+{0} joined	{0} đã tham gia
+{0} left	{0} đã rời đi
+New messages below	Tin nhắn mới bên dưới
+Older messages	Tin nhắn cũ hơn
+The pad is full: send it or clear it	Bảng vẽ đã đầy: hãy gửi hoặc xóa
+Too much on the pad: erase some of it	Quá nhiều trên bảng: hãy tẩy bớt
+That message could not be sent	Không thể gửi tin nhắn
+That room is full	Phòng đó đã đầy
+Chat Room {0}	Phòng trò chuyện {0}
+Choose a chat room to join	Chọn một phòng trò chuyện để tham gia
+Edit	Sửa
+Join	Tham gia
+Matches your accent	Theo màu nhấn
+Nobody here yet	Chưa có ai ở đây
+Start Send   X Undo   L R Scroll	Start Gửi   X Hoàn tác   L R Cuộn
+You	Bạn
+Time format	Định dạng giờ
+24-hour	24 giờ
+12-hour	12 giờ
+24-hour or 12-hour clock	Đồng hồ 24 giờ hoặc 12 giờ
+How dates appear in the status bar	Cách hiển thị ngày trên thanh trạng thái
+Connecting to	Đang kết nối tới
+This can take a few seconds	Việc này có thể mất vài giây
+Waiting for an address…	Đang chờ địa chỉ…
+IP address	Địa chỉ IP
+Signal	Tín hiệu
+Could not connect	Không thể kết nối
+Wi-Fi is off	Wi-Fi đang tắt
+Turn it on to find networks	Bật lên để tìm mạng
+Choose a network from the list	Chọn một mạng trong danh sách
+Preparing…	Đang chuẩn bị…
+Home layout	Bố cục màn hình chính
+Background	Nền
+Touch gestures	Cử chỉ chạm
+Carousel	Băng chuyền
+DSi column	Cột DSi
+Plain	Trơn
+DSi grid	Lưới DSi
+A carousel, or the DSi's column with your last game on top	Băng chuyền, hoặc cột kiểu DSi với trò chơi gần nhất ở trên
+Plain, or the DSi's ruled grid behind every screen	Trơn, hoặc lưới kẻ kiểu DSi phía sau mọi màn hình
+Swipe up from the bottom for Home, in from the left for Back	Vuốt lên từ cạnh dưới để về Trang chính, từ cạnh trái để Quay lại
+Nothing played yet	Chưa chơi gì
+Your last game will appear here	Trò chơi gần nhất sẽ hiện ở đây
+Draw and chat	Vẽ và trò chuyện
+Su	CN
+Mo	T2
+Tu	T3
+We	T4
+Th	T5
+Fr	T6
+Sa	T7
+Chat Room	Phòng chat
+Nobody else here yet	Chưa có ai khác ở đây
+Drawing on your own	Đang vẽ một mình
+Jump	Nhảy tới
+Home	Trang chính
+Swipe up from the bottom edge to go Home from anywhere.	Vuốt lên từ cạnh dưới để về Trang chính từ bất cứ đâu.
+Swipe in from the left edge to go Back.	Vuốt từ cạnh trái vào để Quay lại.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Một thanh nhỏ ở đáy màn hình dưới cho biết cử chỉ đang bật; nó nâng lên theo ngón tay bạn, và một vòng tròn đánh dấu điểm khi cử chỉ được kích hoạt.
+Your saves are safe. See you soon!	Dữ liệu lưu của bạn an toàn. Hẹn gặp lại!
+DS Classic	DS Cổ điển
+DS Lite	DS Lite
+Natural glow	Ánh sáng tự nhiên
+Vivid LCD	LCD rực rỡ
+Natural smooth	Mịn tự nhiên
+Vivid smooth	Mịn rực rỡ
+Pixel beads	Hạt điểm ảnh
+Glossy tiles	Ô gạch bóng
+The first DS screen: muted colour and a fine pixel grid.	Màn hình DS đầu tiên: màu dịu và lưới điểm ảnh mảnh.
+The brighter DS Lite screen with a faint pixel grid.	Màn hình DS Lite sáng hơn với lưới điểm ảnh mờ.
+Natural colour with soft pixels that glow together.	Màu tự nhiên với điểm ảnh mềm tỏa sáng vào nhau.
+Bold colour on a close-up LCD with RGB stripes.	Màu đậm trên LCD nhìn cận cảnh, có sọc RGB.
+Natural colour with smoothed diagonal edges.	Màu tự nhiên với cạnh chéo được làm mịn.
+Bold colour with smoothed diagonal edges.	Màu đậm với cạnh chéo được làm mịn.
+Bold colour; every pixel a round, shiny bead.	Màu đậm; mỗi điểm ảnh là một hạt tròn bóng.
+Bold colour; every pixel a raised, glossy tile.	Màu đậm; mỗi điểm ảnh là một ô gạch nổi bóng.
+IN USE	ĐANG DÙNG
+APPLY	ÁP DỤNG
+Follows your library shader.	Theo bộ lọc của thư viện.
+Original	Gốc
+DS screens	Màn hình DS
+Natural	Tự nhiên
+Vivid	Rực rỡ
+Pixel art	Pixel art
+Moods	Tâm trạng
+Up / Down or L / R: change group	Lên / Xuống hoặc L / R: đổi nhóm

@@ -9,6 +9,7 @@ public:
     void press(int source,int direction,unsigned now){if(!keys.count(source) || keys[source].direction!=direction)keys[source]={direction,now,now+320};}
     void release(int source){keys.erase(source);}
     void clear(){keys.clear();}
+    bool active()const{return !keys.empty();}
     int poll(unsigned now) {
         if(keys.empty())return 0;auto& held=keys.rbegin()->second;
         if(now<held.next)return 0;

@@ -26,7 +26,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.prefs = self.root / 'preferences.ini'
         self.prefs.write_text('schema=1\nmode=light\nfont=rounded\ncore=1\n')
         self.game = self.root / 'library' / game_key(self.rom) / 'game.ini'
-        write_fields(self.game, dict(schema=1, core=2, filter=4, favourite=1,
+        write_fields(self.game, dict(schema=1, core=3, filter=4, favourite=1,
                                     threaded_3d=1, hires_3d=0, frameskip=0))
         self.original = self.game.read_bytes()
 
@@ -52,7 +52,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         return ['X', *(['Down'] * index), *keys]
 
     def test_experimental_engine_can_be_selected_without_changing_default(self):
-        report = self.run_ui(self.row(6, 'A', 'Down', 'Down', 'A'))
+        report = self.run_ui(self.row(6, 'A', 'Down', 'A'))
         self.assertEqual(report['game_core_override'], 4)
         self.assertEqual(report['default_core'], 1)
         self.assertEqual(read_fields(self.game)['core'], '4')
@@ -109,6 +109,54 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.run_ui(graphics + ['A', 'Up', 'Escape', 'Escape'], 'rgds-experimental')
         self.assertEqual(read_fields(self.game)['rgds_scale'], '5')
         self.assertEqual(read_fields(self.game)['filter'], '4')
+
+    def test_graphics_tile_2d_scaling_persists_and_keeps_other_settings(self):
+        graphics = ['Down', 'Right', 'Right', 'A']
+        self.run_ui(graphics + ['A', 'Down', 'Down', 'A'], 'rgds-experimental')   # 3D resolution 3x
+        scale = read_fields(self.game)['rgds_scale']
+        # Row 3 is 2D scaling: Native pixels -> Sharp, then Smooth, then back to native.
+        self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual(read_fields(self.game)['rgds_2d'], '1')
+        self.assertEqual(read_fields(self.game)['rgds_scale'], scale)
+        self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual(read_fields(self.game)['rgds_2d'], '2')
+        # Cancelling leaves the saved choice alone.
+        self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Up', 'Escape', 'Escape'], 'rgds-experimental')
+        self.assertEqual(read_fields(self.game)['rgds_2d'], '2')
+        self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Up', 'Up', 'A'], 'rgds-experimental')
+        self.assertNotIn('rgds_2d', read_fields(self.game))
+        self.assertEqual(read_fields(self.game)['rgds_scale'], scale)
+
+    def test_graphics_tile_heavy_scenes_choice_persists_and_keeps_other_settings(self):
+        graphics = ['Down', 'Right', 'Right', 'A']
+        report = self.run_ui(graphics + ['Down', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual(report['picker_title'], 'Heavy 3D scenes (2x and above)')
+        self.assertEqual(report['picker_focus'], 0)   # Adaptive (holds 60 fps) is the default
+        self.run_ui(graphics + ['A', 'Down', 'Down', 'A'], 'rgds-experimental')   # 3D resolution 3x
+        scale = read_fields(self.game)['rgds_scale']
+        # Row 2: Always sharp is stored; the default never is.
+        self.run_ui(graphics + ['Down', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual(read_fields(self.game)['rgds_adaptive'], '0')
+        self.assertEqual(read_fields(self.game)['rgds_scale'], scale)
+        self.assertEqual(read_fields(self.game)['filter'], '4')
+        report = self.run_ui(graphics + ['Down', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual(report['picker_focus'], 1)
+        # Cancelling leaves the saved choice alone.
+        self.run_ui(graphics + ['Down', 'Down', 'A', 'Up', 'Escape', 'Escape'], 'rgds-experimental')
+        self.assertEqual(read_fields(self.game)['rgds_adaptive'], '0')
+        self.run_ui(graphics + ['Down', 'Down', 'A', 'Up', 'A'], 'rgds-experimental')
+        self.assertNotIn('rgds_adaptive', read_fields(self.game))
+        self.assertEqual(read_fields(self.game)['rgds_scale'], scale)
+
+    def test_graphics_tile_rows_follow_heavy_scenes_row(self):
+        graphics = ['Down', 'Right', 'Right', 'A']
+        report = self.run_ui(graphics + ['Down'] * 5 + ['A'], 'rgds-experimental')
+        self.assertEqual(report['picker_title'], 'Frameskip')
+        # Leaving the screen filter list lands back on its own row, not 2D scaling.
+        shader = self.run_ui(graphics + ['Down'] * 4 + ['A'], 'rgds-experimental')
+        report = self.run_ui(graphics + ['Down'] * 4 + ['A', 'Escape', 'A'], 'rgds-experimental')
+        self.assertEqual(report['page'], shader['page'])
+        self.assertFalse(report['picker_open'])
 
     def test_optional_backend_global_choice_preserves_dsperate_and_cancel(self):
         report = self.run_ui(['Down'] * 6 + ['A', 'Down', 'Escape'], library=True)
@@ -218,7 +266,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertEqual(expected, dict(schema='1', core='-1', filter='4', favourite='1',
                                         threaded_3d='1', hires_3d='0', frameskip='0'))
         self.assertEqual(read_fields(self.prefs)['core'], '1')
-        report = self.run_ui(self.row(6, 'A', 'Down', 'Down', 'Down', 'Down', 'A'))
+        report = self.run_ui(self.row(6, 'A', 'Down', 'Down', 'Down', 'A'))
         self.assertEqual(report['game_core_override'], 3)
         expected['core'] = '3'
         self.assertEqual(read_fields(self.game), expected)
@@ -233,7 +281,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     def test_failed_save_keeps_displayed_and_stored_game_emulator(self):
         Path(str(self.game) + '.pending').mkdir()
         report = self.run_ui(self.row(6, 'A', 'Down', 'A'))
-        self.assertEqual(report['game_core_override'], 2)
+        self.assertEqual(report['game_core_override'], 3)
         self.assertIn('Could not save', report['settings_notice'])
         self.assertEqual(self.game.read_bytes(), self.original)
 
@@ -264,7 +312,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertEqual(report['game_hires'], 1)
 
     def test_touch_can_restore_inherited_emulator(self):
-        report = self.run_ui(self.row(6, 'A'), touch='400 click 200 124\n')
+        report = self.run_ui(self.row(6, 'A'), touch='400 click 200 176\n')
         self.assertFalse(report['picker_open'])
         self.assertEqual(report['game_core_override'], -1)
 

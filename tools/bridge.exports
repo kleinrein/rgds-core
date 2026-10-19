@@ -2,6 +2,7 @@
   global:
     SDL_*;
     gl*;
+    rgds_present_canvas;
     ioctl;
     read;
     kill;

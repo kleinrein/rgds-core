@@ -27,6 +27,34 @@ class FileSharingTests(unittest.TestCase):
         boot = patch('file_sharing.boot_id', return_value='test-boot')
         boot.start(); self.addCleanup(boot.stop)
 
+    def test_open_mode_allows_guests_and_both_modes_veto_mac_clutter(self):
+        games = self.root / 'Roms/NDS';games.mkdir(parents=True);self.sharing.folder.mkdir(parents=True)
+        config, shares = self.sharing.configure('192.168.1.42', [games], 'root', guest=True)
+        text = config.read_text()
+        self.assertIn('map to guest = Bad User', text);self.assertIn('guest ok = yes', text)
+        self.assertNotIn('valid users', text);self.assertIn('force user = root', text)
+        self.assertIn('veto files = /._*/.DS_Store/', text);self.assertIn('delete veto files = yes', text)
+        config, _shares = self.sharing.configure('192.168.1.42', [games], 'root')
+        text = config.read_text()
+        self.assertIn('map to guest = Never', text);self.assertIn('valid users = root', text)
+        self.assertNotIn('guest ok = yes', text);self.assertIn('veto files = /._*/.DS_Store/', text)
+
+    def test_bonjour_service_is_advertised_only_while_sharing(self):
+        service = self.root / 'etc/avahi/services/rgds-smb.service'
+        self.sharing.avahi_service = service
+        with patch('file_sharing.shutil.which', return_value='/usr/sbin/avahi-daemon'), \
+             patch('file_sharing.subprocess.run') as run:
+            self.sharing.advertise(True)
+            self.assertIn('<type>_smb._tcp</type><port>445</port>', service.read_text())
+            self.assertIn('<name>RG DS</name>', service.read_text())
+            self.sharing.advertise(True)
+            self.assertEqual(run.call_count, 1)  # Unchanged advertisement: no reload.
+            self.sharing._stop(None)
+            self.assertFalse(service.exists());self.assertEqual(run.call_count, 2)
+        # Discovery is best effort: an unwritable folder never blocks sharing.
+        self.sharing.avahi_service = Path('/proc/no-such-folder/rgds-smb.service')
+        self.sharing.advertise(True)
+
     def test_damaged_release_requests_repair_and_never_uses_firmware_binaries(self):
         with patch('file_sharing.subprocess.Popen') as launch:
             self.assertEqual(self.sharing.status('192.168.1.42')['sharing_supported'], 0)
@@ -210,8 +238,11 @@ class ConnectivityUiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary)
             script = folder / 'input.txt'
-            for enabled in (True, False):
-                script.write_text('600 key Down\n650 key Down\n700 key Down\n750 key Return\n')
+            # Row 4 opens Off / Open on this Wi-Fi / Password protected.
+            choices = ((True, 'password', '800 key Down\n850 key Down\n'), (False, '', '800 key Up\n850 key Up\n'),
+                       (True, 'open', '800 key Down\n'))
+            for enabled, mode, choose in choices:
+                script.write_text('600 key Down\n650 key Down\n700 key Down\n750 key Return\n' + choose + '950 key Return\n')
                 result = subprocess.run([str(ROOT / 'build/host/rgds-launcher'), '--preview', '--settings',
                                          '--section', 'connectivity', '--data', str(folder), '--input-script', str(script),
                                          '--seconds', '2'], cwd=ROOT, capture_output=True, text=True,
@@ -219,6 +250,7 @@ class ConnectivityUiTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 state = read_fields(folder / 'device/status.ini')
                 self.assertEqual(state['sharing'], str(int(enabled)))
+                self.assertEqual(state.get('sharing_mode', ''), mode)
                 self.assertEqual(state['ip'], '192.168.1.42')
                 self.assertEqual((folder / 'device/sharing/login.ini').exists(), enabled)
 
@@ -227,7 +259,7 @@ class ConnectivityUiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary)
             script = folder / 'input.txt'
-            script.write_text('600 click 280 374\n1100 key Down\n1200 key Return\n')
+            script.write_text('600 click 280 374\n700 key Down\n750 key Down\n800 key Return\n1100 key Down\n1200 key Return\n')
             report = folder / 'report.json'
             result = subprocess.run([str(ROOT / 'build/host/rgds-launcher'), '--preview', '--settings',
                                      '--section', 'connectivity', '--data', str(folder), '--input-script', str(script),

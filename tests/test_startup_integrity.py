@@ -104,7 +104,7 @@ class StartupIntegrityTests(unittest.TestCase):
             activate.verify_startup_receipt(self.app, receipt)
             self.assertEqual(hashes.call_count, count)
             self.assertEqual(count, 4)
-        for name in ("runtime/session.py", "emulators/nnddss/nnddss", "manifest.json"):
+        for name in ("runtime/session.py", "manifest.json"):
             with self.subTest(name=name):
                 receipt = activate.verify_startup(self.app, receipt=True)
                 path = self.app / name;before = path.read_bytes();info = path.stat()
@@ -113,6 +113,60 @@ class StartupIntegrityTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "changed"):
                     activate.verify_startup_receipt(self.app, receipt)
                 path.write_bytes(before)
+        # Engine payloads are no longer stat'ed on the boot path; their bytes
+        # are checked by the selected engine's launch verification instead.
+        receipt = activate.verify_startup(self.app, receipt=True)
+        engine = self.app / "emulators/nnddss/nnddss";before = engine.read_bytes()
+        engine.write_bytes(bytes((before[0] ^ 1,)) + before[1:])
+        activate.verify_startup_receipt(self.app, receipt)
+        with self.assertRaisesRegex(ValueError, "SHA-256"):activate.verify_engine(self.app, "nnddss")
+        engine.write_bytes(before)
+
+    def installed(self):
+        """Move the fixture into an installed <root>/releases/<build> layout."""
+        root = self.app.parent / "rgds";(root / "releases").mkdir(parents=True);(root / "userdata").mkdir()
+        self.app = self.app.rename(root / "releases" / self.app.name)
+        return root
+
+    def test_installed_release_memoizes_unchanged_hashes_across_processes(self):
+        root = self.installed()
+        activate.verify_startup(self.app);activate.verify_engine(self.app, "dsperate")
+        memo = root / "userdata/cache/verified" / (self.app.name + ".json")
+        self.assertTrue(memo.is_file())
+        with patch("activate.hashlib.sha256", wraps=hashlib.sha256) as hashes:
+            activate.verify_startup(self.app);activate.verify_engine(self.app, "dsperate")
+        # Only the two manifest digests; no payload was read again.
+        self.assertEqual(hashes.call_count, 2)
+        # A changed size/time is re-hashed and a mismatch is rejected.
+        (self.app / "runtime/session.py").write_bytes(b"damaged startup")
+        with self.assertRaisesRegex(ValueError, "SHA-256"):activate.verify_startup(self.app)
+        self.assertFalse(memo.exists())
+        (self.app / "runtime/session.py").write_bytes(self.payload["runtime/session.py"])
+        activate.verify_startup(self.app)
+        # A manifest change invalidates every memoized entry.
+        self.manifest["files"]["emulators/nnddss/nnddss"] = hashlib.sha256(b"new engine").hexdigest()
+        (self.app / "emulators/nnddss/nnddss").write_bytes(b"new engine");self.save()
+        with patch("activate.hashlib.sha256", wraps=hashlib.sha256) as hashes:
+            activate.verify_startup(self.app)
+        self.assertEqual(hashes.call_count, 5)
+
+    def test_audit_rehashes_memoized_files_and_drops_a_silently_corrupted_memo(self):
+        root = self.installed()
+        activate.verify_startup(self.app)
+        self.assertEqual(activate.audit(self.app, clock=lambda: 10**10)["state"], "verified")
+        self.assertEqual(activate.audit(self.app, clock=lambda: 10**10 + 60)["state"], "skipped")
+        path = self.app / "themes/default/light.ini";info = path.stat()
+        path.write_bytes(b"palettf")  # Same size; restore the old modification time.
+        os.utime(path, ns=(info.st_atime_ns, info.st_mtime_ns))
+        result = activate.audit(self.app, force=True)
+        self.assertEqual(result["state"], "failed")
+        self.assertFalse((root / "userdata/cache/verified" / (self.app.name + ".json")).exists())
+        with self.assertRaisesRegex(ValueError, "SHA-256"):activate.verify_startup(self.app)
+
+    def test_uninstalled_fixture_never_writes_a_memo_outside_its_tree(self):
+        activate.verify_startup(self.app)
+        self.assertIsNone(activate.verify_cache_path(self.app))
+        self.assertFalse((self.app.parent.parent / "userdata").exists() and (self.app.parent.parent / "userdata/cache/verified").exists())
 
     def test_receipt_rejects_a_different_release_and_new_payload(self):
         receipt = activate.verify_startup(self.app, receipt=True)

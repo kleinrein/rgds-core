@@ -57,10 +57,11 @@ class SettingsInteractionTests(unittest.TestCase):
                     self.assertEqual(report['page'], expected)
 
     def test_touch_indicator_can_be_changed_by_touch_and_keyboard_and_persists(self):
-        self.run_ui('30 click 180 347\n', 'theme')
+        # Touch indicator is the last row: scroll to the end, then tap it.
+        self.run_ui('10 wheel 0 -8\n30 click 180 379\n', 'theme')   # row 7 of 11
         self.assertIn('touch_indicator=0\n', (self.root/'ui.ini').read_text())
         # A second run must load Off before toggling it back to On.
-        self.run_ui('30 key Down\n60 key Down\n90 key Down\n120 key Down\n150 key A\n', 'theme')
+        self.run_ui(''.join(f'{30+i*30} key Down\n' for i in range(7))+'260 key A\n', 'theme')
         self.assertIn('touch_indicator=1\n', (self.root/'ui.ini').read_text())
         self.assertIn('animations=1\n', (self.root/'ui.ini').read_text())
         self.assertNotIn('touch_indicator', (self.root/'preferences.ini').read_text())
@@ -72,8 +73,8 @@ class SettingsInteractionTests(unittest.TestCase):
                 self.assertEqual(report['picker_open'], 1)
                 self.assertIn('core=0\n', (self.root/'preferences.ini').read_text())
 
-    def test_melonds_is_selectable_as_fourth_core_and_restores(self):
-        self.run_ui('30 key A\n60 key Down\n90 key Down\n120 key Down\n150 key A\n','library')
+    def test_melonds_is_selectable_as_third_row_and_restores(self):
+        self.run_ui('30 key A\n60 key Down\n90 key Down\n120 key A\n','library')
         self.assertIn('core=3\n',(self.root/'preferences.ini').read_text())
         self.run_ui('','library')
         self.assertIn('core=3\n',(self.root/'preferences.ini').read_text())
@@ -83,10 +84,10 @@ class SettingsInteractionTests(unittest.TestCase):
         self.assertIn('core=0\n', (self.root/'preferences.ini').read_text())
         report = self.run_ui('30 key A\n60 key Right\n90 key Right\n120 key A\n', 'library')
         self.assertFalse(report['picker_open'])
-        self.assertIn('core=2\n', (self.root/'preferences.ini').read_text())
+        self.assertIn('core=3\n', (self.root/'preferences.ini').read_text())   # the third row: melonDS
 
     def test_touch_choice_is_direct_and_commits_once(self):
-        self.run_ui('30 click 180 129\n120 click 180 230\n', 'library')
+        self.run_ui('30 click 180 129\n120 click 180 280\n', 'library')
         self.assertIn('core=1\n', (self.root/'preferences.ini').read_text())
 
     def test_swipe_scrolls_without_opening_the_pressed_card(self):
@@ -103,15 +104,15 @@ class SettingsInteractionTests(unittest.TestCase):
         self.assertEqual(report['list_scroll'], 0)
 
     def test_mute_cancels_held_slider_repeat_and_survives_restart(self):
-        self.run_ui('30 key Right\n90 click 180 298\n', 'sound')
+        self.run_ui('30 key Right\n90 click 180 230\n', 'sound')
         self.assertIn('volume=0\n', (self.root/'volume.ini').read_text())
         self.run_ui('', 'sound')
         self.assertIn('volume=0\n', (self.root/'volume.ini').read_text())
-        self.run_ui('30 click 180 298\n', 'sound')
+        self.run_ui('30 click 180 230\n', 'sound')
         self.assertIn('volume=25\n', (self.root/'volume.ini').read_text())
 
     def test_duplicate_mouse_delivery_after_finger_mute_does_not_unmute(self):
-        self.run_ui('30 finger-down 0.28125 0.8104167\n60 finger-up 0.28125 0.8104167\n80 click 180 298\n', 'sound')
+        self.run_ui('30 finger-down 0.28125 0.7395833\n60 finger-up 0.28125 0.7395833\n80 click 180 230\n', 'sound')
         self.assertIn('volume=0\n', (self.root/'volume.ini').read_text())
 
     def test_open_picker_settles_and_reduced_motion_applies_immediately(self):

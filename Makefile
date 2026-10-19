@@ -2,6 +2,8 @@ PYTHON ?= python3
 DEVICE ?=
 SD_ROOT ?=
 THEME ?= themes/default/light.ini
+# gcc-pgo: GCC 13.3 + upstream PGO in the Lima ARM64 VM (~8% less emulation time); zig: host cross build
+ENGINE_COMPILER ?= gcc-pgo
 
 .PHONY: preview settings game-menu dev dev-device build-host build-device build-engines build-melonds build-melonds-experiment build-rgds-experimental build-rgds-vulkan build-superdrastic build-samba package installer test probe deploy logs run run-dev rollback status doctor os-audit
 build-host:
@@ -9,11 +11,11 @@ build-host:
 build-device:
 	$(PYTHON) tools/build.py device
 build-engines:
-	$(PYTHON) tools/build_engines.py --fetch
+	$(PYTHON) tools/build_engines.py --fetch --compiler $(ENGINE_COMPILER)
 build-melonds: build-engines
 	$(PYTHON) tools/build_melonds.py --fetch --frontend
 build-rgds-experimental: build-engines
-	$(PYTHON) tools/build_rgds_experimental.py
+	$(PYTHON) tools/build_rgds_experimental.py --compiler $(ENGINE_COMPILER)
 build-rgds-vulkan: build-rgds-experimental
 	$(PYTHON) tools/build_rgds_vulkan.py
 	$(PYTHON) tools/package_rgds_vulkan.py

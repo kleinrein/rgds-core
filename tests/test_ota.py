@@ -31,12 +31,16 @@ class Response(io.BytesIO):
     def __init__(self,body,url,status=200,headers=None):super().__init__(body);self.url=url;self.status=status;self.headers=headers or {}
     def geturl(self):return self.url
 
+# macOS ships LibreSSL as /usr/bin/openssl, which lacks Ed25519; runtime
+# update_crypto.py uses Homebrew's OpenSSL 3 there, and so do these keys.
+OPENSSL=next((p for p in ('/opt/homebrew/opt/openssl@3/bin/openssl','/usr/local/opt/openssl@3/bin/openssl') if sys.platform=='darwin' and Path(p).exists()),'openssl')
+
 class OTATests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temp=tempfile.TemporaryDirectory();cls.key=Path(cls.temp.name)/'key'
-        subprocess.run(['openssl','genpkey','-algorithm','ED25519','-out',str(cls.key)],check=True,capture_output=True)
-        cls.public=subprocess.run(['openssl','pkey','-in',str(cls.key),'-pubout','-outform','DER'],check=True,capture_output=True).stdout[-32:]
+        subprocess.run([OPENSSL,'genpkey','-algorithm','ED25519','-out',str(cls.key)],check=True,capture_output=True)
+        cls.public=subprocess.run([OPENSSL,'pkey','-in',str(cls.key),'-pubout','-outform','DER'],check=True,capture_output=True).stdout[-32:]
     @classmethod
     def tearDownClass(cls):cls.temp.cleanup()
     def setUp(self):
@@ -57,7 +61,7 @@ class OTATests(unittest.TestCase):
     def signed(self,value=None):
         data=json.dumps(value or self.meta,sort_keys=True).encode();folder=Path(self.tempdir.name)
         (folder/'message').write_bytes(data)
-        subprocess.run(['openssl','pkeyutl','-sign','-rawin','-inkey',str(self.key),'-in',str(folder/'message'),'-out',str(folder/'signature')],check=True,capture_output=True)
+        subprocess.run([OPENSSL,'pkeyutl','-sign','-rawin','-inkey',str(self.key),'-in',str(folder/'message'),'-out',str(folder/'signature')],check=True,capture_output=True)
         return json.dumps(dict(key_id='test',signed=base64.b64encode(data).decode(),signature=base64.b64encode((folder/'signature').read_bytes()).decode())).encode()
     def offer(self):self.guard.atomic(self.updater.folder/'offer.json',self.signed().decode())
     def test_automatic_checks_are_rate_limited_and_do_not_install(self):

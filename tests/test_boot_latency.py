@@ -94,7 +94,7 @@ class DeferredBootWorkTests(unittest.TestCase):
         root = self.data / "rgds";(root / "state").mkdir(parents=True)
         (root / "state/active").write_text("new-build\n")
         receipt = dict(schema=1, app=str(root / "releases/old-build"), files={})
-        with patch("session.sys.platform", "linux"), patch("session.environment") as environment, \
+        with patch("session.sys.platform", "linux"), patch("file_sharing.Sharing.stop"), patch("session.environment") as environment, \
              patch.object(sys, "argv", ["unrelated caller", "--invalid-option"]):
             with self.assertRaisesRegex(ValueError, "Invalid startup verification receipt"):
                 session.main(argv=["--root", str(root), "--boot"], startup_receipt=receipt)
@@ -117,7 +117,7 @@ class DeferredBootWorkTests(unittest.TestCase):
         (app / "runtime/boot_network.py").write_text("import pathlib, sys\n"
             "pathlib.Path(sys.argv[sys.argv.index('--result') + 1]).write_text('deferred worker ran')\n")
         began = time.monotonic()
-        with patch("session.sys.platform", "linux"), patch("session.release", return_value=app), \
+        with patch("session.sys.platform", "linux"), patch("file_sharing.Sharing.stop"), patch("session.release", return_value=app), \
              patch("session.environment", return_value=dict(os.environ)), patch("session.lock"), \
              patch("session.unlock"), patch("session.Hardware.restore"), \
              patch("session.process_identity", return_value="1"), patch("session.discover_frontends", return_value=[]), \
@@ -168,7 +168,7 @@ def begin_session(data, owner):
         (control / "config.json").write_text(json.dumps(dict(schema=1, mode="rgds", warning=False, root=str(root))))
         receipt = dict(schema=1, app=str(app), files=activate.release_inventory(app))
         before = dict(os.environ)
-        with patch("session.sys.platform", "linux"), patch("boot.same_runtime", return_value=True), \
+        with patch("session.sys.platform", "linux"), patch("file_sharing.Sharing.stop"), patch("boot.same_runtime", return_value=True), \
              patch("activate.verify_startup", return_value=receipt):
             self.assertEqual(boot.run(control, self.data / "run"), 0)
         self.assertEqual(dict(os.environ), before)

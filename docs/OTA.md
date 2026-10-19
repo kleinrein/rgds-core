@@ -1,8 +1,46 @@
 # OTA application updates
 
-Protocol 1 is implemented but ships **unconfigured**. No repository URL or signing
-key is guessed. A blank channel performs no network requests. Updates apply only
-to RG DS Core on the tested standard RG DS / Anbernic Buildroot 2024.02 base.
+RG DS Core updates itself over Wi-Fi from a signed feed. The channel ships
+**unconfigured**: until you pin a feed and a public key, the updater makes no
+network requests. Updates replace the RG DS Core application only, on the tested
+standard RG DS / Anbernic Buildroot 2024.02 base.
+
+## Publishing on GitHub
+
+GitHub Releases can host everything: each release carries the update archive,
+the signed feed (`stable.json`) and the installer, and
+`https://github.com/OWNER/REPO/releases/latest/download/stable.json` always
+points at the newest feed.
+
+Once, after creating the repository:
+
+```sh
+python3 tools/release.py init --repo OWNER/REPO
+make installer        # new installs now follow your channel
+```
+
+`init` creates an Ed25519 signing key at `~/.config/rgds/release-key.pem` (keep
+it private and backed up; it never goes in the repository) and pins the feed
+and the public key in `packaging/update-trust.json`.
+
+For every release:
+
+```sh
+echo 0.1.0 > VERSION
+make installer
+python3 tools/release.py publish --version 0.1.0 --notes notes.txt
+```
+
+`publish` signs an update for the latest package, writes `dist/release/0.1.0/`
+and prints the `gh release create` command that uploads the archive, the feed
+and the installer (`--upload` runs it for you). It refuses a package whose
+version differs from `--version`, and one built before `init`, since installs
+from it would never see the channel. Each publish gets a higher sequence number,
+so devices always move forward. Use `--channel testing` (and a separate `init`)
+for a beta channel.
+
+Devices installed before the channel was configured need the new installer
+once; after that, updates arrive over Wi-Fi.
 
 ## User flow
 
@@ -58,25 +96,10 @@ higher sequence. Stable and testing should have separate feeds and trust choices
 A fresh publisher release needs a new immutable build after a failed candidate;
 failed builds are not offered again automatically.
 
-Example maintainer commands (after creating the repository and resolving release
-licensing):
-
-```sh
-# Generate once in a secure location. Never put this key in the repository.
-openssl genpkey -algorithm ED25519 -out /secure/rgds-release-key.pem
-python3 tools/publish_update.py \
-  --package dist/RGDS-<build>.zip \
-  --output dist/RG-DS-Core-<build>.ota.zip \
-  --url https://YOUR-RELEASE-HOST/RG-DS-Core-<build>.ota.zip \
-  --key /secure/rgds-release-key.pem --key-id release-2026 \
-  --version 0.1.0-alpha.1 --sequence 1 --channel stable \
-  --notes release-notes.txt --feed dist/stable.json
-```
-
-The tool prints the public key for pinning and uploads nothing. Upload the exact
-archive first, then the signed feed. Keep each artifact immutable. Publish a new
-sequence rather than replacing a package behind a previously signed URL. There
-are no production keys or public endpoints in the current workspace.
+`tools/release.py` wraps `tools/publish_update.py`, which can also be used
+directly for other hosts: it builds the archive and signed feed and uploads
+nothing. Upload the archive before the feed, keep each artifact immutable and
+publish a new sequence rather than replacing a package behind a signed URL.
 
 ## Activation and automatic rollback
 

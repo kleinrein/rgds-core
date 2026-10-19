@@ -106,6 +106,26 @@ def ensure_boot_network(configuration, sysfs=Path("/sys"), helper=VENDOR_HELPER,
     raise ValueError("Wi-Fi initialization did not create an interface in time.")
 
 
+def quiet_wireless_logs(proc=Path("/proc/net")):
+    """Keep the vendor Realtek driver to errors only for this kernel boot.
+
+    The stock driver logs at INFO and writes several kernel lines per second
+    while associated, waking klogd/syslogd and filling the tmpfs log. The
+    setting is runtime-only; the next boot starts from the vendor default.
+    """
+    quieted = []
+    try:entries = sorted(Path(proc).glob("rtl*/log_level"))
+    except OSError:return quieted
+    for entry in entries:
+        try:
+            current = entry.read_text().splitlines()
+            level = next((line.split(":", 1)[1].strip() for line in current if line.startswith("drv_log_level:")), "")
+            if level.isdigit() and int(level) > 2:
+                entry.write_text("2\n");quieted.append(entry.parent.name)
+        except OSError:continue
+    return quieted
+
+
 def run_deferred(configuration, result, recover=None):
     """Run in a worker after the first frame; network failure cannot stop RGDS."""
     began = time.monotonic()
@@ -116,6 +136,8 @@ def run_deferred(configuration, result, recover=None):
         record = dict(schema=1, **(recover or ensure_boot_network)(config))
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         record = dict(schema=1, state="unavailable", interfaces=[], error=str(error))
+    quiet = quiet_wireless_logs()
+    if quiet:record["quiet_logs"] = quiet
     record["elapsed_seconds"] = round(time.monotonic() - began, 3)
     # Readers see either the previous complete result or the new complete result.
     # This is ephemeral boot diagnostics, so it never adds a disk sync to startup.

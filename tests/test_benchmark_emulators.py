@@ -124,6 +124,8 @@ class BenchmarkEmulatorTests(unittest.TestCase):
             self.assertIn('RESULTS',output.read_text())
 
     def test_device_threading_configuration_is_read_by_real_runtime_before_launch(self):
+        # The runtime imports its siblings by bare name, as it does on the device.
+        sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'runtime'))
         from runtime.emulator_profiles import game_options
         from runtime.fields import write_fields
         from runtime.library import game_key

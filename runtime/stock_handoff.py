@@ -220,6 +220,11 @@ def execute_system_action(action, data, *, standalone=False):
         try:write_fields(folder / 'system-exit.ini', receipt)
         except OSError:pass  # Full storage must not make normal power-off impossible.
     record('dispatching')
+    if action == 'poweroff' and not standalone:
+        # Lets the final shutdown step power the PMIC off by register so the
+        # next start takes one press (system_tuning.request_register_poweroff).
+        from system_tuning import request_register_poweroff
+        request_register_poweroff()
     try:
         # A real file survives termination by init without holding a pipe open.
         try:

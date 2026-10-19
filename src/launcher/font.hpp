@@ -3,6 +3,7 @@
 #include "platform/sdl_dynamic.hpp"
 #include <cstdint>
 #include <cmath>
+#include <functional>
 #include <tuple>
 #include <initializer_list>
 
@@ -97,6 +98,21 @@ public:
         for(auto cp:codepoints(value)){auto it=a.glyphs.find(cp);if(it==a.glyphs.end())it=a.glyphs.find('?');const auto& g=it->second;if(!g.h)continue;
             int y=int(std::round((a.ascent+g.top)*scale));top=std::min(top,y);bottom=std::max(bottom,y+int(std::round(g.h*scale)));}
         return bottom<top?std::pair<int,int>{0,0}:std::pair<int,int>{top,bottom};
+    }
+    // The text's alpha, pixel by pixel, for drawing into memory instead of a renderer
+    // (a chat message's pad). Only the baked sizes, placed exactly as draw() places them.
+    void rasterize(const std::string& value,int size,int x,int y,const std::function<void(int,int,uint8_t)>& put) {
+        if(size!=baked_size(size))return;
+        auto& a=atlas(size);float pen=static_cast<float>(x);
+        for(auto cp:codepoints(value)){
+            auto it=a.glyphs.find(cp);if(it==a.glyphs.end())it=a.glyphs.find('?');const auto& g=it->second;
+            const int left=static_cast<int>(std::round(pen+g.left)),top=y+a.ascent+g.top;
+            for(int gy=0;gy<g.h;gy++)for(int gx=0;gx<g.w;gx++){
+                const uint8_t alpha=a.alpha[static_cast<size_t>(g.y+gy)*a.width+g.x+gx];
+                if(alpha)put(left+gx,top+gy,alpha);
+            }
+            pen+=g.advance/64.0f;
+        }
     }
     void draw(SDL_Renderer* r,const std::string& value,int x,int y,int size,Color color,int limit,int max_width) {
         auto& a=atlas(size);auto* image=texture(r,size);s.SetTextureColorMod(image,color.r,color.g,color.b);

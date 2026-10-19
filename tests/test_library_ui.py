@@ -122,9 +122,10 @@ class LibraryUITests(unittest.TestCase):
         self.assertEqual(self.state.read_text().splitlines(), ['1 0 0 ""', "home 0"])
 
     def test_emulator_choice_is_saved_in_library_settings(self):
-        self.run_ui("20 key A\n40 key Right\n60 key Right\n80 key A\n100 key Escape\n140 key Escape\n180 key Escape\n",
+        self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
+        self.run_ui("20 key A\n40 key Right\n60 key A\n80 key Escape\n120 key Escape\n160 key Escape\n",
                     extra=("--settings", "--section", "library"))
-        # DSperate starts at core 1; two explicit steps select melonDS (3).
+        # DSperate starts at core 1; one step selects melonDS (3), the next offered row.
         self.assertIn("core=3\n", self.prefs.read_text())
         self.assertEqual(self.selected(), 0)
 
@@ -144,7 +145,8 @@ class LibraryUITests(unittest.TestCase):
         self.assertEqual(self.selected(),1)
 
     def test_combined_view_modal_changes_collection_and_layout_without_reopening(self):
-        self.run_ui("20 click 460 46\n160 click 310 146\n260 click 510 244\n360 click 530 452\n")
+        # The title row opens the view sheet (the collection chip is gone; the first row is search).
+        self.run_ui("20 click 120 98\n160 click 310 146\n260 click 510 244\n360 click 530 452\n")
         saved = (self.root / "ui.ini").read_text()
         self.assertIn("view=1", saved)
         self.assertIn("layout=2", saved)

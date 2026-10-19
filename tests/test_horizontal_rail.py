@@ -38,7 +38,7 @@ class HorizontalRailTests(unittest.TestCase):
     def test_captured_thumb_remains_pressed_outside_rail_without_launching(self):
         options = dict(indicator=False, animations=False)
         held, _, _ = self.exercise('100 tap 178 443\n200 drag 700 370\n', **options)
-        released, _, _ = self.exercise('100 tap 178 443\n200 drag 700 370\n300 release\n', **options)
+        released, _, state = self.exercise('100 tap 178 443\n200 drag 700 370\n300 release\n', **options)
         self.assertEqual(int(state.split()[1]), 4)
         self.assertNotEqual(self.crop(held, 84, 887, 472, 73), self.crop(released, 84, 887, 472, 73))
 

@@ -31,6 +31,29 @@ class EmulatorOverlay {
     unsigned long long capture_poll_at=0;
     std::vector<unsigned char> composite;
     uint32_t composite_version=0,menu_version=0;
+    // The rows and columns of each panel's pixels that carry any alpha, found
+    // once per composition: a HUD alone covers a small box of the panel, and
+    // the CPU blend (canvas) walks only that.
+    struct Box{int x0=0,y0=0,x1=0,y1=0;};Box boxes[2]{};uint32_t boxes_version=~0u;
+    const Box& box(int index){
+        if(boxes_version!=composite_version){
+            boxes_version=composite_version;
+            for(int i=0;i<2;i++){
+                Box b{640,480,0,0};
+                if(has_panel(i)){
+                    const unsigned char* p=pixels(i);
+                    for(int y=0;y<480;y++){
+                        const unsigned char* row=p+size_t(y)*640*4;int first=-1,last=-1;
+                        for(int x=0;x<640;x++)if(row[x*4+3]){if(first<0)first=x;last=x;}
+                        if(first<0)continue;
+                        b.x0=std::min(b.x0,first);b.x1=std::max(b.x1,last+1);b.y0=std::min(b.y0,y);b.y1=y+1;
+                    }
+                }
+                boxes[i]=b.x1>b.x0 && b.y1>b.y0?b:Box{};
+            }
+        }
+        return boxes[index];
+    }
     bool menu_visible=false,hud_visible=false,fps_visible=false,ff_visible=false,ff_active=false;
     double fps_value=-1,drawn_fps=-1;
     bool fps_game=false;
@@ -68,6 +91,9 @@ class EmulatorOverlay {
         static auto display=overlay_sdl<decltype(&SDL_GetWindowDisplayIndex)>("SDL_GetWindowDisplayIndex");
         static auto title=overlay_sdl<decltype(&SDL_GetWindowTitle)>("SDL_GetWindowTitle");
         const char* name=window && title?title(window):nullptr;
+        // DSCore's windows go by display: 0 is the top panel on Weston and on
+        // KMSDRM, where RGDS swaps the windows' contents (--screen bottom).
+        if(name && std::strstr(name,"RG DS Core") && window && display)return display(window)==1?1:0;
         return (window && display && display(window)==1) || (name && (std::strstr(name,"Bottom") || std::strstr(name,"bottom")))?1:0;
     }
 public:
@@ -77,12 +103,12 @@ public:
         std::lock_guard<std::mutex> guard(mutex);
         volume_level=std::clamp(level,0,100);volume_until=clock()+1800;
     }
-    // Ordinary captures omit UI for save thumbnails. A diagnostic hud- token
-    // captures after composition, allowing on-device verification of owned HUDs.
-    void capture(SDL_Renderer* renderer,bool after_hud=false){
-        std::lock_guard<std::mutex> guard(mutex);
-        if(after_hud && !capture_active)return;
-        const char* control=std::getenv("RGDS_CONTROL_FILE");if(!control)return;
+    // The launcher's capture request (RGDS_CONTROL_FILE.capture, one token
+    // per request), polled at most every 100 ms before composition. True when
+    // this call (before or after the HUD, per the token) should capture.
+    bool capture_wanted(bool after_hud){
+        if(after_hud && !capture_active)return false;
+        const char* control=std::getenv("RGDS_CONTROL_FILE");if(!control)return false;
         static const std::string request=std::string(control)+".capture";
         auto time=clock();
         if(!after_hud && (!capture_poll_at || time-capture_poll_at>=100)){
@@ -90,17 +116,46 @@ public:
             capture_active=bool(input>>token);
             if(capture_active && token!=capture_token){capture_token=token;captured[0]=captured[1]=false;}
         }
-        if(!capture_active || (capture_token.rfind("hud-",0)==0)!=after_hud)return;
+        return capture_active && (capture_token.rfind("hud-",0)==0)==after_hud;
+    }
+    // A finished panel capture: published atomically; the request is
+    // acknowledged (removed) once both panels, or the combined frame, are out.
+    void publish_capture(SDL_Surface* bitmap,int index,bool combined){
+        static auto file=overlay_sdl<decltype(&SDL_RWFromFile)>("SDL_RWFromFile");static auto save=overlay_sdl<decltype(&SDL_SaveBMP_RW)>("SDL_SaveBMP_RW");
+        const char* control=std::getenv("RGDS_CONTROL_FILE");if(!control || !file || !save)return;
+        std::string output=std::string(control)+(combined?".capture-combined.bmp":index?".capture-bottom.bmp":".capture-top.bmp");
+        auto* stream=file((output+".pending").c_str(),"wb");if(stream && save(bitmap,stream,1)==0){rename((output+".pending").c_str(),output.c_str());captured[index]=true;if(combined)captured[1]=true;}
+        if(captured[0] && captured[1]){unlink((std::string(control)+".capture").c_str());capture_active=false;}
+    }
+    // Ordinary captures omit UI for save thumbnails. A diagnostic hud- token
+    // captures after composition, allowing on-device verification of owned HUDs.
+    void capture(SDL_Renderer* renderer,bool after_hud=false){
+        std::lock_guard<std::mutex> guard(mutex);
+        if(!capture_wanted(after_hud))return;
         static auto size=overlay_sdl<decltype(&SDL_GetRendererOutputSize)>("SDL_GetRendererOutputSize");
         static auto create=overlay_sdl<decltype(&SDL_CreateRGBSurfaceWithFormat)>("SDL_CreateRGBSurfaceWithFormat");
-        static auto read=overlay_sdl<decltype(&SDL_RenderReadPixels)>("SDL_RenderReadPixels");static auto file=overlay_sdl<decltype(&SDL_RWFromFile)>("SDL_RWFromFile");static auto save=overlay_sdl<decltype(&SDL_SaveBMP_RW)>("SDL_SaveBMP_RW");static auto release=overlay_sdl<decltype(&SDL_FreeSurface)>("SDL_FreeSurface");
-        if(!size || !create || !read || !file || !save || !release)return;
+        static auto read=overlay_sdl<decltype(&SDL_RenderReadPixels)>("SDL_RenderReadPixels");static auto release=overlay_sdl<decltype(&SDL_FreeSurface)>("SDL_FreeSurface");
+        if(!size || !create || !read || !release)return;
         int w=0,h=0;if(size(renderer,&w,&h)!=0 || w<=0 || h<=0 || w*h>4096*4096)return;
         using Window=SDL_Window*(*)(SDL_Renderer*);static auto window=overlay_sdl<Window>("SDL_RenderGetWindow");bool combined=w>=h*2 || h>=w*3/2;int index=combined?0:panel(window?window(renderer):nullptr);if(captured[index])return;
         auto* bitmap=create(0,w,h,32,SDL_PIXELFORMAT_RGBA32);if(!bitmap)return;
-        std::string output=std::string(control)+(combined?".capture-combined.bmp":index?".capture-bottom.bmp":".capture-top.bmp");
-        if(read(renderer,nullptr,bitmap->format->format,bitmap->pixels,bitmap->pitch)==0){auto* stream=file((output+".pending").c_str(),"wb");if(stream && save(bitmap,stream,1)==0){rename((output+".pending").c_str(),output.c_str());captured[index]=true;if(combined)captured[1]=true;}}
-        release(bitmap);if(captured[0] && captured[1]){unlink(request.c_str());capture_active=false;}
+        if(read(renderer,nullptr,bitmap->format->format,bitmap->pixels,bitmap->pitch)==0)publish_capture(bitmap,index,combined);
+        release(bitmap);
+    }
+    // The same capture from DSCore's direct present (rgds_present_canvas):
+    // the frame as 0xAARRGGBB words, `pitch` words apart, panel `index`.
+    void capture_canvas(const uint32_t* px,int w,int h,int pitch,int index,bool after_hud){
+        std::lock_guard<std::mutex> guard(mutex);
+        if(!capture_wanted(after_hud) || w<=0 || h<=0 || w*h>4096*4096)return;
+        bool combined=w>=h*2 || h>=w*3/2;if(combined)index=0;if(captured[index])return;
+        static auto create=overlay_sdl<decltype(&SDL_CreateRGBSurfaceWithFormat)>("SDL_CreateRGBSurfaceWithFormat");static auto release=overlay_sdl<decltype(&SDL_FreeSurface)>("SDL_FreeSurface");
+        if(!create || !release)return;
+        auto* bitmap=create(0,w,h,32,SDL_PIXELFORMAT_RGBA32);if(!bitmap)return;
+        for(int y=0;y<h;y++){
+            auto* out=static_cast<unsigned char*>(bitmap->pixels)+size_t(y)*bitmap->pitch;const uint32_t* in=px+size_t(y)*pitch;
+            for(int x=0;x<w;x++){const uint32_t v=in[x];out[x*4]=(v>>16)&255;out[x*4+1]=(v>>8)&255;out[x*4+2]=v&255;out[x*4+3]=255;}
+        }
+        publish_capture(bitmap,index,combined);release(bitmap);
     }
     void capture_gl(SDL_Window* window){
         std::lock_guard<std::mutex> guard(mutex);
@@ -113,10 +168,8 @@ public:
         static auto proc=overlay_sdl<decltype(&SDL_GL_GetProcAddress)>("SDL_GL_GetProcAddress");
         static auto size=overlay_sdl<decltype(&SDL_GL_GetDrawableSize)>("SDL_GL_GetDrawableSize");
         static auto create=overlay_sdl<decltype(&SDL_CreateRGBSurfaceWithFormat)>("SDL_CreateRGBSurfaceWithFormat");
-        static auto file=overlay_sdl<decltype(&SDL_RWFromFile)>("SDL_RWFromFile");
-        static auto save=overlay_sdl<decltype(&SDL_SaveBMP_RW)>("SDL_SaveBMP_RW");
         static auto release=overlay_sdl<decltype(&SDL_FreeSurface)>("SDL_FreeSurface");
-        if(!proc || !size || !create || !file || !save || !release)return;
+        if(!proc || !size || !create || !release)return;
         using Read=void(*)(int,int,int,int,unsigned,unsigned,void*);using Get=void(*)(unsigned,int*);using Set=void(*)(unsigned,int);
         auto read=reinterpret_cast<Read>(proc("glReadPixels"));auto get=reinterpret_cast<Get>(proc("glGetIntegerv"));auto set=reinterpret_cast<Set>(proc("glPixelStorei"));
         if(!read || !get || !set)return;
@@ -126,9 +179,35 @@ public:
         int alignment=4;get(0x0d05,&alignment);set(0x0d05,4);read(0,0,w,h,0x1908,0x1401,bitmap->pixels);set(0x0d05,alignment);
         auto* bytes=static_cast<unsigned char*>(bitmap->pixels);
         for(int y=0;y<h/2;y++)for(int x=0;x<bitmap->pitch;x++)std::swap(bytes[y*bitmap->pitch+x],bytes[(h-1-y)*bitmap->pitch+x]);
-        std::string output=std::string(control)+(combined?".capture-combined.bmp":index?".capture-bottom.bmp":".capture-top.bmp");
-        auto* stream=file((output+".pending").c_str(),"wb");if(stream && save(bitmap,stream,1)==0){rename((output+".pending").c_str(),output.c_str());captured[index]=true;if(combined)captured[1]=true;}
-        release(bitmap);if(captured[0] && captured[1]){unlink((std::string(control)+".capture").c_str());capture_active=false;}
+        publish_capture(bitmap,index,combined);release(bitmap);
+    }
+    // The overlay over DSCore's direct present: the finished frame of panel
+    // `index` as 0xAARRGGBB words (`pitch` words apart) before it is copied to
+    // the scanout buffer. The same composition as renderer()/gl(): a live
+    // menu darkens the held game first, then the panel's premultiplied RGBA
+    // pixels go over it (nearest-sampled when the frame is not 640x480).
+    void canvas(uint32_t* px,int w,int h,int pitch,int index,bool visible){
+        std::lock_guard<std::mutex> guard(mutex);
+        if(w<=0 || h<=0 || !ready(visible) || !has_panel(index))return;
+        static const bool live_menu=[]{const char* v=std::getenv("RGDS_MENU_LIVE");return v && std::string(v)=="1";}();
+        if(live_menu && menu_visible){
+            // SDL's fill of (0,0,0,150) over the frame: 105/255 of each channel.
+            for(int y=0;y<h;y++){uint32_t* row=px+size_t(y)*pitch;for(int x=0;x<w;x++){const uint32_t v=row[x];row[x]=0xFF000000u|((((v&0xFF00FFu)*105u)>>8)&0xFF00FFu)|((((v&0xFF00u)*105u)>>8)&0xFF00u);}}
+        }
+        const unsigned char* source=pixels(index);const Box& b=box(index);
+        // The frame's rows/columns the box maps onto (whole frame when it is not 640x480).
+        const int y_lo=h==480?b.y0:0,y_hi=h==480?b.y1:h,x_lo=w==640?b.x0:0,x_hi=w==640?b.x1:w;
+        for(int y=y_lo;y<y_hi;y++){
+            const unsigned char* in=source+size_t(h==480?y:y*480/h)*640*4;uint32_t* row=px+size_t(y)*pitch;
+            for(int x=x_lo;x<x_hi;x++){
+                const unsigned char* s=in+(w==640?x:x*640/w)*4;const unsigned a=s[3];if(!a)continue;
+                if(a==255){row[x]=0xFF000000u|(unsigned(s[0])<<16)|(unsigned(s[1])<<8)|s[2];continue;}
+                const uint32_t v=row[x];const unsigned inverse=255-a;
+                const unsigned r=s[0]+(((v>>16)&255)*inverse+127)/255,g=s[1]+(((v>>8)&255)*inverse+127)/255,b=s[2]+((v&255)*inverse+127)/255;
+                row[x]=0xFF000000u|(std::min(r,255u)<<16)|(std::min(g,255u)<<8)|std::min(b,255u);
+            }
+        }
+        RGDS_PROFILE(draws,1);acknowledge();
     }
     void renderer(SDL_Renderer* renderer,bool visible){
         std::lock_guard<std::mutex> guard(mutex);
@@ -172,6 +251,22 @@ public:
         if(RenderSetIntegerScale)RenderSetIntegerScale(renderer,SDL_FALSE);
         RenderSetLogicalSize(renderer,0,0);RenderSetScale(renderer,1,1);RenderSetViewport(renderer,nullptr);RenderSetClipRect(renderer,nullptr);
         bool ok=true;
+        // A live menu (DSCore on direct display) lies over the held game frame:
+        // darken that frame so the menu reads clearly. Captures were taken before this.
+        static const bool live_menu=[]{const char* v=std::getenv("RGDS_MENU_LIVE");return v && std::string(v)=="1";}();
+        if(live_menu && menu_visible){
+            static auto GetRenderDrawColor=overlay_sdl<decltype(&SDL_GetRenderDrawColor)>("SDL_GetRenderDrawColor");
+            static auto SetRenderDrawColor=overlay_sdl<decltype(&SDL_SetRenderDrawColor)>("SDL_SetRenderDrawColor");
+            static auto GetRenderDrawBlendMode=overlay_sdl<decltype(&SDL_GetRenderDrawBlendMode)>("SDL_GetRenderDrawBlendMode");
+            static auto SetRenderDrawBlendMode=overlay_sdl<decltype(&SDL_SetRenderDrawBlendMode)>("SDL_SetRenderDrawBlendMode");
+            static auto RenderFillRect=overlay_sdl<decltype(&SDL_RenderFillRect)>("SDL_RenderFillRect");
+            Uint8 r=0,g=0,b=0,a=0;SDL_BlendMode mode=SDL_BLENDMODE_NONE;
+            if(GetRenderDrawColor && SetRenderDrawColor && GetRenderDrawBlendMode && SetRenderDrawBlendMode && RenderFillRect &&
+               GetRenderDrawColor(renderer,&r,&g,&b,&a)==0 && GetRenderDrawBlendMode(renderer,&mode)==0){
+                SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SetRenderDrawColor(renderer,0,0,0,150);RenderFillRect(renderer,nullptr);
+                SetRenderDrawColor(renderer,r,g,b,a);SetRenderDrawBlendMode(renderer,mode);
+            }
+        }
         if(w>=h*2){for(int i=0;i<2;i++)if(has_panel(i)){SDL_Rect box{i*w/2,0,w/2,h};RGDS_PROFILE(draws,1);ok=RenderCopy(renderer,cached.texture[i],nullptr,&box)==0 && ok;}}
         else if(h>=w*3/2){for(int i=0;i<2;i++)if(has_panel(i)){SDL_Rect box{0,i*h/2,w,h/2};RGDS_PROFILE(draws,1);ok=RenderCopy(renderer,cached.texture[i],nullptr,&box)==0 && ok;}}
         else {

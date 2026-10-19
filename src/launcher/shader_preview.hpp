@@ -23,6 +23,11 @@ class ShaderPreview {
     };
     using Key=std::pair<SDL_Renderer*,std::string>;
     std::map<Key,Image> images;
+    // Picker tiles: small 1:1 crops (no scaling, so the effect looks as it
+    // will on the screen), cached apart from the full previews' byte budget.
+    struct Thumb { SDL_Texture* texture=nullptr;uint64_t used=0; };
+    std::map<Key,Thumb> thumbs;
+    static constexpr size_t thumb_limit=64;
     uint64_t clock=0,texture_bytes=0;
     static constexpr size_t cache_limit=8;
     static constexpr uint64_t byte_limit=10*1024*1024;
@@ -31,6 +36,7 @@ class ShaderPreview {
     static int bounded_scene(int scene){return scene>=0 && scene<scene_count?scene:0;}
     static const char* scene_stem(int scene){static const char* names[]={"grove","circuit","starfall"};return names[bounded_scene(scene)];}
     static fs::path stem(const fs::path& folder,int scene,int selected){return folder/scene_stem(scene)/("shader-"+std::to_string(std::clamp(selected,0,shader_count-1)));}
+    static SDL_Rect patch(int scene){static const SDL_Rect patches[]={{36,102,64,48},{92,80,64,48},{94,98,64,48}};return patches[bounded_scene(scene)];}
     static uint16_t u16(const std::vector<unsigned char>& data,size_t at){return uint16_t(data[at])|(uint16_t(data[at+1])<<8);}
     SDL_Surface* packed_surface(const fs::path& path){
         std::ifstream file(path,std::ios::binary);if(!file)return nullptr;
@@ -85,8 +91,7 @@ class ShaderPreview {
         auto* reference=filtered?filtered:original;if(!reference)return false;
         SDL_Rect source{0,0,reference->width,reference->height};
         if(magnified){
-            static const SDL_Rect patches[]={{36,102,64,48},{92,80,64,48},{94,98,64,48}};
-            auto patch=patches[bounded_scene(scene)];source={patch.x*reference->width/256,patch.y*reference->height/192,patch.w*reference->width/256,patch.h*reference->height/192};
+            auto area=patch(scene);source={area.x*reference->width/256,area.y*reference->height/192,area.w*reference->width/256,area.h*reference->height/192};
         }
         const double factor=std::min(double(box.w)/source.w,double(box.h)/source.h);
         SDL_Rect target{box.x+(box.w-int(source.w*factor))/2,box.y+(box.h-int(source.h*factor))/2,int(source.w*factor),int(source.h*factor)};
@@ -118,11 +123,44 @@ public:
     }
     bool draw(SDL_Renderer* renderer,const fs::path& folder,int scene,int selected,SDL_Rect box,ShaderPreviewMode mode=ShaderPreviewMode::Filtered,float split=.5f){return paint(renderer,folder,scene,selected,box,mode,split,false);}
     bool detail(SDL_Renderer* renderer,const fs::path& folder,int scene,int selected,SDL_Rect box,ShaderPreviewMode mode=ShaderPreviewMode::Filtered,float split=.5f){return paint(renderer,folder,scene,selected,box,mode,split,true);}
-    void clear(){for(auto& value:images)if(value.second.texture)s.DestroyTexture(value.second.texture);images.clear();texture_bytes=0;}
+    void clear(){for(auto& value:images)if(value.second.texture)s.DestroyTexture(value.second.texture);images.clear();texture_bytes=0;clear_thumbs();}
+    void clear_thumbs(){for(auto& value:thumbs)if(value.second.texture)s.DestroyTexture(value.second.texture);thumbs.clear();}
+    size_t thumb_reads=0;
+    size_t thumb_count()const{return thumbs.size();}
+    // Draw one picker tile. Reads at most `budget` new files per call, so a
+    // fast scroll never waits on storage; the caller redraws until all are in.
+    // Returns false while the tile is still pending or has no preview.
+    bool thumb(SDL_Renderer* renderer,const fs::path& folder,int scene,int selected,SDL_Rect box,int& budget){
+        if(!renderer || selected<0 || selected>=shader_count || box.w<=0 || box.h<=0)return false;
+        auto base=stem(folder,scene,selected);Key key{renderer,base.string()};auto found=thumbs.find(key);
+        if(found==thumbs.end()){
+            if(budget<=0)return false;budget--;
+            Thumb value;value.used=++clock;
+            if(auto* full=packed_surface(base.string()+".rgsp")){
+                thumb_reads++;
+                const auto area=patch(scene);const int side=std::min(full->w,full->h)/4;
+                const int cx=(area.x+area.w/2)*full->w/256,cy=(area.y+area.h/2)*full->h/192;
+                const int x0=std::clamp(cx-side/2,0,full->w-side),y0=std::clamp(cy-side/2,0,full->h-side);
+                if(auto* crop=s.CreateRGBSurfaceWithFormat(0,side,side,32,SDL_PIXELFORMAT_RGBA32)){
+                    for(int row=0;row<side;row++)std::memcpy(static_cast<unsigned char*>(crop->pixels)+row*crop->pitch,static_cast<unsigned char*>(full->pixels)+(y0+row)*full->pitch+x0*4,side*4);
+                    value.texture=s.CreateTextureFromSurface(renderer,crop);
+                    if(value.texture){s.SetTextureBlendMode(value.texture,SDL_BLENDMODE_NONE);if(scale_mode)scale_mode(value.texture,0);}
+                    s.FreeSurface(crop);
+                }
+                s.FreeSurface(full);
+            }
+            while(thumbs.size()>=thumb_limit){auto oldest=std::min_element(thumbs.begin(),thumbs.end(),[](const auto& a,const auto& b){return a.second.used<b.second.used;});if(oldest->second.texture)s.DestroyTexture(oldest->second.texture);thumbs.erase(oldest);}
+            found=thumbs.emplace(std::move(key),value).first;
+        }
+        found->second.used=++clock;
+        return found->second.texture && s.RenderCopy(renderer,found->second.texture,nullptr,&box)==0;
+    }
+    bool thumb_known(SDL_Renderer* renderer,const fs::path& folder,int scene,int selected)const{return thumbs.count({renderer,stem(folder,scene,selected).string()})>0;}
     size_t count()const{return images.size();}uint64_t bytes()const{return texture_bytes;}
     bool refresh(){
         bool changed=false;
         for(auto it=images.begin();it!=images.end();){counters.stamp_checks+=2;if(asset_stamp(it->second.stem.string()+".rgsp")!=it->second.packed || asset_stamp(it->second.stem.string()+".bmp")!=it->second.bmp){auto old=it++;discard(old);counters.invalidations++;changed=true;}else ++it;}
+        if(changed)clear_thumbs();
         return changed;
     }
 };

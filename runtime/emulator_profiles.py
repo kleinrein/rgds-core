@@ -33,12 +33,22 @@ def game_options(data, rom):
         try: value=int(fields.get(key,default))
         except ValueError: return default
         return value if low<=value<=high else default
+    # Direct display (DSCore on KMS, Weston stopped while playing): a game's
+    # 0/1 wins over the global choice; -1 follows it. Off by default. It has
+    # its own display.ini files: the launcher rewrites game.ini with only the
+    # keys it knows (game_options.hpp). game.ini's rgds_direct still counts.
+    direct=bounded(read_fields(Path(data)/"library"/game_key(rom)/"display.ini"),"direct",-1,-1,1)
+    if direct<0:direct=bounded(local,"rgds_direct",-1,-1,1)
+    if direct<0:direct=bounded(read_fields(Path(data)/"display.ini"),"direct",bounded(defaults,"rgds_direct",0,0,1),0,1)
     return dict(core=bounded(local,"core",-1,-1,len(CORES)-1),
+                rgds_direct=direct,
                 filter=bounded(local,"filter",bounded(defaults,"filter",0,0,len(SHADERS)-1),-1,len(SHADERS)-1),
                 drastic_screen_swap=bounded(local,"drastic_screen_swap",0,0,1),
                 gengis_scale=bounded(local,"gengis_scale",0,2,3),
                 rgds_scale=bounded(local,"rgds_scale",1,1,5),
                 rgds_smooth=bounded(local,"rgds_smooth",1,0,1),
+                rgds_2d=bounded(local,"rgds_2d",0,0,3),
+                rgds_adaptive=bounded(local,"rgds_adaptive",1,0,1),
                 threaded=bounded(local,"threaded_3d",1,0,1),hires=bounded(local,"hires_3d",0,0,1),frameskip=bounded(local,"frameskip",0,0,3))
 
 

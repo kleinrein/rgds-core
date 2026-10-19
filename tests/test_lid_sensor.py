@@ -62,6 +62,8 @@ class SensorTests(unittest.TestCase):
         self.sensor.path.write_text('3') # Old hallkey is never a valid state.
         self.assertIsNone(read_state(self.sensor.path))
 
+    # Linux's monotonic clock is shared by every process; macOS's Python restarts it per process.
+    @unittest.skipUnless(sys.platform == 'linux', 'cross-process monotonic stamps need Linux')
     def test_helper_process_reads_the_same_latched_state_and_cleanup_invalidates_it(self):
         import subprocess
         os.write(self.writer, self.event(110, 1));self.sensor.poll()

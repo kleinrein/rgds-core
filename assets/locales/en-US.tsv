@@ -133,6 +133,7 @@ DEFAULT THEME - CHECK LOG	DEFAULT THEME - CHECK LOG
 DS rounded	DS rounded
 DSperate: recommended for everyday play. Native resolution is the default.	DSperate: recommended for everyday play. Native resolution is the default.
 Dark	Dark
+Date format	Date format
 Default	Default
 Default emulator	Default emulator
 Default shader	Default shader
@@ -696,3 +697,142 @@ Push	Push
 Transition style	Transition style
 Animate pages with the selected style	Animate pages with the selected style
 Slide into pages; slide back to return	Slide into pages; slide back to return
+Accent colour	Accent colour
+FAVOURITE COLOUR	FAVOURITE COLOUR
+Classic	Classic
+Classic blue	Classic blue
+High contrast	High contrast
+PREVIEW	PREVIEW
+Selected row	Selected row
+Switches and values	Switches and values
+Grey	Grey
+Brown	Brown
+Red	Red
+Pink	Pink
+Orange	Orange
+Yellow	Yellow
+Lime	Lime
+Green	Green
+Dark green	Dark green
+Sea green	Sea green
+Turquoise	Turquoise
+Blue	Blue
+Dark blue	Dark blue
+Purple	Purple
+Violet	Violet
+Magenta	Magenta
+Network file sharing	Network file sharing
+Open on this Wi-Fi	Open on this Wi-Fi
+Password protected	Password protected
+File sharing on. Find "RG DS" under Network.	File sharing on. Find "RG DS" under Network.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: the original upstream engine. DSCore adds fixes and speed.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.
+DSCore 3D resolution	DSCore 3D resolution
+Native (fastest)	Native (fastest)
+2x sharper	2x sharper
+3x sharper	3x sharper
+4x (experimental)	4x (experimental)
+5x (experimental)	5x (experimental)
+Colour mode	Color mode
+Draw and chat with nearby handhelds	Draw and chat with nearby handhelds
+Wi-Fi connected	Wi-Fi connected
+No Wi-Fi: you can still draw	No Wi-Fi: you can still draw
+Press A to open	Press A to open
+Type your name	Type your name
+You appear like this to others	You appear like this to others
+Starting…	Starting…
+Chat is unavailable: you can still draw	Chat is unavailable: you can still draw
+Nobody else is nearby yet	Nobody else is nearby yet
+1 person nearby	1 person nearby
+{0} people nearby	{0} people nearby
+Your colour	Your color
+Leave	Leave
+Your name	Your name
+Send	Send
+You are in Room {0}	You are in Room {0}
+{0} joined	{0} joined
+{0} left	{0} left
+New messages below	New messages below
+Older messages	Older messages
+The pad is full: send it or clear it	The pad is full: send it or clear it
+Too much on the pad: erase some of it	Too much on the pad: erase some of it
+That message could not be sent	That message could not be sent
+That room is full	That room is full
+Chat Room {0}	Chat Room {0}
+Choose a chat room to join	Choose a chat room to join
+Edit	Edit
+Join	Join
+Matches your accent	Matches your accent
+Nobody here yet	Nobody here yet
+Start Send   X Undo   L R Scroll	Start Send   X Undo   L R Scroll
+You	You
+Time format	Time format
+24-hour	24-hour
+12-hour	12-hour
+24-hour or 12-hour clock	24-hour or 12-hour clock
+How dates appear in the status bar	How dates appear in the status bar
+Connecting to	Connecting to
+This can take a few seconds	This can take a few seconds
+Waiting for an address…	Waiting for an address…
+IP address	IP address
+Signal	Signal
+Could not connect	Could not connect
+Wi-Fi is off	Wi-Fi is off
+Turn it on to find networks	Turn it on to find networks
+Choose a network from the list	Choose a network from the list
+Preparing…	Preparing…
+Home layout	Home layout
+Background	Background
+Touch gestures	Touch gestures
+Carousel	Carousel
+DSi column	DSi column
+Plain	Plain
+DSi grid	DSi grid
+A carousel, or the DSi's column with your last game on top	A carousel, or the DSi's column with your last game on top
+Plain, or the DSi's ruled grid behind every screen	Plain, or the DSi's ruled grid behind every screen
+Swipe up from the bottom for Home, in from the left for Back	Swipe up from the bottom for Home, in from the left for Back
+Nothing played yet	Nothing played yet
+Your last game will appear here	Your last game will appear here
+Draw and chat	Draw and chat
+Su	Su
+Mo	Mo
+Tu	Tu
+We	We
+Th	Th
+Fr	Fr
+Sa	Sa
+Chat Room	Chat Room
+Nobody else here yet	Nobody else here yet
+Drawing on your own	Drawing on your own
+Jump	Jump
+Home	Home
+Swipe up from the bottom edge to go Home from anywhere.	Swipe up from the bottom edge to go Home from anywhere.
+Swipe in from the left edge to go Back.	Swipe in from the left edge to go Back.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.
+Your saves are safe. See you soon!	Your saves are safe. See you soon!
+DS Classic	DS Classic
+DS Lite	DS Lite
+Natural glow	Natural glow
+Vivid LCD	Vivid LCD
+Natural smooth	Natural smooth
+Vivid smooth	Vivid smooth
+Pixel beads	Pixel beads
+Glossy tiles	Glossy tiles
+The first DS screen: muted colour and a fine pixel grid.	The first DS screen: muted colour and a fine pixel grid.
+The brighter DS Lite screen with a faint pixel grid.	The brighter DS Lite screen with a faint pixel grid.
+Natural colour with soft pixels that glow together.	Natural colour with soft pixels that glow together.
+Bold colour on a close-up LCD with RGB stripes.	Bold colour on a close-up LCD with RGB stripes.
+Natural colour with smoothed diagonal edges.	Natural colour with smoothed diagonal edges.
+Bold colour with smoothed diagonal edges.	Bold colour with smoothed diagonal edges.
+Bold colour; every pixel a round, shiny bead.	Bold colour; every pixel a round, shiny bead.
+Bold colour; every pixel a raised, glossy tile.	Bold colour; every pixel a raised, glossy tile.
+IN USE	IN USE
+APPLY	APPLY
+Follows your library shader.	Follows your library shader.
+Original	Original
+DS screens	DS screens
+Natural	Natural
+Vivid	Vivid
+Pixel art	Pixel art
+Moods	Moods
+Up / Down or L / R: change group	Up / Down or L / R: change group

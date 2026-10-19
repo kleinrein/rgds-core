@@ -133,6 +133,7 @@ DEFAULT THEME - CHECK LOG	STANDAARDTHEMA - ZIE LOGBOEK
 DS rounded	DS afgerond
 DSperate: recommended for everyday play. Native resolution is the default.	DSperate: aanbevolen voor dagelijks spelen. Oorspronkelijke resolutie is standaard.
 Dark	Donker
+Date format	Datumnotatie
 Default	Standaard
 Default emulator	Standaardemulator
 Default shader	Standaardshader
@@ -696,3 +697,142 @@ Push	Schuiven
 Transition style	Overgangsstijl
 Animate pages with the selected style	Animeer pagina’s met de gekozen stijl
 Slide into pages; slide back to return	Schuif naar pagina’s; schuif terug om terug te keren
+Accent colour	Accentkleur
+FAVOURITE COLOUR	LIEVELINGSKLEUR
+Classic	Klassiek
+Classic blue	Klassiek blauw
+High contrast	Hoog contrast
+PREVIEW	VOORBEELD
+Selected row	Geselecteerde rij
+Switches and values	Schakelaars en waarden
+Grey	Grijs
+Brown	Bruin
+Red	Rood
+Pink	Roze
+Orange	Oranje
+Yellow	Geel
+Lime	Limoen
+Green	Groen
+Dark green	Donkergroen
+Sea green	Zeegroen
+Turquoise	Turkoois
+Blue	Blauw
+Dark blue	Donkerblauw
+Purple	Paars
+Violet	Violet
+Magenta	Magenta
+Network file sharing	Bestanden delen via netwerk
+Open on this Wi-Fi	Open op deze wifi
+Password protected	Met wachtwoord beveiligd
+File sharing on. Find "RG DS" under Network.	Bestanden delen staat aan. Zoek "RG DS" onder Netwerk.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: de oorspronkelijke engine. DSCore voegt fixes en snelheid toe.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: aanbevolen. Het snelst, met fixes voor klep, stylus en 3D en optionele 2x–5x 3D.
+DSCore 3D resolution	DSCore 3D-resolutie
+Native (fastest)	Origineel (snelst)
+2x sharper	2x scherper
+3x sharper	3x scherper
+4x (experimental)	4x (experimenteel)
+5x (experimental)	5x (experimenteel)
+Colour mode	Kleurmodus
+Draw and chat with nearby handhelds	Teken en chat met apparaten in de buurt
+Wi-Fi connected	Wi-Fi verbonden
+No Wi-Fi: you can still draw	Geen Wi-Fi: je kunt nog steeds tekenen
+Press A to open	Druk op A om te openen
+Type your name	Typ je naam
+You appear like this to others	Zo zien anderen je
+Starting…	Starten…
+Chat is unavailable: you can still draw	Chat niet beschikbaar: je kunt nog steeds tekenen
+Nobody else is nearby yet	Nog niemand in de buurt
+1 person nearby	1 persoon in de buurt
+{0} people nearby	{0} personen in de buurt
+Your colour	Jouw kleur
+Leave	Verlaat
+Your name	Jouw naam
+Send	Stuur
+You are in Room {0}	Je bent in kamer {0}
+{0} joined	{0} doet mee
+{0} left	{0} is weg
+New messages below	Nieuwe berichten onderaan
+Older messages	Oudere berichten
+The pad is full: send it or clear it	Het blok is vol: verstuur of wis het
+Too much on the pad: erase some of it	Te veel op het blok: wis iets
+That message could not be sent	Het bericht kon niet worden verstuurd
+That room is full	Die kamer is vol
+Chat Room {0}	Chatroom {0}
+Choose a chat room to join	Kies een chatroom om aan deel te nemen
+Edit	Wijzig
+Join	Deelnemen
+Matches your accent	Volgt je accentkleur
+Nobody here yet	Nog niemand hier
+Start Send   X Undo   L R Scroll	Start Stuur   X Herstel   L R Scrollen
+You	Jij
+Time format	Tijdnotatie
+24-hour	24 uur
+12-hour	12 uur
+24-hour or 12-hour clock	24-uurs- of 12-uursklok
+How dates appear in the status bar	Hoe datums in de statusbalk verschijnen
+Connecting to	Verbinden met
+This can take a few seconds	Dit kan enkele seconden duren
+Waiting for an address…	Wachten op een adres…
+IP address	IP-adres
+Signal	Signaal
+Could not connect	Verbinden mislukt
+Wi-Fi is off	Wifi staat uit
+Turn it on to find networks	Zet het aan om netwerken te vinden
+Choose a network from the list	Kies een netwerk uit de lijst
+Preparing…	Voorbereiden…
+Home layout	Indeling startscherm
+Background	Achtergrond
+Touch gestures	Aanraakgebaren
+Carousel	Carrousel
+DSi column	DSi-kolom
+Plain	Effen
+DSi grid	DSi-raster
+A carousel, or the DSi's column with your last game on top	Een carrousel, of de DSi-kolom met je laatste spel bovenaan
+Plain, or the DSi's ruled grid behind every screen	Effen, of het gelinieerde DSi-raster achter elk scherm
+Swipe up from the bottom for Home, in from the left for Back	Veeg omhoog vanaf de onderkant voor Home, vanaf links voor Terug
+Nothing played yet	Nog niets gespeeld
+Your last game will appear here	Je laatste spel verschijnt hier
+Draw and chat	Teken en chat
+Su	Zo
+Mo	Ma
+Tu	Di
+We	Wo
+Th	Do
+Fr	Vr
+Sa	Za
+Chat Room	Chatruimte
+Nobody else here yet	Nog niemand anders hier
+Drawing on your own	Je tekent alleen
+Jump	Ga
+Home	Home
+Swipe up from the bottom edge to go Home from anywhere.	Veeg omhoog vanaf de onderrand om overal naar Home te gaan.
+Swipe in from the left edge to go Back.	Veeg vanaf de linkerrand naar binnen om terug te gaan.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Een klein handvat onderaan het onderste scherm laat zien dat gebaren aan staan; het volgt je vinger en een ring markeert de plek wanneer een gebaar wordt uitgevoerd.
+Your saves are safe. See you soon!	Je saves zijn veilig. Tot gauw!
+DS Classic	DS Klassiek
+DS Lite	DS Lite
+Natural glow	Natuurlijke gloed
+Vivid LCD	Levendig LCD
+Natural smooth	Natuurlijk glad
+Vivid smooth	Levendig glad
+Pixel beads	Pixelkralen
+Glossy tiles	Glanzende tegels
+The first DS screen: muted colour and a fine pixel grid.	Het eerste DS-scherm: gedempte kleuren en een fijn pixelraster.
+The brighter DS Lite screen with a faint pixel grid.	Het helderdere DS Lite-scherm met een vaag pixelraster.
+Natural colour with soft pixels that glow together.	Natuurlijke kleuren met zachte pixels die samen gloeien.
+Bold colour on a close-up LCD with RGB stripes.	Felle kleuren op een LCD van dichtbij met RGB-strepen.
+Natural colour with smoothed diagonal edges.	Natuurlijke kleuren met gladde diagonale randen.
+Bold colour with smoothed diagonal edges.	Felle kleuren met gladde diagonale randen.
+Bold colour; every pixel a round, shiny bead.	Felle kleuren; elke pixel een ronde, glimmende kraal.
+Bold colour; every pixel a raised, glossy tile.	Felle kleuren; elke pixel een verhoogde, glanzende tegel.
+IN USE	IN GEBRUIK
+APPLY	TOEPASSEN
+Follows your library shader.	Volgt je bibliotheekshader.
+Original	Origineel
+DS screens	DS-schermen
+Natural	Natuurlijk
+Vivid	Levendig
+Pixel art	Pixelkunst
+Moods	Sferen
+Up / Down or L / R: change group	Omhoog / Omlaag of L / R: andere groep

@@ -5,6 +5,8 @@
 #include "drastic_threads.hpp"
 #include "dsperate_state.hpp"
 #include <dlfcn.h>
+#include <dirent.h>
+#include <sys/resource.h>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -30,16 +32,22 @@
 #include "platform/control_mapping.hpp"
 #include "platform/mainline_controls.hpp"
 #include "platform/wayland_role.hpp"
+#include "platform/alsa_mixer.hpp"
+#include <sys/file.h>
 #include <fcntl.h>
 #ifdef __linux__
 #include <linux/input.h>
 #include <sys/ioctl.h>
 #include <cstdarg>
 #endif
+#include <atomic>
+#include <mutex>
+#include <thread>
 
 extern char** environ;
 
 namespace fs=std::filesystem;
+void shader_result(bool applied);
 namespace {
 std::map<SDL_Window*,std::string> panel_roles;
 bool independent_wayland(){
@@ -59,10 +67,18 @@ Stamp candidate_stamp{};
 std::deque<SDL_Event> events;
 std::deque<SDL_Event> releases;
 unsigned long long release_at=0;
-bool shared_menu=false,loading=false,enhanced_game_texture=false;
-int live_shader=0;
+bool shared_menu=false,loading=false;
+// Read by the present hooks, which DSCore runs on its present thread.
+std::atomic<bool> enhanced_game_texture{false};
+std::atomic<int> live_shader{0};
+// Bridge state changes happen on the thread that polls SDL events. A present
+// on another thread reads the atomics above and posts a shader outcome here.
+std::atomic<std::thread::id> event_thread{};
+std::atomic<int> shader_outcome{0};   // 1 applied, 2 unavailable, from another thread
+std::atomic<bool> blocked_shared{false};
+bool on_event_thread(){auto id=event_thread.load(std::memory_order_relaxed);return id==std::thread::id{} || id==std::this_thread::get_id();}
 int previous_shader=0;
-bool shader_waiting=false;
+std::atomic<bool> shader_waiting{false};
 unsigned long long shader_requested_at=0;
 rgds::EmulatorOverlay overlay_renderer;
 rgds::FrameCounterRate game_rate;
@@ -151,10 +167,11 @@ SmallFile command_file,volume_file,hud_file,resume_file,speed_request;
 double resume_monotonic=0,resume_realtime=0;
 struct NativeTexture {SDL_Renderer* renderer=nullptr;bool game=false;int applied=-1;};
 std::map<SDL_Texture*,NativeTexture> native_textures;
-void graphics_texture_changed(bool enhanced){enhanced_game_texture=enhanced;native_textures.clear();}
+std::mutex textures_mutex;   // native_textures and renderer_contexts
+void graphics_texture_changed(bool enhanced){std::lock_guard<std::mutex> guard(textures_mutex);enhanced_game_texture=enhanced;native_textures.clear();}
 
 std::map<SDL_Renderer*,SDL_GLContext> renderer_contexts;
-void forget_native_renderer(SDL_Renderer* renderer){for(auto item=native_textures.begin();item!=native_textures.end();)if(item->second.renderer==renderer)item=native_textures.erase(item);else ++item;}
+void forget_native_renderer(SDL_Renderer* renderer){std::lock_guard<std::mutex> guard(textures_mutex);for(auto item=native_textures.begin();item!=native_textures.end();)if(item->second.renderer==renderer)item=native_textures.erase(item);else ++item;}
 void update_resume(){
     if(!resume_file.refresh())return;
     resume_monotonic=resume_realtime=0;std::istringstream fields(resume_file.value);std::string line;
@@ -168,10 +185,32 @@ void update_resume(){
         control_shortcut.latched=control_shortcut.start || control_shortcut.menu;
     }
 }
+// runtime/audio.py `sync` without a Python process (~0.5 s each, two or three
+// per engine start and one per menu resume): reapply the saved level to the
+// DAC under the runtime's volume lock. No saved level yet: the helper decides.
+bool sync_saved_volume(const char* data){
+#ifdef __linux__
+    int lock=open((std::string(data)+"/session/volume.lock").c_str(),O_RDWR|O_CREAT|O_CLOEXEC,0644);
+    if(lock<0)return false;
+    while(flock(lock,LOCK_EX)<0 && errno==EINTR){}
+    int level=-1;bool schema=false;
+    std::ifstream file(std::string(data)+"/volume.ini");std::string line;
+    while(std::getline(file,line)){
+        if(line=="schema=1")schema=true;
+        else if(line.rfind("volume=",0)==0){char* end=nullptr;long value=std::strtol(line.c_str()+7,&end,10);if(end && !*end && value>=0 && value<=100)level=int(value);}
+    }
+    bool ok=schema && level>=0 && rgds::write_mixer_percent(rgds::dac_percent_for_level(level),"DAC Playback Volume");
+    flock(lock,LOCK_UN);close(lock);return ok;
+#else
+    (void)data;return false;
+#endif
+}
 bool sync_volume() {
     const char* helper=std::getenv("RGDS_VOLUME_HELPER"),*data=std::getenv("RGDS_VOLUME_DATA");
     if(!helper || !data)return true;
-    static thread_local bool active=false;if(active)return true;active=true;
+    static thread_local bool active=false;if(active)return true;
+    if(sync_saved_volume(data))return true;
+    active=true;
     std::vector<char*> environment;
     for(char** item=environ;*item;item++)if(std::strncmp(*item,"LD_PRELOAD=",11)!=0 && std::strncmp(*item,"LD_LIBRARY_PATH=",16)!=0)environment.push_back(*item);
     environment.push_back(nullptr);
@@ -247,13 +286,13 @@ bool normalize_joystick_event(SDL_Event& event){
     auto stick=from_id?from_id(event.jbutton.which):nullptr;
     return !stick || !mainline_joystick(stick) || mainline_controls.normalize(event);
 }
-void initialize(){if(initialized)return;initialized=true;core=env("RGDS_CORE");control=env("RGDS_CONTROL_FILE");autostate=env("RGDS_AUTOSTATE_FILE");state_dir=env("RGDS_STATE_DIR");state_slot=env("RGDS_STATE_SLOT");autosave=env("RGDS_AUTOSAVE")!="0";autoload=env("RGDS_AUTOLOAD")=="1";shared_menu=env("RGDS_SHARED_MENU")=="1";enhanced_game_texture=env("RGDS_OWN_FF_HUD")=="1" && std::atoi(env("RGDS_ACTIVE_SCALE").c_str())>1;live_shader=std::clamp(std::atoi(env("RGDS_SHADER").c_str()),0,14);opened=now();
+void initialize(){if(initialized)return;initialized=true;core=env("RGDS_CORE");control=env("RGDS_CONTROL_FILE");autostate=env("RGDS_AUTOSTATE_FILE");state_dir=env("RGDS_STATE_DIR");state_slot=env("RGDS_STATE_SLOT");autosave=env("RGDS_AUTOSAVE")!="0";autoload=env("RGDS_AUTOLOAD")=="1";shared_menu=env("RGDS_SHARED_MENU")=="1";enhanced_game_texture=env("RGDS_OWN_FF_HUD")=="1" && std::atoi(env("RGDS_ACTIVE_SCALE").c_str())>1;live_shader=std::clamp(std::atoi(env("RGDS_SHADER").c_str()),0,rgds::shader_count-1);opened=now();
     atomic_state_replace=core=="dsperate" && !state_slot.empty() && env("RGDS_STATE_ATOMIC_REPLACE")=="1";
     frame_stats.enabled=env("RGDS_FPS")=="1";stats_path=env("RGDS_FRAME_STATS");
     controls_global=env("RGDS_CONTROLS_GLOBAL");controls_local=env("RGDS_CONTROLS_FILE");control_mapping.load(controls_global,controls_local);control_shortcut.mode=control_mapping.shortcut;control_shortcut.action=control_mapping.shortcut_action;
     volume_data=env("RGDS_VOLUME_DATA");block_path=control+".blocked";command_file.path=control;resume_file.path=control+".resume";volume_file.path=volume_data+"/volume.ini";hud_file.path=volume_data+"/session/volume-hud.ini";
 }
-bool input_blocked(){if(!shared_menu || control.empty())return false;auto time=now();if(time-block_poll_at>=20 || !block_poll_at){block_poll_at=time;RGDS_PROFILE(block_checks,1);bool blocked=access(block_path.c_str(),F_OK)==0;if(blocked && !blocked_cache)release_controls();blocked_cache=blocked;update_resume();}return blocked_cache;}
+bool input_blocked(){if(!shared_menu || control.empty())return false;if(!on_event_thread())return blocked_shared.load(std::memory_order_relaxed);auto time=now();if(time-block_poll_at>=20 || !block_poll_at){block_poll_at=time;RGDS_PROFILE(block_checks,1);bool blocked=access(block_path.c_str(),F_OK)==0;if(blocked && !blocked_cache)release_controls();blocked_cache=blocked;blocked_shared=blocked;update_resume();}return blocked_cache;}
 void shortcut_action(rgds::ShortcutAction action){
     if(action==rgds::ShortcutAction::none || env("RGDS_MENU_EXTERNAL")=="1" || !shared_menu || control.empty())return;
     std::ofstream file(control+(action==rgds::ShortcutAction::home?".home":".menu"));file<<now()<<'\n';
@@ -467,8 +506,10 @@ bool ds_control(bool blow){
 }
 std::string pending_graphics_token;
 int pending_graphics_scale=1,pending_graphics_smooth=1,pending_graphics_skip=0;
+std::string pending_filter2d_token;int pending_filter2d_mode=0;
 void tick(bool graphics_safe=false){
-    initialize();if(core.empty())return;
+    initialize();if(core.empty() || !on_event_thread())return;
+    if(int outcome=shader_outcome.exchange(0))shader_result(outcome==1);
     auto time=now();
     if(ds_mic_release && time>=ds_mic_release){SDL_Event e{};e.type=SDL_KEYUP;e.key.keysym.sym=SDLK_m;e.key.keysym.scancode=SDL_SCANCODE_M;e.key.state=SDL_RELEASED;events.push_back(e);ds_mic_release=0;}
     if(ds_lid_reopen && time>=ds_lid_reopen){for(bool down:{true,false}){SDL_Event e{};e.type=down?SDL_KEYDOWN:SDL_KEYUP;e.key.keysym.sym=SDLK_l;e.key.keysym.scancode=SDL_SCANCODE_L;e.key.state=down?SDL_PRESSED:SDL_RELEASED;events.push_back(e);}ds_lid_reopen=0;}
@@ -510,6 +551,18 @@ void tick(bool graphics_safe=false){
                     pending_graphics_token=id;pending_graphics_scale=scale;
                     pending_graphics_smooth=smooth;pending_graphics_skip=skip;
                 }else answer("graphics-failed");
+            }
+            else if(command=="adaptive:0" || command=="adaptive:1"){
+                auto apply=env("RGDS_OWN_FF_HUD")=="1"?reinterpret_cast<int(*)(int)>(dlsym(RTLD_DEFAULT,"rgds_set_adaptive")):nullptr;
+                bool on=command=="adaptive:1";
+                answer(apply && apply(on)?(on?"adaptive-on":"adaptive-off"):"adaptive-failed");
+            }
+            else if(command.rfind("filter2d:",0)==0){
+                int mode=-1;char extra=0;
+                auto apply=env("RGDS_OWN_FF_HUD")=="1"?reinterpret_cast<int(*)(int)>(dlsym(RTLD_DEFAULT,"rgds_set_filter2d")):nullptr;
+                bool valid=std::sscanf(command.c_str(),"filter2d:%d%c",&mode,&extra)==1 && mode>=0 && mode<=3;
+                if(valid && apply){pending_filter2d_token=id;pending_filter2d_mode=mode;}
+                else answer("filter2d-failed");
             }
             else if(command=="fast-forward"){
                 if(!set_fast_forward(!fast_forward))answer("fast-forward-unavailable");
@@ -566,12 +619,41 @@ void tick(bool graphics_safe=false){
         if(ok)graphics_texture_changed(pending_graphics_scale>1);
         answer(ok?"graphics-applied":"graphics-failed");
     }
+    if(graphics_safe && !pending_filter2d_token.empty()){
+        auto apply=reinterpret_cast<int(*)(int)>(dlsym(RTLD_DEFAULT,"rgds_set_filter2d"));
+        token=pending_filter2d_token;pending_filter2d_token.clear();
+        answer(apply && apply(pending_filter2d_mode)?"filter2d-applied":"filter2d-failed");
+    }
 }
 }
 __attribute__((constructor)) static void bridge_loaded(){std::fprintf(stderr,"RGDS bridge loaded: %s\n",std::getenv("RGDS_CORE")?std::getenv("RGDS_CORE"):"unknown");std::fflush(stderr);}
+// SDL's playback thread wakes once per device period and must refill the
+// shared dmix ring before it drains. With a 2048-frame request the period
+// equals the whole 2048-frame ring, so every write waits for an empty ring and
+// any scheduling delay underruns (audible crackle in busy 3D scenes). Queue-mode
+// engines (no callback) keep their own queue, so a 512-frame period only adds
+// headroom. The thread also gets a modest nice boost on the busy aux core.
+static void boost_audio_threads(){
+    DIR* tasks=opendir("/proc/self/task");if(!tasks)return;
+    while(auto* entry=readdir(tasks)){
+        if(entry->d_name[0]<'0' || entry->d_name[0]>'9')continue;
+        char path[64];std::snprintf(path,sizeof(path),"/proc/self/task/%s/comm",entry->d_name);
+        char name[32]{};FILE* file=std::fopen(path,"r");if(!file)continue;
+        if(!std::fgets(name,sizeof(name),file))name[0]=0;std::fclose(file);
+        if(!std::strncmp(name,"SDLAudioP",9))setpriority(PRIO_PROCESS,id_t(std::atoi(entry->d_name)),-10);
+    }
+    closedir(tasks);
+}
 extern "C" SDL_AudioDeviceID SDL_OpenAudioDevice(const char* device,int capture,const SDL_AudioSpec* desired,SDL_AudioSpec* obtained,int changes){
     using Fn=SDL_AudioDeviceID(*)(const char*,int,const SDL_AudioSpec*,SDL_AudioSpec*,int);static auto next=reinterpret_cast<Fn>(dlsym(RTLD_NEXT,"SDL_OpenAudioDevice"));
-    auto id=next?next(device,capture,desired,obtained,changes):0;if(id && !capture)sync_volume();return id;
+    SDL_AudioSpec adjusted{};const SDL_AudioSpec* request=desired;
+    const char* shared=std::getenv("RGDS_SHARED_AUDIO");
+    if(desired && !capture && !desired->callback && desired->samples>512 && shared && !std::strcmp(shared,"1") && !std::getenv("RGDS_AUDIO_LARGE_PERIOD")){
+        adjusted=*desired;adjusted.samples=512;request=&adjusted;
+    }
+    auto id=next?next(device,capture,request,obtained,changes):0;
+    if(id && !capture){sync_volume();boost_audio_threads();}
+    return id;
 }
 extern "C" void SDL_PauseAudioDevice(SDL_AudioDeviceID device,int paused){
     using Fn=void(*)(SDL_AudioDeviceID,int);static auto next=reinterpret_cast<Fn>(dlsym(RTLD_NEXT,"SDL_PauseAudioDevice"));
@@ -633,6 +715,21 @@ extern "C" void SDL_RenderPresent(SDL_Renderer* renderer){
     using Fn=void(*)(SDL_Renderer*);initialize();static auto next=shared_menu?rgds::overlay_sdl<Fn>("SDL_RenderPresent"):reinterpret_cast<Fn>(dlsym(RTLD_NEXT,"SDL_RenderPresent"));tick();measure_present(renderer);
     overlay_renderer.capture(renderer);overlay_renderer.renderer(renderer,input_blocked());overlay_renderer.capture(renderer,true);presenting_renderer=true;if(next)next(renderer);presenting_renderer=false;
 }
+// DSCore's direct present (its Display::draw_scanout_async, RG DS on a
+// scanout tier): no SDL renderer or GL swap is in the frame's path, so the
+// engine hands each panel's finished frame here instead, before copying it
+// into the buffer it page-flips. The same work as the SDL_RenderPresent hook:
+// the presentation telemetry, the launcher's capture, the menu/HUD overlay.
+// `display` is the panel's SDL display index (0 the top panel), the pixels
+// 0xAARRGGBB rows `pitch` words apart. Runs on the engine's present threads.
+extern "C" void rgds_present_canvas(int display,uint32_t* pixels,int w,int h,int pitch){
+    initialize();if(!pixels || w<=0 || h<=0 || pitch<w)return;
+    tick();measure_present(reinterpret_cast<void*>(static_cast<uintptr_t>(display)+1));
+    const int index=display==1?1:0;
+    overlay_renderer.capture_canvas(pixels,w,h,pitch,index,false);
+    overlay_renderer.canvas(pixels,w,h,pitch,index,input_blocked());
+    overlay_renderer.capture_canvas(pixels,w,h,pitch,index,true);
+}
 extern "C" void SDL_GL_SwapWindow(SDL_Window* window){
     using Fn=void(*)(SDL_Window*);initialize();static auto next=shared_menu?rgds::overlay_sdl<Fn>("SDL_GL_SwapWindow"):reinterpret_cast<Fn>(dlsym(RTLD_NEXT,"SDL_GL_SwapWindow"));tick();
     if(!presenting_renderer){measure_present(window);overlay_renderer.capture_gl(window);overlay_renderer.gl(window,input_blocked());}if(next)next(window);
@@ -642,11 +739,12 @@ void forget_gl(SDL_GLContext context){
     for(auto item=gl_textures.begin();item!=gl_textures.end();)if(item->first.first==context)item=gl_textures.erase(item);else ++item;
     for(auto item=gl_buffers.begin();item!=gl_buffers.end();)if(item->first.first==context)item=gl_buffers.erase(item);else ++item;
     for(auto item=native_blits.begin();item!=native_blits.end();)if(item->first.first==context)item=native_blits.erase(item);else ++item;
+    std::lock_guard<std::mutex> guard(textures_mutex);
     for(auto item=renderer_contexts.begin();item!=renderer_contexts.end();)if(item->second==context)item=renderer_contexts.erase(item);else ++item;
 }
 extern "C" void SDL_GL_DeleteContext(SDL_GLContext context){using Fn=void(*)(SDL_GLContext);static auto next=reinterpret_cast<Fn>(dlsym(RTLD_NEXT,"SDL_GL_DeleteContext"));forget_gl(context);{std::lock_guard<std::mutex> guard(stats_mutex);stats_source=nullptr;frame_stats.pause();}if(next)next(context);}
-extern "C" void SDL_DestroyRenderer(SDL_Renderer* renderer){using Fn=void(*)(SDL_Renderer*);static auto next=reinterpret_cast<Fn>(dlsym(RTLD_NEXT,"SDL_DestroyRenderer"));{std::lock_guard<std::mutex> guard(stats_mutex);if(stats_source==renderer){stats_source=nullptr;frame_stats.pause();}}overlay_renderer.destroy(renderer);forget_native_renderer(renderer);auto found=renderer_contexts.find(renderer);if(found!=renderer_contexts.end())forget_gl(found->second);if(next)next(renderer);}
-extern "C" void SDL_DestroyTexture(SDL_Texture* texture){using Fn=void(*)(SDL_Texture*);static auto next=rgds::overlay_sdl<Fn>("SDL_DestroyTexture");native_textures.erase(texture);if(next)next(texture);}
+extern "C" void SDL_DestroyRenderer(SDL_Renderer* renderer){using Fn=void(*)(SDL_Renderer*);static auto next=reinterpret_cast<Fn>(dlsym(RTLD_NEXT,"SDL_DestroyRenderer"));{std::lock_guard<std::mutex> guard(stats_mutex);if(stats_source==renderer){stats_source=nullptr;frame_stats.pause();}}overlay_renderer.destroy(renderer);forget_native_renderer(renderer);SDL_GLContext context=nullptr;{std::lock_guard<std::mutex> guard(textures_mutex);auto found=renderer_contexts.find(renderer);if(found!=renderer_contexts.end())context=found->second;}if(context)forget_gl(context);if(next)next(renderer);}
+extern "C" void SDL_DestroyTexture(SDL_Texture* texture){using Fn=void(*)(SDL_Texture*);static auto next=rgds::overlay_sdl<Fn>("SDL_DestroyTexture");{std::lock_guard<std::mutex> guard(textures_mutex);native_textures.erase(texture);}if(next)next(texture);}
 bool sdl_shader(SDL_Renderer* renderer,SDL_Texture* texture,const SDL_Rect* source,const SDL_Rect* target,double angle=0,const SDL_Point* center=nullptr,SDL_RendererFlip flip=SDL_FLIP_NONE){
     if(!live_shader || drawing_shader)return false;
     static auto render_target=rgds::overlay_sdl<decltype(&SDL_GetRenderTarget)>("SDL_GetRenderTarget");
@@ -655,15 +753,21 @@ bool sdl_shader(SDL_Renderer* renderer,SDL_Texture* texture,const SDL_Rect* sour
     SDL_BlendMode blend_mode=SDL_BLENDMODE_NONE;if(blend && blend(texture,&blend_mode)==0 && blend_mode!=SDL_BLENDMODE_NONE && blend_mode!=SDL_BLENDMODE_BLEND)return false;
     // Only DS screen textures are shader candidates; menus and RGDS textures
     // keep SDL's own blend/pixel path. Remember dimensions until destruction.
-    auto found=native_textures.find(texture);
-    if(found==native_textures.end()){
-        static auto query=rgds::overlay_sdl<decltype(&SDL_QueryTexture)>("SDL_QueryTexture");int width=0,height=0;if(!query || query(texture,nullptr,nullptr,&width,&height)!=0)return false;
-        found=native_textures.emplace(texture,NativeTexture{renderer,rgds::GameShader::screen_texture(width,height) || (enhanced_game_texture && width==640 && height==480),-1}).first;
+    const bool enhanced=enhanced_game_texture;
+    {
+        std::lock_guard<std::mutex> guard(textures_mutex);
+        auto found=native_textures.find(texture);
+        if(found==native_textures.end()){
+            static auto query=rgds::overlay_sdl<decltype(&SDL_QueryTexture)>("SDL_QueryTexture");int width=0,height=0;if(!query || query(texture,nullptr,nullptr,&width,&height)!=0)return false;
+            found=native_textures.emplace(texture,NativeTexture{renderer,rgds::GameShader::screen_texture(width,height) || (enhanced && width==640 && height==480),-1}).first;
+        }
+        if(!found->second.game)return false;
     }
-    if(!found->second.game)return false;
-    drawing_shader=true;bool applied=game_shader.sdl(renderer,texture,live_shader,source,target,angle,center,flip,nullptr,enhanced_game_texture);drawing_shader=false;
-    if(applied){static auto context=rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");if(context)renderer_contexts[renderer]=context();}
-    shader_result(applied);return applied;
+    drawing_shader=true;bool applied=game_shader.sdl(renderer,texture,live_shader,source,target,angle,center,flip,nullptr,enhanced);drawing_shader=false;
+    if(applied){static auto context=rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");if(context){std::lock_guard<std::mutex> guard(textures_mutex);renderer_contexts[renderer]=context();}}
+    if(on_event_thread())shader_result(applied);
+    else if(shader_waiting || !applied)shader_outcome=applied?1:2;
+    return applied;
 }
 // NNDDSS's isolated core forwards GLES calls to dlsym(RTLD_DEFAULT) through
 // its supplied shim. Match its native DS framebuffer, textures and attribute
@@ -829,6 +933,7 @@ void release_touch_after_resume(){
 }
 extern "C" int SDL_PollEvent(SDL_Event* event){
     using Fn=int(*)(SDL_Event*);initialize();static auto next=reinterpret_cast<Fn>(input_symbol("SDL_PollEvent"));
+    if(event_thread.load(std::memory_order_relaxed)==std::thread::id{})event_thread=std::this_thread::get_id();
     tick(true);poll_ds_touch();
     if(event && !events.empty()){*event=events.front();events.pop_front();remember_control_event(*event);return 1;}
     auto native=[&](){NativeInputGuard guard(reading_native_event);return next?next(event):0;};int result=native();

@@ -52,9 +52,10 @@ class ExperimentalLaunchTests(Fixture):
         engine = self.app/'emulators'/ENGINE
         (engine/'rgds-experimental-vulkan').write_bytes(b'candidate')
         (engine/'lib').mkdir(); (engine/'lib/libvulkan_panfrost.so').write_bytes(b'driver')
-        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(core=4, rgds_scale=5, rgds_smooth=0))
+        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(core=4, rgds_scale=5, rgds_smooth=0, rgds_2d=2))
         plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)
         self.assertEqual(Path(plan['command'][0]).name, 'rgds-experimental-vulkan')
+        self.assertEqual(plan['env']['RGDS_2D_FILTER'], '2')
         self.assertEqual(plan['env']['RGDS_VK_SCALE'], '5')
         self.assertEqual(plan['env']['RGDS_ACTIVE_SCALE'], '5')
         self.assertEqual(plan['env']['RGDS_3D_SMOOTH'], '0')
@@ -64,6 +65,37 @@ class ExperimentalLaunchTests(Fixture):
         (engine/'lib/libvulkan_panfrost.so').unlink()
         with self.assertRaisesRegex(ValueError, 'high-resolution renderer is missing'):
             emulators.launch_plan(ENGINE, self.app, self.data, rom)
+
+    def test_heavy_scenes_choice_reaches_high_resolution_engine(self):
+        rom = self.prepare()
+        engine = self.app/'emulators'/ENGINE
+        (engine/'rgds-experimental-vulkan').write_bytes(b'candidate')
+        (engine/'lib').mkdir(); (engine/'lib/libvulkan_panfrost.so').write_bytes(b'driver')
+        game = self.data/'library'/game_key(rom)/'game.ini'
+        with patch.dict(os.environ):
+            os.environ.pop('DS_ADAPTIVE', None)
+            # Adaptive is the default; "Always sharp" turns it off; junk falls back.
+            for stored, expected in ((None, '1'), (0, '0'), (1, '1'), (7, '1')):
+                fields = dict(core=4, rgds_scale=2)
+                if stored is not None: fields['rgds_adaptive'] = stored
+                write_fields(game, fields)
+                self.assertEqual(game_options(self.data, rom)['rgds_adaptive'], int(expected))
+                self.assertEqual(emulators.launch_plan(ENGINE, self.app, self.data, rom)['env']['DS_ADAPTIVE'], expected)
+            # Native runs the lean binary, which has no adaptive resolution.
+            write_fields(game, dict(core=4, rgds_scale=1, rgds_adaptive=0))
+            self.assertNotIn('DS_ADAPTIVE', emulators.launch_plan(ENGINE, self.app, self.data, rom)['env'])
+            # Benchmark A/B runs pass DS_ADAPTIVE explicitly; that wins.
+            write_fields(game, dict(core=4, rgds_scale=3))
+            os.environ['DS_ADAPTIVE'] = '0'
+            self.assertEqual(emulators.launch_plan(ENGINE, self.app, self.data, rom)['env']['DS_ADAPTIVE'], '0')
+
+    def test_2d_filter_defaults_off_and_ignores_out_of_range_values(self):
+        rom = self.prepare()
+        plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)
+        self.assertEqual(plan['env']['RGDS_2D_FILTER'], '0')
+        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(core=4, rgds_2d=7))
+        plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)
+        self.assertEqual(plan['env']['RGDS_2D_FILTER'], '0')
 
     def test_missing_fork_never_falls_back_to_standard(self):
         self.binary('dsperate')
@@ -76,23 +108,27 @@ class ExperimentalLaunchTests(Fixture):
             emulators.launch_plan(ENGINE, self.app, self.data, rom)
         self.assertEqual(resume.call_args.args[-1], ENGINE)
 
-    def test_native_launch_uses_live_capable_engine_without_starting_gpu(self):
+    def test_native_launch_uses_the_lean_engine_and_high_resolution_uses_vulkan(self):
         rom=self.prepare()
         engine=self.app/'emulators'/ENGINE
         (engine/'rgds-experimental-vulkan').write_bytes(b'candidate')
         (engine/'lib').mkdir();(engine/'lib/libvulkan_panfrost.so').write_bytes(b'private')
         plan=emulators.launch_plan(ENGINE,self.app,self.data,rom)
-        self.assertEqual(Path(plan['command'][0]).name,'rgds-experimental-vulkan')
-        self.assertEqual(plan['env']['DS_GPU3D'],'0')
+        # The Vulkan build costs ~2.6 ms/frame even with GPU 3D off.
+        self.assertEqual(Path(plan['command'][0]).name,'rgds-experimental')
+        self.assertNotIn('DS_GPU3D',plan['env']);self.assertNotIn('VK_ICD_FILENAMES',plan['env'])
         self.assertEqual(plan['env']['RGDS_ACTIVE_SCALE'],'1')
         self.assertIn('nickname = RG DS Core',(self.data/'emulators'/ENGINE/'config.ini').read_text())
+        with patch.dict(emulators.os.environ,{'RGDS_VK_SCALE':'3'}):
+            plan=emulators.launch_plan(ENGINE,self.app,self.data,rom)
+        self.assertEqual(Path(plan['command'][0]).name,'rgds-experimental-vulkan')
+        self.assertEqual(plan['env']['DS_GPU3D'],'1');self.assertEqual(plan['env']['RGDS_ACTIVE_SCALE'],'3')
 
 
 @unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'Host SDL2 development files required')
 class NativeStylusTests(unittest.TestCase):
     def test_fork_input_events_reach_ds_frame_without_cross_contact_strokes(self):
-        source = ROOT/'build/rgds-experimental-cross/source/src'
-        if not source.is_dir(): self.skipTest('Build experimental source first')
+        source = ROOT/'dscore/src'
         with tempfile.TemporaryDirectory() as folder:
             tmp = Path(folder)
             # Real fork Input::handle and Input::frame; only panel geometry is

@@ -84,7 +84,7 @@ class IndependentNNDDSS(unittest.TestCase):
                          'assets/nnddss/save-types/types.json', 'assets/nnddss/save-types/source/src/ROMList.cpp'):
             with self.subTest(relative=relative):
                 selected = []
-                def verify(app, predicate):
+                def verify(app, predicate, **_options):
                     selected.append(predicate(relative))
                 with patch.object(activate, 'verify_release', side_effect=verify):
                     activate.verify_engine(self.app, 'nnddss')

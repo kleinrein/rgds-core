@@ -28,6 +28,7 @@ from game_menu import GameMenu, MenuInput, SwitchGame
 from shaders import supported, SHADERS
 from integration import select_hooks, engine_libraries
 from engine_log import EngineLog
+from hud_theme import hud_theme
 from controls import paths as control_paths
 
 from engines import CORES, DSPERATE_CORES
@@ -321,6 +322,11 @@ def dsperate_atomic_states(app, binary, verified_manifest):
         return False
 
 
+def top_display(env):
+    """The connector of the top panel (stock RG DS: DSI-1, see device_profile)."""
+    return env.get('RGDS_TOP_DISPLAY', 'DSI-1')
+
+
 def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=False):
     if core not in CORES:
         raise ValueError("Unknown emulator: " + core)
@@ -340,28 +346,49 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     env = base_environment()
     filter_choice = display_filter(data, identity or rom)
     tuning = game_options(data, identity or rom)
+    display = 'wayland'
     if core == 'rgds-experimental':
+        # Direct display: DSCore presents on KMS itself while Weston is stopped
+        # (direct_display), skipping Weston's GL composite of every frame.
+        if tuning['rgds_direct'] and env.get('WAYLAND_DISPLAY'):
+            from direct_display import available
+            if available():display = 'kms'
         try: scale = int(env.get('RGDS_VK_SCALE', tuning['rgds_scale']))
         except ValueError: scale = 1
         scale = max(1, min(5, scale))
         env['RGDS_3D_SMOOTH'] = str(tuning['rgds_smooth'])
+        env['RGDS_2D_FILTER'] = str(tuning['rgds_2d'])
         env['RGDS_ACTIVE_SCALE'] = str(scale)
         candidate = binary.with_name('rgds-experimental-vulkan')
         driver = binary.parent/'lib/libvulkan_panfrost.so'
-        live_graphics = candidate.is_file() and driver.is_file()
+        live_graphics = scale > 1 and candidate.is_file() and driver.is_file()
         if scale > 1 and not live_graphics:
-            raise ValueError('RG DS high-resolution renderer is missing. Install the verified Vulkan payload or select Native.')
+            raise ValueError('DSCore high-resolution renderer is missing. Install the verified Vulkan payload or select Native.')
         if live_graphics:
-            # Native starts without a Vulkan context; the same process can
-            # create one when the user changes resolution during play.
+            # Native resolution runs the lean GCC + PGO binary: the Vulkan
+            # build costs ~2.6 ms more per frame even with GPU 3D off (Mario
+            # Kart race, 9.7 vs 7.1 ms). Crossing between native and 2x-5x
+            # during play saves a checkpoint and restarts (game_menu).
             binary = candidate
             icd = data/'emulators/rgds-experimental/panvk.json'
             if prepare:
                 icd.parent.mkdir(parents=True, exist_ok=True)
                 content = json.dumps({'file_format_version':'1.0.0', 'ICD':{'library_path':str(driver), 'api_version':'1.3.0'}})+'\n'
                 pending = icd.with_suffix('.pending'); pending.write_text(content); pending.replace(icd)
+            # Tested on the standard RG DS (Mali-G52, kbase JM 11.47): 56-byte
+            # atoms, and no context warmup. The driver's default 2 s sleep is
+            # for a Mali-G57; here the first job completes without it, and
+            # skipping it shortens every 2x-5x start and switch by seconds.
             env.update(RGDS_VK_SCALE=str(scale), DS_GPU3D='1' if scale > 1 else '0', VK_ICD_FILENAMES=str(icd),
-                       PANVK_ATOM_STRIDE='56', PANVK_KBASE_DVFS='none')
+                       PANVK_ATOM_STRIDE='56', PANVK_KBASE_DVFS='none', PANVK_KBASE_WARMUP_MS='0')
+            # Adaptive 2x drops heavy 3D stretches to native to hold 60 fps;
+            # "Always sharp" turns it off. DSCore reads it once per launch. An
+            # explicit DS_ADAPTIVE (benchmark A/B runs) wins, like RGDS_VK_SCALE.
+            env['DS_ADAPTIVE'] = env.get('DS_ADAPTIVE', str(tuning['rgds_adaptive']))
+        # DSCore paces itself (config vsync = false). Stock APPS exports
+        # SDL_RENDER_VSYNC=1, which overrides that and makes every panel's
+        # swap wait for the display, on Weston and on KMS alike.
+        env['SDL_RENDER_VSYNC'] = '0'
 
     ds_input=read_fields(data/'library'/game_key(identity or rom)/'ds-input.ini')
     try:ds_language=int(ds_input.get('language','1'))
@@ -558,7 +585,31 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                 for shader in (app / "emulators/shaders").glob("*"):copy_missing(shader, data / "emulators/nnddss" / folder / shader.name)
         if prepare and core=="drastic":
             for shader in (app / "emulators/shaders").glob("*"):copy_missing(shader, data / "emulators/drastic/shaders" / shader.name)
-    return {"command": command, "cwd": str(cwd), "env": env}
+    plan = {"command": command, "cwd": str(cwd), "env": env}
+    if display == 'kms' and selected_hooks.bridge:
+        # No compositor is left for a paused-menu window: the engine keeps
+        # presenting (held still) and the bridge draws the shared menu frame.
+        plan['display'] = 'kms'
+        plan['wayland'] = {key: env.get(key) for key in ('WAYLAND_DISPLAY', 'SDL_VIDEODRIVER', 'RGDS_MENU_LIVE')}
+        plan['wayland_command'] = list(command)
+        env.pop('WAYLAND_DISPLAY', None)
+        env.update(SDL_VIDEODRIVER='KMSDRM', RGDS_MENU_LIVE='1')
+        # Direct KMS scanout for DSCore: its frames (the 2x compose included)
+        # are copied into dma-buf buffers and page-flipped, with no GL job in
+        # the frame's path; the bridge blends the menu/HUD, captures and times
+        # frames through the engine's present hook. The renderer sink stays
+        # for Weston (DS_RGDS_SINK overrides, for measurement; an RGDS_ key
+        # would be dropped by the guardian's clean environment).
+        if core in DSPERATE_CORES and prepare:
+            section_config(config, {"video": {"sink": os.environ.get('DS_RGDS_SINK') or 'auto', "gpu_present": "false"}})
+        # SDL's KMSDRM display 0 is DSI-1, the stock top panel, but DSCore's
+        # KMSDRM order opens the upper window on display 1 first. Opening the
+        # display-0 window first coincided with a Mali GPU reset at start (5 of
+        # 7 launches), so keep DSCore's order and swap the windows' contents:
+        # the display-1 (bottom) window shows the DS bottom screen.
+        if top_display(env) == 'DSI-1':
+            plan['command'] = command + ['--screen', 'bottom']
+    return plan
 
 def core_running(data):
     marker = data / "session/core.json"
@@ -582,7 +633,7 @@ def release_launcher_display(channel):
         raise OSError("Launcher closed before display handoff")
 
 
-def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False):
+def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, display=None):
     data.mkdir(parents=True, exist_ok=True)
     marker = data / "session/core.json"
     child = None
@@ -613,6 +664,11 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False):
         engine_log.command, engine_log.cwd = list(plan["command"]), plan["cwd"]
         plan['env']['RGDS_OVERLAY_FILE'] = f'/dev/shm/rgds-menu-{os.getpid()}-{time.monotonic_ns()}.frame'
         plan['env']['RGDS_FRAME_STATS'] = plan['env']['RGDS_OVERLAY_FILE'] + '.stats'
+        if (app / 'assets/fonts/rounded-20.rgf').is_file():
+            plan['env']['RGDS_FONT_DIR'] = str(app / 'assets/fonts')
+        hud_colours = hud_theme(app, data)
+        if hud_colours:
+            plan['env']['RGDS_HUD_THEME'] = hud_colours
         print("Launching " + core + ": " + str(rom), flush=True)
         (data / "session/emulator.control").unlink(missing_ok=True)
         (data / "session/emulator.control.result").unlink(missing_ok=True)
@@ -627,6 +683,14 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False):
         if super_backend and not inputs.descriptors:
             raise ValueError('SuperDrastic needs readable RG DS menu controls. Choose Standard DraStic until input access is restored.')
         release_launcher_display(display_handoff)
+        if display is not None:
+            wanted = plan.get('display', 'wayland')
+            # Twice a GPU reset under a starting KMS engine: this game goes back to Weston.
+            if wanted == 'kms' and display.gpu_resets >= 2:wanted = 'wayland'
+            if display.prepare(wanted) != plan.get('display', 'wayland'):
+                from direct_display import use_wayland
+                use_wayland(plan['env'], plan['wayland'])
+                plan['command'] = plan['wayland_command']
         if super_backend:
             from superdrastic import VTLease
             lease = VTLease(); lease.acquire()
@@ -641,8 +705,21 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False):
             menu = GameMenu(child, app, data, core, original_rom, plan["env"],inputs=inputs)
         inputs=None
         checkpoint_at = began
+        gpu_reset = False
         while child.poll() is None:
             menu.poll()
+            # The Mali driver can reset the GPU under an engine starting on KMS
+            # ("Job has been on the GPU for too long"); PanVK's 3D then stays
+            # broken for the whole process. Start the engine again instead.
+            if (display is not None and plan['env'].get('SDL_VIDEODRIVER') == 'KMSDRM' and engine_log.gpu_faults
+                    and time.monotonic() - began < 30):
+                print('Direct display: GPU jobs failed while the engine started; restarting it', flush=True)
+                display.gpu_resets += 1
+                gpu_reset = True
+                child.terminate()
+                try:child.wait(timeout=3)
+                except subprocess.TimeoutExpired:child.kill();child.wait()
+                break
             if time.monotonic() - checkpoint_at >= 30:
                 record_playtime(data, original_rom, accumulated + menu.played_seconds(), sessions+1, started)
                 checkpoint_at = time.monotonic()
@@ -650,6 +727,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False):
         # Deliver the completed exit to the pause UI before closing its process.
         menu.poll()
         result = child.wait()
+        if gpu_reset:return 76   # the same engine again (run() keeps the display state)
         if super_backend: result = menu.finish(result)
         if result:
             print(f"{core} exited with code {result}. Diagnostics: {engine_log.path}", file=sys.stderr, flush=True)
@@ -661,6 +739,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False):
         if switch:
             print('Switching to ' + switch.core + ': ' + str(switch.rom), flush=True)
             return switch
+        if result == 0 and menu.restart and getattr(menu, "restart_same_core", False): return 76
         return (77 if getattr(menu,"reset_state",False) else 75) if result == 0 and menu.restart else result if result >= 0 else 128 - result
     except KeyboardInterrupt:
         if menu:menu.close()
@@ -707,13 +786,21 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False):
             raise OSError('SuperDrastic could not restore the original display console; see the engine log.') from restore_error
 
 def run(core, app, data, rom, display_handoff=None):
+    from direct_display import DirectDisplay
+    # Weston stays stopped across restarts and switches between KMS engines,
+    # and is back before the launcher reopens, whichever way the game ends.
+    display = DirectDisplay(data)
+    try:return _run_games(core, app, data, rom, display_handoff, display)
+    finally:display.restore()
+
+def _run_games(core, app, data, rom, display_handoff, display):
     fresh_start = False
     switching = False
     while True:
         previous_autoload = os.environ.get('RGDS_FORCE_AUTOLOAD')
         try:
             if switching:os.environ['RGDS_FORCE_AUTOLOAD'] = '1'
-            result = _run_once(core, app, data, rom, display_handoff, fresh_start=fresh_start)
+            result = _run_once(core, app, data, rom, display_handoff, fresh_start=fresh_start, display=display)
         finally:
             if previous_autoload is None:os.environ.pop('RGDS_FORCE_AUTOLOAD', None)
             else:os.environ['RGDS_FORCE_AUTOLOAD'] = previous_autoload
@@ -723,13 +810,15 @@ def run(core, app, data, rom, display_handoff=None):
             fresh_start = False
             switching = True
             continue
-        if result not in (75,77):return result
+        if result not in (75,76,77):return result
         fresh_start = result == 77
-        if fresh_start:continue
+        # 76: the same engine with another renderer (3D resolution change).
+        if fresh_start or result == 76:continue
         options = game_options(data, rom)
         defaults = read_fields(Path(data)/'preferences.ini')
-        selection = options['core'] if options['core'] >= 0 else int(defaults.get('core','1'))
+        selection = options['core'] if options['core'] >= 0 else int(defaults.get('core','4'))
         core = CORES[selection] if 0 <= selection < len(CORES) else core
+        if core == 'nnddss': core = 'rgds-experimental'   # retired: a saved choice falls back to DSCore
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

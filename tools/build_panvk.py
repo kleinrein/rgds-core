@@ -14,6 +14,10 @@ ROOT = Path(__file__).resolve().parents[1]
 COMMIT = 'efd07bab401b263a9ac114560ecdb9a2934f5d43'
 UPSTREAM = 'https://github.com/FristOneRR-Admin/FristOneRR-Panvk-Source'
 PATCH = ROOT/'tools/engine_patches/panvk-kbase-linux.patch'
+# RG DS: the JM context's 2 s warmup sleep is owed before the first job only
+# (enumeration contexts never pay it; startup work overlaps the rest).
+WARMUP_PATCH = ROOT/'tools/engine_patches/panvk-kbase-lazy-warmup.patch'
+KMOD = 'src/panfrost/lib/kmod/kbase_kmod.c'
 OPTIONS = ['--buildtype=release', '--prefix=/opt/rgds-panvk', '--libdir=lib',
            '-Dpanfrost-kmds=kbase', '-Dvulkan-drivers=panfrost', '-Dgallium-drivers=',
            '-Dpanfrost-rust=false', '-Dplatforms=', '-Degl=disabled', '-Dglx=disabled',
@@ -52,10 +56,13 @@ def main():
                                "if host_machine.system() == 'android'\n  add_project_link_arguments('-llog', language : ['c', 'cpp'])\nendif")
     if patched == original: raise SystemExit('Pinned Android logging block is missing.')
     changes = git('status', '--porcelain', '--untracked-files=all').splitlines()
-    if any(line != ' M meson.build' for line in changes): raise SystemExit('Unexpected driver source changes.')
+    if any(line not in (' M meson.build', ' M '+KMOD) for line in changes): raise SystemExit('Unexpected driver source changes.')
     if (source/'meson.build').read_text() == original:
         run(['patch', '-p1', '--batch', '-i', PATCH], cwd=source)
     if (source/'meson.build').read_text() != patched: raise SystemExit('Linux patch differs from the recorded source.')
+    if (source/KMOD).read_text() == git('show', 'HEAD:'+KMOD):
+        run(['patch', '-p1', '--batch', '-i', WARMUP_PATCH], cwd=source)
+    if git('diff', KMOD) != WARMUP_PATCH.read_text(): raise SystemExit('Warmup patch differs from the recorded source.')
     meson = ROOT/'.cache/panvk-build-venv/bin/meson'
     if not meson.is_file(): raise SystemExit('Prepare the pinned Meson 1.7.2 environment; see docs/RGDS_VULKAN.md.')
     if subprocess.check_output([meson, '--version'], text=True).strip() != '1.7.2':
@@ -71,7 +78,7 @@ def main():
     shutil.copy2('/lib/aarch64-linux-gnu/libzstd.so.1', out/'libzstd.so.1')
     shutil.copy2('/usr/share/doc/libzstd1/copyright', out/'libzstd-copyright')
     record = dict(schema=1, prototype=True, upstream=UPSTREAM, commit=COMMIT,
-                  patch_sha256=sha(PATCH), recipe_sha256=sha(Path(__file__)), options=OPTIONS,
+                  patch_sha256=sha(PATCH), warmup_patch_sha256=sha(WARMUP_PATCH), recipe_sha256=sha(Path(__file__)), options=OPTIONS,
                   compiler=subprocess.check_output(['clang-18', '--version'], text=True).splitlines()[0],
                   zstd_package=subprocess.check_output(['dpkg-query', '-W', 'libzstd1'], text=True).strip(),
                   files={p.name:sha(p) for p in out.iterdir() if p.is_file() and p.name!='build.json'})

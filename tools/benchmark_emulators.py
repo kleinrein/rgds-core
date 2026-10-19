@@ -19,9 +19,13 @@ EXPERIMENT_SETTINGS = frozenset((
     'RGDS_LAUNCH_PROFILE', 'NNDDSS_CPU_AFFINITY',
     'DS_PROFILE', 'DS_FF_RASTER', 'DS_FRAME_STATS', 'DS_FPS', 'DS_VERBOSE',
     'DS_NO_THREAD_LAYOUT', 'DS_PIN', 'DS_PRESENT_SYNC', 'DS_HOST_CORES',
-    'DS_IDLE_SKIP', 'DS_TIMING', 'RGDS_VK_SCALE', 'DS_GPU3D', 'DS_GPU_TRACE',
-    'DS_DEBUG_NOLAG', 'DS_DEBUG_NOLAZY',
-    'VK_ICD_FILENAMES', 'PANVK_ATOM_STRIDE', 'PANVK_KBASE_DVFS',
+    'DS_IDLE_SKIP', 'DS_TIMING', 'RGDS_VK_SCALE', 'DS_GPU3D', 'DS_GPU_TRACE', 'RGDS_CAPTURE_GPU',
+    'DS_DEBUG_NOLAG', 'DS_DEBUG_NOLAZY', 'DS_VK_TIMING', 'RGDS_COMPOSE_THREADS', 'DS_HIRES_DEBUG', 'DS_HIRES_DUMP', 'DS_STARTUP_TRACE', 'DS_LEAN_D24', 'DS_COMPOSE_THREADS', 'DS_VERIFY_HIRES',
+    'VK_ICD_FILENAMES', 'PANVK_ATOM_STRIDE', 'PANVK_KBASE_DVFS', 'PANVK_KBASE_WARMUP_MS', 'PANVK_FORCE_EARLYZS', 'PANVK_SKIP_FS', 'DS_LEAN_MSAA', 'DS_RENDERER_SYNC', 'DS_PRESENT_SYNC', 'DS_JIT_CHURN', 'DS_HANDOFF_STATS', 'DS_LEAN_FLAT', 'DS_PROFILE_THREADS', 'DS_LEAN_NOSTENCIL', 'BIFROST_MESA_DEBUG', 'PAN_MESA_DEBUG', 'PANVK_DEBUG', 'DS_LINE_SPIN', 'DS_THREADS', 'DS_LINE_THREADS', 'DS_ADAPTIVE', 'DS_LEAN_SKIP', 'DS_HIRES_DUMP', 'DS_VK_TIMING', 'DS_JIT_WEEDS', 'DS_JIT_STRICT', 'DS_IDLE_SKIP', 'DS_PRESENT_PROFILE', 'DS_DUAL_SCREENS',
+    'DS_KMS_FLIPS', 'DS_PRESENT_LANES', 'DS_PRESENT_QUEUE', 'DS_ADAPTIVE_GRACE_MS',
+    'DS_LEAN_HALFPX', 'DS_LEAN_NODISCARD',
+    'DS_CADENCE_LOG', 'DS_PACE', 'DS_PACE_BAND', 'DS_PRESENT_FINISH', 'DS_PRESENT_TEST',
+    'DS_RGDS_SINK', 'DS_DIRECT_PRESENT', 'DS_DMA_HEAP', 'DS_PRESENT_DROP', 'DS_KMS_DROP',
 ))
 
 DEVICE_SCRIPT = r'''
@@ -286,7 +290,7 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
  if options.get('feature_checks'):write_fields(data/'experience.ini',dict(quick_resume=1,auto_update=0))
  write_fields(data/'system.ini',dict(schema=1,power=0,brightness=20,idle=0,lid=0,battery_percent=1,timezone='Europe/Oslo'))
  scale=options.get('resolution',1);gengis=options.get('rasterizer','standard')=='gengis'
- tuning=data/'library'/game_key(rom)/'game.ini';tuning.parent.mkdir(parents=True,exist_ok=True);write_fields(tuning,dict(schema=1,rgds_scale=options.get('rgds_scale',1),rgds_smooth=options.get('rgds_smooth',1),threaded_3d=options.get('threaded_3d',1),hires_3d=int(scale>1),gengis_scale=scale if gengis else 0))
+ tuning=data/'library'/game_key(rom)/'game.ini';tuning.parent.mkdir(parents=True,exist_ok=True);write_fields(tuning,dict(schema=1,rgds_scale=options.get('rgds_scale',1),rgds_smooth=options.get('rgds_smooth',1),rgds_2d=options.get('rgds_2d',0),rgds_direct=options.get('rgds_direct',0),threaded_3d=options.get('threaded_3d',1),hires_3d=int(scale>1),gengis_scale=scale if gengis else 0))
  write_fields(data/'volume.ini',dict(schema=1,volume=options.get('volume',0)));write_fields(data/'ui.ini',dict(schema=1,filter=options['shader'],drastic_backend=int(variant=='superdrastic')));write_fields(data/'performance.ini',dict(schema=1,fps=1))
  # Explicit maximum-speed settings belong only to this disposable profile.
  if options.get('max_speed'):
@@ -304,7 +308,7 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
  # let analysis exclude launch, checkpoint IO and menu pauses from gameplay.
  if core in ('dsperate','rgds-experimental'):
   child_environment['DS_FRAME_SERIES']=str(data/'frame-series.csv')
- result=dict(samples=[],clock_ticks=os.sysconf('SC_CLK_TCK'),core=core,backend=variant,repeat=repeat,build=build,rom=str(original_rom),test_rom=str(rom),rom_sha256=rom_sha256,root=str(root),metric='presentation',rgds_scale=options.get('rgds_scale',1),rgds_smooth=options.get('rgds_smooth',1),shader=options['shader'],threaded_3d=options.get('threaded_3d',1),resolution=('Native' if options.get('rgds_scale',1)==1 else str(options['rgds_scale'])+'x') if core=='rgds-experimental' else ('Native' if scale==1 else str(scale)+'x'),rasterizer=options.get('rasterizer','standard'),frameskip=0,seed_sha256=hashlib.sha256(seed.read_bytes()).hexdigest() if seed else None,
+ result=dict(samples=[],clock_ticks=os.sysconf('SC_CLK_TCK'),core=core,backend=variant,repeat=repeat,build=build,rom=str(original_rom),test_rom=str(rom),rom_sha256=rom_sha256,root=str(root),metric='presentation',rgds_scale=options.get('rgds_scale',1),rgds_smooth=options.get('rgds_smooth',1),rgds_direct=options.get('rgds_direct',0),shader=options['shader'],threaded_3d=options.get('threaded_3d',1),resolution=('Native' if options.get('rgds_scale',1)==1 else str(options['rgds_scale'])+'x') if core=='rgds-experimental' else ('Native' if scale==1 else str(scale)+'x'),rasterizer=options.get('rasterizer','standard'),frameskip=0,seed_sha256=hashlib.sha256(seed.read_bytes()).hexdigest() if seed else None,
              fast_forward_config=({'limit_multiplier':10,'render_skip':'engine managed','audio':'engine muted'} if core=='nnddss' else {'limit_multiplier':0,'render_skip':0}) if options.get('max_speed') else 'profile defaults',
              engine_env={key:child_environment[key] for key in options['experiment_settings'] if key in child_environment},measurement=measurement_settings(options,bool(seed)),phases=[])
  output=(data/'runner.log').open('w');began=time.monotonic()
@@ -389,6 +393,35 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
     time.sleep(.3)
    result['menus']=cycles
   else:result['error']='No presentation telemetry/native readiness within 60 seconds'
+  if options.get('switch_to') and frame and child.poll() is None:
+   # In-game 3D resolution change through the real menu request: a live
+   # change between 2x-5x, or a checkpoint + relaunch across native.
+   switch=dict(target=options['switch_to'])
+   overlay=Path(str(frame).removesuffix('.stats'))
+   opened=open_menu(folder,owner,overlay,child);switch['menu']=opened.get('presented',False)
+   if switch['menu']:
+    before=set(Path('/dev/shm').glob('rgds-menu-*.frame.stats'))
+    token='benchmark-switch-'+str(time.monotonic_ns());requested=time.monotonic()
+    write_fields(folder/'game-menu.request',dict(token=token,action='graphics:%d:%d:0'%(options['switch_to'],options.get('rgds_smooth',1))),durable=False)
+    while time.monotonic()-requested<60 and child.poll() is None:
+     fresh=sorted(set(Path('/dev/shm').glob('rgds-menu-*.frame.stats'))-before)
+     if fresh and read_fields(fresh[0]).get('first_present_us'):
+      frame=fresh[0];switch.update(mode='relaunch',seconds=round(time.monotonic()-requested,3));break
+     status=read_fields(folder/'game-menu.status')
+     if status.get('request_token')==token and status.get('state') in ('paused','error'):
+      switch.update(mode='live',seconds=round(time.monotonic()-requested,3),status=status)
+      helper=menu_state(folder,owner,overlay)['helpers'];switch['resume']=resume_menu(folder,owner,overlay,child,helper[0]) if helper else None
+      break
+     time.sleep(.02)
+    else:switch['error']='No relaunch or live acknowledgement within 60 seconds'
+    if 'mode' in switch:
+     time.sleep(4)
+     switch['stats']=read_fields(frame)
+     if options.get('capture_scene'):switch['capture']=capture_scene(variant,folder,child)
+     snapshot=folder/'benchmark-scene'
+     for name in ('emulator.control.capture-top.bmp','emulator.control.capture-bottom.bmp'):
+      if (snapshot/name).is_file():(snapshot/name).replace(snapshot/('switch-'+name))
+   result['switch']=switch
   if child.poll() is None:
    exiting=time.monotonic();quit_sent=False
    if native and not shared_native:
@@ -439,6 +472,8 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
   output.close();result['exit_code']=child.returncode
   if core in ('dsperate','rgds-experimental'):
    result['frame_times']=phase_frame_times(data/'frame-series.csv',result['phases'])
+  try:result['direct_display']=json.loads((data/'session/direct-display.json').read_text())
+  except (OSError,ValueError):pass
   result['checkpoints']=[dict(path=str(p),bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in (data/'library').glob('*/auto-*.dss')]
   if native:result['native_exit']=read_fields(native/'exit')
   result['native_log']=(data/'logs/superdrastic.log').read_text()[-18000:] if (data/'logs/superdrastic.log').exists() else ''
@@ -447,6 +482,15 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
   results.append(result);(base/'results.json').write_text(json.dumps(results,indent=2)+'\n')
   print(json.dumps(result),flush=True)
  if Path('/tmp/rgds-session.lock').exists():raise SystemExit('Recovery is pending; stopped comparison.')
+if not options.get('keep'):
+ # Each run copies the ROM and a full profile (hundreds of MB, ~1k files).
+ # Keep only the report and scene captures, so repeated runs never fill
+ # the card (a full FAT card once went read-only after a bulk delete).
+ for path in sorted(base.rglob('*'),key=lambda p:len(p.parts),reverse=True):
+  if path.is_symlink() or path.is_file():
+   if path.name!='results.json' and path.parent.name!='benchmark-scene':path.unlink()
+  elif path.is_dir() and not any(path.iterdir()):path.rmdir()
+ subprocess.run(['sync'],check=False)
 print('RESULTS '+str(base/'results.json'),flush=True)
 '''
 
@@ -454,7 +498,9 @@ print('RESULTS '+str(base/'results.json'),flush=True)
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--device',required=True)
-    parser.add_argument('--root',default='/userdata/rgds-device-test/rgds')
+    parser.add_argument('--root',default='/mnt/mmc/rgds')
+    parser.add_argument('--keep',action='store_true',help='Keep the run folder (ROM copy, profile, checkpoints) for --resume-from')
+    parser.add_argument('--switch-to',type=int,choices=range(1,6),help='After the phases, change DSCore 3D resolution through the in-game menu and capture the result')
     parser.add_argument('--rom',required=True)
     parser.add_argument('--seconds',type=int,default=30)
     parser.add_argument('--volume',type=int,choices=range(101),default=0,help='Isolated test volume, 0-100; use audible audio for gameplay acceptance')
@@ -473,12 +519,15 @@ def main():
     parser.add_argument('--rasterizer',choices=('standard','gengis'),default='standard')
     parser.add_argument('--capture-scene',action='store_true',help='Capture supported bridge-renderer scenes after warmup, before measured phases')
     parser.add_argument('--rgds-smooth',type=int,choices=(0,1),default=1,help='RG DS Experimental 3D supersampling resolve')
+    parser.add_argument('--rgds-2d',type=int,choices=(0,1,2,3),default=0,help='DSCore 2D scaling: 0 native pixels, 1 sharp, 2 smooth, 3 crisp')
     parser.add_argument('--rgds-scale',type=int,choices=range(1,6),default=1,help='RG DS Experimental internal 3D scale')
+    parser.add_argument('--rgds-direct',type=int,choices=(0,1),default=0,help='DSCore direct display: Weston stops while the engine presents on KMS')
     parser.add_argument('--engine-env',action='append',default=[],metavar='KEY=VALUE',help='Opt-in profiling/render experiment setting')
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
     if not 5<=args.seconds<=3600:parser.error('--seconds must be 5..3600')
     if args.rgds_scale>1 and set(args.cores)!={'rgds-experimental'}:parser.error('--rgds-scale requires RG DS Experimental')
+    if args.rgds_direct and set(args.cores)!={'rgds-experimental'}:parser.error('--rgds-direct requires RG DS Experimental')
     if args.max_speed and not set(args.cores)<={'dsperate','rgds-experimental','nnddss'}:parser.error('--max-speed supports DSperate, RG DS Experimental and NNDDSS')
     if args.rasterizer=='gengis' and (set(args.cores)!={'superdrastic'} or args.resolution==1):
         parser.error('Gengis requires --cores superdrastic and --resolution 2 or 3')
@@ -494,7 +543,7 @@ def main():
         engine_env[key]=value
     options=dict(root=args.root,rom=args.rom,seconds=args.seconds,volume=args.volume,cores=args.cores,shader=args.shader,checkpoints=args.checkpoints,
                  max_speed=args.max_speed,feature_checks=args.feature_checks,phase=args.phase,repeats=args.repeats,menu_cycles=args.menu_cycles,resume_from=args.resume_from,
-                 rgds_scale=args.rgds_scale,rgds_smooth=args.rgds_smooth,engine_env=engine_env,experiment_settings=sorted(EXPERIMENT_SETTINGS),capture_scene=args.capture_scene,threaded_3d=args.threaded_3d,resolution=args.resolution,rasterizer=args.rasterizer)
+                 keep=args.keep,switch_to=args.switch_to,rgds_scale=args.rgds_scale,rgds_smooth=args.rgds_smooth,rgds_2d=args.rgds_2d,rgds_direct=args.rgds_direct,engine_env=engine_env,experiment_settings=sorted(EXPERIMENT_SETTINGS),capture_scene=args.capture_scene,threaded_3d=args.threaded_3d,resolution=args.resolution,rasterizer=args.rasterizer)
     if args.probe_clock:options['probe_clock']=(ROOT/'tools/probe_emulated_clock.py').read_text()
     import subprocess
     try:result=device.ssh(device.target(args.device),'python3 -B - '+shlex.quote(json.dumps(options)),batch=True,input=DEVICE_SCRIPT,text=True,capture_output=True)

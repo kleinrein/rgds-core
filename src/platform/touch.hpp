@@ -28,6 +28,9 @@ struct TouchDecoder {
     int coordinate(int value,int minimum,int maximum,int extent)const{return std::clamp(int((int64_t(value)-minimum)*extent/std::max<int64_t>(1,int64_t(maximum)-minimum)),0,extent-1);}
     std::vector<TouchPoint> cancel(){bool was=reported;reported=false;ignore_remaining=false;current=single=Contact{};slots={};contacts.clear();button_seen=button_down=false;return was?std::vector<TouchPoint>{{3,last_x,last_y}}:std::vector<TouchPoint>{};}
     void discard_contact(){bool active=reported || ignore_remaining;cancel();ignore_remaining=active;}
+    // A contact already down before the reader opened is not a new gesture:
+    // ignore it, including its release, until every contact has lifted.
+    void hold_until_release(){ignore_remaining=true;}
     void finish_contact(){if(!current.tracking_seen)current.active=button_seen?button_down:(current.frame_x && current.frame_y);if(contacts.size()<16 && current.active && current.x_known && current.y_known)contacts.push_back(current);current=Contact{};}
     std::vector<TouchPoint> feed(int type,int code,int value) {
         if(type==0 && code==3){auto result=cancel();ignore_remaining=true;dropped=true;return result;}
@@ -108,13 +111,18 @@ public:
         (void)path;return false;
 #endif
     }
-    bool open_replay(const std::string& path){close_device();std::ifstream file(path,std::ios::binary);if(!file)return false;std::array<unsigned char,768> bytes{};while(file){file.read(reinterpret_cast<char*>(bytes.data()),bytes.size());auto decoded=packets.feed(bytes.data(),size_t(file.gcount()));replay.insert(replay.end(),decoded.begin(),decoded.end());if(replay.size()>65536){close_device();return false;}}if(replay.empty())return false;replay_begin=replay.front().micros;replaying=true;selected_path=path;return true;}
+    bool open_replay(const std::string& path){close_device();std::ifstream file(path,std::ios::binary);if(!file)return false;std::array<unsigned char,768> bytes{};while(file){file.read(reinterpret_cast<char*>(bytes.data()),bytes.size());auto decoded=packets.feed(bytes.data(),size_t(file.gcount()));replay.insert(replay.end(),decoded.begin(),decoded.end());if(replay.size()>65536){close_device();return false;}}if(replay.empty())return false;replay_begin=replay.front().micros;replaying=true;selected_path=path;
+        // A capture whose first frame holds a contact without a BTN_TOUCH press
+        // began mid-touch: the panel was already touched when it was opened.
+        TouchDecoder first;bool pressed=false;for(const auto& event:replay){pressed=pressed || (event.type==1 && event.code==330 && event.value==1);auto points=first.feed(event.type,event.code,event.value);if(event.type==0 && event.code==0){initial_down=!pressed && !points.empty() && points.front().kind==0;break;}}
+        return true;}
     void close_device(){if(fd>=0)::close(fd);fd=-1;decoder=TouchDecoder{};packets=TouchPackets{};replay.clear();replay_at=0;replaying=false;initial_down=false;selected_path.clear();}
     ~TouchDevice(){close_device();}
     bool available()const{return fd>=0 || replaying;}
     bool initially_pressed()const{return initial_down;}
     const std::string& path()const{return selected_path;}
     void discard_until_release(){poll();decoder.discard_contact();}
+    void hold_initial_contact(){if(initial_down)decoder.hold_until_release();}
     std::vector<TouchPoint> poll(uint64_t elapsed_ms=0) {
         std::vector<TouchPoint> result;
         auto consume=[&](const TouchPacket& event){auto points=decoder.feed(event.type,event.code,event.value);result.insert(result.end(),points.begin(),points.end());};

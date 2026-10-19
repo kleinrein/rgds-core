@@ -11,8 +11,13 @@ namespace rgds {
 namespace fs = std::filesystem;
 struct Game { std::string title; fs::path path; bool demo = false; };
 inline constexpr const char* core_ids[] = {"drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"};
-inline constexpr const char* core_names[] = {"DraStic", "DSperate", "NNDDSS", "melonDS", "RG DS Experimental"};
+inline constexpr const char* core_names[] = {"DraStic", "DSperate", "NNDDSS", "melonDS", "DSCore"};
 inline constexpr int core_count = sizeof(core_ids)/sizeof(core_ids[0]);
+// NNDDSS is retired: it is never offered, and a saved choice of it falls back to
+// DSCore. Indices stay stable because settings store them.
+inline constexpr int retired_core = 2;
+inline constexpr bool core_offered(int core){return core>=0 && core<core_count && core!=retired_core;}
+inline constexpr int offered_core(int core){return core==retired_core?core_count-1:core;}
 inline std::string lower(std::string s) {
     for (char& c : s) if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
     return s;
@@ -71,13 +76,13 @@ struct Model {
         auto n = static_cast<long>(games.size());
         selected = static_cast<size_t>((static_cast<long>(selected) + delta % n + n) % n);
     }
-    void next_core() { core = (core + 1) % core_count; }
+    void next_core() { do core = (core + 1) % core_count; while (!core_offered(core)); }
 };
 struct Color { unsigned char r, g, b; };
 using Theme = std::map<std::string, Color>;
 inline Theme default_theme() {
     return {{"background", {242,245,247}}, {"panel",{255,255,255}}, {"ink",{45,57,68}},
-        {"muted",{108,124,138}}, {"accent",{44,137,218}}, {"line",{191,204,215}}, {"slot",{221,230,237}},
+        {"muted",{94,108,120}}, {"accent",{35,110,174}}, {"line",{191,204,215}}, {"slot",{221,230,237}},
         {"on_accent",{255,255,255}}, {"focus",{224,240,252}}};
 }
 inline Theme default_dark_theme() {

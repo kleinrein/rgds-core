@@ -30,8 +30,9 @@ class ReleasePolishTests(unittest.TestCase):
         (folder/'box.bmp').write_bytes(bmp)
         data=self.run_ui(extra=('--library','--rom-dir',str(roms)))
         ink=(45,57,68)
-        for left in [328,468]:self.assertGreater(sum(self.pixel(data,x,y)==ink for x in range(left,left+127) for y in range(280,312)),20)
-        self.assertEqual(sum(self.pixel(data,x,y)==(108,124,138) for x in range(30,580) for y in range(449,475)),0)
+        # With a cover, plays and time share one small pill under it.
+        self.assertGreater(sum(self.pixel(data,x,y)==ink for x in range(200,440) for y in range(440,468)),20)
+        self.assertEqual(sum(self.pixel(data,x,y)==(94,108,120) for x in range(30,580) for y in range(449,475)),0)
     def test_language_index_starts_with_english_and_sorts_native_names(self):
         rows=[l.split('\t') for l in (ROOT/'assets/locales/languages.tsv').read_text().splitlines()]
         self.assertEqual(rows[0],['en-US','English (US)'])

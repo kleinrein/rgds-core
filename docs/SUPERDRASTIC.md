@@ -174,5 +174,5 @@ startup and toggle transition periods are outside the measured intervals.
 
 Logs: `userdata/logs/drastic.log`, `superdrastic.log` (plus three previous native
 logs), and per-run `userdata/session/superdrastic-*` receipts. Preserve them for subsequent
-device comparisons. See [NEXT_DEVICE_TEST.md](NEXT_DEVICE_TEST.md)
+device comparisons. See [NEXT_DEVICE_TEST.md](archive/NEXT_DEVICE_TEST.md)
 for the physical acceptance sequence.

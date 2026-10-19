@@ -166,6 +166,10 @@ def supervise(root, session_args=(), launch=subprocess.Popen, timeout=BOOT_TIMEO
         began=time.monotonic(); ready_at=None;last_pulse=None;last_seen=None
         try:
             while child.poll() is None:
+                if not trial:
+                    # Nothing to supervise outside a trial: block in waitpid
+                    # instead of waking four times a second for the session.
+                    child.wait();break
                 if trial:
                     try:health=read(root/'userdata/session/update-health.json')
                     except (ValueError,OSError):health={}

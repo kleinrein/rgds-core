@@ -44,6 +44,34 @@ class PublicArtworkTests(unittest.TestCase):
         with patch.object(art,'rom_details',return_value=('Puzzle','ABCE')),patch.object(client,'gametdb',side_effect=scraper.NotFound()),patch.object(client,'libretro',return_value=(b'png',{'provider':'Libretro'})):
             self.assertEqual(client.artwork(Path('game.nds'))[1]['provider'],'Libretro')
 
+    def test_auto_prefers_sharp_libretro_art_before_small_gametdb_covers(self):
+        client=art.PublicClient()
+        with patch.object(art,'rom_details',return_value=('Puzzle','ABCE')),patch.object(client,'gametdb') as small,patch.object(client,'libretro',return_value=(b'png',{'provider':'Libretro'})):
+            self.assertEqual(client.artwork(Path('game.nds'))[1]['provider'],'Libretro')
+        small.assert_not_called()
+
+    def test_auto_keeps_gametdb_when_libretro_is_unavailable(self):
+        client=art.PublicClient()
+        with patch.object(art,'rom_details',return_value=('Puzzle','ABCE')),patch.object(client,'libretro',side_effect=scraper.ScraperError('down')),patch.object(client,'gametdb',return_value=(b'png',{'provider':'GameTDB'})):
+            self.assertEqual(client.artwork(Path('game.nds'))[1]['provider'],'GameTDB')
+
+    def test_small_covers_are_upgraded_once_and_kept_without_a_sharper_match(self):
+        def bmp(width):return b'BM'+b'\0'*16+width.to_bytes(4,'little',signed=True)+(115).to_bytes(4,'little')+b'\0'*28
+        with tempfile.TemporaryDirectory() as folder:
+            data=Path(folder);rom=data/'Mario.nds';rom.write_bytes(b'\0'*12+b'ASME')
+            item=data/'library'/game_key(rom);item.mkdir(parents=True);(item/'box.bmp').write_bytes(bmp(128))
+            client=art.PublicClient()
+            def image(raw,destination):destination.write_bytes(bmp(384))
+            with patch.object(client,'artwork',return_value=(b'png',{'provider':'Libretro'})) as fetch,patch.object(scraper,'image_to_bmp',side_effect=image):
+                scraper.scrape(data,client,[rom]);scraper.scrape(data,client,[rom]);fetch.assert_called_once()
+            self.assertEqual(int.from_bytes((item/'box.bmp').read_bytes()[18:22],'little'),384)
+            # No sharper match: the small cover stays and is not requested again.
+            (item/'box.bmp').write_bytes(bmp(128));write_fields(item/'info.ini',{'title':'Mario'})
+            with patch.object(client,'artwork',side_effect=scraper.NotFound()) as fetch:
+                scraper.scrape(data,client,[rom]);scraper.scrape(data,client,[rom]);fetch.assert_called_once()
+            self.assertEqual(int.from_bytes((item/'box.bmp').read_bytes()[18:22],'little'),128)
+            self.assertEqual(read_fields(data/'scraper/status.ini')['missing'],'0')
+
     def test_public_redirect_cannot_exfiltrate_or_downgrade(self):
         request=art.urllib.request.Request('https://art.gametdb.com/ds/a.png')
         for url in ('http://art.gametdb.com/a','https://evil.example/a','https://thumbnails.libretro.com/a','https://art.gametdb.com:444/a'):

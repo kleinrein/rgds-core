@@ -65,14 +65,16 @@ int main(int argc,char**argv){
         for core in range(count):
             with self.subTest(core=core):
                 self.save(core)
-                self.assertEqual(self.read(),f'{core} 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
+                # NNDDSS (2) is retired: a stored choice of it reads back as DSCore (4).
+                self.assertEqual(self.read(),f'{4 if core == 2 else core} 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
 
     def test_unknown_or_invalid_engine_does_not_reset_unrelated_preferences(self):
         for value in ('5','99','-1','','x','4extra','4294967296','999999999999999999999',' 4'):
             with self.subTest(value=value):
                 self.save(4)
                 self.path.write_text(self.path.read_text().replace('core=4\n','core='+value+'\n'))
-                self.assertEqual(self.read(),'1 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
+                # An unknown engine falls back to the default, DSCore (4).
+                self.assertEqual(self.read(),'4 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
 
     @unittest.skipUnless(BINARY.exists(),'Build host launcher first')
     def test_actual_launcher_reloads_experimental_preferences_without_fallback(self):

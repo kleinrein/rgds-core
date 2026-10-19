@@ -130,7 +130,7 @@ class GameSwitcherTests(unittest.TestCase):
 
     def test_runner_reuses_session_and_forces_autoload_only_for_switch(self):
         calls = []
-        def once(core, app, data, rom, display_handoff, fresh_start=False):
+        def once(core, app, data, rom, display_handoff, fresh_start=False, display=None):
             calls.append((core, rom, display_handoff, os.environ.get('RGDS_FORCE_AUTOLOAD')))
             return SwitchGame('melonds', self.next_game) if len(calls) == 1 else 0
         with patch.dict(os.environ, {'RGDS_FORCE_AUTOLOAD': '0'}), patch.object(emulators, '_run_once', side_effect=once):

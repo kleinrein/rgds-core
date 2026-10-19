@@ -10,7 +10,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 BINARY = ROOT / "build/host/rgds-launcher"
-OPEN = "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key Down\n220 key A\n"
+OPEN = "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key Down\n220 key Down\n260 key Down\n300 key A\n"   # Startup is the eighth System row
 
 
 @unittest.skipUnless(BINARY.exists(), "Build host launcher first")
@@ -36,7 +36,7 @@ class StartupUITests(unittest.TestCase):
         self.assertTrue(self.state.read_text().endswith("24 5 0\n"))
         self.assertIn("boot_mode=stock", (self.root / "device/status.ini").read_text())
         self.run_ui(OPEN + "600 key Escape\n")
-        self.assertTrue(self.state.read_text().endswith("9 5 5\n"))
+        self.assertTrue(self.state.read_text().endswith("9 5 7\n"))   # Back lands on the Startup row again
 
     def test_rgds_requires_confirmation_and_cancel_preserves_stock(self):
         self.run_ui(OPEN + "600 key A\n640 key Escape\n")

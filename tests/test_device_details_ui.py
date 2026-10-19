@@ -49,7 +49,7 @@ class DeviceDetailsTests(unittest.TestCase):
         self.assertIn('16 5 1\n',(self.root/'state').read_text())
         report=self.run_ui('500 key A\n700 click 520 452\n900 key Escape\n')
         self.assertEqual(report['page'],9)
-        self.assertIn('9 5 2\n',(self.root/'state').read_text())
+        self.assertIn('9 5 4\n',(self.root/'state').read_text())   # Device information is the fifth System row
 
     def test_long_unbroken_value_can_scroll_to_its_last_line(self):
         script='500 key A\n'+''.join(f'{600+i*10} key Down\n' for i in range(70))

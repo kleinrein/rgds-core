@@ -21,8 +21,10 @@ import urllib.request
 
 try:
     from .elf_abi import inspect_elf
+    from . import build_engines_gcc as gcc
 except ImportError:
     from elf_abi import inspect_elf
+    import build_engines_gcc as gcc
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMIT = "1b76c355109c9f7576363ccc023927b3137d3c6f"
@@ -202,6 +204,7 @@ def source_archive(source, destination, names):
                 # Keep the exact build driver and patch beside full upstream
                 # source so recipients can reproduce this modified build.
                 entries += [("DSperate/tools/build_engines.py", Path(__file__)),
+                            ("DSperate/tools/build_engines_gcc.py", ROOT / "tools/build_engines_gcc.py"),
                             ("DSperate/tools/elf_abi.py", ROOT / "tools/elf_abi.py"),
                             ("DSperate/tools/engine_patches/" + PATCH.name, PATCH)]
                 for name, path in entries:
@@ -290,7 +293,8 @@ def configure(cmake, ninja, source, build, toolchain_path, options, env):
 
 def build_engine(args):
     source, sdk, output = args.source.resolve(), args.sdk.resolve(), args.output.resolve()
-    tools = {name: find_tool(name, getattr(args, name)) for name in ("zig", "cmake", "ninja")}
+    compiler = getattr(args, "compiler", "zig")
+    tools = {name: find_tool(name, getattr(args, name)) for name in ("zig", "cmake", "ninja")} if compiler == "zig" else {}
     sdl_source = ensure_sources(source, sdk, args.fetch)
     source_hash, inputs = source_inputs(source)
     env = os.environ.copy()
@@ -305,6 +309,8 @@ def build_engine(args):
     scratch.mkdir(parents=True, exist_ok=True)
     modified_source = scratch / "source"
     patched_hash = prepare_build_source(source, modified_source, inputs)
+    if compiler == gcc.COMPILER:
+        return publish_gcc_engine(source, modified_source, output, inputs, source_hash, patched_hash)
     chain = toolchain(scratch / "toolchain", tools["zig"], modified_source, sdl_source)
     sdl_build, sdl_install = scratch / "sdl", scratch / "sdl-sdk"
     sdl_options = {**SDL_OPTIONS, "CMAKE_INSTALL_PREFIX": str(sdl_install)}
@@ -374,6 +380,48 @@ def build_engine(args):
     return output
 
 
+def publish_gcc_engine(source, modified_source, output, inputs, source_hash, patched_hash):
+    """Same verified, patched tree; GCC 13.3 with upstream's committed PGO profile."""
+    options = gcc.gcc_options(ENGINE_OPTIONS)
+    candidate, gcc_record = gcc.build(modified_source, "dsperate", options)
+    abi = inspect_elf(candidate, "pinned upstream DSperate built from source")
+    if not abi or abi["machine"] != "aarch64" or not gcc.glibc_allowed(abi, gcc.COMPILER):
+        raise ValueError("GCC engine failed Linux AArch64 / GLIBC 2.38 ABI validation")
+    if source_inputs(source)[0] != source_hash or prepare_build_source(source, modified_source, inputs) != patched_hash:
+        raise ValueError("Engine source changed during the GCC build")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    pending = Path(tempfile.mkdtemp(prefix=".dsperate-", dir=output.parent))
+    try:
+        shutil.copy2(candidate, pending / "dsperate")
+        shutil.copy2(source / "LICENSE", pending / "LICENSE")
+        source_archive(modified_source, pending / "source.tar.gz", inputs)
+        (pending / "NOTICE.txt").write_text(
+            "DSperate 3.0.0; GPL-3.0-or-later (see LICENSE and complete source.tar.gz).\n"
+            f"Upstream: {UPSTREAM}\nCommit: {COMMIT}\n"
+            "RGDS changes: Clang callback/vector-initializer portability; missing GLib byte-order macros for libslirp; exported completed-emulation-frame counter.\n"
+            "Built for RGDS on Linux AArch64 with GCC 13.3, upstream's committed PGO profile, JIT and NEON (tools/build_engines_gcc.py).\n"
+            "libstdc++/libgcc are linked statically; the card supplies runtime SDL2.\n"
+            "Hardware test scope and results are recorded separately in RGDS documentation.\n")
+        record = {
+            "schema": 1, "kind": KIND, "binary": abi, "compiler": gcc.COMPILER,
+            "source": {"url": UPSTREAM, "commit": COMMIT, "tree": TREE,
+                       "inputs_sha256": source_hash, "patched_inputs_sha256": patched_hash,
+                       "patches": [{"name": PATCH.name, "sha256": digest(PATCH)}],
+                       "archive_sha256": digest(pending / "source.tar.gz")},
+            "tools": {"gcc": gcc_record}, "build_driver_sha256": digest(Path(__file__)),
+            "target": "aarch64-linux-gnu (glibc >= 2.38)", "options": options,
+            "source_file_count": len(inputs), "device_tested": False,
+            "files": {name: digest(pending / name) for name in ("dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz")},
+        }
+        (pending / "build.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+        validate_build(pending)
+        publish_build(pending, output)
+    finally:
+        if pending.exists():
+            shutil.rmtree(pending)
+    return output
+
+
 def publish_build(pending, output):
     """Publish the verified directory, restoring the last build on failure."""
     previous = output.with_name(output.name + ".previous")
@@ -416,10 +464,9 @@ def validate_build(directory):
                 or path.is_symlink() or not path.is_file() or digest(path) != checksum):
             raise ValueError("Source-built DSperate artifact hash mismatch: " + name)
     abi = inspect_elf(directory / "dsperate", record["binary"].get("source"))
-    if (not abi or abi != record["binary"] or abi["machine"] != "aarch64"
-            or not abi["glibc_minimum"]
-            or tuple(map(int, abi["glibc_minimum"].split("."))) > (2, 17)
-            or abi.get("runpaths")):
+    compiler = record.get("compiler", "zig")
+    if (compiler not in ("zig", gcc.COMPILER) or not abi or abi != record["binary"] or abi["machine"] != "aarch64"
+            or not gcc.glibc_allowed(abi, compiler) or abi.get("runpaths")):
         raise ValueError("Source-built DSperate ELF metadata mismatch")
     if record["source"].get("archive_sha256") != record["files"]["source.tar.gz"]:
         raise ValueError("Source-built DSperate source archive metadata mismatch")
@@ -442,7 +489,7 @@ def validate_source_archive(path, record):
             names.add(member.name)
             content = archive.extractfile(member).read()
             name = member.name[len("DSperate/"):]
-            if name in ("tools/build_engines.py", "tools/elf_abi.py", "tools/engine_patches/" + PATCH.name):
+            if name in ("tools/build_engines.py", "tools/build_engines_gcc.py", "tools/elf_abi.py", "tools/engine_patches/" + PATCH.name):
                 if name == "tools/build_engines.py":
                     builder = hashlib.sha256(content).hexdigest()
                 elif name == "tools/engine_patches/" + PATCH.name and hashlib.sha256(content).hexdigest() != PATCH_SHA256:
@@ -465,6 +512,8 @@ def main():
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 1, 8))
     for name in ("zig", "cmake", "ninja"):
         parser.add_argument("--" + name, type=Path)
+    parser.add_argument("--compiler", choices=("zig", gcc.COMPILER), default="zig",
+                        help="gcc-pgo: GCC 13.3 + upstream's PGO profile in the Lima ARM64 VM (~8%% less emulation time)")
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be positive")

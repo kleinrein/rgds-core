@@ -133,6 +133,7 @@ DEFAULT THEME - CHECK LOG	TEMA PADRÃO – VER REGISTRO
 DS rounded	DS arredondado
 DSperate: recommended for everyday play. Native resolution is the default.	DSperate: recomendado para uso diário. Resolução nativa por predefinição.
 Dark	Escuro
+Date format	Formato de data
 Default	Predefinição
 Default emulator	Emulador predefinido
 Default shader	Filtro predefinido
@@ -696,3 +697,142 @@ Push	Deslizar
 Transition style	Estilo de transição
 Animate pages with the selected style	Animar páginas com o estilo escolhido
 Slide into pages; slide back to return	Deslize para as páginas; deslize de volta para regressar
+Accent colour	Cor de destaque
+FAVOURITE COLOUR	COR FAVORITA
+Classic	Clássico
+Classic blue	Azul clássico
+High contrast	Alto contraste
+PREVIEW	PRÉ-VISUALIZAÇÃO
+Selected row	Linha selecionada
+Switches and values	Interruptores e valores
+Grey	Cinzento
+Brown	Castanho
+Red	Vermelho
+Pink	Cor-de-rosa
+Orange	Laranja
+Yellow	Amarelo
+Lime	Lima
+Green	Verde
+Dark green	Verde-escuro
+Sea green	Verde-mar
+Turquoise	Turquesa
+Blue	Azul
+Dark blue	Azul-escuro
+Purple	Roxo
+Violet	Violeta
+Magenta	Magenta
+Network file sharing	Partilha de ficheiros em rede
+Open on this Wi-Fi	Aberto nesta rede Wi-Fi
+Password protected	Protegido por palavra-passe
+File sharing on. Find "RG DS" under Network.	Partilha de ficheiros ativada. Procure "RG DS" em Rede.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: o emulador original. O DSCore acrescenta correções e velocidade.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: recomendado. O mais rápido, com correções da tampa, caneta e 3D e 3D opcional de 2x–5x.
+DSCore 3D resolution	Resolução 3D do DSCore
+Native (fastest)	Nativa (mais rápida)
+2x sharper	2x mais nítido
+3x sharper	3x mais nítido
+4x (experimental)	4x (experimental)
+5x (experimental)	5x (experimental)
+Colour mode	Modo de cor
+Draw and chat with nearby handhelds	Desenha e conversa com consolas por perto
+Wi-Fi connected	Wi-Fi ligado
+No Wi-Fi: you can still draw	Sem Wi-Fi: ainda podes desenhar
+Press A to open	Prime A para abrir
+Type your name	Escreve o teu nome
+You appear like this to others	É assim que os outros te veem
+Starting…	A iniciar…
+Chat is unavailable: you can still draw	Conversa indisponível: ainda podes desenhar
+Nobody else is nearby yet	Ninguém por perto ainda
+1 person nearby	1 pessoa por perto
+{0} people nearby	{0} pessoas por perto
+Your colour	A tua cor
+Leave	Sair
+Your name	O teu nome
+Send	Enviar
+You are in Room {0}	Estás na sala {0}
+{0} joined	{0} entrou
+{0} left	{0} saiu
+New messages below	Novas mensagens abaixo
+Older messages	Mensagens anteriores
+The pad is full: send it or clear it	O bloco está cheio: envia ou limpa
+Too much on the pad: erase some of it	Demasiado no bloco: apaga algo
+That message could not be sent	Não foi possível enviar a mensagem
+That room is full	Essa sala está cheia
+Chat Room {0}	Sala de conversa {0}
+Choose a chat room to join	Escolhe uma sala de conversa para entrar
+Edit	Editar
+Join	Entrar
+Matches your accent	Segue a cor de destaque
+Nobody here yet	Ninguém aqui ainda
+Start Send   X Undo   L R Scroll	Start Enviar   X Anular   L R Deslocar
+You	Tu
+Time format	Formato da hora
+24-hour	24 horas
+12-hour	12 horas
+24-hour or 12-hour clock	Relógio de 24 ou 12 horas
+How dates appear in the status bar	Como as datas aparecem na barra de estado
+Connecting to	A ligar a
+This can take a few seconds	Isto pode demorar alguns segundos
+Waiting for an address…	A aguardar um endereço…
+IP address	Endereço IP
+Signal	Sinal
+Could not connect	Não foi possível ligar
+Wi-Fi is off	Wi-Fi desligado
+Turn it on to find networks	Ligue para encontrar redes
+Choose a network from the list	Escolha uma rede da lista
+Preparing…	A preparar…
+Home layout	Esquema do ecrã inicial
+Background	Fundo
+Touch gestures	Gestos de toque
+Carousel	Carrossel
+DSi column	Coluna DSi
+Plain	Simples
+DSi grid	Grelha DSi
+A carousel, or the DSi's column with your last game on top	Um carrossel ou a coluna da DSi com o último jogo no topo
+Plain, or the DSi's ruled grid behind every screen	Simples ou a grelha pautada da DSi atrás de cada ecrã
+Swipe up from the bottom for Home, in from the left for Back	Deslize de baixo para Início e a partir da esquerda para Voltar
+Nothing played yet	Ainda não jogou nada
+Your last game will appear here	O último jogo aparece aqui
+Draw and chat	Desenhe e converse
+Su	Do
+Mo	Se
+Tu	Te
+We	Qu
+Th	Qu
+Fr	Se
+Sa	Sá
+Chat Room	Sala
+Nobody else here yet	Mais ninguém aqui ainda
+Drawing on your own	A desenhar sozinho
+Jump	Ir
+Home	Início
+Swipe up from the bottom edge to go Home from anywhere.	Deslize para cima a partir do rebordo inferior para ir ao Início de qualquer lado.
+Swipe in from the left edge to go Back.	Deslize a partir do rebordo esquerdo para voltar.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Uma pequena pega no fundo do ecrã inferior mostra que os gestos estão ativos; sobe com o dedo e um anel marca o ponto quando um gesto é acionado.
+Your saves are safe. See you soon!	Os seus jogos guardados estão seguros. Até breve!
+DS Classic	DS Clássico
+DS Lite	DS Lite
+Natural glow	Brilho natural
+Vivid LCD	LCD vívido
+Natural smooth	Suave natural
+Vivid smooth	Suave vívido
+Pixel beads	Contas de píxeis
+Glossy tiles	Azulejos brilhantes
+The first DS screen: muted colour and a fine pixel grid.	O primeiro ecrã da DS: cores suaves e uma grelha fina de píxeis.
+The brighter DS Lite screen with a faint pixel grid.	O ecrã mais claro da DS Lite com uma grelha discreta.
+Natural colour with soft pixels that glow together.	Cores naturais com píxeis suaves que brilham juntos.
+Bold colour on a close-up LCD with RGB stripes.	Cores fortes num LCD visto de perto, com riscas RGB.
+Natural colour with smoothed diagonal edges.	Cores naturais com contornos diagonais suavizados.
+Bold colour with smoothed diagonal edges.	Cores fortes com contornos diagonais suavizados.
+Bold colour; every pixel a round, shiny bead.	Cores fortes; cada píxel, uma conta redonda e brilhante.
+Bold colour; every pixel a raised, glossy tile.	Cores fortes; cada píxel, um azulejo brilhante em relevo.
+IN USE	EM USO
+APPLY	APLICAR
+Follows your library shader.	Segue o filtro da sua biblioteca.
+Original	Original
+DS screens	Ecrãs DS
+Natural	Natural
+Vivid	Vívido
+Pixel art	Pixel art
+Moods	Ambientes
+Up / Down or L / R: change group	Cima / Baixo ou L / R: mudar de grupo

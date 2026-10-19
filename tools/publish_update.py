@@ -13,6 +13,8 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'runtime'))
 from ota import TARGET, https_url
+# macOS ships LibreSSL as `openssl`, which cannot sign Ed25519; prefer OpenSSL 3.
+OPENSSL=next((p for p in ('/opt/homebrew/opt/openssl@3/bin/openssl','/usr/local/opt/openssl@3/bin/openssl') if Path(p).exists()),'openssl')
 
 def build(args):
     https_url(args.url)
@@ -38,9 +40,9 @@ def build(args):
     signed=json.dumps(metadata,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()
     with tempfile.TemporaryDirectory() as folder:
         folder=Path(folder);(folder/'metadata').write_bytes(signed)
-        subprocess.run(['openssl','pkeyutl','-sign','-rawin','-inkey',str(args.key),'-in',str(folder/'metadata'),'-out',str(folder/'signature')],check=True,capture_output=True)
+        subprocess.run([OPENSSL,'pkeyutl','-sign','-rawin','-inkey',str(args.key),'-in',str(folder/'metadata'),'-out',str(folder/'signature')],check=True,capture_output=True)
         signature=(folder/'signature').read_bytes()
-        public=subprocess.run(['openssl','pkey','-in',str(args.key),'-pubout','-outform','DER'],check=True,capture_output=True).stdout
+        public=subprocess.run([OPENSSL,'pkey','-in',str(args.key),'-pubout','-outform','DER'],check=True,capture_output=True).stdout
     if len(signature)!=64 or public[:12]!=bytes.fromhex('302a300506032b6570032100') or len(public)!=44:raise ValueError('Use an Ed25519 signing key.')
     envelope=dict(key_id=args.key_id,signed=base64.b64encode(signed).decode(),signature=base64.b64encode(signature).decode())
     args.feed.write_text(json.dumps(envelope,indent=2)+'\n')

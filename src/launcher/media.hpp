@@ -4,9 +4,14 @@
 #include "launcher/bmp_budget.hpp"
 #include "platform/sdl_dynamic.hpp"
 #include <array>
+#include <condition_variable>
 #include <cstdint>
+#include <deque>
 #include <iomanip>
+#include <mutex>
+#include <set>
 #include <sstream>
+#include <thread>
 namespace rgds {
 inline std::map<std::string,std::string> fields(const fs::path& path) {
     std::map<std::string,std::string> result;std::ifstream file(path);std::string line;
@@ -46,7 +51,8 @@ class Media {
     struct Image { SDL_Texture* texture=nullptr;int w=0,h=0;fs::path path;bool icon=false;AssetStamp stamp;uint64_t used=0,bytes=0; };
     std::map<std::pair<SDL_Renderer*,std::string>,Image> images;
     uint64_t clock=0,texture_bytes=0;
-    static constexpr size_t image_limit=64,banner_limit=128;
+    // Cached misses are cheap entries; the byte budget bounds the textures.
+    static constexpr size_t image_limit=192,banner_limit=256;
     static constexpr uint64_t byte_limit=16*1024*1024;
     AssetStamp stamp(const fs::path& path){counters.stamp_checks++;return asset_stamp(path);}
     void discard(decltype(images)::iterator entry){if(entry->second.texture)s.DestroyTexture(entry->second.texture);texture_bytes-=entry->second.bytes;images.erase(entry);}
@@ -55,15 +61,66 @@ class Media {
             auto oldest=std::min_element(images.begin(),images.end(),[](const auto& a,const auto& b){return a.second.used<b.second.used;});discard(oldest);counters.evictions++;
         }
     }
+    void remember_banner(const std::string& key,Banner value,const AssetStamp& version){
+        if(banners.count(key))return;
+        if(banners.size()>=banner_limit){auto oldest=std::min_element(banners.begin(),banners.end(),[](const auto& a,const auto& b){return a.second.used<b.second.used;});banners.erase(oldest);counters.evictions++;}
+        CachedBanner entry;entry.stamp=version;entry.value=std::move(value);entry.used=++clock;banners.emplace(key,std::move(entry));
+    }
+    // A decoded surface becomes this renderer's texture (or a cached miss).
+    Image adopt_surface(SDL_Renderer* r,const fs::path& path,bool icon,const AssetStamp& version,SDL_Surface* surface){
+        Image image;image.path=path;image.icon=icon;image.used=++clock;image.stamp=version;
+        if(surface){
+            uint64_t bytes=surface->w>0 && surface->h>0?uint64_t(surface->w)*surface->h*4:0;
+            if(bytes && bytes<=byte_limit){
+                trim(image_limit-1,bytes);image.w=surface->w;image.h=surface->h;
+                s.SetHint("SDL_RENDER_SCALE_QUALITY",icon || path.filename()=="icon.bmp"?"0":"1");
+                image.texture=s.CreateTextureFromSurface(r,surface);if(image.texture){image.bytes=bytes;texture_bytes+=bytes;s.SetTextureBlendMode(image.texture,SDL_BLENDMODE_BLEND);}
+            }
+        }
+        trim(image_limit-1);return image;
+    }
+    static std::string image_key(const fs::path& path,bool icon){return (icon?"icon:":"art:")+path.string();}
+    // ---- background loading: one worker reads and decodes; textures are
+    // created on the main thread when adopt() runs. ----
+    struct Job {fs::path path;bool icon=false;std::vector<SDL_Renderer*> renderers;AssetStamp stamp;SDL_Surface* surface=nullptr;Banner banner;};
+    std::thread loader;mutable std::mutex guard;std::condition_variable wake;
+    std::deque<Job> queue;std::vector<Job> finished;std::set<std::string> queued;
+    bool loader_stop=false;
+    void load_job(Job& job){
+        job.stamp=asset_stamp(job.path);if(!job.stamp.present)return;
+        if(job.icon){
+            if(lower(job.path.extension().string())!=".zip")job.banner=read_banner(job.path);
+            if(!job.banner.pixels.empty()){
+                job.surface=s.CreateRGBSurfaceWithFormat(0,32,32,32,SDL_PIXELFORMAT_RGBA32);
+                if(job.surface)for(int y=0;y<32;y++)std::copy_n(job.banner.pixels.data()+y*32*4,32*4,static_cast<unsigned char*>(job.surface->pixels)+y*job.surface->pitch);
+            }
+        }else if(job.stamp.size<=32*1024*1024){
+            auto* file=s.RWFromFile(job.path.c_str(),"rb");
+            if(file){if(bmp_within_budget(file,byte_limit))job.surface=s.LoadBMP_RW(file,1);else file->close(file);}
+        }
+    }
+    void loader_main(){
+        for(;;){
+            Job job;
+            {std::unique_lock<std::mutex> lock(guard);wake.wait(lock,[&]{return loader_stop || !queue.empty();});if(loader_stop)return;job=std::move(queue.front());queue.pop_front();}
+            load_job(job);
+            {std::lock_guard<std::mutex> lock(guard);finished.push_back(std::move(job));}
+            SDL_Event event{};event.type=SDL_USEREVENT;event.user.code=1;s.PushEvent(&event);   // wakes an idle menu for adopt()
+        }
+    }
 public:
     CacheCounters counters;
-    uint64_t banner_reads=0,image_reads=0;
-    Media(Sdl& api):s(api){}~Media(){clear();}
+    uint64_t banner_reads=0,image_reads=0,async_loads=0;
+    Media(Sdl& api):s(api){}~Media(){stop();clear();}
     void clear(){for(auto entry:images)if(entry.second.texture)s.DestroyTexture(entry.second.texture);images.clear();banners.clear();texture_bytes=0;}
     size_t image_count() const{return images.size();}
     size_t banner_count() const{return banners.size();}
     uint64_t bytes() const{return texture_bytes;}
     bool prepared(SDL_Renderer* r,const fs::path& path) const{return images.count(std::make_pair(r,"art:"+path.string()))!=0;}
+    bool ready(SDL_Renderer* r,const fs::path& path,bool icon=false) const{auto found=images.find(std::make_pair(r,image_key(path,icon)));return found!=images.end() && found->second.texture;}
+    // Requested but not adopted yet: draw a quiet placeholder, not "no cover".
+    bool pending(const fs::path& path,bool icon=false) const{std::lock_guard<std::mutex> lock(guard);return queued.count(image_key(path,icon))!=0;}
+    bool loading() const{std::lock_guard<std::mutex> lock(guard);return !queue.empty() || !finished.empty();}
     Banner& banner(const fs::path& path){
         counters.lookups++;auto key=path.string();auto found=banners.find(key);
         if(found==banners.end()){
@@ -77,27 +134,57 @@ public:
     // Loading happens before rendering. Missing/invalid files are cached too;
     // refresh() allows newly created or replaced artwork to become visible.
     bool warm(SDL_Renderer* r,const fs::path& path,bool icon=false) {
-        counters.lookups++;auto key=std::make_pair(r,(icon?"icon:":"art:")+path.string());auto found=images.find(key);
+        counters.lookups++;auto key=std::make_pair(r,image_key(path,icon));auto found=images.find(key);
         if(found!=images.end()){counters.hits++;found->second.used=++clock;return found->second.texture!=nullptr;}
-        Image image;image.path=path;image.icon=icon;image.used=++clock;image.stamp=stamp(path);
-        if(image.stamp.present) {
-            SDL_Surface* surface=nullptr;
+        AssetStamp version=stamp(path);SDL_Surface* surface=nullptr;
+        if(version.present) {
             if(icon) {auto& b=banner(path);if(!b.pixels.empty()){surface=s.CreateRGBSurfaceWithFormat(0,32,32,32,SDL_PIXELFORMAT_RGBA32);
                 if(surface)for(int y=0;y<32;y++)std::copy_n(b.pixels.data()+y*32*4,32*4,static_cast<unsigned char*>(surface->pixels)+y*surface->pitch);}
-            }else if(image.stamp.size<=32*1024*1024){
+            }else if(version.size<=32*1024*1024){
                 image_reads++;counters.file_reads++;auto* file=s.RWFromFile(path.c_str(),"rb");
                 if(file){if(bmp_within_budget(file,byte_limit))surface=s.LoadBMP_RW(file,1);else file->close(file);}
             }
-            if(surface){
-                uint64_t bytes=surface->w>0 && surface->h>0?uint64_t(surface->w)*surface->h*4:0;
-                if(bytes && bytes<=byte_limit){
-                    trim(image_limit-1,bytes);image.w=surface->w;image.h=surface->h;
-                    s.SetHint("SDL_RENDER_SCALE_QUALITY",icon || path.filename()=="icon.bmp"?"0":"1");
-                    image.texture=s.CreateTextureFromSurface(r,surface);if(image.texture){image.bytes=bytes;texture_bytes+=bytes;s.SetTextureBlendMode(image.texture,SDL_BLENDMODE_BLEND);}
-                }s.FreeSurface(surface);
-            }
         }
-        trim(image_limit-1);bool ready=image.texture!=nullptr;images.emplace(std::move(key),std::move(image));return ready;
+        Image image=adopt_surface(r,path,icon,version,surface);if(surface)s.FreeSurface(surface);
+        bool ready=image.texture!=nullptr;images.emplace(std::move(key),std::move(image));return ready;
+    }
+    // Queue a load for the worker; nothing happens for a path already cached
+    // or already on its way. Several renderers can share one decode.
+    void request(SDL_Renderer* r,const fs::path& path,bool icon=false){
+        auto key=image_key(path,icon);
+        if(images.count(std::make_pair(r,key)))return;
+        std::lock_guard<std::mutex> lock(guard);
+        if(!queued.insert(key).second){
+            auto attach=[&](auto& jobs){for(auto& job:jobs)if(job.icon==icon && job.path==path){if(std::find(job.renderers.begin(),job.renderers.end(),r)==job.renderers.end())job.renderers.push_back(r);return true;}return false;};
+            if(!attach(finished))attach(queue);
+            return;
+        }
+        Job job;job.path=path;job.icon=icon;job.renderers={r};queue.push_back(std::move(job));async_loads++;
+        if(!loader.joinable())loader=std::thread([this]{loader_main();});
+        wake.notify_one();
+    }
+    // Main thread: turn finished loads into textures. True when anything new is drawable.
+    bool adopt(){
+        std::vector<Job> ready;
+        {std::lock_guard<std::mutex> lock(guard);if(finished.empty())return false;ready.swap(finished);for(auto& job:ready)queued.erase(image_key(job.path,job.icon));}
+        bool changed=false;
+        for(auto& job:ready){
+            if(job.icon && job.stamp.present)remember_banner(job.path.string(),job.banner,job.stamp);
+            for(auto* r:job.renderers){
+                auto key=std::make_pair(r,image_key(job.path,job.icon));if(images.count(key))continue;
+                images.emplace(std::move(key),adopt_surface(r,job.path,job.icon,job.stamp,job.surface));changed=true;
+            }
+            if(job.surface){s.FreeSurface(job.surface);job.surface=nullptr;}
+        }
+        return changed;
+    }
+    // Before the renderers go: finish the worker and drop undecoded results.
+    void stop(){
+        {std::lock_guard<std::mutex> lock(guard);loader_stop=true;}
+        wake.notify_all();if(loader.joinable())loader.join();
+        std::lock_guard<std::mutex> lock(guard);
+        for(auto& job:finished)if(job.surface)s.FreeSurface(job.surface);
+        finished.clear();queue.clear();queued.clear();loader_stop=false;
     }
     bool refresh() {
         bool changed=false;std::map<std::string,AssetStamp> versions;

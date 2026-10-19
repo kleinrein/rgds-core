@@ -32,6 +32,20 @@ class SessionEnvironmentTests(unittest.TestCase):
              patch.object(Path, "is_file", autospec=True, side_effect=lambda path:path == vendor_sdl):
             return session.environment(self.runtime)
 
+    def test_runtime_bytecode_is_read_from_ram_and_compiled_there_at_idle_priority(self):
+        environment = self.stock_environment({})
+        self.assertEqual(environment["PYTHONDONTWRITEBYTECODE"], "1")
+        self.assertEqual(environment["PYTHONPYCACHEPREFIX"], session.PYCACHE)
+        self.assertTrue(session.PYCACHE.startswith("/tmp/"))
+        app = Path("/release")
+        with patch.object(session.subprocess, "Popen") as spawn:session.precompile(app, {"PATH":"/usr/bin"})
+        command, options = spawn.call_args.args[0], spawn.call_args.kwargs
+        self.assertEqual(command[1:], ["-m", "compileall", "-q", str(app / "runtime")])
+        self.assertEqual(options["env"]["PYTHONPYCACHEPREFIX"], session.PYCACHE)
+        self.assertTrue(options["start_new_session"])
+        with patch.object(session.os, "nice") as nice:options["preexec_fn"]()
+        nice.assert_called_once_with(19)
+
     def test_explicit_diagnostics_reach_engine_without_forwarding_stale_controls(self):
         supplied = {name:"1" for name in DIAGNOSTICS}
         supplied.update(RGDS_OVERLAY_FILE="/old/overlay", RGDS_SESSION_PLATFORM="independent",

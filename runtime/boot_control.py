@@ -159,9 +159,14 @@ def configure(root, mode, system_root='/', warning=True):
 
 
 def disable(system_root='/'):
-    # This rescue operation only removes our routing marker, not stock files.
+    # This rescue operation removes our routing marker and returns any stock
+    # service RGDS deferred (system_tuning) to its journalled original mode.
     control = location(system_root, CONTROL)
     (control / 'enabled').unlink(missing_ok=True)
+    try:
+        from system_tuning import remove, remove_poweroff
+        remove(system_root);remove_poweroff(system_root)
+    except (ImportError, OSError, ValueError):pass
     return dict(mode='stock')
 
 

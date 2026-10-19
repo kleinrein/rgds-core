@@ -36,6 +36,8 @@ public:
     void clear(){counters.invalidations+=entries.size();entries.clear();}
     size_t size() const{return entries.size();}
     fs::path folder(const Game& game){return get(game).folder;}
+    // A look without a load: the entry if it is cached, else nothing.
+    const Entry* peek(const Game& game)const{auto found=entries.find(identity(game));return found==entries.end()?nullptr:&found->second;}
     Entry& metadata(const Game& game) {
         auto& entry=get(game);if(!entry.metadata_ready){
             entry.info_stamp=stamp(entry.folder/"info.ini");entry.banner_stamp=stamp(entry.folder/"banner.ini");
@@ -54,6 +56,9 @@ public:
         if(!entry.options_ready){entry.options_stamp=stamp(path);entry.options=GameOptions{};if(entry.options_stamp.present){counters.file_reads++;entry.options=load_game_options(path);}entry.options_ready=true;}
         return entry.options;
     }
+    // Always re-read game.ini: another process just wrote it, and on the FAT
+    // card a same-size rewrite within one 2 s mtime tick can keep its stamp.
+    GameOptions reload_options(const Game& game){auto& entry=get(game);entry.options_ready=false;return options(game);}
     void saved_options(const Game& game,GameOptions value){auto& entry=get(game);entry.options=value;entry.options_ready=true;entry.options_stamp=stamp(entry.folder/"game.ini");}
     void invalidate_metadata(){for(auto& pair:entries){pair.second.metadata_ready=false;pair.second.title_ready=false;}counters.invalidations+=entries.size();}
     void invalidate_titles(){for(auto& pair:entries)pair.second.title_ready=false;}

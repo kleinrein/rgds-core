@@ -26,13 +26,28 @@ int fake_peep(SDL_Event* output,int,SDL_eventaction,Uint32,Uint32){
 int adapter_draws=0,thread_switches=0,graphics_switches=0;
 int fake_graphics(int scale,int smooth,int skip){++graphics_switches;assert(smooth==1 && skip==0);return scale!=4;}
 int fake_threading(int){++thread_switches;return 1;}
+int filter_calls=0,last_filter=-1;
+int fake_filter(int mode){++filter_calls;last_filter=mode;return mode!=2;}
+int adaptive_calls=0,last_adaptive=-1;
+int fake_adaptive(int on){++adaptive_calls;last_adaptive=on;return 1;}
 int fake_load(){return 1;}
 int fake_copy(SDL_Renderer*,SDL_Texture*,const SDL_Rect*,const SDL_Rect*){++adapter_draws;return 0;}
 Uint8 fake_button(SDL_Joystick*,int button){return button<13?1:0;}
 Uint8 native_keys[512]{};
 const Uint8* fake_keys(int* count){*count=512;return native_keys;}
+// The capture's SDL surface and BMP writer, for the direct-present hook: raw RGBA bytes instead of a BMP.
+SDL_Surface* fake_surface(Uint32,int w,int h,int,Uint32 format){auto* s=new SDL_Surface{};auto* f=new SDL_PixelFormat{};f->format=format;f->BytesPerPixel=4;s->format=f;s->w=w;s->h=h;s->pitch=w*4;s->pixels=calloc(size_t(w)*h,4);return s;}
+void fake_free_surface(SDL_Surface* s){if(!s)return;free(s->pixels);delete s->format;delete s;}
+SDL_RWops* fake_rw(const char* path,const char* mode){return reinterpret_cast<SDL_RWops*>(fopen(path,mode));}
+int fake_save_bmp(SDL_Surface* s,SDL_RWops* rw,int){auto* f=reinterpret_cast<FILE*>(rw);fwrite(s->pixels,1,size_t(s->pitch)*s->h,f);fclose(f);return 0;}
 extern "C" void* dlsym(void*,const char* name){
  if(!std::strcmp(name,"rgds_set_graphics"))return reinterpret_cast<void*>(&fake_graphics);
+ if(!std::strcmp(name,"SDL_CreateRGBSurfaceWithFormat"))return reinterpret_cast<void*>(&fake_surface);
+ if(!std::strcmp(name,"SDL_FreeSurface"))return reinterpret_cast<void*>(&fake_free_surface);
+ if(!std::strcmp(name,"SDL_RWFromFile"))return reinterpret_cast<void*>(&fake_rw);
+ if(!std::strcmp(name,"SDL_SaveBMP_RW"))return reinterpret_cast<void*>(&fake_save_bmp);
+ if(!std::strcmp(name,"rgds_set_filter2d"))return reinterpret_cast<void*>(&fake_filter);
+ if(!std::strcmp(name,"rgds_set_adaptive"))return reinterpret_cast<void*>(&fake_adaptive);
  if(!std::strcmp(name,"rgds_set_threaded_3d"))return reinterpret_cast<void*>(&fake_threading);
  if(!std::strcmp(name,"rgds_load_checkpoint"))return reinterpret_cast<void*>(&fake_load);
  if(!std::strcmp(name,"SDL_RenderCopy"))return reinterpret_cast<void*>(&fake_copy);
@@ -65,6 +80,68 @@ int main(int argc,char** argv){
    assert(graphics_switches==2 && state().find("state=graphics-failed")!=std::string::npos);
    command("graphics-native","graphics:1:1:0");test_time=150;SDL_PollEvent(&event);
    assert(graphics_switches==3 && !enhanced_game_texture);
+   // The 2D filter waits for the same safe point and never touches the renderer.
+   command("filter-1","filter2d:1");test_time=180;tick();
+   assert(filter_calls==0 && !pending_filter2d_token.empty());
+   test_time=210;SDL_PollEvent(&event);
+   assert(filter_calls==1 && last_filter==1 && pending_filter2d_token.empty() && graphics_switches==3);
+   assert(state().find("token=filter-1")!=std::string::npos && state().find("state=filter2d-applied")!=std::string::npos);
+   command("filter-fail","filter2d:2");test_time=240;SDL_PollEvent(&event);
+   assert(filter_calls==2 && state().find("state=filter2d-failed")!=std::string::npos);
+   command("filter-bad","filter2d:4");test_time=270;SDL_PollEvent(&event);
+   assert(filter_calls==2 && state().find("state=filter2d-failed")!=std::string::npos);
+   command("filter-junk","filter2d:1x");test_time=300;SDL_PollEvent(&event);
+   assert(filter_calls==2 && state().find("token=filter-junk")!=std::string::npos && state().find("state=filter2d-failed")!=std::string::npos);
+   // Heavy 3D scenes applies at once (an atomic in the engine), and only 0/1.
+   command("adaptive-off","adaptive:0");test_time=330;tick();
+   assert(adaptive_calls==1 && last_adaptive==0 && state().find("state=adaptive-off")!=std::string::npos);
+   command("adaptive-bad","adaptive:2");test_time=360;tick();
+   assert(adaptive_calls==1 && state().find("token=adaptive-off")!=std::string::npos);   // unknown commands get no answer
+   return 0;
+ }
+ if(argc==4 && std::string(argv[3])=="canvas"){
+   // DSCore's direct present (no SDL renderer): the engine hands each panel's
+   // finished frame to rgds_present_canvas, which times it, serves the
+   // launcher's capture from it and blends the shared menu frame / HUD into it.
+   for(const char* lib:{"/usr/lib/libSystem.B.dylib","libc.so.6"})if(void* h=dlopen(lib,RTLD_NOW)){dlclose(h);setenv("RGDS_SDL_LIBRARY",lib,1);break;}
+   setenv("RGDS_MENU_LIVE","1",1);setenv("RGDS_FPS","1",1);
+   const std::string frame_path=(root/"menu.frame").string();setenv("RGDS_OVERLAY_FILE",frame_path.c_str(),1);
+   initialize();frame_stats.enabled=true;frame_stats.reset();
+   std::vector<uint32_t> top(640*480,0xFF102030u),bottom(640*480,0xFF000000u);
+   // No menu, no HUD: the frames are left alone; the top panel's presents are counted, the bottom panel's are not.
+   rgds_present_canvas(0,top.data(),640,480,640);rgds_present_canvas(0,top.data(),640,480,640);rgds_present_canvas(1,bottom.data(),640,480,640);
+   assert(top[0]==0xFF102030u && bottom[0]==0xFF000000u && frame_stats.frames()==1 && stats_source==reinterpret_cast<void*>(1));
+   // The menu helper publishes a frame while the game is held: opaque red at (10,10) on the top panel,
+   // half-transparent (premultiplied) grey at (20,20) on the bottom one.
+   rgds::OverlayFrame writer;assert(writer.open(frame_path,true));
+   {auto* px=writer.begin();std::memset(px,0,rgds::overlay_panel_bytes*2);
+    unsigned char* t=px+(10*640+10)*4;t[0]=255;t[1]=0;t[2]=0;t[3]=255;
+    unsigned char* b=px+rgds::overlay_panel_bytes+(20*640+20)*4;b[0]=128;b[1]=128;b[2]=128;b[3]=128;writer.publish();}
+   std::ofstream(control+".blocked")<<"menu";test_time+=30;assert(input_blocked());
+   // A capture request arrives: served from the frame before the menu goes over it, one file per panel, then acknowledged.
+   std::this_thread::sleep_for(std::chrono::milliseconds(120));
+   std::ofstream(control+".capture")<<"menu-1\n";
+   rgds_present_canvas(0,top.data(),640,480,640);
+   assert(fs::exists(control+".capture-top.bmp") && !fs::exists(control+".capture-bottom.bmp") && fs::exists(control+".capture"));
+   {std::ifstream bmp(control+".capture-top.bmp",std::ios::binary);std::string bytes((std::istreambuf_iterator<char>(bmp)),{});
+    assert(bytes.size()==640*480*4);const auto* p=reinterpret_cast<const unsigned char*>(bytes.data())+(10*640+10)*4;
+    assert(p[0]==0x10 && p[1]==0x20 && p[2]==0x30 && p[3]==255);}   // the game pixel, before the overlay
+   // The live menu darkens the held game (105/255) and the panel's pixels go over it.
+   assert(top[0]==0xFF060D13u && top[10*640+10]==0xFFFF0000u);
+   rgds_present_canvas(1,bottom.data(),640,480,640);
+   assert(bottom[0]==0xFF000000u && bottom[20*640+20]==0xFF808080u);
+   assert(fs::exists(control+".capture-bottom.bmp") && !fs::exists(control+".capture"));
+   assert(writer.header()->reserved[0]==2);   // the frame was acknowledged
+   assert(frame_stats.frames()==1);   // presents while the menu holds the game are not cadence
+   // Menu closed, FPS counter on: the HUD lands on the top panel only.
+   unlink((control+".blocked").c_str());test_time+=30;assert(!input_blocked());
+   overlay_renderer.fps(59.9);
+   std::fill(top.begin(),top.end(),0xFF102030u);std::fill(bottom.begin(),bottom.end(),0xFF102030u);
+   rgds_present_canvas(0,top.data(),640,480,640);rgds_present_canvas(1,bottom.data(),640,480,640);
+   assert(top[30*640+30]!=0xFF102030u && top[300*640+300]==0xFF102030u && bottom[30*640+30]==0xFF102030u);
+   // A frame of another size is sampled nearest; a short pitch is refused.
+   std::vector<uint32_t> small(320*240,0xFF102030u);rgds_present_canvas(0,small.data(),320,240,320);assert(small[15*320+15]!=0xFF102030u);
+   rgds_present_canvas(0,small.data(),320,240,100);
    return 0;
  }
  if(argc==4 && core=="dsperate"){
@@ -212,6 +289,11 @@ int main(int argc,char** argv){
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
                 result=subprocess.run([str(self.binary),folder,core,"atomic"],capture_output=True,text=True,timeout=5)
                 self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    def test_direct_present_hook_times_captures_and_overlays_the_engine_canvas(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result=subprocess.run([str(self.binary),folder,"dsperate","canvas"],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     def test_each_engine_has_the_same_bounded_checkpoint_and_menu_protocol(self):
         for core in ("drastic","dsperate","nnddss","melonds"):

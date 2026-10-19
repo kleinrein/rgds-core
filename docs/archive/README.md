@@ -4,6 +4,7 @@ This directory preserves dated development reports and superseded plans. Their d
 
 Useful evidence starting points:
 
+- [Startup, idle power and polish, October 13](SPEED_POWER_2026-10-13.md): 25.6 → 13 s kernel-to-menu, idle CPU/audio fixes, register power-off, GCC + PGO engine A/B and the lid-sleep journal.
 - [Gameplay review, October 11](GAMEPLAY_REVIEW_2026-10-11.md): matched stationary scenes, verified checkpoint loading, profiler boundaries and excluded runs; includes October 12 screen-order follow-ups.
 - [Device review, October 11](DEVICE_REVIEW_2026-10-11.md): launch/menu smoke tests, frame counter semantics and save/backend checks.
 - [Gap-closure validation, October 12](GAP_CLOSURE_2026-10-12.md): slot/import/backup flows, DS controls, microphone and the ten-minute startup-screen soak.

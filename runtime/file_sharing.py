@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import signal
 import socket
 import subprocess
@@ -16,6 +17,25 @@ import time
 
 from fields import read_fields, write_fields
 from records import process_identity, read_record, write_record
+
+
+# Bonjour advertisement through the firmware's running avahi-daemon, so the
+# handheld appears under Network in Finder while sharing is on. The file is
+# owned by RGDS and removed whenever sharing stops.
+AVAHI_SERVICE = Path('/etc/avahi/services/rgds-smb.service')
+SERVICE_NAME = 'RG DS'
+AVAHI_XML = """<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<!-- Written by RG DS Core while network file sharing is on. -->
+<service-group>
+  <name>{name}</name>
+  <service><type>_smb._tcp</type><port>445</port></service>
+  <service><type>_device-info._tcp</type><port>0</port><txt-record>model=Xserve</txt-record></service>
+</service-group>
+"""
+# macOS writes resource forks and indexes beside every copied file. On the
+# FAT card they would otherwise appear as stray "._Game.nds" files.
+MAC_CLUTTER = '/._*/.DS_Store/.Trashes/.TemporaryItems/.Spotlight-V100/.fseventsd/.apdisk/'
 
 
 def process_state(pid):
@@ -50,6 +70,7 @@ class Sharing:
             legacy = False
         self.compat_login = self.data / 'device/sharing/login.ini' if legacy else None
         self._process = None
+        self.avahi_service = AVAHI_SERVICE if sys.platform == 'linux' and runtime_root is None else None
 
     @contextmanager
     def locked(self):
@@ -100,11 +121,37 @@ class Sharing:
             elif on and self.compat_login is not None:
                 write_fields(self.compat_login, read_fields(self.folder / 'login.ini'))
                 self.compat_login.chmod(0o600)
+            open_mode = on and bool(record) and record.get('guest') is True
             return dict(sharing_supported=int(self.supported()), sharing=int(on),
                         sharing_address='smb://' + ip if on else '',
+                        sharing_mode=('open' if open_mode else 'password') if on else '',
+                        sharing_name=SERVICE_NAME if on and self.avahi_service is not None else '',
                         sharing_login=str(self.folder / 'login.ini') if on else '')
 
+    def advertise(self, enabled):
+        """Best effort: discovery never blocks sharing or its shutdown."""
+        path = self.avahi_service
+        if path is None:return
+        try:
+            if enabled:
+                content = AVAHI_XML.format(name=SERVICE_NAME)
+                if path.is_file() and path.read_text() == content:return
+                path.parent.mkdir(parents=True, exist_ok=True)
+                pending = path.with_name('.' + path.name + '.pending')
+                pending.write_text(content);pending.replace(path)
+            elif path.exists():path.unlink()
+            else:return
+            daemon = shutil.which('avahi-daemon', path='/usr/sbin:/usr/bin:/sbin:/bin')
+            if daemon:
+                # The daemon also watches the folder; a reload covers a folder
+                # that did not exist when it started.
+                subprocess.run([daemon, '--reload'], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, timeout=3, check=False)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
     def _stop(self, record):
+        self.advertise(False)
         if self.alive(record):
             os.killpg(record['pid'], signal.SIGTERM)
             deadline = time.monotonic() + 5
@@ -131,9 +178,10 @@ class Sharing:
             raise ValueError('The sharing folder path is unsupported.')
         return value
 
-    def configure(self, ip, roots, username):
+    def configure(self, ip, roots, username, guest=False):
         lines = ['[global]', 'server role = standalone server', 'security = user',
-                 'map to guest = Never', 'server min protocol = SMB2', 'smb ports = 445',
+                 'map to guest = ' + ('Bad User' if guest else 'Never'), 'server min protocol = SMB2', 'smb ports = 445',
+                 'server string = ' + SERVICE_NAME, 'veto files = ' + MAC_CLUTTER, 'delete veto files = yes',
                  'interfaces = ' + ip, 'bind interfaces only = yes', 'disable netbios = yes',
                  'load printers = no', 'printing = bsd', 'printcap name = /dev/null',
                  'unix extensions = no', 'wide links = no', 'follow symlinks = no',
@@ -160,20 +208,23 @@ class Sharing:
             root.mkdir(exist_ok=True)
             shares.append((name, self.config_path(root)))
         for name, path in shares:
+            # Open mode: anyone on this network may connect without a password;
+            # files are still written as the share owner, like the protected mode.
+            access = ['guest ok = yes'] if guest else ['valid users = ' + username, 'guest ok = no']
             lines += ['', '[' + name + ']', 'path = ' + path, 'read only = no',
-                      'valid users = ' + username, 'force user = ' + username,
-                      'guest ok = no', 'follow symlinks = no', 'wide links = no']
+                      'force user = ' + username, *access, 'follow symlinks = no', 'wide links = no']
         config = self.folder / 'smb.conf'
         config.write_text('\n'.join(lines) + '\n')
         return config, ', '.join(name for name, _path in shares)
 
-    def start(self, ip, roots):
+    def start(self, ip, roots, guest=False):
         ip = str(ipaddress.IPv4Address(ip))
         with self.locked():
             if not self.supported():
                 raise ValueError('The RGDS file sharing service is missing or damaged. Reinstall the RGDS update.')
             record = read_record(self.record)
-            if self.alive(record) and record.get('ip') == ip and self.reachable(ip):
+            if self.alive(record) and record.get('ip') == ip and record.get('guest', False) is bool(guest) and self.reachable(ip):
+                self.advertise(True)
                 return
             self._stop(record)
             # Never stop or reconfigure a firmware-owned SMB service.
@@ -184,7 +235,7 @@ class Sharing:
                 raise ValueError('SMB port is already in use or unavailable. Check the firmware sharing service.') from None
             username = 'root'
             password = secrets.token_hex(6)
-            config, shares = self.configure(ip, roots, username)
+            config, shares = self.configure(ip, roots, username, guest)
             environment = self.environment()
             result = subprocess.run([str(self.bundle / 'bin/smbpasswd'), '-c', str(config), '-s', '-a', username],
                                     input=password + '\n' + password + '\n', text=True,
@@ -202,9 +253,10 @@ class Sharing:
                 identity = process_identity(process.pid)
                 if not identity:
                     raise ValueError('Could not start SMB sharing.')
-                record = dict(pid=process.pid, start=identity, boot=boot_id(), ip=ip)
+                record = dict(pid=process.pid, start=identity, boot=boot_id(), ip=ip, guest=bool(guest))
                 write_record(self.record, record)
-                write_fields(self.folder / 'login.ini', dict(username=username, password=password, shares=shares))
+                write_fields(self.folder / 'login.ini', dict(username=username, password=password, shares=shares,
+                                                              mode='open' if guest else 'password', name=SERVICE_NAME))
                 (self.folder / 'login.ini').chmod(0o600)
                 deadline = time.monotonic() + 5
                 while process.poll() is None:
@@ -215,6 +267,7 @@ class Sharing:
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
                         if check.returncode == 0 and process.poll() is None:
                             self._process = process
+                            self.advertise(True)
                             return
                     if time.monotonic() >= deadline:
                         break

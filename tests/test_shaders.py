@@ -16,8 +16,8 @@ from library import read_fields,write_fields,game_key
 class ShaderTests(unittest.TestCase):
     def test_catalog_preserves_previous_ids_and_every_original_preset(self):
         self.assertEqual(FILTERS[:3],("off","sharp_bilinear","lcd1x"))
-        self.assertEqual(len(SHADERS),21)
-        self.assertEqual([entry["asset_id"] for entry in SHADERS],[0,2,1,*range(3,21)])
+        self.assertEqual(len(SHADERS),29)
+        self.assertEqual([entry["asset_id"] for entry in SHADERS],[0,2,1,*range(3,29)])
         pack=ROOT/"vendor/engines/shaders"
         if pack.exists():
             for entry in SHADERS[1:15]:

@@ -6,6 +6,14 @@ sys.dont_write_bytecode = True
 import argparse
 from contextlib import ExitStack
 
+
+def unconfigured_trust(path):
+    try:
+        value=json.loads(Path(path).read_text())
+    except (OSError,ValueError):
+        return False
+    return isinstance(value,dict) and (not value.get('feed') or not value.get('keys'))
+
 def install_apps(source, apps, stock_apps=None):
     """Refresh menu routes and migrate the former Try RGDS shortcut."""
     legacy, launcher = 'Try RGDS.sh', 'RG DS Core.sh'
@@ -136,7 +144,10 @@ def main():
         apps = root.parent/'Roms/APPS'
         install_apps(stage/'Roms/APPS', apps)
         trust=stage/'rgds/state/update-trust.json'
-        if trust.is_file() and not (root/'state/update-trust.json').exists():shutil.copy2(trust,root/'state/update-trust.json')
+        if trust.is_file() and (not (root/'state/update-trust.json').exists() or unconfigured_trust(root/'state/update-trust.json')):
+            # A pinned channel is never replaced by an installer; a blank one
+            # (no feed or no keys, as private previews shipped) may be.
+            shutil.copy2(trust,root/'state/update-trust.json')
         first_install=not (root/"state/active").exists()
         activate(root,build,stop=False)
         if first_install:

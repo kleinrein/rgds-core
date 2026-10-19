@@ -127,7 +127,10 @@ extern "C" int SDL_WaitEventTimeout(SDL_Event* e,int){
                 output,errors=child.communicate(timeout=4)
                 self.assertEqual(child.returncode,0,output+errors)
                 result=json.loads(report.read_text())
-                self.assertEqual(result['sound_opens'],2)
+                # The sink opens only for a cue and closes when quiet, so an idle
+                # menu holds nothing across the sleep handshake.
+                self.assertEqual(result['sound_opens'],0)
+                self.assertEqual(result['sound_open_now'],0)
                 self.assertEqual(result['sound_reads'],17)
                 self.assertEqual(result['sound_counts'][15:],[0,0])  # Hardware owner supplies the cues.
                 self.assertFalse((session/'game-menu.wake').exists())

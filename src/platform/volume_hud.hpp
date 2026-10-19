@@ -1,4 +1,5 @@
 #pragma once
+#include "platform/hud_style.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <string>
@@ -8,6 +9,7 @@ namespace rgds {
 // lets the same HUD render over games without creating a compositor window.
 inline void draw_volume_hud(unsigned char* pixels,int level) {
     level=std::clamp(level,0,100);
+    if(hud::volume(pixels,level))return;
     auto pixel=[&](int x,int y,int r,int g,int b,int a=255){
         y+=56; // Below the RG DS performance counter.
         auto* p=pixels+(y*640+x)*4;int inverse=255-a;
@@ -58,6 +60,7 @@ inline void draw_volume_hud(unsigned char* pixels,int level) {
 // The bridge owns FF status as well as volume, so the two backends of our
 // emulator never expose a second native on-screen display.
 inline void draw_fast_forward_hud(unsigned char* pixels) {
+    if(hud::fast_forward(pixels))return;
     auto put=[&](int x,int y,int r,int g,int b,int a=245) {
         auto* p=pixels+(y*640+x)*4;
         p[0]=(r*a+127)/255;p[1]=(g*a+127)/255;p[2]=(b*a+127)/255;p[3]=a;

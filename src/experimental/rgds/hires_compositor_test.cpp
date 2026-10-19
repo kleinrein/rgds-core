@@ -89,7 +89,9 @@ int main() {
     w16(n, 0x0400006C, (targets % 3) << 14 | 8);
     render(n, native.data());
     auto& e = n.gpu.engine[0]; std::memcpy(saved.data(), e.output(), sizeof saved);
-    e.prepare_3d_sublines(); e.composite_3d_subline(subpixel.data(), got.data());
+    gpu::Engine2D::EnhancedPlan plan; std::array<gpu::Pixel, 256> scratch{};
+    e.prepare_3d_sublines(plan);
+    gpu::Engine2D::compose_3d_subline(plan, e.render_evy(), e.master_bright(), subpixel.data(), scratch.data(), got.data());
     if (std::memcmp(saved.data(), e.output(), sizeof saved)) { std::puts("FAIL: native output was changed"); return 1; }
     render(n, subpixel.data());
     gpu::kern::active::output_line(e.output(), e.master_bright(), expected.data());

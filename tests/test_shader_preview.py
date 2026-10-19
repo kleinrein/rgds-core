@@ -41,16 +41,16 @@ class ShaderPreviewAssetsTests(unittest.TestCase):
     def test_every_original_scene_and_preset_is_exact_and_records_real_gles_provenance(self):
         manifest=json.loads((ASSETS/'manifest.json').read_text())
         self.assertEqual(manifest['native_size'],[256,192]);self.assertEqual(manifest['preview_size'],[640,480])
-        self.assertIn('OpenGL ES',manifest['renderer']['version']);self.assertEqual(len(manifest['shaders']),20)
+        self.assertIn('OpenGL ES',manifest['renderer']['version']);self.assertEqual(len(manifest['shaders']),28)
         self.assertEqual(len(manifest['scenes']),3)
         total=0
         for scene in manifest['scenes']:
-            self.assertEqual([p['id'] for p in scene['presets']],list(range(21)))
+            self.assertEqual([p['id'] for p in scene['presets']],list(range(29)))
             for preset in scene['presets']:
                 path=ASSETS/scene['id']/('shader-'+str(preset['id'])+'.rgsp');packed=path.read_bytes();w,h,pixels=unpack(path)
                 self.assertEqual((w,h),(640,480));self.assertEqual(hashlib.sha256(packed).hexdigest(),preset['sha256']);self.assertEqual(hashlib.sha256(pixels).hexdigest(),preset['rgba_sha256']);total+=len(packed)
             hashes=[p['rgba_sha256'] for p in scene['presets']]
-            self.assertEqual(len(set(hashes)),21,'Every effect must be visible in the 2.5x scene')
+            self.assertEqual(len(set(hashes)),29,'Every effect must be visible in the 2.5x scene')
         self.assertEqual(total,manifest['packed_bytes']);self.assertLess(total,manifest['uncompressed_rgba_bytes']//3)
 
 

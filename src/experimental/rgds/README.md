@@ -1,9 +1,9 @@
-# RG DS Experimental 1
+# DSCore (RG DS Experimental 1)
 
 An experimental GPL-3.0-or-later fork of the pinned DSperate core. The original
 DSperate entry remains the default. This fork has its own engine ID,
 `rgds-experimental`, and its own battery saves, configuration and checkpoints.
-Choose **Game options → Emulator → RG DS Experimental**.
+Choose **Game options → Emulator → DSCore**.
 
 The first build targets Cortex-A55 with ARM64 JIT, NEON and LTO. It removes
 network transport and achievement integration from the binary. It retains
@@ -54,15 +54,21 @@ The compositor caches its horizontal sample positions until the 3D scale,
 edge-smoothing mode or nine-bit scroll offset changes. It preserves the DS
 transparent half of the scrolling plane and does not change guest rendering.
 
-Build from this checkout with `make build-rgds-experimental`. The normal
-package includes the binary, license, notice, complete modified upstream source
-and build recipe. The pinned pristine checkout is never edited.
+The fork's source is `dscore/` ([FORK.md](../../../dscore/FORK.md)); edit it directly.
+**Graphics → 2D scaling** (Native pixels, Sharp, Smooth) resamples the 2D layers of the enhanced screen
+at 2×–5×; see `docs/RGDS_VULKAN.md`. It is display only and applies live.
+
+Build from this checkout with `make build-rgds-experimental`. The build fingerprints
+`dscore/`, compiles a private copy, and records the fingerprint, so editing the source
+makes an earlier build stale until it is rebuilt. The normal package includes the
+binary, license, notice, complete fork source and build recipe. No upstream checkout
+or patch step is involved; upstream is only the pin recorded in FORK.md.
 
 ## Rebuilding the corresponding-source archive
 
-`DSperate/` contains the complete modified source, including the stylus helper.
-`rgds/` contains the original build tools and patch files. A direct CMake build
-of `DSperate/` does not require git or patch application. Use Zig 0.13 targeting
+`DSperate/` contains the complete fork source (the `dscore/` tree). `rgds/` contains
+the build tools and `dscore/FORK.md`. A direct CMake build of `DSperate/` does not
+require git or patch application. Use Zig 0.13 targeting
 `aarch64-linux-gnu.2.17`, CMake and Ninja, plus an ARM64 SDL2 link SDK. Generate
 compiler wrappers with `rgds/tools/build_engines.py::toolchain`, and configure
 CMake with the options in `rgds/tools/build_rgds_experimental.py::OPTIONS`,

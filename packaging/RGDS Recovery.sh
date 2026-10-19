@@ -11,6 +11,26 @@ if [ -d /userdata/rgds-boot ]; then
         echo "Could not disable the RGDS startup marker." >&2
     fi
 fi
+# Return the stock hourly SD trim that RGDS deferred while it owned startup
+# (runtime/system_tuning.py). Its bytes were never changed, only the mode.
+# The final register power-off step is likewise returned to stock inittab.
+RGDS_TUNING_OK=1
+if [ -f /userdata/rgds-boot/tuning.json ] && grep -q '"fstrim"' /userdata/rgds-boot/tuning.json; then
+    if [ -f /etc/init.d/S99fstrim ] && chmod 0755 /etc/init.d/S99fstrim; then
+        echo "Stock SD trim service restored."
+    else
+        RGDS_TUNING_OK=0
+    fi
+fi
+if grep -q rgds-final-poweroff /etc/inittab 2>/dev/null && [ -s /userdata/rgds-boot/inittab.original ]; then
+    if cp /userdata/rgds-boot/inittab.original /etc/inittab.rgds-restore && mv /etc/inittab.rgds-restore /etc/inittab; then
+        rm -f -- /usr/local/sbin/rgds-final-poweroff /userdata/rgds-boot/inittab.original
+        echo "Stock shutdown sequence restored."
+    else
+        RGDS_TUNING_OK=0
+    fi
+fi
+[ "$RGDS_TUNING_OK" = 0 ] || rm -f -- /userdata/rgds-boot/tuning.json
 RGDS_APPS=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
 for RGDS_ROOT in "$RGDS_APPS/../../rgds" /mnt/mmc/rgds /mnt/SDCARD/rgds /userdata/rgds-device-test/rgds; do
     [ -d "$RGDS_ROOT" ] || continue

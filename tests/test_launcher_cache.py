@@ -97,7 +97,7 @@ int main(int argc,char** argv){
    fs::remove(path);assert(media.refresh());assert(!media.warm(renderer,path));assert(!media.draw(renderer,path,{0,0,16,16}));
    auto rom=root/"native.nds";native(rom,31,"Before");assert(media.banner(rom).title=="Before");assert(media.warm(renderer,rom,true));auto rom_stamp=fs::last_write_time(rom);
    native(rom,31<<5,"After!");fs::last_write_time(rom,rom_stamp);assert(media.banner(rom).title=="Before");assert(media.refresh());assert(media.banner(rom).title=="After!");assert(media.banner(rom).pixels[0]==0 && media.banner(rom).pixels[1]==255);assert(media.warm(renderer,rom,true));
-   for(int i=0;i<150;i++){auto file=root/(std::to_string(i)+".bmp");bitmap(s,file,20,30);assert(media.warm(renderer,file));media.banner(root/(std::to_string(i)+".nds"));assert(media.image_count()<=64 && media.banner_count()<=128 && media.bytes()<=16*1024*1024);}
+   for(int i=0;i<150;i++){auto file=root/(std::to_string(i)+".bmp");bitmap(s,file,20,30);assert(media.warm(renderer,file));media.banner(root/(std::to_string(i)+".nds"));assert(media.image_count()<=192 && media.banner_count()<=256 && media.bytes()<=16*1024*1024);}
    for(int i=0;i<6;i++){auto file=root/("large"+std::to_string(i)+".bmp");bitmap(s,file,20,30,1024);assert(media.warm(renderer,file));assert(media.bytes()<=16*1024*1024);}
    media.clear();assert(media.image_count()==0 && media.banner_count()==0 && media.bytes()==0);
   }s.DestroyRenderer(renderer);s.FreeSurface(surface);s.Quit();
@@ -224,8 +224,9 @@ class RedrawCacheTests(unittest.TestCase):
                     if screenshot.exists():
                         data = screenshot.read_bytes();offset = struct.unpack_from("<I", data, 10)[0]
                         width, height = struct.unpack_from("<ii", data, 18)
-                        row = height - 1 - 230 if height > 0 else 230
-                        pixel = data[offset + (row * width + 170) * 4:offset + (row * width + 170) * 4 + 3]
+                        # Centre of the top screen: the cover, or the DS icon without one.
+                        row = height - 1 - 240 if height > 0 else 240
+                        pixel = data[offset + (row * width + 320) * 4:offset + (row * width + 320) * 4 + 3]
                         if pixel == expected:
                             return
                     time.sleep(0.03)

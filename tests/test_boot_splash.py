@@ -22,12 +22,15 @@ class EarlySplashTests(unittest.TestCase):
 
     def test_shipped_animation_contains_real_motion(self):
         frames,fps=splash.load_frames(ROOT/'assets/boot/animation.rga')
-        self.assertEqual(fps,18)
+        self.assertEqual(fps,15)
         self.assertEqual(len(frames),36)
         self.assertNotEqual(bytes(frames[0]),bytes(frames[9]))
-        # Wordmark pixels themselves change, in addition to the emblem.
-        area=lambda frame:b''.join(bytes(frame[(y*640+142)*4:(y*640+498)*4]) for y in range(264,316))
-        self.assertNotEqual(area(frames[0]),area(frames[9]))
+        area=lambda frame,x,y,w,h:b''.join(bytes(frame[(row*640+x)*4:(row*640+x+w)*4]) for row in range(y,y+h))
+        # The loader dots carry a wave and the floor shadow breathes, while
+        # the wordmark stays still (the launcher's boot scene continues it).
+        self.assertNotEqual(area(frames[0],280,363,96,11),area(frames[9],280,363,96,11))
+        self.assertNotEqual(area(frames[0],270,236,100,10),area(frames[18],270,236,100,10))
+        self.assertEqual(area(frames[0],176,268,289,48),area(frames[9],176,268,289,48))
 
     def test_corrupt_trailing_and_oversized_payloads_reject(self):
         with tempfile.TemporaryDirectory() as directory:

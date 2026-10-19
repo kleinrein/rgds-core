@@ -1,12 +1,18 @@
 """Ed25519 verification via the stock OpenSSL EVP API; no custom cryptography."""
 import ctypes as c
 import ctypes.util
+import os
 import sys
 
 def verify(public, signature, message):
     if len(public)!=32 or len(signature)!=64: return False
-    name=ctypes.util.find_library('crypto')
-    if sys.platform=='darwin' and not name: name='/opt/homebrew/opt/openssl@3/lib/libcrypto.dylib'
+    if sys.platform=='darwin':
+        # Development hosts only: Apple's /usr/lib/libcrypto.dylib aborts the
+        # process that loads it, so use Homebrew's OpenSSL 3 or fail closed.
+        name=next((p for p in ('/opt/homebrew/opt/openssl@3/lib/libcrypto.dylib','/usr/local/opt/openssl@3/lib/libcrypto.dylib') if os.path.exists(p)),None)
+        if not name: return False
+    else:
+        name=ctypes.util.find_library('crypto')
     lib=c.CDLL(name or 'libcrypto.so.3')
     def api(name,restype,args):
         f=getattr(lib,name);f.restype=restype;f.argtypes=args;return f

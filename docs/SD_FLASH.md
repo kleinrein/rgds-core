@@ -1,31 +1,60 @@
-# Installing RG DS Core on the working Anbernic card
+# Installing and updating RG DS Core
 
-The current candidate is a drop-on-card installer for the working Anbernic Linux
-card. No formatting, flashing or SSH is required. It is a private testing build;
-public licensing and payload provenance are still being resolved.
+RG DS Core installs as an app on the RG DS's own stock Linux card. Nothing is
+formatted or flashed, and the stock menu stays available.
 
-1. Extract the `RG-DS-Core-Installer-*.zip` at the games-card root, merging `Roms/`
-   and copying `RGDS-Install/` alongside it.
-2. Open stock **APPS → Install RG DS Core**. The installer verifies the package,
-   installs it and opens the launcher.
-3. Optionally enable **Settings → System → Startup → Boot into → RG DS**.
+## Install
 
-For an update, exit the game, return to stock and repeat with the newer installer.
-ROMs, saves, settings and artwork are retained. **Settings → System → Updates &
-recovery → Use previous build** rolls back the application. Keep enough space
-for both versions; the installer checks staging space before writing.
-The payload ZIP is consumed on success. Copy the full bundle again to reinstall.
-Errors are recorded in `RGDS-Install/install.log`. Stock APPS also retains
-**RGDS Recovery** for disabling direct startup without deleting saves.
+1. Shut the handheld down normally and put its games card in your computer.
+2. Extract `RG-DS-Core-Installer-<version>.zip` to the card root. Merge its
+   `Roms/` folder with yours and copy `RGDS-Install/` next to it:
 
-Developers can generate the candidate with `make installer`, or wrap an existing
-package using `python3 tools/package_installer.py`. SSH deployment remains
-available in [Development](DEVELOPMENT.md). See the [release and OTA plan](RELEASE_PLAN.md)
-for supported behavior, validation limits and public-release prerequisites.
+   ```text
+   Roms/APPS/Install RG DS Core.sh
+   RGDS-Install/
+     install_package.py
+     package.zip
+     README.txt
+   ```
 
-The Armbian image/flash/recovery experiment is retired. Its source and historical
-documentation are archived under `build/retired-armbian-20261011/`; hardware
-failure logs and stock backups are retained. There is no maintained independent
-RG DS Core OS image to flash. The OTA foundation is installed, but its public channel is not configured. See [OTA setup](OTA.md).
+3. Put the card back and open **APPS → Install RG DS Core**. The installer checks
+   the package, installs it into `rgds/`, opens RG DS Core and makes it the
+   startup app.
+4. Copy your `.nds` files (or ZIPs with one game each) to `Roms/NDS`, then choose
+   **Settings → Library → Add your games → Scan for games**, or just reopen the library.
 
-First installation now enables RG DS Core direct startup on the supported stock supervisor. Upgrades preserve an explicit Anbernic startup preference. Change it in Settings → System → Startup.
+If something goes wrong, `RGDS-Install/install.log` says why. The installer
+removes its package after a successful install; copy the bundle again to
+reinstall.
+
+Starting from Android or a blank card? Prepare the stock Linux card first: see
+[card setup](DEVICE_SETUP.md). RG DS Plus owners use the Plus's own stock card;
+see [RG DS Plus](RG_DS_PLUS.md).
+
+## Update
+
+- **Over Wi-Fi:** **Settings → System → Updates & recovery → Check for updates**.
+  Updates are signed, download in the background and install on restart. If the
+  new version fails to start, the previous one comes back by itself.
+  [How updates work](OTA.md).
+- **By card:** repeat the install with a newer installer. Games, saves, settings
+  and artwork are kept.
+
+## Recovery
+
+- **Settings → System → Updates & recovery → Use previous build** returns to the
+  version you had before.
+- **Settings → System → Startup → Boot into** chooses RG DS Core or the stock menu.
+- **APPS → RGDS Recovery** (in the stock menu) turns off direct startup without
+  touching your saves.
+- A memory card that has become read-only after a crash is checked and repaired
+  on the next start; RG DS Core shows a short "Checking the memory card" screen.
+
+Logs live on the card: `rgds/userdata/launch.log`, `rgds/userdata/session.log`
+and `rgds/userdata/update/status.ini`.
+
+## For developers
+
+`make installer` builds the installer; `python3 tools/package_installer.py` wraps
+an existing package. SSH deployment for development is in
+[Development](DEVELOPMENT.md).

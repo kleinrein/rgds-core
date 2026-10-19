@@ -25,40 +25,43 @@ class VisualOptionsTests(unittest.TestCase):
         index=offset+((height-1-y if height>0 else y)*width+x)*4
         b,g,r=data[index:index+3];return r,g,b
     def test_touch_icon_style_survives_restart_and_keeps_font(self):
-        self.run_ui('20 click 500 393\n180 click 140 326\n',('--settings','--section','theme'))
+        # Icon style is the fifth row: scroll it into view, open its picker.
+        self.run_ui('10 wheel 0 -3\n20 click 300 337\n180 click 140 326\n',('--settings','--section','theme'))
         self.assertIn('icon_style=pixel',(self.root/'ui.ini').read_text())
         self.assertIn('font=rounded',self.prefs.read_text())
         pixel=self.run_ui(extra=('--home',))
-        self.run_ui('20 click 500 393\n180 click 140 378\n',('--settings','--section','theme'))
+        self.run_ui('10 wheel 0 -3\n20 click 300 337\n180 click 140 378\n',('--settings','--section','theme'))
         self.assertIn('icon_style=rich',(self.root/'ui.ini').read_text())
         rich=self.run_ui(extra=('--home',))
         # The category symbol actually switches renderer; the setting is not decorative.
         def icon(data):return [self.pixel(data,x,y) for y in range(108,165) for x in range(291,349)]
         self.assertNotEqual(icon(pixel),icon(rich))
     def test_controller_can_select_pixel_icons(self):
-        script=''.join(f'{20+i*60} key Down\n{40+i*60} key-up Down\n' for i in range(5))+'340 key Left\n360 key-up Left\n'
+        script=''.join(f'{20+i*60} key Down\n{40+i*60} key-up Down\n' for i in range(4))+'340 key Left\n360 key-up Left\n'
         self.run_ui(script,('--settings','--section','theme'))
         self.assertIn('icon_style=pixel',(self.root/'ui.ini').read_text())
     def test_language_is_first_and_sorted_italian_is_touch_reachable(self):
         self.run_ui('20 key A\n40 key-up A\n200 click 180 307\n',('--settings','--section','system'))
         self.assertIn('language=it-IT',(self.root/'ui.ini').read_text())
-    def test_touch_can_page_to_nynorsk_and_swedish_and_back_to_english(self):
-        for language,y in [('nn-NO',307),('sv-SE',387)]:
+    def test_touch_can_scroll_to_nynorsk_and_swedish_and_back_to_english(self):
+        # The sheet's scrollbar: a drag to the end shows the last languages.
+        for language,y in [('nn-NO',190),('sv-SE',350)]:
             with self.subTest(language=language):
                 (self.root/'ui.ini').write_text('schema=1\nlanguage=en-US\n')
-                self.run_ui(f'20 click 180 129\n200 click 568 62\n400 click 180 {y}\n',('--settings','--section','system'))
+                self.run_ui(f'20 click 180 129\n200 tap 588 130\n240 drag 588 410\n280 release\n400 click 180 {y}\n',('--settings','--section','system'))
                 self.assertIn(f'language={language}\n',(self.root/'ui.ini').read_text())
-                self.run_ui('20 click 180 129\n200 click 504 62\n400 click 180 107\n',('--settings','--section','system'))
+                self.run_ui('20 click 180 129\n200 tap 588 400\n240 drag 588 60\n280 release\n400 click 180 110\n',('--settings','--section','system'))
                 self.assertIn('language=en-US\n',(self.root/'ui.ini').read_text())
-    def test_paging_then_cancel_keeps_the_selected_language(self):
+    def test_scrolling_then_cancel_keeps_the_selected_language(self):
         (self.root/'ui.ini').write_text('schema=1\nlanguage=en-US\n')
-        self.run_ui('20 click 180 129\n200 click 568 62\n400 click 70 452\n',('--settings','--section','system'))
+        self.run_ui('20 click 180 129\n200 tap 588 130\n240 drag 588 410\n280 release\n400 click 70 452\n',('--settings','--section','system'))
         self.assertIn('language=en-US\n',(self.root/'ui.ini').read_text())
     def test_home_has_wide_blue_thumb_and_grey_position_line(self):
         data=self.run_ui(extra=('--home',))
-        blue=(44,137,218);grey=(108,124,138)
-        self.assertGreaterEqual(sum(self.pixel(data,x,928)==blue for x in range(84,556)),110)
-        self.assertGreaterEqual(sum(self.pixel(data,x,942)==blue for x in range(84,556)),110)
-        self.assertGreaterEqual(sum(self.pixel(data,x,897)==grey for x in range(100,540)),3)
+        blue=(35,110,174);grey=(94,108,120)  # Glossy thumb body and the position notch.
+        # Home has five tiles, so the thumb is 472/5 = 94 px wide (118 px with four).
+        self.assertGreaterEqual(sum(self.pixel(data,x,928)==blue for x in range(84,556)),80)
+        self.assertGreaterEqual(sum(self.pixel(data,x,942)==blue for x in range(84,556)),80)
+        self.assertGreaterEqual(sum(self.pixel(data,x,891)==grey for x in range(100,540)),3)
 
 if __name__=='__main__':unittest.main()

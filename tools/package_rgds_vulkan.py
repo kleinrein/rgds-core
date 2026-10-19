@@ -32,7 +32,7 @@ def archive(output, entries):
 def validate_payload(directory):
     directory = Path(directory)
     record = json.loads((directory/'vulkan-build.json').read_text())
-    if record.get('kind') != 'source-built-rgds-vulkan' or record.get('base_source_hash') != fork.SOURCE_HASH:
+    if record.get('kind') != 'source-built-rgds-vulkan' or record.get('base_source_hash') != fork.source_hash():
         raise ValueError('Stale RG DS Vulkan payload; rebuild and run tools/package_rgds_vulkan.py')
     if record.get('recipe_sha256') != fork.base.digest(Path(__file__)):
         raise ValueError('Vulkan packaging recipe changed')
@@ -48,9 +48,9 @@ def main():
     source = ROOT/'build/rgds-vulkan-game/source'; built = ROOT/'build/rgds-vulkan-game'
     engine = json.loads((built/'build.json').read_text())
     files = {p.relative_to(source).as_posix():fork.base.digest(p) for p in source.rglob('*') if p.is_file()}
-    if engine['base_source_hash'] != fork.SOURCE_HASH or engine['source_hash'] != fork.fingerprint(files):
+    if engine['base_source_hash'] != fork.source_hash() or engine['source_hash'] != fork.fingerprint(files):
         raise ValueError('Vulkan source no longer matches its compiled build')
-    if engine['recipe_sha256'] != fork.base.digest(ROOT/'tools/build_rgds_vulkan.py') or engine['hires_patch_sha256'] != fork.base.digest(ROOT/'tools/engine_patches/rgds-vulkan-hires.patch'):
+    if engine['recipe_sha256'] != fork.base.digest(ROOT/'tools/build_rgds_vulkan.py'):
         raise ValueError('Vulkan build recipe changed')
     if engine['binary_sha256'] != fork.base.digest(built/'rgds-experimental-vulkan'): raise ValueError('Vulkan binary changed')
     driver = ROOT/'build/panvk-private'; drecord = json.loads((driver/'build.json').read_text())
@@ -62,18 +62,16 @@ def main():
     if subprocess.check_output(['git','-C',str(mesa),'rev-parse','HEAD'],text=True).strip() != panvk.COMMIT:
         raise ValueError('PanVK source revision changed')
     changes = subprocess.check_output(['git','-C',str(mesa),'status','--porcelain','--untracked-files=all'],text=True).splitlines()
-    if changes != [' M meson.build']: raise ValueError('Unexpected PanVK source modifications')
+    if sorted(changes) != sorted([' M meson.build', ' M '+panvk.KMOD]): raise ValueError('Unexpected PanVK source modifications')
     loader = ROOT/'build/vulkan-loader'
     deb = loader/('libvulkan1_'+LOADER_VERSION+'_arm64.deb')
     if fork.base.digest(deb) != LOADER_DEB_SHA256: raise ValueError('Pinned Vulkan loader package differs')
     target = ROOT/'build/engines/rgds-vulkan'; target.parent.mkdir(exist_ok=True)
     pending = Path(tempfile.mkdtemp(prefix='.vulkan-',dir=target.parent))
     extras = ['tools/build_rgds_vulkan.py','tools/build_rgds_vulkan_shaders.py','tools/package_rgds_vulkan.py',
-              'tools/build_rgds_experimental.py','tools/build_engines.py','tools/elf_abi.py','tools/build_panvk.py',
-              'src/experimental/rgds/stylus.hpp','src/experimental/rgds/frontend_ui.hpp','src/experimental/rgds/sample_plan.hpp','src/experimental/rgds/README.md','src/experimental/rgds/hires_compositor_test.cpp','src/experimental/rgds/firmware_identity_test.cpp',
-              'tools/engine_patches/rgds-experimental.patch','tools/engine_patches/rgds-sleep-ui.patch','tools/engine_patches/rgds-owned-ui.patch',
-              'tools/engine_patches/rgds-vulkan-hires.patch','tools/engine_patches/rgds-vulkan-resolve.patch',
-              fork.base.PATCH.relative_to(ROOT).as_posix(),'tools/engine_patches/panvk-kbase-linux.patch']
+              'tools/build_rgds_experimental.py','tools/build_engines.py','tools/build_engines_gcc.py','tools/elf_abi.py','tools/build_panvk.py',
+              'dscore/FORK.md','src/experimental/rgds/README.md','src/experimental/rgds/hires_compositor_test.cpp','src/experimental/rgds/firmware_identity_test.cpp',
+              'tools/engine_patches/panvk-kbase-linux.patch','tools/engine_patches/panvk-kbase-lazy-warmup.patch']
     try:
         shutil.copy2(built/'rgds-experimental-vulkan',pending/'rgds-experimental-vulkan')
         (pending/'lib').mkdir()
@@ -93,11 +91,11 @@ def main():
             'RG DS Experimental enhanced 3D: modified DSperate, GPL-3.0-or-later.\n'
             'Native software raster remains authoritative for guest capture and states.\n'
             'Enhanced graphics: private PanVK/kbase driver; no system driver replacement.\n'
-            f'PanVK upstream {panvk.UPSTREAM} at {panvk.COMMIT}; Linux patch in vulkan-source.tar.gz.\n'
+            f'PanVK upstream {panvk.UPSTREAM} at {panvk.COMMIT}; Linux and warmup patches in vulkan-source.tar.gz.\n'
             f'Vulkan loader: Ubuntu arm64 libvulkan1 {LOADER_VERSION}, Apache-2.0 and MIT.\n'
             'Complete modified emulator source: vulkan-source.tar.gz; driver source and notices: panvk-source.tar.gz.\n'
             'Runtime library notices are in lib/. Native is the default. 2x-5x are experimental.\n')
-        record = dict(schema=1,kind='source-built-rgds-vulkan',base_source_hash=fork.SOURCE_HASH,
+        record = dict(schema=1,kind='source-built-rgds-vulkan',base_source_hash=engine['base_source_hash'],
                       recipe_sha256=fork.base.digest(Path(__file__)),inputs=inputs,engine=engine,driver=drecord,
                       loader=dict(package='libvulkan1',version=LOADER_VERSION,deb_sha256=LOADER_DEB_SHA256),
                       files={p.relative_to(pending).as_posix():fork.base.digest(p) for p in pending.rglob('*') if p.is_file()})

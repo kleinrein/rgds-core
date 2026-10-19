@@ -310,13 +310,15 @@ class Services:
         if self.preview:
             enabled = self.fields.get('sharing') == '1' and self.fields.get('wifi_connected') == '1'
             self.publish(sharing_supported=1, sharing=int(enabled),
+                         sharing_mode=self.fields.get('sharing_mode', 'password') if enabled else '',
+                         sharing_name='RG DS' if enabled else '',
                          sharing_address='smb://' + self.fields.get('ip', '') if enabled else '',
                          sharing_login=str(self.data / 'device/sharing/login.ini') if enabled else '')
         else:
             from file_sharing import Sharing
             self.publish(**Sharing(self.data, self.app).status(self.fields.get('ip', '') if self.fields.get('wifi_connected') == '1' else ''))
 
-    def sharing(self, enabled):
+    def sharing(self, enabled, guest=False):
         from file_sharing import Sharing, preview
         if enabled:
             self.network_status()
@@ -325,16 +327,16 @@ class Services:
         self.publish(state='busy', message='Starting file sharing…' if enabled else 'Stopping file sharing…')
         if self.preview:
             preview(self.data, enabled)
-            self.publish(sharing=int(enabled))
+            self.publish(sharing=int(enabled), sharing_mode=('open' if guest else 'password') if enabled else '')
         elif enabled:
             from session import rom_roots
             from linux_platform import independent
             roots = [Path('/userdata/roms/nds'), Path('/userdata/roms/dsi')] if independent() else rom_roots(self.data.parent)
-            Sharing(self.data, self.app).start(self.fields['ip'], roots)
+            Sharing(self.data, self.app).start(self.fields['ip'], roots, guest=guest)
         else:
             Sharing(self.data, self.app).stop()
         self.sharing_status()
-        self.publish(state='ready', message='File sharing on.' if enabled else 'File sharing off.')
+        self.publish(state='ready', message=('File sharing on. Find "RG DS" under Network.' if guest else 'File sharing on.') if enabled else 'File sharing off.')
 
     def info(self):
         try: manifest=json.loads((self.app/"manifest.json").read_text())
@@ -434,7 +436,7 @@ class Services:
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("info","scan","connect","wifi-on","wifi-off","sharing-on","sharing-off","rollback","clear-cache","diagnostics","poweroff","reboot","startup","startup-info","update-info","update-check","update-download","update-apply","update-discard","update-auto","library"))
+    parser.add_argument("action", choices=("info","scan","connect","wifi-on","wifi-off","sharing-on","sharing-open","sharing-off","rollback","clear-cache","diagnostics","poweroff","reboot","startup","startup-info","update-info","update-check","update-download","update-apply","update-discard","update-auto","library"))
     parser.add_argument("--app", required=True, type=Path);parser.add_argument("--data", required=True, type=Path)
     parser.add_argument("--preview", action="store_true")
     args=parser.parse_args();service=Services(args.app,args.data,args.preview)
@@ -450,7 +452,7 @@ def main():
             service.publish(state="ready",message="")
         elif args.action in ("connect","startup"): getattr(service,args.action)(json.loads(sys.stdin.read(4096)))
         elif args.action in ("wifi-on","wifi-off"): service.radio(args.action=="wifi-on")
-        elif args.action in ("sharing-on","sharing-off"): service.sharing(args.action=="sharing-on")
+        elif args.action in ("sharing-on","sharing-open","sharing-off"): service.sharing(args.action!="sharing-off", guest=args.action=="sharing-open")
         else: getattr(service,args.action.replace("-","_"))()
     except KeyboardInterrupt:
         service.publish(state="cancelled",message="Request cancelled.");return 130

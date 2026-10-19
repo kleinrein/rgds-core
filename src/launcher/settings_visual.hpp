@@ -8,10 +8,16 @@
 namespace rgds {
 enum class SettingsIcon { Display, Power, Cartridge, Volume, Wifi, System, Controller,
     Sun, Moon, Type, Spark, Shader, Heart, Save, Load, Play, Home, Refresh, Back,
-    Chevron, Clock, Info, Key, Art, Check, Touch, Battery, Sleep, Trash, Logout, Fast, Sliders, Shutdown, Library, Restart };
+    Chevron, Clock, Info, Key, Art, Check, Touch, Battery, Sleep, Trash, Logout, Fast, Sliders, Shutdown, Library, Restart, Contrast, Palette, Chat };
 
 inline SettingsIcon settings_icon_for(const std::string& title) {
     if(title=="Network file sharing")return SettingsIcon::Wifi;
+    if(title=="High contrast")return SettingsIcon::Contrast;
+    if(title=="Home layout")return SettingsIcon::Home;
+    if(title=="Background")return SettingsIcon::Shader;
+    if(title=="Touch gestures")return SettingsIcon::Touch;
+    if(title=="Accent colour")return SettingsIcon::Palette;
+    if(title=="Icon style")return SettingsIcon::Art;
     if(title=="Sharing details")return SettingsIcon::Info;
     if(title=="Reset state")return SettingsIcon::Restart;
     if(title=="Save gallery" || title=="Back up all saves")return SettingsIcon::Save;
@@ -21,7 +27,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if(title=="Search games" || title=="Search and filters")return SettingsIcon::Library;
     if(title=="Where to put games" || title=="Add your games" || title=="Scan for games")return SettingsIcon::Cartridge;
     if(title=="Library")return SettingsIcon::Library;
-    if(title=="Statistics")return SettingsIcon::Clock;
+    if(title=="Statistics" || title=="Time format" || title=="Date format")return SettingsIcon::Clock;
     if(title=="Power off")return SettingsIcon::Shutdown;
     if(title=="Profile" || title=="Shortcut action" || title=="Use global controls")return SettingsIcon::Controller;
     if(title=="Restore defaults")return SettingsIcon::Refresh;
@@ -79,7 +85,12 @@ inline std::string settings_row_hint(const std::string& title) {
     if(title=="Emulator")return "Choose the core for this cartridge";
     if(title=="Shader")return "A screen style for this cartridge";
     if(title=="Controls")return "Buttons and the game menu shortcut";
+    if(title=="Home layout")return "A carousel, or the DSi's column with your last game on top";
+    if(title=="Background")return "Plain, or the DSi's ruled grid behind every screen";
+    if(title=="Touch gestures")return "Swipe up from the bottom for Home, in from the left for Back";
     if(title=="Timezone")return "Your local time and date";
+    if(title=="Time format")return "24-hour or 12-hour clock";
+    if(title=="Date format")return "How dates appear in the status bar";
     if(title=="Device information")return "Build, storage and device address";
     if(title=="Updates & recovery")return "Manage builds and temporary files";
     if(title=="Return to stock")return "Open the Anbernic menu";
@@ -143,6 +154,11 @@ inline void draw_settings_icon(Sdl& s,SDL_Renderer* renderer,SettingsIcon icon,i
     case SettingsIcon::Logout:path({{10,3},{3,3},{3,21},{10,21}});line(9,12,22,12);path({{17,7},{22,12},{17,17}});break;
     case SettingsIcon::Fast:path({{2,5},{11,12},{2,19},{2,5}});path({{13,5},{22,12},{13,19},{13,5}});break;
     case SettingsIcon::Sliders:for(int i=6;i<22;i+=6)line(3,i,21,i);circle(8,6,2);circle(17,12,2);circle(10,18,2);break;
+    // The accessibility contrast symbol: a ring with its right half filled.
+    case SettingsIcon::Contrast:circle(12,12,9);for(float i=12;i<=20.5f;i+=.5f){float h=std::sqrt(std::max(0.f,81-(i-12)*(i-12)));line(i,12-h,i,12+h);}break;
+    // PictoChat: a speech bubble with a hand-drawn stroke inside it.
+    case SettingsIcon::Chat:path({{3,3},{21,3},{21,16},{10,16},{5,21},{6,16},{3,16},{3,3}});path({{7,9},{9,6},{11,12},{13,6},{15,12},{17,8}});break;
+    case SettingsIcon::Palette:path({{12,3},{6,4},{3,9},{3,15},{7,20},{12,21},{14,19},{13,16},{15,14},{19,15},{21,12},{20,7},{16,4},{12,3}});circle(8,9,1.5f);circle(12,7,1.5f);circle(16,9,1.5f);circle(8,14,1.5f);break;
     }
 }
 }

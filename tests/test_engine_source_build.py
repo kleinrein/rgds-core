@@ -107,6 +107,20 @@ class SourceBuildTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "ELF metadata mismatch"):
                     build.validate_build(root)
 
+    def test_gcc_pgo_records_may_need_glibc_2_38_but_never_newer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for version, accepted in (("GLIBC_2.38", True), ("GLIBC_2.39", False)):
+                elf, _ = fixture((("libc.so.6", (version,)),))
+                record = self.record(root, elf)
+                record["compiler"] = "gcc-pgo";(root / "build.json").write_text(json.dumps(record))
+                if accepted:
+                    with patch.object(build, "validate_source_archive"):build.validate_build(root)
+                else:
+                    with self.assertRaisesRegex(ValueError, "ELF metadata mismatch"):build.validate_build(root)
+            record["compiler"] = "unknown";(root / "build.json").write_text(json.dumps(record))
+            with self.assertRaisesRegex(ValueError, "ELF metadata mismatch"):build.validate_build(root)
+
     def test_packager_rejects_replaced_binary_and_extra_payloads(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

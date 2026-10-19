@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m unittest *)",
+      "Bash(shasum *)",
+      "Bash(ping -c *)",
+      "Bash(gh search *)",
+      "Bash(limactl list)",
+      "Bash(xxd *)",
+      "Bash(arp -a)",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_inspect",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Browser__read_console_messages",
+      "mcp__Claude_Browser__read_page",
+      "mcp__Claude_Browser__find",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__find",
+      "mcp__ccd_session_mgmt__list_events",
+      "mcp__ccd_session_mgmt__search_session_transcripts",
+      "mcp__ccd_session_mgmt__list_sessions"
+    ]
+  }
+}

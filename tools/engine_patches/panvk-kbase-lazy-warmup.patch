@@ -1,0 +1,87 @@
+diff --git a/src/panfrost/lib/kmod/kbase_kmod.c b/src/panfrost/lib/kmod/kbase_kmod.c
+index adadc77..ef1035c 100644
+--- a/src/panfrost/lib/kmod/kbase_kmod.c
++++ b/src/panfrost/lib/kmod/kbase_kmod.c
+@@ -193,6 +193,12 @@ struct kbase_kmod_dev {
+    /* Android dma-heap used for BOs which need to be shared with WSI. */
+    int dma_heap_fd;
+ 
++   /* RG DS: JM context warmup deadline (CLOCK_MONOTONIC ns) and whether a
++    * job already waited for it. Contexts made only to enumerate or query
++    * the GPU never submit, so they no longer pay the warmup at all. */
++   uint64_t warmup_until_ns;
++   bool warmup_done;
++
+    /* Set when the CSF notification stream reports a queue-group error.
+     * Vulkan queue status queries use this latch instead of invalidating and
+     * reading every GPU subqueue context on every submission. */
+@@ -1317,9 +1323,19 @@ kbase_kmod_dev_create(int fd, uint32_t flags,
+     * backoff length (both were tested extensively and never helped).
+     * Sleep once here, at context creation, instead of retrying the
+     * first job. */
++   /* RG DS: the wait is owed before the first job, not here. Note the
++    * deadline; kbase_wait_warmup() sleeps only what remains of it, so the
++    * caller's own startup work (and enumeration-only contexts) overlap it.
++    * PANVK_KBASE_WARMUP_MS overrides the 2000 ms default. */
++   uint64_t warmup_until_ns = 0;
+    if (!is_csf) {
+-      struct timespec warmup_ts = { .tv_sec = 2, .tv_nsec = 0 };
+-      nanosleep(&warmup_ts, NULL);
++      const char *warmup_env = getenv("PANVK_KBASE_WARMUP_MS");
++      const long warmup_ms = warmup_env ? strtol(warmup_env, NULL, 10) : 2000;
++      struct timespec now_ts;
++      clock_gettime(CLOCK_MONOTONIC, &now_ts);
++      if (warmup_ms > 0)
++         warmup_until_ns = (uint64_t)now_ts.tv_sec * 1000000000ull + (uint64_t)now_ts.tv_nsec +
++                           (uint64_t)warmup_ms * 1000000ull;
+    }
+ 
+    /* Map the tracking page.  The kernel requires this before any memory
+@@ -1399,6 +1415,8 @@ kbase_kmod_dev_create(int fd, uint32_t flags,
+                      &kbase_kmod_ops, allocator);
+ 
+    kbase_dev->is_csf = is_csf;
++   kbase_dev->warmup_until_ns = warmup_until_ns;
++   kbase_dev->warmup_done = warmup_until_ns == 0;
+    kbase_dev->tracking_page = tracking_page;
+    kbase_dev->next_handle = 1;
+    kbase_dev->dma_heap_fd = -1;
+@@ -2473,6 +2491,22 @@ kbase_wait_atom(struct kbase_kmod_dev *kd, uint64_t atom_num, int64_t timeout_ns
+ }
+ 
+ 
++static void
++kbase_wait_warmup(struct kbase_kmod_dev *kd)
++{
++   if (p_atomic_read(&kd->warmup_done))
++      return;
++   struct timespec now_ts;
++   clock_gettime(CLOCK_MONOTONIC, &now_ts);
++   const uint64_t now = (uint64_t)now_ts.tv_sec * 1000000000ull + (uint64_t)now_ts.tv_nsec;
++   if (now < kd->warmup_until_ns) {
++      const uint64_t left = kd->warmup_until_ns - now;
++      struct timespec rest = { .tv_sec = (time_t)(left / 1000000000ull), .tv_nsec = (long)(left % 1000000000ull) };
++      while (nanosleep(&rest, &rest) && errno == EINTR) {}
++   }
++   p_atomic_set(&kd->warmup_done, true);
++}
++
+ uint64_t
+ kbase_kmod_job_submit(struct pan_kmod_dev *dev,
+                       uint64_t jc, uint32_t core_req,
+@@ -2481,6 +2515,7 @@ kbase_kmod_job_submit(struct pan_kmod_dev *dev,
+ {
+    struct kbase_kmod_dev *kd = container_of(dev, struct kbase_kmod_dev, base);
+    assert(!kd->is_csf && "kbase_kmod_job_submit is JM-only");
++   kbase_wait_warmup(kd);
+ 
+    struct kbase_atom_slot *slot = kbase_atom_alloc(kd, bos, nbo);
+    if (!slot)
+@@ -2526,6 +2561,7 @@ kbase_kmod_job_submit_dep(struct pan_kmod_dev *dev, uint64_t jc, uint32_t core_r
+ {
+    struct kbase_kmod_dev *kd = container_of(dev, struct kbase_kmod_dev, base);
+    assert(!kd->is_csf && "kbase_kmod_job_submit_dep is JM-only");
++   kbase_wait_warmup(kd);
+ 
+    struct kbase_atom_slot *slot = kbase_atom_alloc(kd, bos, nbo);
+    if (!slot)

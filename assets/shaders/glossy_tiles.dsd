@@ -1,0 +1,42 @@
+<!-- Original RGDS shader; same license as the RGDS project. One texture sample. -->
+// Original RGDS GLES2 preset: bold colour where every DS pixel is a raised,
+// rounded tile with a bevel, a glossy sheen and a thin grout line.
+<vertex>
+attribute vec2 a_vertex_coordinate;
+attribute vec2 a_texture_coordinate;
+varying vec2 v_texture_coordinate;
+void main(){v_texture_coordinate=a_texture_coordinate;gl_Position=vec4(a_vertex_coordinate,0.0,1.0);}
+</vertex>
+<fragment>
+uniform sampler2D u_texture;
+uniform vec4 u_texture_size;
+uniform vec2 u_target_size;
+varying vec2 v_texture_coordinate;
+vec3 vivid(vec3 c){
+    float l=dot(c,vec3(0.2126,0.7152,0.0722));
+    float chroma=max(c.r,max(c.g,c.b))-min(c.r,min(c.g,c.b));
+    c=clamp(mix(vec3(l),c,1.2+0.35*(1.0-chroma)),0.0,1.0);
+    return mix(c,c*c*(3.0-2.0*c),0.35);
+}
+void main(){
+    vec2 cells=vec2(256.0,192.0),p=v_texture_coordinate*cells,cell=floor(p),f=p-cell;
+    vec4 pixel=texture2D(u_texture,(cell+0.5)/cells);
+    vec3 c=vivid(pixel.rgb);
+    vec2 w=min(cells/max(u_target_size,vec2(1.0)),vec2(1.0));
+    float aa=max(w.x,w.y),strength=clamp(1.0/aa-1.0,0.0,1.0);
+    // Rounded square: distance to a 0.3-wide core with 0.16 corner radius.
+    vec2 q=f-0.5,d=max(abs(q)-0.28,0.0);
+    float inside=0.16-length(d);
+    float tile=clamp(inside/aa+0.5,0.0,1.0);
+    // Bevel: the rim facing up-left catches light, the far rim falls into shade.
+    float rim=smoothstep(0.12,0.0,inside);
+    float facing=dot(normalize(q+vec2(0.0001)),vec2(-0.7071,-0.7071));
+    vec3 lit=c*(1.06+0.32*rim*facing);
+    // A soft gloss band across the upper part of each tile.
+    float gloss=smoothstep(0.05,-0.12,q.x+q.y)*smoothstep(-0.48,-0.30,q.x+q.y)*0.22*(1.0-rim);
+    lit+=gloss*(0.7+0.3*c);
+    vec3 grout=c*0.48+0.01;
+    pixel.rgb=clamp(mix(c,mix(grout,lit,tile),strength),0.0,1.0);
+    gl_FragColor=pixel;
+}
+</fragment>

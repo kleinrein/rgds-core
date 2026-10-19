@@ -25,6 +25,26 @@ No artificial sleep, Wi-Fi wait, full-card scan or emulator preload is added bef
 
 `userdata/session/boot-startup.json` records verification time, dispatch mode/session import time when available, hook-to-first-frame and session-to-first-frame timing. The guardian samples the acknowledgement, so these can include up to about 100 ms of acknowledgement scheduling delay. On Linux, kernel-to-first-frame uptime is also recorded; this excludes the bootloader and is not power-button-to-screen timing. `userdata/session/boot-network.json` records deferred network readiness separately. `/run/rgds-boot-result.json` records dispatch mode/overhead and the session's lifetime. Full power-on-to-warning/menu time has not been measured on hardware.
 
+## Startup speed, SD trim and power-off (October 13)
+
+With RG DS startup enabled, the kernel-to-menu time measured 12.3–13.6 s
+(previously 25.6 s). Two causes were removed; see
+[the dated report](archive/SPEED_POWER_2026-10-13.md):
+
+- Stock `S99fstrim` re-trimmed every SD partition at boot (13 s of card I/O)
+  and hourly. `runtime/system_tuning.py` clears only its execute bit while RGDS
+  owns startup and runs one idle-priority trim per week instead.
+- Startup and engine-launch verification memoize file hashes per release in
+  `userdata/cache/verified/`, keyed on size and times; any change re-hashes,
+  and a daily idle-priority audit re-checks memoized files.
+
+The same module adds a final `::shutdown` step to the reviewed stock
+`/etc/inittab`. For an RGDS-requested power-off only, once every block
+filesystem is read-only, it powers the RK817 off by register (DEV_OFF) instead
+of the SLEEP-pin path that left the power key unresponsive for 20–30 s.
+Choosing Anbernic startup or APPS → RGDS Recovery restores the trim script's
+mode and the original inittab.
+
 ## One RG DS identity from early boot
 
 `assets/boot/` contains original static RG DS artwork generated from the bundled brand wordmark and the dual-screen emblem by `python3 tools/build_boot_assets.py`. Both early logo slots receive identical 640×480, top-down, uncompressed 24-bit BMP pixels. Existing userspace boot PNGs receive the same composition; the narrow waiting renderer receives the wordmark. Firmware artwork remains static. With the early service installed, animation begins when Linux exposes the DSI graphics device; otherwise it begins when the native launcher owns the displays. There is no mandatory delay or minimum animation duration. The library-ready event can interrupt the boot scene immediately.

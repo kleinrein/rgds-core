@@ -23,7 +23,8 @@ for theme,ink,quiet in [('light','#2d3944','#bfccd7'),('dark','#e5eef7','#405368
             level=0 if name=='wifi-off' else int(name[-1])
             for i,radius in enumerate([6,11,16],1):
                 d.arc(((14-radius)*S,(21-radius)*S,(14+radius)*S,(21+radius)*S),-137,-43,fill=ink if level>=i else quiet,width=round(2.3*S))
-            d.ellipse((12*S,19*S,16*S,23*S),fill=ink)
+            # Off: the dot goes quiet with the arcs, so only the slash reads as ink.
+            d.ellipse((12*S,19*S,16*S,23*S),fill=quiet if name=='wifi-off' else ink)
             if name=='wifi-off':line([(5,5),(23,23)],quiet,4);line([(5,5),(23,23)],ink,2)
         im=im.resize((28,28),Image.Resampling.LANCZOS);pixels=im.tobytes('raw','BGRA')
         dib=struct.pack('<IiiHHIIiiII',108,28,-28,1,32,3,len(pixels),0,0,0,0)

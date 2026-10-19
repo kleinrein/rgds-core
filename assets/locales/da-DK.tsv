@@ -133,6 +133,7 @@ DEFAULT THEME - CHECK LOG	STANDARDTEMA - SE LOGGEN
 DS rounded	DS afrundet
 DSperate: recommended for everyday play. Native resolution is the default.	DSperate: anbefales til dagligt spil. Original opløsning er standard.
 Dark	Mørk
+Date format	Datoformat
 Default	Standard
 Default emulator	Standardemulator
 Default shader	Standardshader
@@ -696,3 +697,142 @@ Push	Skub
 Transition style	Overgangsstil
 Animate pages with the selected style	Animer sider med den valgte stil
 Slide into pages; slide back to return	Skub ind på sider; skub tilbage for at gå tilbage
+Accent colour	Accentfarve
+FAVOURITE COLOUR	YNDLINGSFARVE
+Classic	Klassisk
+Classic blue	Klassisk blå
+High contrast	Høj kontrast
+PREVIEW	FORHÅNDSVISNING
+Selected row	Valgt række
+Switches and values	Kontakter og værdier
+Grey	Grå
+Brown	Brun
+Red	Rød
+Pink	Lyserød
+Orange	Orange
+Yellow	Gul
+Lime	Limegrøn
+Green	Grøn
+Dark green	Mørkegrøn
+Sea green	Havgrøn
+Turquoise	Turkis
+Blue	Blå
+Dark blue	Mørkeblå
+Purple	Lilla
+Violet	Violet
+Magenta	Magenta
+Network file sharing	Netværksdeling af filer
+Open on this Wi-Fi	Åben på dette Wi-Fi
+Password protected	Beskyttet med adgangskode
+File sharing on. Find "RG DS" under Network.	Fildeling er slået til. Find "RG DS" under Netværk.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: den oprindelige motor. DSCore tilføjer rettelser og fart.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: anbefalet. Hurtigst, med rettelser til låg, stylus og 3D samt valgfri 2x–5x 3D.
+DSCore 3D resolution	DSCore 3D-opløsning
+Native (fastest)	Oprindelig (hurtigst)
+2x sharper	2x skarpere
+3x sharper	3x skarpere
+4x (experimental)	4x (eksperimentel)
+5x (experimental)	5x (eksperimentel)
+Colour mode	Farvetilstand
+Draw and chat with nearby handhelds	Tegn og chat med enheder i nærheden
+Wi-Fi connected	Wi-Fi forbundet
+No Wi-Fi: you can still draw	Intet Wi-Fi: du kan stadig tegne
+Press A to open	Tryk på A for at åbne
+Type your name	Skriv dit navn
+You appear like this to others	Sådan ser andre dig
+Starting…	Starter…
+Chat is unavailable: you can still draw	Chat er ikke tilgængelig: du kan stadig tegne
+Nobody else is nearby yet	Ingen andre i nærheden endnu
+1 person nearby	1 person i nærheden
+{0} people nearby	{0} personer i nærheden
+Your colour	Din farve
+Leave	Forlad
+Your name	Dit navn
+Send	Send
+You are in Room {0}	Du er i rum {0}
+{0} joined	{0} kom ind
+{0} left	{0} gik
+New messages below	Nye beskeder nedenfor
+Older messages	Ældre beskeder
+The pad is full: send it or clear it	Tegneblokken er fuld: send eller ryd den
+Too much on the pad: erase some of it	For meget på blokken: slet noget
+That message could not be sent	Beskeden kunne ikke sendes
+That room is full	Det rum er fuldt
+Chat Room {0}	Chatrum {0}
+Choose a chat room to join	Vælg et chatrum at deltage i
+Edit	Rediger
+Join	Deltag
+Matches your accent	Følger din accentfarve
+Nobody here yet	Ingen her endnu
+Start Send   X Undo   L R Scroll	Start Send   X Fortryd   L R Rul
+You	Du
+Time format	Tidsformat
+24-hour	24 timer
+12-hour	12 timer
+24-hour or 12-hour clock	24- eller 12-timers ur
+How dates appear in the status bar	Sådan vises datoer i statuslinjen
+Connecting to	Opretter forbindelse til
+This can take a few seconds	Det kan tage et par sekunder
+Waiting for an address…	Venter på en adresse…
+IP address	IP-adresse
+Signal	Signal
+Could not connect	Kunne ikke oprette forbindelse
+Wi-Fi is off	Wi-Fi er slået fra
+Turn it on to find networks	Slå det til for at finde netværk
+Choose a network from the list	Vælg et netværk på listen
+Preparing…	Forbereder…
+Home layout	Startskærmens layout
+Background	Baggrund
+Touch gestures	Berøringsbevægelser
+Carousel	Karrusel
+DSi column	DSi-kolonne
+Plain	Enkel
+DSi grid	DSi-gitter
+A carousel, or the DSi's column with your last game on top	En karrusel, eller DSi'ens kolonne med dit seneste spil øverst
+Plain, or the DSi's ruled grid behind every screen	Enkel, eller DSi'ens linjerede gitter bag alle skærme
+Swipe up from the bottom for Home, in from the left for Back	Stryg op fra bunden for Hjem, ind fra venstre for Tilbage
+Nothing played yet	Intet spillet endnu
+Your last game will appear here	Dit seneste spil vises her
+Draw and chat	Tegn og chat
+Su	Sø
+Mo	Ma
+Tu	Ti
+We	On
+Th	To
+Fr	Fr
+Sa	Lø
+Chat Room	Chatrum
+Nobody else here yet	Ingen andre her endnu
+Drawing on your own	Tegner for dig selv
+Jump	Hop
+Home	Hjem
+Swipe up from the bottom edge to go Home from anywhere.	Stryg op fra bunden for at gå til Hjem hvor som helst fra.
+Swipe in from the left edge to go Back.	Stryg ind fra venstre kant for at gå tilbage.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Et lille håndtag nederst på den nederste skærm viser, at bevægelser er slået til; det følger din finger, og en ring markerer stedet, når en bevægelse udløses.
+Your saves are safe. See you soon!	Dine gemte spil er sikre. Vi ses snart!
+DS Classic	DS Klassisk
+DS Lite	DS Lite
+Natural glow	Naturlig glød
+Vivid LCD	Livlig LCD
+Natural smooth	Naturlig glat
+Vivid smooth	Livlig glat
+Pixel beads	Pixelperler
+Glossy tiles	Blanke fliser
+The first DS screen: muted colour and a fine pixel grid.	Den første DS-skærm: dæmpede farver og et fint pixelgitter.
+The brighter DS Lite screen with a faint pixel grid.	Den lysere DS Lite-skærm med et svagt pixelgitter.
+Natural colour with soft pixels that glow together.	Naturlige farver med bløde pixels, der gløder sammen.
+Bold colour on a close-up LCD with RGB stripes.	Kraftige farver på en LCD tæt på med RGB-striber.
+Natural colour with smoothed diagonal edges.	Naturlige farver med udglattede diagonale kanter.
+Bold colour with smoothed diagonal edges.	Kraftige farver med udglattede diagonale kanter.
+Bold colour; every pixel a round, shiny bead.	Kraftige farver; hver pixel en rund, skinnende perle.
+Bold colour; every pixel a raised, glossy tile.	Kraftige farver; hver pixel en hævet, blank flise.
+IN USE	I BRUG
+APPLY	BRUG
+Follows your library shader.	Følger dit biblioteksfilter.
+Original	Original
+DS screens	DS-skærme
+Natural	Naturlig
+Vivid	Livlig
+Pixel art	Pixelkunst
+Moods	Stemninger
+Up / Down or L / R: change group	Op / Ned eller L / R: skift gruppe

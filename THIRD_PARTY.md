@@ -66,7 +66,9 @@ https://github.com/libretro/libretro-database/blob/master/metadat/no-intro/Ninte
 into the player's optional cache; it is not bundled or relicensed by RGDS.
 
 `assets/shaders/soft_scanlines.dsd`, `warm_paper.dsd`, `cool_crisp.dsd`,
-`pocket_green.dsd`, `amber.dsd` and `soft_lcd_grid.dsd` are
+`pocket_green.dsd`, `amber.dsd`, `soft_lcd_grid.dsd`, `ds_classic.dsd`,
+`ds_lite.dsd`, `natural_glow.dsd`, `vivid_lcd.dsd`, `natural_smooth.dsd`,
+`vivid_smooth.dsd`, `pixel_beads.dsd` and `glossy_tiles.dsd` are
 original RGDS single-sample effects, separate from the supplied shader presets.
 
 
@@ -141,9 +143,10 @@ are fabricated from display refreshes.
 
 ## RG DS Experimental fork
 
-The optional `rgds-experimental` engine is a modified build of the same pinned
-GPL-3.0-or-later DSperate source. Original RGDS stylus changes are GPL-3.0-or-later.
-Packages include its LICENSE, NOTICE, complete modified upstream source and
+The optional `rgds-experimental` engine (DSCore) is built from `dscore/`, a fork of
+the same pinned GPL-3.0-or-later DSperate source (see [dscore/FORK.md](dscore/FORK.md)).
+Original RGDS changes are GPL-3.0-or-later.
+Packages include its LICENSE, NOTICE, the complete fork source and
 build recipe. See [fork documentation](src/experimental/rgds/README.md). No NooDS,
 melonDS or NNDDSS implementation has been copied into this fork.
 

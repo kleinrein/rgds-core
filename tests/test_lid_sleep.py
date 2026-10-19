@@ -257,7 +257,8 @@ class WakeInputTests(unittest.TestCase):
                 return inputs.poll()
         self.assertFalse(feed(1)); self.assertIsNone(inputs.shortcut.pending)
         self.assertFalse(feed(0)); self.assertNotIn((123, 1, 139), inputs.suppressed_keys)
-        self.assertFalse(feed(1)); self.assertIsNotNone(inputs.shortcut.pending)
+        # KEY_MENU is the dedicated game-menu key: a fresh press opens it at once.
+        self.assertEqual(feed(1), 'game-menu')
 
 
 class OwnedProcessSleepTests(unittest.TestCase):

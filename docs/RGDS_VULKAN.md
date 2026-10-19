@@ -1,18 +1,19 @@
-# RG DS Experimental enhanced 3D
+# DSCore enhanced 3D
 
-RG DS Experimental offers Native and experimental 2×–5× 3D rendering in
-**In-game menu → Graphics → 3D resolution** (also available before launch in
-Game options). Restart the game after changing it. Native
-is the default. A 5× target rasterizes at 1280×960; its 3D detail is composed to
-the RG DS's 640×480 panel alongside native-grid 2D graphics. Stock Mali,
-Weston, kernel, firmware and power policy are not replaced.
+DSCore renders 3D at Native or 2×–5× (**In-game menu → Graphics → 3D
+resolution**, or Game options before launch). Changes between 2× and 5× apply
+live in about 0.1 s; switching to or from Native restarts the engine in place
+(about 6 s, the game resumes from a checkpoint). A 5× target rasterizes at
+1280×960, and helper threads compose it with the native-grid 2D layers into
+each 640×480 panel. Stock Mali, Weston, kernel, firmware and power policy are
+not replaced.
 
-The CPU raster remains authoritative for guest-visible framebuffer capture,
-VRAM writes and state. The larger GPU raster enhances the displayed image.
-This costs extra work but avoids changing game logic to chase a benchmark.
-The hardware rasterizer has visual approximations and the kbase driver remains
-experimental. Select Native for compatibility or maximum fast-forward speed.
-See [measured results](EXPERIMENTAL_BENCHMARK_2026-10-13.md).
+The CPU rasterizer stays the reference for anything a game can read back:
+display capture, the display FIFO and save states. While none of those is in
+use, DSCore skips it and shows only the GPU image; it runs again, for exactly
+the affected frames, as soon as a game captures or a state is saved. Games that
+capture every frame (for example the Zelda titles) therefore pay for both
+rasterizers at 2× and above. See [performance](PERFORMANCE.md) for results.
 
 The standard RG DS exposes Mali-G52 through `/dev/mali0`, with a kbase JM
 11.47 interface. Its stock `libmali.so.1.9.0` has no Vulkan entry points. The
@@ -54,7 +55,7 @@ The 1280×960 image was inspected and contains new subpixel detail, not enlarged
 native pixels. At 5× the unoptimized isolated renderer needed 25–30 ms in that
 run, already beyond a 60 FPS budget before CPU emulation and 2D composition.
 Subsequent controlled shader comparisons are recorded in
-[the 13 October report](EXPERIMENTAL_BENCHMARK_2026-10-13.md).
+[the 13 October report](archive/EXPERIMENTAL_BENCHMARK_2026-10-13.md).
 JIT-allocation and non-conformance warnings remain. Earlier connection losses
 included confirmed system suspends; private diagnostic profiles now disable
 idle/lid sleep without changing the user's profile. This does not establish
@@ -72,7 +73,7 @@ Their initial changed frames can be recorded with the headless frontend's
 DSperate source. It parameterizes GPU attachments, viewport, resolve buffers,
 readback and output dimensions from 1× to 5×, rejecting invalid scales and GPU
 limits. `RGDS_VK_SCALE=5` is a real 1280×960 offscreen rasterization. This original
-probe patch is separate from `rgds-vulkan-hires.patch`, which now implements
+probe patch is separate from the DSCore fork in `dscore/`, which implements
 scaled attachments, display composition and SDL presentation for actual games.
 The latter retains native CPU pixels for the game's own readbacks.
 
@@ -84,17 +85,17 @@ resolution alone cannot establish texture, shadow, edge or capture correctness.
 
 ## Private full-game build
 
-`python3 tools/build_rgds_vulkan.py --jobs 4` builds the same verified fork
+`python3 tools/build_rgds_vulkan.py --jobs 4` builds the fingerprinted `dscore/`
 source with `DSPERATE_VULKAN=ON` into `build/rgds-vulkan-game`. It preserves
 the shipping build and records source, headers, recipe, options and binary
 hashes. It does not install anything. The recipe also calls
 `tools/build_rgds_vulkan_shaders.py` in the existing Linux VM on macOS, or
-locally on Linux. That step requires `glslangValidator` and `spirv-val`, applies
-`tools/engine_patches/rgds-vulkan-resolve.patch`, compiles the single-sample
-resolve with `-Os`, validates SPIR-V, and records input/output/compiler hashes.
+locally on Linux. That step requires `glslangValidator` and `spirv-val`, compiles
+the lean shaders in `dscore/src/core/gpu/vk/shaders` (including the single-sample
+resolve) with `-Os`, validates SPIR-V, and records input/output/compiler hashes.
 The shader skips coverage accumulation and division when there is exactly one
 sample; fog and alpha calculations stay intact. Four-sample MSAA is unchanged.
-Only the private build receives the patched source and generated shader.
+`dscore/` holds no SPIR-V: only the private build receives the generated blobs.
 
 The runtime switch is `DS_GPU3D=1`,
 along with the private ICD/library environment and 56-byte job stride above.
@@ -115,6 +116,36 @@ pixel using premultiplied coverage, an exact 2×2 average at 5×. Native 2D
 art is not filtered by this pass. `rgds_smooth=0` selects Sharp; the runtime
 passes `RGDS_3D_SMOOTH` only to the enhanced fork. `DS_VERIFY_HIRES=1` compares cached composition
 against the original full layer-selection path during diagnostic runs.
+
+**2D scaling** (In-game menu → Graphics → 2D scaling, `rgds_2d`, `RGDS_2D_FILTER`) resamples
+2D art on the enhanced screen: Native pixels (default, the 2.5× nearest grid), Sharp (crisp pixels,
+about one panel pixel of blend at each seam), Smooth (bilinear) or Crisp (for pixel art: Scale2x cells,
+so stairs on diagonals and curves become slopes while interiors stay exact, area-sampled like Sharp; it
+reads one more line above, which the compose job carries as `above2`). It applies at 2×–5× only; Native 3D
+and the other screen still go through the Screen filter. Composition first builds each line with the 3D
+layer removed; a panel pixel that matches it is 2D art and takes the filtered value, so 3D detail,
+including 3D under translucent 2D, keeps its high-resolution composite. Filtered rows wait one line for
+their lower neighbour. Switching applies live (`filter2d:N`) and never touches the renderer. The
+resampling is `src/core/gpu/rgds_filter2d.hpp`, covered by `dscore/tests/filter2d_test.cpp`.
+`DS_VERIFY_HIRES=1` composes without the filter.
+
+**Heavy 3D scenes** (In-game menu → Graphics → Heavy 3D scenes, `rgds_adaptive`, `DS_ADAPTIVE`)
+picks Adaptive (default: heavy GPU stretches drop the 3D to native for a few seconds to hold 60 fps;
+see `docs/PERFORMANCE.md`) or Always sharp (`rgds_adaptive=0`). The runtime passes it at 2×–5× only,
+and the in-game menu switches it live (`adaptive:N` through the bridge to `rgds_set_adaptive`; the runtime
+saves the choice once applied, and a running native hold ends at once). An
+explicit `DS_ADAPTIVE` in the environment (benchmark A/B runs) overrides the per-game choice.
+
+Composition runs off engine A's 2D worker. For each detailed scanline engine A
+snapshots its layer plan, evy and master brightness (`Gpu::EnhancedRow`) and
+publishes it to two helper threads (`2d-compose-1` beside engine B on core 2,
+`2d-compose-2` on the aux core; normal priority, so engine B's real-time worker
+and audio keep precedence). Engine A's worker helps when its batch ends and the
+emulation thread helps at the line-0 join, which waits for every row before the
+frame is presented or the 3D frame reference changes. Jobs write disjoint panel
+rows and never touch guest-visible state. `RGDS_COMPOSE_THREADS=0` composes
+inline as before; `DS_VERIFY_HIRES=1` always composes inline so its reference
+check sees the engine's own line state.
 
 After building, `python3 tools/package_rgds_vulkan.py` validates the compiled
 source and binary, assembles the private libraries and complete corresponding

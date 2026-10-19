@@ -292,6 +292,7 @@ class StockHandoffTests(unittest.TestCase):
         child = Mock(pid=456);child.wait.return_value=exit_code;child.poll.return_value=exit_code
         order = []
         def spawn(command, **kwargs):
+            if command[1:3] == ["-m", "compileall"]:return Mock()   # session.precompile, after the launcher
             self.assertIn("--boot-startup", command)
             self.assertIn("--boot-warning", command)
             self.assertFalse(any("simpleos" in str(value) for value in command))
@@ -354,7 +355,7 @@ raise SystemExit(76)
             record('init')
         parent=os.getpid();handlers={s:signal.getsignal(s) for s in (signal.SIGTERM,signal.SIGINT)}
         try:
-            with patch.object(session.sys,'platform','linux'),patch.object(session,'release',return_value=self.root), \
+            with patch.object(session.sys,'platform','linux'),patch('file_sharing.Sharing.stop'),patch.object(session,'release',return_value=self.root), \
                  patch.object(session,'environment',return_value=os.environ.copy()),patch.object(session,'lock'), \
                  patch.object(session,'unlock',side_effect=lambda:record('unlock')),patch.object(session,'Hardware'), \
                  patch.object(session,'process_identity',return_value='123'),patch.object(session,'discover_frontends',return_value=[]), \

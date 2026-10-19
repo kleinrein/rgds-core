@@ -1,0 +1,38 @@
+<!-- Original RGDS shader; same license as the RGDS project. One texture sample. -->
+// Original RGDS GLES2 preset: bold colour where every DS pixel is a round, lit
+// bead with a small highlight, sitting on a dark tint of its own colour.
+<vertex>
+attribute vec2 a_vertex_coordinate;
+attribute vec2 a_texture_coordinate;
+varying vec2 v_texture_coordinate;
+void main(){v_texture_coordinate=a_texture_coordinate;gl_Position=vec4(a_vertex_coordinate,0.0,1.0);}
+</vertex>
+<fragment>
+uniform sampler2D u_texture;
+uniform vec4 u_texture_size;
+uniform vec2 u_target_size;
+varying vec2 v_texture_coordinate;
+vec3 vivid(vec3 c){
+    float l=dot(c,vec3(0.2126,0.7152,0.0722));
+    float chroma=max(c.r,max(c.g,c.b))-min(c.r,min(c.g,c.b));
+    c=clamp(mix(vec3(l),c,1.2+0.35*(1.0-chroma)),0.0,1.0);
+    return mix(c,c*c*(3.0-2.0*c),0.35);
+}
+void main(){
+    vec2 cells=vec2(256.0,192.0),p=v_texture_coordinate*cells,cell=floor(p),f=p-cell;
+    vec4 pixel=texture2D(u_texture,(cell+0.5)/cells);
+    vec3 c=vivid(pixel.rgb);
+    vec2 w=min(cells/max(u_target_size,vec2(1.0)),vec2(1.0));
+    float aa=max(w.x,w.y),strength=clamp(1.0/aa-1.0,0.0,1.0);
+    vec2 q=f-0.5;float r=length(q);
+    float bead=clamp((0.56-r)/aa+0.5,0.0,1.0);
+    // Light from the upper left: a soft dome falloff plus a small specular dot.
+    float dome=1.0-0.38*smoothstep(0.0,0.62,length(q-vec2(-0.12,-0.12)));
+    float spec=smoothstep(0.16,0.0,length(q-vec2(-0.15,-0.16)))*0.45;
+    vec3 lit=c*(dome*1.18)+spec*(0.6+0.4*c);
+    vec3 under=c*0.40+0.01;
+    vec3 beaded=mix(under,lit,bead);
+    pixel.rgb=clamp(mix(c,beaded,strength),0.0,1.0);
+    gl_FragColor=pixel;
+}
+</fragment>

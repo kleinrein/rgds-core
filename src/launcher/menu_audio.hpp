@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,9 @@ inline constexpr std::array<const char*,size_t(MenuCue::Count)> menu_cue_files={
 inline constexpr std::array<const char*,size_t(MenuCue::Count)> menu_cue_labels={"Browse","Select","Open a view","Go back","Switch on","Switch off","Add favourite","Remove favourite","Start a game","Resume game","Save complete","Load complete","Try again","Keyboard","Adjust volume","Close lid","Open lid"};
 
 // Cached PCM, four bounded voices, no allocation or file access in the callback.
-// The device sleeps once the last finite cue ends; disabled menus never open it.
+// The sink opens on the first cue and closes after a few quiet seconds. SDL2
+// keeps feeding silence while a device is merely paused, which kept the shared
+// dmix stream, the RK817 DAC and a CPU core busy for as long as the menu was up.
 class MenuAudio {
     struct Voice {const std::vector<int16_t>* clip=nullptr;double position=0,step=1;float left=0,right=0,last_left=0,last_right=0;unsigned attack=0;};
     Sdl& s;
@@ -26,6 +29,7 @@ class MenuAudio {
     std::atomic<bool> sounding{false};
     bool loaded=false,initialized=false,paused=true,failed=false,enabled=false;
     int volume=55;
+    Uint32 quiet_since=0;
     float tail_left=0,tail_right=0;
     uint32_t random=0x31415926,last_nav=0;
     bool navigated=false;
@@ -52,13 +56,26 @@ class MenuAudio {
     bool open(){
         if(device)return true;if(failed || !loaded)return false;
         if(s.InitSubSystem(SDL_INIT_AUDIO)!=0){failed=true;s.ClearError();return false;}initialized=true;
-        SDL_AudioSpec want{};want.freq=32000;want.format=AUDIO_F32SYS;want.channels=2;want.samples=512;want.callback=callback;want.userdata=this;
+        // Match the 48 kHz dmix slave: a 32 kHz sink made ALSA resample every
+        // block, including silence. Clips are resampled by each voice's step.
+        SDL_AudioSpec want{};want.freq=48000;want.format=AUDIO_F32SYS;want.channels=2;want.samples=512;want.callback=callback;want.userdata=this;
         device=s.OpenAudioDevice(nullptr,0,&want,&spec,SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
         if(!device){failed=true;s.QuitSubSystem(SDL_INIT_AUDIO);initialized=false;s.ClearError();return false;}
-        paused=true;opens++;return true;
+        paused=true;quiet_since=s.GetTicks();opens++;
+        if(opened)opened();
+        return true;
+    }
+    // Close the sink but keep the decoded bank and settings for the next cue.
+    void release(){
+        if(device){s.CloseAudioDevice(device);device=0;releases++;}
+        for(auto& v:voices)v={};tail_left=tail_right=0;sounding.store(false,std::memory_order_release);paused=true;
+        if(initialized){s.QuitSubSystem(SDL_INIT_AUDIO);initialized=false;}
     }
 public:
-    uint64_t plays=0,opens=0,reads=0;
+    uint64_t plays=0,opens=0,reads=0,releases=0;
+    // Runs after every successful open, before the first sample is unpaused.
+    std::function<void()> opened;
+    Uint32 idle_close_ms=3000;
     std::array<uint64_t,size_t(MenuCue::Count)> counts{};
     std::string error;
     explicit MenuAudio(Sdl& api):s(api){}
@@ -88,11 +105,12 @@ public:
         error.clear();
         if(std::none_of(clips.begin(),clips.end(),[](const auto& clip){return !clip.empty();})){error="Menu sounds are unavailable.";return;}
         if(std::any_of(clips.begin(),clips.end(),[](const auto& clip){return clip.empty();}))error="Some menu sounds are unavailable.";
-        if(!open())error="Menu audio is unavailable on this device.";
+        if(failed)error="Menu audio is unavailable on this device.";
     }
     bool play(MenuCue cue,Uint32 now,int direction=0,float pan=0){
-        if(!enabled || !volume || !device)return false;
+        if(!enabled || !volume)return false;
         auto index=size_t(cue);if(index>=clips.size() || clips[index].empty())return false;
+        if(!device && !open()){error="Menu audio is unavailable on this device.";return false;}
         bool small=cue==MenuCue::Navigate || cue==MenuCue::Adjust || cue==MenuCue::Type;
         if(small && navigated && now-last_nav<45)return false;
         float cadence=small && navigated && now-last_nav<180?1.025f:1.f;
@@ -110,11 +128,17 @@ public:
         if(paused){s.PauseAudioDevice(device,0);paused=false;}
         plays++;counts[index]++;return true;
     }
-    void poll(){if(device && !paused && !sounding.load(std::memory_order_acquire)){s.PauseAudioDevice(device,1);paused=true;}}
+    void poll(Uint32 now){
+        if(!device)return;
+        if(!paused && !sounding.load(std::memory_order_acquire)){s.PauseAudioDevice(device,1);paused=true;quiet_since=now;}
+        if(paused && idle_close_ms && now-quiet_since>=idle_close_ms)release();
+    }
     bool active()const{return sounding.load(std::memory_order_acquire);}
-    bool available()const{return device!=0;}
+    // Usable when a cue is requested; the sink itself may be closed while quiet.
+    bool available()const{return enabled && volume && loaded && !failed;}
+    bool open_now()const{return device!=0;}
     size_t bytes()const{size_t result=0;for(const auto& clip:clips)result+=clip.size()*sizeof(int16_t);return result;}
     void stop(){if(device){s.LockAudioDevice(device);for(auto& v:voices)v={};tail_left=tail_right=0;sounding.store(false,std::memory_order_release);s.UnlockAudioDevice(device);s.PauseAudioDevice(device,1);}paused=true;}
-    void close(){if(device){s.CloseAudioDevice(device);device=0;}for(auto& v:voices)v={};tail_left=tail_right=0;sounding.store(false,std::memory_order_release);paused=true;if(initialized){s.QuitSubSystem(SDL_INIT_AUDIO);initialized=false;}}
+    void close(){release();enabled=false;}
 };
 }

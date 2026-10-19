@@ -27,7 +27,28 @@ def record_playtime(data, rom, seconds, sessions, started):
                  {"seconds": max(0, int(seconds)), "sessions": max(0, int(sessions)), "last_played": started})
 
 
-def banner_data(path):
+# Titles DSCore cannot run correctly yet, by game code prefix (all regions):
+# the engine a newly indexed copy starts on, and why. A per-game choice the
+# player makes always wins; only a game with no choice of its own is set.
+COMPATIBILITY = {
+    "AWI": ("drastic", "Hotel Dusk: Room 215 crashes during boot in DSCore and DSperate"),
+}
+CORE_INDEX = {"drastic": 0, "dsperate": 1, "nnddss": 2, "melonds": 3, "rgds-experimental": 4}
+
+
+def apply_compatibility(data, rom, code):
+    entry = COMPATIBILITY.get(code[:3]) if code else None
+    if not entry: return False
+    path = Path(data) / "library" / game_key(rom) / "game.ini"
+    fields = read_fields(path)
+    if "core" in fields or fields.get("compatibility") == "1": return False
+    fields.update(core=CORE_INDEX[entry[0]], compatibility=1)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_fields(path, fields)
+    return True
+
+
+def banner_data(path, code=None):
     archive = None
     try:
         if path.suffix.lower() == ".zip":
@@ -39,6 +60,7 @@ def banner_data(path):
         with stream:
             header = stream.read(0x6c)
             if len(header) != 0x6c: return None
+            if code is not None: code.append(header[12:16].decode("ascii", errors="replace"))
             offset = struct.unpack_from("<I", header, 0x68)[0]
             if offset < 0x200 or offset > 16*1024**2: return None
             stream.seek(offset)
@@ -53,8 +75,14 @@ def index_banner(data, rom):
     item = Path(data) / "library" / game_key(rom)
     marker = item / "banner.ini"
     stamp = str(rom.stat().st_mtime_ns) + ":" + str(rom.stat().st_size)
-    if read_fields(marker).get("stamp") == stamp: return
-    banner = banner_data(rom)
+    indexed = read_fields(marker)
+    if indexed.get("stamp") == stamp:
+        if indexed.get("code") and indexed.get("compat") != "1":
+            apply_compatibility(data, rom, indexed["code"]); write_fields(marker, dict(indexed, compat=1))
+        return
+    code = []
+    banner = banner_data(rom, code)
+    if code: apply_compatibility(data, rom, code[0])
     if not banner: return
     palette = struct.unpack_from("<16H", banner, 0x220)
     pixels = bytearray()
@@ -72,4 +100,4 @@ def index_banner(data, rom):
     pending.write_bytes(struct.pack("<2sIHHI", b"BM", 14+108+len(pixels), 0, 0, 14+108) + info + pixels)
     pending.replace(item / "icon.bmp")
     title = banner[0x340:0x440].decode("utf-16le", errors="replace").split("\x00", 1)[0].replace("\n", " ")
-    write_fields(marker, {"title": title, "stamp": stamp})
+    write_fields(marker, {"title": title, "stamp": stamp, "code": code[0] if code else "", "compat": 1})

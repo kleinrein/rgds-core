@@ -51,6 +51,65 @@ def suspend_linux(command, runtime=Path('/run/rgds'), clock=time.monotonic, slee
         except FileNotFoundError:pass
 
 
+WAKE_IRQS = ('rk805_pwrkey_fall', 'rk805_pwrkey_rise', 'hall switch', 'RTC alarm', 'rk817_plug_in',
+             'rk817_plug_out', 'rk817', 'gt9xx', 'rockchip_usb2phy')
+
+
+def sleep_snapshot(sysfs=Path('/sys'), proc=Path('/proc')):
+    """Battery, suspend counters and wake-capable IRQ counts around a sleep.
+
+    CLOCK_BOOTTIME includes suspended time and CLOCK_MONOTONIC does not, so
+    their deltas give the real time spent in deep sleep.
+    """
+    def read(path):
+        try:return Path(path).read_text().strip()
+        except OSError:return None
+    snapshot = dict(time=round(time.time(), 1), monotonic=round(time.monotonic(), 3))
+    clock = getattr(time, 'CLOCK_BOOTTIME', None)
+    if clock is not None:
+        try:snapshot['boottime'] = round(time.clock_gettime(clock), 3)
+        except OSError:pass
+    for supply in ('battery', 'cw2015-battery'):
+        folder = Path(sysfs) / 'class/power_supply' / supply
+        for field in ('capacity', 'voltage_now', 'charge_now', 'current_now', 'status'):
+            value = read(folder / field)
+            if value is not None:snapshot[supply + '.' + field] = value
+    for field in ('success', 'fail'):
+        value = read(Path(sysfs) / 'power/suspend_stats' / field)
+        if value is not None:snapshot['suspend_' + field] = value
+    irqs = {}
+    try:
+        lines = (Path(proc) / 'interrupts').read_text().splitlines()
+        cpus = len(lines[0].split()) if lines else 0
+        for line in lines[1:]:
+            parts = line.split()
+            if len(parts) < cpus + 2 or not parts[0].endswith(':'):continue
+            name = ' '.join(parts[-2:]) if ' '.join(parts[-2:]) in WAKE_IRQS else parts[-1]
+            if name in WAKE_IRQS:irqs[name] = irqs.get(name, 0) + sum(int(part) for part in parts[1:1 + cpus] if part.isdigit())
+    except (OSError, IndexError):pass
+    snapshot['irqs'] = irqs
+    return snapshot
+
+
+def journal_sleep(data, before, after, **extra):
+    """Append one sleep record; keep the newest 300 for drain diagnosis."""
+    entry = dict(before=before, after=after, **extra)
+    try:
+        if 'boottime' in before and 'boottime' in after:
+            entry['asleep_seconds'] = round((after['boottime'] - before['boottime']) - (after['monotonic'] - before['monotonic']), 1)
+        entry['woke_by'] = sorted(name for name, count in after.get('irqs', {}).items()
+                                  if count > before.get('irqs', {}).get(name, count))
+        path = Path(data) / 'logs/sleep-journal.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:lines = path.read_text().splitlines()[-299:]
+        except OSError:lines = []
+        lines.append(json.dumps(entry, sort_keys=True))
+        pending = path.with_name(path.name + '.pending')
+        pending.write_text('\n'.join(lines) + '\n');pending.replace(path)
+    except (OSError, ValueError, TypeError, KeyError):
+        pass  # Diagnostics must never prevent sleep or recovery.
+
+
 def battery_status(sysfs):
     """Keep charge level, active charging and an attached supply distinct."""
     result=dict(battery=-1,charging=0,external_power=0)
@@ -451,6 +510,7 @@ class Hardware:
                 if panels:self.restore_values(panels)
                 mark('deep_sleep_requested')
                 self.sleep_mode = 'deep'
+                before = sleep_snapshot(self.sysfs)
                 # Preserve every vendor hook and never use raw kernel fallback.
                 try:
                     if independent():suspend_linux(command)
@@ -458,6 +518,8 @@ class Hardware:
                                         stdin=subprocess.DEVNULL, check=True)
                 finally:
                     mark('deep_helper_returned')
+                    after = sleep_snapshot(self.sysfs)
+                    journal_sleep(data, before, after, lid=lid, lid_closed_after=self.lid_closed() if lid else None)
                     sync_volume()
             else:
                 self.sleep_mode = 'quick'

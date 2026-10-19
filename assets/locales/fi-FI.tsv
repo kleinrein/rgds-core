@@ -133,6 +133,7 @@ DEFAULT THEME - CHECK LOG	OLETUSTEEMA – KATSO LOKI
 DS rounded	DS pyöristetty
 DSperate: recommended for everyday play. Native resolution is the default.	DSperate: suositeltu päivittäiseen pelaamiseen. Alkuperäinen tarkkuus on oletus.
 Dark	Tumma
+Date format	Päivämäärän muoto
 Default	Oletus
 Default emulator	Oletusemulaattori
 Default shader	Oletussuodatin
@@ -696,3 +697,142 @@ Push	Työntö
 Transition style	Siirtymätyyli
 Animate pages with the selected style	Animoi sivut valitulla tyylillä
 Slide into pages; slide back to return	Liu'u sivuille ja palaa liukumalla takaisin
+Accent colour	Korostusväri
+FAVOURITE COLOUR	LEMPIVÄRI
+Classic	Klassinen
+Classic blue	Klassinen sininen
+High contrast	Suuri kontrasti
+PREVIEW	ESIKATSELU
+Selected row	Valittu rivi
+Switches and values	Kytkimet ja arvot
+Grey	Harmaa
+Brown	Ruskea
+Red	Punainen
+Pink	Pinkki
+Orange	Oranssi
+Yellow	Keltainen
+Lime	Limenvihreä
+Green	Vihreä
+Dark green	Tummanvihreä
+Sea green	Merenvihreä
+Turquoise	Turkoosi
+Blue	Sininen
+Dark blue	Tummansininen
+Purple	Purppura
+Violet	Violetti
+Magenta	Magenta
+Network file sharing	Verkon tiedostonjako
+Open on this Wi-Fi	Avoin tässä Wi-Fi-verkossa
+Password protected	Salasanasuojattu
+File sharing on. Find "RG DS" under Network.	Tiedostonjako on päällä. "RG DS" löytyy kohdasta Verkko.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: alkuperäinen moottori. DSCore tuo korjauksia ja nopeutta.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: suositeltu. Nopein, kansi-, kynä- ja 3D-korjauksilla sekä valinnaisella 2x–5x-3D:llä.
+DSCore 3D resolution	DSCoren 3D-resoluutio
+Native (fastest)	Alkuperäinen (nopein)
+2x sharper	2x terävämpi
+3x sharper	3x terävämpi
+4x (experimental)	4x (kokeellinen)
+5x (experimental)	5x (kokeellinen)
+Colour mode	Väritila
+Draw and chat with nearby handhelds	Piirrä ja keskustele lähellä olevien laitteiden kanssa
+Wi-Fi connected	Wi-Fi yhdistetty
+No Wi-Fi: you can still draw	Ei Wi-Fiä: voit silti piirtää
+Press A to open	Avaa painamalla A
+Type your name	Kirjoita nimesi
+You appear like this to others	Näin muut näkevät sinut
+Starting…	Käynnistyy…
+Chat is unavailable: you can still draw	Keskustelu ei ole käytettävissä: voit silti piirtää
+Nobody else is nearby yet	Ketään muuta ei ole vielä lähellä
+1 person nearby	1 henkilö lähellä
+{0} people nearby	{0} henkilöä lähellä
+Your colour	Värisi
+Leave	Poistu
+Your name	Nimesi
+Send	Lähetä
+You are in Room {0}	Olet huoneessa {0}
+{0} joined	{0} liittyi
+{0} left	{0} poistui
+New messages below	Uusia viestejä alla
+Older messages	Vanhemmat viestit
+The pad is full: send it or clear it	Piirtoalusta on täynnä: lähetä tai tyhjennä se
+Too much on the pad: erase some of it	Alustalla on liikaa: pyyhi jotain pois
+That message could not be sent	Viestiä ei voitu lähettää
+That room is full	Huone on täynnä
+Chat Room {0}	Keskusteluhuone {0}
+Choose a chat room to join	Valitse keskusteluhuone, johon liityt
+Edit	Muokkaa
+Join	Liity
+Matches your accent	Seuraa korostusväriä
+Nobody here yet	Täällä ei ole vielä ketään
+Start Send   X Undo   L R Scroll	Start Lähetä   X Kumoa   L R Vieritä
+You	Sinä
+Time format	Ajan muoto
+24-hour	24 tuntia
+12-hour	12 tuntia
+24-hour or 12-hour clock	24 tai 12 tunnin kello
+How dates appear in the status bar	Miten päivämäärät näkyvät tilapalkissa
+Connecting to	Yhdistetään verkkoon
+This can take a few seconds	Tämä voi kestää muutaman sekunnin
+Waiting for an address…	Odotetaan osoitetta…
+IP address	IP-osoite
+Signal	Signaali
+Could not connect	Yhdistäminen epäonnistui
+Wi-Fi is off	Wi-Fi on pois päältä
+Turn it on to find networks	Kytke päälle löytääksesi verkkoja
+Choose a network from the list	Valitse verkko luettelosta
+Preparing…	Valmistellaan…
+Home layout	Kotinäkymän asettelu
+Background	Tausta
+Touch gestures	Kosketuseleet
+Carousel	Karuselli
+DSi column	DSi-sarake
+Plain	Yksinkertainen
+DSi grid	DSi-ruudukko
+A carousel, or the DSi's column with your last game on top	Karuselli tai DSi:n sarake, jossa viimeisin peli on ylinnä
+Plain, or the DSi's ruled grid behind every screen	Yksinkertainen tai DSi:n viivoitettu ruudukko jokaisen näytön takana
+Swipe up from the bottom for Home, in from the left for Back	Pyyhkäise alhaalta ylös kotiin, vasemmalta takaisin
+Nothing played yet	Ei vielä pelattu
+Your last game will appear here	Viimeisin pelisi näkyy tässä
+Draw and chat	Piirrä ja juttele
+Su	Su
+Mo	Ma
+Tu	Ti
+We	Ke
+Th	To
+Fr	Pe
+Sa	La
+Chat Room	Chat-huone
+Nobody else here yet	Ei vielä muita täällä
+Drawing on your own	Piirrät yksin
+Jump	Siirry
+Home	Koti
+Swipe up from the bottom edge to go Home from anywhere.	Pyyhkäise alareunasta ylös päästäksesi kotiin mistä tahansa.
+Swipe in from the left edge to go Back.	Pyyhkäise vasemmasta reunasta sisään palataksesi.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Pieni kahva alanäytön alareunassa näyttää, että eleet ovat käytössä; se nousee sormen mukana, ja rengas merkitsee kohdan, kun ele laukeaa.
+Your saves are safe. See you soon!	Tallennuksesi ovat turvassa. Nähdään pian!
+DS Classic	DS Klassinen
+DS Lite	DS Lite
+Natural glow	Luonnollinen hehku
+Vivid LCD	Eloisa LCD
+Natural smooth	Luonnollinen pehmeä
+Vivid smooth	Eloisa pehmeä
+Pixel beads	Pikselihelmet
+Glossy tiles	Kiiltävät laatat
+The first DS screen: muted colour and a fine pixel grid.	Ensimmäinen DS-näyttö: hillityt värit ja hieno pikseliruudukko.
+The brighter DS Lite screen with a faint pixel grid.	Kirkkaampi DS Lite -näyttö ja himmeä pikseliruudukko.
+Natural colour with soft pixels that glow together.	Luonnolliset värit ja pehmeät, yhteen hehkuvat pikselit.
+Bold colour on a close-up LCD with RGB stripes.	Voimakkaat värit lähikuvan LCD:llä ja RGB-raidoilla.
+Natural colour with smoothed diagonal edges.	Luonnolliset värit ja pehmennetyt viistot reunat.
+Bold colour with smoothed diagonal edges.	Voimakkaat värit ja pehmennetyt viistot reunat.
+Bold colour; every pixel a round, shiny bead.	Voimakkaat värit; jokainen pikseli pyöreä, kiiltävä helmi.
+Bold colour; every pixel a raised, glossy tile.	Voimakkaat värit; jokainen pikseli koholla oleva kiiltävä laatta.
+IN USE	KÄYTÖSSÄ
+APPLY	KÄYTÄ
+Follows your library shader.	Seuraa kirjaston suodatinta.
+Original	Alkuperäinen
+DS screens	DS-näytöt
+Natural	Luonnollinen
+Vivid	Eloisa
+Pixel art	Pikselitaide
+Moods	Tunnelmat
+Up / Down or L / R: change group	Ylös / Alas tai L / R: vaihda ryhmää

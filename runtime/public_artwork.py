@@ -115,7 +115,8 @@ class PublicClient:
                 if len(content) > limit: raise ScraperError("Artwork response exceeds the size limit.")
                 return content
             except urllib.error.HTTPError as error:
-                error.close()
+                try: error.close()
+                except (AttributeError, KeyError, OSError): pass   # an error without a body (fp=None)
                 if error.code == 404: raise NotFound("No matching cover found.") from None
                 retryable = error.code in (408, 429, 500, 502, 503, 504)
                 if not retryable or attempt:
@@ -213,10 +214,13 @@ class PublicClient:
         if name_override.strip(): return self.libretro(name_override.strip(), "")
         if self.provider == "gametdb": return self.gametdb(name, code)
         if self.provider == "libretro": return self.libretro(name, code)
+        # Automatic prefers Libretro's box art (512 px, stored at 384) for the
+        # large cover screen; GameTDB's coverS is 128x115. GameTDB's exact
+        # game-code match remains the fallback for titles Libretro lacks.
         error = None
-        try: return self.gametdb(name, code)
-        except ScraperError as failure: error = failure
         try: return self.libretro(name, code)
+        except ScraperError as failure: error = failure
+        try: return self.gametdb(name, code)
         except NotFound:
             if error and not isinstance(error, NotFound): raise error
             raise

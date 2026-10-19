@@ -17,7 +17,7 @@ BRIDGE_EXPORTS = {"SDL_Init", "SDL_IsGameController", "SDL_RenderCopy", "SDL_Ren
                   "SDL_GameControllerGetButton", "SDL_GetKeyboardState", "SDL_PeepEvents",
                   "glTexImage2D", "glDrawArrays", "glDeleteTextures", "glDeleteProgram",
                   "glBufferData", "glBufferSubData", "glDeleteBuffers",
-                  "read", "ioctl", "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init"}
+                  "read", "ioctl", "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init", "rgds_present_canvas"}
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -116,7 +116,7 @@ def build(target):
                 info = inspect_elf(candidate, source="RGDS source build", symbols=destination.name.endswith(".so"))
                 if info["machine"] != "aarch64" or info["glibc_minimum"] != "2.17":
                     raise ValueError("Unexpected device build ABI: " + destination.name)
-                if "exports" in info and any(not name.startswith(("SDL_", "gl")) and name not in ("ioctl", "read", "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init") for name in info["exports"]):
+                if "exports" in info and any(not name.startswith(("SDL_", "gl")) and name not in ("ioctl", "read", "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init", "rgds_present_canvas") for name in info["exports"]):
                     raise ValueError("The bridge exports private runtime symbols")
                 if destination.name.endswith(".so") and not BRIDGE_EXPORTS.issubset(info.get("exports", [])):
                     raise ValueError("The bridge is missing required emulator hooks")

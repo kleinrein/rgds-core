@@ -68,11 +68,20 @@ class CoverBrowserTests(unittest.TestCase):
     def test_selected_cover_fills_both_frames_on_first_draw_and_neighbors_follow(self):
         image, first, _ = self.run_ui(first=True)
         pixel = visuals.VisualOptionsTests.pixel
-        for x, y in [(169, 108), (169, 118), (169, 360), (320, 631), (320, 641), (320, 844)]:
+        # Top: the cover alone, centred and scaled to the stage (no animation
+        # on the first draw; its upper part carries a faint glass sheen).
+        near = lambda value, target: all(abs(a - b) <= 40 for a, b in zip(value, target))
+        for x, y in [(320, 80), (320, 140)]:
+            self.assertTrue(near(pixel(image, x, y), (0, 0, 255)), (x, y, pixel(image, x, y)))
+        self.assertEqual(pixel(image, 320, 400), (0, 0, 255))
+        self.assertEqual(pixel(image, 320, 260), (255, 0, 0))
+        self.assertNotIn(pixel(image, 150, 240), ((0, 0, 255), (255, 0, 0)))  # Nothing beside it.
+        # Bottom: the selected carousel tile.
+        for x, y in [(320, 631), (320, 641), (320, 844)]:
             self.assertEqual(pixel(image, x, y), (0, 0, 255), (x, y))
         self.assertEqual(pixel(image, 320, 720), (255, 0, 0))
         # Border hugs the portrait, and the top-left image corner is rounded.
-        self.assertEqual(pixel(image, 263, 740), (44, 137, 218))
+        self.assertEqual(pixel(image, 263, 740), (35, 110, 174))
         self.assertNotEqual(pixel(image, 264, 631), (0, 0, 255))
         image, settled, _ = self.run_ui()
         self.assertEqual(pixel(image, 478, 710), (255, 0, 0))
@@ -97,13 +106,18 @@ class CoverBrowserTests(unittest.TestCase):
             self.assertGreaterEqual(selected, 3)
             self.assertLessEqual(selected, 8)
 
-    def test_both_triggers_open_letter_picker(self):
-        for button in (10, 11):
-            with self.subTest(button=button):
-                _, counts, selected = self.run_ui(f'100 joy-down {button}\n150 joy-up {button}\n')
-                self.assertTrue(counts['picker_open'])
-                self.assertEqual(counts['picker_title'], 'Jump to letter')
-                self.assertEqual(selected, 0)
+    def test_l2_jumps_to_a_letter_and_r2_opens_search(self):
+        _, counts, selected = self.run_ui('100 joy-down 10\n150 joy-up 10\n')
+        self.assertTrue(counts['picker_open'])
+        self.assertEqual(counts['picker_title'], 'Jump to letter')
+        self.assertEqual(selected, 0)
+        # A second press of L2 closes the sheet again.
+        _, counts, _ = self.run_ui('100 joy-down 10\n150 joy-up 10\n400 joy-down 10\n450 joy-up 10\n')
+        self.assertFalse(counts['picker_open'])
+        _, counts, selected = self.run_ui('100 joy-down 11\n150 joy-up 11\n')
+        self.assertFalse(counts['picker_open'])
+        self.assertEqual(counts['page'], 8)   # the search keyboard
+        self.assertEqual(selected, 0)
 
     def test_last_played_icon_comes_from_the_last_game(self):
         image, _, _ = self.run_ui(home=True)

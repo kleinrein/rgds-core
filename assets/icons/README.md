@@ -14,10 +14,14 @@ clear front-facing silhouettes, no text, no enclosing tile and no neon/glow.
 - `games-source.png`: final replacement cartridge. Its prompt specifies a square
   graphite Nintendo DS cartridge front, a small upper-right step, grip ridges,
   silver inset label with blue dual screens, and no exposed gold contacts.
+- `pictochat.bmp`: the home screen's PictoChat tile, two chat bubbles with a
+  hand-drawn stroke. Unlike the others it is drawn by `tools/build_pictochat_icon.py`
+  (original artwork, reproducible, no source PNG), in the same graphite, silver and
+  medium-blue palette. Its pixel counterpart is the `Chat` glyph.
 
 `tools/prepare_icons.py` crops cell padding, preserves alpha and scales each image
 onto a 128×128 canvas with a 116px optical bound. The launcher preloads these BMPs
-outside drawing (20 icons total), with 64 KiB of pixel storage per icon per renderer. Directional
+outside drawing (21 icons total), with 64 KiB of pixel storage per icon per renderer. Directional
 arrows, checkmarks and small control glyphs retain native geometry for legibility.
 
 ## Theme selection

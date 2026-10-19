@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import struct
 import sys
 import tempfile
 import time
@@ -208,30 +209,59 @@ def image_to_bmp(content, path):
     if not surface: raise ScraperError("The downloaded artwork could not be decoded.")
     path.parent.mkdir(parents=True, exist_ok=True)
     pending = path.with_suffix(".pending.bmp")
-    reduced = None
+    sdl.SDL_ConvertSurfaceFormat.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
+    sdl.SDL_ConvertSurfaceFormat.restype = ctypes.c_void_p
+    sdl.SDL_CreateRGBSurfaceWithFormat.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint32]
+    sdl.SDL_CreateRGBSurfaceWithFormat.restype = ctypes.c_void_p
+    # SDL_SoftStretchLinear (2.0.16+) filters; older SDL falls back to nearest.
+    stretch = getattr(sdl, "SDL_SoftStretchLinear", None) or sdl.SDL_SoftStretch
+    stretch.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+    stretch.restype = ctypes.c_int
+    surfaces = [surface]
     try:
         size = ctypes.cast(surface, ctypes.POINTER(Surface)).contents
-        if size.w < 1 or size.h < 1 or size.w * size.h > 4 * 1024**2:
+        width, height = size.w, size.h
+        if width < 1 or height < 1 or width * height > 4 * 1024**2:
             raise ScraperError("Artwork dimensions exceed the limit.")
-        if max(size.w, size.h) > 384:
-            ratio = 384 / max(size.w, size.h)
-            sdl.SDL_CreateRGBSurface.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32]
-            sdl.SDL_CreateRGBSurface.restype = ctypes.c_void_p
-            sdl.SDL_UpperBlitScaled.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
-            sdl.SDL_UpperBlitScaled.restype = ctypes.c_int
-            sdl.SDL_SetSurfaceBlendMode.argtypes = [ctypes.c_void_p, ctypes.c_int]
-            reduced = sdl.SDL_CreateRGBSurface(0, max(1, round(size.w * ratio)), max(1, round(size.h * ratio)), 32, 0xff0000, 0xff00, 0xff, 0xff000000)
-            if not reduced: raise ScraperError("Could not prepare the downloaded artwork.")
-            sdl.SDL_SetSurfaceBlendMode(surface, 0)
-            if sdl.SDL_UpperBlitScaled(surface, None, reduced, None) != 0:
-                raise ScraperError("Could not resize the downloaded artwork.")
+        result = surface
+        if max(width, height) > 384:
+            # Paletted and 24-bit covers (common on thumbnails.libretro.com) can
+            # not be scaled by a blit: stretch one 32-bit copy instead, halving
+            # first so a large cover is filtered rather than decimated.
+            current = sdl.SDL_ConvertSurfaceFormat(surface, 0x16362004, 0)   # ARGB8888
+            if not current: raise ScraperError("Could not prepare the downloaded artwork.")
+            surfaces.append(current)
+            ratio = 384 / max(width, height)
+            final = max(1, round(width * ratio)), max(1, round(height * ratio))
+            while True:
+                step = (max(final[0], width // 2), max(final[1], height // 2)) if width >= final[0] * 2 else final
+                smaller = sdl.SDL_CreateRGBSurfaceWithFormat(0, step[0], step[1], 32, 0x16362004)
+                if not smaller: raise ScraperError("Could not prepare the downloaded artwork.")
+                surfaces.append(smaller)
+                if stretch(current, None, smaller, None) != 0:
+                    raise ScraperError("Could not resize the downloaded artwork.")
+                current, (width, height) = smaller, step
+                if step == final: break
+            result = current
         destination = sdl.SDL_RWFromFile(os.fsencode(pending), b"wb")
-        if not destination or sdl.SDL_SaveBMP_RW(reduced or surface, destination, 1) != 0:
+        if not destination or sdl.SDL_SaveBMP_RW(result, destination, 1) != 0:
             raise ScraperError("Could not save the downloaded artwork.")
         pending.replace(path)
     finally:
-        if reduced: sdl.SDL_FreeSurface(reduced)
-        sdl.SDL_FreeSurface(surface); pending.unlink(missing_ok=True)
+        for item in reversed(surfaces): sdl.SDL_FreeSurface(item)
+        pending.unlink(missing_ok=True)
+
+
+# Covers narrower than this predate the large cover screen (GameTDB coverS is
+# 128x115). "Fetch missing artwork" tries once per game for a sharper one.
+SHARP_WIDTH = 200
+
+
+def low_resolution(path):
+    try:
+        with open(path, "rb") as stream: header = stream.read(26)
+    except OSError: return False
+    return len(header) == 26 and header[:2] == b"BM" and abs(struct.unpack_from("<i", header, 18)[0]) < SHARP_WIDTH
 
 
 def games(roots):
@@ -255,7 +285,10 @@ def scrape(data, client, roms, force=False):
             item = data / "library" / game_key(rom)
             publish("scraping", "Fetching artwork", rom.stem)
             outcome = {"game": rom.stem, "key": game_key(rom), "state": "cached", "message": "Artwork already available."}
-            if not force and (item / "box.bmp").exists():
+            upgrade = (not force and hasattr(client, "artwork") and getattr(client, "provider", "auto") != "gametdb"
+                       and low_resolution(item / "box.bmp")
+                       and read_fields(item / "info.ini").get("sharp_checked") != "1")
+            if not force and not upgrade and (item / "box.bmp").exists():
                 cached += 1
             else:
                 try:
@@ -271,12 +304,19 @@ def scrape(data, client, roms, force=False):
                     image_to_bmp(raw, item / "box.bmp")
                     existing = read_fields(item / "info.ini")
                     existing.update(fields)
+                    if upgrade: existing["sharp_checked"] = "1"
                     write_fields(item / "info.ini", existing)
                     downloaded += 1
                     outcome.update(state="downloaded", message="Artwork saved.", provider=fields.get("provider", ""))
                 except NotFound as error:
-                    missing += 1
-                    outcome.update(state="missing", message=str(error) or "No matching cover found.")
+                    if upgrade:
+                        # No sharper cover exists: keep the small one, ask once.
+                        existing = read_fields(item / "info.ini"); existing["sharp_checked"] = "1"
+                        write_fields(item / "info.ini", existing)
+                        cached += 1
+                    else:
+                        missing += 1
+                        outcome.update(state="missing", message=str(error) or "No matching cover found.")
                 except ScraperError as error:
                     failed += 1
                     outcome.update(state="error", message=str(error))

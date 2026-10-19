@@ -1,35 +1,32 @@
 # Documentation
 
-Start with the [project README](../README.md) for status, installation, controls and measured performance. These guides describe the maintained application; dated reports are under `archive/`.
+Start with the [project README](../README.md).
 
 ## Using RG DS Core
 
-| Guide | Purpose |
+| Guide | What it covers |
 | --- | --- |
-| [Device setup](DEVICE_SETUP.md) | Compatible stock Linux card, inventory and optional SSH |
-| [RG DS Plus](RG_DS_PLUS.md) | Experimental compatibility and community hardware checklist |
-| [SD installation](SD_FLASH.md) | Drop-on-card installer and manual upgrades |
+| [Installing and updating](SD_FLASH.md) | The drop-on-card installer, updates and recovery |
+| [Card setup](DEVICE_SETUP.md) | Preparing the stock Linux card; optional SSH |
+| [RG DS Plus](RG_DS_PLUS.md) | Status and a test checklist for Plus owners |
 | [Saves](SAVES.md) | Battery saves, checkpoints, import/export and backups |
-| [Artwork](SCREENSCRAPER.md) | Offline identity, public cover services and optional ScreenScraper |
-| [SuperDrastic](SUPERDRASTIC.md) | Experimental native DraStic backend and its controls |
-| [Startup](BOOT.md) | Direct boot, branding, stock handoff and recovery |
+| [Artwork](SCREENSCRAPER.md) | Where covers come from and how matching works |
+| [PictoChat](PICTOCHAT.md) | The home-screen chat pad: rooms, drawing, Wi-Fi, security and tests |
+| [SuperDrastic](SUPERDRASTIC.md) | The experimental native DraStic backend |
+| [Startup](BOOT.md) | Direct boot, the boot logo and returning to stock |
+| [Menu sounds](MENU_SOUNDS.md) | The optional sound palette |
 
-## Developing and validating
+## Developing
 
-| Guide | Purpose |
+| Guide | What it covers |
 | --- | --- |
-| [Development](DEVELOPMENT.md) | Prerequisites, engine provisioning, preview and device loop |
-| [Performance](PERFORMANCE.md) | Recorded device/host measurements, methods and reproduction |
-| [Device acceptance](NEXT_DEVICE_TEST.md) | Remaining physical and game compatibility checks |
-| [Localization](I18N.md) | Add or update a language catalog |
-| [NNDDSS integration](NNDDSS_INDEPENDENT.md) | Owned writable data and payload boundaries |
-| [Emulator options](EMULATOR_OPTIONS.md) | Available engines and candidates |
-| [Experimental engine research](EMULATOR_RESEARCH.md) | Ten upstream references, applied findings and benchmark method |
-| [Feature comparison](FEATURE_COMPARISON.md) | Scope and outstanding priorities |
-| [Releases](RELEASE_PLAN.md) | Installer readiness and public-release requirements |
-| [OTA](OTA.md) | Update trust, signing, staging and rollback |
-| [Third-party provenance](../THIRD_PARTY.md) | Sources, retained notices and redistribution boundaries |
+| [Development](DEVELOPMENT.md) | Toolchains, the host preview and the device loop |
+| [DSCore graphics](RGDS_VULKAN.md) | How DSCore renders 2×–5× 3D on the Mali-G52 |
+| [Performance](PERFORMANCE.md) | How frame rates are measured and the latest results |
+| [Raster rules test](RASTER_RULES.md) | A test ROM that holds the GPU raster against the CPU raster, rule by rule |
+| [Releases and updates](OTA.md) | Publishing on GitHub, signing and automatic rollback |
+| [Localization](I18N.md) | Adding or updating a language |
+| [NNDDSS](NNDDSS_INDEPENDENT.md) | How the NNDDSS engine's data is kept separate |
+| [Third-party components](../THIRD_PARTY.md) | Sources, notices and licenses |
 
-## Historical evidence
-
-[Dated investigations and superseded plans](archive/README.md) retain original measurements, failure reports and design context. Check each report's build/date and exclusions before using its results. Raw `build/` evidence is local and ignored by Git; the reports do not imply that a fresh clone includes those logs.
+Older reports, benchmarks and plans live in the [archive](archive/README.md). They describe the project as it was on their date.

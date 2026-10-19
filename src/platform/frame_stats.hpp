@@ -1,4 +1,5 @@
 #pragma once
+#include "platform/hud_style.hpp"
 #include <array>
 #include <atomic>
 #include <algorithm>
@@ -45,6 +46,7 @@ public:
     }
 };
 inline void draw_fps_hud(unsigned char* pixels,double fps,bool game=false){
+    if(hud::fps(pixels,fps,game))return;
     char text[32];std::snprintf(text,sizeof(text),"%.1f FPS",std::clamp(fps,0.0,999.9));
     auto glyph=[](char c)->uint64_t{switch(c){
         case '0':return 0x1f11111111111full;case '1':return 0x040c040404040eull;

@@ -20,3 +20,11 @@
 18	Pocket green	pocket_green	18	Soft green monochrome with full-resolution detail.
 19	Amber	amber	19	Warm monochrome with preserved highlight detail.
 20	Soft LCD grid	soft_lcd_grid	20	A subtle pixel grid with a bright, readable image.
+21	DS Classic	ds_classic	21	The first DS screen: muted colour and a fine pixel grid.
+22	DS Lite	ds_lite	22	The brighter DS Lite screen with a faint pixel grid.
+23	Natural glow	natural_glow	23	Natural colour with soft pixels that glow together.
+24	Vivid LCD	vivid_lcd	24	Bold colour on a close-up LCD with RGB stripes.
+25	Natural smooth	natural_smooth	25	Natural colour with smoothed diagonal edges.
+26	Vivid smooth	vivid_smooth	26	Bold colour with smoothed diagonal edges.
+27	Pixel beads	pixel_beads	27	Bold colour; every pixel a round, shiny bead.
+28	Glossy tiles	glossy_tiles	28	Bold colour; every pixel a raised, glossy tile.

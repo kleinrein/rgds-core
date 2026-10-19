@@ -19,7 +19,7 @@
  X(SaveBMP_RW) X(WaitEventTimeout) X(PollEvent) X(Delay) X(GetTicks) X(NumJoysticks) \
  X(JoystickOpen) X(JoystickClose) X(JoystickName) X(SetHint) \
  X(CreateTexture) X(SetRenderTarget) X(RenderCopyEx) X(CreateTextureFromSurface) X(DestroyTexture) X(SetTextureBlendMode) X(SetTextureColorMod) X(RenderCopy) X(PushEvent) X(GetKeyFromName) \
- X(LoadBMP_RW) X(SetTextureAlphaMod) X(StartTextInput) X(StopTextInput) X(RenderSetClipRect)
+ X(LoadBMP_RW) X(SetTextureAlphaMod) X(StartTextInput) X(StopTextInput) X(RenderSetClipRect) X(UpdateTexture)
 
 struct Sdl {
     void* handle = nullptr;

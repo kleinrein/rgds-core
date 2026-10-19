@@ -20,9 +20,11 @@ class EngineLog:
         self.stream = self.worker = None
         self.deadline = None
         self.wake_reader = self.wake_writer = None
+        self.gpu_faults = 0   # "[KFAULT]" lines: PanVK GPU jobs the kernel terminated
 
     def append(self, chunk):
         with self.lock:
+            self.gpu_faults += chunk.count(b"[KFAULT]")
             self.chunks.append(chunk)
             self.size += len(chunk)
             while self.size > self.limit:

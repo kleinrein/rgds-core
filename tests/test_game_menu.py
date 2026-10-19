@@ -392,7 +392,7 @@ class GameMenuTests(unittest.TestCase):
 
     def test_live_graphics_persists_only_after_success_and_keeps_process(self):
         from library import game_key
-        self.menu.core='rgds-experimental'
+        self.menu.core='rgds-experimental';self.menu.launch_hires=True
         path=self.menu.data/'library'/game_key(self.menu.rom)/'game.ini'
         write_fields(path,dict(rgds_scale=1,rgds_smooth=1,frameskip=0,favourite=1))
         before=path.read_bytes()
@@ -410,6 +410,52 @@ class GameMenuTests(unittest.TestCase):
         self.assertEqual(path.read_bytes(),before)
         self.assertEqual(read_fields(self.menu.status)['active_scale'],'5')
         self.assertEqual(read_fields(self.menu.status)['state'],'error')
+
+    def test_live_2d_filter_persists_only_after_success_and_keeps_process(self):
+        from library import game_key
+        self.menu.core='rgds-experimental';self.menu.launch_hires=True
+        path=self.menu.data/'library'/game_key(self.menu.rom)/'game.ini'
+        write_fields(path,dict(rgds_scale=3,rgds_smooth=1,frameskip=0,favourite=1))
+        before=path.read_bytes()
+        self.request('filter2d:1',token='filter-success')
+        self.assertEqual(self.menu.pending['action'],'filter2d:1')
+        self.assertEqual(path.read_bytes(),before)
+        self.result('filter2d-applied')
+        self.assertEqual(read_fields(path)['rgds_2d'],'1')
+        self.assertEqual(read_fields(path)['rgds_scale'],'3');self.assertEqual(read_fields(path)['favourite'],'1')
+        self.assertEqual(read_fields(self.menu.status)['active_filter2d'],'1')
+        self.assertFalse(self.menu.restart);self.assertIsNone(self.child.poll())
+        before=path.read_bytes()
+        self.request('filter2d:2',token='filter-failure')
+        self.result('filter2d-failed')
+        self.assertEqual(path.read_bytes(),before)
+        self.assertEqual(read_fields(self.menu.status)['active_filter2d'],'1')
+        self.assertEqual(read_fields(self.menu.status)['state'],'error')
+
+    def test_live_2d_filter_rejects_malformed_and_other_engine_requests(self):
+        for command in ('filter2d:1','filter2d:3','filter2d:-1','filter2d:','filter2d:1:0'):
+            self.menu.send(command)
+            self.assertIsNone(self.menu.pending)
+        self.menu.core='rgds-experimental'
+        for command in ('filter2d:4','filter2d:x','filter2d:1:0'):
+            self.menu.send(command)
+            self.assertIsNone(self.menu.pending)
+        self.menu.send('filter2d:2')
+        self.assertEqual(self.menu.pending['action'],'filter2d:2')
+
+    def test_crossing_native_and_high_resolution_saves_choice_and_restarts(self):
+        from library import game_key
+        self.menu.core='rgds-experimental';self.menu.launch_hires=False
+        path=self.menu.data/'library'/game_key(self.menu.rom)/'game.ini'
+        write_fields(path,dict(rgds_scale=1,rgds_smooth=1,frameskip=0,favourite=1))
+        self.request('graphics:3:0:1',token='to-hires')
+        self.assertEqual(read_fields(path)['rgds_scale'],'3');self.assertEqual(read_fields(path)['frameskip'],'1')
+        self.assertEqual(read_fields(path)['favourite'],'1')
+        self.assertTrue(self.menu.restart);self.assertEqual(self.menu.pending['action'],'save-quit')
+        # Within the same renderer the change still applies live.
+        self.menu.pending=None;self.menu.restart=False;self.menu.launch_hires=True
+        self.request('graphics:5:1:0',token='still-hires')
+        self.assertEqual(self.menu.pending['action'],'graphics:5:1:0');self.assertFalse(self.menu.restart)
 
     def test_live_graphics_rejects_malformed_and_other_engine_requests(self):
         for command in ('graphics:5:1:0','graphics:9:1:0','graphics:3:1','graphics:3:1:0:2'):

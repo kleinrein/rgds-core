@@ -17,6 +17,7 @@ from shaders import supported
 from library import read_fields, write_fields, game_key
 from controls import load_profile, paths as control_paths, Shortcut, FastForwardButton, evdev_source
 from lid_sleep import LidSleep
+from game_clocks import GameClocks
 from collections import deque
 from typing import NamedTuple
 
@@ -185,6 +186,7 @@ class GameMenu:
         self.environment = menu_environment(environment)
         self.live = environment.get('RGDS_MENU_LIVE') == '1'
         self.restart = False
+        self.restart_same_core = False
         self.switch_target = None
         self.switcher_requested = False
         self.view_request = 0
@@ -195,7 +197,20 @@ class GameMenu:
         self.speed_state=Path(str(self.data / 'session/emulator.control')+'.speed-state')
         self.fps = environment.get('RGDS_FPS') == '1'
         self.active_scale = environment.get('RGDS_ACTIVE_SCALE', '1')
+        # The native and high-resolution renderers are separate binaries.
+        self.launch_hires = self.active_scale not in ('', '1')
+        # GPU-rendered games hold the GPU and memory clock floors (game_clocks).
+        self.clocks = None
+        if GameClocks.wanted(environment, self.data):
+            try:
+                self.clocks = GameClocks(self.data)
+                held = self.clocks.hold()
+                if held: print('Clock floor held for ' + ', '.join(held), flush=True)
+            except (OSError, ValueError) as error:
+                self.clocks = None
+                print('Clock floor not held: ' + str(error), file=sys.stderr, flush=True)
         self.active_smooth = environment.get('RGDS_3D_SMOOTH', '1')
+        self.active_filter2d = environment.get('RGDS_2D_FILTER', '0')
         self.stats_path = Path(environment['RGDS_FRAME_STATS']) if environment.get('RGDS_FRAME_STATS') else None
         self.overlay_path = Path(environment['RGDS_OVERLAY_FILE']) if environment.get('RGDS_OVERLAY_FILE') else None
         self.overlay_ready = False
@@ -225,10 +240,18 @@ class GameMenu:
         self.folder.mkdir(parents=True, exist_ok=True)
         for path in (self.request, self.status, self.trigger, self.home_trigger, self.game_menu_trigger, self.block, self.folder / 'game-menu.wake', self.folder / 'game-menu.audio-sleep', self.folder / 'game-menu.audio-sleep.ready'):
             path.unlink(missing_ok=True)
+        # Load the pause path's modules while the engine boots, not on the
+        # first menu press.
+        try:
+            import menu_snapshot, save_library  # noqa: F401
+        except ImportError:
+            pass
+        # Monotonic stages of the current menu opening, reported once it shows.
+        self.open_stages = None
 
     def publish(self, state, message="", **fields):
         write_fields(self.status, dict(state=state, message=message, core=self.core,
-                    request_token=self.accepted_request, active_scale=self.active_scale, active_smooth=self.active_smooth,
+                    request_token=self.accepted_request, active_scale=self.active_scale, active_smooth=self.active_smooth, active_filter2d=self.active_filter2d,
                     checkpoint=int(self.has_checkpoint()), live=int(self.live and not self.paused), fast_forward=int(self.fast_forward), fps=int(self.fps), threaded=int(self.threaded), view_request=self.view_request, view='switcher' if self.switcher_requested else 'game-menu', **fields), durable=False)
 
     def checkpoint(self):
@@ -285,7 +308,7 @@ class GameMenu:
             self.publish('error', 'Choose an emulator for this game in the library.')
             return
         self.restart = False
-        self.switch_target = SwitchGame(CORES[core], rom)
+        self.switch_target = SwitchGame('rgds-experimental' if CORES[core] == 'nnddss' else CORES[core], rom)   # NNDDSS is retired
         # Always require a successful checkpoint, even with auto-save disabled.
         self.send('save-quit')
 
@@ -318,17 +341,20 @@ class GameMenu:
     def open(self):
         if self.menu is not None or self.snapshot_deadline is not None or self.child.poll() is not None:
             return
+        self.open_stages = dict(pressed=time.monotonic())
         self.stop_speed_for_menu()
         backdrop = self.folder / 'menu-background.bmp'
         backdrop.unlink(missing_ok=True)
         # Request just one frame before pausing. The main loop keeps servicing
         # input and exit commands during this bounded handoff; no blocking sleep.
-        if not self.live and self.environment.get('RGDS_CONTROL_FILE'):
+        # A live engine (DSCore on direct display) holds the game once input
+        # is blocked and keeps presenting that frame, so it is captured too.
+        if self.environment.get('RGDS_CONTROL_FILE'):
             for suffix in ('.capture-top.bmp', '.capture-bottom.bmp', '.capture-combined.bmp'):
                 Path(str(self.control)+suffix).unlink(missing_ok=True)
             self.block.touch()
             Path(str(self.control)+'.capture').write_text(f'menu-{os.getpid()}-{time.monotonic_ns()}\n')
-            self.snapshot_deadline = time.monotonic() + .18
+            self.snapshot_deadline = time.monotonic() + (.25 if self.live else .18)
             return
         self.open_ready()
 
@@ -341,6 +367,8 @@ class GameMenu:
             return
         self.snapshot_deadline = None
         Path(str(self.control)+'.capture').unlink(missing_ok=True)
+        if self.open_stages is not None:
+            self.open_stages['captured' if source is not None else 'capture_missed'] = time.monotonic()
         if source is not None:
             try:
                 from menu_snapshot import top_panel
@@ -397,9 +425,25 @@ class GameMenu:
         try:
             self.menu = subprocess.Popen(command, env=env)
             self.menu_began = time.monotonic()
+            if self.open_stages is not None:
+                self.open_stages['spawned'] = self.menu_began
         except OSError:
             self.close_menu()
             raise
+
+    def report_open(self):
+        """One log line per opening: where the press-to-picture time went."""
+        stages, self.open_stages = self.open_stages, None
+        if not stages or 'spawned' not in stages:
+            return
+        shown = time.monotonic()
+        def ms(start, end):
+            return round((stages[end] if end in stages else shown) - stages[start], 3) * 1000 if start in stages else None
+        capture = 'captured' if 'captured' in stages else 'capture_missed' if 'capture_missed' in stages else None
+        parts = dict(total=ms('pressed', 'shown'), capture=ms('pressed', capture) if capture else 0,
+                     handoff=ms(capture, 'spawned') if capture else ms('pressed', 'spawned'), helper=ms('spawned', 'shown'))
+        print('RGDS menu: shown in {total:.0f} ms (capture {capture:.0f}, handoff {handoff:.0f}, helper {helper:.0f})'.format(**parts)
+              + (' without a backdrop' if capture == 'capture_missed' else ''), flush=True)
 
     def close_menu(self):
         self.snapshot_deadline = None
@@ -489,8 +533,18 @@ class GameMenu:
                 scale,smooth,skip=map(int,action.split(':')[1:])
                 if self.core!='rgds-experimental' or not (1<=scale<=5 and 0<=smooth<=1 and 0<=skip<=3):raise ValueError()
             except ValueError:
-                self.publish('error','Invalid RG DS graphics setting.')
+                self.publish('error','Invalid DSCore graphics setting.')
                 return
+        if action.startswith('filter2d:'):
+            try:
+                mode=int(action.split(':')[1])
+                if self.core!='rgds-experimental' or action.count(':')!=1 or not 0<=mode<=3:raise ValueError()
+            except ValueError:
+                self.publish('error','Invalid DSCore 2D filter.')
+                return
+        if action.startswith('adaptive:') and (self.core != 'rgds-experimental' or action not in ('adaptive:0','adaptive:1')):
+            self.publish('error', 'This engine has no live heavy-scene control.')
+            return
         if action.startswith('shader:'):
             try:choice=int(action.split(':',1)[1])
             except ValueError:choice=-1
@@ -512,7 +566,7 @@ class GameMenu:
         pending.replace(self.control)
         self.pending = dict(token=token, action=action, began=time.monotonic())
         print(f'RGDS menu: {token} {action}', flush=True)
-        self.publish("busy", "Saving before switching games…" if self.switch_target else 'Changing 3D threading…' if action.startswith('threaded:') else 'Applying graphics…' if action.startswith('graphics:') else 'Applying shader…' if action.startswith('shader:') else ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…") if action == "save-quit" else 'Changing speed…' if action == 'fast-forward' else "Saving before returning home…" if action == "quit" and policy(self.data)[1]
+        self.publish("busy", "Saving before switching games…" if self.switch_target else 'Changing 3D threading…' if action.startswith('threaded:') else 'Applying graphics…' if action.startswith(('graphics:','filter2d:','adaptive:')) else 'Applying shader…' if action.startswith('shader:') else ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…") if action == "save-quit" else 'Changing speed…' if action == 'fast-forward' else "Saving before returning home…" if action == "quit" and policy(self.data)[1]
                      else "Returning home…" if action == "quit" else "Saving checkpoint…" if action == "save" else "Loading checkpoint…")
         self.resume_engine()
 
@@ -583,6 +637,7 @@ class GameMenu:
                 with self.overlay_path.open('rb') as stream:header=struct.unpack('7I',stream.read(28))
                 self.overlay_ready = header[0] == 0x52474453 and header[6] > 0
             except (OSError,struct.error):pass
+            if self.overlay_ready:self.report_open()
             if not self.overlay_ready and self.menu_began is not None and time.monotonic()-self.menu_began > 3:
                 self.close_menu()
                 self.publish('error','The overlay did not render. Game controls restored.')
@@ -590,6 +645,7 @@ class GameMenu:
         if not self.live and not self.direct_ready:
             try:self.direct_ready = self.ready.read_text().strip() == str(self.menu.pid)
             except OSError:pass
+            if self.direct_ready:self.report_open()
             if not self.direct_ready and self.menu_began is not None and time.monotonic()-self.menu_began > 5:
                 print(f'RGDS menu: helper {self.menu.pid} did not present within 5 seconds; exit={self.menu.poll()}.', file=sys.stderr, flush=True)
                 self.close_menu()
@@ -603,18 +659,21 @@ class GameMenu:
                 self.accepted_request = token
             if action == "resume":
                 if not self.pending:
+                    print(f'RGDS menu: {token} resume', flush=True)
                     self.switch_target = None
                     self.restart = False
                     self.close_menu()
                 return
             if action.startswith('switch:'):
                 self.switch_game(action.split(':', 1)[1])
+            elif action.startswith('graphics:') and not self.pending and self.renderer_restart(action):
+                pass
             elif action in ('restart', 'reset-state') and not self.pending:
                 self.switch_target = None
                 self.reset_state = action == 'reset-state'
-                self.restart = True
+                self.restart = True;self.restart_same_core = False
                 self.send('save-quit')
-            elif action in ("ds:blow","ds:lid") or action.startswith("slot-") or action in ("save", "load", "quit", "fast-forward") or action.startswith(('shader:','graphics:')) or action in ('fps:0','fps:1','threaded:0','threaded:1'):
+            elif action in ("ds:blow","ds:lid") or action.startswith("slot-") or action in ("save", "load", "quit", "fast-forward") or action.startswith(('shader:','graphics:','filter2d:')) or action in ('fps:0','fps:1','threaded:0','threaded:1','adaptive:0','adaptive:1'):
                 self.send(action)
             elif action == "force-quit":
                 self.switch_target = None
@@ -637,7 +696,7 @@ class GameMenu:
                     return
                 if state == 'saved' and not self.has_checkpoint():
                     state = 'save-failed'
-                if state in ("saved", "loaded", "load-dispatched", "save-timeout", "save-failed", "load-failed", 'fast-forward-on', 'fast-forward-off', 'fast-forward-unavailable','shader-applied','shader-failed','shader-restart-required','fps-on','fps-off','threaded-on','threaded-off','threaded-failed','graphics-applied','graphics-failed'):
+                if state in ("saved", "loaded", "load-dispatched", "save-timeout", "save-failed", "load-failed", 'fast-forward-on', 'fast-forward-off', 'fast-forward-unavailable','shader-applied','shader-failed','shader-restart-required','fps-on','fps-off','threaded-on','threaded-off','threaded-failed','graphics-applied','graphics-failed','filter2d-applied','filter2d-failed','adaptive-on','adaptive-off','adaptive-failed'):
                     if state == "saved" and self.pending["action"] in ("quit", "save-quit"):
                         pass  # Still wait for the actual engine exit.
                     else:
@@ -673,6 +732,19 @@ class GameMenu:
                                 settings=read_fields(path);settings['threaded_3d']=int(self.threaded)
                                 write_fields(path,settings)
                             except OSError:state='threaded-unsaved'
+                        if state in ('adaptive-on','adaptive-off'):
+                            try:
+                                path=self.data/'library'/game_key(self.rom)/'game.ini'
+                                settings=read_fields(path);settings.update(rgds_adaptive=int(state=='adaptive-on'))
+                                write_fields(path,settings)
+                            except OSError:state='adaptive-unsaved'
+                        if state=='filter2d-applied':
+                            mode=int(action.split(':')[1]);self.active_filter2d=str(mode)
+                            try:
+                                path=self.data/'library'/game_key(self.rom)/'game.ini'
+                                settings=read_fields(path);settings.update(rgds_2d=mode)
+                                write_fields(path,settings)
+                            except OSError:state='filter2d-unsaved'
                         if state=='graphics-applied':
                             scale,smooth,skip=map(int,action.split(':')[1:])
                             self.active_scale=str(scale);self.active_smooth=str(smooth)
@@ -681,7 +753,7 @@ class GameMenu:
                                 settings=read_fields(path);settings.update(rgds_scale=scale,rgds_smooth=smooth,frameskip=skip)
                                 write_fields(path,settings)
                             except OSError:state='graphics-unsaved'
-                        ok = state in ("saved", "loaded", "load-dispatched", 'fast-forward-on', 'fast-forward-off','shader-applied','fps-on','fps-off','fps-unsaved','threaded-on','threaded-off','threaded-unsaved','graphics-applied','graphics-unsaved')
+                        ok = state in ("saved", "loaded", "load-dispatched", 'fast-forward-on', 'fast-forward-off','shader-applied','fps-on','fps-off','fps-unsaved','threaded-on','threaded-off','threaded-unsaved','graphics-applied','graphics-unsaved','filter2d-applied','filter2d-unsaved','adaptive-on','adaptive-off','adaptive-unsaved')
                         self.publish("paused" if ok or state in ('fast-forward-unavailable','shader-restart-required') else "error", "Checkpoint saved." if state == "saved" else "Checkpoint loaded." if state == "loaded"
                                      else "Load requested. Resume to check your game." if state == "load-dispatched"
                                      else 'Fast-forward enabled.' if state == 'fast-forward-on' else 'Normal speed.' if state == 'fast-forward-off'
@@ -689,6 +761,12 @@ class GameMenu:
                                      else 'Graphics applied. Your game keeps running.' if state=='graphics-applied'
                                      else 'Graphics applied for this session. Settings storage is unavailable.' if state=='graphics-unsaved'
                                      else 'Could not apply graphics. The previous renderer is still active.' if state=='graphics-failed'
+                                     else '2D filter applied. Your game keeps running.' if state=='filter2d-applied'
+                                     else '2D filter applied for this session. Settings storage is unavailable.' if state=='filter2d-unsaved'
+                                     else 'Could not apply the 2D filter. Your game is unchanged.' if state=='filter2d-failed'
+                                     else 'Heavy 3D scenes changed. Your game keeps running.' if state in ('adaptive-on','adaptive-off')
+                                     else 'Heavy 3D scenes changed for this session. Settings storage is unavailable.' if state=='adaptive-unsaved'
+                                     else 'Could not change heavy 3D scenes. Your game is unchanged.' if state=='adaptive-failed'
                                      else '3D threading changed. No restart needed.' if state in ('threaded-on','threaded-off')
                                      else '3D threading changed for this session. Settings storage is unavailable.' if state=='threaded-unsaved'
                                      else 'Could not change 3D threading. Your game is unchanged.' if state=='threaded-failed'
@@ -703,8 +781,7 @@ class GameMenu:
                 if not self.live:self.pause()
                 self.publish("error", "The emulator did not finish. Resume, retry, or return without saving.")
         elif self.menu.poll() is not None:
-            if self.menu.poll() != 0 or (not self.live and not self.direct_ready):
-                print(f'RGDS menu: helper {self.menu.pid} exited with code {self.menu.poll()}; presented={int(self.direct_ready if not self.live else self.overlay_ready)}.', file=sys.stderr, flush=True)
+            print(f'RGDS menu: helper {self.menu.pid} exited with code {self.menu.poll()}; presented={int(self.direct_ready if not self.live else self.overlay_ready)}.', file=sys.stderr, flush=True)
             self.restart = False
             self.close_menu()
 
@@ -720,6 +797,30 @@ class GameMenu:
         deadline = time.monotonic() + .35
         while not ready.exists() and self.menu.poll() is None and time.monotonic() < deadline:
             time.sleep(.005)
+        return True
+
+    def renderer_restart(self, action):
+        """Native <-> 2x-5x needs the other binary: save the choice, checkpoint, relaunch."""
+        try:
+            scale, smooth, skip = map(int, action.split(':')[1:])
+        except ValueError:
+            return False
+        if self.core != 'rgds-experimental' or not (1 <= scale <= 5 and 0 <= smooth <= 1 and 0 <= skip <= 3):
+            return False
+        if (scale > 1) == self.launch_hires:
+            return False
+        try:
+            path = self.data/'library'/game_key(self.rom)/'game.ini'
+            settings = read_fields(path);settings.update(rgds_scale=scale, rgds_smooth=smooth, frameskip=skip)
+            write_fields(path, settings)
+        except OSError:
+            self.publish('error', 'Could not save the new resolution. Check storage.')
+            return True
+        self.switch_target = None;self.reset_state = False;self.restart = True
+        # Same engine, other renderer binary: never re-resolve the emulator
+        # from the per-game/default choice (that is for "Next emulator").
+        self.restart_same_core = True
+        self.send('save-quit')
         return True
 
     def sleep_for_lid(self):
@@ -774,9 +875,16 @@ class GameMenu:
                             self.resume_engine()
             self.last_toggle = time.monotonic()
 
+    def release_clocks(self):
+        clocks, self.clocks = self.clocks, None
+        if clocks:
+            try:clocks.release()
+            except (OSError, ValueError) as error:print('Clock floor not released: ' + str(error), file=sys.stderr, flush=True)
+
     def close(self):
         try:self.close_menu()
         finally:
+            self.release_clocks()
             self.inputs.close()
             if self.overlay_path:self.overlay_path.unlink(missing_ok=True)
             if self.stats_path and self.stats_path.is_file():

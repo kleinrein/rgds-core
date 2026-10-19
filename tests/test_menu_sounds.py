@@ -55,6 +55,13 @@ class MenuSoundUITests(unittest.TestCase):
             self.assertEqual(r['sound_reads'],17);self.assertEqual(r['sound_opens'],1)
             self.assertFalse(r['sound_active']);self.assertEqual(r['view_animation_frames'],0)
             self.assertEqual(r['render_file_reads'],0);self.assertLess(r['frames'],30)
+    def test_quiet_menu_releases_the_sink_and_reopens_for_the_next_cue(self):
+        # SDL keeps a merely paused device feeding silence, holding the shared
+        # stream, DAC and a CPU core; the menu closes it after 3 s of quiet.
+        r=self.run_ui('100 key A\n4300 key Escape\n','animations=0\nmenu_sounds=1\n',seconds=5)
+        self.assertEqual(r['sound_counts'][2],1);self.assertEqual(r['sound_counts'][3],1)
+        self.assertEqual(r['sound_opens'],2);self.assertGreaterEqual(r['sound_releases'],1)
+        self.assertEqual(r['sound_reads'],17)
     def test_touch_enables_persists_volume_and_controller_disables(self):
         entry=('--settings','--section','sound')
         r=self.run_ui('100 click 180 390\n220 click 180 129\n350 key Down\n450 key Right\n',entry=entry)

@@ -68,7 +68,7 @@ int main(int argc,char** argv){
             subprocess.run(['clang++','-std=c++17','-pthread',*flags,'-I'+str(ROOT/'src'),str(source),'-o',str(binary)],check=True)
             subprocess.run([str(binary),tmp],check=True,timeout=10)
     def test_generated_icons_keep_alpha_and_fixed_texture_budget(self):
-        icons=list((ROOT/'assets/icons').glob('*.bmp'));self.assertEqual(len(icons),20)
+        icons=list((ROOT/'assets/icons').glob('*.bmp'));self.assertEqual(len(icons),21)
         for path in icons:
             data=path.read_bytes();self.assertEqual(struct.unpack_from('<ii',data,18),(128,-128))
             self.assertEqual(struct.unpack_from('<I',data,66)[0],0xff000000)
