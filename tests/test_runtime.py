@@ -85,6 +85,7 @@ class EmulatorTests(Fixture):
         rom=self.root/'game.nds';rom.write_bytes(b'0123456789abTEST'+bytes(512))
         hook=self.app/'emulators/hooks/librgdsbridge.so';hook.parent.mkdir(parents=True);hook.write_bytes(b'bridge')
         for core in emulators.CORES:
+            if core == 'nnddss': continue   # retired: never launched
             self.binary(core)
             automatic=self.data/'library'/emulators.game_key(rom)/('auto-'+core+'.dss')
             automatic.parent.mkdir(parents=True,exist_ok=True);automatic.write_bytes(b'keep checkpoint')

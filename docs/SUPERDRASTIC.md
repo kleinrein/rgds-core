@@ -68,7 +68,7 @@ not a demanding retail-game benchmark. The 1,536-triangle probe measured about
 Standard and SuperDrastic use the **same DraStic executable and writable save
 home** (`emulators/drastic/backup` and `savestates`). They share RGDS's
 `library/<game-key>/auto-drastic.dss` checkpoint. This is same-engine reuse, not
-conversion or sharing with DSperate, NNDDSS or melonDS.
+conversion or sharing with DSperate or melonDS.
 
 Automatic loading uses a disposable copy inside the native savestates directory,
 so upstream's consume-on-load operation cannot delete the canonical checkpoint.
