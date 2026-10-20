@@ -30,7 +30,7 @@ fi
 echo "Installation failed. See RGDS-Install/install.log on the card."
 exit 1
 '''.replace('CHECKSUM',digest)
-    readme=f'''RG DS Core — SD installer candidate {version}
+    readme=f'''RG DS Core {version} — SD installer
 
 For an RG DS or experimental RG DS Plus with its own working Anbernic Linux card. This is an application
 installer, not a replacement OS image. No formatting, flashing or SSH is needed.
@@ -57,12 +57,10 @@ Settings → System → Startup → Boot into switches back to Anbernic startup.
 APPS → Uninstall RG DS Core removes the app and its menu entries and restores the
 stock startup and boot artwork; saves and settings stay in rgds/userdata.
 
-Candidate status: private testing only. The payload includes supplied NNDDSS
-binaries with unresolved public provenance; project-wide licensing and release
-signing are not yet configured. Do not publish this as a public firmware image.
 No games, user saves, Wi-Fi profiles or Nintendo BIOS dumps are included.
-The OTA foundation is included; no public channel is configured yet.
-This installer does not contact an update service.
+Updates are signed and arrive over Wi-Fi from the project's GitHub releases
+(Settings → System → Updates & recovery). This installer itself does not
+contact any service. Source and licences: https://github.com/kleinrein/rgds-core
 
 RG DS Plus: physical testing is still needed. Capture an inventory over SSH,
 then test DSperate. See rgds/docs/RG_DS_PLUS.md for the checklist and logs.

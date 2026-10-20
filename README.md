@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/lockup-dark.svg">
+    <img alt="RG DS Core" src="assets/brand/lockup-light.svg" width="380">
+  </picture>
+</p>
+
 # RG DS Core
 
 A DSi-style home for your Nintendo DS games on the **Anbernic RG DS**, on the stock Linux firmware. Boots straight into your library, plays games in **DSCore**, our emulator with sharp 2×–5× 3D (may cause visual glitches and will struggle on high 3D games), and sleeps when you close the lid.
