@@ -9,7 +9,7 @@ Anbernic's [official specifications](https://win.anbernic.com/product/763.html) 
 - The launcher requests each panel's native dimensions and scales its 640×480 logical UI to fit. Larger panels use filtered UI textures; touch and hit areas remain in logical coordinates. The shared in-game menu also stays at its bounded logical resolution and scales through the existing overlay.
 - melonDS requests native panel sizes while keeping its 256×192 game textures. DSperate already derives game scaling from its fullscreen output dimensions. Both can use 4× DS scaling on a 1024×768 panel.
 - Stock sessions identify Plus board aliases from the device tree, or infer a Plus profile when both connected DSI panels advertise 1024×768. The inference is a compatibility hint, not firmware certification.
-- Capability discovery selects the single lower touchscreen and the console controller even when event numbers change. The existing raw decoder reads calibration ranges from evdev, including 1024×768 coordinates. Multiple unresolved touch candidates use SDL fallback in the launcher; NNDDSS refuses unresolved raw input instead of assuming event1/event4.
+- Capability discovery selects the single lower touchscreen and the console controller even when event numbers change. The existing raw decoder reads calibration ranges from evdev, including 1024×768 coordinates. Multiple unresolved touch candidates use SDL fallback in the launcher.
 - The bridge resolves the Plus's controller GUID at runtime for recognized console names and selects DSperate's displays by their actual SDL indices. Button semantics still assume the existing RK3568 stock layout and need verification on the Plus. No action requires a right analog stick.
 - The launcher retains its 16 MiB artwork texture budget and the shared menu retains its 640×480 buffers. Higher panel resolution does not multiply these caches. The inventory now includes board identification and memory totals.
 - Independent Linux hardware profiles accept `model: "rg-ds-plus"`; this does not make a standard-model OS image compatible with the Plus.
@@ -27,6 +27,6 @@ Use the **Plus's own official stock Linux card**, with a backup of saves. This i
 
 ## Still unverified
 
-Controller button indices, display order, stock supervisor/hook compatibility, audio/microphone routing, wake events, NNDDSS's supplied loader and DraStic's private touch adapter all need a real Plus test. SuperDrastic remains an experimental backend tied to an exact DraStic build; start with DSCore. The original controller fallback is retained for the original model.
+Controller button indices, display order, stock supervisor/hook compatibility, audio/microphone routing, wake events and DraStic's private touch adapter all need a real Plus test. SuperDrastic remains an experimental backend tied to an exact DraStic build; start with DSCore. The original controller fallback is retained for the original model.
 
 OTA still requires the previously validated stock Buildroot version and 640×480 panels. Use the complete SD installer for manual Plus application updates until a Plus firmware profile is verified. Early KMS splash and boot-image/logo tooling retain their original-model guards; this pass does not patch Plus boot partitions. The launcher loading animation works through the scaled UI.

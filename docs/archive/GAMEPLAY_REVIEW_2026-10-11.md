@@ -313,4 +313,4 @@ passed, including cancel, failed writes, before-launch access, persistence,
 and Standard → SuperDrastic → Standard profile switching. Host and ARM64
 device builds succeeded. The private application package is
 `RGDS-0.0.1-dev-49abd08784c7.zip`; it has not been deployed because SSH at
-`192.168.68.118` timed out. These checks do not prove physical screen/touch order.
+the handheld timed out. These checks do not prove physical screen/touch order.

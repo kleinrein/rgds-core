@@ -15,8 +15,6 @@ if __package__:
     from .build import validate_build as validate_rgds_build
     from .build_engines import validate_build as validate_engine_build
     from .validate_shader_previews import validate_shader_previews
-    from .build_freebios import validate as validate_freebios
-    from .build_nnddss_database import validate as validate_nnddss_database
     from .build_melonds import validate_engine as validate_melonds
     from .build_rgds_experimental import validate_build as validate_experimental
     from .package_rgds_vulkan import validate_payload as validate_vulkan
@@ -28,8 +26,6 @@ else:
     from build import validate_build as validate_rgds_build
     from build_engines import validate_build as validate_engine_build
     from validate_shader_previews import validate_shader_previews
-    from build_freebios import validate as validate_freebios
-    from build_nnddss_database import validate as validate_nnddss_database
     from build_melonds import validate_engine as validate_melonds
     from build_rgds_experimental import validate_build as validate_experimental
     from package_rgds_vulkan import validate_payload as validate_vulkan
@@ -44,7 +40,8 @@ DOCUMENTS = (
     'README.md',
     'THIRD_PARTY.md',
     'src/experimental/rgds/README.md',
-    *(path.relative_to(ROOT).as_posix() for path in sorted((ROOT / 'docs').rglob('*.md'))),
+    # Maintained guides only: the dated reports in docs/archive stay in the repository.
+    *(path.relative_to(ROOT).as_posix() for path in sorted((ROOT / 'docs').rglob('*.md')) if 'archive' not in path.parts),
 )
 
 def sha(path):
@@ -80,8 +77,6 @@ def payload_source(name, source_build=None):
         return "Pinned SDL2 2.32.10 private runtime for SuperDrastic"
     if name.startswith("emulators/superdrastic/"):
         return "Pinned SuperDrastic source build with RGDS integration"
-    if name.startswith("emulators/nnddss/"):
-        return "Supplied NNDDSS payload; external engine and loader/shims"
     return "External engine runtime library"
 
 
@@ -140,8 +135,6 @@ def _package():
     except (OSError, ValueError) as error:
         raise ValueError("Engine bundle rejected: " + str(error) + ". Provision it with tools/provision_engines.py.") from error
     previews = validate_shader_previews(ROOT / "assets/shader-previews", upstream / "shaders", ROOT / "src/platform/game_shader.hpp")
-    freebios = validate_freebios(ROOT / 'assets/nnddss/freebios')
-    validate_nnddss_database(ROOT / 'assets/nnddss/save-types')
     scratch = ROOT / "build/package"
     if scratch.exists():
         shutil.rmtree(scratch)
@@ -163,9 +156,10 @@ def _package():
         if sha(app / 'services/samba' / name) != expected:
             raise ValueError('SMB service changed while packaging: ' + name)
     put(ROOT / "assets/emulator-profiles/dsperate.ini", app / "emulators/dsperate.ini")
-    put(ROOT / "assets/emulator-profiles/nnddss.ini", app / "emulators/nnddss.ini")
-    for name in sorted(payloads["files"]):
-        if name.startswith("dsperate/"): continue
+    # From the bundle only the attributed shader presets; the retired NNDDSS
+    # payload (supplied binaries) is not shipped.
+    bundled = lambda name: not name.startswith(("dsperate/", "nnddss/"))
+    for name in sorted(filter(bundled, payloads["files"])):
         put(upstream / name, app / "emulators" / name)
     for source in sorted((ROOT / "assets/shaders").glob("*.dsd")):
         put(source, app / "emulators/shaders" / source.name)
@@ -209,18 +203,10 @@ def _package():
     for name, expected in super_build['files'].items():
         if sha(app/'emulators/superdrastic'/name) != expected:
             raise ValueError('SuperDrastic payload changed during packaging: ' + name)
-    put(ROOT / "runtime/nnddss_volume.py", app / "emulators/nnddss/tools/rgds_volume_helper.py")
     for name, expected in payloads["files"].items():
-        if name.startswith("dsperate/"): continue
+        if not bundled(name): continue
         if sha(app / "emulators" / name) != expected:
             raise ValueError("Engine payload changed while packaging: " + name)
-    for name, expected in freebios['files'].items():
-        if sha(app / 'assets/nnddss/freebios' / name) != expected:
-            raise ValueError('Replacement NNDDSS BIOS changed while packaging: ' + name)
-    validate_freebios(app / 'assets/nnddss/freebios')
-    put(ROOT / 'tools/build_freebios.py', app / 'assets/nnddss/build_freebios.py')
-    if sha(app / 'assets/nnddss/build_freebios.py') != freebios['driver_sha256']:
-        raise ValueError('Replacement BIOS build driver changed while packaging')
     for name, expected in engine_build["files"].items():
         if sha(app / "emulators/dsperate" / name) != expected:
             raise ValueError("Source engine changed while packaging: " + name)
@@ -228,9 +214,9 @@ def _package():
         copied = app / ("bin/rgds-launcher" if name == "rgds-launcher" else "emulators/hooks/librgdsbridge.so")
         if sha(copied) != info["sha256"]: raise ValueError("RGDS artifact changed while packaging: " + name)
     packaged_payloads = dict(payloads, kind="rgds-composed-engine-bundle")
-    packaged_payloads["components"] = dict(payloads["components"], dsperate="Pinned DSperate source build with corresponding source and build record", melonds="Pinned melonDS source build with RGDS SDL frontend and corresponding source", superdrastic="Optional pinned SuperDrastic backend with RGDS integration and corresponding source")
+    packaged_payloads["components"] = dict({k: v for k, v in payloads["components"].items() if k != "nnddss"}, dsperate="Pinned DSperate source build with corresponding source and build record", melonds="Pinned melonDS source build with RGDS SDL frontend and corresponding source", superdrastic="Optional pinned SuperDrastic backend with RGDS integration and corresponding source")
     packaged_payloads["components"]["rgds-experimental"] = "Experimental DSperate fork with isolated saves and corresponding source"
-    packaged_payloads["files"] = {name: checksum for name, checksum in payloads["files"].items() if not name.startswith("dsperate/")}
+    packaged_payloads["files"] = {name: checksum for name, checksum in payloads["files"].items() if bundled(name)}
     packaged_payloads["files"].update({"dsperate/" + name: checksum for name, checksum in engine_build["files"].items()})
     packaged_payloads["files"].update({"melonds/"+name:sha(app/"emulators/melonds"/name) for name in ("melonds","source.tar.gz","COPYING","build.json")})
     packaged_payloads['files'].update({'superdrastic/'+name:sha(app/'emulators/superdrastic'/name) for name in (*super_build['files'], 'build.json')})
@@ -248,10 +234,10 @@ def _package():
     build_id = version + "-" + digest
     manifest = {"schema": 1, "project": "rgds", "version": version, "build": build_id,
                 "target": "aarch64-linux-gnu", "minimum_glibc": glibc_floor(abi),
-                "launcher_minimum_glibc": "2.17", "component_abi": abi, "private_development_package": True,
+                "launcher_minimum_glibc": "2.17", "component_abi": abi,
                 "source_builds": {"samba": "services/samba/build.json", "rgds-experimental": "emulators/rgds-experimental/build.json", "rgds": "build/rgds.json", "dsperate": "emulators/dsperate/build.json", "melonds": "emulators/melonds/build.json", "superdrastic": "emulators/superdrastic/build.json"},
                 "shader_previews": {"manifest": "assets/shader-previews/manifest.json", "scenes": len(previews["scenes"]), "presets": len(previews["scenes"][0]["presets"])},
-                "cores": ["drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"], "optional_backends": {"drastic": ["standard", "superdrastic"]}, "files": files}
+                "cores": ["drastic", "dsperate", "melonds", "rgds-experimental"], "optional_backends": {"drastic": ["standard", "superdrastic"]}, "files": files}
     (app / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     root = scratch / "card/rgds"
     release = root / "releases" / build_id
@@ -284,7 +270,7 @@ def _package():
     pointer = dist / "latest.pending"
     pointer.write_text(archive.name + "\n");pointer.replace(dist / "latest.txt")
     print(str(archive))
-    print("Private test package: source-built RGDS, DSperate, RG DS Experimental, melonDS and optional SuperDrastic; stock DraStic and supplied NNDDSS. Hardware validation remains pending.")
+    print("Package: source-built RGDS, DSCore, DSperate, melonDS and optional SuperDrastic; stock DraStic from the card.")
     return archive
 
 if __name__ == "__main__":

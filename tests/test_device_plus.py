@@ -136,14 +136,6 @@ class PlusProfileTests(unittest.TestCase):
         (pad / 'capabilities/key').write_text(bitmap((1 << 330) | (1 << 325)))
         self.assertEqual(self.environment()['RGDS_TOUCH_DEV'], str(self.dev / 'event9'))
 
-    def test_nnddss_missing_plus_devices_fail_before_preparing_runtime(self):
-        with patch.dict(os.environ, {'RGDS_DEVICE_MODEL': 'rg-ds-plus'}, clear=True), \
-             patch.object(emulators, 'find_binary', return_value=self.root / 'nnddss'), \
-             patch.object(emulators, 'prepare_nnddss') as prepare:
-            with self.assertRaisesRegex(ValueError, 'Plus input devices'):
-                emulators.launch_plan('nnddss', self.root, self.root / 'data', self.root / 'game.nds')
-            prepare.assert_not_called()
-
     def test_independent_plus_profile_keeps_distinct_screen_requirement(self):
         path = self.root / 'hardware.json'
         profile = dict(schema=1, model='rg-ds-plus', top_display='DSI-1', bottom_display='DSI-2')

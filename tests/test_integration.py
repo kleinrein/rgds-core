@@ -53,7 +53,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(plan["env"]["PATH"], "/usr/sbin:/usr/bin:/sbin:/bin")
 
     def test_all_engines_ignore_legacy_library_and_removed_fallback_flags(self):
-        for core in ("drastic","dsperate","nnddss"):
+        for core in ("drastic","dsperate"):
             with self.subTest(core=core):
                 selected=select_hooks(core,self.hooks,{"RGDS_USE_LEGACY_DSPERATE":"1"})
                 self.assertEqual(selected.bridge,self.hooks/"librgdsbridge.so")

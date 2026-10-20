@@ -28,4 +28,4 @@ the blue thumb/grey marker separation, Italian Theme settings and the game menu.
 
 Final build: `0.0.1-dev-2dd9a0877b25`. A final picker hit-bound check prevents
 selecting an unseen row in the bottom gap; all four visual-option tests passed
-after that change. Deployed to `192.168.68.118` with the previous release retained.
+after that change. Deployed to the handheld with the previous release retained.

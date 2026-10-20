@@ -35,7 +35,7 @@ suite exposed packaging fixture/source-database and missing Wayland utility
 errors outside this pass; it is not recorded as fully green. Light/dark,
 Bokmål, boot, library and menu screenshots were inspected at 640×960.
 
-Installed on the standard RG DS at `192.168.68.118` as
+Installed on the standard RG DS at the handheld as
 `0.0.1-dev-b44b4615b8d6` (initial visual deployment was
 `0.0.1-dev-c04707f769fb`). Both physical displays rendered the new launcher
 under the device's Wayland/GLES2 runtime, and the live screenshots were
@@ -48,7 +48,7 @@ still require owner acceptance.
 
 Power diagnosis remains open. The owner reports that a held first Power press
 produces no LED or image and a second held press starts the device. Read-only
-RK817 diagnostics at `192.168.68.118` showed saved rail registers 0x99 and 0xa4
+RK817 diagnostics at the handheld showed saved rail registers 0x99 and 0xa4
 both zero: the previously repaired stale-state fault is absent. No speculative
 power-controller, bootloader or kernel change was made. This requires a
 physical cold-start reproduction and earlier power/serial evidence.

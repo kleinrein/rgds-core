@@ -1,6 +1,6 @@
-# Development package provenance
+# Third-party components and provenance
 
-The historical SimpleOS reference copy has been removed from this repository. Required private emulator payloads and community shaders are separately provisioned into the ignored `vendor/engines/` bundle; retained contributor notices remain below. The SD artifact built here is a private development package for device testing, not a public firmware release. The repository does not yet include a project-wide license; the SimpleOS notice below applies only to the historical material it covers and must not be treated as a license for all RGDS source.
+RG DS Core is released under the GNU General Public License, version 3 or later (see [LICENSE](LICENSE)). The historical SimpleOS reference copy has been removed from this repository. Community shader presets are provisioned into the ignored `vendor/engines/` bundle; retained contributor notices remain below. The SimpleOS notice below applies only to the historical material it covers.
 
 | Component | Source | Treatment |
 | --- | --- | --- |
@@ -10,11 +10,7 @@ The historical SimpleOS reference copy has been removed from this repository. Re
 | Private independent-image DraStic application | Owner's existing AArch64 executable/display-touch adapter, imported separately with `tools/capture_drastic.py` or `tools/provision_drastic.py`. | Not stored in Git. Exact inventory/ELF hashes; private testing only. OS libraries, BIOS dumps and user saves are excluded. This is a proprietary application import, not a source rebuild or resolved public redistribution license. |
 | DSperate | Upstream [beebono/DSperate](https://github.com/beebono/DSperate), pinned commit `1b76c355109c9f7576363ccc023927b3137d3c6f`. | Source-built Linux AArch64 engine with JIT/NEON/LTO and Cortex-A55 tuning. GPL-3.0-or-later license, corresponding patched source, host build driver, portability patch and build hashes accompany the binary. The supplied binary stays in the reference bundle and is excluded from new packages. |
 | melonDS engine and original RGDS frontend | Upstream [melonDS-emu/melonDS](https://github.com/melonDS-emu/melonDS), pinned commit `906e9ebb27da8c6a715cd7abab4abfe8a8d29427`. | Unmodified GPL-3.0-or-later core with ARM64 JIT/LTO and an original RGDS SDL frontend under GPL-3.0-or-later. Packaged at `emulators/melonds/` with upstream license, full corresponding core/frontend source archive and hashed build record. Uses upstream FreeBIOS/generated firmware; no Qt, downloaded games or Nintendo BIOS. Synthetic ARM64 VM checks are separate from pending handheld/retail-game acceptance. |
-| NNDDSS and its shim libraries | Local `system/nnddss_payload/`. | Supplied binaries for private testing. Runtime applies a SHA-256-gated replacement of two loader configuration path strings, pointing at owned files. This is not a source rebuild; payload provenance remains unresolved for public release. |
-| NNDDSS replacement BIOS | [melonDS FreeBIOS](https://github.com/melonDS-emu/melonDS/tree/1124603369ce72986b7469bb6fa3520bcb58ab5e/freebios), Gilead Kutnick. | BSD-2-Clause replacement implementation, not a Nintendo dump. Original source and notice, LLVM syntax adaptations, build commands and hashes ship under `assets/nnddss/`. Upstream makefiles are CC0-1.0. |
-| NNDDSS save-chip fallback | [melonDS ROMList.cpp](https://github.com/melonDS-emu/melonDS/blob/906e9ebb27da8c6a715cd7abab4abfe8a8d29427/src/ROMList.cpp), same pinned core commit as above. | GPL-3.0-or-later game-code, ROM-size and save-chip data. Original input sources, license and reproducible conversion script ship in `assets/nnddss/save-types/`. Runtime creates one exact-header compatibility entry per selected game; no stock game database is copied. Unknown and NAND chips are not guessed, and user databases take precedence. |
-| NNDDSS font aliases | The same bundled Nunito font listed below. | Fixed loader filenames `orbitron.ttf` and `SourceHanSansSC-Normal.ttf` receive Nunito, not those original fonts. The wrapper is set to English; CJK glyph coverage is not claimed. |
-| Shaders | Local `system/shaders/` and NNDDSS payload shader files. | Keep supplied README/attribution; audit individual notices before public packaging. |
+| Shaders | Local `system/shaders/` presets. | Keep supplied README/attribution; audit individual notices before public packaging. |
 | SDL2 | Installed host library and headers; existing vendor device library. DSperate links against a source-built SDK pinned to official SDL2 2.32.10. | DSperate's SDK is link-time only; standard adapters use the card SDL. SuperDrastic bundles a separate private SDL 2.32.10 runtime with dummy video, software rendering, Linux joystick/input and ALSA. Its zlib license, pinned source archive, build options, ABI and hashes accompany the library. |
 | Nunito (DS rounded option) | [Google Fonts Nunito](https://github.com/google/fonts/tree/main/ofl/nunito); exact commit in `assets/fonts/source/PROVENANCE.txt`. | SIL Open Font License 1.1. Unmodified variable source font, full license and baked weight-600 atlases are bundled. This is a DS-inspired alternative, not Nintendo's original font. |
 | New UI and native integration | Source in this workspace. | Original launcher, vector shapes, probe font/palettes, shared bridge/menu/audio/GL filters, input routing, startup warning and owned engine profiles. No Nintendo or ROCKNIXDS theme artwork/sounds copied. Profile keys were checked against engine source or its supplied configuration interface. |
@@ -148,7 +144,7 @@ the same pinned GPL-3.0-or-later DSperate source (see [dscore/FORK.md](dscore/FO
 Original RGDS changes are GPL-3.0-or-later.
 Packages include its LICENSE, NOTICE, the complete fork source and
 build recipe. See [fork documentation](src/experimental/rgds/README.md). No NooDS,
-melonDS or NNDDSS implementation has been copied into this fork.
+or melonDS implementation has been copied into this fork.
 
 The optional enhanced binary also includes the modified upstream Vulkan
 rasterizer under GPL-3.0-or-later, its full source and build recipes in

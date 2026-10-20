@@ -1,7 +1,0 @@
-Save-chip types derived from melonDS src/ROMList.cpp and NDSCart/CartRetail.cpp.
-Copyright 2016-2026 melonDS team; GPL-3.0-or-later.
-Source: https://github.com/melonDS-emu/melonDS/tree/906e9ebb27da8c6a715cd7abab4abfe8a8d29427
-Pinned corresponding source and license are included in source/.
-RGDS converts game-code, ROM-size and save-type facts to JSON and generates
-a per-ROM compatibility XML at launch. No Nintendo firmware or vendor
-game database is copied. NAND and unknown chips are not guessed.

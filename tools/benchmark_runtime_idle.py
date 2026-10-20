@@ -10,7 +10,6 @@ import json
 import os
 from pathlib import Path
 import select
-import statistics
 import sys
 import tempfile
 import threading
@@ -29,7 +28,7 @@ def module(path, name):
     return result
 
 
-def measure(runtime, nnddss_app=None):
+def measure(runtime):
     adapters = module(runtime/'emulators.py', 'bench_adapters')
     logger = module(runtime/'engine_log.py', 'bench_log')
     with tempfile.TemporaryDirectory() as folder:
@@ -65,45 +64,16 @@ def measure(runtime, nnddss_app=None):
                     component_bytes=original.stat().st_size,comparison_peak_python_bytes=peak,
                     comparison_seconds=elapsed,quiet_seconds=.5,quiet_log=quiet,
                     log_shutdown_seconds=shutdown)
-        if nnddss_app:
-            app = nnddss_app.resolve(); binary = app/'emulators/nnddss/nnddss'
-            data = root/'nnddss-data'
-            adapters.prepare_nnddss(app, data, binary)
-            original_open = Path.open
-            counts = dict(library_read_bytes=0, writes=0)
-            libraries = {p.name for p in (binary.parent/'lib').iterdir() if p.is_file()}
-            class CountedRead:
-                def __init__(self, stream): self.stream = stream
-                def __enter__(self): self.stream.__enter__(); return self
-                def __exit__(self, *args): return self.stream.__exit__(*args)
-                def __getattr__(self, name): return getattr(self.stream, name)
-                def read(self, *args):
-                    content = self.stream.read(*args)
-                    counts['library_read_bytes'] += len(content)
-                    return content
-            def observed_open(path, mode='r', *args, **kwargs):
-                stream = original_open(path, mode, *args, **kwargs)
-                if any(flag in mode for flag in ('w', 'a', '+')): counts['writes'] += 1
-                return CountedRead(stream) if mode=='rb' and path.name in libraries else stream
-            samples=[]
-            with patch.object(Path, 'open', observed_open):
-                for _ in range(12):
-                    began=time.perf_counter(); adapters.prepare_nnddss(app, data, binary)
-                    samples.append((time.perf_counter()-began)*1000)
-            result['nnddss_preparation'] = dict(app=str(app), iterations=len(samples),
-                warm_ms=samples, median_ms=statistics.median(samples), **counts,
-                excludes='release integrity verification and emulator process startup; unchanged by this optimization')
         return result
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--runtime', type=Path, default=ROOT/'runtime')
-    parser.add_argument('--nnddss-app', type=Path, help='Prepared release to benchmark; never executes its emulator')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     sys.path.insert(0, str(args.runtime.resolve()))
-    report = measure(args.runtime.resolve(), args.nnddss_app)
+    report = measure(args.runtime.resolve())
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2)+'\n'); print(json.dumps(report, indent=2))
 

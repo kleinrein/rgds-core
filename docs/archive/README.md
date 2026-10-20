@@ -1,6 +1,6 @@
 # Historical reports and plans
 
-This directory preserves dated development reports and superseded plans. Their descriptions, device addresses, release IDs, test totals and pending-work lists reflect the recorded session; later changes may supersede them. Use the [current documentation index](../README.md) and [device acceptance checklist](../NEXT_DEVICE_TEST.md) for maintained guidance.
+This directory preserves dated development reports and superseded plans. Their descriptions, device addresses, release IDs, test totals and pending-work lists reflect the recorded session; later changes may supersede them. Use the [current documentation index](../README.md) and [device acceptance checklist](NEXT_DEVICE_TEST.md) for maintained guidance.
 
 Useful evidence starting points:
 

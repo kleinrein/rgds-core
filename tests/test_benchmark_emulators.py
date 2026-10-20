@@ -98,7 +98,7 @@ class BenchmarkEmulatorTests(unittest.TestCase):
 
     def test_max_speed_settings_are_explicit_and_reject_unsupported_engines(self):
         with tempfile.TemporaryDirectory() as name:
-            status, remote = self.run_cli(['--cores','dsperate','rgds-experimental','nnddss','--max-speed'],Path(name)/'result.txt')
+            status, remote = self.run_cli(['--cores','dsperate','rgds-experimental','--max-speed'],Path(name)/'result.txt')
             self.assertEqual(status, 0)
             options=json.loads(shlex.split(remote.ssh.call_args.args[1])[-1])
             self.assertTrue(options['max_speed'])
@@ -207,7 +207,7 @@ class BenchmarkEmulatorTests(unittest.TestCase):
     def test_unsupported_backends_never_request_capture(self):
         with tempfile.TemporaryDirectory() as name:
             folder=Path(name)
-            for backend in ('superdrastic','nnddss'):
+            for backend in ('superdrastic',):
                 child=Mock()
                 record=remote_helpers()['capture_scene'](backend,folder,child)
                 self.assertFalse(record['supported']);self.assertFalse(record['ready'])

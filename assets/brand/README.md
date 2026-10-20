@@ -21,4 +21,4 @@ The dark variant preserves the same identity with light lettering.
 `tools/prepare_wordmark.py` crops transparent padding and exports alpha-preserving
 BMP V4 assets for SDL. The original PNGs preserve generation output. Regenerate
 early boot art with `python3 tools/build_boot_assets.py` after preparing the BMPs.
-The earlier symbol is retained as source history.
+The earlier symbol and the generated wordmark PNGs were removed from the repository; the SVG lockups and BMP adaptations here are the current source.

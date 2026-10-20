@@ -299,17 +299,13 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
   if core in ('dsperate','rgds-experimental'):
    shutil.copyfile(app/'assets/emulator-profiles/dsperate.ini',profile/'config.ini')
    section_config(profile/'config.ini',{'emu':{'ff_speed':0,'ff_skip':0}})
-  elif core=='nnddss':
-   fields=read_fields(app/'assets/emulator-profiles/nnddss.ini');fields['ffwd_scale']='10'
-   write_fields(profile/'config.ini',fields)
-   write_fields(profile/'assets/config.ini',fields)
  child_environment=benchmark_environment(os.environ,options.get('engine_env',{}))
  # Keep per-frame timing inside the disposable profile. Phase boundaries below
  # let analysis exclude launch, checkpoint IO and menu pauses from gameplay.
  if core in ('dsperate','rgds-experimental'):
   child_environment['DS_FRAME_SERIES']=str(data/'frame-series.csv')
  result=dict(samples=[],clock_ticks=os.sysconf('SC_CLK_TCK'),core=core,backend=variant,repeat=repeat,build=build,rom=str(original_rom),test_rom=str(rom),rom_sha256=rom_sha256,root=str(root),metric='presentation',rgds_scale=options.get('rgds_scale',1),rgds_smooth=options.get('rgds_smooth',1),rgds_direct=options.get('rgds_direct',0),shader=options['shader'],threaded_3d=options.get('threaded_3d',1),resolution=('Native' if options.get('rgds_scale',1)==1 else str(options['rgds_scale'])+'x') if core=='rgds-experimental' else ('Native' if scale==1 else str(scale)+'x'),rasterizer=options.get('rasterizer','standard'),frameskip=0,seed_sha256=hashlib.sha256(seed.read_bytes()).hexdigest() if seed else None,
-             fast_forward_config=({'limit_multiplier':10,'render_skip':'engine managed','audio':'engine muted'} if core=='nnddss' else {'limit_multiplier':0,'render_skip':0}) if options.get('max_speed') else 'profile defaults',
+             fast_forward_config={'limit_multiplier':0,'render_skip':0} if options.get('max_speed') else 'profile defaults',
              engine_env={key:child_environment[key] for key in options['experiment_settings'] if key in child_environment},measurement=measurement_settings(options,bool(seed)),phases=[])
  output=(data/'runner.log').open('w');began=time.monotonic()
  child=subprocess.Popen([sys.executable,'-B',str(app/'runtime/session.py'),'--root',str(root),'--core',core,'--rom',str(rom)],env=child_environment,stdout=output,stderr=output,start_new_session=True)
@@ -338,7 +334,7 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
    time.sleep(result['measurement']['initial_warmup_seconds']) # Permit native/bridge checkpoint loads to finish.
    if options.get('capture_scene'):result['scene_capture']=capture_scene(variant,folder,child)
    if options.get('probe_clock'):
-    processes=hardware_sample(owner)['processes'];names=('drastic',) if core=='drastic' else ('nnddss-emu',) if core=='nnddss' else (core,)
+    processes=hardware_sample(owner)['processes'];names=('drastic',) if core=='drastic' else (core,)
     engines=[p['pid'] for p in processes if p['name'] in names]
     if len(engines)!=1:raise ValueError('Could not identify benchmark engine for original-ROM clock')
     probe_clock=EmulatedClock(engines[0],root,rom,allow_zero_mapping=(core=='drastic'),allow_drastic_mapping=(core=='drastic'))
@@ -505,7 +501,7 @@ def main():
     parser.add_argument('--seconds',type=int,default=30)
     parser.add_argument('--volume',type=int,choices=range(101),default=0,help='Isolated test volume, 0-100; use audible audio for gameplay acceptance')
     parser.add_argument('--shader',type=int,choices=range(len(SHADERS)),default=0)
-    parser.add_argument('--cores',nargs='+',choices=('drastic','dsperate','nnddss','melonds','superdrastic','rgds-experimental'),default=['drastic','dsperate','nnddss','melonds','superdrastic'])
+    parser.add_argument('--cores',nargs='+',choices=('drastic','dsperate','melonds','superdrastic','rgds-experimental'),default=['drastic','dsperate','melonds','superdrastic'])
     parser.add_argument('--feature-checks',action='store_true',help='Exercise slot save/load/undo/export and supported DS controls in isolated profiles')
     parser.add_argument('--checkpoints',action='store_true',help='Test save-on-exit in disposable profiles')
     parser.add_argument('--phase',choices=('all','normal','fast_forward'),default='all',help='Use one phase in fresh profiles for repeatable comparisons')
@@ -528,11 +524,11 @@ def main():
     if not 5<=args.seconds<=3600:parser.error('--seconds must be 5..3600')
     if args.rgds_scale>1 and set(args.cores)!={'rgds-experimental'}:parser.error('--rgds-scale requires RG DS Experimental')
     if args.rgds_direct and set(args.cores)!={'rgds-experimental'}:parser.error('--rgds-direct requires RG DS Experimental')
-    if args.max_speed and not set(args.cores)<={'dsperate','rgds-experimental','nnddss'}:parser.error('--max-speed supports DSperate, RG DS Experimental and NNDDSS')
+    if args.max_speed and not set(args.cores)<={'dsperate','rgds-experimental'}:parser.error('--max-speed supports DSperate and RG DS Experimental')
     if args.rasterizer=='gengis' and (set(args.cores)!={'superdrastic'} or args.resolution==1):
         parser.error('Gengis requires --cores superdrastic and --resolution 2 or 3')
     if args.resolution==3 and args.rasterizer!='gengis':parser.error('3x requires --rasterizer gengis')
-    if args.resolution>1 and not set(args.cores)<={'drastic','nnddss','superdrastic'}:
+    if args.resolution>1 and not set(args.cores)<={'drastic','superdrastic'}:
         parser.error('Selected core does not implement higher internal resolution')
     import device
     engine_env={}

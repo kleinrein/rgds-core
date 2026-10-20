@@ -207,8 +207,6 @@ def verify_engine(app, core, backend=None):
             return False
         if core == 'drastic' and backend == 'superdrastic' and name.startswith(('emulators/superdrastic/', 'assets/fonts/source/')):
             return True
-        if core == 'nnddss' and (name.startswith('assets/nnddss/') or name.startswith('assets/fonts/source/')):
-            return True
         return name.startswith("runtime/") or name == "emulators/hooks/librgdsbridge.so" or name.startswith("emulators/" + core + "/") or name in ("emulators/" + core + ".ini", "emulators/" + core + ".cfg") or name.startswith("emulators/shaders/") or name.startswith("assets/emulator-profiles/")
     return verify_release(app, dependencies, cached=True)
 

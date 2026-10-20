@@ -12,7 +12,7 @@ There is no automatic shared-save or conversion feature yet.
   proof of compatibility. RGDS has not validated a cross-engine import matrix.
 - **Checkpoint/save state:** a snapshot of one engine's CPU, memory and devices.
   RGDS checkpoints belong to the engine that made them. A DSperate `.dss` must
-  not be loaded into DraStic, NNDDSS or melonDS just because the suffix matches.
+  not be loaded into DraStic or melonDS just because the suffix matches.
   Even engine upgrades can change snapshot compatibility.
 
 Auto-save/Auto-load in Library control checkpoint behavior; continue using the
@@ -71,7 +71,6 @@ application releases.
 | --- | --- | --- |
 | DraStic | `emulators/drastic/backup/` | `emulators/drastic/savestates/` |
 | DSperate | `emulators/dsperate/saves/<ROM basename>.sav` | `emulators/dsperate/states/`, using the DS game code |
-| NNDDSS | `emulators/nnddss/User/backup/` | `emulators/nnddss/User/savestates/` |
 | melonDS | `emulators/melonds/saves/<RGDS game key>.sav` | `emulators/melonds/states/<RGDS game key>.dss` |
 
 RGDS stores its independent checkpoint as
@@ -94,8 +93,7 @@ identity check, not a replacement for the emulator's full state validation.
 
 On first preparation, the stock DraStic adapter imports missing files from its stock home into RGDS's
 private DraStic home; it does not overwrite an existing private save. That is a
-same-engine bootstrap, not cross-engine synchronization. NNDDSS does not search
-other engines for saves, BIOS or configuration.
+same-engine bootstrap, not cross-engine synchronization.
 
 The RGDS game key currently depends on the original game path (the ZIP path for
 an archived game). Renaming or moving games can change that identity. Some

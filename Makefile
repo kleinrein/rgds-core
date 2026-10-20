@@ -23,8 +23,6 @@ build-melonds-experiment:
 	$(PYTHON) tools/build_melonds.py --fetch
 build-superdrastic:
 	$(PYTHON) tools/build_superdrastic.py --fetch
-build-freebios:
-	$(PYTHON) tools/build_freebios.py
 preview: build-host
 	build/host/rgds-launcher --preview --watch-assets --theme "$(THEME)"
 settings: build-host

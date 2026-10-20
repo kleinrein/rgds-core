@@ -262,48 +262,6 @@ def base_environment():
         env["SDL_VIDEODRIVER"] = "wayland"
     return env
 
-def prepare_nnddss(app, data, binary):
-    from nnddss_assets import install
-    source = binary.parent
-    root = data / "emulators" / "nnddss"
-    # This loader locates BIOS/assets beside /proc/self/exe even with --root.
-    # Keep the executable next to its writable runtime assets and private BIOS.
-    install(app, root, binary)
-    for folder in ("User/system", "User/savestates", "User/shaders", "User/config", "User/backup", "User/cheats", "User/input_record", "User/microphone", "User/slot2", "assets/bios", "assets/fonts", "assets/ui", "assets/shaders", "home", "tmp"):
-        (root / folder).mkdir(parents=True, exist_ok=True)
-    # The loader can resolve lib/ relative to --root or its working directory.
-    # Refresh these code dependencies while retaining User/config files.
-    if (source / "lib").is_dir():
-        for library in (source / "lib").iterdir():
-            if library.is_file() and not library.is_symlink():
-                link_component(library, root / "lib" / library.name)
-    for name in ("gamecontrollerdb.txt", "tools/rgds_volume_helper.py"):
-        original = source / name
-        if original.is_file():
-            copy_component(original, root / name)
-    copy_missing(source / "gamecontrollerdb.txt" if (source / "gamecontrollerdb.txt").is_file() else None, root / "User/gamecontrollerdb.txt")
-    for tree, destination in ((source / "assets", root / "assets"), (source / "ui", root / "assets/ui"),
-                              (source / "shaders", root / "User/shaders"), (app / "emulators/shaders", root / "User/shaders")):
-        if tree.is_dir():
-            for path in tree.rglob("*"):
-                if path.is_file() and not path.is_symlink():
-                    copy_missing(path, destination / path.relative_to(tree))
-    profile = app / "assets/emulator-profiles/nnddss.ini"
-    if not profile.is_file(): profile = app / "emulators/nnddss.ini"
-    copy_missing(profile if profile.is_file() else None, root / "assets/config.ini")
-    copy_missing(root / "assets/config.ini" if (root / "assets/config.ini").is_file() else None, root / "config.ini")
-    bindings = root / "assets/bindings.ini"
-    if not bindings.exists():
-        bindings.write_text("btn_a=b\nbtn_b=a\nbtn_x=y\nbtn_y=x\nbtn_l=leftshoulder\nbtn_r=rightshoulder\nbtn_start=start\nbtn_select=back\nbtn_up=dpup\nbtn_down=dpdown\nbtn_left=dpleft\nbtn_right=dpright\nbtn_screen=lefttrigger\nbtn_ffwd=none\n")
-    # Optional databases are explicit user inputs. Never search another engine,
-    # the stock OS, or a global font directory. No console firmware dump is copied.
-    for name in ("game_database.xml", "usrcheat.dat"):
-        candidate = data / 'bios/nnddss' / name
-        found = candidate if candidate.is_file() else None
-        copy_missing(found, root / "User" / name)
-        if name == "game_database.xml": copy_missing(found, root / "assets" / name)
-    return root
-
 def dsperate_atomic_states(app, binary, verified_manifest):
     """Grant the bridge's early save ack only to the reviewed packaged writer."""
     if not isinstance(verified_manifest, dict) or binary.resolve() != (app/'emulators/dsperate/dsperate').resolve():
@@ -497,46 +455,9 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         command += ["--rom", str(rom), "--save", str(root / "saves" / (key + ".sav")),
                     "--state", str(root / "states" / (key + ".dss"))]
     else:
-        from linux_platform import independent
-        if env.get('RGDS_INPUT_AMBIGUOUS')=='1':
-            raise ValueError('Console input mapping is ambiguous; select the verified touch/controller devices before launching NNDDSS.')
-        if env.get('RGDS_DEVICE_MODEL')=='rg-ds-plus' and (not env.get('NNDDSS_TOUCH_DEV') or not env.get('NNDDSS_KEYS_DEV')):
-            raise ValueError('RG DS Plus input devices are unavailable; check the device over SSH before launching NNDDSS.')
-        root = prepare_nnddss(app, data, binary) if prepare else data / "emulators/nnddss"
-        if prepare:
-            from nnddss_database import prepare as prepare_save_database
-            prepare_save_database(app, data, root, rom)
-        command[0] = str(root/'nnddss')
-        cwd = root
-        env["HOME"] = str(root / "home")
-        env["TMPDIR"] = str(root / "tmp")
-        env["XDG_CONFIG_HOME"] = str(root / "xdg-config")
-        env["XDG_CACHE_HOME"] = str(root / "xdg-cache")
-        # The supplied loader patches live code for DMA uploads; on this card
-        # that path races during startup with an input/render hook installed.
-        env['NNDDSS_FAST_UPLOAD']='0'
-        if prepare:
-            Path(env["XDG_CONFIG_HOME"]).mkdir(parents=True, exist_ok=True)
-            Path(env["XDG_CACHE_HOME"]).mkdir(parents=True, exist_ok=True)
-        engine_libraries(env, private=(root / "lib",), stock_independent=True)
-        env["NNDDSS_DATA_ROOT"] = str(root)
-        env['NNDDSS_CORE_DEFAULT'] = str(root / 'lib/libnnddss.so')
-        env['NNDDSS_CORE_RENEGADE'] = str(root / 'lib/libnnddss_renegade_kid.so')
-        env['NNDDSS_LANG'] = 'en'
-        env['NNDDSS_GPU_MAX'] = '0'  # RGDS owns hardware power policy.
-        # Retain the original card's fallback only outside the Plus profile.
-        # Plus event numbering is unverified; the session discovers its nodes.
-        from linux_platform import independent
-        if not independent() and env.get('RGDS_DEVICE_MODEL')!='rg-ds-plus':
-            env.setdefault("NNDDSS_TOUCH_DEV", "/dev/input/event1")
-            env.setdefault("NNDDSS_KEYS_DEV", "/dev/input/event4")
-        env["SDL_GAMECONTROLLERCONFIG"] = "1900b655010000000100000000010000,ANBERNIC-rk3568-keys,a:b1,b:b0,x:b2,y:b3,back:b6,guide:b8,start:b7,leftstick:b9,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpleft:h0.8,dpdown:h0.4,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b10,righttrigger:b11,platform:Linux,"
-        command += ["--root", str(root), "--rom", str(rom)]
-        if prepare:
-            for config in (root/"assets/config.ini",root/"config.ini"):
-                # The bridge compiles live presets after the native game frame.
-                # Keep the loader's startup-only effect off to avoid two passes.
-                flat_config(config,{"fx_enable":0,"shader":"", "ir_3d_2x":tuning["hires"], "frameskip_auto":int(tuning["frameskip"]>0)})
+        # NNDDSS is retired: its supplied binaries are no longer shipped and a
+        # saved choice falls back to DSCore before a launch gets here.
+        raise ValueError('NNDDSS is retired; choose DSCore for this game.')
     if selected_hooks.bridge:
         preload = [str(selected_hooks.bridge)]
         env["SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS"] = "0"
@@ -546,7 +467,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         auto_load, auto_save = policy(data)
         if os.environ.get("RGDS_FORCE_AUTOLOAD")=="1":auto_load=True
         if fresh_start:auto_load=False
-        state_dir = data / ("emulators/drastic/savestates" if core=="drastic" else "emulators/nnddss/User/savestates" if core=="nnddss" else "emulators/melonds/states" if core=="melonds" else "emulators/" + core + "/states")
+        state_dir = data / ("emulators/drastic/savestates" if core=="drastic" else "emulators/melonds/states" if core=="melonds" else "emulators/" + core + "/states")
         auto = data / "library" / game_key(identity or rom) / ("auto-" + core + ".dss")
         env.update(RGDS_CORE="dsperate" if core in DSPERATE_CORES else core, RGDS_CONTROL_FILE=str(data / "session/emulator.control"), RGDS_STATE_DIR=str(state_dir),
                    RGDS_AUTOSTATE_FILE=str(auto), RGDS_AUTOSAVE="1" if auto_save else "0", RGDS_AUTOLOAD="0", RGDS_SHARED_MENU="1", RGDS_MENU_LIVE="0")
@@ -577,12 +498,6 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                 copy_missing(destination, backup)
             shutil.copy2(auto, destination)
             env["RGDS_NATIVE_AUTOLOAD" if core=="melonds" else "RGDS_AUTOLOAD"]="1"
-        if prepare and core=="nnddss":
-            bindings=dict(btn_a='b',btn_b='a',btn_x='y',btn_y='x',btn_l='leftshoulder',btn_r='rightshoulder',btn_start='start',btn_select='back',btn_up='dpup',btn_down='dpdown',btn_left='dpleft',btn_right='dpright',btn_screen='lefttrigger',btn_ffwd='none')
-            bindings.update({"key_"+name:"none" for name in ("a","b","x","y","l","r","start","select","up","down","left","right")})
-            flat_config(root/'assets/bindings.ini',bindings)
-            for folder in ("User/shaders", "assets/shaders"):
-                for shader in (app / "emulators/shaders").glob("*"):copy_missing(shader, data / "emulators/nnddss" / folder / shader.name)
         if prepare and core=="drastic":
             for shader in (app / "emulators/shaders").glob("*"):copy_missing(shader, data / "emulators/drastic/shaders" / shader.name)
     if core in DSPERATE_CORES:

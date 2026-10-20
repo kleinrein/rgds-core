@@ -198,14 +198,14 @@ entries actually opened by the stock menu. See
 
 ## Fourth engine and local verification
 
-`make build-melonds` builds the pinned ARM64 melonDS core and SDL frontend; `make package` includes it with DSperate and NNDDSS while retaining the stock DraStic adapter. Engine IDs 0–2 are unchanged; melonDS is 3. [Integration details](archive/MELONDS_INTEGRATION_2026-10-11.md) separate synthetic VM checks from pending handheld acceptance. The optional local Ubuntu VM supports these executable checks; it is not an Armbian image builder. The old OS build and flash targets have been removed.
+`make build-melonds` builds the pinned ARM64 melonDS core and SDL frontend; `make package` includes it with DSperate while retaining the stock DraStic adapter. Engine IDs 0–2 are unchanged (2, NNDDSS, is retired and never offered); melonDS is 3. [Integration details](archive/MELONDS_INTEGRATION_2026-10-11.md) separate synthetic VM checks from pending handheld acceptance. The optional local Ubuntu VM supports these executable checks; it is not an Armbian image builder. The old OS build and flash targets have been removed.
 
 For local launch/menu work, build the host launcher and run the focused checks:
 
 ```sh
 python3 -B tools/build.py host
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=tests:runtime python3 -m unittest \
-  test_launch_preparation test_nnddss_independent test_game_menu \
+  test_launch_preparation test_game_menu \
   test_game_menu_ui test_shader_pixels test_melonds_integration
 ```
 
@@ -215,9 +215,8 @@ If the shader pipeline changes, regenerate previews with
 `tools/build_shader_previews.py` using a Python environment with Pillow, then
 validate/package normally. Preview manifests bind to the exact pipeline source.
 
-`tools/benchmark_runtime_idle.py --nnddss-app /path/to/unpacked/release --output
-build/runtime-overhead.json` measures repeat preparation of that release in a
-temporary home without running the engine. See [measurement boundaries](archive/LAUNCH_MENU_POLISH_2026-10-11.md).
+`tools/benchmark_runtime_idle.py --output build/runtime-overhead.json` measures
+the runtime's log-worker wakeups and component-copy overhead on the host. See [measurement boundaries](archive/LAUNCH_MENU_POLISH_2026-10-11.md).
 Keep core/user saves out of benchmark fixtures. No deploy watcher or hardware
 command is needed for these checks. [Save locations](SAVES.md) and
 [engine candidates](archive/EMULATOR_OPTIONS.md) document the current boundaries.

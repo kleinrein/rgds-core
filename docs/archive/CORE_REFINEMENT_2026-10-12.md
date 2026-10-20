@@ -48,7 +48,7 @@ This visual update does not claim to repair that hardware/early-boot behavior.
 
 ## Device verification
 
-Deployed to `192.168.68.118`, with the previous release retained. Status reports
+Deployed to the handheld, with the previous release retained. Status reports
 launcher/session running, no active game, no recovery and no record errors. The
 live screenshot confirms the generated wordmark, cartridge/navigation icons,
 restored rail and history totals: 62 games, 36 sessions, 25 minutes, last played

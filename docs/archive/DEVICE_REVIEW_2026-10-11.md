@@ -1,6 +1,6 @@
 # Stock RG DS emulator review — 2026-10-11
 
-The owner authorized deployment and tests over SSH to `192.168.68.118`.
+The owner authorized deployment and tests over SSH to the handheld.
 Anbernic Linux remains the boot baseline. DSperate remains the default core;
 Standard remains the default DraStic backend. No OS image, firmware or boot
 configuration was changed. Test ROM copies and profiles lived under

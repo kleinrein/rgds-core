@@ -26,7 +26,6 @@ Start with the [project README](../README.md).
 | [Raster rules test](RASTER_RULES.md) | A test ROM that holds the GPU raster against the CPU raster, rule by rule |
 | [Releases and updates](OTA.md) | Publishing on GitHub, signing and automatic rollback |
 | [Localization](I18N.md) | Adding or updating a language |
-| [NNDDSS](NNDDSS_INDEPENDENT.md) | How the NNDDSS engine's data is kept separate |
 | [Third-party components](../THIRD_PARTY.md) | Sources, notices and licenses |
 
 Older reports, benchmarks and plans live in the [archive](archive/README.md). They describe the project as it was on their date.

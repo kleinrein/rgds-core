@@ -36,11 +36,6 @@ class Fixture(unittest.TestCase):
         path.parent.mkdir(parents=True)
         path.write_text("#!/bin/sh\nexit 0\n")
         path.chmod(0o755)
-        if core == 'nnddss':
-            shutil.copytree(ROOT / 'assets/nnddss', self.app / 'assets/nnddss', dirs_exist_ok=True)
-            fonts = self.app / 'assets/fonts/source'
-            fonts.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / 'assets/fonts/source/Nunito.ttf', fonts / 'Nunito.ttf')
         return path
     def release(self, name):
         app = self.root / "releases" / name
@@ -163,14 +158,15 @@ class EmulatorTests(Fixture):
         rom = self.root / "A game; $(echo nope).nds"
         for core in emulators.CORES:
             binary = self.binary(core)
+            if core == 'nnddss':   # retired: never launched
+                with self.assertRaisesRegex(ValueError, 'retired'):
+                    emulators.launch_plan(core, self.app, self.data, rom, prepare=False)
+                continue
             plan = emulators.launch_plan(core, self.app, self.data, rom, prepare=False)
-            self.assertEqual(plan["command"][0], str(self.data/'emulators/nnddss/nnddss') if core=='nnddss' else str(binary.resolve()))
+            self.assertEqual(plan["command"][0], str(binary.resolve()))
             self.assertIn(str(rom), plan["command"])
             if core == "dsperate":
                 self.assertIn("--dual-window", plan["command"])
-            if core == "nnddss":
-                self.assertIn("--root", plan["command"])
-                self.assertIn("--rom", plan["command"])
         self.assertFalse(self.data.exists(), "A dry-run must not create or alter save folders")
 
     def test_launch_never_inherits_a_previous_core_hook(self):
@@ -206,81 +202,6 @@ class EmulatorTests(Fixture):
         archive = self.archive([("a.nds", b"a"), ("b.nds", b"b")])
         with self.assertRaisesRegex(ValueError, "exactly one"):
             emulators.resolve_rom(archive, self.data)
-
-    def test_nnddss_preparation_preserves_existing_configuration_and_saves(self):
-        binary = self.binary("nnddss")
-        (binary.parent / "lib").mkdir()
-        library = binary.parent / "lib/libnnddss.so"
-        library.write_bytes(b"first core")
-        (self.app / "emulators/nnddss.ini").write_text("ir_3d_2x=1\n")
-        stock = self.root / "stock"
-        stock.mkdir()
-        for name in ("drastic_bios_arm7.bin", "drastic_bios_arm9.bin"):
-            (stock / name).write_bytes(b"bios")
-        existing = self.data / "emulators/nnddss"
-        (existing / "assets").mkdir(parents=True)
-        (existing / "assets/config.ini").write_text("custom=true\n")
-        (existing / "User/savestates").mkdir(parents=True)
-        save = existing / "User/savestates/game.dss"
-        save.write_bytes(b"save")
-        with patch.object(emulators, "STOCK_DIRS", (stock,)):
-            result = emulators.prepare_nnddss(self.app, self.data, binary)
-        self.assertEqual(result, existing)
-        self.assertEqual((existing / "assets/config.ini").read_text(), "custom=true\n")
-        self.assertEqual(save.read_bytes(), b"save")
-
-        replacement = (ROOT / 'assets/nnddss/freebios/drastic_bios_arm7.bin').read_bytes()
-        self.assertEqual((existing / "User/system/nds_bios_arm7.bin").read_bytes(), replacement)
-        self.assertEqual((existing/'nnddss').read_bytes(),binary.read_bytes())
-        self.assertEqual((existing/'assets/bios/drastic_bios_arm7.bin').read_bytes(), replacement)
-        with patch.object(emulators,'STOCK_DIRS',(stock,)):
-            plan=emulators.launch_plan('nnddss',self.app,self.data,self.root/'game.nds')
-        self.assertEqual(Path(plan['command'][0]).parent,existing)
-        self.assertTrue((Path(plan['command'][0]).parent/'assets/bios/drastic_bios_arm9.bin').is_file())
-        self.assertEqual(plan['env']['NNDDSS_FAST_UPLOAD'],'0')
-        self.assertEqual(plan['env']['NNDDSS_DATA_ROOT'],str(existing))
-        self.assertIn(str(existing/'lib'),plan['env']['LD_LIBRARY_PATH'].split(':'))
-        self.assertNotIn(str(binary.parent/'lib'),plan['env']['LD_LIBRARY_PATH'].split(':'))
-        self.assertEqual(plan['env']['RGDS_SHADER_DIR'],str(self.app/'emulators/shaders'))
-        self.assertEqual(emulators.read_fields(existing/'assets/config.ini')['fx_enable'],'0')
-        hook=self.app/'emulators/hooks/librgdsbridge.so';hook.parent.mkdir(parents=True);hook.write_bytes(b'fixture')
-        automatic=self.data/'library'/emulators.game_key(self.root/'game.nds')/'auto-nnddss.dss'
-        automatic.parent.mkdir(parents=True);automatic.write_bytes(b'checkpoint')
-        with patch.object(emulators,'STOCK_DIRS',(stock,)):
-            plan=emulators.launch_plan('nnddss',self.app,self.data,self.root/'game.nds')
-        self.assertTrue(plan['env']['RGDS_STATE_SLOT'].endswith('game_8.dss'))
-        self.assertEqual((existing/'User/savestates/game_8.dss').read_bytes(),b'checkpoint')
-        library.write_bytes(b"updated core")
-        with patch.object(emulators, "STOCK_DIRS", (stock,)):
-            emulators.prepare_nnddss(self.app, self.data, binary)
-        self.assertEqual((existing / "lib/libnnddss.so").read_bytes(), b"updated core")
-        self.assertEqual(save.read_bytes(), b"save")
-
-    def test_nnddss_ignores_drastic_and_repairs_assets_from_owned_package(self):
-        binary=self.binary("nnddss")
-        drastic=self.binary("drastic")
-        system=drastic.parent/'system';system.mkdir()
-        for name in ('drastic_bios_arm7.bin','drastic_bios_arm9.bin','nds_firmware.bin'):
-            (system/name).write_bytes(name.encode())
-        (drastic.parent/'game_database.xml').write_bytes(b'database')
-        root=self.data/'emulators/nnddss'
-        (root/'assets/bios').mkdir(parents=True)
-        (root/'assets/bios/drastic_bios_arm7.bin').touch()
-        fonts=root/'assets/fonts';fonts.mkdir()
-        for name in ('orbitron.ttf','SourceHanSansSC-Normal.ttf'):(fonts/name).write_bytes(b'font')
-        owned=self.app/'assets/emulator-profiles/nnddss.ini';owned.parent.mkdir(parents=True)
-        owned.write_text('fx_enable=0\ncustom_profile=1\n')
-        optional = self.data / 'bios/nnddss'; optional.mkdir(parents=True)
-        (optional / 'game_database.xml').write_bytes(b'user database')
-        with patch.object(emulators,'stock_file',side_effect=AssertionError('stock access')),patch.dict(os.environ,{},clear=True):
-            result=emulators.prepare_nnddss(self.app,self.data,binary)
-        self.assertEqual((result/'assets/bios/drastic_bios_arm7.bin').read_bytes(), (ROOT / 'assets/nnddss/freebios/drastic_bios_arm7.bin').read_bytes())
-        self.assertFalse((result/'User/system/nds_firmware_modified.bin').exists())
-        self.assertEqual((result/'User/game_database.xml').read_bytes(),b'user database')
-        self.assertEqual((result/'assets/fonts/orbitron.ttf').read_bytes(), (ROOT / 'assets/fonts/source/Nunito.ttf').read_bytes())
-        self.assertEqual(emulators.read_fields(result/'assets/config.ini')['custom_profile'],'1')
-        self.assertTrue((result/'User/config').is_dir())
-        self.assertFalse(list(result.rglob('*.partial')))
 
     def test_actual_subprocess_receives_rom_path_as_one_literal_argument(self):
         binary = self.binary("drastic")

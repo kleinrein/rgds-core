@@ -15,7 +15,7 @@ class PackagingABITests(unittest.TestCase):
     def test_floor_accounts_for_every_bundled_binary(self):
         components = {"bin/rgds-launcher": dict(glibc_minimum="2.17"),
                       "emulators/dsperate/dsperate": dict(glibc_minimum="2.34"),
-                      "emulators/nnddss/lib/z.so": dict(glibc_minimum=None)}
+                      "emulators/superdrastic/sdl/libSDL2.so": dict(glibc_minimum=None)}
         self.assertEqual(glibc_floor(components), "2.34")
         self.assertEqual(glibc_floor({}), "2.17")
         self.assertEqual(glibc_floor({"x": dict(glibc_minimum="2.9")}), "2.17")
@@ -23,7 +23,6 @@ class PackagingABITests(unittest.TestCase):
     def test_owned_bridge_and_external_cores_have_distinct_provenance(self):
         self.assertEqual(payload_source("emulators/hooks/librgdsbridge.so"), "RGDS source build")
         self.assertIn("Supplied DSperate", payload_source("emulators/dsperate/dsperate"))
-        self.assertIn("Supplied NNDDSS", payload_source("emulators/nnddss/lib/runtime.so"))
         record = {"source": {"commit": "pinned-source"}}
         self.assertEqual(payload_source("emulators/dsperate/dsperate", record), "DSperate source build at pinned-source")
 

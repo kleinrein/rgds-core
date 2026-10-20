@@ -1,6 +1,6 @@
 # Emulator input, independence and frame counts — 2026-10-09
 
-The user's New Super Mario Bros report was reproduced on RG DS at 192.168.1.115.
+The user's New Super Mario Bros report was reproduced on RG DS at the handheld.
 The active card installation was `0.0.1-dev-9a9278b47f60` under `/mnt/mmc/rgds`,
 not the older internal test installation. Its DraStic log recorded signal 11.
 

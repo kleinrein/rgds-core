@@ -19,7 +19,7 @@ class PackagingRecordTests(unittest.TestCase):
         self.root = Path(temporary.name)
         names = ("build/device/rgds-launcher", "build/device/librgdsbridge.so",
                  "assets/emulator-profiles/drastic.cfg", "assets/emulator-profiles/dsperate.ini",
-                 "assets/emulator-profiles/nnddss.ini", "runtime/nnddss_volume.py", "runtime/inventory.sh",
+                 "runtime/inventory.sh",
                  "build/engines/dsperate/dsperate", "tools/build_engines.py", "tools/elf_abi.py",
                  "THIRD_PARTY.md", "VERSION", "packaging/main.sh", "packaging/update_guard.py", "packaging/update-trust.json", "README.md",
                  "docs/DEVICE_SETUP.md", "docs/DEVELOPMENT.md", "docs/SCREENSCRAPER.md",
@@ -69,12 +69,8 @@ class PackagingRecordTests(unittest.TestCase):
         patch.object(package, "validate_melonds", return_value=self.melon_record).start()
         patch.object(package, "validate_superdrastic", return_value=self.super_record).start()
         patch.object(package, 'validate_samba', return_value=self.samba_record).start()
-        patch.object(package, "validate_nnddss_database", return_value={}).start()
         patch.object(package, "validate_bundle", return_value=dict(files={}, components={})).start()
         patch.object(package, "validate_shader_previews", return_value=dict(scenes=[dict(presets=[dict(id=n) for n in range(21)]) for _ in range(3)])).start()
-        driver = self.root / 'tools/build_freebios.py'
-        driver.write_text('# fixture build driver\n')
-        patch.object(package, "validate_freebios", return_value=dict(files={}, driver_sha256=package.sha(driver))).start()
         # ABI checking is independent and has its own real ELF parser tests.
         patch.object(package, "component_abi", return_value={}).start()
 
