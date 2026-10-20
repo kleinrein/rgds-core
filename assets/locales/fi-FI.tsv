@@ -785,9 +785,9 @@ Home layout	Kotinäkymän asettelu
 Background	Tausta
 Touch gestures	Kosketuseleet
 Carousel	Karuselli
-DSi column	DSi-sarake
+Column	Sarake
 Plain	Yksinkertainen
-DSi grid	DSi-ruudukko
+Grid	Ruudukko
 A carousel, or the DSi's column with your last game on top	Karuselli tai DSi:n sarake, jossa viimeisin peli on ylinnä
 Plain, or the DSi's ruled grid behind every screen	Yksinkertainen tai DSi:n viivoitettu ruudukko jokaisen näytön takana
 Swipe up from the bottom for Home, in from the left for Back	Pyyhkäise alhaalta ylös kotiin, vasemmalta takaisin
@@ -836,3 +836,19 @@ Vivid	Eloisa
 Pixel art	Pikselitaide
 Moods	Tunnelmat
 Up / Down or L / R: change group	Ylös / Alas tai L / R: vaihda ryhmää
+Sounds & music	Äänet ja musiikki
+Menu music	Valikkomusiikki
+Music volume	Musiikin voimakkuus
+A soft tune plays while you browse. It fades out when a game starts.	Pehmeä sävel soi selatessasi. Se häipyy, kun peli käynnistyy.
+Turn on menu music for a soft tune while you browse.	Ota valikkomusiikki käyttöön, niin pehmeä sävel soi selatessasi.
+Scanning…	Etsitään…
+Scan complete	Haku valmis
+Looking for games…	Etsitään pelejä…
+Reading Roms/NDS on your games card. This takes a moment.	Luetaan pelikortin Roms/NDS-kansiota. Tämä kestää hetken.
+{0} found. Choose Done to go to your library.	{0} löytyi. Valitse Valmis siirtyäksesi kirjastoon.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Pelejä ei löytynyt. Kopioi .nds- tai DS ZIP -tiedostot pelikortin Roms/NDS-kansioon ja etsi uudelleen.
+Backing up your saves…	Varmuuskopioidaan tallennuksia…
+The backup did not finish. Please try again.	Varmuuskopiointi ei valmistunut. Yritä uudelleen.
+Copies every save and checkpoint into one zip in userdata/exports.	Kopioi kaikki tallennukset ja tarkistuspisteet yhteen zip-tiedostoon kansioon userdata/exports.
+Where games go on the card, and a fresh scan.	Mihin pelit laitetaan kortilla, ja uusi haku.
+Where covers and titles come from.	Mistä kannet ja nimet haetaan.

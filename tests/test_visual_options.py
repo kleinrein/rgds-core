@@ -14,6 +14,7 @@ class VisualOptionsTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name);self.prefs=self.root/'preferences.ini'
         self.prefs.write_text('schema=1\nmode=light\nfont=rounded\n')
+        (self.root/'ui.ini').write_text('schema=1\nhome_layout=carousel\nbackground=plain\n')   # the carousel rail over a plain background
     def run_ui(self,script='',extra=()):
         path=self.root/'input.txt';path.write_text(script);bmp=self.root/'screen.bmp'
         result=subprocess.run([str(BINARY),'--preview','--data',str(self.root/'data'),'--preferences',str(self.prefs),'--state',str(self.root/'state'),'--input-script',str(path),'--seconds','1','--screenshot',str(bmp),*extra],cwd=ROOT,env=dict(os.environ,SDL_VIDEODRIVER='dummy'),capture_output=True,text=True,timeout=5)
@@ -58,10 +59,10 @@ class VisualOptionsTests(unittest.TestCase):
         self.assertIn('language=en-US\n',(self.root/'ui.ini').read_text())
     def test_home_has_wide_blue_thumb_and_grey_position_line(self):
         data=self.run_ui(extra=('--home',))
-        blue=(35,110,174);grey=(94,108,120)  # Glossy thumb body and the position notch.
-        # Home has five tiles, so the thumb is 472/5 = 94 px wide (118 px with four).
-        self.assertGreaterEqual(sum(self.pixel(data,x,928)==blue for x in range(84,556)),80)
-        self.assertGreaterEqual(sum(self.pixel(data,x,942)==blue for x in range(84,556)),80)
-        self.assertGreaterEqual(sum(self.pixel(data,x,891)==grey for x in range(100,540)),3)
+        blue=(35,110,174)  # the glossy accent of the arrow buttons
+        # DSi bar: square accent arrow buttons at both ends, a white glass grabber over the ticks.
+        self.assertGreaterEqual(sum(self.pixel(data,x,928)==blue for x in range(8,56)),20)
+        self.assertGreaterEqual(sum(self.pixel(data,x,928)==blue for x in range(584,632)),20)
+        self.assertGreaterEqual(sum(self.pixel(data,x,928)==(255,255,255) for x in range(72,568)),30)
 
 if __name__=='__main__':unittest.main()

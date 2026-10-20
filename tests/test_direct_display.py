@@ -92,6 +92,32 @@ class DirectDisplayPlanTests(Fixture):
         self.assertEqual(plan['env']['SDL_RENDER_VSYNC'], '0')   # DSCore paces itself on Weston too
         self.assertEqual(plan['wayland_command'], plain['command'])
 
+    def test_a_host_sleep_leaves_the_emulated_lid_alone(self):
+        # The supervisor freezes the engine over a lid sleep; DSCore's synthetic
+        # hinge pulse on resume left games asleep with the panels off.
+        rom = self.prepare()
+        for direct in (0, 1):
+            write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=direct))
+            self.assertEqual(self.plan(rom)['env']['DS_LID_PULSE'], '0')
+
+    def test_a_chosen_screen_filter_keeps_the_renderer_sink_on_kms(self):
+        # The filter is the bridge's GL pass over the renderer's game draw; the
+        # direct present has no GPU stage, so the KMS plan keeps the renderer.
+        rom = self.prepare()
+        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=1, filter=6))
+        plan = self.plan(rom)
+        self.assertEqual(plan['display'], 'kms')
+        self.assertEqual(plan['env']['RGDS_SHADER'], '6')
+        self.assertEqual(plan['env']['DS_DIRECT_PRESENT'], '0')
+        config = configparser.ConfigParser(); config.read(self.data/'emulators'/ENGINE/'config.ini')
+        self.assertEqual(config['video']['sink'], 'renderer')
+        self.assertEqual(config['video']['gpu_present'], 'false')
+        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=1, filter=0))
+        plan = self.plan(rom)
+        self.assertNotIn('DS_DIRECT_PRESENT', plan['env'])
+        config = configparser.ConfigParser(); config.read(self.data/'emulators'/ENGINE/'config.ini')
+        self.assertEqual(config['video']['sink'], 'auto')
+
     def test_other_engines_and_independent_linux_keep_weston(self):
         rom = self.prepare()
         write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=1))

@@ -53,6 +53,10 @@ public:
   // keeps every frame but a whole refresh behind. Set per frame, before
   // end_frame(). No-op on tiers without a queue.
   virtual void set_drop_if_pending(bool on) { (void)on; }
+  // The frame's present tag (KmsFlips::Flip::tag: the pacer marks a frame
+  // that started late), carried to the flip's record on a tier that keeps
+  // one (DrmOut::recent). Set per frame, before end_frame(). No-op elsewhere.
+  virtual void set_present_tag(int tag) { (void)tag; }
 };
 
 } // namespace ds::sdl

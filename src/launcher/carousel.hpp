@@ -3,12 +3,15 @@
 #include <cmath>
 #include <cstddef>
 namespace rgds {
+// The DSi scroll bar: square arrow buttons, a recessed tick track between them
+// and a glass grabber over the ticks, all `top` px down the bottom panel's rail.
 struct RailGeometry {
-    static constexpr int left=84,width=472;
+    // `control` is the square end button, `grab` the wider glass grabber.
+    static constexpr int control=48,grab=64,top=421,height=40,left=72,width=496;
     int window_left,window_width,thumb_left,thumb_width,marker;
     static RailGeometry at(size_t count,double position) {
         double fraction=count>1?std::clamp(position/(count-1),0.0,1.0):.5;
-        int thumb=std::clamp(width/std::max(1,int(count)),32,120);
+        int thumb=grab;
         int thumb_x=left+2+int(std::lround(fraction*(width-thumb-4)));
         int window=std::clamp(width*3/std::max(1,int(count)),thumb+8,width);
         int window_x=std::clamp(thumb_x+thumb/2-window/2,left,left+width-window);

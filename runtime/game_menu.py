@@ -11,6 +11,7 @@ import sys
 import time
 
 from audio import EVENT, clean_environment
+from shared_audio import stop_outside_mixer
 from emulator_profiles import policy
 from engines import CORES
 from shaders import supported
@@ -322,7 +323,10 @@ class GameMenu:
 
     def pause(self):
         if not self.paused and self.child.poll() is None:
-            self.child.send_signal(signal.SIGSTOP)
+            # Never stop the engine inside the shared mixer's critical section:
+            # the menu's cue sink would block on its semaphore and freeze.
+            if not stop_outside_mixer(self.child):
+                print('RGDS menu: the engine still holds the shared mixer while stopped; menu sounds may wait for it.', file=sys.stderr, flush=True)
             self.paused = True
 
     def resume_engine(self):

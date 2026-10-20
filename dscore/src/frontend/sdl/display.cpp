@@ -797,6 +797,7 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
   // DS_KMS_DROP=0 never drops, =1 may drop late-started frames too.
   static const int drop_env = [] { const char* e = std::getenv("DS_KMS_DROP"); return e ? std::atoi(e) : -1; }();
   out_->set_drop_if_pending(drop_env == 1 || (drop_env != 0 && tag == 0));
+  out_->set_present_tag(tag & 1);   // the flip's record (KmsFlips::Flip::tag): this frame started late
   out_->end_frame();
   if (profile) {
     const auto tp4 = std::chrono::steady_clock::now();

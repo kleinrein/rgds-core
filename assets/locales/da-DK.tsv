@@ -785,9 +785,9 @@ Home layout	Startskærmens layout
 Background	Baggrund
 Touch gestures	Berøringsbevægelser
 Carousel	Karrusel
-DSi column	DSi-kolonne
+Column	Kolonne
 Plain	Enkel
-DSi grid	DSi-gitter
+Grid	Gitter
 A carousel, or the DSi's column with your last game on top	En karrusel, eller DSi'ens kolonne med dit seneste spil øverst
 Plain, or the DSi's ruled grid behind every screen	Enkel, eller DSi'ens linjerede gitter bag alle skærme
 Swipe up from the bottom for Home, in from the left for Back	Stryg op fra bunden for Hjem, ind fra venstre for Tilbage
@@ -836,3 +836,19 @@ Vivid	Livlig
 Pixel art	Pixelkunst
 Moods	Stemninger
 Up / Down or L / R: change group	Op / Ned eller L / R: skift gruppe
+Sounds & music	Lyde og musik
+Menu music	Menumusik
+Music volume	Musiklydstyrke
+A soft tune plays while you browse. It fades out when a game starts.	En blid melodi spiller, mens du kigger rundt. Den toner ud, når et spil starter.
+Turn on menu music for a soft tune while you browse.	Slå menumusik til for en blid melodi, mens du kigger rundt.
+Scanning…	Søger…
+Scan complete	Søgning færdig
+Looking for games…	Leder efter spil…
+Reading Roms/NDS on your games card. This takes a moment.	Læser Roms/NDS på dit spilkort. Det tager et øjeblik.
+{0} found. Choose Done to go to your library.	{0} fundet. Vælg Færdig for at gå til dit bibliotek.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Ingen spil fundet. Kopiér .nds- eller DS ZIP-filer til Roms/NDS på dit spilkort, og søg igen.
+Backing up your saves…	Sikkerhedskopierer dine gemte spil…
+The backup did not finish. Please try again.	Sikkerhedskopien blev ikke færdig. Prøv igen.
+Copies every save and checkpoint into one zip in userdata/exports.	Kopierer alle gemte spil og kontrolpunkter til én zip i userdata/exports.
+Where games go on the card, and a fresh scan.	Hvor spil skal ligge på kortet, og en ny søgning.
+Where covers and titles come from.	Hvor covers og titler kommer fra.

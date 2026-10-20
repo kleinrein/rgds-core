@@ -36,7 +36,7 @@ def preset(name="default"):
     if name == "ab-swap": mapping.update(a="b", b="a")
     elif name == "left-handed": mapping.update(a="right", b="down", x="up", y="left", up="x", down="b", left="y", right="a", l="r", r="l")
     return dict(schema="1", preset=name, shortcut="start+menu", shortcut_action="home",
-                fast_forward_button="none", fast_forward_mode="hold", **{"bind_"+key:value for key,value in mapping.items()})
+                fast_forward_button="r2", fast_forward_mode="hold", **{"bind_"+key:value for key,value in mapping.items()})
 
 
 def merge(profile, fields):

@@ -183,7 +183,11 @@ project of its own.
 `summary.py`). The RG DS now presents through the direct KMS scanout tier
 instead of the SDL renderer: the launcher's KMS plan writes `video.sink = auto`
 and `gpu_present = false` (runtime/emulators.py; `DS_RGDS_SINK=renderer`
-restores the renderer for A/B runs), and the engine's new direct path
+restores the renderer for A/B runs, and a chosen screen filter keeps the
+renderer too: the filter is the bridge's GL pass over the renderer's game
+draw, which the direct present has no stage for, so a filter picked in-game
+on the direct present is saved and the menu offers the restart), and the
+engine's new direct path
 (`Display::draw_scanout_async`, dscore `display.cpp`) composes each panel's
 finished frame on a cached canvas on the present thread, hands it to the
 bridge's new hook `rgds_present_canvas` (src/platform/emulator_bridge.cpp: the
@@ -317,6 +321,7 @@ saved state from a heavy scene can be replayed exactly. Useful engine switches
 | `DS_LEAN_HALFPX` | Viewport moved half a pixel instead of `interpolateAtOffset` (measured: changes coverage, rejected) |
 | `DS_HIRES_DUMP=F:N` | Writes N frames from frame F to `/tmp/hd/` (`h` is the GPU image), to compare renderers byte for byte |
 | `DS_PACE=free` / `display` | Free-running pacer at the limiter's rate, or the display phase lock (KMSDRM); `DS_PACE_BAND=<ms>` sets its starting margin |
+| `DS_LID_PULSE=0` | No synthetic hinge pulse after a host suspend (the launcher sets it: the game carries on where it was frozen); the default pulse holds the emulated lid closed until the firmware sleeps, then opens it |
 | `DS_CADENCE_LOG=<path>` | One line a frame (start, hand-off and next-start timestamps, locked, band) plus one per page flip (completion, swap, hold); `build/pace-lock/flipwait.py` reports the wait distribution and the panel period |
 
 The headless engine (`dsperate-headless` from `dscore/`) runs games without a

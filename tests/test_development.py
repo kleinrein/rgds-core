@@ -143,6 +143,7 @@ class LiveThemeTests(unittest.TestCase):
             dark.write_text("schema=1\nmode=dark\nbackground=112233\n")
             prefs = root / "preferences.ini"
             prefs.write_text("schema=1\nmode=dark\nfont=rounded\n")
+            (root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the theme colour is read off a plain background
             bmp = root / "screen.bmp"
             command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--themes", str(root),
                        "--theme", str(light), "--preferences", str(prefs), "--screenshot", str(bmp), "--seconds", "5"]
@@ -168,6 +169,7 @@ class LiveThemeTests(unittest.TestCase):
             theme, state, bmp = (root / name for name in ("live.ini", "state.txt", "screen.bmp"))
             theme.write_text("schema=1\nbackground=112233\n")
             state.write_text('1 2 1 ""\n')
+            (root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the theme colour is read off a plain background
             command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--theme", str(theme),
                        "--state", str(state), "--preferences", str(root / "preferences.ini"), "--screenshot", str(bmp), "--seconds", "6"]
             env = dict(os.environ, SDL_VIDEODRIVER="dummy")

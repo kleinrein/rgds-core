@@ -258,7 +258,6 @@ def _package():
     release.parent.mkdir(parents=True)
     app.rename(release)
     put(ROOT / "packaging/main.sh", root / "main.sh")
-    put(ROOT / "runtime/inventory.sh", root / "inventory.sh")
     (root / "state").mkdir()
     put(ROOT/"packaging/update_guard.py",root/"update_guard.py")
     put(ROOT/"packaging/update-trust.json",root/"state/update-trust.json")

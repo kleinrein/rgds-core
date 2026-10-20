@@ -142,6 +142,12 @@ int main(int argc,char** argv){
    // A frame of another size is sampled nearest; a short pitch is refused.
    std::vector<uint32_t> small(320*240,0xFF102030u);rgds_present_canvas(0,small.data(),320,240,320);assert(small[15*320+15]!=0xFF102030u);
    rgds_present_canvas(0,small.data(),320,240,100);
+   // No GL pass carries these frames: a filter picked now is saved for the next launch (the renderer), not applied or failed.
+   assert(direct_present && live_shader==0);
+   command("shader-direct","shader:3");test_time+=30;tick();
+   assert(state().find("shader-restart-required")!=std::string::npos && live_shader==0 && !shader_waiting);
+   command("shader-direct-off","shader:0");test_time+=30;tick();
+   assert(state().find("shader-applied")!=std::string::npos && live_shader==0 && !shader_waiting);
    return 0;
  }
  if(argc==4 && core=="dsperate"){

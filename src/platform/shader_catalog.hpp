@@ -5,6 +5,18 @@ inline constexpr bool shader_uses_target_size(int id){return id==1 || (id>=9 && 
 // Append only: these IDs are persisted in per-game preferences.
 inline constexpr const char* shader_files[]={"off","sharp_bilinear","lcd1x","zfast_lcd","nds_color","natural_vision","lcd1x+nds_color","lcd1x+natural_vision","lcd1x+nds_color+natural_vision","sharp_bilinear+nds_color","sharp_bilinear+natural_vision","sharp_bilinear+nds_color+natural_vision","zfast_lcd+nds_color","zfast_lcd+natural_vision","zfast_lcd+nds_color+natural_vision","soft_scanlines","warm_paper","cool_crisp","pocket_green","amber","soft_lcd_grid","ds_classic","ds_lite","natural_glow","vivid_lcd","natural_smooth","vivid_smooth","pixel_beads","glossy_tiles"};
 inline constexpr int shader_count=sizeof(shader_files)/sizeof(shader_files[0]);
+// The community lcd1x and zfast grids were tuned for 1080p, where one DS pixel
+// spans 5.6 display pixels. On the 640x480 panels it spans 2.5, so only every
+// fifth column and row lands on a grid line and the upstream attenuation terms
+// read as plain dimming. These strengths keep the lines clearly visible on the
+// handheld (about a quarter of the brightness on a flat image) while the mean
+// brightness stays above four fifths. Colour-only and RGDS presets ignore them.
+inline constexpr bool shader_uses_lcd1x_grid(int id){return id==2 || (id>=6 && id<=8);}
+inline constexpr bool shader_uses_zfast_grid(int id){return id==3 || (id>=12 && id<=14);}
+inline constexpr const char* shader_grid_defines(int id){
+    return shader_uses_lcd1x_grid(id)?"#define BRIGHTEN_SCANLINES 24.0\n#define BRIGHTEN_LCD 6.0\n"
+          :shader_uses_zfast_grid(id)?"#define BORDERMULT 16.0\n":"";
+}
 // Picker order, grouped from plain pixels through DS screens to pixel art.
 // Every preset appears exactly once; IDs keep their persisted meaning.
 inline constexpr const char* shader_family_names[]={"Original","DS screens","Natural","Vivid","Pixel art","Moods"};

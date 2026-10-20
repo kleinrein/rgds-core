@@ -79,6 +79,11 @@ std::atomic<bool> blocked_shared{false};
 bool on_event_thread(){auto id=event_thread.load(std::memory_order_relaxed);return id==std::thread::id{} || id==std::this_thread::get_id();}
 int previous_shader=0;
 std::atomic<bool> shader_waiting{false};
+// The engine presents through rgds_present_canvas (DSCore's direct present):
+// no SDL renderer draw carries the frame, so no GL filter pass can replace
+// it. A filter chosen now is saved and takes effect on the next launch,
+// which the launcher plans with the renderer sink.
+std::atomic<bool> direct_present{false};
 unsigned long long shader_requested_at=0;
 rgds::EmulatorOverlay overlay_renderer;
 rgds::FrameCounterRate game_rate;
@@ -572,6 +577,7 @@ void tick(bool graphics_safe=false){
                 char* end=nullptr;long value=std::strtol(command.c_str()+7,&end,10);
                 int selected=int(value);
                 if(end==command.c_str()+7 || !end || *end || value<0 || value>=rgds::shader_count)answer("shader-failed");
+                else if(selected>0 && direct_present)answer("shader-restart-required");
                 else if(selected>=0 && selected<rgds::shader_count){
                     if(!shader_waiting)previous_shader=live_shader;live_shader=selected;
                     shader_requested_at=time;
@@ -724,6 +730,7 @@ extern "C" void SDL_RenderPresent(SDL_Renderer* renderer){
 // 0xAARRGGBB rows `pitch` words apart. Runs on the engine's present threads.
 extern "C" void rgds_present_canvas(int display,uint32_t* pixels,int w,int h,int pitch){
     initialize();if(!pixels || w<=0 || h<=0 || pitch<w)return;
+    if(!direct_present.exchange(true) && live_shader){std::fprintf(stderr,"RGDS: shader %d needs the renderer; the direct present shows original pixels\n",live_shader.load());std::fflush(stderr);live_shader=0;}
     tick();measure_present(reinterpret_cast<void*>(static_cast<uintptr_t>(display)+1));
     const int index=display==1?1:0;
     overlay_renderer.capture_canvas(pixels,w,h,pitch,index,false);

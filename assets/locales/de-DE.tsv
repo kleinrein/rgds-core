@@ -785,9 +785,9 @@ Home layout	Startbildschirm-Layout
 Background	Hintergrund
 Touch gestures	Touch-Gesten
 Carousel	Karussell
-DSi column	DSi-Spalte
+Column	Spalte
 Plain	Schlicht
-DSi grid	DSi-Raster
+Grid	Raster
 A carousel, or the DSi's column with your last game on top	Ein Karussell oder die DSi-Spalte mit deinem letzten Spiel oben
 Plain, or the DSi's ruled grid behind every screen	Schlicht oder das linierte DSi-Raster hinter jedem Bildschirm
 Swipe up from the bottom for Home, in from the left for Back	Von unten nach oben wischen für Home, von links für Zurück
@@ -836,3 +836,19 @@ Vivid	Kräftig
 Pixel art	Pixelkunst
 Moods	Stimmungen
 Up / Down or L / R: change group	Hoch / Runter oder L / R: Gruppe wechseln
+Sounds & music	Töne & Musik
+Menu music	Menümusik
+Music volume	Musiklautstärke
+A soft tune plays while you browse. It fades out when a game starts.	Eine sanfte Melodie läuft beim Stöbern. Sie blendet aus, wenn ein Spiel startet.
+Turn on menu music for a soft tune while you browse.	Schalte Menümusik ein für eine sanfte Melodie beim Stöbern.
+Scanning…	Suche läuft…
+Scan complete	Suche abgeschlossen
+Looking for games…	Spiele werden gesucht…
+Reading Roms/NDS on your games card. This takes a moment.	Roms/NDS auf der Spielekarte wird gelesen. Das dauert einen Moment.
+{0} found. Choose Done to go to your library.	{0} gefunden. Wähle Fertig, um zur Bibliothek zu gehen.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Keine Spiele gefunden. Kopiere .nds- oder DS-ZIP-Dateien nach Roms/NDS auf der Spielekarte und suche erneut.
+Backing up your saves…	Spielstände werden gesichert…
+The backup did not finish. Please try again.	Die Sicherung wurde nicht abgeschlossen. Bitte erneut versuchen.
+Copies every save and checkpoint into one zip in userdata/exports.	Kopiert alle Spielstände und Sicherungspunkte in eine ZIP-Datei unter userdata/exports.
+Where games go on the card, and a fresh scan.	Wo Spiele auf der Karte hingehören, und eine neue Suche.
+Where covers and titles come from.	Woher Cover und Titel kommen.

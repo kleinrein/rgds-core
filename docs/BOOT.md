@@ -42,12 +42,18 @@ The same module adds a final `::shutdown` step to the reviewed stock
 `/etc/inittab`. For an RGDS-requested power-off only, once every block
 filesystem is read-only, it powers the RK817 off by register (DEV_OFF) instead
 of the SLEEP-pin path that left the power key unresponsive for 20–30 s.
-Choosing Anbernic startup or APPS → RGDS Recovery restores the trim script's
+Choosing Anbernic startup or APPS → Uninstall RG DS Core restores the trim script's
 mode and the original inittab.
 
 ## One RG DS identity from early boot
 
 `assets/boot/` contains original static RG DS artwork generated from the bundled brand wordmark and the dual-screen emblem by `python3 tools/build_boot_assets.py`. Both early logo slots receive identical 640×480, top-down, uncompressed 24-bit BMP pixels. Existing userspace boot PNGs receive the same composition; the narrow waiting renderer receives the wordmark. Firmware artwork remains static. With the early service installed, animation begins when Linux exposes the DSI graphics device; otherwise it begins when the native launcher owns the displays. There is no mandatory delay or minimum animation duration. The library-ready event can interrupt the boot scene immediately.
+
+The SD installer applies both parts after activating a release through
+`runtime/boot_identity.py` (best effort: a failure keeps stock artwork and the
+installation still completes; skipped on the RG DS Plus), and APPS → Uninstall
+RG DS Core runs its `remove` to put stock artwork back. Re-running the installer
+with newer artwork refreshes both, keeping the original backups.
 
 The early power-on animation is a separate, reversible userspace service. Install
 with `python3 -B runtime/boot_splash_install.py apply` on the stock handheld;
@@ -98,7 +104,7 @@ python3 -B runtime/boot_branding.py restore --boot-device /dev/disk/by-partlabel
 
 Use only a boot alias actually present on that device. The writer updates changed 512-byte sectors rather than rewriting the entire partition; all original bytes outside the approved logo/hash fields remain identical.
 
-This changes the branding of the active boot image independently of the launcher routing marker. Recovery/Stock can disable RG DS startup while leaving the RG DS splash in place; use the branding installer's restore operation to restore the vendor artwork. The installer has passed synthetic fixture tests, but the actual device FIT layout and a cold boot must still be checked before accepting the RG DS-only sequence as validated.
+This changes the branding of the active boot image independently of the launcher routing marker. Stock startup can be chosen while leaving the RG DS splash in place; use the branding installer's restore operation to restore the vendor artwork. The installer has passed synthetic fixture tests, but the actual device FIT layout and a cold boot must still be checked before accepting the RG DS-only sequence as validated.
 
 ## Recovery and clean restart
 
@@ -112,7 +118,7 @@ Hardware writes and recovery share a process lock, including the full suspend/re
 
 Menu sleep uses the installed `pm-suspend` helper so the firmware's suspend/resume hooks can run. It never writes directly to `/sys/power/state` or manually blanks the panels. Missing helpers disable menu sleep and lid sleep; helper failure is reported without a raw-suspend fallback. Helper availability alone does not establish hardware reliability.
 
-`APPS → RGDS Recovery` removes `/userdata/rgds-boot/enabled` even when the game card is read-only. It also writes `userdata/boot_stock` in writable known RGDS installations. Removing that per-installation file re-enables APPS launching; System → Startup re-enables direct boot. Recovery leaves vendor init files and user saves intact.
+`APPS → Uninstall RG DS Core` puts the stock autostart hook back from its backup (or only removes `/userdata/rgds-boot/enabled` when the hook was changed by someone else) and removes the application; it leaves vendor init files and user saves intact. System → Startup is the everyday way to boot into Anbernic instead.
 
 For an installed release, inspect or plan without changing startup:
 

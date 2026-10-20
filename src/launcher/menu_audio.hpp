@@ -1,5 +1,6 @@
 #pragma once
 #include "platform/sdl_dynamic.hpp"
+#include "launcher/menu_music.hpp"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -8,6 +9,7 @@
 #include <filesystem>
 #include <functional>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace rgds {
@@ -33,6 +35,27 @@ class MenuAudio {
     float tail_left=0,tail_right=0;
     uint32_t random=0x31415926,last_nav=0;
     bool navigated=false;
+    // Optional menu music: one looping track under the cues. The file is
+    // decoded on a helper thread the first time it is wanted; the callback
+    // reads it only once `track_ready` is set. Gain ramps over 0.6 s so the
+    // track fades in, fades out for a launch and never clicks.
+    MusicTrack track;
+    std::thread music_loader;
+    std::atomic<bool> track_ready{false},track_loading{false},track_failed{false};
+    bool music_on=false,music_muted=false,music_started=false;
+    int music_volume=40;
+    std::string music_file;
+    double music_position=0;
+    float music_gain=0,music_target=0;
+    void set_music_target(float target){if(device)s.LockAudioDevice(device);music_target=target;if(device)s.UnlockAudioDevice(device);}
+    void join_loader(){if(music_loader.joinable())music_loader.join();}
+    bool start_music(){
+        if(!music_on || music_muted || !track_ready.load(std::memory_order_acquire))return false;
+        if(!device && !open()){error="Menu audio is unavailable on this device.";return false;}
+        s.LockAudioDevice(device);music_target=music_volume/100.f;sounding.store(true,std::memory_order_release);s.UnlockAudioDevice(device);
+        if(paused){s.PauseAudioDevice(device,0);paused=false;}
+        music_started=true;return true;
+    }
     float next_random(){random^=random<<13;random^=random>>17;random^=random<<5;return float(random&65535)/65535;}
     static void callback(void* self,Uint8* data,int bytes){static_cast<MenuAudio*>(self)->mix(reinterpret_cast<float*>(data),size_t(bytes)/sizeof(float)/2);}
     void mix(float* out,size_t frames){
@@ -50,11 +73,23 @@ class MenuAudio {
             }
             active=active || voice.clip;
         }
+        if(track_ready.load(std::memory_order_acquire) && (music_gain>.0005f || music_target>0)){
+            const auto& pcm=track.samples;const double step=double(track.rate)/spec.freq;const float ramp=1.f/(spec.freq*.6f);
+            for(size_t i=0;i<frames;i++){
+                auto at=size_t(music_position);if(at>=pcm.size()){at=0;music_position=0;}
+                const size_t next=at+1<pcm.size()?at+1:0;const float fraction=float(music_position-at);
+                const float sample=(pcm[at]+(pcm[next]-pcm[at])*fraction)/32768.f;
+                music_gain+=std::clamp(music_target-music_gain,-ramp,ramp);
+                const float v=sample*music_gain*.7f;out[i*2]+=v;out[i*2+1]+=v;
+                music_position+=step;if(music_position>=pcm.size())music_position-=pcm.size();
+            }
+            active=active || music_gain>.0005f || music_target>0;
+        }
         for(size_t i=0;i<frames*2;i++)out[i]=std::clamp(out[i],-.9f,.9f);
         sounding.store(active,std::memory_order_release);
     }
     bool open(){
-        if(device)return true;if(failed || !loaded)return false;
+        if(device)return true;if(failed || (!loaded && !music_on))return false;   // music needs no cue bank
         if(s.InitSubSystem(SDL_INIT_AUDIO)!=0){failed=true;s.ClearError();return false;}initialized=true;
         // Match the 48 kHz dmix slave: a 32 kHz sink made ALSA resample every
         // block, including silence. Clips are resampled by each voice's step.
@@ -68,23 +103,41 @@ class MenuAudio {
     // Close the sink but keep the decoded bank and settings for the next cue.
     void release(){
         if(device){s.CloseAudioDevice(device);device=0;releases++;}
-        for(auto& v:voices)v={};tail_left=tail_right=0;sounding.store(false,std::memory_order_release);paused=true;
+        for(auto& v:voices)v={};tail_left=tail_right=0;music_gain=music_target=0;music_started=false;sounding.store(false,std::memory_order_release);paused=true;
         if(initialized){s.QuitSubSystem(SDL_INIT_AUDIO);initialized=false;}
     }
 public:
-    uint64_t plays=0,opens=0,reads=0,releases=0;
+    uint64_t plays=0,opens=0,reads=0,releases=0,music_reads=0;
     // Runs after every successful open, before the first sample is unpaused.
     std::function<void()> opened;
     Uint32 idle_close_ms=3000;
     std::array<uint64_t,size_t(MenuCue::Count)> counts{};
     std::string error;
     explicit MenuAudio(Sdl& api):s(api){}
-    ~MenuAudio(){close();}
+    ~MenuAudio(){close();join_loader();}
     MenuAudio(const MenuAudio&)=delete;
+    // Menu music: `on` with a level above zero starts the loop (after the
+    // one-time decode); off fades it out and the quiet sink closes as usual.
+    // Cues keep working either way, and nothing is read while music is off.
+    void configure_music(bool on,int level,const std::filesystem::path& file){
+        music_volume=std::clamp(level,0,100);music_on=on && music_volume>0 && !track_failed.load();
+        if(!music_on){if(device)set_music_target(0);music_started=false;return;}
+        if(!track_ready.load(std::memory_order_acquire) && !track_loading.exchange(true)){
+            join_loader();music_reads++;music_file=file.string();failed=false;
+            music_loader=std::thread([this]{auto decoded=load_music(music_file);if(decoded.empty())track_failed.store(true);else{track=std::move(decoded);track_ready.store(true,std::memory_order_release);}track_loading.store(false);});
+        }
+        if(device && music_started)set_music_target(music_volume/100.f);else start_music();
+    }
+    // Lets the track fade out before the sink is handed on (a launch).
+    void fade_music(){music_on=false;music_started=false;if(device)set_music_target(0);}
+    // System mute silences the music without forgetting that it is on.
+    void mute_music(bool muted){if(muted==music_muted)return;music_muted=muted;if(muted){if(device)set_music_target(0);music_started=false;}}
+    bool music_playing()const{return music_started && device;}
+    size_t music_samples()const{return track_ready.load(std::memory_order_acquire)?track.samples.size():0;}
     void configure(bool on,int level,const std::filesystem::path& folder){
         bool changed=enabled!=on;enabled=on;int previous=volume;volume=std::clamp(level,0,100);
         if(device && previous && volume!=previous){s.LockAudioDevice(device);float ratio=float(volume)/previous;for(auto& v:voices){v.left*=ratio;v.right*=ratio;v.last_left*=ratio;v.last_right*=ratio;}tail_left*=ratio;tail_right*=ratio;s.UnlockAudioDevice(device);}
-        if(!on || !volume){close();return;}
+        if(!on || !volume){if(!music_on)close();else if(device){s.LockAudioDevice(device);for(auto& v:voices)v={};tail_left=tail_right=0;s.UnlockAudioDevice(device);}return;}
         if(changed)failed=false;
         if(!loaded){
             for(size_t i=0;i<clips.size();i++){
@@ -129,16 +182,18 @@ public:
         plays++;counts[index]++;return true;
     }
     void poll(Uint32 now){
+        // The decode finished, or the sink was closed under the music: (re)start it.
+        if(music_on && !music_muted && !music_started && track_ready.load(std::memory_order_acquire))start_music();
         if(!device)return;
         if(!paused && !sounding.load(std::memory_order_acquire)){s.PauseAudioDevice(device,1);paused=true;quiet_since=now;}
         if(paused && idle_close_ms && now-quiet_since>=idle_close_ms)release();
     }
     bool active()const{return sounding.load(std::memory_order_acquire);}
     // Usable when a cue is requested; the sink itself may be closed while quiet.
-    bool available()const{return enabled && volume && loaded && !failed;}
+    bool available()const{return (enabled && volume && loaded && !failed) || (music_on && !failed);}
     bool open_now()const{return device!=0;}
     size_t bytes()const{size_t result=0;for(const auto& clip:clips)result+=clip.size()*sizeof(int16_t);return result;}
-    void stop(){if(device){s.LockAudioDevice(device);for(auto& v:voices)v={};tail_left=tail_right=0;sounding.store(false,std::memory_order_release);s.UnlockAudioDevice(device);s.PauseAudioDevice(device,1);}paused=true;}
+    void stop(){if(device){s.LockAudioDevice(device);for(auto& v:voices)v={};tail_left=tail_right=0;music_gain=music_target=0;sounding.store(false,std::memory_order_release);s.UnlockAudioDevice(device);s.PauseAudioDevice(device,1);}paused=true;music_started=false;}
     void close(){release();enabled=false;}
 };
 }

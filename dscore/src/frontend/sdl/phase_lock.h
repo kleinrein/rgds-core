@@ -61,8 +61,11 @@ public:
   // One completed flip of `panel` (0 sets the period): completion and swap
   // times on the same clock, ns. issue_ns 0: the swap time is unknown.
   // wait_ns: how long the present held that swap for the panel's previous
-  // flip; the frame itself was ready that much earlier.
-  void flip(int panel, u64 at_ns, u64 issue_ns, u64 wait_ns = 0) {
+  // flip; the frame itself was ready that much earlier. dropped_behind: the
+  // frame queued behind this flip was dropped at its vblank (the direct KMS
+  // tier's mailbox, display_drm.cpp) instead of being held for the tick
+  // after; SDL's swap holds every such frame.
+  void flip(int panel, u64 at_ns, u64 issue_ns, u64 wait_ns = 0, bool dropped_behind = false) {
     if (panel < 0 || panel >= PANELS) return;
     Panel& s = panels_[panel];
     if (panel == 0 && s.last_at && at_ns > s.last_at) learn_period(at_ns - s.last_at);
@@ -116,16 +119,23 @@ public:
       // Where the frames started since will land, given this flip: one that
       // is ready before the flip before it is held and takes the tick after
       // that flip, one that is not takes the first tick after it is ready.
+      // The mailbox tier may instead have dropped the frame queued behind
+      // this flip at its vblank (that is decided there, and the flip's
+      // record says so): it takes no tick and the frame after it meets no
+      // pending flip. A frame it held (within its margin) lands a tick
+      // later like SDL's, and the ones behind it are held the same way.
       // The next frame aims past the last of them, or every frame from here
       // on would be held the same way.
       double prev = at;
+      bool dropped = dropped_behind;
       for (;;) {
         const Start* next = nullptr;
         for (const Start& c : ring_) if (c.start > e->start && (!next || c.start < next->start) && static_cast<double>(c.start) > prev - 2.0 * period) next = &c;
         if (!next) break;
+        e = next;
+        if (dropped) { dropped = false; continue; }
         const double ready = static_cast<double>(next->start) + work_ema_;
         prev = tick_after(panel, (ready > prev ? ready : prev) + 1.0);
-        e = next;
       }
       // Back onto panel 0's grid, where the target lives.
       const double rebased = tick_after(0, prev - period * 0.5);

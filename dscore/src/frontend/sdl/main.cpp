@@ -1603,6 +1603,7 @@ sdl_ready:
   // as wide as the gain (docs/PERFORMANCE.md). DS_PACE_BAND=<ms> sets the
   // starting (and smallest) margin.
   ds::sdl::PhaseLock::Params lock_params;
+  // The direct KMS tier (display_drm.cpp) is a mailbox: a frame held for the previous flip is dropped there, not shown a tick later.
   if (const char* b = std::getenv("DS_PACE_BAND"); b && std::atof(b) > 0.0) {
     lock_params.band_ns = std::atof(b) * 1e6;
     lock_params.band_min_ns = std::min(lock_params.band_ns, lock_params.band_min_ns);
@@ -1979,7 +1980,7 @@ sdl_ready:
       ds::input::apply(nds, in);
     } else {
       bool closed;
-      if (lid.poll(closed)) { input.set_lid(closed); if (closed) flush_save(); }
+      if (lid.poll(closed, nds.sleeping)) { input.set_lid(closed); if (closed) flush_save(); }
       in.lid = input.lid();
       if (input.fake_mic()) input.fake_mic_frame(mic);
       else {
@@ -2343,7 +2344,7 @@ sdl_ready:
         else continue;
         for (int i = 0; i < flips_n[w]; ++i) {
           const u64 samples = lock.samples();
-          lock.flip(w, flips_new[w][i].at_ns, flips_new[w][i].issue_ns, flips_new[w][i].wait_ns);
+          lock.flip(w, flips_new[w][i].at_ns, flips_new[w][i].issue_ns, flips_new[w][i].wait_ns, (flips_new[w][i].tag & 4) != 0);
           if (lock.samples() != samples) { pace_err_abs += std::fabs(lock.last_lat_ns() - lock.band_ns()); ++pace_err_n; }
           flip_seen[w] = flips_new[w][i].seq;
         }
@@ -2390,11 +2391,12 @@ sdl_ready:
     // cadence change); then CLOCK_MONOTONIC ns: when this frame's wait ended
     // (the input poll follows), when it was handed to the present, when the
     // next wait ended; whether it was display-locked, and the lock's band
-    // (ns). Lines "f <panel> <seq> <completed_ns> <swap_ns> <late_start>
-    // <wait_ns>" are the page flips read this frame (KMSDRM): swap_ns 0 when
-    // the swap was not seen, late_start 1 when the frame it shows began past
-    // its deadline, wait_ns how long the present held the swap for the
-    // window's previous flip.
+    // (ns). Lines "f <panel> <seq> <completed_ns> <swap_ns> <tag> <wait_ns>"
+    // are the page flips read this frame (KMSDRM): swap_ns 0 when the swap
+    // was not seen, tag bit 0 when the frame it shows began past its
+    // deadline and bit 2 when the frame queued behind it was dropped at its
+    // vblank (the direct tier's mailbox), wait_ns how long the present held
+    // the swap for the window's previous flip.
     if (static const char* cad_path = std::getenv("DS_CADENCE_LOG"); cad_path) {
       static std::FILE* cad = [&] {
         std::FILE* f = std::fopen(cad_path, "w");

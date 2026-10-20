@@ -88,9 +88,8 @@ class GameShader {
                 auto compile=[&](U type,const std::string& body){
                     auto prepared=prepare(body,gpu.high_precision);
                     if(type==0x8b30){
-                        // Upstream grids target larger displays. Reduce attenuation on
-                        // the handheld without blending away colour-correction passes.
-                        prepared="#define BRIGHTEN_SCANLINES 32.0\n#define BRIGHTEN_LCD 14.0\n#define BORDERMULT 5.0\n"+prepared;
+                        // Grid strength for the 640x480 panels; see shader_catalog.hpp.
+                        prepared=shader_grid_defines(selected)+prepared;
                         const std::string sample="texture2D(u_texture,";size_t offset=0;while((offset=prepared.find(sample,offset))!=std::string::npos){prepared.replace(offset,sample.size(),"rgds_sample(");offset+=12;}
                         const std::string declaration="uniform vec4 u_texture_size;";auto at=prepared.find(declaration);
                         const bool linear=shader_uses_target_size(selected);

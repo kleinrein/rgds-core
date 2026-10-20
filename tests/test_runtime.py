@@ -466,7 +466,7 @@ pathlib.Path.is_file = lambda p: False if str(p) == '/tmp/rgds-session.lock/owne
             build = activate.read_pointer(root / "state/active")
             activate.verify_release(root / "releases" / build)
             self.assertEqual(save.read_bytes(), b"keep me")
-            self.assertTrue((root.parent / "Roms/APPS/RGDS Probe.sh").is_file())
+            self.assertTrue((root.parent / "Roms/APPS/Uninstall RG DS Core.sh").is_file())
             self.assertFalse(uploaded.exists())
 
     def test_tampered_upload_is_rejected_before_activation(self):

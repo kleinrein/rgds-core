@@ -18,6 +18,8 @@ import sys
 import tempfile
 import time
 
+from shared_audio import stop_outside_mixer
+
 from game_menu import GameMenu
 from controls import JOYSTICK, LOGICAL, load_profile
 from emulator_profiles import drastic_home, drastic_native_overrides, game_options, policy
@@ -317,7 +319,8 @@ class NativeSupervisor:
         if self.exiting is not None and now - self.exiting > 8:
             raise ValueError('SuperDrastic exit timed out; the previous checkpoint was preserved.')
         if self.lid.poll():
-            self.child.send_signal(signal.SIGSTOP)
+            # The sleep owner's chime shares the mixer: stop outside its semaphore.
+            stop_outside_mixer(self.child)
             try: self.hardware.sleep_lid()
             except (OSError, ValueError, subprocess.SubprocessError) as error:
                 print('SuperDrastic lid sleep failed: ' + str(error), file=sys.stderr)

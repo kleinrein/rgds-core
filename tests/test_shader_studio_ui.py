@@ -90,17 +90,18 @@ class ShaderStudioUiTests(unittest.TestCase):
             self.seed(focus=0,mode=mode);_,_,(_,_,rows)=self.run_preview();off.append(patch(rows,42,180,168,224))
         self.assertEqual(fingerprint(off[0]),fingerprint(off[1]));self.assertEqual(fingerprint(off[0]),fingerprint(off[2]))
 
-    def test_keyboard_scene_compare_and_wipe_survive_restart_without_saving_shader(self):
+    def test_keyboard_scene_compare_and_group_jumps_survive_restart_without_saving_shader(self):
+        # The carousel is grouped (shader_order): Right steps one preset, [ / ] and L / R jump to the first preset of the previous / next group.
         before=(self.prefs.read_bytes(),self.ui.read_bytes())
         result,counts,_=self.run_preview('40 key Right\n80 key X\n120 key Y\n160 key [\n')
-        self.assertEqual(self.preview_state()[:4],(20,3,1,2));self.assertAlmostEqual(self.preview_state()[4],.4)
-        self.assertEqual(counts['shader_preview_scene'],1);self.assertEqual(counts['shader_preview_mode'],2);self.assertAlmostEqual(counts['shader_preview_split'],.4)
+        self.assertEqual(self.preview_state()[:4],(20,0,1,0))
+        self.assertEqual(counts['shader_preview_scene'],1);self.assertEqual(counts['shader_preview_mode'],0)
         self.assertEqual(before,(self.prefs.read_bytes(),self.ui.read_bytes()));self.assertNotIn('Shader request (preview)',result.stdout)
         self.assertFalse(list((self.root/'library').glob('*/game.ini')))
-        _,restored,_=self.run_preview();self.assertEqual(self.preview_state()[:4],(20,3,1,2));self.assertAlmostEqual(restored['shader_preview_split'],.4)
-        _,right,_=self.run_preview('40 key ]\n');self.assertAlmostEqual(right['shader_preview_split'],.5)
-        _,left_shoulder,_=self.run_preview('40 joy-down 4\n60 joy-up 4\n');self.assertAlmostEqual(left_shoulder['shader_preview_split'],.4)
-        _,right_shoulder,_=self.run_preview('40 joy-down 5\n60 joy-up 5\n');self.assertAlmostEqual(right_shoulder['shader_preview_split'],.5)
+        self.run_preview();self.assertEqual(self.preview_state()[:4],(20,0,1,0))
+        self.run_preview('40 key ]\n');self.assertEqual(self.preview_state()[1],2)
+        self.run_preview('40 joy-down 5\n60 joy-up 5\n');self.assertEqual(self.preview_state()[1],11)
+        self.run_preview('40 joy-down 4\n60 joy-up 4\n');self.assertEqual(self.preview_state()[1],2)
 
     def test_header_touch_scene_and_compare_are_preview_only(self):
         before=(self.prefs.read_bytes(),self.ui.read_bytes())
@@ -114,18 +115,25 @@ class ShaderStudioUiTests(unittest.TestCase):
         before=(self.prefs.read_bytes(),self.ui.read_bytes());result,report,_=self.run_preview('40 key Right\n80 key X\n')
         self.assertEqual(before,(self.prefs.read_bytes(),self.ui.read_bytes()));self.assertEqual(report['page'],20);self.assertEqual(self.preview_state()[1],3)
         self.assertNotIn('Shader request (preview)',result.stdout)
-        _,applied,_=self.run_preview('40 key A\n');self.assertIn('filter=3\n',self.ui.read_text());self.assertNotEqual(applied['page'],20)
+        _,applied,_=self.run_preview('40 key A\n');self.assertIn('filter=22\n',self.ui.read_text());self.assertNotEqual(applied['page'],20)
 
     def test_game_navigation_only_requests_on_a_and_keeps_studio_open(self):
         self.seed(game=True);before=self.ui.read_bytes();result,report,_=self.run_preview('40 key Right\n80 key X\n120 key Y\n',game=True)
         self.assertEqual(before,self.ui.read_bytes());self.assertFalse(list((self.root/'library').glob('*/game.ini')));self.assertNotIn('Shader request (preview)',result.stdout);self.assertEqual(report['page'],20)
         result,applied,_=self.run_preview('40 key A\n',game=True)
-        self.assertIn('Shader request (preview): shader:3',result.stdout);self.assertEqual(applied['page'],20);self.assertEqual(self.preview_state()[:4],(20,4,1,0));self.assertEqual(before,self.ui.read_bytes())
-        options=list((self.root/'library').glob('*/game.ini'));self.assertEqual(len(options),1);self.assertIn('filter=3\n',options[0].read_text())
+        self.assertIn('Shader request (preview): shader:22',result.stdout);self.assertEqual(applied['page'],20);self.assertEqual(self.preview_state()[:4],(20,4,1,0));self.assertEqual(before,self.ui.read_bytes())
+        options=list((self.root/'library').glob('*/game.ini'));self.assertEqual(len(options),1);self.assertIn('filter=22\n',options[0].read_text())
+
+    def test_held_left_or_right_scrolls_the_carousel_until_released(self):
+        # A tap moves one preset; a key or d-pad held past the repeat delay keeps moving, a release stops it.
+        self.seed(focus=2);self.run_preview('100 key Right\n140 key-up Right\n');self.assertEqual(self.preview_state()[1],3)
+        self.seed(focus=2);self.run_preview('100 key Right\n900 key-up Right\n');self.assertGreaterEqual(self.preview_state()[1],5)
+        self.seed(focus=2);self.run_preview('100 key Right\n300 key-up Right\n');self.assertEqual(self.preview_state()[1],3)
+        self.seed(focus=8);self.run_preview('100 joy-hat 8\n900 joy-hat 0\n');self.assertLessEqual(self.preview_state()[1],5)
 
     def test_repeated_frames_use_bounded_warm_preview_assets_without_render_io(self):
-        self.seed(focus=20);_,counts,_=self.run_preview(frames=40)
-        self.assertEqual(counts['frames'],40);self.assert_cache(counts);self.assertEqual(counts['shader_preview_reads'],3)
+        self.seed(focus=20);_,short,_=self.run_preview(frames=6);self.seed(focus=20);_,counts,_=self.run_preview(frames=40)
+        self.assertEqual(counts['frames'],40);self.assert_cache(counts);self.assertEqual(counts['shader_preview_reads'],short['shader_preview_reads'])
 
 
 if __name__=='__main__':unittest.main()

@@ -785,9 +785,9 @@ Home layout	Disposition de l'accueil
 Background	Arrière-plan
 Touch gestures	Gestes tactiles
 Carousel	Carrousel
-DSi column	Colonne DSi
+Column	Colonne
 Plain	Uni
-DSi grid	Grille DSi
+Grid	Grille
 A carousel, or the DSi's column with your last game on top	Un carrousel, ou la colonne de la DSi avec votre dernier jeu en haut
 Plain, or the DSi's ruled grid behind every screen	Uni, ou la grille lignée de la DSi derrière chaque écran
 Swipe up from the bottom for Home, in from the left for Back	Glissez du bas pour l'accueil, depuis la gauche pour revenir
@@ -836,3 +836,19 @@ Vivid	Éclatant
 Pixel art	Pixel art
 Moods	Ambiances
 Up / Down or L / R: change group	Haut / Bas ou L / R : changer de groupe
+Sounds & music	Sons et musique
+Menu music	Musique du menu
+Music volume	Volume de la musique
+A soft tune plays while you browse. It fades out when a game starts.	Une douce mélodie joue pendant que vous parcourez. Elle s’estompe quand un jeu démarre.
+Turn on menu music for a soft tune while you browse.	Activez la musique du menu pour une douce mélodie pendant la navigation.
+Scanning…	Recherche…
+Scan complete	Recherche terminée
+Looking for games…	Recherche de jeux…
+Reading Roms/NDS on your games card. This takes a moment.	Lecture de Roms/NDS sur votre carte de jeux. Cela prend un instant.
+{0} found. Choose Done to go to your library.	{0} trouvés. Choisissez Terminé pour ouvrir votre bibliothèque.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Aucun jeu trouvé. Copiez des fichiers .nds ou ZIP DS dans Roms/NDS sur votre carte de jeux, puis relancez la recherche.
+Backing up your saves…	Sauvegarde de vos parties…
+The backup did not finish. Please try again.	La sauvegarde ne s’est pas terminée. Veuillez réessayer.
+Copies every save and checkpoint into one zip in userdata/exports.	Copie toutes les parties et points de contrôle dans un zip sous userdata/exports.
+Where games go on the card, and a fresh scan.	Où placer les jeux sur la carte, et une nouvelle recherche.
+Where covers and titles come from.	D’où viennent les jaquettes et les titres.

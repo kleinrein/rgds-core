@@ -14,13 +14,13 @@ class HorizontalRailTests(unittest.TestCase):
                 with self.subTest(mode=mode, animations=animations):
                     options = dict(mode=mode, animations=animations, indicator=False)
                     base, _, _ = self.exercise(**options)
-                    held, counts, state = self.exercise('100 tap 178 443\n', **options)
+                    held, counts, state = self.exercise('100 tap 126 443\n', **options)
                     self.assertEqual(int(state.split()[1]), 0, 'Grabbing the thumb edge must not seek')
                     footer = lambda image: self.crop(image, 84, 887, 472, 73)
                     self.assertNotEqual(footer(base), footer(held))
                     self.assertLess(counts['frames'], 40, 'A held thumb must settle back to idle')
                     for end in ('release', 'focus-lost'):
-                        released, _, _ = self.exercise(f'100 tap 178 443\n300 {end}\n', **options)
+                        released, _, _ = self.exercise(f'100 tap 126 443\n300 {end}\n', **options)
                         self.assertEqual(footer(base), footer(released), end)
 
     def test_caret_press_has_feedback_and_release_restores_surface(self):
@@ -29,7 +29,7 @@ class HorizontalRailTests(unittest.TestCase):
                 options = dict(indicator=False)
                 base, _, _ = self.exercise(**options)
                 held, _, _ = self.exercise(f'100 tap {x} 443\n', **options)
-                button = lambda image: self.crop(image, 0 if x == 42 else 556, 889, 84, 71)
+                button = lambda image: self.crop(image, 0 if x == 42 else 572, 889, 68, 71)   # the arrow button alone; the grabber starts at 74
                 self.assertNotEqual(button(base), button(held))
                 for end in ('release', 'focus-lost', 'drag 320 370'):
                     released, _, _ = self.exercise(f'100 tap {x} 443\n300 {end}\n', **options)
@@ -37,8 +37,8 @@ class HorizontalRailTests(unittest.TestCase):
 
     def test_captured_thumb_remains_pressed_outside_rail_without_launching(self):
         options = dict(indicator=False, animations=False)
-        held, _, _ = self.exercise('100 tap 178 443\n200 drag 700 370\n', **options)
-        released, _, state = self.exercise('100 tap 178 443\n200 drag 700 370\n300 release\n', **options)
+        held, _, _ = self.exercise('100 tap 126 443\n200 drag 700 370\n', **options)
+        released, _, state = self.exercise('100 tap 126 443\n200 drag 700 370\n300 release\n', **options)
         self.assertEqual(int(state.split()[1]), 4)
         self.assertNotEqual(self.crop(held, 84, 887, 472, 73), self.crop(released, 84, 887, 472, 73))
 

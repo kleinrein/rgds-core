@@ -45,10 +45,10 @@ else:os.execv(sys.executable,[sys.executable,*sys.argv[1:]])
 #include <cassert>
 int main(){for(size_t count:{0,1,4,5,62,100,1000,100000})for(int i=0;i<=1000;i++){
  auto r=rgds::RailGeometry::at(count,count>1?double(count-1)*i/1000:0);
- assert(r.thumb_left>=r.window_left+2);
- assert(r.thumb_left+r.thumb_width<=r.window_left+r.window_width-2);
- assert(r.window_left>=84 && r.window_left+r.window_width<=556);
- assert(r.thumb_width>=32);if(count<=4)assert(r.thumb_width>=118);
+ constexpr int left=rgds::RailGeometry::left,right=left+rgds::RailGeometry::width;
+ assert(r.thumb_left>=left+2 && r.thumb_left+r.thumb_width<=right-2);   // the grabber stays on the track
+ assert(r.window_left>=left && r.window_left+r.window_width<=right);
+ assert(r.thumb_width==rgds::RailGeometry::grab);   // the DSi grabber keeps one size whatever the count
 }}
 ''')
         subprocess.run(['clang++','-std=c++17','-I'+str(ROOT/'src'),str(source),'-o',str(binary)],check=True,capture_output=True)

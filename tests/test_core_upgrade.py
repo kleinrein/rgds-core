@@ -129,6 +129,7 @@ class CoreUITests(unittest.TestCase):
     def run_ui(self,data,script='',extra=()):
         import json
         (data/'input').write_text(script)
+        if not (data/'ui.ini').exists():(data/'ui.ini').write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home and rail
         result=subprocess.run([str(ROOT/'build/host/rgds-launcher'),'--preview','--data',str(data),'--input-script',str(data/'input'),'--state',str(data/'state'),'--seconds','1','--cache-report',str(data/'report.json'),*extra],cwd=ROOT,env=dict(os.environ,SDL_VIDEODRIVER='dummy'),capture_output=True,text=True,timeout=8)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         return json.loads((data/'report.json').read_text())

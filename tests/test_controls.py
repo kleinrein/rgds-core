@@ -49,7 +49,7 @@ class ControlProfileTests(unittest.TestCase):
     def test_fast_forward_binding_swaps_conflicts_and_inherits_per_game(self):
         controls.set_fast_forward(self.data,'a')
         profile=controls.load_profile(self.data)
-        self.assertEqual((profile['fast_forward_button'],profile['bind_a']),('a','none'))
+        self.assertEqual((profile['fast_forward_button'],profile['bind_a']),('a','r2'))   # A's old slot goes to the default R2 fast-forward key
         controls.set_fast_forward(self.data,'b')
         profile=controls.load_profile(self.data)
         self.assertEqual((profile['fast_forward_button'],profile['bind_b']),('b','a'))

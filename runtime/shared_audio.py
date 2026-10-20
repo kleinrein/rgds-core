@@ -1,5 +1,10 @@
 """Session-local mixing for the stock RK817's otherwise exclusive playback PCM."""
+import ctypes
+import os
 from pathlib import Path
+import signal
+import sys
+import time
 
 
 def configure(app, env, stock=Path('/etc/asound.conf')):
@@ -23,3 +28,72 @@ def configure(app, env, stock=Path('/etc/asound.conf')):
     except OSError:
         pass
     return env
+
+
+# alsa-lib guards the dmix stream with a SysV semaphore at ipc_key (+ uid):
+# start, recovery after an underrun, open and close all take it for a moment.
+MIXER_KEY = 1380402259
+_GETPID, _GETVAL = 11, 12
+
+
+def mixer_holder(key=MIXER_KEY):
+    """Pid of the process inside the shared mixer's critical section.
+
+    0 when the semaphore is free, None when there is no shared mixer (nobody
+    has the stream open) or it cannot be read on this platform."""
+    if sys.platform != 'linux':
+        return None
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        semget, semctl = libc.semget, libc.semctl
+    except (OSError, AttributeError):
+        return None
+    semget.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]; semget.restype = ctypes.c_int
+    semctl.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_long]; semctl.restype = ctypes.c_int
+    semid = semget(key + os.getuid(), 0, 0)
+    if semid < 0:
+        return None
+    value, pid = semctl(semid, 0, _GETVAL, 0), semctl(semid, 0, _GETPID, 0)
+    if value < 0 or pid < 0:
+        return None
+    return pid if value > 0 else 0
+
+
+def threads_stopped(pid):
+    """True once every thread of pid is stopped (or the process is gone)."""
+    try:
+        tasks = list((Path('/proc') / str(pid) / 'task').iterdir())
+    except OSError:
+        return True
+    for task in tasks:
+        try:
+            stat = (task / 'stat').read_text()
+        except OSError:
+            continue
+        state = stat[stat.rfind(')') + 2:stat.rfind(')') + 3]
+        if state not in ('T', 't', 'Z', 'X'):
+            return False
+    return True
+
+
+def stop_outside_mixer(process, holder=mixer_holder, settled=threads_stopped, retries=50, delay=.002,
+                       sleep=time.sleep, clock=time.monotonic):
+    """SIGSTOP a process, but never while it holds the shared mixer semaphore.
+
+    A client stopped inside alsa-lib's critical section keeps the semaphore,
+    and the next client to open or start the stream (the pause menu's cue
+    sink, the sleep owner's chime) blocks in semtimedop with no timeout until
+    the holder runs again: the menu froze with the engine stopped underneath.
+    Returns False when the process still held it after every retry."""
+    for attempt in range(retries + 1):
+        process.send_signal(signal.SIGSTOP)
+        deadline = clock() + .1
+        while not settled(process.pid) and clock() < deadline:
+            sleep(.001)
+        if holder() != process.pid:
+            return True
+        if attempt == retries:
+            return False
+        process.send_signal(signal.SIGCONT)
+        sleep(delay)
+    return False

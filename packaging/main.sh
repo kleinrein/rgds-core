@@ -22,7 +22,7 @@ fail() {
     exit 1
 }
 if ! command -v python3 >/dev/null 2>&1; then
-    fail "RGDS needs Python 3.8+ on the stock card. Run RGDS Inventory and read its log."
+    fail "RGDS needs Python 3.8+ on the stock card."
 fi
 python3 -B -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)' >> "$RGDS_LOG" 2>&1 || {
     fail "RGDS needs Python 3.8+. Keep stock active and share the inventory."

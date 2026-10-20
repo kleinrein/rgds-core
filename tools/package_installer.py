@@ -39,7 +39,9 @@ installer, not a replacement OS image. No formatting, flashing or SSH is needed.
    Copy both Roms and RGDS-Install. Do not copy only the APPS entry.
 2. Insert the card and open APPS → Install RG DS Core from the stock menu.
 3. The verified install opens RG DS Core. English is the initial language.
-4. Future boots open RG DS Core by default. The first-run guide explains ROM setup.
+4. Future boots open RG DS Core by default, with RG DS Core artwork from power-on
+   (the stock boot image is backed up; Uninstall puts it back). The first-run
+   guide explains ROM setup.
    Settings → System → Startup → Boot into can switch back to Anbernic.
    Updates preserve your existing startup choice.
 
@@ -51,7 +53,9 @@ checks space and file hashes before changing the active release. The payload ZIP
 is consumed after installation; copy a complete installer again to reinstall.
 
 If installation fails, read RGDS-Install/install.log from the card on a computer.
-APPS → RGDS Recovery disables direct startup and retains saves.
+Settings → System → Startup → Boot into switches back to Anbernic startup.
+APPS → Uninstall RG DS Core removes the app and its menu entries and restores the
+stock startup and boot artwork; saves and settings stay in rgds/userdata.
 
 Candidate status: private testing only. The payload includes supplied NNDDSS
 binaries with unresolved public provenance; project-wide licensing and release
@@ -60,7 +64,7 @@ No games, user saves, Wi-Fi profiles or Nintendo BIOS dumps are included.
 The OTA foundation is included; no public channel is configured yet.
 This installer does not contact an update service.
 
-RG DS Plus: physical testing is still needed. Run RGDS Inventory and RGDS Probe,
+RG DS Plus: physical testing is still needed. Capture an inventory over SSH,
 then test DSperate. See rgds/docs/RG_DS_PLUS.md for the checklist and logs.
 Use the Plus's own stock Linux card; do not flash an original RG DS OS image.
 Plus OTA and boot-partition/logo modifications remain unvalidated.

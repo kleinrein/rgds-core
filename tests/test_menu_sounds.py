@@ -36,6 +36,9 @@ class MenuSoundUITests(unittest.TestCase):
         self.root=Path(self.temp.name)
         (self.root/'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\n')
     def run_ui(self,script='',prefs=None,entry=('--settings',),seconds=2,audio='dummy'):
+        # These are cue tests: the music voice (on by default) keeps the sink
+        # open on its own, so it stays off unless a test asks for it.
+        if prefs is not None and 'menu_music=' not in prefs:prefs+='menu_music=0\n'
         if prefs is not None:(self.root/'ui.ini').write_text(prefs)
         (self.root/'input').write_text(script)
         result=subprocess.run([str(BINARY),'--preview','--data',str(self.root),'--state',str(self.root/'state'),'--input-script',str(self.root/'input'),'--cache-report',str(self.root/'report'),'--seconds',str(seconds),*entry],cwd=ROOT,env=dict(os.environ,SDL_VIDEODRIVER='dummy',SDL_AUDIODRIVER=audio),capture_output=True,text=True,timeout=8)
@@ -45,8 +48,11 @@ class MenuSoundUITests(unittest.TestCase):
         for entry in (('--home',),('--library',)):
             r=self.run_ui('100 key Right\n150 key-up Right\n350 key Left\n400 key-up Left\n600 key Right\n650 key-up Right\n','menu_sounds=1\nanimations=0\n',entry)
             self.assertEqual(r['sound_counts'][0],3,entry)
-    def test_default_off_does_not_load_or_open_audio(self):
+    def test_sounds_are_on_by_default(self):
         r=self.run_ui('100 key A\n250 key Escape\n')
+        self.assertEqual((r['menu_sounds'],r['sound_volume']),(1,55));self.assertGreater(r['sound_plays'],0)
+    def test_sounds_off_does_not_load_or_open_audio(self):
+        r=self.run_ui('100 key A\n250 key Escape\n','menu_sounds=0\nmenu_music=0\n')
         for key in ('menu_sounds','sound_reads','sound_opens','sound_plays','sound_bytes'):self.assertEqual(r[key],0,key)
     def test_audio_is_independent_of_both_animation_flags_and_returns_to_idle(self):
         for view_transitions in (0,1):
@@ -64,7 +70,7 @@ class MenuSoundUITests(unittest.TestCase):
         self.assertEqual(r['sound_reads'],17)
     def test_touch_enables_persists_volume_and_controller_disables(self):
         entry=('--settings','--section','sound')
-        r=self.run_ui('100 click 180 390\n220 click 180 129\n350 key Down\n450 key Right\n',entry=entry)
+        r=self.run_ui('100 click 180 390\n220 click 180 129\n350 key Down\n450 key Right\n','menu_sounds=0\n',entry=entry)
         self.assertTrue(r['menu_sounds']);self.assertEqual(r['sound_volume'],60)
         self.assertIn('menu_sounds=1\n',(self.root/'ui.ini').read_text())
         r=self.run_ui('100 key Up\n220 key Left\n',entry=())

@@ -26,7 +26,7 @@ class SDInstallerTests(unittest.TestCase):
         manifest=dict(schema=1,project='rgds',target='aarch64-linux-gnu',build=version,files={k:hashlib.sha256(v).hexdigest() for k,v in files.items()})
         manifest.update(metadata or {})
         entries[prefix+'manifest.json']=json.dumps(manifest).encode()
-        entries.update({'rgds/state/active':version.encode(),'rgds/main.sh':b'#!/bin/sh\n','rgds/inventory.sh':b'#!/bin/sh\n','Roms/APPS/RG DS Core.sh':b'#!/bin/sh\n'})
+        entries.update({'rgds/state/active':version.encode(),'rgds/main.sh':b'#!/bin/sh\n','Roms/APPS/RG DS Core.sh':b'#!/bin/sh\n'})
         if extra:entries.update(extra)
         archive=self.base/(version+'.zip')
         with zipfile.ZipFile(archive,'w') as z:
@@ -43,18 +43,20 @@ class SDInstallerTests(unittest.TestCase):
         card.mkdir(parents=True)
         other_card = self.base/'absent-card/Roms/APPS'
         internal = self.base/'internal/Roms/APPS'
-        for name in ('RG DS Core.sh', 'RGDS Probe.sh', 'RGDS Recovery.sh'):
+        for name in ('RG DS Core.sh', 'Uninstall RG DS Core.sh'):
             (source/name).write_text('new '+name)
             (source/name).chmod(0o755)
-            (card/('Try RGDS.sh' if name == 'RG DS Core.sh' else name)).write_text('old '+name)
+            (card/name).write_text('old '+name)
+        for name in ('Try RGDS.sh', 'RGDS Probe.sh', 'RGDS Inventory.sh', 'RGDS Recovery.sh'):
+            (card/name).write_text('old '+name)
+        (internal/'RGDS Probe.sh').parent.mkdir(parents=True);(internal/'RGDS Probe.sh').write_text('old probe')
         install_apps(source, internal, (card, other_card))
-        for name in ('RG DS Core.sh', 'RGDS Probe.sh'):
+        for name in ('RG DS Core.sh', 'Uninstall RG DS Core.sh'):
             self.assertEqual((card/name).read_text(), 'new '+name)
             self.assertEqual((internal/name).read_text(), 'new '+name)
-        self.assertEqual((card/'RGDS Recovery.sh').read_text(), 'old RGDS Recovery.sh')
+        self.assertEqual(sorted(p.name for p in card.iterdir()), ['RG DS Core.sh', 'Uninstall RG DS Core.sh'])
+        self.assertEqual(sorted(p.name for p in internal.iterdir()), ['RG DS Core.sh', 'Uninstall RG DS Core.sh'])
         self.assertFalse(other_card.exists())
-        self.assertFalse((card/'Try RGDS.sh').exists())
-        self.assertFalse((internal/'Try RGDS.sh').exists())
     def test_fresh_upgrade_and_rollback_keep_user_data(self):
         save=self.root/'userdata/library/game/save.sav';save.parent.mkdir(parents=True);save.write_bytes(b'progress')
         with patch.object(activate,'stop_session'):

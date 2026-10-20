@@ -22,6 +22,7 @@ class SettingsTests(unittest.TestCase):
         self.prefs = self.root / "preferences.ini"
         self.system_prefs = self.root / "system.ini"
         self.bmp = self.root / "screen.bmp"
+        (self.root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # pixel checks read the plain background
 
     def run_preview(self, script=None, extra=()):
         entry = [] if "--home" in extra else ["--library"]

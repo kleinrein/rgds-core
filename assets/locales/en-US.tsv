@@ -785,9 +785,9 @@ Home layout	Home layout
 Background	Background
 Touch gestures	Touch gestures
 Carousel	Carousel
-DSi column	DSi column
+Column	Column
 Plain	Plain
-DSi grid	DSi grid
+Grid	Grid
 A carousel, or the DSi's column with your last game on top	A carousel, or the DSi's column with your last game on top
 Plain, or the DSi's ruled grid behind every screen	Plain, or the DSi's ruled grid behind every screen
 Swipe up from the bottom for Home, in from the left for Back	Swipe up from the bottom for Home, in from the left for Back
@@ -836,3 +836,19 @@ Vivid	Vivid
 Pixel art	Pixel art
 Moods	Moods
 Up / Down or L / R: change group	Up / Down or L / R: change group
+Sounds & music	Sounds & music
+Menu music	Menu music
+Music volume	Music volume
+A soft tune plays while you browse. It fades out when a game starts.	A soft tune plays while you browse. It fades out when a game starts.
+Turn on menu music for a soft tune while you browse.	Turn on menu music for a soft tune while you browse.
+Scanning…	Scanning…
+Scan complete	Scan complete
+Looking for games…	Looking for games…
+Reading Roms/NDS on your games card. This takes a moment.	Reading Roms/NDS on your games card. This takes a moment.
+{0} found. Choose Done to go to your library.	{0} found. Choose Done to go to your library.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.
+Backing up your saves…	Backing up your saves…
+The backup did not finish. Please try again.	The backup did not finish. Please try again.
+Copies every save and checkpoint into one zip in userdata/exports.	Copies every save and checkpoint into one zip in userdata/exports.
+Where games go on the card, and a fresh scan.	Where games go on the card, and a fresh scan.
+Where covers and titles come from.	Where covers and titles come from.

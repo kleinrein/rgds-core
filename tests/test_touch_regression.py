@@ -84,6 +84,7 @@ class FingerRoutingRegressionTests(unittest.TestCase):
             root = Path(folder)
             state = root / "state.txt"
             state.write_text('1 0 0 ""\n')
+            (root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home these taps address
             inputs = root / "fingers.txt";inputs.write_text(script)
             command = [str(BINARY), "--preview", "--home", "--state", str(state), "--preferences", str(root / "preferences.ini"),
                        "--input-script", str(inputs), "--seconds", "1", *extra]

@@ -22,6 +22,7 @@ class LibraryUITests(unittest.TestCase):
         self.state.write_text('1 0 0 ""\n')
         self.prefs = self.root / "preferences.ini"
         self.bmp = self.root / "screen.bmp"
+        (self.root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home these taps address
 
     def run_ui(self, script, seconds=2, extra=(), initial_library=True):
         path = self.root / "input.txt";path.write_text(script)

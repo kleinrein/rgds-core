@@ -785,9 +785,9 @@ Home layout	Layout della home
 Background	Sfondo
 Touch gestures	Gesti touch
 Carousel	Carosello
-DSi column	Colonna DSi
+Column	Colonna
 Plain	Semplice
-DSi grid	Griglia DSi
+Grid	Griglia
 A carousel, or the DSi's column with your last game on top	Un carosello, o la colonna del DSi con l'ultimo gioco in cima
 Plain, or the DSi's ruled grid behind every screen	Semplice, o la griglia rigata del DSi dietro ogni schermata
 Swipe up from the bottom for Home, in from the left for Back	Scorri dal basso per la home, da sinistra per tornare indietro
@@ -836,3 +836,19 @@ Vivid	Vivido
 Pixel art	Pixel art
 Moods	Atmosfere
 Up / Down or L / R: change group	Su / Giù o L / R: cambia gruppo
+Sounds & music	Suoni e musica
+Menu music	Musica del menu
+Music volume	Volume della musica
+A soft tune plays while you browse. It fades out when a game starts.	Una melodia leggera suona mentre sfogli. Sfuma quando parte un gioco.
+Turn on menu music for a soft tune while you browse.	Attiva la musica del menu per una melodia leggera mentre sfogli.
+Scanning…	Ricerca…
+Scan complete	Ricerca completata
+Looking for games…	Ricerca dei giochi…
+Reading Roms/NDS on your games card. This takes a moment.	Lettura di Roms/NDS sulla scheda dei giochi. Ci vuole un momento.
+{0} found. Choose Done to go to your library.	{0} trovati. Scegli Fatto per andare alla libreria.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Nessun gioco trovato. Copia file .nds o ZIP DS in Roms/NDS sulla scheda dei giochi e cerca di nuovo.
+Backing up your saves…	Backup dei salvataggi in corso…
+The backup did not finish. Please try again.	Il backup non è stato completato. Riprova.
+Copies every save and checkpoint into one zip in userdata/exports.	Copia ogni salvataggio e checkpoint in un unico zip in userdata/exports.
+Where games go on the card, and a fresh scan.	Dove vanno i giochi sulla scheda, e una nuova ricerca.
+Where covers and titles come from.	Da dove arrivano copertine e titoli.

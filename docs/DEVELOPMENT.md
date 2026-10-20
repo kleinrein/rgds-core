@@ -138,7 +138,7 @@ Code deployments transfer the complete private package, including all four emula
 - **Top panel skips.** On the library pages the upper screen repaints only when its
   `top_signature` changes (and at least every two seconds); transitions and browsing
   animate the lower screen alone. `top_skips` is in the cache report.
-- **Home layout** (Theme & display): the carousel, or the **DSi column** with the last
+- **Home layout** (Theme & display): the carousel, or the **Column** (the default, after the DSi) with the last
   played game on top, the categories as wide tiles, a brightness / mark / statistics bar
   below, and the DSi's clock and calendar on the upper screen. **Background** adds the
   DSi's ruled grid behind every screen. **Touch gestures** (off by default): swipe up from

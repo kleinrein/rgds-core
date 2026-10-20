@@ -7,6 +7,7 @@ No device, emulator, ROM or remote connection is involved.
 import ctypes.util
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -65,6 +66,25 @@ class ShaderPixelTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             self.assertIn('enhanced panel pixels=verified',result.stdout)
 
+    def test_classic_lcd_grids_clearly_modulate_a_flat_grey_640_by_480_panel(self):
+        # The community grids were tuned for 1080p. On the handheld's 2.5x panel
+        # they must still read as a grid: at least about 20 % column modulation
+        # of a flat mid grey, while the mean brightness stays above three quarters.
+        with tempfile.TemporaryDirectory() as folder:
+            result=subprocess.run([str(self.binary),folder,'drastic','grid'],env=self.environment,capture_output=True,text=True,timeout=60)
+            if result.returncode==77:self.skipTest('Host EGL driver cannot create a pbuffer')
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertIn('grid amplitudes=measured',result.stdout)
+            measured={int(m.group(1)):tuple(float(m.group(i)) for i in (2,3,4)) for m in re.finditer(r'^grid (\d+) column=([\d.]+) row=([\d.]+) mean=([\d.]+)$',result.stdout,re.M)}
+            for selected in (2,6,7,8):  # lcd1x: a vertical LCD grid with faint scanlines.
+                with self.subTest(preset=selected):
+                    column,row,mean=measured[selected];self.assertGreaterEqual(column,20);self.assertGreaterEqual(row,5);self.assertGreaterEqual(mean,80 if selected==2 else 65)
+            for selected in (3,12,13,14):  # zfast: a square grid.
+                with self.subTest(preset=selected):
+                    column,row,mean=measured[selected];self.assertGreaterEqual(column,20);self.assertGreaterEqual(row,20);self.assertGreaterEqual(mean,80 if selected==3 else 65)
+            for selected in (4,5):  # Colour-only presets leave a flat image flat.
+                with self.subTest(preset=selected):self.assertLess(measured[selected][0],1)
+
     def test_compile_failure_restores_previous_selection_and_is_cached(self):
         with tempfile.TemporaryDirectory() as folder:
             pack=Path(folder)/'shaders';shutil.copytree(self.environment['RGDS_SHADER_DIR'],pack)
@@ -80,6 +100,7 @@ class ShaderPixelTests(unittest.TestCase):
 CPP=r'''
 #define RGDS_BRIDGE_TESTS
 #include "platform/emulator_bridge.cpp"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 using U=unsigned;using I=int;using B=unsigned char;
@@ -136,6 +157,21 @@ int main(int argc,char** argv){
    }
    enhanced_game_texture=false;native_textures.clear();assert(!sdl_shader(renderer,big,nullptr,&rect));
    SDL_DestroyTexture(big);std::puts("enhanced panel pixels=verified");return 0;
+ }
+ if(argc==4 && std::string(argv[3])=="grid"){
+   // A flat mid grey at the panel's 2.5x scale isolates each preset's grid:
+   // column/row amplitude in percent of the brightest line, mean in percent
+   // of the input grey.
+   for(size_t i=0;i<pixels.size();i+=4){pixels[i]=pixels[i+1]=pixels[i+2]=128;pixels[i+3]=255;}
+   BindTexture(0x0de1,image);glTexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,pixels.data());SDL_Rect panel{0,0,640,480};
+   for(int selected=1;selected<rgds::shader_count;selected++){
+     command(selected);clear();assert(SDL_RenderCopy(renderer,texture,nullptr,&panel)==0);assert(!shader_waiting && live_shader==selected);
+     auto frame=read();std::vector<double> columns(640,0),rows(480,0);double total=0;
+     for(int y=0;y<480;y++)for(int x=0;x<640;x++){auto p=&frame[((959-y)*1280+x)*4];double v=(p[0]+p[1]+p[2])/3.0;columns[x]+=v/480;rows[y]+=v/640;total+=v/(640.0*480);}
+     auto amplitude=[](const std::vector<double>& lines){double lo=*std::min_element(lines.begin(),lines.end()),hi=*std::max_element(lines.begin(),lines.end());return hi>0?100.0*(hi-lo)/hi:0.0;};
+     std::printf("grid %d column=%.1f row=%.1f mean=%.1f\n",selected,amplitude(columns),amplitude(rows),100.0*total/128.0);
+   }
+   std::puts("grid amplitudes=measured");return 0;
  }
  if(argc==4){
    auto draw=[&](){clear();if(core=="nnddss")glDrawArrays(4,0,6);else assert(SDL_RenderCopy(renderer,texture,nullptr,&rect)==0);};

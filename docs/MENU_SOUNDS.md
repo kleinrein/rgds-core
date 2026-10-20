@@ -4,7 +4,7 @@ Settings → Sound → Menu sounds contains the independent enable switch, effec
 
 The library and in-game menu share the same action cues. Left/right browsing always plays on a successful step, with a clearly lower/higher pitch. Navigation varies subtly with speed and touch position; rapid input is rate-limited instead of queued. Forward travel swells inward, while back has a lower descending cue. Favourites, switches, keyboard entry, saves, loads, resume and launch have distinct effects. Save/load completion is played only after a matching successful supervisor acknowledgement (or a simulated preview completion).
 
-The bank is 17 mono PCM16 WAV files at 32 kHz, totaling 413,440 bytes of samples. Taps last 70–130 ms, other actions 150–640 ms, and launch 1.35 seconds. No synthesis, decoding, file access or allocations happen in the audio callback. Four voices are bounded, navigation owns one voice, interrupted cues fade, and the SDL device pauses when playback finishes. The default-off path does not read the WAVs or open audio. An unavailable audio device leaves navigation functional.
+The bank is 17 mono PCM16 WAV files at 32 kHz, totaling 413,440 bytes of samples. Taps last 70–130 ms, other actions 150–640 ms, and launch 1.35 seconds. No synthesis, decoding, file access or allocations happen in the audio callback. Four voices are bounded, navigation owns one voice, interrupted cues fade, and the SDL device pauses when playback finishes. Menu sounds are on by default; with them off nothing reads the WAVs or opens audio. An unavailable audio device leaves navigation functional.
 
 Launch waits asynchronously for its flourish, capped at 1.5 seconds, and remains cancellable. Resume has a 180 ms asynchronous handoff to allow its short cue to finish. The emulator receives the audio device after the menu closes.
 
@@ -15,6 +15,20 @@ A successful quick reopen or deep wake plays the 500 ms opening cue. Native menu
 The guardian records a close generation alongside position, preserving an open/close pair that occurred while the owner was busy. It wakes directly on hall events; native and game-owner debounce uses two samples at 50 ms intervals. Unknown lid position cancels a pending suspend safely. Panel levels are restored on quick reopening, cancellation, errors and guardian recovery. The in-game menu releases its audio device before being paused and reopens on wake. Failed suspend and requests cancelled before the screen-off pause do not play an opening cue. Desktop Sleep now simulates both cues without calling hardware.
 
 The lid player expands the mono assets to stereo because the RK817 hardware rejects mono output. On the known stock ALSA profile, RGDS uses a private playback mixer shared by its launcher, engines and lid player: a paused engine can keep its stream open while a cue plays. The mixer uses 48 kHz stereo PCM16, 512-frame periods and a 2048-frame buffer, with no daemon. Stock capture remains intact. This configuration is inherited only by RGDS processes and removed for stock helpers/restore; `/etc/asound.conf` is never edited. Custom ALSA configurations are respected. Audio failures include the SDL driver's reason in the session log.
+
+## Menu music
+
+Settings → Sound → Sounds & music also holds **Menu music** and **Music volume** (default on, 40 %). One track loops under the cues on the home screen, in the library and in settings. It fades in over 0.6 s, fades out when a game starts and comes back when the game returns. It does not play in the in-game menu, during the microphone test or while asleep, and system mute silences it without turning it off.
+
+The track is `assets/music/menu.wav`: mono IMA ADPCM, 4 bits per sample, 32 kHz, about 16 KB per second. The launcher decodes it with its own small decoder (`src/launcher/menu_music.hpp`) on a helper thread the first time music is switched on, so the SDL version on the device does not matter and nothing is read while music is off. The decoded PCM stays in memory (3.3 MB for 52 seconds); the audio callback reads it with linear interpolation and keeps no other state.
+
+The shipped track is a 62-second loop cut from "RGDS – Heavenly Menu", generated in the user's Suno account on 2026-10-20 with v6-mini from a short instrumental prompt (heavenly, dreamy ambient handheld menu music: soft celesta and music-box bells, airy pads with a choir-like shimmer, slow, major key, no drums). The downloaded M4A take is kept under `build/menu-music/sources/`; the loop is seconds 32–96 of it with a 2 s crossfade at the seam. As with the cues, this records provenance, not a claim of commercial redistribution rights; it is not a Nintendo recording. `tools/build_menu_music.py --synth` still renders an original fallback composition (F major, 74 bpm, pad, bass, bells, sparkle, two echoes, seamless) when no source is at hand. To rebuild from the source:
+
+```sh
+python3 tools/build_menu_music.py --source build/menu-music/sources/heavenly-menu-take1.m4a --start 32 --duration 64 --crossfade 2
+```
+
+That trims, normalises to the same level, crossfades the end into the start for the loop and encodes the ADPCM file in place.
 
 ## Sources and rebuilding
 

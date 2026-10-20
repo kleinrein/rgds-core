@@ -785,9 +785,9 @@ Home layout	Esquema do ecrã inicial
 Background	Fundo
 Touch gestures	Gestos de toque
 Carousel	Carrossel
-DSi column	Coluna DSi
+Column	Coluna
 Plain	Simples
-DSi grid	Grelha DSi
+Grid	Grelha
 A carousel, or the DSi's column with your last game on top	Um carrossel ou a coluna da DSi com o último jogo no topo
 Plain, or the DSi's ruled grid behind every screen	Simples ou a grelha pautada da DSi atrás de cada ecrã
 Swipe up from the bottom for Home, in from the left for Back	Deslize de baixo para Início e a partir da esquerda para Voltar
@@ -836,3 +836,19 @@ Vivid	Vívido
 Pixel art	Pixel art
 Moods	Ambientes
 Up / Down or L / R: change group	Cima / Baixo ou L / R: mudar de grupo
+Sounds & music	Sons e música
+Menu music	Música do menu
+Music volume	Volume da música
+A soft tune plays while you browse. It fades out when a game starts.	Uma melodia suave toca enquanto navega. Desvanece quando um jogo começa.
+Turn on menu music for a soft tune while you browse.	Ative a música do menu para uma melodia suave enquanto navega.
+Scanning…	A procurar…
+Scan complete	Procura concluída
+Looking for games…	A procurar jogos…
+Reading Roms/NDS on your games card. This takes a moment.	A ler Roms/NDS no cartão de jogos. Demora um momento.
+{0} found. Choose Done to go to your library.	{0} encontrados. Escolha Concluído para ir à sua biblioteca.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Nenhum jogo encontrado. Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão de jogos e procure de novo.
+Backing up your saves…	A fazer cópia dos seus jogos guardados…
+The backup did not finish. Please try again.	A cópia de segurança não terminou. Tente de novo.
+Copies every save and checkpoint into one zip in userdata/exports.	Copia todos os jogos guardados e pontos de controlo para um zip em userdata/exports.
+Where games go on the card, and a fresh scan.	Onde ficam os jogos no cartão, e uma nova procura.
+Where covers and titles come from.	De onde vêm as capas e os títulos.

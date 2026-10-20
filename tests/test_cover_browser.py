@@ -45,7 +45,7 @@ class CoverBrowserTests(unittest.TestCase):
                 (folder / 'stats.ini').write_text('sessions=1\nlast_played=2026-10-12\n')
 
     def run_ui(self, script='', layout=1, animations=False, home=False, first=False, extra=()):
-        (self.root / 'ui.ini').write_text(f'schema=1\nlayout={layout}\nanimations={int(animations)}\n')
+        (self.root / 'ui.ini').write_text(f'schema=1\nlayout={layout}\nanimations={int(animations)}\nhome_layout=carousel\nbackground=plain\n')
         state = self.root / 'state'
         state.write_text('1 0 0 ""\n')
         inputs = self.root / 'input'

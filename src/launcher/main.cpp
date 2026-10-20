@@ -294,6 +294,9 @@ class App {
     void configure_sounds(){
         if(!sounds.opened)sounds.opened=[this]{restore_dac_level();};
         sounds.configure(preferences.menu_sounds && !probe && !sleep_audio_parked && settings.page!=Page::Microphone,preferences.sound_volume,asset_path("sounds"));
+        // Music belongs to the home, library and settings; not to the in-game
+        // menu, the microphone test, sleep or a launch in progress.
+        sounds.configure_music(preferences.menu_music && !probe && !o.game_menu && !sleep_audio_parked && settings.page!=Page::Microphone && !launching,preferences.music_volume,asset_path("music")/"menu.wav");
     }
     // Every new sink can reset the RK817 DAC, including the boot screen. The
     // menu sink stays paused until the saved level is back; a direct control
@@ -334,12 +337,16 @@ class App {
     };
     void menu_sounds_action(int code){
         if(code==3){settings.back();dirty=true;return;}
-        if(code==8 || code==9){settings.focus=std::clamp(settings.focus+(code==8?-1:1),0,2);dirty=true;return;}
+        if(code==8 || code==9){settings.focus=std::clamp(settings.focus+(code==8?-1:1),0,4);dirty=true;return;}
         if(code!=0 && code!=1 && code!=2 && code!=4)return;
         if(settings.focus==0){preferences.menu_sounds=(code==2 || code==4)?!preferences.menu_sounds:code==1;remember_appearance();}
         else if(settings.focus==1){
             if(code==0 || code==1){preferences.sound_volume=std::clamp(preferences.sound_volume+(code==0?-5:5),0,100);remember_appearance();sound_intent(MenuCue::Adjust);}
             else show_picker("Effects volume",{"Mute","25%","50%","75%","100%"},(preferences.sound_volume+12)/25,[this](int n){preferences.sound_volume=n*25;remember_appearance();sound_intent(MenuCue::Adjust);});
+        }else if(settings.focus==2){preferences.menu_music=(code==2 || code==4)?!preferences.menu_music:code==1;remember_appearance();sound_intent(preferences.menu_music?MenuCue::Enable:MenuCue::Disable);}
+        else if(settings.focus==3){
+            if(code==0 || code==1){preferences.music_volume=std::clamp(preferences.music_volume+(code==0?-5:5),0,100);remember_appearance();}
+            else show_picker("Music volume",{"20%","40%","60%","80%","100%"},std::clamp((preferences.music_volume+10)/20-1,0,4),[this](int n){preferences.music_volume=(n+1)*20;remember_appearance();});
         }else {
             std::vector<std::string> names(menu_cue_labels.begin(),menu_cue_labels.end());
             show_picker("Preview sound",names,0,[this](int n){sound_intent(static_cast<MenuCue>(n));});
@@ -406,7 +413,7 @@ class App {
     int list_count() const {
         switch(settings.page){
         case Page::Settings:return 9;
-        case Page::MenuSounds:return 3;
+        case Page::MenuSounds:return 5;
         case Page::GameSwitcher:return int(switch_games.size())+1;
         case Page::Graphics:return 8;
         case Page::Power:return 6;
@@ -427,6 +434,10 @@ class App {
         }
     }
     int list_selected() const {return settings.page==Page::Settings?settings.section:settings.focus;}
+    // Back: the row you left `target` from, kept within its current list.
+    static constexpr SDL_Rect rail_left_bounds(){return {0,409,RailGeometry::left,71};}
+    static constexpr SDL_Rect rail_right_bounds(){return {RailGeometry::left+RailGeometry::width,409,640-RailGeometry::left-RailGeometry::width,71};}
+    void back_to(Page target){settings.page=target;int row=settings.recall(target);int count=list_count();settings.focus=count>0?std::clamp(row,0,count-1):row;}
     int list_max_scroll() const {return std::max(0,list_count()*list_stride-16-list_height);}
     void sync_list() {
         if(settings.page!=list_page){list_page=settings.page;list_scroll=0;list_focus=-1;}
@@ -455,6 +466,9 @@ class App {
         home_selected=std::min<size_t>(index,home_tiles()-1);selected_at=s.GetTicks();
         if(animate && preferences.animations)carousel.select(home_selected,selected_at);else carousel.reset(home_selected);dirty=true;
     }
+    // Pages where a held Left/Right (keys, d-pad, stick, L/R) repeats: the
+    // Home rail, sliders and the shader carousel.
+    bool horizontal_hold_page()const{return settings.page==Page::Library || settings.page==Page::Display || settings.page==Page::Sound || settings.page==Page::ShaderPicker;}
     void cancel_navigation(){dirty=true;touch_tail=false;options_ready=false;pointer_down=false;pointer_source=PointerSource::None;carousel.dragging=false;browser_list.moving=false;scroll_drag=false;picker_rail=picker_swipe=false;detail_drag=detail_rail=false;list_touch=list_swipe=tap_pending=false;browser_list_touch=browser_rail=false;shader_drag=false;shader_carousel.dragging=false;rail_press={};hold.clear();}
     void load_library(std::vector<Game> games){
         model.games=std::move(games);
@@ -491,7 +505,9 @@ class App {
         if(library_child>0){int result=0;auto done=waitpid(library_child,&result,WNOHANG);if(done==0)return;if(done<0 || !WIFEXITED(result) || WEXITSTATUS(result)!=0){stop_library_scan();status="Library scan failed";library_ready=true;return;}library_child=0;}
         if(!library_eof)return;::close(library_pipe);library_pipe=-1;library_child=-1;
         std::vector<Game> games;size_t at=0;while(at<library_bytes.size()){auto path_end=library_bytes.find('\0',at);if(path_end==std::string::npos)break;auto title_end=library_bytes.find('\0',path_end+1);if(title_end==std::string::npos)break;games.push_back({library_bytes.substr(path_end+1,title_end-path_end-1),fs::path(library_bytes.substr(at,path_end-at)),false});at=title_end+1;}
-        library_bytes.clear();auto previous=settings;bool previous_home=home_menu;auto previous_category=home_selected;load_library(std::move(games));if(o.boot_startup){settings=previous;home_menu=previous_home;home_selected=previous_category;if(!home_menu)library_view(preferences.view);carousel.reset(navigation_selected());}if(!o.roots.empty())start_worker("index");dirty=true;
+        library_bytes.clear();auto previous=settings;bool previous_home=home_menu;auto previous_category=home_selected;load_library(std::move(games));if(o.boot_startup){settings=previous;home_menu=previous_home;home_selected=previous_category;if(!home_menu)library_view(preferences.view);carousel.reset(navigation_selected());}
+        else if(scan_stay){if(!previous_home)library_view(preferences.view);settings=previous;home_menu=previous_home;home_selected=previous_category;carousel.reset(navigation_selected());}
+        scan_stay=false;if(!o.roots.empty())start_worker("index");dirty=true;
     }
     void start_boot_session(){
         if(session_initialized)return;
@@ -885,7 +901,13 @@ class App {
     void save_ds_setting(const std::string& key,const std::string& value){
         try{ds_settings[key]=value;auto folder=item_folder(model.selected);fs::create_directories(folder);auto path=folder/"ds-input.ini",pending=fs::path(path.string()+".pending");std::ofstream out(pending);for(auto& pair:ds_settings)out<<pair.first<<'='<<pair.second<<'\n';out.close();if(out){fs::rename(pending,path);status="Restart the game to apply DS settings.";}}catch(const std::exception&){status="Could not save DS settings.";}dirty=true;
     }
-    void rescan_games(){stop_library_scan();library_bytes.clear();library_eof=false;library_ready=false;home_menu=true;settings.page=Page::Library;begin_library_scan();dirty=true;}
+    bool scan_stay=false;   // a scan from Add your games keeps that page open
+    void rescan_games(bool stay=false){stop_library_scan();library_bytes.clear();library_eof=false;library_ready=false;scan_stay=stay;if(!stay){home_menu=true;settings.page=Page::Library;}begin_library_scan();dirty=true;}
+    // Add your games: opened by itself on a first start (Done then goes to the
+    // library) or from Library settings (Done goes back there). A scan from the
+    // page stays on it and reports what it found.
+    bool setup_first_run=false,setup_scanned=false;
+    bool backup_requested=false;   // Back up all saves was chosen; its outcome shows on the Library page
     void confirm_reset_state(){
         show_picker("Restart without loading a state?",{"Cancel","Reset state"},0,[this](int n){if(n)menu_request("reset-state");});
     }
@@ -995,6 +1017,8 @@ class App {
         if(menu_pending_token.empty() || value["request_token"]==menu_pending_token){
             if(!menu_pending_token.empty() && value["state"]!="busy"){
                 if(value["state"]=="error")emit_sound(MenuCue::Error);
+                // The direct present has no GL pass: the filter is saved and needs the renderer, so offer the restart.
+                else if(menu_sound_action.rfind("shader:",0)==0 && value["message"].rfind("Shader saved",0)==0){settings.page=Page::ApplyShader;settings.focus=0;}
                 else if(menu_sound_action=="save" || menu_sound_action.rfind("slot-save:",0)==0)emit_sound(MenuCue::Save);
                 else if(menu_sound_action=="load" || menu_sound_action.rfind("slot-load:",0)==0)emit_sound(MenuCue::Load);
                 // The supervisor saves live graphics choices after the engine accepts them; show what it stored.
@@ -1196,8 +1220,8 @@ class App {
     bool shader_pointer_down(int x,int y){
         const size_t count=shader_choices.size();if(!count)return false;
         if(y>=409 && y<480){
-            if(x<84){focus_shader(settings.focus-1);return true;}
-            if(x>=556){focus_shader(settings.focus+1);return true;}
+            if(x<RailGeometry::left){focus_shader(settings.focus-1);return true;}
+            if(x>=RailGeometry::left+RailGeometry::width){focus_shader(settings.focus+1);return true;}
             shader_carousel.seek_down(x,y,count,s.GetTicks());shader_drag=true;
             int index=int(shader_carousel.drag(x,count));if(index!=settings.focus){settings.focus=index;selected_at=s.GetTicks();}dirty=true;return true;
         }
@@ -1349,7 +1373,7 @@ class App {
         const int note_w=label_width(note,16,false);
         if(note_w<=592)raw_label(r,note,320-note_w/2,y+364,16,"muted",592);else wrapped(r,note,24,y+358,16,592,2,false);
         const bool held=pointer_down && !shader_drag;
-        draw_rail(r,y,size_t(count),shader_carousel.position,{held && down_y>=409 && down_x<84 && contact_x<84?1.0:0.0,held && down_y>=409 && down_x>=556 && contact_x>=556?1.0:0.0,shader_drag && shader_carousel.range?1.0:0.0},false);
+        draw_rail(r,y,size_t(count),shader_carousel.position,{held && down_y>=409 && down_x<RailGeometry::left && contact_x<RailGeometry::left?1.0:0.0,held && down_y>=409 && down_x>=RailGeometry::left+RailGeometry::width && contact_x>=RailGeometry::left+RailGeometry::width?1.0:0.0,shader_drag && shader_carousel.range?1.0:0.0},false);
     }
     void choose_shader() {
         if(o.game_menu && menu_status["state"]=="busy"){dirty=true;return;}
@@ -1560,8 +1584,8 @@ class App {
         // Animations opens its own page, so even "Off" is a value, not a switch.
         case 6:list_row(r,y,i,"Animations",!preferences.animations?"Off":preferences.view_animations?(preferences.view_style==ViewStyle::Push?"Push":preferences.view_style==ViewStyle::Zoom?"Zoom":"Spring"):"Subtle",true,nullptr,false);break;
         case 7:list_row(r,y,i,"Touch indicator",preferences.touch_indicator?"On":"Off");break;
-        case 8:list_row(r,y,i,"Home layout",preferences.home_layout==1?"DSi column":"Carousel");break;
-        case 9:list_row(r,y,i,"Background",preferences.background==1?"DSi grid":"Plain");break;
+        case 8:list_row(r,y,i,"Home layout",preferences.home_layout==1?"Column":"Carousel");break;
+        case 9:list_row(r,y,i,"Background",preferences.background==1?"Grid":"Plain");break;
         default:list_row(r,y,i,"Touch gestures",preferences.gestures?"On":"Off");break;
         }
     }
@@ -1678,10 +1702,10 @@ class App {
         case 6:settings.page=Page::Motion;settings.focus=0;dirty=true;return;
         case 7:preferences.touch_indicator=step?choice==1:!preferences.touch_indicator;break;
         case 8:
-            if(!step){show_picker("Home layout",{"Carousel","DSi column"},preferences.home_layout,[this](int n){preferences.home_layout=n;home_layout_changed();remember_appearance();});return;}
+            if(!step){show_picker("Home layout",{"Carousel","Column"},preferences.home_layout,[this](int n){preferences.home_layout=n;home_layout_changed();remember_appearance();});return;}
             preferences.home_layout=choice;home_layout_changed();break;
         case 9:
-            if(!step){show_picker("Background",{"Plain","DSi grid"},preferences.background,[this](int n){preferences.background=n;remember_appearance();});return;}
+            if(!step){show_picker("Background",{"Plain","Grid"},preferences.background,[this](int n){preferences.background=n;remember_appearance();});return;}
             preferences.background=choice;break;
         case 10:preferences.gestures=step?choice==1:!preferences.gestures;if(preferences.gestures)gesture_intro();break;
         default:return;
@@ -2564,7 +2588,7 @@ class App {
         SettingsIcon symbol=SettingsIcon::System;
         Page page=settings.page==Page::Confirm?confirm_return:settings.page;
         switch(page){
-        case Page::MenuSounds:title="Menu sounds";symbol=SettingsIcon::Volume;break;
+        case Page::MenuSounds:title="Sounds & music";symbol=SettingsIcon::Volume;break;
         case Page::Motion:title="Animations";symbol=SettingsIcon::Spark;break;
         case Page::Colours:colours_top(r,y);return;
         case Page::Appearance:title="Theme & display";symbol=SettingsIcon::Display;break;
@@ -2601,7 +2625,9 @@ class App {
             return;
         }
         if(page==Page::MenuSounds){
-            settings_card(r,28,y+106,584,264);ui_icon(r,SettingsIcon::Volume,320,y+160,48,"accent");centered(r,"A little handheld magic",y+205,2,"ink");wrapped(r,preferences.menu_sounds?(sounds.error.empty()?"Playful sounds for browsing, choosing and starting games.":sounds.error):"Turn on menu sounds to hear the previews.",52,y+258,20,536,3);return;
+            settings_card(r,28,y+106,584,264);ui_icon(r,settings.focus>=2 && settings.focus<=3?SettingsIcon::Spark:SettingsIcon::Volume,320,y+160,48,"accent");centered(r,"A little handheld magic",y+205,2,"ink");
+            std::string note=settings.focus>=2 && settings.focus<=3?(preferences.menu_music?(sounds.error.empty()?"A soft tune plays while you browse. It fades out when a game starts.":sounds.error):"Turn on menu music for a soft tune while you browse."):preferences.menu_sounds?(sounds.error.empty()?"Playful sounds for browsing, choosing and starting games.":sounds.error):"Turn on menu sounds to hear the previews.";
+            wrapped(r,note,52,y+258,20,536,3);return;
         }
         if(page==Page::SaveGallery){
             round_rect(r,24,y+80,592,326,12,"panel");auto key=std::to_string(settings.focus);
@@ -2612,7 +2638,11 @@ class App {
         }
         if(page==Page::Microphone){round_rect(r,24,y+82,592,320,12,"panel");ui_icon(r,SettingsIcon::Volume,320,y+145,52,"accent");centered(r,"Test microphone",y+202,2,"ink");wrapped(r,"Blow or speak into the microphone. Watch the level rise, then fall when you stop.",54,y+255,22,532,4);return;}
         if(page==Page::DSControls){round_rect(r,24,y+82,592,320,12,"panel");ui_icon(r,SettingsIcon::Controller,320,y+126,48,"accent");centered(r,"DS controls",y+181,2,"ink");wrapped(r,!ds_supported()?"Use the engine's native controls for microphone and DS settings.":status.empty()?"Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.":status,54,y+242,22,532,5);return;}
-        if(page==Page::RomSetup){round_rect(r,24,y+82,592,320,12,"panel");ui_icon(r,SettingsIcon::Cartridge,320,y+128,48,"accent");centered(r,"Your DS library starts here",y+177,2,"ink");wrapped(r,"Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.",54,y+242,24,532,4);return;}
+        if(page==Page::RomSetup){round_rect(r,24,y+82,592,320,12,"panel");ui_icon(r,SettingsIcon::Cartridge,320,y+128,48,"accent");centered(r,!library_ready?"Looking for games…":setup_scanned?"Scan complete":"Your DS library starts here",y+177,2,"ink");
+            const size_t found=model.games.size();
+            if(!library_ready)wrapped(r,"Reading Roms/NDS on your games card. This takes a moment.",54,y+242,24,532,4);
+            else if(setup_scanned)wrapped(r,found?locale.text(locale.text(std::to_string(found)+(found==1?" game":" games"))+" found. Choose Done to go to your library."):locale.text("No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again."),54,y+242,24,532,4);
+            else wrapped(r,"Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.",54,y+242,24,532,4);return;}
         if(page==Page::Statistics){
             const auto& group=summary.groups[0];
             // A ring of your collection: the played share fills it, the hours sit inside.
@@ -2692,6 +2722,14 @@ class App {
             else message="Save & restart keeps your checkpoint and applies pending settings.";
         }
         else if(settings.page==Page::Controls && controls_notice.rfind("Could not",0)==0)message=controls_notice;
+        else if(settings.page==Page::LibraryOptions){
+            if(backup_requested && worker_action=="device.library"){
+                if(worker>0)message="Backing up your saves…";
+                else if(device_status["state"]=="error")message=device_status["message"].empty()?"The backup did not finish. Please try again.":device_status["message"];
+                else if(!device_status["message"].empty())message=device_status["message"];
+            }
+            if(message.empty()){if(settings.focus==9)message="Copies every save and checkpoint into one zip in userdata/exports.";else if(settings.focus==8)message="Where games go on the card, and a fresh scan.";else if(settings.focus==1)message="Where covers and titles come from.";}
+        }
         else if(page==Page::Startup || page==Page::Network || page==Page::Wifi || page==Page::Maintenance){
             if(device_status["state"]=="error")message=device_status["message"];
         }else if(page==Page::Scraper || page==Page::GameArtwork){
@@ -2814,7 +2852,7 @@ class App {
         if(settings.page==Page::ShaderPicker){render_shader_carousel(r,y);return;}
         sync_list();int count=list_count();
         if(count>0 || settings.page==Page::Wifi){
-            std::string title=settings.page==Page::Graphics?"Graphics":settings.page==Page::MenuSounds?"Menu sounds":settings.page==Page::SaveGallery?"Save gallery":settings.page==Page::Discover?"Search and filters":settings.page==Page::RomSetup?"Add your games":settings.page==Page::DSControls?"DS controls":settings.page==Page::Settings?"Settings":settings.page==Page::Appearance?"Theme & display":settings.page==Page::Power?"Power":settings.page==Page::LibraryOptions?"Library":settings.page==Page::GameOptions?"Game options":settings.page==Page::System?"System":settings.page==Page::Startup?"Startup":settings.page==Page::Network?"Connectivity":settings.page==Page::Wifi?"Available networks":settings.page==Page::Timezone?"Timezone":settings.page==Page::ShaderPicker?"Shaders":settings.page==Page::EmulatorOptions?"Emulator settings":(settings.page==Page::Scraper || settings.page==Page::GameArtwork)?"Artwork":settings.page==Page::DeviceInfo?"Device information":settings.page==Page::Controls?"Controls":"Updates & recovery";
+            std::string title=settings.page==Page::Graphics?"Graphics":settings.page==Page::MenuSounds?"Sounds & music":settings.page==Page::SaveGallery?"Save gallery":settings.page==Page::Discover?"Search and filters":settings.page==Page::RomSetup?"Add your games":settings.page==Page::DSControls?"DS controls":settings.page==Page::Settings?"Settings":settings.page==Page::Appearance?"Theme & display":settings.page==Page::Power?"Power":settings.page==Page::LibraryOptions?"Library":settings.page==Page::GameOptions?"Game options":settings.page==Page::System?"System":settings.page==Page::Startup?"Startup":settings.page==Page::Network?"Connectivity":settings.page==Page::Wifi?"Available networks":settings.page==Page::Timezone?"Timezone":settings.page==Page::ShaderPicker?"Shaders":settings.page==Page::EmulatorOptions?"Emulator settings":(settings.page==Page::Scraper || settings.page==Page::GameArtwork)?"Artwork":settings.page==Page::DeviceInfo?"Device information":settings.page==Page::Controls?"Controls":"Updates & recovery";
             settings_header(r,y,title);if(settings.page==Page::Wifi){secondary_button(r,476,y+24,150,42,12,pointer_down && contact_x>=476 && contact_y>=24 && contact_y<=66);ui_icon(r,SettingsIcon::Refresh,498,y+45,18,"accent");label(r,"Scan",518,y+34,20,"accent",91);}
             if(settings.page==Page::ShaderPicker){secondary_button(r,368,y+24,120,42,12,pointer_down && contact_x>=368 && contact_x<=488 && contact_y>=24 && contact_y<=66);ui_icon(r,SettingsIcon::Art,386,y+45,18,"accent");label(r,"Scene",403,y+35,17,"ink",74);secondary_button(r,496,y+24,128,42,12,pointer_down && contact_x>=496 && contact_y>=24 && contact_y<=66);ui_icon(r,SettingsIcon::Shader,514,y+45,18,"accent");label(r,"Compare",530,y+35,16,"ink",85);}
             SDL_Rect clip{20,y+list_top,575,list_height};s.RenderSetClipRect(r,&clip);
@@ -2832,12 +2870,12 @@ class App {
                 else if(settings.page==Page::GameOptions && i==5 && experimental_game())list_row(r,y,i,"3D resolution",experimental_resolution_name());
                 else if(settings.page==Page::GameOptions){const std::array<std::string,8> names={"Favourite","Emulator","Shader","Controls","Artwork","DraStic backend","Screen order","3D resolution"},values={game_preferences.favourite?"On":"Off",game_preferences.core<0?"Default":core_names[game_preferences.core],superdrastic_game()?"Native output":shader_name(game_preferences.filter),"","",drastic_backend_name(game_preferences.drastic_backend),game_preferences.drastic_screen_swap==1?"Swapped":"Normal",superdrastic_resolution_name()};list_row(r,y,i,names[i],values[i],(i!=2 && i!=6) || !superdrastic_game());}
                 else if(settings.page==Page::Controls)list_row(r,y,i,controls_row_name(i),controls_row_value(i));
-                else if(settings.page==Page::MenuSounds){const std::array<std::string,3> names={"Menu sounds","Effects volume","Preview sound"};list_row(r,y,i,names[i],i==0?(preferences.menu_sounds?"On":"Off"):i==1?std::to_string(preferences.sound_volume)+"%":"");}
+                else if(settings.page==Page::MenuSounds){const std::array<std::string,5> names={"Menu sounds","Effects volume","Menu music","Music volume","Preview sound"};list_row(r,y,i,names[i],i==0?(preferences.menu_sounds?"On":"Off"):i==1?std::to_string(preferences.sound_volume)+"%":i==2?(preferences.menu_music?"On":"Off"):i==3?std::to_string(preferences.music_volume)+"%":"");}
                 else if(settings.page==Page::System){const std::array<std::string,8> names={"Language","Timezone","Date format","Time format","Device information","Updates & recovery",o.independent?"Restart menu":"Return to stock","Startup"};list_row(r,y,i,names[i],i==0?locale.name():i==1?system_preferences.timezone:i==2?date_format_names.at(system_preferences.date_format):i==3?time_format_names.at(system_preferences.time_format):"");}
                 else if(settings.page==Page::Startup){const std::array<std::string,4> names={"Boot into","Touch to continue","Restart","Resume after power off"};const std::array<std::string,4> values={o.independent?"RG DS Core":device_status["boot_mode"]=="rgds"?"RG DS Core":"Anbernic",device_status["boot_warning"]=="1"?"On":"Off","",experience["quick_resume"]=="1"?"On":"Off"};list_row(r,y,i,names[i],values[i],!o.independent || i!=0);}
                 else if(settings.page==Page::SaveGallery)list_row(r,y,i,locale.text("Slot")+" "+std::to_string(i+1),slots["slot_"+std::to_string(i)].empty()?"Empty slot":slots["slot_"+std::to_string(i)]);
                 else if(settings.page==Page::Discover){const std::array<std::string,3> names={"Search games","Filter","Clear search and filters"};const std::array<std::string,4> filters={"No filter","Unplayed","Played","Missing artwork"};list_row(r,y,i,names[i],i==0?search_query:i==1?filters[discovery_filter]:"");}
-                else if(settings.page==Page::RomSetup){const std::array<std::string,3> names={"Where to put games","Scan for games","Done"};list_row(r,y,i,names[i]);}
+                else if(settings.page==Page::RomSetup){const std::array<std::string,3> names={"Where to put games","Scan for games","Done"};const size_t found=model.games.size();list_row(r,y,i,names[i],i==1?(!library_ready?locale.text("Scanning…"):setup_scanned?locale.text(std::to_string(found)+(found==1?" game":" games")):std::string()):std::string());}
                 else if(settings.page==Page::DSControls)ds_controls_row(r,y,i);
                 else if(settings.page==Page::Network){const std::array<std::string,5> names={"Wi-Fi","Available networks","Refresh connection","Network file sharing","Sharing details"};
                     std::string value=i==0?(device_status["wifi_supported"]=="0"?"Unavailable":device_status["wifi"]=="1"?"On":"Off"):i==1?(network_busy()?"Working…":device_status["wifi_connected"]=="1"?device_status["connection"]:""):i==3?(device_status["sharing"]!="1"?"Off":device_status["sharing_mode"]=="open"?"Open":"Password"):i==4?"SMB":"";
@@ -2920,14 +2958,14 @@ class App {
                     settings_card(r,28,row+(pressed?2:0),584,66,focused);
                     round_rect(r,42,row+11+(pressed?2:0),44,44,12,focused?"accent":"slot");
                     ui_icon(r,i==2?SettingsIcon::Spark:SettingsIcon::Volume,64,row+33+(pressed?2:0),25,focused?"on_accent":"accent");
-                    label(r,i==2?"Menu sounds":i==1?"Test microphone":value==0?"Unmute":"Mute",102,row+19+(pressed?2:0),24,"ink",380);
-                    if(i==2){const std::string state=preferences.menu_sounds?"On":"Off";const int w=label_width(state,18)+42;round_rect(r,578-w,row+18,w,30,10,focused?"panel":"slot");label(r,state,588-w,row+23,18,"accent",w-34);}
+                    label(r,i==2?"Sounds & music":i==1?"Test microphone":value==0?"Unmute":"Mute",102,row+19+(pressed?2:0),24,"ink",380);
+                    if(i==2){const std::string state=preferences.menu_sounds || preferences.menu_music?"On":"Off";const int w=label_width(state,18)+42;round_rect(r,578-w,row+18,w,30,10,focused?"panel":"slot");label(r,state,588-w,row+23,18,"accent",w-34);}
                     ui_icon(r,SettingsIcon::Chevron,574,row+33,14,focused?"accent":"muted");
                 }
             }return;
         }
         if(settings.page==Page::Confirm){settings_header(r,y,"Confirm");std::string prompt=confirmation=="startup-rgds"?"Start RG DS automatically on future boots?":confirmation=="reboot"?"Restart the device?":confirmation=="return-stock"?(o.independent?"Restart the RGDS menu?":"Return to the stock menu?"):confirmation=="wifi-off"?"Turn Wi-Fi off?":confirmation=="poweroff"?"Power off your handheld?":confirmation=="update-apply"?"Restart and install the update?":confirmation=="rollback"?"Use the previous RGDS build?":"Clear temporary game files?";settings_card(r,28,y+105,584,209);ui_icon(r,SettingsIcon::Info,58,y+136,24,"accent");label(r,"REVIEW YOUR CHOICE",88,y+125,13,"muted",495);wrapped(r,prompt,52,y+170,28,536,3);choice(r,28,y+365,"Cancel",settings.focus==0,true);choice(r,332,y+365,"Continue",settings.focus==1,true);return;}
-        settings_header(r,y,settings.page==Page::MenuSounds?"Menu sounds":sections[settings.section].title);
+        settings_header(r,y,settings.page==Page::MenuSounds?"Sounds & music":sections[settings.section].title);
     }
     void cart(SDL_Renderer* r,int x,int y,int width,int height,bool selected,int number) {
         rect(r,x+4,y+5,width,height,"line");
@@ -3360,10 +3398,12 @@ class App {
         const Color shade=preferences.dark?Color{0,0,0}:Color{24,40,60};
         alpha_round(r,left,y+2,w,h,16,shade,preferences.dark?44:18);
         alpha_round(r,left,y,w,h,16,theme.at("panel"),preferences.dark?218:232);
-        round_rect(r,left+5,y+5,22,22,11,enabled?"accent":"slot");
-        if(enabled)alpha_round(r,left+9,y+7,14,7,3,Color{255,255,255},56);   // the glass highlight of a DSi key
-        label(r,button,left+5+(22-label_width(button,14,false))/2,centred_label_y(button,14,cy),14,enabled?"on_accent":"muted",22,false);
-        raw_label(r,text,left+35,centred_label_y(text,16,cy),16,enabled?"ink":"muted",w-40);
+        // The key badge sits on the outer end, next to the screen's corner.
+        const int badge=right?left+w-27:left+5,tx=right?left+12:left+35;
+        round_rect(r,badge,y+5,22,22,11,enabled?"accent":"slot");
+        if(enabled)alpha_round(r,badge+4,y+7,14,7,3,Color{255,255,255},56);   // the glass highlight of a DSi key
+        label(r,button,badge+(22-label_width(button,14,false))/2,centred_label_y(button,14,cy),14,enabled?"on_accent":"muted",22,false);
+        raw_label(r,text,tx,centred_label_y(text,16,cy),16,enabled?"ink":"muted",w-40);
     }
     // Y and X in the lower corners, clear of the cover and its caption.
     void library_hints(SDL_Renderer* r,int y){
@@ -3478,7 +3518,7 @@ class App {
     bool update_rail_feedback(Uint32 now) {
         const bool available=!probe && !picker_open && !launching && settings.page==Page::Library && (home_menu || preferences.layout!=2) && !(home_menu && preferences.home_layout==1) && navigation_count()>1;
         const std::array<bool,3> held={
-            available && pointer_down && library_press==LibraryPress::LeftArrow && point_in({0,409,84,71},contact_x,contact_y),
+            available && pointer_down && library_press==LibraryPress::LeftArrow && point_in(rail_left_bounds(),contact_x,contact_y),
             available && pointer_down && library_press==LibraryPress::RightArrow && point_in({556,409,84,71},contact_x,contact_y),
             available && pointer_down && carousel.dragging && carousel.range};
         bool active=false;
@@ -3544,55 +3584,58 @@ class App {
     void tint_colour(SDL_Renderer* r,Color value){s.SetRenderDrawColor(r,value.r,value.g,value.b,255);}
     // The rail's own glass shelf: a soft vertical sheen over the slot colour.
     Color rail_shelf(int row){return row>=26?theme.at("slot"):blend(theme.at("panel"),theme.at("slot"),std::max(0,row)*100/26);}
-    // The Home rail: glass end buttons, a pip per item and the glossy thumb.
+    // The Home rail after the DSi's scroll bar: a square arrow button at each
+    // end with a plain white triangle, a recessed track with one small tick
+    // per item, and a white glass grabber that shows the ticks through it with
+    // the current one dark. Everything shares one height.
     void draw_rail(SDL_Renderer* r,int y,size_t count,double position,std::array<double,3> press_state,bool bubble){
             rail_bar(r,y);
-            for(int x:{0,556}){
-                const bool right=x!=0,enabled=count>1;
+            constexpr int control=RailGeometry::control,top_edge=RailGeometry::top,height=RailGeometry::height;
+            constexpr int rail_left=RailGeometry::left,rail_width=RailGeometry::width;
+            const bool dark=preferences.dark,enabled=count>1;
+            for(int x:{rail_left-control-16,rail_left+rail_width+16}){
+                const bool right=x>320;
                 const double press=press_state[right?1:0];
-                const int inset=int(std::lround(2*press)),sink=int(std::lround(3*press));
-                round_rect(r,x+4,y+416,76,61,12,"line");
-                glossy_rail_control(r,x+4+inset,y+413+sink,76-2*inset,61-sink,12,press,enabled);
-                const int direction=right?1:-1,cx=x+42+direction*int(std::lround(2*press)),cy=y+443+sink;
+                const int inset=int(std::lround(2*press)),sink=int(std::lround(2*press));
+                alpha_round(r,x,y+top_edge+3,control,height,8,shadow_colour(),int((dark?60:26)*(1-.5*press)));
+                round_rect(r,x,y+top_edge,control,height,8,"line");
+                glossy_rail_control(r,x+inset,y+top_edge+sink+1,control-2*inset,height-2-sink,7,press,enabled);
+                // The DSi's solid triangle, pointing outward.
+                const int direction=right?1:-1,cx=x+control/2+direction*int(std::lround(2*press)),cy=y+top_edge+height/2+sink;
                 for(int pass=0;pass<2;pass++){
                     if(pass==0){if(!enabled)continue;tint_colour(r,blend(theme.at("accent"),Color{0,0,0},30));}else color(r,enabled?"on_accent":"muted");
-                    for(int stroke=-1;stroke<=1;stroke++){
-                        s.RenderDrawLine(r,cx-direction*5+stroke,cy-9+(1-pass),cx+direction*5+stroke,cy+(1-pass));
-                        s.RenderDrawLine(r,cx+direction*5+stroke,cy+(1-pass),cx-direction*5+stroke,cy+9+(1-pass));
-                    }
+                    const int shift=1-pass;
+                    for(int i=0;i<=12;i++){const int half=i*7/12;s.RenderDrawLine(r,cx+direction*(7-i),cy-half+shift,cx+direction*(7-i),cy+half+shift);}
                 }
             }
             const auto rail=RailGeometry::at(count,position);
-            constexpr int rail_left=RailGeometry::left,rail_width=RailGeometry::width;
-            rail_groove(r,y,rail_left,rail_left+rail_width,count,rail);
-            // Glass window over the visible range.
-            const bool dark=preferences.dark;
-            round_rect(r,rail.window_left,y+417,rail.window_width,52,9,"line");
-            // Refill the inside with the shelf so only the rim is solid; the
-            // groove and pips show through the glass.
-            for(int row=1;row<51;row++){
-                double dy=row<9?9-row-.5:row>=43?row-43+.5:-1;int inset=1+(dy<0?0:9-int(std::sqrt(std::max(0.0,81-dy*dy))));
-                tint_rect(r,rail.window_left+inset,y+417+row,rail.window_width-2*inset,1,rail_shelf(row+9));
-            }
-            rail_groove(r,y,rail.window_left+1,rail.window_left+rail.window_width-1,count,rail);
-            alpha_round(r,rail.window_left+1,y+418,rail.window_width-2,50,8,Color{255,255,255},dark?10:110);
-            alpha_round(r,rail.window_left+3,y+419,rail.window_width-6,20,7,Color{255,255,255},dark?16:70);
-            // Position notch above the thumb's centre.
-            for(int row=0;row<5;row++)rect(r,rail.thumb_left+rail.thumb_width/2-4+row,y+411+row,9-2*row,1,"muted");
+            const int track_top=y+top_edge+height/2-9;
+            sunken_track(r,rail_left,track_top,rail_width,18,6);
+            // Ticks: one per item while they fit, else a fixed texture. Those
+            // behind the current position are dark, the rest quiet.
+            const int travel=rail_width-rail.thumb_width-4,first=rail_left+2+rail.thumb_width/2;
+            const double pitch=enabled?double(travel)/double(count-1):0;
+            const Color quiet=blend(theme.at("background"),theme.at("muted"),dark?55:45),done=blend(theme.at("muted"),theme.at("ink"),35);
+            auto ticks=[&](int from,int to,bool inside){
+                SDL_Rect clip{from,track_top,to-from,18};s.RenderSetClipRect(r,&clip);
+                if(pitch>=7){for(size_t i=0;i<count;i++){const int tx=first+int(std::lround(i*pitch));tint_rect(r,tx-2,track_top+7,4,4,i<size_t(std::lround(position))?done:quiet);}}
+                else for(int tx=first;tx<=first+travel;tx+=8)tint_rect(r,tx-2,track_top+7,4,4,tx<rail.thumb_left+rail.thumb_width/2?done:quiet);
+                if(inside && enabled){const int cx=rail.thumb_left+rail.thumb_width/2;tint_rect(r,cx-3,track_top+6,6,6,theme.at("accent"));}
+                s.RenderSetClipRect(r,nullptr);
+            };
+            ticks(rail_left,rail_left+rail_width,false);
             const double press=press_state[2];
-            const int lift=int(std::lround(4*press)),grow=int(std::lround(4*press)),top=y+419-lift,height=48+2*lift;
+            const int lift=int(std::lround(2*press)),grow=int(std::lround(2*press)),top=y+top_edge-lift,grab_height=height+2*lift;
             const int thumb_left=rail.thumb_left-grow,thumb_width=rail.thumb_width+2*grow;
-            const Color shade=dark?Color{0,0,0}:Color{24,40,60};
-            alpha_round(r,thumb_left+1,top+3+int(std::lround(3*press)),thumb_width-2,height,7,shade,int(dark?60:30+30*press));
-            if(press>0)alpha_round(r,thumb_left-4,top-4,thumb_width+8,height+8,10,theme.at("accent"),int(60*press));
-            glossy_rail_control(r,thumb_left,top,thumb_width,height,7,press*.6,count>1);
-            // Engraved grip: a dark groove with a light edge, spreading when held.
-            const int grip=thumb_left+thumb_width/2,spread=5+int(std::lround(2*press)),grip_top=y+437-int(std::lround(2*press)),grip_height=12+int(std::lround(4*press));
-            for(int i=-1;i<=1;i++){
-                if(count>1)tint_rect(r,grip+i*spread-1,grip_top+1,2,grip_height,blend(theme.at("accent"),Color{0,0,0},28));
-                round_rect(r,grip+i*spread-1,grip_top,2,grip_height,1,count>1?"on_accent":"muted");
-            }
-            if(press>.05 && bubble && count>1)rail_bubble(r,y,grip,press);
+            alpha_round(r,thumb_left,top+3+int(std::lround(2*press)),thumb_width,grab_height,8,shadow_colour(),int(dark?60:26+26*press));
+            if(press>0)alpha_round(r,thumb_left-4,top-4,thumb_width+8,grab_height+8,11,theme.at("accent"),int(60*press));
+            round_rect(r,thumb_left,top,thumb_width,grab_height,8,enabled?"accent":"line");
+            glossy_pill(r,thumb_left+1,top+1,thumb_width-2,grab_height-2,7,dark?theme.at("focus"):Color{255,255,255},press*.6);
+            // The track shows through the glass: its rim and the ticks, with the current one marked.
+            tint_rect(r,thumb_left+4,track_top,thumb_width-8,1,blend(theme.at("line"),theme.at("panel"),40));
+            tint_rect(r,thumb_left+4,track_top+17,thumb_width-8,1,blend(theme.at("line"),theme.at("panel"),40));
+            ticks(thumb_left+4,thumb_left+thumb_width-4,true);
+            if(press>.05 && bubble && enabled)rail_bubble(r,y,rail.thumb_left+rail.thumb_width/2,press);
     }
     void rail_bar(SDL_Renderer* r,int y){
         rect(r,0,y+407,640,73,"slot");
@@ -3644,9 +3687,9 @@ class App {
             if(x>=592 && x<628)library_press=LibraryPress::Vertical;
             else if(x>=24 && x<592){library_press_row=browser_list.row_at(y,navigation_count());if(library_press_row>=0)library_press=LibraryPress::Row;}
         }else if((home_menu || preferences.layout!=2) && y>=409 && y<480){
-            if(x>=0 && x<84)library_press=LibraryPress::LeftArrow;
-            else if(x>=556 && x<640)library_press=LibraryPress::RightArrow;
-            else if(x>=84 && x<556)library_press=LibraryPress::Horizontal;
+            if(x>=0 && x<RailGeometry::left)library_press=LibraryPress::LeftArrow;
+            else if(x>=RailGeometry::left+RailGeometry::width && x<640)library_press=LibraryPress::RightArrow;
+            else library_press=LibraryPress::Horizontal;
         }
         if(library_press!=LibraryPress::None){
             library_press_at=s.GetTicks();micro_until=library_press_at+120;
@@ -3731,33 +3774,45 @@ class App {
         round_rect(r,cx-radius-10,cy-radius-10,2*radius+20,2*radius+20,22,"line");round_rect(r,cx-radius-9,cy-radius-9,2*radius+18,2*radius+18,21,"panel");
         for(int i=0;i<12;i++){
             const double a=i*3.14159265358979/6;const int mx=cx+int(std::lround(std::sin(a)*(radius-24))),my=cy-int(std::lround(std::cos(a)*(radius-24)));
-            if(i%3==0){const std::string n=i==0?"12":std::to_string(i);raw_label(r,n,mx-label_width(n,30,false)/2,centred_label_y(n,30,my),30,"muted",44);}
-            else fill_round(r,mx-3,my-3,6,6,3,theme.at("line"));
+            if(i%3==0){const std::string n=i==0?"12":std::to_string(i);raw_label(r,n,mx-label_width(n,34,false)/2,centred_label_y(n,34,my),34,"muted",48);}
+            else rect(r,mx-3,my-3,6,6,"line");   // the DSi's small square marks
         }
         auto hand=[&](double angle,int length,int weight,Color c){
             s.SetRenderDrawColor(r,c.r,c.g,c.b,255);const int ex=cx+int(std::lround(std::sin(angle)*length)),ey=cy-int(std::lround(std::cos(angle)*length));
             for(int w=-weight/2;w<=weight/2;w++)for(int v=-weight/2;v<=weight/2;v++)s.RenderDrawLine(r,cx+w,cy+v,ex+w,ey+v);
         };
-        hand((t.tm_hour%12+t.tm_min/60.0)*3.14159265358979/6,int(radius*.52),5,theme.at("ink"));
-        hand((t.tm_min+t.tm_sec/60.0)*3.14159265358979/30,int(radius*.76),4,theme.at("ink"));
+        hand((t.tm_hour%12+t.tm_min/60.0)*3.14159265358979/6,int(radius*.5),4,theme.at("ink"));
+        hand((t.tm_min+t.tm_sec/60.0)*3.14159265358979/30,int(radius*.78),3,theme.at("ink"));
         hand(t.tm_sec*3.14159265358979/30,int(radius*.84),2,theme.at("accent"));
-        fill_round(r,cx-5,cy-5,10,10,5,theme.at("ink"));fill_round(r,cx-2,cy-2,4,4,2,theme.at("accent"));
+        rect(r,cx-4,cy-4,8,8,"ink");rect(r,cx-2,cy-2,4,4,"accent");
         // The calendar: month and year, weekday row, one cell per day, today lit.
         const int left=330,top=y+96,cell=40;
         alpha_round(r,left,top+3,282,290,16,shadow_colour(),preferences.dark?60:18);round_rect(r,left,top,282,290,16,"line");round_rect(r,left+1,top+1,280,288,15,"panel");
-        {char month[16];std::snprintf(month,sizeof(month),"%02d / %04d",t.tm_mon+1,t.tm_year+1900);raw_label(r,month,left+141-label_width(month,22,false)/2,top+12,22,"ink",200);}
+        {char month[16];std::snprintf(month,sizeof(month),"%02d/%04d",t.tm_mon+1,t.tm_year+1900);raw_label(r,month,left+141-label_width(month,22,false)/2,top+12,22,"ink",200);}
         static const std::array<const char*,7> days={"Su","Mo","Tu","We","Th","Fr","Sa"};
         const Color sunday=preferences.dark?Color{235,110,110}:Color{200,56,56},saturday=preferences.dark?Color{120,160,240}:Color{56,96,200};
         for(int i=0;i<7;i++){const int x=left+1+i*cell;tint_rect(r,x,top+46,cell,26,i==0?sunday:i==6?saturday:theme.at("slot"));const std::string d=locale.text(days[size_t(i)]);raw_label_colour(r,d,x+cell/2-label_width(d,14,false)/2,centred_label_y(d,14,top+59),14,i==0 || i==6?Color{255,255,255}:theme.at("ink"),cell);}
         std::tm first=t;first.tm_mday=1;first.tm_hour=12;std::mktime(&first);
         std::tm next=t;next.tm_mon+=1;next.tm_mday=0;next.tm_hour=12;std::mktime(&next);
-        const int start=first.tm_wday,days_in_month=next.tm_mday;
+        const int start=first.tm_wday,days_in_month=next.tm_mday,rows=(start+days_in_month+6)/7;
+        // Like the DSi: the Sunday column washed pink, Saturday pale blue, a
+        // fine grid between the days and today in a dotted frame.
+        const Color grid=blend(theme.at("panel"),theme.at("line"),preferences.dark?70:55);
+        tint_rect(r,left+1,top+72,cell,rows*36+2,blend(theme.at("panel"),sunday,preferences.dark?14:12));
+        tint_rect(r,left+1+6*cell,top+72,cell,rows*36+2,blend(theme.at("panel"),saturday,preferences.dark?14:12));
+        for(int i=1;i<7;i++)tint_rect(r,left+1+i*cell,top+46,1,rows*36+28,grid);
+        for(int row=0;row<=rows;row++)tint_rect(r,left+1,top+72+row*36,7*cell,1,grid);
         for(int day=1;day<=days_in_month;day++){
-            const int slot=start+day-1,col=slot%7,row=slot/7;const int x=left+1+col*cell,ry=top+76+row*36;
+            const int slot=start+day-1,col=slot%7,row=slot/7;const int x=left+1+col*cell,ry=top+72+row*36;
             const bool today=day==t.tm_mday;
-            if(today)raised_pill(r,x+4,ry+2,cell-8,32,8,theme.at("accent"),0,false);
+            if(today){
+                fill_round(r,x+3,ry+3,cell-5,31,3,theme.at("panel"));
+                const Color mark=theme.at("accent");
+                for(int d=0;d<cell-6;d+=3){tint_rect(r,x+3+d,ry+3,2,2,mark);tint_rect(r,x+3+d,ry+32,2,2,mark);}
+                for(int d=0;d<31;d+=3){tint_rect(r,x+3,ry+3+d,2,2,mark);tint_rect(r,x+cell-4,ry+3+d,2,2,mark);}
+            }
             const std::string n=std::to_string(day);
-            raw_label_colour(r,n,x+cell/2-label_width(n,16,false)/2,centred_label_y(n,16,ry+18),16,today?theme.at("on_accent"):col==0?sunday:col==6?saturday:theme.at("ink"),cell);
+            raw_label_colour(r,n,x+cell/2-label_width(n,16,false)/2,centred_label_y(n,16,ry+18),16,today?theme.at("accent"):col==0?sunday:col==6?saturday:theme.at("ink"),cell);
         }
         // What the selected tile holds.
         std::string line;
@@ -3873,7 +3928,7 @@ class App {
                 move_element(uint32_t(index),x,row,tile_size,tile_size,selected,LibraryViewport::top,LibraryViewport::top+LibraryViewport::height);
                 if(selected){
                     if(preferences.dark){round_rect(r,x-15,row-14,tile_size+30,tile_size+52,10,"line");round_rect(r,x-13,row-12,tile_size+26,tile_size+48,8,"focus");}
-                    round_rect(r,x-9,row-9,tile_size+18,tile_size+44,7,"accent");
+                    raised_pill(r,x-9,row-9,tile_size+18,tile_size+44,7,theme.at("accent"));
                     round_rect(r,x-3,row-3,tile_size+6,tile_size+8,6,"line");round_rect(r,x-1,row-1,tile_size+2,tile_size+2,4,"panel");centered_tile_label(r,home_menu?"OPEN":"PLAY",x-8,row+tile_size+9,tile_size+16);
                 }
                 round_rect(r,x,row+4,tile_size,tile_size,5,"line");round_rect(r,x,row,tile_size,tile_size,5,"line");round_rect(r,x+2,row+2,tile_size-4,tile_size-4,4,"panel");rect(r,x+9,row+7,tile_size-18,1,"background");rect(r,x+10,row+tile_size-6,tile_size-20,1,"slot");
@@ -4197,7 +4252,7 @@ class App {
         auto local=library_cache.options(model.games[model.selected]);launching_core=unsigned(offered_core(local.core<0?int(preferences.core):local.core));
         if(resume_launch)launching_core=unsigned(resume_core);
         sound_intent(MenuCue::Launch);
-        launching=true;launch_at=s.GetTicks();feedback_frame_at=launch_at;launch_phase=LaunchPhase::Waiting;
+        launching=true;launch_at=s.GetTicks();feedback_frame_at=launch_at;launch_phase=LaunchPhase::Waiting;sounds.fade_music();
         launch_cancelled=launch_handoff=false;launch_result=0;launch_drawn_head=-1;cancel_navigation();carousel.reset(model.selected);dirty=true;
         if(!launch_preview && worker>0){kill(worker,SIGTERM);worker_action.clear();}
     }
@@ -4788,6 +4843,7 @@ class App {
     void finish_launch(bool reopen){
         if(launch_channel>=0)::close(launch_channel);launch_channel=-1;
         launching=false;launch_phase=LaunchPhase::None;
+        if(!reopen)configure_sounds();   // a cancelled or preview launch: the music comes back
         if(reopen){
             library_cache.clear();library_summary.request(o.data,all_games);open();configure_sounds();last_activity=s.GetTicks();
             library_view(preferences.view);
@@ -4922,12 +4978,12 @@ class App {
         if(settings.page==Page::Controls){controls_action(code);return;}
         if(settings.page==Page::SaveGallery || settings.page==Page::Discover || settings.page==Page::RomSetup || settings.page==Page::DSControls){
             auto page=settings.page;
-            if(code==3){settings.page=page==Page::SaveGallery?gallery_return:page==Page::DSControls?ds_return:page==Page::Discover?discover_return:Page::LibraryOptions;settings.focus=0;}
+            if(code==3){back_to(page==Page::SaveGallery?gallery_return:page==Page::DSControls?ds_return:page==Page::Discover?discover_return:Page::LibraryOptions);}
             else if(code==8 || code==9)settings.focus=std::clamp(settings.focus+(code==8?-1:1),0,list_count()-1);
             else if(code==2 || code==4){
                 if(page==Page::SaveGallery)slot_actions();
                 else if(page==Page::Discover){if(settings.focus==0)begin_edit(4);else if(settings.focus==1)show_picker("Filter",{"No filter","Unplayed","Played","Missing artwork"},discovery_filter,[this](int n){discovery_filter=n;apply_discovery();});else clear_discovery();}
-                else if(page==Page::RomSetup){if(settings.focus==0)show_detail("Add your games",locale.text("Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.") );else if(settings.focus==1)rescan_games();else{fs::create_directories(o.data);std::ofstream(o.data/"setup-complete").put('1');settings.page=Page::Library;home_menu=true;}}
+                else if(page==Page::RomSetup){if(settings.focus==0)show_detail("Add your games",locale.text("Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.") );else if(settings.focus==1){if(library_ready){setup_scanned=true;rescan_games(true);}}else{fs::create_directories(o.data);std::ofstream(o.data/"setup-complete").put('1');setup_scanned=false;if(setup_first_run){setup_first_run=false;settings.page=Page::Library;home_menu=true;}else back_to(Page::LibraryOptions);}}
                 else ds_controls_action();
             }dirty=true;return;
         }
@@ -4966,7 +5022,7 @@ class App {
             if(code==3 || code==7){settings.page=Page::QuickMenu;settings.focus=0;dirty=true;return;}
         }
         if(settings.page==Page::GameArtwork){
-            if(code==3){settings.page=artwork_return;settings.focus=artwork_return==Page::GameOptions?4:0;}
+            if(code==3){back_to(artwork_return);if(artwork_return==Page::GameOptions)settings.focus=4;}
             else if(code==8 || code==9)settings.focus=std::clamp(settings.focus+(code==8?-1:1),0,2);
             else if(code==2)game_artwork_action();dirty=true;return;
         }
@@ -4978,7 +5034,7 @@ class App {
             dirty=true;return;
         }
         if(settings.page==Page::Confirm) {
-            if(code==3){settings.page=confirm_return;settings.focus=0;}
+            if(code==3){back_to(confirm_return);}
             else if(code==0 || code==1)settings.focus=code==0?0:1;
             else if(code==2 || code==4){bool accepted=settings.focus==1;settings.page=confirm_return;settings.focus=0;
                 if(accepted){if(confirmation=="return-stock")quit=true;else if(confirmation=="startup-rgds")save_startup();else{start_worker("device."+confirmation);if(confirmation=="poweroff" || confirmation=="reboot")begin_shutdown(confirmation);}}}
@@ -5013,7 +5069,7 @@ class App {
                 else if(settings.focus==4 && (code==0 || code==1 || code==2))open_shader_picker(false);
                 else if(settings.focus==7 && code==2){open_discover();}
                 else if(settings.focus==8 && code==2){settings.page=Page::RomSetup;settings.focus=0;}
-                else if(settings.focus==9 && code==2)start_worker("device.library","{\"action\":\"backup\"}");
+                else if(settings.focus==9 && code==2){if(worker<=0){backup_requested=true;start_worker("device.library","{\"action\":\"backup\"}");}}
                 else if(settings.focus==5 && (code==0 || code==1 || code==2)){preferences.layout=(preferences.layout+(code==0?2:1))%3;remember_appearance();}
             }else if(settings.page==Page::GameOptions) {
                 if(code==0 || code==1 || code==2){if(settings.focus==list_count()-2)open_gallery();else if(settings.focus==list_count()-1)open_ds_controls();else if(settings.focus==4)open_game_artwork();else if(settings.focus==3)open_controls(true,Page::GameOptions);else if(settings.focus==2)open_shader_picker(true);else change_game_option(code==0?-1:1,code==2);}
@@ -5237,7 +5293,7 @@ class App {
         if(!pointer_down)return;
         if(contact_x!=x || contact_y!=y){contact_x=x;contact_y=y;dirty=true;}
         if(edge_gesture_move(x,y))return;
-        if(!library_control_active(LibraryPress::LeftArrow,{0,409,84,71}) && !library_control_active(LibraryPress::RightArrow,{556,409,84,71}))hold.release(4000);
+        if(!library_control_active(LibraryPress::LeftArrow,rail_left_bounds()) && !library_control_active(LibraryPress::RightArrow,rail_right_bounds()))hold.release(4000);
         if(settings.page==Page::BootWarning)return;
         if(shader_drag){
             if(std::abs(y-down_y)>12)shader_carousel.moved=true;
@@ -5319,8 +5375,8 @@ class App {
         if(o.mainline && (e.type==SDL_JOYBUTTONDOWN || e.type==SDL_JOYBUTTONUP) && (o.preview || mainline_pads.count(e.jbutton.which)) && !mainline_controls.normalize(e))return;
         capture_view_for_input(e);
         if(o.game_menu)note_menu_input(e);
-        auto before=settings.page;handle_input(e);
-        if(before!=settings.page){page_at=s.GetTicks();hold.clear();dirty=true;}
+        auto before=settings.page;const int before_focus=settings.focus;handle_input(e);
+        if(before!=settings.page){settings.remember(before,before_focus);if(before==Page::LibraryOptions)backup_requested=false;page_at=s.GetTicks();hold.clear();dirty=true;}
     }
     void handle_input(const SDL_Event& e) {
         if(card_repair){
@@ -5395,7 +5451,7 @@ class App {
             }return;
         }
         if(e.type==SDL_KEYDOWN && !e.key.repeat) {
-            if(!picker_open && (settings.page==Page::Library || settings.page==Page::Display || settings.page==Page::Sound) && (e.key.keysym.sym==SDLK_LEFT || e.key.keysym.sym==SDLK_RIGHT))hold.press(e.key.keysym.sym,e.key.keysym.sym==SDLK_LEFT?-1:1,s.GetTicks());
+            if(!picker_open && horizontal_hold_page() && (e.key.keysym.sym==SDLK_LEFT || e.key.keysym.sym==SDLK_RIGHT))hold.press(e.key.keysym.sym,e.key.keysym.sym==SDLK_LEFT?-1:1,s.GetTicks());
             if(!picker_open && settings.page==Page::Library && !home_menu && (e.key.keysym.sym==SDLK_LEFTBRACKET || e.key.keysym.sym==SDLK_RIGHTBRACKET))hold.press(e.key.keysym.sym,e.key.keysym.sym==SDLK_LEFTBRACKET?-1:1,s.GetTicks());
             // Up/down repeat in every list and picker; +-2 tells the poll it is vertical.
             if(e.key.keysym.sym==SDLK_UP || e.key.keysym.sym==SDLK_DOWN)hold.press(e.key.keysym.sym,e.key.keysym.sym==SDLK_UP?-2:2,s.GetTicks());
@@ -5411,7 +5467,7 @@ class App {
             if(((settings.page==Page::Library && !home_menu) || (settings.page==Page::Keyboard && edit_field==4)) && (joystick_source(e.jbutton.button)==12 || joystick_source(e.jbutton.button)==13)){action(joystick_source(e.jbutton.button)==12?15:16);return;}
 
             if(settings.page==Page::ShaderPicker && (e.jbutton.button==4 || e.jbutton.button==5)){action(e.jbutton.button==4?13:14);return;}
-            if(!picker_open && (settings.page==Page::Library || settings.page==Page::Display || settings.page==Page::Sound) && (e.jbutton.button==4 || e.jbutton.button==5))hold.press(1000+e.jbutton.button,e.jbutton.button==4?-1:1,s.GetTicks());
+            if(!picker_open && horizontal_hold_page() && (e.jbutton.button==4 || e.jbutton.button==5))hold.press(1000+e.jbutton.button,e.jbutton.button==4?-1:1,s.GetTicks());
             const char* a=std::getenv("RGDS_BUTTON_A");const char* b=std::getenv("RGDS_BUTTON_B");const char* select=std::getenv("RGDS_BUTTON_SETTINGS");
             if(e.jbutton.button==(a?std::atoi(a):0))action(2);else if(e.jbutton.button==(b?std::atoi(b):1))action(3);
             else if(e.jbutton.button==4)action(0);else if(e.jbutton.button==5)action(1);else if(e.jbutton.button==(select?std::atoi(select):6))action(7);
@@ -5419,11 +5475,11 @@ class App {
             else if(e.jbutton.button==3)action(11);
             else if(e.jbutton.button==2 && (settings.page==Page::Library || settings.page==Page::ShaderPicker || settings.page==Page::Keyboard))action(12);
         }else if(e.type==SDL_JOYHATMOTION) {
-            hold.release(2000);hold.release(2001);if((settings.page==Page::Library || settings.page==Page::Display || settings.page==Page::Sound) && (e.jhat.value&(SDL_HAT_LEFT|SDL_HAT_RIGHT)))hold.press(2000,e.jhat.value&SDL_HAT_LEFT?-1:1,s.GetTicks());
+            hold.release(2000);hold.release(2001);if(horizontal_hold_page() && (e.jhat.value&(SDL_HAT_LEFT|SDL_HAT_RIGHT)))hold.press(2000,e.jhat.value&SDL_HAT_LEFT?-1:1,s.GetTicks());
             else if(!(e.jhat.value&(SDL_HAT_LEFT|SDL_HAT_RIGHT)) && (e.jhat.value&(SDL_HAT_UP|SDL_HAT_DOWN)))hold.press(2001,e.jhat.value&SDL_HAT_UP?-2:2,s.GetTicks());
             if(e.jhat.value&SDL_HAT_LEFT)action(0);else if(e.jhat.value&SDL_HAT_RIGHT)action(1);else if(e.jhat.value&SDL_HAT_UP)action(8);else if(e.jhat.value&SDL_HAT_DOWN)action(9);
         }else if(e.type==SDL_JOYAXISMOTION) {
-            if(e.jaxis.axis==0){if(std::abs(int(e.jaxis.value))<10000)hold.release(3000);else if(settings.page==Page::Library || settings.page==Page::Display || settings.page==Page::Sound)hold.press(3000,e.jaxis.value<0?-1:1,s.GetTicks());}
+            if(e.jaxis.axis==0){if(std::abs(int(e.jaxis.value))<10000)hold.release(3000);else if(horizontal_hold_page())hold.press(3000,e.jaxis.value<0?-1:1,s.GetTicks());}
             if(e.jaxis.axis==1){if(std::abs(int(e.jaxis.value))<10000)hold.release(3001);else hold.press(3001,e.jaxis.value<0?-2:2,s.GetTicks());}
             auto now=s.GetTicks();if(std::abs(static_cast<int>(e.jaxis.value))>16000 && now-last_axis>180){
                 if(e.jaxis.axis==0)action(e.jaxis.value<0?0:1);else if(e.jaxis.axis==1)action(e.jaxis.value<0?8:9);last_axis=now;
@@ -5475,8 +5531,8 @@ public:
         if(!o.boot_startup && !o.preview && !probe && !o.game_menu && hardware.volume && !system.set("volume",hardware.volume_percent))status="Could not apply volume";
         if(!o.boot_warning)load_system_configuration();
         preferences.dark=dark_theme_file(o.theme);
-        try{if(fs::exists(o.preferences))preferences=load_preferences(o.preferences);}
-        catch(const std::exception& e){std::cerr<<"Preferences fallback: "<<e.what()<<std::endl;}
+        try{preferences=load_preferences(o.preferences);}   // reads ui.ini even without the base file
+        catch(const std::exception& e){std::cerr<<"Preferences fallback: "<<e.what()<<std::endl;preferences=Preferences{};try{load_ui_preferences(o.preferences.parent_path()/"ui.ini",preferences);}catch(const std::exception&){}}
         locale.load(asset_path("locales"),preferences.language);
         if(!o.mode.empty())preferences.dark=o.mode=="dark";
         if(!o.font.empty())preferences.pixel=o.font=="pixel";
@@ -5580,7 +5636,7 @@ public:
             ui_trace.mark(UiTrace::Loop,rendered_frames,uint32_t(settings.page));
             if(!o.cache_report.empty())visited_pages.insert(int(settings.page));
             if(quit || stopping)break;
-            auto now=s.GetTicks();if(hardware.volume && hardware.volume_percent==0 && sounds.active())sounds.stop();sounds.poll(now);
+            auto now=s.GetTicks();const bool muted=hardware.volume && hardware.volume_percent==0;sounds.mute_music(muted);if(muted && sounds.active())sounds.stop();sounds.poll(now);
             if(!departure_action.empty() && int32_t(now-departure_at)>=0){auto request=std::move(departure_action);departure_action.clear();departure_dispatch=true;menu_request(request);departure_dispatch=false;if(quit)break;}
             if(settings.page==Page::Controls && control_capture){
                 if(now-capture_started>=10000){control_capture=false;capture_logical=-1;controls_notice="No button detected. Try again when you're ready.";dirty=true;}
@@ -5610,12 +5666,12 @@ public:
                 continue;
             }
             poll_library_scan();poll_collection();poll_search_preview(now);if(auto result=library_summary.poll()){summary=std::move(*result);summary_ready=true;dirty=true;}
-            if(!o.game_menu && library_ready && !setup_checked){setup_checked=true;if(!o.preview && !fs::exists(o.data/"setup-complete") && fs::exists(o.data/"setup-required")){settings.page=Page::RomSetup;settings.focus=0;dirty=true;}}
+            if(!o.game_menu && library_ready && !setup_checked){setup_checked=true;if(!o.preview && !fs::exists(o.data/"setup-complete") && fs::exists(o.data/"setup-required")){settings.page=Page::RomSetup;settings.focus=0;setup_first_run=true;dirty=true;}}
             if(!o.game_menu && o.boot_startup && library_ready && boot_hardware_ready && !return_writes_pending() && !system.volume_pending() && !system.brightness_pending() && !resume_checked && settings.page!=Page::BootWarning){resume_checked=true;auto ticket=o.data/"session/resume-launch.ini";auto saved=fields(ticket);std::error_code ec;fs::remove(ticket,ec);if(!saved["rom"].empty()){search_query.clear();discovery_filter=0;library_view(0);for(size_t i=0;i<model.games.size();i++)if(model.games[i].path.string()==saved["rom"]){select_game(i,false);home_menu=false;for(int core=0;core<core_count;core++)if(saved["core"]==core_ids[core])resume_core=core;resume_launch=resume_core>=0;launch();break;}}}
             poll_return_controls();
             if(!launching){int direction=hold.poll(now);
                 if(direction==-2 || direction==2){action(direction<0?8:9);last_activity=now;}
-                else if(direction && !picker_open && (settings.page==Page::Library || settings.page==Page::Display || settings.page==Page::Sound)){if(settings.page==Page::Library){navigate(direction);}else action(direction<0?0:1);last_activity=now;}}
+                else if(direction && !picker_open && horizontal_hold_page()){if(settings.page==Page::Library){navigate(direction);}else action(direction<0?0:1);last_activity=now;}}
             poll_brightness();
             poll_volume();
             if(auto refreshed=system.poll_status())if(refreshed->success){
@@ -5678,7 +5734,7 @@ public:
         if(!o.cache_report.empty()){
             std::ofstream report(o.cache_report);if(!report)throw std::runtime_error("Cannot write cache report");
             report<<"{\"picker_detail\":"<<picker_detail<<",\"detail_lines\":"<<detail_lines.size()<<",\"detail_scroll\":"<<detail_scroll<<",\"picker_open\":"<<picker_open<<",\"picker_focus\":"<<picker_focus<<",\"picker_scroll\":"<<picker_scroll<<",\"list_scroll\":"<<list_scroll<<",\"status_stamp\":"<<std::quoted(drawn_status_stamp)<<',';
-            report<<"\"menu_sounds\":"<<preferences.menu_sounds<<",\"sound_volume\":"<<preferences.sound_volume<<",\"sound_plays\":"<<sounds.plays<<",\"sound_opens\":"<<sounds.opens<<",\"sound_releases\":"<<sounds.releases<<",\"sound_open_now\":"<<sounds.open_now()<<",\"sound_reads\":"<<sounds.reads<<",\"sound_bytes\":"<<sounds.bytes()<<",\"sound_active\":"<<sounds.active()<<",\"sound_counts\":[";for(size_t i=0;i<sounds.counts.size();i++){if(i)report<<',';report<<sounds.counts[i];}report<<"],";
+            report<<"\"menu_music\":"<<preferences.menu_music<<",\"music_volume\":"<<preferences.music_volume<<",\"music_reads\":"<<sounds.music_reads<<",\"music_playing\":"<<sounds.music_playing()<<",\"music_samples\":"<<sounds.music_samples()<<",\"menu_sounds\":"<<preferences.menu_sounds<<",\"sound_volume\":"<<preferences.sound_volume<<",\"sound_plays\":"<<sounds.plays<<",\"sound_opens\":"<<sounds.opens<<",\"sound_releases\":"<<sounds.releases<<",\"sound_open_now\":"<<sounds.open_now()<<",\"sound_reads\":"<<sounds.reads<<",\"sound_bytes\":"<<sounds.bytes()<<",\"sound_active\":"<<sounds.active()<<",\"sound_counts\":[";for(size_t i=0;i<sounds.counts.size();i++){if(i)report<<',';report<<sounds.counts[i];}report<<"],";
             report<<"\"element_moves\":"<<element_moves<<",\"back_transitions\":"<<back_transitions<<",\"view_energy\":"<<view_motion.energy<<",\"view_variant\":"<<view_motion.variant<<',';
             report<<"\"view_transition_style\":"<<std::quoted(view_style_name(preferences.view_style))<<",\"push_animation_frames\":"<<push_animation_frames<<',';
             report<<"\"view_animations\":"<<preferences.view_animations<<",\"view_transitions\":"<<view_transitions<<",\"view_animation_frames\":"<<view_animation_frames<<",\"view_animation_active\":"<<view_motion.active()<<",\"view_canvas_failed\":"<<view_canvas_failed<<',';
@@ -5711,6 +5767,12 @@ static int self_test() {
     int offered=0;for(int i=0;i<core_count;i++)offered+=core_offered(i);
     for(int i=0;i<offered;i++){m.next_core();ok=ok && core_offered(int(m.core));}ok=ok && m.core==0;
     Model empty;empty.move(-99);ok=ok && empty.selected==0;
+    {   // One IMA ADPCM block of rising nibbles must decode to a rising ramp of the declared length.
+        std::vector<uint8_t> wav={'R','I','F','F',0,0,0,0,'W','A','V','E','f','m','t',' ',20,0,0,0,0x11,0,1,0,0,0x7d,0,0,0,0,0,0,8,0,4,0,2,0,9,0,'d','a','t','a',8,0,0,0,0,0,0,0,0x77,0x77,0x77,0x77};
+        auto track=decode_ima_adpcm(wav);bool rising=track.samples.size()==9 && track.rate==32000;
+        for(size_t i=1;rising && i<track.samples.size();i++)rising=track.samples[i]>track.samples[i-1];
+        ok=ok && rising && decode_ima_adpcm({'R','I','F','F'}).empty();
+    }
     fs::remove_all(root);
     std::cout<<(ok?"Library, deduplication, navigation and engine selection passed.":"Model test failed.")<<std::endl;
     return ok?0:1;

@@ -53,7 +53,7 @@ class PictoChatUiTests(unittest.TestCase):
         (folder / 'pictochat.ini').write_text('name=%s\ncolour=%s\n' % (name, colour))
         (folder / 'state').write_text('1 0 0 ""\nhome 4\n')
         (folder / 'preferences.ini').write_text('schema=1\nmode=%s\nfont=rounded\n' % mode)
-        (folder / 'ui.ini').write_text(ui)
+        (folder / 'ui.ini').write_text('schema=1\nhome_layout=carousel\nbackground=plain\n'+ui)   # the carousel home with the PictoChat tile
         (folder / 'keys').write_text(script)
         env = dict(os.environ, SDL_VIDEODRIVER='dummy')
         if port:

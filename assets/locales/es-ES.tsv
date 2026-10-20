@@ -785,9 +785,9 @@ Home layout	Diseño de inicio
 Background	Fondo
 Touch gestures	Gestos táctiles
 Carousel	Carrusel
-DSi column	Columna DSi
+Column	Columna
 Plain	Sencillo
-DSi grid	Cuadrícula DSi
+Grid	Cuadrícula
 A carousel, or the DSi's column with your last game on top	Un carrusel o la columna de la DSi con tu último juego arriba
 Plain, or the DSi's ruled grid behind every screen	Sencillo o la cuadrícula de la DSi detrás de cada pantalla
 Swipe up from the bottom for Home, in from the left for Back	Desliza desde abajo para Inicio y desde la izquierda para Atrás
@@ -836,3 +836,19 @@ Vivid	Vívido
 Pixel art	Pixel art
 Moods	Ambientes
 Up / Down or L / R: change group	Arriba / Abajo o L / R: cambiar de grupo
+Sounds & music	Sonidos y música
+Menu music	Música del menú
+Music volume	Volumen de la música
+A soft tune plays while you browse. It fades out when a game starts.	Suena una melodía suave mientras navegas. Se desvanece cuando empieza un juego.
+Turn on menu music for a soft tune while you browse.	Activa la música del menú para una melodía suave mientras navegas.
+Scanning…	Buscando…
+Scan complete	Búsqueda completada
+Looking for games…	Buscando juegos…
+Reading Roms/NDS on your games card. This takes a moment.	Leyendo Roms/NDS de tu tarjeta de juegos. Tarda un momento.
+{0} found. Choose Done to go to your library.	{0} encontrados. Elige Listo para ir a tu biblioteca.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	No se encontraron juegos. Copia archivos .nds o ZIP de DS a Roms/NDS en tu tarjeta de juegos y busca de nuevo.
+Backing up your saves…	Haciendo copia de tus partidas…
+The backup did not finish. Please try again.	La copia de seguridad no terminó. Inténtalo de nuevo.
+Copies every save and checkpoint into one zip in userdata/exports.	Copia todas las partidas y puntos de control en un zip en userdata/exports.
+Where games go on the card, and a fresh scan.	Dónde van los juegos en la tarjeta y una nueva búsqueda.
+Where covers and titles come from.	De dónde vienen las carátulas y los títulos.

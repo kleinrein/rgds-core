@@ -30,7 +30,7 @@ inline std::map<std::string,std::string> control_fields(const std::string& path)
 struct ControlMapping {
     std::array<int,12> sources{0,1,2,3,4,5,6,7,8,9,10,11};
     std::string preset="default",shortcut="start+menu",shortcut_action="home";
-    int fast_forward_source=control_none;
+    int fast_forward_source=13;   // R2 fast-forwards unless a preset or the user says otherwise
     std::string fast_forward_mode="hold";
     void apply(const std::map<std::string,std::string>& fields){
         auto schema=fields.find("schema");if(schema!=fields.end() && schema->second!="1")return;

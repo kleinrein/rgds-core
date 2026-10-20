@@ -63,6 +63,8 @@ public:
   // it returned (0 when that swap was not seen pending). The frame pacer
   // phase-locks to these (phase_lock.h).
   // wait_ns: how long before() held that swap for the window's previous flip.
+  // tag: bit 0 (after()'s tag) the frame started late; bit 2 (DrmOut's
+  // mailbox) the frame queued behind this flip was dropped at its vblank.
   struct Flip { u64 seq = 0, at_ns = 0, issue_ns = 0; int tag = 0; u64 wait_ns = 0; };
   static constexpr int RING = 8;
   // The slot's flips after number `after`, oldest first, at most `max` (the

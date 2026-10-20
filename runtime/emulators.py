@@ -501,7 +501,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         if env.get('RGDS_INPUT_AMBIGUOUS')=='1':
             raise ValueError('Console input mapping is ambiguous; select the verified touch/controller devices before launching NNDDSS.')
         if env.get('RGDS_DEVICE_MODEL')=='rg-ds-plus' and (not env.get('NNDDSS_TOUCH_DEV') or not env.get('NNDDSS_KEYS_DEV')):
-            raise ValueError('RG DS Plus input devices are unavailable; run RGDS Inventory and RGDS Probe before launching NNDDSS.')
+            raise ValueError('RG DS Plus input devices are unavailable; check the device over SSH before launching NNDDSS.')
         root = prepare_nnddss(app, data, binary) if prepare else data / "emulators/nnddss"
         if prepare:
             from nnddss_database import prepare as prepare_save_database
@@ -585,6 +585,12 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                 for shader in (app / "emulators/shaders").glob("*"):copy_missing(shader, data / "emulators/nnddss" / folder / shader.name)
         if prepare and core=="drastic":
             for shader in (app / "emulators/shaders").glob("*"):copy_missing(shader, data / "emulators/drastic/shaders" / shader.name)
+    if core in DSPERATE_CORES:
+        # A host sleep freezes the engine (SIGSTOP) and the game carries on where
+        # it was on wake, like the pause menu. DSCore's own hinge pulse on resume
+        # closed the emulated lid for five frames: a game that had not reached its
+        # sleep by the open edge stayed asleep (panels off, saves refused).
+        env['DS_LID_PULSE'] = '0'
     plan = {"command": command, "cwd": str(cwd), "env": env}
     if display == 'kms' and selected_hooks.bridge:
         # No compositor is left for a paused-menu window: the engine keeps
@@ -600,8 +606,14 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # frames through the engine's present hook. The renderer sink stays
         # for Weston (DS_RGDS_SINK overrides, for measurement; an RGDS_ key
         # would be dropped by the guardian's clean environment).
+        # A screen filter is the bridge's GL pass over the renderer's game
+        # draw (its SDL_RenderCopy hook); the direct present has no GPU
+        # stage, so a chosen filter keeps the renderer sink on KMS.
         if core in DSPERATE_CORES and prepare:
-            section_config(config, {"video": {"sink": os.environ.get('DS_RGDS_SINK') or 'auto', "gpu_present": "false"}})
+            sink = os.environ.get('DS_RGDS_SINK') or ('renderer' if filter_choice else 'auto')
+            section_config(config, {"video": {"sink": sink, "gpu_present": "false"}})
+        if core in DSPERATE_CORES and filter_choice:
+            env['DS_DIRECT_PRESENT'] = '0'
         # SDL's KMSDRM display 0 is DSI-1, the stock top panel, but DSCore's
         # KMSDRM order opens the upper window on display 1 first. Opening the
         # display-0 window first coincided with a Mali GPU reset at start (5 of

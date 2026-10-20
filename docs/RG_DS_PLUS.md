@@ -18,12 +18,12 @@ Anbernic's [official specifications](https://win.anbernic.com/product/763.html) 
 
 Use the **Plus's own official stock Linux card**, with a backup of saves. This is an application update; use the normal installer ZIP at the games-card root. Do not flash the original RG DS image onto the Plus.
 
-1. Before installation, run the bundled **RGDS Inventory** entry if available. Otherwise install, then run **APPS → RGDS Inventory**. Keep `rgds/userdata/inventory.txt` and note the stock firmware version.
-2. Run **APPS → RGDS Probe**. Verify top/bottom labels, a full-screen picture on both panels and a crosshair under the stylus at the center and all four corners. Check D-pad, A/B/X/Y, Start/Select, both shoulder pairs, the analog stick and the Anbernic button. The probe returns to stock after 90 seconds or B.
+1. Capture an inventory over SSH (`make inventory DEVICE=root@<IP>`, which runs `runtime/inventory.sh` on the device) and note the stock firmware version.
+2. Run the probe over SSH (`sh /mnt/mmc/rgds/main.sh --probe`). Verify top/bottom labels, a full-screen picture on both panels and a crosshair under the stylus at the center and all four corners. Check D-pad, A/B/X/Y, Start/Select, both shoulder pairs, the analog stick and the Anbernic button. The probe returns to stock after 90 seconds or B.
 3. Open **RG DS Core**. Check library scrolling, settings, brightness, volume and return to stock. `rgds/userdata/launch.log` records the detected profile and selected input nodes; `rgds/userdata/session.log` records SDL panel dimensions and launcher errors.
 4. Try a DS game in **DSCore** (the default) at **Native** first. Check both screens, stylus input, audio, the shared pause menu, checkpoint save/load and return to the library. Confirm an ordinary in-game save survives relaunch. Then try **In-game menu → Graphics → 3D resolution → 2×**: the Plus has the same GPU but only 1 GB of RAM, so note the frame rate (turn on **Game FPS** in the in-game menu's emulator options) and anything odd. In heavy scenes 2× briefly drops to native resolution to hold 60 fps (adaptive 2×): a picture that softens for a few seconds is expected; report scenes where it stays soft or the frame rate still falls. Test other engines individually afterward.
-5. Check lid close/open and sleep/wake, then an ordinary shutdown and cold boot. Direct startup uses the existing stock hook only if that firmware exposes it. Keep the recovery APPS entry available while testing.
-6. Report the firmware version, `inventory.txt`, `launch.log`, `session.log` and which checklist step failed. A photo of the two panels is useful for display or scaling faults. Inventory contains network interface addresses; review it before posting publicly.
+5. Check lid close/open and sleep/wake, then an ordinary shutdown and cold boot. Direct startup uses the existing stock hook only if that firmware exposes it. Settings → System → Startup and APPS → Uninstall RG DS Core are the ways back to stock while testing.
+6. Report the firmware version, the inventory, `launch.log`, `session.log` and which checklist step failed. A photo of the two panels is useful for display or scaling faults. Inventory contains network interface addresses; review it before posting publicly.
 
 ## Still unverified
 

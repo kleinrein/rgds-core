@@ -2,6 +2,7 @@
 #include "lid.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <ctime>
@@ -31,8 +32,11 @@ bool switch_state(int fd, bool& closed) {
 #endif
 }
 
+Lid::Lid() : skew_ns_(clock_ns(CLOCK_BOOTTIME) - clock_ns(CLOCK_MONOTONIC)) {}
+
 void Lid::open() {
   skew_ns_ = clock_ns(CLOCK_BOOTTIME) - clock_ns(CLOCK_MONOTONIC);
+  if (const char* v = std::getenv("DS_LID_PULSE")) pulse_enabled_ = std::atoi(v) != 0;
 #ifdef __linux__
   DIR* d = opendir("/dev/input");
   if (!d) return;
@@ -62,8 +66,14 @@ void Lid::close() {
 #endif
 }
 
-bool Lid::poll(bool& closed) {
-  const bool was = closed_;
+void Lid::resumed() {
+  if (fd_ >= 0) return;   // the switch reports the real hinge
+  if (!pulse_enabled_) { std::fprintf(stderr, "lid: host resumed from suspend; the lid stays as it is\n"); return; }
+  pulse_ = PULSE_FRAMES;
+  std::fprintf(stderr, "lid: host resumed from suspend; closing the lid until the firmware sleeps\n");
+}
+
+bool Lid::poll(bool& closed, bool asleep) {
 #ifdef __linux__
   if (fd_ >= 0) {
     input_event ev;
@@ -74,11 +84,15 @@ bool Lid::poll(bool& closed) {
 #endif
   // No switch (or host froze before the event): clocks drifted >1s apart.
   const s64 skew = clock_ns(CLOCK_BOOTTIME) - clock_ns(CLOCK_MONOTONIC);
-  if (skew - skew_ns_ > 1000000000 && fd_ < 0) { pulse_ = 6; std::fprintf(stderr, "lid: host resumed from suspend; pulsing the lid\n"); }
+  if (skew - skew_ns_ > 1000000000) resumed();
   skew_ns_ = skew;
-  if (pulse_ > 0) { --pulse_; closed = pulse_ > 0; return true; }
-  closed = closed_;
-  return closed_ != was;
+  // Open once the firmware is asleep (the open edge's IRQ wakes it), or when
+  // a game has ignored the hinge for the whole pulse.
+  if (pulse_ > 0 && (asleep || --pulse_ == 0)) pulse_ = 0;
+  closed = closed_ || pulse_ > 0;
+  const bool changed = closed != last_;
+  last_ = closed;
+  return changed;
 }
 
 } // namespace ds::sdl

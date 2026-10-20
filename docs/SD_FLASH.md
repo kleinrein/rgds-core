@@ -45,8 +45,9 @@ see [RG DS Plus](RG_DS_PLUS.md).
 - **Settings → System → Updates & recovery → Use previous build** returns to the
   version you had before.
 - **Settings → System → Startup → Boot into** chooses RG DS Core or the stock menu.
-- **APPS → RGDS Recovery** (in the stock menu) turns off direct startup without
-  touching your saves.
+- **APPS → Uninstall RG DS Core** removes the app, its menu entries and its
+  startup and boot-artwork changes. Saves and settings stay in `rgds/userdata`
+  for a later install; delete that folder yourself to remove them too.
 - A memory card that has become read-only after a crash is checked and repaired
   on the next start; RG DS Core shows a short "Checking the memory card" screen.
 

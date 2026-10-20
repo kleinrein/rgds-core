@@ -31,6 +31,10 @@ add_executable(test_select select_test.cpp)
 target_link_libraries(test_select PRIVATE dsperate_frontend_video)
 add_test(NAME select COMMAND test_select)
 
+add_executable(test_lid lid_test.cpp ${CMAKE_SOURCE_DIR}/src/frontend/sdl/lid.cpp)
+target_include_directories(test_lid PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME lid COMMAND test_lid)
+
 add_executable(test_io io_test.cpp)
 target_link_libraries(test_io PRIVATE dsperate_core)
 add_test(NAME io COMMAND test_io)

@@ -14,6 +14,7 @@ class MainlineControlsTests(unittest.TestCase):
     def run_input(self, script):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);inputs=root/'input';inputs.write_text(script)
+            (root/'ui.ini').write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home these scripts drive
             report=root/'report.json'
             env=dict(os.environ,SDL_VIDEODRIVER='dummy',RGDS_SESSION_PLATFORM='independent',RGDS_INPUT_PROFILE='mainline-rg-ds')
             result=subprocess.run([str(BINARY),'--preview','--home','--seconds','1','--app',str(ROOT),'--data',str(root),

@@ -19,6 +19,7 @@ class IdlePreviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); data = root / "data"; data.mkdir()
             (data / "preferences.ini").write_text("schema=1\nmode=light\nfont=rounded\nanimations=0\n")
+            (data / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home has no ticking clock
             (data / "system.ini").write_text("schema=1\npower=0\nbrightness=60\nidle=0\nlid=0\nbattery_percent=1\ntimezone=Europe/Oslo\n")
             report = root / "report.json"
             before = datetime.datetime.now(ZoneInfo("Europe/Oslo")).strftime("%d/%m  %H:%M")
@@ -66,6 +67,7 @@ extern "C" int SDL_WaitEventTimeout(SDL_Event*,int){SDL_Delay(5);return 0;}
             (app / "assets").symlink_to(ROOT / "assets", target_is_directory=True)
             (app / "themes").symlink_to(ROOT / "themes", target_is_directory=True)
             (data / "preferences.ini").write_text("schema=1\nmode=light\nfont=rounded\nanimations=0\n")
+            (data / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home has no ticking clock
             (runtime / "system_controls.py").write_text('''import sys
 from pathlib import Path
 data=Path(sys.argv[sys.argv.index('--data')+1])

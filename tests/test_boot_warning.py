@@ -20,6 +20,7 @@ class BootWarningTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder).resolve()
             state = root / "state.txt";state.write_text('1 3 2 ""\n')
+            (root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home these scripts drive
             inputs = root / "input.txt";inputs.write_text(script)
             report = root / "report.json"
             screenshot = root / "warning.bmp"

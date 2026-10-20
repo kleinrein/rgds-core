@@ -785,9 +785,9 @@ Home layout	Indeling startscherm
 Background	Achtergrond
 Touch gestures	Aanraakgebaren
 Carousel	Carrousel
-DSi column	DSi-kolom
+Column	Kolom
 Plain	Effen
-DSi grid	DSi-raster
+Grid	Raster
 A carousel, or the DSi's column with your last game on top	Een carrousel, of de DSi-kolom met je laatste spel bovenaan
 Plain, or the DSi's ruled grid behind every screen	Effen, of het gelinieerde DSi-raster achter elk scherm
 Swipe up from the bottom for Home, in from the left for Back	Veeg omhoog vanaf de onderkant voor Home, vanaf links voor Terug
@@ -836,3 +836,19 @@ Vivid	Levendig
 Pixel art	Pixelkunst
 Moods	Sferen
 Up / Down or L / R: change group	Omhoog / Omlaag of L / R: andere groep
+Sounds & music	Geluiden en muziek
+Menu music	Menumuziek
+Music volume	Muziekvolume
+A soft tune plays while you browse. It fades out when a game starts.	Een zachte melodie speelt terwijl je bladert. Ze vervaagt wanneer een spel start.
+Turn on menu music for a soft tune while you browse.	Zet menumuziek aan voor een zachte melodie terwijl je bladert.
+Scanning…	Zoeken…
+Scan complete	Zoeken voltooid
+Looking for games…	Spellen zoeken…
+Reading Roms/NDS on your games card. This takes a moment.	Roms/NDS op je spelkaart wordt gelezen. Dit duurt even.
+{0} found. Choose Done to go to your library.	{0} gevonden. Kies Klaar om naar je bibliotheek te gaan.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Geen spellen gevonden. Kopieer .nds- of DS ZIP-bestanden naar Roms/NDS op je spelkaart en zoek opnieuw.
+Backing up your saves…	Je opgeslagen spellen worden geback-upt…
+The backup did not finish. Please try again.	De back-up is niet voltooid. Probeer het opnieuw.
+Copies every save and checkpoint into one zip in userdata/exports.	Kopieert elk opgeslagen spel en controlepunt naar één zip in userdata/exports.
+Where games go on the card, and a fresh scan.	Waar spellen op de kaart horen, en een nieuwe zoekopdracht.
+Where covers and titles come from.	Waar hoezen en titels vandaan komen.

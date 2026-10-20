@@ -40,18 +40,26 @@ struct Sim {
   double work = 10.0 * MS, draw = 5.0 * MS, gpu = 0.3 * MS;
   double free_period = 1e9 / 60.0;   // the pacer's own clock before the lock holds
   double now = 100.0 * MS;           // the current frame's hand-off time
-  struct Pending { int panel; double at, swap, wait; };
+  // The direct KMS tier's mailbox (display_drm.cpp): a frame held for the
+  // previous flip longer than `margin` is dropped at that flip's vblank and
+  // has no flip at all (margin < 0: every held frame is flipped, as SDL's
+  // swap does). `report_hold`: the tier tells the lock how long the swap
+  // was held (KmsFlips::Flip::wait_ns); false is the record DrmOut kept
+  // before 19 October (the issue time at the vblank, the hold unknown).
+  double margin = -1.0;
+  bool report_hold = true;
+  struct Pending { int panel; double at, swap, wait; bool dropped_behind = false; };
   std::deque<Pending> pending;
   // The last frame's results, per panel.
   std::vector<double> lat, wait, gap;
-  int repeats = 0, late_starts = 0;
+  int repeats = 0, late_starts = 0, dropped = 0;
 
   Sim(PhaseLock& l, std::vector<Panel> p) : lock(l), panels(std::move(p)), lat(panels.size()), wait(panels.size()), gap(panels.size()) {}
 
   void deliver(double upto) {
     while (!pending.empty() && pending.front().at <= upto) {
       const Pending& f = pending.front();
-      lock.flip(f.panel, static_cast<u64>(f.at), static_cast<u64>(f.swap), static_cast<u64>(f.wait));
+      lock.flip(f.panel, static_cast<u64>(f.at), static_cast<u64>(f.swap), static_cast<u64>(f.wait), report_hold && f.dropped_behind);
       pending.pop_front();
     }
   }
@@ -70,12 +78,20 @@ struct Sim {
       const double ready = done + draw;
       const double swap = ready > p.last_flip ? ready : p.last_flip;   // held for the previous flip
       wait[i] = swap - ready;
+      if (margin >= 0.0 && wait[i] > margin) {
+        // The mailbox: dropped at the pending flip's vblank, no flip of its
+        // own; that flip's record says so (it is still to be delivered: the
+        // decision falls at its completion, after this frame's hand-off).
+        ++dropped;
+        for (auto it = pending.rbegin(); it != pending.rend(); ++it) if (it->panel == static_cast<int>(i)) { it->dropped_behind = true; break; }
+        continue;
+      }
       const double at = p.tick_after(swap + gpu);
       lat[i] = at - swap;
       gap[i] = p.last_flip ? at - p.last_flip : p.period;
       if (p.last_flip && gap[i] > 1.5 * p.period) ++repeats;
       p.last_flip = at;
-      pending.push_back({static_cast<int>(i), at, swap, wait[i]});
+      pending.push_back({static_cast<int>(i), at, swap, report_hold ? wait[i] : 0.0});
     }
     now = done;
   }
@@ -248,6 +264,94 @@ int main() {
     const double now = sim.now + 500.0 * MS;
     const double d = static_cast<double>(lock.deadline(static_cast<u64>(now)));
     CHECK(d >= now && d < now + panel_period);
+  }
+
+  // 9. The direct KMS tier as a mailbox (display_drm.cpp, RG DS 19 October):
+  //    the present is 2 ms, a frame ready while the panel's previous flip is
+  //    pending is issued at that flip's vblank (the record's issue time is
+  //    the vblank, wait_ns the hold) or dropped there when it waited longer
+  //    than the margin, and has no flip then. Free-running at 60 Hz against
+  //    a 59.7 Hz panel about half the flips are held ones, so the lock must
+  //    learn the work from the unheld half, settle like the SDL tier, and
+  //    take one long frame as one repeat plus the drop of the frame behind
+  //    it (held `band` > margin), nothing more.
+  {
+    PhaseLock lock;
+    Sim sim(lock, {Panel{panel_period, 2.0 * MS}});
+    sim.draw = 2.0 * MS;
+    sim.margin = 1.0 * MS;   // below any band: a frame held behind a late one is always dropped
+    sim.run(300);
+    CHECK(lock.locked());
+    std::fprintf(stderr, "phase lock: mailbox, after 300 frames work mean %.3f ms (used %.3f), band %.2f, late %llu, repeats %d, dropped %d, lat %.3f\n",
+                 lock.work_mean_ns() / MS, lock.work_ns() / MS, lock.band_ns() / MS, static_cast<unsigned long long>(lock.late()), sim.repeats, sim.dropped, sim.lat[0] / MS);
+    CHECK(near(lock.work_mean_ns(), sim.work + sim.draw, 50'000.0));
+    const int repeats0 = sim.repeats, dropped0 = sim.dropped;
+    const u64 late0 = lock.late();
+    for (int i = 0; i < 300; ++i) { sim.frame(); CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS)); }
+    CHECK(sim.repeats == repeats0 && sim.dropped == dropped0 && lock.late() == late0);
+    const double work0 = sim.work;
+    sim.work = work0 + 6.0 * MS;   // over its slot
+    sim.frame();
+    sim.work = work0;
+    for (int i = 0; i < 8; ++i) sim.frame();
+    std::fprintf(stderr, "phase lock: mailbox, one long frame: repeats +%d, dropped +%d, late +%llu, band %.2f\n",
+                 sim.repeats - repeats0, sim.dropped - dropped0, static_cast<unsigned long long>(lock.late() - late0), lock.band_ns() / MS);
+    CHECK(sim.repeats == repeats0 + 1);   // the tick the long frame missed
+    CHECK(sim.dropped == dropped0 + 1);   // the frame behind it, held past the margin
+    CHECK(lock.late() == late0 + 1);
+    sim.run(100);
+    CHECK(sim.repeats == repeats0 + 1 && sim.dropped == dropped0 + 1);
+    CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS));
+  }
+  // 9b. The same mailbox with the band under its margin (DS_PACE_BAND 1.6 ms,
+  //     margin 2 ms): the frame behind a late one is held, not dropped, and
+  //     flipped one tick late with its hold in the record; so is the frame
+  //     behind that one, until the lock aims the next frame past them. One
+  //     long frame costs one repeat and no drop, and the lock settles again.
+  {
+    PhaseLock::Params p;
+    p.band_ns = 1.6 * MS;
+    PhaseLock lock(p);
+    Sim sim(lock, {Panel{panel_period, 2.0 * MS}});
+    sim.draw = 2.0 * MS;
+    sim.margin = 2.0 * MS;
+    sim.run(300);
+    const int repeats0 = sim.repeats, dropped0 = sim.dropped;
+    const u64 late0 = lock.late();
+    for (int i = 0; i < 100; ++i) { sim.frame(); CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS)); }
+    const double work0 = sim.work;
+    sim.work = work0 + 6.0 * MS;
+    sim.frame();
+    sim.work = work0;
+    int held = 0;
+    for (int i = 0; i < 12; ++i) { sim.frame(); if (sim.wait[0] > 0.0) ++held; }
+    std::fprintf(stderr, "phase lock: mailbox under the margin, one long frame: repeats +%d, dropped +%d, late +%llu, %d of the next 12 frames held, band %.2f, lat %.3f\n",
+                 sim.repeats - repeats0, sim.dropped - dropped0, static_cast<unsigned long long>(lock.late() - late0), held, lock.band_ns() / MS, sim.lat[0] / MS);
+    CHECK(sim.repeats == repeats0 + 1);
+    CHECK(sim.dropped == dropped0);
+    CHECK(held <= 3);
+    sim.run(100);
+    CHECK(sim.repeats == repeats0 + 1 && sim.dropped == dropped0);
+    CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS));
+  }
+
+  // The same tier with the hold unreported (DrmOut's record before 19 Oct):
+  // a held flip's issue time is the vblank, and the lock learns the hold as
+  // work. Printed for the record; the device measurements are in
+  // docs/PERFORMANCE.md.
+  {
+    PhaseLock lock;
+    Sim sim(lock, {Panel{panel_period, 2.0 * MS}});
+    sim.draw = 2.0 * MS;
+    sim.margin = 2.0 * MS;
+    sim.report_hold = false;
+    sim.run(300);
+    const int repeats0 = sim.repeats, dropped0 = sim.dropped;
+    const u64 late0 = lock.late();
+    sim.run(300);
+    std::fprintf(stderr, "phase lock: mailbox, hold unreported: work mean %.3f ms (real %.3f), band %.2f, over 300 settled frames late +%llu, repeats +%d, dropped +%d, lat %.3f\n",
+                 lock.work_mean_ns() / MS, (sim.work + sim.draw) / MS, lock.band_ns() / MS, static_cast<unsigned long long>(lock.late() - late0),
+                 sim.repeats - repeats0, sim.dropped - dropped0, sim.lat[0] / MS);
   }
 
   std::fprintf(stderr, "phase_lock: ok\n");

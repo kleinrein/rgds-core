@@ -212,9 +212,19 @@ void DrmOut::close() {
 
 void DrmOut::retire(u64 at_ns) {
   if (pending_ < 0) return;
+  // Mailbox: a frame that has waited here longer than the margin has its
+  // successor due before the next vblank (frames come one refresh apart),
+  // so it goes and the successor is flipped straight onto that vblank;
+  // flipping it now would show it then and put every later frame a
+  // refresh behind. A frame queued just before this vblank (its flip
+  // would have been direct a moment earlier) is flipped as usual.
+  const bool drop = queued_ >= 0 && queued_may_drop_ && at_ns > queued_ns_ + margin_ns_;
   {
     std::lock_guard<std::mutex> lk(ring_m_);
-    ring_[flips_ % KmsFlips::RING] = KmsFlips::Flip{flips_ + 1, at_ns, issue_ns_, 0, 0};
+    // The record carries the fate of the frame queued behind this flip (tag
+    // bit 2: dropped here): the pacer's lock reads it off a late flip to
+    // tell where the frames started since land (phase_lock.h).
+    ring_[flips_ % KmsFlips::RING] = KmsFlips::Flip{flips_ + 1, at_ns, issue_ns_, pending_tag_ | (drop ? 4 : 0), pending_wait_ns_};
     ++flips_;
   }
   if (on_screen_ >= 0) bufs_[on_screen_].busy = false;
@@ -223,18 +233,12 @@ void DrmOut::retire(u64 at_ns) {
   if (queued_ >= 0) {
     const int q = queued_;
     queued_ = -1;
-    // Mailbox: a frame that has waited here longer than the margin has its
-    // successor due before the next vblank (frames come one refresh apart),
-    // so it goes and the successor is flipped straight onto that vblank;
-    // flipping it now would show it then and put every later frame a
-    // refresh behind. A frame queued just before this vblank (its flip
-    // would have been direct a moment earlier) is flipped as usual.
-    if (queued_may_drop_ && at_ns > queued_ns_ + margin_ns_) { bufs_[q].busy = false; ++dropped_; }
-    else if (!flip(q)) dead_ = true;
+    if (drop) { bufs_[q].busy = false; ++dropped_; }
+    else if (!flip(q, queued_tag_, queued_ns_)) dead_ = true;
   }
 }
 
-bool DrmOut::flip(int i) {
+bool DrmOut::flip(int i, int tag, u64 queued_at_ns) {
   drmu::mode_crtc_page_flip pf = {};
   pf.crtc_id = crtc_;
   pf.fb_id = bufs_[i].fb;
@@ -242,7 +246,14 @@ bool DrmOut::flip(int i) {
   pf.user_data = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(this));
   if (ioctl(fd_, drmu::IOCTL_MODE_PAGE_FLIP, &pf) < 0) { std::perror("drm: PAGE_FLIP"); bufs_[i].busy = false; return false; }
   pending_ = i;
-  { std::lock_guard<std::mutex> lk(ring_m_); issue_ns_ = mono_ns(); }
+  pending_tag_ = tag;
+  {
+    std::lock_guard<std::mutex> lk(ring_m_);
+    issue_ns_ = mono_ns();
+    // A queued frame's hold for the flip before it (KmsFlips::Flip::wait_ns):
+    // the frame was ready at queued_at_ns, the flip issued now.
+    pending_wait_ns_ = queued_at_ns && issue_ns_ > queued_at_ns ? issue_ns_ - queued_at_ns : 0;
+  }
   return true;
 }
 
@@ -343,12 +354,12 @@ void DrmOut::end_frame() {
     // pending flip's vblank (scanout.h: issue it for the vblank after, or
     // drop it when the next frame is due before that one).
     bufs_[i].busy = true;
-    queued_ = i; queued_ns_ = mono_ns(); queued_may_drop_ = drop_if_pending_; ++queued_n_;
+    queued_ = i; queued_ns_ = mono_ns(); queued_may_drop_ = drop_if_pending_; queued_tag_ = tag_; ++queued_n_;
     return;
   }
   bufs_[i].busy = true;
   ++presented_;
-  if (!flip(i)) dead_ = true;
+  if (!flip(i, tag_, 0)) dead_ = true;
 }
 
 // A queued flip only issues when the pending one retires, which is only

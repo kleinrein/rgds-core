@@ -55,11 +55,15 @@ public:
   bool dmabuf_plane(int buf, DmabufPlane& out) const override;
   void set_gpu_writes(bool on) override { gpu_writes_ = on; }
   void set_drop_if_pending(bool on) override { drop_if_pending_ = on; }
+  void set_present_tag(int tag) override { tag_ = tag; }
   void end_frame() override;      // flip now, or queue behind (or drop at, see set_drop_if_pending) the pending flip; does not wait
   void flush() override;          // wait until no flip is queued behind a pending one
 
   // This panel's completed flips after number `after` (KmsFlips::Flip: the
-  // DRM event's CLOCK_MONOTONIC stamp and when the flip was issued), oldest
+  // DRM event's CLOCK_MONOTONIC stamp, when the flip was issued, the frame's
+  // present tag, and how long the frame was queued behind the flip before
+  // it -- the issue time is then that flip's vblank, not the frame's
+  // completion, and the pacer must not read the queueing as work), oldest
   // first, at most `max` of the last KmsFlips::RING. The frame pacer locks
   // to them (phase_lock.h) as it does to the SDL renderer's.
   int recent(u64 after, KmsFlips::Flip* out, int max) const;
@@ -73,7 +77,9 @@ private:
     u32 fb = 0;                   // DRM framebuffer id
     bool busy = false;            // on screen, flip pending, or queued
   };
-  bool flip(int i);               // issue the page flip for bufs_[i]; false = driver error
+  // Issue the page flip for bufs_[i], with the frame's tag; queued_at_ns:
+  // when end_frame() queued the frame (0: flipped at once). False = driver error.
+  bool flip(int i, int tag, u64 queued_at_ns);
   bool alloc_buf(Buf& b);
   void drop_buf(Buf& b);
   // Reads events on the shared DRM fd and routes each to its owning DrmOut
@@ -93,6 +99,9 @@ private:
   bool drop_if_pending_ = false;
   bool queued_may_drop_ = false;  // the queued frame's set_drop_if_pending()
   u64 queued_ns_ = 0;             // when it was queued
+  int tag_ = 0;                   // set_present_tag(): the frame between begin_frame() and end_frame()
+  int queued_tag_ = 0, pending_tag_ = 0;   // the tags of the queued frame and of the one whose flip is pending
+  u64 pending_wait_ns_ = 0;       // how long the pending flip's frame was queued (0: flipped at once)
   u64 margin_ns_ = 2'000'000;     // DS_KMS_MARGIN_MS: queued longer than this at the vblank -> dropped (mailbox)
   u64 presented_ = 0, dropped_ = 0, queued_n_ = 0;   // end_frame() outcomes, for the close report
   int cur_ = -1;                  // buffer handed out by begin_frame()

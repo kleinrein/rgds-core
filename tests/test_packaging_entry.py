@@ -63,7 +63,7 @@ class PackagingEntryTests(unittest.TestCase):
     def test_configured_installation_is_independent_of_automatic_startup(self):
         configured = Path(self.temporary.name) / "internal install" / "rgds"
         shutil.copytree(self.root, configured)
-        for entry in ("RG DS Core.sh", "RGDS Probe.sh"):
+        for entry in ("RG DS Core.sh",):
             self.write_entry(entry)
             for mode, enabled in (("rgds", True), ("stock", False), ("rgds", False)):
                 with self.subTest(entry=entry, mode=mode, enabled=enabled):
@@ -80,11 +80,11 @@ class PackagingEntryTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     arguments = json.loads((configured / "userdata/arguments.json").read_text())
                     self.assertEqual(Path(arguments[1]).resolve(), configured.resolve())
-                    self.assertEqual(arguments[2:], ["--probe"] if entry == "RGDS Probe.sh" else ["--dev"])
+                    self.assertEqual(arguments[2:], ["--dev"])
                     self.assertFalse((self.root / "userdata/arguments.json").exists())
 
     def test_invalid_or_removed_configuration_falls_back_to_own_card(self):
-        for entry in ("RG DS Core.sh", "RGDS Probe.sh"):
+        for entry in ("RG DS Core.sh",):
             self.write_entry(entry)
             for config in ("{broken", "[]", json.dumps(dict(mode="stock", root="relative")),
                            json.dumps(dict(mode="stock", root=str(self.control / "missing")))):

@@ -14,9 +14,11 @@ def unconfigured_trust(path):
         return False
     return isinstance(value,dict) and (not value.get('feed') or not value.get('keys'))
 
+RETIRED_APPS = ('Try RGDS.sh', 'RGDS Probe.sh', 'RGDS Inventory.sh', 'RGDS Recovery.sh')
+
 def install_apps(source, apps, stock_apps=None):
-    """Refresh menu routes and migrate the former Try RGDS shortcut."""
-    legacy, launcher = 'Try RGDS.sh', 'RG DS Core.sh'
+    """Refresh menu routes; retired entries from earlier installs are removed."""
+    legacy, launcher, uninstall = 'Try RGDS.sh', 'RG DS Core.sh', 'Uninstall RG DS Core.sh'
     entries = {entry.name: entry for entry in source.iterdir()}
     if legacy in entries:
         old = entries.pop(legacy)
@@ -24,22 +26,22 @@ def install_apps(source, apps, stock_apps=None):
     apps.mkdir(parents=True, exist_ok=True)
     for name, entry in entries.items():
         shutil.copy2(entry, apps / name)
-    if launcher in entries:
-        (apps / legacy).unlink(missing_ok=True)
     if stock_apps is None:
         stock_apps = (Path('/mnt/mmc/Roms/APPS'), Path('/mnt/SDCARD/Roms/APPS'))
-    for directory in stock_apps:
+    for directory in (apps, *stock_apps):
+        if not directory.is_dir():
+            continue
+        for name in RETIRED_APPS:
+            retired = directory / name
+            if retired.is_file() and not retired.is_symlink():
+                retired.unlink()
         if directory.resolve() == apps.resolve():
             continue
-        for name in (launcher, 'RGDS Probe.sh'):
+        for name in (launcher, uninstall):
             entry, destination = entries.get(name), directory / name
-            previous = directory / legacy if name == launcher else destination
             # Refresh existing menu entries without following entry symlinks.
-            if (entry is not None and (destination.is_file() or previous.is_file())
-                    and not destination.is_symlink() and not previous.is_symlink()):
+            if entry is not None and destination.is_file() and not destination.is_symlink():
                 shutil.copy2(entry, destination)
-                if name == launcher:
-                    previous.unlink(missing_ok=True)
 
 def main():
     with ExitStack() as resources:
@@ -59,8 +61,8 @@ def main():
                 for block in iter(lambda:stream.read(1024*1024),b""):digest.update(block)
             if digest.hexdigest()!=args.sha256:raise ValueError("Package checksum mismatch")
         if sys.version_info < (3,8) or (not args.check and platform.machine() not in ('aarch64', 'arm64')):
-            raise SystemExit('Need Linux AArch64 and Python 3.8+; keep stock and capture inventory.')
-        allowed_apps = {'RG DS Core.sh','Try RGDS.sh','RGDS Probe.sh','RGDS Inventory.sh','RGDS Recovery.sh'}
+            raise SystemExit('Need Linux AArch64 and Python 3.8+; keep stock.')
+        allowed_apps = {'RG DS Core.sh','Uninstall RG DS Core.sh'}
         with zipfile.ZipFile(archive_path) as archive:
             entries = archive.infolist()
             # Private packages include emulator/driver and Samba source archives.
@@ -81,7 +83,7 @@ def main():
                 p = Path(e.filename)
                 if p.is_absolute() or '..' in p.parts or '\\' in e.filename or stat.S_ISLNK(e.external_attr >> 16):
                     raise ValueError('Unsafe archive path')
-                permitted = e.filename.startswith(prefix) or e.filename.startswith('rgds/docs/') or e.filename in ('rgds/main.sh','rgds/inventory.sh','rgds/state/active','rgds/update_guard.py','rgds/state/update-trust.json') or (p.parent == Path('Roms/APPS') and p.name in allowed_apps)
+                permitted = e.filename.startswith(prefix) or e.filename.startswith('rgds/docs/') or e.filename in ('rgds/main.sh','rgds/state/active','rgds/update_guard.py','rgds/state/update-trust.json') or (p.parent == Path('Roms/APPS') and p.name in allowed_apps)
                 if not permitted or e.is_dir():
                     raise ValueError('Unexpected package entry: '+e.filename)
             actual = {n[len(prefix):] for n in names if n.startswith(prefix) and n != prefix+'manifest.json'}
@@ -135,7 +137,7 @@ def main():
         else:
             app.rename(destination)
         # Only private development deployment updates these tiny bootstrap files.
-        for name in ('main.sh','inventory.sh','update_guard.py'):
+        for name in ('main.sh','update_guard.py'):
             if not (stage/'rgds'/name).exists():continue
             if (root/name).exists():
                 (root/'state').mkdir(exist_ok=True)
@@ -160,6 +162,15 @@ def main():
         if SUPERVISOR.is_file():
             mode=boot.get('mode','rgds') if boot.get('root')==str(root) else 'rgds'
             configure(root,mode,warning=boot.get('warning',True))
+            # One RG DS identity from power-on: the early splash and the boot-image
+            # logo. Both keep originals and are reversible by the uninstaller; a
+            # failure leaves stock artwork and never fails the installation.
+            try:
+                from boot_identity import apply as apply_identity
+                identity=apply_identity(destination)
+                print('Boot artwork: splash '+identity['splash']+', logo '+identity['logo']+'.')
+                for note in identity['messages']:print('  '+note)
+            except Exception as error:print('Boot artwork skipped: '+str(error))
         shutil.rmtree(stage)
         archive_path.unlink()
         print('Installed RG DS Core '+build+'. Open APPS > RG DS Core to play.')

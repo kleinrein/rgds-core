@@ -785,9 +785,9 @@ Home layout	Bố cục màn hình chính
 Background	Nền
 Touch gestures	Cử chỉ chạm
 Carousel	Băng chuyền
-DSi column	Cột DSi
+Column	Cột
 Plain	Trơn
-DSi grid	Lưới DSi
+Grid	Lưới
 A carousel, or the DSi's column with your last game on top	Băng chuyền, hoặc cột kiểu DSi với trò chơi gần nhất ở trên
 Plain, or the DSi's ruled grid behind every screen	Trơn, hoặc lưới kẻ kiểu DSi phía sau mọi màn hình
 Swipe up from the bottom for Home, in from the left for Back	Vuốt lên từ cạnh dưới để về Trang chính, từ cạnh trái để Quay lại
@@ -836,3 +836,19 @@ Vivid	Rực rỡ
 Pixel art	Pixel art
 Moods	Tâm trạng
 Up / Down or L / R: change group	Lên / Xuống hoặc L / R: đổi nhóm
+Sounds & music	Âm thanh và nhạc
+Menu music	Nhạc nền menu
+Music volume	Âm lượng nhạc
+A soft tune plays while you browse. It fades out when a game starts.	Một giai điệu nhẹ phát trong lúc bạn duyệt. Nhạc sẽ nhỏ dần khi trò chơi bắt đầu.
+Turn on menu music for a soft tune while you browse.	Bật nhạc nền menu để có giai điệu nhẹ trong lúc duyệt.
+Scanning…	Đang quét…
+Scan complete	Quét xong
+Looking for games…	Đang tìm trò chơi…
+Reading Roms/NDS on your games card. This takes a moment.	Đang đọc Roms/NDS trên thẻ trò chơi. Việc này mất một lát.
+{0} found. Choose Done to go to your library.	Đã tìm thấy {0}. Chọn Xong để đến thư viện.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Không tìm thấy trò chơi. Chép tệp .nds hoặc ZIP DS vào Roms/NDS trên thẻ trò chơi rồi quét lại.
+Backing up your saves…	Đang sao lưu các bản lưu của bạn…
+The backup did not finish. Please try again.	Sao lưu chưa hoàn tất. Vui lòng thử lại.
+Copies every save and checkpoint into one zip in userdata/exports.	Sao chép mọi bản lưu và điểm kiểm vào một tệp zip trong userdata/exports.
+Where games go on the card, and a fresh scan.	Nơi đặt trò chơi trên thẻ, và quét lại.
+Where covers and titles come from.	Nguồn của ảnh bìa và tên trò chơi.
