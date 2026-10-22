@@ -68,9 +68,14 @@ def read_probe_checkpoint(path):
         raise ValueError('Checkpoint is missing or exceeds the benchmark size limit')
     data = path.read_bytes()
     encoding, decoded = decode_checkpoint(data)
-    return dict(path=str(path), sha256=hashlib.sha256(data).hexdigest(),
-                encoding=encoding, checkpoint_bytes=len(data), decoded_bytes=len(decoded),
-                **extract_counter(decoded))
+    return dict(
+        path=str(path),
+        sha256=hashlib.sha256(data).hexdigest(),
+        encoding=encoding,
+        checkpoint_bytes=len(data),
+        decoded_bytes=len(decoded),
+        **extract_counter(decoded)
+    )
 
 
 def main():

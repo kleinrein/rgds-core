@@ -28,7 +28,7 @@ def _eligible(system_root):
             from device_profile import detect
             if detect()['model'] == 'rg-ds-plus':
                 return 'Boot artwork is not validated on the RG DS Plus; stock artwork is kept.'
-        except Exception:   # identification is a hint, never a blocker
+        except Exception:  # identification is a hint, never a blocker
             pass
     if not (root / 'etc/init.d/S49weston').is_file():
         return 'Expected stock Weston startup is missing; stock artwork is kept.'
@@ -49,13 +49,15 @@ def apply(release, system_root='/'):
         install(release / 'runtime/boot_splash.py', assets, system_root)
         result['splash'] = 'installed'
     except (OSError, ValueError) as error:
-        result['splash'] = 'failed';result['messages'].append('Early splash: ' + str(error))
+        result['splash'] = 'failed'
+        result['messages'].append('Early splash: ' + str(error))
     try:
         from boot_branding import configure_current
         record = configure_current(assets, system_root=system_root)
         result['logo'] = record.get('state', 'installed')
     except (OSError, ValueError) as error:
-        result['logo'] = 'failed';result['messages'].append('Boot logo: ' + str(error))
+        result['logo'] = 'failed'
+        result['messages'].append('Boot logo: ' + str(error))
     return result
 
 
@@ -71,7 +73,8 @@ def remove(release, system_root='/'):
             install(release / 'runtime/boot_splash.py', release / 'assets/boot', system_root, remove=True)
             result['splash'] = 'removed'
     except (OSError, ValueError) as error:
-        result['splash'] = 'failed';result['messages'].append('Early splash: ' + str(error))
+        result['splash'] = 'failed'
+        result['messages'].append('Early splash: ' + str(error))
     try:
         from boot_branding import restore, store_path, load_record, discover_boot_device
         store = store_path(system_root)
@@ -84,7 +87,8 @@ def remove(release, system_root='/'):
             else:
                 result['logo'] = record.get('state', 'skipped')
     except (OSError, ValueError) as error:
-        result['logo'] = 'failed';result['messages'].append('Boot logo: ' + str(error))
+        result['logo'] = 'failed'
+        result['messages'].append('Boot logo: ' + str(error))
     return result
 
 

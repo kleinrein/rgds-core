@@ -17,6 +17,7 @@ from records import process_identity, read_record
 
 BUILD_ID = re.compile(r"[a-z0-9][a-z0-9.-]{0,100}\Z")
 
+
 def read_pointer(path):
     if not path.exists():
         return None
@@ -24,6 +25,7 @@ def read_pointer(path):
     if not BUILD_ID.fullmatch(value):
         raise ValueError("Invalid build pointer: " + str(path))
     return value
+
 
 def file_stamp(info):
     return [info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns]
@@ -51,24 +53,30 @@ def verify_cache_path(app):
 
 
 def load_verify_cache(app, manifest_digest):
-    if verify_cache_path(app) is None:return {}
+    if verify_cache_path(app) is None: return {}
     try:
         record = json.loads(verify_cache_path(app).read_text())
     except (OSError, ValueError):
         return {}
-    if not isinstance(record, dict) or record.get("schema") != VERIFY_CACHE_SCHEMA or record.get("manifest") != manifest_digest or not isinstance(record.get("files"), dict):
+    if not isinstance(record, dict) or record.get("schema") != VERIFY_CACHE_SCHEMA or record.get(
+        "manifest"
+    ) != manifest_digest or not isinstance(record.get("files"), dict):
         return {}
     return record
 
 
 def save_verify_cache(app, manifest_digest, files, audited=None):
     path = verify_cache_path(app)
-    if path is None:return
+    if path is None: return
     previous = load_verify_cache(app, manifest_digest)
     merged = dict(previous.get("files", {}))
     merged.update(files)
-    record = dict(schema=VERIFY_CACHE_SCHEMA, manifest=manifest_digest, files=merged,
-                  audited=previous.get("audited", 0) if audited is None else audited)
+    record = dict(
+        schema=VERIFY_CACHE_SCHEMA,
+        manifest=manifest_digest,
+        files=merged,
+        audited=previous.get("audited", 0) if audited is None else audited
+    )
     pending = path.with_name(path.name + ".%d.tmp" % os.getpid())
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -76,15 +84,19 @@ def save_verify_cache(app, manifest_digest, files, audited=None):
         os.replace(pending, path)
     except OSError:
         # The memo is an optimization; a read-only card just hashes next time.
-        try:pending.unlink()
-        except OSError:pass
+        try:
+            pending.unlink()
+        except OSError:
+            pass
 
 
 def forget_verify_cache(app):
     path = verify_cache_path(app)
-    if path is None:return
-    try:path.unlink()
-    except OSError:pass
+    if path is None: return
+    try:
+        path.unlink()
+    except OSError:
+        pass
 
 
 def release_inventory(app, stamped=None):
@@ -126,7 +138,9 @@ def verify_release(app, selected=None, receipt=False, cached=False):
     manifest_stamp = file_stamp((app / "manifest.json").stat())
     manifest_bytes = (app / "manifest.json").read_bytes()
     manifest = json.loads(manifest_bytes)
-    if not isinstance(manifest, dict) or manifest.get("project") != "rgds" or manifest.get("schema") != 1 or manifest.get("target") != "aarch64-linux-gnu":
+    if not isinstance(manifest, dict) or manifest.get("project") != "rgds" or manifest.get(
+        "schema"
+    ) != 1 or manifest.get("target") != "aarch64-linux-gnu":
         raise ValueError("Wrong project, schema, or architecture.")
     if manifest.get("build") != app.name or not BUILD_ID.fullmatch(app.name):
         raise ValueError("Release directory does not match manifest.")
@@ -137,7 +151,8 @@ def verify_release(app, selected=None, receipt=False, cached=False):
         if not isinstance(name, str) or not name or not isinstance(digest, str):
             raise ValueError("Invalid manifest file entry.")
         path = Path(name)
-        if path.is_absolute() or ".." in path.parts or "\\" in name or str(path) != name or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        if path.is_absolute(
+        ) or ".." in path.parts or "\\" in name or str(path) != name or not re.fullmatch(r"[0-9a-f]{64}", digest):
             raise ValueError("Invalid manifest file entry.")
     inventory = release_inventory(app, selected if cached else None)
     if inventory.get("manifest.json") != manifest_stamp:
@@ -162,14 +177,14 @@ def verify_release(app, selected=None, receipt=False, cached=False):
             with source.open("rb") as stream:
                 while True:
                     chunk = stream.read(1024 * 1024)
-                    if not chunk:break
+                    if not chunk: break
                     hasher.update(chunk)
                 unchanged = file_stamp(os.fstat(stream.fileno())) == inventory[name]
             if not unchanged or hasher.hexdigest() != digest:
-                if cached:forget_verify_cache(app)
+                if cached: forget_verify_cache(app)
                 raise ValueError("Release file failed SHA-256: " + name)
-            if cached:learned[name] = [stamp, digest]
-    if learned:save_verify_cache(app, manifest_digest, learned)
+            if cached: learned[name] = [stamp, digest]
+    if learned: save_verify_cache(app, manifest_digest, learned)
     with (app / "bin/rgds-launcher").open("rb") as stream:
         header = stream.read(20)
     if len(header) != 20 or header[:6] != b"\x7fELF\x02\x01" or header[18:20] != b"\xb7\x00":
@@ -178,8 +193,13 @@ def verify_release(app, selected=None, receipt=False, cached=False):
         return dict(schema=1, app=str(app.absolute()), files=inventory)
     return manifest
 
+
 def startup_file(name):
-    return name == "bin/rgds-launcher" or name.startswith("runtime/") or name.startswith("themes/") or name.startswith("assets/icons/") or name.startswith("assets/status/") or name.startswith("assets/brand/") or name.startswith("assets/locales/") or name == "assets/shaders/catalog.tsv" or (name.startswith("assets/fonts/rounded-") and name.endswith(".rgf"))
+    return name == "bin/rgds-launcher" or name.startswith("runtime/") or name.startswith("themes/") or name.startswith(
+        "assets/icons/"
+    ) or name.startswith("assets/status/") or name.startswith("assets/brand/") or name.startswith(
+        "assets/locales/"
+    ) or name == "assets/shaders/catalog.tsv" or (name.startswith("assets/fonts/rounded-") and name.endswith(".rgf"))
 
 
 def verify_startup(app, receipt=False):
@@ -190,7 +210,9 @@ def verify_startup(app, receipt=False):
 def verify_startup_receipt(app, receipt):
     """Reuse this boot's hashes only while every inspected file is unchanged."""
     app = Path(app)
-    if not isinstance(receipt, dict) or receipt.get("schema") != 1 or receipt.get("app") != str(app.absolute()) or not isinstance(receipt.get("files"), dict):
+    if not isinstance(receipt, dict) or receipt.get("schema") != 1 or receipt.get("app") != str(
+        app.absolute()
+    ) or not isinstance(receipt.get("files"), dict):
         raise ValueError("Invalid startup verification receipt.")
     if app.is_symlink() or release_inventory(app, startup_file) != receipt["files"]:
         raise ValueError("Release changed after startup verification.")
@@ -199,30 +221,45 @@ def verify_startup_receipt(app, receipt):
 def verify_engine(app, core, backend=None):
     if core not in CORES:
         raise ValueError("Unknown engine")
+
     def dependencies(name):
         # Corresponding engine source/build tools are distributed for rebuilds,
         # but are not loaded by an emulator. Full installation verification
         # covers them; do not rehash a large source archive on every game launch.
-        if name in ("emulators/dsperate/source.tar.gz", "emulators/rgds-experimental/source.tar.gz", "emulators/rgds-experimental/vulkan-source.tar.gz", "emulators/rgds-experimental/panvk-source.tar.gz", "emulators/melonds/source.tar.gz", "emulators/superdrastic/source.tar.gz", "emulators/superdrastic/sdl/source.tar.gz") or name.startswith("emulators/dsperate/rgds-build/"):
+        if name in (
+            "emulators/dsperate/source.tar.gz", "emulators/rgds-experimental/source.tar.gz",
+            "emulators/rgds-experimental/vulkan-source.tar.gz", "emulators/rgds-experimental/panvk-source.tar.gz",
+            "emulators/melonds/source.tar.gz", "emulators/superdrastic/source.tar.gz",
+            "emulators/superdrastic/sdl/source.tar.gz"
+        ) or name.startswith("emulators/dsperate/rgds-build/"):
             return False
-        if core == 'drastic' and backend == 'superdrastic' and name.startswith(('emulators/superdrastic/', 'assets/fonts/source/')):
+        if core == 'drastic' and backend == 'superdrastic' and name.startswith(
+            ('emulators/superdrastic/', 'assets/fonts/source/')
+        ):
             return True
-        return name.startswith("runtime/") or name == "emulators/hooks/librgdsbridge.so" or name.startswith("emulators/" + core + "/") or name in ("emulators/" + core + ".ini", "emulators/" + core + ".cfg") or name.startswith("emulators/shaders/") or name.startswith("assets/emulator-profiles/")
+        return name.startswith("runtime/") or name == "emulators/hooks/librgdsbridge.so" or name.startswith(
+            "emulators/" + core + "/"
+        ) or name in ("emulators/" + core + ".ini", "emulators/" + core +
+                      ".cfg") or name.startswith("emulators/shaders/") or name.startswith("assets/emulator-profiles/")
+
     return verify_release(app, dependencies, cached=True)
 
 
 def background_priority():
     """Lowest CPU priority and idle I/O class, so an audit never competes with play."""
-    try:os.nice(19)
-    except OSError:pass
-    if sys.platform != "linux":return
+    try:
+        os.nice(19)
+    except OSError:
+        pass
+    if sys.platform != "linux": return
     try:
         import ctypes, platform
         number = {"aarch64": 30, "arm64": 30, "x86_64": 251}.get(platform.machine())
         if number is not None:
             # ioprio_set(IOPRIO_WHO_PROCESS, self, IOPRIO_CLASS_IDLE << 13)
             ctypes.CDLL(None, use_errno=True).syscall(number, 1, 0, 3 << 13)
-    except (OSError, AttributeError):pass
+    except (OSError, AttributeError):
+        pass
 
 
 def audit(app, force=False, clock=time.time):
@@ -232,8 +269,10 @@ def audit(app, force=False, clock=time.time):
     later without delaying the first frame or a game launch.
     """
     app = Path(app)
-    try:manifest_bytes = (app / "manifest.json").read_bytes()
-    except OSError:return dict(state="unavailable")
+    try:
+        manifest_bytes = (app / "manifest.json").read_bytes()
+    except OSError:
+        return dict(state="unavailable")
     digest = hashlib.sha256(manifest_bytes).hexdigest()
     record = load_verify_cache(app, digest)
     if not record or (not force and clock() - record.get("audited", 0) < AUDIT_INTERVAL_SECONDS):
@@ -268,6 +307,7 @@ def write_pointer(path, value):
     except OSError:
         pass
 
+
 def stop_session(data):
     with activity_lock(data):
         _stop_session_locked(data)
@@ -299,6 +339,7 @@ def _stop_session_locked(data):
                 time.sleep(0.1)
             raise ValueError("Session did not stop. Leave this build active and inspect its log.")
 
+
 def activate(root, build, stop=True):
     if not BUILD_ID.fullmatch(build):
         raise ValueError("Invalid build ID.")
@@ -312,18 +353,21 @@ def activate(root, build, stop=True):
     write_pointer(root / "state/active", build)
     return build
 
+
 def rollback(root, stop=True):
     from contextlib import nullcontext
-    guard=None
-    if (root/'update_guard.py').exists():
+    guard = None
+    if (root / 'update_guard.py').exists():
         from ota import guard_module
-        guard=guard_module(root)
+        guard = guard_module(root)
     with guard.update_lock(root) if guard else nullcontext():
-        if (root/'state/update-pending.json').exists():raise ValueError('An update is already prepared. Install it or discard it first.')
+        if (root / 'state/update-pending.json').exists():
+            raise ValueError('An update is already prepared. Install it or discard it first.')
         previous = read_pointer(root / "state/previous")
         if not previous:
             raise ValueError("No previous development build is available.")
         return activate(root, previous, stop=stop)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -344,12 +388,13 @@ def main():
         background_priority()
         result = audit(args.root / "releases" / build)
         print(json.dumps(result))
-        if result["state"] == "failed":sys.exit(1)
+        if result["state"] == "failed": sys.exit(1)
     else:
         build = args.build or read_pointer(args.root / "state/active")
         if not build:
             raise ValueError("No active build")
         print(json.dumps(verify_release(args.root / "releases" / build), indent=2))
+
 
 if __name__ == "__main__":
     try:

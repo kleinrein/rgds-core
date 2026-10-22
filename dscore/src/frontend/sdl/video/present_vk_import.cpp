@@ -20,7 +20,10 @@ public:
             (std::strcmp(SDL_GetCurrentVideoDriver(), "KMSDRM") == 0 ? "kms" : "dmabuf") + " scanout)";
     sink_.set_gpu_writes(true);
   }
-  ~VkImportPresenter() override { if (!lost_) gpu_->flush(sink_); sink_.set_gpu_writes(false); }
+  ~VkImportPresenter() override {
+    if (!lost_) gpu_->flush(sink_);
+    sink_.set_gpu_writes(false);
+  }
 
   Kind kind() const override { return Kind::Vulkan; }
   Fit fit(SDL_Window* win, int w, int h) override {
@@ -31,17 +34,21 @@ public:
   }
   bool present(const u32* const fb[2], const View* views, int nviews, const Params& p) override {
     GpuPresent::View v[frontend::SCREENS];
-    for (int i = 0; i < nviews && i < frontend::SCREENS; ++i) v[i] = GpuPresent::View{views[i].screen, sdl(views[i].rect), views[i].shown, views[i].blends, views[i].grid};
+    for (int i = 0; i < nviews && i < frontend::SCREENS; ++i)
+      v[i] = GpuPresent::View{views[i].screen, sdl(views[i].rect), views[i].shown, views[i].blends, views[i].grid};
     return gpu_->present(sink_, fb, v, nviews, p.rot, p.lw, p.lh, p.inset_alpha, sdl(p.drawn), p.grid);
   }
   u32* overlay(int lw, int lh) override { return gpu_->overlay(lw, lh); }
-  void flush() override { gpu_->flush(sink_); sink_.flush(); }
+  void flush() override {
+    gpu_->flush(sink_);
+    sink_.flush();
+  }
   void retire() override { gpu_->flush(sink_); }
 
 private:
   ScanoutOut& sink_;
   std::unique_ptr<GpuPresent> gpu_;
-  bool lost_ = false;   // the sink failed to reopen: nothing in flight to hand it
+  bool lost_ = false; // the sink failed to reopen: nothing in flight to hand it
 };
 
 } // namespace

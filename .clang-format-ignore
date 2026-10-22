@@ -1,0 +1,11 @@
+# Third-party and generated C/C++ that must stay byte-for-byte as shipped
+# upstream. clang-format skips these, from tools/format.py and from editors.
+dscore/src/cheevos/rcheevos/**
+dscore/src/core/cart/miniz/**
+dscore/src/net/enet/**
+dscore/src/net/slirp/**
+dscore/src/frontend/sdl/wl/**
+# Generated files: format the generator instead, or the next run undoes it.
+dscore/src/core/bios/freebios_data.cpp
+dscore/src/frontend/sdl/loader_icon.h
+src/launcher/pixel_icons.hpp

@@ -7,17 +7,15 @@
 #include <cstring>
 
 // The directory comes from CMake (DSPERATE_DSI_FONT_DIR), absolute.
-#define DSPERATE_FONT_BLOB(sym, file)          \
-  "\t.balign 4\n"                              \
-  "\t.globl " sym "_begin\n" sym "_begin:\n"    \
-  "\t.incbin \"" DSPERATE_DSI_FONT_DIR "/" file "\"\n" \
+#define DSPERATE_FONT_BLOB(sym, file)                                                                                  \
+  "\t.balign 4\n"                                                                                                      \
+  "\t.globl " sym "_begin\n" sym "_begin:\n"                                                                           \
+  "\t.incbin \"" DSPERATE_DSI_FONT_DIR "/" file "\"\n"                                                                 \
   "\t.globl " sym "_end\n" sym "_end:\n"
-__asm__(
-  "\t.section .rodata.dsperate_dsi_font,\"a\",%progbits\n"
-  DSPERATE_FONT_BLOB("dsperate_dsi_font", "TWLFontTable.dat")
-  DSPERATE_FONT_BLOB("dsperate_dsi_font_cn", "TWLFontTable-cn.dat")
-  DSPERATE_FONT_BLOB("dsperate_dsi_font_kr", "TWLFontTable-kr.dat")
-  "\t.previous\n");
+__asm__("\t.section .rodata.dsperate_dsi_font,\"a\",%progbits\n" DSPERATE_FONT_BLOB("dsperate_dsi_font",
+                                                                                    "TWLFontTable.dat")
+            DSPERATE_FONT_BLOB("dsperate_dsi_font_cn", "TWLFontTable-cn.dat")
+                DSPERATE_FONT_BLOB("dsperate_dsi_font_kr", "TWLFontTable-kr.dat") "\t.previous\n");
 extern "C" const ds::u8 dsperate_dsi_font_begin[], dsperate_dsi_font_end[];
 extern "C" const ds::u8 dsperate_dsi_font_cn_begin[], dsperate_dsi_font_cn_end[];
 extern "C" const ds::u8 dsperate_dsi_font_kr_begin[], dsperate_dsi_font_kr_end[];
@@ -32,7 +30,8 @@ std::vector<u8> builtin_dsi_font(u8 region) {
 
 bool is_builtin_font_signature(const u8 sig[0x80]) {
   // The three tables carry the same marker.
-  return dsperate_dsi_font_end - dsperate_dsi_font_begin >= 0xA0 && std::memcmp(sig, dsperate_dsi_font_begin, 0x80) == 0;
+  return dsperate_dsi_font_end - dsperate_dsi_font_begin >= 0xA0 &&
+         std::memcmp(sig, dsperate_dsi_font_begin, 0x80) == 0;
 }
 
 int font_table_region(const std::vector<u8>& table) {
@@ -42,4 +41,4 @@ int font_table_region(const std::vector<u8>& table) {
   return -1;
 }
 
-}  // namespace ds::io
+} // namespace ds::io

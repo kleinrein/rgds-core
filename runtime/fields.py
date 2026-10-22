@@ -18,8 +18,9 @@ def write_fields(path, fields, durable=True):
     regenerated after a restart, rather than a save or preference record.
     """
     path = Path(path)
-    content = "".join(key + "=" + str(value).replace("\n", " ").replace("\r", " ") + "\n"
-                      for key, value in fields.items())
+    content = "".join(
+        key + "=" + str(value).replace("\n", " ").replace("\r", " ") + "\n" for key, value in fields.items()
+    )
     try:
         if path.read_text() == content:
             return False

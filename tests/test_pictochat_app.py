@@ -16,16 +16,25 @@ class PictoChatAppTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             binary = Path(tmp) / 'app_test'
             flags = shlex.split(subprocess.check_output(['sdl2-config', '--cflags'], text=True))
-            build = subprocess.run(['clang++', '-std=c++17', '-O1', '-g', '-Wall', '-Wextra', '-Werror',
-                                    '-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer', *flags,
-                                    '-I' + str(ROOT / 'src'), str(ROOT / 'tests/pictochat_app_test.cpp'), '-o', str(binary)],
-                                   capture_output=True, text=True)
+            build = subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-O1', '-g', '-Wall', '-Wextra', '-Werror', '-fsanitize=address,undefined',
+                    '-fno-sanitize-recover=all', '-fno-omit-frame-pointer', *flags, '-I' + str(ROOT / 'src'),
+                    str(ROOT / 'tests/pictochat_app_test.cpp'), '-o',
+                    str(binary)
+                ],
+                capture_output=True,
+                text=True
+            )
             self.assertEqual(build.returncode, 0, build.stderr)
-            run = subprocess.run([str(binary), str(ROOT / 'runtime/pictochat_net.py')], capture_output=True, text=True, timeout=120)
+            run = subprocess.run(
+                [str(binary), str(ROOT / 'runtime/pictochat_net.py')], capture_output=True, text=True, timeout=120
+            )
             self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
             self.assertIn('pictochat app: ok', run.stdout)
             # Every key must show a real glyph, not the font's "?" fallback.
-            keys = subprocess.run([str(binary), '--keys'], capture_output=True, text=True, check=True).stdout.split('\n')
+            keys = subprocess.run([str(binary), '--keys'], capture_output=True, text=True,
+                                  check=True).stdout.split('\n')
             font = (ROOT / 'assets/fonts/rounded-24.rgf').read_bytes()
             count = struct.unpack_from('<I', font, 16)[0]
             glyphs = {struct.unpack_from('<I', font, 20 + i * 32)[0] for i in range(count)}

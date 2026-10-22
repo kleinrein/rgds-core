@@ -22,12 +22,14 @@ class DisplayHandoffTests(unittest.TestCase):
         parent, child = socket.socketpair()
         completed = threading.Event()
         errors = []
+
         def prepare():
             try:
                 release_launcher_display(child)
                 completed.set()
             except Exception as error:
                 errors.append(error)
+
         with parent, child:
             worker = threading.Thread(target=prepare)
             worker.start()
@@ -61,11 +63,22 @@ class FeedbackUITests(unittest.TestCase):
             (root / 'preferences.ini').write_text(f'schema=1\nmode={mode}\nfont=rounded\n')
             (root / 'ui.ini').write_text(f'schema=1\nanimations={int(animations)}\ntouch_indicator={int(indicator)}\n')
             screen = root / 'screen.bmp'
-            result = subprocess.run([str(BINARY), '--preview', '--library', '--data', str(root),
-                '--input-script', str(root / 'inputs'), '--seconds', str(seconds),
-                '--screenshot', str(screen), '--state', str(root / 'state'),
-                '--cache-report', str(root / 'report')], cwd=ROOT,
-                env=dict(os.environ, SDL_VIDEODRIVER='dummy'), capture_output=True, text=True, timeout=8)
+            result = subprocess.run(
+                [
+                    str(BINARY), '--preview', '--library', '--data',
+                    str(root), '--input-script',
+                    str(root / 'inputs'), '--seconds',
+                    str(seconds), '--screenshot',
+                    str(screen), '--state',
+                    str(root / 'state'), '--cache-report',
+                    str(root / 'report')
+                ],
+                cwd=ROOT,
+                env=dict(os.environ, SDL_VIDEODRIVER='dummy'),
+                capture_output=True,
+                text=True,
+                timeout=8
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             return screen.read_bytes(), json.loads((root / 'report').read_text()), (root / 'state').read_text()
 
@@ -74,7 +87,10 @@ class FeedbackUITests(unittest.TestCase):
         w, h = struct.unpack_from('<ii', bmp, 18)
         depth = struct.unpack_from('<H', bmp, 28)[0] // 8
         stride = (w * depth + 3) & ~3
-        return b''.join(bmp[offset + (h-1-row)*stride+x*depth:offset + (h-1-row)*stride+(x+width)*depth] for row in range(y,y+height))
+        return b''.join(
+            bmp[offset + (h - 1 - row) * stride + x * depth:offset + (h - 1 - row) * stride + (x + width) * depth]
+            for row in range(y, y + height)
+        )
 
     def test_held_contact_is_visible_then_release_and_focus_loss_clear_it(self):
         base, _, _ = self.exercise(animations=False)

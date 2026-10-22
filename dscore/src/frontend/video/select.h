@@ -29,35 +29,35 @@ bool parse_sink(const std::string& s, Sink& out);
 
 // ---- before SDL_Init ----
 struct BootProbe {
-  std::string sink;                 // video.sink ("" = auto)
-  std::string disp, fbdev;          // deprecated video.disp / video.fbdev: "" | auto | true | on | false | off
-  bool dual_window = false;         // the panel-owning sinks drive one panel only
-  std::string sdl_videodriver;      // $SDL_VIDEODRIVER, "" if unset
-  bool sdl_has_mali = false;        // this SDL2 has a "mali" video driver
-  bool display_env = false;         // $DISPLAY or $WAYLAND_DISPLAY set
-  bool has_dri = false;             // /dev/dri exists
-  bool disp_ok = false;             // DispOut::available()
-  bool fb0_ok = false;              // FbdevOut::available()
+  std::string sink;            // video.sink ("" = auto)
+  std::string disp, fbdev;     // deprecated video.disp / video.fbdev: "" | auto | true | on | false | off
+  bool dual_window = false;    // the panel-owning sinks drive one panel only
+  std::string sdl_videodriver; // $SDL_VIDEODRIVER, "" if unset
+  bool sdl_has_mali = false;   // this SDL2 has a "mali" video driver
+  bool display_env = false;    // $DISPLAY or $WAYLAND_DISPLAY set
+  bool has_dri = false;        // /dev/dri exists
+  bool disp_ok = false;        // DispOut::available()
+  bool fb0_ok = false;         // FbdevOut::available()
 };
 struct BootPlan {
-  Sink panel = Sink::Count;         // Disp or Fbdev when one owns the panel; Count: SDL's window decides
-  Sink want = Sink::Count;          // explicit video.sink among the window sinks (Count = auto)
-  bool headless_driver = false;     // point SDL at its dummy/offscreen driver
-  bool unset_videodriver = false;   // drop SDL_VIDEODRIVER=mali first (it would put EGL on fb0 under us)
-  std::vector<std::string> notes;   // what to tell stderr
+  Sink panel = Sink::Count;       // Disp or Fbdev when one owns the panel; Count: SDL's window decides
+  Sink want = Sink::Count;        // explicit video.sink among the window sinks (Count = auto)
+  bool headless_driver = false;   // point SDL at its dummy/offscreen driver
+  bool unset_videodriver = false; // drop SDL_VIDEODRIVER=mali first (it would put EGL on fb0 under us)
+  std::vector<std::string> notes; // what to tell stderr
 };
 BootPlan plan_boot(const BootProbe& p);
 
 // ---- with a window ----
 struct WindowProbe {
-  Sink want = Sink::Count;          // BootPlan::want
-  std::string video_driver;         // SDL_GetCurrentVideoDriver()
-  std::string dmabuf_env;           // $DS_DMABUF: "0" forbids Kms/Dmabuf, "1" makes their failure fatal
-  std::string scanline_env;         // $DS_SCANLINE_SCALE: "0" forces Renderer, anything else the scanline sinks
+  Sink want = Sink::Count;  // BootPlan::want
+  std::string video_driver; // SDL_GetCurrentVideoDriver()
+  std::string dmabuf_env;   // $DS_DMABUF: "0" forbids Kms/Dmabuf, "1" makes their failure fatal
+  std::string scanline_env; // $DS_SCANLINE_SCALE: "0" forces Renderer, anything else the scanline sinks
 };
 struct WindowPlan {
-  std::vector<Sink> order;          // tried first to last; Renderer always ends it
-  bool required = false;            // DS_DMABUF=1: a failed Kms/Dmabuf fails the open
+  std::vector<Sink> order; // tried first to last; Renderer always ends it
+  bool required = false;   // DS_DMABUF=1: a failed Kms/Dmabuf fails the open
 };
 WindowPlan plan_window(const WindowProbe& p);
 

@@ -26,7 +26,10 @@ bool fastmem_requested() {
 #else
   constexpr bool kDefault = false;
 #endif
-  static const bool on = [] { const char* e = std::getenv("DS_FASTMEM"); return e ? std::atoi(e) != 0 : kDefault; }();
+  static const bool on = [] {
+    const char* e = std::getenv("DS_FASTMEM");
+    return e ? std::atoi(e) != 0 : kDefault;
+  }();
   return on;
 }
 
@@ -52,9 +55,10 @@ int try_memfd() {
 int try_tmpfs(size_t bytes, const char** where) {
   static const char* const dirs[] = {"/dev/shm", "/tmp/shm", "/tmp"};
   for (const char* d : dirs) {
-    struct statfs st {};
+    struct statfs st{};
     if (statfs(d, &st) != 0 || static_cast<long>(st.f_type) != TMPFS_MAGIC_) continue;
-    if (static_cast<u64>(st.f_bavail) * static_cast<u64>(st.f_bsize) < static_cast<u64>(bytes) * 2) continue;   // room, with slack for others
+    if (static_cast<u64>(st.f_bavail) * static_cast<u64>(st.f_bsize) < static_cast<u64>(bytes) * 2)
+      continue; // room, with slack for others
     char path[64];
     std::snprintf(path, sizeof path, "%s/dsperate-guest-XXXXXX", d);
     const int fd = mkostemp(path, O_CLOEXEC);
@@ -75,7 +79,7 @@ std::unique_ptr<HostArena> HostArena::create(size_t bytes) {
   a->fd_ = try_memfd();
   if (a->fd_ >= 0) a->kind_ = "memfd";
   else if ((a->fd_ = try_tmpfs(size, &where)) >= 0) a->kind_ = where;
-  else return nullptr;   // no arena, no views: caller falls back
+  else return nullptr; // no arena, no views: caller falls back
   if (ftruncate(a->fd_, static_cast<off_t>(size)) != 0) return nullptr;
   void* p = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, a->fd_, 0);
   if (p == MAP_FAILED) return nullptr;
@@ -94,7 +98,7 @@ u8* HostArena::take(size_t bytes) {
   if (used_ + n > size_) return nullptr;
   u8* p = base_ + used_;
   used_ += n;
-  return p;   // a fresh tmpfs page reads as zero
+  return p; // a fresh tmpfs page reads as zero
 }
 
 std::unique_ptr<GuestView> GuestView::create(const HostArena& arena, const PageTable& table) {
@@ -107,7 +111,7 @@ std::unique_ptr<GuestView> GuestView::create(const HostArena& arena, const PageT
   v->laid_.assign(pages, Laid{});
   v->moved_.assign(pages, 0);
   v->pending_.reserve(pages);
-  return v;   // nothing laid: fault() grants pages as they are touched
+  return v; // nothing laid: fault() grants pages as they are touched
 }
 
 GuestView::~GuestView() {
@@ -118,7 +122,7 @@ GuestView::~GuestView() {
 // consecutive offsets starting on a 4 KB boundary, outside VRAM.
 GuestView::Laid GuestView::desired(u32 v) const {
   const u32 a0 = v * HOST_PAGE;
-  if ((a0 >> 24) == 0x06) return {};   // VRAM: traps toggle every frame
+  if ((a0 >> 24) == 0x06) return {}; // VRAM: traps toggle every frame
   u32 off[2];
   bool writable = true;
   for (int h = 0; h < 2; ++h) {
@@ -139,8 +143,7 @@ bool GuestView::lay_run(u32 v0, u32 n, const Laid& first) {
   void* const addr = base_ + size_t{v0} * HOST_PAGE;
   const size_t len = size_t{n} * HOST_PAGE;
   void* r;
-  if (!first.off_plus1)
-    r = mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED, -1, 0);
+  if (!first.off_plus1) r = mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED, -1, 0);
   else
     r = mmap(addr, len, PROT_READ | (first.writable ? PROT_WRITE : 0), MAP_SHARED | MAP_FIXED, arena_.fd(),
              static_cast<off_t>(first.off_plus1 - 1));
@@ -178,10 +181,16 @@ bool GuestView::flush() {
     const u32 v0 = pending_[i];
     dirty_[v0] = 0;
     const Laid l0 = laid_[v0];
-    if (!l0.off_plus1) { ++i; continue; }
+    if (!l0.off_plus1) {
+      ++i;
+      continue;
+    }
     const Laid d0 = desired(v0);
     const bool keep0 = same_backing(l0.off_plus1, d0.off_plus1);
-    if (keep0 && (d0.writable || !l0.writable)) { ++i; continue; }   // nothing to take away
+    if (keep0 && (d0.writable || !l0.writable)) {
+      ++i;
+      continue;
+    } // nothing to take away
     u32 n = 1;
     laid_[v0] = keep0 ? Laid{l0.off_plus1, 0} : Laid{};
     if (!keep0 && moved_[v0] < 255) ++moved_[v0];
@@ -210,14 +219,20 @@ bool GuestView::fault(uintptr_t addr) {
   if (a >= SPAN) return false;
   const u32 v0 = static_cast<u32>(a / HOST_PAGE);
   const Laid d0 = desired(v0), l0 = laid_[v0];
-  if (!d0.off_plus1 || (same_backing(l0.off_plus1, d0.off_plus1) && l0.writable >= d0.writable)) return false;   // the table refuses too
-  if (moved_[v0] >= kVolatile) { ++stats_.volatile_refusals; return false; }
+  if (!d0.off_plus1 || (same_backing(l0.off_plus1, d0.off_plus1) && l0.writable >= d0.writable))
+    return false; // the table refuses too
+  if (moved_[v0] >= kVolatile) {
+    ++stats_.volatile_refusals;
+    return false;
+  }
   // Grant a run of consecutive pages too (one mmap, not one fault each).
   constexpr u32 kRun = 256;
   u32 n = 1;
   while (n < kRun && v0 + n < SPAN / HOST_PAGE) {
     const Laid d = desired(v0 + n), l = laid_[v0 + n];
-    if (d.writable != d0.writable || d.off_plus1 != d0.off_plus1 + n * HOST_PAGE || l == d || moved_[v0 + n] >= kVolatile) break;
+    if (d.writable != d0.writable || d.off_plus1 != d0.off_plus1 + n * HOST_PAGE || l == d ||
+        moved_[v0 + n] >= kVolatile)
+      break;
     ++n;
   }
   if (!lay_run(v0, n, d0)) return false;
@@ -227,13 +242,17 @@ bool GuestView::fault(uintptr_t addr) {
 }
 
 bool GuestView::verify(std::string* why) {
-  if (!flush()) { *why = "flush failed"; return false; }
+  if (!flush()) {
+    *why = "flush failed";
+    return false;
+  }
   char buf[160];
   for (u32 v = 0; v < SPAN / HOST_PAGE; ++v) {
     const Laid d = desired(v), l = laid_[v];
     if (!l.off_plus1) continue;
     if (l.off_plus1 != d.off_plus1 || (l.writable && !d.writable)) {
-      std::snprintf(buf, sizeof buf, "view page %08x laid off %x w%d, but the table allows only off %x w%d", v * HOST_PAGE, l.off_plus1, l.writable, d.off_plus1, d.writable);
+      std::snprintf(buf, sizeof buf, "view page %08x laid off %x w%d, but the table allows only off %x w%d",
+                    v * HOST_PAGE, l.off_plus1, l.writable, d.off_plus1, d.writable);
       *why = buf;
       return false;
     }
@@ -244,7 +263,8 @@ bool GuestView::verify(std::string* why) {
       const PageTable& tt = table_;
       const u8* w = tt.write_ptr(a, &code);
       if (t != arena_.base() + (l.off_plus1 - 1) + static_cast<u32>(h) * PAGE_SIZE || (l.writable && (!w || code))) {
-        std::snprintf(buf, sizeof buf, "guest %08x: view serves %s, table read %p write %p code %d", a, l.writable ? "rw" : "r", static_cast<void*>(const_cast<u8*>(t)),
+        std::snprintf(buf, sizeof buf, "guest %08x: view serves %s, table read %p write %p code %d", a,
+                      l.writable ? "rw" : "r", static_cast<void*>(const_cast<u8*>(t)),
                       static_cast<void*>(const_cast<u8*>(w)), code ? 1 : 0);
         *why = buf;
         return false;
@@ -259,7 +279,7 @@ bool GuestView::verify(std::string* why) {
   return true;
 }
 
-#else   // not Linux: no arena, no views
+#else // not Linux: no arena, no views
 
 std::unique_ptr<HostArena> HostArena::create(size_t) { return nullptr; }
 HostArena::~HostArena() = default;

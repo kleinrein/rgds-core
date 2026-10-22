@@ -15,14 +15,26 @@ class GridBackgroundTests(unittest.TestCase):
     def shot(self, background):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            (root/'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\n')
-            (root/'ui.ini').write_text('schema=1\nbackground=%s\nanimations=0\n' % background)
-            result = subprocess.run([str(BINARY), '--preview', '--settings', '--section', 'system', '--data', str(root),
-                                     '--state', str(root/'state'), '--preferences', str(root/'preferences.ini'),
-                                     '--frames', '3', '--screenshot', str(root/'s.bmp')],
-                                    cwd=ROOT, env={**os.environ, 'SDL_VIDEODRIVER': 'dummy'}, capture_output=True, text=True, timeout=20)
-            self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
-            return (root/'s.bmp').read_bytes()
+            (root / 'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\n')
+            (root / 'ui.ini').write_text('schema=1\nbackground=%s\nanimations=0\n' % background)
+            result = subprocess.run(
+                [
+                    str(BINARY), '--preview', '--settings', '--section', 'system', '--data',
+                    str(root), '--state',
+                    str(root / 'state'), '--preferences',
+                    str(root / 'preferences.ini'), '--frames', '3', '--screenshot',
+                    str(root / 's.bmp')
+                ],
+                cwd=ROOT,
+                env={
+                    **os.environ, 'SDL_VIDEODRIVER': 'dummy'
+                },
+                capture_output=True,
+                text=True,
+                timeout=20
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            return (root / 's.bmp').read_bytes()
 
     @staticmethod
     def row(data, y, x0=200, x1=640):
@@ -33,8 +45,9 @@ class GridBackgroundTests(unittest.TestCase):
 
     def test_settings_wear_the_grid_on_both_screens(self):
         grid, plain = self.shot('grid'), self.shot('plain')
-        # Empty paper on the upper screen and above the lower screen's header: grid columns cross the row, plain is one colour.
-        for y in (120, 490):
+        # Empty paper on the upper screen (between the status bar and the note) and above the lower
+        # screen's header: grid columns cross the row, plain is one colour.
+        for y in (56, 490):
             self.assertEqual(len(self.row(plain, y)), 1, y)
             self.assertGreater(len(self.row(grid, y)), 2, y)
 

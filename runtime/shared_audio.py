@@ -19,9 +19,12 @@ def configure(app, env, stock=Path('/etc/asound.conf')):
     config = Path(app) / 'runtime/alsa-rgds.conf'
     try:
         profile = Path(stock).read_text()
-        known = all(value in profile for value in
-                    ('pcm.!default', 'type asym', 'playback.pcm', 'capture.pcm',
-                     'slave.pcm "hw:0,0"', 'name "Playback Path"', 'value "SPK"'))
+        known = all(
+            value in profile for value in (
+                'pcm.!default', 'type asym', 'playback.pcm', 'capture.pcm', 'slave.pcm "hw:0,0"',
+                'name "Playback Path"', 'value "SPK"'
+            )
+        )
         if known and config.is_file():
             env['ALSA_CONFIG_PATH'] = str(config)
             env['RGDS_SHARED_AUDIO'] = '1'
@@ -48,8 +51,10 @@ def mixer_holder(key=MIXER_KEY):
         semget, semctl = libc.semget, libc.semctl
     except (OSError, AttributeError):
         return None
-    semget.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]; semget.restype = ctypes.c_int
-    semctl.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_long]; semctl.restype = ctypes.c_int
+    semget.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]
+    semget.restype = ctypes.c_int
+    semctl.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_long]
+    semctl.restype = ctypes.c_int
     semid = semget(key + os.getuid(), 0, 0)
     if semid < 0:
         return None
@@ -76,8 +81,15 @@ def threads_stopped(pid):
     return True
 
 
-def stop_outside_mixer(process, holder=mixer_holder, settled=threads_stopped, retries=50, delay=.002,
-                       sleep=time.sleep, clock=time.monotonic):
+def stop_outside_mixer(
+    process,
+    holder=mixer_holder,
+    settled=threads_stopped,
+    retries=50,
+    delay=.002,
+    sleep=time.sleep,
+    clock=time.monotonic
+):
     """SIGSTOP a process, but never while it holds the shared mixer semaphore.
 
     A client stopped inside alsa-lib's critical section keeps the semaphore,

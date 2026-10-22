@@ -13,9 +13,9 @@
 
 namespace {
 
-using ds::u8;
 using ds::u16;
 using ds::u32;
+using ds::u8;
 
 const char* kFw = "firmware_test.bin";
 const char* kOvr = "firmware_test.bin.ovr";
@@ -95,7 +95,7 @@ void test_one_field_at_a_time() {
   ds::bios::UserSettings after;
   CHECK(nds.read_user_settings(after));
   CHECK(after.favourite_colour == 2);
-  CHECK(after.nickname == "Setya");      // untouched, and still its own case
+  CHECK(after.nickname == "Setya"); // untouched, and still its own case
   CHECK(after.message == "Keep me");
   CHECK(after.birthday_month == 7);
   CHECK(after.birthday_day == 5);
@@ -118,7 +118,7 @@ void test_one_field_at_a_time() {
   u.nickname = "ABCDEFGHIJKLMNOP";
   CHECK(nds.write_user_settings(ds::NDS::UserField::Nickname, u));
   CHECK(nds.read_user_settings(after));
-  CHECK(after.nickname == "ABCDEFGHIJ");   // ten characters
+  CHECK(after.nickname == "ABCDEFGHIJ"); // ten characters
   CHECK(after.message == "Keep me");
   check_crcs(nds);
 
@@ -176,7 +176,7 @@ void test_sidecar_round_trip() {
     load(nds);
     ds::bios::UserSettings fresh;
     CHECK(nds.read_user_settings(fresh));
-    CHECK(fresh.favourite_colour == 0);      // not until the sidecar is applied
+    CHECK(fresh.favourite_colour == 0); // not until the sidecar is applied
     std::string err;
     CHECK(nds.load_firmware_override(kOvr, err));
     CHECK(nds.read_user_settings(fresh));
@@ -196,7 +196,10 @@ static void test_access_point_stamp() {
   std::vector<u8> fw = bios::generate_firmware_dsi(user, 1, 0x3E);
   const u32 base = (static_cast<u32>(fw[0x20] | (fw[0x21] << 8)) << 3) - 0x400;
   auto slot = [&](int i) { return fw.data() + base + i * 0x100; };
-  auto crc_ok = [&](int i) { const u8* a = slot(i); return bios::crc16(a, 0xFE, 0) == static_cast<u16>(a[0xFE] | (a[0xFF] << 8)); };
+  auto crc_ok = [&](int i) {
+    const u8* a = slot(i);
+    return bios::crc16(a, 0xFE, 0) == static_cast<u16>(a[0xFE] | (a[0xFF] << 8));
+  };
   // A generated image already has it in slot 0, with the DSi's MTU.
   CHECK(bios::stamp_access_point(fw) == 0);
   CHECK(std::string(reinterpret_cast<const char*>(slot(0) + 0x40)) == bios::kAccessPointSsid);
@@ -205,7 +208,8 @@ static void test_access_point_stamp() {
   std::memset(slot(0) + 0x40, 0, 32);
   std::strcpy(reinterpret_cast<char*>(slot(0) + 0x40), "HomeNet");
   const u16 c0 = bios::crc16(slot(0), 0xFE, 0);
-  slot(0)[0xFE] = static_cast<u8>(c0); slot(0)[0xFF] = static_cast<u8>(c0 >> 8);
+  slot(0)[0xFE] = static_cast<u8>(c0);
+  slot(0)[0xFF] = static_cast<u8>(c0 >> 8);
   std::memset(slot(1), 0xFF, 0x100);
   CHECK(bios::stamp_access_point(fw) == 1);
   CHECK(std::string(reinterpret_cast<const char*>(slot(0) + 0x40)) == "HomeNet");

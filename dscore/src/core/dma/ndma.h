@@ -5,7 +5,9 @@
 
 #include <array>
 
-namespace ds { struct NDS; }
+namespace ds {
+struct NDS;
+}
 
 namespace ds::dma {
 
@@ -21,14 +23,14 @@ public:
   template <class S> void sync_state(S& s);
 
   // Register file, 0x04004100-0x040041EF (both CPUs, each its own).
-  u32  read(Cpu cpu, u32 addr) const;
+  u32 read(Cpu cpu, u32 addr) const;
   void write(Cpu cpu, u32 addr, u32 v);
 
   // Start modes in NDMA numbering (old DMA modes translate through
   // Dma::ndma_mode). ARM7 channels carry 0x20.
   static constexpr u32 MODE_IMMEDIATE = 0x10;
-  void check(Cpu cpu, u32 mode);     // start channels waiting on `mode`
-  void stop(Cpu cpu, u32 mode);      // clear the enable of channels in `mode`
+  void check(Cpu cpu, u32 mode); // start channels waiting on `mode`
+  void stop(Cpu cpu, u32 mode);  // clear the enable of channels in `mode`
   bool in_mode(Cpu cpu, u32 mode) const;
   bool any_running(Cpu cpu) const { return running_[cpu == Cpu::ARM9 ? 0 : 1] != 0; }
 
@@ -36,22 +38,23 @@ public:
   // the cycles consumed.
   u32 run(Cpu cpu, u32 budget);
   void set_clock9_shift(u32 s) { shift9_ = s; }
-  u32  run_base_ = 0;                 // see Dma::run_base_
+  u32 run_base_ = 0; // see Dma::run_base_
 
 private:
   struct Channel {
-    Cpu cpu; int num;
+    Cpu cpu;
+    int num;
     u32 src = 0, dst = 0, total = 0, block = 0, subblock_timer = 0, fill = 0, cnt = 0;
     u32 cur_src = 0, cur_dst = 0;
     s32 src_inc = 1, dst_inc = 1;
     u32 start_mode = 0;
     u32 rem_count = 0, iter_count = 0, total_rem = 0;
-    u32 running = 0;          // 0 idle, 1 running, 2 running (burst start)
+    u32 running = 0; // 0 idle, 1 running, 2 running (burst start)
     bool in_progress = false;
   };
   NDS& nds_;
-  u32 gcr_[2] = {0, 0};      // 0x04004100 per CPU
-  u8  running_[2] = {0, 0};
+  u32 gcr_[2] = {0, 0}; // 0x04004100 per CPU
+  u8 running_[2] = {0, 0};
   u32 shift9_ = 2;
   std::array<Channel, 8> ch_;
   Channel& channel(Cpu cpu, int n) { return ch_[static_cast<int>(cpu) * 4 + n]; }
@@ -59,7 +62,7 @@ private:
   void write_cnt(Channel& c, u32 v);
   void start(Channel& c);
   void set_running(Channel& c, u32 v);
-  u32  run_channel(Channel& c, u32 budget);
+  u32 run_channel(Channel& c, u32 budget);
   void finished(Channel& c);
 };
 

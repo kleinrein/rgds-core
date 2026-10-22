@@ -30,9 +30,7 @@ namespace ds::jit {
 constexpr u32 R_BUDGET = 9, R_PT = 10, R_CTX = 11, R_FN = 12, R_SP = 13, R_LR = 14, R_PC = 15;
 constexpr u32 SCRATCH0 = 0, SCRATCH1 = 1, SCRATCH2 = 2, SCRATCH3 = 3, SCRATCH4 = 12;
 
-inline constexpr u32 pinned_host(u32 guest) {
-  return guest < 4 ? 4 + guest : guest == 13 ? 8 : 0xFFu;
-}
+inline constexpr u32 pinned_host(u32 guest) { return guest < 4 ? 4 + guest : guest == 13 ? 8 : 0xFFu; }
 constexpr u32 PINNED_MASK = 0xFu | (1u << 13);
 
 } // namespace ds::jit

@@ -29,14 +29,27 @@ bool in_idle_loop(CpuContext& cpu, IdlePorts ports = IdlePorts::All);
 void invalidate_idle_loops();
 
 // Diagnostics (DS_PROFILE): how the analysis is landing.
-enum class IdleReject : u8 { None, Thumb, Fetch, NoBackEdge, TooLong, Store, LoadForm, BadInstr, PcWrite, Carried, NoLoad, Mmio };
+enum class IdleReject : u8 {
+  None,
+  Thumb,
+  Fetch,
+  NoBackEdge,
+  TooLong,
+  Store,
+  LoadForm,
+  BadInstr,
+  PcWrite,
+  Carried,
+  NoLoad,
+  Mmio
+};
 const char* idle_reject_name(IdleReject r);
 IdleReject idle_loop_last_reject();
 
 struct IdleLoopStats {
   u64 queries, hits, analyses;
-  u64 by_reason[12];   // indexed by IdleReject
+  u64 by_reason[12]; // indexed by IdleReject
 };
 const IdleLoopStats& idle_loop_stats();
 
-}  // namespace ds::cpu
+} // namespace ds::cpu

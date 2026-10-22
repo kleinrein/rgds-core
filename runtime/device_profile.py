@@ -51,5 +51,6 @@ def stock_environment(env):
         if not inputs['touch']:
             env['RGDS_TOUCH_DEV'] = 'none'
         env['RGDS_INPUT_AMBIGUOUS'] = '1' if (
-            not inputs['touch'] or not inputs['keys'] or inputs['touch_ambiguous'] or inputs['keys_ambiguous']) else '0'
+            not inputs['touch'] or not inputs['keys'] or inputs['touch_ambiguous'] or inputs['keys_ambiguous']
+        ) else '0'
     return env

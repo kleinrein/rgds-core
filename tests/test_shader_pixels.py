@@ -13,91 +13,147 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def graphics_libraries():
-    egl=os.environ.get('RGDS_TEST_EGL_LIBRARY')
-    gles=os.environ.get('RGDS_TEST_GLES_LIBRARY')
-    if egl and gles:return egl,gles
-    swift=Path.home()/'Library/Android/sdk/emulator/lib64/gles_angle'
-    if (swift/'libswiftshader_libEGL.dylib').is_file():
-        return str(swift/'libswiftshader_libEGL.dylib'),str(swift/'libswiftshader_libGLESv2.dylib')
-    return ctypes.util.find_library('EGL'),ctypes.util.find_library('GLESv2')
+    egl = os.environ.get('RGDS_TEST_EGL_LIBRARY')
+    gles = os.environ.get('RGDS_TEST_GLES_LIBRARY')
+    if egl and gles: return egl, gles
+    swift = Path.home() / 'Library/Android/sdk/emulator/lib64/gles_angle'
+    if (swift / 'libswiftshader_libEGL.dylib').is_file():
+        return str(swift / 'libswiftshader_libEGL.dylib'), str(swift / 'libswiftshader_libGLESv2.dylib')
+    return ctypes.util.find_library('EGL'), ctypes.util.find_library('GLESv2')
 
 
-@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config') and all(graphics_libraries()),'A host EGL/GLES2 driver and C++/SDL headers are required')
+@unittest.skipUnless(
+    shutil.which('clang++') and shutil.which('sdl2-config') and all(graphics_libraries()),
+    'A host EGL/GLES2 driver and C++/SDL headers are required'
+)
 class ShaderPixelTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.temp=tempfile.TemporaryDirectory();cls.folder=Path(cls.temp.name)
-        cls.library=cls.folder/('driver.dylib' if os.uname().sysname=='Darwin' else 'driver.so')
-        flags=subprocess.check_output(['sdl2-config','--cflags'],text=True).split()
-        cls.flags=['clang++','-std=c++17','-O1',*flags,'-I'+str(ROOT/'src')]
-        result=subprocess.run([*cls.flags,'-shared','-fPIC',str(ROOT/'tests/fixtures/shader_gles_driver.cpp'),'-o',str(cls.library)],capture_output=True,text=True)
-        if result.returncode:raise AssertionError(result.stderr)
-        cls.binary=cls.folder/'shader-pixels'
-        source=cls.folder/'pixels.cpp';source.write_text(CPP)
-        result=subprocess.run([*cls.flags,str(source),str(cls.library),'-o',str(cls.binary)],capture_output=True,text=True)
-        if result.returncode:raise AssertionError(result.stderr)
-        egl,gles=graphics_libraries()
-        cls.environment=dict(os.environ,RGDS_TEST_EGL_LIBRARY=egl,RGDS_TEST_GLES_LIBRARY=gles,RGDS_SDL_LIBRARY=str(cls.library),RGDS_SHADER_DIR=str(ROOT/'vendor/engines/shaders'),EGL_PLATFORM='surfaceless')
-        merged=cls.folder/'shaders';shutil.copytree(cls.environment['RGDS_SHADER_DIR'],merged)
-        for shader in (ROOT/'assets/shaders').glob('*.dsd'):shutil.copyfile(shader,merged/shader.name)
-        cls.environment['RGDS_SHADER_DIR']=str(merged)
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.folder = Path(cls.temp.name)
+        cls.library = cls.folder / ('driver.dylib' if os.uname().sysname == 'Darwin' else 'driver.so')
+        flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
+        cls.flags = ['clang++', '-std=c++17', '-O1', *flags, '-I' + str(ROOT / 'src')]
+        result = subprocess.run(
+            [
+                *cls.flags, '-shared', '-fPIC',
+                str(ROOT / 'tests/fixtures/shader_gles_driver.cpp'), '-o',
+                str(cls.library)
+            ],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode: raise AssertionError(result.stderr)
+        cls.binary = cls.folder / 'shader-pixels'
+        source = cls.folder / 'pixels.cpp'
+        source.write_text(CPP)
+        result = subprocess.run(
+            [*cls.flags, str(source), str(cls.library), '-o',
+             str(cls.binary)], capture_output=True, text=True
+        )
+        if result.returncode: raise AssertionError(result.stderr)
+        egl, gles = graphics_libraries()
+        cls.environment = dict(
+            os.environ,
+            RGDS_TEST_EGL_LIBRARY=egl,
+            RGDS_TEST_GLES_LIBRARY=gles,
+            RGDS_SDL_LIBRARY=str(cls.library),
+            RGDS_SHADER_DIR=str(ROOT / 'vendor/engines/shaders'),
+            EGL_PLATFORM='surfaceless'
+        )
+        merged = cls.folder / 'shaders'
+        shutil.copytree(cls.environment['RGDS_SHADER_DIR'], merged)
+        for shader in (ROOT / 'assets/shaders').glob('*.dsd'):
+            shutil.copyfile(shader, merged / shader.name)
+        cls.environment['RGDS_SHADER_DIR'] = str(merged)
 
     @classmethod
-    def tearDownClass(cls):cls.temp.cleanup()
+    def tearDownClass(cls):
+        cls.temp.cleanup()
 
     def test_all_presets_compile_link_and_change_real_pixels_on_every_core(self):
-        for core in ('nnddss','drastic','dsperate','melonds'):
-            with self.subTest(core=core),tempfile.TemporaryDirectory() as folder:
-                result=subprocess.run([str(self.binary),folder,core],env=self.environment,capture_output=True,text=True,timeout=30)
-                if result.returncode==77:self.skipTest('Host EGL driver cannot create a pbuffer')
-                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-                self.assertIn('presets=20 pixels=verified',result.stdout)
+        for core in ('nnddss', 'drastic', 'dsperate', 'melonds'):
+            with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
+                result = subprocess.run(
+                    [str(self.binary), folder, core], env=self.environment, capture_output=True, text=True, timeout=30
+                )
+                if result.returncode == 77: self.skipTest('Host EGL driver cannot create a pbuffer')
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn('presets=20 pixels=verified', result.stdout)
 
     def test_enhanced_rgds_panel_filters_actual_640_by_480_pixels(self):
         with tempfile.TemporaryDirectory() as folder:
-            result=subprocess.run([str(self.binary),folder,'dsperate','enhanced'],
-                env=dict(self.environment,RGDS_OWN_FF_HUD='1',RGDS_ACTIVE_SCALE='5'),
-                capture_output=True,text=True,timeout=30)
-            if result.returncode==77:self.skipTest('Host EGL driver cannot create a pbuffer')
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            self.assertIn('enhanced panel pixels=verified',result.stdout)
+            result = subprocess.run(
+                [str(self.binary), folder, 'dsperate', 'enhanced'],
+                env=dict(self.environment, RGDS_OWN_FF_HUD='1', RGDS_ACTIVE_SCALE='5'),
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            if result.returncode == 77: self.skipTest('Host EGL driver cannot create a pbuffer')
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('enhanced panel pixels=verified', result.stdout)
 
     def test_classic_lcd_grids_clearly_modulate_a_flat_grey_640_by_480_panel(self):
         # The community grids were tuned for 1080p. On the handheld's 2.5x panel
         # they must still read as a grid: at least about 20 % column modulation
         # of a flat mid grey, while the mean brightness stays above three quarters.
         with tempfile.TemporaryDirectory() as folder:
-            result=subprocess.run([str(self.binary),folder,'drastic','grid'],env=self.environment,capture_output=True,text=True,timeout=60)
-            if result.returncode==77:self.skipTest('Host EGL driver cannot create a pbuffer')
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            self.assertIn('grid amplitudes=measured',result.stdout)
-            measured={int(m.group(1)):tuple(float(m.group(i)) for i in (2,3,4)) for m in re.finditer(r'^grid (\d+) column=([\d.]+) row=([\d.]+) mean=([\d.]+)$',result.stdout,re.M)}
-            for selected in (2,6,7,8):  # lcd1x: a vertical LCD grid with faint scanlines.
+            result = subprocess.run(
+                [str(self.binary), folder, 'drastic', 'grid'],
+                env=self.environment,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            if result.returncode == 77: self.skipTest('Host EGL driver cannot create a pbuffer')
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('grid amplitudes=measured', result.stdout)
+            measured = {
+                int(m.group(1)): tuple(float(m.group(i)) for i in (2, 3, 4))
+                for m in re.finditer(r'^grid (\d+) column=([\d.]+) row=([\d.]+) mean=([\d.]+)$', result.stdout, re.M)
+            }
+            for selected in (2, 6, 7, 8):  # lcd1x: a vertical LCD grid with faint scanlines.
                 with self.subTest(preset=selected):
-                    column,row,mean=measured[selected];self.assertGreaterEqual(column,20);self.assertGreaterEqual(row,5);self.assertGreaterEqual(mean,80 if selected==2 else 65)
-            for selected in (3,12,13,14):  # zfast: a square grid.
+                    column, row, mean = measured[selected]
+                    self.assertGreaterEqual(column, 20)
+                    self.assertGreaterEqual(row, 5)
+                    self.assertGreaterEqual(mean, 80 if selected == 2 else 65)
+            for selected in (3, 12, 13, 14):  # zfast: a square grid.
                 with self.subTest(preset=selected):
-                    column,row,mean=measured[selected];self.assertGreaterEqual(column,20);self.assertGreaterEqual(row,20);self.assertGreaterEqual(mean,80 if selected==3 else 65)
-            for selected in (4,5):  # Colour-only presets leave a flat image flat.
-                with self.subTest(preset=selected):self.assertLess(measured[selected][0],1)
+                    column, row, mean = measured[selected]
+                    self.assertGreaterEqual(column, 20)
+                    self.assertGreaterEqual(row, 20)
+                    self.assertGreaterEqual(mean, 80 if selected == 3 else 65)
+            for selected in (4, 5):  # Colour-only presets leave a flat image flat.
+                with self.subTest(preset=selected):
+                    self.assertLess(measured[selected][0], 1)
 
     def test_compile_failure_restores_previous_selection_and_is_cached(self):
         with tempfile.TemporaryDirectory() as folder:
-            pack=Path(folder)/'shaders';shutil.copytree(self.environment['RGDS_SHADER_DIR'],pack)
-            bad=pack/'lcd1x.dsd';bad.write_text(bad.read_text().replace('void main()', 'void broken_main(',1))
-            for core in ('nnddss','drastic','dsperate','melonds'):
-                with self.subTest(core=core),tempfile.TemporaryDirectory() as control:
-                    result=subprocess.run([str(self.binary),control,core,'failure'],env=dict(self.environment,RGDS_SHADER_DIR=str(pack)),capture_output=True,text=True,timeout=30)
-                    if result.returncode==77:self.skipTest('Host EGL driver cannot create a pbuffer')
-                    self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-                    self.assertIn('compile failure preserved previous pixels',result.stdout)
+            pack = Path(folder) / 'shaders'
+            shutil.copytree(self.environment['RGDS_SHADER_DIR'], pack)
+            bad = pack / 'lcd1x.dsd'
+            bad.write_text(bad.read_text().replace('void main()', 'void broken_main(', 1))
+            for core in ('nnddss', 'drastic', 'dsperate', 'melonds'):
+                with self.subTest(core=core), tempfile.TemporaryDirectory() as control:
+                    result = subprocess.run(
+                        [str(self.binary), control, core, 'failure'],
+                        env=dict(self.environment, RGDS_SHADER_DIR=str(pack)),
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+                    if result.returncode == 77: self.skipTest('Host EGL driver cannot create a pbuffer')
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn('compile failure preserved previous pixels', result.stdout)
 
 
-CPP=r'''
+CPP = r'''
 #define RGDS_BRIDGE_TESTS
 #include "platform/emulator_bridge.cpp"
 #include <algorithm>
@@ -253,5 +309,4 @@ int main(int argc,char** argv){
 }
 '''
 
-
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

@@ -9,10 +9,10 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 BINARY = ROOT / 'build/host/rgds-launcher'
-RED, BLUE = (251, 0, 24), (0, 89, 243)          # DS colours 2 and 11
-INK_BLUE = (35, 110, 210)                       # ink 5
-OPEN = '100 key A\n160 key-up A\n300 key A\n360 key-up A\n'      # open PictoChat from Home, join Chat Room A
-SEND = (603, 271)                         # beside the keyboard, as on the DS
+RED, BLUE = (251, 0, 24), (0, 89, 243)  # DS colours 2 and 11
+INK_BLUE = (35, 110, 210)  # ink 5
+OPEN = '100 key A\n160 key-up A\n300 key A\n360 key-up A\n'  # open PictoChat from Home, join Chat Room A
+SEND = (603, 271)  # beside the keyboard, as on the DS
 
 
 def free_port():
@@ -53,7 +53,9 @@ class PictoChatUiTests(unittest.TestCase):
         (folder / 'pictochat.ini').write_text('name=%s\ncolour=%s\n' % (name, colour))
         (folder / 'state').write_text('1 0 0 ""\nhome 4\n')
         (folder / 'preferences.ini').write_text('schema=1\nmode=%s\nfont=rounded\n' % mode)
-        (folder / 'ui.ini').write_text('schema=1\nhome_layout=carousel\nbackground=plain\n'+ui)   # the carousel home with the PictoChat tile
+        (folder / 'ui.ini').write_text(
+            'schema=1\nhome_layout=carousel\nbackground=plain\n' + ui
+        )  # the carousel home with the PictoChat tile
         (folder / 'keys').write_text(script)
         env = dict(os.environ, SDL_VIDEODRIVER='dummy')
         if port:
@@ -61,10 +63,22 @@ class PictoChatUiTests(unittest.TestCase):
         if arguments:
             env['RGDS_PICTOCHAT_ARGS'] = arguments
         bmp = folder / 'screen.bmp'
-        process = subprocess.Popen([str(BINARY), '--preview', '--home', '--data', str(folder), '--state', str(folder / 'state'),
-                                    '--preferences', str(folder / 'preferences.ini'), '--input-script', str(folder / 'keys'),
-                                    '--seconds', str(seconds), '--screenshot', str(bmp)], cwd=ROOT, env=env,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        process = subprocess.Popen(
+            [
+                str(BINARY), '--preview', '--home', '--data',
+                str(folder), '--state',
+                str(folder / 'state'), '--preferences',
+                str(folder / 'preferences.ini'), '--input-script',
+                str(folder / 'keys'), '--seconds',
+                str(seconds), '--screenshot',
+                str(bmp)
+            ],
+            cwd=ROOT,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
         return folder, process, bmp
 
     def finish(self, handle):
@@ -94,14 +108,21 @@ class PictoChatUiTests(unittest.TestCase):
     def test_lobby_then_room_then_a_drawn_and_typed_message_is_sent_and_the_pad_emptied(self):
         script = OPEN + tap(*swatch(5), 450) + stroke((120, 70), (440, 90), 500) + '700 text Hello!\n' + tap(*SEND, 900)
         folder, data = self.run_one('Anna', 2, script)
-        self.assertGreater(self.count(data, RED, *self.BUBBLE), 100, "the message is in a bubble of the sender's colour")
+        self.assertGreater(
+            self.count(data, RED, *self.BUBBLE), 100, "the message is in a bubble of the sender's colour"
+        )
         self.assertGreater(self.count(data, INK_BLUE, 80, 356, 560, 460), 40, 'drawn in the ink that was chosen')
-        self.assertGreater(self.count(data, (255, 255, 255), 60, 534, 590, 634), 530 * 100 * .85, 'the pad is empty again after sending')   # the enlarged pad
+        self.assertGreater(
+            self.count(data, (255, 255, 255), 60, 534, 590, 634), 530 * 100 * .85,
+            'the pad is empty again after sending'
+        )  # the enlarged pad
 
     def test_colour_and_name_are_chosen_on_one_screen_and_remembered(self):
         # Lobby -> your profile -> clear the field, type, pick DS Blue, Done.
-        script = ('100 key A\n160 key-up A\n' + tap(320, 384, 300) + tap(588, 58, 500) + '700 text Mia\n'
-                  + tap(14 + 12 * 36 + 16, 132, 900) + tap(548, 452, 1100))
+        script = (
+            '100 key A\n160 key-up A\n' + tap(320, 384, 300) + tap(588, 58, 500) + '700 text Mia\n' +
+            tap(14 + 12 * 36 + 16, 132, 900) + tap(548, 452, 1100)
+        )
         folder, _ = self.run_one('Anna', 'auto', script)
         saved = (folder / 'pictochat.ini').read_text()
         self.assertIn('name=Mia\n', saved)
@@ -116,7 +137,7 @@ class PictoChatUiTests(unittest.TestCase):
         _, plain = self.run_one('Anna', 'auto', OPEN)
         _, red = self.run_one('Bea', 'auto', OPEN, ui='accent=2\n')
         _, chosen = self.run_one('Cleo', 11, OPEN, ui='accent=2\n')
-        send = (14, 480 + 66)   # the pen button
+        send = (14, 480 + 66)  # the pen button
         r, g, b = self.pixel(red, *send)
         self.assertGreater(r, g + 60, 'a red accent dresses the pad red')
         self.assertNotEqual(self.pixel(plain, *send), self.pixel(red, *send))
@@ -136,23 +157,35 @@ class PictoChatUiTests(unittest.TestCase):
         self.assertGreater(self.count(a_screen, RED, *self.LOG), 100, 'and still her own message')
 
     def test_the_scrollbar_thumb_moves_when_the_log_is_scrolled_back(self):
-        sends = ''.join('%d text %s\n' % (500 + i * 600, word) + tap(*SEND, 600 + i * 600) for i, word in enumerate(['One', 'Two', 'Three', 'Four']))
+        sends = ''.join(
+            '%d text %s\n' % (500 + i * 600, word) + tap(*SEND, 600 + i * 600)
+            for i, word in enumerate(['One', 'Two', 'Three', 'Four'])
+        )
         _, newest = self.run_one('Anna', 2, OPEN + sends, 3.6)
         up = tap(603, 326, 3000) + tap(603, 326, 3150)
         _, older = self.run_one('Bea', 2, OPEN + sends + up, 4.4)
 
-        def thumb_top(data):   # the thumb is drawn in the pad's colour, in a track at x 24-36
-            rows = [y for y in range(130, 386) if self.pixel(data, 30, y) == RED]   # the glossy thumb, in the pad's colour
+        def thumb_top(data):  # the thumb is drawn in the pad's colour, in a track at x 24-36
+            rows = [
+                y for y in range(130, 386) if self.pixel(data, 30, y) == RED
+            ]  # the glossy thumb, in the pad's colour
             return min(rows) if rows else None
+
         self.assertIsNotNone(thumb_top(newest))
         self.assertLess(thumb_top(older), thumb_top(newest) - 6, 'scrolling back moves the thumb up the track')
 
     def test_the_shoulder_buttons_scroll_the_log_since_the_dpad_belongs_to_the_keyboard(self):
-        sends = ''.join('%d text %s\n' % (500 + i * 600, word) + tap(*SEND, 600 + i * 600) for i, word in enumerate(['One', 'Two', 'Three', 'Four']))
+        sends = ''.join(
+            '%d text %s\n' % (500 + i * 600, word) + tap(*SEND, 600 + i * 600)
+            for i, word in enumerate(['One', 'Two', 'Three', 'Four'])
+        )
 
         def thumb_top(data):
-            rows = [y for y in range(130, 386) if self.pixel(data, 30, y) == RED]   # the glossy thumb, in the pad's colour
+            rows = [
+                y for y in range(130, 386) if self.pixel(data, 30, y) == RED
+            ]  # the glossy thumb, in the pad's colour
             return min(rows) if rows else None
+
         _, newest = self.run_one('Anna', 2, OPEN + sends, 3.6)
         # L (button 4) steps to older messages; R (button 5) steps back.
         step = '3000 joy-down 4\n3040 joy-up 4\n'
@@ -168,7 +201,9 @@ class PictoChatUiTests(unittest.TestCase):
         # R2 (button 11) steps to the next ink: five steps from the first reach ink 5, the blue.
         steps = ''.join('%d joy-down 11\n%d joy-up 11\n' % (400 + i * 40, 420 + i * 40) for i in range(5))
         _, data = self.run_one('Anna', 2, OPEN + steps + stroke((120, 70), (440, 90), 800) + tap(*SEND, 1100))
-        self.assertGreater(self.count(data, INK_BLUE, 80, 356, 560, 460), 40, 'the message is written in the ink the triggers chose')
+        self.assertGreater(
+            self.count(data, INK_BLUE, 80, 356, 560, 460), 40, 'the message is written in the ink the triggers chose'
+        )
 
     def test_a_controller_can_type_on_the_shared_keyboard(self):
         # Down then Right moves from the first key to q; A (button 0) presses it; Start (button 7) sends.
@@ -195,8 +230,7 @@ class PictoChatUiTests(unittest.TestCase):
         # Home again: no pad, so neither the Pen nor the Send button (accent blue in a room) is there.
         self.assertNotEqual(self.pixel(data, 40, 480 + 40), (35, 110, 174))
         self.assertNotEqual(self.pixel(data, SEND[0], 480 + 40), (35, 110, 174))
-        self.assertNotEqual(self.pixel(data, 330, 480 + 150), (255, 255, 255))   # and the pad's paper is gone
-
+        self.assertNotEqual(self.pixel(data, 330, 480 + 150), (255, 255, 255))  # and the pad's paper is gone
 
     GESTURES = 'schema=1\ngestures=1\n'
 
@@ -204,7 +238,9 @@ class PictoChatUiTests(unittest.TestCase):
     def swipe(start, end, at):
         """An edge swipe: down on the edge, a few moves, release."""
         (x0, y0), (x1, y1) = start, end
-        moves = ''.join('%d drag %d %d\n' % (at + i * 15, x0 + (x1 - x0) * i // 4, y0 + (y1 - y0) * i // 4) for i in range(1, 5))
+        moves = ''.join(
+            '%d drag %d %d\n' % (at + i * 15, x0 + (x1 - x0) * i // 4, y0 + (y1 - y0) * i // 4) for i in range(1, 5)
+        )
         return '%d tap %d %d\n' % (at, x0, y0) + moves + '%d release\n' % (at + 90)
 
     def assert_home(self, folder, data):
@@ -212,16 +248,20 @@ class PictoChatUiTests(unittest.TestCase):
         self.assertNotEqual(self.pixel(data, SEND[0], 480 + 40), (35, 110, 174))
         self.assertNotEqual(self.pixel(data, 330, 480 + 150), (255, 255, 255))
 
-    LOBBY = '100 key A\n160 key-up A\n'      # open PictoChat from Home; the room picker
+    LOBBY = '100 key A\n160 key-up A\n'  # open PictoChat from Home; the room picker
 
     def assert_in_room(self, data):
-        self.assertEqual(self.pixel(data, 330, 480 + 150), (255, 255, 255), "still in the room: the pad's paper is there")
+        self.assertEqual(
+            self.pixel(data, 330, 480 + 150), (255, 255, 255), "still in the room: the pad's paper is there"
+        )
 
     def test_swiping_in_from_the_left_in_the_room_picker_goes_home(self):
         self.assert_home(*self.run_one('Anna', 2, self.LOBBY + self.swipe((4, 300), (160, 300), 400), ui=self.GESTURES))
 
     def test_swiping_up_from_the_bottom_in_the_room_picker_goes_home(self):
-        self.assert_home(*self.run_one('Anna', 2, self.LOBBY + self.swipe((320, 474), (320, 330), 400), ui=self.GESTURES))
+        self.assert_home(
+            *self.run_one('Anna', 2, self.LOBBY + self.swipe((320, 474), (320, 330), 400), ui=self.GESTURES)
+        )
 
     def test_a_tap_on_a_gesture_edge_is_still_a_tap(self):
         # The room picker's Back button reaches the bottom edge; a tap there leaves without a swipe.

@@ -42,17 +42,17 @@ public:
   static constexpr int RING = 8;
 
   struct Params {
-    double band_ns = 2.5e6;        // margin between the swap and its tick, to begin with
-    double band_min_ns = 1.5e6;    // the band never decays below this
-    double band_max_ns = 8.0e6;    // nor grows above it
-    double band_bump_ns = 0.5e6;   // what a missed tick adds
-    double band_decay = 1.0 - 1.0 / 4096.0;   // per flip; halves in ~47 s at 60 Hz
-    double period_alpha = 1.0 / 32.0;         // period EMA weight
-    double period_tol = 0.02;      // a gap this close to the EMA counts as consistent
-    int settle_flips = 8;          // consistent gaps before the lock is trusted
-    double work_alpha = 1.0 / 16.0;           // start-to-swap EMA weight (mean and deviation)
-    double work_spread = 2.0;      // deviations above the mean the deadline allows for
-    double work_cap_ns = 4.0e6;    // ... but never more than this
+    double band_ns = 2.5e6;                 // margin between the swap and its tick, to begin with
+    double band_min_ns = 1.5e6;             // the band never decays below this
+    double band_max_ns = 8.0e6;             // nor grows above it
+    double band_bump_ns = 0.5e6;            // what a missed tick adds
+    double band_decay = 1.0 - 1.0 / 4096.0; // per flip; halves in ~47 s at 60 Hz
+    double period_alpha = 1.0 / 32.0;       // period EMA weight
+    double period_tol = 0.02;               // a gap this close to the EMA counts as consistent
+    int settle_flips = 8;                   // consistent gaps before the lock is trusted
+    double work_alpha = 1.0 / 16.0;         // start-to-swap EMA weight (mean and deviation)
+    double work_spread = 2.0;               // deviations above the mean the deadline allows for
+    double work_cap_ns = 4.0e6;             // ... but never more than this
   };
 
   PhaseLock() : PhaseLock(Params()) {}
@@ -80,9 +80,14 @@ public:
     const Start* e = nullptr;
     for (const Start& c : ring_) {
       if (!c.start || c.start >= ready) continue;
-      if (!e) { e = &c; continue; }
+      if (!e) {
+        e = &c;
+        continue;
+      }
       if (work_ema_ > 0.0) {
-        if (std::fabs(static_cast<double>(ready - c.start) - work_ema_) < std::fabs(static_cast<double>(ready - e->start) - work_ema_)) e = &c;
+        if (std::fabs(static_cast<double>(ready - c.start) - work_ema_) <
+            std::fabs(static_cast<double>(ready - e->start) - work_ema_))
+          e = &c;
       } else if (c.start > e->start) e = &c;
     }
     if (!e) return;
@@ -97,13 +102,15 @@ public:
     // then start earlier, be held more, and the estimate run away.
     if (wait_ns < 100'000) {
       const double w = static_cast<double>(ready - e->start);
-      if (work_ema_ <= 0.0) { work_ema_ = w; work_dev_ = 0.0; }
-      else {
+      if (work_ema_ <= 0.0) {
+        work_ema_ = w;
+        work_dev_ = 0.0;
+      } else {
         work_ema_ += (w - work_ema_) * p_.work_alpha;
         work_dev_ += (std::fabs(w - work_ema_) - work_dev_) * p_.work_alpha;
       }
     }
-    if (!e->target || !locked()) return;   // a free-running frame: no tick was aimed at
+    if (!e->target || !locked()) return; // a free-running frame: no tick was aimed at
     // Its tick on this panel, and whether the flip was taken there or after.
     const double expected = tick_after(panel, static_cast<double>(e->target) - period * 0.5);
     const double at = static_cast<double>(at_ns);
@@ -130,10 +137,16 @@ public:
       bool dropped = dropped_behind;
       for (;;) {
         const Start* next = nullptr;
-        for (const Start& c : ring_) if (c.start > e->start && (!next || c.start < next->start) && static_cast<double>(c.start) > prev - 2.0 * period) next = &c;
+        for (const Start& c : ring_)
+          if (c.start > e->start && (!next || c.start < next->start) &&
+              static_cast<double>(c.start) > prev - 2.0 * period)
+            next = &c;
         if (!next) break;
         e = next;
-        if (dropped) { dropped = false; continue; }
+        if (dropped) {
+          dropped = false;
+          continue;
+        }
         const double ready = static_cast<double>(next->start) + work_ema_;
         prev = tick_after(panel, (ready > prev ? ready : prev) + 1.0);
       }
@@ -162,7 +175,8 @@ public:
       // after; the first frames are then held too, until the first flip
       // seen moves the target on (engaging_: no band is blamed for that).
       const Start* last = nullptr;
-      for (const Start& c : ring_) if (c.start && (!last || c.start > last->start)) last = &c;
+      for (const Start& c : ring_)
+        if (c.start && (!last || c.start > last->start)) last = &c;
       if (last && work_ema_ > 0.0) {
         const double t = tick_after(0, static_cast<double>(last->start) + work_ema_) + period;
         if (t > target_) target_ = t;
@@ -221,9 +235,11 @@ public:
     return work_ema_ + (extra < p_.work_cap_ns ? extra : p_.work_cap_ns);
   }
   double work_mean_ns() const { return work_ema_; }
-  double last_lat_ns() const { return last_lat_; }   // the last sample's swap-to-flip time
-  double target_ns() const { return target_; }       // the tick the frame now running aims at (diagnostics)
-  u64 late() const { return late_; }       // flips taken a tick after the one their frame aimed at (frames that started on time)
+  double last_lat_ns() const { return last_lat_; } // the last sample's swap-to-flip time
+  double target_ns() const { return target_; }     // the tick the frame now running aims at (diagnostics)
+  u64 late() const {
+    return late_;
+  } // flips taken a tick after the one their frame aimed at (frames that started on time)
   u64 samples() const { return samples_; }
 
   // After a pause, a speed change or a lost lock: the period, the work and
@@ -238,8 +254,13 @@ public:
   }
 
 private:
-  struct Panel { u64 last_at = 0; };
-  struct Start { u64 start = 0, target = 0; bool late = false, engaging = false; };
+  struct Panel {
+    u64 last_at = 0;
+  };
+  struct Start {
+    u64 start = 0, target = 0;
+    bool late = false, engaging = false;
+  };
 
   // The first tick of `panel` at or after x (its last flip, stepped by the period).
   double tick_after(int panel, double x) const {
@@ -270,11 +291,18 @@ private:
   // (a mode change, a stall in the event read) starts the run over.
   void learn_period(u64 gap) {
     const double g = static_cast<double>(gap);
-    if (g < 4.0e6) return;   // not two vblanks
-    if (period_ema_ <= 0.0 || g < period_ema_ * 0.75) { period_ema_ = g; consistent_ = 1; return; }   // first gap, or the first was a multiple
+    if (g < 4.0e6) return; // not two vblanks
+    if (period_ema_ <= 0.0 || g < period_ema_ * 0.75) {
+      period_ema_ = g;
+      consistent_ = 1;
+      return;
+    } // first gap, or the first was a multiple
     const double k = std::round(g / period_ema_);
     const double d = std::fabs(g - k * period_ema_);
-    if (d > period_ema_ * p_.period_tol * k) { consistent_ = 0; return; }
+    if (d > period_ema_ * p_.period_tol * k) {
+      consistent_ = 0;
+      return;
+    }
     ++consistent_;
     if (k == 1.0) period_ema_ += (g - period_ema_) * p_.period_alpha;
   }
@@ -287,10 +315,10 @@ private:
   int consistent_ = 0;
   double band_;
   double work_ema_ = 0.0, work_dev_ = 0.0;
-  double emu_ema_ = 0.0;     // emulation time per frame, from back-to-back starts
+  double emu_ema_ = 0.0; // emulation time per frame, from back-to-back starts
   u64 last_start_ = 0;
-  double target_ = 0.0;      // the tick (panel 0's grid) the frame now starting aims at
-  int engaging_ = 0;         // frames still to start before the first target can be trusted
+  double target_ = 0.0; // the tick (panel 0's grid) the frame now starting aims at
+  int engaging_ = 0;    // frames still to start before the first target can be trusted
   double last_lat_ = 0.0;
   u64 late_ = 0, samples_ = 0;
 };

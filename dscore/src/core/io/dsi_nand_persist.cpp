@@ -110,14 +110,20 @@ std::map<std::string, std::vector<u8>> read_sidecar(const std::string& path) {
   std::vector<u8> b;
   if (!slurp(path, b) || b.size() < 12 || std::memcmp(b.data(), kSidecarMagic, 8) != 0) return out;
   size_t p = 8;
-  auto u32at = [&](size_t o) { return static_cast<u32>(b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (static_cast<u32>(b[o + 3]) << 24)); };
-  const u32 n = u32at(p); p += 4;
+  auto u32at = [&](size_t o) {
+    return static_cast<u32>(b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (static_cast<u32>(b[o + 3]) << 24));
+  };
+  const u32 n = u32at(p);
+  p += 4;
   for (u32 k = 0; k < n; ++k) {
     if (p + 2 > b.size()) break;
-    const size_t plen = b[p] | (b[p + 1] << 8); p += 2;
+    const size_t plen = b[p] | (b[p + 1] << 8);
+    p += 2;
     if (p + plen + 4 > b.size()) break;
-    std::string name(reinterpret_cast<const char*>(&b[p]), plen); p += plen;
-    const u32 len = u32at(p); p += 4;
+    std::string name(reinterpret_cast<const char*>(&b[p]), plen);
+    p += plen;
+    const u32 len = u32at(p);
+    p += 4;
     if (p + len > b.size()) break;
     out[name].assign(b.begin() + static_cast<long>(p), b.begin() + static_cast<long>(p + len));
     p += len;
@@ -127,10 +133,13 @@ std::map<std::string, std::vector<u8>> read_sidecar(const std::string& path) {
 
 std::vector<u8> encode_sidecar(const std::map<std::string, std::vector<u8>>& files) {
   std::vector<u8> b(kSidecarMagic, kSidecarMagic + 8);
-  auto put32 = [&](u32 v) { for (int i = 0; i < 4; ++i) b.push_back(static_cast<u8>(v >> (8 * i))); };
+  auto put32 = [&](u32 v) {
+    for (int i = 0; i < 4; ++i) b.push_back(static_cast<u8>(v >> (8 * i)));
+  };
   put32(static_cast<u32>(files.size()));
   for (const auto& [name, data] : files) {
-    b.push_back(static_cast<u8>(name.size())); b.push_back(static_cast<u8>(name.size() >> 8));
+    b.push_back(static_cast<u8>(name.size()));
+    b.push_back(static_cast<u8>(name.size() >> 8));
     b.insert(b.end(), name.begin(), name.end());
     put32(static_cast<u32>(data.size()));
     b.insert(b.end(), data.begin(), data.end());
@@ -138,7 +147,7 @@ std::vector<u8> encode_sidecar(const std::map<std::string, std::vector<u8>>& fil
   return b;
 }
 
-}  // namespace
+} // namespace
 
 NandPersistPaths NandPersistPaths::beside(const std::string& nand_path, const std::string& saves_dir) {
   NandPersistPaths p;
@@ -153,17 +162,26 @@ NandPersistReport nand_import(NandImage& nand, const u8* bios7i, const NandPersi
   NandPersistReport r;
   NandFs nfs;
   std::string err;
-  if (!nfs.mount(nand, bios7i, &err)) { r.notes.push_back("nand: " + err); return r; }
+  if (!nfs.mount(nand, bios7i, &err)) {
+    r.notes.push_back("nand: " + err);
+    return r;
+  }
   FatVolume& vol = nfs.main();
 
   // Replace with the host's copy only when it's the same size (else a different/broken save).
   std::vector<std::pair<std::string, FatVolume::Entry>> saves;
-  vol.walk([&](const std::string& path, const FatVolume::Entry& e) { if (!e.dir() && save_ext(path)) saves.emplace_back(path, e); });
+  vol.walk([&](const std::string& path, const FatVolume::Entry& e) {
+    if (!e.dir() && save_ext(path)) saves.emplace_back(path, e);
+  });
   for (const auto& [path, e] : saves) {
     const std::string host = paths.saves_dir + "/" + game_code(path.substr(16, 8)) + save_ext(path);
     std::vector<u8> data, cur;
     if (!slurp(host, data)) continue;
-    if (data.size() != e.size) { r.notes.push_back(host + ": " + std::to_string(data.size()) + " bytes, the title's save is " + std::to_string(e.size) + "; left alone"); continue; }
+    if (data.size() != e.size) {
+      r.notes.push_back(host + ": " + std::to_string(data.size()) + " bytes, the title's save is " +
+                        std::to_string(e.size) + "; left alone");
+      continue;
+    }
     if (vol.read(e, cur) && cur == data) continue;
     if (vol.write(path, data.data(), static_cast<u32>(data.size()), &err)) r.saves++;
     else r.notes.push_back(err);
@@ -181,14 +199,16 @@ NandPersistReport nand_import(NandImage& nand, const u8* bios7i, const NandPersi
   // Photos: every file under the folder, at the same path on the partition.
   std::error_code ec;
   if (nfs.photo().valid() && fs::is_directory(paths.photos_dir, ec)) {
-    for (auto it = fs::recursive_directory_iterator(paths.photos_dir, ec); !ec && it != fs::recursive_directory_iterator(); it.increment(ec)) {
+    for (auto it = fs::recursive_directory_iterator(paths.photos_dir, ec);
+         !ec && it != fs::recursive_directory_iterator(); it.increment(ec)) {
       if (!it->is_regular_file(ec)) continue;
       const std::string rel = "/" + upper(fs::relative(it->path(), paths.photos_dir, ec).generic_string());
       std::vector<u8> data, cur;
       if (!slurp(it->path().string(), data)) continue;
       FatVolume::Entry e;
       if (nfs.photo().lookup(rel, e) && !e.dir() && nfs.photo().read(e, cur) && cur == data) continue;
-      if (mkdirs(nfs.photo(), rel, &err) && nfs.photo().write(rel, data.data(), static_cast<u32>(data.size()), &err)) r.photos++;
+      if (mkdirs(nfs.photo(), rel, &err) && nfs.photo().write(rel, data.data(), static_cast<u32>(data.size()), &err))
+        r.photos++;
       else r.notes.push_back("photo " + err);
     }
   }
@@ -200,7 +220,10 @@ NandPersistReport nand_export(NandImage& nand, const u8* bios7i, const NandPersi
   if (!nand.any_changed()) return r;
   NandFs nfs;
   std::string err;
-  if (!nfs.mount(nand, bios7i, &err)) { r.notes.push_back("nand: " + err); return r; }
+  if (!nfs.mount(nand, bios7i, &err)) {
+    r.notes.push_back("nand: " + err);
+    return r;
+  }
   FatVolume& vol = nfs.main();
 
   std::map<std::string, std::vector<u8>> sidecar = read_sidecar(paths.sidecar);
@@ -211,7 +234,10 @@ NandPersistReport nand_export(NandImage& nand, const u8* bios7i, const NandPersi
     const bool in_sidecar = !ext && system_file(path) && sidecar.count(path);
     if (!touched(nand, nfs.main_base(), vol, e) && !in_sidecar) return;
     std::vector<u8> data;
-    if (!vol.read(e, data)) { r.notes.push_back(path + ": unreadable"); return; }
+    if (!vol.read(e, data)) {
+      r.notes.push_back(path + ": unreadable");
+      return;
+    }
     if (ext) {
       const std::string host = paths.saves_dir + "/" + game_code(path.substr(16, 8)) + ext;
       if (same_as_file(host, data)) return;
@@ -244,4 +270,4 @@ NandPersistReport nand_export(NandImage& nand, const u8* bios7i, const NandPersi
   return r;
 }
 
-}  // namespace ds::io
+} // namespace ds::io

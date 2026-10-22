@@ -19,26 +19,30 @@ public:
   virtual void begin() {}
   virtual void end() {}
   // Regular frames (LOC1-3 slots and beacons).
-  virtual int  send_packet(const u8* data, int len, u64 timestamp) = 0;
-  virtual int  recv_packet(u8* data, u64* timestamp) = 0;   // > 0: bytes; 0: nothing
+  virtual int send_packet(const u8* data, int len, u64 timestamp) = 0;
+  virtual int recv_packet(u8* data, u64* timestamp) = 0; // > 0: bytes; 0: nothing
   // MP protocol: host CMD, client reply in its slot, host ack.
-  virtual int  send_cmd(const u8* data, int len, u64 timestamp) = 0;
-  virtual int  send_reply(const u8* data, int len, u64 timestamp, u16 aid) = 0;
-  virtual int  send_ack(const u8* data, int len, u64 timestamp) = 0;
-  virtual int  recv_host_packet(u8* data, u64* timestamp) = 0;   // < 0: the host is gone
+  virtual int send_cmd(const u8* data, int len, u64 timestamp) = 0;
+  virtual int send_reply(const u8* data, int len, u64 timestamp, u16 aid) = 0;
+  virtual int send_ack(const u8* data, int len, u64 timestamp) = 0;
+  virtual int recv_host_packet(u8* data, u64* timestamp) = 0; // < 0: the host is gone
   // Non-blocking recv_host_packet; a client uses this to fetch early without
   // stalling on its own timeline.
-  virtual int  peek_host_packet(u8* data, u64* timestamp) { (void)data; (void)timestamp; return 0; }
+  virtual int peek_host_packet(u8* data, u64* timestamp) {
+    (void)data;
+    (void)timestamp;
+    return 0;
+  }
   // Gathers replies of clients in aidmask into 15 x 1024-byte slots; returns
   // the mask of clients that answered.
-  virtual u16  recv_replies(u8* data, u64 timestamp, u16 aidmask) = 0;
+  virtual u16 recv_replies(u8* data, u64 timestamp, u16 aidmask) = 0;
 };
 
 class NetDriver {
 public:
   virtual ~NetDriver() = default;
   virtual int send(const u8* data, int len) = 0;
-  virtual int recv(u8* data) = 0;   // > 0: bytes of one Ethernet frame; 0: nothing
+  virtual int recv(u8* data) = 0; // > 0: bytes of one Ethernet frame; 0: nothing
 };
 
 } // namespace ds::io

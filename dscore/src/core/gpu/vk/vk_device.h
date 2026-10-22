@@ -16,21 +16,21 @@
 
 namespace ds::gpu::vk {
 
-struct DeviceInternal;   // vk_internal.h; the backend's view of this context
+struct DeviceInternal; // vk_internal.h; the backend's view of this context
 
 // Both are DEVICE_LOCAL on a unified part; the difference is the CPU mapping's cacheability.
 enum class Access {
-  CpuRead,    // DEVICE_LOCAL | HOST_VISIBLE | HOST_CACHED, near-malloc CPU reads. Needs invalidate() before reading. What the 2D compositor's 3D layer must be.
-  CpuWrite,   // DEVICE_LOCAL | HOST_VISIBLE | HOST_COHERENT, typically write-combine (slow CPU reads). Write-only buffers.
+  CpuRead, // DEVICE_LOCAL | HOST_VISIBLE | HOST_CACHED, near-malloc CPU reads. Needs invalidate() before reading. What the 2D compositor's 3D layer must be.
+  CpuWrite, // DEVICE_LOCAL | HOST_VISIBLE | HOST_COHERENT, typically write-combine (slow CPU reads). Write-only buffers.
 };
 
 // One mapped allocation. `ptr` is vkMapMemory's CPU mapping -- use it, not an
 // mmap'd exported fd (this driver only imports dma-buf, never exports).
 struct Buffer {
-  void*  ptr  = nullptr;
+  void* ptr = nullptr;
   size_t size = 0;
-  u64    handle = 0;      // opaque VkBuffer, for the backend
-  u64    memory = 0;      // opaque VkDeviceMemory
+  u64 handle = 0; // opaque VkBuffer, for the backend
+  u64 memory = 0; // opaque VkDeviceMemory
   explicit operator bool() const { return ptr != nullptr; }
 };
 
@@ -57,7 +57,7 @@ public:
 
   // Allocate and map. Returns an empty Buffer on failure.
   Buffer alloc(size_t size, Access access);
-  void   free(Buffer& b);
+  void free(Buffer& b);
 
   // Makes GPU writes visible to a CPU read of a CpuRead buffer. Pass the
   // range actually read, not the whole allocation.
@@ -85,11 +85,11 @@ public:
     u32 max_workgroup_invocations = 0;
     u32 max_shared_memory = 0;
     u32 subgroup_size = 0;
-    u32 max_storage_range = 0;           // largest storage buffer the shader may bind
+    u32 max_storage_range = 0; // largest storage buffer the shader may bind
     // VK_KHR_shader_atomic_int64 + shaderInt64: without it, the visibility
     // pass's atomicMin owner key can't run and the ordered loop draws the whole list.
     bool int64_atomics = false;
-    double timestamp_period_ns = 0;   // GPU timestamp ns/tick on the compute queue, 0 if none (DS_VK_TIMING=1)
+    double timestamp_period_ns = 0; // GPU timestamp ns/tick on the compute queue, 0 if none (DS_VK_TIMING=1)
     // dma-buf IMPORT: frontend scanout buffers bindable as images the GPU
     // writes. drm_modifier: LINEAR layout stated explicitly, else VK_IMAGE_TILING_LINEAR.
     bool dmabuf_import = false;

@@ -30,9 +30,11 @@ def validate(directory):
     if directory.is_symlink():
         raise ValueError("DraStic bundle must be a real directory")
     record = json.loads((directory / "application.json").read_text())
-    if (not isinstance(record, dict) or record.get("schema") != 1 or record.get("kind") != KIND
-            or record.get("private_only") is not True or not isinstance(record.get("files"), dict)
-            or not REQUIRED <= set(record["files"]) <= REQUIRED | OPTIONAL):
+    if (
+        not isinstance(record, dict) or record.get("schema") != 1 or record.get("kind") != KIND
+        or record.get("private_only") is not True or not isinstance(record.get("files"), dict)
+        or not REQUIRED <= set(record["files"]) <= REQUIRED | OPTIONAL
+    ):
         raise ValueError("Invalid private DraStic application record")
     actual = set()
     for path in directory.rglob("*"):
@@ -43,7 +45,9 @@ def validate(directory):
     if actual != set(record["files"]):
         raise ValueError("DraStic application inventory mismatch")
     for name, checksum in record["files"].items():
-        if not isinstance(checksum, str) or not re.fullmatch(r"[0-9a-f]{64}", checksum) or digest(directory / name) != checksum:
+        if not isinstance(checksum, str) or not re.fullmatch(r"[0-9a-f]{64}", checksum) or digest(
+            directory / name
+        ) != checksum:
             raise ValueError("DraStic application hash mismatch: " + name)
     for name in sorted(REQUIRED):
         info = inspect_elf(directory / name)
@@ -71,19 +75,28 @@ def provision(source, output, touch_library=None):
                 raise ValueError("DraStic requires Linux AArch64 application components")
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".drastic-", dir=output.parent) as temporary:
-        stage = Path(temporary) / "application";stage.mkdir()
+        stage = Path(temporary) / "application"
+        stage.mkdir()
         hashes = {name: digest(path) for name, path in components.items()}
         for name, path in components.items():
-            target = stage / name;target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, target);target.chmod(0o755 if name in REQUIRED else 0o644)
+            target = stage / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+            target.chmod(0o755 if name in REQUIRED else 0o644)
             if digest(target) != hashes[name] or digest(path) != hashes[name]:
                 raise ValueError("DraStic source changed during import")
-        record = dict(schema=1, kind=KIND, private_only=True, files=hashes,
-                      source="Owner's existing DraStic application; binary components, not a source rebuild",
-                      excluded=["BIOS/firmware dumps", "OS libraries/scripts", "user saves/configuration"],
-                      redistribution_provenance="Unresolved; private testing only")
+        record = dict(
+            schema=1,
+            kind=KIND,
+            private_only=True,
+            files=hashes,
+            source="Owner's existing DraStic application; binary components, not a source rebuild",
+            excluded=["BIOS/firmware dumps", "OS libraries/scripts", "user saves/configuration"],
+            redistribution_provenance="Unresolved; private testing only"
+        )
         (stage / "application.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
-        validate(stage);stage.rename(output)
+        validate(stage)
+        stage.rename(output)
     print("Verified private DraStic application: " + str(output))
     return record
 

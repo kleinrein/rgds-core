@@ -1,0 +1,895 @@
+# UTF-8 source\ttranslation. One entry per line.	
+3D rendering automatically uses worker threads.	3D işleme otomatik olarak yardımcı iş parçacıkları kullanır.
+3D resolution	3D çözünürlüğü
+3D threading changed for this session. Settings storage is unavailable.	3D iş parçacığı bu oturum için değişti. Ayar depolama kullanılamıyor.
+3D threading changed. No restart needed.	3D iş parçacığı değişti. Yeniden başlatma gerekmez.
+A  Apply	A  Uygula
+A  Done	A  Bitti
+A  Play	A  Oyna
+A gentle scanline pattern with original colours.	Orijinal renklerle hafif tarama çizgileri.
+A natural colour and contrast treatment.	Doğal renk ve kontrast.
+A screen style for this cartridge	Bu kartuş için ekran stili
+A stronger LCD texture and scanline look.	Daha belirgin LCD dokusu ve tarama çizgileri.
+A subtle handheld LCD pixel pattern.	Hafif bir el konsolu LCD piksel deseni.
+A subtle pixel grid with a bright, readable image.	Hafif piksel ızgarası ile parlak, net görüntü.
+Add your DS games to fetch their artwork.	Kapaklarını indirmek için DS oyunlarınızı ekleyin.
+Africa	Afrika
+After	Sonra
+All games	Tüm oyunlar
+Amber	Kehribar
+Americas	Amerika
+Anbernic startup is unavailable in RGDS OS.	RGDS OS'ta Anbernic ile başlatma kullanılamaz.
+Animations	Animasyonlar
+Antarctica	Antarktika
+Applies immediately. Higher clocks use more battery.	Hemen uygulanır. Yüksek hızlar daha çok pil harcar.
+Applies immediately. Your game keeps its progress.	Hemen uygulanır. Oyununuzun ilerlemesi korunur.
+Apply	Uygula
+Applying shader…	Filtre uygulanıyor…
+Arctic	Arktik
+Artwork	Kapaklar
+Artwork & ScreenScraper	Kapaklar
+Artwork source	Kapak kaynağı
+Artwork sources	Kapak kaynakları
+Asia	Asya
+Atlantic Ocean	Atlas Okyanusu
+Australia	Avustralya
+Auto-load state	Durumu otomatik yükle
+Auto-save on exit	Çıkışta otomatik kaydet
+Automatic	Otomatik
+Automatic (free)	Otomatik
+Available networks	Kullanılabilir ağlar
+B  Cancel	B  İptal
+B  Close	B  Kapat
+BACK HOME	ANA EKRANA DÖN
+Back	Geri
+Balance battery life and speed	Pil ömrü ile hızı dengele
+Balanced	Dengeli
+Battery	Pil
+Battery percentage	Pil yüzdesi
+Battery saver	Pil tasarrufu
+Before	Önce
+Before you play	Oynamadan önce
+Binding unchanged.	Atama değişmedi.
+Boot	Açılış
+Boot into	Açılışta
+Both screens	İki ekran
+Bottom display	Alt ekran
+Box art, titles and game details	Kapaklar, adlar ve oyun ayrıntıları
+Brightness	Parlaklık
+Browser layout	Liste düzeni
+Build, storage and device address	Sürüm, depolama ve cihaz adresi
+Button	Düğme
+Button layout	Düğme düzeni
+Button {0}	Düğme {0}
+Buttons and the game menu shortcut	Düğmeler ve oyun menüsü kısayolu
+COLOUR MODE	RENK MODU
+Cancel	İptal
+Cartridges	Kartuşlar
+Changes immediately. Map a button in Controls for quick access.	Hemen değişir. Hızlı erişim için Kontroller'de bir düğme atayın.
+Changing 3D threading…	3D iş parçacığı değiştiriliyor…
+Changing speed…	Hız değiştiriliyor…
+Check the current connection	Geçerli bağlantıyı denetle
+Checkpoint loaded	Kayıt noktası yüklendi
+Checkpoint loaded (preview)	Kayıt noktası yüklendi (önizleme)
+Checkpoint loaded.	Kayıt noktası yüklendi.
+Checkpoint saved	Kayıt noktası kaydedildi
+Checkpoint saved (preview)	Kayıt noktası kaydedildi (önizleme)
+Checkpoint saved.	Kayıt noktası kaydedildi.
+Choose Anbernic or RG DS startup.	Anbernic veya RG DS ile başlatmayı seçin.
+Choose an option	Bir seçenek belirleyin
+Choose native or a sharper 3D image	Doğal veya daha keskin 3D görüntü
+Choose the core for this cartridge	Bu kartuş için çekirdeği seçin
+Choose the display backend for the next DraStic launch. DSperate stays your default.	Bir sonraki DraStic açılışı için görüntü arka ucunu seçin. DSperate varsayılan kalır.
+Choose what opens when you power on	Açılışta neyin açılacağını seçin
+Clear	Temizle
+Clear temporary cache	Geçici önbelleği temizle
+Clear temporary game files?	Geçici oyun dosyaları silinsin mi?
+Close	Kapat
+Close the handheld to sleep	Uyku için konsolu kapatın
+Colour treatment inspired by the original DS display.	Orijinal DS ekranından esinlenen renkler.
+Compare	Karşılaştır
+Confirm	Onayla
+Connect	Bağlan
+Connected	Bağlandı
+Connected.	Bağlandı.
+Connecting…	Bağlanıyor…
+Connectivity	Bağlantı
+Continue	Devam
+Continue where you left off	Kaldığınız yerden devam edin
+Control unavailable on this device	Bu cihazda kontrol kullanılamıyor
+Controls	Kontroller
+Controls saved for this game.	Kontroller bu oyun için kaydedildi.
+Cool crisp	Soğuk net
+Cool whites with a small contrast boost.	Soğuk beyazlar ve biraz daha kontrast.
+Could not apply brightness	Parlaklık uygulanamadı
+Could not apply saved brightness	Kayıtlı parlaklık uygulanamadı
+Could not apply saved power mode	Kayıtlı güç modu uygulanamadı
+Could not apply setting - see log	Ayar uygulanamadı - günlüğe bakın
+Could not apply this shader.	Bu filtre uygulanamadı.
+Could not apply volume	Ses düzeyi uygulanamadı
+Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi bağdaştırıcısı açılamadı. Yeniden deneyin.
+Could not change 3D threading. Your game is unchanged.	3D iş parçacığı değiştirilemedi. Oyununuz değişmedi.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	Seçilen Wi-Fi bağlantısı doğrulanamadı. Tarayıp yeniden deneyin.
+Could not enable lid wake	Kapakla uyandırma açılamadı
+Could not load. Resume, retry, or return without saving.	Yüklenemedi. Devam edin, yeniden deneyin veya kaydetmeden dönün.
+Could not read this collection. Try again.	Bu koleksiyon okunamadı. Yeniden deneyin.
+Could not restore previous hardware setting	Önceki donanım ayarı geri yüklenemedi
+Could not save all settings. Check storage.	Tüm ayarlar kaydedilemedi. Depolamayı denetleyin.
+Could not save brightness	Parlaklık kaydedilemedi
+Could not save controls. Check writable storage.	Kontroller kaydedilemedi. Yazılabilir depolamayı denetleyin.
+Could not save game settings. Previous values kept.	Oyun ayarları kaydedilemedi. Önceki değerler korundu.
+Could not save matching title.	Eşleşen ad kaydedilemedi.
+Could not save settings	Ayarlar kaydedilemedi
+Could not save timezone	Saat dilimi kaydedilemedi
+Could not save volume	Ses düzeyi kaydedilemedi
+Could not save. Resume, retry, or return without saving.	Kaydedilemedi. Devam edin, yeniden deneyin veya kaydetmeden dönün.
+Could not send game action	Oyun eylemi gönderilemedi
+Could not set volume - see log	Ses düzeyi ayarlanamadı - günlüğe bakın
+Could not sleep - see log	Uyku moduna geçilemedi - günlüğe bakın
+Could not sleep. Reopen the lid and try again.	Uyku moduna geçilemedi. Kapağı açıp yeniden deneyin.
+Could not start artwork service	Kapak hizmeti başlatılamadı
+Could not start library scan	Kitaplık taraması başlatılamadı
+Could not write controls	Kontroller yazılamadı
+Counts display updates, not emulation speed. Changes immediately.	Emülasyon hızını değil ekran yenilemelerini sayar. Hemen değişir.
+Counts emulated game frames. Changes immediately.	Emüle edilen oyun karelerini sayar. Hemen değişir.
+Covers	Kapaklar
+Custom	Özel
+DEFAULT THEME - CHECK LOG	VARSAYILAN TEMA - GÜNLÜĞE BAKIN
+DS rounded	DS yuvarlak
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: günlük oyun için önerilir. Varsayılan doğal çözünürlüktür.
+Dark	Koyu
+Date format	Tarih biçimi
+Default	Varsayılan
+Default emulator	Varsayılan emülatör
+Default shader	Varsayılan filtre
+Delete	Sil
+Desktop preview	Masaüstü önizleme
+Development build	Geliştirme sürümü
+Device address	Cihaz adresi
+Device information	Cihaz bilgileri
+Display FPS	Ekran FPS
+Done	Bitti
+Down	Aşağı
+DraStic backend	DraStic arka ucu
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: buna ihtiyaç duyan oyunlar için bir alternatif. Kayıtlar ayrı tutulur.
+ERROR	HATA
+ERROR: Could not restore settings	HATA: Ayarlar geri yüklenemedi
+ERROR: Could not restore settings - see log	HATA: Ayarlar geri yüklenemedi - günlüğe bakın
+Emulator	Emülatör
+Emulator settings	Emülatör ayarları
+Engine managed	Motor yönetir
+Enter here	Buraya girin
+Enter password	Şifreyi girin
+Enter your username and password	Kullanıcı adınızı ve şifrenizi girin
+Europe	Avrupa
+Every game in this collection has artwork.	Bu koleksiyondaki her oyunun kapağı var.
+FPS changed for this session. Settings storage is unavailable.	FPS bu oturum için değişti. Ayar depolama kullanılamıyor.
+FPS counter enabled.	FPS sayacı açık.
+FPS counter hidden.	FPS sayacı gizlendi.
+Fast	Hızlı
+Fast-forward	Hızlı ileri
+Fast-forward button	Hızlı ileri düğmesi
+Fast-forward enabled.	Hızlı ileri açık.
+Fast-forward is unavailable for this emulator.	Bu emülatörde hızlı ileri kullanılamaz.
+Fast-forward style	Hızlı ileri türü
+Favourite	Favori
+Favourites	Favoriler
+Fetch artwork	Kapakları indir
+Fetch missing artwork	Eksik kapakları indir
+Find and connect to a nearby network	Yakındaki bir ağı bulup bağlanın
+Finishing the system request	Sistem isteği tamamlanıyor
+Follow your default button layout	Varsayılan düğme düzenini izle
+Following your global controls.	Genel kontroller kullanılıyor.
+Follows your Library default. Each emulator keeps its own saves.	Kitaplık varsayılanını izler. Her emülatörün kendi kayıtları vardır.
+Frameskip	Kare atlama
+Free space	Boş alan
+Free space while keeping your saves	Kayıtları koruyarak yer aç
+Game FPS	Oyun FPS
+Game emulator	Oyun emülatörü
+Game emulator saved.	Oyun emülatörü kaydedildi.
+Game menu	Oyun menüsü
+Game options	Oyun seçenekleri
+Game options saved	Oyun seçenekleri kaydedildi
+GameTDB (free)	GameTDB
+Games	Oyunlar
+Give your eyes and hands a break.	Gözlerinizi ve ellerinizi dinlendirin.
+Global	Genel
+Global controls saved.	Genel kontroller kaydedildi.
+Hold	Basılı tut
+Home shortcut	Ana ekran kısayolu
+Indian Ocean	Hint Okyanusu
+Inherit	Devral
+Inherited	Devralındı
+Jump to letter	Harfe atla
+Keep a checkpoint when returning home	Ana ekrana dönerken kayıt noktası al
+Keep playing	Oynamaya devam et
+Keep this game in Favourites	Bu oyunu Favorilerde tut
+Kernel	Çekirdek
+Key {0}	Tuş {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + iki renk filtresi
+LCD pixels with natural colour and contrast.	Doğal renk ve kontrastlı LCD pikselleri.
+LCD pixels with the DS colour treatment.	DS renkleriyle LCD pikselleri.
+LCD pixels, DS colour and Natural Vision together.	LCD pikselleri, DS renkleri ve Natural Vision bir arada.
+Language	Dil
+Launch cancelled	Başlatma iptal edildi
+Left	Sol
+Left stick	Sol çubuk
+Left-handed	Solak
+Less than a minute	Bir dakikadan az
+Library	Kitaplık
+Library scan exceeded its limit	Kitaplık taraması sınırı aştı
+Library scan failed	Kitaplık taraması başarısız
+Libretro (free)	Libretro
+Light	Açık
+List	Liste
+Live background	Canlı arka plan
+Load	Yükle
+Load requested. Resume to check your game.	Yükleme istendi. Oyununuzu denetlemek için devam edin.
+Load state	Durumu yükle
+Loading checkpoint…	Kayıt noktası yükleniyor…
+Looking for networks…	Ağlar aranıyor…
+Magnified detail	Büyütülmüş ayrıntı
+Manage builds and temporary files	Sürümleri ve geçici dosyaları yönet
+Matching title	Eşleşen ad
+Matching title saved. Choose Fetch artwork.	Eşleşen ad kaydedildi. Kapakları indir'i seçin.
+Menu idle sleep	Menü boşta uyku
+Mute	Sessiz
+Muted	Ses kapalı
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: bir uyumluluk seçeneği. Hız için önce DSperate'i deneyin.
+Native	Doğal
+Native is faster; 2x uses more GPU time. Save & restart applies it.	Doğal daha hızlıdır; 2x daha çok GPU kullanır. Kaydet ve yeniden başlat ile uygulanır.
+Native output	Doğal çıktı
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	Ağ devre dışı. Etkinleştirmek için Wi-Fi'yi açın.
+Never	Asla
+Next emulator	Sonraki emülatör
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Wi-Fi bağdaştırıcısı yok. Başlatmak için Wi-Fi'yi açın.
+No button detected. Try again when you're ready.	Düğme algılanmadı. Hazır olduğunuzda yeniden deneyin.
+No checkpoint saved for this emulator yet.	Bu emülatör için henüz kayıt noktası yok.
+No cover yet	Henüz kapak yok
+No favourites yet	Henüz favori yok
+No games	Oyun yok
+No games in this collection.	Bu koleksiyonda oyun yok.
+No networks found	Ağ bulunamadı
+No previous build available.	Önceki sürüm yok.
+No recent games yet	Henüz son oyun yok
+Normal	Normal
+Normal speed.	Normal hız.
+Not available	Kullanılamaz
+Not connected	Bağlı değil
+Not played yet	Henüz oynanmadı
+OPEN	AÇ
+Off	Kapalı
+Off (smooth)	Kapalı (akıcı)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Kapalı akıcı hareket sağlar. Kare atlamak hıza yardımcı olabilir. Uygulamak için yeniden başlatın.
+Off keeps the original picture.	Kapalı orijinal görüntüyü korur.
+On	Açık
+Open	Aç
+Open menu	Menüyü aç
+Open the Anbernic menu	Anbernic menüsünü aç
+Options	Seçenekler
+Original pixels	Orijinal pikseller
+Original pixels and colours.	Orijinal pikseller ve renkler.
+Pacific	Pasifik
+PLAY	OYNA
+Password	Şifre
+Pause when you need to.	Gerektiğinde ara verin.
+Paused	Duraklatıldı
+Performance	Performans
+Pixel classic	Klasik piksel
+Play at a comfortable volume.	Rahat bir ses düzeyinde oynayın.
+Please keep your handheld on	Lütfen konsolu kapatmayın
+Pocket green	Cep yeşili
+Power	Güç
+Power mode	Güç modu
+Power off	Kapat
+Power off your handheld?	Konsol kapatılsın mı?
+Power profile	Güç profili
+Powering off…	Kapanıyor…
+Preparing controls…	Kontroller hazırlanıyor…
+Preparing the launcher	Başlatıcı hazırlanıyor
+Preparing the library…	Kitaplık hazırlanıyor…
+Preparing your cartridges…	Kartuşlarınız hazırlanıyor…
+Preparing your library…	Kitaplığınız hazırlanıyor…
+Press a button for {0}	{0} için bir düğmeye basın
+Press a button…	Bir düğmeye basın…
+Preview	Önizleme
+Preview Wi-Fi	Wi-Fi önizleme
+Preview and choose your screen style	Ekran stilinizi önizleyip seçin
+Preview game	Oyun önizleme
+Preview unavailable	Önizleme kullanılamıyor
+Previous build selected. Return to stock, then open RGDS again.	Önceki sürüm seçildi. Fabrika menüsüne dönüp RGDS'yi yeniden açın.
+Profile	Profil
+READY	HAZIR
+REVIEW YOUR CHOICE	SEÇİMİNİZİ GÖZDEN GEÇİRİN
+RGDS build	RGDS sürümü
+ROUNDED FONT UNAVAILABLE	YUVARLAK YAZI TİPİ KULLANILAMIYOR
+Recents	Son oynananlar
+Reduce rendering work when needed	Gerektiğinde işleme yükünü azalt
+Refresh	Yenile
+Refresh connection	Bağlantıyı yenile
+Release for options	Seçenekler için bırakın
+Remap	Yeniden ata
+Request cancelled.	İstek iptal edildi.
+Request failed. Check the connection or device log and try again.	İstek başarısız. Bağlantıyı veya cihaz günlüğünü denetleyip yeniden deneyin.
+Reset	Sıfırla
+Rest after a period of inactivity	Bir süre işlem yapılmazsa dinlen
+Restart	Yeniden başlat
+Restart menu	Menüyü yeniden başlat
+Restart the RGDS menu?	RGDS menüsü yeniden başlatılsın mı?
+Restart the device?	Cihaz yeniden başlatılsın mı?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	Yeniden başlatınca {0} kullanılır. Kayıtlar her emülatör için ayrı tutulur.
+Restarting…	Yeniden başlatılıyor…
+Restore defaults	Varsayılanlara dön
+Restore the last installed RGDS build	Son kurulan RGDS sürümünü geri yükle
+Restoring settings	Ayarlar geri yükleniyor
+Restoring settings…	Ayarlar geri yükleniyor…
+Resume	Devam et
+Resume game	Oyuna devam et
+Return	Dön
+Return home	Ana ekrana dön
+Return home before changing startup.	Başlatmayı değiştirmeden önce ana ekrana dönün.
+Return home from your game first.	Önce oyundan ana ekrana dönün.
+Return to game	Oyuna dön
+Return to stock	Fabrika menüsüne dön
+Return to the original button layout	Orijinal düğme düzenine dön
+Return to the stock menu?	Fabrika menüsüne dönülsün mü?
+Return without saving	Kaydetmeden dön
+Returning home…	Ana ekrana dönülüyor…
+Review unmatched	Eşleşmeyenleri gözden geçir
+Right	Sağ
+Right stick	Sağ çubuk
+Rollback simulated.	Geri alma simüle edildi.
+START	START
+Save	Kaydet
+Save & restart	Kaydet ve yeniden başlat
+Save & restart applies Threaded 3D.	Kaydet ve yeniden başlat, çok iş parçacıklı 3D'yi uygular.
+Save & restart keeps your checkpoint and applies pending settings.	Kaydet ve yeniden başlat, kayıt noktanızı korur ve bekleyen ayarları uygular.
+Save a report for troubleshooting	Sorun giderme için rapor kaydet
+Save device report	Cihaz raporunu kaydet
+Save state	Durumu kaydet
+Save your checkpoint and restart	Kayıt noktası al ve yeniden başlat
+Saved	Kaydedildi
+Saved - desktop simulation	Kaydedildi - masaüstü simülasyonu
+Saved for the next Standard DraStic launch.	Bir sonraki Standart DraStic açılışı için kaydedildi.
+Saved network	Kayıtlı ağ
+Saved · {0}	Kaydedildi · {0}
+Saved. Applies on your next DraStic launch.	Kaydedildi. Bir sonraki DraStic açılışında uygulanır.
+Saved. Save & restart applies screen order.	Kaydedildi. Ekran sırası Kaydet ve yeniden başlat ile uygulanır.
+Saved. Save & restart applies this change.	Kaydedildi. Bu değişiklik Kaydet ve yeniden başlat ile uygulanır.
+Saved. Save & restart changes the emulator.	Kaydedildi. Emülatör Kaydet ve yeniden başlat ile değişir.
+Saving before restarting…	Yeniden başlatmadan önce kaydediliyor…
+Saving before returning home…	Ana ekrana dönmeden önce kaydediliyor…
+Saving checkpoint before restarting…	Yeniden başlatmadan önce kayıt noktası alınıyor…
+Saving checkpoint…	Kayıt noktası alınıyor…
+Saving your progress…	İlerlemeniz kaydediliyor…
+Scan	Tara
+Scene	Sahne
+Screen brightness	Ekran parlaklığı
+Screen order	Ekran sırası
+ScreenScraper needs project credentials and your account	ScreenScraper proje kimlik bilgileri ve hesabınızı gerektirir
+Select	Seç
+Select a network again and enter its password.	Bir ağı yeniden seçip şifresini girin.
+Select a network again.	Bir ağı yeniden seçin.
+Selected	Seçili
+Sets Standard DraStic screen order for this game. Save & restart applies it.	Bu oyun için Standart DraStic ekran sırasını ayarlar. Kaydet ve yeniden başlat ile uygulanır.
+Settings	Ayarlar
+Settings saved	Ayarlar kaydedildi
+Shader	Filtre
+Shader applied.	Filtre uygulandı.
+Shader change requested (preview)	Filtre değişikliği istendi (önizleme)
+Shader saved	Filtre kaydedildi
+Shader saved for next launch	Filtre bir sonraki açılış için kaydedildi
+Shader saved. Restart this game to apply it.	Filtre kaydedildi. Uygulamak için oyunu yeniden başlatın.
+Shader studio	Filtre stüdyosu
+Shaders	Filtreler
+Sharp + NDS Color	Keskin + NDS Color
+Sharp + Natural Vision	Keskin + Natural Vision
+Sharp + both colours	Keskin + iki renk filtresi
+Sharp bilinear	Keskin çift doğrusal
+Sharp pixel edges with smoother scaling.	Keskin piksel kenarları ve daha yumuşak ölçekleme.
+Sharp scaling with natural colour and contrast.	Doğal renk ve kontrastla keskin ölçekleme.
+Sharp scaling with the DS colour treatment.	DS renkleriyle keskin ölçekleme.
+Sharp scaling, DS colour and Natural Vision together.	Keskin ölçekleme, DS renkleri ve Natural Vision bir arada.
+Shift	Shift
+Shortcut action	Kısayol eylemi
+Show the charge in the status bar	Şarjı durum çubuğunda göster
+Show the welcome screen at startup	Açılışta karşılama ekranını göster
+Sign in	Oturum aç
+Sign out	Oturumu kapat
+Signing in…	Oturum açılıyor…
+Simulated handheld	Simüle konsol
+Sleep	Uyku
+Sleep now	Şimdi uyu
+Sleep on lid close	Kapak kapanınca uyu
+Sleep simulated - press any control	Uyku simüle edildi - herhangi bir düğmeye basın
+Sleep simulated - settings retained	Uyku simüle edildi - ayarlar korundu
+Sleep unavailable on this device	Bu cihazda uyku kullanılamıyor
+Sleeping - use Power to wake	Uykuda - uyandırmak için Güç'e basın
+Soft LCD grid	Yumuşak LCD ızgarası
+Soft green monochrome with full-resolution detail.	Tam çözünürlük ayrıntılı yumuşak yeşil tek renk.
+Soft scanlines	Yumuşak tarama çizgileri
+Sound	Ses
+Space	Boşluk
+Standard	Standart
+Standard DraStic only. Applies on the next launch; game saves are kept.	Yalnızca Standart DraStic. Bir sonraki açılışta uygulanır; oyun kayıtları korunur.
+Standard screen order	Standart ekran sırası
+Start	Start
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	RG DS sonraki açılışlarda otomatik başlasın mı?
+Start with a familiar layout	Tanıdık bir düzenle başlayın
+Start, then Anbernic	Start, sonra Anbernic
+Startup	Başlangıç
+Startup choice saved.	Başlangıç seçimi kaydedildi.
+Startup choice simulated.	Başlangıç seçimi simüle edildi.
+Startup is managed by RGDS OS.	Başlangıcı RGDS OS yönetir.
+Stock	Fabrika
+Stock firmware	Fabrika yazılımı
+Stop fetching	İndirmeyi durdur
+Stop fetching before editing the match.	Eşleşmeyi düzenlemeden önce indirmeyi durdurun.
+Stop scraping	Taramayı durdur
+Stop scraping before changing source	Kaynağı değiştirmeden önce taramayı durdurun
+Stopping after this request	Bu istekten sonra duruluyor
+Stopping after this request.	Bu istekten sonra duruluyor.
+Storage read-only - use internal RGDS	Depolama salt okunur - dahili RGDS'yi kullanın
+SuperDrastic (experimental)	SuperDrastic (deneysel)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic şimdilik doğal çıktı kullanır. Standart filtre seçiminiz korunur.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic kendi duraklatma menüsünü ve görüntü yolunu kullanır. Deneysel; RG DS testi sürüyor.
+Swapped	Yer değişti
+System	Sistem
+THEME ERROR - RETAINED CURRENT	TEMA HATASI - GEÇERLİ KORUNDU
+THEME RELOADED	TEMA YENİDEN YÜKLENDİ
+TYPEFACE	YAZI TİPİ
+Temporary game cache cleared. Saves and artwork are kept.	Geçici oyun önbelleği temizlendi. Kayıtlar ve kapaklar korundu.
+The checkpoint did not finish saving.	Kayıt noktası kaydı tamamlanmadı.
+The emulator did not finish. Resume, retry, or return without saving.	Emülatör tamamlanmadı. Devam edin, yeniden deneyin veya kaydetmeden dönün.
+The game menu did not respond. Resume or return without saving.	Oyun menüsü yanıt vermedi. Devam edin veya kaydetmeden dönün.
+The zFast LCD texture with both colour treatments.	İki renk filtresiyle zFast LCD dokusu.
+The zFast LCD texture with natural colour and contrast.	Doğal renk ve kontrastla zFast LCD dokusu.
+The zFast LCD texture with the DS colour treatment.	DS renkleriyle zFast LCD dokusu.
+Theme	Tema
+Theme & display	Tema ve ekran
+This emulator does not expose a frameskip setting.	Bu emülatörde kare atlama ayarı yok.
+This emulator uses native resolution. No resolution switch is available.	Bu emülatör doğal çözünürlük kullanır. Çözünürlük değiştirilemez.
+This engine does not expose a threading switch.	Bu motorda iş parçacığı anahtarı yok.
+This engine has no live threading control.	Bu motorda iş parçacığı canlı değiştirilemez.
+This game	Bu oyun
+This network requires an enterprise profile.	Bu ağ kurumsal profil gerektirir.
+This request did not finish. Please try again.	Bu istek tamamlanmadı. Lütfen yeniden deneyin.
+This shader is unavailable for the current emulator.	Bu filtre geçerli emülatör için kullanılamıyor.
+Threaded 3D	Çok iş parçacıklı 3D
+Time played	Oynama süresi
+Timezone	Saat dilimi
+Toggle	Aç/kapat
+Top display	Üst ekran
+Touch	Dokunma
+Touch indicator	Dokunma göstergesi
+Touch to continue	Devam etmek için dokunun
+Touch {0}	Dokunma {0}
+Try saving again	Yeniden kaydetmeyi dene
+Turn Wi-Fi off?	Wi-Fi kapatılsın mı?
+Turn Wi-Fi on first.	Önce Wi-Fi'yi açın.
+Turn Wi-Fi on to find networks.	Ağ bulmak için Wi-Fi'yi açın.
+Turning Wi-Fi off…	Wi-Fi kapatılıyor…
+Turning Wi-Fi on…	Wi-Fi açılıyor…
+Typeface	Yazı tipi
+Unassigned	Atanmadı
+Unavailable	Kullanılamıyor
+Unmatched artwork	Eşleşmeyen kapaklar
+Unmute	Sesi aç
+Updates & recovery	Güncelleme ve kurtarma
+Use ROM identity	ROM kimliğini kullan
+Use an additional rendering thread	Ek bir işleme iş parçacığı kullan
+Use default ({0})	Varsayılanı kullan ({0})
+Use global controls	Genel kontrolleri kullan
+Use previous build	Önceki sürümü kullan
+Use the previous RGDS build?	Önceki RGDS sürümü kullanılsın mı?
+Used by games without an override	Özel ayarı olmayan oyunlar için
+Username	Kullanıcı adı
+View	Görünüm
+Volume	Ses düzeyi
+Volume control unavailable	Ses denetimi kullanılamıyor
+WAITING FOR INPUT	GİRİŞ BEKLENİYOR
+Warm monochrome with preserved highlight detail.	Parlak alan ayrıntısı korunmuş sıcak tek renk.
+Warm paper	Sıcak kâğıt
+Warm whites and softened contrast for evening play.	Akşam oyunları için sıcak beyazlar ve yumuşak kontrast.
+Welcome back	Tekrar hoş geldiniz
+What the shortcut opens	Kısayolun açtığı yer
+Where this layout applies	Bu düzenin geçerli olduğu yer
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi bağdaştırıcısı hazır değil. İşletim sistemi sürücüsünü denetleyin veya konsolu yeniden başlatın.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi bağdaştırıcısı hazır değil. Yeniden denemek için Wi-Fi'yi açın.
+Wi-Fi did not turn on. Try again.	Wi-Fi açılmadı. Yeniden deneyin.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi donanım tarafından engellendi. Konsolu yeniden başlatıp yeniden deneyin.
+Wi-Fi is still on. Try turning it off again.	Wi-Fi hâlâ açık. Yeniden kapatmayı deneyin.
+Wi-Fi is unavailable.	Wi-Fi kullanılamıyor.
+Wi-Fi off.	Wi-Fi kapalı.
+Wi-Fi on.	Wi-Fi açık.
+Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi isteği başarısız. Şifreyi ve sinyali denetleyip yeniden deneyin.
+Wi-Fi request timed out. Check signal and try again.	Wi-Fi isteği zaman aşımına uğradı. Sinyali denetleyip yeniden deneyin.
+Wi-Fi service is unavailable.	Wi-Fi hizmeti kullanılamıyor.
+With shader	Filtreli
+Working…	Çalışıyor…
+Your cartridges go here	Kartuşlarınız burada olacak
+Your home screen after powering on	Açılıştan sonraki ana ekranınız
+Your local time and date	Yerel saat ve tarih
+Your menu shortcut	Menü kısayolunuz
+Your shader choice is still available.	Filtre seçiminiz hâlâ kullanılabilir.
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + iki renk filtresi
+{0} (experimental)	{0} (deneysel)
+{0} (recommended)	{0} (önerilen)
+{0} frames	{0} kare
+{0} games	{0} oyun
+{0} settings	{0} ayarları
+Up	Yukarı
+Times played	Oynanma sayısı
+Last played	Son oynanma
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	Kapaklar indirilmeye hazır.
+Icon style	Simge stili
+Simple pixel	Basit piksel
+Rich	Ayrıntılı
+Statistics	İstatistikler
+Games played	Oynanan oyunlar
+Most played	En çok oynanan
+Preparing your statistics…	İstatistikleriniz hazırlanıyor…
+Play a game to start your statistics.	İstatistikleri başlatmak için bir oyun oynayın.
+Installed version	Kurulu sürüm
+Check for updates	Güncellemeleri denetle
+Restart & install	Yeniden başlat ve kur
+Download update	Güncellemeyi indir
+Pause download	İndirmeyi duraklat
+Release notes	Sürüm notları
+Discard update	Güncellemeyi at
+No release notes yet.	Henüz sürüm notu yok.
+Restart and install the update?	Yeniden başlatılıp güncelleme kurulsun mu?
+Check for updates when you are ready.	Hazır olduğunuzda güncellemeleri denetleyin.
+Updates will be available when the release channel opens.	Güncellemeler sürüm kanalı açıldığında kullanılabilir olacak.
+Checking for updates…	Güncellemeler denetleniyor…
+You are up to date.	Güncelsiniz.
+A new version is ready to download.	Yeni sürüm indirilmeye hazır.
+This version failed to start. Waiting for a newer update.	Bu sürüm başlatılamadı. Daha yeni bir güncelleme bekleniyor.
+Downloading update…	Güncelleme indiriliyor…
+Verifying update…	Güncelleme doğrulanıyor…
+Preparing update…	Güncelleme hazırlanıyor…
+Ready to restart. Your previous version is kept for recovery.	Yeniden başlatmaya hazır. Önceki sürümünüz kurtarma için saklanır.
+Restarting into the update…	Güncellemeyle yeniden başlatılıyor…
+Checking the new version…	Yeni sürüm denetleniyor…
+Update installed.	Güncelleme kuruldu.
+The update could not start. Your previous version was restored.	Güncelleme başlatılamadı. Önceki sürümünüz geri yüklendi.
+Download paused. Retry to continue.	İndirme duraklatıldı. Devam etmek için yeniden deneyin.
+Update discarded. Your installed version is unchanged.	Güncelleme atıldı. Kurulu sürümünüz değişmedi.
+Connect the charger before installing an update.	Güncelleme kurmadan önce şarj cihazını takın.
+There is not enough free space for this update.	Bu güncelleme için yeterli boş alan yok.
+Exit your game before installing an update.	Güncelleme kurmadan önce oyundan çıkın.
+Install the latest SD installer before this update.	Bu güncellemeden önce en yeni SD yükleyicisini kurun.
+Restart RG DS Core before installing the update.	Güncellemeyi kurmadan önce RG DS Core'u yeniden başlatın.
+Download interrupted. Retry to continue.	İndirme kesildi. Devam etmek için yeniden deneyin.
+An update is already prepared. Install it or discard it first.	Bir güncelleme zaten hazır. Önce onu kurun veya atın.
+Another update is already running.	Başka bir güncelleme zaten çalışıyor.
+Update information has expired or the device clock is incorrect.	Güncelleme bilgisinin süresi doldu veya cihaz saati yanlış.
+This stock firmware has not been validated for updates.	Bu fabrika yazılımı güncellemeler için doğrulanmadı.
+Update verification failed. Check for updates again.	Güncelleme doğrulanamadı. Güncellemeleri yeniden denetleyin.
+Update failed. Check Wi-Fi and try again.	Güncelleme başarısız. Wi-Fi'yi denetleyip yeniden deneyin.
+Stable	Kararlı
+Testing	Test
+Import slot	Yuvayı içe aktar
+Export slot	Yuvayı dışa aktar
+Save checkpoint	Kayıt noktası al
+Load checkpoint	Kayıt noktasını yükle
+Save here	Buraya kaydet
+Export	Dışa aktar
+More	Daha fazla
+Replace slot {0}?	{0}. yuvanın üzerine yazılsın mı?
+Load slot {0}?	{0}. yuva yüklensin mi?
+Delete slot {0}?	{0}. yuva silinsin mi?
+Undo last slot change	Son yuva değişikliğini geri al
+Undo last load	Son yüklemeyi geri al
+Import into this slot	Bu yuvaya içe aktar
+Slot {0} deleted.	{0}. yuva silindi.
+Slot change undone.	Yuva değişikliği geri alındı.
+A saves your current progress here.	A geçerli ilerlemenizi buraya kaydeder.
+A replaces this slot with your current progress. X deletes it.	A bu yuvaya geçerli ilerlemenizi yazar. X yuvayı siler.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A bu yuvayı yükler. Y altındaki Son yüklemeyi geri al, şu anki ilerlemenizi geri getirir.
+Nothing to load here yet.	Burada henüz yüklenecek bir şey yok.
+A exports this slot to userdata/exports. X deletes it.	A bu yuvayı userdata/exports klasörüne aktarır. X yuvayı siler.
+Y imports a save into this slot.	Y bu yuvaya bir kayıt aktarır.
+Import help	İçe aktarma yardımı
+Replace	Üzerine yaz
+Blow into microphone	Mikrofona üfle
+Close and open DS lid	DS kapağını kapat ve aç
+DS language	DS dili
+Real microphone	Gerçek mikrofon
+Japanese	Japonca
+English	İngilizce
+French	Fransızca
+German	Almanca
+Italian	İtalyanca
+Spanish	İspanyolca
+2 seconds	2 saniye
+In game	Oyunda
+Restart the game to apply DS settings.	DS ayarlarını uygulamak için oyunu yeniden başlatın.
+Could not save DS settings.	DS ayarları kaydedilemedi.
+Search	Ara
+Save gallery	Kayıt galerisi
+Search and filters	Arama ve filtreler
+Add your games	Oyunlarınızı ekleyin
+DS controls	DS kontrolleri
+Back up all saves	Tüm kayıtları yedekle
+Resume after power off	Kapattıktan sonra devam et
+Slot	Yuva
+Empty slot	Boş yuva
+Search games	Oyun ara
+Filter	Filtre
+Clear search and filters	Aramayı ve filtreleri temizle
+Missing artwork	Eksik kapak
+Where to put games	Oyunlar nereye konur
+Scan for games	Oyunları tara
+Automatic updates	Otomatik güncellemeler
+Download automatically	Otomatik indir
+Check automatically	Otomatik denetle
+Update available in Maintenance	Bakım bölümünde güncelleme var
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	.rgdssave.zip dosyalarını userdata/imports klasörüne kopyalayın. İçe aktarılanlar bu oyun ve emülatörle eşleşmelidir.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	.nds dosyalarınızı veya DS ZIP arşivlerinizi oyun kartındaki Roms/NDS klasörüne kopyalayın. Oyunlar dahil değildir. Kayıtlar userdata içinde kalır.
+Save backup created in userdata/exports.	Kayıt yedeği userdata/exports içinde oluşturuldu.
+Slot exported to userdata/exports.	Yuva userdata/exports klasörüne aktarıldı.
+Save library updated.	Kayıt kitaplığı güncellendi.
+Current progress could not be saved. No slot was changed.	Geçerli ilerleme kaydedilemedi. Hiçbir yuva değişmedi.
+DS controls are unavailable for this engine.	Bu motor için DS kontrolleri kullanılamıyor.
+Your DS library starts here	DS kitaplığınız burada başlıyor
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	.nds veya DS ZIP dosyalarını oyun kartınızdaki Roms/NDS klasörüne kopyalayıp Oyunları tara'yı seçin.
+Use the engine's native controls for microphone and DS settings.	Mikrofon ve DS ayarları için motorun kendi kontrollerini kullanın.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Gerçek mikrofon varsayılan olarak açıktır. Üfleme ve kapak işlemleri iki saniyeliğine oyuna döner. Dil değişiklikleri yeniden başlatınca uygulanır.
+Unplayed	Oynanmamış
+Played	Oynanmış
+Filtered	Filtreli
+No matching games	Eşleşen oyun yok
+No matches. Use View to change filters.	Eşleşme yok. Filtreleri Görünüm'den değiştirin.
+Reset state	Durumu sıfırla
+Restart without loading a state?	Durum yüklemeden yeniden başlatılsın mı?
+Restart from the title screen. In-game saves and save slots are kept.	Başlık ekranından yeniden başlatır. Oyun içi kayıtlar ve kayıt yuvaları korunur.
+Microphone, simulated blowing, lid and DS language.	Mikrofon, simüle üfleme, kapak ve DS dili.
+Test microphone	Mikrofonu test et
+Test	Test et
+Live input	Canlı giriş
+Quiet	Sessiz
+Loud	Yüksek
+Listening…	Dinleniyor…
+Microphone unavailable	Mikrofon kullanılamıyor
+Audio is not recorded or saved.	Ses kaydedilmez veya saklanmaz.
+Test the microphone on your handheld.	Konsolunuzun mikrofonunu test edin.
+Return home before testing the physical microphone.	Fiziksel mikrofonu test etmeden önce ana ekrana dönün.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Mikrofona üfleyin veya konuşun. Seviyenin yükseldiğini, durunca düştüğünü izleyin.
+No filter	Filtre yok
+Quick search	Hızlı arama
+A  Search	A  Ara
+A  Jump	A  Atla
+Edit search	Aramayı düzenle
+Clear filters	Filtreleri temizle
+Try another title or clear your filters	Başka bir ad deneyin veya filtreleri temizleyin
+Type a game title…	Bir oyun adı yazın…
+Finding games…	Oyunlar bulunuyor…
+Searching…	Aranıyor…
+Search in	Şurada ara
+Try a shorter title or clear your filter.	Daha kısa bir ad deneyin veya filtreyi temizleyin.
+Type	Yaz
+Tap to type, or use the D-pad and A	Yazmak için dokunun veya yön tuşları ve A'yı kullanın
+No letters to jump to. Search for another game.	Atlanacak harf yok. Başka bir oyun arayın.
+{0} match	{0} eşleşme
+{0} matches	{0} eşleşme
+{0} matching game	{0} eşleşen oyun
+{0} matching games	{0} eşleşen oyun
+{0} game	{0} oyun
+Interface animations	Arayüz animasyonları
+View transitions	Görünüm geçişleri
+Small touches, scrolling and startup motion	Küçük dokunuşlar, kaydırma ve açılış hareketi
+Springy menu changes with a colourful wobble	Renkli bir sallanmayla yaylı menü geçişleri
+Transitions	Geçişler
+Subtle	Hafif
+Menu sounds	Menü sesleri
+Effects volume	Efekt ses düzeyi
+Preview sound	Sesi önizle
+A little handheld magic	Biraz el konsolu büyüsü
+Playful sounds for browsing, choosing and starting games.	Gezinme, seçme ve oyun başlatma için neşeli sesler.
+Turn on menu sounds to hear the previews.	Önizlemeleri duymak için menü seslerini açın.
+Some menu sounds are unavailable.	Bazı menü sesleri kullanılamıyor.
+Menu audio is unavailable on this device.	Bu cihazda menü sesi kullanılamıyor.
+Menu sounds are unavailable.	Menü sesleri kullanılamıyor.
+Close lid	Kapağı kapat
+Open lid	Kapağı aç
+Spring	Yay
+Push	Kaydır
+Transition style	Geçiş stili
+Animate pages with the selected style	Sayfaları seçilen stille canlandır
+Slide into pages; slide back to return	Sayfalara kayarak girin; dönmek için geri kayın
+Accent colour	Vurgu rengi
+FAVOURITE COLOUR	SEVDİĞİNİZ RENK
+Classic	Klasik
+Classic blue	Klasik mavi
+High contrast	Yüksek kontrast
+PREVIEW	ÖNİZLEME
+Selected row	Seçili satır
+Switches and values	Anahtarlar ve değerler
+Grey	Gri
+Brown	Kahverengi
+Red	Kırmızı
+Pink	Pembe
+Orange	Turuncu
+Yellow	Sarı
+Lime	Limon yeşili
+Green	Yeşil
+Dark green	Koyu yeşil
+Sea green	Deniz yeşili
+Turquoise	Turkuaz
+Blue	Mavi
+Dark blue	Koyu mavi
+Purple	Mor
+Violet	Menekşe
+Magenta	Eflatun
+Network file sharing	Ağ dosya paylaşımı
+Open on this Wi-Fi	Bu Wi-Fi'da açık
+Password protected	Şifre korumalı
+File sharing on. Find "RG DS" under Network.	Dosya paylaşımı açık. Ağ altında "RG DS" öğesini bulun.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: orijinal ana motor. DSCore düzeltme ve hız ekler.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: önerilen. En hızlısı; kapak, kalem ve 3D düzeltmeleri ve isteğe bağlı 2x–5x 3D ile.
+DSCore 3D resolution	DSCore 3D çözünürlüğü
+Native (fastest)	Doğal (en hızlı)
+2x sharper	2x daha keskin
+3x sharper	3x daha keskin
+4x (experimental)	4x (deneysel)
+5x (experimental)	5x (deneysel)
+Colour mode	Renk modu
+Draw and chat with nearby handhelds	Yakındaki konsollarla çizin ve sohbet edin
+Wi-Fi connected	Wi-Fi bağlı
+No Wi-Fi: you can still draw	Wi-Fi yok: yine de çizebilirsiniz
+Type your name	Adınızı yazın
+You appear like this to others	Başkaları sizi böyle görür
+Starting…	Başlatılıyor…
+Chat is unavailable: you can still draw	Sohbet kullanılamıyor: yine de çizebilirsiniz
+Nobody else is nearby yet	Yakında henüz kimse yok
+1 person nearby	Yakında 1 kişi
+{0} people nearby	Yakında {0} kişi
+Your colour	Renginiz
+Leave	Ayrıl
+Your name	Adınız
+Send	Gönder
+You are in Room {0}	{0} numaralı odadasınız
+{0} joined	{0} katıldı
+{0} left	{0} ayrıldı
+New messages below	Yeni mesajlar aşağıda
+Older messages	Eski mesajlar
+The pad is full: send it or clear it	Sayfa dolu: gönderin veya temizleyin
+Too much on the pad: erase some of it	Sayfada çok fazla şey var: bir kısmını silin
+That message could not be sent	Mesaj gönderilemedi
+That room is full	Bu oda dolu
+Chat Room {0}	Sohbet Odası {0}
+Choose a chat room to join	Katılmak için bir sohbet odası seçin
+Edit	Düzenle
+Join	Katıl
+Matches your accent	Vurgu renginize uyar
+Nobody here yet	Burada henüz kimse yok
+Start Send   X Undo   L R Scroll	Start Gönder   X Geri al   L R Kaydır
+You	Siz
+Time format	Saat biçimi
+24-hour	24 saat
+12-hour	12 saat
+24-hour or 12-hour clock	24 veya 12 saatlik saat
+How dates appear in the status bar	Tarihlerin durum çubuğunda görünüşü
+Connecting to	Bağlanılıyor:
+This can take a few seconds	Bu birkaç saniye sürebilir
+Waiting for an address…	Adres bekleniyor…
+IP address	IP adresi
+Signal	Sinyal
+Could not connect	Bağlanılamadı
+Wi-Fi is off	Wi-Fi kapalı
+Turn it on to find networks	Ağ bulmak için açın
+Choose a network from the list	Listeden bir ağ seçin
+Preparing…	Hazırlanıyor…
+Home layout	Ana ekran düzeni
+Background	Arka plan
+Touch gestures	Dokunma hareketleri
+Carousel	Atlıkarınca
+Column	Sütun
+Plain	Düz
+Grid	Izgara
+A carousel, or the DSi's column with your last game on top	Atlıkarınca veya son oyununuz en üstte olan DSi sütunu
+Plain, or the DSi's ruled grid behind every screen	Düz veya her ekranın arkasında DSi'nin çizgili ızgarası
+Swipe up from the bottom for Home, in from the left for Back	Ana ekran için alttan yukarı, geri için soldan kaydırın
+Nothing played yet	Henüz bir şey oynanmadı
+Your last game will appear here	Son oyununuz burada görünecek
+Draw and chat	Çiz ve sohbet et
+Su	Pz
+Mo	Pt
+Tu	Sa
+We	Ça
+Th	Pe
+Fr	Cu
+Sa	Ct
+Chat Room	Sohbet Odası
+Nobody else here yet	Burada henüz başka kimse yok
+Drawing on your own	Tek başınıza çiziyorsunuz
+Jump	Atla
+Home	Ana ekran
+Swipe up from the bottom edge to go Home from anywhere.	Her yerden ana ekrana gitmek için alt kenardan yukarı kaydırın.
+Swipe in from the left edge to go Back.	Geri gitmek için sol kenardan içeri kaydırın.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Alt ekranın altındaki küçük tutamak hareketlerin açık olduğunu gösterir; parmağınızla yükselir ve hareket algılandığında bir halka yeri işaretler.
+Your saves are safe. See you soon!	Kayıtlarınız güvende. Görüşmek üzere!
+DS Classic	DS Classic
+DS Lite	DS Lite
+Natural glow	Doğal parıltı
+Vivid LCD	Canlı LCD
+Natural smooth	Doğal yumuşak
+Vivid smooth	Canlı yumuşak
+Pixel beads	Piksel boncuklar
+Glossy tiles	Parlak karolar
+The first DS screen: muted colour and a fine pixel grid.	İlk DS ekranı: soluk renkler ve ince piksel ızgarası.
+The brighter DS Lite screen with a faint pixel grid.	Hafif piksel ızgaralı, daha parlak DS Lite ekranı.
+Natural colour with soft pixels that glow together.	Birlikte parıldayan yumuşak piksellerle doğal renk.
+Bold colour on a close-up LCD with RGB stripes.	RGB şeritli yakın plan LCD'de canlı renk.
+Natural colour with smoothed diagonal edges.	Yumuşatılmış çapraz kenarlarla doğal renk.
+Bold colour with smoothed diagonal edges.	Yumuşatılmış çapraz kenarlarla canlı renk.
+Bold colour; every pixel a round, shiny bead.	Canlı renk; her piksel yuvarlak, parlak bir boncuk.
+Bold colour; every pixel a raised, glossy tile.	Canlı renk; her piksel kabarık, parlak bir karo.
+IN USE	KULLANIMDA
+APPLY	UYGULA
+Follows your library shader.	Kitaplık filtrenizi izler.
+Original	Orijinal
+DS screens	DS ekranları
+Natural	Doğal
+Vivid	Canlı
+Pixel art	Piksel sanatı
+Moods	Havalar
+Change group	Grubu değiştir
+Sounds & music	Sesler ve müzik
+Menu music	Menü müziği
+Music volume	Müzik ses düzeyi
+A soft tune plays while you browse. It fades out when a game starts.	Gezinirken yumuşak bir ezgi çalar. Oyun başlayınca kısılarak biter.
+Turn on menu music for a soft tune while you browse.	Gezinirken yumuşak bir ezgi için menü müziğini açın.
+Scanning…	Taranıyor…
+Scan complete	Tarama tamamlandı
+Looking for games…	Oyunlar aranıyor…
+Reading Roms/NDS on your games card. This takes a moment.	Oyun kartınızdaki Roms/NDS okunuyor. Bu biraz sürer.
+{0} found. Choose Done to go to your library.	{0} bulundu. Kitaplığınıza gitmek için Bitti'yi seçin.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Oyun bulunamadı. .nds veya DS ZIP dosyalarını oyun kartınızdaki Roms/NDS klasörüne kopyalayıp yeniden tarayın.
+Backing up your saves…	Kayıtlarınız yedekleniyor…
+The backup did not finish. Please try again.	Yedekleme tamamlanmadı. Lütfen yeniden deneyin.
+Copies every save and checkpoint into one zip in userdata/exports.	Tüm kayıtları ve kayıt noktalarını userdata/exports içinde tek bir zip'e kopyalar.
+Where games go on the card, and a fresh scan.	Oyunların karttaki yeri ve yeni bir tarama.
+Where covers and titles come from.	Kapakların ve adların kaynağı.
+System update	Sistem güncellemesi
+Version {0} is ready	{0} sürümü hazır
+Version {0} is ready to install	{0} sürümü kuruluma hazır
+Downloading {0}	{0} indiriliyor
+Paused at {0}	{0} noktasında duraklatıldı
+Update now	Şimdi güncelle
+Resume download	İndirmeye devam et
+Update	Güncelle
+Install	Kur
+What's new	Yenilikler
+Download	İndir
+Verify	Doğrula
+Prepare	Hazırla
+Step {0} of 4	Adım {0} / 4
+Less than a minute left	Bir dakikadan az kaldı
+About {0} min left	Yaklaşık {0} dk kaldı
+About {0} h left	Yaklaşık {0} sa kaldı
+Downloads resume where they stopped if Wi-Fi drops.	Wi-Fi kesilirse indirmeler kaldığı yerden sürer.
+Your games and saves are not touched.	Oyunlarınıza ve kayıtlarınıza dokunulmaz.
+Connection lost. Retrying…	Bağlantı koptu. Yeniden deneniyor…
+The update could not be downloaded. Check for updates again.	Güncelleme indirilemedi. Güncellemeleri yeniden denetleyin.
+Finishing another task. Press Y again in a moment.	Başka bir iş bitiriliyor. Birazdan Y'ye yeniden basın.
+Updates	Güncellemeler
+The language for menus and messages.	Menülerin ve mesajların dili.
+Set the clock to where you are.	Saati bulunduğun yere göre ayarla.
+How dates appear at the top of the screen.	Tarihlerin ekranın üstünde nasıl görüneceği.
+A 24-hour or 12-hour clock.	24 veya 12 saatlik saat.
+Versions, free space and the network address of your handheld.	Cihazının sürümleri, boş alanı ve ağ adresi.
+Check for updates, go back to the previous build or clear temporary files.	Güncellemeleri denetle, önceki sürüme dön veya geçici dosyaları temizle.
+Leave RG DS Core and go back to the stock menu.	RG DS Core'dan çık ve orijinal menüye dön.
+What happens when you turn the handheld on.	Cihazı açtığında ne olacağı.
+Restart the RGDS menu.	RGDS menüsünü yeniden başlat.

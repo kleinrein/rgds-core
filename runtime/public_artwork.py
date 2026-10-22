@@ -17,7 +17,10 @@ LIBRETRO = "https://thumbnails.libretro.com/Nintendo%20-%20Nintendo%20DS/Named_B
 SERIALS = "https://raw.githubusercontent.com/libretro/libretro-database/master/metadat/no-intro/Nintendo%20-%20Nintendo%20DS.dat"
 HOSTS = {"thumbnails.libretro.com", "art.gametdb.com", "raw.githubusercontent.com"}
 # Only release tags are discarded. Parenthetical words can be part of a title.
-TAGS = re.compile(r"\((?:USA|Europe|Japan|World|Australia|Canada|France|Germany|Italy|Spain|Korea|China|Taiwan|Norway|Denmark|Sweden|Netherlands|United Kingdom|Scandinavia|Russia|Rev \d+|Beta[^)]*|Demo[^)]*|Proto[^)]*|NDSi Enhanced|[A-Z][a-z](?:,[A-Z][a-z])*)\)", re.I)
+TAGS = re.compile(
+    r"\((?:USA|Europe|Japan|World|Australia|Canada|France|Germany|Italy|Spain|Korea|China|Taiwan|Norway|Denmark|Sweden|Netherlands|United Kingdom|Scandinavia|Russia|Rev \d+|Beta[^)]*|Demo[^)]*|Proto[^)]*|NDSi Enhanced|[A-Z][a-z](?:,[A-Z][a-z])*)\)",
+    re.I
+)
 
 
 def display_title(name):
@@ -45,7 +48,8 @@ def allowed(url):
 
 class PublicRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, request, fp, code, message, headers, newurl):
-        if not allowed(newurl) or urllib.parse.urlsplit(request.full_url).hostname != urllib.parse.urlsplit(newurl).hostname:
+        if not allowed(newurl) or urllib.parse.urlsplit(request.full_url
+                                                        ).hostname != urllib.parse.urlsplit(newurl).hostname:
             raise ScraperError("Artwork service returned an unexpected redirect.")
         return super().redirect_request(request, fp, code, message, headers, newurl)
 
@@ -69,13 +73,14 @@ def rom_details(path):
 
 
 def title_key(name):
-    name = display_title(name).translate(str.maketrans({"ø":"o", "Ø":"O", "æ":"ae", "Æ":"Ae", "œ":"oe"}))
+    name = display_title(name).translate(str.maketrans({"ø": "o", "Ø": "O", "æ": "ae", "Æ": "Ae", "œ": "oe"}))
     return "".join(c for c in unicodedata.normalize("NFKD", name).casefold() if c.isalnum())
 
 
 class CoverIndex(HTMLParser):
     def __init__(self):
-        super().__init__(); self.names = []
+        super().__init__()
+        self.names = []
 
     def handle_starttag(self, tag, attrs):
         href = dict(attrs).get("href", "")
@@ -115,13 +120,17 @@ class PublicClient:
                 if len(content) > limit: raise ScraperError("Artwork response exceeds the size limit.")
                 return content
             except urllib.error.HTTPError as error:
-                try: error.close()
-                except (AttributeError, KeyError, OSError): pass   # an error without a body (fp=None)
+                try:
+                    error.close()
+                except (AttributeError, KeyError, OSError):
+                    pass  # an error without a body (fp=None)
                 if error.code == 404: raise NotFound("No matching cover found.") from None
                 retryable = error.code in (408, 429, 500, 502, 503, 504)
                 if not retryable or attempt:
                     self.unavailable[host] = time.monotonic() + 60
-                    raise ScraperError("Artwork service unavailable (HTTP %d). Retry missing artwork later." % error.code) from None
+                    raise ScraperError(
+                        "Artwork service unavailable (HTTP %d). Retry missing artwork later." % error.code
+                    ) from None
             except (urllib.error.URLError, TimeoutError, OSError):
                 if attempt:
                     self.unavailable[host] = time.monotonic() + 60
@@ -138,21 +147,26 @@ class PublicClient:
                 saved = path.read_bytes()
                 if len(saved) > 8 * 1024 * 1024: saved = None
                 elif time.time() - path.stat().st_mtime < 7 * 86400: return parse(saved.decode("utf-8-sig"))
-            except (OSError, UnicodeError, ScraperError): saved = None
+            except (OSError, UnicodeError, ScraperError):
+                saved = None
         try:
             raw = self.fetch(url)
             value = parse(raw.decode("utf-8-sig"))
         except (ScraperError, UnicodeError):
             if saved:
-                try: return parse(saved.decode("utf-8-sig"))
-                except (UnicodeError, ScraperError): pass
+                try:
+                    return parse(saved.decode("utf-8-sig"))
+                except (UnicodeError, ScraperError):
+                    pass
             raise ScraperError("The artwork catalog is unavailable. Retry missing artwork later.") from None
         if path:
             try:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 pending = path.with_suffix(".pending")
-                pending.write_bytes(raw); pending.replace(path)
-            except OSError: pass  # A catalog cache is optional; the cover still works.
+                pending.write_bytes(raw)
+                pending.replace(path)
+            except OSError:
+                pass  # A catalog cache is optional; the cover still works.
         return value
 
     def names_for_code(self, code):
@@ -162,26 +176,42 @@ class PublicClient:
 
     def gametdb(self, name, code):
         if not code: raise NotFound("This ROM has no retail game code.")
-        region = {"E": "US", "J": "JA", "D": "DE", "F": "FR", "I": "IT", "S": "ES", "K": "KO", "N": "NO", "H": "NL", "V": "SE"}.get(code[-1], "EN")
-        for language in dict.fromkeys((region, "EN", "US", "JA", * (("DK", "SE") if code[-1] == "N" else ()))):
+        region = {
+            "E": "US",
+            "J": "JA",
+            "D": "DE",
+            "F": "FR",
+            "I": "IT",
+            "S": "ES",
+            "K": "KO",
+            "N": "NO",
+            "H": "NL",
+            "V": "SE"
+        }.get(code[-1], "EN")
+        for language in dict.fromkeys((region, "EN", "US", "JA", *(("DK", "SE") if code[-1] == "N" else ()))):
             url = "https://art.gametdb.com/ds/coverS/%s/%s.png" % (language, code)
             try:
                 raw = self.fetch(url)
                 return raw, {"provider": "GameTDB", "provider_id": code, "artwork_url": url}
-            except NotFound: pass
+            except NotFound:
+                pass
         raise NotFound("No matching GameTDB cover found.")
 
     def libretro(self, name, code):
         exact = re.sub(r'[&*/:`<>?\\|]', '_', name)
         url = LIBRETRO + urllib.parse.quote(exact, safe="") + ".png"
         matched_by = "filename"
-        try: raw = self.fetch(url)
+        try:
+            raw = self.fetch(url)
         except NotFound:
             if self.index is None:
+
                 def parse(raw):
-                    parser = CoverIndex(); parser.feed(raw)
+                    parser = CoverIndex()
+                    parser.feed(raw)
                     if not parser.names: raise ScraperError("The artwork catalog was unreadable.")
                     return parser.names
+
                 self.index = self.catalog("ds-covers.html", LIBRETRO, parse)
             matches = [candidate for candidate in self.index if title_key(candidate) == title_key(name)]
             if not matches:
@@ -191,21 +221,36 @@ class PublicClient:
                 keys = {title_key(candidate) for candidate in names}
                 matches = [candidate for candidate in self.index if title_key(candidate) in keys]
                 matched_by = "game_code"
-            if not matches: raise NotFound("No cover in the public catalogs. Try a matching title in Game options > Artwork.")
-            preferred = {"E": "USA", "J": "Japan", "K": "Korea", "N": "Norway", "D": "Germany", "F": "France"}.get(code[-1:] or "", "Europe")
+            if not matches:
+                raise NotFound("No cover in the public catalogs. Try a matching title in Game options > Artwork.")
+            preferred = {
+                "E": "USA",
+                "J": "Japan",
+                "K": "Korea",
+                "N": "Norway",
+                "D": "Germany",
+                "F": "France"
+            }.get(code[-1:] or "", "Europe")
             regional = [candidate for candidate in matches if "(" + preferred in candidate]
             choices = regional or matches
             exact_region = [candidate for candidate in choices if candidate == name]
-            selected = exact_region[0] if exact_region else sorted(choices, key=lambda x:("(Rev " in x, len(x), x))[0]
+            selected = exact_region[0] if exact_region else sorted(choices, key=lambda x: ("(Rev " in x, len(x), x))[0]
             # Different localized titles sharing a serial need the filename to
             # disambiguate. A provider must not silently choose another game.
             if len({title_key(candidate) for candidate in choices}) > 1:
-                raise NotFound("More than one title matches this game code. Set the matching title in Game options > Artwork.")
+                raise NotFound(
+                    "More than one title matches this game code. Set the matching title in Game options > Artwork."
+                )
             url = LIBRETRO + urllib.parse.quote(selected, safe="") + ".png"
             raw = self.fetch(url)
             exact = selected
-        return raw, {"provider": "Libretro", "provider_id": exact, "artwork_url": url,
-                     "artwork_match": matched_by, "artwork_title": display_title(exact)}
+        return raw, {
+            "provider": "Libretro",
+            "provider_id": exact,
+            "artwork_url": url,
+            "artwork_match": matched_by,
+            "artwork_title": display_title(exact)
+        }
 
     def artwork(self, rom, name_override=""):
         name, code = rom_details(rom)
@@ -218,9 +263,12 @@ class PublicClient:
         # large cover screen; GameTDB's coverS is 128x115. GameTDB's exact
         # game-code match remains the fallback for titles Libretro lacks.
         error = None
-        try: return self.libretro(name, code)
-        except ScraperError as failure: error = failure
-        try: return self.gametdb(name, code)
+        try:
+            return self.libretro(name, code)
+        except ScraperError as failure:
+            error = failure
+        try:
+            return self.gametdb(name, code)
         except NotFound:
             if error and not isinstance(error, NotFound): raise error
             raise

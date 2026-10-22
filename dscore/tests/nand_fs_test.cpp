@@ -32,12 +32,21 @@ using namespace ds;
 using ds::io::FatVolume;
 
 static int failures = 0;
-#define CHECK(c) do { if (!(c)) { std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #c); ++failures; } } while (0)
+#define CHECK(c)                                                                                                       \
+  do {                                                                                                                 \
+    if (!(c)) {                                                                                                        \
+      std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #c);                                                \
+      ++failures;                                                                                                      \
+    }                                                                                                                  \
+  } while (0)
 
 static std::string hex(const u8* p, size_t n) {
   std::string s;
   char b[3];
-  for (size_t i = 0; i < n; ++i) { std::snprintf(b, sizeof b, "%02x", p[i]); s += b; }
+  for (size_t i = 0; i < n; ++i) {
+    std::snprintf(b, sizeof b, "%02x", p[i]);
+    s += b;
+  }
   return s;
 }
 
@@ -58,15 +67,23 @@ static void test_sha1() {
 static std::vector<u8> make_fat12(u32 total_sectors) {
   std::vector<u8> img(static_cast<size_t>(total_sectors) * 512, 0);
   u8* b = img.data();
-  b[0x0B] = 0x00; b[0x0C] = 0x02;   // 512 bytes per sector
-  b[0x0D] = 1;                      // sectors per cluster
-  b[0x0E] = 1;                      // reserved
-  b[0x10] = 2;                      // FATs
-  b[0x11] = 112;                    // root entries
-  b[0x13] = static_cast<u8>(total_sectors); b[0x14] = static_cast<u8>(total_sectors >> 8);
-  b[0x16] = 3;                      // sectors per FAT
-  b[0x1FE] = 0x55; b[0x1FF] = 0xAA;
-  for (int f = 0; f < 2; ++f) { u8* fat = b + 512 * (1 + 3 * f); fat[0] = 0xF8; fat[1] = 0xFF; fat[2] = 0xFF; }
+  b[0x0B] = 0x00;
+  b[0x0C] = 0x02; // 512 bytes per sector
+  b[0x0D] = 1;    // sectors per cluster
+  b[0x0E] = 1;    // reserved
+  b[0x10] = 2;    // FATs
+  b[0x11] = 112;  // root entries
+  b[0x13] = static_cast<u8>(total_sectors);
+  b[0x14] = static_cast<u8>(total_sectors >> 8);
+  b[0x16] = 3; // sectors per FAT
+  b[0x1FE] = 0x55;
+  b[0x1FF] = 0xAA;
+  for (int f = 0; f < 2; ++f) {
+    u8* fat = b + 512 * (1 + 3 * f);
+    fat[0] = 0xF8;
+    fat[1] = 0xFF;
+    fat[2] = 0xFF;
+  }
   return img;
 }
 
@@ -84,14 +101,14 @@ static void test_fat12() {
 
   std::string err;
   CHECK(v.mkdir("/title", &err));
-  CHECK(v.mkdir("/TITLE/00030004", &err));   // case-insensitive
-  CHECK(v.mkdir("/title/00030004", &err));   // already there: fine
-  CHECK(!v.mkdir("/nope/deeper", &err));     // no parent
+  CHECK(v.mkdir("/TITLE/00030004", &err)); // case-insensitive
+  CHECK(v.mkdir("/title/00030004", &err)); // already there: fine
+  CHECK(!v.mkdir("/nope/deeper", &err));   // no parent
 
   std::vector<u8> data(5000);
   for (size_t i = 0; i < data.size(); ++i) data[i] = static_cast<u8>(i * 7 + 3);
   CHECK(v.write("/title/00030004/public.sav", data.data(), static_cast<u32>(data.size()), &err));
-  CHECK(v.free_clusters() == free0 - 2 - 10);   // two directory clusters, ten data clusters
+  CHECK(v.free_clusters() == free0 - 2 - 10); // two directory clusters, ten data clusters
 
   // Enough files to spill a subdirectory past its first cluster (16 entries).
   for (int i = 0; i < 20; ++i) {
@@ -126,7 +143,8 @@ static void test_fat12() {
   CHECK(w.write("/title/00030004/TWLFontOther.dat", small.data(), 1, &err));
   FatVolume x;
   CHECK(open_on(x, img));
-  CHECK(x.lookup("/title/00030004/twlfonttable.DAT", e) && e.name == "TWLFON~1.DAT" && e.long_name == "TWLFontTable.dat");
+  CHECK(x.lookup("/title/00030004/twlfonttable.DAT", e) && e.name == "TWLFON~1.DAT" &&
+        e.long_name == "TWLFontTable.dat");
   CHECK(x.lookup("/title/00030004/TWLFON~1.DAT", e) && x.read(e, got) && got == small);
   CHECK(x.lookup("/title/00030004/TWLFontOther.dat", e) && e.name == "TWLFON~2.DAT" && e.size == 1);
   // Rewriting through the long name replaces that file, not a third one.
@@ -141,11 +159,13 @@ static void test_fat12() {
 static void test_synthetic_nand() {
   std::vector<u8> srl(0x6000);
   for (size_t i = 0; i < srl.size(); ++i) srl[i] = static_cast<u8>(i * 7);
-  const u32 lo = 0x4B535445, hi = 0x00030004;   // "ETSK"
-  std::memcpy(&srl[0x230], &lo, 4); std::memcpy(&srl[0x234], &hi, 4);
+  const u32 lo = 0x4B535445, hi = 0x00030004; // "ETSK"
+  std::memcpy(&srl[0x230], &lo, 4);
+  std::memcpy(&srl[0x234], &hi, 4);
   const u32 pub = 0x4000, prv = 0;
-  std::memcpy(&srl[0x238], &pub, 4); std::memcpy(&srl[0x23C], &prv, 4);
-  srl[0x1BF] = 0x04;                            // banner.sav
+  std::memcpy(&srl[0x238], &pub, 4);
+  std::memcpy(&srl[0x23C], &prv, 4);
+  srl[0x1BF] = 0x04; // banner.sav
   ds::bios::UserSettings user;
   user.nickname = "Tester";
   const ds::io::DsiRegion region = ds::io::dsi_region_for(0x00000002, 1);
@@ -174,8 +194,9 @@ static void test_synthetic_nand() {
   u8 digest[20];
   crypto::sha1(&got[0x88], 0x128, digest);
   CHECK(std::memcmp(digest, got.data(), 20) == 0);
-  CHECK(got[0x8D] == 0x31 && got[0x8E] == 1 && got[0xD0] == 'T');   // USA, English, the nickname
-  CHECK(fs.main().lookup("/sys/HWINFO_S.dat", e) && fs.main().read(e, got) && got[0x90] == 1 && std::memcmp(&got[0xA0], "EANH", 4) == 0);
+  CHECK(got[0x8D] == 0x31 && got[0x8E] == 1 && got[0xD0] == 'T'); // USA, English, the nickname
+  CHECK(fs.main().lookup("/sys/HWINFO_S.dat", e) && fs.main().read(e, got) && got[0x90] == 1 &&
+        std::memcmp(&got[0xA0], "EANH", 4) == 0);
   CHECK(files.boot_blobs().size() == 0x154);
 
   // A guest write after the baseline is the session's; the build's were not.
@@ -190,61 +211,68 @@ static void test_synthetic_nand() {
 // OS_LoadSharedFont takes a resource index under the entry count, and 3 or
 // more only while header byte 0x86 is set (read from a Korean title's code).
 static void test_builtin_font() {
-  struct Layout { u8 region; u32 count, first; u8 region_byte; const char* names[3]; };
-  const Layout layouts[] = {
-    {1, 3, 0, 0, {"TBF1_l.NFTR", "TBF1_m.NFTR", "TBF1_s.NFTR"}},
-    {4, 9, 3, 4, {"TBF1-cn_l.NFTR", "TBF1-cn_m.NFTR", "TBF1-cn_s.NFTR"}},
-    {5, 9, 6, 5, {"TBF1-kr_l.NFTR", "TBF1-kr_m.NFTR", "TBF1-kr_s.NFTR"}},
+  struct Layout {
+    u8 region;
+    u32 count, first;
+    u8 region_byte;
+    const char* names[3];
   };
-  CHECK(ds::io::builtin_dsi_font(0) == ds::io::builtin_dsi_font(1));   // Japan shares the normal table
+  const Layout layouts[] = {
+      {1, 3, 0, 0, {"TBF1_l.NFTR", "TBF1_m.NFTR", "TBF1_s.NFTR"}},
+      {4, 9, 3, 4, {"TBF1-cn_l.NFTR", "TBF1-cn_m.NFTR", "TBF1-cn_s.NFTR"}},
+      {5, 9, 6, 5, {"TBF1-kr_l.NFTR", "TBF1-kr_m.NFTR", "TBF1-kr_s.NFTR"}},
+  };
+  CHECK(ds::io::builtin_dsi_font(0) == ds::io::builtin_dsi_font(1)); // Japan shares the normal table
   CHECK(ds::io::builtin_dsi_font(2) == ds::io::builtin_dsi_font(1));
   for (const Layout& l : layouts) {
-  const std::vector<u8> f = ds::io::builtin_dsi_font(l.region);
-  CHECK(f.size() > 0x100000 / 5);
-  if (f.size() < 0xA0 + 9 * 0x40) continue;
-  CHECK(ds::io::is_builtin_font_signature(f.data()));
-  CHECK(ds::io::font_table_region(f) == (l.region == 1 ? 0 : l.region));
-  std::vector<u8> other(f.begin(), f.begin() + 0x80);
-  other[0x10] ^= 1;
-  CHECK(!ds::io::is_builtin_font_signature(other.data()));
-  const u32 n = f[0x84];
-  CHECK(n == l.count && f[0x86] == l.region_byte);
-  u8 d[20];
-  crypto::sha1(&f[0xA0], n * 0x40, d);
-  CHECK(std::memcmp(d, &f[0x8C], 20) == 0);
-  for (u32 i = 0; i < n; ++i) {
-    const u8* e = &f[0xA0 + i * 0x40];
-    const bool used = i >= l.first && i < l.first + 3;
-    bool zero = true;
-    for (u32 k = 0; k < 0x40; ++k) zero = zero && e[k] == 0;
-    CHECK(used != zero);
-    if (!used) continue;
-    CHECK(std::strcmp(reinterpret_cast<const char*>(e), l.names[i - l.first]) == 0);
-    u32 csize, cstart, dsize;
-    std::memcpy(&csize, e + 0x20, 4); std::memcpy(&cstart, e + 0x24, 4); std::memcpy(&dsize, e + 0x28, 4);
-    CHECK(cstart % 16 == 0 && static_cast<u64>(cstart) + csize <= f.size() && dsize > csize);
-    if (static_cast<u64>(cstart) + csize > f.size() || csize < 8) continue;
-    crypto::sha1(&f[cstart], csize, d);
-    CHECK(std::memcmp(d, e + 0x2C, 20) == 0);
-    // The backwards-LZ footer: the decompressed size is the stored one.
-    u32 extra;
-    std::memcpy(&extra, &f[cstart + csize - 4], 4);
-    CHECK(csize + extra == dsize);
-  }
+    const std::vector<u8> f = ds::io::builtin_dsi_font(l.region);
+    CHECK(f.size() > 0x100000 / 5);
+    if (f.size() < 0xA0 + 9 * 0x40) continue;
+    CHECK(ds::io::is_builtin_font_signature(f.data()));
+    CHECK(ds::io::font_table_region(f) == (l.region == 1 ? 0 : l.region));
+    std::vector<u8> other(f.begin(), f.begin() + 0x80);
+    other[0x10] ^= 1;
+    CHECK(!ds::io::is_builtin_font_signature(other.data()));
+    const u32 n = f[0x84];
+    CHECK(n == l.count && f[0x86] == l.region_byte);
+    u8 d[20];
+    crypto::sha1(&f[0xA0], n * 0x40, d);
+    CHECK(std::memcmp(d, &f[0x8C], 20) == 0);
+    for (u32 i = 0; i < n; ++i) {
+      const u8* e = &f[0xA0 + i * 0x40];
+      const bool used = i >= l.first && i < l.first + 3;
+      bool zero = true;
+      for (u32 k = 0; k < 0x40; ++k) zero = zero && e[k] == 0;
+      CHECK(used != zero);
+      if (!used) continue;
+      CHECK(std::strcmp(reinterpret_cast<const char*>(e), l.names[i - l.first]) == 0);
+      u32 csize, cstart, dsize;
+      std::memcpy(&csize, e + 0x20, 4);
+      std::memcpy(&cstart, e + 0x24, 4);
+      std::memcpy(&dsize, e + 0x28, 4);
+      CHECK(cstart % 16 == 0 && static_cast<u64>(cstart) + csize <= f.size() && dsize > csize);
+      if (static_cast<u64>(cstart) + csize > f.size() || csize < 8) continue;
+      crypto::sha1(&f[cstart], csize, d);
+      CHECK(std::memcmp(d, e + 0x2C, 20) == 0);
+      // The backwards-LZ footer: the decompressed size is the stored one.
+      u32 extra;
+      std::memcpy(&extra, &f[cstart + csize - 4], 4);
+      CHECK(csize + extra == dsize);
+    }
   }
 }
 
 // The region a title is run in, from its header and the user's language.
 static void test_region() {
-  auto r = ds::io::dsi_region_for(0x00000002, 3);          // USA only, German wanted
+  auto r = ds::io::dsi_region_for(0x00000002, 3); // USA only, German wanted
   CHECK(r.region == 1 && r.language == 1 && r.letter == 'E');
-  r = ds::io::dsi_region_for(0x00000004, 3);               // Europe: German is there
+  r = ds::io::dsi_region_for(0x00000004, 3); // Europe: German is there
   CHECK(r.region == 2 && r.language == 3 && r.letter == 'P');
-  r = ds::io::dsi_region_for(0xFFFFFFFF, 0);               // region-free, Japanese
+  r = ds::io::dsi_region_for(0xFFFFFFFF, 0); // region-free, Japanese
   CHECK(r.region == 0 && r.language == 0);
-  r = ds::io::dsi_region_for(0xFFFFFFFF, 1);               // region-free, English: the USA console
+  r = ds::io::dsi_region_for(0xFFFFFFFF, 1); // region-free, English: the USA console
   CHECK(r.region == 1);
-  r = ds::io::dsi_region_for(0x00000020, 1);               // Korea only
+  r = ds::io::dsi_region_for(0x00000020, 1); // Korea only
   CHECK(r.region == 5 && r.language == 7 && r.letter == 'K');
 }
 
@@ -256,7 +284,10 @@ static std::vector<u8> slurp(const char* path) {
 static void test_real_nand() {
   const char* path = std::getenv("DS_TEST_DSI_NAND");
   const char* b7path = std::getenv("DS_TEST_DSI_BIOS7I");
-  if (!path || !b7path) { std::printf("nand_fs: DS_TEST_DSI_NAND / DS_TEST_DSI_BIOS7I not set, real-dump checks skipped\n"); return; }
+  if (!path || !b7path) {
+    std::printf("nand_fs: DS_TEST_DSI_NAND / DS_TEST_DSI_BIOS7I not set, real-dump checks skipped\n");
+    return;
+  }
   const std::vector<u8> bios7i = slurp(b7path);
   CHECK(bios7i.size() == 0x10000);
   if (bios7i.size() != 0x10000) return;
@@ -267,7 +298,10 @@ static void test_real_nand() {
   io::NandFs fs;
   std::string err;
   CHECK(fs.mount(nand, bios7i.data(), &err));
-  if (!fs.valid()) { std::fprintf(stderr, "mount: %s\n", err.c_str()); return; }
+  if (!fs.valid()) {
+    std::fprintf(stderr, "mount: %s\n", err.c_str());
+    return;
+  }
   CHECK(fs.main().fat_bits() == 16);
 
   // A title's save, and the FAT12 volume the SDK formats inside it.
@@ -296,7 +330,10 @@ static void test_real_nand() {
 
   // A ticket the way melonDS's ImportTitle makes one survives the round trip.
   u8 tik[0x2C4] = {};
-  tik[0x1DC] = 0x00; tik[0x1DD] = 0x03; tik[0x1DE] = 0x00; tik[0x1DF] = 0x04;
+  tik[0x1DC] = 0x00;
+  tik[0x1DD] = 0x03;
+  tik[0x1DE] = 0x00;
+  tik[0x1DF] = 0x04;
   const u8 nonce[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
   fs.es_encrypt(tik, 0x2A4, nonce);
   CHECK(fs.es_decrypt(tik, 0x2A4));
@@ -315,7 +352,8 @@ static void test_real_nand() {
   CHECK(again.mount(nand, bios7i.data(), &err));
   std::vector<u8> back;
   CHECK(again.main().lookup("/DSPERATE/PROBE.BIN", e) && again.main().read(e, back) && back == data);
-  CHECK(again.main().lookup("/title/00030004/4b533345/data/public.sav", e) && again.main().read(e, back) && back.size() == 16384);
+  CHECK(again.main().lookup("/title/00030004/4b533345/data/public.sav", e) && again.main().read(e, back) &&
+        back.size() == 16384);
   std::printf("nand_fs: real dump ok (%d tickets, %u clusters free before the probe)\n", tickets, free0);
 }
 
@@ -337,14 +375,20 @@ static void test_persist() {
 
   std::vector<u8> save(16384);
   for (size_t i = 0; i < save.size(); ++i) save[i] = static_cast<u8>(i * 13 + 5);
-  { std::ofstream f(dir / "KS3E.pub", std::ios::binary); f.write(reinterpret_cast<const char*>(save.data()), save.size()); }
+  {
+    std::ofstream f(dir / "KS3E.pub", std::ios::binary);
+    f.write(reinterpret_cast<const char*>(save.data()), save.size());
+  }
   const u8 wrong[3] = {1, 2, 3};
-  { std::ofstream f(dir / "KMGE.pub", std::ios::binary); f.write(reinterpret_cast<const char*>(wrong), 3); }
+  {
+    std::ofstream f(dir / "KMGE.pub", std::ios::binary);
+    f.write(reinterpret_cast<const char*>(wrong), 3);
+  }
 
   io::NandImage nand;
   CHECK(nand.open(path));
   io::NandPersistReport in = io::nand_import(nand, bios7i.data(), paths);
-  CHECK(in.saves == 1);                 // KS3E; KMGE's is the wrong size and is left alone
+  CHECK(in.saves == 1); // KS3E; KMGE's is the wrong size and is left alone
   CHECK(in.notes.size() == 1);
 
   io::NandFs fs;
@@ -387,8 +431,15 @@ static void test_persist() {
 // base, applied back over a session that has moved on.
 static void test_nand_state() {
   const u8 cid[16] = {1, 2, 3};
-  auto sector = [](u8 fill) { std::vector<u8> s(512, fill); return s; };
-  auto at = [](io::NandImage& n, u64 sec) { std::vector<u8> s(512); n.peek(sec * 512, 512, s.data()); return s; };
+  auto sector = [](u8 fill) {
+    std::vector<u8> s(512, fill);
+    return s;
+  };
+  auto at = [](io::NandImage& n, u64 sec) {
+    std::vector<u8> s(512);
+    n.peek(sec * 512, 512, s.data());
+    return s;
+  };
   auto build = [&](io::NandImage& n, u8 base_fill) {
     n.create_in_memory(64 << 20, cid, 0x1234);
     for (u64 s = 0; s < 4; ++s) n.poke(s * 512, 512, sector(base_fill).data());
@@ -412,7 +463,7 @@ static void test_nand_state() {
 
   nand.apply_state_delta(d);
   CHECK(at(nand, 2) == sector(0xB0));
-  CHECK(at(nand, 3) == sector(0xAA));   // back to the base
+  CHECK(at(nand, 3) == sector(0xAA)); // back to the base
   CHECK(at(nand, 10) == sector(0xC0));
   CHECK(at(nand, 11) == sector(0));
   CHECK(nand.state_delta().sectors == d.sectors && nand.state_delta().data == d.data);
@@ -436,14 +487,19 @@ static void test_nand_state() {
 // names, the .app and console data read back, and the .dspr.nds sync.
 static void test_nand_shortcuts() {
   std::vector<u8> srl(0x6000, 0);
-  const u32 lo = 0x4B535445, hi = 0x00030004;   // "ETSK"
-  std::memcpy(&srl[0x230], &lo, 4); std::memcpy(&srl[0x234], &hi, 4);
+  const u32 lo = 0x4B535445, hi = 0x00030004; // "ETSK"
+  std::memcpy(&srl[0x230], &lo, 4);
+  std::memcpy(&srl[0x234], &hi, 4);
   const u32 banner = 0x5000;
   std::memcpy(&srl[0x68], &banner, 4);
   const char16_t en[] = u"Test: Title\nPublisher";
-  for (size_t i = 0; en[i]; ++i) { srl[banner + 0x340 + i * 2] = static_cast<u8>(en[i]); srl[banner + 0x341 + i * 2] = static_cast<u8>(en[i] >> 8); }
+  for (size_t i = 0; en[i]; ++i) {
+    srl[banner + 0x340 + i * 2] = static_cast<u8>(en[i]);
+    srl[banner + 0x341 + i * 2] = static_cast<u8>(en[i] >> 8);
+  }
   ds::bios::UserSettings user;
-  ds::io::DsiConsoleFiles files = ds::io::make_dsi_console_files(user, ds::io::dsi_region_for(0x00000002, 1), ds::io::kSynthConsoleId);
+  ds::io::DsiConsoleFiles files =
+      ds::io::make_dsi_console_files(user, ds::io::dsi_region_for(0x00000002, 1), ds::io::kSynthConsoleId);
   files.font = std::vector<u8>(0x300, 0xAB);
   ds::io::NandImage nand;
   std::string err;
@@ -452,28 +508,35 @@ static void test_nand_shortcuts() {
   const std::vector<ds::io::NandTitle> titles = ds::io::nand_dsiware_titles(nand, nullptr);
   CHECK(titles.size() == 1);
   if (titles.size() != 1) return;
-  CHECK(titles[0].title_lo == lo && titles[0].code == "KSTE" && titles[0].name == "Test Title");   // the first line, made file-safe
+  CHECK(titles[0].title_lo == lo && titles[0].code == "KSTE" &&
+        titles[0].name == "Test Title"); // the first line, made file-safe
   std::vector<u8> app, blobs;
   u32 cid = 99;
   CHECK(ds::io::nand_read_title_app(nand, nullptr, lo, app, cid, &err) && app == srl && cid == 0);
   CHECK(!ds::io::nand_read_title_app(nand, nullptr, 0x4B585858, app, cid, &err));
   CHECK(ds::io::nand_boot_blobs(nand, nullptr, blobs, &err) && blobs == files.boot_blobs());
 
-  const std::filesystem::path dir = std::filesystem::temp_directory_path() / ("dsperate-shortcuts-" + std::to_string(getpid()));
+  const std::filesystem::path dir =
+      std::filesystem::temp_directory_path() / ("dsperate-shortcuts-" + std::to_string(getpid()));
   std::filesystem::create_directories(dir);
-  { std::ofstream(dir / "game.nds") << "x"; std::ofstream(dir / "Gone Title.dspr.nds") << "stale"; }
+  {
+    std::ofstream(dir / "game.nds") << "x";
+    std::ofstream(dir / "Gone Title.dspr.nds") << "stale";
+  }
   ds::io::ShortcutSync r = ds::io::sync_shortcuts(dir.string(), &nand, nullptr, true);
   CHECK(r.written == 1 && r.removed == 1);
   ds::io::NandShortcut sc;
-  CHECK(ds::io::is_shortcut_name((dir / "Test Title.dspr.nds").string()) && ds::io::is_shortcut_name("A.DSPR.NDS") && !ds::io::is_shortcut_name("a.nds"));
+  CHECK(ds::io::is_shortcut_name((dir / "Test Title.dspr.nds").string()) && ds::io::is_shortcut_name("A.DSPR.NDS") &&
+        !ds::io::is_shortcut_name("a.nds"));
   CHECK(ds::io::read_shortcut((dir / "Test Title.dspr.nds").string(), sc) && sc.title_lo == lo && sc.from(nand));
   ds::io::NandImage other;
   other.create_in_memory(64 << 20, files.hwinfo_s.data(), 0x1234);
   CHECK(!sc.from(other));
   r = ds::io::sync_shortcuts(dir.string(), &nand, nullptr, true);
-  CHECK(r.written == 0 && r.removed == 0);   // already up to date
+  CHECK(r.written == 0 && r.removed == 0); // already up to date
   r = ds::io::sync_shortcuts(dir.string(), nullptr, nullptr, false);
-  CHECK(r.removed == 1 && !std::filesystem::exists(dir / "Test Title.dspr.nds") && std::filesystem::exists(dir / "game.nds"));
+  CHECK(r.removed == 1 && !std::filesystem::exists(dir / "Test Title.dspr.nds") &&
+        std::filesystem::exists(dir / "game.nds"));
   std::filesystem::remove_all(dir);
 }
 
@@ -483,18 +546,21 @@ static void test_nand_shortcuts() {
 static void test_shortcut_names() {
   auto ascii = [](const std::u16string& s) {
     std::vector<ds::u8> b(0x100, 0);
-    for (size_t i = 0; i < s.size() && i < 0x80; ++i) { b[i * 2] = static_cast<ds::u8>(s[i]); b[i * 2 + 1] = static_cast<ds::u8>(s[i] >> 8); }
+    for (size_t i = 0; i < s.size() && i < 0x80; ++i) {
+      b[i * 2] = static_cast<ds::u8>(s[i]);
+      b[i * 2 + 1] = static_cast<ds::u8>(s[i] >> 8);
+    }
     return ds::io::banner_title_ascii(b.data());
   };
   CHECK(ascii(u"Shantae: Risky\u2019s Revenge\u2122") == "Shantae: Risky's Revenge");
   CHECK(ascii(u"Dark Void\u2122 Zero") == "Dark Void Zero");
   CHECK(ascii(u"Pok\u00E9mon\u00AE Art Academy\u00A9") == "Pokemon Art Academy");
   CHECK(ascii(u"Na\u00EFve \u00C6ther \u0141\u00F3d\u017A \u00DFtra\u00DFe") == "Naive AEther Lodz sstrasse");
-  CHECK(ascii(u"\uFF21\uFF22\uFF23\u3000\uFF11\uFF12") == "ABC 12");      // fullwidth ASCII
+  CHECK(ascii(u"\uFF21\uFF22\uFF23\u3000\uFF11\uFF12") == "ABC 12"); // fullwidth ASCII
   CHECK(ascii(u"A \u2013 B\u2026") == "A - B...");
-  CHECK(ascii(u"\uE000 Start\uE001") == " Start");                            // the DSi font's button glyphs
-  CHECK(ascii(u"\u3074\u3053\u3063\u3068\u30A2\u30ED\u30FC") == "-");      // kana: only the long-vowel mark survives
-  CHECK(ascii(u"Line one\nLine two") == "Line one");                            // the first line only
+  CHECK(ascii(u"\uE000 Start\uE001") == " Start");                    // the DSi font's button glyphs
+  CHECK(ascii(u"\u3074\u3053\u3063\u3068\u30A2\u30ED\u30FC") == "-"); // kana: only the long-vowel mark survives
+  CHECK(ascii(u"Line one\nLine two") == "Line one");                  // the first line only
 }
 
 int main() {
@@ -508,7 +574,10 @@ int main() {
   test_builtin_font();
   test_real_nand();
   test_persist();
-  if (failures) { std::fprintf(stderr, "nand_fs: %d failure(s)\n", failures); return 1; }
+  if (failures) {
+    std::fprintf(stderr, "nand_fs: %d failure(s)\n", failures);
+    return 1;
+  }
   std::printf("nand_fs: ok\n");
   return 0;
 }

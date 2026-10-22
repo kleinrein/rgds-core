@@ -8,13 +8,15 @@
 
 #include <string>
 
-namespace ds::cart { class RomSource; }
+namespace ds::cart {
+class RomSource;
+}
 
 namespace ds::cheevos {
 
 // 32 lowercase hex chars in `out`, or false with a reason in `err`. `name` is
 // for messages only. Safe to call on any thread.
-bool rom_hash(const cart::RomSource& src, const std::string& name,
-              std::string& out, std::string& err, bool dsi = false);
+bool rom_hash(const cart::RomSource& src, const std::string& name, std::string& out, std::string& err,
+              bool dsi = false);
 
 } // namespace ds::cheevos

@@ -42,7 +42,10 @@ inline bool host_governor_polls(std::string* which = nullptr) {
   for (unsigned p = 0; p < 16; ++p) {
     const std::string g = cpu_governor(p);
     if (g.empty()) continue;
-    if (governor_is_polling(g, read_policy_attr(p, "scaling_driver"))) { if (which) *which = g; return true; }
+    if (governor_is_polling(g, read_policy_attr(p, "scaling_driver"))) {
+      if (which) *which = g;
+      return true;
+    }
   }
   return false;
 }

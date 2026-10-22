@@ -22,8 +22,13 @@ namespace ds {
       const s64 r = n - q * d;
       const s64 ad = d < 0 ? -static_cast<s64>(d) : d;
       const s64 away = d < 0 ? -1 : 1;
-      if (n >= 0) { if (r < 0) q -= away; else if (r >= ad) q += away; }
-      else { if (r > 0) q += away; else if (-r >= ad) q -= away; }
+      if (n >= 0) {
+        if (r < 0) q -= away;
+        else if (r >= ad) q += away;
+      } else {
+        if (r > 0) q += away;
+        else if (-r >= ad) q -= away;
+      }
       return q;
     }
   }
@@ -34,7 +39,8 @@ namespace ds {
 [[gnu::always_inline]] inline u64 div_u64(u64 n, u32 d) {
   const u32 hi = static_cast<u32>(n >> 32);
   if (d != 0 && hi < (1u << 20)) {
-    const double qd = (static_cast<double>(hi) * 4294967296.0 + static_cast<double>(static_cast<u32>(n))) / static_cast<double>(d);
+    const double qd =
+        (static_cast<double>(hi) * 4294967296.0 + static_cast<double>(static_cast<u32>(n))) / static_cast<double>(d);
     if (qd < 4294967000.0) {
       u64 q = static_cast<u32>(qd);
       const u64 qd64 = q * d;

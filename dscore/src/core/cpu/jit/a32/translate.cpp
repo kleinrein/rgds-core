@@ -34,27 +34,39 @@ constexpr size_t COLD_CAP = 32u << 10;
 constexpr u32 OFF_SPSR = offsetof(CpuContext, hot) + offsetof(JitHot, spsr);
 constexpr u32 OFF_TIMING9 = offsetof(CpuContext, timing9);
 constexpr u32 OFF_TIMING7 = offsetof(CpuContext, timing7);
-constexpr u32 OFF_COST7   = offsetof(CpuContext, cost7);
+constexpr u32 OFF_COST7 = offsetof(CpuContext, cost7);
 static_assert(OFF_COST7 < 4096, "CpuContext timing pointers must be reachable from r11");
 
 constexpr u32 F_N = 8, F_Z = 4, F_C = 2, F_V = 1, F_ALL = 15;
 
-inline u32 rotr(u32 v, u32 n) { n &= 31; return n ? (v >> n) | (v << (32 - n)) : v; }
+inline u32 rotr(u32 v, u32 n) {
+  n &= 31;
+  return n ? (v >> n) | (v << (32 - n)) : v;
+}
 
 u32 cond_reads(u32 cond) {
   switch (cond) {
-  case 0x0: case 0x1: return F_Z;
-  case 0x2: case 0x3: return F_C;
-  case 0x4: case 0x5: return F_N;
-  case 0x6: case 0x7: return F_V;
-  case 0x8: case 0x9: return F_C | F_Z;
-  case 0xA: case 0xB: return F_N | F_V;
-  case 0xC: case 0xD: return F_N | F_Z | F_V;
-  default:  return 0;
+  case 0x0:
+  case 0x1: return F_Z;
+  case 0x2:
+  case 0x3: return F_C;
+  case 0x4:
+  case 0x5: return F_N;
+  case 0x6:
+  case 0x7: return F_V;
+  case 0x8:
+  case 0x9: return F_C | F_Z;
+  case 0xA:
+  case 0xB: return F_N | F_V;
+  case 0xC:
+  case 0xD: return F_N | F_Z | F_V;
+  default: return 0;
   }
 }
 
-struct FlagUse { u32 reads, writes; };
+struct FlagUse {
+  u32 reads, writes;
+};
 
 using shape::mcr_is_nop;
 using shape::msr_inline;
@@ -62,51 +74,78 @@ using shape::msr_inline;
 // Must agree with the liveness pass, which treats these as reading every flag.
 bool arm_needs_fallback(u32 instr, bool a9) {
   const u32 cond = instr >> 28;
-  if (cond == 0xF) return !(((instr >> 25) & 7) == 5 && a9) && ((instr >> 24) & 0xF7) != 0x55;   // BLX imm (ARM9) and PLD inline
+  if (cond == 0xF)
+    return !(((instr >> 25) & 7) == 5 && a9) && ((instr >> 24) & 0xF7) != 0x55; // BLX imm (ARM9) and PLD inline
   const AOp op = arm::decode_arm(instr);
   const u32 rd = (instr >> 12) & 0xF, rn = (instr >> 16) & 0xF;
   switch (op) {
-  case AOp::DpImm: case AOp::DpImmShift: case AOp::DpRegShift: {
+  case AOp::DpImm:
+  case AOp::DpImmShift:
+  case AOp::DpRegShift: {
     const u32 opcode = (instr >> 21) & 0xF;
     const bool test = opcode >= 8 && opcode <= 0xB;
     if (rd == 15 && !test) return true;
     return op == AOp::DpRegShift && ((instr >> 8) & 0xF) == 15;
   }
-  case AOp::Mrs: case AOp::B: case AOp::Bl: case AOp::Bx: case AOp::Pld:
-    return false;
+  case AOp::Mrs:
+  case AOp::B:
+  case AOp::Bl:
+  case AOp::Bx:
+  case AOp::Pld: return false;
   case AOp::Mcr: return !mcr_is_nop(instr, a9);
-  case AOp::MsrReg: case AOp::MsrImm: return !msr_inline(instr);
-  case AOp::BlxReg: case AOp::Clz: return !a9;
-  case AOp::Mul: case AOp::Mla:
-    return rd == 15 || ((instr >> 8) & 0xF) == 15 || (instr & 0xF) == 15 || rn == 15;
-  case AOp::Umull: case AOp::Umlal: case AOp::Smull: case AOp::Smlal:
-    return rd == 15 || rn == 15 || ((instr >> 8) & 0xF) == 15 || (instr & 0xF) == 15;
-  case AOp::SmlaXY: case AOp::SmulXY: case AOp::SmlawY: case AOp::SmulwY:
+  case AOp::MsrReg:
+  case AOp::MsrImm: return !msr_inline(instr);
+  case AOp::BlxReg:
+  case AOp::Clz: return !a9;
+  case AOp::Mul:
+  case AOp::Mla: return rd == 15 || ((instr >> 8) & 0xF) == 15 || (instr & 0xF) == 15 || rn == 15;
+  case AOp::Umull:
+  case AOp::Umlal:
+  case AOp::Smull:
+  case AOp::Smlal: return rd == 15 || rn == 15 || ((instr >> 8) & 0xF) == 15 || (instr & 0xF) == 15;
+  case AOp::SmlaXY:
+  case AOp::SmulXY:
+  case AOp::SmlawY:
+  case AOp::SmulwY:
     return !a9 || rn == 15 || ((instr >> 8) & 0xF) == 15 || (instr & 0xF) == 15 ||
            ((op == AOp::SmlaXY || op == AOp::SmlawY) && rd == 15);
-  case AOp::LdrStrImm: case AOp::LdrStrReg: {
+  case AOp::LdrStrImm:
+  case AOp::LdrStrReg: {
     const bool l = instr & (1u << 20), p = instr & (1u << 24), w = instr & (1u << 21);
     return (l && rd == 15) || (rn == 15 && (!p || w)) || (op == AOp::LdrStrReg && (instr & 0xF) == 15);
   }
-  case AOp::LdrStrHImm: case AOp::LdrStrHReg: {
+  case AOp::LdrStrHImm:
+  case AOp::LdrStrHReg: {
     const bool l = instr & (1u << 20), p = instr & (1u << 24), w = instr & (1u << 21);
     const u32 sh = (instr >> 5) & 3;
     return (!l && sh != 1) || rd == 15 || (rn == 15 && (!p || w)) || (op == AOp::LdrStrHReg && (instr & 0xF) == 15);
   }
-  case AOp::Ldm: case AOp::Stm:
-    return (instr & (1u << 22)) || (instr & 0xFFFF) == 0 || rn == 15;
-  default:
-    return true;
+  case AOp::Ldm:
+  case AOp::Stm: return (instr & (1u << 22)) || (instr & 0xFFFF) == 0 || rn == 15;
+  default: return true;
   }
 }
 
 // `paired`: previous instruction is a BL prefix (static BL/BLX suffix target).
 bool thumb_needs_fallback(u16 instr, bool a9, bool paired) {
   switch (arm::decode_thumb(instr)) {
-  case TOp::HiRegOp: case TOp::ShiftImm: case TOp::AddSubReg: case TOp::AddSubImm3: case TOp::MovCmpAddSubImm8: case TOp::Alu:
-  case TOp::B: case TOp::BCond: case TOp::BlPrefix: case TOp::AddPcSp: case TOp::AdjustSp: case TOp::BlSuffix:
-  case TOp::LdrPcRel: case TOp::LdrStrReg: case TOp::LdrStrImm5: case TOp::LdrStrHImm5: case TOp::LdrStrSpRel:
-    return false;
+  case TOp::HiRegOp:
+  case TOp::ShiftImm:
+  case TOp::AddSubReg:
+  case TOp::AddSubImm3:
+  case TOp::MovCmpAddSubImm8:
+  case TOp::Alu:
+  case TOp::B:
+  case TOp::BCond:
+  case TOp::BlPrefix:
+  case TOp::AddPcSp:
+  case TOp::AdjustSp:
+  case TOp::BlSuffix:
+  case TOp::LdrPcRel:
+  case TOp::LdrStrReg:
+  case TOp::LdrStrImm5:
+  case TOp::LdrStrHImm5:
+  case TOp::LdrStrSpRel: return false;
   case TOp::BxBlx: return (instr & (1 << 7)) && !a9;
   case TOp::PushPop: return ((instr & 0xFF) | ((instr >> 8) & 1)) == 0;
   case TOp::StmLdm: return (instr & 0xFF) == 0;
@@ -124,9 +163,11 @@ FlagUse arm_flag_use(u32 instr, bool a9) {
   const bool s = instr & (1u << 20);
   const u32 opcode = (instr >> 21) & 0xF;
   switch (op) {
-  case AOp::DpImm: case AOp::DpImmShift: case AOp::DpRegShift: {
-    if (opcode == 5 || opcode == 6 || opcode == 7) u.reads |= F_C;                 // ADC SBC RSC
-    if (op == AOp::DpImmShift && ((instr >> 4) & 0xFF) == 0x06) u.reads |= F_C;    // RRX (ROR #0)
+  case AOp::DpImm:
+  case AOp::DpImmShift:
+  case AOp::DpRegShift: {
+    if (opcode == 5 || opcode == 6 || opcode == 7) u.reads |= F_C;              // ADC SBC RSC
+    if (op == AOp::DpImmShift && ((instr >> 4) & 0xFF) == 0x06) u.reads |= F_C; // RRX (ROR #0)
     if (s) {
       const bool arith = (opcode >= 2 && opcode <= 7) || opcode == 0xA || opcode == 0xB;
       if (arith) u.writes = F_ALL;
@@ -135,27 +176,52 @@ FlagUse arm_flag_use(u32 instr, bool a9) {
         bool carry_written;
         if (op == AOp::DpImm) carry_written = ((instr >> 8) & 0xF) != 0;
         else if (op == AOp::DpImmShift) carry_written = ((instr >> 7) & 0x1F) != 0 || ((instr >> 5) & 3) != 0;
-        else { carry_written = true; u.reads |= F_C; }
+        else {
+          carry_written = true;
+          u.reads |= F_C;
+        }
         if (carry_written) u.writes |= F_C;
       }
     }
     break;
   }
-  case AOp::Mul: case AOp::Mla: case AOp::Umull: case AOp::Umlal: case AOp::Smull: case AOp::Smlal:
-    if (s) u.writes = F_N | F_Z;   // ARM7 also clears C; under-claiming writes is safe
+  case AOp::Mul:
+  case AOp::Mla:
+  case AOp::Umull:
+  case AOp::Umlal:
+  case AOp::Smull:
+  case AOp::Smlal:
+    if (s) u.writes = F_N | F_Z; // ARM7 also clears C; under-claiming writes is safe
     break;
   case AOp::Mrs: u.reads = F_ALL; break;
-  case AOp::MsrReg: case AOp::MsrImm:
-    u.reads = F_ALL;                                   // mode-change path syncs CPSR via the interpreter
-    if (instr & (1u << 19)) u.writes = F_ALL;          // f field
+  case AOp::MsrReg:
+  case AOp::MsrImm:
+    u.reads = F_ALL;                          // mode-change path syncs CPSR via the interpreter
+    if (instr & (1u << 19)) u.writes = F_ALL; // f field
     break;
-  case AOp::B: case AOp::Bl: case AOp::Bx: case AOp::BlxReg: case AOp::Clz: case AOp::Pld: case AOp::Mcr:
-  case AOp::SmlaXY: case AOp::SmulXY: case AOp::SmlawY: case AOp::SmulwY:
-  case AOp::LdrStrImm: case AOp::LdrStrReg: case AOp::LdrStrHImm: case AOp::LdrStrHReg: case AOp::Ldm: case AOp::Stm:
-    break;
+  case AOp::B:
+  case AOp::Bl:
+  case AOp::Bx:
+  case AOp::BlxReg:
+  case AOp::Clz:
+  case AOp::Pld:
+  case AOp::Mcr:
+  case AOp::SmlaXY:
+  case AOp::SmulXY:
+  case AOp::SmlawY:
+  case AOp::SmulwY:
+  case AOp::LdrStrImm:
+  case AOp::LdrStrReg:
+  case AOp::LdrStrHImm:
+  case AOp::LdrStrHReg:
+  case AOp::Ldm:
+  case AOp::Stm: break;
   default: u = {F_ALL, F_ALL}; break;
   }
-  if (cond != 0xE) { u.reads |= cond_reads(cond); u.writes = 0; }
+  if (cond != 0xE) {
+    u.reads |= cond_reads(cond);
+    u.writes = 0;
+  }
   return u;
 }
 
@@ -167,13 +233,20 @@ FlagUse thumb_flag_use(u16 instr, bool a9, bool paired) {
     const u32 type = (instr >> 11) & 3, amt = (instr >> 6) & 0x1F;
     return {0, (type == 0 && amt == 0) ? (F_N | F_Z) : (F_N | F_Z | F_C)};
   }
-  case TOp::AddSubReg: case TOp::AddSubImm3: return {0, F_ALL};
+  case TOp::AddSubReg:
+  case TOp::AddSubImm3: return {0, F_ALL};
   case TOp::MovCmpAddSubImm8: return {0, ((instr >> 11) & 3) == 0 ? (F_N | F_Z) : F_ALL};
   case TOp::Alu:
     switch ((instr >> 6) & 0xF) {
-    case 0x2: case 0x3: case 0x4: case 0x7: return {F_C, F_N | F_Z | F_C};
-    case 0x5: case 0x6: return {F_C, F_ALL};
-    case 0x9: case 0xA: case 0xB: return {0, F_ALL};
+    case 0x2:
+    case 0x3:
+    case 0x4:
+    case 0x7: return {F_C, F_N | F_Z | F_C};
+    case 0x5:
+    case 0x6: return {F_C, F_ALL};
+    case 0x9:
+    case 0xA:
+    case 0xB: return {0, F_ALL};
     default: return {0, F_N | F_Z};
     }
   case TOp::HiRegOp: return {0, ((instr >> 8) & 3) == 1 ? F_ALL : 0};
@@ -182,7 +255,12 @@ FlagUse thumb_flag_use(u16 instr, bool a9, bool paired) {
   }
 }
 
-struct Instr { u32 addr; u32 raw; u32 live_out; bool fallback; };
+struct Instr {
+  u32 addr;
+  u32 raw;
+  u32 live_out;
+  bool fallback;
+};
 
 // ---- register cache ----
 // Slots used by the current instruction are locked against eviction.
@@ -190,12 +268,21 @@ class RegCache {
 public:
   static constexpr u32 NSLOT = 5, NONE = 0xFF;
   static constexpr u32 HOST[NSLOT] = {SCRATCH0, SCRATCH1, SCRATCH2, SCRATCH3, SCRATCH4};
-  struct Slot { u32 guest = NONE; bool dirty = false; u32 last = 0; };
-  struct State { Slot slots[NSLOT]; };
+  struct Slot {
+    u32 guest = NONE;
+    bool dirty = false;
+    u32 last = 0;
+  };
+  struct State {
+    Slot slots[NSLOT];
+  };
 
   explicit RegCache(Emitter*& cur) : cur_(cur) {}
 
-  void begin_instr() { ++tick_; locked_ = 0; }
+  void begin_instr() {
+    ++tick_;
+    locked_ = 0;
+  }
   u32 read(u32 g) {
     assert(g < 15);
     if (const u32 h = pinned_host(g); h != 0xFF) return h;
@@ -228,14 +315,20 @@ public:
     return use(s);
   }
   void release(u32 host) {
-    for (u32 s = 0; s < NSLOT; ++s) if (HOST[s] == host) { locked_ &= ~(1u << s); slots_[s] = Slot{}; }
+    for (u32 s = 0; s < NSLOT; ++s)
+      if (HOST[s] == host) {
+        locked_ &= ~(1u << s);
+        slots_[s] = Slot{};
+      }
   }
   // Keep a slot cached but let the rest of this instruction evict it.
   void unlock(u32 host) {
-    for (u32 s = 0; s < NSLOT; ++s) if (HOST[s] == host) locked_ &= ~(1u << s);
+    for (u32 s = 0; s < NSLOT; ++s)
+      if (HOST[s] == host) locked_ &= ~(1u << s);
   }
   int slot_of(u32 host) const {
-    for (u32 s = 0; s < NSLOT; ++s) if (HOST[s] == host) return static_cast<int>(s);
+    for (u32 s = 0; s < NSLOT; ++s)
+      if (HOST[s] == host) return static_cast<int>(s);
     return -1;
   }
   // For a cold path rejoining after helpers clobbered the slot registers.
@@ -256,20 +349,34 @@ public:
       if (slots_[s].guest != NONE && slots_[s].dirty) cur_->str(HOST[s], R_CTX, off_reg(slots_[s].guest));
   }
   bool empty() const {
-    for (u32 s = 0; s < NSLOT; ++s) if (slots_[s].guest != NONE) return false;
+    for (u32 s = 0; s < NSLOT; ++s)
+      if (slots_[s].guest != NONE) return false;
     return true;
   }
-  State save() const { State st; for (u32 s = 0; s < NSLOT; ++s) st.slots[s] = slots_[s]; return st; }
-  void restore(const State& st) { for (u32 s = 0; s < NSLOT; ++s) slots_[s] = st.slots[s]; locked_ = 0; }
+  State save() const {
+    State st;
+    for (u32 s = 0; s < NSLOT; ++s) st.slots[s] = slots_[s];
+    return st;
+  }
+  void restore(const State& st) {
+    for (u32 s = 0; s < NSLOT; ++s) slots_[s] = st.slots[s];
+    locked_ = 0;
+  }
 
 private:
   int find(u32 g) const {
-    for (u32 s = 0; s < NSLOT; ++s) if (slots_[s].guest == g) return static_cast<int>(s);
+    for (u32 s = 0; s < NSLOT; ++s)
+      if (slots_[s].guest == g) return static_cast<int>(s);
     return -1;
   }
-  u32 use(int s) { slots_[s].last = tick_; locked_ |= 1u << s; return HOST[s]; }
+  u32 use(int s) {
+    slots_[s].last = tick_;
+    locked_ |= 1u << s;
+    return HOST[s];
+  }
   int alloc() {
-    for (u32 s = 0; s < NSLOT; ++s) if (!(locked_ & (1u << s)) && slots_[s].guest == NONE) return static_cast<int>(s);
+    for (u32 s = 0; s < NSLOT; ++s)
+      if (!(locked_ & (1u << s)) && slots_[s].guest == NONE) return static_cast<int>(s);
     int best = -1;
     for (u32 s = 0; s < NSLOT; ++s) {
       if (locked_ & (1u << s)) continue;
@@ -309,22 +416,33 @@ private:
   std::vector<Instr> instrs_;
   u32 pc_ = 0;
   u32 live_ = F_ALL;
-  Cond cond_ = AL;           // predication of the current instruction
-  u32 pending_ = 0;          // static cycles not yet charged
-  u32 charged_ahead_ = 0;    // charged before a conditional body
+  Cond cond_ = AL;        // predication of the current instruction
+  u32 pending_ = 0;       // static cycles not yet charged
+  u32 charged_ahead_ = 0; // charged before a conditional body
   bool ended_ = false;
   const u8* t7_ = nullptr;
   u32 code_region7_ = 0;
   bool bl_prefix_valid_ = false;
-  u32  bl_prefix_lr_ = 0;
+  u32 bl_prefix_lr_ = 0;
 
   u8* cold_buf_;
   Emitter cold_;
   Emitter* cur_;
   RegCache cache_;
-  struct Fix { size_t at; bool at_cold; size_t target; bool target_cold; const void* abs; };
+  struct Fix {
+    size_t at;
+    bool at_cold;
+    size_t target;
+    bool target_cold;
+    const void* abs;
+  };
   // Hot offsets of faulting access and patch site; resume is cold-relative.
-  struct FmSiteRel { u32 fault; u32 patch; u32 resume_cold; u64 guest; };
+  struct FmSiteRel {
+    u32 fault;
+    u32 patch;
+    u32 resume_cold;
+    u64 guest;
+  };
   std::vector<FmSiteRel> fm_sites_;
   u32 fm_faults_[4] = {};
   u32 fm_nfaults_ = 0;
@@ -336,11 +454,17 @@ private:
 
   // ---- hot / cold sections ----
   void call_stub(const u8* stub) {
-    if (!in_cold()) { hot_.bl(stub); return; }
+    if (!in_cold()) {
+      hot_.bl(stub);
+      return;
+    }
     fixes_.push_back({cold_.bl_fwd(), true, 0, false, stub});
   }
   void jump_stub(const u8* stub) {
-    if (!in_cold()) { hot_.b(stub); return; }
+    if (!in_cold()) {
+      hot_.b(stub);
+      return;
+    }
     fixes_.push_back({cold_.b_fwd(), true, 0, false, stub});
   }
   void cold_begin(const std::vector<size_t>& hot_fixups) {
@@ -363,19 +487,27 @@ private:
     u8* base = hot_.base();
     for (const Fix& f : fixes_) {
       u8* at = base + (f.at_cold ? cold_base + f.at : f.at);
-      const u8* target = f.abs ? static_cast<const u8*>(f.abs) : base + (f.target_cold ? cold_base + f.target : f.target);
+      const u8* target =
+          f.abs ? static_cast<const u8*>(f.abs) : base + (f.target_cold ? cold_base + f.target : f.target);
       Emitter::patch_rel(at, target);
     }
     assert(hot_.size() >= backend::ENTRY_PATCH && "kill_block patches 12 bytes at the entry");
-    for (const FmSiteRel& s : fm_sites_) rt().fm_new.push_back({s.fault, s.patch, static_cast<u32>(cold_base) + s.resume_cold, s.guest});
+    for (const FmSiteRel& s : fm_sites_)
+      rt().fm_new.push_back({s.fault, s.patch, static_cast<u32>(cold_base) + s.resume_cold, s.guest});
     return true;
   }
 
   // ---- decoding ----
   u32 fetch(u32 addr) {
     if (u8* p = cpu_.page_table.read_ptr(addr)) {
-      if (thumb_) { u16 v; std::memcpy(&v, p, 2); return v; }
-      u32 v; std::memcpy(&v, p, 4); return v;
+      if (thumb_) {
+        u16 v;
+        std::memcpy(&v, p, 2);
+        return v;
+      }
+      u32 v;
+      std::memcpy(&v, p, 4);
+      return v;
     }
     // Unmapped code (DSi ARM7 BIOS): fetch via the bus like the interpreter.
     return cpu_.nds->bus.fetch(cpu_.which, addr, thumb_ ? 16 : 32);
@@ -384,9 +516,16 @@ private:
   // ---- cycles ----
   void note_dep(u32 addr, u8 kind) const {
     const u32 page = addr >> 12;
-    for (u32 i = 0; i < blk_.ndep; ++i) if (blk_.dep_page[i] == page) { blk_.dep_kind[i] |= kind; return; }
-    if (blk_.ndep < Block::DEP_MAX) { blk_.dep_page[blk_.ndep] = page; blk_.dep_kind[blk_.ndep] = kind; ++blk_.ndep; }
-    else blk_.dep_overflow = true;
+    for (u32 i = 0; i < blk_.ndep; ++i)
+      if (blk_.dep_page[i] == page) {
+        blk_.dep_kind[i] |= kind;
+        return;
+      }
+    if (blk_.ndep < Block::DEP_MAX) {
+      blk_.dep_page[blk_.ndep] = page;
+      blk_.dep_kind[blk_.ndep] = kind;
+      ++blk_.ndep;
+    } else blk_.dep_overflow = true;
   }
   u32 numC(u32 addr) const {
     if (a9_) {
@@ -416,7 +555,10 @@ private:
     if (thumb_) {
       switch (arm::decode_thumb(static_cast<u16>(raw))) {
       case TOp::LdrPcRel: return cost7_slot(true, true) < 0;
-      case TOp::LdrStrReg: { const u32 o = (raw >> 9) & 7; return cost7_slot(o >= 3, o == 0 || o == 4) < 0; }
+      case TOp::LdrStrReg: {
+        const u32 o = (raw >> 9) & 7;
+        return cost7_slot(o >= 3, o == 0 || o == 4) < 0;
+      }
       case TOp::LdrStrImm5: return cost7_slot(raw & (1 << 11), !(raw & (1 << 12))) < 0;
       case TOp::LdrStrHImm5: return cost7_slot(raw & (1 << 11), false) < 0;
       case TOp::LdrStrSpRel: return cost7_slot(raw & (1 << 11), true) < 0;
@@ -424,14 +566,20 @@ private:
       }
     }
     switch (arm::decode_arm(raw)) {
-    case AOp::LdrStrImm: case AOp::LdrStrReg: return cost7_slot(raw & (1u << 20), !(raw & (1u << 22))) < 0;
-    case AOp::LdrStrHImm: case AOp::LdrStrHReg: return cost7_slot(raw & (1u << 20), false) < 0;
+    case AOp::LdrStrImm:
+    case AOp::LdrStrReg: return cost7_slot(raw & (1u << 20), !(raw & (1u << 22))) < 0;
+    case AOp::LdrStrHImm:
+    case AOp::LdrStrHReg: return cost7_slot(raw & (1u << 20), false) < 0;
     default: return false;
     }
   }
   u32 numC_internal() const { return a9_ ? numC(pc_) : numC_nonseq7(); }
   void add_pending(u32 c) {
-    if (charged_ahead_) { const u32 k = std::min(c, charged_ahead_); c -= k; charged_ahead_ -= k; }
+    if (charged_ahead_) {
+      const u32 k = std::min(c, charged_ahead_);
+      c -= k;
+      charged_ahead_ -= k;
+    }
     pending_ += c;
   }
   // Predicated on cond_.
@@ -451,7 +599,10 @@ private:
   void emit_budget_check(u32 exit_key, bool flags_live) {
     assert(!in_cold());
     u32 t = 0;
-    if (flags_live) { t = cache_.temp(); hot_.mrs_apsr(t); }
+    if (flags_live) {
+      t = cache_.temp();
+      hot_.mrs_apsr(t);
+    }
     hot_.tst_imm(R_BUDGET, 0x80000000u);
     const size_t br = hot_.b_fwd(NE);
     if (flags_live) hot_.msr_apsr_nzcvq(t);
@@ -497,8 +648,12 @@ private:
   static bool is_word(Mem m) { return m == Mem::Ld32 || m == Mem::St32; }
   static u32 size_index(Mem m) {
     switch (m) {
-    case Mem::Ld8: case Mem::Ld8S: case Mem::St8: return 0;
-    case Mem::Ld16: case Mem::Ld16S: case Mem::St16: return 1;
+    case Mem::Ld8:
+    case Mem::Ld8S:
+    case Mem::St8: return 0;
+    case Mem::Ld16:
+    case Mem::Ld16S:
+    case Mem::St16: return 1;
     default: return 2;
     }
   }
@@ -511,7 +666,10 @@ private:
     e().ldr_reg(en, R_PT, en, LSL, 2);
     return at;
   }
-  void fm_fault_here() { assert(fm_nfaults_ < 4); fm_faults_[fm_nfaults_++] = static_cast<u32>(hot_.size()); }
+  void fm_fault_here() {
+    assert(fm_nfaults_ < 4);
+    fm_faults_[fm_nfaults_++] = static_cast<u32>(hot_.size());
+  }
   // Page entry of `a` -> en; flag-neutral. Fastmem: R_PT is the region table,
   // so the page table is a constant and the x4 index is two `add lsr #10` + mask.
   void emit_entry_load(u32 a, u32 en) {
@@ -534,7 +692,10 @@ private:
     if (live_) e().mrs_apsr(R_LR);
     emit_entry_load(a, en);
     std::vector<size_t> f;
-    if (store) { e().tst_imm(en, 0xC0000000u); f.push_back(e().b_fwd(NE)); }
+    if (store) {
+      e().tst_imm(en, 0xC0000000u);
+      f.push_back(e().b_fwd(NE));
+    }
     e().dp_reg(MOV, true, en, 0, en, LSL, 2);
     f.push_back(e().b_fwd(EQ));
     if (live_) e().msr_apsr_nzcvq(R_LR);
@@ -542,7 +703,8 @@ private:
     for (size_t s : f) cold_.bind(s);
     if (live_) e().msr_apsr_nzcvq(R_LR);
     if (fail_to != ~size_t{0}) fixes_.push_back({cold_.b_fwd(), true, fail_to, true, nullptr});
-    for (u32 i = 0; i < fm_nfaults_; ++i) fm_sites_.push_back({fm_faults_[i], static_cast<u32>(patch), resume, fm_key(a9_, pc_, thumb_)});
+    for (u32 i = 0; i < fm_nfaults_; ++i)
+      fm_sites_.push_back({fm_faults_[i], static_cast<u32>(patch), resume, fm_key(a9_, pc_, thumb_)});
     fm_nfaults_ = 0;
   }
 
@@ -576,7 +738,10 @@ private:
     if (a9_) {
       // cost = max(nc + nd - 6, nc, nd), nd >= 1: nc <= 1 -> nd; nc <= 6 -> max(nc, nd); else nc + max(nd - 6, 0)
       const u32 nc = numC(pc_);
-      if (nc <= 1) { e().sub_reg(R_BUDGET, R_BUDGET, c); return; }
+      if (nc <= 1) {
+        e().sub_reg(R_BUDGET, R_BUDGET, c);
+        return;
+      }
       e().sub_imm(t0, c, nc <= 6 ? nc : 6, t1);
       e().dp_reg(BIC, false, t0, t0, t0, ASR, 31);
       e().add_imm(t0, t0, nc, t1);
@@ -592,17 +757,18 @@ private:
     e().lsr_imm(t0, a, 24);
     e().sub_imm(t0, t0, 2, t1);
     e().clz(t0, t0);
-    e().lsr_imm(t0, t0, 5);                                   // data_main
-    if (code_main) e().eor_imm(t0, t0, 1);                    // 1: max form
+    e().lsr_imm(t0, t0, 5);                // data_main
+    if (code_main) e().eor_imm(t0, t0, 1); // 1: max form
     e().add_imm(a, c, y, a);
-    e().sub_imm(t1, a, x, t1);                                // t1 = max(d + y, x)
+    e().sub_imm(t1, a, x, t1); // t1 = max(d + y, x)
     e().dp_reg(BIC, false, t1, t1, t1, ASR, 31);
     e().add_imm(t1, t1, x, t1);
-    if (x >= 3) e().add_imm(a, a, x - 3, a); else e().sub_imm(a, a, 3 - x, a);   // a = x + d + y - 3
+    if (x >= 3) e().add_imm(a, a, x - 3, a);
+    else e().sub_imm(a, a, 3 - x, a); // a = x + d + y - 3
     e().sub_reg(a, a, t1);
     e().dp_reg(BIC, false, a, a, a, ASR, 31);
     e().add_reg(t1, t1, a);
-    e().add_imm(c, c, k, a);                                  // add form
+    e().add_imm(c, c, k, a); // add form
     e().sub_reg(t1, t1, c);
     e().dp_imm(RSB, false, t0, t0, 0);
     e().and_reg(t1, t1, t0);
@@ -612,23 +778,52 @@ private:
   // Helper returns the aligned raw value; apply rotation / extension.
   void emit_load_post(Mem m, u32 v, u32 addr, u32 tmp) {
     switch (m) {
-    case Mem::Ld32: e().lsl_imm(tmp, addr, 3); e().ror_reg(v, v, tmp); break;
-    case Mem::Ld16: if (!a9_) { e().and_imm(tmp, addr, 1); e().lsl_imm(tmp, tmp, 3); e().ror_reg(v, v, tmp); } break;
+    case Mem::Ld32:
+      e().lsl_imm(tmp, addr, 3);
+      e().ror_reg(v, v, tmp);
+      break;
+    case Mem::Ld16:
+      if (!a9_) {
+        e().and_imm(tmp, addr, 1);
+        e().lsl_imm(tmp, tmp, 3);
+        e().ror_reg(v, v, tmp);
+      }
+      break;
     case Mem::Ld8S: e().sxtb(v, v); break;
     case Mem::Ld16S:
       e().sxth(v, v);
-      if (!a9_) { e().and_imm(tmp, addr, 1); e().lsl_imm(tmp, tmp, 3); e().asr_reg(v, v, tmp); }
+      if (!a9_) {
+        e().and_imm(tmp, addr, 1);
+        e().lsl_imm(tmp, tmp, 3);
+        e().asr_reg(v, v, tmp);
+      }
       break;
     default: break;
     }
   }
   // r1 = a, r2 = data (0xFF: none); r3 scratch.
   void emit_slow_args(u32 a, u32 data) {
-    if (data == 0xFF) { if (a != 1) e().mov(1, a); return; }
+    if (data == 0xFF) {
+      if (a != 1) e().mov(1, a);
+      return;
+    }
     if (a == 1 && data == 2) return;
-    if (a == 2 && data == 1) { e().mov(3, 1); e().mov(1, 2); e().mov(2, 3); return; }
-    if (data == 1) { e().mov(2, 1); if (a != 1) e().mov(1, a); return; }
-    if (a == 2) { e().mov(1, 2); if (data != 2) e().mov(2, data); return; }
+    if (a == 2 && data == 1) {
+      e().mov(3, 1);
+      e().mov(1, 2);
+      e().mov(2, 3);
+      return;
+    }
+    if (data == 1) {
+      e().mov(2, 1);
+      if (a != 1) e().mov(1, a);
+      return;
+    }
+    if (a == 2) {
+      e().mov(1, 2);
+      if (data != 2) e().mov(2, data);
+      return;
+    }
     if (a != 1) e().mov(1, a);
     if (data != 2) e().mov(2, data);
   }
@@ -652,41 +847,86 @@ private:
     if (fast) patch = fm_region(a, en);
     else {
       emit_entry_load(a, en);
-      if (!load) { e().tst_imm(en, 0xC0000000u); fail.push_back(e().b_fwd(NE)); }
-      e().dp_reg(MOV, true, en, 0, en, LSL, 2);          // biased host base; 0 = unmapped
+      if (!load) {
+        e().tst_imm(en, 0xC0000000u);
+        fail.push_back(e().b_fwd(NE));
+      }
+      e().dp_reg(MOV, true, en, 0, en, LSL, 2); // biased host base; 0 = unmapped
       fail.push_back(e().b_fwd(EQ));
       flags_end(f);
     }
     e().add_reg(en, en, a);
     u32 d = 0;
     if (load) d = cache_.write(rd, false);
-    auto site = [&] { if (fast) fm_fault_here(); };
+    auto site = [&] {
+      if (fast) fm_fault_here();
+    };
     switch (m) {
-    case Mem::Ld32: e().and_imm(en, en, ~3u); site(); e().ldr(d, en, 0); e().lsl_imm(en, a, 3); e().ror_reg(d, d, en); break;
+    case Mem::Ld32:
+      e().and_imm(en, en, ~3u);
+      site();
+      e().ldr(d, en, 0);
+      e().lsl_imm(en, a, 3);
+      e().ror_reg(d, d, en);
+      break;
     case Mem::Ld16:
-      e().and_imm(en, en, ~1u); site(); e().ldrh(d, en, 0);
-      if (!a9_) { e().and_imm(en, a, 1); e().lsl_imm(en, en, 3); e().ror_reg(d, d, en); }
+      e().and_imm(en, en, ~1u);
+      site();
+      e().ldrh(d, en, 0);
+      if (!a9_) {
+        e().and_imm(en, a, 1);
+        e().lsl_imm(en, en, 3);
+        e().ror_reg(d, d, en);
+      }
       break;
-    case Mem::Ld8:  site(); e().ldrb(d, en, 0); break;
-    case Mem::Ld8S: site(); e().ldrsb(d, en, 0); break;
+    case Mem::Ld8:
+      site();
+      e().ldrb(d, en, 0);
+      break;
+    case Mem::Ld8S:
+      site();
+      e().ldrsb(d, en, 0);
+      break;
     case Mem::Ld16S:
-      e().and_imm(en, en, ~1u); site(); e().ldrsh(d, en, 0);
-      if (!a9_) { e().and_imm(en, a, 1); e().lsl_imm(en, en, 3); e().asr_reg(d, d, en); }   // odd: signed high byte
+      e().and_imm(en, en, ~1u);
+      site();
+      e().ldrsh(d, en, 0);
+      if (!a9_) {
+        e().and_imm(en, a, 1);
+        e().lsl_imm(en, en, 3);
+        e().asr_reg(d, d, en);
+      } // odd: signed high byte
       break;
-    case Mem::St32: e().and_imm(en, en, ~3u); site(); e().str(data, en, 0); break;
-    case Mem::St16: e().and_imm(en, en, ~1u); site(); e().strh(data, en, 0); break;
-    case Mem::St8:  site(); e().strb(data, en, 0); break;
+    case Mem::St32:
+      e().and_imm(en, en, ~3u);
+      site();
+      e().str(data, en, 0);
+      break;
+    case Mem::St16:
+      e().and_imm(en, en, ~1u);
+      site();
+      e().strh(data, en, 0);
+      break;
+    case Mem::St8:
+      site();
+      e().strb(data, en, 0);
+      break;
     }
     if (!const_cost) {
       const u32 c = cache_.temp();
-      if (a9_) { emit_data_cost(a, c, en, word, false, !load); emit_charge(c, a, en, en, cdi); }
-      else { emit_cost7(a, c, en, slot7); e().sub_reg(R_BUDGET, R_BUDGET, c); }
+      if (a9_) {
+        emit_data_cost(a, c, en, word, false, !load);
+        emit_charge(c, a, en, en, cdi);
+      } else {
+        emit_cost7(a, c, en, slot7);
+        e().sub_reg(R_BUDGET, R_BUDGET, c);
+      }
       cache_.release(c);
     }
     cache_.release(en);
     const size_t join = hot_.size();
     const RegCache::State s1 = cache_.save();
-    if (fast) {   // walk failures fall through into the helper path
+    if (fast) { // walk failures fall through into the helper path
       cold_begin({});
       fm_cold_walk(a, en, patch, !load, ~size_t{0});
       cur_ = &hot_;
@@ -699,11 +939,17 @@ private:
     call_stub(load ? rt().slow_load[size_index(m)] : rt().slow_store[size_index(m)]);
     if (load) {
       emit_load_post(m, 0, 1, 2);
-      if (const u32 h = pinned_host(rd); h != 0xFF) e().mov(h, 0); else e().str(0, R_CTX, off_reg(rd));
+      if (const u32 h = pinned_host(rd); h != 0xFF) e().mov(h, 0);
+      else e().str(0, R_CTX, off_reg(rd));
     }
     if (!const_cost) {
-      if (a9_) { emit_data_cost(1, 2, 3, word, false, !load); emit_charge(2, 1, 3, SCRATCH4, cdi); }
-      else { emit_cost7(1, 2, 3, slot7); e().sub_reg(R_BUDGET, R_BUDGET, 2); }
+      if (a9_) {
+        emit_data_cost(1, 2, 3, word, false, !load);
+        emit_charge(2, 1, 3, SCRATCH4, cdi);
+      } else {
+        emit_cost7(1, 2, 3, slot7);
+        e().sub_reg(R_BUDGET, R_BUDGET, 2);
+      }
     }
     call_stub(rt().poll);
     e().word(make_key(pc_ + step(), thumb_));
@@ -714,7 +960,8 @@ private:
 
   // Fast path within one 2 KB page. Cold path is the interpreter, so rn keeps its
   // old value until after the transfer; writeback value in `t_w` (0xFF: equals `a`).
-  void emit_block_transfer(u32 instr, u32 list, bool load, bool writeback, u32 rn, u32 a, u32 t_w, u32 pc_store_value, bool interwork_pc = false) {
+  void emit_block_transfer(u32 instr, u32 list, bool load, bool writeback, u32 rn, u32 a, u32 t_w, u32 pc_store_value,
+                           bool interwork_pc = false) {
     const u32 n = static_cast<u32>(__builtin_popcount(list));
     const bool pc_in_list = load && (list & 0x8000);
     flush_pending();
@@ -734,18 +981,24 @@ private:
       patch = fm_region(a, en);
     } else {
       emit_entry_load(a, en);
-      if (!load) { e().tst_imm(en, 0xC0000000u); fail.push_back(e().b_fwd(NE)); }
+      if (!load) {
+        e().tst_imm(en, 0xC0000000u);
+        fail.push_back(e().b_fwd(NE));
+      }
       e().dp_reg(MOV, true, en, 0, en, LSL, 2);
       fail.push_back(e().b_fwd(EQ));
       flags_end(f);
     }
     cache_.release(e2);
     e().add_reg(en, en, a);
-    e().and_imm(en, en, ~3u);                          // Thumb base may be unaligned
+    e().and_imm(en, en, ~3u); // Thumb base may be unaligned
     if (fast) {
       fm_fault_here();
       e().ldrb(R_LR, en, 0);
-      if (!load) { fm_fault_here(); e().strb(R_LR, en, 0); }
+      if (!load) {
+        fm_fault_here();
+        e().strb(R_LR, en, 0);
+      }
     }
     u32 k = 0;
     bool first = true;
@@ -754,13 +1007,18 @@ private:
     if (load) {
       for (u32 i = 0; i < 16; ++i) {
         if (!(list & (1u << i))) continue;
-        if (i == 15) { hpc = cache_.temp(); e().ldr(hpc, en, 4 * k); ++k; continue; }
+        if (i == 15) {
+          hpc = cache_.temp();
+          e().ldr(hpc, en, 4 * k);
+          ++k;
+          continue;
+        }
         const u32 h = cache_.write(i, false);
         e().ldr(h, en, 4 * k);
         cache_.unlock(h);
         ++k;
       }
-      if (writeback && !(list & (1u << rn))) {         // a loaded rn wins over the writeback
+      if (writeback && !(list & (1u << rn))) { // a loaded rn wins over the writeback
         const u32 h = cache_.write(rn, false);
         e().mov(h, wv);
         cache_.unlock(h);
@@ -770,12 +1028,17 @@ private:
         if (!(list & (1u << i))) continue;
         u32 src;
         bool tmp = false;
-        if (i == 15) { src = cache_.temp(); e().mov_imm(src, pc_store_value); tmp = true; }
-        else if (i == rn && !first && writeback) src = wv;
+        if (i == 15) {
+          src = cache_.temp();
+          e().mov_imm(src, pc_store_value);
+          tmp = true;
+        } else if (i == rn && !first && writeback) src = wv;
         else src = cache_.read(i);
         e().str(src, en, 4 * k);
-        if (tmp) cache_.release(src); else if (src != a && src != t_w) cache_.unlock(src);
-        ++k; first = false;
+        if (tmp) cache_.release(src);
+        else if (src != a && src != t_w) cache_.unlock(src);
+        ++k;
+        first = false;
       }
       if (writeback) {
         const u32 h = cache_.write(rn, false);
@@ -801,11 +1064,15 @@ private:
       emit_branch_indirect(hpc, interwork_pc, true, c, a);
       cold_begin(fail);
       if (f != 0xFF) e().msr_apsr_nzcvq(f);
-      const size_t fb = cold_.size();                 // walk failures enter here
+      const size_t fb = cold_.size(); // walk failures enter here
       cache_.restore(s0);
       emit_fallback(instr, true);
       cold_end();
-      if (fast) { cold_begin({}); fm_cold_walk(a, en, patch, !load, fb); cur_ = &hot_; }
+      if (fast) {
+        cold_begin({});
+        fm_cold_walk(a, en, patch, !load, fb);
+        cur_ = &hot_;
+      }
       return;
     }
     const u32 c = cache_.temp(), t = cache_.temp();
@@ -826,29 +1093,42 @@ private:
     const RegCache::State s1 = cache_.save();
     cold_begin(fail);
     if (f != 0xFF) e().msr_apsr_nzcvq(f);
-    const size_t fb = cold_.size();                   // walk failures enter here
+    const size_t fb = cold_.size(); // walk failures enter here
     cache_.restore(s0);
     emit_fallback(instr, false);
     cache_.restore(s1);
     cache_.reload();
     cold_end_jump(join);
-    if (fast) { cold_begin({}); fm_cold_walk(a, en, patch, !load, fb); cur_ = &hot_; }
+    if (fast) {
+      cold_begin({});
+      fm_cold_walk(a, en, patch, !load, fb);
+      cur_ = &hot_;
+    }
   }
 
   // Base writeback goes to rn's slot immediately so the cold path sees it; a load
   // into rn then overwrites it, as on hardware.
-  u32 emit_ea(u32 rn, bool off_imm, u32 off_val, u32 off_host, Shift sh, u32 amt, bool pre, bool up, bool wb, u32& data) {
+  u32 emit_ea(u32 rn, bool off_imm, u32 off_val, u32 off_host, Shift sh, u32 amt, bool pre, bool up, bool wb,
+              u32& data) {
     const u32 base = reg_read(rn, pc_ + 8);
     const u32 a = cache_.temp();
     auto addoff = [&](u32 dst, u32 src) {
-      if (off_imm) { if (up) e().add_imm(dst, src, off_val, dst); else e().sub_imm(dst, src, off_val, dst); }
-      else e().dp_reg(up ? ADD : SUB, false, dst, src, off_host, sh, amt);
+      if (off_imm) {
+        if (up) e().add_imm(dst, src, off_val, dst);
+        else e().sub_imm(dst, src, off_val, dst);
+      } else e().dp_reg(up ? ADD : SUB, false, dst, src, off_host, sh, amt);
     };
-    if (pre) addoff(a, base); else e().mov(a, base);
+    if (pre) addoff(a, base);
+    else e().mov(a, base);
     if (wb) {
-      if (data != 0xFF && data == base) { const u32 t = cache_.temp(); e().mov(t, data); data = t; }
+      if (data != 0xFF && data == base) {
+        const u32 t = cache_.temp();
+        e().mov(t, data);
+        data = t;
+      }
       const u32 w = cache_.write(rn, false);
-      if (pre) e().mov(w, a); else addoff(w, a);
+      if (pre) e().mov(w, a);
+      else addoff(w, a);
       cache_.unlock(w);
     }
     if (rn != 15 && base != data) cache_.unlock(base);
@@ -860,10 +1140,14 @@ private:
   void emit_branch_static(u32 target, bool to_thumb, bool refill) {
     assert(cond_ == AL);
     if (refill) {
-      if (a9_) {   // the pages refill_cycles reads
-        if (!to_thumb) { note_dep(target, mem::Timing::RETIME_CODE); note_dep(target + 4, mem::Timing::RETIME_CODE); }
-        else if (target & 2) { note_dep(target - 2, mem::Timing::RETIME_CODE); note_dep(target + 2, mem::Timing::RETIME_CODE); }
-        else note_dep(target, mem::Timing::RETIME_CODE);
+      if (a9_) { // the pages refill_cycles reads
+        if (!to_thumb) {
+          note_dep(target, mem::Timing::RETIME_CODE);
+          note_dep(target + 4, mem::Timing::RETIME_CODE);
+        } else if (target & 2) {
+          note_dep(target - 2, mem::Timing::RETIME_CODE);
+          note_dep(target + 2, mem::Timing::RETIME_CODE);
+        } else note_dep(target, mem::Timing::RETIME_CODE);
       }
       add_pending(refill_cycles(cpu_, target, to_thumb));
     }
@@ -881,32 +1165,58 @@ private:
   // Parallel move dst[i] <- src[i]; cache must be flushed (cycles use a free slot).
   void emit_permute(const u32* dst, const u32* src, u32 n) {
     u32 d[3], sr[3];
-    for (u32 i = 0; i < n; ++i) { d[i] = dst[i]; sr[i] = src[i]; }
+    for (u32 i = 0; i < n; ++i) {
+      d[i] = dst[i];
+      sr[i] = src[i];
+    }
     bool pending[3] = {true, true, true};
     for (u32 left = n; left;) {
       bool progress = false;
       for (u32 i = 0; i < n; ++i) {
         if (!pending[i]) continue;
-        if (d[i] == sr[i]) { pending[i] = false; --left; progress = true; continue; }
+        if (d[i] == sr[i]) {
+          pending[i] = false;
+          --left;
+          progress = true;
+          continue;
+        }
         bool blocked = false;
-        for (u32 j = 0; j < n; ++j) if (j != i && pending[j] && sr[j] == d[i]) blocked = true;
+        for (u32 j = 0; j < n; ++j)
+          if (j != i && pending[j] && sr[j] == d[i]) blocked = true;
         if (blocked) continue;
         e().mov(d[i], sr[i]);
-        pending[i] = false; --left; progress = true;
+        pending[i] = false;
+        --left;
+        progress = true;
       }
       if (progress || !left) continue;
-      u32 scratch = SCRATCH4;                       // break a cycle
-      for (u32 r : RegCache::HOST) { bool used = false; for (u32 j = 0; j < n; ++j) if (sr[j] == r || d[j] == r) used = true; if (!used) { scratch = r; break; } }
-      for (u32 i = 0; i < n; ++i) if (pending[i]) { e().mov(scratch, sr[i]); sr[i] = scratch; break; }
+      u32 scratch = SCRATCH4; // break a cycle
+      for (u32 r : RegCache::HOST) {
+        bool used = false;
+        for (u32 j = 0; j < n; ++j)
+          if (sr[j] == r || d[j] == r) used = true;
+        if (!used) {
+          scratch = r;
+          break;
+        }
+      }
+      for (u32 i = 0; i < n; ++i)
+        if (pending[i]) {
+          e().mov(scratch, sr[i]);
+          sr[i] = scratch;
+          break;
+        }
     }
   }
   // `cdi`: LDM/POP to pc; `hnumd`/`haddr` feed the stub's post-jump charge.
   void emit_branch_indirect(u32 htarget, bool interwork, bool cdi = false, u32 hnumd = 0, u32 haddr = 0) {
     assert(cond_ == AL);
-    cache_.flush();                                 // temps keep their values
+    cache_.flush(); // temps keep their values
     flush_pending();
-    if (cdi) { const u32 d[3] = {0, 1, 2}, sr[3] = {htarget, hnumd, haddr}; emit_permute(d, sr, 3); }
-    else if (htarget != SCRATCH0) e().mov(SCRATCH0, htarget);
+    if (cdi) {
+      const u32 d[3] = {0, 1, 2}, sr[3] = {htarget, hnumd, haddr};
+      emit_permute(d, sr, 3);
+    } else if (htarget != SCRATCH0) e().mov(SCRATCH0, htarget);
     if (!interwork) {
       if (thumb_) e().orr_imm(SCRATCH0, SCRATCH0, 1);
       else e().and_imm(SCRATCH0, SCRATCH0, ~1u);
@@ -914,8 +1224,7 @@ private:
     jump_stub(cdi ? jc_.branch_indirect_cdi : jc_.branch_indirect);
     ended_ = true;
   }
-  template <class Taken>
-  void emit_branch_cond(u32 cond, Taken taken) {
+  template <class Taken> void emit_branch_cond(u32 cond, Taken taken) {
     assert(cond_ == AL);
     cache_.flush();
     flush_pending();
@@ -933,11 +1242,12 @@ private:
   // ARM7: 1..4 internal cycles by magnitude of rs (signed: rs ^ (rs >> 31)).
   void emit_mul_cycles7(u32 hrs, bool signed_op, u32 extra) {
     const u32 t = cache_.temp(), u = cache_.temp();
-    if (signed_op) e().eor_reg(t, hrs, hrs, ASR, 31, cond_); else e().mov(t, hrs, cond_);
+    if (signed_op) e().eor_reg(t, hrs, hrs, ASR, 31, cond_);
+    else e().mov(t, hrs, cond_);
     e().clz(t, t, cond_);
-    e().lsr_imm(t, t, 3, cond_);            // leading zero bytes 0..4
+    e().lsr_imm(t, t, 3, cond_); // leading zero bytes 0..4
     e().lsl_imm(t, t, 2, cond_);
-    e().mov_imm(u, 0x11234, cond_);         // nibble table: 4,3,2,1,1
+    e().mov_imm(u, 0x11234, cond_); // nibble table: 4,3,2,1,1
     e().lsr_reg(u, u, t, cond_);
     e().and_imm(u, u, 0xF, cond_);
     if (extra) e().add_imm(u, u, extra, u, false, cond_);
@@ -979,11 +1289,14 @@ private:
 void Translator::arm_msr(u32 instr, AOp op) {
   const u32 fields = (instr >> 16) & 0xF;
   cache_.flush();
-  flush_pending();                 // numC is charged after the tests (cold path charges its own)
+  flush_pending(); // numC is charged after the tests (cold path charges its own)
   u32 wv;
-  if (op == AOp::MsrImm) { wv = cache_.temp(); e().mov_imm(wv, rotr(instr & 0xFF, ((instr >> 8) & 0xF) * 2)); }
-  else wv = cache_.read(instr & 0xF);
-  const u32 mem_mask = ((fields & 1) ? 0xC0u : 0) | ((fields & 2) ? 0xFF00u : 0) | ((fields & 4) ? 0xFF0000u : 0) | ((fields & 8) ? 0x0F000000u : 0);
+  if (op == AOp::MsrImm) {
+    wv = cache_.temp();
+    e().mov_imm(wv, rotr(instr & 0xFF, ((instr >> 8) & 0xF) * 2));
+  } else wv = cache_.read(instr & 0xF);
+  const u32 mem_mask = ((fields & 1) ? 0xC0u : 0) | ((fields & 2) ? 0xFF00u : 0) | ((fields & 4) ? 0xFF0000u : 0) |
+                       ((fields & 8) ? 0x0F000000u : 0);
   const bool tests = (fields & 7) != 0;
   std::vector<size_t> fail;
   u32 f = 0xFF;
@@ -994,19 +1307,21 @@ void Translator::arm_msr(u32 instr, AOp op) {
     e().mrs_apsr(f);
     e().ldr(t2, R_CTX, OFF_CPSR);
     e().tst_imm(t2, 0xF);
-    fail.push_back(e().b_fwd(EQ));                // user mode
+    fail.push_back(e().b_fwd(EQ)); // user mode
     if (fields & 1) {
       e().eor_reg(t3, t2, wv);
       e().tst_imm(t3, 0x1F);
-      fail.push_back(e().b_fwd(NE));              // mode change
+      fail.push_back(e().b_fwd(NE)); // mode change
     }
     e().msr_apsr_nzcvq(f);
   } else if (mem_mask) e().ldr(t2, R_CTX, OFF_CPSR);
   add_pending(numC(pc_));
   flush_pending();
   if (mem_mask) {
-    if (mem_mask == 0xC0) { e().ubfx(t3, wv, 6, 2); e().bfi(t2, t3, 6, 2); }
-    else {
+    if (mem_mask == 0xC0) {
+      e().ubfx(t3, wv, 6, 2);
+      e().bfi(t2, t3, 6, 2);
+    } else {
       e().mov_imm(t3, mem_mask);
       e().dp_reg(BIC, false, t2, t2, t3);
       e().and_reg(t3, wv, t3);
@@ -1015,8 +1330,12 @@ void Translator::arm_msr(u32 instr, AOp op) {
     e().str(t2, R_CTX, OFF_CPSR);
   }
   if (fields & 8) e().msr_apsr_nzcvq(wv);
-  if (fields & 1) { call_stub(rt().poll); e().word(make_key(pc_ + 4, thumb_)); }   // I may have changed
-  cache_.release(t2); cache_.release(t3);
+  if (fields & 1) {
+    call_stub(rt().poll);
+    e().word(make_key(pc_ + 4, thumb_));
+  } // I may have changed
+  cache_.release(t2);
+  cache_.release(t3);
   if (f != 0xFF) cache_.release(f);
   if (fail.empty()) return;
   const size_t join = hot_.size();
@@ -1041,7 +1360,9 @@ void Translator::arm_ldr_str(u32 instr, AOp op) {
   if (!l) data = rd == 15 ? pc_const(pc_ + 12) : cache_.read(rd);
   u32 a;
   if (op == AOp::LdrStrImm) a = emit_ea(rn, true, instr & 0xFFF, 0, LSL, 0, p, u, writeback, data);
-  else a = emit_ea(rn, false, 0, cache_.read(instr & 0xF), static_cast<Shift>((instr >> 5) & 3), (instr >> 7) & 0x1F, p, u, writeback, data);
+  else
+    a = emit_ea(rn, false, 0, cache_.read(instr & 0xF), static_cast<Shift>((instr >> 5) & 3), (instr >> 7) & 0x1F, p, u,
+                writeback, data);
   int const_nd = -1;
   if (l && a9_ && !b && op == AOp::LdrStrImm && rn == 15 && !writeback) {
     // ldr rd, [pc, #imm]: the literal's N32 cost is known now.
@@ -1063,7 +1384,8 @@ void Translator::arm_ldr_str_h(u32 instr, AOp op) {
   u32 data = 0xFF;
   if (!l) data = cache_.read(rd);
   u32 a;
-  if (op == AOp::LdrStrHImm) a = emit_ea(rn, true, ((instr >> 4) & 0xF0) | (instr & 0xF), 0, LSL, 0, p, u, writeback, data);
+  if (op == AOp::LdrStrHImm)
+    a = emit_ea(rn, true, ((instr >> 4) & 0xF0) | (instr & 0xF), 0, LSL, 0, p, u, writeback, data);
   else a = emit_ea(rn, false, 0, cache_.read(instr & 0xF), LSL, 0, p, u, writeback, data);
   if (l) emit_single(sh == 1 ? Mem::Ld16 : sh == 2 ? Mem::Ld8S : Mem::Ld16S, a, 0xFF, rd, true);
   else emit_single(Mem::St16, a, data, 0, false);
@@ -1077,13 +1399,19 @@ void Translator::arm_ldm_stm(u32 instr, bool load) {
   const u32 n = static_cast<u32>(__builtin_popcount(list));
   const u32 hb = cache_.read(rn);
   const u32 a = cache_.temp();
-  if (u) { if (p) e().add_imm(a, hb, 4, a); else e().mov(a, hb); }
-  else   { if (p) e().sub_imm(a, hb, n * 4, a); else e().sub_imm(a, hb, n * 4 - 4, a); }
+  if (u) {
+    if (p) e().add_imm(a, hb, 4, a);
+    else e().mov(a, hb);
+  } else {
+    if (p) e().sub_imm(a, hb, n * 4, a);
+    else e().sub_imm(a, hb, n * 4 - 4, a);
+  }
   e().and_imm(a, a, ~3u);
   u32 t_w = 0xFF;
-  if (w && !(!u && p)) {                               // db!: writeback = start address, no t_w
+  if (w && !(!u && p)) { // db!: writeback = start address, no t_w
     t_w = cache_.temp();
-    if (u) e().add_imm(t_w, hb, n * 4, t_w); else e().sub_imm(t_w, hb, n * 4, t_w);
+    if (u) e().add_imm(t_w, hb, n * 4, t_w);
+    else e().sub_imm(t_w, hb, n * 4, t_w);
   }
   cache_.unlock(hb);
   emit_block_transfer(instr, list, load, w, rn, a, t_w, pc_ + 12, a9_);
@@ -1101,7 +1429,10 @@ void Translator::thumb_ldr_str(u16 instr, TOp op) {
     const u32 addr = ((pc_ + 4) & ~3u) + ((instr & 0xFF) << 2);
     a = pc_const(addr);
     m = Mem::Ld32;
-    if (a9_) { note_dep(addr, mem::Timing::RETIME_DATA); const_nd = cpu_.timing9[addr >> 12][2]; }
+    if (a9_) {
+      note_dep(addr, mem::Timing::RETIME_DATA);
+      const_nd = cpu_.timing9[addr >> 12][2];
+    }
     break;
   }
   case TOp::LdrStrReg: {
@@ -1110,7 +1441,8 @@ void Translator::thumb_ldr_str(u16 instr, TOp op) {
     const u32 hb = cache_.read(rb), ho = cache_.read(ro);
     a = cache_.temp();
     e().add_reg(a, hb, ho);
-    cache_.unlock(hb); cache_.unlock(ho);
+    cache_.unlock(hb);
+    cache_.unlock(ho);
     static const Mem kinds[8] = {Mem::St32, Mem::St16, Mem::St8, Mem::Ld8S, Mem::Ld32, Mem::Ld16, Mem::Ld8, Mem::Ld16S};
     m = kinds[(instr >> 9) & 7];
     break;
@@ -1136,7 +1468,7 @@ void Translator::thumb_ldr_str(u16 instr, TOp op) {
     m = (instr & (1 << 11)) ? Mem::Ld16 : Mem::St16;
     break;
   }
-  default: {   // LdrStrSpRel
+  default: { // LdrStrSpRel
     rd = (instr >> 8) & 7;
     a = cache_.temp();
     e().add_imm(a, pinned_host(13), (instr & 0xFF) * 4, a);
@@ -1165,7 +1497,7 @@ void Translator::thumb_push_pop(u16 instr) {
     if (r) list |= 0x4000;
     const u32 n = static_cast<u32>(__builtin_popcount(list));
     e().sub_imm(a, sp, n * 4, a);
-    emit_block_transfer(instr, list, false, true, 13, a, 0xFF, 0);   // writeback = start address
+    emit_block_transfer(instr, list, false, true, 13, a, 0xFF, 0); // writeback = start address
   }
   if (!ended_) cache_.release(a);
 }
@@ -1205,7 +1537,7 @@ void Translator::arm_data_processing(u32 instr, AOp op) {
   const u32 hd = test ? 0 : cache_.write(rd, cond_ != AL);
   const DpOp dop = static_cast<DpOp>(opcode);
   const Shift sh = static_cast<Shift>((instr >> 5) & 3);
-  flush_pending();   // before the body: an S body rewrites the predicating flags
+  flush_pending(); // before the body: an S body rewrites the predicating flags
   if (op == AOp::DpImm) e().dp_imm(dop, s, hd, hn, instr & 0xFFF, cond_);
   else if (op == AOp::DpImmShift) e().dp_reg(dop, s, hd, hn, hm, sh, (instr >> 7) & 0x1F, cond_);
   else e().dp_regshift(dop, s, hd, hn, hm, sh, hs, cond_);
@@ -1217,12 +1549,17 @@ void Translator::arm_multiply(u32 instr, AOp op) {
   if (op == AOp::Mul || op == AOp::Mla) {
     const u32 rd = (instr >> 16) & 0xF, rn = (instr >> 12) & 0xF;
     if (a9_) add_pending(numC(pc_) + (s ? 3 : 1));
-    else { add_pending(numC_nonseq7()); flush_pending(); emit_mul_cycles7(cache_.read(rs), true, op == AOp::Mla ? 1 : 0); }
+    else {
+      add_pending(numC_nonseq7());
+      flush_pending();
+      emit_mul_cycles7(cache_.read(rs), true, op == AOp::Mla ? 1 : 0);
+    }
     const u32 hm = cache_.read(rm), hs = cache_.read(rs);
     const u32 hn = op == AOp::Mla ? cache_.read(rn) : 0;
     const u32 hd = cache_.write(rd, cond_ != AL);
     flush_pending();
-    if (op == AOp::Mla) e().mla(hd, hm, hs, hn, s, cond_); else e().mul(hd, hm, hs, s, cond_);
+    if (op == AOp::Mla) e().mla(hd, hm, hs, hn, s, cond_);
+    else e().mul(hd, hm, hs, s, cond_);
     if (s) emit_clear_c();
     return;
   }
@@ -1230,13 +1567,22 @@ void Translator::arm_multiply(u32 instr, AOp op) {
   const bool sgn = op == AOp::Smull || op == AOp::Smlal;
   const bool acc = op == AOp::Umlal || op == AOp::Smlal;
   if (a9_) add_pending(numC(pc_) + (s ? 3 : 1));
-  else { add_pending(numC_nonseq7()); flush_pending(); emit_mul_cycles7(cache_.read(rs), sgn, 1); }
+  else {
+    add_pending(numC_nonseq7());
+    flush_pending();
+    emit_mul_cycles7(cache_.read(rs), sgn, 1);
+  }
   const u32 hm = cache_.read(rm), hs = cache_.read(rs);
   const bool keep = acc || cond_ != AL;
   const u32 hlo = cache_.write(rdlo, keep), hhi = cache_.write(rdhi, keep);
   flush_pending();
-  if (acc) { if (sgn) e().smlal(hlo, hhi, hm, hs, s, cond_); else e().umlal(hlo, hhi, hm, hs, s, cond_); }
-  else     { if (sgn) e().smull(hlo, hhi, hm, hs, s, cond_); else e().umull(hlo, hhi, hm, hs, s, cond_); }
+  if (acc) {
+    if (sgn) e().smlal(hlo, hhi, hm, hs, s, cond_);
+    else e().umlal(hlo, hhi, hm, hs, s, cond_);
+  } else {
+    if (sgn) e().smull(hlo, hhi, hm, hs, s, cond_);
+    else e().umull(hlo, hhi, hm, hs, s, cond_);
+  }
   if (s) emit_clear_c();
 }
 
@@ -1254,7 +1600,7 @@ void Translator::arm_dsp_multiply(u32 instr, AOp op) {
   case AOp::SmulXY: e().smul_xy(hd, hm, hs, x, y, cond_); break;
   case AOp::SmlaXY: e().smla_xy(hd, hm, hs, hn, x, y, cond_); break;
   case AOp::SmulwY: e().smulw_y(hd, hm, hs, y, cond_); break;
-  default:          e().smlaw_y(hd, hm, hs, hn, y, cond_); break;
+  default: e().smlaw_y(hd, hm, hs, hn, y, cond_); break;
   }
 }
 
@@ -1262,14 +1608,17 @@ void Translator::translate_arm(u32 instr, bool fb) {
   const u32 cond = instr >> 28;
   cond_ = AL;
   if (cond == 0xF) {
-    if (((instr >> 25) & 7) == 5 && a9_) {       // BLX imm
+    if (((instr >> 25) & 7) == 5 && a9_) { // BLX imm
       s32 off = static_cast<s32>(instr << 8) >> 6;
       off |= (instr >> 23) & 2;
       e().mov_imm(cache_.write(14, false), pc_ + 4);
       emit_branch_static((pc_ + 8 + static_cast<u32>(off)) & ~1u, true, true);
       return;
     }
-    if (((instr >> 24) & 0xF7) == 0x55) { add_pending(numC(pc_)); return; }   // PLD
+    if (((instr >> 24) & 0xF7) == 0x55) {
+      add_pending(numC(pc_));
+      return;
+    } // PLD
     emit_fallback(instr, true);
     return;
   }
@@ -1278,19 +1627,25 @@ void Translator::translate_arm(u32 instr, bool fb) {
   if (fb) {
     bool always = false;
     switch (op) {
-    case AOp::Swi: break;   // DSi HLE may service it without the exception
-    case AOp::Bkpt: case AOp::Undefined: case AOp::Cdp: case AOp::Ldc: case AOp::Stc:
-    case AOp::Bx: case AOp::BlxReg:
-      always = cond == 0xE; break;
-    case AOp::DpImm: case AOp::DpImmShift: case AOp::DpRegShift:
-      always = cond == 0xE && ((instr >> 12) & 0xF) == 15 && !(((instr >> 21) & 0xF) >= 8 && ((instr >> 21) & 0xF) <= 0xB);
+    case AOp::Swi: break; // DSi HLE may service it without the exception
+    case AOp::Bkpt:
+    case AOp::Undefined:
+    case AOp::Cdp:
+    case AOp::Ldc:
+    case AOp::Stc:
+    case AOp::Bx:
+    case AOp::BlxReg: always = cond == 0xE; break;
+    case AOp::DpImm:
+    case AOp::DpImmShift:
+    case AOp::DpRegShift:
+      always =
+          cond == 0xE && ((instr >> 12) & 0xF) == 15 && !(((instr >> 21) & 0xF) >= 8 && ((instr >> 21) & 0xF) <= 0xB);
       break;
-    case AOp::LdrStrImm: case AOp::LdrStrReg: case AOp::LdrStrHImm: case AOp::LdrStrHReg:
-      always = cond == 0xE && ((instr >> 12) & 0xF) == 15 && (instr & (1u << 20)) != 0;
-      break;
-    case AOp::Ldm:
-      always = cond == 0xE && (instr & 0x8000) != 0;
-      break;
+    case AOp::LdrStrImm:
+    case AOp::LdrStrReg:
+    case AOp::LdrStrHImm:
+    case AOp::LdrStrHReg: always = cond == 0xE && ((instr >> 12) & 0xF) == 15 && (instr & (1u << 20)) != 0; break;
+    case AOp::Ldm: always = cond == 0xE && (instr & 0x8000) != 0; break;
     default: break;
     }
     emit_fallback(instr, always);
@@ -1303,7 +1658,8 @@ void Translator::translate_arm(u32 instr, bool fb) {
       if (op == AOp::Bl) e().mov_imm(cache_.write(14, false), pc_ + 4);
       emit_branch_static(pc_ + 8 + static_cast<u32>(off), false, true);
     };
-    if (cond != 0xE) emit_branch_cond(cond, taken); else taken();
+    if (cond != 0xE) emit_branch_cond(cond, taken);
+    else taken();
     return;
   }
 
@@ -1314,25 +1670,35 @@ void Translator::translate_arm(u32 instr, bool fb) {
       if (op == AOp::BlxReg) e().mov_imm(cache_.write(14, false), pc_ + 4);
       emit_branch_indirect(t, true);
     };
-    if (cond != 0xE) emit_branch_cond(cond, taken); else taken();
+    if (cond != 0xE) emit_branch_cond(cond, taken);
+    else taken();
     return;
   }
 
   // Memory and MSR (dynamic cost / interpreter cold path): conditional forms branch
   // around the body with the cache empty on both arms; the skipped arm charges numC.
   switch (op) {
-  case AOp::LdrStrImm: case AOp::LdrStrReg: case AOp::LdrStrHImm: case AOp::LdrStrHReg: case AOp::Ldm: case AOp::Stm:
-  case AOp::MsrReg: case AOp::MsrImm: {
+  case AOp::LdrStrImm:
+  case AOp::LdrStrReg:
+  case AOp::LdrStrHImm:
+  case AOp::LdrStrHReg:
+  case AOp::Ldm:
+  case AOp::Stm:
+  case AOp::MsrReg:
+  case AOp::MsrImm: {
     size_t skip = 0;
     if (cond != 0xE) {
-      cache_.flush(); flush_pending();
+      cache_.flush();
+      flush_pending();
       skip = hot_.b_fwd(invert(static_cast<Cond>(cond)));
       // The interpreter cold path re-evaluates the condition.
       live_ |= cond_reads(cond);
     }
     switch (op) {
-    case AOp::LdrStrImm: case AOp::LdrStrReg: arm_ldr_str(instr, op); break;
-    case AOp::LdrStrHImm: case AOp::LdrStrHReg: arm_ldr_str_h(instr, op); break;
+    case AOp::LdrStrImm:
+    case AOp::LdrStrReg: arm_ldr_str(instr, op); break;
+    case AOp::LdrStrHImm:
+    case AOp::LdrStrHReg: arm_ldr_str_h(instr, op); break;
     case AOp::Ldm: arm_ldm_stm(instr, true); break;
     case AOp::Stm: arm_ldm_stm(instr, false); break;
     default: arm_msr(instr, op); break;
@@ -1370,24 +1736,33 @@ void Translator::translate_arm(u32 instr, bool fb) {
     flush_pending();
     charged_ahead_ = c;
     switch (op) {
-    case AOp::Mul: case AOp::Mla: case AOp::Umull: case AOp::Umlal: case AOp::Smull: case AOp::Smlal:
-      branch_form = mul_clears_c(instr); break;
+    case AOp::Mul:
+    case AOp::Mla:
+    case AOp::Umull:
+    case AOp::Umlal:
+    case AOp::Smull:
+    case AOp::Smlal: branch_form = mul_clears_c(instr); break;
     default: break;
     }
-    if (branch_form) { cache_.flush(); skip = hot_.b_fwd(invert(static_cast<Cond>(cond))); }
-    else cond_ = static_cast<Cond>(cond);
+    if (branch_form) {
+      cache_.flush();
+      skip = hot_.b_fwd(invert(static_cast<Cond>(cond)));
+    } else cond_ = static_cast<Cond>(cond);
   }
 
   switch (op) {
-  case AOp::DpImm: case AOp::DpImmShift: case AOp::DpRegShift:
-    arm_data_processing(instr, op);
-    break;
+  case AOp::DpImm:
+  case AOp::DpImmShift:
+  case AOp::DpRegShift: arm_data_processing(instr, op); break;
   case AOp::Mrs: {
     const u32 rd = (instr >> 12) & 0xF;
     add_pending(numC(pc_));
     if (rd == 15) break;
     const u32 hd = cache_.write(rd, cond_ != AL);
-    if (instr & (1u << 22)) { e().ldr(hd, R_CTX, OFF_SPSR, cond_); break; }
+    if (instr & (1u << 22)) {
+      e().ldr(hd, R_CTX, OFF_SPSR, cond_);
+      break;
+    }
     const u32 t = cache_.temp();
     e().ldr(hd, R_CTX, OFF_CPSR, cond_);
     e().mrs_apsr(t, cond_);
@@ -1405,18 +1780,25 @@ void Translator::translate_arm(u32 instr, bool fb) {
     break;
   }
   case AOp::Pld: add_pending(numC(pc_)); break;
-  case AOp::Mcr: add_pending(numC(pc_) + 2); break;      // charge_CI(2)
-  case AOp::SmlaXY: case AOp::SmulXY: case AOp::SmlawY: case AOp::SmulwY:
-    arm_dsp_multiply(instr, op);
-    break;
-  case AOp::Mul: case AOp::Mla: case AOp::Umull: case AOp::Umlal: case AOp::Smull: case AOp::Smlal:
-    arm_multiply(instr, op);
-    break;
+  case AOp::Mcr: add_pending(numC(pc_) + 2); break; // charge_CI(2)
+  case AOp::SmlaXY:
+  case AOp::SmulXY:
+  case AOp::SmlawY:
+  case AOp::SmulwY: arm_dsp_multiply(instr, op); break;
+  case AOp::Mul:
+  case AOp::Mla:
+  case AOp::Umull:
+  case AOp::Umlal:
+  case AOp::Smull:
+  case AOp::Smlal: arm_multiply(instr, op); break;
   default: assert(false && "inline set and fallback set disagree"); break;
   }
   flush_pending();
   assert(charged_ahead_ == 0 && "a conditional instruction charged less than numC");
-  if (branch_form) { cache_.flush(); hot_.bind(skip); }
+  if (branch_form) {
+    cache_.flush();
+    hot_.bind(skip);
+  }
   cond_ = AL;
 }
 
@@ -1426,16 +1808,23 @@ void Translator::thumb_alu(u16 instr) {
   const u32 rs = (instr >> 3) & 7, rd = instr & 7;
   const u32 aluop = (instr >> 6) & 0xF;
   switch (aluop) {
-  case 0x2: case 0x3: case 0x4: case 0x7: {   // LSL LSR ASR ROR by register
+  case 0x2:
+  case 0x3:
+  case 0x4:
+  case 0x7: { // LSL LSR ASR ROR by register
     add_pending(numC_internal() + 1);
     const Shift type = aluop == 2 ? LSL : aluop == 3 ? LSR : aluop == 4 ? ASR : ROR;
     const u32 hs = cache_.read(rs), hd = cache_.write(rd, true);
     e().dp_regshift(MOV, true, hd, 0, hd, type, hs);
     return;
   }
-  case 0xD: {   // MUL
+  case 0xD: { // MUL
     if (a9_) add_pending(numC(pc_) + 3);
-    else { add_pending(numC_nonseq7()); flush_pending(); emit_mul_cycles7(cache_.read(rd), true, 0); }
+    else {
+      add_pending(numC_nonseq7());
+      flush_pending();
+      emit_mul_cycles7(cache_.read(rd), true, 0);
+    }
     const u32 hs = cache_.read(rs), hd = cache_.write(rd, true);
     e().mul(hd, hd, hs, true);
     emit_clear_c();
@@ -1446,17 +1835,49 @@ void Translator::thumb_alu(u16 instr) {
   add_pending(numC(pc_));
   const u32 hs = cache_.read(rs);
   switch (aluop) {
-  case 0x0: { const u32 hd = cache_.write(rd, true); e().dp_reg(AND, true, hd, hd, hs); break; }
-  case 0x1: { const u32 hd = cache_.write(rd, true); e().dp_reg(EOR, true, hd, hd, hs); break; }
-  case 0x5: { const u32 hd = cache_.write(rd, true); e().dp_reg(ADC, true, hd, hd, hs); break; }
-  case 0x6: { const u32 hd = cache_.write(rd, true); e().dp_reg(SBC, true, hd, hd, hs); break; }
+  case 0x0: {
+    const u32 hd = cache_.write(rd, true);
+    e().dp_reg(AND, true, hd, hd, hs);
+    break;
+  }
+  case 0x1: {
+    const u32 hd = cache_.write(rd, true);
+    e().dp_reg(EOR, true, hd, hd, hs);
+    break;
+  }
+  case 0x5: {
+    const u32 hd = cache_.write(rd, true);
+    e().dp_reg(ADC, true, hd, hd, hs);
+    break;
+  }
+  case 0x6: {
+    const u32 hd = cache_.write(rd, true);
+    e().dp_reg(SBC, true, hd, hd, hs);
+    break;
+  }
   case 0x8: e().tst_reg(cache_.read(rd), hs); break;
-  case 0x9: { const u32 hd = cache_.write(rd, false); e().dp_imm(RSB, true, hd, hs, 0); break; }
+  case 0x9: {
+    const u32 hd = cache_.write(rd, false);
+    e().dp_imm(RSB, true, hd, hs, 0);
+    break;
+  }
   case 0xA: e().cmp_reg(cache_.read(rd), hs); break;
   case 0xB: e().dp_reg(CMN, true, 0, cache_.read(rd), hs); break;
-  case 0xC: { const u32 hd = cache_.write(rd, true); e().dp_reg(ORR, true, hd, hd, hs); break; }
-  case 0xE: { const u32 hd = cache_.write(rd, true); e().dp_reg(BIC, true, hd, hd, hs); break; }
-  default:  { const u32 hd = cache_.write(rd, false); e().dp_reg(MVN, true, hd, 0, hs); break; }
+  case 0xC: {
+    const u32 hd = cache_.write(rd, true);
+    e().dp_reg(ORR, true, hd, hd, hs);
+    break;
+  }
+  case 0xE: {
+    const u32 hd = cache_.write(rd, true);
+    e().dp_reg(BIC, true, hd, hd, hs);
+    break;
+  }
+  default: {
+    const u32 hd = cache_.write(rd, false);
+    e().dp_reg(MVN, true, hd, 0, hs);
+    break;
+  }
   }
 }
 
@@ -1468,10 +1889,13 @@ void Translator::translate_thumb(u16 instr, bool fb) {
   if (fb) {
     bool always = false;
     switch (op) {
-    case TOp::Swi: break;   // DSi HLE may service it without the exception
-    case TOp::Bkpt: case TOp::Undefined: case TOp::BxBlx: case TOp::BlSuffix: case TOp::BlxSuffix:
-      always = true; break;
-    case TOp::HiRegOp: always = true; break;          // only pc-destination forms reach here
+    case TOp::Swi: break; // DSi HLE may service it without the exception
+    case TOp::Bkpt:
+    case TOp::Undefined:
+    case TOp::BxBlx:
+    case TOp::BlSuffix:
+    case TOp::BlxSuffix: always = true; break;
+    case TOp::HiRegOp: always = true; break; // only pc-destination forms reach here
     case TOp::PushPop: always = (instr & (1 << 11)) && (instr & (1 << 8)); break;
     case TOp::StmLdm: always = false; break;
     default: break;
@@ -1484,7 +1908,7 @@ void Translator::translate_thumb(u16 instr, bool fb) {
     const u32 type = (instr >> 11) & 3, amt = (instr >> 6) & 0x1F, rs = (instr >> 3) & 7, rd = instr & 7;
     add_pending(numC(pc_));
     const u32 hs = cache_.read(rs), hd = cache_.write(rd, false);
-    e().dp_reg(MOV, true, hd, 0, hs, static_cast<Shift>(type), amt);   // LSR/ASR #0 = #32, as the guest
+    e().dp_reg(MOV, true, hd, 0, hs, static_cast<Shift>(type), amt); // LSR/ASR #0 = #32, as the guest
     return;
   }
   case TOp::AddSubReg: {
@@ -1507,26 +1931,50 @@ void Translator::translate_thumb(u16 instr, bool fb) {
     switch ((instr >> 11) & 3) {
     case 0: e().dp_imm(MOV, true, cache_.write(rd, false), 0, imm); break;
     case 1: e().dp_imm(CMP, true, 0, cache_.read(rd), imm); break;
-    case 2: { const u32 hd = cache_.write(rd, true); e().dp_imm(ADD, true, hd, hd, imm); break; }
-    default: { const u32 hd = cache_.write(rd, true); e().dp_imm(SUB, true, hd, hd, imm); break; }
+    case 2: {
+      const u32 hd = cache_.write(rd, true);
+      e().dp_imm(ADD, true, hd, hd, imm);
+      break;
+    }
+    default: {
+      const u32 hd = cache_.write(rd, true);
+      e().dp_imm(SUB, true, hd, hd, imm);
+      break;
+    }
     }
     return;
   }
   case TOp::Alu: thumb_alu(instr); return;
   case TOp::HiRegOp: {
     const u32 rd = (instr & 7) | ((instr >> 4) & 8), rs = (instr >> 3) & 0xF;
-    add_pending(numC(pc_));             // charged before a jump too
+    add_pending(numC(pc_)); // charged before a jump too
     switch ((instr >> 8) & 3) {
     case 0: {
       const u32 b = reg_read(rs, pc_ + 4);
-      if (rd == 15) { const u32 t = cache_.temp(); e().add_imm(t, b, pc_ + 4, t); emit_branch_indirect(t, false); return; }
-      const u32 hd = cache_.write(rd, true); e().add_reg(hd, hd, b); return;
+      if (rd == 15) {
+        const u32 t = cache_.temp();
+        e().add_imm(t, b, pc_ + 4, t);
+        emit_branch_indirect(t, false);
+        return;
+      }
+      const u32 hd = cache_.write(rd, true);
+      e().add_reg(hd, hd, b);
+      return;
     }
-    case 1: { const u32 a = reg_read(rd, pc_ + 4), b = reg_read(rs, pc_ + 4); e().cmp_reg(a, b); return; }
+    case 1: {
+      const u32 a = reg_read(rd, pc_ + 4), b = reg_read(rs, pc_ + 4);
+      e().cmp_reg(a, b);
+      return;
+    }
     case 2: {
       const u32 b = reg_read(rs, pc_ + 4);
-      if (rd == 15) { emit_branch_indirect(b, false); return; }
-      const u32 hd = cache_.write(rd, false); e().mov(hd, b); return;
+      if (rd == 15) {
+        emit_branch_indirect(b, false);
+        return;
+      }
+      const u32 hd = cache_.write(rd, false);
+      e().mov(hd, b);
+      return;
     }
     default: return;
     }
@@ -1549,7 +1997,8 @@ void Translator::translate_thumb(u16 instr, bool fb) {
   case TOp::AdjustSp: {
     const u32 imm = (instr & 0x7F) * 4, sp = pinned_host(13);
     add_pending(numC(pc_));
-    if (instr & (1 << 7)) e().sub_imm(sp, sp, imm, SCRATCH0); else e().add_imm(sp, sp, imm, SCRATCH0);
+    if (instr & (1 << 7)) e().sub_imm(sp, sp, imm, SCRATCH0);
+    else e().add_imm(sp, sp, imm, SCRATCH0);
     return;
   }
   case TOp::BCond: {
@@ -1571,12 +2020,15 @@ void Translator::translate_thumb(u16 instr, bool fb) {
     bl_prefix_valid_ = true;
     return;
   }
-  case TOp::LdrPcRel: case TOp::LdrStrReg: case TOp::LdrStrImm5: case TOp::LdrStrHImm5: case TOp::LdrStrSpRel:
-    thumb_ldr_str(instr, op);
-    return;
+  case TOp::LdrPcRel:
+  case TOp::LdrStrReg:
+  case TOp::LdrStrImm5:
+  case TOp::LdrStrHImm5:
+  case TOp::LdrStrSpRel: thumb_ldr_str(instr, op); return;
   case TOp::PushPop: thumb_push_pop(instr); return;
   case TOp::StmLdm: thumb_stm_ldm(instr); return;
-  case TOp::BlSuffix: case TOp::BlxSuffix: {
+  case TOp::BlSuffix:
+  case TOp::BlxSuffix: {
     const bool blx = op == TOp::BlxSuffix;
     const u32 ret = (pc_ + 2) | 1;
     if (was_prefix) {
@@ -1589,13 +2041,12 @@ void Translator::translate_thumb(u16 instr, bool fb) {
     const u32 t = cache_.temp();
     e().add_imm(t, cache_.read(14), (instr & 0x7FF) << 1, t);
     e().mov_imm(cache_.write(14, false), ret);
-    if (blx) e().and_imm(t, t, ~3u); else e().orr_imm(t, t, 1);
+    if (blx) e().and_imm(t, t, ~3u);
+    else e().orr_imm(t, t, 1);
     emit_branch_indirect(t, true);
     return;
   }
-  default:
-    assert(false && "inline set and fallback set disagree");
-    return;
+  default: assert(false && "inline set and fallback set disagree"); return;
   }
 }
 
@@ -1603,7 +2054,10 @@ void Translator::translate_thumb(u16 instr, bool fb) {
 
 bool Translator::run() {
   const u32 start = key_pc(key_);
-  if (!a9_) { t7_ = cpu_.timing7[start >> 15]; code_region7_ = start >> 24; }
+  if (!a9_) {
+    t7_ = cpu_.timing7[start >> 15];
+    code_region7_ = start >> 24;
+  }
   blk_.ndep = 0;
   blk_.dep_overflow = false;
 
@@ -1611,7 +2065,9 @@ bool Translator::run() {
   for (u32 i = 0; i < MAX_INSTRS; ++i) {
     const u32 raw = fetch(addr);
     const bool paired = thumb_ && i > 0 && arm::decode_thumb(static_cast<u16>(instrs_.back().raw)) == TOp::BlPrefix;
-    const bool fb = (thumb_ ? thumb_needs_fallback(static_cast<u16>(raw), a9_, paired) : arm_needs_fallback(raw, a9_)) || needs_fallback_cost7(raw);
+    const bool fb =
+        (thumb_ ? thumb_needs_fallback(static_cast<u16>(raw), a9_, paired) : arm_needs_fallback(raw, a9_)) ||
+        needs_fallback_cost7(raw);
     instrs_.push_back({addr, raw, F_ALL, fb});
     const bool ends = thumb_ ? shape::thumb_ends_block(static_cast<u16>(raw)) : shape::arm_ends_block(raw, a9_);
     addr += step();
@@ -1625,7 +2081,8 @@ bool Translator::run() {
     instrs_[i].live_out = live;
     const bool paired = thumb_ && i > 0 && arm::decode_thumb(static_cast<u16>(instrs_[i - 1].raw)) == TOp::BlPrefix;
     const FlagUse u = instrs_[i].fallback ? FlagUse{F_ALL, 0}
-                    : thumb_ ? thumb_flag_use(static_cast<u16>(instrs_[i].raw), a9_, paired) : arm_flag_use(instrs_[i].raw, a9_);
+                      : thumb_            ? thumb_flag_use(static_cast<u16>(instrs_[i].raw), a9_, paired)
+                                          : arm_flag_use(instrs_[i].raw, a9_);
     live = u.reads | (live & ~u.writes);
   }
 
@@ -1634,14 +2091,18 @@ bool Translator::run() {
   u32 end_addr = addr;
   for (size_t i = 0; i < instrs_.size(); ++i) {
     const Instr& in = instrs_[i];
-    if (i > 0 && hot_.size() + cold_.size() > BLOCK_LIMIT) { end_addr = in.addr; break; }
+    if (i > 0 && hot_.size() + cold_.size() > BLOCK_LIMIT) {
+      end_addr = in.addr;
+      break;
+    }
     if (hot_.remaining() < 8192 || cold_.remaining() < 4096) return false;
     pc_ = in.addr;
     live_ = in.live_out;
     cache_.begin_instr();
     if (rt().trace) emit_call2(reinterpret_cast<const void*>(&jit_h_trace), in.raw, make_key(in.addr, thumb_));
     if (rt().cyclog) emit_call2(reinterpret_cast<const void*>(&jit_h_cyclog), in.raw, make_key(in.addr, thumb_));
-    if (thumb_) translate_thumb(static_cast<u16>(in.raw), in.fallback); else translate_arm(in.raw, in.fallback);
+    if (thumb_) translate_thumb(static_cast<u16>(in.raw), in.fallback);
+    else translate_arm(in.raw, in.fallback);
     rt().stats.instrs_translated++;
     if (ended_) break;
     if (rt().strict) {
@@ -1665,7 +2126,11 @@ bool backend::translate_block(JitCpu& jc, u32 key, u8* buf, size_t cap, Block& b
   size = static_cast<u32>(e.size());
   if (rt().debug) {
     std::fprintf(stderr, "[jit] block %08x:", key);
-    for (u32 i = 0; i < size; i += 4) { u32 w; std::memcpy(&w, buf + i, 4); std::fprintf(stderr, " %08x", w); }
+    for (u32 i = 0; i < size; i += 4) {
+      u32 w;
+      std::memcpy(&w, buf + i, 4);
+      std::fprintf(stderr, " %08x", w);
+    }
     std::fprintf(stderr, "\n");
   }
   return true;

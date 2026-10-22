@@ -6,7 +6,6 @@
 A  Apply	A  Áp dụng
 A  Done	A  Xong
 A  Play	A  Chơi
-A / Start	A / Start
 A gentle scanline pattern with original colours.	Vạch quét nhẹ với màu gốc.
 A natural colour and contrast treatment.	Màu sắc và độ tương phản tự nhiên.
 A screen style for this cartridge	Kiểu màn hình cho băng trò chơi này
@@ -14,20 +13,26 @@ A stronger LCD texture and scanline look.	Kết cấu LCD và vạch quét đậ
 A subtle handheld LCD pixel pattern.	Hoa văn điểm ảnh LCD cầm tay nhẹ.
 A subtle pixel grid with a bright, readable image.	Lưới điểm ảnh nhẹ với hình ảnh sáng, rõ.
 Add your DS games to fetch their artwork.	Thêm trò chơi DS để tải ảnh bìa.
+Africa	Châu Phi
 After	Sau
 All games	Tất cả trò chơi
 Amber	Hổ phách
-Anbernic / Escape cancels	Anbernic / Escape để hủy
+Americas	Châu Mỹ
 Anbernic startup is unavailable in RGDS OS.	Không có khởi động Anbernic trong RGDS OS.
 Animations	Hoạt ảnh
+Antarctica	Châu Nam Cực
 Applies immediately. Higher clocks use more battery.	Áp dụng ngay. Xung nhịp cao hơn tiêu thụ nhiều pin hơn.
 Applies immediately. Your game keeps its progress.	Áp dụng ngay. Tiến trình trò chơi được giữ lại.
 Apply	Áp dụng
 Applying shader…	Đang áp dụng bộ lọc…
+Arctic	Bắc Cực
 Artwork	Ảnh bìa
 Artwork & ScreenScraper	Ảnh bìa
 Artwork source	Nguồn ảnh bìa
 Artwork sources	Các nguồn ảnh bìa
+Asia	Châu Á
+Atlantic Ocean	Đại Tây Dương
+Australia	Úc
 Auto-load state	Tự động tải trạng thái
 Auto-save on exit	Tự động lưu khi thoát
 Automatic	Tự động
@@ -156,6 +161,7 @@ Engine managed	Do trình giả lập quản lý
 Enter here	Nhập tại đây
 Enter password	Nhập mật khẩu
 Enter your username and password	Nhập tên người dùng và mật khẩu
+Europe	Châu Âu
 Every game in this collection has artwork.	Mọi trò chơi trong bộ sưu tập này đều có ảnh bìa.
 FPS changed for this session. Settings storage is unavailable.	Đã đổi FPS cho phiên này. Không thể lưu cài đặt.
 FPS counter enabled.	Đã bật bộ đếm FPS.
@@ -191,6 +197,7 @@ Global	Chung
 Global controls saved.	Đã lưu điều khiển chung.
 Hold	Giữ
 Home shortcut	Phím tắt trang chủ
+Indian Ocean	Ấn Độ Dương
 Inherit	Kế thừa
 Inherited	Đã kế thừa
 Jump to letter	Chuyển đến chữ cái
@@ -265,6 +272,7 @@ Open the Anbernic menu	Mở menu Anbernic
 Options	Tùy chọn
 Original pixels	Điểm ảnh gốc
 Original pixels and colours.	Điểm ảnh và màu sắc gốc.
+Pacific	Thái Bình Dương
 PLAY	CHƠI
 Password	Mật khẩu
 Pause when you need to.	Tạm dừng khi cần.
@@ -504,8 +512,6 @@ Wi-Fi request timed out. Check signal and try again.	Yêu cầu Wi-Fi hết th�
 Wi-Fi service is unavailable.	Dịch vụ Wi-Fi không khả dụng.
 With shader	Có bộ lọc
 Working…	Đang xử lý…
-X Scene   Y Compare	X Cảnh   Y So sánh
-X Scene / Y Compare	X Cảnh / Y So sánh
 Your cartridges go here	Băng trò chơi của bạn ở đây
 Your home screen after powering on	Trang chủ sau khi bật máy
 Your local time and date	Giờ và ngày địa phương
@@ -572,17 +578,29 @@ Update verification failed. Check for updates again.	Xác minh cập nhật th�
 Update failed. Check Wi-Fi and try again.	Cập nhật thất bại. Kiểm tra Wi-Fi và thử lại.
 Stable	Ổn định
 Testing	Thử nghiệm
-Save to slot	Lưu vào ô
 Import slot	Nhập ô lưu
-Load slot	Tải ô lưu
 Export slot	Xuất ô lưu
-Undo overwrite	Hoàn tác ghi đè
-Undo load	Hoàn tác tải
+Save checkpoint	Lưu trạng thái
+Load checkpoint	Tải trạng thái
+Save here	Lưu vào đây
+Export	Xuất
+More	Thêm
+Replace slot {0}?	Thay thế ô {0}?
+Load slot {0}?	Tải ô {0}?
+Delete slot {0}?	Xóa ô {0}?
+Undo last slot change	Hoàn tác thay đổi cuối
+Undo last load	Hoàn tác lần tải cuối
+Import into this slot	Nhập vào ô này
+Slot {0} deleted.	Đã xóa ô {0}.
+Slot change undone.	Đã hoàn tác thay đổi.
+A saves your current progress here.	A lưu tiến trình hiện tại vào đây.
+A replaces this slot with your current progress. X deletes it.	A thay ô này bằng tiến trình hiện tại. X xóa ô.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A tải ô này. Hoàn tác lần tải cuối trong Y đưa tiến trình hiện tại trở lại.
+Nothing to load here yet.	Chưa có gì để tải ở đây.
+A exports this slot to userdata/exports. X deletes it.	A xuất ô này vào userdata/exports. X xóa ô.
+Y imports a save into this slot.	Y nhập bản lưu vào ô này.
 Import help	Trợ giúp nhập
-Save slot	Ô lưu
-Replace this save?	Thay bản lưu này?
 Replace	Thay thế
-Load this save?	Tải bản lưu này?
 Blow into microphone	Thổi vào micrô
 Close and open DS lid	Gập và mở nắp DS
 DS language	Ngôn ngữ DS
@@ -621,15 +639,12 @@ Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are
 Save backup created in userdata/exports.	Đã tạo bản sao lưu trong userdata/exports.
 Slot exported to userdata/exports.	Đã xuất ô lưu vào userdata/exports.
 Save library updated.	Đã cập nhật thư viện bản lưu.
-Save overwrite undone.	Đã hoàn tác ghi đè bản lưu.
 Current progress could not be saved. No slot was changed.	Không thể lưu tiến trình. Không thay đổi ô nào.
 DS controls are unavailable for this engine.	Trình giả lập này không hỗ trợ điều khiển DS.
 Your DS library starts here	Thư viện DS bắt đầu từ đây
 Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Chép tệp .nds hoặc DS ZIP vào Roms/NDS trên thẻ trò chơi rồi chọn Quét trò chơi.
 Use the engine's native controls for microphone and DS settings.	Dùng điều khiển gốc của trình giả lập cho micrô và cài đặt DS.
 Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Micrô thật mặc định bật. Thổi và thao tác nắp quay về trò chơi trong hai giây. Đổi ngôn ngữ áp dụng sau khi khởi động lại.
-Save slots	Các ô lưu
-Load slots	Tải ô lưu
 Unplayed	Chưa chơi
 Played	Đã chơi
 Filtered	Đã lọc
@@ -652,9 +667,6 @@ Return home before testing the physical microphone.	Về trang chủ trước kh
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Thổi hoặc nói vào micrô. Mức tín hiệu tăng rồi giảm khi dừng.
 No filter	Không có bộ lọc
 Quick search	Tìm nhanh
-Y  Quick search	Y  Tìm nhanh
-X  Filters	X  Bộ lọc
-Y Search / X Filters	Y Tìm / X Bộ lọc
 A  Search	A  Tìm
 A  Jump	A  Chuyển
 Edit search	Sửa tìm kiếm
@@ -665,10 +677,8 @@ Finding games…	Đang tìm trò chơi…
 Searching…	Đang tìm kiếm…
 Search in	Tìm trong
 Try a shorter title or clear your filter.	Thử tên ngắn hơn hoặc xóa bộ lọc.
-A Key / Start Search / B Cancel	A Phím / Start Tìm / B Hủy
+Type	Gõ
 Tap to type, or use the D-pad and A	Chạm để nhập hoặc dùng phím điều hướng và A
-X Delete / Start Search	X Xóa / Start Tìm
-X Delete / Start Done	X Xóa / Start Xong
 No letters to jump to. Search for another game.	Không có chữ cái để chuyển đến. Tìm trò chơi khác.
 {0} match	{0} kết quả
 {0} matches	{0} kết quả
@@ -737,7 +747,6 @@ Colour mode	Chế độ màu
 Draw and chat with nearby handhelds	Vẽ và trò chuyện với máy ở gần
 Wi-Fi connected	Wi-Fi đã kết nối
 No Wi-Fi: you can still draw	Không có Wi-Fi: bạn vẫn có thể vẽ
-Press A to open	Nhấn A để mở
 Type your name	Nhập tên của bạn
 You appear like this to others	Đây là cách người khác thấy bạn
 Starting…	Đang khởi động…
@@ -835,7 +844,7 @@ Natural	Tự nhiên
 Vivid	Rực rỡ
 Pixel art	Pixel art
 Moods	Tâm trạng
-Up / Down or L / R: change group	Lên / Xuống hoặc L / R: đổi nhóm
+Change group	Đổi nhóm
 Sounds & music	Âm thanh và nhạc
 Menu music	Nhạc nền menu
 Music volume	Âm lượng nhạc
@@ -852,3 +861,35 @@ The backup did not finish. Please try again.	Sao lưu chưa hoàn tất. Vui lò
 Copies every save and checkpoint into one zip in userdata/exports.	Sao chép mọi bản lưu và điểm kiểm vào một tệp zip trong userdata/exports.
 Where games go on the card, and a fresh scan.	Nơi đặt trò chơi trên thẻ, và quét lại.
 Where covers and titles come from.	Nguồn của ảnh bìa và tên trò chơi.
+System update	Cập nhật hệ thống
+Version {0} is ready	Phiên bản {0} đã sẵn sàng
+Version {0} is ready to install	Phiên bản {0} sẵn sàng để cài đặt
+Downloading {0}	Đang tải {0}
+Paused at {0}	Tạm dừng ở {0}
+Update now	Cập nhật ngay
+Resume download	Tiếp tục tải
+Update	Cập nhật
+Install	Cài đặt
+What's new	Có gì mới
+Download	Tải
+Verify	Kiểm tra
+Prepare	Chuẩn bị
+Step {0} of 4	Bước {0}/4
+Less than a minute left	Còn dưới một phút
+About {0} min left	Còn khoảng {0} phút
+About {0} h left	Còn khoảng {0} giờ
+Downloads resume where they stopped if Wi-Fi drops.	Tải xuống sẽ tiếp tục từ chỗ dừng nếu mất Wi-Fi.
+Your games and saves are not touched.	Trò chơi và dữ liệu lưu của bạn không bị thay đổi.
+Connection lost. Retrying…	Mất kết nối. Đang thử lại…
+The update could not be downloaded. Check for updates again.	Không thể tải bản cập nhật. Hãy kiểm tra cập nhật lại.
+Finishing another task. Press Y again in a moment.	Đang hoàn tất tác vụ khác. Hãy nhấn Y lại sau giây lát.
+Updates	Cập nhật
+The language for menus and messages.	Ngôn ngữ của menu và thông báo.
+Set the clock to where you are.	Chỉnh đồng hồ theo nơi bạn ở.
+How dates appear at the top of the screen.	Cách ngày hiển thị ở đầu màn hình.
+A 24-hour or 12-hour clock.	Đồng hồ 24 giờ hoặc 12 giờ.
+Versions, free space and the network address of your handheld.	Phiên bản, dung lượng trống và địa chỉ mạng của máy.
+Check for updates, go back to the previous build or clear temporary files.	Kiểm tra cập nhật, quay lại bản trước hoặc xóa tệp tạm.
+Leave RG DS Core and go back to the stock menu.	Thoát RG DS Core và quay lại menu gốc.
+What happens when you turn the handheld on.	Điều xảy ra khi bạn bật máy.
+Restart the RGDS menu.	Khởi động lại menu RGDS.

@@ -127,7 +127,9 @@ class WatchTests(unittest.TestCase):
             config.write_text("#!/bin/sh\nprintf '%s\\n' '-I/fake'\n")
             config.chmod(0o755)
             env = dict(os.environ, CXX=str(compiler), PATH=str(root) + os.pathsep + os.environ["PATH"])
-            result = subprocess.run([sys.executable, str(root / "tools/build.py"), "host"], env=env, capture_output=True)
+            result = subprocess.run(
+                [sys.executable, str(root / "tools/build.py"), "host"], env=env, capture_output=True
+            )
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(output.read_bytes(), b"working binary")
             self.assertEqual(list(output.parent.glob(".launcher-*")), [])
@@ -143,11 +145,24 @@ class LiveThemeTests(unittest.TestCase):
             dark.write_text("schema=1\nmode=dark\nbackground=112233\n")
             prefs = root / "preferences.ini"
             prefs.write_text("schema=1\nmode=dark\nfont=rounded\n")
-            (root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the theme colour is read off a plain background
+            (root / "ui.ini").write_text(
+                "schema=1\nhome_layout=carousel\nbackground=plain\n"
+            )  # the theme colour is read off a plain background
             bmp = root / "screen.bmp"
-            command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--themes", str(root),
-                       "--theme", str(light), "--preferences", str(prefs), "--screenshot", str(bmp), "--seconds", "5"]
-            child = subprocess.Popen(command, env=dict(os.environ, SDL_VIDEODRIVER="dummy"), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            command = [
+                str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--themes",
+                str(root), "--theme",
+                str(light), "--preferences",
+                str(prefs), "--screenshot",
+                str(bmp), "--seconds", "5"
+            ]
+            child = subprocess.Popen(
+                command,
+                env=dict(os.environ, SDL_VIDEODRIVER="dummy"),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True
+            )
             try:
                 self.wait_color(bmp, (0x11, 0x22, 0x33), child)
                 light.write_text("schema=1\nmode=light\nbackground=aabbcc\n")
@@ -161,7 +176,8 @@ class LiveThemeTests(unittest.TestCase):
                 self.assertEqual(prefs.read_text(), "schema=1\nmode=dark\nfont=rounded\n")
             finally:
                 if child.poll() is None:
-                    child.kill();child.communicate()
+                    child.kill()
+                    child.communicate()
 
     def test_running_sdl_preview_reloads_and_keeps_valid_theme_and_selection(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -169,9 +185,16 @@ class LiveThemeTests(unittest.TestCase):
             theme, state, bmp = (root / name for name in ("live.ini", "state.txt", "screen.bmp"))
             theme.write_text("schema=1\nbackground=112233\n")
             state.write_text('1 2 1 ""\n')
-            (root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the theme colour is read off a plain background
-            command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--theme", str(theme),
-                       "--state", str(state), "--preferences", str(root / "preferences.ini"), "--screenshot", str(bmp), "--seconds", "6"]
+            (root / "ui.ini").write_text(
+                "schema=1\nhome_layout=carousel\nbackground=plain\n"
+            )  # the theme colour is read off a plain background
+            command = [
+                str(ROOT / "build/host/rgds-launcher"), "--preview", "--library", "--watch-assets", "--theme",
+                str(theme), "--state",
+                str(state), "--preferences",
+                str(root / "preferences.ini"), "--screenshot",
+                str(bmp), "--seconds", "6"
+            ]
             env = dict(os.environ, SDL_VIDEODRIVER="dummy")
             child = subprocess.Popen(command, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             try:
@@ -225,6 +248,7 @@ class LiveThemeTests(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+
 class ConfiguredRootTests(unittest.TestCase):
     def test_remote_selection_keeps_configured_root_in_stock_mode(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -236,8 +260,9 @@ class ConfiguredRootTests(unittest.TestCase):
 
             def remote(device_name, command, **kwargs):
                 script = kwargs['input'].replace('/userdata/rgds-boot', str(control))
-                return subprocess.run([sys.executable, '-B', '-'], input=script,
-                                      text=True, capture_output=True, check=True)
+                return subprocess.run(
+                    [sys.executable, '-B', '-'], input=script, text=True, capture_output=True, check=True
+                )
 
             for mode in ('stock', 'rgds'):
                 with self.subTest(mode=mode):
@@ -250,14 +275,17 @@ class ConfiguredRootTests(unittest.TestCase):
                     self.assertEqual(device.configured_root('root@device'), Path('/mnt/mmc/rgds'))
 
     def test_default_follows_boot_root_and_explicit_mount_does_not_probe(self):
-        with patch.object(device,'ssh',return_value=subprocess.CompletedProcess([],0,'/userdata/rgds-device-test/rgds\n','')) as ssh, patch('sys.stdout',new_callable=io.StringIO):
-            self.assertEqual(device.configured_root('root@device'),Path('/userdata/rgds-device-test/rgds'))
+        with patch.object(
+            device, 'ssh', return_value=subprocess.CompletedProcess([], 0, '/userdata/rgds-device-test/rgds\n', '')
+        ) as ssh, patch('sys.stdout', new_callable=io.StringIO):
+            self.assertEqual(device.configured_root('root@device'), Path('/userdata/rgds-device-test/rgds'))
             ssh.assert_called_once()
             ssh.reset_mock()
-            self.assertEqual(device.configured_root('root@device',Path('/mnt/SDCARD')),Path('/mnt/SDCARD/rgds'))
+            self.assertEqual(device.configured_root('root@device', Path('/mnt/SDCARD')), Path('/mnt/SDCARD/rgds'))
             ssh.assert_not_called()
 
     def test_invalid_remote_path_cannot_become_a_deploy_target(self):
-        for value in ('relative/path','/mnt/../etc','/safe\n/other'):
-            with patch.object(device,'ssh',return_value=subprocess.CompletedProcess([],0,value,'')):
-                with self.assertRaises(ValueError):device.configured_root('root@device')
+        for value in ('relative/path', '/mnt/../etc', '/safe\n/other'):
+            with patch.object(device, 'ssh', return_value=subprocess.CompletedProcess([], 0, value, '')):
+                with self.assertRaises(ValueError):
+                    device.configured_root('root@device')

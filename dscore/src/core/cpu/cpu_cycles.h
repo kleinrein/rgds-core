@@ -19,20 +19,23 @@
 
 namespace ds {
 
-
 // ARM9 numC at the moment of charging: the odd halfword of a Thumb pair is
 // already in the prefetch buffer.
-inline u32 num_c9(const CpuContext& cpu) {
-  return (cpu.thumb() && (cpu.hot.regs[15] & 2)) ? 0 : cpu.code_cycles;
-}
+inline u32 num_c9(const CpuContext& cpu) { return (cpu.thumb() && (cpu.hot.regs[15] & 2)) ? 0 : cpu.code_cycles; }
 
 inline void charge_C(CpuContext& cpu) {
-  if (cpu.which == Cpu::ARM9) { cpu.hot.cycle_budget -= static_cast<s32>(num_c9(cpu)); return; }
+  if (cpu.which == Cpu::ARM9) {
+    cpu.hot.cycle_budget -= static_cast<s32>(num_c9(cpu));
+    return;
+  }
   cpu.hot.cycle_budget -= cpu.timing7[cpu.code_cycles][cpu.thumb() ? 1 : 3];
 }
 
 inline void charge_CI(CpuContext& cpu, u32 internal) {
-  if (cpu.which == Cpu::ARM9) { cpu.hot.cycle_budget -= static_cast<s32>(num_c9(cpu) + internal); return; }
+  if (cpu.which == Cpu::ARM9) {
+    cpu.hot.cycle_budget -= static_cast<s32>(num_c9(cpu) + internal);
+    return;
+  }
   cpu.hot.cycle_budget -= static_cast<s32>(cpu.timing7[cpu.code_cycles][cpu.thumb() ? 0 : 2] + internal);
 }
 
@@ -46,7 +49,10 @@ inline void charge_fast_CD(CpuContext& cpu) {
 
 // Loads (the ARM9 skips the internal cycle; the ARM7 pays it unless main RAM absorbs it).
 inline void charge_CDI(CpuContext& cpu) {
-  if (g_fast_timing) { charge_fast_CD(cpu); return; }
+  if (g_fast_timing) {
+    charge_fast_CD(cpu);
+    return;
+  }
   const s32 numD = static_cast<s32>(cpu.data_cycles);
   if (cpu.which == Cpu::ARM9) {
     const s32 numC = static_cast<s32>(num_c9(cpu));
@@ -58,10 +64,15 @@ inline void charge_CDI(CpuContext& cpu) {
   u32 cost;
   if (cpu.data_region == 0x02) {
     if (cpu.code_region == 0x02) cost = static_cast<u32>(numC + d);
-    else { numC++; cost = max3(numC + d - 3, numC, d); }
+    else {
+      numC++;
+      cost = max3(numC + d - 3, numC, d);
+    }
   } else {
-    if (cpu.code_region == 0x02) { d++; cost = max3(numC + d - 3, numC, d); }
-    else cost = static_cast<u32>(numC + d + 1);
+    if (cpu.code_region == 0x02) {
+      d++;
+      cost = max3(numC + d - 3, numC, d);
+    } else cost = static_cast<u32>(numC + d + 1);
   }
   cpu.hot.cycle_budget -= static_cast<s32>(cost);
 }
@@ -69,7 +80,10 @@ inline void charge_CDI(CpuContext& cpu) {
 // A load that just jumped (LDM pc, POP pc). melonDS charges with R[15] at
 // target+2 in Thumb where jump() leaves target+4, so `& 2` here is inverted.
 inline void charge_CDI_after_jump(CpuContext& cpu) {
-  if (g_fast_timing) { cpu.hot.cycle_budget -= static_cast<s32>(cpu.data_cycles); return; }   // the constant refill stands for numC
+  if (g_fast_timing) {
+    cpu.hot.cycle_budget -= static_cast<s32>(cpu.data_cycles);
+    return;
+  } // the constant refill stands for numC
   if (cpu.which == Cpu::ARM9) {
     const s32 numC = (cpu.thumb() && !(cpu.hot.regs[15] & 2)) ? 0 : static_cast<s32>(cpu.code_cycles);
     const s32 numD = static_cast<s32>(cpu.data_cycles);
@@ -81,7 +95,10 @@ inline void charge_CDI_after_jump(CpuContext& cpu) {
 
 // Stores.
 inline void charge_CD(CpuContext& cpu) {
-  if (g_fast_timing) { charge_fast_CD(cpu); return; }
+  if (g_fast_timing) {
+    charge_fast_CD(cpu);
+    return;
+  }
   const s32 numD = static_cast<s32>(cpu.data_cycles);
   if (cpu.which == Cpu::ARM9) {
     const s32 numC = static_cast<s32>(num_c9(cpu));
@@ -98,9 +115,12 @@ inline void charge_CD(CpuContext& cpu) {
 // ARM9 prefetch cost for the instruction about to execute (r15 = two ahead).
 inline void prefetch_cost9(CpuContext& cpu) {
   const u32 pc = cpu.hot.regs[15];
-  if (cpu.thumb() && (pc & 2)) { cpu.code_cycles = 0; return; }
+  if (cpu.thumb() && (pc & 2)) {
+    cpu.code_cycles = 0;
+    return;
+  }
   u8 c = cpu.code_latch ? cpu.code_latch : cpu.timing9[pc >> 12][0];
-  if (cpu.code_latch && pc < cpu.itcm_size) c = 1;   // ITCM fetches always cost 1
+  if (cpu.code_latch && pc < cpu.itcm_size) c = 1; // ITCM fetches always cost 1
   cpu.code_cycles = (c == 0xFF) ? (!(pc & 0x1F) ? 3 : 1) : c;
 }
 
@@ -108,7 +128,7 @@ inline void prefetch_cost9(CpuContext& cpu) {
 // marks the first fetch after a branch (a cache line fill on cacheable code).
 inline u32 fetch_cost9(const CpuContext& cpu, u32 addr, bool branch) {
   const u8 c = cpu.timing9[addr >> 12][0];
-  if (c == 0xFF) return (branch || !(addr & 0x1F)) ? 3 : 1;   // cache line fill vs hit (approximation)
+  if (c == 0xFF) return (branch || !(addr & 0x1F)) ? 3 : 1; // cache line fill vs hit (approximation)
   return c;
 }
 
@@ -118,8 +138,13 @@ inline u32 refill_cycles(const CpuContext& cpu, u32 addr, bool thumb, u32* code_
   if (cpu.which == Cpu::ARM9) {
     u32 c, last;
     if (thumb) {
-      if (addr & 2) { last = fetch_cost9(cpu, addr + 2, false); c = fetch_cost9(cpu, addr - 2, true) + last; }
-      else { last = fetch_cost9(cpu, addr, true); c = last; }
+      if (addr & 2) {
+        last = fetch_cost9(cpu, addr + 2, false);
+        c = fetch_cost9(cpu, addr - 2, true) + last;
+      } else {
+        last = fetch_cost9(cpu, addr, true);
+        c = last;
+      }
     } else {
       last = fetch_cost9(cpu, addr + 4, false);
       c = fetch_cost9(cpu, addr, true) + last;

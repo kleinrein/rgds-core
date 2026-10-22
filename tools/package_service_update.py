@@ -23,16 +23,27 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def build(base, legacy_details=False):
-    subprocess.run([sys.executable, '-B', str(ROOT / 'packaging/install_package.py'),
-                    str(ROOT / 'build/service-update-check'), str(base), '--check'], check=True)
+    subprocess.run(
+        [
+            sys.executable, '-B',
+            str(ROOT / 'packaging/install_package.py'),
+            str(ROOT / 'build/service-update-check'),
+            str(base), '--check'
+        ],
+        check=True
+    )
     samba = ROOT / 'build/samba'
     record = validate_build(samba)
     stage = ROOT / 'build/service-update-abi'
     stage.mkdir(parents=True, exist_ok=True)
-    replacements = {'runtime/file_sharing.py': (ROOT / 'runtime/file_sharing.py').read_bytes(),
-                    'THIRD_PARTY.md': (ROOT / 'THIRD_PARTY.md').read_bytes()}
-    documents = {'rgds/docs/' + name: (ROOT / name).read_bytes()
-                 for name in ('docs/DEVICE_SETUP.md', 'docs/DEVELOPMENT.md', 'THIRD_PARTY.md')}
+    replacements = {
+        'runtime/file_sharing.py': (ROOT / 'runtime/file_sharing.py').read_bytes(),
+        'THIRD_PARTY.md': (ROOT / 'THIRD_PARTY.md').read_bytes()
+    }
+    documents = {
+        'rgds/docs/' + name: (ROOT / name).read_bytes()
+        for name in ('docs/DEVICE_SETUP.md', 'docs/DEVELOPMENT.md', 'THIRD_PARTY.md')
+    }
     for name in (*sorted(record['files']), 'build.json'):
         replacements['services/samba/' + name] = (samba / name).read_bytes()
     with zipfile.ZipFile(base) as source:
@@ -42,15 +53,22 @@ def build(base, legacy_details=False):
         files = dict(manifest['files'])
         files.update({name: hashlib.sha256(content).hexdigest() for name, content in replacements.items()})
         for name, content in replacements.items():
-            path = stage / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(content)
+            path = stage / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
         abi = dict(manifest.get('component_abi', {}))
         abi.update(component_abi(stage, {name: files[name] for name in replacements}))
-        update = dict(base_build=old, legacy_sharing_details=legacy_details,
-                      recipe_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
-        identity = hashlib.sha256(json.dumps(dict(files=files, abi=abi, update=update), sort_keys=True).encode()).hexdigest()[:12]
+        update = dict(
+            base_build=old,
+            legacy_sharing_details=legacy_details,
+            recipe_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+        )
+        identity = hashlib.sha256(json.dumps(dict(files=files, abi=abi, update=update),
+                                             sort_keys=True).encode()).hexdigest()[:12]
         build_id = manifest['version'] + '-smb-' + identity
-        manifest.update(build=build_id, files=files, component_abi=abi,
-                        minimum_glibc=glibc_floor(abi), service_update=update)
+        manifest.update(
+            build=build_id, files=files, component_abi=abi, minimum_glibc=glibc_floor(abi), service_update=update
+        )
         manifest.setdefault('source_builds', {})['samba'] = 'services/samba/build.json'
         target = 'rgds/releases/' + build_id + '/'
         output = ROOT / 'dist' / ('RGDS-' + build_id + '.zip')
@@ -62,18 +80,30 @@ def build(base, legacy_details=False):
                     if name in replacements or name == 'manifest.json':
                         continue
                     new_entry = zipfile.ZipInfo(target + name, entry.date_time)
-                    new_entry.external_attr = entry.external_attr; new_entry.compress_type = zipfile.ZIP_DEFLATED
+                    new_entry.external_attr = entry.external_attr
+                    new_entry.compress_type = zipfile.ZIP_DEFLATED
                     destination.writestr(new_entry, source.read(entry))
                 else:
-                    content = build_id.encode() + b'\n' if entry.filename == 'rgds/state/active' else documents.get(entry.filename, source.read(entry))
+                    content = build_id.encode() + b'\n' if entry.filename == 'rgds/state/active' else documents.get(
+                        entry.filename, source.read(entry)
+                    )
                     destination.writestr(entry, content)
-            for name, content in {**replacements, 'manifest.json': (json.dumps(manifest, indent=2, sort_keys=True) + '\n').encode()}.items():
+            for name, content in {
+                **replacements, 'manifest.json': (json.dumps(manifest, indent=2, sort_keys=True) + '\n').encode()
+            }.items():
                 entry = zipfile.ZipInfo(target + name, (2026, 10, 13, 0, 0, 0))
                 entry.compress_type = zipfile.ZIP_DEFLATED
                 entry.external_attr = (0o100755 if name.startswith('services/samba/bin/') else 0o100644) << 16
                 destination.writestr(entry, content)
-    subprocess.run([sys.executable, '-B', str(ROOT / 'packaging/install_package.py'),
-                    str(ROOT / 'build/service-update-check'), str(pending), '--check'], check=True)
+    subprocess.run(
+        [
+            sys.executable, '-B',
+            str(ROOT / 'packaging/install_package.py'),
+            str(ROOT / 'build/service-update-check'),
+            str(pending), '--check'
+        ],
+        check=True
+    )
     pending.replace(output)
     print(output)
     return output

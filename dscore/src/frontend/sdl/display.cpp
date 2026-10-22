@@ -25,7 +25,8 @@
 namespace ds::sdl {
 
 // View rects go to SDL as SDL_Rect.
-static_assert(sizeof(frontend::Rect) == sizeof(SDL_Rect) && offsetof(frontend::Rect, w) == offsetof(SDL_Rect, w) && offsetof(frontend::Rect, h) == offsetof(SDL_Rect, h),
+static_assert(sizeof(frontend::Rect) == sizeof(SDL_Rect) && offsetof(frontend::Rect, w) == offsetof(SDL_Rect, w) &&
+                  offsetof(frontend::Rect, h) == offsetof(SDL_Rect, h),
               "frontend::Rect must match SDL_Rect");
 
 // ---- rotation ----------------------------------------------------------------
@@ -37,7 +38,8 @@ static_assert(sizeof(frontend::Rect) == sizeof(SDL_Rect) && offsetof(frontend::R
 namespace {
 
 #if DS_ROT_NEON
-inline void tr4(uint32x4_t r0, uint32x4_t r1, uint32x4_t r2, uint32x4_t r3, uint32x4_t& c0, uint32x4_t& c1, uint32x4_t& c2, uint32x4_t& c3) {
+inline void tr4(uint32x4_t r0, uint32x4_t r1, uint32x4_t r2, uint32x4_t r3, uint32x4_t& c0, uint32x4_t& c1,
+                uint32x4_t& c2, uint32x4_t& c3) {
   const uint32x4x2_t a = vtrnq_u32(r0, r1), b = vtrnq_u32(r2, r3);
   c0 = vcombine_u32(vget_low_u32(a.val[0]), vget_low_u32(b.val[0]));
   c1 = vcombine_u32(vget_low_u32(a.val[1]), vget_low_u32(b.val[1]));
@@ -56,18 +58,24 @@ void rot270(const u32* src, int lw, int lh, u32* dst, int dp) {
       uint32x4_t c[4][4];
       for (int g = 0; g < 4; ++g) {
         const u32* p = r + g * 4 * lw + sx;
-        tr4(vld1q_u32(p), vld1q_u32(p + lw), vld1q_u32(p + 2 * lw), vld1q_u32(p + 3 * lw), c[0][g], c[1][g], c[2][g], c[3][g]);
+        tr4(vld1q_u32(p), vld1q_u32(p + lw), vld1q_u32(p + 2 * lw), vld1q_u32(p + 3 * lw), c[0][g], c[1][g], c[2][g],
+            c[3][g]);
       }
       for (int j = 0; j < 4; ++j) {
         u32* o = dst + static_cast<size_t>(lw - 1 - (sx + j)) * dp + sy;
-        vst1q_u32(o, c[j][0]); vst1q_u32(o + 4, c[j][1]); vst1q_u32(o + 8, c[j][2]); vst1q_u32(o + 12, c[j][3]);
+        vst1q_u32(o, c[j][0]);
+        vst1q_u32(o + 4, c[j][1]);
+        vst1q_u32(o + 8, c[j][2]);
+        vst1q_u32(o + 12, c[j][3]);
       }
     }
   }
   sxb = lw4;
 #endif
-  for (int y = sy; y < lh; ++y) for (int x = 0; x < lw; ++x) dst[static_cast<size_t>(lw - 1 - x) * dp + y] = src[static_cast<size_t>(y) * lw + x];
-  for (int y = 0; y < sy; ++y) for (int x = sxb; x < lw; ++x) dst[static_cast<size_t>(lw - 1 - x) * dp + y] = src[static_cast<size_t>(y) * lw + x];
+  for (int y = sy; y < lh; ++y)
+    for (int x = 0; x < lw; ++x) dst[static_cast<size_t>(lw - 1 - x) * dp + y] = src[static_cast<size_t>(y) * lw + x];
+  for (int y = 0; y < sy; ++y)
+    for (int x = sxb; x < lw; ++x) dst[static_cast<size_t>(lw - 1 - x) * dp + y] = src[static_cast<size_t>(y) * lw + x];
 }
 
 void rot90(const u32* src, int lw, int lh, u32* dst, int dp) {
@@ -80,18 +88,25 @@ void rot90(const u32* src, int lw, int lh, u32* dst, int dp) {
       uint32x4_t c[4][4];
       for (int g = 0; g < 4; ++g) {
         const u32* p = r + g * 4 * lw + sx;
-        tr4(vld1q_u32(p + 3 * lw), vld1q_u32(p + 2 * lw), vld1q_u32(p + lw), vld1q_u32(p), c[0][g], c[1][g], c[2][g], c[3][g]);
+        tr4(vld1q_u32(p + 3 * lw), vld1q_u32(p + 2 * lw), vld1q_u32(p + lw), vld1q_u32(p), c[0][g], c[1][g], c[2][g],
+            c[3][g]);
       }
       for (int j = 0; j < 4; ++j) {
         u32* o = dst + static_cast<size_t>(sx + j) * dp + (lh - 16 - sy);
-        vst1q_u32(o, c[j][3]); vst1q_u32(o + 4, c[j][2]); vst1q_u32(o + 8, c[j][1]); vst1q_u32(o + 12, c[j][0]);
+        vst1q_u32(o, c[j][3]);
+        vst1q_u32(o + 4, c[j][2]);
+        vst1q_u32(o + 8, c[j][1]);
+        vst1q_u32(o + 12, c[j][0]);
       }
     }
   }
   sxb = lw4;
 #endif
-  for (int y = sy; y < lh; ++y) for (int x = 0; x < lw; ++x) dst[static_cast<size_t>(x) * dp + (lh - 1 - y)] = src[static_cast<size_t>(y) * lw + x];
-  for (int y = 0; y < sy; ++y) for (int x = sxb; x < lw; ++x) dst[static_cast<size_t>(x) * dp + (lh - 1 - y)] = src[static_cast<size_t>(y) * lw + x];
+  for (int y = sy; y < lh; ++y)
+    for (int x = 0; x < lw; ++x) dst[static_cast<size_t>(x) * dp + (lh - 1 - y)] = src[static_cast<size_t>(y) * lw + x];
+  for (int y = 0; y < sy; ++y)
+    for (int x = sxb; x < lw; ++x)
+      dst[static_cast<size_t>(x) * dp + (lh - 1 - y)] = src[static_cast<size_t>(y) * lw + x];
 }
 
 void rot180(const u32* src, int lw, int lh, u32* dst, int dp) {
@@ -108,10 +123,13 @@ void Display::rotate_out(u32* dst, u32 dst_pitch) const {
   const u32* src = stage_.data();
   const int lw = scaled_w_, lh = scaled_h_, dp = static_cast<int>(dst_pitch);
   switch (rot_) {
-    case 90:  rot90(src, lw, lh, dst, dp); break;
-    case 180: rot180(src, lw, lh, dst, dp); break;
-    case 270: rot270(src, lw, lh, dst, dp); break;
-    default:  for (int y = 0; y < lh; ++y) std::memcpy(dst + static_cast<size_t>(y) * dp, src + static_cast<size_t>(y) * lw, static_cast<size_t>(lw) * sizeof(u32));
+  case 90: rot90(src, lw, lh, dst, dp); break;
+  case 180: rot180(src, lw, lh, dst, dp); break;
+  case 270: rot270(src, lw, lh, dst, dp); break;
+  default:
+    for (int y = 0; y < lh; ++y)
+      std::memcpy(dst + static_cast<size_t>(y) * dp, src + static_cast<size_t>(y) * lw,
+                  static_cast<size_t>(lw) * sizeof(u32));
   }
 }
 
@@ -122,7 +140,10 @@ void Display::output_size(int& w, int& h) const {
 
 namespace {
 // The same DS_VERBOSE gate as main.cpp's VLOG.
-bool verbose() { static const bool v = std::getenv("DS_VERBOSE") != nullptr; return v; }
+bool verbose() {
+  static const bool v = std::getenv("DS_VERBOSE") != nullptr;
+  return v;
+}
 
 // RG DS: SDL KMSDRM's page flips, read by KmsFlips (one per process: every
 // window shares SDL's DRM fd). Null on other drivers, with
@@ -153,7 +174,8 @@ double Display::dominant_ratio() const {
   return views_[p].rect.w > 0 ? static_cast<double>(views_[q].rect.w) / views_[p].rect.w : layout_.dominant_min;
 }
 
-bool Display::open(const char* title, int scale, bool fullscreen, bool linear, bool vsync, const Layout& layout_mode, int only_screen, int display_index) {
+bool Display::open(const char* title, int scale, bool fullscreen, bool linear, bool vsync, const Layout& layout_mode,
+                   int only_screen, int display_index) {
   sync();
   layout_ = layout_mode;
   only_screen_ = only_screen;
@@ -163,38 +185,62 @@ bool Display::open(const char* title, int scale, bool fullscreen, bool linear, b
   sink_ = Sink::Count;
   const bool panel = only_screen_ < 0 && (panel_ == Sink::Disp || panel_ == Sink::Fbdev);
   int w = 0, h = 0;
-  if (only_screen_ >= 0) { w = static_cast<int>(SCREEN_W) * scale; h = static_cast<int>(SCREEN_H) * scale; }
-  else natural_size(layout_, scale, w, h);
+  if (only_screen_ >= 0) {
+    w = static_cast<int>(SCREEN_W) * scale;
+    h = static_cast<int>(SCREEN_H) * scale;
+  } else natural_size(layout_, scale, w, h);
   int rot = rot_wanted_;
-  if (!rot) if (const char* r = std::getenv("DS_ROTATE")) rot = std::atoi(r);
+  if (!rot)
+    if (const char* r = std::getenv("DS_ROTATE")) rot = std::atoi(r);
   rot = ((rot % 360) + 360) % 360;
-  if (rot != 0 && rot != 90 && rot != 180 && rot != 270) { std::fprintf(stderr, "video: rotation %d not supported; 0\n", rot); rot = 0; }
+  if (rot != 0 && rot != 90 && rot != 180 && rot != 270) {
+    std::fprintf(stderr, "video: rotation %d not supported; 0\n", rot);
+    rot = 0;
+  }
   if ((rot == 90 || rot == 270) && !panel) std::swap(w, h);
-  const u32 flags = static_cast<u32>(SDL_WINDOW_RESIZABLE) | (fullscreen ? static_cast<u32>(SDL_WINDOW_FULLSCREEN_DESKTOP) : 0u);
-  win_ = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED_DISPLAY(display_index), SDL_WINDOWPOS_CENTERED_DISPLAY(display_index), w, h, flags);
-  if (!win_) { std::fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError()); return false; }
+  const u32 flags =
+      static_cast<u32>(SDL_WINDOW_RESIZABLE) | (fullscreen ? static_cast<u32>(SDL_WINDOW_FULLSCREEN_DESKTOP) : 0u);
+  win_ = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED_DISPLAY(display_index),
+                          SDL_WINDOWPOS_CENTERED_DISPLAY(display_index), w, h, flags);
+  if (!win_) {
+    std::fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
+    return false;
+  }
   fullscreen_ = fullscreen;
   rot_ = 0;
 
-  if (panel && panel_ == Sink::Disp && open_disp(linear, vsync, rot)) { sink_ = Sink::Disp; return true; }
+  if (panel && panel_ == Sink::Disp && open_disp(linear, vsync, rot)) {
+    sink_ = Sink::Disp;
+    return true;
+  }
   if (panel && panel_ == Sink::Fbdev) {
-    if (open_fbdev(vsync, rot)) { sink_ = Sink::Fbdev; return true; }
+    if (open_fbdev(vsync, rot)) {
+      sink_ = Sink::Fbdev;
+      return true;
+    }
     std::fprintf(stderr, "video.sink: /dev/fb0 not usable; using SDL\n");
   }
 
   const char* vd = SDL_GetCurrentVideoDriver();
-  auto env = [](const char* k) { const char* e = std::getenv(k); return std::string(e ? e : ""); };
-  const frontend::WindowPlan plan = frontend::plan_window({want_, vd ? vd : "", env("DS_DMABUF"), env("DS_SCANLINE_SCALE")});
+  auto env = [](const char* k) {
+    const char* e = std::getenv(k);
+    return std::string(e ? e : "");
+  };
+  const frontend::WindowPlan plan =
+      frontend::plan_window({want_, vd ? vd : "", env("DS_DMABUF"), env("DS_SCANLINE_SCALE")});
   for (const Sink s : plan.order) {
     bool ok = false;
     switch (s) {
-      case Sink::Kms:      ok = open_kms(rot); break;
-      case Sink::Dmabuf:   ok = open_dmabuf(rot); break;
-      case Sink::Surface:  ok = open_surface(rot); break;
-      case Sink::Renderer: ok = open_renderer(linear, vsync, rot); break;
-      default: break;
+    case Sink::Kms: ok = open_kms(rot); break;
+    case Sink::Dmabuf: ok = open_dmabuf(rot); break;
+    case Sink::Surface: ok = open_surface(rot); break;
+    case Sink::Renderer: ok = open_renderer(linear, vsync, rot); break;
+    default: break;
     }
-    if (ok) { sink_ = s; return true; }
+    if (ok) {
+      sink_ = s;
+      return true;
+    }
     if (plan.required && (s == Sink::Kms || s == Sink::Dmabuf)) {
       std::fprintf(stderr, "DS_DMABUF=1 but the %s sink failed\n", frontend::sink_name(s));
       return false;
@@ -211,7 +257,7 @@ bool Display::open_disp(bool linear, bool vsync, int rot) {
   if (!DispOut::available()) return false;
   auto d = std::make_unique<DispOut>();
   d->set_grid(disp_grid_);
-  d->set_overlay(true);   // menu/OSD panel pixels: the only place on this chip to get them
+  d->set_overlay(true); // menu/OSD panel pixels: the only place on this chip to get them
   d->set_nearest(!linear);
   d->set_integer_scale(static_cast<int>(int_scale_));
   if (!d->open(rot, vsync)) return false;
@@ -219,9 +265,14 @@ bool Display::open_disp(bool linear, bool vsync, int rot) {
   layout();
   if (chunky_) build_source_scale();
   std::fprintf(stderr, "video: display-engine scaler (%s), rot %d, layout %s, %s driver, vsync %s%s%s\n",
-               disp_->nearest() ? "nearest" : "driver filter", rot, mode_name(layout_.mode), SDL_GetCurrentVideoDriver(), vsync ? "on" : "off",
-               !chunky_ ? "" : disp_->divisor() > 1 ? ", chunky in the scaler" : ", chunky at source",
-               disp_->grid() ? ", grid layer" : disp_->overlay_available() ? ", overlay layer" : "");
+               disp_->nearest() ? "nearest" : "driver filter", rot, mode_name(layout_.mode),
+               SDL_GetCurrentVideoDriver(), vsync ? "on" : "off",
+               !chunky_               ? ""
+               : disp_->divisor() > 1 ? ", chunky in the scaler"
+                                      : ", chunky at source",
+               disp_->grid()                ? ", grid layer"
+               : disp_->overlay_available() ? ", overlay layer"
+                                            : "");
   return true;
 }
 
@@ -235,8 +286,8 @@ bool Display::open_fbdev(bool vsync, int rot) {
   rot_ = rot;
   layout();
   build_scale();
-  std::fprintf(stderr, "video: fbdev scanout %dx%d, %s driver, scanline scaling, rot %d, vsync %s\n",
-               out_->width(), out_->height(), SDL_GetCurrentVideoDriver(), rot_, vsync ? "on" : "off");
+  std::fprintf(stderr, "video: fbdev scanout %dx%d, %s driver, scanline scaling, rot %d, vsync %s\n", out_->width(),
+               out_->height(), SDL_GetCurrentVideoDriver(), rot_, vsync ? "on" : "off");
   return true;
 }
 
@@ -249,7 +300,11 @@ bool Display::open_kms(int rot) {
   SDL_GetWindowSize(win_, &ow, &oh);
   auto dr = std::make_unique<DrmOut>();
   if (gpu_wanted_) dr->set_bufs(DrmOut::DEFAULT_BUFS + 1);
-  if (!dr->open(win_, ow, oh, display_index_)) { scaled_ = false; rot_ = 0; return false; }
+  if (!dr->open(win_, ow, oh, display_index_)) {
+    scaled_ = false;
+    rot_ = 0;
+    return false;
+  }
   out_ = std::move(dr);
   layout();
   build_scale();
@@ -264,7 +319,7 @@ bool Display::open_kms(int rot) {
 bool Display::open_dmabuf(int rot) {
   if (!open_surface_scaling(rot)) return false;
   int ow = 0, oh = 0;
-  output_size(ow, oh);   // the presented size, whatever the rotation
+  output_size(ow, oh); // the presented size, whatever the rotation
   auto dm = std::make_unique<DmabufOut>();
   if (gpu_wanted_) dm->set_bufs(DmabufOut::DEFAULT_BUFS + 1);
   if (!dm->open(win_, ow, oh, only_screen_ >= 0 ? display_index_ : -1)) return false;
@@ -277,7 +332,8 @@ bool Display::open_dmabuf(int rot) {
 
 bool Display::open_surface(int rot) {
   if (!open_surface_scaling(rot)) return false;
-  std::fprintf(stderr, "video: window surface, %s driver, scanline scaling, rot %d\n", SDL_GetCurrentVideoDriver(), rot_);
+  std::fprintf(stderr, "video: window surface, %s driver, scanline scaling, rot %d\n", SDL_GetCurrentVideoDriver(),
+               rot_);
   return true;
 }
 
@@ -288,12 +344,16 @@ bool Display::open_surface_scaling(int rot) {
   rot_ = rot;
   if (!SDL_GetWindowSurface(win_)) {
     std::fprintf(stderr, "window surface unavailable (%s)\n", SDL_GetError());
-    scaled_ = false; rot_ = 0;
+    scaled_ = false;
+    rot_ = 0;
     return false;
   }
   layout();
   build_scale();
-  if (!scaled_) { rot_ = 0; return false; }
+  if (!scaled_) {
+    rot_ = 0;
+    return false;
+  }
   return true;
 }
 
@@ -310,7 +370,10 @@ bool Display::open_renderer(bool linear, bool vsync, int rot) {
     std::fprintf(stderr, "accelerated renderer unavailable (%s); falling back to software\n", SDL_GetError());
     ren_ = SDL_CreateRenderer(win_, -1, static_cast<u32>(SDL_RENDERER_SOFTWARE) | vflag);
   }
-  if (!ren_) { std::fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError()); return false; }
+  if (!ren_) {
+    std::fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError());
+    return false;
+  }
   if (KmsFlips* f = kms_flips(win_)) {
     flip_slot_ = f->add();
     if (flip_slot_ >= 0) flips_ = f;
@@ -319,9 +382,14 @@ bool Display::open_renderer(bool linear, bool vsync, int rot) {
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, linear ? "linear" : "nearest");
   for (int i = 0; i < SCREENS; ++i) {
     // The core's framebuffers are 0xAARRGGBB words: ARGB8888.
-    tex_[i] = SDL_CreateTexture(ren_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(SCREEN_W), static_cast<int>(SCREEN_H));
-    if (!tex_[i]) { std::fprintf(stderr, "SDL_CreateTexture: %s\n", SDL_GetError()); return false; }
-    texture_width_[i] = SCREEN_W; texture_height_[i] = SCREEN_H;
+    tex_[i] = SDL_CreateTexture(ren_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(SCREEN_W),
+                                static_cast<int>(SCREEN_H));
+    if (!tex_[i]) {
+      std::fprintf(stderr, "SDL_CreateTexture: %s\n", SDL_GetError());
+      return false;
+    }
+    texture_width_[i] = SCREEN_W;
+    texture_height_[i] = SCREEN_H;
   }
   layout();
 
@@ -330,15 +398,16 @@ bool Display::open_renderer(bool linear, bool vsync, int rot) {
     // Which panel a window landed on: KMSDRM orders displays by connector.
     const int shown = SDL_GetWindowDisplayIndex(win_);
     const char* panel = shown >= 0 ? SDL_GetDisplayName(shown) : nullptr;
-    std::fprintf(stderr, "video: %s renderer, %s driver, vsync %s, display %d (%s)\n", info.name, SDL_GetCurrentVideoDriver(),
-                 (info.flags & SDL_RENDERER_PRESENTVSYNC) ? "on" : "off", shown, panel ? panel : "unnamed");
+    std::fprintf(stderr, "video: %s renderer, %s driver, vsync %s, display %d (%s)\n", info.name,
+                 SDL_GetCurrentVideoDriver(), (info.flags & SDL_RENDERER_PRESENTVSYNC) ? "on" : "off", shown,
+                 panel ? panel : "unnamed");
   }
 
   // Which GL stack actually drives the window (Mesa/panfrost vs a vendor blob) varies; name it.
   using GetString = const unsigned char* (*)(unsigned);
   if (auto gl_get_string = reinterpret_cast<GetString>(SDL_GL_GetProcAddress("glGetString"))) {
-    const unsigned char* rend = gl_get_string(0x1F01);      // GL_RENDERER
-    const unsigned char* ver  = gl_get_string(0x1F02);      // GL_VERSION
+    const unsigned char* rend = gl_get_string(0x1F01); // GL_RENDERER
+    const unsigned char* ver = gl_get_string(0x1F02);  // GL_VERSION
     if (rend) std::fprintf(stderr, "gl: %s | %s\n", rend, ver ? reinterpret_cast<const char*>(ver) : "?");
   }
   return true;
@@ -348,19 +417,23 @@ void Display::close() {
   sync();
   if (direct_frames_) {
     const double k = 1.0 / (static_cast<double>(direct_frames_) * 1e6);
-    std::fprintf(stderr, "direct present (%s): %llu frames, compose %.3f ms mean, hook %.3f, buffer wait %.3f, copy+flip %.3f\n",
-                 win_ ? SDL_GetWindowTitle(win_) : "?", static_cast<unsigned long long>(direct_frames_),
-                 static_cast<double>(direct_compose_ns_) * k, static_cast<double>(direct_hook_ns_) * k, static_cast<double>(direct_begin_ns_) * k, static_cast<double>(direct_copy_ns_) * k);
+    std::fprintf(
+        stderr, "direct present (%s): %llu frames, compose %.3f ms mean, hook %.3f, buffer wait %.3f, copy+flip %.3f\n",
+        win_ ? SDL_GetWindowTitle(win_) : "?", static_cast<unsigned long long>(direct_frames_),
+        static_cast<double>(direct_compose_ns_) * k, static_cast<double>(direct_hook_ns_) * k,
+        static_cast<double>(direct_begin_ns_) * k, static_cast<double>(direct_copy_ns_) * k);
     direct_frames_ = 0;
   }
   if (prof_frames_)
-    std::fprintf(stderr, "present profile (%s): %llu frames, upload %.3f ms mean, upload+draw %.3f ms mean, finish %.3f ms mean, present %.3f ms mean, %.3f ms max, %llu textures recreated\n",
-                 win_ ? SDL_GetWindowTitle(win_) : "?", static_cast<unsigned long long>(prof_frames_),
-                 static_cast<double>(prof_upload_ns_) / 1e6 / static_cast<double>(prof_frames_),
-                 static_cast<double>(prof_draw_ns_) / 1e6 / static_cast<double>(prof_frames_),
-                 static_cast<double>(prof_finish_ns_) / 1e6 / static_cast<double>(prof_frames_),
-                 static_cast<double>(prof_swap_ns_) / 1e6 / static_cast<double>(prof_frames_), static_cast<double>(prof_swap_max_ns_) / 1e6,
-                 static_cast<unsigned long long>(prof_recreated_));
+    std::fprintf(
+        stderr,
+        "present profile (%s): %llu frames, upload %.3f ms mean, upload+draw %.3f ms mean, finish %.3f ms mean, present %.3f ms mean, %.3f ms max, %llu textures recreated\n",
+        win_ ? SDL_GetWindowTitle(win_) : "?", static_cast<unsigned long long>(prof_frames_),
+        static_cast<double>(prof_upload_ns_) / 1e6 / static_cast<double>(prof_frames_),
+        static_cast<double>(prof_draw_ns_) / 1e6 / static_cast<double>(prof_frames_),
+        static_cast<double>(prof_finish_ns_) / 1e6 / static_cast<double>(prof_frames_),
+        static_cast<double>(prof_swap_ns_) / 1e6 / static_cast<double>(prof_frames_),
+        static_cast<double>(prof_swap_max_ns_) / 1e6, static_cast<unsigned long long>(prof_recreated_));
   // Take the GL context back from the present thread before SDL frees the
   // renderer's textures and context here, once the last page flip is done
   // (SDL tears the window down without waiting for it).
@@ -369,15 +442,19 @@ void Display::close() {
     KmsFlips* f = flips_;
     const int slot = flip_slot_;
     PresentThread& pt = PresentThread::get(lane_);
-    pt.wait(pt.post([w, f, slot] { if (f) f->before(slot); SDL_GL_MakeCurrent(w, nullptr); }));
+    pt.wait(pt.post([w, f, slot] {
+      if (f) f->before(slot);
+      SDL_GL_MakeCurrent(w, nullptr);
+    }));
     ren_async_ = false;
     lane_ = 0;
   } else if (flips_) {
     flips_->before(flip_slot_);
   }
   if (dropped_)
-    std::fprintf(stderr, "video: %s: %llu of %llu frames not presented (its present thread was still busy)\n", win_ ? SDL_GetWindowTitle(win_) : "?",
-                 static_cast<unsigned long long>(dropped_), static_cast<unsigned long long>(frames_));
+    std::fprintf(stderr, "video: %s: %llu of %llu frames not presented (its present thread was still busy)\n",
+                 win_ ? SDL_GetWindowTitle(win_) : "?", static_cast<unsigned long long>(dropped_),
+                 static_cast<unsigned long long>(frames_));
   frames_ = dropped_ = 0;
   if (flips_) {
     flips_->report(flip_slot_, win_ ? SDL_GetWindowTitle(win_) : "?", stderr);
@@ -385,19 +462,38 @@ void Display::close() {
     flips_ = nullptr;
     flip_slot_ = -1;
   }
-  if (disp_) { disp_->close(); disp_.reset(); }
-  gpu_.reset();   // flushes what it has in flight
-  if (out_) { out_->close(); out_.reset(); }
+  if (disp_) {
+    disp_->close();
+    disp_.reset();
+  }
+  gpu_.reset(); // flushes what it has in flight
+  if (out_) {
+    out_->close();
+    out_.reset();
+  }
   frame_px_ = nullptr;
-  surf_ = nullptr;   // owned by SDL, freed with the window
-  for (auto*& t : tex_) { if (t) SDL_DestroyTexture(t); t = nullptr; }
-  if (ren_) { SDL_DestroyRenderer(ren_); ren_ = nullptr; }
-  if (win_) { SDL_DestroyWindow(win_); win_ = nullptr; }
+  surf_ = nullptr; // owned by SDL, freed with the window
+  for (auto*& t : tex_) {
+    if (t) SDL_DestroyTexture(t);
+    t = nullptr;
+  }
+  if (ren_) {
+    SDL_DestroyRenderer(ren_);
+    ren_ = nullptr;
+  }
+  if (win_) {
+    SDL_DestroyWindow(win_);
+    win_ = nullptr;
+  }
 }
 
 // Screen rects for the current mode: aspect preserved, centred.
 void Display::layout() {
-  if (disp_) { int cw = 0, ch = 0; natural_size(layout_, 1.0, cw, ch); disp_->set_canvas(cw, ch); }
+  if (disp_) {
+    int cw = 0, ch = 0;
+    natural_size(layout_, 1.0, cw, ch);
+    disp_->set_canvas(cw, ch);
+  }
   int w = 0, h = 0;
   if (!out_size(w, h)) return;
   if (only_screen_ >= 0) {
@@ -405,10 +501,17 @@ void Display::layout() {
     return;
   }
   place(layout_, w, h, views_, int_scale_);
-  if (verbose()) for (int i = 0; i < nviews_; ++i)
-    std::fprintf(stderr, "video: view %d screen %d at %d,%d %dx%d%s (%dx%d, integer %s%s)\n", i, views_[i].screen, views_[i].rect.x, views_[i].rect.y, views_[i].rect.w, views_[i].rect.h,
-                 views_[i].shown ? "" : " hidden", w, h, int_scale_name(int_scale_), layout_.dominant_auto && (layout_.mode == Mode::DominantV || layout_.mode == Mode::DominantH) ? ", dominant auto" : "");
-  if (disp_) for (int i = 0; i < nviews_; ++i) disp_->set_view(i, views_[i].rect.x, views_[i].rect.y, views_[i].rect.w, views_[i].rect.h, views_[i].shown);
+  if (verbose())
+    for (int i = 0; i < nviews_; ++i)
+      std::fprintf(stderr, "video: view %d screen %d at %d,%d %dx%d%s (%dx%d, integer %s%s)\n", i, views_[i].screen,
+                   views_[i].rect.x, views_[i].rect.y, views_[i].rect.w, views_[i].rect.h,
+                   views_[i].shown ? "" : " hidden", w, h, int_scale_name(int_scale_),
+                   layout_.dominant_auto && (layout_.mode == Mode::DominantV || layout_.mode == Mode::DominantH)
+                       ? ", dominant auto"
+                       : "");
+  if (disp_)
+    for (int i = 0; i < nviews_; ++i)
+      disp_->set_view(i, views_[i].rect.x, views_[i].rect.y, views_[i].rect.w, views_[i].rect.h, views_[i].shown);
 }
 
 bool Display::try_gpu_present() {
@@ -420,7 +523,10 @@ bool Display::try_gpu_present() {
     gpu_ = open_vk_import_presenter(*out_, &why2);
     if (!gpu_) why = gpu_mode_ == GpuPresentMode::Vulkan ? why2 : why + "; " + why2;
   }
-  if (!gpu_) { std::fprintf(stderr, "video.gpu_present: %s; scanline scaling instead\n", why.c_str()); return false; }
+  if (!gpu_) {
+    std::fprintf(stderr, "video.gpu_present: %s; scanline scaling instead\n", why.c_str());
+    return false;
+  }
   scaled_ = false;
   layout();
   std::fprintf(stderr, "video: %s, %s driver, rot %d\n", gpu_->name().c_str(), SDL_GetCurrentVideoDriver(), rot_);
@@ -445,8 +551,9 @@ bool Display::settle_step(const u32* const blank[SCREENS]) {
     Target t[SCREENS] = {};
     if (begin_frame(t)) present();
   }
-  const bool done = (w == m.w && h == m.h) || (w == m.h && h == m.w);   // a rotated output reports either way
-  if (done && verbose() && (w != open_w_ || h != open_h_)) std::fprintf(stderr, "video: settled at %dx%d (opened %dx%d) at %u ms\n", w, h, open_w_, open_h_, SDL_GetTicks());
+  const bool done = (w == m.w && h == m.h) || (w == m.h && h == m.w); // a rotated output reports either way
+  if (done && verbose() && (w != open_w_ || h != open_h_))
+    std::fprintf(stderr, "video: settled at %dx%d (opened %dx%d) at %u ms\n", w, h, open_w_, open_h_, SDL_GetTicks());
   return done;
 }
 
@@ -482,19 +589,22 @@ bool Display::prepare_gpu(GpuFrame& f) {
   int w = 0, h = 0;
   SDL_GetWindowSize(win_, &w, &h);
   switch (gpu_->fit(win_, w, h)) {
-    case FramePresenter::Fit::Lost:
-      // The sink may be closed now; begin_frame() reopens it or falls back
-      // to the window surface.
-      drop_gpu_present("lost on resize");
-      return false;   // this frame is dropped; the next takes begin_frame()
-    case FramePresenter::Fit::Changed: layout(); break;
-    case FramePresenter::Fit::Same: break;
+  case FramePresenter::Fit::Lost:
+    // The sink may be closed now; begin_frame() reopens it or falls back
+    // to the window surface.
+    drop_gpu_present("lost on resize");
+    return false; // this frame is dropped; the next takes begin_frame()
+  case FramePresenter::Fit::Changed: layout(); break;
+  case FramePresenter::Fit::Same: break;
   }
   FramePresenter::Params& p = f.params;
   out_size(p.lw, p.lh);
-  for (int i = 0; i < nviews_; ++i) f.v[i] = FramePresenter::View{views_[i].screen, views_[i].rect, views_[i].shown, !views_[i].direct, grid_on(views_[i].screen)};
+  for (int i = 0; i < nviews_; ++i)
+    f.v[i] = FramePresenter::View{views_[i].screen, views_[i].rect, views_[i].shown, !views_[i].direct,
+                                  grid_on(views_[i].screen)};
   f.n = nviews_;
-  p.rot = rot_; p.inset_alpha = inset_alpha_;
+  p.rot = rot_;
+  p.inset_alpha = inset_alpha_;
   p.drawn = frontend::Rect{canvas_drawn_.x, canvas_drawn_.y, canvas_drawn_.w, canvas_drawn_.h};
   p.grid = grid_strength_ > 0.0 ? static_cast<u32>(std::lround((1.0 - grid_strength_) * 256.0)) : 256u;
   canvas_drawn_ = SDL_Rect{0, 0, 0, 0};
@@ -524,7 +634,10 @@ void Display::draw_async(Display* const ds[], int n, const u32* const fb[SCREENS
   for (int i = 0; i < n && i < 2; ++i) {
     Display& d = *ds[i];
     d.sync();
-    if (!d.gpu_) { d.draw(fb); continue; }
+    if (!d.gpu_) {
+      d.draw(fb);
+      continue;
+    }
     if (d.prepare_gpu(frames[nf])) owners[nf++] = &d;
   }
   if (!nf) return;
@@ -545,24 +658,38 @@ void Display::draw_async(Display* const ds[], int n, const u32* const fb[SCREENS
   for (int k = 0; k < nf; ++k) owners[k]->job_ = stage_job;
 }
 
-bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const fb[SCREENS], u32 width, u32 height, const bool* enhanced) {
-  for (int i = 0; i < n; ++i) if (!ds[i]->ren_ || ds[i]->gpu_ || ds[i]->disp_) return false;
+bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const fb[SCREENS], u32 width, u32 height,
+                                  const bool* enhanced) {
+  for (int i = 0; i < n; ++i)
+    if (!ds[i]->ren_ || ds[i]->gpu_ || ds[i]->disp_) return false;
   // On KMSDRM the two windows present on two lanes once KmsFlips tracks both
   // windows' flips: each swap waits for its own panel's flip there, and on
   // one thread the second panel's wait queued behind the first's.
   // DS_PRESENT_LANES=1 keeps one lane; =2 splits on other drivers too (a
   // test aid: none of them shares a flip wait between windows).
-  static const int lanes = [] { const char* e = std::getenv("DS_PRESENT_LANES"); return e ? std::atoi(e) : 0; }();
-  static const bool kms = [] { const char* vd = SDL_GetCurrentVideoDriver(); return vd && std::strcmp(vd, "KMSDRM") == 0; }();
+  static const int lanes = [] {
+    const char* e = std::getenv("DS_PRESENT_LANES");
+    return e ? std::atoi(e) : 0;
+  }();
+  static const bool kms = [] {
+    const char* vd = SDL_GetCurrentVideoDriver();
+    return vd && std::strcmp(vd, "KMSDRM") == 0;
+  }();
   // KMSDRM: a frame whose lane is still busy with older ones is not
   // presented there (its windows keep the older picture), so emulation and
   // audio never wait on a page flip. Elsewhere the emulation thread waits,
   // as before. DS_PRESENT_DROP=0/1 overrides.
-  static const bool drop = [] { const char* e = std::getenv("DS_PRESENT_DROP"); return e ? std::atoi(e) != 0 : kms; }();
+  static const bool drop = [] {
+    const char* e = std::getenv("DS_PRESENT_DROP");
+    return e ? std::atoi(e) != 0 : kms;
+  }();
   // Staged copies of the screens, per lane, reused once the job that read
   // them is done. Two sets let one frame queue behind the one presenting
   // (DS_PRESENT_QUEUE=1/2; two by default when dropping).
-  static const int depth = [] { const char* e = std::getenv("DS_PRESENT_QUEUE"); return e ? (std::atoi(e) >= 2 ? 2 : 1) : drop ? 2 : 1; }();
+  static const int depth = [] {
+    const char* e = std::getenv("DS_PRESENT_QUEUE");
+    return e ? (std::atoi(e) >= 2 ? 2 : 1) : drop ? 2 : 1;
+  }();
   bool split = n == 2 && lanes != 1;
   if (!(lanes == 2 && !kms))
     for (int i = 0; i < n && split; ++i) split = ds[i]->flips_ && ds[i]->flips_->ready(ds[i]->flip_slot_);
@@ -581,9 +708,16 @@ bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const f
     }
   }
   static bool was_split = false;
-  if (split != was_split) { was_split = split; std::fprintf(stderr, "video: the windows present on %s\n", split ? "two threads" : "one thread"); }
+  if (split != was_split) {
+    was_split = split;
+    std::fprintf(stderr, "video: the windows present on %s\n", split ? "two threads" : "one thread");
+  }
 
-  struct LaneStage { std::vector<u32> px[2][SCREENS]; u64 job[2] = {}; int set = 0; };
+  struct LaneStage {
+    std::vector<u32> px[2][SCREENS];
+    u64 job[2] = {};
+    int set = 0;
+  };
   static LaneStage stage[PresentThread::LANES];
   bool flags[SCREENS];
   u32 sizes[SCREENS];
@@ -599,14 +733,18 @@ bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const f
     for (int k = 0; k < m; ++k) ++owners[k]->frames_;
     const int next = (ls.set + 1) % depth;
     if (!pt.done(ls.job[next])) {
-      if (drop) { for (int k = 0; k < m; ++k) ++owners[k]->dropped_; continue; }
+      if (drop) {
+        for (int k = 0; k < m; ++k) ++owners[k]->dropped_;
+        continue;
+      }
       pt.wait(ls.job[next]);
     }
     ls.set = next;
     // Only the screens this lane's windows show.
     bool shown[SCREENS] = {};
     for (int k = 0; k < m; ++k)
-      for (int i = 0; i < owners[k]->nviews_; ++i) if (owners[k]->views_[i].shown) shown[owners[k]->views_[i].screen] = true;
+      for (int i = 0; i < owners[k]->nviews_; ++i)
+        if (owners[k]->views_[i].shown) shown[owners[k]->views_[i].screen] = true;
     std::vector<u32>* const st = ls.px[next];
     for (int s = 0; s < SCREENS; ++s) {
       if (!shown[s]) continue;
@@ -617,7 +755,10 @@ bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const f
     ls.job[next] = pt.post([st, width, height, f0 = flags[0], f1 = flags[1], owners, m, t0 = tags[0], t1 = tags[1]] {
       const u32* const sfb[SCREENS] = {st[0].data(), st[1].data()};
       const bool on[SCREENS] = {f0, f1};
-      for (int k = 0; k < m; ++k) { owners[k]->tag_in_flight_ = k ? t1 : t0; owners[k]->draw_renderer(sfb, width, height, on); }
+      for (int k = 0; k < m; ++k) {
+        owners[k]->tag_in_flight_ = k ? t1 : t0;
+        owners[k]->draw_renderer(sfb, width, height, on);
+      }
     });
     for (int k = 0; k < m; ++k) owners[k]->job_ = ls.job[next];
   }
@@ -630,16 +771,32 @@ void Display::draw(const u32* const fb[SCREENS], u32 width, u32 height, const bo
   draw_renderer(fb, width, height, enhanced);
 }
 
-bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb[SCREENS], u32 width, u32 height, const bool* enhanced) {
-  for (int i = 0; i < n; ++i) if (!ds[i]->scanout_direct()) return false;
+bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb[SCREENS], u32 width, u32 height,
+                                 const bool* enhanced) {
+  for (int i = 0; i < n; ++i)
+    if (!ds[i]->scanout_direct()) return false;
   // A GPU presenter still laying out 1x frames on this tier hands over: from
   // here the CPU writes the tier's buffers (its tables come with scaled_).
-  for (int i = 0; i < n; ++i) if (ds[i]->gpu_) ds[i]->drop_gpu_present("handed over to the direct present");
-  for (int i = 0; i < n; ++i) if (!ds[i]->scaled_) return false;
-  static const int lanes = [] { const char* e = std::getenv("DS_PRESENT_LANES"); return e ? std::atoi(e) : 0; }();
-  static const bool kms = [] { const char* vd = SDL_GetCurrentVideoDriver(); return vd && std::strcmp(vd, "KMSDRM") == 0; }();
-  static const bool drop = [] { const char* e = std::getenv("DS_PRESENT_DROP"); return e ? std::atoi(e) != 0 : kms; }();
-  static const int depth = [] { const char* e = std::getenv("DS_PRESENT_QUEUE"); return e ? (std::atoi(e) >= 2 ? 2 : 1) : drop ? 2 : 1; }();
+  for (int i = 0; i < n; ++i)
+    if (ds[i]->gpu_) ds[i]->drop_gpu_present("handed over to the direct present");
+  for (int i = 0; i < n; ++i)
+    if (!ds[i]->scaled_) return false;
+  static const int lanes = [] {
+    const char* e = std::getenv("DS_PRESENT_LANES");
+    return e ? std::atoi(e) : 0;
+  }();
+  static const bool kms = [] {
+    const char* vd = SDL_GetCurrentVideoDriver();
+    return vd && std::strcmp(vd, "KMSDRM") == 0;
+  }();
+  static const bool drop = [] {
+    const char* e = std::getenv("DS_PRESENT_DROP");
+    return e ? std::atoi(e) != 0 : kms;
+  }();
+  static const int depth = [] {
+    const char* e = std::getenv("DS_PRESENT_QUEUE");
+    return e ? (std::atoi(e) >= 2 ? 2 : 1) : drop ? 2 : 1;
+  }();
   // Two lanes on KMSDRM only: each panel's DrmOut waits for its own flip, and
   // the tier serialises the two threads on the fd they share. A Wayland
   // dmabuf tier's event queue is not for two threads.
@@ -647,12 +804,22 @@ bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb
   for (int i = 0; i < n; ++i) {
     Display& d = *ds[i];
     const int lane = split ? i : 0;
-    if (d.lane_ != lane) { d.sync(); d.lane_ = lane; }
+    if (d.lane_ != lane) {
+      d.sync();
+      d.lane_ = lane;
+    }
     d.display_shown_ = SDL_GetWindowDisplayIndex(d.win_);
   }
   static bool was_split = false;
-  if (split != was_split) { was_split = split; std::fprintf(stderr, "video: the windows present on %s\n", split ? "two threads" : "one thread"); }
-  struct LaneStage { std::vector<u32> px[2][SCREENS]; u64 job[2] = {}; int set = 0; };
+  if (split != was_split) {
+    was_split = split;
+    std::fprintf(stderr, "video: the windows present on %s\n", split ? "two threads" : "one thread");
+  }
+  struct LaneStage {
+    std::vector<u32> px[2][SCREENS];
+    u64 job[2] = {};
+    int set = 0;
+  };
   static LaneStage stage[PresentThread::LANES];
   bool sized[SCREENS];
   u32 sizes[SCREENS];
@@ -668,13 +835,17 @@ bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb
     for (int k = 0; k < m; ++k) ++owners[k]->frames_;
     const int next = (ls.set + 1) % depth;
     if (!pt.done(ls.job[next])) {
-      if (drop) { for (int k = 0; k < m; ++k) ++owners[k]->dropped_; continue; }
+      if (drop) {
+        for (int k = 0; k < m; ++k) ++owners[k]->dropped_;
+        continue;
+      }
       pt.wait(ls.job[next]);
     }
     ls.set = next;
     bool shown[SCREENS] = {};
     for (int k = 0; k < m; ++k)
-      for (int i = 0; i < owners[k]->nviews_; ++i) if (owners[k]->views_[i].shown) shown[owners[k]->views_[i].screen] = true;
+      for (int i = 0; i < owners[k]->nviews_; ++i)
+        if (owners[k]->views_[i].shown) shown[owners[k]->views_[i].screen] = true;
     std::vector<u32>* const st = ls.px[next];
     for (int s = 0; s < SCREENS; ++s) {
       if (!shown[s]) continue;
@@ -684,7 +855,10 @@ bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb
     // The tag for the mailbox: bit 0 this frame started late, bit 1 the one
     // before did (the pacer's catch-up after a long frame spans two).
     int tags[2] = {0, 0};
-    for (int k = 0; k < m; ++k) { tags[k] = owners[k]->present_tag_ | (owners[k]->prev_tag_ ? 2 : 0); owners[k]->prev_tag_ = owners[k]->present_tag_; }
+    for (int k = 0; k < m; ++k) {
+      tags[k] = owners[k]->present_tag_ | (owners[k]->prev_tag_ ? 2 : 0);
+      owners[k]->prev_tag_ = owners[k]->present_tag_;
+    }
     ls.job[next] = pt.post([st, width, height, s0 = sized[0], s1 = sized[1], owners, m, t0 = tags[0], t1 = tags[1]] {
       const u32* const sfb[SCREENS] = {st[0].data(), st[1].data()};
       const bool on[SCREENS] = {s0, s1};
@@ -708,7 +882,11 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
   SDL_GetWindowSize(win_, &ww, &wh);
   if (ww != out_->width() || wh != out_->height()) {
     // A resize is followed from begin_frame() on the emulation thread, never here.
-    if (!direct_lost_) { direct_lost_ = true; std::fprintf(stderr, "video: window %dx%d but the scanout buffers are %dx%d; not presented\n", ww, wh, out_->width(), out_->height()); }
+    if (!direct_lost_) {
+      direct_lost_ = true;
+      std::fprintf(stderr, "video: window %dx%d but the scanout buffers are %dx%d; not presented\n", ww, wh,
+                   out_->width(), out_->height());
+    }
     return;
   }
   const int lw = scaled_w_, lh = scaled_h_;
@@ -717,9 +895,14 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
   u64 sig = static_cast<u64>(nviews_) * 31 + static_cast<u64>(lw) * 7 + static_cast<u64>(lh);
   for (int i = 0; i < nviews_; ++i) {
     const View& v = views_[i];
-    sig = sig * 1000003u + static_cast<u64>(v.rect.x) * 31 + static_cast<u64>(v.rect.y) * 131 + static_cast<u64>(v.rect.w) * 1031 + static_cast<u64>(v.rect.h) * 8191 + static_cast<u64>(v.screen) + (v.shown ? 7u : 0u);
+    sig = sig * 1000003u + static_cast<u64>(v.rect.x) * 31 + static_cast<u64>(v.rect.y) * 131 +
+          static_cast<u64>(v.rect.w) * 1031 + static_cast<u64>(v.rect.h) * 8191 + static_cast<u64>(v.screen) +
+          (v.shown ? 7u : 0u);
   }
-  if (canvas_.size() != static_cast<size_t>(lw) * lh || sig != canvas_sig_) { canvas_.assign(static_cast<size_t>(lw) * lh, 0xFF000000u); canvas_sig_ = sig; }
+  if (canvas_.size() != static_cast<size_t>(lw) * lh || sig != canvas_sig_) {
+    canvas_.assign(static_cast<size_t>(lw) * lh, 0xFF000000u);
+    canvas_sig_ = sig;
+  }
   for (int i = 0; i < nviews_; ++i) {
     const View& v = views_[i];
     if (!v.shown || v.rect.w <= 0 || v.rect.h <= 0) continue;
@@ -746,7 +929,8 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
       const size_t nx = std::min<size_t>(rw - skip, static_cast<size_t>(x_hi - x_lo));
       scratch_row_.resize(static_cast<size_t>(rw) + 64);
       for (u32 line = 0; line < SCREEN_H; ++line) {
-        const int y0 = static_cast<int>((line * v.rect.h + SCREEN_H - 1) / SCREEN_H), y1 = static_cast<int>(((line + 1) * v.rect.h + SCREEN_H - 1) / SCREEN_H);
+        const int y0 = static_cast<int>((line * v.rect.h + SCREEN_H - 1) / SCREEN_H),
+                  y1 = static_cast<int>(((line + 1) * v.rect.h + SCREEN_H - 1) / SCREEN_H);
         const int ya = std::max(y0, y_lo), yb = std::min(y1, y_hi);
         if (ya >= yb) continue;
         gpu::kern::active::scale_row(fb[s] + static_cast<size_t>(line) * SCREEN_W, xr, scratch_row_.data());
@@ -754,15 +938,20 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
       }
     } else if (v.rect.w == static_cast<int>(sw) && v.rect.h == static_cast<int>(sh)) {
       // The enhanced image is the view's size: straight in.
-      for (int y = y_lo; y < y_hi; ++y) put(y, fb[s] + static_cast<size_t>(y) * sw + x_lo, static_cast<size_t>(x_hi - x_lo));
+      for (int y = y_lo; y < y_hi; ++y)
+        put(y, fb[s] + static_cast<size_t>(y) * sw + x_lo, static_cast<size_t>(x_hi - x_lo));
     } else {
       // Another size (an odd layout): nearest, with the column map built once.
       const size_t nx = static_cast<size_t>(x_hi - x_lo);
       scratch_map_.resize(nx);
-      for (size_t x = 0; x < nx; ++x) scratch_map_[x] = static_cast<u16>(std::min<u32>(sw - 1, static_cast<u32>((x_lo + x) * sw / static_cast<u32>(v.rect.w))));
+      for (size_t x = 0; x < nx; ++x)
+        scratch_map_[x] =
+            static_cast<u16>(std::min<u32>(sw - 1, static_cast<u32>((x_lo + x) * sw / static_cast<u32>(v.rect.w))));
       scratch_row_.resize(nx + 64);
       for (int y = y_lo; y < y_hi; ++y) {
-        const u32* src = fb[s] + static_cast<size_t>(std::min<u32>(sh - 1, static_cast<u32>(y) * sh / static_cast<u32>(v.rect.h))) * sw;
+        const u32* src =
+            fb[s] +
+            static_cast<size_t>(std::min<u32>(sh - 1, static_cast<u32>(y) * sh / static_cast<u32>(v.rect.h))) * sw;
         for (size_t x = 0; x < nx; ++x) scratch_row_[x] = src[scratch_map_[x]];
         put(y, scratch_row_.data(), nx);
       }
@@ -777,16 +966,22 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
   const auto tp2 = now();
   u32* px = out_->begin_frame();
   if (!px) {
-    if (!direct_lost_) { direct_lost_ = true; std::fprintf(stderr, "video: the scanout tier gave no buffer; frames not presented\n"); }
+    if (!direct_lost_) {
+      direct_lost_ = true;
+      std::fprintf(stderr, "video: the scanout tier gave no buffer; frames not presented\n");
+    }
     return;
   }
   const auto tp3 = now();
   const int dp = out_->stride();
   switch (rot_) {
-    case 90:  rot90(canvas_.data(), lw, lh, px, dp); break;
-    case 180: rot180(canvas_.data(), lw, lh, px, dp); break;
-    case 270: rot270(canvas_.data(), lw, lh, px, dp); break;
-    default:  for (int y = 0; y < lh; ++y) std::memcpy(px + static_cast<size_t>(y) * dp, canvas_.data() + static_cast<size_t>(y) * lw, static_cast<size_t>(lw) * sizeof(u32));
+  case 90: rot90(canvas_.data(), lw, lh, px, dp); break;
+  case 180: rot180(canvas_.data(), lw, lh, px, dp); break;
+  case 270: rot270(canvas_.data(), lw, lh, px, dp); break;
+  default:
+    for (int y = 0; y < lh; ++y)
+      std::memcpy(px + static_cast<size_t>(y) * dp, canvas_.data() + static_cast<size_t>(y) * lw,
+                  static_cast<size_t>(lw) * sizeof(u32));
   }
   // Mailbox (scanout.h): a frame that started on time, after one that did,
   // may be dropped at the panel's pending flip (the tier decides at that
@@ -795,38 +990,53 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
   // after a long one), or follows one, is kept, so a slow stretch shows
   // every frame and the catch-up does not cost a dropped frame two later.
   // DS_KMS_DROP=0 never drops, =1 may drop late-started frames too.
-  static const int drop_env = [] { const char* e = std::getenv("DS_KMS_DROP"); return e ? std::atoi(e) : -1; }();
+  static const int drop_env = [] {
+    const char* e = std::getenv("DS_KMS_DROP");
+    return e ? std::atoi(e) : -1;
+  }();
   out_->set_drop_if_pending(drop_env == 1 || (drop_env != 0 && tag == 0));
-  out_->set_present_tag(tag & 1);   // the flip's record (KmsFlips::Flip::tag): this frame started late
+  out_->set_present_tag(tag & 1); // the flip's record (KmsFlips::Flip::tag): this frame started late
   out_->end_frame();
   if (profile) {
     const auto tp4 = std::chrono::steady_clock::now();
-    ++direct_frames_; direct_compose_ns_ += static_cast<u64>((tp1 - tp0).count()); direct_hook_ns_ += static_cast<u64>((tp2 - tp1).count());
-    direct_begin_ns_ += static_cast<u64>((tp3 - tp2).count()); direct_copy_ns_ += static_cast<u64>((tp4 - tp3).count());
+    ++direct_frames_;
+    direct_compose_ns_ += static_cast<u64>((tp1 - tp0).count());
+    direct_hook_ns_ += static_cast<u64>((tp2 - tp1).count());
+    direct_begin_ns_ += static_cast<u64>((tp3 - tp2).count());
+    direct_copy_ns_ += static_cast<u64>((tp4 - tp3).count());
   }
 }
 
 void Display::draw_renderer(const u32* const fb[SCREENS], u32 width, u32 height, const bool* enhanced) {
-  if (ren_) for (int i = 0; i < SCREENS; ++i) {
-    const u32 w = !enhanced || enhanced[i] ? width : SCREEN_W;
-    const u32 h = !enhanced || enhanced[i] ? height : SCREEN_H;
-    if (w == texture_width_[i] && h == texture_height_[i]) continue;
-    SDL_Texture* next = SDL_CreateTexture(ren_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
-    if (!next) return;
-    SDL_DestroyTexture(tex_[i]); tex_[i] = next;
-    texture_width_[i] = w; texture_height_[i] = h;
-    ++prof_recreated_;
+  if (ren_)
+    for (int i = 0; i < SCREENS; ++i) {
+      const u32 w = !enhanced || enhanced[i] ? width : SCREEN_W;
+      const u32 h = !enhanced || enhanced[i] ? height : SCREEN_H;
+      if (w == texture_width_[i] && h == texture_height_[i]) continue;
+      SDL_Texture* next = SDL_CreateTexture(ren_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
+      if (!next) return;
+      SDL_DestroyTexture(tex_[i]);
+      tex_[i] = next;
+      texture_width_[i] = w;
+      texture_height_[i] = h;
+      ++prof_recreated_;
+    }
+  if (gpu_) {
+    draw_gpu(fb);
+    return;
   }
-  if (gpu_) { draw_gpu(fb); return; }
   if (disp_) {
-    if (disp_->overlay_available()) { disp_->overlay_changed(canvas_taken_); canvas_taken_ = false; }
+    if (disp_->overlay_available()) {
+      disp_->overlay_changed(canvas_taken_);
+      canvas_taken_ = false;
+    }
     const u32* slots[DispOut::VIEWS] = {nullptr, nullptr};
     for (int i = 0; i < nviews_ && i < DispOut::VIEWS; ++i) slots[i] = views_[i].shown ? fb[views_[i].screen] : nullptr;
     disp_->set_inset_alpha(inset_alpha_);
     disp_->present(slots);
     return;
   }
-  if (!ren_) return;   // renderer tier only; scanline tiers use begin_frame/end_frame
+  if (!ren_) return; // renderer tier only; scanline tiers use begin_frame/end_frame
   // DS_PRESENT_PROFILE=1: texture upload, draw, (DS_PRESENT_FINISH=1: a glFinish, to tell the GPU's share of the swap from the driver's)
   // and SDL_RenderPresent (the swap; the flip wait too, unless KmsFlips took it) per window, reported at close.
   static const bool profile = std::getenv("DS_PRESENT_PROFILE") != nullptr;
@@ -836,7 +1046,10 @@ void Display::draw_renderer(const u32* const fb[SCREENS], u32 width, u32 height,
   const auto now = [&] { return profile ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{}; };
   // DS_PRESENT_TEST=clear|upload|copy (measurement only, the picture is wrong): leave out the texture upload, the
   // draw, or both, to see what each costs the GPU.
-  static const int test = [] { const char* e = std::getenv("DS_PRESENT_TEST"); return !e ? 0 : !std::strcmp(e, "clear") ? 1 : !std::strcmp(e, "upload") ? 2 : !std::strcmp(e, "copy") ? 3 : 0; }();
+  static const int test = [] {
+    const char* e = std::getenv("DS_PRESENT_TEST");
+    return !e ? 0 : !std::strcmp(e, "clear") ? 1 : !std::strcmp(e, "upload") ? 2 : !std::strcmp(e, "copy") ? 3 : 0;
+  }();
   const auto t0 = now();
   SDL_SetRenderDrawColor(ren_, 0, 0, 0, 255);
   SDL_RenderClear(ren_);
@@ -845,20 +1058,30 @@ void Display::draw_renderer(const u32* const fb[SCREENS], u32 width, u32 height,
     const View& v = views_[i];
     if (!v.shown) continue;
     const auto tu = now();
-    if (test != 1 && test != 3) SDL_UpdateTexture(tex_[v.screen], nullptr, fb[v.screen], static_cast<int>(texture_width_[v.screen]) * 4);
+    if (test != 1 && test != 3)
+      SDL_UpdateTexture(tex_[v.screen], nullptr, fb[v.screen], static_cast<int>(texture_width_[v.screen]) * 4);
     if (profile) upload_ns += static_cast<u64>((std::chrono::steady_clock::now() - tu).count());
     if (test == 1 || test == 2) continue;
     // Textures are per screen, not per view, so the alpha mod is scoped to
     // the inset's copy or a screen swap would carry it to the large view.
     const bool translucent = !v.direct && inset_alpha_ < 255;
-    if (translucent) { SDL_SetTextureBlendMode(tex_[v.screen], SDL_BLENDMODE_BLEND); SDL_SetTextureAlphaMod(tex_[v.screen], inset_alpha_); }
+    if (translucent) {
+      SDL_SetTextureBlendMode(tex_[v.screen], SDL_BLENDMODE_BLEND);
+      SDL_SetTextureAlphaMod(tex_[v.screen], inset_alpha_);
+    }
     SDL_RenderCopy(ren_, tex_[v.screen], nullptr, reinterpret_cast<const SDL_Rect*>(&v.rect));
-    if (translucent) { SDL_SetTextureAlphaMod(tex_[v.screen], 255); SDL_SetTextureBlendMode(tex_[v.screen], SDL_BLENDMODE_NONE); }
+    if (translucent) {
+      SDL_SetTextureAlphaMod(tex_[v.screen], 255);
+      SDL_SetTextureBlendMode(tex_[v.screen], SDL_BLENDMODE_NONE);
+    }
   }
   // KMSDRM: this window's previous page flip is done before SDL's swap,
   // which would otherwise wait for it on the fd every window shares.
   const auto t1 = now();
-  if (gl_finish) { SDL_RenderFlush(ren_); gl_finish(); }
+  if (gl_finish) {
+    SDL_RenderFlush(ren_);
+    gl_finish();
+  }
   const auto tf = now();
   if (flips_) flips_->before(flip_slot_);
   const auto t2 = now();
@@ -866,8 +1089,11 @@ void Display::draw_renderer(const u32* const fb[SCREENS], u32 width, u32 height,
   if (flips_) flips_->after(flip_slot_, tag_in_flight_);
   if (!profile) return;
   const u64 swap = static_cast<u64>((std::chrono::steady_clock::now() - t2).count());
-  ++prof_frames_; prof_draw_ns_ += static_cast<u64>((t1 - t0).count()); prof_swap_ns_ += swap;
-  prof_upload_ns_ += upload_ns; prof_finish_ns_ += static_cast<u64>((tf - t1).count());
+  ++prof_frames_;
+  prof_draw_ns_ += static_cast<u64>((t1 - t0).count());
+  prof_swap_ns_ += swap;
+  prof_upload_ns_ += upload_ns;
+  prof_finish_ns_ += static_cast<u64>((tf - t1).count());
   if (swap > prof_swap_max_ns_) prof_swap_max_ns_ = swap;
 }
 
@@ -879,7 +1105,7 @@ void Display::set_page(bool on) {
 
 void Display::toggle_fullscreen() {
   sync();
-  if (disp_) return;   // the panel is the window
+  if (disp_) return; // the panel is the window
   fullscreen_ = !fullscreen_;
   SDL_SetWindowFullscreen(win_, fullscreen_ ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
   layout();
@@ -890,15 +1116,21 @@ void Display::toggle_fullscreen() {
 void Display::set_layout(const Layout& l) {
   sync();
   if (only_screen_ >= 0) return;
-  if (disp_) { layout_ = l; layout(); if (chunky_) build_source_scale(); return; }
+  if (disp_) {
+    layout_ = l;
+    layout();
+    if (chunky_) build_source_scale();
+    return;
+  }
   const Mode was = layout_.mode;
   layout_ = l;
   if (!fullscreen_ && was != l.mode) {
     int pw = 0;
-    for (int i = 0; i < nviews_; ++i) if (views_[i].shown) pw = std::max(pw, views_[i].rect.w);
+    for (int i = 0; i < nviews_; ++i)
+      if (views_[i].shown) pw = std::max(pw, views_[i].rect.w);
     int nw = 0, nh = 0;
     natural_size(l, std::max(1.0, static_cast<double>(pw) / SCREEN_W), nw, nh);
-    if (rotated()) std::swap(nw, nh);   // the window is the presented side
+    if (rotated()) std::swap(nw, nh); // the window is the presented side
     SDL_SetWindowSize(win_, nw, nh);
   }
   layout();
@@ -912,12 +1144,22 @@ bool Display::map_point(int wx, int wy, int& screen, int& sx, int& sy) const {
     const int lw = scaled_w_, lh = scaled_h_;
     int lx = wx, ly = wy;
     switch (rot_) {
-      case 270: lx = lw - 1 - wy; ly = wx; break;
-      case 90:  lx = wy; ly = lh - 1 - wx; break;
-      case 180: lx = lw - 1 - wx; ly = lh - 1 - wy; break;
-      default: break;
+    case 270:
+      lx = lw - 1 - wy;
+      ly = wx;
+      break;
+    case 90:
+      lx = wy;
+      ly = lh - 1 - wx;
+      break;
+    case 180:
+      lx = lw - 1 - wx;
+      ly = lh - 1 - wy;
+      break;
+    default: break;
     }
-    wx = lx; wy = ly;
+    wx = lx;
+    wy = ly;
   }
   for (int i = nviews_ - 1; i >= 0; --i) {
     const View& v = views_[i];
@@ -934,15 +1176,24 @@ bool Display::map_point(int wx, int wy, int& screen, int& sx, int& sy) const {
 // ---- per-scanline scaling ---------------------------------------------------
 
 bool Display::out_size(int& w, int& h) const {
-  if (disp_) { w = disp_->logical_w(); h = disp_->logical_h(); return true; }
+  if (disp_) {
+    w = disp_->logical_w();
+    h = disp_->logical_h();
+    return true;
+  }
   if (ren_) return SDL_GetRendererOutputSize(ren_, &w, &h) == 0;
   if (!win_) return false;
   // Window size is the truth on a scanout tier: the shm surface can lag a
   // configure by a frame, and KMSDRM has no window surface to ask at all.
-  if (out_) { SDL_GetWindowSize(win_, &w, &h); if (rotated()) std::swap(w, h); return w > 0 && h > 0; }
+  if (out_) {
+    SDL_GetWindowSize(win_, &w, &h);
+    if (rotated()) std::swap(w, h);
+    return w > 0 && h > 0;
+  }
   SDL_Surface* s = SDL_GetWindowSurface(win_);
   if (!s) return false;
-  w = s->w; h = s->h;
+  w = s->w;
+  h = s->h;
   if (rotated()) std::swap(w, h);
   return true;
 }
@@ -972,14 +1223,20 @@ void Display::build_source_scale() {
       auto fits = [&](u32 p) {
         if (p < 2 || pw % p || ph % p) return false;
         const u32 cx = pw / p, cy = ph / p;
-        return SCREEN_W % cx == 0 && SCREEN_H % cy == 0 && SCREEN_W / cx == SCREEN_H / cy && SCREEN_W / cx <= ds::gpu::Gpu::CELL_TAPS;
+        return SCREEN_W % cx == 0 && SCREEN_H % cy == 0 && SCREEN_W / cx == SCREEN_H / cy &&
+               SCREEN_W / cx <= ds::gpu::Gpu::CELL_TAPS;
       };
       u32 P = 0;
-      if (chunky_cell_ > 0) { for (u32 p = static_cast<u32>(chunky_cell_); p >= 2 && !P; --p) if (fits(p)) P = p; }
-      else { for (u32 p = 4; p <= 16 && !P; ++p) if (fits(p)) P = p; }
+      if (chunky_cell_ > 0) {
+        for (u32 p = static_cast<u32>(chunky_cell_); p >= 2 && !P; --p)
+          if (fits(p)) P = p;
+      } else {
+        for (u32 p = 4; p <= 16 && !P; ++p)
+          if (fits(p)) P = p;
+      }
       D = P ? SCREEN_W / (pw / P) : 0;
-      if (D < 2) hw = false;                       // no whole cell: pairs at source
-      else if (D_hw && D != D_hw) hw = false;      // views disagree
+      if (D < 2) hw = false;                  // no whole cell: pairs at source
+      else if (D_hw && D != D_hw) hw = false; // views disagree
       else D_hw = D;
     }
     if (D_hw && (v.rect.w % D_hw || v.rect.h % D_hw || v.rect.x % D_hw || v.rect.y % D_hw)) hw = false;
@@ -988,8 +1245,11 @@ void Display::build_source_scale() {
   disp_divisor_ = hw ? static_cast<int>(D_hw) : 1;
   if (disp_) disp_->set_divisor(page_ ? 1 : disp_divisor_);
   if (hw) {
-    scaled_ = false;   // the core's framebuffers go to the layer as they are
-    for (int i = 0; i < nviews_; ++i) { disp_->set_view_cell(i, 1); src_chunky_[views_[i].screen] = false; }
+    scaled_ = false; // the core's framebuffers go to the layer as they are
+    for (int i = 0; i < nviews_; ++i) {
+      disp_->set_view_cell(i, 1);
+      src_chunky_[views_[i].screen] = false;
+    }
     if (verbose()) std::fprintf(stderr, "video: chunky cells of %u DS pixels drawn by the scaler\n", D_hw);
     return;
   }
@@ -1007,63 +1267,85 @@ void Display::build_source_scale() {
     const u32 pw = static_cast<u32>(std::lround(v.rect.w * s)), ph = static_cast<u32>(std::lround(v.rect.h * s));
     // Shown smaller than the screen: flattening before a downscale is only blur.
     src_chunky_[v.screen] = s > 0.0 && pw >= SCREEN_W && ph >= SCREEN_H;
-    if (!src_chunky_[v.screen]) { if (disp_) disp_->set_view_cell(i, 1); continue; }
+    if (!src_chunky_[v.screen]) {
+      if (disp_) disp_->set_view_cell(i, 1);
+      continue;
+    }
     if (chunky_cell_ != 0) {
       u32 P = 0;
       auto fits = [&](u32 p) {
         if (p < 2 || pw % p || ph % p) return false;
         const u32 cx = pw / p, cy = ph / p;
-        return SCREEN_W % cx == 0 && SCREEN_H % cy == 0 && SCREEN_W / cx == SCREEN_H / cy && SCREEN_W / cx <= ds::gpu::Gpu::CELL_TAPS;
+        return SCREEN_W % cx == 0 && SCREEN_H % cy == 0 && SCREEN_W / cx == SCREEN_H / cy &&
+               SCREEN_W / cx <= ds::gpu::Gpu::CELL_TAPS;
       };
-      if (chunky_cell_ > 0) { for (u32 p = static_cast<u32>(chunky_cell_); p >= 2 && !P; --p) if (fits(p)) P = p; }
-      else { for (u32 p = 4; p <= 16 && !P; ++p) if (fits(p)) P = p; }
+      if (chunky_cell_ > 0) {
+        for (u32 p = static_cast<u32>(chunky_cell_); p >= 2 && !P; --p)
+          if (fits(p)) P = p;
+      } else {
+        for (u32 p = 4; p <= 16 && !P; ++p)
+          if (fits(p)) P = p;
+      }
       ds::gpu::Gpu::CellMap m;
       const u32 D = P ? SCREEN_W / (pw / P) : 0;
-      if (P && D > 1 && ds::gpu::Gpu::build_cell_axis(SCREEN_W, SCREEN_W / D, D, m.x) && ds::gpu::Gpu::build_cell_axis(SCREEN_H, SCREEN_H / D, D, m.y)) {
+      if (P && D > 1 && ds::gpu::Gpu::build_cell_axis(SCREEN_W, SCREEN_W / D, D, m.x) &&
+          ds::gpu::Gpu::build_cell_axis(SCREEN_H, SCREEN_H / D, D, m.y)) {
         cells_[v.screen] = std::move(m);
         cell = static_cast<int>(D);
         for (u32 x = 0; x <= SCREEN_W; ++x) xr[x] = static_cast<u16>(std::min(x, SCREEN_W / D) * D);
         if (verbose() || (chunky_cell_ > 0 && P != static_cast<u32>(chunky_cell_)))
           std::fprintf(stderr, "video: chunky cells of %u px on %ux%u = %u DS pixels at source\n", P, pw, ph, D);
       } else {
-        std::fprintf(stderr, "video: no %s cell is whole DS pixels on %ux%u; 2x2 pairs at source\n", chunky_cell_ > 0 ? "such" : "auto", pw, ph);
+        std::fprintf(stderr, "video: no %s cell is whole DS pixels on %ux%u; 2x2 pairs at source\n",
+                     chunky_cell_ > 0 ? "such" : "auto", pw, ph);
       }
     }
-    if (cell == 2) for (u32 x = 1; x < SCREEN_W; x += 2) xr[x] = xr[x + 1];
+    if (cell == 2)
+      for (u32 x = 1; x < SCREEN_W; x += 2) xr[x] = xr[x + 1];
     if (disp_) disp_->set_view_cell(i, cell);
   }
 }
 
 void Display::build_scale() {
-  if (!scaled_ || !win_ || disp_) return;   // the display-engine tier's tables are fixed at open()
+  if (!scaled_ || !win_ || disp_) return; // the display-engine tier's tables are fixed at open()
   if (out_) {
     // No window surface to fetch on KMSDRM, and asking would build a renderer.
     surf_ = nullptr;
-    phys_w_ = out_->width(); phys_h_ = out_->height();
+    phys_w_ = out_->width();
+    phys_h_ = out_->height();
   } else {
-    surf_ = SDL_GetWindowSurface(win_);      // recreated by SDL on resize
-    if (!surf_) { scaled_ = false; return; }
+    surf_ = SDL_GetWindowSurface(win_); // recreated by SDL on resize
+    if (!surf_) {
+      scaled_ = false;
+      return;
+    }
     if (surf_->format->BytesPerPixel != 4) {
       std::fprintf(stderr, "window surface is %d bpp, not 32; using the framebuffer path\n",
                    surf_->format->BytesPerPixel);
       scaled_ = false;
       return;
     }
-    phys_w_ = surf_->w; phys_h_ = surf_->h;
+    phys_w_ = surf_->w;
+    phys_h_ = surf_->h;
   }
   // Views/tables are in the logical frame; under rotation that's the staging
   // buffer, the presented buffer's size turned back.
-  scaled_w_ = phys_w_; scaled_h_ = phys_h_;
+  scaled_w_ = phys_w_;
+  scaled_h_ = phys_h_;
   if (rotated()) std::swap(scaled_w_, scaled_h_);
   if (rot_) stage_.assign(static_cast<size_t>(scaled_w_) * scaled_h_, 0);
-  else { stage_.clear(); stage_.shrink_to_fit(); }
+  else {
+    stage_.clear();
+    stage_.shrink_to_fit();
+  }
 
   // Inverse of the dst_x -> src_x = dst_x * SCREEN_W / rect.w map used by
   // draw()/map_point(): source pixel s covers [xrun[s], xrun[s+1]). One
   // table per view. The largest shown view sets the chunky cell the others follow.
   int ref_view = 0;
-  for (int i = 1; i < nviews_; ++i) if (views_[i].shown && (!views_[ref_view].shown || views_[i].rect.w > views_[ref_view].rect.w)) ref_view = i;
-  const int order[SCREENS] = {ref_view, 1 - ref_view};   // the reference first, so ref_D is set
+  for (int i = 1; i < nviews_; ++i)
+    if (views_[i].shown && (!views_[ref_view].shown || views_[i].rect.w > views_[ref_view].rect.w)) ref_view = i;
+  const int order[SCREENS] = {ref_view, 1 - ref_view}; // the reference first, so ref_D is set
   double ref_D = 2.0;
   for (int oi = 0; oi < nviews_; ++oi) {
     const int i = order[oi];
@@ -1075,8 +1357,10 @@ void Display::build_scale() {
     // relative to x0. Rows are cropped the same way by targets(). An inset
     // is never cropped here; blit_insets clips it at the edge.
     const u32 x0 = v.direct ? static_cast<u32>(std::max(0, -v.rect.x)) : 0u;
-    const u32 x1 = v.direct ? static_cast<u32>(std::clamp(scaled_w_ - v.rect.x, 0, v.rect.w)) : static_cast<u32>(v.rect.w);
-    const bool cropped = v.direct && (x0 > 0 || x1 < static_cast<u32>(v.rect.w) || v.rect.y < 0 || v.rect.y + v.rect.h > scaled_h_);
+    const u32 x1 =
+        v.direct ? static_cast<u32>(std::clamp(scaled_w_ - v.rect.x, 0, v.rect.w)) : static_cast<u32>(v.rect.w);
+    const bool cropped =
+        v.direct && (x0 > 0 || x1 < static_cast<u32>(v.rect.w) || v.rect.y < 0 || v.rect.y + v.rect.h > scaled_h_);
     for (u32 x = 0; x <= SCREEN_W; ++x) {
       const u32 raw = (x * static_cast<u32>(v.rect.w) + SCREEN_W - 1) / SCREEN_W;
       xr[x] = static_cast<u16>(std::clamp(raw, x0, x1) - x0);
@@ -1098,21 +1382,32 @@ void Display::build_scale() {
       // size rather than its panel-pixel one, so the smaller screen isn't
       // the coarsest; a view shown smaller than the screen goes plain.
       if (i == ref_view) {
-        if (chunky_cell_ > 0) { for (u32 p = static_cast<u32>(chunky_cell_); p >= 4 && !P; --p) if (fits(p)) P = p; }
-        else if (chunky_cell_ < 0) { for (u32 p = 4; p <= 16 && !P; ++p) if (fits(p)) P = p; }
+        if (chunky_cell_ > 0) {
+          for (u32 p = static_cast<u32>(chunky_cell_); p >= 4 && !P; --p)
+            if (fits(p)) P = p;
+        } else if (chunky_cell_ < 0) {
+          for (u32 p = 4; p <= 16 && !P; ++p)
+            if (fits(p)) P = p;
+        }
         ref_D = P ? static_cast<double>(SCREEN_W) * P / w : 2.0;
       } else if (w < SCREEN_W || h < SCREEN_H) {
-        src_chunky_[v.screen] = false; pair = false;
+        src_chunky_[v.screen] = false;
+        pair = false;
         if (verbose()) std::fprintf(stderr, "video: view %ux%u is below the screen; no chunky\n", w, h);
       } else if (chunky_cell_ != 0) {
         double best = 1e9;
-        for (u32 p = 2; p <= 64; ++p) if (fits(p)) {
-          const double d = std::fabs(static_cast<double>(SCREEN_W) * p / w - ref_D);
-          if (d < best - 1e-9) { best = d; P = p; }
-        }
+        for (u32 p = 2; p <= 64; ++p)
+          if (fits(p)) {
+            const double d = std::fabs(static_cast<double>(SCREEN_W) * p / w - ref_D);
+            if (d < best - 1e-9) {
+              best = d;
+              P = p;
+            }
+          }
       }
       ds::gpu::Gpu::CellMap m;
-      if (P && ds::gpu::Gpu::build_cell_axis(SCREEN_W, w / P, P, m.x) && ds::gpu::Gpu::build_cell_axis(SCREEN_H, h / P, P, m.y)) {
+      if (P && ds::gpu::Gpu::build_cell_axis(SCREEN_W, w / P, P, m.x) &&
+          ds::gpu::Gpu::build_cell_axis(SCREEN_H, h / P, P, m.y)) {
         cells_[v.screen] = std::move(m);
         pair = false;
         // The cells' xrun: cell i covers [i*P, (i+1)*P); entries past the
@@ -1124,10 +1419,14 @@ void Display::build_scale() {
         if (i == ref_view && chunky_cell_ > 0 && P != static_cast<u32>(chunky_cell_) && !told) {
           told = true;
           std::fprintf(stderr, "video: no %d px cell divides %ux%u; using %u\n", chunky_cell_, w, h, P);
-        } else if (verbose()) std::fprintf(stderr, "video: chunky cells %ux%u of %u px (%.2f DS pixels)\n", w / P, h / P, P, static_cast<double>(SCREEN_W) * P / w);
-      } else if (!src_chunky_[v.screen]) {}
-      else if (chunky_cell_ && cropped) { if (verbose()) std::fprintf(stderr, "video: view cropped by the overscale; 2x2 pairs\n"); }
-      else if (chunky_cell_) std::fprintf(stderr, "video: no %s cell divides %ux%u; 2x2 pairs\n", chunky_cell_ > 0 ? "such" : "auto", w, h);
+        } else if (verbose())
+          std::fprintf(stderr, "video: chunky cells %ux%u of %u px (%.2f DS pixels)\n", w / P, h / P, P,
+                       static_cast<double>(SCREEN_W) * P / w);
+      } else if (!src_chunky_[v.screen]) {
+      } else if (chunky_cell_ && cropped) {
+        if (verbose()) std::fprintf(stderr, "video: view cropped by the overscale; 2x2 pairs\n");
+      } else if (chunky_cell_)
+        std::fprintf(stderr, "video: no %s cell divides %ux%u; 2x2 pairs\n", chunky_cell_ > 0 ? "such" : "auto", w, h);
     }
     if (pair)
       for (u32 x = 1; x < SCREEN_W; x += 2) xr[x] = xr[x + 1];
@@ -1150,13 +1449,18 @@ void Display::build_scale() {
     // so the kernel's pair load never reads past the row.
     std::vector<u16>& lsx = lin_sx_[v.screen];
     std::vector<u8>& lwx = lin_wx_[v.screen];
-    lsx.assign(static_cast<size_t>(x1 - x0), 0); lwx.assign(static_cast<size_t>(x1 - x0), 0);
+    lsx.assign(static_cast<size_t>(x1 - x0), 0);
+    lwx.assign(static_cast<size_t>(x1 - x0), 0);
     for (u32 x = x0; x < x1; ++x) {
-      const s32 u = static_cast<s32>(((2 * x + 1) * SCREEN_W * 128) / static_cast<u32>(v.rect.w)) - 128;  // u * 256
+      const s32 u = static_cast<s32>(((2 * x + 1) * SCREEN_W * 128) / static_cast<u32>(v.rect.w)) - 128; // u * 256
       if (u <= 0) continue;
       u32 s = static_cast<u32>(u) >> 8, f = static_cast<u32>(u) & 255;
-      if (s >= SCREEN_W - 1) { s = SCREEN_W - 2; f = 255; }
-      lsx[x - x0] = static_cast<u16>(s); lwx[x - x0] = static_cast<u8>(f);
+      if (s >= SCREEN_W - 1) {
+        s = SCREEN_W - 2;
+        f = 255;
+      }
+      lsx[x - x0] = static_cast<u16>(s);
+      lwx[x - x0] = static_cast<u8>(f);
     }
     if (!v.direct) side_[v.screen].assign(static_cast<size_t>(v.rect.w) * v.rect.h, 0);
   }
@@ -1170,13 +1474,18 @@ void Display::clear_margins(u32* px, u32 pitch, int w, int h) const {
   for (int y = 0; y < h; ++y) {
     u32* row = px + static_cast<size_t>(y) * pitch;
     int x = 0;
-    int xs[SCREENS], xe[SCREENS], n = 0;   // direct views in x order on this row (at most two)
+    int xs[SCREENS], xe[SCREENS], n = 0; // direct views in x order on this row (at most two)
     for (int i = 0; i < nviews_; ++i) {
       const View& v = views_[i];
       if (!v.direct || y < v.rect.y || y >= v.rect.y + v.rect.h) continue;
-      xs[n] = std::min(v.rect.x, w); xe[n] = std::min(v.rect.x + v.rect.w, w); ++n;
+      xs[n] = std::min(v.rect.x, w);
+      xe[n] = std::min(v.rect.x + v.rect.w, w);
+      ++n;
     }
-    if (n == 2 && xs[1] < xs[0]) { std::swap(xs[0], xs[1]); std::swap(xe[0], xe[1]); }
+    if (n == 2 && xs[1] < xs[0]) {
+      std::swap(xs[0], xs[1]);
+      std::swap(xe[0], xe[1]);
+    }
     for (int i = 0; i < n; ++i) {
       if (xs[i] > x) std::memset(row + x, 0, static_cast<size_t>(xs[i] - x) * sizeof(u32));
       x = std::max(x, xe[i]);
@@ -1189,7 +1498,10 @@ void Display::clear_margins(u32* px, u32 pitch, int w, int h) const {
 // are the two cases; a union costs a few cleared pixels, saves a list).
 void Display::note_canvas_draw(int x, int y, int w, int h) {
   if (w <= 0 || h <= 0) return;
-  if (canvas_drawn_.w == 0 || canvas_drawn_.h == 0) { canvas_drawn_ = SDL_Rect{x, y, w, h}; return; }
+  if (canvas_drawn_.w == 0 || canvas_drawn_.h == 0) {
+    canvas_drawn_ = SDL_Rect{x, y, w, h};
+    return;
+  }
   const int x0 = std::min(canvas_drawn_.x, x), y0 = std::min(canvas_drawn_.y, y);
   const int x1 = std::max(canvas_drawn_.x + canvas_drawn_.w, x + w);
   const int y1 = std::max(canvas_drawn_.y + canvas_drawn_.h, y + h);
@@ -1205,7 +1517,10 @@ void Display::clear_rect(u32* px, u32 pitch, int w, int h, const SDL_Rect& r) co
 }
 
 void Display::targets(u32* px, u32 stride, int w, int h, Target out[SCREENS]) {
-  frame_px_ = px; frame_pitch_ = stride; frame_w_ = w; frame_h_ = h;
+  frame_px_ = px;
+  frame_pitch_ = stride;
+  frame_w_ = w;
+  frame_h_ = h;
   insets_done_ = false;
   for (int i = 0; i < nviews_; ++i) {
     const View& v = views_[i];
@@ -1213,10 +1528,21 @@ void Display::targets(u32* px, u32 stride, int w, int h, Target out[SCREENS]) {
       // px at the rect's first kept row/column; runs are relative to it (see build_scale).
       const int x0 = std::max(0, -v.rect.x), y0 = std::max(0, -v.rect.y);
       const int y1 = std::clamp(h - v.rect.y, 0, v.rect.h);
-      out[v.screen] = Target{px + static_cast<size_t>(v.rect.y + y0) * stride + v.rect.x + x0, stride, static_cast<u32>(v.rect.h), xrun_[v.screen].data(), seam_w_[v.screen].data(), lin_sx_[v.screen].data(), lin_wx_[v.screen].data(), grid_on(v.screen), xrun_plain_[v.screen].data(),
-                             static_cast<u32>(y0), static_cast<u32>(std::max(y0, y1))};
+      out[v.screen] = Target{px + static_cast<size_t>(v.rect.y + y0) * stride + v.rect.x + x0,
+                             stride,
+                             static_cast<u32>(v.rect.h),
+                             xrun_[v.screen].data(),
+                             seam_w_[v.screen].data(),
+                             lin_sx_[v.screen].data(),
+                             lin_wx_[v.screen].data(),
+                             grid_on(v.screen),
+                             xrun_plain_[v.screen].data(),
+                             static_cast<u32>(y0),
+                             static_cast<u32>(std::max(y0, y1))};
     } else
-      out[v.screen] = Target{side_[v.screen].data(), static_cast<u32>(v.rect.w), static_cast<u32>(v.rect.h), xrun_[v.screen].data(), seam_w_[v.screen].data(), lin_sx_[v.screen].data(), lin_wx_[v.screen].data(), grid_on(v.screen), xrun_plain_[v.screen].data()};
+      out[v.screen] = Target{side_[v.screen].data(),   static_cast<u32>(v.rect.w), static_cast<u32>(v.rect.h),
+                             xrun_[v.screen].data(),   seam_w_[v.screen].data(),   lin_sx_[v.screen].data(),
+                             lin_wx_[v.screen].data(), grid_on(v.screen),          xrun_plain_[v.screen].data()};
   }
 }
 
@@ -1254,11 +1580,13 @@ void Display::blit_insets() {
 }
 
 bool Display::begin_frame(Target out[SCREENS]) {
-  if (!scaled_) return false;   // GPU present or the renderer: nothing here touches the present thread's side
+  if (!scaled_) return false; // GPU present or the renderer: nothing here touches the present thread's side
   sync();
   if (disp_) {
     for (int i = 0; i < SCREENS; ++i)
-      out[i] = Target{src_side_[i].data(), SCREEN_W, SCREEN_H, xrun_[i].data(), seam_w_[i].data(), nullptr, nullptr, false, xrun_plain_[i].data()};
+      out[i] =
+          Target{src_side_[i].data(),  SCREEN_W, SCREEN_H, xrun_[i].data(), seam_w_[i].data(), nullptr, nullptr, false,
+                 xrun_plain_[i].data()};
     return true;
   }
   if (out_) {
@@ -1315,15 +1643,26 @@ void Display::take_frame(u32* px, u32 stride, int w, int h, int idx, Target out[
   if (rot_) {
     // Rotation rewrites the presented buffer in full every frame, so
     // per-buffer bookkeeping collapses to buffer 0 of the staging frame.
-    phys_px_ = px; phys_pitch_ = stride;
-    px = stage_.data(); stride = static_cast<u32>(scaled_w_); w = scaled_w_; h = scaled_h_; idx = 0;
+    phys_px_ = px;
+    phys_pitch_ = stride;
+    px = stage_.data();
+    stride = static_cast<u32>(scaled_w_);
+    w = scaled_w_;
+    h = scaled_h_;
+    idx = 0;
   }
   // Every buffer's margins are cleared once (tracked per index, not a
   // frame count): a buffer can come back several frames running while
   // another still holds the old layout until it's cycled back to.
-  if (margins_dirty_) { out_clean_ = 0; margins_dirty_ = false; }
+  if (margins_dirty_) {
+    out_clean_ = 0;
+    margins_dirty_ = false;
+  }
   const u32 bit = idx >= 0 && idx < 32 ? 1u << idx : 0u;
-  if (!(out_clean_ & bit)) { clear_margins(px, stride, w, h); out_clean_ |= bit; }
+  if (!(out_clean_ & bit)) {
+    clear_margins(px, stride, w, h);
+    out_clean_ |= bit;
+  }
   if (idx >= 0 && idx < kMaxBufs) {
     clear_rect(px, stride, w, h, canvas_prev_[idx]);
     canvas_prev_[idx] = SDL_Rect{0, 0, 0, 0};
@@ -1344,8 +1683,8 @@ bool Display::canvas_capable() const {
   // Display-engine tier has no panel-resolution frame buffer, but its
   // overlay layer serves the same purpose regardless of the scaling path.
   if (disp_) return disp_->overlay_available();
-  if (gpu_) return true;   // GPU present stage blends its own overlay plane
-  return scaled_;   // else the canvas is the frame itself; SDL_Renderer has none
+  if (gpu_) return true; // GPU present stage blends its own overlay plane
+  return scaled_;        // else the canvas is the frame itself; SDL_Renderer has none
 }
 
 bool Display::canvas(CanvasView& out) const {
@@ -1361,7 +1700,8 @@ bool Display::canvas(CanvasView& out) const {
     return true;
   }
   if (disp_) {
-    u32* px = nullptr; int pitch = 0, w = 0, h = 0;
+    u32* px = nullptr;
+    int pitch = 0, w = 0, h = 0;
     if (!disp_->overlay(px, pitch, w, h)) return false;
     canvas_taken_ = true;
     out = CanvasView{px, static_cast<u32>(pitch), w, h};
@@ -1385,8 +1725,15 @@ void Display::present() {
   if (idx >= 0 && idx < kMaxBufs) canvas_prev_[idx] = canvas_drawn_;
   canvas_drawn_ = SDL_Rect{0, 0, 0, 0};
   frame_px_ = nullptr;
-  if (rot_ && phys_px_) { rotate_out(phys_px_, phys_pitch_); phys_px_ = nullptr; }
-  if (out_frame_) { out_frame_ = false; out_->end_frame(); return; }
+  if (rot_ && phys_px_) {
+    rotate_out(phys_px_, phys_pitch_);
+    phys_px_ = nullptr;
+  }
+  if (out_frame_) {
+    out_frame_ = false;
+    out_->end_frame();
+    return;
+  }
   if (SDL_MUSTLOCK(surf_)) SDL_UnlockSurface(surf_);
   SDL_UpdateWindowSurface(win_);
 }

@@ -35,9 +35,9 @@ using namespace ds;
 namespace {
 
 // The RetroAchievements addresses, as rc_consoles.h publishes them for the DS.
-constexpr u32 RA_MAIN = 0x000000;                       // 4 MB of main RAM
-constexpr u32 RA_HOLE = 0x400000;                       // 12 MB of DSi-only padding
-constexpr u32 RA_DTCM = 0x1000000;                      // 16 KB of data TCM
+constexpr u32 RA_MAIN = 0x000000;  // 4 MB of main RAM
+constexpr u32 RA_HOLE = 0x400000;  // 12 MB of DSi-only padding
+constexpr u32 RA_DTCM = 0x1000000; // 16 KB of data TCM
 constexpr u32 MAIN_LEN = mem::Bus::MAIN_RAM_SIZE;
 constexpr u32 DTCM_LEN = mem::Bus::DTCM_SIZE;
 
@@ -79,8 +79,10 @@ void main_ram_and_dtcm_read_through() {
   CHECK(f.mem.read(RA_DTCM + DTCM_LEN - 1, &b, 1) == 1 && b == 0x44);
 
   // A multi-byte read, little-endian through peek() as rcheevos sees it.
-  f.main_ram()[0x100] = 0x78; f.main_ram()[0x101] = 0x56;
-  f.main_ram()[0x102] = 0x34; f.main_ram()[0x103] = 0x12;
+  f.main_ram()[0x100] = 0x78;
+  f.main_ram()[0x101] = 0x56;
+  f.main_ram()[0x102] = 0x34;
+  f.main_ram()[0x103] = 0x12;
   CHECK(cheevos::Memory::peek(RA_MAIN + 0x100, 4, &f.mem) == 0x12345678u);
   CHECK(cheevos::Memory::peek(RA_MAIN + 0x100, 2, &f.mem) == 0x5678u);
   CHECK(cheevos::Memory::peek(RA_MAIN + 0x100, 1, &f.mem) == 0x78u);
@@ -96,8 +98,8 @@ void the_dsi_hole_reads_zero_and_is_unbacked() {
 
   u8 b[8];
   std::memset(b, 0xAA, sizeof b);
-  CHECK(f.mem.read(RA_HOLE, b, sizeof b) == 0);         // nothing backed
-  for (u8 v : b) CHECK(v == 0);                          // and it reads zero
+  CHECK(f.mem.read(RA_HOLE, b, sizeof b) == 0); // nothing backed
+  for (u8 v : b) CHECK(v == 0);                 // and it reads zero
   CHECK(!f.mem.supported(RA_HOLE));
   CHECK(!f.mem.supported(RA_HOLE + 0xBFFFFF));
   CHECK(cheevos::Memory::peek(RA_HOLE, 4, &f.mem) == 0);
@@ -158,7 +160,11 @@ void on_event(const rc_runtime_event_t* e) {
 struct Runtime {
   rc_runtime_t rt;
   cheevos::Memory* mem;
-  explicit Runtime(cheevos::Memory& m) : mem(&m) { rc_runtime_init(&rt); g_triggered = 0; g_triggered_id = 0; }
+  explicit Runtime(cheevos::Memory& m) : mem(&m) {
+    rc_runtime_init(&rt);
+    g_triggered = 0;
+    g_triggered_id = 0;
+  }
   ~Runtime() { rc_runtime_destroy(&rt); }
   void activate(u32 id, const char* memaddr) {
     CHECK(rc_runtime_activate_achievement(&rt, id, memaddr, nullptr, 0) == RC_OK);
@@ -172,7 +178,7 @@ struct Runtime {
 void a_trigger_fires_on_the_right_frame() {
   Fixture f;
   Runtime r(f.mem);
-  r.activate(7, "0xH000010=5");          // 8-bit at RA 0x10 equals 5
+  r.activate(7, "0xH000010=5"); // 8-bit at RA 0x10 equals 5
 
   // rcheevos holds a new achievement in WAITING until its condition has been
   // false once, so that loading into an already-satisfied state does not unlock
@@ -221,18 +227,18 @@ void a_trigger_can_read_data_tcm() {
 void hit_counts_follow_the_frame_count() {
   Fixture f;
   Runtime r(f.mem);
-  r.activate(11, "0xH000020=1.10.");     // true for 10 frames
+  r.activate(11, "0xH000020=1.10."); // true for 10 frames
 
   f.main_ram()[0x20] = 0;
-  r.frame();                             // out of WAITING
+  r.frame(); // out of WAITING
   CHECK(g_triggered == 0);
 
   f.main_ram()[0x20] = 1;
   for (int i = 0; i < 9; ++i) {
     r.frame();
-    CHECK(g_triggered == 0);             // not yet: only i+1 hits
+    CHECK(g_triggered == 0); // not yet: only i+1 hits
   }
-  r.frame();                             // the tenth hit
+  r.frame(); // the tenth hit
   CHECK(g_triggered == 1);
 }
 
@@ -244,7 +250,7 @@ void a_condition_over_the_hole_never_fires() {
   Fixture f;
   Runtime r(f.mem);
   r.activate(13, "0xH400000=5");
-  std::memset(f.main_ram(), 5, 64);      // the bytes it would alias if mis-mapped
+  std::memset(f.main_ram(), 5, 64); // the bytes it would alias if mis-mapped
   for (int i = 0; i < 20; ++i) r.frame();
   CHECK(g_triggered == 0);
 }
@@ -259,8 +265,8 @@ void the_user_agent_is_well_formed() {
   // it cannot recognise with 403 unsupported_client.
   CHECK(ua.rfind("DSperate/", 0) == 0);
   const size_t sp = ua.find(' ');
-  CHECK(sp != std::string::npos);                        // there is a second clause
-  CHECK(ua.find(' ', sp + 1) == std::string::npos);      // and only one space
+  CHECK(sp != std::string::npos);                   // there is a second clause
+  CHECK(ua.find(' ', sp + 1) == std::string::npos); // and only one space
   CHECK(ua.find(" rcheevos/") == sp);
 
   // The version is numeric and non-empty, so the server can compare it.
@@ -283,7 +289,7 @@ void the_dsi_map_backs_all_of_main_ram() {
   CHECK(mem.attach(nds, err));
   CHECK(err.empty());
   constexpr u32 DSI_LEN = mem::Bus::MAIN_RAM_SIZE_DSI;
-  nds.bus.main_ram.get()[RA_HOLE] = 0x5C;              // above the DS's 4 MB
+  nds.bus.main_ram.get()[RA_HOLE] = 0x5C; // above the DS's 4 MB
   nds.bus.main_ram.get()[DSI_LEN - 1] = 0x6D;
   nds.bus.dtcm.get()[0] = 0x7E;
   u8 b = 0;

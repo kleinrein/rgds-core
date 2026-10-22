@@ -14,7 +14,9 @@
 
 #include "core/types.h"
 
-namespace ds { class NDS; }
+namespace ds {
+class NDS;
+}
 
 namespace ds::cheevos {
 
@@ -31,13 +33,13 @@ public:
   u32 max_address() const { return max_address_; }
 
   // `ud` is a Memory*. Safe to call unattached (reads zero).
-  static u32 peek(u32 address, u32 num_bytes, void* ud);          // rc_runtime_peek_t
+  static u32 peek(u32 address, u32 num_bytes, void* ud); // rc_runtime_peek_t
   static u32 read_memory(u32 address, u8* buffer, u32 num_bytes, void* ud);
 
 private:
   struct Region {
-    u32 start = 0, end = 0;   // inclusive RetroAchievements addresses
-    u8* host = nullptr;       // null = exists in map but unbacked (the DSi hole)
+    u32 start = 0, end = 0; // inclusive RetroAchievements addresses
+    u8* host = nullptr;     // null = exists in map but unbacked (the DSi hole)
     u32 size = 0;
   };
   Region regions_[3];

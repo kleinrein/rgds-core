@@ -9,9 +9,9 @@ namespace ds::cheat {
 namespace {
 
 constexpr size_t ENTRY_LIST = 0x100;     // where the entry list starts
-constexpr size_t NAME_LEN   = 0x3C;      // the database description, after the 16-byte magic
+constexpr size_t NAME_LEN = 0x3C;        // the database description, after the 16-byte magic
 constexpr u32 MAX_CODE_WORDS = 0x100000; // melonDS's sanity bound, and far above any real code
-constexpr u32 MAX_CATEGORY   = 0x10000;
+constexpr u32 MAX_CATEGORY = 0x10000;
 
 // Bounds-checked cursor: every read either succeeds or sets `bad`.
 struct Reader {
@@ -19,24 +19,39 @@ struct Reader {
   size_t n, at = 0;
   bool bad = false;
 
-  bool seek(size_t to) { if (to > n) { bad = true; return false; } at = to; return true; }
+  bool seek(size_t to) {
+    if (to > n) {
+      bad = true;
+      return false;
+    }
+    at = to;
+    return true;
+  }
   size_t left() const { return at <= n ? n - at : 0; }
   u32 u32le() {
-    if (left() < 4) { bad = true; return 0; }
-    const u32 v = static_cast<u32>(p[at]) | (static_cast<u32>(p[at + 1]) << 8) |
-                  (static_cast<u32>(p[at + 2]) << 16) | (static_cast<u32>(p[at + 3]) << 24);
+    if (left() < 4) {
+      bad = true;
+      return 0;
+    }
+    const u32 v = static_cast<u32>(p[at]) | (static_cast<u32>(p[at + 1]) << 8) | (static_cast<u32>(p[at + 2]) << 16) |
+                  (static_cast<u32>(p[at + 3]) << 24);
     at += 4;
     return v;
   }
   std::string ntstring() {
     const size_t start = at;
     while (at < n && p[at]) ++at;
-    if (at >= n) { bad = true; return {}; }
+    if (at >= n) {
+      bad = true;
+      return {};
+    }
     std::string s(reinterpret_cast<const char*>(p + start), at - start);
-    ++at;   // the terminator
+    ++at; // the terminator
     return s;
   }
-  void align4() { if (at & 3) seek((at + 3) & ~size_t{3}); }
+  void align4() {
+    if (at & 3) seek((at + 3) & ~size_t{3});
+  }
 };
 
 u32 crc32(const u8* data, size_t n) {
@@ -65,18 +80,32 @@ bool Database::open(const std::string& path, std::string& err) {
   name_.clear();
 
   FILE* f = std::fopen(path.c_str(), "rb");
-  if (!f) { err = "cannot open " + path; return false; }
+  if (!f) {
+    err = "cannot open " + path;
+    return false;
+  }
   std::fseek(f, 0, SEEK_END);
   const long len = std::ftell(f);
   std::fseek(f, 0, SEEK_SET);
-  if (len <= 0) { std::fclose(f); err = path + " is empty"; return false; }
+  if (len <= 0) {
+    std::fclose(f);
+    err = path + " is empty";
+    return false;
+  }
   file_.resize(static_cast<size_t>(len));
   const bool read_ok = std::fread(file_.data(), 1, file_.size(), f) == file_.size();
   std::fclose(f);
-  if (!read_ok) { file_.clear(); err = "cannot read " + path; return false; }
+  if (!read_ok) {
+    file_.clear();
+    err = "cannot read " + path;
+    return false;
+  }
 
-  if (file_.size() < ENTRY_LIST) { err = path + " is too short to be a cheat database"; return false; }
-  static const u8 magic[16] = {'R','4',' ','C','h','e','a','t','C','o','d','e', 0, 1, 0, 0};
+  if (file_.size() < ENTRY_LIST) {
+    err = path + " is too short to be a cheat database";
+    return false;
+  }
+  static const u8 magic[16] = {'R', '4', ' ', 'C', 'h', 'e', 'a', 't', 'C', 'o', 'd', 'e', 0, 1, 0, 0};
   if (std::memcmp(file_.data(), magic, sizeof magic) != 0) {
     err = path + " is not a usrcheat database (bad magic)";
     return false;
@@ -89,22 +118,31 @@ bool Database::open(const std::string& path, std::string& err) {
   r.seek(ENTRY_LIST);
   while (r.left() >= 16) {
     const u32 code = r.u32le(), checksum = r.u32le(), offset = r.u32le();
-    r.u32le();                       // reserved
+    r.u32le(); // reserved
     if (code == 0) break;
     if (offset < ENTRY_LIST || offset >= file_.size()) continue;
     index_.push_back({code, checksum, offset});
   }
-  if (index_.empty()) { err = path + " has no usable entries"; return false; }
+  if (index_.empty()) {
+    err = path + " has no usable entries";
+    return false;
+  }
   return true;
 }
 
 bool load_for_rom(const std::string& db_path, const std::string& rom_path, GameCheats& out, std::string& err) {
   u8 header[512];
   FILE* rom = std::fopen(rom_path.c_str(), "rb");
-  if (!rom) { err = "cannot open " + rom_path; return false; }
+  if (!rom) {
+    err = "cannot open " + rom_path;
+    return false;
+  }
   const bool got = std::fread(header, 1, sizeof header, rom) == sizeof header;
   std::fclose(rom);
-  if (!got) { err = rom_path + " is too short to be a DS ROM"; return false; }
+  if (!got) {
+    err = rom_path + " is too short to be a DS ROM";
+    return false;
+  }
 
   return load_for_header(db_path, header, out, err);
 }
@@ -120,7 +158,8 @@ bool load_for_header(const std::string& db_path, const u8 header[512], GameCheat
 }
 
 bool Database::has(u32 game_code) const {
-  for (const Entry& e : index_) if (e.game_code == game_code) return true;
+  for (const Entry& e : index_)
+    if (e.game_code == game_code) return true;
   return false;
 }
 
@@ -147,7 +186,10 @@ bool Database::best_entry(u32 game_code, u32 checksum, GameCheats& out, std::str
   std::vector<GameCheats> all = entries_for(game_code, err);
   if (all.empty()) return false;
   for (GameCheats& g : all) {
-    if (g.checksum == checksum) { out = std::move(g); return true; }
+    if (g.checksum == checksum) {
+      out = std::move(g);
+      return true;
+    }
   }
   // No revision matched; the first entry is the useful fallback.
   out = std::move(all.front());
@@ -156,7 +198,10 @@ bool Database::best_entry(u32 game_code, u32 checksum, GameCheats& out, std::str
 
 bool Database::parse_entry(const Entry& e, GameCheats& out, std::string& err) const {
   Reader r{file_.data(), file_.size()};
-  if (!r.seek(e.offset)) { err = "entry offset past the end of the file"; return false; }
+  if (!r.seek(e.offset)) {
+    err = "entry offset past the end of the file";
+    return false;
+  }
 
   out.game_code = e.game_code;
   out.checksum = e.checksum;
@@ -164,8 +209,11 @@ bool Database::parse_entry(const Entry& e, GameCheats& out, std::string& err) co
   r.align4();
 
   const u32 flags = r.u32le();
-  for (int i = 0; i < 8; ++i) r.u32le();   // master codes; undocumented
-  if (r.bad) { err = "entry header runs past the end of the file"; return false; }
+  for (int i = 0; i < 8; ++i) r.u32le(); // master codes; undocumented
+  if (r.bad) {
+    err = "entry header runs past the end of the file";
+    return false;
+  }
   const u32 items = flags & 0xFFFFFF;
 
   // Codes belong to the most recent category until its count is used up.
@@ -177,10 +225,16 @@ bool Database::parse_entry(const Entry& e, GameCheats& out, std::string& err) co
     const std::string item_name = r.ntstring();
     const std::string item_desc = r.ntstring();
     r.align4();
-    if (r.bad) { err = "item " + std::to_string(i) + " runs past the end of the file"; return false; }
+    if (r.bad) {
+      err = "item " + std::to_string(i) + " runs past the end of the file";
+      return false;
+    }
 
     if (item & (1u << 28)) {
-      if (total >= MAX_CATEGORY) { err = "category \"" + item_name + "\" has an unreasonable length"; return false; }
+      if (total >= MAX_CATEGORY) {
+        err = "category \"" + item_name + "\" has an unreasonable length";
+        return false;
+      }
       out.groups.push_back({item_name, item_desc, (item & (1u << 24)) != 0});
       group = static_cast<int>(out.groups.size()) - 1;
       group_left = total;
@@ -188,13 +242,27 @@ bool Database::parse_entry(const Entry& e, GameCheats& out, std::string& err) co
     }
 
     const u32 words = r.u32le();
-    if (r.bad) { err = "code \"" + item_name + "\" has no length"; return false; }
+    if (r.bad) {
+      err = "code \"" + item_name + "\" has no length";
+      return false;
+    }
     // Declared length must account for strings, word count and code.
-    const u32 expect = ((static_cast<u32>(item_name.size()) + 1 + static_cast<u32>(item_desc.size()) + 1 + 3) >> 2) + 1 + words;
-    if (expect != total) { err = "code \"" + item_name + "\" has a length of " + std::to_string(total) + ", expected " + std::to_string(expect); return false; }
+    const u32 expect =
+        ((static_cast<u32>(item_name.size()) + 1 + static_cast<u32>(item_desc.size()) + 1 + 3) >> 2) + 1 + words;
+    if (expect != total) {
+      err = "code \"" + item_name + "\" has a length of " + std::to_string(total) + ", expected " +
+            std::to_string(expect);
+      return false;
+    }
     // Zero words: a note (credit line, heading), not a cheat; kept for the menu.
-    if (words >= MAX_CODE_WORDS) { err = "code \"" + item_name + "\" has an unreasonable word count (" + std::to_string(words) + ")"; return false; }
-    if (r.left() < static_cast<size_t>(words) * 4) { err = "code \"" + item_name + "\" runs past the end of the file"; return false; }
+    if (words >= MAX_CODE_WORDS) {
+      err = "code \"" + item_name + "\" has an unreasonable word count (" + std::to_string(words) + ")";
+      return false;
+    }
+    if (r.left() < static_cast<size_t>(words) * 4) {
+      err = "code \"" + item_name + "\" runs past the end of the file";
+      return false;
+    }
 
     Code c;
     c.name = item_name;

@@ -11,13 +11,22 @@
 #include <vector>
 
 using namespace melonDS;
-static void require(bool okay, const char* why) { if (!okay) throw std::runtime_error(why); }
+static void require(bool okay, const char* why) {
+    if (!okay) throw std::runtime_error(why);
+}
 #include "test_cartridge.hpp"
-static u32 ram_word(const NDS& nds, size_t offset) { u32 value; std::memcpy(&value, nds.MainRAM + offset, 4); return value; }
+static u32 ram_word(const NDS& nds, size_t offset) {
+    u32 value;
+    std::memcpy(&value, nds.MainRAM + offset, 4);
+    return value;
+}
 static u64 frame_hash(const void* frame) {
     u64 hash = 14695981039346656037ULL;
     const u8* data = static_cast<const u8*>(frame);
-    for (size_t i = 0; i < 256 * 192 * 4; ++i) { hash ^= data[i]; hash *= 1099511628211ULL; }
+    for (size_t i = 0; i < 256 * 192 * 4; ++i) {
+        hash ^= data[i];
+        hash *= 1099511628211ULL;
+    }
     return hash;
 }
 static void frames(NDS& nds, unsigned count) {
@@ -53,7 +62,8 @@ static void exercise(bool jit) {
     frames(*nds, 2);
     require(ram_word(*nds, 0x1000) > first, "ARM9 stopped advancing");
     require((ram_word(*nds, 0x1004) & 0x3ff) == 0x3fe, "pressed A not sampled");
-    void* top = nullptr; void* bottom = nullptr;
+    void* top = nullptr;
+    void* bottom = nullptr;
     require(nds->GPU.GetFramebuffers(&top, &bottom) && top && bottom, "missing software screens");
     const u64 top_hash = frame_hash(top), bottom_hash = frame_hash(bottom);
     require(top_hash != bottom_hash, "both screen outputs unexpectedly identical");
@@ -86,12 +96,18 @@ static void exercise(bool jit) {
     require((ram_word(*nds, 0x1004) & 0x3ff) == 0x3ff, "key release not sampled after restore");
     if (jit) require(!nds->JIT.JitBlocks9.empty() && !nds->JIT.JitBlocks7.empty(), "JIT did not compile both CPUs");
     std::printf("{\"mode\":\"%s\",\"frames\":13,\"counter\":%u,\"checkpoint_bytes\":%u,"
-        "\"top_hash\":\"%016llx\",\"bottom_hash\":\"%016llx\",\"passed\":true}\n",
-        jit ? "arm64-jit" : "interpreter", advanced, checkpoint.Length(),
-        static_cast<unsigned long long>(top_hash), static_cast<unsigned long long>(bottom_hash));
+                "\"top_hash\":\"%016llx\",\"bottom_hash\":\"%016llx\",\"passed\":true}\n",
+                jit ? "arm64-jit" : "interpreter", advanced, checkpoint.Length(),
+                static_cast<unsigned long long>(top_hash), static_cast<unsigned long long>(bottom_hash));
     nds->Stop();
 }
 int main() {
-    try { exercise(false); exercise(true); return 0; }
-    catch (const std::exception& error) { std::fprintf(stderr, "Probe failed: %s\n", error.what()); return 1; }
+    try {
+        exercise(false);
+        exercise(true);
+        return 0;
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "Probe failed: %s\n", error.what());
+        return 1;
+    }
 }

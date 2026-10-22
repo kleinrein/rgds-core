@@ -22,7 +22,7 @@ namespace {
 
 Cart make_cart(NDS& nds, const char code[4]) {
   std::vector<u8> rom(1 << 20, 0);
-  std::memcpy(rom.data() + 0x0C, code, 4);    // arm9_rom_offset stays 0: no secure area to re-encrypt
+  std::memcpy(rom.data() + 0x0C, code, 4); // arm9_rom_offset stays 0: no secure area to re-encrypt
   return Cart(nds, std::move(rom));
 }
 
@@ -54,9 +54,9 @@ void test_detect_from_first_read() {
   {
     Cart c = make_cart(nds, "ZZZZ");
     CHECK(!c.save_type_listed() && c.save_type() == SaveType::Detect && c.sram().empty());
-    tx(c, {0x05, 0x00});                            // a status poll says nothing
+    tx(c, {0x05, 0x00}); // a status poll says nothing
     CHECK(c.save_type() == SaveType::Detect);
-    CHECK(tx(c, {0x03, 0x00, 0x00, 0x00})[3] == 0xFF);   // blank chip
+    CHECK(tx(c, {0x03, 0x00, 0x00, 0x00})[3] == 0xFF); // blank chip
     CHECK(c.save_type() == SaveType::Eeprom && c.sram().size() == 65536);
     tx(c, {0x06});
     tx(c, {0x02, 0x01, 0x23, 0xAB});
@@ -77,10 +77,10 @@ void test_detect_from_first_read() {
     Cart c = make_cart(nds, "ZZZZ");
     CHECK(tx(c, {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})[7] == 0xFF);
     CHECK(c.save_type() == SaveType::Detect);
-    tx(c, {0x0B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});   // undecided either
-    tx(c, {0x06});                                  // must not re-read the transaction before it
+    tx(c, {0x0B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}); // undecided either
+    tx(c, {0x06});                                                 // must not re-read the transaction before it
     CHECK(c.save_type() == SaveType::Detect);
-    tx(c, {0xD8, 0x00, 0x00, 0x00});                // an erase: FLASH
+    tx(c, {0xD8, 0x00, 0x00, 0x00}); // an erase: FLASH
     CHECK(c.save_type() == SaveType::Flash);
   }
 }
@@ -124,7 +124,8 @@ void test_lenient_flash() {
   CHECK(c.sram().size() == 0x100000 && c.sram()[0x0F0000] == 0x42 && c.sram()[0x10] == 0xF0);
 
   const char listed[4] = {'A', 'D', 'A', 'D'};
-  u32 code; std::memcpy(&code, listed, 4);
+  u32 code;
+  std::memcpy(&code, listed, 4);
   u32 size = 0;
   CHECK(cart::known_game_code(code) && cart::save_type_for(code, size) == SaveType::Flash);
   Cart l = make_cart(nds, listed);

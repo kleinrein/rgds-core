@@ -8,37 +8,60 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
-@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'),'SDL headers required')
+
+@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'SDL headers required')
 class OverlayTests(unittest.TestCase):
     def test_gl_symbols_and_static_geometry_are_cached_per_context(self):
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);stub=root/'gl.cpp';library=root/('gl.dylib' if os.uname().sysname=='Darwin' else 'gl.so')
+            root = Path(folder)
+            stub = root / 'gl.cpp'
+            library = root / ('gl.dylib' if os.uname().sysname == 'Darwin' else 'gl.so')
             # Supply a typed fake GL driver; no video window or GPU is opened.
-            signatures=re.findall(r'\bGL\((\w+),(\w+),(\([^;\n]*?\))\)',(ROOT/'src/platform/emulator_overlay.hpp').read_text())
-            overrides={
-                'CreateShader':'U impl_CreateShader(U){return 1;}', 'CreateProgram':'U impl_CreateProgram(){return 1;}',
-                'GetShaderiv':'void impl_GetShaderiv(U,U,I* value){*value=1;}', 'GetProgramiv':'void impl_GetProgramiv(U,U,I* value){*value=1;}',
-                'GenTextures':'void impl_GenTextures(I n,U* value){for(I i=0;i<n;i++)value[i]=i+1;}',
-                'GenBuffers':'void impl_GenBuffers(I,U* value){*value=1;}',
-                'BufferData':'void impl_BufferData(U,P,const void*,U){++geometry_uploads;}',
-                'TexImage2D':'void impl_TexImage2D(U,I,I,I,I,I,U,U,const void*){++storage_allocations;}',
-                'TexSubImage2D':'void impl_TexSubImage2D(U,I,I,I,I,I,U,U,const void*){++texture_updates;}',
+            signatures = re.findall(
+                r'\bGL\((\w+),\s*(\w+),\s*(\([^;\n]*?\))\)', (ROOT / 'src/platform/emulator_overlay.hpp').read_text()
+            )
+            overrides = {
+                'CreateShader': 'U impl_CreateShader(U){return 1;}',
+                'CreateProgram': 'U impl_CreateProgram(){return 1;}',
+                'GetShaderiv': 'void impl_GetShaderiv(U,U,I* value){*value=1;}',
+                'GetProgramiv': 'void impl_GetProgramiv(U,U,I* value){*value=1;}',
+                'GenTextures': 'void impl_GenTextures(I n,U* value){for(I i=0;i<n;i++)value[i]=i+1;}',
+                'GenBuffers': 'void impl_GenBuffers(I,U* value){*value=1;}',
+                'BufferData': 'void impl_BufferData(U,P,const void*,U){++geometry_uploads;}',
+                'TexImage2D': 'void impl_TexImage2D(U,I,I,I,I,I,U,U,const void*){++storage_allocations;}',
+                'TexSubImage2D': 'void impl_TexSubImage2D(U,I,I,I,I,I,U,U,const void*){++texture_updates;}',
             }
-            declarations='\n'.join(overrides.get(name,f'{ret} impl_{name}{args}{{return {ret}();}}') for name,ret,args in signatures)
-            lookup='\n'.join(f'if(!std::strcmp(name,"gl{name}"))return reinterpret_cast<void*>(&impl_{name});' for name,_,_ in signatures)
-            stub.write_text('#include <SDL.h>\n#include <cstring>\n#include <cstddef>\nusing U=unsigned int;using I=int;using B=unsigned char;using P=std::ptrdiff_t;int geometry_uploads=0,storage_allocations=0,texture_updates=0;\n'+declarations+'''
+            declarations = '\n'.join(
+                overrides.get(name, f'{ret} impl_{name}{args}{{return {ret}();}}') for name, ret, args in signatures
+            )
+            lookup = '\n'.join(
+                f'if(!std::strcmp(name,"gl{name}"))return reinterpret_cast<void*>(&impl_{name});'
+                for name, _, _ in signatures
+            )
+            stub.write_text(
+                '#include <SDL.h>\n#include <cstring>\n#include <cstddef>\nusing U=unsigned int;using I=int;using B=unsigned char;using P=std::ptrdiff_t;int geometry_uploads=0,storage_allocations=0,texture_updates=0;\n'
+                + declarations + '''
 extern "C" SDL_GLContext SDL_GL_GetCurrentContext(){return reinterpret_cast<void*>(1);}
 extern "C" void SDL_GL_GetDrawableSize(SDL_Window*,int* w,int* h){*w=1280;*h=480;}
 extern "C" int TestGeometryUploads(){return geometry_uploads;}
 extern "C" int TestStorageAllocations(){return storage_allocations;}
 extern "C" int TestTextureUpdates(){return texture_updates;}
-extern "C" void* SDL_GL_GetProcAddress(const char* name){'''+lookup+'return nullptr;}\n')
-            flags=subprocess.check_output(['sdl2-config','--cflags'],text=True).split()
-            subprocess.run(['clang++','-std=c++17','-shared','-fPIC',*flags,str(stub),'-o',str(library)],check=True,capture_output=True,text=True)
-            source=root/'check.cpp';binary=root/'check'
-            source.write_text(r'''
+extern "C" void* SDL_GL_GetProcAddress(const char* name){''' + lookup + 'return nullptr;}\n'
+            )
+            flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
+            subprocess.run(
+                ['clang++', '-std=c++17', '-shared', '-fPIC', *flags,
+                 str(stub), '-o', str(library)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            source = root / 'check.cpp'
+            binary = root / 'check'
+            source.write_text(
+                r'''
 #define RGDS_BRIDGE_PROFILE
 #include "platform/emulator_overlay.hpp"
 #include <cassert>
@@ -52,15 +75,32 @@ int main(){
  overlay.destroy_gl(reinterpret_cast<void*>(1));rgds::bridge_metrics()={};overlay.gl(nullptr,false);
  assert(rgds::bridge_metrics().gl_lookups==39 && geometry()==2);
 }
-''')
-            subprocess.run(['clang++','-std=c++17',*flags,'-I'+str(ROOT/'src'),str(source),'-o',str(binary)],check=True,capture_output=True,text=True)
-            result=subprocess.run([str(binary)],env=dict(os.environ,RGDS_SDL_LIBRARY=str(library)),capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+'''
+            )
+            subprocess.run(
+                ['clang++', '-std=c++17', *flags, '-I' + str(ROOT / 'src'),
+                 str(source), '-o',
+                 str(binary)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            result = subprocess.run(
+                [str(binary)],
+                env=dict(os.environ, RGDS_SDL_LIBRARY=str(library)),
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_frames_blend_over_both_panels_and_restore_renderer_state(self):
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);source=root/'overlay.cpp';binary=root/'overlay'
-            source.write_text(r'''
+            root = Path(folder)
+            source = root / 'overlay.cpp'
+            binary = root / 'overlay'
+            source.write_text(
+                r'''
 #define RGDS_BRIDGE_PROFILE
 #include "platform/emulator_overlay.hpp"
 #include <cassert>
@@ -130,25 +170,52 @@ int main(int argc,char** argv){
  overlay.destroy(renderer);rgds::overlay_sdl<decltype(&SDL_DestroyRenderer)>("SDL_DestroyRenderer")(renderer);
  rgds::overlay_sdl<decltype(&SDL_FreeSurface)>("SDL_FreeSurface")(surface);rgds::overlay_sdl<decltype(&SDL_Quit)>("SDL_Quit")();
 }
-''')
-            flags=subprocess.check_output(['sdl2-config','--cflags'],text=True).split()
-            build=subprocess.run(['clang++','-std=c++17','-O2',*flags,'-I'+str(ROOT/'src'),str(source),'-o',str(binary)],capture_output=True,text=True)
-            self.assertEqual(build.returncode,0,build.stderr)
-            prefix=subprocess.check_output(['sdl2-config','--prefix'],text=True).strip()
-            library=Path(prefix)/'lib/libSDL2.dylib' if os.uname().sysname=='Darwin' else Path(prefix)/'lib/libSDL2-2.0.so.0'
-            env=dict(os.environ,RGDS_SDL_LIBRARY=str(library))
-            result=subprocess.run([str(binary),str(root/'frame')],env=env,capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+'''
+            )
+            flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
+            build = subprocess.run(
+                ['clang++', '-std=c++17', '-O2', *flags, '-I' + str(ROOT / 'src'),
+                 str(source), '-o',
+                 str(binary)],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(build.returncode, 0, build.stderr)
+            prefix = subprocess.check_output(['sdl2-config', '--prefix'], text=True).strip()
+            library = Path(prefix) / 'lib/libSDL2.dylib' if os.uname(
+            ).sysname == 'Darwin' else Path(prefix) / 'lib/libSDL2-2.0.so.0'
+            env = dict(os.environ, RGDS_SDL_LIBRARY=str(library))
+            result = subprocess.run(
+                [str(binary), str(root / 'frame')], env=env, capture_output=True, text=True, timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_menu_renders_without_a_video_window(self):
-        binary=ROOT/'build/host/rgds-launcher'
-        if not binary.exists():self.skipTest('Host build required')
+        binary = ROOT / 'build/host/rgds-launcher'
+        if not binary.exists(): self.skipTest('Host build required')
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);frame=root/'menu.frame'
-            env=dict(os.environ,RGDS_OVERLAY_FILE=str(frame),RGDS_SYSTEM_MANAGED='1',RGDS_VOLUME_EXTERNAL='1',SDL_VIDEODRIVER='dummy')
-            result=subprocess.run([str(binary),'--game-menu','--app',str(ROOT),'--data',str(root/'data'),'--seconds','1'],env=env,cwd=ROOT,capture_output=True,text=True,timeout=4)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            header=struct.unpack('16I',frame.read_bytes()[:64])
-            self.assertEqual(header[:3],(0x52474453,640,480));self.assertGreater(header[3],0)
-            self.assertEqual(header[4],0,'Closing the helper must hide its frame')
-            self.assertIn('driver=unknown',result.stdout)
+            root = Path(folder)
+            frame = root / 'menu.frame'
+            env = dict(
+                os.environ,
+                RGDS_OVERLAY_FILE=str(frame),
+                RGDS_SYSTEM_MANAGED='1',
+                RGDS_VOLUME_EXTERNAL='1',
+                SDL_VIDEODRIVER='dummy'
+            )
+            result = subprocess.run(
+                [str(binary), '--game-menu', '--app',
+                 str(ROOT), '--data',
+                 str(root / 'data'), '--seconds', '1'],
+                env=env,
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                timeout=4
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            header = struct.unpack('16I', frame.read_bytes()[:64])
+            self.assertEqual(header[:3], (0x52474453, 640, 480))
+            self.assertGreater(header[3], 0)
+            self.assertEqual(header[4], 0, 'Closing the helper must hide its frame')
+            self.assertIn('driver=unknown', result.stdout)

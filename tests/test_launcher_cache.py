@@ -22,7 +22,8 @@ class LauncherCacheTests(unittest.TestCase):
         cls.temporary = tempfile.TemporaryDirectory()
         cls.root = Path(cls.temporary.name)
         source = cls.root / "cache.cpp"
-        source.write_text(r'''#include "launcher/library_cache.hpp"
+        source.write_text(
+            r'''#include "launcher/library_cache.hpp"
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -103,11 +104,18 @@ int main(int argc,char** argv){
   }s.DestroyRenderer(renderer);s.FreeSurface(surface);s.Quit();
  }else return 2;
 }
-''')
+'''
+        )
         cls.binary = cls.root / "cache"
-        flags = [flag for flag in shlex.split(subprocess.check_output(["sdl2-config", "--cflags"], text=True)) if flag.startswith("-I")]
-        command = ["clang++", "-std=c++17", "-O2", "-Wall", "-Wextra", "-Werror", *flags,
-                   "-I" + str(ROOT / "src"), str(source), "-o", str(cls.binary)]
+        flags = [
+            flag for flag in shlex.split(subprocess.check_output(["sdl2-config", "--cflags"], text=True))
+            if flag.startswith("-I")
+        ]
+        command = [
+            "clang++", "-std=c++17", "-O2", "-Wall", "-Wextra", "-Werror", *flags, "-I" + str(ROOT / "src"),
+            str(source), "-o",
+            str(cls.binary)
+        ]
         if sys.platform != "darwin":
             command.append("-ldl")
         subprocess.run(command, check=True, capture_output=True, text=True)
@@ -118,8 +126,13 @@ int main(int argc,char** argv){
 
     def invoke(self, mode):
         with tempfile.TemporaryDirectory() as folder:
-            result = subprocess.run([str(self.binary), folder, mode], capture_output=True, text=True,
-                                    env=dict(os.environ, SDL_VIDEODRIVER="dummy"), timeout=10)
+            result = subprocess.run(
+                [str(self.binary), folder, mode],
+                capture_output=True,
+                text=True,
+                env=dict(os.environ, SDL_VIDEODRIVER="dummy"),
+                timeout=10
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             return result.stdout
 
@@ -149,10 +162,13 @@ int main(int argc,char** argv){
 class RedrawCacheTests(unittest.TestCase):
     @staticmethod
     def fixture(root):
-        roms = root / "roms";roms.mkdir()
+        roms = root / "roms"
+        roms.mkdir()
         rom = roms / "fixture.nds"
-        content = bytearray(0x640);struct.pack_into("<I", content, 0x68, 0x200)
-        content[0x220:0x420] = bytes([0x11]) * 512;struct.pack_into("<H", content, 0x422, 31)
+        content = bytearray(0x640)
+        struct.pack_into("<I", content, 0x68, 0x200)
+        content[0x220:0x420] = bytes([0x11]) * 512
+        struct.pack_into("<H", content, 0x422, 31)
         rom.write_bytes(content)
         key = 14695981039346656037
         for byte in str(rom).encode():
@@ -168,10 +184,19 @@ class RedrawCacheTests(unittest.TestCase):
             root = Path(folder).resolve()
             roms, _ = self.fixture(root)
             report = root / "report.json"
-            result = subprocess.run([str(BINARY), "--preview", "--library", "--data", str(root / "data"),
-                                     "--rom-dir", str(roms), "--frames", "40", "--cache-report", str(report)],
-                                    cwd=ROOT, capture_output=True, text=True,
-                                    env=dict(os.environ, SDL_VIDEODRIVER="dummy"), timeout=10)
+            result = subprocess.run(
+                [
+                    str(BINARY), "--preview", "--library", "--data",
+                    str(root / "data"), "--rom-dir",
+                    str(roms), "--frames", "40", "--cache-report",
+                    str(report)
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                env=dict(os.environ, SDL_VIDEODRIVER="dummy"),
+                timeout=10
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             counts = json.loads(report.read_text())
             self.assertEqual(counts["frames"], 40)
@@ -185,20 +210,35 @@ class RedrawCacheTests(unittest.TestCase):
     def test_recents_reads_stats_once_per_game_before_sorting_a_large_collection(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder).resolve()
-            roms = root / "roms";roms.mkdir()
+            roms = root / "roms"
+            roms.mkdir()
             for index in range(200):
-                rom = roms / f"game{index:04}.nds";rom.write_bytes(b"fixture")
+                rom = roms / f"game{index:04}.nds"
+                rom.write_bytes(b"fixture")
                 key = 14695981039346656037
                 for byte in str(rom).encode():
                     key = ((key ^ byte) * 1099511628211) & 0xffffffffffffffff
-                item = root / "data/library" / f"{key:016x}";item.mkdir(parents=True)
-                (item / "stats.ini").write_text(f"seconds=125\nlast_played=2026-10-07T00:{index // 60:02}:{index % 60:02}\n")
+                item = root / "data/library" / f"{key:016x}"
+                item.mkdir(parents=True)
+                (item /
+                 "stats.ini").write_text(f"seconds=125\nlast_played=2026-10-07T00:{index // 60:02}:{index % 60:02}\n")
             preferences = root / "preferences.ini"
             preferences.write_text("schema=1\nmode=light\nfont=pixel\ncore=0\nview=2\n")
             report = root / "report.json"
-            result = subprocess.run([str(BINARY), "--preview", "--library", "--data", str(root / "data"),
-                "--preferences", str(preferences), "--rom-dir", str(roms), "--frames", "3", "--cache-report", str(report)],
-                cwd=ROOT, capture_output=True, text=True, env=dict(os.environ, SDL_VIDEODRIVER="dummy"), timeout=10)
+            result = subprocess.run(
+                [
+                    str(BINARY), "--preview", "--library", "--data",
+                    str(root / "data"), "--preferences",
+                    str(preferences), "--rom-dir",
+                    str(roms), "--frames", "3", "--cache-report",
+                    str(report)
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                env=dict(os.environ, SDL_VIDEODRIVER="dummy"),
+                timeout=10
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             counts = json.loads(report.read_text())
             self.assertGreaterEqual(counts["metadata_reads"], 200)
@@ -212,17 +252,28 @@ class RedrawCacheTests(unittest.TestCase):
             root = Path(folder).resolve()
             roms, item = self.fixture(root)
             screenshot = root / "screen.bmp"
-            child = subprocess.Popen([str(BINARY), "--preview", "--library", "--data", str(root / "data"),
-                                      "--rom-dir", str(roms), "--seconds", "8", "--screenshot", str(screenshot)],
-                                     cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                                     env=dict(os.environ, SDL_VIDEODRIVER="dummy"))
+            child = subprocess.Popen(
+                [
+                    str(BINARY), "--preview", "--library", "--data",
+                    str(root / "data"), "--rom-dir",
+                    str(roms), "--seconds", "8", "--screenshot",
+                    str(screenshot)
+                ],
+                cwd=ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env=dict(os.environ, SDL_VIDEODRIVER="dummy")
+            )
+
             def wait_color(expected):
                 end = time.monotonic() + 2.5
                 while time.monotonic() < end:
                     if child.poll() is not None:
                         self.fail(child.communicate()[0])
                     if screenshot.exists():
-                        data = screenshot.read_bytes();offset = struct.unpack_from("<I", data, 10)[0]
+                        data = screenshot.read_bytes()
+                        offset = struct.unpack_from("<I", data, 10)[0]
                         width, height = struct.unpack_from("<ii", data, 18)
                         # Centre of the top screen: the cover, or the DS icon without one.
                         row = height - 1 - 240 if height > 0 else 240
@@ -231,16 +282,23 @@ class RedrawCacheTests(unittest.TestCase):
                             return
                     time.sleep(0.03)
                 self.fail("Updated artwork was not rendered: " + repr(expected))
+
             def write_box(bgr):
                 pixels = bgr * (16 * 16)
                 header = struct.pack("<2sIHHI", b"BM", 54 + len(pixels), 0, 0, 54)
                 header += struct.pack("<IiiHHIIiiII", 40, 16, 16, 1, 24, 0, len(pixels), 0, 0, 0, 0)
-                pending = item / "box.pending.bmp";pending.write_bytes(header + pixels);pending.replace(item / "box.bmp")
+                pending = item / "box.pending.bmp"
+                pending.write_bytes(header + pixels)
+                pending.replace(item / "box.bmp")
+
             try:
                 wait_color(b"\x00\x00\xff")
-                write_box(b"\x00\xff\x00");wait_color(b"\x00\xff\x00")
-                write_box(b"\xff\x00\x00");wait_color(b"\xff\x00\x00")
-                (item / "box.bmp").unlink();wait_color(b"\x00\x00\xff")
+                write_box(b"\x00\xff\x00")
+                wait_color(b"\x00\xff\x00")
+                write_box(b"\xff\x00\x00")
+                wait_color(b"\xff\x00\x00")
+                (item / "box.bmp").unlink()
+                wait_color(b"\x00\x00\xff")
             finally:
                 if child.poll() is None:
                     child.terminate()

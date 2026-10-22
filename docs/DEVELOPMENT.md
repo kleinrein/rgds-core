@@ -4,7 +4,7 @@
 
 The host preview needs Python 3.9+, a C++17 compiler and SDL2 development files (`sdl2-config` on the host). Device launcher/bridge builds use Zig 0.13; source-built engines also need CMake and Ninja. Ordinary builds use checked-in fonts/previews. Regenerating assets needs Pillow and, for shader previews, host EGL/GLES2. Update signing needs OpenSSL 3.
 
-Packaging requires an independently provisioned, ignored `vendor/engines/` bundle. The retired SimpleOS reference tree is not required. The one-time importer takes an owner-supplied system payload directory containing `bin/dsperate` and community `shaders/`, retains notices and verifies an exact inventory:
+Packaging requires an independently provisioned, ignored `vendor/engines/` bundle. The one-time importer takes an owner-supplied system payload directory containing `bin/dsperate` and community `shaders/`, retains notices and verifies an exact inventory:
 
 ```sh
 python3 tools/provision_engines.py --source /path/to/owner-supplied/system
@@ -17,7 +17,7 @@ make installer
 
 Do not fetch unspecified proprietary payloads. Provisioning does not resolve redistribution rights; see [third-party provenance](../THIRD_PARTY.md). The supplied DSperate binary is excluded from new packages in favor of the source build. DraStic uses the compatible stock card installation. Source builders record pinned commits, patched corresponding source, toolchain inputs and hashes; packaging rejects stale or changed build outputs. [SuperDrastic](SUPERDRASTIC.md) has additional Linux builder requirements.
 
-Community shader data lives in `vendor/engines/shaders/`; original RGDS effects and the catalog live in `assets/shaders/`. `tools/build_shader_previews.py --shader-dir /path/to/presets` can use another explicit community pack. Tests and preview generation no longer use the retired reference tree.
+Community shader data lives in `vendor/engines/shaders/`; original RGDS effects and the catalog live in `assets/shaders/`. `tools/build_shader_previews.py --shader-dir /path/to/presets` can use another explicit community pack.
 
 See [performance measurement](PERFORMANCE.md) for repeatable host/device checks and [the documentation index](README.md) for current guides. Dated implementation history is retained in [the archive](archive/README.md).
 
@@ -108,11 +108,40 @@ Checkpoint saves acknowledge a changed, stable expected engine slot and flush th
 
 Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so older development builds can still read the base appearance file. Per-cartridge overrides and favourite flags live in `userdata/library/<key>/game.ini`. The versioned IDs in `assets/shaders/catalog.tsv` preserve Off/Sharp/LCD at 0/1/2 and add the full supplied pack. Both launcher and Python adapters read that catalog. DraStic maps to the supplied shader IDs, and DSperate/melonDS use the shared SDL/GLES shader path. All four paths support the current 28 effects plus Off. The picker is a Home-style carousel in six groups (Original, DS screens, Natural, Vivid, Pixel art, Moods): Left/Right browse, Up/Down, L/R or the group chips jump between groups, each tile shows its preset at 1:1 from the packaged previews, and per-game Default inheritance is kept. The eight original presets added on 18 October 2026 (DS Classic, DS Lite, Natural glow, Vivid LCD, Natural/Vivid smooth, Pixel beads, Glossy tiles) draw their pixel structure on the DS's own 256×192 grid, anti-aliased from `u_target_size`, so they hold up at the RG DS's 2.5× and the Plus's 4× and fade out below 2×. Library choices take effect on launch; in-game choices update the running renderer and keep the picker open. Actual appearance and frame pacing must still be checked on the Mali driver. The picker remembers its page during the development rebuild loop.
 
-Restart the watcher after modifying `tools/dev.py` or `tools/device.py`; those Python modules are loaded by the watcher itself. The watcher watches renderer/runtime/theme files and build inputs, rather than arbitrary files in the repository. New emulator payloads must be provisioned into the separate engine bundle, then packaged and provenance-reviewed. The historical SimpleOS reference copy is no longer part of the repository.
+Restart the watcher after modifying `tools/dev.py` or `tools/device.py`; those Python modules are loaded by the watcher itself. The watcher watches renderer/runtime/theme files and build inputs, rather than arbitrary files in the repository. New emulator payloads must be provisioned into the separate engine bundle, then packaged and provenance-reviewed.
 
 Code deployments transfer the complete private package, including all four emulator adapters and the bundled font. Theme refresh is small and fast. A live override's `mode` hint identifies the palette it edits; switch to that colour mode in Settings to see it. Measure code-to-screen latency on your Wi-Fi connection before setting performance targets. Hardware input, display orientation, sleep/wake, emulator return, and actual rendering smoothness still need testing on the stock card.
 
 ## Refining the interface
+
+### The 2026-10-21 DSi pass
+
+- **Buttons are DSi buttons, not glass.** `glossy_pill` now draws a fine darker rim, one
+  smooth vertical shade (lighter top, slightly deeper bottom) and a single bright line
+  inside the top edge. There is no half-height gloss band any more; a press turns the
+  shade over. Pale bodies (white panels) get no lift, dark ones only a little. Accent
+  swatches and the Home column tiles use it too.
+- **START frame.** `start_frame` draws the selected cartridge (and the shader picker's
+  selected tile) as the DSi does: one accent body in one continuous shade, the tile set
+  into it behind a darker rim, and PLAY / OPEN centred in the space below. No second
+  band or outer ring: it reads as one piece in both palettes.
+- **Edge-to-edge rail.** `draw_rail` follows the DSi scroll bar: arrow blocks flush with
+  the screen corners, the recessed track filling the strip between them, and a white
+  grabber with a neutral rim only. Blocks and grabber are square, like the DSi's; the
+  grabber spans the strip's full height and its travel ends flush against the blocks. `RailGeometry` (`carousel.hpp`) is `left 64, width
+  512, top 424, height 56`; the arrow hit areas follow it.
+- **Lower-screen tiles.** `pattern(..., lower=true)` draws the original DS touch-screen
+  grid (20 px square tiles with a pale edge) under the bottom screen; the top keeps the
+  DSi graph paper.
+- **Segmented controls slide.** `segment_position` eases the lit pill between choices
+  (140 ms), keyed by page and row.
+- **Quieter Home and settings.** No status line under the Home clock/calendar (only
+  "Preparing" and the update banner remain) and no last-played box on the carousel Home;
+  the calendar's weeks fill the card to its bottom edge. The accent preview is one card
+  without the name/"A Apply" footer. Value pills keep 14 px margins with text, swatch and
+  chevron on one centre line. The library header says "All games"; the view sheet is a
+  3 x 3 grid (Collection, Browser layout, Search: Jump to letter, Search games, Clear
+  filters) with Up/Down keeping the column.
 
 ### The 2026-10-15 polish pass
 
@@ -227,6 +256,25 @@ candidate repositories without executing their installers. Run
 after building the host launcher to exercise disabled options, picker cancel/apply,
 default inheritance, restart selection and failed preference writes. The tests
 drive real SDL input with temporary data; they do not launch handheld emulators.
+
+## Formatting
+
+Python is laid out by yapf (`.style.yapf`), C and C++ by clang-format
+(`.clang-format`; `dscore/.clang-format` keeps DSCore's two-space indent). Both
+use a 120-column limit. `tools/format.py` installs the versions pinned in
+`requirements-format.txt` into `.cache/format-tools` on first use, so every
+machine formats alike, and only touches tracked or new files. Vendored and
+generated sources are listed in `.clang-format-ignore` and `.yapfignore`.
+
+```sh
+make format-check                      # list files that need formatting; changes nothing
+make format                            # rewrite them in place
+python3 tools/format.py --diff src/    # preview one area
+python3 tools/format.py --changed      # only files changed against HEAD
+```
+
+Formatting a file under `dscore/` changes the fork's source hash, so rebuild
+the engines before packaging.
 
 ## Optional SuperDrastic backend
 

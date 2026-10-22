@@ -6,23 +6,30 @@
 #include <cstdio>
 #include <string>
 
-namespace ds { struct NDS; }
+namespace ds {
+struct NDS;
+}
 namespace ds::input {
 
 // One frame of player input, handed to the core before `run_frame`. Buttons are Io::Button
 // bits; the pen is in screen pixels.
 struct Frame {
   static constexpr int MIC_SAMPLES = 8;
-  u16  buttons = 0;
-  u8   x = 0, y = 0;
+  u16 buttons = 0;
+  u8 x = 0, y = 0;
   bool down = false;
-  bool lid = false;                 // hinge closed
+  bool lid = false; // hinge closed
   // MIC_SAMPLES evenly spaced samples over the frame (~480 Hz); enough for loudness detection.
-  s8   mic[MIC_SAMPLES] = {};
-  bool silent() const { for (s8 m : mic) if (m) return false; return true; }
+  s8 mic[MIC_SAMPLES] = {};
+  bool silent() const {
+    for (s8 m : mic)
+      if (m) return false;
+    return true;
+  }
   bool operator==(const Frame& o) const {
     if (buttons != o.buttons || x != o.x || y != o.y || down != o.down || lid != o.lid) return false;
-    for (int i = 0; i < MIC_SAMPLES; ++i) if (mic[i] != o.mic[i]) return false;
+    for (int i = 0; i < MIC_SAMPLES; ++i)
+      if (mic[i] != o.mic[i]) return false;
     return true;
   }
 };
@@ -48,15 +55,15 @@ public:
   void close();
 
   void write(const Frame& f);
-  bool read(Frame& f);            // false at the end
-  u32  frames() const { return count_; }
+  bool read(Frame& f); // false at the end
+  u32 frames() const { return count_; }
   bool writing() const { return f_ && write_; }
   bool reading() const { return f_ && !write_; }
 
 private:
   FILE* f_ = nullptr;
-  bool  write_ = false;
-  u32   count_ = 0;
+  bool write_ = false;
+  u32 count_ = 0;
   size_t record_ = 16;
 };
 

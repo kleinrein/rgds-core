@@ -28,7 +28,8 @@ std::string read() {
 bool has_line(const std::string& text, const std::string& want) {
   std::istringstream ss(text);
   std::string line;
-  while (std::getline(ss, line)) if (line == want) return true;
+  while (std::getline(ss, line))
+    if (line == want) return true;
   return false;
 }
 
@@ -40,8 +41,8 @@ void test_parsing() {
         "autosave = true    # trailing comments are cut\n"
         "empty =\n"
         "[video]\n"
-        "  lcd_grid = 0.5  \n"          // surrounding space is trimmed
-        "chunky=mean\n"                 // no spaces around the =
+        "  lcd_grid = 0.5  \n" // surrounding space is trimmed
+        "chunky=mean\n"        // no spaces around the =
         "no equals sign here\n");
   ds::sdl::Config c;
   CHECK(c.load(kPath));
@@ -128,20 +129,17 @@ void test_store_adds_keys_and_sections() {
 // would show something other than what the emulator is running with.
 void test_round_trip() {
   write("[emu]\n[video]\n[user]\n");
-  const struct { const char* key; const char* value; } cases[] = {
-    {"emu.frameskip", "3"},
-    {"emu.ff_speed", "0"},                  // the UNLIMITED sentinel
-    {"emu.autosave", "true"},
-    {"video.chunky_cell", "auto"},          // the AUTO sentinel
-    {"video.dominant_ratio", "auto"},
-    {"video.lcd_grid", "0.5"},              // a percent row's double
-    {"video.pip_alpha", "1"},
-    {"video.pip_scale", "0.33"},
-    {"video.seam", "blend_linear"},
-    {"user.nickname", "Ada"},
-    {"user.message", "Hello there"},        // spaces survive
-    {"keys.a", "Right Shift"},
-    {"padhotkeys.quit", "mod+start+back"},  // and so do + and mod
+  const struct {
+    const char* key;
+    const char* value;
+  } cases[] = {
+      {"emu.frameskip", "3"},           {"emu.ff_speed", "0"},         // the UNLIMITED sentinel
+      {"emu.autosave", "true"},         {"video.chunky_cell", "auto"}, // the AUTO sentinel
+      {"video.dominant_ratio", "auto"}, {"video.lcd_grid", "0.5"},     // a percent row's double
+      {"video.pip_alpha", "1"},         {"video.pip_scale", "0.33"},
+      {"video.seam", "blend_linear"},   {"user.nickname", "Ada"},
+      {"user.message", "Hello there"},                                         // spaces survive
+      {"keys.a", "Right Shift"},        {"padhotkeys.quit", "mod+start+back"}, // and so do + and mod
   };
   for (const auto& c : cases) CHECK(ds::sdl::Config::store(kPath, c.key, c.value));
   ds::sdl::Config cfg;
@@ -157,7 +155,8 @@ void test_round_trip() {
   int seen = 0;
   std::istringstream ss(read());
   std::string line;
-  while (std::getline(ss, line)) if (line.rfind("frameskip", 0) == 0) ++seen;
+  while (std::getline(ss, line))
+    if (line.rfind("frameskip", 0) == 0) ++seen;
   CHECK(seen == 1);
 }
 
@@ -169,8 +168,8 @@ void test_layering() {
   CHECK(c.load(kPath));
   write("[emu]\nframeskip = 3\n");
   CHECK(c.load(kPath));
-  CHECK(c.num("emu.frameskip", 0) == 3);   // overridden
-  CHECK(!c.flag("emu.autosave", true));    // and what the second file omits is kept
+  CHECK(c.num("emu.frameskip", 0) == 3); // overridden
+  CHECK(!c.flag("emu.autosave", true));  // and what the second file omits is kept
   c.set("emu.frameskip", "0");
   CHECK(c.num("emu.frameskip", 9) == 0);
 }
@@ -178,7 +177,8 @@ void test_layering() {
 // Keys a release no longer reads (the retired CPU tuning, fast load, timing
 // OC and geometry worker) still load: an old file must not stop the emulator.
 void test_retired_keys_load() {
-  write("[emu]\ncpu_oc = true\ncpu_tuning = underclock\nfast_load = true\ntiming_oc = true\ngx_worker = true\nframeskip = 2\n");
+  write(
+      "[emu]\ncpu_oc = true\ncpu_tuning = underclock\nfast_load = true\ntiming_oc = true\ngx_worker = true\nframeskip = 2\n");
   ds::sdl::Config c;
   CHECK(c.load(kPath));
   CHECK(c.num("emu.frameskip", 0) == 2);

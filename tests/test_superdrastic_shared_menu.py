@@ -5,15 +5,17 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class SharedMenuAdapterTests(unittest.TestCase):
     def test_pause_present_save_receipt_and_side_channel_isolation(self):
-        if not shutil.which('c++'):self.skipTest('C++ compiler unavailable')
+        if not shutil.which('c++'): self.skipTest('C++ compiler unavailable')
         with tempfile.TemporaryDirectory() as temp:
-            folder=Path(temp)
-            source=folder/'test.cpp'
-            source.write_text(r'''
+            folder = Path(temp)
+            source = folder / 'test.cpp'
+            source.write_text(
+                r'''
 #include <cassert>
 #include <thread>
 #include <fstream>
@@ -54,7 +56,14 @@ int main(int argc,char** argv){
  assert(read(ctl+".result").find("token=save-1")!=std::string::npos);
  assert(!rgds_shared_blocked());assert(dsflip_hold==0);assert(pauses==0);
 }
-''')
-            binary=folder/'test'
-            subprocess.run(['c++','-std=c++17','-pthread','-I'+str(ROOT/'src'),str(source),'-o',str(binary)],check=True,capture_output=True)
-            subprocess.run([str(binary),str(folder)],check=True,capture_output=True,timeout=8)
+'''
+            )
+            binary = folder / 'test'
+            subprocess.run(
+                ['c++', '-std=c++17', '-pthread', '-I' + str(ROOT / 'src'),
+                 str(source), '-o',
+                 str(binary)],
+                check=True,
+                capture_output=True
+            )
+            subprocess.run([str(binary), str(folder)], check=True, capture_output=True, timeout=8)

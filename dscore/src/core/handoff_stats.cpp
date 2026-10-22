@@ -10,7 +10,9 @@ namespace ds::handoff {
 const bool enabled = std::getenv("DS_HANDOFF_STATS") != nullptr;
 
 u64 now_ns() {
-  return static_cast<u64>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
+  return static_cast<u64>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
+          .count());
 }
 
 void Hist::add(u64 ns) {
@@ -31,12 +33,14 @@ namespace {
 void line(std::FILE* f, const char* what, const Hist& h) {
   const u64 n = h.n.load(std::memory_order_relaxed);
   if (!n) return;
-  std::fprintf(f, "    %-12s %9llu  mean %7.1f us  max %8.1f us  total %8.1f ms  | <10us %llu, <50 %llu, <200 %llu, <1ms %llu, <5ms %llu, more %llu\n", what,
-               static_cast<unsigned long long>(n), static_cast<double>(h.sum.load()) / 1e3 / static_cast<double>(n),
-               static_cast<double>(h.max.load()) / 1e3, static_cast<double>(h.sum.load()) / 1e6,
-               static_cast<unsigned long long>(h.b[0].load()), static_cast<unsigned long long>(h.b[1].load()),
-               static_cast<unsigned long long>(h.b[2].load()), static_cast<unsigned long long>(h.b[3].load()),
-               static_cast<unsigned long long>(h.b[4].load()), static_cast<unsigned long long>(h.b[5].load()));
+  std::fprintf(
+      f,
+      "    %-12s %9llu  mean %7.1f us  max %8.1f us  total %8.1f ms  | <10us %llu, <50 %llu, <200 %llu, <1ms %llu, <5ms %llu, more %llu\n",
+      what, static_cast<unsigned long long>(n), static_cast<double>(h.sum.load()) / 1e3 / static_cast<double>(n),
+      static_cast<double>(h.max.load()) / 1e3, static_cast<double>(h.sum.load()) / 1e6,
+      static_cast<unsigned long long>(h.b[0].load()), static_cast<unsigned long long>(h.b[1].load()),
+      static_cast<unsigned long long>(h.b[2].load()), static_cast<unsigned long long>(h.b[3].load()),
+      static_cast<unsigned long long>(h.b[4].load()), static_cast<unsigned long long>(h.b[5].load()));
 }
 } // namespace
 

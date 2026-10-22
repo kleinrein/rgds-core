@@ -23,13 +23,15 @@ constexpr int kBtnJoystick = 0x120, kKeyMax = 0x2ff;
 std::vector<int> sdl_button_codes(const std::vector<int>& key_codes) {
   std::vector<int> sorted = key_codes, out;
   std::sort(sorted.begin(), sorted.end());
-  for (const int k : sorted) if (k >= kBtnJoystick && k < kKeyMax) out.push_back(k);
-  for (const int k : sorted) if (k >= 0 && k < kBtnJoystick) out.push_back(k);
+  for (const int k : sorted)
+    if (k >= kBtnJoystick && k < kKeyMax) out.push_back(k);
+  for (const int k : sorted)
+    if (k >= 0 && k < kBtnJoystick) out.push_back(k);
   return out;
 }
 
 bool face_positions_from(const std::vector<int>& codes, const int bind[4], int phys[4]) {
-  static constexpr int kWant[4] = {kSouth, kEast, kWest, kNorth};   // SDL a, b, x, y
+  static constexpr int kWant[4] = {kSouth, kEast, kWest, kNorth}; // SDL a, b, x, y
   int p[4];
   for (int f = 0; f < 4; ++f) {
     if (bind[f] < 0 || bind[f] >= static_cast<int>(codes.size())) return false;
@@ -40,7 +42,7 @@ bool face_positions_from(const std::vector<int>& codes, const int bind[4], int p
   // Only pair swaps within a/b and x/y: anything else is a mapping we don't understand.
   if (!((p[0] == 0 && p[1] == 1) || (p[0] == 1 && p[1] == 0))) return false;
   if (!((p[2] == 2 && p[3] == 3) || (p[2] == 3 && p[3] == 2))) return false;
-  if (p[0] == 0 && p[2] == 2) return false;   // already positional
+  if (p[0] == 0 && p[2] == 2) return false; // already positional
   std::memcpy(phys, p, sizeof p);
   return true;
 }
@@ -50,7 +52,7 @@ bool face_positions(SDL_GameController* pad, int phys[4]) {
   if (!pad) return false;
   SDL_Joystick* joy = SDL_GameControllerGetJoystick(pad);
   const char* path = joy ? SDL_JoystickPath(joy) : nullptr;
-  if (!path || std::strncmp(path, "/dev/input/event", 16) != 0) return false;   // not SDL's evdev backend
+  if (!path || std::strncmp(path, "/dev/input/event", 16) != 0) return false; // not SDL's evdev backend
   const int fd = ::open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
   if (fd < 0) return false;
   constexpr int kBits = 8 * sizeof(unsigned long);
@@ -59,17 +61,20 @@ bool face_positions(SDL_GameController* pad, int phys[4]) {
   ::close(fd);
   if (!ok) return false;
   std::vector<int> keys;
-  for (int k = 0; k < KEY_MAX; ++k) if ((bits[k / kBits] >> (k % kBits)) & 1) keys.push_back(k);
+  for (int k = 0; k < KEY_MAX; ++k)
+    if ((bits[k / kBits] >> (k % kBits)) & 1) keys.push_back(k);
   const std::vector<int> codes = sdl_button_codes(keys);
-  if (static_cast<int>(codes.size()) != SDL_JoystickNumButtons(joy)) return false;   // not the numbering we assume
+  if (static_cast<int>(codes.size()) != SDL_JoystickNumButtons(joy)) return false; // not the numbering we assume
   int bind[4];
   for (int f = 0; f < 4; ++f) {
-    const SDL_GameControllerButtonBind b = SDL_GameControllerGetBindForButton(pad, static_cast<SDL_GameControllerButton>(f));
+    const SDL_GameControllerButtonBind b =
+        SDL_GameControllerGetBindForButton(pad, static_cast<SDL_GameControllerButton>(f));
     bind[f] = b.bindType == SDL_CONTROLLER_BINDTYPE_BUTTON ? b.value.button : -1;
   }
   return face_positions_from(codes, bind, phys);
 #else
-  (void)pad; (void)phys;
+  (void)pad;
+  (void)phys;
   return false;
 #endif
 }

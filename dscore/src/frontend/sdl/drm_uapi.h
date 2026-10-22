@@ -45,7 +45,7 @@ struct mode_get_connector {
   uint64_t encoders_ptr, modes_ptr, props_ptr, prop_values_ptr;
   uint32_t count_modes, count_props, count_encoders;
   uint32_t encoder_id, connector_id, connector_type, connector_type_id;
-  uint32_t connection;          // 1 = connected
+  uint32_t connection; // 1 = connected
   uint32_t mm_width, mm_height, subpixel;
   uint32_t pad;
 };
@@ -66,9 +66,13 @@ struct prime_handle {
   int32_t fd;
 };
 
-struct gem_close { uint32_t handle, pad; };
+struct gem_close {
+  uint32_t handle, pad;
+};
 
-struct event { uint32_t type, length; };
+struct event {
+  uint32_t type, length;
+};
 struct event_vblank {
   event base;
   uint64_t user_data;
@@ -81,18 +85,18 @@ constexpr uint32_t CONNECTOR_CONNECTED = 1;
 
 #define DS_DRM_IOWR(nr, type) _IOWR('d', (nr), type)
 
-constexpr unsigned long IOCTL_SET_MASTER        = _IO('d', 0x1e);
-constexpr unsigned long IOCTL_DROP_MASTER       = _IO('d', 0x1f);
-constexpr unsigned long IOCTL_GEM_CLOSE         = _IOW('d', 0x09, gem_close);
+constexpr unsigned long IOCTL_SET_MASTER = _IO('d', 0x1e);
+constexpr unsigned long IOCTL_DROP_MASTER = _IO('d', 0x1f);
+constexpr unsigned long IOCTL_GEM_CLOSE = _IOW('d', 0x09, gem_close);
 constexpr unsigned long IOCTL_PRIME_FD_TO_HANDLE = DS_DRM_IOWR(0x2e, prime_handle);
 constexpr unsigned long IOCTL_MODE_GETRESOURCES = DS_DRM_IOWR(0xA0, mode_card_res);
-constexpr unsigned long IOCTL_MODE_GETCRTC      = DS_DRM_IOWR(0xA1, mode_crtc);
-constexpr unsigned long IOCTL_MODE_SETCRTC      = DS_DRM_IOWR(0xA2, mode_crtc);
-constexpr unsigned long IOCTL_MODE_GETENCODER   = DS_DRM_IOWR(0xA6, mode_get_encoder);
+constexpr unsigned long IOCTL_MODE_GETCRTC = DS_DRM_IOWR(0xA1, mode_crtc);
+constexpr unsigned long IOCTL_MODE_SETCRTC = DS_DRM_IOWR(0xA2, mode_crtc);
+constexpr unsigned long IOCTL_MODE_GETENCODER = DS_DRM_IOWR(0xA6, mode_get_encoder);
 constexpr unsigned long IOCTL_MODE_GETCONNECTOR = DS_DRM_IOWR(0xA7, mode_get_connector);
-constexpr unsigned long IOCTL_MODE_RMFB         = DS_DRM_IOWR(0xAF, unsigned int);
-constexpr unsigned long IOCTL_MODE_PAGE_FLIP    = DS_DRM_IOWR(0xB0, mode_crtc_page_flip);
-constexpr unsigned long IOCTL_MODE_ADDFB2       = DS_DRM_IOWR(0xB8, mode_fb_cmd2);
+constexpr unsigned long IOCTL_MODE_RMFB = DS_DRM_IOWR(0xAF, unsigned int);
+constexpr unsigned long IOCTL_MODE_PAGE_FLIP = DS_DRM_IOWR(0xB0, mode_crtc_page_flip);
+constexpr unsigned long IOCTL_MODE_ADDFB2 = DS_DRM_IOWR(0xB8, mode_fb_cmd2);
 
 #undef DS_DRM_IOWR
 

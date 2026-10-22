@@ -64,11 +64,11 @@ class GuestView {
 public:
   static constexpr u32 HOST_PAGE = 4096;
 #if UINTPTR_MAX > 0xFFFFFFFFu
-  static constexpr u64 RESERVE = u64{1} << 32;    // whole guest space
-  static constexpr u32 SPAN    = 0x10000000u;     // DS memory lives below 256 MB
+  static constexpr u64 RESERVE = u64{1} << 32; // whole guest space
+  static constexpr u32 SPAN = 0x10000000u;     // DS memory lives below 256 MB
 #else
-  static constexpr u64 RESERVE = u64{64} << 20;   // 0x00000000-0x03FFFFFF
-  static constexpr u32 SPAN    = 0x04000000u;
+  static constexpr u64 RESERVE = u64{64} << 20; // 0x00000000-0x03FFFFFF
+  static constexpr u32 SPAN = 0x04000000u;
 #endif
 
   static std::unique_ptr<GuestView> create(const HostArena& arena, const PageTable& table);
@@ -92,17 +92,25 @@ public:
   // table reads and mmap only). True if the table allows more than laid;
   // grants the page (and a following run) and the access can be retried.
   bool fault(uintptr_t addr);
-  bool contains(uintptr_t addr) const { return addr >= reinterpret_cast<uintptr_t>(base_) && addr - reinterpret_cast<uintptr_t>(base_) < RESERVE; }
+  bool contains(uintptr_t addr) const {
+    return addr >= reinterpret_cast<uintptr_t>(base_) && addr - reinterpret_cast<uintptr_t>(base_) < RESERVE;
+  }
   // DS_FASTMEM_VERIFY: checks nothing laid exceeds the table, and mapped
   // bytes match. Flushes first.
   bool verify(std::string* why);
 
-  struct Stats { u64 flushes = 0, map_calls = 0, pages_laid = 0, flush_ns = 0, grants = 0, volatile_refusals = 0; };
+  struct Stats {
+    u64 flushes = 0, map_calls = 0, pages_laid = 0, flush_ns = 0, grants = 0, volatile_refusals = 0;
+  };
   const Stats& stats() const { return stats_; }
 
 private:
   GuestView(const HostArena& a, const PageTable& t) : arena_(a), table_(t) {}
-  struct Laid { u32 off_plus1 = 0; u8 writable = 0; bool operator==(const Laid& o) const { return off_plus1 == o.off_plus1 && writable == o.writable; } };
+  struct Laid {
+    u32 off_plus1 = 0;
+    u8 writable = 0;
+    bool operator==(const Laid& o) const { return off_plus1 == o.off_plus1 && writable == o.writable; }
+  };
   Laid desired(u32 v) const;
   bool lay_run(u32 v0, u32 n, const Laid& first);
   bool protect_run(u32 v0, u32 n, bool writable);

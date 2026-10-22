@@ -23,16 +23,19 @@ class SourceBuildTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output, pending = root / "dsperate", root / ".pending"
-            output.mkdir(); pending.mkdir()
+            output.mkdir()
+            pending.mkdir()
             original = {"dsperate": b"last working ELF", "build.json": b"matching old metadata"}
             for name, content in original.items():
                 (output / name).write_bytes(content)
                 (pending / name).write_bytes(b"new " + content)
             rename = Path.rename
+
             def fail_publication(path, target):
                 if path == pending and target == output:
                     raise OSError("injected final directory rename failure")
                 return rename(path, target)
+
             with patch.object(Path, "rename", fail_publication):
                 with self.assertRaisesRegex(OSError, "final directory rename failure"):
                     build.publish_build(pending, output)
@@ -65,8 +68,11 @@ class SourceBuildTests(unittest.TestCase):
             path = Path(directory) / "source.tar.gz"
             driver = b"build driver"
             source = b"correct source"
-            expected = hashlib.sha256(json.dumps({"main.cpp": hashlib.sha256(source).hexdigest()},
-                                                  sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            expected = hashlib.sha256(
+                json.dumps({
+                    "main.cpp": hashlib.sha256(source).hexdigest()
+                }, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
             record = {"build_driver_sha256": hashlib.sha256(driver).hexdigest(), "source_file_count": 1}
             entries = [("DSperate/main.cpp", source), ("DSperate/tools/build_engines.py", driver)]
             self.archive(path, entries)
@@ -85,16 +91,34 @@ class SourceBuildTests(unittest.TestCase):
                     build.validate_source_archive(path, {})
 
     def record(self, directory, elf):
-        for name, content in {"dsperate": elf, "LICENSE": b"GPL", "NOTICE.txt": b"Notice", "source.tar.gz": b"source"}.items():
+        for name, content in {
+            "dsperate": elf,
+            "LICENSE": b"GPL",
+            "NOTICE.txt": b"Notice",
+            "source.tar.gz": b"source"
+        }.items():
             (directory / name).write_bytes(content)
-        files = {name: build.digest(directory / name) for name in ("dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz")}
-        record = {"schema": 1, "kind": build.KIND, "files": files,
-                  "source": {"commit": build.COMMIT, "tree": build.TREE,
-                             "inputs_sha256": build.SOURCE_INPUTS_SHA256,
-                             "patched_inputs_sha256": build.PATCHED_INPUTS_SHA256,
-                             "patches": [{"name": build.PATCH.name, "sha256": build.PATCH_SHA256}],
-                             "archive_sha256": files["source.tar.gz"]},
-                  "binary": build.inspect_elf(directory / "dsperate", "source build")}
+        files = {
+            name: build.digest(directory / name)
+            for name in ("dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz")
+        }
+        record = {
+            "schema": 1,
+            "kind": build.KIND,
+            "files": files,
+            "source": {
+                "commit": build.COMMIT,
+                "tree": build.TREE,
+                "inputs_sha256": build.SOURCE_INPUTS_SHA256,
+                "patched_inputs_sha256": build.PATCHED_INPUTS_SHA256,
+                "patches": [{
+                    "name": build.PATCH.name,
+                    "sha256": build.PATCH_SHA256
+                }],
+                "archive_sha256": files["source.tar.gz"]
+            },
+            "binary": build.inspect_elf(directory / "dsperate", "source build")
+        }
         (directory / "build.json").write_text(json.dumps(record))
         return record
 
@@ -113,13 +137,18 @@ class SourceBuildTests(unittest.TestCase):
             for version, accepted in (("GLIBC_2.38", True), ("GLIBC_2.39", False)):
                 elf, _ = fixture((("libc.so.6", (version,)),))
                 record = self.record(root, elf)
-                record["compiler"] = "gcc-pgo";(root / "build.json").write_text(json.dumps(record))
+                record["compiler"] = "gcc-pgo"
+                (root / "build.json").write_text(json.dumps(record))
                 if accepted:
-                    with patch.object(build, "validate_source_archive"):build.validate_build(root)
+                    with patch.object(build, "validate_source_archive"):
+                        build.validate_build(root)
                 else:
-                    with self.assertRaisesRegex(ValueError, "ELF metadata mismatch"):build.validate_build(root)
-            record["compiler"] = "unknown";(root / "build.json").write_text(json.dumps(record))
-            with self.assertRaisesRegex(ValueError, "ELF metadata mismatch"):build.validate_build(root)
+                    with self.assertRaisesRegex(ValueError, "ELF metadata mismatch"):
+                        build.validate_build(root)
+            record["compiler"] = "unknown"
+            (root / "build.json").write_text(json.dumps(record))
+            with self.assertRaisesRegex(ValueError, "ELF metadata mismatch"):
+                build.validate_build(root)
 
     def test_packager_rejects_replaced_binary_and_extra_payloads(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -142,7 +171,8 @@ class SourceBuildTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fixture_source = root / "stream-test.c"
-            fixture_source.write_text(r'''
+            fixture_source.write_text(
+                r'''
 #include <assert.h>
 #include <string.h>
 #include "stream.h"
@@ -171,10 +201,18 @@ int main(void) {
     assert(slirp_istream_read_i32(&in) == -7);
     return 0;
 }
-''')
+'''
+            )
             binary = root / "stream-test"
-            subprocess.run([compiler, "-std=c99", "-I" + str(source), "-I" + str(source / "glib"),
-                            str(source / "stream.c"), str(fixture_source), "-o", str(binary)], check=True)
+            subprocess.run(
+                [
+                    compiler, "-std=c99", "-I" + str(source), "-I" + str(source / "glib"),
+                    str(source / "stream.c"),
+                    str(fixture_source), "-o",
+                    str(binary)
+                ],
+                check=True
+            )
             subprocess.run([str(binary)], check=True)
 
 

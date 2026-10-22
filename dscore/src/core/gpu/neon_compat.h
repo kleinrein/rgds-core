@@ -100,7 +100,9 @@ namespace ds::gpu::kern::compat {
 }
 // Avoids a vector->scalar readback: two 64-bit loads, replicate first byte, compare.
 [[gnu::always_inline]] inline bool uniform_u8_mem(const u8* p) {
-  u64 a, b; std::memcpy(&a, p, 8); std::memcpy(&b, p + 8, 8);
+  u64 a, b;
+  std::memcpy(&a, p, 8);
+  std::memcpy(&b, p + 8, 8);
   const u64 r = (a & 0xFF) * 0x0101010101010101ull;
   return ((a ^ r) | (b ^ r)) == 0;
 }
@@ -119,8 +121,8 @@ namespace ds::gpu::kern::compat {
 
 [[gnu::always_inline]] inline uint8x16_t tbl2q_u8(uint8x16x2_t t, uint8x16_t idx) {
 #if DS_A32_SUBSET
-  const uint8x8x4_t tt = {{vget_low_u8(t.val[0]), vget_high_u8(t.val[0]),
-                           vget_low_u8(t.val[1]), vget_high_u8(t.val[1])}};
+  const uint8x8x4_t tt = {
+      {vget_low_u8(t.val[0]), vget_high_u8(t.val[0]), vget_low_u8(t.val[1]), vget_high_u8(t.val[1])}};
   return vcombine_u8(vtbl4_u8(tt, vget_low_u8(idx)), vtbl4_u8(tt, vget_high_u8(idx)));
 #else
   return vqtbl2q_u8(t, idx);
@@ -131,10 +133,10 @@ namespace ds::gpu::kern::compat {
 #if DS_A32_SUBSET
   // 64 bytes is twice what vtbl4 addresses: look up in both 32-byte halves,
   // biasing the second by 32, so exactly one lookup is in-range and the two OR together.
-  const uint8x8x4_t lo = {{vget_low_u8(t.val[0]), vget_high_u8(t.val[0]),
-                           vget_low_u8(t.val[1]), vget_high_u8(t.val[1])}};
-  const uint8x8x4_t hi = {{vget_low_u8(t.val[2]), vget_high_u8(t.val[2]),
-                           vget_low_u8(t.val[3]), vget_high_u8(t.val[3])}};
+  const uint8x8x4_t lo = {
+      {vget_low_u8(t.val[0]), vget_high_u8(t.val[0]), vget_low_u8(t.val[1]), vget_high_u8(t.val[1])}};
+  const uint8x8x4_t hi = {
+      {vget_low_u8(t.val[2]), vget_high_u8(t.val[2]), vget_low_u8(t.val[3]), vget_high_u8(t.val[3])}};
   const uint8x16_t bias = vsubq_u8(idx, vdupq_n_u8(32));
   const uint8x16_t a = vcombine_u8(vtbl4_u8(lo, vget_low_u8(idx)), vtbl4_u8(lo, vget_high_u8(idx)));
   const uint8x16_t b = vcombine_u8(vtbl4_u8(hi, vget_low_u8(bias)), vtbl4_u8(hi, vget_high_u8(bias)));
@@ -227,8 +229,7 @@ namespace ds::gpu::kern::compat {
 }
 
 // Shift count must be a literal, hence template rather than a parameter.
-template <int N>
-[[gnu::always_inline]] inline uint32x4_t shll_high_n_u16(uint16x8_t a) {
+template <int N> [[gnu::always_inline]] inline uint32x4_t shll_high_n_u16(uint16x8_t a) {
 #if DS_A32_SUBSET
   return vshll_n_u16(vget_high_u16(a), N);
 #else
@@ -238,8 +239,7 @@ template <int N>
 
 // ---- lane broadcast ---------------------------------------------------------
 // VDUP.32 can only name a lane of a D register; extract the upper half first to reach it.
-template <int N>
-[[gnu::always_inline]] inline int32x4_t dup_laneq_s32(int32x4_t v) {
+template <int N> [[gnu::always_inline]] inline int32x4_t dup_laneq_s32(int32x4_t v) {
 #if DS_A32_SUBSET
   return vdupq_lane_s32(N < 2 ? vget_low_s32(v) : vget_high_s32(v), N & 1);
 #else
@@ -275,8 +275,10 @@ template <int N>
     q[i] = static_cast<u32>(keep_scalar(static_cast<double>(n[i]) / static_cast<double>(d[i])));
   return vld1q_u32(q);
 #else
-  const float64x2_t nlo = vcvtq_f64_u64(vmovl_u32(vget_low_u32(num))), nhi = vcvtq_f64_u64(vmovl_u32(vget_high_u32(num)));
-  const float64x2_t dlo = vcvtq_f64_u64(vmovl_u32(vget_low_u32(den))), dhi = vcvtq_f64_u64(vmovl_u32(vget_high_u32(den)));
+  const float64x2_t nlo = vcvtq_f64_u64(vmovl_u32(vget_low_u32(num))),
+                    nhi = vcvtq_f64_u64(vmovl_u32(vget_high_u32(num)));
+  const float64x2_t dlo = vcvtq_f64_u64(vmovl_u32(vget_low_u32(den))),
+                    dhi = vcvtq_f64_u64(vmovl_u32(vget_high_u32(den)));
   const uint64x2_t qlo = vcvtq_u64_f64(vdivq_f64(nlo, dlo)), qhi = vcvtq_u64_f64(vdivq_f64(nhi, dhi));
   return vcombine_u32(vmovn_u64(qlo), vmovn_u64(qhi));
 #endif

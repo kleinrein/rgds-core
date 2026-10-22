@@ -25,29 +25,41 @@ def probe(directory, report):
         raise ValueError("Use a fresh report path; existing evidence is preserved")
     record = json.loads((directory / "build.json").read_text())
     abi = validate_build(directory)
-    if (record.get("kind") != "experimental-melonds-core-probe" or record.get("binary") != abi
-            or record.get("source", {}).get("commit") != COMMIT
-            or record.get("source", {}).get("inputs_sha256") != INPUTS_SHA256
-            or record.get("selectable_engine") is not False):
+    if (
+        record.get("kind") != "experimental-melonds-core-probe" or record.get("binary") != abi
+        or record.get("source", {}).get("commit") != COMMIT
+        or record.get("source", {}).get("inputs_sha256") != INPUTS_SHA256
+        or record.get("selectable_engine") is not False
+    ):
         raise ValueError("Experimental probe provenance does not match its executable")
     start = time.monotonic()
-    result = subprocess.run([str(directory / "rgds-melonds-probe")],
-                            capture_output=True, text=True, timeout=30)
+    result = subprocess.run([str(directory / "rgds-melonds-probe")], capture_output=True, text=True, timeout=30)
     elapsed = time.monotonic() - start
     rows = [json.loads(line) for line in result.stdout.splitlines()]
-    if (result.returncode or len(rows) != 2 or {row.get("mode") for row in rows} != {"interpreter", "arm64-jit"}
-            or not all(row.get("passed") is True and row.get("frames") == 13 for row in rows)):
+    if (
+        result.returncode or len(rows) != 2 or {row.get("mode")
+                                                for row in rows} != {"interpreter", "arm64-jit"}
+        or not all(row.get("passed") is True and row.get("frames") == 13 for row in rows)
+    ):
         raise ValueError("melonDS probe failed: " + result.stderr[-4000:])
     evidence = {
-        "schema": 1, "kind": "experimental-melonds-linux-core-check",
-        "source_commit": COMMIT, "binary_sha256": abi["sha256"],
-        "runtime_tested": True, "device_tested": False, "selectable_engine": False,
-        "system": platform.platform(), "machine": platform.machine(),
+        "schema": 1,
+        "kind": "experimental-melonds-linux-core-check",
+        "source_commit": COMMIT,
+        "binary_sha256": abi["sha256"],
+        "runtime_tested": True,
+        "device_tested": False,
+        "selectable_engine": False,
+        "system": platform.platform(),
+        "machine": platform.machine(),
         "elapsed_seconds": elapsed,
         "peak_child_resident_kib": resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
-        "checks": rows, "stderr": result.stderr,
-        "limitations": ["synthetic homebrew only", "memory checkpoint only",
-                        "no hardware or battery-save validation", "no performance comparison to RG DS"],
+        "checks": rows,
+        "stderr": result.stderr,
+        "limitations": [
+            "synthetic homebrew only", "memory checkpoint only", "no hardware or battery-save validation",
+            "no performance comparison to RG DS"
+        ],
     }
     report.parent.mkdir(parents=True, exist_ok=True)
     with report.open("x") as stream:

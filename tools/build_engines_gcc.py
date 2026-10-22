@@ -31,16 +31,27 @@ GLIBC_CEILING = (2, 38)
 # Flags the committed profile's MANIFEST fingerprint was made with: build
 # type, no extra tune, JIT, NEON, no hardening. Feature switches (network,
 # achievements, Vulkan, Wayland, headless) do not enter the fingerprint.
-PGO_OPTIONS = {"CMAKE_BUILD_TYPE": "RelWithDebInfo", "DSPERATE_TUNE": "", "DSPERATE_PGO": "use",
-               "DSPERATE_PGO_STRICT": "OFF", "DSPERATE_JIT": "ON", "DSPERATE_NEON": "ON", "DSPERATE_HARDEN": "OFF",
-               # The RGDS bridge resolves exported engine symbols with dlsym.
-               "CMAKE_EXE_LINKER_FLAGS": "-static-libstdc++ -static-libgcc -Wl,--export-dynamic",
-               "CMAKE_SKIP_RPATH": "ON"}
+PGO_OPTIONS = {
+    "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+    "DSPERATE_TUNE": "",
+    "DSPERATE_PGO": "use",
+    "DSPERATE_PGO_STRICT": "OFF",
+    "DSPERATE_JIT": "ON",
+    "DSPERATE_NEON": "ON",
+    "DSPERATE_HARDEN": "OFF",
+    # The RGDS bridge resolves exported engine symbols with dlsym.
+    "CMAKE_EXE_LINKER_FLAGS": "-static-libstdc++ -static-libgcc -Wl,--export-dynamic",
+    "CMAKE_SKIP_RPATH": "ON"
+}
 
 
 def gcc_options(base):
     """Keep every feature switch of the Zig build; change only code generation."""
-    options = {key: value for key, value in base.items() if key not in ("CMAKE_EXE_LINKER_FLAGS", "DSPERATE_TUNE", "DSPERATE_PGO", "CMAKE_BUILD_TYPE")}
+    options = {
+        key: value
+        for key, value in base.items()
+        if key not in ("CMAKE_EXE_LINKER_FLAGS", "DSPERATE_TUNE", "DSPERATE_PGO", "CMAKE_BUILD_TYPE")
+    }
     options.update(PGO_OPTIONS)
     return options
 
@@ -51,8 +62,9 @@ def available():
 
 def vm(script, capture=False):
     env = dict(os.environ, LIMA_HOME=str(LIMA_HOME))
-    return subprocess.run([str(LIMA), "shell", VM, "--", "bash", "-c", script], env=env, check=True,
-                          text=True, capture_output=capture)
+    return subprocess.run(
+        [str(LIMA), "shell", VM, "--", "bash", "-c", script], env=env, check=True, text=True, capture_output=capture
+    )
 
 
 def build(source, name, options, target="dsperate"):
@@ -94,10 +106,16 @@ cmake --version | head -1
         raise ValueError("GCC build flags no longer match the PGO profile fingerprint")
     if not binary.is_file():
         raise ValueError("GCC engine build produced no executable")
-    record = {"compiler": COMPILER, "gcc": GCC_VERSION, "builder": "Lima " + VM + " (Ubuntu 24.04 ARM64)",
-              "pgo_manifest_sha256": hashlib.sha256(manifest.encode()).hexdigest(), "pgo_fingerprint": fingerprint,
-              "pgo_control_flow_mismatches": mismatches, "options": options,
-              "builder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+    record = {
+        "compiler": COMPILER,
+        "gcc": GCC_VERSION,
+        "builder": "Lima " + VM + " (Ubuntu 24.04 ARM64)",
+        "pgo_manifest_sha256": hashlib.sha256(manifest.encode()).hexdigest(),
+        "pgo_fingerprint": fingerprint,
+        "pgo_control_flow_mismatches": mismatches,
+        "options": options,
+        "builder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    }
     (output / "build.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
     return binary, record
 

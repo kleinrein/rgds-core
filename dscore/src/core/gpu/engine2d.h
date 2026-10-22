@@ -8,7 +8,9 @@
 #include <array>
 #include <vector>
 
-namespace ds { struct NDS; }
+namespace ds {
+struct NDS;
+}
 
 namespace ds::gpu {
 
@@ -23,12 +25,24 @@ enum LayerId : u8 { L_BG0 = 0x01, L_BG1 = 0x02, L_BG2 = 0x04, L_BG3 = 0x08, L_OB
 
 enum PixelKind : u8 { K_NORMAL = 0, K_OBJ_SEMI = 1, K_OBJ_BITMAP = 2, K_3D = 3 };
 
-constexpr u8 OA_PRIO = 0x03, OA_SEMI = 0x04, OA_BITMAP = 0x08, OA_MOSAIC = 0x10, OA_TOUCHED = 0x20, OA_STDPAL = 0x40, OA_OPAQUE = 0x80;
+constexpr u8 OA_PRIO = 0x03, OA_SEMI = 0x04, OA_BITMAP = 0x08, OA_MOSAIC = 0x10, OA_TOUCHED = 0x20, OA_STDPAL = 0x40,
+             OA_OPAQUE = 0x80;
 
 // Layer line value: bit 15 opaque; palette index (bits 0-11), RGB555, or (3D) x position.
 // Only the priority winner is resolved through its table.
 constexpr u16 LV_OPAQUE = 0x8000;
-enum TableId : u8 { T_BG0 = 0, T_BG1, T_BG2, T_BG3, T_OBJ_STD, T_OBJ_EXT, T_OBJ_DIRECT, T_BACKDROP, T_NONE, T_COUNT };   // T_NONE: nothing beneath (colour 0, no layer id)
+enum TableId : u8 {
+  T_BG0 = 0,
+  T_BG1,
+  T_BG2,
+  T_BG3,
+  T_OBJ_STD,
+  T_OBJ_EXT,
+  T_OBJ_DIRECT,
+  T_BACKDROP,
+  T_NONE,
+  T_COUNT
+}; // T_NONE: nothing beneath (colour 0, no layer id)
 
 // 2D engine (A at 0x04000000, B at 0x04001000): the registers (Engine2DRegs)
 // and the software line renderer, which draws each line from the LineRegs
@@ -37,10 +51,10 @@ class Engine2D {
 public:
   Engine2D(NDS& nds, int num);
   void reset();
-  template <class S> void sync_state(S& s);   // journal must be drained
+  template <class S> void sync_state(S& s); // journal must be drained
 
   // Guest side; addr is the full address.
-  u32  read(u32 addr, u32 width) { return regs_.read(addr, width); }
+  u32 read(u32 addr, u32 width) { return regs_.read(addr, width); }
   void write(u32 addr, u32 width, u32 value) { regs_.write(addr, width, value); }
   void powcnt_write(u16 value) { regs_.powcnt_write(value); }
   void master_bright_write(u16 value) { regs_.master_bright_write(value); }
@@ -48,16 +62,19 @@ public:
   void oam_written(u32 off, u32 width, u32 value) { regs_.oam_written(off, width, value); }
 
   // Render side.
-  void replay_to(u32 stamp) { regs_.replay_to(stamp); }   // inclusive
-  void vram_remapped() { extpal_checked_ = 0; objext_checked_ = 0; }
+  void replay_to(u32 stamp) { regs_.replay_to(stamp); } // inclusive
+  void vram_remapped() {
+    extpal_checked_ = 0;
+    objext_checked_ = 0;
+  }
   // A job in flight reads this map instead of the bus's live one (Gpu's
   // per-job snapshot), so a VRAMCNT remap can rebuild the live map meanwhile.
   void set_vram_override(const VramMap* m) { vm_override_ = m; }
   void apply_pending() { regs_.apply_pending(); }
-  void frame_done() { regs_.frame_done(); }                // journal must be drained by now
+  void frame_done() { regs_.frame_done(); } // journal must be drained by now
   bool enabled() const { return regs_.enabled(); }
-  u16  master_bright() const { return regs_.master_bright(); }
-  int  screen() const { return regs_.screen(); }  // 0 = top, 1 = bottom
+  u16 master_bright() const { return regs_.master_bright(); }
+  int screen() const { return regs_.screen(); } // 0 = top, 1 = bottom
   const Engine2DRegs& regs() const { return regs_; }
 
   // Per-line hooks, in hardware order; journaled so they stay ordered with register writes.
@@ -65,11 +82,13 @@ public:
   static constexpr Latch L_WINDOWS = Engine2DRegs::L_WINDOWS, L_PREDRAW = Engine2DRegs::L_PREDRAW,
                          L_POSTDRAW = Engine2DRegs::L_POSTDRAW, L_SPRITES = Engine2DRegs::L_SPRITES;
   void latch(Latch k, u32 line, bool reset) { regs_.latch(k, line, reset); }
-  void update_windows(u32 line) { regs_.update_windows(line); }            // scanline start
-  void pre_draw(u32 line, bool frame_reset) { regs_.pre_draw(line, frame_reset); }   // HBlank, before drawing `line`
-  void render_sprites(u32 line);           // runs one line ahead
+  void update_windows(u32 line) { regs_.update_windows(line); }                    // scanline start
+  void pre_draw(u32 line, bool frame_reset) { regs_.pre_draw(line, frame_reset); } // HBlank, before drawing `line`
+  void render_sprites(u32 line);                                                   // runs one line ahead
   void render_line(u32 line);
-  bool enhanced_3d() const { return !num_ && cur_.enabled && !cur_.forced_blank && (cur_.dispcnt & 8) && (cur_.layer_enable & 1); }
+  bool enhanced_3d() const {
+    return !num_ && cur_.enabled && !cur_.forced_blank && (cur_.dispcnt & 8) && (cur_.layer_enable & 1);
+  }
   // The native pixel's layer/effect rules for enhanced 3D sublines. A plan
   // plus evy/master brightness is all composition needs, so a snapshot can
   // be composed on another thread after this engine moved on.
@@ -84,10 +103,11 @@ public:
   };
   void prepare_3d_sublines(EnhancedPlan& plan);
   u32 render_evy() const { return cur_.evy; }
-  static void compose_3d_subline(const EnhancedPlan& plan, u32 evy, u16 master, const Pixel* line, Pixel* scratch, Pixel* output);
+  static void compose_3d_subline(const EnhancedPlan& plan, u32 evy, u16 master, const Pixel* line, Pixel* scratch,
+                                 Pixel* output);
   // DS_VERIFY_HIRES: compare a composed subline with the full native layer selection.
   void verify_3d_subline(const Pixel* line, const Pixel* output);
-  void post_draw(bool frame_reset) { regs_.post_draw(frame_reset); }       // HBlank, after drawing
+  void post_draw(bool frame_reset) { regs_.post_draw(frame_reset); } // HBlank, after drawing
 
   // Top byte non-zero for every drawn pixel (display capture's alpha).
   const Pixel* output() const { return out_.data(); }
@@ -100,17 +120,17 @@ public:
   u32 evb() const { return regs_.evb(); }
   u32 evy() const { return regs_.evy(); }
 
-  u32 dispcnt() const { return regs_.dispcnt(); }   // render side
+  u32 dispcnt() const { return regs_.dispcnt(); } // render side
   void debug_dump(u32 line);
-  void debug_outhash(u32 line);   // DS_DEBUG_OUTHASH
+  void debug_outhash(u32 line); // DS_DEBUG_OUTHASH
   bool forced_blank() const { return regs_.forced_blank(); }
 
 private:
   NDS& nds_;
   const int num_;
   Engine2DRegs regs_;
-  LineRegs cur_{};    // the line render_line() draws
-  LineRegs spr_{};    // the state render_sprites() draws with
+  LineRegs cur_{}; // the line render_line() draws
+  LineRegs spr_{}; // the state render_sprites() draws with
 
   // 8 px padding each side lets text BGs write whole tiles at any scroll.
   struct Layer {
@@ -130,7 +150,7 @@ private:
   u32 objpal18_gen_ = 0;
   alignas(16) std::array<Pixel, 4096> objext18_{};
   alignas(16) std::array<u16, 4096> objext_copy_{};
-  u16 objext_checked_ = 0, objext_have_ = 0;   // per 256-entry palette
+  u16 objext_checked_ = 0, objext_have_ = 0; // per 256-entry palette
   const Pixel* obj_std_pal18();
   void obj_ext_pal18(u32 pal);
   const Pixel* tables_[T_COUNT] = {};
@@ -142,15 +162,18 @@ private:
   alignas(16) std::array<Pixel, 4 * 16 * 256> extpal18_{};
   alignas(16) std::array<u16, 4 * 16 * 256> extpal_copy_{};
   u64 extpal_checked_ = 0, extpal_have_ = 0;
-  u8 obj_prio_mask_ = 0;                             // priorities with an opaque sprite pixel
+  u8 obj_prio_mask_ = 0; // priorities with an opaque sprite pixel
   const Pixel* std_pal18();
   const Pixel* ext_pal18(u32 slot, u32 pal);
   u32 num_sprites_ = 0;
   u32 oam_lists_gen_ = 0;
-  struct LineSprites { u8 count; u8 idx[128]; };
+  struct LineSprites {
+    u8 count;
+    u8 idx[128];
+  };
   std::array<LineSprites, 256> line_sprites_{};
   void rebuild_sprite_lists(const u16* oam);
-  alignas(16) std::array<u8, 256> win_{};            // bits 0-3 BG, 4 OBJ, 5 effects
+  alignas(16) std::array<u8, 256> win_{}; // bits 0-3 BG, 4 OBJ, 5 effects
   alignas(16) std::array<u16, 256> top16_{}, second16_{};
   alignas(16) std::array<u8, 256> top_tid_{}, second_tid_{};
   alignas(16) std::array<Pixel, 256> top_{}, second_{};
@@ -171,8 +194,10 @@ private:
   void draw_bg_extended(u32 line, int bg);
   void draw_bg_large(u32 line);
   // Rotscale fast path for pa = 1.0, pc = 0.
-  void bitmap_row_degenerate(Layer& plane, u32 base, u32 xmask, u32 ymask, u32 yshift, bool wrap, bool direct, s32 rx, s32 ry);
-  void tile_row_degenerate(Layer& plane, u32 tilemap, u32 tileset, u32 coordmask, u32 yshift, bool wrap, bool map16, bool ext, int bg, s32 rx, s32 ry);
+  void bitmap_row_degenerate(Layer& plane, u32 base, u32 xmask, u32 ymask, u32 yshift, bool wrap, bool direct, s32 rx,
+                             s32 ry);
+  void tile_row_degenerate(Layer& plane, u32 tilemap, u32 tileset, u32 coordmask, u32 yshift, bool wrap, bool map16,
+                           bool ext, int bg, s32 rx, s32 ry);
   void draw_bg_3d();
   void draw_sprite_normal(const u16* attr, int w, int h, s32 x, s32 y, bool window);
   void draw_sprite_rotscale(const u16* attr, const u16* oam, int bw, int bh, int w, int h, s32 x, s32 y, bool window);

@@ -30,7 +30,6 @@ std::shared_ptr<Device> Device::shared(std::string* why) {
   return d;
 }
 
-
 namespace {
 std::vector<std::string> g_present_exts;
 }
@@ -48,24 +47,24 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   return nullptr;
 }
 Buffer Device::alloc(size_t, Access) { return {}; }
-void   Device::free(Buffer&) {}
-void   Device::invalidate(const Buffer&, size_t, size_t) {}
+void Device::free(Buffer&) {}
+void Device::invalidate(const Buffer&, size_t, size_t) {}
 Buffer Device::import_host(void*, size_t) { return {}; }
-void   Device::flush(const Buffer&, size_t, size_t) {}
-const  DeviceInternal* Device::internal() const { return nullptr; }
+void Device::flush(const Buffer&, size_t, size_t) {}
+const DeviceInternal* Device::internal() const { return nullptr; }
 
 #else
 
 struct Device::Impl {
   void* lib = nullptr;
-  Api   api{};
+  Api api{};
   VkInstance inst = VK_NULL_HANDLE;
   VkPhysicalDevice phys = VK_NULL_HANDLE;
   VkDevice dev = VK_NULL_HANDLE;
-  VkQueue  queue = VK_NULL_HANDLE, queue2 = VK_NULL_HANDLE;
-  u32      qfam = 0;
-  bool     has_host_import = false;
-  bool     device_local = true;   // the chosen CpuRead type is also DEVICE_LOCAL
+  VkQueue queue = VK_NULL_HANDLE, queue2 = VK_NULL_HANDLE;
+  u32 qfam = 0;
+  bool has_host_import = false;
+  bool device_local = true; // the chosen CpuRead type is also DEVICE_LOCAL
   DeviceInternal internal{};
   VkPhysicalDeviceMemoryProperties memprops{};
 
@@ -76,12 +75,11 @@ struct Device::Impl {
   // falling back is reported via Device::name() rather than silent.
   bool find_mem(u32 bits, Access a, u32* out, bool* was_device_local = nullptr) const {
     const VkMemoryPropertyFlags need =
-      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-      (a == Access::CpuRead ? VK_MEMORY_PROPERTY_HOST_CACHED_BIT
-                            : VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+        (a == Access::CpuRead ? VK_MEMORY_PROPERTY_HOST_CACHED_BIT : VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     for (int pass = 0; pass < 2; ++pass) {
       const VkMemoryPropertyFlags want =
-        need | (pass == 0 ? VkMemoryPropertyFlags{VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT} : 0u);
+          need | (pass == 0 ? VkMemoryPropertyFlags{VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT} : 0u);
       for (u32 i = 0; i < memprops.memoryTypeCount; ++i)
         if ((bits & (1u << i)) && (memprops.memoryTypes[i].propertyFlags & want) == want) {
           *out = i;
@@ -97,13 +95,19 @@ Device::Device() : d_(std::make_unique<Impl>()) {}
 
 Device::~Device() {
   if (!d_) return;
-  if (d_->dev) { d_->api.vkDeviceWaitIdle(d_->dev); d_->api.vkDestroyDevice(d_->dev, nullptr); }
+  if (d_->dev) {
+    d_->api.vkDeviceWaitIdle(d_->dev);
+    d_->api.vkDestroyDevice(d_->dev, nullptr);
+  }
   if (d_->inst) d_->api.vkDestroyInstance(d_->inst, nullptr);
   if (d_->lib) dlclose(d_->lib);
 }
 
 std::unique_ptr<Device> Device::create(std::string* why) {
-  auto set = [&](const char* m) { if (why) *why = m; return nullptr; };
+  auto set = [&](const char* m) {
+    if (why) *why = m;
+    return nullptr;
+  };
 
   std::unique_ptr<Device> self(new Device());
   Impl& d = *self->d_;
@@ -128,17 +132,22 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   // Presentation's instance extensions, when a frontend asked and the loader has every one.
   std::vector<const char*> inst_exts;
   if (!g_present_exts.empty()) {
-    auto enum_ext = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(gipa(nullptr, "vkEnumerateInstanceExtensionProperties"));
+    auto enum_ext = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
+        gipa(nullptr, "vkEnumerateInstanceExtensionProperties"));
     u32 nie = 0;
     std::vector<VkExtensionProperties> ie;
-    if (enum_ext && enum_ext(nullptr, &nie, nullptr) == VK_SUCCESS) { ie.resize(nie); enum_ext(nullptr, &nie, ie.data()); }
+    if (enum_ext && enum_ext(nullptr, &nie, nullptr) == VK_SUCCESS) {
+      ie.resize(nie);
+      enum_ext(nullptr, &nie, ie.data());
+    }
     bool all = true;
     for (const std::string& want : g_present_exts) {
       bool have = false;
       for (const auto& e : ie) have |= want == e.extensionName;
       all &= have;
     }
-    if (all) for (const std::string& want : g_present_exts) inst_exts.push_back(want.c_str());
+    if (all)
+      for (const std::string& want : g_present_exts) inst_exts.push_back(want.c_str());
   }
   ii.enabledExtensionCount = static_cast<u32>(inst_exts.size());
   ii.ppEnabledExtensionNames = inst_exts.empty() ? nullptr : inst_exts.data();
@@ -160,13 +169,21 @@ std::unique_ptr<Device> Device::create(std::string* why) {
     char* end = nullptr;
     const long idx = std::strtol(pick, &end, 10);
     for (u32 i = 0; i < n; ++i) {
-      VkPhysicalDeviceProperties pp{}; d.api.vkGetPhysicalDeviceProperties(devs[i], &pp);
+      VkPhysicalDeviceProperties pp{};
+      d.api.vkGetPhysicalDeviceProperties(devs[i], &pp);
       const bool by_index = end && *end == '\0' && idx == static_cast<long>(i);
-      if (by_index || (!(end && *end == '\0') && std::strstr(pp.deviceName, pick))) { d.phys = devs[i]; break; }
+      if (by_index || (!(end && *end == '\0') && std::strstr(pp.deviceName, pick))) {
+        d.phys = devs[i];
+        break;
+      }
     }
   }
   if (std::getenv("DS_VK_LIST_EXT"))
-    for (u32 i = 0; i < n; ++i) { VkPhysicalDeviceProperties pp{}; d.api.vkGetPhysicalDeviceProperties(devs[i], &pp); std::fprintf(stderr, "vk: device %u: %s%s\n", i, pp.deviceName, devs[i] == d.phys ? " (selected)" : ""); }
+    for (u32 i = 0; i < n; ++i) {
+      VkPhysicalDeviceProperties pp{};
+      d.api.vkGetPhysicalDeviceProperties(devs[i], &pp);
+      std::fprintf(stderr, "vk: device %u: %s%s\n", i, pp.deviceName, devs[i] == d.phys ? " (selected)" : "");
+    }
 
   VkPhysicalDeviceProperties props{};
   d.api.vkGetPhysicalDeviceProperties(d.phys, &props);
@@ -195,7 +212,8 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   d.api.vkEnumerateDeviceExtensionProperties(d.phys, nullptr, &ne, nullptr);
   std::vector<VkExtensionProperties> exts(ne);
   d.api.vkEnumerateDeviceExtensionProperties(d.phys, nullptr, &ne, exts.data());
-  bool has_gprio = false, has_atomic64_ext = false, has_fd = false, has_dmabuf = false, has_modifier = false, has_fmtlist = false, has_foreign = false, has_roaa = false, has_swapchain = false;
+  bool has_gprio = false, has_atomic64_ext = false, has_fd = false, has_dmabuf = false, has_modifier = false,
+       has_fmtlist = false, has_foreign = false, has_roaa = false, has_swapchain = false;
   for (const auto& e : exts) {
     if (!std::strcmp(e.extensionName, VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME)) d.has_host_import = true;
     if (!std::strcmp(e.extensionName, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) has_atomic64_ext = true;
@@ -221,9 +239,12 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   if (has_roaa) at64.pNext = &roaa;
   if (d.api.vkGetPhysicalDeviceFeatures2 && (has_atomic64_ext || has_roaa || props.apiVersion >= VK_API_VERSION_1_2)) {
     d.api.vkGetPhysicalDeviceFeatures2(d.phys, &f2);
-    self->limits_.int64_atomics = (has_atomic64_ext || props.apiVersion >= VK_API_VERSION_1_2) && f2.features.shaderInt64 && at64.shaderBufferInt64Atomics;
+    self->limits_.int64_atomics = (has_atomic64_ext || props.apiVersion >= VK_API_VERSION_1_2) &&
+                                  f2.features.shaderInt64 && at64.shaderBufferInt64Atomics;
     self->limits_.ordered_attachments = has_roaa && roaa.rasterizationOrderColorAttachmentAccess;
-    self->limits_.msaa4 = f2.features.sampleRateShading && (props.limits.framebufferColorSampleCounts & props.limits.framebufferDepthSampleCounts & VK_SAMPLE_COUNT_4_BIT);
+    self->limits_.msaa4 =
+        f2.features.sampleRateShading &&
+        (props.limits.framebufferColorSampleCounts & props.limits.framebufferDepthSampleCounts & VK_SAMPLE_COUNT_4_BIT);
     self->limits_.fragment_stores = f2.features.fragmentStoresAndAtomics;
   }
   // DS_VK_LIST_EXT=1: what this driver actually offers.
@@ -240,7 +261,9 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   u32 nqueues = 1;
   for (u32 i = 0; i < nq; ++i)
     if (qf[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-      d.qfam = i; found = true; nqueues = std::min(2u, qf[i].queueCount);
+      d.qfam = i;
+      found = true;
+      nqueues = std::min(2u, qf[i].queueCount);
       self->limits_.graphics = (qf[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0;
       if (qf[i].timestampValidBits) self->limits_.timestamp_period_ns = props.limits.timestampPeriod;
       break;
@@ -250,8 +273,14 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   std::vector<const char*> want;
   if (d.has_host_import) want.push_back(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
   if (self->limits_.int64_atomics && has_atomic64_ext) want.push_back(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
-  if (self->limits_.dmabuf_import) { want.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME); want.push_back(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME); }
-  if (self->limits_.drm_modifier) { want.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME); want.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME); }
+  if (self->limits_.dmabuf_import) {
+    want.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    want.push_back(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+  }
+  if (self->limits_.drm_modifier) {
+    want.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    want.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+  }
   if (self->limits_.dmabuf_import && has_foreign) want.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
   if (self->limits_.ordered_attachments) want.push_back(VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
   if (self->limits_.present) want.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -263,8 +292,14 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   enroaa.rasterizationOrderColorAttachmentAccess = VK_TRUE;
   VkPhysicalDeviceFeatures2 enf{};
   enf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-  if (self->limits_.int64_atomics) { enf.pNext = &en64; enf.features.shaderInt64 = VK_TRUE; }
-  if (self->limits_.ordered_attachments) { enroaa.pNext = enf.pNext; enf.pNext = &enroaa; }
+  if (self->limits_.int64_atomics) {
+    enf.pNext = &en64;
+    enf.features.shaderInt64 = VK_TRUE;
+  }
+  if (self->limits_.ordered_attachments) {
+    enroaa.pNext = enf.pNext;
+    enf.pNext = &enroaa;
+  }
   if (self->limits_.msaa4) enf.features.sampleRateShading = VK_TRUE;
   if (self->limits_.fragment_stores) enf.features.fragmentStoresAndAtomics = VK_TRUE;
 
@@ -288,8 +323,14 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   {
     const char* p = std::getenv("DS_VK_PRIORITY");
     const std::string ps = p ? p : "high";
-    gp.globalPriority = ps == "low" ? VK_QUEUE_GLOBAL_PRIORITY_LOW_EXT : ps == "medium" ? VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_EXT : ps == "realtime" ? VK_QUEUE_GLOBAL_PRIORITY_REALTIME_EXT : VK_QUEUE_GLOBAL_PRIORITY_HIGH_EXT;
-    if (has_gprio && ps != "off") { want.push_back(VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME); qi.pNext = &gp; }
+    gp.globalPriority = ps == "low"        ? VK_QUEUE_GLOBAL_PRIORITY_LOW_EXT
+                        : ps == "medium"   ? VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_EXT
+                        : ps == "realtime" ? VK_QUEUE_GLOBAL_PRIORITY_REALTIME_EXT
+                                           : VK_QUEUE_GLOBAL_PRIORITY_HIGH_EXT;
+    if (has_gprio && ps != "off") {
+      want.push_back(VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME);
+      qi.pNext = &gp;
+    }
   }
   VkDeviceCreateInfo di{};
   di.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -301,11 +342,16 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   if (d.api.vkCreateDevice(d.phys, &di, nullptr, &d.dev) != VK_SUCCESS) {
     // A priority the process may not take (VK_ERROR_NOT_PERMITTED) or a driver quirk: once more without it.
     if (!qi.pNext) return set("vkCreateDevice failed");
-    qi.pNext = nullptr; want.pop_back(); di.enabledExtensionCount = static_cast<u32>(want.size());
+    qi.pNext = nullptr;
+    want.pop_back();
+    di.enabledExtensionCount = static_cast<u32>(want.size());
     if (d.api.vkCreateDevice(d.phys, &di, nullptr, &d.dev) != VK_SUCCESS) return set("vkCreateDevice failed");
   } else if (qi.pNext) self->name_ += " (queue priority)";
   d.api.vkGetDeviceQueue(d.dev, d.qfam, 0, &d.queue);
-  if (nqueues > 1) { d.api.vkGetDeviceQueue(d.dev, d.qfam, 1, &d.queue2); self->name_ += " (2 queues)"; }
+  if (nqueues > 1) {
+    d.api.vkGetDeviceQueue(d.dev, d.qfam, 1, &d.queue2);
+    self->name_ += " (2 queues)";
+  }
 
   u32 dummy = 0;
   if (!d.find_mem(~0u, Access::CpuRead, &dummy, &d.device_local)) return set("no HOST_CACHED memory type");
@@ -329,7 +375,8 @@ Buffer Device::alloc(size_t size, Access access) {
   VkBufferCreateInfo bi{};
   bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
   bi.size = size;
-  bi.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;   // texel buffer: triangle path fetches through it
+  bi.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+             VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT; // texel buffer: triangle path fetches through it
   bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   VkBuffer buf = VK_NULL_HANDLE;
   if (d.api.vkCreateBuffer(d.dev, &bi, nullptr, &buf) != VK_SUCCESS) return out;
@@ -337,7 +384,10 @@ Buffer Device::alloc(size_t size, Access access) {
   VkMemoryRequirements mr{};
   d.api.vkGetBufferMemoryRequirements(d.dev, buf, &mr);
   u32 type = 0;
-  if (!d.find_mem(mr.memoryTypeBits, access, &type)) { d.api.vkDestroyBuffer(d.dev, buf, nullptr); return out; }
+  if (!d.find_mem(mr.memoryTypeBits, access, &type)) {
+    d.api.vkDestroyBuffer(d.dev, buf, nullptr);
+    return out;
+  }
 
   VkMemoryAllocateInfo ai{};
   ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -394,7 +444,7 @@ Buffer Device::import_host(void* ptr, size_t size) {
   Impl& d = *d_;
   Buffer out;
   if (!d.has_host_import || !ptr) return out;
-  if (reinterpret_cast<uintptr_t>(ptr) % host_align_) return out;   // caller must align
+  if (reinterpret_cast<uintptr_t>(ptr) % host_align_) return out; // caller must align
 
   VkImportMemoryHostPointerInfoEXT ip{};
   ip.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT;
@@ -418,12 +468,15 @@ Buffer Device::import_host(void* ptr, size_t size) {
   if (d.api.vkGetMemoryHostPointerPropertiesEXT) {
     VkMemoryHostPointerPropertiesEXT hp{};
     hp.sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT;
-    if (d.api.vkGetMemoryHostPointerPropertiesEXT(
-            d.dev, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, ptr, &hp) == VK_SUCCESS)
+    if (d.api.vkGetMemoryHostPointerPropertiesEXT(d.dev, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, ptr,
+                                                  &hp) == VK_SUCCESS)
       bits &= hp.memoryTypeBits;
   }
   u32 type = 0;
-  if (!d.find_mem(bits, Access::CpuRead, &type)) { d.api.vkDestroyBuffer(d.dev, buf, nullptr); return out; }
+  if (!d.find_mem(bits, Access::CpuRead, &type)) {
+    d.api.vkDestroyBuffer(d.dev, buf, nullptr);
+    return out;
+  }
 
   VkMemoryAllocateInfo ai{};
   ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -440,7 +493,7 @@ Buffer Device::import_host(void* ptr, size_t size) {
     d.api.vkDestroyBuffer(d.dev, buf, nullptr);
     return out;
   }
-  out.ptr = ptr;                 // the caller's own pointer: no new mapping
+  out.ptr = ptr; // the caller's own pointer: no new mapping
   out.size = size;
   out.handle = reinterpret_cast<u64>(buf);
   out.memory = reinterpret_cast<u64>(mem);

@@ -16,11 +16,15 @@ from engine_log import EngineLog
 
 class EngineLogTests(unittest.TestCase):
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(); self.addCleanup(temporary.cleanup)
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
         self.data = Path(temporary.name)
 
     def test_noisy_engine_drains_without_disk_writes_and_retains_the_final_error(self):
-        command = [sys.executable, "-c", "import os;os.write(1,b'frame diagnostic\\n'*200000);os.write(2,b'FINAL STARTUP FAILURE\\n')"]
+        command = [
+            sys.executable, "-c",
+            "import os;os.write(1,b'frame diagnostic\\n'*200000);os.write(2,b'FINAL STARTUP FAILURE\\n')"
+        ]
         child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0)
         log = EngineLog(self.data, "drastic", command, self.data)
         log.start(child.stdout)
@@ -58,9 +62,12 @@ class EngineLogTests(unittest.TestCase):
         entered = threading.Event()
         original = select.select
         timeouts = []
+
         def observed(readers, writers, errors, timeout):
-            timeouts.append(timeout); entered.set()
+            timeouts.append(timeout)
+            entered.set()
             return original(readers, writers, errors, timeout)
+
         try:
             with patch("engine_log.select.select", side_effect=observed):
                 log.start(stream)
@@ -77,19 +84,20 @@ class EngineLogTests(unittest.TestCase):
             if log.worker and log.worker.is_alive(): log.finish(-1)
 
     def test_readonly_game_storage_retains_crash_diagnostics_in_a_private_tempfile(self):
-        log=EngineLog(self.data,'nnddss',['nnddss'],self.data)
+        log = EngineLog(self.data, 'nnddss', ['nnddss'], self.data)
         log.append(b'LAST CRASH DETAIL\n')
-        with patch.object(Path,'mkdir',side_effect=OSError(30,'Read-only file system')):
-            recovered=log.finish(-11)
+        with patch.object(Path, 'mkdir', side_effect=OSError(30, 'Read-only file system')):
+            recovered = log.finish(-11)
         self.addCleanup(recovered.unlink)
-        self.assertIn('LAST CRASH DETAIL',recovered.read_text())
-        self.assertIn('Exit code: -11',recovered.read_text())
-        self.assertNotEqual(recovered.parent,self.data/'logs')
-        self.assertEqual(recovered.stat().st_mode & 0o777,0o600)
+        self.assertIn('LAST CRASH DETAIL', recovered.read_text())
+        self.assertIn('Exit code: -11', recovered.read_text())
+        self.assertNotEqual(recovered.parent, self.data / 'logs')
+        self.assertEqual(recovered.stat().st_mode & 0o777, 0o600)
 
     def test_spawn_failure_replaces_previous_diagnostics_atomically(self):
         log = EngineLog(self.data, "dsperate", ["missing-engine"], self.data)
-        log.path.parent.mkdir(); log.path.write_text("previous run")
+        log.path.parent.mkdir()
+        log.path.write_text("previous run")
         log.finish(None, FileNotFoundError("Engine loader is missing"))
         self.assertIn("Runtime error: Engine loader is missing", log.path.read_text())
         self.assertNotIn("previous run", log.path.read_text())

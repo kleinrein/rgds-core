@@ -16,11 +16,17 @@ namespace ds::io {
 namespace fs = std::filesystem;
 namespace {
 
-void wr32(u8* p, u32 v) { p[0] = static_cast<u8>(v); p[1] = static_cast<u8>(v >> 8); p[2] = static_cast<u8>(v >> 16); p[3] = static_cast<u8>(v >> 24); }
+void wr32(u8* p, u32 v) {
+  p[0] = static_cast<u8>(v);
+  p[1] = static_cast<u8>(v >> 8);
+  p[2] = static_cast<u8>(v >> 16);
+  p[3] = static_cast<u8>(v >> 24);
+}
 u32 rd32(const u8* p) { return static_cast<u32>(p[0] | (p[1] << 8) | (p[2] << 16) | (static_cast<u32>(p[3]) << 24)); }
 
 std::string upper(std::string s) {
-  for (char& c : s) if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
+  for (char& c : s)
+    if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
   return s;
 }
 
@@ -66,7 +72,12 @@ FatVolume::Stamp fat_stamp(s64 t) {
 // Content plus 128 MB, rounded up to a power of two (a size that already is one doubles).
 u64 card_size_for(u64 content) {
   u64 size = content + 0x8000000ull;
-  size |= size >> 1; size |= size >> 2; size |= size >> 4; size |= size >> 8; size |= size >> 16; size |= size >> 32;
+  size |= size >> 1;
+  size |= size >> 2;
+  size |= size >> 4;
+  size |= size >> 8;
+  size |= size >> 16;
+  size |= size >> 32;
   return size + 1;
 }
 
@@ -75,10 +86,13 @@ void log_access(bool write, u64 addr, u32 len) {
     const char* path = std::getenv("DS_SD_LOG");
     return path ? std::fopen(path, "w") : nullptr;
   }();
-  if (log) { std::fprintf(log, "%c %llx %u\n", write ? 'w' : 'r', static_cast<unsigned long long>(addr), len); std::fflush(log); }
+  if (log) {
+    std::fprintf(log, "%c %llx %u\n", write ? 'w' : 'r', static_cast<unsigned long long>(addr), len);
+    std::fflush(log);
+  }
 }
 
-}  // namespace
+} // namespace
 
 SdCard::~SdCard() { close(); }
 
@@ -102,7 +116,11 @@ bool SdCard::open(const std::string& dir, Report* report, std::string* err) {
   Report local;
   Report& r = report ? *report : local;
   r = Report{};
-  auto fail = [&](const std::string& m) { if (err) *err = m; close(); return false; };
+  auto fail = [&](const std::string& m) {
+    if (err) *err = m;
+    close();
+    return false;
+  };
   std::error_code ec;
   if (!fs::exists(dir, ec)) {
     fs::create_directories(dir, ec);
@@ -113,7 +131,12 @@ bool SdCard::open(const std::string& dir, Report* report, std::string* err) {
   while (dir_.size() > 1 && (dir_.back() == '/' || dir_.back() == '\\')) dir_.pop_back();
 
   // Directory links are not followed (they can loop); file links are.
-  struct Item { std::string rel; bool dir; u64 size; s64 mtime, mtime_ns; };
+  struct Item {
+    std::string rel;
+    bool dir;
+    u64 size;
+    s64 mtime, mtime_ns;
+  };
   std::vector<Item> items;
   u64 content = 0;
   const fs::path root(dir_);
@@ -124,9 +147,19 @@ bool SdCard::open(const std::string& dir, Report* report, std::string* err) {
     const fs::path& p = it->path();
     const std::string rel = p.lexically_relative(root).generic_string();
     const HostStat h = host_stat(p.string());
-    if (!h.ok) { r.notes.push_back(rel + ": cannot be read; skipped"); continue; }
-    if (h.dir && it->is_symlink(ec)) { it.disable_recursion_pending(); r.notes.push_back(rel + ": a link to a directory; skipped"); continue; }
-    if (!h.dir && !h.regular) { r.notes.push_back(rel + ": not a regular file; skipped"); continue; }
+    if (!h.ok) {
+      r.notes.push_back(rel + ": cannot be read; skipped");
+      continue;
+    }
+    if (h.dir && it->is_symlink(ec)) {
+      it.disable_recursion_pending();
+      r.notes.push_back(rel + ": a link to a directory; skipped");
+      continue;
+    }
+    if (!h.dir && !h.regular) {
+      r.notes.push_back(rel + ": not a regular file; skipped");
+      continue;
+    }
     items.push_back({rel, h.dir, h.dir ? 0 : h.size, h.mtime, h.mtime_ns});
     content += h.dir ? 0x8000 : (h.size + 0x7FFF) / 0x8000 * 0x8000;
   }
@@ -143,12 +176,17 @@ bool SdCard::open(const std::string& dir, Report* report, std::string* err) {
 
   u8 mbr[512] = {};
   u8* pe = mbr + 0x1BE;
-  pe[1] = 0xFE; pe[2] = 0xFF; pe[3] = 0xFF;    // CHS: use the LBA fields
+  pe[1] = 0xFE;
+  pe[2] = 0xFF;
+  pe[3] = 0xFF; // CHS: use the LBA fields
   pe[4] = fat_bits_ == 32 ? 0x0C : 0x06;
-  pe[5] = 0xFE; pe[6] = 0xFF; pe[7] = 0xFF;
+  pe[5] = 0xFE;
+  pe[6] = 0xFF;
+  pe[7] = 0xFF;
   wr32(pe + 8, static_cast<u32>(kPartitionStart));
   wr32(pe + 12, static_cast<u32>(part_sectors));
-  mbr[0x1FE] = 0x55; mbr[0x1FF] = 0xAA;
+  mbr[0x1FE] = 0x55;
+  mbr[0x1FF] = 0xAA;
   poke(0, 512, mbr);
 
   FatVolume::FormatSpec spec;
@@ -166,12 +204,15 @@ bool SdCard::open(const std::string& dir, Report* report, std::string* err) {
   v.set_preserve_case(true);
   v.set_fresh(true);
 
-  std::map<std::string, std::vector<size_t>> by_parent;   // directory -> its entries, one pass each
+  std::map<std::string, std::vector<size_t>> by_parent; // directory -> its entries, one pass each
   for (size_t i = 0; i < items.size(); ++i) {
     const size_t slash = items[i].rel.rfind('/');
     by_parent[slash == std::string::npos ? std::string() : items[i].rel.substr(0, slash)].push_back(i);
   }
-  struct Pending { std::string rel; FatVolume::Entry entry; };
+  struct Pending {
+    std::string rel;
+    FatVolume::Entry entry;
+  };
   std::vector<Pending> queue{{std::string(), v.root()}};
   for (size_t q = 0; q < queue.size(); ++q) {
     const Pending cur = queue[q];
@@ -184,8 +225,14 @@ bool SdCard::open(const std::string& dir, Report* report, std::string* err) {
       const Item& h = items[i];
       const size_t slash = h.rel.rfind('/');
       const std::string name = slash == std::string::npos ? h.rel : h.rel.substr(slash + 1);
-      if (h.size > 0xFFFFFFFFull) { r.notes.push_back(h.rel + ": 4 GB or larger, which FAT cannot hold; skipped"); continue; }
-      if (!names.insert(upper(name)).second) { r.notes.push_back(h.rel + ": differs from another name only in case; skipped"); continue; }
+      if (h.size > 0xFFFFFFFFull) {
+        r.notes.push_back(h.rel + ": 4 GB or larger, which FAT cannot hold; skipped");
+        continue;
+      }
+      if (!names.insert(upper(name)).second) {
+        r.notes.push_back(h.rel + ": differs from another name only in case; skipped");
+        continue;
+      }
       FatVolume::NewEntry n;
       n.name = name;
       n.dir = h.dir;
@@ -194,10 +241,14 @@ bool SdCard::open(const std::string& dir, Report* report, std::string* err) {
       news.push_back(std::move(n));
       src.push_back(i);
     }
-    if (!v.populate(cur.entry, news, &why)) return fail((cur.rel.empty() ? std::string("the folder's top level") : cur.rel) + ": " + why);
+    if (!v.populate(cur.entry, news, &why))
+      return fail((cur.rel.empty() ? std::string("the folder's top level") : cur.rel) + ": " + why);
     for (size_t k = 0; k < news.size(); ++k) {
       const Item& h = items[src[k]];
-      if (!news[k].ok) { r.notes.push_back(h.rel + ": " + news[k].why + "; skipped"); continue; }
+      if (!news[k].ok) {
+        r.notes.push_back(h.rel + ": " + news[k].why + "; skipped");
+        continue;
+      }
       known_[upper(h.rel)] = Known{h.rel, h.dir, h.size, h.mtime, h.mtime_ns};
       if (h.dir) {
         r.dirs++;
@@ -243,12 +294,17 @@ std::istream* SdCard::host_file(u32 index) {
   if (host_in_ && open_index_ == index) return host_in_.get();
   host_in_ = std::make_unique<std::ifstream>(files_[index], std::ios::binary);
   open_index_ = index;
-  if (!*host_in_) { host_in_.reset(); open_index_ = ~0u; return nullptr; }
+  if (!*host_in_) {
+    host_in_.reset();
+    open_index_ = ~0u;
+    return nullptr;
+  }
   return host_in_.get();
 }
 
 const SdCard::Extent* SdCard::extent_at(u64 addr) const {
-  auto it = std::upper_bound(extents_.begin(), extents_.end(), addr, [](u64 a, const Extent& e) { return a < e.start; });
+  auto it =
+      std::upper_bound(extents_.begin(), extents_.end(), addr, [](u64 a, const Extent& e) { return a < e.start; });
   if (it == extents_.begin()) return nullptr;
   --it;
   return addr < it->start + it->len ? &*it : nullptr;
@@ -262,7 +318,7 @@ void SdCard::read_backing(u64 addr, u8* out) {
   if (!f) return;
   f->clear();
   f->seekg(static_cast<std::streamoff>(it->file_off + (addr - it->start)));
-  f->read(reinterpret_cast<char*>(out), 512);   // short past the end of the file: the rest stays zero
+  f->read(reinterpret_cast<char*>(out), 512); // short past the end of the file: the rest stays zero
 }
 
 void SdCard::read_sector(u64 sector, u8* out) {
@@ -295,7 +351,10 @@ void SdCard::poke(u64 addr, u32 len, const u8* in) {
 void SdCard::read(u64 addr, u32 len, u8* out) {
   reads++;
   log_access(false, addr, len);
-  if (addr + len > length_) { std::memset(out, 0, len); return; }
+  if (addr + len > length_) {
+    std::memset(out, 0, len);
+    return;
+  }
   peek(addr, len, out);
 }
 
@@ -324,14 +383,17 @@ SdCard::Report SdCard::sync() {
   }
   const u32 cs = v.cluster_bytes();
   const u64 data = part_base_ + v.data_offset();
-  std::unordered_set<u32> dirty;   // clusters the guest wrote
+  std::unordered_set<u32> dirty; // clusters the guest wrote
   for (u64 s : changed_) {
     const u64 a = s * 512;
     if (a >= data) dirty.insert(static_cast<u32>((a - data) / cs) + 2);
   }
   auto cluster_of = [&](u64 volume_off) { return static_cast<u32>((part_base_ + volume_off - data) / cs) + 2; };
 
-  struct Node { std::string path, key; FatVolume::Entry e; };   // card's tree, parents before children
+  struct Node {
+    std::string path, key;
+    FatVolume::Entry e;
+  }; // card's tree, parents before children
   std::vector<Node> nodes;
   {
     std::vector<Node> stack{{std::string(), std::string(), v.root()}};
@@ -366,7 +428,7 @@ SdCard::Report SdCard::sync() {
 
   std::unordered_map<std::string, std::string> host_of{{std::string(), std::string()}};
   std::unordered_set<std::string> present;
-  std::vector<std::pair<std::string, FatVolume::Entry>> backed;   // host file -> the card file it holds
+  std::vector<std::pair<std::string, FatVolume::Entry>> backed; // host file -> the card file it holds
   std::error_code ec;
   for (const Node& n : nodes) {
     present.insert(n.key);
@@ -388,7 +450,11 @@ SdCard::Report SdCard::sync() {
     if (n.e.dir()) {
       if (!known) {
         fs::create_directories(host, ec);
-        if (ec) { r.notes.push_back(host_rel + "/: cannot be created (" + ec.message() + ")"); ec.clear(); continue; }
+        if (ec) {
+          r.notes.push_back(host_rel + "/: cannot be created (" + ec.message() + ")");
+          ec.clear();
+          continue;
+        }
         known_[n.key] = Known{host_rel, true, 0, 0, 0};
         r.dirs++;
       }
@@ -398,7 +464,10 @@ SdCard::Report SdCard::sync() {
     bool changed = !known || kit->second.size != n.e.size;
     if (!changed)
       for (u64 o : v.extents(n.e))
-        if (dirty.count(cluster_of(o))) { changed = true; break; }
+        if (dirty.count(cluster_of(o))) {
+          changed = true;
+          break;
+        }
     if (!changed) {
       // Stays where it is read from now: the host, or the card's memory after an earlier conflict.
       const std::vector<u64> ex = v.extents(n.e);
@@ -407,8 +476,9 @@ SdCard::Report SdCard::sync() {
     }
 
     if (known ? !host_unchanged(kit->second) : fs::exists(host, ec)) {
-      r.notes.push_back(host_rel + (known ? ": changed on the host since the card was built; the card's copy was not written"
-                                          : ": already exists on the host; the card's copy was not written"));
+      r.notes.push_back(host_rel +
+                        (known ? ": changed on the host since the card was built; the card's copy was not written"
+                               : ": already exists on the host; the card's copy was not written"));
       keep_in_memory(n.e);
       continue;
     }
@@ -451,8 +521,9 @@ SdCard::Report SdCard::sync() {
     r.files++;
   }
 
-  std::vector<std::string> gone;   // guest-removed: files then directories, children before parents
-  for (const auto& [key, k] : known_) if (!present.count(key)) gone.push_back(key);
+  std::vector<std::string> gone; // guest-removed: files then directories, children before parents
+  for (const auto& [key, k] : known_)
+    if (!present.count(key)) gone.push_back(key);
   std::sort(gone.rbegin(), gone.rend());
   for (const std::string& key : gone) {
     const Known k = known_[key];
@@ -463,8 +534,14 @@ SdCard::Report SdCard::sync() {
       ec.clear();
       continue;
     }
-    if (!fs::exists(host, ec)) { ec.clear(); continue; }
-    if (!host_unchanged(k)) { r.notes.push_back(k.host + ": removed on the card but changed on the host; kept"); continue; }
+    if (!fs::exists(host, ec)) {
+      ec.clear();
+      continue;
+    }
+    if (!host_unchanged(k)) {
+      r.notes.push_back(k.host + ": removed on the card but changed on the host; kept");
+      continue;
+    }
     if (fs::remove(host, ec)) r.removed++;
     else r.notes.push_back(k.host + ": cannot be removed (" + ec.message() + ")");
     ec.clear();
@@ -499,20 +576,28 @@ SdCard::StateSnapshot SdCard::state_snapshot() const {
   st.changed.assign(changed_.begin(), changed_.end());
   std::sort(st.changed.begin(), st.changed.end());
   for (const Extent& e : extents_) {
-    st.ext_start.push_back(e.start); st.ext_len.push_back(e.len);
-    st.ext_file.push_back(e.file); st.ext_file_off.push_back(e.file_off);
+    st.ext_start.push_back(e.start);
+    st.ext_len.push_back(e.len);
+    st.ext_file.push_back(e.file);
+    st.ext_file_off.push_back(e.file_off);
   }
   for (const std::string& f : files_) st.files.push_back(f.substr(dir_.size() + 1));
-  for (const auto& [key, k] : known_) {   // std::map: in key order
-    st.known_key.push_back(key); st.known_host.push_back(k.host);
-    st.known_dir.push_back(k.dir ? 1 : 0); st.known_size.push_back(k.size);
-    st.known_mtime.push_back(k.mtime); st.known_mtime_ns.push_back(k.mtime_ns);
+  for (const auto& [key, k] : known_) { // std::map: in key order
+    st.known_key.push_back(key);
+    st.known_host.push_back(k.host);
+    st.known_dir.push_back(k.dir ? 1 : 0);
+    st.known_size.push_back(k.size);
+    st.known_mtime.push_back(k.mtime);
+    st.known_mtime_ns.push_back(k.mtime_ns);
   }
   return st;
 }
 
 bool SdCard::state_matches(const StateSnapshot& snap, std::string* why) const {
-  auto no = [why](const std::string& m) { if (why) *why = m; return false; };
+  auto no = [why](const std::string& m) {
+    if (why) *why = m;
+    return false;
+  };
   if (!snap.present) return no("the state has no SD card");
   if (!valid()) return no("this session has no SD card");
   const size_t n = snap.known_key.size();
@@ -520,12 +605,15 @@ bool SdCard::state_matches(const StateSnapshot& snap, std::string* why) const {
       snap.known_mtime.size() != n || snap.known_mtime_ns.size() != n || snap.data.size() != snap.sectors.size() * 512)
     return no("the state's card record is damaged");
   std::unordered_map<std::string, size_t> by_host;
-  for (size_t i = 0; i < n; ++i) if (!snap.known_dir[i]) by_host[snap.known_host[i]] = i;
-  for (u32 f : snap.ext_file) if (f >= snap.files.size()) return no("the state's card record is damaged");
+  for (size_t i = 0; i < n; ++i)
+    if (!snap.known_dir[i]) by_host[snap.known_host[i]] = i;
+  for (u32 f : snap.ext_file)
+    if (f >= snap.files.size()) return no("the state's card record is damaged");
   for (const std::string& rel : snap.files) {
     const auto it = by_host.find(rel);
     if (it == by_host.end()) return no(rel + " is not in the state's card record");
-    const Known k{rel, false, snap.known_size[it->second], snap.known_mtime[it->second], snap.known_mtime_ns[it->second]};
+    const Known k{rel, false, snap.known_size[it->second], snap.known_mtime[it->second],
+                  snap.known_mtime_ns[it->second]};
     if (!host_unchanged(k)) return no(dir_ + "/" + rel + " has changed since the state was made");
   }
   return true;
@@ -538,17 +626,20 @@ void SdCard::apply_state_snapshot(const StateSnapshot& snap) {
   part_base_ = snap.part_base;
   fat_bits_ = snap.fat_bits;
   sectors_.clear();
-  for (size_t i = 0; i < snap.sectors.size(); ++i) std::memcpy(sectors_[snap.sectors[i]].data(), &snap.data[i * 512], 512);
+  for (size_t i = 0; i < snap.sectors.size(); ++i)
+    std::memcpy(sectors_[snap.sectors[i]].data(), &snap.data[i * 512], 512);
   changed_.clear();
   changed_.insert(snap.changed.begin(), snap.changed.end());
   extents_.clear();
-  for (size_t i = 0; i < snap.ext_start.size(); ++i) extents_.push_back({snap.ext_start[i], snap.ext_len[i], snap.ext_file[i], snap.ext_file_off[i]});
+  for (size_t i = 0; i < snap.ext_start.size(); ++i)
+    extents_.push_back({snap.ext_start[i], snap.ext_len[i], snap.ext_file[i], snap.ext_file_off[i]});
   files_.clear();
   for (const std::string& rel : snap.files) files_.push_back(dir_ + "/" + rel);
   known_.clear();
   for (size_t i = 0; i < snap.known_key.size(); ++i)
-    known_[snap.known_key[i]] = Known{snap.known_host[i], snap.known_dir[i] != 0, snap.known_size[i], snap.known_mtime[i], snap.known_mtime_ns[i]};
-  writes++;   // the frontend's cue to sync what the state's card had not yet carried out
+    known_[snap.known_key[i]] = Known{snap.known_host[i], snap.known_dir[i] != 0, snap.known_size[i],
+                                      snap.known_mtime[i], snap.known_mtime_ns[i]};
+  writes++; // the frontend's cue to sync what the state's card had not yet carried out
 }
 
 bool SdCard::dump(const std::string& path) {
@@ -562,4 +653,4 @@ bool SdCard::dump(const std::string& path) {
   return static_cast<bool>(out);
 }
 
-}  // namespace ds::io
+} // namespace ds::io

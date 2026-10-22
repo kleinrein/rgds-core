@@ -18,9 +18,10 @@ import sys
 
 LIMIT = 256 * 1024
 BUILD_ID = re.compile(r"[a-z0-9][a-z0-9.-]{0,100}\Z")
-PROCESS_NAMES = {"rgds-launcher", "dsperate", "nnddss", "drastic", "weston",
-                 "dmenu.bin", "muos2.bin", "muos3.bin", "MainUI",
-                 "NetworkManager", "wpa_supplicant", "power_daemon"}
+PROCESS_NAMES = {
+    "rgds-launcher", "dsperate", "nnddss", "drastic", "weston", "dmenu.bin", "muos2.bin", "muos3.bin", "MainUI",
+    "NetworkManager", "wpa_supplicant", "power_daemon"
+}
 
 
 def read(path, limit=LIMIT):
@@ -57,8 +58,7 @@ def file_record(path):
                 if total > 64 * 1024 * 1024:
                     return {"path": str(path), "error": "file grew beyond limit"}
                 digest.update(block)
-        return {"path": str(path), "resolved": str(path.resolve()),
-                "bytes": total, "sha256": digest.hexdigest()}
+        return {"path": str(path), "resolved": str(path.resolve()), "bytes": total, "sha256": digest.hexdigest()}
     except OSError as error:
         return {"path": str(path), "error": type(error).__name__}
 
@@ -69,16 +69,25 @@ def mounts(value):
         fields = line.split()
         if len(fields) >= 4:
             # Omit options other than read/write: mount options can contain secrets.
-            result.append({"source": fields[0], "mount": fields[1], "type": fields[2],
-                           "writable": "rw" in fields[3].split(",")})
+            result.append(
+                {
+                    "source": fields[0],
+                    "mount": fields[1],
+                    "type": fields[2],
+                    "writable": "rw" in fields[3].split(",")
+                }
+            )
     return result
 
 
 def installation(root):
     active = read(root / "state/active", 128)
-    result = {"root": str(root), "active": active,
-              "previous": read(root / "state/previous", 128),
-              "stock_marker": (root / "userdata/boot_stock").exists()}
+    result = {
+        "root": str(root),
+        "active": active,
+        "previous": read(root / "state/previous", 128),
+        "stock_marker": (root / "userdata/boot_stock").exists()
+    }
     if active and BUILD_ID.fullmatch(active):
         app = root / "releases" / active
         result["session_present"] = (app / "runtime/session.py").is_file()
@@ -93,8 +102,10 @@ def installation(root):
 def collect(roots=(), base=Path("/")):
     """base exists for fixture tests; normal collection always uses Linux /."""
     base = Path(base)
+
     def at(name):
         return base / name.lstrip("/")
+
     def values(patterns):
         result = {}
         for pattern in patterns:
@@ -121,60 +132,87 @@ def collect(roots=(), base=Path("/")):
                 path = fields[5]
                 if ".so" in Path(path).name:
                     mapped.add(path)
-        processes.append({"pid": int(entry.name), "name": name,
-                          "mapped_libraries": sorted(mapped)})
+        processes.append({"pid": int(entry.name), "name": name, "mapped_libraries": sorted(mapped)})
     library_patterns = [
-        "usr/lib/libSDL2*.so*", "usr/lib/aarch64-linux-gnu/libSDL2*.so*",
-        "usr/lib/libEGL*.so*", "usr/lib/libGLES*.so*", "usr/lib/libmali*.so*",
-        "usr/lib/libdrastouch*.so*", "usr/lib/aarch64-linux-gnu/libEGL*.so*",
+        "usr/lib/libSDL2*.so*",
+        "usr/lib/aarch64-linux-gnu/libSDL2*.so*",
+        "usr/lib/libEGL*.so*",
+        "usr/lib/libGLES*.so*",
+        "usr/lib/libmali*.so*",
+        "usr/lib/libdrastouch*.so*",
+        "usr/lib/aarch64-linux-gnu/libEGL*.so*",
         "usr/lib/aarch64-linux-gnu/libGLES*.so*",
         "mnt/vendor/deep/drastic_aarch64/libs/libSDL2*.so*",
         "mnt/vendor/deep/drastic64/libs/libSDL2*.so*",
     ]
     libraries = sorted({path for pattern in library_patterns for path in base.glob(pattern)})[:128]
-    configs = ["/etc/init.d/S50launch", "/etc/init.d/S49weston",
-               "/etc/init.d/S36wifibt-init.sh", "/etc/init.d/S45network-manager",
-               "/etc/xdg/weston/weston.ini", "/etc/weston.ini",
-               "/etc/pm/sleep.d/03wifibt", "/boot/extlinux/extlinux.conf",
-               "/boot/armbianEnv.txt", "/boot/config.txt"]
+    configs = [
+        "/etc/init.d/S50launch", "/etc/init.d/S49weston", "/etc/init.d/S36wifibt-init.sh",
+        "/etc/init.d/S45network-manager", "/etc/xdg/weston/weston.ini", "/etc/weston.ini", "/etc/pm/sleep.d/03wifibt",
+        "/boot/extlinux/extlinux.conf", "/boot/armbianEnv.txt", "/boot/config.txt"
+    ]
     model = read(at("/proc/device-tree/model"), 1024)
     compatible = read(at("/proc/device-tree/compatible"), 4096)
     return {
-        "schema": 1, "read_only": True,
+        "schema": 1,
+        "read_only": True,
         "captured_at_utc": datetime.now(timezone.utc).isoformat(),
-        "system": {"machine": platform.machine(), "kernel": platform.release(),
-                   "python": platform.python_version(), "libc": libc,
-                   "os_release": pairs(read(at("/etc/os-release"), 8192)),
-                   "boot_id": read(at("/proc/sys/kernel/random/boot_id"), 128),
-                   "uptime": read(at("/proc/uptime"), 128),
-                   "pid1": read(at("/proc/1/comm"), 256)},
-        "hardware": {"model": model.rstrip("\0") if model else None,
-                     "compatible": compatible.rstrip("\0").split("\0") if compatible else [],
-                     "memory_kib": int(match[1]) if match else None,
-                     "model_profile": "unclassified; confirm physical model"},
+        "system": {
+            "machine": platform.machine(),
+            "kernel": platform.release(),
+            "python": platform.python_version(),
+            "libc": libc,
+            "os_release": pairs(read(at("/etc/os-release"), 8192)),
+            "boot_id": read(at("/proc/sys/kernel/random/boot_id"), 128),
+            "uptime": read(at("/proc/uptime"), 128),
+            "pid1": read(at("/proc/1/comm"), 256)
+        },
+        "hardware": {
+            "model": model.rstrip("\0") if model else None,
+            "compatible": compatible.rstrip("\0").split("\0") if compatible else [],
+            "memory_kib": int(match[1]) if match else None,
+            "model_profile": "unclassified; confirm physical model"
+        },
         "mounts": mounts(read(at("/proc/mounts"))),
         "displays": values(["sys/class/drm/card*-*/status", "sys/class/drm/card*-*/modes"]),
         "input_devices": read(at("/proc/bus/input/devices")),
         "backlights": values(["sys/class/backlight/*/brightness", "sys/class/backlight/*/max_brightness"]),
-        "power": values(["sys/power/state", "sys/power/mem_sleep",
-                         "sys/class/power_supply/*/type", "sys/class/power_supply/*/status",
-                         "sys/class/power_supply/*/capacity", "sys/class/anbernic_misc/hallkey",
-                         "sys/devices/platform/anbernic_misc/power/wakeup"]),
-        "clocks": values(["sys/devices/system/cpu/cpufreq/policy*/scaling_available_frequencies",
-                          "sys/devices/system/cpu/cpufreq/policy*/scaling_available_governors",
-                          "sys/class/devfreq/*/available_frequencies", "sys/class/devfreq/*/available_governors"]),
-        "block_devices": values(["sys/class/block/mmcblk*/size", "sys/class/block/mmcblk*/ro",
-                                 "sys/class/block/mmcblk*/removable", "sys/class/block/mmcblk*/partition"]),
+        "power": values(
+            [
+                "sys/power/state", "sys/power/mem_sleep", "sys/class/power_supply/*/type",
+                "sys/class/power_supply/*/status", "sys/class/power_supply/*/capacity",
+                "sys/class/anbernic_misc/hallkey", "sys/devices/platform/anbernic_misc/power/wakeup"
+            ]
+        ),
+        "clocks": values(
+            [
+                "sys/devices/system/cpu/cpufreq/policy*/scaling_available_frequencies",
+                "sys/devices/system/cpu/cpufreq/policy*/scaling_available_governors",
+                "sys/class/devfreq/*/available_frequencies", "sys/class/devfreq/*/available_governors"
+            ]
+        ),
+        "block_devices": values(
+            [
+                "sys/class/block/mmcblk*/size", "sys/class/block/mmcblk*/ro", "sys/class/block/mmcblk*/removable",
+                "sys/class/block/mmcblk*/partition"
+            ]
+        ),
         "processes": processes,
         "libraries": [file_record(path) for path in libraries],
         "configuration_hashes": [file_record(at(name)) for name in configs if at(name).is_file()],
         "init_entries": sorted(path.name for path in at("/etc/init.d").glob("*")),
-        "suspend_hooks": sorted(str(path) for folder in ("/etc/pm/sleep.d", "/usr/lib/pm-utils/sleep.d")
-                                for path in at(folder).glob("*")),
+        "suspend_hooks": sorted(
+            str(path) for folder in ("/etc/pm/sleep.d", "/usr/lib/pm-utils/sleep.d") for path in at(folder).glob("*")
+        ),
         "installations": [installation(Path(root)) for root in roots],
-        "acceptance": {"replacement_kernel": "not tested", "dual_screen_render": "not tested",
-                       "gameplay": "not tested", "save_restore": "not tested",
-                       "suspend_wake": "not tested", "reboot_shutdown": "not tested"},
+        "acceptance": {
+            "replacement_kernel": "not tested",
+            "dual_screen_render": "not tested",
+            "gameplay": "not tested",
+            "save_restore": "not tested",
+            "suspend_wake": "not tested",
+            "reboot_shutdown": "not tested"
+        },
     }
 
 

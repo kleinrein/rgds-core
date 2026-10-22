@@ -5,7 +5,7 @@ THEME ?= themes/default/light.ini
 # gcc-pgo: GCC 13.3 + upstream PGO in the Lima ARM64 VM (~8% less emulation time); zig: host cross build
 ENGINE_COMPILER ?= gcc-pgo
 
-.PHONY: preview settings game-menu dev dev-device build-host build-device build-engines build-melonds build-melonds-experiment build-rgds-experimental build-rgds-vulkan build-superdrastic build-samba package installer test probe deploy logs run run-dev rollback status doctor os-audit
+.PHONY: preview settings game-menu dev dev-device build-host build-device build-engines build-melonds build-melonds-experiment build-rgds-experimental build-rgds-vulkan build-superdrastic build-samba package installer test probe deploy logs run run-dev rollback status doctor os-audit format format-check
 build-host:
 	$(PYTHON) tools/build.py host
 build-device:
@@ -39,6 +39,11 @@ package: build-device build-melonds build-superdrastic build-rgds-vulkan build-s
 	$(PYTHON) tools/package.py
 installer: package
 	$(PYTHON) tools/package_installer.py
+# Pinned yapf + clang-format (requirements-format.txt); format-check changes nothing.
+format:
+	$(PYTHON) tools/format.py
+format-check:
+	$(PYTHON) tools/format.py --check
 test: build-host
 	$(PYTHON) -m unittest discover -s tests -v
 	build/host/rgds-launcher --self-test

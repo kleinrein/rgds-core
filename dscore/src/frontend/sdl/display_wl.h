@@ -33,8 +33,8 @@ namespace ds::sdl {
 
 class DmabufOut : public ScanoutOut {
 public:
-  static constexpr int BUFS = 5;           // nbufs_ is the count in use; 5 needed under GPU present
-  static constexpr int DEFAULT_BUFS = 4;   // two frames of run-ahead
+  static constexpr int BUFS = 5;         // nbufs_ is the count in use; 5 needed under GPU present
+  static constexpr int DEFAULT_BUFS = 4; // two frames of run-ahead
 
   // False if any precondition is missing; caller falls back to another path.
   // w/h is the buffer size in pixels.
@@ -44,7 +44,11 @@ public:
   // must go through the window's xdg_toplevel rather than SDL.
   bool open(SDL_Window* win, int w, int h, int output_index = -1);
 
-  bool reopen(SDL_Window* win, int w, int h) override { const int o = output_index_; close(); return open(win, w, h, o); }
+  bool reopen(SDL_Window* win, int w, int h) override {
+    const int o = output_index_;
+    close();
+    return open(win, w, h, o);
+  }
   void close() override;
 
   int width() const override { return w_; }
@@ -59,7 +63,7 @@ public:
   u32* begin_frame() override;
   bool dmabuf_plane(int buf, DmabufPlane& out) const override;
   void set_gpu_writes(bool on) override { gpu_writes_ = on; }
-  void end_frame() override;       // attach + damage + commit + flush
+  void end_frame() override; // attach + damage + commit + flush
 
   // Public for the C listener table; not part of the interface.
   static void on_release(void* data, struct wl_buffer* wb);
@@ -75,16 +79,16 @@ private:
   bool alloc_buf(Buf& b);
   void drop_buf(Buf& b);
 
-  struct wl_display* dpy_ = nullptr;      // SDL's; not ours to destroy
-  struct wl_surface* surf_ = nullptr;     // SDL's; not ours to destroy
+  struct wl_display* dpy_ = nullptr;  // SDL's; not ours to destroy
+  struct wl_surface* surf_ = nullptr; // SDL's; not ours to destroy
   struct wl_event_queue* q_ = nullptr;
   Buf bufs_[BUFS];
   int nbufs_ = DEFAULT_BUFS;
   bool gpu_writes_ = false;
   int cur_ = -1;
   int w_ = 0, h_ = 0;
-  int output_index_ = -1;                 // saved open() arg, for reopen()
-  bool dead_ = false;                     // protocol error; stop submitting
+  int output_index_ = -1; // saved open() arg, for reopen()
+  bool dead_ = false;     // protocol error; stop submitting
 };
 
 } // namespace ds::sdl

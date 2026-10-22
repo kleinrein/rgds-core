@@ -26,20 +26,27 @@ namespace ds::mem {
 // bytes it wrote. The recompiler installs the hook; without one it's a null
 // check.
 extern void (*code_write_hook)(u8* host, u32 len);
-inline void code_written(u8* host, u32 len) { if (code_write_hook) code_write_hook(host, len); }
+inline void code_written(u8* host, u32 len) {
+  if (code_write_hook) code_write_hook(host, len);
+}
 // Silent-store elimination: a value identical to what's already there is not
 // reported (whether a block actually covers the bytes is the hook's business).
-struct CodeStoreStats { u64 silent = 0, changed = 0; };
-extern CodeStoreStats code_store_stats;   // census builds only; reported by DS_JIT_CHURN
+struct CodeStoreStats {
+  u64 silent = 0, changed = 0;
+};
+extern CodeStoreStats code_store_stats; // census builds only; reported by DS_JIT_CHURN
 inline void store_code(u8* host, const void* v, u32 len) {
-  if (std::memcmp(host, v, len) == 0) { if (prof::census) ++code_store_stats.silent; return; }
+  if (std::memcmp(host, v, len) == 0) {
+    if (prof::census) ++code_store_stats.silent;
+    return;
+  }
   std::memcpy(host, v, len);
   if (prof::census) ++code_store_stats.changed;
   code_written(host, len);
 }
 
 constexpr u32 PAGE_SHIFT = 11;
-constexpr u32 PAGE_SIZE  = 1u << PAGE_SHIFT;      // 2 KB
+constexpr u32 PAGE_SIZE = 1u << PAGE_SHIFT;         // 2 KB
 constexpr u32 PAGE_COUNT = 1u << (32 - PAGE_SHIFT); // 2 Mi entries = 16 MiB of table
 
 // Host backing for guest memory is PAGE_SIZE-aligned so a guest page and its
@@ -47,7 +54,12 @@ constexpr u32 PAGE_COUNT = 1u << (32 - PAGE_SHIFT); // 2 Mi entries = 16 MiB of 
 // host_page_of(pointer)) depends on that, or stores into stale code go
 // unreported.
 // `owned` false: bytes belong to a HostArena (fastmem.h), freed all at once.
-struct PageBufFree { bool owned = true; void operator()(u8* p) const { if (owned) std::free(p); } };
+struct PageBufFree {
+  bool owned = true;
+  void operator()(u8* p) const {
+    if (owned) std::free(p);
+  }
+};
 using PageBuf = std::unique_ptr<u8[], PageBufFree>;
 inline PageBuf alloc_page_buf(size_t bytes) {
   const size_t n = (bytes + PAGE_SIZE - 1) & ~size_t{PAGE_SIZE - 1};
@@ -60,14 +72,14 @@ inline PageBuf alloc_page_buf(size_t bytes) {
 using Entry = uintptr_t;
 class GuestView;
 
-constexpr Entry TAG_CODE    = Entry{1} << (sizeof(Entry) * 8 - 1);
+constexpr Entry TAG_CODE = Entry{1} << (sizeof(Entry) * 8 - 1);
 constexpr Entry TAG_SPECIAL = Entry{1} << (sizeof(Entry) * 8 - 2);
-constexpr Entry BASE_MASK   = ~(TAG_CODE | TAG_SPECIAL);
+constexpr Entry BASE_MASK = ~(TAG_CODE | TAG_SPECIAL);
 
 enum PageFlags : u32 {
-  PAGE_READABLE = 1u << 0,   // direct loads allowed
-  PAGE_WRITABLE = 1u << 1,   // direct stores allowed
-  PAGE_MMIO     = 1u << 2,   // no host backing at all
+  PAGE_READABLE = 1u << 0, // direct loads allowed
+  PAGE_WRITABLE = 1u << 1, // direct stores allowed
+  PAGE_MMIO = 1u << 2,     // no host backing at all
 };
 
 class PageTable {
@@ -108,7 +120,7 @@ public:
     return base ? reinterpret_cast<u8*>(base + addr) : nullptr;
   }
   inline u8* write_ptr(u32 addr, bool* is_code) const {
-    if (prof::census && prof::enabled) {   // DSPERATE_CENSUS
+    if (prof::census && prof::enabled) { // DSPERATE_CENSUS
       const u32 r = addr >> 24;
       if (r == 5) prof::add(prof::C_W_PALETTE, 1);
       else if (r == 7) prof::add(prof::C_W_OAM, 1);
@@ -133,12 +145,12 @@ public:
   // here on is reported to it; nullptr detaches.
   void attach_view(GuestView* v);
 
-  Entry  entry(u32 addr) const { return table_[addr >> PAGE_SHIFT]; }
-  Entry* raw()                 { return table_; }
-  const Entry* raw() const     { return table_; }
+  Entry entry(u32 addr) const { return table_[addr >> PAGE_SHIFT]; }
+  Entry* raw() { return table_; }
+  const Entry* raw() const { return table_; }
 
 private:
-  Entry* table_;   // PAGE_COUNT entries, mmap'd: untouched pages cost no RSS
+  Entry* table_; // PAGE_COUNT entries, mmap'd: untouched pages cost no RSS
   GuestView* view_ = nullptr;
   void note_view(u32 page);
   void flush_view();

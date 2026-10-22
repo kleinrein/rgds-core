@@ -28,7 +28,10 @@ bool verbose() {
   return on;
 }
 
-#define CLOG(...) do { if (verbose()) std::fprintf(stderr, "cheevos: " __VA_ARGS__); } while (0)
+#define CLOG(...)                                                                                                      \
+  do {                                                                                                                 \
+    if (verbose()) std::fprintf(stderr, "cheevos: " __VA_ARGS__);                                                      \
+  } while (0)
 
 const char* token_name = "/cheevos.token";
 
@@ -37,18 +40,19 @@ const char* token_name = "/cheevos.token";
 constexpr u32 WARNING_ACHIEVEMENT_ID = 101000001;
 bool is_warning(u32 id) { return id >= WARNING_ACHIEVEMENT_ID; }
 
-Client* session_of(const rc_client_t* c) {
-  return static_cast<Client*>(rc_client_get_userdata(c));
-}
+Client* session_of(const rc_client_t* c) { return static_cast<Client*>(rc_client_get_userdata(c)); }
 
 uint32_t rc_read_memory(uint32_t address, uint8_t* buffer, uint32_t num_bytes, rc_client_t* c) {
   Client* self = session_of(c);
-  if (!self) { std::memset(buffer, 0, num_bytes); return 0; }
+  if (!self) {
+    std::memset(buffer, 0, num_bytes);
+    return 0;
+  }
   return self->read(address, buffer, num_bytes);
 }
 
-void rc_server_call(const rc_api_request_t* request, rc_client_server_callback_t callback,
-                    void* callback_data, rc_client_t* c) {
+void rc_server_call(const rc_api_request_t* request, rc_client_server_callback_t callback, void* callback_data,
+                    rc_client_t* c) {
   Client* self = session_of(c);
   if (!self || !request) return;
   Request req;
@@ -100,7 +104,10 @@ bool load_credentials(const std::string& dir, Credentials& out, std::string& err
 
 bool save_credentials(const std::string& dir, const Credentials& in, std::string& err) {
   err.clear();
-  if (in.empty()) { err = "nothing to save"; return false; }
+  if (in.empty()) {
+    err = "nothing to save";
+    return false;
+  }
   if (in.username.find('\n') != std::string::npos || in.token.find('\n') != std::string::npos) {
     err = "credentials contain a newline";
     return false;
@@ -111,7 +118,10 @@ bool save_credentials(const std::string& dir, const Credentials& in, std::string
   const std::string tmp = path + ".tmp";
   ::unlink(tmp.c_str());
   const int fd = ::open(tmp.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
-  if (fd < 0) { err = std::strerror(errno); return false; }
+  if (fd < 0) {
+    err = std::strerror(errno);
+    return false;
+  }
   const std::string body = in.username + "\n" + in.token + "\n";
   const ssize_t n = ::write(fd, body.data(), body.size());
   const bool ok = n == static_cast<ssize_t>(body.size());
@@ -133,7 +143,10 @@ bool read_token_file(const std::string& path, Credentials& out, std::string& err
   out = Credentials{};
   err.clear();
   std::FILE* f = std::fopen(path.c_str(), "r");
-  if (!f) { err = path + ": " + std::strerror(errno); return false; }
+  if (!f) {
+    err = path + ": " + std::strerror(errno);
+    return false;
+  }
 
   // At most two words: token-only file, or "username\ntoken".
   std::vector<std::string> words;
@@ -151,8 +164,14 @@ bool read_token_file(const std::string& path, Credentials& out, std::string& err
   }
   std::fclose(f);
 
-  if (words.empty()) { err = path + ": no token in the file"; return false; }
-  if (words.size() == 1) { out.token = words[0]; return true; }
+  if (words.empty()) {
+    err = path + ": no token in the file";
+    return false;
+  }
+  if (words.size() == 1) {
+    out.token = words[0];
+    return true;
+  }
   out.username = words[0];
   out.token = words[1];
   return true;
@@ -164,12 +183,15 @@ bool read_cfw_credentials(const std::string& path, Credentials& out) {
   if (!f) return false;
 
   // Only these keys are read; the cleartext password in these files is never touched.
-  struct Want { const char* key; std::string* into; };
+  struct Want {
+    const char* key;
+    std::string* into;
+  };
   const Want wants[] = {
-    {"global.retroachievements.username", &out.username},
-    {"global.retroachievements.token",    &out.token},
-    {"cheevos_username",                  &out.username},
-    {"cheevos_token",                     &out.token},
+      {"global.retroachievements.username", &out.username},
+      {"global.retroachievements.token", &out.token},
+      {"cheevos_username", &out.username},
+      {"cheevos_token", &out.token},
   };
 
   char line[1024];
@@ -191,7 +213,10 @@ bool read_cfw_credentials(const std::string& path, Credentials& out) {
     if (val.size() >= 2 && val.front() == '"' && val.back() == '"') val = val.substr(1, val.size() - 2);
     if (val.empty()) continue;
     for (const Want& w : wants) {
-      if (key == w.key) { *w.into = val; break; }
+      if (key == w.key) {
+        *w.into = val;
+        break;
+      }
     }
   }
   std::fclose(f);
@@ -212,7 +237,10 @@ bool import_cfw_credentials(Credentials& out, std::string& source) {
   }
 
   for (const std::string& p : paths) {
-    if (read_cfw_credentials(p, out)) { source = p; return true; }
+    if (read_cfw_credentials(p, out)) {
+      source = p;
+      return true;
+    }
   }
   out = Credentials{};
   return false;
@@ -336,8 +364,8 @@ void Client::worker_loop() {
 
     CLOG("-> %s%s\n", job.req.url.c_str(), job.req.body.empty() ? "" : " (POST)");
     Response res = http_->perform(job.req, user_agent());
-    CLOG("<- status %d, %zu bytes%s%s\n", res.status, res.body.size(),
-         res.error.empty() ? "" : ", ", res.error.c_str());
+    CLOG("<- status %d, %zu bytes%s%s\n", res.status, res.body.size(), res.error.empty() ? "" : ", ",
+         res.error.c_str());
 
     {
       std::lock_guard<std::mutex> lk(mu_);
@@ -392,9 +420,7 @@ void Client::idle() {
   rc_client_idle(static_cast<rc_client_t*>(client_));
 }
 
-u32 Client::read(u32 address, u8* buffer, u32 num_bytes) {
-  return mem_.read(address, buffer, num_bytes);
-}
+u32 Client::read(u32 address, u8* buffer, u32 num_bytes) { return mem_.read(address, buffer, num_bytes); }
 
 // ---------------------------------------------------------------------------
 // Sign-in
@@ -436,15 +462,15 @@ void load_done(int result, const char* error_message, rc_client_t* c, void* user
 void Client::sign_in(const std::string& username, const std::string& password) {
   if (!client_) return;
   state_ = State::SigningIn;
-  rc_client_begin_login_with_password(static_cast<rc_client_t*>(client_), username.c_str(),
-                                      password.c_str(), &login_done, nullptr);
+  rc_client_begin_login_with_password(static_cast<rc_client_t*>(client_), username.c_str(), password.c_str(),
+                                      &login_done, nullptr);
 }
 
 void Client::sign_in_with_token(const std::string& username, const std::string& token) {
   if (!client_) return;
   state_ = State::SigningIn;
-  rc_client_begin_login_with_token(static_cast<rc_client_t*>(client_), username.c_str(),
-                                   token.c_str(), &login_done, nullptr);
+  rc_client_begin_login_with_token(static_cast<rc_client_t*>(client_), username.c_str(), token.c_str(), &login_done,
+                                   nullptr);
 }
 
 void Client::sign_out() {
@@ -484,8 +510,7 @@ void Client::load_game(NDS& nds, const std::string& hash) {
 void Client::unload_game() {
   if (!client_) return;
   rc_client_unload_game(static_cast<rc_client_t*>(client_));
-  if (state_ == State::Playing || state_ == State::LoadingGame || state_ == State::NoSet ||
-      state_ == State::EmptySet)
+  if (state_ == State::Playing || state_ == State::LoadingGame || state_ == State::NoSet || state_ == State::EmptySet)
     state_ = State::SignedIn;
 }
 
@@ -506,8 +531,7 @@ u32 Client::game_id() const {
 
 void Client::on_signed_in(const std::string& display_name) {
   state_ = State::SignedIn;
-  post(Message::Kind::Info, "Signed in to RetroAchievements",
-       display_name.empty() ? std::string{} : display_name);
+  post(Message::Kind::Info, "Signed in to RetroAchievements", display_name.empty() ? std::string{} : display_name);
   CLOG("signed in as %s\n", display_name.c_str());
 }
 
@@ -518,8 +542,7 @@ void Client::on_sign_in_failed(const std::string& why) {
 
 void Client::on_game_loaded(const std::string& title, u32 id) {
   state_ = State::Playing;
-  post(Message::Kind::Info, title.empty() ? "Achievements loaded" : title,
-       "achievements active");
+  post(Message::Kind::Info, title.empty() ? "Achievements loaded" : title, "achievements active");
   CLOG("game %u loaded: %s\n", id, title.c_str());
 }
 
@@ -550,9 +573,8 @@ std::vector<Client::Achievement> Client::achievements() const {
   if (!client_) return out;
   rc_client_t* c = static_cast<rc_client_t*>(client_);
   // Core category only; unofficial achievements are opt-in separately.
-  rc_client_achievement_list_t* list =
-      rc_client_create_achievement_list(c, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE,
-                                        RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
+  rc_client_achievement_list_t* list = rc_client_create_achievement_list(
+      c, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE, RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
   if (!list) return out;
   for (u32 b = 0; b < list->num_buckets; ++b) {
     const rc_client_achievement_bucket_t& bucket = list->buckets[b];
@@ -583,7 +605,10 @@ Client::Summary Client::summary() const {
   for (const Achievement& a : achievements()) {
     ++s.total;
     s.points += a.points;
-    if (a.unlocked) { ++s.unlocked; s.points_earned += a.points; }
+    if (a.unlocked) {
+      ++s.unlocked;
+      s.points_earned += a.points;
+    }
     if (a.active) ++s.active;
     if (a.unsupported) ++s.unsupported;
   }
@@ -629,38 +654,31 @@ void Client::handle_event(const void* event_ptr) {
   Client* self = this;
 
   switch (e->type) {
-    case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED:
-      if (e->achievement && is_warning(e->achievement->id)) {
-        CLOG("ignoring warning achievement %u: %s\n", e->achievement->id,
-             e->achievement->title ? e->achievement->title : "");
-      } else if (e->achievement) {
-        self->post(Message::Kind::Unlock,
-                   e->achievement->title ? e->achievement->title : "Achievement unlocked",
-                   e->achievement->description ? e->achievement->description : "",
-                   e->achievement->points);
-      }
-      break;
-    case RC_CLIENT_EVENT_GAME_COMPLETED:
-      self->post(Message::Kind::Info, "All achievements earned", self->game_title());
-      break;
-    case RC_CLIENT_EVENT_SUBSET_COMPLETED:
-      self->post(Message::Kind::Info, "Subset completed");
-      break;
-    case RC_CLIENT_EVENT_SERVER_ERROR:
-      self->post(Message::Kind::Problem, "RetroAchievements error",
-                 e->server_error && e->server_error->error_message ? e->server_error->error_message : "");
-      break;
-    case RC_CLIENT_EVENT_DISCONNECTED:
-      self->post(Message::Kind::Problem, "RetroAchievements offline", "unlocks will be sent when the connection returns");
-      break;
-    case RC_CLIENT_EVENT_RECONNECTED:
-      self->post(Message::Kind::Info, "RetroAchievements reconnected", "pending unlocks sent");
-      break;
-    case RC_CLIENT_EVENT_RESET:
-      CLOG("ignoring a reset event; hardcore is not supported\n");
-      break;
-    default:
-      break;
+  case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED:
+    if (e->achievement && is_warning(e->achievement->id)) {
+      CLOG("ignoring warning achievement %u: %s\n", e->achievement->id,
+           e->achievement->title ? e->achievement->title : "");
+    } else if (e->achievement) {
+      self->post(Message::Kind::Unlock, e->achievement->title ? e->achievement->title : "Achievement unlocked",
+                 e->achievement->description ? e->achievement->description : "", e->achievement->points);
+    }
+    break;
+  case RC_CLIENT_EVENT_GAME_COMPLETED:
+    self->post(Message::Kind::Info, "All achievements earned", self->game_title());
+    break;
+  case RC_CLIENT_EVENT_SUBSET_COMPLETED: self->post(Message::Kind::Info, "Subset completed"); break;
+  case RC_CLIENT_EVENT_SERVER_ERROR:
+    self->post(Message::Kind::Problem, "RetroAchievements error",
+               e->server_error && e->server_error->error_message ? e->server_error->error_message : "");
+    break;
+  case RC_CLIENT_EVENT_DISCONNECTED:
+    self->post(Message::Kind::Problem, "RetroAchievements offline", "unlocks will be sent when the connection returns");
+    break;
+  case RC_CLIENT_EVENT_RECONNECTED:
+    self->post(Message::Kind::Info, "RetroAchievements reconnected", "pending unlocks sent");
+    break;
+  case RC_CLIENT_EVENT_RESET: CLOG("ignoring a reset event; hardcore is not supported\n"); break;
+  default: break;
   }
 }
 

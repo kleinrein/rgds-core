@@ -12,8 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 class MainlineEvdevTests(unittest.TestCase):
     def test_native_keys_bits_directions_and_reserved_speed(self):
         with tempfile.TemporaryDirectory() as folder:
-            source = Path(folder)/'test.cpp';binary=Path(folder)/'test'
-            source.write_text(r'''
+            source = Path(folder) / 'test.cpp'
+            binary = Path(folder) / 'test'
+            source.write_text(
+                r'''
 #include "platform/control_mapping.hpp"
 #include <cassert>
 int main(){
@@ -42,6 +44,15 @@ int main(){
  int type=1,code=304,value=1;mapping=rgds::ControlMapping{};
  mapping.remap_evdev_key(type,code,value);assert(type==1 && code==304 && value==1);
 }
-''')
-            subprocess.run(['clang++','-std=c++17','-Wall','-Wextra','-Werror','-I'+str(ROOT/'src'),str(source),'-o',str(binary)],check=True,capture_output=True)
-            subprocess.run([str(binary)],check=True,capture_output=True)
+'''
+            )
+            subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I' + str(ROOT / 'src'),
+                    str(source), '-o',
+                    str(binary)
+                ],
+                check=True,
+                capture_output=True
+            )
+            subprocess.run([str(binary)], check=True, capture_output=True)

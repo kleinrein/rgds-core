@@ -148,19 +148,19 @@ class PlusProfileTests(unittest.TestCase):
 
     def test_plus_captures_keep_logical_texture_budget_and_top_panel(self):
         from menu_snapshot import top_panel
-        for width, height in ((1024,768), (1024,1536), (2048,768)):
+        for width, height in ((1024, 768), (1024, 1536), (2048, 768)):
             stride = width * 3
-            pixels = b''.join(bytes((y % 256,10,20)) * width for y in range(height))
-            header = struct.pack('<2sIHHI',b'BM',54+len(pixels),0,0,54)
-            header += struct.pack('<IiiHHIIiiII',40,width,-height,1,24,0,len(pixels),0,0,0,0)
+            pixels = b''.join(bytes((y % 256, 10, 20)) * width for y in range(height))
+            header = struct.pack('<2sIHHI', b'BM', 54 + len(pixels), 0, 0, 54)
+            header += struct.pack('<IiiHHIIiiII', 40, width, -height, 1, 24, 0, len(pixels), 0, 0, 0, 0)
             source = self.root / 'native.bmp'
             source.write_bytes(header + pixels)
             output = self.root / 'logical.bmp'
             top_panel(source, output)
             result = output.read_bytes()
-            self.assertEqual(struct.unpack_from('<ii',result,18), (640,-480))
-            self.assertEqual(result[54:57],bytes((0,10,20)))
-            self.assertEqual(result[-3:],bytes(((479 * 768 // 480) % 256,10,20)))
+            self.assertEqual(struct.unpack_from('<ii', result, 18), (640, -480))
+            self.assertEqual(result[54:57], bytes((0, 10, 20)))
+            self.assertEqual(result[-3:], bytes(((479 * 768 // 480) % 256, 10, 20)))
 
 
 @unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'C++/SDL headers required')
@@ -169,7 +169,8 @@ class PlusBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             source = root / 'plus.cpp'
-            source.write_text(r'''
+            source.write_text(
+                r'''
 #define RGDS_BRIDGE_TESTS
 #include "platform/emulator_bridge.cpp"
 #include <cassert>
@@ -204,11 +205,18 @@ int main(){
  assert(mapping.find("guide:b8,start:b7")!=std::string::npos);
  registered=false;mapping.clear();SDL_IsGameController(1);assert(mapping.empty());
 }
-''')
+'''
+            )
             flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
-            compiled = subprocess.run(['clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', *flags,
-                            '-I' + str(ROOT / 'src'), str(source), '-o', str(root / 'plus')],
-                           capture_output=True, text=True)
+            compiled = subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', *flags, '-I' + str(ROOT / 'src'),
+                    str(source), '-o',
+                    str(root / 'plus')
+                ],
+                capture_output=True,
+                text=True
+            )
             self.assertEqual(compiled.returncode, 0, compiled.stderr)
             result = subprocess.run([str(root / 'plus')], capture_output=True, text=True, timeout=5)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

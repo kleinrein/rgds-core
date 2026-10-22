@@ -26,11 +26,16 @@ SHADER_DIR = 'src/core/gpu/vk/shaders'
 # Compiled by tools/build_rgds_vulkan_shaders.py into a build tree only.
 GENERATED = frozenset(f'{SHADER_DIR}/{name}' for name in shaders.SHADERS)
 # What the corresponding-source archive carries beside the DSperate/ tree.
-EXTRAS = ('tools/build_rgds_experimental.py', 'tools/build_rgds_vulkan_shaders.py', 'tools/build_engines.py',
-          'tools/build_engines_gcc.py', 'tools/elf_abi.py', 'dscore/FORK.md', 'src/experimental/rgds/README.md')
-OPTIONS = {**base.ENGINE_OPTIONS, 'DSPERATE_VERSION': '3.0.0-rgds-experimental.1',
-           'DSPERATE_TUNE': '-mcpu=cortex_a55',
-           'DSPERATE_CHEEVOS': 'OFF', 'DSPERATE_NET': 'OFF'}
+EXTRAS = (
+    'tools/build_rgds_experimental.py', 'tools/build_rgds_vulkan_shaders.py', 'tools/build_engines.py',
+    'tools/build_engines_gcc.py', 'tools/elf_abi.py', 'dscore/FORK.md', 'src/experimental/rgds/README.md'
+)
+OPTIONS = {
+    **base.ENGINE_OPTIONS, 'DSPERATE_VERSION': '3.0.0-rgds-experimental.1',
+    'DSPERATE_TUNE': '-mcpu=cortex_a55',
+    'DSPERATE_CHEEVOS': 'OFF',
+    'DSPERATE_NET': 'OFF'
+}
 FILES = {'rgds-experimental', 'LICENSE', 'NOTICE.txt', 'source.tar.gz'}
 GCC_OPTIONS = base.gcc.gcc_options(OPTIONS)
 
@@ -106,19 +111,24 @@ def archive_source(source, files, output):
             entries = [('DSperate/' + name, source / name) for name in sorted(files)]
             entries += [('rgds/' + name, ROOT / name) for name in EXTRAS]
             for name, path in entries:
-                content = path.read_bytes(); item = tarfile.TarInfo(name)
-                item.size = len(content); item.mode = path.stat().st_mode & 0o777
+                content = path.read_bytes()
+                item = tarfile.TarInfo(name)
+                item.size = len(content)
+                item.mode = path.stat().st_mode & 0o777
                 archive.addfile(item, io.BytesIO(content))
 
 
 def validate_source_archive(path, expected):
     """The archive holds exactly the fingerprinted tree and the unchanged build recipe."""
-    files = {}; seen = set()
+    files = {}
+    seen = set()
     with tarfile.open(path) as archive:
         for member in archive:
             name = Path(member.name)
-            if (not member.isfile() or name.is_absolute() or '..' in name.parts or member.name in seen
-                    or not member.name.startswith(('DSperate/', 'rgds/'))):
+            if (
+                not member.isfile() or name.is_absolute() or '..' in name.parts or member.name in seen
+                or not member.name.startswith(('DSperate/', 'rgds/'))
+            ):
                 raise ValueError('Unsafe experimental source archive')
             seen.add(member.name)
             content = archive.extractfile(member).read()
@@ -135,30 +145,33 @@ def validate_source_archive(path, expected):
 def validate_build(directory):
     directory = Path(directory)
     record = json.loads((directory / 'build.json').read_text())
-    if (directory.is_symlink() or {p.name for p in directory.iterdir()} != FILES | {'build.json'}
-            or record.get('kind') != 'source-built-rgds-experimental' or record.get('schema') != 2
-            or record.get('options') != (GCC_OPTIONS if record.get('compiler') == base.gcc.COMPILER else OPTIONS)
-            or record.get('source_hash') != source_hash()
-            or record.get('upstream_commit') != base.COMMIT
-            or record.get('driver_sha256') != base.digest(Path(__file__))
-            or record.get('base_driver_sha256') != base.digest(Path(base.__file__))
-            or set(record.get('files', {})) != FILES):
+    if (
+        directory.is_symlink() or {p.name
+                                   for p in directory.iterdir()} != FILES | {'build.json'}
+        or record.get('kind') != 'source-built-rgds-experimental' or record.get('schema') != 2
+        or record.get('options') != (GCC_OPTIONS if record.get('compiler') == base.gcc.COMPILER else OPTIONS)
+        or record.get('source_hash') != source_hash() or record.get('upstream_commit') != base.COMMIT
+        or record.get('driver_sha256') != base.digest(Path(__file__))
+        or record.get('base_driver_sha256') != base.digest(Path(base.__file__)) or set(record.get('files', {})) != FILES
+    ):
         raise ValueError('Stale or invalid RG DS experimental build; run make build-rgds-experimental')
     for name, checksum in record['files'].items():
         path = directory / name
         if path.is_symlink() or not path.is_file() or base.digest(path) != checksum:
             raise ValueError('Experimental payload hash mismatch: ' + name)
     abi = base.inspect_elf(directory / 'rgds-experimental', 'RG DS experimental DSperate fork')
-    if (abi != record.get('binary') or abi['machine'] != 'aarch64'
-            or abi['interpreter'] != '/lib/ld-linux-aarch64.so.1' or abi.get('runpaths')
-            or not base.gcc.glibc_allowed(abi, record.get('compiler', 'zig'))):
+    if (
+        abi != record.get('binary') or abi['machine'] != 'aarch64' or abi['interpreter'] != '/lib/ld-linux-aarch64.so.1'
+        or abi.get('runpaths') or not base.gcc.glibc_allowed(abi, record.get('compiler', 'zig'))
+    ):
         raise ValueError('Experimental engine ABI mismatch')
     validate_source_archive(directory / 'source.tar.gz', record['source_hash'])
     return record
 
 
 def build(args):
-    scratch = ROOT / 'build/rgds-experimental-cross'; scratch.mkdir(parents=True, exist_ok=True)
+    scratch = ROOT / 'build/rgds-experimental-cross'
+    scratch.mkdir(parents=True, exist_ok=True)
     sdk = ROOT / 'build/engine-cross/sdl-sdk'
     if not (sdk / 'lib/cmake/SDL2').is_dir():
         raise ValueError('Run make build-engines first to prepare the SDL link SDK')
@@ -168,15 +181,23 @@ def build(args):
         return publish(source, files, args, *base.gcc.build(source, 'rgds-experimental', GCC_OPTIONS))
     tool = {name: base.find_tool(name) for name in ('zig', 'cmake', 'ninja')}
     env = os.environ.copy()
-    for name in ('CFLAGS', 'CXXFLAGS', 'LDFLAGS', 'CPPFLAGS', 'CPATH', 'C_INCLUDE_PATH',
-                 'CPLUS_INCLUDE_PATH', 'LIBRARY_PATH', 'SDKROOT', 'MACOSX_DEPLOYMENT_TARGET', 'PKG_CONFIG_PATH', 'SDL2_DIR'):
+    for name in (
+        'CFLAGS', 'CXXFLAGS', 'LDFLAGS', 'CPPFLAGS', 'CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'LIBRARY_PATH',
+        'SDKROOT', 'MACOSX_DEPLOYMENT_TARGET', 'PKG_CONFIG_PATH', 'SDL2_DIR'
+    ):
         env.pop(name, None)
-    env.update(ZIG_GLOBAL_CACHE_DIR=str(ROOT / '.cache/zig'), ZIG_LOCAL_CACHE_DIR=str(ROOT / '.cache/zig-rgds-experimental'))
+    env.update(
+        ZIG_GLOBAL_CACHE_DIR=str(ROOT / '.cache/zig'), ZIG_LOCAL_CACHE_DIR=str(ROOT / '.cache/zig-rgds-experimental')
+    )
     chain = base.toolchain(scratch / 'toolchain', tool['zig'], source, ROOT / '.cache/engine-sdk/SDL2-2.32.10')
     build_dir = scratch / 'build'
-    base.configure(tool['cmake'], tool['ninja'], source, build_dir, chain,
-                   {**OPTIONS, 'SDL2_DIR': str(sdk / 'lib/cmake/SDL2'),
-                    'CMAKE_FIND_ROOT_PATH': str(sdk), 'CMAKE_PREFIX_PATH': str(sdk)}, env)
+    base.configure(
+        tool['cmake'], tool['ninja'], source, build_dir, chain, {
+            **OPTIONS, 'SDL2_DIR': str(sdk / 'lib/cmake/SDL2'),
+            'CMAKE_FIND_ROOT_PATH': str(sdk),
+            'CMAKE_PREFIX_PATH': str(sdk)
+        }, env
+    )
     base.run([tool['cmake'], '--build', build_dir, '--target', 'dsperate', '--parallel', args.jobs], env=env)
     return publish(source, files, args, build_dir / 'src/frontend/sdl/dsperate', None)
 
@@ -185,7 +206,8 @@ def publish(source, files, args, binary, gcc_record):
     actual = {p.relative_to(source).as_posix(): base.digest(p) for p in source.rglob('*') if p.is_file()}
     if actual != files: raise ValueError('Experimental source changed during compilation')
     if source_hash() != fingerprint(files): raise ValueError('dscore/ was edited during the build; build again')
-    output = args.output.resolve(); output.parent.mkdir(parents=True, exist_ok=True)
+    output = args.output.resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
     pending = Path(tempfile.mkdtemp(prefix='.rgds-experimental-', dir=output.parent))
     try:
         shutil.copy2(binary, pending / 'rgds-experimental')
@@ -195,18 +217,26 @@ def publish(source, files, args, binary, gcc_record):
             f'Upstream: {base.UPSTREAM}, commit {base.COMMIT}\n'
             'Changes: the DSCore fork (rgds/dscore/FORK.md in source.tar.gz): portability and frame counter; single-stylus\n'
             'ownership, edge clamping, mouse/touch arbitration; capture-safe fast-forward raster skipping; lid sleep;\n'
-            'RGDS-owned menus and HUD; high-resolution 3D compositor.\n'
-            + ('GCC 13.3 with upstream\'s committed PGO profile, ARM64 JIT, NEON (tools/build_engines_gcc.py); network and achievements omitted.\n'
-               if gcc_record else 'Cortex-A55 CPU target, ARM64 JIT, NEON, LTO; network and achievements omitted.\n') +
-            'Performance and Zelda drawing acceptance require physical RG DS testing.\n'
-            'Complete modified source and build recipe: source.tar.gz.\n')
+            'RGDS-owned menus and HUD; high-resolution 3D compositor.\n' + (
+                'GCC 13.3 with upstream\'s committed PGO profile, ARM64 JIT, NEON (tools/build_engines_gcc.py); network and achievements omitted.\n'
+                if gcc_record else 'Cortex-A55 CPU target, ARM64 JIT, NEON, LTO; network and achievements omitted.\n'
+            ) + 'Performance and Zelda drawing acceptance require physical RG DS testing.\n'
+            'Complete modified source and build recipe: source.tar.gz.\n'
+        )
         archive_source(source, files, pending / 'source.tar.gz')
-        record = dict(schema=2, kind='source-built-rgds-experimental', upstream_commit=base.COMMIT,
-                      source_hash=fingerprint(files), options=GCC_OPTIONS if gcc_record else OPTIONS, driver_sha256=base.digest(Path(__file__)),
-                      base_driver_sha256=base.digest(Path(base.__file__)),
-                      files={name: base.digest(pending / name) for name in sorted(FILES)},
-                      binary=base.inspect_elf(pending / 'rgds-experimental', 'RG DS experimental DSperate fork'))
-        if gcc_record:record.update(compiler=base.gcc.COMPILER, gcc=gcc_record)
+        record = dict(
+            schema=2,
+            kind='source-built-rgds-experimental',
+            upstream_commit=base.COMMIT,
+            source_hash=fingerprint(files),
+            options=GCC_OPTIONS if gcc_record else OPTIONS,
+            driver_sha256=base.digest(Path(__file__)),
+            base_driver_sha256=base.digest(Path(base.__file__)),
+            files={name: base.digest(pending / name)
+                   for name in sorted(FILES)},
+            binary=base.inspect_elf(pending / 'rgds-experimental', 'RG DS experimental DSperate fork')
+        )
+        if gcc_record: record.update(compiler=base.gcc.COMPILER, gcc=gcc_record)
         (pending / 'build.json').write_text(json.dumps(record, indent=2, sort_keys=True) + '\n')
         validate_build(pending)
         base.publish_build(pending, output)
@@ -219,12 +249,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=ROOT / 'build/engines/rgds-experimental')
     parser.add_argument('--jobs', type=int, default=min(os.cpu_count() or 1, 8))
-    parser.add_argument('--compiler', choices=('zig', base.gcc.COMPILER), default='zig',
-                        help='gcc-pgo: GCC 13.3 + upstream PGO profile in the Lima ARM64 VM')
+    parser.add_argument(
+        '--compiler',
+        choices=('zig', base.gcc.COMPILER),
+        default='zig',
+        help='gcc-pgo: GCC 13.3 + upstream PGO profile in the Lima ARM64 VM'
+    )
     args = parser.parse_args()
     if args.jobs < 1: parser.error('--jobs must be positive')
-    try: print(build(args))
-    except (OSError, ValueError, subprocess.CalledProcessError) as error: parser.exit(1, str(error) + '\n')
+    try:
+        print(build(args))
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        parser.exit(1, str(error) + '\n')
 
 
 if __name__ == '__main__': main()

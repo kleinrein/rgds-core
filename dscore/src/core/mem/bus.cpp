@@ -20,14 +20,16 @@ constexpr u32 Bus::VRAM_BANK_SIZES[9];
 
 // Debug watchpoint (DS_WATCH=<hex addr>): the 2 KB page holding the address
 // is taken out of both page tables so accesses come through here.
-static u32 watch_addr = 0; static bool watch_on = false; static u32 watch_hits = 0;
-static u8* watch_host[2] = {nullptr, nullptr};   // watched page's host bytes per CPU
+static u32 watch_addr = 0;
+static bool watch_on = false;
+static u32 watch_hits = 0;
+static u8* watch_host[2] = {nullptr, nullptr}; // watched page's host bytes per CPU
 
 static size_t arena_bytes() {
   auto r = [](size_t n) { return (n + GuestView::HOST_PAGE - 1) & ~size_t{GuestView::HOST_PAGE - 1}; };
-  return r(Bus::MAIN_RAM_SIZE_DSI) + r(Bus::SHARED_WRAM_SIZE) + r(Bus::ARM7_WRAM_SIZE) + r(Bus::ITCM_SIZE) + r(Bus::DTCM_SIZE) + r(Bus::VRAM_TOTAL) +
-         r(Bus::PALETTE_SIZE) + r(Bus::OAM_SIZE) + r(Bus::BIOS9_SIZE) + r(Bus::BIOS7_SIZE) + 3 * r(Bus::NWRAM_BANK_SIZE) + r(Bus::BIOS9I_SIZE) +
-         r(Bus::BIOS7I_SIZE);
+  return r(Bus::MAIN_RAM_SIZE_DSI) + r(Bus::SHARED_WRAM_SIZE) + r(Bus::ARM7_WRAM_SIZE) + r(Bus::ITCM_SIZE) +
+         r(Bus::DTCM_SIZE) + r(Bus::VRAM_TOTAL) + r(Bus::PALETTE_SIZE) + r(Bus::OAM_SIZE) + r(Bus::BIOS9_SIZE) +
+         r(Bus::BIOS7_SIZE) + 3 * r(Bus::NWRAM_BANK_SIZE) + r(Bus::BIOS9I_SIZE) + r(Bus::BIOS7I_SIZE);
 }
 
 PageBuf Bus::take_buf(size_t bytes) {
@@ -37,11 +39,10 @@ PageBuf Bus::take_buf(size_t bytes) {
 }
 
 Bus::Bus(NDS& nds)
-    : arena_(fastmem_requested() ? HostArena::create(arena_bytes()) : nullptr),
-      main_ram(take_buf(MAIN_RAM_SIZE_DSI)), shared_wram(take_buf(SHARED_WRAM_SIZE)),
-      arm7_wram(take_buf(ARM7_WRAM_SIZE)), itcm(take_buf(ITCM_SIZE)),
-      dtcm(take_buf(DTCM_SIZE)), vram(take_buf(VRAM_TOTAL)), palette(take_buf(PALETTE_SIZE)),
-      oam(take_buf(OAM_SIZE)), bios9(take_buf(BIOS9_SIZE)), bios7(take_buf(BIOS7_SIZE)),
+    : arena_(fastmem_requested() ? HostArena::create(arena_bytes()) : nullptr), main_ram(take_buf(MAIN_RAM_SIZE_DSI)),
+      shared_wram(take_buf(SHARED_WRAM_SIZE)), arm7_wram(take_buf(ARM7_WRAM_SIZE)), itcm(take_buf(ITCM_SIZE)),
+      dtcm(take_buf(DTCM_SIZE)), vram(take_buf(VRAM_TOTAL)), palette(take_buf(PALETTE_SIZE)), oam(take_buf(OAM_SIZE)),
+      bios9(take_buf(BIOS9_SIZE)), bios7(take_buf(BIOS7_SIZE)),
       nwram{take_buf(NWRAM_BANK_SIZE), take_buf(NWRAM_BANK_SIZE), take_buf(NWRAM_BANK_SIZE)},
       bios9i(take_buf(BIOS9I_SIZE)), bios7i(take_buf(BIOS7I_SIZE)), nds_(nds) {
   if (fastmem_requested() && !arena_) std::fprintf(stderr, "fastmem: no shared-memory backing (memfd or tmpfs); off\n");
@@ -57,7 +58,8 @@ Bus::~Bus() {
 }
 
 void Bus::fastmem_flush() {
-  for (auto& v : views_) if (v && v->pending()) v->flush();
+  for (auto& v : views_)
+    if (v && v->pending()) v->flush();
 }
 
 bool Bus::fastmem_verify(u64 frame) {
@@ -65,7 +67,8 @@ bool Bus::fastmem_verify(u64 frame) {
     if (!views_[c]) continue;
     std::string why;
     if (!views_[c]->verify(&why)) {
-      std::fprintf(stderr, "fastmem verify: frame %llu arm%d: %s\n", static_cast<unsigned long long>(frame), c ? 7 : 9, why.c_str());
+      std::fprintf(stderr, "fastmem verify: frame %llu arm%d: %s\n", static_cast<unsigned long long>(frame), c ? 7 : 9,
+                   why.c_str());
       return false;
     }
   }
@@ -77,10 +80,13 @@ void Bus::fastmem_report() const {
   for (int c = 0; c < 2; ++c) {
     if (!views_[c]) continue;
     const GuestView::Stats& s = views_[c]->stats();
-    std::fprintf(stderr, "fastmem: arm%d view at %p (%s): %llu flushes, %llu mmap calls, %llu pages laid, %llu grants, %llu volatile refusals, %.1f ms flushing\n", c ? 7 : 9,
-                 static_cast<void*>(views_[c]->base()), arena_->kind(), static_cast<unsigned long long>(s.flushes),
-                 static_cast<unsigned long long>(s.map_calls), static_cast<unsigned long long>(s.pages_laid), static_cast<unsigned long long>(s.grants),
-                 static_cast<unsigned long long>(s.volatile_refusals), s.flush_ns / 1e6);
+    std::fprintf(
+        stderr,
+        "fastmem: arm%d view at %p (%s): %llu flushes, %llu mmap calls, %llu pages laid, %llu grants, %llu volatile refusals, %.1f ms flushing\n",
+        c ? 7 : 9, static_cast<void*>(views_[c]->base()), arena_->kind(), static_cast<unsigned long long>(s.flushes),
+        static_cast<unsigned long long>(s.map_calls), static_cast<unsigned long long>(s.pages_laid),
+        static_cast<unsigned long long>(s.grants), static_cast<unsigned long long>(s.volatile_refusals),
+        s.flush_ns / 1e6);
   }
 }
 
@@ -94,8 +100,8 @@ void Bus::reset() {
   std::memset(main_ram.get(), 0, main_ram_size());
   for (auto& b : nwram) std::memset(b.get(), 0, NWRAM_BANK_SIZE);
   std::memset(nwram_map_, 0, sizeof nwram_map_);
-  wram_key_[0] = wram_key_[1] = ~0u;   // next apply lays everything
-  timing_.clock9_shift = nds_.dsi ? 2 : 1;   // SCFG_CLK9 bit 0 set at DSi reset
+  wram_key_[0] = wram_key_[1] = ~0u;       // next apply lays everything
+  timing_.clock9_shift = nds_.dsi ? 2 : 1; // SCFG_CLK9 bit 0 set at DSi reset
   std::memset(shared_wram.get(), 0, SHARED_WRAM_SIZE);
   std::memset(arm7_wram.get(), 0, ARM7_WRAM_SIZE);
   std::memset(itcm.get(), 0, ITCM_SIZE);
@@ -105,7 +111,7 @@ void Bus::reset() {
   std::memset(oam.get(), 0, OAM_SIZE);
   timing_.reset();
   if (nds_.dsi) {
-    timing_.set_region9(0x0C000000, 0x0D000000, REGION_MAIN_RAM, 16, 8, 1);   // uncached main-RAM alias
+    timing_.set_region9(0x0C000000, 0x0D000000, REGION_MAIN_RAM, 16, 8, 1); // uncached main-RAM alias
     timing_.set_region7(0x0C000000, 0x0D000000, REGION_MAIN_RAM, 16, 8, 1);
   }
   vram_hosts_valid_ = false;
@@ -152,12 +158,13 @@ void Bus::update_gba_slot_timings() {
   gba_slot_applied_ = ex;
   prof::add(prof::C_BUS_GBA_TIMING, 1);
   static const bool debug = std::getenv("DS_DEBUG_TIMING") != nullptr;
-  if (debug) std::fprintf(stderr, "[timing] exmemcnt %04x frame %llu\n", nds_.io.exmemcnt, (unsigned long long)nds_.frame_count);
+  if (debug)
+    std::fprintf(stderr, "[timing] exmemcnt %04x frame %llu\n", nds_.io.exmemcnt, (unsigned long long)nds_.frame_count);
   static const int rom_n[4] = {10, 8, 6, 18};
   const int rn = rom_n[(ex >> 2) & 3], rs = (ex & 0x10) ? 4 : 6;
   static const int ram_n[4] = {10, 8, 6, 18};
   const int ran = ram_n[ex & 3];
-  if (ex & 0x80) {          // ARM7 owns the slot
+  if (ex & 0x80) { // ARM7 owns the slot
     timing_.set_region9(0x08000000, 0x0A000000, REGION_NONE, 32, 1, 1);
     timing_.set_region9(0x0A000000, 0x0B000000, REGION_NONE, 32, 1, 1);
     timing_.set_region7(0x08000000, 0x0A000000, REGION_GBA_ROM, 16, rn, rs);
@@ -195,7 +202,7 @@ void Bus::map_fixed_regions() {
   // ARM7 private WRAM (default; WRAMCNT may put shared WRAM in
   // 03000000-037FFFFF, handled in update_wram).
   map_page_aligned(pt7, 0x03800000, ARM7_WRAM_SIZE, arm7_wram.get(), RW, 0x04000000);
-  pt9.map_mmio(0x08000000, 0x02000000);   // GBA slot, no cart: open bus via slow path
+  pt9.map_mmio(0x08000000, 0x02000000); // GBA slot, no cart: open bus via slow path
   pt7.map_mmio(0x08000000, 0x02000000);
 }
 
@@ -274,9 +281,15 @@ void Bus::nwram_windows(int c, bool nwram, u32 win[3][2]) const {
   for (int bank = 0; bank < 3; ++bank) {
     const u32 v = d.mbk[c][5 + bank];
     u32 start, end;
-    if (bank == 0) { start = 0x03000000 + (((v >> 4) & 0xFF) << 16); end = 0x03000000 + (((v >> 20) & 0x1FF) << 16); }
-    else { start = 0x03000000 + (((v >> 3) & 0x1FF) << 15); end = 0x03000000 + (((v >> 19) & 0x3FF) << 15); }
-    win[bank][0] = start; win[bank][1] = std::min(end, 0x04000000u);   // cut at end of region
+    if (bank == 0) {
+      start = 0x03000000 + (((v >> 4) & 0xFF) << 16);
+      end = 0x03000000 + (((v >> 20) & 0x1FF) << 16);
+    } else {
+      start = 0x03000000 + (((v >> 3) & 0x1FF) << 15);
+      end = 0x03000000 + (((v >> 19) & 0x3FF) << 15);
+    }
+    win[bank][0] = start;
+    win[bank][1] = std::min(end, 0x04000000u); // cut at end of region
   }
 }
 
@@ -289,15 +302,20 @@ u8* Bus::wram_cell_host(int c, const u32 win[3][2], u32 a) const {
       if (a < win[bank][0] || a >= win[bank][1]) continue;
       const u32 v = d.mbk[c][5 + bank];
       u32 mask;
-      if (bank == 0) { static const u32 masks[4] = {0, 0, 1, 3}; mask = masks[(v >> 12) & 3]; }
-      else { static const u32 masks[4] = {0, 1, 3, 7}; mask = masks[(v >> 12) & 3]; }
+      if (bank == 0) {
+        static const u32 masks[4] = {0, 0, 1, 3};
+        mask = masks[(v >> 12) & 3];
+      } else {
+        static const u32 masks[4] = {0, 1, 3, 7};
+        mask = masks[(v >> 12) & 3];
+      }
       const u32 shift = bank == 0 ? 16 : 15;
-      u8* host = nwram_map_[bank][c][(a >> shift) & mask];   // unbacked: reads 0, writes dropped
+      u8* host = nwram_map_[bank][c][(a >> shift) & mask]; // unbacked: reads 0, writes dropped
       return host ? host + (a & ((1u << shift) - 1)) : nullptr;
     }
   }
   const u32 cnt = nds_.io.wramcnt & 3;
-  u8* const half0 = shared_wram.get(), * const half1 = shared_wram.get() + 0x4000;
+  u8 *const half0 = shared_wram.get(), *const half1 = shared_wram.get() + 0x4000;
   if (c == 0) {
     // ARM9: all 32K (0), second 16K (1), first (2), none (3).
     if (cnt == 0) return shared_wram.get() + (a & 0x7FFF);
@@ -315,15 +333,21 @@ void Bus::apply_wram(bool nwram, bool windows_only) {
   for (int c = 0; c < 2; ++c) {
     u32 win[3][2];
     nwram_windows(c, nwram, win);
-    const u32 key = (nds_.io.wramcnt & 3) | (nwram ? 4 : 0) | (nds_.dsi ? 8 : 0) | (nds_.dsi ? (nds_.io.dsi.scfg_ext[c] >> 25 & 1) << 4 : 0);
+    const u32 key = (nds_.io.wramcnt & 3) | (nwram ? 4 : 0) | (nds_.dsi ? 8 : 0) |
+                    (nds_.dsi ? (nds_.io.dsi.scfg_ext[c] >> 25 & 1) << 4 : 0);
     const bool partial = windows_only && wram_key_[c] == key;
     u32 lo = 0x03000000, hi = 0x04000000;
     if (partial) {
-      lo = 0x04000000; hi = 0x03000000;
+      lo = 0x04000000;
+      hi = 0x03000000;
       for (const auto* w : {win, wram_win_[c]})
         for (int bank = 0; bank < 3; ++bank)
-          if (w[bank][0] < w[bank][1]) { lo = std::min(lo, w[bank][0]); hi = std::max(hi, w[bank][1]); }
-      lo &= ~(CELL - 1); hi = (hi + CELL - 1) & ~(CELL - 1);
+          if (w[bank][0] < w[bank][1]) {
+            lo = std::min(lo, w[bank][0]);
+            hi = std::max(hi, w[bank][1]);
+          }
+      lo &= ~(CELL - 1);
+      hi = (hi + CELL - 1) & ~(CELL - 1);
     }
     PageTable& pt = nds_.cpu(c ? Cpu::ARM7 : Cpu::ARM9).page_table;
     u8** cells = wram_cells_[c];
@@ -341,9 +365,7 @@ void Bus::apply_wram(bool nwram, bool windows_only) {
   }
 }
 
-void Bus::update_wram() {
-  apply_wram(false, false);
-}
+void Bus::update_wram() { apply_wram(false, false); }
 
 // Each MBK1-5 byte assigns its slot to a CPU and position; a CPU's window
 // (MBK6-8) shows the slots at positions (addr >> 16|15) & mask, A over B
@@ -351,13 +373,20 @@ void Bus::update_wram() {
 // both written by a store there; here the one that reads wins.
 void Bus::update_nwram(bool windows_only) {
   // Watched page is re-laid with the rest: take it out again after.
-  struct Retrap { Bus& b; ~Retrap() { if (!watch_on) return; for (int c = 0; c < 2; ++c) if (watch_host[c]) b.nds_.cpu(c ? Cpu::ARM7 : Cpu::ARM9).page_table.map_mmio(watch_addr & ~0x7FFu, 0x800); } } retrap{*this};
+  struct Retrap {
+    Bus& b;
+    ~Retrap() {
+      if (!watch_on) return;
+      for (int c = 0; c < 2; ++c)
+        if (watch_host[c]) b.nds_.cpu(c ? Cpu::ARM7 : Cpu::ARM9).page_table.map_mmio(watch_addr & ~0x7FFu, 0x800);
+    }
+  } retrap{*this};
   std::memset(nwram_map_, 0, sizeof nwram_map_);
   if (nds_.dsi) {
     const io::DsiIo& d = nds_.io.dsi;
     if (getenv("DS_DEBUG_MBK"))
-      std::fprintf(stderr, "[nwram] rebuild scfg_ext %08x/%08x (bit25 a9=%d a7=%d) t=%llu\n",
-                   d.scfg_ext[0], d.scfg_ext[1], (d.scfg_ext[0] >> 25) & 1, (d.scfg_ext[1] >> 25) & 1,
+      std::fprintf(stderr, "[nwram] rebuild scfg_ext %08x/%08x (bit25 a9=%d a7=%d) t=%llu\n", d.scfg_ext[0],
+                   d.scfg_ext[1], (d.scfg_ext[0] >> 25) & 1, (d.scfg_ext[1] >> 25) & 1,
                    (unsigned long long)nds_.sched.now());
     for (int part = 3; part >= 0; --part) {
       const u8 v = static_cast<u8>((d.mbk[0][0] >> (part * 8)) & 0xFD);
@@ -404,9 +433,13 @@ void Bus::update_vram() {
   const u32 moved_2d =
       ((view_moved(next.abg, vram_map_.abg) || view_moved(next.aobj, vram_map_.aobj) ||
         view_moved(next.abg_extpal, vram_map_.abg_extpal) || view_moved(next.aobj_extpal, vram_map_.aobj_extpal) ||
-        next.lcdc_mask != vram_map_.lcdc_mask) ? 1u : 0u) |
+        next.lcdc_mask != vram_map_.lcdc_mask)
+           ? 1u
+           : 0u) |
       ((view_moved(next.bbg, vram_map_.bbg) || view_moved(next.bobj, vram_map_.bobj) ||
-        view_moved(next.bbg_extpal, vram_map_.bbg_extpal) || view_moved(next.bobj_extpal, vram_map_.bobj_extpal)) ? 2u : 0u);
+        view_moved(next.bbg_extpal, vram_map_.bbg_extpal) || view_moved(next.bobj_extpal, vram_map_.bobj_extpal))
+           ? 2u
+           : 0u);
   const bool trapped = nds_.gpu.vram_remap_begin(moved_2d, &next);
   vram_map_ = next;
   // Whole 16 MB region described as one host pointer per page, applied as a
@@ -425,43 +458,65 @@ void Bus::update_vram() {
       for (u32 b = 0; b < v.blocks(); ++b)
         if (v.ptr[b]) set_pages(hosts, mirror + b * gpu::VramView::BLOCK, gpu::VramView::BLOCK, v.ptr[b]);
   };
-  map_view(h9, vram_map_.abg,  0x06000000, 0x06200000);
-  map_view(h9, vram_map_.bbg,  0x06200000, 0x06400000);
+  map_view(h9, vram_map_.abg, 0x06000000, 0x06200000);
+  map_view(h9, vram_map_.bbg, 0x06200000, 0x06400000);
   map_view(h9, vram_map_.aobj, 0x06400000, 0x06600000);
   map_view(h9, vram_map_.bobj, 0x06600000, 0x06800000);
   map_view(h7, vram_map_.arm7, 0x06000000, 0x07000000);
   static const u32 lcdc_base[9] = {0x00000, 0x20000, 0x40000, 0x60000, 0x80000, 0x90000, 0x94000, 0x98000, 0xA0000};
   for (int i = 0; i < 9; ++i) {
     if (!(vram_map_.lcdc_mask & (1u << i))) continue;
-    for (u32 mirror = 0x06800000; mirror < 0x07000000; mirror += 0x100000) set_pages(h9, mirror + lcdc_base[i], VRAM_BANK_SIZES[i], banks[i]);
+    for (u32 mirror = 0x06800000; mirror < 0x07000000; mirror += 0x100000)
+      set_pages(h9, mirror + lcdc_base[i], VRAM_BANK_SIZES[i], banks[i]);
   }
   // Only runs of pages whose host changed go through the page table.
   auto apply = [&](PageTable& pt, u8** cur, u8** prev) {
-    constexpr u32 CHUNK = 256;   // entries (512 KB of guest space)
-    u32 run = 0; bool in_run = false;
+    constexpr u32 CHUNK = 256; // entries (512 KB of guest space)
+    u32 run = 0;
+    bool in_run = false;
     for (u32 i = 0; i <= VRAM_PAGES; i += CHUNK) {
       const bool d = i < VRAM_PAGES && std::memcmp(cur + i, prev + i, CHUNK * sizeof(u8*)) != 0;
-      if (d) { if (!in_run) { run = i; in_run = true; } }
-      else if (in_run) { pt.remap(0x06000000 + (run << PAGE_SHIFT), (i - run) << PAGE_SHIFT, cur + run, RW); in_run = false; }
+      if (d) {
+        if (!in_run) {
+          run = i;
+          in_run = true;
+        }
+      } else if (in_run) {
+        pt.remap(0x06000000 + (run << PAGE_SHIFT), (i - run) << PAGE_SHIFT, cur + run, RW);
+        in_run = false;
+      }
     }
   };
   for (u32 w = 0; w < VRAM_PAGES / 64; ++w) {
     u64 m = 0;
-    for (u32 b = 0; b < 64; ++b) if (h9[w * 64 + b]) m |= u64{1} << b;
+    for (u32 b = 0; b < 64; ++b)
+      if (h9[w * 64 + b]) m |= u64{1} << b;
     vram_mapped9_[w] = m;
   }
-  if (!vram_hosts_valid_) { pt9.remap(0x06000000, 0x01000000, h9, RW); pt7.remap(0x06000000, 0x01000000, h7, RW); vram_hosts_valid_ = true; }
-  else { apply(pt9, h9, vram_hosts_prev_[0].get()); apply(pt7, h7, vram_hosts_prev_[1].get()); }
+  if (!vram_hosts_valid_) {
+    pt9.remap(0x06000000, 0x01000000, h9, RW);
+    pt7.remap(0x06000000, 0x01000000, h7, RW);
+    vram_hosts_valid_ = true;
+  } else {
+    apply(pt9, h9, vram_hosts_prev_[0].get());
+    apply(pt7, h7, vram_hosts_prev_[1].get());
+  }
   std::swap(vram_hosts_[0], vram_hosts_prev_[0]);
   std::swap(vram_hosts_[1], vram_hosts_prev_[1]);
   nds_.gpu.vram_remap_end(trapped);
-  if (watch_on && (watch_addr >> 24) == 0x06) { pt9.map_mmio(watch_addr & ~0x7FFu, 0x800); pt7.map_mmio(watch_addr & ~0x7FFu, 0x800); }
+  if (watch_on && (watch_addr >> 24) == 0x06) {
+    pt9.map_mmio(watch_addr & ~0x7FFu, 0x800);
+    pt7.map_mmio(watch_addr & ~0x7FFu, 0x800);
+  }
 }
 
 // Slow-path VRAM access for blocks with overlapping banks (and LCDC gaps).
 static const gpu::VramView* vram_view_for(const gpu::VramMap& m, Cpu cpu, u32 addr, int& lcdc_bank, u32& off) {
   lcdc_bank = -1;
-  if (cpu == Cpu::ARM7) { off = addr; return &m.arm7; }
+  if (cpu == Cpu::ARM7) {
+    off = addr;
+    return &m.arm7;
+  }
   switch ((addr >> 21) & 7) {
   case 0: off = addr; return &m.abg;
   case 1: off = addr; return &m.bbg;
@@ -471,7 +526,11 @@ static const gpu::VramView* vram_view_for(const gpu::VramMap& m, Cpu cpu, u32 ad
     const u32 o = addr & 0xFFFFF;
     static const u32 base[9] = {0x00000, 0x20000, 0x40000, 0x60000, 0x80000, 0x90000, 0x94000, 0x98000, 0xA0000};
     for (int i = 0; i < 9; ++i)
-      if (o >= base[i] && o < base[i] + Bus::VRAM_BANK_SIZES[i]) { lcdc_bank = i; off = o - base[i]; return nullptr; }
+      if (o >= base[i] && o < base[i] + Bus::VRAM_BANK_SIZES[i]) {
+        lcdc_bank = i;
+        off = o - base[i];
+        return nullptr;
+      }
     return nullptr;
   }
   }
@@ -480,19 +539,31 @@ static const gpu::VramView* vram_view_for(const gpu::VramMap& m, Cpu cpu, u32 ad
 u32 Bus::vram_read(Cpu cpu, u32 addr, u32 width) {
   if (addr >= 0x06800000 && nds_.gpu.lcdc_read_trapped()) nds_.gpu.lcdc_read_hit(addr);
   if (bank_read_trapped(addr)) nds_.gpu.capture_read_hit();
-  int bank; u32 off;
+  int bank;
+  u32 off;
   const gpu::VramView* v = vram_view_for(vram_map_, cpu, addr, bank, off);
-  if (v) return width == 8 ? vram_map_.read8(*v, off) : width == 16 ? vram_map_.read16(*v, off) : vram_map_.read32(*v, off);
+  if (v)
+    return width == 8 ? vram_map_.read8(*v, off) : width == 16 ? vram_map_.read16(*v, off) : vram_map_.read32(*v, off);
   if (bank < 0 || !(vram_map_.lcdc_mask & (1u << bank))) return 0;
-  u32 r = 0; std::memcpy(&r, vram_bank(bank) + off, width / 8); return r;
+  u32 r = 0;
+  std::memcpy(&r, vram_bank(bank) + off, width / 8);
+  return r;
 }
 
 void Bus::vram_write(Cpu cpu, u32 addr, u32 width, u32 val) {
   if (watch_on && addr >= (watch_addr & ~0x7FFu) && addr < (watch_addr & ~0x7FFu) + 0x800 && watch_hits++ < 1000000)
-    std::fprintf(stderr, "[watch] cpu%d vram write%u %08x = %08x pc %08x frame %llu line %u vramcnt_h %02x\n", cpu == Cpu::ARM9 ? 9 : 7, width, addr, val, nds_.cpu(cpu).hot.regs[15], (unsigned long long)nds_.frame_count, nds_.gpu.line(), nds_.io.vramcnt[7]);
-  int bank; u32 off;
+    std::fprintf(stderr, "[watch] cpu%d vram write%u %08x = %08x pc %08x frame %llu line %u vramcnt_h %02x\n",
+                 cpu == Cpu::ARM9 ? 9 : 7, width, addr, val, nds_.cpu(cpu).hot.regs[15],
+                 (unsigned long long)nds_.frame_count, nds_.gpu.line(), nds_.io.vramcnt[7]);
+  int bank;
+  u32 off;
   const gpu::VramView* v = vram_view_for(vram_map_, cpu, addr, bank, off);
-  if (v) { if (width == 8) vram_map_.write8(*v, off, val); else if (width == 16) vram_map_.write16(*v, off, val); else vram_map_.write32(*v, off, val); return; }
+  if (v) {
+    if (width == 8) vram_map_.write8(*v, off, val);
+    else if (width == 16) vram_map_.write16(*v, off, val);
+    else vram_map_.write32(*v, off, val);
+    return;
+  }
   if (bank < 0 || !(vram_map_.lcdc_mask & (1u << bank))) return;
   std::memcpy(vram_bank(bank) + off, &val, width / 8);
 }
@@ -507,13 +578,14 @@ void Bus::update_tcm(CpuContext& cpu, bool force) {
   PageTable& pt = cpu.page_table;
   const u32 RW = PAGE_READABLE | PAGE_WRITABLE, RO = PAGE_READABLE;
   if (force) pt.unmap(0x00000000, 0x10000000);
-  vram_hosts_valid_ = false;   // unmaps above may have touched VRAM pages
+  vram_hosts_valid_ = false; // unmaps above may have touched VRAM pages
   if (tcm_prev_itcm_) pt.unmap(0, std::min(tcm_prev_itcm_, 0x02000000u));
   if (tcm_prev_dtcm_size_) pt.unmap(tcm_prev_dtcm_base_, tcm_prev_dtcm_size_);
-  tcm_prev_itcm_ = 0; tcm_prev_dtcm_size_ = 0;
+  tcm_prev_itcm_ = 0;
+  tcm_prev_dtcm_size_ = 0;
   map_main_ram(pt);
   pt.map_mmio(0x04000000, 0x01000000);
-  map_page_aligned(pt, 0x05000000, PALETTE_SIZE, palette.get(), RO, 0x06000000);   // stores journaled
+  map_page_aligned(pt, 0x05000000, PALETTE_SIZE, palette.get(), RO, 0x06000000); // stores journaled
   map_page_aligned(pt, 0x07000000, OAM_SIZE, oam.get(), RO, 0x08000000);
   pt.map_mmio(0x08000000, 0x02000000);
   if (force) update_bios_map();
@@ -524,7 +596,10 @@ void Bus::update_tcm(CpuContext& cpu, bool force) {
   else {
     auto window = [&](u32 base, u32 mask, u32 itcm) {
       if (itcm) timing_.update_cpu9(cpu, 0, std::min(itcm, 0x10000000u), false);
-      if (mask) { const u32 end = base + (~mask + 1); timing_.update_cpu9(cpu, base, end < base ? 0xFFFFFFFF : end, false); }   // ~mask + 1 = window size
+      if (mask) {
+        const u32 end = base + (~mask + 1);
+        timing_.update_cpu9(cpu, base, end < base ? 0xFFFFFFFF : end, false);
+      } // ~mask + 1 = window size
     };
     window(old_dbase, old_dmask, old_itcm);
     window(cpu.dtcm_base, cpu.dtcm_mask, cpu.itcm_size);
@@ -532,16 +607,17 @@ void Bus::update_tcm(CpuContext& cpu, bool force) {
   }
   if (watch_on) pt.map_mmio(watch_addr & ~0x7FFu, 0x800);
   const u32 ctl = cpu.cp15_control;
-  if (ctl & (1u << 16)) {                                       // DTCM enabled
+  if (ctl & (1u << 16)) { // DTCM enabled
     const u32 base = cpu.cp15_dtcm & 0xFFFFF000;
     u32 size = 512u << ((cpu.cp15_dtcm >> 1) & 0x1F);
     if (size < DTCM_SIZE) size = DTCM_SIZE;
     for (u32 off = 0; off < size; off += DTCM_SIZE) {
-      pt.map(base + off, DTCM_SIZE, dtcm.get(), RW);   // load mode (write-only) approximated as RW
+      pt.map(base + off, DTCM_SIZE, dtcm.get(), RW); // load mode (write-only) approximated as RW
     }
-    tcm_prev_dtcm_base_ = base; tcm_prev_dtcm_size_ = size;
+    tcm_prev_dtcm_base_ = base;
+    tcm_prev_dtcm_size_ = size;
   }
-  if (ctl & (1u << 18)) {                                       // ITCM enabled (base fixed at 0)
+  if (ctl & (1u << 18)) { // ITCM enabled (base fixed at 0)
     u32 size = 512u << ((cpu.cp15_itcm >> 1) & 0x1F);
     if (size < ITCM_SIZE) size = ITCM_SIZE;
     if (size > 0x02000000) size = 0x02000000;
@@ -554,14 +630,17 @@ void Bus::update_tcm(CpuContext& cpu, bool force) {
 
 // ---- slow paths -------------------------------------------------------------
 void Bus::enable_watch(u32 addr) {
-  watch_addr = addr; watch_on = true;
+  watch_addr = addr;
+  watch_on = true;
   // Host bytes of the page are recorded per CPU before it's taken out of the
   // tables; the slow path serves them below. A later remap of that page ends
   // the watch.
   for (int c = 0; c < 2; ++c) {
     PageTable& pt = nds_.cpu(c ? Cpu::ARM7 : Cpu::ARM9).page_table;
     u8* p = pt.read_ptr(addr & ~0x7FFu);
-    watch_host[c] = p ? p : ((addr & 0xFF000000) == 0x02000000 ? main_ram.get() + (addr & (main_ram_size() - 1) & ~0x7FFu) : nullptr);
+    watch_host[c] =
+        p ? p
+          : ((addr & 0xFF000000) == 0x02000000 ? main_ram.get() + (addr & (main_ram_size() - 1) & ~0x7FFu) : nullptr);
     if (watch_host[c]) pt.map_mmio(addr & ~0x7FFu, 0x800);
   }
 }
@@ -570,9 +649,12 @@ bool Bus::watch_active() { return watch_on; }
 
 u32 Bus::io_read(Cpu cpu, u32 addr, u32 width) {
   if (watch_on && (addr & ~0x7FFu) == (watch_addr & ~0x7FFu) && watch_host[cpu == Cpu::ARM9 ? 0 : 1]) {
-    u32 v = 0; std::memcpy(&v, watch_host[cpu == Cpu::ARM9 ? 0 : 1] + (addr & 0x7FF), width / 8);
+    u32 v = 0;
+    std::memcpy(&v, watch_host[cpu == Cpu::ARM9 ? 0 : 1] + (addr & 0x7FF), width / 8);
     if (addr < watch_addr + 4 && addr + width / 8 > watch_addr)
-      std::fprintf(stderr, "[watch] cpu%d read%u %08x = %08x pc %08x t %llu frame %llu line %u\n", cpu == Cpu::ARM9 ? 9 : 7, width, addr, v, nds_.cpu(cpu).hot.regs[15], (unsigned long long)nds_.sched.now(), (unsigned long long)nds_.frame_count, nds_.gpu.line());
+      std::fprintf(stderr, "[watch] cpu%d read%u %08x = %08x pc %08x t %llu frame %llu line %u\n",
+                   cpu == Cpu::ARM9 ? 9 : 7, width, addr, v, nds_.cpu(cpu).hot.regs[15],
+                   (unsigned long long)nds_.sched.now(), (unsigned long long)nds_.frame_count, nds_.gpu.line());
     return v;
   }
   if ((addr & 0xFF000000) == 0x04000000) return nds_.io.read(cpu, addr, width);
@@ -581,12 +663,14 @@ u32 Bus::io_read(Cpu cpu, u32 addr, u32 width) {
     const u32 ones = width == 32 ? 0xFFFFFFFFu : width == 16 ? 0xFFFFu : 0xFFu;
     if (cpu == Cpu::ARM9) return ones;
     const u16 scfg_bios = nds_.io.dsi.scfg_bios;
-    if (scfg_bios & 0x0200) return ones;                     // DS BIOS selected: mapped directly, never here
+    if (scfg_bios & 0x0200) return ones; // DS BIOS selected: mapped directly, never here
     const u32 pc = nds_.cpu(cpu).hot.regs[15], prot = nds_.io.arm7_bios_prot;
     if (addr >= 0x8000 && (scfg_bios & 0x0100)) return ones;
     if (pc >= 0x10000) return ones;
     if (addr < prot && pc >= prot) return ones;
-    u32 v = 0; std::memcpy(&v, bios7i.get() + (addr & 0xFFFF & ~(width / 8 - 1)), width / 8); return v;
+    u32 v = 0;
+    std::memcpy(&v, bios7i.get() + (addr & 0xFFFF & ~(width / 8 - 1)), width / 8);
+    return v;
   }
   if ((addr & 0xFF000000) == 0x06000000) return vram_read(cpu, addr, width);
   if ((addr & 0xFF000000) == 0x08000000 || (addr & 0xFF000000) == 0x09000000) {
@@ -599,15 +683,22 @@ u32 Bus::io_read(Cpu cpu, u32 addr, u32 width) {
 void Bus::io_write(Cpu cpu, u32 addr, u32 width, u32 v) {
   if (watch_on && (addr & ~0x7FFu) == (watch_addr & ~0x7FFu) && watch_host[cpu == Cpu::ARM9 ? 0 : 1]) {
     if (addr < watch_addr + 4 && addr + width / 8 > watch_addr)
-      std::fprintf(stderr, "[watch] cpu%d write%u %08x = %08x pc %08x t %llu frame %llu line %u\n", cpu == Cpu::ARM9 ? 9 : 7, width, addr, v, nds_.cpu(cpu).hot.regs[15], (unsigned long long)nds_.sched.now(), (unsigned long long)nds_.frame_count, nds_.gpu.line());
-    std::memcpy(watch_host[cpu == Cpu::ARM9 ? 0 : 1] + (addr & 0x7FF), &v, width / 8); return;
+      std::fprintf(stderr, "[watch] cpu%d write%u %08x = %08x pc %08x t %llu frame %llu line %u\n",
+                   cpu == Cpu::ARM9 ? 9 : 7, width, addr, v, nds_.cpu(cpu).hot.regs[15],
+                   (unsigned long long)nds_.sched.now(), (unsigned long long)nds_.frame_count, nds_.gpu.line());
+    std::memcpy(watch_host[cpu == Cpu::ARM9 ? 0 : 1] + (addr & 0x7FF), &v, width / 8);
+    return;
   }
   switch (addr >> 24) {
   case 0x04:
     // ARM9 word stores to GXFIFO/direct command ports: straight to the
     // geometry engine instead of through io_unowned's slower path.
-    if (width == 32 && cpu == Cpu::ARM9 && addr - 0x04000400 < 0x1CC && !io::Io::census_on()) { nds_.gpu3d.gx_port_write(addr, v); return; }
-    nds_.io.write(cpu, addr, width, v); return;
+    if (width == 32 && cpu == Cpu::ARM9 && addr - 0x04000400 < 0x1CC && !io::Io::census_on()) {
+      nds_.gpu3d.gx_port_write(addr, v);
+      return;
+    }
+    nds_.io.write(cpu, addr, width, v);
+    return;
   case 0x05: nds_.gpu.palette_store(cpu, addr, width, v); return;
   case 0x07: nds_.gpu.oam_store(cpu, addr, width, v); return;
   case 0x06: {
@@ -615,7 +706,10 @@ void Bus::io_write(Cpu cpu, u32 addr, u32 width, u32 v) {
     // while the lazy-2D write trap holds them.
     nds_.gpu.vram_store_trap(cpu, addr);
     const Entry e = nds_.cpu(cpu).page_table.entry(addr);
-    if ((e & TAG_CODE) && (e & BASE_MASK)) { store_code(reinterpret_cast<u8*>(((e & BASE_MASK) << 2) + addr), &v, width / 8); return; }
+    if ((e & TAG_CODE) && (e & BASE_MASK)) {
+      store_code(reinterpret_cast<u8*>(((e & BASE_MASK) << 2) + addr), &v, width / 8);
+      return;
+    }
     vram_write(cpu, addr, width, v);
     return;
   }
@@ -630,9 +724,15 @@ void Bus::set_vram_trap(bool on, bool lcdc, u32 windows) {
     const u32 first = (addr - 0x06000000) >> PAGE_SHIFT;
     pt9.set_write_trap_bits(addr >> PAGE_SHIFT, size >> PAGE_SHIFT, vram_mapped9_ + first / 64, on);
   };
-  if (windows & 1) { range(0x06000000, 0x00200000); range(0x06400000, 0x00200000); }   // BG-A, OBJ-A
-  if (windows & 2) { range(0x06200000, 0x00200000); range(0x06600000, 0x00200000); }   // BG-B, OBJ-B
-  if (lcdc) range(0x06800000, 0x00800000);    // LCDC and its 1 MB mirrors
+  if (windows & 1) {
+    range(0x06000000, 0x00200000);
+    range(0x06400000, 0x00200000);
+  } // BG-A, OBJ-A
+  if (windows & 2) {
+    range(0x06200000, 0x00200000);
+    range(0x06600000, 0x00200000);
+  } // BG-B, OBJ-B
+  if (lcdc) range(0x06800000, 0x00800000); // LCDC and its 1 MB mirrors
 }
 
 // A trapped entry keeps only its tags: read_ptr/write_ptr see no base and
@@ -648,8 +748,10 @@ void Bus::set_lcdc_read_trap(int bank, bool on) {
     const u32 first = (mirror + lcdc_base[bank]) >> PAGE_SHIFT;
     for (u32 p = 0; p < pages; ++p, ++k) {
       Entry& e = t[first + p];
-      if (on) { lcdc_read_save_[k] = e; if (e & BASE_MASK) e = TAG_SPECIAL | (e & TAG_CODE); }
-      else if (!(e & BASE_MASK)) e = lcdc_read_save_[k] | (e & TAG_CODE);
+      if (on) {
+        lcdc_read_save_[k] = e;
+        if (e & BASE_MASK) e = TAG_SPECIAL | (e & TAG_CODE);
+      } else if (!(e & BASE_MASK)) e = lcdc_read_save_[k] | (e & TAG_CODE);
     }
   }
 }
@@ -663,16 +765,18 @@ void Bus::set_bank_read_trap(int bank, bool on) {
     // the bank) or with others (an OR-read block, no host pointer).
     const u8* const lo = vram_bank(bank);
     const u8* const hi = lo + VRAM_BANK_SIZES[bank];
-    u8* const* hosts = vram_hosts_prev_[0].get();   // what the ARM9 table holds now
+    u8* const* hosts = vram_hosts_prev_[0].get(); // what the ARM9 table holds now
     bank_trap_save_.clear();
     std::memset(bank_trap_bits_, 0, sizeof bank_trap_bits_);
     for (u32 p = 0; p < VRAM_PAGES; ++p) {
       bool backed = hosts[p] && hosts[p] >= lo && hosts[p] < hi;
       if (!backed && !hosts[p]) {
-        int b; u32 off;
+        int b;
+        u32 off;
         const u32 addr = 0x06000000 + (p << PAGE_SHIFT);
-        if (const gpu::VramView* v = vram_view_for(vram_map_, Cpu::ARM9, addr, b, off)) backed = (v->mask[(off & v->addr_mask()) / gpu::VramView::BLOCK] >> bank) & 1;
-        else if (b == bank) backed = true;   // its LCDC slot, unmapped
+        if (const gpu::VramView* v = vram_view_for(vram_map_, Cpu::ARM9, addr, b, off))
+          backed = (v->mask[(off & v->addr_mask()) / gpu::VramView::BLOCK] >> bank) & 1;
+        else if (b == bank) backed = true; // its LCDC slot, unmapped
       }
       if (!backed) continue;
       Entry& e = t[(0x06000000 >> PAGE_SHIFT) + p];
@@ -699,44 +803,67 @@ u8 Bus::dma_read8(Cpu cpu, u32 addr) {
 }
 u16 Bus::dma_read16(Cpu cpu, u32 addr) {
   addr &= ~1u;
-  if (u8* p = nds_.cpu(cpu).page_table.read_ptr(addr)) { u16 v; std::memcpy(&v, p, 2); return v; }
+  if (u8* p = nds_.cpu(cpu).page_table.read_ptr(addr)) {
+    u16 v;
+    std::memcpy(&v, p, 2);
+    return v;
+  }
   return static_cast<u16>(io_read(cpu, addr, 16));
 }
 u32 Bus::dma_read32(Cpu cpu, u32 addr) {
   addr &= ~3u;
-  if (u8* p = nds_.cpu(cpu).page_table.read_ptr(addr)) { u32 v; std::memcpy(&v, p, 4); return v; }
+  if (u8* p = nds_.cpu(cpu).page_table.read_ptr(addr)) {
+    u32 v;
+    std::memcpy(&v, p, 4);
+    return v;
+  }
   return io_read(cpu, addr, 32);
 }
 void Bus::dma_write8(Cpu cpu, u32 addr, u8 v) {
   bool code = false;
-  if (u8* p = nds_.cpu(cpu).page_table.write_ptr(addr, &code)) { if (code) store_code(p, &v, 1); else *p = v; return; }
+  if (u8* p = nds_.cpu(cpu).page_table.write_ptr(addr, &code)) {
+    if (code) store_code(p, &v, 1);
+    else *p = v;
+    return;
+  }
   io_write(cpu, addr, 8, v);
 }
 void Bus::dma_write16(Cpu cpu, u32 addr, u16 v) {
-  addr &= ~1u; bool code = false;
-  if (u8* p = nds_.cpu(cpu).page_table.write_ptr(addr, &code)) { if (code) store_code(p, &v, 2); else std::memcpy(p, &v, 2); return; }
+  addr &= ~1u;
+  bool code = false;
+  if (u8* p = nds_.cpu(cpu).page_table.write_ptr(addr, &code)) {
+    if (code) store_code(p, &v, 2);
+    else std::memcpy(p, &v, 2);
+    return;
+  }
   io_write(cpu, addr, 16, v);
 }
 void Bus::dma_write32(Cpu cpu, u32 addr, u32 v) {
-  addr &= ~3u; bool code = false;
-  if (u8* p = nds_.cpu(cpu).page_table.write_ptr(addr, &code)) { if (code) store_code(p, &v, 4); else std::memcpy(p, &v, 4); return; }
+  addr &= ~3u;
+  bool code = false;
+  if (u8* p = nds_.cpu(cpu).page_table.write_ptr(addr, &code)) {
+    if (code) store_code(p, &v, 4);
+    else std::memcpy(p, &v, 4);
+    return;
+  }
   io_write(cpu, addr, 32, v);
 }
 
-u8  Bus::read8 (Cpu cpu, u32 addr) { return static_cast<u8>(io_read(cpu, addr, 8)); }
+u8 Bus::read8(Cpu cpu, u32 addr) { return static_cast<u8>(io_read(cpu, addr, 8)); }
 u16 Bus::read16(Cpu cpu, u32 addr) { return static_cast<u16>(io_read(cpu, addr, 16)); }
 u32 Bus::read32(Cpu cpu, u32 addr) { return io_read(cpu, addr, 32); }
-void Bus::write8 (Cpu cpu, u32 addr, u8  v) { io_write(cpu, addr, 8, v); }
+void Bus::write8(Cpu cpu, u32 addr, u8 v) { io_write(cpu, addr, 8, v); }
 void Bus::write16(Cpu cpu, u32 addr, u16 v) { io_write(cpu, addr, 16, v); }
 void Bus::write32(Cpu cpu, u32 addr, u32 v) { io_write(cpu, addr, 32, v); }
 u32 Bus::fetch(Cpu cpu, u32 addr, u32 width) {
   if (nds_.dsi && cpu == Cpu::ARM7 && addr < 0x00010000 && !(nds_.io.dsi.scfg_bios & 0x0200)) {
     if (addr >= 0x8000 && (nds_.io.dsi.scfg_bios & 0x0100)) return width == 32 ? 0xFFFFFFFFu : 0xFFFFu;
-    u32 v = 0; std::memcpy(&v, bios7i.get() + (addr & 0xFFFF & ~(width / 8 - 1)), width / 8); return v;
+    u32 v = 0;
+    std::memcpy(&v, bios7i.get() + (addr & 0xFFFF & ~(width / 8 - 1)), width / 8);
+    return v;
   }
   return io_read(cpu, addr, width);
 }
-
 
 template <class S> void Bus::sync_state(S& s) {
   s.begin("MEM ");
@@ -748,7 +875,8 @@ template <class S> void Bus::sync_state(S& s) {
   s.blob(vram.get(), VRAM_TOTAL);
   s.blob(palette.get(), PALETTE_SIZE);
   s.blob(oam.get(), OAM_SIZE);
-  if (nds_.dsi) for (auto& b : nwram) s.blob(b.get(), NWRAM_BANK_SIZE);
+  if (nds_.dsi)
+    for (auto& b : nwram) s.blob(b.get(), NWRAM_BANK_SIZE);
   s.end();
 }
 template void Bus::sync_state<state::Writer>(state::Writer&);
@@ -761,8 +889,8 @@ void Bus::relink() {
   a9.timing7 = a7.timing7 = timing_.cpu7();
   a9.cost7 = a7.cost7 = timing_.cost7();
   cp15_update_pu_map(a9);
-  update_main_ram();            // rebuilds TCM/BIOS/NWRAM/VRAM maps too
-  gba_slot_applied_ = -1;        // loaded EXMEMCNT is not what the tables hold
+  update_main_ram();      // rebuilds TCM/BIOS/NWRAM/VRAM maps too
+  gba_slot_applied_ = -1; // loaded EXMEMCNT is not what the tables hold
   update_gba_slot_timings();
   if (nds_.dsi) {
     set_clock9_shift((nds_.io.dsi.scfg_clock9 & 1) ? 2 : 1);

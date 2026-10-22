@@ -21,7 +21,8 @@ import scraper
 
 
 class Response(io.BytesIO):
-    def geturl(self): return scraper.API + "ssuserInfos.php"
+    def geturl(self):
+        return scraper.API + "ssuserInfos.php"
 
 
 class ScraperTests(unittest.TestCase):
@@ -29,13 +30,22 @@ class ScraperTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.auth = dict(devid="app-id", devpassword="APP-SECRET", ssid="player", sspassword="USER-SECRET", output="json", softname="RGDS")
+        self.auth = dict(
+            devid="app-id",
+            devpassword="APP-SECRET",
+            ssid="player",
+            sspassword="USER-SECRET",
+            output="json",
+            softname="RGDS"
+        )
 
     def test_login_separates_player_account_from_project_credentials(self):
         calls = []
+
         def opener(request, **kwargs):
             calls.append(urllib.parse.parse_qs(urllib.parse.urlsplit(request.full_url).query))
             return Response(json.dumps({"response": {"ssuser": {"id": "12", "maxrequestspermin": "10"}}}).encode())
+
         client = scraper.Client(self.auth, opener)
         self.assertEqual(client.login()["id"], "12")
         self.assertEqual(calls[0]["devid"], ["app-id"])
@@ -45,6 +55,7 @@ class ScraperTests(unittest.TestCase):
     def test_request_errors_never_include_credential_bearing_url(self):
         def opener(request, **kwargs):
             raise urllib.error.HTTPError(request.full_url, 403, "secret", None, None)
+
         with self.assertRaises(scraper.ScraperError) as caught:
             scraper.Client(self.auth, opener).login()
         self.assertNotIn("APP-SECRET", str(caught.exception))
@@ -61,7 +72,8 @@ class ScraperTests(unittest.TestCase):
         raw = self.root / "A game.nds"
         raw.write_bytes(content)
         archive = self.root / "A game.zip"
-        with zipfile.ZipFile(archive, "w") as output: output.writestr("folder/A game.nds", content)
+        with zipfile.ZipFile(archive, "w") as output:
+            output.writestr("folder/A game.nds", content)
         identity = scraper.rom_identity(raw)
         self.assertEqual(identity, scraper.rom_identity(archive))
         self.assertEqual(identity["md5"], hashlib.md5(content).hexdigest())
@@ -79,7 +91,8 @@ class ScraperTests(unittest.TestCase):
         rom = self.root / "game.nds"
         rom.write_bytes(b"game")
         art = self.root / "data/library" / library.game_key(rom) / "box.bmp"
-        art.parent.mkdir(parents=True); art.write_bytes(b"existing artwork")
+        art.parent.mkdir(parents=True)
+        art.write_bytes(b"existing artwork")
         with patch.object(scraper.Client, "game") as lookup:
             scraper.scrape(self.root / "data", scraper.Client(self.auth), [rom])
             lookup.assert_not_called()
@@ -110,10 +123,12 @@ class BannerAndPlaytimeTests(unittest.TestCase):
             data[0x220:0x420] = bytes([0x11]) * 512
             struct.pack_into("<H", data, 0x422, 31)  # Palette 1 is red.
             title = "Café Adventure".encode("utf-16le")
-            data[0x540:0x540+len(title)] = title
-            raw = root / "game.nds"; raw.write_bytes(data)
+            data[0x540:0x540 + len(title)] = title
+            raw = root / "game.nds"
+            raw.write_bytes(data)
             archive = root / "game.zip"
-            with zipfile.ZipFile(archive, "w") as output: output.writestr("game.nds", data)
+            with zipfile.ZipFile(archive, "w") as output:
+                output.writestr("game.nds", data)
             for rom in (raw, archive):
                 library.index_banner(root / "cache", rom)
                 item = root / "cache/library" / library.game_key(rom)
@@ -125,7 +140,8 @@ class BannerAndPlaytimeTests(unittest.TestCase):
     def test_playtime_accumulates_without_touching_rom_or_artwork(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            rom = root / "game.nds"; rom.write_bytes(b"game")
+            rom = root / "game.nds"
+            rom.write_bytes(b"game")
             data = root / "data"
             library.record_playtime(data, rom, 120, 1, "2026-10-05")
             seconds, sessions = library.playtime(data, rom)

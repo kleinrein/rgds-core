@@ -45,7 +45,9 @@ public:
 
   void start(Job job, void* context) {
     if (!threads_.empty() || !configured()) return;
-    job_ = job; context_ = context; quit_.store(false, std::memory_order_relaxed);
+    job_ = job;
+    context_ = context;
+    quit_.store(false, std::memory_order_relaxed);
     for (u32 i = 0; i < configured(); ++i) threads_.emplace_back([this, i] { loop(i); });
   }
 
@@ -68,13 +70,14 @@ public:
   static constexpr u64 kBatch = 16;
   void publish(u32 job, bool flush = false) {
     const u64 next = published_.load(std::memory_order_relaxed);
-    if (next - finished_.load(std::memory_order_acquire) >= queue_.size()) join();   // never expected: < 192 per frame
+    if (next - finished_.load(std::memory_order_acquire) >= queue_.size()) join(); // never expected: < 192 per frame
     queue_[next % queue_.size()] = job;
     published_.store(next + 1, std::memory_order_seq_cst);
-    std::atomic_thread_fence(std::memory_order_seq_cst);   // Dekker pair with the park in loop()
+    std::atomic_thread_fence(std::memory_order_seq_cst); // Dekker pair with the park in loop()
     if (parked_.load(std::memory_order_seq_cst) &&
         (flush || next + 1 - claimed_.load(std::memory_order_relaxed) >= kBatch)) {
-      std::lock_guard<std::mutex> lock(m_); cv_.notify_all();
+      std::lock_guard<std::mutex> lock(m_);
+      cv_.notify_all();
     }
   }
 
@@ -141,4 +144,4 @@ private:
   std::vector<std::thread> threads_;
 };
 
-}  // namespace ds::gpu
+} // namespace ds::gpu

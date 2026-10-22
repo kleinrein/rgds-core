@@ -31,38 +31,50 @@ public:
   // transparent: any texel has alpha 0; opaque: any texel has alpha 31 (both
   // false for an empty texture).
   // min_alpha: the lowest texel alpha (31 for an empty texture).
-  struct Ref { const u32* texels = nullptr; u32 words = 0; u32 id = 0; u32 version = 0; bool transparent = false; bool opaque = false; u32 min_alpha = 31; };
+  struct Ref {
+    const u32* texels = nullptr;
+    u32 words = 0;
+    u32 id = 0;
+    u32 version = 0;
+    bool transparent = false;
+    bool opaque = false;
+    u32 min_alpha = 31;
+  };
   Ref lookup_ref(const VramMap& vm, u32 fmt, u32 base, u32 width, u32 height, u32 texpal, u32 alpha0);
   void clear();
-  u32  decodes_this_frame() const { return decodes_; }
+  u32 decodes_this_frame() const { return decodes_; }
 
 private:
-  struct Source { u32 addr = 0, len = 0; bool palette = false; };   // a validated range
+  struct Source {
+    u32 addr = 0, len = 0;
+    bool palette = false;
+  }; // a validated range
   struct Entry {
     u32 fmt, base, width, height, texpal, alpha0;
-    Source src[3]; u32 nsrc = 0;
-    std::vector<u8> copy;        // the source ranges, concatenated
+    Source src[3];
+    u32 nsrc = 0;
+    std::vector<u8> copy; // the source ranges, concatenated
     std::vector<u32> texels;
     u64 validated = 0, used = 0; // frames
     u32 id = 0, version = 0;     // identity and decode count, for Ref
     bool transparent = false, opaque = false;
     u32 min_alpha = 31;
-    u32 gen = 0, banks = 0;      // generation and banks last validated at
-    u64 sig = 0;                 // block_signature of the ranges then
+    u32 gen = 0, banks = 0; // generation and banks last validated at
+    u64 sig = 0;            // block_signature of the ranges then
   };
   static u64 key(u32 fmt, u32 base, u32 width, u32 height, u32 texpal, u32 alpha0);
   void decode(const VramMap& vm, Entry& e);
   void snapshot(const VramMap& vm, Entry& e);
   bool unchanged(const VramMap& vm, Entry& e);
   void stamp(const VramMap& vm, Entry& e) const;
-  bool verify_ = false;   // DS_TEXCACHE_VERIFY
+  bool verify_ = false; // DS_TEXCACHE_VERIFY
 
   Entry& find_or_decode(const VramMap& vm, u32 fmt, u32 base, u32 width, u32 height, u32 texpal, u32 alpha0);
   std::unordered_map<u64, Entry> entries_;
   u32 next_id_ = 1;
   size_t bytes_ = 0;
   u64 frame_ = 0;
-  u32 gate_hits_ = 0;   // DS_TEXCACHE_VERIFY report: gate-only hits
+  u32 gate_hits_ = 0; // DS_TEXCACHE_VERIFY report: gate-only hits
   u32 decodes_ = 0;
 };
 

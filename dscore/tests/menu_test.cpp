@@ -24,18 +24,18 @@ u32 press(B b) { return 1u << b; }
 void test_root_rows() {
   Menu m;
   m.set_open(true);
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Save);          // row 0
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Save); // row 0
   CHECK(m.input(press(B::BTN_DOWN)) == Menu::Result::None);
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Load);          // row 1
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Load); // row 1
   m.input(press(B::BTN_DOWN));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);          // row 2 opens the slot page
-  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None);          // and B comes back to it
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None); // row 2 opens the slot page
+  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None); // and B comes back to it
   m.input(press(B::BTN_DOWN));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Resume);        // row 3
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Resume); // row 3
   m.input(press(B::BTN_DOWN));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Reset);         // row 4
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Reset); // row 4
   m.input(press(B::BTN_DOWN));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Quit);          // row 5
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Quit); // row 5
 }
 
 // The slot page's delete mode: Y in, A arms a used slot, A again deletes it.
@@ -46,24 +46,26 @@ void test_slot_delete() {
   m.set_open(true);
   m.set_slot_used(1, true);
   m.set_slot_used(Menu::kAutoSlot, true);
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                       // the slot page, on slot 0
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // the slot page, on slot 0
   m.input(press(B::BTN_Y));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);          // slot 0 is empty: nothing to arm
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None); // slot 0 is empty: nothing to arm
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);
   m.input(press(B::BTN_DOWN));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);          // armed
-  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None);          // disarmed, still in delete mode
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);          // armed again
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None); // armed
+  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None); // disarmed, still in delete mode
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None); // armed again
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::Delete);
   CHECK(m.doomed_slot() == 1);
-  CHECK(m.slot() == 0);                                           // deleting selects nothing
-  m.input(press(B::BTN_UP)); m.input(press(B::BTN_UP));           // 1 -> 0 -> wraps to the auto cell
+  CHECK(m.slot() == 0); // deleting selects nothing
+  m.input(press(B::BTN_UP));
+  m.input(press(B::BTN_UP)); // 1 -> 0 -> wraps to the auto cell
   m.input(press(B::BTN_A));
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::Delete);
   CHECK(m.doomed_slot() == Menu::kAutoSlot);
-  m.input(press(B::BTN_Y));                                       // out of delete mode: off the auto cell
-  m.input(press(B::BTN_A));                                       // an ordinary pick
+  m.input(press(B::BTN_Y)); // out of delete mode: off the auto cell
+  m.input(press(B::BTN_A)); // an ordinary pick
   CHECK(m.slot() == 0);
   // Outside delete mode the left column is five cells and A never deletes.
   m.input(press(B::BTN_A));
@@ -71,7 +73,6 @@ void test_slot_delete() {
   m.input(press(B::BTN_A));
   CHECK(m.slot() == 4);
 }
-
 
 // With a network session up the three state rows come off the page entirely:
 // a state freezes this machine and not the one it is talking to, and nothing in a state file restores a session. The
@@ -82,9 +83,9 @@ void test_root_rows_without_states() {
   Menu m;
   m.set_network_session(true);
   m.set_open(true);
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Resume);        // row 0, was row 3
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Resume); // row 0, was row 3
   m.input(press(B::BTN_DOWN));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Quit);          // row 1
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Quit); // row 1
   // The page wraps, as it does with every row visible, and wraps over the
   // two rows that are left rather than through the hidden ones.
   m.input(press(B::BTN_DOWN));
@@ -101,7 +102,7 @@ void test_root_rows_without_states() {
   // Putting them back restores the original page, on the same menu: a session
   // that ends mid-run gives the state rows back without a restart.
   m2.set_network_session(false);
-  CHECK(m2.input(press(B::BTN_A)) != Menu::Result::Quit);   // the page grew under it
+  CHECK(m2.input(press(B::BTN_A)) != Menu::Result::Quit); // the page grew under it
   Menu m3;
   m3.set_open(true);
   CHECK(m3.input(press(B::BTN_A)) == Menu::Result::Save);
@@ -110,10 +111,10 @@ void test_root_rows_without_states() {
   // under the selection, and it must not be left pointing past the end.
   Menu m4;
   m4.set_open(true);
-  for (int i = 0; i < 5; ++i) m4.input(press(B::BTN_DOWN));   // down to QUIT
+  for (int i = 0; i < 5; ++i) m4.input(press(B::BTN_DOWN)); // down to QUIT
   m4.set_network_session(true);
   const Menu::Result r = m4.input(press(B::BTN_A));
-  CHECK(r == Menu::Result::Quit || r == Menu::Result::Resume);   // a real row, either way
+  CHECK(r == Menu::Result::Quit || r == Menu::Result::Resume); // a real row, either way
 }
 
 // ---------------------------------------------------------------------------
@@ -135,7 +136,10 @@ struct FakeCheevos final : ds::sdl::CheevosHost {
   int row_count() const override { return static_cast<int>(rows.size()); }
   Row row(int i) const override { return rows.at(static_cast<size_t>(i)); }
   void sign_in(const std::string& u, const std::string& p) override { sign_ins.push_back({u, p}); }
-  void sign_out() override { ++signed_out_calls; in = false; }
+  void sign_out() override {
+    ++signed_out_calls;
+    in = false;
+  }
 
   std::map<int, bool> opts;
   bool option(Option o) const override {
@@ -163,17 +167,19 @@ void to_row(Menu& m, int row) {
 // multi-byte character is one glyph wide, not one per byte. "\xC5\x8C" is
 // U+014C, the O with a macron that opens "Okamiden".
 void test_utf8_folds_to_ascii_glyphs() {
-  using ds::sdl::Canvas; using ds::sdl::text_width; using ds::sdl::draw_text;
-  const char* accented = "\xC5\x8Ckamiden \xC3\x89t\xC3\xA9 \xC5\xA0";   // Ōkamiden Été Š
-  const char* plain    = "Okamiden Ete S";
+  using ds::sdl::Canvas;
+  using ds::sdl::draw_text;
+  using ds::sdl::text_width;
+  const char* accented = "\xC5\x8Ckamiden \xC3\x89t\xC3\xA9 \xC5\xA0"; // Ōkamiden Été Š
+  const char* plain = "Okamiden Ete S";
   CHECK(text_width(2, accented) == text_width(2, plain));
   std::vector<u32> a(200 * 20, 0), b(200 * 20, 0);
   const Canvas ca{a.data(), 200, 200, 20}, cb{b.data(), 200, 200, 20};
   CHECK(draw_text(ca, 0, 0, 2, 0xFFFFFFFF, accented) == draw_text(cb, 0, 0, 2, 0xFFFFFFFF, plain));
-  CHECK(a == b);   // pixel for pixel the same word
+  CHECK(a == b); // pixel for pixel the same word
   // Something with no Latin base draws as '?' rather than nothing.
   std::vector<u32> q(200 * 20, 0), z(200 * 20, 0);
-  draw_text(Canvas{q.data(), 200, 200, 20}, 0, 0, 2, 0xFFFFFFFF, "\xE3\x81\x82");   // あ
+  draw_text(Canvas{q.data(), 200, 200, 20}, 0, 0, 2, 0xFFFFFFFF, "\xE3\x81\x82"); // あ
   draw_text(Canvas{z.data(), 200, 200, 20}, 0, 0, 2, 0xFFFFFFFF, "?");
   CHECK(q == z);
   CHECK(text_width(2, "\xE3\x81\x82") == text_width(2, "?"));
@@ -191,9 +197,9 @@ void test_cheevos_row_hidden_without_a_host() {
   m2.set_cheevos_host(&host);
   m2.set_open(true);
   to_row(m2, kCheevosVisibleRow);
-  CHECK(m2.input(press(B::BTN_A)) == Menu::Result::None);   // the account page
-  CHECK(m2.input(press(B::BTN_B)) == Menu::Result::None);   // back to the root
-  to_row(m2, 1);                                           // the row below it
+  CHECK(m2.input(press(B::BTN_A)) == Menu::Result::None); // the account page
+  CHECK(m2.input(press(B::BTN_B)) == Menu::Result::None); // back to the root
+  to_row(m2, 1);                                          // the row below it
   CHECK(m2.input(press(B::BTN_A)) == Menu::Result::Resume);
 }
 
@@ -227,14 +233,14 @@ void test_sign_in_collects_both_fields() {
   m.set_cheevos_host(&host);
   m.set_open(true);
   to_row(m, kCheevosVisibleRow);
-  m.input(press(B::BTN_A));                 // no set loaded, so the account page
-  m.input(press(B::BTN_A));                 // SIGN IN -> the username editor
+  m.input(press(B::BTN_A)); // no set loaded, so the account page
+  m.input(press(B::BTN_A)); // SIGN IN -> the username editor
   // One character is enough: the editor starts on a space, and UP steps the
   // character, which the TextEdit tests already cover.
   m.input(press(B::BTN_UP));
-  m.input(press(B::BTN_A));                 // accept the username
+  m.input(press(B::BTN_A)); // accept the username
   m.input(press(B::BTN_UP));
-  m.input(press(B::BTN_A));                 // accept the password
+  m.input(press(B::BTN_A)); // accept the password
   CHECK(host.sign_ins.size() == 1);
   CHECK(!host.sign_ins[0].first.empty());
   CHECK(!host.sign_ins[0].second.empty());
@@ -250,8 +256,8 @@ void test_sign_in_drops_skipped_slots() {
   m.set_cheevos_host(&host);
   m.set_open(true);
   to_row(m, kCheevosVisibleRow);
-  m.input(press(B::BTN_A));                 // account page
-  m.input(press(B::BTN_A));                 // SIGN IN -> username
+  m.input(press(B::BTN_A)); // account page
+  m.input(press(B::BTN_A)); // SIGN IN -> username
 
   // Choose a character, skip two slots, choose another.
   const auto typed_with_a_gap = [&] {
@@ -262,8 +268,8 @@ void test_sign_in_drops_skipped_slots() {
     m.input(press(B::BTN_UP));
     m.input(press(B::BTN_A));
   };
-  typed_with_a_gap();                       // username
-  typed_with_a_gap();                       // password
+  typed_with_a_gap(); // username
+  typed_with_a_gap(); // password
 
   CHECK(host.sign_ins.size() == 1);
   const std::string& user = host.sign_ins[0].first;
@@ -284,10 +290,10 @@ void test_cancelling_sign_in_sends_nothing() {
   m.set_cheevos_host(&host);
   m.set_open(true);
   to_row(m, kCheevosVisibleRow);
-  m.input(press(B::BTN_A));                 // account page
-  m.input(press(B::BTN_A));                 // SIGN IN
+  m.input(press(B::BTN_A)); // account page
+  m.input(press(B::BTN_A)); // SIGN IN
   m.input(press(B::BTN_UP));
-  m.input(press(B::BTN_B));                 // abandon
+  m.input(press(B::BTN_B)); // abandon
   CHECK(host.sign_ins.empty());
 }
 
@@ -299,8 +305,8 @@ void test_sign_out_is_offered_when_signed_in() {
   m.set_cheevos_host(&host);
   m.set_open(true);
   to_row(m, kCheevosVisibleRow);
-  m.input(press(B::BTN_A));                 // account page
-  m.input(press(B::BTN_A));                 // its only row is SIGN OUT
+  m.input(press(B::BTN_A)); // account page
+  m.input(press(B::BTN_A)); // its only row is SIGN OUT
   CHECK(host.signed_out_calls == 1);
 }
 
@@ -312,13 +318,13 @@ void test_account_switches_toggle() {
   m.set_cheevos_host(&host);
   m.set_open(true);
   to_row(m, kCheevosVisibleRow);
-  m.input(press(B::BTN_A));                 // account page; row 0 is SIGN IN
+  m.input(press(B::BTN_A)); // account page; row 0 is SIGN IN
   using O = ds::sdl::CheevosHost::Option;
   CHECK(!host.option(O::Toasts));
-  m.input(press(B::BTN_DOWN));              // no set loaded, so row 1 is UNLOCK NOTICES
+  m.input(press(B::BTN_DOWN)); // no set loaded, so row 1 is UNLOCK NOTICES
   m.input(press(B::BTN_A));
   CHECK(host.option(O::Toasts));
-  m.input(press(B::BTN_RIGHT));             // and it toggles back
+  m.input(press(B::BTN_RIGHT)); // and it toggles back
   CHECK(!host.option(O::Toasts));
 
   m.input(press(B::BTN_DOWN));
@@ -351,9 +357,9 @@ void test_list_scrolls_within_bounds() {
   m.set_cheevos_host(&host);
   m.set_open(true);
   to_row(m, kCheevosVisibleRow);
-  m.input(press(B::BTN_A));                 // the account page
-  m.input(press(B::BTN_DOWN));              // signed in, so row 1 is VIEW ACHIEVEMENTS
-  m.input(press(B::BTN_A));                 // and now the list
+  m.input(press(B::BTN_A));    // the account page
+  m.input(press(B::BTN_DOWN)); // signed in, so row 1 is VIEW ACHIEVEMENTS
+  m.input(press(B::BTN_A));    // and now the list
   for (int i = 0; i < 80; ++i) m.input(press(B::BTN_UP));
   for (int i = 0; i < 200; ++i) m.input(press(B::BTN_DOWN));
   for (int i = 0; i < 20; ++i) m.input(press(B::BTN_R));
@@ -384,10 +390,10 @@ void test_cheevos_draw_bounds() {
       m.set_open(true);
       to_row(m, kCheevosVisibleRow);
       m.input(press(B::BTN_A));
-      m.draw(c);                            // the account page
-      m.input(press(B::BTN_DOWN));          // VIEW ACHIEVEMENTS
+      m.draw(c);                   // the account page
+      m.input(press(B::BTN_DOWN)); // VIEW ACHIEVEMENTS
       m.input(press(B::BTN_A));
-      m.draw(c);                            // and the list
+      m.draw(c); // and the list
       for (size_t i = static_cast<size_t>(w) * h; i < px.size(); ++i) CHECK(px[i] == 0xDEADBEEF);
     }
   }
@@ -400,7 +406,8 @@ void test_toast_draw_bounds() {
     for (int h : {192, 240, 480, 720}) {
       std::vector<u32> px(static_cast<size_t>(w) * h + 64, 0xDEADBEEF);
       const ds::sdl::Canvas c{px.data(), static_cast<u32>(w), w, h};
-      ds::sdl::draw_toast(c, "ACHIEVEMENT UNLOCKED", "A VERY LONG ACHIEVEMENT NAME INDEED", "WITH A LONG DESCRIPTION TOO", 25);
+      ds::sdl::draw_toast(c, "ACHIEVEMENT UNLOCKED", "A VERY LONG ACHIEVEMENT NAME INDEED",
+                          "WITH A LONG DESCRIPTION TOO", 25);
       ds::sdl::draw_toast(c, nullptr, "SHORT", nullptr, 0);
       const ds::sdl::Rect r = ds::sdl::toast_rect(c, nullptr, "SHORT", nullptr, 0);
       CHECK(r.x >= 0 && r.y >= 0 && r.w > 0 && r.h > 0);
@@ -414,10 +421,10 @@ void test_toast_draw_bounds() {
 void test_wrap_and_back() {
   Menu m;
   m.set_open(true);
-  m.input(press(B::BTN_UP));                                      // wraps to the last row
+  m.input(press(B::BTN_UP)); // wraps to the last row
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::Quit);
   m.set_open(true);
-  for (int i = 0; i < 6; ++i) m.input(press(B::BTN_DOWN));        // a full cycle
+  for (int i = 0; i < 6; ++i) m.input(press(B::BTN_DOWN)); // a full cycle
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::Save);
   // B on the root page leaves the menu; on the slot page it only goes back.
   CHECK(m.input(press(B::BTN_B)) == Menu::Result::Resume);
@@ -428,21 +435,22 @@ void test_slot_selection() {
   m.set_open(true);
   m.set_slot(4);
   // Left/right on the slot row adjust it without opening the page, and wrap.
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_RIGHT));
   CHECK(m.slot() == 5);
   for (int i = 0; i < 6; ++i) m.input(press(B::BTN_LEFT));
-  CHECK(m.slot() == 9);                                           // 5 -> 0 -> wraps to 9
+  CHECK(m.slot() == 9); // 5 -> 0 -> wraps to 9
   // The page opens on the current slot, laid out as two columns of five:
   // slots 0-4 on the left, 5-9 on the right.
   m.input(press(B::BTN_A));
-  m.input(press(B::BTN_DOWN));                                    // 9 is the foot of its column
+  m.input(press(B::BTN_DOWN)); // 9 is the foot of its column
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);
-  CHECK(m.slot() == 5);                                           // wrapped to the column's head
+  CHECK(m.slot() == 5); // wrapped to the column's head
   // Back on the root page, the cursor is on the slot row it came from.
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);          // opens the page again
-  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None);          // back to root, not a resume
-  CHECK(m.slot() == 5);                                           // B does not commit a move
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None); // opens the page again
+  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None); // back to root, not a resume
+  CHECK(m.slot() == 5);                                  // B does not commit a move
 }
 
 // Up/down stay inside a column; left and right are what crosses between them.
@@ -450,17 +458,18 @@ void test_slot_grid_navigation() {
   Menu m;
   m.set_open(true);
   m.set_slot(0);
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                       // the slot page, on 0
-  m.input(press(B::BTN_UP));                                      // head of the left column wraps to its foot
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A));  // the slot page, on 0
+  m.input(press(B::BTN_UP)); // head of the left column wraps to its foot
   m.input(press(B::BTN_A));
   CHECK(m.slot() == 4);
-  m.input(press(B::BTN_A));                                       // reopen on 4
-  m.input(press(B::BTN_RIGHT));                                   // across to the right column
+  m.input(press(B::BTN_A));     // reopen on 4
+  m.input(press(B::BTN_RIGHT)); // across to the right column
   m.input(press(B::BTN_A));
   CHECK(m.slot() == 9);
-  m.input(press(B::BTN_A));                                       // reopen on 9
-  m.input(press(B::BTN_LEFT));                                    // and back again
+  m.input(press(B::BTN_A));    // reopen on 9
+  m.input(press(B::BTN_LEFT)); // and back again
   m.input(press(B::BTN_A));
   CHECK(m.slot() == 4);
 }
@@ -470,7 +479,7 @@ void test_slot_untouched_off_row() {
   Menu m;
   m.set_open(true);
   m.set_slot(3);
-  m.input(press(B::BTN_RIGHT));                                   // row 0
+  m.input(press(B::BTN_RIGHT)); // row 0
   CHECK(m.slot() == 3);
 }
 
@@ -486,13 +495,18 @@ void test_draw_bounds() {
       // Draw into the middle of a larger buffer: a guard row and column on
       // every side catches a write past the screen.
       m.draw(ds::sdl::Canvas{fb.data() + (w + 2) + 1, static_cast<ds::u32>(w + 2), w, h});
-      for (u32 x = 0; x < w + 2; ++x) CHECK(fb[x] == 0xDEADBEEF);                        // above
-      for (u32 x = 0; x < w + 2; ++x) CHECK(fb[(h + 1) * (w + 2) + x] == 0xDEADBEEF);    // below
-      for (u32 y = 0; y < h + 2; ++y) CHECK(fb[y * (w + 2)] == 0xDEADBEEF);              // left
-      for (u32 y = 0; y < h + 2; ++y) CHECK(fb[y * (w + 2) + w + 1] == 0xDEADBEEF);      // right
+      for (u32 x = 0; x < w + 2; ++x) CHECK(fb[x] == 0xDEADBEEF);                     // above
+      for (u32 x = 0; x < w + 2; ++x) CHECK(fb[(h + 1) * (w + 2) + x] == 0xDEADBEEF); // below
+      for (u32 y = 0; y < h + 2; ++y) CHECK(fb[y * (w + 2)] == 0xDEADBEEF);           // left
+      for (u32 y = 0; y < h + 2; ++y) CHECK(fb[y * (w + 2) + w + 1] == 0xDEADBEEF);   // right
       m.input(press(B::BTN_DOWN));
     }
-    if (page == 0) { m.set_open(true); m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_A)); }
+    if (page == 0) {
+      m.set_open(true);
+      m.input(press(B::BTN_DOWN));
+      m.input(press(B::BTN_DOWN));
+      m.input(press(B::BTN_A));
+    }
   }
 }
 
@@ -522,9 +536,9 @@ void test_slot_notice() {
   CHECK(std::find(fb.begin(), fb.end(), kWarn) == fb.end());
   // Stepping the slot clears it, so it never outlives the player's attention.
   m.set_slot_notice("REJECTED");
-  m.input(press(B::BTN_DOWN));   // onto LOAD... walk to the slot row
+  m.input(press(B::BTN_DOWN)); // onto LOAD... walk to the slot row
   m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_RIGHT));  // step the slot
+  m.input(press(B::BTN_RIGHT)); // step the slot
   std::fill(fb.begin(), fb.end(), 0xDEADBEEF);
   m.draw(ds::sdl::Canvas{fb.data() + (w + 2) + 1, static_cast<ds::u32>(w + 2), w, h});
   CHECK(std::find(fb.begin(), fb.end(), kWarn) == fb.end());
@@ -535,7 +549,7 @@ void test_text_metrics() {
   const ds::sdl::Canvas d{fb.data(), ds::SCREEN_W, ds::SCREEN_W, ds::SCREEN_H};
   CHECK(ds::sdl::text_width(2, "") == 0);
   CHECK(ds::sdl::text_width(1, "A") == 5);
-  CHECK(ds::sdl::text_width(2, "AB") == 22);       // 10 + gap 2 + 10
+  CHECK(ds::sdl::text_width(2, "AB") == 22); // 10 + gap 2 + 10
   CHECK(ds::sdl::draw_text(d, 10, 10, 2, 0xFFFFFFFF, "AB") == 10 + 22);
   // Lowercase folds to uppercase, so the two draw the same pixels.
   std::vector<u32> a(ds::SCREEN_W * ds::SCREEN_H, 0), b = a;
@@ -549,7 +563,7 @@ void test_dim() {
   ds::sdl::dim_framebuffer(px.data(), static_cast<u32>(px.size()));
   CHECK(px[0] == 0xFF7F7F7F);
   CHECK(px[1] == 0xFF000000);
-  CHECK(px[2] == 0xFF402010);   // alpha kept, every channel halved
+  CHECK(px[2] == 0xFF402010); // alpha kept, every channel halved
 }
 
 // --- the cheats page -------------------------------------------------------
@@ -568,12 +582,12 @@ struct Fixture {
       if (!note) c.words = {0x02000000, 1};
       codes.push_back(c);
     };
-    add("(M) note", 0, true);      // 0
-    add("Infinite Lives", 0, false);  // 1
-    add("Infinite Coins", 0, false);  // 2
-    add("Easy", 1, false);            // 3
-    add("Normal", 1, false);          // 4
-    add("Hard", 1, false);            // 5
+    add("(M) note", 0, true);        // 0
+    add("Infinite Lives", 0, false); // 1
+    add("Infinite Coins", 0, false); // 2
+    add("Easy", 1, false);           // 3
+    add("Normal", 1, false);         // 4
+    add("Hard", 1, false);           // 5
   }
 };
 
@@ -582,7 +596,7 @@ void open_cheats(Menu& m) {
   m.set_open(true);
   m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_DOWN));    // SAVE, LOAD, SLOT, CHEATS
+  m.input(press(B::BTN_DOWN)); // SAVE, LOAD, SLOT, CHEATS
   m.input(press(B::BTN_A));
 }
 
@@ -590,14 +604,18 @@ void test_cheats_row_hidden_without_codes() {
   Menu m;
   m.set_open(true);
   // With no cheats the root page is five rows and the fourth is RESUME.
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::Resume);
   // Empty is the same as absent.
   std::vector<ds::cheat::Code> none;
   std::vector<ds::cheat::Group> no_groups;
   m.set_cheats(&none, &no_groups);
   m.set_open(true);
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::Resume);
 }
 
@@ -607,9 +625,11 @@ void test_cheats_row_shifts_the_rest() {
   Menu m;
   m.set_cheats(&f.codes, &f.groups);
   m.set_open(true);
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                        // CHEATS: opens a page, no result
-  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None);   // and B comes back to it
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A));                              // CHEATS: opens a page, no result
+  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None); // and B comes back to it
   m.input(press(B::BTN_DOWN));
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::Resume); // RESUME is now the fifth
 }
@@ -625,10 +645,10 @@ void test_cheat_toggle() {
   // it and not the note before it.
   m.input(press(B::BTN_A));
   CHECK(f.codes[1].enabled);
-  CHECK(!f.codes[0].enabled);      // the note was never selectable
+  CHECK(!f.codes[0].enabled); // the note was never selectable
   CHECK(m.cheats_dirty());
   m.clear_cheats_dirty();
-  m.input(press(B::BTN_A));        // and A again turns it off
+  m.input(press(B::BTN_A)); // and A again turns it off
   CHECK(!f.codes[1].enabled);
   CHECK(m.cheats_dirty());
 }
@@ -645,9 +665,9 @@ void test_exclusive_group() {
   m.input(press(B::BTN_A));
   CHECK(f.codes[3].enabled);
   m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));        // "Normal"
+  m.input(press(B::BTN_A)); // "Normal"
   CHECK(f.codes[4].enabled);
-  CHECK(!f.codes[3].enabled);      // which turned "Easy" off
+  CHECK(!f.codes[3].enabled); // which turned "Easy" off
   // The ordinary group is unaffected by any of it.
   CHECK(!f.codes[1].enabled && !f.codes[2].enabled);
 }
@@ -658,9 +678,10 @@ void test_exclusive_off_is_not_a_switch() {
   Menu m;
   m.set_cheats(&f.codes, &f.groups);
   open_cheats(m);
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));        // Easy on
-  m.input(press(B::BTN_A));        // Easy off again
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // Easy on
+  m.input(press(B::BTN_A)); // Easy off again
   CHECK(!f.codes[3].enabled && !f.codes[4].enabled && !f.codes[5].enabled);
 }
 
@@ -673,11 +694,11 @@ void test_cheat_navigation_clamps() {
   open_cheats(m);
   for (int i = 0; i < 20; ++i) m.input(press(B::BTN_UP));
   m.input(press(B::BTN_A));
-  CHECK(f.codes[1].enabled);       // still the first code
+  CHECK(f.codes[1].enabled); // still the first code
   m.clear_cheats_dirty();
   for (int i = 0; i < 50; ++i) m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_A));
-  CHECK(f.codes[5].enabled);       // and the last
+  CHECK(f.codes[5].enabled); // and the last
 }
 
 // The page must stay on screen however far down the list it is scrolled.
@@ -736,14 +757,19 @@ struct FlatFixture {
   int selected(Menu& m) {
     m.input(press(B::BTN_A));
     for (size_t i = 0; i < codes.size(); ++i)
-      if (codes[i].enabled) { codes[i].enabled = false; return static_cast<int>(i); }
+      if (codes[i].enabled) {
+        codes[i].enabled = false;
+        return static_cast<int>(i);
+      }
     return -1;
   }
 };
 
 void open_flat(Menu& m) {
   m.set_open(true);
-  m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN)); m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_A));
 }
 
@@ -757,9 +783,9 @@ void test_key_repeat() {
     Menu m;
     m.set_cheats(&f.codes, &f.groups);
     open_flat(m);
-    m.update(down, down, 0);                             // the press itself: one row
-    for (int t = 0; t < 39; ++t) m.update(0, down, 10);  // 390 ms, just under the delay
-    CHECK(f.selected(m) == 1);                           // nothing repeated yet
+    m.update(down, down, 0);                            // the press itself: one row
+    for (int t = 0; t < 39; ++t) m.update(0, down, 10); // 390 ms, just under the delay
+    CHECK(f.selected(m) == 1);                          // nothing repeated yet
   }
   {
     FlatFixture f(40);
@@ -767,7 +793,7 @@ void test_key_repeat() {
     m.set_cheats(&f.codes, &f.groups);
     open_flat(m);
     m.update(down, down, 0);
-    for (int t = 0; t < 40; ++t) m.update(0, down, 10);  // 400 ms: the first repeat
+    for (int t = 0; t < 40; ++t) m.update(0, down, 10); // 400 ms: the first repeat
     CHECK(f.selected(m) == 2);
   }
   {
@@ -776,7 +802,7 @@ void test_key_repeat() {
     m.set_cheats(&f.codes, &f.groups);
     open_flat(m);
     m.update(down, down, 0);
-    for (int t = 0; t < 51; ++t) m.update(0, down, 10);  // 400 + two 55 ms steps
+    for (int t = 0; t < 51; ++t) m.update(0, down, 10); // 400 + two 55 ms steps
     CHECK(f.selected(m) == 4);
   }
 }
@@ -790,11 +816,11 @@ void test_key_repeat_restarts() {
   open_flat(m);
   const u32 down = 1u << B::BTN_DOWN;
   m.update(down, down, 0);
-  for (int t = 0; t < 39; ++t) m.update(0, down, 10);   // just under the delay
-  for (int t = 0; t < 5; ++t) m.update(0, 0, 10);       // released
-  m.update(down, down, 0);                              // and pressed again
+  for (int t = 0; t < 39; ++t) m.update(0, down, 10); // just under the delay
+  for (int t = 0; t < 5; ++t) m.update(0, 0, 10);     // released
+  m.update(down, down, 0);                            // and pressed again
   for (int t = 0; t < 39; ++t) m.update(0, down, 10);
-  CHECK(f.selected(m) == 2);                            // two presses, no repeats
+  CHECK(f.selected(m) == 2); // two presses, no repeats
 }
 
 // The other pages keep their one-step-per-press feel.
@@ -804,8 +830,8 @@ void test_key_repeat_only_on_cheats() {
   m.set_cheats(&f.codes, &f.groups);
   m.set_open(true);
   const u32 down = 1u << B::BTN_DOWN;
-  for (int t = 0; t < 200; ++t) m.update(0, down, 10);  // two seconds on the root page
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Save);   // still the first row
+  for (int t = 0; t < 200; ++t) m.update(0, down, 10);   // two seconds on the root page
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::Save); // still the first row
 }
 
 // A name too long for its row scrolls after a pause; a short one never does.
@@ -822,10 +848,16 @@ void test_marquee() {
   m.draw(d);
   m.clear_dirty();
   // Nothing moves during the initial pause.
-  for (int t = 0; t < 40; ++t) { m.update(0, 0, 10); m.draw(d); }
+  for (int t = 0; t < 40; ++t) {
+    m.update(0, 0, 10);
+    m.draw(d);
+  }
   CHECK(!m.dirty());
   // Then it starts, and keeps asking to be redrawn.
-  for (int t = 0; t < 20; ++t) { m.update(0, 0, 10); m.draw(d); }
+  for (int t = 0; t < 20; ++t) {
+    m.update(0, 0, 10);
+    m.draw(d);
+  }
   CHECK(m.dirty());
 
   // A short name never scrolls, however long it is selected.
@@ -835,7 +867,10 @@ void test_marquee() {
   open_flat(m2);
   m2.draw(d);
   m2.clear_dirty();
-  for (int t = 0; t < 500; ++t) { m2.update(0, 0, 10); m2.draw(d); }
+  for (int t = 0; t < 500; ++t) {
+    m2.update(0, 0, 10);
+    m2.draw(d);
+  }
   CHECK(!m2.dirty());
 }
 
@@ -850,34 +885,42 @@ void test_marquee_resets_on_move() {
   open_flat(m);
   m.draw(d);
   // Scroll well into it, then move: the new row starts from still again.
-  for (int t = 0; t < 80; ++t) { m.update(0, 0, 10); m.draw(d); }
+  for (int t = 0; t < 80; ++t) {
+    m.update(0, 0, 10);
+    m.draw(d);
+  }
   m.update(press(B::BTN_DOWN), 0, 10);
   m.draw(d);
   m.clear_dirty();
-  for (int t = 0; t < 40; ++t) { m.update(0, 0, 10); m.draw(d); }
-  CHECK(!m.dirty());               // back inside the initial pause
+  for (int t = 0; t < 40; ++t) {
+    m.update(0, 0, 10);
+    m.draw(d);
+  }
+  CHECK(!m.dirty()); // back inside the initial pause
 }
 
 } // namespace
-
 
 // A settings host with nothing behind it: the values live in a map, and the
 // dependency and tier questions are answered by fields the test sets. Enough
 // for the menu's own behaviour, which is what these tests are about.
 struct FakeHost : ds::sdl::SettingsHost {
   std::map<std::string, std::string> kv;
-  std::map<std::string, bool> off;      // rows the test has switched off
-  std::vector<std::string> writes;      // keys set, in order
+  std::map<std::string, bool> off; // rows the test has switched off
+  std::vector<std::string> writes; // keys set, in order
   bool per_game = false, game = true, pad = false, capturing_ = false;
-  const char* user_note = nullptr;   // non-null when a firmware dump holds them
-  std::string pending;                  // what the "device" is about to report
+  const char* user_note = nullptr; // non-null when a firmware dump holds them
+  std::string pending;             // what the "device" is about to report
   int commits = 0;
 
   std::string get(const char* key) const override {
     const auto it = kv.find(key);
     return it == kv.end() ? "" : it->second;
   }
-  void set(const char* key, const std::string& v) override { kv[key] = v; writes.push_back(key); }
+  void set(const char* key, const std::string& v) override {
+    kv[key] = v;
+    writes.push_back(key);
+  }
   bool enabled(const ds::sdl::Setting& s) const override {
     const auto it = off.find(s.key);
     return it == off.end() || !it->second;
@@ -908,9 +951,15 @@ struct FakeHost : ds::sdl::SettingsHost {
   bool capturing() const override { return capturing_; }
   std::string take_capture() override {
     if (pending.empty()) return "";
-    std::string out; out.swap(pending); capturing_ = false; return out;
+    std::string out;
+    out.swap(pending);
+    capturing_ = false;
+    return out;
   }
-  void bind(const std::string& k, const std::string& v) override { kv[k] = v; writes.push_back(k); }
+  void bind(const std::string& k, const std::string& v) override {
+    kv[k] = v;
+    writes.push_back(k);
+  }
   void reset_bindings(bool) override { writes.push_back("reset"); }
   std::vector<std::string> collisions() const override { return {}; }
   const char* user_settings_note() const override { return user_note; }
@@ -928,10 +977,10 @@ void test_page_stack() {
   m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_DOWN));
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);      // into Options
-  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);      // into Emulation
-  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None);      // back to Options
-  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None);      // back to the root
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None); // into Options
+  CHECK(m.input(press(B::BTN_A)) == Menu::Result::None); // into Emulation
+  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None); // back to Options
+  CHECK(m.input(press(B::BTN_B)) == Menu::Result::None); // back to the root
   // ... on the row that opened it, so A goes straight back in.
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);
   CHECK(m.input(press(B::BTN_B)) == Menu::Result::None);
@@ -945,11 +994,11 @@ void test_slot_row_is_separate() {
   Menu m;
   m.set_open(true);
   m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_DOWN));                                 // the slot row
-  m.input(press(B::BTN_A));                                    // into the slot page
+  m.input(press(B::BTN_DOWN)); // the slot row
+  m.input(press(B::BTN_A));    // into the slot page
   m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_DOWN));                                 // move within it
-  m.input(press(B::BTN_B));                                    // back out without choosing
+  m.input(press(B::BTN_DOWN)); // move within it
+  m.input(press(B::BTN_B));    // back out without choosing
   // Still on the slot row: A opens the slot page again rather than doing
   // whatever the row two below happens to be.
   CHECK(m.input(press(B::BTN_A)) == Menu::Result::None);
@@ -965,20 +1014,21 @@ void test_setting_steps() {
   const int n = ds::sdl::settings_count(t);
   CHECK(n > 0);
   const auto find = [&](const char* key) -> const ds::sdl::Setting& {
-    for (int i = 0; i < n; ++i) if (!std::strcmp(t[i].key, key)) return t[i];
+    for (int i = 0; i < n; ++i)
+      if (!std::strcmp(t[i].key, key)) return t[i];
     CHECK(false);
     return t[0];
   };
   const ds::sdl::Setting& fs = find("emu.frameskip");
-  CHECK(ds::sdl::step_value(fs, "0", -1, h) == "0");            // clamped at the bottom
-  CHECK(ds::sdl::step_value(fs, "3", +1, h) == "3");            // and at the top
+  CHECK(ds::sdl::step_value(fs, "0", -1, h) == "0"); // clamped at the bottom
+  CHECK(ds::sdl::step_value(fs, "3", +1, h) == "3"); // and at the top
   CHECK(ds::sdl::step_value(fs, "1", +1, h) == "2");
   // A sentinel: down off the bottom of the range, and back up onto it. The
   // range starts at 2, since 1X is real time and that is not fast forwarding.
   const ds::sdl::Setting& ff = find("emu.ff_speed");
   CHECK(ds::sdl::step_value(ff, "2", -1, h) == "0");
   CHECK(ds::sdl::display_value(ff, "0") == "UNLIMITED");
-  CHECK(ds::sdl::step_value(ff, "0", -1, h) == "0");            // nothing below it
+  CHECK(ds::sdl::step_value(ff, "0", -1, h) == "0"); // nothing below it
   CHECK(ds::sdl::step_value(ff, "0", +1, h) == "2");
   // A number says what it counts.
   CHECK(ds::sdl::display_value(ff, "4") == "4X");
@@ -991,7 +1041,7 @@ void test_setting_steps() {
   const ds::sdl::Setting& sp = find("emu.speed");
   CHECK(ds::sdl::display_value(sp, "") == "100%");
   CHECK(ds::sdl::step_value(sp, "100", -1, h) == "95");
-  CHECK(ds::sdl::step_value(sp, "1", +1, h) == "25");           // a bad file value steps back into range
+  CHECK(ds::sdl::step_value(sp, "1", +1, h) == "25"); // a bad file value steps back into range
 }
 
 // A percent row keeps a 0..1 double in the file: stepping it must not creep,
@@ -1010,7 +1060,7 @@ void test_percent_round_trip() {
   CHECK(ds::sdl::display_value(*pip, v) == "0%");
   for (int i = 0; i < 10; ++i) v = ds::sdl::step_value(*pip, v, +1, h);
   CHECK(ds::sdl::display_value(*pip, v) == "100%");
-  CHECK(ds::sdl::step_value(*pip, v, +1, h) == v);   // clamped
+  CHECK(ds::sdl::step_value(*pip, v, +1, h) == v); // clamped
 }
 
 // The Layout page: the LAYOUT pick heads it, one checkbox per Display mode
@@ -1102,8 +1152,7 @@ void test_network_features_row() {
   for (int i = 0; i < ds::sdl::settings_count(t); ++i)
     if (t[i].depends == ds::sdl::Dep::NetSession) ++session_gated;
   CHECK(session_gated == 5);
-  for (const char* k : {"emu.frameskip", "emu.ff_speed", "emu.ff_skip",
-                        "emu.limiter", "emu.speed"}) {
+  for (const char* k : {"emu.frameskip", "emu.ff_speed", "emu.ff_skip", "emu.limiter", "emu.speed"}) {
     const ds::sdl::Setting* row = nullptr;
     for (int i = 0; i < ds::sdl::settings_count(t); ++i)
       if (!std::strcmp(t[i].key, k)) row = &t[i];
@@ -1124,7 +1173,10 @@ void test_network_features_row() {
   } session;
   int refused = 0;
   for (int i = 0; i < ds::sdl::settings_count(t); ++i)
-    if (t[i].depends == ds::sdl::Dep::NetSession) { CHECK(!session.enabled(t[i])); ++refused; }
+    if (t[i].depends == ds::sdl::Dep::NetSession) {
+      CHECK(!session.enabled(t[i]));
+      ++refused;
+    }
   CHECK(refused == 5);
   // And with no session up, all five are usable: the gate is the session, so
   // an ordinary run is untouched by any of this.
@@ -1141,7 +1193,7 @@ void test_out_of_range_value_is_kept() {
   for (int i = 0; i < ds::sdl::settings_count(t); ++i)
     if (!std::strcmp(t[i].key, "emu.frameskip")) fs = &t[i];
   CHECK(fs != nullptr);
-  CHECK(ds::sdl::display_value(*fs, "8") == "8");      // shown as the file wrote it
+  CHECK(ds::sdl::display_value(*fs, "8") == "8"); // shown as the file wrote it
   // Touching it brings it into the menu's range, from either direction: the
   // page offers 0..3, so once the player moves the row that is what it holds.
   CHECK(ds::sdl::step_value(*fs, "8", -1, h) == "3");
@@ -1159,8 +1211,8 @@ void test_out_of_range_value_is_kept() {
 // or the first press on that row would jump somewhere unrelated.
 void test_defaults_are_reachable() {
   FakeHost h;
-  for (const ds::sdl::Setting* t : {ds::sdl::kEmuSettings, ds::sdl::kVideoSettings,
-                                    ds::sdl::kLayoutSettings, ds::sdl::kUserSettings}) {
+  for (const ds::sdl::Setting* t :
+       {ds::sdl::kEmuSettings, ds::sdl::kVideoSettings, ds::sdl::kLayoutSettings, ds::sdl::kUserSettings}) {
     for (int i = 0; i < ds::sdl::settings_count(t); ++i) {
       const ds::sdl::Setting& s = t[i];
       const std::string def = ds::sdl::default_value(s);
@@ -1186,8 +1238,8 @@ void test_disabled_rows_are_skipped() {
   m.set_settings_host(&h);
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                    // Options
-  m.input(press(B::BTN_A));                                    // Emulation
+  m.input(press(B::BTN_A)); // Options
+  m.input(press(B::BTN_A)); // Emulation
   // Down lands on the first disabled row: it can be highlighted (its reason
   // shows in the note) but stepping it changes nothing.
   m.input(press(B::BTN_DOWN));
@@ -1207,7 +1259,7 @@ void test_disabled_rows_are_skipped() {
   for (int i = 1; i < n; ++i) m.input(press(B::BTN_UP));
   m.input(press(B::BTN_RIGHT));
   CHECK(h.writes.back() == t[0].key);
-  m.input(press(B::BTN_UP));                                   // nothing above it
+  m.input(press(B::BTN_UP)); // nothing above it
   m.input(press(B::BTN_RIGHT));
   CHECK(h.writes.back() == t[0].key);
 }
@@ -1220,8 +1272,8 @@ void test_disabled_row_does_not_step() {
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_A));
-  m.input(press(B::BTN_A));                                    // Emulation, on row 0
-  h.off[ds::sdl::kEmuSettings[0].key] = true;                  // switched off underneath it
+  m.input(press(B::BTN_A));                   // Emulation, on row 0
+  h.off[ds::sdl::kEmuSettings[0].key] = true; // switched off underneath it
   m.input(press(B::BTN_RIGHT));
   CHECK(h.writes.empty());
   m.input(press(B::BTN_A));
@@ -1241,16 +1293,16 @@ void test_commit_on_closing() {
   m.input(press(B::BTN_A));
   const int at_entry = h.commits;
   m.input(press(B::BTN_RIGHT));
-  CHECK(h.commits == at_entry);        // changed something: still nothing done
+  CHECK(h.commits == at_entry); // changed something: still nothing done
   m.input(press(B::BTN_DOWN));
-  CHECK(h.commits == at_entry);        // left the row: still nothing
+  CHECK(h.commits == at_entry); // left the row: still nothing
   m.input(press(B::BTN_B));
-  CHECK(h.commits == at_entry);        // left the page: still nothing
-  m.input(press(B::BTN_B));            // back at the root
+  CHECK(h.commits == at_entry); // left the page: still nothing
+  m.input(press(B::BTN_B));     // back at the root
   CHECK(h.commits == at_entry);
   CHECK(m.input(press(B::BTN_B)) == Menu::Result::Resume);
   m.set_open(false);
-  CHECK(h.commits == at_entry + 1);    // ... and now, once
+  CHECK(h.commits == at_entry + 1); // ... and now, once
   // Closing again does not do it twice.
   m.set_open(false);
   CHECK(h.commits == at_entry + 1);
@@ -1263,11 +1315,11 @@ void test_controls_binding() {
   m.set_settings_host(&h);
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                    // Options
-  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));     // CONTROLS
+  m.input(press(B::BTN_A));                                // Options
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN)); // CONTROLS
   m.input(press(B::BTN_A));
-  m.input(press(B::BTN_DOWN));                                 // row 1
-  m.input(press(B::BTN_A));                                    // listen
+  m.input(press(B::BTN_DOWN)); // row 1
+  m.input(press(B::BTN_A));    // listen
   CHECK(h.capturing());
   // Nothing is bound until the device reports something.
   m.update(0, 0, 10);
@@ -1281,9 +1333,9 @@ void test_controls_binding() {
   // Y clears the row it is on; X twice puts the column back.
   m.input(press(B::BTN_Y));
   CHECK(h.kv["keys.k1"] == "none");
-  m.input(press(B::BTN_X));                                    // armed only
+  m.input(press(B::BTN_X)); // armed only
   CHECK(h.writes.back() != "reset");
-  m.input(press(B::BTN_DOWN));                                 // backs out, doesn't move
+  m.input(press(B::BTN_DOWN)); // backs out, doesn't move
   CHECK(h.writes.back() != "reset");
   m.input(press(B::BTN_X));
   m.input(press(B::BTN_X));
@@ -1300,11 +1352,11 @@ void test_controls_clear_and_reset_are_positional_on_a_pad() {
   m.set_settings_host(&h);
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                    // Options
-  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));     // CONTROLS
+  m.input(press(B::BTN_A));                                // Options
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN)); // CONTROLS
   m.input(press(B::BTN_A));
   h.kv["pad.k0"] = "b";
-  m.input(press(B::BTN_Y));                                    // bound DS Y: ignored
+  m.input(press(B::BTN_Y)); // bound DS Y: ignored
   m.input(press(B::BTN_X));
   m.input(press(B::BTN_X));
   CHECK(h.kv["pad.k0"] == "b");
@@ -1314,7 +1366,7 @@ void test_controls_clear_and_reset_are_positional_on_a_pad() {
   CHECK(h.kv["pad.k0"] == "none");
   m.face_presses(kNorth);
   m.input(0);
-  CHECK(h.writes.back() != "reset");                           // armed only
+  CHECK(h.writes.back() != "reset"); // armed only
   m.face_presses(kNorth);
   m.input(0);
   CHECK(h.writes.back() == "reset");
@@ -1328,12 +1380,12 @@ void test_controls_list_can_shrink() {
   m.set_settings_host(&h);
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                    // Options
-  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));     // CONTROLS
+  m.input(press(B::BTN_A));                                // Options
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN)); // CONTROLS
   m.input(press(B::BTN_A));
-  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));     // the last row
-  h.rows = 2;                                                  // two rows went away
-  m.input(press(B::BTN_Y));                                    // clear, which re-clamps first
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN)); // the last row
+  h.rows = 2;                                              // two rows went away
+  m.input(press(B::BTN_Y));                                // clear, which re-clamps first
   // Whatever it cleared, it has to be a row that still exists.
   CHECK(h.writes.back() == "keys.k1");
   // And the page still draws, with the selection inside the list.
@@ -1356,14 +1408,14 @@ void test_controls_repaints_when_a_capture_is_cancelled() {
   m.set_settings_host(&h);
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                    // Options
-  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));     // CONTROLS
+  m.input(press(B::BTN_A));                                // Options
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN)); // CONTROLS
   m.input(press(B::BTN_A));
-  m.input(press(B::BTN_A));                                    // listen
+  m.input(press(B::BTN_A)); // listen
   CHECK(h.capturing());
-  m.update(0, 0, 10);                                          // the listening page is drawn
+  m.update(0, 0, 10); // the listening page is drawn
   m.clear_dirty();
-  h.capturing_ = false;                                        // the device backed out
+  h.capturing_ = false; // the device backed out
   m.update(0, 0, 10);
   CHECK(m.dirty());
   // And the page is live again straight away: one press does something.
@@ -1385,7 +1437,7 @@ void test_controls_opens_on_the_pad() {
     m.input(press(B::BTN_A));
     for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
     m.input(press(B::BTN_A));
-    m.input(press(B::BTN_A));                                  // listen on row 0
+    m.input(press(B::BTN_A)); // listen on row 0
     h.pending = "Q";
     m.update(0, 0, 10);
     CHECK(h.writes.back() == (pad ? "pad.k0" : "keys.k0"));
@@ -1401,26 +1453,26 @@ void test_text_editor() {
   m.set_settings_host(&h);
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                    // Options
-  for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN));     // DS OPTIONS
+  m.input(press(B::BTN_A));                                // Options
+  for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN)); // DS OPTIONS
   m.input(press(B::BTN_A));
-  m.input(press(B::BTN_A));                                    // the nickname editor
-  CHECK(h.writes.empty());                                     // opening writes nothing
-  m.input(press(B::BTN_UP));                                   // A -> B
-  m.input(press(B::BTN_B));                                    // abandon
-  CHECK(h.kv["user.nickname"] == "AB");                        // ... and nothing was kept
-  m.input(press(B::BTN_A));                                    // open it again
-  m.input(press(B::BTN_UP));                                   // A -> B
-  m.input(press(B::BTN_A));                                    // commit
+  m.input(press(B::BTN_A));             // the nickname editor
+  CHECK(h.writes.empty());              // opening writes nothing
+  m.input(press(B::BTN_UP));            // A -> B
+  m.input(press(B::BTN_B));             // abandon
+  CHECK(h.kv["user.nickname"] == "AB"); // ... and nothing was kept
+  m.input(press(B::BTN_A));             // open it again
+  m.input(press(B::BTN_UP));            // A -> B
+  m.input(press(B::BTN_A));             // commit
   CHECK(h.kv["user.nickname"] == "BB");
   // The cursor moves along the field and past its end, up to the length the
   // firmware keeps; the table wraps rather than running off its end.
   m.input(press(B::BTN_A));
   for (int i = 0; i < 40; ++i) m.input(press(B::BTN_RIGHT));
   for (int i = 0; i < 40; ++i) m.input(press(B::BTN_UP));
-  for (int i = 0; i < 8; ++i) m.input(press(B::BTN_L));        // round every table and back
+  for (int i = 0; i < 8; ++i) m.input(press(B::BTN_L)); // round every table and back
   m.input(press(B::BTN_A));
-  CHECK(h.kv["user.nickname"].size() <= 10);                   // never past the field
+  CHECK(h.kv["user.nickname"].size() <= 10); // never past the field
 }
 
 // The DS Options page is editable either way: with a generated firmware the
@@ -1436,9 +1488,9 @@ void test_ds_options_with_a_firmware_dump() {
     for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
     m.input(press(B::BTN_A));
     for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN));
-    m.input(press(B::BTN_A));                                  // DS OPTIONS
+    m.input(press(B::BTN_A)); // DS OPTIONS
     m.input(press(B::BTN_DOWN));
-    m.input(press(B::BTN_DOWN));                               // FAVOURITE COLOUR, a stepped row
+    m.input(press(B::BTN_DOWN)); // FAVOURITE COLOUR, a stepped row
     m.input(press(B::BTN_RIGHT));
     CHECK(!h.writes.empty());
     CHECK(h.writes.back() == "user.colour");
@@ -1454,8 +1506,8 @@ void test_save_target_switch() {
   m.set_settings_host(&h);
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
-  m.input(press(B::BTN_A));                                    // Options
-  for (int i = 0; i < 5; ++i) m.input(press(B::BTN_DOWN));     // the save row
+  m.input(press(B::BTN_A));                                // Options
+  for (int i = 0; i < 5; ++i) m.input(press(B::BTN_DOWN)); // the save row
   CHECK(!h.save_per_game());
   m.input(press(B::BTN_RIGHT));
   CHECK(h.save_per_game());
@@ -1478,12 +1530,15 @@ void test_save_target_switch() {
 // Every page, at canvas sizes from a DS screen to a desktop and in portrait,
 // stays inside the canvas and writes nothing past its edges.
 void test_canvas_sizes() {
-  static const int dims[][2] = {{256, 192}, {320, 240}, {480, 272}, {512, 384},
-                                {640, 480}, {720, 720}, {1280, 720}, {1920, 1080},
-                                {240, 320}, {160, 128}};
+  static const int dims[][2] = {{256, 192}, {320, 240},  {480, 272},   {512, 384}, {640, 480},
+                                {720, 720}, {1280, 720}, {1920, 1080}, {240, 320}, {160, 128}};
   std::vector<ds::cheat::Code> codes;
   std::vector<ds::cheat::Group> groups;
-  { ds::cheat::Group g; g.name = "GROUP"; groups.push_back(g); }
+  {
+    ds::cheat::Group g;
+    g.name = "GROUP";
+    groups.push_back(g);
+  }
   for (int i = 0; i < 50; ++i) {
     ds::cheat::Code c;
     c.name = "A CHEAT WITH A REASONABLY LONG NAME " + std::to_string(i);
@@ -1517,31 +1572,47 @@ void test_canvas_sizes() {
     m.set_games(&games);
     m.set_open(true);
     // The root, then every page reachable from it.
-    m.draw(d); guards_intact();
-    for (int i = 0; i < 3; ++i) { m.input(press(B::BTN_DOWN)); m.draw(d); guards_intact(); }
-    m.input(press(B::BTN_A));  m.draw(d); guards_intact();     // Options
+    m.draw(d);
+    guards_intact();
+    for (int i = 0; i < 3; ++i) {
+      m.input(press(B::BTN_DOWN));
+      m.draw(d);
+      guards_intact();
+    }
+    m.input(press(B::BTN_A));
+    m.draw(d);
+    guards_intact(); // Options
     for (int page = 0; page < 5; ++page) {
       Menu p;
       p.set_settings_host(&host);
       p.set_cheats(&codes, &groups);
       p.set_open(true);
       for (int i = 0; i < 4; ++i) p.input(press(B::BTN_DOWN)); // cheats row is shown now
-      p.input(press(B::BTN_A));                                 // Options
+      p.input(press(B::BTN_A));                                // Options
       for (int i = 0; i < page; ++i) p.input(press(B::BTN_DOWN));
       p.input(press(B::BTN_A));
-      p.draw(d); guards_intact();
-      p.input(press(B::BTN_DOWN)); p.draw(d); guards_intact();
-      p.input(press(B::BTN_A));    p.draw(d); guards_intact();  // and whatever A opens there
+      p.draw(d);
+      guards_intact();
+      p.input(press(B::BTN_DOWN));
+      p.draw(d);
+      guards_intact();
+      p.input(press(B::BTN_A));
+      p.draw(d);
+      guards_intact(); // and whatever A opens there
     }
     // The slot page, the cheats page, the game picker and the notice.
     Menu s;
     s.set_open(true);
-    s.input(press(B::BTN_DOWN)); s.input(press(B::BTN_DOWN)); s.input(press(B::BTN_A));
-    s.draw(d); guards_intact();
+    s.input(press(B::BTN_DOWN));
+    s.input(press(B::BTN_DOWN));
+    s.input(press(B::BTN_A));
+    s.draw(d);
+    guards_intact();
     Menu g;
     g.set_games(&games);
     g.open_games();
-    g.draw(d); guards_intact();
+    g.draw(d);
+    guards_intact();
     ds::sdl::draw_notice(d, "A GAME WITH A VERY LONG TITLE INDEED", "UNPACKING...", "FIRST LAUNCH ONLY");
     guards_intact();
   }

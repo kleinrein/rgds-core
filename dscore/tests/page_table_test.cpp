@@ -10,7 +10,7 @@ using namespace ds::mem;
 
 int main() {
   PageTable pt;
-  auto ram = alloc_page_buf(64 * 1024);   // PAGE_SIZE-aligned, as map() requires
+  auto ram = alloc_page_buf(64 * 1024); // PAGE_SIZE-aligned, as map() requires
 
   // Unmapped => slow path.
   CHECK(pt.read_ptr(0x02000000) == nullptr);
@@ -48,7 +48,7 @@ int main() {
 
   pt.unmap(0x02000000, 64 * 1024);
   CHECK(pt.read_ptr(0x02001234) == nullptr);
-  CHECK(pt.read_ptr(0x02011234) != nullptr);   // mirror still mapped
+  CHECK(pt.read_ptr(0x02011234) != nullptr); // mirror still mapped
   std::puts("page_table: ok");
   return 0;
 }

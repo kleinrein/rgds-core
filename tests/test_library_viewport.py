@@ -4,14 +4,17 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-ROOT=Path(__file__).resolve().parents[1]
 
-@unittest.skipUnless(shutil.which('clang++'),'Requires clang++')
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@unittest.skipUnless(shutil.which('clang++'), 'Requires clang++')
 class LibraryViewportTests(unittest.TestCase):
     def test_reveal_continuous_scroll_rows_and_rail_endpoints(self):
         with tempfile.TemporaryDirectory() as folder:
-            path=Path(folder)/'test.cpp'
-            path.write_text(r'''#include "launcher/library_viewport.hpp"
+            path = Path(folder) / 'test.cpp'
+            path.write_text(
+                r'''#include "launcher/library_viewport.hpp"
 #include "launcher/model.hpp"
 #include <cassert>
 int main(){
@@ -38,7 +41,16 @@ int main(){
  assert(rgds::library_title("0123 - Puzzle 2 (Europe) (En,Fr) (Rev 1)")=="Puzzle 2");
  assert(rgds::library_title("Puzzle (Advance)")=="Puzzle (Advance)");
  assert(rgds::library_title("Sims 2, The (Europe)")=="The Sims 2");
-}''')
-            binary=Path(folder)/'test'
-            subprocess.run(['clang++','-std=c++17','-Wall','-Wextra','-Werror','-I'+str(ROOT/'src'),str(path),'-o',str(binary)],check=True,capture_output=True)
-            subprocess.run([str(binary)],check=True,capture_output=True)
+}'''
+            )
+            binary = Path(folder) / 'test'
+            subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I' + str(ROOT / 'src'),
+                    str(path), '-o',
+                    str(binary)
+                ],
+                check=True,
+                capture_output=True
+            )
+            subprocess.run([str(binary)], check=True, capture_output=True)

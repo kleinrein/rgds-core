@@ -79,9 +79,14 @@ namespace {
 
 // Gates startup chatter and hotkey echoes; errors, refusals and disk-touching
 // confirmations are never gated. DS_VERBOSE=1 enables.
-bool verbose() { static const bool v = std::getenv("DS_VERBOSE") != nullptr; return v; }
-#define VLOG(...) do { if (verbose()) std::fprintf(stderr, __VA_ARGS__); } while (0)
-
+bool verbose() {
+  static const bool v = std::getenv("DS_VERBOSE") != nullptr;
+  return v;
+}
+#define VLOG(...)                                                                                                      \
+  do {                                                                                                                 \
+    if (verbose()) std::fprintf(stderr, __VA_ARGS__);                                                                  \
+  } while (0)
 
 using namespace ds;
 
@@ -288,7 +293,8 @@ void load_save(NDS& nds, const std::string& path) {
   if (!nds.cart) return;
   FILE* f = std::fopen(path.c_str(), "rb");
   if (!f) {
-    if (!nds.cart->save_type_listed()) VLOG("save: game code not in the save list; the chip is detected on first use\n");
+    if (!nds.cart->save_type_listed())
+      VLOG("save: game code not in the save list; the chip is detected on first use\n");
     return;
   }
   std::vector<u8> data;
@@ -296,15 +302,26 @@ void load_save(NDS& nds, const std::string& path) {
   for (size_t got; (got = std::fread(buf, 1, sizeof buf, f)) > 0;) data.insert(data.end(), buf, buf + got);
   std::fclose(f);
   const ds::cart::Cart::SaveLoad r = nds.cart->load_save(data.data(), data.size());
-  if (r.fitted) { VLOG("save: loaded %zu bytes from %s\n", data.size(), path.c_str()); return; }
+  if (r.fitted) {
+    VLOG("save: loaded %zu bytes from %s\n", data.size(), path.c_str());
+    return;
+  }
   // First write resizes to the chip's size, which would cut off/pad the
   // player's original: keep it as .bak.
   const std::string bak = path + ".bak";
-  if (r.chip_bytes) std::fprintf(stderr, "save: %s is %zu bytes but the game's save chip holds %u; the original is kept as %s\n", path.c_str(), data.size(), r.chip_bytes, bak.c_str());
-  else std::fprintf(stderr, "save: %s is %zu bytes, a size no save chip has; ignored, the original is kept as %s\n", path.c_str(), data.size(), bak.c_str());
-  if (FILE* e = std::fopen(bak.c_str(), "rb")) { std::fclose(e); return; }   // earlier original wins
+  if (r.chip_bytes)
+    std::fprintf(stderr, "save: %s is %zu bytes but the game's save chip holds %u; the original is kept as %s\n",
+                 path.c_str(), data.size(), r.chip_bytes, bak.c_str());
+  else
+    std::fprintf(stderr, "save: %s is %zu bytes, a size no save chip has; ignored, the original is kept as %s\n",
+                 path.c_str(), data.size(), bak.c_str());
+  if (FILE* e = std::fopen(bak.c_str(), "rb")) {
+    std::fclose(e);
+    return;
+  } // earlier original wins
   if (FILE* o = std::fopen(bak.c_str(), "wb")) {
-    if (std::fwrite(data.data(), 1, data.size(), o) != data.size()) std::fprintf(stderr, "save: cannot write %s\n", bak.c_str());
+    if (std::fwrite(data.data(), 1, data.size(), o) != data.size())
+      std::fprintf(stderr, "save: cannot write %s\n", bak.c_str());
     std::fclose(o);
   }
 }
@@ -314,10 +331,16 @@ void write_save(NDS& nds, const std::string& path) {
   // Write-then-rename: a power cut mid-write leaves the previous file.
   const std::string tmp = path + ".tmp";
   FILE* f = std::fopen(tmp.c_str(), "wb");
-  if (!f) { std::fprintf(stderr, "save: cannot write %s\n", tmp.c_str()); return; }
+  if (!f) {
+    std::fprintf(stderr, "save: cannot write %s\n", tmp.c_str());
+    return;
+  }
   const bool ok = std::fwrite(nds.cart->sram().data(), 1, nds.cart->sram().size(), f) == nds.cart->sram().size();
   std::fclose(f);
-  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) { std::fprintf(stderr, "save: cannot write %s\n", path.c_str()); return; }
+  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) {
+    std::fprintf(stderr, "save: cannot write %s\n", path.c_str());
+    return;
+  }
   nds.cart->clear_sram_dirty();
 }
 
@@ -327,7 +350,8 @@ bool write_png(NDS& nds, const std::string& path, const ds::sdl::Display::Layout
   using Disp = ds::sdl::Display;
   int w = 0, h = 0;
   Disp::Layout layout = shown;
-  layout.gap = 0; layout.gap_auto = false;   // screen_gap is a panel distance, not part of the game's picture
+  layout.gap = 0;
+  layout.gap_auto = false; // screen_gap is a panel distance, not part of the game's picture
   Disp::natural_size(layout, 1.0, w, h);
   Disp::View views[Disp::SCREENS];
   Disp::place(layout, w, h, views);
@@ -347,9 +371,10 @@ bool write_png(NDS& nds, const std::string& path, const ds::sdl::Display::Layout
         const int dx = v.rect.x + x;
         if (dx < 0 || dx >= w) continue;
         const int sx = static_cast<int>(static_cast<long>(x) * ds::SCREEN_W / v.rect.w);
-        u32 c = fb[sy * ds::SCREEN_W + sx];    // ARGB8888
+        u32 c = fb[sy * ds::SCREEN_W + sx]; // ARGB8888
         if (alpha < 255) {
-          u32 under = (static_cast<u32>(dst[x * 4 + 0]) << 16) | (static_cast<u32>(dst[x * 4 + 1]) << 8) | dst[x * 4 + 2];
+          u32 under =
+              (static_cast<u32>(dst[x * 4 + 0]) << 16) | (static_cast<u32>(dst[x * 4 + 1]) << 8) | dst[x * 4 + 2];
           Disp::blend_row(&under, &c, 1, alpha);
           c = under;
         }
@@ -361,14 +386,22 @@ bool write_png(NDS& nds, const std::string& path, const ds::sdl::Display::Layout
     }
   }
   size_t len = 0;
-  void* png = tdefl_write_image_to_png_file_in_memory_ex(rgba.data(), w, h, 4, &len, 6 /* zlib default level */, MZ_FALSE);
-  if (!png) { std::fprintf(stderr, "png: cannot encode\n"); return false; }
+  void* png =
+      tdefl_write_image_to_png_file_in_memory_ex(rgba.data(), w, h, 4, &len, 6 /* zlib default level */, MZ_FALSE);
+  if (!png) {
+    std::fprintf(stderr, "png: cannot encode\n");
+    return false;
+  }
   const std::string tmp = path + ".tmp";
   FILE* f = std::fopen(tmp.c_str(), "wb");
   const bool ok = f && std::fwrite(png, 1, len, f) == len;
   if (f) std::fclose(f);
-  std::free(png);   // miniz allocates with plain malloc (MZ_MALLOC is not overridden)
-  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) { std::fprintf(stderr, "png: cannot write %s\n", path.c_str()); std::remove(tmp.c_str()); return false; }
+  std::free(png); // miniz allocates with plain malloc (MZ_MALLOC is not overridden)
+  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) {
+    std::fprintf(stderr, "png: cannot write %s\n", path.c_str());
+    std::remove(tmp.c_str());
+    return false;
+  }
   return true;
 }
 
@@ -411,21 +444,30 @@ std::string autoload_path(NDS& nds, const std::string& dir, bool enabled) {
 // headless never writes it, an older file just ends before it.
 void write_layout_chunk(ds::state::Writer& w, const ds::sdl::Display::Layout& l) {
   w.begin("VIEW");
-  w.put(static_cast<u8>(l.mode)); w.put(static_cast<u8>(l.primary)); w.put(static_cast<u8>(l.corner));
-  w.put(l.pip); w.put(l.dominant);
+  w.put(static_cast<u8>(l.mode));
+  w.put(static_cast<u8>(l.primary));
+  w.put(static_cast<u8>(l.corner));
+  w.put(l.pip);
+  w.put(l.dominant);
   w.end();
 }
 
 bool read_layout_chunk(ds::state::Reader& r, ds::sdl::Display::Layout& l) {
   using Disp = ds::sdl::Display;
   if (r.at_end() || !r.begin("VIEW")) return false;
-  u8 mode = 0, primary = 0, corner = 0; double pip = l.pip, dominant = l.dominant;
+  u8 mode = 0, primary = 0, corner = 0;
+  double pip = l.pip, dominant = l.dominant;
   r.fields(mode, primary, corner);
   if (r.more()) r.fields(pip, dominant);
   r.end();
-  if (!r.ok() || mode >= static_cast<u8>(Disp::Mode::Count) || primary > 1 || corner >= static_cast<u8>(Disp::Corner::Count)) return false;
-  l.mode = static_cast<Disp::Mode>(mode); l.primary = primary; l.corner = static_cast<Disp::Corner>(corner);
-  l.pip = std::clamp(pip, 0.1, 0.9); l.dominant = std::clamp(dominant, 0.1, 0.99);
+  if (!r.ok() || mode >= static_cast<u8>(Disp::Mode::Count) || primary > 1 ||
+      corner >= static_cast<u8>(Disp::Corner::Count))
+    return false;
+  l.mode = static_cast<Disp::Mode>(mode);
+  l.primary = primary;
+  l.corner = static_cast<Disp::Corner>(corner);
+  l.pip = std::clamp(pip, 0.1, 0.9);
+  l.dominant = std::clamp(dominant, 0.1, 0.99);
   return true;
 }
 
@@ -442,9 +484,9 @@ CheevosStateHook* g_cheevos_state = nullptr;
 // A state loaded before cheevos sign-in/fetch completes is held here and
 // applied once the set arrives; also covers an in-session load mid-fetch.
 struct PendingCheevosState {
-  bool waiting = false;      // state loaded, not yet accounted for
+  bool waiting = false; // state loaded, not yet accounted for
   u32 game_id = 0;
-  std::vector<u8> blob;      // empty: state carried no progress, so reset
+  std::vector<u8> blob; // empty: state carried no progress, so reset
 } g_cheevos_pending;
 
 void write_cheevos_chunk(ds::state::Writer& w) {
@@ -461,28 +503,43 @@ void write_cheevos_chunk(ds::state::Writer& w) {
 void read_cheevos_chunk(ds::state::Reader& r) {
   // No hook check: the session doesn't exist yet at startup read time.
   // No chunk found: still reset the runtime, or it keeps counting stale progress.
-  if (r.at_end() || !r.begin("CHVO")) { g_cheevos_pending = {true, 0, {}}; return; }
+  if (r.at_end() || !r.begin("CHVO")) {
+    g_cheevos_pending = {true, 0, {}};
+    return;
+  }
   u32 game_id = 0;
   std::vector<u8> blob;
   r.fields(game_id);
   r.vec(blob);
   r.end();
-  if (!r.ok() || blob.empty()) { g_cheevos_pending = {true, 0, {}}; return; }
+  if (!r.ok() || blob.empty()) {
+    g_cheevos_pending = {true, 0, {}};
+    return;
+  }
   g_cheevos_pending = {true, game_id, std::move(blob)};
 }
 
-
 bool save_state_file(NDS& nds, const std::string& path, const ds::sdl::Display::Layout& layout) {
-  ds::state::Writer w; std::string err;
-  if (!nds.save_state(w, err)) { std::fprintf(stderr, "state: cannot save: %s\n", err.c_str()); return false; }
+  ds::state::Writer w;
+  std::string err;
+  if (!nds.save_state(w, err)) {
+    std::fprintf(stderr, "state: cannot save: %s\n", err.c_str());
+    return false;
+  }
   write_layout_chunk(w, layout);
   write_cheevos_chunk(w);
   const std::string tmp = path + ".tmp";
   FILE* f = std::fopen(tmp.c_str(), "wb");
-  if (!f) { std::fprintf(stderr, "state: cannot write %s\n", tmp.c_str()); return false; }
+  if (!f) {
+    std::fprintf(stderr, "state: cannot write %s\n", tmp.c_str());
+    return false;
+  }
   const bool ok = std::fwrite(w.data().data(), 1, w.data().size(), f) == w.data().size();
   std::fclose(f);
-  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) { std::fprintf(stderr, "state: cannot write %s\n", path.c_str()); return false; }
+  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) {
+    std::fprintf(stderr, "state: cannot write %s\n", path.c_str());
+    return false;
+  }
   std::fprintf(stderr, "state: saved %s (%zu KB)\n", path.c_str(), w.data().size() >> 10);
   return true;
 }
@@ -497,11 +554,19 @@ bool load_state_file(NDS& nds, const std::string& path, ds::sdl::Display::Layout
   layout_loaded = false;
   std::vector<u8> bytes;
   if (FILE* f = std::fopen(path.c_str(), "rb")) {
-    std::fseek(f, 0, SEEK_END); const long n = std::ftell(f); std::fseek(f, 0, SEEK_SET);
-    if (n > 0) { bytes.resize(static_cast<size_t>(n)); if (std::fread(bytes.data(), 1, bytes.size(), f) != bytes.size()) bytes.clear(); }
+    std::fseek(f, 0, SEEK_END);
+    const long n = std::ftell(f);
+    std::fseek(f, 0, SEEK_SET);
+    if (n > 0) {
+      bytes.resize(static_cast<size_t>(n));
+      if (std::fread(bytes.data(), 1, bytes.size(), f) != bytes.size()) bytes.clear();
+    }
     std::fclose(f);
   }
-  if (bytes.empty()) { std::fprintf(stderr, "state: no state in slot (%s)\n", path.c_str()); return false; }
+  if (bytes.empty()) {
+    std::fprintf(stderr, "state: no state in slot (%s)\n", path.c_str());
+    return false;
+  }
   g_state_refused.clear();
   ds::state::Reader r(bytes.data(), bytes.size());
   std::string err;
@@ -512,7 +577,8 @@ bool load_state_file(NDS& nds, const std::string& path, ds::sdl::Display::Layout
   }
   layout_loaded = read_layout_chunk(r, layout);
   read_cheevos_chunk(r);
-  std::fprintf(stderr, "state: loaded %s (frame %llu%s)\n", path.c_str(), static_cast<unsigned long long>(nds.frame_count),
+  std::fprintf(stderr, "state: loaded %s (frame %llu%s)\n", path.c_str(),
+               static_cast<unsigned long long>(nds.frame_count),
                layout_loaded ? (std::string(", layout ") + ds::sdl::Display::mode_name(layout.mode)).c_str() : "");
   return true;
 }
@@ -572,18 +638,24 @@ void Session::open(NDS& nds, const ds::sdl::Config& cfg, const std::string& rom,
   if (!db.empty()) {
     auto ends_with_db = [](const std::string& s) {
       static const std::string tail = "usrcheat.dat";
-      return s.size() >= tail.size() &&
-             s.compare(s.size() - tail.size(), tail.size(), tail) == 0;
+      return s.size() >= tail.size() && s.compare(s.size() - tail.size(), tail.size(), tail) == 0;
     };
     while (db.size() > 1 && (db.back() == '/' || db.back() == '\\')) db.pop_back();
     if (!ends_with_db(db)) {
       std::string joined = db + "/usrcheat.dat";
-      if (FILE* f = std::fopen(joined.c_str(), "rb")) { std::fclose(f); db = joined; }
+      if (FILE* f = std::fopen(joined.c_str(), "rb")) {
+        std::fclose(f);
+        db = joined;
+      }
     }
   }
   if (db.empty()) {
     for (const std::string& candidate : {rom_dir + "/usrcheat.dat", ds::sdl::Config::dir() + "/usrcheat.dat"}) {
-      if (FILE* f = std::fopen(candidate.c_str(), "rb")) { std::fclose(f); db = candidate; break; }
+      if (FILE* f = std::fopen(candidate.c_str(), "rb")) {
+        std::fclose(f);
+        db = candidate;
+        break;
+      }
     }
   }
   if (!db.empty()) {
@@ -615,7 +687,10 @@ void Session::load_enabled(NDS& nds) const {
     while (!want.empty() && (want.back() == '\n' || want.back() == '\r')) want.pop_back();
     if (want.empty()) continue;
     for (ds::cheat::Code& c : nds.cheats.codes)
-      if (!c.is_note() && c.name == want) { c.enabled = true; ++on; }
+      if (!c.is_note() && c.name == want) {
+        c.enabled = true;
+        ++on;
+      }
   }
   std::fclose(f);
   if (on) VLOG("cheats: %zu enabled from %s\n", on, cheats_on_path.c_str());
@@ -624,7 +699,10 @@ void Session::load_enabled(NDS& nds) const {
 void Session::save_enabled(NDS& nds) const {
   if (cheats_on_path.empty()) return;
   FILE* f = std::fopen(cheats_on_path.c_str(), "wb");
-  if (!f) { std::fprintf(stderr, "cheats: cannot write %s\n", cheats_on_path.c_str()); return; }
+  if (!f) {
+    std::fprintf(stderr, "cheats: cannot write %s\n", cheats_on_path.c_str());
+    return;
+  }
   for (const ds::cheat::Code& c : nds.cheats.codes)
     if (c.enabled && !c.is_note()) std::fprintf(f, "%s\n", c.name.c_str());
   std::fclose(f);
@@ -632,22 +710,30 @@ void Session::save_enabled(NDS& nds) const {
 
 // The stick-driven pen: an outlined crosshair with a red centre, drawn over
 // the bottom screen in DS pixel space and mapped onto the destination.
-struct CursorDst { u32* px; u32 pitch; u32 h; const u16* xrun; };
+struct CursorDst {
+  u32* px;
+  u32 pitch;
+  u32 h;
+  const u16* xrun;
+};
 void draw_cursor(const CursorDst& d, int cx, int cy, int size) {
   auto fill = [&](int x, int y, u32 colour) {
     if (x < 0 || x > 255 || y < 0 || y > 191) return;
     const u32 w = d.xrun ? d.xrun[ds::SCREEN_W] : ds::SCREEN_W;
-    for (u32 yy = u32(y)*d.h/192; yy < u32(y+1)*d.h/192; ++yy)
-      for (u32 xx = u32(x)*w/256; xx < u32(x+1)*w/256; ++xx) d.px[yy*d.pitch+xx] = colour;
+    for (u32 yy = u32(y) * d.h / 192; yy < u32(y + 1) * d.h / 192; ++yy)
+      for (u32 xx = u32(x) * w / 256; xx < u32(x + 1) * w / 256; ++xx) d.px[yy * d.pitch + xx] = colour;
   };
   // `size` scales the shape: arms `size` wide, 3*size long, size x size centre.
-  auto box = [&](int x0, int y0, int w, int h, u32 colour) { for (int y = y0; y < y0 + h; ++y) for (int x = x0; x < x0 + w; ++x) fill(x, y, colour); };
+  auto box = [&](int x0, int y0, int w, int h, u32 colour) {
+    for (int y = y0; y < y0 + h; ++y)
+      for (int x = x0; x < x0 + w; ++x) fill(x, y, colour);
+  };
   const u32 outline = 0xFF14263B, line = 0xFF4EBBFF, centre = 0xFFE9F4FF;
   if (size < 1) size = 1;
-  const int arm = 3 * size, half = size / 2;          // the centre box spans [cx-half, cx-half+size)
-  const int c0 = -half, c1 = -half + size;            // centre extent relative to cx/cy
-  box(cx + c0 - arm - 1, cy + c0 - 1, 2 * arm + size + 2, size + 2, outline);   // horizontal bar outline
-  box(cx + c0 - 1, cy + c0 - arm - 1, size + 2, 2 * arm + size + 2, outline);   // vertical bar outline
+  const int arm = 3 * size, half = size / 2; // the centre box spans [cx-half, cx-half+size)
+  const int c0 = -half, c1 = -half + size;   // centre extent relative to cx/cy
+  box(cx + c0 - arm - 1, cy + c0 - 1, 2 * arm + size + 2, size + 2, outline); // horizontal bar outline
+  box(cx + c0 - 1, cy + c0 - arm - 1, size + 2, 2 * arm + size + 2, outline); // vertical bar outline
   box(cx + c0 - arm, cy + c0, 2 * arm + size, size, line);
   box(cx + c0, cy + c0 - arm, size, 2 * arm + size, line);
   box(cx + c0, cy + c0, c1 - c0, c1 - c0, centre);
@@ -657,29 +743,30 @@ void draw_cursor(const CursorDst& d, int cx, int cy, int size) {
 volatile std::sig_atomic_t g_signalled = 0;
 void on_signal(int) { g_signalled = 1; }
 
-
 // [video] settings, re-read/re-applied from the pause menu, not just at boot.
 // parse_video() is pure (no SDL); open_displays() does the set_* calls that
 // must precede Display::open. The sink plan and dual-window order are
 // boot-only: they can force SDL's video driver, fixed before SDL_Init.
 struct VideoSetup {
-  int    scale = 2;
-  bool   fullscreen = false, linear = false, vsync = true, dual_window = false;
+  int scale = 2;
+  bool fullscreen = false, linear = false, vsync = true, dual_window = false;
   ds::sdl::Display::IntScale int_scale = ds::sdl::Display::IntScale::Off;
-  double grid_s = 0.0;      // 0..1 as configured
-  u32    grid = 256;        // brightness kept on a seam, 0..256 (256 = off)
-  u8     seam_blend = 0;    // 0 dark, 1 blend, 2 blend in linear light
-  u8     chunky = 0;
-  int    chunky_cell = -1;
-  u32    chunky_thresh = 180 * 256;
+  double grid_s = 0.0; // 0..1 as configured
+  u32 grid = 256;      // brightness kept on a seam, 0..256 (256 = off)
+  u8 seam_blend = 0;   // 0 dark, 1 blend, 2 blend in linear light
+  u8 chunky = 0;
+  int chunky_cell = -1;
+  u32 chunky_thresh = 180 * 256;
   ds::sdl::Display::Layout layout;
   std::vector<ds::sdl::Display::Mode> layout_cycle;
   // Boot-only, see above.
-  ds::frontend::Sink panel_sink = ds::frontend::Sink::Count;   // Disp/Fbdev when one owns the panel (frontend/video/select.h)
-  ds::frontend::Sink want_sink = ds::frontend::Sink::Count;    // explicit video.sink among the window sinks
-  bool   gpu_present = false;
-  ds::sdl::Display::GpuPresentMode gpu_mode = ds::sdl::Display::GpuPresentMode::Auto;   // video.gpu_present: true (auto: RGA, else Vulkan) | rga | vulkan
-  int    upper_display = 0, lower_display = 1;   // dual-window: SDL display per physical panel
+  ds::frontend::Sink panel_sink =
+      ds::frontend::Sink::Count; // Disp/Fbdev when one owns the panel (frontend/video/select.h)
+  ds::frontend::Sink want_sink = ds::frontend::Sink::Count; // explicit video.sink among the window sinks
+  bool gpu_present = false;
+  ds::sdl::Display::GpuPresentMode gpu_mode =
+      ds::sdl::Display::GpuPresentMode::Auto; // video.gpu_present: true (auto: RGA, else Vulkan) | rga | vulkan
+  int upper_display = 0, lower_display = 1;   // dual-window: SDL display per physical panel
 };
 
 constexpr const char* kDefaultLayoutCycle = "vertical,horizontal,single,pip,dominant_v,dominant_h";
@@ -690,11 +777,16 @@ bool parse_layout_cycle(const std::string& cyc, std::vector<ds::sdl::Display::Mo
   using Disp = ds::sdl::Display;
   out.clear();
   for (size_t at = 0; at <= cyc.size();) {
-    size_t end = cyc.find(',', at); if (end == std::string::npos) end = cyc.size();
+    size_t end = cyc.find(',', at);
+    if (end == std::string::npos) end = cyc.size();
     std::string name = cyc.substr(at, end - at);
-    name.erase(0, name.find_first_not_of(' ')); name.erase(name.find_last_not_of(' ') + 1);
+    name.erase(0, name.find_first_not_of(' '));
+    name.erase(name.find_last_not_of(' ') + 1);
     Disp::Mode m;
-    if (!name.empty() && !Disp::parse_mode(name, m)) { std::fprintf(stderr, "unknown layout %s in layout_cycle\n", name.c_str()); return false; }
+    if (!name.empty() && !Disp::parse_mode(name, m)) {
+      std::fprintf(stderr, "unknown layout %s in layout_cycle\n", name.c_str());
+      return false;
+    }
     if (!name.empty()) out.push_back(m);
     at = end + 1;
   }
@@ -709,50 +801,87 @@ bool parse_video(const ds::sdl::Config& cfg, VideoSetup& vs) {
   vs.linear = cfg.flag("video.linear", false);
   vs.vsync = cfg.flag("video.vsync", true);
   vs.dual_window = cfg.flag("video.dual_window", false);
-  if (!Disp::parse_int_scale(cfg.str("video.integer_scale", "off"), vs.int_scale)) { std::fprintf(stderr, "integer_scale must be off, under or over\n"); return false; }
+  if (!Disp::parse_int_scale(cfg.str("video.integer_scale", "off"), vs.int_scale)) {
+    std::fprintf(stderr, "integer_scale must be off, under or over\n");
+    return false;
+  }
   vs.grid_s = std::min(1.0, std::max(0.0, cfg.real("video.lcd_grid", 0.0)));
   vs.grid = static_cast<u32>(std::lround((1.0 - vs.grid_s) * 256.0));
   vs.seam_blend = 0;
   {
     const std::string sm = cfg.str("video.seam", "dark");
-    if (sm == "blend") vs.seam_blend = 1; else if (sm == "blend_linear") vs.seam_blend = 2;
-    else if (sm != "dark") { std::fprintf(stderr, "unknown seam %s (dark | blend | blend_linear)\n", sm.c_str()); return false; }
+    if (sm == "blend") vs.seam_blend = 1;
+    else if (sm == "blend_linear") vs.seam_blend = 2;
+    else if (sm != "dark") {
+      std::fprintf(stderr, "unknown seam %s (dark | blend | blend_linear)\n", sm.c_str());
+      return false;
+    }
     if (vs.linear && (vs.grid_s > 0.0 || vs.seam_blend || cfg.str("video.chunky", "false") != "false"))
       std::fprintf(stderr, "video.linear takes precedence over lcd_grid, seam and chunky\n");
   }
   {
     const std::string c = cfg.str("video.chunky_cell", "auto");
-    if (c == "auto") vs.chunky_cell = -1; else if (c == "pair" || c == "2x") vs.chunky_cell = 0;
-    else { vs.chunky_cell = std::atoi(c.c_str()); if (vs.chunky_cell < 2 || vs.chunky_cell > 64) { std::fprintf(stderr, "chunky_cell %s: auto | pair | 2..64\n", c.c_str()); return false; } }
+    if (c == "auto") vs.chunky_cell = -1;
+    else if (c == "pair" || c == "2x") vs.chunky_cell = 0;
+    else {
+      vs.chunky_cell = std::atoi(c.c_str());
+      if (vs.chunky_cell < 2 || vs.chunky_cell > 64) {
+        std::fprintf(stderr, "chunky_cell %s: auto | pair | 2..64\n", c.c_str());
+        return false;
+      }
+    }
   }
   vs.chunky_thresh = static_cast<u32>(std::min(255, std::max(0, cfg.num("video.chunky_threshold", 180)))) * 256;
   vs.chunky = 0;
   {
     const std::string c = cfg.str("video.chunky", "false");
-    if (c == "tl") vs.chunky = 1; else if (c == "mean" || c == "true" || c == "1" || c == "yes" || c == "on") vs.chunky = 2;
-    else if (c == "min") vs.chunky = 4; else if (c == "max") vs.chunky = 5; else if (c == "mode") vs.chunky = 3;
+    if (c == "tl") vs.chunky = 1;
+    else if (c == "mean" || c == "true" || c == "1" || c == "yes" || c == "on") vs.chunky = 2;
+    else if (c == "min") vs.chunky = 4;
+    else if (c == "max") vs.chunky = 5;
+    else if (c == "mode") vs.chunky = 3;
     else if (c == "extreme") vs.chunky = 6;
-    else if (!(c == "false" || c == "0" || c == "no" || c == "off" || c.empty())) { std::fprintf(stderr, "unknown chunky %s (mean | extreme | mode | tl | min | max | false)\n", c.c_str()); return false; }
+    else if (!(c == "false" || c == "0" || c == "no" || c == "off" || c.empty())) {
+      std::fprintf(stderr, "unknown chunky %s (mean | extreme | mode | tl | min | max | false)\n", c.c_str());
+      return false;
+    }
   }
   vs.layout = Disp::Layout{};
   vs.layout_cycle.clear();
   {
-    const std::string l = cfg.str("video.layout", "vertical"), sc = cfg.str("video.screen", "top"), co = cfg.str("video.pip_corner", "br");
-    if (!Disp::parse_mode(l, vs.layout.mode)) { std::fprintf(stderr, "unknown layout %s\n", l.c_str()); return false; }
-    if (sc == "top") vs.layout.primary = 0; else if (sc == "bottom") vs.layout.primary = 1;
-    else { std::fprintf(stderr, "unknown screen %s (top | bottom)\n", sc.c_str()); return false; }
-    if (!Disp::parse_corner(co, vs.layout.corner)) { std::fprintf(stderr, "unknown pip_corner %s (tl | tr | bl | br)\n", co.c_str()); return false; }
+    const std::string l = cfg.str("video.layout", "vertical"), sc = cfg.str("video.screen", "top"),
+                      co = cfg.str("video.pip_corner", "br");
+    if (!Disp::parse_mode(l, vs.layout.mode)) {
+      std::fprintf(stderr, "unknown layout %s\n", l.c_str());
+      return false;
+    }
+    if (sc == "top") vs.layout.primary = 0;
+    else if (sc == "bottom") vs.layout.primary = 1;
+    else {
+      std::fprintf(stderr, "unknown screen %s (top | bottom)\n", sc.c_str());
+      return false;
+    }
+    if (!Disp::parse_corner(co, vs.layout.corner)) {
+      std::fprintf(stderr, "unknown pip_corner %s (tl | tr | bl | br)\n", co.c_str());
+      return false;
+    }
     if (!parse_layout_cycle(cfg.str("video.layout_cycle", kDefaultLayoutCycle), vs.layout_cycle)) return false;
     if (vs.layout_cycle.empty()) vs.layout_cycle.push_back(vs.layout.mode);
     vs.layout.pip = std::clamp(cfg.real("video.pip_scale", 1.0 / 3.0), 0.1, 0.9);
     vs.layout.pip_alpha = std::clamp(cfg.real("video.pip_alpha", 1.0), 0.0, 1.0);
-    vs.layout.gap_auto = cfg.str("video.screen_gap", "0") == "auto";   // the pair pushed to the edges
-    vs.layout.gap = vs.layout.gap_auto ? 0 : cfg.num("video.screen_gap", 0);   // menu bounds it; file/CLI take anything, overlap included
+    vs.layout.gap_auto = cfg.str("video.screen_gap", "0") == "auto"; // the pair pushed to the edges
+    vs.layout.gap = vs.layout.gap_auto
+                        ? 0
+                        : cfg.num("video.screen_gap", 0); // menu bounds it; file/CLI take anything, overlap included
     const std::string dr = cfg.str("video.dominant_ratio", "auto");
     vs.layout.dominant_auto = dr == "auto";
     if (!vs.layout.dominant_auto) {
-      char* end = nullptr; const double v = std::strtod(dr.c_str(), &end);
-      if (end == dr.c_str() || *end) { std::fprintf(stderr, "dominant_ratio must be a number or auto\n"); return false; }
+      char* end = nullptr;
+      const double v = std::strtod(dr.c_str(), &end);
+      if (end == dr.c_str() || *end) {
+        std::fprintf(stderr, "dominant_ratio must be a number or auto\n");
+        return false;
+      }
       vs.layout.dominant = std::clamp(v, 0.1, 0.99);
     }
     vs.layout.dominant_min = std::clamp(cfg.real("video.dominant_threshold", 0.25), 0.1, 0.99);
@@ -773,15 +902,25 @@ bool sync_dual_modes(ds::sdl::Display& a, ds::sdl::Display& b) {
 // Split from parse_video so a settings change can close the windows and
 // come back through here with new values.
 bool open_displays(const VideoSetup& vs, ds::sdl::Display& display, ds::sdl::Display& display2) {
-  display.set_gpu_present(vs.gpu_present, vs.gpu_mode); display2.set_gpu_present(vs.gpu_present, vs.gpu_mode);
+  display.set_gpu_present(vs.gpu_present, vs.gpu_mode);
+  display2.set_gpu_present(vs.gpu_present, vs.gpu_mode);
   if (vs.dual_window) {
-    display.set_sinks(ds::frontend::Sink::Count, vs.want_sink); display2.set_sinks(ds::frontend::Sink::Count, vs.want_sink);
-    display.set_chunky(vs.chunky != 0, vs.chunky_cell); display2.set_chunky(vs.chunky != 0, vs.chunky_cell);
-    display.set_grid_strength(vs.linear ? 0.0 : vs.grid_s); display2.set_grid_strength(vs.linear ? 0.0 : vs.grid_s);
-    display.set_integer_scale(vs.int_scale); display2.set_integer_scale(vs.int_scale);
+    display.set_sinks(ds::frontend::Sink::Count, vs.want_sink);
+    display2.set_sinks(ds::frontend::Sink::Count, vs.want_sink);
+    display.set_chunky(vs.chunky != 0, vs.chunky_cell);
+    display2.set_chunky(vs.chunky != 0, vs.chunky_cell);
+    display.set_grid_strength(vs.linear ? 0.0 : vs.grid_s);
+    display2.set_grid_strength(vs.linear ? 0.0 : vs.grid_s);
+    display.set_integer_scale(vs.int_scale);
+    display2.set_integer_scale(vs.int_scale);
     if (!display.open("RG DS Core", vs.scale, vs.fullscreen, vs.linear, vs.vsync, vs.layout, 0, vs.upper_display) ||
-        !display2.open("RG DS Core (Bottom)", vs.scale, vs.fullscreen, vs.linear, vs.vsync, vs.layout, 1, vs.lower_display)) return false;
-    if (!sync_dual_modes(display, display2)) { std::fprintf(stderr, "dual-window: mixed display modes\n"); return false; }
+        !display2.open("RG DS Core (Bottom)", vs.scale, vs.fullscreen, vs.linear, vs.vsync, vs.layout, 1,
+                       vs.lower_display))
+      return false;
+    if (!sync_dual_modes(display, display2)) {
+      std::fprintf(stderr, "dual-window: mixed display modes\n");
+      return false;
+    }
     // MAIN SCREEN picks the DS screen on the upper panel.
     display.set_only_screen(vs.layout.primary);
     display2.set_only_screen(1 - vs.layout.primary);
@@ -802,7 +941,8 @@ bool open_displays(const VideoSetup& vs, ds::sdl::Display& display, ds::sdl::Dis
 static void startup_stage(const char* what) {
   static const bool on = std::getenv("DS_STARTUP_TRACE") || std::getenv("DS_HIRES_DEBUG");
   if (!on) return;
-  timespec t{}; clock_gettime(CLOCK_MONOTONIC, &t);
+  timespec t{};
+  clock_gettime(CLOCK_MONOTONIC, &t);
   std::fprintf(stderr, "startup: %s at %.1f ms\n", what, t.tv_sec * 1e3 + t.tv_nsec / 1e6);
 }
 static int run(int argc, char** argv) {
@@ -812,20 +952,27 @@ static int run(int argc, char** argv) {
   long frame_limit = 0;
   const char *record = nullptr, *replay = nullptr, *save_arg = nullptr, *load_state = nullptr;
   bool clear_cache = false;
-  bool rtc_host = false;              // --rtc-host: real clock even under replay
-  const char* lan_host = nullptr; const char* lan_join = nullptr; const char* lan_name = "RG DS Core"; bool netplay = false;
-  bool lan_guest = false;             // net.mode = guest: join only, never host
-  bool lan_name_set = false;          // --lan-name given, so nickname must not override it
-  bool internet = false;              // --internet / net.mode = internet: emulated AP reaches the real network
-  long stats_from = 0;   // frames run but left out of timing statistics
+  bool rtc_host = false; // --rtc-host: real clock even under replay
+  const char* lan_host = nullptr;
+  const char* lan_join = nullptr;
+  const char* lan_name = "RG DS Core";
+  bool netplay = false;
+  bool lan_guest = false;    // net.mode = guest: join only, never host
+  bool lan_name_set = false; // --lan-name given, so nickname must not override it
+  bool internet = false;     // --internet / net.mode = internet: emulated AP reaches the real network
+  long stats_from = 0;       // frames run but left out of timing statistics
   bool dsi_mode = false;
-  const char* bios9i = nullptr; const char* bios7i = nullptr; const char* dsi_nand = nullptr;
-  const char* dsi_title = nullptr; const char* dsi_tmd = nullptr; bool dsi_hide_installed = false, dsi_menu = false;
-  bool dsi_hle = false;          // --dsi-mode with title and no NAND: launcher hand-off, BIOS pair only
+  const char* bios9i = nullptr;
+  const char* bios7i = nullptr;
+  const char* dsi_nand = nullptr;
+  const char* dsi_title = nullptr;
+  const char* dsi_tmd = nullptr;
+  bool dsi_hide_installed = false, dsi_menu = false;
+  bool dsi_hle = false; // --dsi-mode with title and no NAND: launcher hand-off, BIOS pair only
   const char* dsi_font = nullptr;
   const char* dsi_sd = nullptr;
-  u32 dsi_title_lo = 0;   // title --dsi-mode was given, once on the NAND: what autoload starts
-  std::string dsi_title_cheevos_hash;   // RetroAchievements identity; runs from NAND, no cart to hash later
+  u32 dsi_title_lo = 0;               // title --dsi-mode was given, once on the NAND: what autoload starts
+  std::string dsi_title_cheevos_hash; // RetroAchievements identity; runs from NAND, no cart to hash later
 
   // Found before options are read, so an optional-value flag like --chunky
   // [M] doesn't swallow `--chunky game.nds` as its mode.
@@ -837,14 +984,17 @@ static int run(int argc, char** argv) {
     struct stat st;
     return ::stat(w, &st) == 0 && S_ISREG(st.st_mode);
   };
-  for (int i = 1; i < argc && !rom_word; ++i) if (looks_like_rom(argv[i])) rom_word = argv[i];
+  for (int i = 1; i < argc && !rom_word; ++i)
+    if (looks_like_rom(argv[i])) rom_word = argv[i];
   // Command line is one more settings layer, applied after the files.
   ds::sdl::Config cli;
   for (int i = 1; i < argc; ++i) {
     auto arg = [&](const char* name) { return !std::strcmp(argv[i], name) && i + 1 < argc; };
     auto flag = [&](const char* name) { return !std::strcmp(argv[i], name); };
     // Next word unless it's another option or the game.
-    auto optional = [&](const char* fallback) { return i + 1 < argc && argv[i + 1][0] != '-' && argv[i + 1] != rom_word ? argv[++i] : fallback; };
+    auto optional = [&](const char* fallback) {
+      return i + 1 < argc && argv[i + 1][0] != '-' && argv[i + 1] != rom_word ? argv[++i] : fallback;
+    };
     if (arg("--bios9")) cli.set("paths.bios9", argv[++i]);
     else if (arg("--bios7")) cli.set("paths.bios7", argv[++i]);
     else if (arg("--firmware")) cli.set("paths.firmware", argv[++i]);
@@ -855,12 +1005,14 @@ static int run(int argc, char** argv) {
     else if (arg("--dsi-tmd")) dsi_tmd = argv[++i];
     else if (arg("--dsi-font")) dsi_font = argv[++i];
     else if (arg("--dsi-sd")) dsi_sd = argv[++i];
-    else if (flag("--dsi-offline")) { /* This build is already offline. */ }
-    else if (flag("--dsi-menu")) dsi_menu = true;
+    else if (flag("--dsi-offline")) { /* This build is already offline. */ } else if (flag("--dsi-menu"))
+      dsi_menu = true;
     else if (flag("--dsi-hide-installed")) dsi_hide_installed = true;
     else if (arg("--config")) config_arg = argv[++i];
-    else if (arg("--write-config")) { ds::sdl::Config::write_default(argv[++i], true); return 0; }
-    else if (arg("--scale")) cli.set("video.scale", argv[++i]);
+    else if (arg("--write-config")) {
+      ds::sdl::Config::write_default(argv[++i], true);
+      return 0;
+    } else if (arg("--scale")) cli.set("video.scale", argv[++i]);
     else if (flag("--dual-window")) cli.set("video.dual_window", "true");
     else if (arg("--pacing")) cli.set("emu.pacing", argv[++i]);
     else if (arg("--layout")) cli.set("video.layout", argv[++i]);
@@ -874,11 +1026,14 @@ static int run(int argc, char** argv) {
     else if (flag("--rtc-host")) rtc_host = true;
     else if (arg("--lan-host")) lan_host = argv[++i];
     else if (arg("--lan-join")) lan_join = argv[++i];
-    else if (arg("--lan-name")) { lan_name = argv[++i]; lan_name_set = true; }
-    else if (flag("--netplay")) netplay = true;   // join a session heard on the LAN, else host one
-    else if (flag("--internet")) internet = true;   // exclusive with local wireless
-    else if (arg("--dns")) { ++i; /* No host network transport in RGDS. */ }
-    else if (flag("--clear-cache")) clear_cache = true;
+    else if (arg("--lan-name")) {
+      lan_name = argv[++i];
+      lan_name_set = true;
+    } else if (flag("--netplay")) netplay = true; // join a session heard on the LAN, else host one
+    else if (flag("--internet")) internet = true; // exclusive with local wireless
+    else if (arg("--dns")) {
+      ++i; /* No host network transport in RGDS. */
+    } else if (flag("--clear-cache")) clear_cache = true;
     else if (arg("--record")) record = argv[++i];
     else if (arg("--replay")) replay = argv[++i];
     else if (arg("--save")) save_arg = argv[++i];
@@ -920,10 +1075,17 @@ static int run(int argc, char** argv) {
     else if (flag("--preload-rom")) cli.set("cart.preload", "true");
     else if (flag("--no-preload-rom")) cli.set("cart.preload", "false");
     else if (flag("--no-gpu3d")) cli.set("video.gpu3d", "false");
-    else if (flag("--version")) { std::printf("RG DS Core %s (%s)\n", kDsperateVersion, kDsperateCommit); return 0; }
-    else if (flag("--help")) { std::fputs(kUsage, stderr); return 0; }
-    else if (argv[i][0] == '-' && argv[i][1] == '-') { std::fprintf(stderr, "unknown option %s\n", argv[i]); std::fputs(kUsage, stderr); return 2; }
-    else rom = argv[i];
+    else if (flag("--version")) {
+      std::printf("RG DS Core %s (%s)\n", kDsperateVersion, kDsperateCommit);
+      return 0;
+    } else if (flag("--help")) {
+      std::fputs(kUsage, stderr);
+      return 0;
+    } else if (argv[i][0] == '-' && argv[i][1] == '-') {
+      std::fprintf(stderr, "unknown option %s\n", argv[i]);
+      std::fputs(kUsage, stderr);
+      return 2;
+    } else rom = argv[i];
   }
   // BootMenuDSi.nds is --dsi-mode, the way BootMenu.nds is a firmware boot;
   // neither file has to exist. ROM is dropped, becoming the cartless DSi boot.
@@ -935,13 +1097,16 @@ static int run(int argc, char** argv) {
   }
   // DSiWare named without --dsi-mode runs the DSi machine too: as a DS it
   // would not start at all.
-  const bool dsi_mode_asked = dsi_mode;   // --dsi-mode itself, not implied by a DSiWare title
+  const bool dsi_mode_asked = dsi_mode; // --dsi-mode itself, not implied by a DSiWare title
   const bool rom_shortcut = rom && ds::io::is_shortcut_name(rom);
   if (!dsi_mode && rom && !dsi_nand && (rom_shortcut || ds::io::file_is_dsiware(rom))) dsi_mode = true;
   ds::sdl::Config cfg;
   const std::string global_ini = config_arg ? std::string(config_arg) : ds::sdl::Config::global_path();
   if (!config_arg) ds::sdl::Config::write_default(global_ini);
-  if (!cfg.load(global_ini) && config_arg) { std::fprintf(stderr, "cannot read %s\n", config_arg); return 2; }
+  if (!cfg.load(global_ini) && config_arg) {
+    std::fprintf(stderr, "cannot read %s\n", config_arg);
+    return 2;
+  }
   // paths.dsi_nand stands in for --dsi-nand only under --dsi-mode.
   const std::string dsi_nand_cfg = dsi_mode_asked && !dsi_nand ? cfg.str("paths.dsi_nand") : std::string();
   if (!dsi_nand_cfg.empty()) dsi_nand = dsi_nand_cfg.c_str();
@@ -950,14 +1115,69 @@ static int run(int argc, char** argv) {
   if (dsi_mode) {
     // A game named with a NAND is DSiWare, installed into the session's NAND.
     dsi_hle = !dsi_nand && rom;
-    if (!dsi_nand && !rom) { std::fprintf(stderr, "%s needs --dsi-nand (or paths.dsi_nand in %s) or a DSiWare title\n", dsi_mode_by, global_ini.c_str()); return 2; }
-    if (dsi_hle && dsi_menu) { std::fprintf(stderr, "--dsi-menu needs --dsi-nand: without one there is no DSi Menu to boot\n"); return 2; }
+    if (!dsi_nand && !rom) {
+      std::fprintf(stderr, "%s needs --dsi-nand (or paths.dsi_nand in %s) or a DSiWare title\n", dsi_mode_by,
+                   global_ini.c_str());
+      return 2;
+    }
+    if (dsi_hle && dsi_menu) {
+      std::fprintf(stderr, "--dsi-menu needs --dsi-nand: without one there is no DSi Menu to boot\n");
+      return 2;
+    }
     // Without a NAND the title goes in the slot (NDS::prepare_dsi_hle).
-    if (!dsi_hle) { dsi_title = rom; rom = nullptr; }
+    if (!dsi_hle) {
+      dsi_title = rom;
+      rom = nullptr;
+    }
   }
-  auto apply_cli = [&] { for (const char* k : {"paths.bios9", "paths.bios7", "paths.firmware", "video.scale", "video.dual_window", "video.layout", "video.screen", "video.pip_alpha", "video.screen_gap", "video.dominant_ratio", "video.dominant_threshold", "video.integer_scale",
-                                              "video.fullscreen", "video.linear", "video.lcd_grid", "video.chunky", "video.chunky_threshold", "video.chunky_cell", "video.seam", "video.sink", "video.disp", "video.fbdev", "video.gpu_present", "video.vsync", "audio.enabled", "audio.volume",
-                                              "audio.mic", "emu.jit", "emu.timing", "emu.speed", "emu.limiter", "emu.pacing", "audio.buffer_size", "audio.latency_frames", "emu.frameskip", "emu.frameskip_mode", "emu.frameskip_capture", "video.aa", "video.gpu3d", "cart.preload", "emu.autosave_png", "emu.autoload", "cheevos.enabled", "cheevos.token_file", "cheevos.username"}) if (cli.has(k)) cfg.set(k, cli.str(k)); };
+  auto apply_cli = [&] {
+    for (const char* k : {"paths.bios9",
+                          "paths.bios7",
+                          "paths.firmware",
+                          "video.scale",
+                          "video.dual_window",
+                          "video.layout",
+                          "video.screen",
+                          "video.pip_alpha",
+                          "video.screen_gap",
+                          "video.dominant_ratio",
+                          "video.dominant_threshold",
+                          "video.integer_scale",
+                          "video.fullscreen",
+                          "video.linear",
+                          "video.lcd_grid",
+                          "video.chunky",
+                          "video.chunky_threshold",
+                          "video.chunky_cell",
+                          "video.seam",
+                          "video.sink",
+                          "video.disp",
+                          "video.fbdev",
+                          "video.gpu_present",
+                          "video.vsync",
+                          "audio.enabled",
+                          "audio.volume",
+                          "audio.mic",
+                          "emu.jit",
+                          "emu.timing",
+                          "emu.speed",
+                          "emu.limiter",
+                          "emu.pacing",
+                          "audio.buffer_size",
+                          "audio.latency_frames",
+                          "emu.frameskip",
+                          "emu.frameskip_mode",
+                          "emu.frameskip_capture",
+                          "video.aa",
+                          "video.gpu3d",
+                          "cart.preload",
+                          "emu.autosave_png",
+                          "emu.autoload",
+                          "cheevos.enabled",
+                          "cheevos.token_file",
+                          "cheevos.username"})
+      if (cli.has(k)) cfg.set(k, cli.str(k));
+  };
   apply_cli();
   const std::string bios9 = cfg.str("paths.bios9"), bios7 = cfg.str("paths.bios7");
   const std::string dsi_fw = cfg.str("paths.dsi_firmware");
@@ -965,7 +1185,10 @@ static int run(int argc, char** argv) {
   const std::string fw = dsi_mode && have_dsi_fw && !cli.has("paths.firmware") ? dsi_fw : cfg.str("paths.firmware");
   const std::string dsi_bios9i = bios9i ? std::string(bios9i) : cfg.str("paths.bios9i");
   const std::string dsi_bios7i = bios7i ? std::string(bios7i) : cfg.str("paths.bios7i");
-  auto have_dsi_bios = [&] { return !dsi_bios9i.empty() && !dsi_bios7i.empty() && std::filesystem::exists(dsi_bios9i) && std::filesystem::exists(dsi_bios7i); };
+  auto have_dsi_bios = [&] {
+    return !dsi_bios9i.empty() && !dsi_bios7i.empty() && std::filesystem::exists(dsi_bios9i) &&
+           std::filesystem::exists(dsi_bios7i);
+  };
   if (dsi_mode && !have_dsi_bios()) {
     std::fprintf(stderr, "%s needs the DSi BIOS pair: --bios9i/--bios7i, or paths.bios9i/paths.bios7i in %s\n",
                  dsi_hle ? (std::string(rom) + " is DSiWare and").c_str() : dsi_mode_by, global_ini.c_str());
@@ -1001,18 +1224,22 @@ static int run(int argc, char** argv) {
     const std::string rt = cfg.str("emu.realtime", "rr");
     const int prio = cfg.num("emu.rt_priority", 5);
     if (rt == "rr" || rt == "fifo") {
-      sched_param sp{}; sp.sched_priority = prio;
+      sched_param sp{};
+      sp.sched_priority = prio;
       if (sched_setscheduler(0, rt == "rr" ? SCHED_RR : SCHED_FIFO, &sp) != 0)
         VLOG("realtime scheduling (%s %d) not permitted: %s\n", rt.c_str(), prio, std::strerror(errno));
-      else { VLOG("realtime scheduling: %s %d\n", rt.c_str(), prio); }
+      else {
+        VLOG("realtime scheduling: %s %d\n", rt.c_str(), prio);
+      }
     }
-    ds::latch_worker_sched();   // what the video workers run at, whichever thread starts them
+    ds::latch_worker_sched(); // what the video workers run at, whichever thread starts them
   }
   // CPU timing model (core/cpu/timing_mode.h), fixed before anything runs or
   // the recompiler emits its stubs. DS_TIMING wins.
   if (cfg.has("emu.timing") && !std::getenv("DS_TIMING")) ds::g_fast_timing = cfg.str("emu.timing") != "exact";
   VLOG("cpu timing: %s\n", ds::g_fast_timing ? "fast" : "exact");
-  if (cfg.num("emu.host_cores", 0) > 0) ds::set_host_cores(static_cast<ds::u32>(cfg.num("emu.host_cores", 0)));   // DS_HOST_CORES still wins
+  if (cfg.num("emu.host_cores", 0) > 0)
+    ds::set_host_cores(static_cast<ds::u32>(cfg.num("emu.host_cores", 0))); // DS_HOST_CORES still wins
   VLOG("host: %u cores\n", ds::host_cores());
   // Thread layout (host_cores.h): before any worker starts, so each places itself.
   {
@@ -1023,7 +1250,8 @@ static int run(int argc, char** argv) {
   }
 
   NDS nds;
-  if (cfg.has("emu.idle_skip") && !std::getenv("DS_IDLE_SKIP")) nds.sched.set_idle_skip(cfg.str("emu.idle_skip").c_str());   // DS_IDLE_SKIP wins
+  if (cfg.has("emu.idle_skip") && !std::getenv("DS_IDLE_SKIP"))
+    nds.sched.set_idle_skip(cfg.str("emu.idle_skip").c_str()); // DS_IDLE_SKIP wins
   ds::bios::UserSettings user;
   user.nickname = cfg.str("user.nickname", user.nickname);
   user.message = cfg.str("user.message", user.message);
@@ -1050,7 +1278,10 @@ static int run(int argc, char** argv) {
   }
   {
     std::string err;
-    if (!nds.load_bios(bios9, bios7, fw, user, &err)) { std::fprintf(stderr, "bios: %s\n", err.c_str()); return 1; }
+    if (!nds.load_bios(bios9, bios7, fw, user, &err)) {
+      std::fprintf(stderr, "bios: %s\n", err.c_str());
+      return 1;
+    }
     if (!nds.firmware_synthetic) VLOG("firmware: %s\n", fw.c_str());
     // A fixed MAC (dump's own, or generated 00:09:BF:11:22:33) collides
     // across instances and breaks PictoChat. Low 3 bytes generated once,
@@ -1067,8 +1298,12 @@ static int run(int argc, char** argv) {
       nds.set_wifi_mac_suffix(suffix);
     }
   }
-  if (!nds.bios_native) std::fprintf(stderr, "bios: %s, using the built-in FreeBIOS (direct boot only; timing is not Nintendo's)\n", bios9.empty() ? "no dumps given" : "dumps not found");
-  if (nds.firmware_synthetic) std::fprintf(stderr, "firmware: %s, using a generated one ([user] in %s)\n", fw.empty() ? "no dump given" : "dump not found", global_ini.c_str());
+  if (!nds.bios_native)
+    std::fprintf(stderr, "bios: %s, using the built-in FreeBIOS (direct boot only; timing is not Nintendo's)\n",
+                 bios9.empty() ? "no dumps given" : "dumps not found");
+  if (nds.firmware_synthetic)
+    std::fprintf(stderr, "firmware: %s, using a generated one ([user] in %s)\n",
+                 fw.empty() ? "no dump given" : "dump not found", global_ini.c_str());
   if (boot_firmware && !nds.can_boot_firmware()) {
     std::fprintf(stderr, "the DS menu needs real dumps: %s%s%s (--bios9/--bios7/--firmware or [paths] in %s)\n",
                  nds.bios_native ? "" : "bios9 and bios7", (!nds.bios_native && nds.firmware_synthetic) ? " and " : "",
@@ -1078,9 +1313,11 @@ static int run(int argc, char** argv) {
   // FreeBIOS lacks the Blowfish key table and SWI behaviour the launcher
   // hand-off needs, so a title on it wedges instead of refusing cleanly.
   if (dsi_mode && !nds.bios_native) {
-    std::fprintf(stderr, "a DSi session needs the DS BIOS dumps as well as the DSi pair: %s (--bios9/--bios7 or [paths] in %s).\n"
-                 "The built-in FreeBIOS cannot boot one.\n",
-                 bios9.empty() ? "no dumps given" : "dumps not found", global_ini.c_str());
+    std::fprintf(
+        stderr,
+        "a DSi session needs the DS BIOS dumps as well as the DSi pair: %s (--bios9/--bios7 or [paths] in %s).\n"
+        "The built-in FreeBIOS cannot boot one.\n",
+        bios9.empty() ? "no dumps given" : "dumps not found", global_ini.c_str());
     return 2;
   }
   // Opened once; a later DSiWare pick from the game list keeps it.
@@ -1089,7 +1326,10 @@ static int run(int argc, char** argv) {
     if (dsi_sd_dir.empty() || nds.dsi_sd.valid()) return true;
     ds::io::SdCard::Report r;
     std::string err;
-    if (!nds.dsi_sd.open(dsi_sd_dir, &r, &err)) { std::fprintf(stderr, "dsi sd: %s\n", err.c_str()); return false; }
+    if (!nds.dsi_sd.open(dsi_sd_dir, &r, &err)) {
+      std::fprintf(stderr, "dsi sd: %s\n", err.c_str());
+      return false;
+    }
     VLOG("dsi sd: %s, %d files and %d folders on a %llu MB FAT%d card\n", dsi_sd_dir.c_str(), r.files, r.dirs,
          static_cast<unsigned long long>(nds.dsi_sd.length() >> 20), nds.dsi_sd.fat_bits());
     for (const std::string& n : r.notes) std::fprintf(stderr, "dsi sd: %s\n", n.c_str());
@@ -1097,49 +1337,80 @@ static int run(int argc, char** argv) {
   };
   if (dsi_hle) {
     std::string err;
-    if (!nds.load_dsi_bios(dsi_bios9i, dsi_bios7i, &err)) { std::fprintf(stderr, "dsi bios: %s\n", err.c_str()); return 1; }
-    if (!nds.bios_native_dsi) { std::fprintf(stderr, "dsi bios: %s or %s not found\n", dsi_bios9i.c_str(), dsi_bios7i.c_str()); return 1; }
+    if (!nds.load_dsi_bios(dsi_bios9i, dsi_bios7i, &err)) {
+      std::fprintf(stderr, "dsi bios: %s\n", err.c_str());
+      return 1;
+    }
+    if (!nds.bios_native_dsi) {
+      std::fprintf(stderr, "dsi bios: %s or %s not found\n", dsi_bios9i.c_str(), dsi_bios7i.c_str());
+      return 1;
+    }
     if (!open_dsi_sd()) return 1;
     if (rom_shortcut) {
-      if (shortcut_nand.empty()) { std::fprintf(stderr, "%s is a NAND title shortcut and needs the NAND: --dsi-nand or paths.dsi_nand in %s\n", rom, global_ini.c_str()); return 1; }
-      if (!nds.load_dsi_nand(shortcut_nand, &err)) { std::fprintf(stderr, "dsi nand: %s\n", err.c_str()); return 1; }
+      if (shortcut_nand.empty()) {
+        std::fprintf(stderr, "%s is a NAND title shortcut and needs the NAND: --dsi-nand or paths.dsi_nand in %s\n",
+                     rom, global_ini.c_str());
+        return 1;
+      }
+      if (!nds.load_dsi_nand(shortcut_nand, &err)) {
+        std::fprintf(stderr, "dsi nand: %s\n", err.c_str());
+        return 1;
+      }
     }
     nds.set_dsi(true);
-    nds.dsi_hle_launch = true;   // NAND and settings made once the title is in the slot
-    std::fprintf(stderr, rom_shortcut ? "console: DSi, a title from its NAND without the DSi Menu (EXPERIMENTAL)\n" : "console: DSi without a NAND (EXPERIMENTAL)\n");
+    nds.dsi_hle_launch = true; // NAND and settings made once the title is in the slot
+    std::fprintf(stderr, rom_shortcut ? "console: DSi, a title from its NAND without the DSi Menu (EXPERIMENTAL)\n"
+                                      : "console: DSi without a NAND (EXPERIMENTAL)\n");
   } else if (dsi_mode) {
     std::string err;
-    if (!nds.load_dsi_bios(dsi_bios9i, dsi_bios7i, &err)) { std::fprintf(stderr, "dsi bios: %s\n", err.c_str()); return 1; }
-    if (!nds.bios_native_dsi) { std::fprintf(stderr, "dsi bios: %s or %s not found\n", dsi_bios9i.c_str(), dsi_bios7i.c_str()); return 1; }
+    if (!nds.load_dsi_bios(dsi_bios9i, dsi_bios7i, &err)) {
+      std::fprintf(stderr, "dsi bios: %s\n", err.c_str());
+      return 1;
+    }
+    if (!nds.bios_native_dsi) {
+      std::fprintf(stderr, "dsi bios: %s or %s not found\n", dsi_bios9i.c_str(), dsi_bios7i.c_str());
+      return 1;
+    }
     if (!open_dsi_sd()) return 1;
     // Opened read-only: writes held in memory until pulled out as files.
-    if (!nds.load_dsi_nand(dsi_nand, &err)) { std::fprintf(stderr, "dsi nand: %s\n", err.c_str()); return 1; }
+    if (!nds.load_dsi_nand(dsi_nand, &err)) {
+      std::fprintf(stderr, "dsi nand: %s\n", err.c_str());
+      return 1;
+    }
     VLOG("dsi nand: %s (read-only; writes held in memory)\n", dsi_nand);
     const ds::io::NandPersistPaths pp = ds::io::NandPersistPaths::beside(dsi_nand, cfg.str("paths.saves"));
     if (dsi_hide_installed) {
       const int n = ds::io::nand_hide_installed_dsiware(nds.dsi_nand, nds.bus.bios7i.get(), &err);
-      if (n < 0) { std::fprintf(stderr, "dsi: hiding the installed titles: %s\n", err.c_str()); return 1; }
+      if (n < 0) {
+        std::fprintf(stderr, "dsi: hiding the installed titles: %s\n", err.c_str());
+        return 1;
+      }
       std::fprintf(stderr, "dsi: %d installed titles hidden for this session\n", n);
     }
     // At most one, skipped if the NAND already has it.
     if (dsi_title) {
       std::vector<ds::u8> srl, embedded;
-      if (!ds::io::read_dsiware(dsi_title, srl, &err, &embedded)) { std::fprintf(stderr, "dsi: %s\n", err.c_str()); return 2; }
+      if (!ds::io::read_dsiware(dsi_title, srl, &err, &embedded)) {
+        std::fprintf(stderr, "dsi: %s\n", err.c_str());
+        return 2;
+      }
       const u32 lo = static_cast<u32>(srl[0x230] | (srl[0x231] << 8) | (srl[0x232] << 16) | (srl[0x233] << 24));
       if (ds::io::nand_has_title(nds.dsi_nand, nds.bus.bios7i.get(), lo)) {
         std::fprintf(stderr, "dsi: %.4s: already installed on the NAND\n", reinterpret_cast<const char*>(&srl[0x0C]));
         dsi_title_lo = lo;
       } else {
         std::string beside = dsi_tmd ? std::string(dsi_tmd) : rom_stem(std::string(dsi_title)) + ".tmd";
-        const std::string cache = pp.saves_dir + "/" + std::string(reinterpret_cast<const char*>(&srl[0x0C]), 4) + ".tmd";
+        const std::string cache =
+            pp.saves_dir + "/" + std::string(reinterpret_cast<const char*>(&srl[0x0C]), 4) + ".tmd";
         ds::io::TmdFetch fetch;
         std::vector<std::string> tmd_log;
         const std::vector<ds::u8> tmd = ds::io::find_signed_tmd(srl, embedded, cache, beside, fetch, tmd_log);
         for (const std::string& l : tmd_log) VLOG("dsi: %s\n", l.c_str());
         if (tmd.empty()) {
           for (const std::string& l : tmd_log) std::fprintf(stderr, "dsi: %s\n", l.c_str());
-          std::fprintf(stderr, "dsi: no signed DSi TMD for %.4s; the launcher cannot start it without one (put it at %s%s)\n",
-                       reinterpret_cast<const char*>(&srl[0x0C]), beside.c_str(), fetch ? "" : ", or allow the download");
+          std::fprintf(
+              stderr, "dsi: no signed DSi TMD for %.4s; the launcher cannot start it without one (put it at %s%s)\n",
+              reinterpret_cast<const char*>(&srl[0x0C]), beside.c_str(), fetch ? "" : ", or allow the download");
           return 2;
         }
         const ds::io::TitleInstall r = ds::io::nand_install_title(nds.dsi_nand, nds.bus.bios7i.get(), srl, tmd);
@@ -1154,11 +1425,13 @@ static int run(int argc, char** argv) {
     nds.dsi_nand.mark_state_base();
     if (!replay) {
       const ds::io::NandPersistReport r = ds::io::nand_import(nds.dsi_nand, nds.bus.bios7i.get(), pp);
-      if (r.saves || r.system_files || r.photos) std::fprintf(stderr, "dsi: restored %d title saves, %d system files, %d photos\n", r.saves, r.system_files, r.photos);
+      if (r.saves || r.system_files || r.photos)
+        std::fprintf(stderr, "dsi: restored %d title saves, %d system files, %d photos\n", r.saves, r.system_files,
+                     r.photos);
       for (const std::string& n : r.notes) std::fprintf(stderr, "dsi: %s\n", n.c_str());
     }
     nds.set_dsi(true);
-    nds.dsi_nand_boot = true;   // reset() builds the DSi machine, setup_direct_boot() boots the NAND
+    nds.dsi_nand_boot = true; // reset() builds the DSi machine, setup_direct_boot() boots the NAND
     std::fprintf(stderr, "console: DSi (EXPERIMENTAL)\n");
   }
   nds.reset();
@@ -1169,7 +1442,7 @@ static int run(int argc, char** argv) {
     if (!nds.load_firmware_override(fw_override, err)) {
       if (err != "cannot open") std::fprintf(stderr, "firmware settings: %s: %s\n", fw_override.c_str(), err.c_str());
     } else if (err.empty()) {
-      VLOG("firmware settings: %s\n", fw_override.c_str());   // loaded cleanly
+      VLOG("firmware settings: %s\n", fw_override.c_str()); // loaded cleanly
     } else {
       std::fprintf(stderr, "firmware settings: %s -- warning: %s\n", fw_override.c_str(), err.c_str());
     }
@@ -1196,7 +1469,8 @@ static int run(int argc, char** argv) {
     if (std::getenv("SDL_VIDEODRIVER")) return;
     const char* pick = nullptr;
     for (const char* want : {"dummy", "offscreen"}) {
-      for (int i = 0; i < SDL_GetNumVideoDrivers() && !pick; ++i) if (!std::strcmp(SDL_GetVideoDriver(i), want)) pick = want;
+      for (int i = 0; i < SDL_GetNumVideoDrivers() && !pick; ++i)
+        if (!std::strcmp(SDL_GetVideoDriver(i), want)) pick = want;
       if (pick) break;
     }
     if (pick) {
@@ -1204,7 +1478,9 @@ static int run(int argc, char** argv) {
       // A headless window never has focus, and SDL drops joystick events
       // without focus; let them through since the pad is the only input.
       SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
-    } else std::fprintf(stderr, "%s: this SDL2 has no headless video driver; its own driver will also open the panel\n", tier);
+    } else
+      std::fprintf(stderr, "%s: this SDL2 has no headless video driver; its own driver will also open the panel\n",
+                   tier);
   };
   // Where frames go (frontend/video/select.h). The panel-owning sinks are
   // decided here, before SDL_Init, since they point SDL at a headless driver.
@@ -1215,7 +1491,8 @@ static int run(int argc, char** argv) {
     probe.fbdev = cfg.str("video.fbdev");
     probe.dual_window = dual_window;
     if (const char* vd = std::getenv("SDL_VIDEODRIVER")) probe.sdl_videodriver = vd;
-    for (int i = 0; i < SDL_GetNumVideoDrivers(); ++i) if (!std::strcmp(SDL_GetVideoDriver(i), "mali")) probe.sdl_has_mali = true;
+    for (int i = 0; i < SDL_GetNumVideoDrivers(); ++i)
+      if (!std::strcmp(SDL_GetVideoDriver(i), "mali")) probe.sdl_has_mali = true;
     probe.display_env = std::getenv("DISPLAY") || std::getenv("WAYLAND_DISPLAY");
     probe.has_dri = ::access("/dev/dri", F_OK) == 0;
     probe.disp_ok = !dual_window && ds::sdl::DispOut::available();
@@ -1225,10 +1502,13 @@ static int run(int argc, char** argv) {
     vs.panel_sink = plan.panel;
     vs.want_sink = plan.want;
     if (plan.unset_videodriver) unsetenv("SDL_VIDEODRIVER");
-    if (plan.headless_driver) go_headless(plan.panel == ds::frontend::Sink::Disp ? "video.sink disp" : "video.sink fbdev");
+    if (plan.headless_driver)
+      go_headless(plan.panel == ds::frontend::Sink::Disp ? "video.sink disp" : "video.sink fbdev");
   }
   if (vs.panel_sink == ds::frontend::Sink::Disp && chunky != 0 && chunky != 2) {
-    std::fprintf(stderr, "chunky %s: the display-engine tier draws chunky cells in the scaler as their mean; using mean\n", cfg.str("video.chunky").c_str());
+    std::fprintf(stderr,
+                 "chunky %s: the display-engine tier draws chunky cells in the scaler as their mean; using mean\n",
+                 cfg.str("video.chunky").c_str());
     chunky = 2;
   }
 
@@ -1236,7 +1516,9 @@ static int run(int argc, char** argv) {
   // without dma-buf import, and GpuPresent::open() declines without Vulkan.
   {
     const std::string g = cfg.str("video.gpu_present", "true");
-    vs.gpu_mode = g == "rga" ? ds::sdl::Display::GpuPresentMode::Rga : g == "vulkan" ? ds::sdl::Display::GpuPresentMode::Vulkan : ds::sdl::Display::GpuPresentMode::Auto;
+    vs.gpu_mode = g == "rga"      ? ds::sdl::Display::GpuPresentMode::Rga
+                  : g == "vulkan" ? ds::sdl::Display::GpuPresentMode::Vulkan
+                                  : ds::sdl::Display::GpuPresentMode::Auto;
     vs.gpu_present = g == "rga" || g == "vulkan" || g == "true" || g == "auto" || g == "on" || g == "1";
   }
 
@@ -1245,7 +1527,8 @@ static int run(int argc, char** argv) {
   // Prefer SDL's native pipewire backend over Pulse (more daemon/wakeup cost).
   const std::string audio_driver = cfg.str("audio.driver", "pipewire");
   const bool driver_forced = std::getenv("SDL_AUDIODRIVER") != nullptr;
-  if ((init & SDL_INIT_AUDIO) && !driver_forced && !audio_driver.empty()) setenv("SDL_AUDIODRIVER", audio_driver.c_str(), 1);
+  if ((init & SDL_INIT_AUDIO) && !driver_forced && !audio_driver.empty())
+    setenv("SDL_AUDIODRIVER", audio_driver.c_str(), 1);
 #ifdef SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS
   // Pad a/b/x/y are positions (south/east/west/north) everywhere: bindings
   // and the menu's pips assume it. SDL2 otherwise uses labels on Nintendo pads.
@@ -1259,15 +1542,19 @@ static int run(int argc, char** argv) {
     }
     std::fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
     if (!(init & SDL_INIT_AUDIO) || SDL_Init(init & ~SDL_INIT_AUDIO) != 0) return 1;
-    audio_on = mic_on = false;   // no audio subsystem: run silent
+    audio_on = mic_on = false; // no audio subsystem: run silent
   }
 sdl_ready:
 
   ds::sdl::Display display;
-  ds::sdl::Display display2;   // dual-window: the lower panel's window
-  std::vector<ds::sdl::Input::TouchRoute> touch_routes;   // DS_DUAL_SCREENS
+  ds::sdl::Display display2;                            // dual-window: the lower panel's window
+  std::vector<ds::sdl::Input::TouchRoute> touch_routes; // DS_DUAL_SCREENS
   if (dual_window) {
-    if (SDL_GetNumVideoDisplays() < 2) { std::fprintf(stderr, "--dual-window needs two video displays\n"); SDL_Quit(); return 1; }
+    if (SDL_GetNumVideoDisplays() < 2) {
+      std::fprintf(stderr, "--dual-window needs two video displays\n");
+      SDL_Quit();
+      return 1;
+    }
     // Under KMSDRM display 0 is DSI-1, the lower panel; sway orders the other way.
     const char* vd = SDL_GetCurrentVideoDriver();
     const bool kms = vd && !std::strcmp(vd, "KMSDRM");
@@ -1276,16 +1563,23 @@ sdl_ready:
     if (const char* map = std::getenv("DS_DUAL_SCREENS"); map && *map) {
       std::string err;
       if (!ds::sdl::Input::parse_dual_screens(map, vs.upper_display, vs.lower_display, touch_routes, err)) {
-        std::fprintf(stderr, "DS_DUAL_SCREENS: %s\n", err.c_str()); SDL_Quit(); return 1;
+        std::fprintf(stderr, "DS_DUAL_SCREENS: %s\n", err.c_str());
+        SDL_Quit();
+        return 1;
       }
       const int nd = SDL_GetNumVideoDisplays();
       if (vs.upper_display >= nd || vs.lower_display >= nd || vs.upper_display == vs.lower_display) {
-        std::fprintf(stderr, "DS_DUAL_SCREENS: displays %d/%d, %d available\n", vs.upper_display, vs.lower_display, nd); SDL_Quit(); return 1;
+        std::fprintf(stderr, "DS_DUAL_SCREENS: displays %d/%d, %d available\n", vs.upper_display, vs.lower_display, nd);
+        SDL_Quit();
+        return 1;
       }
     }
   }
   startup_stage("sdl ready");
-  if (!open_displays(vs, display, display2)) { SDL_Quit(); return 1; }
+  if (!open_displays(vs, display, display2)) {
+    SDL_Quit();
+    return 1;
+  }
   startup_stage("displays open");
   // video.gpu3d (DS_GPU3D=1 overrides): the 3D layer on the GPU (Renderer3D::set_gpu).
   // After the displays: the Vulkan device opens the DRM node, and under direct
@@ -1293,16 +1587,19 @@ sdl_ready:
   {
     const char* g = std::getenv("DS_GPU3D");
     const bool want = g ? std::atoi(g) != 0 : cfg.flag("video.gpu3d", false);
-    nds.gpu3d.renderer().set_aa(aa_on(cfg.str("video.aa", "false")));   // before the raster starts: its MSAA is fixed at creation
+    nds.gpu3d.renderer().set_aa(
+        aa_on(cfg.str("video.aa", "false"))); // before the raster starts: its MSAA is fixed at creation
     if (want) {
       std::string why;
       if (!nds.gpu3d.renderer().set_gpu(true, &why)) {
-        std::fprintf(stderr, "RG DS: high-resolution renderer unavailable (%s). Select Native in Graphics.\n", why.c_str());
-        SDL_Quit(); return 1;
+        std::fprintf(stderr, "RG DS: high-resolution renderer unavailable (%s). Select Native in Graphics.\n",
+                     why.c_str());
+        SDL_Quit();
+        return 1;
       }
-      const char* requested=std::getenv("RGDS_VK_SCALE");
-      const int scale=requested?std::clamp(std::atoi(requested),1,5):1;
-      std::fprintf(stderr, "gpu3d: on; RG DS true %dx 3D (%dx%d), 640x480 panel\n",scale,256*scale,192*scale);
+      const char* requested = std::getenv("RGDS_VK_SCALE");
+      const int scale = requested ? std::clamp(std::atoi(requested), 1, 5) : 1;
+      std::fprintf(stderr, "gpu3d: on; RG DS true %dx 3D (%dx%d), 640x480 panel\n", scale, 256 * scale, 192 * scale);
       startup_stage("gpu3d ready");
     }
   }
@@ -1314,7 +1611,10 @@ sdl_ready:
     const Uint32 until = SDL_GetTicks() + 1000;
     for (;;) {
       bool done = display.settle_step(bfb);
-      if (dual_window) { done = display2.settle_step(bfb) && done; sync_dual_modes(display, display2); }
+      if (dual_window) {
+        done = display2.settle_step(bfb) && done;
+        sync_dual_modes(display, display2);
+      }
       if (done || SDL_TICKS_PASSED(SDL_GetTicks(), until)) break;
       SDL_Delay(8);
     }
@@ -1336,7 +1636,10 @@ sdl_ready:
   // buffer_size (ms) supersedes latency_frames; the old key is still read
   // when buffer_size is unset.
   auto apply_audio_buffer = [&audio](const std::string& v) {
-    if (v.empty() || v == "auto") { audio.set_buffer_auto(); return; }
+    if (v.empty() || v == "auto") {
+      audio.set_buffer_auto();
+      return;
+    }
     audio.set_buffer_ms(std::atof(v.c_str()));
   };
   if (const std::string v = cfg.str("audio.buffer_size"); !v.empty()) apply_audio_buffer(v);
@@ -1362,7 +1665,9 @@ sdl_ready:
   input.open_controllers();
   {
     const std::string pl = cfg.str("cart.preload", "auto");
-    ds::cart::RomSource::set_preload(pl == "true" || pl == "on" || pl == "1" ? ds::cart::RomSource::Preload::On : pl == "false" || pl == "off" || pl == "0" ? ds::cart::RomSource::Preload::Off : ds::cart::RomSource::Preload::Auto);
+    ds::cart::RomSource::set_preload(pl == "true" || pl == "on" || pl == "1"     ? ds::cart::RomSource::Preload::On
+                                     : pl == "false" || pl == "off" || pl == "0" ? ds::cart::RomSource::Preload::Off
+                                                                                 : ds::cart::RomSource::Preload::Auto);
   }
   nds.rom_cache_dir = cfg.str("paths.cache", "");
   nds.rom_cache_max_bytes = static_cast<u64>(std::max(0, cfg.num("cart.cache_mb", 2048))) << 20;
@@ -1370,8 +1675,12 @@ sdl_ready:
   // Every unpacked image goes except the one this launch is about to use.
   if (clear_cache) {
     std::string keep;
-    { std::ifstream f(rom_path, std::ios::binary); u8 magic[4] = {}; f.read(reinterpret_cast<char*>(magic), 4);
-      if (f.gcount() == 4 && ds::cart::is_zip(magic, 4)) keep = ds::cart::zip_cache_path(rom_path); }
+    {
+      std::ifstream f(rom_path, std::ios::binary);
+      u8 magic[4] = {};
+      f.read(reinterpret_cast<char*>(magic), 4);
+      if (f.gcount() == 4 && ds::cart::is_zip(magic, 4)) keep = ds::cart::zip_cache_path(rom_path);
+    }
     u64 freed = 0;
     std::vector<std::string> dirs = {ds::cart::zip_cache_dir(rom_dir_of(rom_path))};
     if (!nds.rom_cache_dir.empty()) dirs.push_back(nds.rom_cache_dir);
@@ -1382,12 +1691,26 @@ sdl_ready:
   auto set_scale_targets = [&](const ds::sdl::Display::Target target[2], bool scaled) {
     const bool at_source = display.effects_at_source();
     for (int i = 0; i < 2; ++i) {
-      if (!scaled) { nds.gpu.set_scale_target(i, ds::gpu::Gpu::ScaleTarget{}); continue; }
-      ds::gpu::Gpu::ScaleTarget st{target[i].px, target[i].pitch, target[i].h, target[i].xrun, at_source || !target[i].grid ? 256u : grid, display.chunky_on(i) ? chunky : static_cast<u8>(0), chunky_thresh,
-                                      at_source ? static_cast<u8>(0) : seam_blend, target[i].seam_w,
-                                      static_cast<const ds::gpu::Gpu::CellMap*>((dual_window && display2.only_screen() == i ? display2 : display).cell_map(i)),
-                                      vs.linear && !at_source, target[i].lin_sx, target[i].lin_wx};
-      st.y_lo = target[i].y_lo; st.y_hi = target[i].y_hi;   // crop window (integer overscale)
+      if (!scaled) {
+        nds.gpu.set_scale_target(i, ds::gpu::Gpu::ScaleTarget{});
+        continue;
+      }
+      ds::gpu::Gpu::ScaleTarget st{target[i].px,
+                                   target[i].pitch,
+                                   target[i].h,
+                                   target[i].xrun,
+                                   at_source || !target[i].grid ? 256u : grid,
+                                   display.chunky_on(i) ? chunky : static_cast<u8>(0),
+                                   chunky_thresh,
+                                   at_source ? static_cast<u8>(0) : seam_blend,
+                                   target[i].seam_w,
+                                   static_cast<const ds::gpu::Gpu::CellMap*>(
+                                       (dual_window && display2.only_screen() == i ? display2 : display).cell_map(i)),
+                                   vs.linear && !at_source,
+                                   target[i].lin_sx,
+                                   target[i].lin_wx};
+      st.y_lo = target[i].y_lo;
+      st.y_hi = target[i].y_hi; // crop window (integer overscale)
       nds.gpu.set_scale_target(i, st);
     }
   };
@@ -1397,7 +1720,10 @@ sdl_ready:
     std::atomic<bool> cancel{false}, done{false};
     bool ok = false;
     nds.rom_cancel = &cancel;
-    std::thread worker([&] { ok = nds.load_rom(path); done = true; });
+    std::thread worker([&] {
+      ok = nds.load_rom(path);
+      done = true;
+    });
     while (!done) {
       SDL_Event e;
       while (SDL_PollEvent(&e)) input.handle(e, display, dual_window ? &display2 : nullptr);
@@ -1409,25 +1735,48 @@ sdl_ready:
     return ok;
   };
   auto discard_session_cache = [&] {
-    if (cache_session && !nds.rom_cache_path.empty()) { ds::cart::remove_cached(nds.rom_cache_path); nds.rom_cache_path.clear(); }
+    if (cache_session && !nds.rom_cache_path.empty()) {
+      ds::cart::remove_cached(nds.rom_cache_path);
+      nds.rom_cache_path.clear();
+    }
   };
   // The open SDL display supplies cancellation events while the cartridge loads.
   const bool rom_is_cia = is_cia_container(rom_path);
   auto load_shortcut_title = [&](const std::string& path) -> bool {
     ds::io::NandShortcut sc;
     std::string err;
-    if (!ds::io::read_shortcut(path, sc)) { std::fprintf(stderr, "dsi: %s is not a NAND title shortcut\n", path.c_str()); return false; }
-    if (!sc.from(nds.dsi_nand)) { std::fprintf(stderr, "dsi: %s was made from another NAND than %s\n", path.c_str(), shortcut_nand.c_str()); return false; }
-    if (!nds.load_dsi_nand_title(sc.title_lo, &err)) { std::fprintf(stderr, "dsi: %s: %s\n", path.c_str(), err.c_str()); return false; }
+    if (!ds::io::read_shortcut(path, sc)) {
+      std::fprintf(stderr, "dsi: %s is not a NAND title shortcut\n", path.c_str());
+      return false;
+    }
+    if (!sc.from(nds.dsi_nand)) {
+      std::fprintf(stderr, "dsi: %s was made from another NAND than %s\n", path.c_str(), shortcut_nand.c_str());
+      return false;
+    }
+    if (!nds.load_dsi_nand_title(sc.title_lo, &err)) {
+      std::fprintf(stderr, "dsi: %s: %s\n", path.c_str(), err.c_str());
+      return false;
+    }
     return true;
   };
   if (dsi_hle && rom_shortcut) {
-    if (!load_shortcut_title(rom_path)) { SDL_Quit(); return 1; }
+    if (!load_shortcut_title(rom_path)) {
+      SDL_Quit();
+      return 1;
+    }
   } else if (dsi_hle && rom_is_cia) {
     std::vector<ds::u8> srl;
     std::string err;
-    if (!ds::io::read_dsiware(rom_path, srl, &err) || !nds.load_rom_image(std::move(srl))) { std::fprintf(stderr, "dsi: %s: %s\n", rom_path.c_str(), err.c_str()); SDL_Quit(); return 1; }
-  } else if (!boot_firmware && !load_rom_cancellable(rom_path)) { std::fprintf(stderr, "could not read %s\n", rom_path.c_str()); SDL_Quit(); return 1; }
+    if (!ds::io::read_dsiware(rom_path, srl, &err) || !nds.load_rom_image(std::move(srl))) {
+      std::fprintf(stderr, "dsi: %s: %s\n", rom_path.c_str(), err.c_str());
+      SDL_Quit();
+      return 1;
+    }
+  } else if (!boot_firmware && !load_rom_cancellable(rom_path)) {
+    std::fprintf(stderr, "could not read %s\n", rom_path.c_str());
+    SDL_Quit();
+    return 1;
+  }
   startup_stage("rom loaded");
   auto prepare_dsiware = [&]() -> bool {
     std::string err;
@@ -1437,11 +1786,17 @@ sdl_ready:
       std::fprintf(stderr, "dsi: font %s not found; using RG DS Core's own\n", nds.dsi_font_path.c_str());
       nds.dsi_font_path.clear();
     }
-    if (!nds.prepare_dsi_hle(user, &err, &made)) { std::fprintf(stderr, "dsi: %s\n", err.c_str()); return false; }
+    if (!nds.prepare_dsi_hle(user, &err, &made)) {
+      std::fprintf(stderr, "dsi: %s\n", err.c_str());
+      return false;
+    }
     for (const std::string& m : made) std::fprintf(stderr, "dsi: %s\n", m.c_str());
     return true;
   };
-  if (dsi_hle && !prepare_dsiware()) { SDL_Quit(); return 1; }
+  if (dsi_hle && !prepare_dsiware()) {
+    SDL_Quit();
+    return 1;
+  }
   // Firmware itself remains guest software; RGDS supplies the host library.
   if (boot_firmware && std::filesystem::exists(rom_path)) nds.load_rom(rom_path);
   // Merge again now the game code is known (first time for a zip).
@@ -1455,7 +1810,7 @@ sdl_ready:
 
   cfg.set("video.aa", aa_on(cfg.str("video.aa", "false")) ? "true" : "false");
   apply_aa(nds, aa_on(cfg.str("video.aa", "false")));
-  if (!boot_firmware || nds.dsi) nds.setup_direct_boot();   // on a DSi this is the NAND boot
+  if (!boot_firmware || nds.dsi) nds.setup_direct_boot(); // on a DSi this is the NAND boot
   if (nds.dsi && dsi_title_lo && !dsi_menu) nds.dsi_autoload(dsi_title_lo);
   // Off in the core by default for reproducibility. Not under --replay: a
   // game reading the date would replay differently each time.
@@ -1467,7 +1822,10 @@ sdl_ready:
   // The DS menu boots under per-instruction budget checks: block-granularity
   // overshoot can intermittently stop it booting. Dropped once a game
   // launches; not the DSi Menu, which runs fine without it.
-  if (jit && boot_firmware && !nds.dsi) { ds::jit::set_strict(true); VLOG("jit: strict timing for the firmware\n"); }
+  if (jit && boot_firmware && !nds.dsi) {
+    ds::jit::set_strict(true);
+    VLOG("jit: strict timing for the firmware\n");
+  }
 #else
   (void)jit;
 #endif
@@ -1477,10 +1835,19 @@ sdl_ready:
   if (save_readonly) VLOG("save: read-only for the replay\n");
 
   ds::input::Log log;
-  if (record && replay) { std::fprintf(stderr, "--record and --replay are exclusive\n"); return 2; }
-  if (record && !log.open_write(record)) { std::fprintf(stderr, "cannot write %s\n", record); return 1; }
+  if (record && replay) {
+    std::fprintf(stderr, "--record and --replay are exclusive\n");
+    return 2;
+  }
+  if (record && !log.open_write(record)) {
+    std::fprintf(stderr, "cannot write %s\n", record);
+    return 1;
+  }
   if (replay) {
-    if (!log.open_read(replay)) { std::fprintf(stderr, "cannot read %s\n", replay); return 1; }
+    if (!log.open_read(replay)) {
+      std::fprintf(stderr, "cannot read %s\n", replay);
+      return 1;
+    }
     VLOG("replay: %u frames from %s\n", log.frames(), replay);
   }
   // After the battery save (state's SRAM wins) and after the replay log
@@ -1499,8 +1866,14 @@ sdl_ready:
       startup_stage("state loaded");
       if (!load_state) std::fprintf(stderr, "state: autoloaded %s\n", start_state);
       // The state's view replaces the config's, dual-window aside.
-      if (got_layout && !dual_window) { display.set_layout(layout); apply_visibility(); }
-      if (log.reading()) { ds::input::Frame f; for (u64 k = 0; k < nds.frame_count && log.read(f); ++k) {} }
+      if (got_layout && !dual_window) {
+        display.set_layout(layout);
+        apply_visibility();
+      }
+      if (log.reading()) {
+        ds::input::Frame f;
+        for (u64 k = 0; k < nds.frame_count && log.read(f); ++k) {}
+      }
     }
   }
   ds::sdl::Lid lid;
@@ -1514,7 +1887,7 @@ sdl_ready:
   const double mic_gate = cfg.real("audio.mic_gate", 5.0);
   double mic_floor = 1e9;
   const double mic_gain = cfg.real("audio.mic_gain", 0.25);
-  const size_t mic_per_frame = ds::spu::Spu::SAMPLE_RATE * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ;   // 547
+  const size_t mic_per_frame = ds::spu::Spu::SAMPLE_RATE * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ; // 547
 
   // Wall-clock pacing when there is no audio queue to pace against.
   const double frame_ns = 1e9 * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ;
@@ -1529,9 +1902,9 @@ sdl_ready:
     const bool polls = ds::sdl::host_governor_polls(&gov);
     const bool busy = pacing == "busy" || (pacing != "sleep" && pacing != "off" && polls);
     pacer.set_busy_wait(busy);
-    if (busy) VLOG("pacing: busy-wait to the deadline (governor %s%s)\n",
-                   polls ? gov.c_str() : ds::sdl::cpu_governor().c_str(),
-                   pacing == "busy" ? ", asked for" : ": it decides by polling load");
+    if (busy)
+      VLOG("pacing: busy-wait to the deadline (governor %s%s)\n", polls ? gov.c_str() : ds::sdl::cpu_governor().c_str(),
+           pacing == "busy" ? ", asked for" : ": it decides by polling load");
     else VLOG("pacing: sleep to the deadline (governor %s)\n", ds::sdl::cpu_governor().c_str());
   }
   // emu.rt_relief (default on): stay under the kernel's RT bandwidth cap
@@ -1548,15 +1921,19 @@ sdl_ready:
     };
     const double runtime_us = sysctl_num("/proc/sys/kernel/sched_rt_runtime_us");
     const double period_us = sysctl_num("/proc/sys/kernel/sched_rt_period_us");
-    int policy = 0; sched_param sp{};
-    const bool rt = pthread_getschedparam(pthread_self(), &policy, &sp) == 0 && (policy == SCHED_RR || policy == SCHED_FIFO);
+    int policy = 0;
+    sched_param sp{};
+    const bool rt =
+        pthread_getschedparam(pthread_self(), &policy, &sp) == 0 && (policy == SCHED_RR || policy == SCHED_FIFO);
     if (!rt || std::getenv("DS_EMU_OTHER")) VLOG("rt relief: not needed, this thread is not real-time\n");
     else if (runtime_us < 0 || period_us <= 0) VLOG("rt relief: not needed, the real-time class is uncapped\n");
-    else if (runtime_us >= period_us) VLOG("rt relief: not needed, the cap is not a cap (%.0f of %.0f us)\n", runtime_us, period_us);
+    else if (runtime_us >= period_us)
+      VLOG("rt relief: not needed, the cap is not a cap (%.0f of %.0f us)\n", runtime_us, period_us);
     else {
       pacer.set_rt_relief(runtime_us / period_us, period_us * 1000.0);
-      VLOG("rt relief: the real-time class is capped at %.1f %% of every %.0f ms; giving the rest back a frame at a time\n",
-           100.0 * runtime_us / period_us, period_us / 1000.0);
+      VLOG(
+          "rt relief: the real-time class is capped at %.1f %% of every %.0f ms; giving the rest back a frame at a time\n",
+          100.0 * runtime_us / period_us, period_us / 1000.0);
     }
   }
   // "auto" (default): the console's own 59.8261 Hz. 60 is what a player
@@ -1567,12 +1944,13 @@ sdl_ready:
   bool limiter_off = false;
   // Limiter, speed percent and fast forward all write this one scale factor.
   double base_scale = 1.0;
-  double frame_budget_ms = frame_ns / 1e6;   // one frame at the rate now in force; adaptive frameskip's budget
+  double frame_budget_ms = frame_ns / 1e6; // one frame at the rate now in force; adaptive frameskip's budget
   auto apply_limiter = [&] {
     // Anything unrecognised falls back to the console's own rate.
     double hz = 0.0;
-    if (limiter_mode == "off" || limiter_mode == "unlimited") { limiter_off = true; }
-    else {
+    if (limiter_mode == "off" || limiter_mode == "unlimited") {
+      limiter_off = true;
+    } else {
       limiter_off = false;
       const double parsed = std::atof(limiter_mode.c_str());
       hz = parsed >= 1.0 && parsed <= 1000.0 ? parsed : 0.0;
@@ -1617,33 +1995,48 @@ sdl_ready:
     const bool kms = vd && !std::strcmp(vd, "KMSDRM");
     const bool tracked = display.flips() || dynamic_cast<ds::sdl::DrmOut*>(display.scanout());
     if (mode == "display") {
-      if (!tracked) { std::fprintf(stderr, "pace: display asked for, but this window's page flips are not tracked (%s); pacing freely\n", vd ? vd : "?"); return false; }
+      if (!tracked) {
+        std::fprintf(stderr,
+                     "pace: display asked for, but this window's page flips are not tracked (%s); pacing freely\n",
+                     vd ? vd : "?");
+        return false;
+      }
       return true;
     }
-    if (mode != "free" && mode != "auto" && mode != "off") std::fprintf(stderr, "pace: unknown mode %s; auto\n", mode.c_str());
+    if (mode != "free" && mode != "auto" && mode != "off")
+      std::fprintf(stderr, "pace: unknown mode %s; auto\n", mode.c_str());
     (void)kms;
-    return false;   // auto: free, until the lock measures better than the free pacer on the RG DS
+    return false; // auto: free, until the lock measures better than the free pacer on the RG DS
   }();
-  VLOG("pace: %s\n", pace_display ? "locked to the display's page flips once their period holds" : "free-running at the limiter's rate");
-  bool pace_locked = false;        // this frame was paced at the display's period
+  VLOG("pace: %s\n", pace_display ? "locked to the display's page flips once their period holds"
+                                  : "free-running at the limiter's rate");
+  bool pace_locked = false; // this frame was paced at the display's period
   u64 pace_locked_frames = 0, pace_frames = 0;
-  double pace_err_abs = 0.0;       // sum of |lat - band| over locked frames with a sample, ns
+  double pace_err_abs = 0.0; // sum of |lat - band| over locked frames with a sample, ns
   u64 pace_err_n = 0;
-  u64 flip_seen[2] = {0, 0};       // newest flip number taken from each window
-  bool frame_late_start = false;   // this frame began past its deadline
-  const auto mono_ns = [] { timespec t{}; clock_gettime(CLOCK_MONOTONIC, &t); return static_cast<u64>(t.tv_sec) * 1'000'000'000ull + static_cast<u64>(t.tv_nsec); };
+  u64 flip_seen[2] = {0, 0};     // newest flip number taken from each window
+  bool frame_late_start = false; // this frame began past its deadline
+  const auto mono_ns = [] {
+    timespec t{};
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return static_cast<u64>(t.tv_sec) * 1'000'000'000ull + static_cast<u64>(t.tv_nsec);
+  };
   const double ticks_per_ns = static_cast<double>(SDL_GetPerformanceFrequency()) / 1e9;
-  u64 frame_start_ns = mono_ns();  // when the wait for this frame ended (the input poll follows)
+  u64 frame_start_ns = mono_ns(); // when the wait for this frame ended (the input poll follows)
 
   const bool show_fps = std::getenv("DS_FPS") != nullptr;
   Uint64 fps_mark = SDL_GetPerformanceCounter();
-  Uint64 emu_ticks = 0, draw_ticks = 0, wait_ticks = 0, fps_pace_ticks = 0;   // wait: blocked in begin_frame for a free scanout buffer
+  Uint64 emu_ticks = 0, draw_ticks = 0, wait_ticks = 0,
+         fps_pace_ticks = 0; // wait: blocked in begin_frame for a free scanout buffer
   u64 frames = 0;
   // Only run_frame()'s slice goes in: present/vsync blocking would peg
   // every frame at the refresh interval and hide the clusters this finds.
   const double ticks_to_ms = 1e3 / static_cast<double>(SDL_GetPerformanceFrequency());
-  std::vector<double> frame_ms, work_ms;   // emu slice; emu + present slice
-  if (frame_limit > 0) { frame_ms.reserve(static_cast<size_t>(frame_limit)); work_ms.reserve(static_cast<size_t>(frame_limit)); }
+  std::vector<double> frame_ms, work_ms; // emu slice; emu + present slice
+  if (frame_limit > 0) {
+    frame_ms.reserve(static_cast<size_t>(frame_limit));
+    work_ms.reserve(static_cast<size_t>(frame_limit));
+  }
   Uint64 pace_ticks = 0, draw_ticks_total = 0;
   // Set once the transport has actually started (not from the flags). While
   // live, gates save states, fast forward, frameskip, speed knobs, and pause.
@@ -1658,21 +2051,21 @@ sdl_ready:
   // A skipped frame leaves out line rendering, 3D raster and scaling; the
   // decision reaches the core one frame early since 3D raster for a frame
   // runs during the frame before it (a display-capturing frame is never skipped).
-  int fs_limit = cfg.num("emu.frameskip", 0);            // the menu can change these
+  int fs_limit = cfg.num("emu.frameskip", 0); // the menu can change these
   bool fs_adaptive = cfg.str("emu.frameskip_mode", "adaptive") != "fixed";
   const bool fs_capture = cfg.flag("emu.frameskip_capture", true);
   nds.gpu.set_frameskip_capture(fs_capture);
-  u64 fs_refused = 0;         // skips the core would not take (capture / display FIFO)
+  u64 fs_refused = 0; // skips the core would not take (capture / display FIFO)
   // Skipping runs in blocks of a whole display period: a game that renders
   // one screen per frame and swaps them needs every phase of a period
   // drawn, or the two screens look like they're swapping (stale vs fresh).
-  int fs_left = 0;            // frames left in the current block
-  bool fs_in_skip = false;    // that block is a skip block
-  int fs_blocks = 0;          // skip blocks run back to back, against the limit
+  int fs_left = 0;         // frames left in the current block
+  bool fs_in_skip = false; // that block is a skip block
+  int fs_blocks = 0;       // skip blocks run back to back, against the limit
   bool fs_period_warned = false;
-  int fs_drawn_run = 0;       // drawn frames since the last skipped one
-  u64 fs_skipped = 0;         // reported with the frame statistics
-  double fs_debt_ms = 0;      // adaptive: how far behind real time we are
+  int fs_drawn_run = 0;  // drawn frames since the last skipped one
+  u64 fs_skipped = 0;    // reported with the frame statistics
+  double fs_debt_ms = 0; // adaptive: how far behind real time we are
   // One state to the unlisted ".auto" slot when the session ends, so a
   // kill/Ctrl-C can be resumed via --load-state. Nothing written while playing.
   bool autosave = cfg.flag("emu.autosave", false);
@@ -1686,11 +2079,11 @@ sdl_ready:
   // Keep an A/B switch for device profiling; this changes host rendering only.
   const bool ff_raster_enabled = !std::getenv("DS_FF_RASTER") || std::atoi(std::getenv("DS_FF_RASTER")) != 0;
   std::vector<u32> cursor_enhanced_fb;
-  std::vector<u32> cursor_fb(ds::SCREEN_W * ds::SCREEN_H);   // bottom screen with the pen crosshair
+  std::vector<u32> cursor_fb(ds::SCREEN_W * ds::SCREEN_H); // bottom screen with the pen crosshair
   // Status UI belongs to RG DS; state hotkeys retain diagnostic logging.
   auto show_slot = [](const std::string& text) { std::fprintf(stderr, "state: %s\n", text.c_str()); };
   int pip_touch_hold = std::max(0, cfg.num("video.pip_touch_hold", 60));
-  constexpr int PIP_FADE_STEP = 24;                          // ~10 frames rest to opaque
+  constexpr int PIP_FADE_STEP = 24; // ~10 frames rest to opaque
   int pip_alpha = static_cast<int>(layout.pip_alpha * 255.0 + 0.5), pip_hold = 0;
   session.load_enabled(nds);
   // DSI NAND LINKS: a .dspr.nds shortcut file per DSiWare title on
@@ -1712,7 +2105,8 @@ sdl_ready:
       if (b7.size() < 0x10000) return "THE DSI BIOS CANNOT BE READ";
     }
     const ds::io::ShortcutSync r = ds::io::sync_shortcuts(dir, on ? &nand : nullptr, on ? b7.data() : nullptr, on);
-    if (r.written || r.removed) std::fprintf(stderr, "dsi shortcuts: %d written, %d removed in %s\n", r.written, r.removed, dir.c_str());
+    if (r.written || r.removed)
+      std::fprintf(stderr, "dsi shortcuts: %d written, %d removed in %s\n", r.written, r.removed, dir.c_str());
     for (const std::string& n : r.notes) std::fprintf(stderr, "dsi shortcuts: %s\n", n.c_str());
     return std::to_string(r.written) + " ADDED, " + std::to_string(r.removed) + " REMOVED";
   };
@@ -1728,13 +2122,18 @@ sdl_ready:
   auto hle_paths = [&](const std::string& game) {
     ds::io::NandPersistPaths p;
     p.saves_dir = cfg.str("paths.saves");
-    if (p.saves_dir.empty()) { const std::filesystem::path r(game); p.saves_dir = r.has_parent_path() ? r.parent_path().string() : "."; }
+    if (p.saves_dir.empty()) {
+      const std::filesystem::path r(game);
+      p.saves_dir = r.has_parent_path() ? r.parent_path().string() : ".";
+    }
     p.photos_dir = p.saves_dir + "/dsi-photos";
     return p;
   };
-  ds::io::NandPersistPaths dsi_paths = rom_shortcut ? ds::io::NandPersistPaths::beside(shortcut_nand, cfg.str("paths.saves"))
-                                     : dsi_hle ? hle_paths(rom_path)
-                                     : dsi_mode ? ds::io::NandPersistPaths::beside(dsi_nand, cfg.str("paths.saves")) : ds::io::NandPersistPaths{};
+  ds::io::NandPersistPaths dsi_paths = rom_shortcut
+                                           ? ds::io::NandPersistPaths::beside(shortcut_nand, cfg.str("paths.saves"))
+                                       : dsi_hle  ? hle_paths(rom_path)
+                                       : dsi_mode ? ds::io::NandPersistPaths::beside(dsi_nand, cfg.str("paths.saves"))
+                                                  : ds::io::NandPersistPaths{};
   // Earlier saves go back into the made-up NAND; that becomes the export baseline.
   auto import_dsiware_saves = [&] {
     if (replay) return;
@@ -1749,7 +2148,8 @@ sdl_ready:
     if (!dsi_mode || save_readonly || nds.dsi_nand.writes == nand_exported) return;
     nand_exported = nds.dsi_nand.writes;
     const ds::io::NandPersistReport r = ds::io::nand_export(nds.dsi_nand, nds.bus.bios7i.get(), dsi_paths);
-    if (r.saves || r.system_files || r.photos) VLOG("dsi: saved %d title saves, %d system files, %d photos\n", r.saves, r.system_files, r.photos);
+    if (r.saves || r.system_files || r.photos)
+      VLOG("dsi: saved %d title saves, %d system files, %d photos\n", r.saves, r.system_files, r.photos);
     for (const std::string& n : r.notes) std::fprintf(stderr, "dsi: %s\n", n.c_str());
   };
   // SD card changes go back to its folder once writes are quiet for two seconds.
@@ -1758,10 +2158,16 @@ sdl_ready:
     if (save_readonly || !nds.dsi_sd.valid() || nds.dsi_sd.writes == sd_synced) return;
     sd_synced = nds.dsi_sd.writes;
     const ds::io::SdCard::Report r = nds.dsi_sd.sync();
-    if (r.files || r.dirs || r.removed) VLOG("dsi sd: %d files written, %d folders made, %d removed in %s\n", r.files, r.dirs, r.removed, nds.dsi_sd.folder().c_str());
+    if (r.files || r.dirs || r.removed)
+      VLOG("dsi sd: %d files written, %d folders made, %d removed in %s\n", r.files, r.dirs, r.removed,
+           nds.dsi_sd.folder().c_str());
     for (const std::string& n : r.notes) std::fprintf(stderr, "dsi sd: %s\n", n.c_str());
   };
-  auto flush_save = [&] { if (!save_readonly && nds.cart && nds.cart->sram_dirty()) write_save(nds, session.sav); flush_dsi(); flush_sd(); };
+  auto flush_save = [&] {
+    if (!save_readonly && nds.cart && nds.cart->sram_dirty()) write_save(nds, session.sav);
+    flush_dsi();
+    flush_sd();
+  };
   // Whether fb_ holds the last run frame's picture (true after an unscaled
   // frame; false after a scanline-tier frame written straight to the panel).
   bool fb_current = false;
@@ -1776,20 +2182,25 @@ sdl_ready:
       fb_current = true;
     }
     if (!save_state_file(nds, auto_state_path(nds, session.states_dir), display.current_layout())) return;
-    flush_save();   // the .sav and the state never diverge
+    flush_save(); // the .sav and the state never diverge
     if (!autosave_png) return;
     const bool beside = autosave_png_cfg == "true" || autosave_png_cfg == "1";
     std::string png = autosave_png_cfg;
-    if (beside) { png = auto_state_path(nds, session.states_dir); png.replace(png.size() - 3, 3, "png"); }
+    if (beside) {
+      png = auto_state_path(nds, session.states_dir);
+      png.replace(png.size() - 3, 3, "png");
+    }
     if (write_png(nds, png, display.current_layout())) std::fprintf(stderr, "state: thumbnail %s\n", png.c_str());
   };
-  Disp::Layout loaded_layout = layout; bool got_layout = false;   // from `layout`: a state carries no pip_alpha, the config's stays
+  Disp::Layout loaded_layout = layout;
+  bool got_layout = false; // from `layout`: a state carries no pip_alpha, the config's stays
   auto apply_loaded_layout = [&] {
     if (!got_layout || dual_window) return;
-    loaded_layout.gap = display.current_layout().gap; loaded_layout.gap_auto = display.current_layout().gap_auto;   // not in a state either, and the menu may have moved it since
+    loaded_layout.gap = display.current_layout().gap;
+    loaded_layout.gap_auto =
+        display.current_layout().gap_auto; // not in a state either, and the menu may have moved it since
     display.set_layout(loaded_layout);
     apply_visibility();
-    
   };
   auto log_sd_note = [&] {
     if (!nds.sd_card_note.empty()) std::fprintf(stderr, "DS card: %s\n", nds.sd_card_note.c_str());
@@ -1807,8 +2218,11 @@ sdl_ready:
       std::fprintf(stderr, "RG DS graphics: keeping current renderer: %s\n", why.c_str());
       return false;
     }
-    fs_limit = skip; fs_left = fs_blocks = fs_drawn_run = 0;
-    fs_in_skip = false; fs_debt_ms = 0; nds.gpu.set_frame_skip(false);
+    fs_limit = skip;
+    fs_left = fs_blocks = fs_drawn_run = 0;
+    fs_in_skip = false;
+    fs_debt_ms = 0;
+    nds.gpu.set_frame_skip(false);
     const auto value = std::to_string(scale);
     setenv("RGDS_VK_SCALE", value.c_str(), 1);
     setenv("RGDS_3D_SMOOTH", smooth ? "1" : "0", 1);
@@ -1828,19 +2242,58 @@ sdl_ready:
     std::fprintf(stderr, "RG DS heavy 3D scenes: %s\n", on ? "adaptive" : "always sharp");
     return true;
   };
+  // RG DS game menu cheats: the codes Session::open loaded for this cart,
+  // toggled between frames on this thread (the ARM7 VBlank runs them), so
+  // the engine never sees a half-applied change. Which codes are on is saved
+  // beside the states at once, the way the engine's own hotkeys did.
+  rgds::cheat_count_handler = [&] { return int(nds.cheats.codes.size()); };
+  rgds::cheat_group_count_handler = [&] { return int(session.cheats.groups.size()); };
+  rgds::cheat_entry_handler = [&](int index, rgds::CheatEntry& entry) {
+    if (index < 0 || size_t(index) >= nds.cheats.codes.size()) return false;
+    const ds::cheat::Code& code = nds.cheats.codes[size_t(index)];
+    entry.name = code.name.c_str();
+    entry.description = code.description.c_str();
+    entry.group = code.group;
+    entry.state = code.is_note() ? -1 : code.enabled ? 1 : 0;
+    return true;
+  };
+  rgds::cheat_group_handler = [&](int index, rgds::CheatGroup& group) {
+    if (index < 0 || size_t(index) >= session.cheats.groups.size()) return false;
+    const ds::cheat::Group& source = session.cheats.groups[size_t(index)];
+    group.name = source.name.c_str();
+    group.exclusive = source.exclusive ? 1 : 0;
+    return true;
+  };
+  rgds::cheat_set_handler = [&](int index, bool on) {
+    if (index < 0 || size_t(index) >= nds.cheats.codes.size()) return false;
+    ds::cheat::Code& code = nds.cheats.codes[size_t(index)];
+    if (code.is_note()) return false;
+    // An exclusive group (the database's flag) keeps one code on at a time.
+    if (on && code.group >= 0 && size_t(code.group) < session.cheats.groups.size() &&
+        session.cheats.groups[size_t(code.group)].exclusive)
+      for (ds::cheat::Code& other : nds.cheats.codes)
+        if (&other != &code && other.group == code.group) other.enabled = false;
+    code.enabled = on;
+    session.save_enabled(nds);
+    std::fprintf(stderr, "RG DS cheat %s: %s\n", on ? "on" : "off", code.name.c_str());
+    return true;
+  };
   // RG DS live menu (rgds::menu_hold): no frames run while it is up, and the
   // last presented picture goes out again (renderer tier) so the bridge can
   // draw the menu over it. Events still flow, so its save/load/quit work.
   struct HeldFrame {
-    const u32* src[2] = {};          // what the last renderer present drew
+    const u32* src[2] = {}; // what the last renderer present drew
     u32 w = 0, h = 0;
     bool enhanced = false, flags[2] = {};
-    std::vector<u32> px[2];          // copied once the hold starts
+    std::vector<u32> px[2]; // copied once the hold starts
   } held;
   bool holding = false;
   Uint32 held_present_at = 0, held_sequence = 0, held_presents = 0;
   const auto remember_present = [&](const u32* const src[2], u32 w, u32 h, const bool* flags) {
-    held.src[0] = src[0]; held.src[1] = src[1]; held.w = w; held.h = h;
+    held.src[0] = src[0];
+    held.src[1] = src[1];
+    held.w = w;
+    held.h = h;
     held.enhanced = flags != nullptr;
     for (int s = 0; s < 2; ++s) held.flags[s] = !flags || flags[s];
   };
@@ -1854,7 +2307,8 @@ sdl_ready:
     if (display.scanout_direct() && (!dual_window || display2.scanout_direct()))
       return ds::sdl::Display::draw_scanout_async(windows, dual_window ? 2 : 1, px, held.w, held.h, flags);
     if (!display.enhanced_present() || display.gpu_present()) return false;
-    static const bool async = !std::getenv("DS_PRESENT_SYNC") && !(std::getenv("DS_RENDERER_SYNC") && std::atoi(std::getenv("DS_RENDERER_SYNC")) != 0);
+    static const bool async = !std::getenv("DS_PRESENT_SYNC") &&
+                              !(std::getenv("DS_RENDERER_SYNC") && std::atoi(std::getenv("DS_RENDERER_SYNC")) != 0);
     if (!async || !ds::sdl::Display::draw_renderer_async(windows, dual_window ? 2 : 1, px, held.w, held.h, flags)) {
       display.draw(px, held.w, held.h, flags);
       if (dual_window) display2.draw(px, held.w, held.h, flags);
@@ -1870,19 +2324,28 @@ sdl_ready:
       using A = ds::sdl::Action;
       switch (a) {
       case A::Pause: rgds::request_menu(); break;
-      case A::Fullscreen: display.toggle_fullscreen(); if (dual_window) display2.toggle_fullscreen();  break;
-      case A::LayoutNext: case A::LayoutPrev: {
+      case A::Fullscreen:
+        display.toggle_fullscreen();
+        if (dual_window) display2.toggle_fullscreen();
+        break;
+      case A::LayoutNext:
+      case A::LayoutPrev: {
         if (dual_window) break;
         Disp::Layout l = display.current_layout();
         const int n = static_cast<int>(layout_cycle.size());
         int at = 0;
-        for (int i = 0; i < n; ++i) if (layout_cycle[static_cast<size_t>(i)] == l.mode) { at = a == A::LayoutNext ? (i + 1) % n : (i + n - 1) % n; break; }
+        for (int i = 0; i < n; ++i)
+          if (layout_cycle[static_cast<size_t>(i)] == l.mode) {
+            at = a == A::LayoutNext ? (i + 1) % n : (i + n - 1) % n;
+            break;
+          }
         l.mode = layout_cycle[static_cast<size_t>(at)];
         display.set_layout(l);
         apply_visibility();
-        
+
         VLOG("layout: %s\n", Disp::mode_name(l.mode));
-        if (!session.game_ini.empty()) ds::sdl::Config::store(session.game_ini, "video.layout", Disp::mode_name(l.mode));
+        if (!session.game_ini.empty())
+          ds::sdl::Config::store(session.game_ini, "video.layout", Disp::mode_name(l.mode));
         break;
       }
       case A::ScreenSwap: {
@@ -1890,16 +2353,18 @@ sdl_ready:
           vs.layout.primary = 1 - vs.layout.primary;
           display.set_only_screen(vs.layout.primary);
           display2.set_only_screen(1 - vs.layout.primary);
-          
-          if (!session.game_ini.empty()) ds::sdl::Config::store(session.game_ini, "video.screen", vs.layout.primary ? "bottom" : "top");
+
+          if (!session.game_ini.empty())
+            ds::sdl::Config::store(session.game_ini, "video.screen", vs.layout.primary ? "bottom" : "top");
           break;
         }
         Disp::Layout l = display.current_layout();
         l.primary = 1 - l.primary;
         display.set_layout(l);
         apply_visibility();
-        
-        if (!session.game_ini.empty()) ds::sdl::Config::store(session.game_ini, "video.screen", l.primary ? "bottom" : "top");
+
+        if (!session.game_ini.empty())
+          ds::sdl::Config::store(session.game_ini, "video.screen", l.primary ? "bottom" : "top");
         break;
       }
       case A::PipCornerNext: {
@@ -1907,27 +2372,55 @@ sdl_ready:
         Disp::Layout l = display.current_layout();
         l.corner = static_cast<Disp::Corner>((static_cast<int>(l.corner) + 1) % static_cast<int>(Disp::Corner::Count));
         display.set_layout(l);
-        
-        if (!session.game_ini.empty()) ds::sdl::Config::store(session.game_ini, "video.pip_corner", Disp::corner_name(l.corner));
+
+        if (!session.game_ini.empty())
+          ds::sdl::Config::store(session.game_ini, "video.pip_corner", Disp::corner_name(l.corner));
         break;
       }
       case A::Screenshot: shot_pending = true; break;
-      case A::Lid: input.set_lid(!input.lid()); VLOG("lid: %s\n", input.lid() ? "closed" : "open"); if (input.lid()) flush_save(); break;
-      case A::SlotNext: state_slot = (state_slot + 1) % 10; show_slot(std::to_string(state_slot)); VLOG("state slot %d\n", state_slot); break;
-      case A::SlotPrev: state_slot = (state_slot + 9) % 10; show_slot(std::to_string(state_slot)); VLOG("state slot %d\n", state_slot); break;
+      case A::Lid:
+        input.set_lid(!input.lid());
+        VLOG("lid: %s\n", input.lid() ? "closed" : "open");
+        if (input.lid()) flush_save();
+        break;
+      case A::SlotNext:
+        state_slot = (state_slot + 1) % 10;
+        show_slot(std::to_string(state_slot));
+        VLOG("state slot %d\n", state_slot);
+        break;
+      case A::SlotPrev:
+        state_slot = (state_slot + 9) % 10;
+        show_slot(std::to_string(state_slot));
+        VLOG("state slot %d\n", state_slot);
+        break;
       case A::SaveState:
         // A state freezes the machine mid-conversation, but nothing restores a network session.
-        if (net_live) { std::fprintf(stderr, "state: not during a network session\n"); break; }
-        if (save_readonly) { std::fprintf(stderr, "state: not during a replay\n"); break; }
+        if (net_live) {
+          std::fprintf(stderr, "state: not during a network session\n");
+          break;
+        }
+        if (save_readonly) {
+          std::fprintf(stderr, "state: not during a replay\n");
+          break;
+        }
         if (save_state_file(nds, state_path(nds, session.states_dir, state_slot), display.current_layout())) {
-          flush_save();   // the .sav and the state never diverge
+          flush_save(); // the .sav and the state never diverge
           show_slot("STATE " + std::to_string(state_slot) + " SAVED");
         }
         break;
       case A::LoadState:
-        if (net_live) { std::fprintf(stderr, "state: not during a network session\n"); break; }
-        if (save_readonly) { std::fprintf(stderr, "state: not during a replay\n"); break; }
-        if (log.writing()) { std::fprintf(stderr, "state: not while recording\n"); break; }
+        if (net_live) {
+          std::fprintf(stderr, "state: not during a network session\n");
+          break;
+        }
+        if (save_readonly) {
+          std::fprintf(stderr, "state: not during a replay\n");
+          break;
+        }
+        if (log.writing()) {
+          std::fprintf(stderr, "state: not while recording\n");
+          break;
+        }
         if (load_state_file(nds, state_path(nds, session.states_dir, state_slot), loaded_layout, got_layout)) {
           apply_loaded_layout();
           audio.clear();
@@ -1939,8 +2432,12 @@ sdl_ready:
         }
         break;
       case A::FastForwardToggle:
-        if (net_live) { std::fprintf(stderr, "fast forward: not during a network session\n"); break; }
-        ff_toggle = !ff_toggle; VLOG("fast forward %s\n", ff_toggle ? "on" : "off");
+        if (net_live) {
+          std::fprintf(stderr, "fast forward: not during a network session\n");
+          break;
+        }
+        ff_toggle = !ff_toggle;
+        VLOG("fast forward %s\n", ff_toggle ? "on" : "off");
         break;
       default: break;
       }
@@ -1951,16 +2448,19 @@ sdl_ready:
         holding = true;
         audio.pause(true);
         for (int s = 0; s < 2; ++s) {
-          const size_t n = held.flags[s] ? static_cast<size_t>(held.w) * held.h : static_cast<size_t>(ds::SCREEN_W) * ds::SCREEN_H;
+          const size_t n =
+              held.flags[s] ? static_cast<size_t>(held.w) * held.h : static_cast<size_t>(ds::SCREEN_W) * ds::SCREEN_H;
           if (held.src[s]) held.px[s].assign(held.src[s], held.src[s] + n);
         }
-        held_present_at = now - 1000; held_presents = 0;
+        held_present_at = now - 1000;
+        held_presents = 0;
         std::fprintf(stderr, "RG DS menu: game held\n");
       }
       // Again when the menu publishes a new frame, else ~30 Hz for the HUD.
       const Uint32 sequence = rgds::overlay_sequence();
       if (sequence != held_sequence || now - held_present_at >= 33) {
-        held_sequence = sequence; held_present_at = now;
+        held_sequence = sequence;
+        held_present_at = now;
         if (present_held()) ++held_presents;
       }
       SDL_Delay(4);
@@ -1976,11 +2476,14 @@ sdl_ready:
     input.update_stylus();
     ds::input::Frame in = input.frame();
     if (log.reading()) {
-      if (!log.read(in)) break;   // the controls still quit; the log ends the run
+      if (!log.read(in)) break; // the controls still quit; the log ends the run
       ds::input::apply(nds, in);
     } else {
       bool closed;
-      if (lid.poll(closed, nds.sleeping)) { input.set_lid(closed); if (closed) flush_save(); }
+      if (lid.poll(closed, nds.sleeping)) {
+        input.set_lid(closed);
+        if (closed) flush_save();
+      }
       in.lid = input.lid();
       if (input.fake_mic()) input.fake_mic_frame(mic);
       else {
@@ -1996,7 +2499,8 @@ sdl_ready:
         // Capture arrives in bursts; queue and hand out a frame at a time,
         // dropping backlog so a stall doesn't turn into latency.
         mic_queue.insert(mic_queue.end(), mic_raw.begin(), mic_raw.end());
-        if (mic_queue.size() > mic_per_frame * 4) mic_queue.erase(mic_queue.begin(), mic_queue.end() - mic_per_frame * 2);
+        if (mic_queue.size() > mic_per_frame * 4)
+          mic_queue.erase(mic_queue.begin(), mic_queue.end() - mic_per_frame * 2);
         const size_t take = mic_queue.size() < mic_per_frame ? mic_queue.size() : mic_per_frame;
         mic.assign(mic_queue.begin(), mic_queue.begin() + take);
         mic_queue.erase(mic_queue.begin(), mic_queue.begin() + take);
@@ -2004,17 +2508,25 @@ sdl_ready:
           double sq = 0;
           for (s16 v : mic) sq += double(v) * v;
           const double rms = std::sqrt(sq / mic.size());
-          mic_floor = rms < mic_floor ? rms : mic_floor + (rms - mic_floor) * 0.002;   // drops at once, creeps up
+          mic_floor = rms < mic_floor ? rms : mic_floor + (rms - mic_floor) * 0.002; // drops at once, creeps up
           if (rms < mic_floor * mic_gate + 16) std::fill(mic.begin(), mic.end(), 0);
         }
       }
       if (static const bool mic_log = std::getenv("DS_MIC_LOG") != nullptr; mic_log) {
-        static u32 mframes = 0, mtotal = 0; static int mpeak = 0; static double msq = 0;
-        for (s16 v : mic) { msq += double(v) * v; if (std::abs(int(v)) > mpeak) mpeak = std::abs(int(v)); }
+        static u32 mframes = 0, mtotal = 0;
+        static int mpeak = 0;
+        static double msq = 0;
+        for (s16 v : mic) {
+          msq += double(v) * v;
+          if (std::abs(int(v)) > mpeak) mpeak = std::abs(int(v));
+        }
         mtotal += static_cast<u32>(mic.size());
         if (++mframes == 60) {
-          std::fprintf(stderr, "[mic] capture: %u samples/60 frames, peak %d, rms %.0f\n", mtotal, mpeak, mtotal ? std::sqrt(msq / mtotal) : 0.0);
-          mframes = mtotal = 0; mpeak = 0; msq = 0;
+          std::fprintf(stderr, "[mic] capture: %u samples/60 frames, peak %d, rms %.0f\n", mtotal, mpeak,
+                       mtotal ? std::sqrt(msq / mtotal) : 0.0);
+          mframes = mtotal = 0;
+          mpeak = 0;
+          msq = 0;
         }
       }
       ds::input::decimate_mic(in, mic.data(), mic.size());
@@ -2028,18 +2540,25 @@ sdl_ready:
     bool fast = ff_toggle || input.fast_forward_held();
     if (net_live && fast) {
       static bool said = false;
-      if (!said) { said = true; std::fprintf(stderr, "fast forward: not during a network session\n"); }
+      if (!said) {
+        said = true;
+        std::fprintf(stderr, "fast forward: not during a network session\n");
+      }
       fast = false;
     }
-    if (fast != was_fast) { was_fast = fast; pacer.reset(); }
+    if (fast != was_fast) {
+      was_fast = fast;
+      pacer.reset();
+    }
     // FF's presentation cadence can also save invisible raster work. Capture
     // and FIFO frames always render: their pixels can be read by the guest.
     nds.gpu.set_frameskip_capture(fast ? false : fs_capture);
-    const bool ff_raster = fast && ff_raster_enabled && ff_skip > 0 &&
-                          !shot_pending && nds.gpu.frame_skip_safe();
+    const bool ff_raster = fast && ff_raster_enabled && ff_skip > 0 && !shot_pending && nds.gpu.frame_skip_safe();
     if (ff_raster != was_ff_raster) {
       was_ff_raster = ff_raster;
-      fs_left = fs_blocks = 0; fs_in_skip = false; fs_drawn_run = 0;
+      fs_left = fs_blocks = 0;
+      fs_in_skip = false;
+      fs_drawn_run = 0;
     }
     const int render_skip_limit = ff_raster ? std::max(fs_limit, ff_skip) : fs_limit;
     // Policy decides for the frame after the one about to run; what the
@@ -2055,7 +2574,7 @@ sdl_ready:
         std::fprintf(stderr, "frameskip: this game drives its screens over %d frames, so it skips %d of every %d\n",
                      period, fs_limit * period, (fs_limit + 1) * period);
       }
-      if (fs_left == 0) {                         // a block ended: pick the next one
+      if (fs_left == 0) { // a block ended: pick the next one
         // Fixed skips its blocks whatever the clock says; adaptive skips only
         // while it is behind, and both stop at the limit and draw a period.
         const bool want = ff_raster || !fs_adaptive || fs_debt_ms > frame_budget_ms * 0.5;
@@ -2073,14 +2592,20 @@ sdl_ready:
     // Games that render one screen per frame (the other via capture) show one
     // stale screen right after a skip; draw the block through and present its last frame.
     const int fs_period = render_skip_limit > 0 ? nds.gpu.display_phase_period() : 1;
-    if (skipped) { ++fs_skipped; fs_drawn_run = 0; } else ++fs_drawn_run;
+    if (skipped) {
+      ++fs_skipped;
+      fs_drawn_run = 0;
+    } else ++fs_drawn_run;
     const bool fs_partial = fs_period > 1 && fs_drawn_run < fs_period;
     // Say why frameskip is doing nothing, once, rather than looking broken.
     if (!skipped && fs_in_skip && ++fs_refused == 120 && !fs_capture)
-      std::fprintf(stderr, "frameskip: this game display-captures its frames, which cannot be skipped exactly;\n"
-                           "           drop --no-frameskip-capture (or [emu] frameskip_capture = true) to skip them anyway\n");
-    const bool present = shot_pending ? !skipped
-                                       : (!skipped && !fs_partial && (ff_raster || !fast || ff_skip <= 0 || frames % static_cast<u64>(ff_skip + 1) == 0));
+      std::fprintf(stderr,
+                   "frameskip: this game display-captures its frames, which cannot be skipped exactly;\n"
+                   "           drop --no-frameskip-capture (or [emu] frameskip_capture = true) to skip them anyway\n");
+    const bool present = shot_pending
+                             ? !skipped
+                             : (!skipped && !fs_partial &&
+                                (ff_raster || !fast || ff_skip <= 0 || frames % static_cast<u64>(ff_skip + 1) == 0));
     // Translucent PiP inset comes up to opaque while touched, holds
     // pip_touch_hold frames, then fades back. Only when the inset IS the bottom screen.
     {
@@ -2104,9 +2629,13 @@ sdl_ready:
     // shows the compose) and, under the RG DS launcher (whose bridge blends
     // the pause menu through the present's hook), at 1x as well; elsewhere
     // 1x keeps the scanline path. DS_DIRECT_PRESENT=0/1 overrides.
-    static const int direct_env = [] { const char* e = std::getenv("DS_DIRECT_PRESENT"); return e ? std::atoi(e) : -1; }();
-    const bool direct = direct_env != 0 && display.scanout_direct() && (!dual_window || display2.scanout_direct()) &&
-                        (direct_env == 1 || nds.gpu.enhanced_framebuffer(0) != nullptr || rgds::present_hook() != nullptr);
+    static const int direct_env = [] {
+      const char* e = std::getenv("DS_DIRECT_PRESENT");
+      return e ? std::atoi(e) : -1;
+    }();
+    const bool direct =
+        direct_env != 0 && display.scanout_direct() && (!dual_window || display2.scanout_direct()) &&
+        (direct_env == 1 || nds.gpu.enhanced_framebuffer(0) != nullptr || rgds::present_hook() != nullptr);
     if (present && !shot_pending && !direct) {
       // Scanout tiers block here until a buffer is free (DS_FPS "wait").
       const Uint64 tw = SDL_GetPerformanceCounter();
@@ -2116,7 +2645,7 @@ sdl_ready:
       wait_ticks += SDL_GetPerformanceCounter() - tw;
     }
     set_scale_targets(target, scaled);
-    fb_current = present && !scaled;   // a skipped frame renders nothing
+    fb_current = present && !scaled; // a skipped frame renders nothing
 
     const Uint64 t0 = SDL_GetPerformanceCounter();
     nds.run_frame();
@@ -2142,12 +2671,12 @@ sdl_ready:
         else if (nds.firmware_override_dirty())
           std::fprintf(stderr, "firmware settings: saved to %s\n", fw_override.c_str());
         std::fprintf(stderr, "power off: rebooting the firmware\n");
-        autosave_now();       // the reset below discards the session
+        autosave_now(); // the reset below discards the session
 #if DSPERATE_JIT
         if (jit) ds::jit::flush_all();
 #endif
-        nds.reset();          // clears power_off, and re-seeds the clock
-        if (nds.dsi) nds.setup_direct_boot();   // the DSi boots from its NAND again
+        nds.reset();                          // clears power_off, and re-seeds the clock
+        if (nds.dsi) nds.setup_direct_boot(); // the DSi boots from its NAND again
       } else {
         nds.power_off = false;
       }
@@ -2163,14 +2692,18 @@ sdl_ready:
         const Disp::Layout& cl = display.current_layout();
         double ratio = 1.0;
         if (!dual_window && cl.mode == Disp::Mode::Pip && cl.primary == 0) ratio = cl.pip;
-        else if (!dual_window && (cl.mode == Disp::Mode::DominantV || cl.mode == Disp::Mode::DominantH) && cl.primary == 0) ratio = display.dominant_ratio();
+        else if (!dual_window && (cl.mode == Disp::Mode::DominantV || cl.mode == Disp::Mode::DominantH) &&
+                 cl.primary == 0)
+          ratio = display.dominant_ratio();
         if (ratio < 1.0) cursor_size *= std::clamp(static_cast<int>(1.0 / ratio + 0.5), 1, 4);
       }
       if (scaled) {
         // Crosshair first, still in DS pixels. Must go down before
         // finish_views(): a PiP-inset bottom screen's target is a side
         // buffer finish_views() then copies into the canvas.
-        if (cursor) draw_cursor(CursorDst{target[1].px, target[1].pitch, target[1].h, target[1].xrun}, input.stylus_x(), input.stylus_y(), cursor_size);
+        if (cursor)
+          draw_cursor(CursorDst{target[1].px, target[1].pitch, target[1].h, target[1].xrun}, input.stylus_x(),
+                      input.stylus_y(), cursor_size);
         display.finish_views();
         if (dual_window) display2.finish_views();
         display.present();
@@ -2179,7 +2712,8 @@ sdl_ready:
         const u32* fb[2] = {nds.gpu.framebuffer(0), nds.gpu.framebuffer(1)};
         if (cursor) {
           std::memcpy(cursor_fb.data(), fb[1], cursor_fb.size() * 4);
-          draw_cursor(CursorDst{cursor_fb.data(), ds::SCREEN_W, ds::SCREEN_H, nullptr}, input.stylus_x(), input.stylus_y(), cursor_size);
+          draw_cursor(CursorDst{cursor_fb.data(), ds::SCREEN_W, ds::SCREEN_H, nullptr}, input.stylus_x(),
+                      input.stylus_y(), cursor_size);
           fb[1] = cursor_fb.data();
         }
         // A GPU present goes to the present thread on the aux core
@@ -2200,17 +2734,28 @@ sdl_ready:
           static const bool present_nort = ds::thread_layout_on() && !std::getenv("DS_PRESENT_RT");
           // RG DS: an SDL_Renderer window's upload, draw and swap (~3 ms on
           // the A55 with both panels) go to the present thread as well.
-          static const bool renderer_async = !present_sync && !(std::getenv("DS_RENDERER_SYNC") && std::atoi(std::getenv("DS_RENDERER_SYNC")) != 0);
+          static const bool renderer_async =
+              !present_sync && !(std::getenv("DS_RENDERER_SYNC") && std::atoi(std::getenv("DS_RENDERER_SYNC")) != 0);
           ds::sdl::Display* const windows[2] = {&display, &display2};
-          int rt_pol = 0; sched_param rt_sp{};
-          const bool drop_rt = !renderer_async && present_nort && pthread_getschedparam(pthread_self(), &rt_pol, &rt_sp) == 0 && (rt_pol == SCHED_RR || rt_pol == SCHED_FIFO);
-          if (drop_rt) { sched_param z{}; sched_setscheduler(0, SCHED_OTHER, &z); }
+          int rt_pol = 0;
+          sched_param rt_sp{};
+          const bool drop_rt = !renderer_async && present_nort &&
+                               pthread_getschedparam(pthread_self(), &rt_pol, &rt_sp) == 0 &&
+                               (rt_pol == SCHED_RR || rt_pol == SCHED_FIFO);
+          if (drop_rt) {
+            sched_param z{};
+            sched_setscheduler(0, SCHED_OTHER, &z);
+          }
           const bool enhanced_screen[2] = {nds.gpu.enhanced_screen(0), nds.gpu.enhanced_screen(1)};
-          const u32* enhanced[2] = {enhanced_screen[0] ? nds.gpu.enhanced_framebuffer(0) : fb[0], enhanced_screen[1] ? nds.gpu.enhanced_framebuffer(1) : fb[1]};
+          const u32* enhanced[2] = {enhanced_screen[0] ? nds.gpu.enhanced_framebuffer(0) : fb[0],
+                                    enhanced_screen[1] ? nds.gpu.enhanced_framebuffer(1) : fb[1]};
           if (cursor && enhanced_screen[1]) {
             cursor_enhanced_fb.assign(enhanced[1], enhanced[1] + ds::gpu::Gpu::PRESENT_W * ds::gpu::Gpu::PRESENT_H);
-            std::array<u16, ds::SCREEN_W+1> runs{}; runs.back() = ds::gpu::Gpu::PRESENT_W;
-            draw_cursor(CursorDst{cursor_enhanced_fb.data(), ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, runs.data()}, input.stylus_x(), input.stylus_y(), cursor_size);
+            std::array<u16, ds::SCREEN_W + 1> runs{};
+            runs.back() = ds::gpu::Gpu::PRESENT_W;
+            draw_cursor(
+                CursorDst{cursor_enhanced_fb.data(), ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, runs.data()},
+                input.stylus_x(), input.stylus_y(), cursor_size);
             enhanced[1] = cursor_enhanced_fb.data();
           }
           const bool detail = enhanced[0] && enhanced[1] &&
@@ -2219,14 +2764,21 @@ sdl_ready:
           else remember_present(fb, ds::SCREEN_W, ds::SCREEN_H, nullptr);
           if (direct) {
             // Each screen as the core finished it (the compose, or native), to the panel without a GPU job.
-            if (!ds::sdl::Display::draw_scanout_async(windows, dual_window ? 2 : 1, enhanced, ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, enhanced_screen)) {
+            if (!ds::sdl::Display::draw_scanout_async(windows, dual_window ? 2 : 1, enhanced, ds::gpu::Gpu::PRESENT_W,
+                                                      ds::gpu::Gpu::PRESENT_H, enhanced_screen)) {
               static bool said = false;
-              if (!said) { said = true; std::fprintf(stderr, "video: the direct present is unavailable on this tier; frames are not shown\n"); }
+              if (!said) {
+                said = true;
+                std::fprintf(stderr, "video: the direct present is unavailable on this tier; frames are not shown\n");
+              }
             }
           } else if (detail) {
-            if (!renderer_async || !ds::sdl::Display::draw_renderer_async(windows, dual_window ? 2 : 1, enhanced, ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, enhanced_screen)) {
+            if (!renderer_async ||
+                !ds::sdl::Display::draw_renderer_async(windows, dual_window ? 2 : 1, enhanced, ds::gpu::Gpu::PRESENT_W,
+                                                       ds::gpu::Gpu::PRESENT_H, enhanced_screen)) {
               display.draw(enhanced, ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, enhanced_screen);
-              if (dual_window) display2.draw(enhanced, ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, enhanced_screen);
+              if (dual_window)
+                display2.draw(enhanced, ds::gpu::Gpu::PRESENT_W, ds::gpu::Gpu::PRESENT_H, enhanced_screen);
             }
           } else if (!renderer_async || !ds::sdl::Display::draw_renderer_async(windows, dual_window ? 2 : 1, fb)) {
             display.draw(fb);
@@ -2238,13 +2790,19 @@ sdl_ready:
     }
     // Unlimited limiter outruns the speakers like fast forward: sheds audio the same way.
     audio.push(nds, fast || limiter_off);
-    if (present) { static bool first_present = true; if (first_present) { first_present = false; startup_stage("first present"); } }
+    if (present) {
+      static bool first_present = true;
+      if (first_present) {
+        first_present = false;
+        startup_stage("first present");
+      }
+    }
     if (shot_pending && present) {
       shot_pending = false;
       screenshot(nds, session.shots_dir, display.current_layout());
     }
     const Uint64 t2 = SDL_GetPerformanceCounter();
-    const u64 frame_done_ns = mono_ns();   // the frame is handed to the present thread (or drawn)
+    const u64 frame_done_ns = mono_ns(); // the frame is handed to the present thread (or drawn)
     emu_ticks += t1 - t0;
     draw_ticks += t2 - t1;
     draw_ticks_total += t2 - t1;
@@ -2254,12 +2812,15 @@ sdl_ready:
       // DS_FRAME_SERIES=<path>: "emu work start end" per frame in run order:
       // ms, then the emu slice's CLOCK_MONOTONIC bounds in ns, so a
       // `perf record --clockid monotonic` can be cut to chosen frames.
-      static FILE* series = [] { const char* p = std::getenv("DS_FRAME_SERIES"); return p ? std::fopen(p, "w") : nullptr; }();
+      static FILE* series = [] {
+        const char* p = std::getenv("DS_FRAME_SERIES");
+        return p ? std::fopen(p, "w") : nullptr;
+      }();
       if (series) {
         timespec ts{};
         clock_gettime(CLOCK_MONOTONIC, &ts);
         const double tick_ns = ticks_to_ms * 1e6;
-        const Uint64 tc = SDL_GetPerformanceCounter();   // taken with ts: maps the counter onto CLOCK_MONOTONIC
+        const Uint64 tc = SDL_GetPerformanceCounter(); // taken with ts: maps the counter onto CLOCK_MONOTONIC
         const long long now = static_cast<long long>(ts.tv_sec) * 1000000000LL + ts.tv_nsec;
         const long long emu_end = now - static_cast<long long>(static_cast<double>(tc - t1) * tick_ns);
         const long long start = emu_end - static_cast<long long>(static_cast<double>(t1 - t0) * tick_ns);
@@ -2267,8 +2828,14 @@ sdl_ready:
       }
       // DS_HITCH_PNG=<ms>: write what is ON SCREEN for any frame whose work
       // exceeds that, named <index>-<ms>. Capped at DS_HITCH_MAX (default 12).
-      static const double hitch_ms = [] { const char* p = std::getenv("DS_HITCH_PNG"); return p ? std::atof(p) : 0.0; }();
-      static const long hitch_max = [] { const char* p = std::getenv("DS_HITCH_MAX"); return p ? std::atol(p) : 12; }();
+      static const double hitch_ms = [] {
+        const char* p = std::getenv("DS_HITCH_PNG");
+        return p ? std::atof(p) : 0.0;
+      }();
+      static const long hitch_max = [] {
+        const char* p = std::getenv("DS_HITCH_MAX");
+        return p ? std::atol(p) : 12;
+      }();
       static long hitch_n = 0;
       if (hitch_ms > 0.0 && work_ms.back() > hitch_ms && hitch_n < hitch_max) {
         ++hitch_n;
@@ -2286,26 +2853,45 @@ sdl_ready:
     // (adaptive_res.h has the rules).
     {
       // RG DS: the menu's Heavy 3D scenes choice switches it live (rgds_set_adaptive).
-      if (g_rgds_adaptive.load(std::memory_order_relaxed) < 0) { const char* e = std::getenv("DS_ADAPTIVE"); g_rgds_adaptive.store(e ? (std::atoi(e) != 0) : cfg.flag("video.adaptive", true), std::memory_order_relaxed); }
+      if (g_rgds_adaptive.load(std::memory_order_relaxed) < 0) {
+        const char* e = std::getenv("DS_ADAPTIVE");
+        g_rgds_adaptive.store(e ? (std::atoi(e) != 0) : cfg.flag("video.adaptive", true), std::memory_order_relaxed);
+      }
       const bool adaptive_on = g_rgds_adaptive.load(std::memory_order_relaxed) > 0;
       static ds::sdl::AdaptiveRes adaptive;
       // The first seconds of a start are slow anyway (pipelines, uploads), so
       // they never start a hold. RG DS KMS starts with adaptive on hit a GPU
       // job the kernel hard-stopped about 0.5 s in (2 of 2 harness starts,
       // 0 of 7 with it off). DS_ADAPTIVE_GRACE_MS overrides the 5 s.
-      static const double grace_ms = [] { const char* e = std::getenv("DS_ADAPTIVE_GRACE_MS"); return e ? std::atof(e) : 5000.0; }();
+      static const double grace_ms = [] {
+        const char* e = std::getenv("DS_ADAPTIVE_GRACE_MS");
+        return e ? std::atof(e) : 5000.0;
+      }();
       static double adaptive_from_ms = -1;
       auto& r3d = nds.gpu3d.renderer();
       using Event = ds::sdl::AdaptiveRes::Event;
       const double now_ms = static_cast<double>(t2) * ticks_to_ms;
       if (adaptive_on && adaptive_from_ms < 0 && r3d.hires_active()) adaptive_from_ms = now_ms + grace_ms;
-      const double gpu_wait = static_cast<double>(nds.gpu.take_hires_wait_ns()) / 1e6;   // this frame's, taken every frame
+      const double gpu_wait =
+          static_cast<double>(nds.gpu.take_hires_wait_ns()) / 1e6; // this frame's, taken every frame
       if (adaptive_on && r3d.hires_active() && !(fast && ff_speed <= 0) && now_ms >= adaptive_from_ms) {
         switch (adaptive.frame(now_ms, static_cast<double>(t2 - t0) * ticks_to_ms, frame_budget_ms, gpu_wait)) {
-          case Event::Hold: r3d.set_hires_hold(true); std::fprintf(stderr, "adaptive: native for %.1f s (%u of 30 frames over budget)\n", adaptive.hold_ms() / 1000, adaptive.last_over()); break;
-          case Event::Release: r3d.set_hires_hold(false); std::fprintf(stderr, "adaptive: back to high resolution (native %.1f ms vs %.1f ms)\n", adaptive.hold_avg(), adaptive.hires_avg()); break;
-          case Event::ReleaseNoGain: r3d.set_hires_hold(false); std::fprintf(stderr, "adaptive: native was no faster (%.1f vs %.1f ms); high resolution for 60 s\n", adaptive.hold_avg(), adaptive.hires_avg()); break;
-          case Event::None: break;
+        case Event::Hold:
+          r3d.set_hires_hold(true);
+          std::fprintf(stderr, "adaptive: native for %.1f s (%u of 30 frames over budget)\n", adaptive.hold_ms() / 1000,
+                       adaptive.last_over());
+          break;
+        case Event::Release:
+          r3d.set_hires_hold(false);
+          std::fprintf(stderr, "adaptive: back to high resolution (native %.1f ms vs %.1f ms)\n", adaptive.hold_avg(),
+                       adaptive.hires_avg());
+          break;
+        case Event::ReleaseNoGain:
+          r3d.set_hires_hold(false);
+          std::fprintf(stderr, "adaptive: native was no faster (%.1f vs %.1f ms); high resolution for 60 s\n",
+                       adaptive.hold_avg(), adaptive.hires_avg());
+          break;
+        case Event::None: break;
         }
       } else if (adaptive.pause()) r3d.set_hires_hold(false);
     }
@@ -2315,7 +2901,7 @@ sdl_ready:
       fs_debt_ms += (fast && ff_speed <= 0) ? 0.0 : work - frame_budget_ms;
       if (fs_debt_ms < 0) fs_debt_ms = 0;
       const double cap = frame_budget_ms * (fs_limit + 1);
-      if (fs_debt_ms > cap) fs_debt_ms = cap;   // a long stall must not buy a run of skips
+      if (fs_debt_ms > cap) fs_debt_ms = cap; // a long stall must not buy a run of skips
     }
     // Auto buffer size needs to know if the machine keeps up; fast forward
     // doesn't get a vote, since it's behind by design.
@@ -2324,11 +2910,15 @@ sdl_ready:
     // DS_AUDIO_QUEUE=<path>: one line a frame -- depth, rate-control ppm,
     // target depth, dry count, SPU output rate.
     if (audio.active()) {
-      static FILE* aq = [] { const char* p = std::getenv("DS_AUDIO_QUEUE"); return p ? std::fopen(p, "w") : nullptr; }();
-      if (aq) std::fprintf(aq, "%.3f %.0f %.2f %llu %.1f\n", audio.queued_frames(), audio.rate_trim_ppm(), audio.target_frames(),
-                           static_cast<unsigned long long>(audio.stats().dry), audio.input_rate());
+      static FILE* aq = [] {
+        const char* p = std::getenv("DS_AUDIO_QUEUE");
+        return p ? std::fopen(p, "w") : nullptr;
+      }();
+      if (aq)
+        std::fprintf(aq, "%.3f %.0f %.2f %llu %.1f\n", audio.queued_frames(), audio.rate_trim_ppm(),
+                     audio.target_frames(), static_cast<unsigned long long>(audio.stats().dry), audio.input_rate());
     }
-    ds::prof::frame_mark();   // marks the emu slice: present isn't in a stage, lands in "untimed" of work_ms
+    ds::prof::frame_mark(); // marks the emu slice: present isn't in a stage, lands in "untimed" of work_ms
 
     const Uint64 t3 = SDL_GetPerformanceCounter();
     // The windows' page flips completed since last frame (KMSDRM; panel 0 is
@@ -2339,13 +2929,20 @@ sdl_ready:
       const ds::sdl::Display* wins[2] = {&display, dual_window ? &display2 : nullptr};
       for (int w = 0; w < 2; ++w) {
         if (!wins[w]) continue;
-        if (wins[w]->flips()) flips_n[w] = wins[w]->flips()->recent(wins[w]->flip_slot(), flip_seen[w], flips_new[w], ds::sdl::KmsFlips::RING);
-        else if (auto* drm = dynamic_cast<ds::sdl::DrmOut*>(wins[w]->scanout())) flips_n[w] = drm->recent(flip_seen[w], flips_new[w], ds::sdl::KmsFlips::RING);
+        if (wins[w]->flips())
+          flips_n[w] =
+              wins[w]->flips()->recent(wins[w]->flip_slot(), flip_seen[w], flips_new[w], ds::sdl::KmsFlips::RING);
+        else if (auto* drm = dynamic_cast<ds::sdl::DrmOut*>(wins[w]->scanout()))
+          flips_n[w] = drm->recent(flip_seen[w], flips_new[w], ds::sdl::KmsFlips::RING);
         else continue;
         for (int i = 0; i < flips_n[w]; ++i) {
           const u64 samples = lock.samples();
-          lock.flip(w, flips_new[w][i].at_ns, flips_new[w][i].issue_ns, flips_new[w][i].wait_ns, (flips_new[w][i].tag & 4) != 0);
-          if (lock.samples() != samples) { pace_err_abs += std::fabs(lock.last_lat_ns() - lock.band_ns()); ++pace_err_n; }
+          lock.flip(w, flips_new[w][i].at_ns, flips_new[w][i].issue_ns, flips_new[w][i].wait_ns,
+                    (flips_new[w][i].tag & 4) != 0);
+          if (lock.samples() != samples) {
+            pace_err_abs += std::fabs(lock.last_lat_ns() - lock.band_ns());
+            ++pace_err_n;
+          }
           flip_seen[w] = flips_new[w][i].seq;
         }
       }
@@ -2362,13 +2959,14 @@ sdl_ready:
       lock.reset();
       pacer.reset();
       audio.set_speed(want_lock ? frame_ns / lock.period_ns() : base_scale);
-      VLOG("pace: %s (panel %.3f ms, %.2f Hz; band %.2f ms, work %.2f ms)\n", want_lock ? "locked to the display" : "free again",
-           lock.period_ns() / 1e6, 1e9 / lock.period_ns(), lock.band_ns() / 1e6, lock.work_ns() / 1e6);
+      VLOG("pace: %s (panel %.3f ms, %.2f Hz; band %.2f ms, work %.2f ms)\n",
+           want_lock ? "locked to the display" : "free again", lock.period_ns() / 1e6, 1e9 / lock.period_ns(),
+           lock.band_ns() / 1e6, lock.work_ns() / 1e6);
     }
     frame_late_start = false;
-    if ((fast && ff_speed <= 0) || limiter_off) pacer.reset();   // unthrottled: do not bank the time it gains
+    if ((fast && ff_speed <= 0) || limiter_off) pacer.reset(); // unthrottled: do not bank the time it gains
     else if (pace_locked) {
-      audio.set_speed(frame_ns / lock.period_ns());   // follows the period estimate; the trim takes the rest
+      audio.set_speed(frame_ns / lock.period_ns()); // follows the period estimate; the trim takes the rest
       // The lock's deadline is on CLOCK_MONOTONIC; the pacer counts SDL ticks: convert by the distance from now.
       const u64 now_m = mono_ns();
       const Uint64 now_t = SDL_GetPerformanceCounter();
@@ -2380,7 +2978,8 @@ sdl_ready:
     } else pacer.wait(scale);
     ++pace_frames;
     const u64 next_start_ns = mono_ns();
-    if (pace_display && !fast && !limiter_off) lock.started(next_start_ns, frame_late_start);   // free frames teach it the work too
+    if (pace_display && !fast && !limiter_off)
+      lock.started(next_start_ns, frame_late_start); // free frames teach it the work too
 
     pace_ticks += SDL_GetPerformanceCounter() - t3;
     fps_pace_ticks += SDL_GetPerformanceCounter() - t3;
@@ -2409,11 +3008,14 @@ sdl_ready:
         using ull = unsigned long long;
         for (int w = 0; w < 2; ++w)
           for (int i = 0; i < flips_n[w]; ++i)
-            std::fprintf(cad, "f %d %llu %llu %llu %d %llu\n", w, static_cast<ull>(flips_new[w][i].seq), static_cast<ull>(flips_new[w][i].at_ns), static_cast<ull>(flips_new[w][i].issue_ns), flips_new[w][i].tag, static_cast<ull>(flips_new[w][i].wait_ns));
+            std::fprintf(cad, "f %d %llu %llu %llu %d %llu\n", w, static_cast<ull>(flips_new[w][i].seq),
+                         static_cast<ull>(flips_new[w][i].at_ns), static_cast<ull>(flips_new[w][i].issue_ns),
+                         flips_new[w][i].tag, static_cast<ull>(flips_new[w][i].wait_ns));
         const u64 now = nds.gpu3d.swap_count();
-        std::fprintf(cad, "%llu %llu %u %d %llu %llu %llu %d %.0f\n", static_cast<ull>(frames), static_cast<ull>(now - cad_prev),
-                     nds.gpu3d.render_polygon_count(), present ? 1 : 0, static_cast<ull>(frame_start_ns), static_cast<ull>(frame_done_ns),
-                     static_cast<ull>(next_start_ns), pace_locked ? 1 : 0, lock.band_ns());
+        std::fprintf(cad, "%llu %llu %u %d %llu %llu %llu %d %.0f\n", static_cast<ull>(frames),
+                     static_cast<ull>(now - cad_prev), nds.gpu3d.render_polygon_count(), present ? 1 : 0,
+                     static_cast<ull>(frame_start_ns), static_cast<ull>(frame_done_ns), static_cast<ull>(next_start_ns),
+                     pace_locked ? 1 : 0, lock.band_ns());
         cad_prev = now;
         if (frames % 256 == 0) std::fflush(cad);
       }
@@ -2421,34 +3023,49 @@ sdl_ready:
     frame_start_ns = next_start_ns;
     ++frames;
     // DS_SHOT_AT=N: a screenshot after frame N, for offscreen/replay runs.
-    if (static const long shot_at = [] { const char* v = std::getenv("DS_SHOT_AT"); return v ? std::atol(v) : -1L; }(); shot_at >= 0 && frames == static_cast<u64>(shot_at)) shot_pending = true;
+    if (static const long shot_at =
+            [] {
+              const char* v = std::getenv("DS_SHOT_AT");
+              return v ? std::atol(v) : -1L;
+            }();
+        shot_at >= 0 && frames == static_cast<u64>(shot_at))
+      shot_pending = true;
     if (nds.cart && nds.cart->sram_dirty()) {
-      if (nds.cart->sram_writes() != sram_writes_seen) { sram_writes_seen = nds.cart->sram_writes(); sram_quiet_since = frames; }
-      else if (frames - sram_quiet_since >= 60) flush_save();
+      if (nds.cart->sram_writes() != sram_writes_seen) {
+        sram_writes_seen = nds.cart->sram_writes();
+        sram_quiet_since = frames;
+      } else if (frames - sram_quiet_since >= 60) flush_save();
     }
     if (dsi_mode && nds.dsi_nand.writes != nand_exported) {
-      if (nds.dsi_nand.writes != nand_writes_seen) { nand_writes_seen = nds.dsi_nand.writes; nand_quiet_since = frames; }
-      else if (frames - nand_quiet_since >= 120) flush_dsi();
+      if (nds.dsi_nand.writes != nand_writes_seen) {
+        nand_writes_seen = nds.dsi_nand.writes;
+        nand_quiet_since = frames;
+      } else if (frames - nand_quiet_since >= 120) flush_dsi();
     }
     if (nds.dsi_sd.writes != sd_synced) {
-      if (nds.dsi_sd.writes != sd_writes_seen) { sd_writes_seen = nds.dsi_sd.writes; sd_quiet_since = frames; }
-      else if (frames - sd_quiet_since >= 120) flush_sd();
+      if (nds.dsi_sd.writes != sd_writes_seen) {
+        sd_writes_seen = nds.dsi_sd.writes;
+        sd_quiet_since = frames;
+      } else if (frames - sd_quiet_since >= 120) flush_sd();
     }
 
-    if (show_fps && frames % 60 == 0) {   // Diagnostic telemetry only; RG DS owns the counter.
+    if (show_fps && frames % 60 == 0) { // Diagnostic telemetry only; RG DS owns the counter.
       const Uint64 now = SDL_GetPerformanceCounter();
       const double secs = static_cast<double>(now - fps_mark) / SDL_GetPerformanceFrequency();
       const double to_ms = 1e3 / SDL_GetPerformanceFrequency() / 60.0;
       const double fps = secs > 0 ? 60.0 / secs : 0.0;
       if (show_fps) {
-        const double wall_ms = static_cast<double>(now - fps_mark) * to_ms;   // per frame, same unit as the rest
-        std::fprintf(stderr, "%.1f fps (%.0f%%), emu %.1f ms, present %.1f ms, wait %.1f ms, pace %.1f ms (spin %.0f us), other %.1f ms, audio queued %.1f frames (%+.0f ppm, %.1f -> %u Hz)\n",
-                     fps, 100.0 * fps / (ds::ARM9_CLOCK_HZ / double(ds::CYCLES_PER_FRAME)),
-                     emu_ticks * to_ms, draw_ticks * to_ms, wait_ticks * to_ms, fps_pace_ticks * to_ms, pacer.spin_us(),
-                     wall_ms - (emu_ticks + draw_ticks + wait_ticks + fps_pace_ticks) * to_ms, audio.queued_frames(), audio.rate_trim_ppm(),
-                     audio.input_rate(), audio.rate());
-        if (fs_limit > 0) std::fprintf(stderr, "  frameskip: %llu frames skipped (%s, limit %d)\n",
-                                       static_cast<unsigned long long>(fs_skipped), fs_adaptive ? "adaptive" : "fixed", fs_limit);
+        const double wall_ms = static_cast<double>(now - fps_mark) * to_ms; // per frame, same unit as the rest
+        std::fprintf(
+            stderr,
+            "%.1f fps (%.0f%%), emu %.1f ms, present %.1f ms, wait %.1f ms, pace %.1f ms (spin %.0f us), other %.1f ms, audio queued %.1f frames (%+.0f ppm, %.1f -> %u Hz)\n",
+            fps, 100.0 * fps / (ds::ARM9_CLOCK_HZ / double(ds::CYCLES_PER_FRAME)), emu_ticks * to_ms,
+            draw_ticks * to_ms, wait_ticks * to_ms, fps_pace_ticks * to_ms, pacer.spin_us(),
+            wall_ms - (emu_ticks + draw_ticks + wait_ticks + fps_pace_ticks) * to_ms, audio.queued_frames(),
+            audio.rate_trim_ppm(), audio.input_rate(), audio.rate());
+        if (fs_limit > 0)
+          std::fprintf(stderr, "  frameskip: %llu frames skipped (%s, limit %d)\n",
+                       static_cast<unsigned long long>(fs_skipped), fs_adaptive ? "adaptive" : "fixed", fs_limit);
       }
       fps_mark = now;
       emu_ticks = draw_ticks = wait_ticks = fps_pace_ticks = 0;
@@ -2461,7 +3078,8 @@ sdl_ready:
   // Not after a DSiWare session: nothing a DSi title wrote belongs beside the DS firmware.
   if (!fw_override.empty() && nds.firmware_override_dirty() && !nds.dsi) {
     std::string err;
-    if (!nds.save_firmware_override(fw_override, err)) std::fprintf(stderr, "firmware settings: cannot save %s: %s\n", fw_override.c_str(), err.c_str());
+    if (!nds.save_firmware_override(fw_override, err))
+      std::fprintf(stderr, "firmware settings: cannot save %s: %s\n", fw_override.c_str(), err.c_str());
     else std::fprintf(stderr, "firmware settings: saved to %s\n", fw_override.c_str());
   }
   if (fs_limit > 0)
@@ -2475,23 +3093,27 @@ sdl_ready:
   // it, so the device played silence, the gap a player hears. Drops with
   // no dry frames means fast-forwarding or a lost device, a different fault.
   if (const ds::sdl::Audio::Stats& as = audio.stats(); as.frames) {
-    VLOG("audio: queue depth %.2f..%.2f frames over %llu, dry %llu, under 1 frame %llu, under 0.5 %llu, dropped %llu; device buffer %u samples (%.2f frames), ring overruns %llu\n",
-         as.min_depth, as.max_depth, static_cast<unsigned long long>(as.frames), static_cast<unsigned long long>(as.dry),
-         static_cast<unsigned long long>(as.under_one), static_cast<unsigned long long>(as.under_half),
-         static_cast<unsigned long long>(as.dropped), audio.device_samples(), audio.device_buffer_frames(),
-         static_cast<unsigned long long>(nds.spu.ring_overruns()));
+    VLOG(
+        "audio: queue depth %.2f..%.2f frames over %llu, dry %llu, under 1 frame %llu, under 0.5 %llu, dropped %llu; device buffer %u samples (%.2f frames), ring overruns %llu\n",
+        as.min_depth, as.max_depth, static_cast<unsigned long long>(as.frames), static_cast<unsigned long long>(as.dry),
+        static_cast<unsigned long long>(as.under_one), static_cast<unsigned long long>(as.under_half),
+        static_cast<unsigned long long>(as.dropped), audio.device_samples(), audio.device_buffer_frames(),
+        static_cast<unsigned long long>(nds.spu.ring_overruns()));
   }
   if (pacer.rt_relief()) {
     unsigned relief_frames = 0;
     const double relief_us = pacer.relief_us(&relief_frames);
-    VLOG("rt relief: %u of %llu frames gave time back, %.0f us each on those\n",
-         relief_frames, static_cast<unsigned long long>(frames), relief_us);
+    VLOG("rt relief: %u of %llu frames gave time back, %.0f us each on those\n", relief_frames,
+         static_cast<unsigned long long>(frames), relief_us);
   }
   if (pace_display && pace_frames)
-    std::fprintf(stderr, "pace: display-locked %llu of %llu frames (panel %.3f ms, %.2f Hz), start-to-swap %.2f ms mean %.2f ms used, band %.2f ms, %llu missed ticks, |lat - band| %.2f ms mean\n",
-                 static_cast<unsigned long long>(pace_locked_frames), static_cast<unsigned long long>(pace_frames),
-                 lock.period_ns() / 1e6, lock.period_ns() > 0.0 ? 1e9 / lock.period_ns() : 0.0, lock.work_mean_ns() / 1e6, lock.work_ns() / 1e6, lock.band_ns() / 1e6,
-                 static_cast<unsigned long long>(lock.late()), pace_err_n ? pace_err_abs / 1e6 / static_cast<double>(pace_err_n) : 0.0);
+    std::fprintf(
+        stderr,
+        "pace: display-locked %llu of %llu frames (panel %.3f ms, %.2f Hz), start-to-swap %.2f ms mean %.2f ms used, band %.2f ms, %llu missed ticks, |lat - band| %.2f ms mean\n",
+        static_cast<unsigned long long>(pace_locked_frames), static_cast<unsigned long long>(pace_frames),
+        lock.period_ns() / 1e6, lock.period_ns() > 0.0 ? 1e9 / lock.period_ns() : 0.0, lock.work_mean_ns() / 1e6,
+        lock.work_ns() / 1e6, lock.band_ns() / 1e6, static_cast<unsigned long long>(lock.late()),
+        pace_err_n ? pace_err_abs / 1e6 / static_cast<double>(pace_err_n) : 0.0);
   if (std::getenv("DS_FRAME_STATS") || ds::prof::enabled) {
     // Emulation work only; excluded costs named on their own line. Under
     // DS_PROFILE the probes' own cost comes off first.
@@ -2504,14 +3126,17 @@ sdl_ready:
     ds::prof::frame_breakdown(frame_ms);
     if (!frame_ms.empty())
       std::fprintf(stderr, "  (emulation only; excluded: present %.1f ms, pacing %.1f ms total over %zu frames)\n",
-                   static_cast<double>(draw_ticks_total) * ticks_to_ms,
-                   static_cast<double>(pace_ticks) * ticks_to_ms, frame_ms.size());
+                   static_cast<double>(draw_ticks_total) * ticks_to_ms, static_cast<double>(pace_ticks) * ticks_to_ms,
+                   frame_ms.size());
     for (int lane = 0; lane < ds::sdl::PresentThread::LANES; ++lane)
       if (const auto ps = ds::sdl::PresentThread::get(lane).stats(); ps.jobs)
-        std::fprintf(stderr, "present thread%s: %llu frames, %.3f ms mean, %.3f ms max; the emulation thread waited on it %llu times, %.1f ms total, %llu over 0.5 ms\n",
-                   lane ? " 1" : "", static_cast<unsigned long long>(ps.jobs), static_cast<double>(ps.job_ns) / 1e6 / static_cast<double>(ps.jobs),
-                   static_cast<double>(ps.job_max_ns) / 1e6, static_cast<unsigned long long>(ps.waits),
-                   static_cast<double>(ps.wait_ns) / 1e6, static_cast<unsigned long long>(ps.long_waits));
+        std::fprintf(
+            stderr,
+            "present thread%s: %llu frames, %.3f ms mean, %.3f ms max; the emulation thread waited on it %llu times, %.1f ms total, %llu over 0.5 ms\n",
+            lane ? " 1" : "", static_cast<unsigned long long>(ps.jobs),
+            static_cast<double>(ps.job_ns) / 1e6 / static_cast<double>(ps.jobs),
+            static_cast<double>(ps.job_max_ns) / 1e6, static_cast<unsigned long long>(ps.waits),
+            static_cast<double>(ps.wait_ns) / 1e6, static_cast<unsigned long long>(ps.long_waits));
     ds::handoff::report(stderr);
   }
   log.close();

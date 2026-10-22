@@ -36,7 +36,7 @@ namespace ds::jit {
 namespace {
 // 32-bit: A32 reaches the stubs with `b`/`bl` (+-32 MB).
 constexpr size_t ARENA_BYTES = sizeof(void*) >= 8 ? (64u << 20) : (32u << 20);
-constexpr size_t BLOCK_MARGIN = 64u << 10;    // max bytes one block may emit
+constexpr size_t BLOCK_MARGIN = 64u << 10; // max bytes one block may emit
 // Bounds Block metadata growth (reset forced when reached).
 constexpr size_t MAX_BLOCKS = ARENA_BYTES / 4 * 3 / sizeof(Block);
 
@@ -47,75 +47,113 @@ namespace {
 
 // DS_JIT_CHURN=1: who invalidates what, and what gets retranslated. Printed at exit.
 namespace churn {
-struct Key { u32 pc; u8 dma, cpu; bool operator<(const Key& o) const { return pc != o.pc ? pc < o.pc : dma != o.dma ? dma < o.dma : cpu < o.cpu; } };
+struct Key {
+  u32 pc;
+  u8 dma, cpu;
+  bool operator<(const Key& o) const { return pc != o.pc ? pc < o.pc : dma != o.dma ? dma < o.dma : cpu < o.cpu; }
+};
 static std::map<Key, u64> writers;
 static std::map<u32, u64> victims_by_page;
-static std::map<u32, u64> retrans;             // guest pc -> translations
+static std::map<u32, u64> retrans; // guest pc -> translations
 static std::map<u64, u64> trans_by_frame;
 static std::map<u64, u64> retrans_by_frame;
-static std::map<u64, u64> store_sites;         // (victim pc << 32 | store guest addr) -> kills
-static std::map<u32, u64> by_region;           // (cpu << 8 | pc >> 24) -> translations
-static u64 sample_frame = ~0ull, sampled = 0;   // DS_CHURN_FRAME=N: print the first keys translated in frame N
-static u64 revive_none = 0, revive_stamp = 0, revive_span = 0, revive_len = 0, revive_bytes = 0, revive_ok = 0;   // why a revive did not happen
+static std::map<u64, u64> store_sites;        // (victim pc << 32 | store guest addr) -> kills
+static std::map<u32, u64> by_region;          // (cpu << 8 | pc >> 24) -> translations
+static u64 sample_frame = ~0ull, sampled = 0; // DS_CHURN_FRAME=N: print the first keys translated in frame N
+static u64 revive_none = 0, revive_stamp = 0, revive_span = 0, revive_len = 0, revive_bytes = 0,
+           revive_ok = 0; // why a revive did not happen
 static u64 inval = 0, killed = 0, trans = 0, frames_seen = 0, range_miss = 0, resets = 0;
 static u64 retime_calls = 0, retime_killed = 0;
 // Lead time: page's last invalidation -> retranslation, in ARM9 cycles.
-static std::map<u32, u64> page_last_write;   // guest page -> sched.now()
+static std::map<u32, u64> page_last_write; // guest page -> sched.now()
 static u64 lead_hist[6];
 static u64 lead_n = 0, lead_sum = 0;
-static bool on() { static const bool e = std::getenv("DS_JIT_CHURN") != nullptr; return e; }
+static bool on() {
+  static const bool e = std::getenv("DS_JIT_CHURN") != nullptr;
+  return e;
+}
 static void report() {
   auto top = [](auto& m, const char* what, int n, auto print) {
     using K = std::remove_const_t<std::remove_reference_t<decltype(m.begin()->first)>>;
-    std::vector<std::pair<u64, K>> v; for (auto& kv : m) v.push_back({kv.second, kv.first});
+    std::vector<std::pair<u64, K>> v;
+    for (auto& kv : m) v.push_back({kv.second, kv.first});
     std::sort(v.begin(), v.end(), [](auto& a, auto& b) { return a.first > b.first; });
     std::fprintf(stderr, "[churn] top %s (%zu distinct):\n", what, m.size());
     for (int i = 0; i < n && i < (int)v.size(); ++i) print(v[i].first, v[i].second);
   };
-  auto pk = [](u64 n, const Key& k) { std::fprintf(stderr, "   %10llu  pc %08x %s arm%d\n", (unsigned long long)n, k.pc, k.dma ? "DMA" : "cpu", k.cpu); };
+  auto pk = [](u64 n, const Key& k) {
+    std::fprintf(stderr, "   %10llu  pc %08x %s arm%d\n", (unsigned long long)n, k.pc, k.dma ? "DMA" : "cpu", k.cpu);
+  };
   auto pa = [](u64 n, u32 a) { std::fprintf(stderr, "   %10llu  %08x\n", (unsigned long long)n, a); };
-  std::fprintf(stderr, "[churn] frames %llu arena resets %llu invalidations %llu blocks killed %llu translations %llu | code-page stores changed-but-no-block %llu\n",
-               (unsigned long long)frames_seen, (unsigned long long)resets, (unsigned long long)inval, (unsigned long long)killed, (unsigned long long)trans,
-               (unsigned long long)range_miss);
+  std::fprintf(
+      stderr,
+      "[churn] frames %llu arena resets %llu invalidations %llu blocks killed %llu translations %llu | code-page stores changed-but-no-block %llu\n",
+      (unsigned long long)frames_seen, (unsigned long long)resets, (unsigned long long)inval,
+      (unsigned long long)killed, (unsigned long long)trans, (unsigned long long)range_miss);
   if (prof::census)
     std::fprintf(stderr, "[churn] code-page stores: silent %llu changed %llu\n",
                  (unsigned long long)mem::code_store_stats.silent, (unsigned long long)mem::code_store_stats.changed);
   std::fprintf(stderr, "[churn] retimes %llu (%.2f/frame) blocks killed by retimes %llu (%.1f/frame)\n",
-               (unsigned long long)retime_calls, frames_seen ? static_cast<double>(retime_calls) / static_cast<double>(frames_seen) : 0.0,
-               (unsigned long long)retime_killed, frames_seen ? static_cast<double>(retime_killed) / static_cast<double>(frames_seen) : 0.0);
+               (unsigned long long)retime_calls,
+               frames_seen ? static_cast<double>(retime_calls) / static_cast<double>(frames_seen) : 0.0,
+               (unsigned long long)retime_killed,
+               frames_seen ? static_cast<double>(retime_killed) / static_cast<double>(frames_seen) : 0.0);
   top(writers, "writers (pc of the store / DMA start)", 15, pk);
   top(victims_by_page, "invalidated guest pages (2 KB)", 15, pa);
   top(retrans, "retranslated block pcs", 20, pa);
-  auto ps = [](u64 n, u64 k) { std::fprintf(stderr, "   %10llu  block %08x <- store at %08x\n", (unsigned long long)n, static_cast<u32>(k >> 32), static_cast<u32>(k)); };
+  auto ps = [](u64 n, u64 k) {
+    std::fprintf(stderr, "   %10llu  block %08x <- store at %08x\n", (unsigned long long)n, static_cast<u32>(k >> 32),
+                 static_cast<u32>(k));
+  };
   top(store_sites, "store address per victim block", 12, ps);
-  auto pr = [](u64 n, u32 k) { std::fprintf(stderr, "   %10llu  arm%d region %02x\n", (unsigned long long)n, (k >> 8) ? 7 : 9, k & 0xFF); };
+  auto pr = [](u64 n, u32 k) {
+    std::fprintf(stderr, "   %10llu  arm%d region %02x\n", (unsigned long long)n, (k >> 8) ? 7 : 9, k & 0xFF);
+  };
   top(by_region, "translations by cpu and region", 12, pr);
-  std::fprintf(stderr, "[churn] revive: ok %llu, no parked %llu, stamp %llu, span %llu, len %llu, bytes differ %llu\n", (unsigned long long)revive_ok,
-               (unsigned long long)revive_none, (unsigned long long)revive_stamp, (unsigned long long)revive_span, (unsigned long long)revive_len, (unsigned long long)revive_bytes);
-  auto pf = [](u64 n, u64 f) { std::fprintf(stderr, "   %10llu  frame %llu (%llu re)\n",
-      (unsigned long long)n, (unsigned long long)f, (unsigned long long)retrans_by_frame[f]); };
+  std::fprintf(stderr, "[churn] revive: ok %llu, no parked %llu, stamp %llu, span %llu, len %llu, bytes differ %llu\n",
+               (unsigned long long)revive_ok, (unsigned long long)revive_none, (unsigned long long)revive_stamp,
+               (unsigned long long)revive_span, (unsigned long long)revive_len, (unsigned long long)revive_bytes);
+  auto pf = [](u64 n, u64 f) {
+    std::fprintf(stderr, "   %10llu  frame %llu (%llu re)\n", (unsigned long long)n, (unsigned long long)f,
+                 (unsigned long long)retrans_by_frame[f]);
+  };
   top(trans_by_frame, "translation frames", 20, pf);
   if (lead_n) {
     static const char* const lb[6] = {"<0.1ms", "0.1-1ms", "1-4ms", "4-16ms", "16-64ms", ">64ms"};
-    std::fprintf(stderr, "[churn] retranslate lead time (page's last kill -> translate, upper bound), %llu samples, mean %.1f ms:\n",
-                 (unsigned long long)lead_n, static_cast<double>(lead_sum) / static_cast<double>(lead_n) / 1120380.0 * 16.7);
+    std::fprintf(
+        stderr,
+        "[churn] retranslate lead time (page's last kill -> translate, upper bound), %llu samples, mean %.1f ms:\n",
+        (unsigned long long)lead_n, static_cast<double>(lead_sum) / static_cast<double>(lead_n) / 1120380.0 * 16.7);
     for (int i = 0; i < 6; ++i) std::fprintf(stderr, "   %-8s %10llu\n", lb[i], (unsigned long long)lead_hist[i]);
   }
 }
-}  // namespace churn
+} // namespace churn
 
 // ---- code page tracking ----
 
-const u8* host_page_of(const u8* p) { return reinterpret_cast<const u8*>(reinterpret_cast<u64>(p) & ~u64{mem::PAGE_SIZE - 1}); }
+const u8* host_page_of(const u8* p) {
+  return reinterpret_cast<const u8*>(reinterpret_cast<u64>(p) & ~u64{mem::PAGE_SIZE - 1});
+}
 
 // Offsets of `b`'s bytes within `page` (of at most two, possibly non-adjacent);
 // an unmapped end counts as the whole page.
 static void page_span(const Block* b, const u8* page, u32& lo, u32& hi) {
-  if (!b->host_lo || !b->host_hi) { lo = 0; hi = mem::PAGE_SIZE - 1; return; }
-  const u8* seg_lo; const u8* seg_hi;
-  if (page == b->host_pages[0]) { seg_lo = b->host_lo; seg_hi = (b->npages == 1) ? b->host_hi : page + mem::PAGE_SIZE - 1; }
-  else                          { seg_lo = page; seg_hi = b->host_hi; }
-  lo = static_cast<u32>(seg_lo - page); hi = static_cast<u32>(seg_hi - page);
+  if (!b->host_lo || !b->host_hi) {
+    lo = 0;
+    hi = mem::PAGE_SIZE - 1;
+    return;
+  }
+  const u8* seg_lo;
+  const u8* seg_hi;
+  if (page == b->host_pages[0]) {
+    seg_lo = b->host_lo;
+    seg_hi = (b->npages == 1) ? b->host_hi : page + mem::PAGE_SIZE - 1;
+  } else {
+    seg_lo = page;
+    seg_hi = b->host_hi;
+  }
+  lo = static_cast<u32>(seg_lo - page);
+  hi = static_cast<u32>(seg_hi - page);
 }
 
 bool code_query(const u8* host_page) { return g_rt.code_pages.count(host_page) != 0; }
@@ -158,7 +196,10 @@ void remove_from_page_lists(Block* b) {
     auto it = g_rt.code_pages.find(b->host_pages[i]);
     if (it == g_rt.code_pages.end()) continue;
     it->second.remove(b);
-    if (it->second.empty()) { g_rt.code_pages.erase(it); set_code_tag(b->host_pages[i], false); }
+    if (it->second.empty()) {
+      g_rt.code_pages.erase(it);
+      set_code_tag(b->host_pages[i], false);
+    }
   }
 }
 
@@ -168,15 +209,17 @@ void reset_arena() {
   if (churn::on()) ++churn::resets;
   Runtime& r = g_rt;
   for (JitCpu& jc : r.cpus) {
-    for (Block* b : jc.all_blocks) if (!b->pooled) delete b;
+    for (Block* b : jc.all_blocks)
+      if (!b->pooled) delete b;
     jc.all_blocks.clear();
     jc.blocks.clear();
     jc.parked.clear();
-    if (jc.lut) for (u32 i = 0; i < LUT_SIZE; ++i) jc.lut[i] = LUT_EMPTY_KEY;
+    if (jc.lut)
+      for (u32 i = 0; i < LUT_SIZE; ++i) jc.lut[i] = LUT_EMPTY_KEY;
   }
   for (auto& kv : r.code_pages) set_code_tag(kv.first, false);
   r.code_pages.clear();
-  r.fm_blocks.clear();   // fm_slow (guest sites) survives
+  r.fm_blocks.clear(); // fm_slow (guest sites) survives
   r.fm_rels.clear();
   r.block_pool.clear();
   r.blocks_live = 0;
@@ -191,7 +234,10 @@ void on_timing_changed(CpuContext& cpu) {
   if (!cpu.jit) return;
   JitCpu& jc = *static_cast<JitCpu*>(cpu.jit);
   mem::Timing& t = cpu.nds->bus.timing();
-  if (churn::on()) { static bool reg = (std::atexit(churn::report), true); (void)reg; }
+  if (churn::on()) {
+    static bool reg = (std::atexit(churn::report), true);
+    (void)reg;
+  }
   u64 killed = 0;
   if (t.retime_pending()) {
     for (Block* b : jc.all_blocks) {
@@ -209,7 +255,11 @@ void on_timing_changed(CpuContext& cpu) {
   if (killed) jc.ctx->hot.alerts |= ALERT_INVALIDATED;
   prof::add(prof::C_JIT_INVALIDATE_CPU, 1);
   prof::add(prof::C_JIT_INVALIDATE_CPU_KILLED, killed);
-  if (churn::on()) { churn::retime_calls++; churn::retime_killed += killed; churn::frames_seen = cpu.nds->frame_count; }
+  if (churn::on()) {
+    churn::retime_calls++;
+    churn::retime_killed += killed;
+    churn::frames_seen = cpu.nds->frame_count;
+  }
 }
 
 } // namespace
@@ -225,7 +275,7 @@ void lut_insert(JitCpu& jc, Block* b) {
 
 // DS_PERF_MAP=1: /tmp/perf-<pid>.map symbols jit9_<pc>/jit7_<pc>[t].
 static FILE* perf_map_file() {
-  static FILE* map = [] () -> FILE* {
+  static FILE* map = []() -> FILE* {
     if (!std::getenv("DS_PERF_MAP")) return nullptr;
     char path[64];
     std::snprintf(path, sizeof path, "/tmp/perf-%d.map", static_cast<int>(getpid()));
@@ -247,20 +297,35 @@ static void perf_map_stubs(const Runtime& r) {
   FILE* map = perf_map_file();
   if (!map) return;
   std::vector<std::pair<const u8*, std::string>> v;
-  auto add = [&](const void* p, const char* name) { if (p) v.emplace_back(static_cast<const u8*>(p), name); };
-  add(reinterpret_cast<const void*>(r.enter), "jit_stub_enter"); add(r.enter_light, "jit_stub_enter_light");
+  auto add = [&](const void* p, const char* name) {
+    if (p) v.emplace_back(static_cast<const u8*>(p), name);
+  };
+  add(reinterpret_cast<const void*>(r.enter), "jit_stub_enter");
+  add(r.enter_light, "jit_stub_enter_light");
   add(reinterpret_cast<const void*>(r.run_loop), "jit_stub_run_loop");
-  add(r.exit_key, "jit_stub_exit_key"); add(r.exit_key_lit, "jit_stub_exit_key_lit"); add(r.exit_r15, "jit_stub_exit_r15");
-  add(r.call_pure, "jit_stub_call_pure"); add(r.call_full, "jit_stub_call_full"); add(r.call2, "jit_stub_call2");
-  add(r.poll, "jit_stub_poll"); add(r.flush_exit, "jit_stub_flush_exit");
+  add(r.exit_key, "jit_stub_exit_key");
+  add(r.exit_key_lit, "jit_stub_exit_key_lit");
+  add(r.exit_r15, "jit_stub_exit_r15");
+  add(r.call_pure, "jit_stub_call_pure");
+  add(r.call_full, "jit_stub_call_full");
+  add(r.call2, "jit_stub_call2");
+  add(r.poll, "jit_stub_poll");
+  add(r.flush_exit, "jit_stub_flush_exit");
   static const char* const sz[3] = {"8", "16", "32"};
-  for (int i = 0; i < 3; ++i) { add(r.slow_load[i], (std::string("jit_stub_slow_load") + sz[i]).c_str()); add(r.slow_store[i], (std::string("jit_stub_slow_store") + sz[i]).c_str()); }
-  add(r.merge_keep_cv, "jit_stub_merge_keep_cv"); add(r.merge_set_c, "jit_stub_merge_set_c");
+  for (int i = 0; i < 3; ++i) {
+    add(r.slow_load[i], (std::string("jit_stub_slow_load") + sz[i]).c_str());
+    add(r.slow_store[i], (std::string("jit_stub_slow_store") + sz[i]).c_str());
+  }
+  add(r.merge_keep_cv, "jit_stub_merge_keep_cv");
+  add(r.merge_set_c, "jit_stub_merge_set_c");
   for (int c = 0; c < 2; ++c) {
     const JitCpu& jc = r.cpus[c];
     const std::string pre = c == 0 ? "jit_stub9_" : "jit_stub7_";
-    add(jc.dispatch, (pre + "dispatch").c_str()); add(jc.link, (pre + "link").c_str()); add(jc.fallback, (pre + "fallback").c_str());
-    add(jc.branch_indirect, (pre + "branch_indirect").c_str()); add(jc.branch_indirect_cdi, (pre + "branch_indirect_cdi").c_str());
+    add(jc.dispatch, (pre + "dispatch").c_str());
+    add(jc.link, (pre + "link").c_str());
+    add(jc.fallback, (pre + "fallback").c_str());
+    add(jc.branch_indirect, (pre + "branch_indirect").c_str());
+    add(jc.branch_indirect_cdi, (pre + "branch_indirect_cdi").c_str());
   }
   std::sort(v.begin(), v.end());
   for (size_t i = 0; i < v.size(); ++i) {
@@ -306,7 +371,8 @@ static void register_block(JitCpu& jc, Block* b) {
   const u8* p0 = jc.ctx->page_table.read_ptr(span ? b->span_lo : pc);
   const u8* p1 = jc.ctx->page_table.read_ptr(span ? b->span_hi : pc + b->guest_len - 1);
   b->npages = 0;
-  b->host_lo = p0; b->host_hi = p1;
+  b->host_lo = p0;
+  b->host_hi = p1;
   if (p0) b->host_pages[b->npages++] = host_page_of(p0);
   if (p1 && host_page_of(p1) != (p0 ? host_page_of(p0) : nullptr)) b->host_pages[b->npages++] = host_page_of(p1);
   for (u32 i = 0; i < b->npages; ++i) {
@@ -323,18 +389,24 @@ static void register_block(JitCpu& jc, Block* b) {
 // Revive a parked translation whose guest bytes match again; same timing stamp only.
 static Block* revive(JitCpu& jc, u32 key) {
   auto it = jc.parked.find(key);
-  if (it == jc.parked.end()) { if (churn::on()) churn::revive_none++; return nullptr; }
+  if (it == jc.parked.end()) {
+    if (churn::on()) churn::revive_none++;
+    return nullptr;
+  }
   std::vector<Block*>& v = it->second;
   const u64 stamp = jc.nds->bus.timing().stamp;
   for (size_t k = v.size(); k-- > 0;) {
     Block* b = v[k];
     // A spanned block is checked by its range hash (the successor's bytes it
     // read decide the flags it keeps at the exit); others by their own bytes.
-    const bool same = b->stamp == stamp && (b->span_hi ? span_hash(jc, b) == b->span_hash
-                                                        : (b->guest_len == b->guest_copy_len && guest_bytes_match(jc, b)));
+    const bool same =
+        b->stamp == stamp && (b->span_hi ? span_hash(jc, b) == b->span_hash
+                                         : (b->guest_len == b->guest_copy_len && guest_bytes_match(jc, b)));
     if (churn::on()) {
-      if (b->stamp != stamp) churn::revive_stamp++; else if (!b->span_hi && b->guest_len != b->guest_copy_len) churn::revive_len++;
-      else if (!same) churn::revive_bytes++; else churn::revive_ok++;
+      if (b->stamp != stamp) churn::revive_stamp++;
+      else if (!b->span_hi && b->guest_len != b->guest_copy_len) churn::revive_len++;
+      else if (!same) churn::revive_bytes++;
+      else churn::revive_ok++;
     }
     if (!same) continue;
     v.erase(v.begin() + static_cast<std::ptrdiff_t>(k));
@@ -353,7 +425,11 @@ static void install(JitCpu& jc, Block* b) {
   Runtime& r = g_rt;
   if (r.debug) {
     std::fprintf(stderr, "[jit] block %08x (%u bytes):", b->key, b->size);
-    for (u32 i = 0; i < b->size; i += 4) { u32 w; std::memcpy(&w, b->entry + i, 4); std::fprintf(stderr, " %08x", w); }
+    for (u32 i = 0; i < b->size; i += 4) {
+      u32 w;
+      std::memcpy(&w, b->entry + i, 4);
+      std::fprintf(stderr, " %08x", w);
+    }
     std::fputc('\n', stderr);
   }
   perf_map_add(b, jc.arm9);
@@ -381,27 +457,40 @@ static void fm_drain(Runtime& r) {
 }
 
 Block* translate(JitCpu& jc, u32 key) {
-  DS_PROF(JIT_TX);   // nested in the CPU9/CPU7 slice
+  DS_PROF(JIT_TX); // nested in the CPU9/CPU7 slice
   Runtime& r = g_rt;
   if (r.fm_ring_n) fm_drain(r);
   if (churn::on()) {
     churn::trans++;
     const u64 f = jc.ctx->nds->frame_count;
     churn::by_region[(jc.arm9 ? 0u : 0x100u) | (key_pc(key) >> 24)]++;
-    if (churn::sample_frame == ~0ull) { const char* e = std::getenv("DS_CHURN_FRAME"); churn::sample_frame = e ? static_cast<u64>(std::atoll(e)) : 0; }
-    if (f == churn::sample_frame && churn::sampled < 80) { ++churn::sampled; std::fprintf(stderr, "[churn] frame %llu arm%d key %08x%s r15 %08x\n", (unsigned long long)f, jc.arm9 ? 9 : 7, key_pc(key), key_thumb(key) ? "t" : "", jc.ctx->hot.regs[15]); }
+    if (churn::sample_frame == ~0ull) {
+      const char* e = std::getenv("DS_CHURN_FRAME");
+      churn::sample_frame = e ? static_cast<u64>(std::atoll(e)) : 0;
+    }
+    if (f == churn::sample_frame && churn::sampled < 80) {
+      ++churn::sampled;
+      std::fprintf(stderr, "[churn] frame %llu arm%d key %08x%s r15 %08x\n", (unsigned long long)f, jc.arm9 ? 9 : 7,
+                   key_pc(key), key_thumb(key) ? "t" : "", jc.ctx->hot.regs[15]);
+    }
     churn::trans_by_frame[f]++;
     if (churn::retrans[key_pc(key)]++ > 0) churn::retrans_by_frame[f]++;
     const auto pw = churn::page_last_write.find(key_pc(key) & ~(mem::PAGE_SIZE - 1));
     if (pw != churn::page_last_write.end()) {
       const u64 dt = jc.ctx->nds->sched.now() - pw->second;
-      const u64 ms01 = 112038;    // ~0.1 ms of ARM9 cycles
-      const int bucket = dt < ms01 ? 0 : dt < ms01 * 10 ? 1 : dt < ms01 * 40 ? 2 : dt < ms01 * 160 ? 3 : dt < ms01 * 640 ? 4 : 5;
+      const u64 ms01 = 112038; // ~0.1 ms of ARM9 cycles
+      const int bucket = dt < ms01         ? 0
+                         : dt < ms01 * 10  ? 1
+                         : dt < ms01 * 40  ? 2
+                         : dt < ms01 * 160 ? 3
+                         : dt < ms01 * 640 ? 4
+                                           : 5;
       churn::lead_hist[bucket]++;
-      churn::lead_n++; churn::lead_sum += dt;
+      churn::lead_n++;
+      churn::lead_sum += dt;
     }
   }
-  if (r.pos + BLOCK_MARGIN > r.cap || r.blocks_live >= MAX_BLOCKS) return nullptr;   // caller resets the arena
+  if (r.pos + BLOCK_MARGIN > r.cap || r.blocks_live >= MAX_BLOCKS) return nullptr; // caller resets the arena
   Block* b = &r.block_pool.emplace_back(Block{});
   b->key = key;
   b->owner = jc.arm9 ? 0 : 1;
@@ -410,7 +499,11 @@ Block* translate(JitCpu& jc, u32 key) {
   r.fm_new.clear();
   {
     DS_PROF(JIT_TX_GEN);
-    if (!backend::translate_block(jc, key, r.arena + r.pos, BLOCK_MARGIN, *b, size)) { r.block_pool.pop_back(); r.fm_new.clear(); return nullptr; }
+    if (!backend::translate_block(jc, key, r.arena + r.pos, BLOCK_MARGIN, *b, size)) {
+      r.block_pool.pop_back();
+      r.fm_new.clear();
+      return nullptr;
+    }
   }
   b->entry = r.arena + r.pos;
   b->size = size;
@@ -420,14 +513,23 @@ Block* translate(JitCpu& jc, u32 key) {
     r.fm_new.clear();
   }
   r.pos += (b->size + 15) & ~size_t{15};
-  { DS_PROF(JIT_TX_ICACHE); sync_icache(b->entry, b->size); }
-  { DS_PROF(JIT_TX_INSTALL); install(jc, b); }
+  {
+    DS_PROF(JIT_TX_ICACHE);
+    sync_icache(b->entry, b->size);
+  }
+  {
+    DS_PROF(JIT_TX_INSTALL);
+    install(jc, b);
+  }
   return b;
 }
 
 const u8* find_native(JitCpu& jc, u32 key) {
   auto it = jc.blocks.find(key);
-  if (it != jc.blocks.end()) { lut_insert(jc, it->second); return it->second->entry; }
+  if (it != jc.blocks.end()) {
+    lut_insert(jc, it->second);
+    return it->second->entry;
+  }
   if (Block* b = revive(jc, key)) return b->entry;
   Block* b = translate(jc, key);
   return b ? b->entry : nullptr;
@@ -441,26 +543,39 @@ void invalidate_host_range(const u8* host_page, const u8* lo, const u8* hi) {
   std::vector<Block*> victims;
   for (size_t k = 0; k < list.span.size();) {
     const u32 sp = list.span[k];
-    if (slo <= (sp >> 16) && shi >= (sp & 0xFFFF)) { victims.push_back(list.blocks[k]); list.remove_at(k); }
-    else ++k;
+    if (slo <= (sp >> 16) && shi >= (sp & 0xFFFF)) {
+      victims.push_back(list.blocks[k]);
+      list.remove_at(k);
+    } else ++k;
   }
-  if (victims.empty()) { churn::range_miss++; return; }
-  if (list.empty()) { g_rt.code_pages.erase(it); set_code_tag(host_page, false); }
-  if (churn::on()) for (Block* b : victims) churn::store_sites[(static_cast<u64>(key_pc(b->key)) << 32) | ((key_pc(b->key) & ~(mem::PAGE_SIZE - 1)) + slo)]++;
+  if (victims.empty()) {
+    churn::range_miss++;
+    return;
+  }
+  if (list.empty()) {
+    g_rt.code_pages.erase(it);
+    set_code_tag(host_page, false);
+  }
+  if (churn::on())
+    for (Block* b : victims)
+      churn::store_sites[(static_cast<u64>(key_pc(b->key)) << 32) | ((key_pc(b->key) & ~(mem::PAGE_SIZE - 1)) + slo)]++;
   invalidate_blocks(host_page, std::move(victims));
 }
 
 // Victims are already unlinked from host_page's list.
 static void invalidate_blocks(const u8* host_page, std::vector<Block*> victims) {
   if (churn::on()) {
-    static bool reg = (std::atexit(churn::report), true); (void)reg;
+    static bool reg = (std::atexit(churn::report), true);
+    (void)reg;
     CpuContext* ctx = g_rt.cpus[0].ctx ? g_rt.cpus[0].ctx : g_rt.cpus[1].ctx;
     const CpuContext* run = ctx->nds->sched.running();
     const bool dma = ctx->nds->sched.in_dma();
     const u8 cpu = run ? (run->which == Cpu::ARM9 ? 9 : 7) : 0;
     const u32 pc = run ? run->hot.regs[15] : 0;
     churn::writers[churn::Key{pc, dma, cpu}]++;
-    churn::inval++; churn::killed += victims.size(); churn::frames_seen = ctx->nds->frame_count;
+    churn::inval++;
+    churn::killed += victims.size();
+    churn::frames_seen = ctx->nds->frame_count;
     for (Block* b : victims) {
       churn::victims_by_page[key_pc(b->key) & ~(mem::PAGE_SIZE - 1)]++;
       churn::page_last_write[key_pc(b->key) & ~(mem::PAGE_SIZE - 1)] = ctx->nds->sched.now();
@@ -469,18 +584,27 @@ static void invalidate_blocks(const u8* host_page, std::vector<Block*> victims) 
   for (Block* b : victims) {
     JitCpu& jc = jc_of(b);
     kill_block(jc, b);
-    for (u32 i = 0; i < b->npages; ++i) if (b->host_pages[i] != host_page) {
-      auto jt = g_rt.code_pages.find(b->host_pages[i]);
-      if (jt == g_rt.code_pages.end()) continue;
-      jt->second.remove(b);
-      if (jt->second.empty()) { g_rt.code_pages.erase(jt); set_code_tag(b->host_pages[i], false); }
-    }
+    for (u32 i = 0; i < b->npages; ++i)
+      if (b->host_pages[i] != host_page) {
+        auto jt = g_rt.code_pages.find(b->host_pages[i]);
+        if (jt == g_rt.code_pages.end()) continue;
+        jt->second.remove(b);
+        if (jt->second.empty()) {
+          g_rt.code_pages.erase(jt);
+          set_code_tag(b->host_pages[i], false);
+        }
+      }
   }
-  for (JitCpu& jc : g_rt.cpus) if (jc.ctx) jc.ctx->hot.alerts |= ALERT_INVALIDATED;
+  for (JitCpu& jc : g_rt.cpus)
+    if (jc.ctx) jc.ctx->hot.alerts |= ALERT_INVALIDATED;
 }
 
 void invalidate_cpu(JitCpu& jc) {
-  for (Block* b : jc.all_blocks) if (!b->dead) { remove_from_page_lists(b); kill_block(jc, b); }
+  for (Block* b : jc.all_blocks)
+    if (!b->dead) {
+      remove_from_page_lists(b);
+      kill_block(jc, b);
+    }
   jc.blocks.clear();
   jc.parked.clear();
   if (jc.ctx) jc.ctx->hot.alerts |= ALERT_INVALIDATED;
@@ -489,8 +613,8 @@ void invalidate_cpu(JitCpu& jc) {
 // ---- helpers called from translated code ----
 
 extern "C" u32 jit_h_fallback(CpuContext* cpu, u32 instr, u32 key) {
-  if (instr == BIOS_SHA1_MARKER) return bios_sha1_run(*cpu) ? 1 : 0;   // key is LOOP-4, so a poll resumes at LOOP
-  if (instr == WAIT_LOOP_MARKER) {   // key is LOOP-2: a poll resumes at LOOP, and the block's own loop runs what is left
+  if (instr == BIOS_SHA1_MARKER) return bios_sha1_run(*cpu) ? 1 : 0; // key is LOOP-4, so a poll resumes at LOOP
+  if (instr == WAIT_LOOP_MARKER) { // key is LOOP-2: a poll resumes at LOOP, and the block's own loop runs what is left
     cpu->hot.regs[15] = key_r15(key) + 2;
     if (cpu::wait_loop_run(*cpu)) g_rt.stats.wait_loop_runs++;
     return 0;
@@ -499,7 +623,10 @@ extern "C" u32 jit_h_fallback(CpuContext* cpu, u32 instr, u32 key) {
   cpu->data_cycles = 0;
   cpu->jumped = false;
   if (cpu->which == Cpu::ARM9) prefetch_cost9(*cpu);
-  else { cpu->code_cycles = key_pc(key) >> 15; cpu->code_region = key_pc(key) >> 24; }
+  else {
+    cpu->code_cycles = key_pc(key) >> 15;
+    cpu->code_region = key_pc(key) >> 24;
+  }
   if (key_thumb(key)) {
     interp::exec_thumb(*cpu, static_cast<u16>(instr));
     if (!cpu->jumped) cpu->hot.regs[15] += 2;
@@ -510,7 +637,9 @@ extern "C" u32 jit_h_fallback(CpuContext* cpu, u32 instr, u32 key) {
   if (cpu->halted) cpu->hot.alerts |= ALERT_HALTED;
   g_rt.stats.instrs_fallback++;
   if (g_rt.hist) g_rt.fallback_hist[(static_cast<u64>(cpu->which) << 32) | key_pc(key)]++;
-  if (g_rt.debug) std::fprintf(stderr, "[jit] fallback %08x %08x -> r15 %08x cpsr %08x budget %d halted %d jumped %d\n", key_pc(key), instr, cpu->hot.regs[15], cpu->hot.cpsr, cpu->hot.cycle_budget, cpu->halted, cpu->jumped);
+  if (g_rt.debug)
+    std::fprintf(stderr, "[jit] fallback %08x %08x -> r15 %08x cpsr %08x budget %d halted %d jumped %d\n", key_pc(key),
+                 instr, cpu->hot.regs[15], cpu->hot.cpsr, cpu->hot.cycle_budget, cpu->halted, cpu->jumped);
   return cpu->jumped ? 1 : 0;
 }
 
@@ -521,7 +650,10 @@ extern "C" u32 jit_h_fallback(CpuContext* cpu, u32 instr, u32 key) {
 // GS:DD's load bursts down but cost ST 0.2 ms a frame, since the interpreter
 // takes the whole rest of the slice, hot code after the cold block included.
 // Interpreting just the cold block would need a one-block interpreter entry.
-static u32 warm_threshold() { static const u32 v = std::getenv("DS_JIT_WARM") ? static_cast<u32>(std::atoi(std::getenv("DS_JIT_WARM"))) : 1; return v; }
+static u32 warm_threshold() {
+  static const u32 v = std::getenv("DS_JIT_WARM") ? static_cast<u32>(std::atoi(std::getenv("DS_JIT_WARM"))) : 1;
+  return v;
+}
 static bool is_cold(JitCpu& jc, u32 key) {
   if (warm_threshold() <= 1) return false;
   if (jc.blocks.count(key)) return false;
@@ -539,20 +671,33 @@ static void weeds_check(CpuContext& cpu, u32 pc);
 extern "C" const void* jit_h_lookup(CpuContext* cpu, u32 key) {
   JitCpu& jc = *static_cast<JitCpu*>(cpu->jit);
   weeds_check(*cpu, key_pc(key));
-  if (is_cold(jc, key)) { cpu->hot.regs[15] = key_r15(key); return g_rt.exit_r15; }   // the C side interprets it
+  if (is_cold(jc, key)) {
+    cpu->hot.regs[15] = key_r15(key);
+    return g_rt.exit_r15;
+  } // the C side interprets it
   const u8* native = find_native(jc, key);
-  if (g_rt.debug) std::fprintf(stderr, "[jit] lookup %08x -> %p (budget %d)\n", key, static_cast<const void*>(native), cpu->hot.cycle_budget);
+  if (g_rt.debug)
+    std::fprintf(stderr, "[jit] lookup %08x -> %p (budget %d)\n", key, static_cast<const void*>(native),
+                 cpu->hot.cycle_budget);
   if (native) return native;
   cpu->hot.regs[15] = key_r15(key);
-  return g_rt.flush_exit;   // arena full
+  return g_rt.flush_exit; // arena full
 }
 
 extern "C" const void* jit_h_link(CpuContext* cpu, u32 key, u8* patch_site) {
   JitCpu& jc = *static_cast<JitCpu*>(cpu->jit);
-  if (is_cold(jc, key)) { cpu->hot.regs[15] = key_r15(key); return g_rt.exit_r15; }   // unpatched: linked once the target is warm
+  if (is_cold(jc, key)) {
+    cpu->hot.regs[15] = key_r15(key);
+    return g_rt.exit_r15;
+  } // unpatched: linked once the target is warm
   const u8* native = find_native(jc, key);
-  if (g_rt.debug) std::fprintf(stderr, "[jit] link %08x -> %p at %p (budget %d)\n", key, static_cast<const void*>(native), static_cast<void*>(patch_site), cpu->hot.cycle_budget);
-  if (!native) { cpu->hot.regs[15] = key_r15(key); return g_rt.flush_exit; }
+  if (g_rt.debug)
+    std::fprintf(stderr, "[jit] link %08x -> %p at %p (budget %d)\n", key, static_cast<const void*>(native),
+                 static_cast<void*>(patch_site), cpu->hot.cycle_budget);
+  if (!native) {
+    cpu->hot.regs[15] = key_r15(key);
+    return g_rt.flush_exit;
+  }
   backend::patch_link(patch_site, native);
   sync_icache(patch_site, 4);
   return native;
@@ -570,8 +715,8 @@ extern "C" void jit_h_trace(CpuContext* cpu, u32 instr, u32 key) {
 
 // call_pure has already stored host flags into hot.cpsr.
 extern "C" void jit_h_msr_cpsr(CpuContext* cpu, u32 value, u32 mask) {
-  if ((cpu->hot.cpsr & 0x1F) == 0x10) mask &= 0xFF000000;   // user mode: flags only
-  mask &= ~0x00000020u;                                     // T not writable via MSR
+  if ((cpu->hot.cpsr & 0x1F) == 0x10) mask &= 0xFF000000; // user mode: flags only
+  mask &= ~0x00000020u;                                   // T not writable via MSR
   cpu->set_cpsr((cpu->hot.cpsr & ~mask) | (value & mask));
 }
 
@@ -591,22 +736,33 @@ extern "C" u32 jit_h_ld8(CpuContext* cpu, u32 addr) {
 extern "C" u32 jit_h_ld16(CpuContext* cpu, u32 addr) {
   g_rt.stats.slow_accesses++;
   addr &= ~1u;
-  if (u8* p = cpu->page_table.read_ptr(addr)) { u16 v; std::memcpy(&v, p, 2); return v; }
+  if (u8* p = cpu->page_table.read_ptr(addr)) {
+    u16 v;
+    std::memcpy(&v, p, 2);
+    return v;
+  }
   if ((addr & 0xFF000000) == 0x04000000) return cpu->nds->io.read(cpu->which, addr, 16);
   return cpu->nds->bus.read16(cpu->which, addr);
 }
 extern "C" u32 jit_h_ld32(CpuContext* cpu, u32 addr) {
   g_rt.stats.slow_accesses++;
   addr &= ~3u;
-  if (u8* p = cpu->page_table.read_ptr(addr)) { u32 v; std::memcpy(&v, p, 4); return v; }
+  if (u8* p = cpu->page_table.read_ptr(addr)) {
+    u32 v;
+    std::memcpy(&v, p, 4);
+    return v;
+  }
   if ((addr & 0xFF000000) == 0x04000000) return cpu->nds->io.read(cpu->which, addr, 32);
   return cpu->nds->bus.read32(cpu->which, addr);
 }
 extern "C" void jit_h_st8(CpuContext* cpu, u32 addr, u32 v) {
   g_rt.stats.slow_accesses++;
   bool code = false;
-  if (u8* p = cpu->page_table.write_ptr(addr, &code)) { const u8 b8 = static_cast<u8>(v); if (code) mem::store_code(p, &b8, 1); else *p = b8; }
-  else if ((addr & 0xFF000000) == 0x04000000) cpu->nds->io.write(cpu->which, addr, 8, v);
+  if (u8* p = cpu->page_table.write_ptr(addr, &code)) {
+    const u8 b8 = static_cast<u8>(v);
+    if (code) mem::store_code(p, &b8, 1);
+    else *p = b8;
+  } else if ((addr & 0xFF000000) == 0x04000000) cpu->nds->io.write(cpu->which, addr, 8, v);
   else cpu->nds->bus.write8(cpu->which, addr, static_cast<u8>(v));
   if (cpu->halted) cpu->hot.alerts |= ALERT_HALTED;
 }
@@ -615,8 +771,10 @@ extern "C" void jit_h_st16(CpuContext* cpu, u32 addr, u32 v) {
   addr &= ~1u;
   bool code = false;
   const u16 h = static_cast<u16>(v);
-  if (u8* p = cpu->page_table.write_ptr(addr, &code)) { if (code) mem::store_code(p, &h, 2); else std::memcpy(p, &h, 2); }
-  else if ((addr & 0xFF000000) == 0x04000000) cpu->nds->io.write(cpu->which, addr, 16, v);
+  if (u8* p = cpu->page_table.write_ptr(addr, &code)) {
+    if (code) mem::store_code(p, &h, 2);
+    else std::memcpy(p, &h, 2);
+  } else if ((addr & 0xFF000000) == 0x04000000) cpu->nds->io.write(cpu->which, addr, 16, v);
   else cpu->nds->bus.write16(cpu->which, addr, h);
   if (cpu->halted) cpu->hot.alerts |= ALERT_HALTED;
 }
@@ -624,9 +782,13 @@ extern "C" void jit_h_st32(CpuContext* cpu, u32 addr, u32 v) {
   g_rt.stats.slow_accesses++;
   addr &= ~3u;
   bool code = false;
-  if (u8* p = cpu->page_table.write_ptr(addr, &code)) { if (code) mem::store_code(p, &v, 4); else std::memcpy(p, &v, 4); }
+  if (u8* p = cpu->page_table.write_ptr(addr, &code)) {
+    if (code) mem::store_code(p, &v, 4);
+    else std::memcpy(p, &v, 4);
+  }
   // Bus::io_write, not Io::write: it has the ARM9 GXFIFO fast path.
-  else if ((addr & 0xFF000000) == 0x04000000) cpu->nds->bus.io_write(cpu->which, addr, 32, v);
+  else if ((addr & 0xFF000000) == 0x04000000)
+    cpu->nds->bus.io_write(cpu->which, addr, 32, v);
   else cpu->nds->bus.write32(cpu->which, addr, v);
   if (cpu->halted) cpu->hot.alerts |= ALERT_HALTED;
 }
@@ -648,14 +810,19 @@ static void fm_fault(int sig, siginfo_t* si, void* uctx) {
   const Runtime::FmRel* site = nullptr;
   const u8* block = nullptr;
   {
-    auto it = std::upper_bound(r.fm_blocks.begin(), r.fm_blocks.end(), pc,
-                               [](uintptr_t p, const Runtime::FmBlock& b) { return p < reinterpret_cast<uintptr_t>(b.entry); });
+    auto it = std::upper_bound(r.fm_blocks.begin(), r.fm_blocks.end(), pc, [](uintptr_t p, const Runtime::FmBlock& b) {
+      return p < reinterpret_cast<uintptr_t>(b.entry);
+    });
     if (it != r.fm_blocks.begin()) {
       const Runtime::FmBlock& b = *(it - 1);
       const uintptr_t off = pc - reinterpret_cast<uintptr_t>(b.entry);
       if (off < b.size)
         for (u32 k = 0; k < b.count; ++k)
-          if (r.fm_rels[b.first + k].fault == off) { site = &r.fm_rels[b.first + k]; block = b.entry; break; }
+          if (r.fm_rels[b.first + k].fault == off) {
+            site = &r.fm_rels[b.first + k];
+            block = b.entry;
+            break;
+          }
     }
   }
   bool in_view = false;
@@ -666,12 +833,21 @@ static void fm_fault(int sig, siginfo_t* si, void* uctx) {
     const mem::GuestView* v = jc.nds->bus.view(c == 0 ? Cpu::ARM9 : Cpu::ARM7);
     if (v && v->contains(addr)) in_view = true;
   }
-  if (r.fm_guard && addr >= reinterpret_cast<uintptr_t>(r.fm_guard) && addr - reinterpret_cast<uintptr_t>(r.fm_guard) < mem::GuestView::RESERVE) in_view = true;
+  if (r.fm_guard && addr >= reinterpret_cast<uintptr_t>(r.fm_guard) &&
+      addr - reinterpret_cast<uintptr_t>(r.fm_guard) < mem::GuestView::RESERVE)
+    in_view = true;
   if (!site || !in_view) {
     const struct sigaction& old = sig == SIGBUS ? g_old_bus : g_old_segv;
-    if (old.sa_flags & SA_SIGINFO) { if (old.sa_sigaction) { old.sa_sigaction(sig, si, uctx); return; } }
-    else if (old.sa_handler != SIG_DFL && old.sa_handler != SIG_IGN) { old.sa_handler(sig); return; }
-    signal(sig, SIG_DFL);   // re-executes and dies
+    if (old.sa_flags & SA_SIGINFO) {
+      if (old.sa_sigaction) {
+        old.sa_sigaction(sig, si, uctx);
+        return;
+      }
+    } else if (old.sa_handler != SIG_DFL && old.sa_handler != SIG_IGN) {
+      old.sa_handler(sig);
+      return;
+    }
+    signal(sig, SIG_DFL); // re-executes and dies
     return;
   }
   // View pages are mapped on demand; if that was all, retry in place.
@@ -698,7 +874,7 @@ static void install_fault_handler() {
   static bool done = false;
   if (done) return;
   done = true;
-  struct sigaction sa {};
+  struct sigaction sa{};
   sa.sa_sigaction = fm_fault;
   sa.sa_flags = SA_SIGINFO | SA_NODEFER;
   sigemptyset(&sa.sa_mask);
@@ -717,7 +893,10 @@ bool attach(NDS& nds, bool arm9, bool arm7) {
   }
   if (!r.arena) {
     void* p = mmap(nullptr, ARENA_BYTES, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (p == MAP_FAILED) { std::fprintf(stderr, "jit: cannot map code arena\n"); return false; }
+    if (p == MAP_FAILED) {
+      std::fprintf(stderr, "jit: cannot map code arena\n");
+      return false;
+    }
     r.arena = static_cast<u8*>(p);
     r.cap = ARENA_BYTES;
     for (int c = 0; c < 2; ++c) {
@@ -760,7 +939,8 @@ bool attach(NDS& nds, bool arm9, bool arm7) {
       }
       if (r.fm_guard) {
         const u32 guard = static_cast<u32>(reinterpret_cast<uintptr_t>(r.fm_guard));
-        for (u32 k = 0; k < 64; ++k) jc.fm_region[k] = k == 0 ? static_cast<u32>(reinterpret_cast<uintptr_t>(v->base())) : guard - (k << 26);
+        for (u32 k = 0; k < 64; ++k)
+          jc.fm_region[k] = k == 0 ? static_cast<u32>(reinterpret_cast<uintptr_t>(v->base())) : guard - (k << 26);
         jc.fastmem = true;
         jc.hot.pt = reinterpret_cast<mem::Entry*>(jc.fm_region);
       }
@@ -791,17 +971,33 @@ void detach(NDS& nds) {
   }
 }
 
-void flush(CpuContext& cpu) { if (cpu.jit) invalidate_cpu(*static_cast<JitCpu*>(cpu.jit)); }
+void flush(CpuContext& cpu) {
+  if (cpu.jit) invalidate_cpu(*static_cast<JitCpu*>(cpu.jit));
+}
 void flush_all() { reset_arena(); }
-void set_trace(bool on) { if (g_rt.trace != on) { g_rt.trace = on; for (JitCpu& jc : g_rt.cpus) if (jc.ctx) invalidate_cpu(jc); } }
-void set_strict(bool on) { if (g_rt.strict != on) { g_rt.strict = on; for (JitCpu& jc : g_rt.cpus) if (jc.ctx) invalidate_cpu(jc); } }
+void set_trace(bool on) {
+  if (g_rt.trace != on) {
+    g_rt.trace = on;
+    for (JitCpu& jc : g_rt.cpus)
+      if (jc.ctx) invalidate_cpu(jc);
+  }
+}
+void set_strict(bool on) {
+  if (g_rt.strict != on) {
+    g_rt.strict = on;
+    for (JitCpu& jc : g_rt.cpus)
+      if (jc.ctx) invalidate_cpu(jc);
+  }
+}
 const Stats& stats() { return g_rt.stats; }
 
 static double ex_total_pct(unsigned long long v, unsigned long long tot) {
   return tot ? 100.0 * static_cast<double>(v) / static_cast<double>(tot) : 0.0;
 }
 
-void density_reset() { for (DensitySlot& d : g_rt.density_slots) d.execs = 0; }
+void density_reset() {
+  for (DensitySlot& d : g_rt.density_slots) d.execs = 0;
+}
 
 DensitySlot* density_new_slot() {
   Runtime& r = g_rt;
@@ -815,50 +1011,80 @@ void report(std::FILE* out) {
   // DS_JIT_DUMP=<path>: dump the arena at exit after a "<base> <size>" line.
   if (const char* dump = std::getenv("DS_JIT_DUMP")) {
     if (FILE* f = std::fopen(dump, "wb")) {
-      std::fprintf(f, "%llx %llx\n", (unsigned long long)reinterpret_cast<uintptr_t>(g_rt.arena), (unsigned long long)g_rt.pos);
+      std::fprintf(f, "%llx %llx\n", (unsigned long long)reinterpret_cast<uintptr_t>(g_rt.arena),
+                   (unsigned long long)g_rt.pos);
       std::fwrite(g_rt.arena, 1, g_rt.pos, f);
       std::fclose(f);
     }
   }
-  std::fprintf(out, "[jit] blocks %llu, inline instrs %llu, fallback executions %llu, slow accesses %llu, entries %llu, invalidated %llu, revived %llu, flushes %llu\n",
-               (unsigned long long)s.blocks_translated, (unsigned long long)s.instrs_translated, (unsigned long long)s.instrs_fallback,
-               (unsigned long long)s.slow_accesses, (unsigned long long)s.entries, (unsigned long long)s.blocks_invalidated, (unsigned long long)s.blocks_revived, (unsigned long long)s.flushes);
+  std::fprintf(
+      out,
+      "[jit] blocks %llu, inline instrs %llu, fallback executions %llu, slow accesses %llu, entries %llu, invalidated %llu, revived %llu, flushes %llu\n",
+      (unsigned long long)s.blocks_translated, (unsigned long long)s.instrs_translated,
+      (unsigned long long)s.instrs_fallback, (unsigned long long)s.slow_accesses, (unsigned long long)s.entries,
+      (unsigned long long)s.blocks_invalidated, (unsigned long long)s.blocks_revived, (unsigned long long)s.flushes);
   if (g_rt.cpus[0].fastmem || g_rt.cpus[1].fastmem)
-    std::fprintf(out, "[jit] fastmem: %llu site faults (rewritten to the walk), %zu guest sites on the walk, %zu registered sites\n",
-                 static_cast<unsigned long long>(g_rt.fm_faults), g_rt.fm_slow.size() + g_rt.fm_ring_n, g_rt.fm_rels.size());
-  if (s.bios_sha1_blocks) std::fprintf(out, "[jit] DSi BIOS SHA-1 blocks run natively: %llu\n", (unsigned long long)s.bios_sha1_blocks);
-  if (s.slices_interpreted) std::fprintf(out, "[jit] cold code: %llu slices interpreted (DS_JIT_WARM)\n", (unsigned long long)s.slices_interpreted);
+    std::fprintf(
+        out,
+        "[jit] fastmem: %llu site faults (rewritten to the walk), %zu guest sites on the walk, %zu registered sites\n",
+        static_cast<unsigned long long>(g_rt.fm_faults), g_rt.fm_slow.size() + g_rt.fm_ring_n, g_rt.fm_rels.size());
+  if (s.bios_sha1_blocks)
+    std::fprintf(out, "[jit] DSi BIOS SHA-1 blocks run natively: %llu\n", (unsigned long long)s.bios_sha1_blocks);
+  if (s.slices_interpreted)
+    std::fprintf(out, "[jit] cold code: %llu slices interpreted (DS_JIT_WARM)\n",
+                 (unsigned long long)s.slices_interpreted);
   if (const cpu::WaitLoopStats& w = cpu::wait_loop_stats(); w.runs)
-    std::fprintf(out, "[jit] ARM7 WaitByLoop fast-forwarded %llu times: %llu iterations, %llu ARM7 cycles\n", (unsigned long long)w.runs, (unsigned long long)w.iterations, (unsigned long long)w.cycles);
-  std::fprintf(out, "[jit] code %llu KB (hot %llu KB): %.1f bytes per guest instruction, %.1f hot\n", (unsigned long long)(s.code_bytes >> 10), (unsigned long long)(s.hot_bytes >> 10),
+    std::fprintf(out, "[jit] ARM7 WaitByLoop fast-forwarded %llu times: %llu iterations, %llu ARM7 cycles\n",
+                 (unsigned long long)w.runs, (unsigned long long)w.iterations, (unsigned long long)w.cycles);
+  std::fprintf(out, "[jit] code %llu KB (hot %llu KB): %.1f bytes per guest instruction, %.1f hot\n",
+               (unsigned long long)(s.code_bytes >> 10), (unsigned long long)(s.hot_bytes >> 10),
                s.instrs_translated ? static_cast<double>(s.code_bytes) / static_cast<double>(s.instrs_translated) : 0.0,
                s.instrs_translated ? static_cast<double>(s.hot_bytes) / static_cast<double>(s.instrs_translated) : 0.0);
   if (g_rt.census) {
     // Execution-weighted.
     long double ex = 0, gi = 0, fb = 0, mem = 0, memfl = 0, memfli = 0, fl = 0, efl = 0;
     long double rr[16] = {}, rw[16] = {}, li[16] = {}, wr[16] = {};
-    long double len_hist[8] = {};   // 1-2, 3-4, 5-8, 9-16, 17-32, 33-64
+    long double len_hist[8] = {}; // 1-2, 3-4, 5-8, 9-16, 17-32, 33-64
     for (const DensitySlot& d : g_rt.density_slots) {
       const long double e = static_cast<long double>(d.execs);
-      ex += e; gi += e * d.n_instrs; fb += e * d.n_fallback; mem += e * d.n_mem; memfl += e * d.n_mem_flags_live; memfli += e * d.n_mem_flags_intra;
-      fl += e * d.n_flags_live; efl += d.entry_flags_live ? e : 0;
+      ex += e;
+      gi += e * d.n_instrs;
+      fb += e * d.n_fallback;
+      mem += e * d.n_mem;
+      memfl += e * d.n_mem_flags_live;
+      memfli += e * d.n_mem_flags_intra;
+      fl += e * d.n_flags_live;
+      efl += d.entry_flags_live ? e : 0;
       for (int r = 0; r < 16; ++r) {
-        rr[r] += e * d.reg_reads[r]; rw[r] += e * d.reg_writes[r];
+        rr[r] += e * d.reg_reads[r];
+        rw[r] += e * d.reg_writes[r];
         if (d.live_in & (1u << r)) li[r] += e;
         if (d.written & (1u << r)) wr[r] += e;
       }
       const u32 n = d.n_instrs;
       len_hist[n <= 2 ? 0 : n <= 4 ? 1 : n <= 8 ? 2 : n <= 16 ? 3 : n <= 32 ? 4 : 5] += e;
     }
-    std::fprintf(out, "[census] translations %zu entries %.0Lf guest_instrs %.0Lf fallback_instrs %.0Lf\n", g_rt.density_slots.size(), ex, gi, fb);
+    std::fprintf(out, "[census] translations %zu entries %.0Lf guest_instrs %.0Lf fallback_instrs %.0Lf\n",
+                 g_rt.density_slots.size(), ex, gi, fb);
     std::fprintf(out, "[census] instrs_per_entry %.2Lf fallback_pct %.2Lf\n", ex ? gi / ex : 0, gi ? 100 * fb / gi : 0);
-    std::fprintf(out, "[census] mem_instrs %.0Lf mem_nzcv_live %.0Lf mem_nzcv_live_pct %.2Lf mem_nzcv_intra %.0Lf mem_nzcv_intra_pct %.2Lf\n", mem, memfl, mem ? 100 * memfl / mem : 0, memfli, mem ? 100 * memfli / mem : 0);
-    std::fprintf(out, "[census] instrs_nzcv_live %.0Lf instrs_nzcv_live_pct %.2Lf entries_nzcv_live_at_entry %.0Lf entry_nzcv_live_pct %.2Lf\n", fl, gi ? 100 * fl / gi : 0, efl, ex ? 100 * efl / ex : 0);
+    std::fprintf(
+        out,
+        "[census] mem_instrs %.0Lf mem_nzcv_live %.0Lf mem_nzcv_live_pct %.2Lf mem_nzcv_intra %.0Lf mem_nzcv_intra_pct %.2Lf\n",
+        mem, memfl, mem ? 100 * memfl / mem : 0, memfli, mem ? 100 * memfli / mem : 0);
+    std::fprintf(
+        out,
+        "[census] instrs_nzcv_live %.0Lf instrs_nzcv_live_pct %.2Lf entries_nzcv_live_at_entry %.0Lf entry_nzcv_live_pct %.2Lf\n",
+        fl, gi ? 100 * fl / gi : 0, efl, ex ? 100 * efl / ex : 0);
     static const char* const lens[6] = {"1-2", "3-4", "5-8", "9-16", "17-32", "33-64"};
-    for (int k = 0; k < 6; ++k) std::fprintf(out, "[census] block_len %s entries %.0Lf entries_pct %.2Lf\n", lens[k], len_hist[k], ex ? 100 * len_hist[k] / ex : 0);
+    for (int k = 0; k < 6; ++k)
+      std::fprintf(out, "[census] block_len %s entries %.0Lf entries_pct %.2Lf\n", lens[k], len_hist[k],
+                   ex ? 100 * len_hist[k] / ex : 0);
     for (int r = 0; r < 16; ++r)
-      std::fprintf(out, "[census] reg r%d reads %.0Lf writes %.0Lf live_in_entries %.0Lf written_entries %.0Lf reads_per_entry %.3Lf writes_per_entry %.3Lf live_in_pct %.2Lf written_pct %.2Lf\n",
-                   r, rr[r], rw[r], li[r], wr[r], ex ? rr[r] / ex : 0, ex ? rw[r] / ex : 0, ex ? 100 * li[r] / ex : 0, ex ? 100 * wr[r] / ex : 0);
+      std::fprintf(
+          out,
+          "[census] reg r%d reads %.0Lf writes %.0Lf live_in_entries %.0Lf written_entries %.0Lf reads_per_entry %.3Lf writes_per_entry %.3Lf live_in_pct %.2Lf written_pct %.2Lf\n",
+          r, rr[r], rw[r], li[r], wr[r], ex ? rr[r] / ex : 0, ex ? rw[r] / ex : 0, ex ? 100 * li[r] / ex : 0,
+          ex ? 100 * wr[r] / ex : 0);
   }
   if (g_rt.density) {
     u64 ex = 0;
@@ -868,12 +1094,18 @@ void report(std::FILE* out) {
       hb += static_cast<long double>(d.execs) * d.hot_bytes;
       gi += static_cast<long double>(d.execs) * d.guest_instrs;
     }
-    std::fprintf(out, "[jit] density: %zu translations, %llu block entries, %.0Lf guest instrs executed, %.0Lf hot bytes fetched\n",
-                 g_rt.density_slots.size(), (unsigned long long)ex, gi, hb);
+    std::fprintf(
+        out,
+        "[jit] density: %zu translations, %llu block entries, %.0Lf guest instrs executed, %.0Lf hot bytes fetched\n",
+        g_rt.density_slots.size(), (unsigned long long)ex, gi, hb);
     // From slots, not Stats: stats.hot_bytes includes the counter code.
     long double shb = 0.0L, sgi = 0.0L;
-    for (const DensitySlot& d : g_rt.density_slots) { shb += d.hot_bytes; sgi += d.guest_instrs; }
-    std::fprintf(out, "[jit] density: %.2Lf hot bytes per guest instruction executed, against %.2Lf translated (static)\n",
+    for (const DensitySlot& d : g_rt.density_slots) {
+      shb += d.hot_bytes;
+      sgi += d.guest_instrs;
+    }
+    std::fprintf(out,
+                 "[jit] density: %.2Lf hot bytes per guest instruction executed, against %.2Lf translated (static)\n",
                  gi > 0.0L ? hb / gi : 0.0L, sgi > 0.0L ? shb / sgi : 0.0L);
     static const int lo[9] = {1, 2, 3, 4, 5, 9, 17, 33, 65};
     u64 tx[8] = {}, bex[8] = {};
@@ -881,7 +1113,8 @@ void report(std::FILE* out) {
     for (const DensitySlot& d : g_rt.density_slots) {
       int k = 0;
       while (k < 7 && static_cast<int>(d.guest_instrs) >= lo[k + 1]) ++k;
-      tx[k]++; bex[k] += d.execs;
+      tx[k]++;
+      bex[k] += d.execs;
       gx[k] += static_cast<long double>(d.execs) * d.guest_instrs;
     }
     std::fprintf(out, "[jit] density: block length    translations        entries   %% entries   %% guest instrs\n");
@@ -890,9 +1123,8 @@ void report(std::FILE* out) {
       char lab[16];
       if (lo[k + 1] - lo[k] == 1) std::snprintf(lab, sizeof lab, "%d", lo[k]);
       else std::snprintf(lab, sizeof lab, "%d-%d", lo[k], lo[k + 1] - 1);
-      std::fprintf(out, "[jit]         %12s %14llu %14llu %10.2f %%     %10.2Lf %%\n", lab,
-                   (unsigned long long)tx[k], (unsigned long long)bex[k],
-                   ex_total_pct(bex[k], ex), gi > 0.0L ? 100.0L * gx[k] / gi : 0.0L);
+      std::fprintf(out, "[jit]         %12s %14llu %14llu %10.2f %%     %10.2Lf %%\n", lab, (unsigned long long)tx[k],
+                   (unsigned long long)bex[k], ex_total_pct(bex[k], ex), gi > 0.0L ? 100.0L * gx[k] / gi : 0.0L);
     }
   }
   if (!g_rt.hist) return;
@@ -905,7 +1137,8 @@ void report(std::FILE* out) {
     CpuContext& ctx = *g_rt.cpus[c == Cpu::ARM9 ? 0 : 1].ctx;
     u32 instr = 0;
     if (u8* p = ctx.page_table.read_ptr(pc)) std::memcpy(&instr, p, 4);
-    std::fprintf(out, "[jit]   arm%d %08x %08x %llu\n", c == Cpu::ARM9 ? 9 : 7, pc, instr, (unsigned long long)v[i].second);
+    std::fprintf(out, "[jit]   arm%d %08x %08x %llu\n", c == Cpu::ARM9 ? 9 : 7, pc, instr,
+                 (unsigned long long)v[i].second);
   }
 }
 
@@ -920,11 +1153,18 @@ static void weeds_check(CpuContext& cpu, u32 pc) {
   const int i = cpu.which == Cpu::ARM9 ? 0 : 1;
   if (ok || shown[i]) return;
   shown[i] = true;
-  std::fprintf(stderr, "[weeds] arm%d frame %llu pc %08x cpsr %08x lr %08x sp %08x r0-r3 %08x %08x %08x %08x r4-r7 %08x %08x %08x %08x r12 %08x\n",
-               i ? 7 : 9, (unsigned long long)cpu.nds->frame_count, pc, cpu.hot.cpsr, cpu.hot.regs[14], cpu.hot.regs[13],
-               cpu.hot.regs[0], cpu.hot.regs[1], cpu.hot.regs[2], cpu.hot.regs[3], cpu.hot.regs[4], cpu.hot.regs[5], cpu.hot.regs[6], cpu.hot.regs[7], cpu.hot.regs[12]);
+  std::fprintf(
+      stderr,
+      "[weeds] arm%d frame %llu pc %08x cpsr %08x lr %08x sp %08x r0-r3 %08x %08x %08x %08x r4-r7 %08x %08x %08x %08x r12 %08x\n",
+      i ? 7 : 9, (unsigned long long)cpu.nds->frame_count, pc, cpu.hot.cpsr, cpu.hot.regs[14], cpu.hot.regs[13],
+      cpu.hot.regs[0], cpu.hot.regs[1], cpu.hot.regs[2], cpu.hot.regs[3], cpu.hot.regs[4], cpu.hot.regs[5],
+      cpu.hot.regs[6], cpu.hot.regs[7], cpu.hot.regs[12]);
   // The stack's top words: return addresses of the callers.
-  for (u32 k = 0; k < 16; ++k) { u32 w = 0; if (const u8* p = cpu.page_table.read_ptr(cpu.hot.regs[13] + k * 4)) std::memcpy(&w, p, 4); std::fprintf(stderr, "[weeds]   [sp+%02x] %08x\n", k * 4, w); }
+  for (u32 k = 0; k < 16; ++k) {
+    u32 w = 0;
+    if (const u8* p = cpu.page_table.read_ptr(cpu.hot.regs[13] + k * 4)) std::memcpy(&w, p, 4);
+    std::fprintf(stderr, "[weeds]   [sp+%02x] %08x\n", k * 4, w);
+  }
 }
 
 const void* lookup(CpuContext& cpu) {
@@ -944,7 +1184,10 @@ const void* lookup(CpuContext& cpu) {
       return r.exit_r15;
     }
     const u8* native = static_cast<u32>(lut) == key ? r.arena + (lut >> 32) : find_native(jc, key);
-    if (!native) { reset_arena(); continue; }
+    if (!native) {
+      reset_arena();
+      continue;
+    }
     cpu.hot.alerts = 0;
     r.stats.entries++;
     return native;
@@ -957,11 +1200,21 @@ void run_loop(void* scheduler) { g_rt.run_loop(scheduler); }
 void run(CpuContext& cpu) {
   Runtime& r = g_rt;
   cpu.check_irq();
-  if (cpu.halted) { cpu.hot.cycle_budget = -1; return; }
-  if (cpu.step_limit) { interp::run(cpu); return; }
+  if (cpu.halted) {
+    cpu.hot.cycle_budget = -1;
+    return;
+  }
+  if (cpu.step_limit) {
+    interp::run(cpu);
+    return;
+  }
   while (cpu.hot.cycle_budget > 0) {
     r.enter(&cpu, lookup(cpu));
-    if (cpu.halted) { cpu.budget_at_halt = cpu.hot.cycle_budget; cpu.hot.cycle_budget = -1; return; }
+    if (cpu.halted) {
+      cpu.budget_at_halt = cpu.hot.cycle_budget;
+      cpu.hot.cycle_budget = -1;
+      return;
+    }
     if (cpu.hot.irq_pending) cpu.check_irq();
   }
 }

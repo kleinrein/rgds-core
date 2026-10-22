@@ -6,7 +6,6 @@
 A  Apply	A  Apply
 A  Done	A  Done
 A  Play	A  Play
-A / Start	A / Start
 A gentle scanline pattern with original colours.	A gentle scanline pattern with original colors.
 A natural colour and contrast treatment.	A natural color and contrast treatment.
 A screen style for this cartridge	A screen style for this cartridge
@@ -14,20 +13,26 @@ A stronger LCD texture and scanline look.	A stronger LCD texture and scanline lo
 A subtle handheld LCD pixel pattern.	A subtle handheld LCD pixel pattern.
 A subtle pixel grid with a bright, readable image.	A subtle pixel grid with a bright, readable image.
 Add your DS games to fetch their artwork.	Add your DS games to fetch their artwork.
+Africa	Africa
 After	After
 All games	All games
 Amber	Amber
-Anbernic / Escape cancels	Anbernic / Escape cancels
+Americas	Americas
 Anbernic startup is unavailable in RGDS OS.	Anbernic startup is unavailable in RGDS OS.
 Animations	Animations
+Antarctica	Antarctica
 Applies immediately. Higher clocks use more battery.	Applies immediately. Higher clocks use more battery.
 Applies immediately. Your game keeps its progress.	Applies immediately. Your game keeps its progress.
 Apply	Apply
 Applying shader…	Applying shader…
+Arctic	Arctic
 Artwork	Artwork
 Artwork & ScreenScraper	Artwork
 Artwork source	Artwork source
 Artwork sources	Artwork sources
+Asia	Asia
+Atlantic Ocean	Atlantic Ocean
+Australia	Australia
 Auto-load state	Auto-load state
 Auto-save on exit	Auto-save on exit
 Automatic	Automatic
@@ -156,6 +161,7 @@ Engine managed	Engine managed
 Enter here	Enter here
 Enter password	Enter password
 Enter your username and password	Enter your username and password
+Europe	Europe
 Every game in this collection has artwork.	Every game in this collection has artwork.
 FPS changed for this session. Settings storage is unavailable.	FPS changed for this session. Settings storage is unavailable.
 FPS counter enabled.	FPS counter enabled.
@@ -191,6 +197,7 @@ Global	Global
 Global controls saved.	Global controls saved.
 Hold	Hold
 Home shortcut	Home shortcut
+Indian Ocean	Indian Ocean
 Inherit	Inherit
 Inherited	Inherited
 Jump to letter	Jump to letter
@@ -265,6 +272,7 @@ Open the Anbernic menu	Open the Anbernic menu
 Options	Options
 Original pixels	Original pixels
 Original pixels and colours.	Original pixels and colors.
+Pacific	Pacific
 PLAY	PLAY
 Password	Password
 Pause when you need to.	Pause when you need to.
@@ -504,8 +512,6 @@ Wi-Fi request timed out. Check signal and try again.	Wi-Fi request timed out. Ch
 Wi-Fi service is unavailable.	Wi-Fi service is unavailable.
 With shader	With shader
 Working…	Working…
-X Scene   Y Compare	X Scene   Y Compare
-X Scene / Y Compare	X Scene / Y Compare
 Your cartridges go here	Your cartridges go here
 Your home screen after powering on	Your home screen after powering on
 Your local time and date	Your local time and date
@@ -572,17 +578,29 @@ Update verification failed. Check for updates again.	Update verification failed.
 Update failed. Check Wi-Fi and try again.	Update failed. Check Wi-Fi and try again.
 Stable	Stable
 Testing	Testing
-Save to slot	Save to slot
 Import slot	Import slot
-Load slot	Load slot
 Export slot	Export slot
-Undo overwrite	Undo overwrite
-Undo load	Undo load
+Save checkpoint	Save checkpoint
+Load checkpoint	Load checkpoint
+Save here	Save here
+Export	Export
+More	More
+Replace slot {0}?	Replace slot {0}?
+Load slot {0}?	Load slot {0}?
+Delete slot {0}?	Delete slot {0}?
+Undo last slot change	Undo last slot change
+Undo last load	Undo last load
+Import into this slot	Import into this slot
+Slot {0} deleted.	Slot {0} deleted.
+Slot change undone.	Slot change undone.
+A saves your current progress here.	A saves your current progress here.
+A replaces this slot with your current progress. X deletes it.	A replaces this slot with your current progress. X deletes it.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A loads this slot. Undo last load, under Y, brings back the progress you have now.
+Nothing to load here yet.	Nothing to load here yet.
+A exports this slot to userdata/exports. X deletes it.	A exports this slot to userdata/exports. X deletes it.
+Y imports a save into this slot.	Y imports a save into this slot.
 Import help	Import help
-Save slot	Save slot
-Replace this save?	Replace this save?
 Replace	Replace
-Load this save?	Load this save?
 Blow into microphone	Blow into microphone
 Close and open DS lid	Close and open DS lid
 DS language	DS language
@@ -621,15 +639,12 @@ Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are
 Save backup created in userdata/exports.	Save backup created in userdata/exports.
 Slot exported to userdata/exports.	Slot exported to userdata/exports.
 Save library updated.	Save library updated.
-Save overwrite undone.	Save overwrite undone.
 Current progress could not be saved. No slot was changed.	Current progress could not be saved. No slot was changed.
 DS controls are unavailable for this engine.	DS controls are unavailable for this engine.
 Your DS library starts here	Your DS library starts here
 Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.
 Use the engine's native controls for microphone and DS settings.	Use the engine's native controls for microphone and DS settings.
 Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.
-Save slots	Save slots
-Load slots	Load slots
 Unplayed	Unplayed
 Played	Played
 Filtered	Filtered
@@ -652,9 +667,6 @@ Return home before testing the physical microphone.	Return home before testing t
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blow or speak into the microphone. Watch the level rise, then fall when you stop.
 No filter	No filter
 Quick search	Quick search
-Y  Quick search	Y  Quick search
-X  Filters	X  Filters
-Y Search / X Filters	Y Search / X Filters
 A  Search	A  Search
 A  Jump	A  Jump
 Edit search	Edit search
@@ -665,10 +677,8 @@ Finding games…	Finding games…
 Searching…	Searching…
 Search in	Search in
 Try a shorter title or clear your filter.	Try a shorter title or clear your filter.
-A Key / Start Search / B Cancel	A Key / Start Search / B Cancel
+Type	Type
 Tap to type, or use the D-pad and A	Tap to type, or use the D-pad and A
-X Delete / Start Search	X Delete / Start Search
-X Delete / Start Done	X Delete / Start Done
 No letters to jump to. Search for another game.	No letters to jump to. Search for another game.
 {0} match	{0} match
 {0} matches	{0} matches
@@ -737,7 +747,6 @@ Colour mode	Color mode
 Draw and chat with nearby handhelds	Draw and chat with nearby handhelds
 Wi-Fi connected	Wi-Fi connected
 No Wi-Fi: you can still draw	No Wi-Fi: you can still draw
-Press A to open	Press A to open
 Type your name	Type your name
 You appear like this to others	You appear like this to others
 Starting…	Starting…
@@ -835,7 +844,7 @@ Natural	Natural
 Vivid	Vivid
 Pixel art	Pixel art
 Moods	Moods
-Up / Down or L / R: change group	Up / Down or L / R: change group
+Change group	Change group
 Sounds & music	Sounds & music
 Menu music	Menu music
 Music volume	Music volume
@@ -852,3 +861,35 @@ The backup did not finish. Please try again.	The backup did not finish. Please t
 Copies every save and checkpoint into one zip in userdata/exports.	Copies every save and checkpoint into one zip in userdata/exports.
 Where games go on the card, and a fresh scan.	Where games go on the card, and a fresh scan.
 Where covers and titles come from.	Where covers and titles come from.
+System update	System update
+Version {0} is ready	Version {0} is ready
+Version {0} is ready to install	Version {0} is ready to install
+Downloading {0}	Downloading {0}
+Paused at {0}	Paused at {0}
+Update now	Update now
+Resume download	Resume download
+Update	Update
+Install	Install
+What's new	What's new
+Download	Download
+Verify	Verify
+Prepare	Prepare
+Step {0} of 4	Step {0} of 4
+Less than a minute left	Less than a minute left
+About {0} min left	About {0} min left
+About {0} h left	About {0} h left
+Downloads resume where they stopped if Wi-Fi drops.	Downloads resume where they stopped if Wi-Fi drops.
+Your games and saves are not touched.	Your games and saves are not touched.
+Connection lost. Retrying…	Connection lost. Retrying…
+The update could not be downloaded. Check for updates again.	The update could not be downloaded. Check for updates again.
+Finishing another task. Press Y again in a moment.	Finishing another task. Press Y again in a moment.
+Updates	Updates
+The language for menus and messages.	The language for menus and messages.
+Set the clock to where you are.	Set the clock to where you are.
+How dates appear at the top of the screen.	How dates appear at the top of the screen.
+A 24-hour or 12-hour clock.	A 24-hour or 12-hour clock.
+Versions, free space and the network address of your handheld.	Versions, free space and the network address of your handheld.
+Check for updates, go back to the previous build or clear temporary files.	Check for updates, go back to the previous build or clear temporary files.
+Leave RG DS Core and go back to the stock menu.	Leave RG DS Core and go back to the stock menu.
+What happens when you turn the handheld on.	What happens when you turn the handheld on.
+Restart the RGDS menu.	Restart the RGDS menu.

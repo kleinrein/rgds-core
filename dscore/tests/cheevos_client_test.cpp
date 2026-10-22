@@ -88,7 +88,7 @@ void saving_again_replaces_it() {
   CHECK(out.username == "second");
   CHECK(out.token == "token-two");
   struct stat st{};
-  CHECK(::stat((dir + "/cheevos.token.tmp").c_str(), &st) != 0);   // no leftovers
+  CHECK(::stat((dir + "/cheevos.token.tmp").c_str(), &st) != 0); // no leftovers
   remove_dir(dir);
 }
 
@@ -147,7 +147,8 @@ void the_cfw_sign_in_is_imported() {
              "global.retroachievements.username=someplayer\n"
              "global.retroachievements.password=hunter2secret\n"
              "global.retroachievements.token=0123456789abcdef\n"
-             "global.retroachievements.hardcore=1\n", f);
+             "global.retroachievements.hardcore=1\n",
+             f);
   std::fclose(f);
 
   cheevos::Credentials c;
@@ -164,7 +165,8 @@ void the_cfw_sign_in_is_imported() {
   CHECK(f != nullptr);
   std::fputs("cheevos_username = \"otherplayer\"\n"
              "cheevos_password = \"alsosecret\"\n"
-             "cheevos_token = \"fedcba9876543210\"\n", f);
+             "cheevos_token = \"fedcba9876543210\"\n",
+             f);
   std::fclose(f);
   CHECK(cheevos::read_cfw_credentials(ra, c));
   CHECK(c.username == "otherplayer");
@@ -199,7 +201,10 @@ void the_cfw_sign_in_is_imported() {
   CHECK(c.token == "0123456789abcdef");
   ::unsetenv("DS_CHEEVOS_CFW_CONFIG");
 
-  ::unlink(es.c_str()); ::unlink(ra.c_str()); ::unlink(empty.c_str()); ::unlink(half.c_str());
+  ::unlink(es.c_str());
+  ::unlink(ra.c_str());
+  ::unlink(empty.c_str());
+  ::unlink(half.c_str());
   remove_dir(dir);
 }
 
@@ -213,10 +218,10 @@ void a_token_file_is_read() {
   const std::string bare = dir + "/ppsspp_retroachievements.dat";
   std::FILE* f = std::fopen(bare.c_str(), "w");
   CHECK(f != nullptr);
-  std::fputs("0123456789abcdef", f);        // no newline, exactly as PPSSPP's helper writes it
+  std::fputs("0123456789abcdef", f); // no newline, exactly as PPSSPP's helper writes it
   std::fclose(f);
   CHECK(cheevos::read_token_file(bare, c, err));
-  CHECK(c.username.empty());                 // the caller supplies it from the config
+  CHECK(c.username.empty()); // the caller supplies it from the config
   CHECK(c.token == "0123456789abcdef");
 
   const std::string ours = dir + "/two-line";
@@ -240,7 +245,9 @@ void a_token_file_is_read() {
   CHECK(!cheevos::read_token_file(dir + "/not-there", c, err));
   CHECK(!err.empty());
 
-  ::unlink(bare.c_str()); ::unlink(ours.c_str()); ::unlink(empty.c_str());
+  ::unlink(bare.c_str());
+  ::unlink(ours.c_str());
+  ::unlink(empty.c_str());
   remove_dir(dir);
 }
 

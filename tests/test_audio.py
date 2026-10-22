@@ -68,6 +68,7 @@ class AudioTests(unittest.TestCase):
                         self.volume.apply(level)
                         expected = self.mixer.percent
                         saved = self.volume.path.read_bytes()
+
                         def suspend(*args, **kwargs):
                             self.mixer.percent = 100  # Firmware resume reset.
                         with patch('system_controls.Volume', return_value=self.volume), \
@@ -92,6 +93,7 @@ class AudioTests(unittest.TestCase):
         hardware = Hardware(self.data)
         self.mixer.percent = 37
         failure = subprocess.CalledProcessError(1, 'pm-suspend')
+
         def suspend(*args, **kwargs):
             self.assertIsNotNone(self.volume.saved())
             self.mixer.percent = 100
@@ -146,7 +148,7 @@ class AudioTests(unittest.TestCase):
         with patch.object(Path, "write_text"):
             watcher.handle(event(115, 1), 1)
             watcher.handle(event(115, 1), 1.01)  # Duplicate kernel device report.
-            watcher.handle(event(115, 2), 1.2)   # Held key repeat.
+            watcher.handle(event(115, 2), 1.2)  # Held key repeat.
             watcher.handle(event(115, 0), 1.3)
             self.assertEqual(self.volume.saved(), 20)
             for index in range(8):
@@ -154,18 +156,21 @@ class AudioTests(unittest.TestCase):
         self.assertEqual(self.volume.saved(), 0)
 
     def test_native_volume_hud_refreshes_at_limits_and_clears_previous_session(self):
-        self.volume.apply(100);watcher=VolumeWatch(self.data,self.volume)
-        event=EVENT.pack(0,0,1,115,1)
-        with patch.object(Path,'write_text'):
-            watcher.handle(event,1)
-            first=read_fields(self.data/'session/volume-hud.ini')
-            watcher.handle(event,1.2)
-            second=read_fields(self.data/'session/volume-hud.ini')
-        self.assertEqual(first['volume'],'100');self.assertEqual(second['volume'],'100')
-        self.assertNotEqual(first['token'],second['token'])
-        with patch('audio.volume_inputs',return_value=[]):
-            watcher.start();watcher.close()
-        self.assertFalse((self.data/'session/volume-hud.ini').exists())
+        self.volume.apply(100)
+        watcher = VolumeWatch(self.data, self.volume)
+        event = EVENT.pack(0, 0, 1, 115, 1)
+        with patch.object(Path, 'write_text'):
+            watcher.handle(event, 1)
+            first = read_fields(self.data / 'session/volume-hud.ini')
+            watcher.handle(event, 1.2)
+            second = read_fields(self.data / 'session/volume-hud.ini')
+        self.assertEqual(first['volume'], '100')
+        self.assertEqual(second['volume'], '100')
+        self.assertNotEqual(first['token'], second['token'])
+        with patch('audio.volume_inputs', return_value=[]):
+            watcher.start()
+            watcher.close()
+        self.assertFalse((self.data / 'session/volume-hud.ini').exists())
 
     def test_mixer_uses_DAC_and_cleans_emulator_preloads(self):
         result = subprocess.CompletedProcess([], 0, stdout="Playback 22 [39%] [-10dB]\nPlayback 22 [39%]")

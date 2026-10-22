@@ -18,28 +18,30 @@ struct wl_interface;
 #ifdef __cplusplus
 namespace ds::sdl::wldyn {
 
-bool load();   // true once resolved; safe to call repeatedly, failure is sticky
-const char* error();   // why load() failed
+bool load();         // true once resolved; safe to call repeatedly, failure is sticky
+const char* error(); // why load() failed
 
 } // namespace ds::sdl::wldyn
 
 // Outside the namespace so the macros below substitute into vendored C code.
 extern "C" {
 #endif
-union wl_argument;   // forward decl
-extern struct wl_proxy* (*p_wl_proxy_marshal_flags)(struct wl_proxy*, uint32_t opcode, const struct wl_interface*, uint32_t version, uint32_t flags, ...);
-extern struct wl_proxy* (*p_wl_proxy_marshal_array_flags)(struct wl_proxy*, uint32_t opcode, const struct wl_interface*, uint32_t version, uint32_t flags, union wl_argument*);
-extern int              (*p_wl_proxy_add_listener)(struct wl_proxy*, void (**implementation)(void), void* data);
-extern void             (*p_wl_proxy_destroy)(struct wl_proxy*);
-extern uint32_t         (*p_wl_proxy_get_version)(struct wl_proxy*);
-extern void             (*p_wl_proxy_set_queue)(struct wl_proxy*, struct wl_event_queue*);
+union wl_argument; // forward decl
+extern struct wl_proxy* (*p_wl_proxy_marshal_flags)(struct wl_proxy*, uint32_t opcode, const struct wl_interface*,
+                                                    uint32_t version, uint32_t flags, ...);
+extern struct wl_proxy* (*p_wl_proxy_marshal_array_flags)(struct wl_proxy*, uint32_t opcode, const struct wl_interface*,
+                                                          uint32_t version, uint32_t flags, union wl_argument*);
+extern int (*p_wl_proxy_add_listener)(struct wl_proxy*, void (**implementation)(void), void* data);
+extern void (*p_wl_proxy_destroy)(struct wl_proxy*);
+extern uint32_t (*p_wl_proxy_get_version)(struct wl_proxy*);
+extern void (*p_wl_proxy_set_queue)(struct wl_proxy*, struct wl_event_queue*);
 extern struct wl_event_queue* (*p_wl_display_create_queue)(struct wl_display*);
-extern void             (*p_wl_event_queue_destroy)(struct wl_event_queue*);
-extern int              (*p_wl_display_roundtrip_queue)(struct wl_display*, struct wl_event_queue*);
-extern int              (*p_wl_display_dispatch_queue)(struct wl_display*, struct wl_event_queue*);
-extern int              (*p_wl_display_dispatch_queue_pending)(struct wl_display*, struct wl_event_queue*);
-extern int              (*p_wl_display_flush)(struct wl_display*);
-extern int              (*p_wl_display_get_error)(struct wl_display*);
+extern void (*p_wl_event_queue_destroy)(struct wl_event_queue*);
+extern int (*p_wl_display_roundtrip_queue)(struct wl_display*, struct wl_event_queue*);
+extern int (*p_wl_display_dispatch_queue)(struct wl_display*, struct wl_event_queue*);
+extern int (*p_wl_display_dispatch_queue_pending)(struct wl_display*, struct wl_event_queue*);
+extern int (*p_wl_display_flush)(struct wl_display*);
+extern int (*p_wl_display_get_error)(struct wl_display*);
 #ifdef __cplusplus
 }
 #endif

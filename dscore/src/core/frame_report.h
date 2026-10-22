@@ -23,16 +23,19 @@ inline void frame_report(const std::vector<double>& frame_ms, const char* label 
   if (frame_ms.empty()) return;
   std::vector<double> v = frame_ms;
   std::sort(v.begin(), v.end());
-  double sum = 0; for (double x : v) sum += x;
+  double sum = 0;
+  for (double x : v) sum += x;
   const size_t n = v.size();
   auto pct = [&](double p) { return v[std::min(n - 1, static_cast<size_t>(p * n))]; };
-  size_t over = 0; for (double x : v) if (x > kFrameBudgetMs) ++over;
+  size_t over = 0;
+  for (double x : v)
+    if (x > kFrameBudgetMs) ++over;
   // p95 is the gating tier; p99/max are reported but not gated on since
   // loading screens legitimately spend frame time there.
-  std::fprintf(stderr, "%s ms: median %.3f mean %.3f p90 %.3f p95 %.3f p99 %.3f max %.3f min %.3f total %.1f\n",
-               label, v[n / 2], sum / n, pct(0.90), pct(0.95), pct(0.99), v.back(), v.front(), sum);
-  std::fprintf(stderr, "%s budget: %zu of %zu frames over %.3f ms (%.2f%%)\n",
-               label, over, n, kFrameBudgetMs, 100.0 * static_cast<double>(over) / static_cast<double>(n));
+  std::fprintf(stderr, "%s ms: median %.3f mean %.3f p90 %.3f p95 %.3f p99 %.3f max %.3f min %.3f total %.1f\n", label,
+               v[n / 2], sum / n, pct(0.90), pct(0.95), pct(0.99), v.back(), v.front(), sum);
+  std::fprintf(stderr, "%s budget: %zu of %zu frames over %.3f ms (%.2f%%)\n", label, over, n, kFrameBudgetMs,
+               100.0 * static_cast<double>(over) / static_cast<double>(n));
 
   // Locate overruns for --dump-from/--dump-count; frame_ms is in run order.
   if (!over) return;
@@ -40,12 +43,18 @@ inline void frame_report(const std::vector<double>& frame_ms, const char* label 
   for (size_t i = 0; i < frame_ms.size(); ++i) {
     if (frame_ms[i] > frame_ms[worst_i]) worst_i = i;
     if (frame_ms[i] > kFrameBudgetMs) {
-      if (cur == 0) { ++bursts; cur_at = i; }
-      if (++cur > longest) { longest = cur; longest_at = cur_at; }
+      if (cur == 0) {
+        ++bursts;
+        cur_at = i;
+      }
+      if (++cur > longest) {
+        longest = cur;
+        longest_at = cur_at;
+      }
     } else cur = 0;
   }
-  std::fprintf(stderr, "  worst frame #%zu at %.3f ms; %zu bursts, longest %zu frames from #%zu\n",
-               worst_i, frame_ms[worst_i], bursts, longest, longest_at);
+  std::fprintf(stderr, "  worst frame #%zu at %.3f ms; %zu bursts, longest %zu frames from #%zu\n", worst_i,
+               frame_ms[worst_i], bursts, longest, longest_at);
   // Ten windows over the run; a spike marks a section worth dumping.
   constexpr size_t W = 10;
   const size_t span = (frame_ms.size() + W - 1) / W;
@@ -59,4 +68,4 @@ inline void frame_report(const std::vector<double>& frame_ms, const char* label 
   std::fputc('\n', stderr);
 }
 
-}  // namespace ds
+} // namespace ds

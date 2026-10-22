@@ -6,7 +6,6 @@
 A  Apply	A  Aplicar
 A  Done	A  Concluir
 A  Play	A  Jogar
-A / Start	A / Start
 A gentle scanline pattern with original colours.	Linhas suaves com cores originais.
 A natural colour and contrast treatment.	Cores e contraste naturais.
 A screen style for this cartridge	Estilo de ecrã deste cartucho
@@ -14,20 +13,26 @@ A stronger LCD texture and scanline look.	Textura LCD e linhas de varrimento mai
 A subtle handheld LCD pixel pattern.	Predefinição subtil de pixels LCD portátil.
 A subtle pixel grid with a bright, readable image.	Grelha subtil com imagem clara e legível.
 Add your DS games to fetch their artwork.	Adicione jogos de DS para transferir as capas.
+Africa	África
 After	Depois
 All games	Todos os jogos
 Amber	Âmbar
-Anbernic / Escape cancels	Anbernic / Escape cancela
+Americas	Américas
 Anbernic startup is unavailable in RGDS OS.	O arranque Anbernic está indisponível no RGDS OS.
 Animations	Animações
+Antarctica	Antártida
 Applies immediately. Higher clocks use more battery.	Aplica-se imediatamente. Frequências maiores gastam mais bateria.
 Applies immediately. Your game keeps its progress.	Aplica-se imediatamente. O progresso do jogo é mantido.
 Apply	Aplicar
 Applying shader…	A aplicar filtro…
+Arctic	Ártico
 Artwork	Capas
 Artwork & ScreenScraper	Capas
 Artwork source	Fonte das capas
 Artwork sources	Fontes das capas
+Asia	Ásia
+Atlantic Ocean	Oceano Atlântico
+Australia	Austrália
 Auto-load state	Carregar automaticamente
 Auto-save on exit	Guardar ao sair
 Automatic	Automático
@@ -156,6 +161,7 @@ Engine managed	Gerido pelo emulador
 Enter here	Escreva aqui
 Enter password	Introduza a palavra-passe
 Enter your username and password	Introduza o nome de utilizador e a palavra-passe
+Europe	Europa
 Every game in this collection has artwork.	Todos os jogos desta coleção têm capa.
 FPS changed for this session. Settings storage is unavailable.	FPS alterado nesta sessão. Não foi possível guardar as definições.
 FPS counter enabled.	Contador de FPS ativado.
@@ -191,6 +197,7 @@ Global	Global
 Global controls saved.	Controlos globais guardados.
 Hold	Segurar
 Home shortcut	Atalho de início
+Indian Ocean	Oceano Índico
 Inherit	Herdar
 Inherited	Herdado
 Jump to letter	Ir para uma letra
@@ -265,6 +272,7 @@ Open the Anbernic menu	Abrir menu Anbernic
 Options	Opções
 Original pixels	Pixels originais
 Original pixels and colours.	Pixels e cores originais.
+Pacific	Pacífico
 PLAY	JOGAR
 Password	Palavra-passe
 Pause when you need to.	Faça uma pausa quando precisar.
@@ -504,8 +512,6 @@ Wi-Fi request timed out. Check signal and try again.	Tempo do Wi-Fi esgotado. Ve
 Wi-Fi service is unavailable.	Serviço Wi-Fi indisponível.
 With shader	Com filtro
 Working…	A processar…
-X Scene   Y Compare	X Cena   Y Comparar
-X Scene / Y Compare	X Cena / Y Comparar
 Your cartridges go here	Os seus cartuchos aparecem aqui
 Your home screen after powering on	O seu ecrã inicial ao ligar
 Your local time and date	A sua data e hora locais
@@ -572,17 +578,29 @@ Update verification failed. Check for updates again.	A verificação falhou. Pro
 Update failed. Check Wi-Fi and try again.	A atualização falhou. Verifique o Wi-Fi e tente novamente.
 Stable	Estável
 Testing	Testes
-Save to slot	Guardar na posição
 Import slot	Importar estado
-Load slot	Carregar estado
 Export slot	Exportar estado
-Undo overwrite	Desfazer substituição
-Undo load	Desfazer carregamento
+Save checkpoint	Guardar estado
+Load checkpoint	Carregar estado
+Save here	Guardar aqui
+Export	Exportar
+More	Mais
+Replace slot {0}?	Substituir o espaço {0}?
+Load slot {0}?	Carregar o espaço {0}?
+Delete slot {0}?	Apagar o espaço {0}?
+Undo last slot change	Anular a última alteração
+Undo last load	Anular o último carregamento
+Import into this slot	Importar para este espaço
+Slot {0} deleted.	Espaço {0} apagado.
+Slot change undone.	Alteração anulada.
+A saves your current progress here.	A guarda o teu progresso aqui.
+A replaces this slot with your current progress. X deletes it.	A substitui este espaço pelo teu progresso. X apaga-o.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A carrega este espaço. Anular o último carregamento, em Y, recupera o teu progresso atual.
+Nothing to load here yet.	Ainda não há nada para carregar aqui.
+A exports this slot to userdata/exports. X deletes it.	A exporta este espaço para userdata/exports. X apaga-o.
+Y imports a save into this slot.	Y importa um estado para este espaço.
 Import help	Ajuda de importação
-Save slot	Posição de estado
-Replace this save?	Substituir este estado?
 Replace	Substituir
-Load this save?	Carregar este estado?
 Blow into microphone	Soprar no microfone
 Close and open DS lid	Fechar e abrir o DS
 DS language	Idioma do DS
@@ -621,15 +639,12 @@ Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are
 Save backup created in userdata/exports.	Cópia de segurança criada em userdata/exports.
 Slot exported to userdata/exports.	Estado exportado para userdata/exports.
 Save library updated.	Biblioteca de estados atualizada.
-Save overwrite undone.	Substituição desfeita.
 Current progress could not be saved. No slot was changed.	Não foi possível guardar o progresso. Nenhuma posição foi alterada.
 DS controls are unavailable for this engine.	Funções do DS indisponíveis neste emulador.
 Your DS library starts here	A sua biblioteca DS começa aqui
 Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão e escolha Procurar jogos.
 Use the engine's native controls for microphone and DS settings.	Use os controlos do emulador para o microfone e as definições do DS.
 Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	O microfone real vem ativado. Sopro e tampa duram dois segundos no jogo. Reinicie para mudar o idioma.
-Save slots	Posições de estado
-Load slots	Carregar estados
 Unplayed	Não jogados
 Played	Jogados
 Filtered	Filtrados
@@ -652,9 +667,6 @@ Return home before testing the physical microphone.	Volte ao início antes de te
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Sopre ou fale para o microfone. O nível sobe e desce quando para.
 No filter	Sem filtro
 Quick search	Pesquisa rápida
-Y  Quick search	Y  Pesquisa rápida
-X  Filters	X  Filtros
-Y Search / X Filters	Y Pesquisar / X Filtros
 A  Search	A  Pesquisar
 A  Jump	A  Ir
 Edit search	Editar pesquisa
@@ -665,10 +677,8 @@ Finding games…	A procurar jogos…
 Searching…	A pesquisar…
 Search in	Pesquisar em
 Try a shorter title or clear your filter.	Tente um título mais curto ou limpe o filtro.
-A Key / Start Search / B Cancel	A Tecla / Start Pesquisar / B Cancelar
+Type	Escrever
 Tap to type, or use the D-pad and A	Toque para escrever ou use o comando direcional e A
-X Delete / Start Search	X Apagar / Start Pesquisar
-X Delete / Start Done	X Apagar / Start Concluir
 No letters to jump to. Search for another game.	Não há letras disponíveis. Pesquise outro jogo.
 {0} match	{0} resultado
 {0} matches	{0} resultados
@@ -737,7 +747,6 @@ Colour mode	Modo de cor
 Draw and chat with nearby handhelds	Desenha e conversa com consolas por perto
 Wi-Fi connected	Wi-Fi ligado
 No Wi-Fi: you can still draw	Sem Wi-Fi: ainda podes desenhar
-Press A to open	Prime A para abrir
 Type your name	Escreve o teu nome
 You appear like this to others	É assim que os outros te veem
 Starting…	A iniciar…
@@ -835,7 +844,7 @@ Natural	Natural
 Vivid	Vívido
 Pixel art	Pixel art
 Moods	Ambientes
-Up / Down or L / R: change group	Cima / Baixo ou L / R: mudar de grupo
+Change group	Mudar de grupo
 Sounds & music	Sons e música
 Menu music	Música do menu
 Music volume	Volume da música
@@ -852,3 +861,35 @@ The backup did not finish. Please try again.	A cópia de segurança não termino
 Copies every save and checkpoint into one zip in userdata/exports.	Copia todos os jogos guardados e pontos de controlo para um zip em userdata/exports.
 Where games go on the card, and a fresh scan.	Onde ficam os jogos no cartão, e uma nova procura.
 Where covers and titles come from.	De onde vêm as capas e os títulos.
+System update	Atualização do sistema
+Version {0} is ready	A versão {0} está pronta
+Version {0} is ready to install	A versão {0} está pronta a instalar
+Downloading {0}	A transferir {0}
+Paused at {0}	Em pausa em {0}
+Update now	Atualizar agora
+Resume download	Retomar transferência
+Update	Atualizar
+Install	Instalar
+What's new	Novidades
+Download	Transferir
+Verify	Verificar
+Prepare	Preparar
+Step {0} of 4	Passo {0} de 4
+Less than a minute left	Menos de um minuto
+About {0} min left	Cerca de {0} min restantes
+About {0} h left	Cerca de {0} h restantes
+Downloads resume where they stopped if Wi-Fi drops.	As transferências continuam onde pararam se o Wi-Fi falhar.
+Your games and saves are not touched.	Os teus jogos e gravações não são alterados.
+Connection lost. Retrying…	Ligação perdida. A tentar novamente…
+The update could not be downloaded. Check for updates again.	Não foi possível transferir a atualização. Procura atualizações novamente.
+Finishing another task. Press Y again in a moment.	A terminar outra tarefa. Prime Y novamente daqui a pouco.
+Updates	Atualizações
+The language for menus and messages.	O idioma dos menus e mensagens.
+Set the clock to where you are.	Acerte o relógio para onde está.
+How dates appear at the top of the screen.	Como as datas aparecem no topo do ecrã.
+A 24-hour or 12-hour clock.	Um relógio de 24 ou 12 horas.
+Versions, free space and the network address of your handheld.	Versões, espaço livre e endereço de rede da sua consola.
+Check for updates, go back to the previous build or clear temporary files.	Procure atualizações, volte à versão anterior ou limpe ficheiros temporários.
+Leave RG DS Core and go back to the stock menu.	Saia do RG DS Core e volte ao menu original.
+What happens when you turn the handheld on.	O que acontece ao ligar a consola.
+Restart the RGDS menu.	Reinicie o menu RGDS.

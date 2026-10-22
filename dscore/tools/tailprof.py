@@ -16,7 +16,7 @@ series, script = sys.argv[1], sys.argv[2]
 tail_pct = float(sys.argv[3]) if len(sys.argv) > 3 else 95.0
 HZ = 4999.0
 
-frames = []   # (emu_ms, start_ns, end_ns)
+frames = []  # (emu_ms, start_ns, end_ns)
 for l in open(series):
     p = l.split()
     if len(p) >= 4: frames.append((float(p[0]), int(p[2]), int(p[3])))
@@ -33,34 +33,57 @@ outside = 0
 for l in open(script):
     m = re.match(r'\s*(\d+\.\d+):\s*([0-9a-f]+)\s*(.*)', l)
     if not m: continue
-    t = int(round(float(m.group(1)) * 1e9)); sym = m.group(3).strip() or '[unknown]'
+    t = int(round(float(m.group(1)) * 1e9))
+    sym = m.group(3).strip() or '[unknown]'
     if sym == '[unknown]': sym = '0x' + m.group(2)
     elif m.group(2).startswith('ffff'): sym = '[k] ' + sym
     k = bisect.bisect_right(starts, t) - 1
-    if k < 0: outside += 1; continue
+    if k < 0:
+        outside += 1
+        continue
     i = frames_by_start[k]
-    if t > frames[i][2]: outside += 1; continue
+    if t > frames[i][2]:
+        outside += 1
+        continue
     if i in tail: cnt['tail'][sym] += 1
     elif i in mid: cnt['mid'][sym] += 1
 
 ms = 1000.0 / HZ
-def per_frame(c, nf): return {s: v * ms / nf for s, v in c.items()}
-T = per_frame(cnt['tail'], len(tail)); M = per_frame(cnt['mid'], len(mid))
 
-rules = [('jit code', r'^jit[79]_'), ('jit stubs', r'jit_stub'), ('jit helpers/slice', r'jit_h_|ds::jit::|ds_slice|bios_sha'),
-         ('3d geometry', r'Gpu3D|gxfifo|TextureCache|Renderer3D|Polygon|finalise_list'), ('2d', r'Engine2D|kern::|output_line|gpu::Gpu::'),
-         ('dma', r'dma::'), ('spu', r'spu::'), ('io/bus/mem', r'io::|mem::|Bus::|PageTable'), ('scheduler', r'Scheduler|sched::'),
-         ('interp', r'interp::'), ('libc/kernel', r'memcmp|memcpy|memset|\[k\]|^0xffff'), ('unresolved', r'^\[unknown\]|^0x')]
+
+def per_frame(c, nf):
+    return {s: v * ms / nf for s, v in c.items()}
+
+
+T = per_frame(cnt['tail'], len(tail))
+M = per_frame(cnt['mid'], len(mid))
+
+rules = [
+    ('jit code', r'^jit[79]_'), ('jit stubs', r'jit_stub'),
+    ('jit helpers/slice', r'jit_h_|ds::jit::|ds_slice|bios_sha'),
+    ('3d geometry', r'Gpu3D|gxfifo|TextureCache|Renderer3D|Polygon|finalise_list'),
+    ('2d', r'Engine2D|kern::|output_line|gpu::Gpu::'), ('dma', r'dma::'), ('spu', r'spu::'),
+    ('io/bus/mem', r'io::|mem::|Bus::|PageTable'), ('scheduler', r'Scheduler|sched::'), ('interp', r'interp::'),
+    ('libc/kernel', r'memcmp|memcpy|memset|\[k\]|^0xffff'), ('unresolved', r'^\[unknown\]|^0x')
+]
+
+
 def bucket(s):
     for k, r in rules:
         if re.search(r, s): return k
     return 'other'
+
+
 BT, BM = collections.Counter(), collections.Counter()
-for s, v in T.items(): BT[bucket(s)] += v
-for s, v in M.items(): BM[bucket(s)] += v
+for s, v in T.items():
+    BT[bucket(s)] += v
+for s, v in M.items():
+    BM[bucket(s)] += v
 
 emu = lambda idx: sum(frames[i][0] for i in idx) / max(1, len(idx))
-print(f"frames {n}: tail p{tail_pct:.0f}+ {len(tail)} frames, emu {emu(tail):.2f} ms; typical {len(mid)} frames, emu {emu(mid):.2f} ms; samples outside frames {outside}")
+print(
+    f"frames {n}: tail p{tail_pct:.0f}+ {len(tail)} frames, emu {emu(tail):.2f} ms; typical {len(mid)} frames, emu {emu(mid):.2f} ms; samples outside frames {outside}"
+)
 print(f"sampled emu-thread ms/frame: tail {sum(T.values()):.2f}  typical {sum(M.values()):.2f}")
 print(f"{'bucket':20s} {'typ ms':>8s} {'tail ms':>8s} {'delta':>8s}")
 for k in sorted(set(BT) | set(BM), key=lambda k: -(BT[k] - BM[k])):

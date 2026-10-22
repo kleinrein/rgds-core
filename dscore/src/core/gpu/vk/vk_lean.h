@@ -27,22 +27,22 @@ public:
   Lean& operator=(const Lean&) = delete;
 
   bool ready() const { return ready_; }
-  bool msaa() const;   // 4x MSAA in use (else 1 sample: the device could not)
+  bool msaa() const; // 4x MSAA in use (else 1 sample: the device could not)
 
   // Frame input: polygons, vertices and post tables are host staging
   // (rewritten freely between submits); the texel arena is mapped device
   // memory, append-only until wait_all() (write only, never read back).
   GpuPoly* poly_buffer();
   GpuVert* vert_buffer();
-  u32*     texel_buffer(u32* capacity);
+  u32* texel_buffer(u32* capacity);
   // RG DS: the textures' 2D atlas. place() reserves a w x h rectangle (DS
   // sizes, powers of two) and returns its corner as x | y << 16, or false
   // when the atlas is full (the caller then waits all and resets, as for
   // the arena). upload() queues the copy of texels already written to the
   // arena at `word` into that rectangle; the next submit records it.
-  bool     atlas_place(u32 w, u32 h, u32* corner);
-  void     atlas_upload(u32 word, u32 corner, u32 w, u32 h);
-  void     atlas_reset();
+  bool atlas_place(u32 w, u32 h, u32* corner);
+  void atlas_upload(u32 word, u32 corner, u32 w, u32 h);
+  void atlas_reset();
   GpuPost* post_buffer();
 
   // Draw the frame into the next of four output slots; false if refused.
@@ -52,7 +52,7 @@ public:
   // buffers); the caller only waits before rewriting the texel arena.
   bool submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& f);
   void wait();
-  void wait_all();   // every frame in flight done; the texel arena may be rewritten from the start
+  void wait_all(); // every frame in flight done; the texel arena may be rewritten from the start
   // (256*scale)*(192*scale) words: RGB666 in bits 0-21, 5-bit alpha in bits 24-28 (the CPU raster's layout).
   const u32* output();
   // The lag rule: the newest frame if the GPU has finished it; else, when
@@ -72,10 +72,17 @@ public:
   u32 draws() const;
   // Diagnostics (DS_GPU_TRACE): CPU ms of the last submit's command recording
   // and queue submit; how newest_ready() resolved since the last reset.
-  struct Stats { double record_ms = 0, queue_ms = 0, slot_wait_ms = 0, prep_ms = 0, gpu_ms = 0; u32 newest = 0, lagged = 0, stalled = 0, nolag = 0, timed = 0; double lat_ms = 0; u32 lat_n = 0; double gap_ms = 0; u32 gap_n = 0; };   // gap: submit to the first read of that frame   // lat: submit to signal, exact from blocking waits
+  struct Stats {
+    double record_ms = 0, queue_ms = 0, slot_wait_ms = 0, prep_ms = 0, gpu_ms = 0;
+    u32 newest = 0, lagged = 0, stalled = 0, nolag = 0, timed = 0;
+    double lat_ms = 0;
+    u32 lat_n = 0;
+    double gap_ms = 0;
+    u32 gap_n = 0;
+  }; // gap: submit to the first read of that frame   // lat: submit to signal, exact from blocking waits
   Stats stats(bool reset);
 
-  struct Impl;   // public for the file-local helpers
+  struct Impl; // public for the file-local helpers
 private:
   Lean() = default;
   std::unique_ptr<Impl> d_;

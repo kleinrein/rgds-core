@@ -6,7 +6,9 @@
 #include <string>
 #include <vector>
 
-namespace ds { struct NDS; }
+namespace ds {
+struct NDS;
+}
 
 namespace ds::cheat {
 
@@ -16,10 +18,10 @@ namespace ds::cheat {
 // invalidate JIT blocks).
 struct Code {
   std::string name;
-  std::string description;   // often empty
-  int group = -1;            // index into GameCheats::groups, -1 for none
+  std::string description; // often empty
+  int group = -1;          // index into GameCheats::groups, -1 for none
   bool enabled = false;
-  std::vector<u32> words;    // an even number; an odd tail is ignored
+  std::vector<u32> words; // an even number; an odd tail is ignored
 
   bool is_note() const { return words.empty(); }
 };

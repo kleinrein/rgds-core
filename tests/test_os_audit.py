@@ -19,12 +19,14 @@ class OsAuditTests(unittest.TestCase):
     def test_probe_reads_fixture_without_changing_files_or_claiming_acceptance(self):
         with tempfile.TemporaryDirectory() as folder:
             base = Path(folder)
-            facts = {"proc/device-tree/model": "Rockchip RK3568 Board\0",
-                     "proc/device-tree/compatible": "rockchip,rk3568\0",
-                     "proc/meminfo": "MemTotal:        2990000 kB\n",
-                     "sys/class/drm/card0-DSI-1/status": "connected\n",
-                     "sys/power/state": "freeze mem\n",
-                     "etc/os-release": 'ID=buildroot\nPASSWORD=private\n'}
+            facts = {
+                "proc/device-tree/model": "Rockchip RK3568 Board\0",
+                "proc/device-tree/compatible": "rockchip,rk3568\0",
+                "proc/meminfo": "MemTotal:        2990000 kB\n",
+                "sys/class/drm/card0-DSI-1/status": "connected\n",
+                "sys/power/state": "freeze mem\n",
+                "etc/os-release": 'ID=buildroot\nPASSWORD=private\n'
+            }
             for name, value in facts.items():
                 path = base / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -39,8 +41,10 @@ class OsAuditTests(unittest.TestCase):
             self.assertEqual(before, {str(p): p.read_bytes() for p in base.rglob("*") if p.is_file()})
 
     def test_mount_password_options_are_not_captured(self):
-        report = os_probe.mounts("//server/share /mnt/share cifs rw,password=private,user=alice 0 0\n"
-                                 "/dev/mmcblk1p4 /mnt/mmc vfat ro,relatime 0 0\n")
+        report = os_probe.mounts(
+            "//server/share /mnt/share cifs rw,password=private,user=alice 0 0\n"
+            "/dev/mmcblk1p4 /mnt/mmc vfat ro,relatime 0 0\n"
+        )
         self.assertTrue(report[0]["writable"])
         self.assertFalse(report[1]["writable"])
         self.assertNotIn("private", json.dumps(report))
@@ -66,8 +70,9 @@ class OsAuditTests(unittest.TestCase):
 
     def test_ssh_uses_verified_key_and_python_stdin_without_upload(self):
         expected = {"schema": 1, "read_only": True, "system": {"machine": "aarch64"}}
-        with patch.object(os_audit.subprocess, "run", return_value=subprocess.CompletedProcess(
-                [], 0, stdout=json.dumps(expected))) as run:
+        with patch.object(
+            os_audit.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(expected))
+        ) as run:
             self.assertEqual(os_audit.probe("root@device", [Path("/userdata/rgds's test")]), expected)
         command = run.call_args.args[0]
         self.assertIn("StrictHostKeyChecking=yes", command)
@@ -78,23 +83,38 @@ class OsAuditTests(unittest.TestCase):
 
     def test_invalid_target_and_root_never_contact_device(self):
         with patch.object(os_audit.subprocess, "run") as run:
-            for target, roots in (("-oProxyCommand=bad", []), ("root@device", [Path("relative")]),
-                                  ("root@device", [Path("/userdata/../etc")])):
+            for target, roots in (
+                ("-oProxyCommand=bad", []), ("root@device", [Path("relative")]),
+                ("root@device", [Path("/userdata/../etc")])
+            ):
                 with self.assertRaises(ValueError):
                     os_audit.probe(target, roots)
             run.assert_not_called()
 
     def test_wrong_architecture_is_not_accepted(self):
-        with patch.object(os_audit.subprocess, "run", return_value=subprocess.CompletedProcess(
-                [], 0, stdout=json.dumps({"schema": 1, "read_only": True,
-                                         "system": {"machine": "x86_64"}}))):
+        with patch.object(
+            os_audit.subprocess,
+            "run",
+            return_value=subprocess.CompletedProcess(
+                [], 0, stdout=json.dumps({
+                    "schema": 1,
+                    "read_only": True,
+                    "system": {
+                        "machine": "x86_64"
+                    }
+                })
+            )
+        ):
             with self.assertRaises(ValueError):
                 os_audit.probe("root@device", [])
 
     def test_malformed_report_is_rejected_as_evidence(self):
         for evidence in ([], {"schema": 1, "read_only": True, "system": []}):
-            with patch.object(os_audit.subprocess, "run", return_value=subprocess.CompletedProcess(
-                    [], 0, stdout=json.dumps(evidence))):
+            with patch.object(
+                os_audit.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(evidence))
+            ):
                 with self.assertRaises(ValueError):
                     os_audit.probe("root@device", [])
 

@@ -19,9 +19,11 @@ ENGINE = 'rgds-experimental'
 class DirectDisplayPlanTests(Fixture):
     def prepare(self):
         self.binary(ENGINE)
-        bridge = self.app/'emulators/hooks/librgdsbridge.so'
-        bridge.parent.mkdir(parents=True); bridge.write_bytes(b'bridge')
-        rom = self.root/'Kart.nds'; rom.write_bytes(b'0123456789abAMCE' + bytes(512))
+        bridge = self.app / 'emulators/hooks/librgdsbridge.so'
+        bridge.parent.mkdir(parents=True)
+        bridge.write_bytes(b'bridge')
+        rom = self.root / 'Kart.nds'
+        rom.write_bytes(b'0123456789abAMCE' + bytes(512))
         return rom
 
     def plan(self, rom):
@@ -31,9 +33,9 @@ class DirectDisplayPlanTests(Fixture):
 
     def test_game_choice_wins_over_the_global_preference_and_default_is_off(self):
         rom = self.prepare()
-        game = self.data/'library'/game_key(rom)/'game.ini'
+        game = self.data / 'library' / game_key(rom) / 'game.ini'
         self.assertEqual(game_options(self.data, rom)['rgds_direct'], 0)
-        write_fields(self.data/'preferences.ini', dict(schema=1, rgds_direct=1))
+        write_fields(self.data / 'preferences.ini', dict(schema=1, rgds_direct=1))
         self.assertEqual(game_options(self.data, rom)['rgds_direct'], 1)
         write_fields(game, dict(rgds_direct=0))
         self.assertEqual(game_options(self.data, rom)['rgds_direct'], 0)
@@ -42,15 +44,15 @@ class DirectDisplayPlanTests(Fixture):
 
     def test_display_files_survive_the_launcher_rewriting_game_ini(self):
         rom = self.prepare()
-        folder = self.data/'library'/game_key(rom)
-        write_fields(folder/'display.ini', dict(direct=1))
+        folder = self.data / 'library' / game_key(rom)
+        write_fields(folder / 'display.ini', dict(direct=1))
         # The launcher's GameOptions writer keeps only the keys it knows.
-        write_fields(folder/'game.ini', dict(schema=1, rgds_scale=2))
+        write_fields(folder / 'game.ini', dict(schema=1, rgds_scale=2))
         self.assertEqual(game_options(self.data, rom)['rgds_direct'], 1)
-        write_fields(folder/'display.ini', dict(direct=0))
-        write_fields(self.data/'display.ini', dict(direct=1))
+        write_fields(folder / 'display.ini', dict(direct=0))
+        write_fields(self.data / 'display.ini', dict(direct=1))
         self.assertEqual(game_options(self.data, rom)['rgds_direct'], 0)
-        (folder/'display.ini').unlink()
+        (folder / 'display.ini').unlink()
         self.assertEqual(game_options(self.data, rom)['rgds_direct'], 1)
 
     def test_opted_in_engine_presents_on_kms_with_a_live_menu(self):
@@ -60,20 +62,23 @@ class DirectDisplayPlanTests(Fixture):
         self.assertEqual(plain['env']['SDL_VIDEODRIVER'], 'wayland')
         self.assertEqual(plain['env']['RGDS_MENU_LIVE'], '0')
         self.assertEqual(plain['env']['SDL_RENDER_VSYNC'], '0')
-        config = configparser.ConfigParser(); config.read(self.data/'emulators'/ENGINE/'config.ini')
+        config = configparser.ConfigParser()
+        config.read(self.data / 'emulators' / ENGINE / 'config.ini')
         self.assertEqual(config['video']['sink'], 'renderer')
-        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=1))
+        write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=1))
         plan = self.plan(rom)
         self.assertEqual(plan['display'], 'kms')
         # Direct scanout for the engine's frames: dma-buf buffers page-flipped
         # with no GL job in the frame's path (the bridge's present hook
         # blends the menu). DS_RGDS_SINK keeps the renderer for A/B runs.
-        config = configparser.ConfigParser(); config.read(self.data/'emulators'/ENGINE/'config.ini')
+        config = configparser.ConfigParser()
+        config.read(self.data / 'emulators' / ENGINE / 'config.ini')
         self.assertEqual(config['video']['sink'], 'auto')
         self.assertEqual(config['video']['gpu_present'], 'false')
         with patch.dict(os.environ, DS_RGDS_SINK='renderer'):
             self.plan(rom)
-        config = configparser.ConfigParser(); config.read(self.data/'emulators'/ENGINE/'config.ini')
+        config = configparser.ConfigParser()
+        config.read(self.data / 'emulators' / ENGINE / 'config.ini')
         self.assertEqual(config['video']['sink'], 'renderer')
         self.plan(rom)
         self.assertEqual(plan['env']['SDL_VIDEODRIVER'], 'KMSDRM')
@@ -87,9 +92,12 @@ class DirectDisplayPlanTests(Fixture):
         self.assertEqual(plan['env']['SDL_RENDER_VSYNC'], '0')
         # A failed stop puts the engine back on Weston with the paused menu.
         direct_display.use_wayland(plan['env'], plan['wayland'])
-        self.assertEqual({key: plan['env'][key] for key in ('WAYLAND_DISPLAY', 'SDL_VIDEODRIVER', 'RGDS_MENU_LIVE')},
-                         dict(WAYLAND_DISPLAY='wayland-0', SDL_VIDEODRIVER='wayland', RGDS_MENU_LIVE='0'))
-        self.assertEqual(plan['env']['SDL_RENDER_VSYNC'], '0')   # DSCore paces itself on Weston too
+        self.assertEqual(
+            {key: plan['env'][key]
+             for key in ('WAYLAND_DISPLAY', 'SDL_VIDEODRIVER', 'RGDS_MENU_LIVE')},
+            dict(WAYLAND_DISPLAY='wayland-0', SDL_VIDEODRIVER='wayland', RGDS_MENU_LIVE='0')
+        )
+        self.assertEqual(plan['env']['SDL_RENDER_VSYNC'], '0')  # DSCore paces itself on Weston too
         self.assertEqual(plan['wayland_command'], plain['command'])
 
     def test_a_host_sleep_leaves_the_emulated_lid_alone(self):
@@ -97,30 +105,32 @@ class DirectDisplayPlanTests(Fixture):
         # hinge pulse on resume left games asleep with the panels off.
         rom = self.prepare()
         for direct in (0, 1):
-            write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=direct))
+            write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=direct))
             self.assertEqual(self.plan(rom)['env']['DS_LID_PULSE'], '0')
 
     def test_a_chosen_screen_filter_keeps_the_renderer_sink_on_kms(self):
         # The filter is the bridge's GL pass over the renderer's game draw; the
         # direct present has no GPU stage, so the KMS plan keeps the renderer.
         rom = self.prepare()
-        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=1, filter=6))
+        write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=1, filter=6))
         plan = self.plan(rom)
         self.assertEqual(plan['display'], 'kms')
         self.assertEqual(plan['env']['RGDS_SHADER'], '6')
         self.assertEqual(plan['env']['DS_DIRECT_PRESENT'], '0')
-        config = configparser.ConfigParser(); config.read(self.data/'emulators'/ENGINE/'config.ini')
+        config = configparser.ConfigParser()
+        config.read(self.data / 'emulators' / ENGINE / 'config.ini')
         self.assertEqual(config['video']['sink'], 'renderer')
         self.assertEqual(config['video']['gpu_present'], 'false')
-        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=1, filter=0))
+        write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=1, filter=0))
         plan = self.plan(rom)
         self.assertNotIn('DS_DIRECT_PRESENT', plan['env'])
-        config = configparser.ConfigParser(); config.read(self.data/'emulators'/ENGINE/'config.ini')
+        config = configparser.ConfigParser()
+        config.read(self.data / 'emulators' / ENGINE / 'config.ini')
         self.assertEqual(config['video']['sink'], 'auto')
 
     def test_other_engines_and_independent_linux_keep_weston(self):
         rom = self.prepare()
-        write_fields(self.data/'library'/game_key(rom)/'game.ini', dict(rgds_direct=1))
+        write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=1))
         with patch.dict(os.environ, WAYLAND_DISPLAY='wayland-0'), patch('direct_display.available', return_value=False):
             self.assertNotIn('display', emulators.launch_plan(ENGINE, self.app, self.data, rom))
         self.binary('melonds')
@@ -140,17 +150,20 @@ class GpuFaultTests(Fixture):
 class DirectDisplayLifecycleTests(Fixture):
     def setUp(self):
         super().setUp()
-        self.marker = self.root/'weston-stopped.json'
+        self.marker = self.root / 'weston-stopped.json'
         self.events = []
         self.running = True
-        patches = [patch.object(direct_display, 'MARKER', self.marker),
-                   patch.object(direct_display, 'LOCK', self.root/'weston.lock'),
-                   patch.object(direct_display, 'weston_running', side_effect=lambda: self.running),
-                   patch.object(direct_display, 'ready', side_effect=lambda: self.running),
-                   patch.object(direct_display.subprocess, 'run', side_effect=self.init_run),
-                   patch.object(direct_display.subprocess, 'Popen', side_effect=self.init_popen)]
+        patches = [
+            patch.object(direct_display, 'MARKER', self.marker),
+            patch.object(direct_display, 'LOCK', self.root / 'weston.lock'),
+            patch.object(direct_display, 'weston_running', side_effect=lambda: self.running),
+            patch.object(direct_display, 'ready', side_effect=lambda: self.running),
+            patch.object(direct_display.subprocess, 'run', side_effect=self.init_run),
+            patch.object(direct_display.subprocess, 'Popen', side_effect=self.init_popen)
+        ]
         for item in patches:
-            item.start(); self.addCleanup(item.stop)
+            item.start()
+            self.addCleanup(item.stop)
 
     def init_run(self, command, **options):
         self.events.append(command[-1])
@@ -161,8 +174,11 @@ class DirectDisplayLifecycleTests(Fixture):
         self.events.append(command[-1])
         self.assertTrue(options.get('start_new_session'), 'Weston must not join the launcher process group')
         self.running = True
+
         class Script:
-            def wait(self, timeout=None): return 0
+            def wait(self, timeout=None):
+                return 0
+
         return Script()
 
     def test_stop_once_across_engine_restarts_then_restore_once(self):
@@ -173,8 +189,9 @@ class DirectDisplayLifecycleTests(Fixture):
         display.restore()
         self.assertEqual(self.events, ['stop', 'start'])
         self.assertFalse(self.marker.exists())
-        timings = json.loads((self.data/'session/direct-display.json').read_text())
-        self.assertIn('weston_stop_seconds', timings); self.assertIn('weston_start_seconds', timings)
+        timings = json.loads((self.data / 'session/direct-display.json').read_text())
+        self.assertIn('weston_stop_seconds', timings)
+        self.assertIn('weston_start_seconds', timings)
         display.restore()
         self.assertEqual(self.events, ['stop', 'start'])
 
@@ -187,6 +204,7 @@ class DirectDisplayLifecycleTests(Fixture):
 
     def test_weston_that_will_not_stop_keeps_the_game_on_wayland(self):
         display = direct_display.DirectDisplay(self.data)
+
         def stuck(command, **options):
             self.events.append(command[-1])
         with patch.object(direct_display.subprocess, 'run', side_effect=stuck), \
@@ -212,16 +230,20 @@ class DirectDisplayLifecycleTests(Fixture):
 
     def test_runner_restores_weston_when_the_game_fails(self):
         restored = []
+
         class Display:
-            def __init__(self, data): pass
-            def restore(self): restored.append(True)
+            def __init__(self, data):
+                pass
+
+            def restore(self):
+                restored.append(True)
         with patch('direct_display.DirectDisplay', Display), \
                 patch.object(emulators, '_run_once', side_effect=OSError('engine failed')):
             with self.assertRaises(OSError):
-                emulators.run(ENGINE, self.app, self.data, self.root/'game.nds')
+                emulators.run(ENGINE, self.app, self.data, self.root / 'game.nds')
         self.assertEqual(restored, [True])
         with patch('direct_display.DirectDisplay', Display), patch.object(emulators, '_run_once', return_value=0):
-            self.assertEqual(emulators.run(ENGINE, self.app, self.data, self.root/'game.nds'), 0)
+            self.assertEqual(emulators.run(ENGINE, self.app, self.data, self.root / 'game.nds'), 0)
         self.assertEqual(restored, [True, True])
 
 

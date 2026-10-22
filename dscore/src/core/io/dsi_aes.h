@@ -18,10 +18,10 @@ public:
   template <class S> void sync_state(S& s);
 
   // Register file, offsets from 0x04004400. IV/MAC/key writes come through with a byte mask.
-  u32  read_cnt() const;
+  u32 read_cnt() const;
   void write_cnt(u32 value);
   void write_blkcnt(u32 value);
-  u32  read_output_fifo();
+  u32 read_output_fifo();
   void write_input_fifo(u32 value);
   void write_iv(u32 offset, u32 value, u32 mask);
   void write_mac(u32 offset, u32 value, u32 mask);
@@ -40,14 +40,25 @@ private:
   struct Fifo {
     u32 entries[16] = {};
     u32 occupied = 0, rd = 0, wr = 0;
-    void clear() { occupied = rd = wr = 0; entries[0] = 0; }
+    void clear() {
+      occupied = rd = wr = 0;
+      entries[0] = 0;
+    }
     bool empty() const { return occupied == 0; }
     bool full() const { return occupied >= 16; }
     u32 level() const { return occupied; }
-    void write(u32 v) { if (full()) return; entries[wr] = v; if (++wr >= 16) wr = 0; ++occupied; }
-    u32 read() {                       // an empty FIFO re-reads the last entry
+    void write(u32 v) {
+      if (full()) return;
+      entries[wr] = v;
+      if (++wr >= 16) wr = 0;
+      ++occupied;
+    }
+    u32 read() { // an empty FIFO re-reads the last entry
       if (empty()) return entries[(rd == 0 ? 16 : rd) - 1];
-      const u32 v = entries[rd]; if (++rd >= 16) rd = 0; --occupied; return v;
+      const u32 v = entries[rd];
+      if (++rd >= 16) rd = 0;
+      --occupied;
+      return v;
     }
   };
   void update();

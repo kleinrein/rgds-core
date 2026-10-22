@@ -9,18 +9,28 @@
 # a melonDS trace harness can take as --touch / --key, so one script drives both.
 import struct, sys
 # usage: mkdsin.py out.dsin frames [F:x,y[:N]]... [kF:mask[:N]]...  (touch, or key mask held)
-out=sys.argv[1]; n=int(sys.argv[2]); taps=[]; keys=[]
+out = sys.argv[1]
+n = int(sys.argv[2])
+taps = []
+keys = []
 for t in sys.argv[3:]:
     if t.startswith('k'):
-        f,rest=t[1:].split(':',1); m,_,nn=rest.partition(':'); keys.append((int(f),int(m,0),int(nn or 10)))
+        f, rest = t[1:].split(':', 1)
+        m, _, nn = rest.partition(':')
+        keys.append((int(f), int(m, 0), int(nn or 10)))
     else:
-        f,rest=t.split(':',1); xy,_,nn=rest.partition(':'); x,y=xy.split(','); taps.append((int(f),int(x),int(y),int(nn or 10)))
-with open(out,'wb') as o:
-    o.write(b'DSIN'+struct.pack('<II',2,n)+b'\0'*4)
+        f, rest = t.split(':', 1)
+        xy, _, nn = rest.partition(':')
+        x, y = xy.split(',')
+        taps.append((int(f), int(x), int(y), int(nn or 10)))
+with open(out, 'wb') as o:
+    o.write(b'DSIN' + struct.pack('<II', 2, n) + b'\0' * 4)
     for i in range(n):
-        x=y=0; down=0; b=0
-        for f,tx,ty,nn in taps:
-            if f<=i<f+nn: x,y,down=tx,ty,1
-        for f,m,nn in keys:
-            if f<=i<f+nn: b|=m
-        o.write(struct.pack('<HBBB',b,x,y,down)+b'\0'*3+b'\0'*8)
+        x = y = 0
+        down = 0
+        b = 0
+        for f, tx, ty, nn in taps:
+            if f <= i < f + nn: x, y, down = tx, ty, 1
+        for f, m, nn in keys:
+            if f <= i < f + nn: b |= m
+        o.write(struct.pack('<HBBB', b, x, y, down) + b'\0' * 3 + b'\0' * 8)

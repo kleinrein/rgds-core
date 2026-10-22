@@ -6,16 +6,19 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'),'Host C++/SDL headers required')
+@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'Host C++/SDL headers required')
 class NativeFilterTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.temp=tempfile.TemporaryDirectory();cls.root=Path(cls.temp.name)
-        source=cls.root/'filter.cpp';cls.binary=cls.root/'filter'
-        source.write_text(r'''
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temp.name)
+        source = cls.root / 'filter.cpp'
+        cls.binary = cls.root / 'filter'
+        source.write_text(
+            r'''
 #define RGDS_BRIDGE_TESTS
 #include "platform/emulator_bridge.cpp"
 #include <cassert>
@@ -51,29 +54,50 @@ int main(int argc,char** argv){
  SDL_DestroyTexture(game);assert(!native_textures.count(game));SDL_DestroyTexture(icon);assert(native_textures.empty());
  rgds::overlay_sdl<decltype(&SDL_DestroyRenderer)>("SDL_DestroyRenderer")(renderer);rgds::overlay_sdl<decltype(&SDL_FreeSurface)>("SDL_FreeSurface")(bitmap);rgds::overlay_sdl<decltype(&SDL_Quit)>("SDL_Quit")();
 }
-''')
-        flags=subprocess.check_output(['sdl2-config','--cflags'],text=True).split()
-        build=subprocess.run(['clang++','-std=c++17','-O2',*flags,'-I'+str(ROOT/'src'),str(source),'-o',str(cls.binary)],capture_output=True,text=True)
-        if build.returncode:raise AssertionError(build.stderr)
-        prefix=Path(subprocess.check_output(['sdl2-config','--prefix'],text=True).strip())
-        cls.library=prefix/('lib/libSDL2.dylib' if os.uname().sysname=='Darwin' else 'lib/libSDL2-2.0.so.0')
-        stub=cls.root/'stub.cpp';stub.write_text('extern "C" int SDL_QueryTexture(void*,void*,void*,int*,int*){return 0;}\n')
-        cls.missing=cls.root/('stub.dylib' if os.uname().sysname=='Darwin' else 'stub.so')
-        subprocess.run(['clang++','-shared','-fPIC',str(stub),'-o',str(cls.missing)],check=True,capture_output=True,text=True)
+'''
+        )
+        flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
+        build = subprocess.run(
+            ['clang++', '-std=c++17', '-O2', *flags, '-I' + str(ROOT / 'src'),
+             str(source), '-o',
+             str(cls.binary)],
+            capture_output=True,
+            text=True
+        )
+        if build.returncode: raise AssertionError(build.stderr)
+        prefix = Path(subprocess.check_output(['sdl2-config', '--prefix'], text=True).strip())
+        cls.library = prefix / ('lib/libSDL2.dylib' if os.uname().sysname == 'Darwin' else 'lib/libSDL2-2.0.so.0')
+        stub = cls.root / 'stub.cpp'
+        stub.write_text('extern "C" int SDL_QueryTexture(void*,void*,void*,int*,int*){return 0;}\n')
+        cls.missing = cls.root / ('stub.dylib' if os.uname().sysname == 'Darwin' else 'stub.so')
+        subprocess.run(
+            ['clang++', '-shared', '-fPIC', str(stub), '-o',
+             str(cls.missing)],
+            check=True,
+            capture_output=True,
+            text=True
+        )
 
     @classmethod
-    def tearDownClass(cls):cls.temp.cleanup()
+    def tearDownClass(cls):
+        cls.temp.cleanup()
 
-    def run_fixture(self,mode,library):
+    def run_fixture(self, mode, library):
         with tempfile.TemporaryDirectory() as folder:
-            result=subprocess.run([str(self.binary),folder,mode],env=dict(os.environ,RGDS_SDL_LIBRARY=str(library)),capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            result = subprocess.run(
+                [str(self.binary), folder, mode],
+                env=dict(os.environ, RGDS_SDL_LIBRARY=str(library)),
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_software_renderer_preserves_pixels_and_leaves_ui_textures_alone(self):
-        self.run_fixture('native',self.library)
+        self.run_fixture('native', self.library)
 
     def test_missing_renderer_api_reports_failure_without_requesting_a_restart(self):
-        self.run_fixture('missing',self.missing)
+        self.run_fixture('missing', self.missing)
 
 
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

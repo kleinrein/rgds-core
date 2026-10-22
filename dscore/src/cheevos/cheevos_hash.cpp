@@ -12,16 +12,18 @@
 namespace ds::cheevos {
 namespace {
 
-using ds::u8;
+using ds::s64;
 using ds::u32;
 using ds::u64;
-using ds::s64;
+using ds::u8;
 
 // rcheevos' file-open callback takes no userdata, so the source is reached via
 // a static; thread_local so hashing works from more than one thread.
 thread_local const cart::RomSource* t_src = nullptr;
 
-struct Cursor { u64 pos = 0; };
+struct Cursor {
+  u64 pos = 0;
+};
 
 void* rs_open(const char*) {
   if (!t_src) return nullptr;
@@ -56,11 +58,13 @@ void rs_error(const char* message, const rc_hash_iterator_t*) { std::fprintf(std
 
 } // namespace
 
-bool rom_hash(const cart::RomSource& src, const std::string& name,
-              std::string& out, std::string& err, bool dsi) {
+bool rom_hash(const cart::RomSource& src, const std::string& name, std::string& out, std::string& err, bool dsi) {
   out.clear();
   err.clear();
-  if (src.size() < 0x200) { err = "too small to be a DS ROM"; return false; }
+  if (src.size() < 0x200) {
+    err = "too small to be a DS ROM";
+    return false;
+  }
 
   rc_hash_iterator_t it;
   // Fixed synthetic name: a ".nds" extension picks the single-console path

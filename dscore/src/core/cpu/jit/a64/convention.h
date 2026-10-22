@@ -31,8 +31,9 @@ namespace ds::jit {
 //
 // Guest NZCV live in the host NZCV; the rest of CPSR lives in memory.
 constexpr u32 R_BUDGET = 8, R_PT = 14, R_TIM = 15, R_ARENA = 18, R_CTX = 29, R_LR = 30;
-constexpr u32 SCRATCH0 = 0, SCRATCH1 = 1, SCRATCH2 = 2, SCRATCH3 = 3, SCRATCH4 = 4, SCRATCH5 = 5, SCRATCH6 = 6, SCRATCH7 = 7;
-constexpr u32 R_FN = 16;        // function address for the call stubs
+constexpr u32 SCRATCH0 = 0, SCRATCH1 = 1, SCRATCH2 = 2, SCRATCH3 = 3, SCRATCH4 = 4, SCRATCH5 = 5, SCRATCH6 = 6,
+              SCRATCH7 = 7;
+constexpr u32 R_FN = 16; // function address for the call stubs
 
 inline constexpr u32 host_reg(u32 guest) {
   return guest < 8 ? 19 + guest : guest < 13 ? 9 + (guest - 8) : guest == 13 ? 27 : 28;

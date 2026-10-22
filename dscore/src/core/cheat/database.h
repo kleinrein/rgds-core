@@ -24,13 +24,13 @@ namespace ds::cheat {
 // Read whole and parsed from memory; entries scattered by absolute offset.
 struct Group {
   std::string name, description;
-  bool exclusive = false;   // only one code in the group may be enabled
+  bool exclusive = false; // only one code in the group may be enabled
 };
 
 // `codes` is flat; group -1 means outside any category.
 struct GameCheats {
   u32 game_code = 0;
-  u32 checksum = 0;        // of the ROM header; distinguishes revisions/regions
+  u32 checksum = 0; // of the ROM header; distinguishes revisions/regions
   std::string name;
   std::vector<Group> groups;
   std::vector<Code> codes;
@@ -63,7 +63,9 @@ public:
   std::vector<u32> game_codes() const;
 
 private:
-  struct Entry { u32 game_code, checksum, offset; };
+  struct Entry {
+    u32 game_code, checksum, offset;
+  };
   std::vector<u8> file_;
   std::string name_;
   std::vector<Entry> index_;

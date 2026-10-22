@@ -57,12 +57,16 @@ std::string tag_archive(const std::string& tag) {
   return tag.substr(start, end == std::string::npos ? std::string::npos : end - start);
 }
 
-bool exists(const std::string& p) { struct stat st{}; return stat(p.c_str(), &st) == 0; }
+bool exists(const std::string& p) {
+  struct stat st{};
+  return stat(p.c_str(), &st) == 0;
+}
 
 bool read_file(const std::string& path, std::string& out) {
   std::ifstream f(path, std::ios::binary);
   if (!f) return false;
-  std::ostringstream o; o << f.rdbuf();
+  std::ostringstream o;
+  o << f.rdbuf();
   out = o.str();
   return true;
 }
@@ -85,14 +89,20 @@ bool file_size(const std::string& path, u64& size) {
 bool choose_cache(const std::string& zip_path, const std::string& fallback, std::string& path, std::string& err) {
   for (const std::string& dir : {dir_of(zip_path) + "/.dsperate", fallback}) {
     if (dir.empty()) continue;
-    mkdir(dir.c_str(), 0755);   // may exist; the access check below is the test
-    if (access(dir.c_str(), W_OK | X_OK) == 0) { path = dir + "/" + stem_of(zip_path) + ".nds"; return true; }
+    mkdir(dir.c_str(), 0755); // may exist; the access check below is the test
+    if (access(dir.c_str(), W_OK | X_OK) == 0) {
+      path = dir + "/" + stem_of(zip_path) + ".nds";
+      return true;
+    }
   }
   err = "cannot write beside " + zip_path + " and no cache directory is configured";
   return false;
 }
 
-struct FileSink { FILE* f; std::atomic<bool>* cancel; };
+struct FileSink {
+  FILE* f;
+  std::atomic<bool>* cancel;
+};
 bool file_sink(void* user, const u8* p, size_t n) {
   FileSink& s = *static_cast<FileSink*>(user);
   if (s.cancel && s.cancel->load()) return false;
@@ -139,7 +149,11 @@ std::vector<CacheEntry> list_cache(const std::string& dir) {
     e.stamp = static_cast<long>(st.st_mtime);
     const std::string tag_path = e.image + ".tag";
     std::string tag;
-    if (read_file(tag_path, tag)) { e.tag = tag_path; e.archive = tag_archive(tag); if (stat(tag_path.c_str(), &st) == 0) e.stamp = static_cast<long>(st.st_mtime); }
+    if (read_file(tag_path, tag)) {
+      e.tag = tag_path;
+      e.archive = tag_archive(tag);
+      if (stat(tag_path.c_str(), &st) == 0) e.stamp = static_cast<long>(st.st_mtime);
+    }
     out.push_back(std::move(e));
   }
   closedir(d);
@@ -166,7 +180,8 @@ u64 sweep_cache(const std::string& dir) {
 
 u64 clear_cache(const std::string& dir, const std::string& keep_image) {
   u64 freed = 0;
-  for (const CacheEntry& e : list_cache(dir)) if (e.image != keep_image) freed += remove_entry(e);
+  for (const CacheEntry& e : list_cache(dir))
+    if (e.image != keep_image) freed += remove_entry(e);
   return freed;
 }
 
@@ -183,7 +198,9 @@ std::string zip_cache_path(const std::string& zip_path, const std::string& dir_o
 
 std::unique_ptr<RomSource> open_zip(const std::string& path, ZipOpen& how, std::string& err) {
   err.clear();
-  how.chosen.clear(); how.cache_path.clear(); how.extracted = false;
+  how.chosen.clear();
+  how.cache_path.clear();
+  how.extracted = false;
 
   std::unique_ptr<RomSource> archive = RomSource::map_file(path, err);
   if (!archive) return nullptr;
@@ -193,7 +210,10 @@ std::unique_ptr<RomSource> open_zip(const std::string& path, ZipOpen& how, std::
   ZipEntry e;
   if (!find_rom(zip, size, e, err)) return nullptr;
   // A CIA must be unwrapped to its SRL first (io/dsi_title_install.h).
-  if (e.cia) { err = cia_refusal(e.name); return nullptr; }
+  if (e.cia) {
+    err = cia_refusal(e.name);
+    return nullptr;
+  }
   how.chosen = e.name;
 
   if (e.stored()) {
@@ -201,7 +221,10 @@ std::unique_ptr<RomSource> open_zip(const std::string& path, ZipOpen& how, std::
   }
 
   struct stat zst{};
-  if (stat(path.c_str(), &zst) != 0) { err = std::strerror(errno); return nullptr; }
+  if (stat(path.c_str(), &zst) != 0) {
+    err = std::strerror(errno);
+    return nullptr;
+  }
   const std::string tag = make_tag(canonical(path), zst, e);
 
   std::string image;
@@ -210,29 +233,43 @@ std::unique_ptr<RomSource> open_zip(const std::string& path, ZipOpen& how, std::
   how.cache_path = image;
   sweep_cache(dir_of(image));
 
-  std::string have; u64 have_size = 0;
+  std::string have;
+  u64 have_size = 0;
   const bool fresh = read_file(tag_path, have) && have == tag && file_size(image, have_size) && have_size == e.usize;
   if (!fresh) {
     std::remove(tag_path.c_str());
     std::remove(image.c_str());
     enforce_cap(dir_of(image), how.max_bytes, e.usize, image);
     FILE* f = std::fopen(part.c_str(), "wb");
-    if (!f) { err = "cannot write " + part + ": " + std::strerror(errno); return nullptr; }
+    if (!f) {
+      err = "cannot write " + part + ": " + std::strerror(errno);
+      return nullptr;
+    }
     FileSink sink{f, how.cancel};
     const bool ok = inflate_entry(zip, size, e, file_sink, &sink, how.progress, how.progress_user, err);
     bool flushed = ok;
-    if (ok) { flushed = std::fflush(f) == 0 && fsync(fileno(f)) == 0; if (!flushed) err = "cannot write " + part + ": " + std::strerror(errno); }
+    if (ok) {
+      flushed = std::fflush(f) == 0 && fsync(fileno(f)) == 0;
+      if (!flushed) err = "cannot write " + part + ": " + std::strerror(errno);
+    }
     std::fclose(f);
     if (!ok || !flushed) {
       std::remove(part.c_str());
       if (how.cancel && how.cancel->load()) err = "cancelled";
       return nullptr;
     }
-    if (std::rename(part.c_str(), image.c_str()) != 0) { err = "cannot replace " + image + ": " + std::strerror(errno); std::remove(part.c_str()); return nullptr; }
-    if (!write_file(tag_path, tag)) { err = "cannot write " + tag_path; return nullptr; }
+    if (std::rename(part.c_str(), image.c_str()) != 0) {
+      err = "cannot replace " + image + ": " + std::strerror(errno);
+      std::remove(part.c_str());
+      return nullptr;
+    }
+    if (!write_file(tag_path, tag)) {
+      err = "cannot write " + tag_path;
+      return nullptr;
+    }
     how.extracted = true;
   }
-  utime(tag_path.c_str(), nullptr);   // launch stamp for LRU eviction
+  utime(tag_path.c_str(), nullptr); // launch stamp for LRU eviction
   archive.reset();
   return RomSource::map_file(image, err);
 }

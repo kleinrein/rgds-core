@@ -31,7 +31,10 @@ namespace {
 constexpr u32 MAX_CPUS = 64;
 
 int forced_cores() {
-  static const int n = [] { const char* e = std::getenv("DS_HOST_CORES"); return e ? std::atoi(e) : 0; }();
+  static const int n = [] {
+    const char* e = std::getenv("DS_HOST_CORES");
+    return e ? std::atoi(e) : 0;
+  }();
   return n;
 }
 std::atomic<u32> g_configured_cores{0};
@@ -65,13 +68,17 @@ u64 read_affinity() {
   CPU_ZERO(&set);
   if (sched_getaffinity(0, sizeof set, &set) != 0) return ~u64{0};
   u64 m = 0;
-  for (u32 c = 0; c < MAX_CPUS; ++c) if (CPU_ISSET(c, &set)) m |= u64{1} << c;
+  for (u32 c = 0; c < MAX_CPUS; ++c)
+    if (CPU_ISSET(c, &set)) m |= u64{1} << c;
   return m ? m : ~u64{0};
 }
 std::atomic<u64> g_startup_affinity{0};
 u64 startup_affinity() {
   u64 m = g_startup_affinity.load(std::memory_order_relaxed);
-  if (!m) { m = read_affinity(); g_startup_affinity.store(m, std::memory_order_relaxed); }
+  if (!m) {
+    m = read_affinity();
+    g_startup_affinity.store(m, std::memory_order_relaxed);
+  }
   return m;
 }
 
@@ -79,7 +86,9 @@ u64 startup_affinity() {
 u64 usable_mask() {
   static std::atomic<u64> cached{0};
   static std::atomic<s64> read_at{0};
-  const s64 now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+  const s64 now =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+          .count();
   u64 m = cached.load(std::memory_order_relaxed);
   if (!m || now - read_at.load(std::memory_order_relaxed) >= 1000) {
     const u64 aff = startup_affinity();
@@ -120,7 +129,7 @@ void name_current_thread(const char* name) {
 namespace {
 std::atomic<bool> g_layout{false};
 std::mutex g_placed_m;
-std::vector<long> g_placed;   // tids placed by role
+std::vector<long> g_placed; // tids placed by role
 
 #if defined(__linux__)
 long current_tid() { return static_cast<long>(syscall(SYS_gettid)); }
@@ -131,7 +140,8 @@ long current_tid() { return static_cast<long>(syscall(SYS_gettid)); }
 u32 layout_cores(u32 out[4]) {
   const u64 m = startup_affinity();
   u32 n = 0;
-  for (u32 c = 0; c < MAX_CPUS && n < 4; ++c) if (m & (u64{1} << c)) out[n++] = c;
+  for (u32 c = 0; c < MAX_CPUS && n < 4; ++c)
+    if (m & (u64{1} << c)) out[n++] = c;
   return n;
 }
 
@@ -139,11 +149,11 @@ u64 role_mask_default(ThreadRole role, u32 index) {
   u32 c[4];
   if (layout_cores(c) < 4) return 0;
   switch (role) {
-    case ThreadRole::Emu:     return u64{1} << c[3];
-    case ThreadRole::EngineA: return u64{1} << c[1];
-    case ThreadRole::Line:    return u64{1} << c[2];
-    case ThreadRole::Band:    return u64{1} << (index == 0 ? c[1] : index == 1 ? c[2] : c[0]);
-    case ThreadRole::Aux:     return u64{1} << c[0];
+  case ThreadRole::Emu: return u64{1} << c[3];
+  case ThreadRole::EngineA: return u64{1} << c[1];
+  case ThreadRole::Line: return u64{1} << c[2];
+  case ThreadRole::Band: return u64{1} << (index == 0 ? c[1] : index == 1 ? c[2] : c[0]);
+  case ThreadRole::Aux: return u64{1} << c[0];
   }
   return 0;
 }
@@ -162,10 +172,13 @@ u64 role_mask_env(const char* key) {
       u64 m = 0;
       const char* q = eq + 1;
       while (*q && *q != ',') {
-        char* x; const long a = std::strtol(q, &x, 10); long b = a;
+        char* x;
+        const long a = std::strtol(q, &x, 10);
+        long b = a;
         if (x == q) break;
         if (*x == '-') b = std::strtol(x + 1, &x, 10);
-        for (long c = a; c <= b && c < static_cast<long>(MAX_CPUS); ++c) if (c >= 0) m |= u64{1} << c;
+        for (long c = a; c <= b && c < static_cast<long>(MAX_CPUS); ++c)
+          if (c >= 0) m |= u64{1} << c;
         q = x;
       }
       return m;
@@ -179,21 +192,24 @@ u64 role_mask_env(const char* key) {
 u64 role_mask(ThreadRole role, u32 index) {
   char key[16];
   switch (role) {
-    case ThreadRole::Emu:     std::snprintf(key, sizeof key, "emu"); break;
-    case ThreadRole::EngineA: std::snprintf(key, sizeof key, "enginea"); break;
-    case ThreadRole::Line:    std::snprintf(key, sizeof key, "line"); break;
-    case ThreadRole::Band:    std::snprintf(key, sizeof key, "band%u", index); break;
-    case ThreadRole::Aux:     std::snprintf(key, sizeof key, "aux"); break;
+  case ThreadRole::Emu: std::snprintf(key, sizeof key, "emu"); break;
+  case ThreadRole::EngineA: std::snprintf(key, sizeof key, "enginea"); break;
+  case ThreadRole::Line: std::snprintf(key, sizeof key, "line"); break;
+  case ThreadRole::Band: std::snprintf(key, sizeof key, "band%u", index); break;
+  case ThreadRole::Aux: std::snprintf(key, sizeof key, "aux"); break;
   }
   if (const u64 m = role_mask_env(key)) return m;
-  if (role == ThreadRole::Band) if (const u64 m = role_mask_env("band")) return m;
-  if (std::getenv("DS_PIN")) return 0;   // an explicit layout names what it pins
+  if (role == ThreadRole::Band)
+    if (const u64 m = role_mask_env("band")) return m;
+  if (std::getenv("DS_PIN")) return 0; // an explicit layout names what it pins
   return g_layout.load(std::memory_order_relaxed) ? role_mask_default(role, index) : 0;
 }
 
 bool set_tid_affinity(long tid, u64 m) {
-  cpu_set_t set; CPU_ZERO(&set);
-  for (u32 c = 0; c < MAX_CPUS; ++c) if (m & (u64{1} << c)) CPU_SET(c, &set);
+  cpu_set_t set;
+  CPU_ZERO(&set);
+  for (u32 c = 0; c < MAX_CPUS; ++c)
+    if (m & (u64{1} << c)) CPU_SET(c, &set);
   return sched_setaffinity(static_cast<pid_t>(tid), sizeof set, &set) == 0;
 }
 #endif
@@ -201,7 +217,7 @@ bool set_tid_affinity(long tid, u64 m) {
 
 void set_thread_layout(bool on) {
 #if defined(__linux__)
-  startup_affinity();   // latch the unpinned set before anything is pinned
+  startup_affinity(); // latch the unpinned set before anything is pinned
   host_cores();
 #endif
   g_layout.store(on, std::memory_order_relaxed);
@@ -210,7 +226,7 @@ bool thread_layout_on() { return g_layout.load(std::memory_order_relaxed) || std
 
 #if defined(__linux__)
 namespace {
-std::atomic<int> g_worker_policy{-1}, g_worker_prio{0};   // -1: not latched
+std::atomic<int> g_worker_policy{-1}, g_worker_prio{0}; // -1: not latched
 }
 #endif
 
@@ -227,7 +243,10 @@ void latch_worker_sched() {
 void place_current_thread(ThreadRole role, u32 index) {
 #if defined(__linux__)
   const long tid = current_tid();
-  { std::lock_guard<std::mutex> lk(g_placed_m); g_placed.push_back(tid); }
+  {
+    std::lock_guard<std::mutex> lk(g_placed_m);
+    g_placed.push_back(tid);
+  }
   if (const u64 m = role_mask(role, index)) set_tid_affinity(tid, m);
   const int pol = g_worker_policy.load(std::memory_order_relaxed);
   if (pol == SCHED_RR || pol == SCHED_FIFO) {
@@ -235,16 +254,21 @@ void place_current_thread(ThreadRole role, u32 index) {
     sched_param sp{};
     int want = pol;
     sp.sched_priority = g_worker_prio.load(std::memory_order_relaxed);
-    if (role == ThreadRole::Emu && emu_other) { want = SCHED_OTHER; sp.sched_priority = 0; }
+    if (role == ThreadRole::Emu && emu_other) {
+      want = SCHED_OTHER;
+      sp.sched_priority = 0;
+    }
     // Through pthread, not sched_setscheduler: glibc caches what
     // pthread_setschedparam last set, and pthread_getschedparam (the pacer's
     // spin saves and restores the policy with it) answers from that cache.
     if (role != ThreadRole::Aux)
       if (const int e = pthread_setschedparam(pthread_self(), want, &sp))
-        std::fprintf(stderr, "thread layout: scheduling policy %d/%d for role %d not set: %s\n", want, sp.sched_priority, static_cast<int>(role), std::strerror(e));
+        std::fprintf(stderr, "thread layout: scheduling policy %d/%d for role %d not set: %s\n", want,
+                     sp.sched_priority, static_cast<int>(role), std::strerror(e));
   }
 #else
-  (void)role; (void)index;
+  (void)role;
+  (void)index;
 #endif
 }
 
@@ -255,7 +279,10 @@ void place_foreign_threads() {
   DIR* d = opendir("/proc/self/task");
   if (!d) return;
   std::vector<long> placed;
-  { std::lock_guard<std::mutex> lk(g_placed_m); placed = g_placed; }
+  {
+    std::lock_guard<std::mutex> lk(g_placed_m);
+    placed = g_placed;
+  }
   while (dirent* e = readdir(d)) {
     if (e->d_name[0] < '0' || e->d_name[0] > '9') continue;
     const long tid = std::atol(e->d_name);

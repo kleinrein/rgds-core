@@ -43,14 +43,13 @@ public:
   static std::unique_ptr<RomSource> from_memory(std::vector<u8> bytes);
   // Maps `size` bytes of `path` at `offset` (0, 0 = the whole file). Offset
   // need not be page-aligned. Null with a reason in `err` on failure.
-  static std::unique_ptr<RomSource> map_file(const std::string& path, u64 offset, u64 size,
-                                             std::string& err);
+  static std::unique_ptr<RomSource> map_file(const std::string& path, u64 offset, u64 size, std::string& err);
   static std::unique_ptr<RomSource> map_file(const std::string& path, std::string& err) {
     return map_file(path, 0, 0, err);
   }
 
-  u32 size() const { return size_; }          // bytes in the image
-  u32 mask() const { return mask_; }          // padded power-of-two size minus one
+  u32 size() const { return size_; } // bytes in the image
+  u32 mask() const { return mask_; } // padded power-of-two size minus one
   bool mapped() const { return map_ != nullptr; }
 
   // The 4 KB page holding `addr` (masked). Never null: past the image it is
@@ -58,7 +57,8 @@ public:
   const u8* page(u32 addr) const {
     const u32 p = addr & mask_ & ~(PAGE - 1);
     if (!overlay_.empty()) {
-      for (const Patch& o : overlay_) if (o.base == p) return o.bytes.data();
+      for (const Patch& o : overlay_)
+        if (o.base == p) return o.bytes.data();
     }
     return page_unpatched(p);
   }
@@ -75,11 +75,15 @@ public:
   // image (rest filled with 0xFF); rcheevos needs the short count to
   // distinguish a real short read from 0xFF padding.
   u32 read_unpatched(u32 addr, u8* dst, u32 n) const;
-  u32 read32(u32 addr) const { u8 b[4]; read(addr, b, 4); return static_cast<u32>(b[0]) | (b[1] << 8) | (b[2] << 16) | (static_cast<u32>(b[3]) << 24); }
+  u32 read32(u32 addr) const {
+    u8 b[4];
+    read(addr, b, 4);
+    return static_cast<u32>(b[0]) | (b[1] << 8) | (b[2] << 16) | (static_cast<u32>(b[3]) << 24);
+  }
 
 private:
   RomSource() = default;
-  void finish();   // mask_, tail_ from data_/size_
+  void finish(); // mask_, tail_ from data_/size_
   static const u8* ff_page();
   // `p` already masked and page-aligned; overlay not consulted.
   const u8* page_unpatched(u32 p) const {
@@ -88,13 +92,17 @@ private:
     return ff_page();
   }
 
-  struct Patch { u32 base; std::vector<u8> bytes; };
+  struct Patch {
+    u32 base;
+    std::vector<u8> bytes;
+  };
   const u8* data_ = nullptr;
   u32 size_ = 0, mask_ = 0;
   std::vector<u8> owned_;
   std::vector<u8> tail_;
   std::vector<Patch> overlay_;
-  void* map_ = nullptr; size_t map_len_ = 0;
+  void* map_ = nullptr;
+  size_t map_len_ = 0;
 };
 
 } // namespace ds::cart

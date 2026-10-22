@@ -21,13 +21,20 @@ const char* kPath = "cheat_db_test.tmp";
 struct Builder {
   std::vector<u8> buf;
 
-  void u32le(u32 v) { for (int i = 0; i < 4; ++i) buf.push_back(static_cast<u8>(v >> (8 * i))); }
-  void str(const std::string& s) { buf.insert(buf.end(), s.begin(), s.end()); buf.push_back(0); }
-  void align4() { while (buf.size() & 3) buf.push_back(0); }
+  void u32le(u32 v) {
+    for (int i = 0; i < 4; ++i) buf.push_back(static_cast<u8>(v >> (8 * i)));
+  }
+  void str(const std::string& s) {
+    buf.insert(buf.end(), s.begin(), s.end());
+    buf.push_back(0);
+  }
+  void align4() {
+    while (buf.size() & 3) buf.push_back(0);
+  }
   size_t here() const { return buf.size(); }
 
   Builder() {
-    const char magic[16] = {'R','4',' ','C','h','e','a','t','C','o','d','e', 0, 1, 0, 0};
+    const char magic[16] = {'R', '4', ' ', 'C', 'h', 'e', 'a', 't', 'C', 'o', 'd', 'e', 0, 1, 0, 0};
     buf.insert(buf.end(), magic, magic + 16);
     const std::string name = "test database";
     buf.insert(buf.end(), name.begin(), name.end());
@@ -39,10 +46,16 @@ struct Builder {
 
   // The entry list is written at 0x100 once the payloads are placed, so the
   // builder collects them and patches the list at the end.
-  struct Ent { u32 code, checksum; size_t offset; };
+  struct Ent {
+    u32 code, checksum;
+    size_t offset;
+  };
   std::vector<Ent> ents;
 
-  void entry(u32 code, u32 checksum, size_t offset) { CHECK(ents.size() + 1 < kMaxEntries); ents.push_back({code, checksum, offset}); }
+  void entry(u32 code, u32 checksum, size_t offset) {
+    CHECK(ents.size() + 1 < kMaxEntries);
+    ents.push_back({code, checksum, offset});
+  }
 
   // A game's payload: name, the item count, eight master words, then items.
   size_t begin_game(const std::string& name, u32 items) {
@@ -55,27 +68,32 @@ struct Builder {
     return off;
   }
 
-  void code_item(const std::string& name, const std::string& desc, bool enabled,
-                 const std::vector<u32>& words, int total_override = -1) {
+  void code_item(const std::string& name, const std::string& desc, bool enabled, const std::vector<u32>& words,
+                 int total_override = -1) {
     const u32 strlen4 = (static_cast<u32>(name.size()) + 1 + static_cast<u32>(desc.size()) + 1 + 3) >> 2;
-    const u32 total = total_override >= 0 ? static_cast<u32>(total_override)
-                                          : strlen4 + 1 + static_cast<u32>(words.size());
+    const u32 total =
+        total_override >= 0 ? static_cast<u32>(total_override) : strlen4 + 1 + static_cast<u32>(words.size());
     u32le(total | (enabled ? (1u << 24) : 0u));
-    str(name); str(desc); align4();
+    str(name);
+    str(desc);
+    align4();
     u32le(static_cast<u32>(words.size()));
     for (u32 v : words) u32le(v);
   }
 
   void category(const std::string& name, const std::string& desc, u32 count, bool exclusive) {
     u32le(count | (exclusive ? (1u << 24) : 0u) | (1u << 28));
-    str(name); str(desc); align4();
+    str(name);
+    str(desc);
+    align4();
   }
 
   void write() {
     for (size_t i = 0; i < ents.size(); ++i) {
       u8* e = buf.data() + 0x100 + i * 16;
       const u32 vals[4] = {ents[i].code, ents[i].checksum, static_cast<u32>(ents[i].offset), 0};
-      for (int k = 0; k < 4; ++k) for (int j = 0; j < 4; ++j) e[k * 4 + j] = static_cast<u8>(vals[k] >> (8 * j));
+      for (int k = 0; k < 4; ++k)
+        for (int j = 0; j < 4; ++j) e[k * 4 + j] = static_cast<u8>(vals[k] >> (8 * j));
     }
     FILE* f = std::fopen(kPath, "wb");
     CHECK(f != nullptr);
@@ -85,20 +103,28 @@ struct Builder {
 };
 
 constexpr u32 game(const char (&s)[5]) {
-  return static_cast<u32>(s[0]) | (static_cast<u32>(s[1]) << 8) | (static_cast<u32>(s[2]) << 16) | (static_cast<u32>(s[3]) << 24);
+  return static_cast<u32>(s[0]) | (static_cast<u32>(s[1]) << 8) | (static_cast<u32>(s[2]) << 16) |
+         (static_cast<u32>(s[3]) << 24);
 }
 
 void test_header() {
   cheat::Database db;
   std::string err;
   // Not a database at all.
-  { FILE* f = std::fopen(kPath, "wb"); std::fputs("not a cheat database at all, but long enough to read", f); std::fclose(f); }
+  {
+    FILE* f = std::fopen(kPath, "wb");
+    std::fputs("not a cheat database at all, but long enough to read", f);
+    std::fclose(f);
+  }
   CHECK(!db.open(kPath, err));
   CHECK(!err.empty());
   // Right magic, but nothing after the header.
-  { FILE* f = std::fopen(kPath, "wb");
-    const char magic[16] = {'R','4',' ','C','h','e','a','t','C','o','d','e', 0, 1, 0, 0};
-    std::fwrite(magic, 1, 16, f); std::fclose(f); }
+  {
+    FILE* f = std::fopen(kPath, "wb");
+    const char magic[16] = {'R', '4', ' ', 'C', 'h', 'e', 'a', 't', 'C', 'o', 'd', 'e', 0, 1, 0, 0};
+    std::fwrite(magic, 1, 16, f);
+    std::fclose(f);
+  }
   CHECK(!db.open(kPath, err));
   // A missing file.
   CHECK(!db.open("no_such_database.tmp", err));
@@ -145,7 +171,7 @@ void test_categories() {
   const size_t off = b.begin_game("Grouped", 5);
   b.category("Characters", "pick one", 2, true);
   b.code_item("Mario", "", true, {0x02000000, 1});
-  b.code_item("Luigi", "", true, {0x02000000, 2});   // both enabled in an exclusive group
+  b.code_item("Luigi", "", true, {0x02000000, 2}); // both enabled in an exclusive group
   b.category("Extras", "", 1, false);
   b.code_item("Widescreen", "", true, {0x02000000, 3});
   b.entry(game("GRUP"), 0, off);
@@ -258,8 +284,8 @@ void test_bad_offsets() {
   Builder b;
   const size_t off = b.begin_game("Good", 1);
   b.code_item("Fine", "", false, {0x02000000, 1});
-  b.entry(game("BAD1"), 0, 0x20);          // inside the header
-  b.entry(game("BAD2"), 0, 0x7FFFFFF0);    // past the end
+  b.entry(game("BAD1"), 0, 0x20);       // inside the header
+  b.entry(game("BAD2"), 0, 0x7FFFFFF0); // past the end
   b.entry(game("GOOD"), 0, off);
   b.write();
 

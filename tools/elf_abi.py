@@ -13,7 +13,6 @@ import re
 import struct
 import sys
 
-
 ELF_HEADER = struct.Struct("<16sHHIQQQIHHHHHH")
 SECTION_HEADER = struct.Struct("<IIQQQQIIQQ")
 PROGRAM_HEADER = struct.Struct("<IIQQQQQQ")
@@ -73,6 +72,7 @@ def inspect_elf(path, source=None, *, symbols=False):
         if section[6] >= len(sections) or sections[section[6]][1] != SHT_STRTAB:
             invalid(label + " has no valid linked string table")
         strings = sections[section[6]]
+
         def string(offset):
             if offset >= strings[5]:
                 invalid(label + " string is out of bounds")
@@ -84,6 +84,7 @@ def inspect_elf(path, source=None, *, symbols=False):
                 return data[start:end].decode("utf-8")
             except UnicodeDecodeError:
                 invalid(label + " string is not valid UTF-8")
+
         return string
 
     needed, exports, imports, runpaths = set(), set(), set(), []
@@ -99,8 +100,10 @@ def inspect_elf(path, source=None, *, symbols=False):
             raw = data[program[2]:program[2] + program[5]]
             if not raw.endswith(b"\0") or b"\0" in raw[:-1]:
                 invalid("interpreter is not a terminated path")
-            try: interpreter = raw[:-1].decode("utf-8")
-            except UnicodeDecodeError: invalid("interpreter is not valid UTF-8")
+            try:
+                interpreter = raw[:-1].decode("utf-8")
+            except UnicodeDecodeError:
+                invalid("interpreter is not valid UTF-8")
     for section in sections:
         if section[1] == SHT_DYNAMIC:
             if section[9] != DYNAMIC_ENTRY.size or section[5] % DYNAMIC_ENTRY.size:
@@ -159,7 +162,9 @@ def inspect_elf(path, source=None, *, symbols=False):
 
         position, count = 0, 0
         while size:
-            version, auxiliary_count, file_name, auxiliary, following = record(position, VERSION_NEED, "version-need record")
+            version, auxiliary_count, file_name, auxiliary, following = record(
+                position, VERSION_NEED, "version-need record"
+            )
             if version != 1:
                 invalid("unsupported GNU version-need format")
             name(file_name)  # Validate the required library name as well.
@@ -167,7 +172,9 @@ def inspect_elf(path, source=None, *, symbols=False):
                 invalid("version-need auxiliary chain overlaps its header")
             auxiliary_position = position + auxiliary
             for index in range(auxiliary_count):
-                _hash, _flags, _other, string_offset, next_auxiliary = record(auxiliary_position, VERSION_AUX, "version-need auxiliary record")
+                _hash, _flags, _other, string_offset, next_auxiliary = record(
+                    auxiliary_position, VERSION_AUX, "version-need auxiliary record"
+                )
                 match = GLIBC_VERSION.fullmatch(name(string_offset))
                 if match:
                     versions.add(match.group(1))
@@ -219,7 +226,12 @@ def main():
         print(json.dumps(results, indent=2, sort_keys=True))
     else:
         for path, result in results.items():
-            print(f"{path}: " + (f"{result['machine']}, required GLIBC {result['glibc_minimum'] or 'none recorded'}" if result else "not ELF"))
+            print(
+                f"{path}: " + (
+                    f"{result['machine']}, required GLIBC {result['glibc_minimum'] or 'none recorded'}"
+                    if result else "not ELF"
+                )
+            )
     return 0
 
 

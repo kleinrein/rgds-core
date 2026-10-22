@@ -1,0 +1,4 @@
+# Formatter versions for tools/format.py, pinned so every machine formats alike.
+# The script installs these into .cache/format-tools; no need to pip install by hand.
+yapf==0.43.0
+clang-format==23.1.3

@@ -7,7 +7,6 @@ import subprocess
 import tempfile
 import unittest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -69,8 +68,8 @@ class PackagingEntryTests(unittest.TestCase):
                 with self.subTest(entry=entry, mode=mode, enabled=enabled):
                     (configured / "userdata/arguments.json").unlink(missing_ok=True)
                     (self.root / "userdata/arguments.json").unlink(missing_ok=True)
-                    (self.control / "config.json").write_text(json.dumps(
-                        dict(schema=1, root=str(configured), mode=mode)))
+                    (self.control /
+                     "config.json").write_text(json.dumps(dict(schema=1, root=str(configured), mode=mode)))
                     marker = self.control / "enabled"
                     if enabled:
                         marker.touch()
@@ -86,8 +85,10 @@ class PackagingEntryTests(unittest.TestCase):
     def test_invalid_or_removed_configuration_falls_back_to_own_card(self):
         for entry in ("RG DS Core.sh",):
             self.write_entry(entry)
-            for config in ("{broken", "[]", json.dumps(dict(mode="stock", root="relative")),
-                           json.dumps(dict(mode="stock", root=str(self.control / "missing")))):
+            for config in (
+                "{broken", "[]", json.dumps(dict(mode="stock", root="relative")),
+                json.dumps(dict(mode="stock", root=str(self.control / "missing")))
+            ):
                 with self.subTest(entry=entry, config=config):
                     (self.control / "config.json").write_text(config)
                     result = self.run_entry()

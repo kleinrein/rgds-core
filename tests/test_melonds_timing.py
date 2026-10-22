@@ -5,17 +5,18 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class MelonDSPresentationTests(unittest.TestCase):
     def test_normal_output_fast_limit_and_stall_recovery(self):
-        compiler=shutil.which('c++')
-        if not compiler:self.skipTest('C++ compiler unavailable')
+        compiler = shutil.which('c++')
+        if not compiler: self.skipTest('C++ compiler unavailable')
         with tempfile.TemporaryDirectory() as name:
-            directory=Path(name)
-            source=directory/'timing.cpp'
-            source.write_text(r'''
+            directory = Path(name)
+            source = directory / 'timing.cpp'
+            source.write_text(
+                r'''
 #include "src/experimental/melonds/presentation.hpp"
 #include <cassert>
 int main(){
@@ -34,10 +35,17 @@ int main(){
     // Controlled experiments can retain the previous every-frame behavior.
     for(unsigned long long us=5000005;us<5001005;us++)assert(clock.due(true,true,us));
 }
-''')
-            binary=directory/'timing'
-            subprocess.run([compiler,'-std=c++17','-I',str(ROOT),str(source),'-o',str(binary)],check=True,capture_output=True,text=True)
-            subprocess.run([str(binary)],check=True,capture_output=True,text=True)
+'''
+            )
+            binary = directory / 'timing'
+            subprocess.run(
+                [compiler, '-std=c++17', '-I', str(ROOT),
+                 str(source), '-o', str(binary)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            subprocess.run([str(binary)], check=True, capture_output=True, text=True)
 
 
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

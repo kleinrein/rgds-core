@@ -13,9 +13,10 @@ SHADER_DIR = TREE / "src/core/gpu/vk/shaders"
 
 class DscoreForkTests(unittest.TestCase):
     def test_hires_pipeline_sources_present(self):
-        for name in ("src/core/gpu/rgds_compose_pool.h", "src/core/gpu/rgds_sample_plan.hpp",
-                     "src/core/gpu/vk/vk_lean.cpp", "src/frontend/sdl/rgds_stylus.hpp",
-                     "src/frontend/sdl/rgds_frontend_ui.hpp", "LICENSE", "FORK.md"):
+        for name in (
+            "src/core/gpu/rgds_compose_pool.h", "src/core/gpu/rgds_sample_plan.hpp", "src/core/gpu/vk/vk_lean.cpp",
+            "src/frontend/sdl/rgds_stylus.hpp", "src/frontend/sdl/rgds_frontend_ui.hpp", "LICENSE", "FORK.md"
+        ):
             self.assertTrue((TREE / name).is_file(), name)
 
     def test_generated_spirv_is_not_committed(self):

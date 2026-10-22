@@ -36,13 +36,19 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 TRUST = ROOT / 'packaging/update-trust.json'
 DEFAULT_KEY = Path.home() / '.config/rgds/release-key.pem'
-OPENSSL = next((p for p in ('/opt/homebrew/opt/openssl@3/bin/openssl', '/usr/local/opt/openssl@3/bin/openssl')
-                if sys.platform == 'darwin' and Path(p).exists()), 'openssl')
+OPENSSL = next(
+    (
+        p for p in ('/opt/homebrew/opt/openssl@3/bin/openssl', '/usr/local/opt/openssl@3/bin/openssl')
+        if sys.platform == 'darwin' and Path(p).exists()
+    ), 'openssl'
+)
 
 
 def repo_name(value):
     owner, _, name = value.partition('/')
-    if not owner or not name or '/' in name or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.' for c in owner + name):
+    if not owner or not name or '/' in name or any(
+        c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.' for c in owner + name
+    ):
         raise argparse.ArgumentTypeError('Use OWNER/REPO, as on github.com')
     return value
 
@@ -52,7 +58,9 @@ def feed_url(repo, channel):
 
 
 def public_key(key):
-    der = subprocess.run([OPENSSL, 'pkey', '-in', str(key), '-pubout', '-outform', 'DER'], check=True, capture_output=True).stdout
+    der = subprocess.run(
+        [OPENSSL, 'pkey', '-in', str(key), '-pubout', '-outform', 'DER'], check=True, capture_output=True
+    ).stdout
     return der[-32:].hex()
 
 
@@ -63,7 +71,9 @@ def init(args):
         subprocess.run([OPENSSL, 'genpkey', '-algorithm', 'ED25519', '-out', str(key)], check=True, capture_output=True)
         key.chmod(0o600)
         print(f'Created signing key {key}. Back it up; without it no further update can be signed.')
-    trust = dict(schema=1, channel=args.channel, feed=feed_url(args.repo, args.channel), keys={args.key_id: public_key(key)})
+    trust = dict(
+        schema=1, channel=args.channel, feed=feed_url(args.repo, args.channel), keys={args.key_id: public_key(key)}
+    )
     TRUST.write_text(json.dumps(trust, indent=2) + '\n')
     (ROOT / 'packaging/release-repo.txt').write_text(args.repo + '\n')
     print(f'Pinned {trust["feed"]} and key {args.key_id} in {TRUST.relative_to(ROOT)}.')
@@ -96,7 +106,9 @@ def publish(args):
     # The package carries VERSION; a feed for another version would show testers the wrong number.
     packaged = package.stem.removeprefix('RGDS-').rsplit('-', 1)[0]
     if packaged != args.version:
-        raise SystemExit(f'{package.name} is version {packaged}: set VERSION to {args.version} and run `make installer` again.')
+        raise SystemExit(
+            f'{package.name} is version {packaged}: set VERSION to {args.version} and run `make installer` again.'
+        )
     # An installer built before `init` ships a blank channel: its installs
     # would never see this release or any later one.
     if packaged_trust(package) != trust:
@@ -108,11 +120,20 @@ def publish(args):
     notes = args.notes or out / 'notes.txt'
     if not args.notes:
         notes.write_text(f'RG DS Core {args.version}\n')
-    subprocess.run([sys.executable, str(ROOT / 'tools/publish_update.py'), '--package', str(package), '--output', str(archive),
-                    '--url', f'https://github.com/{repo}/releases/download/{tag}/{archive.name}',
-                    '--key', str(key), '--key-id', key_id, '--sequence', str(int(time.time())),
-                    '--version', args.version, '--channel', args.channel, '--days', str(args.days),
-                    '--notes', str(notes), '--feed', str(out / f'{args.channel}.json')], check=True)
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / 'tools/publish_update.py'), '--package',
+            str(package), '--output',
+            str(archive), '--url', f'https://github.com/{repo}/releases/download/{tag}/{archive.name}', '--key',
+            str(key), '--key-id', key_id, '--sequence',
+            str(int(time.time())), '--version', args.version, '--channel', args.channel, '--days',
+            str(args.days), '--notes',
+            str(notes), '--feed',
+            str(out / f'{args.channel}.json')
+        ],
+        check=True
+    )
     installers = sorted((ROOT / 'dist').glob(f'RG-DS-Core-Installer-*{build}.zip'))
     assets = [archive, out / f'{args.channel}.json']
     if installers:
@@ -121,16 +142,20 @@ def publish(args):
     else:
         print('No installer for this build in dist/; run `make installer` to attach one.')
     if args.upload:
-        command = ['gh', 'release', 'create', tag, '--repo', repo, '--title', f'RG DS Core {args.version}',
-                   '--notes-file', str(notes), *map(str, assets)]
+        command = [
+            'gh', 'release', 'create', tag, '--repo', repo, '--title', f'RG DS Core {args.version}', '--notes-file',
+            str(notes), *map(str, assets)
+        ]
         if args.channel == 'testing':
             command.append('--prerelease')
         subprocess.run(command, check=True)
         return
     files = ' '.join(f'"{p.relative_to(ROOT)}"' for p in assets)
-    print(f'\nPublish (uploads the archive, the signed feed and the installer):\n'
-          f'gh release create {tag} --repo {repo} --title "RG DS Core {args.version}" --notes-file "{notes}" {files}'
-          + (' --prerelease' if args.channel == 'testing' else ''))
+    print(
+        f'\nPublish (uploads the archive, the signed feed and the installer):\n'
+        f'gh release create {tag} --repo {repo} --title "RG DS Core {args.version}" --notes-file "{notes}" {files}' +
+        (' --prerelease' if args.channel == 'testing' else '')
+    )
 
 
 def main():

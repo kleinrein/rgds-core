@@ -55,8 +55,8 @@ def parse_fdt(image):
     if len(image) > MAX_IMAGE:
         fail('Boot image exceeds 128 MiB limit')
     bounds(0, 40, len(image), 'FDT header')
-    (magic, total, struct_at, strings_at, reserve_at, version, compatible,
-     _cpu, strings_size, struct_size) = struct.unpack_from('>10I', image)
+    (magic, total, struct_at, strings_at, reserve_at, version, compatible, _cpu, strings_size,
+     struct_size) = struct.unpack_from('>10I', image)
     if magic != 0xd00dfeed:
         fail('Boot image must begin with FDT/FIT magic')
     if version != 17 or compatible > 17 or compatible < 16:
@@ -65,8 +65,7 @@ def parse_fdt(image):
     if total < 40 or struct_at % 4 or struct_size % 4 or reserve_at % 8:
         fail('Invalid FDT alignment or total size')
     blocks = [(0, 40)]
-    for start, size, label in ((struct_at, struct_size, 'FDT structure'),
-                               (strings_at, strings_size, 'FDT strings')):
+    for start, size, label in ((struct_at, struct_size, 'FDT structure'), (strings_at, strings_size, 'FDT strings')):
         bounds(start, size, total, label)
         if not size or any(overlap((start, size), other) for other in blocks):
             fail('FDT sections overlap or are empty')
@@ -101,8 +100,7 @@ def parse_fdt(image):
             path = (stack[-1].rstrip('/') + '/' + name) if stack else '/'
             if path in nodes:
                 fail('Duplicate FDT node: ' + path)
-            nodes[path] = dict(name=name, parent=stack[-1] if stack else None,
-                               properties={})
+            nodes[path] = dict(name=name, parent=stack[-1] if stack else None, properties={})
             stack.append(path)
         elif token == 2:  # FDT_END_NODE
             if not stack:
@@ -143,16 +141,22 @@ def parse_fdt(image):
         props = node['properties']
         # Stock ships an unpopulated mkimage signing template. A real signature
         # has a value; never strip it or accept a partially signed/unknown node.
-        template = {'algo': b'sha256,rsa2048\0', 'padding': b'pss\0',
-                    'key-name-hint': b'dev\0', 'sign-images': b'fdt\0kernel\0multi\0'}
-        unsigned_template = (node['name'] == 'signature'
-            and node['parent'] is not None
-            and nodes[node['parent']]['parent'] == '/configurations'
-            and set(props) == set(template)
-            and all(image[props[k][0]:props[k][0] + props[k][1]] == v for k, v in template.items())
-            and not any(child['parent'] == path for child in nodes.values()))
-        if not unsigned_template and (node['name'].startswith('signature') or
-                any(key in props for key in ('hashed-nodes', 'hashed-strings', 'key-name-hint'))):
+        template = {
+            'algo': b'sha256,rsa2048\0',
+            'padding': b'pss\0',
+            'key-name-hint': b'dev\0',
+            'sign-images': b'fdt\0kernel\0multi\0'
+        }
+        unsigned_template = (
+            node['name'] == 'signature' and node['parent'] is not None
+            and nodes[node['parent']]['parent'] == '/configurations' and set(props) == set(template)
+            and all(image[props[k][0]:props[k][0] + props[k][1]] == v
+                    for k, v in template.items()) and not any(child['parent'] == path for child in nodes.values())
+        )
+        if not unsigned_template and (
+            node['name'].startswith('signature')
+            or any(key in props for key in ('hashed-nodes', 'hashed-strings', 'key-name-hint'))
+        ):
             fail('Signed FIT images are not supported')
         if node['name'].startswith('cipher'):
             fail('Encrypted FIT images are not supported')
@@ -248,8 +252,7 @@ def parse_rsce(resource):
             actual = digest(resource[start:start + size], algo)
             if resource[at + 224:at + 224 + hash_size] != actual:
                 fail('Original RSCE hash mismatch: ' + name)
-        entries.append(dict(name=name, start=start, size=size, extent=extent,
-                            hash_start=at + 224, hash_size=hash_size))
+        entries.append(dict(name=name, start=start, size=size, extent=extent, hash_start=at + 224, hash_size=hash_size))
     if any(name not in names for name in LOGOS):
         fail('RSCE must contain logo.bmp and logo_kernel.bmp')
     return entries
@@ -261,9 +264,10 @@ def validate_logo(logo):
         fail('Logo must be a BMP')
     size, offset = struct.unpack_from('<I', logo, 2)[0], struct.unpack_from('<I', logo, 10)[0]
     header, width, height, planes, bpp, compression, pixels = struct.unpack_from('<IiiHHII', logo, 14)
-    if (size != len(logo) or header != 40 or offset != 54 or width != 640 or
-            height != -480 or planes != 1 or bpp != 24 or compression != 0 or
-            pixels not in (0, 640 * 480 * 3) or len(logo) != 54 + 640 * 480 * 3):
+    if (
+        size != len(logo) or header != 40 or offset != 54 or width != 640 or height != -480 or planes != 1 or bpp != 24
+        or compression != 0 or pixels not in (0, 640 * 480 * 3) or len(logo) != 54 + 640 * 480 * 3
+    ):
         fail('Logo must be a 640x480 top-down 24-bit uncompressed BMP')
 
 
@@ -313,8 +317,15 @@ def inspect(image):
     if not hashes:
         fail('FIT resource has no verifiable hash')
     entries = parse_rsce(payload)
-    return dict(schema=1, image_size=len(image), image_sha256=hashlib.sha256(image).hexdigest(),
-                fit_size=total, resource=resource, hashes=hashes, entries=entries)
+    return dict(
+        schema=1,
+        image_size=len(image),
+        image_sha256=hashlib.sha256(image).hexdigest(),
+        fit_size=total,
+        resource=resource,
+        hashes=hashes,
+        entries=entries
+    )
 
 
 def patch(image, logo):
@@ -345,8 +356,11 @@ def patch(image, logo):
         changes.append(dict(kind='fit_hash', name=item['path'], start=start, size=size))
     prepared = bytes(result)
     inspect(prepared)  # Verify the exact output, including all unchanged entries.
-    details.update(output_sha256=hashlib.sha256(prepared).hexdigest(),
-                   logo_sha256=hashlib.sha256(logo).hexdigest(), changes=changes)
+    details.update(
+        output_sha256=hashlib.sha256(prepared).hexdigest(),
+        logo_sha256=hashlib.sha256(logo).hexdigest(),
+        changes=changes
+    )
     return prepared, details
 
 
@@ -368,7 +382,8 @@ def read_file(path, limit):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
-    check = commands.add_parser('inspect');check.add_argument('--image', required=True)
+    check = commands.add_parser('inspect')
+    check.add_argument('--image', required=True)
     prepare = commands.add_parser('prepare')
     prepare.add_argument('--image', required=True)
     prepare.add_argument('--logo', required=True)
@@ -386,7 +401,9 @@ def main():
             descriptor, pending = tempfile.mkstemp(prefix='.rgds-boot-', dir=output.parent)
             try:
                 with os.fdopen(descriptor, 'wb') as stream:
-                    stream.write(prepared);stream.flush();os.fsync(stream.fileno())
+                    stream.write(prepared)
+                    stream.flush()
+                    os.fsync(stream.fileno())
                 os.link(pending, output)  # Exclusive publication; never overwrite.
             finally:
                 Path(pending).unlink(missing_ok=True)

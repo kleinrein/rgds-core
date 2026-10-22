@@ -17,37 +17,52 @@ class SettingsInteractionTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        (self.root/'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\ncore=0\n')
+        (self.root / 'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\ncore=0\n')
 
     def run_ui(self, script, section=None, animations=True, screenshot=None):
-        (self.root/'input').write_text(script)
+        (self.root / 'input').write_text(script)
         if not animations:
-            (self.root/'ui.ini').write_text('schema=1\nanimations=0\n')
-        command = [str(BINARY), '--preview', '--settings', '--data', str(self.root),
-                   '--state', str(self.root/'state'), '--input-script', str(self.root/'input'),
-                   '--cache-report', str(self.root/'report'), '--seconds', '1']
+            (self.root / 'ui.ini').write_text('schema=1\nanimations=0\n')
+        command = [
+            str(BINARY), '--preview', '--settings', '--data',
+            str(self.root), '--state',
+            str(self.root / 'state'), '--input-script',
+            str(self.root / 'input'), '--cache-report',
+            str(self.root / 'report'), '--seconds', '1'
+        ]
         if screenshot:
             command += ['--screenshot', str(screenshot)]
         if section:
             command += ['--section', section]
-        result = subprocess.run(command, cwd=ROOT, env=dict(os.environ, SDL_VIDEODRIVER='dummy'),
-                                capture_output=True, text=True, timeout=5)
-        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
-        return json.loads((self.root/'report').read_text())
+        result = subprocess.run(
+            command, cwd=ROOT, env=dict(os.environ, SDL_VIDEODRIVER='dummy'), capture_output=True, text=True, timeout=5
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return json.loads((self.root / 'report').read_text())
 
     def test_top_panel_stays_identical_while_navigating_settings_rows(self):
         def panel(path):
-            data=path.read_bytes();offset=struct.unpack_from('<I',data,10)[0]
-            width,height=struct.unpack_from('<ii',data,18);bits=struct.unpack_from('<H',data,28)[0]
-            stride=((width*bits+31)//32)*4
-            return b''.join(data[offset+(height-1-y)*stride:offset+(height-y)*stride] for y in range(48,480))
-        for section in (None,'library','controls'):
+            data = path.read_bytes()
+            offset = struct.unpack_from('<I', data, 10)[0]
+            width, height = struct.unpack_from('<ii', data, 18)
+            bits = struct.unpack_from('<H', data, 28)[0]
+            stride = ((width * bits + 31) // 32) * 4
+            return b''.join(
+                data[offset + (height - 1 - y) * stride:offset + (height - y) * stride] for y in range(48, 480)
+            )
+
+        for section in (None, 'library', 'controls'):
             with self.subTest(section=section):
-                first=self.root/'first.bmp';last=self.root/'last.bmp'
-                self.run_ui('',section,animations=False,screenshot=first)
-                self.run_ui('100 key Down\n150 key Down\n200 key Down\n250 key Down\n',
-                            section,animations=False,screenshot=last)
-                self.assertEqual(panel(first),panel(last))
+                first = self.root / 'first.bmp'
+                last = self.root / 'last.bmp'
+                self.run_ui('', section, animations=False, screenshot=first)
+                self.run_ui(
+                    '100 key Down\n150 key Down\n200 key Down\n250 key Down\n',
+                    section,
+                    animations=False,
+                    screenshot=last
+                )
+                self.assertEqual(panel(first), panel(last))
 
     def test_header_and_footer_back_leave_settings_and_subpages(self):
         for x, y in ((50, 42), (72, 452)):
@@ -58,37 +73,37 @@ class SettingsInteractionTests(unittest.TestCase):
 
     def test_touch_indicator_can_be_changed_by_touch_and_keyboard_and_persists(self):
         # Touch indicator is the last row: scroll to the end, then tap it.
-        self.run_ui('10 wheel 0 -8\n30 click 180 379\n', 'theme')   # row 7 of 11
-        self.assertIn('touch_indicator=0\n', (self.root/'ui.ini').read_text())
+        self.run_ui('10 wheel 0 -8\n30 click 180 379\n', 'theme')  # row 7 of 11
+        self.assertIn('touch_indicator=0\n', (self.root / 'ui.ini').read_text())
         # A second run must load Off before toggling it back to On.
-        self.run_ui(''.join(f'{30+i*30} key Down\n' for i in range(7))+'260 key A\n', 'theme')
-        self.assertIn('touch_indicator=1\n', (self.root/'ui.ini').read_text())
-        self.assertIn('animations=1\n', (self.root/'ui.ini').read_text())
-        self.assertNotIn('touch_indicator', (self.root/'preferences.ini').read_text())
+        self.run_ui(''.join(f'{30+i*30} key Down\n' for i in range(7)) + '260 key A\n', 'theme')
+        self.assertIn('touch_indicator=1\n', (self.root / 'ui.ini').read_text())
+        self.assertIn('animations=1\n', (self.root / 'ui.ini').read_text())
+        self.assertNotIn('touch_indicator', (self.root / 'preferences.ini').read_text())
 
     def test_left_right_and_a_open_without_changing_value(self):
         for key in ('Left', 'Right', 'A'):
             with self.subTest(key=key):
                 report = self.run_ui(f'30 key {key}\n', 'library')
                 self.assertEqual(report['picker_open'], 1)
-                self.assertIn('core=0\n', (self.root/'preferences.ini').read_text())
+                self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
 
     def test_melonds_is_selectable_as_third_row_and_restores(self):
-        self.run_ui('30 key A\n60 key Down\n90 key Down\n120 key A\n','library')
-        self.assertIn('core=3\n',(self.root/'preferences.ini').read_text())
-        self.run_ui('','library')
-        self.assertIn('core=3\n',(self.root/'preferences.ini').read_text())
+        self.run_ui('30 key A\n60 key Down\n90 key Down\n120 key A\n', 'library')
+        self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())
+        self.run_ui('', 'library')
+        self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())
 
     def test_choice_cancel_preserves_value_and_apply_persists(self):
         self.run_ui('30 key A\n60 key Right\n90 key Escape\n', 'library')
-        self.assertIn('core=0\n', (self.root/'preferences.ini').read_text())
+        self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
         report = self.run_ui('30 key A\n60 key Right\n90 key Right\n120 key A\n', 'library')
         self.assertFalse(report['picker_open'])
-        self.assertIn('core=3\n', (self.root/'preferences.ini').read_text())   # the third row: melonDS
+        self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())  # the third row: melonDS
 
     def test_touch_choice_is_direct_and_commits_once(self):
         self.run_ui('30 click 180 129\n120 click 180 280\n', 'library')
-        self.assertIn('core=1\n', (self.root/'preferences.ini').read_text())
+        self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
     def test_swipe_scrolls_without_opening_the_pressed_card(self):
         report = self.run_ui('30 tap 210 375\n60 drag 210 250\n90 drag 210 115\n120 release\n')
@@ -105,22 +120,22 @@ class SettingsInteractionTests(unittest.TestCase):
 
     def test_mute_cancels_held_slider_repeat_and_survives_restart(self):
         self.run_ui('30 key Right\n90 click 180 230\n', 'sound')
-        self.assertIn('volume=0\n', (self.root/'volume.ini').read_text())
+        self.assertIn('volume=0\n', (self.root / 'volume.ini').read_text())
         self.run_ui('', 'sound')
-        self.assertIn('volume=0\n', (self.root/'volume.ini').read_text())
+        self.assertIn('volume=0\n', (self.root / 'volume.ini').read_text())
         self.run_ui('30 click 180 230\n', 'sound')
-        self.assertIn('volume=25\n', (self.root/'volume.ini').read_text())
+        self.assertIn('volume=25\n', (self.root / 'volume.ini').read_text())
 
     def test_duplicate_mouse_delivery_after_finger_mute_does_not_unmute(self):
         self.run_ui('30 finger-down 0.28125 0.7395833\n60 finger-up 0.28125 0.7395833\n80 click 180 230\n', 'sound')
-        self.assertIn('volume=0\n', (self.root/'volume.ini').read_text())
+        self.assertIn('volume=0\n', (self.root / 'volume.ini').read_text())
 
     def test_open_picker_settles_and_reduced_motion_applies_immediately(self):
         report = self.run_ui('100 key A\n', 'library', animations=False)
         self.assertLess(report['frames'], 12)
         self.assertEqual(report['render_file_reads'], 0)
         self.run_ui('30 key A\n31 key Right\n32 key A\n', 'library', animations=False)
-        self.assertIn('core=1\n', (self.root/'preferences.ini').read_text())
+        self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
 
 if __name__ == '__main__':

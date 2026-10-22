@@ -56,28 +56,28 @@ private:
   void fit_window(SDL_Window* win) const;
   u32* buf_ptr(int buf) const { return reinterpret_cast<u32*>(map_ + static_cast<size_t>(buf) * buf_bytes_); }
 
-  int  fd_ = -1;
-  u8*  map_ = nullptr;
+  int fd_ = -1;
+  u8* map_ = nullptr;
   size_t map_len_ = 0;
-  size_t buf_bytes_ = 0;            // one buffer: line_length * yres
-  int  w_ = 0, h_ = 0, stride_ = 0; // stride in pixels
-  int  bufs_ = 0;
+  size_t buf_bytes_ = 0;           // one buffer: line_length * yres
+  int w_ = 0, h_ = 0, stride_ = 0; // stride in pixels
+  int bufs_ = 0;
   fb_var_screeninfo var_{};
   bool vsync_ = true;
-  bool pan_blocks_ = true;          // FBIOPAN_DISPLAY waits for the refresh (measured once)
+  bool pan_blocks_ = true; // FBIOPAN_DISPLAY waits for the refresh (measured once)
   bool pan_measured_ = false;
-  bool waitforvsync_ = true;        // FBIO_WAITFORVSYNC works (until it fails once)
-  u64  next_ns_ = 0;                // clock pacing when neither waits
-  int  cur_ = -1;                   // buffer handed out by begin_frame()
+  bool waitforvsync_ = true; // FBIO_WAITFORVSYNC works (until it fails once)
+  u64 next_ns_ = 0;          // clock pacing when neither waits
+  int cur_ = -1;             // buffer handed out by begin_frame()
   std::atomic<bool> dead_{false};
 
   // Presenter thread state (vsync only). Buffer indices; -1 = none.
-  std::thread             thread_;
-  std::mutex              mu_;
+  std::thread thread_;
+  std::mutex mu_;
   std::condition_variable cv_;
-  int  displayed_ = 0;              // on the panel now
-  int  latched_ = -1;               // panned to, waiting for the refresh
-  int  pending_ = -1;               // drawn, not yet panned
+  int displayed_ = 0; // on the panel now
+  int latched_ = -1;  // panned to, waiting for the refresh
+  int pending_ = -1;  // drawn, not yet panned
   bool stop_ = false;
 };
 

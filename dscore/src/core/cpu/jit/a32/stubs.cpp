@@ -22,7 +22,7 @@ namespace {
 
 constexpr u32 M(u32 r) { return 1u << r; }
 constexpr u32 CALLEE_SAVED = M(4) | M(5) | M(6) | M(7) | M(8) | M(9) | M(10) | M(11);
-constexpr u32 PINNED_LOW = M(4) | M(5) | M(6) | M(7);   // guest r0-r3
+constexpr u32 PINNED_LOW = M(4) | M(5) | M(6) | M(7); // guest r0-r3
 
 // R_BUDGET holds cycle_budget - 1.
 void emit_store_budget(Emitter& e, u32 t) {
@@ -88,7 +88,7 @@ void emit_stubs(Runtime& rt) {
   // ---- enter(ctx, native): C-callable ----
   rt.enter = reinterpret_cast<void (*)(CpuContext*, const void*)>(e.cur());
   e.push(CALLEE_SAVED | M(R_LR));
-  e.dp_imm(SUB, false, R_SP, R_SP, 4);       // pad to 40
+  e.dp_imm(SUB, false, R_SP, R_SP, 4); // pad to 40
   size_t to_light = e.bl_fwd();
   e.dp_imm(ADD, false, R_SP, R_SP, 4);
   e.pop(CALLEE_SAVED | M(R_PC));
@@ -111,7 +111,7 @@ void emit_stubs(Runtime& rt) {
   e.and_imm(1, 0, 1);
   e.and_imm(2, 0, ~1u);
   e.add_imm(2, 2, 8, 3);
-  e.sub_reg(2, 2, 1, LSL, 2);               // pc + 8 - 4T
+  e.sub_reg(2, 2, 1, LSL, 2); // pc + 8 - 4T
   e.str(2, R_CTX, off_reg(15));
   // ---- exit_r15: ctx.r15 already correct ----
   rt.exit_r15 = e.cur();
@@ -123,7 +123,7 @@ void emit_stubs(Runtime& rt) {
   // ---- run_loop(scheduler): the native slice loop ----
   rt.run_loop = reinterpret_cast<void (*)(void*)>(e.cur());
   e.push(CALLEE_SAVED | M(R_LR));
-  e.dp_imm(SUB, false, R_SP, R_SP, 20);     // [sp] = SliceNext, [sp+8] = scheduler
+  e.dp_imm(SUB, false, R_SP, R_SP, 20); // [sp] = SliceNext, [sp+8] = scheduler
   e.str(0, R_SP, 8);
   const size_t loop_top = e.size();
   e.mov(0, R_SP);
@@ -201,8 +201,10 @@ void emit_stubs(Runtime& rt) {
 
   // ---- slow loads/stores: r1 = address (r2 = value) -> r0; r1-r3, r12 preserved ----
   {
-    const void* lds[3] = {reinterpret_cast<const void*>(&jit_h_ld8), reinterpret_cast<const void*>(&jit_h_ld16), reinterpret_cast<const void*>(&jit_h_ld32)};
-    const void* sts[3] = {reinterpret_cast<const void*>(&jit_h_st8), reinterpret_cast<const void*>(&jit_h_st16), reinterpret_cast<const void*>(&jit_h_st32)};
+    const void* lds[3] = {reinterpret_cast<const void*>(&jit_h_ld8), reinterpret_cast<const void*>(&jit_h_ld16),
+                          reinterpret_cast<const void*>(&jit_h_ld32)};
+    const void* sts[3] = {reinterpret_cast<const void*>(&jit_h_st8), reinterpret_cast<const void*>(&jit_h_st16),
+                          reinterpret_cast<const void*>(&jit_h_st32)};
     for (int k = 0; k < 6; ++k) {
       (k < 3 ? rt.slow_load[k] : rt.slow_store[k - 3]) = e.cur();
       e.push(M(0) | M(1) | M(2) | M(3) | M(R_FN) | M(R_LR));
@@ -275,7 +277,7 @@ void emit_stubs(Runtime& rt) {
       e.pop(M(2) | M(R_LR));
       emit_load_pinned(e, 3);
       emit_load_flags(e, 3);
-      e.and_imm(3, 2, 1);                   // key + 4 - 2T
+      e.and_imm(3, 2, 1); // key + 4 - 2T
       e.add_imm(0, 2, 4, 0);
       e.sub_reg(0, 0, 3, LSL, 1);
       e.b(rt.exit_key);
@@ -289,7 +291,7 @@ void emit_stubs(Runtime& rt) {
       e.ldr(1, R_CTX, OFF_CPSR);
       e.ubfx(2, 1, 5, 1);
       e.sub_imm(0, 0, 8, 3);
-      e.add_reg(0, 0, 2, LSL, 2);           // r15 - 8 + 4T
+      e.add_reg(0, 0, 2, LSL, 2); // r15 - 8 + 4T
       e.orr_reg(0, 0, 2);
       e.b(jc.dispatch);
       for (size_t f : leave2) e.bind(f);
@@ -307,7 +309,7 @@ void emit_stubs(Runtime& rt) {
     e.str(R_FN, R_SP, 0);
     e.tst_imm(0, 1);
     e.and_imm(0, 0, ~3u, EQ);
-    e.and_imm(3, 0, ~1u);                       // a
+    e.and_imm(3, 0, ~1u); // a
     if (c == 0) {
       // numC after the jump: ARM cost(a+4, S); Thumb odd cost(a+2, S); Thumb even 0.
       e.ldr(R_LR, R_CTX, OFF_TIMING9);
@@ -338,7 +340,7 @@ void emit_stubs(Runtime& rt) {
       e.cmp_reg(R_FN, 1);
       e.mov(R_FN, 1, LS);
       e.cmp_reg(3, R_FN);
-      e.mov(R_FN, 3, GT);                       // signed
+      e.mov(R_FN, 3, GT); // signed
       e.sub_reg(R_BUDGET, R_BUDGET, R_FN);
     } else {
       // numC = t_new[T ? 0 : 2], then charge_CDI's main-RAM rules (code = target, data = r2).
@@ -347,21 +349,21 @@ void emit_stubs(Runtime& rt) {
       e.add_reg(R_FN, R_LR, R_FN, LSL, 2);
       e.tst_imm(0, 1);
       e.ldrb(R_FN, R_FN, 0, NE);
-      e.ldrb(R_FN, R_FN, 2, EQ);                // nc
+      e.ldrb(R_FN, R_FN, 2, EQ); // nc
       e.lsr_imm(R_LR, 3, 24);
       e.lsr_imm(3, 2, 24);
       e.cmp_imm(3, 2);
       size_t not_data_main = e.b_fwd(NE);
       e.cmp_imm(R_LR, 2);
-      e.add_reg(R_FN, R_FN, 1, LSL, 0, EQ);     // both main: nc + d
+      e.add_reg(R_FN, R_FN, 1, LSL, 0, EQ); // both main: nc + d
       size_t done = e.b_fwd(EQ);
-      e.add_imm(R_FN, R_FN, 1, 3);              // nc + 1
+      e.add_imm(R_FN, R_FN, 1, 3); // nc + 1
       size_t maxform = e.b_fwd();
       e.bind(not_data_main);
       e.cmp_imm(R_LR, 2);
       size_t plain = e.b_fwd(NE);
-      e.add_imm(1, 1, 1, 3);                    // d + 1
-      e.bind(maxform);                          // max3(nc + d - 3, nc, d)
+      e.add_imm(1, 1, 1, 3); // d + 1
+      e.bind(maxform);       // max3(nc + d - 3, nc, d)
       e.add_reg(3, R_FN, 1);
       e.sub_imm(3, 3, 3, R_LR);
       e.cmp_reg(R_FN, 1);
@@ -369,7 +371,7 @@ void emit_stubs(Runtime& rt) {
       e.cmp_reg(3, R_FN);
       e.mov(R_FN, 3, GT);
       size_t done2 = e.b_fwd();
-      e.bind(plain);                            // neither main: nc + d + 1
+      e.bind(plain); // neither main: nc + d + 1
       e.add_reg(R_FN, R_FN, 1);
       e.add_imm(R_FN, R_FN, 1, 3);
       e.bind(done);
@@ -389,17 +391,17 @@ void emit_stubs(Runtime& rt) {
     e.ldr(1, R_CTX, OFF_CPSR);
     e.bfi(1, 0, 5, 1);
     e.str(1, R_CTX, OFF_CPSR);
-    e.and_imm(2, 0, ~1u);                       // a
+    e.and_imm(2, 0, ~1u); // a
     if (c == 0) {
       // ARM9 refill: ARM cost(a,B)+cost(a+4,S); Thumb odd cost(a-2,B)+cost(a+2,S), even cost(a,B).
       // first = a - 2*odd (B fetch), second = a + 4 - 2*T (S fetch, dropped when T && !odd).
       e.ldr(R_LR, R_CTX, OFF_TIMING9);
       e.and_imm(3, 0, 1);
-      e.ubfx(R_FN, 2, 1, 1);                    // odd
+      e.ubfx(R_FN, 2, 1, 1); // odd
       e.sub_reg(1, 2, R_FN, LSL, 1);
       e.bic_reg(R_FN, 3, R_FN);
       e.sub_reg(3, 2, 3, LSL, 1);
-      e.add_imm(3, 3, 4, 2);                    // a is dead now
+      e.add_imm(3, 3, 4, 2); // a is dead now
       e.lsr_imm(1, 1, 12);
       e.add_reg(1, R_LR, 1, LSL, 3);
       e.ldrb(1, 1, 0);
@@ -451,9 +453,7 @@ void write_entry_redirect(u8* entry, u32 key, const u8* dispatch) {
 
 bool fastmem_capable() { return true; }
 
-void patch_link(u8* site, const u8* target) {
-  Emitter::patch(site, 0xEA000000u | Emitter::rel24_from(site, target));
-}
+void patch_link(u8* site, const u8* target) { Emitter::patch(site, 0xEA000000u | Emitter::rel24_from(site, target)); }
 
 } // namespace backend
 } // namespace ds::jit

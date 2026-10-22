@@ -62,51 +62,100 @@ int main(int argc,char** argv){
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output',type=Path,required=True)
-    parser.add_argument('--bridge',type=Path,default=ROOT/'build/device/librgdsbridge.so')
-    modes=parser.add_mutually_exclusive_group()
-    modes.add_argument('--build-only',action='store_true',help='Cross-compile fixtures on the Mac with Zig')
-    modes.add_argument('--run-only',action='store_true',help='Run previously compiled fixtures in Linux')
-    args=parser.parse_args()
-    if not args.build_only and platform.system()!='Linux':parser.error('Run only in the local Linux builder')
-    root=args.output.resolve();root.mkdir(parents=True,exist_ok=True)
-    source=root/'original-fixture.cpp'
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--bridge', type=Path, default=ROOT / 'build/device/librgdsbridge.so')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--build-only', action='store_true', help='Cross-compile fixtures on the Mac with Zig')
+    modes.add_argument('--run-only', action='store_true', help='Run previously compiled fixtures in Linux')
+    args = parser.parse_args()
+    if not args.build_only and platform.system() != 'Linux': parser.error('Run only in the local Linux builder')
+    root = args.output.resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    source = root / 'original-fixture.cpp'
     if not args.run_only:
         source.write_text(SOURCE)
-        compiler=['g++'] if platform.system()=='Linux' else ['zig','c++','-target','aarch64-linux-gnu.2.17']
-        layout=root/'layout.ld'
-        layout.write_text('SECTIONS { .probe_lines 0x2fa50 : { *(.probe_lines) } .probe_bins 0x58e50 : { *(.probe_bins) } } INSERT BEFORE .text;\n')
-        flags=[*compiler,'-std=c++17','-O2','-UNDEBUG','-pthread','-fPIE','-pie',str(source),'-Wl,-T,'+str(layout)]
-        for name,identity in [('recognized',BUILD_ID),('unknown','00'*20)]:
-            subprocess.run([*flags,'-Wl,--build-id=0x'+identity,'-o',str(root/name)],check=True,
-                           env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'),ZIG_LOCAL_CACHE_DIR=str(ROOT/'.cache/zig-local')))
-        record=dict(source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                    binaries={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in ('recognized','unknown')})
-        (root/'fixtures.json').write_text(json.dumps(record,indent=2)+'\n')
-    elif source.read_text()!=SOURCE:raise ValueError('Fixture source changed; rebuild before probing')
-    if args.build_only:return
-    record=json.loads((root/'fixtures.json').read_text())
-    if record != dict(source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                      binaries={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in ('recognized','unknown')}):
+        compiler = ['g++'] if platform.system() == 'Linux' else ['zig', 'c++', '-target', 'aarch64-linux-gnu.2.17']
+        layout = root / 'layout.ld'
+        layout.write_text(
+            'SECTIONS { .probe_lines 0x2fa50 : { *(.probe_lines) } .probe_bins 0x58e50 : { *(.probe_bins) } } INSERT BEFORE .text;\n'
+        )
+        flags = [
+            *compiler, '-std=c++17', '-O2', '-UNDEBUG', '-pthread', '-fPIE', '-pie',
+            str(source), '-Wl,-T,' + str(layout)
+        ]
+        for name, identity in [('recognized', BUILD_ID), ('unknown', '00' * 20)]:
+            subprocess.run(
+                [*flags, '-Wl,--build-id=0x' + identity, '-o',
+                 str(root / name)],
+                check=True,
+                env=dict(
+                    os.environ,
+                    ZIG_GLOBAL_CACHE_DIR=str(ROOT / '.cache/zig'),
+                    ZIG_LOCAL_CACHE_DIR=str(ROOT / '.cache/zig-local')
+                )
+            )
+        record = dict(
+            source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+            binaries={
+                name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+                for name in ('recognized', 'unknown')
+            }
+        )
+        (root / 'fixtures.json').write_text(json.dumps(record, indent=2) + '\n')
+    elif source.read_text() != SOURCE:
+        raise ValueError('Fixture source changed; rebuild before probing')
+    if args.build_only: return
+    record = json.loads((root / 'fixtures.json').read_text())
+    if record != dict(
+        source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+        binaries={name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+                  for name in ('recognized', 'unknown')}
+    ):
         raise ValueError('Fixture binaries changed; rebuild before probing')
-    tests=[('recognized','drastic','1','guarded'),('unknown','drastic','1','bypass'),
-           ('recognized','dsperate','1','bypass'),('recognized','nnddss','1','bypass'),
-           ('recognized','melonds','1','bypass'),('recognized','drastic','0','bypass'),
-           ('recognized','drastic','1','timeout')]
-    results=[]
-    for name,core,enabled,mode in tests:
-        began=time.monotonic()
-        result=subprocess.run([str(root/name),mode],env=dict(os.environ,LD_PRELOAD=str(args.bridge.resolve()),RGDS_CORE=core,RGDS_DRASTIC_HELPER_GATE=enabled),capture_output=True,text=True,timeout=12)
-        elapsed=time.monotonic()-began
-        entry=dict(executable=name,core=core,enabled=enabled,mode=mode,seconds=elapsed,exit_code=result.returncode,stdout=result.stdout,stderr=result.stderr);results.append(entry)
+    tests = [
+        ('recognized', 'drastic', '1', 'guarded'), ('unknown', 'drastic', '1', 'bypass'),
+        ('recognized', 'dsperate', '1', 'bypass'), ('recognized', 'nnddss', '1', 'bypass'),
+        ('recognized', 'melonds', '1', 'bypass'), ('recognized', 'drastic', '0', 'bypass'),
+        ('recognized', 'drastic', '1', 'timeout')
+    ]
+    results = []
+    for name, core, enabled, mode in tests:
+        began = time.monotonic()
+        result = subprocess.run(
+            [str(root / name), mode],
+            env=dict(
+                os.environ, LD_PRELOAD=str(args.bridge.resolve()), RGDS_CORE=core, RGDS_DRASTIC_HELPER_GATE=enabled
+            ),
+            capture_output=True,
+            text=True,
+            timeout=12
+        )
+        elapsed = time.monotonic() - began
+        entry = dict(
+            executable=name,
+            core=core,
+            enabled=enabled,
+            mode=mode,
+            seconds=elapsed,
+            exit_code=result.returncode,
+            stdout=result.stdout,
+            stderr=result.stderr
+        )
+        results.append(entry)
         if result.returncode:
-            (root/'failure.json').write_text(json.dumps(results,indent=2)+'\n')
+            (root / 'failure.json').write_text(json.dumps(results, indent=2) + '\n')
             raise RuntimeError(str(entry))
-        if mode=='timeout' and (not 1.8<=elapsed<8 or 'initialization timed out' not in result.stderr):raise RuntimeError('Expected bounded timeout diagnostic: '+str(entry))
-    report=dict(scope='Synthetic Linux pthread/preload integration; no emulator or handheld execution',
-                bridge_sha256=hashlib.sha256(args.bridge.read_bytes()).hexdigest(),fixtures=record,cases=results)
-    (root/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
+        if mode == 'timeout' and (not 1.8 <= elapsed < 8 or 'initialization timed out' not in result.stderr):
+            raise RuntimeError('Expected bounded timeout diagnostic: ' + str(entry))
+    report = dict(
+        scope='Synthetic Linux pthread/preload integration; no emulator or handheld execution',
+        bridge_sha256=hashlib.sha256(args.bridge.read_bytes()).hexdigest(),
+        fixtures=record,
+        cases=results
+    )
+    (root / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
+    print(json.dumps(report, indent=2))
 
 
-if __name__=='__main__':main()
+if __name__ == '__main__': main()

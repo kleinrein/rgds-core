@@ -133,7 +133,7 @@ void emit_stubs(Runtime& rt) {
   e.and_imm(1, 0, 1);
   e.and_imm(2, 0, ~1u);
   e.add_imm(2, 2, 8);
-  e.sub_reg(2, 2, 1, LSL, 2);         // pc + 8 - 4T
+  e.sub_reg(2, 2, 1, LSL, 2); // pc + 8 - 4T
   e.str_w(2, R_CTX, off_reg(15));
   // exit_r15: ctx.r15 already correct
   rt.exit_r15 = e.cur();
@@ -224,8 +224,10 @@ void emit_stubs(Runtime& rt) {
 
   // ---- slow loads/stores: w1 = address (w2 = value); x1, x7 preserved ----
   {
-    const void* lds[3] = {reinterpret_cast<const void*>(&jit_h_ld8), reinterpret_cast<const void*>(&jit_h_ld16), reinterpret_cast<const void*>(&jit_h_ld32)};
-    const void* sts[3] = {reinterpret_cast<const void*>(&jit_h_st8), reinterpret_cast<const void*>(&jit_h_st16), reinterpret_cast<const void*>(&jit_h_st32)};
+    const void* lds[3] = {reinterpret_cast<const void*>(&jit_h_ld8), reinterpret_cast<const void*>(&jit_h_ld16),
+                          reinterpret_cast<const void*>(&jit_h_ld32)};
+    const void* sts[3] = {reinterpret_cast<const void*>(&jit_h_st8), reinterpret_cast<const void*>(&jit_h_st16),
+                          reinterpret_cast<const void*>(&jit_h_st32)};
     for (int k = 0; k < 6; ++k) {
       (k < 3 ? rt.slow_load[k] : rt.slow_store[k - 3]) = e.cur();
       e.stp_x_pre(30, 1, SP, -32);
@@ -268,7 +270,8 @@ void emit_stubs(Runtime& rt) {
     e.ubfx(2, 0, 1, LUT_BITS);
     if (c != 0) {
       const bool ok = e.orr_imm(2, 2, static_cast<u32>(LUT_STRIDE / 8));
-      assert(ok && "LUT_STRIDE/8 must be a logical immediate"); (void)ok;
+      assert(ok && "LUT_STRIDE/8 must be a logical immediate");
+      (void)ok;
     }
     e.ldr_x_reg(3, R_ARENA, 2, true, true);
     e.eor_reg(4, 3, 0);
@@ -308,7 +311,7 @@ void emit_stubs(Runtime& rt) {
       e.ret();
       for (size_t f : leave) e.bind(f);
       e.ldp_x_post(30, 2, SP, 16);
-      e.and_imm(3, 2, 1);               // key + 4 - 2T
+      e.and_imm(3, 2, 1); // key + 4 - 2T
       e.add_imm(0, 2, 4);
       e.sub_reg(0, 0, 3, LSL, 1);
       e.b(rt.exit_key);
@@ -337,7 +340,7 @@ void emit_stubs(Runtime& rt) {
       size_t is_thumb = e.tbnz_fwd(0, 0);
       e.and_imm(0, 0, ~3u);
       e.bind(is_thumb);
-      e.and_imm(3, 0, ~1u);                 // a
+      e.and_imm(3, 0, ~1u); // a
       if (c == 0) {
         // numC = (T && (a + 4) & 2) ? 0 : code_after;  code_after: ARM cost(a+4,S); Thumb a&2 ? cost(a+2,S) : cost(a,B)
         size_t thumb = e.tbnz_fwd(0, 0);
@@ -347,7 +350,7 @@ void emit_stubs(Runtime& rt) {
         e.bind(thumb);
         size_t odd = e.tbnz_fwd(3, 1);
         emit_fetch_cost9(e, 3, 4, 6, true);
-        e.movz(4, 0);                       // even a: new r15 has bit 1 set -> numC 0
+        e.movz(4, 0); // even a: new r15 has bit 1 set -> numC 0
         size_t done2 = e.b_fwd();
         e.bind(odd);
         e.add_imm(5, 3, 2);
@@ -372,8 +375,12 @@ void emit_stubs(Runtime& rt) {
         e.bind(thumb);
         e.ldrb(4, 4, 0);
         e.bind(done);
-        e.lsr_imm(5, 3, 24); e.cmp_imm(5, 2); e.cset(5, EQ);     // code_main
-        e.lsr_imm(6, 2, 24); e.cmp_imm(6, 2); e.cset(6, EQ);     // data_main
+        e.lsr_imm(5, 3, 24);
+        e.cmp_imm(5, 2);
+        e.cset(5, EQ); // code_main
+        e.lsr_imm(6, 2, 24);
+        e.cmp_imm(6, 2);
+        e.cset(6, EQ); // data_main
         // data_main ? (code_main ? nC + d : (nC+1, max(nC+d-3, max(nC,d)))) : (code_main ? (d+1, max(...)) : nC + d + 1)
         size_t not_main = e.cbz_fwd(6);
         size_t both = e.cbnz_fwd(5);
@@ -386,12 +393,16 @@ void emit_stubs(Runtime& rt) {
         size_t plain = e.cbz_fwd(5);
         e.add_imm(1, 1, 1);
         e.bind(mx);
-        e.add_reg(5, 4, 1); e.sub_imm(5, 5, 3);
-        e.cmp_reg(4, 1); e.csel(6, 4, 1, HI);
-        e.cmp_reg(5, 6); e.csel(5, 5, 6, GT);
+        e.add_reg(5, 4, 1);
+        e.sub_imm(5, 5, 3);
+        e.cmp_reg(4, 1);
+        e.csel(6, 4, 1, HI);
+        e.cmp_reg(5, 6);
+        e.csel(5, 5, 6, GT);
         size_t fin2 = e.b_fwd();
         e.bind(plain);
-        e.add_reg(5, 4, 1); e.add_imm(5, 5, 1);
+        e.add_reg(5, 4, 1);
+        e.add_imm(5, 5, 1);
         e.bind(fin);
         e.bind(fin2);
       }
@@ -408,13 +419,13 @@ void emit_stubs(Runtime& rt) {
       e.bfi(1, 0, 5, 1);
       e.str_w(1, R_CTX, OFF_CPSR);
       e.and_imm(2, 0, ~1u);
-      if (g_fast_timing) e.movz(3, c == 0 ? g_fast.r9 : g_fast.r7);   // fast timing: a constant refill
+      if (g_fast_timing) e.movz(3, c == 0 ? g_fast.r9 : g_fast.r7); // fast timing: a constant refill
       else if (c == 0) {
         // ARM9 refill: ARM cost(a,B)+cost(a+4,S); Thumb a&2 ? cost(a-2,B)+cost(a+2,S) : cost(a,B).
         // Byte from Timing's refill9 table: page of first = a - 2*odd; index by second =
         // a + 4 - 2*T: 3 if dropped (T && !odd), 2 if page start, 1 if line start, else 0.
-        e.and_imm(4, 0, 1);                       // T
-        e.ubfx(5, 2, 1, 1);                       // odd
+        e.and_imm(4, 0, 1); // T
+        e.ubfx(5, 2, 1, 1); // odd
         e.sub_reg(3, 2, 5, LSL, 1);
         e.lsr_imm(3, 3, 12);
         e.add_imm(7, 2, 4);

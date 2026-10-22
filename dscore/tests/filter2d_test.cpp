@@ -15,7 +15,10 @@ using rgds::Filter2DPlan;
 static std::vector<uint32_t> noise_image() {
   std::vector<uint32_t> image(256 * 192);
   uint32_t s = 12345;
-  for (auto& p : image) { s = s * 1664525u + 1013904223u; p = 0xFF000000u | (s >> 8); }
+  for (auto& p : image) {
+    s = s * 1664525u + 1013904223u;
+    p = 0xFF000000u | (s >> 8);
+  }
   return image;
 }
 
@@ -27,7 +30,8 @@ static void render(const Filter2DPlan& plan, const std::vector<uint32_t>& image,
     const uint32_t* above = line ? cur - 256 : cur;
     const uint32_t* below = line < 191 ? cur + 256 : cur;
     const uint32_t* above2 = line >= 2 ? cur - 512 : above;
-    for (unsigned y = line * 480 / 192; y < (line + 1) * 480 / 192; ++y) plan.row(above2, above, cur, below, line, y, &panel[y * 640]);
+    for (unsigned y = line * 480 / 192; y < (line + 1) * 480 / 192; ++y)
+      plan.row(above2, above, cur, below, line, y, &panel[y * 640]);
   }
 }
 
@@ -38,19 +42,22 @@ static void smooth_matches_reference() {
   std::vector<uint32_t> panel;
   render(Filter2DPlan::get(Filter2D::Smooth), image, panel);
   int worst = 0;
-  for (unsigned y = 0; y < 480; ++y) for (unsigned x = 0; x < 640; ++x) {
-    const double u = (x + 0.5) * 256 / 640 - 0.5, v = (y + 0.5) * 192 / 480 - 0.5;
-    const int x0 = int(std::floor(u)), y0 = int(std::floor(v));
-    const double fx = u - x0, fy = v - y0;
-    auto at = [&](int xx, int yy) { return image[std::min(std::max(yy, 0), 191) * 256 + std::min(std::max(xx, 0), 255)]; };
-    for (int shift : {0, 8, 16}) {
-      const double top = channel(at(x0, y0), shift) * (1 - fx) + channel(at(x0 + 1, y0), shift) * fx;
-      const double bottom = channel(at(x0, y0 + 1), shift) * (1 - fx) + channel(at(x0 + 1, y0 + 1), shift) * fx;
-      const double want = top * (1 - fy) + bottom * fy;
-      worst = std::max(worst, int(std::lround(std::fabs(want - channel(panel[y * 640 + x], shift)))));
+  for (unsigned y = 0; y < 480; ++y)
+    for (unsigned x = 0; x < 640; ++x) {
+      const double u = (x + 0.5) * 256 / 640 - 0.5, v = (y + 0.5) * 192 / 480 - 0.5;
+      const int x0 = int(std::floor(u)), y0 = int(std::floor(v));
+      const double fx = u - x0, fy = v - y0;
+      auto at = [&](int xx, int yy) {
+        return image[std::min(std::max(yy, 0), 191) * 256 + std::min(std::max(xx, 0), 255)];
+      };
+      for (int shift : {0, 8, 16}) {
+        const double top = channel(at(x0, y0), shift) * (1 - fx) + channel(at(x0 + 1, y0), shift) * fx;
+        const double bottom = channel(at(x0, y0 + 1), shift) * (1 - fx) + channel(at(x0 + 1, y0 + 1), shift) * fx;
+        const double want = top * (1 - fy) + bottom * fy;
+        worst = std::max(worst, int(std::lround(std::fabs(want - channel(panel[y * 640 + x], shift)))));
+      }
+      CHECK((panel[y * 640 + x] >> 24) == 0xFF);
     }
-    CHECK((panel[y * 640 + x] >> 24) == 0xFF);
-  }
   CHECK(worst <= 3);
 }
 
@@ -59,11 +66,13 @@ static void sharp_keeps_interiors() {
   std::vector<uint32_t> panel;
   render(Filter2DPlan::get(Filter2D::Sharp), image, panel);
   unsigned exact = 0, blended = 0;
-  for (unsigned y = 0; y < 480; ++y) for (unsigned x = 0; x < 640; ++x) {
-    const uint32_t out = panel[y * 640 + x];
-    const unsigned nx = x * 2 / 5, ny = y * 2 / 5;     // the pixel a nearest 2.5x would use
-    if (out == image[ny * 256 + nx]) ++exact; else ++blended;
-  }
+  for (unsigned y = 0; y < 480; ++y)
+    for (unsigned x = 0; x < 640; ++x) {
+      const uint32_t out = panel[y * 640 + x];
+      const unsigned nx = x * 2 / 5, ny = y * 2 / 5; // the pixel a nearest 2.5x would use
+      if (out == image[ny * 256 + nx]) ++exact;
+      else ++blended;
+    }
   // 2.5x: the seam is about one panel pixel per axis, so roughly 0.6 * 0.6 of
   // the panel stays pure native colour (noise has no accidental matches).
   CHECK(exact * 100 / (exact + blended) >= 30);
@@ -80,10 +89,11 @@ static void sharp_is_area_sampling() {
   const auto image = noise_image();
   std::vector<uint32_t> panel;
   render(Filter2DPlan::get(Filter2D::Sharp), image, panel);
-  for (unsigned y = 0; y < 480; ++y) for (unsigned x = 0; x < 640; ++x) {
-    if (x % 5 == 2 || y % 5 == 2) continue;
-    CHECK(panel[y * 640 + x] == image[(y * 2 / 5) * 256 + x * 2 / 5]);
-  }
+  for (unsigned y = 0; y < 480; ++y)
+    for (unsigned x = 0; x < 640; ++x) {
+      if (x % 5 == 2 || y % 5 == 2) continue;
+      CHECK(panel[y * 640 + x] == image[(y * 2 / 5) * 256 + x * 2 / 5]);
+    }
   std::vector<uint32_t> stripes(256 * 192), out;
   for (unsigned i = 0; i < stripes.size(); ++i) stripes[i] = (i % 2) ? 0xFFFFFFFFu : 0xFF000000u;
   render(Filter2DPlan::get(Filter2D::Sharp), stripes, out);
@@ -125,14 +135,21 @@ static void flat_image_stays_flat() {
 static void sharp_seam_is_narrow() {
   // A hard vertical edge between native columns 99 and 100 spreads over at most 2 panel pixels.
   std::vector<uint32_t> image(256 * 192), panel;
-  for (unsigned y = 0; y < 192; ++y) for (unsigned x = 0; x < 256; ++x) image[y * 256 + x] = x < 100 ? 0xFF000000u : 0xFFFFFFFFu;
+  for (unsigned y = 0; y < 192; ++y)
+    for (unsigned x = 0; x < 256; ++x) image[y * 256 + x] = x < 100 ? 0xFF000000u : 0xFFFFFFFFu;
   render(Filter2DPlan::get(Filter2D::Sharp), image, panel);
   unsigned between = 0;
-  for (unsigned x = 0; x < 640; ++x) { const uint32_t p = panel[240 * 640 + x]; if (p != 0xFF000000u && p != 0xFFFFFFFFu) ++between; }
+  for (unsigned x = 0; x < 640; ++x) {
+    const uint32_t p = panel[240 * 640 + x];
+    if (p != 0xFF000000u && p != 0xFFFFFFFFu) ++between;
+  }
   CHECK(between <= 2);
   render(Filter2DPlan::get(Filter2D::Smooth), image, panel);
   between = 0;
-  for (unsigned x = 0; x < 640; ++x) { const uint32_t p = panel[240 * 640 + x]; if (p != 0xFF000000u && p != 0xFFFFFFFFu) ++between; }
+  for (unsigned x = 0; x < 640; ++x) {
+    const uint32_t p = panel[240 * 640 + x];
+    if (p != 0xFF000000u && p != 0xFFFFFFFFu) ++between;
+  }
   CHECK(between >= 2);
 }
 
@@ -142,25 +159,30 @@ static void sharp_seam_is_narrow() {
 static void crisp_slopes_stairs() {
   const uint32_t black = 0xFF000000u, white = 0xFFFFFFFFu;
   std::vector<uint32_t> image(256 * 192), panel;
-  for (unsigned y = 0; y < 192; ++y) for (unsigned x = 0; x < 256; ++x) image[y * 256 + x] = x >= y + 1 ? white : black;
+  for (unsigned y = 0; y < 192; ++y)
+    for (unsigned x = 0; x < 256; ++x) image[y * 256 + x] = x >= y + 1 ? white : black;
   render(Filter2DPlan::get(Filter2D::Crisp), image, panel);
   // DS pixel (4, 3) is a white edge pixel with black left and below: its
   // bottom-left cell turns black. Panel (10, 9) is exactly that cell.
   CHECK(panel[9 * 640 + 10] == black);
   render(Filter2DPlan::get(Filter2D::Sharp), image, panel);
-  CHECK(panel[9 * 640 + 10] == white);   // Sharp keeps the stair
+  CHECK(panel[9 * 640 + 10] == white); // Sharp keeps the stair
   render(Filter2DPlan::get(Filter2D::Crisp), image, panel);
-  CHECK(panel[9 * 640 + 14] == white);   // (5, 3): bottom-right cell, white neighbours on that side
+  CHECK(panel[9 * 640 + 14] == white); // (5, 3): bottom-right cell, white neighbours on that side
   // Far from the edge, every panel pixel is the exact source colour.
-  for (unsigned y = 300; y < 480; ++y) for (unsigned x = 0; x < 100; ++x) CHECK(panel[y * 640 + x] == black);
-  for (unsigned y = 0; y < 100; ++y) for (unsigned x = 400; x < 640; ++x) CHECK(panel[y * 640 + x] == white);
+  for (unsigned y = 300; y < 480; ++y)
+    for (unsigned x = 0; x < 100; ++x) CHECK(panel[y * 640 + x] == black);
+  for (unsigned y = 0; y < 100; ++y)
+    for (unsigned x = 400; x < 640; ++x) CHECK(panel[y * 640 + x] == white);
   std::vector<uint32_t> board(256 * 192), sharp;
-  for (unsigned y = 0; y < 192; ++y) for (unsigned x = 0; x < 256; ++x) board[y * 256 + x] = ((x ^ y) & 1) ? white : black;
+  for (unsigned y = 0; y < 192; ++y)
+    for (unsigned x = 0; x < 256; ++x) board[y * 256 + x] = ((x ^ y) & 1) ? white : black;
   render(Filter2DPlan::get(Filter2D::Crisp), board, panel);
   render(Filter2DPlan::get(Filter2D::Sharp), board, sharp);
   // Away from the image corners (where both edge clamps meet and Scale2x
   // sees two agreeing clamped neighbours) the two are identical.
-  for (unsigned y = 5; y < 475; ++y) for (unsigned x = 5; x < 635; ++x) CHECK(panel[y * 640 + x] == sharp[y * 640 + x]);
+  for (unsigned y = 5; y < 475; ++y)
+    for (unsigned x = 5; x < 635; ++x) CHECK(panel[y * 640 + x] == sharp[y * 640 + x]);
 }
 
 int main() {

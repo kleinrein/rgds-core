@@ -6,23 +6,26 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'),'Host C++/SDL headers required')
+@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'Host C++/SDL headers required')
 class LiveShaderTests(unittest.TestCase):
     def compile(self, source, output, shared=False, link_sdl=False):
-        flags=subprocess.check_output(['sdl2-config','--cflags'],text=True).split()
-        libs=subprocess.check_output(['sdl2-config','--libs'],text=True).split() if link_sdl else []
-        command=['clang++','-std=c++17','-O1',*flags,'-I'+str(ROOT/'src')]
-        if shared:command+=['-shared','-fPIC']
-        result=subprocess.run([*command,str(source),*libs,'-o',str(output)],capture_output=True,text=True)
-        self.assertEqual(result.returncode,0,result.stderr)
+        flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
+        libs = subprocess.check_output(['sdl2-config', '--libs'], text=True).split() if link_sdl else []
+        command = ['clang++', '-std=c++17', '-O1', *flags, '-I' + str(ROOT / 'src')]
+        if shared: command += ['-shared', '-fPIC']
+        result = subprocess.run([*command, str(source), *libs, '-o', str(output)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_unsupported_sdl_shader_keeps_original_pixels_and_reports_failure(self):
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);source=root/'software.cpp';binary=root/'software'
-            source.write_text(r'''
+            root = Path(folder)
+            source = root / 'software.cpp'
+            binary = root / 'software'
+            source.write_text(
+                r'''
 #define RGDS_BRIDGE_TESTS
 #include "platform/emulator_bridge.cpp"
 #include <cassert>
@@ -46,13 +49,19 @@ int main(int argc,char** argv){
  assert(read(renderer,nullptr,SDL_PIXELFORMAT_RGBA32,image.data(),640*4)==0);assert(image[0]==0 && image[1]==200 && live_shader==0);
  SDL_DestroyTexture(texture);SDL_DestroyRenderer(renderer);rgds::overlay_sdl<decltype(&SDL_FreeSurface)>("SDL_FreeSurface")(bitmap);
 }
-''')
-            self.compile(source,binary)
-            prefix=Path(subprocess.check_output(['sdl2-config','--prefix'],text=True).strip())
-            sdl=prefix/('lib/libSDL2.dylib' if os.uname().sysname=='Darwin' else 'lib/libSDL2-2.0.so.0')
-            result=subprocess.run([str(binary),str(root)],env=dict(os.environ,RGDS_SDL_LIBRARY=str(sdl)),capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+'''
+            )
+            self.compile(source, binary)
+            prefix = Path(subprocess.check_output(['sdl2-config', '--prefix'], text=True).strip())
+            sdl = prefix / ('lib/libSDL2.dylib' if os.uname().sysname == 'Darwin' else 'lib/libSDL2-2.0.so.0')
+            result = subprocess.run(
+                [str(binary), str(root)],
+                env=dict(os.environ, RGDS_SDL_LIBRARY=str(sdl)),
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

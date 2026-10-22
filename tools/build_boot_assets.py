@@ -26,7 +26,7 @@ def atlas(path):
 
 def sprite(name):
     """An alpha BMP V4 from assets/brand (tools/brand_logo.py): w, h, BGRA rows."""
-    data = (ROOT/'assets/brand'/name).read_bytes()
+    data = (ROOT / 'assets/brand' / name).read_bytes()
     offset = struct.unpack_from('<I', data, 10)[0]
     width, height = struct.unpack_from('<ii', data, 18)
     if width <= 0 or height >= 0 or struct.unpack_from('<H', data, 28)[0] != 32:
@@ -43,7 +43,9 @@ def place(pixels, width, name, left, top):
             if not a:
                 continue
             dest = ((top + y) * width + left + x) * 3
-            pixels[dest:dest + 3] = bytes((c * (255 - a) + v * a + 127) // 255 for c, v in zip(pixels[dest:dest + 3], (r, g, b)))
+            pixels[dest:dest + 3] = bytes(
+                (c * (255 - a) + v * a + 127) // 255 for c, v in zip(pixels[dest:dest + 3], (r, g, b))
+            )
 
 
 def blend(a, b, percent):
@@ -96,8 +98,9 @@ def waiting_panel():
 def bmp(width, height, pixels, top_down=True):
     stride = (width * 3 + 3) & ~3
     header = struct.pack('<2sIHHI', b'BM', 54 + stride * height, 0, 0, 54)
-    header += struct.pack('<IiiHHIIiiII', 40, width, -height if top_down else height, 1, 24, 0,
-                          stride * height, 3780, 3780, 0, 0)
+    header += struct.pack(
+        '<IiiHHIIiiII', 40, width, -height if top_down else height, 1, 24, 0, stride * height, 3780, 3780, 0, 0
+    )
     rows = []
     for y in range(height) if top_down else range(height - 1, -1, -1):
         row = pixels[y * width * 3:(y + 1) * width * 3]
@@ -110,9 +113,12 @@ def bmp(width, height, pixels, top_down=True):
 def png(width, height, pixels):
     def chunk(kind, body):
         return struct.pack('>I', len(body)) + kind + body + struct.pack('>I', zlib.crc32(kind + body))
+
     rows = b''.join(b'\0' + pixels[y * width * 3:(y + 1) * width * 3] for y in range(height))
-    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>2I5B', width, height, 8, 2, 0, 0, 0)) +
-            chunk(b'IDAT', zlib.compress(rows, 9)) + chunk(b'IEND', b''))
+    return (
+        b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>2I5B', width, height, 8, 2, 0, 0, 0)) +
+        chunk(b'IDAT', zlib.compress(rows, 9)) + chunk(b'IEND', b'')
+    )
 
 
 def build(destination):

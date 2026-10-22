@@ -13,6 +13,7 @@
 namespace ds::gpu::vk {
 
 // Context and allocation.
+// clang-format off: one X-macro list, wrapped by hand
 #define DS_VK_FNS_CORE \
   F(vkCreateInstance) F(vkDestroyInstance) F(vkEnumeratePhysicalDevices) \
   F(vkGetPhysicalDeviceProperties) F(vkGetPhysicalDeviceProperties2) F(vkGetPhysicalDeviceFeatures2) \
@@ -22,8 +23,10 @@ namespace ds::gpu::vk {
   F(vkAllocateMemory) F(vkFreeMemory) F(vkBindBufferMemory) F(vkMapMemory) \
   F(vkInvalidateMappedMemoryRanges) F(vkFlushMappedMemoryRanges) \
   F(vkGetMemoryHostPointerPropertiesEXT) F(vkDeviceWaitIdle)
+// clang-format on
 
 // Pipeline, descriptors, command recording and submission.
+// clang-format off: one X-macro list, wrapped by hand
 #define DS_VK_FNS_PIPE \
   F(vkCreateShaderModule) F(vkDestroyShaderModule) \
   F(vkCreateDescriptorSetLayout) F(vkDestroyDescriptorSetLayout) \
@@ -43,15 +46,18 @@ namespace ds::gpu::vk {
   F(vkGetMemoryFdPropertiesKHR) F(vkGetPhysicalDeviceImageFormatProperties2) \
   F(vkCreateGraphicsPipelines) F(vkCreateRenderPass) F(vkDestroyRenderPass) F(vkCreateFramebuffer) F(vkDestroyFramebuffer) \
   F(vkCmdBeginRenderPass) F(vkCmdEndRenderPass) F(vkCmdNextSubpass) F(vkCmdDraw) F(vkCmdSetStencilReference) F(vkCmdCopyImageToBuffer) F(vkGetPhysicalDeviceFormatProperties) F(vkCmdClearAttachments)
+// clang-format on
 
 // Presentation (VK_KHR_surface / VK_KHR_swapchain; null when not enabled) and
 // what a graphics presenter records beyond the raster's needs.
+// clang-format off: one X-macro list, wrapped by hand
 #define DS_VK_FNS_WSI \
   F(vkGetPhysicalDeviceSurfaceSupportKHR) F(vkGetPhysicalDeviceSurfaceCapabilitiesKHR) \
   F(vkGetPhysicalDeviceSurfaceFormatsKHR) F(vkGetPhysicalDeviceSurfacePresentModesKHR) F(vkDestroySurfaceKHR) \
   F(vkCreateSwapchainKHR) F(vkDestroySwapchainKHR) F(vkGetSwapchainImagesKHR) F(vkAcquireNextImageKHR) F(vkQueuePresentKHR) \
   F(vkCreateSemaphore) F(vkDestroySemaphore) F(vkCmdCopyBufferToImage) F(vkCreateSampler) F(vkDestroySampler) \
   F(vkCmdSetViewport) F(vkCmdSetScissor) F(vkQueueWaitIdle) F(vkCmdCopyImage) F(vkCmdClearColorImage)
+// clang-format on
 
 #define DS_VK_FNS DS_VK_FNS_CORE DS_VK_FNS_PIPE DS_VK_FNS_WSI
 
@@ -63,14 +69,14 @@ struct Api {
 
 // What Device hands the backend; lifetime is the Device's.
 struct DeviceInternal {
-  const Api*       api = nullptr;
-  VkInstance       inst = VK_NULL_HANDLE;
-  VkDevice         dev = VK_NULL_HANDLE;
-  VkQueue          queue = VK_NULL_HANDLE;
-  VkQueue          queue2 = VK_NULL_HANDLE;   // the 3D raster's own queue (null: one queue, shared under queue_mutex)
+  const Api* api = nullptr;
+  VkInstance inst = VK_NULL_HANDLE;
+  VkDevice dev = VK_NULL_HANDLE;
+  VkQueue queue = VK_NULL_HANDLE;
+  VkQueue queue2 = VK_NULL_HANDLE; // the 3D raster's own queue (null: one queue, shared under queue_mutex)
   VkPhysicalDevice phys = VK_NULL_HANDLE;
-  u32              qfam = 0;
-  VkDeviceSize     non_coherent_atom = 1;
+  u32 qfam = 0;
+  VkDeviceSize non_coherent_atom = 1;
 };
 
 inline VkBuffer vk_buf(const Buffer& b) { return reinterpret_cast<VkBuffer>(b.handle); }

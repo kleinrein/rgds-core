@@ -6,7 +6,11 @@ using namespace ds;
 
 static int fired = 0;
 static u64 fired_at = 0;
-static void on_event(NDS& nds, u32 param) { ++fired; fired_at = nds.sched.now(); CHECK(param == 7); }
+static void on_event(NDS& nds, u32 param) {
+  ++fired;
+  fired_at = nds.sched.now();
+  CHECK(param == 7);
+}
 
 int main() {
   NDS nds;

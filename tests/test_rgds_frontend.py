@@ -13,14 +13,22 @@ class RgdsFrontendTests(unittest.TestCase):
     def compile_run(self, source):
         with tempfile.TemporaryDirectory() as folder:
             folder = Path(folder)
-            cpp = folder/'test.cpp'; cpp.write_text(source)
-            binary = folder/'test'
-            subprocess.run(['clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '-Werror',
-                            '-I'+str(ROOT/'dscore/src'), str(cpp), '-o', str(binary)], check=True)
+            cpp = folder / 'test.cpp'
+            cpp.write_text(source)
+            binary = folder / 'test'
+            subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '-Werror', '-I' + str(ROOT / 'dscore/src'),
+                    str(cpp), '-o',
+                    str(binary)
+                ],
+                check=True
+            )
             subprocess.run([str(binary), str(folder)], check=True, timeout=15)
 
     def test_pause_requests_owned_menu_and_failure_does_not_publish_partial_request(self):
-        self.compile_run(r'''
+        self.compile_run(
+            r'''
 #include "frontend/sdl/rgds_frontend_ui.hpp"
 #include <cassert>
 #include <filesystem>
@@ -43,10 +51,12 @@ int main(int, char** argv) {
   setenv("RGDS_CONTROL_FILE", (control/"missing").c_str(), 1);
   assert(!rgds::request_menu());
 }
-''')
+'''
+        )
 
     def test_live_menu_holds_while_input_is_blocked_and_reads_the_overlay_sequence(self):
-        self.compile_run(r'''
+        self.compile_run(
+            r'''
 #include "frontend/sdl/rgds_frontend_ui.hpp"
 #include <cassert>
 #include <cstdint>
@@ -71,10 +81,12 @@ int main(int, char** argv) {
   { std::ofstream out(frame, std::ios::binary); out.write(reinterpret_cast<const char*>(header), sizeof header); }
   assert(rgds::overlay_sequence() == 6);
 }
-''')
+'''
+        )
 
     def test_menu_hold_is_off_without_a_live_menu(self):
-        self.compile_run(r'''
+        self.compile_run(
+            r'''
 #include "frontend/sdl/rgds_frontend_ui.hpp"
 #include <cassert>
 #include <filesystem>
@@ -85,10 +97,12 @@ int main(int, char** argv) {
   std::ofstream(control.string()+".blocked").close();
   assert(!rgds::menu_hold());   // the paused menu SIGSTOPs this engine instead
 }
-''')
+'''
+        )
 
     def test_all_scales_scroll_offsets_and_modes_preserve_original_sample_addresses(self):
-        self.compile_run(r'''
+        self.compile_run(
+            r'''
 #include "core/gpu/rgds_sample_plan.hpp"
 #include <cassert>
 #include <cstdio>
@@ -133,7 +147,8 @@ int main() {
   }
   assert(original==interleaved);
 }
-''')
+'''
+        )
 
 
 if __name__ == '__main__': unittest.main()

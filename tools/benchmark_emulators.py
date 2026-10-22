@@ -10,23 +10,89 @@ from pathlib import Path
 import shlex
 import sys
 
-ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 from runtime.shaders import SHADERS
 
-EXPERIMENT_SETTINGS = frozenset((
-    'RGDS_MELONDS_PROFILE', 'RGDS_MELONDS_PRESENT_EVERY_FRAME', 'RGDS_MELONDS_POSIX_SEMAPHORE',
-    'RGDS_LAUNCH_PROFILE', 'NNDDSS_CPU_AFFINITY',
-    'DS_PROFILE', 'DS_FF_RASTER', 'DS_FRAME_STATS', 'DS_FPS', 'DS_VERBOSE',
-    'DS_NO_THREAD_LAYOUT', 'DS_PIN', 'DS_PRESENT_SYNC', 'DS_HOST_CORES',
-    'DS_IDLE_SKIP', 'DS_TIMING', 'RGDS_VK_SCALE', 'DS_GPU3D', 'DS_GPU_TRACE', 'RGDS_CAPTURE_GPU',
-    'DS_DEBUG_NOLAG', 'DS_DEBUG_NOLAZY', 'DS_VK_TIMING', 'RGDS_COMPOSE_THREADS', 'DS_HIRES_DEBUG', 'DS_HIRES_DUMP', 'DS_STARTUP_TRACE', 'DS_LEAN_D24', 'DS_COMPOSE_THREADS', 'DS_VERIFY_HIRES',
-    'VK_ICD_FILENAMES', 'PANVK_ATOM_STRIDE', 'PANVK_KBASE_DVFS', 'PANVK_KBASE_WARMUP_MS', 'PANVK_FORCE_EARLYZS', 'PANVK_SKIP_FS', 'DS_LEAN_MSAA', 'DS_RENDERER_SYNC', 'DS_PRESENT_SYNC', 'DS_JIT_CHURN', 'DS_HANDOFF_STATS', 'DS_LEAN_FLAT', 'DS_PROFILE_THREADS', 'DS_LEAN_NOSTENCIL', 'BIFROST_MESA_DEBUG', 'PAN_MESA_DEBUG', 'PANVK_DEBUG', 'DS_LINE_SPIN', 'DS_THREADS', 'DS_LINE_THREADS', 'DS_ADAPTIVE', 'DS_LEAN_SKIP', 'DS_HIRES_DUMP', 'DS_VK_TIMING', 'DS_JIT_WEEDS', 'DS_JIT_STRICT', 'DS_IDLE_SKIP', 'DS_PRESENT_PROFILE', 'DS_DUAL_SCREENS',
-    'DS_KMS_FLIPS', 'DS_PRESENT_LANES', 'DS_PRESENT_QUEUE', 'DS_ADAPTIVE_GRACE_MS',
-    'DS_LEAN_HALFPX', 'DS_LEAN_NODISCARD',
-    'DS_CADENCE_LOG', 'DS_PACE', 'DS_PACE_BAND', 'DS_PRESENT_FINISH', 'DS_PRESENT_TEST',
-    'DS_RGDS_SINK', 'DS_DIRECT_PRESENT', 'DS_DMA_HEAP', 'DS_PRESENT_DROP', 'DS_KMS_DROP',
-))
+EXPERIMENT_SETTINGS = frozenset(
+    (
+        'RGDS_MELONDS_PROFILE',
+        'RGDS_MELONDS_PRESENT_EVERY_FRAME',
+        'RGDS_MELONDS_POSIX_SEMAPHORE',
+        'RGDS_LAUNCH_PROFILE',
+        'NNDDSS_CPU_AFFINITY',
+        'DS_PROFILE',
+        'DS_FF_RASTER',
+        'DS_FRAME_STATS',
+        'DS_FPS',
+        'DS_VERBOSE',
+        'DS_NO_THREAD_LAYOUT',
+        'DS_PIN',
+        'DS_PRESENT_SYNC',
+        'DS_HOST_CORES',
+        'DS_IDLE_SKIP',
+        'DS_TIMING',
+        'RGDS_VK_SCALE',
+        'DS_GPU3D',
+        'DS_GPU_TRACE',
+        'RGDS_CAPTURE_GPU',
+        'DS_DEBUG_NOLAG',
+        'DS_DEBUG_NOLAZY',
+        'DS_VK_TIMING',
+        'RGDS_COMPOSE_THREADS',
+        'DS_HIRES_DEBUG',
+        'DS_HIRES_DUMP',
+        'DS_STARTUP_TRACE',
+        'DS_LEAN_D24',
+        'DS_COMPOSE_THREADS',
+        'DS_VERIFY_HIRES',
+        'VK_ICD_FILENAMES',
+        'PANVK_ATOM_STRIDE',
+        'PANVK_KBASE_DVFS',
+        'PANVK_KBASE_WARMUP_MS',
+        'PANVK_FORCE_EARLYZS',
+        'PANVK_SKIP_FS',
+        'DS_LEAN_MSAA',
+        'DS_RENDERER_SYNC',
+        'DS_PRESENT_SYNC',
+        'DS_JIT_CHURN',
+        'DS_HANDOFF_STATS',
+        'DS_LEAN_FLAT',
+        'DS_PROFILE_THREADS',
+        'DS_LEAN_NOSTENCIL',
+        'BIFROST_MESA_DEBUG',
+        'PAN_MESA_DEBUG',
+        'PANVK_DEBUG',
+        'DS_LINE_SPIN',
+        'DS_THREADS',
+        'DS_LINE_THREADS',
+        'DS_ADAPTIVE',
+        'DS_LEAN_SKIP',
+        'DS_HIRES_DUMP',
+        'DS_VK_TIMING',
+        'DS_JIT_WEEDS',
+        'DS_JIT_STRICT',
+        'DS_IDLE_SKIP',
+        'DS_PRESENT_PROFILE',
+        'DS_DUAL_SCREENS',
+        'DS_KMS_FLIPS',
+        'DS_PRESENT_LANES',
+        'DS_PRESENT_QUEUE',
+        'DS_ADAPTIVE_GRACE_MS',
+        'DS_LEAN_HALFPX',
+        'DS_LEAN_NODISCARD',
+        'DS_CADENCE_LOG',
+        'DS_PACE',
+        'DS_PACE_BAND',
+        'DS_PRESENT_FINISH',
+        'DS_PRESENT_TEST',
+        'DS_RGDS_SINK',
+        'DS_DIRECT_PRESENT',
+        'DS_DMA_HEAP',
+        'DS_PRESENT_DROP',
+        'DS_KMS_DROP',
+    )
+)
 
 DEVICE_SCRIPT = r'''
 import hashlib,json,os,shutil,signal,struct,subprocess,sys,time
@@ -492,72 +558,188 @@ print('RESULTS '+str(base/'results.json'),flush=True)
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--device',required=True)
-    parser.add_argument('--root',default='/mnt/mmc/rgds')
-    parser.add_argument('--keep',action='store_true',help='Keep the run folder (ROM copy, profile, checkpoints) for --resume-from')
-    parser.add_argument('--switch-to',type=int,choices=range(1,6),help='After the phases, change DSCore 3D resolution through the in-game menu and capture the result')
-    parser.add_argument('--rom',required=True)
-    parser.add_argument('--seconds',type=int,default=30)
-    parser.add_argument('--volume',type=int,choices=range(101),default=0,help='Isolated test volume, 0-100; use audible audio for gameplay acceptance')
-    parser.add_argument('--shader',type=int,choices=range(len(SHADERS)),default=0)
-    parser.add_argument('--cores',nargs='+',choices=('drastic','dsperate','melonds','superdrastic','rgds-experimental'),default=['drastic','dsperate','melonds','superdrastic'])
-    parser.add_argument('--feature-checks',action='store_true',help='Exercise slot save/load/undo/export and supported DS controls in isolated profiles')
-    parser.add_argument('--checkpoints',action='store_true',help='Test save-on-exit in disposable profiles')
-    parser.add_argument('--phase',choices=('all','normal','fast_forward'),default='all',help='Use one phase in fresh profiles for repeatable comparisons')
-    parser.add_argument('--repeats',type=int,choices=range(1,6),default=1)
-    parser.add_argument('--max-speed',action='store_true',help='Uncap DSperate/fork with no presentation skipping; set NNDDSS to its supported 10x maximum')
-    parser.add_argument('--menu-cycles',type=int,choices=range(0,11),default=3)
-    parser.add_argument('--resume-from',help='Remote results.json from an isolated benchmark with matching ROM bytes')
-    parser.add_argument('--probe-clock',action='store_true',help='Read the original RGDS homebrew VBlank clock from the owned test process')
-    parser.add_argument('--threaded-3d',type=int,choices=(0,1),default=1,help='Isolated per-game threading setting')
-    parser.add_argument('--resolution',type=int,choices=(1,2,3),default=1,help='Internal 3D scale; 3 requires SuperDrastic and Gengis')
-    parser.add_argument('--rasterizer',choices=('standard','gengis'),default='standard')
-    parser.add_argument('--capture-scene',action='store_true',help='Capture supported bridge-renderer scenes after warmup, before measured phases')
-    parser.add_argument('--rgds-smooth',type=int,choices=(0,1),default=1,help='RG DS Experimental 3D supersampling resolve')
-    parser.add_argument('--rgds-2d',type=int,choices=(0,1,2,3),default=0,help='DSCore 2D scaling: 0 native pixels, 1 sharp, 2 smooth, 3 crisp')
-    parser.add_argument('--rgds-scale',type=int,choices=range(1,6),default=1,help='RG DS Experimental internal 3D scale')
-    parser.add_argument('--rgds-direct',type=int,choices=(0,1),default=0,help='DSCore direct display: Weston stops while the engine presents on KMS')
-    parser.add_argument('--engine-env',action='append',default=[],metavar='KEY=VALUE',help='Opt-in profiling/render experiment setting')
-    parser.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args()
-    if not 5<=args.seconds<=3600:parser.error('--seconds must be 5..3600')
-    if args.rgds_scale>1 and set(args.cores)!={'rgds-experimental'}:parser.error('--rgds-scale requires RG DS Experimental')
-    if args.rgds_direct and set(args.cores)!={'rgds-experimental'}:parser.error('--rgds-direct requires RG DS Experimental')
-    if args.max_speed and not set(args.cores)<={'dsperate','rgds-experimental'}:parser.error('--max-speed supports DSperate and RG DS Experimental')
-    if args.rasterizer=='gengis' and (set(args.cores)!={'superdrastic'} or args.resolution==1):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--device', required=True)
+    parser.add_argument('--root', default='/mnt/mmc/rgds')
+    parser.add_argument(
+        '--keep', action='store_true', help='Keep the run folder (ROM copy, profile, checkpoints) for --resume-from'
+    )
+    parser.add_argument(
+        '--switch-to',
+        type=int,
+        choices=range(1, 6),
+        help='After the phases, change DSCore 3D resolution through the in-game menu and capture the result'
+    )
+    parser.add_argument('--rom', required=True)
+    parser.add_argument('--seconds', type=int, default=30)
+    parser.add_argument(
+        '--volume',
+        type=int,
+        choices=range(101),
+        default=0,
+        help='Isolated test volume, 0-100; use audible audio for gameplay acceptance'
+    )
+    parser.add_argument('--shader', type=int, choices=range(len(SHADERS)), default=0)
+    parser.add_argument(
+        '--cores',
+        nargs='+',
+        choices=('drastic', 'dsperate', 'melonds', 'superdrastic', 'rgds-experimental'),
+        default=['drastic', 'dsperate', 'melonds', 'superdrastic']
+    )
+    parser.add_argument(
+        '--feature-checks',
+        action='store_true',
+        help='Exercise slot save/load/undo/export and supported DS controls in isolated profiles'
+    )
+    parser.add_argument('--checkpoints', action='store_true', help='Test save-on-exit in disposable profiles')
+    parser.add_argument(
+        '--phase',
+        choices=('all', 'normal', 'fast_forward'),
+        default='all',
+        help='Use one phase in fresh profiles for repeatable comparisons'
+    )
+    parser.add_argument('--repeats', type=int, choices=range(1, 6), default=1)
+    parser.add_argument(
+        '--max-speed',
+        action='store_true',
+        help='Uncap DSperate/fork with no presentation skipping; set NNDDSS to its supported 10x maximum'
+    )
+    parser.add_argument('--menu-cycles', type=int, choices=range(0, 11), default=3)
+    parser.add_argument('--resume-from', help='Remote results.json from an isolated benchmark with matching ROM bytes')
+    parser.add_argument(
+        '--probe-clock',
+        action='store_true',
+        help='Read the original RGDS homebrew VBlank clock from the owned test process'
+    )
+    parser.add_argument(
+        '--threaded-3d', type=int, choices=(0, 1), default=1, help='Isolated per-game threading setting'
+    )
+    parser.add_argument(
+        '--resolution',
+        type=int,
+        choices=(1, 2, 3),
+        default=1,
+        help='Internal 3D scale; 3 requires SuperDrastic and Gengis'
+    )
+    parser.add_argument('--rasterizer', choices=('standard', 'gengis'), default='standard')
+    parser.add_argument(
+        '--capture-scene',
+        action='store_true',
+        help='Capture supported bridge-renderer scenes after warmup, before measured phases'
+    )
+    parser.add_argument(
+        '--rgds-smooth', type=int, choices=(0, 1), default=1, help='RG DS Experimental 3D supersampling resolve'
+    )
+    parser.add_argument(
+        '--rgds-2d',
+        type=int,
+        choices=(0, 1, 2, 3),
+        default=0,
+        help='DSCore 2D scaling: 0 native pixels, 1 sharp, 2 smooth, 3 crisp'
+    )
+    parser.add_argument(
+        '--rgds-scale', type=int, choices=range(1, 6), default=1, help='RG DS Experimental internal 3D scale'
+    )
+    parser.add_argument(
+        '--rgds-direct',
+        type=int,
+        choices=(0, 1),
+        default=0,
+        help='DSCore direct display: Weston stops while the engine presents on KMS'
+    )
+    parser.add_argument(
+        '--engine-env',
+        action='append',
+        default=[],
+        metavar='KEY=VALUE',
+        help='Opt-in profiling/render experiment setting'
+    )
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    if not 5 <= args.seconds <= 3600: parser.error('--seconds must be 5..3600')
+    if args.rgds_scale > 1 and set(args.cores) != {'rgds-experimental'}:
+        parser.error('--rgds-scale requires RG DS Experimental')
+    if args.rgds_direct and set(args.cores) != {'rgds-experimental'}:
+        parser.error('--rgds-direct requires RG DS Experimental')
+    if args.max_speed and not set(args.cores) <= {'dsperate', 'rgds-experimental'}:
+        parser.error('--max-speed supports DSperate and RG DS Experimental')
+    if args.rasterizer == 'gengis' and (set(args.cores) != {'superdrastic'} or args.resolution == 1):
         parser.error('Gengis requires --cores superdrastic and --resolution 2 or 3')
-    if args.resolution==3 and args.rasterizer!='gengis':parser.error('3x requires --rasterizer gengis')
-    if args.resolution>1 and not set(args.cores)<={'drastic','superdrastic'}:
+    if args.resolution == 3 and args.rasterizer != 'gengis': parser.error('3x requires --rasterizer gengis')
+    if args.resolution > 1 and not set(args.cores) <= {'drastic', 'superdrastic'}:
         parser.error('Selected core does not implement higher internal resolution')
     import device
-    engine_env={}
+    engine_env = {}
     for assignment in args.engine_env:
-        key,sep,value=assignment.partition('=')
+        key, sep, value = assignment.partition('=')
         if not sep or key not in EXPERIMENT_SETTINGS:
             parser.error('Unsupported experiment environment setting')
-        engine_env[key]=value
-    options=dict(root=args.root,rom=args.rom,seconds=args.seconds,volume=args.volume,cores=args.cores,shader=args.shader,checkpoints=args.checkpoints,
-                 max_speed=args.max_speed,feature_checks=args.feature_checks,phase=args.phase,repeats=args.repeats,menu_cycles=args.menu_cycles,resume_from=args.resume_from,
-                 keep=args.keep,switch_to=args.switch_to,rgds_scale=args.rgds_scale,rgds_smooth=args.rgds_smooth,rgds_2d=args.rgds_2d,rgds_direct=args.rgds_direct,engine_env=engine_env,experiment_settings=sorted(EXPERIMENT_SETTINGS),capture_scene=args.capture_scene,threaded_3d=args.threaded_3d,resolution=args.resolution,rasterizer=args.rasterizer)
-    if args.probe_clock:options['probe_clock']=(ROOT/'tools/probe_emulated_clock.py').read_text()
+        engine_env[key] = value
+    options = dict(
+        root=args.root,
+        rom=args.rom,
+        seconds=args.seconds,
+        volume=args.volume,
+        cores=args.cores,
+        shader=args.shader,
+        checkpoints=args.checkpoints,
+        max_speed=args.max_speed,
+        feature_checks=args.feature_checks,
+        phase=args.phase,
+        repeats=args.repeats,
+        menu_cycles=args.menu_cycles,
+        resume_from=args.resume_from,
+        keep=args.keep,
+        switch_to=args.switch_to,
+        rgds_scale=args.rgds_scale,
+        rgds_smooth=args.rgds_smooth,
+        rgds_2d=args.rgds_2d,
+        rgds_direct=args.rgds_direct,
+        engine_env=engine_env,
+        experiment_settings=sorted(EXPERIMENT_SETTINGS),
+        capture_scene=args.capture_scene,
+        threaded_3d=args.threaded_3d,
+        resolution=args.resolution,
+        rasterizer=args.rasterizer
+    )
+    if args.probe_clock: options['probe_clock'] = (ROOT / 'tools/probe_emulated_clock.py').read_text()
     import subprocess
-    try:result=device.ssh(device.target(args.device),'python3 -B - '+shlex.quote(json.dumps(options)),batch=True,input=DEVICE_SCRIPT,text=True,capture_output=True)
+    try:
+        result = device.ssh(
+            device.target(args.device),
+            'python3 -B - ' + shlex.quote(json.dumps(options)),
+            batch=True,
+            input=DEVICE_SCRIPT,
+            text=True,
+            capture_output=True
+        )
     except subprocess.CalledProcessError as error:
-        result=error  # Preserve failure evidence, too.
-        result.stdout=error.stdout or '';result.stderr=error.stderr or ''
-    args.output.parent.mkdir(parents=True,exist_ok=True)
-    args.output.write_text(result.stdout+result.stderr)
-    failed=False
+        result = error  # Preserve failure evidence, too.
+        result.stdout = error.stdout or ''
+        result.stderr = error.stderr or ''
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(result.stdout + result.stderr)
+    failed = False
     for line in result.stdout.splitlines():
         if line.startswith('{'):
-            report=json.loads(line)
+            report = json.loads(line)
             # SSH completing successfully does not mean the emulator launched.
             # Keep the full evidence, but make callers stop on a failed run.
-            failed |= bool(report.get('error')) or report.get('exit_code',0)!=0
-            print(json.dumps({key:report[key] for key in ('backend','exit_code','first_present_seconds','native_ready_seconds','menus','error') if key in report}))
-        else:print(line)
-    print(result.stderr,end='',file=sys.stderr)
+            failed |= bool(report.get('error')) or report.get('exit_code', 0) != 0
+            print(
+                json.dumps(
+                    {
+                        key: report[key]
+                        for key in
+                        ('backend', 'exit_code', 'first_present_seconds', 'native_ready_seconds', 'menus', 'error')
+                        if key in report
+                    }
+                )
+            )
+        else:
+            print(line)
+    print(result.stderr, end='', file=sys.stderr)
     return result.returncode or int(failed)
 
-if __name__=='__main__':raise SystemExit(main())
+
+if __name__ == '__main__': raise SystemExit(main())

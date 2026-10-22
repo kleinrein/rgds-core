@@ -8,17 +8,22 @@ import tempfile
 import time
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
-BINARY=ROOT/'build/host/rgds-launcher'
+ROOT = Path(__file__).resolve().parents[1]
+BINARY = ROOT / 'build/host/rgds-launcher'
 
 
-@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config') and BINARY.exists(),'Host SDL/C++ required')
+@unittest.skipUnless(
+    shutil.which('clang++') and shutil.which('sdl2-config') and BINARY.exists(), 'Host SDL/C++ required'
+)
 class LauncherReturnTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.temp=tempfile.TemporaryDirectory();cls.root=Path(cls.temp.name)
-        source=cls.root/'display.cpp';cls.library=cls.root/'display.dylib'
-        source.write_text(r'''#include <SDL.h>
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temp.name)
+        source = cls.root / 'display.cpp'
+        cls.library = cls.root / 'display.dylib'
+        source.write_text(
+            r'''#include <SDL.h>
 #include <dlfcn.h>
 #include <cstdlib>
 #include <fstream>
@@ -52,22 +57,39 @@ extern "C" int SDL_WaitEventTimeout(SDL_Event* event,int){
  *event={};event->type=next==1?SDL_KEYUP:SDL_KEYDOWN;
  bool change=std::getenv("RGDS_TEST_CHANGE_RETURN");event->key.keysym.sym=next<2?(change?SDLK_VOLUMEUP:SDLK_RIGHT):next==2?(failed?SDLK_a:SDLK_r):SDLK_ESCAPE;next++;return 1;
 }
-''')
-        flags=subprocess.check_output(['sdl2-config','--cflags','--libs'],text=True).split()
-        result=subprocess.run(['clang++','-std=c++17','-shared','-fPIC',str(source),*flags,'-o',str(cls.library)],capture_output=True,text=True)
-        if result.returncode:raise AssertionError(result.stderr)
+'''
+        )
+        flags = subprocess.check_output(['sdl2-config', '--cflags', '--libs'], text=True).split()
+        result = subprocess.run(
+            ['clang++', '-std=c++17', '-shared', '-fPIC',
+             str(source), *flags, '-o',
+             str(cls.library)],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode: raise AssertionError(result.stderr)
 
     @classmethod
-    def tearDownClass(cls):cls.temp.cleanup()
+    def tearDownClass(cls):
+        cls.temp.cleanup()
 
-    def exercise(self,fail_volume=False,change_volume=False,ota_trial=False):
+    def exercise(self, fail_volume=False, change_volume=False, ota_trial=False):
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);app=root/'app';data=root/'data';roms=root/'roms';runtime=app/'runtime'
-            runtime.mkdir(parents=True);data.mkdir();roms.mkdir()
-            (app/'assets').symlink_to(ROOT/'assets',target_is_directory=True);(app/'themes').symlink_to(ROOT/'themes',target_is_directory=True)
-            for name in ('a.nds','b.nds'):(roms/name).write_bytes(b'fixture')
-            if fail_volume:(data/'fail-volume').touch()
-            (runtime/'system_controls.py').write_text('''import argparse,time
+            root = Path(folder)
+            app = root / 'app'
+            data = root / 'data'
+            roms = root / 'roms'
+            runtime = app / 'runtime'
+            runtime.mkdir(parents=True)
+            data.mkdir()
+            roms.mkdir()
+            (app / 'assets').symlink_to(ROOT / 'assets', target_is_directory=True)
+            (app / 'themes').symlink_to(ROOT / 'themes', target_is_directory=True)
+            for name in ('a.nds', 'b.nds'):
+                (roms / name).write_bytes(b'fixture')
+            if fail_volume: (data / 'fail-volume').touch()
+            (runtime / 'system_controls.py').write_text(
+                '''import argparse,time
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('command');p.add_argument('value',nargs='?',type=int);p.add_argument('--data',type=Path,required=True);a=p.parse_args();a.data.mkdir(parents=True,exist_ok=True)
 def trace(name):
@@ -85,8 +107,10 @@ else:
  failed=a.command=='volume' and a.value==0 and (a.data/'game-exit').exists() and (a.data/'fail-volume').exists()
  if not failed and a.command=='volume':(a.data/'volume.ini').write_text('schema=1\\nvolume='+str(a.value)+'\\n')
  trace(a.command+'-end');busy.unlink();raise SystemExit(1 if failed else 0)
-''')
-            (runtime/'emulators.py').write_text('''import sys,time,socket,os,json
+'''
+            )
+            (runtime / 'emulators.py').write_text(
+                '''import sys,time,socket,os,json
 from pathlib import Path
 data=Path(sys.argv[sys.argv.index('--data')+1])
 if (data/'game-exit').exists():
@@ -112,41 +136,80 @@ with (data/'launches').open('a') as f:f.write('launch\\n')
 (data/'volume.ini').write_text('schema=1\\nvolume=0\\n')
 (data/'system.ini').write_text('schema=1\\npower=2\\nbrightness=80\\nidle=0\\nlid=0\\nbattery_percent=1\\ntimezone=Europe/Oslo\\n')
 (data/'game-exit').write_text(str(time.time()))
-''')
-            (data/'system.ini').write_text('schema=1\npower=2\nbrightness=60\nidle=0\nlid=0\nbattery_percent=1\ntimezone=Europe/Oslo\n')
-            (data/'volume.ini').write_text('schema=1\nvolume=25\n')
-            state=root/'state.txt';snapshot=root/'screen'
-            env=dict(os.environ,RGDS_SDL_LIBRARY=str(self.library),SDL_VIDEODRIVER='dummy',RGDS_SYSTEM_MANAGED='1',RGDS_VOLUME_EXTERNAL='1')
-            env['RGDS_TEST_RETURN_DATA']=str(data)
-            if ota_trial:env['RGDS_UPDATE_TOKEN']='trial-immediate-play'
-            if fail_volume:env['RGDS_TEST_FAILED_RETURN']='1'
-            if change_volume:env['RGDS_TEST_CHANGE_RETURN']='1';env.pop('RGDS_VOLUME_EXTERNAL',None)
-            child=subprocess.Popen([str(BINARY),'--library','--allow-launch','--app',str(app),'--data',str(data),
-                '--rom-dir',str(roms),'--state',str(state),'--seconds','5','--screenshot',str(snapshot)],
-                cwd=ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
-            delay=None;deadline=time.monotonic()+6
+'''
+            )
+            (data / 'system.ini'
+             ).write_text('schema=1\npower=2\nbrightness=60\nidle=0\nlid=0\nbattery_percent=1\ntimezone=Europe/Oslo\n')
+            (data / 'volume.ini').write_text('schema=1\nvolume=25\n')
+            state = root / 'state.txt'
+            snapshot = root / 'screen'
+            env = dict(
+                os.environ,
+                RGDS_SDL_LIBRARY=str(self.library),
+                SDL_VIDEODRIVER='dummy',
+                RGDS_SYSTEM_MANAGED='1',
+                RGDS_VOLUME_EXTERNAL='1'
+            )
+            env['RGDS_TEST_RETURN_DATA'] = str(data)
+            if ota_trial: env['RGDS_UPDATE_TOKEN'] = 'trial-immediate-play'
+            if fail_volume: env['RGDS_TEST_FAILED_RETURN'] = '1'
+            if change_volume:
+                env['RGDS_TEST_CHANGE_RETURN'] = '1'
+                env.pop('RGDS_VOLUME_EXTERNAL', None)
+            child = subprocess.Popen(
+                [
+                    str(BINARY), '--library', '--allow-launch', '--app',
+                    str(app), '--data',
+                    str(data), '--rom-dir',
+                    str(roms), '--state',
+                    str(state), '--seconds', '5', '--screenshot',
+                    str(snapshot)
+                ],
+                cwd=ROOT,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            delay = None
+            deadline = time.monotonic() + 6
             try:
-                while child.poll() is None and time.monotonic()<deadline:
-                    marker=data/'game-exit';image=root/'screen-top.bmp'
+                while child.poll() is None and time.monotonic() < deadline:
+                    marker = data / 'game-exit'
+                    image = root / 'screen-top.bmp'
                     if marker.exists() and image.exists():
-                        ended=float(marker.read_text())
-                        if image.stat().st_mtime>ended and delay is None:delay=image.stat().st_mtime-ended
+                        ended = float(marker.read_text())
+                        if image.stat().st_mtime > ended and delay is None: delay = image.stat().st_mtime - ended
                     time.sleep(.01)
-                output,errors=child.communicate(timeout=3)
+                output, errors = child.communicate(timeout=3)
             finally:
-                if child.poll() is None:child.kill();child.wait()
-            self.assertEqual(child.returncode,0,output+errors)
-            self.assertIsNotNone(delay,'The native launcher must redraw after the stub game exits\n'+output+errors+'\n'+((data/'trace').read_text() if (data/'trace').exists() else 'no trace'))
-            self.assertLess(delay,1,'Slow status helpers must not block the first returned frame')
-            self.assertEqual((data/'launches').read_text(),'launch\n')
-            self.assertEqual((data/'retried-launch').exists(),fail_volume,'START retries preparation after a failed restore')
-            self.assertEqual(int(state.read_text().split()[1]),0 if change_volume else 1,'Input must work while status remains slow')
-            trace=(data/'trace').read_text();self.assertNotIn('OVERLAP',trace)
-            ended=float((data/'game-exit').read_text())
-            commands=[line.split()[0] for line in trace.splitlines() if float(line.split()[-1])>ended]
-            self.assertEqual(commands[:6],['volume-start','volume-end','brightness-start','brightness-end','power-start','power-end'])
-            self.assertIn('status-start',commands)
-            if change_volume:self.assertIn('volume=5\n',(data/'volume.ini').read_text())
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+            self.assertEqual(child.returncode, 0, output + errors)
+            self.assertIsNotNone(
+                delay, 'The native launcher must redraw after the stub game exits\n' + output + errors + '\n' +
+                ((data / 'trace').read_text() if (data / 'trace').exists() else 'no trace')
+            )
+            self.assertLess(delay, 1, 'Slow status helpers must not block the first returned frame')
+            self.assertEqual((data / 'launches').read_text(), 'launch\n')
+            self.assertEqual(
+                (data / 'retried-launch').exists(), fail_volume, 'START retries preparation after a failed restore'
+            )
+            self.assertEqual(
+                int(state.read_text().split()[1]), 0 if change_volume else 1,
+                'Input must work while status remains slow'
+            )
+            trace = (data / 'trace').read_text()
+            self.assertNotIn('OVERLAP', trace)
+            ended = float((data / 'game-exit').read_text())
+            commands = [line.split()[0] for line in trace.splitlines() if float(line.split()[-1]) > ended]
+            self.assertEqual(
+                commands[:6],
+                ['volume-start', 'volume-end', 'brightness-start', 'brightness-end', 'power-start', 'power-end']
+            )
+            self.assertIn('status-start', commands)
+            if change_volume: self.assertIn('volume=5\n', (data / 'volume.ini').read_text())
             return delay
 
     def test_starting_game_during_ota_trial_keeps_heartbeat_after_sdl_closes(self):
@@ -154,13 +217,22 @@ with (data/'launches').open('a') as f:f.write('launch\\n')
 
     def test_cancel_during_slow_preparation_restores_navigation_without_handoff(self):
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);app=root/'app';data=root/'data';roms=root/'roms';runtime=app/'runtime'
-            runtime.mkdir(parents=True);data.mkdir();roms.mkdir()
-            for name in ('a.nds','b.nds'):(roms/name).write_bytes(b'fixture')
-            (app/'assets').symlink_to(ROOT/'assets',target_is_directory=True)
-            (app/'themes').symlink_to(ROOT/'themes',target_is_directory=True)
-            (runtime/'system_controls.py').write_text('print("brightness_supported=0\\nvolume_supported=0\\nbattery=82\\ncharging=0")\n')
-            (runtime/'emulators.py').write_text('''import sys,time,signal
+            root = Path(directory)
+            app = root / 'app'
+            data = root / 'data'
+            roms = root / 'roms'
+            runtime = app / 'runtime'
+            runtime.mkdir(parents=True)
+            data.mkdir()
+            roms.mkdir()
+            for name in ('a.nds', 'b.nds'):
+                (roms / name).write_bytes(b'fixture')
+            (app / 'assets').symlink_to(ROOT / 'assets', target_is_directory=True)
+            (app / 'themes').symlink_to(ROOT / 'themes', target_is_directory=True)
+            (runtime / 'system_controls.py'
+             ).write_text('print("brightness_supported=0\\nvolume_supported=0\\nbattery=82\\ncharging=0")\n')
+            (runtime / 'emulators.py').write_text(
+                '''import sys,time,signal
 from pathlib import Path
 data=Path(sys.argv[sys.argv.index('--data')+1])
 def cancel(*args):
@@ -169,17 +241,34 @@ signal.signal(signal.SIGTERM,cancel)
 (data/'preparing').touch()
 time.sleep(10)
 (data/'should-not-start').touch()
-''')
-            state=root/'state'
-            result=subprocess.run([str(BINARY),'--library','--allow-launch','--app',str(app),'--data',str(data),
-                '--rom-dir',str(roms),'--state',str(state),'--seconds','4'],cwd=ROOT,
-                env=dict(os.environ,RGDS_SDL_LIBRARY=str(self.library),SDL_VIDEODRIVER='dummy',
-                         RGDS_SYSTEM_MANAGED='1',RGDS_TEST_CANCEL_LAUNCH='1',RGDS_TEST_RETURN_DATA=str(data)),
-                capture_output=True,text=True,timeout=7)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            self.assertTrue((data/'cancelled').exists())
-            self.assertFalse((data/'should-not-start').exists())
-            self.assertEqual(int(state.read_text().split()[1]),1,'Navigation must resume after the cancellation fade')
+'''
+            )
+            state = root / 'state'
+            result = subprocess.run(
+                [
+                    str(BINARY), '--library', '--allow-launch', '--app',
+                    str(app), '--data',
+                    str(data), '--rom-dir',
+                    str(roms), '--state',
+                    str(state), '--seconds', '4'
+                ],
+                cwd=ROOT,
+                env=dict(
+                    os.environ,
+                    RGDS_SDL_LIBRARY=str(self.library),
+                    SDL_VIDEODRIVER='dummy',
+                    RGDS_SYSTEM_MANAGED='1',
+                    RGDS_TEST_CANCEL_LAUNCH='1',
+                    RGDS_TEST_RETURN_DATA=str(data)
+                ),
+                capture_output=True,
+                text=True,
+                timeout=7
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue((data / 'cancelled').exists())
+            self.assertFalse((data / 'should-not-start').exists())
+            self.assertEqual(int(state.read_text().split()[1]), 1, 'Navigation must resume after the cancellation fade')
 
     def test_return_redraw_and_navigation_do_not_wait_for_slow_status(self):
         self.exercise()
@@ -191,4 +280,4 @@ time.sleep(10)
         self.exercise(change_volume=True)
 
 
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

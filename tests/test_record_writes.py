@@ -12,8 +12,10 @@ from library import read_fields, write_fields
 
 class RecordWriteTests(unittest.TestCase):
     def setUp(self):
-        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
-        self.root = Path(temp.name); self.path = self.root / "preferences.ini"
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.path = self.root / "preferences.ini"
 
     def test_identical_preferences_retain_inode_and_timestamp(self):
         self.assertTrue(write_fields(self.path, dict(volume=15)))
@@ -25,7 +27,8 @@ class RecordWriteTests(unittest.TestCase):
     def test_failed_durable_write_preserves_previous_record(self):
         write_fields(self.path, dict(volume=15))
         with patch("library.os.fsync", side_effect=OSError("flush failed")):
-            with self.assertRaises(OSError): write_fields(self.path, dict(volume=80))
+            with self.assertRaises(OSError):
+                write_fields(self.path, dict(volume=80))
         self.assertEqual(read_fields(self.path), dict(volume="15"))
         self.assertEqual(list(self.root.glob(".pending-*")), [])
 

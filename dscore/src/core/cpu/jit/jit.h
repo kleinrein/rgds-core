@@ -7,24 +7,26 @@
 
 #include <cstdio>
 
-namespace ds { struct NDS; }
+namespace ds {
+struct NDS;
+}
 
 namespace ds::jit {
 
 struct Stats {
   u64 blocks_translated = 0;
-  u64 instrs_translated = 0;   // emitted inline
-  u64 instrs_fallback = 0;     // routed to the interpreter helper
+  u64 instrs_translated = 0; // emitted inline
+  u64 instrs_fallback = 0;   // routed to the interpreter helper
   u64 blocks_invalidated = 0;
   u64 flushes = 0;
-  u64 entries = 0;             // native entries (one per scheduler slice at most)
-  u64 code_bytes = 0;          // native bytes emitted (cold sections included)
-  u64 hot_bytes = 0;           // of which hot-section (fast path) bytes
-  u64 slow_accesses = 0;       // loads/stores that left the inline page-table path
-  u64 blocks_revived = 0;      // killed blocks whose guest bytes matched again
-  u64 bios_sha1_blocks = 0;    // DSi BIOS SHA-1 blocks run natively
-  u64 wait_loop_runs = 0;      // ARM7 BIOS WaitByLoop heads fast-forwarded
-  u64 slices_interpreted = 0;  // slices the interpreter ran for cold code (DS_JIT_WARM)
+  u64 entries = 0;            // native entries (one per scheduler slice at most)
+  u64 code_bytes = 0;         // native bytes emitted (cold sections included)
+  u64 hot_bytes = 0;          // of which hot-section (fast path) bytes
+  u64 slow_accesses = 0;      // loads/stores that left the inline page-table path
+  u64 blocks_revived = 0;     // killed blocks whose guest bytes matched again
+  u64 bios_sha1_blocks = 0;   // DSi BIOS SHA-1 blocks run natively
+  u64 wait_loop_runs = 0;     // ARM7 BIOS WaitByLoop heads fast-forwarded
+  u64 slices_interpreted = 0; // slices the interpreter ran for cold code (DS_JIT_WARM)
 };
 
 // Safe to call once per NDS; `trace` mirrors NDS::trace at attach time

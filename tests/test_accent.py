@@ -12,8 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 class AccentTests(unittest.TestCase):
     def test_every_colour_meets_contrast_on_light_and_dark_surfaces(self):
         with tempfile.TemporaryDirectory() as folder:
-            source = Path(folder) / 'accent.cpp';binary = Path(folder) / 'accent'
-            source.write_text(r'''
+            source = Path(folder) / 'accent.cpp'
+            binary = Path(folder) / 'accent'
+            source.write_text(
+                r'''
 #include "launcher/accent.hpp"
 #include <cassert>
 #include <cstdio>
@@ -34,10 +36,17 @@ int main(){
     assert(theme.at("accent").r==default_theme().at("accent").r);
     std::puts("ok");
 }
-''')
-            subprocess.run(['clang++', '-std=c++17', '-I' + str(ROOT / 'src'), str(source), '-o', str(binary)], check=True, capture_output=True, text=True)
+'''
+            )
+            subprocess.run(
+                ['clang++', '-std=c++17', '-I' + str(ROOT / 'src'),
+                 str(source), '-o', str(binary)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
             result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-if __name__ == '__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

@@ -10,17 +10,23 @@ namespace ds::bios {
 
 std::u16string user_text(const std::string& text, u32 max_units) {
   std::u16string units;
-  try { units = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(text); }
-  catch (const std::range_error&) { return {}; }
+  try {
+    units = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(text);
+  } catch (const std::range_error&) {
+    return {};
+  }
   if (units.size() > max_units) units.resize(max_units);
   if (!units.empty() && units.back() >= 0xD800 && units.back() <= 0xDBFF) units.pop_back();
   return units;
 }
 std::string user_text(const u8* bytes, u32 count) {
   std::u16string units;
-  for (u32 i=0; i<count; ++i) units.push_back(static_cast<char16_t>(bytes[2*i] | (bytes[2*i+1]<<8)));
-  try { return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(units); }
-  catch (const std::range_error&) { return {}; }
+  for (u32 i = 0; i < count; ++i) units.push_back(static_cast<char16_t>(bytes[2 * i] | (bytes[2 * i + 1] << 8)));
+  try {
+    return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(units);
+  } catch (const std::range_error&) {
+    return {};
+  }
 }
 
 u16 crc16(const u8* data, u32 len, u16 start) {
@@ -38,29 +44,33 @@ u16 crc16(const u8* data, u32 len, u16 start) {
 }
 
 namespace {
-void w16(u8* p, u16 v) { p[0] = static_cast<u8>(v); p[1] = static_cast<u8>(v >> 8); }
+void w16(u8* p, u16 v) {
+  p[0] = static_cast<u8>(v);
+  p[1] = static_cast<u8>(v >> 8);
+}
 
 // Field offsets follow GBATEK "DS Firmware Header" / "User Settings".
 void fill_header(u8* h, u32 size, u8 console_type) {
   std::memset(h, 0, 0x200);
-  std::memcpy(h + 0x08, "DSPR", 4);            // not "MACP", so it's not mistaken for a dump
-  h[0x1D] = console_type;                      // 0x20 DS Lite, 0x57 DSi
-  w16(h + 0x20, static_cast<u16>((size - 0x200) >> 3));   // user settings offset (/8)
-  w16(h + 0x2C, 0x138);                        // wifi config length
-  h[0x2F] = 6;                                 // wifi version W006
+  std::memcpy(h + 0x08, "DSPR", 4);                     // not "MACP", so it's not mistaken for a dump
+  h[0x1D] = console_type;                               // 0x20 DS Lite, 0x57 DSi
+  w16(h + 0x20, static_cast<u16>((size - 0x200) >> 3)); // user settings offset (/8)
+  w16(h + 0x2C, 0x138);                                 // wifi config length
+  h[0x2F] = 6;                                          // wifi version W006
   static const u8 unused3[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00};
   std::memcpy(h + 0x30, unused3, 6);
   static const u8 mac[6] = {0x00, 0x09, 0xBF, 0x11, 0x22, 0x33};
   std::memcpy(h + 0x36, mac, 6);
-  w16(h + 0x3C, 0x3FFE);                       // enabled channels
-  h[0x3E] = 0xFF; h[0x3F] = 0xFF;
-  h[0x40] = 3;                                 // RF chip type 3
-  h[0x41] = 0x94;                              // RF bits per entry
-  h[0x42] = 0x29;                              // RF entries
+  w16(h + 0x3C, 0x3FFE); // enabled channels
+  h[0x3E] = 0xFF;
+  h[0x3F] = 0xFF;
+  h[0x40] = 3;    // RF chip type 3
+  h[0x41] = 0x94; // RF bits per entry
+  h[0x42] = 0x29; // RF entries
   h[0x43] = 0x02;
   static const u16 init[9] = {0x0002, 0x0017, 0x0026, 0x1818, 0x0048, 0x4840, 0x0058, 0x0042, 0x0146};
   for (u32 i = 0; i < 9; ++i) w16(h + 0x44 + 2 * i, init[i]);
-  w16(h + 0x2A, crc16(h + 0x2C, 0x138, 0x0000));   // wifi config checksum
+  w16(h + 0x2A, crc16(h + 0x2C, 0x138, 0x0000)); // wifi config checksum
 }
 
 void put_utf16(u8* dst, const std::string& s, u32 max_chars, u16* len_out) {
@@ -72,25 +82,33 @@ void put_utf16(u8* dst, const std::string& s, u32 max_chars, u16* len_out) {
 
 void fill_user(u8* u, const UserSettings& s) {
   std::memset(u, 0, 0x100);
-  w16(u + 0x00, 5);                            // version
+  w16(u + 0x00, 5); // version
   u[0x02] = static_cast<u8>(s.favourite_colour & 15);
   u[0x03] = (s.birthday_month >= 1 && s.birthday_month <= 12) ? s.birthday_month : 1;
   u[0x04] = (s.birthday_day >= 1 && s.birthday_day <= 31) ? s.birthday_day : 1;
   u16 len;
-  put_utf16(u + 0x06, s.nickname, 10, &len); std::memcpy(u + 0x1A, &len, 2);
-  put_utf16(u + 0x1C, s.message, 26, &len);  std::memcpy(u + 0x50, &len, 2);
+  put_utf16(u + 0x06, s.nickname, 10, &len);
+  std::memcpy(u + 0x1A, &len, 2);
+  put_utf16(u + 0x1C, s.message, 26, &len);
+  std::memcpy(u + 0x50, &len, 2);
   // Identity touch calibration, ADC<<4 form.
-  w16(u + 0x58, 0); w16(u + 0x5A, 0); u[0x5C] = 0; u[0x5D] = 0;
-  w16(u + 0x5E, 255 << 4); w16(u + 0x60, 191 << 4); u[0x62] = 255; u[0x63] = 191;
-  w16(u + 0x64, static_cast<u16>((s.language & 7) | (7 << 3)));   // language, backlight max
-  w16(u + 0x70, 0);                            // update counter
+  w16(u + 0x58, 0);
+  w16(u + 0x5A, 0);
+  u[0x5C] = 0;
+  u[0x5D] = 0;
+  w16(u + 0x5E, 255 << 4);
+  w16(u + 0x60, 191 << 4);
+  u[0x62] = 255;
+  u[0x63] = 191;
+  w16(u + 0x64, static_cast<u16>((s.language & 7) | (7 << 3))); // language, backlight max
+  w16(u + 0x70, 0);                                             // update counter
   w16(u + 0x72, crc16(u, 0x70, 0xFFFF));
 }
 
 std::vector<u8> build(const UserSettings& user, u32 size, u8 console_type) {
   std::vector<u8> fw(size, 0xFF);
   fill_header(fw.data(), size, console_type);
-  fw[0x2FF] = 0x80;                            // boot0: NAND as stage-2 medium
+  fw[0x2FF] = 0x80; // boot0: NAND as stage-2 medium
   fill_access_point(fw.data() + size - 0x600, true, console_type == 0x57);
   fill_access_point(fw.data() + size - 0x500, false, false);
   fill_access_point(fw.data() + size - 0x400, false, false);
@@ -102,13 +120,13 @@ std::vector<u8> build(const UserSettings& user, u32 size, u8 console_type) {
 void fill_access_point(u8* ap, bool configured, bool dsi) {
   std::memset(ap, 0, 0x100);
   if (configured) {
-    std::strncpy(reinterpret_cast<char*>(ap + 0x40), kAccessPointSsid, 32);   // SSID
-    ap[0xE7] = 0x00;                           // status: normal
-    if (dsi) w16(ap + 0xEA, 1400);             // MTU
+    std::strncpy(reinterpret_cast<char*>(ap + 0x40), kAccessPointSsid, 32); // SSID
+    ap[0xE7] = 0x00;                                                        // status: normal
+    if (dsi) w16(ap + 0xEA, 1400);                                          // MTU
   } else {
-    ap[0xE7] = 0xFF;                           // status: not configured
+    ap[0xE7] = 0xFF; // status: not configured
   }
-  ap[0xEF] = 0x01;                             // connection configured (melonDS sets it on both)
+  ap[0xEF] = 0x01; // connection configured (melonDS sets it on both)
   w16(ap + 0xFE, crc16(ap, 0xFE, 0x0000));
 }
 

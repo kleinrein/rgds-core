@@ -30,7 +30,10 @@ std::atomic<size_t> g_n{0};
 std::atomic<bool> g_active{false};
 
 // utime+stime per thread at first activation and at write, for absolute CPU.
-struct TaskTime { long tid; unsigned long long ticks; };
+struct TaskTime {
+  long tid;
+  unsigned long long ticks;
+};
 constexpr size_t kMaxTasks = 64;
 TaskTime g_t0[kMaxTasks];
 size_t g_nt0 = 0;
@@ -46,7 +49,7 @@ bool task_ticks(const char* tid, unsigned long long* ticks) {
   const size_t n = std::fread(buf, 1, sizeof buf - 1, f);
   std::fclose(f);
   buf[n] = 0;
-  const char* q = std::strrchr(buf, ')');   // the name can hold spaces; fields resume after its ')'
+  const char* q = std::strrchr(buf, ')'); // the name can hold spaces; fields resume after its ')'
   if (!q) return false;
   unsigned long ut = 0, st = 0;
   // fields 3..15 after the name: state ppid pgrp session tty tpgid flags minflt cminflt majflt cmajflt utime stime
@@ -60,7 +63,8 @@ void snapshot_tasks() {
   if (DIR* d = opendir("/proc/self/task")) {
     while (dirent* e = readdir(d)) {
       unsigned long long t;
-      if (e->d_name[0] != '.' && g_nt0 < kMaxTasks && task_ticks(e->d_name, &t)) g_t0[g_nt0++] = TaskTime{std::atol(e->d_name), t};
+      if (e->d_name[0] != '.' && g_nt0 < kMaxTasks && task_ticks(e->d_name, &t))
+        g_t0[g_nt0++] = TaskTime{std::atol(e->d_name), t};
     }
     closedir(d);
   }
@@ -90,7 +94,7 @@ int each_object(struct dl_phdr_info* info, size_t, void* out) {
   FILE* f = static_cast<FILE*>(out);
   char exe[512] = "";
   const char* name = info->dlpi_name;
-  if (!name || !*name) {   // the executable itself
+  if (!name || !*name) { // the executable itself
     const ssize_t k = readlink("/proc/self/exe", exe, sizeof exe - 1);
     if (k > 0) exe[k] = 0;
     name = exe;
@@ -99,30 +103,31 @@ int each_object(struct dl_phdr_info* info, size_t, void* out) {
     const auto& ph = info->dlpi_phdr[i];
     if (ph.p_type != PT_LOAD || !(ph.p_flags & PF_X)) continue;
     const uintptr_t lo = info->dlpi_addr + ph.p_vaddr;
-    std::fprintf(f, "obj %#lx %#lx %s\n", static_cast<unsigned long>(lo), static_cast<unsigned long>(lo + ph.p_memsz), name);
+    std::fprintf(f, "obj %#lx %#lx %s\n", static_cast<unsigned long>(lo), static_cast<unsigned long>(lo + ph.p_memsz),
+                 name);
   }
   return 0;
 }
 
 int first_object(struct dl_phdr_info* info, size_t, void* out) {
-  *static_cast<uintptr_t*>(out) = info->dlpi_addr;   // the first object is the executable
+  *static_cast<uintptr_t*>(out) = info->dlpi_addr; // the first object is the executable
   return 1;
 }
 
 } // namespace
 
 bool start() {
-  struct sigaction sa {};
+  struct sigaction sa{};
   sa.sa_sigaction = on_sigprof;
   sa.sa_flags = SA_SIGINFO | SA_RESTART;
   sigemptyset(&sa.sa_mask);
   if (sigaction(SIGPROF, &sa, nullptr) != 0) return false;
-  const itimerval tv{{0, 1000}, {0, 1000}};   // asks for 1 kHz; the kernel's tick decides
+  const itimerval tv{{0, 1000}, {0, 1000}}; // asks for 1 kHz; the kernel's tick decides
   return setitimer(ITIMER_PROF, &tv, nullptr) == 0;
 }
 
 void set_active(bool on) {
-  if (on && !g_window_started) {   // arm the window once, on first activation
+  if (on && !g_window_started) { // arm the window once, on first activation
     g_window_started = true;
     snapshot_tasks();
     g_window0 = std::chrono::steady_clock::now();
@@ -140,7 +145,9 @@ bool write(const char* path) {
   dl_iterate_phdr(first_object, &base);
   std::fprintf(f, "base %#lx\npid %d\n", static_cast<unsigned long>(base), static_cast<int>(getpid()));
   if (g_window_started)
-    std::fprintf(f, "window %.3f %ld\n", std::chrono::duration<double>(std::chrono::steady_clock::now() - g_window0).count(), sysconf(_SC_CLK_TCK));
+    std::fprintf(f, "window %.3f %ld\n",
+                 std::chrono::duration<double>(std::chrono::steady_clock::now() - g_window0).count(),
+                 sysconf(_SC_CLK_TCK));
   dl_iterate_phdr(each_object, f);
   if (DIR* d = opendir("/proc/self/task")) {
     while (dirent* e = readdir(d)) {
@@ -153,7 +160,8 @@ bool write(const char* path) {
       }
       unsigned long long t = 0, t0 = 0;
       const bool have = task_ticks(e->d_name, &t);
-      for (size_t k = 0; k < g_nt0; ++k) if (g_t0[k].tid == std::atol(e->d_name)) t0 = g_t0[k].ticks;
+      for (size_t k = 0; k < g_nt0; ++k)
+        if (g_t0[k].tid == std::atol(e->d_name)) t0 = g_t0[k].ticks;
       std::fprintf(f, "thread %s %s %lld\n", e->d_name, comm, have ? static_cast<long long>(t - t0) : -1LL);
     }
     closedir(d);

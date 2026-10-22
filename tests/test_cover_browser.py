@@ -45,19 +45,43 @@ class CoverBrowserTests(unittest.TestCase):
                 (folder / 'stats.ini').write_text('sessions=1\nlast_played=2026-10-12\n')
 
     def run_ui(self, script='', layout=1, animations=False, home=False, first=False, extra=()):
-        (self.root / 'ui.ini').write_text(f'schema=1\nlayout={layout}\nanimations={int(animations)}\nhome_layout=carousel\nbackground=plain\n')
+        (self.root / 'ui.ini').write_text(
+            f'schema=1\nlayout={layout}\nanimations={int(animations)}\nhome_layout=carousel\nbackground=plain\n'
+        )
         state = self.root / 'state'
         state.write_text('1 0 0 ""\n')
         inputs = self.root / 'input'
         inputs.write_text(script)
         screenshot = self.root / 'screen.bmp'
         report = self.root / 'report.json'
-        result = subprocess.run([
-            str(BINARY), '--preview', '--home' if home else '--library', '--rom-dir', str(self.roms),
-            '--data', str(self.data), '--preferences', str(self.prefs), '--state', str(state),
-            '--input-script', str(inputs), '--screenshot', str(screenshot), '--cache-report', str(report),
-            *(['--frames', '1'] if first else ['--seconds', '1']), *extra,
-        ], cwd=ROOT, env=dict(os.environ, SDL_VIDEODRIVER='dummy'), capture_output=True, text=True, timeout=8)
+        result = subprocess.run(
+            [
+                str(BINARY),
+                '--preview',
+                '--home' if home else '--library',
+                '--rom-dir',
+                str(self.roms),
+                '--data',
+                str(self.data),
+                '--preferences',
+                str(self.prefs),
+                '--state',
+                str(state),
+                '--input-script',
+                str(inputs),
+                '--screenshot',
+                str(screenshot),
+                '--cache-report',
+                str(report),
+                *(['--frames', '1'] if first else ['--seconds', '1']),
+                *extra,
+            ],
+            cwd=ROOT,
+            env=dict(os.environ, SDL_VIDEODRIVER='dummy'),
+            capture_output=True,
+            text=True,
+            timeout=8
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.last_stdout = result.stdout
         counts = json.loads(report.read_text())
@@ -96,12 +120,15 @@ class CoverBrowserTests(unittest.TestCase):
                     _, counts, selected = self.run_ui('100 joy-down 5\n130 joy-up 5\n', layout, animations)
                     self.assertEqual(selected, 1)
                     self.assertFalse(counts['picker_open'])
-        _, _, selected = self.run_ui('100 joy-down 5\n150 joy-up 5\n200 joy-down 5\n250 joy-up 5\n300 joy-down 5\n350 joy-up 5\n')
+        _, _, selected = self.run_ui(
+            '100 joy-down 5\n150 joy-up 5\n200 joy-down 5\n250 joy-up 5\n300 joy-down 5\n350 joy-up 5\n'
+        )
         self.assertEqual(selected, 3)
         _, _, selected = self.run_ui('100 joy-down 4\n150 joy-up 4\n')
         self.assertEqual(selected, 11)
         for source in ("joy-down 5", "tap 598 443", "key Right"):
-            release = "joy-up 5" if source.startswith("joy") else "release" if source.startswith("tap") else "key-up Right"
+            release = "joy-up 5" if source.startswith("joy"
+                                                      ) else "release" if source.startswith("tap") else "key-up Right"
             _, _, selected = self.run_ui(f"100 {source}\n850 {release}\n")
             self.assertGreaterEqual(selected, 3)
             self.assertLessEqual(selected, 8)
@@ -116,27 +143,33 @@ class CoverBrowserTests(unittest.TestCase):
         self.assertFalse(counts['picker_open'])
         _, counts, selected = self.run_ui('100 joy-down 11\n150 joy-up 11\n')
         self.assertFalse(counts['picker_open'])
-        self.assertEqual(counts['page'], 8)   # the search keyboard
+        self.assertEqual(counts['page'], 8)  # the search keyboard
         self.assertEqual(selected, 0)
 
     def test_last_played_icon_comes_from_the_last_game(self):
         image, _, _ = self.run_ui(home=True)
         self.assertEqual(visuals.VisualOptionsTests.pixel(image, 100, 350), (255, 255, 0))
 
-
     def test_anbernic_opens_search_from_library_modal_settings_and_keyboard(self):
-        for script in ('100 joy-down 8\n', '100 key Y\n300 joy-down 8\n',
-                       '100 key S\n300 joy-down 8\n', '100 key Q\n300 key Y\n500 key Home\n'):
+        for script in (
+            '100 joy-down 8\n', '100 key Y\n300 joy-down 8\n', '100 key S\n300 joy-down 8\n',
+            '100 key Q\n300 key Y\n500 key Home\n'
+        ):
             _, counts, _ = self.run_ui(script)
             self.assertEqual(counts['page'], 29)
             self.assertFalse(counts['picker_open'])
 
     def test_switcher_shows_games_and_keeps_game_menu_accessible(self):
         from library import write_fields
-        write_fields(self.data / 'session/game-switcher.ini', {
-            'count': 2, 'game_0_rom': str(self.roms / 'Game 00.nds'), 'game_0_title': 'Current game',
-            'game_1_rom': str(self.roms / 'Game 08.nds'), 'game_1_title': 'Recent game',
-        })
+        write_fields(
+            self.data / 'session/game-switcher.ini', {
+                'count': 2,
+                'game_0_rom': str(self.roms / 'Game 00.nds'),
+                'game_0_title': 'Current game',
+                'game_1_rom': str(self.roms / 'Game 08.nds'),
+                'game_1_title': 'Recent game',
+            }
+        )
         extra = ('--game-menu', '--game-switcher', '--game-rom', str(self.roms / 'Game 00.nds'))
         _, counts, _ = self.run_ui(extra=extra)
         self.assertEqual(counts['page'], 36)

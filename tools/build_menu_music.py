@@ -31,7 +31,9 @@ RATE = 32000
 
 def write_pcm_wav(path, samples):
     data = array.array('h', (max(-32767, min(32767, int(round(s * 32767)))) for s in samples)).tobytes()
-    header = b'RIFF' + struct.pack('<I', 36 + len(data)) + b'WAVE' + b'fmt ' + struct.pack('<IHHIIHH', 16, 1, 1, RATE, RATE * 2, 2, 16) + b'data' + struct.pack('<I', len(data))
+    header = b'RIFF' + struct.pack('<I', 36 + len(data)) + b'WAVE' + b'fmt ' + struct.pack(
+        '<IHHIIHH', 16, 1, 1, RATE, RATE * 2, 2, 16
+    ) + b'data' + struct.pack('<I', len(data))
     path.write_bytes(header + data)
 
 
@@ -65,11 +67,12 @@ def loop_crossfade(samples, seconds):
 
 # ---------------------------------------------------------------- synthesis
 
+
 def note(name):
     names = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
     pitch = names[name[0]] + (1 if '#' in name else 0) - (1 if 'b' in name else 0)
     octave = int(name[-1])
-    return 440.0 * 2 ** ((pitch + 12 * (octave + 1) - 69) / 12)
+    return 440.0 * 2**((pitch + 12 * (octave + 1) - 69) / 12)
 
 
 def render_bell(buffer, at, freq, seconds, gain, rng):
@@ -130,12 +133,19 @@ def compose(seed=7):
             render_bass(buffer, at + int(half * 2 * beat * RATE), note(roots[(bar // 2) % 4]), 2 * beat, 0.18)
     # Melody: a pentatonic phrase that answers itself, bells over the pad.
     scale = ['F4', 'G4', 'A4', 'C5', 'D5', 'F5', 'G5', 'A5']
-    phrase_a = [(0, 2, 1.0), (1, 3, 0.75), (2, 4, 1.0), (3.5, 3, 0.5), (4, 5, 1.5), (6, 4, 0.5), (6.5, 3, 0.5), (7, 2, 1.0)]
-    phrase_b = [(0, 4, 1.0), (1, 5, 0.75), (2, 6, 1.0), (3.5, 5, 0.5), (4, 4, 1.5), (6, 3, 0.5), (6.5, 2, 0.5), (7, 1, 1.0)]
-    phrase_c = [(0, 3, 0.5), (0.5, 4, 0.5), (1, 5, 1.0), (2.5, 4, 0.5), (3, 3, 1.0), (4, 2, 0.5), (4.5, 1, 0.5), (5, 2, 1.5), (7, 0, 1.0)]
+    phrase_a = [
+        (0, 2, 1.0), (1, 3, 0.75), (2, 4, 1.0), (3.5, 3, 0.5), (4, 5, 1.5), (6, 4, 0.5), (6.5, 3, 0.5), (7, 2, 1.0)
+    ]
+    phrase_b = [
+        (0, 4, 1.0), (1, 5, 0.75), (2, 6, 1.0), (3.5, 5, 0.5), (4, 4, 1.5), (6, 3, 0.5), (6.5, 2, 0.5), (7, 1, 1.0)
+    ]
+    phrase_c = [
+        (0, 3, 0.5), (0.5, 4, 0.5), (1, 5, 1.0), (2.5, 4, 0.5), (3, 3, 1.0), (4, 2, 0.5), (4.5, 1, 0.5), (5, 2, 1.5),
+        (7, 0, 1.0)
+    ]
     plan = [phrase_a, phrase_b, phrase_a, phrase_c, phrase_b, phrase_a, phrase_c, None]
     for index, phrase in enumerate(plan):
-        if phrase is None: continue   # the last two bars rest, so the loop breathes
+        if phrase is None: continue  # the last two bars rest, so the loop breathes
         start = int(index * 2 * 4 * beat * RATE)
         for offset, degree, hold in phrase:
             gain = 0.30 + rng.uniform(-0.03, 0.03)
@@ -166,20 +176,32 @@ def compose(seed=7):
 
 # ------------------------------------------------------------------ encode
 
+
 def encode_adpcm(pcm_path, out_path):
     if not shutil.which('ffmpeg'): raise SystemExit('ffmpeg is needed to encode the ADPCM file')
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(pcm_path), '-ac', '1', '-ar', str(RATE), '-c:a', 'adpcm_ima_wav', '-block_size', '1024', str(out_path)], check=True)
+    subprocess.run(
+        [
+            'ffmpeg', '-v', 'error', '-y', '-i',
+            str(pcm_path), '-ac', '1', '-ar',
+            str(RATE), '-c:a', 'adpcm_ima_wav', '-block_size', '1024',
+            str(out_path)
+        ],
+        check=True
+    )
 
 
 def verify(path):
     """Parse the result the way the launcher does and report its shape."""
     data = path.read_bytes()
     assert data[:4] == b'RIFF' and data[8:12] == b'WAVE', 'not a WAVE file'
-    at = 12; fmt = None; size = 0
+    at = 12
+    fmt = None
+    size = 0
     while at + 8 <= len(data):
         chunk, length = data[at:at + 4], struct.unpack('<I', data[at + 4:at + 8])[0]
         body = data[at + 8:at + 8 + length]
-        if chunk == b'fmt ': fmt = struct.unpack('<HHIIHH', body[:16]) + (struct.unpack('<H', body[18:20])[0] if length >= 20 else 0,)
+        if chunk == b'fmt ':
+            fmt = struct.unpack('<HHIIHH', body[:16]) + (struct.unpack('<H', body[18:20])[0] if length >= 20 else 0,)
         if chunk == b'data': size = length
         at += 8 + length + (length & 1)
     assert fmt and fmt[0] == 0x11 and fmt[1] == 1 and fmt[2] == RATE and fmt[5] == 4, fmt

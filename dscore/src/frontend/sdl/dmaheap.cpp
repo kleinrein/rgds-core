@@ -19,15 +19,17 @@ namespace ds::sdl::dmaheap {
 namespace {
 
 // linux/dma-buf.h, not shipped in the handhelds' sysroots; kernel UAPI, fixed.
-struct dma_buf_sync { unsigned long long flags; };
+struct dma_buf_sync {
+  unsigned long long flags;
+};
 constexpr unsigned long long kSyncWrite = 2ull;      // DMA_BUF_SYNC_WRITE
 constexpr unsigned long long kSyncStart = 0ull << 2; // DMA_BUF_SYNC_START
-constexpr unsigned long long kSyncEnd   = 1ull << 2; // DMA_BUF_SYNC_END
+constexpr unsigned long long kSyncEnd = 1ull << 2;   // DMA_BUF_SYNC_END
 #ifndef DMA_BUF_IOCTL_SYNC
 #define DMA_BUF_IOCTL_SYNC _IOW('b', 0, struct ds::sdl::dmaheap::dma_buf_sync)
 #endif
 
-bool g_no_sync = false;  // set once the ioctl is known unsupported
+bool g_no_sync = false; // set once the ioctl is known unsupported
 
 void sync(int fd, unsigned long long flags) {
   if (fd < 0 || g_no_sync) return;
@@ -45,8 +47,6 @@ void sync(int fd, unsigned long long flags) {
 
 void sync_begin_write(int fd) { sync(fd, kSyncStart | kSyncWrite); }
 void sync_end_write(int fd) { sync(fd, kSyncEnd | kSyncWrite); }
-
-
 
 namespace {
 
@@ -83,27 +83,37 @@ struct ion_heap_query {
   uint32_t reserved2;
 };
 struct ion_allocation_data_legacy {
-  size_t len;                       // target's size_t: 32-bit ABI on arm32
+  size_t len; // target's size_t: 32-bit ABI on arm32
   size_t align;
   unsigned int heap_id_mask;
   unsigned int flags;
   int handle;
 };
-struct ion_handle_data { int handle; };
-struct ion_fd_data { int handle; int fd; };
-#define ION_IOC_ALLOC_NEW    _IOWR('I', 0, struct ion_allocation_data_new)
-#define ION_IOC_HEAP_QUERY   _IOWR('I', 8, struct ion_heap_query)
+struct ion_handle_data {
+  int handle;
+};
+struct ion_fd_data {
+  int handle;
+  int fd;
+};
+#define ION_IOC_ALLOC_NEW _IOWR('I', 0, struct ion_allocation_data_new)
+#define ION_IOC_HEAP_QUERY _IOWR('I', 8, struct ion_heap_query)
 #define ION_IOC_ALLOC_LEGACY _IOWR('I', 0, struct ion_allocation_data_legacy)
-#define ION_IOC_FREE         _IOWR('I', 1, struct ion_handle_data)
-#define ION_IOC_SHARE        _IOWR('I', 4, struct ion_fd_data)
-enum { ION_HEAP_TYPE_SYSTEM = 0, ION_HEAP_TYPE_SYSTEM_CONTIG = 1, ION_HEAP_TYPE_CARVEOUT = 2,
-       ION_HEAP_TYPE_CHUNK = 3, ION_HEAP_TYPE_DMA = 4 };
+#define ION_IOC_FREE _IOWR('I', 1, struct ion_handle_data)
+#define ION_IOC_SHARE _IOWR('I', 4, struct ion_fd_data)
+enum {
+  ION_HEAP_TYPE_SYSTEM = 0,
+  ION_HEAP_TYPE_SYSTEM_CONTIG = 1,
+  ION_HEAP_TYPE_CARVEOUT = 2,
+  ION_HEAP_TYPE_CHUNK = 3,
+  ION_HEAP_TYPE_DMA = 4
+};
 
 // `ion_mask` == 0 means a dma-heap at `path`.
 struct Source {
-  std::string path;               // dma-heap device, or "ion:<name>" for the log
+  std::string path; // dma-heap device, or "ion:<name>" for the log
   uint32_t ion_mask = 0;
-  bool swept = false;             // blind id-bit candidate: quiet on failure
+  bool swept = false; // blind id-bit candidate: quiet on failure
 };
 
 std::string g_chosen;
@@ -143,7 +153,7 @@ int alloc_ion(const Source& s, size_t len) {
       f.handle = l.handle;
       if (ioctl(ion, ION_IOC_SHARE, &f) == 0) fd = f.fd;
       ion_handle_data h = {l.handle};
-      ioctl(ion, ION_IOC_FREE, &h);   // fd keeps the buffer alive
+      ioctl(ion, ION_IOC_FREE, &h); // fd keeps the buffer alive
     }
   }
   const int err = errno;
@@ -152,17 +162,15 @@ int alloc_ion(const Source& s, size_t len) {
   return fd;
 }
 
-int alloc_from(const Source& s, size_t len) {
-  return s.ion_mask ? alloc_ion(s, len) : alloc_dmaheap(s.path, len);
-}
+int alloc_from(const Source& s, size_t len) { return s.ion_mask ? alloc_ion(s, len) : alloc_dmaheap(s.path, len); }
 
 // Rank a dma-heap by name: contiguous memory preferred, uncached over cached.
 int heap_rank(const std::string& n) {
   const bool uncached = n.find("uncached") != std::string::npos;
-  if (n == "linux,cma") return 0;                                  // mainline
+  if (n == "linux,cma") return 0; // mainline
   if (n.find("cma") != std::string::npos || n.find("contig") != std::string::npos) return uncached ? 1 : 2;
   if (n.find("reserved") != std::string::npos || n.find("carveout") != std::string::npos) return 3;
-  if (n.find("system") != std::string::npos) return uncached ? 4 : 5;   // contiguous only behind an IOMMU
+  if (n.find("system") != std::string::npos) return uncached ? 4 : 5; // contiguous only behind an IOMMU
   return 6;
 }
 
@@ -170,7 +178,8 @@ void dma_heaps(std::vector<Source>& out) {
   DIR* d = opendir("/dev/dma_heap");
   if (!d) return;
   std::vector<std::string> names;
-  while (dirent* e = readdir(d)) if (e->d_name[0] != '.') names.emplace_back(e->d_name);
+  while (dirent* e = readdir(d))
+    if (e->d_name[0] != '.') names.emplace_back(e->d_name);
   closedir(d);
   std::stable_sort(names.begin(), names.end(),
                    [](const std::string& a, const std::string& b) { return heap_rank(a) < heap_rank(b); });
@@ -179,12 +188,12 @@ void dma_heaps(std::vector<Source>& out) {
 
 int ion_type_rank(uint32_t t) {
   switch (t) {
-    case ION_HEAP_TYPE_DMA: return 0;
-    case ION_HEAP_TYPE_CARVEOUT: return 1;
-    case ION_HEAP_TYPE_SYSTEM_CONTIG: return 2;
-    case ION_HEAP_TYPE_CHUNK: return 3;
-    case ION_HEAP_TYPE_SYSTEM: return 5;
-    default: return 4;
+  case ION_HEAP_TYPE_DMA: return 0;
+  case ION_HEAP_TYPE_CARVEOUT: return 1;
+  case ION_HEAP_TYPE_SYSTEM_CONTIG: return 2;
+  case ION_HEAP_TYPE_CHUNK: return 3;
+  case ION_HEAP_TYPE_SYSTEM: return 5;
+  default: return 4;
   }
 }
 
@@ -200,8 +209,9 @@ void ion_heaps(std::vector<Source>& out) {
     std::vector<ion_heap_data> hs(q.cnt);
     q.heaps = reinterpret_cast<uint64_t>(hs.data());
     if (ioctl(ion, ION_IOC_HEAP_QUERY, &q) == 0) {
-      std::stable_sort(hs.begin(), hs.end(),
-                       [](const ion_heap_data& a, const ion_heap_data& b) { return ion_type_rank(a.type) < ion_type_rank(b.type); });
+      std::stable_sort(hs.begin(), hs.end(), [](const ion_heap_data& a, const ion_heap_data& b) {
+        return ion_type_rank(a.type) < ion_type_rank(b.type);
+      });
       for (const auto& h : hs) {
         std::string name(h.name, strnlen(h.name, sizeof h.name));
         out.push_back({"ion:" + name, 1u << (h.heap_id & 31), false});
@@ -215,7 +225,7 @@ void ion_heaps(std::vector<Source>& out) {
   // No usable query (legacy ION). Heap ids are per vendor, but common BSPs
   // number by type (DMA 4, carveout 2, system-contig 1, chunk 3, system 0);
   // try those first, then the rest of the bits; caller's import test decides.
-  static const unsigned order[] = {4, 2, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+  static const unsigned order[] = {4,  2,  1,  3,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
                                    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0};
   for (unsigned b : order) out.push_back({"ion:id" + std::to_string(b), 1u << b, true});
 }
@@ -223,7 +233,10 @@ void ion_heaps(std::vector<Source>& out) {
 std::vector<Source> candidates() {
   std::vector<Source> v;
   if (const char* e = std::getenv("DS_DMA_HEAP"); e && *e) {
-    if (!std::strcmp(e, "ion")) { ion_heaps(v); return v; }
+    if (!std::strcmp(e, "ion")) {
+      ion_heaps(v);
+      return v;
+    }
     if (!std::strncmp(e, "ion:", 4)) {
       const uint32_t m = static_cast<uint32_t>(std::strtoul(e + 4, nullptr, 0));
       v.push_back({std::string("ion:") + (e + 4), m, false});
@@ -242,9 +255,16 @@ std::vector<Source> candidates() {
 int alloc(size_t len, const std::function<bool(int fd)>& usable, const char* tag) {
   // DS_DMABUF_FAIL_AFTER=N: every allocation after the first N fails (tests the
   // fallbacks for a CMA pool that page cache or another client has used up).
-  static const long fail_after = [] { const char* e = std::getenv("DS_DMABUF_FAIL_AFTER"); return e ? std::atol(e) : -1L; }();
+  static const long fail_after = [] {
+    const char* e = std::getenv("DS_DMABUF_FAIL_AFTER");
+    return e ? std::atol(e) : -1L;
+  }();
   static long allocs = 0;
-  if (fail_after >= 0 && allocs++ >= fail_after) { errno = ENOMEM; std::fprintf(stderr, "%s: alloc: %s (DS_DMABUF_FAIL_AFTER)\n", tag, std::strerror(errno)); return -1; }
+  if (fail_after >= 0 && allocs++ >= fail_after) {
+    errno = ENOMEM;
+    std::fprintf(stderr, "%s: alloc: %s (DS_DMABUF_FAIL_AFTER)\n", tag, std::strerror(errno));
+    return -1;
+  }
   // A pinned pool that runs out moves the pin to the next source in rank
   // order: the RG DS's /dev/dma_heap/reserved holds one screen's buffers,
   // and without this the second screen's scanout found no memory at all.
@@ -255,7 +275,10 @@ int alloc(size_t len, const std::function<bool(int fd)>& usable, const char* tag
       std::fprintf(stderr, "%s: %s is full; trying the next source\n", tag, g_chosen.c_str());
       full = g_pinned.path;
     } else {
-      if (fd < 0) { std::fprintf(stderr, "%s: %s: alloc: %s\n", tag, g_chosen.c_str(), std::strerror(errno)); return -1; }
+      if (fd < 0) {
+        std::fprintf(stderr, "%s: %s: alloc: %s\n", tag, g_chosen.c_str(), std::strerror(errno));
+        return -1;
+      }
       if (usable(fd)) return fd;
       ::close(fd);
       std::fprintf(stderr, "%s: %s: buffer rejected\n", tag, g_chosen.c_str());
@@ -278,7 +301,8 @@ int alloc(size_t len, const std::function<bool(int fd)>& usable, const char* tag
     const int fd = alloc_from(s, len);
     if (fd < 0) {
       // legacy-ION sweep: most of its 32 bits are not heaps, so stay quiet
-      if (!s.swept || std::getenv("DS_DMA_HEAP_VERBOSE")) std::fprintf(stderr, "%s: %s: %s\n", tag, s.path.c_str(), std::strerror(errno));
+      if (!s.swept || std::getenv("DS_DMA_HEAP_VERBOSE"))
+        std::fprintf(stderr, "%s: %s: %s\n", tag, s.path.c_str(), std::strerror(errno));
       continue;
     }
     if (usable(fd)) {

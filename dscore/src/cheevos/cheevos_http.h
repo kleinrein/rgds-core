@@ -14,14 +14,14 @@ namespace ds::cheevos {
 
 struct Request {
   std::string url;
-  std::string body;           // empty for GET, form-encoded for POST
+  std::string body; // empty for GET, form-encoded for POST
   std::string content_type;
 };
 
 struct Response {
-  int status = 0;              // 0 = no status reached (DNS/connect/TLS); rcheevos retries
+  int status = 0; // 0 = no status reached (DNS/connect/TLS); rcheevos retries
   std::string body;
-  std::string error;           // transport-level reason when status == 0
+  std::string error; // transport-level reason when status == 0
 };
 
 // A blocking HTTP client. Call sites are on the worker thread only.

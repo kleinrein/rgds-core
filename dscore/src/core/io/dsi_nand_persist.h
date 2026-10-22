@@ -21,17 +21,17 @@ namespace ds::io {
 class NandImage;
 
 struct NandPersistPaths {
-  std::string saves_dir;     // <GAMECODE>.pub/.prv/.bnr
-  std::string sidecar;       // the system files
-  std::string photos_dir;    // the photo partition's files
+  std::string saves_dir;  // <GAMECODE>.pub/.prv/.bnr
+  std::string sidecar;    // the system files
+  std::string photos_dir; // the photo partition's files
 
   // Defaults: saves in `saves_dir` if given, else beside the dump as "<nand>.ovr"/"<nand>.photos".
   static NandPersistPaths beside(const std::string& nand_path, const std::string& saves_dir = {});
 };
 
 struct NandPersistReport {
-  int saves = 0, system_files = 0, photos = 0;   // files moved
-  std::vector<std::string> notes;                // skipped files and why, one line each
+  int saves = 0, system_files = 0, photos = 0; // files moved
+  std::vector<std::string> notes;              // skipped files and why, one line each
 };
 
 // Puts saved files into the session. Call after the NAND is loaded, before the boot that reads
@@ -42,4 +42,4 @@ NandPersistReport nand_import(NandImage& nand, const u8* bios7i, const NandPersi
 // sectors the session wrote are read, and a host file is only rewritten if it differs.
 NandPersistReport nand_export(NandImage& nand, const u8* bios7i, const NandPersistPaths& paths);
 
-}  // namespace ds::io
+} // namespace ds::io

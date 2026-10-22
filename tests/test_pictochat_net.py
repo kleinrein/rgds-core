@@ -31,9 +31,9 @@ class PrivilegeTests(unittest.TestCase):
         from unittest import mock
         with mock.patch.object(net.os, "geteuid", return_value=1000), mock.patch.object(net.os, "setuid") as setuid:
             net.drop_privileges()
-            setuid.assert_not_called()            # nothing to give up
+            setuid.assert_not_called()  # nothing to give up
         calls = []
-        ids = iter([0, 0, 65534, 65534])           # root until setuid/setgid run
+        ids = iter([0, 0, 65534, 65534])  # root until setuid/setgid run
         state = {"uid": 0, "gid": 0}
         with mock.patch.object(net.os, "geteuid", side_effect=lambda: state["uid"]), \
              mock.patch.object(net.os, "getegid", side_effect=lambda: state["gid"]), \
@@ -41,14 +41,14 @@ class PrivilegeTests(unittest.TestCase):
              mock.patch.object(net.os, "setgid", side_effect=lambda g: (calls.append(("gid", g)), state.update(gid=g))), \
              mock.patch.object(net.os, "setuid", side_effect=lambda u: (calls.append(("uid", u)), state.update(uid=u))):
             net.drop_privileges()
-        self.assertEqual(calls, [("groups", ()), ("gid", 65534), ("uid", 65534)])   # groups and group first, user last
+        self.assertEqual(calls, [("groups", ()), ("gid", 65534), ("uid", 65534)])  # groups and group first, user last
         with mock.patch.object(net.os, "geteuid", return_value=0), mock.patch.object(net.os, "setgroups"), \
              mock.patch.object(net.os, "setgid", side_effect=PermissionError("no")), mock.patch.object(net.sys.stderr, "write"):
             with self.assertRaises(SystemExit):
                 net.drop_privileges()
         with mock.patch.object(net.os, "geteuid", return_value=0), mock.patch.object(net.os, "getegid", return_value=0), \
              mock.patch.object(net.os, "setgroups"), mock.patch.object(net.os, "setgid"), mock.patch.object(net.os, "setuid"):
-            with self.assertRaises(SystemExit):     # still root after "dropping": refuse to run
+            with self.assertRaises(SystemExit):  # still root after "dropping": refuse to run
                 net.drop_privileges()
 
 
@@ -94,7 +94,7 @@ class ProtocolTests(unittest.TestCase):
         hear(b, a.join(0, 3, "Anna", 1.0))
         payload = os.urandom(net.CHUNK_BYTES * 2 + 123)
         packets = a.send(payload) if a.room is not None else []
-        self.assertEqual(len(packets), 6)                     # three pieces, twice
+        self.assertEqual(len(packets), 6)  # three pieces, twice
         random.Random(4).shuffle(packets)
         events = hear(b, packets)
         self.assertEqual(events, ["MSG %s %s" % ((b"A" * 8).hex(), payload.hex())])
@@ -113,15 +113,15 @@ class ProtocolTests(unittest.TestCase):
         a, b = pair()
         b.join(0, 0, "Me", 0)
         a.join(1, 3, "Anna", 1.0)
-        self.assertEqual(hear(b, a.send(b"hello")), [])        # never said hello to B, and a different room
+        self.assertEqual(hear(b, a.send(b"hello")), [])  # never said hello to B, and a different room
         a.join(0, 3, "Anna", 2.0)
-        self.assertEqual(hear(b, a.send(b"hello")), [])        # said hello to nobody B has heard
+        self.assertEqual(hear(b, a.send(b"hello")), [])  # said hello to nobody B has heard
         hear(b, a.join(0, 3, "Anna", 3.0))
         self.assertEqual(len(hear(b, a.send(b"hello"))), 1)
         self.assertEqual(hear(b, [b"RGPC"]), [])
         own = net.Node(sender=b"B" * 8)
         own.join(0, 1, "Me", 0)
-        self.assertEqual(hear(b, own.send(b"x")), [])          # our own id coming back
+        self.assertEqual(hear(b, own.send(b"x")), [])  # our own id coming back
 
     def test_chatty_senders_are_limited_and_recover(self):
         a, b = pair()
@@ -139,22 +139,24 @@ class ProtocolTests(unittest.TestCase):
             other = net.Node(sender=bytes([i]) * 8)
             seen += hear(b, other.join(0, i % 16, "User%d" % i, 1.0))
         self.assertEqual(sum(1 for e in seen if e.startswith("USER")), net.ROOM_LIMIT)
-        self.assertEqual(b.room_users(0), net.ROOM_LIMIT)           # the extra four are not part of the room
-        self.assertNotIn("FULL", seen)                              # existing members are not told anything
-        packets, full = b.try_join(0, 1, "Me", 1.0)                 # already inside: not turned away
+        self.assertEqual(b.room_users(0), net.ROOM_LIMIT)  # the extra four are not part of the room
+        self.assertNotIn("FULL", seen)  # existing members are not told anything
+        packets, full = b.try_join(0, 1, "Me", 1.0)  # already inside: not turned away
         self.assertFalse(full)
         late = net.Node(sender=b"L" * 8)
         for other in range(16):
             late.receive(net.pack_hello(bytes([other + 1]) * 8, 2, 3, "U%d" % other), 1.0)
-        self.assertEqual(late.try_join(2, 0, "Latecomer", 2.0), ([], True))     # a full room turns you away, sending nothing
+        self.assertEqual(
+            late.try_join(2, 0, "Latecomer", 2.0), ([], True)
+        )  # a full room turns you away, sending nothing
         self.assertEqual(late.room, None)
-        packets, full = late.try_join(3, 0, "Latecomer", 2.0)                   # another room is fine
+        packets, full = late.try_join(3, 0, "Latecomer", 2.0)  # another room is fine
         self.assertFalse(full)
         self.assertEqual(len(packets), 1)
 
     def test_names_are_cleaned_and_bad_ones_refused(self):
         self.assertEqual(net.clean_name("  Anna \t Lise "), "Anna Lise")
-        self.assertEqual(net.clean_name("\x00\x1b[31m"), "[31m")      # controls are dropped, never sent
+        self.assertEqual(net.clean_name("\x00\x1b[31m"), "[31m")  # controls are dropped, never sent
         self.assertEqual(net.clean_name("\x00\x1b"), "Guest")
         self.assertEqual(net.clean_name(""), "Guest")
         self.assertLessEqual(len(net.clean_name("é" * 40).encode()), net.NAME_BYTES)
@@ -163,7 +165,10 @@ class ProtocolTests(unittest.TestCase):
         self.assertIsNone(net.printable_name("a\u0085b".encode()))
         b = net.Node(sender=b"B" * 8)
         b.join(0, 0, "Me", 0)
-        for body in (struct.pack("<BB", 3, 3) + b"\xff\xfe\xfd", struct.pack("<BB", 99, 1) + b"x", struct.pack("<BB", 3, 5) + b"abc"):
+        for body in (
+            struct.pack("<BB", 3, 3) + b"\xff\xfe\xfd", struct.pack("<BB", 99, 1) + b"x",
+            struct.pack("<BB", 3, 5) + b"abc"
+        ):
             data = net.MAGIC + struct.pack("<BBB8s", 1, net.HELLO, 0, b"Z" * 8) + body
             self.assertEqual(b.receive(data, 1.0), [])
 
@@ -195,7 +200,10 @@ class ProtocolTests(unittest.TestCase):
     def test_commands_from_the_launcher_are_checked(self):
         self.assertEqual(net.parse_command("HELLO 2 7 Anna Lise\n"), ("HELLO", 2, 7, "Anna Lise"))
         self.assertEqual(net.parse_command("HELLO 0 0"), ("HELLO", 0, 0, "Guest"))
-        for bad in ("HELLO 4 0 x", "HELLO 0 16 x", "HELLO x 0 x", "SEND zz", "SEND ", "SEND 00" + "ff" * net.MAX_PAYLOAD, "LEAVE now", "RUN", ""):
+        for bad in (
+            "HELLO 4 0 x", "HELLO 0 16 x", "HELLO x 0 x", "SEND zz", "SEND ", "SEND 00" + "ff" * net.MAX_PAYLOAD,
+            "LEAVE now", "RUN", ""
+        ):
             self.assertIsNone(net.parse_command(bad), bad)
         self.assertEqual(net.parse_command("SEND 0a0b"), ("SEND", b"\x0a\x0b"))
         self.assertEqual(net.parse_command("QUIT"), ("QUIT",))
@@ -209,12 +217,21 @@ def free_port():
 
 class Helper:
     """A real helper process wired to a peer's port on loopback."""
-
     def __init__(self, port, peer):
         self.port = port
-        self.process = subprocess.Popen([sys.executable, "-B", str(ROOT / "runtime/pictochat_net.py"), "--port", str(port),
-                                         "--bind", "127.0.0.1", "--targets", "127.0.0.1:%d" % peer],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+        self.process = subprocess.Popen(
+            [
+                sys.executable, "-B",
+                str(ROOT / "runtime/pictochat_net.py"), "--port",
+                str(port), "--bind", "127.0.0.1", "--targets",
+                "127.0.0.1:%d" % peer
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1
+        )
         self.lines = []
         self.partial = b""
 
@@ -238,7 +255,9 @@ class Helper:
                 while b"\n" in self.partial:
                     line, self.partial = self.partial.split(b"\n", 1)
                     self.lines.append(line.decode("utf-8"))
-        raise AssertionError("no %r from helper %d; heard %r; stderr %r" % (prefix, self.port, self.lines, self.stderr_now()))
+        raise AssertionError(
+            "no %r from helper %d; heard %r; stderr %r" % (prefix, self.port, self.lines, self.stderr_now())
+        )
 
     def stderr_now(self):
         if self.process.poll() is None:

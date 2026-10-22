@@ -15,8 +15,10 @@ class SystemStatusAsyncTests(unittest.TestCase):
     def setUpClass(cls):
         cls.temp = tempfile.TemporaryDirectory()
         cls.root = Path(cls.temp.name)
-        runtime = cls.root / "app/runtime";runtime.mkdir(parents=True)
-        (runtime / "system_controls.py").write_text('''import argparse, os, subprocess, sys, time
+        runtime = cls.root / "app/runtime"
+        runtime.mkdir(parents=True)
+        (runtime / "system_controls.py").write_text(
+            '''import argparse, os, subprocess, sys, time
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument("command");p.add_argument("value",nargs="?",type=int);p.add_argument("--data",type=Path,required=True)
 p.add_argument("--menu-wake",action="store_true");p.add_argument("--menu-close",action="store_true")
@@ -44,9 +46,11 @@ elif a.command=="volume":
   assert not (a.data/"pid").exists(), "Must work before status exists"
   (a.data/"volume-restored").write_text("saved")
   if (a.data/"fail").exists():sys.exit(1)
-''')
+'''
+        )
         source = cls.root / "test.cpp"
-        source.write_text('''#include "platform/system_controls.hpp"
+        source.write_text(
+            '''#include "platform/system_controls.hpp"
 #include <cassert>
 #include <thread>
 using Clock=std::chrono::steady_clock;
@@ -92,11 +96,19 @@ int main(int argc,char** argv){
   assert(rgds::fs::exists(data/"child-pid"));
  }else return 2;
 }
-''')
+'''
+        )
         cls.binary = cls.root / "probe"
-        subprocess.run(["clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-                        "-I" + str(ROOT / "src"), str(source), "-o", str(cls.binary)],
-                       check=True, capture_output=True, text=True)
+        subprocess.run(
+            [
+                "clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT / "src"),
+                str(source), "-o",
+                str(cls.binary)
+            ],
+            check=True,
+            capture_output=True,
+            text=True
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -105,36 +117,66 @@ int main(int argc,char** argv){
     def invoke(self, task):
         with tempfile.TemporaryDirectory() as folder:
             data = Path(folder)
-            result = subprocess.run([str(self.binary), str(self.root), str(data), task],
-                                    capture_output=True, text=True,
-                                    env=dict(os.environ, RGDS_SYSTEM_MANAGED="1"), timeout=6)
+            result = subprocess.run(
+                [str(self.binary), str(self.root), str(data), task],
+                capture_output=True,
+                text=True,
+                env=dict(os.environ, RGDS_SYSTEM_MANAGED="1"),
+                timeout=6
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             if task == "cleanup":
                 helper = int((data / "pid").read_text())
-                with self.assertRaises(ProcessLookupError):os.kill(helper, 0)
+                with self.assertRaises(ProcessLookupError):
+                    os.kill(helper, 0)
                 # All group members were signalled. A child may briefly remain
                 # as an init-owned zombie on Linux; it must not still be running.
                 child = int((data / "child-pid").read_text())
                 for _ in range(50):
-                    try:os.kill(child, 0)
-                    except ProcessLookupError:break
+                    try:
+                        os.kill(child, 0)
+                    except ProcessLookupError:
+                        break
                     if Path(f"/proc/{child}/stat").exists():
                         state = Path(f"/proc/{child}/stat").read_text().rsplit(')', 1)[1].split()[0]
-                        if state == "Z":break
-                    import time;time.sleep(.01)
-                else:self.fail("Status helper's mixer child remained running after destruction")
+                        if state == "Z": break
+                    import time
+                    time.sleep(.01)
+                else:
+                    self.fail("Status helper's mixer child remained running after destruction")
 
-    def test_sleep_transfers_only_the_requested_audio_ownership(self):self.invoke("audio-owner")
-    def test_audio_restore_reads_saved_level_before_status_and_reports_failure(self):self.invoke("audio-sync")
-    def test_slow_partial_output_does_not_block_and_requests_do_not_duplicate(self):self.invoke("slow")
-    def test_failure_preserves_the_last_good_snapshot(self):self.invoke("fail")
-    def test_empty_successful_output_is_rejected(self):self.invoke("empty")
-    def test_malformed_status_is_rejected(self):self.invoke("bad")
-    def test_oversize_output_is_bounded_and_can_recover(self):self.invoke("oversize")
-    def test_interactive_brightness_cancels_slow_status_and_preserves_write_order(self):self.invoke("cancel")
-    def test_interactive_volume_cancels_slow_status_without_blocking(self):self.invoke("cancel-volume")
-    def test_destruction_stops_the_helper_and_its_mixer_process(self):self.invoke("cleanup")
-    def test_preview_uses_the_cached_simulation_without_a_helper(self):self.invoke("preview")
+    def test_sleep_transfers_only_the_requested_audio_ownership(self):
+        self.invoke("audio-owner")
+
+    def test_audio_restore_reads_saved_level_before_status_and_reports_failure(self):
+        self.invoke("audio-sync")
+
+    def test_slow_partial_output_does_not_block_and_requests_do_not_duplicate(self):
+        self.invoke("slow")
+
+    def test_failure_preserves_the_last_good_snapshot(self):
+        self.invoke("fail")
+
+    def test_empty_successful_output_is_rejected(self):
+        self.invoke("empty")
+
+    def test_malformed_status_is_rejected(self):
+        self.invoke("bad")
+
+    def test_oversize_output_is_bounded_and_can_recover(self):
+        self.invoke("oversize")
+
+    def test_interactive_brightness_cancels_slow_status_and_preserves_write_order(self):
+        self.invoke("cancel")
+
+    def test_interactive_volume_cancels_slow_status_without_blocking(self):
+        self.invoke("cancel-volume")
+
+    def test_destruction_stops_the_helper_and_its_mixer_process(self):
+        self.invoke("cleanup")
+
+    def test_preview_uses_the_cached_simulation_without_a_helper(self):
+        self.invoke("preview")
 
 
-if __name__ == "__main__":unittest.main()
+if __name__ == "__main__": unittest.main()

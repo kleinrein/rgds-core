@@ -40,7 +40,7 @@ from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont, TTCollection
 
 SIGNATURE_MARKER = b'DSperate TWLFontTable.dat: generated, not signed by Nintendo'.ljust(0x80, b'\0')
-DATE = bytes([0x00, 0x13, 0x09, 0x26])     # the layout's date field, BCD, as in 2026-09-13
+DATE = bytes([0x00, 0x13, 0x09, 0x26])  # the layout's date field, BCD, as in 2026-09-13
 
 # name, cell width, cell height, baseline row (the first row below the text),
 # the widest advance, and the two faces' pixel sizes. Cell geometry follows
@@ -59,29 +59,37 @@ SIZES = [
 # was measured.
 REGIONS = {
     'normal': (0, 3, 0, SIZES),
-    'china': (3, 9, 4, [
-        ('TBF1-cn_l.NFTR', 16, 21, 17, 17, 18, 15),
-        ('TBF1-cn_m.NFTR', 12, 16, 13, 13, 14, 12),
-        ('TBF1-cn_s.NFTR', 12, 13, 11, 13, 11, 12),
-    ]),
-    'korea': (6, 9, 5, [
-        ('TBF1-kr_l.NFTR', 16, 21, 17, 17, 18, 15),
-        ('TBF1-kr_m.NFTR', 12, 16, 13, 13, 14, 12),
-        ('TBF1-kr_s.NFTR', 12, 12, 10, 13, 11, 11),
-    ]),
+    'china': (
+        3, 9, 4, [
+            ('TBF1-cn_l.NFTR', 16, 21, 17, 17, 18, 15),
+            ('TBF1-cn_m.NFTR', 12, 16, 13, 13, 14, 12),
+            ('TBF1-cn_s.NFTR', 12, 13, 11, 13, 11, 12),
+        ]
+    ),
+    'korea': (
+        6, 9, 5, [
+            ('TBF1-kr_l.NFTR', 16, 21, 17, 17, 18, 15),
+            ('TBF1-kr_m.NFTR', 12, 16, 13, 13, 14, 12),
+            ('TBF1-kr_s.NFTR', 12, 12, 10, 13, 11, 11),
+        ]
+    ),
 }
-
 
 # Private-use code points (as the console's font assigns them) and the image
 # drawn for each; the largest image of a name is the one scaled down. `wide`
 # glyphs keep their 3:2 shape.
 CONTROL_GLYPHS = [
-    (0xE000, 'A_light_dark', False), (0xE001, 'B_light_dark', False),
-    (0xE002, 'X_light_dark', False), (0xE003, 'Y_light_dark', False),
-    (0xE004, 'LB_light', True), (0xE005, 'RB_light', True),
+    (0xE000, 'A_light_dark', False),
+    (0xE001, 'B_light_dark', False),
+    (0xE002, 'X_light_dark', False),
+    (0xE003, 'Y_light_dark', False),
+    (0xE004, 'LB_light', True),
+    (0xE005, 'RB_light', True),
     (0xE006, 'Digipad_light', False),
-    (0xE019, 'Right_light', False), (0xE01A, 'Left_light', False),
-    (0xE01B, 'Up_light', False), (0xE01C, 'Down_light', False),
+    (0xE019, 'Right_light', False),
+    (0xE01A, 'Left_light', False),
+    (0xE01B, 'Up_light', False),
+    (0xE01C, 'Down_light', False),
 ]
 
 
@@ -109,7 +117,7 @@ def render_control(ink, wide, w, h, base):
     gw, gh = (size, max(1, round(size * ink.height / ink.width))) if wide else (size, size)
     small = ink.resize((gw, gh), Image.BOX)
     top = base + 1 - gh - ((size - gh) // 2 if wide else 0)
-    level = [min(3, int(((v / 255) ** 0.7) * 3 + 0.5)) for v in range(256)]
+    level = [min(3, int(((v / 255)**0.7) * 3 + 0.5)) for v in range(256)]
     rows = [[0] * w for _ in range(h)]
     for y in range(gh):
         for x in range(gw):
@@ -134,29 +142,39 @@ def double_byte(codec, leads, trails):
 
 def coverage(region='normal'):
     cps = set(range(0x20, 0x7F)) | set(range(0xA0, 0x180))
-    cps |= set(range(0x384, 0x3CF)) | set(range(0x400, 0x460))            # Greek, Cyrillic
+    cps |= set(range(0x384, 0x3CF)) | set(range(0x400, 0x460))  # Greek, Cyrillic
     cps |= {0x192, 0x2C6, 0x2C7, 0x2D8, 0x2D9, 0x2DA, 0x2DB, 0x2DC, 0x2DD}
     cps |= set(range(0x2010, 0x2027)) | {0x2030, 0x2032, 0x2033, 0x2039, 0x203A, 0x203B, 0x2044, 0x20AC}
     cps |= {0x2103, 0x2116, 0x2122} | set(range(0x2160, 0x216C)) | set(range(0x2190, 0x219A)) | {0x21D2, 0x21D4}
-    cps |= set(range(0x3000, 0x3040)) | set(range(0x3041, 0x3097)) | set(range(0x309B, 0x30A0)) | set(range(0x30A1, 0x3100))
+    cps |= set(range(0x3000, 0x3040)) | set(range(0x3041, 0x3097)) | set(range(0x309B, 0x30A0)
+                                                                         ) | set(range(0x30A1, 0x3100))
     cps |= set(range(0xFF01, 0xFF5F)) | set(range(0xFFE0, 0xFFE7))
     if region == 'china':
         # GB 2312: every EUC-CN double-byte code (symbols, pinyin, both hanzi levels).
         cps |= double_byte('gb2312', range(0xA1, 0xF8), range(0xA1, 0xFF))
     elif region == 'korea':
         # KS X 1001 without the hanja: Hangul syllables, jamo and the symbol rows.
-        cps |= {c for c in double_byte('euc_kr', range(0xA1, 0xFF), range(0xA1, 0xFF))
-                if not (0x4E00 <= c <= 0x9FFF or 0xF900 <= c <= 0xFAFF)}
+        cps |= {
+            c
+            for c in double_byte('euc_kr', range(0xA1, 0xFF), range(0xA1, 0xFF))
+            if not (0x4E00 <= c <= 0x9FFF or 0xF900 <= c <= 0xFAFF)
+        }
     else:
-        cps |= set(range(0xFF61, 0xFFA0))   # half-width katakana
+        cps |= set(range(0xFF61, 0xFFA0))  # half-width katakana
         # JIS X 0208: every double-byte Shift-JIS code (symbols, kana, both kanji levels).
-        cps |= double_byte('shift_jis', list(range(0x81, 0xA0)) + list(range(0xE0, 0xF0)), list(range(0x40, 0x7F)) + list(range(0x80, 0xFD)))
+        cps |= double_byte(
+            'shift_jis',
+            list(range(0x81, 0xA0)) + list(range(0xE0, 0xF0)),
+            list(range(0x40, 0x7F)) + list(range(0x80, 0xFD))
+        )
     return sorted(c for c in cps if not 0xE000 <= c <= 0xF8FF)
 
 
 def cjk(c):
-    return (0x1100 <= c <= 0x11FF or 0x2E80 <= c <= 0x9FFF or 0xAC00 <= c <= 0xD7A3 or
-            0xF900 <= c <= 0xFAFF or 0xFF00 <= c <= 0xFFEF)
+    return (
+        0x1100 <= c <= 0x11FF or 0x2E80 <= c <= 0x9FFF or 0xAC00 <= c <= 0xD7A3 or 0xF900 <= c <= 0xFAFF
+        or 0xFF00 <= c <= 0xFFEF
+    )
 
 
 def cmap_of(path):
@@ -177,7 +195,7 @@ def render(face, c, w, h, base, shift, fullwidth):
     left, right = cols[0], min(cols[-1], cols[0] + w - 1)
     # Four levels, with a gamma lift so antialiased stems stay as dark as the
     # console's own font draws them at these sizes.
-    level = [min(3, int(((v / 255) ** 0.7) * 3 + 0.5)) for v in range(256)]
+    level = [min(3, int(((v / 255)**0.7) * 3 + 0.5)) for v in range(256)]
     rows = [[level[px[x, y]] if x <= right and x < img.width else 0 for x in range(left, left + w)] for y in range(h)]
     return rows, left - w, right - left + 1, min(advance, 255)
 
@@ -217,8 +235,10 @@ def build_nftr(codes, faces, w, h, base, maxw, controls):
         i = j + 1
 
     cmap_bodies = [struct.pack('<HHI', first, last, 0) + pad4(struct.pack('<H', tile)) for first, last, tile in runs]
-    cmap_bodies.append(struct.pack('<HHI', 0x0000, 0xFFFF, 2) +
-                       pad4(struct.pack('<H', len(singles)) + b''.join(struct.pack('<HH', c, t) for c, t in singles)))
+    cmap_bodies.append(
+        struct.pack('<HHI', 0x0000, 0xFFFF, 2) +
+        pad4(struct.pack('<H', len(singles)) + b''.join(struct.pack('<HH', c, t) for c, t in singles))
+    )
 
     finf_at = 0x10
     cglp_at = finf_at + 0x20
@@ -228,7 +248,8 @@ def build_nftr(codes, faces, w, h, base, maxw, controls):
     cmap_at = cwdh_at + 8 + len(cwdh)
 
     out = bytearray()
-    finf = struct.pack('<BBHBBBB', 0, h, 0, 0, w, w, 1) + struct.pack('<III', cglp_at + 8, cwdh_at + 8, cmap_at + 8) + bytes([h, maxw, base, 0])
+    finf = struct.pack('<BBHBBBB', 0, h, 0, 0, w, w, 1) + struct.pack('<III', cglp_at + 8, cwdh_at + 8,
+                                                                      cmap_at + 8) + bytes([h, maxw, base, 0])
     out += b'FNIF' + struct.pack('<I', 8 + len(finf)) + finf
     out += b'PLGC' + struct.pack('<I', 8 + len(cglp)) + cglp
     out += b'HDWC' + struct.pack('<I', 8 + len(cwdh)) + cwdh
@@ -244,6 +265,7 @@ def build_nftr(codes, faces, w, h, base, maxw, controls):
 
 # ---- the DSi's backwards LZ ------------------------------------------------------
 
+
 def blz_decode(data):
     n = len(data)
     inc = struct.unpack_from('<I', data, n - 4)[0]
@@ -258,15 +280,21 @@ def blz_decode(data):
     while r > r_end:
         mask >>= 1
         if not mask:
-            pak -= 1; flags = data[pak]; mask = 0x80
+            pak -= 1
+            flags = data[pak]
+            mask = 0x80
         if not flags & mask:
-            pak -= 1; r -= 1; raw[r] = data[pak]
+            pak -= 1
+            r -= 1
+            raw[r] = data[pak]
         else:
-            pak -= 2; pos = data[pak + 1] << 8 | data[pak]
+            pak -= 2
+            pos = data[pak + 1] << 8 | data[pak]
             ln = min((pos >> 12) + 3, r - r_end)
             pos = (pos & 0xFFF) + 3
             for _ in range(ln):
-                r -= 1; raw[r] = raw[r + pos]
+                r -= 1
+                raw[r] = raw[r + pos]
     return bytes(raw)
 
 
@@ -277,13 +305,15 @@ def blz_encode(raw):
     rev = raw[::-1]
     n = len(rev)
     heads = {}
-    stream = bytearray()      # the forward token stream over `rev`
-    marks = [(0, 0)]          # (input consumed, output written) at each token end
+    stream = bytearray()  # the forward token stream over `rev`
+    marks = [(0, 0)]  # (input consumed, output written) at each token end
     i = 0
     flag_at, bit = -1, 0
     while i < n:
         if bit == 0:
-            flag_at = len(stream); stream.append(0); bit = 0x80
+            flag_at = len(stream)
+            stream.append(0)
+            bit = 0x80
         best_len, best_disp = 0, 0
         if i + 3 <= n:
             key = rev[i:i + 3]
@@ -332,7 +362,10 @@ def blz_encode(raw):
     footer_len = 8 + (-len(body) % 4)
     enc_len = len(comp) + footer_len
     total = len(body) + footer_len
-    out = body + b'\xFF' * (footer_len - 8) + struct.pack('<I', enc_len)[:3] + bytes([footer_len]) + struct.pack('<I', len(raw) - total)
+    out = body + b'\xFF' * (footer_len - 8) + struct.pack('<I', enc_len)[:3] + bytes(
+        [footer_len]
+    ) + struct.pack('<I',
+                    len(raw) - total)
     assert len(raw) > total, 'incompressible'
     return out
 
@@ -351,11 +384,16 @@ def check_in_place(packed, raw_len):
     while r > pak_end:
         mask >>= 1
         if not mask:
-            pak -= 1; flags = packed[pak]; mask = 0x80
+            pak -= 1
+            flags = packed[pak]
+            mask = 0x80
         if not flags & mask:
-            pak -= 1; r -= 1
+            pak -= 1
+            r -= 1
         else:
-            pak -= 2; ln = min((((packed[pak + 1] << 8) | packed[pak]) >> 12) + 3, r - pak_end); r -= ln
+            pak -= 2
+            ln = min((((packed[pak + 1] << 8) | packed[pak]) >> 12) + 3, r - pak_end)
+            r -= ln
         if r < pak:
             return False
     return True
@@ -375,15 +413,20 @@ def main(noto_path, cjk_path, out_path, glyph_dir=None, region='normal'):
         probe = Image.new('L', (w * 3, h * 2), 0)
         ImageDraw.Draw(probe).text((w, h), '漢', font=wqy, fill=255, anchor='ls')
         bottom = max(y for y in range(h * 2) if any(probe.getpixel((x, y)) for x in range(w * 3)))
-        cjk_shift = h - bottom                 # its ink bottom on the baseline row itself
+        cjk_shift = h - bottom  # its ink bottom on the baseline row itself
+
         def faces(c):
             use_cjk = (cjk(c) and c in cjk_cmap) or c not in noto_cmap
             return (wqy, cjk_shift, cjk(c) and not 0xFF61 <= c <= 0xFFDC) if use_cjk else (noto, 0, False)
+
         nftr = build_nftr(codes, faces, w, h, base, maxw, controls)
         packed = blz_encode(nftr)
         assert blz_decode(packed) == nftr, name + ': the compressor does not round-trip'
         assert check_in_place(packed, len(nftr)), name + ': not safe to decompress in place'
-        entries.append(name.encode().ljust(0x20, b'\0') + struct.pack('<III', len(packed), offset, len(nftr)) + hashlib.sha1(packed).digest())
+        entries.append(
+            name.encode().ljust(0x20, b'\0') + struct.pack('<III', len(packed), offset, len(nftr)) +
+            hashlib.sha1(packed).digest()
+        )
         blobs.append(packed + b'\0' * (-len(packed) % 16))
         print(f'{name}: {len(codes)} characters, {len(nftr)} bytes, {len(packed)} compressed', file=sys.stderr)
         offset += len(blobs[-1])

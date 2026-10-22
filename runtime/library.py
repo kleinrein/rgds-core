@@ -23,8 +23,13 @@ def playtime(data, rom):
 
 
 def record_playtime(data, rom, seconds, sessions, started):
-    write_fields(Path(data) / "library" / game_key(rom) / "stats.ini",
-                 {"seconds": max(0, int(seconds)), "sessions": max(0, int(sessions)), "last_played": started})
+    write_fields(
+        Path(data) / "library" / game_key(rom) / "stats.ini", {
+            "seconds": max(0, int(seconds)),
+            "sessions": max(0, int(sessions)),
+            "last_played": started
+        }
+    )
 
 
 # Titles DSCore cannot run correctly yet, by game code prefix (all regions):
@@ -56,17 +61,19 @@ def banner_data(path, code=None):
             games = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in (".nds", ".dsi")]
             if len(games) != 1: return None
             stream = archive.open(games[0])
-        else: stream = path.open("rb")
+        else:
+            stream = path.open("rb")
         with stream:
             header = stream.read(0x6c)
             if len(header) != 0x6c: return None
             if code is not None: code.append(header[12:16].decode("ascii", errors="replace"))
             offset = struct.unpack_from("<I", header, 0x68)[0]
-            if offset < 0x200 or offset > 16*1024**2: return None
+            if offset < 0x200 or offset > 16 * 1024**2: return None
             stream.seek(offset)
             banner = stream.read(0x440)
             return banner if len(banner) == 0x440 else None
-    except (OSError, ValueError, zipfile.BadZipFile): return None
+    except (OSError, ValueError, zipfile.BadZipFile):
+        return None
     finally:
         if archive: archive.close()
 
@@ -78,7 +85,8 @@ def index_banner(data, rom):
     indexed = read_fields(marker)
     if indexed.get("stamp") == stamp:
         if indexed.get("code") and indexed.get("compat") != "1":
-            apply_compatibility(data, rom, indexed["code"]); write_fields(marker, dict(indexed, compat=1))
+            apply_compatibility(data, rom, indexed["code"])
+            write_fields(marker, dict(indexed, compat=1))
         return
     code = []
     banner = banner_data(rom, code)
@@ -88,16 +96,21 @@ def index_banner(data, rom):
     pixels = bytearray()
     for y in range(32):
         for x in range(32):
-            tile = (y//8)*4+x//8
-            byte = banner[0x20+tile*32+(y%8)*4+(x%8)//2]
-            index = (byte >> 4) if x%2 else byte & 15
+            tile = (y // 8) * 4 + x // 8
+            byte = banner[0x20 + tile * 32 + (y % 8) * 4 + (x % 8) // 2]
+            index = (byte >> 4) if x % 2 else byte & 15
             rgb = palette[index]
-            pixels.extend((((rgb>>10)&31)*255//31, ((rgb>>5)&31)*255//31, (rgb&31)*255//31, 255 if index else 0))
+            pixels.extend(
+                (
+                    ((rgb >> 10) & 31) * 255 // 31, ((rgb >> 5) & 31) * 255 // 31, (rgb & 31) * 255 // 31,
+                    255 if index else 0
+                )
+            )
     info = struct.pack("<IiiHHIIiiII", 108, 32, -32, 1, 32, 3, len(pixels), 2835, 2835, 0, 0)
     info += struct.pack("<5I", 0xff0000, 0xff00, 0xff, 0xff000000, 0x73524742) + bytes(48)
     item.mkdir(parents=True, exist_ok=True)
     pending = item / "icon.pending.bmp"
-    pending.write_bytes(struct.pack("<2sIHHI", b"BM", 14+108+len(pixels), 0, 0, 14+108) + info + pixels)
+    pending.write_bytes(struct.pack("<2sIHHI", b"BM", 14 + 108 + len(pixels), 0, 0, 14 + 108) + info + pixels)
     pending.replace(item / "icon.bmp")
     title = banner[0x340:0x440].decode("utf-16le", errors="replace").split("\x00", 1)[0].replace("\n", " ")
     write_fields(marker, {"title": title, "stamp": stamp, "code": code[0] if code else "", "compat": 1})

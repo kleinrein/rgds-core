@@ -16,46 +16,46 @@ namespace {
 // numbers are permanent (type base + index) and safe to hard-code.
 using CURL = void;
 constexpr long CURL_GLOBAL_ALL = 3;
-constexpr int  CURLE_OK = 0;
+constexpr int CURLE_OK = 0;
 
 enum CurlOpt : int {
-  CURLOPT_WRITEDATA        = 10001,   // CBPOINT 1
-  CURLOPT_URL              = 10002,   // STRINGPOINT 2
-  CURLOPT_WRITEFUNCTION    = 20011,   // FUNCTIONPOINT 11
-  CURLOPT_POSTFIELDS       = 10015,   // OBJECTPOINT 15
-  CURLOPT_USERAGENT        = 10018,   // STRINGPOINT 18
-  CURLOPT_HTTPHEADER       = 10023,   // SLISTPOINT 23
-  CURLOPT_POST             = 47,      // LONG 47
-  CURLOPT_FOLLOWLOCATION   = 52,      // LONG 52
-  CURLOPT_POSTFIELDSIZE    = 60,      // LONG 60
-  CURLOPT_CAINFO           = 10065,   // STRINGPOINT 65
-  CURLOPT_NOSIGNAL         = 99,      // LONG 99
-  CURLOPT_ACCEPT_ENCODING  = 10102,   // STRINGPOINT 102
-  CURLOPT_TIMEOUT_MS       = 155,     // LONG 155
-  CURLOPT_CONNECTTIMEOUT_MS = 156,    // LONG 156
+  CURLOPT_WRITEDATA = 10001,       // CBPOINT 1
+  CURLOPT_URL = 10002,             // STRINGPOINT 2
+  CURLOPT_WRITEFUNCTION = 20011,   // FUNCTIONPOINT 11
+  CURLOPT_POSTFIELDS = 10015,      // OBJECTPOINT 15
+  CURLOPT_USERAGENT = 10018,       // STRINGPOINT 18
+  CURLOPT_HTTPHEADER = 10023,      // SLISTPOINT 23
+  CURLOPT_POST = 47,               // LONG 47
+  CURLOPT_FOLLOWLOCATION = 52,     // LONG 52
+  CURLOPT_POSTFIELDSIZE = 60,      // LONG 60
+  CURLOPT_CAINFO = 10065,          // STRINGPOINT 65
+  CURLOPT_NOSIGNAL = 99,           // LONG 99
+  CURLOPT_ACCEPT_ENCODING = 10102, // STRINGPOINT 102
+  CURLOPT_TIMEOUT_MS = 155,        // LONG 155
+  CURLOPT_CONNECTTIMEOUT_MS = 156, // LONG 156
 };
-constexpr int CURLINFO_RESPONSE_CODE = 0x200000 + 2;   // CURLINFO_LONG + 2
+constexpr int CURLINFO_RESPONSE_CODE = 0x200000 + 2; // CURLINFO_LONG + 2
 
 struct curl_slist;
 
 struct Api {
-  int   (*global_init)(long);
+  int (*global_init)(long);
   CURL* (*easy_init)();
-  int   (*easy_setopt)(CURL*, int, ...);
-  int   (*easy_perform)(CURL*);
-  int   (*easy_getinfo)(CURL*, int, ...);
-  void  (*easy_cleanup)(CURL*);
+  int (*easy_setopt)(CURL*, int, ...);
+  int (*easy_perform)(CURL*);
+  int (*easy_getinfo)(CURL*, int, ...);
+  void (*easy_cleanup)(CURL*);
   const char* (*easy_strerror)(int);
   curl_slist* (*slist_append)(curl_slist*, const char*);
-  void  (*slist_free_all)(curl_slist*);
+  void (*slist_free_all)(curl_slist*);
 };
 
 // Fallback trust stores, consulted only when curl's own compiled-in store is absent.
 const char* const kCaPaths[] = {
-  "/etc/ssl/certs/ca-certificates.crt",
-  "/etc/pki/tls/certs/ca-bundle.crt",
-  "/etc/ssl/cert.pem",
-  "/mnt/SDCARD/spruce/etc/ca-certificates.crt",
+    "/etc/ssl/certs/ca-certificates.crt",
+    "/etc/pki/tls/certs/ca-bundle.crt",
+    "/etc/ssl/cert.pem",
+    "/mnt/SDCARD/spruce/etc/ca-certificates.crt",
 };
 
 bool exists(const char* path) {
@@ -63,7 +63,7 @@ bool exists(const char* path) {
   return stat(path, &st) == 0 && S_ISREG(st.st_mode);
 }
 
-constexpr size_t MAX_BODY = 8u << 20;   // caps a runaway response
+constexpr size_t MAX_BODY = 8u << 20; // caps a runaway response
 
 struct Sink {
   std::string* out;
@@ -73,7 +73,10 @@ struct Sink {
 size_t write_cb(char* data, size_t size, size_t nmemb, void* user) {
   Sink* s = static_cast<Sink*>(user);
   const size_t n = size * nmemb;
-  if (s->out->size() + n > MAX_BODY) { s->overflowed = true; return 0; }  // 0 aborts the transfer
+  if (s->out->size() + n > MAX_BODY) {
+    s->overflowed = true;
+    return 0;
+  } // 0 aborts the transfer
   s->out->append(data, n);
   return n;
 }
@@ -83,10 +86,16 @@ public:
   CurlBackend(void* handle, const Api& api, const char* from)
       : handle_(handle), api_(api), name_(std::string("libcurl (") + from + ")") {
     if (const char* ca = std::getenv("DS_CHEEVOS_CAINFO")) {
-      if (*ca) { ca_ = ca; return; }
+      if (*ca) {
+        ca_ = ca;
+        return;
+      }
     }
     for (const char* p : kCaPaths) {
-      if (exists(p)) { ca_ = p; break; }
+      if (exists(p)) {
+        ca_ = p;
+        break;
+      }
     }
   }
   // Handle deliberately leaked, curl_global_cleanup deliberately not called:
@@ -98,7 +107,10 @@ public:
   Response perform(const Request& req, const char* user_agent) override {
     Response res;
     CURL* c = api_.easy_init();
-    if (!c) { res.error = "curl_easy_init failed"; return res; }
+    if (!c) {
+      res.error = "curl_easy_init failed";
+      return res;
+    }
 
     Sink sink{&res.body};
     api_.easy_setopt(c, CURLOPT_URL, req.url.c_str());
@@ -122,7 +134,7 @@ public:
         const std::string h = "Content-Type: " + req.content_type;
         headers = api_.slist_append(headers, h.c_str());
       }
-      headers = api_.slist_append(headers, "Expect:");  // suppress 100-continue stalls
+      headers = api_.slist_append(headers, "Expect:"); // suppress 100-continue stalls
       if (headers) api_.easy_setopt(c, CURLOPT_HTTPHEADER, headers);
     }
 
@@ -166,17 +178,20 @@ std::unique_ptr<Backend> make_curl_backend(std::string& err) {
   }
 
   Api api{};
-  struct Sym { const char* name; void** slot; };
+  struct Sym {
+    const char* name;
+    void** slot;
+  };
   const Sym syms[] = {
-    {"curl_global_init",   reinterpret_cast<void**>(&api.global_init)},
-    {"curl_easy_init",     reinterpret_cast<void**>(&api.easy_init)},
-    {"curl_easy_setopt",   reinterpret_cast<void**>(&api.easy_setopt)},
-    {"curl_easy_perform",  reinterpret_cast<void**>(&api.easy_perform)},
-    {"curl_easy_getinfo",  reinterpret_cast<void**>(&api.easy_getinfo)},
-    {"curl_easy_cleanup",  reinterpret_cast<void**>(&api.easy_cleanup)},
-    {"curl_easy_strerror", reinterpret_cast<void**>(&api.easy_strerror)},
-    {"curl_slist_append",  reinterpret_cast<void**>(&api.slist_append)},
-    {"curl_slist_free_all", reinterpret_cast<void**>(&api.slist_free_all)},
+      {"curl_global_init", reinterpret_cast<void**>(&api.global_init)},
+      {"curl_easy_init", reinterpret_cast<void**>(&api.easy_init)},
+      {"curl_easy_setopt", reinterpret_cast<void**>(&api.easy_setopt)},
+      {"curl_easy_perform", reinterpret_cast<void**>(&api.easy_perform)},
+      {"curl_easy_getinfo", reinterpret_cast<void**>(&api.easy_getinfo)},
+      {"curl_easy_cleanup", reinterpret_cast<void**>(&api.easy_cleanup)},
+      {"curl_easy_strerror", reinterpret_cast<void**>(&api.easy_strerror)},
+      {"curl_slist_append", reinterpret_cast<void**>(&api.slist_append)},
+      {"curl_slist_free_all", reinterpret_cast<void**>(&api.slist_free_all)},
   };
   for (const Sym& s : syms) {
     *s.slot = dlsym(h, s.name);

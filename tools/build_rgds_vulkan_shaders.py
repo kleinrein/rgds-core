@@ -28,7 +28,8 @@ SHADERS = {
     'lean_frag_early.spv': ('lean.frag', ['-DDS_EARLY']),
     'lean_frag_opq.spv': ('lean.frag', ['-DDS_ALPHA_SEL=1']),
     'lean_frag_trans.spv': ('lean.frag', ['-DDS_ALPHA_SEL=2']),
-    'lean_frag_trans_nd.spv': ('lean.frag', ['-DDS_ALPHA_SEL=2', '-DDS_NODISCARD']),   # pass B without discard (DS_LEAN_NODISCARD)
+    'lean_frag_trans_nd.spv': ('lean.frag', ['-DDS_ALPHA_SEL=2',
+                                             '-DDS_NODISCARD']),  # pass B without discard (DS_LEAN_NODISCARD)
     'lean_resolve_frag.spv': ('lean_resolve.frag', []),
     'lean_resolve_1x_frag.spv': ('lean_resolve.frag', ['-DDS_SAMPLES=1']),
     'lean_resolve_store_1x_frag.spv': ('lean_resolve.frag', ['-DDS_SAMPLES=1', '-DDS_STORE_OUT']),
@@ -41,48 +42,74 @@ def sha(path):
 
 
 def inputs(source):
-    vk = source/'src/core/gpu/vk'
-    record = {name: sha(vk/name) for name in SOURCES}
+    vk = source / 'src/core/gpu/vk'
+    record = {name: sha(vk / name) for name in SOURCES}
     record['recipe'] = sha(Path(__file__))
     return record
 
 
 def validate(source, output):
-    record = json.loads((output/'build.json').read_text())
-    if record['inputs'] != inputs(source) or record['flags'] != FLAGS or record['shaders'] != {k: list(v) for k, v in SHADERS.items()}:
+    record = json.loads((output / 'build.json').read_text())
+    if record['inputs'] != inputs(source) or record['flags'] != FLAGS or record['shaders'] != {
+        k: list(v)
+        for k, v in SHADERS.items()
+    }:
         raise ValueError('Private Vulkan shader inputs changed')
     if set(record['files']) != set(SHADERS):
         raise ValueError('Incomplete private Vulkan shaders')
     for name, digest in record['files'].items():
-        if sha(output/name) != digest:
+        if sha(output / name) != digest:
             raise ValueError('Private Vulkan shader output mismatch')
     return record
 
 
 def compile_shaders(source, output):
     expected = inputs(source)
-    vk = source/'src/core/gpu/vk'
+    vk = source / 'src/core/gpu/vk'
     output.mkdir(parents=True, exist_ok=True)
     for blob, (shader, defines) in SHADERS.items():
-        target = output/blob
-        subprocess.run(['glslangValidator', *FLAGS, *defines, '-I'+str(vk), '-I'+str(vk/'shaders'),
-                        str(vk/'shaders'/shader), '-o', str(target)], check=True, stdout=subprocess.DEVNULL)
+        target = output / blob
+        subprocess.run(
+            [
+                'glslangValidator', *FLAGS, *defines, '-I' + str(vk), '-I' + str(vk / 'shaders'),
+                str(vk / 'shaders' / shader), '-o',
+                str(target)
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL
+        )
         subprocess.run(['spirv-val', '--target-env', 'vulkan1.1', str(target)], check=True)
     if inputs(source) != expected:
         raise ValueError('Shader inputs changed during compilation')
-    record = dict(schema=2, inputs=expected, flags=FLAGS, shaders={k: list(v) for k, v in SHADERS.items()},
-                  compiler=subprocess.check_output(['glslangValidator', '--version'], text=True),
-                  files={name: sha(output/name) for name in SHADERS})
-    (output/'build.json').write_text(json.dumps(record, indent=2)+'\n')
+    record = dict(
+        schema=2,
+        inputs=expected,
+        flags=FLAGS,
+        shaders={
+            k: list(v)
+            for k, v in SHADERS.items()
+        },
+        compiler=subprocess.check_output(['glslangValidator', '--version'], text=True),
+        files={name: sha(output / name)
+               for name in SHADERS}
+    )
+    (output / 'build.json').write_text(json.dumps(record, indent=2) + '\n')
 
 
 def prepare(source, output):
     source, output = source.resolve(), output.resolve()
     if sys.platform == 'darwin':
-        env = dict(os.environ, LIMA_HOME=str(ROOT/'.cache/linux-builder/state'))
-        subprocess.run([str(ROOT/'.cache/linux-builder/lima/bin/limactl'), 'shell', 'rgds-image',
-                        'python3', str(Path(__file__).resolve()), '--source', str(source),
-                        '--output', str(output)], env=env, check=True)
+        env = dict(os.environ, LIMA_HOME=str(ROOT / '.cache/linux-builder/state'))
+        subprocess.run(
+            [
+                str(ROOT / '.cache/linux-builder/lima/bin/limactl'), 'shell', 'rgds-image', 'python3',
+                str(Path(__file__).resolve()), '--source',
+                str(source), '--output',
+                str(output)
+            ],
+            env=env,
+            check=True
+        )
     else:
         if output.exists():
             shutil.rmtree(output)

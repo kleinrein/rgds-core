@@ -13,8 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 class EventWaitTests(unittest.TestCase):
     def test_gamepad_events_remain_ordered_without_sdl_wait_polling(self):
         with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder); source = root/'wait.cpp'; binary = root/'wait'
-            source.write_text(r'''
+            root = Path(folder)
+            source = root / 'wait.cpp'
+            binary = root / 'wait'
+            source.write_text(
+                r'''
 #include "platform/event_wait.hpp"
 #include <SDL.h>
 #include <cassert>
@@ -50,11 +53,23 @@ int main(){
     assert(rgds::wait_ui_event(api,&e,500,false));assert(e.type==SDL_USEREVENT && api.waits==1);
     poster.join();SDL_Quit();
 }
-''')
-            flags=subprocess.check_output(['sdl2-config','--cflags','--libs'],text=True).split()
-            subprocess.run(['clang++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-pthread','-I'+str(ROOT/'src'),str(source),*flags,'-o',str(binary)],check=True,capture_output=True,text=True)
-            result=subprocess.run([str(binary)],env=dict(os.environ,SDL_VIDEODRIVER='dummy'),capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+'''
+            )
+            flags = subprocess.check_output(['sdl2-config', '--cflags', '--libs'], text=True).split()
+            subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '-Werror', '-pthread', '-I' + str(ROOT / 'src'),
+                    str(source), *flags, '-o',
+                    str(binary)
+                ],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            result = subprocess.run(
+                [str(binary)], env=dict(os.environ, SDL_VIDEODRIVER='dummy'), capture_output=True, text=True, timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-if __name__ == '__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

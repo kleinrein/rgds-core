@@ -5,16 +5,19 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(shutil.which("clang++") and shutil.which("sdl2-config"),"C++/SDL headers required")
+@unittest.skipUnless(shutil.which("clang++") and shutil.which("sdl2-config"), "C++/SDL headers required")
 class EmulatorBridgeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.temp=tempfile.TemporaryDirectory();cls.folder=Path(cls.temp.name);cls.binary=cls.folder/"bridge-test"
-        source=cls.folder/"test.cpp"
-        source.write_text(r'''
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.folder = Path(cls.temp.name)
+        cls.binary = cls.folder / "bridge-test"
+        source = cls.folder / "test.cpp"
+        source.write_text(
+            r'''
 #define RGDS_BRIDGE_TESTS
 #define RGDS_BRIDGE_PROFILE
 #include "platform/emulator_bridge.cpp"
@@ -31,6 +34,15 @@ int fake_filter(int mode){++filter_calls;last_filter=mode;return mode!=2;}
 int adaptive_calls=0,last_adaptive=-1;
 int fake_adaptive(int on){++adaptive_calls;last_adaptive=on;return 1;}
 int fake_load(){return 1;}
+// DSCore's cheat hooks: three codes, the first two in one exclusive group, the third a note.
+int cheat_states[3]={0,1,-1};int cheat_sets=0;
+int fake_cheat_count(){return 3;}
+int fake_cheat_group_count(){return 1;}
+int fake_cheat_entry(int i,const char** name,const char** description,int* group,int* state){
+ static const char* names[]={"Infinite lives","Max coins","Notes"};if(i<0 || i>2)return 0;
+ *name=names[i];*description=i==1?"All the\ncoins":"";*group=i==2?-1:0;*state=cheat_states[i];return 1;}
+int fake_cheat_group(int g,const char** name,int* exclusive){if(g!=0)return 0;*name="Items";*exclusive=1;return 1;}
+int fake_set_cheat(int i,int on){++cheat_sets;if(i<0 || i>1)return 0;cheat_states[i]=on;if(on)cheat_states[1-i]=0;return 1;}
 int fake_copy(SDL_Renderer*,SDL_Texture*,const SDL_Rect*,const SDL_Rect*){++adapter_draws;return 0;}
 Uint8 fake_button(SDL_Joystick*,int button){return button<13?1:0;}
 Uint8 native_keys[512]{};
@@ -50,6 +62,11 @@ extern "C" void* dlsym(void*,const char* name){
  if(!std::strcmp(name,"rgds_set_adaptive"))return reinterpret_cast<void*>(&fake_adaptive);
  if(!std::strcmp(name,"rgds_set_threaded_3d"))return reinterpret_cast<void*>(&fake_threading);
  if(!std::strcmp(name,"rgds_load_checkpoint"))return reinterpret_cast<void*>(&fake_load);
+ if(!std::strcmp(name,"rgds_cheat_count"))return reinterpret_cast<void*>(&fake_cheat_count);
+ if(!std::strcmp(name,"rgds_cheat_group_count"))return reinterpret_cast<void*>(&fake_cheat_group_count);
+ if(!std::strcmp(name,"rgds_cheat_entry"))return reinterpret_cast<void*>(&fake_cheat_entry);
+ if(!std::strcmp(name,"rgds_cheat_group"))return reinterpret_cast<void*>(&fake_cheat_group);
+ if(!std::strcmp(name,"rgds_set_cheat"))return reinterpret_cast<void*>(&fake_set_cheat);
  if(!std::strcmp(name,"SDL_RenderCopy"))return reinterpret_cast<void*>(&fake_copy);
  if(!std::strcmp(name,"SDL_PeepEvents"))return reinterpret_cast<void*>(&fake_peep);
  if(!std::strcmp(name,"SDL_JoystickGetButton"))return reinterpret_cast<void*>(&fake_button);
@@ -97,6 +114,31 @@ int main(int argc,char** argv){
    assert(adaptive_calls==1 && last_adaptive==0 && state().find("state=adaptive-off")!=std::string::npos);
    command("adaptive-bad","adaptive:2");test_time=360;tick();
    assert(adaptive_calls==1 && state().find("token=adaptive-off")!=std::string::npos);   // unknown commands get no answer
+   return 0;
+ }
+ if(argc==4 && std::string(argv[3])=="cheats"){
+   std::string listing=control+".cheats";
+   auto listed=[&]{std::ifstream file(listing);return std::string(std::istreambuf_iterator<char>(file),{});};
+   // The first tick lists what the engine has loaded; the menu opening (the block flag) lists it again.
+   test_time=30;tick();assert(fs::exists(listing));
+   std::string text=listed();
+   assert(text.find("count=3\n")!=std::string::npos && text.find("groups=1\n")!=std::string::npos);
+   assert(text.find("group_0=Items\ngroup_0_exclusive=1\n")!=std::string::npos);
+   assert(text.find("cheat_0=Infinite lives\ncheat_0_description=\ncheat_0_group=0\ncheat_0_state=0\n")!=std::string::npos);
+   assert(text.find("cheat_1=Max coins\ncheat_1_description=All the coins\ncheat_1_group=0\ncheat_1_state=1\n")!=std::string::npos);   // newlines in text are flattened
+   assert(text.find("cheat_2=Notes\ncheat_2_description=\ncheat_2_group=-1\ncheat_2_state=-1\n")!=std::string::npos);
+   fs::remove(listing);test_time=60;tick();assert(!fs::exists(listing));   // unchanged count: no rewrite each second
+   std::ofstream(control+".blocked")<<"menu";test_time=90;tick();assert(fs::exists(listing));
+   unlink((control+".blocked").c_str());test_time=120;tick();
+   // A toggle applies at once, rewrites the list before answering, and the exclusive group follows the engine.
+   command("cheat-on","cheat:0:1");test_time=150;tick();
+   assert(cheat_sets==1 && state().find("token=cheat-on")!=std::string::npos && state().find("state=cheat-on")!=std::string::npos);
+   text=listed();assert(text.find("cheat_0_state=1\n")!=std::string::npos && text.find("cheat_1_state=0\n")!=std::string::npos);
+   command("cheat-off","cheat:0:0");test_time=180;tick();
+   assert(cheat_sets==2 && state().find("state=cheat-off")!=std::string::npos && listed().find("cheat_0_state=0\n")!=std::string::npos);
+   command("cheat-note","cheat:2:1");test_time=210;tick();
+   assert(cheat_sets==3 && state().find("token=cheat-note")!=std::string::npos && state().find("state=cheat-failed")!=std::string::npos);
+   for(const char* bad:{"cheat:0:2","cheat:0:1x","cheat:-1:1","cheat:0","cheat:x:1"}){command("cheat-bad",bad);test_time+=30;tick();assert(cheat_sets==3 && state().find("state=cheat-failed")!=std::string::npos);}
    return 0;
  }
  if(argc==4 && std::string(argv[3])=="canvas"){
@@ -282,35 +324,56 @@ int main(int argc,char** argv){
  speed("toggle","fast-forward-toggle");assert(fast_forward && events.size()==6);
  return 0;
 }
-''')
-        flags=subprocess.check_output(["sdl2-config","--cflags"],text=True).split()
-        result=subprocess.run(["clang++","-std=c++17","-O0",*flags,"-I"+str(ROOT/"src"),str(source),"-o",str(cls.binary)],capture_output=True,text=True)
-        if result.returncode:raise AssertionError(result.stderr)
+'''
+        )
+        flags = subprocess.check_output(["sdl2-config", "--cflags"], text=True).split()
+        result = subprocess.run(
+            ["clang++", "-std=c++17", "-O0", *flags, "-I" + str(ROOT / "src"),
+             str(source), "-o",
+             str(cls.binary)],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode: raise AssertionError(result.stderr)
 
     @classmethod
-    def tearDownClass(cls):cls.temp.cleanup()
+    def tearDownClass(cls):
+        cls.temp.cleanup()
 
     def test_verified_atomic_writer_skips_delay_without_accepting_old_or_partial_states(self):
         for core in ("dsperate", "drastic", "nnddss", "melonds"):
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
-                result=subprocess.run([str(self.binary),folder,core,"atomic"],capture_output=True,text=True,timeout=5)
-                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                result = subprocess.run(
+                    [str(self.binary), folder, core, "atomic"], capture_output=True, text=True, timeout=5
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_direct_present_hook_times_captures_and_overlays_the_engine_canvas(self):
         with tempfile.TemporaryDirectory() as folder:
-            result=subprocess.run([str(self.binary),folder,"dsperate","canvas"],capture_output=True,text=True,timeout=20)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            result = subprocess.run(
+                [str(self.binary), folder, "dsperate", "canvas"], capture_output=True, text=True, timeout=20
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_each_engine_has_the_same_bounded_checkpoint_and_menu_protocol(self):
-        for core in ("drastic","dsperate","nnddss","melonds"):
-            with self.subTest(core=core),tempfile.TemporaryDirectory() as folder:
-                result=subprocess.run([str(self.binary),folder,core],capture_output=True,text=True,timeout=5)
-                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        for core in ("drastic", "dsperate", "nnddss", "melonds"):
+            with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
+                result = subprocess.run([str(self.binary), folder, core], capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_cheats_are_listed_for_the_menu_and_toggled_through_the_engine(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = subprocess.run(
+                [str(self.binary), folder, 'dsperate', 'cheats'], capture_output=True, text=True, timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_graphics_wait_for_event_boundary_and_preserve_renderer_on_failure(self):
         with tempfile.TemporaryDirectory() as folder:
-            result=subprocess.run([str(self.binary),folder,'dsperate','graphics'],capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            result = subprocess.run(
+                [str(self.binary), folder, 'dsperate', 'graphics'], capture_output=True, text=True, timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-if __name__=="__main__":unittest.main()
+if __name__ == "__main__": unittest.main()

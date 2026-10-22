@@ -6,7 +6,6 @@
 A  Apply	A  Käytä
 A  Done	A  Valmis
 A  Play	A  Pelaa
-A / Start	A / Start
 A gentle scanline pattern with original colours.	Hienovaraiset vaakajuovat ja alkuperäiset värit.
 A natural colour and contrast treatment.	Luonnolliset värit ja kontrasti.
 A screen style for this cartridge	Tämän pelin näyttötyyli
@@ -14,20 +13,26 @@ A stronger LCD texture and scanline look.	Voimakkaampi LCD-tekstuuri ja vaakajuo
 A subtle handheld LCD pixel pattern.	Hienovarainen kannettavan LCD-näytön pikselikuvio.
 A subtle pixel grid with a bright, readable image.	Hienovarainen pikseliruudukko ja kirkas, selkeä kuva.
 Add your DS games to fetch their artwork.	Lisää DS-pelisi, jotta voit hakea niiden kansikuvat.
+Africa	Afrikka
 After	Jälkeen
 All games	Kaikki pelit
 Amber	Meripihka
-Anbernic / Escape cancels	Anbernic / Escape peruuttaa
+Americas	Amerikka
 Anbernic startup is unavailable in RGDS OS.	Anbernic-käynnistys ei ole käytettävissä RGDS OS:ssa.
 Animations	Animaatiot
+Antarctica	Etelämanner
 Applies immediately. Higher clocks use more battery.	Tulee voimaan heti. Suurempi kellotaajuus kuluttaa enemmän akkua.
 Applies immediately. Your game keeps its progress.	Tulee voimaan heti. Pelisi edistyminen säilyy.
 Apply	Käytä
 Applying shader…	Otetaan suodatinta käyttöön…
+Arctic	Arktis
 Artwork	Kansikuvat
 Artwork & ScreenScraper	Kansikuvat
 Artwork source	Kansikuvien lähde
 Artwork sources	Kansikuvien lähteet
+Asia	Aasia
+Atlantic Ocean	Atlantti
+Australia	Australia
 Auto-load state	Lataa tila automaattisesti
 Auto-save on exit	Tallenna poistuttaessa
 Automatic	Automaattinen
@@ -156,6 +161,7 @@ Engine managed	Emulaattorin hallitsema
 Enter here	Kirjoita tähän
 Enter password	Anna salasana
 Enter your username and password	Anna käyttäjätunnus ja salasana
+Europe	Eurooppa
 Every game in this collection has artwork.	Jokaisella kokoelman pelillä on kansikuva.
 FPS changed for this session. Settings storage is unavailable.	FPS muutettu tälle istunnolle. Asetuksia ei voi tallentaa.
 FPS counter enabled.	FPS-laskuri käytössä.
@@ -191,6 +197,7 @@ Global	Yhteinen
 Global controls saved.	Yhteiset ohjainasetukset tallennettu.
 Hold	Pidä painettuna
 Home shortcut	Kotipikavalinta
+Indian Ocean	Intian valtameri
 Inherit	Peri
 Inherited	Peritty
 Jump to letter	Siirry kirjaimeen
@@ -265,6 +272,7 @@ Open the Anbernic menu	Avaa Anbernic-valikko
 Options	Valinnat
 Original pixels	Alkuperäiset pikselit
 Original pixels and colours.	Alkuperäiset pikselit ja värit.
+Pacific	Tyynimeri
 PLAY	PELAA
 Password	Salasana
 Pause when you need to.	Pidä tauko tarvittaessa.
@@ -504,8 +512,6 @@ Wi-Fi request timed out. Check signal and try again.	Wi-Fi-pyyntö aikakatkaisti
 Wi-Fi service is unavailable.	Wi-Fi-palvelu ei ole käytettävissä.
 With shader	Suodattimella
 Working…	Työskennellään…
-X Scene   Y Compare	X Näkymä   Y Vertaa
-X Scene / Y Compare	X Näkymä / Y Vertaa
 Your cartridges go here	Pelikasettisi näkyvät täällä
 Your home screen after powering on	Kotinäyttösi virran kytkennän jälkeen
 Your local time and date	Paikallinen aika ja päivämäärä
@@ -572,17 +578,29 @@ Update verification failed. Check for updates again.	Päivityksen tarkistus epä
 Update failed. Check Wi-Fi and try again.	Päivitys epäonnistui. Tarkista Wi-Fi ja yritä uudelleen.
 Stable	Vakaa
 Testing	Testaus
-Save to slot	Tallenna paikkaan
 Import slot	Tuo tallennustila
-Load slot	Lataa paikasta
 Export slot	Vie tallennustila
-Undo overwrite	Kumoa ylikirjoitus
-Undo load	Kumoa lataus
+Save checkpoint	Tallenna tila
+Load checkpoint	Lataa tila
+Save here	Tallenna tähän
+Export	Vie
+More	Lisää
+Replace slot {0}?	Korvataanko paikka {0}?
+Load slot {0}?	Ladataanko paikka {0}?
+Delete slot {0}?	Poistetaanko paikka {0}?
+Undo last slot change	Kumoa viimeisin muutos
+Undo last load	Kumoa viimeisin lataus
+Import into this slot	Tuo tähän paikkaan
+Slot {0} deleted.	Paikka {0} poistettu.
+Slot change undone.	Muutos kumottu.
+A saves your current progress here.	A tallentaa edistymisesi tähän.
+A replaces this slot with your current progress. X deletes it.	A korvaa paikan edistymiselläsi. X poistaa sen.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A lataa paikan. Kumoa viimeisin lataus Y-valikosta palauttaa nykyisen edistymisesi.
+Nothing to load here yet.	Täällä ei ole vielä ladattavaa.
+A exports this slot to userdata/exports. X deletes it.	A vie paikan kansioon userdata/exports. X poistaa sen.
+Y imports a save into this slot.	Y tuo tallennuksen tähän paikkaan.
 Import help	Tuontiohje
-Save slot	Tallennuspaikka
-Replace this save?	Korvataanko tämä tallennus?
 Replace	Korvaa
-Load this save?	Ladataanko tämä tallennus?
 Blow into microphone	Puhalla mikrofoniin
 Close and open DS lid	Sulje ja avaa DS-kansi
 DS language	DS-kieli
@@ -621,15 +639,12 @@ Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are
 Save backup created in userdata/exports.	Tallennusten varmuuskopio luotu kansioon userdata/exports.
 Slot exported to userdata/exports.	Tallennustila viety kansioon userdata/exports.
 Save library updated.	Tallennuskirjasto päivitetty.
-Save overwrite undone.	Tallennuksen ylikirjoitus kumottu.
 Current progress could not be saved. No slot was changed.	Edistymistä ei voitu tallentaa. Tallennuspaikkoja ei muutettu.
 DS controls are unavailable for this engine.	DS-ohjaimet eivät ole käytettävissä tässä emulaattorissa.
 Your DS library starts here	DS-kirjastosi alkaa tästä
 Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopioi .nds- tai DS ZIP -tiedostot pelikortin Roms/NDS-kansioon ja valitse Etsi pelejä.
 Use the engine's native controls for microphone and DS settings.	Käytä emulaattorin omia mikrofoni- ja DS-asetuksia.
 Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Oikea mikrofoni on oletuksena käytössä. Puhallus ja kansitoiminnot palaavat peliin kahdeksi sekunniksi. Kielimuutos vaatii uudelleenkäynnistyksen.
-Save slots	Tallennuspaikat
-Load slots	Lataa tallennustilat
 Unplayed	Pelaamattomat
 Played	Pelatut
 Filtered	Suodatetut
@@ -652,9 +667,6 @@ Return home before testing the physical microphone.	Palaa kotiin ennen fyysisen 
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Puhalla tai puhu mikrofoniin. Taso nousee ja laskee, kun lopetat.
 No filter	Ei suodatinta
 Quick search	Pikahaku
-Y  Quick search	Y  Pikahaku
-X  Filters	X  Suodattimet
-Y Search / X Filters	Y Hae / X Suodattimet
 A  Search	A  Hae
 A  Jump	A  Siirry
 Edit search	Muokkaa hakua
@@ -665,10 +677,8 @@ Finding games…	Etsitään pelejä…
 Searching…	Haetaan…
 Search in	Hae kohteesta
 Try a shorter title or clear your filter.	Kokeile lyhyempää nimeä tai tyhjennä suodatin.
-A Key / Start Search / B Cancel	A Näppäin / Start Hae / B Peruuta
+Type	Kirjoita
 Tap to type, or use the D-pad and A	Kosketa kirjoittaaksesi tai käytä ristiohjainta ja A:ta
-X Delete / Start Search	X Poista / Start Hae
-X Delete / Start Done	X Poista / Start Valmis
 No letters to jump to. Search for another game.	Ei kirjaimia, joihin siirtyä. Hae toista peliä.
 {0} match	{0} tulos
 {0} matches	{0} tulosta
@@ -737,7 +747,6 @@ Colour mode	Väritila
 Draw and chat with nearby handhelds	Piirrä ja keskustele lähellä olevien laitteiden kanssa
 Wi-Fi connected	Wi-Fi yhdistetty
 No Wi-Fi: you can still draw	Ei Wi-Fiä: voit silti piirtää
-Press A to open	Avaa painamalla A
 Type your name	Kirjoita nimesi
 You appear like this to others	Näin muut näkevät sinut
 Starting…	Käynnistyy…
@@ -835,7 +844,7 @@ Natural	Luonnollinen
 Vivid	Eloisa
 Pixel art	Pikselitaide
 Moods	Tunnelmat
-Up / Down or L / R: change group	Ylös / Alas tai L / R: vaihda ryhmää
+Change group	Vaihda ryhmää
 Sounds & music	Äänet ja musiikki
 Menu music	Valikkomusiikki
 Music volume	Musiikin voimakkuus
@@ -852,3 +861,35 @@ The backup did not finish. Please try again.	Varmuuskopiointi ei valmistunut. Yr
 Copies every save and checkpoint into one zip in userdata/exports.	Kopioi kaikki tallennukset ja tarkistuspisteet yhteen zip-tiedostoon kansioon userdata/exports.
 Where games go on the card, and a fresh scan.	Mihin pelit laitetaan kortilla, ja uusi haku.
 Where covers and titles come from.	Mistä kannet ja nimet haetaan.
+System update	Järjestelmäpäivitys
+Version {0} is ready	Versio {0} on valmis
+Version {0} is ready to install	Versio {0} on valmis asennettavaksi
+Downloading {0}	Ladataan {0}
+Paused at {0}	Keskeytetty kohdassa {0}
+Update now	Päivitä nyt
+Resume download	Jatka latausta
+Update	Päivitä
+Install	Asenna
+What's new	Uutta tässä versiossa
+Download	Lataa
+Verify	Tarkista
+Prepare	Valmistele
+Step {0} of 4	Vaihe {0}/4
+Less than a minute left	Alle minuutti jäljellä
+About {0} min left	Noin {0} min jäljellä
+About {0} h left	Noin {0} h jäljellä
+Downloads resume where they stopped if Wi-Fi drops.	Lataus jatkuu siitä, mihin se jäi, jos Wi-Fi katkeaa.
+Your games and saves are not touched.	Pelisi ja tallennuksesi pysyvät koskemattomina.
+Connection lost. Retrying…	Yhteys katkesi. Yritetään uudelleen…
+The update could not be downloaded. Check for updates again.	Päivitystä ei voitu ladata. Tarkista päivitykset uudelleen.
+Finishing another task. Press Y again in a moment.	Toinen tehtävä on kesken. Paina Y uudelleen hetken päästä.
+Updates	Päivitykset
+The language for menus and messages.	Valikkojen ja viestien kieli.
+Set the clock to where you are.	Aseta kello sijaintisi mukaan.
+How dates appear at the top of the screen.	Miten päivämäärät näkyvät näytön yläreunassa.
+A 24-hour or 12-hour clock.	24 tai 12 tunnin kello.
+Versions, free space and the network address of your handheld.	Laitteen versiot, vapaa tila ja verkko-osoite.
+Check for updates, go back to the previous build or clear temporary files.	Tarkista päivitykset, palaa edelliseen versioon tai tyhjennä väliaikaiset tiedostot.
+Leave RG DS Core and go back to the stock menu.	Poistu RG DS Coresta ja palaa vakiovalikkoon.
+What happens when you turn the handheld on.	Mitä tapahtuu, kun käynnistät laitteen.
+Restart the RGDS menu.	Käynnistä RGDS-valikko uudelleen.

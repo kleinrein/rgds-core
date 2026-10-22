@@ -22,24 +22,36 @@ Hardware restoration checks remain pending for the current candidate.
 
 ## Save gallery, import/export and backup
 
-Open **Game menu → Save slots / Load slots**, or **Cartridge options → Save gallery**.
-There are nine slots per game and emulator. Selecting a slot opens its actions;
-replacing or loading an occupied slot asks for confirmation with Cancel selected.
-A captured top-screen preview and timestamp identify each slot. Engines without
-capture support show a save symbol. The optional SuperDrastic backend retains
-its own native save menu.
+Open **Game menu → Save checkpoint** or **Load checkpoint** while playing, or
+**Game options → Save gallery** from the library. There are nine slots per game
+and emulator. A captured top-screen preview and timestamp identify each slot.
+Engines without capture support show a save symbol. The optional SuperDrastic
+backend retains its own native save menu.
 
-**Undo overwrite** swaps the most recent slot edit. **Undo load** restores the
-checkpoint captured immediately before loading another slot. The engine must
-acknowledge a fresh save before loading can proceed; a failed capture changes no
-slot. Only the most recent overwrite and load are retained as undo points.
+Every slot answers the same three buttons, and the footer names them:
+
+- **A** does what the page was opened for: *Save here* on the Save checkpoint
+  page, *Load* on the Load checkpoint page, *Export* in the library gallery.
+  Replacing or loading an occupied slot asks first, with Cancel selected. Slots
+  the page cannot use, such as empty slots when loading, are dimmed.
+- **X** deletes the focused slot after asking. Deleting removes the slot entry
+  only; the checkpoint object is kept, so Undo restores it.
+- **Y** opens the rare actions for that slot. In game: *Export slot*, *Undo last
+  slot change* and *Undo last load*. In the library: *Import into this slot*,
+  *Undo last slot change* and *Import help*.
+
+**Undo last slot change** swaps back the most recent save, replace or delete.
+**Undo last load** restores the checkpoint captured immediately before loading
+another slot. The engine must acknowledge a fresh save before loading can
+proceed; a failed capture changes no slot. Only the most recent slot change and
+load are retained as undo points.
 Immutable checkpoint objects are verified by SHA-256 before use, and catalog
 publication is atomic. Old objects are retained; no automatic pruning deletes
 save history in this preview.
 
-**Export slot** writes a `.rgdssave.zip` to `userdata/exports/`. Copy it to another
-installation's `userdata/imports/`, open that game's gallery and choose **Import
-slot**. The importer verifies the complete ROM hash, engine identity and state
+**Export** writes a `.rgdssave.zip` to `userdata/exports/`. Copy it to another
+installation's `userdata/imports/`, open that game's gallery in the library and
+choose **Y → Import into this slot**. The importer verifies the complete ROM hash, engine identity and state
 checksum; unsafe archive paths and oversized archives are rejected. It refuses
 cross-engine imports. Engine versions can still have incompatible state formats.
 
@@ -48,7 +60,7 @@ while no game is running. It contains slot history, canonical checkpoints and
 known native save/state directories, plus a SHA-256 inventory. It excludes games,
 BIOS and network credentials. Copy the archive off the card for a separate backup.
 Whole-backup restore is currently a manual offline operation; portable slot
-restore is available through the Import slot action. Neither path converts battery
+restore is available through the Import into this slot action. Neither path converts battery
 saves between engines.
 
 ## Resume after power off

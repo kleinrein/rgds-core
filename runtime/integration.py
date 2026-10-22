@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import NamedTuple, Optional
 
 from engines import CORES
+
 SDL_NAMES = ("libSDL2-2.0.so.0", "libSDL2-2.0.so", "libSDL2.so")
-SYSTEM_LIBRARY_DIRS = (Path("/usr/lib"), Path("/lib"),
-                       Path("/mnt/ports/libs/lib64"), Path("/mnt/ports/libs/SDL64"))
+SYSTEM_LIBRARY_DIRS = (Path("/usr/lib"), Path("/lib"), Path("/mnt/ports/libs/lib64"), Path("/mnt/ports/libs/SDL64"))
 
 
 def engine_libraries(environment, private=(), vendor=(), stock_independent=False):
@@ -19,15 +19,22 @@ def engine_libraries(environment, private=(), vendor=(), stock_independent=False
     directories = [Path(path) for path in (*private, *vendor)]
     selected = environment.get("RGDS_SDL_LIBRARY")
     selected = Path(selected) if selected and Path(selected).is_file() else None
-    system = (Path('/usr/lib'), Path('/lib'), Path('/usr/lib/aarch64-linux-gnu'),
-              Path('/lib/aarch64-linux-gnu')) if stock_independent else SYSTEM_LIBRARY_DIRS
+    system = (
+        Path('/usr/lib'), Path('/lib'), Path('/usr/lib/aarch64-linux-gnu'), Path('/lib/aarch64-linux-gnu')
+    ) if stock_independent else SYSTEM_LIBRARY_DIRS
     if stock_independent and selected is not None and any(
-            str(path).startswith(('/mnt/vendor/', '/mnt/ports/', '/oem/'))
-            for path in (selected, selected.resolve())):
-        raise ValueError('This engine requires an OS SDL2 library or a bundled library, not a stock/ports SDL override.')
+        str(path).startswith(('/mnt/vendor/', '/mnt/ports/', '/oem/')) for path in (selected, selected.resolve())
+    ):
+        raise ValueError(
+            'This engine requires an OS SDL2 library or a bundled library, not a stock/ports SDL override.'
+        )
     if selected is None:
-        selected = next((directory / name for directory in (*directories, *system)
-                         for name in SDL_NAMES if (directory / name).is_file()), None)
+        selected = next(
+            (
+                directory / name for directory in (*directories, *system)
+                for name in SDL_NAMES if (directory / name).is_file()
+            ), None
+        )
     if selected is not None:
         environment["RGDS_SDL_LIBRARY"] = str(selected)
         # Pin SDL first, then resolve engine-private dependencies. The verified

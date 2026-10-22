@@ -24,7 +24,8 @@ installer = load('install_package', ROOT / 'packaging/install_package.py')
 @unittest.skipUnless(Path(release.OPENSSL).exists() or sys.platform == 'linux', 'OpenSSL 3 is required')
 class ReleaseChannelTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 
     def init(self, repo='rgds-dev/rg-ds-core', channel='stable'):
@@ -56,13 +57,22 @@ class ReleaseChannelTests(unittest.TestCase):
     def test_publish_refuses_dev_versions_and_packages_without_the_channel(self):
         trust, key = self.init()
         (self.root / 'packaging/update-trust.json').write_text(json.dumps(trust))
-        dist = self.root / 'dist'; dist.mkdir()
+        dist = self.root / 'dist'
+        dist.mkdir()
         package = dist / 'RGDS-0.1.0-abc123.zip'
         with release.zipfile.ZipFile(package, 'w') as archive:
-            archive.writestr('rgds/state/update-trust.json', json.dumps({'schema': 1, 'channel': 'stable', 'feed': '', 'keys': {}}))
+            archive.writestr(
+                'rgds/state/update-trust.json', json.dumps({
+                    'schema': 1,
+                    'channel': 'stable',
+                    'feed': '',
+                    'keys': {}
+                })
+            )
         (dist / 'latest.txt').write_text(package.name + '\n')
         args = mock.Mock(version='0.1.0', repo=None, key=key, channel='stable', notes=None, days=90, upload=False)
-        with mock.patch.object(release, 'TRUST', self.root / 'update-trust.json'), mock.patch.object(release, 'ROOT', self.root):
+        with mock.patch.object(release, 'TRUST',
+                               self.root / 'update-trust.json'), mock.patch.object(release, 'ROOT', self.root):
             with self.assertRaisesRegex(SystemExit, 'before this channel was pinned'):
                 release.publish(args)
             args.version = '0.2.0'
@@ -79,9 +89,27 @@ class InstallerTrustTests(unittest.TestCase):
             path = Path(folder) / 'update-trust.json'
             path.write_text(json.dumps({'schema': 1, 'channel': 'stable', 'feed': '', 'keys': {}}))
             self.assertTrue(installer.unconfigured_trust(path))
-            path.write_text(json.dumps({'schema': 1, 'channel': 'stable', 'feed': 'https://example.org/stable.json', 'keys': {}}))
+            path.write_text(
+                json.dumps({
+                    'schema': 1,
+                    'channel': 'stable',
+                    'feed': 'https://example.org/stable.json',
+                    'keys': {}
+                })
+            )
             self.assertTrue(installer.unconfigured_trust(path))
-            path.write_text(json.dumps({'schema': 1, 'channel': 'stable', 'feed': 'https://example.org/stable.json', 'keys': {'k': 'ab' * 32}}))
+            path.write_text(
+                json.dumps(
+                    {
+                        'schema': 1,
+                        'channel': 'stable',
+                        'feed': 'https://example.org/stable.json',
+                        'keys': {
+                            'k': 'ab' * 32
+                        }
+                    }
+                )
+            )
             self.assertFalse(installer.unconfigured_trust(path))
             path.write_text('not json')
             self.assertFalse(installer.unconfigured_trust(path))

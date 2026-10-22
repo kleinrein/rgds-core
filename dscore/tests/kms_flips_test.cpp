@@ -45,7 +45,14 @@ struct Kernel {
   bool quit = false;
   std::thread t;
   explicit Kernel(int fd_) : fd(fd_), t([this] { run(); }) {}
-  ~Kernel() { { std::lock_guard<std::mutex> lk(m); quit = true; } cv.notify_all(); t.join(); }
+  ~Kernel() {
+    {
+      std::lock_guard<std::mutex> lk(m);
+      quit = true;
+    }
+    cv.notify_all();
+    t.join();
+  }
   void flip(volatile int* flag, std::chrono::microseconds delay) {
     std::lock_guard<std::mutex> lk(m);
     q.emplace_back(std::chrono::steady_clock::now() + delay, flag);
@@ -57,7 +64,10 @@ struct Kernel {
       cv.wait(lk, [&] { return quit || !q.empty(); });
       if (q.empty()) return;
       const auto at = q.front().first;
-      if (std::chrono::steady_clock::now() < at) { cv.wait_until(lk, at); continue; }
+      if (std::chrono::steady_clock::now() < at) {
+        cv.wait_until(lk, at);
+        continue;
+      }
       volatile int* f = q.front().second;
       q.pop_front();
       write_event(fd, f, 7);
@@ -88,13 +98,19 @@ int main() {
     CHECK(a == 0 && b == 1);
     CHECK(!f.ready(a) && !f.ready(b));
     // First present: SDL sets the mode, no flip.
-    f.before(a); f.after(a);
-    f.before(b); f.after(b);
+    f.before(a);
+    f.after(a);
+    f.before(b);
+    f.after(b);
     CHECK(!f.ready(a));
     // Second: one flip each, learned one at a time.
-    f.before(a); swap(k, top, std::chrono::microseconds(3000)); f.after(a);
+    f.before(a);
+    swap(k, top, std::chrono::microseconds(3000));
+    f.after(a);
     CHECK(f.ready(a) && top == 0);
-    f.before(b); swap(k, bottom, std::chrono::microseconds(3000)); f.after(b);
+    f.before(b);
+    swap(k, bottom, std::chrono::microseconds(3000));
+    f.after(b);
     CHECK(f.ready(b) && bottom == 0);
 
     std::atomic<int> errors{0};
@@ -112,7 +128,8 @@ int main() {
     };
     std::thread t1([&] { lane(a, top, 1); });
     std::thread t2([&] { lane(b, bottom, 2); });
-    t1.join(); t2.join();
+    t1.join();
+    t2.join();
     CHECK(errors == 0);
     CHECK(top == 0 && bottom == 0);
     for (int s : {a, b}) {
@@ -127,7 +144,9 @@ int main() {
     // An event for no known window (none is learning) is cleared like SDL would.
     volatile int other = 1;
     write_event(p[1], &other, 9);
-    f.before(a); swap(k, top, std::chrono::microseconds(1000)); f.after(a);
+    f.before(a);
+    swap(k, top, std::chrono::microseconds(1000));
+    f.after(a);
     f.before(a);
     CHECK(other == 0 && f.strays() == 1);
     close(p[1]);
@@ -140,10 +159,16 @@ int main() {
     KmsFlips f(p[0], 50'000'000, 200'000'000);
     volatile int flag = 0;
     const int a = f.add();
-    f.before(a); f.after(a);
-    f.before(a); flag = 1; write_event(p[1], &flag, 7); f.after(a);   // learned
+    f.before(a);
+    f.after(a);
+    f.before(a);
+    flag = 1;
+    write_event(p[1], &flag, 7);
+    f.after(a); // learned
     CHECK(f.ready(a));
-    f.before(a); flag = 1; f.after(a);                                // queued, never completes
+    f.before(a);
+    flag = 1;
+    f.after(a); // queued, never completes
     const auto t0 = std::chrono::steady_clock::now();
     f.before(a);
     CHECK(std::chrono::steady_clock::now() - t0 >= std::chrono::milliseconds(45));
@@ -157,7 +182,10 @@ int main() {
     CHECK(pipe(p) == 0);
     KmsFlips f(p[0], 50'000'000, 20'000'000);
     const int a = f.add();
-    for (int i = 0; i < 4; ++i) { f.before(a); f.after(a); }
+    for (int i = 0; i < 4; ++i) {
+      f.before(a);
+      f.after(a);
+    }
     CHECK(f.failed() && !f.ready(a));
     close(p[1]);
     close(p[0]);

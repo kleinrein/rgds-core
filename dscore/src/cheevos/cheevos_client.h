@@ -21,28 +21,34 @@
 #include "cheevos/cheevos_memory.h"
 #include "core/types.h"
 
-namespace ds { class NDS; }
+namespace ds {
+class NDS;
+}
 
 namespace ds::cheevos {
 
 // Something the player should be told about (frontend renders as a toast).
 struct Message {
-  enum class Kind : u8 { Unlock, Info, Problem, };
+  enum class Kind : u8 {
+    Unlock,
+    Info,
+    Problem,
+  };
   Kind kind = Kind::Info;
   std::string text;
   std::string detail;
-  u32 points = 0;   // unlock value; 0 for non-unlocks and 0-point achievements
+  u32 points = 0; // unlock value; 0 for non-unlocks and 0-point achievements
 };
 
 enum class State : u8 {
-  Off,          // not started, or no transport on this device
+  Off, // not started, or no transport on this device
   SignedOut,
   SigningIn,
   SignedIn,
   LoadingGame,
-  Playing,      // a set is loaded and being evaluated
-  NoSet,        // signed in, but RetroAchievements does not know this dump
-  EmptySet,     // dump known, game has no published achievements yet
+  Playing,  // a set is loaded and being evaluated
+  NoSet,    // signed in, but RetroAchievements does not know this dump
+  EmptySet, // dump known, game has no published achievements yet
 };
 
 class Client {
@@ -94,9 +100,9 @@ public:
   struct Achievement {
     std::string title, description, progress;
     u32 id = 0, points = 0;
-    bool unlocked = false;      // the account holds it
-    bool active = false;        // armed, can trigger now (both true in encore)
-    bool unsupported = false;   // a condition reads memory we do not back
+    bool unlocked = false;    // the account holds it
+    bool active = false;      // armed, can trigger now (both true in encore)
+    bool unsupported = false; // a condition reads memory we do not back
   };
   struct Summary {
     u32 total = 0, unlocked = 0, active = 0, unsupported = 0;
@@ -125,7 +131,7 @@ private:
 
   struct Job {
     Request req;
-    void* callback = nullptr;        // rc_client_server_callback_t
+    void* callback = nullptr; // rc_client_server_callback_t
     void* callback_data = nullptr;
   };
   struct Completion {
@@ -134,12 +140,12 @@ private:
     void* callback_data = nullptr;
   };
 
-  void* client_ = nullptr;           // rc_client_t*
+  void* client_ = nullptr; // rc_client_t*
   std::unique_ptr<Backend> http_;
   Memory mem_;
   State state_ = State::Off;
   bool encore_ = false;
-  std::string hash_;                 // the identity of the dump in the slot
+  std::string hash_; // the identity of the dump in the slot
   std::string unavailable_;
 
   std::thread worker_;

@@ -24,8 +24,8 @@
 #include "cheevos/cheevos_hash.h"
 #include "core/cart/rom_source.h"
 
-using ds::u8;
 using ds::u32;
+using ds::u8;
 
 namespace {
 
@@ -61,7 +61,7 @@ std::string hash_of(const ds::cart::RomSource& src) {
   return out;
 }
 
-const char* FULL_HASH  = "9d072ade9c1badd3a4325488f687f253";
+const char* FULL_HASH = "9d072ade9c1badd3a4325488f687f253";
 const char* SHORT_HASH = "5f1e526181ad5db9f5d20f625f5f9622";
 
 void hash_matches_the_specification() {

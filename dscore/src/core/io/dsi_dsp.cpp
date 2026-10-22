@@ -23,8 +23,8 @@ void DsiDsp::set_rst_line(bool release) {
 }
 
 template <class S> void DsiDsp::sync_state(S& s) {
-  s.fields(rst_, padr_, pcfg_, psts_, psem_, pmask_, pclear_, cmd_, pdata_dma_len_,
-           rd_fifo_.entries, rd_fifo_.occupied, rd_fifo_.rd, rd_fifo_.wr);
+  s.fields(rst_, padr_, pcfg_, psts_, psem_, pmask_, pclear_, cmd_, pdata_dma_len_, rd_fifo_.entries, rd_fifo_.occupied,
+           rd_fifo_.rd, rd_fifo_.wr);
 }
 template void DsiDsp::sync_state<state::Writer>(state::Writer&);
 template void DsiDsp::sync_state<state::Reader>(state::Reader&);
@@ -48,8 +48,8 @@ u16 DsiDsp::psts() const {
 }
 
 void DsiDsp::pdata_write(u16) {
-  if (pcfg_ & (1u << 1)) ++padr_;   // auto-increment (the value would go to the core)
-  nds_.io.request_irq(Cpu::ARM9, io::IRQ_DSI_DSP);   // write FIFO empty
+  if (pcfg_ & (1u << 1)) ++padr_;                  // auto-increment (the value would go to the core)
+  nds_.io.request_irq(Cpu::ARM9, io::IRQ_DSI_DSP); // write FIFO empty
 }
 
 u16 DsiDsp::pdata_dma_read() {
@@ -93,7 +93,7 @@ u8 DsiDsp::read8(u32 addr) {
   case 0x11: return static_cast<u8>(psem_ >> 8);
   case 0x14: return static_cast<u8>(pmask_);
   case 0x15: return static_cast<u8>(pmask_ >> 8);
-  default: return 0;   // no 8-bit PDATA/PADR/PCLEAR reads; SEM is the core's
+  default: return 0; // no 8-bit PDATA/PADR/PCLEAR reads; SEM is the core's
   }
 }
 
@@ -107,13 +107,13 @@ u16 DsiDsp::read16(u32 addr) {
   case 0x20: return cmd_[0];
   case 0x28: return cmd_[1];
   case 0x30: return cmd_[2];
-  default: return 0;   // PADR/PCLEAR unreadable; SEM and REP0-2 come from the core
+  default: return 0; // PADR/PCLEAR unreadable; SEM and REP0-2 come from the core
   }
 }
 
 void DsiDsp::write8(u32 addr, u8 value) {
   switch (addr & 0x3F) {
-  case 0x08: pcfg_ = static_cast<u16>((pcfg_ & 0xFF00) | value); break;   // byte writes skip the side effects
+  case 0x08: pcfg_ = static_cast<u16>((pcfg_ & 0xFF00) | value); break; // byte writes skip the side effects
   case 0x09: pcfg_ = static_cast<u16>((pcfg_ & 0x00FF) | (value << 8)); break;
   default: break;
   }
@@ -132,11 +132,14 @@ void DsiDsp::write16(u32 addr, u16 value) {
     }
     pcfg_ = value;
     if (pcfg_ & (1u << 4)) pdata_dma_start();
-    else { pdata_dma_len_ = 0; rd_fifo_.clear(); }
+    else {
+      pdata_dma_len_ = 0;
+      rd_fifo_.clear();
+    }
     break;
   case 0x10: psem_ = value; break;
   case 0x14: pmask_ = value; break;
-  case 0x18: psts_ &= static_cast<u16>(~(1u << 9)); break;   // PCLEAR: with no core the semaphore is always clear
+  case 0x18: psts_ &= static_cast<u16>(~(1u << 9)); break; // PCLEAR: with no core the semaphore is always clear
   case 0x20: cmd_[0] = value; break;
   case 0x28: cmd_[1] = value; break;
   case 0x30: cmd_[2] = value; break;

@@ -29,7 +29,7 @@ class DrmOut : public ScanoutOut {
 public:
   // One on screen, one flip pending (only one outstanding per CRTC), one
   // queued behind it. begin_frame() blocks only when all three are taken.
-  static constexpr int BUFS = 4;   // array size; nbufs_ is the count in use (default 3, 4 under GPU present)
+  static constexpr int BUFS = 4; // array size; nbufs_ is the count in use (default 3, 4 under GPU present)
   static constexpr int DEFAULT_BUFS = 3;
 
   // False if any precondition is missing (wrong video driver, no usable
@@ -38,7 +38,11 @@ public:
   // connector in DRM resource order.
   bool open(SDL_Window* win, int w, int h, int display_index);
 
-  bool reopen(SDL_Window* win, int w, int h) override { const int d = display_; close(); return open(win, w, h, d); }
+  bool reopen(SDL_Window* win, int w, int h) override {
+    const int d = display_;
+    close();
+    return open(win, w, h, d);
+  }
   void close() override;
 
   int width() const override { return w_; }
@@ -56,8 +60,9 @@ public:
   void set_gpu_writes(bool on) override { gpu_writes_ = on; }
   void set_drop_if_pending(bool on) override { drop_if_pending_ = on; }
   void set_present_tag(int tag) override { tag_ = tag; }
-  void end_frame() override;      // flip now, or queue behind (or drop at, see set_drop_if_pending) the pending flip; does not wait
-  void flush() override;          // wait until no flip is queued behind a pending one
+  void end_frame()
+      override; // flip now, or queue behind (or drop at, see set_drop_if_pending) the pending flip; does not wait
+  void flush() override; // wait until no flip is queued behind a pending one
 
   // This panel's completed flips after number `after` (KmsFlips::Flip: the
   // DRM event's CLOCK_MONOTONIC stamp, when the flip was issued, the frame's
@@ -70,12 +75,12 @@ public:
 
 private:
   struct Buf {
-    int fd = -1;                  // dma-heap buffer
+    int fd = -1; // dma-heap buffer
     u32* px = nullptr;
     size_t bytes = 0;
-    u32 handle = 0;               // GEM handle from the PRIME import
-    u32 fb = 0;                   // DRM framebuffer id
-    bool busy = false;            // on screen, flip pending, or queued
+    u32 handle = 0;    // GEM handle from the PRIME import
+    u32 fb = 0;        // DRM framebuffer id
+    bool busy = false; // on screen, flip pending, or queued
   };
   // Issue the page flip for bufs_[i], with the frame's tag; queued_at_ns:
   // when end_frame() queued the frame (0: flipped at once). False = driver error.
@@ -87,9 +92,9 @@ private:
   // Called with the tier's lock held (see display_drm.cpp), which it drops
   // around the wait.
   static bool pump(std::unique_lock<std::mutex>& lk, int fd, bool block);
-  void retire(u64 at_ns);         // our flip completed, at `at_ns` (the event stamp)
+  void retire(u64 at_ns); // our flip completed, at `at_ns` (the event stamp)
 
-  int fd_ = -1;                   // SDL's DRM fd; not ours to close
+  int fd_ = -1; // SDL's DRM fd; not ours to close
   u32 crtc_ = 0, conn_ = 0;
   int display_ = 0;
   int w_ = 0, h_ = 0;
@@ -97,21 +102,21 @@ private:
   int nbufs_ = DEFAULT_BUFS;
   bool gpu_writes_ = false;
   bool drop_if_pending_ = false;
-  bool queued_may_drop_ = false;  // the queued frame's set_drop_if_pending()
-  u64 queued_ns_ = 0;             // when it was queued
-  int tag_ = 0;                   // set_present_tag(): the frame between begin_frame() and end_frame()
-  int queued_tag_ = 0, pending_tag_ = 0;   // the tags of the queued frame and of the one whose flip is pending
-  u64 pending_wait_ns_ = 0;       // how long the pending flip's frame was queued (0: flipped at once)
-  u64 margin_ns_ = 2'000'000;     // DS_KMS_MARGIN_MS: queued longer than this at the vblank -> dropped (mailbox)
-  u64 presented_ = 0, dropped_ = 0, queued_n_ = 0;   // end_frame() outcomes, for the close report
-  int cur_ = -1;                  // buffer handed out by begin_frame()
-  mutable std::mutex ring_m_;     // the flip record below (pump() runs on whichever thread waits)
+  bool queued_may_drop_ = false;         // the queued frame's set_drop_if_pending()
+  u64 queued_ns_ = 0;                    // when it was queued
+  int tag_ = 0;                          // set_present_tag(): the frame between begin_frame() and end_frame()
+  int queued_tag_ = 0, pending_tag_ = 0; // the tags of the queued frame and of the one whose flip is pending
+  u64 pending_wait_ns_ = 0;              // how long the pending flip's frame was queued (0: flipped at once)
+  u64 margin_ns_ = 2'000'000;            // DS_KMS_MARGIN_MS: queued longer than this at the vblank -> dropped (mailbox)
+  u64 presented_ = 0, dropped_ = 0, queued_n_ = 0; // end_frame() outcomes, for the close report
+  int cur_ = -1;                                   // buffer handed out by begin_frame()
+  mutable std::mutex ring_m_;                      // the flip record below (pump() runs on whichever thread waits)
   KmsFlips::Flip ring_[KmsFlips::RING];
   u64 flips_ = 0, issue_ns_ = 0;
-  int on_screen_ = -1;            // buffer the CRTC is scanning out
-  int pending_ = -1;              // buffer whose flip has not completed
-  int queued_ = -1;               // buffer drawn while a flip was pending; flipped on its retire
-  bool dead_ = false;             // driver error; stop submitting
+  int on_screen_ = -1; // buffer the CRTC is scanning out
+  int pending_ = -1;   // buffer whose flip has not completed
+  int queued_ = -1;    // buffer drawn while a flip was pending; flipped on its retire
+  bool dead_ = false;  // driver error; stop submitting
 };
 
 } // namespace ds::sdl

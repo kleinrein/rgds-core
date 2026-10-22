@@ -31,7 +31,10 @@ public:
   // `role`/`name`: the thread's placement (host_cores.h) and name.
   void start(void (*fn)(void*), void* arg, ThreadRole role = ThreadRole::Line, const char* name = "line-worker") {
     if (thread_.joinable()) return;
-    fn_ = fn; arg_ = arg; role_ = role; name_ = name;
+    fn_ = fn;
+    arg_ = arg;
+    role_ = role;
+    name_ = name;
     kind_ = role == ThreadRole::EngineA ? handoff::EngineA : handoff::EngineB;
     quit_.store(false, std::memory_order_relaxed);
     req_.store(0, std::memory_order_relaxed);
@@ -52,7 +55,8 @@ public:
   // For a stalled-frame watchdog (DS_WATCHDOG).
   void debug_dump(FILE* f) const {
     std::fprintf(f, "  line worker: running %d req %u ack %u parked %d\n", running() ? 1 : 0,
-                 req_.load(std::memory_order_relaxed), ack_.load(std::memory_order_relaxed), parked_.load(std::memory_order_relaxed) ? 1 : 0);
+                 req_.load(std::memory_order_relaxed), ack_.load(std::memory_order_relaxed),
+                 parked_.load(std::memory_order_relaxed) ? 1 : 0);
   }
 
   // Must be paired with wait() before reading the job's output or dispatching again.
@@ -111,10 +115,14 @@ private:
       u32 r = req_.load(std::memory_order_acquire);
       while (r == last) {
         if (quit_.load(std::memory_order_relaxed)) return;
-        if (--spins > 0) { cpu_relax(); r = req_.load(std::memory_order_acquire); continue; }
+        if (--spins > 0) {
+          cpu_relax();
+          r = req_.load(std::memory_order_acquire);
+          continue;
+        }
         std::unique_lock<std::mutex> lk(m_);
         parked_.store(true, std::memory_order_seq_cst);
-        std::atomic_thread_fence(std::memory_order_seq_cst);   // see dispatch()
+        std::atomic_thread_fence(std::memory_order_seq_cst); // see dispatch()
         // Re-check: catches a dispatch that raced the park and skipped the notify.
         r = req_.load(std::memory_order_seq_cst);
         if (r == last && !quit_.load(std::memory_order_relaxed))
@@ -134,7 +142,11 @@ private:
       }
       const u64 j0 = handoff::enabled ? handoff::now_ns() : 0;
       fn_(arg_);
-      if (handoff::enabled) { const u64 j1 = handoff::now_ns(); handoff::stats().job[kind_].add(j1 - j0); done_ns_.store(j1, std::memory_order_relaxed); }
+      if (handoff::enabled) {
+        const u64 j1 = handoff::now_ns();
+        handoff::stats().job[kind_].add(j1 - j0);
+        done_ns_.store(j1, std::memory_order_relaxed);
+      }
       ack_.store(r, std::memory_order_release);
     }
   }
@@ -147,7 +159,7 @@ private:
   std::atomic<u32> req_{0}, ack_{0};
   std::atomic<bool> quit_{false}, parked_{false};
   handoff::Kind kind_ = handoff::EngineB;
-  std::atomic<u64> disp_ns_{0}, done_ns_{0};   // DS_HANDOFF_STATS: last dispatch, last job end
+  std::atomic<u64> disp_ns_{0}, done_ns_{0}; // DS_HANDOFF_STATS: last dispatch, last job end
   std::mutex m_;
   std::condition_variable cv_;
 };

@@ -16,13 +16,16 @@ class AudioBridgeTests(unittest.TestCase):
         cls.root = Path(cls.temp.name)
         cls.binary = cls.root / "audio-test"
         helper = cls.root / "helper.py"
-        helper.write_text('''import pathlib, sys
+        helper.write_text(
+            '''import pathlib, sys
 root = pathlib.Path(sys.argv[-1])
 with (root / "trace").open("a") as f: f.write("sync\\n")
 sys.exit(1 if (root / "fail").exists() else 0)
-''')
+'''
+        )
         source = cls.root / "test.cpp"
-        source.write_text('''#include "platform/emulator_bridge.cpp"
+        source.write_text(
+            '''#include "platform/emulator_bridge.cpp"
 void trace(const char* message){std::ofstream f(fs::path(std::getenv("RGDS_VOLUME_DATA"))/"trace",std::ios::app);f<<message<<'\\n';}
 SDL_AudioDeviceID fake_open(const char*,int,const SDL_AudioSpec*,SDL_AudioSpec*,int){trace("open");return 7;}
 void fake_pause(SDL_AudioDeviceID,int){trace("unpause");}
@@ -41,10 +44,17 @@ int main(int argc,char** argv){
  if(!std::strcmp(argv[3],"sdl")){auto id=SDL_OpenAudioDevice(nullptr,0,nullptr,nullptr,0);SDL_PauseAudioDevice(id,0);return 0;}
  void* pcm=nullptr;return snd_pcm_open(&pcm,"default",0,0)==0?0:5;
 }
-''')
+'''
+        )
         includes = subprocess.check_output(["sdl2-config", "--cflags"], text=True).split()
-        subprocess.run(["clang++", "-std=c++17", "-O0", *includes, "-I" + str(ROOT / "src"),
-                        str(source), "-o", str(cls.binary)], check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["clang++", "-std=c++17", "-O0", *includes, "-I" + str(ROOT / "src"),
+             str(source), "-o",
+             str(cls.binary)],
+            check=True,
+            capture_output=True,
+            text=True
+        )
         cls.helper = helper
 
     @classmethod
@@ -56,8 +66,9 @@ int main(int argc,char** argv){
             data = Path(temp)
             if fail:
                 (data / "fail").touch()
-            result = subprocess.run([str(self.binary), str(data), str(self.helper), kind],
-                                    capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                [str(self.binary), str(data), str(self.helper), kind], capture_output=True, text=True, timeout=5
+            )
             return result, (data / "trace").read_text().splitlines()
 
     def test_sdl_syncs_after_open_and_before_unpausing(self):

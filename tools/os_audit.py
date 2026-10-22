@@ -20,8 +20,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def local_components():
-    candidates = [ROOT / "build/device/rgds-launcher", ROOT / "build/device/librgdsbridge.so",
-                  ROOT / "build/engines/dsperate/dsperate", ROOT / "vendor/engines/nnddss/nnddss"]
+    candidates = [
+        ROOT / "build/device/rgds-launcher", ROOT / "build/device/librgdsbridge.so",
+        ROOT / "build/engines/dsperate/dsperate", ROOT / "vendor/engines/nnddss/nnddss"
+    ]
     candidates += sorted((ROOT / "vendor/engines/nnddss/lib").glob("*.so"))
     results = {}
     for path in candidates:
@@ -42,14 +44,24 @@ def probe(device, roots):
             raise ValueError("Installation roots must be absolute paths without '..'.")
     source = (ROOT / "tools/os_probe.py").read_text()
     command = "python3 -B -" + "".join(" --install-root " + shlex.quote(str(root)) for root in roots)
-    result = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes",
-        "-o", "IPQoS=none", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=5",
-        "-o", "ServerAliveCountMax=2", target(device), command], input=source,
-        text=True, capture_output=True, check=True, timeout=60)
+    result = subprocess.run(
+        [
+            "ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes", "-o", "IPQoS=none", "-o",
+            "ConnectTimeout=10", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2",
+            target(device), command
+        ],
+        input=source,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=60
+    )
     evidence = json.loads(result.stdout)
-    if (not isinstance(evidence, dict) or evidence.get("schema") != 1
-            or evidence.get("read_only") is not True or not isinstance(evidence.get("system"), dict)
-            or evidence["system"].get("machine") not in ("aarch64", "arm64")):
+    if (
+        not isinstance(evidence, dict) or evidence.get("schema") != 1 or evidence.get("read_only") is not True
+        or not isinstance(evidence.get("system"), dict)
+        or evidence["system"].get("machine") not in ("aarch64", "arm64")
+    ):
         raise ValueError("Unexpected OS probe schema or architecture; keep evidence unaccepted.")
     return evidence
 
@@ -58,12 +70,19 @@ def capture(output, device=None, roots=()):
     output = Path(output)
     # Reserve a fresh directory before SSH; never replace an earlier baseline.
     output.mkdir(parents=True, exist_ok=False)
-    report = {"schema": 1, "project": "rgds", "purpose": "os-migration-baseline",
-              "captured_at_utc": datetime.now(timezone.utc).isoformat(),
-              "local_components": local_components(), "device": None,
-              "limits": ["ELF metadata covers direct linkage, not dlopen or recursive dependency closure.",
-                         "SSH inspection uses the running OS; it does not validate a replacement kernel.",
-                         "No hardware acceptance tests were dispatched."]}
+    report = {
+        "schema": 1,
+        "project": "rgds",
+        "purpose": "os-migration-baseline",
+        "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+        "local_components": local_components(),
+        "device": None,
+        "limits": [
+            "ELF metadata covers direct linkage, not dlopen or recursive dependency closure.",
+            "SSH inspection uses the running OS; it does not validate a replacement kernel.",
+            "No hardware acceptance tests were dispatched."
+        ]
+    }
     failed = False
     if device:
         try:
@@ -86,8 +105,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", help="Explicit SSH target; omit for local ELF audit only")
     parser.add_argument("--install-root", type=Path, action="append", default=[])
-    parser.add_argument("--output", type=Path, default=ROOT / "build/os-audit" /
-                        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ"))
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=ROOT / "build/os-audit" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    )
     args = parser.parse_args()
     if args.install_root and not args.device:
         parser.error("--install-root requires --device")

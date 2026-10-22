@@ -15,14 +15,15 @@ def rom(folder, code, name='game.nds'):
     header = bytearray(0x200)
     header[0:12] = b'TEST TITLE\0\0'
     header[12:16] = code.encode()
-    struct.pack_into('<I', header, 0x68, 0)   # no banner: indexing stops early
+    struct.pack_into('<I', header, 0x68, 0)  # no banner: indexing stops early
     path.write_bytes(bytes(header))
     return path
 
 
 class CompatibilityTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
         self.data = Path(self.temp.name) / 'data'
 
     def game_ini(self, path):
@@ -49,7 +50,8 @@ class CompatibilityTests(unittest.TestCase):
     def test_the_default_is_applied_once(self):
         path = rom(self.temp.name, 'AWIP')
         self.assertTrue(library.apply_compatibility(self.data, path, 'AWIP'))
-        fields = self.game_ini(path); fields.pop('core')   # the player resets to Default later
+        fields = self.game_ini(path)
+        fields.pop('core')  # the player resets to Default later
         library.write_fields(self.data / 'library' / library.game_key(path) / 'game.ini', fields)
         self.assertFalse(library.apply_compatibility(self.data, path, 'AWIP'))
 

@@ -1,0 +1,5 @@
+# DSCore keeps its two-space indent; everything else comes from the
+# repository's ../.clang-format.
+BasedOnStyle: InheritParentConfig
+IndentWidth: 2
+AccessModifierOffset: -2

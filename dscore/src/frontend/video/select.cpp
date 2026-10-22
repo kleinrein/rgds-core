@@ -17,9 +17,15 @@ bool is_auto(const std::string& v) { return v.empty() || v == "auto"; }
 const char* sink_name(Sink s) { return s < Sink::Count ? kNames[static_cast<size_t>(s)] : "auto"; }
 
 bool parse_sink(const std::string& s, Sink& out) {
-  if (is_auto(s)) { out = Sink::Count; return true; }
+  if (is_auto(s)) {
+    out = Sink::Count;
+    return true;
+  }
   for (size_t i = 0; i < static_cast<size_t>(Sink::Count); ++i)
-    if (s == kNames[i]) { out = static_cast<Sink>(i); return true; }
+    if (s == kNames[i]) {
+      out = static_cast<Sink>(i);
+      return true;
+    }
   return false;
 }
 
@@ -38,12 +44,17 @@ BootPlan plan_boot(const BootProbe& p) {
   if (want != Sink::Disp && want != Sink::Fbdev) b.want = want;
 
   if ((use_disp || use_fbdev) && p.dual_window)
-    b.notes.push_back(std::string("video.sink: ") + (use_disp ? "disp" : "fbdev") + " drives one panel; not with dual_window");
+    b.notes.push_back(std::string("video.sink: ") + (use_disp ? "disp" : "fbdev") +
+                      " drives one panel; not with dual_window");
   if (p.dual_window) return b;
 
   // Display engine: auto wherever /dev/disp answers.
   if (use_disp || disp_auto) {
-    if (p.disp_ok) { b.panel = Sink::Disp; b.headless_driver = true; return b; }
+    if (p.disp_ok) {
+      b.panel = Sink::Disp;
+      b.headless_driver = true;
+      return b;
+    }
     if (use_disp) b.notes.push_back("video.sink: /dev/disp not usable; using SDL");
   }
 
@@ -104,7 +115,9 @@ WindowPlan plan_window(const WindowProbe& p) {
     }
   }
   w.order.push_back(Sink::Renderer);
-  if (w.required) w.required = std::any_of(w.order.begin(), w.order.end(), [](Sink s) { return s == Sink::Kms || s == Sink::Dmabuf; });
+  if (w.required)
+    w.required =
+        std::any_of(w.order.begin(), w.order.end(), [](Sink s) { return s == Sink::Kms || s == Sink::Dmabuf; });
   return w;
 }
 

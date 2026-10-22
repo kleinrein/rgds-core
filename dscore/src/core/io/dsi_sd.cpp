@@ -17,19 +17,28 @@ namespace {
 constexpr u32 TRANSFER_TX = 0, TRANSFER_RX = 1;
 // Transfer completes 512 ARM7 cycles out; scheduler counts ARM9 cycles, so double.
 constexpr u64 TRANSFER_DELAY = 512 * 2;
-}  // namespace
+} // namespace
 
 // ---- NandImage ---------------------------------------------------------------
 
 NandImage::~NandImage() { close(); }
 
 void NandImage::close() {
-  if (file_) { std::fflush(file_); std::fclose(file_); file_ = nullptr; }
+  if (file_) {
+    std::fflush(file_);
+    std::fclose(file_);
+    file_ = nullptr;
+  }
   in_memory_ = false;
-  baseline_ = false; changed_.clear();
-  length_ = 0; console_id_ = 0; std::memset(cid_, 0, sizeof(cid_));
+  baseline_ = false;
+  changed_.clear();
+  length_ = 0;
+  console_id_ = 0;
+  std::memset(cid_, 0, sizeof(cid_));
   written_.clear();
-  since_base_.clear(); state_base_ = false; state_id_ = 0;
+  since_base_.clear();
+  state_base_ = false;
+  state_id_ = 0;
 }
 
 void NandImage::create_in_memory(u64 length, const u8 cid[16], u64 console_id) {
@@ -43,10 +52,22 @@ void NandImage::create_in_memory(u64 length, const u8 cid[16], u64 console_id) {
 
 // FNV-1a over: console, size, whether a base was marked, and the base's written sectors in order.
 void NandImage::update_state_id() {
-  if (!valid()) { state_id_ = 0; return; }
+  if (!valid()) {
+    state_id_ = 0;
+    return;
+  }
   u64 h = 1469598103934665603ull;
-  auto mix = [&h](u64 w) { h = (h ^ w) * 1099511628211ull; h ^= h >> 29; };
-  auto mix_bytes = [&mix](const u8* p, size_t n) { for (size_t i = 0; i < n; i += 8) { u64 w = 0; std::memcpy(&w, p + i, std::min<size_t>(8, n - i)); mix(w); } };
+  auto mix = [&h](u64 w) {
+    h = (h ^ w) * 1099511628211ull;
+    h ^= h >> 29;
+  };
+  auto mix_bytes = [&mix](const u8* p, size_t n) {
+    for (size_t i = 0; i < n; i += 8) {
+      u64 w = 0;
+      std::memcpy(&w, p + i, std::min<size_t>(8, n - i));
+      mix(w);
+    }
+  };
   mix_bytes(cid_, sizeof cid_);
   mix(console_id_);
   mix(length_);
@@ -56,7 +77,10 @@ void NandImage::update_state_id() {
     order.reserve(written_.size());
     for (const auto& [sec, data] : written_) order.push_back(sec);
     std::sort(order.begin(), order.end());
-    for (u64 sec : order) { mix(sec); mix_bytes(written_.at(sec).data(), MMC_BLOCK_SIZE); }
+    for (u64 sec : order) {
+      mix(sec);
+      mix_bytes(written_.at(sec).data(), MMC_BLOCK_SIZE);
+    }
   }
   state_id_ = h ? h : 1;
 }
@@ -70,11 +94,14 @@ void NandImage::mark_state_base() {
 NandImage::StateDelta NandImage::state_delta() const {
   StateDelta d;
   d.identity = state_id_;
-  if (state_base_) for (const auto& [sec, orig] : since_base_) d.sectors.push_back(sec);
-  else for (const auto& [sec, data] : written_) d.sectors.push_back(sec);
+  if (state_base_)
+    for (const auto& [sec, orig] : since_base_) d.sectors.push_back(sec);
+  else
+    for (const auto& [sec, data] : written_) d.sectors.push_back(sec);
   std::sort(d.sectors.begin(), d.sectors.end());
   d.data.resize(d.sectors.size() * MMC_BLOCK_SIZE);
-  for (size_t i = 0; i < d.sectors.size(); ++i) std::memcpy(&d.data[i * MMC_BLOCK_SIZE], written_.at(d.sectors[i]).data(), MMC_BLOCK_SIZE);
+  for (size_t i = 0; i < d.sectors.size(); ++i)
+    std::memcpy(&d.data[i * MMC_BLOCK_SIZE], written_.at(d.sectors[i]).data(), MMC_BLOCK_SIZE);
   return d;
 }
 
@@ -105,14 +132,21 @@ void NandImage::apply_state_delta(const StateDelta& d) {
 bool NandImage::open(const std::string& path, bool write_through) {
   close();
   std::FILE* f = std::fopen(path.c_str(), write_through ? "r+b" : "rb");
-  if (!f) { std::fprintf(stderr, "[nand] cannot open %s\n", path.c_str()); return false; }
+  if (!f) {
+    std::fprintf(stderr, "[nand] cannot open %s\n", path.c_str());
+    return false;
+  }
   std::fseek(f, 0, SEEK_END);
   const long len = std::ftell(f);
-  if (len <= 0x40) { std::fprintf(stderr, "[nand] %s is too small\n", path.c_str()); std::fclose(f); return false; }
+  if (len <= 0x40) {
+    std::fprintf(stderr, "[nand] %s is too small\n", path.c_str());
+    std::fclose(f);
+    return false;
+  }
 
   // nocash footer: normally the last 0x40 bytes, with a second copy at
   // 0x000FF800 for images cut off by external tools.
-  static const char kRef[16] = {'D','S','i',' ','e','M','M','C',' ','C','I','D','/','C','P','U'};
+  static const char kRef[16] = {'D', 'S', 'i', ' ', 'e', 'M', 'M', 'C', ' ', 'C', 'I', 'D', '/', 'C', 'P', 'U'};
   char footer[16];
   std::fseek(f, -0x40, SEEK_END);
   if (std::fread(footer, 1, sizeof(footer), f) != sizeof(footer) || std::memcmp(footer, kRef, sizeof(kRef)) != 0) {
@@ -138,7 +172,10 @@ bool NandImage::open(const std::string& path, bool write_through) {
 }
 
 void NandImage::read_file(u64 addr, u32 len, u8* out) {
-  if (!file_) { std::memset(out, 0, len); return; }
+  if (!file_) {
+    std::memset(out, 0, len);
+    return;
+  }
   std::fseek(file_, static_cast<long>(addr), SEEK_SET);
   const size_t got = std::fread(out, 1, len, file_);
   if (got < len) std::memset(out + got, 0, len - got);
@@ -157,7 +194,10 @@ void NandImage::write(u64 addr, u32 len, const u8* in) {
 }
 
 void NandImage::peek(u64 addr, u32 len, u8* out) {
-  if (!valid()) { std::memset(out, 0, len); return; }
+  if (!valid()) {
+    std::memset(out, 0, len);
+    return;
+  }
   read_file(addr, len, out);
   if (written_.empty()) return;
   // Overlay sectors written this session; reads may be whole blocks or
@@ -193,7 +233,9 @@ void NandImage::poke(u64 addr, u32 len, const u8* in) {
   }
 }
 
-void NandImage::flush() { if (file_) std::fflush(file_); }
+void NandImage::flush() {
+  if (file_) std::fflush(file_);
+}
 
 // DS_NAND_LOG=<file>: logs each block read/write as "r|w <addr> <len>".
 void NandImage::log_access(bool write, u64 addr, u32 len) {
@@ -201,7 +243,10 @@ void NandImage::log_access(bool write, u64 addr, u32 len) {
     const char* path = getenv("DS_NAND_LOG");
     return path ? std::fopen(path, "w") : nullptr;
   }();
-  if (log) { std::fprintf(log, "%c %llx %u\n", write ? 'w' : 'r', (unsigned long long)addr, len); std::fflush(log); }
+  if (log) {
+    std::fprintf(log, "%c %llx %u\n", write ? 'w' : 'r', (unsigned long long)addr, len);
+    std::fflush(log);
+  }
 }
 
 // ---- SdHost ------------------------------------------------------------------
@@ -287,7 +332,7 @@ void SdHost::update_data32_irq() {
 
   data32_irq_ &= ~0x0300;
   if (data_fifo32_.level >= (block_len32_ >> 2)) data32_irq_ |= 1 << 8;
-  if (!data_fifo32_.empty())                     data32_irq_ |= 1 << 9;
+  if (!data_fifo32_.empty()) data32_irq_ |= 1 << 9;
 
   u32 newflags = ((data32_irq_ >> 8) & 0x1) | (((~data32_irq_) >> 8) & 0x2);
   newflags &= (data32_irq_ >> 11);
@@ -313,8 +358,8 @@ void SdHost::set_card_irq() {
 
   const u16 oldflags = card_irq_status_ & ~card_irq_mask_;
   SdDevice* dev = device();
-  if (dev && dev->irq) card_irq_status_ |=  1;
-  else                 card_irq_status_ &= ~1;
+  if (dev && dev->irq) card_irq_status_ |= 1;
+  else card_irq_status_ &= ~1;
   const u16 newflags = card_irq_status_ & ~card_irq_mask_;
 
   if (oldflags == 0 && newflags != 0) {
@@ -363,7 +408,9 @@ u32 SdHost::data_rx(const u8* data, u32 len) {
 void SdHost::finish_tx() {
   SdDevice* dev = device();
   if (block_count_internal_ == 0) {
-    if (stop_action_ & (1 << 8)) { if (dev) dev->send_cmd(MmcCmd::StopTransmission, 0); }
+    if (stop_action_ & (1 << 8)) {
+      if (dev) dev->send_cmd(MmcCmd::StopTransmission, 0);
+    }
     set_irq(2);
     tx_req_ = false;
   } else {
@@ -422,7 +469,9 @@ void SdHost::check_rx() {
   check_swap_fifo();
 
   if (block_count_internal_ <= 1) {
-    if (stop_action_ & (1 << 8)) { if (dev) dev->send_cmd(MmcCmd::StopTransmission, 0); }
+    if (stop_action_ & (1 << 8)) {
+      if (dev) dev->send_cmd(MmcCmd::StopTransmission, 0);
+    }
     set_irq(2);
   } else {
     block_count_internal_--;
@@ -443,7 +492,10 @@ void SdHost::check_tx() {
   if (dev) dev->continue_transfer();
 }
 
-static bool sd_trace() { static const bool on = getenv("DS_DEBUG_SD") != nullptr; return on; }
+static bool sd_trace() {
+  static const bool on = getenv("DS_DEBUG_SD") != nullptr;
+  return on;
+}
 
 u16 SdHost::read(u32 addr) {
   if (sd_trace()) std::fprintf(stderr, "[sd] r %03X\n", addr & 0x1FF);
@@ -456,9 +508,14 @@ u16 SdHost::read(u32 addr) {
   case 0x008: return stop_action_;
   case 0x00A: return block_count16_;
 
-  case 0x00C: case 0x00E: case 0x010: case 0x012:
-  case 0x014: case 0x016: case 0x018: case 0x01A:
-    return response_buffer_[((addr & 0x1FF) - 0x00C) >> 1];
+  case 0x00C:
+  case 0x00E:
+  case 0x010:
+  case 0x012:
+  case 0x014:
+  case 0x016:
+  case 0x018:
+  case 0x01A: return response_buffer_[((addr & 0x1FF) - 0x00C) >> 1];
 
   case 0x01C: {
     u16 ret = static_cast<u16>(irq_status_ & (0x031D | (num_ ? 2 : 0)));
@@ -487,7 +544,7 @@ u16 SdHost::read(u32 addr) {
 
   case 0x0D8: return data_ctl_;
   case 0x0E0: return soft_reset_;
-  case 0x0F6: return 0;   // MMC write protect, always 0
+  case 0x0F6: return 0; // MMC write protect, always 0
 
   case 0x100: return data32_irq_;
   case 0x102: return 0;
@@ -502,7 +559,7 @@ u16 SdHost::read(u32 addr) {
 
 u16 SdHost::read_fifo16() {
   const u32 f = cur_fifo_;
-  if (data_fifo_[f].empty()) return 0;   // hardware wraps around; melonDS returns 0
+  if (data_fifo_[f].empty()) return 0; // hardware wraps around; melonDS returns 0
 
   const u16 ret = data_fifo_[f].read();
   if (data_fifo_[f].empty()) check_rx();
@@ -540,7 +597,10 @@ void SdHost::write(u32 addr, u16 val) {
   case 0x006: param_ = (param_ & 0x0000FFFF) | (static_cast<u32>(val) << 16); return;
 
   case 0x008: stop_action_ = val & 0x0101; return;
-  case 0x00A: block_count16_ = val; block_count_internal_ = val; return;
+  case 0x00A:
+    block_count16_ = val;
+    block_count_internal_ = val;
+    return;
 
   case 0x01C: irq_status_ &= (val | 0xFFFF0000); return;
   case 0x01E: irq_status_ &= ((static_cast<u32>(val) << 16) | 0xFFFF); return;
@@ -566,7 +626,10 @@ void SdHost::write(u32 addr, u16 val) {
 
   case 0x030: write_fifo16(val); return;
 
-  case 0x034: card_irq_ctl_ = val & 0x0305; set_card_irq(); return;
+  case 0x034:
+    card_irq_ctl_ = val & 0x0305;
+    set_card_irq();
+    return;
   case 0x036: card_irq_status_ &= val; return;
   case 0x038: {
     const u16 oldmask = card_irq_mask_;
@@ -675,16 +738,18 @@ void MmcStorage::send_cmd(MmcCmd cmd, u32 param) {
     return;
   }
 
-  auto word = [&](const u8* p, u32 off) { u32 v; std::memcpy(&v, p + off, sizeof(v)); return v; };
+  auto word = [&](const u8* p, u32 off) {
+    u32 v;
+    std::memcpy(&v, p + off, sizeof(v));
+    return v;
+  };
 
   switch (cmd) {
-  case MmcCmd::Reset:
-    host_.send_response(csr_, true);
-    return;
+  case MmcCmd::Reset: host_.send_response(csr_, true); return;
 
   case MmcCmd::GetOcr:
-    if (sd_card_) return;   // CMD1 is MMC-only; SD cards don't answer it
-    param &= ~(1u << 30);   // eMMC is not high-capacity addressed: bit 30 never sets
+    if (sd_card_) return; // CMD1 is MMC-only; SD cards don't answer it
+    param &= ~(1u << 30); // eMMC is not high-capacity addressed: bit 30 never sets
     ocr_ &= 0xBF000000;
     ocr_ |= param & 0x40FFFFFF;
     host_.send_response(ocr_, true);
@@ -711,17 +776,11 @@ void MmcStorage::send_cmd(MmcCmd cmd, u32 param) {
     host_.send_response(csr_ | 0x10000, true);
     return;
 
-  case MmcCmd::Switch:
-    host_.send_response(csr_, true);
-    return;
+  case MmcCmd::Switch: host_.send_response(csr_, true); return;
 
-  case MmcCmd::Select:
-    host_.send_response(csr_, true);
-    return;
+  case MmcCmd::Select: host_.send_response(csr_, true); return;
 
-  case MmcCmd::SetVoltage:
-    host_.send_response(param, true);
-    return;
+  case MmcCmd::SetVoltage: host_.send_response(param, true); return;
 
   case MmcCmd::GetCsd:
     host_.send_response(word(csd_, 12), false);
@@ -737,9 +796,7 @@ void MmcStorage::send_cmd(MmcCmd cmd, u32 param) {
     host_.send_response(csr_, true);
     return;
 
-  case MmcCmd::GetCsr:
-    host_.send_response(csr_, true);
-    return;
+  case MmcCmd::GetCsr: host_.send_response(csr_, true); return;
 
   case MmcCmd::SetBlockLength:
     block_size_ = param;
@@ -751,7 +808,10 @@ void MmcStorage::send_cmd(MmcCmd cmd, u32 param) {
   case MmcCmd::ReadSingleBlock:
   case MmcCmd::ReadMultipleBlocks:
     rw_address_ = param;
-    if (ocr_ & (1 << 30)) { rw_address_ <<= 9; block_size_ = MMC_BLOCK_SIZE; }
+    if (ocr_ & (1 << 30)) {
+      rw_address_ <<= 9;
+      block_size_ = MMC_BLOCK_SIZE;
+    }
     rw_command_ = cmd;
     host_.send_response(csr_, true);
     rw_address_ += read_block(rw_address_);
@@ -761,7 +821,10 @@ void MmcStorage::send_cmd(MmcCmd cmd, u32 param) {
   case MmcCmd::WriteSingleBlock:
   case MmcCmd::WriteMultipleBlocks:
     rw_address_ = param;
-    if (ocr_ & (1 << 30)) { rw_address_ <<= 9; block_size_ = MMC_BLOCK_SIZE; }
+    if (ocr_ & (1 << 30)) {
+      rw_address_ <<= 9;
+      block_size_ = MMC_BLOCK_SIZE;
+    }
     rw_command_ = cmd;
     host_.send_response(csr_, true);
     rw_address_ += write_block(rw_address_);
@@ -773,17 +836,14 @@ void MmcStorage::send_cmd(MmcCmd cmd, u32 param) {
     host_.send_response(csr_, true);
     return;
 
-  default:
-    break;
+  default: break;
   }
   std::fprintf(stderr, "[mmc] unknown CMD %u %08X\n", static_cast<u32>(cmd), param);
 }
 
 void MmcStorage::send_acmd(MmcAcmd cmd, u32 param) {
   switch (cmd) {
-  case MmcAcmd::SetBusWidth:
-    host_.send_response(csr_, true);
-    return;
+  case MmcAcmd::SetBusWidth: host_.send_response(csr_, true); return;
 
   case MmcAcmd::GetSsr:
     host_.send_response(csr_, true);
@@ -800,17 +860,14 @@ void MmcStorage::send_acmd(MmcAcmd cmd, u32 param) {
     set_state(0x01);
     return;
 
-  case MmcAcmd::SetCardDetect:
-    host_.send_response(csr_, true);
-    return;
+  case MmcAcmd::SetCardDetect: host_.send_response(csr_, true); return;
 
   case MmcAcmd::GetScr:
     host_.send_response(csr_, true);
     host_.data_rx(scr_, 8);
     return;
 
-  default:
-    break;
+  default: break;
   }
   std::fprintf(stderr, "[mmc] unknown ACMD %u %08X\n", static_cast<u32>(cmd), param);
 }
@@ -820,22 +877,13 @@ void MmcStorage::continue_transfer() {
 
   u32 len = 0;
   switch (rw_command_) {
-  case MmcCmd::ReadSingleBlock:
-    rw_command_ = MmcCmd::Reset;
-    [[fallthrough]];
-  case MmcCmd::ReadMultipleBlocks:
-    len = read_block(rw_address_);
-    break;
+  case MmcCmd::ReadSingleBlock: rw_command_ = MmcCmd::Reset; [[fallthrough]];
+  case MmcCmd::ReadMultipleBlocks: len = read_block(rw_address_); break;
 
-  case MmcCmd::WriteSingleBlock:
-    rw_command_ = MmcCmd::Reset;
-    [[fallthrough]];
-  case MmcCmd::WriteMultipleBlocks:
-    len = write_block(rw_address_);
-    break;
+  case MmcCmd::WriteSingleBlock: rw_command_ = MmcCmd::Reset; [[fallthrough]];
+  case MmcCmd::WriteMultipleBlocks: len = write_block(rw_address_); break;
 
-  default:
-    break;
+  default: break;
   }
   rw_address_ += len;
 }
@@ -869,13 +917,12 @@ template void MmcStorage::sync_state<state::Writer>(state::Writer&);
 template void MmcStorage::sync_state<state::Reader>(state::Reader&);
 
 template <class S> void SdHost::sync_state(S& s) {
-  s.fields(port_select_, soft_reset_, sd_clock_, sd_option_, irq_status_, irq_mask_,
-           card_irq_status_, card_irq_mask_, card_irq_ctl_, data_ctl_, data32_irq_, data_mode_,
-           block_count16_, block_count32_, block_count_internal_, block_len16_, block_len32_,
-           stop_action_, command_, param_, response_buffer_, cur_fifo_, tx_req_,
-           data_fifo_[0].buf, data_fifo_[0].read_pos, data_fifo_[0].write_pos, data_fifo_[0].level,
-           data_fifo_[1].buf, data_fifo_[1].read_pos, data_fifo_[1].write_pos, data_fifo_[1].level,
-           data_fifo32_.buf, data_fifo32_.read_pos, data_fifo32_.write_pos, data_fifo32_.level);
+  s.fields(port_select_, soft_reset_, sd_clock_, sd_option_, irq_status_, irq_mask_, card_irq_status_, card_irq_mask_,
+           card_irq_ctl_, data_ctl_, data32_irq_, data_mode_, block_count16_, block_count32_, block_count_internal_,
+           block_len16_, block_len32_, stop_action_, command_, param_, response_buffer_, cur_fifo_, tx_req_,
+           data_fifo_[0].buf, data_fifo_[0].read_pos, data_fifo_[0].write_pos, data_fifo_[0].level, data_fifo_[1].buf,
+           data_fifo_[1].read_pos, data_fifo_[1].write_pos, data_fifo_[1].level, data_fifo32_.buf,
+           data_fifo32_.read_pos, data_fifo32_.write_pos, data_fifo32_.level);
   if (storage_) storage_->sync_state(s);
   // Card presence recorded: a state loaded without its card skips its registers.
   u8 card = card_ != nullptr;
@@ -884,7 +931,10 @@ template <class S> void SdHost::sync_state(S& s) {
     struct NoStorage : BlockStorage {
       void read(u64, u32 len, u8* out) override { std::memset(out, 0, len); }
       void write(u64, u32, const u8*) override {}
-      const u8* cid() const override { static const u8 z[16] = {}; return z; }
+      const u8* cid() const override {
+        static const u8 z[16] = {};
+        return z;
+      }
     } none;
     MmcStorage(nds_, *this, none, true).sync_state(s);
   } else if (card_) {
@@ -895,4 +945,4 @@ template <class S> void SdHost::sync_state(S& s) {
 template void SdHost::sync_state<state::Writer>(state::Writer&);
 template void SdHost::sync_state<state::Reader>(state::Reader&);
 
-}  // namespace ds::io
+} // namespace ds::io

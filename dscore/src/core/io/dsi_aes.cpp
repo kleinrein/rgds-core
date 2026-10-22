@@ -19,8 +19,14 @@ namespace {
 
 // The engine works on byte-reversed 128-bit blocks: register words are little-endian, the
 // cipher sees them mirrored.
-void bswap128(u8* dst, const u8* src) { for (int i = 0; i < 16; ++i) dst[i] = src[15 - i]; }
-u32 get32(const u8* p) { u32 v; std::memcpy(&v, p, 4); return v; }
+void bswap128(u8* dst, const u8* src) {
+  for (int i = 0; i < 16; ++i) dst[i] = src[15 - i];
+}
+u32 get32(const u8* p) {
+  u32 v;
+  std::memcpy(&v, p, 4);
+  return v;
+}
 void put32(u8* p, u32 v) { std::memcpy(p, &v, 4); }
 void masked32(u8* p, u32 value, u32 mask) { put32(p, (get32(p) & ~mask) | (value & mask)); }
 
@@ -36,11 +42,16 @@ void DsiAes::rol16(u8* v, u32 n) {
 }
 
 void DsiAes::derive_normal_key(const u8* kx, const u8* ky, u8* out) {
-  static const u8 key_const[16] = {0xFF, 0xFE, 0xFB, 0x4E, 0x29, 0x59, 0x02, 0x58, 0x2A, 0x68, 0x0F, 0x5F, 0x1A, 0x4F, 0x3E, 0x79};
+  static const u8 key_const[16] = {0xFF, 0xFE, 0xFB, 0x4E, 0x29, 0x59, 0x02, 0x58,
+                                   0x2A, 0x68, 0x0F, 0x5F, 0x1A, 0x4F, 0x3E, 0x79};
   u8 t[16];
   for (int i = 0; i < 16; ++i) t[i] = kx[i] ^ ky[i];
   u32 carry = 0;
-  for (int i = 0; i < 16; ++i) { const u32 r = t[i] + key_const[15 - i] + carry; t[i] = static_cast<u8>(r); carry = r >> 8; }
+  for (int i = 0; i < 16; ++i) {
+    const u32 r = t[i] + key_const[15 - i] + carry;
+    t[i] = static_cast<u8>(r);
+    carry = r >> 8;
+  }
   rol16(t, 42);
   std::memcpy(out, t, 16);
 }
@@ -48,35 +59,48 @@ void DsiAes::derive_normal_key(const u8* kx, const u8* ky, u8* out) {
 void DsiAes::reset() {
   cnt_ = blkcnt_ = rem_extra_ = rem_blocks_ = 0;
   input_dma_size_ = output_dma_size_ = mode_ = 0;
-  in_.clear(); out_.clear();
-  std::memset(iv_, 0, sizeof iv_); std::memset(mac_, 0, sizeof mac_);
-  std::memset(key_normal_, 0, sizeof key_normal_); std::memset(key_x_, 0, sizeof key_x_); std::memset(key_y_, 0, sizeof key_y_);
-  std::memset(cur_key_, 0, sizeof cur_key_); std::memset(cur_mac_, 0, sizeof cur_mac_); std::memset(output_mac_, 0, sizeof output_mac_);
+  in_.clear();
+  out_.clear();
+  std::memset(iv_, 0, sizeof iv_);
+  std::memset(mac_, 0, sizeof mac_);
+  std::memset(key_normal_, 0, sizeof key_normal_);
+  std::memset(key_x_, 0, sizeof key_x_);
+  std::memset(key_y_, 0, sizeof key_y_);
+  std::memset(cur_key_, 0, sizeof cur_key_);
+  std::memset(cur_mac_, 0, sizeof cur_mac_);
+  std::memset(output_mac_, 0, sizeof output_mac_);
   output_mac_due_ = false;
   static const u8 zero[16] = {};
   AES_init_ctx_iv(CTX, zero, zero);
   // Slot 0 "Nintendo", slots 1/3 mix the console ID, slot 2's KeyX lives in the ARM9i BIOS.
   const u64 cid = nds_.io.dsi.console_id;
-  put32(&key_x_[0][0], 0x746E694E); put32(&key_x_[0][4], 0x6F646E65);
-  put32(&key_x_[1][0], 0x4E00004A); put32(&key_x_[1][4], 0x4A00004E);
-  put32(&key_x_[1][8], static_cast<u32>(cid >> 32) ^ 0xC80C4B72); put32(&key_x_[1][12], static_cast<u32>(cid));
+  put32(&key_x_[0][0], 0x746E694E);
+  put32(&key_x_[0][4], 0x6F646E65);
+  put32(&key_x_[1][0], 0x4E00004A);
+  put32(&key_x_[1][4], 0x4A00004E);
+  put32(&key_x_[1][8], static_cast<u32>(cid >> 32) ^ 0xC80C4B72);
+  put32(&key_x_[1][12], static_cast<u32>(cid));
   std::memcpy(key_x_[2], nds_.bus.bios9i.get() + 0x8B8C, 16);
-  put32(&key_x_[3][0], static_cast<u32>(cid)); put32(&key_x_[3][4], static_cast<u32>(cid) ^ 0x24EE6906);
-  put32(&key_x_[3][8], static_cast<u32>(cid >> 32) ^ 0xE65B601D); put32(&key_x_[3][12], static_cast<u32>(cid >> 32));
-  put32(&key_y_[3][0], 0x0AB9DC76); put32(&key_y_[3][4], 0xBD4DC4D3); put32(&key_y_[3][8], 0x202DDD1D);
+  put32(&key_x_[3][0], static_cast<u32>(cid));
+  put32(&key_x_[3][4], static_cast<u32>(cid) ^ 0x24EE6906);
+  put32(&key_x_[3][8], static_cast<u32>(cid >> 32) ^ 0xE65B601D);
+  put32(&key_x_[3][12], static_cast<u32>(cid >> 32));
+  put32(&key_y_[3][0], 0x0AB9DC76);
+  put32(&key_y_[3][4], 0xBD4DC4D3);
+  put32(&key_y_[3][8], 0x202DDD1D);
 }
 
 template <class S> void DsiAes::sync_state(S& s) {
-  s.fields(cnt_, blkcnt_, rem_extra_, rem_blocks_, input_dma_size_, output_dma_size_, mode_,
-           in_.entries, in_.occupied, in_.rd, in_.wr, out_.entries, out_.occupied, out_.rd, out_.wr,
-           iv_, mac_, key_normal_, key_x_, key_y_, cur_key_, cur_mac_, output_mac_, output_mac_due_, ctx_);
+  s.fields(cnt_, blkcnt_, rem_extra_, rem_blocks_, input_dma_size_, output_dma_size_, mode_, in_.entries, in_.occupied,
+           in_.rd, in_.wr, out_.entries, out_.occupied, out_.rd, out_.wr, iv_, mac_, key_normal_, key_x_, key_y_,
+           cur_key_, cur_mac_, output_mac_, output_mac_due_, ctx_);
 }
 template void DsiAes::sync_state<state::Writer>(state::Writer&);
 template void DsiAes::sync_state<state::Reader>(state::Reader&);
 
 // ---- block processing -------------------------------------------------------
 
-void DsiAes::process_ccm_extra() {           // associated data: MAC only
+void DsiAes::process_ccm_extra() { // associated data: MAC only
   u8 data[16], rev[16];
   for (int k = 0; k < 4; ++k) put32(&data[k * 4], in_.read());
   bswap128(rev, data);
@@ -136,7 +160,10 @@ void DsiAes::write_cnt(u32 value) {
   rem_extra_ = (mode_ < 2) ? (blkcnt_ & 0xFFFF) : 0;
   rem_blocks_ = blkcnt_ >> 16;
   output_mac_due_ = false;
-  if (rem_blocks_ == 0 && rem_extra_ == 0) { cnt_ &= ~(1u << 31); return; }
+  if (rem_blocks_ == 0 && rem_extra_ == 0) {
+    cnt_ &= ~(1u << 31);
+    return;
+  }
   u8 key[16], iv[16];
   bswap128(key, cur_key_);
   bswap128(iv, iv_);
@@ -147,7 +174,9 @@ void DsiAes::write_cnt(u32 value) {
     if (maclen < 1) maclen = 1;
     iv[0] = 0x02;
     for (int i = 0; i < 12; ++i) iv[1 + i] = iv[4 + i];
-    iv[13] = 0; iv[14] = 0; iv[15] = 1;
+    iv[13] = 0;
+    iv[14] = 0;
+    iv[15] = 1;
     AES_init_ctx_iv(CTX, key, iv);
     iv[0] |= static_cast<u8>((maclen << 3) | ((blkcnt_ & 0xFFFF) ? (1u << 6) : 0));
     iv[13] = static_cast<u8>(rem_blocks_ >> 12);
@@ -192,7 +221,10 @@ void DsiAes::check_output_dma() {
 }
 
 void DsiAes::update() {
-  while (in_.level() >= 4 && rem_extra_ > 0) { process_ccm_extra(); --rem_extra_; }
+  while (in_.level() >= 4 && rem_extra_ > 0) {
+    process_ccm_extra();
+    --rem_extra_;
+  }
   if (rem_extra_ == 0) {
     while (in_.level() >= 4 && out_.level() <= 12 && rem_blocks_ > 0) {
       switch (mode_) {
@@ -212,12 +244,14 @@ void DsiAes::update() {
     ctx->Iv[13] = ctx->Iv[14] = ctx->Iv[15] = 0;
     AES_CTR_xcrypt_buffer(ctx, cur_mac_, 16);
     cnt_ |= 1u << 21;
-    for (int i = 0; i < 16; ++i) if (cur_mac_[15 - i] != mac_[i]) cnt_ &= ~(1u << 21);
+    for (int i = 0; i < 16; ++i)
+      if (cur_mac_[15 - i] != mac_[i]) cnt_ &= ~(1u << 21);
   } else if (mode_ == 1) {
     ctx->Iv[13] = ctx->Iv[14] = ctx->Iv[15] = 0;
     AES_CTR_xcrypt_buffer(ctx, cur_mac_, 16);
     bswap128(output_mac_, cur_mac_);
-    if (out_.level() <= 12) push_output_mac(); else output_mac_due_ = true;
+    if (out_.level() <= 12) push_output_mac();
+    else output_mac_due_ = true;
     cnt_ &= ~(1u << 21);
   } else {
     cnt_ &= ~(1u << 21);
@@ -231,11 +265,16 @@ void DsiAes::update() {
 
 void DsiAes::write_iv(u32 offset, u32 value, u32 mask) { masked32(&iv_[offset & 0xC], value, mask); }
 void DsiAes::write_mac(u32 offset, u32 value, u32 mask) { masked32(&mac_[offset & 0xC], value, mask); }
-void DsiAes::write_key_normal(u32 slot, u32 offset, u32 value, u32 mask) { masked32(&key_normal_[slot & 3][offset & 0xC], value, mask); }
-void DsiAes::write_key_x(u32 slot, u32 offset, u32 value, u32 mask) { masked32(&key_x_[slot & 3][offset & 0xC], value, mask); }
+void DsiAes::write_key_normal(u32 slot, u32 offset, u32 value, u32 mask) {
+  masked32(&key_normal_[slot & 3][offset & 0xC], value, mask);
+}
+void DsiAes::write_key_x(u32 slot, u32 offset, u32 value, u32 mask) {
+  masked32(&key_x_[slot & 3][offset & 0xC], value, mask);
+}
 void DsiAes::write_key_y(u32 slot, u32 offset, u32 value, u32 mask) {
   masked32(&key_y_[slot & 3][offset & 0xC], value, mask);
-  if ((offset & 0xC) >= 0xC) derive_normal_key(key_x_[slot & 3], key_y_[slot & 3], key_normal_[slot & 3]);   // the last word commits the pair
+  if ((offset & 0xC) >= 0xC)
+    derive_normal_key(key_x_[slot & 3], key_y_[slot & 3], key_normal_[slot & 3]); // the last word commits the pair
 }
 
 #undef CTX

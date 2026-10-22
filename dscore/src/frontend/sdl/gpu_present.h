@@ -31,14 +31,20 @@ public:
   // Tier reopened at a new size: drop and re-import its buffers.
   bool reimport(ScanoutOut& out);
 
-  struct View { int screen; SDL_Rect rect; bool shown; bool blends; bool grid = false; };   // grid: LCD grid applies to this view
+  struct View {
+    int screen;
+    SDL_Rect rect;
+    bool shown;
+    bool blends;
+    bool grid = false;
+  }; // grid: LCD grid applies to this view
   // One frame: take a buffer from the tier, upload fb[0..1], dispatch,
   // submit. `lw`x`lh` is the logical (unrotated) frame the rects are laid
   // out in; `rot` maps it onto the presented buffer. False if nothing shown.
   // `drawn`: rectangle the frontend's overlay drew this frame (see overlay()).
   // `grid`: LCD grid brightness on a seam, 0..256 (256 = off).
-  bool present(ScanoutOut& out, const u32* const fb[2], const View* views, int nviews, int rot, int lw, int lh, u8 inset_alpha,
-               SDL_Rect drawn = SDL_Rect{0, 0, 0, 0}, u32 grid = 256);
+  bool present(ScanoutOut& out, const u32* const fb[2], const View* views, int nviews, int rot, int lw, int lh,
+               u8 inset_alpha, SDL_Rect drawn = SDL_Rect{0, 0, 0, 0}, u32 grid = 256);
   // Canvas for the frontend's overlays (OSD, pause menu, notices) for the
   // coming frame: `lw`x`lh`, pitch `lw`, 0xAARRGGBB, alpha honoured,
   // host-cached. Pre-cleared where the frame before last drew.

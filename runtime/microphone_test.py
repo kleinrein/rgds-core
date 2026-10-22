@@ -22,7 +22,7 @@ def levels(pcm):
     # Remove the ADC's DC offset so silence does not appear as a signal.
     mean = sum(samples) / len(samples)
     peak = max(abs(value - mean) for value in samples) / 32768
-    rms = math.sqrt(sum((value - mean) ** 2 for value in samples) / len(samples)) / 32768
+    rms = math.sqrt(sum((value - mean)**2 for value in samples) / len(samples)) / 32768
     db = max(-60.0, min(0.0, 20 * math.log10(max(rms, 1e-9))))
     peak_db = max(-60.0, min(0.0, 20 * math.log10(max(peak, 1e-9))))
     return round((db + 60) * 100 / 60), round((peak_db + 60) * 100 / 60), round(db)
@@ -34,9 +34,11 @@ def run(data):
         print('busy', flush=True)
         return
     stopped = False
+
     def stop(*_):
         nonlocal stopped
         stopped = True
+
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     parent = os.getppid()
@@ -45,9 +47,12 @@ def run(data):
         env = os.environ.copy()
         env.pop('LD_PRELOAD', None)
         env.pop('LD_LIBRARY_PATH', None)
-        capture = subprocess.Popen(['arecord', '-q', '-D', 'plughw:0,0', '-t', 'raw',
-                                    '-f', 'S16_LE', '-r', '16000', '-c', '1'],
-                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env)
+        capture = subprocess.Popen(
+            ['arecord', '-q', '-D', 'plughw:0,0', '-t', 'raw', '-f', 'S16_LE', '-r', '16000', '-c', '1'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            env=env
+        )
         os.set_blocking(capture.stdout.fileno(), False)
         pending = b''
         last = time.monotonic()

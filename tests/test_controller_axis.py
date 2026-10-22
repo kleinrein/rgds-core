@@ -5,15 +5,19 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'),'Host C++/SDL headers required')
+@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'Host C++/SDL headers required')
 class ControllerAxisTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.temp=tempfile.TemporaryDirectory();cls.root=Path(cls.temp.name);cls.binary=cls.root/'axis'
-        source=cls.root/'axis.cpp';source.write_text(r'''
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temp.name)
+        cls.binary = cls.root / 'axis'
+        source = cls.root / 'axis.cpp'
+        source.write_text(
+            r'''
 #define RGDS_BRIDGE_TESTS
 #include "platform/emulator_bridge.cpp"
 #include <cassert>
@@ -40,22 +44,35 @@ int main(int argc,char** argv){
  assert(axis()==0 && SDL_JoystickGetAxis(nullptr,0)==0); // A current centered value must not revive a previous held value.
  native_axis=-18000;assert(axis()==-18000 && SDL_JoystickGetAxis(nullptr,0)==-18000 && controller_lookups==1);
 }
-''')
-        flags=subprocess.check_output(['sdl2-config','--cflags'],text=True).split()
-        result=subprocess.run(['clang++','-std=c++17','-O1',*flags,'-I'+str(ROOT/'src'),str(source),'-o',str(cls.binary)],capture_output=True,text=True)
-        if result.returncode:raise AssertionError(result.stderr)
+'''
+        )
+        flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
+        result = subprocess.run(
+            ['clang++', '-std=c++17', '-O1', *flags, '-I' + str(ROOT / 'src'),
+             str(source), '-o',
+             str(cls.binary)],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode: raise AssertionError(result.stderr)
 
     @classmethod
-    def tearDownClass(cls):cls.temp.cleanup()
+    def tearDownClass(cls):
+        cls.temp.cleanup()
 
-    def exercise(self,mode):
+    def exercise(self, mode):
         with tempfile.TemporaryDirectory() as folder:
-            result=subprocess.run([str(self.binary),folder,mode],capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            result = subprocess.run([str(self.binary), folder, mode], capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_managed_axes_are_neutral_during_menu_and_use_current_values_after_resume(self):self.exercise('managed')
-    def test_unmanaged_axis_input_is_preserved(self):self.exercise('unmanaged')
-    def test_missing_native_axis_api_stays_neutral(self):self.exercise('missing')
+    def test_managed_axes_are_neutral_during_menu_and_use_current_values_after_resume(self):
+        self.exercise('managed')
+
+    def test_unmanaged_axis_input_is_preserved(self):
+        self.exercise('unmanaged')
+
+    def test_missing_native_axis_api_stays_neutral(self):
+        self.exercise('missing')
 
 
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

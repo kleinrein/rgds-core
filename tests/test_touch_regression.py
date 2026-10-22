@@ -17,7 +17,8 @@ class TouchDecoderRegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             source = root / "touch.cpp"
-            source.write_text(r'''#include "platform/touch.hpp"
+            source.write_text(
+                r'''#include "platform/touch.hpp"
 #include <cassert>
 void contact(rgds::TouchDecoder& t,int id,int x,int y){t.feed(3,57,id);t.feed(3,53,x);t.feed(3,54,y);t.feed(0,2,0);}
 int main(){
@@ -58,10 +59,19 @@ int main(){
  rgds::TouchPackets packets;assert(packets.feed(event.data(),19).empty());auto complete=packets.feed(event.data()+19,5);
  assert(complete.size()==1 && complete[0].micros==1000000 && complete[0].type==3 && complete[0].code==57 && complete[0].value==-1);
 }
-''')
+'''
+            )
             binary = root / "touch"
-            subprocess.run(["clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT / "src"),
-                            str(source), "-o", str(binary)], check=True, capture_output=True, text=True)
+            subprocess.run(
+                [
+                    "clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT / "src"),
+                    str(source), "-o",
+                    str(binary)
+                ],
+                check=True,
+                capture_output=True,
+                text=True
+            )
             result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=3)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
@@ -70,29 +80,45 @@ int main(){
 class FingerRoutingRegressionTests(unittest.TestCase):
     @staticmethod
     def recording(events):
-        return b"".join(struct.pack("<qqHHi", ms // 1000, (ms % 1000) * 1000, kind, code, value)
-                        for ms, kind, code, value in events)
+        return b"".join(
+            struct.pack("<qqHHi", ms // 1000, (ms % 1000) * 1000, kind, code, value) for ms, kind, code, value in events
+        )
 
     @staticmethod
     def goodix_tap(ms, x, y, identity):
-        return [(ms, 1, 330, 1), (ms, 3, 57, identity), (ms, 3, 53, x), (ms, 3, 54, y),
-                (ms, 0, 2, 0), (ms, 0, 0, 0), (ms + 20, 1, 330, 0),
-                (ms + 20, 0, 2, 0), (ms + 20, 0, 0, 0)]
+        return [
+            (ms, 1, 330, 1), (ms, 3, 57, identity), (ms, 3, 53, x), (ms, 3, 54, y), (ms, 0, 2, 0), (ms, 0, 0, 0),
+            (ms + 20, 1, 330, 0), (ms + 20, 0, 2, 0), (ms + 20, 0, 0, 0)
+        ]
 
     def run_touch(self, script="", events=None, extra=()):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             state = root / "state.txt"
             state.write_text('1 0 0 ""\n')
-            (root / "ui.ini").write_text("schema=1\nhome_layout=carousel\nbackground=plain\n")   # the carousel home these taps address
-            inputs = root / "fingers.txt";inputs.write_text(script)
-            command = [str(BINARY), "--preview", "--home", "--state", str(state), "--preferences", str(root / "preferences.ini"),
-                       "--input-script", str(inputs), "--seconds", "1", *extra]
+            (root / "ui.ini").write_text(
+                "schema=1\nhome_layout=carousel\nbackground=plain\n"
+            )  # the carousel home these taps address
+            inputs = root / "fingers.txt"
+            inputs.write_text(script)
+            command = [
+                str(BINARY), "--preview", "--home", "--state",
+                str(state), "--preferences",
+                str(root / "preferences.ini"), "--input-script",
+                str(inputs), "--seconds", "1", *extra
+            ]
             if events is not None:
-                recording = root / "touch.events";recording.write_bytes(self.recording(events))
+                recording = root / "touch.events"
+                recording.write_bytes(self.recording(events))
                 command += ["--touch-recording", str(recording)]
-            result = subprocess.run(command, cwd=ROOT, env=dict(os.environ, SDL_VIDEODRIVER="dummy"),
-                                    capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                command,
+                cwd=ROOT,
+                env=dict(os.environ, SDL_VIDEODRIVER="dummy"),
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             return state.read_text().splitlines()
 
@@ -148,15 +174,19 @@ class FingerRoutingRegressionTests(unittest.TestCase):
         script = "20 finger-down 0.5 0.7135417 7\n40 focus-lost\n100 finger-down 0.5 0.7135417 9\n120 finger-move 0.2875 0.7135417 9\n140 finger-up 0.2875 0.7135417 9\n"
         self.assertEqual(self.run_touch(script), ['1 0 0 ""', "home 2"])
 
-@unittest.skipUnless(BINARY.exists() and shutil.which('clang++') and shutil.which('sdl2-config'), 'Host SDL compiler required')
+
+@unittest.skipUnless(
+    BINARY.exists() and shutil.which('clang++') and shutil.which('sdl2-config'), 'Host SDL compiler required'
+)
 class NativeTouchWindowTests(unittest.TestCase):
     def test_kms_top_window_association_still_routes_to_lower_touch_panel(self, panel_width=640, panel_height=480):
         """Emulate two KMS windows without opening a device or reading evdev."""
         import json
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            source = root/'native.cpp'
-            source.write_text(r'''#include <SDL.h>
+            source = root / 'native.cpp'
+            source.write_text(
+                r'''#include <SDL.h>
 #include <dlfcn.h>
 #include <cstdlib>
 #include <cassert>
@@ -182,25 +212,50 @@ extern "C" int SDL_PollEvent(SDL_Event* event){
  event->tfinger.x=200.f/640;event->tfinger.y=130.f/480;return 1;
 }
 extern "C" int SDL_WaitEventTimeout(SDL_Event*,int){SDL_Delay(5);return 0;}
-''')
-            library = root/('native.dylib' if os.uname().sysname=='Darwin' else 'native.so')
-            flags = subprocess.check_output(['sdl2-config','--cflags','--libs'], text=True).split()
-            subprocess.run(['clang++','-std=c++17','-shared','-fPIC',str(source),*flags,'-o',str(library)],check=True,capture_output=True,text=True)
-            report = root/'report.json'
-            result = subprocess.run([str(BINARY),'--settings','--data',str(root),'--state',str(root/'state'),
-                                     '--seconds','1','--cache-report',str(report),'--screenshot',str(root/'panel')],cwd=ROOT,
-                                    env=dict(os.environ,SDL_VIDEODRIVER='dummy',RGDS_SDL_LIBRARY=str(library),
-                                             RGDS_TEST_PANEL_WIDTH=str(panel_width),RGDS_TEST_PANEL_HEIGHT=str(panel_height),
-                                             RGDS_TOUCH_DEV=str(root/'no-device'),RGDS_VOLUME_EXTERNAL='1',RGDS_SYSTEM_MANAGED='1'),
-                                    capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            self.assertEqual(json.loads(report.read_text())['page'],2)
-            for panel in ('top','bottom'):
-                raw=(root/('panel-'+panel+'.bmp')).read_bytes()
-                self.assertEqual(struct.unpack_from('<ii',raw,18),(panel_width,panel_height))
+'''
+            )
+            library = root / ('native.dylib' if os.uname().sysname == 'Darwin' else 'native.so')
+            flags = subprocess.check_output(['sdl2-config', '--cflags', '--libs'], text=True).split()
+            subprocess.run(
+                ['clang++', '-std=c++17', '-shared', '-fPIC',
+                 str(source), *flags, '-o',
+                 str(library)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            report = root / 'report.json'
+            result = subprocess.run(
+                [
+                    str(BINARY), '--settings', '--data',
+                    str(root), '--state',
+                    str(root / 'state'), '--seconds', '1', '--cache-report',
+                    str(report), '--screenshot',
+                    str(root / 'panel')
+                ],
+                cwd=ROOT,
+                env=dict(
+                    os.environ,
+                    SDL_VIDEODRIVER='dummy',
+                    RGDS_SDL_LIBRARY=str(library),
+                    RGDS_TEST_PANEL_WIDTH=str(panel_width),
+                    RGDS_TEST_PANEL_HEIGHT=str(panel_height),
+                    RGDS_TOUCH_DEV=str(root / 'no-device'),
+                    RGDS_VOLUME_EXTERNAL='1',
+                    RGDS_SYSTEM_MANAGED='1'
+                ),
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(json.loads(report.read_text())['page'], 2)
+            for panel in ('top', 'bottom'):
+                raw = (root / ('panel-' + panel + '.bmp')).read_bytes()
+                self.assertEqual(struct.unpack_from('<ii', raw, 18), (panel_width, panel_height))
 
     def test_plus_native_panels_render_and_route_lower_touch(self):
-        self.test_kms_top_window_association_still_routes_to_lower_touch_panel(1024,768)
+        self.test_kms_top_window_association_still_routes_to_lower_touch_panel(1024, 768)
 
 
 if __name__ == "__main__":

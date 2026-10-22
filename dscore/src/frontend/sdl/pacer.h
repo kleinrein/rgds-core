@@ -23,7 +23,7 @@ public:
   // period_ns: nominal frame period, e.g. CYCLES_PER_FRAME / ARM9_CLOCK_HZ (59.8261 Hz).
   explicit Pacer(double period_ns) {
 #if defined(__linux__)
-    prctl(PR_SET_TIMERSLACK, 1UL, 0, 0, 0);   // remove the kernel's default ~50us timer rounding
+    prctl(PR_SET_TIMERSLACK, 1UL, 0, 0, 0); // remove the kernel's default ~50us timer rounding
 #endif
     set_period_ns(period_ns);
     reset();
@@ -43,7 +43,7 @@ public:
   // `cap` is runtime/period; `period_ns` the kernel's RT accounting period.
   void set_rt_relief(double cap, double period_ns) {
     if (!(cap > 0.0 && cap < 1.0) || !(period_ns > 0.0)) return;
-    allowed_ = cap - 0.01;   // small margin: throttling costs 50ms, being early costs us
+    allowed_ = cap - 0.01; // small margin: throttling costs 50ms, being early costs us
     rt_period_ = period_ns * ticks_per_ns();
     relief_ = allowed_ > 0.0;
     window_ = SDL_GetPerformanceCounter();
@@ -56,7 +56,8 @@ public:
   double relief_us(unsigned* frames = nullptr) {
     const double v = relief_n_ ? relief_ticks_ / ticks_per_ns() / 1e3 / relief_n_ : 0.0;
     if (frames) *frames = relief_n_;
-    relief_ticks_ = 0; relief_n_ = 0;
+    relief_ticks_ = 0;
+    relief_n_ = 0;
     return v;
   }
 
@@ -73,12 +74,12 @@ public:
     Uint64 now = SDL_GetPerformanceCounter();
     if (relief_) now = relieve(now);
     if (now >= next_) {
-      const Uint64 budget = static_cast<Uint64>(period_);   // cap debt at one frame
+      const Uint64 budget = static_cast<Uint64>(period_); // cap debt at one frame
       if (now - next_ > budget) next_ = now - budget;
     } else {
       sleep_until(next_, now);
     }
-    if (relief_) frame_start_ = SDL_GetPerformanceCounter();   // RT run starts here, not before the wait
+    if (relief_) frame_start_ = SDL_GetPerformanceCounter(); // RT run starts here, not before the wait
   }
 
   // The display-locked wait (phase_lock.h): the deadline is given (in
@@ -99,7 +100,8 @@ public:
   // Spin cost in us/frame, averaged since the last call. Informational only.
   double spin_us() {
     const double v = spin_n_ ? spin_ticks_ / ticks_per_ns() / 1e3 / spin_n_ : 0.0;
-    spin_ticks_ = 0; spin_n_ = 0;
+    spin_ticks_ = 0;
+    spin_n_ = 0;
     return v;
   }
 
@@ -109,7 +111,7 @@ private:
   // ~2s to halve) otherwise. Asymmetric because being early costs microseconds
   // of spin, being late costs a missed frame.
   static constexpr double MARGIN_DECAY = 1.0 - 1.0 / 512.0;
-  static constexpr double MARGIN_MAX_NS = 2e6;    // never hand more than 2 ms to the spin
+  static constexpr double MARGIN_MAX_NS = 2e6; // never hand more than 2 ms to the spin
 
   static double ticks_per_ns() {
     static const double v = static_cast<double>(SDL_GetPerformanceFrequency()) / 1e9;
@@ -140,13 +142,14 @@ private:
   Uint64 relieve(Uint64 now) {
     rt_busy_ += static_cast<double>(now - frame_start_);
     const double elapsed = static_cast<double>(now - window_);
-    if (elapsed >= rt_period_) {          // new accounting window
-      window_ = now; rt_busy_ = 0.0;
+    if (elapsed >= rt_period_) { // new accounting window
+      window_ = now;
+      rt_busy_ = 0.0;
       return now;
     }
     const double over = rt_busy_ - allowed_ * elapsed;
     if (over <= 0.0) return now;
-    const double cap_ticks = period_ * 0.25;   // spread the cost; cap at a quarter frame per nap
+    const double cap_ticks = period_ * 0.25; // spread the cost; cap at a quarter frame per nap
     const double nap = over < cap_ticks ? over : cap_ticks;
 #if defined(__linux__)
     const double nap_ns = nap / ticks_per_ns();
@@ -160,7 +163,10 @@ private:
   }
 
   void sleep_until(Uint64 deadline, Uint64 now) {
-    if (busy_) { busy_until(deadline, now); return; }
+    if (busy_) {
+      busy_until(deadline, now);
+      return;
+    }
     const double margin = margin_ticks_;
     const double left = static_cast<double>(deadline - now);
     if (left > margin) {
@@ -181,26 +187,26 @@ private:
       const double late = static_cast<double>(woke) - static_cast<double>(asked);
       const double cap = MARGIN_MAX_NS * ticks_per_ns();
       margin_ticks_ = late > margin_ticks_ ? (late < cap ? late : cap) : margin_ticks_ * MARGIN_DECAY;
-      if (woke >= deadline) return;      // already past deadline
+      if (woke >= deadline) return; // already past deadline
       spin_ticks_ += static_cast<double>(deadline - woke);
     }
     ++spin_n_;
     while (SDL_GetPerformanceCounter() < deadline) {}
   }
 
-  bool busy_ = false;        // spin the wait instead of sleeping it
-  bool relief_ = false;      // keep this thread under the kernel's RT bandwidth cap
-  double allowed_ = 0.0;     // fraction of wall time we may spend running at RT
-  double rt_period_ = 0.0;   // the kernel's RT accounting period, in ticks
-  Uint64 window_ = 0;        // start of the current accounting window
-  double rt_busy_ = 0.0;     // ticks run at RT priority in this window
-  Uint64 frame_start_ = 0;   // when this frame's real-time run began
-  double relief_ticks_ = 0;  // what the relief has cost since the last relief_us()
+  bool busy_ = false;       // spin the wait instead of sleeping it
+  bool relief_ = false;     // keep this thread under the kernel's RT bandwidth cap
+  double allowed_ = 0.0;    // fraction of wall time we may spend running at RT
+  double rt_period_ = 0.0;  // the kernel's RT accounting period, in ticks
+  Uint64 window_ = 0;       // start of the current accounting window
+  double rt_busy_ = 0.0;    // ticks run at RT priority in this window
+  Uint64 frame_start_ = 0;  // when this frame's real-time run began
+  double relief_ticks_ = 0; // what the relief has cost since the last relief_us()
   unsigned relief_n_ = 0;
-  double period_ = 0;        // in performance-counter ticks
+  double period_ = 0; // in performance-counter ticks
   Uint64 next_ = 0;
-  double margin_ticks_ = 0;  // learned; starts at zero and grows into the first few frames
-  double spin_ticks_ = 0;    // what the spin has cost since the last spin_us()
+  double margin_ticks_ = 0; // learned; starts at zero and grows into the first few frames
+  double spin_ticks_ = 0;   // what the spin has cost since the last spin_us()
   unsigned spin_n_ = 0;
 };
 

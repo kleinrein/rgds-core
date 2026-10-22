@@ -18,7 +18,8 @@ class BrightnessQueueTests(unittest.TestCase):
         cls.root = Path(cls.temp.name)
         runtime = cls.root / "app/runtime"
         runtime.mkdir(parents=True)
-        (runtime / "system_controls.py").write_text('''import argparse, json, sys, time
+        (runtime / "system_controls.py").write_text(
+            '''import argparse, json, sys, time
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument("command");p.add_argument("value",nargs="?",type=int);p.add_argument("--data",type=Path,required=True)
 a=p.parse_args();a.data.mkdir(parents=True,exist_ok=True)
@@ -29,9 +30,11 @@ with (a.data/"trace").open("a") as f:f.write(json.dumps([a.command,a.value])+"\\
 if a.command=="brightness" and not (a.data/"fast").exists():time.sleep(.15)
 busy.unlink()
 sys.exit(1 if a.command=="brightness" and a.value==65 else 0)
-''')
+'''
+        )
         source = cls.root / "test.cpp"
-        source.write_text('''#include "platform/system_controls.hpp"
+        source.write_text(
+            '''#include "platform/system_controls.hpp"
 #include <cassert>
 #include <thread>
 using Clock=std::chrono::steady_clock;
@@ -77,11 +80,19 @@ int main(int argc,char** argv){
   auto result=s.poll_brightness();assert(result && result->value==85 && result->success && result->settled);
  }else return 2;
 }
-''')
+'''
+        )
         cls.binary = cls.root / "probe"
-        subprocess.run(["clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-                        "-I" + str(ROOT / "src"), str(source), "-o", str(cls.binary)],
-                       check=True, capture_output=True, text=True)
+        subprocess.run(
+            [
+                "clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT / "src"),
+                str(source), "-o",
+                str(cls.binary)
+            ],
+            check=True,
+            capture_output=True,
+            text=True
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -92,8 +103,13 @@ int main(int argc,char** argv){
             data = Path(folder)
             environment = os.environ.copy()
             environment.pop("RGDS_SYSTEM_MANAGED", None)
-            result = subprocess.run([str(self.binary), str(self.root), str(data), mode],
-                                    capture_output=True, text=True, env=environment, timeout=6)
+            result = subprocess.run(
+                [str(self.binary), str(self.root), str(data), mode],
+                capture_output=True,
+                text=True,
+                env=environment,
+                timeout=6
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             trace = data / "trace"
             return [json.loads(line) for line in trace.read_text().splitlines()] if trace.exists() else []
@@ -108,7 +124,9 @@ int main(int argc,char** argv){
         self.assertEqual(self.invoke("failure"), [["brightness", 65], ["brightness", 80], ["restore", None]])
 
     def test_other_hardware_controls_and_restore_wait_for_latest_brightness(self):
-        self.assertEqual(self.invoke("serialize"), [["brightness", 25], ["brightness", 85], ["power", 2], ["restore", None]])
+        self.assertEqual(
+            self.invoke("serialize"), [["brightness", 25], ["brightness", 85], ["power", 2], ["restore", None]]
+        )
 
     def test_fast_helpers_still_use_a_bounded_apply_cadence(self):
         self.assertEqual(self.invoke("cadence"), [["brightness", n] for n in range(10, 61, 10)] + [["restore", None]])

@@ -6,7 +6,6 @@
 A  Apply	A  Anvend
 A  Done	A  Færdig
 A  Play	A  Spil
-A / Start	A / Start
 A gentle scanline pattern with original colours.	Et diskret linjemønster med originale farver.
 A natural colour and contrast treatment.	Naturlige farver og kontraster.
 A screen style for this cartridge	En skærmstil til denne spilkassette
@@ -14,20 +13,26 @@ A stronger LCD texture and scanline look.	Tydeligere LCD-struktur og scanningsli
 A subtle handheld LCD pixel pattern.	Et diskret pixelmønster fra en håndholdt LCD-skærm.
 A subtle pixel grid with a bright, readable image.	Et diskret pixelgitter med et lyst og tydeligt billede.
 Add your DS games to fetch their artwork.	Tilføj dine DS-spil for at hente omslag.
+Africa	Afrika
 After	Efter
 All games	Alle spil
 Amber	Rav
-Anbernic / Escape cancels	Anbernic / Escape annullerer
+Americas	Amerika
 Anbernic startup is unavailable in RGDS OS.	Anbernic-opstart er ikke tilgængelig i RGDS OS.
 Animations	Animationer
+Antarctica	Antarktis
 Applies immediately. Higher clocks use more battery.	Gælder straks. Højere clockfrekvenser bruger mere batteri.
 Applies immediately. Your game keeps its progress.	Gælder straks. Dine spilfremskridt bevares.
 Apply	Anvend
 Applying shader…	Anvender shader…
+Arctic	Arktis
 Artwork	Omslag
 Artwork & ScreenScraper	Omslag
 Artwork source	Omslagskilde
 Artwork sources	Omslagskilder
+Asia	Asien
+Atlantic Ocean	Atlanterhavet
+Australia	Australien
 Auto-load state	Indlæs spiltilstand automatisk
 Auto-save on exit	Gem automatisk ved afslutning
 Automatic	Automatisk
@@ -156,6 +161,7 @@ Engine managed	Styres af motoren
 Enter here	Skriv her
 Enter password	Indtast adgangskode
 Enter your username and password	Indtast dit brugernavn og din adgangskode
+Europe	Europa
 Every game in this collection has artwork.	Alle spil i samlingen har omslag.
 FPS changed for this session. Settings storage is unavailable.	FPS ændret for denne session. Indstillinger kan ikke gemmes.
 FPS counter enabled.	FPS-tæller aktiveret.
@@ -191,6 +197,7 @@ Global	Global
 Global controls saved.	Global styring gemt.
 Hold	Hold nede
 Home shortcut	Genvej til startskærmen
+Indian Ocean	Det Indiske Ocean
 Inherit	Nedarv
 Inherited	Nedarvet
 Jump to letter	Hop til bogstav
@@ -265,6 +272,7 @@ Open the Anbernic menu	Åbn Anbernic-menuen
 Options	Muligheder
 Original pixels	Originale pixels
 Original pixels and colours.	Originale pixels og farver.
+Pacific	Stillehavet
 PLAY	SPIL
 Password	Adgangskode
 Pause when you need to.	Hold pause, når du har brug for det.
@@ -504,8 +512,6 @@ Wi-Fi request timed out. Check signal and try again.	Wi-Fi-anmodningen tog for l
 Wi-Fi service is unavailable.	Wi-Fi-tjenesten er ikke tilgængelig.
 With shader	Med shader
 Working…	Arbejder…
-X Scene   Y Compare	X Scene   Y Sammenlign
-X Scene / Y Compare	X Scene / Y Sammenlign
 Your cartridges go here	Dine spilkassetter vises her
 Your home screen after powering on	Din startskærm efter opstart
 Your local time and date	Din lokale tid og dato
@@ -572,17 +578,29 @@ Update verification failed. Check for updates again.	Verificeringen mislykkedes.
 Update failed. Check Wi-Fi and try again.	Opdateringen mislykkedes. Kontroller Wi-Fi, og prøv igen.
 Stable	Stabil
 Testing	Test
-Save to slot	Gem på plads
 Import slot	Importer gemt spil
-Load slot	Indlæs gemt spil
 Export slot	Eksporter gemt spil
-Undo overwrite	Fortryd overskrivning
-Undo load	Fortryd indlæsning
+Save checkpoint	Gem spiltilstand
+Load checkpoint	Indlæs spiltilstand
+Save here	Gem her
+Export	Eksporter
+More	Mere
+Replace slot {0}?	Erstat plads {0}?
+Load slot {0}?	Indlæs plads {0}?
+Delete slot {0}?	Slet plads {0}?
+Undo last slot change	Fortryd seneste ændring
+Undo last load	Fortryd seneste indlæsning
+Import into this slot	Importer til denne plads
+Slot {0} deleted.	Plads {0} slettet.
+Slot change undone.	Ændringen er fortrudt.
+A saves your current progress here.	A gemmer din fremgang her.
+A replaces this slot with your current progress. X deletes it.	A erstatter pladsen med din fremgang. X sletter den.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A indlæser pladsen. Fortryd seneste indlæsning under Y henter din nuværende fremgang tilbage.
+Nothing to load here yet.	Intet at indlæse her endnu.
+A exports this slot to userdata/exports. X deletes it.	A eksporterer pladsen til userdata/exports. X sletter den.
+Y imports a save into this slot.	Y importerer et gemt spil til denne plads.
 Import help	Importhjælp
-Save slot	Gemmeplads
-Replace this save?	Erstat dette gemte spil?
 Replace	Erstat
-Load this save?	Indlæs dette gemte spil?
 Blow into microphone	Pust i mikrofonen
 Close and open DS lid	Luk og åbn DS-låget
 DS language	DS-sprog
@@ -621,15 +639,12 @@ Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are
 Save backup created in userdata/exports.	Sikkerhedskopi oprettet i userdata/exports.
 Slot exported to userdata/exports.	Gemmeplads eksporteret til userdata/exports.
 Save library updated.	Bibliotek med gemte spil opdateret.
-Save overwrite undone.	Overskrivning fortrudt.
 Current progress could not be saved. No slot was changed.	Aktuelle fremskridt kunne ikke gemmes. Ingen gemmeplads blev ændret.
 DS controls are unavailable for this engine.	DS-styring er ikke tilgængelig for denne motor.
 Your DS library starts here	Dit DS-bibliotek starter her
 Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopiér .nds- eller DS ZIP-filer til Roms/NDS på spilkortet, og vælg Søg efter nye spil.
 Use the engine's native controls for microphone and DS settings.	Brug motorens egen styring til mikrofon og DS-indstillinger.
 Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Fysisk mikrofon er slået til som standard. Puste- og låghandlinger vender tilbage til spillet i to sekunder. Sprogændringer gælder efter genstart.
-Save slots	Gemmepladser
-Load slots	Indlæs spil
 Unplayed	Ikke spillet
 Played	Spillet
 Filtered	Filtreret
@@ -652,9 +667,6 @@ Return home before testing the physical microphone.	Gå til startskærmen, før 
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Pust eller tal i mikrofonen. Se niveauet stige og falde, når du stopper.
 No filter	Intet filter
 Quick search	Hurtigsøgning
-Y  Quick search	Y  Hurtigsøgning
-X  Filters	X  Filtre
-Y Search / X Filters	Y Søg / X Filtre
 A  Search	A  Søg
 A  Jump	A  Hop
 Edit search	Rediger søgning
@@ -665,10 +677,8 @@ Finding games…	Finder spil…
 Searching…	Søger…
 Search in	Søg i
 Try a shorter title or clear your filter.	Prøv en kortere titel, eller ryd filteret.
-A Key / Start Search / B Cancel	A Tast / Start Søg / B Annuller
+Type	Skriv
 Tap to type, or use the D-pad and A	Tryk for at skrive, eller brug styrekrydset og A
-X Delete / Start Search	X Slet / Start Søg
-X Delete / Start Done	X Slet / Start Færdig
 No letters to jump to. Search for another game.	Ingen bogstaver at hoppe til. Søg efter et andet spil.
 {0} match	{0} resultat
 {0} matches	{0} resultater
@@ -737,7 +747,6 @@ Colour mode	Farvetilstand
 Draw and chat with nearby handhelds	Tegn og chat med enheder i nærheden
 Wi-Fi connected	Wi-Fi forbundet
 No Wi-Fi: you can still draw	Intet Wi-Fi: du kan stadig tegne
-Press A to open	Tryk på A for at åbne
 Type your name	Skriv dit navn
 You appear like this to others	Sådan ser andre dig
 Starting…	Starter…
@@ -835,7 +844,7 @@ Natural	Naturlig
 Vivid	Livlig
 Pixel art	Pixelkunst
 Moods	Stemninger
-Up / Down or L / R: change group	Op / Ned eller L / R: skift gruppe
+Change group	Skift gruppe
 Sounds & music	Lyde og musik
 Menu music	Menumusik
 Music volume	Musiklydstyrke
@@ -852,3 +861,35 @@ The backup did not finish. Please try again.	Sikkerhedskopien blev ikke færdig.
 Copies every save and checkpoint into one zip in userdata/exports.	Kopierer alle gemte spil og kontrolpunkter til én zip i userdata/exports.
 Where games go on the card, and a fresh scan.	Hvor spil skal ligge på kortet, og en ny søgning.
 Where covers and titles come from.	Hvor covers og titler kommer fra.
+System update	Systemopdatering
+Version {0} is ready	Version {0} er klar
+Version {0} is ready to install	Version {0} er klar til installation
+Downloading {0}	Henter {0}
+Paused at {0}	Sat på pause ved {0}
+Update now	Opdater nu
+Resume download	Genoptag download
+Update	Opdater
+Install	Installer
+What's new	Nyt i denne version
+Download	Hent
+Verify	Kontroller
+Prepare	Klargør
+Step {0} of 4	Trin {0} af 4
+Less than a minute left	Under et minut tilbage
+About {0} min left	Cirka {0} min tilbage
+About {0} h left	Cirka {0} t tilbage
+Downloads resume where they stopped if Wi-Fi drops.	Downloads fortsætter, hvor de stoppede, hvis Wi-Fi falder ud.
+Your games and saves are not touched.	Dine spil og gemte data røres ikke.
+Connection lost. Retrying…	Forbindelsen blev afbrudt. Prøver igen…
+The update could not be downloaded. Check for updates again.	Opdateringen kunne ikke hentes. Søg efter opdateringer igen.
+Finishing another task. Press Y again in a moment.	Afslutter en anden opgave. Tryk Y igen om lidt.
+Updates	Opdateringer
+The language for menus and messages.	Sproget til menuer og beskeder.
+Set the clock to where you are.	Indstil uret efter, hvor du er.
+How dates appear at the top of the screen.	Hvordan datoer vises øverst på skærmen.
+A 24-hour or 12-hour clock.	Et 24- eller 12-timers ur.
+Versions, free space and the network address of your handheld.	Versioner, ledig plads og håndkonsollens netværksadresse.
+Check for updates, go back to the previous build or clear temporary files.	Søg efter opdateringer, gå tilbage til forrige version eller ryd midlertidige filer.
+Leave RG DS Core and go back to the stock menu.	Forlad RG DS Core og gå tilbage til standardmenuen.
+What happens when you turn the handheld on.	Hvad der sker, når du tænder håndkonsollen.
+Restart the RGDS menu.	Genstart RGDS-menuen.

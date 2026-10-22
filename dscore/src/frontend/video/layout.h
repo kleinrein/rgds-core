@@ -10,7 +10,9 @@ namespace ds::frontend {
 // Where the DS screens go in an output of a given size: the arithmetic every
 // presenter (software sinks, GPU) and the screenshot writer share. No SDL.
 
-struct Rect { int x = 0, y = 0, w = 0, h = 0; };   // same layout as SDL_Rect
+struct Rect {
+  int x = 0, y = 0, w = 0, h = 0;
+}; // same layout as SDL_Rect
 
 // How the two screens share the output; `primary` is the screen shown alone
 // (Single), large (Pip) or dominant (DominantV/H), else first in the
@@ -20,17 +22,17 @@ struct Rect { int x = 0, y = 0, w = 0, h = 0; };   // same layout as SDL_Rect
 enum class Mode : u8 { Vertical, Horizontal, Single, Pip, DominantV, DominantH, Count };
 enum class Corner : u8 { TopLeft, TopRight, BottomLeft, BottomRight, Count };
 struct Layout {
-  Mode   mode = Mode::Vertical;
-  int    primary = 0;
+  Mode mode = Mode::Vertical;
+  int primary = 0;
   Corner corner = Corner::BottomRight;
-  double pip = 1.0 / 3.0;      // inset size relative to the large screen
-  double dominant = 0.5;       // secondary size relative to the dominant screen
-  bool   dominant_auto = true; // pick the primary's whole scale instead (see above); a ratio when false
-  double dominant_min = 0.25;  // auto: the smallest secondary the primary may leave
-  double pip_alpha = 1.0;      // inset opacity at rest, 0..1
-  int    gap = 0;              // video.screen_gap: pixels between the two screens of a pair (negative overlaps)
-  bool   gap_auto = false;     // video.screen_gap = auto: the pair is fitted with no gap, then the screens
-                               // are pushed to the output's edges along the pair, the spare room between them
+  double pip = 1.0 / 3.0;     // inset size relative to the large screen
+  double dominant = 0.5;      // secondary size relative to the dominant screen
+  bool dominant_auto = true;  // pick the primary's whole scale instead (see above); a ratio when false
+  double dominant_min = 0.25; // auto: the smallest secondary the primary may leave
+  double pip_alpha = 1.0;     // inset opacity at rest, 0..1
+  int gap = 0;                // video.screen_gap: pixels between the two screens of a pair (negative overlaps)
+  bool gap_auto = false;      // video.screen_gap = auto: the pair is fitted with no gap, then the screens
+                              // are pushed to the output's edges along the pair, the spare room between them
 };
 // Forced integer scaling of full-size views (PiP inset / dominant secondary
 // keep their own ratio). Under: largest whole scale that fits, letterboxed.
@@ -40,12 +42,17 @@ enum class IntScale : u8 { Off, Under, Over };
 
 // `direct`: drawn straight into the output at `rect`. Otherwise into a side
 // buffer (an inset, or a hidden screen), copied into place if `shown`.
-struct View { int screen; Rect rect; bool direct; bool shown; };
+struct View {
+  int screen;
+  Rect rect;
+  bool direct;
+  bool shown;
+};
 constexpr int SCREENS = 2;
 
-const char* mode_name(Mode m);      // "vertical" ... "dominant_h"
+const char* mode_name(Mode m); // "vertical" ... "dominant_h"
 bool parse_mode(const std::string& s, Mode& m);
-const char* corner_name(Corner c);  // "tl" "tr" "bl" "br"
+const char* corner_name(Corner c); // "tl" "tr" "bl" "br"
 bool parse_corner(const std::string& s, Corner& c);
 const char* int_scale_name(IntScale m);
 bool parse_int_scale(const std::string& s, IntScale& m);

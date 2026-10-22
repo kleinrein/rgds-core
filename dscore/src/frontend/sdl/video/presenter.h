@@ -21,16 +21,22 @@ class FramePresenter {
 public:
   virtual ~FramePresenter() = default;
 
-  struct View { int screen; frontend::Rect rect; bool shown; bool blends; bool grid = false; };   // grid: LCD grid applies to this view
+  struct View {
+    int screen;
+    frontend::Rect rect;
+    bool shown;
+    bool blends;
+    bool grid = false;
+  }; // grid: LCD grid applies to this view
   struct Params {
-    int rot = 0;                 // presented = logical rotated by this
-    int lw = 0, lh = 0;          // the logical (unrotated) frame the rects are laid out in
+    int rot = 0;        // presented = logical rotated by this
+    int lw = 0, lh = 0; // the logical (unrotated) frame the rects are laid out in
     u8 inset_alpha = 255;
-    frontend::Rect drawn;        // where the frontend drew on overlay() this frame
-    u32 grid = 256;              // LCD grid brightness on a seam, 0..256 (256 = off)
+    frontend::Rect drawn; // where the frontend drew on overlay() this frame
+    u32 grid = 256;       // LCD grid brightness on a seam, 0..256 (256 = off)
   };
 
-  const std::string& name() const { return name_; }   // for the log: what presents, on which device
+  const std::string& name() const { return name_; } // for the log: what presents, on which device
   // Which hardware presents: the menu greys out what a presenter cannot do
   // (the RGA scales bilinear only, and draws no grid, seams or chunky cells).
   enum class Kind : u8 { Vulkan, Rga };

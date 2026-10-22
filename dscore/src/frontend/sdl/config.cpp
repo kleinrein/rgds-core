@@ -29,7 +29,8 @@ void split_key(const std::string& key, std::string& sec, std::string& name) {
 // Keys of the GPU 3D raster, which is gone: still read so an old file loads,
 // but only to say they do nothing now.
 bool retired(const std::string& key) {
-  for (const char* k : {"video.gpu_raster", "video.gpu_defer", "video.internal_res", "video.smooth3d", "emu.gpu_irq_avoid"})
+  for (const char* k :
+       {"video.gpu_raster", "video.gpu_defer", "video.internal_res", "video.smooth3d", "emu.gpu_irq_avoid"})
     if (key == k) return true;
   return false;
 }
@@ -68,13 +69,20 @@ bool Config::load(const std::string& path) {
   while (std::getline(f, line)) {
     line = trim(line);
     if (line.empty() || line[0] == '#' || line[0] == ';') continue;
-    if (line.front() == '[' && line.back() == ']') { section = trim(line.substr(1, line.size() - 2)); continue; }
+    if (line.front() == '[' && line.back() == ']') {
+      section = trim(line.substr(1, line.size() - 2));
+      continue;
+    }
     const size_t eq = line.find('=');
     if (eq == std::string::npos) continue;
     std::string k = trim(line.substr(0, eq)), v = trim(line.substr(eq + 1));
     if (const size_t c = v.find_first_of("#;"); c != std::string::npos) v = trim(v.substr(0, c));
     const std::string key = section.empty() ? k : section + "." + k;
-    if (retired(key)) { std::fprintf(stderr, "config: %s is retired (3D is drawn on the CPU only) and is ignored (%s)\n", key.c_str(), path.c_str()); continue; }
+    if (retired(key)) {
+      std::fprintf(stderr, "config: %s is retired (3D is drawn on the CPU only) and is ignored (%s)\n", key.c_str(),
+                   path.c_str());
+      continue;
+    }
     kv_[key] = v;
   }
   return true;
@@ -119,7 +127,10 @@ bool Config::store(const std::string& path, const std::string& key, const std::s
   for (size_t i = 0; i < lines.size(); ++i) {
     const std::string t = trim(lines[i]);
     if (t.size() >= 2 && t.front() == '[' && t.back() == ']') {
-      if (sec_start != std::string::npos) { sec_end = i; break; }
+      if (sec_start != std::string::npos) {
+        sec_end = i;
+        break;
+      }
       if (trim(t.substr(1, t.size() - 2)) == sec) sec_start = i;
     }
   }
@@ -134,7 +145,11 @@ bool Config::store(const std::string& path, const std::string& key, const std::s
       const std::string t = trim(lines[i]);
       if (t.empty() || t[0] == '#' || t[0] == ';') continue;
       const size_t eq = t.find('=');
-      if (eq != std::string::npos && trim(t.substr(0, eq)) == name) { lines[i] = entry; done = true; break; }
+      if (eq != std::string::npos && trim(t.substr(0, eq)) == name) {
+        lines[i] = entry;
+        done = true;
+        break;
+      }
     }
     if (!done) {
       size_t at = sec_end;
@@ -153,7 +168,7 @@ void Config::write_default(const std::string& path, bool force) {
   std::ofstream f(path);
   if (!f) return;
   f <<
-R"(# RG DS Core settings. Command-line flags override this file. Two files next
+      R"(# RG DS Core settings. Command-line flags override this file. Two files next
 # to it override it for one game: games/<rom name>.ini (the ROM's filename
 # without .nds) and games/<GAMECODE>.ini (the four letters printed as
 # "game: ... [XXXX]" at start); the filename one wins, and is where a layout

@@ -6,7 +6,6 @@
 A  Apply	A  Toepassen
 A  Done	A  Klaar
 A  Play	A  Spelen
-A / Start	A / Start
 A gentle scanline pattern with original colours.	Een subtiel scanlijnpatroon met originele kleuren.
 A natural colour and contrast treatment.	Natuurlijke kleuren en contrasten.
 A screen style for this cartridge	Een schermstijl voor deze cartridge
@@ -14,20 +13,26 @@ A stronger LCD texture and scanline look.	Een duidelijkere LCD-textuur en scanli
 A subtle handheld LCD pixel pattern.	Een subtiel pixelpatroon van een draagbaar LCD-scherm.
 A subtle pixel grid with a bright, readable image.	Een subtiel pixelraster met een helder, leesbaar beeld.
 Add your DS games to fetch their artwork.	Voeg je DS-spellen toe om hoesafbeeldingen op te halen.
+Africa	Afrika
 After	Na
 All games	Alle spellen
 Amber	Amber
-Anbernic / Escape cancels	Anbernic / Escape annuleert
+Americas	Amerika
 Anbernic startup is unavailable in RGDS OS.	Anbernic opstarten is niet beschikbaar in RGDS OS.
 Animations	Animaties
+Antarctica	Antarctica
 Applies immediately. Higher clocks use more battery.	Geldt direct. Hogere kloksnelheden verbruiken meer batterij.
 Applies immediately. Your game keeps its progress.	Geldt direct. Je spelvoortgang blijft behouden.
 Apply	Toepassen
 Applying shader…	Shader toepassen…
+Arctic	Noordpool
 Artwork	Hoesafbeeldingen
 Artwork & ScreenScraper	Hoesafbeeldingen
 Artwork source	Bron voor hoesafbeeldingen
 Artwork sources	Bronnen voor hoesafbeeldingen
+Asia	Azië
+Atlantic Ocean	Atlantische Oceaan
+Australia	Australië
 Auto-load state	Spelstatus automatisch laden
 Auto-save on exit	Automatisch opslaan bij afsluiten
 Automatic	Automatisch
@@ -156,6 +161,7 @@ Engine managed	Beheerd door de engine
 Enter here	Typ hier
 Enter password	Wachtwoord invoeren
 Enter your username and password	Voer je gebruikersnaam en wachtwoord in
+Europe	Europa
 Every game in this collection has artwork.	Elk spel in deze verzameling heeft een hoesafbeelding.
 FPS changed for this session. Settings storage is unavailable.	FPS gewijzigd voor deze sessie. Instellingen kunnen niet worden opgeslagen.
 FPS counter enabled.	FPS-teller ingeschakeld.
@@ -191,6 +197,7 @@ Global	Algemeen
 Global controls saved.	Algemene besturing opgeslagen.
 Hold	Ingedrukt houden
 Home shortcut	Sneltoets startscherm
+Indian Ocean	Indische Oceaan
 Inherit	Overnemen
 Inherited	Overgenomen
 Jump to letter	Naar letter springen
@@ -265,6 +272,7 @@ Open the Anbernic menu	Het Anbernic-menu openen
 Options	Opties
 Original pixels	Originele pixels
 Original pixels and colours.	Originele pixels en kleuren.
+Pacific	Stille Oceaan
 PLAY	SPELEN
 Password	Wachtwoord
 Pause when you need to.	Pauzeer wanneer je dat nodig hebt.
@@ -504,8 +512,6 @@ Wi-Fi request timed out. Check signal and try again.	Wi-Fi-verzoek verlopen. Con
 Wi-Fi service is unavailable.	Wi-Fi-dienst is niet beschikbaar.
 With shader	Met shader
 Working…	Bezig…
-X Scene   Y Compare	X Scène   Y Vergelijken
-X Scene / Y Compare	X Scène / Y Vergelijken
 Your cartridges go here	Je cartridges komen hier
 Your home screen after powering on	Je startscherm na inschakelen
 Your local time and date	Je lokale tijd en datum
@@ -572,17 +578,29 @@ Update verification failed. Check for updates again.	Updateverificatie mislukt. 
 Update failed. Check Wi-Fi and try again.	Update mislukt. Controleer Wi-Fi en probeer opnieuw.
 Stable	Stabiel
 Testing	Test
-Save to slot	Opslaan in slot
 Import slot	Slot importeren
-Load slot	Slot laden
 Export slot	Slot exporteren
-Undo overwrite	Overschrijven ongedaan maken
-Undo load	Laden ongedaan maken
+Save checkpoint	Spelstand opslaan
+Load checkpoint	Spelstand laden
+Save here	Hier opslaan
+Export	Exporteren
+More	Meer
+Replace slot {0}?	Slot {0} vervangen?
+Load slot {0}?	Slot {0} laden?
+Delete slot {0}?	Slot {0} verwijderen?
+Undo last slot change	Laatste wijziging ongedaan maken
+Undo last load	Laatste laden ongedaan maken
+Import into this slot	Importeren in dit slot
+Slot {0} deleted.	Slot {0} verwijderd.
+Slot change undone.	Wijziging ongedaan gemaakt.
+A saves your current progress here.	A slaat je voortgang hier op.
+A replaces this slot with your current progress. X deletes it.	A vervangt dit slot door je voortgang. X verwijdert het.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A laadt dit slot. Laatste laden ongedaan maken onder Y brengt je huidige voortgang terug.
+Nothing to load here yet.	Hier is nog niets te laden.
+A exports this slot to userdata/exports. X deletes it.	A exporteert dit slot naar userdata/exports. X verwijdert het.
+Y imports a save into this slot.	Y importeert een save in dit slot.
 Import help	Importhulp
-Save slot	Opslagslot
-Replace this save?	Dit opgeslagen spel vervangen?
 Replace	Vervangen
-Load this save?	Dit opgeslagen spel laden?
 Blow into microphone	Blaas in de microfoon
 Close and open DS lid	Sluit en open het DS-deksel
 DS language	DS-taal
@@ -621,15 +639,12 @@ Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are
 Save backup created in userdata/exports.	Back-up gemaakt in userdata/exports.
 Slot exported to userdata/exports.	Slot geëxporteerd naar userdata/exports.
 Save library updated.	Opslagbibliotheek bijgewerkt.
-Save overwrite undone.	Overschrijven ongedaan gemaakt.
 Current progress could not be saved. No slot was changed.	Huidige voortgang kon niet worden opgeslagen. Geen slot is gewijzigd.
 DS controls are unavailable for this engine.	DS-besturing is niet beschikbaar voor deze engine.
 Your DS library starts here	Je DS-bibliotheek begint hier
 Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopieer .nds- of DS ZIP-bestanden naar Roms/NDS op je spelkaart en kies Scannen naar spellen.
 Use the engine's native controls for microphone and DS settings.	Gebruik de eigen besturing van de engine voor microfoon en DS-instellingen.
 Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	De fysieke microfoon staat standaard aan. Blaas- en dekselacties keren twee seconden terug naar het spel. Taalwijzigingen gelden na herstarten.
-Save slots	Opslagslots
-Load slots	Slots laden
 Unplayed	Ongespeeld
 Played	Gespeeld
 Filtered	Gefilterd
@@ -652,9 +667,6 @@ Return home before testing the physical microphone.	Ga naar het startscherm voor
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blaas of spreek in de microfoon. Kijk hoe het niveau stijgt en weer daalt als je stopt.
 No filter	Geen filter
 Quick search	Snel zoeken
-Y  Quick search	Y  Snel zoeken
-X  Filters	X  Filters
-Y Search / X Filters	Y Zoeken / X Filters
 A  Search	A  Zoeken
 A  Jump	A  Springen
 Edit search	Zoekopdracht bewerken
@@ -665,10 +677,8 @@ Finding games…	Spellen zoeken…
 Searching…	Zoeken…
 Search in	Zoeken in
 Try a shorter title or clear your filter.	Probeer een kortere titel of wis je filter.
-A Key / Start Search / B Cancel	A Toets / Start Zoeken / B Annuleren
+Type	Typen
 Tap to type, or use the D-pad and A	Tik om te typen, of gebruik de richtingstoetsen en A
-X Delete / Start Search	X Wissen / Start Zoeken
-X Delete / Start Done	X Wissen / Start Klaar
 No letters to jump to. Search for another game.	Geen letters om naartoe te springen. Zoek een ander spel.
 {0} match	{0} resultaat
 {0} matches	{0} resultaten
@@ -737,7 +747,6 @@ Colour mode	Kleurmodus
 Draw and chat with nearby handhelds	Teken en chat met apparaten in de buurt
 Wi-Fi connected	Wi-Fi verbonden
 No Wi-Fi: you can still draw	Geen Wi-Fi: je kunt nog steeds tekenen
-Press A to open	Druk op A om te openen
 Type your name	Typ je naam
 You appear like this to others	Zo zien anderen je
 Starting…	Starten…
@@ -835,7 +844,7 @@ Natural	Natuurlijk
 Vivid	Levendig
 Pixel art	Pixelkunst
 Moods	Sferen
-Up / Down or L / R: change group	Omhoog / Omlaag of L / R: andere groep
+Change group	Andere groep
 Sounds & music	Geluiden en muziek
 Menu music	Menumuziek
 Music volume	Muziekvolume
@@ -852,3 +861,35 @@ The backup did not finish. Please try again.	De back-up is niet voltooid. Probee
 Copies every save and checkpoint into one zip in userdata/exports.	Kopieert elk opgeslagen spel en controlepunt naar één zip in userdata/exports.
 Where games go on the card, and a fresh scan.	Waar spellen op de kaart horen, en een nieuwe zoekopdracht.
 Where covers and titles come from.	Waar hoezen en titels vandaan komen.
+System update	Systeemupdate
+Version {0} is ready	Versie {0} is klaar
+Version {0} is ready to install	Versie {0} is klaar om te installeren
+Downloading {0}	{0} downloaden
+Paused at {0}	Gepauzeerd bij {0}
+Update now	Nu bijwerken
+Resume download	Download hervatten
+Update	Bijwerken
+Install	Installeren
+What's new	Wat is er nieuw
+Download	Downloaden
+Verify	Controleren
+Prepare	Voorbereiden
+Step {0} of 4	Stap {0} van 4
+Less than a minute left	Minder dan een minuut over
+About {0} min left	Ongeveer {0} min over
+About {0} h left	Ongeveer {0} u over
+Downloads resume where they stopped if Wi-Fi drops.	Downloads gaan verder waar ze stopten als wifi wegvalt.
+Your games and saves are not touched.	Je games en opslagbestanden blijven onaangeroerd.
+Connection lost. Retrying…	Verbinding verbroken. Opnieuw proberen…
+The update could not be downloaded. Check for updates again.	De update kon niet worden gedownload. Zoek opnieuw naar updates.
+Finishing another task. Press Y again in a moment.	Een andere taak wordt afgerond. Druk zo opnieuw op Y.
+Updates	Updates
+The language for menus and messages.	De taal van menu's en berichten.
+Set the clock to where you are.	Zet de klok op de plek waar je bent.
+How dates appear at the top of the screen.	Hoe datums bovenaan het scherm verschijnen.
+A 24-hour or 12-hour clock.	Een 24- of 12-uursklok.
+Versions, free space and the network address of your handheld.	Versies, vrije ruimte en het netwerkadres van je handheld.
+Check for updates, go back to the previous build or clear temporary files.	Zoek naar updates, ga terug naar de vorige versie of wis tijdelijke bestanden.
+Leave RG DS Core and go back to the stock menu.	Verlaat RG DS Core en ga terug naar het standaardmenu.
+What happens when you turn the handheld on.	Wat er gebeurt als je de handheld aanzet.
+Restart the RGDS menu.	Start het RGDS-menu opnieuw.

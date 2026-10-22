@@ -4,13 +4,19 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-ROOT=Path(__file__).resolve().parents[1]
-@unittest.skipUnless(shutil.which('clang++'),'C++ required')
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@unittest.skipUnless(shutil.which('clang++'), 'C++ required')
 class FrameStatsTests(unittest.TestCase):
- def test_cadence_and_menu_time(self):
-  with tempfile.TemporaryDirectory() as folder:
-   root=Path(folder);source=root/'test.cpp';binary=root/'test'
-   source.write_text(r'''#include "platform/frame_stats.hpp"
+    def test_cadence_and_menu_time(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / 'test.cpp'
+            binary = root / 'test'
+            source.write_text(
+                r'''#include "platform/frame_stats.hpp"
 #include "platform/nnddss_stats.hpp"
 #include <cassert>
 #include <cmath>
@@ -32,8 +38,16 @@ int main(int argc,char** argv){
  stats.reset();assert(stats.frames()==0);
  for(unsigned i=0;i<62;i++)stats.present(1+i*33333,false);
  assert(std::abs(stats.fps()-30)<.01 && std::abs(stats.percentile(.95)-33.3)<.001);
-}''')
-   subprocess.run(['clang++','-std=c++17','-O2','-I'+str(ROOT/'src'),str(source),'-o',str(binary)],check=True,capture_output=True)
-   output=root/'stats';subprocess.run([str(binary),str(output)],check=True)
-   self.assertIn('fps=60.0',output.read_text())
-   self.assertIn('frames=120',output.read_text())
+}'''
+            )
+            subprocess.run(
+                ['clang++', '-std=c++17', '-O2', '-I' + str(ROOT / 'src'),
+                 str(source), '-o',
+                 str(binary)],
+                check=True,
+                capture_output=True
+            )
+            output = root / 'stats'
+            subprocess.run([str(binary), str(output)], check=True)
+            self.assertIn('fps=60.0', output.read_text())
+            self.assertIn('frames=120', output.read_text())

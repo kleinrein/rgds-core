@@ -31,17 +31,17 @@ VERSION = 1
 HELLO, BYE, CHUNK = 1, 2, 3
 PORT = 49320
 ROOMS = 4
-ROOM_LIMIT = 16                 # users in one room, as on the DS
+ROOM_LIMIT = 16  # users in one room, as on the DS
 MAX_DATAGRAM = 1100
 CHUNK_BYTES = 960
-MAX_PAYLOAD = 8192              # must match pictochat_core.hpp
+MAX_PAYLOAD = 8192  # must match pictochat_core.hpp
 MAX_CHUNKS = (MAX_PAYLOAD + CHUNK_BYTES - 1) // CHUNK_BYTES
 NAME_BYTES = 24
 HELLO_EVERY = 2.0
 USER_TTL = 7.0
 PENDING_TTL = 3.0
 PENDING_LIMIT = 32
-BUCKET_BURST, BUCKET_RATE = 6.0, 3.0   # messages: a burst, then three a second
+BUCKET_BURST, BUCKET_RATE = 6.0, 3.0  # messages: a burst, then three a second
 SIOCGIFADDR, SIOCGIFBRDADDR = 0x8915, 0x8919
 
 
@@ -61,7 +61,10 @@ def printable_name(raw):
 
 def clean_name(text):
     """A name the user typed, made safe to send: controls dropped, tabs and newlines as spaces."""
-    text = "".join(" " if c in "\t\n\r" else c for c in text if c in "\t\n\r" or not (ord(c) < 0x20 or ord(c) == 0x7f or 0x80 <= ord(c) < 0xa0 or 0xd800 <= ord(c) <= 0xdfff))
+    text = "".join(
+        " " if c in "\t\n\r" else c for c in text if c in "\t\n\r"
+        or not (ord(c) < 0x20 or ord(c) == 0x7f or 0x80 <= ord(c) < 0xa0 or 0xd800 <= ord(c) <= 0xdfff)
+    )
     return printable_name(text.encode("utf-8", "replace")) or "Guest"
 
 
@@ -76,8 +79,10 @@ def pack_bye(sender, room):
 
 def pack_chunks(sender, room, message_id, payload):
     count = max(1, (len(payload) + CHUNK_BYTES - 1) // CHUNK_BYTES)
-    return [MAGIC + struct.pack("<BBB8sIBB", VERSION, CHUNK, room, sender, message_id, index, count)
-            + payload[index * CHUNK_BYTES:(index + 1) * CHUNK_BYTES] for index in range(count)]
+    return [
+        MAGIC + struct.pack("<BBB8sIBB", VERSION, CHUNK, room, sender, message_id, index, count) +
+        payload[index * CHUNK_BYTES:(index + 1) * CHUNK_BYTES] for index in range(count)
+    ]
 
 
 class Bucket:
@@ -96,12 +101,11 @@ class Bucket:
 
 class Node:
     """The protocol, free of sockets so it can be tested with plain bytes."""
-
     def __init__(self, sender=None):
         self.sender = sender or os.urandom(8)
         self.room, self.colour, self.name = None, 0, "Guest"
-        self.users = {}            # sender -> [room, colour, name, last seen]
-        self.pending = collections.OrderedDict()   # (sender, id) -> [room, count, {index: bytes}, started]
+        self.users = {}  # sender -> [room, colour, name, last seen]
+        self.pending = collections.OrderedDict()  # (sender, id) -> [room, count, {index: bytes}, started]
         self.delivered = collections.OrderedDict()
         self.buckets = {}
         self.next_id = random.getrandbits(32)
@@ -136,7 +140,7 @@ class Node:
             return []
         self.next_id = (self.next_id + 1) & 0xffffffff
         packets = pack_chunks(self.sender, self.room, self.next_id, payload)
-        return packets + packets          # twice: a lost datagram would drop the message
+        return packets + packets  # twice: a lost datagram would drop the message
 
     def tick(self, now):
         """Datagrams due now, and events for users who stopped answering."""
@@ -149,7 +153,9 @@ class Node:
             events.append("GONE " + sender.hex())
         for key in [k for k, v in self.pending.items() if now - v[3] > PENDING_TTL]:
             del self.pending[key]
-        for sender in [s for s, b in self.buckets.items() if b.at is not None and now - b.at > 60 and s not in self.users]:
+        for sender in [
+            s for s, b in self.buckets.items() if b.at is not None and now - b.at > 60 and s not in self.users
+        ]:
             del self.buckets[sender]
         return out, events
 
@@ -172,7 +178,7 @@ class Node:
                 return events
             known = self.users.get(sender)
             if known is None and self.room_users(room) >= ROOM_LIMIT:
-                return events     # a seventeenth person is not part of the room
+                return events  # a seventeenth person is not part of the room
             changed = known is None or known[:3] != [room, colour, name]
             self.users[sender] = [room, colour, name, now]
             if changed:
@@ -185,7 +191,9 @@ class Node:
                 return events
             message_id, index, count = struct.unpack_from("<IBB", body)
             data = body[6:]
-            if count == 0 or count > MAX_CHUNKS or index >= count or len(data) > CHUNK_BYTES or (index + 1 < count and len(data) != CHUNK_BYTES):
+            if count == 0 or count > MAX_CHUNKS or index >= count or len(data) > CHUNK_BYTES or (
+                index + 1 < count and len(data) != CHUNK_BYTES
+            ):
                 return events
             key = (sender, message_id)
             if key in self.delivered:
@@ -302,7 +310,10 @@ def main(argv=None):
 
     def transmit(packets):
         for packet in packets:
-            for target in (targets or [(b, args.port) for _ip, b in addresses] + ([("255.255.255.255", args.port)] if addresses else [])):
+            for target in (
+                targets
+                or [(b, args.port) for _ip, b in addresses] + ([("255.255.255.255", args.port)] if addresses else [])
+            ):
                 try:
                     sock.sendto(packet, target)
                 except OSError:
@@ -373,4 +384,4 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except (BrokenPipeError, KeyboardInterrupt):
-        sys.exit(0)   # the launcher went away
+        sys.exit(0)  # the launcher went away

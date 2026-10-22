@@ -43,7 +43,7 @@ def triangle(px, py, a, b, c):
     for e, v in zip(edges, sides):
         w = p - v
         t = np.clip((w @ e) / (e @ e), 0, 1)
-        distance = np.minimum(distance, np.sum((w - t[..., None] * e) ** 2, -1))
+        distance = np.minimum(distance, np.sum((w - t[..., None] * e)**2, -1))
     cross = [e[0] * (p[..., 1] - v[1]) - e[1] * (p[..., 0] - v[0]) for e, v in zip(edges, sides)]
     inside = (np.all([k >= 0 for k in cross], 0)) | (np.all([k <= 0 for k in cross], 0))
     return np.sqrt(distance) * np.where(inside, -1, 1)
@@ -60,7 +60,7 @@ def stroke(px, py, points, width):
 
 
 def cover(distance):
-    return np.clip(.5 - distance * SUPER, 0, 1)   # one output pixel is SUPER samples wide
+    return np.clip(.5 - distance * SUPER, 0, 1)  # one output pixel is SUPER samples wide
 
 
 def blur(mask, passes=3, radius=3):
@@ -98,7 +98,9 @@ def render():
     paint(canvas, cover(back + 3.2), '#59646f', '#36404b', py, 12, 86)
     # A short stack of strokes on the back bubble: someone else's drawing.
     for row, (x0, x1) in enumerate(((56, 100), (56, 92))):
-        paint(canvas, cover(stroke(px, py, [(x0, 28 + row * 14), (x1, 28 + row * 14)], 5)), '#9fb0c2', '#8798ab', py, 0, 1)
+        paint(
+            canvas, cover(stroke(px, py, [(x0, 28 + row * 14), (x1, 28 + row * 14)], 5)), '#9fb0c2', '#8798ab', py, 0, 1
+        )
     # Front bubble: silver-white paper, graphite edge, a blue stroke drawn on it.
     paint(canvas, cover(front), '#2f3a45', '#1f2831', py, 40, 118)
     paint(canvas, cover(front + 3.4), '#ffffff', '#dfe7ef', py, 40, 118)
@@ -126,10 +128,14 @@ def write_png(path, rgba, background=(0xf2, 0xf5, 0xf8), scale=3):
     flat = (rgba[..., :3] * alpha + np.array(background) * (1 - alpha)).round().astype(np.uint8)
     flat = np.repeat(np.repeat(flat, scale, 0), scale, 1)
     raw = b''.join(b'\0' + row.tobytes() for row in flat)
-    chunk = lambda kind, body: struct.pack('>I', len(body)) + kind + body + struct.pack('>I', zlib.crc32(kind + body) & 0xffffffff)
+    chunk = lambda kind, body: struct.pack('>I', len(body)
+                                           ) + kind + body + struct.pack('>I',
+                                                                         zlib.crc32(kind + body) & 0xffffffff)
     height, width = flat.shape[:2]
-    Path(path).write_bytes(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)) +
-                           chunk(b'IDAT', zlib.compress(raw, 9)) + chunk(b'IEND', b''))
+    Path(path).write_bytes(
+        b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)) +
+        chunk(b'IDAT', zlib.compress(raw, 9)) + chunk(b'IEND', b'')
+    )
 
 
 def main():

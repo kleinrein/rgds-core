@@ -16,8 +16,8 @@
 #include <deque>
 #include <vector>
 
-using ds::sdl::PhaseLock;
 using ds::u64;
+using ds::sdl::PhaseLock;
 
 namespace {
 
@@ -38,8 +38,8 @@ struct Sim {
   PhaseLock& lock;
   std::vector<Panel> panels;
   double work = 10.0 * MS, draw = 5.0 * MS, gpu = 0.3 * MS;
-  double free_period = 1e9 / 60.0;   // the pacer's own clock before the lock holds
-  double now = 100.0 * MS;           // the current frame's hand-off time
+  double free_period = 1e9 / 60.0; // the pacer's own clock before the lock holds
+  double now = 100.0 * MS;         // the current frame's hand-off time
   // The direct KMS tier's mailbox (display_drm.cpp): a frame held for the
   // previous flip longer than `margin` is dropped at that flip's vblank and
   // has no flip at all (margin < 0: every held frame is flipped, as SDL's
@@ -48,18 +48,24 @@ struct Sim {
   // before 19 October (the issue time at the vblank, the hold unknown).
   double margin = -1.0;
   bool report_hold = true;
-  struct Pending { int panel; double at, swap, wait; bool dropped_behind = false; };
+  struct Pending {
+    int panel;
+    double at, swap, wait;
+    bool dropped_behind = false;
+  };
   std::deque<Pending> pending;
   // The last frame's results, per panel.
   std::vector<double> lat, wait, gap;
   int repeats = 0, late_starts = 0, dropped = 0;
 
-  Sim(PhaseLock& l, std::vector<Panel> p) : lock(l), panels(std::move(p)), lat(panels.size()), wait(panels.size()), gap(panels.size()) {}
+  Sim(PhaseLock& l, std::vector<Panel> p)
+      : lock(l), panels(std::move(p)), lat(panels.size()), wait(panels.size()), gap(panels.size()) {}
 
   void deliver(double upto) {
     while (!pending.empty() && pending.front().at <= upto) {
       const Pending& f = pending.front();
-      lock.flip(f.panel, static_cast<u64>(f.at), static_cast<u64>(f.swap), static_cast<u64>(f.wait), report_hold && f.dropped_behind);
+      lock.flip(f.panel, static_cast<u64>(f.at), static_cast<u64>(f.swap), static_cast<u64>(f.wait),
+                report_hold && f.dropped_behind);
       pending.pop_front();
     }
   }
@@ -76,14 +82,18 @@ struct Sim {
     for (size_t i = 0; i < panels.size(); ++i) {
       Panel& p = panels[i];
       const double ready = done + draw;
-      const double swap = ready > p.last_flip ? ready : p.last_flip;   // held for the previous flip
+      const double swap = ready > p.last_flip ? ready : p.last_flip; // held for the previous flip
       wait[i] = swap - ready;
       if (margin >= 0.0 && wait[i] > margin) {
         // The mailbox: dropped at the pending flip's vblank, no flip of its
         // own; that flip's record says so (it is still to be delivered: the
         // decision falls at its completion, after this frame's hand-off).
         ++dropped;
-        for (auto it = pending.rbegin(); it != pending.rend(); ++it) if (it->panel == static_cast<int>(i)) { it->dropped_behind = true; break; }
+        for (auto it = pending.rbegin(); it != pending.rend(); ++it)
+          if (it->panel == static_cast<int>(i)) {
+            it->dropped_behind = true;
+            break;
+          }
         continue;
       }
       const double at = p.tick_after(swap + gpu);
@@ -95,13 +105,15 @@ struct Sim {
     }
     now = done;
   }
-  void run(int n) { for (int i = 0; i < n; ++i) frame(); }
+  void run(int n) {
+    for (int i = 0; i < n; ++i) frame();
+  }
 };
 
 } // namespace
 
 int main() {
-  const double panel_period = 1e9 / 59.7;   // the RG DS panels, give or take their wander
+  const double panel_period = 1e9 / 59.7; // the RG DS panels, give or take their wander
 
   // 1. Period learning: after settle_flips consistent gaps the lock holds and
   //    the period is the panel's; a gap of two refreshes is still the panel's
@@ -109,21 +121,30 @@ int main() {
   {
     PhaseLock lock;
     u64 t = 1'000'000'000ull;
-    for (int i = 0; i < 7; ++i) { lock.flip(0, t, 0); t += static_cast<u64>(panel_period); }
-    CHECK(!lock.locked());   // 6 gaps < 8
-    for (int i = 0; i < 3; ++i) { lock.flip(0, t, 0); t += static_cast<u64>(panel_period); }
+    for (int i = 0; i < 7; ++i) {
+      lock.flip(0, t, 0);
+      t += static_cast<u64>(panel_period);
+    }
+    CHECK(!lock.locked()); // 6 gaps < 8
+    for (int i = 0; i < 3; ++i) {
+      lock.flip(0, t, 0);
+      t += static_cast<u64>(panel_period);
+    }
     CHECK(lock.locked());
     CHECK(near(lock.period_ns(), panel_period, 2'000.0));
-    t += static_cast<u64>(panel_period);   // one refresh with no flip
+    t += static_cast<u64>(panel_period); // one refresh with no flip
     lock.flip(0, t, 0);
     CHECK(lock.locked());
     CHECK(near(lock.period_ns(), panel_period, 2'000.0));
     t += static_cast<u64>(panel_period * 1.3);
     lock.flip(0, t, 0);
     CHECK(!lock.locked());
-    for (int i = 0; i < 9; ++i) { t += static_cast<u64>(panel_period); lock.flip(0, t, 0); }
+    for (int i = 0; i < 9; ++i) {
+      t += static_cast<u64>(panel_period);
+      lock.flip(0, t, 0);
+    }
     CHECK(lock.locked());
-    CHECK(lock.samples() == 0);   // no swap times: nothing learned about the work
+    CHECK(lock.samples() == 0); // no swap times: nothing learned about the work
   }
 
   // 2. Convergence on one panel: from a free-running 60 Hz pacer the lock
@@ -135,11 +156,14 @@ int main() {
     Sim sim(lock, {Panel{panel_period, 3.7 * MS}});
     sim.run(60);
     CHECK(lock.locked());
-    std::fprintf(stderr, "phase lock: after 60 frames work mean %.3f ms (used %.3f), %llu samples, band %.2f, late %llu, repeats %d, lat %.3f wait %.3f\n",
-                 lock.work_mean_ns() / MS, lock.work_ns() / MS, static_cast<unsigned long long>(lock.samples()), lock.band_ns() / MS,
-                 static_cast<unsigned long long>(lock.late()), sim.repeats, sim.lat[0] / MS, sim.wait[0] / MS);
+    std::fprintf(
+        stderr,
+        "phase lock: after 60 frames work mean %.3f ms (used %.3f), %llu samples, band %.2f, late %llu, repeats %d, lat %.3f wait %.3f\n",
+        lock.work_mean_ns() / MS, lock.work_ns() / MS, static_cast<unsigned long long>(lock.samples()),
+        lock.band_ns() / MS, static_cast<unsigned long long>(lock.late()), sim.repeats, sim.lat[0] / MS,
+        sim.wait[0] / MS);
     CHECK(near(lock.work_mean_ns(), sim.work + sim.draw, 50'000.0));
-    CHECK(lock.late() == 0);   // the frames held while engaging are not misses
+    CHECK(lock.late() == 0); // the frames held while engaging are not misses
     CHECK(near(lock.band_ns(), PhaseLock::Params{}.band_ns, 0.1 * MS));
     const int repeats0 = sim.repeats;
     const u64 late0 = lock.late();
@@ -149,9 +173,11 @@ int main() {
       worst = std::max(worst, std::fabs(sim.lat[0] - lock.band_ns()));
       worst_wait = std::max(worst_wait, sim.wait[0]);
     }
-    std::fprintf(stderr, "phase lock: one panel, worst |lat - band| after settling %.3f ms, worst hold for the previous flip %.3f ms, band %.2f ms, work %.2f ms, period %.4f ms\n",
-                 worst / MS, worst_wait / MS, lock.band_ns() / MS, lock.work_ns() / MS, lock.period_ns() / MS);
-    CHECK(worst < 0.1 * MS);   // the spread allowance, learned from the engagement frames, decays towards zero
+    std::fprintf(
+        stderr,
+        "phase lock: one panel, worst |lat - band| after settling %.3f ms, worst hold for the previous flip %.3f ms, band %.2f ms, work %.2f ms, period %.4f ms\n",
+        worst / MS, worst_wait / MS, lock.band_ns() / MS, lock.work_ns() / MS, lock.period_ns() / MS);
+    CHECK(worst < 0.1 * MS); // the spread allowance, learned from the engagement frames, decays towards zero
     CHECK(worst_wait == 0.0);
     CHECK(sim.repeats == repeats0);
     CHECK(lock.late() == late0);
@@ -180,11 +206,14 @@ int main() {
     const u64 late0 = lock.late();
     const double band0 = lock.band_ns();
     const double work0 = sim.work;
-    sim.work = work0 + 6.0 * MS;   // over its slot
+    sim.work = work0 + 6.0 * MS; // over its slot
     sim.frame();
     sim.work = work0;
     CHECK(sim.repeats == repeats0 + 1);
-    for (int i = 0; i < 8; ++i) { sim.frame(); CHECK(sim.repeats == repeats0 + 1); }   // the two frames behind it are held, none repeats
+    for (int i = 0; i < 8; ++i) {
+      sim.frame();
+      CHECK(sim.repeats == repeats0 + 1);
+    } // the two frames behind it are held, none repeats
     CHECK(lock.late() == late0 + 1);
     CHECK(near(lock.band_ns(), band0 + PhaseLock::Params{}.band_bump_ns, 0.01 * MS));
     sim.run(100);
@@ -202,9 +231,11 @@ int main() {
     const u64 late0 = lock.late();
     sim.run(100);
     const double lo = std::min(sim.lat[0], sim.lat[1]), hi = std::max(sim.lat[0], sim.lat[1]);
-    std::fprintf(stderr, "phase lock: two panels, lat %.3f / %.3f ms, wait %.3f / %.3f, band %.2f, work %.2f (mean %.2f), late %llu, repeats %d\n",
-                 sim.lat[0] / MS, sim.lat[1] / MS, sim.wait[0] / MS, sim.wait[1] / MS, lock.band_ns() / MS, lock.work_ns() / MS, lock.work_mean_ns() / MS,
-                 static_cast<unsigned long long>(lock.late()), sim.repeats);
+    std::fprintf(
+        stderr,
+        "phase lock: two panels, lat %.3f / %.3f ms, wait %.3f / %.3f, band %.2f, work %.2f (mean %.2f), late %llu, repeats %d\n",
+        sim.lat[0] / MS, sim.lat[1] / MS, sim.wait[0] / MS, sim.wait[1] / MS, lock.band_ns() / MS, lock.work_ns() / MS,
+        lock.work_mean_ns() / MS, static_cast<unsigned long long>(lock.late()), sim.repeats);
     CHECK(near(lo, lock.band_ns(), 0.1 * MS));
     CHECK(near(hi - lo, 6.0 * MS, 0.05 * MS));
     CHECK(sim.repeats == repeats0);
@@ -219,10 +250,13 @@ int main() {
     sim.run(300);
     const int repeats0 = sim.repeats;
     Panel& p = sim.panels[0];
-    p.phase = p.last_flip; p.period = 1e9 / 59.2;   // the grid continues from the last flip at the new period
+    p.phase = p.last_flip;
+    p.period = 1e9 / 59.2; // the grid continues from the last flip at the new period
     sim.run(200);
-    std::fprintf(stderr, "phase lock: period wander, period %.4f ms, lat %.3f, band %.2f, work %.2f, repeats +%d, late %llu\n",
-                 lock.period_ns() / MS, sim.lat[0] / MS, lock.band_ns() / MS, lock.work_ns() / MS, sim.repeats - repeats0, static_cast<unsigned long long>(lock.late()));
+    std::fprintf(stderr,
+                 "phase lock: period wander, period %.4f ms, lat %.3f, band %.2f, work %.2f, repeats +%d, late %llu\n",
+                 lock.period_ns() / MS, sim.lat[0] / MS, lock.band_ns() / MS, lock.work_ns() / MS,
+                 sim.repeats - repeats0, static_cast<unsigned long long>(lock.late()));
     CHECK(near(lock.period_ns(), 1e9 / 59.2, 20'000.0));
     CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS));
     CHECK(sim.repeats - repeats0 <= 2);
@@ -242,12 +276,14 @@ int main() {
       sim.frame();
       CHECK(lock.locked());
     }
-    std::fprintf(stderr, "phase lock: cpu-bound, late starts %d, late %llu (was %llu), band %.2f (was %.2f), repeats %d\n", sim.late_starts,
-                 static_cast<unsigned long long>(lock.late()), static_cast<unsigned long long>(late0), lock.band_ns() / MS, band0 / MS, sim.repeats);
+    std::fprintf(stderr,
+                 "phase lock: cpu-bound, late starts %d, late %llu (was %llu), band %.2f (was %.2f), repeats %d\n",
+                 sim.late_starts, static_cast<unsigned long long>(lock.late()), static_cast<unsigned long long>(late0),
+                 lock.band_ns() / MS, band0 / MS, sim.repeats);
     CHECK(sim.late_starts >= 90);
     CHECK(lock.late() <= late0 + 1);
     CHECK(lock.band_ns() <= band0 + PhaseLock::Params{}.band_bump_ns);
-    CHECK(sim.repeats <= 14);   // 100 frames of 1.1 refresh each need 110 ticks: about 10 repeats, no more than that
+    CHECK(sim.repeats <= 14); // 100 frames of 1.1 refresh each need 110 ticks: about 10 repeats, no more than that
     const u64 d = lock.deadline(static_cast<u64>(sim.now));
     CHECK(static_cast<double>(d) < sim.now + panel_period);
   }
@@ -279,25 +315,32 @@ int main() {
     PhaseLock lock;
     Sim sim(lock, {Panel{panel_period, 2.0 * MS}});
     sim.draw = 2.0 * MS;
-    sim.margin = 1.0 * MS;   // below any band: a frame held behind a late one is always dropped
+    sim.margin = 1.0 * MS; // below any band: a frame held behind a late one is always dropped
     sim.run(300);
     CHECK(lock.locked());
-    std::fprintf(stderr, "phase lock: mailbox, after 300 frames work mean %.3f ms (used %.3f), band %.2f, late %llu, repeats %d, dropped %d, lat %.3f\n",
-                 lock.work_mean_ns() / MS, lock.work_ns() / MS, lock.band_ns() / MS, static_cast<unsigned long long>(lock.late()), sim.repeats, sim.dropped, sim.lat[0] / MS);
+    std::fprintf(
+        stderr,
+        "phase lock: mailbox, after 300 frames work mean %.3f ms (used %.3f), band %.2f, late %llu, repeats %d, dropped %d, lat %.3f\n",
+        lock.work_mean_ns() / MS, lock.work_ns() / MS, lock.band_ns() / MS,
+        static_cast<unsigned long long>(lock.late()), sim.repeats, sim.dropped, sim.lat[0] / MS);
     CHECK(near(lock.work_mean_ns(), sim.work + sim.draw, 50'000.0));
     const int repeats0 = sim.repeats, dropped0 = sim.dropped;
     const u64 late0 = lock.late();
-    for (int i = 0; i < 300; ++i) { sim.frame(); CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS)); }
+    for (int i = 0; i < 300; ++i) {
+      sim.frame();
+      CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS));
+    }
     CHECK(sim.repeats == repeats0 && sim.dropped == dropped0 && lock.late() == late0);
     const double work0 = sim.work;
-    sim.work = work0 + 6.0 * MS;   // over its slot
+    sim.work = work0 + 6.0 * MS; // over its slot
     sim.frame();
     sim.work = work0;
     for (int i = 0; i < 8; ++i) sim.frame();
     std::fprintf(stderr, "phase lock: mailbox, one long frame: repeats +%d, dropped +%d, late +%llu, band %.2f\n",
-                 sim.repeats - repeats0, sim.dropped - dropped0, static_cast<unsigned long long>(lock.late() - late0), lock.band_ns() / MS);
-    CHECK(sim.repeats == repeats0 + 1);   // the tick the long frame missed
-    CHECK(sim.dropped == dropped0 + 1);   // the frame behind it, held past the margin
+                 sim.repeats - repeats0, sim.dropped - dropped0, static_cast<unsigned long long>(lock.late() - late0),
+                 lock.band_ns() / MS);
+    CHECK(sim.repeats == repeats0 + 1); // the tick the long frame missed
+    CHECK(sim.dropped == dropped0 + 1); // the frame behind it, held past the margin
     CHECK(lock.late() == late0 + 1);
     sim.run(100);
     CHECK(sim.repeats == repeats0 + 1 && sim.dropped == dropped0 + 1);
@@ -318,15 +361,24 @@ int main() {
     sim.run(300);
     const int repeats0 = sim.repeats, dropped0 = sim.dropped;
     const u64 late0 = lock.late();
-    for (int i = 0; i < 100; ++i) { sim.frame(); CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS)); }
+    for (int i = 0; i < 100; ++i) {
+      sim.frame();
+      CHECK(near(sim.lat[0], lock.band_ns(), 0.1 * MS));
+    }
     const double work0 = sim.work;
     sim.work = work0 + 6.0 * MS;
     sim.frame();
     sim.work = work0;
     int held = 0;
-    for (int i = 0; i < 12; ++i) { sim.frame(); if (sim.wait[0] > 0.0) ++held; }
-    std::fprintf(stderr, "phase lock: mailbox under the margin, one long frame: repeats +%d, dropped +%d, late +%llu, %d of the next 12 frames held, band %.2f, lat %.3f\n",
-                 sim.repeats - repeats0, sim.dropped - dropped0, static_cast<unsigned long long>(lock.late() - late0), held, lock.band_ns() / MS, sim.lat[0] / MS);
+    for (int i = 0; i < 12; ++i) {
+      sim.frame();
+      if (sim.wait[0] > 0.0) ++held;
+    }
+    std::fprintf(
+        stderr,
+        "phase lock: mailbox under the margin, one long frame: repeats +%d, dropped +%d, late +%llu, %d of the next 12 frames held, band %.2f, lat %.3f\n",
+        sim.repeats - repeats0, sim.dropped - dropped0, static_cast<unsigned long long>(lock.late() - late0), held,
+        lock.band_ns() / MS, sim.lat[0] / MS);
     CHECK(sim.repeats == repeats0 + 1);
     CHECK(sim.dropped == dropped0);
     CHECK(held <= 3);
@@ -349,9 +401,12 @@ int main() {
     const int repeats0 = sim.repeats, dropped0 = sim.dropped;
     const u64 late0 = lock.late();
     sim.run(300);
-    std::fprintf(stderr, "phase lock: mailbox, hold unreported: work mean %.3f ms (real %.3f), band %.2f, over 300 settled frames late +%llu, repeats +%d, dropped +%d, lat %.3f\n",
-                 lock.work_mean_ns() / MS, (sim.work + sim.draw) / MS, lock.band_ns() / MS, static_cast<unsigned long long>(lock.late() - late0),
-                 sim.repeats - repeats0, sim.dropped - dropped0, sim.lat[0] / MS);
+    std::fprintf(
+        stderr,
+        "phase lock: mailbox, hold unreported: work mean %.3f ms (real %.3f), band %.2f, over 300 settled frames late +%llu, repeats +%d, dropped +%d, lat %.3f\n",
+        lock.work_mean_ns() / MS, (sim.work + sim.draw) / MS, lock.band_ns() / MS,
+        static_cast<unsigned long long>(lock.late() - late0), sim.repeats - repeats0, sim.dropped - dropped0,
+        sim.lat[0] / MS);
   }
 
   std::fprintf(stderr, "phase_lock: ok\n");

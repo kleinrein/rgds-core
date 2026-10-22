@@ -19,7 +19,7 @@ constexpr u32 RAM = 0x02000000;
 
 u32 r32(NDS& nds, u32 a) { return nds.bus.dma_read32(Cpu::ARM7, a); }
 u16 r16(NDS& nds, u32 a) { return nds.bus.dma_read16(Cpu::ARM7, a); }
-u8  r8 (NDS& nds, u32 a) { return nds.bus.dma_read8 (Cpu::ARM7, a); }
+u8 r8(NDS& nds, u32 a) { return nds.bus.dma_read8(Cpu::ARM7, a); }
 void w32(NDS& nds, u32 a, u32 v) { nds.bus.dma_write32(Cpu::ARM7, a, v); }
 
 Stop run(NDS& nds, std::initializer_list<u32> words) {
@@ -36,12 +36,11 @@ constexpr u32 at(u32 op, u32 addr) { return (op << 24) | (addr & 0x0FFFFFFF); }
 
 void test_writes() {
   NDS nds;
-  CHECK(run(nds, {at(0x00, 0x2000000), 0xCAFEBABE,
-                  at(0x10, 0x2000010), 0x1234,
-                  at(0x20, 0x2000020), 0x56}) == Stop::Ok);
+  CHECK(run(nds, {at(0x00, 0x2000000), 0xCAFEBABE, at(0x10, 0x2000010), 0x1234, at(0x20, 0x2000020), 0x56}) ==
+        Stop::Ok);
   CHECK(r32(nds, RAM + 0x00) == 0xCAFEBABE);
   CHECK(r16(nds, RAM + 0x10) == 0x1234);
-  CHECK(r8 (nds, RAM + 0x20) == 0x56);
+  CHECK(r8(nds, RAM + 0x20) == 0x56);
   // Writes are relative to the offset register (D3 sets it).
   CHECK(run(nds, {0xD3000000, RAM + 0x100, at(0x00, 0x0000004), 0xAABBCCDD}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0x104) == 0xAABBCCDD);
@@ -57,13 +56,13 @@ void test_conditionals_32() {
   CHECK(run(nds, {at(0x30, 0x2000000), 200, store, 1, 0xD0000000, 0}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0x40) == 1);
   CHECK(run(nds, {at(0x30, 0x2000000), 50, store, 2, 0xD0000000, 0}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x40) == 1);                       // not taken, no write
+  CHECK(r32(nds, RAM + 0x40) == 1); // not taken, no write
   CHECK(run(nds, {at(0x40, 0x2000000), 50, store, 3, 0xD0000000, 0}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0x40) == 3);
   CHECK(run(nds, {at(0x50, 0x2000000), 100, store, 4, 0xD0000000, 0}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0x40) == 4);
   CHECK(run(nds, {at(0x60, 0x2000000), 100, store, 5, 0xD0000000, 0}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x40) == 4);                       // equal, so != is false
+  CHECK(r32(nds, RAM + 0x40) == 4); // equal, so != is false
   // Address field zero: the offset register supplies the address, and is not
   // added to it.
   // The offset is cleared again before the store, which would otherwise add it.
@@ -85,9 +84,9 @@ void test_conditionals_16() {
   CHECK(run(nds, {at(0xA0, 0x2000000), 0x00000037, store, 3, 0xD0000000, 0}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0x40) == 3);
   CHECK(run(nds, {at(0x70, 0x2000000), 0xFF000038, store, 4, 0xD0000000, 0}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x40) == 4);                       // 0x38 > 0x37
+  CHECK(r32(nds, RAM + 0x40) == 4); // 0x38 > 0x37
   CHECK(run(nds, {at(0x80, 0x2000000), 0xFF000036, store, 5, 0xD0000000, 0}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x40) == 5);                       // 0x36 < 0x37
+  CHECK(r32(nds, RAM + 0x40) == 5); // 0x36 < 0x37
 }
 
 // Nesting works the ordinary way as long as the outer condition holds: the
@@ -96,13 +95,11 @@ void test_nested_conditions() {
   NDS nds;
   w32(nds, RAM, 1);
   w32(nds, RAM + 0x40, 0);
-  CHECK(run(nds, {at(0x50, 0x2000000), 1,                 // outer: true
-                  at(0x50, 0x2000000), 999,               // inner: false
-                  at(0x00, 0x2000040), 7,                 // skipped
-                  0xD0000000, 0,                          // ENDIF: back to the outer true
-                  at(0x00, 0x2000044), 8,
-                  0xD0000000, 0,
-                  at(0x00, 0x2000048), 9}) == Stop::Ok);
+  CHECK(run(nds, {at(0x50, 0x2000000), 1,   // outer: true
+                  at(0x50, 0x2000000), 999, // inner: false
+                  at(0x00, 0x2000040), 7,   // skipped
+                  0xD0000000, 0,            // ENDIF: back to the outer true
+                  at(0x00, 0x2000044), 8, 0xD0000000, 0, at(0x00, 0x2000048), 9}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0x40) == 0);
   CHECK(r32(nds, RAM + 0x44) == 8);
   CHECK(r32(nds, RAM + 0x48) == 9);
@@ -117,12 +114,12 @@ void test_skipped_conditional_does_not_push() {
   NDS nds;
   w32(nds, RAM, 1);
   w32(nds, RAM + 0x50, 0);
-  CHECK(run(nds, {at(0x50, 0x2000000), 999,               // false
-                  at(0x50, 0x2000000), 1,                 // skipped, so not pushed
-                  0xD0000000, 0,                          // pops the outer frame: true again
-                  at(0x00, 0x2000050), 5,                 // so this one runs
-                  0xD0000000, 0,                          // pops an empty stack: false
-                  at(0x00, 0x2000054), 6}) == Stop::Ok);  // and this one does not
+  CHECK(run(nds, {at(0x50, 0x2000000), 999,              // false
+                  at(0x50, 0x2000000), 1,                // skipped, so not pushed
+                  0xD0000000, 0,                         // pops the outer frame: true again
+                  at(0x00, 0x2000050), 5,                // so this one runs
+                  0xD0000000, 0,                         // pops an empty stack: false
+                  at(0x00, 0x2000054), 6}) == Stop::Ok); // and this one does not
   CHECK(r32(nds, RAM + 0x50) == 5);
   CHECK(r32(nds, RAM + 0x54) == 0);
 }
@@ -131,11 +128,11 @@ void test_loop() {
   NDS nds;
   w32(nds, RAM + 0x40, 0);
   // FOR 0..3 { datareg += 1 }  -- four passes in total (b, then b-1..0).
-  CHECK(run(nds, {0xD5000000, 0,                          // datareg = 0
-                  0xC0000000, 3,                          // FOR
-                  0xD4000000, 1,                          // datareg += 1
-                  0xD1000000, 0,                          // NEXT
-                  0xD6000000, RAM + 0x40}) == Stop::Ok);  // u32[b] = datareg
+  CHECK(run(nds, {0xD5000000, 0,                         // datareg = 0
+                  0xC0000000, 3,                         // FOR
+                  0xD4000000, 1,                         // datareg += 1
+                  0xD1000000, 0,                         // NEXT
+                  0xD6000000, RAM + 0x40}) == Stop::Ok); // u32[b] = datareg
   CHECK(r32(nds, RAM + 0x40) == 4);
 }
 
@@ -143,10 +140,10 @@ void test_loop() {
 // the condition stack.
 void test_loop_flush() {
   NDS nds;
-  CHECK(run(nds, {0xD3000000, RAM + 0x200,                // offset = ...
-                  0xD5000000, 0x99,                       // datareg = 0x99
-                  0xC0000000, 0,                          // FOR 0..0 (one pass)
-                  0xD2000000, 0,                          // NEXT+FLUSH
+  CHECK(run(nds, {0xD3000000, RAM + 0x200, // offset = ...
+                  0xD5000000, 0x99,        // datareg = 0x99
+                  0xC0000000, 0,           // FOR 0..0 (one pass)
+                  0xD2000000, 0,           // NEXT+FLUSH
                   at(0x00, 0x2000050), 1}) == Stop::Ok);
   // The write landed at 0x2000050, not 0x2000050 + old offset.
   CHECK(r32(nds, RAM + 0x50) == 1);
@@ -156,21 +153,21 @@ void test_data_register() {
   NDS nds;
   const u32 out = 0xD6000000, dst = RAM + 0x60;
   CHECK(run(nds, {0xD5000000, 0x0F0F0F0F, 0xD4000001, 0xF0F0F0F0, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 0xFFFFFFFF);                     // OR
+  CHECK(r32(nds, dst) == 0xFFFFFFFF); // OR
   CHECK(run(nds, {0xD5000000, 0xFF00FF00, 0xD4000002, 0x0FF00FF0, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 0x0F000F00);                     // AND
+  CHECK(r32(nds, dst) == 0x0F000F00); // AND
   CHECK(run(nds, {0xD5000000, 0xFFFF0000, 0xD4000003, 0xFF00FF00, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 0x00FFFF00);                     // XOR
+  CHECK(r32(nds, dst) == 0x00FFFF00); // XOR
   CHECK(run(nds, {0xD5000000, 1, 0xD4000004, 4, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 0x10);                           // shift left
+  CHECK(r32(nds, dst) == 0x10); // shift left
   CHECK(run(nds, {0xD5000000, 0x80, 0xD4000005, 4, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 0x8);                            // shift right
+  CHECK(r32(nds, dst) == 0x8); // shift right
   CHECK(run(nds, {0xD5000000, 0x00000001, 0xD4000006, 4, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 0x10000000);                     // rotate right
+  CHECK(r32(nds, dst) == 0x10000000); // rotate right
   CHECK(run(nds, {0xD5000000, 0xFFFFFFF0, 0xD4000007, 4, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 0xFFFFFFFF);                     // arithmetic shift right
+  CHECK(r32(nds, dst) == 0xFFFFFFFF); // arithmetic shift right
   CHECK(run(nds, {0xD5000000, 7, 0xD4000008, 6, out, dst}) == Stop::Ok);
-  CHECK(r32(nds, dst) == 42);                             // multiply
+  CHECK(r32(nds, dst) == 42); // multiply
   // A shift of more than 31 clears the register; the arithmetic one saturates.
   CHECK(run(nds, {0xD5000000, 0xFF, 0xD4000004, 99, out, dst}) == Stop::Ok);
   CHECK(r32(nds, dst) == 0);
@@ -184,19 +181,18 @@ void test_datareg_memory() {
   w32(nds, RAM + 0x80, 0x11223344);
   // Both the load and the store add the offset to their operand.
   CHECK(run(nds, {0xD3000000, 0x80, 0xD9000000, RAM, 0xD6000000, RAM + 0x90}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x110) == 0x11223344);             // 0x90 + the 0x80 offset
+  CHECK(r32(nds, RAM + 0x110) == 0x11223344); // 0x90 + the 0x80 offset
   CHECK(run(nds, {0xD3000000, 0, 0xDA000000, RAM + 0x80, 0xD6000000, RAM + 0x94}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x94) == 0x3344);                  // 16-bit load
+  CHECK(r32(nds, RAM + 0x94) == 0x3344); // 16-bit load
   CHECK(run(nds, {0xD3000000, 0, 0xDB000000, RAM + 0x80, 0xD6000000, RAM + 0x98}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x98) == 0x44);                    // 8-bit load
+  CHECK(r32(nds, RAM + 0x98) == 0x44); // 8-bit load
   // Three stores from offset 0 land at +0, +4 and +6 as the offset advances.
-  CHECK(run(nds, {0xD3000000, 0, 0xD5000000, 0xAABBCCDD,
-                  0xD6000000, RAM + 0xA0,                 // 32-bit, offset += 4
-                  0xD7000000, RAM + 0xA0,                 // 16-bit at +4, offset += 2
-                  0xD8000000, RAM + 0xA0}) == Stop::Ok);  // 8-bit at +6
+  CHECK(run(nds, {0xD3000000, 0, 0xD5000000, 0xAABBCCDD, 0xD6000000, RAM + 0xA0, // 32-bit, offset += 4
+                  0xD7000000, RAM + 0xA0,                                        // 16-bit at +4, offset += 2
+                  0xD8000000, RAM + 0xA0}) == Stop::Ok);                         // 8-bit at +6
   CHECK(r32(nds, RAM + 0xA0) == 0xAABBCCDD);
   CHECK(r16(nds, RAM + 0xA4) == 0xCCDD);
-  CHECK(r8 (nds, RAM + 0xA6) == 0xDD);
+  CHECK(r8(nds, RAM + 0xA6) == 0xDD);
 }
 
 void test_offset_ops() {
@@ -215,12 +211,7 @@ void test_c5_counter() {
   NDS nds;
   w32(nds, RAM + 0xE0, 0);
   // Four passes; the write runs only when (count & 1) == 1, i.e. on 1 and 3.
-  CHECK(run(nds, {0xD5000000, 0,
-                  0xC0000000, 3,
-                  0xC5000000, 0x00010001,
-                  0xD4000000, 1,
-                  0xD0000000, 0,
-                  0xD1000000, 0,
+  CHECK(run(nds, {0xD5000000, 0, 0xC0000000, 3, 0xC5000000, 0x00010001, 0xD4000000, 1, 0xD0000000, 0, 0xD1000000, 0,
                   0xD6000000, RAM + 0xE0}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0xE0) == 2);
 }
@@ -232,14 +223,12 @@ void test_block_write() {
   CHECK(r32(nds, RAM + 0x100) == 0x11223344);
   CHECK(r32(nds, RAM + 0x104) == 0x55667788);
   // Five bytes: a word and a byte, still costing a whole pair of data words.
-  CHECK(run(nds, {at(0xE0, 0x2000110), 5, 0xAABBCCDD, 0x000000EE,
-                  at(0x00, 0x2000120), 0x600D}) == Stop::Ok);
+  CHECK(run(nds, {at(0xE0, 0x2000110), 5, 0xAABBCCDD, 0x000000EE, at(0x00, 0x2000120), 0x600D}) == Stop::Ok);
   CHECK(r32(nds, RAM + 0x110) == 0xAABBCCDD);
-  CHECK(r8 (nds, RAM + 0x114) == 0xEE);
-  CHECK(r32(nds, RAM + 0x120) == 0x600D);                 // the pair was stepped over exactly
+  CHECK(r8(nds, RAM + 0x114) == 0xEE);
+  CHECK(r32(nds, RAM + 0x120) == 0x600D); // the pair was stepped over exactly
   // Three bytes: no word, three bytes, one pair.
-  CHECK(run(nds, {at(0xE0, 0x2000130), 3, 0x00332211, 0,
-                  at(0x00, 0x2000140), 0xF00D}) == Stop::Ok);
+  CHECK(run(nds, {at(0xE0, 0x2000130), 3, 0x00332211, 0, at(0x00, 0x2000140), 0xF00D}) == Stop::Ok);
   CHECK(r8(nds, RAM + 0x130) == 0x11);
   CHECK(r8(nds, RAM + 0x131) == 0x22);
   CHECK(r8(nds, RAM + 0x132) == 0x33);
@@ -251,12 +240,11 @@ void test_block_write_skipped() {
   NDS nds;
   w32(nds, RAM, 1);
   w32(nds, RAM + 0x150, 0);
-  CHECK(run(nds, {at(0x50, 0x2000000), 999,               // false
-                  at(0xE0, 0x2000150), 8, 0xDEADBEEF, 0xDEADBEEF,
-                  0xD0000000, 0,
-                  at(0x00, 0x2000160), 0xBEEF}) == Stop::Ok);
-  CHECK(r32(nds, RAM + 0x150) == 0);                      // the block did not run
-  CHECK(r32(nds, RAM + 0x160) == 0xBEEF);                 // and the data was not executed
+  CHECK(run(nds, {at(0x50, 0x2000000), 999, // false
+                  at(0xE0, 0x2000150), 8, 0xDEADBEEF, 0xDEADBEEF, 0xD0000000, 0, at(0x00, 0x2000160), 0xBEEF}) ==
+        Stop::Ok);
+  CHECK(r32(nds, RAM + 0x150) == 0);      // the block did not run
+  CHECK(r32(nds, RAM + 0x160) == 0xBEEF); // and the data was not executed
 }
 
 void test_block_copy() {
@@ -278,7 +266,7 @@ void test_malformed() {
   // An opcode that does not exist.
   CHECK(run(nds, {0xC1000000, 0}) == Stop::BadOpcode);
   CHECK(run(nds, {0xDD000000, 0}) == Stop::BadOpcode);
-  CHECK(run(nds, {0xD400000F, 0}) == Stop::BadOpcode);    // no such data op
+  CHECK(run(nds, {0xD400000F, 0}) == Stop::BadOpcode); // no such data op
   // C4 is refused rather than guessed at.
   CHECK(run(nds, {0xC4000000, 0}) == Stop::Unsupported);
   // A block write whose data is not there.
@@ -303,8 +291,14 @@ void test_engine_enable() {
   cheat::Engine e;
   // Named fields: Code gained a description and a group when the database
   // loader landed, and a positional list would silently follow it.
-  cheat::Code on;  on.name = "on";   on.enabled = true;  on.words = {at(0x00, 0x20001C0), 1};
-  cheat::Code off; off.name = "off"; off.enabled = false; off.words = {at(0x00, 0x20001C4), 1};
+  cheat::Code on;
+  on.name = "on";
+  on.enabled = true;
+  on.words = {at(0x00, 0x20001C0), 1};
+  cheat::Code off;
+  off.name = "off";
+  off.enabled = false;
+  off.words = {at(0x00, 0x20001C4), 1};
   e.codes.push_back(on);
   e.codes.push_back(off);
   e.run(nds);
@@ -322,10 +316,10 @@ void test_engine_enable() {
 // all three.
 void arm_vblank(NDS& nds) {
   CpuContext& arm7 = nds.cpu(Cpu::ARM7);
-  arm7.hot.cpsr &= ~0x80u;                                   // IRQs unmasked
+  arm7.hot.cpsr &= ~0x80u; // IRQs unmasked
   nds.io.cpu_io[1].ime = 1;
   nds.io.cpu_io[1].ie = 1u << io::IRQ_VBLANK;
-  nds.io.set_irq_line(Cpu::ARM7, io::IRQ_VBLANK, true);      // the GPU's own path
+  nds.io.set_irq_line(Cpu::ARM7, io::IRQ_VBLANK, true); // the GPU's own path
   CHECK(arm7.hot.irq_pending);
 }
 
@@ -405,8 +399,8 @@ void test_hook_needs_ie_and_if() {
   CpuContext& arm7 = nds.cpu(Cpu::ARM7);
   arm7.hot.cpsr &= ~0x80u;
   nds.io.cpu_io[1].ime = 1;
-  nds.io.cpu_io[1].ie = 1u << io::IRQ_HBLANK;      // HBlank is what is enabled
-  nds.io.cpu_io[1].if_ = 1u << io::IRQ_VBLANK;     // VBlank is merely pending
+  nds.io.cpu_io[1].ie = 1u << io::IRQ_HBLANK;  // HBlank is what is enabled
+  nds.io.cpu_io[1].if_ = 1u << io::IRQ_VBLANK; // VBlank is merely pending
   nds.io.set_irq_line(Cpu::ARM7, io::IRQ_HBLANK, true);
   arm7.check_irq();
   CHECK(r32(nds, RAM + 0x20C) == 0);

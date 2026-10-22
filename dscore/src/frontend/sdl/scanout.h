@@ -25,14 +25,14 @@ public:
 
   virtual int width() const = 0;
   virtual int height() const = 0;
-  virtual int stride() const { return width(); }   // pixels; > width if padded (fbdev)
+  virtual int stride() const { return width(); } // pixels; > width if padded (fbdev)
   // Buffer count, and index begin_frame() last handed out (0..bufs()-1, -1
   // outside a frame). Buffers are not round-robin -- lowest free is taken --
   // so a caller touching every buffer once keys off the index, not a frame count.
   virtual int bufs() const = 0;
   virtual int current() const = 0;
 
-  virtual u32* begin_frame() = 0;   // free buffer's pixels, or null on protocol/driver error (caller falls back)
+  virtual u32* begin_frame() = 0; // free buffer's pixels, or null on protocol/driver error (caller falls back)
   virtual void end_frame() = 0;
   // Block until the last end_frame() is on its way to the panel. Needed by a
   // caller that presents once and stops (pause menu), since a tier may defer
@@ -42,9 +42,17 @@ public:
   // dma-buf behind buffer `buf`, for a GPU present stage that imports and
   // writes the tier's buffers directly (no sync ioctl needed on read). Fd
   // stays owned by the tier; importer dup()s it. False if the tier has no dma-buf (fbdev).
-  struct DmabufPlane { int fd = -1; u32 offset = 0, stride_bytes = 0, width = 0, height = 0; u32 fourcc = 0; };
-  virtual bool dmabuf_plane(int buf, DmabufPlane& out) const { (void)buf; (void)out; return false; }
-  virtual void set_gpu_writes(bool on) { (void)on; }   // skip the CPU-write cache sync once the GPU owns writes
+  struct DmabufPlane {
+    int fd = -1;
+    u32 offset = 0, stride_bytes = 0, width = 0, height = 0;
+    u32 fourcc = 0;
+  };
+  virtual bool dmabuf_plane(int buf, DmabufPlane& out) const {
+    (void)buf;
+    (void)out;
+    return false;
+  }
+  virtual void set_gpu_writes(bool on) { (void)on; } // skip the CPU-write cache sync once the GPU owns writes
   // Mailbox: a frame end_frame() queues behind the panel's pending flip may
   // be dropped at that flip's vblank instead of flipped for the one after,
   // when it has waited there longer than a margin -- the next frame is then

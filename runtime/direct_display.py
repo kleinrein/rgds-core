@@ -37,12 +37,13 @@ def available():
 def _processes(names, proc=Path('/proc')):
     found = []
     for entry in proc.iterdir():
-        if not entry.name.isdigit():continue
+        if not entry.name.isdigit(): continue
         try:
             if (entry / 'comm').read_text().strip() in names and \
                     (entry / 'stat').read_text().rsplit(')', 1)[1].split()[0] != 'Z':
                 found.append(int(entry.name))
-        except (OSError, IndexError):continue
+        except (OSError, IndexError):
+            continue
     return found
 
 
@@ -80,7 +81,7 @@ class _Quiet:
 def _wait(predicate, timeout):
     deadline = time.monotonic() + timeout
     while not predicate():
-        if time.monotonic() > deadline:return False
+        if time.monotonic() > deadline: return False
         time.sleep(.01)
     return True
 
@@ -90,14 +91,26 @@ def stop(timeout=3):
     began = time.monotonic()
     with _Locked(), _Quiet():
         # Marker first: a crash right after the stop must still bring it back.
-        MARKER.write_text(json.dumps(dict(pid=os.getpid(), start=process_identity(os.getpid()), stopped=time.time())) + '\n')
-        subprocess.run([str(INIT_SCRIPT), 'stop'], env=INIT_ENVIRONMENT, cwd='/', stdin=subprocess.DEVNULL,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
-        if not _wait(lambda:not weston_running(), timeout):
+        MARKER.write_text(
+            json.dumps(dict(pid=os.getpid(), start=process_identity(os.getpid()), stopped=time.time())) + '\n'
+        )
+        subprocess.run(
+            [str(INIT_SCRIPT), 'stop'],
+            env=INIT_ENVIRONMENT,
+            cwd='/',
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=False
+        )
+        if not _wait(lambda: not weston_running(), timeout):
             for pid in _processes({'weston'}):
-                try:os.kill(pid, signal.SIGKILL)
-                except ProcessLookupError:pass
-            if not _wait(lambda:not weston_running(), 1):
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            if not _wait(lambda: not weston_running(), 1):
                 raise OSError('Weston did not stop')
     return time.monotonic() - began
 
@@ -107,10 +120,19 @@ def _start(timeout):
         # The init script backgrounds "weston --warm-up | tee /var/log/weston.log".
         # Its own session keeps both out of the launcher's process group, which
         # the guardian stops at the end of a session.
-        script = subprocess.Popen([str(INIT_SCRIPT), 'start'], env=INIT_ENVIRONMENT, cwd='/', stdin=subprocess.DEVNULL,
-                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        try:script.wait(timeout=5)
-        except subprocess.TimeoutExpired:pass
+        script = subprocess.Popen(
+            [str(INIT_SCRIPT), 'start'],
+            env=INIT_ENVIRONMENT,
+            cwd='/',
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+        try:
+            script.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            pass
     if not _wait(ready, timeout):
         raise OSError('Weston did not come back within %d seconds' % timeout)
     MARKER.unlink(missing_ok=True)
@@ -125,17 +147,19 @@ def start(timeout=10):
 
 
 def _owner_alive():
-    try:owner = json.loads(MARKER.read_text())
-    except (OSError, ValueError):return False
+    try:
+        owner = json.loads(MARKER.read_text())
+    except (OSError, ValueError):
+        return False
     return isinstance(owner, dict) and bool(owner.get('start')) and process_identity(owner.get('pid')) == owner['start']
 
 
 def recover(timeout=10):
     """Restart Weston if an RGDS game stopped it and its runner is gone."""
-    if not MARKER.exists():return None
+    if not MARKER.exists(): return None
     with _Locked(), _Quiet():
         # A live runner still owns the display (its game is playing on KMS).
-        if not MARKER.exists() or _owner_alive():return None
+        if not MARKER.exists() or _owner_alive(): return None
         began = time.monotonic()
         _start(timeout)
         return time.monotonic() - began
@@ -147,7 +171,7 @@ class DirectDisplay:
         self.data = Path(data)
         self.stopped = False
         self.timings = {}
-        self.gpu_resets = 0   # engine restarts after a GPU reset at start (emulators._run_once)
+        self.gpu_resets = 0  # engine restarts after a GPU reset at start (emulators._run_once)
 
     def prepare(self, wanted):
         """Return the display the engine will really use ('kms' or 'wayland')."""
@@ -155,7 +179,11 @@ class DirectDisplay:
             try:
                 self.timings['weston_stop_seconds'] = round(stop(), 3)
                 self.stopped = True
-                print('Direct display: Weston stopped in %.2f s; the engine presents on KMS' % self.timings['weston_stop_seconds'], flush=True)
+                print(
+                    'Direct display: Weston stopped in %.2f s; the engine presents on KMS' %
+                    self.timings['weston_stop_seconds'],
+                    flush=True
+                )
             except (OSError, subprocess.SubprocessError) as error:
                 print('Direct display unavailable, keeping Weston: ' + str(error), flush=True)
                 self.restore()
@@ -165,7 +193,7 @@ class DirectDisplay:
         return 'kms' if self.stopped else 'wayland'
 
     def restore(self):
-        if not self.stopped and not MARKER.exists():return
+        if not self.stopped and not MARKER.exists(): return
         exited = time.monotonic()
         try:
             self.timings['weston_start_seconds'] = round(start(), 3)
@@ -177,12 +205,13 @@ class DirectDisplay:
                 path = self.data / 'session/direct-display.json'
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(json.dumps(self.timings) + '\n')
-            except OSError:pass
+            except OSError:
+                pass
         print('Direct display: Weston back in %.2f s' % self.timings['weston_start_seconds'], flush=True)
 
 
 def use_wayland(env, wayland):
     """Undo a KMS launch plan when Weston could not be stopped."""
     for key, value in wayland.items():
-        if value is None:env.pop(key, None)
-        else:env[key] = value
+        if value is None: env.pop(key, None)
+        else: env[key] = value

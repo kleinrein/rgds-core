@@ -17,9 +17,9 @@ A DSi-style home for your Nintendo DS games on the **Anbernic RG DS**, on the st
 
 - **Library:** cartridges, covers or a list. Search, A–Z jump, favourites, recents, play time. Covers download by themselves.
 - **DSCore:** 3D at native to 5×, switchable mid-game. 20 shaders and LCD filters. Fast-forward. Reduced input latency.
-- **Original in game menu:** pause, checkpoints, game switcher and game settings.
+- **Original in game menu:** pause, checkpoints, cheats, game switcher and game settings.
 - **Other engines availables:** DraStic, DSperate or melonDS.
-- **Tailored:** Light or dark, accent colours, high contrast, rounded or pixel fonts, menu sounds and music, 14 languages.
+- **Tailored:** Light or dark, accent colours, high contrast, rounded or pixel fonts, menu sounds and music, 19 languages.
 - **PictoChat:** Our homegrown chat client. Wi-Fi rooms between RG DS Core handhelds with pens, stamps, rainbow ink. No Nintendo files. [More](docs/PICTOCHAT.md).
 - **Safe updates:** Signed over-the-air updates that roll back if they fail.
 
@@ -48,7 +48,7 @@ You need the RG DS's **stock linux version V1.0** and a computer.
 3. On the handheld: **APPS → Install RG DS Core**. It installs, opens and starts on every boot.
 4. Put `.nds` files in `Roms/NDS`.
 
-Updates arrive over Wi-Fi: **Settings → System → Updates & recovery**. Saves and settings are kept. **Settings → System → Startup** brings the stock menu back, and **APPS → Uninstall RG DS Core** removes the app while keeping your saves. Details: [installing](docs/SD_FLASH.md), [card setup](docs/DEVICE_SETUP.md), [saves](docs/SAVES.md).
+Updates arrive over Wi-Fi: when one is out, Home shows a banner and **Y** installs it (or **Settings → System → Updates & recovery**). Saves and settings are kept. **Settings → System → Startup** brings the stock menu back, and **APPS → Uninstall RG DS Core** removes the app while keeping your saves. Details: [installing](docs/SD_FLASH.md), [card setup](docs/DEVICE_SETUP.md), [saves](docs/SAVES.md).
 
 **Controls:** A plays, B goes back, Y is View, X is Options, L2/R2 jump by letter. In a game, Home opens the menu and R2 fast-forwards (change it under Controls).
 

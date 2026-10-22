@@ -6,25 +6,41 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'),'Host C++/SDL headers required')
+@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'Host C++/SDL headers required')
 class ControlBridgeTests(unittest.TestCase):
     def test_remapping_live_reload_auxiliary_consumption_and_shortcut_release(self):
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);source=root/'controls.cpp';binary=root/'controls'
+            root = Path(folder)
+            source = root / 'controls.cpp'
+            binary = root / 'controls'
             source.write_text(CPP)
-            flags=subprocess.check_output(['sdl2-config','--cflags'],text=True).split()
-            result=subprocess.run(['clang++','-std=c++17','-Wall','-Wextra','-Werror',*flags,'-I'+str(ROOT/'src'),str(source),'-o',str(binary)],capture_output=True,text=True)
-            self.assertEqual(result.returncode,0,result.stderr)
-            for core in ('drastic','dsperate','nnddss'):
+            flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
+            result = subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', *flags, '-I' + str(ROOT / 'src'),
+                    str(source), '-o',
+                    str(binary)
+                ],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for core in ('drastic', 'dsperate', 'nnddss'):
                 with self.subTest(core=core):
-                    result=subprocess.run([str(binary),str(root),core],capture_output=True,text=True,timeout=5,env=dict(os.environ,RGDS_MENU_EXTERNAL='0'))
-                    self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                    result = subprocess.run(
+                        [str(binary), str(root), core],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                        env=dict(os.environ, RGDS_MENU_EXTERNAL='0')
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-CPP=r'''
+CPP = r'''
 #define RGDS_BRIDGE_TESTS
 #include "platform/emulator_bridge.cpp"
 #include <cassert>
@@ -124,5 +140,4 @@ int main(int argc,char** argv){
 }
 '''
 
-
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

@@ -54,7 +54,9 @@ class Changes:
 def build(on_device):
     began = time.monotonic()
     try:
-        subprocess.run([sys.executable, str(ROOT / "tools/build.py"), "device" if on_device else "host"], cwd=ROOT, check=True)
+        subprocess.run(
+            [sys.executable, str(ROOT / "tools/build.py"), "device" if on_device else "host"], cwd=ROOT, check=True
+        )
         if on_device:
             subprocess.run([sys.executable, str(ROOT / "tools/package.py")], cwd=ROOT, check=True)
     except subprocess.CalledProcessError:
@@ -75,8 +77,12 @@ def stop_preview(child):
 
 
 def preview(theme, roms):
-    command = [str(ROOT / "build/host/rgds-launcher"), "--preview", "--watch-assets", "--theme", str(theme),
-               "--state", str(ROOT / "build/dev/menu-state.txt"), "--data", str(ROOT / "build/dev")]
+    command = [
+        str(ROOT / "build/host/rgds-launcher"), "--preview", "--watch-assets", "--theme",
+        str(theme), "--state",
+        str(ROOT / "build/dev/menu-state.txt"), "--data",
+        str(ROOT / "build/dev")
+    ]
     for root in roms:
         command += ["--rom-dir", str(root)]
     return subprocess.Popen(command, cwd=ROOT)
@@ -100,7 +106,10 @@ class DeviceQueue:
             return
         status = transport.status(self.device, self.root, batch=True)
         if status.get("record_errors"):
-            self.announce("Activity records are unreadable; updates are queued safely. Run make doctor DEVICE=" + self.device + " after returning to stock.")
+            self.announce(
+                "Activity records are unreadable; updates are queued safely. Run make doctor DEVICE=" + self.device +
+                " after returning to stock."
+            )
             return
         if status["recovery"]:
             raise RuntimeError("userdata/boot_stock is set. Remove it when you want to resume device development.")
@@ -182,8 +191,10 @@ def main():
                     next_remote = time.monotonic() + 2
                 except subprocess.CalledProcessError as error:
                     # Includes the installer's second game check. Keep the candidate queued.
-                    queue.announce("Device update waiting; keeping the current session. "
-                                   "Retrying in 5s. " + (error.stderr or "Check SSH/device logs.").strip())
+                    queue.announce(
+                        "Device update waiting; keeping the current session. "
+                        "Retrying in 5s. " + (error.stderr or "Check SSH/device logs.").strip()
+                    )
                     next_remote = time.monotonic() + 5
             if child and child.poll() is not None:
                 print("Preview closed. Save source to reopen it, or stop with Ctrl+C.", flush=True)
@@ -194,8 +205,10 @@ def main():
 
 
 if __name__ == "__main__":
+
     def interrupt(_signum, _frame):
         raise KeyboardInterrupt
+
     signal.signal(signal.SIGTERM, interrupt)
     try:
         main()

@@ -18,17 +18,18 @@ namespace ds::io {
 class NandImage;
 
 struct NandTitle {
-  u32 title_lo = 0;          // 0x4B533345
-  std::string code;          // "KS3E"
-  std::string name;          // the banner's title (English where there is one), UTF-8, one line
-  u32 content_id = 0;        // its CONTENT/xxxxxxxx.APP
+  u32 title_lo = 0;   // 0x4B533345
+  std::string code;   // "KS3E"
+  std::string name;   // the banner's title (English where there is one), UTF-8, one line
+  u32 content_id = 0; // its CONTENT/xxxxxxxx.APP
 };
 
 // The DSiWare titles (00030004) installed on `nand`, with their banner names.
 std::vector<NandTitle> nand_dsiware_titles(NandImage& nand, const u8* bios7i);
 
 // A title's .app, whole.
-bool nand_read_title_app(NandImage& nand, const u8* bios7i, u32 title_lo, std::vector<u8>& srl, u32& content_id, std::string* err);
+bool nand_read_title_app(NandImage& nand, const u8* bios7i, u32 title_lo, std::vector<u8>& srl, u32& content_id,
+                         std::string* err);
 
 // What a DSi direct boot copies into main RAM from the NAND (0x154 bytes): TWLCFG's
 // 0x88..0x1AF, HWINFO_N's 0x88..0x9B, HWINFO_S's 0x88..0x9F.
@@ -40,7 +41,7 @@ inline constexpr const char* kShortcutSuffix = ".dspr.nds";
 
 struct NandShortcut {
   u32 title_lo = 0, title_hi = 0x00030004;
-  u8  cid[16] = {};
+  u8 cid[16] = {};
   u64 console_id = 0;
   // Whether it names a title on this NAND (the same eMMC CID and console ID).
   bool from(const NandImage& nand) const;
@@ -66,4 +67,4 @@ struct ShortcutSync {
 // get game codes appended.
 ShortcutSync sync_shortcuts(const std::string& dir, NandImage* nand, const u8* bios7i, bool enabled);
 
-}  // namespace ds::io
+} // namespace ds::io

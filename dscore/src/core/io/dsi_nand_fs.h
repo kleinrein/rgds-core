@@ -27,41 +27,43 @@ namespace ds::io {
 class NandImage;
 
 class FatVolume {
- public:
+public:
   using ReadFn = std::function<void(u64 offset, u32 len, u8* out)>;
   using WriteFn = std::function<void(u64 offset, u32 len, const u8* in)>;
 
   struct Entry {
     std::string name;      // "PUBLIC.SAV", as stored (8.3, upper case)
     std::string long_name; // "TWLFontTable.dat" (UTF-8) when a long-name entry precedes it, else empty
-    u8  attr = 0;          // 0x10 directory
+    u8 attr = 0;           // 0x10 directory
     u32 cluster = 0;       // first cluster; 0 for an empty file, and for the root except on FAT32
     u32 size = 0;
-    u64 dirent = 0;        // byte offset of the 32-byte entry (0 for the root)
-    u16 mdate = 0, mtime = 0;   // last modified, FAT encoding
+    u64 dirent = 0;           // byte offset of the 32-byte entry (0 for the root)
+    u16 mdate = 0, mtime = 0; // last modified, FAT encoding
     bool dir() const { return attr & 0x10; }
     const std::string& display_name() const { return long_name.empty() ? name : long_name; }
   };
 
   // FAT timestamp for entries a write creates/updates; default 2000-01-01 00:00.
-  struct Stamp { u16 date = 0, time = 0; };
+  struct Stamp {
+    u16 date = 0, time = 0;
+  };
 
   // `read`/`write` address the device in bytes from the volume's boot sector, whole sectors only.
   bool open(ReadFn read, WriteFn write, std::string* err = nullptr);
   bool valid() const { return bps_ != 0; }
-  int  fat_bits() const { return fat_bits_; }
-  u32  cluster_bytes() const { return bps_ * spc_; }
-  u32  free_clusters() const { return free_count_; }
-  u32  cluster_count() const { return clusters_; }
+  int fat_bits() const { return fat_bits_; }
+  u32 cluster_bytes() const { return bps_ * spc_; }
+  u32 free_clusters() const { return free_count_; }
+  u32 cluster_count() const { return clusters_; }
   Entry root() const;
 
   // Writes an empty volume through `write`; layout computed from the size, `fat_bits` must suit
   // the resulting cluster count. `zeroed`: device already reads zero, so all-zero sectors are
   // skipped.
   struct FormatSpec {
-    u64 sectors = 0;          // the volume's length in 512-byte sectors
-    u32 hidden = 0;           // sectors before it (its partition's start)
-    int fat_bits = 16;        // 16 or 32
+    u64 sectors = 0;   // the volume's length in 512-byte sectors
+    u32 hidden = 0;    // sectors before it (its partition's start)
+    int fat_bits = 16; // 16 or 32
     u32 sectors_per_cluster = 32;
     const char* oem = "DSPERATE";
     const char* label = "NO NAME";
@@ -83,7 +85,8 @@ class FatVolume {
   bool read_part(const Entry& file, u64 offset, u32 len, u8* out) const;
 
   // Replaces a file's contents (chain grown/trimmed), or creates it in its parent (must exist).
-  bool write(const std::string& path, const u8* data, u32 len, std::string* err = nullptr, const Stamp* stamp = nullptr);
+  bool write(const std::string& path, const u8* data, u32 len, std::string* err = nullptr,
+             const Stamp* stamp = nullptr);
   // Same without the data: entry plus a `len`-byte chain, clusters left as the device has them
   // (for contents living elsewhere, e.g. the SD card's host files); `out` is the new entry.
   bool create(const std::string& path, u32 len, Entry* out, std::string* err = nullptr, const Stamp* stamp = nullptr);
@@ -107,7 +110,7 @@ class FatVolume {
   // Set when unused clusters already read zero (freshly formatted onto a zeroed device): new
   // directory clusters then skip their zero fill.
   void set_fresh(bool on) { fresh_ = on; }
-  u64 data_offset() const { return data_off_; }   // cluster 2's byte offset in the volume
+  u64 data_offset() const { return data_off_; } // cluster 2's byte offset in the volume
   // Deletes a file, or a directory with everything in it; true if already absent.
   bool remove(const std::string& path, std::string* err = nullptr);
 
@@ -116,17 +119,17 @@ class FatVolume {
   // Volume-relative byte offset of each of a file's clusters (cluster_bytes() long).
   std::vector<u64> extents(const Entry& file) const;
 
- private:
-  u32  fat_get(u32 c) const;
+private:
+  u32 fat_get(u32 c) const;
   void fat_set(u32 c, u32 v);
   void fat_flush();
-  u32  eoc_min() const { return fat_bits_ == 12 ? 0xFF8 : fat_bits_ == 16 ? 0xFFF8 : 0x0FFFFFF8; }
-  u32  eoc_mark() const { return fat_bits_ == 12 ? 0xFFF : fat_bits_ == 16 ? 0xFFFF : 0x0FFFFFFF; }
+  u32 eoc_min() const { return fat_bits_ == 12 ? 0xFF8 : fat_bits_ == 16 ? 0xFFF8 : 0x0FFFFFF8; }
+  u32 eoc_mark() const { return fat_bits_ == 12 ? 0xFFF : fat_bits_ == 16 ? 0xFFFF : 0x0FFFFFFF; }
   bool alloc_chain(u32 count, u32& first);
   void free_chain(u32 first);
   std::vector<u32> chain(u32 first) const;
-  u64  cluster_offset(u32 c) const { return data_off_ + static_cast<u64>(c - 2) * bps_ * spc_; }
-  u32  entry_cluster(const u8* e) const;
+  u64 cluster_offset(u32 c) const { return data_off_ + static_cast<u64>(c - 2) * bps_ * spc_; }
+  u32 entry_cluster(const u8* e) const;
   void set_entry_cluster(u8* e, u32 c) const;
   std::vector<u8> dir_bytes(const Entry& dir) const;
   // Stores `count` consecutive 32-byte entries (long-name, then short); `dirent_out` is the
@@ -134,11 +137,13 @@ class FatVolume {
   bool add_entry(const Entry& parent, const u8* raw, u32 count, u64& dirent_out);
   // Short name plus long-name entries for `name` in `parent`; 1 entry if already 8.3.
   bool make_entries(const Entry& parent, const std::string& name, std::vector<u8>& raws, std::string* why) const;
-  bool make_entries_in(const std::unordered_set<std::string>& taken, const std::string& name, std::vector<u8>& raws, std::string* why) const;
+  bool make_entries_in(const std::unordered_set<std::string>& taken, const std::string& name, std::vector<u8>& raws,
+                       std::string* why) const;
   void write_dir_cluster(u32 cluster, u32 parent_cluster, const Stamp* stamp);
   void write_entry(u64 dirent, const u8 raw[32]);
   bool split(const std::string& path, Entry& parent, std::string& name, std::string* err) const;
-  bool put(const std::string& path, const u8* data, u32 len, bool with_data, Entry* out, std::string* err, const Stamp* stamp);
+  bool put(const std::string& path, const u8* data, u32 len, bool with_data, Entry* out, std::string* err,
+           const Stamp* stamp);
   static bool to_83(const std::string& name, u8 out[11]);
 
   ReadFn read_;
@@ -147,16 +152,16 @@ class FatVolume {
   int fat_bits_ = 0;
   u32 nfats_ = 0, fat_sectors_ = 0, root_entries_ = 0, root_cluster_ = 0;
   u64 fat_off_ = 0, root_off_ = 0, data_off_ = 0;
-  std::vector<u8> fat_;             // the first FAT, cached; written to every copy
-  std::vector<bool> fat_dirty_;     // per FAT sector
-  u32 free_count_ = 0;              // clusters whose FAT entry is 0
-  u32 next_free_ = 2;               // where the next allocation starts looking
+  std::vector<u8> fat_;         // the first FAT, cached; written to every copy
+  std::vector<bool> fat_dirty_; // per FAT sector
+  u32 free_count_ = 0;          // clusters whose FAT entry is 0
+  u32 next_free_ = 2;           // where the next allocation starts looking
   bool preserve_case_ = false;
   bool fresh_ = false;
 };
 
 class NandFs {
- public:
+public:
   // `bios7i` (64 KB) supplies the ES key's KeyY at 0x8308; without it, tickets cannot be made
   // or read, but everything else works.
   bool mount(NandImage& nand, const u8* bios7i, std::string* err = nullptr);
@@ -167,9 +172,9 @@ class NandFs {
   bool format(NandImage& nand, const u8* bios7i, std::string* err = nullptr);
   bool valid() const { return main_.valid(); }
 
-  FatVolume& main() { return main_; }     // partition 0: title/, ticket/, shared1/, sys/
-  FatVolume& photo() { return photo_; }   // partition 1: the camera's photos (may be invalid)
-  u64 main_base() const { return main_base_; }     // each partition's byte offset in the image
+  FatVolume& main() { return main_; }          // partition 0: title/, ticket/, shared1/, sys/
+  FatVolume& photo() { return photo_; }        // partition 1: the camera's photos (may be invalid)
+  u64 main_base() const { return main_base_; } // each partition's byte offset in the image
   u64 photo_base() const { return photo_base_; }
 
   // `data` holds `len` bytes followed by a 0x20-byte MAC + footer area; decrypt fails on a bad MAC.
@@ -177,7 +182,7 @@ class NandFs {
   void es_encrypt(u8* data, u32 len, const u8 nonce[12]) const;
   bool es_decrypt(u8* data, u32 len) const;
 
- private:
+private:
   void setup_crypto(NandImage& nand, const u8* bios7i);
   void crypt_read(u64 offset, u32 len, u8* out);
   void crypt_write(u64 offset, u32 len, const u8* in);
@@ -185,11 +190,11 @@ class NandFs {
 
   NandImage* nand_ = nullptr;
   AES_ctx fat_ctx_{};
-  u8 fat_iv_[16] = {};              // counter base, big-endian
+  u8 fat_iv_[16] = {}; // counter base, big-endian
   u8 es_key_[16] = {};
   bool es_key_ok_ = false;
   FatVolume main_, photo_;
   u64 main_base_ = 0, photo_base_ = 0;
 };
 
-}  // namespace ds::io
+} // namespace ds::io

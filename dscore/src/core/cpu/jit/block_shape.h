@@ -20,12 +20,12 @@ inline bool mcr_is_nop(u32 instr, bool a9) {
 // SUBS/ADDS/MOVS pc, rn, #imm with S set: exception return, inlined as one
 // restore_cpsr + interworking branch. Register-operand forms stay interpreted.
 inline bool dp_exc_return(u32 instr) {
-  if ((instr >> 28) != 0xE) return false;                       // unconditional only
+  if ((instr >> 28) != 0xE) return false; // unconditional only
   if (arm::decode_arm(instr) != arm::AOp::DpImm) return false;
-  if (!(instr & (1u << 20))) return false;                      // S
-  if (((instr >> 12) & 0xF) != 15) return false;                // rd == pc
+  if (!(instr & (1u << 20))) return false;       // S
+  if (((instr >> 12) & 0xF) != 15) return false; // rd == pc
   const u32 opc = (instr >> 21) & 0xF;
-  return opc == 0x2 || opc == 0x4 || opc == 0xD;                // SUB / ADD / MOV
+  return opc == 0x2 || opc == 0x4 || opc == 0xD; // SUB / ADD / MOV
 }
 
 inline bool msr_inline(u32 instr) {
@@ -42,12 +42,12 @@ inline bool ldm_user_inline(u32 instr) {
   using arm::AOp;
   const AOp op = arm::decode_arm(instr);
   if (op != AOp::Ldm && op != AOp::Stm) return false;
-  if (!(instr & (1u << 22))) return false;                      // S
-  if (instr & (1u << 21)) return false;                         // writeback
+  if (!(instr & (1u << 22))) return false; // S
+  if (instr & (1u << 21)) return false;    // writeback
   const u32 list = instr & 0xFFFF;
   if (list == 0 || ((instr >> 16) & 0xF) == 15) return false;
   const bool load = instr & (1u << 20);
-  return !(load && (list & 0x8000));                            // else: CPSR restore
+  return !(load && (list & 0x8000)); // else: CPSR restore
 }
 
 inline bool arm_ends_block(u32 instr, bool a9) {
@@ -55,18 +55,31 @@ inline bool arm_ends_block(u32 instr, bool a9) {
   const u32 cond = instr >> 28;
   if (cond == 0xF) return true;
   switch (arm::decode_arm(instr)) {
-  case AOp::B: case AOp::Bl: case AOp::Bx: case AOp::BlxReg: case AOp::Swi: case AOp::Bkpt: case AOp::Undefined:
-  case AOp::Cdp: case AOp::Ldc: case AOp::Stc: case AOp::Mrc:
-    return true;
+  case AOp::B:
+  case AOp::Bl:
+  case AOp::Bx:
+  case AOp::BlxReg:
+  case AOp::Swi:
+  case AOp::Bkpt:
+  case AOp::Undefined:
+  case AOp::Cdp:
+  case AOp::Ldc:
+  case AOp::Stc:
+  case AOp::Mrc: return true;
   case AOp::Mcr: return !mcr_is_nop(instr, a9);
-  case AOp::MsrReg: case AOp::MsrImm: return !msr_inline(instr);
-  case AOp::DpImm: case AOp::DpImmShift: case AOp::DpRegShift: {
+  case AOp::MsrReg:
+  case AOp::MsrImm: return !msr_inline(instr);
+  case AOp::DpImm:
+  case AOp::DpImmShift:
+  case AOp::DpRegShift: {
     const u32 opcode = (instr >> 21) & 0xF;
     const bool test = opcode >= 8 && opcode <= 0xB;
     return !test && ((instr >> 12) & 0xF) == 15;
   }
-  case AOp::LdrStrImm: case AOp::LdrStrReg: case AOp::LdrStrHImm: case AOp::LdrStrHReg:
-    return (instr & (1u << 20)) && ((instr >> 12) & 0xF) == 15;
+  case AOp::LdrStrImm:
+  case AOp::LdrStrReg:
+  case AOp::LdrStrHImm:
+  case AOp::LdrStrHReg: return (instr & (1u << 20)) && ((instr >> 12) & 0xF) == 15;
   case AOp::Ldm: return (instr & 0x8000) != 0;
   default: return false;
   }
@@ -79,9 +92,14 @@ inline bool thumb_ends_block(u16 instr) {
     const u32 rd = (instr & 7) | ((instr >> 4) & 8), op = (instr >> 8) & 3;
     return rd == 15 && (op == 0 || op == 2);
   }
-  case TOp::BxBlx: case TOp::BCond: case TOp::Swi: case TOp::B: case TOp::BlSuffix: case TOp::BlxSuffix:
-  case TOp::Bkpt: case TOp::Undefined:
-    return true;
+  case TOp::BxBlx:
+  case TOp::BCond:
+  case TOp::Swi:
+  case TOp::B:
+  case TOp::BlSuffix:
+  case TOp::BlxSuffix:
+  case TOp::Bkpt:
+  case TOp::Undefined: return true;
   case TOp::PushPop: return (instr & (1 << 11)) && (instr & (1 << 8));
   case TOp::StmLdm: return (instr & 0xFF) == 0;
   default: return false;

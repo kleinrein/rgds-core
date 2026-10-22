@@ -15,19 +15,24 @@
 
 namespace ds::cart {
 
-static constexpr u64 MAX_ROM = 512ull << 20;   // a DS card tops out at 512 MB
+static constexpr u64 MAX_ROM = 512ull << 20; // a DS card tops out at 512 MB
 
 RomSource::~RomSource() {
   if (map_) munmap(map_, map_len_);
 }
 
 const u8* RomSource::ff_page() {
-  static const u8* p = [] { static u8 page[PAGE]; std::memset(page, 0xFF, PAGE); return page; }();
+  static const u8* p = [] {
+    static u8 page[PAGE];
+    std::memset(page, 0xFF, PAGE);
+    return page;
+  }();
   return p;
 }
 
 void RomSource::finish() {
-  u32 m = PAGE; while (m < size_) m <<= 1;
+  u32 m = PAGE;
+  while (m < size_) m <<= 1;
   mask_ = m - 1;
   const u32 rem = size_ & (PAGE - 1);
   if (rem) {
@@ -56,13 +61,20 @@ bool on_network_fs(int fd) {
   struct statfs sf{};
   if (fstatfs(fd, &sf) != 0) return false;
   switch (static_cast<unsigned long>(sf.f_type)) {
-    case 0x6969UL: case 0x517BUL: case 0xFF534D42UL: case 0xFE534D42UL: case 0x65735546UL:
-    case 0x01021997UL: case 0x5346414FUL: case 0x73757245UL: case 0x564CUL:
-      return true;
-    default: return false;
+  case 0x6969UL:
+  case 0x517BUL:
+  case 0xFF534D42UL:
+  case 0xFE534D42UL:
+  case 0x65735546UL:
+  case 0x01021997UL:
+  case 0x5346414FUL:
+  case 0x73757245UL:
+  case 0x564CUL: return true;
+  default: return false;
   }
 #else
-  (void)fd; return false;
+  (void)fd;
+  return false;
 #endif
 }
 
@@ -70,8 +82,10 @@ bool on_network_fs(int fd) {
 u64 mem_available() {
 #if defined(__linux__)
   if (std::FILE* f = std::fopen("/proc/meminfo", "r")) {
-    char line[128]; u64 kb = 0;
-    while (std::fgets(line, sizeof line, f)) if (std::sscanf(line, "MemAvailable: %llu kB", reinterpret_cast<unsigned long long*>(&kb)) == 1) break;
+    char line[128];
+    u64 kb = 0;
+    while (std::fgets(line, sizeof line, f))
+      if (std::sscanf(line, "MemAvailable: %llu kB", reinterpret_cast<unsigned long long*>(&kb)) == 1) break;
     std::fclose(f);
     return kb << 10;
   }
@@ -83,19 +97,41 @@ u64 mem_available() {
 void RomSource::set_preload(Preload p) { g_preload = p; }
 RomSource::Preload RomSource::preload() { return g_preload; }
 
-std::unique_ptr<RomSource> RomSource::map_file(const std::string& path, u64 offset, u64 size,
-                                               std::string& err) {
+std::unique_ptr<RomSource> RomSource::map_file(const std::string& path, u64 offset, u64 size, std::string& err) {
   err.clear();
   const int fd = open(path.c_str(), O_RDONLY | O_CLOEXEC);
-  if (fd < 0) { err = std::strerror(errno); return nullptr; }
+  if (fd < 0) {
+    err = std::strerror(errno);
+    return nullptr;
+  }
   struct stat st{};
-  if (fstat(fd, &st) != 0) { err = std::strerror(errno); close(fd); return nullptr; }
+  if (fstat(fd, &st) != 0) {
+    err = std::strerror(errno);
+    close(fd);
+    return nullptr;
+  }
   const u64 file = static_cast<u64>(st.st_size);
-  if (offset > file) { err = "range starts past the end of the file"; close(fd); return nullptr; }
+  if (offset > file) {
+    err = "range starts past the end of the file";
+    close(fd);
+    return nullptr;
+  }
   if (size == 0) size = file - offset;
-  if (size > file - offset) { err = "range runs past the end of the file"; close(fd); return nullptr; }
-  if (size > MAX_ROM) { err = "larger than any DS card"; close(fd); return nullptr; }
-  if (size == 0) { err = "empty"; close(fd); return nullptr; }
+  if (size > file - offset) {
+    err = "range runs past the end of the file";
+    close(fd);
+    return nullptr;
+  }
+  if (size > MAX_ROM) {
+    err = "larger than any DS card";
+    close(fd);
+    return nullptr;
+  }
+  if (size == 0) {
+    err = "empty";
+    close(fd);
+    return nullptr;
+  }
 
   const long ps = sysconf(_SC_PAGESIZE);
   const u64 align = static_cast<u64>(ps > 0 ? ps : 4096);
@@ -106,7 +142,9 @@ std::unique_ptr<RomSource> RomSource::map_file(const std::string& path, u64 offs
   if (g_preload == Preload::Auto && on_network_fs(fd)) {
     const u64 avail = mem_available();
     populate = avail == 0 || avail >= len + (128ull << 20);
-    if (!populate) std::fprintf(stderr, "rom: on a network filesystem, but %llu MB free is too little to preload %llu MB\n", (unsigned long long)(avail >> 20), (unsigned long long)(len >> 20));
+    if (!populate)
+      std::fprintf(stderr, "rom: on a network filesystem, but %llu MB free is too little to preload %llu MB\n",
+                   (unsigned long long)(avail >> 20), (unsigned long long)(len >> 20));
   }
   int flags = MAP_PRIVATE;
 #if defined(MAP_POPULATE)
@@ -114,14 +152,24 @@ std::unique_ptr<RomSource> RomSource::map_file(const std::string& path, u64 offs
 #endif
   void* m = mmap(nullptr, len, PROT_READ, flags, fd, static_cast<off_t>(base));
 #if !defined(MAP_POPULATE)
-  if (populate && m != MAP_FAILED) { volatile u8 sink = 0; for (size_t i = 0; i < len; i += 4096) sink += static_cast<const u8*>(m)[i]; (void)sink; }
+  if (populate && m != MAP_FAILED) {
+    volatile u8 sink = 0;
+    for (size_t i = 0; i < len; i += 4096) sink += static_cast<const u8*>(m)[i];
+    (void)sink;
+  }
 #endif
-  if (populate && m != MAP_FAILED) std::fprintf(stderr, "rom: preloaded %llu MB%s\n", (unsigned long long)((len + (1 << 20) - 1) >> 20), g_preload == Preload::Auto ? " (network filesystem)" : "");
+  if (populate && m != MAP_FAILED)
+    std::fprintf(stderr, "rom: preloaded %llu MB%s\n", (unsigned long long)((len + (1 << 20) - 1) >> 20),
+                 g_preload == Preload::Auto ? " (network filesystem)" : "");
   close(fd);
-  if (m == MAP_FAILED) { err = std::string("mmap: ") + std::strerror(errno); return nullptr; }
+  if (m == MAP_FAILED) {
+    err = std::string("mmap: ") + std::strerror(errno);
+    return nullptr;
+  }
 
   std::unique_ptr<RomSource> s(new RomSource);
-  s->map_ = m; s->map_len_ = len;
+  s->map_ = m;
+  s->map_len_ = len;
   s->data_ = static_cast<const u8*>(m) + (offset - base);
   s->size_ = static_cast<u32>(size);
   s->finish();
@@ -130,8 +178,11 @@ std::unique_ptr<RomSource> RomSource::map_file(const std::string& path, u64 offs
 
 u8* RomSource::patch(u32 addr) {
   const u32 p = addr & mask_ & ~(PAGE - 1);
-  for (Patch& o : overlay_) if (o.base == p) return o.bytes.data();
-  Patch o; o.base = p; o.bytes.assign(page(p), page(p) + PAGE);
+  for (Patch& o : overlay_)
+    if (o.base == p) return o.bytes.data();
+  Patch o;
+  o.base = p;
+  o.bytes.assign(page(p), page(p) + PAGE);
   overlay_.push_back(std::move(o));
   return overlay_.back().bytes.data();
 }
@@ -142,7 +193,9 @@ void RomSource::read(u32 addr, u8* dst, u32 n) const {
     const u32 off = addr & (PAGE - 1);
     const u32 take = n < PAGE - off ? n : PAGE - off;
     std::memcpy(dst, pg + off, take);
-    dst += take; addr += take; n -= take;
+    dst += take;
+    addr += take;
+    n -= take;
   }
 }
 
@@ -158,7 +211,9 @@ u32 RomSource::read_unpatched(u32 addr, u8* dst, u32 n) const {
     const u32 off = addr & (PAGE - 1);
     const u32 take = n < PAGE - off ? n : PAGE - off;
     std::memcpy(dst, pg + off, take);
-    dst += take; addr += take; n -= take;
+    dst += take;
+    addr += take;
+    n -= take;
   }
   return have;
 }

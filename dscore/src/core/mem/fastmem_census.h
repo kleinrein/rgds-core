@@ -17,9 +17,9 @@ struct CpuContext;
 
 namespace ds::mem::fmc {
 
-extern bool g_on;              // DS_FASTMEM_CENSUS, read once at startup
+extern bool g_on; // DS_FASTMEM_CENSUS, read once at startup
 inline bool on() { return prof::census && g_on; }
-void init();                   // reads the environment; call once before running
+void init(); // reads the environment; call once before running
 
 void access(CpuContext& cpu, u32 addr, bool store);
 void fetch(CpuContext& cpu, u32 addr);

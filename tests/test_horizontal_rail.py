@@ -29,7 +29,9 @@ class HorizontalRailTests(unittest.TestCase):
                 options = dict(indicator=False)
                 base, _, _ = self.exercise(**options)
                 held, _, _ = self.exercise(f'100 tap {x} 443\n', **options)
-                button = lambda image: self.crop(image, 0 if x == 42 else 572, 889, 68, 71)   # the arrow button alone; the grabber starts at 74
+                button = lambda image: self.crop(
+                    image, 0 if x == 42 else 576, 889, 64, 71
+                )  # the arrow block alone, flush to the edge; the grabber starts at 66
                 self.assertNotEqual(button(base), button(held))
                 for end in ('release', 'focus-lost', 'drag 320 370'):
                     released, _, _ = self.exercise(f'100 tap {x} 443\n300 {end}\n', **options)

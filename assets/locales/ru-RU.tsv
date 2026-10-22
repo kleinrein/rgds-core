@@ -1,0 +1,895 @@
+# UTF-8 source\ttranslation. One entry per line.	
+3D rendering automatically uses worker threads.	3D-рендеринг автоматически использует рабочие потоки.
+3D resolution	Разрешение 3D
+3D threading changed for this session. Settings storage is unavailable.	Потоки 3D изменены на этот сеанс. Хранилище настроек недоступно.
+3D threading changed. No restart needed.	Потоки 3D изменены. Перезапуск не нужен.
+A  Apply	A  Применить
+A  Done	A  Готово
+A  Play	A  Играть
+A gentle scanline pattern with original colours.	Мягкие линии развёртки с исходными цветами.
+A natural colour and contrast treatment.	Естественные цвета и контраст.
+A screen style for this cartridge	Стиль экрана для этого картриджа
+A stronger LCD texture and scanline look.	Более выраженная текстура ЖК и линии развёртки.
+A subtle handheld LCD pixel pattern.	Лёгкий узор пикселей ЖК-экрана консоли.
+A subtle pixel grid with a bright, readable image.	Лёгкая пиксельная сетка и яркое, чёткое изображение.
+Add your DS games to fetch their artwork.	Добавьте игры DS, чтобы загрузить обложки.
+Africa	Африка
+After	После
+All games	Все игры
+Amber	Янтарь
+Americas	Америка
+Anbernic startup is unavailable in RGDS OS.	Запуск Anbernic недоступен в RGDS OS.
+Animations	Анимации
+Antarctica	Антарктида
+Applies immediately. Higher clocks use more battery.	Применяется сразу. Высокие частоты расходуют больше заряда.
+Applies immediately. Your game keeps its progress.	Применяется сразу. Прогресс игры сохраняется.
+Apply	Применить
+Applying shader…	Применение фильтра…
+Arctic	Арктика
+Artwork	Обложки
+Artwork & ScreenScraper	Обложки
+Artwork source	Источник обложек
+Artwork sources	Источники обложек
+Asia	Азия
+Atlantic Ocean	Атлантический океан
+Australia	Австралия
+Auto-load state	Автозагрузка состояния
+Auto-save on exit	Автосохранение при выходе
+Automatic	Автоматически
+Automatic (free)	Автоматически
+Available networks	Доступные сети
+B  Cancel	B  Отмена
+B  Close	B  Закрыть
+BACK HOME	НА ГЛАВНУЮ
+Back	Назад
+Balance battery life and speed	Баланс автономности и скорости
+Balanced	Сбалансированный
+Battery	Батарея
+Battery percentage	Заряд в процентах
+Battery saver	Экономия заряда
+Before	До
+Before you play	Перед игрой
+Binding unchanged.	Назначение не изменено.
+Boot	Загрузка
+Boot into	Загружать в
+Both screens	Оба экрана
+Bottom display	Нижний экран
+Box art, titles and game details	Обложки, названия и сведения об играх
+Brightness	Яркость
+Browser layout	Вид списка
+Build, storage and device address	Сборка, память и адрес устройства
+Button	Кнопка
+Button layout	Раскладка кнопок
+Button {0}	Кнопка {0}
+Buttons and the game menu shortcut	Кнопки и вызов игрового меню
+COLOUR MODE	ЦВЕТОВОЙ РЕЖИМ
+Cancel	Отмена
+Cartridges	Картриджи
+Changes immediately. Map a button in Controls for quick access.	Меняется сразу. Назначьте кнопку в «Управлении» для быстрого доступа.
+Changing 3D threading…	Изменение потоков 3D…
+Changing speed…	Изменение скорости…
+Check the current connection	Проверить текущее подключение
+Checkpoint loaded	Сохранение загружено
+Checkpoint loaded (preview)	Сохранение загружено (предпросмотр)
+Checkpoint loaded.	Сохранение загружено.
+Checkpoint saved	Сохранение создано
+Checkpoint saved (preview)	Сохранение создано (предпросмотр)
+Checkpoint saved.	Сохранение создано.
+Choose Anbernic or RG DS startup.	Выберите запуск Anbernic или RG DS.
+Choose an option	Выберите вариант
+Choose native or a sharper 3D image	Исходное или более чёткое 3D-изображение
+Choose the core for this cartridge	Выберите ядро для этого картриджа
+Choose the display backend for the next DraStic launch. DSperate stays your default.	Выберите вывод изображения для следующего запуска DraStic. DSperate остаётся по умолчанию.
+Choose what opens when you power on	Что открывается при включении
+Clear	Очистить
+Clear temporary cache	Очистить временный кэш
+Clear temporary game files?	Удалить временные файлы игр?
+Close	Закрыть
+Close the handheld to sleep	Закройте консоль для перехода в сон
+Colour treatment inspired by the original DS display.	Цвета в духе оригинального экрана DS.
+Compare	Сравнить
+Confirm	Подтвердить
+Connect	Подключить
+Connected	Подключено
+Connected.	Подключено.
+Connecting…	Подключение…
+Connectivity	Связь
+Continue	Продолжить
+Continue where you left off	Продолжить с того же места
+Control unavailable on this device	Управление недоступно на этом устройстве
+Controls	Управление
+Controls saved for this game.	Управление сохранено для этой игры.
+Cool crisp	Холодный чёткий
+Cool whites with a small contrast boost.	Холодный белый и чуть больше контраста.
+Could not apply brightness	Не удалось применить яркость
+Could not apply saved brightness	Не удалось применить сохранённую яркость
+Could not apply saved power mode	Не удалось применить сохранённый режим питания
+Could not apply setting - see log	Не удалось применить настройку — см. журнал
+Could not apply this shader.	Не удалось применить этот фильтр.
+Could not apply volume	Не удалось применить громкость
+Could not bring the Wi-Fi adapter up. Try again.	Не удалось включить адаптер Wi-Fi. Попробуйте снова.
+Could not change 3D threading. Your game is unchanged.	Не удалось изменить потоки 3D. Игра не изменена.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	Не удалось подтвердить подключение Wi-Fi. Выполните поиск и попробуйте снова.
+Could not enable lid wake	Не удалось включить пробуждение крышкой
+Could not load. Resume, retry, or return without saving.	Не удалось загрузить. Продолжите, повторите или выйдите без сохранения.
+Could not read this collection. Try again.	Не удалось прочитать коллекцию. Попробуйте снова.
+Could not restore previous hardware setting	Не удалось вернуть прежнюю настройку оборудования
+Could not save all settings. Check storage.	Не удалось сохранить все настройки. Проверьте память.
+Could not save brightness	Не удалось сохранить яркость
+Could not save controls. Check writable storage.	Не удалось сохранить управление. Проверьте доступ к записи.
+Could not save game settings. Previous values kept.	Не удалось сохранить настройки игры. Прежние значения оставлены.
+Could not save matching title.	Не удалось сохранить сопоставленное название.
+Could not save settings	Не удалось сохранить настройки
+Could not save timezone	Не удалось сохранить часовой пояс
+Could not save volume	Не удалось сохранить громкость
+Could not save. Resume, retry, or return without saving.	Не удалось сохранить. Продолжите, повторите или выйдите без сохранения.
+Could not send game action	Не удалось отправить действие игре
+Could not set volume - see log	Не удалось задать громкость — см. журнал
+Could not sleep - see log	Не удалось уйти в сон — см. журнал
+Could not sleep. Reopen the lid and try again.	Не удалось уйти в сон. Откройте крышку и попробуйте снова.
+Could not start artwork service	Не удалось запустить службу обложек
+Could not start library scan	Не удалось начать сканирование библиотеки
+Could not write controls	Не удалось записать управление
+Counts display updates, not emulation speed. Changes immediately.	Считает обновления экрана, а не скорость эмуляции. Меняется сразу.
+Counts emulated game frames. Changes immediately.	Считает эмулируемые кадры игры. Меняется сразу.
+Covers	Обложки
+Custom	Свой
+DEFAULT THEME - CHECK LOG	ТЕМА ПО УМОЛЧАНИЮ — СМ. ЖУРНАЛ
+DS rounded	DS скруглённый
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: рекомендуется для повседневной игры. По умолчанию исходное разрешение.
+Dark	Тёмная
+Date format	Формат даты
+Default	По умолчанию
+Default emulator	Эмулятор по умолчанию
+Default shader	Фильтр по умолчанию
+Delete	Удалить
+Desktop preview	Предпросмотр на ПК
+Development build	Сборка для разработки
+Device address	Адрес устройства
+Device information	Об устройстве
+Display FPS	FPS экрана
+Done	Готово
+Down	Вниз
+DraStic backend	Вывод DraStic
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: альтернатива для игр, которым он нужен. Сохранения хранятся отдельно.
+ERROR	ОШИБКА
+ERROR: Could not restore settings	ОШИБКА: не удалось восстановить настройки
+ERROR: Could not restore settings - see log	ОШИБКА: не удалось восстановить настройки — см. журнал
+Emulator	Эмулятор
+Emulator settings	Настройки эмулятора
+Engine managed	Управляется движком
+Enter here	Введите здесь
+Enter password	Введите пароль
+Enter your username and password	Введите имя пользователя и пароль
+Europe	Европа
+Every game in this collection has artwork.	У всех игр в коллекции есть обложки.
+FPS changed for this session. Settings storage is unavailable.	FPS изменён на этот сеанс. Хранилище настроек недоступно.
+FPS counter enabled.	Счётчик FPS включён.
+FPS counter hidden.	Счётчик FPS скрыт.
+Fast	Быстрый
+Fast-forward	Ускорение
+Fast-forward button	Кнопка ускорения
+Fast-forward enabled.	Ускорение включено.
+Fast-forward is unavailable for this emulator.	Ускорение недоступно для этого эмулятора.
+Fast-forward style	Режим ускорения
+Favourite	Избранное
+Favourites	Избранное
+Fetch artwork	Загрузить обложки
+Fetch missing artwork	Загрузить недостающие обложки
+Find and connect to a nearby network	Найти сеть рядом и подключиться
+Finishing the system request	Завершение системного запроса
+Follow your default button layout	Как в раскладке по умолчанию
+Following your global controls.	Используется общее управление.
+Follows your Library default. Each emulator keeps its own saves.	Как в настройках библиотеки. У каждого эмулятора свои сохранения.
+Frameskip	Пропуск кадров
+Free space	Свободно
+Free space while keeping your saves	Освободить место, сохранив сохранения
+Game FPS	FPS игры
+Game emulator	Эмулятор игры
+Game emulator saved.	Эмулятор игры сохранён.
+Game menu	Игровое меню
+Game options	Параметры игры
+Game options saved	Параметры игры сохранены
+GameTDB (free)	GameTDB
+Games	Игры
+Give your eyes and hands a break.	Дайте отдохнуть глазам и рукам.
+Global	Общие
+Global controls saved.	Общее управление сохранено.
+Hold	Удержание
+Home shortcut	Кнопка «Домой»
+Indian Ocean	Индийский океан
+Inherit	Наследовать
+Inherited	Унаследовано
+Jump to letter	К букве
+Keep a checkpoint when returning home	Сохраняться при выходе на главную
+Keep playing	Продолжить игру
+Keep this game in Favourites	Держать игру в избранном
+Kernel	Ядро ОС
+Key {0}	Клавиша {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + оба фильтра цвета
+LCD pixels with natural colour and contrast.	Пиксели ЖК с естественными цветами и контрастом.
+LCD pixels with the DS colour treatment.	Пиксели ЖК с цветами DS.
+LCD pixels, DS colour and Natural Vision together.	Пиксели ЖК, цвета DS и Natural Vision вместе.
+Language	Язык
+Launch cancelled	Запуск отменён
+Left	Влево
+Left stick	Левый стик
+Left-handed	Для левши
+Less than a minute	Меньше минуты
+Library	Библиотека
+Library scan exceeded its limit	Сканирование библиотеки превысило лимит
+Library scan failed	Ошибка сканирования библиотеки
+Libretro (free)	Libretro
+Light	Светлая
+List	Список
+Live background	Живой фон
+Load	Загрузить
+Load requested. Resume to check your game.	Загрузка запрошена. Продолжите, чтобы проверить игру.
+Load state	Загрузить состояние
+Loading checkpoint…	Загрузка сохранения…
+Looking for networks…	Поиск сетей…
+Magnified detail	Увеличенный фрагмент
+Manage builds and temporary files	Сборки и временные файлы
+Matching title	Сопоставленное название
+Matching title saved. Choose Fetch artwork.	Название сохранено. Выберите «Загрузить обложки».
+Menu idle sleep	Сон меню при бездействии
+Mute	Без звука
+Muted	Звук выключен
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: вариант для совместимости. Для скорости сначала попробуйте DSperate.
+Native	Исходное
+Native is faster; 2x uses more GPU time. Save & restart applies it.	Исходное быстрее; 2x сильнее нагружает GPU. Применяется через «Сохранить и перезапустить».
+Native output	Исходный вывод
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	Сеть отключена. Включите Wi-Fi.
+Never	Никогда
+Next emulator	Следующий эмулятор
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Нет адаптера Wi-Fi. Включите Wi-Fi для инициализации.
+No button detected. Try again when you're ready.	Кнопка не обнаружена. Попробуйте снова, когда будете готовы.
+No checkpoint saved for this emulator yet.	Для этого эмулятора ещё нет сохранений.
+No cover yet	Обложки пока нет
+No favourites yet	Избранного пока нет
+No games	Нет игр
+No games in this collection.	В этой коллекции нет игр.
+No networks found	Сети не найдены
+No previous build available.	Предыдущей сборки нет.
+No recent games yet	Недавних игр пока нет
+Normal	Обычный
+Normal speed.	Обычная скорость.
+Not available	Недоступно
+Not connected	Не подключено
+Not played yet	Ещё не запускалась
+OPEN	ОТКРЫТЬ
+Off	Выкл.
+Off (smooth)	Выкл. (плавно)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	«Выкл.» даёт плавное движение. Пропуск кадров ускоряет игру. Нужен перезапуск.
+Off keeps the original picture.	«Выкл.» оставляет исходное изображение.
+On	Вкл.
+Open	Открыть
+Open menu	Открыть меню
+Open the Anbernic menu	Открыть меню Anbernic
+Options	Параметры
+Original pixels	Исходные пиксели
+Original pixels and colours.	Исходные пиксели и цвета.
+Pacific	Тихий океан
+PLAY	ИГРАТЬ
+Password	Пароль
+Pause when you need to.	Делайте паузы, когда нужно.
+Paused	Пауза
+Performance	Производительность
+Pixel classic	Пиксельный классический
+Play at a comfortable volume.	Играйте на комфортной громкости.
+Please keep your handheld on	Не выключайте консоль
+Pocket green	Зелёный карманный
+Power	Питание
+Power mode	Режим питания
+Power off	Выключить
+Power off your handheld?	Выключить консоль?
+Power profile	Профиль питания
+Powering off…	Выключение…
+Preparing controls…	Подготовка управления…
+Preparing the launcher	Подготовка лаунчера
+Preparing the library…	Подготовка библиотеки…
+Preparing your cartridges…	Подготовка картриджей…
+Preparing your library…	Подготовка вашей библиотеки…
+Press a button for {0}	Нажмите кнопку для {0}
+Press a button…	Нажмите кнопку…
+Preview	Предпросмотр
+Preview Wi-Fi	Предпросмотр Wi-Fi
+Preview and choose your screen style	Просмотрите и выберите стиль экрана
+Preview game	Предпросмотр игры
+Preview unavailable	Предпросмотр недоступен
+Previous build selected. Return to stock, then open RGDS again.	Выбрана предыдущая сборка. Вернитесь в штатное меню и снова откройте RGDS.
+Profile	Профиль
+READY	ГОТОВО
+REVIEW YOUR CHOICE	ПРОВЕРЬТЕ ВЫБОР
+RGDS build	Сборка RGDS
+ROUNDED FONT UNAVAILABLE	СКРУГЛЁННЫЙ ШРИФТ НЕДОСТУПЕН
+Recents	Недавние
+Reduce rendering work when needed	Снижать нагрузку на рендеринг при необходимости
+Refresh	Обновить
+Refresh connection	Обновить подключение
+Release for options	Отпустите для параметров
+Remap	Переназначить
+Request cancelled.	Запрос отменён.
+Request failed. Check the connection or device log and try again.	Ошибка запроса. Проверьте подключение или журнал устройства и попробуйте снова.
+Reset	Сброс
+Rest after a period of inactivity	Отдыхать после бездействия
+Restart	Перезапуск
+Restart menu	Перезапустить меню
+Restart the RGDS menu?	Перезапустить меню RGDS?
+Restart the device?	Перезагрузить устройство?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	После перезапуска: {0}. Сохранения каждого эмулятора хранятся отдельно.
+Restarting…	Перезапуск…
+Restore defaults	Сбросить настройки
+Restore the last installed RGDS build	Вернуть последнюю установленную сборку RGDS
+Restoring settings	Восстановление настроек
+Restoring settings…	Восстановление настроек…
+Resume	Продолжить
+Resume game	Продолжить игру
+Return	Вернуться
+Return home	На главную
+Return home before changing startup.	Перед сменой запуска вернитесь на главную.
+Return home from your game first.	Сначала выйдите из игры на главную.
+Return to game	Вернуться в игру
+Return to stock	Вернуться в штатное меню
+Return to the original button layout	Вернуть исходную раскладку кнопок
+Return to the stock menu?	Вернуться в штатное меню?
+Return without saving	Выйти без сохранения
+Returning home…	Возврат на главную…
+Review unmatched	Проверить несопоставленные
+Right	Вправо
+Right stick	Правый стик
+Rollback simulated.	Откат смоделирован.
+START	START
+Save	Сохранить
+Save & restart	Сохранить и перезапустить
+Save & restart applies Threaded 3D.	«Сохранить и перезапустить» применит многопоточное 3D.
+Save & restart keeps your checkpoint and applies pending settings.	«Сохранить и перезапустить» сохранит прогресс и применит изменения.
+Save a report for troubleshooting	Сохранить отчёт для диагностики
+Save device report	Сохранить отчёт устройства
+Save state	Сохранить состояние
+Save your checkpoint and restart	Сохраниться и перезапустить
+Saved	Сохранено
+Saved - desktop simulation	Сохранено — симуляция на ПК
+Saved for the next Standard DraStic launch.	Сохранено для следующего запуска стандартного DraStic.
+Saved network	Сохранённая сеть
+Saved · {0}	Сохранено · {0}
+Saved. Applies on your next DraStic launch.	Сохранено. Применится при следующем запуске DraStic.
+Saved. Save & restart applies screen order.	Сохранено. Порядок экранов применит «Сохранить и перезапустить».
+Saved. Save & restart applies this change.	Сохранено. Изменение применит «Сохранить и перезапустить».
+Saved. Save & restart changes the emulator.	Сохранено. Эмулятор сменится после «Сохранить и перезапустить».
+Saving before restarting…	Сохранение перед перезапуском…
+Saving before returning home…	Сохранение перед выходом на главную…
+Saving checkpoint before restarting…	Сохранение прогресса перед перезапуском…
+Saving checkpoint…	Сохранение прогресса…
+Saving your progress…	Сохранение вашего прогресса…
+Scan	Поиск
+Scene	Сцена
+Screen brightness	Яркость экрана
+Screen order	Порядок экранов
+ScreenScraper needs project credentials and your account	Для ScreenScraper нужны данные проекта и ваша учётная запись
+Select	Выбрать
+Select a network again and enter its password.	Снова выберите сеть и введите пароль.
+Select a network again.	Снова выберите сеть.
+Selected	Выбрано
+Sets Standard DraStic screen order for this game. Save & restart applies it.	Порядок экранов стандартного DraStic для этой игры. Применяется через «Сохранить и перезапустить».
+Settings	Настройки
+Settings saved	Настройки сохранены
+Shader	Фильтр
+Shader applied.	Фильтр применён.
+Shader change requested (preview)	Запрошена смена фильтра (предпросмотр)
+Shader saved	Фильтр сохранён
+Shader saved for next launch	Фильтр сохранён для следующего запуска
+Shader saved. Restart this game to apply it.	Фильтр сохранён. Перезапустите игру, чтобы применить его.
+Shader studio	Студия фильтров
+Shaders	Фильтры
+Sharp + NDS Color	Чёткий + NDS Color
+Sharp + Natural Vision	Чёткий + Natural Vision
+Sharp + both colours	Чёткий + оба фильтра цвета
+Sharp bilinear	Чёткий билинейный
+Sharp pixel edges with smoother scaling.	Чёткие края пикселей и плавное масштабирование.
+Sharp scaling with natural colour and contrast.	Чёткое масштабирование с естественными цветами и контрастом.
+Sharp scaling with the DS colour treatment.	Чёткое масштабирование с цветами DS.
+Sharp scaling, DS colour and Natural Vision together.	Чёткое масштабирование, цвета DS и Natural Vision вместе.
+Shift	Shift
+Shortcut action	Действие кнопки
+Show the charge in the status bar	Показывать заряд в строке состояния
+Show the welcome screen at startup	Показывать приветствие при запуске
+Sign in	Войти
+Sign out	Выйти
+Signing in…	Вход…
+Simulated handheld	Симулированная консоль
+Sleep	Сон
+Sleep now	Уснуть сейчас
+Sleep on lid close	Сон при закрытии крышки
+Sleep simulated - press any control	Сон смоделирован — нажмите любую кнопку
+Sleep simulated - settings retained	Сон смоделирован — настройки сохранены
+Sleep unavailable on this device	Сон недоступен на этом устройстве
+Sleeping - use Power to wake	Сон — нажмите питание для пробуждения
+Soft LCD grid	Мягкая сетка ЖК
+Soft green monochrome with full-resolution detail.	Мягкий зелёный монохром с полной детализацией.
+Soft scanlines	Мягкие линии развёртки
+Sound	Звук
+Space	Пробел
+Standard	Стандартный
+Standard DraStic only. Applies on the next launch; game saves are kept.	Только стандартный DraStic. Применится при следующем запуске; сохранения останутся.
+Standard screen order	Стандартный порядок экранов
+Start	Start
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	Запускать RG DS автоматически при следующих загрузках?
+Start with a familiar layout	Начните со знакомой раскладки
+Start, then Anbernic	Start, затем Anbernic
+Startup	Запуск
+Startup choice saved.	Выбор запуска сохранён.
+Startup choice simulated.	Выбор запуска смоделирован.
+Startup is managed by RGDS OS.	Запуском управляет RGDS OS.
+Stock	Штатное
+Stock firmware	Штатная прошивка
+Stop fetching	Остановить загрузку
+Stop fetching before editing the match.	Остановите загрузку перед изменением сопоставления.
+Stop scraping	Остановить сбор
+Stop scraping before changing source	Остановите сбор перед сменой источника
+Stopping after this request	Остановка после этого запроса
+Stopping after this request.	Остановка после этого запроса.
+Storage read-only - use internal RGDS	Память только для чтения — используйте встроенный RGDS
+SuperDrastic (experimental)	SuperDrastic (экспериментально)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic пока использует исходный вывод. Ваш стандартный фильтр сохранён.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	У SuperDrastic своё меню паузы и вывод изображения. Экспериментально; проверка на RG DS ещё не завершена.
+Swapped	Поменяны
+System	Система
+THEME ERROR - RETAINED CURRENT	ОШИБКА ТЕМЫ — ОСТАВЛЕНА ТЕКУЩАЯ
+THEME RELOADED	ТЕМА ПЕРЕЗАГРУЖЕНА
+TYPEFACE	ШРИФТ
+Temporary game cache cleared. Saves and artwork are kept.	Временный кэш игр очищен. Сохранения и обложки остались.
+The checkpoint did not finish saving.	Сохранение не завершилось.
+The emulator did not finish. Resume, retry, or return without saving.	Эмулятор не завершил работу. Продолжите, повторите или выйдите без сохранения.
+The game menu did not respond. Resume or return without saving.	Игровое меню не отвечает. Продолжите или выйдите без сохранения.
+The zFast LCD texture with both colour treatments.	Текстура ЖК zFast с обоими фильтрами цвета.
+The zFast LCD texture with natural colour and contrast.	Текстура ЖК zFast с естественными цветами и контрастом.
+The zFast LCD texture with the DS colour treatment.	Текстура ЖК zFast с цветами DS.
+Theme	Тема
+Theme & display	Тема и экран
+This emulator does not expose a frameskip setting.	У этого эмулятора нет настройки пропуска кадров.
+This emulator uses native resolution. No resolution switch is available.	Этот эмулятор использует исходное разрешение. Смена разрешения недоступна.
+This engine does not expose a threading switch.	У этого движка нет переключателя потоков.
+This engine has no live threading control.	У этого движка нельзя менять потоки на лету.
+This game	Эта игра
+This network requires an enterprise profile.	Этой сети нужен корпоративный профиль.
+This request did not finish. Please try again.	Запрос не завершился. Попробуйте снова.
+This shader is unavailable for the current emulator.	Этот фильтр недоступен для текущего эмулятора.
+Threaded 3D	Многопоточное 3D
+Time played	Время в игре
+Timezone	Часовой пояс
+Toggle	Переключение
+Top display	Верхний экран
+Touch	Касание
+Touch indicator	Индикатор касания
+Touch to continue	Коснитесь, чтобы продолжить
+Touch {0}	Касание {0}
+Try saving again	Сохранить ещё раз
+Turn Wi-Fi off?	Выключить Wi-Fi?
+Turn Wi-Fi on first.	Сначала включите Wi-Fi.
+Turn Wi-Fi on to find networks.	Включите Wi-Fi для поиска сетей.
+Turning Wi-Fi off…	Выключение Wi-Fi…
+Turning Wi-Fi on…	Включение Wi-Fi…
+Typeface	Шрифт
+Unassigned	Не назначено
+Unavailable	Недоступно
+Unmatched artwork	Несопоставленные обложки
+Unmute	Включить звук
+Updates & recovery	Обновления и восстановление
+Use ROM identity	Данные из ROM
+Use an additional rendering thread	Дополнительный поток рендеринга
+Use default ({0})	По умолчанию ({0})
+Use global controls	Общее управление
+Use previous build	Предыдущая сборка
+Use the previous RGDS build?	Использовать предыдущую сборку RGDS?
+Used by games without an override	Для игр без своих настроек
+Username	Имя пользователя
+View	Вид
+Volume	Громкость
+Volume control unavailable	Регулировка громкости недоступна
+WAITING FOR INPUT	ОЖИДАНИЕ ВВОДА
+Warm monochrome with preserved highlight detail.	Тёплый монохром с сохранением деталей в светах.
+Warm paper	Тёплая бумага
+Warm whites and softened contrast for evening play.	Тёплый белый и мягкий контраст для игры вечером.
+Welcome back	С возвращением
+What the shortcut opens	Что открывает кнопка
+Where this layout applies	Где действует раскладка
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Адаптер Wi-Fi не готов. Проверьте драйвер ОС или перезапустите консоль.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Адаптер Wi-Fi не готов. Включите Wi-Fi, чтобы повторить.
+Wi-Fi did not turn on. Try again.	Wi-Fi не включился. Попробуйте снова.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi заблокирован оборудованием. Перезапустите консоль и попробуйте снова.
+Wi-Fi is still on. Try turning it off again.	Wi-Fi всё ещё включён. Попробуйте выключить снова.
+Wi-Fi is unavailable.	Wi-Fi недоступен.
+Wi-Fi off.	Wi-Fi выключен.
+Wi-Fi on.	Wi-Fi включён.
+Wi-Fi request failed. Check the password and signal, then try again.	Ошибка запроса Wi-Fi. Проверьте пароль и сигнал и попробуйте снова.
+Wi-Fi request timed out. Check signal and try again.	Время запроса Wi-Fi истекло. Проверьте сигнал и попробуйте снова.
+Wi-Fi service is unavailable.	Служба Wi-Fi недоступна.
+With shader	С фильтром
+Working…	Выполняется…
+Your cartridges go here	Здесь будут ваши картриджи
+Your home screen after powering on	Главный экран после включения
+Your local time and date	Местное время и дата
+Your menu shortcut	Кнопка вызова меню
+Your shader choice is still available.	Выбранный фильтр по-прежнему доступен.
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + оба фильтра цвета
+{0} (experimental)	{0} (экспериментально)
+{0} (recommended)	{0} (рекомендуется)
+{0} frames	Кадров: {0}
+{0} games	Игр: {0}
+{0} settings	Настройки: {0}
+Up	Вверх
+Times played	Запусков
+Last played	Последний запуск
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	Готово к загрузке обложек.
+Icon style	Стиль значков
+Simple pixel	Простые пиксельные
+Rich	Подробные
+Statistics	Статистика
+Games played	Сыграно игр
+Most played	Чаще всего
+Preparing your statistics…	Подготовка статистики…
+Play a game to start your statistics.	Сыграйте в игру, чтобы начать статистику.
+Installed version	Установленная версия
+Check for updates	Проверить обновления
+Restart & install	Перезапустить и установить
+Download update	Загрузить обновление
+Pause download	Приостановить загрузку
+Release notes	Примечания к выпуску
+Discard update	Отменить обновление
+No release notes yet.	Примечаний к выпуску пока нет.
+Restart and install the update?	Перезапустить и установить обновление?
+Check for updates when you are ready.	Проверьте обновления, когда будете готовы.
+Updates will be available when the release channel opens.	Обновления появятся, когда откроется канал выпусков.
+Checking for updates…	Проверка обновлений…
+You are up to date.	Установлена последняя версия.
+A new version is ready to download.	Новая версия готова к загрузке.
+This version failed to start. Waiting for a newer update.	Эта версия не запустилась. Ожидается более новое обновление.
+Downloading update…	Загрузка обновления…
+Verifying update…	Проверка обновления…
+Preparing update…	Подготовка обновления…
+Ready to restart. Your previous version is kept for recovery.	Готово к перезапуску. Предыдущая версия сохранена для восстановления.
+Restarting into the update…	Перезапуск в обновление…
+Checking the new version…	Проверка новой версии…
+Update installed.	Обновление установлено.
+The update could not start. Your previous version was restored.	Обновление не запустилось. Предыдущая версия восстановлена.
+Download paused. Retry to continue.	Загрузка приостановлена. Повторите, чтобы продолжить.
+Update discarded. Your installed version is unchanged.	Обновление отменено. Установленная версия не изменилась.
+Connect the charger before installing an update.	Подключите зарядку перед установкой обновления.
+There is not enough free space for this update.	Недостаточно места для этого обновления.
+Exit your game before installing an update.	Выйдите из игры перед установкой обновления.
+Install the latest SD installer before this update.	Перед этим обновлением установите последний установщик для SD.
+Restart RG DS Core before installing the update.	Перезапустите RG DS Core перед установкой обновления.
+Download interrupted. Retry to continue.	Загрузка прервана. Повторите, чтобы продолжить.
+An update is already prepared. Install it or discard it first.	Обновление уже подготовлено. Сначала установите или отмените его.
+Another update is already running.	Уже выполняется другое обновление.
+Update information has expired or the device clock is incorrect.	Данные об обновлении устарели или часы устройства неверны.
+This stock firmware has not been validated for updates.	Эта штатная прошивка не проверена для обновлений.
+Update verification failed. Check for updates again.	Проверка обновления не пройдена. Проверьте обновления снова.
+Update failed. Check Wi-Fi and try again.	Ошибка обновления. Проверьте Wi-Fi и попробуйте снова.
+Stable	Стабильный
+Testing	Тестовый
+Import slot	Импорт слота
+Export slot	Экспорт слота
+Save checkpoint	Сохранить прогресс
+Load checkpoint	Загрузить прогресс
+Save here	Сохранить сюда
+Export	Экспорт
+More	Ещё
+Replace slot {0}?	Заменить слот {0}?
+Load slot {0}?	Загрузить слот {0}?
+Delete slot {0}?	Удалить слот {0}?
+Undo last slot change	Отменить изменение слота
+Undo last load	Отменить загрузку
+Import into this slot	Импортировать в этот слот
+Slot {0} deleted.	Слот {0} удалён.
+Slot change undone.	Изменение слота отменено.
+A saves your current progress here.	A сохраняет сюда текущий прогресс.
+A replaces this slot with your current progress. X deletes it.	A заменяет слот текущим прогрессом. X удаляет его.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A загружает слот. «Отменить загрузку» в меню Y вернёт текущий прогресс.
+Nothing to load here yet.	Здесь пока нечего загружать.
+A exports this slot to userdata/exports. X deletes it.	A экспортирует слот в userdata/exports. X удаляет его.
+Y imports a save into this slot.	Y импортирует сохранение в этот слот.
+Import help	Справка по импорту
+Replace	Заменить
+Blow into microphone	Подуть в микрофон
+Close and open DS lid	Закрыть и открыть крышку DS
+DS language	Язык DS
+Real microphone	Настоящий микрофон
+Japanese	Японский
+English	Английский
+French	Французский
+German	Немецкий
+Italian	Итальянский
+Spanish	Испанский
+2 seconds	2 секунды
+In game	В игре
+Restart the game to apply DS settings.	Перезапустите игру, чтобы применить настройки DS.
+Could not save DS settings.	Не удалось сохранить настройки DS.
+Search	Поиск
+Save gallery	Галерея сохранений
+Search and filters	Поиск и фильтры
+Add your games	Добавьте игры
+DS controls	Управление DS
+Back up all saves	Резервная копия сохранений
+Resume after power off	Продолжать после выключения
+Slot	Слот
+Empty slot	Пустой слот
+Search games	Поиск игр
+Filter	Фильтр
+Clear search and filters	Сбросить поиск и фильтры
+Missing artwork	Без обложки
+Where to put games	Куда класть игры
+Scan for games	Найти игры
+Automatic updates	Автообновления
+Download automatically	Загружать автоматически
+Check automatically	Проверять автоматически
+Update available in Maintenance	Обновление доступно в «Обслуживании»
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Скопируйте файлы .rgdssave.zip в userdata/imports. Импорт должен совпадать с игрой и эмулятором.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Скопируйте файлы .nds или ZIP-архивы DS в Roms/NDS на карте с играми. Игры не входят в комплект. Сохранения хранятся в userdata.
+Save backup created in userdata/exports.	Резервная копия сохранений создана в userdata/exports.
+Slot exported to userdata/exports.	Слот экспортирован в userdata/exports.
+Save library updated.	Библиотека сохранений обновлена.
+Current progress could not be saved. No slot was changed.	Не удалось сохранить текущий прогресс. Слоты не изменены.
+DS controls are unavailable for this engine.	Управление DS недоступно для этого движка.
+Your DS library starts here	Здесь начинается ваша библиотека DS
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Скопируйте файлы .nds или ZIP DS в Roms/NDS на карте с играми и выберите «Найти игры».
+Use the engine's native controls for microphone and DS settings.	Микрофон и настройки DS — через собственное управление движка.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Настоящий микрофон включён по умолчанию. Дуновение и крышка возвращают в игру на две секунды. Смена языка применяется после перезапуска.
+Unplayed	Не запускались
+Played	Запускались
+Filtered	С фильтром
+No matching games	Нет подходящих игр
+No matches. Use View to change filters.	Ничего не найдено. Измените фильтры в «Виде».
+Reset state	Сбросить состояние
+Restart without loading a state?	Перезапустить без загрузки состояния?
+Restart from the title screen. In-game saves and save slots are kept.	Перезапуск с титульного экрана. Игровые сохранения и слоты останутся.
+Microphone, simulated blowing, lid and DS language.	Микрофон, имитация дуновения, крышка и язык DS.
+Test microphone	Проверить микрофон
+Test	Проверить
+Live input	Входной сигнал
+Quiet	Тихо
+Loud	Громко
+Listening…	Слушаю…
+Microphone unavailable	Микрофон недоступен
+Audio is not recorded or saved.	Звук не записывается и не сохраняется.
+Test the microphone on your handheld.	Проверьте микрофон консоли.
+Return home before testing the physical microphone.	Вернитесь на главную перед проверкой микрофона.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Подуйте или говорите в микрофон. Уровень поднимется и опустится, когда вы замолчите.
+No filter	Без фильтра
+Quick search	Быстрый поиск
+A  Search	A  Поиск
+A  Jump	A  Перейти
+Edit search	Изменить поиск
+Clear filters	Сбросить фильтры
+Try another title or clear your filters	Попробуйте другое название или сбросьте фильтры
+Type a game title…	Введите название игры…
+Finding games…	Поиск игр…
+Searching…	Поиск…
+Search in	Искать в
+Try a shorter title or clear your filter.	Попробуйте название короче или сбросьте фильтр.
+Type	Ввод
+Tap to type, or use the D-pad and A	Коснитесь, чтобы печатать, или используйте крестовину и A
+No letters to jump to. Search for another game.	Нет букв для перехода. Найдите другую игру.
+{0} match	Совпадений: {0}
+{0} matches	Совпадений: {0}
+{0} matching game	Подходящих игр: {0}
+{0} matching games	Подходящих игр: {0}
+{0} game	Игр: {0}
+Interface animations	Анимации интерфейса
+View transitions	Переходы между экранами
+Small touches, scrolling and startup motion	Мелкие эффекты, прокрутка и анимация запуска
+Springy menu changes with a colourful wobble	Пружинистая смена меню с цветным покачиванием
+Transitions	Переходы
+Subtle	Сдержанные
+Menu sounds	Звуки меню
+Effects volume	Громкость эффектов
+Preview sound	Прослушать звук
+A little handheld magic	Немного карманной магии
+Playful sounds for browsing, choosing and starting games.	Весёлые звуки при просмотре, выборе и запуске игр.
+Turn on menu sounds to hear the previews.	Включите звуки меню, чтобы прослушать их.
+Some menu sounds are unavailable.	Некоторые звуки меню недоступны.
+Menu audio is unavailable on this device.	Звук меню недоступен на этом устройстве.
+Menu sounds are unavailable.	Звуки меню недоступны.
+Close lid	Закрыть крышку
+Open lid	Открыть крышку
+Spring	Пружина
+Push	Сдвиг
+Transition style	Стиль переходов
+Animate pages with the selected style	Анимировать страницы выбранным стилем
+Slide into pages; slide back to return	Страницы въезжают и уезжают назад
+Accent colour	Цвет акцента
+FAVOURITE COLOUR	ЛЮБИМЫЙ ЦВЕТ
+Classic	Классика
+Classic blue	Классический синий
+High contrast	Высокий контраст
+PREVIEW	ПРЕДПРОСМОТР
+Selected row	Выбранная строка
+Switches and values	Переключатели и значения
+Grey	Серый
+Brown	Коричневый
+Red	Красный
+Pink	Розовый
+Orange	Оранжевый
+Yellow	Жёлтый
+Lime	Лаймовый
+Green	Зелёный
+Dark green	Тёмно-зелёный
+Sea green	Морской зелёный
+Turquoise	Бирюзовый
+Blue	Синий
+Dark blue	Тёмно-синий
+Purple	Пурпурный
+Violet	Фиолетовый
+Magenta	Маджента
+Network file sharing	Общий доступ к файлам по сети
+Open on this Wi-Fi	Открыт в этой сети Wi-Fi
+Password protected	Защищён паролем
+File sharing on. Find "RG DS" under Network.	Общий доступ включён. Найдите «RG DS» в разделе «Сеть».
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: исходный движок. DSCore добавляет исправления и скорость.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: рекомендуется. Самый быстрый, с исправлениями крышки, стилуса и 3D и 3D 2x–5x по желанию.
+DSCore 3D resolution	Разрешение 3D в DSCore
+Native (fastest)	Исходное (быстрее всего)
+2x sharper	В 2 раза чётче
+3x sharper	В 3 раза чётче
+4x (experimental)	4x (экспериментально)
+5x (experimental)	5x (экспериментально)
+Colour mode	Цветовой режим
+Draw and chat with nearby handhelds	Рисуйте и общайтесь с консолями рядом
+Wi-Fi connected	Wi-Fi подключён
+No Wi-Fi: you can still draw	Нет Wi-Fi: рисовать всё равно можно
+Type your name	Введите имя
+You appear like this to others	Так вас видят другие
+Starting…	Запуск…
+Chat is unavailable: you can still draw	Чат недоступен: рисовать всё равно можно
+Nobody else is nearby yet	Рядом пока никого нет
+1 person nearby	Рядом 1 человек
+{0} people nearby	Рядом человек: {0}
+Your colour	Ваш цвет
+Leave	Выйти
+Your name	Ваше имя
+Send	Отправить
+You are in Room {0}	Вы в комнате {0}
+{0} joined	{0} входит
+{0} left	{0} выходит
+New messages below	Новые сообщения ниже
+Older messages	Старые сообщения
+The pad is full: send it or clear it	Листок заполнен: отправьте или очистите его
+Too much on the pad: erase some of it	На листке слишком много: сотрите часть
+That message could not be sent	Не удалось отправить сообщение
+That room is full	Эта комната заполнена
+Chat Room {0}	Комната {0}
+Choose a chat room to join	Выберите комнату для чата
+Edit	Изменить
+Join	Войти
+Matches your accent	Как цвет акцента
+Nobody here yet	Здесь пока никого
+Start Send   X Undo   L R Scroll	Start Отправить   X Отменить   L R Листать
+You	Вы
+Time format	Формат времени
+24-hour	24 часа
+12-hour	12 часов
+24-hour or 12-hour clock	24- или 12-часовой формат
+How dates appear in the status bar	Как даты выглядят в строке состояния
+Connecting to	Подключение к
+This can take a few seconds	Это может занять несколько секунд
+Waiting for an address…	Ожидание адреса…
+IP address	IP-адрес
+Signal	Сигнал
+Could not connect	Не удалось подключиться
+Wi-Fi is off	Wi-Fi выключен
+Turn it on to find networks	Включите его для поиска сетей
+Choose a network from the list	Выберите сеть из списка
+Preparing…	Подготовка…
+Home layout	Вид главного экрана
+Background	Фон
+Touch gestures	Жесты касанием
+Carousel	Карусель
+Column	Колонка
+Plain	Простой
+Grid	Сетка
+A carousel, or the DSi's column with your last game on top	Карусель или колонка как на DSi с последней игрой сверху
+Plain, or the DSi's ruled grid behind every screen	Простой фон или сетка в стиле DSi на каждом экране
+Swipe up from the bottom for Home, in from the left for Back	Свайп снизу вверх — главная, слева — назад
+Nothing played yet	Пока ничего не запускалось
+Your last game will appear here	Здесь появится последняя игра
+Draw and chat	Рисовать и общаться
+Su	Вс
+Mo	Пн
+Tu	Вт
+We	Ср
+Th	Чт
+Fr	Пт
+Sa	Сб
+Chat Room	Комната чата
+Nobody else here yet	Здесь пока больше никого
+Drawing on your own	Рисуете в одиночку
+Jump	Перейти
+Home	Главная
+Swipe up from the bottom edge to go Home from anywhere.	Свайп вверх от нижнего края откроет главную откуда угодно.
+Swipe in from the left edge to go Back.	Свайп от левого края — назад.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Маленький язычок внизу нижнего экрана показывает, что жесты включены; он поднимается за пальцем, а кольцо отмечает место срабатывания жеста.
+Your saves are safe. See you soon!	Ваши сохранения в безопасности. До скорого!
+DS Classic	DS Classic
+DS Lite	DS Lite
+Natural glow	Естественное свечение
+Vivid LCD	Яркий ЖК
+Natural smooth	Естественный сглаженный
+Vivid smooth	Яркий сглаженный
+Pixel beads	Пиксельные бусины
+Glossy tiles	Глянцевые плитки
+The first DS screen: muted colour and a fine pixel grid.	Экран первой DS: приглушённые цвета и тонкая пиксельная сетка.
+The brighter DS Lite screen with a faint pixel grid.	Более яркий экран DS Lite с едва заметной сеткой.
+Natural colour with soft pixels that glow together.	Естественные цвета и мягкие пиксели, светящиеся вместе.
+Bold colour on a close-up LCD with RGB stripes.	Насыщенные цвета на крупном ЖК с полосами RGB.
+Natural colour with smoothed diagonal edges.	Естественные цвета со сглаженными диагоналями.
+Bold colour with smoothed diagonal edges.	Насыщенные цвета со сглаженными диагоналями.
+Bold colour; every pixel a round, shiny bead.	Насыщенные цвета; каждый пиксель — круглая блестящая бусина.
+Bold colour; every pixel a raised, glossy tile.	Насыщенные цвета; каждый пиксель — выпуклая глянцевая плитка.
+IN USE	ВЫБРАНО
+APPLY	ПРИМЕНИТЬ
+Follows your library shader.	Как фильтр библиотеки.
+Original	Исходный
+DS screens	Экраны DS
+Natural	Естественные
+Vivid	Яркие
+Pixel art	Пиксель-арт
+Moods	Настроения
+Change group	Сменить группу
+Sounds & music	Звуки и музыка
+Menu music	Музыка меню
+Music volume	Громкость музыки
+A soft tune plays while you browse. It fades out when a game starts.	Во время просмотра играет тихая мелодия. Она затихает при запуске игры.
+Turn on menu music for a soft tune while you browse.	Включите музыку меню, чтобы слышать тихую мелодию.
+Scanning…	Поиск…
+Scan complete	Поиск завершён
+Looking for games…	Поиск игр…
+Reading Roms/NDS on your games card. This takes a moment.	Чтение Roms/NDS на карте с играми. Это займёт немного времени.
+{0} found. Choose Done to go to your library.	Найдено: {0}. Выберите «Готово», чтобы открыть библиотеку.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Игры не найдены. Скопируйте файлы .nds или ZIP DS в Roms/NDS на карте с играми и повторите поиск.
+Backing up your saves…	Резервное копирование сохранений…
+The backup did not finish. Please try again.	Резервное копирование не завершилось. Попробуйте снова.
+Copies every save and checkpoint into one zip in userdata/exports.	Копирует все сохранения в один zip в userdata/exports.
+Where games go on the card, and a fresh scan.	Куда класть игры на карте и новый поиск.
+Where covers and titles come from.	Откуда берутся обложки и названия.
+System update	Обновление системы
+Version {0} is ready	Версия {0} готова
+Version {0} is ready to install	Версия {0} готова к установке
+Downloading {0}	Загрузка {0}
+Paused at {0}	Пауза на {0}
+Update now	Обновить сейчас
+Resume download	Продолжить загрузку
+Update	Обновить
+Install	Установить
+What's new	Что нового
+Download	Загрузка
+Verify	Проверка
+Prepare	Подготовка
+Step {0} of 4	Шаг {0} из 4
+Less than a minute left	Осталось меньше минуты
+About {0} min left	Осталось около {0} мин
+About {0} h left	Осталось около {0} ч
+Downloads resume where they stopped if Wi-Fi drops.	При обрыве Wi-Fi загрузка продолжится с того же места.
+Your games and saves are not touched.	Игры и сохранения не затрагиваются.
+Connection lost. Retrying…	Соединение потеряно. Повтор…
+The update could not be downloaded. Check for updates again.	Не удалось загрузить обновление. Проверьте обновления снова.
+Finishing another task. Press Y again in a moment.	Завершается другая задача. Нажмите Y чуть позже.
+Updates	Обновления
+The language for menus and messages.	Язык меню и сообщений.
+Set the clock to where you are.	Настройте часы по месту, где вы находитесь.
+How dates appear at the top of the screen.	Как даты выглядят вверху экрана.
+A 24-hour or 12-hour clock.	24- или 12-часовой формат.
+Versions, free space and the network address of your handheld.	Версии, свободное место и сетевой адрес консоли.
+Check for updates, go back to the previous build or clear temporary files.	Проверить обновления, вернуться к прошлой сборке или удалить временные файлы.
+Leave RG DS Core and go back to the stock menu.	Выйти из RG DS Core и вернуться в стандартное меню.
+What happens when you turn the handheld on.	Что происходит при включении консоли.
+Restart the RGDS menu.	Перезапустить меню RGDS.

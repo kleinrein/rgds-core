@@ -22,10 +22,10 @@ bool is_zip(const u8* data, size_t size);
 
 struct ZipEntry {
   std::string name;
-  u16  method = 0;          // 0 stored, 8 deflated
-  u64  data_off = 0;        // payload offset in the archive
-  u64  csize = 0, usize = 0;
-  u32  crc32 = 0;           // of the uncompressed bytes, as declared
+  u16 method = 0;   // 0 stored, 8 deflated
+  u64 data_off = 0; // payload offset in the archive
+  u64 csize = 0, usize = 0;
+  u32 crc32 = 0; // of the uncompressed bytes, as declared
   // A DSiWare title wrapped in a CIA container. Not a DS header, so the cart
   // path must not map it directly -- io/dsi_title_install.h unwraps it first.
   bool cia = false;
@@ -60,8 +60,8 @@ u32 crc32_update(u32 crc, const u8* data, size_t n);
 //
 // False on any failure, with a reason in `err`. A CIA is refused unless
 // `allow_cia`; io/dsi_title_install.h is the caller that unwraps one.
-bool extract_rom(const u8* zip, size_t size, std::vector<u8>& out, std::string& err,
-                 std::string* chosen = nullptr, bool allow_cia = false, bool* was_cia = nullptr);
+bool extract_rom(const u8* zip, size_t size, std::vector<u8>& out, std::string& err, std::string* chosen = nullptr,
+                 bool allow_cia = false, bool* was_cia = nullptr);
 
 std::string cia_refusal(const std::string& name);
 

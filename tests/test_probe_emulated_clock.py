@@ -64,7 +64,7 @@ class EmulatedClockTests(unittest.TestCase):
 
     def test_original_triangle_workload_uses_the_same_validated_clock(self):
         self.rom.write_bytes(b'RGDS 3D TEST####00')
-        self.assertEqual(self.discover(self.clock())['vblank_count'],110)
+        self.assertEqual(self.discover(self.clock())['vblank_count'], 110)
 
     def test_unrelated_process_and_wrong_rom_are_rejected_before_memory_open(self):
         self.stat(101, 1, 11)
@@ -95,15 +95,19 @@ class EmulatedClockTests(unittest.TestCase):
             clock.find()
 
     def test_drastic_ram_requires_opt_in_and_matching_owned_regular_fd(self):
-        backing = self.base / 'ram'; backing.write_bytes(bytes(4 * 1024 * 1024))
+        backing = self.base / 'ram'
+        backing.write_bytes(bytes(4 * 1024 * 1024))
         info = backing.stat()
         identity = f'{os.major(info.st_dev):02x}:{os.minor(info.st_dev):02x} {info.st_ino}'
-        fd = self.proc / '101/fd/19'; fd.parent.mkdir(); fd.symlink_to(backing)
+        fd = self.proc / '101/fd/19'
+        fd.parent.mkdir()
+        fd.symlink_to(backing)
         mapped = '/dev/shm/drastic_mapped_memory.dat (deleted)'
         (self.proc / '101/maps').write_text(
             '1000-401000 rw-s 00000000 ' + identity + ' ' + mapped + '\n'
             '501000-901000 rw-s 00000000 ' + identity + ' ' + mapped + '\n'
-            'a00000-b00000 rw-p 00000000 00:00 0\n')
+            'a00000-b00000 rw-p 00000000 00:00 0\n'
+        )
         with (self.proc / '101/mem').open('r+b') as memory:
             memory.truncate(0xb00000)
         self.assertIsNone(_mapping((self.proc / '101/maps').read_text().splitlines()[0], True))
@@ -123,7 +127,9 @@ class EmulatedClockTests(unittest.TestCase):
         self.assertIsNone(_mapping(prefix + '00:14 1038 /dev/shm/drastic_mapped_memory.dat', False, identity))
         self.assertIsNone(_mapping(prefix + '00:14 1037 /dev/dri/card0', False, identity))
         self.assertIsNone(_mapping(prefix + '00:14 1037 /tmp/drastic_mapped_memory.dat', False, identity))
-        self.assertTrue(_mapping(prefix + '00:14 1037 /dev/shm/drastic_mapped_memory.dat', False, identity)['drastic_ram'])
+        self.assertTrue(
+            _mapping(prefix + '00:14 1037 /dev/shm/drastic_mapped_memory.dat', False, identity)['drastic_ram']
+        )
 
 
 if __name__ == '__main__':

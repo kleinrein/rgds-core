@@ -29,10 +29,11 @@
 namespace ds::io {
 
 class SdCard : public BlockStorage {
- public:
-  static constexpr u8 kCid[16] = {0xBD, 0x12, 0x34, 0x56, 0x78, 0x03, 0x4D, 0x30, 0x30, 0x46, 0x50, 0x41, 0x00, 0x00, 0x15, 0x00};
+public:
+  static constexpr u8 kCid[16] = {0xBD, 0x12, 0x34, 0x56, 0x78, 0x03, 0x4D, 0x30,
+                                  0x30, 0x46, 0x50, 0x41, 0x00, 0x00, 0x15, 0x00};
   static constexpr u64 kMaxBytes = 32ull << 30;
-  static constexpr u64 kPartitionStart = 8192;   // sectors before the partition
+  static constexpr u64 kPartitionStart = 8192; // sectors before the partition
 
   struct Report {
     int files = 0, dirs = 0;        // open: imported; sync: written / created
@@ -72,12 +73,12 @@ class SdCard : public BlockStorage {
     bool present = false;
     u64 length = 0, part_base = 0;
     s32 fat_bits = 0;
-    std::vector<u64> sectors;                 // ascending
-    std::vector<u8> data;                     // 512 bytes per sector
-    std::vector<u64> changed;                 // ascending
+    std::vector<u64> sectors; // ascending
+    std::vector<u8> data;     // 512 bytes per sector
+    std::vector<u64> changed; // ascending
     std::vector<u64> ext_start, ext_len, ext_file_off;
     std::vector<u32> ext_file;
-    std::vector<std::string> files;           // relative to the folder
+    std::vector<std::string> files; // relative to the folder
     std::vector<std::string> known_key, known_host;
     std::vector<u8> known_dir;
     std::vector<u64> known_size;
@@ -94,28 +95,28 @@ class SdCard : public BlockStorage {
 
   u64 reads = 0, writes = 0;
 
- private:
+private:
   // A run of the card backed by a host file.
   struct Extent {
-    u64 start = 0, len = 0;   // card byte range
-    u32 file = 0;             // index into files_
+    u64 start = 0, len = 0; // card byte range
+    u32 file = 0;           // index into files_
     u64 file_off = 0;
   };
   // What the folder held for a card path, as of the last build or sync.
   struct Known {
-    std::string host;         // the host path relative to the folder, '/'-separated, the host's spelling
+    std::string host; // the host path relative to the folder, '/'-separated, the host's spelling
     bool dir = false;
     u64 size = 0;
-    s64 mtime = 0;            // host modification time, seconds
+    s64 mtime = 0; // host modification time, seconds
     s64 mtime_ns = 0;
   };
 
   void read_sector(u64 sector, u8* out);
-  void read_backing(u64 addr, u8* out);   // one sector, from the host file backing it (zero if none)
+  void read_backing(u64 addr, u8* out); // one sector, from the host file backing it (zero if none)
   const Extent* extent_at(u64 addr) const;
   bool is_backed(u64 addr) const { return extent_at(addr) != nullptr; }
   std::istream* host_file(u32 index);
-  bool mount(FatVolume& v, std::string* why);   // the partition the MBR names; sets part_base_
+  bool mount(FatVolume& v, std::string* why); // the partition the MBR names; sets part_base_
   void map_file(const FatVolume& v, const std::string& host_rel, const FatVolume::Entry& e);
   bool host_unchanged(const Known& k) const;
 
@@ -123,13 +124,13 @@ class SdCard : public BlockStorage {
   u64 length_ = 0;
   u64 part_base_ = 0;
   int fat_bits_ = 0;
-  std::unordered_map<u64, std::array<u8, 512>> sectors_;   // sector index -> contents
-  std::unordered_set<u64> changed_;                         // guest writes since the last sync
-  std::vector<Extent> extents_;                             // sorted by start, not overlapping
-  std::vector<std::string> files_;                          // host paths (absolute)
-  std::map<std::string, Known> known_;                      // key: card path, upper case
+  std::unordered_map<u64, std::array<u8, 512>> sectors_; // sector index -> contents
+  std::unordered_set<u64> changed_;                      // guest writes since the last sync
+  std::vector<Extent> extents_;                          // sorted by start, not overlapping
+  std::vector<std::string> files_;                       // host paths (absolute)
+  std::map<std::string, Known> known_;                   // key: card path, upper case
   u32 open_index_ = ~0u;
-  std::unique_ptr<std::istream> host_in_;   // the last host file read
+  std::unique_ptr<std::istream> host_in_; // the last host file read
 };
 
-}  // namespace ds::io
+} // namespace ds::io

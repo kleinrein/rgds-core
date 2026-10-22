@@ -14,7 +14,8 @@ class CarouselTimingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             source = root / "timing.cpp"
-            source.write_text(r'''#include "launcher/carousel.hpp"
+            source.write_text(
+                r'''#include "launcher/carousel.hpp"
 #include <cassert>
 #include <cmath>
 int main(){
@@ -64,11 +65,19 @@ int main(){
  c.reset(1);c.select(0,1600);c.down(320,205,false,1650);
  assert(c.position>0 && c.position<1 && c.start_position==c.position);
 }
-''')
+'''
+            )
             binary = root / "timing"
-            subprocess.run(["clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-                            "-I" + str(ROOT / "src"), str(source), "-o", str(binary)],
-                           check=True, capture_output=True, text=True)
+            subprocess.run(
+                [
+                    "clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT / "src"),
+                    str(source), "-o",
+                    str(binary)
+                ],
+                check=True,
+                capture_output=True,
+                text=True
+            )
             result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=2)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

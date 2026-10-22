@@ -75,7 +75,9 @@ int main(int argc,char** argv){
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-root", type=Path, default=ROOT, help="Repository or before snapshot with src/platform")
+    parser.add_argument(
+        "--source-root", type=Path, default=ROOT, help="Repository or before snapshot with src/platform"
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if not shutil.which("clang++") or not shutil.which("sdl2-config"):
@@ -87,11 +89,27 @@ def main():
     with tempfile.TemporaryDirectory(prefix="rgds-bridge-benchmark-") as folder:
         temp = Path(folder)
         for name, source in (("bridge", BRIDGE), ("overlay", OVERLAY)):
-            path = temp / (name + ".cpp");path.write_text(source)
+            path = temp / (name + ".cpp")
+            path.write_text(source)
             binary = temp / name
-            subprocess.run(["clang++", "-std=c++17", "-O2", *flags, "-I" + str(args.source_root / "src"), str(path), "-o", str(binary)], check=True, capture_output=True, text=True)
-            run = subprocess.run([str(binary), str(temp / ("data" if name == "bridge" else "frame"))],
-                                 env=dict(os.environ, RGDS_SDL_LIBRARY=str(library)), check=True, capture_output=True, text=True, timeout=30)
+            subprocess.run(
+                [
+                    "clang++", "-std=c++17", "-O2", *flags, "-I" + str(args.source_root / "src"),
+                    str(path), "-o",
+                    str(binary)
+                ],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            run = subprocess.run(
+                [str(binary), str(temp / ("data" if name == "bridge" else "frame"))],
+                env=dict(os.environ, RGDS_SDL_LIBRARY=str(library)),
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
             result[name] = json.loads(run.stdout)
     serialized = json.dumps(result, indent=2) + "\n"
     if args.output:

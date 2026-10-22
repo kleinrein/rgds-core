@@ -10,10 +10,10 @@
 namespace ds::gpu::vk {
 
 struct GpuDumpHeader {
-  static constexpr u32 kMagic = 0x44475046;   // "FPGD"
+  static constexpr u32 kMagic = 0x44475046; // "FPGD"
   u32 magic = kMagic, version = 1;
-  u32 npoly = 0, nvert = 0, ntexels = 0, nrows = 0;   // array lengths that follow, in entries
-  u64 frame = 0;                                        // NDS frame number
+  u32 npoly = 0, nvert = 0, ntexels = 0, nrows = 0; // array lengths that follow, in entries
+  u64 frame = 0;                                    // NDS frame number
   GpuFrame f{};
   GpuPost post{};
 };

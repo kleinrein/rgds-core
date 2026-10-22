@@ -41,7 +41,10 @@ public:
   }
   ~PresentThread() {
     if (!thread_.joinable()) return;
-    { std::lock_guard<std::mutex> lk(m_); quit_ = true; }
+    {
+      std::lock_guard<std::mutex> lk(m_);
+      quit_ = true;
+    }
     cv_.notify_all();
     thread_.join();
   }
@@ -64,7 +67,8 @@ public:
     const auto t0 = std::chrono::steady_clock::now();
     done_cv_.wait(lk, [&] { return done_ >= ticket; });
     const u64 ns = static_cast<u64>((std::chrono::steady_clock::now() - t0).count());
-    wait_ns_ += ns; ++waits_;
+    wait_ns_ += ns;
+    ++waits_;
     if (ns > 500'000) ++long_waits_;
   }
 
@@ -74,7 +78,9 @@ public:
     return done_ >= ticket;
   }
 
-  struct Stats { u64 jobs, job_ns, job_max_ns, waits, wait_ns, long_waits; };
+  struct Stats {
+    u64 jobs, job_ns, job_max_ns, waits, wait_ns, long_waits;
+  };
   Stats stats() {
     std::lock_guard<std::mutex> lk(m_);
     return Stats{done_, job_ns_, job_max_ns_, waits_, wait_ns_, long_waits_};
@@ -90,12 +96,15 @@ private:
     // A normal task by default: it is off the frame's critical path, and an
     // RT thread would keep the kernel work a present queues on its core
     // (the kworker) waiting behind it. DS_PRESENT_RT=1 keeps the inherited policy.
-    if (!std::getenv("DS_PRESENT_RT")) { sched_param z{}; pthread_setschedparam(pthread_self(), SCHED_OTHER, &z); }
+    if (!std::getenv("DS_PRESENT_RT")) {
+      sched_param z{};
+      pthread_setschedparam(pthread_self(), SCHED_OTHER, &z);
+    }
 #endif
     std::unique_lock<std::mutex> lk(m_);
     for (;;) {
       cv_.wait(lk, [&] { return quit_ || !jobs_.empty(); });
-      if (jobs_.empty()) return;   // quit, nothing left
+      if (jobs_.empty()) return; // quit, nothing left
       std::function<void()> job = std::move(jobs_.front());
       jobs_.pop_front();
       lk.unlock();
@@ -103,7 +112,8 @@ private:
       job();
       const u64 ns = static_cast<u64>((std::chrono::steady_clock::now() - t0).count());
       lk.lock();
-      job_ns_ += ns; if (ns > job_max_ns_) job_max_ns_ = ns;
+      job_ns_ += ns;
+      if (ns > job_max_ns_) job_max_ns_ = ns;
       ++done_;
       done_cv_.notify_all();
     }

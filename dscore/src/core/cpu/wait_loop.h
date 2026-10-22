@@ -27,7 +27,9 @@ bool wait_loop_hook_wanted(CpuContext& cpu, u32 pc, bool thumb);
 // At the loop head: skip what the budget covers. True if anything was skipped.
 bool wait_loop_run(CpuContext& cpu);
 
-struct WaitLoopStats { u64 runs, iterations, cycles; };
+struct WaitLoopStats {
+  u64 runs, iterations, cycles;
+};
 const WaitLoopStats& wait_loop_stats();
 
 } // namespace ds::cpu

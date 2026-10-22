@@ -6,11 +6,11 @@
 
 namespace ds {
 
-using u8  = std::uint8_t;
+using u8 = std::uint8_t;
 using u16 = std::uint16_t;
 using u32 = std::uint32_t;
 using u64 = std::uint64_t;
-using s8  = std::int8_t;
+using s8 = std::int8_t;
 using s16 = std::int16_t;
 using s32 = std::int32_t;
 using s64 = std::int64_t;
@@ -27,7 +27,7 @@ constexpr u32 ARM7_CLOCK_HZ = ARM9_CLOCK_HZ / 2;
 constexpr u32 SYSTEM_CYCLES_PER_SCANLINE = 355 * 6;
 constexpr u32 CYCLES_PER_SCANLINE = SYSTEM_CYCLES_PER_SCANLINE * 2;
 constexpr u32 SCANLINES_PER_FRAME = 263;
-constexpr u32 CYCLES_PER_FRAME    = CYCLES_PER_SCANLINE * SCANLINES_PER_FRAME;
+constexpr u32 CYCLES_PER_FRAME = CYCLES_PER_SCANLINE * SCANLINES_PER_FRAME;
 
 constexpr u32 SCREEN_W = 256;
 constexpr u32 SCREEN_H = 192;

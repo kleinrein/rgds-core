@@ -16,7 +16,8 @@ class ViewSpringTests(unittest.TestCase):
     def test_spring_bounds_interruptions_wraparound_and_hit_testing(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / 'spring.cpp'
-            source.write_text(r'''#include "launcher/view_motion.hpp"
+            source.write_text(
+                r'''#include "launcher/view_motion.hpp"
 #include "launcher/settings.hpp"
 #include <cassert>
 int main(int argc,char**argv){
@@ -77,30 +78,50 @@ int main(int argc,char**argv){
  hits.add({24,96,566,66},-3,2);assert(hits.unproject(60,100)==std::make_pair(63,98));
  for(int i=0;i<100;i++)hits.add(first,0,0);assert(hits.count==64);hits.clear();assert(hits.count==0);
 }
-''')
+'''
+            )
             binary = Path(folder) / 'spring'
-            subprocess.run(['clang++', '-std=c++17', '-I'+str(ROOT/'src'), str(source), '-o', str(binary)], check=True, capture_output=True)
+            subprocess.run(
+                ['clang++', '-std=c++17', '-I' + str(ROOT / 'src'),
+                 str(source), '-o', str(binary)],
+                check=True,
+                capture_output=True
+            )
             subprocess.run([str(binary), folder], check=True)
 
 
 @unittest.skipUnless(BINARY.exists(), 'Build the host launcher first')
 class ViewAnimationUITests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        (self.root/'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\n')
+        (self.root / 'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\n')
 
     def run_ui(self, script='', entry=('--settings',), seconds=2, env_extra=None):
-        (self.root/'input').write_text(script)
-        result = subprocess.run([str(BINARY), '--preview', '--data', str(self.root),
-            '--state', str(self.root/'state'), '--input-script', str(self.root/'input'),
-            '--seconds', str(seconds), '--cache-report', str(self.root/'report'), *entry],
-            cwd=ROOT, env=dict(os.environ, SDL_VIDEODRIVER='dummy', **(env_extra or {})), capture_output=True, text=True, timeout=8)
-        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
-        return json.loads((self.root/'report').read_text())
+        (self.root / 'input').write_text(script)
+        result = subprocess.run(
+            [
+                str(BINARY), '--preview', '--data',
+                str(self.root), '--state',
+                str(self.root / 'state'), '--input-script',
+                str(self.root / 'input'), '--seconds',
+                str(seconds), '--cache-report',
+                str(self.root / 'report'), *entry
+            ],
+            cwd=ROOT,
+            env=dict(os.environ, SDL_VIDEODRIVER='dummy', **(env_extra or {})),
+            capture_output=True,
+            text=True,
+            timeout=8
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return json.loads((self.root / 'report').read_text())
 
     def enable(self, enabled=True, general=True, style="spring"):
-        (self.root/'ui.ini').write_text(f'schema=1\nanimations={int(general)}\nview_animations={int(enabled)}\nview_transition_style={style}\n')
+        (self.root / 'ui.ini').write_text(
+            f'schema=1\nanimations={int(general)}\nview_animations={int(enabled)}\nview_transition_style={style}\n'
+        )
 
     def assert_settled(self, report):
         self.assertFalse(report['view_animation_active'])
@@ -118,12 +139,12 @@ class ViewAnimationUITests(unittest.TestCase):
     def test_touch_toggle_persists_and_keyboard_disables(self):
         report = self.run_ui('100 click 180 240\n', ('--settings', '--section', 'motion'))
         self.assertTrue(report['view_animations'])
-        self.assertIn('view_animations=1\n', (self.root/'ui.ini').read_text())
+        self.assertIn('view_animations=1\n', (self.root / 'ui.ini').read_text())
         self.assertGreater(report['view_animation_frames'], 0)
         self.assert_settled(report)
         report = self.run_ui('100 key Left\n', ())
         self.assertFalse(report['view_animations'])
-        self.assertIn('view_animations=0\n', (self.root/'ui.ini').read_text())
+        self.assertIn('view_animations=0\n', (self.root / 'ui.ini').read_text())
 
     def test_launcher_changes_animate_and_return_to_idle(self):
         self.enable()
@@ -134,13 +155,13 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertGreater(short['view_animation_frames'], 10)
         self.assert_settled(short)
         long = self.run_ui('100 key A\n800 key Escape\n', seconds=3)
-        self.assertLessEqual(long['frames'], short['frames']+12)
+        self.assertLessEqual(long['frames'], short['frames'] + 12)
 
     def test_game_menu_subpage_and_back_animate(self):
         self.enable()
         report = self.run_ui('100 key Down\n140 key Down\n180 key Right\n220 key A\n900 key Escape\n', ('--game-menu',))
         self.assertIn(11, report['visited_pages'])  # Sound
-        self.assertEqual(report['page'], 12)       # QuickMenu
+        self.assertEqual(report['page'], 12)  # QuickMenu
         self.assertEqual(report['back_transitions'], 1)  # Back to a higher enum is still backwards.
         self.assertGreater(report['element_moves'], 0)
         self.assertEqual(report['view_transitions'], 2)
@@ -174,7 +195,10 @@ class ViewAnimationUITests(unittest.TestCase):
 
     def test_home_and_library_layout_changes_animate(self):
         self.enable()
-        report = self.run_ui('100 key A\n800 key Y\n1000 key Down\n1100 key Right\n1200 key A\n1800 key Escape\n', ('--home',), seconds=3)
+        report = self.run_ui(
+            '100 key A\n800 key Y\n1000 key Down\n1100 key Right\n1200 key A\n1800 key Escape\n', ('--home',),
+            seconds=3
+        )
         self.assertFalse(report['home_menu'])
         self.assertGreaterEqual(report['view_transitions'], 2)
         self.assertGreater(report['view_animation_frames'], 10)
@@ -184,7 +208,7 @@ class ViewAnimationUITests(unittest.TestCase):
         report = self.run_ui('100 click 430 290\n', ('--settings', '--section', 'motion'))
         self.assertEqual(report['view_transition_style'], 'push')
         self.assertFalse(report['view_animations'])  # Choosing a style leaves motion off.
-        self.assertIn('view_transition_style=push\n', (self.root/'ui.ini').read_text())
+        self.assertIn('view_transition_style=push\n', (self.root / 'ui.ini').read_text())
         report = self.run_ui('100 key Left\n', ())  # Restore focus on the style row.
         self.assertEqual(report['view_transition_style'], 'spring')
         self.assertFalse(report['view_animations'])
@@ -192,7 +216,7 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertEqual(report['view_transition_style'], 'push')
         report = self.run_ui('100 key Right\n', ())
         self.assertEqual(report['view_transition_style'], 'zoom')
-        self.assertIn('view_transition_style=zoom\n', (self.root/'ui.ini').read_text())
+        self.assertIn('view_transition_style=zoom\n', (self.root / 'ui.ini').read_text())
         self.assert_settled(report)
 
     def test_zoom_navigation_composites_and_speed_persists(self):
@@ -206,7 +230,7 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assert_settled(report)
         # Speed: the fourth card; Left picks Snappy and is saved.
         self.run_ui('100 click 320 372\n', ('--settings', '--section', 'motion'))
-        self.assertIn('view_transition_speed=snappy\n', (self.root/'ui.ini').read_text())
+        self.assertIn('view_transition_speed=snappy\n', (self.root / 'ui.ini').read_text())
 
     def test_push_parent_navigation_and_idle(self):
         self.enable(style='push')
@@ -220,7 +244,7 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertEqual(report['element_moves'], 0)
         self.assert_settled(report)
         long = self.run_ui(script, seconds=4)
-        self.assertLessEqual(long['frames'], report['frames']+12)
+        self.assertLessEqual(long['frames'], report['frames'] + 12)
 
     def test_push_rapid_reversal_and_game_menu_back(self):
         self.enable(style='push')
@@ -249,7 +273,7 @@ class ViewAnimationUITests(unittest.TestCase):
 
     def test_push_restored_subpage_back_then_reopen_is_forward(self):
         self.enable(style='push')
-        (self.root/'state').write_text('1 0 1 ""\n33 0 0\n')
+        (self.root / 'state').write_text('1 0 1 ""\n33 0 0\n')
         report = self.run_ui('100 key Escape\n600 key A\n', ())
         self.assertEqual(report['page'], 33)
         self.assertEqual(report['back_transitions'], 1)
@@ -272,10 +296,16 @@ class ViewAnimationUITests(unittest.TestCase):
     @unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'SDL compiler required')
     def test_renderer_without_targets_falls_back_to_instant_views(self):
         self.enable()
-        source = self.root/'fallback.cpp'; library = self.root/'fallback.dylib'
-        source.write_text('#include <SDL.h>\nextern "C" int SDL_SetRenderTarget(SDL_Renderer*,SDL_Texture*){return -1;}\n')
+        source = self.root / 'fallback.cpp'
+        library = self.root / 'fallback.dylib'
+        source.write_text(
+            '#include <SDL.h>\nextern "C" int SDL_SetRenderTarget(SDL_Renderer*,SDL_Texture*){return -1;}\n'
+        )
         flags = subprocess.check_output(['sdl2-config', '--cflags', '--libs'], text=True).split()
-        subprocess.run(['clang++', '-shared', '-fPIC', str(source), *flags, '-o', str(library)], check=True, capture_output=True)
+        subprocess.run(
+            ['clang++', '-shared', '-fPIC', str(source), *flags, '-o',
+             str(library)], check=True, capture_output=True
+        )
         for style in ('spring', 'push'):
             with self.subTest(style=style):
                 self.enable(style=style)

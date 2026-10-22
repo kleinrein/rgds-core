@@ -32,7 +32,7 @@ void on_fault(int, siginfo_t* si, void*) {
 // Whether touching the byte faults for real (a store writes back what it
 // read, so a successful store changes nothing).
 bool faults(u8* p, bool store) {
-  struct sigaction sa {}, old_segv {}, old_bus {};
+  struct sigaction sa{}, old_segv{}, old_bus{};
   sa.sa_sigaction = on_fault;
   sa.sa_flags = SA_SIGINFO | SA_NODEFER;
   sigemptyset(&sa.sa_mask);
@@ -53,7 +53,10 @@ bool faults(u8* p, bool store) {
 
 int main() {
   std::unique_ptr<HostArena> arena = HostArena::create(64 * 1024);
-  if (!arena) { std::printf("fastmem: no shared memory on this host, skipped\n"); return 0; }
+  if (!arena) {
+    std::printf("fastmem: no shared memory on this host, skipped\n");
+    return 0;
+  }
   u8* ram = arena->take(16 * 1024);
   u8* rom = arena->take(8 * 1024);
   CHECK(ram && rom && arena->take(64 * 1024) == nullptr);
@@ -61,8 +64,8 @@ int main() {
 
   PageTable pt;
   pt.map(0x02000000, 16 * 1024, ram, PAGE_READABLE | PAGE_WRITABLE);
-  pt.map(0x02004000, 16 * 1024, ram, PAGE_READABLE | PAGE_WRITABLE);   // a mirror
-  pt.map(0x03000000, 8 * 1024, rom, PAGE_READABLE);                    // read-only
+  pt.map(0x02004000, 16 * 1024, ram, PAGE_READABLE | PAGE_WRITABLE); // a mirror
+  pt.map(0x03000000, 8 * 1024, rom, PAGE_READABLE);                  // read-only
   pt.map_mmio(0x04000000, 8 * 1024);
   std::unique_ptr<GuestView> view = GuestView::create(*arena, pt);
   CHECK(view != nullptr);
@@ -82,10 +85,11 @@ int main() {
   // Read-only, I/O and unmapped.
   rom[0x30] = 0x42;
   CHECK(!faults(g + 0x03000030, false) && g[0x03000030] == 0x42 && faults(g + 0x03000030, true));
-  CHECK(faults(g + 0x01000000, false));   // unmapped inside the reservation
+  CHECK(faults(g + 0x01000000, false)); // unmapped inside the reservation
   // A 32-bit host reserves only 0x00000000-0x03FFFFFF; beyond it the JIT's
   // region table points at a guard, not at the view.
-  if (GuestView::RESERVE > 0x07000000u) CHECK(faults(g + 0x04000000, false) && faults(g + 0x05000000, false) && faults(g + 0x06000000, false));
+  if (GuestView::RESERVE > 0x07000000u)
+    CHECK(faults(g + 0x04000000, false) && faults(g + 0x05000000, false) && faults(g + 0x06000000, false));
   CHECK(view->verify(&why));
 
   // A write trap on one 2 KB half protects its whole 4 KB host page, the other half too.
@@ -100,7 +104,7 @@ int main() {
   CHECK(view->flush());
   CHECK(faults(g + 0x02000000, true) && faults(g + 0x02004000, true) && !faults(g + 0x02004000, false));
   pt.set_code_host(ram, false);
-  CHECK(view->flush() && !faults(g + 0x02004000, true));   // untagging stays read-only until a store asks
+  CHECK(view->flush() && !faults(g + 0x02004000, true)); // untagging stays read-only until a store asks
 
   // A remap to a buffer offset that does not start on 4 KB: not laid (the
   // table still serves it), and an unmap takes the view page away.

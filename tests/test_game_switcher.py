@@ -18,11 +18,16 @@ class GameSwitcherTests(unittest.TestCase):
         self.menu.rom.write_bytes(b'current game')
         self.next_game = (self.root / 'Next game.nds').resolve()
         self.next_game.write_bytes(b'next game')
-        write_fields(self.menu.folder / 'switcher-library.ini', {
-            'game_0_rom': str(self.menu.rom), 'game_0_title': 'Current',
-            'game_1_rom': str(self.next_game), 'game_1_title': 'Next game',
-            'game_2_rom': str(self.next_game), 'game_3_rom': str(self.root / 'gone.nds'),
-        })
+        write_fields(
+            self.menu.folder / 'switcher-library.ini', {
+                'game_0_rom': str(self.menu.rom),
+                'game_0_title': 'Current',
+                'game_1_rom': str(self.next_game),
+                'game_1_title': 'Next game',
+                'game_2_rom': str(self.next_game),
+                'game_3_rom': str(self.root / 'gone.nds'),
+            }
+        )
         self.menu.prepare_switcher()
 
     def test_switch_always_saves_and_waits_for_verified_exit(self):
@@ -48,7 +53,8 @@ class GameSwitcherTests(unittest.TestCase):
             self.menu.close_menu()
             self.ui = menus.Process()
             self.clock += 1
-            with patch.object(self.menu.inputs, 'poll', return_value=key), patch('game_menu.subprocess.Popen', return_value=self.ui) as spawn:
+            with patch.object(self.menu.inputs, 'poll',
+                              return_value=key), patch('game_menu.subprocess.Popen', return_value=self.ui) as spawn:
                 self.menu.poll()
             self.assertEqual('--game-switcher' in spawn.call_args.args[0], switcher)
             self.assertIsNone(self.menu.pending, 'Home opens a menu without exiting or saving')
@@ -56,16 +62,21 @@ class GameSwitcherTests(unittest.TestCase):
     def test_stock_anbernic_packet_aliases_do_not_become_home(self):
         from audio import EVENT
         for codes in ((312,), (354,), (312, 354)):
-            with patch('game_menu.Path.glob', return_value=[]):inputs=MenuInput()
-            inputs.descriptors=[7];inputs.codes[7]=ANBERNIC_MENU_CODES;inputs.starts[7]=311
-            inputs.calibrated[7]=True;inputs.mainline[7]=False
-            packets=b''.join(EVENT.pack(0,0,1,code,down) for down in (1,0) for code in codes)
-            with patch('game_menu.select.select',return_value=([7],[],[])),patch('game_menu.os.read',return_value=packets):
+            with patch('game_menu.Path.glob', return_value=[]):
+                inputs = MenuInput()
+            inputs.descriptors = [7]
+            inputs.codes[7] = ANBERNIC_MENU_CODES
+            inputs.starts[7] = 311
+            inputs.calibrated[7] = True
+            inputs.mainline[7] = False
+            packets = b''.join(EVENT.pack(0, 0, 1, code, down) for down in (1, 0) for code in codes)
+            with patch('game_menu.select.select',
+                       return_value=([7], [], [])), patch('game_menu.os.read', return_value=packets):
                 self.assertFalse(inputs.poll(), codes)
             self.clock += .2
-            with patch('game_menu.select.select',return_value=([],[],[])):
-                self.assertEqual(inputs.poll(),'menu',codes)
-                self.assertFalse(inputs.poll(),codes)
+            with patch('game_menu.select.select', return_value=([], [], [])):
+                self.assertEqual(inputs.poll(), 'menu', codes)
+                self.assertFalse(inputs.poll(), codes)
 
     def test_home_changes_open_switcher_to_game_menu_without_resuming(self):
         with patch.object(self.menu.inputs, 'poll', return_value='game-menu'):
@@ -81,7 +92,7 @@ class GameSwitcherTests(unittest.TestCase):
             self.menu.poll()
         self.assertTrue(self.menu.paused)
         self.assertIs(self.menu.menu, self.ui)
-        status=menus.read_fields(self.menu.status)
+        status = menus.read_fields(self.menu.status)
         self.assertEqual(status['view_request'], '1')
         self.assertEqual(status['view'], 'switcher')
         self.assertIsNone(self.menu.pending)
@@ -130,10 +141,13 @@ class GameSwitcherTests(unittest.TestCase):
 
     def test_runner_reuses_session_and_forces_autoload_only_for_switch(self):
         calls = []
+
         def once(core, app, data, rom, display_handoff, fresh_start=False, display=None):
             calls.append((core, rom, display_handoff, os.environ.get('RGDS_FORCE_AUTOLOAD')))
             return SwitchGame('melonds', self.next_game) if len(calls) == 1 else 0
-        with patch.dict(os.environ, {'RGDS_FORCE_AUTOLOAD': '0'}), patch.object(emulators, '_run_once', side_effect=once):
+
+        with patch.dict(os.environ,
+                        {'RGDS_FORCE_AUTOLOAD': '0'}), patch.object(emulators, '_run_once', side_effect=once):
             self.assertEqual(emulators.run('drastic', self.menu.app, self.menu.data, self.menu.rom, 'handoff'), 0)
             self.assertEqual(os.environ['RGDS_FORCE_AUTOLOAD'], '0')
         self.assertEqual(calls, [('drastic', self.menu.rom, 'handoff', '0'), ('melonds', self.next_game, None, '1')])

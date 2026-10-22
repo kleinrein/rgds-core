@@ -17,16 +17,21 @@ Q = shlex.quote
 # uploaded Python code. Updates stage into our folder and retain the old build.
 REMOTE_INSTALL = (ROOT / "packaging/install_package.py").read_text()
 
+
 def target(value):
     if not value or value.startswith("-") or not re.fullmatch(r"[A-Za-z0-9_.:@\[\]-]+", value):
         raise ValueError("Set DEVICE to the RG DS SSH address, for example root@192.168.1.42.")
     return value if "@" in value else "root@" + value
 
+
 def ssh(device, command, batch=False, **kwargs):
-    options = ["-o", "IPQoS=none", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2"]
+    options = [
+        "-o", "IPQoS=none", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2"
+    ]
     if batch:
         options += ["-o", "BatchMode=yes"]
     return subprocess.run(["ssh", *options, device, command], check=True, **kwargs)
+
 
 REMOTE_STATUS = r'''
 import json, platform, sys, time
@@ -71,9 +76,11 @@ result['record_errors'] = record_errors
 print(json.dumps(result))
 '''
 
+
 def status(device, root, batch=False):
     result = ssh(device, "python3 - " + Q(str(root)), input=REMOTE_STATUS, text=True, capture_output=True, batch=batch)
     return json.loads(result.stdout)
+
 
 REMOTE_DOCTOR = r'''
 import json,sys,time
@@ -109,8 +116,10 @@ for name in ('core.json','launcher.json'):
 print('Activity records repaired. Run make dev-device again.')
 '''
 
+
 def doctor(device, root):
     ssh(device, "python3 -B - " + Q(str(root)), input=REMOTE_DOCTOR, text=True, batch=True)
+
 
 def latest_package():
     name = (ROOT / "dist/latest.txt").read_text().strip()
@@ -118,12 +127,14 @@ def latest_package():
         raise ValueError("Invalid latest package filename")
     return ROOT / "dist" / name
 
+
 def deploy(device, root, archive, batch=False):
     upload = root / "inbox" / archive.name
     ssh(device, "test -d " + Q(str(root.parent)) + " && mkdir -p " + Q(str(root / "inbox")), batch=batch)
     with archive.open("rb") as stream:
         ssh(device, "cat > " + Q(str(upload)), stdin=stream, batch=batch)
     ssh(device, "python3 -B - " + Q(str(root)) + " " + Q(str(upload)), input=REMOTE_INSTALL, text=True, batch=batch)
+
 
 REMOTE_THEME = r'''
 import os, sys
@@ -138,12 +149,14 @@ with temporary.open('wb') as stream:
 temporary.replace(path)
 '''
 
+
 def sync_theme(device, root, theme, batch=False):
     # A writable override keeps the hashed release itself intact.
     content = theme.read_bytes()
     validate_theme(content)
     command = "python3 -c " + Q(REMOTE_THEME) + " " + Q(str(root))
     ssh(device, command, input=content, batch=batch)
+
 
 def validate_theme(content):
     if len(content) > 65536:
@@ -165,6 +178,7 @@ def validate_theme(content):
     if not schema:
         raise ValueError("Theme schema is missing")
 
+
 def run_session(device, root, dev=False, batch=False):
     log = root / "userdata/runner.log"
     command = "mkdir -p " + Q(str(log.parent)) + "; nohup sh " + Q(str(root / "main.sh"))
@@ -173,15 +187,28 @@ def run_session(device, root, dev=False, batch=False):
     command += " > " + Q(str(log)) + " 2>&1 < /dev/null &"
     ssh(device, command, batch=batch)
 
+
 def start_dev_session(device, root):
     run_session(device, root, dev=True, batch=True)
     time.sleep(2)
     if not status(device, root, batch=True)["launcher"]:
-        result = ssh(device, "tail -n 30 " + Q(str(root / "userdata/runner.log")) + " " + Q(str(root / "userdata/session.log")) + " 2>&1 || :", text=True, capture_output=True, batch=True)
+        result = ssh(
+            device,
+            "tail -n 30 " + Q(str(root / "userdata/runner.log")) + " " + Q(str(root / "userdata/session.log")) +
+            " 2>&1 || :",
+            text=True,
+            capture_output=True,
+            batch=True
+        )
         raise RuntimeError("Device launcher did not stay running.\n" + result.stdout)
 
+
 def active_command(root, action):
-    return "RGDS_ID=$(cat " + Q(str(root / "state/active")) + "); case \"$RGDS_ID\" in ''|*[!a-z0-9.-]*|.*) exit 1;; esac; python3 -B " + Q(str(root / "releases")) + '/"$RGDS_ID"/runtime/activate.py ' + action + " --root " + Q(str(root))
+    return "RGDS_ID=$(cat " + Q(str(root / "state/active")
+                                ) + "); case \"$RGDS_ID\" in ''|*[!a-z0-9.-]*|.*) exit 1;; esac; python3 -B " + Q(
+                                    str(root / "releases")
+                                ) + '/"$RGDS_ID"/runtime/activate.py ' + action + " --root " + Q(str(root))
+
 
 def configured_root(device, sd_root=None):
     """An explicit mount wins; otherwise follow the configured installation, even in stock mode."""
@@ -201,11 +228,13 @@ try:
 except (OSError,ValueError,TypeError):pass
 print(root)
 """
-    result=ssh(device,"python3 -B -",batch=True,input=script,text=True,capture_output=True)
-    root=Path(result.stdout.strip())
-    if not root.is_absolute() or ".." in root.parts or "\n" in str(root):raise ValueError("Invalid configured RGDS root")
+    result = ssh(device, "python3 -B -", batch=True, input=script, text=True, capture_output=True)
+    root = Path(result.stdout.strip())
+    if not root.is_absolute() or ".." in root.parts or "\n" in str(root):
+        raise ValueError("Invalid configured RGDS root")
     print("Using RGDS installation: " + str(root))
     return root
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -234,6 +263,7 @@ def main():
         ssh(device, "tail -n 80 -f " + Q(str(root / "userdata/session.log")))
     else:
         ssh(device, active_command(root, "rollback"))
+
 
 if __name__ == "__main__":
     try:

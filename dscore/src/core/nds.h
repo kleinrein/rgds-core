@@ -23,7 +23,10 @@
 #include "core/bios/freebios.h"
 
 namespace ds {
-namespace state { class Writer; class Reader; }
+namespace state {
+class Writer;
+class Reader;
+}
 
 // Per-instruction trace callback: called with r15 already pipeline-adjusted
 // (instruction address + 8 / + 4) before the instruction executes.
@@ -40,44 +43,44 @@ struct NDS {
   // bios_native/firmware_synthetic below (substitutes only support direct boot).
   bool load_bios(const std::string& bios9, const std::string& bios7, const std::string& firmware,
                  const bios::UserSettings& user = {}, std::string* err = nullptr);
-  bool bios_native = false;          // both BIOS images came from dumps
+  bool bios_native = false; // both BIOS images came from dumps
   // DSi BIOS pair (64 KB each, dumps only). Loaded separately: a DS game doesn't need them; both or neither.
   bool load_dsi_bios(const std::string& bios9i, const std::string& bios7i, std::string* err = nullptr);
-  bool bios_native_dsi = false;      // the DSi pair is loaded
+  bool bios_native_dsi = false; // the DSi pair is loaded
   // Console type (core/nds_dsi.cpp for the DSi machine). Set by the frontend
   // before reset(); every DS-mode path is unchanged when false.
   bool dsi = false;
-  void set_dsi(bool on);             // before reset(); needs load_dsi_bios for true
+  void set_dsi(bool on); // before reset(); needs load_dsi_bios for true
   // What the launcher leaves in main RAM for a title: TWLCFG (0x128 @
   // 0x02000400), HWINFO_N (0x14 @ 0x02000600), HWINFO_S (0x18 @ 0x02FFFD68).
   // Absent, the areas stay zero.
   bool load_dsi_boot_blobs(const std::string& path, std::string* err = nullptr);
-  std::vector<u8> dsi_boot_blobs;    // 0x154 bytes when loaded, else empty
+  std::vector<u8> dsi_boot_blobs; // 0x154 bytes when loaded, else empty
   // DSi NAND image; backs the eMMC on SD/MMC port 1 and seeds AES key slots
   // 1/3 from the console ID. Loaded before reset(), like the BIOS pair.
-  bool load_dsi_nand(const std::string& path, std::string* err = nullptr, bool write_through = false);   // see NandImage
+  bool load_dsi_nand(const std::string& path, std::string* err = nullptr, bool write_through = false); // see NandImage
   io::NandImage dsi_nand;
   // SD card in the DSi's slot, from a host folder (io/dsi_sd_card.h). Opened
   // before reset() onto SD/MMC port 0; changes sync back via dsi_sd.sync().
   io::SdCard dsi_sd;
-  bool firmware_synthetic = false;   // the firmware was generated, not dumped (set by load_bios)
+  bool firmware_synthetic = false; // the firmware was generated, not dumped (set by load_bios)
   bool can_boot_firmware() const { return bios_native && !firmware_synthetic; }
   bool load_rom(const std::string& path);
   // A ROM already in memory (frontend's built-in loader cart); same identity
   // hash as the path form, so saves/states key the same way.
   bool load_rom_image(std::vector<u8> image);
   bool load_rom_source(std::unique_ptr<cart::RomSource> src);
-  std::string rom_zip_entry;   // which zip entry a zipped ROM came from, empty for a loose .nds; reporting only
+  std::string rom_zip_entry; // which zip entry a zipped ROM came from, empty for a loose .nds; reporting only
   // Loading a zip: extraction target when the archive's own directory can't
   // be written (cart/zip_cache.h), and a progress callback. Set before load_rom.
   std::string rom_cache_dir;
-  u64 rom_cache_max_bytes = 0;                 // 0: no limit
+  u64 rom_cache_max_bytes = 0; // 0: no limit
   cart::ZipProgress rom_progress = nullptr;
   void* rom_progress_user = nullptr;
-  std::atomic<bool>* rom_cancel = nullptr;     // set from another thread to abandon the extraction
-  std::string rom_cache_path;   // extracted image the current cart was mapped from, empty otherwise
-  void normalise_touch_calibration();   // see nds.cpp; called by load_bios
-  void normalise_boot_mode();           // see nds.cpp; called by load_bios
+  std::atomic<bool>* rom_cancel = nullptr; // set from another thread to abandon the extraction
+  std::string rom_cache_path;              // extracted image the current cart was mapped from, empty otherwise
+  void normalise_touch_calibration();      // see nds.cpp; called by load_bios
+  void normalise_boot_mode();              // see nds.cpp; called by load_bios
   // Which of the firmware's three Wi-Fi slots holds DSperate's access point, -1 if none.
   int firmware_ap_slot = -1;
 
@@ -89,20 +92,20 @@ struct NDS {
   // are preserved. User strings are UTF-8; firmware strings are UTF-16.
   enum class UserField : u8 { Nickname, Message, Colour, BirthdayMonth, BirthdayDay, Language };
   bool read_user_settings(bios::UserSettings& out) const;
-  u32  user_settings_offset() const;   // where the two settings copies live, or 0 if none
+  u32 user_settings_offset() const; // where the two settings copies live, or 0 if none
   bool write_user_settings(UserField field, const bios::UserSettings& in);
-  void setup_direct_boot();          // skip the firmware: load the ROM's binaries and jump to them
+  void setup_direct_boot(); // skip the firmware: load the ROM's binaries and jump to them
   // Gives this console its own Wi-Fi MAC (firmware OUI + `suffix` as the low
   // three bytes, checksum fixed), so local-wireless titles can tell
   // instances of the same dump apart. Call before boot; in-memory only.
   void set_wifi_mac_suffix(u32 suffix);
-  void setup_direct_boot_dsi();      // the DSi machine's version (nds_dsi.cpp)
+  void setup_direct_boot_dsi(); // the DSi machine's version (nds_dsi.cpp)
   // DSiWare without the launcher: stages what the DSi Launcher leaves a
   // title at its entry point (nds_dsi.cpp) instead of card-mode direct boot.
   // Starts as if launched from the menu: nand:/ mounted, image read back
   // from nand:/title/.../content/<dsi_hle_content_id>.app. Set before setup_direct_boot.
   bool dsi_hle_launch = false;
-  u32  dsi_hle_content_id = 0;
+  u32 dsi_hle_content_id = 0;
   // What the launcher hand-off needs beyond the BIOS pair, synthesised where
   // missing (io/dsi_nand_synth.h): an in-memory NAND if none loaded, console
   // settings from `user` if no --dsi-boot data, firmware settings if
@@ -114,14 +117,14 @@ struct NDS {
   // console data from TWLCFG/HWINFO. Marks the NAND's state base so later
   // saves are carried by a state. Call after load_dsi_nand/load_dsi_bios, before prepare_dsi_hle.
   bool load_dsi_nand_title(u32 title_lo, std::string* err);
-  bool dsi_nand_synthetic = false;   // dsi_nand was built by prepare_dsi_hle, not loaded
+  bool dsi_nand_synthetic = false; // dsi_nand was built by prepare_dsi_hle, not loaded
   // User's /sys/TWLFontTable.dat for a synthesised NAND; empty uses DSperate's own font.
   std::string dsi_font_path;
   // The built-in font's signature check (DSi BIOS SWI 22h) is answered with
   // its SHA-1 when the passed signature is the built-in font's marker.
   // Called by the interpreter/recompiler fallback for every SWI while set; true if handled.
   bool dsi_font_hle = false;
-  u8   dsi_font_digest[20] = {};
+  u8 dsi_font_digest[20] = {};
   // Set by the frontend when its loader cart sits in the slot of a DSi
   // booted to its launcher. The launcher fades to white at several points,
   // so only a card launch's header hash (SWI 27h over the first 0x160
@@ -133,12 +136,13 @@ struct NDS {
   // Boots the DSi from its NAND (boot2 -> launcher) instead of a direct
   // boot; needs a NAND image.
   bool boot_dsi_nand();
-  bool dsi_nand_boot = false;        // set before reset() to take that path
+  bool dsi_nand_boot = false; // set before reset() to take that path
   // DSi autoload hand-off (GBATEK "DSi Autoload"): a "TLNC" block at
   // 0x02000300 plus the BPTWL boot flag, making the launcher start the
   // installed title instead of the menu.
   void dsi_autoload(u32 title_lo, u32 title_hi = 0x00030004);
-  bool dsi_soft_reset_pending = false;   // BPTWL soft reset (reg 0x11 <- 1); scheduler calls dsi_soft_reset() as the ARM7's run returns
+  bool dsi_soft_reset_pending =
+      false; // BPTWL soft reset (reg 0x11 <- 1); scheduler calls dsi_soft_reset() as the ARM7's run returns
   void dsi_soft_reset();
   // Guest started a DSP program (unemulated): it will hang waiting for
   // replies. Sticky until reset()/soft reset; frontends warn once per start.
@@ -151,11 +155,11 @@ struct NDS {
   //
   // Both take the sidecar's path and report the reason on failure. save_
   // returns true and writes nothing when no page has changed.
-  static constexpr u32 FW_PAGE = 256;   // the flash's page, and the sidecar's granularity
+  static constexpr u32 FW_PAGE = 256; // the flash's page, and the sidecar's granularity
   bool load_firmware_override(const std::string& path, std::string& err);
   bool save_firmware_override(const std::string& path, std::string& err);
   bool firmware_override_dirty() const { return fw_dirty_pages > 0; }
-  void firmware_written(u32 offset);   // called from the SPI page-write path
+  void firmware_written(u32 offset); // called from the SPI page-write path
   // STOP gates the system clock; the RTC and frontend audio remain alive.
   bool sleeping = false;
   void run_frame();
@@ -191,29 +195,29 @@ struct NDS {
   // the SPI write path and by a loaded override.
   std::vector<u8> fw_page_dirty;
   u32 fw_dirty_pages = 0;
-  u64 firmware_id = 0;           // identity of the pristine dump; an override names it
+  u64 firmware_id = 0; // identity of the pristine dump; an override names it
   // Identity of the two BIOS images in bus.bios9/bios7. A save state usually
   // restores the ARM7 mid-BIOS-routine, but the BIOS isn't part of the
   // state, so the header carries this to refuse a load against a different pair.
   u64 bios_id = 0;
 
-  mem::Bus   bus;
-  Scheduler  sched;
-  gpu::Gpu   gpu;
+  mem::Bus bus;
+  Scheduler sched;
+  gpu::Gpu gpu;
   gpu::Gpu3D gpu3d;
-  spu::Spu   spu;
-  io::Io     io;
-  dma::Dma   dma;
-  dma::Ndma  ndma;                 // DSi only; idle on a DS
+  spu::Spu spu;
+  io::Io io;
+  dma::Dma dma;
+  dma::Ndma ndma; // DSi only; idle on a DS
   std::unique_ptr<cart::Cart> cart;
 
   // Action Replay codes, run from the ARM7's VBlank IRQ when enabled. Not
   // part of a save state: which cheats are on is the frontend's business.
   cheat::Engine cheats;
 
-  u64  frame_count = 0;
+  u64 frame_count = 0;
   bool frame_ready = false;
-  bool frame_in_slices = false;   // run_frame_slice has begun a frame not yet complete
+  bool frame_in_slices = false; // run_frame_slice has begun a frame not yet complete
   // ARM7 pulled the power line down (PMIC reg 0 bit 6): console switched
   // itself off. Cleared by reset(); what it means is the frontend's call (SDL saves settings and reboots).
   bool power_off = false;
@@ -223,7 +227,7 @@ struct NDS {
   bool exit_requested = false;
 
   TraceFn trace = nullptr;
-  void*   trace_user = nullptr;
+  void* trace_user = nullptr;
 };
 
 } // namespace ds

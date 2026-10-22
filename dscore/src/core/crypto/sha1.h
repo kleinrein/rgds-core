@@ -12,4 +12,4 @@ namespace ds::crypto {
 
 void sha1(const u8* data, size_t len, u8 out[20]);
 
-}  // namespace ds::crypto
+} // namespace ds::crypto

@@ -46,7 +46,8 @@ void Lid::open() {
     const int fd = ::open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) continue;
     unsigned long sw[(SW_MAX + 8 * sizeof(long)) / (8 * sizeof(long))] = {};
-    if (ioctl(fd, EVIOCGBIT(EV_SW, sizeof sw), sw) >= 0 && ((sw[SW_LID / (8 * sizeof(long))] >> (SW_LID % (8 * sizeof(long)))) & 1)) {
+    if (ioctl(fd, EVIOCGBIT(EV_SW, sizeof sw), sw) >= 0 &&
+        ((sw[SW_LID / (8 * sizeof(long))] >> (SW_LID % (8 * sizeof(long)))) & 1)) {
       char name[64] = "?";
       ioctl(fd, EVIOCGNAME(sizeof name), name);
       fd_ = fd;
@@ -62,13 +63,19 @@ void Lid::open() {
 
 void Lid::close() {
 #ifdef __linux__
-  if (fd_ >= 0) { ::close(fd_); fd_ = -1; }
+  if (fd_ >= 0) {
+    ::close(fd_);
+    fd_ = -1;
+  }
 #endif
 }
 
 void Lid::resumed() {
-  if (fd_ >= 0) return;   // the switch reports the real hinge
-  if (!pulse_enabled_) { std::fprintf(stderr, "lid: host resumed from suspend; the lid stays as it is\n"); return; }
+  if (fd_ >= 0) return; // the switch reports the real hinge
+  if (!pulse_enabled_) {
+    std::fprintf(stderr, "lid: host resumed from suspend; the lid stays as it is\n");
+    return;
+  }
   pulse_ = PULSE_FRAMES;
   std::fprintf(stderr, "lid: host resumed from suspend; closing the lid until the firmware sleeps\n");
 }

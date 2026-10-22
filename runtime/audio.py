@@ -25,9 +25,15 @@ def clean_environment():
 
 class Mixer:
     def query(self):
-        result = subprocess.run(["amixer", "-c", "0", "sget", "DAC"], text=True,
-                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                                env=clean_environment(), check=True, timeout=2)
+        result = subprocess.run(
+            ["amixer", "-c", "0", "sget", "DAC"],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            env=clean_environment(),
+            check=True,
+            timeout=2
+        )
         levels = [int(v) for v in re.findall(r"\[(\d+)%\]", result.stdout)]
         if not levels:
             raise ValueError("DAC playback mixer unavailable")
@@ -36,9 +42,14 @@ class Mixer:
     def set(self, level):
         # RK817's lowest ~30% lies below the speaker floor. Zero remains mute.
         percent = 0 if level == 0 else 30 + round(70 * (level - 1) / 99)
-        subprocess.run(["amixer", "-q", "-c", "0", "sset", "DAC", f"{percent}%"],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       env=clean_environment(), check=True, timeout=2)
+        subprocess.run(
+            ["amixer", "-q", "-c", "0", "sset", "DAC", f"{percent}%"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=clean_environment(),
+            check=True,
+            timeout=2
+        )
 
 
 class Volume:
@@ -65,14 +76,15 @@ class Volume:
             return min(25, level)
         # Stock's frontend sometimes attenuates in software while leaving DAC at
         # 100%. Use its remembered dB value when available, and adopt quietly.
-        for path in (Path("/.config/retroarch/retroarch_volume.cfg"),
-                     Path("/root/.config/retroarch/retroarch_volume.cfg")):
+        for path in (
+            Path("/.config/retroarch/retroarch_volume.cfg"), Path("/root/.config/retroarch/retroarch_volume.cfg")
+        ):
             try:
                 match = re.search(r'audio_volume\s*=\s*"?(-?\d+(?:\.\d+)?)', path.read_text())
                 if match:
                     db = float(match[1])
                     if math.isfinite(db):
-                        level = min(level, 0 if db <= -60 else round(100 * 10 ** (min(0, db) / 20)))
+                        level = min(level, 0 if db <= -60 else round(100 * 10**(min(0, db) / 20)))
                     break
             except OSError:
                 pass
@@ -163,8 +175,11 @@ class VolumeWatch:
             level = self.volume.apply(delta=5 if code == 115 else -5)
             # The native bridge renders this on the top screen while playing.
             # A token also refreshes the HUD when a key hits 0% or 100% again.
-            write_fields(self.volume.data / "session/volume-hud.ini",
-                         dict(schema=1, volume=level, token=f"{os.getpid()}-{time.monotonic_ns()}"), durable=False)
+            write_fields(
+                self.volume.data / "session/volume-hud.ini",
+                dict(schema=1, volume=level, token=f"{os.getpid()}-{time.monotonic_ns()}"),
+                durable=False
+            )
 
     def watch(self):
         started = time.monotonic()

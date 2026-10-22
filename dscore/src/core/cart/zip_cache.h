@@ -24,15 +24,15 @@
 namespace ds::cart {
 
 struct ZipOpen {
-  std::string fallback_dir;   // used when the archive's own directory isn't writable; empty = fail
-  u64 max_bytes = 0;          // cache directory cap before LRU eviction (0: no limit); image being opened is never evicted
-  ZipProgress progress = nullptr;   // called during extraction with bytes done/total; null for none
+  std::string fallback_dir; // used when the archive's own directory isn't writable; empty = fail
+  u64 max_bytes = 0; // cache directory cap before LRU eviction (0: no limit); image being opened is never evicted
+  ZipProgress progress = nullptr; // called during extraction with bytes done/total; null for none
   void* progress_user = nullptr;
-  std::atomic<bool>* cancel = nullptr;   // set to abandon extraction; open_zip fails with "cancelled"
+  std::atomic<bool>* cancel = nullptr; // set to abandon extraction; open_zip fails with "cancelled"
   // Filled in on success.
-  std::string chosen;         // the entry's name
-  std::string cache_path;     // the extracted image, empty when mapped in place
-  bool extracted = false;     // true when the image was (re)built this time
+  std::string chosen;     // the entry's name
+  std::string cache_path; // the extracted image, empty when mapped in place
+  bool extracted = false; // true when the image was (re)built this time
 };
 
 // Opens `path` (an archive) as a RomSource. Null with a reason in `err`.
@@ -45,7 +45,11 @@ std::string zip_cache_path(const std::string& zip_path, const std::string& dir_o
 std::string zip_cache_dir(const std::string& dir);
 
 // `stamp` is when the image was last launched (the tag's mtime).
-struct CacheEntry { std::string image, tag, archive; u64 bytes = 0; long stamp = 0; };
+struct CacheEntry {
+  std::string image, tag, archive;
+  u64 bytes = 0;
+  long stamp = 0;
+};
 std::vector<CacheEntry> list_cache(const std::string& dir);
 
 // Removes images whose archive no longer exists, images with no tag, and

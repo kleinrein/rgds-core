@@ -1,0 +1,16 @@
+# Python layout for runtime/, tools/, tests/ and dscore/tools. Run `make format`;
+# the yapf version is pinned in requirements-format.txt so every machine agrees.
+[style]
+based_on_style = pep8
+column_limit = 120
+# Keep `foo(a, b)` calls and `{'key': value}` literals compact before splitting.
+split_before_named_assigns = true
+allow_split_before_dict_value = false
+# A call that must split puts its arguments on their own indented lines and the
+# closing bracket back at the call's indent; coalescing `([` left keyword
+# arguments hanging far right of a dedented `],`.
+coalesce_brackets = false
+dedent_closing_brackets = true
+# `(316,)`, not `(316, )`; no blank line between `class X:` and its first def.
+space_between_ending_comma_and_closing_bracket = false
+blank_line_before_nested_class_or_def = false

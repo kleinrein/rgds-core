@@ -15,7 +15,7 @@ namespace ds::sdl {
 // emulator over its own sleep and wants the game to carry on where it was.
 class Lid {
 public:
-  static constexpr int PULSE_FRAMES = 120;   // two seconds at 60 Hz
+  static constexpr int PULSE_FRAMES = 120; // two seconds at 60 Hz
 
   Lid();
   void open();
@@ -30,12 +30,12 @@ public:
   void enable_pulse(bool on) { pulse_enabled_ = on; }
 
 private:
-  int  fd_ = -1;
+  int fd_ = -1;
   bool closed_ = false;
-  bool last_ = false;          // what the previous poll() reported
+  bool last_ = false; // what the previous poll() reported
   bool pulse_enabled_ = true;
-  int  pulse_ = 0;             // frames left of a suspend-detected close
-  s64  skew_ns_ = 0;           // last boottime - monotonic
+  int pulse_ = 0;   // frames left of a suspend-detected close
+  s64 skew_ns_ = 0; // last boottime - monotonic
 };
 
 } // namespace ds::sdl

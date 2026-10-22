@@ -17,14 +17,26 @@ class MainlineBridgeTests(unittest.TestCase):
             source = root / 'mainline.cpp'
             source.write_text(CPP)
             flags = subprocess.check_output(['sdl2-config', '--cflags'], text=True).split()
-            result = subprocess.run(['clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', *flags,
-                                     '-I'+str(ROOT/'src'), str(source), '-o', str(root/'test')], capture_output=True, text=True)
+            result = subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', *flags, '-I' + str(ROOT / 'src'),
+                    str(source), '-o',
+                    str(root / 'test')
+                ],
+                capture_output=True,
+                text=True
+            )
             self.assertEqual(result.returncode, 0, result.stderr)
             for core in ('drastic', 'dsperate', 'nnddss'):
                 with self.subTest(core=core):
-                    result = subprocess.run([str(root/'test'), str(root), core], capture_output=True,
-                                            text=True, timeout=5, env=dict(os.environ, RGDS_MENU_EXTERNAL='0'))
-                    self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+                    result = subprocess.run(
+                        [str(root / 'test'), str(root), core],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                        env=dict(os.environ, RGDS_MENU_EXTERNAL='0')
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 CPP = r'''

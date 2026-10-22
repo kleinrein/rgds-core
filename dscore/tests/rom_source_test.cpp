@@ -17,12 +17,21 @@ using namespace ds;
 using cart::RomSource;
 
 static int failures = 0;
-#define CHECK(c) do { if (!(c)) { std::fprintf(stderr, "%s:%d: CHECK(%s)\n", __FILE__, __LINE__, #c); ++failures; } } while (0)
+#define CHECK(c)                                                                                                       \
+  do {                                                                                                                 \
+    if (!(c)) {                                                                                                        \
+      std::fprintf(stderr, "%s:%d: CHECK(%s)\n", __FILE__, __LINE__, #c);                                              \
+      ++failures;                                                                                                      \
+    }                                                                                                                  \
+  } while (0)
 
 static std::vector<u8> pattern(size_t n, u32 seed) {
   std::vector<u8> v(n);
   u32 x = seed;
-  for (size_t i = 0; i < n; ++i) { x = x * 1664525u + 1013904223u; v[i] = static_cast<u8>(x >> 24); }
+  for (size_t i = 0; i < n; ++i) {
+    x = x * 1664525u + 1013904223u;
+    v[i] = static_cast<u8>(x >> 24);
+  }
   return v;
 }
 
@@ -40,12 +49,18 @@ static void compare(const RomSource& a, const RomSource& b, const char* what) {
   CHECK(a.size() == b.size());
   CHECK(a.mask() == b.mask());
   for (u32 p = 0; p <= a.mask(); p += RomSource::PAGE) {
-    if (std::memcmp(a.page(p), b.page(p), RomSource::PAGE) != 0) { std::fprintf(stderr, "%s: page %x differs\n", what, p); ++failures; return; }
+    if (std::memcmp(a.page(p), b.page(p), RomSource::PAGE) != 0) {
+      std::fprintf(stderr, "%s: page %x differs\n", what, p);
+      ++failures;
+      return;
+    }
   }
   // Wrap: an address above the mask lands on the same page.
-  CHECK(a.page(a.mask() + 1 + 0x123) == a.page(0x123) || std::memcmp(a.page(a.mask() + 1 + 0x123), a.page(0x123), RomSource::PAGE) == 0);
+  CHECK(a.page(a.mask() + 1 + 0x123) == a.page(0x123) ||
+        std::memcmp(a.page(a.mask() + 1 + 0x123), a.page(0x123), RomSource::PAGE) == 0);
   u8 x[9], y[9];
-  a.read(a.size() - 5, x, 9); b.read(b.size() - 5, y, 9);   // straddles the end
+  a.read(a.size() - 5, x, 9);
+  b.read(b.size() - 5, y, 9); // straddles the end
   CHECK(std::memcmp(x, y, 9) == 0);
   CHECK(a.read32(0x10) == b.read32(0x10));
 }
@@ -61,7 +76,7 @@ int main() {
     CHECK(mapped && err.empty());
     auto owned = RomSource::from_memory(rom);
     CHECK(owned->size() == rom.size());
-    CHECK(owned->mask() == 0x7FFF);          // padded to 32 KB
+    CHECK(owned->mask() == 0x7FFF); // padded to 32 KB
     CHECK(mapped->mapped() && !owned->mapped());
     compare(*mapped, *owned, "unaligned");
     const u8* tail = mapped->page(0x4000);
@@ -95,7 +110,7 @@ int main() {
     auto mapped = RomSource::map_file(path, 0x1234, rom.size(), err);
     CHECK(mapped && err.empty());
     compare(*mapped, *RomSource::from_memory(rom), "range");
-    CHECK(!RomSource::map_file(path, 0x1234, file.size(), err) && !err.empty());   // runs past the end
+    CHECK(!RomSource::map_file(path, 0x1234, file.size(), err) && !err.empty()); // runs past the end
     CHECK(!RomSource::map_file(path, file.size() + 1, 0, err));
     unlink(path.c_str());
   }
@@ -109,10 +124,11 @@ int main() {
     CHECK(std::memcmp(sec, rom.data() + 0x4000, 0x1000) == 0);
     std::memcpy(sec, "encryObj", 8);
     CHECK(std::memcmp(mapped->page(0x4123), "encryObj", 8) == 0);
-    CHECK(mapped->patch(0x4800) == sec);                       // same page, same copy
+    CHECK(mapped->patch(0x4800) == sec); // same page, same copy
     CHECK(std::memcmp(mapped->page(0x3000), rom.data() + 0x3000, 0x1000) == 0);
     CHECK(std::memcmp(mapped->page(0x5000), rom.data() + 0x5000, 0x1000) == 0);
-    u8 b[8]; mapped->read(0x4000, b, 8);
+    u8 b[8];
+    mapped->read(0x4000, b, 8);
     CHECK(std::memcmp(b, "encryObj", 8) == 0);
     unlink(path.c_str());
   }
@@ -121,7 +137,10 @@ int main() {
     std::string err;
     CHECK(!RomSource::map_file("/nonexistent/rom.nds", err) && !err.empty());
   }
-  if (failures) { std::fprintf(stderr, "%d failure(s)\n", failures); return 1; }
+  if (failures) {
+    std::fprintf(stderr, "%d failure(s)\n", failures);
+    return 1;
+  }
   std::puts("rom_source: ok");
   return 0;
 }

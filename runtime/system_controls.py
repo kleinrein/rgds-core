@@ -21,38 +21,48 @@ from contextlib import contextmanager
 
 from audio import Volume
 
-SLEEP_HOOK=Path('/usr/lib/systemd/system-sleep/90-rgds-resume')
+SLEEP_HOOK = Path('/usr/lib/systemd/system-sleep/90-rgds-resume')
 
 
 def suspend_linux(command, runtime=Path('/run/rgds'), clock=time.monotonic, sleep=time.sleep):
     """Wait for this request's post-resume hook, not just logind's enqueue ACK."""
     from stock_handoff import clean_environment
-    runtime=Path(runtime);request=runtime/'suspend-request';state=runtime/'suspend-state'
-    if not runtime.is_dir():raise ValueError('OS sleep acknowledgement is unavailable')
-    token=uuid.uuid4().hex
-    pending=request.with_suffix('.pending');pending.write_text(token+'\n');pending.replace(request)
+    runtime = Path(runtime)
+    request = runtime / 'suspend-request'
+    state = runtime / 'suspend-state'
+    if not runtime.is_dir(): raise ValueError('OS sleep acknowledgement is unavailable')
+    token = uuid.uuid4().hex
+    pending = request.with_suffix('.pending')
+    pending.write_text(token + '\n')
+    pending.replace(request)
     try:
-        subprocess.run(command,env=clean_environment(),cwd='/',stdin=subprocess.DEVNULL,check=True)
-        deadline=clock()+15;started=False
+        subprocess.run(command, env=clean_environment(), cwd='/', stdin=subprocess.DEVNULL, check=True)
+        deadline = clock() + 15
+        started = False
         while True:
-            try:fields=dict(line.split('=',1) for line in state.read_text().splitlines() if '=' in line)
-            except OSError:fields={}
-            if fields.get('token')==token:
-                if fields.get('phase')=='post':return
-                if fields.get('phase')=='pre':started=True
-            if not started and clock()>=deadline:
+            try:
+                fields = dict(line.split('=', 1) for line in state.read_text().splitlines() if '=' in line)
+            except OSError:
+                fields = {}
+            if fields.get('token') == token:
+                if fields.get('phase') == 'post': return
+                if fields.get('phase') == 'pre': started = True
+            if not started and clock() >= deadline:
                 raise ValueError('The OS did not acknowledge suspend; check its sleep log')
             # Monotonic time stops while suspended. Once pre is observed, do
             # not bound the owner's sleep duration or restore controls early.
             sleep(.1)
     finally:
         try:
-            if request.read_text().strip()==token:request.unlink()
-        except FileNotFoundError:pass
+            if request.read_text().strip() == token: request.unlink()
+        except FileNotFoundError:
+            pass
 
 
-WAKE_IRQS = ('rk805_pwrkey_fall', 'rk805_pwrkey_rise', 'hall switch', 'RTC alarm', 'rk817_plug_in',
-             'rk817_plug_out', 'rk817', 'gt9xx', 'rockchip_usb2phy')
+WAKE_IRQS = (
+    'rk805_pwrkey_fall', 'rk805_pwrkey_rise', 'hall switch', 'RTC alarm', 'rk817_plug_in', 'rk817_plug_out', 'rk817',
+    'gt9xx', 'rockchip_usb2phy'
+)
 
 
 def sleep_snapshot(sysfs=Path('/sys'), proc=Path('/proc')):
@@ -62,31 +72,38 @@ def sleep_snapshot(sysfs=Path('/sys'), proc=Path('/proc')):
     their deltas give the real time spent in deep sleep.
     """
     def read(path):
-        try:return Path(path).read_text().strip()
-        except OSError:return None
+        try:
+            return Path(path).read_text().strip()
+        except OSError:
+            return None
+
     snapshot = dict(time=round(time.time(), 1), monotonic=round(time.monotonic(), 3))
     clock = getattr(time, 'CLOCK_BOOTTIME', None)
     if clock is not None:
-        try:snapshot['boottime'] = round(time.clock_gettime(clock), 3)
-        except OSError:pass
+        try:
+            snapshot['boottime'] = round(time.clock_gettime(clock), 3)
+        except OSError:
+            pass
     for supply in ('battery', 'cw2015-battery'):
         folder = Path(sysfs) / 'class/power_supply' / supply
         for field in ('capacity', 'voltage_now', 'charge_now', 'current_now', 'status'):
             value = read(folder / field)
-            if value is not None:snapshot[supply + '.' + field] = value
+            if value is not None: snapshot[supply + '.' + field] = value
     for field in ('success', 'fail'):
         value = read(Path(sysfs) / 'power/suspend_stats' / field)
-        if value is not None:snapshot['suspend_' + field] = value
+        if value is not None: snapshot['suspend_' + field] = value
     irqs = {}
     try:
         lines = (Path(proc) / 'interrupts').read_text().splitlines()
         cpus = len(lines[0].split()) if lines else 0
         for line in lines[1:]:
             parts = line.split()
-            if len(parts) < cpus + 2 or not parts[0].endswith(':'):continue
+            if len(parts) < cpus + 2 or not parts[0].endswith(':'): continue
             name = ' '.join(parts[-2:]) if ' '.join(parts[-2:]) in WAKE_IRQS else parts[-1]
-            if name in WAKE_IRQS:irqs[name] = irqs.get(name, 0) + sum(int(part) for part in parts[1:1 + cpus] if part.isdigit())
-    except (OSError, IndexError):pass
+            if name in WAKE_IRQS:
+                irqs[name] = irqs.get(name, 0) + sum(int(part) for part in parts[1:1 + cpus] if part.isdigit())
+    except (OSError, IndexError):
+        pass
     snapshot['irqs'] = irqs
     return snapshot
 
@@ -96,48 +113,64 @@ def journal_sleep(data, before, after, **extra):
     entry = dict(before=before, after=after, **extra)
     try:
         if 'boottime' in before and 'boottime' in after:
-            entry['asleep_seconds'] = round((after['boottime'] - before['boottime']) - (after['monotonic'] - before['monotonic']), 1)
-        entry['woke_by'] = sorted(name for name, count in after.get('irqs', {}).items()
-                                  if count > before.get('irqs', {}).get(name, count))
+            entry['asleep_seconds'] = round(
+                (after['boottime'] - before['boottime']) - (after['monotonic'] - before['monotonic']), 1
+            )
+        entry['woke_by'] = sorted(
+            name for name, count in after.get('irqs', {}).items() if count > before.get('irqs', {}).get(name, count)
+        )
         path = Path(data) / 'logs/sleep-journal.jsonl'
         path.parent.mkdir(parents=True, exist_ok=True)
-        try:lines = path.read_text().splitlines()[-299:]
-        except OSError:lines = []
+        try:
+            lines = path.read_text().splitlines()[-299:]
+        except OSError:
+            lines = []
         lines.append(json.dumps(entry, sort_keys=True))
         pending = path.with_name(path.name + '.pending')
-        pending.write_text('\n'.join(lines) + '\n');pending.replace(path)
+        pending.write_text('\n'.join(lines) + '\n')
+        pending.replace(path)
     except (OSError, ValueError, TypeError, KeyError):
         pass  # Diagnostics must never prevent sleep or recovery.
 
 
 def battery_status(sysfs):
     """Keep charge level, active charging and an attached supply distinct."""
-    result=dict(battery=-1,charging=0,external_power=0)
-    battery=None;online=[]
-    for folder in sorted((Path(sysfs)/'class/power_supply').glob('*')):
-        try: kind=(folder/'type').read_text().strip()
-        except OSError: continue
-        if kind=='Battery' and battery is None: battery=folder
-        elif kind in ('Mains','Wireless') or kind.startswith('USB'):
-            try: value=(folder/'online').read_text().strip()
-            except OSError: continue
-            if value in ('0','1'): online.append(value=='1')
-    if battery is None:return result
-    try: status=(battery/'status').read_text().strip()
-    except OSError: status='Unknown'
-    plugged=any(online) if online else status in ('Charging','Full')
-    result.update(charging=int(status=='Charging' and plugged),external_power=int(plugged))
-    try:
-        capacity=int((battery/'capacity').read_text().strip())
-        if 0<=capacity<=100:result['battery']=capacity
-    except (OSError,ValueError):
-        # Some power-supply drivers expose counters rather than capacity.
-        for name in ('charge','energy'):
+    result = dict(battery=-1, charging=0, external_power=0)
+    battery = None
+    online = []
+    for folder in sorted((Path(sysfs) / 'class/power_supply').glob('*')):
+        try:
+            kind = (folder / 'type').read_text().strip()
+        except OSError:
+            continue
+        if kind == 'Battery' and battery is None: battery = folder
+        elif kind in ('Mains', 'Wireless') or kind.startswith('USB'):
             try:
-                now=int((battery/(name+'_now')).read_text().strip())
-                full=int((battery/(name+'_full')).read_text().strip())
-                if full>0 and 0<=now<=full:result['battery']=round(now*100/full);break
-            except (OSError,ValueError):pass
+                value = (folder / 'online').read_text().strip()
+            except OSError:
+                continue
+            if value in ('0', '1'): online.append(value == '1')
+    if battery is None: return result
+    try:
+        status = (battery / 'status').read_text().strip()
+    except OSError:
+        status = 'Unknown'
+    plugged = any(online) if online else status in ('Charging', 'Full')
+    result.update(charging=int(status == 'Charging' and plugged), external_power=int(plugged))
+    try:
+        capacity = int((battery / 'capacity').read_text().strip())
+        if 0 <= capacity <= 100: result['battery'] = capacity
+    except (OSError, ValueError):
+        # Some power-supply drivers expose counters rather than capacity.
+        for name in ('charge', 'energy'):
+            try:
+                now = int((battery / (name + '_now')).read_text().strip())
+                full = int((battery / (name + '_full')).read_text().strip())
+                if full > 0 and 0 <= now <= full:
+                    result['battery'] = round(now * 100 / full)
+                    break
+            except (OSError, ValueError):
+                pass
     return result
 
 
@@ -146,6 +179,7 @@ def serialized(method):
     def run(self, *args, **kwargs):
         with self.transaction():
             return method(self, *args, **kwargs)
+
     return run
 
 
@@ -214,8 +248,7 @@ class Hardware:
     def clocks(self):
         cpu = self.sysfs / "devices/system/cpu"
         folders = sorted((cpu / "cpufreq").glob("policy*")) or sorted(cpu.glob("cpu*/cpufreq"))
-        folders += [p for p in sorted((self.sysfs / "class/devfreq").glob("*"))
-                    if "gpu" in p.name or p.name == "dmc"]
+        folders += [p for p in sorted((self.sysfs / "class/devfreq").glob("*")) if "gpu" in p.name or p.name == "dmc"]
         result, seen = [], set()
         for folder in folders:
             if folder.resolve() in seen:
@@ -236,8 +269,9 @@ class Hardware:
                 if not all(self.writable(p) for p in (minimum, maximum, governor)):
                     continue
                 # Only offer profiles when both a dynamic and performance governor exist.
-                dynamic = next((g for g in ("schedutil", "ondemand", "simple_ondemand", "conservative")
-                                if g in governors), None)
+                dynamic = next(
+                    (g for g in ("schedutil", "ondemand", "simple_ondemand", "conservative") if g in governors), None
+                )
                 if dynamic and "performance" in governors:
                     result.append((minimum, maximum, governor, frequencies, dynamic, cpu_policy))
             except (OSError, ValueError):
@@ -248,7 +282,8 @@ class Hardware:
         path = self.sysfs / "power/state"
         try:
             from linux_platform import independent
-            if independent() and self.sysfs==Path('/sys') and not (SLEEP_HOOK.is_file() and os.access(SLEEP_HOOK,os.X_OK)):
+            if independent(
+            ) and self.sysfs == Path('/sys') and not (SLEEP_HOOK.is_file() and os.access(SLEEP_HOOK, os.X_OK)):
                 return False
             return bool(self.suspend_helper()) and self.writable(path) and "mem" in self.read(path).split()
         except OSError:
@@ -257,9 +292,12 @@ class Hardware:
     def lid_supported(self):
         from linux_platform import independent
         if independent():
-            device=os.environ.get('RGDS_LID_DEV');wake=os.environ.get('RGDS_LID_WAKEUP')
-            return bool(device and wake and str(Path(wake)).startswith(str(self.sysfs)+'/')
-                        and Path(device).exists() and self.writable(Path(wake)) and self.sleep_supported())
+            device = os.environ.get('RGDS_LID_DEV')
+            wake = os.environ.get('RGDS_LID_WAKEUP')
+            return bool(
+                device and wake and str(Path(wake)).startswith(str(self.sysfs) + '/') and Path(device).exists()
+                and self.writable(Path(wake)) and self.sleep_supported()
+            )
         from lid_sensor import read_state
         wake = self.sysfs / "devices/platform/anbernic_misc/power/wakeup"
         return self.sleep_supported() and read_state() is not None and self.writable(wake)
@@ -287,10 +325,15 @@ class Hardware:
             return None
 
     def status(self):
-        result = {"brightness_supported": int(bool(self.backlights())),
-                  "power_supported": int(any(c[-1] for c in self.clocks())),
-                  "sleep_supported": int(self.sleep_supported()), "lid_supported": int(self.lid_supported()),
-                  "brightness": 60, "battery": -1, "charging": 0}
+        result = {
+            "brightness_supported": int(bool(self.backlights())),
+            "power_supported": int(any(c[-1] for c in self.clocks())),
+            "sleep_supported": int(self.sleep_supported()),
+            "lid_supported": int(self.lid_supported()),
+            "brightness": 60,
+            "battery": -1,
+            "charging": 0
+        }
         result.update(volume_supported=0, volume=0)
         result["poweroff_supported"] = int(self.sysfs == Path("/sys") and bool(shutil.which("poweroff")))
         if self.sysfs == Path("/sys"):
@@ -330,15 +373,19 @@ class Hardware:
             path = Path(name)
             if path.is_absolute() or ".." in path.parts or not isinstance(value, str):
                 raise ValueError("Invalid hardware recovery entry")
-            if path.name not in ("brightness", "scaling_min_freq", "scaling_max_freq", "scaling_governor",
-                                 "min_freq", "max_freq", "governor", "wakeup"):
+            if path.name not in (
+                "brightness", "scaling_min_freq", "scaling_max_freq", "scaling_governor", "min_freq", "max_freq",
+                "governor", "wakeup"
+            ):
                 raise ValueError("Unknown hardware recovery control")
         return values
 
     @staticmethod
     def boot_id():
-        try:return Path("/proc/sys/kernel/random/boot_id").read_text().strip() or None
-        except OSError:return None
+        try:
+            return Path("/proc/sys/kernel/random/boot_id").read_text().strip() or None
+        except OSError:
+            return None
 
     def save_journal(self, values):
         self.journal.parent.mkdir(parents=True, exist_ok=True)
@@ -349,8 +396,10 @@ class Hardware:
             os.fsync(file.fileno())
         pending.replace(self.journal)
         descriptor = os.open(self.journal.parent, os.O_RDONLY)
-        try:os.fsync(descriptor)
-        finally:os.close(descriptor)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
     def restore_values(self, values):
         errors = []
@@ -401,20 +450,28 @@ class Hardware:
         if mode not in range(4):
             raise ValueError("Invalid power mode")
         if mode == 0:
-            self.restore_values({k: v for k, v in self.saved().items()
-                                 if Path(k).name in ("scaling_min_freq", "scaling_max_freq", "scaling_governor",
-                                                    "min_freq", "max_freq", "governor")})
+            self.restore_values(
+                {
+                    k: v
+                    for k, v in self.saved().items() if Path(k).name in
+                    ("scaling_min_freq", "scaling_max_freq", "scaling_governor", "min_freq", "max_freq", "governor")
+                }
+            )
             return
         clocks = self.clocks()
         if not any(c[-1] for c in clocks):
             raise ValueError("Power profiles unavailable")
         writes = []
         for minimum, maximum, governor, frequencies, dynamic, _ in clocks:
-            index = (len(frequencies) - 1) // 2 if mode == 1 else max(0, len(frequencies) - 2) if mode == 2 else len(frequencies) - 1
+            index = (len(frequencies) - 1) // 2 if mode == 1 else max(0,
+                                                                      len(frequencies) -
+                                                                      2) if mode == 2 else len(frequencies) - 1
             # Keep a low floor for dynamic modes. Performance holds the advertised ceiling.
-            writes += [(minimum, frequencies[0]), (maximum, frequencies[index]),
-                       (minimum, frequencies[index] if mode == 3 else frequencies[0]),
-                       (governor, "performance" if mode == 3 else dynamic)]
+            writes += [
+                (minimum, frequencies[0]), (maximum, frequencies[index]),
+                (minimum, frequencies[index] if mode == 3 else frequencies[0]),
+                (governor, "performance" if mode == 3 else dynamic)
+            ]
         self.change(writes)
 
     @serialized
@@ -423,7 +480,8 @@ class Hardware:
             if not self.lid_supported():
                 raise ValueError("Lid sleep unavailable")
             from linux_platform import independent
-            path=Path(os.environ['RGDS_LID_WAKEUP']) if independent() else self.sysfs / "devices/platform/anbernic_misc/power/wakeup"
+            path = Path(os.environ['RGDS_LID_WAKEUP']
+                        ) if independent() else self.sysfs / "devices/platform/anbernic_misc/power/wakeup"
             self.change([(path, "enabled")])
         else:
             self.restore_values({k: v for k, v in self.saved().items() if Path(k).name == "wakeup"})
@@ -435,13 +493,18 @@ class Hardware:
         if self.lid_closed() is not True:
             return False
         from fields import write_fields
+
         def record(state, **fields):
             print('Lid sleep: ' + state, flush=True)
             try:
-                write_fields(self.journal.parent.parent / 'logs/lid-sleep.ini',
-                             dict(state=state, time=time.time(), **fields), durable=False)
+                write_fields(
+                    self.journal.parent.parent / 'logs/lid-sleep.ini',
+                    dict(state=state, time=time.time(), **fields),
+                    durable=False
+                )
             except OSError:
                 pass  # Diagnostics must never prevent suspend or recovery.
+
         try:
             self.lid(True)
             if self.lid_closed() is not True:
@@ -461,19 +524,22 @@ class Hardware:
         """True after the grace period, False on open, None if position is lost."""
         while True:
             closed = self.lid_closed()
-            if closed is not True:return closed
+            if closed is not True: return closed
             remaining = deadline - time.monotonic()
-            if remaining <= 0:return True
+            if remaining <= 0: return True
             time.sleep(min(.02, remaining))
 
     @serialized
     def sleep(self, lid=False, wake_sound=True, close_sound=True):
         from linux_platform import independent, system_command
         if not self.sleep_supported():
-            raise ValueError("System sleep helper unavailable" if independent() else "Stock system sleep helper unavailable")
+            raise ValueError(
+                "System sleep helper unavailable" if independent() else "Stock system sleep helper unavailable"
+            )
         from stock_handoff import clean_environment
         command = system_command("suspend") if independent() else [self.suspend_helper()]
         volume = Volume(self.journal.parent.parent)
+
         def sync_volume():
             try:
                 volume.apply()
@@ -481,13 +547,18 @@ class Hardware:
                 # An unavailable codec must not prevent sleep or hide a failed
                 # suspend helper. Leave the saved level intact for a later retry.
                 print(f"Sleep volume restore: {error}", file=sys.stderr, flush=True)
+
         data = self.journal.parent.parent
         from fields import write_fields
         timings = {}
+
         def mark(phase):
             timings[phase] = time.time()
-            try:write_fields(data / 'logs/sleep-timing.ini', timings, durable=False)
-            except OSError:pass
+            try:
+                write_fields(data / 'logs/sleep-timing.ini', timings, durable=False)
+            except OSError:
+                pass
+
         self.sleep_mode = 'cancelled'
         # A brief close is a screen-off pause. Do not carry brightness=0 into
         # kernel suspend: pwm-backlight would restore that zero during resume,
@@ -496,26 +567,26 @@ class Hardware:
         started = time.monotonic()
         mark('requested')
         try:
-            if panels:self.change([(self.sysfs / name, 0) for name in panels])
+            if panels: self.change([(self.sysfs / name, 0) for name in panels])
             mark('screen_off')
             sync_volume()
             from sleep_sounds import play
-            if close_sound:play(data, 'lid-close')
+            if close_sound: play(data, 'lid-close')
             mark('close_cue_finished')
             held = self.wait_closed(started + 5) if lid else True
-            if held is None:return False
+            if held is None: return False
             if held:
                 # Hand the normal brightness back to the driver before deep
                 # sleep, so it can light the panels in its own resume phase.
-                if panels:self.restore_values(panels)
+                if panels: self.restore_values(panels)
                 mark('deep_sleep_requested')
                 self.sleep_mode = 'deep'
                 before = sleep_snapshot(self.sysfs)
                 # Preserve every vendor hook and never use raw kernel fallback.
                 try:
-                    if independent():suspend_linux(command)
-                    else:subprocess.run(command, env=clean_environment(), cwd="/",
-                                        stdin=subprocess.DEVNULL, check=True)
+                    if independent(): suspend_linux(command)
+                    else:
+                        subprocess.run(command, env=clean_environment(), cwd="/", stdin=subprocess.DEVNULL, check=True)
                 finally:
                     mark('deep_helper_returned')
                     after = sleep_snapshot(self.sysfs)
@@ -525,11 +596,11 @@ class Hardware:
                 self.sleep_mode = 'quick'
                 mark('quick_open')
         finally:
-            if panels:self.restore_values(panels)
+            if panels: self.restore_values(panels)
             mark('screen_restored')
         # Native menus play their cached wake cue after repainting, so its full
         # duration no longer blocks navigation. Games retain this shared owner.
-        if wake_sound:play(self.journal.parent.parent, 'lid-open')
+        if wake_sound: play(self.journal.parent.parent, 'lid-open')
         return True
 
     @serialized
@@ -540,7 +611,9 @@ class Hardware:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("status", "brightness", "volume", "power", "lid", "sleep", "sleep_lid", "restore"))
+    parser.add_argument(
+        "command", choices=("status", "brightness", "volume", "power", "lid", "sleep", "sleep_lid", "restore")
+    )
     parser.add_argument("value", nargs="?", type=int)
     parser.add_argument("--data", required=True, type=Path)
     parser.add_argument("--menu-wake", action="store_true")

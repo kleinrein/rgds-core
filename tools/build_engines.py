@@ -41,27 +41,43 @@ KIND = "source-built-dsperate"
 PATCH = ROOT / "tools/engine_patches/dsperate-clang-function-pointer.patch"
 PATCH_SHA256 = "f89b546dcabf821733b9b2c13881150007e1dd11a45ccafd50858eecf38bc780"
 ENGINE_OPTIONS = {
-    "CMAKE_BUILD_TYPE": "Release", "DSPERATE_VERSION": "3.0.0",
-    "DSPERATE_CHEEVOS_VERSION": "3.0.0", "DSPERATE_JIT": "ON",
+    "CMAKE_BUILD_TYPE": "Release",
+    "DSPERATE_VERSION": "3.0.0",
+    "DSPERATE_CHEEVOS_VERSION": "3.0.0",
+    "DSPERATE_JIT": "ON",
     # Zig's cc wrapper uses underscore CPU identifiers for -mtune.
-    "DSPERATE_NEON": "ON", "DSPERATE_TUNE": "-mtune=cortex_a55",
-    "DSPERATE_PGO": "OFF", "DSPERATE_HARDEN": "OFF",
-    "DSPERATE_TESTS": "OFF", "DSPERATE_HEADLESS": "OFF", "DSPERATE_SDL": "ON",
-    "DSPERATE_WAYLAND": "OFF", "DSPERATE_VULKAN": "OFF",
-    "DSPERATE_CHEEVOS": "ON", "DSPERATE_NET": "ON",
+    "DSPERATE_NEON": "ON",
+    "DSPERATE_TUNE": "-mtune=cortex_a55",
+    "DSPERATE_PGO": "OFF",
+    "DSPERATE_HARDEN": "OFF",
+    "DSPERATE_TESTS": "OFF",
+    "DSPERATE_HEADLESS": "OFF",
+    "DSPERATE_SDL": "ON",
+    "DSPERATE_WAYLAND": "OFF",
+    "DSPERATE_VULKAN": "OFF",
+    "DSPERATE_CHEEVOS": "ON",
+    "DSPERATE_NET": "ON",
     "CMAKE_EXE_LINKER_FLAGS": "-Wl,--strip-all -Wl,--export-dynamic",
-    "CMAKE_SKIP_RPATH": "ON", "CMAKE_DISABLE_FIND_PACKAGE_PkgConfig": "ON",
+    "CMAKE_SKIP_RPATH": "ON",
+    "CMAKE_DISABLE_FIND_PACKAGE_PkgConfig": "ON",
 }
 # A real, source-built SDL library supplies its public symbols to the linker.
 # Native platform dependencies are intentionally absent from this link SDK.
-SDL_OPTIONS = {"CMAKE_BUILD_TYPE": "Release", "SDL_SHARED": "ON",
-               "SDL_STATIC": "OFF", "SDL_TEST": "OFF", "SDL_TESTS": "OFF",
-               "SDL2_DISABLE_SDL2MAIN": "ON", "SDL_DUMMYVIDEO": "ON",
-               "SDL_DUMMYAUDIO": "ON"}
-for _option in ("ALSA", "JACK", "ESD", "PIPEWIRE", "PULSEAUDIO", "ARTS", "NAS",
-                "SNDIO", "FUSIONSOUND", "LIBSAMPLERATE", "OSS", "X11", "WAYLAND",
-                "RPI", "VIVANTE", "KMSDRM", "OPENGL", "OPENGLES", "VULKAN",
-                "DBUS", "IBUS", "LIBUDEV", "HIDAPI", "OFFSCREEN", "CCACHE", "RPATH"):
+SDL_OPTIONS = {
+    "CMAKE_BUILD_TYPE": "Release",
+    "SDL_SHARED": "ON",
+    "SDL_STATIC": "OFF",
+    "SDL_TEST": "OFF",
+    "SDL_TESTS": "OFF",
+    "SDL2_DISABLE_SDL2MAIN": "ON",
+    "SDL_DUMMYVIDEO": "ON",
+    "SDL_DUMMYAUDIO": "ON"
+}
+for _option in (
+    "ALSA", "JACK", "ESD", "PIPEWIRE", "PULSEAUDIO", "ARTS", "NAS", "SNDIO", "FUSIONSOUND", "LIBSAMPLERATE", "OSS",
+    "X11", "WAYLAND", "RPI", "VIVANTE", "KMSDRM", "OPENGL", "OPENGLES", "VULKAN", "DBUS", "IBUS", "LIBUDEV", "HIDAPI",
+    "OFFSCREEN", "CCACHE", "RPATH"
+):
     SDL_OPTIONS["SDL_" + _option] = "OFF"
 
 
@@ -75,8 +91,9 @@ def digest(path):
 
 def run(command, *, env=None, capture=False):
     print(shlex.join(str(value) for value in command), flush=True)
-    return subprocess.run([str(value) for value in command], cwd=ROOT, env=env,
-                          check=True, text=True, capture_output=capture)
+    return subprocess.run(
+        [str(value) for value in command], cwd=ROOT, env=env, check=True, text=True, capture_output=capture
+    )
 
 
 def git(source, *arguments):
@@ -129,12 +146,15 @@ def prepare_build_source(source, destination, inputs):
     """Apply the recorded Clang portability patch to an isolated checkout."""
     if digest(PATCH) != PATCH_SHA256:
         raise ValueError("DSperate portability patch checksum mismatch")
-    edits = {"src/core/gpu/render3d.cpp": [
-                 (b"reinterpret_cast<GatherNFn>(sh.gather4)",
-                  b"reinterpret_cast<GatherNFn>(const_cast<void*>(sh.gather4))")],
-             "src/core/gpu/kernels_neon.cpp": [
-                 (b"vst1_u32(dst + x, uint32x2_t{c, cs})", b"vst1_u32(dst + x, (uint32x2_t{c, cs}))"),
-                 (b"vst1_u32(dst + x, uint32x2_t{cd, c})", b"vst1_u32(dst + x, (uint32x2_t{cd, c}))")]}
+    edits = {
+        "src/core/gpu/render3d.cpp": [
+            (b"reinterpret_cast<GatherNFn>(sh.gather4)", b"reinterpret_cast<GatherNFn>(const_cast<void*>(sh.gather4))")
+        ],
+        "src/core/gpu/kernels_neon.cpp": [
+            (b"vst1_u32(dst + x, uint32x2_t{c, cs})", b"vst1_u32(dst + x, (uint32x2_t{c, cs}))"),
+            (b"vst1_u32(dst + x, uint32x2_t{cd, c})", b"vst1_u32(dst + x, (uint32x2_t{cd, c}))")
+        ]
+    }
     endian = b"""/* RGDS: libslirp's stream helpers need these GLib byte-order macros. */
 #if G_BYTE_ORDER == G_BIG_ENDIAN
 #define GUINT16_FROM_BE(v) ((guint16)(v))
@@ -156,12 +176,17 @@ def prepare_build_source(source, destination, inputs):
     # Count completed emulated frames, including frames intentionally not drawn.
     # Export the accessor so the HUD can distinguish speed from refresh.
     edits["src/frontend/sdl/main.cpp"] = [
-        (b"// Nearest tag and short commit hash.\n",
-         b"#include <cstdint>\nstatic std::atomic<uint32_t> rgds_completed_frames{0};\n"
-         b'extern "C" uint32_t rgds_emulated_frames() { return rgds_completed_frames.load(std::memory_order_relaxed); }\n\n'
-         b"// Nearest tag and short commit hash.\n"),
-        (b"    nds.run_frame();\n#if DSPERATE_CHEEVOS\n",
-         b"    nds.run_frame();\n    rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);\n#if DSPERATE_CHEEVOS\n")]
+        (
+            b"// Nearest tag and short commit hash.\n",
+            b"#include <cstdint>\nstatic std::atomic<uint32_t> rgds_completed_frames{0};\n"
+            b'extern "C" uint32_t rgds_emulated_frames() { return rgds_completed_frames.load(std::memory_order_relaxed); }\n\n'
+            b"// Nearest tag and short commit hash.\n"
+        ),
+        (
+            b"    nds.run_frame();\n#if DSPERATE_CHEEVOS\n",
+            b"    nds.run_frame();\n    rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);\n#if DSPERATE_CHEEVOS\n"
+        )
+    ]
     originals, patched = {}, {}
     expected = dict(inputs)
     for name, replacements in edits.items():
@@ -179,7 +204,10 @@ def prepare_build_source(source, destination, inputs):
         run(["git", "-C", destination, "apply", "--unidiff-zero", PATCH])
     if git(destination, "rev-parse", "HEAD") != COMMIT:
         raise ValueError("Isolated engine build checkout has the wrong commit")
-    names = set(filter(None, subprocess.check_output(["git", "-C", str(destination), "ls-files", "-z"]).decode().split("\0")))
+    names = set(
+        filter(None,
+               subprocess.check_output(["git", "-C", str(destination), "ls-files", "-z"]).decode().split("\0"))
+    )
     if names != set(expected):
         raise ValueError("Isolated engine build checkout has an unexpected source inventory")
     for name, data in patched.items():
@@ -203,10 +231,12 @@ def source_archive(source, destination, names):
                 entries = [("DSperate/" + name, source / name) for name in sorted(names)]
                 # Keep the exact build driver and patch beside full upstream
                 # source so recipients can reproduce this modified build.
-                entries += [("DSperate/tools/build_engines.py", Path(__file__)),
-                            ("DSperate/tools/build_engines_gcc.py", ROOT / "tools/build_engines_gcc.py"),
-                            ("DSperate/tools/elf_abi.py", ROOT / "tools/elf_abi.py"),
-                            ("DSperate/tools/engine_patches/" + PATCH.name, PATCH)]
+                entries += [
+                    ("DSperate/tools/build_engines.py", Path(__file__)),
+                    ("DSperate/tools/build_engines_gcc.py", ROOT / "tools/build_engines_gcc.py"),
+                    ("DSperate/tools/elf_abi.py", ROOT / "tools/elf_abi.py"),
+                    ("DSperate/tools/engine_patches/" + PATCH.name, PATCH)
+                ]
                 for name, path in entries:
                     data = path.read_bytes()
                     item = tarfile.TarInfo(name)
@@ -264,46 +294,63 @@ def toolchain(directory, zig, source, sdl_source):
         path = directory / name
         path.write_text("#!/bin/sh\nexec " + shlex.join(arguments) + ' "$@"\n')
         path.chmod(0o755)
-    flags = " ".join(f"-ffile-prefix-map={path}={label}" for path, label in
-                     ((source, "/src/DSperate"), (sdl_source, "/src/SDL2"), (ROOT, "/rgds")))
+    flags = " ".join(
+        f"-ffile-prefix-map={path}={label}"
+        for path, label in ((source, "/src/DSperate"), (sdl_source, "/src/SDL2"), (ROOT, "/rgds"))
+    )
     path = directory / "linux-aarch64.cmake"
-    path.write_text("\n".join([
-        'set(CMAKE_SYSTEM_NAME Linux)', 'set(CMAKE_SYSTEM_PROCESSOR aarch64)',
-        f'set(CMAKE_C_COMPILER "{directory / "cc"}")',
-        f'set(CMAKE_CXX_COMPILER "{directory / "cxx"}")',
-        f'set(CMAKE_AR "{directory / "ar"}")', f'set(CMAKE_RANLIB "{directory / "ranlib"}")',
-        f'set(CMAKE_C_COMPILER_AR "{directory / "ar"}")',
-        f'set(CMAKE_CXX_COMPILER_AR "{directory / "ar"}")',
-        f'set(CMAKE_C_COMPILER_RANLIB "{directory / "ranlib"}")',
-        f'set(CMAKE_CXX_COMPILER_RANLIB "{directory / "ranlib"}")',
-        f'set(CMAKE_C_FLAGS_INIT "{flags}")', f'set(CMAKE_CXX_FLAGS_INIT "{flags}")',
-        'set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)',
-        'set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)',
-        'set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)',
-        'set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)',
-    ]) + "\n")
+    path.write_text(
+        "\n".join(
+            [
+                'set(CMAKE_SYSTEM_NAME Linux)',
+                'set(CMAKE_SYSTEM_PROCESSOR aarch64)',
+                f'set(CMAKE_C_COMPILER "{directory / "cc"}")',
+                f'set(CMAKE_CXX_COMPILER "{directory / "cxx"}")',
+                f'set(CMAKE_AR "{directory / "ar"}")',
+                f'set(CMAKE_RANLIB "{directory / "ranlib"}")',
+                f'set(CMAKE_C_COMPILER_AR "{directory / "ar"}")',
+                f'set(CMAKE_CXX_COMPILER_AR "{directory / "ar"}")',
+                f'set(CMAKE_C_COMPILER_RANLIB "{directory / "ranlib"}")',
+                f'set(CMAKE_CXX_COMPILER_RANLIB "{directory / "ranlib"}")',
+                f'set(CMAKE_C_FLAGS_INIT "{flags}")',
+                f'set(CMAKE_CXX_FLAGS_INIT "{flags}")',
+                'set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)',
+                'set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)',
+                'set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)',
+                'set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)',
+            ]
+        ) + "\n"
+    )
     return path
 
 
 def configure(cmake, ninja, source, build, toolchain_path, options, env):
-    run([cmake, "-S", source, "-B", build, "-G", "Ninja",
-         "-DCMAKE_MAKE_PROGRAM=" + str(ninja), "-DCMAKE_TOOLCHAIN_FILE=" + str(toolchain_path),
-         *["-D" + key + "=" + value for key, value in sorted(options.items())]], env=env)
+    run(
+        [
+            cmake, "-S", source, "-B", build, "-G", "Ninja", "-DCMAKE_MAKE_PROGRAM=" + str(ninja),
+            "-DCMAKE_TOOLCHAIN_FILE=" + str(toolchain_path),
+            *["-D" + key + "=" + value for key, value in sorted(options.items())]
+        ],
+        env=env
+    )
 
 
 def build_engine(args):
     source, sdk, output = args.source.resolve(), args.sdk.resolve(), args.output.resolve()
     compiler = getattr(args, "compiler", "zig")
-    tools = {name: find_tool(name, getattr(args, name)) for name in ("zig", "cmake", "ninja")} if compiler == "zig" else {}
+    tools = {
+        name: find_tool(name, getattr(args, name))
+        for name in ("zig", "cmake", "ninja")
+    } if compiler == "zig" else {}
     sdl_source = ensure_sources(source, sdk, args.fetch)
     source_hash, inputs = source_inputs(source)
     env = os.environ.copy()
-    env.update(ZIG_GLOBAL_CACHE_DIR=str(ROOT / ".cache/zig"),
-               ZIG_LOCAL_CACHE_DIR=str(ROOT / ".cache/zig-engines"))
+    env.update(ZIG_GLOBAL_CACHE_DIR=str(ROOT / ".cache/zig"), ZIG_LOCAL_CACHE_DIR=str(ROOT / ".cache/zig-engines"))
     # Clear host package environment so macOS SDL headers cannot be selected.
-    for name in ("CFLAGS", "CXXFLAGS", "LDFLAGS", "CPPFLAGS", "PKG_CONFIG_PATH", "SDL2_DIR",
-                 "CPATH", "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH", "SDKROOT",
-                 "MACOSX_DEPLOYMENT_TARGET"):
+    for name in (
+        "CFLAGS", "CXXFLAGS", "LDFLAGS", "CPPFLAGS", "PKG_CONFIG_PATH", "SDL2_DIR", "CPATH", "C_INCLUDE_PATH",
+        "CPLUS_INCLUDE_PATH", "LIBRARY_PATH", "SDKROOT", "MACOSX_DEPLOYMENT_TARGET"
+    ):
         env.pop(name, None)
     scratch = ROOT / "build/engine-cross"
     scratch.mkdir(parents=True, exist_ok=True)
@@ -318,9 +365,11 @@ def build_engine(args):
     run([tools["cmake"], "--build", sdl_build, "--parallel", args.jobs], env=env)
     run([tools["cmake"], "--install", sdl_build], env=env)
     engine_build = scratch / "dsperate"
-    options = {**ENGINE_OPTIONS, "SDL2_DIR": str(sdl_install / "lib/cmake/SDL2"),
-               "CMAKE_FIND_ROOT_PATH": str(sdl_install),
-               "CMAKE_PREFIX_PATH": str(sdl_install)}
+    options = {
+        **ENGINE_OPTIONS, "SDL2_DIR": str(sdl_install / "lib/cmake/SDL2"),
+        "CMAKE_FIND_ROOT_PATH": str(sdl_install),
+        "CMAKE_PREFIX_PATH": str(sdl_install)
+    }
     # The original compile attempt used the unpatched checkout. CMake caches
     # the source root, so a transition to the isolated tree needs a fresh cache.
     cache = engine_build / "CMakeCache.txt"
@@ -330,7 +379,9 @@ def build_engine(args):
     run([tools["cmake"], "--build", engine_build, "--target", "dsperate", "--parallel", args.jobs], env=env)
     candidate = engine_build / "src/frontend/sdl/dsperate"
     abi = inspect_elf(candidate, "pinned upstream DSperate built from source")
-    if not abi or abi["machine"] != "aarch64" or not abi["glibc_minimum"] or tuple(map(int, abi["glibc_minimum"].split("."))) > (2, 17):
+    if not abi or abi["machine"] != "aarch64" or not abi["glibc_minimum"] or tuple(
+        map(int, abi["glibc_minimum"].split("."))
+    ) > (2, 17):
         raise ValueError("Source engine failed Linux AArch64 / GLIBC 2.17 ABI validation")
     if source_inputs(source)[0] != source_hash:
         raise ValueError("Upstream source changed during the build")
@@ -348,28 +399,61 @@ def build_engine(args):
             "RGDS changes: Clang callback/vector-initializer portability; missing GLib byte-order macros for libslirp; exported completed-emulation-frame counter.\n"
             "Built for RGDS on Linux AArch64 / Cortex-A55 with JIT, NEON and LTO.\n"
             "The SDL2 library is a build-time SDK only; the card supplies runtime SDL2.\n"
-            "Hardware test scope and results are recorded separately in RGDS documentation.\n")
+            "Hardware test scope and results are recorded separately in RGDS documentation.\n"
+        )
         commands = json.loads((engine_build / "compile_commands.json").read_text())
-        compile_options = sorted({entry["command"].split(" -o ")[0].replace(str(modified_source), "/src/DSperate").replace(str(ROOT), "/rgds") for entry in commands})
+        compile_options = sorted(
+            {
+                entry["command"].split(" -o ")[0].replace(str(modified_source),
+                                                          "/src/DSperate").replace(str(ROOT), "/rgds")
+                for entry in commands
+            }
+        )
         sdl_lib = next((sdl_install / "lib").glob("libSDL2-2.0.so.*.*.*"))
-        headers = {path.relative_to(sdl_install / "include").as_posix(): digest(path)
-                   for path in sorted((sdl_install / "include").rglob("*.h"))}
+        headers = {
+            path.relative_to(sdl_install / "include").as_posix(): digest(path)
+            for path in sorted((sdl_install / "include").rglob("*.h"))
+        }
         record = {
-            "schema": 1, "kind": KIND, "binary": abi,
-            "source": {"url": UPSTREAM, "commit": COMMIT, "tree": TREE,
-                       "inputs_sha256": source_hash, "patched_inputs_sha256": patched_hash,
-                       "patches": [{"name": PATCH.name, "sha256": digest(PATCH)}],
-                       "archive_sha256": digest(pending / "source.tar.gz")},
-            "tools": {name: tool_record(path) for name, path in tools.items()},
-            "build_driver_sha256": digest(Path(__file__)), "target": TARGET,
-            "options": ENGINE_OPTIONS, "compile_options": compile_options,
-            "source_file_count": len(inputs), "device_tested": False,
-            "sdl_link_sdk": {"version": SDL_VERSION, "url": SDL_URL,
-                             "source_archive_sha256": SDL_SHA256, "library_sha256": digest(sdl_lib),
-                             "headers_sha256": hashlib.sha256(json.dumps(headers, sort_keys=True).encode()).hexdigest(),
-                             "options": SDL_OPTIONS, "packaged": False,
-                             "runtime": "Existing card libSDL2-2.0.so.0; ABI symbols still need device validation"},
-            "files": {name: digest(pending / name) for name in ("dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz")},
+            "schema": 1,
+            "kind": KIND,
+            "binary": abi,
+            "source": {
+                "url": UPSTREAM,
+                "commit": COMMIT,
+                "tree": TREE,
+                "inputs_sha256": source_hash,
+                "patched_inputs_sha256": patched_hash,
+                "patches": [{
+                    "name": PATCH.name,
+                    "sha256": digest(PATCH)
+                }],
+                "archive_sha256": digest(pending / "source.tar.gz")
+            },
+            "tools": {
+                name: tool_record(path)
+                for name, path in tools.items()
+            },
+            "build_driver_sha256": digest(Path(__file__)),
+            "target": TARGET,
+            "options": ENGINE_OPTIONS,
+            "compile_options": compile_options,
+            "source_file_count": len(inputs),
+            "device_tested": False,
+            "sdl_link_sdk": {
+                "version": SDL_VERSION,
+                "url": SDL_URL,
+                "source_archive_sha256": SDL_SHA256,
+                "library_sha256": digest(sdl_lib),
+                "headers_sha256": hashlib.sha256(json.dumps(headers, sort_keys=True).encode()).hexdigest(),
+                "options": SDL_OPTIONS,
+                "packaged": False,
+                "runtime": "Existing card libSDL2-2.0.so.0; ABI symbols still need device validation"
+            },
+            "files": {
+                name: digest(pending / name)
+                for name in ("dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz")
+            },
         }
         (pending / "build.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
         validate_build(pending)
@@ -401,17 +485,37 @@ def publish_gcc_engine(source, modified_source, output, inputs, source_hash, pat
             "RGDS changes: Clang callback/vector-initializer portability; missing GLib byte-order macros for libslirp; exported completed-emulation-frame counter.\n"
             "Built for RGDS on Linux AArch64 with GCC 13.3, upstream's committed PGO profile, JIT and NEON (tools/build_engines_gcc.py).\n"
             "libstdc++/libgcc are linked statically; the card supplies runtime SDL2.\n"
-            "Hardware test scope and results are recorded separately in RGDS documentation.\n")
+            "Hardware test scope and results are recorded separately in RGDS documentation.\n"
+        )
         record = {
-            "schema": 1, "kind": KIND, "binary": abi, "compiler": gcc.COMPILER,
-            "source": {"url": UPSTREAM, "commit": COMMIT, "tree": TREE,
-                       "inputs_sha256": source_hash, "patched_inputs_sha256": patched_hash,
-                       "patches": [{"name": PATCH.name, "sha256": digest(PATCH)}],
-                       "archive_sha256": digest(pending / "source.tar.gz")},
-            "tools": {"gcc": gcc_record}, "build_driver_sha256": digest(Path(__file__)),
-            "target": "aarch64-linux-gnu (glibc >= 2.38)", "options": options,
-            "source_file_count": len(inputs), "device_tested": False,
-            "files": {name: digest(pending / name) for name in ("dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz")},
+            "schema": 1,
+            "kind": KIND,
+            "binary": abi,
+            "compiler": gcc.COMPILER,
+            "source": {
+                "url": UPSTREAM,
+                "commit": COMMIT,
+                "tree": TREE,
+                "inputs_sha256": source_hash,
+                "patched_inputs_sha256": patched_hash,
+                "patches": [{
+                    "name": PATCH.name,
+                    "sha256": digest(PATCH)
+                }],
+                "archive_sha256": digest(pending / "source.tar.gz")
+            },
+            "tools": {
+                "gcc": gcc_record
+            },
+            "build_driver_sha256": digest(Path(__file__)),
+            "target": "aarch64-linux-gnu (glibc >= 2.38)",
+            "options": options,
+            "source_file_count": len(inputs),
+            "device_tested": False,
+            "files": {
+                name: digest(pending / name)
+                for name in ("dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz")
+            },
         }
         (pending / "build.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
         validate_build(pending)
@@ -444,29 +548,34 @@ def validate_build(directory):
     directory = Path(directory)
     record = json.loads((directory / "build.json").read_text())
     expected = {"dsperate", "LICENSE", "NOTICE.txt", "source.tar.gz"}
-    if (not isinstance(record, dict) or type(record.get("schema")) is not int
-            or record.get("schema") != 1 or record.get("kind") != KIND
-            or not isinstance(record.get("source"), dict)
-            or not isinstance(record.get("binary"), dict)
-            or not isinstance(record.get("files"), dict)
-            or record.get("source", {}).get("commit") != COMMIT
-            or record.get("source", {}).get("tree") != TREE
-            or record.get("source", {}).get("inputs_sha256") != SOURCE_INPUTS_SHA256
-            or record.get("source", {}).get("patched_inputs_sha256") != PATCHED_INPUTS_SHA256
-            or record.get("source", {}).get("patches") != [{"name": PATCH.name, "sha256": PATCH_SHA256}]
-            or set(record.get("files", {})) != expected):
+    if (
+        not isinstance(record, dict) or type(record.get("schema")) is not int or record.get("schema") != 1
+        or record.get("kind") != KIND or not isinstance(record.get("source"), dict)
+        or not isinstance(record.get("binary"), dict) or not isinstance(record.get("files"), dict)
+        or record.get("source", {}).get("commit") != COMMIT or record.get("source", {}).get("tree") != TREE
+        or record.get("source", {}).get("inputs_sha256") != SOURCE_INPUTS_SHA256
+        or record.get("source", {}).get("patched_inputs_sha256") != PATCHED_INPUTS_SHA256
+        or record.get("source", {}).get("patches") != [{
+            "name": PATCH.name,
+            "sha256": PATCH_SHA256
+        }] or set(record.get("files", {})) != expected
+    ):
         raise ValueError("Invalid source-built DSperate metadata")
     if directory.is_symlink() or {path.name for path in directory.iterdir()} != expected | {"build.json"}:
         raise ValueError("Unexpected source-built DSperate file inventory")
     for name, checksum in record["files"].items():
         path = directory / name
-        if (not isinstance(checksum, str) or not re.fullmatch("[0-9a-f]{64}", checksum)
-                or path.is_symlink() or not path.is_file() or digest(path) != checksum):
+        if (
+            not isinstance(checksum, str) or not re.fullmatch("[0-9a-f]{64}", checksum) or path.is_symlink()
+            or not path.is_file() or digest(path) != checksum
+        ):
             raise ValueError("Source-built DSperate artifact hash mismatch: " + name)
     abi = inspect_elf(directory / "dsperate", record["binary"].get("source"))
     compiler = record.get("compiler", "zig")
-    if (compiler not in ("zig", gcc.COMPILER) or not abi or abi != record["binary"] or abi["machine"] != "aarch64"
-            or not gcc.glibc_allowed(abi, compiler) or abi.get("runpaths")):
+    if (
+        compiler not in ("zig", gcc.COMPILER) or not abi or abi != record["binary"] or abi["machine"] != "aarch64"
+        or not gcc.glibc_allowed(abi, compiler) or abi.get("runpaths")
+    ):
         raise ValueError("Source-built DSperate ELF metadata mismatch")
     if record["source"].get("archive_sha256") != record["files"]["source.tar.gz"]:
         raise ValueError("Source-built DSperate source archive metadata mismatch")
@@ -482,23 +591,30 @@ def validate_source_archive(path, record):
         names = set()
         for member in archive.getmembers():
             relative = Path(member.name)
-            if (relative.is_absolute() or ".." in relative.parts
-                    or not member.isfile() or not member.name.startswith("DSperate/")
-                    or member.name in names):
+            if (
+                relative.is_absolute() or ".." in relative.parts or not member.isfile()
+                or not member.name.startswith("DSperate/") or member.name in names
+            ):
                 raise ValueError("Unsafe or duplicate DSperate source archive entry")
             names.add(member.name)
             content = archive.extractfile(member).read()
             name = member.name[len("DSperate/"):]
-            if name in ("tools/build_engines.py", "tools/build_engines_gcc.py", "tools/elf_abi.py", "tools/engine_patches/" + PATCH.name):
+            if name in (
+                "tools/build_engines.py", "tools/build_engines_gcc.py", "tools/elf_abi.py",
+                "tools/engine_patches/" + PATCH.name
+            ):
                 if name == "tools/build_engines.py":
                     builder = hashlib.sha256(content).hexdigest()
-                elif name == "tools/engine_patches/" + PATCH.name and hashlib.sha256(content).hexdigest() != PATCH_SHA256:
+                elif name == "tools/engine_patches/" + PATCH.name and hashlib.sha256(content
+                                                                                     ).hexdigest() != PATCH_SHA256:
                     raise ValueError("DSperate source archive portability patch mismatch")
             else:
                 files[name] = hashlib.sha256(content).hexdigest()
     fingerprint = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    if (fingerprint != PATCHED_INPUTS_SHA256 or builder != record.get("build_driver_sha256")
-            or len(files) != record.get("source_file_count")):
+    if (
+        fingerprint != PATCHED_INPUTS_SHA256 or builder != record.get("build_driver_sha256")
+        or len(files) != record.get("source_file_count")
+    ):
         raise ValueError("DSperate source archive does not match the built source fingerprint")
 
 
@@ -512,8 +628,12 @@ def main():
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 1, 8))
     for name in ("zig", "cmake", "ninja"):
         parser.add_argument("--" + name, type=Path)
-    parser.add_argument("--compiler", choices=("zig", gcc.COMPILER), default="zig",
-                        help="gcc-pgo: GCC 13.3 + upstream's PGO profile in the Lima ARM64 VM (~8%% less emulation time)")
+    parser.add_argument(
+        "--compiler",
+        choices=("zig", gcc.COMPILER),
+        default="zig",
+        help="gcc-pgo: GCC 13.3 + upstream's PGO profile in the Lima ARM64 VM (~8%% less emulation time)"
+    )
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be positive")

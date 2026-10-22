@@ -30,7 +30,10 @@ class GameClockTests(unittest.TestCase):
         self.put(f"{name}/{prefix}max_freq", maximum)
         self.put(f"{name}/{prefix}governor", "simple_ondemand" if not prefix else "schedutil")
         self.put(f"{name}/{prefix}available_frequencies", available)
-        self.put(f"{name}/{prefix}available_governors", "simple_ondemand performance" if not prefix else "schedutil performance")
+        self.put(
+            f"{name}/{prefix}available_governors",
+            "simple_ondemand performance" if not prefix else "schedutil performance"
+        )
         return self.sysfs / name
 
     def read(self, path):
@@ -38,7 +41,9 @@ class GameClockTests(unittest.TestCase):
 
     def test_hold_raises_gpu_and_memory_floors_and_release_puts_them_back(self):
         cpu = self.clock("devices/system/cpu/cpufreq/policy0", "scaling_", 408000, 1992000, "408000 1008000 1992000")
-        gpu = self.clock("class/devfreq/fde60000.gpu", "", 200000000, 800000000, "200000000 300000000 400000000 600000000 800000000")
+        gpu = self.clock(
+            "class/devfreq/fde60000.gpu", "", 200000000, 800000000, "200000000 300000000 400000000 600000000 800000000"
+        )
         dmc = self.clock("class/devfreq/dmc", "", 324000000, 1056000000, "324000000 528000000 1056000000")
         clocks = GameClocks(self.data, self.sysfs)
         self.assertEqual(sorted(clocks.hold()), ["dmc", "fde60000.gpu"])
@@ -46,17 +51,19 @@ class GameClockTests(unittest.TestCase):
         self.assertEqual(self.read(dmc / "min_freq"), "1056000000")
         self.assertEqual(self.read(gpu / "max_freq"), "800000000")
         self.assertEqual(self.read(gpu / "governor"), "simple_ondemand")
-        self.assertEqual(self.read(cpu / "scaling_min_freq"), "408000")   # CPU policy untouched
+        self.assertEqual(self.read(cpu / "scaling_min_freq"), "408000")  # CPU policy untouched
         # The hardware journal knows the originals, so a crashed session restores them.
         self.assertEqual(Hardware(self.data, self.sysfs).saved()["class/devfreq/fde60000.gpu/min_freq"], "200000000")
         clocks.release()
         self.assertEqual(self.read(gpu / "min_freq"), "200000000")
         self.assertEqual(self.read(dmc / "min_freq"), "324000000")
-        clocks.release()   # a second release is a no-op
+        clocks.release()  # a second release is a no-op
         self.assertEqual(self.read(gpu / "min_freq"), "200000000")
 
     def test_floor_never_exceeds_a_power_profile_cap(self):
-        gpu = self.clock("class/devfreq/fde60000.gpu", "", 200000000, 600000000, "200000000 300000000 400000000 600000000 800000000")
+        gpu = self.clock(
+            "class/devfreq/fde60000.gpu", "", 200000000, 600000000, "200000000 300000000 400000000 600000000 800000000"
+        )
         clocks = GameClocks(self.data, self.sysfs)
         self.assertEqual(clocks.hold(), ["fde60000.gpu"])
         self.assertEqual(self.read(gpu / "min_freq"), "600000000")

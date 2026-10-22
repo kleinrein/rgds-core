@@ -17,7 +17,8 @@ class FontScalingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             source, binary = folder / "font.cpp", folder / "font"
-            source.write_text(r'''
+            source.write_text(
+                r'''
 #include "launcher/font.hpp"
 #include <cassert>
 #include <cmath>
@@ -43,12 +44,25 @@ int main(int argc,char** argv) {
     }
     s.DestroyRenderer(renderer);s.FreeSurface(surface);s.Quit();return 0;
 }
-''')
-            includes = [flag for flag in shlex.split(subprocess.check_output(["sdl2-config", "--cflags"], text=True)) if flag.startswith("-I")]
-            subprocess.run(["clang++", "-std=c++17", "-O2", "-Wall", "-Wextra", "-Werror", *includes,
-                            "-I" + str(ROOT / "src"), str(source), *( [] if sys.platform == "darwin" else ["-ldl"]), "-o", str(binary)], check=True)
-            subprocess.run([str(binary), str(ROOT / "assets/fonts")],
-                           env={**os.environ, "SDL_VIDEODRIVER": "dummy"}, check=True)
+'''
+            )
+            includes = [
+                flag for flag in shlex.split(subprocess.check_output(["sdl2-config", "--cflags"], text=True))
+                if flag.startswith("-I")
+            ]
+            subprocess.run(
+                [
+                    "clang++", "-std=c++17", "-O2", "-Wall", "-Wextra", "-Werror", *includes, "-I" + str(ROOT / "src"),
+                    str(source), *([] if sys.platform == "darwin" else ["-ldl"]), "-o",
+                    str(binary)
+                ],
+                check=True
+            )
+            subprocess.run(
+                [str(binary), str(ROOT / "assets/fonts")], env={
+                    **os.environ, "SDL_VIDEODRIVER": "dummy"
+                }, check=True
+            )
 
 
 if __name__ == "__main__":

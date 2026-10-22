@@ -20,7 +20,7 @@ class EngineLog:
         self.stream = self.worker = None
         self.deadline = None
         self.wake_reader = self.wake_writer = None
-        self.gpu_faults = 0   # "[KFAULT]" lines: PanVK GPU jobs the kernel terminated
+        self.gpu_faults = 0  # "[KFAULT]" lines: PanVK GPU jobs the kernel terminated
 
     def append(self, chunk):
         with self.lock:
@@ -43,7 +43,8 @@ class EngineLog:
         try:
             self.worker.start()
         except Exception:
-            os.close(self.wake_reader); os.close(self.wake_writer)
+            os.close(self.wake_reader)
+            os.close(self.wake_writer)
             self.wake_reader = self.wake_writer = self.worker = None
             raise
 
@@ -74,17 +75,22 @@ class EngineLog:
         # inherited writer must not prevent the launcher from returning home.
         self.deadline = time.monotonic() + .3
         if self.wake_writer is not None:
-            try: os.write(self.wake_writer, b"x")
-            except OSError: pass  # The engine may already have closed stdout.
+            try:
+                os.write(self.wake_writer, b"x")
+            except OSError:
+                pass  # The engine may already have closed stdout.
         if self.worker: self.worker.join(timeout=1)
         if self.wake_writer is not None:
-            os.close(self.wake_writer); self.wake_writer = None
+            os.close(self.wake_writer)
+            self.wake_writer = None
         if self.stream and (not self.worker or not self.worker.is_alive()): self.stream.close()
         with self.lock:
             tail = b"".join(self.chunks).decode("utf-8", errors="replace")
             dropped = self.dropped
-        header = (f"Engine: {self.core}\nWorking directory: {self.cwd}\n"
-                  f"Command: {self.command!r}\nExit code: {returncode}\n")
+        header = (
+            f"Engine: {self.core}\nWorking directory: {self.cwd}\n"
+            f"Command: {self.command!r}\nExit code: {returncode}\n"
+        )
         if error: header += "Runtime error: " + str(error) + "\n"
         if dropped: header += f"Earlier output discarded: {dropped} bytes\n"
         pending = self.path.with_suffix(".log.partial")
@@ -95,11 +101,15 @@ class EngineLog:
         except OSError as failure:
             # Preserve the bounded crash tail even if a card remounts read-only
             # mid-game. This recovery file never becomes a save destination.
-            with tempfile.NamedTemporaryFile(mode="w", prefix="rgds-"+self.core+"-", suffix=".log", delete=False) as stream:
+            with tempfile.NamedTemporaryFile(
+                mode="w", prefix="rgds-" + self.core + "-", suffix=".log", delete=False
+            ) as stream:
                 stream.write(header + "Log storage error: " + str(failure) + "\n\n" + tail)
                 self.path = Path(stream.name)
             print("Engine diagnostics recovered to " + str(self.path), file=sys.stderr, flush=True)
         finally:
-            try:pending.unlink(missing_ok=True)
-            except OSError:pass
+            try:
+                pending.unlink(missing_ok=True)
+            except OSError:
+                pass
         return self.path

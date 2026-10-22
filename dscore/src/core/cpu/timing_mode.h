@@ -26,7 +26,9 @@ namespace ds {
 // A single constant low enough for the former made main-RAM-bound idle work
 // (PW2's) iterate ~40% more per frame, and one at the whole-run average (4)
 // pushed ST's and NSMB's frame logic past VBlank, halving their 3D rate.
-struct FastTiming { u32 d9s = 0, d9 = 5, d7 = 2, r9 = 4, r7 = 2; };
+struct FastTiming {
+  u32 d9s = 0, d9 = 5, d7 = 2, r9 = 4, r7 = 2;
+};
 extern bool g_fast_timing;
 extern FastTiming g_fast;
 

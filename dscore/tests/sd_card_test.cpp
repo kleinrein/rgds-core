@@ -27,17 +27,27 @@ using ds::io::SdCard;
 namespace fs = std::filesystem;
 
 static int failures = 0;
-#define CHECK(c) do { if (!(c)) { std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #c); ++failures; } } while (0)
+#define CHECK(c)                                                                                                       \
+  do {                                                                                                                 \
+    if (!(c)) {                                                                                                        \
+      std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #c);                                                \
+      ++failures;                                                                                                      \
+    }                                                                                                                  \
+  } while (0)
 
 static std::vector<u8> pattern(size_t n, u32 seed) {
   std::vector<u8> v(n);
-  for (size_t i = 0; i < n; ++i) { seed = seed * 1103515245u + 12345u; v[i] = static_cast<u8>(seed >> 16); }
+  for (size_t i = 0; i < n; ++i) {
+    seed = seed * 1103515245u + 12345u;
+    v[i] = static_cast<u8>(seed >> 16);
+  }
   return v;
 }
 
 static void put_file(const fs::path& p, const std::vector<u8>& data) {
   fs::create_directories(p.parent_path());
-  std::ofstream(p, std::ios::binary).write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
+  std::ofstream(p, std::ios::binary)
+      .write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
 }
 
 static std::vector<u8> get_file(const fs::path& p) {
@@ -53,27 +63,31 @@ struct MemDev {
   void read(u64 o, u32 n, u8* out) {
     for (u32 i = 0; i < n; i += 512) {
       auto it = sec.find((o + i) / 512);
-      if (it == sec.end()) std::memset(out + i, 0, 512); else std::memcpy(out + i, it->second.data(), 512);
+      if (it == sec.end()) std::memset(out + i, 0, 512);
+      else std::memcpy(out + i, it->second.data(), 512);
     }
   }
-  void write(u64 o, u32 n, const u8* in) { for (u32 i = 0; i < n; i += 512) sec[(o + i) / 512].assign(in + i, in + i + 512); }
+  void write(u64 o, u32 n, const u8* in) {
+    for (u32 i = 0; i < n; i += 512) sec[(o + i) / 512].assign(in + i, in + i + 512);
+  }
 };
 
 static void test_fat32() {
   MemDev dev;
   FatVolume::FormatSpec spec;
-  spec.sectors = (1ull << 30) / 512;   // 1 GB
+  spec.sectors = (1ull << 30) / 512; // 1 GB
   spec.fat_bits = 32;
   spec.sectors_per_cluster = 8;
   spec.zeroed = true;
   std::string err;
   CHECK(FatVolume::format([&](u64 o, u32 n, const u8* in) { dev.write(o, n, in); }, spec, &err));
   FatVolume v;
-  CHECK(v.open([&](u64 o, u32 n, u8* out) { dev.read(o, n, out); }, [&](u64 o, u32 n, const u8* in) { dev.write(o, n, in); }, &err));
+  CHECK(v.open([&](u64 o, u32 n, u8* out) { dev.read(o, n, out); },
+               [&](u64 o, u32 n, const u8* in) { dev.write(o, n, in); }, &err));
   CHECK(v.fat_bits() == 32);
   CHECK(v.cluster_bytes() == 4096);
   const u32 free0 = v.free_clusters();
-  CHECK(free0 == v.cluster_count() - 1);   // the root's cluster
+  CHECK(free0 == v.cluster_count() - 1); // the root's cluster
   v.set_preserve_case(true);
 
   CHECK(v.mkdir("/private"));
@@ -81,7 +95,7 @@ static void test_fat32() {
   const std::vector<u8> big = pattern(100000, 7);
   CHECK(v.write("/private/ds/save data.bin", big.data(), static_cast<u32>(big.size())));
   CHECK(v.write("/readme.txt", reinterpret_cast<const u8*>("hi"), 2));
-  const std::string jp = "\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E.txt";   // 日本語.txt
+  const std::string jp = "\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E.txt"; // 日本語.txt
   CHECK(v.write("/" + jp, reinterpret_cast<const u8*>("jp"), 2));
   CHECK(v.free_clusters() == free0 - 2 - 25 - 1 - 1);
 
@@ -95,13 +109,15 @@ static void test_fat32() {
 
   // A re-open reads what was written, with the same free count.
   FatVolume v2;
-  CHECK(v2.open([&](u64 o, u32 n, u8* out) { dev.read(o, n, out); }, [&](u64 o, u32 n, const u8* in) { dev.write(o, n, in); }));
+  CHECK(v2.open([&](u64 o, u32 n, u8* out) { dev.read(o, n, out); },
+                [&](u64 o, u32 n, const u8* in) { dev.write(o, n, in); }));
   CHECK(v2.free_clusters() == v.free_clusters());
   CHECK(v2.lookup("/private/ds/save data.bin", e) && v2.read(e, back) && back == big);
   // ".." in a first-level directory names the root as cluster 0.
   CHECK(v2.lookup("/private", e));
   bool dotdot = false;
-  for (const FatVolume::Entry& c : v2.list(e)) if (c.name == ".." && c.cluster == 0) dotdot = true;
+  for (const FatVolume::Entry& c : v2.list(e))
+    if (c.name == ".." && c.cluster == 0) dotdot = true;
   CHECK(dotdot);
 
   // Many names that share a short-name stem, in one populate.
@@ -127,7 +143,9 @@ static void test_fat32() {
 static bool guest_mount(SdCard& card, FatVolume& v) {
   u8 mbr[512];
   card.read(0, 512, mbr);
-  const u64 base = (static_cast<u64>(mbr[0x1C6]) | (mbr[0x1C7] << 8) | (mbr[0x1C8] << 16) | (static_cast<u64>(mbr[0x1C9]) << 24)) * 512;
+  const u64 base =
+      (static_cast<u64>(mbr[0x1C6]) | (mbr[0x1C7] << 8) | (mbr[0x1C8] << 16) | (static_cast<u64>(mbr[0x1C9]) << 24)) *
+      512;
   return v.open([&card, base](u64 o, u32 n, u8* out) { card.read(base + o, n, out); },
                 [&card, base](u64 o, u32 n, const u8* in) { card.write(base + o, n, in); });
 }
@@ -148,7 +166,7 @@ static void test_card(const fs::path& dir) {
   CHECK(card.open(dir.string(), &rep, &err));
   CHECK(rep.files == 7 && rep.dirs == 3 && rep.notes.empty());
   CHECK(card.length() == 256ull << 20 && card.fat_bits() == 16);
-  CHECK(card.sync().files == 0);   // nothing written yet
+  CHECK(card.sync().files == 0); // nothing written yet
 
   FatVolume v;
   CHECK(guest_mount(card, v));
@@ -174,7 +192,7 @@ static void test_card(const fs::path& dir) {
   CHECK(card.any_changed());
 
   rep = card.sync();
-  CHECK(rep.files == 3);     // readme, big, data file
+  CHECK(rep.files == 3); // readme, big, data file
   CHECK(rep.dirs == 1);
   CHECK(rep.removed == 1);
   CHECK(rep.notes.size() == 1 && rep.notes[0].find("keep.txt") != std::string::npos);
@@ -184,7 +202,8 @@ static void test_card(const fs::path& dir) {
   CHECK(!fs::exists(dir / "gone.txt"));
   CHECK(get_file(dir / "keep.txt") == bytes("changed on the host"));
   CHECK(get_file(dir / "Photos" / "IMG_0001.JPG") == photo);
-  for (const auto& p : fs::recursive_directory_iterator(dir)) CHECK(p.path().string().find(".dsperate-sync") == std::string::npos);
+  for (const auto& p : fs::recursive_directory_iterator(dir))
+    CHECK(p.path().string().find(".dsperate-sync") == std::string::npos);
 
   // After the sync the card reads its files from the host again, and keeps
   // its own keep.txt.
@@ -200,7 +219,7 @@ static void test_card(const fs::path& dir) {
   const std::vector<u8> photo2 = pattern(300000, 3);
   CHECK(v.write("/Photos/IMG_0001.JPG", photo2.data(), static_cast<u32>(photo2.size())));
   rep = card.sync();
-  CHECK(rep.files == 1 && rep.removed == 3);   // x.txt, Nested, Empty
+  CHECK(rep.files == 1 && rep.removed == 3); // x.txt, Nested, Empty
   CHECK(!fs::exists(dir / "Empty"));
   CHECK(get_file(dir / "Photos" / "IMG_0001.JPG") == photo2);
   CHECK(guest_mount(card, v));
@@ -279,7 +298,8 @@ static void test_card_state(const fs::path& dir) {
   CHECK(v.lookup("/b.bin", e) && v.read(e, back) && back == big);
   // Saved again straight away, it is the same snapshot.
   const SdCard::StateSnapshot again = card.state_snapshot();
-  CHECK(again.sectors == snap.sectors && again.data == snap.data && again.changed == snap.changed && again.known_key == snap.known_key);
+  CHECK(again.sectors == snap.sectors && again.data == snap.data && again.changed == snap.changed &&
+        again.known_key == snap.known_key);
 
   // The loaded card's unsynced write goes out like any other; a.txt then
   // no longer backs the snapshot as it was.
@@ -301,7 +321,10 @@ int main() {
   test_card_fat32(tmp / "card32");
   test_card_state(tmp / "cardstate");
   fs::remove_all(tmp);
-  if (failures) { std::fprintf(stderr, "sd_card: %d failures\n", failures); return 1; }
+  if (failures) {
+    std::fprintf(stderr, "sd_card: %d failures\n", failures);
+    return 1;
+  }
   std::fprintf(stderr, "sd_card: ok\n");
   return 0;
 }

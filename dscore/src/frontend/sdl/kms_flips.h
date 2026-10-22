@@ -56,7 +56,7 @@ public:
     u64 timed = 0, lat_ns = 0, lat_max_ns = 0, late = 0, timeouts = 0;
   };
   Stats stats(int slot) const;
-  u64 strays() const;   // events for no known window (cleared as SDL would)
+  u64 strays() const; // events for no known window (cleared as SDL would)
 
   // One completed flip: its number for the window (from 1), when it completed
   // (the DRM event's CLOCK_MONOTONIC stamp) and when SDL's swap that queued
@@ -65,7 +65,11 @@ public:
   // wait_ns: how long before() held that swap for the window's previous flip.
   // tag: bit 0 (after()'s tag) the frame started late; bit 2 (DrmOut's
   // mailbox) the frame queued behind this flip was dropped at its vblank.
-  struct Flip { u64 seq = 0, at_ns = 0, issue_ns = 0; int tag = 0; u64 wait_ns = 0; };
+  struct Flip {
+    u64 seq = 0, at_ns = 0, issue_ns = 0;
+    int tag = 0;
+    u64 wait_ns = 0;
+  };
   static constexpr int RING = 8;
   // The slot's flips after number `after`, oldest first, at most `max` (the
   // ring keeps the last RING); returns how many were written.
@@ -74,14 +78,14 @@ public:
 private:
   struct Slot {
     bool used = false;
-    volatile int* flag = nullptr;   // SDL's windata->waiting_for_flip (an SDL_bool)
-    bool pending = false;           // a flip queued by after() and not yet completed
+    volatile int* flag = nullptr; // SDL's windata->waiting_for_flip (an SDL_bool)
+    bool pending = false;         // a flip queued by after() and not yet completed
     int learn_tries = 0;
-    u64 seen = 0, seen_before = 0;  // events read for it; the count at before()
+    u64 seen = 0, seen_before = 0; // events read for it; the count at before()
     u64 issue_ns = 0, last_ns = 0, period_ns = 0;
-    int pending_tag = 0;            // after()'s tag for the pending flip
-    u64 last_wait_ns = 0, pending_wait_ns = 0;   // before()'s wait for the swap in progress; for the pending flip
-    Flip ring[RING];                // the last RING flips, ring[(seq - 1) % RING]
+    int pending_tag = 0;                       // after()'s tag for the pending flip
+    u64 last_wait_ns = 0, pending_wait_ns = 0; // before()'s wait for the swap in progress; for the pending flip
+    Flip ring[RING];                           // the last RING flips, ring[(seq - 1) % RING]
     Stats st;
   };
   // Reads the fd (one thread at a time) until done() or the timeout.

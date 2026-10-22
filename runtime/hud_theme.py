@@ -9,8 +9,10 @@ from pathlib import Path
 from fields import read_fields
 
 # The sixteen DS favourite colours, in firmware order (src/launcher/accent.hpp).
-DS_COLOURS = ("61829a", "ba4900", "fb0018", "fb8afb", "fb9200", "f3e300", "aafb00", "00fb00",
-              "00a238", "49db8a", "30baf3", "0059f3", "000092", "8a00d3", "d300eb", "fb0092")
+DS_COLOURS = (
+    "61829a", "ba4900", "fb0018", "fb8afb", "fb9200", "f3e300", "aafb00", "00fb00", "00a238", "49db8a", "30baf3",
+    "0059f3", "000092", "8a00d3", "d300eb", "fb0092"
+)
 KEYS = ("panel", "ink", "muted", "accent", "line")
 
 
@@ -21,7 +23,8 @@ def _rgb(text):
 def _luminance(colour):
     def linear(value):
         x = value / 255
-        return x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4
+        return x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055)**2.4
+
     r, g, b = (linear(v) for v in colour)
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 

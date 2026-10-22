@@ -21,10 +21,10 @@ def discover(sysfs=Path('/sys/class/input'), devices=Path('/dev/input')):
     candidates = []
     for entry in sorted(Path(sysfs).glob('event*')):
         try:
-            if (entry/'device/name').read_text().strip() != 'rk805 pwrkey':
+            if (entry / 'device/name').read_text().strip() != 'rk805 pwrkey':
                 continue
-            keys = bits(entry/'device/capabilities/key')
-            node = Path(devices)/entry.name
+            keys = bits(entry / 'device/capabilities/key')
+            node = Path(devices) / entry.name
             if all(keys & (1 << code) for code in (110, 111, 116)) and node.exists():
                 candidates.append(node)
         except OSError:
@@ -39,12 +39,12 @@ def read_snapshot(path=None):
         return None, None
     try:
         fields = Path(path).read_text().split()
-        if len(fields) not in (2, 3):return None, None
+        if len(fields) not in (2, 3): return None, None
         stamp, state = fields[:2]
         age = time.monotonic() - float(stamp)
         value = int(state)
-        generation = int(fields[2]) if len(fields)==3 and fields[2].isdigit() else None
-        if len(fields)==3 and (generation is None or generation>=2**64):return None, None
+        generation = int(fields[2]) if len(fields) == 3 and fields[2].isdigit() else None
+        if len(fields) == 3 and (generation is None or generation >= 2**64): return None, None
         return (value, generation) if 0 <= age <= 3 and value in (-1, 0, 1) else (None, None)
     except (OSError, ValueError):
         return None, None
@@ -71,7 +71,7 @@ class LidSensor:
         try:
             self.fd = os.open(node, os.O_RDONLY | os.O_NONBLOCK | os.O_CLOEXEC)
             self.folder = Path(tempfile.mkdtemp(prefix='rgds-lid-', dir='/tmp'))
-            self.path = self.folder/'state'
+            self.path = self.folder / 'state'
             self.publish()
         except OSError:
             self.close()
@@ -83,14 +83,14 @@ class LidSensor:
             _, _, kind, code, value = EVENT.unpack(self.pending[:EVENT.size])
             self.pending = self.pending[EVENT.size:]
             if self.dropped:
-                if kind == 0 and code == 0:self.dropped = False
+                if kind == 0 and code == 0: self.dropped = False
                 continue
             if kind == 0 and code == 3:  # SYN_DROPPED: never trust a lost edge.
                 self.dropped = True
                 self.closed = -1
                 changed = True
             elif kind == 1 and value == 1 and code in (110, 111):
-                if code == 110 and self.closed != 1:self.generation += 1
+                if code == 110 and self.closed != 1: self.generation += 1
                 self.closed = int(code == 110)
                 changed = True
         return changed
@@ -109,8 +109,10 @@ class LidSensor:
         try:
             # Bound work if a faulty input node floods events.
             for _ in range(16):
-                try: payload = os.read(self.fd, EVENT.size * 32)
-                except BlockingIOError: break
+                try:
+                    payload = os.read(self.fd, EVENT.size * 32)
+                except BlockingIOError:
+                    break
                 if not payload:
                     raise OSError('Lid input disconnected')
                 changed = self.feed(payload) or changed

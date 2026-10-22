@@ -11,13 +11,14 @@ from pathlib import Path
 import struct
 import zlib
 from build_boot_assets import boot_panel, dots, place, shadow, fill, BACKGROUND
-ROOT=Path(__file__).resolve().parents[1]
+
+ROOT = Path(__file__).resolve().parents[1]
 FRAMES, FPS = 36, 15
 
 
 def frames():
     base = bytearray(boot_panel(with_dots=False))
-    fill(base, 640, 270, 236, 100, 10, BACKGROUND)   # the shadow is redrawn per frame
+    fill(base, 640, 270, 236, 100, 10, BACKGROUND)  # the shadow is redrawn per frame
     for index in range(FRAMES):
         phase = index / FRAMES
         p = bytearray(base)
@@ -25,7 +26,10 @@ def frames():
         place(p, 640, 'mark-120.bmp', 260, 112)
         dots(p, phase)
         bgra = bytearray(640 * 480 * 4)
-        bgra[0::4] = p[2::3]; bgra[1::4] = p[1::3]; bgra[2::4] = p[0::3]; bgra[3::4] = b'\xff' * (640 * 480)
+        bgra[0::4] = p[2::3]
+        bgra[1::4] = p[1::3]
+        bgra[2::4] = p[0::3]
+        bgra[3::4] = b'\xff' * (640 * 480)
         yield bytes(bgra)
 
 
@@ -34,4 +38,5 @@ def build(path):
     data = b''.join(compressor.compress(frame) for frame in frames()) + compressor.flush()
     Path(path).write_bytes(struct.pack('<4s4I', b'RGA1', 640, 480, FRAMES, FPS) + data)
 
-if __name__ == '__main__':build(ROOT/'assets/boot/animation.rga')
+
+if __name__ == '__main__': build(ROOT / 'assets/boot/animation.rga')

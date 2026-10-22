@@ -37,48 +37,55 @@ RECIPES = {
 # A coherent original musical vocabulary sits over the generated textures.
 # Notes are authored here, not sampled from an existing console melody.
 NOTES = {
-    'navigate': [(0,1046.5)], 'type': [(0,1318.5)], 'adjust': [(0,784)],
-    'confirm': [(0,1046.5),(.075,1318.5)],
-    'open': [(0,523.25),(.09,784),(.18,1046.5)],
-    'back': [(0,1046.5),(.09,784),(.18,523.25)],
-    'enable': [(0,659.25),(.065,1046.5)], 'disable': [(0,784),(.075,523.25)],
-    'favourite': [(0,1046.5),(.085,1318.5),(.17,1568),(.255,2093)],
-    'unfavourite': [(0,1046.5),(.11,659.25)],
-    'launch': [(0,523.25),(.10,659.25),(.20,784),(.33,987.77),(.47,1174.66),(.62,1568)],
-    'resume': [(0,784),(.045,1046.5)],
-    'save': [(0,659.25),(.09,784),(.18,1046.5)],
-    'load': [(0,1046.5),(.105,784),(.21,1318.5)],
-    'error': [(0,392),(.10,369.99)],
-    'lid-close': [(0,987.77),(.065,659.25),(.13,493.88)],
-    'lid-open': [(0,659.25),(.075,987.77),(.15,1318.5),(.225,1975.53)],
+    'navigate': [(0, 1046.5)],
+    'type': [(0, 1318.5)],
+    'adjust': [(0, 784)],
+    'confirm': [(0, 1046.5), (.075, 1318.5)],
+    'open': [(0, 523.25), (.09, 784), (.18, 1046.5)],
+    'back': [(0, 1046.5), (.09, 784), (.18, 523.25)],
+    'enable': [(0, 659.25), (.065, 1046.5)],
+    'disable': [(0, 784), (.075, 523.25)],
+    'favourite': [(0, 1046.5), (.085, 1318.5), (.17, 1568), (.255, 2093)],
+    'unfavourite': [(0, 1046.5), (.11, 659.25)],
+    'launch': [(0, 523.25), (.10, 659.25), (.20, 784), (.33, 987.77), (.47, 1174.66), (.62, 1568)],
+    'resume': [(0, 784), (.045, 1046.5)],
+    'save': [(0, 659.25), (.09, 784), (.18, 1046.5)],
+    'load': [(0, 1046.5), (.105, 784), (.21, 1318.5)],
+    'error': [(0, 392), (.10, 369.99)],
+    'lid-close': [(0, 987.77), (.065, 659.25), (.13, 493.88)],
+    'lid-open': [(0, 659.25), (.075, 987.77), (.15, 1318.5), (.225, 1975.53)],
 }
 
+
 def musical_layer(name, samples, duration):
-    length=round(duration*32000)
-    samples.extend([0.] * max(0,length-len(samples)))
+    length = round(duration * 32000)
+    samples.extend([0.] * max(0, length - len(samples)))
     del samples[length:]
-    peak=max(map(abs,samples)) or 1
+    peak = max(map(abs, samples)) or 1
     # The texture stays underneath a clear, immediate note, even on tiny speakers.
     for i in range(length):
-        samples[i]=samples[i]/peak*.16
-    for start,frequency in NOTES[name]:
-        decay=.24 if name=='launch' else .12 if name in ('favourite','save','load','lid-open') else .055
-        for i in range(round(start*32000),length):
-            t=i/32000-start
-            attack=1-math.exp(-t/0.0025)
-            bell=(math.sin(math.tau*frequency*t)*math.exp(-t/decay)
-                  +.22*math.sin(math.tau*frequency*2.005*t)*math.exp(-t/(decay*.55))
-                  +.07*math.sin(math.tau*frequency*3.98*t)*math.exp(-t/(decay*.3)))
-            samples[i]+=.52*attack*bell
-    if name=='launch':
+        samples[i] = samples[i] / peak * .16
+    for start, frequency in NOTES[name]:
+        decay = .24 if name == 'launch' else .12 if name in ('favourite', 'save', 'load', 'lid-open') else .055
+        for i in range(round(start * 32000), length):
+            t = i / 32000 - start
+            attack = 1 - math.exp(-t / 0.0025)
+            bell = (
+                math.sin(math.tau * frequency * t) * math.exp(-t / decay) +
+                .22 * math.sin(math.tau * frequency * 2.005 * t) * math.exp(-t / (decay * .55)) +
+                .07 * math.sin(math.tau * frequency * 3.98 * t) * math.exp(-t / (decay * .3))
+            )
+            samples[i] += .52 * attack * bell
+    if name == 'launch':
         for i in range(length):
-            t=i/32000
+            t = i / 32000
             # Quiet, warm major-ninth bloom beneath the ascending glass notes.
-            pad=sum(math.sin(math.tau*f*t) for f in (130.8128,196,246.9417,293.6648))/4
-            swell=(1-math.exp(-t/.15))*math.exp(-t/.6)
-            sparkle=math.sin(math.tau*3136*t)*(.5+.5*math.sin(math.tau*7*t))*math.exp(-t/.35)
-            samples[i]+=.16*pad*swell+.025*sparkle
+            pad = sum(math.sin(math.tau * f * t) for f in (130.8128, 196, 246.9417, 293.6648)) / 4
+            swell = (1 - math.exp(-t / .15)) * math.exp(-t / .6)
+            sparkle = math.sin(math.tau * 3136 * t) * (.5 + .5 * math.sin(math.tau * 7 * t)) * math.exp(-t / .35)
+            samples[i] += .16 * pad * swell + .025 * sparkle
     return samples
+
 
 def build(source, out):
     out.mkdir(parents=True, exist_ok=True)
@@ -91,30 +98,36 @@ def build(source, out):
         if reverse:
             filters += ',areverse'
         filters += f',atrim=duration={duration},highpass=f=100,lowpass=f=10000'
-        raw = subprocess.run([ffmpeg, '-v', 'error', '-i', str(path), '-ac', '1', '-ar', '32000', '-af', filters, '-f', 'f32le', '-'], check=True, capture_output=True).stdout
+        raw = subprocess.run(
+            [ffmpeg, '-v', 'error', '-i',
+             str(path), '-ac', '1', '-ar', '32000', '-af', filters, '-f', 'f32le', '-'],
+            check=True,
+            capture_output=True
+        ).stdout
         samples = array.array('f', raw)
         if not samples:
             raise ValueError(f'{path} contains no audio')
-        samples=musical_layer(name,samples,duration)
+        samples = musical_layer(name, samples, duration)
         dc = sum(samples) / len(samples)
         # Smooth 2 ms attack and a finite release; no hard cuts or long tails.
         attack = 64
-        release = min(len(samples)//2, int(32000*min(.18, duration*.48)))
+        release = min(len(samples) // 2, int(32000 * min(.18, duration * .48)))
         for i in range(len(samples)):
-            envelope = min(1, i/attack) * min(1, (len(samples)-1-i)/release)**1.5
-            samples[i] = (samples[i]-dc)*envelope
+            envelope = min(1, i / attack) * min(1, (len(samples) - 1 - i) / release)**1.5
+            samples[i] = (samples[i] - dc) * envelope
         peak = max(map(abs, samples))
         if peak < .0001:
             raise ValueError(f'{name} is silent')
-        pcm = array.array('h', (round(x*.66/peak*32767) for x in samples))
-        with wave.open(str(out/f'{name}.wav'), 'wb') as wav:
+        pcm = array.array('h', (round(x * .66 / peak * 32767) for x in samples))
+        with wave.open(str(out / f'{name}.wav'), 'wb') as wav:
             wav.setparams((1, 2, 32000, 0, 'NONE', 'not compressed'))
             wav.writeframes(pcm.tobytes())
         print(f'{name}: {len(samples)/32000:.3f}s, {len(pcm)*2} bytes')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sources', type=Path, required=True)
-    parser.add_argument('--output', type=Path, default=ROOT/'assets/sounds')
+    parser.add_argument('--output', type=Path, default=ROOT / 'assets/sounds')
     args = parser.parse_args()
     build(args.sources, args.output)

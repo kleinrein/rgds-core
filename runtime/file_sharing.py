@@ -18,7 +18,6 @@ import time
 from fields import read_fields, write_fields
 from records import process_identity, read_record, write_record
 
-
 # Bonjour advertisement through the firmware's running avahi-daemon, so the
 # handheld appears under Network in Finder while sharing is on. The file is
 # owned by RGDS and removed whenever sharing stops.
@@ -65,7 +64,8 @@ class Sharing:
         # Service-only updates preserve the installed launcher. Its original
         # details screen reads this transient file instead of sharing_login.
         try:
-            legacy = json.loads((self.app / 'manifest.json').read_text()).get('service_update', {}).get('legacy_sharing_details', False)
+            legacy = json.loads((self.app / 'manifest.json').read_text()).get('service_update',
+                                                                              {}).get('legacy_sharing_details', False)
         except (OSError, ValueError):
             legacy = False
         self.compat_login = self.data / 'device/sharing/login.ini' if legacy else None
@@ -81,17 +81,24 @@ class Sharing:
             yield
 
     def supported(self):
-        return os.geteuid() == 0 and all((self.bundle / 'bin' / name).is_file()
-            for name in ('smbd', 'smbpasswd', 'smbclient', 'samba-dcerpcd', 'rpcd_classic', 'rpcd_winreg', 'rpcd_lsad'))
+        return os.geteuid() == 0 and all(
+            (self.bundle / 'bin' / name).is_file()
+            for name in ('smbd', 'smbpasswd', 'smbclient', 'samba-dcerpcd', 'rpcd_classic', 'rpcd_winreg', 'rpcd_lsad')
+        )
 
     def environment(self):
-        return dict(PATH='/usr/sbin:/usr/bin:/sbin:/bin', LC_ALL='C',
-                    LD_LIBRARY_PATH=str(self.bundle / 'lib'),
-                    RGDS_SAMBA_SAMBA_LIBEXECDIR=str(self.bundle / 'bin'),
-                    RGDS_SAMBA_LOGFILEBASE=str(self.folder))
+        return dict(
+            PATH='/usr/sbin:/usr/bin:/sbin:/bin',
+            LC_ALL='C',
+            LD_LIBRARY_PATH=str(self.bundle / 'lib'),
+            RGDS_SAMBA_SAMBA_LIBEXECDIR=str(self.bundle / 'bin'),
+            RGDS_SAMBA_LOGFILEBASE=str(self.folder)
+        )
 
     def alive(self, record):
-        if not record or record.get('boot') != boot_id() or process_identity(record['pid']) != record['start'] or process_state(record['pid']) in (None, 'Z'):
+        if not record or record.get('boot') != boot_id() or process_identity(
+            record['pid']
+        ) != record['start'] or process_state(record['pid']) in (None, 'Z'):
             return False
         try:
             # A PID/start match alone must never authorize signalling another group.
@@ -122,31 +129,43 @@ class Sharing:
                 write_fields(self.compat_login, read_fields(self.folder / 'login.ini'))
                 self.compat_login.chmod(0o600)
             open_mode = on and bool(record) and record.get('guest') is True
-            return dict(sharing_supported=int(self.supported()), sharing=int(on),
-                        sharing_address='smb://' + ip if on else '',
-                        sharing_mode=('open' if open_mode else 'password') if on else '',
-                        sharing_name=SERVICE_NAME if on and self.avahi_service is not None else '',
-                        sharing_login=str(self.folder / 'login.ini') if on else '')
+            return dict(
+                sharing_supported=int(self.supported()),
+                sharing=int(on),
+                sharing_address='smb://' + ip if on else '',
+                sharing_mode=('open' if open_mode else 'password') if on else '',
+                sharing_name=SERVICE_NAME if on and self.avahi_service is not None else '',
+                sharing_login=str(self.folder / 'login.ini') if on else ''
+            )
 
     def advertise(self, enabled):
         """Best effort: discovery never blocks sharing or its shutdown."""
         path = self.avahi_service
-        if path is None:return
+        if path is None: return
         try:
             if enabled:
                 content = AVAHI_XML.format(name=SERVICE_NAME)
-                if path.is_file() and path.read_text() == content:return
+                if path.is_file() and path.read_text() == content: return
                 path.parent.mkdir(parents=True, exist_ok=True)
                 pending = path.with_name('.' + path.name + '.pending')
-                pending.write_text(content);pending.replace(path)
-            elif path.exists():path.unlink()
-            else:return
+                pending.write_text(content)
+                pending.replace(path)
+            elif path.exists():
+                path.unlink()
+            else:
+                return
             daemon = shutil.which('avahi-daemon', path='/usr/sbin:/usr/bin:/sbin:/bin')
             if daemon:
                 # The daemon also watches the folder; a reload covers a folder
                 # that did not exist when it started.
-                subprocess.run([daemon, '--reload'], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                               stderr=subprocess.DEVNULL, timeout=3, check=False)
+                subprocess.run(
+                    [daemon, '--reload'],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=3,
+                    check=False
+                )
         except (OSError, subprocess.SubprocessError):
             pass
 
@@ -179,14 +198,17 @@ class Sharing:
         return value
 
     def configure(self, ip, roots, username, guest=False):
-        lines = ['[global]', 'server role = standalone server', 'security = user',
-                 'map to guest = ' + ('Bad User' if guest else 'Never'), 'server min protocol = SMB2', 'smb ports = 445',
-                 'server string = ' + SERVICE_NAME, 'veto files = ' + MAC_CLUTTER, 'delete veto files = yes',
-                 'interfaces = ' + ip, 'bind interfaces only = yes', 'disable netbios = yes',
-                 'load printers = no', 'printing = bsd', 'printcap name = /dev/null',
-                 'unix extensions = no', 'wide links = no', 'follow symlinks = no',
-                 'rpc start on demand helpers = no', 'nt acl support = no', 'ea support = no']
-        for key in ('private dir', 'state directory', 'cache directory', 'lock directory', 'pid directory', 'ncalrpc dir'):
+        lines = [
+            '[global]', 'server role = standalone server', 'security = user',
+            'map to guest = ' + ('Bad User' if guest else 'Never'), 'server min protocol = SMB2', 'smb ports = 445',
+            'server string = ' + SERVICE_NAME, 'veto files = ' + MAC_CLUTTER, 'delete veto files = yes',
+            'interfaces = ' + ip, 'bind interfaces only = yes', 'disable netbios = yes', 'load printers = no',
+            'printing = bsd', 'printcap name = /dev/null', 'unix extensions = no', 'wide links = no',
+            'follow symlinks = no', 'rpc start on demand helpers = no', 'nt acl support = no', 'ea support = no'
+        ]
+        for key in (
+            'private dir', 'state directory', 'cache directory', 'lock directory', 'pid directory', 'ncalrpc dir'
+        ):
             folder = self.folder / key.replace(' ', '-')
             folder.mkdir(exist_ok=True, mode=0o700)
             lines.append(key + ' = ' + self.config_path(folder))
@@ -200,7 +222,8 @@ class Sharing:
             path = self.config_path(root)
             if path not in seen:
                 name = 'Games' if not shares else 'Games' + str(len(shares) + 1)
-                shares.append((name, path)); seen.add(path)
+                shares.append((name, path))
+                seen.add(path)
         for name in ('Imports', 'Exports'):
             root = self.data / name.lower()
             if root.is_symlink():
@@ -211,8 +234,10 @@ class Sharing:
             # Open mode: anyone on this network may connect without a password;
             # files are still written as the share owner, like the protected mode.
             access = ['guest ok = yes'] if guest else ['valid users = ' + username, 'guest ok = no']
-            lines += ['', '[' + name + ']', 'path = ' + path, 'read only = no',
-                      'force user = ' + username, *access, 'follow symlinks = no', 'wide links = no']
+            lines += [
+                '', '[' + name + ']', 'path = ' + path, 'read only = no', 'force user = ' + username, *access,
+                'follow symlinks = no', 'wide links = no'
+            ]
         config = self.folder / 'smb.conf'
         config.write_text('\n'.join(lines) + '\n')
         return config, ', '.join(name for name, _path in shares)
@@ -223,7 +248,8 @@ class Sharing:
             if not self.supported():
                 raise ValueError('The RGDS file sharing service is missing or damaged. Reinstall the RGDS update.')
             record = read_record(self.record)
-            if self.alive(record) and record.get('ip') == ip and record.get('guest', False) is bool(guest) and self.reachable(ip):
+            if self.alive(record) and record.get('ip') == ip and record.get('guest', False
+                                                                            ) is bool(guest) and self.reachable(ip):
                 self.advertise(True)
                 return
             self._stop(record)
@@ -232,39 +258,73 @@ class Sharing:
                 with socket.socket() as check:
                     check.bind((ip, 445))
             except OSError:
-                raise ValueError('SMB port is already in use or unavailable. Check the firmware sharing service.') from None
+                raise ValueError(
+                    'SMB port is already in use or unavailable. Check the firmware sharing service.'
+                ) from None
             username = 'root'
             password = secrets.token_hex(6)
             config, shares = self.configure(ip, roots, username, guest)
             environment = self.environment()
-            result = subprocess.run([str(self.bundle / 'bin/smbpasswd'), '-c', str(config), '-s', '-a', username],
-                                    input=password + '\n' + password + '\n', text=True,
-                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                    env=environment, timeout=10)
+            result = subprocess.run(
+                [str(self.bundle / 'bin/smbpasswd'), '-c',
+                 str(config), '-s', '-a', username],
+                input=password + '\n' + password + '\n',
+                text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                env=environment,
+                timeout=10
+            )
             if result.returncode:
                 raise ValueError('Could not prepare the file sharing login. See the sharing server log.')
             process = None
             try:
                 with (self.folder / 'server.log').open('w') as log:
-                    process = subprocess.Popen([sys.executable, '-B', str(Path(__file__).resolve()), 'serve',
-                                                '--bundle', str(self.bundle), '--config', str(config)],
-                                               stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                                               env=environment, start_new_session=True)
+                    process = subprocess.Popen(
+                        [
+                            sys.executable, '-B',
+                            str(Path(__file__).resolve()), 'serve', '--bundle',
+                            str(self.bundle), '--config',
+                            str(config)
+                        ],
+                        stdin=subprocess.DEVNULL,
+                        stdout=log,
+                        stderr=log,
+                        env=environment,
+                        start_new_session=True
+                    )
                 identity = process_identity(process.pid)
                 if not identity:
                     raise ValueError('Could not start SMB sharing.')
                 record = dict(pid=process.pid, start=identity, boot=boot_id(), ip=ip, guest=bool(guest))
                 write_record(self.record, record)
-                write_fields(self.folder / 'login.ini', dict(username=username, password=password, shares=shares,
-                                                              mode='open' if guest else 'password', name=SERVICE_NAME))
+                write_fields(
+                    self.folder / 'login.ini',
+                    dict(
+                        username=username,
+                        password=password,
+                        shares=shares,
+                        mode='open' if guest else 'password',
+                        name=SERVICE_NAME
+                    )
+                )
                 (self.folder / 'login.ini').chmod(0o600)
                 deadline = time.monotonic() + 5
                 while process.poll() is None:
                     if self.reachable(ip):
                         # A listening port alone does not prove authentication works.
-                        check = subprocess.run([str(self.bundle / 'bin/smbclient'), '//' + ip + '/Imports',
-                            '-s', str(config), '-A', str(self.folder / 'login.ini'), '-c', 'quit'], env=environment,
-                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+                        check = subprocess.run(
+                            [
+                                str(self.bundle / 'bin/smbclient'), '//' + ip + '/Imports', '-s',
+                                str(config), '-A',
+                                str(self.folder / 'login.ini'), '-c', 'quit'
+                            ],
+                            env=environment,
+                            stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            timeout=3
+                        )
                         if check.returncode == 0 and process.poll() is None:
                             self._process = process
                             self.advertise(True)
@@ -287,7 +347,9 @@ def preview(data, enabled):
     folder = Path(data) / 'device/sharing'
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
     if enabled:
-        write_fields(folder / 'login.ini', dict(username='rgds', password='preview-only', shares='Games, Imports, Exports'))
+        write_fields(
+            folder / 'login.ini', dict(username='rgds', password='preview-only', shares='Games, Imports, Exports')
+        )
         (folder / 'login.ini').chmod(0o600)
     else:
         (folder / 'login.ini').unlink(missing_ok=True)
@@ -296,17 +358,24 @@ def preview(data, enabled):
 def serve(bundle, config):
     """Keep SMB and its RPC workers in one owned group until both have stopped."""
     children = []
+
     def interrupted(_signum, _frame):
         raise KeyboardInterrupt
+
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
-    options = ['--foreground', '--no-process-group', '--configfile=' + str(config),
-               '--log-basename=' + str(config.parent)]
+    options = [
+        '--foreground', '--no-process-group', '--configfile=' + str(config), '--log-basename=' + str(config.parent)
+    ]
     try:
         # Explicit workers avoid Samba's build-time libexec directory. This
         # also prevents accidental success through a builder-only fallback.
         workers = [str(bundle / 'bin' / name) for name in ('rpcd_classic', 'rpcd_winreg', 'rpcd_lsad')]
-        children.append(subprocess.Popen([str(bundle / 'bin/samba-dcerpcd'), *options, '--np-only', *workers], stdin=subprocess.DEVNULL))
+        children.append(
+            subprocess.Popen(
+                [str(bundle / 'bin/samba-dcerpcd'), *options, '--np-only', *workers], stdin=subprocess.DEVNULL
+            )
+        )
         children.append(subprocess.Popen([str(bundle / 'bin/smbd'), *options], stdin=subprocess.DEVNULL))
         while all(child.poll() is None for child in children):
             time.sleep(.1)

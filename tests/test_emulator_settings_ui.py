@@ -26,8 +26,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.prefs = self.root / 'preferences.ini'
         self.prefs.write_text('schema=1\nmode=light\nfont=rounded\ncore=1\n')
         self.game = self.root / 'library' / game_key(self.rom) / 'game.ini'
-        write_fields(self.game, dict(schema=1, core=3, filter=4, favourite=1,
-                                    threaded_3d=1, hires_3d=0, frameskip=0))
+        write_fields(self.game, dict(schema=1, core=3, filter=4, favourite=1, threaded_3d=1, hires_3d=0, frameskip=0))
         self.original = self.game.read_bytes()
 
     def run_ui(self, keys, core='drastic', library=False, touch='', game_library=False):
@@ -35,15 +34,24 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         script.write_text(''.join(f'{30 + i * 30} key {key}\n' for i, key in enumerate(keys)) + touch)
         state = self.root / 'state'
         state.unlink(missing_ok=True)
-        mode = ['--settings', '--section', 'library'] if library else [
-            '--game-menu', '--game-core', core, '--game-rom', str(self.rom)]
-        if game_library:mode=['--library','--rom-dir',str(self.root)]
-        result = subprocess.run([
-            str(BINARY), '--preview', *mode, '--data', str(self.root),
-            '--state', str(state), '--input-script', str(script), '--seconds', '1',
-            '--cache-report', str(self.root / 'report.json')], cwd=ROOT,
+        mode = ['--settings', '--section', 'library'
+                ] if library else ['--game-menu', '--game-core', core, '--game-rom',
+                                   str(self.rom)]
+        if game_library: mode = ['--library', '--rom-dir', str(self.root)]
+        result = subprocess.run(
+            [
+                str(BINARY), '--preview', *mode, '--data',
+                str(self.root), '--state',
+                str(state), '--input-script',
+                str(script), '--seconds', '1', '--cache-report',
+                str(self.root / 'report.json')
+            ],
+            cwd=ROOT,
             env=dict(os.environ, SDL_VIDEODRIVER='dummy'),
-            capture_output=True, text=True, timeout=6)
+            capture_output=True,
+            text=True,
+            timeout=6
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return json.loads((self.root / 'report.json').read_text())
 
@@ -61,8 +69,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     def test_ds_nickname_edit_preserves_other_ds_settings(self):
         path = self.game.parent / 'ds-input.ini'
         write_fields(path, dict(language=3, microphone=0, nickname='Old'))
-        keys = self.row(8, 'A', 'Down', 'Down', 'Down', 'Down', 'A',
-                        'Backspace', 'Backspace', 'Backspace')
+        keys = self.row(8, 'A', 'Down', 'Down', 'Down', 'Down', 'A', 'Backspace', 'Backspace', 'Backspace')
         self.run_ui(keys, 'rgds-experimental', touch='800 text Andreas\n900 key Return\n')
         self.assertEqual(read_fields(path), dict(language='3', microphone='0', nickname='Andreas'))
 
@@ -89,7 +96,9 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     def test_experimental_resolution_picker_persists_from_both_menus(self):
         self.run_ui(self.row(4, 'A', 'Down', 'Down', 'Down', 'Down', 'A'), 'rgds-experimental')
         self.assertEqual(read_fields(self.game)['rgds_scale'], '5')
-        fields = read_fields(self.game); fields['core'] = '4'; write_fields(self.game, fields)
+        fields = read_fields(self.game)
+        fields['core'] = '4'
+        write_fields(self.game, fields)
         self.run_ui(self.row(5, 'A', 'Up', 'Up', 'A'), game_library=True)
         self.assertEqual(read_fields(self.game)['rgds_scale'], '3')
         self.assertEqual(read_fields(self.game)['core'], '4')
@@ -112,7 +121,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
 
     def test_graphics_tile_2d_scaling_persists_and_keeps_other_settings(self):
         graphics = ['Down', 'Right', 'Right', 'A']
-        self.run_ui(graphics + ['A', 'Down', 'Down', 'A'], 'rgds-experimental')   # 3D resolution 3x
+        self.run_ui(graphics + ['A', 'Down', 'Down', 'A'], 'rgds-experimental')  # 3D resolution 3x
         scale = read_fields(self.game)['rgds_scale']
         # Row 3 is 2D scaling: Native pixels -> Sharp, then Smooth, then back to native.
         self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
@@ -131,8 +140,8 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         graphics = ['Down', 'Right', 'Right', 'A']
         report = self.run_ui(graphics + ['Down', 'Down', 'A'], 'rgds-experimental')
         self.assertEqual(report['picker_title'], 'Heavy 3D scenes (2x and above)')
-        self.assertEqual(report['picker_focus'], 0)   # Adaptive (holds 60 fps) is the default
-        self.run_ui(graphics + ['A', 'Down', 'Down', 'A'], 'rgds-experimental')   # 3D resolution 3x
+        self.assertEqual(report['picker_focus'], 0)  # Adaptive (holds 60 fps) is the default
+        self.run_ui(graphics + ['A', 'Down', 'Down', 'A'], 'rgds-experimental')  # 3D resolution 3x
         scale = read_fields(self.game)['rgds_scale']
         # Row 2: Always sharp is stored; the default never is.
         self.run_ui(graphics + ['Down', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
@@ -190,60 +199,67 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.run_ui(self.row(9, 'A', 'Down', 'Escape'))
         self.assertEqual(self.game.read_bytes(), self.original)
         self.run_ui(self.row(9, 'A', 'Down', 'A'))
-        fields=read_fields(self.game)
-        self.assertEqual(fields['drastic_screen_swap'],'1')
-        self.assertEqual(fields['filter'],'4')
-        self.assertEqual(read_fields(self.prefs)['core'],'1')
+        fields = read_fields(self.game)
+        self.assertEqual(fields['drastic_screen_swap'], '1')
+        self.assertEqual(fields['filter'], '4')
+        self.assertEqual(read_fields(self.prefs)['core'], '1')
         # Changing another setting must preserve the screen-order choice.
         self.run_ui(self.row(3, 'A'))
-        self.assertEqual(read_fields(self.game)['drastic_screen_swap'],'1')
+        self.assertEqual(read_fields(self.game)['drastic_screen_swap'], '1')
         self.run_ui(self.row(9, 'A', 'Up', 'A'))
-        self.assertEqual(read_fields(self.game)['drastic_screen_swap'],'0')
+        self.assertEqual(read_fields(self.game)['drastic_screen_swap'], '0')
 
     def test_failed_screen_order_save_keeps_previous_preferences(self):
-        Path(str(self.game)+'.pending').mkdir()
-        report=self.run_ui(self.row(9, 'A', 'Down', 'A'))
-        self.assertIn('Previous values kept',report['settings_notice'])
-        self.assertEqual(self.game.read_bytes(),self.original)
+        Path(str(self.game) + '.pending').mkdir()
+        report = self.run_ui(self.row(9, 'A', 'Down', 'A'))
+        self.assertIn('Previous values kept', report['settings_notice'])
+        self.assertEqual(self.game.read_bytes(), self.original)
 
     def test_screen_order_accessible_before_launch_and_disabled_for_superdrastic(self):
-        fields=read_fields(self.game);fields.update(core='0',drastic_backend='0')
-        write_fields(self.game,fields)
-        self.run_ui(self.row(6,'A','Down','A'),game_library=True)
-        self.assertEqual(read_fields(self.game)['drastic_screen_swap'],'1')
-        fields=read_fields(self.game);fields['drastic_backend']='1';write_fields(self.game,fields)
-        original=self.game.read_bytes()
-        report=self.run_ui(self.row(6,'A','Right'),game_library=True)
+        fields = read_fields(self.game)
+        fields.update(core='0', drastic_backend='0')
+        write_fields(self.game, fields)
+        self.run_ui(self.row(6, 'A', 'Down', 'A'), game_library=True)
+        self.assertEqual(read_fields(self.game)['drastic_screen_swap'], '1')
+        fields = read_fields(self.game)
+        fields['drastic_backend'] = '1'
+        write_fields(self.game, fields)
+        original = self.game.read_bytes()
+        report = self.run_ui(self.row(6, 'A', 'Right'), game_library=True)
         self.assertFalse(report['picker_open'])
-        self.assertEqual(self.game.read_bytes(),original)
+        self.assertEqual(self.game.read_bytes(), original)
 
     def test_gengis_resolution_is_opt_in_persists_and_can_be_disabled(self):
-        fields=read_fields(self.game);fields.update(core='0',drastic_backend='1')
-        write_fields(self.game,fields)
-        original=self.game.read_bytes()
-        report=self.run_ui(self.row(7,'A','Down','Down','Down','Escape'),game_library=True)
-        self.assertEqual(self.game.read_bytes(),original)
-        report=self.run_ui(self.row(7,'A','Down','Down','Down','A'),game_library=True)
-        fields=read_fields(self.game)
-        self.assertEqual(fields['hires_3d'],'1');self.assertEqual(fields['gengis_scale'],'3')
-        self.assertEqual(report['default_core'],1)
-        self.run_ui(self.row(0,'A'),game_library=True)
-        self.assertEqual(read_fields(self.game)['gengis_scale'],'3')
-        self.run_ui(self.row(7,'A','Up','Up','A'),game_library=True)
-        self.assertEqual(read_fields(self.game)['hires_3d'],'1')
-        self.assertNotIn('gengis_scale',read_fields(self.game))
+        fields = read_fields(self.game)
+        fields.update(core='0', drastic_backend='1')
+        write_fields(self.game, fields)
+        original = self.game.read_bytes()
+        report = self.run_ui(self.row(7, 'A', 'Down', 'Down', 'Down', 'Escape'), game_library=True)
+        self.assertEqual(self.game.read_bytes(), original)
+        report = self.run_ui(self.row(7, 'A', 'Down', 'Down', 'Down', 'A'), game_library=True)
+        fields = read_fields(self.game)
+        self.assertEqual(fields['hires_3d'], '1')
+        self.assertEqual(fields['gengis_scale'], '3')
+        self.assertEqual(report['default_core'], 1)
+        self.run_ui(self.row(0, 'A'), game_library=True)
+        self.assertEqual(read_fields(self.game)['gengis_scale'], '3')
+        self.run_ui(self.row(7, 'A', 'Up', 'Up', 'A'), game_library=True)
+        self.assertEqual(read_fields(self.game)['hires_3d'], '1')
+        self.assertNotIn('gengis_scale', read_fields(self.game))
 
     def test_unsupported_controls_do_not_open_pickers_or_write_preferences(self):
-        for core, row in [('dsperate', 3), ('dsperate', 4), ('nnddss', 3),
-                          ('nnddss', 5), ('melonds', 4), ('melonds', 5)]:
+        for core, row in [
+            ('dsperate', 3), ('dsperate', 4), ('nnddss', 3), ('nnddss', 5), ('melonds', 4), ('melonds', 5)
+        ]:
             with self.subTest(core=core, row=row):
                 report = self.run_ui(self.row(row, 'A', 'Right', 'Left'), core)
                 self.assertFalse(report['picker_open'])
                 self.assertEqual(self.game.read_bytes(), self.original)
 
     def test_supported_pickers_open_without_mutating_on_a_or_arrow(self):
-        for core, row, key in [('drastic', 4, 'A'), ('drastic', 5, 'Right'),
-                               ('dsperate', 5, 'Left'), ('nnddss', 4, 'A')]:
+        for core, row, key in [
+            ('drastic', 4, 'A'), ('drastic', 5, 'Right'), ('dsperate', 5, 'Left'), ('nnddss', 4, 'A')
+        ]:
             with self.subTest(core=core, row=row, key=key):
                 report = self.run_ui(self.row(row, key), core)
                 self.assertTrue(report['picker_open'])
@@ -263,8 +279,10 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         report = self.run_ui(self.row(6, 'A', 'Up', 'Up', 'Up', 'A'))
         self.assertEqual(report['game_core_override'], -1)
         expected = read_fields(self.game)
-        self.assertEqual(expected, dict(schema='1', core='-1', filter='4', favourite='1',
-                                        threaded_3d='1', hires_3d='0', frameskip='0'))
+        self.assertEqual(
+            expected,
+            dict(schema='1', core='-1', filter='4', favourite='1', threaded_3d='1', hires_3d='0', frameskip='0')
+        )
         self.assertEqual(read_fields(self.prefs)['core'], '1')
         report = self.run_ui(self.row(6, 'A', 'Down', 'Down', 'Down', 'A'))
         self.assertEqual(report['game_core_override'], 3)
@@ -315,6 +333,74 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         report = self.run_ui(self.row(6, 'A'), touch='400 click 200 176\n')
         self.assertFalse(report['picker_open'])
         self.assertEqual(report['game_core_override'], -1)
+
+    # The preview's sample database: Infinite lives and a note outside any group,
+    # the exclusive Coins group (99 coins on, Max coins) and Movement (two codes).
+    # Page 38 is Page::Cheats, 12 the game menu; views are Groups 0, Group 1, Search 2, On 3.
+    def test_cheats_bar_opens_the_groups_overview_and_toggles_inside_a_group(self):
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A'], 'rgds-experimental')
+        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 0, 3, 1))
+        self.assertTrue(report['cheats_available'])
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual((report['cheat_view'], report['cheat_group'], report['cheat_rows']), (1, 0, 2))
+        # Max coins on turns 99 coins off: one code at a time in that group.
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual((report['cheats_on'], report['cheat_rows']), (1, 2))
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'Down', 'A', 'B'], 'rgds-experimental')
+        self.assertEqual((report['page'], report['cheat_view']), (38, 0))
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'Down', 'A', 'B', 'B'], 'rgds-experimental')
+        self.assertEqual(report['page'], 12)
+
+    def test_cheats_right_steps_through_groups_and_y_lists_what_is_on(self):
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'A'], 'rgds-experimental')
+        self.assertEqual((report['cheat_view'], report['cheat_group'], report['cheat_rows']), (1, -1, 2))
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'A', 'Right', 'Right', 'Right'], 'rgds-experimental')
+        self.assertEqual((report['cheat_view'], report['cheat_group'], report['cheat_rows']), (1, 1, 2))
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'A', 'Right', 'Y'], 'rgds-experimental')
+        self.assertEqual((report['cheat_view'], report['cheat_rows'], report['cheats_on']), (3, 1, 1))
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'A', 'Right', 'Y', 'Y'], 'rgds-experimental')
+        self.assertEqual(report['cheat_view'], 0)
+
+    def test_cheats_search_lists_matches_across_groups(self):
+        keys = ['Down'] * 4 + ['Right'] + ['A', 'X']
+        report = self.run_ui(keys, 'rgds-experimental', touch='800 text coin\n900 key Return\n')
+        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 2, 2))
+        report = self.run_ui(keys, 'rgds-experimental', touch='800 text coin\n900 key Return\n1000 key A\n')
+        self.assertEqual(report['cheats_on'], 0)
+        # Escape cancels and leaves the overview as it was; an empty search lists every code flat.
+        report = self.run_ui(keys, 'rgds-experimental', touch='800 text coin\n900 key Escape\n')
+        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 0, 3))
+        report = self.run_ui(keys, 'rgds-experimental', touch='900 key Return\n')
+        self.assertEqual((report['cheat_view'], report['cheat_rows']), (2, 6))
+
+    def test_cheats_bar_explains_itself_for_other_engines(self):
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A'], 'drastic')
+        self.assertEqual(report['page'], 12)   # still the game menu
+        self.assertFalse(report['cheats_available'])
+        self.assertTrue(report['picker_detail'])
+        self.assertEqual(report['picker_title'], 'Cheats')
+
+    def test_cheats_bar_and_rows_answer_to_touch(self):
+        # The bar under the grid opens the overview; a row opens its group; a code row toggles.
+        report = self.run_ui([], 'rgds-experimental', touch='300 click 470 380\n500 click 300 130\n700 click 300 130\n')
+        self.assertEqual((report['page'], report['cheat_view'], report['cheats_on']), (38, 1, 2))
+        # The header's segmented control: On lists what is on, Search opens the keyboard, Groups returns.
+        report = self.run_ui([], 'rgds-experimental', touch='300 click 470 380\n500 click 560 45\n')
+        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 3, 1))
+        report = self.run_ui([], 'rgds-experimental', touch='300 click 470 380\n500 click 560 45\n700 click 370 45\n')
+        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 0, 3))
+        report = self.run_ui([], 'rgds-experimental', touch='300 click 470 380\n500 click 465 45\n')
+        self.assertEqual(report['page'], 8)   # Page::Keyboard, the cheat search
+
+    def test_cheats_page_lists_the_engine_file_flat_when_it_has_no_groups(self):
+        write_fields(self.root / 'session/emulator.control.cheats', dict(count=2, groups=0, cheat_0='Moon jump', cheat_0_description='', cheat_0_group=-1, cheat_0_state=1, cheat_1='Notes', cheat_1_description='', cheat_1_group=-1, cheat_1_state=-1))
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'Down', 'A'], 'rgds-experimental')
+        # No overview for a flat list; the note cannot be toggled, so the one code stays on.
+        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 1, 2, 1))
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'A'], 'rgds-experimental')
+        self.assertEqual(report['cheats_on'], 0)
+        report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'B'], 'rgds-experimental')
+        self.assertEqual(report['page'], 12)
 
     def test_fast_forward_preview_tracks_toggle_state(self):
         self.assertTrue(self.run_ui(self.row(1, 'A'))['menu_fast_forward'])

@@ -18,7 +18,7 @@ from system_controls import Hardware
 class GameClocks:
     def __init__(self, data, sysfs=Path("/sys")):
         self.hardware = Hardware(data, sysfs)
-        self.previous = []   # (minimum path, value before the hold)
+        self.previous = []  # (minimum path, value before the hold)
 
     @staticmethod
     def wanted(environment, data):

@@ -23,20 +23,42 @@ u64 rd64le(const u8* p) { return rd32le(p) | (static_cast<u64>(rd32le(p + 4)) <<
 u32 rd32be(const u8* p) { return (static_cast<u32>(p[0]) << 24) | (p[1] << 16) | (p[2] << 8) | p[3]; }
 u16 rd16be(const u8* p) { return static_cast<u16>((p[0] << 8) | p[1]); }
 u64 rd64be(const u8* p) { return (static_cast<u64>(rd32be(p)) << 32) | rd32be(p + 4); }
-void wr16le(u8* p, u16 v) { p[0] = static_cast<u8>(v); p[1] = static_cast<u8>(v >> 8); }
-void wr32le(u8* p, u32 v) { wr16le(p, static_cast<u16>(v)); wr16le(p + 2, static_cast<u16>(v >> 16)); }
-void wr16be(u8* p, u16 v) { p[0] = static_cast<u8>(v >> 8); p[1] = static_cast<u8>(v); }
-void wr32be(u8* p, u32 v) { wr16be(p, static_cast<u16>(v >> 16)); wr16be(p + 2, static_cast<u16>(v)); }
+void wr16le(u8* p, u16 v) {
+  p[0] = static_cast<u8>(v);
+  p[1] = static_cast<u8>(v >> 8);
+}
+void wr32le(u8* p, u32 v) {
+  wr16le(p, static_cast<u16>(v));
+  wr16le(p + 2, static_cast<u16>(v >> 16));
+}
+void wr16be(u8* p, u16 v) {
+  p[0] = static_cast<u8>(v >> 8);
+  p[1] = static_cast<u8>(v);
+}
+void wr32be(u8* p, u32 v) {
+  wr16be(p, static_cast<u16>(v >> 16));
+  wr16be(p + 2, static_cast<u16>(v));
+}
 
 constexpr u32 kDsiWareHigh = 0x00030004;
-constexpr u64 kDsiWareQuota = 1024ull * 128 * 1024;   // 1024 blocks of 128 KB
+constexpr u64 kDsiWareQuota = 1024ull * 128 * 1024; // 1024 blocks of 128 KB
 constexpr u32 kTmdSize = 520, kTicketSize = 0x2C4, kTicketBody = 0x2A4;
 
-std::string hex8(u32 v) { char b[9]; std::snprintf(b, sizeof b, "%08x", v); return b; }
+std::string hex8(u32 v) {
+  char b[9];
+  std::snprintf(b, sizeof b, "%08x", v);
+  return b;
+}
 
 bool is_dsiware(const std::vector<u8>& s, std::string* err) {
-  if (s.size() < 0x1000) { if (err) *err = "too small for a DSi header"; return false; }
-  if (!(s[0x12] & 2)) { if (err) *err = "not a DSi title (unit code " + std::to_string(s[0x12]) + ")"; return false; }
+  if (s.size() < 0x1000) {
+    if (err) *err = "too small for a DSi header";
+    return false;
+  }
+  if (!(s[0x12] & 2)) {
+    if (err) *err = "not a DSi title (unit code " + std::to_string(s[0x12]) + ")";
+    return false;
+  }
   if (rd32le(&s[0x234]) != kDsiWareHigh) {
     if (err) *err = "a DSi-enhanced cartridge, not DSiWare (title ID high " + hex8(rd32le(&s[0x234])) + ")";
     return false;
@@ -44,12 +66,15 @@ bool is_dsiware(const std::vector<u8>& s, std::string* err) {
   return true;
 }
 
-}  // namespace
+} // namespace
 
 bool read_dsiware(const std::string& path, std::vector<u8>& srl, std::string* err, std::vector<u8>* embedded_tmd) {
   if (embedded_tmd) embedded_tmd->clear();
   std::ifstream f(path, std::ios::binary);
-  if (!f) { if (err) *err = path + ": cannot open"; return false; }
+  if (!f) {
+    if (err) *err = path + ": cannot open";
+    return false;
+  }
   std::vector<u8> b(std::istreambuf_iterator<char>(f), {});
   std::string why;
 
@@ -69,7 +94,10 @@ bool read_dsiware(const std::string& path, std::vector<u8>& srl, std::string* er
   if (cia) {
     auto al = [](u64 x) { return (x + 0x3F) & ~u64{0x3F}; };
     const u64 tmd = al(al(al(rd32le(&b[0])) + rd32le(&b[8])) + rd32le(&b[12]));
-    if (tmd + 4 > b.size()) { if (err) *err = path + ": truncated CIA"; return false; }
+    if (tmd + 4 > b.size()) {
+      if (err) *err = path + ": truncated CIA";
+      return false;
+    }
     const u64 content = al(tmd + rd32le(&b[16]));
     const u64 size = rd64le(&b[24]);
     // Content chunk record: in a 3DS TMD, after signature block (0x140),
@@ -85,13 +113,17 @@ bool read_dsiware(const std::string& path, std::vector<u8>& srl, std::string* er
       if (err) *err = path + ": its content is encrypted with a title key; extract the plain SRL first";
       return false;
     }
-    srl.assign(b.begin() + static_cast<long>(content), b.begin() + static_cast<long>(content + std::min<u64>(size, rd64be(&b[rec + 8]))));
+    srl.assign(b.begin() + static_cast<long>(content),
+               b.begin() + static_cast<long>(content + std::min<u64>(size, rd64be(&b[rec + 8]))));
     if (embedded_tmd && sig == 0x00010001 && tmd + kTmdSize <= b.size())
       embedded_tmd->assign(b.begin() + static_cast<long>(tmd), b.begin() + static_cast<long>(tmd + kTmdSize));
   } else {
     srl = std::move(b);
   }
-  if (!is_dsiware(srl, &why)) { if (err) *err = path + ": " + why; return false; }
+  if (!is_dsiware(srl, &why)) {
+    if (err) *err = path + ": " + why;
+    return false;
+  }
   return true;
 }
 
@@ -111,7 +143,10 @@ std::vector<u8> make_dsi_save(u32 len) {
     }
   }
   next = (tracksize + 1) * headcount * headcount;
-  if (next <= maxsectors) { tracksize++; totsec16 = next; }
+  if (next <= maxsectors) {
+    tracksize++;
+    totsec16 = next;
+  }
 
   const u32 maxfiles = len < 0x8C000 ? 0x20 : 0x200;
   const u32 clustersize = totsec16 > (8u << 10) ? 8 : (totsec16 > (1u << 10) ? 4 : 1);
@@ -155,18 +190,26 @@ std::string code_of(const std::string& id) {
   return c;
 }
 
-}  // namespace
+} // namespace
 
 bool check_signed_tmd(const std::vector<u8>& tmd, const std::vector<u8>& srl, std::string* err) {
-  auto fail = [&](const std::string& m) { if (err) *err = m; return false; };
+  auto fail = [&](const std::string& m) {
+    if (err) *err = m;
+    return false;
+  };
   if (tmd.size() < kTmdSize) return fail("shorter than a DSi TMD");
-  if (rd32be(&tmd[0]) != 0x00010001 || std::memcmp(&tmd[0x140], "Root-CA00000001", 15) != 0) return fail("not signed for the DSi (a 3DS or unsigned TMD)");
-  if (rd32be(&tmd[0x18C]) != kDsiWareHigh || rd32be(&tmd[0x190]) != rd32le(&srl[0x230])) return fail("for another title (" + hex8(rd32be(&tmd[0x18C])) + "/" + hex8(rd32be(&tmd[0x190])) + ")");
+  if (rd32be(&tmd[0]) != 0x00010001 || std::memcmp(&tmd[0x140], "Root-CA00000001", 15) != 0)
+    return fail("not signed for the DSi (a 3DS or unsigned TMD)");
+  if (rd32be(&tmd[0x18C]) != kDsiWareHigh || rd32be(&tmd[0x190]) != rd32le(&srl[0x230]))
+    return fail("for another title (" + hex8(rd32be(&tmd[0x18C])) + "/" + hex8(rd32be(&tmd[0x190])) + ")");
   if (rd16be(&tmd[0x1DE]) != 1) return fail("does not describe exactly one content");
-  if (rd64be(&tmd[0x1EC]) != srl.size()) return fail("for a different version of the title (content is " + std::to_string(rd64be(&tmd[0x1EC])) + " bytes, this one " + std::to_string(srl.size()) + ")");
+  if (rd64be(&tmd[0x1EC]) != srl.size())
+    return fail("for a different version of the title (content is " + std::to_string(rd64be(&tmd[0x1EC])) +
+                " bytes, this one " + std::to_string(srl.size()) + ")");
   u8 digest[20];
   crypto::sha1(srl.data(), srl.size(), digest);
-  if (std::memcmp(digest, &tmd[0x1F4], 20) != 0) return fail("its content hash does not match this dump (another version, or a modified SRL)");
+  if (std::memcmp(digest, &tmd[0x1F4], 20) != 0)
+    return fail("its content hash does not match this dump (another version, or a modified SRL)");
   return true;
 }
 
@@ -176,12 +219,16 @@ std::string nus_tmd_url(u32 title_lo) {
   return b;
 }
 
-std::vector<u8> find_signed_tmd(const std::vector<u8>& srl, const std::vector<u8>& embedded, const std::string& cache_path,
-                                const std::string& beside_rom, const TmdFetch& fetch, std::vector<std::string>& log) {
+std::vector<u8> find_signed_tmd(const std::vector<u8>& srl, const std::vector<u8>& embedded,
+                                const std::string& cache_path, const std::string& beside_rom, const TmdFetch& fetch,
+                                std::vector<std::string>& log) {
   std::string why;
   auto usable = [&](const std::vector<u8>& t, const std::string& from) {
     if (t.empty()) return false;
-    if (check_signed_tmd(t, srl, &why)) { log.push_back("TMD from " + from); return true; }
+    if (check_signed_tmd(t, srl, &why)) {
+      log.push_back("TMD from " + from);
+      return true;
+    }
     log.push_back("TMD from " + from + " not usable: " + why);
     return false;
   };
@@ -229,8 +276,9 @@ std::vector<DsiWareUsage> dsiware_usage(const FatVolume& vol) {
       stack.pop_back();
       for (const FatVolume::Entry& x : vol.list(d)) {
         if (x.name == "." || x.name == "..") continue;
-        if (x.dir()) { if (x.cluster) stack.push_back(x); }
-        else u.bytes += (static_cast<u64>(x.size) + cs - 1) / cs * cs;
+        if (x.dir()) {
+          if (x.cluster) stack.push_back(x);
+        } else u.bytes += (static_cast<u64>(x.size) + cs - 1) / cs * cs;
       }
     }
     out.push_back(std::move(u));
@@ -242,22 +290,35 @@ bool hide_dsiware_title(FatVolume& vol, const std::string& id, std::string* err)
   return vol.remove("/title/00030004/" + id, err) && vol.remove("/ticket/00030004/" + id + ".tik", err);
 }
 
-TitleInstall nand_install_title(NandImage& nand, const u8* bios7i, const std::vector<u8>& srl, const std::vector<u8>& signed_tmd) {
+TitleInstall nand_install_title(NandImage& nand, const u8* bios7i, const std::vector<u8>& srl,
+                                const std::vector<u8>& signed_tmd) {
   TitleInstall r;
   std::string err;
-  if (!is_dsiware(srl, &err)) { r.message = err; return r; }
+  if (!is_dsiware(srl, &err)) {
+    r.message = err;
+    return r;
+  }
   const u32 lo = rd32le(&srl[0x230]);
   r.title_lo = lo;
   const u8 version = srl[0x1E];
-  if (!check_signed_tmd(signed_tmd, srl, &err)) { r.message = "TMD: " + err; return r; }
+  if (!check_signed_tmd(signed_tmd, srl, &err)) {
+    r.message = "TMD: " + err;
+    return r;
+  }
   const std::vector<u8> tmd(signed_tmd.begin(), signed_tmd.begin() + kTmdSize);
   const u32 content_id = rd32be(&tmd[0x1E4]);
   const u32 pub = rd32le(&srl[0x238]), prv = rd32le(&srl[0x23C]);
   const bool banner = srl[0x1BF] & 0x04;
 
   NandFs fs;
-  if (!fs.mount(nand, bios7i, &err)) { r.message = "nand: " + err; return r; }
-  if (!fs.has_es_key()) { r.message = "the DSi ARM7 BIOS is needed to make the title's ticket"; return r; }
+  if (!fs.mount(nand, bios7i, &err)) {
+    r.message = "nand: " + err;
+    return r;
+  }
+  if (!fs.has_es_key()) {
+    r.message = "the DSi ARM7 BIOS is needed to make the title's ticket";
+    return r;
+  }
   FatVolume& vol = fs.main();
   const std::string id = hex8(lo);
   const std::string title = "/title/00030004/" + id;
@@ -271,7 +332,7 @@ TitleInstall nand_install_title(NandImage& nand, const u8* bios7i, const std::ve
   const u32 cs = vol.cluster_bytes();
   auto clusters = [cs](u64 n) { return static_cast<u32>((n + cs - 1) / cs); };
   const u32 need = clusters(srl.size()) + clusters(kTmdSize) + clusters(kTicketSize) + clusters(pub) + clusters(prv) +
-                   (banner ? clusters(0x4000) : 0) + 5;   // five directories at most
+                   (banner ? clusters(0x4000) : 0) + 5; // five directories at most
 
   // If adding it would exceed kDsiWareQuota, hide the dump's own titles, largest first, to fit.
   const std::vector<DsiWareUsage> installed = dsiware_usage(vol);
@@ -280,14 +341,21 @@ TitleInstall nand_install_title(NandImage& nand, const u8* bios7i, const std::ve
   const u64 adding = static_cast<u64>(need - 5) * cs;
   if (used + adding > kDsiWareQuota) {
     std::vector<DsiWareUsage> order = installed;
-    std::sort(order.begin(), order.end(), [](const DsiWareUsage& a, const DsiWareUsage& b) { return a.bytes > b.bytes; });
+    std::sort(order.begin(), order.end(),
+              [](const DsiWareUsage& a, const DsiWareUsage& b) { return a.bytes > b.bytes; });
     for (const DsiWareUsage& t : order) {
       if (used + adding <= kDsiWareQuota) break;
-      if (!hide_dsiware_title(vol, t.id, &err)) { r.message = err; return r; }
+      if (!hide_dsiware_title(vol, t.id, &err)) {
+        r.message = err;
+        return r;
+      }
       used -= t.bytes;
       r.hidden.push_back(t.code);
     }
-    if (used + adding > kDsiWareQuota) { r.message = "the title alone is larger than the DSi's DSiWare quota"; return r; }
+    if (used + adding > kDsiWareQuota) {
+      r.message = "the title alone is larger than the DSi's DSiWare quota";
+      return r;
+    }
   }
 
   // Check space for all of it up front: no half-installed title.
@@ -307,17 +375,30 @@ TitleInstall nand_install_title(NandImage& nand, const u8* bios7i, const std::ve
   const u8 nonce[12] = {};
   fs.es_encrypt(tik, kTicketBody, nonce);
 
-  auto fail = [&](const std::string& m) { r.message = m; return r; };
+  auto fail = [&](const std::string& m) {
+    r.message = m;
+    return r;
+  };
   for (const char* d : {"/ticket", "/ticket/00030004", "/title", "/title/00030004"})
     if (!vol.mkdir(d, &err)) return fail(err);
   if (!vol.write("/ticket/00030004/" + id + ".tik", tik, kTicketSize, &err)) return fail(err);
   for (const std::string& d : {title, title + "/content", title + "/data"})
     if (!vol.mkdir(d, &err)) return fail(err);
-  if (pub) { const std::vector<u8> s = make_dsi_save(pub); if (!vol.write(title + "/data/public.sav", s.data(), static_cast<u32>(s.size()), &err)) return fail(err); }
-  if (prv) { const std::vector<u8> s = make_dsi_save(prv); if (!vol.write(title + "/data/private.sav", s.data(), static_cast<u32>(s.size()), &err)) return fail(err); }
-  if (banner) { const std::vector<u8> s(0x4000, 0); if (!vol.write(title + "/data/banner.sav", s.data(), 0x4000, &err)) return fail(err); }
+  if (pub) {
+    const std::vector<u8> s = make_dsi_save(pub);
+    if (!vol.write(title + "/data/public.sav", s.data(), static_cast<u32>(s.size()), &err)) return fail(err);
+  }
+  if (prv) {
+    const std::vector<u8> s = make_dsi_save(prv);
+    if (!vol.write(title + "/data/private.sav", s.data(), static_cast<u32>(s.size()), &err)) return fail(err);
+  }
+  if (banner) {
+    const std::vector<u8> s(0x4000, 0);
+    if (!vol.write(title + "/data/banner.sav", s.data(), 0x4000, &err)) return fail(err);
+  }
   if (!vol.write(title + "/content/title.tmd", tmd.data(), kTmdSize, &err)) return fail(err);
-  if (!vol.write(title + "/content/" + hex8(content_id) + ".app", srl.data(), static_cast<u32>(srl.size()), &err)) return fail(err);
+  if (!vol.write(title + "/content/" + hex8(content_id) + ".app", srl.data(), static_cast<u32>(srl.size()), &err))
+    return fail(err);
 
   r.result = TitleInstall::Result::Installed;
   r.message = "installed into the session (" + std::to_string(srl.size() >> 10) + " KB)";
@@ -366,7 +447,7 @@ std::unique_ptr<cart::RomSource> zip_entry_of(const std::string& path, cart::Zip
   if (!src || !cart::find_rom(src->page(0), src->size(), e, err)) return nullptr;
   return src;
 }
-}  // namespace
+} // namespace
 
 bool zip_is_dsiware(const std::string& path) {
   cart::ZipEntry e;
@@ -386,14 +467,18 @@ bool zip_holds_cia(const std::string& path) {
 bool nand_title_content_id(NandImage& nand, const u8* bios7i, u32 title_lo, u32& content_id) {
   NandFs fs;
   FatVolume::Entry dir;
-  if (!fs.mount(nand, bios7i) || !fs.main().lookup("/title/00030004/" + hex8(title_lo) + "/content", dir) || !dir.dir()) return false;
+  if (!fs.mount(nand, bios7i) || !fs.main().lookup("/title/00030004/" + hex8(title_lo) + "/content", dir) || !dir.dir())
+    return false;
   for (const FatVolume::Entry& e : fs.main().list(dir)) {
     if (e.dir() || e.name.size() != 12 || e.name.compare(8, 4, ".APP") != 0) continue;
     char* end = nullptr;
     const unsigned long v = std::strtoul(e.name.substr(0, 8).c_str(), &end, 16);
-    if (end && *end == 0) { content_id = static_cast<u32>(v); return true; }
+    if (end && *end == 0) {
+      content_id = static_cast<u32>(v);
+      return true;
+    }
   }
   return false;
 }
 
-}  // namespace ds::io
+} // namespace ds::io

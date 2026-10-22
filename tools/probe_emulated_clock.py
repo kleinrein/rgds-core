@@ -42,9 +42,11 @@ def _mapping(line, allow_zero, drastic_identity=None):
     name = fields[5].strip() if len(fields) == 6 else ''
     anonymous = not name or name == '[heap]' or name.startswith('[anon:')
     zero = allow_zero and name in ('/dev/zero', '/dev/zero (deleted)')
-    drastic = (drastic_identity is not None
-               and name in ('/dev/shm/drastic_mapped_memory.dat', '/dev/shm/drastic_mapped_memory.dat (deleted)')
-               and (fields[3], fields[4]) == drastic_identity and int(fields[2], 16) == 0)
+    drastic = (
+        drastic_identity is not None
+        and name in ('/dev/shm/drastic_mapped_memory.dat', '/dev/shm/drastic_mapped_memory.dat (deleted)')
+        and (fields[3], fields[4]) == drastic_identity and int(fields[2], 16) == 0
+    )
     if not (anonymous or zero or drastic):
         return None
     start, end = (int(part, 16) for part in fields[0].split('-'))
@@ -63,8 +65,16 @@ def _count(data):
 
 
 class EmulatedClock:
-    def __init__(self, pid, benchmark_root, rom_path, *, allow_zero_mapping=False,
-                 allow_drastic_mapping=False, _proc_root='/proc'):
+    def __init__(
+        self,
+        pid,
+        benchmark_root,
+        rom_path,
+        *,
+        allow_zero_mapping=False,
+        allow_drastic_mapping=False,
+        _proc_root='/proc'
+    ):
         self.proc = Path(_proc_root)
         self.pid = int(pid)
         self.root = Path(benchmark_root).resolve(strict=True)
@@ -160,7 +170,9 @@ class EmulatedClock:
                 raise ValueError('Owned DraStic main-RAM mapping is absent')
         # DraStic's canonical DS RAM is an exact 4 MiB map. Scan smaller maps
         # before large allocator areas, with a total cap independent of RSS.
-        return sorted(result, key=lambda m: (m['end'] - m['start'] != 4 * 1024 * 1024, m['end'] - m['start'], m['start']))
+        return sorted(
+            result, key=lambda m: (m['end'] - m['start'] != 4 * 1024 * 1024, m['end'] - m['start'], m['start'])
+        )
 
     def _read(self, address, size):
         self._check_owner()
@@ -216,12 +228,27 @@ class EmulatedClock:
             count = _count(self._read(address, 32))
             if count is not None and 0 < count - candidate['count'] <= 1000000:
                 advancing.append(dict(candidate, count=count))
-        self.discovery_status = dict(eligible_maps=len(mappings), unreadable_maps=unreadable,
-                                     scanned_bytes=scanned, candidates=len(candidates),
-                                     advancing=len(advancing), scan_limit_reached=exhausted)
+        self.discovery_status = dict(
+            eligible_maps=len(mappings),
+            unreadable_maps=unreadable,
+            scanned_bytes=scanned,
+            candidates=len(candidates),
+            advancing=len(advancing),
+            scan_limit_reached=exhausted
+        )
         if not advancing:
-            raise ValueError('No advancing homebrew clock found in allowed benchmark memory: ' + json.dumps(self.discovery_status, sort_keys=True))
-        advancing.sort(key=lambda p: (not (p['mapping']['end'] - p['mapping']['start'] == 4 * 1024 * 1024 and p['address'] - p['mapping']['start'] == 0x1000), p['address']))
+            raise ValueError(
+                'No advancing homebrew clock found in allowed benchmark memory: ' +
+                json.dumps(self.discovery_status, sort_keys=True)
+            )
+        advancing.sort(
+            key=lambda p: (
+                not (
+                    p['mapping']['end'] - p['mapping']['start'] == 4 * 1024 * 1024 and p['address'] - p['mapping'][
+                        'start'] == 0x1000
+                ), p['address']
+            )
+        )
         # Cross-check mirrors inside two reads of the chosen clock. Their reads
         # are sequential, so equality or a fixed small tolerance would reject
         # correct mirrors when fast-forward advances during /proc metadata I/O.
@@ -229,16 +256,24 @@ class EmulatedClock:
         before = _count(self._read(reference, 32))
         observed = [_count(self._read(p['address'], 32)) for p in advancing]
         after = _count(self._read(reference, 32))
-        if before is None or after is None or after < before or any(v is None or not before <= v <= after for v in observed):
+        if before is None or after is None or after < before or any(
+            v is None or not before <= v <= after for v in observed
+        ):
             raise ValueError('Different advancing homebrew clocks found; refusing an ambiguous sample')
         self.address = advancing[0]['address']
         self.candidates = [p['address'] for p in advancing]
         self.last_count = after
-        return dict(pid=self.pid, start=self.start, address=hex(self.address),
-                    aliases=[hex(p) for p in self.candidates], scanned_bytes=scanned,
-                    scan_limit_reached=exhausted, zero_mapping=advancing[0]['mapping']['zero'],
-                    drastic_shared_ram=advancing[0]['mapping']['drastic_ram'],
-                    **self.sample())
+        return dict(
+            pid=self.pid,
+            start=self.start,
+            address=hex(self.address),
+            aliases=[hex(p) for p in self.candidates],
+            scanned_bytes=scanned,
+            scan_limit_reached=exhausted,
+            zero_mapping=advancing[0]['mapping']['zero'],
+            drastic_shared_ram=advancing[0]['mapping']['drastic_ram'],
+            **self.sample()
+        )
 
     def sample(self):
         if self.address is None:

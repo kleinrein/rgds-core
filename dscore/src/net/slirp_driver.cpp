@@ -19,17 +19,23 @@ extern "C" {
 namespace ds::net {
 namespace {
 
-bool slirp_log() { static const bool on = std::getenv("DS_WIFI_LOG") != nullptr; return on; }
-#define SLIRP_LOG(...) do { if (slirp_log()) std::fprintf(stderr, "[slirp] " __VA_ARGS__); } while (0)
+bool slirp_log() {
+  static const bool on = std::getenv("DS_WIFI_LOG") != nullptr;
+  return on;
+}
+#define SLIRP_LOG(...)                                                                                                 \
+  do {                                                                                                                 \
+    if (slirp_log()) std::fprintf(stderr, "[slirp] " __VA_ARGS__);                                                     \
+  } while (0)
 
 // slirp's conventional subnet, host order.
-constexpr u32 kNetwork    = 0x0A000200;   // 10.0.2.0/24
-constexpr u32 kNetmask    = 0xFFFFFF00;
-constexpr u32 kHost       = 0x0A000202;   // 10.0.2.2, the gateway
-constexpr u32 kDhcpStart  = 0x0A00020F;   // 10.0.2.15, what the DS is leased
-constexpr u32 kNameserver = SlirpDriver::kVirtualDns;   // 10.0.2.3
+constexpr u32 kNetwork = 0x0A000200; // 10.0.2.0/24
+constexpr u32 kNetmask = 0xFFFFFF00;
+constexpr u32 kHost = 0x0A000202;                     // 10.0.2.2, the gateway
+constexpr u32 kDhcpStart = 0x0A00020F;                // 10.0.2.15, what the DS is leased
+constexpr u32 kNameserver = SlirpDriver::kVirtualDns; // 10.0.2.3
 
-constexpr std::size_t kMaxRxQueue = 64;   // frames; TCP retransmits past a drop
+constexpr std::size_t kMaxRxQueue = 64; // frames; TCP retransmits past a drop
 
 in_addr addr_of(u32 host_order) {
   in_addr a{};
@@ -38,14 +44,18 @@ in_addr addr_of(u32 host_order) {
 }
 
 u16 ld16be(const u8* p) { return static_cast<u16>((p[0] << 8) | p[1]); }
-void st16be(u8* p, u16 v) { p[0] = static_cast<u8>(v >> 8); p[1] = static_cast<u8>(v); }
+void st16be(u8* p, u16 v) {
+  p[0] = static_cast<u8>(v >> 8);
+  p[1] = static_cast<u8>(v);
+}
 u32 ld32be(const u8* p) {
-  return (static_cast<u32>(p[0]) << 24) | (static_cast<u32>(p[1]) << 16) |
-         (static_cast<u32>(p[2]) << 8) | p[3];
+  return (static_cast<u32>(p[0]) << 24) | (static_cast<u32>(p[1]) << 16) | (static_cast<u32>(p[2]) << 8) | p[3];
 }
 void st32be(u8* p, u32 v) {
-  p[0] = static_cast<u8>(v >> 24); p[1] = static_cast<u8>(v >> 16);
-  p[2] = static_cast<u8>(v >> 8);  p[3] = static_cast<u8>(v);
+  p[0] = static_cast<u8>(v >> 24);
+  p[1] = static_cast<u8>(v >> 16);
+  p[2] = static_cast<u8>(v >> 8);
+  p[3] = static_cast<u8>(v);
 }
 
 // RFC 1624: fold a 32-bit address change into a one's-complement checksum
@@ -61,18 +71,18 @@ u16 checksum_patch(u16 old_sum, u32 old_addr, u32 new_addr) {
 // IPv4/UDP offsets of one Ethernet frame; false if not an IPv4 UDP datagram
 // (fragment past the first has no UDP header).
 struct UdpView {
-  u8* ip = nullptr;      // start of the IPv4 header
-  u8* udp = nullptr;     // start of the UDP header
+  u8* ip = nullptr;  // start of the IPv4 header
+  u8* udp = nullptr; // start of the UDP header
 };
 bool udp_view(u8* frame, int len, UdpView* out) {
   if (len < 14 + 20 + 8) return false;
-  if (ld16be(&frame[12]) != 0x0800) return false;          // not IPv4
+  if (ld16be(&frame[12]) != 0x0800) return false; // not IPv4
   u8* ip = &frame[14];
   if ((ip[0] >> 4) != 4) return false;
   const int ihl = (ip[0] & 0xF) * 4;
   if (ihl < 20 || 14 + ihl + 8 > len) return false;
-  if (ip[9] != 17) return false;                            // not UDP
-  if ((ld16be(&ip[6]) & 0x1FFF) != 0) return false;         // a later fragment
+  if (ip[9] != 17) return false;                    // not UDP
+  if ((ld16be(&ip[6]) & 0x1FFF) != 0) return false; // a later fragment
   out->ip = ip;
   out->udp = ip + ihl;
   return true;
@@ -107,8 +117,8 @@ struct SlirpCallbacks {
 
   static int64_t clock_get_ns(void* opaque) {
     (void)opaque;
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(
-               std::chrono::steady_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
+        .count();
   }
 
   static void* timer_new_opaque(SlirpTimerId id, void* cb_opaque, void* opaque) {
@@ -121,7 +131,11 @@ struct SlirpCallbacks {
     SlirpDriver* d = self(opaque);
     // Disarm in place, don't erase: slirp keeps this pointer.
     for (auto& t : d->timers_) {
-      if (&t == timer) { t.expire_ms = -1; t.cb_opaque = nullptr; return; }
+      if (&t == timer) {
+        t.expire_ms = -1;
+        t.cb_opaque = nullptr;
+        return;
+      }
     }
   }
 
@@ -134,13 +148,19 @@ struct SlirpCallbacks {
 
   // No-ops: process() hands libslirp a fresh poll set every call. Must be
   // non-null: at config version 4 libslirp calls these on every new socket.
-  static void register_poll_fd(int fd, void* opaque) { (void)fd; (void)opaque; }
-  static void unregister_poll_fd(int fd, void* opaque) { (void)fd; (void)opaque; }
+  static void register_poll_fd(int fd, void* opaque) {
+    (void)fd;
+    (void)opaque;
+  }
+  static void unregister_poll_fd(int fd, void* opaque) {
+    (void)fd;
+    (void)opaque;
+  }
 
   static int add_poll(slirp_os_socket fd, int events, void* opaque) {
     SlirpDriver* d = self(opaque);
     short ev = 0;
-    if (events & SLIRP_POLL_IN)  ev |= POLLIN;
+    if (events & SLIRP_POLL_IN) ev |= POLLIN;
     if (events & SLIRP_POLL_OUT) ev |= POLLOUT;
     if (events & SLIRP_POLL_PRI) ev |= POLLPRI;
     if (events & SLIRP_POLL_ERR) ev |= POLLERR;
@@ -154,7 +174,7 @@ struct SlirpCallbacks {
     if (idx < 0 || idx >= static_cast<int>(d->pollfds_.size())) return 0;
     const short rev = d->pollfds_[static_cast<std::size_t>(idx)].revents;
     int events = 0;
-    if (rev & POLLIN)  events |= SLIRP_POLL_IN;
+    if (rev & POLLIN) events |= SLIRP_POLL_IN;
     if (rev & POLLOUT) events |= SLIRP_POLL_OUT;
     if (rev & POLLPRI) events |= SLIRP_POLL_PRI;
     if (rev & POLLERR) events |= SLIRP_POLL_ERR;
@@ -177,7 +197,7 @@ bool SlirpDriver::start(Dns dns, u32 dns_addr) {
   }
 
   SlirpConfig cfg{};
-  cfg.version = 4;                 // timer_new_opaque; register_poll_socket needs 6
+  cfg.version = 4; // timer_new_opaque; register_poll_socket needs 6
   cfg.restricted = 0;
   cfg.in_enabled = true;
   cfg.vnetwork = addr_of(kNetwork);
@@ -186,7 +206,7 @@ bool SlirpDriver::start(Dns dns, u32 dns_addr) {
   cfg.vdhcp_start = addr_of(kDhcpStart);
   cfg.vnameserver = addr_of(kNameserver);
   cfg.vhostname = "DSperate";
-  cfg.in6_enabled = false;         // the DS has no IPv6 stack
+  cfg.in6_enabled = false; // the DS has no IPv6 stack
   cfg.if_mtu = kMtu;
   cfg.if_mru = kMtu;
   cfg.disable_host_loopback = false;
@@ -254,16 +274,15 @@ void SlirpDriver::pump() {
   if (!slirp_) return;
 
   pollfds_.clear();
-  u32 timeout = 0;   // never wait: recv() is on the ARM7's timeline
+  u32 timeout = 0; // never wait: recv() is on the ARM7's timeline
   slirp_pollfds_fill_socket(slirp_, &timeout, &SlirpCallbacks::add_poll, this);
 
   int select_error = 0;
   if (!pollfds_.empty()) {
     static_assert(sizeof(PollFd) == sizeof(struct pollfd) &&
-                  offsetof(PollFd, revents) == offsetof(struct pollfd, revents),
+                      offsetof(PollFd, revents) == offsetof(struct pollfd, revents),
                   "PollFd must be poll(2)'s struct");
-    const int n = ::poll(reinterpret_cast<struct pollfd*>(pollfds_.data()),
-                         static_cast<nfds_t>(pollfds_.size()), 0);
+    const int n = ::poll(reinterpret_cast<struct pollfd*>(pollfds_.data()), static_cast<nfds_t>(pollfds_.size()), 0);
     if (n < 0) select_error = 1;
   }
   slirp_pollfds_poll(slirp_, select_error, &SlirpCallbacks::get_revents, this);
@@ -309,12 +328,12 @@ int SlirpDriver::recv(u8* data) {
 bool SlirpDriver::rewrite_dns_dst(u8* frame, int len, u32 from, u32 to) {
   UdpView v;
   if (!udp_view(frame, len, &v)) return false;
-  if (ld16be(&v.udp[2]) != 53) return false;                  // not a DNS query
-  if (ld32be(&v.ip[16]) != from) return false;                // not ours to redirect
+  if (ld16be(&v.udp[2]) != 53) return false;   // not a DNS query
+  if (ld32be(&v.ip[16]) != from) return false; // not ours to redirect
 
   st16be(&v.ip[10], checksum_patch(ld16be(&v.ip[10]), from, to));
   const u16 udp_sum = ld16be(&v.udp[6]);
-  if (udp_sum != 0)   // 0 means no checksum was computed; leave it that way
+  if (udp_sum != 0) // 0 means no checksum was computed; leave it that way
     st16be(&v.udp[6], checksum_patch(udp_sum, from, to));
   st32be(&v.ip[16], to);
   return true;
@@ -323,13 +342,12 @@ bool SlirpDriver::rewrite_dns_dst(u8* frame, int len, u32 from, u32 to) {
 bool SlirpDriver::rewrite_dns_src(u8* frame, int len, u32 from, u32 to) {
   UdpView v;
   if (!udp_view(frame, len, &v)) return false;
-  if (ld16be(&v.udp[0]) != 53) return false;                  // not a DNS reply
+  if (ld16be(&v.udp[0]) != 53) return false; // not a DNS reply
   if (ld32be(&v.ip[12]) != from) return false;
 
   st16be(&v.ip[10], checksum_patch(ld16be(&v.ip[10]), from, to));
   const u16 udp_sum = ld16be(&v.udp[6]);
-  if (udp_sum != 0)
-    st16be(&v.udp[6], checksum_patch(udp_sum, from, to));
+  if (udp_sum != 0) st16be(&v.udp[6], checksum_patch(udp_sum, from, to));
   st32be(&v.ip[12], to);
   return true;
 }

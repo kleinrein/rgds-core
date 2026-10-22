@@ -15,32 +15,52 @@
 #include <thread>
 
 namespace melonDS::Platform {
-struct Thread { std::thread value; };
-struct Mutex { std::mutex value; };
-struct Semaphore : rgds_melonds::Semaphore { using rgds_melonds::Semaphore::Semaphore; };
+struct Thread {
+    std::thread value;
+};
+struct Mutex {
+    std::mutex value;
+};
+struct Semaphore : rgds_melonds::Semaphore {
+    using rgds_melonds::Semaphore::Semaphore;
+};
 void SignalStop(StopReason reason, void*) {
-    #ifdef RGDS_MELONDS_FRONTEND
+#ifdef RGDS_MELONDS_FRONTEND
     rgds_melonds::stop(int(reason));
 #else
-    if (reason != External) { std::fprintf(stderr, "Unexpected emulation stop: %d\n", reason); std::abort(); }
+    if (reason != External) {
+        std::fprintf(stderr, "Unexpected emulation stop: %d\n", reason);
+        std::abort();
+    }
 #endif
 }
 void Log(LogLevel, const char* fmt, ...) {
-    va_list args; va_start(args, fmt); std::vfprintf(stderr, fmt, args); va_end(args);
+    va_list args;
+    va_start(args, fmt);
+    std::vfprintf(stderr, fmt, args);
+    va_end(args);
 }
 Thread* Thread_Create(std::function<void()> fn) { return new Thread{std::thread(std::move(fn))}; }
-void Thread_Wait(Thread* t) { if (t->value.joinable()) t->value.join(); }
-void Thread_Free(Thread* t) { Thread_Wait(t); delete t; }
+void Thread_Wait(Thread* t) {
+    if (t->value.joinable()) t->value.join();
+}
+void Thread_Free(Thread* t) {
+    Thread_Wait(t);
+    delete t;
+}
 Mutex* Mutex_Create() { return new Mutex; }
 void Mutex_Free(Mutex* m) { delete m; }
 void Mutex_Lock(Mutex* m) { m->value.lock(); }
 void Mutex_Unlock(Mutex* m) { m->value.unlock(); }
 bool Mutex_TryLock(Mutex* m) { return m->value.try_lock(); }
 Semaphore* Semaphore_Create() {
-    const char* setting=std::getenv("RGDS_MELONDS_POSIX_SEMAPHORE");
-    auto* semaphore=new Semaphore(setting && std::strcmp(setting,"1")==0);
+    const char* setting = std::getenv("RGDS_MELONDS_POSIX_SEMAPHORE");
+    auto* semaphore = new Semaphore(setting && std::strcmp(setting, "1") == 0);
     static std::once_flag reported;
-    std::call_once(reported,[semaphore]{Log(LogLevel::Info,"RGDS melonDS semaphore=%s\n",semaphore->uses_posix()?"posix-experiment":"condition-variable");});
+    std::call_once(reported, [semaphore] {
+        Log(LogLevel::Info, "RGDS melonDS semaphore=%s\n",
+            semaphore->uses_posix() ? "posix-experiment" : "condition-variable");
+    });
     return semaphore;
 }
 void Semaphore_Free(Semaphore* s) { delete s; }
@@ -49,7 +69,10 @@ void Semaphore_Wait(Semaphore* s) { s->wait(); }
 bool Semaphore_TryWait(Semaphore* s, int timeout_ms) { return s->try_wait(timeout_ms); }
 void Semaphore_Post(Semaphore* s, int count) { s->post(count); }
 void Sleep(u64 usecs) { std::this_thread::sleep_for(std::chrono::microseconds(usecs)); }
-u64 GetUSCount() { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+u64 GetUSCount() {
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch())
+        .count();
+}
 u64 GetMSCount() { return GetUSCount() / 1000; }
 
 // The synthetic cartridge and checkpoint stay in memory. Refuse all file
@@ -73,12 +96,19 @@ u64 FileWrite(const void*, u64, u64, FileHandle*) { return 0; }
 u64 FileWriteFormatted(FileHandle*, const char*, ...) { return 0; }
 u64 FileLength(FileHandle*) { return 0; }
 
-static void unsupported_write() { std::fputs("Unexpected persistent write in memory-only probe\n", stderr); std::abort(); }
+static void unsupported_write() {
+    std::fputs("Unexpected persistent write in memory-only probe\n", stderr);
+    std::abort();
+}
 void WriteNDSSave(const u8* data, u32 size, u32 offset, u32 length, void*) {
 #ifdef RGDS_MELONDS_FRONTEND
-    rgds_melonds::battery_write(data,size,offset,length);
+    rgds_melonds::battery_write(data, size, offset, length);
 #else
-    (void)data;(void)size;(void)offset;(void)length;unsupported_write();
+    (void)data;
+    (void)size;
+    (void)offset;
+    (void)length;
+    unsupported_write();
 #endif
 }
 void WriteGBASave(const u8*, u32, u32, u32, void*) { unsupported_write(); }
@@ -101,7 +131,9 @@ int Net_SendPacket(u8*, int, void*) { return 0; }
 int Net_RecvPacket(u8*, void*) { return 0; }
 void Camera_Start(int, void*) {}
 void Camera_Stop(int, void*) {}
-void Camera_CaptureFrame(int, u32* frame, int width, int height, bool, void*) { std::memset(frame, 0, size_t(width) * height * sizeof(u32)); }
+void Camera_CaptureFrame(int, u32* frame, int width, int height, bool, void*) {
+    std::memset(frame, 0, size_t(width) * height * sizeof(u32));
+}
 void Mic_Start(void*) {
 #ifdef RGDS_MELONDS_FRONTEND
     rgds_melonds::mic_start();
@@ -114,9 +146,11 @@ void Mic_Stop(void*) {
 }
 int Mic_ReadInput(s16* data, int maximum, void*) {
 #ifdef RGDS_MELONDS_FRONTEND
-    return rgds_melonds::mic_read(data,maximum);
+    return rgds_melonds::mic_read(data, maximum);
 #else
-    (void)data;(void)maximum;return 0;
+    (void)data;
+    (void)maximum;
+    return 0;
 #endif
 }
 AACDecoder* AAC_Init() { return nullptr; }

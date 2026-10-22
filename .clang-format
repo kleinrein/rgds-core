@@ -1,0 +1,34 @@
+# C/C++ layout for RG DS's own code (src/, tests/). dscore/ keeps its upstream
+# two-space indent in dscore/.clang-format. Run `make format`; written for the
+# clang-format pinned in requirements-format.txt.
+BasedOnStyle: LLVM
+Standard: c++17
+IndentWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+ColumnLimit: 120
+PointerAlignment: Left
+DerivePointerAlignment: false
+ReferenceAlignment: Pointer
+NamespaceIndentation: None
+FixNamespaceComments: false
+# The code leans on one-line guards and cases (`if (!fd) return 0;`); keep them.
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortLambdasOnASingleLine: All
+AllowShortBlocksOnASingleLine: Empty
+AllowShortEnumsOnASingleLine: true
+BreakBeforeBraces: Attach
+# Some headers depend on include order (SDL, dlopen'd Wayland, ALSA); leave it.
+SortIncludes: Never
+IncludeBlocks: Preserve
+# Rewrap nothing: comments are hand-wrapped, some hold tables and diagrams, and
+# a log or JSON key split mid-word can no longer be found with grep.
+ReflowComments: IndentOnly
+BreakStringLiterals: false
+MaxEmptyLinesToKeep: 1
+KeepEmptyLines:
+  AtStartOfBlock: false
+  AtStartOfFile: false

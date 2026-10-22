@@ -44,11 +44,29 @@ once; after that, updates arrive over Wi-Fi.
 
 ## User flow
 
-Settings → System → Updates & recovery: Check for updates, read Release notes,
-Download update, then Restart & install. The download can pause and resume.
-Progress covers downloading, verification and staging. Errors remain visible
-and allow retry; a staged update can be discarded. The installed application
-continues to run until the user confirms restart.
+When the background check (every 6 hours, 30 minutes after a failed one) finds
+a release, Home shows an accent banner on the upper screen and a badge on the
+RG DS mark. **Y** on Home (or a tap on the mark) opens Updates & recovery and
+starts the download; once it is staged, Y asks to restart and install. B returns
+to Home. Settings → System → Updates & recovery offers the same steps by hand:
+Check for updates, Release notes, Download update, Restart & install, with Y in
+the footer as the shortcut.
+
+While it runs, the upper screen shows the release, four steps (Download, Verify,
+Prepare, Install), the current step's percent, megabytes, speed and time left on
+a glass progress bar. The download resumes on its own after a dropped
+connection: up to six attempts in a row without new bytes (2, 4, 8, 16 and 30 s
+apart), 120 s below 64 KiB counts as dropped, and no download runs longer than
+six hours. A paused or interrupted download, including one cut off by a restart,
+resumes from its part file. A missing package (HTTP 4xx) is not retried. Errors
+remain visible and allow retry; a staged update can be discarded. A failed
+background check never replaces what the owner last saw. The installed
+application continues to run until the user confirms restart.
+
+`status.ini` fields the launcher reads: `state`, `message`, `offer` (the
+version on offer, empty once current, applied or discarded), `version`,
+`notes`, `size`, `received`, `progress` (of the current step), `rate` (bytes/s),
+`eta` (seconds, -1 unknown) and `prepared`.
 
 A trusted update must match the target, base, channel and updater protocol. The
 updater rejects expired metadata, older sequences, same-sequence changes,

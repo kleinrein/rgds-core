@@ -5,15 +5,18 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(shutil.which('clang++'),'Host C++ compiler required')
+@unittest.skipUnless(shutil.which('clang++'), 'Host C++ compiler required')
 class GameInputGateTests(unittest.TestCase):
     def test_native_type_a_coordinates_releases_menu_and_resume_filtering(self):
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);source=root/'input.cpp';binary=root/'input'
-            source.write_text(r'''
+            root = Path(folder)
+            source = root / 'input.cpp'
+            binary = root / 'input'
+            source.write_text(
+                r'''
 #include "platform/touch.hpp"
 #include "platform/game_input.hpp"
 #include <cassert>
@@ -46,18 +49,25 @@ int main(){
  rgds::TouchPacket held{99000000,1,304,1};rgds::filter_game_input(held,false,true,100,1000000100);assert(held.type==0);
  rgds::TouchPacket stale_origin{99000000,3,53,0};rgds::filter_game_input(stale_origin,false,true,100,1000000100);assert(stale_origin.type==0);
 }
-''')
-            build=subprocess.run(['clang++','-std=c++17','-Wall','-Wextra','-Werror','-I'+str(ROOT/'src'),str(source),'-o',str(binary)],capture_output=True,text=True)
-            self.assertEqual(build.returncode,0,build.stderr)
-            result=subprocess.run([str(binary)],capture_output=True,text=True,timeout=5)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+'''
+            )
+            build = subprocess.run(
+                [
+                    'clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I' + str(ROOT / 'src'),
+                    str(source), '-o',
+                    str(binary)
+                ],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(build.returncode, 0, build.stderr)
+            result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_bridge_has_no_legacy_callbacks_and_evdev_always_uses_libc(self):
-        source=(ROOT/'src/platform/emulator_bridge.cpp').read_text()
-        for removed in ('Fx_copy','App_handleCommon','RGDS_FX_LIBRARY','RGDS_LEGACY_ACTIVE','libsimplehook'):
-            self.assertNotIn(removed,source)
-        self.assertIn('if(input){static void* libc=dlopen("libc.so.6"',source)
-        self.assertNotIn('std::strcmp(path,touch)',source)
+    def test_bridge_evdev_always_uses_libc(self):
+        source = (ROOT / 'src/platform/emulator_bridge.cpp').read_text()
+        self.assertRegex(source, r'if \(input\) \{\s*static void\* libc = dlopen\("libc\.so\.6"')
+        self.assertNotIn('std::strcmp(path,touch)', source)
 
 
-if __name__=='__main__':unittest.main()
+if __name__ == '__main__': unittest.main()

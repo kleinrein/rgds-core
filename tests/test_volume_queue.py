@@ -16,8 +16,10 @@ class VolumeQueueTests(unittest.TestCase):
     def setUpClass(cls):
         cls.temp = tempfile.TemporaryDirectory()
         cls.root = Path(cls.temp.name)
-        runtime = cls.root / "app/runtime";runtime.mkdir(parents=True)
-        (runtime / "system_controls.py").write_text('''import argparse, json, os, sys, time
+        runtime = cls.root / "app/runtime"
+        runtime.mkdir(parents=True)
+        (runtime / "system_controls.py").write_text(
+            '''import argparse, json, os, sys, time
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument("command");p.add_argument("value",nargs="?",type=int);p.add_argument("--data",type=Path,required=True)
 a=p.parse_args();a.data.mkdir(parents=True,exist_ok=True)
@@ -29,9 +31,11 @@ if a.command in ("volume","brightness") and not (a.data/"fast").exists():time.sl
 if a.command=="volume" and a.value!=65:(a.data/"volume.ini").write_text("schema=1\\nvolume="+str(a.value)+"\\n")
 busy.unlink()
 sys.exit(1 if a.command=="volume" and a.value==65 else 0)
-''')
+'''
+        )
         source = cls.root / "test.cpp"
-        source.write_text('''#include "platform/system_controls.hpp"
+        source.write_text(
+            '''#include "platform/system_controls.hpp"
 #include <cassert>
 #include <thread>
 using Clock=std::chrono::steady_clock;
@@ -84,11 +88,19 @@ int main(int argc,char** argv){
   assert(result.success && result.settled && result.value==0 && s.cached().volume_percent==0);
  }else if(mode=="cleanup")s.request_volume(90);else return 2;
 }
-''')
+'''
+        )
         cls.binary = cls.root / "probe"
-        subprocess.run(["clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-                        "-I" + str(ROOT / "src"), str(source), "-o", str(cls.binary)],
-                       check=True, capture_output=True, text=True)
+        subprocess.run(
+            [
+                "clang++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT / "src"),
+                str(source), "-o",
+                str(cls.binary)
+            ],
+            check=True,
+            capture_output=True,
+            text=True
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -96,14 +108,21 @@ int main(int argc,char** argv){
 
     def invoke(self, mode):
         with tempfile.TemporaryDirectory() as folder:
-            data = Path(folder);environment = os.environ.copy();environment.pop("RGDS_SYSTEM_MANAGED", None)
-            result = subprocess.run([str(self.binary), str(self.root), str(data), mode],
-                                    capture_output=True, text=True, env=environment, timeout=6)
+            data = Path(folder)
+            environment = os.environ.copy()
+            environment.pop("RGDS_SYSTEM_MANAGED", None)
+            result = subprocess.run(
+                [str(self.binary), str(self.root), str(data), mode],
+                capture_output=True,
+                text=True,
+                env=environment,
+                timeout=6
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             trace = data / "trace"
             records = [json.loads(line) for line in trace.read_text().splitlines()] if trace.exists() else []
             successful = [value for command, value in records if command == "volume" and value != 65]
-            if successful:self.assertIn(f"volume={successful[-1]}\n", (data / "volume.ini").read_text())
+            if successful: self.assertIn(f"volume={successful[-1]}\n", (data / "volume.ini").read_text())
             return records
 
     def test_volume_motion_is_immediate_and_waiting_values_coalesce(self):
@@ -116,10 +135,15 @@ int main(int argc,char** argv){
         self.assertEqual(self.invoke("failure"), [["volume", 80], ["volume", 65], ["volume", 90], ["restore", None]])
 
     def test_brightness_volume_power_and_restore_never_overlap(self):
-        self.assertEqual(self.invoke("serialize"), [["volume", 10], ["brightness", 90], ["volume", 85], ["power", 2], ["restore", None]])
+        self.assertEqual(
+            self.invoke("serialize"),
+            [["volume", 10], ["brightness", 90], ["volume", 85], ["power", 2], ["restore", None]]
+        )
 
     def test_waiting_volume_is_not_starved_by_brightness_repeats(self):
-        self.assertEqual(self.invoke("fair"), [["brightness", 50], ["volume", 10], ["brightness", 60], ["restore", None]])
+        self.assertEqual(
+            self.invoke("fair"), [["brightness", 50], ["volume", 10], ["brightness", 60], ["restore", None]]
+        )
 
     def test_apply_cadence_is_bounded_even_when_helpers_are_fast(self):
         self.assertEqual(self.invoke("cadence"), [["volume", n] for n in range(10, 61, 10)] + [["restore", None]])
@@ -134,4 +158,4 @@ int main(int argc,char** argv){
         self.assertEqual(self.invoke("preview"), [])
 
 
-if __name__ == "__main__":unittest.main()
+if __name__ == "__main__": unittest.main()

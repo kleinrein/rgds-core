@@ -1,0 +1,7 @@
+# Fetched or generated trees; tools/format.py only feeds yapf tracked files, this
+# also covers editors and a bare `yapf -r .`.
+build/**
+dist/**
+vendor/**
+.cache/**
+runs/**

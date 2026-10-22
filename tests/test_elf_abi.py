@@ -14,36 +14,43 @@ from elf_abi import inspect_elf
 def fixture(requirements=(('libc.so.6', ('GLIBC_2.17', 'GLIBC_2.34')),), machine=183):
     strings = bytearray(b"\0")
     offsets = {}
+
     def name(value):
         if value not in offsets:
             offsets[value] = len(strings)
             strings.extend(value.encode() + b"\0")
         return offsets[value]
+
     name("GLIBC_999.99")  # Unreferenced text in the linked string table.
     needs = bytearray()
     for index, (library, versions) in enumerate(requirements):
         count = len(versions)
         record_size = 16 + count * 16
-        needs.extend(struct.pack("<HHIII", 1, count, name(library), 16,
-                                 record_size if index + 1 < len(requirements) else 0))
+        needs.extend(
+            struct.pack("<HHIII", 1, count, name(library), 16, record_size if index + 1 < len(requirements) else 0)
+        )
         for auxiliary, version in enumerate(versions):
-            needs.extend(struct.pack("<IHHII", 0, 0, auxiliary + 2, name(version),
-                                     16 if auxiliary + 1 < count else 0))
+            needs.extend(struct.pack("<IHHII", 0, 0, auxiliary + 2, name(version), 16 if auxiliary + 1 < count else 0))
     data = bytearray(64)
-    strings_at = len(data);data.extend(strings)
-    needs_at = len(data);data.extend(needs)
+    strings_at = len(data)
+    data.extend(strings)
+    needs_at = len(data)
+    data.extend(needs)
     # This exported-version section must not be treated as a requirement.
-    exports_at = len(data);exports = b"GLIBC_999.99\0";data.extend(exports)
+    exports_at = len(data)
+    exports = b"GLIBC_999.99\0"
+    data.extend(exports)
     sections_at = len(data)
-    sections = [(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-                (0, 3, 0, 0, strings_at, len(strings), 0, 0, 1, 0)]
+    sections = [(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), (0, 3, 0, 0, strings_at, len(strings), 0, 0, 1, 0)]
     if requirements:
         sections.append((0, 0x6FFFFFFE, 0, 0, needs_at, len(needs), 1, len(requirements), 4, 0))
     sections.append((0, 0x6FFFFFFF, 0, 0, exports_at, len(exports), 1, 1, 4, 0))
-    for section in sections:data.extend(struct.pack("<IIQQQQIIQQ", *section))
+    for section in sections:
+        data.extend(struct.pack("<IIQQQQIIQQ", *section))
     identity = b"\x7fELF\x02\x01\x01" + bytes(9)
-    struct.pack_into("<16sHHIQQQIHHHHHH", data, 0, identity, 3, machine, 1,
-                     0, 0, sections_at, 0, 64, 0, 0, 64, len(sections), 0)
+    struct.pack_into(
+        "<16sHHIQQQIHHHHHH", data, 0, identity, 3, machine, 1, 0, 0, sections_at, 0, 64, 0, 0, 64, len(sections), 0
+    )
     return data, dict(needs=needs_at, strings=strings_at, string_size=len(strings), sections=sections_at)
 
 
@@ -53,7 +60,9 @@ def dynamic_fixture():
     sections = [struct.unpack_from("<IIQQQQIIQQ", data, offsets["sections"] + i * 64) for i in range(header[12])]
     data = data[:offsets["sections"]]
     strings = b"\0libSDL2-2.0.so.0\0libbridge.so\0/usr/lib\0SDL_RenderPresent\0malloc\0private_cpp\0"
-    string_at = len(data); data.extend(strings); string_index = len(sections)
+    string_at = len(data)
+    data.extend(strings)
+    string_index = len(sections)
     sections.append((0, 3, 0, 0, string_at, len(strings), 0, 0, 1, 0))
     dynamic_at = len(data)
     for tag, name in ((1, b"libSDL2"), (14, b"libbridge"), (29, b"/usr/lib")):
@@ -65,11 +74,17 @@ def dynamic_fixture():
     for name, visibility, index in ((b"SDL_RenderPresent", 0, 1), (b"malloc", 0, 0), (b"private_cpp", 2, 1)):
         data.extend(struct.pack("<IBBHQQ", strings.index(name), 0x12, visibility, index, 1, 4))
     sections.append((0, 11, 0, 0, symbol_at, 96, string_index, 0, 8, 24))
-    interpreter_at = len(data); path = b"/lib/ld-linux-aarch64.so.1\0"; data.extend(path)
-    header[5] = len(data); header[9] = 56; header[10] = 1
+    interpreter_at = len(data)
+    path = b"/lib/ld-linux-aarch64.so.1\0"
+    data.extend(path)
+    header[5] = len(data)
+    header[9] = 56
+    header[10] = 1
     data.extend(struct.pack("<IIQQQQQQ", 3, 4, interpreter_at, 0, 0, len(path), len(path), 1))
-    header[6] = len(data); header[12] = len(sections)
-    for section in sections: data.extend(struct.pack("<IIQQQQIIQQ", *section))
+    header[6] = len(data)
+    header[12] = len(sections)
+    for section in sections:
+        data.extend(struct.pack("<IIQQQQIIQQ", *section))
     struct.pack_into("<16sHHIQQQIHHHHHH", data, 0, *header)
     return data, dict(dynamic=dynamic_at, interpreter=interpreter_at, strings=string_at, symbols=symbol_at)
 
@@ -82,8 +97,7 @@ class ElfAbiTests(unittest.TestCase):
             return inspect_elf(path, **kwargs)
 
     def test_aarch64_required_versions_ignore_unreferenced_strings_and_exports(self):
-        data, _ = fixture((('libc.so.6', ('GLIBC_2.17', 'GLIBC_2.34')),
-                           ('libm.so.6', ('GLIBC_2.18', 'GLIBC_2.17'))))
+        data, _ = fixture((('libc.so.6', ('GLIBC_2.17', 'GLIBC_2.34')), ('libm.so.6', ('GLIBC_2.18', 'GLIBC_2.17'))))
         result = self.inspect(data, source="supplied/private-payload")
         self.assertEqual(result["machine"], "aarch64")
         self.assertEqual(result["glibc_versions"], ["2.17", "2.18", "2.34"])
@@ -98,8 +112,7 @@ class ElfAbiTests(unittest.TestCase):
         self.assertEqual(result["glibc_versions"], ["2.3.4", "2.9", "2.17"])
 
     def test_version_headers_may_precede_all_auxiliary_records(self):
-        data, offsets = fixture((('libc.so.6', ('GLIBC_2.17',)),
-                                 ('libm.so.6', ('GLIBC_2.34',))))
+        data, offsets = fixture((('libc.so.6', ('GLIBC_2.17',)), ('libm.so.6', ('GLIBC_2.34',))))
         start = offsets["needs"]
         first = list(struct.unpack_from("<HHIII", data, start))
         second = list(struct.unpack_from("<HHIII", data, start + 32))
@@ -165,7 +178,8 @@ class ElfAbiTests(unittest.TestCase):
 
     def test_wrong_elf_format_is_rejected_clearly(self):
         for offset, value in ((4, 1), (5, 2)):
-            data, _ = fixture();data[offset] = value
+            data, _ = fixture()
+            data[offset] = value
             with self.assertRaisesRegex(ValueError, "only ELF64 little-endian"):
                 self.inspect(data)
 
@@ -183,9 +197,12 @@ class ElfAbiTests(unittest.TestCase):
     def test_malformed_dynamic_paths_and_unterminated_interpreter_are_rejected(self):
         data, offsets = dynamic_fixture()
         struct.pack_into("<Q", data, offsets["dynamic"] + 8, 99999)
-        with self.assertRaisesRegex(ValueError, "dynamic string is out of bounds"): self.inspect(data)
-        data, offsets = dynamic_fixture(); data[data.index(0, offsets["interpreter"])] = ord("x")
-        with self.assertRaisesRegex(ValueError, "interpreter is not a terminated"): self.inspect(data)
+        with self.assertRaisesRegex(ValueError, "dynamic string is out of bounds"):
+            self.inspect(data)
+        data, offsets = dynamic_fixture()
+        data[data.index(0, offsets["interpreter"])] = ord("x")
+        with self.assertRaisesRegex(ValueError, "interpreter is not a terminated"):
+            self.inspect(data)
 
 
 if __name__ == "__main__":
