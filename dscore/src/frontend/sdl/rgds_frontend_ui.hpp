@@ -119,9 +119,9 @@ extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_grap
 }
 
 // Called by RGDS on the SDL/emulation thread, between emulated frames.
-// 0 native grid, 1 sharp, 2 smooth, 3 crisp; applies to the enhanced (2x-5x) panel image.
+// 0 native grid, 1 sharp, 2 smooth, 3 crisp (the 3D screen at 2x-5x); 4 HD (both screens, every scale).
 extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_filter2d(int mode) {
-  if (mode < 0 || mode > 3 || !rgds::filter2d_handler) return 0;
+  if (mode < 0 || mode > 5 || !rgds::filter2d_handler) return 0;
   try {
     return rgds::filter2d_handler(mode) ? 1 : 0;
   } catch (const std::exception& e) {

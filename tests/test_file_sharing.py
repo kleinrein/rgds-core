@@ -63,6 +63,18 @@ class FileSharingTests(unittest.TestCase):
             self.sharing._stop(None)
             self.assertFalse(service.exists())
             self.assertEqual(run.call_count, 2)
+            # The firmware's umask 077 must not hide the file from avahi's own
+            # user, and a root-only copy left by an older release is repaired.
+            previous = os.umask(0o077)
+            try:
+                self.sharing.advertise(True)
+                self.assertEqual(service.stat().st_mode & 0o777, 0o644)
+                service.chmod(0o600)
+                self.sharing.advertise(True)
+                self.assertEqual(service.stat().st_mode & 0o777, 0o644)
+                self.assertEqual(run.call_count, 4)
+            finally:
+                os.umask(previous)
         # Discovery is best effort: an unwritable folder never blocks sharing.
         self.sharing.avahi_service = Path('/proc/no-such-folder/rgds-smb.service')
         self.sharing.advertise(True)

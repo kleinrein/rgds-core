@@ -34,8 +34,11 @@
 
 namespace rgds {
 
-enum class Filter2D : int { Native = 0, Sharp = 1, Smooth = 2, Crisp = 3 };
-constexpr int kFilter2DModes = 4;
+// HD is not resampled here: the RG DS bridge reconstructs it on the GPU at the output's resolution, from the native
+// frames, or from the 2x-5x compose with the pixels 2D owns marked (Gpu::output_enhanced_a). HD smooth is HD with
+// every edge rebuilt and wider blends (rgds_hd2d_rules.hpp).
+enum class Filter2D : int { Native = 0, Sharp = 1, Smooth = 2, Crisp = 3, HD = 4, HDSmooth = 5 };
+constexpr int kFilter2DModes = 6;
 
 class Filter2DPlan {
 public:

@@ -633,9 +633,9 @@ def main():
     parser.add_argument(
         '--rgds-2d',
         type=int,
-        choices=(0, 1, 2, 3),
+        choices=(0, 1, 2, 3, 4, 5),
         default=0,
-        help='DSCore 2D scaling: 0 native pixels, 1 sharp, 2 smooth, 3 crisp'
+        help='DSCore 2D scaling: 0 native pixels, 1 sharp, 2 smooth, 3 crisp, 4 HD, 5 HD smooth'
     )
     parser.add_argument(
         '--rgds-scale', type=int, choices=range(1, 6), default=1, help='RG DS Experimental internal 3D scale'

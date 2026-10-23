@@ -1,4 +1,5 @@
 #pragma once
+#include "launcher/game_facets.hpp"
 #include "launcher/library_cache.hpp"
 #include <atomic>
 #include <future>
@@ -25,6 +26,7 @@ private:
         unsigned generation;
         std::string query;
         int filter;
+        Facets facets;
     };
     std::optional<Request> queued;
     unsigned generation = 0;
@@ -37,9 +39,9 @@ public:
         queued.reset();
     }
     void request(const fs::path& data, const std::vector<Game>& games, int view, const std::string& query = "",
-                 int filter = 0) {
+                 int filter = 0, const Facets& facets = {}) {
         cancel();
-        queued = Request{data, games, view, generation, query, filter};
+        queued = Request{data, games, view, generation, query, filter, facets};
     }
     bool pending() const { return bool(queued) || worker.valid(); }
     std::optional<Result> poll() {
@@ -74,9 +76,12 @@ public:
                     if (!query.empty()) {
                         auto& entry = cache.metadata(game);
                         auto title = game.title + " " + entry.info["title"] + " " + entry.info["artwork_title"] + " " +
-                                     entry.banner["title"];
+                                     entry.banner["title"] + " " + entry.info["info_title"] + " " +
+                                     entry.info["developer"] + " " + entry.info["publisher"];
                         if (fold(title).find(query) == std::string::npos) continue;
                     }
+                    if (request.facets.any() && !facets_match(request.facets, facet_values(cache.metadata(game).info)))
+                        continue;
                     if (request.filter == 1 || request.filter == 2) {
                         auto stats = cache.stats(game);
                         bool played = stats.sessions || stats.seconds || !stats.last_played.empty();

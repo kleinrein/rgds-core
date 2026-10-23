@@ -58,6 +58,15 @@ class PackagingRecordTests(unittest.TestCase):
             source=dict(archive_sha256=package.sha(melon / 'source.tar.gz'))
         )
         (melon / 'build.json').write_text(json.dumps(self.melon_record))
+        play = self.root / 'build/play/device/payload'
+        (play / 'profiles/gba').mkdir(parents=True)
+        for name in ('rgds-play', 'source.tar.gz', 'COPYING', 'COPYING.mgba', 'profiles/gba/AMKE.ini'):
+            (play / name).write_bytes(b'fixture ' + name.encode())
+        self.play_record = dict(
+            files={p.relative_to(play).as_posix(): package.sha(p)
+                   for p in play.rglob('*') if p.is_file()}
+        )
+        (play / 'build.json').write_text(json.dumps(self.play_record))
         backend = self.root / 'build/superdrastic'
         backend.mkdir(parents=True)
         for name in ('libsuperdrastic.so', 'source.tar.gz', 'LICENSE', 'THIRD_PARTY.md', 'VERSION'):
@@ -96,6 +105,7 @@ class PackagingRecordTests(unittest.TestCase):
         patch.object(package, "validate_experimental", return_value=self.experimental_record).start()
         patch.object(package, 'validate_vulkan', return_value=self.vulkan_record).start()
         patch.object(package, "validate_melonds", return_value=self.melon_record).start()
+        patch.object(package, "validate_play", return_value=self.play_record).start()
         patch.object(package, "validate_superdrastic", return_value=self.super_record).start()
         patch.object(package, 'validate_samba', return_value=self.samba_record).start()
         patch.object(package, "validate_bundle", return_value=dict(files={}, components={})).start()

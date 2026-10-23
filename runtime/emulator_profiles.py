@@ -95,7 +95,7 @@ def game_options(data, rom):
         gengis_scale=bounded(local, "gengis_scale", 0, 2, 3),
         rgds_scale=bounded(local, "rgds_scale", 1, 1, 5),
         rgds_smooth=bounded(local, "rgds_smooth", 1, 0, 1),
-        rgds_2d=bounded(local, "rgds_2d", 0, 0, 3),
+        rgds_2d=bounded(local, "rgds_2d", 0, 0, 5),
         rgds_adaptive=bounded(local, "rgds_adaptive", 1, 0, 1),
         threaded=bounded(local, "threaded_3d", 1, 0, 1),
         hires=bounded(local, "hires_3d", 0, 0, 1),

@@ -141,19 +141,35 @@ class AudioTests(unittest.TestCase):
         self.assertEqual(self.volume.saved(), 100)
         self.assertEqual(self.mixer.writes[-1], 100)
 
-    def test_physical_keys_repeat_clamp_and_ignore_release_and_duplicates(self):
+    def test_held_physical_keys_repeat_speed_up_clamp_and_stop_on_release(self):
         self.volume.apply(10)
         watcher = VolumeWatch(self.data, self.volume)
         event = lambda code, value: EVENT.pack(0, 0, 1, code, value)
         with patch.object(Path, "write_text"):
             watcher.handle(event(115, 1), 1)
-            watcher.handle(event(115, 1), 1.01)  # Duplicate kernel device report.
-            watcher.handle(event(115, 2), 1.2)  # Held key repeat.
-            watcher.handle(event(115, 0), 1.3)
-            self.assertEqual(self.volume.saved(), 20)
-            for index in range(8):
-                watcher.handle(event(114, 2), 2 + index * .1)
+            self.assertEqual(self.volume.saved(), 15)
+            watcher.repeat(1.2)  # Still inside the initial pause.
+            self.assertEqual(self.volume.saved(), 15)
+            watcher.repeat(1.36)
+            watcher.repeat(1.47)
+            self.assertEqual(self.volume.saved(), 25)
+            watcher.handle(event(115, 0), 1.5)
+            watcher.repeat(3)
+            self.assertEqual(self.volume.saved(), 25)
+            watcher.handle(event(114, 1), 5)
+            for index in range(40):
+                watcher.repeat(5.4 + index * .1)
+            watcher.handle(event(114, 0), 10)
         self.assertEqual(self.volume.saved(), 0)
+        self.assertEqual(watcher.held, {})
+
+    def test_lost_release_does_not_run_away(self):
+        self.volume.apply(50)
+        watcher = VolumeWatch(self.data, self.volume)
+        with patch.object(Path, "write_text"):
+            watcher.handle(EVENT.pack(0, 0, 1, 115, 1), 1)
+            watcher.repeat(17)
+        self.assertEqual(watcher.held, {})
 
     def test_native_volume_hud_refreshes_at_limits_and_clears_previous_session(self):
         self.volume.apply(100)

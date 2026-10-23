@@ -3,6 +3,8 @@
     SDL_*;
     gl*;
     rgds_present_canvas;
+    rgds_hd_rules;
+    rgds_shader_live;
     ioctl;
     read;
     kill;

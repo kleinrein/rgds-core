@@ -129,6 +129,48 @@ their lower neighbour. Switching applies live (`filter2d:N`) and never touches t
 resampling is `src/core/gpu/rgds_filter2d.hpp`, covered by `dscore/tests/filter2d_test.cpp`.
 `DS_VERIFY_HIRES=1` composes without the filter.
 
+**HD** (`rgds_2d=4`) rebuilds both screens at every 3D scale, including native, at the output's own
+resolution and under any screen filter. The work is split where each processor is cheapest on the RG DS:
+
+- *Rules, per native pixel, on the CPU* (`dscore/src/core/gpu/rgds_hd2d_rules.hpp`): Hyllian's xBR level 2
+  corner tests, kept only for structural edges (both neighbours a corner faces differ by 48 or more), which
+  neighbours each pixel smooths toward (2D, differing by less than 16), and where 2D owns the pixel. Bands of 8
+  lines run on the compose helpers as lines finish, and a band whose lines match the previous frame keeps its
+  rules (`Gpu::hd_band`). NEON does each line's distances and tests eight or sixteen pixels at a time; on the A55
+  at 1.4 GHz a busy screen costs about 2.2-2.5 ms. The frontend uploads them with the frame as a 256x192
+  texture paired with the screen's (`Display::hd_rules_upload`, the bridge's `rgds_hd_rules`).
+- *Reconstruction, per output pixel, on the GPU* (`src/platform/hd2d_shader.hpp`, in the bridge's screen
+  draw): a pixel with no rule is shown as it is; otherwise it blends toward its flagged neighbours (gradients
+  turn smooth, detail stays sharp) and draws each corner edge as a half-plane whose coverage is measured
+  analytically over the fragment, so anti-aliasing is one output pixel wide at any output size. Presets that
+  read the picture once (all but Natural glow and the two smooth presets) sample this function directly, one
+  draw with no intermediate image; the others read it from a render target.
+
+Without the CPU's rules (another producer, or a paused frame) the bridge computes them in a GPU pass of its own.
+On the 3D screen at 2x-5x DSCore composes like Native pixels and marks the 2D-owned pixels (blue's lowest bit, and
+the rules), so the GPU keeps the 3D detail there and rebuilds 2D outlines against it. HD needs the renderer, so the
+runtime keeps the renderer sink with it, as for filters; on the direct present it shows plain pixels.
+Measured on the RG DS's Mali-G52 (headless, both screens): the reconstruction about 2.5 ms; the GPU-only version
+with its rules pass and the dependency between the passes took 8.7-12.8 ms, which is why the rules moved to the
+CPU. Verified offscreen on Mesa through SDL's GLES2 renderer: the one-draw and render-target paths match bit for
+bit, CPU-supplied rules give the GPU-rules picture, presets draw over HD, and 3D regions keep their samples. On the
+RG DS (23 October 2026, 30 s, fresh profiles; the bridge logs "RGDS HD 2D: drawing ... in one pass, CPU rules"):
+Castlevania: Dawn of Sorrow at 1x ran 59.69 fps, p95 19.1 ms, 2-2.5 % of frames over 20 ms, against 59.46 fps,
+19.8 ms and 4.3 % with native pixels; Mario Kart DS at 3x (intro and title) 59.17 fps.
+Known issue: SDL's desktop OpenGL renderer crashes in the HD draw (Mesa, offscreen); the RG DS uses GLES2.
+
+**HD smooth** (`rgds_2d=5`) is HD with the structural floor dropped and wider blends: every corner
+xBR finds is rebuilt, a pixel smooths toward neighbours closer than 64, and the anti-aliasing is 1.5 output pixels
+wide (`hd2d_strength` in `hd2d_shader.hpp`, `Hd2DRules::get(true)`). Shading and texture steps, which HD leaves as
+pixels, turn into slopes too: painted title art and maps come out much smoother; text and outlines stay sharp. It
+suits art drawn smooth more than deliberate pixel art. More pixels carry rules (on four test frames 10-70 % more than
+HD), so the CPU rules and the reconstruction cost more where the picture is busy: on the RG DS the rules took
+2.9-3.0 ms per screen (5.3 ms on Mario Kart DS's title art) against HD's 2.2-2.5, and the reconstruction 3.2-6.0 ms
+for both screens against 2.1-3.6 (headless, 23 October 2026). CPU and GPU rules agree on
+97-99.7 % of words, as for HD (ties in the level-1 test); the paired-rules picture is identical. A per-region "field
+vote" reconstruction (quadratic B-spline membership of each colour, thresholded) was tried as an alternative and
+dropped: on 3x3 support it straightened stairs no better than xBR and pinched 1-pixel diagonals.
+
 **Heavy 3D scenes** (In-game menu → Graphics → Heavy 3D scenes, `rgds_adaptive`, `DS_ADAPTIVE`)
 picks Adaptive (default: heavy GPU stretches drop the 3D to native for a few seconds to hold 60 fps;
 see `docs/PERFORMANCE.md`) or Always sharp (`rgds_adaptive=0`). The runtime passes it at 2×–5× only,

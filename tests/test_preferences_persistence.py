@@ -22,7 +22,7 @@ class PreferencePersistenceTests(unittest.TestCase):
             r'''#include "launcher/settings.hpp"
 #include <iostream>
 int main(int argc,char**argv){
- if(argc==2){std::cout<<rgds::core_count;return 0;}
+ if(argc==2){std::cout<<rgds::ds_core_count;return 0;}  // the default engine is always a DS engine
  if(argc<3)return 2;
  try {
   rgds::fs::path path=argv[2];

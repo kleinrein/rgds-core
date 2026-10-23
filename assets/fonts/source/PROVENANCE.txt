@@ -3,3 +3,26 @@ Commit: 7085eb89a950e85db5b166b7a58d414544b4140c
 Path: ofl/nunito/Nunito[wght].ttf
 License: SIL Open Font License 1.1 (OFL.txt)
 Unmodified source font; UI atlases generated at weight 600.
+
+CJK source fonts live in tools/fonts, outside the shipped app; only their
+atlases (rounded-ja/zh/ko-N.rgf) and licences ship.
+
+M PLUS Rounded 1c from google/fonts
+Commit: 84efd8ad78c3710ad14bd909e3bc407151885628
+Path: ofl/mplusrounded1c/MPLUSRounded1c-Medium.ttf
+License: SIL Open Font License 1.1 (OFL-MPLUSRounded1c.txt)
+Unmodified source font (tools/fonts/MPLUSRounded1c-Medium.ttf); the Japanese
+atlases hold its kana, symbols, full- and halfwidth forms, JIS X 0208 level-1
+kanji and every character of the ja-JP catalog.
+
+Noto Sans SC and Noto Sans KR from google/fonts
+Commit: e7db6ca603fd4862010383ff17ffd6cc4ffac1c0
+Paths: ofl/notosanssc/NotoSansSC[wght].ttf, ofl/notosanskr/NotoSansKR[wght].ttf
+License: SIL Open Font License 1.1 (OFL-NotoSansSC.txt, OFL-NotoSansKR.txt)
+Modified with fontTools: instanced at weight 500, then subset to ASCII, CJK
+symbols, full-width forms, quotes and the national set (all of GB 2312 for
+SC; all 11,172 hangul syllables and the compatibility jamo for KR), keeping
+every layout feature and name record (tools/fonts/Noto*-Medium-subset.ttf).
+The Chinese atlases hold GB 2312 symbols, the 3,755 level-1 hanzi and every
+character of zh-CN; the Korean atlases hold the compatibility jamo, the 2,350
+KS X 1001 hangul and every character of ko-KR.

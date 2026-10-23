@@ -70,6 +70,7 @@ void Gpu::reset() {
     filter2d_ = m > 0 && m < rgds::kFilter2DModes ? m : 0;
   }
   pending_row_ = snapshot_row_ = -1;
+  if (hd_mode()) hd_start();
   const char* scale = std::getenv("RGDS_VK_SCALE");
   compose_.join();
   if (scale && std::atoi(scale) > 1) {
@@ -1132,6 +1133,8 @@ void Gpu::output_engine(int e, u32 line) {
     for (u32 i = 0; i < 256; ++i) dst[i] = 0xFF000000;
   }
   if (!enhanced_[screen].empty()) output_enhanced(e, line, dst);
+  // HD rules: engine A's lines on the 2x-5x compose come from output_enhanced_a, which knows what 2D owns.
+  if (hd_mode() && (e != 0 || enhanced_[screen].empty())) hd_line(e, screen, line, dst, nullptr);
   if (scaled) {
     if (e == 1 && bscale_defer_ && bscale_n_ < SCREEN_H) {
       StashedLine& st = bscale_[bscale_n_++];
@@ -1174,6 +1177,73 @@ void Gpu::set_filter2d(int mode) {
   pending_row_ = snapshot_row_ = -1;
   filter2d_.store(mode, std::memory_order_relaxed);
   enhanced_screen_[0] = enhanced_screen_[1] = false;
+  if (hd_mode()) hd_start();
+}
+
+// HD: the rules buffers and the compose pool (which runs the bands at 1x too).
+void Gpu::hd_start() {
+  for (int s = 0; s < 2; ++s) {
+    for (auto& frame : hd_native_[s]) frame.assign(SCREEN_W * SCREEN_H, 0);
+    for (auto& owner : hd_owner_[s]) owner.assign(SCREEN_W * SCREEN_H, 1);
+    hd_rules_[s].assign(SCREEN_W * SCREEN_H, 0);
+    hd_fresh_[s].fill(0);
+    hd_valid_[s] = false;
+  }
+  hd_screen_[0] = hd_screen_[1] = -1;
+  enable_enhanced();
+}
+
+// HD: one finished native line of engine e's screen; `owner` (nonzero where 2D owns the pixel) null for all 2D.
+// Bands whose lines, and the 2 below, are all in go to the compose pool.
+void Gpu::hd_line(int e, int screen, u32 line, const u32* native, const u8* owner) {
+  if (hd_rules_[screen].empty()) return;
+  if (line == 0) {
+    hd_screen_[e] = screen;
+    hd_next_band_[e] = 0;
+    hd_parity_[screen] ^= 1;
+  }
+  if (hd_screen_[e] != screen) return; // swapped screens mid-frame: the next frame starts over
+  const u8 parity = hd_parity_[screen];
+  std::memcpy(hd_native_[screen][parity].data() + line * SCREEN_W, native, SCREEN_W * sizeof(u32));
+  u8* own = hd_owner_[screen][parity].data() + line * SCREEN_W;
+  if (owner) std::memcpy(own, owner, SCREEN_W);
+  else std::memset(own, 1, SCREEN_W);
+  const u32 ready = line + 1 >= SCREEN_H        ? kHdBands
+                    : line >= kHdBandLines + 1 ? (line - kHdBandLines - 1) / kHdBandLines + 1
+                                               : 0;
+  while (hd_next_band_[e] < ready) hd_publish(kHdJob | u32(e) << 8 | hd_next_band_[e]++);
+  if (line + 1 >= SCREEN_H) hd_valid_[screen] = true;
+}
+
+// Engine A's worker and engine B's both publish HD bands; the pool takes one producer at a time.
+void Gpu::hd_publish(u32 job) {
+  if (!compose_.active()) {
+    hd_band(int((job >> 8) & 1), job & 255);
+    return;
+  }
+  while (hd_publish_lock_.test_and_set(std::memory_order_acquire)) {}
+  compose_.publish(job, (job & 255) == kHdBands - 1);
+  hd_publish_lock_.clear(std::memory_order_release);
+}
+
+// One band of engine e's screen: the rules of 8 native lines. A band whose lines and owners (with the 2 lines
+// around) match the previous frame keeps its rules.
+void Gpu::hd_band(int e, u32 band) {
+  const int screen = hd_screen_[e];
+  if (screen < 0) return;
+  const u8 parity = hd_parity_[screen];
+  const u32* frame = hd_native_[screen][parity].data();
+  const u8* owner = hd_owner_[screen][parity].data();
+  const u32 l0 = band * kHdBandLines, l1 = l0 + kHdBandLines;
+  const u32 c0 = l0 >= 2 ? l0 - 2 : 0, c1 = std::min(l1 + 2, SCREEN_H);
+  if (hd_fresh_[screen][band] &&
+      !std::memcmp(frame + c0 * SCREEN_W, hd_native_[screen][parity ^ 1].data() + c0 * SCREEN_W,
+                   (c1 - c0) * SCREEN_W * sizeof(u32)) &&
+      !std::memcmp(owner + c0 * SCREEN_W, hd_owner_[screen][parity ^ 1].data() + c0 * SCREEN_W, (c1 - c0) * SCREEN_W))
+    return;
+  rgds::Hd2DRules::get(filter2d_.load(std::memory_order_relaxed) == int(rgds::Filter2D::HDSmooth))
+      .lines(frame, owner, l0, l1, hd_rules_[screen].data());
+  hd_fresh_[screen][band] = 1;
 }
 
 extern u32 g_rgds_refuse[8];
@@ -1232,11 +1302,12 @@ void Gpu::reuse_enhanced_b(int screen, u32 line, const u32* native) {
               db = int(a & 255) - int(b & 255);
     return dr <= 10 && dr >= -10 && dg <= 10 && dg >= -10 && db <= 10 && db >= -10;
   };
+  const u32 mark = filter2d_.load(std::memory_order_relaxed) >= int(rgds::Filter2D::HD) ? 1u : 0u; // B's pixels are 2D
   for (u32 x = 0; x < SCREEN_W; ++x) {
     if (near(native[x], previous[x])) continue;
     const u32 x0 = x * PRESENT_W / SCREEN_W, x1 = (x + 1) * PRESENT_W / SCREEN_W;
     for (u32 y = y0; y < y1; ++y)
-      for (u32 dx = x0; dx < x1; ++dx) image[y * PRESENT_W + dx] = native[x];
+      for (u32 dx = x0; dx < x1; ++dx) image[y * PRESENT_W + dx] = native[x] | mark;
   }
   enhanced_screen_[screen] = true;
 }
@@ -1286,12 +1357,19 @@ void Gpu::output_enhanced_a(Engine2D& en, u32 line, const u32* native) {
   static const bool verify = std::getenv("DS_VERIFY_HIRES") != nullptr;
   // The reference check reads the engine's own line state, so it composes
   // inline and never defers a row for the 2D filter.
-  const u8 mode = verify ? 0 : static_cast<u8>(filter2d_.load(std::memory_order_relaxed));
+  const u8 setting = verify ? 0 : static_cast<u8>(filter2d_.load(std::memory_order_relaxed));
+  // HD is drawn by the bridge's GPU pass: composition stays on the native grid and only marks the pixels 2D owns.
+  const bool marks = setting >= static_cast<u8>(rgds::Filter2D::HD);
+  const u8 mode = marks ? 0 : setting;
   const bool candidate =
       screens_on_ && ((en.dispcnt() >> 16) & 3) == 1 && en.enhanced_3d() && ref3d_.gpu && ref3d_.scale > 1;
   if (!candidate && !mode) {
     if (g_hd.on) ++g_hd.plain;
     native_rows(image, y0, y1, native);
+    if (marks) {
+      mark_rows(image, y0, y1, nullptr);
+      hd_line(0, en.screen(), line, native, nullptr);
+    }
     return;
   }
   if (candidate && g_hd.on) ++g_hd.detail;
@@ -1303,6 +1381,7 @@ void Gpu::output_enhanced_a(Engine2D& en, u32 line, const u32* native) {
   const u32* above2 = contiguous && line >= 2 && snapshot_run_ >= 2 ? enhanced_rows_[line - 2].native : above;
   row.filter2d = mode;
   row.plain = !candidate;
+  row.marks = marks;
   row.above2 = above2;
   row.above = above;
   row.below = row.native;
@@ -1310,6 +1389,11 @@ void Gpu::output_enhanced_a(Engine2D& en, u32 line, const u32* native) {
     en.prepare_3d_sublines(row.plan);
     row.evy = en.render_evy();
     row.master = en.master_bright();
+  }
+  if (marks) {
+    u8 owner[SCREEN_W];
+    for (u32 x = 0; x < SCREEN_W; ++x) owner[x] = !candidate || row.plan.op[x] == Engine2D::Keep2D;
+    hd_line(0, en.screen(), line, native, owner);
   }
   row.line = line;
   row.y0 = y0;
@@ -1361,9 +1445,10 @@ void Gpu::enable_enhanced() {
   compose_.start(&Gpu::compose_job, this);
 }
 
-void Gpu::compose_job(void* self, u32 line) {
+void Gpu::compose_job(void* self, u32 job) {
   Gpu& g = *static_cast<Gpu*>(self);
-  g.compose_row(g.enhanced_rows_[line], nullptr);
+  if (job & kHdJob) g.hd_band(int((job >> 8) & 1), job & 255);
+  else g.compose_row(g.enhanced_rows_[job], nullptr);
 }
 
 // Compose one native line's panel rows from its snapshot. Thread-safe: reads
@@ -1408,6 +1493,7 @@ void Gpu::compose_row(const EnhancedRow& job, Engine2D* verify) {
       enhanced_screen_[job.screen].store(true, std::memory_order_relaxed);
       std::memcpy(job.image + job.y0 * PRESENT_W, filtered, sizeof(u32) * PRESENT_W * (job.y1 - job.y0));
     } else native_rows(job.image, job.y0, job.y1, job.native);
+    if (job.marks) mark_rows(job.image, job.y0, job.y1, nullptr); // no 3D on these rows: all 2D
     return;
   }
   enhanced_screen_[job.screen].store(true, std::memory_order_relaxed);
@@ -1467,6 +1553,17 @@ void Gpu::compose_row(const EnhancedRow& job, Engine2D* verify) {
     }
   }
   if (job.filter2d) apply_2d_filter(job, two_d, filtered);
+  if (job.marks) mark_rows(job.image, job.y0, job.y1, &job.plan);
+}
+
+// HD: blue's lowest bit 1 where a panel pixel's native pixel is 2D's alone (its plan keeps the 2D result whatever
+// the 3D sample), 0 where 3D shows through. Invisible elsewhere; the bridge reads it at native block centres.
+void Gpu::mark_rows(u32* image, u32 y0, u32 y1, const Engine2D::EnhancedPlan* plan) {
+  for (u32 y = y0; y < y1; ++y) {
+    u32* row = image + y * PRESENT_W;
+    for (u32 p = 0; p < PRESENT_W; ++p)
+      row[p] = !plan || plan->op[(2 * p + 1) / 5] == Engine2D::Keep2D ? row[p] | 1u : row[p] & ~1u;
+  }
 }
 
 // Resample this native line's panel rows with the selected 2D filter.

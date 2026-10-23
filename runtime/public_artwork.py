@@ -1,4 +1,4 @@
-"""Credential-free DS cover providers. No ROM bytes are uploaded."""
+"""Credential-free cover providers for every system. No ROM bytes are uploaded."""
 import re
 import time
 import unicodedata
@@ -13,9 +13,28 @@ from pathlib import Path
 from scraper import ScraperError, NotFound
 
 PROVIDERS = ("auto", "gametdb", "libretro")
-LIBRETRO = "https://thumbnails.libretro.com/Nintendo%20-%20Nintendo%20DS/Named_Boxarts/"
-SERIALS = "https://raw.githubusercontent.com/libretro/libretro-database/master/metadat/no-intro/Nintendo%20-%20Nintendo%20DS.dat"
-HOSTS = {"thumbnails.libretro.com", "art.gametdb.com", "raw.githubusercontent.com"}
+# Libretro's box-art catalogue and No-Intro serials, per system (GameTDB is DS only).
+CATALOGS = {
+    "nds": "Nintendo - Nintendo DS",
+    "gba": "Nintendo - Game Boy Advance",
+    "gbc": "Nintendo - Game Boy Color",
+    "gb": "Nintendo - Game Boy"
+}
+
+
+def libretro_base(system):
+    return "https://thumbnails.libretro.com/" + urllib.parse.quote(CATALOGS[system]) + "/Named_Boxarts/"
+
+
+def serials_url(system):
+    return "https://raw.githubusercontent.com/libretro/libretro-database/master/metadat/no-intro/" + urllib.parse.quote(
+        CATALOGS[system]
+    ) + ".dat"
+
+
+LIBRETRO = libretro_base("nds")
+SERIALS = serials_url("nds")
+HOSTS = {"thumbnails.libretro.com", "art.gametdb.com", "www.gametdb.com", "raw.githubusercontent.com"}
 # Only release tags are discarded. Parenthetical words can be part of a title.
 TAGS = re.compile(
     r"\((?:USA|Europe|Japan|World|Australia|Canada|France|Germany|Italy|Spain|Korea|China|Taiwan|Norway|Denmark|Sweden|Netherlands|United Kingdom|Scandinavia|Russia|Rev \d+|Beta[^)]*|Demo[^)]*|Proto[^)]*|NDSi Enhanced|[A-Z][a-z](?:,[A-Z][a-z])*)\)",
@@ -72,6 +91,31 @@ def rom_details(path):
     return name, code if re.fullmatch(r"[A-Z0-9]{4}", code) and code not in ("####", "0000") else ""
 
 
+def rom_identity(path):
+    """(system, name, game code). Other systems' codes: the GBA header's at 0xAC; GB has none."""
+    from play_options import SYSTEMS, system_of
+    system = system_of(path)
+    if system == "nds":
+        return (system,) + rom_details(path)
+    path = Path(path)
+    if path.suffix.lower() == ".zip":
+        with zipfile.ZipFile(path) as archive:
+            entries = [
+                i for i in archive.infolist()
+                if any(Path(i.filename).suffix.lower() in suffixes for suffixes in SYSTEMS.values())
+            ]
+            if len(entries) != 1 or entries[0].file_size > 64 * 1024**2: raise NotFound("ZIP must contain one game.")
+            with archive.open(entries[0]) as stream:
+                header = stream.read(0xB0)
+            name = Path(entries[0].filename).stem
+    else:
+        with path.open("rb") as stream:
+            header = stream.read(0xB0)
+        name = path.stem
+    code = header[0xAC:0xB0].decode("ascii", errors="replace") if system == "gba" else ""
+    return system, name, code if re.fullmatch(r"[A-Z0-9]{4}", code) else ""
+
+
 def title_key(name):
     name = display_title(name).translate(str.maketrans({"ø": "o", "Ø": "O", "æ": "ae", "Æ": "Ae", "œ": "oe"}))
     return "".join(c for c in unicodedata.normalize("NFKD", name).casefold() if c.isalnum())
@@ -95,8 +139,9 @@ class PublicClient:
         self.provider = provider
         self.opener = opener or urllib.request.build_opener(PublicRedirect()).open
         self.next_request = 0.0
-        self.index = None
+        self.index = None  # the DS catalogue
         self.serials = None
+        self.indexes, self.serial_sets = {}, {}  # other systems
         self.cache = Path(cache) if cache else None
         self.cancelled = cancelled or (lambda: False)
         self.unavailable = {}
@@ -169,8 +214,12 @@ class PublicClient:
                 pass  # A catalog cache is optional; the cover still works.
         return value
 
-    def names_for_code(self, code):
+    def names_for_code(self, code, system="nds"):
         if not code: return []
+        if system != "nds":
+            if system not in self.serial_sets:
+                self.serial_sets[system] = self.catalog(system + "-serials.dat", serials_url(system), serial_index)
+            return self.serial_sets[system].get(code, [])
         if self.serials is None: self.serials = self.catalog("ds-serials.dat", SERIALS, serial_index)
         return self.serials.get(code, [])
 
@@ -197,29 +246,35 @@ class PublicClient:
                 pass
         raise NotFound("No matching GameTDB cover found.")
 
-    def libretro(self, name, code):
+    def libretro(self, name, code, system="nds"):
+        base = LIBRETRO if system == "nds" else libretro_base(system)
         exact = re.sub(r'[&*/:`<>?\\|]', '_', name)
-        url = LIBRETRO + urllib.parse.quote(exact, safe="") + ".png"
+        url = base + urllib.parse.quote(exact, safe="") + ".png"
         matched_by = "filename"
         try:
             raw = self.fetch(url)
         except NotFound:
-            if self.index is None:
 
-                def parse(raw):
-                    parser = CoverIndex()
-                    parser.feed(raw)
-                    if not parser.names: raise ScraperError("The artwork catalog was unreadable.")
-                    return parser.names
+            def parse(raw):
+                parser = CoverIndex()
+                parser.feed(raw)
+                if not parser.names: raise ScraperError("The artwork catalog was unreadable.")
+                return parser.names
 
-                self.index = self.catalog("ds-covers.html", LIBRETRO, parse)
-            matches = [candidate for candidate in self.index if title_key(candidate) == title_key(name)]
+            if system == "nds":
+                if self.index is None: self.index = self.catalog("ds-covers.html", LIBRETRO, parse)
+                index = self.index
+            else:
+                if system not in self.indexes:
+                    self.indexes[system] = self.catalog(system + "-covers.html", base, parse)
+                index = self.indexes[system]
+            matches = [candidate for candidate in index if title_key(candidate) == title_key(name)]
             if not matches:
                 # An exact header serial recovers renamed/localized dumps. No
                 # approximate title/substring guesses that can cross sequels.
-                names = self.names_for_code(code)
+                names = self.names_for_code(code, system)
                 keys = {title_key(candidate) for candidate in names}
-                matches = [candidate for candidate in self.index if title_key(candidate) in keys]
+                matches = [candidate for candidate in index if title_key(candidate) in keys]
                 matched_by = "game_code"
             if not matches:
                 raise NotFound("No cover in the public catalogs. Try a matching title in Game options > Artwork.")
@@ -241,7 +296,7 @@ class PublicClient:
                 raise NotFound(
                     "More than one title matches this game code. Set the matching title in Game options > Artwork."
                 )
-            url = LIBRETRO + urllib.parse.quote(selected, safe="") + ".png"
+            url = base + urllib.parse.quote(selected, safe="") + ".png"
             raw = self.fetch(url)
             exact = selected
         return raw, {
@@ -253,6 +308,10 @@ class PublicClient:
         }
 
     def artwork(self, rom, name_override=""):
+        system, name, code = rom_identity(rom)
+        if system != "nds":
+            # Other systems: Libretro's catalogue for that system (GameTDB has DS covers only).
+            return self.libretro(name_override.strip() or name, "" if name_override.strip() else code, system)
         name, code = rom_details(rom)
         # An explicit matching title intentionally overrides header identity for
         # hacks/homebrew or a correction. It never renames the ROM or save path.

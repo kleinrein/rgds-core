@@ -34,6 +34,8 @@ int fake_filter(int mode){++filter_calls;last_filter=mode;return mode!=2;}
 int adaptive_calls=0,last_adaptive=-1;
 int fake_adaptive(int on){++adaptive_calls;last_adaptive=on;return 1;}
 int fake_load(){return 1;}
+int play_views=0,last_fit=-1,last_second=-1;std::string last_frame;
+int fake_play_graphics(int fit,int second,const char* frame){++play_views;last_fit=fit;last_second=second;last_frame=frame;return fit>=0 && fit<=2 && second>=0 && second<=2;}
 // DSCore's cheat hooks: three codes, the first two in one exclusive group, the third a note.
 int cheat_states[3]={0,1,-1};int cheat_sets=0;
 int fake_cheat_count(){return 3;}
@@ -62,6 +64,7 @@ extern "C" void* dlsym(void*,const char* name){
  if(!std::strcmp(name,"rgds_set_adaptive"))return reinterpret_cast<void*>(&fake_adaptive);
  if(!std::strcmp(name,"rgds_set_threaded_3d"))return reinterpret_cast<void*>(&fake_threading);
  if(!std::strcmp(name,"rgds_load_checkpoint"))return reinterpret_cast<void*>(&fake_load);
+ if(!std::strcmp(name,"rgds_play_set_graphics"))return reinterpret_cast<void*>(&fake_play_graphics);
  if(!std::strcmp(name,"rgds_cheat_count"))return reinterpret_cast<void*>(&fake_cheat_count);
  if(!std::strcmp(name,"rgds_cheat_group_count"))return reinterpret_cast<void*>(&fake_cheat_group_count);
  if(!std::strcmp(name,"rgds_cheat_entry"))return reinterpret_cast<void*>(&fake_cheat_entry);
@@ -105,7 +108,7 @@ int main(int argc,char** argv){
    assert(state().find("token=filter-1")!=std::string::npos && state().find("state=filter2d-applied")!=std::string::npos);
    command("filter-fail","filter2d:2");test_time=240;SDL_PollEvent(&event);
    assert(filter_calls==2 && state().find("state=filter2d-failed")!=std::string::npos);
-   command("filter-bad","filter2d:4");test_time=270;SDL_PollEvent(&event);
+   command("filter-bad","filter2d:6");test_time=270;SDL_PollEvent(&event);
    assert(filter_calls==2 && state().find("state=filter2d-failed")!=std::string::npos);
    command("filter-junk","filter2d:1x");test_time=300;SDL_PollEvent(&event);
    assert(filter_calls==2 && state().find("token=filter-junk")!=std::string::npos && state().find("state=filter2d-failed")!=std::string::npos);
@@ -114,6 +117,19 @@ int main(int argc,char** argv){
    assert(adaptive_calls==1 && last_adaptive==0 && state().find("state=adaptive-off")!=std::string::npos);
    command("adaptive-bad","adaptive:2");test_time=360;tick();
    assert(adaptive_calls==1 && state().find("token=adaptive-off")!=std::string::npos);   // unknown commands get no answer
+   return 0;
+ }
+ if(argc==4 && std::string(argv[3])=="play-graphics"){
+   // RG DS Play's view: applied at once through its export, answered either way; other engines refuse it.
+   command("view-1","play-graphics:0:2:Perfect GBA (mugwomp93)");test_time=30;tick();
+   bool play=core=="rgds-play";
+   assert(play_views==(play?1:0) && state().find("token=view-1")!=std::string::npos);
+   assert(state().find(play?"state=play-graphics-applied":"state=play-graphics-failed")!=std::string::npos);
+   if(play)assert(last_fit==0 && last_second==2 && last_frame=="Perfect GBA (mugwomp93)");
+   command("view-bad","play-graphics:3:0:off");test_time=60;tick();
+   assert(state().find("token=view-bad")!=std::string::npos && state().find("state=play-graphics-failed")!=std::string::npos);
+   command("view-junk","play-graphics:1:1:../x");test_time=90;tick();
+   assert(state().find("token=view-junk")!=std::string::npos && state().find("state=play-graphics-failed")!=std::string::npos);
    return 0;
  }
  if(argc==4 && std::string(argv[3])=="cheats"){
@@ -356,9 +372,17 @@ int main(int argc,char** argv){
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_each_engine_has_the_same_bounded_checkpoint_and_menu_protocol(self):
-        for core in ("drastic", "dsperate", "nnddss", "melonds"):
+        for core in ("drastic", "dsperate", "nnddss", "melonds", "rgds-play"):
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
                 result = subprocess.run([str(self.binary), folder, core], capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rgds_play_view_changes_go_through_its_export(self):
+        for core in ("rgds-play", "dsperate"):
+            with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
+                result = subprocess.run(
+                    [str(self.binary), folder, core, "play-graphics"], capture_output=True, text=True, timeout=5
+                )
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_cheats_are_listed_for_the_menu_and_toggled_through_the_engine(self):

@@ -55,9 +55,11 @@ class SettingsInteractionTests(unittest.TestCase):
             with self.subTest(section=section):
                 first = self.root / 'first.bmp'
                 last = self.root / 'last.bmp'
-                self.run_ui('', section, animations=False, screenshot=first)
+                # Library's first row (Show all systems) has its own note: start on the engine row.
+                start = '50 key Down\n' if section == 'library' else ''
+                self.run_ui(start, section, animations=False, screenshot=first)
                 self.run_ui(
-                    '100 key Down\n150 key Down\n200 key Down\n250 key Down\n',
+                    start + '100 key Down\n150 key Down\n200 key Down\n250 key Down\n',
                     section,
                     animations=False,
                     screenshot=last
@@ -84,25 +86,25 @@ class SettingsInteractionTests(unittest.TestCase):
     def test_left_right_and_a_open_without_changing_value(self):
         for key in ('Left', 'Right', 'A'):
             with self.subTest(key=key):
-                report = self.run_ui(f'30 key {key}\n', 'library')
+                report = self.run_ui(f'20 key Down\n30 key {key}\n', 'library')
                 self.assertEqual(report['picker_open'], 1)
                 self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
 
     def test_melonds_is_selectable_as_third_row_and_restores(self):
-        self.run_ui('30 key A\n60 key Down\n90 key Down\n120 key A\n', 'library')
+        self.run_ui('20 key Down\n30 key A\n60 key Down\n90 key Down\n120 key A\n', 'library')
         self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())
         self.run_ui('', 'library')
         self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())
 
     def test_choice_cancel_preserves_value_and_apply_persists(self):
-        self.run_ui('30 key A\n60 key Right\n90 key Escape\n', 'library')
+        self.run_ui('20 key Down\n30 key A\n60 key Right\n90 key Escape\n', 'library')
         self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
-        report = self.run_ui('30 key A\n60 key Right\n90 key Right\n120 key A\n', 'library')
+        report = self.run_ui('20 key Down\n30 key A\n60 key Right\n90 key Right\n120 key A\n', 'library')
         self.assertFalse(report['picker_open'])
         self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())  # the third row: melonDS
 
     def test_touch_choice_is_direct_and_commits_once(self):
-        self.run_ui('30 click 180 129\n120 click 180 280\n', 'library')
+        self.run_ui('30 click 180 211\n120 click 180 280\n', 'library')  # the engine row, under Show all systems
         self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
     def test_swipe_scrolls_without_opening_the_pressed_card(self):
@@ -131,10 +133,10 @@ class SettingsInteractionTests(unittest.TestCase):
         self.assertIn('volume=0\n', (self.root / 'volume.ini').read_text())
 
     def test_open_picker_settles_and_reduced_motion_applies_immediately(self):
-        report = self.run_ui('100 key A\n', 'library', animations=False)
+        report = self.run_ui('90 key Down\n100 key A\n', 'library', animations=False)
         self.assertLess(report['frames'], 12)
         self.assertEqual(report['render_file_reads'], 0)
-        self.run_ui('30 key A\n31 key Right\n32 key A\n', 'library', animations=False)
+        self.run_ui('29 key Down\n30 key A\n31 key Right\n32 key A\n', 'library', animations=False)
         self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
 

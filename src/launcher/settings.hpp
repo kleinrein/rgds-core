@@ -45,7 +45,11 @@ enum class Page {
     Graphics,
     GameSwitcher,
     Colours,
-    Cheats
+    Cheats,
+    // Appended: page numbers are stored in the launcher's state file.
+    PlayGraphics, // in-game Graphics for RG DS Play: game screen fit, second screen
+    GameInfo,     // the selected game's facts, description and pictures (read-only)
+    MoreFilters   // Search and filters > More filters: genre, publisher, players, rating, ...
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -58,8 +62,13 @@ struct Preferences {
     int filter = 0, view = 0, layout = 0, artwork_provider = 0, drastic_backend = 0, sound_volume = 55;
     int home_layout = 1, background = 1;
     bool gestures = false;
+    bool show_systems = false; // Library: a Systems step between Home and the games (ui.ini)
     bool menu_music = true;
     int music_volume = 40;
+    // Artwork sources: what "Fetch missing artwork" also downloads. Game info is the text from the public
+    // databases; extra_pictures is a bit set (1 screenshot, 2 title screen). Both only add to the library.
+    bool game_info = true;
+    int extra_pictures = 0;
 };
 struct SystemPreferences {
     int power = 0, brightness = 60, idle = 0;
@@ -598,9 +607,9 @@ struct Settings {
     void move(int delta) {
         if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 9))];
         else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 10);
-        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 9);
+        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 10);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, 5);
-        else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 2);
+        else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::Startup) focus = std::clamp(focus + delta, 0, 3);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
         else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 4);
@@ -725,6 +734,7 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
             result.home_layout = line == "home_layout=vertical";
         else if (line == "background=plain" || line == "background=grid") result.background = line == "background=grid";
         else if (line == "gestures=0" || line == "gestures=1") result.gestures = line.back() == '1';
+        else if (line == "show_systems=0" || line == "show_systems=1") result.show_systems = line.back() == '1';
         else if (line == "menu_music=0" || line == "menu_music=1") result.menu_music = line.back() == '1';
         else if (line.rfind("music_volume=", 0) == 0) {
             try {
@@ -732,7 +742,11 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
                 int value = std::stoi(line.substr(13), &end);
                 if (end == line.size() - 13 && value >= 0 && value <= 100) result.music_volume = value;
             } catch (const std::exception&) {}
-        } else if (line == "artwork_provider=0" || line == "artwork_provider=1" || line == "artwork_provider=2" ||
+        } else if (line == "game_info=0" || line == "game_info=1") result.game_info = line.back() == '1';
+        else if (line == "extra_pictures=0" || line == "extra_pictures=1" || line == "extra_pictures=2" ||
+                 line == "extra_pictures=3")
+            result.extra_pictures = line.back() - '0';
+        else if (line == "artwork_provider=0" || line == "artwork_provider=1" || line == "artwork_provider=2" ||
                    line == "artwork_provider=3")
             result.artwork_provider = line.back() == '3' ? 0 : line.back() - '0';
     }
@@ -758,7 +772,7 @@ inline Preferences load_preferences(const fs::path& path) {
             } else if (line.rfind("core=", 0) == 0) {
                 unsigned value = 0;
                 auto parsed = std::from_chars(line.data() + 5, line.data() + line.size(), value);
-                if (parsed.ec == std::errc{} && parsed.ptr == line.data() + line.size() && value < unsigned(core_count))
+                if (parsed.ec == std::errc{} && parsed.ptr == line.data() + line.size() && value < unsigned(ds_core_count))
                     result.core = unsigned(offered_core(int(value)));
                 // A newer release may know another engine. Keep the default engine
                 // in that case, without discarding unrelated appearance/UI choices.
@@ -811,6 +825,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
           << "\nanimations=" << p.animations << "\nview_animations=" << p.view_animations
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
           << "\nlayout=" << p.layout << "\nartwork_provider=" << p.artwork_provider
+          << "\ngame_info=" << p.game_info << "\nextra_pictures=" << p.extra_pictures
           << "\ndrastic_backend=" << p.drastic_backend << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';
@@ -825,6 +840,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "home_layout=" << (p.home_layout == 1 ? "vertical" : "carousel")
           << "\nbackground=" << (p.background == 1 ? "grid" : "plain") << "\ngestures=" << p.gestures << '\n';
     extra << "menu_music=" << p.menu_music << "\nmusic_volume=" << p.music_volume << '\n';
+    extra << "show_systems=" << p.show_systems << '\n';
     extra.close();
     if (!extra) throw std::runtime_error("Cannot save UI preferences");
     fs::rename(draft, ui);

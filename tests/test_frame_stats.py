@@ -17,7 +17,7 @@ class FrameStatsTests(unittest.TestCase):
             binary = root / 'test'
             source.write_text(
                 r'''#include "platform/frame_stats.hpp"
-#include "platform/nnddss_stats.hpp"
+#include "platform/frame_rate.hpp"
 #include <cassert>
 #include <cmath>
 int main(int argc,char** argv){

@@ -16,6 +16,7 @@ if __package__:
     from .build_engines import validate_build as validate_engine_build
     from .validate_shader_previews import validate_shader_previews
     from .build_melonds import validate_engine as validate_melonds
+    from .build_play import validate_payload as validate_play
     from .build_rgds_experimental import validate_build as validate_experimental
     from .package_rgds_vulkan import validate_payload as validate_vulkan
     from .build_superdrastic import validate_build as validate_superdrastic
@@ -27,6 +28,7 @@ else:
     from build_engines import validate_build as validate_engine_build
     from validate_shader_previews import validate_shader_previews
     from build_melonds import validate_engine as validate_melonds
+    from build_play import validate_payload as validate_play
     from build_rgds_experimental import validate_build as validate_experimental
     from package_rgds_vulkan import validate_payload as validate_vulkan
     from build_superdrastic import validate_build as validate_superdrastic
@@ -80,6 +82,8 @@ def payload_source(name, source_build=None):
         return "RG DS experimental source fork of pinned DSperate"
     if name.startswith("emulators/melonds/"):
         return "Pinned melonDS source build with original RGDS SDL frontend"
+    if name.startswith("emulators/rgds-play/"):
+        return "RG DS Play source build with pinned libmgba"
     if name.startswith("emulators/superdrastic/sdl/"):
         return "Pinned SDL2 2.32.10 private runtime for SuperDrastic"
     if name.startswith("emulators/superdrastic/"):
@@ -135,6 +139,8 @@ def _package():
     vulkan_build = validate_vulkan(vulkan_source)
     melon_source = ROOT / "build/melonds-experiment"
     melon_build = validate_melonds(melon_source)
+    play_source = ROOT / "build/play/device/payload"
+    play_build = validate_play(play_source)
     super_source = ROOT / 'build/superdrastic'
     super_build = validate_superdrastic(super_source)
     samba_source = ROOT / 'build/samba'
@@ -216,6 +222,13 @@ def _package():
         app / 'emulators/melonds/source.tar.gz'
     ) != melon_build['source']['archive_sha256']:
         raise ValueError('melonDS payload changed during packaging')
+    # RG DS Play: every system but the DS (python3 tools/build_play.py device).
+    for name in (*sorted(play_build['files']), 'build.json'):
+        put(play_source / name, app / 'emulators/rgds-play' / name)
+    checked_record(app / 'emulators/rgds-play/build.json', play_build)
+    for name, expected in play_build['files'].items():
+        if sha(app / 'emulators/rgds-play' / name) != expected:
+            raise ValueError('RG DS Play payload changed during packaging: ' + name)
     for name in (*sorted(super_build['files']), 'build.json'):
         put(super_source / name, app / 'emulators/superdrastic' / name)
     checked_record(app / 'emulators/superdrastic/build.json', super_build)
@@ -240,7 +253,8 @@ def _package():
         },
         dsperate="Pinned DSperate source build with corresponding source and build record",
         melonds="Pinned melonDS source build with RGDS SDL frontend and corresponding source",
-        superdrastic="Optional pinned SuperDrastic backend with RGDS integration and corresponding source"
+        superdrastic="Optional pinned SuperDrastic backend with RGDS integration and corresponding source",
+        **{"rgds-play": "RG DS Play (GBA, GB, GBC) with pinned libmgba and corresponding source"}
     )
     packaged_payloads["components"]["rgds-experimental"
                                     ] = "Experimental DSperate fork with isolated saves and corresponding source"
@@ -268,6 +282,10 @@ def _package():
             "rgds-experimental/" + name: sha(app / "emulators/rgds-experimental" / name)
             for name in (*experimental_build["files"], "build.json")
         }
+    )
+    packaged_payloads["files"].update(
+        {"rgds-play/" + name: sha(app / "emulators/rgds-play" / name)
+         for name in (*play_build["files"], "build.json")}
     )
     packaged_payloads["files"].update(
         {
@@ -306,6 +324,7 @@ def _package():
             "rgds": "build/rgds.json",
             "dsperate": "emulators/dsperate/build.json",
             "melonds": "emulators/melonds/build.json",
+            "rgds-play": "emulators/rgds-play/build.json",
             "superdrastic": "emulators/superdrastic/build.json"
         },
         "shader_previews": {
@@ -313,7 +332,7 @@ def _package():
             "scenes": len(previews["scenes"]),
             "presets": len(previews["scenes"][0]["presets"])
         },
-        "cores": ["drastic", "dsperate", "melonds", "rgds-experimental"],
+        "cores": ["drastic", "dsperate", "melonds", "rgds-experimental", "rgds-play"],
         "optional_backends": {
             "drastic": ["standard", "superdrastic"]
         },
@@ -345,7 +364,8 @@ def _package():
                 info.compress_type = zipfile.ZIP_DEFLATED
                 executable = source.suffix == ".sh" or source.name in (
                     "rgds-launcher", "dsperate", "nnddss", "melonds", "rgds-experimental", "rgds-experimental-vulkan",
-                    "smbd", "smbpasswd", "smbclient", "samba-dcerpcd", "rpcd_classic", "rpcd_winreg", "rpcd_lsad"
+                    "rgds-play", "smbd", "smbpasswd", "smbclient", "samba-dcerpcd", "rpcd_classic", "rpcd_winreg",
+                    "rpcd_lsad"
                 )
                 info.external_attr = (0o100755 if executable else 0o100644) << 16
                 output.writestr(info, source.read_bytes())

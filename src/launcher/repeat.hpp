@@ -14,6 +14,9 @@ public:
         if (!keys.count(source) || keys[source].direction != direction) keys[source] = {direction, now, now + 320};
     }
     void release(int source) { keys.erase(source); }
+    // How long the newest press has been down, for callers that cover more
+    // ground the longer a key stays held.
+    unsigned held_for(unsigned now) const { return keys.empty() ? 0 : now - keys.rbegin()->second.began; }
     void clear() { keys.clear(); }
     bool active() const { return !keys.empty(); }
     int poll(unsigned now) {

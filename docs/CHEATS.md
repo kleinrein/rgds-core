@@ -26,23 +26,23 @@ muted and says why.
 Databases run to hundreds of codes for a popular game (Mario Kart DS has 483
 in 31 groups, Pokémon HeartGold 1174), so the page is built for long lists:
 
-- **Groups first.** The page opens on the database's groups, each with its code
-  count or how many are on; codes outside any group are listed under *Other
-  cheats*. A opens a group. A database without groups opens straight on its
-  codes.
-- **One group at a time.** Inside a group, **Left / Right** (or L / R) step to
+- **Three tabs** in the header, **All · Groups · On**, changed with the **L / R**
+  shoulder buttons or a tap. *All* lists every code flat, *Groups* opens on the database's
+  groups (each with its code count or how many are on; codes outside any group
+  sit under *Other cheats*, A opens a group, B returns), and *On* lists the
+  cheats that are on across all groups, to review and switch off in one place.
+  A database without groups has only All and On.
+- **One group at a time.** Inside a group, **Left / Right** on the pad step to
   the previous or next group without going back. A group marked *One at a
   time* keeps a single code on: turning one on turns its neighbour off.
-- **X searches** every code by name and description. The top screen shows the
-  match count and the first names while you type; Start lists the matches, and
-  an empty search lists every code flat. In a search or the on-list, Left /
-  Right move a page of rows.
-- **Y shows the cheats that are on**, across all groups, so you can review and
-  switch them off in one place. Y again returns to the groups.
-- **The header's segmented control** (Groups · Search · On) shows which view
-  is open and can be tapped; the top screen shows the focused group or code
-  with its description from the database, how many codes are on, and a key
-  bar for the keys that apply on the current view.
+- **X is the search key**, at the right end of the header. It searches every
+  code by name and description; the top screen shows the match count and the
+  first names while you type, Start lists the matches on the *All* tab and the
+  key then shows the word it filters by. B clears the search; changing tabs
+  drops it too. In All or On, Left / Right move a page of rows.
+- **The top screen** shows the focused group or code with its description from
+  the database, how many codes are on, and a key bar for the keys that apply
+  on the current view.
 - **Notes** (entries without code words) are listed but cannot be toggled. A
   change takes a moment: the engine applies it between frames and answers.
 - Codes stay on across checkpoints and restarts. They are stored by name in

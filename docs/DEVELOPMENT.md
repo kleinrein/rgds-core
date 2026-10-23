@@ -114,6 +114,38 @@ Code deployments transfer the complete private package, including all four emula
 
 ## Refining the interface
 
+### The 2026-10-22 follow-up
+
+- **Held scrolling covers a whole card.** `hold_navigate` steps one game per repeat
+  (`HoldRepeat` still paces 130/75/45 ms); from 2.4 s held, `hold_stride` doubles the
+  stride every 600 ms (capped at games/40, at most 128) and the run stops at either end
+  instead of wrapping. `HoldRepeat::held_for` reports the press length. Home's rail and
+  cards under 24 games keep single steps.
+- **The view sheet closes cleanly.** A choice on the sheet changes the page under it; the
+  sheet's own 140 ms slide is the whole transition. `sync_view_motion` starts no Library
+  crossfade while the sheet is open or leaving (`sheet_leaving`), so the old frame, sheet
+  and all, no longer hangs over the closing sheet until a crossfade runs out.
+- **One line of tips on the Games top screen.** `cover_line` draws the top screen's lower
+  edge after the DSi: L (Previous) and R (Next) in the corners like its shoulder tabs, Y
+  (View) beside L, X (Options) beside R, and the play count and time (or a notice) in a pill
+  centred on the screen between the two halves. No pills on the tips, muted 14 px text. When
+  a long translation leaves no room for the centred pill, L and R drop their words and keep
+  their badges (Russian does with any stats). Tried and dropped on the way: a staggered
+  X-over-Y pair (too big), and Y/X in a row above R (it ran into tall box art on the handheld).
+- **L and R look like shoulders.** `key_badge` draws L, R, L2 and R2 with
+  `shoulder_fill`: a flat tab with small corners whose outer top corner sweeps down in a
+  deep quarter ellipse, as the DSi draws its shoulder buttons. Face buttons stay round.
+  Every key tip goes through `key_badge`, so this covers the Games top screen, the
+  timezone tabs, the cheats and shader "L R" tips and the L2/R2 hotkeys on the view
+  sheet, in the launcher and the in-game menu alike.
+- **Accent on the edge only.** The top-screen note (`dsi_note`) is a panel card with a
+  2 px accent edge; the sheet's selected tile is a panel tile with its accent outline;
+  the column Home's tiles are plain panels with the brackets as the selection mark.
+- **Last played starts over Home.** `open_last_played` keeps Home up and calls
+  `launch(true)`, with the rail reset to Home's tile; `finish_launch` returns to Home.
+  Preview launches leave after 500 ms and the handoff waits at most 1200 ms for the
+  launch cue (1.35 s with a quiet tail).
+
 ### The 2026-10-21 DSi pass
 
 - **Buttons are DSi buttons, not glass.** `glossy_pill` now draws a fine darker rim, one

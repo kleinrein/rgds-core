@@ -57,6 +57,16 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Accent colour") return SettingsIcon::Palette;
     if (title == "Icon style") return SettingsIcon::Art;
     if (title == "Sharing details") return SettingsIcon::Info;
+    if (title == "Game info") return SettingsIcon::Info;
+    if (title == "Genre") return SettingsIcon::Spark;
+    if (title == "Players") return SettingsIcon::Controller;
+    if (title == "Rating") return SettingsIcon::Info;
+    if (title == "Released") return SettingsIcon::Clock;
+    if (title == "Online") return SettingsIcon::Wifi;
+    if (title == "More filters") return SettingsIcon::Sliders;
+    if (title == "Show games") return SettingsIcon::Play;
+    if (title == "Reset filters") return SettingsIcon::Refresh;
+    if (title == "Extra pictures") return SettingsIcon::Art;
     if (title == "Reset state") return SettingsIcon::Restart;
     if (title == "Save gallery" || title == "Back up all saves") return SettingsIcon::Save;
     if (title == "Blow into microphone" || title == "Real microphone" || title == "Test microphone")

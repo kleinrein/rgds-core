@@ -100,14 +100,14 @@ class ControlsSettingsUITests(unittest.TestCase):
         self.assertEqual(report['page'], 1)
 
     def test_failed_game_profile_write_keeps_inherited_layout(self):
-        self.run_ui('50 click 510 364\n', game=True)
+        self.run_ui('50 click 510 320\n', game=True)
         import sys
         sys.path.insert(0, str(ROOT / 'runtime'))
         from library import game_key
         path = self.data / 'library' / game_key(self.root / 'my-game.nds') / 'controls.ini'
         path.mkdir(parents=True)
         self.state.unlink()
-        report, _ = self.run_ui('30 click 510 364\n' + self.to_a() + '300 joy-down 1\n320 joy-up 1\n', game=True)
+        report, _ = self.run_ui('30 click 510 320\n' + self.to_a() + '300 joy-down 1\n320 joy-up 1\n', game=True)
         self.assertTrue(path.is_dir())
         self.assertTrue(report['controls_inherited'])
         self.assertFalse(report['controls_capturing'])
@@ -115,12 +115,12 @@ class ControlsSettingsUITests(unittest.TestCase):
 
     def test_game_profile_changes_and_reset_return_to_global_mapping(self):
         (self.data / 'controls.ini').write_text('schema=1\npreset=ab-swap\nshortcut=start+menu\nshortcut_action=home\n')
-        self.run_ui('50 click 510 364\n100 key Down\n150 key A\n180 key Right\n220 key A\n', game=True)
+        self.run_ui('50 click 510 320\n100 key Down\n150 key A\n180 key Right\n220 key A\n', game=True)
         local = next((self.data / 'library').glob('*/controls.ini'))
         self.assertEqual(self.fields(local)['inherit'], '0')
         self.assertEqual(self.fields(self.data / 'controls.ini')['preset'], 'ab-swap')
         self.state.unlink()
-        select_reset = '50 click 510 364\n' + ''.join(
+        select_reset = '50 click 510 320\n' + ''.join(
             f'{100+index*25} key Down\n' for index in range(16)
         ) + '550 key A\n'
         self.run_ui(select_reset, game=True)
@@ -128,7 +128,7 @@ class ControlsSettingsUITests(unittest.TestCase):
         self.assertEqual(self.fields(self.data / 'controls.ini')['preset'], 'ab-swap')
 
     def test_back_returns_to_the_action_grid_and_default_reset_is_reversible(self):
-        report, _ = self.run_ui('40 click 510 364\n100 key Escape\n', game=True)
+        report, _ = self.run_ui('40 click 510 320\n100 key Escape\n', game=True)
         self.assertEqual(report['page'], 12)
         self.assertIn('12 6 9\n', self.state.read_text())
         self.state.unlink()

@@ -425,6 +425,24 @@ def rom_roots(root, cards=(Path("/mnt/mmc"), Path("/mnt/SDCARD"))):
     return result
 
 
+def system_roots(root, cards=(Path("/mnt/mmc"), Path("/mnt/SDCARD"))):
+    """Folders of the other systems' games (RG DS Play), as (system, path): the stock
+    card's Roms/<SYSTEM> and rgds/games/<system>. Listed only with Show all systems on."""
+    root = Path(root)
+    seen = set()
+    result = []
+    for system, folder in (("gba", "GBA"), ("gbc", "GBC"), ("gb", "GB")):
+        candidates = [root.parent / "Roms" / folder, root / "games" / system]
+        for card in cards:
+            candidates.extend((Path(card) / "Roms" / folder, Path(card) / "rgds/games" / system))
+        for path in candidates:
+            identity = system + ":" + str(path.resolve())
+            if identity not in seen:
+                seen.add(identity)
+                result.append((system, path))
+    return result
+
+
 def ensure_writable_data(data):
     """Fail before taking stock input/audio when userdata cannot be updated."""
     data = Path(data)
@@ -834,6 +852,9 @@ def main(argv=None, startup_receipt=None):
             for path in (args.rom_dir or [Path("/userdata/roms/nds"),
                                           Path("/userdata/roms/dsi")]) if args.standalone else rom_roots(root):
                 command += ["--rom-dir", str(path)]
+            if not args.standalone:
+                for system, path in system_roots(root):
+                    command += ["--system-dir", system + "=" + str(path)]
         log_path = data / "session.log"
         with log_path.open("a", buffering=1) as log:
             log.write("\nRGDS session: " + app.name + "\n")

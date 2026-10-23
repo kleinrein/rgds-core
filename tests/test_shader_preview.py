@@ -50,11 +50,11 @@ class ShaderPreviewAssetsTests(unittest.TestCase):
         self.assertEqual(manifest['native_size'], [256, 192])
         self.assertEqual(manifest['preview_size'], [640, 480])
         self.assertIn('OpenGL ES', manifest['renderer']['version'])
-        self.assertEqual(len(manifest['shaders']), 28)
+        self.assertEqual(len(manifest['shaders']), 30)
         self.assertEqual(len(manifest['scenes']), 3)
         total = 0
         for scene in manifest['scenes']:
-            self.assertEqual([p['id'] for p in scene['presets']], list(range(29)))
+            self.assertEqual([p["id"] for p in scene["presets"]], list(range(31)))
             for preset in scene['presets']:
                 path = ASSETS / scene['id'] / ('shader-' + str(preset['id']) + '.rgsp')
                 packed = path.read_bytes()
@@ -64,7 +64,7 @@ class ShaderPreviewAssetsTests(unittest.TestCase):
                 self.assertEqual(hashlib.sha256(pixels).hexdigest(), preset['rgba_sha256'])
                 total += len(packed)
             hashes = [p['rgba_sha256'] for p in scene['presets']]
-            self.assertEqual(len(set(hashes)), 29, 'Every effect must be visible in the 2.5x scene')
+            self.assertEqual(len(set(hashes)), 31, 'Every effect must be visible in the 2.5x scene')
         self.assertEqual(total, manifest['packed_bytes'])
         self.assertLess(total, manifest['uncompressed_rgba_bytes'] // 3)
 

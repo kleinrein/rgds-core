@@ -305,6 +305,21 @@ def low_resolution(path):
     return len(header) == 26 and header[:2] == b"BM" and abs(struct.unpack_from("<i", header, 18)[0]) < SHARP_WIDTH
 
 
+def system_games(entries):
+    """Other systems' games (RG DS Play) from --system-dir system=path entries."""
+    from play_options import SYSTEMS
+    result = set()
+    for entry in entries:
+        system, _, folder = entry.partition("=")
+        root = Path(folder)
+        if system not in SYSTEMS or not root.is_dir(): continue
+        suffixes = SYSTEMS[system] + (".zip",)
+        result.update(
+            p.resolve() for p in root.rglob("*") if p.is_file() and not p.is_symlink() and p.suffix.lower() in suffixes
+        )
+    return sorted(result)
+
+
 def games(roots):
     return sorted(
         {
@@ -315,7 +330,7 @@ def games(roots):
     )
 
 
-def scrape(data, client, roms, force=False):
+def scrape(data, client, roms, force=False, extras=None):
     folder = data / "scraper"
     total, completed, missing, failed, cached, downloaded = len(roms), 0, 0, 0, 0, 0
     report = []
@@ -337,6 +352,9 @@ def scrape(data, client, roms, force=False):
         )
 
     try:
+        if extras:
+            publish("scraping", "Preparing game information")
+            extras.prepare(roms, lambda rom: data / "library" / game_key(rom), force)
         for rom in roms:
             if (folder / "cancel").exists(): raise KeyboardInterrupt()
             item = data / "library" / game_key(rom)
@@ -406,6 +424,9 @@ def scrape(data, client, roms, force=False):
                         state="error",
                         message="Could not read this game or save its artwork. Existing artwork is retained."
                     )
+            if extras:
+                publish("scraping", "Fetching game information", rom.stem)
+                outcome["extras"] = extras.process(rom, item, force)
             # Per-game results power Review unmatched and survive cancellation.
             write_fields(item / "artwork-status.ini", outcome, durable=False)
             report.append(outcome)
@@ -437,10 +458,12 @@ def main():
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--private-dir", type=Path)
     parser.add_argument("--rom-dir", type=Path, action="append", default=[])
+    parser.add_argument("--system-dir", action="append", default=[], help="system=folder (Show all systems)")
     parser.add_argument("--stdin", action="store_true")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--rom", type=Path, help="Fetch one game without scanning the library")
     parser.add_argument("--provider", choices=("auto", "gametdb", "libretro"), default="auto")
+    parser.add_argument("--extras", default="", help="Comma list of info, snap, title: game information and pictures")
     args = parser.parse_args()
     folder = args.private_dir or private_root(args.data)
     status = args.data / "scraper/status.ini"
@@ -467,7 +490,13 @@ def main():
                 cache=args.data / "scraper/catalogs",
                 cancelled=lambda: (args.data / "scraper/cancel").exists()
             )
-            scrape(args.data, client, [args.rom.resolve()] if args.rom else games(args.rom_dir), args.force)
+            roms = [args.rom.resolve()] if args.rom else games(args.rom_dir) + system_games(args.system_dir)
+            extras = None
+            if args.extras:
+                from game_info import GameInfo, parse_kinds
+                kinds = parse_kinds(args.extras)
+                extras = GameInfo(client, kinds) if kinds else None
+            scrape(args.data, client, roms, args.force, extras)
         return 0
     except KeyboardInterrupt:
         if args.action != "index": write_fields(status, {"state": "cancelled", "message": "Scraping stopped."})

@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <string>
 
 namespace rgds {
 // Classic 5x7 text uses an uppercase base plus separate Vietnamese shape/tone
@@ -127,6 +128,27 @@ inline ExtendedPixelGlyph extended_pixel_glyph(unsigned cp) {
     case 0x425: return {'X', 0};
     default: return (cp >= 0x400 && cp <= 0x42f) || cp == 0x490 ? ExtendedPixelGlyph{cp, 0} : ExtendedPixelGlyph{};
     }
+}
+// Kana, kanji and other CJK characters have no 5×7 form; the classic text draws
+// the rounded glyph in a two-cell box instead. Halfwidth katakana stay one cell.
+inline bool pixel_wide(unsigned cp) { return cp >= 0x2e80 && !(cp >= 0xff61 && cp <= 0xffdc); }
+inline std::string utf8_encode(unsigned cp) {
+    std::string out;
+    if (cp < 0x80) out += static_cast<char>(cp);
+    else if (cp < 0x800) {
+        out += static_cast<char>(0xc0 | (cp >> 6));
+        out += static_cast<char>(0x80 | (cp & 0x3f));
+    } else if (cp < 0x10000) {
+        out += static_cast<char>(0xe0 | (cp >> 12));
+        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3f));
+        out += static_cast<char>(0x80 | (cp & 0x3f));
+    } else {
+        out += static_cast<char>(0xf0 | (cp >> 18));
+        out += static_cast<char>(0x80 | ((cp >> 12) & 0x3f));
+        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3f));
+        out += static_cast<char>(0x80 | (cp & 0x3f));
+    }
+    return out;
 }
 inline const std::array<unsigned char, 7>* cyrillic_pixel_bitmap(unsigned cp) {
     struct Entry {

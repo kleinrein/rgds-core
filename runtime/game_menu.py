@@ -309,7 +309,7 @@ class GameMenu:
             if not name or '\n' in name or '\r' in name:
                 continue
             path = Path(name).resolve()
-            if path.suffix.lower() not in ('.nds', '.zip') or not path.is_file() or any(
+            if path.suffix.lower() not in ('.nds', '.zip', '.gba', '.gbc', '.gb', '.sgb') or not path.is_file() or any(
                 path == game[0] for game in self.switch_games
             ):
                 continue
@@ -347,9 +347,10 @@ class GameMenu:
             self.publish('error', 'Choose an emulator for this game in the library.')
             return
         self.restart = False
+        from play_options import engine_for
         self.switch_target = SwitchGame(
-            'rgds-experimental' if CORES[core] == 'nnddss' else CORES[core], rom
-        )  # NNDDSS is retired
+            engine_for(rom, 'rgds-experimental' if CORES[core] == 'nnddss' else CORES[core]), rom
+        )  # NNDDSS is retired; other systems always play in RG DS Play
         # Always require a successful checkpoint, even with auto-save disabled.
         self.send('save-quit')
 
@@ -655,7 +656,7 @@ class GameMenu:
         if action.startswith('filter2d:'):
             try:
                 mode = int(action.split(':')[1])
-                if self.core != 'rgds-experimental' or action.count(':') != 1 or not 0 <= mode <= 3: raise ValueError()
+                if self.core != 'rgds-experimental' or action.count(':') != 1 or not 0 <= mode <= 5: raise ValueError()
             except ValueError:
                 self.publish('error', 'Invalid DSCore 2D filter.')
                 return
@@ -663,6 +664,15 @@ class GameMenu:
                              ) and (self.core != 'rgds-experimental' or action not in ('adaptive:0', 'adaptive:1')):
             self.publish('error', 'This engine has no live heavy-scene control.')
             return
+        if action.startswith('play-graphics:'):
+            # play-graphics:<fit>:<second>:<frame>: RG DS Play's view (game screen fit, second screen, and a
+            # frame by name: a built-in style or one of the owner's pictures in userdata/frames/<system>).
+            from play_options import frame_known
+            pieces, valid = action.split(':', 3), ('0', '1', '2')
+            if (self.core != 'rgds-play' or len(pieces) != 4 or pieces[1] not in valid or pieces[2] not in valid or
+                    not frame_known(self.data, self.rom, pieces[3])):
+                self.publish('error', 'Invalid graphics setting for this game.')
+                return
         if action.startswith('cheat:'):
             # cheat:<index>:<0|1>; DSCore lists its codes in emulator.control.cheats and toggles them live.
             pieces = action.split(':')
@@ -698,7 +708,7 @@ class GameMenu:
         self.publish(
             "busy", "Saving before switching games…"
             if self.switch_target else 'Changing 3D threading…' if action.startswith('threaded:') else
-            'Applying graphics…' if action.startswith(('graphics:', 'filter2d:',
+            'Applying graphics…' if action.startswith(('graphics:', 'play-graphics:', 'filter2d:',
                                                        'adaptive:')) else 'Applying shader…' if action.
             startswith('shader:') else 'Applying cheat…' if action.startswith('cheat:') else
             ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…"
@@ -830,7 +840,7 @@ class GameMenu:
             elif action in ("ds:blow", "ds:lid") or action.startswith("slot-") or action in (
                 "save", "load", "quit", "fast-forward"
             ) or action.startswith(
-                ('shader:', 'graphics:', 'filter2d:', 'cheat:')
+                ('shader:', 'graphics:', 'play-graphics:', 'filter2d:', 'cheat:')
             ) or action in ('fps:0', 'fps:1', 'threaded:0', 'threaded:1', 'adaptive:0', 'adaptive:1'):
                 self.send(action)
             elif action == "force-quit":
@@ -859,7 +869,8 @@ class GameMenu:
                     'fast-forward-on', 'fast-forward-off', 'fast-forward-unavailable', 'shader-applied',
                     'shader-failed', 'shader-restart-required', 'fps-on', 'fps-off', 'threaded-on', 'threaded-off',
                     'threaded-failed', 'graphics-applied', 'graphics-failed', 'filter2d-applied', 'filter2d-failed',
-                    'adaptive-on', 'adaptive-off', 'adaptive-failed', 'cheat-on', 'cheat-off', 'cheat-failed'
+                    'adaptive-on', 'adaptive-off', 'adaptive-failed', 'cheat-on', 'cheat-off', 'cheat-failed',
+                    'play-graphics-applied', 'play-graphics-failed'
                 ):
                     if state == "saved" and self.pending["action"] in ("quit", "save-quit"):
                         pass  # Still wait for the actual engine exit.
@@ -926,6 +937,13 @@ class GameMenu:
                                 write_fields(path, settings)
                             except OSError:
                                 state = 'filter2d-unsaved'
+                        if state == 'play-graphics-applied':
+                            try:
+                                from play_options import save_view
+                                _, fit, second, frame = action.split(':', 3)
+                                save_view(self.data, self.rom, int(fit), int(second), frame)
+                            except OSError:
+                                state = 'play-graphics-unsaved'
                         if state == 'graphics-applied':
                             scale, smooth, skip = map(int, action.split(':')[1:])
                             self.active_scale = str(scale)
@@ -942,7 +960,7 @@ class GameMenu:
                             'shader-applied', 'fps-on', 'fps-off', 'fps-unsaved', 'threaded-on', 'threaded-off',
                             'threaded-unsaved', 'graphics-applied', 'graphics-unsaved', 'filter2d-applied',
                             'filter2d-unsaved', 'adaptive-on', 'adaptive-off', 'adaptive-unsaved', 'cheat-on',
-                            'cheat-off'
+                            'cheat-off', 'play-graphics-applied', 'play-graphics-unsaved'
                         )
                         self.publish(
                             "paused" if ok or state in ('fast-forward-unavailable', 'shader-restart-required') else
@@ -950,8 +968,11 @@ class GameMenu:
                             == "loaded" else "Load requested. Resume to check your game." if state == "load-dispatched"
                             else 'Fast-forward enabled.' if state == 'fast-forward-on' else 'Normal speed.' if state ==
                             'fast-forward-off' else 'Fast-forward is unavailable for this emulator.' if state ==
-                            'fast-forward-unavailable' else 'Graphics applied. Your game keeps running.' if state ==
-                            'graphics-applied' else
+                            'fast-forward-unavailable' else 'Graphics applied. Your game keeps running.' if state in (
+                                'graphics-applied', 'play-graphics-applied'
+                            ) else 'Graphics applied for this session. Settings storage is unavailable.' if state ==
+                            'play-graphics-unsaved' else 'Could not apply graphics. Your game is unchanged.' if state ==
+                            'play-graphics-failed' else
                             'Graphics applied for this session. Settings storage is unavailable.' if state ==
                             'graphics-unsaved' else 'Could not apply graphics. The previous renderer is still active.'
                             if state == 'graphics-failed' else '2D filter applied. Your game keeps running.' if state ==

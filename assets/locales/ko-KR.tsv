@@ -1,0 +1,946 @@
+# UTF-8 source\ttranslation. One entry per line.	
+3D rendering automatically uses worker threads.	3D 렌더링은 작업 스레드를 자동으로 사용합니다.
+3D resolution	3D 해상도
+3D threading changed for this session. Settings storage is unavailable.	이번 세션에만 3D 스레드를 변경했습니다. 설정을 저장할 수 없습니다.
+3D threading changed. No restart needed.	3D 스레드를 변경했습니다. 다시 시작할 필요가 없습니다.
+A  Apply	A  적용
+A  Done	A  완료
+A  Play	A  플레이
+A gentle scanline pattern with original colours.	원래 색 그대로 은은한 스캔라인을 더합니다.
+A natural colour and contrast treatment.	자연스러운 색과 대비로 보정합니다.
+A screen style for this cartridge	이 카트리지의 화면 스타일
+A stronger LCD texture and scanline look.	LCD 질감과 스캔라인을 더 강하게 표현합니다.
+A subtle handheld LCD pixel pattern.	은은한 휴대용 게임기 LCD 픽셀 무늬.
+A subtle pixel grid with a bright, readable image.	은은한 픽셀 격자에 밝고 선명한 화면.
+Add your DS games to fetch their artwork.	DS 게임을 추가하면 커버 이미지를 가져올 수 있습니다.
+Africa	아프리카
+After	후
+All games	모든 게임
+Amber	앰버
+Americas	아메리카
+Anbernic startup is unavailable in RGDS OS.	RGDS OS에서는 Anbernic으로 시작할 수 없습니다.
+Animations	애니메이션
+Antarctica	남극
+Applies immediately. Higher clocks use more battery.	바로 적용됩니다. 클럭이 높을수록 배터리를 많이 씁니다.
+Applies immediately. Your game keeps its progress.	바로 적용됩니다. 게임 진행은 그대로 유지됩니다.
+Apply	적용
+Applying shader…	필터 적용 중…
+Arctic	북극
+Artwork	커버 이미지
+Artwork & ScreenScraper	커버 이미지
+Artwork source	이미지 출처
+Artwork sources	이미지 출처
+Asia	아시아
+Atlantic Ocean	대서양
+Australia	오스트레일리아
+Auto-load state	상태 자동 불러오기
+Auto-save on exit	종료 시 자동 저장
+Automatic	자동
+Automatic (free)	자동
+Available networks	사용 가능한 네트워크
+B  Cancel	B  취소
+B  Close	B  닫기
+BACK HOME	홈으로
+Back	뒤로
+Balance battery life and speed	배터리와 속도의 균형
+Balanced	균형
+Battery	배터리
+Battery percentage	배터리 잔량(%)
+Battery saver	절전
+Before	전
+Before you play	플레이하기 전에
+Binding unchanged.	버튼 할당이 바뀌지 않았습니다.
+Boot	부팅
+Boot into	부팅 대상
+Both screens	두 화면
+Bottom display	아래 화면
+Box art, titles and game details	커버 이미지, 제목, 게임 정보
+Brightness	밝기
+Browser layout	목록 보기
+Build, storage and device address	빌드, 저장 공간, 기기 주소
+Button	버튼
+Button layout	버튼 배치
+Button {0}	버튼 {0}
+Buttons and the game menu shortcut	버튼과 게임 메뉴 단축키
+COLOUR MODE	색상 모드
+Cancel	취소
+Cartridges	카트리지
+Changes immediately. Map a button in Controls for quick access.	바로 바뀝니다. '조작 설정'에서 버튼을 할당하면 빠르게 쓸 수 있습니다.
+Changing 3D threading…	3D 스레드 변경 중…
+Changing speed…	속도 변경 중…
+Check the current connection	현재 연결 확인
+Checkpoint loaded	체크포인트를 불러왔습니다
+Checkpoint loaded (preview)	체크포인트를 불러왔습니다(미리 보기)
+Checkpoint loaded.	체크포인트를 불러왔습니다.
+Checkpoint saved	체크포인트를 저장했습니다
+Checkpoint saved (preview)	체크포인트를 저장했습니다(미리 보기)
+Checkpoint saved.	체크포인트를 저장했습니다.
+Choose Anbernic or RG DS startup.	Anbernic과 RG DS 중 어느 쪽으로 시작할지 선택하세요.
+Choose an option	항목을 선택하세요
+Choose native or a sharper 3D image	원본 해상도 또는 더 선명한 3D 화면
+Choose the core for this cartridge	이 카트리지의 코어 선택
+Choose the display backend for the next DraStic launch. DSperate stays your default.	다음에 DraStic을 실행할 때 쓸 화면 방식을 선택합니다. 기본값은 계속 DSperate입니다.
+Choose what opens when you power on	전원을 켜면 열릴 화면
+Clear	지우기
+Clear temporary cache	임시 캐시 지우기
+Clear temporary game files?	게임 임시 파일을 지울까요?
+Close	닫기
+Close the handheld to sleep	기기를 닫으면 절전 모드
+Colour treatment inspired by the original DS display.	초대 DS 화면을 닮은 색감.
+Compare	비교
+Confirm	확인
+Connect	연결
+Connected	연결됨
+Connected.	연결되었습니다.
+Connecting…	연결 중…
+Connectivity	통신
+Continue	계속
+Continue where you left off	마지막으로 하던 곳부터
+Control unavailable on this device	이 기기에서는 조작할 수 없습니다
+Controls	조작 설정
+Controls saved for this game.	이 게임의 조작 설정을 저장했습니다.
+Cool crisp	차갑고 선명하게
+Cool whites with a small contrast boost.	푸른빛 흰색에 대비를 조금 높였습니다.
+Could not apply brightness	밝기를 적용할 수 없습니다
+Could not apply saved brightness	저장된 밝기를 적용할 수 없습니다
+Could not apply saved power mode	저장된 전원 모드를 적용할 수 없습니다
+Could not apply setting - see log	설정을 적용할 수 없습니다 - 로그를 확인하세요
+Could not apply this shader.	이 필터를 적용할 수 없습니다.
+Could not apply volume	음량을 적용할 수 없습니다
+Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi 어댑터를 켤 수 없습니다. 다시 시도하세요.
+Could not change 3D threading. Your game is unchanged.	3D 스레드를 변경할 수 없습니다. 게임은 그대로입니다.
+Could not confirm the selected Wi-Fi connection. Scan and try again.	선택한 Wi-Fi 연결을 확인할 수 없습니다. 다시 검색한 뒤 시도하세요.
+Could not enable lid wake	덮개를 열어 깨우기를 켤 수 없습니다
+Could not load. Resume, retry, or return without saving.	불러올 수 없습니다. 계속하거나, 다시 시도하거나, 저장하지 않고 돌아가세요.
+Could not read this collection. Try again.	이 컬렉션을 읽을 수 없습니다. 다시 시도하세요.
+Could not restore previous hardware setting	이전 하드웨어 설정으로 되돌릴 수 없습니다
+Could not save all settings. Check storage.	일부 설정을 저장할 수 없습니다. 저장 공간을 확인하세요.
+Could not save brightness	밝기를 저장할 수 없습니다
+Could not save controls. Check writable storage.	조작 설정을 저장할 수 없습니다. 쓰기 가능한 저장 공간인지 확인하세요.
+Could not save game settings. Previous values kept.	게임 설정을 저장할 수 없습니다. 이전 설정을 유지합니다.
+Could not save matching title.	일치하는 제목을 저장할 수 없습니다.
+Could not save settings	설정을 저장할 수 없습니다
+Could not save timezone	시간대를 저장할 수 없습니다
+Could not save volume	음량을 저장할 수 없습니다
+Could not save. Resume, retry, or return without saving.	저장할 수 없습니다. 계속하거나, 다시 시도하거나, 저장하지 않고 돌아가세요.
+Could not send game action	게임에 동작을 보낼 수 없습니다
+Could not set volume - see log	음량을 설정할 수 없습니다 - 로그를 확인하세요
+Could not sleep - see log	절전 모드로 전환할 수 없습니다 - 로그를 확인하세요
+Could not sleep. Reopen the lid and try again.	절전 모드로 전환할 수 없습니다. 덮개를 열고 다시 시도하세요.
+Could not start artwork service	이미지 서비스를 시작할 수 없습니다
+Could not start library scan	라이브러리 검색을 시작할 수 없습니다
+Could not write controls	조작 설정을 기록할 수 없습니다
+Counts display updates, not emulation speed. Changes immediately.	에뮬레이션 속도가 아니라 화면 갱신 횟수를 셉니다. 바로 바뀝니다.
+Counts emulated game frames. Changes immediately.	에뮬레이션된 게임 프레임 수를 셉니다. 바로 바뀝니다.
+Covers	커버
+Custom	사용자 지정
+DEFAULT THEME - CHECK LOG	기본 테마 - 로그 확인
+DS rounded	DS 둥근 글꼴
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: 평소 플레이에 추천합니다. 기본값은 원본 해상도입니다.
+Dark	다크
+Date format	날짜 형식
+Default	기본
+Default emulator	기본 에뮬레이터
+Default shader	기본 필터
+Delete	삭제
+Desktop preview	데스크톱 미리 보기
+Development build	개발 빌드
+Device address	기기 주소
+Device information	기기 정보
+Display FPS	화면 FPS
+Done	완료
+Down	아래
+DraStic backend	DraStic 화면 방식
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic: 필요한 게임을 위한 대안입니다. 세이브 데이터는 따로 저장됩니다.
+ERROR	오류
+ERROR: Could not restore settings	오류: 설정을 복원할 수 없습니다
+ERROR: Could not restore settings - see log	오류: 설정을 복원할 수 없습니다 - 로그를 확인하세요
+Emulator	에뮬레이터
+Emulator settings	에뮬레이터 설정
+Engine managed	엔진이 관리
+Enter here	여기에 입력
+Enter password	비밀번호 입력
+Enter your username and password	사용자 이름과 비밀번호 입력
+Europe	유럽
+Every game in this collection has artwork.	이 컬렉션의 모든 게임에 이미지가 있습니다.
+FPS changed for this session. Settings storage is unavailable.	이번 세션에만 FPS 표시를 변경했습니다. 설정을 저장할 수 없습니다.
+FPS counter enabled.	FPS를 표시합니다.
+FPS counter hidden.	FPS를 숨겼습니다.
+Fast	빠름
+Fast-forward	빨리 감기
+Fast-forward button	빨리 감기 버튼
+Fast-forward enabled.	빨리 감기를 켰습니다.
+Fast-forward is unavailable for this emulator.	이 에뮬레이터에서는 빨리 감기를 쓸 수 없습니다.
+Fast-forward style	빨리 감기 방식
+Favourite	즐겨찾기
+Favourites	즐겨찾기
+Fetch artwork	이미지 가져오기
+Fetch missing artwork	없는 이미지 가져오기
+Find and connect to a nearby network	주변 네트워크를 찾아 연결
+Finishing the system request	시스템 요청을 마무리하는 중
+Follow your default button layout	기본 버튼 배치 따르기
+Following your global controls.	공통 조작 설정을 사용 중입니다.
+Follows your Library default. Each emulator keeps its own saves.	라이브러리 기본값을 따릅니다. 세이브 데이터는 에뮬레이터마다 따로 보관됩니다.
+Frameskip	프레임 건너뛰기
+Free space	남은 공간
+Free space while keeping your saves	세이브 데이터는 남기고 공간 확보
+Game FPS	게임 FPS
+Game emulator	게임 에뮬레이터
+Game emulator saved.	게임 에뮬레이터를 저장했습니다.
+Game menu	게임 메뉴
+Game options	게임 옵션
+Game options saved	게임 옵션을 저장했습니다
+GameTDB (free)	GameTDB
+Games	게임
+Give your eyes and hands a break.	눈과 손을 쉬게 해 주세요.
+Global	공통
+Global controls saved.	공통 조작 설정을 저장했습니다.
+Hold	길게 누르기
+Home shortcut	홈 단축키
+Indian Ocean	인도양
+Inherit	상속
+Inherited	상속됨
+Jump to letter	첫 글자로 이동
+Keep a checkpoint when returning home	홈으로 돌아갈 때 체크포인트 남기기
+Keep playing	계속 플레이
+Keep this game in Favourites	이 게임을 즐겨찾기에 두기
+Kernel	커널
+Key {0}	키 {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + 두 가지 색 보정
+LCD pixels with natural colour and contrast.	자연스러운 색과 대비의 LCD 픽셀.
+LCD pixels with the DS colour treatment.	DS 색감의 LCD 픽셀.
+LCD pixels, DS colour and Natural Vision together.	LCD 픽셀, DS 색감, Natural Vision을 함께.
+Language	언어
+Launch cancelled	실행을 취소했습니다
+Left	왼쪽
+Left stick	왼쪽 스틱
+Left-handed	왼손잡이
+Less than a minute	1분 미만
+Library	라이브러리
+Library scan exceeded its limit	라이브러리 검색이 한도를 넘었습니다
+Library scan failed	라이브러리 검색에 실패했습니다
+Libretro (free)	Libretro
+Light	라이트
+List	목록
+Live background	움직이는 배경
+Load	불러오기
+Load requested. Resume to check your game.	불러오기를 요청했습니다. 계속해서 게임을 확인하세요.
+Load state	상태 불러오기
+Loading checkpoint…	체크포인트 불러오는 중…
+Looking for networks…	네트워크 검색 중…
+Magnified detail	확대 보기
+Manage builds and temporary files	빌드와 임시 파일 관리
+Matching title	일치하는 제목
+Matching title saved. Choose Fetch artwork.	일치하는 제목을 저장했습니다. '이미지 가져오기'를 선택하세요.
+Menu idle sleep	메뉴 대기 시 절전
+Mute	음소거
+Muted	음소거됨
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: 호환성 옵션입니다. 속도가 중요하면 DSperate를 먼저 써 보세요.
+Native	원본
+Native is faster; 2x uses more GPU time. Save & restart applies it.	원본이 더 빠르고 2x는 GPU를 더 씁니다. '저장 후 다시 시작'으로 적용됩니다.
+Native output	원본 출력
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	네트워크가 꺼져 있습니다. Wi-Fi를 켜세요.
+Never	안 함
+Next emulator	다음 에뮬레이터
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Wi-Fi 어댑터가 없습니다. Wi-Fi를 켜서 초기화하세요.
+No button detected. Try again when you're ready.	버튼 입력이 없었습니다. 준비되면 다시 시도하세요.
+No checkpoint saved for this emulator yet.	이 에뮬레이터의 체크포인트가 아직 없습니다.
+No cover yet	아직 커버 이미지가 없습니다
+No favourites yet	아직 즐겨찾기가 없습니다
+No games	게임 없음
+No games in this collection.	이 컬렉션에 게임이 없습니다.
+No networks found	네트워크를 찾지 못했습니다
+No previous build available.	이전 빌드가 없습니다.
+No recent games yet	아직 최근 게임이 없습니다
+Normal	보통
+Normal speed.	보통 속도입니다.
+Not available	사용할 수 없음
+Not connected	연결 안 됨
+Not played yet	아직 플레이하지 않음
+OPEN	열기
+Off	끔
+Off (smooth)	끔(부드럽게)
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	끄면 움직임이 부드럽습니다. 프레임을 건너뛰면 빨라질 수 있습니다. 다시 시작하면 적용됩니다.
+Off keeps the original picture.	끄면 원래 화면 그대로입니다.
+On	켬
+Open	열기
+Open menu	메뉴 열기
+Open the Anbernic menu	Anbernic 메뉴 열기
+Options	옵션
+Original pixels	원래 픽셀
+Original pixels and colours.	원래 픽셀과 색 그대로.
+Pacific	태평양
+PLAY	플레이
+Password	비밀번호
+Pause when you need to.	필요할 때는 쉬어 가세요.
+Paused	일시 정지됨
+Performance	성능
+Pixel classic	클래식 픽셀
+Play at a comfortable volume.	편안한 음량으로 플레이하세요.
+Please keep your handheld on	기기 전원을 끄지 마세요
+Pocket green	포켓 그린
+Power	전원
+Power mode	전원 모드
+Power off	전원 끄기
+Power off your handheld?	기기 전원을 끌까요?
+Power profile	전원 프로필
+Powering off…	전원을 끄는 중…
+Preparing controls…	조작 설정 준비 중…
+Preparing the launcher	런처 준비 중
+Preparing the library…	라이브러리 준비 중…
+Preparing your cartridges…	카트리지 준비 중…
+Preparing your library…	라이브러리 준비 중…
+Press a button for {0}	{0}에 쓸 버튼을 누르세요
+Press a button…	버튼을 누르세요…
+Preview	미리 보기
+Preview Wi-Fi	Wi-Fi 미리 보기
+Preview and choose your screen style	화면 스타일을 미리 보고 선택
+Preview game	게임 미리 보기
+Preview unavailable	미리 볼 수 없습니다
+Previous build selected. Return to stock, then open RGDS again.	이전 빌드를 선택했습니다. 기본 메뉴로 돌아간 뒤 RGDS를 다시 여세요.
+Profile	프로필
+READY	준비 완료
+REVIEW YOUR CHOICE	선택 내용 확인
+RGDS build	RGDS 빌드
+ROUNDED FONT UNAVAILABLE	둥근 글꼴을 쓸 수 없습니다
+Recents	최근 게임
+Reduce rendering work when needed	필요할 때 렌더링 줄이기
+Refresh	새로 고침
+Refresh connection	연결 새로 고침
+Release for options	손을 떼면 옵션
+Remap	다시 할당
+Request cancelled.	요청을 취소했습니다.
+Request failed. Check the connection or device log and try again.	요청에 실패했습니다. 연결이나 기기 로그를 확인한 뒤 다시 시도하세요.
+Reset	초기화
+Rest after a period of inactivity	한동안 조작이 없으면 쉬기
+Restart	다시 시작
+Restart menu	메뉴 다시 시작
+Restart the RGDS menu?	RGDS 메뉴를 다시 시작할까요?
+Restart the device?	기기를 다시 시작할까요?
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	다시 시작하면 {0}을(를) 사용합니다. 세이브 데이터와 체크포인트는 에뮬레이터마다 따로 보관됩니다.
+Restarting…	다시 시작하는 중…
+Restore defaults	기본값으로 되돌리기
+Restore the last installed RGDS build	마지막으로 설치한 RGDS 빌드로 되돌리기
+Restoring settings	설정 복원 중
+Restoring settings…	설정 복원 중…
+Resume	계속하기
+Resume game	게임 계속하기
+Return	돌아가기
+Return home	홈으로 돌아가기
+Return home before changing startup.	시작 화면을 바꾸기 전에 홈으로 돌아가세요.
+Return home from your game first.	먼저 게임에서 홈으로 돌아가세요.
+Return to game	게임으로 돌아가기
+Return to stock	기본 메뉴로 돌아가기
+Return to the original button layout	원래 버튼 배치로 되돌리기
+Return to the stock menu?	기본 메뉴로 돌아갈까요?
+Return without saving	저장하지 않고 돌아가기
+Returning home…	홈으로 돌아가는 중…
+Review unmatched	일치하지 않는 항목 확인
+Right	오른쪽
+Right stick	오른쪽 스틱
+Rollback simulated.	롤백을 시뮬레이션했습니다.
+START	START
+Save	저장
+Save & restart	저장 후 다시 시작
+Save & restart applies Threaded 3D.	'저장 후 다시 시작'으로 멀티스레드 3D가 적용됩니다.
+Save & restart keeps your checkpoint and applies pending settings.	'저장 후 다시 시작'은 체크포인트를 남기고 바뀐 설정을 적용합니다.
+Save a report for troubleshooting	문제 해결용 보고서 저장
+Save device report	기기 보고서 저장
+Save state	상태 저장
+Save your checkpoint and restart	체크포인트 저장 후 다시 시작
+Saved	저장했습니다
+Saved - desktop simulation	저장했습니다 - 데스크톱 시뮬레이션
+Saved for the next Standard DraStic launch.	다음 기본 DraStic 실행을 위해 저장했습니다.
+Saved network	저장된 네트워크
+Saved · {0}	저장됨 · {0}
+Saved. Applies on your next DraStic launch.	저장했습니다. 다음에 DraStic을 실행할 때 적용됩니다.
+Saved. Save & restart applies screen order.	저장했습니다. 화면 순서는 '저장 후 다시 시작'으로 적용됩니다.
+Saved. Save & restart applies this change.	저장했습니다. 이 변경은 '저장 후 다시 시작'으로 적용됩니다.
+Saved. Save & restart changes the emulator.	저장했습니다. 에뮬레이터는 '저장 후 다시 시작'으로 바뀝니다.
+Saving before restarting…	다시 시작하기 전에 저장하는 중…
+Saving before returning home…	홈으로 돌아가기 전에 저장하는 중…
+Saving checkpoint before restarting…	다시 시작하기 전에 체크포인트 저장 중…
+Saving checkpoint…	체크포인트 저장 중…
+Saving your progress…	진행 상황 저장 중…
+Scan	검색
+Scene	장면
+Screen brightness	화면 밝기
+Screen order	화면 순서
+ScreenScraper needs project credentials and your account	ScreenScraper에는 프로젝트 인증 정보와 사용자 계정이 필요합니다
+Select	선택
+Select a network again and enter its password.	네트워크를 다시 선택하고 비밀번호를 입력하세요.
+Select a network again.	네트워크를 다시 선택하세요.
+Selected	선택됨
+Sets Standard DraStic screen order for this game. Save & restart applies it.	이 게임의 기본 DraStic 화면 순서를 정합니다. '저장 후 다시 시작'으로 적용됩니다.
+Settings	설정
+Settings saved	설정을 저장했습니다
+Shader	필터
+Shader applied.	필터를 적용했습니다.
+Shader change requested (preview)	필터 변경을 요청했습니다(미리 보기)
+Shader saved	필터를 저장했습니다
+Shader saved for next launch	다음 실행을 위해 필터를 저장했습니다
+Shader saved. Restart this game to apply it.	필터를 저장했습니다. 게임을 다시 시작하면 적용됩니다.
+Shader studio	필터 스튜디오
+Shaders	필터
+Sharp + NDS Color	선명 + NDS Color
+Sharp + Natural Vision	선명 + Natural Vision
+Sharp + both colours	선명 + 두 가지 색 보정
+Sharp bilinear	선명한 바이리니어
+Sharp pixel edges with smoother scaling.	픽셀 윤곽은 선명하게, 확대는 부드럽게.
+Sharp scaling with natural colour and contrast.	자연스러운 색과 대비로 선명하게 확대.
+Sharp scaling with the DS colour treatment.	DS 색감으로 선명하게 확대.
+Sharp scaling, DS colour and Natural Vision together.	선명한 확대, DS 색감, Natural Vision을 함께.
+Shift	Shift
+Shortcut action	단축키 동작
+Show the charge in the status bar	상태 표시줄에 배터리 잔량 표시
+Show the welcome screen at startup	시작할 때 환영 화면 표시
+Sign in	로그인
+Sign out	로그아웃
+Signing in…	로그인 중…
+Simulated handheld	시뮬레이션 기기
+Sleep	절전
+Sleep now	지금 절전
+Sleep on lid close	덮개를 닫으면 절전
+Sleep simulated - press any control	절전 시뮬레이션 - 아무 버튼이나 누르세요
+Sleep simulated - settings retained	절전 시뮬레이션 - 설정 유지
+Sleep unavailable on this device	이 기기에서는 절전할 수 없습니다
+Sleeping - use Power to wake	절전 중 - 전원 버튼으로 깨우기
+Soft LCD grid	부드러운 LCD 격자
+Soft green monochrome with full-resolution detail.	세부까지 보이는 부드러운 녹색 모노크롬.
+Soft scanlines	부드러운 스캔라인
+Sound	사운드
+Space	스페이스
+Standard	기본
+Standard DraStic only. Applies on the next launch; game saves are kept.	기본 DraStic 전용입니다. 다음 실행 때 적용되며 세이브 데이터는 유지됩니다.
+Standard screen order	기본 화면 순서
+Start	시작
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	앞으로 부팅할 때 RG DS를 자동으로 시작할까요?
+Start with a familiar layout	익숙한 배치로 시작
+Start, then Anbernic	Start 다음 Anbernic
+Startup	시작
+Startup choice saved.	시작 화면 선택을 저장했습니다.
+Startup choice simulated.	시작 화면 선택을 시뮬레이션했습니다.
+Startup is managed by RGDS OS.	시작은 RGDS OS가 관리합니다.
+Stock	기본
+Stock firmware	기본 펌웨어
+Stop fetching	가져오기 중지
+Stop fetching before editing the match.	일치 항목을 편집하기 전에 가져오기를 중지하세요.
+Stop scraping	가져오기 중지
+Stop scraping before changing source	출처를 바꾸기 전에 가져오기를 중지하세요
+Stopping after this request	이 요청 후 중지합니다
+Stopping after this request.	이 요청 후 중지합니다.
+Storage read-only - use internal RGDS	저장 공간이 읽기 전용입니다 - 내장 RGDS를 사용하세요
+SuperDrastic (experimental)	SuperDrastic(실험적)
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic은 현재 원본 출력을 사용합니다. 기본 필터 선택은 유지됩니다.
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic은 자체 일시 정지 메뉴와 화면 방식을 사용합니다. 실험적 기능이며 RG DS 테스트는 아직입니다.
+Swapped	바뀜
+System	시스템
+THEME ERROR - RETAINED CURRENT	테마 오류 - 현재 테마 유지
+THEME RELOADED	테마를 다시 불러왔습니다
+TYPEFACE	글꼴
+Temporary game cache cleared. Saves and artwork are kept.	게임 임시 캐시를 지웠습니다. 세이브 데이터와 이미지는 남아 있습니다.
+The checkpoint did not finish saving.	체크포인트 저장이 끝나지 않았습니다.
+The emulator did not finish. Resume, retry, or return without saving.	에뮬레이터가 작업을 끝내지 못했습니다. 계속하거나, 다시 시도하거나, 저장하지 않고 돌아가세요.
+The game menu did not respond. Resume or return without saving.	게임 메뉴가 응답하지 않습니다. 계속하거나 저장하지 않고 돌아가세요.
+The zFast LCD texture with both colour treatments.	zFast LCD 질감에 두 가지 색 보정.
+The zFast LCD texture with natural colour and contrast.	zFast LCD 질감에 자연스러운 색과 대비.
+The zFast LCD texture with the DS colour treatment.	zFast LCD 질감에 DS 색감.
+Theme	테마
+Theme & display	테마와 화면
+This emulator does not expose a frameskip setting.	이 에뮬레이터에는 프레임 건너뛰기 설정이 없습니다.
+This emulator uses native resolution. No resolution switch is available.	이 에뮬레이터는 원본 해상도를 사용합니다. 해상도를 바꿀 수 없습니다.
+This engine does not expose a threading switch.	이 엔진에는 스레드 전환 설정이 없습니다.
+This engine has no live threading control.	이 엔진은 실행 중에 스레드를 바꿀 수 없습니다.
+This game	이 게임
+This network requires an enterprise profile.	이 네트워크에는 기업용 프로필이 필요합니다.
+This request did not finish. Please try again.	요청이 끝나지 않았습니다. 다시 시도하세요.
+This shader is unavailable for the current emulator.	현재 에뮬레이터에서는 이 필터를 쓸 수 없습니다.
+Threaded 3D	멀티스레드 3D
+Time played	플레이 시간
+Timezone	시간대
+Toggle	전환
+Top display	위 화면
+Touch	터치
+Touch indicator	터치 위치 표시
+Touch to continue	터치하여 계속
+Touch {0}	터치 {0}
+Try saving again	다시 저장하기
+Turn Wi-Fi off?	Wi-Fi를 끌까요?
+Turn Wi-Fi on first.	먼저 Wi-Fi를 켜세요.
+Turn Wi-Fi on to find networks.	네트워크를 찾으려면 Wi-Fi를 켜세요.
+Turning Wi-Fi off…	Wi-Fi를 끄는 중…
+Turning Wi-Fi on…	Wi-Fi를 켜는 중…
+Typeface	글꼴
+Unassigned	할당 안 됨
+Unavailable	사용할 수 없음
+Unmatched artwork	일치하지 않는 이미지
+Unmute	음소거 해제
+Updates & recovery	업데이트와 복구
+Use ROM identity	ROM 정보 사용
+Use an additional rendering thread	추가 렌더링 스레드 사용
+Use default ({0})	기본값 사용({0})
+Use global controls	공통 조작 설정 사용
+Use previous build	이전 빌드 사용
+Use the previous RGDS build?	이전 RGDS 빌드를 사용할까요?
+Used by games without an override	개별 설정이 없는 게임에 사용
+Username	사용자 이름
+View	보기
+Volume	음량
+Volume control unavailable	음량을 조절할 수 없습니다
+WAITING FOR INPUT	입력 대기 중
+Warm monochrome with preserved highlight detail.	밝은 부분의 디테일을 살린 따뜻한 모노크롬.
+Warm paper	따뜻한 종이
+Warm whites and softened contrast for evening play.	저녁 플레이를 위한 따뜻한 흰색과 부드러운 대비.
+Welcome back	다시 오신 것을 환영합니다
+What the shortcut opens	단축키로 열리는 화면
+Where this layout applies	이 배치를 쓰는 곳
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi 어댑터가 준비되지 않았습니다. OS 드라이버를 확인하거나 기기를 다시 시작하세요.
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi 어댑터가 준비되지 않았습니다. Wi-Fi를 켜서 다시 시도하세요.
+Wi-Fi did not turn on. Try again.	Wi-Fi가 켜지지 않았습니다. 다시 시도하세요.
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	하드웨어가 Wi-Fi를 막고 있습니다. 기기를 다시 시작한 뒤 시도하세요.
+Wi-Fi is still on. Try turning it off again.	Wi-Fi가 아직 켜져 있습니다. 다시 꺼 보세요.
+Wi-Fi is unavailable.	Wi-Fi를 쓸 수 없습니다.
+Wi-Fi off.	Wi-Fi를 껐습니다.
+Wi-Fi on.	Wi-Fi를 켰습니다.
+Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi 요청에 실패했습니다. 비밀번호와 신호를 확인한 뒤 다시 시도하세요.
+Wi-Fi request timed out. Check signal and try again.	Wi-Fi 요청 시간이 초과되었습니다. 신호를 확인한 뒤 다시 시도하세요.
+Wi-Fi service is unavailable.	Wi-Fi 서비스를 쓸 수 없습니다.
+With shader	필터 적용
+Working…	처리 중…
+Your cartridges go here	여기에 카트리지가 표시됩니다
+Your home screen after powering on	전원을 켠 뒤의 홈 화면
+Your local time and date	현지 날짜와 시간
+Your menu shortcut	메뉴 단축키
+Your shader choice is still available.	선택한 필터를 계속 쓸 수 있습니다.
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + 두 가지 색 보정
+{0} (experimental)	{0}(실험적)
+{0} (recommended)	{0}(추천)
+{0} frames	{0}프레임
+{0} games	게임 {0}개
+{0} settings	{0} 설정
+Up	위
+Times played	플레이 횟수
+Last played	마지막 플레이
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	이미지를 가져올 준비가 되었습니다.
+Icon style	아이콘 스타일
+Simple pixel	심플 픽셀
+Rich	리치
+Statistics	기록
+Games played	플레이한 게임
+Most played	가장 많이 플레이한 게임
+Preparing your statistics…	기록 준비 중…
+Play a game to start your statistics.	게임을 플레이하면 기록이 시작됩니다.
+Installed version	설치된 버전
+Check for updates	업데이트 확인
+Restart & install	다시 시작 후 설치
+Download update	업데이트 다운로드
+Pause download	다운로드 일시 정지
+Release notes	릴리스 노트
+Discard update	업데이트 버리기
+No release notes yet.	아직 릴리스 노트가 없습니다.
+Restart and install the update?	다시 시작하고 업데이트를 설치할까요?
+Check for updates when you are ready.	준비되면 업데이트를 확인하세요.
+Updates will be available when the release channel opens.	릴리스 채널이 열리면 업데이트할 수 있습니다.
+Checking for updates…	업데이트 확인 중…
+You are up to date.	최신 상태입니다.
+A new version is ready to download.	새 버전을 다운로드할 수 있습니다.
+This version failed to start. Waiting for a newer update.	이 버전을 시작하지 못했습니다. 더 새로운 업데이트를 기다리는 중입니다.
+Downloading update…	업데이트 다운로드 중…
+Verifying update…	업데이트 확인 중…
+Preparing update…	업데이트 준비 중…
+Ready to restart. Your previous version is kept for recovery.	다시 시작할 준비가 되었습니다. 이전 버전은 복구용으로 보관됩니다.
+Restarting into the update…	업데이트를 적용해 다시 시작하는 중…
+Checking the new version…	새 버전 확인 중…
+Update installed.	업데이트를 설치했습니다.
+The update could not start. Your previous version was restored.	업데이트를 시작하지 못했습니다. 이전 버전으로 되돌렸습니다.
+Download paused. Retry to continue.	다운로드를 일시 정지했습니다. 다시 시도하면 이어서 받습니다.
+Update discarded. Your installed version is unchanged.	업데이트를 버렸습니다. 설치된 버전은 그대로입니다.
+Connect the charger before installing an update.	업데이트를 설치하기 전에 충전기를 연결하세요.
+There is not enough free space for this update.	이 업데이트에 필요한 공간이 부족합니다.
+Exit your game before installing an update.	업데이트를 설치하기 전에 게임을 종료하세요.
+Install the latest SD installer before this update.	이 업데이트 전에 최신 SD 설치 프로그램을 설치하세요.
+Restart RG DS Core before installing the update.	업데이트를 설치하기 전에 RG DS Core를 다시 시작하세요.
+Download interrupted. Retry to continue.	다운로드가 중단되었습니다. 다시 시도하면 이어서 받습니다.
+An update is already prepared. Install it or discard it first.	이미 준비된 업데이트가 있습니다. 먼저 설치하거나 버리세요.
+Another update is already running.	다른 업데이트가 진행 중입니다.
+Update information has expired or the device clock is incorrect.	업데이트 정보가 만료되었거나 기기 시계가 맞지 않습니다.
+This stock firmware has not been validated for updates.	이 기본 펌웨어는 업데이트 검증을 거치지 않았습니다.
+Update verification failed. Check for updates again.	업데이트 검증에 실패했습니다. 업데이트를 다시 확인하세요.
+Update failed. Check Wi-Fi and try again.	업데이트에 실패했습니다. Wi-Fi를 확인한 뒤 다시 시도하세요.
+Stable	안정판
+Testing	테스트판
+Import slot	슬롯 가져오기
+Export slot	슬롯 내보내기
+Save checkpoint	체크포인트 저장
+Load checkpoint	체크포인트 불러오기
+Save here	여기에 저장
+Export	내보내기
+More	더 보기
+Replace slot {0}?	슬롯 {0}에 덮어쓸까요?
+Load slot {0}?	슬롯 {0}을(를) 불러올까요?
+Delete slot {0}?	슬롯 {0}을(를) 삭제할까요?
+Undo last slot change	슬롯 변경 취소
+Undo last load	불러오기 취소
+Import into this slot	이 슬롯으로 가져오기
+Slot {0} deleted.	슬롯 {0}을(를) 삭제했습니다.
+Slot change undone.	슬롯 변경을 취소했습니다.
+A saves your current progress here.	A를 누르면 현재 진행 상황을 여기에 저장합니다.
+A replaces this slot with your current progress. X deletes it.	A를 누르면 현재 진행 상황으로 이 슬롯에 덮어씁니다. X를 누르면 삭제합니다.
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A를 누르면 이 슬롯을 불러옵니다. Y의 '불러오기 취소'로 지금의 진행 상황으로 돌아올 수 있습니다.
+Nothing to load here yet.	아직 불러올 것이 없습니다.
+A exports this slot to userdata/exports. X deletes it.	A를 누르면 이 슬롯을 userdata/exports로 내보냅니다. X를 누르면 삭제합니다.
+Y imports a save into this slot.	Y를 누르면 이 슬롯으로 세이브 데이터를 가져옵니다.
+Import help	가져오기 도움말
+Replace	덮어쓰기
+Blow into microphone	마이크에 바람 불기
+Close and open DS lid	DS 덮개 닫았다 열기
+DS language	DS 언어
+Real microphone	실제 마이크
+Japanese	일본어
+English	영어
+French	프랑스어
+German	독일어
+Italian	이탈리아어
+Spanish	스페인어
+2 seconds	2초
+In game	게임 중
+Restart the game to apply DS settings.	DS 설정을 적용하려면 게임을 다시 시작하세요.
+Could not save DS settings.	DS 설정을 저장할 수 없습니다.
+Search	검색
+Save gallery	세이브 갤러리
+Search and filters	검색과 필터
+Add your games	게임 추가
+DS controls	DS 조작
+Back up all saves	모든 세이브 데이터 백업
+Resume after power off	전원을 꺼도 이어서 플레이
+Slot	슬롯
+Empty slot	빈 슬롯
+Search games	게임 검색
+Filter	필터
+Clear search and filters	검색과 필터 지우기
+Missing artwork	이미지 없음
+Where to put games	게임을 넣을 곳
+Scan for games	게임 검색
+Automatic updates	자동 업데이트
+Download automatically	자동으로 다운로드
+Check automatically	자동으로 확인
+Update available in Maintenance	'유지 관리'에 업데이트가 있습니다
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	.rgdssave.zip 파일을 userdata/imports에 복사하세요. 이 게임과 에뮬레이터에 맞는 것만 가져올 수 있습니다.
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	.nds 파일이나 DS ZIP 압축 파일을 게임 카드의 Roms/NDS에 복사하세요. 게임은 포함되어 있지 않습니다. 세이브 데이터는 userdata에 남습니다.
+Save backup created in userdata/exports.	userdata/exports에 세이브 데이터 백업을 만들었습니다.
+Slot exported to userdata/exports.	슬롯을 userdata/exports로 내보냈습니다.
+Save library updated.	세이브 라이브러리를 업데이트했습니다.
+Current progress could not be saved. No slot was changed.	현재 진행 상황을 저장할 수 없습니다. 슬롯은 바뀌지 않았습니다.
+DS controls are unavailable for this engine.	이 엔진에서는 DS 조작을 쓸 수 없습니다.
+Your DS library starts here	여기서 DS 라이브러리가 시작됩니다
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	.nds나 DS ZIP 파일을 게임 카드의 Roms/NDS에 복사한 뒤 '게임 검색'을 선택하세요.
+Use the engine's native controls for microphone and DS settings.	마이크와 DS 설정은 엔진 자체 조작을 사용하세요.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	실제 마이크는 기본으로 켜져 있습니다. 바람 불기와 덮개 동작은 2초 동안 게임으로 돌아가 실행됩니다. 언어 변경은 다시 시작한 뒤 적용됩니다.
+Unplayed	플레이 안 함
+Played	플레이함
+Filtered	필터 적용됨
+No matching games	일치하는 게임이 없습니다
+No matches. Use View to change filters.	결과가 없습니다. '보기'에서 필터를 바꾸세요.
+Reset state	상태 초기화
+Restart without loading a state?	상태를 불러오지 않고 다시 시작할까요?
+Restart from the title screen. In-game saves and save slots are kept.	타이틀 화면부터 다시 시작합니다. 게임 내 저장과 세이브 슬롯은 유지됩니다.
+Microphone, simulated blowing, lid and DS language.	마이크, 바람 불기 시뮬레이션, 덮개, DS 언어.
+Test microphone	마이크 테스트
+Test	테스트
+Live input	입력 레벨
+Quiet	작게
+Loud	크게
+Listening…	듣는 중…
+Microphone unavailable	마이크를 쓸 수 없습니다
+Audio is not recorded or saved.	소리는 녹음하거나 저장하지 않습니다.
+Test the microphone on your handheld.	기기의 마이크를 테스트합니다.
+Return home before testing the physical microphone.	실제 마이크를 테스트하기 전에 홈으로 돌아가세요.
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	마이크에 바람을 불거나 말해 보세요. 레벨이 올라갔다가 멈추면 내려갑니다.
+No filter	필터 없음
+Quick search	빠른 검색
+A  Search	A  검색
+A  Jump	A  이동
+Edit search	검색어 편집
+Clear filters	필터 지우기
+Try another title or clear your filters	다른 제목으로 찾거나 필터를 지우세요
+Type a game title…	게임 제목 입력…
+Finding games…	게임 찾는 중…
+Searching…	검색 중…
+Search in	검색 범위
+Try a shorter title or clear your filter.	더 짧은 제목으로 찾거나 필터를 지우세요.
+Type	입력
+Tap to type, or use the D-pad and A	터치로 입력하거나 십자 버튼과 A를 사용하세요
+No letters to jump to. Search for another game.	이동할 글자가 없습니다. 다른 게임을 검색하세요.
+{0} match	결과 {0}개
+{0} matches	결과 {0}개
+{0} matching game	일치하는 게임 {0}개
+{0} matching games	일치하는 게임 {0}개
+{0} game	게임 {0}개
+Interface animations	화면 애니메이션
+View transitions	화면 전환
+Small touches, scrolling and startup motion	작은 움직임, 스크롤, 시작 애니메이션
+Springy menu changes with a colourful wobble	알록달록 통통 튀는 메뉴 전환
+Transitions	전환 효과
+Subtle	은은하게
+Menu sounds	메뉴 효과음
+Effects volume	효과음 음량
+Preview sound	소리 미리 듣기
+A little handheld magic	휴대용 게임기의 작은 마법
+Playful sounds for browsing, choosing and starting games.	게임을 둘러보고, 고르고, 시작할 때의 즐거운 효과음.
+Turn on menu sounds to hear the previews.	미리 들으려면 메뉴 효과음을 켜세요.
+Some menu sounds are unavailable.	일부 메뉴 효과음을 쓸 수 없습니다.
+Menu audio is unavailable on this device.	이 기기에서는 메뉴 소리를 쓸 수 없습니다.
+Menu sounds are unavailable.	메뉴 효과음을 쓸 수 없습니다.
+Close lid	덮개 닫기
+Open lid	덮개 열기
+Spring	스프링
+Push	밀기
+Transition style	전환 스타일
+Animate pages with the selected style	선택한 스타일로 페이지 전환
+Slide into pages; slide back to return	페이지로 밀려 들어가고, 돌아갈 때는 반대로 밀려 나옵니다
+Accent colour	강조 색상
+FAVOURITE COLOUR	좋아하는 색
+Classic	클래식
+Classic blue	클래식 블루
+High contrast	고대비
+PREVIEW	미리 보기
+Selected row	선택한 줄
+Switches and values	스위치와 값
+Grey	회색
+Brown	갈색
+Red	빨간색
+Pink	분홍색
+Orange	주황색
+Yellow	노란색
+Lime	라임색
+Green	초록색
+Dark green	진초록색
+Sea green	바다색
+Turquoise	청록색
+Blue	파란색
+Dark blue	남색
+Purple	보라색
+Violet	바이올렛
+Magenta	마젠타
+Network file sharing	네트워크 파일 공유
+Open on this Wi-Fi	이 Wi-Fi에 공개
+Password protected	비밀번호로 보호
+File sharing on. Find "RG DS" under Network.	파일 공유를 켰습니다. '네트워크'에서 "RG DS"를 찾으세요.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: 원래 업스트림 엔진입니다. DSCore는 여기에 수정과 속도 향상을 더했습니다.
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: 추천. 가장 빠르며 덮개·스타일러스·3D 문제를 고쳤고, 3D를 2x–5x로 높일 수도 있습니다.
+DSCore 3D resolution	DSCore 3D 해상도
+Native (fastest)	원본(가장 빠름)
+2x sharper	2배 선명
+3x sharper	3배 선명
+4x (experimental)	4배(실험적)
+5x (experimental)	5배(실험적)
+Colour mode	색상 모드
+Draw and chat with nearby handhelds	주변 기기와 그림을 그리며 채팅
+Wi-Fi connected	Wi-Fi 연결됨
+No Wi-Fi: you can still draw	Wi-Fi 없음: 그림은 그릴 수 있습니다
+Type your name	이름 입력
+You appear like this to others	다른 사람에게는 이렇게 보입니다
+Starting…	시작하는 중…
+Chat is unavailable: you can still draw	채팅을 쓸 수 없음: 그림은 그릴 수 있습니다
+Nobody else is nearby yet	아직 주변에 아무도 없습니다
+1 person nearby	주변에 1명
+{0} people nearby	주변에 {0}명
+Your colour	내 색
+Leave	나가기
+Your name	내 이름
+Send	보내기
+You are in Room {0}	{0}번 방에 있습니다
+{0} joined	{0} 님이 들어왔습니다
+{0} left	{0} 님이 나갔습니다
+New messages below	아래에 새 메시지가 있습니다
+Older messages	이전 메시지
+The pad is full: send it or clear it	종이가 가득 찼습니다: 보내거나 지우세요
+Too much on the pad: erase some of it	종이에 너무 많이 그렸습니다: 조금 지우세요
+That message could not be sent	메시지를 보낼 수 없습니다
+That room is full	그 방은 가득 찼습니다
+Chat Room {0}	채팅방 {0}
+Choose a chat room to join	들어갈 채팅방을 선택하세요
+Edit	편집
+Join	들어가기
+Matches your accent	강조 색상과 같게
+Nobody here yet	아직 아무도 없습니다
+Start Send   X Undo   L R Scroll	Start 보내기   X 취소   L R 스크롤
+You	나
+Time format	시간 형식
+24-hour	24시간
+12-hour	12시간
+24-hour or 12-hour clock	24시간제 또는 12시간제
+How dates appear in the status bar	상태 표시줄의 날짜 표시 방식
+Connecting to	연결 대상
+This can take a few seconds	몇 초 정도 걸릴 수 있습니다
+Waiting for an address…	주소를 기다리는 중…
+IP address	IP 주소
+Signal	신호
+Could not connect	연결할 수 없습니다
+Wi-Fi is off	Wi-Fi가 꺼져 있습니다
+Turn it on to find networks	켜면 네트워크를 찾을 수 있습니다
+Choose a network from the list	목록에서 네트워크를 선택하세요
+Preparing…	준비 중…
+Home layout	홈 레이아웃
+Background	배경
+Touch gestures	터치 제스처
+Carousel	캐러셀
+Column	세로 목록
+Plain	단색
+Grid	모눈
+A carousel, or the DSi's column with your last game on top	캐러셀, 또는 마지막 게임이 맨 위에 오는 DSi 스타일 세로 목록
+Plain, or the DSi's ruled grid behind every screen	단색, 또는 모든 화면 뒤에 DSi 스타일 모눈
+Swipe up from the bottom for Home, in from the left for Back	아래에서 위로 밀면 홈, 왼쪽에서 밀면 뒤로
+Nothing played yet	아직 플레이한 게임이 없습니다
+Your last game will appear here	마지막으로 플레이한 게임이 여기에 표시됩니다
+Draw and chat	그림 채팅
+Su	일
+Mo	월
+Tu	화
+We	수
+Th	목
+Fr	금
+Sa	토
+Chat Room	채팅방
+Nobody else here yet	아직 다른 사람이 없습니다
+Drawing on your own	혼자 그리는 중
+Jump	이동
+Home	홈
+Swipe up from the bottom edge to go Home from anywhere.	어디서든 아래쪽 가장자리에서 위로 밀면 홈으로 갑니다.
+Swipe in from the left edge to go Back.	왼쪽 가장자리에서 밀면 뒤로 갑니다.
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	아래 화면 맨 아래의 작은 손잡이는 제스처가 켜져 있다는 표시입니다. 손가락을 따라 올라오고, 제스처가 실행되면 고리가 그 자리를 표시합니다.
+Your saves are safe. See you soon!	세이브 데이터는 안전합니다. 또 만나요!
+DS Classic	DS Classic
+DS Lite	DS Lite
+Natural glow	자연스러운 빛
+Vivid LCD	선명한 LCD
+Natural smooth	자연스럽고 부드럽게
+Vivid smooth	선명하고 부드럽게
+Pixel beads	픽셀 구슬
+Glossy tiles	반짝이는 타일
+The first DS screen: muted colour and a fine pixel grid.	초대 DS 화면: 차분한 색과 촘촘한 픽셀 격자.
+The brighter DS Lite screen with a faint pixel grid.	더 밝은 DS Lite 화면에 옅은 픽셀 격자.
+Natural colour with soft pixels that glow together.	자연스러운 색에 부드러운 픽셀이 함께 빛납니다.
+Bold colour on a close-up LCD with RGB stripes.	RGB 줄무늬가 보이는 확대 LCD에 선명한 색.
+Natural colour with smoothed diagonal edges.	자연스러운 색에 대각선 윤곽을 부드럽게.
+Bold colour with smoothed diagonal edges.	선명한 색에 대각선 윤곽을 부드럽게.
+Bold colour; every pixel a round, shiny bead.	선명한 색, 픽셀 하나하나가 동그랗게 빛나는 구슬.
+Bold colour; every pixel a raised, glossy tile.	선명한 색, 픽셀 하나하나가 볼록하게 반짝이는 타일.
+IN USE	사용 중
+APPLY	적용
+Follows your library shader.	라이브러리 필터를 따릅니다.
+Original	원본
+DS screens	DS 화면
+Natural	자연스럽게
+Vivid	선명하게
+Pixel art	픽셀 아트
+Moods	분위기
+Change group	그룹 바꾸기
+Sounds & music	효과음과 음악
+Menu music	메뉴 음악
+Music volume	음악 음량
+A soft tune plays while you browse. It fades out when a game starts.	둘러보는 동안 부드러운 음악이 흐릅니다. 게임을 시작하면 서서히 꺼집니다.
+Turn on menu music for a soft tune while you browse.	메뉴 음악을 켜면 둘러보는 동안 부드러운 음악이 흐릅니다.
+Scanning…	검색 중…
+Scan complete	검색 완료
+Looking for games…	게임 찾는 중…
+Reading Roms/NDS on your games card. This takes a moment.	게임 카드의 Roms/NDS를 읽는 중입니다. 잠시 기다려 주세요.
+{0} found. Choose Done to go to your library.	{0} 찾았습니다. '완료'를 선택하면 라이브러리로 갑니다.
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	게임을 찾지 못했습니다. .nds나 DS ZIP 파일을 게임 카드의 Roms/NDS에 복사한 뒤 다시 검색하세요.
+Backing up your saves…	세이브 데이터 백업 중…
+The backup did not finish. Please try again.	백업이 끝나지 않았습니다. 다시 시도하세요.
+Copies every save and checkpoint into one zip in userdata/exports.	모든 세이브 데이터와 체크포인트를 userdata/exports의 zip 파일 하나로 복사합니다.
+Where games go on the card, and a fresh scan.	카드에서 게임을 넣을 곳과 새로 검색하기.
+Where covers and titles come from.	커버 이미지와 제목의 출처.
+System update	시스템 업데이트
+Version {0} is ready	버전 {0} 준비 완료
+Version {0} is ready to install	버전 {0}을(를) 설치할 수 있습니다
+Downloading {0}	{0} 다운로드 중
+Paused at {0}	{0}에서 일시 정지됨
+Update now	지금 업데이트
+Resume download	다운로드 계속하기
+Update	업데이트
+Install	설치
+What's new	새로운 기능
+Download	다운로드
+Verify	확인
+Prepare	준비
+Step {0} of 4	{0}/4단계
+Less than a minute left	1분 미만 남음
+About {0} min left	약 {0}분 남음
+About {0} h left	약 {0}시간 남음
+Downloads resume where they stopped if Wi-Fi drops.	Wi-Fi가 끊겨도 다운로드는 멈춘 곳부터 이어집니다.
+Your games and saves are not touched.	게임과 세이브 데이터는 그대로 둡니다.
+Connection lost. Retrying…	연결이 끊겼습니다. 다시 시도하는 중…
+The update could not be downloaded. Check for updates again.	업데이트를 다운로드할 수 없습니다. 업데이트를 다시 확인하세요.
+Finishing another task. Press Y again in a moment.	다른 작업을 마무리하는 중입니다. 잠시 후 Y를 다시 누르세요.
+Updates	업데이트
+The language for menus and messages.	메뉴와 메시지에 쓰는 언어입니다.
+Set the clock to where you are.	지금 있는 곳에 맞춰 시계를 설정합니다.
+How dates appear at the top of the screen.	화면 위쪽의 날짜 표시 방식입니다.
+A 24-hour or 12-hour clock.	24시간제 또는 12시간제입니다.
+Versions, free space and the network address of your handheld.	기기의 버전, 남은 공간, 네트워크 주소.
+Check for updates, go back to the previous build or clear temporary files.	업데이트 확인, 이전 빌드로 되돌리기, 임시 파일 지우기.
+Leave RG DS Core and go back to the stock menu.	RG DS Core를 나가 기본 메뉴로 돌아갑니다.
+What happens when you turn the handheld on.	기기를 켤 때의 동작입니다.
+Restart the RGDS menu.	RGDS 메뉴를 다시 시작합니다.
+Previous	이전
+Next	다음
+Show all systems	모든 시스템 표시
+Systems	시스템
+Game screen	게임 화면
+Second screen	보조 화면
+Sharp fill	선명하게 채우기
+Whole pixels	정수 배율
+Smooth fill	부드럽게 채우기
+Companion	컴패니언
+Swap screens	화면 바꾸기
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	게임보이와 게임보이 어드밴스 게임을 추가합니다. 게임을 열면 시스템 페이지가 나타납니다.
+Frame	테두리
+Indigo	인디고
+Glacier	글레이셔
+Black	블랙
+Platinum	플래티넘
+Black bar	검은 띠
+SP Onyx	SP 오닉스
+SP Cobalt	SP 코발트
+SP Platinum	SP 플래티넘
+GBA Color	GBA 색감
+GBA screen	GBA 화면
+GBA screens	GBA 화면
+The Game Boy Advance LCD's own colour and gamma.	게임보이 어드밴스 LCD 고유의 색감과 감마.
+The Game Boy Advance screen: its colour and faint pixel gaps.	게임보이 어드밴스 화면: 그 색감과 희미한 픽셀 틈.
+Game info	게임 정보
+Extra pictures	추가 이미지
+Screenshots	스크린샷
+Title screens	타이틀 화면
+Screenshots and title screens	스크린샷 및 타이틀 화면
+Both	둘 다
+Cover	커버
+Title screen	타이틀 화면
+Screenshot	스크린샷
+Developer	개발사
+Publisher	배급사
+Genre	장르
+Released	출시일
+Rating	등급
+Players	플레이어
+Series	시리즈
+Online	온라인
+Yes	예
+Source	출처
+Picture	이미지
+Next picture	다음 이미지
+No pictures yet	아직 이미지가 없습니다
+Available	사용 가능
+Not downloaded	다운로드 안 됨
+No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	아직 게임 정보가 없습니다. 설정 > 라이브러리 > 아트워크 소스에서 게임 정보를 켜고 아트워크를 가져오세요.

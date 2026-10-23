@@ -76,7 +76,8 @@ class LanguagePickerTests(unittest.TestCase):
     def test_swipe_and_cancel_preserve_language_and_keyboard_focus_stays_visible(self):
         report = self.run_ui('30 key A\n40 key-up A\n120 tap 180 350\n160 drag 180 80\n200 release\n')
         self.assertTrue(report['picker_open'])
-        self.assertEqual(report['picker_scroll'], self.maximum)
+        # The list follows the 270 px drag, stopping at its end.
+        self.assertEqual(report['picker_scroll'], min(self.maximum, 270))
         self.assertGreaterEqual(report['picker_focus'] * 40, report['picker_scroll'])
         self.assertEqual(self.language(), 'language=en-US')
         report = self.run_ui('30 key A\n40 key-up A\n120 tap 180 350\n160 drag 180 80\n200 release\n260 key Escape\n')
@@ -95,7 +96,7 @@ class LanguagePickerTests(unittest.TestCase):
         report = self.run_ui(
             '30 key A\n40 key-up A\n120 finger-down 0.28125 0.8645833\n160 finger-move 0.28125 0.5833333\n200 finger-up 0.28125 0.5833333\n'
         )
-        self.assertEqual(report['picker_scroll'], self.maximum)
+        self.assertEqual(report['picker_scroll'], min(self.maximum, 270))
         self.assertTrue(report['picker_open'])
         self.assertEqual(self.language(), 'language=en-US')
         report = self.run_ui('30 key A\n40 key-up A\n120 tap 180 145\n140 focus-lost\n160 release\n')

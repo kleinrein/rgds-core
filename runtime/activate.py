@@ -199,7 +199,7 @@ def startup_file(name):
         "assets/icons/"
     ) or name.startswith("assets/status/") or name.startswith("assets/brand/") or name.startswith(
         "assets/locales/"
-    ) or name == "assets/shaders/catalog.tsv" or (name.startswith("assets/fonts/rounded-") and name.endswith(".rgf"))
+    ) or name == "assets/shaders/catalog.tsv" or re.fullmatch(r"assets/fonts/rounded-\d+\.rgf", name) is not None
 
 
 def verify_startup(app, receipt=False):
@@ -230,7 +230,7 @@ def verify_engine(app, core, backend=None):
             "emulators/dsperate/source.tar.gz", "emulators/rgds-experimental/source.tar.gz",
             "emulators/rgds-experimental/vulkan-source.tar.gz", "emulators/rgds-experimental/panvk-source.tar.gz",
             "emulators/melonds/source.tar.gz", "emulators/superdrastic/source.tar.gz",
-            "emulators/superdrastic/sdl/source.tar.gz"
+            "emulators/superdrastic/sdl/source.tar.gz", "emulators/rgds-play/source.tar.gz"
         ) or name.startswith("emulators/dsperate/rgds-build/"):
             return False
         if core == 'drastic' and backend == 'superdrastic' and name.startswith(

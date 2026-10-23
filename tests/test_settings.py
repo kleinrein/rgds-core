@@ -206,7 +206,7 @@ class SettingsTests(unittest.TestCase):
         # The carousel is grouped; Amber (19) is the last place.
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(28))
         self.run_preview(
-            "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last + "1500 key A\n",
+            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last + "1500 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
@@ -216,7 +216,7 @@ class SettingsTests(unittest.TestCase):
         self.assertIn("filter=19\n", next((self.root / "library").glob("*/game.ini")).read_text())
 
     def test_shader_groups_jump_with_up_down_shoulders_and_chips(self):
-        picker = "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n"
+        picker = "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n"
         self.run_preview(picker + "220 key Down\n300 key A\n", extra=("--settings", "--section", "library"))
         self.assertIn("filter=21\n", (self.root / "ui.ini").read_text(), "Down opens DS screens at DS Classic")
         self.state.write_text('1 3 2 ""\n')
@@ -235,14 +235,14 @@ class SettingsTests(unittest.TestCase):
     def test_dsperate_picker_offers_the_full_preset_pack(self):
         self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
         self.run_preview(
-            "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key A\n",
+            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=21\n", (self.root / "ui.ini").read_text())
 
     def test_shader_rail_drag_selects_the_last_shader_and_a_tile_tap_applies(self):
         self.run_preview(
-            "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 tap 300 440\n260 drag 600 440\n300 release\n600 click 320 200\n",
+            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 tap 300 440\n260 drag 600 440\n300 release\n600 click 320 200\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
@@ -250,7 +250,7 @@ class SettingsTests(unittest.TestCase):
     def test_shader_focus_restores_during_rebuilds_and_scrolls_into_view(self):
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(14))
         self.run_preview(
-            "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last,
+            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last,
             extra=("--settings", "--section", "library")
         )
         self.assertIn("20 2 14\nshader 0\n", self.state.read_text())
@@ -261,7 +261,7 @@ class SettingsTests(unittest.TestCase):
 
     def test_shader_left_and_right_move_one_item(self):
         self.run_preview(
-            "20 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key Left\n340 key A\n",
+            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key Left\n340 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=1", (self.root / "ui.ini").read_text())

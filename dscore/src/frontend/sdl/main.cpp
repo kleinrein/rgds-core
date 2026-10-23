@@ -2747,6 +2747,9 @@ sdl_ready:
             sched_setscheduler(0, SCHED_OTHER, &z);
           }
           const bool enhanced_screen[2] = {nds.gpu.enhanced_screen(0), nds.gpu.enhanced_screen(1)};
+          // HD: the core's rules go with this frame to the bridge's GPU reconstruction (null when HD is off).
+          const u32* const hd_rules[2] = {nds.gpu.hd_rules(0), nds.gpu.hd_rules(1)};
+          ds::sdl::Display::set_hd_rules(hd_rules);
           const u32* enhanced[2] = {enhanced_screen[0] ? nds.gpu.enhanced_framebuffer(0) : fb[0],
                                     enhanced_screen[1] ? nds.gpu.enhanced_framebuffer(1) : fb[1]};
           if (cursor && enhanced_screen[1]) {

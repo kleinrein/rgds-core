@@ -12,6 +12,7 @@
 #include "core/gpu/render3d.h"
 #include "rgds_sample_plan.hpp"
 #include "rgds_filter2d.hpp"
+#include "rgds_hd2d_rules.hpp"
 #include "rgds_compose_pool.h"
 #include "core/profile.h"
 
@@ -96,7 +97,8 @@ public:
   void set_lazy(bool on) { lazy_enabled_ = on; } // off: per-line rendering (tests)
 
   bool set_presentation(int scale, bool smooth, std::string* why = nullptr);
-  // 2D scaling on the enhanced (2x-5x) panel image: 0 native grid, 1 sharp, 2 smooth. Display only.
+  // 2D scaling on the enhanced (2x-5x) panel image: 0 native grid, 1 sharp, 2 smooth, 3 crisp; 4 HD (5 HD smooth)
+  // keeps the native grid and marks 2D-owned pixels for the bridge's GPU reconstruction. Display only.
   void set_filter2d(int mode);
   int filter2d() const { return filter2d_.load(std::memory_order_relaxed); }
   static constexpr u32 PRESENT_W = 640, PRESENT_H = 480;
@@ -104,6 +106,11 @@ public:
   // RG DS: time composition stood waiting for the GPU's 3D since the last call (adaptive resolution's GPU-bound test).
   // A capture frame's derived native layer waits for the GPU there instead (Renderer3D::take_derive_wait_ns).
   u64 take_hires_wait_ns();
+  // HD (rgds_2d=4 or 5): the CPU's HD rules for the screen's last finished frame (rgds::Hd2DRules words, 256x192), which
+  // the bridge's GPU reconstruction draws from; null when HD is off or the screen has none yet.
+  const u32* hd_rules(int screen) const {
+    return hd_mode() && hd_valid_[screen] ? hd_rules_[screen].data() : nullptr;
+  }
   const u32* enhanced_framebuffer(int screen) const {
     return enhanced_[screen].empty() ? nullptr : enhanced_[screen].data();
   }
@@ -453,6 +460,7 @@ private:
     // `plain` rows carry no 3D plan and are only resampled.
     u8 filter2d = 0;
     bool plain = false;
+    bool marks = false; // HD: mark the pixels 2D owns (blue's lowest bit)
     const u32* above2 = nullptr;
     const u32* above = nullptr;
     const u32* below = nullptr;
@@ -467,13 +475,32 @@ private:
   const u32* frame_hires();
   int a_screen_now_ = -1; // the screen engine A drew this frame (dual-screen 3D bookkeeping at the join)
   static void native_rows(u32* image, u32 y0, u32 y1, const u32* native);
+  static void mark_rows(u32* image, u32 y0, u32 y1, const Engine2D::EnhancedPlan* plan);
+  // HD rules (rgds_hd2d_rules.hpp), per screen: the native frames and their 2D ownership, double-buffered so a band
+  // of 8 lines can tell whether its lines (and the 2 around them) changed since its rules were made. A band is
+  // published to the compose pool once the frame holds the 2 lines below it; both engines publish, under a lock.
+  static constexpr u32 kHdBandLines = 8, kHdBands = SCREEN_H / kHdBandLines;
+  static constexpr u32 kHdJob = 1u << 16; // compose job id: kHdJob | engine << 8 | band
+  std::vector<u32> hd_native_[2][2], hd_rules_[2];
+  std::vector<u8> hd_owner_[2][2];
+  u8 hd_parity_[2] = {};
+  int hd_screen_[2] = {-1, -1}; // per engine: the screen it draws this frame
+  u32 hd_next_band_[2] = {};    // per engine: the next band to publish
+  bool hd_valid_[2] = {};       // the screen's rules describe a finished frame
+  std::array<std::array<u8, kHdBands>, 2> hd_fresh_{}; // the band's rules match the previous frame's lines
+  std::atomic_flag hd_publish_lock_ = ATOMIC_FLAG_INIT;
+  bool hd_mode() const { return filter2d_.load(std::memory_order_relaxed) >= int(rgds::Filter2D::HD); }
+  void hd_start();
+  void hd_line(int e, int screen, u32 line, const u32* native, const u8* owner);
+  void hd_publish(u32 job);
+  void hd_band(int e, u32 band);
   static void filtered_rows(const EnhancedRow& job);
   static void apply_2d_filter(const EnhancedRow& job, const u32* two_d, const u32* filtered);
   void submit_row(u32 line, Engine2D* verify);
   void submit_pending_row(u32 next_line);
   std::vector<EnhancedRow> enhanced_rows_;
   void enable_enhanced();
-  static void compose_job(void* self, u32 line);
+  static void compose_job(void* self, u32 job);
   void compose_row(const EnhancedRow& row, Engine2D* verify);
   ComposePool compose_; // after the rows: its threads stop before they go
   void output_engine(int e, u32 line);

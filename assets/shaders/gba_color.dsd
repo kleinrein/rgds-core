@@ -1,0 +1,24 @@
+<!-- Original RGDS shader; same license as the RGDS project. One texture sample. -->
+// Original RGDS GLES2 preset: the Game Boy Advance's own LCD colour. The
+// colour response follows Pokefan531's GBA model (public domain, as in
+// libretro's handheld/shaders/color/gba-color): a darker gamma, colours that
+// bleed into each other, slightly lower brightness. Darkened half as much as
+// the unlit AGB-001 screen, since the RG DS panels are lit.
+<vertex>
+attribute vec2 a_vertex_coordinate;
+attribute vec2 a_texture_coordinate;
+varying vec2 v_texture_coordinate;
+void main(){v_texture_coordinate=a_texture_coordinate;gl_Position=vec4(a_vertex_coordinate,0.0,1.0);}
+</vertex>
+<fragment>
+uniform sampler2D u_texture;
+uniform vec4 u_texture_size;
+varying vec2 v_texture_coordinate;
+void main(){
+    vec4 pixel=texture2D(u_texture,v_texture_coordinate);
+    vec3 c=clamp(pow(pixel.rgb,vec3(2.7))*0.94,0.0,1.0);
+    c=mat3(0.82,0.125,0.195, 0.24,0.665,0.075, -0.06,0.21,0.73)*c;
+    pixel.rgb=clamp(pow(max(c,0.0),vec3(1.0/2.2)),0.0,1.0);
+    gl_FragColor=pixel;
+}
+</fragment>

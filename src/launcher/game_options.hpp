@@ -20,7 +20,7 @@ inline GameOptions load_game_options(const fs::path& path) {
         } catch (...) {}
         return fallback;
     };
-    result.core = integer("core", -1, -1, core_count - 1);
+    result.core = integer("core", -1, -1, ds_core_count - 1);
     if (result.core == retired_core) result.core = -1;
     result.filter = integer("filter", -1, -1, shader_count - 1);
     result.favourite = integer("favourite", 0, 0, 1);
@@ -32,7 +32,7 @@ inline GameOptions load_game_options(const fs::path& path) {
     result.gengis_scale = integer("gengis_scale", 0, 2, 3);
     result.rgds_scale = integer("rgds_scale", 1, 1, 5);
     result.rgds_smooth = integer("rgds_smooth", 1, 0, 1);
-    result.rgds_2d = integer("rgds_2d", 0, 0, 3);
+    result.rgds_2d = integer("rgds_2d", 0, 0, 5);
     result.rgds_adaptive = integer("rgds_adaptive", 1, 0, 1);
     return result;
 }

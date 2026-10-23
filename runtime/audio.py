@@ -155,7 +155,7 @@ class VolumeWatch:
         self.stop = threading.Event()
         self.thread = None
         self.descriptors = []
-        self.pending = {}  # Coalesce an occasional duplicate kernel press.
+        self.held = {}  # code -> [pressed at, next repeat]; the keys send no autorepeat.
 
     def start(self):
         (self.volume.data / "session/volume-hud.ini").unlink(missing_ok=True)
@@ -164,33 +164,48 @@ class VolumeWatch:
         self.thread = threading.Thread(target=self.watch, name="rgds-volume", daemon=True)
         self.thread.start()
 
+    def step(self, code):
+        level = self.volume.apply(delta=5 if code == 115 else -5)
+        # The native bridge renders this on the top screen while playing.
+        # A token also refreshes the HUD when a key hits 0% or 100% again.
+        write_fields(
+            self.volume.data / "session/volume-hud.ini",
+            dict(schema=1, volume=level, token=f"{os.getpid()}-{time.monotonic_ns()}"),
+            durable=False
+        )
+
     def handle(self, data, now):
         for offset in range(0, len(data) - EVENT.size + 1, EVENT.size):
             _sec, _usec, kind, code, value = EVENT.unpack_from(data, offset)
-            if kind != 1 or code not in (114, 115) or value not in (1, 2):
+            if kind != 1 or code not in (114, 115):
                 continue
-            if now - self.pending.get(code, -10) < .04:
-                continue
-            self.pending[code] = now
-            level = self.volume.apply(delta=5 if code == 115 else -5)
-            # The native bridge renders this on the top screen while playing.
-            # A token also refreshes the HUD when a key hits 0% or 100% again.
-            write_fields(
-                self.volume.data / "session/volume-hud.ini",
-                dict(schema=1, volume=level, token=f"{os.getpid()}-{time.monotonic_ns()}"),
-                durable=False
-            )
+            if value == 0:
+                self.held.pop(code, None)
+            elif value == 1:
+                self.held[code] = [now, now + .35]
+                self.step(code)
+
+    def repeat(self, now):
+        """Keep stepping while a button stays down: slow at first, then faster."""
+        for code, state in list(self.held.items()):
+            if now - state[0] > 15:  # A release lost to a sleep must not run away.
+                del self.held[code]
+            elif now >= state[1]:
+                held = now - state[0]
+                state[1] = now + (.04 if held > 1.5 else .065 if held > .8 else .1)
+                self.step(code)
 
     def watch(self):
         started = time.monotonic()
         retry = 0
         while not self.stop.is_set():
             try:
-                readable, _, _ = select.select(self.descriptors, [], [], .1)
+                readable, _, _ = select.select(self.descriptors, [], [], .02 if self.held else .1)
                 for descriptor in readable:
                     self.handle(os.read(descriptor, EVENT.size * 32), time.monotonic())
+                self.repeat(time.monotonic())
                 # Also repair resets during startup/resume. Skip identical writes.
-                if time.monotonic() >= retry:
+                if not self.held and time.monotonic() >= retry:
                     self.volume.apply()
                     retry = time.monotonic() + (.4 if time.monotonic() - started < 8 else 2)
             except (OSError, ValueError, subprocess.SubprocessError) as error:

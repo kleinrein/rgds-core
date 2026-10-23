@@ -586,11 +586,14 @@ class GameMenuTests(unittest.TestCase):
             self.menu.send(command)
             self.assertIsNone(self.menu.pending)
         self.menu.core = 'rgds-experimental'
-        for command in ('filter2d:4', 'filter2d:x', 'filter2d:1:0'):
+        for command in ('filter2d:6', 'filter2d:x', 'filter2d:1:0'):
             self.menu.send(command)
             self.assertIsNone(self.menu.pending)
-        self.menu.send('filter2d:2')
-        self.assertEqual(self.menu.pending['action'], 'filter2d:2')
+        self.menu.send('filter2d:4')  # HD
+        self.assertEqual(self.menu.pending['action'], 'filter2d:4')
+        self.menu.pending = None
+        self.menu.send('filter2d:5')  # HD smooth
+        self.assertEqual(self.menu.pending['action'], 'filter2d:5')
 
     def test_crossing_native_and_high_resolution_saves_choice_and_restarts(self):
         from library import game_key

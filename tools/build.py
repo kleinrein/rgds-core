@@ -17,7 +17,8 @@ BRIDGE_EXPORTS = {
     "SDL_PollEvent", "SDL_OpenAudioDevice", "SDL_PauseAudioDevice", "SDL_JoystickGetButton",
     "SDL_GameControllerGetButton", "SDL_GetKeyboardState", "SDL_PeepEvents", "glTexImage2D", "glDrawArrays",
     "glDeleteTextures", "glDeleteProgram", "glBufferData", "glBufferSubData", "glDeleteBuffers", "read", "ioctl",
-    "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init", "rgds_present_canvas"
+    "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init", "rgds_present_canvas", "rgds_hd_rules",
+    "rgds_shader_live"
 }
 
 
@@ -145,10 +146,7 @@ def build(target):
                 if info["machine"] != "aarch64" or info["glibc_minimum"] != "2.17":
                     raise ValueError("Unexpected device build ABI: " + destination.name)
                 if "exports" in info and any(
-                    not name.startswith(("SDL_", "gl")) and name not in (
-                        "ioctl", "read", "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init",
-                        "rgds_present_canvas"
-                    ) for name in info["exports"]
+                    not name.startswith(("SDL_", "gl")) and name not in BRIDGE_EXPORTS for name in info["exports"]
                 ):
                     raise ValueError("The bridge exports private runtime symbols")
                 if destination.name.endswith(".so") and not BRIDGE_EXPORTS.issubset(info.get("exports", [])):

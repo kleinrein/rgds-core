@@ -31,7 +31,9 @@ inline constexpr const char* shader_files[] = {"off",
                                                "natural_smooth",
                                                "vivid_smooth",
                                                "pixel_beads",
-                                               "glossy_tiles"};
+                                               "glossy_tiles",
+                                               "gba_color",
+                                               "gba_screen"};
 inline constexpr int shader_count = sizeof(shader_files) / sizeof(shader_files[0]);
 // The community lcd1x and zfast grids were tuned for 1080p, where one DS pixel
 // spans 5.6 display pixels. On the 640x480 panels it spans 2.5, so only every
@@ -48,16 +50,18 @@ inline constexpr const char* shader_grid_defines(int id) {
 }
 // Picker order, grouped from plain pixels through DS screens to pixel art.
 // Every preset appears exactly once; IDs keep their persisted meaning.
-inline constexpr const char* shader_family_names[] = {"Original", "DS screens", "Natural",
+inline constexpr const char* shader_family_names[] = {"Original", "DS screens", "GBA screens", "Natural",
                                                       "Vivid",    "Pixel art",  "Moods"};
 inline constexpr int shader_family_count = sizeof(shader_family_names) / sizeof(shader_family_names[0]);
 struct ShaderPlace {
     int id, family;
 };
 inline constexpr ShaderPlace shader_order[] = {{0, 0},  {1, 0},  {21, 1}, {22, 1}, {4, 1},  {6, 1},  {9, 1},  {12, 1},
-                                               {8, 1},  {11, 1}, {14, 1}, {23, 2}, {25, 2}, {5, 2},  {7, 2},  {10, 2},
-                                               {13, 2}, {20, 2}, {15, 2}, {24, 3}, {26, 3}, {17, 3}, {27, 4}, {28, 4},
-                                               {2, 4},  {3, 4},  {16, 5}, {18, 5}, {19, 5}};
+                                               {8, 1},  {11, 1}, {14, 1}, {30, 2}, {29, 2}, {23, 3}, {25, 3}, {5, 3},
+                                               {7, 3},  {10, 3}, {13, 3}, {20, 3}, {15, 3}, {24, 4}, {26, 4}, {17, 4},
+                                               {27, 5}, {28, 5}, {2, 5},  {3, 5},  {16, 6}, {18, 6}, {19, 6}};
+// What a Game Boy Advance game shows when its own choice is Default: its screen, colour and pixel gaps.
+inline constexpr int gba_default_shader = 30;
 static_assert(sizeof(shader_order) / sizeof(shader_order[0]) == shader_count, "Every shader needs one picker place");
 inline constexpr int shader_family(int id) {
     for (auto place : shader_order)

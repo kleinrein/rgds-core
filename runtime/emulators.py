@@ -225,8 +225,13 @@ def link_component(source, destination):
         pending.unlink(missing_ok=True)
 
 
-def resolve_rom(rom, data):
+def resolve_rom(rom, data, core=None):
     rom = rom.resolve(strict=True)
+    from play_options import PLAY_CORE, system_of
+    if core == PLAY_CORE:
+        if system_of(rom) == "nds": raise ValueError("RG DS Play opens Game Boy and Game Boy Advance games.")
+        return rom  # it opens .zip archives itself
+    if system_of(rom) != "nds": raise ValueError("This game is played with RG DS Play, not a DS engine.")
     if rom.suffix.lower() in (".nds", ".dsi"):
         return rom
     if rom.suffix.lower() != ".zip":
@@ -347,6 +352,11 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         )
     env = base_environment()
     filter_choice = display_filter(data, identity or rom)
+    if core == 'rgds-play':
+        # A game on Default gets its system's screen (GBA screen for the GBA), and never a DS screen.
+        from play_options import shader_for
+        own = read_fields(data / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
+        filter_choice = shader_for(rom, int(own) if own.lstrip('-').isdigit() else -1, filter_choice)
     tuning = game_options(data, identity or rom)
     display = 'wayland'
     if core == 'rgds-experimental':
@@ -608,6 +618,27 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             str(root / "saves" / (key + ".sav")), "--state",
             str(root / "states" / (key + ".dss"))
         ]
+    elif core == "rgds-play":
+        # RG DS Play: every system but the DS. Its saves, states and backups
+        # live under userdata/emulators/rgds-play; the view is per game (play.ini).
+        from play_options import view, frames_folder
+        root = data / "emulators/rgds-play"
+        if prepare:
+            for folder in ("home", "states"):
+                (root / folder).mkdir(parents=True, exist_ok=True)
+        env["HOME"] = str(root / "home")
+        cwd = root
+        engine_libraries(env, private=(binary.parent / "lib",), stock_independent=True)
+        env["SDL_RENDER_DRIVER"] = "opengles2"
+        env[
+            "SDL_GAMECONTROLLERCONFIG"
+        ] = "1900b655010000000100000000010000,ANBERNIC-rk3568-keys,a:b0,b:b1,x:b3,y:b2,back:b6,guide:b8,start:b7,leftstick:b9,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpleft:h0.8,dpdown:h0.4,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b10,righttrigger:b11,platform:Linux,"
+        shown = view(data, identity or rom)
+        command += ["--rom", str(rom), "--data", str(root), "--fonts", str(app / "assets/fonts")]
+        for system in ("gba", "gb"):
+            command += ["--profiles", str(binary.parent / "profiles" / system)]
+        command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
+        command += ["--frames", str(frames_folder(data, rom))]
     else:
         # NNDDSS is retired: its supplied binaries are no longer shipped and a
         # saved choice falls back to DSCore before a launch gets here.
@@ -666,7 +697,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                 )
                 copy_missing(destination, backup)
             shutil.copy2(auto, destination)
-            env["RGDS_NATIVE_AUTOLOAD" if core == "melonds" else "RGDS_AUTOLOAD"] = "1"
+            # melonDS and RG DS Play load it before their first frame; the others get F7 from the bridge.
+            env["RGDS_NATIVE_AUTOLOAD" if core in ("melonds", "rgds-play") else "RGDS_AUTOLOAD"] = "1"
         if prepare and core == "drastic":
             for shader in (app / "emulators/shaders").glob("*"):
                 copy_missing(shader, data / "emulators/drastic/shaders" / shader.name)
@@ -693,11 +725,13 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # would be dropped by the guardian's clean environment).
         # A screen filter is the bridge's GL pass over the renderer's game
         # draw (its SDL_RenderCopy hook); the direct present has no GPU
-        # stage, so a chosen filter keeps the renderer sink on KMS.
+        # stage, so a chosen filter keeps the renderer sink on KMS. HD 2D
+        # (rgds_2d=4, HD smooth 5) is a GPU pass in the same draw.
+        gpu_pass = bool(filter_choice) or env.get('RGDS_2D_FILTER') in ('4', '5')
         if core in DSPERATE_CORES and prepare:
-            sink = os.environ.get('DS_RGDS_SINK') or ('renderer' if filter_choice else 'auto')
+            sink = os.environ.get('DS_RGDS_SINK') or ('renderer' if gpu_pass else 'auto')
             section_config(config, {"video": {"sink": sink, "gpu_present": "false"}})
-        if core in DSPERATE_CORES and filter_choice:
+        if core in DSPERATE_CORES and gpu_pass:
             env['DS_DIRECT_PRESENT'] = '0'
         # SDL's KMSDRM display 0 is DSI-1, the stock top panel, but DSCore's
         # KMSDRM order opens the upper window on display 1 first. Opening the
@@ -763,7 +797,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             write_record(marker, record)
         from quick_resume import invalidate
         invalidate(data)
-        rom = resolve_rom(rom, data)
+        rom = resolve_rom(rom, data, core)
         plan = launch_plan(core, app, data, rom, identity=original_rom, fresh_start=fresh_start)
         engine_log.command, engine_log.cwd = list(plan["command"]), plan["cwd"]
         plan['env']['RGDS_OVERLAY_FILE'] = f'/dev/shm/rgds-menu-{os.getpid()}-{time.monotonic_ns()}.frame'
@@ -933,6 +967,7 @@ def run(core, app, data, rom, display_handoff=None):
 
 
 def _run_games(core, app, data, rom, display_handoff, display):
+    from play_options import engine_for
     fresh_start = False
     switching = False
     while True:
@@ -958,6 +993,7 @@ def _run_games(core, app, data, rom, display_handoff, display):
         selection = options['core'] if options['core'] >= 0 else int(defaults.get('core', '4'))
         core = CORES[selection] if 0 <= selection < len(CORES) else core
         if core == 'nnddss': core = 'rgds-experimental'  # retired: a saved choice falls back to DSCore
+        core = engine_for(rom, core)  # other systems always restart in RG DS Play
 
 
 def main():

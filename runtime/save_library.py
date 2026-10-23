@@ -279,6 +279,7 @@ def backup_all(data):
                 ]
             ]
         ]
+        roots += [data / 'emulators/rgds-play' / folder for folder in ('saves', 'states')]  # other systems
         selected = []
         for root in roots:
             if root.exists():

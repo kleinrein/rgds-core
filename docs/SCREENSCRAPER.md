@@ -52,6 +52,44 @@ texture memory while covering the launcher's displayed sizes. Completed results
 survive cancellation in each game's `artwork-status.ini`; `scraper/report.json`
 contains the last job's audit. Fetch missing artwork resumes using existing covers.
 
+## Game information and extra pictures
+
+Besides the cover, **Fetch missing artwork** can also keep text and pictures
+about each game. Both are optional, never replace a cover or a title, and a
+library without them looks exactly as before. They work for DS, GBA, GBC and GB;
+`runtime/game_info.py` does the work and `--extras info,snap,title` selects the
+parts (Settings → Library → Artwork sources chooses them in the launcher).
+
+- **Game info** adds developer, publisher, genre, release date, rating, player
+  count, online play, series and a description. DS games come from the
+  [GameTDB](https://www.gametdb.com/DS/Downloads) database (one 4.5 MB download,
+  cached for seven days, matched by the header game code, with descriptions in
+  every language it has). GBA, GBC and GB games come from Libretro's metadata
+  lists, matched by the ROM's CRC32 (read from the ZIP directory for zipped
+  games, so nothing is unpacked).
+- **Screenshot** and **Title screen** come from Libretro's `Named_Snaps` and
+  `Named_Titles` and are stored next to the cover as `snap.bmp` and `title.bmp`
+  (at most 384 px). The name is resolved like covers: your matching title, the
+  exact No-Intro name of the ROM's CRC, the filename, then the header serial.
+  Ambiguous titles are skipped rather than guessed.
+
+In the game's library folder: `info.ini` gains `info_title`, `publisher`,
+`genre`, `release`, `rating`, `players`, `online`, `features`, `franchise`,
+`languages`, `region`, `info_provider` and `synopsis_languages`; `developer`
+and `year` are only filled when empty, and `title` is never touched. Each
+description is `synopsis.<LANG>.txt`. `info-status.ini` records what was tried,
+so a game with no entry is not asked about again until **Fetch artwork** on that
+game forces it. Network failures are retried on the next run.
+
+In the launcher, Settings → Library → Artwork sources has **Game info** (on by
+default) and **Extra pictures** (off by default: Screenshots, Title screens or
+both, because each is one more request per game). **Game options → Artwork →
+Game info** opens the page: the cover, title screen and screenshot you have, one
+at a time (L/R, Left/Right, A or the arrow buttons), and below them the facts and
+the description in your interface language, falling back to English. Up/Down or a
+tap on the upper/lower half scrolls. A game without information shows how to get
+it, and nothing else in the library or the game list changes.
+
 ## Play history and storage
 
 Home shows game count, total sessions (Times played), time played and the last

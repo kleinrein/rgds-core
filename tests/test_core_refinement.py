@@ -18,16 +18,29 @@ class RefinementTests(unittest.TestCase):
         self.assertTrue(
             {
                 "en-US", "nb-NO", "nn-NO", "da-DK", "sv-SE", "nl-NL", "de-DE", "fr-FR", "es-ES", "pt-BR", "it-IT",
-                "fi-FI", "pt-PT", "vi-VN", "id-ID", "pl-PL", "tr-TR", "ru-RU", "uk-UA"
+                "fi-FI", "pt-PT", "vi-VN", "id-ID", "pl-PL", "tr-TR", "ru-RU", "uk-UA", "ja-JP", "zh-CN", "ko-KR"
             }.issubset(languages)
         )
         self.assertEqual(len(languages), len(set(languages)))
-        glyphs = None
-        for path in sorted((ROOT / 'assets/fonts').glob('rounded-*.rgf')):
-            font = path.read_bytes()
-            count = struct.unpack_from('<I', font, 16)[0]
-            current = {struct.unpack_from('<I', font, 20 + i * 32)[0] for i in range(count)}
-            glyphs = current if glyphs is None else glyphs & current
+
+        def shipped(pattern):
+            glyphs = None
+            for path in sorted((ROOT / 'assets/fonts').glob(pattern)):
+                font = path.read_bytes()
+                count = struct.unpack_from('<I', font, 16)[0]
+                current = {struct.unpack_from('<I', font, 20 + i * 32)[0] for i in range(count)}
+                glyphs = current if glyphs is None else glyphs & current
+            return glyphs or set()
+
+        # The Latin atlases, plus the language's own CJK family for codepoints from
+        # U+2E80 up, so its text never borrows another language's Han shapes.
+        latin = shipped('rounded-[0-9]*.rgf')
+        families = {
+            'ja-JP': shipped('rounded-ja-*.rgf'),
+            'zh-CN': shipped('rounded-zh-*.rgf'),
+            'ko-KR': shipped('rounded-ko-*.rgf')
+        }
+        self.assertTrue(all(cp >= 0x2E80 for family in families.values() for cp in family))
         base = None
         for language in languages:
             rows = [
@@ -39,6 +52,7 @@ class RefinementTests(unittest.TestCase):
             self.assertEqual(len(values), len(rows))
             if base is None: base = values.keys()
             self.assertEqual(base, values.keys())
+            glyphs = latin | families.get(language, set())
             for key, value in rows:
                 self.assertEqual(key.count('{0}'), value.count('{0}'), (language, key))
                 self.assertFalse(set(map(ord, value)) - glyphs, (language, value))

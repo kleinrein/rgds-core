@@ -19,7 +19,7 @@ A DSi-style home for your Nintendo DS games on the **Anbernic RG DS**, on the st
 - **DSCore:** 3D at native to 5×, switchable mid-game. 20 shaders and LCD filters. Fast-forward. Reduced input latency.
 - **Original in game menu:** pause, checkpoints, cheats, game switcher and game settings.
 - **Other engines availables:** DraStic, DSperate or melonDS.
-- **Tailored:** Light or dark, accent colours, high contrast, rounded or pixel fonts, menu sounds and music, 19 languages.
+- **Tailored:** Light or dark, accent colours, high contrast, rounded or pixel fonts, menu sounds and music, 22 languages.
 - **PictoChat:** Our homegrown chat client. Wi-Fi rooms between RG DS Core handhelds with pens, stamps, rainbow ink. No Nintendo files. [More](docs/PICTOCHAT.md).
 - **Safe updates:** Signed over-the-air updates that roll back if they fail.
 

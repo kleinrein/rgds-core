@@ -23,6 +23,8 @@ class GapClosureUiTests(unittest.TestCase):
 
     def run_ui(self, keys, mode='game', text=''):
         script = self.root / 'input'
+        # Settings > Library opens on Show all systems, its first row: step onto the rows these tests count from.
+        if mode == 'settings': keys = ['Down', *keys]
         script.write_text(
             ''.join(f'{60+i*65} key {key}\n{80+i*65} key-up {key}\n' for i, key in enumerate(keys)) + text
         )
@@ -134,7 +136,7 @@ class GapClosureUiTests(unittest.TestCase):
         r = self.run_ui(
             ['Down'] * 7 + ['A', 'A'],
             mode='settings',
-            text='800 text missing\n900 key Return\n1000 key Y\n1150 click 260 374\n'
+            text='800 text missing\n900 key Return\n1000 key Y\n1150 click 511 346\n'
         )
         self.assertEqual(r['filtered_games'], 1)
         self.assertEqual(r['search_query'], '')

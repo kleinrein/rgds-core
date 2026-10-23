@@ -145,10 +145,13 @@ class Sharing:
         try:
             if enabled:
                 content = AVAHI_XML.format(name=SERVICE_NAME)
-                if path.is_file() and path.read_text() == content: return
+                # avahi-daemon reads the file as its own user, and the firmware
+                # runs everything under umask 077, so the mode is set explicitly.
+                if path.is_file() and path.stat().st_mode & 0o777 == 0o644 and path.read_text() == content: return
                 path.parent.mkdir(parents=True, exist_ok=True)
                 pending = path.with_name('.' + path.name + '.pending')
                 pending.write_text(content)
+                pending.chmod(0o644)
                 pending.replace(path)
             elif path.exists():
                 path.unlink()

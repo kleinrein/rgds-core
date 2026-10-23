@@ -5,3 +5,6 @@ dist/**
 vendor/**
 .cache/**
 runs/**
+# The prebuilt PanVK driver (build/panvk-private/build.json) pins this script's exact
+# bytes; reformatting it forces a full Mesa rebuild in the Lima VM.
+tools/build_panvk.py

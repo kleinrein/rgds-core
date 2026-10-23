@@ -44,9 +44,9 @@ class CoverBrowserTests(unittest.TestCase):
             if i == 8:
                 (folder / 'stats.ini').write_text('sessions=1\nlast_played=2026-10-12\n')
 
-    def run_ui(self, script='', layout=1, animations=False, home=False, first=False, extra=()):
+    def run_ui(self, script='', layout=1, animations=False, home=False, first=False, extra=(), home_layout='carousel'):
         (self.root / 'ui.ini').write_text(
-            f'schema=1\nlayout={layout}\nanimations={int(animations)}\nhome_layout=carousel\nbackground=plain\n'
+            f'schema=1\nlayout={layout}\nanimations={int(animations)}\nhome_layout={home_layout}\nbackground=plain\n'
         )
         state = self.root / 'state'
         state.write_text('1 0 0 ""\n')
@@ -147,8 +147,9 @@ class CoverBrowserTests(unittest.TestCase):
         self.assertEqual(selected, 0)
 
     def test_last_played_icon_comes_from_the_last_game(self):
-        image, _, _ = self.run_ui(home=True)
-        self.assertEqual(visuals.VisualOptionsTests.pixel(image, 100, 350), (255, 255, 0))
+        # The column Home's top tile carries the last game's banner icon (64 px at 44, 32 on the lower screen).
+        image, _, _ = self.run_ui(home=True, home_layout='vertical')
+        self.assertEqual(visuals.VisualOptionsTests.pixel(image, 76, 480 + 64), (255, 255, 0))
 
     def test_anbernic_opens_search_from_library_modal_settings_and_keyboard(self):
         for script in (
@@ -181,7 +182,8 @@ class CoverBrowserTests(unittest.TestCase):
             _, counts, _ = self.run_ui(f'100 key {button}\n', extra=extra)
             self.assertEqual(counts['page'], 12, button)
         menu = ('--game-menu', '--game-rom', str(self.roms / 'Game 00.nds'))
-        for script in ('100 key Right\n200 key A\n', '100 click 450 124\n'):
+        # Game switcher is the bottom row's left tile.
+        for script in ('100 key Down\n150 key Down\n200 key Down\n250 key Down\n300 key A\n', '100 click 170 388\n'):
             _, counts, _ = self.run_ui(script, extra=menu)
             self.assertEqual(counts['page'], 36, script)
 

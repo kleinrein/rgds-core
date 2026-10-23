@@ -12,7 +12,12 @@
 namespace rgds {
 class VolumeKeys {
     std::vector<int> descriptors;
-    std::map<int, long long> previous;
+    struct Held {
+        long long began, next;
+    };
+    // The handheld's volume buttons send no kernel autorepeat, so a held
+    // button is repeated here: after a pause, then faster the longer it stays.
+    std::map<int, Held> held;
 
 public:
     ~VolumeKeys() { close_devices(); }
@@ -38,21 +43,37 @@ public:
         }
 #endif
     }
+    bool holding() const { return !held.empty(); }
     int poll() {
         int delta = 0;
 #ifdef __linux__
+        auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       std::chrono::steady_clock::now().time_since_epoch())
+                       .count();
         for (int fd : descriptors) {
             input_event event{};
-            while (::read(fd, &event, sizeof(event)) == sizeof(event))
-                if (event.type == EV_KEY && (event.value == 1 || event.value == 2)) {
-                    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                   std::chrono::steady_clock::now().time_since_epoch())
-                                   .count();
-                    if (previous.count(event.code) && now - previous[event.code] < 40) continue;
-                    previous[event.code] = now;
-                    if (event.code == KEY_VOLUMEUP) delta += 5;
-                    else if (event.code == KEY_VOLUMEDOWN) delta -= 5;
+            while (::read(fd, &event, sizeof(event)) == sizeof(event)) {
+                if (event.type != EV_KEY || (event.code != KEY_VOLUMEUP && event.code != KEY_VOLUMEDOWN)) continue;
+                const int step = event.code == KEY_VOLUMEUP ? 5 : -5;
+                if (event.value == 0) held.erase(event.code);
+                else if (event.value == 1) {
+                    delta += step;
+                    held[event.code] = {now, now + 350};
                 }
+            }
+        }
+        for (auto it = held.begin(); it != held.end();) {
+            // A release lost to a sleep must not leave the volume running away.
+            if (now - it->second.began > 15000) {
+                it = held.erase(it);
+                continue;
+            }
+            if (now >= it->second.next) {
+                delta += it->first == KEY_VOLUMEUP ? 5 : -5;
+                long long elapsed = now - it->second.began;
+                it->second.next = now + (elapsed > 1500 ? 40 : elapsed > 800 ? 65 : 100);
+            }
+            ++it;
         }
 #endif
         return delta;

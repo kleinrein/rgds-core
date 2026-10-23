@@ -58,6 +58,12 @@ public:
   // A mark for the next frame's swap, carried to its flip record
   // (KmsFlips::Flip::tag): the pacer marks a frame that started late.
   void set_present_tag(int tag) { present_tag_ = tag; }
+  // HD (rgds_2d=4): the core's HD rules for each screen of the next frame handed to draw*() (256x192 words, or
+  // null). They go with the frame (the async present copies them) and reach the RG DS bridge as a texture paired
+  // with the screen's, so its GPU reconstruction skips its own rules pass.
+  static void set_hd_rules(const u32* const rules[SCREENS]) {
+    for (int s = 0; s < SCREENS; ++s) hd_rules_next_[s] = rules ? rules[s] : nullptr;
+  }
 
   void draw(const u32* const fb[SCREENS], u32 width = SCREEN_W, u32 height = SCREEN_H, const bool* enhanced = nullptr);
   bool enhanced_present() const { return ren_ != nullptr; }
@@ -301,6 +307,11 @@ private:
   SDL_Renderer* ren_ = nullptr;
   u32 texture_width_[SCREENS] = {SCREEN_W, SCREEN_W}, texture_height_[SCREENS] = {SCREEN_H, SCREEN_H};
   SDL_Texture* tex_[SCREENS] = {nullptr, nullptr};
+  inline static const u32* hd_rules_next_[SCREENS] = {nullptr, nullptr}; // set_hd_rules()
+  const u32* hd_rules_in_flight_[SCREENS] = {nullptr, nullptr};          // the frame draw_renderer() draws
+  SDL_Texture* rules_tex_[SCREENS] = {nullptr, nullptr};
+  bool rules_paired_[SCREENS] = {false, false};
+  void hd_rules_upload(int screen); // before the screen's draw
   View views_[SCREENS] = {};
   int nviews_ = SCREENS;
   int only_screen_ = -1;

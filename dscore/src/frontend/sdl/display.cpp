@@ -477,6 +477,10 @@ void Display::close() {
     if (t) SDL_DestroyTexture(t);
     t = nullptr;
   }
+  for (auto*& t : rules_tex_) {
+    if (t) SDL_DestroyTexture(t);
+    t = nullptr;
+  }
   if (ren_) {
     SDL_DestroyRenderer(ren_);
     ren_ = nullptr;
@@ -714,7 +718,7 @@ bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const f
   }
 
   struct LaneStage {
-    std::vector<u32> px[2][SCREENS];
+    std::vector<u32> px[2][SCREENS], rules[2][SCREENS];
     u64 job[2] = {};
     int set = 0;
   };
@@ -746,17 +750,27 @@ bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const f
       for (int i = 0; i < owners[k]->nviews_; ++i)
         if (owners[k]->views_[i].shown) shown[owners[k]->views_[i].screen] = true;
     std::vector<u32>* const st = ls.px[next];
+    std::vector<u32>* const sr = ls.rules[next];
+    const u32* rules[SCREENS] = {nullptr, nullptr};
     for (int s = 0; s < SCREENS; ++s) {
       if (!shown[s]) continue;
       st[s].resize(sizes[s]);
       std::memcpy(st[s].data(), fb[s], static_cast<size_t>(sizes[s]) * sizeof(u32));
+      if (hd_rules_next_[s]) {
+        sr[s].resize(SCREEN_W * SCREEN_H);
+        std::memcpy(sr[s].data(), hd_rules_next_[s], SCREEN_W * SCREEN_H * sizeof(u32));
+        rules[s] = sr[s].data();
+      }
     }
     const int tags[2] = {owners[0]->present_tag_, owners[1] ? owners[1]->present_tag_ : 0};
-    ls.job[next] = pt.post([st, width, height, f0 = flags[0], f1 = flags[1], owners, m, t0 = tags[0], t1 = tags[1]] {
+    ls.job[next] = pt.post([st, width, height, f0 = flags[0], f1 = flags[1], owners, m, t0 = tags[0], t1 = tags[1],
+                            r0 = rules[0], r1 = rules[1]] {
       const u32* const sfb[SCREENS] = {st[0].data(), st[1].data()};
       const bool on[SCREENS] = {f0, f1};
       for (int k = 0; k < m; ++k) {
         owners[k]->tag_in_flight_ = k ? t1 : t0;
+        owners[k]->hd_rules_in_flight_[0] = r0;
+        owners[k]->hd_rules_in_flight_[1] = r1;
         owners[k]->draw_renderer(sfb, width, height, on);
       }
     });
@@ -768,7 +782,30 @@ bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const f
 void Display::draw(const u32* const fb[SCREENS], u32 width, u32 height, const bool* enhanced) {
   sync();
   tag_in_flight_ = present_tag_;
+  for (int s = 0; s < SCREENS; ++s) hd_rules_in_flight_[s] = hd_rules_next_[s];
   draw_renderer(fb, width, height, enhanced);
+}
+
+// HD: the frame's rules for `screen` into its rules texture, paired with the screen's texture in the RG DS bridge
+// (rgds_hd_rules); without rules the pair is dropped and the bridge computes them on the GPU.
+void Display::hd_rules_upload(int screen) {
+  using Pair = void (*)(SDL_Texture*, SDL_Texture*);
+  static const Pair pair = reinterpret_cast<Pair>(::dlsym(RTLD_DEFAULT, "rgds_hd_rules"));
+  if (!pair || !tex_[screen]) return;
+  const u32* rules = hd_rules_in_flight_[screen];
+  if (!rules) {
+    if (rules_paired_[screen]) pair(tex_[screen], nullptr);
+    rules_paired_[screen] = false;
+    return;
+  }
+  if (!rules_tex_[screen]) {
+    rules_tex_[screen] =
+        SDL_CreateTexture(ren_, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, int(SCREEN_W), int(SCREEN_H));
+    if (!rules_tex_[screen]) return; // read nearest: the bridge sets that on its GL texture
+  }
+  SDL_UpdateTexture(rules_tex_[screen], nullptr, rules, int(SCREEN_W) * 4);
+  pair(tex_[screen], rules_tex_[screen]); // every frame: the screen texture may have been recreated
+  rules_paired_[screen] = true;
 }
 
 bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb[SCREENS], u32 width, u32 height,
@@ -1058,8 +1095,10 @@ void Display::draw_renderer(const u32* const fb[SCREENS], u32 width, u32 height,
     const View& v = views_[i];
     if (!v.shown) continue;
     const auto tu = now();
-    if (test != 1 && test != 3)
+    if (test != 1 && test != 3) {
       SDL_UpdateTexture(tex_[v.screen], nullptr, fb[v.screen], static_cast<int>(texture_width_[v.screen]) * 4);
+      hd_rules_upload(v.screen);
+    }
     if (profile) upload_ns += static_cast<u64>((std::chrono::steady_clock::now() - tu).count());
     if (test == 1 || test == 2) continue;
     // Textures are per screen, not per view, so the alpha mod is scoped to

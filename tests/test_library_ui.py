@@ -148,7 +148,8 @@ class LibraryUITests(unittest.TestCase):
     def test_emulator_choice_is_saved_in_library_settings(self):
         self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
         self.run_ui(
-            "20 key A\n40 key Right\n60 key A\n80 key Escape\n120 key Escape\n160 key Escape\n",
+            # Down: from Show all systems (the first row) to Default emulator.
+            "10 key Down\n20 key A\n40 key Right\n60 key A\n80 key Escape\n120 key Escape\n160 key Escape\n",
             extra=("--settings", "--section", "library")
         )
         # DSperate starts at core 1; one step selects melonDS (3), the next offered row.

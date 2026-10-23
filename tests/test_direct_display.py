@@ -128,6 +128,20 @@ class DirectDisplayPlanTests(Fixture):
         config.read(self.data / 'emulators' / ENGINE / 'config.ini')
         self.assertEqual(config['video']['sink'], 'auto')
 
+    def test_hd_2d_keeps_the_renderer_sink_on_kms(self):
+        # HD 2D (and HD smooth) is a GPU pass in the same bridge draw, with or without a filter.
+        rom = self.prepare()
+        for mode in ('4', '5'):
+            with self.subTest(rgds_2d=mode):
+                write_fields(self.data / 'library' / game_key(rom) / 'game.ini',
+                             dict(rgds_direct=1, filter=0, rgds_2d=mode))
+                plan = self.plan(rom)
+                self.assertEqual(plan['env']['RGDS_2D_FILTER'], mode)
+                self.assertEqual(plan['env']['DS_DIRECT_PRESENT'], '0')
+                config = configparser.ConfigParser()
+                config.read(self.data / 'emulators' / ENGINE / 'config.ini')
+                self.assertEqual(config['video']['sink'], 'renderer')
+
     def test_other_engines_and_independent_linux_keep_weston(self):
         rom = self.prepare()
         write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=1))

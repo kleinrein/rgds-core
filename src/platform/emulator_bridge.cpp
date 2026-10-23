@@ -1,7 +1,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include "touch.hpp"
-#include "nnddss_stats.hpp"
+#include "frame_rate.hpp"
 #include "drastic_threads.hpp"
 #include "dsperate_state.hpp"
 #include <dlfcn.h>
@@ -72,6 +72,8 @@ bool shared_menu = false, loading = false;
 // Read by the present hooks, which DSCore runs on its present thread.
 std::atomic<bool> enhanced_game_texture{false};
 std::atomic<int> live_shader{0};
+// DSCore's HD 2D (rgds_2d=4): the GPU reconstruction runs in the screen draw, under the live shader or alone.
+std::atomic<bool> hd_live{false};
 // Bridge state changes happen on the thread that polls SDL events. A present
 // on another thread reads the atomics above and posts a shader outcome here.
 std::atomic<std::thread::id> event_thread{};
@@ -238,7 +240,11 @@ struct NativeTexture {
     SDL_Renderer* renderer = nullptr;
     bool game = false;
     int applied = -1;
+    bool companion = false; // RG DS Play's second screen (a 640x480 streaming texture)
 };
+// RG DS Play: panel pixels per game pixel on the game screen, so the second
+// screen's grid has the same cells (8/3 for a GBA game at sharp fill).
+std::atomic<float> play_cell{8.f / 3.f};
 std::map<SDL_Texture*, NativeTexture> native_textures;
 std::mutex textures_mutex; // native_textures and renderer_contexts
 void graphics_texture_changed(bool enhanced) {
@@ -401,12 +407,12 @@ extern "C" SDL_bool SDL_IsGameController(int index) {
             char identifier[33]{};
             text(guid(index), identifier, sizeof(identifier));
             if (!configured[identifier]) {
-                std::string faces = env("RGDS_CORE") == "nnddss" ? "a:b1,b:b0,x:b2,y:b3" : "a:b0,b:b1,x:b3,y:b2";
+                std::string faces = "a:b0,b:b1,x:b3,y:b2";
                 std::string mapping =
                     std::string(identifier) + ",RGDS console," + faces +
                     ",back:b6,guide:b8,start:b7,leftstick:b9,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpleft:h0.8,dpdown:h0.4,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b10,righttrigger:b11,platform:Linux,";
                 if (std::strcmp(label, "gpio-keys-control") == 0) {
-                    faces = env("RGDS_CORE") == "nnddss" ? "a:b0,b:b1,x:b3,y:b2" : "a:b1,b:b0,x:b2,y:b3";
+                    faces = "a:b1,b:b0,x:b2,y:b3";
                     mapping =
                         std::string(identifier) + ",RGDS mainline," + faces +
                         ",back:b8,guide:b16,start:b9,leftstick:b10,rightstick:b11,leftshoulder:b4,rightshoulder:b5,dpup:b12,dpdown:b13,dpleft:b14,dpright:b15,lefttrigger:b6,righttrigger:b7,platform:Linux,";
@@ -466,6 +472,11 @@ void initialize() {
     shared_menu = env("RGDS_SHARED_MENU") == "1";
     enhanced_game_texture = env("RGDS_OWN_FF_HUD") == "1" && std::atoi(env("RGDS_ACTIVE_SCALE").c_str()) > 1;
     live_shader = std::clamp(std::atoi(env("RGDS_SHADER").c_str()), 0, rgds::shader_count - 1);
+    hd_live = env("RGDS_OWN_FF_HUD") == "1" && (env("RGDS_2D_FILTER") == "4" || env("RGDS_2D_FILTER") == "5");
+    game_shader.hd_smooth = env("RGDS_2D_FILTER") == "5";
+    if (hd_live)
+        std::fprintf(stderr, "RGDS: HD 2D%s on (filter %d)\n", game_shader.hd_smooth ? " smooth" : "",
+                     live_shader.load());
     opened = now();
     atomic_state_replace = core == "dsperate" && !state_slot.empty() && env("RGDS_STATE_ATOMIC_REPLACE") == "1";
     frame_stats.enabled = env("RGDS_FPS") == "1";
@@ -552,9 +563,7 @@ void refresh_controls() {
 int controller_button(int source) {
     constexpr int buttons[]{0, 1, 2, 3, 9, 10, 6, 4, 11, 12, 13, 14, -1, -1, 7, 8};
     if (source < 0 || source >= 16) return -1;
-    int selected = source;
-    if (core == "nnddss" && source < 4) selected = source ^ 1;
-    return buttons[selected];
+    return buttons[source];
 }
 int controller_source(int button) {
     for (int source = 0; source < 16; source++)
@@ -834,7 +843,7 @@ void inject(int action) {
     }
 }
 bool set_fast_forward(bool enabled) {
-    if (core != "dsperate" && core != "drastic" && core != "nnddss" && core != "melonds") return false;
+    if (core != "dsperate" && core != "drastic" && core != "melonds" && core != "rgds-play") return false;
     if (enabled != fast_forward) {
         inject(4);
         fast_forward = enabled;
@@ -1049,7 +1058,10 @@ void tick(bool graphics_safe = false) {
         if (command_file.refresh()) {
             std::istringstream file(command_file.value);
             std::string id, command;
-            if (file >> id >> command && id != last_token) {
+            // The command is the rest of the line: a picture frame's name may hold spaces.
+            if (file >> id && std::getline(file >> std::ws, command))
+                command.erase(command.find_last_not_of(" \t\r") + 1);
+            if (!id.empty() && !command.empty() && id != last_token) {
                 last_token = token = id;
                 if (command == "ds:blow" || command == "ds:lid")
                     answer(ds_control(command == "ds:blow") ? "ds-applied" : "ds-unavailable");
@@ -1095,6 +1107,20 @@ void tick(bool graphics_safe = false) {
                                      : nullptr;
                     bool on = command == "adaptive:1";
                     answer(apply && apply(on) ? (on ? "adaptive-on" : "adaptive-off") : "adaptive-failed");
+                } else if (command.rfind("play-graphics:", 0) == 0) {
+                    // RG DS Play: play-graphics:<fit>:<second>:<frame>, a view change the player takes up
+                    // between frames (fit 0 sharp, 1 whole pixels, 2 smooth; second 0 companion, 1 off, 2 swap;
+                    // frame a built-in style's name or a picture frame's; the player checks it).
+                    int fit = -1, second = -1, used = 0;
+                    auto apply = core == "rgds-play" ? reinterpret_cast<int (*)(int, int, const char*)>(
+                                                           dlsym(RTLD_DEFAULT, "rgds_play_set_graphics"))
+                                                     : nullptr;
+                    bool valid =
+                        std::sscanf(command.c_str(), "play-graphics:%d:%d:%n", &fit, &second, &used) == 2 && used > 0;
+                    const std::string frame = valid ? command.substr(size_t(used)) : std::string();
+                    valid = valid && !frame.empty() && frame.size() <= 64 && frame.find('/') == std::string::npos;
+                    answer(valid && apply && apply(fit, second, frame.c_str()) ? "play-graphics-applied"
+                                                                               : "play-graphics-failed");
                 } else if (command.rfind("filter2d:", 0) == 0) {
                     int mode = -1;
                     char extra = 0;
@@ -1102,7 +1128,7 @@ void tick(bool graphics_safe = false) {
                                      ? reinterpret_cast<int (*)(int)>(dlsym(RTLD_DEFAULT, "rgds_set_filter2d"))
                                      : nullptr;
                     bool valid =
-                        std::sscanf(command.c_str(), "filter2d:%d%c", &mode, &extra) == 1 && mode >= 0 && mode <= 3;
+                        std::sscanf(command.c_str(), "filter2d:%d%c", &mode, &extra) == 1 && mode >= 0 && mode <= 5;
                     if (valid && apply) {
                         pending_filter2d_token = id;
                         pending_filter2d_mode = mode;
@@ -1216,7 +1242,12 @@ void tick(bool graphics_safe = false) {
         auto apply = reinterpret_cast<int (*)(int)>(dlsym(RTLD_DEFAULT, "rgds_set_filter2d"));
         token = pending_filter2d_token;
         pending_filter2d_token.clear();
-        answer(apply && apply(pending_filter2d_mode) ? "filter2d-applied" : "filter2d-failed");
+        const bool ok = apply && apply(pending_filter2d_mode);
+        if (ok) {
+            game_shader.hd_smooth = pending_filter2d_mode == 5;
+            hd_live = pending_filter2d_mode >= 4;
+        }
+        answer(ok ? "filter2d-applied" : "filter2d-failed");
     }
 }
 }
@@ -1310,13 +1341,11 @@ void measure_present(void* source) {
         frame_stats.pause();
         game_rate.reset();
     }
-    static const auto* counter = core == "nnddss" ? rgds::nnddss_frame_counter() : nullptr;
     static auto native_frames = (core == "melonds" || core == "dsperate")
                                     ? reinterpret_cast<uint32_t (*)()>(dlsym(RTLD_DEFAULT, "rgds_emulated_frames"))
                                     : nullptr;
-    const bool game_counter = counter || native_frames;
-    if (game_counter && game_rate.sample(us, counter ? *counter : native_frames(), blocked))
-        overlay_renderer.fps(game_rate.fps, true);
+    const bool game_counter = native_frames != nullptr;
+    if (game_counter && game_rate.sample(us, native_frames(), blocked)) overlay_renderer.fps(game_rate.fps, true);
     if (frame_stats.present(us, blocked)) {
         if (!game_counter) overlay_renderer.fps(frame_stats.fps());
         frame_stats.write(stats_path, game_counter ? game_rate.fps : -1);
@@ -1371,9 +1400,11 @@ extern "C" void SDL_RenderPresent(SDL_Renderer* renderer) {
 extern "C" void rgds_present_canvas(int display, uint32_t* pixels, int w, int h, int pitch) {
     initialize();
     if (!pixels || w <= 0 || h <= 0 || pitch < w) return;
-    if (!direct_present.exchange(true) && live_shader) {
-        std::fprintf(stderr, "RGDS: shader %d needs the renderer; the direct present shows original pixels\n",
-                     live_shader.load());
+    if (!direct_present.exchange(true) && (live_shader || hd_live)) {
+        if (live_shader)
+            std::fprintf(stderr, "RGDS: shader %d needs the renderer; the direct present shows original pixels\n",
+                         live_shader.load());
+        if (hd_live) std::fprintf(stderr, "RGDS: HD 2D needs the renderer; the direct present shows plain pixels\n");
         std::fflush(stderr);
         live_shader = 0;
     }
@@ -1446,6 +1477,14 @@ extern "C" void SDL_DestroyRenderer(SDL_Renderer* renderer) {
     if (context) forget_gl(context);
     if (next) next(renderer);
 }
+// DSCore's HD 2D: `rules` (an SDL texture, 256x192) carries the CPU's rules for whatever frame `image` holds, so
+// the GPU skips its rules pass; null forgets the pair. Called on the thread that draws, before the draw.
+// RG DS Play draws its game texture as it is, with no render target, while a
+// screen filter is chosen, so the filter's pass can take that draw.
+extern "C" __attribute__((visibility("default"))) int rgds_shader_live() { return live_shader.load(); }
+extern "C" __attribute__((visibility("default"))) void rgds_hd_rules(SDL_Texture* image, SDL_Texture* rules) {
+    game_shader.pair_rules(image, rules);
+}
 extern "C" void SDL_DestroyTexture(SDL_Texture* texture) {
     using Fn = void (*)(SDL_Texture*);
     static auto next = rgds::overlay_sdl<Fn>("SDL_DestroyTexture");
@@ -1453,11 +1492,13 @@ extern "C" void SDL_DestroyTexture(SDL_Texture* texture) {
         std::lock_guard<std::mutex> guard(textures_mutex);
         native_textures.erase(texture);
     }
+    game_shader.pair_rules(texture, nullptr);
     if (next) next(texture);
 }
 bool sdl_shader(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_Rect* source, const SDL_Rect* target,
                 double angle = 0, const SDL_Point* center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE) {
-    if (!live_shader || drawing_shader) return false;
+    const bool hd = hd_live;
+    if ((!live_shader && !hd) || drawing_shader) return false;
     static auto render_target = rgds::overlay_sdl<decltype(&SDL_GetRenderTarget)>("SDL_GetRenderTarget");
     if (render_target && render_target(renderer)) return false;
     static auto blend = rgds::overlay_sdl<decltype(&SDL_GetTextureBlendMode)>("SDL_GetTextureBlendMode");
@@ -1468,26 +1509,52 @@ bool sdl_shader(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_Rect* so
     // Only DS screen textures are shader candidates; menus and RGDS textures
     // keep SDL's own blend/pixel path. Remember dimensions until destruction.
     const bool enhanced = enhanced_game_texture;
+    bool companion = false;
     {
         std::lock_guard<std::mutex> guard(textures_mutex);
         auto found = native_textures.find(texture);
         if (found == native_textures.end()) {
             static auto query = rgds::overlay_sdl<decltype(&SDL_QueryTexture)>("SDL_QueryTexture");
-            int width = 0, height = 0;
-            if (!query || query(texture, nullptr, nullptr, &width, &height) != 0) return false;
+            int width = 0, height = 0, access = 0;
+            if (!query || query(texture, nullptr, &access, &width, &height) != 0) return false;
+            // RG DS Play's second screen gets the filter too, like a DS game's bottom screen. Its frames
+            // and picture overlays are static textures and keep their own pixels.
+            const bool companion =
+                core == "rgds-play" && width == 640 && height == 480 && access == SDL_TEXTUREACCESS_STREAMING;
             found = native_textures
                         .emplace(texture, NativeTexture{renderer,
                                                         rgds::GameShader::screen_texture(width, height) ||
-                                                            (enhanced && width == 640 && height == 480),
-                                                        -1})
+                                                            (enhanced && width == 640 && height == 480) ||
+                                                            (core == "rgds-play" &&
+                                                             rgds::GameShader::handheld_texture(width, height)) ||
+                                                            companion,
+                                                        -1, companion})
                         .first;
         }
         if (!found->second.game) return false;
+        companion = found->second.companion;
+    }
+    int grid_w = 0, grid_h = 0;
+    if (core == "rgds-play" && target && !companion) {
+        int width = source ? source->w : 0;
+        static auto query = rgds::overlay_sdl<decltype(&SDL_QueryTexture)>("SDL_QueryTexture");
+        if (!source && query) query(texture, nullptr, nullptr, &width, nullptr);
+        if (width > 0) play_cell = float(target->w) / width;
+    }
+    if (companion) {
+        // The same cell size as the game screen: the panel's width and height in game pixels.
+        const float cell = std::max(1.f, play_cell.load());
+        const int w = target ? target->w : 640, h = target ? target->h : 480;
+        grid_w = std::max(1, int(std::lround(w / cell)));
+        grid_h = std::max(1, int(std::lround(h / cell)));
     }
     drawing_shader = true;
-    bool applied =
-        game_shader.sdl(renderer, texture, live_shader, source, target, angle, center, flip, nullptr, enhanced);
+    bool applied = game_shader.sdl(renderer, texture, live_shader, source, target, angle, center, flip, nullptr,
+                                   enhanced, hd, core == "rgds-play", grid_w, grid_h);
     drawing_shader = false;
+    static std::atomic<bool> said_declined{false};
+    if (hd && !applied && !said_declined.exchange(true))
+        std::fprintf(stderr, "RGDS: HD 2D pass declined for a game texture; showing it plain\n");
     if (applied) {
         static auto context = rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");
         if (context) {
@@ -1874,10 +1941,7 @@ extern "C" const Uint8* SDL_GetKeyboardState(int* count) {
     if (count) *count = length;
     initialize();
     if (!source || !shared_menu) return source;
-    // NNDDSS's hotkey edge detector reads keyboard state after draining events.
-    // A Tab down/up pair alone leaves that state unchanged and never toggles it.
-    bool blocked = input_blocked(),
-         active_pulse = now() - pulse_at < 160 && (pulse == 1 || pulse == 2 || (pulse == 4 && core == "nnddss")),
+    bool blocked = input_blocked(), active_pulse = now() - pulse_at < 160 && (pulse == 1 || pulse == 2),
          menu_key = false;
     for (auto key : {SDL_SCANCODE_AC_HOME, SDL_SCANCODE_HOME, SDL_SCANCODE_AC_BACK, SDL_SCANCODE_MENU})
         if (key < length && source[key]) menu_key = true;
@@ -1889,7 +1953,7 @@ extern "C" const Uint8* SDL_GetKeyboardState(int* count) {
     for (auto key : {SDL_SCANCODE_AC_HOME, SDL_SCANCODE_HOME, SDL_SCANCODE_AC_BACK, SDL_SCANCODE_MENU})
         if (key < length) keys[key] = 0;
     if (active_pulse) {
-        auto key = pulse == 1 ? SDL_SCANCODE_F5 : pulse == 4 ? SDL_SCANCODE_TAB : SDL_SCANCODE_F7;
+        auto key = pulse == 1 ? SDL_SCANCODE_F5 : SDL_SCANCODE_F7;
         if (key < length) keys[key] = 1;
     }
     return keys.data();

@@ -220,14 +220,15 @@ class CoreUITests(unittest.TestCase):
 
     def test_language_picker_persists_and_game_menu_loads_same_preference(self):
         languages = [line.split('\t')[0] for line in (ROOT / 'assets/locales/languages.tsv').read_text().splitlines()]
-        for language in ('nb-NO', 'nn-NO', 'sv-SE', 'da-DK', 'nl-NL', 'fi-FI', 'pt-PT', 'vi-VN', 'pl-PL', 'ru-RU', 'uk-UA'):
+        for language in ('nb-NO', 'nn-NO', 'sv-SE', 'da-DK', 'nl-NL', 'fi-FI', 'pt-PT', 'vi-VN', 'pl-PL', 'ru-RU', 'uk-UA', 'ja-JP', 'zh-CN', 'ko-KR'):
             with self.subTest(language=language), tempfile.TemporaryDirectory() as tmp:
                 data = Path(tmp)
                 steps = languages.index(language)
                 script = '20 key A\n40 key-up A\n' + ''.join(
-                    f'{100+i*50} key Down\n{120+i*50} key-up Down\n' for i in range(steps)
+                    f'{100+i*40} key Down\n{120+i*40} key-up Down\n' for i in range(steps)
                 )
-                script += f'{150+steps*50} key A\n'
+                # Every language, the last included, is chosen well inside the one-second run.
+                script += f'{120+steps*40} key A\n'
                 self.run_ui(data, script, ('--settings', '--section', 'system'))
                 self.assertIn(f'language={language}\n', (data / 'ui.ini').read_text())
                 before = (data / 'ui.ini').read_text()

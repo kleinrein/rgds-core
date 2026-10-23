@@ -1,0 +1,946 @@
+# UTF-8 source\ttranslation. One entry per line.	
+3D rendering automatically uses worker threads.	3D 渲染会自动使用工作线程。
+3D resolution	3D 分辨率
+3D threading changed for this session. Settings storage is unavailable.	已在本次会话中更改 3D 线程。无法保存设置。
+3D threading changed. No restart needed.	已更改 3D 线程，无需重启。
+A  Apply	A  应用
+A  Done	A  完成
+A  Play	A  开始游戏
+A gentle scanline pattern with original colours.	保留原始色彩的柔和扫描线。
+A natural colour and contrast treatment.	自然的色彩与对比度。
+A screen style for this cartridge	此卡带的画面风格
+A stronger LCD texture and scanline look.	更明显的液晶质感和扫描线。
+A subtle handheld LCD pixel pattern.	细微的掌机液晶像素纹理。
+A subtle pixel grid with a bright, readable image.	细微的像素网格，画面明亮清晰。
+Add your DS games to fetch their artwork.	添加 DS 游戏后即可获取封面。
+Africa	非洲
+After	之后
+All games	全部游戏
+Amber	琥珀色
+Americas	美洲
+Anbernic startup is unavailable in RGDS OS.	RGDS OS 中无法从 Anbernic 启动。
+Animations	动画
+Antarctica	南极洲
+Applies immediately. Higher clocks use more battery.	立即生效。频率越高越耗电。
+Applies immediately. Your game keeps its progress.	立即生效，游戏进度不受影响。
+Apply	应用
+Applying shader…	正在应用滤镜…
+Arctic	北极
+Artwork	封面
+Artwork & ScreenScraper	封面
+Artwork source	封面来源
+Artwork sources	封面来源
+Asia	亚洲
+Atlantic Ocean	大西洋
+Australia	澳大利亚
+Auto-load state	自动读取即时存档
+Auto-save on exit	退出时自动存档
+Automatic	自动
+Automatic (free)	自动
+Available networks	可用网络
+B  Cancel	B  取消
+B  Close	B  关闭
+BACK HOME	返回主页
+Back	返回
+Balance battery life and speed	兼顾续航与速度
+Balanced	均衡
+Battery	电池
+Battery percentage	电量百分比
+Battery saver	省电
+Before	之前
+Before you play	开始游戏前
+Binding unchanged.	按键设置未更改。
+Boot	启动
+Boot into	启动到
+Both screens	双屏
+Bottom display	下屏
+Box art, titles and game details	封面、标题和游戏信息
+Brightness	亮度
+Browser layout	列表布局
+Build, storage and device address	版本、存储空间和设备地址
+Button	按键
+Button layout	按键布局
+Button {0}	按键 {0}
+Buttons and the game menu shortcut	按键与游戏菜单快捷键
+COLOUR MODE	色彩模式
+Cancel	取消
+Cartridges	卡带
+Changes immediately. Map a button in Controls for quick access.	立即切换。在“按键设置”中指定按键可快速使用。
+Changing 3D threading…	正在更改 3D 线程…
+Changing speed…	正在更改速度…
+Check the current connection	检查当前连接
+Checkpoint loaded	已读取存档点
+Checkpoint loaded (preview)	已读取存档点（预览）
+Checkpoint loaded.	已读取存档点。
+Checkpoint saved	已保存存档点
+Checkpoint saved (preview)	已保存存档点（预览）
+Checkpoint saved.	已保存存档点。
+Choose Anbernic or RG DS startup.	请选择从 Anbernic 还是 RG DS 启动。
+Choose an option	请选择
+Choose native or a sharper 3D image	原生分辨率或更清晰的 3D 画面
+Choose the core for this cartridge	选择此卡带的核心
+Choose the display backend for the next DraStic launch. DSperate stays your default.	选择下次启动 DraStic 时的显示方式。默认仍为 DSperate。
+Choose what opens when you power on	选择开机时打开的内容
+Clear	清除
+Clear temporary cache	清除临时缓存
+Clear temporary game files?	要清除游戏临时文件吗？
+Close	关闭
+Close the handheld to sleep	合上掌机即可休眠
+Colour treatment inspired by the original DS display.	仿照初代 DS 屏幕的色彩。
+Compare	对比
+Confirm	确认
+Connect	连接
+Connected	已连接
+Connected.	已连接。
+Connecting…	正在连接…
+Connectivity	网络
+Continue	继续
+Continue where you left off	从上次的进度继续
+Control unavailable on this device	此设备不支持该操作
+Controls	按键设置
+Controls saved for this game.	已保存此游戏的按键设置。
+Cool crisp	冷色清晰
+Cool whites with a small contrast boost.	偏冷的白色，对比度略微增强。
+Could not apply brightness	无法应用亮度
+Could not apply saved brightness	无法应用已保存的亮度
+Could not apply saved power mode	无法应用已保存的电源模式
+Could not apply setting - see log	无法应用设置 - 请查看日志
+Could not apply this shader.	无法应用此滤镜。
+Could not apply volume	无法应用音量
+Could not bring the Wi-Fi adapter up. Try again.	无法启动 Wi-Fi 适配器，请重试。
+Could not change 3D threading. Your game is unchanged.	无法更改 3D 线程，游戏不受影响。
+Could not confirm the selected Wi-Fi connection. Scan and try again.	无法确认所选的 Wi-Fi 连接。请重新搜索后再试。
+Could not enable lid wake	无法启用开盖唤醒
+Could not load. Resume, retry, or return without saving.	无法读取。请继续、重试，或不保存直接返回。
+Could not read this collection. Try again.	无法读取此合集，请重试。
+Could not restore previous hardware setting	无法恢复之前的硬件设置
+Could not save all settings. Check storage.	部分设置无法保存，请检查存储空间。
+Could not save brightness	无法保存亮度
+Could not save controls. Check writable storage.	无法保存按键设置，请检查存储空间是否可写入。
+Could not save game settings. Previous values kept.	无法保存游戏设置，已保留之前的设置。
+Could not save matching title.	无法保存匹配的标题。
+Could not save settings	无法保存设置
+Could not save timezone	无法保存时区
+Could not save volume	无法保存音量
+Could not save. Resume, retry, or return without saving.	无法保存。请继续、重试，或不保存直接返回。
+Could not send game action	无法向游戏发送操作
+Could not set volume - see log	无法设置音量 - 请查看日志
+Could not sleep - see log	无法休眠 - 请查看日志
+Could not sleep. Reopen the lid and try again.	无法休眠。请打开翻盖后重试。
+Could not start artwork service	无法启动封面服务
+Could not start library scan	无法开始扫描游戏库
+Could not write controls	无法写入按键设置
+Counts display updates, not emulation speed. Changes immediately.	统计屏幕刷新次数，而非模拟速度。立即切换。
+Counts emulated game frames. Changes immediately.	统计模拟的游戏帧数。立即切换。
+Covers	封面
+Custom	自定义
+DEFAULT THEME - CHECK LOG	默认主题 - 请查看日志
+DS rounded	DS 圆体
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate：日常游玩推荐使用。默认为原生分辨率。
+Dark	深色
+Date format	日期格式
+Default	默认
+Default emulator	默认模拟器
+Default shader	默认滤镜
+Delete	删除
+Desktop preview	桌面预览
+Development build	开发版
+Device address	设备地址
+Device information	设备信息
+Display FPS	屏幕帧率
+Done	完成
+Down	下
+DraStic backend	DraStic 显示方式
+DraStic: an alternative for games that need it. Saves stay separate.	DraStic：供有需要的游戏使用。存档单独保存。
+ERROR	错误
+ERROR: Could not restore settings	错误：无法恢复设置
+ERROR: Could not restore settings - see log	错误：无法恢复设置 - 请查看日志
+Emulator	模拟器
+Emulator settings	模拟器设置
+Engine managed	由引擎管理
+Enter here	在此输入
+Enter password	输入密码
+Enter your username and password	输入用户名和密码
+Europe	欧洲
+Every game in this collection has artwork.	此合集中的游戏都已有封面。
+FPS changed for this session. Settings storage is unavailable.	已在本次会话中更改帧率显示。无法保存设置。
+FPS counter enabled.	已显示帧率。
+FPS counter hidden.	已隐藏帧率。
+Fast	快速
+Fast-forward	快进
+Fast-forward button	快进键
+Fast-forward enabled.	已开启快进。
+Fast-forward is unavailable for this emulator.	此模拟器不支持快进。
+Fast-forward style	快进方式
+Favourite	收藏
+Favourites	收藏
+Fetch artwork	获取封面
+Fetch missing artwork	获取缺少的封面
+Find and connect to a nearby network	搜索并连接附近的网络
+Finishing the system request	正在完成系统请求
+Follow your default button layout	跟随默认按键布局
+Following your global controls.	正在使用通用按键设置。
+Follows your Library default. Each emulator keeps its own saves.	跟随游戏库的默认设置。每个模拟器的存档各自独立。
+Frameskip	跳帧
+Free space	可用空间
+Free space while keeping your saves	释放空间并保留存档
+Game FPS	游戏帧率
+Game emulator	游戏模拟器
+Game emulator saved.	已保存游戏模拟器。
+Game menu	游戏菜单
+Game options	游戏选项
+Game options saved	已保存游戏选项
+GameTDB (free)	GameTDB
+Games	游戏
+Give your eyes and hands a break.	让眼睛和双手休息一下吧。
+Global	通用
+Global controls saved.	已保存通用按键设置。
+Hold	长按
+Home shortcut	主页快捷键
+Indian Ocean	印度洋
+Inherit	继承
+Inherited	已继承
+Jump to letter	跳到首字母
+Keep a checkpoint when returning home	返回主页时保留存档点
+Keep playing	继续游戏
+Keep this game in Favourites	收藏此游戏
+Kernel	内核
+Key {0}	按键 {0}
+LCD + NDS Color	LCD + NDS Color
+LCD + Natural Vision	LCD + Natural Vision
+LCD + both colours	LCD + 两种色彩校正
+LCD pixels with natural colour and contrast.	自然色彩与对比度的液晶像素。
+LCD pixels with the DS colour treatment.	DS 色彩的液晶像素。
+LCD pixels, DS colour and Natural Vision together.	液晶像素、DS 色彩与 Natural Vision 的组合。
+Language	语言
+Launch cancelled	已取消启动
+Left	左
+Left stick	左摇杆
+Left-handed	左手模式
+Less than a minute	不到 1 分钟
+Library	游戏库
+Library scan exceeded its limit	游戏库扫描超出上限
+Library scan failed	游戏库扫描失败
+Libretro (free)	Libretro
+Light	浅色
+List	列表
+Live background	动态背景
+Load	读取
+Load requested. Resume to check your game.	已请求读取。请继续游戏确认。
+Load state	读取即时存档
+Loading checkpoint…	正在读取存档点…
+Looking for networks…	正在搜索网络…
+Magnified detail	放大细节
+Manage builds and temporary files	管理版本和临时文件
+Matching title	匹配的标题
+Matching title saved. Choose Fetch artwork.	已保存匹配的标题。请选择“获取封面”。
+Menu idle sleep	菜单闲置时休眠
+Mute	静音
+Muted	已静音
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS：兼容性选项。追求速度请先试试 DSperate。
+Native	原生
+Native is faster; 2x uses more GPU time. Save & restart applies it.	原生分辨率更快，2x 会占用更多 GPU。通过“保存并重启”生效。
+Native output	原生输出
+Natural Vision	Natural Vision
+Networking is disabled. Turn Wi-Fi on to enable it.	网络已停用。请开启 Wi-Fi。
+Never	从不
+Next emulator	下一个模拟器
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	没有 Wi-Fi 适配器。请开启 Wi-Fi 进行初始化。
+No button detected. Try again when you're ready.	未检测到按键。准备好后请重试。
+No checkpoint saved for this emulator yet.	此模拟器还没有存档点。
+No cover yet	暂无封面
+No favourites yet	暂无收藏
+No games	没有游戏
+No games in this collection.	此合集中没有游戏。
+No networks found	未找到网络
+No previous build available.	没有之前的版本。
+No recent games yet	暂无最近玩过的游戏
+Normal	普通
+Normal speed.	正常速度。
+Not available	不可用
+Not connected	未连接
+Not played yet	尚未玩过
+OPEN	打开
+Off	关
+Off (smooth)	关（流畅）
+Off gives smooth motion. Skipping frames can help speed. Restart to apply.	关闭时画面更流畅，跳帧可提升速度。重启后生效。
+Off keeps the original picture.	关闭时保持原始画面。
+On	开
+Open	打开
+Open menu	打开菜单
+Open the Anbernic menu	打开 Anbernic 菜单
+Options	选项
+Original pixels	原始像素
+Original pixels and colours.	原始像素与色彩。
+Pacific	太平洋
+PLAY	开始
+Password	密码
+Pause when you need to.	需要时请暂停休息。
+Paused	已暂停
+Performance	性能
+Pixel classic	经典像素
+Play at a comfortable volume.	请以合适的音量游玩。
+Please keep your handheld on	请勿关闭掌机
+Pocket green	口袋绿
+Power	电源
+Power mode	电源模式
+Power off	关机
+Power off your handheld?	要关闭掌机吗？
+Power profile	电源方案
+Powering off…	正在关机…
+Preparing controls…	正在准备按键设置…
+Preparing the launcher	正在准备启动器
+Preparing the library…	正在准备游戏库…
+Preparing your cartridges…	正在准备卡带…
+Preparing your library…	正在准备你的游戏库…
+Press a button for {0}	请按下要用于 {0} 的按键
+Press a button…	请按下按键…
+Preview	预览
+Preview Wi-Fi	预览 Wi-Fi
+Preview and choose your screen style	预览并选择画面风格
+Preview game	预览游戏
+Preview unavailable	无法预览
+Previous build selected. Return to stock, then open RGDS again.	已选择之前的版本。请返回原厂菜单，再重新打开 RGDS。
+Profile	方案
+READY	准备就绪
+REVIEW YOUR CHOICE	确认你的选择
+RGDS build	RGDS 版本
+ROUNDED FONT UNAVAILABLE	圆体字体不可用
+Recents	最近玩过
+Reduce rendering work when needed	需要时减少渲染
+Refresh	刷新
+Refresh connection	刷新连接
+Release for options	松开显示选项
+Remap	重新设置
+Request cancelled.	已取消请求。
+Request failed. Check the connection or device log and try again.	请求失败。请检查连接或设备日志后重试。
+Reset	重置
+Rest after a period of inactivity	闲置一段时间后休眠
+Restart	重启
+Restart menu	重启菜单
+Restart the RGDS menu?	要重启 RGDS 菜单吗？
+Restart the device?	要重启设备吗？
+Restart uses {0}. Saves and checkpoints stay separate per emulator.	重启后使用 {0}。每个模拟器的存档和存档点各自独立。
+Restarting…	正在重启…
+Restore defaults	恢复默认设置
+Restore the last installed RGDS build	恢复上次安装的 RGDS 版本
+Restoring settings	正在恢复设置
+Restoring settings…	正在恢复设置…
+Resume	继续
+Resume game	继续游戏
+Return	返回
+Return home	返回主页
+Return home before changing startup.	更改启动方式前请先返回主页。
+Return home from your game first.	请先退出游戏返回主页。
+Return to game	返回游戏
+Return to stock	返回原厂菜单
+Return to the original button layout	恢复原始按键布局
+Return to the stock menu?	要返回原厂菜单吗？
+Return without saving	不保存直接返回
+Returning home…	正在返回主页…
+Review unmatched	查看未匹配项
+Right	右
+Right stick	右摇杆
+Rollback simulated.	已模拟回滚。
+START	START
+Save	保存
+Save & restart	保存并重启
+Save & restart applies Threaded 3D.	通过“保存并重启”启用多线程 3D。
+Save & restart keeps your checkpoint and applies pending settings.	“保存并重启”会保留存档点并应用待生效的设置。
+Save a report for troubleshooting	保存故障排查报告
+Save device report	保存设备报告
+Save state	保存即时存档
+Save your checkpoint and restart	保存存档点并重启
+Saved	已保存
+Saved - desktop simulation	已保存 - 桌面模拟
+Saved for the next Standard DraStic launch.	已保存，下次启动标准 DraStic 时使用。
+Saved network	已保存的网络
+Saved · {0}	已保存 · {0}
+Saved. Applies on your next DraStic launch.	已保存，下次启动 DraStic 时生效。
+Saved. Save & restart applies screen order.	已保存。通过“保存并重启”应用屏幕顺序。
+Saved. Save & restart applies this change.	已保存。通过“保存并重启”应用此更改。
+Saved. Save & restart changes the emulator.	已保存。通过“保存并重启”切换模拟器。
+Saving before restarting…	正在重启前保存…
+Saving before returning home…	正在返回主页前保存…
+Saving checkpoint before restarting…	正在重启前保存存档点…
+Saving checkpoint…	正在保存存档点…
+Saving your progress…	正在保存进度…
+Scan	扫描
+Scene	场景
+Screen brightness	屏幕亮度
+Screen order	屏幕顺序
+ScreenScraper needs project credentials and your account	ScreenScraper 需要项目凭据和你的账号
+Select	选择
+Select a network again and enter its password.	请重新选择网络并输入密码。
+Select a network again.	请重新选择网络。
+Selected	已选择
+Sets Standard DraStic screen order for this game. Save & restart applies it.	设置此游戏在标准 DraStic 中的屏幕顺序。通过“保存并重启”生效。
+Settings	设置
+Settings saved	已保存设置
+Shader	滤镜
+Shader applied.	已应用滤镜。
+Shader change requested (preview)	已请求更改滤镜（预览）
+Shader saved	已保存滤镜
+Shader saved for next launch	已保存滤镜，下次启动时生效
+Shader saved. Restart this game to apply it.	已保存滤镜。重启此游戏后生效。
+Shader studio	滤镜工作室
+Shaders	滤镜
+Sharp + NDS Color	锐利 + NDS Color
+Sharp + Natural Vision	锐利 + Natural Vision
+Sharp + both colours	锐利 + 两种色彩校正
+Sharp bilinear	锐利双线性
+Sharp pixel edges with smoother scaling.	像素边缘锐利，缩放更平滑。
+Sharp scaling with natural colour and contrast.	锐利缩放，自然色彩与对比度。
+Sharp scaling with the DS colour treatment.	锐利缩放，DS 色彩。
+Sharp scaling, DS colour and Natural Vision together.	锐利缩放、DS 色彩与 Natural Vision 的组合。
+Shift	Shift
+Shortcut action	快捷键功能
+Show the charge in the status bar	在状态栏显示电量
+Show the welcome screen at startup	启动时显示欢迎画面
+Sign in	登录
+Sign out	退出登录
+Signing in…	正在登录…
+Simulated handheld	模拟掌机
+Sleep	休眠
+Sleep now	立即休眠
+Sleep on lid close	合盖时休眠
+Sleep simulated - press any control	已模拟休眠 - 按任意键
+Sleep simulated - settings retained	已模拟休眠 - 设置已保留
+Sleep unavailable on this device	此设备无法休眠
+Sleeping - use Power to wake	休眠中 - 按电源键唤醒
+Soft LCD grid	柔和液晶网格
+Soft green monochrome with full-resolution detail.	保留全部细节的柔和绿色单色画面。
+Soft scanlines	柔和扫描线
+Sound	声音
+Space	空格
+Standard	标准
+Standard DraStic only. Applies on the next launch; game saves are kept.	仅限标准 DraStic。下次启动时生效，游戏存档会保留。
+Standard screen order	标准屏幕顺序
+Start	开始
+Start + Anbernic	Start + Anbernic
+Start RG DS automatically on future boots?	以后开机时自动启动 RG DS 吗？
+Start with a familiar layout	从熟悉的布局开始
+Start, then Anbernic	先 Start，再 Anbernic
+Startup	启动
+Startup choice saved.	已保存启动方式。
+Startup choice simulated.	已模拟启动方式。
+Startup is managed by RGDS OS.	启动方式由 RGDS OS 管理。
+Stock	原厂
+Stock firmware	原厂固件
+Stop fetching	停止获取
+Stop fetching before editing the match.	编辑匹配前请先停止获取。
+Stop scraping	停止获取
+Stop scraping before changing source	更改来源前请先停止获取
+Stopping after this request	本次请求后停止
+Stopping after this request.	本次请求后停止。
+Storage read-only - use internal RGDS	存储空间为只读 - 请使用内置的 RGDS
+SuperDrastic (experimental)	SuperDrastic（实验性）
+SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic 目前使用原生输出。你的标准滤镜选择会保留。
+SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic 使用自己的暂停菜单和显示方式。实验性功能，尚未在 RG DS 上完成测试。
+Swapped	已交换
+System	系统
+THEME ERROR - RETAINED CURRENT	主题错误 - 已保留当前主题
+THEME RELOADED	已重新加载主题
+TYPEFACE	字体
+Temporary game cache cleared. Saves and artwork are kept.	已清除游戏临时缓存。存档和封面已保留。
+The checkpoint did not finish saving.	存档点未能保存完成。
+The emulator did not finish. Resume, retry, or return without saving.	模拟器未完成处理。请继续、重试，或不保存直接返回。
+The game menu did not respond. Resume or return without saving.	游戏菜单无响应。请继续，或不保存直接返回。
+The zFast LCD texture with both colour treatments.	zFast 液晶质感，搭配两种色彩校正。
+The zFast LCD texture with natural colour and contrast.	zFast 液晶质感，搭配自然色彩与对比度。
+The zFast LCD texture with the DS colour treatment.	zFast 液晶质感，搭配 DS 色彩。
+Theme	主题
+Theme & display	主题与显示
+This emulator does not expose a frameskip setting.	此模拟器没有跳帧设置。
+This emulator uses native resolution. No resolution switch is available.	此模拟器使用原生分辨率，无法切换分辨率。
+This engine does not expose a threading switch.	此引擎没有线程开关。
+This engine has no live threading control.	此引擎无法在运行时更改线程。
+This game	此游戏
+This network requires an enterprise profile.	此网络需要企业配置文件。
+This request did not finish. Please try again.	请求未完成，请重试。
+This shader is unavailable for the current emulator.	当前模拟器无法使用此滤镜。
+Threaded 3D	多线程 3D
+Time played	游戏时长
+Timezone	时区
+Toggle	切换
+Top display	上屏
+Touch	触摸
+Touch indicator	触摸位置提示
+Touch to continue	触摸以继续
+Touch {0}	触摸 {0}
+Try saving again	重新保存
+Turn Wi-Fi off?	要关闭 Wi-Fi 吗？
+Turn Wi-Fi on first.	请先开启 Wi-Fi。
+Turn Wi-Fi on to find networks.	开启 Wi-Fi 以搜索网络。
+Turning Wi-Fi off…	正在关闭 Wi-Fi…
+Turning Wi-Fi on…	正在开启 Wi-Fi…
+Typeface	字体
+Unassigned	未设置
+Unavailable	不可用
+Unmatched artwork	未匹配的封面
+Unmute	取消静音
+Updates & recovery	更新与恢复
+Use ROM identity	使用 ROM 信息
+Use an additional rendering thread	使用额外的渲染线程
+Use default ({0})	使用默认值（{0}）
+Use global controls	使用通用按键设置
+Use previous build	使用之前的版本
+Use the previous RGDS build?	要使用之前的 RGDS 版本吗？
+Used by games without an override	用于没有单独设置的游戏
+Username	用户名
+View	视图
+Volume	音量
+Volume control unavailable	无法调节音量
+WAITING FOR INPUT	等待输入
+Warm monochrome with preserved highlight detail.	保留高光细节的暖色单色画面。
+Warm paper	暖色纸张
+Warm whites and softened contrast for evening play.	偏暖的白色和柔和的对比度，适合夜间游玩。
+Welcome back	欢迎回来
+What the shortcut opens	快捷键打开的内容
+Where this layout applies	此布局的适用范围
+Wi-Fi	Wi-Fi
+Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi 适配器未就绪。请检查系统驱动或重启掌机。
+Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi 适配器未就绪。请开启 Wi-Fi 重试。
+Wi-Fi did not turn on. Try again.	Wi-Fi 未能开启，请重试。
+Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi 被硬件禁用。请重启掌机后重试。
+Wi-Fi is still on. Try turning it off again.	Wi-Fi 仍处于开启状态，请再次尝试关闭。
+Wi-Fi is unavailable.	Wi-Fi 不可用。
+Wi-Fi off.	已关闭 Wi-Fi。
+Wi-Fi on.	已开启 Wi-Fi。
+Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi 请求失败。请检查密码和信号后重试。
+Wi-Fi request timed out. Check signal and try again.	Wi-Fi 请求超时。请检查信号后重试。
+Wi-Fi service is unavailable.	Wi-Fi 服务不可用。
+With shader	使用滤镜
+Working…	处理中…
+Your cartridges go here	你的卡带会显示在这里
+Your home screen after powering on	开机后的主页
+Your local time and date	本地日期和时间
+Your menu shortcut	菜单快捷键
+Your shader choice is still available.	你选择的滤镜仍可使用。
+zFast + NDS Color	zFast + NDS Color
+zFast + Natural Vision	zFast + Natural Vision
+zFast + both colours	zFast + 两种色彩校正
+{0} (experimental)	{0}（实验性）
+{0} (recommended)	{0}（推荐）
+{0} frames	{0} 帧
+{0} games	{0} 款游戏
+{0} settings	{0} 设置
+Up	上
+Times played	游玩次数
+Last played	最近游玩
+GameTDB	GameTDB
+Libretro	Libretro
+Ready to fetch artwork.	可以获取封面了。
+Icon style	图标风格
+Simple pixel	简约像素
+Rich	精致
+Statistics	游戏记录
+Games played	玩过的游戏
+Most played	最常玩
+Preparing your statistics…	正在准备游戏记录…
+Play a game to start your statistics.	玩一款游戏即可开始记录。
+Installed version	已安装版本
+Check for updates	检查更新
+Restart & install	重启并安装
+Download update	下载更新
+Pause download	暂停下载
+Release notes	更新说明
+Discard update	放弃更新
+No release notes yet.	暂无更新说明。
+Restart and install the update?	要重启并安装更新吗？
+Check for updates when you are ready.	准备好后请检查更新。
+Updates will be available when the release channel opens.	发布渠道开放后即可更新。
+Checking for updates…	正在检查更新…
+You are up to date.	已是最新版本。
+A new version is ready to download.	有新版本可以下载。
+This version failed to start. Waiting for a newer update.	此版本无法启动，正在等待更新的版本。
+Downloading update…	正在下载更新…
+Verifying update…	正在验证更新…
+Preparing update…	正在准备更新…
+Ready to restart. Your previous version is kept for recovery.	可以重启了。之前的版本会保留以便恢复。
+Restarting into the update…	正在重启并应用更新…
+Checking the new version…	正在检查新版本…
+Update installed.	更新已安装。
+The update could not start. Your previous version was restored.	更新无法启动，已恢复之前的版本。
+Download paused. Retry to continue.	下载已暂停。重试即可继续。
+Update discarded. Your installed version is unchanged.	已放弃更新，已安装的版本保持不变。
+Connect the charger before installing an update.	安装更新前请连接充电器。
+There is not enough free space for this update.	可用空间不足，无法进行此更新。
+Exit your game before installing an update.	安装更新前请先退出游戏。
+Install the latest SD installer before this update.	进行此更新前请先安装最新的 SD 安装程序。
+Restart RG DS Core before installing the update.	安装更新前请重启 RG DS Core。
+Download interrupted. Retry to continue.	下载中断。重试即可继续。
+An update is already prepared. Install it or discard it first.	已有准备好的更新。请先安装或放弃。
+Another update is already running.	另一个更新正在进行。
+Update information has expired or the device clock is incorrect.	更新信息已过期，或设备时间不正确。
+This stock firmware has not been validated for updates.	此原厂固件尚未经过更新验证。
+Update verification failed. Check for updates again.	更新验证失败。请重新检查更新。
+Update failed. Check Wi-Fi and try again.	更新失败。请检查 Wi-Fi 后重试。
+Stable	稳定版
+Testing	测试版
+Import slot	导入存档位
+Export slot	导出存档位
+Save checkpoint	存档
+Load checkpoint	读档
+Save here	保存到此处
+Export	导出
+More	更多
+Replace slot {0}?	要覆盖存档位 {0} 吗？
+Load slot {0}?	要读取存档位 {0} 吗？
+Delete slot {0}?	要删除存档位 {0} 吗？
+Undo last slot change	撤销存档位更改
+Undo last load	撤销读取
+Import into this slot	导入到此存档位
+Slot {0} deleted.	已删除存档位 {0}。
+Slot change undone.	已撤销存档位更改。
+A saves your current progress here.	按 A 将当前进度保存到此处。
+A replaces this slot with your current progress. X deletes it.	按 A 用当前进度覆盖此存档位，按 X 删除。
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	按 A 读取此存档位。Y 中的“撤销读取”可恢复当前进度。
+Nothing to load here yet.	这里还没有可读取的内容。
+A exports this slot to userdata/exports. X deletes it.	按 A 将此存档位导出到 userdata/exports，按 X 删除。
+Y imports a save into this slot.	按 Y 将存档导入此存档位。
+Import help	导入说明
+Replace	覆盖
+Blow into microphone	对麦克风吹气
+Close and open DS lid	合上再打开 DS 翻盖
+DS language	DS 语言
+Real microphone	真实麦克风
+Japanese	日语
+English	英语
+French	法语
+German	德语
+Italian	意大利语
+Spanish	西班牙语
+2 seconds	2 秒
+In game	游戏中
+Restart the game to apply DS settings.	重启游戏后 DS 设置才会生效。
+Could not save DS settings.	无法保存 DS 设置。
+Search	搜索
+Save gallery	存档库
+Search and filters	搜索与筛选
+Add your games	添加游戏
+DS controls	DS 操作
+Back up all saves	备份全部存档
+Resume after power off	关机后可继续
+Slot	存档位
+Empty slot	空存档位
+Search games	搜索游戏
+Filter	筛选
+Clear search and filters	清除搜索和筛选
+Missing artwork	缺少封面
+Where to put games	游戏存放位置
+Scan for games	扫描游戏
+Automatic updates	自动更新
+Download automatically	自动下载
+Check automatically	自动检查
+Update available in Maintenance	“维护”中有可用更新
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	将 .rgdssave.zip 文件复制到 userdata/imports。导入的存档必须与此游戏和模拟器相符。
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	将 .nds 文件或 DS ZIP 压缩包复制到游戏卡的 Roms/NDS。本系统不附带游戏，存档保存在 userdata 中。
+Save backup created in userdata/exports.	已在 userdata/exports 中创建存档备份。
+Slot exported to userdata/exports.	已将存档位导出到 userdata/exports。
+Save library updated.	存档库已更新。
+Current progress could not be saved. No slot was changed.	无法保存当前进度，存档位未更改。
+DS controls are unavailable for this engine.	此引擎无法使用 DS 操作。
+Your DS library starts here	你的 DS 游戏库从这里开始
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	将 .nds 或 DS ZIP 文件复制到游戏卡的 Roms/NDS，然后选择“扫描游戏”。
+Use the engine's native controls for microphone and DS settings.	麦克风和 DS 设置请使用引擎自带的操作。
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	默认开启真实麦克风。吹气和翻盖操作会返回游戏 2 秒。语言更改在重启后生效。
+Unplayed	未玩过
+Played	已玩过
+Filtered	已筛选
+No matching games	没有符合条件的游戏
+No matches. Use View to change filters.	没有结果。请在“视图”中更改筛选条件。
+Reset state	重置状态
+Restart without loading a state?	要不读取即时存档直接重启吗？
+Restart from the title screen. In-game saves and save slots are kept.	从标题画面重新开始。游戏内存档和存档位会保留。
+Microphone, simulated blowing, lid and DS language.	麦克风、模拟吹气、翻盖和 DS 语言。
+Test microphone	测试麦克风
+Test	测试
+Live input	实时输入
+Quiet	小
+Loud	大
+Listening…	正在聆听…
+Microphone unavailable	麦克风不可用
+Audio is not recorded or saved.	不会录制或保存声音。
+Test the microphone on your handheld.	测试掌机的麦克风。
+Return home before testing the physical microphone.	测试麦克风前请先返回主页。
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	对麦克风吹气或说话。音量会上升，停止后会回落。
+No filter	不筛选
+Quick search	快速搜索
+A  Search	A  搜索
+A  Jump	A  跳转
+Edit search	编辑搜索
+Clear filters	清除筛选
+Try another title or clear your filters	试试其他标题，或清除筛选条件
+Type a game title…	输入游戏标题…
+Finding games…	正在查找游戏…
+Searching…	正在搜索…
+Search in	搜索范围
+Try a shorter title or clear your filter.	试试更短的标题，或清除筛选条件。
+Type	输入
+Tap to type, or use the D-pad and A	触摸输入，或使用十字键和 A
+No letters to jump to. Search for another game.	没有可跳转的字母，请搜索其他游戏。
+{0} match	{0} 个结果
+{0} matches	{0} 个结果
+{0} matching game	{0} 款符合条件的游戏
+{0} matching games	{0} 款符合条件的游戏
+{0} game	{0} 款游戏
+Interface animations	界面动画
+View transitions	页面切换
+Small touches, scrolling and startup motion	细节动效、滚动和启动动画
+Springy menu changes with a colourful wobble	带有彩色弹跳的菜单切换
+Transitions	切换效果
+Subtle	柔和
+Menu sounds	菜单音效
+Effects volume	音效音量
+Preview sound	试听
+A little handheld magic	一点掌机小魔法
+Playful sounds for browsing, choosing and starting games.	浏览、选择和开始游戏时的趣味音效。
+Turn on menu sounds to hear the previews.	开启菜单音效即可试听。
+Some menu sounds are unavailable.	部分菜单音效不可用。
+Menu audio is unavailable on this device.	此设备无法播放菜单声音。
+Menu sounds are unavailable.	菜单音效不可用。
+Close lid	合上翻盖
+Open lid	打开翻盖
+Spring	弹簧
+Push	推移
+Transition style	切换风格
+Animate pages with the selected style	以所选风格切换页面
+Slide into pages; slide back to return	滑入页面，滑回即可返回
+Accent colour	强调色
+FAVOURITE COLOUR	喜欢的颜色
+Classic	经典
+Classic blue	经典蓝
+High contrast	高对比度
+PREVIEW	预览
+Selected row	选中的行
+Switches and values	开关和数值
+Grey	灰色
+Brown	棕色
+Red	红色
+Pink	粉色
+Orange	橙色
+Yellow	黄色
+Lime	青柠色
+Green	绿色
+Dark green	深绿色
+Sea green	海绿色
+Turquoise	青绿色
+Blue	蓝色
+Dark blue	深蓝色
+Purple	紫色
+Violet	紫罗兰色
+Magenta	品红色
+Network file sharing	网络文件共享
+Open on this Wi-Fi	在此 Wi-Fi 中开放
+Password protected	受密码保护
+File sharing on. Find "RG DS" under Network.	已开启文件共享。请在“网络”中查找“RG DS”。
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate：原版上游引擎。DSCore 在此基础上加入了修复和提速。
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore：推荐。速度最快，修复了翻盖、触控笔和 3D 问题，3D 可选 2x–5x。
+DSCore 3D resolution	DSCore 3D 分辨率
+Native (fastest)	原生（最快）
+2x sharper	2 倍清晰
+3x sharper	3 倍清晰
+4x (experimental)	4 倍（实验性）
+5x (experimental)	5 倍（实验性）
+Colour mode	色彩模式
+Draw and chat with nearby handhelds	与附近的掌机画画聊天
+Wi-Fi connected	已连接 Wi-Fi
+No Wi-Fi: you can still draw	没有 Wi-Fi：仍然可以画画
+Type your name	输入你的名字
+You appear like this to others	其他人看到的你是这样的
+Starting…	正在启动…
+Chat is unavailable: you can still draw	无法聊天：仍然可以画画
+Nobody else is nearby yet	附近还没有其他人
+1 person nearby	附近有 1 人
+{0} people nearby	附近有 {0} 人
+Your colour	你的颜色
+Leave	离开
+Your name	你的名字
+Send	发送
+You are in Room {0}	你在房间 {0}
+{0} joined	{0} 加入了
+{0} left	{0} 离开了
+New messages below	下方有新消息
+Older messages	更早的消息
+The pad is full: send it or clear it	画板已满：请发送或清除
+Too much on the pad: erase some of it	画板内容太多：请擦除一部分
+That message could not be sent	消息发送失败
+That room is full	该房间已满
+Chat Room {0}	聊天室 {0}
+Choose a chat room to join	选择要加入的聊天室
+Edit	编辑
+Join	加入
+Matches your accent	与强调色一致
+Nobody here yet	这里还没有人
+Start Send   X Undo   L R Scroll	Start 发送   X 撤销   L R 滚动
+You	你
+Time format	时间格式
+24-hour	24 小时制
+12-hour	12 小时制
+24-hour or 12-hour clock	24 小时制或 12 小时制
+How dates appear in the status bar	状态栏中的日期显示方式
+Connecting to	正在连接
+This can take a few seconds	这可能需要几秒钟
+Waiting for an address…	正在等待地址…
+IP address	IP 地址
+Signal	信号
+Could not connect	无法连接
+Wi-Fi is off	Wi-Fi 已关闭
+Turn it on to find networks	开启后即可搜索网络
+Choose a network from the list	从列表中选择网络
+Preparing…	正在准备…
+Home layout	主页布局
+Background	背景
+Touch gestures	触摸手势
+Carousel	轮播
+Column	竖列
+Plain	纯色
+Grid	方格
+A carousel, or the DSi's column with your last game on top	轮播，或像 DSi 一样把最近玩的游戏放在顶部的竖列
+Plain, or the DSi's ruled grid behind every screen	纯色，或每个画面都有 DSi 风格的方格
+Swipe up from the bottom for Home, in from the left for Back	从底部上滑返回主页，从左侧滑入返回上一页
+Nothing played yet	还没有玩过游戏
+Your last game will appear here	最近玩的游戏会显示在这里
+Draw and chat	画画聊天
+Su	日
+Mo	一
+Tu	二
+We	三
+Th	四
+Fr	五
+Sa	六
+Chat Room	聊天室
+Nobody else here yet	这里还没有其他人
+Drawing on your own	正在独自画画
+Jump	跳转
+Home	主页
+Swipe up from the bottom edge to go Home from anywhere.	在任何画面从底部边缘上滑即可返回主页。
+Swipe in from the left edge to go Back.	从左侧边缘滑入即可返回。
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	下屏底部的小把手表示手势已开启；它会随手指升起，手势触发时会出现一个圆环标出位置。
+Your saves are safe. See you soon!	存档已妥善保存。下次见！
+DS Classic	DS Classic
+DS Lite	DS Lite
+Natural glow	自然光晕
+Vivid LCD	鲜艳液晶
+Natural smooth	自然平滑
+Vivid smooth	鲜艳平滑
+Pixel beads	像素珠
+Glossy tiles	光泽方块
+The first DS screen: muted colour and a fine pixel grid.	初代 DS 屏幕：色彩柔和，像素网格细腻。
+The brighter DS Lite screen with a faint pixel grid.	更明亮的 DS Lite 屏幕，带有淡淡的像素网格。
+Natural colour with soft pixels that glow together.	自然色彩，柔和的像素交融发光。
+Bold colour on a close-up LCD with RGB stripes.	带 RGB 条纹的特写液晶，色彩鲜艳。
+Natural colour with smoothed diagonal edges.	自然色彩，斜边更平滑。
+Bold colour with smoothed diagonal edges.	鲜艳色彩，斜边更平滑。
+Bold colour; every pixel a round, shiny bead.	鲜艳色彩，每个像素都是圆润发亮的珠子。
+Bold colour; every pixel a raised, glossy tile.	鲜艳色彩，每个像素都是凸起的光泽方块。
+IN USE	使用中
+APPLY	应用
+Follows your library shader.	跟随游戏库的滤镜。
+Original	原始
+DS screens	DS 屏幕
+Natural	自然
+Vivid	鲜艳
+Pixel art	像素画
+Moods	氛围
+Change group	切换分组
+Sounds & music	音效与音乐
+Menu music	菜单音乐
+Music volume	音乐音量
+A soft tune plays while you browse. It fades out when a game starts.	浏览时会播放轻柔的音乐，游戏开始时淡出。
+Turn on menu music for a soft tune while you browse.	开启菜单音乐，浏览时即可听到轻柔的旋律。
+Scanning…	正在扫描…
+Scan complete	扫描完成
+Looking for games…	正在查找游戏…
+Reading Roms/NDS on your games card. This takes a moment.	正在读取游戏卡中的 Roms/NDS，请稍候。
+{0} found. Choose Done to go to your library.	找到 {0}。选择“完成”进入游戏库。
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	未找到游戏。请将 .nds 或 DS ZIP 文件复制到游戏卡的 Roms/NDS 后重新扫描。
+Backing up your saves…	正在备份存档…
+The backup did not finish. Please try again.	备份未完成，请重试。
+Copies every save and checkpoint into one zip in userdata/exports.	将全部存档和存档点复制到 userdata/exports 中的一个 zip 文件。
+Where games go on the card, and a fresh scan.	游戏在存储卡上的位置，以及重新扫描。
+Where covers and titles come from.	封面和标题的来源。
+System update	系统更新
+Version {0} is ready	版本 {0} 已准备好
+Version {0} is ready to install	版本 {0} 可以安装了
+Downloading {0}	正在下载 {0}
+Paused at {0}	已暂停于 {0}
+Update now	立即更新
+Resume download	继续下载
+Update	更新
+Install	安装
+What's new	新内容
+Download	下载
+Verify	验证
+Prepare	准备
+Step {0} of 4	第 {0} 步，共 4 步
+Less than a minute left	剩余不到 1 分钟
+About {0} min left	约剩 {0} 分钟
+About {0} h left	约剩 {0} 小时
+Downloads resume where they stopped if Wi-Fi drops.	Wi-Fi 断开后，下载会从中断处继续。
+Your games and saves are not touched.	不会影响你的游戏和存档。
+Connection lost. Retrying…	连接已断开，正在重试…
+The update could not be downloaded. Check for updates again.	无法下载更新。请重新检查更新。
+Finishing another task. Press Y again in a moment.	正在完成另一项任务。请稍后再按 Y。
+Updates	更新
+The language for menus and messages.	菜单和消息使用的语言。
+Set the clock to where you are.	将时钟设为你所在的地区。
+How dates appear at the top of the screen.	屏幕顶部的日期显示方式。
+A 24-hour or 12-hour clock.	24 小时制或 12 小时制。
+Versions, free space and the network address of your handheld.	掌机的版本、可用空间和网络地址。
+Check for updates, go back to the previous build or clear temporary files.	检查更新、退回之前的版本或清除临时文件。
+Leave RG DS Core and go back to the stock menu.	退出 RG DS Core，返回原厂菜单。
+What happens when you turn the handheld on.	开机时的行为。
+Restart the RGDS menu.	重启 RGDS 菜单。
+Previous	上一个
+Next	下一个
+Show all systems	显示所有系统
+Systems	系统
+Game screen	游戏画面
+Second screen	第二屏幕
+Sharp fill	清晰填充
+Whole pixels	整数像素
+Smooth fill	平滑填充
+Companion	伴侣屏幕
+Swap screens	交换屏幕
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	添加 Game Boy 和 Game Boy Advance 游戏，之后进入游戏会先打开系统页面。
+Frame	边框
+Indigo	靛蓝
+Glacier	冰川
+Black	黑色
+Platinum	铂金
+Black bar	黑色横条
+SP Onyx	SP 深黑
+SP Cobalt	SP 宝蓝
+SP Platinum	SP 铂金
+GBA Color	GBA 色彩
+GBA screen	GBA 屏幕
+GBA screens	GBA 屏幕
+The Game Boy Advance LCD's own colour and gamma.	Game Boy Advance 液晶屏本来的色彩与亮度曲线。
+The Game Boy Advance screen: its colour and faint pixel gaps.	Game Boy Advance 屏幕：它的色彩与像素间淡淡的缝隙。
+Game info	游戏信息
+Extra pictures	附加图片
+Screenshots	截图
+Title screens	标题画面
+Screenshots and title screens	截图和标题画面
+Both	两者
+Cover	封面
+Title screen	标题画面
+Screenshot	截图
+Developer	开发商
+Publisher	发行商
+Genre	类型
+Released	发售日期
+Rating	分级
+Players	玩家人数
+Series	系列
+Online	联机
+Yes	是
+Source	来源
+Picture	图片
+Next picture	下一张图片
+No pictures yet	暂无图片
+Available	可用
+Not downloaded	未下载
+No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	暂无游戏信息。请在 设置 > 游戏库 > 封面来源 中开启游戏信息，然后获取封面。

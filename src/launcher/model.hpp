@@ -1,7 +1,9 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -13,19 +15,53 @@ struct Game {
     std::string title;
     fs::path path;
     bool demo = false;
+    std::string system = "nds"; // "gba", "gbc", "gb": played by RG DS Play
 };
-inline constexpr const char* core_ids[] = {"drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"};
-inline constexpr const char* core_names[] = {"DraStic", "DSperate", "NNDDSS", "melonDS", "DSCore"};
+inline constexpr const char* core_ids[] = {"drastic", "dsperate",          "nnddss",
+                                           "melonds", "rgds-experimental", "rgds-play"};
+inline constexpr const char* core_names[] = {"DraStic", "DSperate", "NNDDSS", "melonDS", "DSCore", "RG DS Play"};
 inline constexpr int core_count = sizeof(core_ids) / sizeof(core_ids[0]);
+// The DS engines come first; RG DS Play (appended, so stored indexes keep
+// their meaning) plays every other system and is never offered for DS games.
+inline constexpr int ds_core_count = 5, play_core = 5, dscore_core = 4;
 // NNDDSS is retired: it is never offered, and a saved choice of it falls back to
 // DSCore. Indices stay stable because settings store them.
 inline constexpr int retired_core = 2;
-inline constexpr bool core_offered(int core) { return core >= 0 && core < core_count && core != retired_core; }
-inline constexpr int offered_core(int core) { return core == retired_core ? core_count - 1 : core; }
+inline constexpr bool core_offered(int core) { return core >= 0 && core < ds_core_count && core != retired_core; }
+inline constexpr int offered_core(int core) { return core == retired_core ? dscore_core : core; }
+// The other systems RG DS Play opens, by file extension; the order of the Systems page.
+struct SystemInfo {
+    const char* id;
+    const char* name;  // on the Systems page and in the library header
+    const char* badge; // on a game without its own artwork
+    std::initializer_list<const char*> extensions;
+};
+inline const std::array<SystemInfo, 4>& systems() {
+    static const std::array<SystemInfo, 4> list = {{
+        {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
+        {"gba", "Game Boy Advance", "GBA", {".gba"}},
+        {"gbc", "Game Boy Color", "GBC", {".gbc"}},
+        {"gb", "Game Boy", "GB", {".gb", ".sgb"}},
+    }};
+    return list;
+}
+inline const SystemInfo& system_info(const std::string& id) {
+    for (const auto& s : systems())
+        if (id == s.id) return s;
+    return systems()[0];
+}
 inline std::string lower(std::string s) {
     for (char& c : s)
         if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
     return s;
+}
+// The system a game file is for, by its extension ("nds" for anything else, a .zip included).
+inline std::string system_for_path(const fs::path& path) {
+    const std::string extension = lower(path.extension().string());
+    for (const auto& s : systems())
+        for (const char* e : s.extensions)
+            if (extension == e) return s.id;
+    return "nds";
 }
 inline std::string library_title(std::string name) {
     // Remove recognized dump tags, retaining meaningful parenthetical titles.
@@ -74,11 +110,49 @@ inline std::vector<Game> scan(const std::vector<fs::path>& roots) {
             auto entry = *it;
             if (entry.is_symlink(ec)) {
                 it.disable_recursion_pending();
+            } else if (entry.is_directory(ec) && it.depth() == 0 &&
+                       system_info(lower(entry.path().filename().string())).id != std::string("nds")) {
+                // rgds/games/gba and the like belong to RG DS Play, not the DS list.
+                it.disable_recursion_pending();
             } else if (entry.is_regular_file(ec)) {
                 const auto ext = lower(entry.path().extension().string());
                 if (ext == ".nds" || ext == ".dsi" || ext == ".zip") {
                     auto canonical = fs::weakly_canonical(entry.path(), ec);
                     if (!ec) unique[canonical.string()] = {entry.path().stem().string(), canonical, false};
+                }
+            }
+            ec.clear();
+            it.increment(ec);
+            if (ec) break;
+        }
+    }
+    std::vector<Game> games;
+    for (const auto& pair : unique) games.push_back(pair.second);
+    std::sort(games.begin(), games.end(), [](const Game& a, const Game& b) {
+        auto at = lower(a.title), bt = lower(b.title);
+        return at == bt ? a.path.string() < b.path.string() : at < bt;
+    });
+    return games;
+}
+// Games of one other system (RG DS Play): its extensions, and .zip archives
+// in its own folders. Not recursive into another system's folder.
+inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const std::string& system) {
+    const auto& info = system_info(system);
+    std::map<std::string, Game> unique;
+    for (const auto& root : roots) {
+        std::error_code ec;
+        if (!fs::is_directory(root, ec)) continue;
+        fs::recursive_directory_iterator it(root, fs::directory_options::skip_permission_denied, ec), end;
+        while (it != end) {
+            auto entry = *it;
+            if (entry.is_symlink(ec)) it.disable_recursion_pending();
+            else if (entry.is_regular_file(ec)) {
+                const auto ext = lower(entry.path().extension().string());
+                bool wanted = ext == ".zip";
+                for (const char* e : info.extensions) wanted = wanted || ext == e;
+                if (wanted) {
+                    auto canonical = fs::weakly_canonical(entry.path(), ec);
+                    if (!ec) unique[canonical.string()] = {entry.path().stem().string(), canonical, false, info.id};
                 }
             }
             ec.clear();
