@@ -1,6 +1,6 @@
 # Menu sounds
 
-Settings → Sound → Menu sounds contains the independent enable switch, effects volume, and a 17-sound preview picker, including Close lid and Open lid. The switch starts off. It is independent of interface animations and view transitions. System mute still silences everything; switching sounds off closes the audio device immediately. Microphone testing temporarily closes menu audio and restores it on return.
+Settings → Sound → Sounds & music contains the independent **Menu effects** switch, **Effects volume**, and a 17-sound preview picker, including Close lid and Open lid. The switch starts off. It is independent of interface animations and view transitions. System mute still silences everything; switching sounds off closes the audio device immediately. Microphone testing temporarily closes menu audio and restores it on return.
 
 The library and in-game menu share the same action cues. Left/right browsing always plays on a successful step, with a clearly lower/higher pitch. Navigation varies subtly with speed and touch position; rapid input is rate-limited instead of queued. Forward travel swells inward, while back has a lower descending cue. Favourites, switches, keyboard entry, saves, loads, resume and launch have distinct effects. Save/load completion is played only after a matching successful supervisor acknowledgement (or a simulated preview completion).
 
@@ -18,7 +18,9 @@ The lid player expands the mono assets to stereo because the RK817 hardware reje
 
 ## Menu music
 
-Settings → Sound → Sounds & music also holds **Menu music** and **Music volume** (default on, 40 %). One track loops under the cues on the home screen, in the library and in settings. It fades in over 0.6 s, fades out when a game starts and comes back when the game returns. It does not play in the in-game menu, during the microphone test or while asleep, and system mute silences it without turning it off.
+Settings → Sound → Sounds & music also holds **Menu music** and **Music volume** (default on, 40 %). One track loops under the cues on the home screen, in the library and in settings. It fades in over 0.6 s, fades out when a game starts and comes back when the game returns. It does not play in the in-game menu, during the microphone test or while asleep, and system mute silences it without turning it off. Music volume has a Mute choice like Effects volume.
+
+The volume buttons (and the Sound page) also scale everything the menu plays, in software, on top of the DAC: a 12 dB range from full at 100 % to silent at 0 (`MenuAudio::set_master`, ramped over 50 ms). The DAC curve alone left the cues and the track sounding the same at every level above mute. Host-verified only; not yet listened to on the handheld.
 
 The track is `assets/music/menu.wav`: mono IMA ADPCM, 4 bits per sample, 32 kHz, about 16 KB per second. The launcher decodes it with its own small decoder (`src/launcher/menu_music.hpp`) on a helper thread the first time music is switched on, so the SDL version on the device does not matter and nothing is read while music is off. The decoded PCM stays in memory (3.3 MB for 52 seconds); the audio callback reads it with linear interpolation and keeps no other state.
 

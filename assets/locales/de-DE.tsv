@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Kleine Effekte, Scrollen und Startan
 Springy menu changes with a colourful wobble	Federnde Menüwechsel mit buntem Schwung
 Transitions	Übergänge
 Subtle	Dezent
-Menu sounds	Menüklänge
+Menu effects	Menüeffekte
 Effects volume	Effektlautstärke
 Preview sound	Klang anhören
 A little handheld magic	Ein wenig Handheld-Magie
@@ -943,4 +943,17 @@ Next picture	Nächstes Bild
 No pictures yet	Noch keine Bilder
 Available	Verfügbar
 Not downloaded	Nicht geladen
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Noch keine Spielinfos. Aktiviere Spielinfo unter Einstellungen > Bibliothek > Cover-Quellen und lade die Cover.
+More filters	Weitere Filter
+Show games	Spiele zeigen
+Reset filters	Filter zurücksetzen
+Any	Alle
+{0} active	{0} aktiv
+Still reading your library. Try again in a moment.	Die Bibliothek wird noch gelesen. Gleich noch einmal versuchen.
+No game has this information yet. Fetch artwork with Game info turned on.	Noch kein Spiel hat diese Angabe. Cover mit eingeschaltetem Spielinfo laden.
+With info	Mit Infos
+Without info	Ohne Infos
+Online play	Online-Spiel
+1 player	1 Spieler
+{0} players	{0} Spieler
+No game information yet.	Noch keine Spielinfos.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Aktiviere Spielinfo unter Einstellungen > Bibliothek > Cover-Quellen und lade die Cover.

@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Pienet tehosteet, vieritys ja käynn
 Springy menu changes with a colourful wobble	Joustavat valikonvaihdot värikkäällä heilahduksella
 Transitions	Siirtymät
 Subtle	Hienovarainen
-Menu sounds	Valikkoäänet
+Menu effects	Valikkotehosteet
 Effects volume	Tehosteiden voimakkuus
 Preview sound	Esikuuntele ääni
 A little handheld magic	Hieman kannettavan taikaa
@@ -943,4 +943,17 @@ Next picture	Seuraava kuva
 No pictures yet	Ei vielä kuvia
 Available	Saatavilla
 Not downloaded	Ei ladattu
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ei vielä pelin tietoja. Ota Pelin tiedot käyttöön kohdassa Asetukset > Kirjasto > Kansilähteet ja hae kannet.
+More filters	Lisää suodattimia
+Show games	Näytä pelit
+Reset filters	Nollaa suodattimet
+Any	Kaikki
+{0} active	{0} käytössä
+Still reading your library. Try again in a moment.	Kirjastoa luetaan vielä. Yritä hetken päästä uudelleen.
+No game has this information yet. Fetch artwork with Game info turned on.	Millään pelillä ei ole vielä tätä tietoa. Hae kannet Pelin tiedot päällä.
+With info	Tiedoilla
+Without info	Ilman tietoja
+Online play	Verkkopeli
+1 player	1 pelaaja
+{0} players	{0} pelaajaa
+No game information yet.	Ei vielä pelin tietoja.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ota Pelin tiedot käyttöön kohdassa Asetukset > Kirjasto > Kansilähteet ja hae kannet.

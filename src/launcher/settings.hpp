@@ -48,8 +48,7 @@ enum class Page {
     Cheats,
     // Appended: page numbers are stored in the launcher's state file.
     PlayGraphics, // in-game Graphics for RG DS Play: game screen fit, second screen
-    GameInfo,     // the selected game's facts, description and pictures (read-only)
-    MoreFilters   // Search and filters > More filters: genre, publisher, players, rating, ...
+    GameInfo // the selected game's facts, description and pictures (read-only)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,

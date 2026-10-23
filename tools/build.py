@@ -15,10 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 BRIDGE_EXPORTS = {
     "SDL_Init", "SDL_IsGameController", "SDL_RenderCopy", "SDL_RenderCopyEx", "SDL_RenderPresent", "SDL_GL_SwapWindow",
     "SDL_PollEvent", "SDL_OpenAudioDevice", "SDL_PauseAudioDevice", "SDL_JoystickGetButton",
-    "SDL_GameControllerGetButton", "SDL_GetKeyboardState", "SDL_PeepEvents", "glTexImage2D", "glDrawArrays",
-    "glDeleteTextures", "glDeleteProgram", "glBufferData", "glBufferSubData", "glDeleteBuffers", "read", "ioctl",
-    "kill", "snd_pcm_open", "pthread_create", "pthread_cond_init", "rgds_present_canvas", "rgds_hd_rules",
-    "rgds_shader_live"
+    "SDL_GameControllerGetButton", "SDL_GetKeyboardState", "SDL_PeepEvents", "read", "ioctl", "kill", "snd_pcm_open",
+    "pthread_create", "pthread_cond_init", "rgds_present_canvas", "rgds_hd_rules", "rgds_shader_live"
 }
 
 

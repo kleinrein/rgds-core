@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Мелкие эффекты, про�
 Springy menu changes with a colourful wobble	Пружинистая смена меню с цветным покачиванием
 Transitions	Переходы
 Subtle	Сдержанные
-Menu sounds	Звуки меню
+Menu effects	Эффекты меню
 Effects volume	Громкость эффектов
 Preview sound	Прослушать звук
 A little handheld magic	Немного карманной магии
@@ -943,4 +943,17 @@ Next picture	Следующее изображение
 No pictures yet	Изображений пока нет
 Available	Доступно
 Not downloaded	Не загружено
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Сведений об игре пока нет. Включите «Об игре» в Настройки > Библиотека > Источники обложек и загрузите обложки.
+More filters	Ещё фильтры
+Show games	Показать игры
+Reset filters	Сбросить фильтры
+Any	Любой
+{0} active	Активно: {0}
+Still reading your library. Try again in a moment.	Библиотека ещё читается. Попробуйте через минуту.
+No game has this information yet. Fetch artwork with Game info turned on.	Ни у одной игры пока нет этих сведений. Загрузите обложки при включённой функции «Об игре».
+With info	Со сведениями
+Without info	Без сведений
+Online play	Онлайн-игра
+1 player	1 игрок
+{0} players	Игроков: {0}
+No game information yet.	Сведений об игре пока нет.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Включите «Об игре» в Настройки > Библиотека > Источники обложек и загрузите обложки.

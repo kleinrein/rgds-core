@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Дрібні ефекти, прок�
 Springy menu changes with a colourful wobble	Пружна зміна меню з кольоровим похитуванням
 Transitions	Переходи
 Subtle	Стримані
-Menu sounds	Звуки меню
+Menu effects	Ефекти меню
 Effects volume	Гучність ефектів
 Preview sound	Прослухати звук
 A little handheld magic	Трохи кишенькової магії
@@ -943,4 +943,17 @@ Next picture	Наступне зображення
 No pictures yet	Зображень поки немає
 Available	Доступно
 Not downloaded	Не завантажено
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Відомостей про гру поки немає. Увімкніть «Про гру» в Налаштування > Бібліотека > Джерела обкладинок і завантажте обкладинки.
+More filters	Більше фільтрів
+Show games	Показати ігри
+Reset filters	Скинути фільтри
+Any	Будь-який
+{0} active	Активно: {0}
+Still reading your library. Try again in a moment.	Бібліотека ще читається. Спробуйте за хвилину.
+No game has this information yet. Fetch artwork with Game info turned on.	Жодна гра поки не має цих відомостей. Завантажте обкладинки з увімкненою функцією «Про гру».
+With info	Зі відомостями
+Without info	Без відомостей
+Online play	Онлайн-гра
+1 player	1 гравець
+{0} players	Гравців: {0}
+No game information yet.	Відомостей про гру поки немає.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Увімкніть «Про гру» в Налаштування > Бібліотека > Джерела обкладинок і завантажте обкладинки.

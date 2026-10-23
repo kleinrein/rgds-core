@@ -172,7 +172,8 @@ MapImage capture_map(Core& shadow, const MapSpec& spec, const std::vector<uint8_
     return out;
 }
 
-MapCapture::MapCapture(const Core& live, const Profile& profile) : profile_(profile), shadow_(live.shadow()) {
+MapCapture::MapCapture(const Core& live, const Profile& profile)
+    : profile_(profile), shadow_(live.shadow()), battery_revision_(live.battery_revision()) {
     if (shadow_ && profile_.has_map) thread_ = std::thread(&MapCapture::worker, this);
 }
 
@@ -193,9 +194,15 @@ bool MapCapture::request(Core& live) {
     }
     std::vector<uint8_t> state;
     if (!live.save_state(state)) return false;
+    std::vector<uint8_t> battery;
+    if (live.battery_revision() != battery_revision_) {
+        battery_revision_ = live.battery_revision();
+        battery = live.battery();
+    }
     {
         std::lock_guard<std::mutex> g(lock_);
         pending_.swap(state);
+        if (!battery.empty()) pending_battery_.swap(battery);
         has_job_ = true;
     }
     wake_.notify_one();
@@ -225,6 +232,10 @@ MapImage MapCapture::capture_now(Core& live) {
     if (!shadow_ || !profile_.has_map || busy()) return img;
     std::vector<uint8_t> state;
     if (!live.save_state(state)) return img;
+    if (live.battery_revision() != battery_revision_) {
+        battery_revision_ = live.battery_revision();
+        shadow_->restore_battery(live.battery());
+    }
     img = capture_map(*shadow_, profile_.map, state);
     std::lock_guard<std::mutex> g(lock_);
     if (img.ok) {
@@ -244,11 +255,13 @@ void MapCapture::worker() {
     for (;;) {
         wake_.wait(g, [&] { return quit_ || has_job_; });
         if (quit_) return;
-        std::vector<uint8_t> state;
+        std::vector<uint8_t> state, battery;
         state.swap(pending_);
+        battery.swap(pending_battery_);
         has_job_ = false;
         working_ = true;
         g.unlock();
+        if (!battery.empty()) shadow_->restore_battery(battery);
         MapImage img = capture_map(*shadow_, profile_.map, state);
         g.lock();
         working_ = false;

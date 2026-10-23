@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Sentuhan kecil, gulir, dan gerakan s
 Springy menu changes with a colourful wobble	Perpindahan menu memantul dengan goyangan warna-warni
 Transitions	Transisi
 Subtle	Halus
-Menu sounds	Suara menu
+Menu effects	Efek menu
 Effects volume	Volume efek
 Preview sound	Dengarkan suara
 A little handheld magic	Sedikit keajaiban konsol genggam
@@ -943,4 +943,17 @@ Next picture	Gambar berikutnya
 No pictures yet	Belum ada gambar
 Available	Tersedia
 Not downloaded	Belum diunduh
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Belum ada info game. Aktifkan Info game di Pengaturan > Pustaka > Sumber sampul, lalu ambil sampul.
+More filters	Filter lainnya
+Show games	Tampilkan game
+Reset filters	Atur ulang filter
+Any	Semua
+{0} active	{0} aktif
+Still reading your library. Try again in a moment.	Pustaka masih dibaca. Coba lagi sebentar lagi.
+No game has this information yet. Fetch artwork with Game info turned on.	Belum ada game dengan informasi ini. Ambil sampul dengan Info game aktif.
+With info	Dengan info
+Without info	Tanpa info
+Online play	Main online
+1 player	1 pemain
+{0} players	{0} pemain
+No game information yet.	Belum ada info game.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Aktifkan Info game di Pengaturan > Pustaka > Sumber sampul, lalu ambil sampul.

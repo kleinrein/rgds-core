@@ -115,10 +115,6 @@ void App::settings_top(SDL_Renderer* r, int y) {
         title = "Search and filters";
         symbol = SettingsIcon::Library;
         break;
-    case Page::MoreFilters:
-        title = "More filters";
-        symbol = SettingsIcon::Library;
-        break;
     case Page::RomSetup:
         title = "Add your games";
         symbol = SettingsIcon::Cartridge;
@@ -411,6 +407,8 @@ void App::settings_top(SDL_Renderer* r, int y) {
                 "Restart uses " + std::string(core_names[next]) + ". Saves and checkpoints stay separate per emulator.";
         else message = "Save & restart keeps your checkpoint and applies pending settings.";
     } else if (settings.page == Page::Controls && controls_notice.rfind("Could not", 0) == 0) message = controls_notice;
+    else if (settings.page == Page::Controls && settings.focus == 0 && model.games.empty())
+        message = "Per-game controls appear once a game is in your library.";
     else if (settings.page == Page::LibraryOptions) {
         if (backup_requested && worker_action == "device.library") {
             if (worker > 0) message = "Backing up your saves…";
@@ -432,11 +430,12 @@ void App::settings_top(SDL_Renderer* r, int y) {
         if (service["state"] == "scraping") message = service["completed"] + " / " + service["total"] + " games";
         else if (!service_notice.empty()) message = service_notice;
         else message = page == Page::GameArtwork ? artwork_result["message"] : service["message"];
-    } else if (page == Page::MoreFilters) {
-        // The result of the filters so far: they apply behind this page as they are picked.
+    } else if (page == Page::Discover && discovery_active()) {
+        // The result of the search and filters so far.
         if (collection_loading) message = "Finding games…";
-        else if (discovery_active())
-            message = std::to_string(model.games.size()) + (model.games.size() == 1 ? " matching game" : " matching games");
+        else
+            message =
+                std::to_string(model.games.size()) + (model.games.size() == 1 ? " matching game" : " matching games");
     }
     if (message.empty())
         message =
@@ -603,7 +602,6 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                             : settings.page == Page::MenuSounds                                    ? "Sounds & music"
                             : settings.page == Page::SaveGallery                                   ? gallery_title()
                             : settings.page == Page::Discover        ? "Search and filters"
-                            : settings.page == Page::MoreFilters     ? "More filters"
                             : settings.page == Page::RomSetup        ? "Add your games"
                             : settings.page == Page::DSControls      ? "DS controls"
                             : settings.page == Page::Settings        ? "Settings"
@@ -698,7 +696,11 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             } else if (settings.page == Page::GameOptions && other_system_selected() && (i == 1 || i == count - 1))
                 list_row(r, y, i, i == 1 ? "Emulator" : "DS controls", i == 1 ? core_names[play_core] : "Unavailable",
                          false);
-            else if (settings.page == Page::GameOptions && i >= count - 2)
+            else if (settings.page == Page::GameOptions && i == count - 3) {
+                const bool have = !model.games.empty() &&
+                                  !library_cache.metadata(model.games[model.selected]).info["info_version"].empty();
+                list_row(r, y, i, "Game info", have ? "Available" : "Not downloaded");
+            } else if (settings.page == Page::GameOptions && i >= count - 2)
                 list_row(r, y, i, i == count - 2 ? "Save gallery" : "DS controls");
             else if (settings.page == Page::GameOptions && i == 5 && experimental_game())
                 list_row(r, y, i, "3D resolution", experimental_resolution_name());
@@ -720,8 +722,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, names[i], values[i], (i != 2 && i != 6) || !superdrastic_game());
             } else if (settings.page == Page::Controls) list_row(r, y, i, controls_row_name(i), controls_row_value(i));
             else if (settings.page == Page::MenuSounds) {
-                const std::array<std::string, 5> names = {"Menu sounds", "Effects volume", "Menu music", "Music volume",
-                                                          "Preview sound"};
+                const std::array<std::string, 5> names = {"Menu effects", "Effects volume", "Menu music",
+                                                          "Music volume", "Preview sound"};
                 list_row(r, y, i, names[i],
                          i == 0   ? (preferences.menu_sounds ? "On" : "Off")
                          : i == 1 ? std::to_string(preferences.sound_volume) + "%"
@@ -754,15 +756,11 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, names[i],
                          i == 0   ? search_query
                          : i == 1 ? filters[discovery_filter]
-                         : i == 2 ? (discovery_facets.any() ? locale.text(std::to_string(discovery_facets.active()) + " active")
-                                                            : std::string())
+                         : i == 2 ? (discovery_facets.any()
+                                         ? locale.text(std::to_string(discovery_facets.active()) + " active")
+                                         : std::string())
                                   : "");
-            } else if (settings.page == Page::MoreFilters) {
-                if (i < int(facet_rows().size())) {
-                    const auto& row = facet_rows()[size_t(i)];
-                    const auto& value = discovery_facets.*row.field;
-                    list_row(r, y, i, row.title, value.empty() ? "Any" : value);
-                } else list_row(r, y, i, i == 8 ? "Show games" : "Reset filters");
+
             } else if (settings.page == Page::RomSetup) {
                 const std::array<std::string, 3> names = {"Where to put games", "Scan for games", "Done"};
                 const size_t found = model.games.size();
@@ -830,16 +828,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                   : "",
                          enabled);
             } else if (settings.page == Page::GameArtwork) {
-                const std::array<std::string, 4> names = {
+                const std::array<std::string, 3> names = {
                     "Matching title", worker > 0 && worker_action == "scrape" ? "Stop fetching" : "Fetch artwork",
-                    "Use ROM identity", "Game info"};
-                const bool have_info = !model.games.empty() && !library_cache.metadata(model.games[model.selected])
-                                                                     .info["info_version"]
-                                                                     .empty();
-                list_row(r, y, i, names[i],
-                         i == 0   ? (artwork_match.empty() ? "Automatic" : artwork_match)
-                         : i == 3 ? (have_info ? "Available" : "Not downloaded")
-                                  : "");
+                    "Use ROM identity"};
+                list_row(r, y, i, names[i], i == 0 ? (artwork_match.empty() ? "Automatic" : artwork_match) : "");
             } else if (settings.page == Page::Scraper) {
                 const std::array<std::string, 3> providers = {"Automatic", "GameTDB", "Libretro"};
                 const std::array<std::string, 4> pictures = {"Off", "Screenshots", "Title screens", "Both"};

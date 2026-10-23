@@ -170,15 +170,6 @@ struct NativeInputGuard {
     explicit NativeInputGuard(bool& field) : value(field), before(field) { value = true; }
     ~NativeInputGuard() { value = before; }
 };
-struct GlTexture {
-    int width = 0, height = 0;
-};
-std::map<std::pair<SDL_GLContext, unsigned>, GlTexture> gl_textures;
-std::map<std::pair<SDL_GLContext, unsigned>, std::vector<unsigned char>> gl_buffers;
-struct NativeBlit {
-    int position = -1, coordinate = -1;
-};
-std::map<std::pair<SDL_GLContext, unsigned>, NativeBlit> native_blits;
 bool fast_forward = false, pulse_consumed = false;
 unsigned long long ds_lid_reopen = 0, ds_mic_release = 0;
 std::string speed_token;
@@ -1431,15 +1422,6 @@ extern "C" void SDL_GL_SwapWindow(SDL_Window* window) {
 void forget_gl(SDL_GLContext context) {
     overlay_renderer.destroy_gl(context);
     game_shader.destroy(context);
-    for (auto item = gl_textures.begin(); item != gl_textures.end();)
-        if (item->first.first == context) item = gl_textures.erase(item);
-        else ++item;
-    for (auto item = gl_buffers.begin(); item != gl_buffers.end();)
-        if (item->first.first == context) item = gl_buffers.erase(item);
-        else ++item;
-    for (auto item = native_blits.begin(); item != native_blits.end();)
-        if (item->first.first == context) item = native_blits.erase(item);
-        else ++item;
     std::lock_guard<std::mutex> guard(textures_mutex);
     for (auto item = renderer_contexts.begin(); item != renderer_contexts.end();)
         if (item->second == context) item = renderer_contexts.erase(item);
@@ -1566,197 +1548,13 @@ bool sdl_shader(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_Rect* so
     else if (shader_waiting || !applied) shader_outcome = applied ? 1 : 2;
     return applied;
 }
-// NNDDSS's isolated core forwards GLES calls to dlsym(RTLD_DEFAULT) through
-// its supplied shim. Match its native DS framebuffer, textures and attribute
-// names; loader UI quads use different attribute names and stay untouched.
-extern "C" void glTexImage2D(unsigned target, int level, int internal, int width, int height, int border,
-                             unsigned format, unsigned type, const void* pixels) {
-    using Fn = void (*)(unsigned, int, int, int, int, int, unsigned, unsigned, const void*);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "glTexImage2D"));
-    if (next) next(target, level, internal, width, height, border, format, type, pixels);
-    initialize();
-    if (!shared_menu || core != "nnddss" || target != 0x0de1 || level != 0) return;
-    static auto context = rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");
-    static auto proc = rgds::overlay_sdl<decltype(&SDL_GL_GetProcAddress)>("SDL_GL_GetProcAddress");
-    if (!context || !proc) return;
-    auto current = context();
-    if (!current) return;
-    static auto get = reinterpret_cast<void (*)(unsigned, int*)>(proc("glGetIntegerv"));
-    int texture = 0;
-    if (get) get(0x8069, &texture);
-    if (texture) gl_textures[{current, unsigned(texture)}] = {width, height};
-}
-extern "C" void glDeleteTextures(int count, const unsigned* textures) {
-    using Fn = void (*)(int, const unsigned*);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "glDeleteTextures"));
-    if (core == "nnddss" && count > 0 && textures) {
-        static auto context = rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");
-        if (context) {
-            auto current = context();
-            for (int i = 0; i < count; i++) gl_textures.erase({current, textures[i]});
-        }
-    }
-    if (next) next(count, textures);
-}
-extern "C" void glDeleteProgram(unsigned program) {
-    using Fn = void (*)(unsigned);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "glDeleteProgram"));
-    if (core == "nnddss") {
-        static auto context = rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");
-        if (context) native_blits.erase({context(), program});
-    }
-    if (next) next(program);
-}
-// Keep a small shadow of the screen quad buffers so sharp bilinear uses
-// the screen destination, including half-screen layouts, rather than the
-// whole display viewport. This never reads pixels or maps GPU buffers.
-void track_gl_buffer(unsigned target, std::ptrdiff_t offset, std::ptrdiff_t size, const void* data, bool replace) {
-    initialize();
-    if (!shared_menu || core != "nnddss" || drawing_shader || target != 0x8892) return;
-    static auto context = rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");
-    static auto proc = rgds::overlay_sdl<decltype(&SDL_GL_GetProcAddress)>("SDL_GL_GetProcAddress");
-    if (!context || !proc) return;
-    auto current = context();
-    if (!current) return;
-    static auto get = reinterpret_cast<void (*)(unsigned, int*)>(proc("glGetIntegerv"));
-    int name = 0;
-    if (get) get(0x8894, &name);
-    if (!name) return;
-    auto key = std::make_pair(current, unsigned(name));
-    if (offset < 0 || size < 0 || size > 8192 || offset > 8192 - size) {
-        if (replace) gl_buffers.erase(key);
-        return;
-    }
-    if (replace) {
-        auto& buffer = gl_buffers[key];
-        buffer.resize(size);
-        if (data && size) std::memcpy(buffer.data(), data, size);
-    } else {
-        auto found = gl_buffers.find(key);
-        if (found != gl_buffers.end() && data && size_t(offset + size) <= found->second.size())
-            std::memcpy(found->second.data() + offset, data, size);
-    }
-}
-extern "C" void glBufferData(unsigned target, std::ptrdiff_t size, const void* data, unsigned usage) {
-    using Fn = void (*)(unsigned, std::ptrdiff_t, const void*, unsigned);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "glBufferData"));
-    if (next) next(target, size, data, usage);
-    track_gl_buffer(target, 0, size, data, true);
-}
-extern "C" void glBufferSubData(unsigned target, std::ptrdiff_t offset, std::ptrdiff_t size, const void* data) {
-    using Fn = void (*)(unsigned, std::ptrdiff_t, std::ptrdiff_t, const void*);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "glBufferSubData"));
-    if (next) next(target, offset, size, data);
-    track_gl_buffer(target, offset, size, data, false);
-}
-extern "C" void glDeleteBuffers(int count, const unsigned* buffers) {
-    using Fn = void (*)(int, const unsigned*);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "glDeleteBuffers"));
-    if (core == "nnddss" && count > 0 && buffers) {
-        static auto context = rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");
-        if (context) {
-            auto current = context();
-            for (int i = 0; i < count; i++) gl_buffers.erase({current, buffers[i]});
-        }
-    }
-    if (next) next(count, buffers);
-}
-std::pair<float, float> native_target(SDL_GLContext current, int attribute, int first, int count) {
-    static auto proc = rgds::overlay_sdl<decltype(&SDL_GL_GetProcAddress)>("SDL_GL_GetProcAddress");
-    if (!proc) return {};
-    static auto get = reinterpret_cast<void (*)(unsigned, int*)>(proc("glGetIntegerv"));
-    static auto attr = reinterpret_cast<void (*)(unsigned, unsigned, int*)>(proc("glGetVertexAttribiv"));
-    static auto pointer = reinterpret_cast<void (*)(unsigned, unsigned, void**)>(proc("glGetVertexAttribPointerv"));
-    if (!get || !attr || !pointer || first < 0 || (count != 4 && count != 6 && count != 12)) return {};
-    int name = 0, type = 0, size = 0, stride = 0, viewport[4]{};
-    void* address = nullptr;
-    attr(attribute, 0x889f, &name);
-    attr(attribute, 0x8625, &type);
-    attr(attribute, 0x8623, &size);
-    attr(attribute, 0x8624, &stride);
-    pointer(attribute, 0x8645, &address);
-    get(0x0ba2, viewport);
-    if (type != 0x1406 || size < 2 || size > 4 || stride < 0) return {};
-    auto buffer = gl_buffers.find({current, unsigned(name)});
-    size_t step = stride ? size_t(stride) : size_t(size) * sizeof(float),
-           offset = name ? reinterpret_cast<size_t>(address) : 0;
-    // The default loader uses static interleaved CPU arrays; fxRender uses
-    // VBOs. Both are legitimate GLES2 vertex sources for this very draw.
-    if ((name && buffer == gl_buffers.end()) || (!name && !address) || size_t(first) > 12 || step > 8192) return {};
-    const unsigned char* bytes = name ? buffer->second.data() : static_cast<const unsigned char*>(address);
-    size_t length = name ? buffer->second.size() : offset + size_t(first + count) * step;
-    if (offset > length) return {};
-    float low_x = 4, high_x = -4, low_y = 4, high_y = -4;
-    for (int i = 0; i < count; i++) {
-        size_t begin = offset + size_t(first + i) * step;
-        if (begin > length || 2 * sizeof(float) > length - begin) return {};
-        float xy[2];
-        std::memcpy(xy, bytes + begin, sizeof(xy));
-        if (!std::isfinite(xy[0]) || !std::isfinite(xy[1]) || std::abs(xy[0]) > 4 || std::abs(xy[1]) > 4) return {};
-        low_x = std::min(low_x, xy[0]);
-        high_x = std::max(high_x, xy[0]);
-        low_y = std::min(low_y, xy[1]);
-        high_y = std::max(high_y, xy[1]);
-    }
-    return {(high_x - low_x) * .5f * viewport[2], (high_y - low_y) * .5f * viewport[3]};
-}
-extern "C" void glDrawArrays(unsigned mode, int first, int count) {
-    using Fn = void (*)(unsigned, int, int);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "glDrawArrays"));
-    initialize();
-    if (!drawing_shader && shared_menu && core == "nnddss" && live_shader &&
-        ((mode == 5 && count == 4) || (mode == 4 && (count == 6 || count == 12)))) {
-        static auto context = rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext");
-        static auto proc = rgds::overlay_sdl<decltype(&SDL_GL_GetProcAddress)>("SDL_GL_GetProcAddress");
-        if (context && proc) {
-            static auto get = reinterpret_cast<void (*)(unsigned, int*)>(proc("glGetIntegerv"));
-            static auto attrib = reinterpret_cast<int (*)(unsigned, const char*)>(proc("glGetAttribLocation"));
-            auto current = context();
-            int framebuffer = 0, texture = 0, program = 0, active = 0;
-            if (current && get && attrib) {
-                get(0x8ca6, &framebuffer);
-                get(0x84e0, &active);
-                get(0x8069, &texture);
-                get(0x8b8d, &program);
-                auto image = gl_textures.find({current, unsigned(texture)});
-                if (!framebuffer && active == 0x84c0 && image != gl_textures.end() &&
-                    rgds::GameShader::ds_texture(image->second.width, image->second.height)) {
-                    auto key = std::make_pair(current, unsigned(program));
-                    auto blit = native_blits.find(key);
-                    if (blit == native_blits.end()) {
-                        NativeBlit attributes{attrib(program, "a_vertex_coordinate"),
-                                              attrib(program, "a_texture_coordinate")};
-                        if (attributes.position < 0 || attributes.coordinate < 0)
-                            attributes = {attrib(program, "aPosition"), attrib(program, "aTextureCoord")};
-                        blit = native_blits.emplace(key, attributes).first;
-                    }
-                    if (blit->second.position >= 0 && blit->second.coordinate >= 0) {
-                        // Colour/LCD effects use source pixels only. Avoid six
-                        // driver queries and a vertex walk for every panel draw.
-                        auto target = rgds::shader_uses_target_size(live_shader)
-                                          ? native_target(current, blit->second.position, first, count)
-                                          : std::pair<float, float>{};
-                        drawing_shader = true;
-                        bool applied = game_shader.native(live_shader, image->second.width, image->second.height,
-                                                          blit->second.position, blit->second.coordinate, mode, first,
-                                                          count, target.first, target.second);
-                        drawing_shader = false;
-                        shader_result(applied);
-                        if (applied) return;
-                    }
-                }
-            }
-        }
-    }
-    if (next) next(mode, first, count);
-}
 using CopyTexture = int (*)(SDL_Renderer*, SDL_Texture*, const SDL_Rect*, const SDL_Rect*);
 extern "C" int SDL_RenderCopy(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_Rect* source,
                               const SDL_Rect* target) {
     initialize();
     using Fn = CopyTexture;
     static auto copy = rgds::overlay_sdl<Fn>("SDL_RenderCopy");
-    if (shared_menu && core != "nnddss") {
+    if (shared_menu) {
         if (core == "drastic" && !env("RGDS_TOUCH_LIBRARY").empty()) {
             // The vendor adapter records the lower-screen destination during
             // RenderCopy. Bypassing it leaves its touch rectangle null, and its
@@ -1779,7 +1577,7 @@ extern "C" int SDL_RenderCopyEx(SDL_Renderer* renderer, SDL_Texture* texture, co
     using Fn = int (*)(SDL_Renderer*, SDL_Texture*, const SDL_Rect*, const SDL_Rect*, double, const SDL_Point*,
                        SDL_RendererFlip);
     static auto copy = rgds::overlay_sdl<Fn>("SDL_RenderCopyEx");
-    if (shared_menu && core != "nnddss") {
+    if (shared_menu) {
         if (sdl_shader(renderer, texture, source, target, angle, center, flip)) return 0;
         return copy ? copy(renderer, texture, source, target, angle, center, flip) : -1;
     }
@@ -2028,23 +1826,12 @@ extern "C" Uint8 SDL_JoystickGetHat(SDL_Joystick* stick, int hat) {
     return value;
 }
 #ifdef __linux__
-bool direct_control_caller(void* address) {
-    Dl_info caller{};
-    return core == "nnddss" && dladdr(address, &caller) && caller.dli_fname &&
-           fs::path(caller.dli_fname).filename() == "nnddss";
-}
 bool anbernic_input(int descriptor) {
     using Fn = int (*)(int, unsigned long, ...);
     static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "ioctl"));
     char name[128]{};
     return next && next(descriptor, EVIOCGNAME(sizeof(name)), name) >= 0 &&
            (std::strstr(name, "ANBERNIC") || std::strstr(name, "retrogame_joypad"));
-}
-bool mainline_input(int descriptor) {
-    using Fn = int (*)(int, unsigned long, ...);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "ioctl"));
-    char name[128]{};
-    return next && next(descriptor, EVIOCGNAME(sizeof(name)), name) >= 0 && std::strstr(name, "gpio-keys-control");
 }
 extern "C" int ioctl(int descriptor, unsigned long request, ...) noexcept {
     using Fn = int (*)(int, unsigned long, ...);
@@ -2054,7 +1841,7 @@ extern "C" int ioctl(int descriptor, unsigned long request, ...) noexcept {
     void* value = va_arg(arguments, void*);
     va_end(arguments);
     // The shared menu and volume watcher need independent evdev clients.
-    // NNDDSS otherwise grabs touch/keys exclusively inside its loader.
+    // Engines otherwise grab touch/keys exclusively.
     if (request == EVIOCGRAB && value && env("RGDS_SHARED_MENU") == "1") return 0;
     int result = next ? next(descriptor, request, value) : -1;
     if (result >= 0 && value && std::getenv("RGDS_SHARED_MENU") && _IOC_TYPE(request) == 'E' &&
@@ -2065,19 +1852,12 @@ extern "C" int ioctl(int descriptor, unsigned long request, ...) noexcept {
             std::memset(bits, 0, size);
             return result;
         }
-        bool anbernic = anbernic_input(descriptor), mainline = mainline_input(descriptor);
-        bool direct = initialized && direct_control_caller(__builtin_return_address(0));
+        bool anbernic = anbernic_input(descriptor);
         // Consume physical Menu before remapping: legacy output code 312 can
         // also represent a legitimate mapped input on a mainline device.
         for (int code : {102, 139, 158, 172, 312, 316, 354})
             if (rgds::game_menu_code(code, anbernic) && static_cast<unsigned>(code / 8) < size)
                 bits[code / 8] &= static_cast<unsigned char>(~(1 << (code % 8)));
-        if ((anbernic || mainline) && direct) {
-            int code = mainline ? 315 : 311;
-            bool start = static_cast<unsigned>(code / 8) < size && (bits[code / 8] & (1 << (code % 8)));
-            observe_shortcut(rgds::control_start, start);
-            control_mapping.remap_key_bits(bits, size, control_shortcut.visible_start(now()), mainline);
-        }
         // BTN_TL2 (312) is a real trigger on standard/mainline pads.
     }
     return result;
@@ -2092,8 +1872,8 @@ extern "C" ssize_t read(int descriptor, void* buffer, size_t size) {
     if (length < 0) return next ? next(descriptor, buffer, size) : -1;
     path[length] = '\0';
     bool input = std::strncmp(path, "/dev/input/event", 16) == 0;
-    // Every evdev client reads libc directly. The supplied NNDDSS loader owns
-    // GT9xx Type-A calibration (recorded native ranges 0..640 / 0..480).
+    // Every evdev client reads libc directly; touch framing and calibration
+    // stay native.
     Fn reader = next;
     if (input) {
         static void* libc = dlopen("libc.so.6", RTLD_NOW | RTLD_LOCAL);
@@ -2105,13 +1885,7 @@ extern "C" ssize_t read(int descriptor, void* buffer, size_t size) {
     initialize();
     if (!shared_menu) return result;
     auto events = static_cast<input_event*>(buffer);
-    bool blocked = input_blocked(), anbernic = anbernic_input(descriptor), mainline = mainline_input(descriptor);
-    static std::map<int, std::array<bool, 16>> direct_held;
-    if (blocked) direct_held[descriptor].fill(false);
-    // SDL's own evdev client must keep physical state. Mapping it here and
-    // again in the controller API would undo swaps. Only direct loader reads
-    // receive raw key translations; touch framing/calibration stays native.
-    bool direct = direct_control_caller(__builtin_return_address(0));
+    bool blocked = input_blocked(), anbernic = anbernic_input(descriptor);
     for (ssize_t i = 0; i < result / ssize_t(sizeof(input_event)); i++) {
         auto& event = events[i];
         struct Packet {
@@ -2131,9 +1905,6 @@ extern "C" ssize_t read(int descriptor, void* buffer, size_t size) {
             } else if (source >= 0) observe_shortcut(source, packet.value == 1);
         }
         rgds::filter_game_input(packet, blocked, anbernic, resume_monotonic, resume_realtime);
-        if (direct && (anbernic || mainline))
-            control_mapping.remap_evdev_key(packet.type, packet.code, packet.value,
-                                            control_shortcut.visible_start(now()), mainline, &direct_held[descriptor]);
         event.type = Uint16(packet.type);
         event.code = Uint16(packet.code);
         event.value = packet.value;

@@ -110,16 +110,33 @@ class BootControlTests(unittest.TestCase):
         self.configure()
         self.assertEqual(vendor.read_bytes(), before)
 
-    def test_external_hook_and_symlink_are_never_overwritten(self):
+    def test_external_hook_is_kept_chained_and_restored_and_symlink_is_refused(self):
         self.hook.parent.mkdir(parents=True)
-        self.hook.write_text('# another manager\n')
-        with self.assertRaisesRegex(ValueError, 'another manager'):
-            self.configure()
-        self.assertEqual(self.hook.read_text(), '# another manager\n')
+        self.hook.write_text('#!/bin/sh\n# another manager\n')
+        self.hook.chmod(0o700)
+        self.configure()
+        self.assertEqual(control.inspect(self.root, self.system)['mode'], 'rgds')
+        self.assertEqual((self.ctl / 'original-autostart').read_text(), '#!/bin/sh\n# another manager\n')
+        source = self.hook.read_text()
+        self.assertIn(control.TAG, source)
+        self.assertIn('original-autostart', source)
+        self.assertTrue(source.rstrip().endswith('exit 0'))
+        self.assertEqual(subprocess.run(['/bin/sh', '-n', str(self.hook)]).returncode, 0)
+        control.uninstall(self.system)
+        self.assertEqual(self.hook.read_text(), '#!/bin/sh\n# another manager\n')
+        self.assertEqual(self.hook.stat().st_mode & 0o777, 0o700)
         self.hook.unlink()
         self.hook.symlink_to(self.root / 'state/active')
         with self.assertRaisesRegex(ValueError, 'symlink'):
             self.configure()
+
+    def test_our_own_hook_without_a_control_folder_is_replaced_not_chained(self):
+        self.configure()
+        import shutil
+        shutil.rmtree(self.ctl)
+        self.configure()
+        self.assertEqual((self.ctl / 'original-autostart').read_bytes(), b'')
+        self.assertNotIn('original-autostart', self.hook.read_text())
 
     def test_interrupted_update_cannot_enable_boot(self):
         self.configure()

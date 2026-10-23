@@ -76,7 +76,7 @@ class ShaderPixelTests(unittest.TestCase):
         cls.temp.cleanup()
 
     def test_all_presets_compile_link_and_change_real_pixels_on_every_core(self):
-        for core in ('nnddss', 'drastic', 'dsperate', 'melonds'):
+        for core in ('drastic', 'dsperate', 'melonds'):
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
                 result = subprocess.run(
                     [str(self.binary), folder, core], env=self.environment, capture_output=True, text=True, timeout=30
@@ -139,7 +139,7 @@ class ShaderPixelTests(unittest.TestCase):
             shutil.copytree(self.environment['RGDS_SHADER_DIR'], pack)
             bad = pack / 'lcd1x.dsd'
             bad.write_text(bad.read_text().replace('void main()', 'void broken_main(', 1))
-            for core in ('nnddss', 'drastic', 'dsperate', 'melonds'):
+            for core in ('drastic', 'dsperate', 'melonds'):
                 with self.subTest(core=core), tempfile.TemporaryDirectory() as control:
                     result = subprocess.run(
                         [str(self.binary), control, core, 'failure'],
@@ -177,7 +177,7 @@ int main(int argc,char** argv){
  GL(CreateShader,U,(U));GL(ShaderSource,void,(U,I,const char* const*,const I*));GL(CompileShader,void,(U));GL(GetShaderiv,void,(U,U,I*));GL(GetShaderInfoLog,void,(U,I,I*,char*));
  GL(CreateProgram,U,());GL(AttachShader,void,(U,U));GL(BindAttribLocation,void,(U,U,const char*));GL(LinkProgram,void,(U));GL(GetProgramiv,void,(U,U,I*));GL(UseProgram,void,(U));
  GL(GenTextures,void,(I,U*));GL(ActiveTexture,void,(U));GL(BindTexture,void,(U,U));GL(TexParameteri,void,(U,U,I));GL(TexImage2D,void,(U,I,I,I,I,I,U,U,const void*));
- GL(GenBuffers,void,(I,U*));GL(BindBuffer,void,(U,U));GL(BufferData,void,(U,std::ptrdiff_t,const void*,U));GL(VertexAttribPointer,void,(U,I,U,B,I,const void*));GL(EnableVertexAttribArray,void,(U));GL(DisableVertexAttribArray,void,(U));
+ GL(GenBuffers,void,(I,U*));GL(BindBuffer,void,(U,U));GL(BufferData,void,(U,std::ptrdiff_t,const void*,U));GL(VertexAttribPointer,void,(U,I,U,B,I,const void*));GL(EnableVertexAttribArray,void,(U));GL(DrawArrays,void,(U,I,I));GL(BufferSubData,void,(U,std::ptrdiff_t,std::ptrdiff_t,const void*));GL(DisableVertexAttribArray,void,(U));
  GL(Viewport,void,(I,I,I,I));GL(Scissor,void,(I,I,I,I));GL(ColorMask,void,(B,B,B,B));GL(ClearColor,void,(float,float,float,float));GL(Clear,void,(U));GL(ReadPixels,void,(I,I,I,I,U,U,void*));
 #undef GL
  const char* vs="attribute vec2 aPosition;attribute vec2 aTextureCoord;varying vec2 v;void main(){v=aTextureCoord;gl_Position=vec4(aPosition,0.,1.);}";
@@ -188,23 +188,23 @@ int main(int argc,char** argv){
  TexParameteri(0x0de1,0x2801,0x2600);TexParameteri(0x0de1,0x2800,0x2600);TexParameteri(0x0de1,0x2802,0x812f);TexParameteri(0x0de1,0x2803,0x812f);
  std::vector<B> pixels(256*192*4);
  for(int y=0;y<192;y++)for(int x=0;x<256;x++){auto p=&pixels[(y*256+x)*4];p[0]=x<128?180:30;p[1]=y<96?90:160;p[2]=((x+y)%2)?140:70;p[3]=255;}
- glTexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,pixels.data());
+ TexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,pixels.data());
  auto texture=TestTexture(image,256,192);auto renderer=reinterpret_cast<SDL_Renderer*>(1);
- const float vertices[]={-1,1,0,0,1,1,1,0,-1,-1,0,1,-1,-1,0,1,1,1,1,0,1,-1,1,1};U buffer=0;GenBuffers(1,&buffer);BindBuffer(0x8892,buffer);glBufferData(0x8892,4416,nullptr,0x88e8);glBufferSubData(0x8892,2208,sizeof(vertices),vertices);
+ const float vertices[]={-1,1,0,0,1,1,1,0,-1,-1,0,1,-1,-1,0,1,1,1,1,0,1,-1,1,1};U buffer=0;GenBuffers(1,&buffer);BindBuffer(0x8892,buffer);BufferData(0x8892,4416,nullptr,0x88e8);BufferSubData(0x8892,2208,sizeof(vertices),vertices);
  VertexAttribPointer(3,2,0x1406,0,16,reinterpret_cast<void*>(2208));VertexAttribPointer(5,2,0x1406,0,16,reinterpret_cast<void*>(2216));EnableVertexAttribArray(3);EnableVertexAttribArray(5);
  auto clear=[&](){Disable(0x0c11);Disable(0x0be2);ColorMask(1,1,1,1);Viewport(0,0,1280,960);ClearColor(0,0,0,1);Clear(0x4000);};
  auto read=[&](){std::vector<B> values(1280*960*4);ReadPixels(0,0,1280,960,0x1908,0x1401,values.data());assert(GetError()==0);return values;};
  int serial=0;auto command=[&](int id){std::ofstream file(control);file<<++serial<<" shader:"<<id<<'\n';file.close();test_time+=30;tick();};
  auto result=[&](){std::ifstream file(control+".result");return std::string(std::istreambuf_iterator<char>(file),{});};
  SDL_Rect rect{0,0,1280,960};TestGeometry(1,1,0,0,1280,960,0,0,-1,-1);
- clear();glDrawArrays(4,0,6);auto original_pixels=read();
+ clear();DrawArrays(4,0,6);auto original_pixels=read();
  if(argc==4 && std::string(argv[3])=="enhanced"){
    assert(enhanced_game_texture);
    std::vector<B> panel(640*480*4);for(int y=0;y<480;y++)for(int x=0;x<640;x++){
      int p=(y*640+x)*4;panel[p]=x%256;panel[p+1]=y%256;panel[p+2]=180;panel[p+3]=255;
    }
-   BindTexture(0x0de1,image);glTexImage2D(0x0de1,0,0x1908,640,480,0,0x1908,0x1401,panel.data());
-   auto big=TestTexture(image,640,480);clear();glDrawArrays(4,0,6);auto unfiltered=read();
+   BindTexture(0x0de1,image);TexImage2D(0x0de1,0,0x1908,640,480,0,0x1908,0x1401,panel.data());
+   auto big=TestTexture(image,640,480);clear();DrawArrays(4,0,6);auto unfiltered=read();
    for(int selected : {2,4}){
      command(selected);clear();assert(SDL_RenderCopy(renderer,big,nullptr,&rect)==0);
      assert(!shader_waiting && live_shader==selected && TestCopies()==0);
@@ -219,7 +219,7 @@ int main(int argc,char** argv){
    // column/row amplitude in percent of the brightest line, mean in percent
    // of the input grey.
    for(size_t i=0;i<pixels.size();i+=4){pixels[i]=pixels[i+1]=pixels[i+2]=128;pixels[i+3]=255;}
-   BindTexture(0x0de1,image);glTexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,pixels.data());SDL_Rect panel{0,0,640,480};
+   BindTexture(0x0de1,image);TexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,pixels.data());SDL_Rect panel{0,0,640,480};
    for(int selected=1;selected<rgds::shader_count;selected++){
      command(selected);clear();assert(SDL_RenderCopy(renderer,texture,nullptr,&panel)==0);assert(!shader_waiting && live_shader==selected);
      auto frame=read();std::vector<double> columns(640,0),rows(480,0);double total=0;
@@ -230,7 +230,7 @@ int main(int argc,char** argv){
    std::puts("grid amplitudes=measured");return 0;
  }
  if(argc==4){
-   auto draw=[&](){clear();if(core=="nnddss")glDrawArrays(4,0,6);else assert(SDL_RenderCopy(renderer,texture,nullptr,&rect)==0);};
+   auto draw=[&](){clear();assert(SDL_RenderCopy(renderer,texture,nullptr,&rect)==0);};
    command(4);draw();auto previous=read();assert(live_shader==4 && !shader_waiting);
    command(2);draw();assert(live_shader==4 && !shader_waiting && result().find("shader-failed")!=std::string::npos);draw();assert(read()==previous);
    int compiled=TestCompiles();command(2);draw();assert(live_shader==4 && !shader_waiting && TestCompiles()==compiled);draw();assert(read()==previous);
@@ -239,7 +239,7 @@ int main(int argc,char** argv){
  }
  for(int selected=1;selected<rgds::shader_count;selected++){
    command(selected);assert(shader_waiting && result().find("shader-applying")!=std::string::npos);clear();
-   if(core=="nnddss")glDrawArrays(4,0,6);else{assert(SDL_RenderClear(renderer)==0);assert(SDL_RenderCopy(renderer,texture,nullptr,&rect)==0);SDL_RenderPresent(renderer);}
+   assert(SDL_RenderClear(renderer)==0);assert(SDL_RenderCopy(renderer,texture,nullptr,&rect)==0);SDL_RenderPresent(renderer);
    assert(!shader_waiting && live_shader==selected && result().find("shader-applied")!=std::string::npos);
    auto filtered=read();size_t changed=0;for(size_t i=0;i<filtered.size();i+=4)if(filtered[i]!=original_pixels[i] || filtered[i+1]!=original_pixels[i+1] || filtered[i+2]!=original_pixels[i+2])++changed;
    // Sharp alone must visibly interpolate a noninteger-scaled source. The
@@ -250,27 +250,15 @@ int main(int argc,char** argv){
  }
  assert(TestCompiles()==2*rgds::shader_count); // Original program + every preset pair.
  // Sharp scaling at a noninteger 2.5x scale must change real edge pixels.
- clear();Viewport(0,480,640,480);live_shader=0;glDrawArrays(4,0,6);auto scaled=read();
+ clear();Viewport(0,480,640,480);live_shader=0;DrawArrays(4,0,6);auto scaled=read();
  live_shader=1;clear();Viewport(0,480,640,480);
- if(core=="nnddss")glDrawArrays(4,0,6);else{SDL_Rect noninteger{0,0,640,480};assert(SDL_RenderCopy(renderer,texture,nullptr,&noninteger)==0);}
+ {SDL_Rect noninteger{0,0,640,480};assert(SDL_RenderCopy(renderer,texture,nullptr,&noninteger)==0);}
  auto sharp=read();assert(sharp!=scaled);assert(TestCompiles()==2*rgds::shader_count);
- if(core=="nnddss"){
-   const float half[]={-1,1,0,0,0,1,1,0,-1,-1,0,1,-1,-1,0,1,0,1,1,0,0,-1,1,1};
-   glBufferSubData(0x8892,2208,sizeof(half),half);clear();Viewport(0,480,1280,480);glDrawArrays(4,0,6);
-   assert(read()==sharp); // Half-span geometry still means a 640x480 target.
-   glBufferSubData(0x8892,2208,sizeof(vertices),vertices);
-   glBufferSubData(0x8892,2208+sizeof(vertices),sizeof(vertices),vertices);clear();Viewport(0,480,640,480);glDrawArrays(4,6,6);assert(read()==sharp);
-   // Exact default loader topology: static interleaved CPU arrays, one
-   // 1280x480 viewport, triangles6 at first0 and first6.
-   const float lr[]={-1,1,0,0,0,1,1,0,-1,-1,0,1,-1,-1,0,1,0,1,1,0,0,-1,1,1,0,1,0,0,1,1,1,0,0,-1,0,1,0,-1,0,1,1,1,1,0,1,-1,1,1};
-   BindBuffer(0x8892,0);VertexAttribPointer(3,2,0x1406,0,16,lr);VertexAttribPointer(5,2,0x1406,0,16,lr+2);clear();Viewport(0,480,1280,480);glDrawArrays(4,0,6);assert(read()==sharp);glDrawArrays(4,6,6);auto side_by_side=read();assert(side_by_side[((959-200)*1280+700)*4]>0);
-   BindBuffer(0x8892,buffer);VertexAttribPointer(3,2,0x1406,0,16,reinterpret_cast<void*>(2208));VertexAttribPointer(5,2,0x1406,0,16,reinterpret_cast<void*>(2216));
- }
  // Real precision regression: unprepared original fragments MUST fail on
  // this GLES compiler, proving the harness catches the original defect.
  std::ifstream raw(std::string(std::getenv("RGDS_SHADER_DIR"))+"/lcd1x.dsd");std::string text(std::istreambuf_iterator<char>(raw),{});auto start=text.find("<fragment>")+10,end=text.find("</fragment>");std::string body=text.substr(start,end-start);const char* unprepared=body.c_str();U bad=CreateShader(0x8b30);ShaderSource(bad,1,&unprepared,nullptr);CompileShader(bad);I accepted=1;GetShaderiv(bad,0x8b81,&accepted);assert(!accepted);
  // Per-screen rect, letterbox, logical scale, clipping and UV orientation.
- if(core!="nnddss"){
+ {
    command(4);clear();TestGeometry(2,2,10,20,600,440,30,40,120,80);SDL_Rect box{20,20,256,192};assert(SDL_RenderCopy(renderer,texture,nullptr,&box)==0);auto frame=read();
    auto pixel=[&](int x,int y){return &frame[((959-y)*1280+x)*4];};assert(pixel(10,10)[0]==0);assert(pixel(90,130)[0]>100);assert(pixel(350,200)[0]==0);assert(pixel(90,110)[0]==0);
    clear();TestGeometry(1,1,0,0,1280,960,0,0,-1,-1);SDL_Rect rotated{200,200,256,192};assert(SDL_RenderCopyEx(renderer,texture,nullptr,&rotated,90,nullptr,SDL_FLIP_VERTICAL)==0);frame=read();assert(pixel(230,160)[0]==0);assert(pixel(300,250)[0]>0);
@@ -279,30 +267,26 @@ int main(int argc,char** argv){
    // DraStic can upload both screens into one native texture and draw source
    // rectangles. Their grids/scaling must remain independent, without seams.
    U combined=0;GenTextures(1,&combined);BindTexture(0x0de1,combined);TexParameteri(0x0de1,0x2801,0x2600);TexParameteri(0x0de1,0x2800,0x2600);TexParameteri(0x0de1,0x2802,0x812f);TexParameteri(0x0de1,0x2803,0x812f);
-   std::vector<B> dual(256*384*4);std::copy(pixels.begin(),pixels.end(),dual.begin());std::copy(pixels.begin(),pixels.end(),dual.begin()+pixels.size());glTexImage2D(0x0de1,0,0x1908,256,384,0,0x1908,0x1401,dual.data());auto stacked=TestTexture(combined,256,384);
+   std::vector<B> dual(256*384*4);std::copy(pixels.begin(),pixels.end(),dual.begin());std::copy(pixels.begin(),pixels.end(),dual.begin()+pixels.size());TexImage2D(0x0de1,0,0x1908,256,384,0,0x1908,0x1401,dual.data());auto stacked=TestTexture(combined,256,384);
    live_shader=2;clear();SDL_Rect full{0,0,640,960};assert(SDL_RenderCopy(renderer,stacked,nullptr,&full)==0);auto combined_frame=read();
    clear();SDL_Rect upper{0,0,640,480},lower{0,480,640,480};assert(SDL_RenderCopy(renderer,texture,nullptr,&upper)==0);assert(SDL_RenderCopy(renderer,texture,nullptr,&lower)==0);assert(read()==combined_frame);
    clear();SDL_Rect bottom_source{0,192,256,192};assert(SDL_RenderCopy(renderer,stacked,&bottom_source,&upper)==0);auto source_frame=read();clear();assert(SDL_RenderCopy(renderer,texture,nullptr,&upper)==0);assert(read()==source_frame);
    // Distinct adjacent screens catch linear sampling into another subrect.
    std::vector<B> other_pixels=pixels;for(size_t i=0;i<other_pixels.size();i+=4){other_pixels[i]=20;other_pixels[i+1]=40;other_pixels[i+2]=230;}
-   std::copy(other_pixels.begin(),other_pixels.end(),dual.begin()+pixels.size());BindTexture(0x0de1,combined);glTexImage2D(0x0de1,0,0x1908,256,384,0,0x1908,0x1401,dual.data());
-   U bottom=0;GenTextures(1,&bottom);BindTexture(0x0de1,bottom);TexParameteri(0x0de1,0x2801,0x2600);TexParameteri(0x0de1,0x2800,0x2600);TexParameteri(0x0de1,0x2802,0x812f);TexParameteri(0x0de1,0x2803,0x812f);glTexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,other_pixels.data());auto bottom_texture=TestTexture(bottom,256,192);
+   std::copy(other_pixels.begin(),other_pixels.end(),dual.begin()+pixels.size());BindTexture(0x0de1,combined);TexImage2D(0x0de1,0,0x1908,256,384,0,0x1908,0x1401,dual.data());
+   U bottom=0;GenTextures(1,&bottom);BindTexture(0x0de1,bottom);TexParameteri(0x0de1,0x2801,0x2600);TexParameteri(0x0de1,0x2800,0x2600);TexParameteri(0x0de1,0x2802,0x812f);TexParameteri(0x0de1,0x2803,0x812f);TexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,other_pixels.data());auto bottom_texture=TestTexture(bottom,256,192);
    live_shader=1;clear();assert(SDL_RenderCopy(renderer,stacked,nullptr,&full)==0);auto distinct=read();clear();assert(SDL_RenderCopy(renderer,texture,nullptr,&upper)==0);assert(SDL_RenderCopy(renderer,bottom_texture,nullptr,&lower)==0);assert(read()==distinct);
    clear();assert(SDL_RenderCopy(renderer,stacked,&bottom_source,&upper)==0);auto distinct_crop=read();clear();assert(SDL_RenderCopy(renderer,bottom_texture,nullptr,&upper)==0);assert(read()==distinct_crop);
    SDL_DestroyTexture(bottom_texture);SDL_DestroyTexture(stacked);BindTexture(0x0de1,image);
    live_shader=4;clear();assert(SDL_RenderCopy(renderer,texture,nullptr,&upper)==0);auto rgba_frame=read();
-   U bgra=0;GenTextures(1,&bgra);BindTexture(0x0de1,bgra);TexParameteri(0x0de1,0x2801,0x2600);TexParameteri(0x0de1,0x2800,0x2600);std::vector<B> bgra_pixels=pixels;for(size_t i=0;i<bgra_pixels.size();i+=4)std::swap(bgra_pixels[i],bgra_pixels[i+2]);glTexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,bgra_pixels.data());auto bgra_texture=TestTextureFormat(bgra,256,192,SDL_PIXELFORMAT_ARGB8888);
+   U bgra=0;GenTextures(1,&bgra);BindTexture(0x0de1,bgra);TexParameteri(0x0de1,0x2801,0x2600);TexParameteri(0x0de1,0x2800,0x2600);std::vector<B> bgra_pixels=pixels;for(size_t i=0;i<bgra_pixels.size();i+=4)std::swap(bgra_pixels[i],bgra_pixels[i+2]);TexImage2D(0x0de1,0,0x1908,256,192,0,0x1908,0x1401,bgra_pixels.data());auto bgra_texture=TestTextureFormat(bgra,256,192,SDL_PIXELFORMAT_ARGB8888);
    clear();assert(SDL_RenderCopy(renderer,bgra_texture,nullptr,&upper)==0);assert(read()==rgba_frame); // SDL's BGR native upload must be converted before colour treatment.
    TestAlpha(bgra_texture,128);clear();assert(SDL_RenderCopy(renderer,bgra_texture,nullptr,&upper)==0);auto translucent=read();int p=((959-200)*1280+200)*4;assert(std::abs(int(translucent[p])*2-int(rgba_frame[p]))<=2);
    SDL_DestroyTexture(bgra_texture);BindTexture(0x0de1,image);
 
 
  }
- command(0);assert(live_shader==0 && !shader_waiting);clear();glDrawArrays(4,0,6);assert(read()==original_pixels);
- if(core=="nnddss"){
-   // Render-target/core/UI draws keep their original program and pixels.
-   live_shader=4;native_blits.clear();UseProgram(0);glDrawArrays(4,0,6);assert(native_blits.size()==1);assert(native_blits.begin()->second.position==-1);GetError();UseProgram(original);live_shader=0;
- }
+ command(0);assert(live_shader==0 && !shader_waiting);clear();DrawArrays(4,0,6);assert(read()==original_pixels);
  SDL_DestroyTexture(texture);game_shader.destroy(rgds::overlay_sdl<decltype(&SDL_GL_GetCurrentContext)>("SDL_GL_GetCurrentContext")());assert(GetError()==0);
  for(int i=1;i<rgds::shader_count;i++)assert(!IsProgram(TestProgram(i)));assert(IsProgram(original));
  std::printf("%s presets=20 pixels=verified\n",core.c_str());

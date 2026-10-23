@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Küçük dokunuşlar, kaydırma ve a
 Springy menu changes with a colourful wobble	Renkli bir sallanmayla yaylı menü geçişleri
 Transitions	Geçişler
 Subtle	Hafif
-Menu sounds	Menü sesleri
+Menu effects	Menü efektleri
 Effects volume	Efekt ses düzeyi
 Preview sound	Sesi önizle
 A little handheld magic	Biraz el konsolu büyüsü
@@ -943,4 +943,17 @@ Next picture	Sonraki resim
 No pictures yet	Henüz resim yok
 Available	Mevcut
 Not downloaded	İndirilmedi
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Henüz oyun bilgisi yok. Ayarlar > Kütüphane > Kapak kaynakları altında Oyun bilgisini açın ve kapakları getirin.
+More filters	Daha fazla filtre
+Show games	Oyunları göster
+Reset filters	Filtreleri sıfırla
+Any	Hepsi
+{0} active	{0} etkin
+Still reading your library. Try again in a moment.	Kütüphane hâlâ okunuyor. Birazdan tekrar deneyin.
+No game has this information yet. Fetch artwork with Game info turned on.	Henüz hiçbir oyunda bu bilgi yok. Oyun bilgisi açıkken kapakları getirin.
+With info	Bilgili
+Without info	Bilgisiz
+Online play	Çevrimiçi oyun
+1 player	1 oyuncu
+{0} players	{0} oyuncu
+No game information yet.	Henüz oyun bilgisi yok.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ayarlar > Kütüphane > Kapak kaynakları altında Oyun bilgisini açın ve kapakları getirin.

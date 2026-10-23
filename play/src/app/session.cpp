@@ -25,6 +25,24 @@ std::string clean_title(std::string name) {
     return name;
 }
 
+// A Game Boy cartridge's header title as a profile code: "POKEMON BLUE" ->
+// POKEMON_BLUE. Older carts carry no game code (or a garbled one, where the
+// title runs into it), so their profiles name the title instead.
+std::string header_title_code(const std::vector<uint8_t>& rom) {
+    if (rom.size() < 0x150) return {};
+    std::string out;
+    for (size_t i = 0x134; i < 0x144; ++i) {
+        uint8_t c = rom[i];
+        if (c == 0 || (i == 0x143 && (c & 0x80))) break;
+        bool word = (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+        if (c >= 'a' && c <= 'z') c = uint8_t(c - 32), word = true;
+        if (word) out += char(c);
+        else if (!out.empty() && out.back() != '_') out += '_';
+    }
+    while (!out.empty() && out.back() == '_') out.pop_back();
+    return out;
+}
+
 } // namespace
 
 std::string system_display_name(const std::string& system) {
@@ -64,17 +82,50 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     for (const auto& dir : o.profile_dirs) profiles_.load_directory(dir, profile_errors_);
     for (const auto& e : profile_errors_) std::fprintf(stderr, "play: profile skipped: %s\n", e.c_str());
     profile_ = profiles_.find(core_->system(), core_->game_code());
+    if (!profile_ && std::string(core_->system()) != "gba")
+        profile_ = profiles_.find(core_->system(), header_title_code(*rom));
     title_ = profile_ ? profile_->title : clean_title(file_stem(o.rom));
     if (!o.font_dir.empty()) font_.load(o.font_dir);
-    if (o.companion)
-        companion_ = std::make_unique<Companion>(*core_, profile_, title_, system_display_name(core_->system()));
+    if (o.companion) {
+        // A colour game that also plays on the first Game Boy (header flag 80)
+        // runs in colour, but mGBA names it a Game Boy game (its saves stay
+        // under "gb"); the card says what it is.
+        std::string system = core_->system();
+        if (system == "gb" && rom->size() > 0x143 && ((*rom)[0x143] & 0x80)) system = "gbc";
+        companion_ = std::make_unique<Companion>(*core_, profile_, title_, system_display_name(system));
+        // What a view has learnt (the explored map) lives beside the save.
+        std::vector<uint8_t> bytes;
+        if (companion_->view() && read_file(view_path(), bytes))
+            companion_->view()->load(std::string(bytes.begin(), bytes.end()));
+    }
     return true;
+}
+
+std::string Session::view_path() const {
+    std::string path = save_.path;
+    auto dot = path.rfind('.');
+    if (dot != std::string::npos && path.find('/', dot) == std::string::npos) path.erase(dot);
+    return path + ".view";
+}
+
+void Session::save_view() {
+    View* view = companion_ ? companion_->view() : nullptr;
+    std::string bytes;
+    if (!view || !view->dirty() || !view->save(bytes)) return;
+    // On its own thread, like the battery save: an SD card fsync can stall a frame.
+    if (view_writer_.joinable()) view_writer_.join();
+    view_writer_ = std::thread([path = view_path(), bytes = std::move(bytes)] {
+        std::string error;
+        if (!write_file_atomic(path, std::vector<uint8_t>(bytes.begin(), bytes.end()), error))
+            std::fprintf(stderr, "play: the companion's map was not kept: %s\n", error.c_str());
+    });
 }
 
 void Session::frame(uint32_t buttons) {
     core_->run_frame(buttons);
     ++frames_;
     if (companion_) companion_->after_frame(*core_);
+    if (frames_ % 1800 == 0) save_view(); // every half minute, when it has changed
     uint64_t revision = core_->battery_revision();
     if (revision != saved_revision_) {
         saved_revision_ = revision;
@@ -112,6 +163,8 @@ bool Session::load_state_file(const std::string& path, std::string& error) {
 
 void Session::flush() {
     if (!core_ || !writer_) return;
+    save_view();
+    if (view_writer_.joinable()) view_writer_.join();
     uint64_t revision = core_->battery_revision();
     if (revision != saved_revision_) {
         saved_revision_ = revision;

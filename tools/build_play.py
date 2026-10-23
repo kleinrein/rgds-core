@@ -77,7 +77,8 @@ MGBA_OPTIONS = {
 
 CORE_SOURCES = [
     "core/mgba_core.cpp", "companion/profile.cpp", "companion/map_capture.cpp", "companion/companion.cpp",
-    "ui/canvas.cpp", "ui/screens.cpp", "ui/frame.cpp", "ui/png.cpp", "app/storage.cpp", "app/session.cpp"
+    "companion/party.cpp", "companion/party_gb.cpp", "companion/view.cpp", "companion/automap.cpp", "ui/canvas.cpp",
+    "ui/screens.cpp", "ui/frame.cpp", "ui/png.cpp", "app/storage.cpp", "app/session.cpp"
 ]
 C_SOURCES = ["core/mgba_split.c"]  # mGBA's internal renderer headers are C
 PROGRAMS = {

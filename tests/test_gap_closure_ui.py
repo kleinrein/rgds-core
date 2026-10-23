@@ -81,7 +81,8 @@ class GapClosureUiTests(unittest.TestCase):
         r = self.run_ui(['Down', 'A', 'Y'])
         self.assertEqual(r['picker_title'], 'Slot 1')
         self.assertTrue(r['picker_open'])
-        r = self.run_ui(['X'] + ['Down'] * 5 + ['A', 'X'], mode='library')
+        # Game options: ... Artwork, Game info, Save gallery (the sixth Down).
+        r = self.run_ui(['X'] + ['Down'] * 6 + ['A', 'X'], mode='library')
         self.assertEqual(r['page'], 28)
         self.assertEqual(r['picker_title'], 'Delete slot 1?')
 
@@ -113,7 +114,7 @@ class GapClosureUiTests(unittest.TestCase):
         archive = self.data / 'imports/test.rgdssave.zip'
         archive.parent.mkdir()
         archive.touch()
-        r = self.run_ui(['X'] + ['Down'] * 5 + ['A', 'Y', 'A'], mode='library')
+        r = self.run_ui(['X'] + ['Down'] * 6 + ['A', 'Y', 'A'], mode='library')
         self.assertEqual(r['page'], 28)
         self.assertEqual(r['picker_title'], 'Import slot')
         self.assertTrue(r['picker_open'])

@@ -315,133 +315,26 @@ class App {
         return preferences.animations && preferences.view_animations && !probe && !launching &&
                settings.page != Page::BootWarning;
     }
-    void motion_input(int code) {
-        view_route = (code == 3 || (code == 7 && settings.page != Page::Library) ||
-                      (code == 2 && settings.page == Page::Display) || (code == 4 && settings.page == Page::Keyboard))
-                         ? ViewTravel::Back
-                     : code == 0 ? ViewTravel::Left
-                     : code == 1 ? ViewTravel::Right
-                                 : ViewTravel::Forward;
-        if (view_transitions_enabled() && preferences.view_style == ViewStyle::Spring)
-            view_motion.interact(s.GetTicks(), motion_touch ? contact_x : 320, motion_touch ? contact_y : 240);
-    }
+    void motion_input(int code);
     void move_element(uint32_t id, int& x, int& y, int width, int height, bool focused, int clip_top = 0,
-                      int clip_bottom = 480, int clip_left = 0, int clip_right = 640) {
-        if (!drawing_elements || !view_transitions_enabled() || layered(preferences.view_style)) return;
-        MotionRect bounds{x, y - element_origin_y, width, height};
-        auto offset = view_motion.element(id, bounds, focused, view_drawn_at);
-        if (pointer_down && bounds.contains(contact_x, contact_y)) offset.y += 3;
-        motion_hits.add(bounds, offset.x, offset.y, clip_top, clip_bottom, clip_left, clip_right);
-        x += offset.x;
-        y += offset.y;
-        if (offset.x || offset.y) element_moves++;
-    }
+                      int clip_bottom = 480, int clip_left = 0, int clip_right = 640);
     SDL_Texture* view_canvas = nullptr;
     SDL_Texture *view_previous = nullptr, *view_presented = nullptr;
     bool view_snapshot_ready = false, view_previous_ready = false;
     ViewStyle last_view_style = ViewStyle::Spring;
     std::vector<std::pair<int, bool>> view_levels;
     uint64_t push_animation_frames = 0;
-    void clear_view_canvases() {
-        for (auto** texture : {&view_canvas, &view_previous, &view_presented})
-            if (*texture) {
-                s.DestroyTexture(*texture);
-                *texture = nullptr;
-            }
-        view_snapshot_ready = view_previous_ready = false;
-    }
-    void start_view_motion(Uint32 now, ViewTravel route = ViewTravel::Forward) {
-        // Push composites the view captured just before the input that
-        // changed it; nothing captured (no input) means no transition.
-        if (layered(preferences.view_style) && !view_previous_ready) {
-            view_motion.stop();
-            return;
-        }
-        view_motion.start(now, route, preferences.view_style);
-    }
+    void clear_view_canvases();
+    void start_view_motion(Uint32 now, ViewTravel route = ViewTravel::Forward);
     SDL_Renderer* bottom_renderer() { return surfaces.size() > 1 ? surfaces[1].renderer : surfaces[0].renderer; }
     uint64_t view_capture_frame = ~uint64_t(0);
     // The outgoing image for a Push transition, captured once per displayed
     // frame when an input arrives. Idle frames never render offscreen.
-    void capture_view_for_input(const SDL_Event& e) {
-        if (!view_transitions_enabled() || !layered(preferences.view_style) || view_canvas_failed ||
-            view_motion.running || surfaces.empty())
-            return;
-        const bool trigger = e.type == SDL_KEYDOWN || e.type == SDL_JOYBUTTONDOWN ||
-                             (e.type == SDL_JOYHATMOTION && e.jhat.value) || e.type == SDL_MOUSEBUTTONUP ||
-                             e.type == SDL_FINGERUP;
-        if (!trigger || view_capture_frame == rendered_frames) return;
-        SDL_Renderer* renderer = bottom_renderer();
-        if (!view_previous)
-            view_previous = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
-        if (!view_previous || s.SetRenderTarget(renderer, view_previous) != 0) {
-            view_canvas_failed = true;
-            s.ClearError();
-            return;
-        }
-        s.RenderSetLogicalSize(renderer, 640, 480);
-        s.RenderSetClipRect(renderer, nullptr);
-        s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        s.SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        s.RenderClear(renderer);
-        paint_bottom(renderer, 0);
-        if (s.SetRenderTarget(renderer, nullptr) != 0) throw std::runtime_error("Could not restore capture canvas");
-        s.RenderSetLogicalSize(renderer, 640, o.preview ? 960 : 480);
-        s.RenderSetClipRect(renderer, nullptr);
-        view_previous_ready = true;
-        view_capture_frame = rendered_frames;
-    }
+    void capture_view_for_input(const SDL_Event& e);
     bool view_canvas_failed = false, view_seen = false;
     std::tuple<int, bool, int, int> last_view;
     uint64_t view_transitions = 0, view_animation_frames = 0;
-    void sync_view_motion(Uint32 now) {
-        auto key = std::make_tuple(int(settings.page), home_menu, preferences.view, preferences.layout);
-        bool enabled = view_transitions_enabled();
-        view_motion.pace = view_pace(preferences.view_speed);
-        if (last_view_style != preferences.view_style) {
-            clear_view_canvases();
-            view_motion.stop();
-            view_motion.style = preferences.view_style;
-            view_canvas_failed = false;
-            last_view_style = preferences.view_style;
-        }
-        auto level = std::make_pair(int(settings.page), home_menu);
-        if (view_seen && level != std::make_pair(std::get<0>(last_view), std::get<1>(last_view))) {
-            auto parent = std::find(view_levels.begin(), view_levels.end(), level);
-            if (parent != view_levels.end()) {
-                view_route = ViewTravel::Back;
-                view_levels.erase(parent + 1, view_levels.end());
-            } else if (view_route == ViewTravel::Back) view_levels = {level};
-            else {
-                view_route = ViewTravel::Forward;
-                view_levels.push_back(level);
-            }
-        } else if (!view_seen) view_levels = {level};
-        const bool same_page = settings.page == Page::Library && std::get<0>(last_view) == int(Page::Library) &&
-                               home_menu == std::get<1>(last_view);
-        // A choice on the view sheet changes the page under the sheet, and the
-        // sheet's own slide away is the whole transition. A crossfade as well
-        // would keep the old frame, sheet and all, over the closing sheet until
-        // the fade ran out.
-        if (view_seen && key != last_view && enabled && !(same_page && (picker_open || sheet_leaving()))) {
-            // Any other layout or collection change stays in place: a quick
-            // crossfade, never a sideways slide of the whole screen.
-            if (same_page) view_route = ViewTravel::Fade;
-            start_view_motion(now, view_route);
-            if (view_route == ViewTravel::Back) back_transitions++;
-            view_route = ViewTravel::Forward;
-            view_transitions++;
-        }
-        last_view = key;
-        view_seen = true;
-        if (!enabled) {
-            if (view_motion.active()) dirty = true;
-            view_motion.stop();
-            motion_hits.clear();
-            clear_view_canvases();
-            view_canvas_failed = false;
-        }
-    }
+    void sync_view_motion(Uint32 now);
     struct SoundState {
         Page page;
         bool home, picker;
@@ -449,6 +342,7 @@ class App {
         size_t game, text;
         unsigned toggles;
         bool favourite, launch;
+        int bar; // Home's bottom-bar button under the D-pad, or -1
     };
     unsigned sound_toggles() const {
         return unsigned(preferences.dark) | (unsigned(preferences.pixel) << 1) |
@@ -457,24 +351,7 @@ class App {
                (unsigned(preferences.auto_save) << 6) | (unsigned(preferences.menu_sounds) << 7) |
                (unsigned(system_preferences.lid) << 8);
     }
-    SoundState sound_state() const {
-        return {settings.page,
-                home_menu,
-                picker_open,
-                preferences.view,
-                preferences.layout,
-                settings.page == Page::Settings ? settings.section : settings.focus,
-                picker_focus,
-                key_row,
-                key_col,
-                hardware.volume_percent,
-                system_preferences.brightness,
-                navigation_selected(),
-                edit_buffer.size(),
-                sound_toggles(),
-                game_preferences.favourite,
-                launching};
-    }
+    SoundState sound_state() const;
     unsigned sound_depth = 0;
     int sound_code = 2;
     SoundState sound_before{};
@@ -482,91 +359,14 @@ class App {
     std::string menu_sound_action, departure_action;
     Uint32 departure_at = 0;
     bool departure_dispatch = false, sleep_audio_parked = false;
-    void configure_sounds() {
-        if (!sounds.opened) sounds.opened = [this] { restore_dac_level(); };
-        sounds.configure(preferences.menu_sounds && !probe && !sleep_audio_parked && settings.page != Page::Microphone,
-                         preferences.sound_volume, asset_path("sounds"));
-        // Music belongs to the home, library and settings; not to the in-game
-        // menu, the microphone test, sleep or a launch in progress.
-        sounds.configure_music(preferences.menu_music && !probe && !o.game_menu && !sleep_audio_parked &&
-                                   settings.page != Page::Microphone && !launching,
-                               preferences.music_volume, asset_path("music") / "menu.wav");
-    }
+    void configure_sounds();
     // Every new sink can reset the RK817 DAC, including the boot screen. The
     // menu sink stays paused until the saved level is back; a direct control
     // write avoids a helper process on each reopen. Status may not exist yet.
-    void restore_dac_level() {
-        if (o.preview) return;
-        int level = hardware.volume ? hardware.volume_percent : -1;
-        if (level < 0) {
-            auto saved = fields(o.data / "volume.ini");
-            try {
-                if (saved["schema"] == "1") level = std::clamp(std::stoi(saved["volume"]), 0, 100);
-            } catch (const std::exception&) {
-                level = -1;
-            }
-        }
-        if (level >= 0 && write_mixer_percent(dac_percent_for_level(level))) return;
-        if (!system.sync_volume()) {
-            sounds.close();
-            sounds.error = "Menu audio is unavailable on this device.";
-        }
-    }
-    bool emit_sound(MenuCue cue, int direction = 0) {
-        if (probe || settings.page == Page::Microphone || (hardware.volume && hardware.volume_percent == 0))
-            return false;
-        return sounds.play(cue, s.GetTicks(), direction,
-                           motion_touch ? (contact_x / 640.f - .5f) * .5f : direction * .12f);
-    }
-    void sound_intent(MenuCue cue) {
-        if (sound_depth) explicit_sound = cue;
-        else emit_sound(cue);
-    }
-    void finish_sound_action() {
-        if (--sound_depth) return;
-        if (!departure_action.empty()) {
-            explicit_sound.reset();
-            return;
-        }
-        const auto after = sound_state();
-        auto before = sound_before;
-        int direction = sound_code == 0 || sound_code == 8 ? -1 : 1;
-        if (explicit_sound) {
-            emit_sound(*explicit_sound);
-            explicit_sound.reset();
-            return;
-        }
-        if (before.launch || after.launch) return;
-        if (before.page == Page::GameOptions && after.page == Page::GameOptions &&
-            before.favourite != after.favourite) {
-            emit_sound(after.favourite ? MenuCue::Favourite : MenuCue::Unfavourite);
-            return;
-        }
-        if (before.toggles != after.toggles) {
-            emit_sound((after.toggles & ~before.toggles) ? MenuCue::Enable : MenuCue::Disable);
-            return;
-        }
-        if (before.page != after.page || before.home != after.home || before.picker != after.picker) {
-            bool back = sound_code == 3 || view_route == ViewTravel::Back;
-            emit_sound(back ? MenuCue::Back : before.picker && !after.picker ? MenuCue::Confirm : MenuCue::Open);
-            return;
-        }
-        if (before.view != after.view || before.layout != after.layout) {
-            emit_sound(MenuCue::Open, direction);
-            return;
-        }
-        if (before.volume != after.volume || before.brightness != after.brightness) {
-            emit_sound(MenuCue::Adjust, direction);
-            return;
-        }
-        if (before.text != after.text) {
-            emit_sound(MenuCue::Type);
-            return;
-        }
-        if (before.game != after.game || before.focus != after.focus || before.pick != after.pick ||
-            before.row != after.row || before.col != after.col)
-            emit_sound(MenuCue::Navigate, direction);
-    }
+    void restore_dac_level();
+    bool emit_sound(MenuCue cue, int direction = 0);
+    void sound_intent(MenuCue cue);
+    void finish_sound_action();
     struct SoundAction {
         App& app;
         SoundAction(App& value, int code) : app(value) {
@@ -578,53 +378,7 @@ class App {
         }
         ~SoundAction() { app.finish_sound_action(); }
     };
-    void menu_sounds_action(int code) {
-        if (code == 3) {
-            settings.back();
-            dirty = true;
-            return;
-        }
-        if (code == 8 || code == 9) {
-            settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 4);
-            dirty = true;
-            return;
-        }
-        if (code != 0 && code != 1 && code != 2 && code != 4) return;
-        if (settings.focus == 0) {
-            preferences.menu_sounds = (code == 2 || code == 4) ? !preferences.menu_sounds : code == 1;
-            remember_appearance();
-        } else if (settings.focus == 1) {
-            if (code == 0 || code == 1) {
-                preferences.sound_volume = std::clamp(preferences.sound_volume + (code == 0 ? -5 : 5), 0, 100);
-                remember_appearance();
-                sound_intent(MenuCue::Adjust);
-            } else
-                show_picker("Effects volume", {"Mute", "25%", "50%", "75%", "100%"},
-                            (preferences.sound_volume + 12) / 25, [this](int n) {
-                                preferences.sound_volume = n * 25;
-                                remember_appearance();
-                                sound_intent(MenuCue::Adjust);
-                            });
-        } else if (settings.focus == 2) {
-            preferences.menu_music = (code == 2 || code == 4) ? !preferences.menu_music : code == 1;
-            remember_appearance();
-            sound_intent(preferences.menu_music ? MenuCue::Enable : MenuCue::Disable);
-        } else if (settings.focus == 3) {
-            if (code == 0 || code == 1) {
-                preferences.music_volume = std::clamp(preferences.music_volume + (code == 0 ? -5 : 5), 0, 100);
-                remember_appearance();
-            } else
-                show_picker("Music volume", {"20%", "40%", "60%", "80%", "100%"},
-                            std::clamp((preferences.music_volume + 10) / 20 - 1, 0, 4), [this](int n) {
-                                preferences.music_volume = (n + 1) * 20;
-                                remember_appearance();
-                            });
-        } else {
-            std::vector<std::string> names(menu_cue_labels.begin(), menu_cue_labels.end());
-            show_picker("Preview sound", names, 0, [this](int n) { sound_intent(static_cast<MenuCue>(n)); });
-        }
-        dirty = true;
-    }
+    void menu_sounds_action(int code);
     TouchDevice touchscreen;
     VolumeKeys volume_keys;
     HoldRepeat hold;
@@ -749,18 +503,18 @@ class App {
         case Page::DeviceInfo: return 5;
         case Page::System: return 8;
         case Page::GameOptions:
-            if (other_system_selected()) return 7; // the rows every engine has; DS-only ones read Unavailable
-            if (experimental_game()) return 8;
+            // The last three rows are always Game info, Save gallery and DS controls.
+            if (other_system_selected()) return 8; // the rows every engine has; DS-only ones read Unavailable
+            if (experimental_game()) return 9;
             return (game_preferences.core < 0 ? int(preferences.core) : game_preferences.core) == 0
-                       ? (superdrastic_game() ? 10 : 9)
-                       : 7;
-        case Page::GameArtwork: return 4;
+                       ? (superdrastic_game() ? 11 : 10)
+                       : 8;
+        case Page::GameArtwork: return 3;
         case Page::Maintenance: return 7;
         case Page::Network: return 5;
         case Page::Startup: return 4;
         case Page::SaveGallery: return 9;
         case Page::Discover: return 4;
-        case Page::MoreFilters: return 10;
         case Page::RomSetup: return 3;
         case Page::DSControls: return 5;
         case Page::EmulatorOptions: return o.game_core == "drastic" ? 12 : 10;
@@ -846,6 +600,7 @@ class App {
             return;
         }
         home_selected = std::min<size_t>(index, home_tiles() - 1);
+        home_bar_focus = -1;
         selected_at = s.GetTicks();
         if (animate && preferences.animations) carousel.select(home_selected, selected_at);
         else carousel.reset(home_selected);
@@ -875,501 +630,50 @@ class App {
         rail_press = {};
         hold.clear();
     }
-    void load_library(std::vector<Game> games) {
-        model.games = std::move(games);
-        if (o.preview && model.games.empty())
-            for (const char* name :
-                 {"A little adventure", "Puzzle collection", "Racing club", "Garden stories", "Pocket exploration"})
-                model.games.push_back({name, {}, true});
-        ds_games = model.games;
-        refresh_other_systems();
-        library_ready = true;
-        if (!o.game_menu) {
-            summary_ready = false;
-            library_summary.request(o.data, all_games);
-        }
-        device_status = fields(o.data / "device/status.ini");
-        if (!o.game_menu && !o.boot_startup) library_view(preferences.view);
-        if (o.game_menu) {
-            if (std::find(std::begin(core_ids), std::end(core_ids), o.game_core) == std::end(core_ids))
-                throw std::runtime_error("Unknown game engine");
-            if (!o.game_rom.empty()) o.game_rom = fs::weakly_canonical(o.game_rom);
-            model.games = {
-                {o.game_rom.empty() ? "Preview game" : o.game_rom.stem().string(), o.game_rom, o.game_rom.empty()}};
-            // Its system, for its icon and the Graphics it offers (a zipped game in RG DS Play is a GBA one).
-            model.games[0].system = system_for_path(o.game_rom);
-            if (model.games[0].system == "nds" && o.game_core == "rgds-play") model.games[0].system = "gba";
-            model.selected = 0;
-            home_menu = false;
-            settings.page = Page::QuickMenu;
-            menu_status = {{"state", "paused"}, {"checkpoint", o.preview ? "1" : "0"}};
-            load_cheats();
-        }
-        if (o.game_switcher) {
-            load_switcher();
-            settings.page = Page::GameSwitcher;
-        }
-        restore_state();
-        if (o.library || o.game_menu) home_menu = false;
-        else if (o.home || o.boot_startup) {
-            home_menu = true;
-            settings.page = Page::Library;
-        }
-        home_selected = std::min(home_selected, home_tiles() - 1);
-        carousel.reset(navigation_selected());
-        browser_list.reveal(model.selected, model.games.size());
-        theme_source = read_theme_source();
-        if (o.settings) {
-            settings.open();
-            if (!o.section.empty()) {
-                if (o.section == "scraper") open_scraper();
-                else if (o.section == "updates") open_updates(Page::Settings);
-                else {
-                    static const std::array<std::string, 8> ids = {"theme",        "power",  "library",  "sound",
-                                                                   "connectivity", "system", "controls", "statistics"};
-                    auto found = std::find(ids.begin(), ids.end(),
-                                           o.section == "brightness" || o.section == "motion" ? "theme" : o.section);
-                    if (found == ids.end()) throw std::runtime_error("Unknown settings section");
-                    settings.section = int(found - ids.begin());
-                    settings.enter();
-                    if (o.section == "brightness") settings.page = Page::Display;
-                    else if (o.section == "motion") settings.page = Page::Motion;
-                    else if (o.section == "controls") open_controls(false);
-                }
-            }
-        }
-    }
-    void stop_library_scan() {
-        if (library_child > 0) {
-            kill(library_child, SIGTERM);
-            for (int i = 0; i < 30; i++) {
-                if (waitpid(library_child, nullptr, WNOHANG) != 0) {
-                    library_child = -1;
-                    break;
-                }
-                usleep(10000);
-            }
-            if (library_child > 0) {
-                kill(library_child, SIGKILL);
-                waitpid(library_child, nullptr, 0);
-            }
-        }
-        library_child = -1;
-        if (library_pipe >= 0) ::close(library_pipe);
-        library_pipe = -1;
-    }
-    void begin_library_scan() {
-        library_scan_started = true;
-        if (o.roots.empty()) {
-            load_library({});
-            return;
-        }
-        int channel[2];
-        if (pipe(channel) != 0) {
-            status = "Could not start library scan";
-            library_ready = true;
-            return;
-        }
-        if (fcntl(channel[0], F_SETFL, O_NONBLOCK) < 0 || fcntl(channel[0], F_SETFD, FD_CLOEXEC) < 0 ||
-            fcntl(channel[1], F_SETFD, FD_CLOEXEC) < 0) {
-            ::close(channel[0]);
-            ::close(channel[1]);
-            status = "Could not start library scan";
-            library_ready = true;
-            return;
-        }
-        std::vector<std::string> arguments = {o.executable.string(), "--scan-library"};
-        for (const auto& root : o.roots) {
-            arguments.push_back("--rom-dir");
-            arguments.push_back(root.string());
-        }
-        std::vector<char*> argv;
-        for (auto& argument : arguments) argv.push_back(argument.data());
-        argv.push_back(nullptr);
-        library_child = fork();
-        if (library_child == 0) {
-            ::close(channel[0]);
-            if (dup2(channel[1], STDOUT_FILENO) < 0) _exit(127);
-            ::close(channel[1]);
-            execv(argv[0], argv.data());
-            _exit(127);
-        }
-        ::close(channel[1]);
-        if (library_child < 0) {
-            ::close(channel[0]);
-            status = "Could not start library scan";
-            library_ready = true;
-            return;
-        }
-        library_pipe = channel[0];
-    }
-    void poll_library_scan() {
-        if (library_pipe < 0) return;
-        char bytes[4096];
-        ssize_t count;
-        while ((count = read(library_pipe, bytes, sizeof(bytes))) > 0) {
-            library_bytes.append(bytes, size_t(count));
-            if (library_bytes.size() > 64 * 1024 * 1024) {
-                stop_library_scan();
-                status = "Library scan exceeded its limit";
-                library_ready = true;
-                return;
-            }
-        }
-        if (count == 0) library_eof = true;
-        else if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
-            stop_library_scan();
-            status = "Could not read library scan";
-            library_ready = true;
-            return;
-        }
-        if (library_child > 0) {
-            int result = 0;
-            auto done = waitpid(library_child, &result, WNOHANG);
-            if (done == 0) return;
-            if (done < 0 || !WIFEXITED(result) || WEXITSTATUS(result) != 0) {
-                stop_library_scan();
-                status = "Library scan failed";
-                library_ready = true;
-                return;
-            }
-            library_child = 0;
-        }
-        if (!library_eof) return;
-        ::close(library_pipe);
-        library_pipe = -1;
-        library_child = -1;
-        std::vector<Game> games;
-        size_t at = 0;
-        while (at < library_bytes.size()) {
-            auto path_end = library_bytes.find('\0', at);
-            if (path_end == std::string::npos) break;
-            auto title_end = library_bytes.find('\0', path_end + 1);
-            if (title_end == std::string::npos) break;
-            games.push_back({library_bytes.substr(path_end + 1, title_end - path_end - 1),
-                             fs::path(library_bytes.substr(at, path_end - at)), false});
-            at = title_end + 1;
-        }
-        library_bytes.clear();
-        auto previous = settings;
-        bool previous_home = home_menu;
-        auto previous_category = home_selected;
-        load_library(std::move(games));
-        if (o.boot_startup) {
-            settings = previous;
-            home_menu = previous_home;
-            home_selected = previous_category;
-            if (!home_menu) library_view(preferences.view);
-            carousel.reset(navigation_selected());
-        } else if (scan_stay) {
-            if (!previous_home) library_view(preferences.view);
-            settings = previous;
-            home_menu = previous_home;
-            home_selected = previous_category;
-            carousel.reset(navigation_selected());
-        }
-        scan_stay = false;
-        if (!o.roots.empty()) start_worker("index");
-        dirty = true;
-    }
-    void start_boot_session() {
-        if (session_initialized) return;
-        load_system_configuration();
-        if (!preferences.pixel) check_fonts();
-        shaders =
-            load_shaders(o.app.empty() ? fs::path("assets/shaders/catalog.tsv") : o.app / "assets/shaders/catalog.tsv");
-        cancel_navigation();
-        boot_touch_candidate = false;
-        session_initialized = true;
-        settings.page = Page::Library;
-        home_menu = !o.library;
-        selected_at = page_at = s.GetTicks();
-        if (o.preview) {
-            refresh_system();
-            boot_hardware_ready = true;
-        } else system.request_status();
-        begin_library_scan();
-        dirty = true;
-    }
-    void continue_boot() {
-        if (settings.page == Page::BootWarning && boot_displayed) start_boot_session();
-    }
-    void snapshot_boot_input() {
-        if (!o.boot_startup || session_initialized) return;
-        auto pump = reinterpret_cast<decltype(&SDL_PumpEvents)>(dlsym(s.handle, "SDL_PumpEvents"));
-        if (pump) pump();
-        auto keys = reinterpret_cast<decltype(&SDL_GetKeyboardState)>(dlsym(s.handle, "SDL_GetKeyboardState"));
-        if (keys) {
-            int length = 0;
-            auto state = keys(&length);
-            for (auto item : {std::make_pair(SDLK_a, SDL_SCANCODE_A), std::make_pair(SDLK_RETURN, SDL_SCANCODE_RETURN)})
-                if (state && item.second < length && state[item.second]) boot_blocked_keys.insert(item.first);
-        }
-        auto mouse = reinterpret_cast<decltype(&SDL_GetMouseState)>(dlsym(s.handle, "SDL_GetMouseState"));
-        if (mouse && (mouse(nullptr, nullptr) & SDL_BUTTON_LMASK)) boot_touch_wait_release = true;
-        auto touch_count =
-            reinterpret_cast<decltype(&SDL_GetNumTouchDevices)>(dlsym(s.handle, "SDL_GetNumTouchDevices"));
-        auto touch_id = reinterpret_cast<decltype(&SDL_GetTouchDevice)>(dlsym(s.handle, "SDL_GetTouchDevice"));
-        auto fingers = reinterpret_cast<decltype(&SDL_GetNumTouchFingers)>(dlsym(s.handle, "SDL_GetNumTouchFingers"));
-        if (touch_count && touch_id && fingers)
-            for (int i = 0; i < touch_count(); i++)
-                if (fingers(touch_id(i)) > 0) boot_touch_wait_release = true;
-        boot_touch_wait_release = boot_touch_wait_release || touchscreen.initially_pressed();
-        auto update = reinterpret_cast<decltype(&SDL_JoystickUpdate)>(dlsym(s.handle, "SDL_JoystickUpdate"));
-        auto button = reinterpret_cast<decltype(&SDL_JoystickGetButton)>(dlsym(s.handle, "SDL_JoystickGetButton"));
-        auto instance = reinterpret_cast<decltype(&SDL_JoystickInstanceID)>(dlsym(s.handle, "SDL_JoystickInstanceID"));
-        if (update) update();
-        const char* a = std::getenv("RGDS_BUTTON_A");
-        int accept = a ? std::atoi(a) : 0;
-        if (button && instance)
-            for (auto* joystick : joysticks)
-                for (int index : {accept, 7}) {
-                    bool mainline = o.mainline && mainline_pads.count(instance(joystick));
-                    int raw = mainline ? (index == 7 ? 9 : 1) : index;
-                    if (button(joystick, raw)) boot_blocked_buttons.insert({instance(joystick), Uint8(index)});
-                }
-    }
+    void load_library(std::vector<Game> games);
+    void stop_library_scan();
+    void begin_library_scan();
+    void poll_library_scan();
+    void start_boot_session();
+    void continue_boot();
+    void snapshot_boot_input();
     std::set<SDL_JoystickID> menu_held_hats;
     // A fresh pause menu would read the game's held controls as new presses:
     // SDL posts every joystick button already down on its first update, and a
     // stylus resting on the panel decodes as a new contact. A held A (accelerate),
     // B, Start, Select or Menu, or a stylus over Resume, would close the menu at
     // once, so each control held at open is ignored until it is released.
-    void snapshot_menu_input() {
-        if (!o.game_menu) return;
-        std::string held;
-        if (touchscreen.initially_pressed()) {
-            touchscreen.hold_initial_contact();
-            held = " touch";
-        }
-        auto update = reinterpret_cast<decltype(&SDL_JoystickUpdate)>(dlsym(s.handle, "SDL_JoystickUpdate"));
-        auto count = reinterpret_cast<decltype(&SDL_JoystickNumButtons)>(dlsym(s.handle, "SDL_JoystickNumButtons"));
-        auto button = reinterpret_cast<decltype(&SDL_JoystickGetButton)>(dlsym(s.handle, "SDL_JoystickGetButton"));
-        auto hat = reinterpret_cast<decltype(&SDL_JoystickGetHat)>(dlsym(s.handle, "SDL_JoystickGetHat"));
-        auto instance = reinterpret_cast<decltype(&SDL_JoystickInstanceID)>(dlsym(s.handle, "SDL_JoystickInstanceID"));
-        if (update && count && button && hat && instance) {
-            update();
-            for (auto* joystick : joysticks) {
-                auto id = instance(joystick);
-                bool mainline = o.mainline && mainline_pads.count(id);
-                for (int raw = 0; raw < count(joystick); raw++)
-                    if (button(joystick, raw)) {
-                        int index = mainline ? MainlineControls::button(raw) : raw;
-                        if (index >= 0) {
-                            boot_blocked_buttons.insert({id, Uint8(index)});
-                            held += " button " + std::to_string(index);
-                        }
-                    }
-                if (hat(joystick, 0) != SDL_HAT_CENTERED) {
-                    menu_held_hats.insert(id);
-                    held += " hat";
-                }
-            }
-        }
-        if (!held.empty())
-            std::cout << "RGDS menu helper: held at open:" << held << "; ignored until released" << std::endl;
-    }
+    void snapshot_menu_input();
     // The column's top tile: straight back into the last game.
-    void open_last_played() {
-        const auto& last = summary.groups[0].last_game;
-        if (!summary_ready || !last) {
-            status = summary_ready ? "Nothing played yet" : "Preparing…";
-            dirty = true;
-            return;
-        }
-        library_view(0);
-        remember_appearance();
-        // The game starts over Home itself. Games opens instead only while a
-        // very large card is still being listed, or if the game has left it.
-        if (!collection_loading)
-            for (size_t i = 0; i < model.games.size(); i++)
-                if (model.games[i].path == last->path) {
-                    select_game(i, false);
-                    carousel.reset(home_selected); // the rail is Home's while Home is up
-                    launch(true);
-                    return;
-                }
-        home_menu = false;
-    }
-    void open_category() {
-        cancel_navigation();
-        if (home_selected == last_played_tile) open_last_played();
-        else if (home_selected == pictochat_tile) open_pictochat();
-        else if (home_selected == 0) settings.open();
-        else if (home_selected == 1 && preferences.show_systems) open_systems();
-        else {
-            home_menu = false;
-            library_view(int(home_selected) - 1);
-            remember_appearance();
-        }
-        dirty = true;
-    }
+    void open_last_played();
+    void open_category();
     // ---- Show all systems (Settings > Library): other systems' games are played by
     // RG DS Play. Games opens the Systems page; Favourites and Recents span every system.
-    bool other_system_selected() const {
-        return !o.game_menu && model.selected < model.games.size() && model.games[model.selected].system != "nds";
-    }
-    void refresh_other_systems() {
-        all_games = ds_games;
-        listed_systems = {"nds"};
-        if (preferences.show_systems && !o.game_menu)
-            for (const auto& info : systems()) {
-                if (std::string(info.id) == "nds") continue;
-                std::vector<fs::path> roots;
-                for (const auto& [id, path] : o.system_roots)
-                    if (id == info.id) roots.push_back(path);
-                auto games = scan_system(roots, info.id);
-                if (games.empty()) continue;
-                listed_systems.push_back(info.id);
-                all_games.insert(all_games.end(), games.begin(), games.end());
-            }
-        if (std::find(listed_systems.begin(), listed_systems.end(), shown_system) == listed_systems.end())
-            shown_system = "nds";
-    }
-    std::vector<Game> view_source(int view) const {
-        if (view != 0 || !preferences.show_systems) return all_games;
-        std::vector<Game> games;
-        for (const auto& game : all_games)
-            if (game.system == shown_system) games.push_back(game);
-        return games;
-    }
-    size_t system_games(const std::string& id) const {
-        return size_t(std::count_if(all_games.begin(), all_games.end(), [&](const Game& g) { return g.system == id; }));
-    }
-    void open_systems() {
-        cancel_navigation();
-        settings.page = Page::Library;
-        home_menu = false;
-        systems_menu = true;
-        auto at = std::find(listed_systems.begin(), listed_systems.end(), shown_system);
-        systems_selected = at == listed_systems.end() ? 0 : size_t(at - listed_systems.begin());
-        // Each card's numbers, as Home's collections show theirs.
-        system_stats.assign(listed_systems.size(), {});
-        for (const auto& game : all_games)
-            for (size_t i = 0; i < listed_systems.size(); i++)
-                if (game.system == listed_systems[i] && !game.demo) {
-                    const auto& played = library_cache.stats(game, true);
-                    system_stats[i].games++;
-                    system_stats[i].sessions += played.sessions;
-                    system_stats[i].seconds += played.seconds;
-                }
-        selected_at = s.GetTicks();
-        carousel.reset(systems_selected);
-        status.clear();
-        dirty = true;
-    }
-    void choose_system(size_t index) {
-        if (index >= listed_systems.size()) return;
-        shown_system = listed_systems[index];
-        systems_menu = false;
-        library_view(0);
-        remember_appearance();
-        dirty = true;
-    }
+    bool other_system_selected() const;
+    void refresh_other_systems();
+    std::vector<Game> view_source(int view) const;
+    size_t system_games(const std::string& id) const;
+    void open_systems();
+    void choose_system(size_t index);
     // A system's tile: a cartridge and its badge, drawn in the space a game's icon takes.
-    void system_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
-        const auto& info = system_info(index < listed_systems.size() ? listed_systems[index] : "nds");
-        ui_icon(r, SettingsIcon::Cartridge, x + size / 2, y + size * 2 / 5, size * 5 / 8, "accent");
-        const std::string badge = info.badge;
-        raw_label(r, badge, x + (size - label_width(badge, 16, false)) / 2, y + size * 3 / 4, 16, "ink", size);
-    }
+    void system_icon(SDL_Renderer* r, size_t index, int x, int y, int size);
     // RG DS Play's view of the running game, as the runtime stores it beside game.ini.
     fs::path play_view_path() { return item_folder(0) / "play.ini"; }
-    void load_play_view() {
-        auto values = fields(play_view_path());
-        static const std::array<std::string, 3> fits = {"sharp", "integer", "smooth"},
-                                                seconds = {"companion", "off", "swap"};
-        play_fit = int(std::find(fits.begin(), fits.end(), values["fit"]) - fits.begin()) % 3;
-        play_second = int(std::find(seconds.begin(), seconds.end(), values["second"]) - seconds.begin()) % 3;
-        auto choices = play_frame_choices();
-        play_frame =
-            std::find(choices.begin(), choices.end(), values["frame"]) == choices.end() ? "off" : values["frame"];
-    }
+    void load_play_view();
     // What RG DS Play can draw around the game (play/src/ui/frame.hpp), by their play.ini names: its own
     // styles, then the owner's picture frames, userdata/frames/<system>/<name>.png.
     static constexpr std::array<const char*, 9> play_frames = {"off", "indigo",  "glacier",   "black",      "platinum",
                                                                "bar", "sp-onyx", "sp-cobalt", "sp-platinum"};
     static constexpr std::array<const char*, 9> play_frame_names = {
         "Off", "Indigo", "Glacier", "Black", "Platinum", "Black bar", "SP Onyx", "SP Cobalt", "SP Platinum"};
-    fs::path play_frames_folder() {
-        const auto& game = model.games.at(0);
-        std::string system = game.system;
-        if (system == "nds") system = system_for_path(game.path);
-        return o.data / "frames" / (system == "nds" ? "gba" : system);
-    }
-    std::vector<std::string> play_frame_choices() {
-        std::vector<std::string> choices(play_frames.begin(), play_frames.end()), pictures;
-        std::error_code ec;
-        for (fs::directory_iterator it(play_frames_folder(), ec), end; !ec && it != end; it.increment(ec)) {
-            const auto name = it->path().stem().string();
-            if (lower(it->path().extension().string()) == ".png" && it->is_regular_file(ec) && !name.empty() &&
-                name.size() <= 64 && name[0] != '.' && std::find(choices.begin(), choices.end(), name) == choices.end())
-                pictures.push_back(name);
-        }
-        std::sort(pictures.begin(), pictures.end());
-        choices.insert(choices.end(), pictures.begin(), pictures.end());
-        return choices;
-    }
-    std::string play_frame_label(const std::string& frame) const {
-        auto found = std::find(play_frames.begin(), play_frames.end(), frame);
-        return found == play_frames.end() ? frame : play_frame_names[size_t(found - play_frames.begin())];
-    }
-    void apply_play_view(int fit, int second, const std::string& frame) {
-        if (fit == play_fit && second == play_second && frame == play_frame) return;
-        if (o.game_menu && !o.preview) {
-            menu_request("play-graphics:" + std::to_string(fit) + ":" + std::to_string(second) + ":" + frame);
-            return;
-        }
-        static const std::array<const char*, 3> fits = {"sharp", "integer", "smooth"},
-                                                seconds = {"companion", "off", "swap"};
-        std::error_code ec;
-        fs::create_directories(play_view_path().parent_path(), ec);
-        auto pending = fs::path(play_view_path().string() + ".pending");
-        std::ofstream(pending) << "schema=1\nfit=" << fits[size_t(fit)] << "\nsecond=" << seconds[size_t(second)]
-                               << "\nframe=" << frame << '\n';
-        fs::rename(pending, play_view_path(), ec);
-        play_fit = fit;
-        play_second = second;
-        play_frame = frame;
-        status = "Graphics applied (preview).";
-        dirty = true;
-    }
-    const char* play_fit_name(int fit) const {
-        return fit == 1 ? "Whole pixels" : fit == 2 ? "Smooth fill" : "Sharp fill";
-    }
-    const char* play_second_name(int second) const {
-        return second == 1 ? "Off" : second == 2 ? "Swap screens" : "Companion";
-    }
-    void play_graphics_action() {
-        if (settings.focus == 0)
-            show_picker("Game screen", {"Sharp fill", "Whole pixels", "Smooth fill"}, play_fit,
-                        [this](int n) { apply_play_view(n, play_second, play_frame); });
-        else if (settings.focus == 1)
-            show_picker("Second screen", {"Companion", "Off", "Swap screens"}, play_second,
-                        [this](int n) { apply_play_view(play_fit, n, play_frame); });
-        else if (settings.focus == 2) {
-            auto choices = play_frame_choices();
-            std::vector<std::string> labels;
-            for (const auto& choice : choices) labels.push_back(play_frame_label(choice));
-            int selected = int(std::find(choices.begin(), choices.end(), play_frame) - choices.begin());
-            show_picker("Frame", labels, selected < int(choices.size()) ? selected : 0, [this, choices](int n) {
-                if (n >= 0 && n < int(choices.size())) apply_play_view(play_fit, play_second, choices[size_t(n)]);
-            });
-        } else {
-            // The same shader carousel as the DS engines: the bridge's pass draws GBA and Game Boy screens too.
-            open_shader_picker(true);
-            shader_return = Page::PlayGraphics;
-        }
-    }
-    void return_home() {
-        view_route = ViewTravel::Back;
-        cancel_navigation();
-        home_menu = true;
-        home_selected = size_t(preferences.view) + 1;
-        carousel.reset(home_selected);
-        selected_at = s.GetTicks();
-        dirty = true;
-    }
+    fs::path play_frames_folder();
+    std::vector<std::string> play_frame_choices();
+    std::string play_frame_label(const std::string& frame) const;
+    void apply_play_view(int fit, int second, const std::string& frame);
+    const char* play_fit_name(int fit) const;
+    const char* play_second_name(int second) const;
+    void play_graphics_action();
+    void return_home();
     SystemPreferences system_preferences;
     bool system_configuration_loaded = false;
     Uint32 last_activity = 0, system_poll = 0, system_retry = 0, lid_poll = 0, brightness_changed = 0,
@@ -1382,111 +686,13 @@ class App {
     std::optional<int> return_volume, return_brightness, return_power, return_lid, active_return_volume,
         active_return_brightness;
     bool return_status_needed = false, return_audio_failed = false;
-    bool return_writes_pending() const {
-        return return_control_child > 0 || return_volume || return_brightness || return_power || return_lid;
-    }
-    void begin_return_controls() {
-        if (return_control_child > 0 || system.volume_pending() || system.brightness_pending()) return;
-        if (!return_volume && !return_brightness && !return_power && !return_lid) return;
-        std::vector<std::string> arguments = {o.executable.string(),
-                                              "--restore-controls",
-                                              o.app.string(),
-                                              o.data.string(),
-                                              std::to_string(return_volume.value_or(-1)),
-                                              std::to_string(return_brightness.value_or(-1)),
-                                              std::to_string(return_power.value_or(-1)),
-                                              std::to_string(return_lid.value_or(-1))};
-        std::vector<char*> argv;
-        for (auto& argument : arguments) argv.push_back(argument.data());
-        argv.push_back(nullptr);
-        active_return_volume = return_volume;
-        active_return_brightness = return_brightness;
-        return_volume.reset();
-        return_brightness.reset();
-        return_power.reset();
-        return_lid.reset();
-        system.discard_status();
-        return_control_child = fork();
-        if (return_control_child == 0) {
-            execv(argv[0], argv.data());
-            _exit(127);
-        }
-        if (return_control_child < 0) {
-            return_audio_failed = active_return_volume.has_value();
-            status = "ERROR: Could not restore settings";
-        }
-    }
-    void poll_return_controls(bool wait = false) {
-        if (return_control_child > 0) {
-            int result = 0;
-            pid_t completed;
-            do {
-                completed = waitpid(return_control_child, &result, wait ? 0 : WNOHANG);
-            } while (completed < 0 && errno == EINTR);
-            if (completed == 0) return;
-            return_control_child = -1;
-            int failure = completed > 0 && WIFEXITED(result) ? WEXITSTATUS(result) : 127;
-            if (active_return_volume) {
-                return_audio_failed = (failure & 1) != 0;
-                if (!return_audio_failed) volume_applied = *active_return_volume;
-            }
-            if (active_return_brightness && !(failure & 2)) brightness_applied = *active_return_brightness;
-            if (failure) status = "ERROR: Could not restore settings - see log";
-            if (!return_volume && active_return_volume) {
-                if (return_audio_failed) hardware.volume_percent = confirmed_volume();
-                volume_unsaved = false;
-            }
-            if (!return_brightness && active_return_brightness) {
-                if (failure & 2) {
-                    system_preferences.brightness = brightness_applied;
-                    hardware.brightness_percent = brightness_applied;
-                }
-                if (brightness_unsaved) {
-                    try {
-                        save_system_preferences(o.system_preferences, system_preferences);
-                    } catch (const std::exception& error) {
-                        status = error.what();
-                    }
-                }
-                brightness_unsaved = false;
-            }
-            active_return_volume.reset();
-            active_return_brightness.reset();
-            dirty = true;
-        }
-        begin_return_controls();
-        if (!wait && !return_writes_pending() && return_status_needed && system.request_status()) {
-            return_status_needed = false;
-            system_poll = s.GetTicks();
-        }
-    }
-    void flush_return_controls() {
-        while (return_writes_pending()) {
-            poll_return_controls(true);
-            if (return_control_child <= 0 && (system.volume_pending() || system.brightness_pending())) {
-                system.flush_volume();
-                system.flush_brightness();
-            }
-        }
-    }
+    bool return_writes_pending() const;
+    void begin_return_controls();
+    void poll_return_controls(bool wait = false);
+    void flush_return_controls();
     LidSleep lid_sleep;
     bool font_ready = true, font_checked = false;
-    void check_fonts(bool first_frame = false) {
-        if (!font_ready || font_checked) return;
-        try {
-            if (first_frame) {
-                if (o.boot_warning) rounded.check({16, 20, 28, 36});
-                else rounded.check({16, 20, 28});
-            } else {
-                rounded.check();
-                font_checked = true;
-            }
-        } catch (const std::exception& e) {
-            font_ready = false;
-            preferences.pixel = true;
-            std::cerr << "Font fallback: " << e.what() << std::endl;
-        }
-    }
+    void check_fonts(bool first_frame = false);
     Uint32 selected_at = 0, page_at = 0, service_poll = 0, clock_poll = 0;
     Uint32 cover_motion_at = 0;   // Only a changed selection animates the top-screen cover.
     std::time_t drawn_second = 0; // the column's clock ticks once a second
@@ -1504,83 +710,15 @@ class App {
     bool pointer_down = false;
     enum class EdgeGesture { None, Bottom, Left };
     EdgeGesture edge_gesture = EdgeGesture::None;
-    void gesture_intro() {
-        remember_appearance();
-        show_detail(
-            "Touch gestures",
-            locale.text("Swipe up from the bottom edge to go Home from anywhere.") + "\n" +
-                locale.text("Swipe in from the left edge to go Back.") + "\n" +
-                locale.text(
-                    "A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires."));
-    }
+    void gesture_intro();
     Uint32 gesture_flash_at = 0;
     int gesture_flash_kind = 0;
     // The handle at the bottom edge, the Home pill that rises with the finger,
     // the Back disc that slides in from the left, and a ring where one fired.
-    void gesture_cues(SDL_Renderer* r, int y) {
-        if (!gestures_available()) return;
-        const Uint32 now = s.GetTicks();
-        const bool bottom = pointer_down && edge_gesture == EdgeGesture::Bottom,
-                   left = pointer_down && edge_gesture == EdgeGesture::Left;
-        const double pb = bottom ? std::clamp((down_y - contact_y) / 72.0, 0.0, 1.0) : 0,
-                     pl = left ? std::clamp((contact_x - down_x) / 72.0, 0.0, 1.0) : 0;
-        {
-            const int w = 72 + int(48 * pb), lift = int(26 * pb);
-            alpha_round(r, 320 - w / 2, y + 471 - lift, w, 5, 2, theme.at(pb > 0 ? "accent" : "ink"),
-                        int((preferences.dark ? 90 : 110) + 140 * pb));
-            if (pb > .2) {
-                const std::string text = locale.text("Home");
-                const int pw = label_width(text, 16, false) + 52;
-                alpha_round(r, 320 - pw / 2, y + 428 - lift, pw, 34, 17, theme.at("accent"),
-                            int(250 * std::min(1.0, (pb - .2) * 2)));
-                if (pb > .5) {
-                    ui_icon(r, SettingsIcon::Home, 320 - pw / 2 + 20, y + 445 - lift, 18, "on_accent");
-                    raw_label_colour(r, text, 320 - pw / 2 + 36, centred_label_y(text, 16, y + 445 - lift), 16,
-                                     theme.at("on_accent"), pw);
-                }
-            }
-        }
-        if (pl > 0) {
-            const int cx = -44 + int(80 * pl);
-            alpha_round(r, cx - 40, y + 200, 80, 80, 40, theme.at("accent"), int(250 * pl));
-            if (pl > .4) ui_icon(r, SettingsIcon::Back, cx + 14, y + 240, 24, "on_accent");
-        }
-        if (preferences.animations && gesture_flash_at && now - gesture_flash_at < 260) {
-            const double t = (now - gesture_flash_at) / 260.0;
-            feedback_arc(r, gesture_flash_kind ? 24 : 320, y + (gesture_flash_kind ? 240 : 468), int(18 + 56 * t), 0, 1,
-                         theme.at("accent"), int(220 * (1 - t)), 4);
-        }
-    }
-    bool gestures_available() const {
-        return preferences.gestures && !probe && !(chat_open && chat.view == pictochat::View::Room) && !launching &&
-               settings.page != Page::BootWarning && settings.page != Page::Controls && !o.game_menu;
-    }
+    void gesture_cues(SDL_Renderer* r, int y);
+    bool gestures_available() const;
     // A swipe that started on an edge and travelled far enough: act once, then swallow the rest of the touch.
-    bool edge_gesture_move(int x, int y) {
-        if (edge_gesture == EdgeGesture::None) return false;
-        const bool home = edge_gesture == EdgeGesture::Bottom && down_y - y >= 72 && std::abs(x - down_x) < 120,
-                   back = edge_gesture == EdgeGesture::Left && x - down_x >= 72 && std::abs(y - down_y) < 120;
-        if (!home && !back) return false;
-        edge_gesture = EdgeGesture::None;
-        cancel_navigation();
-        brightness_drag = volume_drag = false;
-        gesture_flash_at = s.GetTicks();
-        gesture_flash_kind = home ? 0 : 1;
-        micro_until = gesture_flash_at + 270;
-        if (home) {
-            const bool chatting = chat_open;
-            close_pictochat();
-            picker_open = false;
-            if (settings.page != Page::Library) {
-                settings.page = Page::Library;
-                settings.focus = 0;
-            }
-            if (!home_menu) return_home();
-            if (!chatting) sound_intent(MenuCue::Back);
-        } else action(3);
-        dirty = true;
-        return true;
-    }
+    bool edge_gesture_move(int x, int y);
     enum class PointerSource { None, Mouse, SDL, Raw };
     PointerSource pointer_source = PointerSource::None;
     Uint32 raw_touch_at = 0, sdl_touch_at = 0;
@@ -1598,32 +736,7 @@ class App {
     Uint32 device_info_at = 0;
     // Spawn the full status helper only for a changed link, an open network
     // page or a five-minute safety refresh. Quality comes from the kernel.
-    void refresh_network(Uint32 now) {
-        connection_poll = now;
-        auto probe = o.preview ? NetworkProbe{} : probe_network();
-        bool details = settings.page == Page::Network || settings.page == Page::Wifi ||
-                       settings.page == Page::DeviceInfo || settings.page == Page::Startup ||
-                       settings.page == Page::Maintenance;
-        if (!device_loaded || o.preview || details || probe.signature != network_signature ||
-            now - device_info_at >= 300000) {
-            start_worker("device.info");
-            device_loaded = true;
-            device_info_at = now;
-            network_signature = probe.signature;
-            probed_signal = -1;
-            return;
-        }
-        int level = probe.signal >= 67   ? 3
-                    : probe.signal >= 34 ? 2
-                    : probe.signal > 0   ? 1
-                                         : 0,
-            previous = probed_signal >= 67   ? 3
-                       : probed_signal >= 34 ? 2
-                       : probed_signal > 0   ? 1
-                                             : 0;
-        if (probed_signal < 0 || level != previous) dirty = true;
-        probed_signal = probe.signal;
-    }
+    void refresh_network(Uint32 now);
     std::string network_id, confirmation;
     std::string startup_mode = "stock";
     bool startup_warning = true;
@@ -1632,166 +745,13 @@ class App {
     unsigned menu_sequence = 0;
     std::string menu_pending_token;
     Uint32 menu_request_at = 0;
-    void confirm(const std::string& operation, Page parent) {
-        confirmation = operation;
-        confirm_return = parent;
-        settings.page = Page::Confirm;
-        settings.focus = 0;
-        dirty = true;
-    }
-    void save_startup() {
-        std::ostringstream payload;
-        payload << "{\"mode\":\"" << startup_mode << "\",\"warning\":" << (startup_warning ? "true" : "false") << '}';
-        start_worker("device.startup", payload.str());
-    }
-    void change_startup(int direction, bool toggle) {
-        if (settings.focus == 3) {
-            save_experience("quick_resume", experience["quick_resume"] != "1");
-            return;
-        }
-        if (o.independent) {
-            if (settings.focus == 2) confirm("reboot", Page::Startup);
-            else if (settings.focus == 1) {
-                startup_mode = "rgds";
-                startup_warning = toggle ? device_status["boot_warning"] != "1" : direction > 0;
-                save_startup();
-            }
-            return;
-        }
-        if (worker > 0) return;
-        startup_mode = device_status["boot_mode"] == "rgds" ? "rgds" : "stock";
-        startup_warning = device_status["boot_warning"] == "1";
-        if (settings.focus == 2) {
-            confirm("reboot", Page::Startup);
-            return;
-        }
-        if (settings.focus == 1) {
-            startup_warning = toggle ? !startup_warning : direction > 0;
-            save_startup();
-            return;
-        }
-        auto previous = startup_mode;
-        startup_mode = toggle ? (startup_mode == "stock" ? "rgds" : "stock") : direction > 0 ? "rgds" : "stock";
-        if (startup_mode == previous) return;
-        if (startup_mode == "rgds") confirm("startup-rgds", Page::Startup);
-        else save_startup();
-    }
-    void wifi_choose() {
-        if (worker > 0) return;
-        auto prefix = "network_" + std::to_string(settings.focus) + "_";
-        network_id = device_status[prefix + "id"];
-        if (network_id.empty()) return;
-        if (device_status[prefix + "connected"] == "1") {
-            settings.page = Page::Network;
-            service_notice = "Already connected.";
-            dirty = true;
-            return;
-        }
-        if (device_status[prefix + "saved"] == "1") {
-            auto selected_network = network_id;
-            show_picker("Saved network", {"Connect", "Enter password"}, 0, [this, selected_network](int selected) {
-                network_id = selected_network;
-                if (selected == 1) {
-                    begin_edit(2);
-                    return;
-                }
-                std::ostringstream payload;
-                payload << "{\"network\":" << std::quoted(network_id) << ",\"use_saved\":true}";
-                start_worker("device.connect", payload.str());
-                settings.page = Page::Network;
-                settings.focus = 1;
-            });
-            return;
-        }
-        if (device_status[prefix + "security"].find("802.1X") != std::string::npos) {
-            service_notice = "This network requires an enterprise profile.";
-            dirty = true;
-            return;
-        }
-        if (device_status[prefix + "security"].empty()) {
-            std::ostringstream payload;
-            payload << "{\"network\":" << std::quoted(network_id) << ",\"password\":\"\"}";
-            start_worker("device.connect", payload.str());
-            settings.page = Page::Network;
-        } else begin_edit(2);
-        dirty = true;
-    }
+    void confirm(const std::string& operation, Page parent);
+    void save_startup();
+    void change_startup(int direction, bool toggle);
+    void wifi_choose();
     std::string menu_input = "no input";
-    void note_menu_input(const SDL_Event& e) {
-        if (e.type == SDL_JOYBUTTONDOWN) menu_input = "joystick button " + std::to_string(e.jbutton.button);
-        else if (e.type == SDL_JOYHATMOTION && e.jhat.value)
-            menu_input = "joystick hat " + std::to_string(e.jhat.value);
-        else if (e.type == SDL_KEYDOWN) menu_input = "key " + std::to_string(e.key.keysym.sym);
-        else if (e.type == SDL_FINGERDOWN || e.type == SDL_MOUSEBUTTONDOWN) menu_input = "SDL pointer";
-    }
-    void menu_request(const std::string& action) {
-        if (menu_status["state"] == "busy" || !menu_pending_token.empty()) {
-            dirty = true;
-            return;
-        }
-        if (o.preview && action.rfind("switch:", 0) == 0) {
-            std::cout << "Game switch (preview): " << action << std::endl;
-            menu_status["message"] = "Saving before switching games…";
-            dirty = true;
-            return;
-        }
-        if (action == "resume" && !departure_dispatch && preferences.menu_sounds) {
-            if (emit_sound(MenuCue::Resume)) {
-                explicit_sound.reset();
-                departure_action = action;
-                departure_at = s.GetTicks() + 180;
-                return;
-            }
-        }
-        menu_sound_action = action;
-        if (action == "save" || action == "load" || action.rfind("slot-", 0) == 0) sound_intent(MenuCue::Confirm);
-        // The supervisor logs <pid>-<n> tokens; this names the input behind each one.
-        if (o.game_menu)
-            std::cout << "RGDS menu helper: " << getpid() << '-' << menu_sequence + 1 << ' ' << action << " after "
-                      << menu_input << " at " << s.GetTicks() << " ms" << std::endl;
-        if (o.preview) {
-            if (action == "save" || action.rfind("slot-save:", 0) == 0) sound_intent(MenuCue::Save);
-            else if (action == "load" || action.rfind("slot-load:", 0) == 0) sound_intent(MenuCue::Load);
-            if (action == "threaded:0" || action == "threaded:1") menu_status["threaded"] = action.substr(9);
-            if (action == "fast-forward") menu_status["fast_forward"] = menu_status["fast_forward"] == "1" ? "0" : "1";
-            menu_status["message"] = action == "save"                  ? "Checkpoint saved (preview)"
-                                     : action == "load"                ? "Checkpoint loaded (preview)"
-                                     : action.rfind("shader:", 0) == 0 ? "Shader change requested (preview)"
-                                                                       : "";
-            if (action.rfind("shader:", 0) == 0) std::cout << "Shader request (preview): " << action << std::endl;
-            if (action == "resume" || action == "quit" || action == "force-quit" || action == "restart") quit = true;
-            dirty = true;
-            return;
-        }
-        auto path = o.data / "session/game-menu.request", pending = fs::path(path.string() + ".pending");
-        fs::create_directories(path.parent_path());
-        std::ofstream file(pending);
-        auto request_token = std::to_string(getpid()) + '-' + std::to_string(++menu_sequence);
-        file << "token=" << request_token << "\naction=" << action << '\n';
-        file.close();
-        if (!file) {
-            status = "Could not send game action";
-            dirty = true;
-            return;
-        }
-        fs::rename(pending, path);
-        if (action == "resume") quit = true;
-        else {
-            menu_pending_token = request_token;
-            menu_request_at = s.GetTicks();
-            menu_status["state"] = "busy";
-            menu_status["message"] = action == "save"   ? "Saving checkpoint…"
-                                     : action == "load" ? "Loading checkpoint…"
-                                     : (action.rfind("graphics:", 0) == 0 || action.rfind("filter2d:", 0) == 0 ||
-                                        action.rfind("adaptive:", 0) == 0)
-                                         ? "Applying graphics…"
-                                     : action.rfind("shader:", 0) == 0 ? "Applying shader…"
-                                     : action == "restart"             ? "Saving before restarting…"
-                                     : action == "quit"                ? "Returning home…"
-                                                                       : "Working…";
-        }
-        dirty = true;
-    }
+    void note_menu_input(const SDL_Event& e);
+    void menu_request(const std::string& action);
     std::map<std::string, std::string> slots, experience;
     // The slot page is opened for one purpose: saving, loading, or (from the
     // library) exporting. That purpose names the page and the A button.
@@ -1803,9 +763,55 @@ class App {
     // Library filters from the game information (game_facets.hpp), and the counts that fill their pickers.
     Facets discovery_facets;
     FacetIndex facet_index;
-    void open_more_filters();
-    void facet_picker(int row);
-    void reset_facets();
+    // The filter sheet (filter_sheet.hpp): chips for played state and the facets, over the lower screen.
+    struct FilterChip {
+        int facet = -1;  // -1: the played state; otherwise a facet_rows() index
+        int slider = -1; // 0 players, 1 release year: a range slider instead of a chip
+        int section = 0, title_y = 0;
+        std::string label, value;
+        int count = -1; // games with this value, shown after the label; -1: none
+        bool selected = false, more = false;
+        SDL_Rect box{};
+    };
+    struct FilterTitle {
+        std::string text;
+        int y;
+    };
+    // A slider's span (the library's own extent) and where its two handles are.
+    struct FilterSlider {
+        int low_bound = 0, high_bound = 0, low = 0, high = 0;
+        const FacetIndex::Histogram* histogram = nullptr;
+    };
+    struct FilterLayout {
+        std::vector<FilterChip> chips;
+        std::vector<FilterTitle> titles;
+        int height = 0;
+        bool loading = false;
+    };
+    bool filter_sheet_open = false;
+    int filter_focus = 0, filter_scroll = 0;
+    int filter_thumb = 0;        // which handle of the focused slider the arrow keys move
+    int filter_drag = -1;        // the slider a finger is dragging, or -1
+    bool filter_touch = false;   // a finger is down on the sheet
+    int filter_scroll_start = 0; // the scroll when the finger went down
+    bool filter_slider(int slider, FilterSlider& out) const;
+    void filter_slider_set(int slider, int low, int high);
+    void filter_slider_move(int slider, int thumb, int delta);
+    std::string filter_slider_caption(int slider) const;
+    bool filter_slider_press(int x, int y);
+    void filter_slider_drag(int x);
+    void filter_drag_scroll(int y);
+    void filter_draw_slider(SDL_Renderer* r, const FilterChip& item, int top, bool focused);
+    bool filter_sheet_active() const;
+    void open_filter_sheet();
+    void reset_filters();
+    void facet_picker(int facet);
+    FilterLayout filter_layout();
+    void filter_scroll_to_focus(const FilterLayout& layout);
+    void filter_activate(const FilterChip& chip);
+    void filter_sheet_key(int code);
+    void filter_sheet_touch(int x, int y);
+    void filter_sheet_render(SDL_Renderer* r, int y);
     Page search_return = Page::Discover;
     Uint32 automatic_update_at = 0;
     bool resume_checked = false, setup_checked = false, resume_launch = false;
@@ -1817,267 +823,31 @@ class App {
         experience[key] = std::to_string(value);
         dirty = true;
     }
-    void open_gallery(GalleryMode mode = GalleryMode::Manage) {
-        if (model.games.empty()) return;
-        gallery_return = settings.page;
-        gallery_mode = o.game_menu ? mode : GalleryMode::Manage;
-        auto local = library_cache.options(model.games[model.selected]);
-        gallery_core = o.game_menu               ? active_engine()
-                       : other_system_selected() ? play_core
-                       : local.core < 0          ? int(preferences.core)
-                                                 : local.core;
-        settings.page = Page::SaveGallery;
-        settings.focus = 0;
-        slots = fields(gallery_root() / "index.ini");
-        dirty = true;
-        if (!o.game_menu) slot_worker("slots", 0);
-    }
-    void slot_worker(const std::string& action, int slot, const std::string& file = "", bool overwrite = false) {
-        std::ostringstream body;
-        body << "{\"action\":" << std::quoted(action)
-             << ",\"rom\":" << std::quoted(model.games[model.selected].path.string())
-             << ",\"core\":" << std::quoted(core_ids[gallery_core]) << ",\"slot\":" << slot
-             << ",\"file\":" << std::quoted(file) << ",\"overwrite\":" << (overwrite ? "true" : "false") << '}';
-        start_worker("device.library", body.str());
-    }
+    void open_gallery(GalleryMode mode = GalleryMode::Manage);
+    void slot_worker(const std::string& action, int slot, const std::string& file = "", bool overwrite = false);
     // Checkpoint slots: the same three verbs on every slot. A does what the page
     // was opened for (save here, load, or export from the library), X deletes,
     // Y holds the rare actions. Anything that replaces progress asks once first,
     // with Cancel selected.
-    const char* gallery_title() const {
-        return gallery_mode == GalleryMode::Save   ? "Save checkpoint"
-               : gallery_mode == GalleryMode::Load ? "Load checkpoint"
-                                                   : "Save gallery";
-    }
-    SettingsIcon gallery_icon() const {
-        return gallery_mode == GalleryMode::Load ? SettingsIcon::Load : SettingsIcon::Save;
-    }
-    bool slot_occupied(int slot) const {
-        auto found = slots.find("slot_" + std::to_string(slot));
-        return found != slots.end() && !found->second.empty();
-    }
+    const char* gallery_title() const;
+    SettingsIcon gallery_icon() const;
+    bool slot_occupied(int slot) const;
     bool slot_primary_enabled(int slot) const { return gallery_mode == GalleryMode::Save || slot_occupied(slot); }
-    const char* slot_primary_name() const {
-        return gallery_mode == GalleryMode::Save ? "Save here" : gallery_mode == GalleryMode::Load ? "Load" : "Export";
-    }
-    const char* slot_hint(bool occupied) const {
-        if (gallery_mode == GalleryMode::Save)
-            return occupied ? "A replaces this slot with your current progress. X deletes it."
-                            : "A saves your current progress here.";
-        if (gallery_mode == GalleryMode::Load)
-            return occupied ? "A loads this slot. Undo last load, under Y, brings back the progress you have now."
-                            : "Nothing to load here yet.";
-        return occupied ? "A exports this slot to userdata/exports. X deletes it." : "Y imports a save into this slot.";
-    }
-    std::string slot_question(const char* verb, int slot) const {
-        return std::string(verb) + " slot " + std::to_string(slot + 1) + "?";
-    }
-    void slot_primary() {
-        const int slot = settings.focus;
-        const bool occupied = slot_occupied(slot);
-        if (gallery_mode == GalleryMode::Save) {
-            if (!occupied) {
-                menu_request("slot-save:" + std::to_string(slot));
-                return;
-            }
-            show_picker(slot_question("Replace", slot), {"Cancel", "Replace"}, 0, [this, slot](int yes) {
-                if (yes) menu_request("slot-save:" + std::to_string(slot) + ":yes");
-            });
-        } else if (gallery_mode == GalleryMode::Load) {
-            if (occupied)
-                show_picker(slot_question("Load", slot), {"Cancel", "Load"}, 0, [this, slot](int yes) {
-                    if (yes) menu_request("slot-load:" + std::to_string(slot));
-                });
-        } else if (occupied) slot_worker("export", slot);
-    }
-    void slot_delete() {
-        const int slot = settings.focus;
-        if (!slot_occupied(slot)) return;
-        show_picker(slot_question("Delete", slot), {"Cancel", "Delete"}, 0, [this, slot](int yes) {
-            if (!yes) return;
-            if (o.game_menu) menu_request("slot-delete:" + std::to_string(slot));
-            else slot_worker("delete", slot);
-        });
-    }
-    void slot_import(int slot) {
-        std::vector<std::string> names;
-        std::error_code ec;
-        auto folder = o.data / "imports";
-        if (fs::exists(folder))
-            for (const auto& file : fs::directory_iterator(folder, ec)) {
-                auto name = file.path().filename().string();
-                if (file.is_regular_file() && name.size() > 12 && name.substr(name.size() - 12) == ".rgdssave.zip" &&
-                    names.size() < 100)
-                    names.push_back(name);
-            }
-        std::sort(names.begin(), names.end());
-        if (names.empty()) {
-            show_detail(
-                "Import slot",
-                locale.text(
-                    "Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator."));
-            return;
-        }
-        const bool occupied = slot_occupied(slot);
-        show_picker("Import slot", names, 0, [this, names, slot, occupied](int n) {
-            auto name = names.at(n);
-            if (occupied)
-                show_picker(slot_question("Replace", slot), {"Cancel", "Replace"}, 0, [this, name, slot](int yes) {
-                    if (yes) slot_worker("import", slot, name, true);
-                });
-            else slot_worker("import", slot, name);
-        });
-    }
-    void slot_more() {
-        const int slot = settings.focus;
-        std::vector<std::string> actions;
-        if (o.game_menu) {
-            if (slot_occupied(slot)) actions.push_back("Export slot");
-            actions.push_back("Undo last slot change");
-            actions.push_back("Undo last load");
-        } else actions = {"Import into this slot", "Undo last slot change", "Import help"};
-        show_picker(locale.text("Slot") + " " + std::to_string(slot + 1), actions, 0, [this, slot, actions](int choice) {
-            const auto& action = actions.at(choice);
-            if (action == "Export slot") menu_request("slot-export:" + std::to_string(slot));
-            else if (action == "Undo last slot change") {
-                if (o.game_menu) menu_request("slot-undo");
-                else slot_worker("undo", slot);
-            } else if (action == "Undo last load") menu_request("slot-undo-load");
-            else if (action == "Import into this slot") slot_import(slot);
-            else
-                show_detail(
-                    "Import help",
-                    locale.text(
-                        "Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator."));
-        });
-    }
+    const char* slot_primary_name() const;
+    const char* slot_hint(bool occupied) const;
+    std::string slot_question(const char* verb, int slot) const;
+    void slot_primary();
+    void slot_delete();
+    void slot_import(int slot);
+    void slot_more();
     pid_t microphone_worker = -1;
     int microphone_pipe = -1, microphone_level = 0, microphone_peak = 0, microphone_db = -60;
     std::string microphone_bytes, microphone_state;
     Uint32 microphone_update = 0;
-    void stop_microphone() {
-        if (microphone_worker > 0) {
-            kill(-microphone_worker, SIGTERM);
-            kill(microphone_worker, SIGTERM);
-            for (int i = 0; i < 30; i++) {
-                if (waitpid(microphone_worker, nullptr, WNOHANG) != 0) {
-                    microphone_worker = -1;
-                    break;
-                }
-                usleep(10000);
-            }
-            if (microphone_worker > 0) {
-                kill(microphone_worker, SIGKILL);
-                waitpid(microphone_worker, nullptr, 0);
-                microphone_worker = -1;
-            }
-        }
-        if (microphone_pipe >= 0) {
-            ::close(microphone_pipe);
-            microphone_pipe = -1;
-        }
-        microphone_bytes.clear();
-    }
-    void open_microphone() {
-        if (o.game_menu) {
-            show_detail("Test microphone", locale.text("Return home before testing the physical microphone."));
-            return;
-        }
-        stop_microphone();
-        microphone_level = microphone_peak = 0;
-        microphone_db = -60;
-        microphone_state = o.preview ? "Test the microphone on your handheld." : "Listening…";
-        settings.page = Page::Microphone;
-        settings.focus = 0;
-        configure_sounds();
-        dirty = true;
-        if (o.preview) return;
-        int channel[2];
-        if (pipe(channel) != 0) {
-            microphone_state = "Microphone unavailable";
-            return;
-        }
-        auto helper = (o.app / "runtime/microphone_test.py").string(), data = o.data.string();
-        auto child = fork();
-        if (child == 0) {
-            setpgid(0, 0);
-            ::close(channel[0]);
-            dup2(channel[1], STDOUT_FILENO);
-            ::close(channel[1]);
-            execlp("python3", "python3", "-B", helper.c_str(), "--data", data.c_str(), nullptr);
-            _exit(127);
-        }
-        ::close(channel[1]);
-        if (child < 0) {
-            ::close(channel[0]);
-            microphone_state = "Microphone unavailable";
-            return;
-        }
-        setpgid(child, child);
-        microphone_worker = child;
-        microphone_pipe = channel[0];
-        fcntl(microphone_pipe, F_SETFL, fcntl(microphone_pipe, F_GETFL) | O_NONBLOCK);
-        fcntl(microphone_pipe, F_SETFD, FD_CLOEXEC);
-        microphone_update = s.GetTicks();
-    }
-    void poll_microphone(Uint32 now) {
-        if (settings.page != Page::Microphone) {
-            if (microphone_worker > 0 || microphone_pipe >= 0) stop_microphone();
-            return;
-        }
-        if (microphone_pipe < 0) return;
-        char buffer[512];
-        ssize_t size;
-        while ((size = read(microphone_pipe, buffer, sizeof(buffer))) > 0) microphone_bytes.append(buffer, size);
-        size_t newline;
-        while ((newline = microphone_bytes.find('\n')) != std::string::npos) {
-            auto line = microphone_bytes.substr(0, newline);
-            microphone_bytes.erase(0, newline + 1);
-            std::istringstream values(line);
-            int level, peak, db;
-            if (values >> level >> peak >> db) {
-                microphone_level = std::clamp(level, 0, 100);
-                microphone_peak = std::clamp(peak, 0, 100);
-                microphone_db = std::clamp(db, -60, 0);
-                microphone_state = "Listening…";
-                microphone_update = now;
-            } else {
-                microphone_state =
-                    line == "busy" ? "Return home before testing the physical microphone." : "Microphone unavailable";
-                microphone_level = microphone_peak = 0;
-            }
-            dirty = true;
-        }
-        if (microphone_bytes.size() > 4096) microphone_bytes.clear();
-        if (microphone_worker > 0 && waitpid(microphone_worker, nullptr, WNOHANG) != 0) {
-            microphone_worker = -1;
-            ::close(microphone_pipe);
-            microphone_pipe = -1;
-            if (microphone_state == "Listening…") microphone_state = "Microphone unavailable";
-            microphone_level = microphone_peak = 0;
-            dirty = true;
-        }
-        if (now - microphone_update > 3000 && microphone_state == "Listening…") {
-            microphone_state = "Microphone unavailable";
-            microphone_level = microphone_peak = 0;
-            dirty = true;
-        }
-    }
-    void microphone_screen(SDL_Renderer* r, int y) {
-        settings_header(r, y, "Test microphone");
-        round_rect(r, 28, y + 105, 584, 250, 12, "panel");
-        ui_icon(r, SettingsIcon::Volume, 70, y + 145, 30, "accent");
-        label(r, "Live input", 100, y + 133, 24, "ink", 280);
-        raw_label(r, std::to_string(microphone_db) + " dBFS", 424, y + 136, 22, "accent", 160);
-        for (int i = 0; i < 24; i++)
-            round_rect(r, 52 + i * 22, y + 207, 17, 52, 4, i * 100 / 24 < microphone_level ? "accent" : "slot");
-        int peak = 52 + std::clamp(microphone_peak * 523 / 100, 0, 523);
-        rect(r, peak, y + 198, 3, 70, "ink");
-        label(r, "Quiet", 52, y + 275, 16, "muted", 200);
-        label(r, "Loud", 526, y + 275, 16, "muted", 70);
-        wrapped(r, microphone_state, 52, y + 312, 18, 536, 2);
-        label(r, "Audio is not recorded or saved.", 40, y + 381, 18, "muted", 560);
-    }
+    void stop_microphone();
+    void open_microphone();
+    void poll_microphone(Uint32 now);
+    void microphone_screen(SDL_Renderer* r, int y);
     void open_discover() {
         discover_return = settings.page;
         settings.page = Page::Discover;
@@ -2085,141 +855,23 @@ class App {
         status.clear();
         dirty = true;
     }
-    void launcher_search_shortcut() {
-        if (o.game_menu || !session_initialized || settings.page == Page::BootWarning) return;
-        cancel_navigation();
-        picker_open = false;
-        picker_apply = {};
-        picker_detail = false;
-        probe = false;
-        if (settings.page == Page::Keyboard) finish_edit(false);
-        if (settings.page == Page::Microphone) {
-            stop_microphone();
-            settings.page = Page::Sound;
-            configure_sounds();
-        }
-        if (settings.page == Page::Confirm) settings.page = confirm_return;
-        control_capture = false;
-        capture_logical = -1;
-        if (settings.page != Page::Discover) open_discover();
-        else {
-            settings.focus = 0;
-            dirty = true;
-        }
-    }
-    void save_switcher_library() {
-        auto path = o.data / "session/switcher-library.ini", pending = fs::path(path.string() + ".pending");
-        fs::create_directories(path.parent_path());
-        std::ofstream out(pending);
-        std::set<fs::path> seen;
-        int count = 0;
-        auto add = [&](const Game& game) {
-            auto rom = game.path.string();
-            if (game.demo || count >= 9 || rom.find_first_of("\r\n") != std::string::npos ||
-                !seen.insert(game.path).second)
-                return;
-            auto title = library_title(game.title);
-            std::replace(title.begin(), title.end(), '\n', ' ');
-            std::replace(title.begin(), title.end(), '\r', ' ');
-            out << "game_" << count << "_rom=" << rom << "\ngame_" << count << "_title=" << title << '\n';
-            count++;
-        };
-        if (!model.games.empty()) add(model.games[model.selected]);
-        for (const auto& game : summary.recent_games) add(game);
-        // A fresh library can still switch games before it has play history.
-        for (const auto& game : model.games) {
-            if (count >= 9) break;
-            add(game);
-        }
-        out << "count=" << count << '\n';
-        out.close();
-        if (out) fs::rename(pending, path);
-    }
-    void load_switcher() {
-        switch_games.clear();
-        auto values = fields(o.data / "session/game-switcher.ini");
-        for (int i = 0; i < std::clamp(std::atoi(values["count"].c_str()), 0, 9); i++) {
-            auto prefix = "game_" + std::to_string(i);
-            fs::path path = values[prefix + "_rom"];
-            if (!path.empty()) {
-                std::error_code ec;
-                auto canonical = fs::weakly_canonical(path, ec);
-                if (!ec) path = canonical;
-            }
-            if (!path.empty())
-                switch_games.push_back(
-                    {values[prefix + "_title"].empty() ? path.stem().string() : values[prefix + "_title"], path, false,
-                     system_for_path(path)});
-        }
-        if (switch_games.empty() && !model.games.empty()) switch_games.push_back(model.games[0]);
-    }
+    void launcher_search_shortcut();
+    void save_switcher_library();
+    void load_switcher();
     bool discovery_active() const { return !search_query.empty() || discovery_filter != 0 || discovery_facets.any(); }
-    std::string discovery_filter_name() const {
-        static const std::array<std::string, 4> names = {"All games", "Unplayed", "Played", "Missing artwork"};
-        return names.at(discovery_filter);
-    }
+    std::string discovery_filter_name() const;
     // What the list is filtered by, apart from the search words: "Unplayed  ·  Puzzle  ·  2 players".
-    std::string discovery_filters_text() const {
-        std::string value = discovery_filter ? locale.text(discovery_filter_name()) : "";
-        if (discovery_facets.any()) value += (value.empty() ? "" : "  ·  ") + discovery_facets.summary();
-        return value;
-    }
-    std::string discovery_description() const {
-        std::string value = search_query;
-        const auto filters = discovery_filters_text();
-        if (!filters.empty()) value += (value.empty() ? "" : "  ·  ") + filters;
-        return value;
-    }
-    void apply_discovery() {
-        home_menu = false;
-        settings.page = Page::Library;
-        settings.focus = 0;
-        library_view(preferences.view);
-        dirty = true;
-    }
-    void clear_discovery() {
-        search_query.clear();
-        discovery_filter = 0;
-        discovery_facets = {};
-        apply_discovery();
-    }
-    void quick_search() {
-        picker_open = false;
-        picker_apply = {};
-        discover_return = Page::Library;
-        begin_edit(4);
-    }
+    std::string discovery_filters_text() const;
+    std::string discovery_description() const;
+    void apply_discovery();
+    void clear_discovery();
+    void quick_search();
     static std::string trimmed_query(const std::string& value) {
         auto first = value.find_first_not_of(" \t\r\n"), last = value.find_last_not_of(" \t\r\n");
         return first == std::string::npos ? "" : value.substr(first, last - first + 1);
     }
-    void search_changed() {
-        if (edit_field != 4) return;
-        search_preview.cancel();
-        search_matches.clear();
-        search_preview_waiting = true;
-        search_preview_loading = true;
-        search_preview_at = s.GetTicks();
-        dirty = true;
-    }
-    void poll_search_preview(Uint32 now) {
-        if (settings.page != Page::Keyboard || edit_field != 4) return;
-        try {
-            if (search_preview_waiting && now - search_preview_at >= 150 && library_ready) {
-                search_preview_waiting = false;
-                search_preview.request(o.data, all_games, preferences.view, trimmed_query(edit_buffer),
-                                       discovery_filter, discovery_facets);
-            }
-            if (auto result = search_preview.poll()) {
-                search_matches = std::move(result->games);
-                search_preview_loading = false;
-                dirty = true;
-            }
-        } catch (const std::exception&) {
-            search_preview_loading = false;
-            dirty = true;
-        }
-    }
+    void search_changed();
+    void poll_search_preview(Uint32 now);
     void open_ds_controls() {
         ds_settings = fields(item_folder(model.selected) / "ds-input.ini");
         ds_return = settings.page;
@@ -2234,76 +886,18 @@ class App {
                                                : game_preferences.core;
         return core == 1 || core == 3 || core == 4;
     }
-    void ds_controls_row(SDL_Renderer* r, int y, int i) {
-        const std::array<std::string, 5> names = {"Blow into microphone", "Close and open DS lid", "DS language",
-                                                  "Real microphone", "DS nickname"};
-        const std::array<std::string, 6> languages = {"Japanese", "English", "French", "German", "Italian", "Spanish"};
-        int language = ds_settings.count("language") ? std::clamp(std::atoi(ds_settings["language"].c_str()), 0, 5) : 1;
-        list_row(r, y, i, names[i],
-                 !ds_supported() ? "Engine managed"
-                 : i == 4        ? (ds_settings.count("nickname") ? ds_settings["nickname"] : "RG DS Core")
-                 : i == 2        ? languages[language]
-                 : i == 3        ? ds_settings["microphone"] == "0" ? "Off" : "On"
-                 : o.game_menu   ? "2 seconds"
-                                 : "In game",
-                 ds_supported() && (i >= 2 || o.game_menu));
-    }
-    void ds_controls_action() {
-        if (!ds_supported()) return;
-        if (settings.focus < 2) {
-            if (o.game_menu) menu_request(settings.focus == 0 ? "ds:blow" : "ds:lid");
-            return;
-        }
-        if (settings.focus == 2)
-            show_picker("DS language", {"Japanese", "English", "French", "German", "Italian", "Spanish"},
-                        ds_settings.count("language") ? std::atoi(ds_settings["language"].c_str()) : 1,
-                        [this](int n) { save_ds_setting("language", n); });
-        else if (settings.focus == 4) begin_edit(5);
-        else save_ds_setting("microphone", ds_settings["microphone"] == "0");
-    }
+    void ds_controls_row(SDL_Renderer* r, int y, int i);
+    void ds_controls_action();
     void save_ds_setting(const std::string& key, int value) { save_ds_setting(key, std::to_string(value)); }
-    void save_ds_setting(const std::string& key, const std::string& value) {
-        try {
-            ds_settings[key] = value;
-            auto folder = item_folder(model.selected);
-            fs::create_directories(folder);
-            auto path = folder / "ds-input.ini", pending = fs::path(path.string() + ".pending");
-            std::ofstream out(pending);
-            for (auto& pair : ds_settings) out << pair.first << '=' << pair.second << '\n';
-            out.close();
-            if (out) {
-                fs::rename(pending, path);
-                status = "Restart the game to apply DS settings.";
-            }
-        } catch (const std::exception&) {
-            status = "Could not save DS settings.";
-        }
-        dirty = true;
-    }
+    void save_ds_setting(const std::string& key, const std::string& value);
     bool scan_stay = false; // a scan from Add your games keeps that page open
-    void rescan_games(bool stay = false) {
-        stop_library_scan();
-        library_bytes.clear();
-        library_eof = false;
-        library_ready = false;
-        scan_stay = stay;
-        if (!stay) {
-            home_menu = true;
-            settings.page = Page::Library;
-        }
-        begin_library_scan();
-        dirty = true;
-    }
+    void rescan_games(bool stay = false);
     // Add your games: opened by itself on a first start (Done then goes to the
     // library) or from Library settings (Done goes back there). A scan from the
     // page stays on it and reports what it found.
     bool setup_first_run = false, setup_scanned = false;
     bool backup_requested = false; // Back up all saves was chosen; its outcome shows on the Library page
-    void confirm_reset_state() {
-        show_picker("Restart without loading a state?", {"Cancel", "Reset state"}, 0, [this](int n) {
-            if (n) menu_request("reset-state");
-        });
-    }
+    void confirm_reset_state();
     // Cheats: the Action Replay codes DSCore loaded for this game, from the list
     // the bridge writes beside the control file (session/emulator.control.cheats)
     // when the menu opens and after each toggle. Databases run to hundreds or
@@ -2598,272 +1192,13 @@ class App {
         if (experimental_game()) apply_experimental_graphics(next);
         else apply_game_preferences(next, "Saved. Save & restart applies this change.");
     }
-    void watch_menu(Uint32 now) {
-        // Pending actions should acknowledge promptly; idle menus keep their
-        // slower poll. The first frame starts with the supervisor's real state.
-        if (!o.game_menu || o.preview ||
-            (rendered_frames &&
-             now - menu_poll < (menu_pending_token.empty() && menu_status["state"] != "busy" ? 100u : 20u)))
-            return;
-        menu_poll = now;
-        auto value = fields(o.data / "session/game-menu.status");
-        if (value["view_request"] != menu_status["view_request"] && std::atoi(value["view_request"].c_str()) > 0) {
-            picker_open = false;
-            cancel_navigation();
-            if (value["view"] == "switcher") {
-                load_switcher();
-                settings.page = Page::GameSwitcher;
-            } else settings.page = Page::QuickMenu;
-            settings.focus = 0;
-            load_cheats();
-            dirty = true;
-        }
-        // The old status can still be on disk after a tap. Keep the local
-        // busy state until the supervisor acknowledges this exact request.
-        if (menu_pending_token.empty() || value["request_token"] == menu_pending_token) {
-            if (!menu_pending_token.empty() && value["state"] != "busy") {
-                if (value["state"] == "error") emit_sound(MenuCue::Error);
-                // The direct present has no GL pass: the filter is saved and needs the renderer, so offer the restart.
-                else if (menu_sound_action.rfind("shader:", 0) == 0 && value["message"].rfind("Shader saved", 0) == 0) {
-                    settings.page = Page::ApplyShader;
-                    settings.focus = 0;
-                } else if (menu_sound_action == "save" || menu_sound_action.rfind("slot-save:", 0) == 0)
-                    emit_sound(MenuCue::Save);
-                else if (menu_sound_action == "load" || menu_sound_action.rfind("slot-load:", 0) == 0)
-                    emit_sound(MenuCue::Load);
-                // The supervisor saves live graphics choices after the engine accepts them; show what it stored.
-                if ((menu_sound_action.rfind("graphics:", 0) == 0 || menu_sound_action.rfind("filter2d:", 0) == 0 ||
-                     menu_sound_action.rfind("adaptive:", 0) == 0) &&
-                    value["state"] != "error")
-                    game_preferences = library_cache.reload_options(model.games[0]);
-                // The engine rewrote its cheat list before answering; show that, whichever way it went.
-                if (menu_sound_action.rfind("cheat:", 0) == 0) load_cheats();
-                // RG DS Play's view: what the runtime stored once the player applied it.
-                if (menu_sound_action.rfind("play-graphics:", 0) == 0) load_play_view();
-                menu_sound_action.clear();
-            }
-            if (value["state"] != "busy") menu_pending_token.clear();
-            if (!same_fields(value, menu_status)) {
-                menu_status = std::move(value);
-                dirty = true;
-            }
-        } else if (now - menu_request_at > (menu_sound_action.rfind("graphics:", 0) == 0 ? 50000u : 15000u)) {
-            menu_pending_token.clear();
-            emit_sound(MenuCue::Error);
-            menu_status["state"] = "error";
-            menu_status["message"] = "The game menu did not respond. Resume or return without saving.";
-            dirty = true;
-        }
-        auto volume = fields(o.data / "volume.ini");
-        if (volume.count("volume")) {
-            int level = std::clamp(std::atoi(volume["volume"].c_str()), 0, 100);
-            volume_applied = level;
-            if (!volume_unsaved && !system.volume_pending() && level != hardware.volume_percent) {
-                hardware.volume_percent = level;
-                if (level > 0) unmuted_volume = level;
-                volume_toast = now + 1800;
-                dirty = true;
-            }
-        }
-        if (menu_status["state"] == "home") quit = true;
-    }
-    void start_worker(const std::string& operation, const std::string& payload = "") {
-        if (worker > 0 && (worker_action == "device.info" || worker_action == "device.update-auto") &&
-            operation != "device.info")
-            stop_worker();
-        if (worker > 0 && worker_action == "index" && operation.rfind("device.", 0) == 0) stop_worker();
-        if (worker > 0) return;
-        bool busy_visible = operation != "device.info" || settings.page == Page::Startup ||
-                            settings.page == Page::Wifi || !service_notice.empty();
-        service_notice.clear();
-        bool device = operation.rfind("device.", 0) == 0;
-        auto folder = o.data / (device ? "device" : "scraper");
-        fs::create_directories(folder);
-        fs::path script = fs::path("runtime") / (device ? "device_services.py" : "scraper.py");
-        std::vector<std::string> args = {"python3",
-                                         "-B",
-                                         (o.app.empty() ? script : o.app / script).string(),
-                                         device ? operation.substr(7) : operation,
-                                         "--data",
-                                         o.data.string()};
-        if (device) {
-            args.push_back("--app");
-            args.push_back((o.app.empty() ? fs::current_path() : o.app).string());
-            if (o.preview) args.push_back("--preview");
-        } else {
-            static const std::array<const char*, 3> providers = {"auto", "gametdb", "libretro"};
-            args.push_back("--provider");
-            args.push_back(operation == "scrape" && settings.page == Page::GameArtwork
-                               ? "auto"
-                               : providers.at(preferences.artwork_provider));
-            if (operation == "scrape" && settings.page == Page::GameArtwork && !model.games.empty()) {
-                args.push_back("--rom");
-                args.push_back(model.games[model.selected].path.string());
-                args.push_back("--force");
-            }
-            // Game info and extra pictures ride along with the covers when they are switched on.
-            std::string extras = preferences.game_info ? "info" : "";
-            if (preferences.extra_pictures & 1) extras += std::string(extras.empty() ? "" : ",") + "snap";
-            if (preferences.extra_pictures & 2) extras += std::string(extras.empty() ? "" : ",") + "title";
-            if (operation == "scrape" && !extras.empty()) {
-                args.push_back("--extras");
-                args.push_back(extras);
-            }
-            for (auto root : o.roots) {
-                args.push_back("--rom-dir");
-                args.push_back(root.string());
-            }
-            if (preferences.show_systems)
-                for (const auto& [system, root] : o.system_roots) {
-                    args.push_back("--system-dir");
-                    args.push_back(system + "=" + root.string());
-                }
-        }
-        int channel[2];
-        if (pipe(channel) != 0) {
-            status = "Could not start artwork service";
-            return;
-        }
-        auto child = fork();
-        if (child == 0) {
-            ::close(channel[1]);
-            dup2(channel[0], STDIN_FILENO);
-            ::close(channel[0]);
-            int log = ::open((folder / "worker.log").c_str(), O_WRONLY | O_CREAT | O_APPEND, 0600);
-            if (log >= 0) {
-                dup2(log, STDOUT_FILENO);
-                dup2(log, STDERR_FILENO);
-                ::close(log);
-            }
-            std::vector<char*> argv;
-            for (auto& arg : args) argv.push_back(arg.data());
-            argv.push_back(nullptr);
-            execvp(argv[0], argv.data());
-            _exit(127);
-        }
-        ::close(channel[0]);
-        if (!payload.empty() && child > 0) {
-            auto sent = write(channel[1], payload.data(), payload.size());
-            (void)sent;
-        }
-        ::close(channel[1]);
-        if (child < 0) {
-            status = "Could not start artwork service";
-            return;
-        }
-        worker = child;
-        worker_action = operation;
-        worker_ok = false;
-        if (busy_visible) dirty = true;
-    }
-    void stop_worker() {
-        if (worker <= 0) return;
-        if (waitpid(worker, nullptr, WNOHANG) == 0) {
-            kill(worker, SIGTERM);
-            for (int i = 0; i < 100; i++) {
-                if (waitpid(worker, nullptr, WNOHANG) != 0) {
-                    worker = -1;
-                    return;
-                }
-                usleep(10000);
-            }
-            kill(worker, SIGKILL);
-            waitpid(worker, nullptr, 0);
-        }
-        worker = -1;
-    }
+    void watch_menu(Uint32 now);
+    void start_worker(const std::string& operation, const std::string& payload = "");
+    void stop_worker();
     Uint32 worker_finished_at = 0;
-    void poll_service(Uint32 now) {
-        bool artwork_finished = false;
-        if (worker > 0) {
-            int result = 0;
-            auto finished = waitpid(worker, &result, WNOHANG);
-            if (finished > 0) {
-                worker_ok = WIFEXITED(result) && WEXITSTATUS(result) == 0;
-                worker = -1;
-                worker_finished_at = now;
-                service_poll = 0;
-                artwork_finished = worker_action == "index" || worker_action == "scrape";
-                if (worker_action != "device.info" || settings.page == Page::Startup || settings.page == Page::Wifi)
-                    dirty = true;
-            }
-        }
-        if (artwork_finished) {
-            if (settings.page == Page::GameArtwork && !model.games.empty())
-                artwork_result = fields(item_folder(model.selected) / "artwork-status.ini");
-            library_cache.invalidate_metadata();
-            if (media.refresh()) library_cache.invalidate_titles();
-        }
-        // Status files change only through workers; poll quickly while one runs.
-        bool quick = worker > 0 || now - worker_finished_at < 1000 || settings.page == Page::SaveGallery ||
-                     !menu_pending_token.empty();
-        if (now - service_poll < (quick ? 250u : 2000u)) return;
-        service_poll = now;
-        auto next = fields(o.data / "scraper/status.ini");
-        if (!same_fields(next, service)) {
-            service = std::move(next);
-            library_cache.invalidate_metadata();
-            if (media.refresh()) library_cache.invalidate_titles();
-            dirty = true;
-        }
-        auto device = fields(o.data / "device/status.ini");
-        if (!same_fields(device, device_status)) {
-            device_status = std::move(device);
-            dirty = true;
-        }
-        experience = fields(o.data / "experience.ini");
-        if (!experience.count("auto_update")) experience["auto_update"] = "1";
-        if (settings.page == Page::SaveGallery && !model.games.empty()) {
-            auto next = fields(gallery_root() / "index.ini");
-            if (next != slots) {
-                slots = std::move(next);
-                media.refresh();
-                dirty = true;
-            }
-        }
-        auto update = fields(o.data / "update/status.ini");
-        if (!same_fields(update, update_status)) {
-            update_status = std::move(update);
-            dirty = true;
-        }
-        if (worker <= 0 && worker_ok && worker_action == "device.update-apply" &&
-            update_status["state"] == "restarting")
-            quit = true;
-        if (shutting_down() && worker <= 0 && !worker_ok) {
-            shutdown_at = 0;
-            shutdown_kind.clear();
-            dirty = true;
-        }
-        if (worker <= 0 && !worker_ok && worker_action.rfind("device.", 0) == 0 && device_status["state"] != "error") {
-            device_status["state"] = "error";
-            device_status["message"] = "This request did not finish. Please try again.";
-            dirty = true;
-        }
-        if (worker <= 0 && worker_ok && (worker_action == "device.poweroff" || worker_action == "device.reboot") &&
-            device_status["state"] == "ready") {
-            system_exit_ack = !o.preview;
-            quit = true;
-        }
-    }
-    void select_game(size_t index, bool animate = true) {
-        if (model.games.empty()) return;
-        model.selected = std::min(index, model.games.size() - 1);
-        selected_at = s.GetTicks();
-        if (animate) cover_motion_at = selected_at;
-        browser_list.select(model.selected, model.games.size(), selected_at, animate && preferences.animations);
-        if (animate && preferences.animations) carousel.select(model.selected, selected_at);
-        else carousel.reset(model.selected);
-        dirty = true;
-    }
-    void navigate(int delta) {
-        SoundAction sound_action(*this, delta < 0 ? 0 : 1);
-        motion_input(delta < 0 ? 0 : 1);
-        if (!navigation_count()) return;
-        long count = static_cast<long>(navigation_count()), previous = static_cast<long>(navigation_selected());
-        size_t next = static_cast<size_t>((previous + delta % count + count) % count);
-        if (next != size_t(previous)) sound_intent(MenuCue::Navigate);
-        select_navigation(next, std::abs(previous - static_cast<long>(next)) <= 3);
-    }
+    void poll_service(Uint32 now);
+    void select_game(size_t index, bool animate = true);
+    void navigate(int delta);
     // A held Left or Right steps one game at a time; from 2.4 s on its stride
     // doubles every 600 ms, so a card of thousands of games is crossed in a
     // few seconds. The run stops at either end instead of wrapping round.
@@ -2872,181 +1207,21 @@ class App {
         const int cap = int(std::clamp<size_t>(count / 40, 1, 128));
         return std::min(cap, 1 << std::min(7u, 1 + (held - 2400) / 600));
     }
-    void hold_navigate(int direction, unsigned held) {
-        const int stride = home_menu ? 1 : hold_stride(held, navigation_count());
-        if (stride == 1) {
-            navigate(direction);
-            return;
-        }
-        const long count = long(navigation_count()), at = long(navigation_selected()),
-                   next = std::clamp(at + direction * stride, 0L, count - 1);
-        if (next != at) navigate(int(next - at));
-    }
-    void library_view(int view) {
-        cancel_navigation();
-        std::string selected = model.games.empty()                ? ""
-                               : model.games[model.selected].demo ? "demo:" + model.games[model.selected].title
-                                                                  : model.games[model.selected].path.string();
-        preferences.view = view;
-        collection_filter.cancel();
-        collection_loading = false;
-        if ((view != 0 && all_games.size() > 256) || !search_query.empty() || discovery_filter ||
-            discovery_facets.any()) {
-            collection_selection = selected;
-            collection_loading = true;
-            collection_filter.request(o.data, view_source(view), view, search_query, discovery_filter,
-                                      discovery_facets);
-            model.games.clear();
-            model.selected = 0;
-            carousel.reset(0);
-            browser_list.scroll = 0;
-            dirty = true;
-            return;
-        }
-        model.games = view_source(view);
-        if (view == 1)
-            model.games.erase(
-                std::remove_if(model.games.begin(), model.games.end(),
-                               [&](const Game& game) { return !library_cache.options(game, true).favourite; }),
-                model.games.end());
-        if (view == 2) {
-            // Snapshot each date once. Sorting a large collection never performs
-            // filesystem reads or churns the bounded detail cache in a comparator.
-            std::vector<std::pair<Game, std::string>> recent;
-            recent.reserve(model.games.size());
-            for (const auto& game : model.games) {
-                auto date = library_cache.stats(game, true).last_played;
-                if (!date.empty()) recent.emplace_back(game, std::move(date));
-            }
-            std::stable_sort(recent.begin(), recent.end(),
-                             [](const auto& a, const auto& b) { return a.second > b.second; });
-            model.games.clear();
-            model.games.reserve(recent.size());
-            for (auto& item : recent) model.games.push_back(std::move(item.first));
-        }
-        model.selected = 0;
-        if (!selected.empty())
-            for (size_t i = 0; i < model.games.size(); i++)
-                if ((model.games[i].demo ? "demo:" + model.games[i].title : model.games[i].path.string()) == selected)
-                    model.selected = i;
-        carousel.reset(model.selected);
-        browser_list.scroll = 0;
-        browser_list.reveal(model.selected, model.games.size());
-        dirty = true;
-    }
-    void poll_collection() {
-        try {
-            auto result = collection_filter.poll();
-            if (!result || !collection_loading) return;
-            model.games = std::move(result->games);
-            collection_loading = false;
-            model.selected = 0;
-            for (size_t i = 0; i < model.games.size(); i++)
-                if (model.games[i].path.string() == collection_selection) {
-                    model.selected = i;
-                    break;
-                }
-            carousel.reset(model.selected);
-            browser_list.reveal(model.selected, model.games.size());
-            dirty = true;
-        } catch (const std::exception&) {
-            collection_loading = false;
-            status = "Could not read this collection. Try again.";
-            dirty = true;
-        }
-    }
-    void open_game_options() {
-        if (model.games.empty()) return;
-        game_preferences = library_cache.options(model.games[model.selected], true);
-        status.clear();
-        settings.page = Page::GameOptions;
-        settings.focus = 0;
-        settings.section = 2;
-        dirty = true;
-    }
-    bool apply_game_preferences(const GameOptions& next, const char* message) {
-        try {
-            save_game_options(item_folder(model.selected) / "game.ini", next);
-            game_preferences = next;
-            library_cache.saved_options(model.games[model.selected], next);
-            if (!o.game_menu) library_summary.request(o.data, all_games);
-            status = message;
-        } catch (const std::exception& e) {
-            status = "Could not save game settings. Previous values kept.";
-            std::cerr << e.what() << std::endl;
-            dirty = true;
-            return false;
-        }
-        dirty = true;
-        return true;
-    }
-    void choose_game_emulator(int core) {
-        if (core == game_preferences.core) return;
-        auto next = game_preferences;
-        next.core = core;
-        apply_game_preferences(next,
-                               o.game_menu ? "Saved. Save & restart changes the emulator." : "Game emulator saved.");
-    }
-    void change_game_option(int delta, bool toggle = false) {
-        auto next = game_preferences;
-        if (settings.focus == 0) next.favourite = toggle ? !next.favourite : delta > 0;
-        else if (settings.focus == 1) {
-            int& value = next.core;
-            const int step = toggle || delta > 0 ? 1 : -1;
-            do
-                value = toggle ? (value >= ds_core_count - 1 ? -1 : value + 1)
-                               : std::clamp(value + step, -1, ds_core_count - 1);
-            while (value == retired_core);
-        } else {
-            open_shader_picker(true);
-            return;
-        }
-        apply_game_preferences(next, "Game options saved");
-    }
-    std::string shader_name(int value) {
-        return value < 0 ? "Default" : shaders.at(std::clamp(value, 0, shader_count - 1)).name;
-    }
-    bool experimental_game() const {
-        if (o.game_menu) return o.game_core == "rgds-experimental";
-        if (other_system_selected()) return false;
-        return (game_preferences.core < 0 ? int(preferences.core) : game_preferences.core) == 4;
-    }
-    std::string experimental_resolution_name() const {
-        return game_preferences.rgds_scale == 1 ? "Native" : std::to_string(game_preferences.rgds_scale) + "x";
-    }
-    void show_experimental_resolution_picker() {
-        show_picker("DSCore 3D resolution",
-                    {"Native (fastest)", "2x sharper", "3x sharper", "4x (experimental)", "5x (experimental)"},
-                    game_preferences.rgds_scale - 1, [this](int n) {
-                        auto next = game_preferences;
-                        next.rgds_scale = n + 1;
-                        apply_experimental_graphics(next);
-                    });
-    }
-    bool superdrastic_game() const {
-        int core = game_preferences.core < 0 ? int(preferences.core) : game_preferences.core;
-        int backend =
-            game_preferences.drastic_backend < 0 ? preferences.drastic_backend : game_preferences.drastic_backend;
-        if (o.game_menu) return o.game_core == "drastic" && std::getenv("RGDS_SD_SHARED_MENU");
-        return core == 0 && backend == 1 && !other_system_selected();
-    }
-    int superdrastic_resolution() const {
-        return game_preferences.hires == 1 ? (game_preferences.gengis_scale >= 2 ? game_preferences.gengis_scale : 1)
-                                           : 0;
-    }
-    const char* superdrastic_resolution_name() const {
-        static const char* names[] = {"Native", "2x", "2x Gengis", "3x Gengis"};
-        return names[superdrastic_resolution()];
-    }
-    void show_superdrastic_resolution_picker() {
-        show_picker("3D resolution", {"Native", "2x (DraStic)", "2x Gengis (experimental)", "3x Gengis (experimental)"},
-                    superdrastic_resolution(), [this](int n) {
-                        auto next = game_preferences;
-                        next.hires = n > 0;
-                        next.gengis_scale = n >= 2 ? n : 0;
-                        apply_game_preferences(next, "Saved. Applies on your next SuperDrastic launch.");
-                    });
-    }
+    void hold_navigate(int direction, unsigned held);
+    void library_view(int view);
+    void poll_collection();
+    void open_game_options();
+    bool apply_game_preferences(const GameOptions& next, const char* message);
+    void choose_game_emulator(int core);
+    void change_game_option(int delta, bool toggle = false);
+    std::string shader_name(int value);
+    bool experimental_game() const;
+    std::string experimental_resolution_name() const;
+    void show_experimental_resolution_picker();
+    bool superdrastic_game() const;
+    int superdrastic_resolution() const;
+    const char* superdrastic_resolution_name() const;
+    void show_superdrastic_resolution_picker();
     void open_shader_picker(bool per_game);
     // The system of the game a shader is picked for (Settings' default is the DS games').
     std::string shader_system = "nds";
@@ -3106,90 +1281,10 @@ class App {
     Page artwork_return = Page::GameOptions;
     std::string artwork_match;
     std::map<std::string, std::string> artwork_result;
-    void open_game_artwork(Page back = Page::GameOptions) {
-        if (model.games.empty()) return;
-        artwork_return = back;
-        artwork_match = fields(item_folder(model.selected) / "artwork.ini")["match_title"];
-        artwork_result = fields(item_folder(model.selected) / "artwork-status.ini");
-        service_notice.clear();
-        settings.page = Page::GameArtwork;
-        settings.focus = 0;
-        dirty = true;
-    }
-    bool save_artwork_match(const std::string& title) {
-        try {
-            auto path = item_folder(model.selected) / "artwork.ini";
-            fs::create_directories(path.parent_path());
-            auto pending = path.string() + ".pending";
-            std::ofstream file(pending);
-            std::string clean = title;
-            std::replace(clean.begin(), clean.end(), '\n', ' ');
-            std::replace(clean.begin(), clean.end(), '\r', ' ');
-            file << "schema=1\nmatch_title=" << clean << '\n';
-            file.close();
-            if (!file) throw std::runtime_error("Could not save matching title.");
-            fs::rename(pending, path);
-            artwork_match = clean;
-            return true;
-        } catch (const std::exception&) {
-            service_notice = "Could not save matching title.";
-            return false;
-        }
-    }
-    void review_artwork() {
-        std::vector<std::string> names;
-        std::vector<size_t> targets;
-        for (size_t i = 0; i < model.games.size(); i++) {
-            auto result = fields(item_folder(i) / "artwork-status.ini");
-            std::error_code ec;
-            if (!fs::exists(item_folder(i) / "box.bmp", ec) || result["state"] == "error" ||
-                result["state"] == "missing") {
-                names.push_back(game_title(i));
-                targets.push_back(i);
-            }
-        }
-        if (names.empty()) {
-            service_notice =
-                model.games.empty() ? "No games in this collection." : "Every game in this collection has artwork.";
-            dirty = true;
-            return;
-        }
-        show_picker("Unmatched artwork", names, 0, [this, targets](int n) {
-            select_game(targets.at(n), false);
-            open_game_artwork(Page::Scraper);
-        });
-    }
-    void game_artwork_action() {
-        if (settings.focus == 3) {
-            open_game_info(Page::GameArtwork);
-            return;
-        }
-        if (worker > 0 && worker_action == "scrape") {
-            if (settings.focus == 1) {
-                std::ofstream(o.data / "scraper/cancel").put('\n');
-                service_notice = "Stopping after this request.";
-            } else service_notice = "Stop fetching before editing the match.";
-            dirty = true;
-            return;
-        }
-        if (settings.focus == 0) {
-            begin_edit(3);
-            return;
-        }
-        if (settings.focus == 2) {
-            if (save_artwork_match("")) service_notice = "Using the ROM's game code and filename.";
-            dirty = true;
-            return;
-        }
-        if (worker > 0 && (worker_action == "index" || worker_action == "device.info" || worker_action == "status"))
-            stop_worker();
-        if (model.games[model.selected].demo) {
-            service_notice = "Add your DS games to fetch their artwork.";
-            dirty = true;
-            return;
-        }
-        start_worker("scrape");
-    }
+    void open_game_artwork(Page back = Page::GameOptions);
+    bool save_artwork_match(const std::string& title);
+    void review_artwork();
+    void game_artwork_action();
     void open_scraper() {
         settings.section = 2;
         settings.page = Page::Scraper;
@@ -3198,172 +1293,13 @@ class App {
         service_loaded = true;
         dirty = true;
     }
-    void begin_edit(int field) {
-        if (field == 4) search_return = settings.page;
-        edit_field = field;
-        edit_buffer = field == 5   ? (ds_settings.count("nickname") ? ds_settings["nickname"] : "RG DS Core")
-                      : field == 4 ? search_query
-                      : field == 6 ? cheat_query
-                      : field == 0 ? username
-                      : field == 1 ? password
-                      : field == 3 ? artwork_match
-                                   : "";
-        key_row = 1;
-        key_col = 1;
-        key_layer = 0;
-        key_caps = false;
-        edit_cursor = edit_buffer.size();
-        settings.page = Page::Keyboard;
-        s.StartTextInput();
-        search_changed();
-        dirty = true;
-    }
-    void finish_edit(bool commit) {
-        if (edit_field == 6) {
-            // An empty search lists every code flat, which has its own use.
-            if (commit) {
-                cheat_query = trimmed_query(edit_buffer);
-                show_cheat_view(CheatView::All);
-            }
-            edit_buffer.clear();
-            s.StopTextInput();
-            settings.page = Page::Cheats;
-            dirty = true;
-            return;
-        }
-        if (edit_field == 5) {
-            if (commit) save_ds_setting("nickname", edit_buffer.empty() ? std::string("RG DS Core") : edit_buffer);
-            edit_buffer.clear();
-            s.StopTextInput();
-            settings.page = Page::DSControls;
-            settings.focus = 4;
-            dirty = true;
-            return;
-        }
-        if (edit_field == 4) {
-            search_preview.cancel();
-            search_preview_waiting = search_preview_loading = false;
-            search_matches.clear();
-            if (commit) {
-                search_query = trimmed_query(edit_buffer);
-                apply_discovery();
-            } else {
-                settings.page = search_return;
-                settings.focus = 0;
-            }
-            edit_buffer.clear();
-            s.StopTextInput();
-            dirty = true;
-            return;
-        }
-        if (edit_field == 3) {
-            if (commit && save_artwork_match(edit_buffer))
-                service_notice = "Matching title saved. Choose Fetch artwork.";
-            edit_buffer.clear();
-            s.StopTextInput();
-            settings.page = Page::GameArtwork;
-            settings.focus = 0;
-            dirty = true;
-            return;
-        }
-        if (edit_field == 2) {
-            if (commit) {
-                std::ostringstream payload;
-                payload << "{\"network\":" << std::quoted(network_id) << ",\"password\":" << std::quoted(edit_buffer)
-                        << '}';
-                start_worker("device.connect", payload.str());
-            }
-            std::fill(edit_buffer.begin(), edit_buffer.end(), '\0');
-            edit_buffer.clear();
-            s.StopTextInput();
-            settings.page = Page::Network;
-            settings.focus = 1;
-            dirty = true;
-            return;
-        }
-        if (commit) {
-            if (edit_field == 0) username = edit_buffer;
-            else password = edit_buffer;
-        }
-        std::fill(edit_buffer.begin(), edit_buffer.end(), '\0');
-        edit_buffer.clear();
-        s.StopTextInput();
-        settings.page = Page::Scraper;
-        dirty = true;
-    }
-    void move_edit_cursor(int direction) {
-        if (direction < 0 && edit_cursor) {
-            edit_cursor--;
-            while (edit_cursor && (static_cast<unsigned char>(edit_buffer[edit_cursor]) & 0xc0) == 0x80) edit_cursor--;
-        } else if (direction > 0 && edit_cursor < edit_buffer.size()) {
-            edit_cursor++;
-            while (edit_cursor < edit_buffer.size() &&
-                   (static_cast<unsigned char>(edit_buffer[edit_cursor]) & 0xc0) == 0x80)
-                edit_cursor++;
-        }
-        dirty = true;
-    }
-    void insert_text(const std::string& value) {
-        if (edit_field == 6 && RoundedFont::codepoints(edit_buffer + value).size() > 16) return;
-        if (edit_field == 5) {
-            auto text = edit_buffer;
-            text.insert(edit_cursor, value);
-            auto points = RoundedFont::codepoints(text);
-            size_t units = 0;
-            for (auto c : points) units += c > 0xFFFF ? 2 : 1;
-            if (units > 10) return;
-        }
-        if (edit_buffer.size() + value.size() <= 256 && value.find_first_of("\r\n\t") == std::string::npos) {
-            edit_buffer.insert(edit_cursor, value);
-            edit_cursor += value.size();
-            search_changed();
-        }
-        dirty = true;
-    }
-    void erase_character() {
-        if (!edit_cursor) return;
-        size_t end = edit_cursor;
-        move_edit_cursor(-1);
-        edit_buffer.erase(edit_cursor, end - edit_cursor);
-        search_changed();
-        dirty = true;
-    }
-    void delete_character() {
-        if (edit_cursor >= edit_buffer.size()) return;
-        size_t begin = edit_cursor;
-        move_edit_cursor(1);
-        edit_buffer.erase(begin, edit_cursor - begin);
-        edit_cursor = begin;
-        search_changed();
-        dirty = true;
-    }
-    void scraper_action() {
-        if (settings.focus == 3) {
-            preferences.game_info = !preferences.game_info;
-            remember_appearance();
-            return;
-        }
-        if (settings.focus == 4) {
-            open_setting_picker();
-            return;
-        }
-        if (settings.focus == 2) {
-            review_artwork();
-            return;
-        }
-        if (settings.focus == 0) {
-            open_setting_picker();
-            return;
-        }
-        if (worker > 0 && (worker_action == "index" || worker_action == "device.info" || worker_action == "status"))
-            stop_worker();
-        if (worker > 0) {
-            std::ofstream(o.data / "scraper/cancel").put('\n');
-            service_notice = "Stopping after this request";
-            return;
-        }
-        start_worker("scrape");
-    }
+    void begin_edit(int field);
+    void finish_edit(bool commit);
+    void move_edit_cursor(int direction);
+    void insert_text(const std::string& value);
+    void erase_character();
+    void delete_character();
+    void scraper_action();
     bool brightness_drag = false, volume_drag = false;
     int unmuted_volume = 25;
     Uint32 volume_toast = 0;
@@ -3405,56 +1341,11 @@ class App {
     Uint32 theme_poll = 0, theme_changed = 0;
     bool theme_pending = false;
     std::map<fs::path, std::optional<std::string>> theme_source;
-    std::map<fs::path, std::optional<std::string>> read_theme_source() {
-        std::map<fs::path, std::optional<std::string>> result;
-        for (auto path : {o.themes / "light.ini", o.themes / "dark.ini", o.theme}) {
-            if (path.empty()) continue;
-            std::ifstream file(path, std::ios::binary);
-            result[path] =
-                file ? std::optional<std::string>(std::string(std::istreambuf_iterator<char>(file), {})) : std::nullopt;
-        }
-        return result;
-    }
+    std::map<fs::path, std::optional<std::string>> read_theme_source();
     // The selected light/dark palette with the optional DS favourite colour.
-    void select_theme() {
-        theme = preferences.dark ? dark_theme : light_theme;
-        apply_accent(theme, preferences.accent, preferences.dark);
-        if (preferences.high_contrast) apply_high_contrast(theme, preferences.dark);
-    }
-    void reload_themes() {
-        auto light = fs::exists(o.themes / "light.ini") ? load_theme(o.themes / "light.ini") : default_theme();
-        auto dark = fs::exists(o.themes / "dark.ini") ? load_theme(o.themes / "dark.ini", default_dark_theme())
-                                                      : default_dark_theme();
-        if (!o.theme.empty()) {
-            bool is_dark = dark_theme_file(o.theme);
-            auto custom = load_theme(o.theme, is_dark ? dark : light);
-            if (is_dark) dark = std::move(custom);
-            else light = std::move(custom);
-        }
-        light_theme = std::move(light);
-        dark_theme = std::move(dark);
-        select_theme();
-    }
-    void remember_appearance() {
-        select_theme();
-        try {
-            save_preferences(o.preferences, preferences);
-            status = "Settings saved";
-        } catch (const std::exception& e) {
-            status = "Could not save all settings. Check storage.";
-            std::cerr << e.what() << std::endl;
-            // Base and additive UI preferences have separate atomic files.
-            // A partial failure must display what actually reached storage.
-            try {
-                preferences = load_preferences(o.preferences);
-                select_theme();
-            } catch (const std::exception&) {}
-        }
-        locale.load(asset_path("locales"), preferences.language);
-        rounded.prefer(preferences.language);
-        configure_sounds();
-        dirty = true;
-    }
+    void select_theme();
+    void reload_themes();
+    void remember_appearance();
     // Theme & display uses the shared settings list, four roomy rows per
     // screen: 0 colour mode, 1 accent colour, 2 high contrast, 3 typeface,
     // 4 icon style, 5 screen brightness, 6 animations, 7 touch indicator.
@@ -3462,89 +1353,16 @@ class App {
     // or A to swap).
     using SegmentNames = std::array<const char*, 2>;
     static constexpr SegmentNames mode_names{"Light", "Dark"}, typeface_names{"DS rounded", "Pixel classic"};
-    SDL_Rect segment_bounds(int index, int option) {
-        const auto& names = index == 0 ? mode_names : typeface_names;
-        int width = std::clamp(std::max(label_width(names[0], 18), label_width(names[1], 18)) + 34, 100, 150),
-            left = 574 - 2 * width - 8;
-        return {left + 4 + option * width, list_top + index * list_stride - list_scroll + 17, width, 32};
-    }
-    void segment_row(SDL_Renderer* r, int y, int index, const std::string& title, bool second) {
-        int row = y + list_top + index * list_stride - list_scroll;
-        bool focused = index == list_selected();
-        int dx = 24;
-        move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
-        dx -= 24;
-        settings_card(r, 24 + dx, row, 566, 66, focused);
-        round_rect(r, 38 + dx, row + 11, 44, 44, 12, focused ? "accent" : "slot");
-        ui_icon(r, index == 0 ? (second ? SettingsIcon::Moon : SettingsIcon::Sun) : SettingsIcon::Type, 60 + dx,
-                row + 33, 25, focused ? "on_accent" : "accent");
-        const auto& names = index == 0 ? mode_names : typeface_names;
-        auto first = segment_bounds(index, 0);
-        first.x += dx;
-        first.y += y;
-        label(r, title, 98 + dx, row + 19, 24, "ink", first.x - 16 - (98 + dx));
-        sunken_track(r, first.x - 4, first.y - 4, first.w * 2 + 8, first.h + 8, 13);
-        const float slide = segment_position(index, second ? 1 : 0);
-        raised_pill(r, first.x + int(std::lround(slide * first.w)), first.y, first.w, first.h, 10, theme.at("accent"),
-                    0, false);
-        for (int option = 0; option < 2; option++) {
-            SDL_Rect box{first.x + option * first.w, first.y, first.w, first.h};
-            bool on = std::abs(slide - option) < .5f;
-            int width = std::min(box.w - 12, label_width(names[size_t(option)], 18));
-            label(r, names[size_t(option)], box.x + (box.w - width) / 2,
-                  centred_label_y(locale.text(names[size_t(option)]), 18, box.y + box.h / 2), 18,
-                  on ? "on_accent" : "ink", box.w - 12);
-        }
-    }
-    void appearance_row(SDL_Renderer* r, int y, int i) {
-        switch (i) {
-        case 0: segment_row(r, y, i, "Colour mode", preferences.dark); break;
-        case 1: {
-            Color swatch = theme.at("accent");
-            list_row(r, y, i, "Accent colour", accent_name(preferences.accent), true, &swatch);
-            break;
-        }
-        case 2: list_row(r, y, i, "High contrast", preferences.high_contrast ? "On" : "Off"); break;
-        case 3: segment_row(r, y, i, "Typeface", preferences.pixel); break;
-        case 4: list_row(r, y, i, "Icon style", preferences.rich_icons ? "Rich" : "Simple pixel"); break;
-        case 5: list_row(r, y, i, "Screen brightness", std::to_string(system_preferences.brightness) + "%"); break;
-        // Animations opens its own page, so even "Off" is a value, not a switch.
-        case 6:
-            list_row(r, y, i, "Animations",
-                     !preferences.animations       ? "Off"
-                     : preferences.view_animations ? (preferences.view_style == ViewStyle::Push   ? "Push"
-                                                      : preferences.view_style == ViewStyle::Zoom ? "Zoom"
-                                                                                                  : "Spring")
-                                                   : "Subtle",
-                     true, nullptr, false);
-            break;
-        case 7: list_row(r, y, i, "Touch indicator", preferences.touch_indicator ? "On" : "Off"); break;
-        case 8: list_row(r, y, i, "Home layout", preferences.home_layout == 1 ? "Column" : "Carousel"); break;
-        case 9: list_row(r, y, i, "Background", preferences.background == 1 ? "Grid" : "Plain"); break;
-        default: list_row(r, y, i, "Touch gestures", preferences.gestures ? "On" : "Off"); break;
-        }
-    }
+    SDL_Rect segment_bounds(int index, int option);
+    void segment_row(SDL_Renderer* r, int y, int index, const std::string& title, bool second);
+    void appearance_row(SDL_Renderer* r, int y, int i);
     static std::string accent_name(int index) {
         return index >= 0 && index < int(ds_colours.size()) ? ds_colours[size_t(index)].name : "Classic";
     }
-    void accent_swatch(SDL_Renderer* r, int cx, int cy, int radius, Color fill) {
-        for (int dy = -radius; dy <= radius; dy++) {
-            int half = int(std::sqrt(double(radius * radius - dy * dy)));
-            tint_rect(r, cx - half, cy + dy, half * 2 + 1, 1, fill);
-        }
-        ring(r, cx, cy, radius, "line");
-    }
+    void accent_swatch(SDL_Renderer* r, int cx, int cy, int radius, Color fill);
     // Off, an open share that appears in Finder/Explorer like a NAS, or the
     // previous one-time password login. Both shares are advertised by name.
-    void show_sharing_picker() {
-        int current = device_status["sharing"] != "1" ? 0 : device_status["sharing_mode"] == "open" ? 1 : 2;
-        show_picker(
-            "Network file sharing", {"Off", "Open on this Wi-Fi", "Password protected"}, current,
-            [this, current](int n) {
-                if (n == current) return;
-                start_worker(n == 0 ? "device.sharing-off" : n == 1 ? "device.sharing-open" : "device.sharing-on");
-            });
-    }
+    void show_sharing_picker();
     // Theme & display > Accent colour: the DSi profile's 4x4 favourite-colour
     // grid. Tiles show the original DS colour and its name (never colour
     // alone); the interface uses the contrast-adjusted variant. Focus 0-15 are
@@ -3566,217 +1384,21 @@ class App {
     void colours_top(SDL_Renderer* r, int y);
     // Left/Right (choice 0/1) set a row's value directly; A (choice 2)
     // swaps two-choice rows, flips switches and opens the rest.
-    void choose_appearance(int choice) {
-        const int row = settings.focus;
-        const bool step = choice != 2;
-        switch (row) {
-        case 0: preferences.dark = step ? choice == 1 : !preferences.dark; break;
-        case 1:
-            if (!step) {
-                open_colours();
-                return;
-            }
-            preferences.accent =
-                std::clamp(preferences.accent + (choice == 1 ? 1 : -1), -1, int(ds_colours.size()) - 1);
-            break;
-        case 2:
-            preferences.high_contrast = step ? choice == 1 : !preferences.high_contrast;
-            emit_sound(preferences.high_contrast ? MenuCue::Enable : MenuCue::Disable);
-            break;
-        case 3: {
-            bool pixel = step ? choice == 1 : !preferences.pixel;
-            if (!pixel) check_fonts();
-            if (!pixel && !font_ready) {
-                status = "ROUNDED FONT UNAVAILABLE";
-                dirty = true;
-                return;
-            }
-            preferences.pixel = pixel;
-            break;
-        }
-        case 4:
-            if (!step) {
-                show_picker("Icon style", {"Simple pixel", "Rich"}, preferences.rich_icons ? 1 : 0, [this](int n) {
-                    preferences.rich_icons = n == 1;
-                    remember_appearance();
-                });
-                return;
-            }
-            preferences.rich_icons = choice == 1;
-            break;
-        case 5:
-            if (step) {
-                change_system(4, choice == 0 ? -1 : 1);
-                return;
-            }
-            settings.enter();
-            dirty = true;
-            return;
-        case 6:
-            settings.page = Page::Motion;
-            settings.focus = 0;
-            dirty = true;
-            return;
-        case 7: preferences.touch_indicator = step ? choice == 1 : !preferences.touch_indicator; break;
-        case 8:
-            if (!step) {
-                show_picker("Home layout", {"Carousel", "Column"}, preferences.home_layout, [this](int n) {
-                    preferences.home_layout = n;
-                    home_layout_changed();
-                    remember_appearance();
-                });
-                return;
-            }
-            preferences.home_layout = choice;
-            home_layout_changed();
-            break;
-        case 9:
-            if (!step) {
-                show_picker("Background", {"Plain", "Grid"}, preferences.background, [this](int n) {
-                    preferences.background = n;
-                    remember_appearance();
-                });
-                return;
-            }
-            preferences.background = choice;
-            break;
-        case 10:
-            preferences.gestures = step ? choice == 1 : !preferences.gestures;
-            if (preferences.gestures) gesture_intro();
-            break;
-        default: return;
-        }
-        remember_appearance();
-    }
-    void refresh_system() {
-        hardware = system.status();
-        dirty = true;
-        if (o.preview) {
-            std::ifstream file(o.data / "volume.ini");
-            std::string line;
-            while (std::getline(file, line))
-                if (line.rfind("volume=", 0) == 0)
-                    hardware.volume_percent = std::clamp(std::atoi(line.c_str() + 7), 0, 100);
-        }
-        if (hardware.volume_percent > 0) unmuted_volume = hardware.volume_percent;
-        volume_applied = hardware.volume_percent;
-    }
-    void save_preview_volume(int value) {
-        if (!o.preview) return;
-        fs::create_directories(o.data);
-        auto path = o.data / "volume.ini", pending = fs::path(path.string() + ".tmp");
-        std::ofstream file(pending);
-        file << "schema=1\nvolume=" << value << '\n';
-        file.close();
-        if (!file) throw std::runtime_error("Could not save volume");
-        fs::rename(pending, path);
-    }
-    int confirmed_volume() {
-        if (!o.preview) {
-            auto fields = rgds::fields(o.data / "volume.ini");
-            if (fields.count("volume")) {
-                try {
-                    size_t end = 0;
-                    int value = std::stoi(fields["volume"], &end);
-                    if (end == fields["volume"].size() && value >= 0 && value <= 100) return value;
-                } catch (...) {}
-            }
-        }
-        return system.cached().volume_percent;
-    }
-    void poll_volume() {
-        if (auto update = system.poll_volume()) {
-            if (update->success) {
-                volume_applied = update->value;
-                return_audio_failed = false;
-            }
-            if (update->settled && update->value == hardware.volume_percent) {
-                if (!update->success) {
-                    hardware.volume_percent = volume_applied = confirmed_volume();
-                    status = "Could not set volume - see log";
-                }
-                try {
-                    save_preview_volume(volume_applied);
-                } catch (const std::exception& error) {
-                    status = error.what();
-                }
-                volume_unsaved = false;
-                dirty = true;
-            }
-        }
-    }
-    void flush_volume() {
-        if (!volume_unsaved && !system.volume_pending()) return;
-        bool ok = system.flush_volume();
-        volume_applied = ok ? system.cached().volume_percent : confirmed_volume();
-        if (!ok) {
-            hardware.volume_percent = volume_applied;
-            status = "Could not set volume - see log";
-        }
-        try {
-            save_preview_volume(volume_applied);
-        } catch (const std::exception& error) {
-            status = error.what();
-        }
-        volume_unsaved = false;
-        poll_volume();
-    }
-    void toggle_mute() {
-        hold.clear();
-        volume_drag = false;
-        change_volume(hardware.volume_percent == 0 ? unmuted_volume : 0);
-    }
-    void change_volume(int value) {
-        if (!hardware.volume) {
-            status = "Volume control unavailable";
-            dirty = true;
-            return;
-        }
-        value = std::clamp(value, 0, 100);
-        if (value == hardware.volume_percent && !return_audio_failed) {
-            volume_toast = s.GetTicks() + 1800;
-            last_activity = s.GetTicks();
-            dirty = true;
-            return;
-        }
-        if (return_writes_pending()) return_volume = value;
-        else system.request_volume(value);
-        volume_unsaved = true;
-        hardware.volume_percent = value;
-        if (value > 0) unmuted_volume = value;
-        volume_toast = s.GetTicks() + 1800;
-        last_activity = s.GetTicks();
-        dirty = true;
-    }
-    void apply_timezone() {
-        setenv("TZ", system_preferences.timezone.c_str(), 1);
-        tzset();
-        dirty = true;
-    }
+    void choose_appearance(int choice);
+    void refresh_system();
+    void save_preview_volume(int value);
+    int confirmed_volume();
+    void poll_volume();
+    void flush_volume();
+    void toggle_mute();
+    void change_volume(int value);
+    void apply_timezone();
     // UTC offsets per zone, read from tzdata by switching TZ for a moment and
     // putting the chosen zone back. Only rows on screen ask, and the cache
     // empties every quarter hour so a daylight-saving change shows up.
     std::map<std::string, long> zone_offsets;
     long zone_offsets_bucket = -1;
-    long zone_offset(const std::string& zone) {
-        auto now = std::time(nullptr);
-        if (now / 900 != zone_offsets_bucket) {
-            zone_offsets.clear();
-            zone_offsets_bucket = now / 900;
-        }
-        auto found = zone_offsets.find(zone);
-        if (found != zone_offsets.end()) return found->second;
-        std::tm local{};
-        long offset = 0;
-        if (zone != "UTC") {
-            setenv("TZ", zone.c_str(), 1);
-            tzset();
-            if (localtime_r(&now, &local)) offset = local.tm_gmtoff;
-            setenv("TZ", system_preferences.timezone.c_str(), 1);
-            tzset();
-        }
-        return zone_offsets[zone] = offset;
-    }
+    long zone_offset(const std::string& zone);
     static std::string offset_text(long seconds) {
         if (!seconds) return "UTC";
         auto minutes = std::abs(seconds) / 60;
@@ -3788,424 +1410,26 @@ class App {
         }
         return text;
     }
-    std::string zone_time(const std::string& zone) {
-        auto shifted = std::time(nullptr) + zone_offset(zone);
-        std::tm t{};
-        gmtime_r(&shifted, &t);
-        return time_text(t);
-    }
-    std::string timezone_summary() {
-        const auto& zone = system_preferences.timezone;
-        return zone == "UTC" ? zone : timezone_place(zone) + " · " + offset_text(zone_offset(zone));
-    }
-    std::string timezone_title() {
-        auto region = timezone_region(timezones.at(size_t(std::clamp(settings.focus, 0, int(timezones.size()) - 1))));
-        return region == "UTC" ? locale.text("Timezone")
-                               : locale.text("Timezone") + " · " + locale.text(timezone_region_name(region));
-    }
+    std::string zone_time(const std::string& zone);
+    std::string timezone_summary();
+    std::string timezone_title();
     // The regions L and R (and the d-pad's Left and Right) jump to; empty at either end.
-    std::pair<std::string, std::string> timezone_neighbours() {
-        const int count = int(timezones.size()), focus = std::clamp(settings.focus, 0, count - 1);
-        auto region = [&](int i) { return timezone_region(timezones[size_t(i)]); };
-        int start = focus;
-        while (start > 0 && region(start - 1) == region(focus)) start--;
-        const int next = timezone_region_jump(focus, 1);
-        return {start > 0 ? locale.text(timezone_region_name(region(start - 1))) : std::string(),
-                region(next) != region(focus) ? locale.text(timezone_region_name(region(next))) : std::string()};
-    }
-    void load_system_configuration() {
-        if (system_configuration_loaded) return;
-        system_configuration_loaded = true;
-        try {
-            if (fs::exists(o.system_preferences)) {
-                system_preferences = load_system_preferences(o.system_preferences);
-                if (!probe && !o.game_menu) {
-                    if (hardware.power && system_preferences.power > 0 &&
-                        !system.set("power", system_preferences.power))
-                        status = "Could not apply saved power mode";
-                    if (hardware.brightness) {
-                        if (system.set("brightness", system_preferences.brightness)) {
-                            brightness_applied = system_preferences.brightness;
-                            hardware.brightness_percent = brightness_applied;
-                        } else {
-                            system_preferences.brightness = brightness_applied;
-                            status = "Could not apply saved brightness";
-                        }
-                    }
-                }
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "System preferences fallback: " << e.what() << std::endl;
-        }
-        if (!probe && !o.game_menu && hardware.lid && system_preferences.lid && !system.set("lid", 1))
-            status = "Could not enable lid wake";
-        apply_timezone();
-    }
-    void save_date_format(int value) {
-        auto previous = system_preferences.date_format;
-        system_preferences.date_format = value;
-        try {
-            save_system_preferences(o.system_preferences, system_preferences);
-            dirty = true;
-        } catch (const std::exception& e) {
-            system_preferences.date_format = previous;
-            status = "Could not save date format";
-            std::cerr << e.what() << std::endl;
-            dirty = true;
-        }
-    }
-    void save_time_format(int value) {
-        auto previous = system_preferences.time_format;
-        system_preferences.time_format = value;
-        try {
-            save_system_preferences(o.system_preferences, system_preferences);
-            dirty = true;
-        } catch (const std::exception& e) {
-            system_preferences.time_format = previous;
-            status = "Could not save time format";
-            std::cerr << e.what() << std::endl;
-            dirty = true;
-        }
-    }
-    void save_timezone() {
-        auto previous = system_preferences.timezone;
-        system_preferences.timezone = timezones.at(settings.focus);
-        try {
-            save_system_preferences(o.system_preferences, system_preferences);
-            apply_timezone();
-        } catch (const std::exception& e) {
-            system_preferences.timezone = previous;
-            status = "Could not save timezone";
-            std::cerr << e.what() << std::endl;
-            dirty = true;
-        }
-    }
-    bool apply_control(int focus, const SystemPreferences& value) {
-        if (return_writes_pending()) {
-            if (focus == 0) return_power = value.power;
-            else if (focus == 2) return_lid = value.lid;
-            else if (focus == 4) return_brightness = value.brightness;
-            return true;
-        }
-        if (focus == 0) return system.set("power", value.power);
-        if (focus == 2) return system.set("lid", value.lid);
-        if (focus == 4) return system.set("brightness", value.brightness);
-        return true;
-    }
-    void poll_brightness() {
-        if (auto result = system.poll_brightness()) {
-            if (result->success) {
-                brightness_applied = result->value;
-                hardware.brightness_percent = result->value;
-            } else if (result->settled && result->value == system_preferences.brightness) {
-                system_preferences.brightness = brightness_applied;
-                status = "Could not apply brightness";
-                dirty = true;
-            }
-        }
-        if (brightness_unsaved && !return_writes_pending() && !system.brightness_pending() && !brightness_drag &&
-            s.GetTicks() - brightness_changed >= 180) {
-            try {
-                save_system_preferences(o.system_preferences, system_preferences);
-                brightness_unsaved = false;
-            } catch (const std::exception& e) {
-                status = "Could not save brightness";
-                brightness_unsaved = false;
-                std::cerr << e.what() << std::endl;
-                dirty = true;
-            }
-        }
-    }
-    void flush_brightness() {
-        bool success = system.flush_brightness();
-        if (auto result = system.poll_brightness()) {
-            if (result->success) brightness_applied = result->value;
-        }
-        if (!success) {
-            system_preferences.brightness = brightness_applied;
-            status = "Could not apply brightness";
-        }
-        if (brightness_unsaved) {
-            try {
-                save_system_preferences(o.system_preferences, system_preferences);
-                brightness_unsaved = false;
-            } catch (const std::exception& e) {
-                std::cerr << e.what() << std::endl;
-            }
-        }
-    }
-    void change_system(int focus, int delta, bool cycle = false) {
-        auto previous = system_preferences, next = previous;
-        bool available = focus == 0   ? hardware.power
-                         : focus == 1 ? hardware.sleep
-                         : focus == 2 ? hardware.lid
-                         : focus == 3 ? hardware.battery >= 0
-                                      : hardware.brightness;
-        if (!available) {
-            status = "Control unavailable on this device";
-            dirty = true;
-            return;
-        }
-        if (focus == 0) next.power = cycle ? (next.power + 1) % 4 : std::clamp(next.power + delta, 0, 3);
-        else if (focus == 1) next.idle = cycle ? (next.idle + 1) % 5 : std::clamp(next.idle + delta, 0, 4);
-        else if (focus == 2) next.lid = cycle ? !next.lid : delta > 0;
-        else if (focus == 3) next.battery_percent = cycle ? !next.battery_percent : delta > 0;
-        else if (focus == 4)
-            next.brightness = cycle ? (next.brightness >= 100 ? 5 : std::min(100, (next.brightness / 5 + 1) * 5))
-                                    : std::clamp((next.brightness / 5 + delta) * 5, 5, 100);
-        if (next.power == previous.power && next.idle == previous.idle && next.lid == previous.lid &&
-            next.brightness == previous.brightness && next.battery_percent == previous.battery_percent)
-            return;
-        if (focus == 4) {
-            system_preferences.brightness = next.brightness;
-            if (return_writes_pending()) return_brightness = next.brightness;
-            else system.request_brightness(next.brightness);
-            brightness_changed = s.GetTicks();
-            brightness_unsaved = true;
-            dirty = true;
-            return;
-        }
-        if (!apply_control(focus, next)) {
-            status = "Could not apply setting - see log";
-            dirty = true;
-            return;
-        }
-        try {
-            save_system_preferences(o.system_preferences, next);
-            system_preferences = next;
-            status = o.preview ? "Saved - desktop simulation" : "Settings saved";
-        } catch (const std::exception& e) {
-            if (!apply_control(focus, previous))
-                std::cerr << "Could not restore previous hardware setting" << std::endl;
-            status = "Could not save settings";
-            std::cerr << e.what() << std::endl;
-        }
-        dirty = true;
-    }
-    void reset_after_sleep() {
-        top_seen.clear();
-        // Discard pre-suspend SDL/raw presses, including a held browser gesture.
-        SDL_Event pending{};
-        while (s.PollEvent(&pending)) {
-            if (pending.type == SDL_QUIT) quit = true;
-        }
-        touchscreen.discard_until_release();
-        cancel_navigation();
-        brightness_drag = volume_drag = false;
-        carousel.reset(navigation_selected());
-        last_activity = s.GetTicks();
-        dirty = true;
-    }
+    std::pair<std::string, std::string> timezone_neighbours();
+    void load_system_configuration();
+    void save_date_format(int value);
+    void save_time_format(int value);
+    void save_timezone();
+    bool apply_control(int focus, const SystemPreferences& value);
+    void poll_brightness();
+    void flush_brightness();
+    void change_system(int focus, int delta, bool cycle = false);
+    void reset_after_sleep();
     void restore_sleep_audio() { configure_sounds(); }
-    void sleep_now(bool lid = false) {
-        if (!hardware.sleep) {
-            status = "Sleep unavailable on this device";
-            dirty = true;
-            return;
-        }
-        flush_return_controls();
-        flush_volume();
-        flush_brightness();
-        save_state();
-        status = o.preview ? "Sleep simulated - press any control" : "Sleeping - use Power to wake";
-        dirty = true;
-        draw();
-        sounds.stop();
-        // The private shared PCM can survive suspend just like an engine's
-        // PCM. Keep it warm: reopening the codec can swallow a short cue and
-        // delays the wake sound. Exclusive/custom configurations still release it.
-        const char* shared_audio = std::getenv("RGDS_SHARED_AUDIO");
-        bool warm_audio = !o.preview && shared_audio && std::string(shared_audio) == "1" && sounds.available();
-        bool close_played = false;
-        if (warm_audio || o.preview) close_played = emit_sound(MenuCue::LidClose);
-        if (o.preview && close_played) {
-            auto began = s.GetTicks();
-            while (sounds.active() && s.GetTicks() - began < 400) s.Delay(5);
-        }
-        if (!warm_audio) sounds.close();
-        bool ok = system.sleep(lid, close_played);
-        status =
-            ok ? (o.preview ? "Sleep simulated - settings retained" : "Welcome back") : "Could not sleep - see log";
-        reset_after_sleep();
-        // Stock resume hooks may reset the mixer even with the sink retained.
-        if (warm_audio && !system.sync_volume()) sounds.close();
-        restore_sleep_audio();
-        if (ok) emit_sound(MenuCue::Unlock);
-    }
-    void watch_system(Uint32 now) {
-        if (!return_writes_pending() && now - system_poll >= 10000 && now - system_retry >= 500) {
-            system_retry = now;
-            if (system.request_status()) system_poll = now;
-        }
-        // The game runner owns lid sleep while playing, including its overlay.
-        if (o.preview || probe || o.game_menu) return;
-        if (now - lid_poll >= 50) {
-            lid_poll = now;
-            auto closed = system.lid_closed();
-            if (lid_sleep.poll(closed, system_preferences.lid && hardware.lid, system.lid_generation())) {
-                sleep_now(true);
-                return;
-            }
-        }
-        if (!pointer_down && system_preferences.idle > 0 && hardware.sleep &&
-            now - last_activity >= static_cast<Uint32>(idle_minutes[system_preferences.idle]) * 60000)
-            sleep_now();
-    }
-    void watch_theme(Uint32 now) {
-        if (!o.watch_assets || o.theme.empty() || now - theme_poll < 100) return;
-        theme_poll = now;
-        auto source = read_theme_source();
-        if (source != theme_source) {
-            theme_source = std::move(source);
-            theme_changed = now;
-            theme_pending = true;
-        }
-        // Editors may truncate then write, or replace the file via rename.
-        if (theme_pending && now - theme_changed >= 200) {
-            theme_pending = false;
-            action(6);
-        }
-    }
-    void restore_state() {
-        if (o.state.empty()) return;
-        std::ifstream navigation(o.state);
-        std::string navigation_line;
-        bool saved_home = false;
-        while (std::getline(navigation, navigation_line)) {
-            std::istringstream row(navigation_line);
-            std::string marker;
-            int category = 1;
-            if (row >> marker >> category && marker == "home" && category >= 0 && category < int(home_count)) {
-                saved_home = true;
-                home_menu = true;
-                home_selected = size_t(category);
-            }
-        }
-        std::ifstream file(o.state);
-        unsigned schema = 0, core = 0;
-        size_t selected = 0;
-        std::string path;
-        if (!(file >> schema >> selected >> core >> std::quoted(path)) || schema != 1 || core >= core_count) return;
-        if (!saved_home) home_menu = false;
-        model.core = core;
-        if (!model.games.empty()) {
-            model.selected = std::min(selected, model.games.size() - 1);
-            for (size_t i = 0; i < model.games.size(); i++)
-                if (!path.empty() && model.games[i].path == fs::path(path)) {
-                    model.selected = i;
-                    break;
-                }
-        }
-        int page = 0, section = 0, focus = 0;
-        if (file >> page >> section >> focus && page == int(Page::ShaderPicker) && focus >= 0 &&
-            focus <= shader_count) {
-            std::string marker;
-            int per_game = 0;
-            if (file >> marker >> per_game && marker == "shader" && (per_game == 0 || per_game == 1) &&
-                (!per_game || !model.games.empty())) {
-                if (per_game) game_preferences = library_cache.options(model.games[model.selected]);
-                open_shader_picker(per_game);
-                if (o.game_menu) shader_return = Page::QuickMenu;
-                settings.focus = std::min(focus, int(shader_choices.size()) - 1);
-                shader_carousel.reset(size_t(std::max(0, settings.focus)));
-                int scene = 0, mode = 2;
-                float split = .5f;
-                if (file >> marker >> scene >> mode >> split && marker == "shader-preview" && scene >= 0 &&
-                    scene < ShaderPreview::scene_count && mode >= 0 && mode <= 2 && split >= .1f && split <= .9f) {
-                    shader_preview_scene = scene;
-                    shader_preview_mode = ShaderPreviewMode(mode);
-                    shader_preview_split = split;
-                }
-                return;
-            }
-        }
-        if (file && page == int(Page::Controls) && focus >= 0 && focus <= 18) {
-            std::string marker, tail;
-            int per_game = 0, parent = int(o.game_menu ? Page::QuickMenu : Page::Settings), saved_parent = parent;
-            file >> marker >> per_game;
-            std::getline(file, tail);
-            std::istringstream extra(tail);
-            if (extra >> saved_parent && (saved_parent == int(Page::Settings) || saved_parent == int(Page::QuickMenu) ||
-                                          saved_parent == int(Page::GameOptions)))
-                parent = saved_parent;
-            open_controls(marker == "controls" && per_game == 1, static_cast<Page>(parent));
-            settings.focus = focus;
-            return;
-        }
-        if (file && page >= 0 &&
-            (page <= int(Page::GameOptions) || page == int(Page::Startup) || page == int(Page::Statistics) ||
-             page == int(Page::RomSetup) || page == int(Page::Discover) || page == int(Page::Motion) ||
-             page == int(Page::Colours) || page == int(Page::MenuSounds)) &&
-            page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
-            page != int(Page::Confirm) && section >= 0 && section <= 9 && focus >= 0 &&
-            focus <= (page == int(Page::Motion)           ? 3
-                      : page == int(Page::Timezone)       ? int(timezones.size()) - 1
-                      : page == int(Page::Maintenance)    ? 6
-                      : page == int(Page::LibraryOptions) ? 10
-                      : page == int(Page::Appearance)     ? 10
-                      : page == int(Page::System)         ? 7
-                      : page == int(Page::Wifi) ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)
-                                                : 4))
-            settings = {static_cast<Page>(page), section, focus};
-        if (settings.page == Page::Power) {
-            settings.section = 1;
-        }
-        if (settings.page == Page::Placeholder && settings.section == 1) settings.page = Page::Power;
-        if (settings.page == Page::Placeholder && settings.section == 0) settings.page = Page::Appearance;
-        if (settings.page == Page::Placeholder && settings.section >= 2)
-            settings.page = settings.section == 2   ? Page::LibraryOptions
-                            : settings.section == 3 ? Page::Sound
-                            : settings.section == 4 ? Page::Network
-                                                    : Page::System;
-        if (settings.page == Page::Appearance || settings.page == Page::Display || settings.page == Page::Motion ||
-            settings.page == Page::Colours)
-            settings.section = 0;
-        if (settings.page == Page::Display) settings.focus = 0;
-        if (settings.page == Page::Sound || settings.page == Page::MenuSounds) {
-            settings.section = 3;
-            settings.focus = 0;
-        }
-        if (settings.page == Page::System || settings.page == Page::Timezone) settings.section = 5;
-        if (settings.page == Page::System) settings.focus = std::min(settings.focus, 7);
-        if (settings.page == Page::Startup) {
-            settings.section = 5;
-            settings.focus = std::min(settings.focus, 3);
-            start_worker("device.startup-info");
-        }
-        if (settings.page == Page::Network) settings.focus = std::min(settings.focus, 4);
-        if (settings.page == Page::Maintenance) settings.focus = std::min(settings.focus, 6);
-        if (settings.page == Page::Statistics) settings.section = 7;
-        if (settings.page == Page::GameOptions) {
-            if (model.games.empty()) settings.page = Page::Library;
-            else game_preferences = library_cache.options(model.games[model.selected]);
-            settings.focus = std::min(settings.focus, 5);
-        }
-    }
-    void save_state() {
-        if (o.state.empty() || !session_initialized || !library_ready || settings.page == Page::BootWarning) return;
-        try {
-            if (!o.state.parent_path().empty()) fs::create_directories(o.state.parent_path());
-            auto pending = o.state.string() + ".tmp";
-            std::ofstream file(pending);
-            file << 1 << ' ' << model.selected << ' ' << model.core << ' '
-                 << std::quoted(model.games.empty() ? std::string() : model.games[model.selected].path.string())
-                 << '\n';
-            if (settings.page != Page::Library && settings.page != Page::Keyboard)
-                file << static_cast<int>(settings.page) << ' ' << settings.section << ' ' << settings.focus << '\n';
-            if (settings.page == Page::ShaderPicker) file << "shader " << shader_per_game << '\n';
-            if (settings.page == Page::ShaderPicker)
-                file << "shader-preview " << shader_preview_scene << ' ' << int(shader_preview_mode) << ' '
-                     << shader_preview_split << '\n';
-            if (settings.page == Page::Controls)
-                file << "controls " << controls_per_game << ' ' << int(controls_return) << '\n';
-            if (home_menu && !o.game_menu) file << "home " << home_selected << '\n';
-            file.close();
-            if (!file) throw std::runtime_error("Cannot save launcher state");
-            fs::rename(pending, o.state);
-        } catch (const std::exception& e) {
-            std::cerr << "State: " << e.what() << std::endl;
-        }
-    }
+    void sleep_now(bool lid = false);
+    void watch_system(Uint32 now);
+    void watch_theme(Uint32 now);
+    void restore_state();
+    void save_state();
     void color(SDL_Renderer* r, const std::string& key) {
         auto c = theme.at(key);
         s.SetRenderDrawColor(r, c.r, c.g, c.b, o.game_menu && key == "background" ? 56 : 255);
@@ -4360,8 +1584,16 @@ class App {
         }
         // Rendered at its drawn size; its capitals match the clock's (14 px),
         // centred on the bar's text line (y + 24) like the labels.
-        media.draw(r, asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"),
-                   {84, y + 13, 129, 22}, false);
+        if (!preferences.rich_icons) {
+            // The simple pixel style sets the name in its own dots, not from the rendered wordmark.
+            const int dot = pixel_scale(20);
+            color(r, "ink");
+            pixel_dots(
+                "RG DS CORE", 84, status_label_y("RG DS CORE", 20, y), dot, 12,
+                [&](const SDL_Rect& p) { s.RenderFillRect(r, &p); }, [](unsigned, int, int) {});
+        } else
+            media.draw(r, asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"),
+                       {84, y + 13, 129, 22}, false);
         if (artwork_busy()) artwork_loader(r, y);
         drawn_status_stamp = status_stamp();
         const auto& stamp = drawn_status_stamp;
@@ -4376,27 +1608,17 @@ class App {
         rect(r, 0, y + 47, 640, 1, "line");
     }
     int point_size(int size) { return size == 1 ? 16 : size == 2 ? 20 : size == 3 ? 28 : 36; }
-    void text(SDL_Renderer* r, std::string value, int x, int y, int size, const std::string& key, int max_chars = 80,
-              bool translate = true) {
-        if (translate) value = locale.text(value);
-        if (!preferences.pixel && font_ready) {
-            rounded.draw(r, value, x, y, point_size(size), theme.at(key), max_chars, std::max(1, 612 - x));
-            return;
-        }
+    // Classic 5x7 text as filled squares: `fill` takes each dot's rectangle and
+    // `wide` each kana or kanji cell (the caller draws those from the rounded
+    // font). `y` is the line box's top, as for the rounded font.
+    template <class Fill, class Wide>
+    void pixel_dots(const std::string& value, int x, int y, int size, int max_chars, Fill&& fill, Wide&& wide) {
         y += size * 3; // Match the rounded font's visible top, rather than its line-box top.
-        color(r, key);
         int n = 0;
         for (unsigned c : RoundedFont::codepoints(value)) {
             if (++n > max_chars) break;
             if (pixel_wide(c)) {
-                // The rounded glyph, centred in two cells and standing on the dot baseline.
-                try {
-                    const auto glyph = utf8_encode(c);
-                    const int points = size * 10;
-                    const int w = static_cast<int>(std::lround(rounded.width(glyph, points)));
-                    rounded.draw(r, glyph, x + size * 6 - w / 2, y + size * 7 - rounded.ascent(points), points,
-                                 theme.at(key), 1, 1000);
-                } catch (const std::exception&) {}
+                wide(c, x, y);
                 x += size * 12;
                 continue;
             }
@@ -4464,10 +1686,7 @@ class App {
             default: break;
             }
             if (accent) {
-                auto dot = [&](int col, int row) {
-                    SDL_Rect p{x + col * size, y + row * size, size, size};
-                    s.RenderFillRect(r, &p);
-                };
+                auto dot = [&](int col, int row) { fill(SDL_Rect{x + col * size, y + row * size, size, size}); };
                 if (accent == 1) {
                     dot(1, -2);
                     dot(2, -1);
@@ -4504,10 +1723,7 @@ class App {
                 }
             }
             if (vietnamese.base) {
-                auto dot = [&](int col, int row) {
-                    SDL_Rect p{x + col * size, y + row * size, size, size};
-                    s.RenderFillRect(r, &p);
-                };
+                auto dot = [&](int col, int row) { fill(SDL_Rect{x + col * size, y + row * size, size, size}); };
                 if (vietnamese.shape == 1) {
                     dot(2, -2);
                     dot(1, -1);
@@ -4558,12 +1774,32 @@ class App {
             for (int row = 0; row < 7; row++)
                 for (int col = 0; col < 5; col++) {
                     if ((*bitmap)[row] & (1 << (4 - col))) {
-                        SDL_Rect p{x + col * size, y + row * size, size, size};
-                        s.RenderFillRect(r, &p);
+                        fill(SDL_Rect{x + col * size, y + row * size, size, size});
                     }
                 }
             x += size * 6;
         }
+    }
+    void text(SDL_Renderer* r, std::string value, int x, int y, int size, const std::string& key, int max_chars = 80,
+              bool translate = true) {
+        if (translate) value = locale.text(value);
+        if (!preferences.pixel && font_ready) {
+            rounded.draw(r, value, x, y, point_size(size), theme.at(key), max_chars, std::max(1, 612 - x));
+            return;
+        }
+        color(r, key);
+        pixel_dots(
+            value, x, y, size, max_chars, [&](const SDL_Rect& p) { s.RenderFillRect(r, &p); },
+            [&](unsigned c, int cell_x, int baseline_y) {
+                // The rounded glyph, centred in two cells and standing on the dot baseline.
+                try {
+                    const auto glyph = utf8_encode(c);
+                    const int points = size * 10;
+                    const int w = static_cast<int>(std::lround(rounded.width(glyph, points)));
+                    rounded.draw(r, glyph, cell_x + size * 6 - w / 2, baseline_y + size * 7 - rounded.ascent(points),
+                                 points, theme.at(key), 1, 1000);
+                } catch (const std::exception&) {}
+            });
     }
     void centered(SDL_Renderer* r, const std::string& source, int y, int size, const std::string& key, int limit = 48) {
         auto value = locale.text(source);
@@ -4632,7 +1868,8 @@ class App {
         }
         if (settings.page == Page::Statistics || settings.page == Page::Microphone) return;
         if (settings.page == Page::GameInfo) {
-            if (!picker_open) key_hints(r, 320, y + 452, {{"L R", "Picture"}, {"A", "Next picture"}}, 0, 16, 280);
+            if (!picker_open && info_pictures.size() > 1)
+                key_hints(r, 320, y + 452, {{"L R", "Picture"}, {"A", "Next picture"}}, 0, 16, 280);
             return;
         }
         if (settings.page == Page::GameSwitcher) key_hints(r, 320, y + 452, {{"X", "Game menu"}}, 0, 16, 280);
@@ -4656,7 +1893,8 @@ class App {
         }
         if ((settings.page == Page::EmulatorOptions && !emulator_option_enabled(settings.focus)) ||
             (settings.page == Page::Cheats && cheat_view != CheatView::Groups && !cheat_togglable(settings.focus)) ||
-            (settings.page == Page::GameOptions && settings.focus == 2 && superdrastic_game()))
+            (settings.page == Page::GameOptions && settings.focus == 2 && superdrastic_game()) ||
+            (settings.page == Page::Motion && settings.focus >= 2))
             return;
         footer_button(r, 468, y + 432, 160,
                       settings.page == Page::ShaderPicker ? "Apply"
@@ -4668,6 +1906,7 @@ class App {
                                                              : hardware.volume_percent == 0 ? "Unmute"
                                                                                             : "Mute")
                       : settings.page == Page::Display    ? "Done"
+                      : settings.page == Page::Motion     ? "Toggle"
                                                           : "Select",
                       "A", true, a_pressed);
     }
@@ -5374,208 +2613,26 @@ class App {
         micro_until = shutdown_at + 600;
         dirty = true;
     }
-    void shutdown_overlay(SDL_Renderer* r, int y, bool upper) {
-        if (!shutting_down()) return;
-        const Uint32 now = s.GetTicks();
-        const double t = preferences.animations ? std::min(1.0, (now - shutdown_at) / 420.0) : 1.0,
-                     ease = 1 - (1 - t) * (1 - t);
-        const Color bg = theme.at("background");
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-        s.SetRenderDrawColor(r, bg.r, bg.g, bg.b, Uint8(std::lround(255 * ease)));
-        SDL_Rect veil{0, y, 640, 480};
-        s.RenderFillRect(r, &veil);
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_NONE);
-        if (ease < .6) return;
-        const int alpha = int(std::lround(255 * std::min(1.0, (ease - .6) / .4)));
-        if (upper) {
-            const int cx = 320, cy = y + 206;
-            alpha_round(r, cx - 70, cy - 66, 140, 140, 34, shadow_colour(),
-                        int((preferences.dark ? 60 : 18) * alpha / 255));
-            round_rect(r, cx - 70, cy - 70, 140, 140, 34, "panel");
-            brand(r, cx - 48, cy - 48, 96);
-            const double spin = preferences.animations ? (now % 1400) / 1400.0 : 0;
-            feedback_arc(r, cx, cy, 86, 0, 1, theme.at("slot"), alpha, 5);
-            feedback_arc(r, cx, cy, 86, spin, .28, theme.at("accent"), alpha, 5);
-            const std::string text = locale.text(shutdown_kind == "reboot" ? "Restarting…" : "Powering off…");
-            raw_label(r, text, 320 - label_width(text, 26, false) / 2, y + 318, 26, "ink", 400);
-            const std::string note = locale.text("Your saves are safe. See you soon!");
-            raw_label(r, note, 320 - label_width(note, 16, false) / 2, y + 358, 16, "muted", 500);
-        } else {
-            const double spin = preferences.animations ? (now % 1400) / 1400.0 : 0;
-            feedback_arc(r, 320, y + 240, 26, spin, .3, theme.at("accent"), alpha, 4);
-        }
-    }
-    void brand(SDL_Renderer* r, int x, int y, int size) {
-        if (!media.draw(r, asset_path(mark_asset(size)), {x, y, size, size}, false))
-            ui_icon(r, SettingsIcon::Display, x + size / 2, y + size / 2, size, "accent");
-    }
-    bool boot_animating(Uint32) const {
-        return o.boot_startup && preferences.animations && (settings.page == Page::BootWarning || !library_ready);
-    }
+    void shutdown_overlay(SDL_Renderer* r, int y, bool upper);
+    void brand(SDL_Renderer* r, int x, int y, int size);
+    bool boot_animating(Uint32) const;
     double boot_phase() const { return preferences.animations ? ((s.GetTicks() - boot_scene_at) % 2400) / 2400.0 : 0; }
-    void boot_caption(SDL_Renderer* r, const std::string& value, int y, int pixels, const std::string& key) {
-        const int width = std::min(576, label_width(value, pixels));
-        label(r, value, 320 - width / 2, y, pixels, key, 576);
-    }
-    void boot_emblem(SDL_Renderer* r, int y) {
-        // The identity tile settles in once (a short rise and fade), then
-        // rests; a soft floor shadow breathes slowly while the library loads.
-        const double t = preferences.animations ? std::min(1.0, (s.GetTicks() - boot_scene_at) / 420.0) : 1.0;
-        const double ease = 1 - std::pow(1 - t, 3);
-        const int lift = int(std::lround(6 * (1 - ease)));
-        const double breath = preferences.animations ? (1 + std::cos(boot_phase() * 6.283185307)) * .5 : .5;
-        // A soft floor shadow (always darker than the page, in both modes).
-        const Color shade{0, 0, 0};
-        for (int i = 0; i < 6; i++) {
-            int half = 44 - i * 6 + int(4 * breath);
-            tint_rect(r, 320 - half, y + 128 + i, half * 2, 1,
-                      blend(theme.at("background"), shade, (preferences.dark ? 5 : 7) - i));
-        }
-        // Visible from frame one (the identity never pops in from nothing).
-        if (!media.draw(r, asset_path("brand/mark-120.bmp"), {260, y + lift, 120, 120}, false,
-                        static_cast<unsigned char>(std::lround(255 * (.55 + .45 * ease)))))
-            ui_icon(r, SettingsIcon::Display, 320, y + 60, 96, "accent");
-    }
-    void boot_wordmark(SDL_Renderer* r, int y, int) {
-        // Drawn at its rendered size (289 x 48): no scaling, crisp edges.
-        if (!media.draw(r, asset_path(preferences.dark ? "brand/wordmark-dark.bmp" : "brand/wordmark-light.bmp"),
-                        {176, y, 289, 48}, false))
-            boot_caption(r, "RG DS Core", y + 8, 28, "ink");
-    }
-    void boot_scene(SDL_Renderer* r, int y) {
-        rect(r, 0, y, 640, 480, "background");
-        boot_emblem(r, y + 112);
-        boot_wordmark(r, y + 268, 356);
-        // Five soft round dots, a slow wave of light passing through them.
-        for (int i = 0; i < 5; i++) {
-            double wave = preferences.animations ? (1 + std::cos(boot_phase() * 6.283185307 - i * .65)) * .5 : .4;
-            const Color c = blend(theme.at("background"), theme.at("accent"), int(22 + 68 * wave));
-            const int cx = 288 + i * 16, cy = y + 368;
-            for (int dy = -4; dy <= 4; dy++) {
-                int half = int(std::sqrt(std::max(0.0, 16.5 - dy * dy)));
-                tint_rect(r, cx - half, cy + dy, half * 2 + 1, 1, c);
-            }
-        }
-        boot_caption(r, "Preparing your library…", y + 403, 16, "muted");
-    }
-    void boot_top(SDL_Renderer* r, int y) {
-        rect(r, 0, y, 640, 480, "background");
-        // Small, deliberate safety mark and an open text layout, like the
-        // original handheld welcome screen rather than a settings dialog.
-        Color amber{239, 178, 65};
-        s.SetRenderDrawColor(r, amber.r, amber.g, amber.b, 255);
-        for (int row = 0; row < 30; row++) {
-            int half = row * 18 / 30;
-            s.RenderDrawLine(r, 320 - half, y + 88 + row, 320 + half, y + 88 + row);
-        }
-        rect(r, 319, y + 98, 3, 10, "background");
-        rect(r, 319, y + 111, 3, 3, "background");
-        boot_caption(r, "Before you play", y + 150, 28, "ink");
-        rect(r, 288, y + 207, 64, 1, "line");
-        boot_caption(r, "Play at a comfortable volume.", y + 241, 20, "ink");
-        boot_caption(r, "Give your eyes and hands a break.", y + 277, 20, "ink");
-        boot_caption(r, "Pause when you need to.", y + 313, 20, "ink");
-        boot_caption(r, "RG DS Core", y + 415, 16, "muted");
-    }
-    void boot_stylus(SDL_Renderer* r, int x, int y) {
-        double phase = boot_phase();
-        int lift = preferences.animations ? int(3 * (1 - std::cos(phase * 6.283185307))) : 0;
-        if (preferences.animations) {
-            feedback_arc(r, x, y + 10, 9 + int(phase * 11), 0, 1, theme.at("accent"), int(100 * (1 - phase)), 1);
-        } else feedback_arc(r, x, y + 10, 12, 0, 1, theme.at("line"), 255, 1);
-        // Closed pen silhouette, a pointed nib and an inset highlight.
-        color(r, "ink");
-        for (int i = 0; i < 7; i++) s.RenderDrawLine(r, x + 4 + i, y + 3 - lift, x + 29 + i, y - 22 - lift);
-        for (int i = 0; i < 6; i++) s.RenderDrawLine(r, x + i, y + 9 - i - lift, x + 4 + i, y + 3 - lift);
-        color(r, "background");
-        s.RenderDrawLine(r, x + 9, y - lift, x + 31, y - 22 - lift);
-    }
-    void boot_bottom(SDL_Renderer* r, int y) {
-        rect(r, 0, y, 640, 480, "background");
-        boot_emblem(r, y + 70);
-        boot_wordmark(r, y + 222, 332);
-        boot_stylus(r, 309, y + 309);
-        boot_caption(r, "Touch to continue", y + 344, 28, "ink");
-        key_hints(r, 320, y + 428, {{"A Start", ""}}, 0);
-    }
+    void boot_caption(SDL_Renderer* r, const std::string& value, int y, int pixels, const std::string& key);
+    void boot_emblem(SDL_Renderer* r, int y);
+    void boot_wordmark(SDL_Renderer* r, int y, int);
+    void boot_scene(SDL_Renderer* r, int y);
+    void boot_top(SDL_Renderer* r, int y);
+    void boot_stylus(SDL_Renderer* r, int x, int y);
+    void boot_bottom(SDL_Renderer* r, int y);
     // A read-only games card breaks saves, volume and launch at once. Explain
     // the automatic check plainly instead of letting every action fail.
     int card_repair = 0;
     bool card_repair_dismissed = false;
     Uint32 card_check_at = 0, card_repair_at = 0;
-    void check_card(Uint32 now, bool force = false) {
-        if (card_repair || card_repair_dismissed || o.preview || o.game_menu || o.data.empty()) return;
-        if (!force && now - card_check_at < 5000) return;
-        card_check_at = now;
-        struct statvfs st{};
-        if (statvfs(o.data.c_str(), &st) != 0 || !(st.f_flag & ST_RDONLY)) return;
-        start_card_repair(now);
-    }
-    void start_card_repair(Uint32 now) {
-        auto script = (o.app.empty() ? fs::current_path() : o.app) / "runtime/card_repair.py";
-        auto child = fork();
-        if (child == 0) {
-            int null = ::open("/dev/null", O_RDWR);
-            if (null >= 0) {
-                dup2(null, STDIN_FILENO);
-                dup2(null, STDOUT_FILENO);
-            }
-            execlp("python3", "python3", "-B", script.c_str(), "start", "--data", o.data.c_str(), nullptr);
-            _exit(127);
-        }
-        int code = -1;
-        if (child > 0) {
-            int raw = 0;
-            if (waitpid(child, &raw, 0) == child && WIFEXITED(raw)) code = WEXITSTATUS(raw);
-        }
-        if (code == 0 || code == 3) {
-            card_repair = code == 0 ? 1 : 2;
-            card_repair_at = now;
-            stop_worker();
-            picker_open = false;
-            hold.clear();
-            dirty = true;
-        }
-    }
-    void card_top(SDL_Renderer* r, int y) {
-        rect(r, 0, y, 640, 480, "background");
-        brand(r, 296, y + 96, 48);
-        boot_caption(r, card_repair == 1 ? "Checking the memory card" : "The memory card needs attention", y + 178, 28,
-                     "ink");
-        rect(r, 288, y + 229, 64, 1, "line");
-        if (card_repair == 1) {
-            boot_caption(r, "The card stopped accepting changes, so", y + 262, 20, "ink");
-            boot_caption(r, "RG DS is checking and fixing it now.", y + 296, 20, "ink");
-            boot_caption(r, "Your games and saves stay on the card.", y + 330, 20, "muted");
-        } else {
-            boot_caption(r, "The automatic check did not fix it.", y + 262, 20, "ink");
-            boot_caption(r, "Copy your saves to a computer and", y + 296, 20, "ink");
-            boot_caption(r, "check the card there.", y + 330, 20, "ink");
-        }
-    }
-    void card_bottom(SDL_Renderer* r, int y) {
-        rect(r, 0, y, 640, 480, "background");
-        if (card_repair == 1) {
-            // Calm progress: eight soft dots, one brighter, no spinner churn.
-            const double phase = preferences.animations ? ((s.GetTicks() - card_repair_at) % 1600) / 1600.0 : 0;
-            for (int i = 0; i < 8; i++) {
-                double angle = i * 0.785398163 - 1.570796327;
-                int cx = 320 + int(std::cos(angle) * 30), cy = y + 190 + int(std::sin(angle) * 30);
-                int lit = std::abs(i - int(phase * 8)) % 8;
-                int strength = lit == 0 ? 100 : lit == 1 || lit == 7 ? 55 : 22;
-                for (int dy = -5; dy <= 5; dy++)
-                    for (int dx = -5; dx <= 5; dx++)
-                        if (dx * dx + dy * dy <= 25)
-                            tint_rect(r, cx + dx, cy + dy, 1, 1,
-                                      blend(theme.at("background"), theme.at("accent"), strength));
-            }
-            boot_caption(r, "RG DS restarts by itself when it is done.", y + 268, 20, "ink");
-            boot_caption(r, "This usually takes about a minute.", y + 302, 20, "muted");
-        } else {
-            boot_caption(r, "Games cannot start or save right now.", y + 190, 20, "ink");
-            boot_caption(r, "Press any button to continue", y + 404, 16, "muted");
-        }
-    }
+    void check_card(Uint32 now, bool force = false);
+    void start_card_repair(Uint32 now);
+    void card_top(SDL_Renderer* r, int y);
+    void card_bottom(SDL_Renderer* r, int y);
     void top(SDL_Renderer* r, int y);
     // Word-wrapped text centred on the screen, at most `rows` lines.
     void centered_wrapped(SDL_Renderer* r, const std::string& value, int y, int pixels, int width, int rows,
@@ -6143,7 +3200,11 @@ class App {
         home_bar_mark{280, 418, 80, 54};
     // Up and down walk the rows, left and right the two tiles of a row.
     int home_column_memory = 0; // the column (Games/Recents or Favourites/PictoChat) you were last in
+    // Down from the last row walks onto the bottom bar: 0 brightness, 1 the
+    // update mark (only while one is waiting), 2 the clock. -1 is the tiles.
+    int home_bar_focus = -1;
     bool home_column_move(int code);
+    void home_bar_activate(int button);
     void home_column_touch(int x, int y);
     void home_column_bottom(SDL_Renderer* r, int y);
     // The upper screen of the column: the DSi's clock and calendar.
@@ -6700,15 +3761,38 @@ class App {
     // this is its drawing and its hooks into the launcher's input. It uses the launcher's one keyboard,
     // and it needs no BIOS, firmware or file from Nintendo.
     struct ChatGlyphs : pictochat::GlyphSource {
+        App& app;
         RoundedFont& font;
-        explicit ChatGlyphs(RoundedFont& f) : font(f) {}
+        ChatGlyphs(App& a, RoundedFont& f) : app(a), font(f) {}
+        // Message text follows the Typeface setting: smooth is the rounded font,
+        // pixel the launcher's 5x7 dots at 2x (12 px a letter, like 24 px rounded).
+        static constexpr int pixel_size = 2;
         // A missing font file must not take the launcher down: the text is simply not drawn.
         void draw(const std::string& t, int x, int y, const std::function<void(int, int, uint8_t)>& put) override {
+            if (app.preferences.pixel) {
+                app.pixel_dots(
+                    t, x, y, pixel_size, 1000,
+                    [&](const SDL_Rect& p) {
+                        for (int dy = 0; dy < p.h; dy++)
+                            for (int dx = 0; dx < p.w; dx++) put(p.x + dx, p.y + dy, 255);
+                    },
+                    [&](unsigned c, int cell_x, int baseline_y) {
+                        try {
+                            const auto glyph = utf8_encode(c);
+                            const int points = pixel_size * 10;
+                            const int w = int(std::lround(font.width(glyph, points)));
+                            font.rasterize(glyph, points, cell_x + pixel_size * 6 - w / 2,
+                                           baseline_y + pixel_size * 7 - font.ascent(points), put);
+                        } catch (const std::exception&) {}
+                    });
+                return;
+            }
             try {
                 font.rasterize(t, 24, x, y, put);
             } catch (const std::exception&) {}
         }
         int width(const std::string& t) override {
+            if (app.preferences.pixel) return pixel_cells(t) * pixel_size * 6;
             try {
                 return int(std::lround(font.width(t, 24)));
             } catch (const std::exception&) {
@@ -6717,7 +3801,7 @@ class App {
         }
     };
     pictochat::Chat chat;
-    ChatGlyphs chat_glyphs{rounded};
+    ChatGlyphs chat_glyphs{*this, rounded};
     bool chat_open = false;
     int chat_focus = 0; // the lobby row a controller would open (4 is the profile)
     int chat_shoulder = 0;
@@ -7137,554 +4221,33 @@ public:
         (void)result;
 #endif
     }
-    int run() {
-        open();
-        configure_sounds();
-        view_motion.seed = ViewMotion::hash(uint32_t(getpid()) ^ uint32_t(std::time(nullptr)));
-        for (auto& panel : surfaces) {
-            for (const char* name : {"brand/mark-48.bmp", "brand/mark-120.bmp"})
-                media.warm(panel.renderer, asset_path(name));
-            media.warm(panel.renderer,
-                       asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"));
-            media.warm(panel.renderer,
-                       asset_path(preferences.dark ? "brand/wordmark-dark.bmp" : "brand/wordmark-light.bmp"));
-        }
-        const auto began = s.GetTicks();
-        boot_scene_at = began;
-        last_activity = began;
-        int frames = 0;
-        std::set<int> visited_pages;
-        if (!o.boot_startup && !o.game_menu && !o.roots.empty()) start_worker("index");
-        if (!o.input_script.empty()) {
-            std::ifstream file(o.input_script);
-            if (!file) throw std::runtime_error("Cannot read input script");
-            std::string line;
-            while (std::getline(file, line)) {
-                if (line.empty() || line[0] == '#') continue;
-                std::istringstream record(line);
-                Input input{};
-                std::string type, key;
-                if (!(record >> input.time >> type)) throw std::runtime_error("Invalid preview input script");
-                if (type == "key" || type == "key-up") {
-                    if (!(record >> key)) throw std::runtime_error("Input key missing");
-                    input.event.type = type == "key" ? SDL_KEYDOWN : SDL_KEYUP;
-                    input.event.key.keysym.sym = s.GetKeyFromName(key.c_str());
-                    if (!input.event.key.keysym.sym) throw std::runtime_error("Unknown input key");
-                } else if (type == "text") {
-                    input.event.type = SDL_TEXTINPUT;
-                    std::string value;
-                    std::getline(record >> std::ws, value);
-                    if (value.size() > 31) throw std::runtime_error("Input text too long");
-                    std::copy(value.begin(), value.end(), input.event.text.text);
-                } else if (type == "tap" || type == "click") {
-                    input.event.type = SDL_MOUSEBUTTONDOWN;
-                    input.event.button.button = SDL_BUTTON_LEFT;
-                    if (!(record >> input.event.button.x >> input.event.button.y))
-                        throw std::runtime_error("Input coordinates missing");
-                    input.event.button.y += 480;
-                    input.event.button.windowID = surfaces[0].id;
-                } else if (type == "drag") {
-                    input.event.type = SDL_MOUSEMOTION;
-                    input.event.motion.state = SDL_BUTTON_LMASK;
-                    if (!(record >> input.event.motion.x >> input.event.motion.y))
-                        throw std::runtime_error("Input coordinates missing");
-                    input.event.motion.y += 480;
-                    input.event.motion.windowID = surfaces[0].id;
-                } else if (type == "release") {
-                    input.event.type = SDL_MOUSEBUTTONUP;
-                    input.event.button.button = SDL_BUTTON_LEFT;
-                } else if (type == "finger-down" || type == "finger-move" || type == "finger-up") {
-                    input.event.type = type == "finger-down"   ? SDL_FINGERDOWN
-                                       : type == "finger-move" ? SDL_FINGERMOTION
-                                                               : SDL_FINGERUP;
-                    input.event.tfinger.touchId = 1;
-                    input.event.tfinger.fingerId = 1;
-                    input.event.tfinger.windowID = surfaces[0].id;
-                    if (!(record >> input.event.tfinger.x >> input.event.tfinger.y))
-                        throw std::runtime_error("Finger coordinates missing");
-                    record >> input.event.tfinger.fingerId;
-                } else if (type == "joy-down" || type == "joy-up") {
-                    input.event.type = type == "joy-down" ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
-                    int button = 0;
-                    if (!(record >> button) || button < 0 || button > 255)
-                        throw std::runtime_error("Joystick button missing");
-                    input.event.jbutton.button = Uint8(button);
-                    input.event.jbutton.which = 0;
-                    input.event.jbutton.state = type == "joy-down" ? SDL_PRESSED : SDL_RELEASED;
-                } else if (type == "joy-hat") {
-                    int value = 0;
-                    if (!(record >> value) || value < 0 || value > 15)
-                        throw std::runtime_error("Joystick direction missing");
-                    input.event.type = SDL_JOYHATMOTION;
-                    input.event.jhat.which = 0;
-                    input.event.jhat.hat = 0;
-                    input.event.jhat.value = Uint8(value);
-                } else if (type == "wheel") {
-                    input.event.type = SDL_MOUSEWHEEL;
-                    if (!(record >> input.event.wheel.x >> input.event.wheel.y))
-                        throw std::runtime_error("Wheel delta missing");
-                } else if (type == "focus-lost") {
-                    input.event.type = SDL_WINDOWEVENT;
-                    input.event.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
-                    input.event.window.windowID = surfaces[0].id;
-                } else throw std::runtime_error("Unknown preview input type");
-                inputs.push_back(input);
-                if (type == "click") {
-                    input.time++;
-                    input.event.type = SDL_MOUSEBUTTONUP;
-                    inputs.push_back(input);
-                }
-            }
-            std::stable_sort(inputs.begin(), inputs.end(),
-                             [](const Input& a, const Input& b) { return a.time < b.time; });
-            // A key the script never releases is a tap, as a real keyboard would send; a key-up later on holds it (and repeats) until then.
-            std::vector<Input> taps;
-            for (size_t i = 0; i < inputs.size(); i++)
-                if (inputs[i].event.type == SDL_KEYDOWN) {
-                    bool released = false;
-                    for (size_t j = i + 1; j < inputs.size() && !released; j++)
-                        released = inputs[j].event.type == SDL_KEYUP &&
-                                   inputs[j].event.key.keysym.sym == inputs[i].event.key.keysym.sym;
-                    if (!released) {
-                        Input up = inputs[i];
-                        up.time++;
-                        up.event.type = SDL_KEYUP;
-                        taps.push_back(up);
-                    }
-                }
-            inputs.insert(inputs.end(), taps.begin(), taps.end());
-            std::stable_sort(inputs.begin(), inputs.end(),
-                             [](const Input& a, const Input& b) { return a.time < b.time; });
-        }
-        while (!quit && !stopping) {
-            update_health();
-            if (o.game_menu && !o.preview && !sleep_audio_parked &&
-                fs::exists(o.data / "session/game-menu.audio-sleep")) {
-                sounds.close();
-                sleep_audio_parked = true;
-                std::ofstream(o.data / "session/game-menu.audio-sleep.ready").put('1');
-            }
-            if (sleep_audio_parked && !fs::exists(o.data / "session/game-menu.audio-sleep")) {
-                sleep_audio_parked = false;
-                restore_sleep_audio();
-            }
-            if (o.game_menu && !o.preview && fs::exists(o.data / "session/game-menu.wake")) {
-                fs::remove(o.data / "session/game-menu.wake");
-                reset_after_sleep();
-                sleep_audio_parked = false;
-                restore_sleep_audio();
-            }
-            // The emulator owns the displays during play; keep only its lifecycle alive.
-            if (launch_phase == LaunchPhase::Playing) {
-                ui_trace.mark(UiTrace::Playing, rendered_frames, uint32_t(settings.page));
-                poll_launch(0);
-                if (launch_phase == LaunchPhase::Playing) wait_child_exit(launch_child, 1000);
-                continue;
-            }
-            while (next_input < inputs.size() && s.GetTicks() - began >= inputs[next_input].time)
-                s.PushEvent(&inputs[next_input++].event);
-            // Apply releases/back actions before held-button repeat or drawing.
-            // A slow screenshot/frame must not repeat a key already released.
-            ui_trace.mark(UiTrace::Events, rendered_frames, uint32_t(settings.page));
-            SDL_Event queued{};
-            while (s.PollEvent(&queued)) event(queued);
-            ui_trace.mark(UiTrace::Loop, rendered_frames, uint32_t(settings.page));
-            if (!o.cache_report.empty()) visited_pages.insert(int(settings.page));
-            if (quit || stopping) break;
-            auto now = s.GetTicks();
-            const bool muted = hardware.volume && hardware.volume_percent == 0;
-            sounds.mute_music(muted);
-            if (muted && sounds.active()) sounds.stop();
-            sounds.poll(now);
-            if (!departure_action.empty() && int32_t(now - departure_at) >= 0) {
-                auto request = std::move(departure_action);
-                departure_action.clear();
-                departure_dispatch = true;
-                menu_request(request);
-                departure_dispatch = false;
-                if (quit) break;
-            }
-            if (settings.page == Page::Controls && control_capture) {
-                if (now - capture_started >= 10000) {
-                    control_capture = false;
-                    capture_logical = -1;
-                    controls_notice = "No button detected. Try again when you're ready.";
-                    dirty = true;
-                } else if (now - capture_clock >= 1000) {
-                    capture_clock = now;
-                    dirty = true;
-                }
-            }
-            if (!o.probe && (session_initialized || o.card_repair)) check_card(now);
-            if (card_repair) {
-                if (o.seconds && now - began >= Uint32(o.seconds) * 1000) break;
-                if (card_repair == 1 && preferences.animations && now - feedback_frame_at >= 50) {
-                    feedback_frame_at = now;
-                    dirty = true;
-                }
-                if (dirty || o.frames) {
-                    draw(!o.screenshot.empty());
-                    frames++;
-                }
-                if (o.frames && frames >= o.frames) break;
-                SDL_Event wait{};
-                if (wait_event(&wait, 50)) {
-                    event(wait);
-                    while (s.PollEvent(&wait)) event(wait);
-                }
-                continue;
-            }
-            int volume_delta = volume_keys.poll();
-            if (session_initialized && !launching && volume_delta)
-                change_volume(hardware.volume_percent + volume_delta);
-            if (volume_toast && now >= volume_toast) {
-                volume_toast = 0;
-                dirty = true;
-            }
-            for (auto point : touchscreen.poll(now - began)) raw_touch(point, now);
-            if (!session_initialized) {
-                if (o.seconds && now - began >= Uint32(o.seconds) * 1000) break;
-                const bool motion = boot_animating(now);
-                if (motion && now - feedback_frame_at >= 33) {
-                    feedback_frame_at = now;
-                    dirty = true;
-                }
-                if (dirty || o.frames) {
-                    draw(!o.screenshot.empty());
-                    frames++;
-                }
-                if (o.frames && frames >= o.frames) break;
-                if (o.boot_startup && !o.boot_warning) {
-                    start_boot_session();
-                    continue;
-                }
-                SDL_Event wait{};
-                if (wait_event(&wait, motion ? 16 : input_wake.available() ? 250 : touchscreen.available() ? 8 : 50)) {
-                    event(wait);
-                    while (s.PollEvent(&wait)) event(wait);
-                }
-                continue;
-            }
-            poll_library_scan();
-            poll_collection();
-            poll_search_preview(now);
-            if (facet_index.poll()) dirty = true;
-            if (auto result = library_summary.poll()) {
-                summary = std::move(*result);
-                summary_ready = true;
-                dirty = true;
-            }
-            if (!o.game_menu && library_ready && !setup_checked) {
-                setup_checked = true;
-                if (!o.preview && !fs::exists(o.data / "setup-complete") && fs::exists(o.data / "setup-required")) {
-                    settings.page = Page::RomSetup;
-                    settings.focus = 0;
-                    setup_first_run = true;
-                    dirty = true;
-                }
-            }
-            if (!o.game_menu && o.boot_startup && library_ready && boot_hardware_ready && !return_writes_pending() &&
-                !system.volume_pending() && !system.brightness_pending() && !resume_checked &&
-                settings.page != Page::BootWarning) {
-                resume_checked = true;
-                auto ticket = o.data / "session/resume-launch.ini";
-                auto saved = fields(ticket);
-                std::error_code ec;
-                fs::remove(ticket, ec);
-                if (!saved["rom"].empty()) {
-                    search_query.clear();
-                    discovery_filter = 0;
-                    discovery_facets = {};
-                    library_view(0);
-                    for (size_t i = 0; i < model.games.size(); i++)
-                        if (model.games[i].path.string() == saved["rom"]) {
-                            select_game(i, false);
-                            home_menu = false;
-                            for (int core = 0; core < core_count; core++)
-                                if (saved["core"] == core_ids[core]) resume_core = core;
-                            resume_launch = resume_core >= 0;
-                            launch();
-                            break;
-                        }
-                }
-            }
-            poll_return_controls();
-            if (!launching) {
-                int direction = hold.poll(now);
-                if (direction == -2 || direction == 2) {
-                    action(direction < 0 ? 8 : 9);
-                    last_activity = now;
-                } else if (direction && !picker_open && horizontal_hold_page()) {
-                    if (settings.page == Page::Library) hold_navigate(direction, hold.held_for(now));
-                    else action(direction < 0 ? 0 : 1);
-                    last_activity = now;
-                }
-            }
-            poll_brightness();
-            poll_volume();
-            if (auto refreshed = system.poll_status())
-                if (refreshed->success) {
-                    const auto previous = hardware;
-                    auto brightness = hardware.brightness_percent, volume = hardware.volume_percent;
-                    hardware = refreshed->value;
-                    if (brightness_unsaved || brightness_drag || system.brightness_pending())
-                        hardware.brightness_percent = brightness;
-                    if (o.preview || return_writes_pending() || volume_unsaved || volume_drag ||
-                        system.volume_pending() || volume_toast > now)
-                        hardware.volume_percent = volume;
-                    if (!volume_unsaved && !system.volume_pending()) {
-                        volume_applied = hardware.volume_percent;
-                        if (volume_applied > 0) unmuted_volume = volume_applied;
-                    }
-                    if (o.boot_startup && !boot_hardware_ready) {
-                        boot_hardware_ready = true;
-                        if (hardware.volume) {
-                            system.request_volume(hardware.volume_percent);
-                            volume_unsaved = true;
-                        }
-                        if (hardware.brightness) {
-                            system.request_brightness(system_preferences.brightness);
-                            brightness_unsaved = true;
-                            brightness_changed = now;
-                            hardware.brightness_percent = system_preferences.brightness;
-                        }
-                        if (hardware.power && system_preferences.power > 0)
-                            system.set("power", system_preferences.power);
-                        if (hardware.lid && system_preferences.lid) system.set("lid", 1);
-                    }
-                    if (!same_hardware(previous, hardware)) dirty = true;
-                }
-            if (!launching || launch_preview) poll_service(now);
-            if (!o.preview && !o.game_menu && !launching && worker <= 0 && now - automatic_update_at > 60000) {
-                automatic_update_at = now;
-                start_worker("device.update-auto");
-            }
-            poll_microphone(now);
-            watch_menu(now);
-            if (settings.page == Page::Scraper && !service_loaded && worker <= 0) {
-                start_worker("status");
-                service_loaded = true;
-            }
-            if (!o.game_menu && !launching && worker <= 0 && (!device_loaded || now - connection_poll >= 15000))
-                refresh_network(now);
-            poll_launch(now);
-            poll_chat();
-            if (media.adopt()) dirty = true;
-            if (launch_phase == LaunchPhase::Playing) continue;
-            if (touch_tail && now - release_at >= 140) {
-                touch_tail = false;
-                dirty = true;
-            }
-            bool launch_transition =
-                launching && preferences.animations && (now - launch_at < 110 || launch_phase == LaunchPhase::Exiting);
-            if (launching && preferences.animations) {
-                int head = int((now - launch_at) / 75) % 8;
-                if (head != launch_drawn_head) {
-                    launch_drawn_head = head;
-                    dirty = true;
-                }
-            }
-            sync_view_motion(now);
-            bool view_active = view_motion.active();
-            if (view_motion.update(now) && !view_motion.active()) dirty = true;
-            bool rail_animating = update_rail_feedback(now);
-            bool feedback_active = view_active || rail_animating || (preferences.animations && shutting_down()) ||
-                                   (o.game_menu && menu_status["state"] == "busy" && preferences.animations) ||
-                                   (preferences.animations && network_busy() &&
-                                    (settings.page == Page::Network || settings.page == Page::Wifi)) ||
-                                   boot_animating(now) || launch_transition || touch_animating(now) ||
-                                   (preferences.animations &&
-                                    (now < micro_until || (picker_open && now - picker_at < 170) || picker_closing()));
-            // Stop refreshing a stationary held contact after its cue completes.
-            if (feedback_active && now - feedback_frame_at >= 16) {
-                feedback_frame_at = now;
-                dirty = true;
-            }
-            bool ready = options_hold() && now - pointer_at >= 600;
-            if (ready != options_ready) {
-                options_ready = ready;
-                dirty = true;
-            }
-            ease_update(now);
-            const bool glitter = glitter_active();
-            if (glitter && now - glitter_frame_at >= 33) {
-                glitter_frame_at = now;
-                dirty = true;
-            }
-            if (banner_shown() && banner_frame(now) != drawn_banner_frame) dirty = true;
-            bool list_animated = browser_list.update(now);
-            const bool shader_moving = settings.page == Page::ShaderPicker && shader_carousel.update(now);
-            bool animated =
-                (preferences.animations && (carousel.update(now) || shader_moving || list_animated ||
-                                            now - selected_at < 190 || (!view_active && now - page_at < 150))) ||
-                (settings.page == Page::ShaderPicker && shader_thumbs_pending);
-            if (animated) dirty = true;
-            if (hardware.charging && !drawn_status_stamp.empty() && int((now / 420) % 4) != drawn_charge_phase)
-                dirty = true;
-            if (artwork_busy() && !drawn_status_stamp.empty() && loader_phase(now) != drawn_loader_phase) dirty = true;
-            watch_theme(now);
-            if (!launching) watch_system(now);
-            if (!launching && !animated && !carousel.dragging) watch_library_assets(now);
-            if (o.seconds && s.GetTicks() - began >= static_cast<Uint32>(o.seconds) * 1000) break;
-            if (now - clock_poll >= 250) {
-                clock_poll = now;
-                if (!drawn_status_stamp.empty() && status_stamp() != drawn_status_stamp) dirty = true;
-                if (home_menu && preferences.home_layout == 1 && settings.page == Page::Library && !chat_open &&
-                    !launching && std::time(nullptr) != drawn_second) {
-                    drawn_second = std::time(nullptr);
-                    dirty = true;
-                }
-            }
-            if (dirty || o.frames) {
-                ui_trace.mark(UiTrace::Assets, rendered_frames, uint32_t(settings.page));
-                if (!rendered_frames) launch_profile.mark("assets-start");
-                prepare_render_assets();
-                if (!rendered_frames) launch_profile.mark("assets-ready");
-                draw(!o.screenshot.empty());
-                frames++;
-                if (frames == 1 && o.game_menu && !o.preview) {
-                    system.request_status();
-                    system_poll = now;
-                }
-            }
-            if (!o.preview && fs::exists(o.data / "session/capture-request")) {
-                auto previous = o.screenshot;
-                o.screenshot = o.data / "session/ui-snapshot";
-                prepare_render_assets();
-                draw(true);
-                o.screenshot = previous;
-                // Acknowledge only after both captures have been saved.
-                fs::remove(o.data / "session/capture-request");
-            }
-            if (o.frames && frames >= o.frames) break;
-            prepare_next_cover();
-            SDL_Event e{};
-            int wait_ms = animated || dirty                     ? 1
-                          : feedback_active                     ? 16
-                          : launching && preferences.animations ? int(std::min(50u, 75u - (now - launch_at) % 75))
-                                                                : idle_wait_ms(now);
-            if (o.game_menu && (!menu_pending_token.empty() || menu_status["state"] == "busy"))
-                wait_ms = std::min(wait_ms, 20);
-            if (chat_open) wait_ms = std::min(wait_ms, 40);
-            if (glitter) wait_ms = std::min(wait_ms, 33);
-            if (banner_shown() && preferences.animations) wait_ms = std::min(wait_ms, int(banner_wait(now)));
-            if (wait_event(&e, wait_ms)) {
-                event(e);
-                while (s.PollEvent(&e)) event(e);
-            }
-        }
-        flush_brightness();
-        flush_volume();
-        save_state();
-        if (!o.cache_report.empty()) {
-            std::ofstream report(o.cache_report);
-            if (!report) throw std::runtime_error("Cannot write cache report");
-            report << "{\"picker_detail\":" << picker_detail << ",\"detail_lines\":" << detail_lines.size()
-                   << ",\"detail_scroll\":" << detail_scroll << ",\"picker_open\":" << picker_open
-                   << ",\"picker_focus\":" << picker_focus << ",\"picker_scroll\":" << picker_scroll
-                   << ",\"list_scroll\":" << list_scroll << ",\"status_stamp\":" << std::quoted(drawn_status_stamp)
-                   << ',';
-            report << "\"menu_music\":" << preferences.menu_music << ",\"music_volume\":" << preferences.music_volume
-                   << ",\"music_reads\":" << sounds.music_reads << ",\"music_playing\":" << sounds.music_playing()
-                   << ",\"music_samples\":" << sounds.music_samples() << ",\"menu_sounds\":" << preferences.menu_sounds
-                   << ",\"sound_volume\":" << preferences.sound_volume << ",\"sound_plays\":" << sounds.plays
-                   << ",\"sound_opens\":" << sounds.opens << ",\"sound_releases\":" << sounds.releases
-                   << ",\"sound_open_now\":" << sounds.open_now() << ",\"sound_reads\":" << sounds.reads
-                   << ",\"sound_bytes\":" << sounds.bytes() << ",\"sound_active\":" << sounds.active()
-                   << ",\"sound_counts\":[";
-            for (size_t i = 0; i < sounds.counts.size(); i++) {
-                if (i) report << ',';
-                report << sounds.counts[i];
-            }
-            report << "],";
-            report << "\"element_moves\":" << element_moves << ",\"back_transitions\":" << back_transitions
-                   << ",\"view_energy\":" << view_motion.energy << ",\"view_variant\":" << view_motion.variant << ',';
-            report << "\"view_transition_style\":" << std::quoted(view_style_name(preferences.view_style))
-                   << ",\"push_animation_frames\":" << push_animation_frames << ',';
-            report << "\"view_animations\":" << preferences.view_animations
-                   << ",\"view_transitions\":" << view_transitions
-                   << ",\"view_animation_frames\":" << view_animation_frames
-                   << ",\"view_animation_active\":" << view_motion.active()
-                   << ",\"view_canvas_failed\":" << view_canvas_failed << ',';
-            report << "\"font_atlases\":" << rounded.loaded_atlases() << ",\"font_bytes\":" << rounded.loaded_bytes()
-                   << ",\"shader_catalog_loaded\":" << !shaders.empty() << ',';
-            report << "\"shader_preview_scene\":" << shader_preview_scene
-                   << ",\"shader_preview_mode\":" << int(shader_preview_mode)
-                   << ",\"shader_preview_split\":" << shader_preview_split
-                   << ",\"shader_preview_entries\":" << shader_preview.count()
-                   << ",\"shader_preview_bytes\":" << shader_preview.bytes()
-                   << ",\"shader_preview_reads\":" << shader_preview.counters.file_reads
-                   << ",\"shader_preview_stamp_checks\":" << shader_preview.counters.stamp_checks << ',';
-            report << "\"controls_game\":" << controls_per_game << ",\"controls_inherited\":" << controls_inherit
-                   << ",\"controls_capturing\":" << control_capture
-                   << ",\"controls_preset\":" << std::quoted(edited_controls.preset) << ',';
-            report << "\"system_configuration_loaded\":" << system_configuration_loaded
-                   << ",\"timezone\":" << std::quoted(system_preferences.timezone) << ',';
-            report << "\"drastic_backend\":" << preferences.drastic_backend
-                   << ",\"game_drastic_backend\":" << game_preferences.drastic_backend << ",";
-            report << "\"systems_menu\":" << systems_menu << ",\"systems_selected\":" << systems_selected << ',';
-            report << "\"show_systems\":" << preferences.show_systems
-                   << ",\"shown_system\":" << std::quoted(shown_system)
-                   << ",\"listed_systems\":" << listed_systems.size() << ",\"launching_core\":" << launching_core
-                   << ",\"library_count\":" << model.games.size() << ",\"play_fit\":" << play_fit
-                   << ",\"play_second\":" << play_second << ",\"play_frame\":" << std::quoted(play_frame) << ',';
-            report << "\"shader_choices\":[";
-            for (size_t i = 0; i < shader_choices.size(); ++i) report << (i ? "," : "") << shader_choices[i];
-            report << "],";
-            report << "\"default_core\":" << preferences.core << ",\"game_core_override\":" << game_preferences.core
-                   << ",\"game_threaded\":" << game_preferences.threaded << ",\"game_hires\":" << game_preferences.hires
-                   << ",\"game_frameskip\":" << game_preferences.frameskip
-                   << ",\"game_scale\":" << game_preferences.rgds_scale
-                   << ",\"game_filter2d\":" << game_preferences.rgds_2d
-                   << ",\"menu_fast_forward\":" << (menu_status["fast_forward"] == "1")
-                   << ",\"cheat_rows\":" << cheat_rows.size() << ",\"cheats_on\":" << cheats_on()
-                   << ",\"cheat_view\":" << int(cheat_view) << ",\"cheat_group\":" << cheat_group
-                   << ",\"cheats_available\":" << cheats_available() << ",\"settings_notice\":" << std::quoted(status)
-                   << ",\"picker_title\":" << std::quoted(picker_title) << ',';
-            report << "\"visited_pages\":[";
-            bool first_page = true;
-            for (int page : visited_pages) {
-                if (!first_page) report << ',';
-                report << page;
-                first_page = false;
-            }
-            report << "],";
-            report << "\"discovery_active\":" << discovery_active()
-                   << ",\"discovery_description\":" << std::quoted(discovery_description())
-                   << ",\"search_preview_games\":" << search_matches.size()
-                   << ",\"search_preview_loading\":" << search_preview_loading << ",\"keyboard_row\":" << key_row
-                   << ",\"keyboard_col\":" << key_col << ",\"keyboard_layer\":" << key_layer
-                   << ",\"keyboard_caps\":" << key_caps << ",\"edit_cursor\":" << (edit_field == 4 ? edit_cursor : 0)
-                   << ',';
-            report << "\"home_menu\":" << home_menu << ",\"filtered_games\":" << model.games.size()
-                   << ",\"search_query\":" << std::quoted(search_query) << ",\"discovery_filter\":" << discovery_filter
-                   << ',';
-            report << "\"page\":" << int(settings.page) << ",\"boot_pending\":" << (settings.page == Page::BootWarning)
-                   << ",\"library_scan_started\":" << library_scan_started << ",\"library_ready\":" << library_ready
-                   << ",\"frames\":" << rendered_frames << ",\"metadata_reads\":" << library_cache.counters.file_reads
-                   << ",\"metadata_lookups\":" << library_cache.counters.lookups
-                   << ",\"metadata_hits\":" << library_cache.counters.hits
-                   << ",\"metadata_stamp_checks\":" << library_cache.counters.stamp_checks
-                   << ",\"image_reads\":" << media.image_reads << ",\"async_loads\":" << media.async_loads
-                   << ",\"top_skips\":" << top_skips << ",\"banner_reads\":" << media.banner_reads
-                   << ",\"media_lookups\":" << media.counters.lookups << ",\"media_hits\":" << media.counters.hits
-                   << ",\"media_stamp_checks\":" << media.counters.stamp_checks
-                   << ",\"render_file_reads\":" << render_file_reads
-                   << ",\"render_stamp_checks\":" << render_stamp_checks
-                   << ",\"metadata_entries\":" << library_cache.size() << ",\"image_entries\":" << media.image_count()
-                   << ",\"banner_entries\":" << media.banner_count() << ",\"texture_bytes\":" << media.bytes()
-                   << ",\"evictions\":" << library_cache.counters.evictions + media.counters.evictions << "}\n";
-        }
-        // The managed session dispatches a terminal request only with this
-        // acknowledgement; ordinary exit or failed cleanup cannot trigger it.
-        return system_exit_ack ? 76 : 0;
-    }
+    int run();
 };
 
 // Out-of-line App members, split by screen.
 #include "launcher/settings_screen.hpp"
 #include "launcher/settings_picker.hpp"
 #include "launcher/input_handling.hpp"
+#include "launcher/view_transitions.hpp"
+#include "launcher/menu_sounds.hpp"
+#include "launcher/library_boot.hpp"
+#include "launcher/systems_play.hpp"
+#include "launcher/return_gestures.hpp"
+#include "launcher/network_menu.hpp"
+#include "launcher/gallery_slots.hpp"
+#include "launcher/microphone.hpp"
+#include "launcher/switcher_search.hpp"
+#include "launcher/game_settings.hpp"
+#include "launcher/worker_service.hpp"
+#include "launcher/library_navigation.hpp"
+#include "launcher/game_preferences.hpp"
+#include "launcher/artwork_actions.hpp"
+#include "launcher/text_edit.hpp"
+#include "launcher/appearance.hpp"
+#include "launcher/system_settings.hpp"
+#include "launcher/state_persistence.hpp"
+#include "launcher/boot_screens.hpp"
+#include "launcher/run_loop.hpp"
 #include "launcher/update_banner.hpp"
 #include "launcher/pictochat_screen.hpp"
 #include "launcher/panels.hpp"
@@ -7696,7 +4259,7 @@ public:
 #include "launcher/controls_editor.hpp"
 #include "launcher/keyboard_screen.hpp"
 #include "launcher/game_info_screen.hpp"
-#include "launcher/filter_pages.hpp"
+#include "launcher/filter_sheet.hpp"
 
 static int self_test() {
     auto root = fs::temp_directory_path() / ("rgds-model-" + std::to_string(getpid()));

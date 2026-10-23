@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	細かな動き、スクロール、
 Springy menu changes with a colourful wobble	カラフルに弾むメニューの切り替え
 Transitions	切り替え効果
 Subtle	控えめ
-Menu sounds	メニューの効果音
+Menu effects	メニューの効果音
 Effects volume	効果音の音量
 Preview sound	音を試聴
 A little handheld magic	携帯機のちょっとした魔法
@@ -943,4 +943,17 @@ Next picture	次の画像
 No pictures yet	画像はまだありません
 Available	利用可能
 Not downloaded	未ダウンロード
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	ゲーム情報はまだありません。設定 > ライブラリ > アートワークの取得元で「ゲーム情報」をオンにして、アートワークを取得してください。
+More filters	その他のフィルター
+Show games	ゲームを表示
+Reset filters	フィルターをリセット
+Any	すべて
+{0} active	{0}件有効
+Still reading your library. Try again in a moment.	ライブラリを読み込み中です。しばらくしてからもう一度お試しください。
+No game has this information yet. Fetch artwork with Game info turned on.	この情報を持つゲームはまだありません。ゲーム情報をオンにしてアートワークを取得してください。
+With info	情報あり
+Without info	情報なし
+Online play	オンライン対応
+1 player	1人
+{0} players	{0}人
+No game information yet.	ゲーム情報はまだありません。
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	設定 > ライブラリ > アートワークの取得元で「ゲーム情報」をオンにして、アートワークを取得してください。

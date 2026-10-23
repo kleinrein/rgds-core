@@ -180,6 +180,12 @@ int main(int argc, char** argv) {
                         out.write(reinterpret_cast<const char*>(&v), 4);
                     }
                 std::printf("ok\n");
+            } else if (what == "layers") {
+                // Which layers the live picture draws (bits 0-3 BG0-3, bit 4 sprites): to see what is where.
+                std::string mask;
+                in >> mask;
+                s.core().set_layers(unsigned(std::stoul(mask, nullptr, 16)));
+                std::printf("ok\n");
             } else if (what == "quit") break;
             else {
                 std::getline(in, arg);

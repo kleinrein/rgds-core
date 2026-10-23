@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	细节动效、滚动和启动动画
 Springy menu changes with a colourful wobble	带有彩色弹跳的菜单切换
 Transitions	切换效果
 Subtle	柔和
-Menu sounds	菜单音效
+Menu effects	菜单音效
 Effects volume	音效音量
 Preview sound	试听
 A little handheld magic	一点掌机小魔法
@@ -943,4 +943,17 @@ Next picture	下一张图片
 No pictures yet	暂无图片
 Available	可用
 Not downloaded	未下载
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	暂无游戏信息。请在 设置 > 游戏库 > 封面来源 中开启游戏信息，然后获取封面。
+More filters	更多筛选
+Show games	显示游戏
+Reset filters	重置筛选
+Any	全部
+{0} active	已启用 {0} 项
+Still reading your library. Try again in a moment.	仍在读取游戏库，请稍后再试。
+No game has this information yet. Fetch artwork with Game info turned on.	还没有游戏具有此信息。请在开启游戏信息的情况下获取封面。
+With info	有信息
+Without info	无信息
+Online play	支持联机
+1 player	1 名玩家
+{0} players	{0} 名玩家
+No game information yet.	暂无游戏信息。
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	请在 设置 > 游戏库 > 封面来源 中开启游戏信息，然后获取封面。

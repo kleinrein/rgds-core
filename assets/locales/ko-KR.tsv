@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	작은 움직임, 스크롤, 시작 
 Springy menu changes with a colourful wobble	알록달록 통통 튀는 메뉴 전환
 Transitions	전환 효과
 Subtle	은은하게
-Menu sounds	메뉴 효과음
+Menu effects	메뉴 효과음
 Effects volume	효과음 음량
 Preview sound	소리 미리 듣기
 A little handheld magic	휴대용 게임기의 작은 마법
@@ -943,4 +943,17 @@ Next picture	다음 이미지
 No pictures yet	아직 이미지가 없습니다
 Available	사용 가능
 Not downloaded	다운로드 안 됨
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	아직 게임 정보가 없습니다. 설정 > 라이브러리 > 아트워크 소스에서 게임 정보를 켜고 아트워크를 가져오세요.
+More filters	더 많은 필터
+Show games	게임 보기
+Reset filters	필터 초기화
+Any	전체
+{0} active	{0}개 사용 중
+Still reading your library. Try again in a moment.	아직 라이브러리를 읽는 중입니다. 잠시 후 다시 시도하세요.
+No game has this information yet. Fetch artwork with Game info turned on.	아직 이 정보가 있는 게임이 없습니다. 게임 정보를 켜고 아트워크를 가져오세요.
+With info	정보 있음
+Without info	정보 없음
+Online play	온라인 플레이
+1 player	1명
+{0} players	{0}명
+No game information yet.	아직 게임 정보가 없습니다.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	설정 > 라이브러리 > 아트워크 소스에서 게임 정보를 켜고 아트워크를 가져오세요.

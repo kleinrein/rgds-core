@@ -67,8 +67,11 @@ try:
         if not stop_outside_mixer(Pid(pid)): raise RuntimeError("pid %d kept the sound mixer; not started" % pid)
         paused.append(pid)
     env = session.environment(app)
-    command = [str(HERE / "rgds-play"), "--rom", str(rom), "--data", str(HERE / "data"),
-               "--profiles", str(HERE / "profiles/gba"), "--fonts", str(HERE / "fonts")]
+    # Replay switches for a headless check (RGDS_PLAY_INPUT, _SHOTS, _QUIT_AT, ...)
+    env.update({k: v for k, v in os.environ.items() if k.startswith("RGDS_PLAY_")})
+    command = [str(HERE / "rgds-play"), "--rom", str(rom), "--data", str(HERE / "data"), "--fonts", str(HERE / "fonts")]
+    for system in ("gba", "gb"):
+        command += ["--profiles", str(HERE / "profiles" / system)]
     child = subprocess.Popen(command, env=env, stdout=log, stderr=log)
     result = child.wait()
 except KeyboardInterrupt:
@@ -157,11 +160,12 @@ def deploy(device):
     staging = ROOT / "build/play/device-stage"
     if staging.exists():
         subprocess.run(["rm", "-rf", str(staging)], check=True)
-    (staging / "profiles/gba").mkdir(parents=True)
-    (staging / "fonts").mkdir()
+    (staging / "fonts").mkdir(parents=True)
     subprocess.run(["cp", str(binary), str(staging / "rgds-play")], check=True)
-    for p in (ROOT / "play/profiles/gba").glob("*.ini"):
-        (staging / "profiles/gba" / p.name).write_bytes(p.read_bytes())
+    for system in ("gba", "gb"):
+        (staging / "profiles" / system).mkdir(parents=True)
+        for p in (ROOT / "play/profiles" / system).glob("*.ini"):
+            (staging / "profiles" / system / p.name).write_bytes(p.read_bytes())
     for p in (ROOT / "assets/fonts").glob("rounded-*.rgf"):
         (staging / "fonts" / p.name).write_bytes(p.read_bytes())
     (staging / "run.py").write_text(RUNNER)

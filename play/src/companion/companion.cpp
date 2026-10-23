@@ -2,6 +2,8 @@
 #include "companion/companion.hpp"
 
 #include <algorithm>
+#include <cstdio>
+#include <map>
 
 namespace play {
 
@@ -10,6 +12,12 @@ Companion::Companion(Core& live, const Profile* profile, std::string title, std:
     if (profile_ && profile_->has_map) {
         capture_ = std::make_unique<MapCapture>(live, *profile_);
         if (!capture_->ready()) capture_.reset();
+    }
+    if (profile_ && profile_->has_party) party_ = std::make_unique<Party>(profile_->party);
+    if (profile_ && profile_->has_view) {
+        std::string error;
+        view_ = make_view(profile_->view, error);
+        if (!view_) std::fprintf(stderr, "play: %s: %s\n", profile_->file.c_str(), error.c_str());
     }
 }
 
@@ -39,12 +47,75 @@ void Companion::take(MapImage img) {
     ever_shown_ = true;
 }
 
-void Companion::update_hud(Core& live) {
+namespace {
+
+// The BG layers that are HUD now: the profile's mask, or (games that move
+// their menus between layers) the enabled layers below a priority.
+unsigned hud_layers(Core& live, const HudSpec& h) {
+    if (h.bg_priority_below <= 0) return h.bg_mask;
+    const uint32_t display = live.peek(0x04000000, 2);
+    unsigned mask = 0;
+    for (int i = 0; i < 4; ++i)
+        if ((display >> (8 + i)) & 1 && int(live.peek(0x04000008 + uint32_t(i) * 2, 2) & 3) < h.bg_priority_below)
+            mask |= 1u << i;
+    return mask;
+}
+
+bool map_layer_shown(Core& live, const HudSpec& h) {
+    if (!h.map_cnt) return true;
+    for (int i = 0; i < 4; ++i)
+        if (live.peek(0x04000008 + uint32_t(i) * 2, 2) == h.map_cnt) return true;
+    return false;
+}
+
+} // namespace
+
+void Companion::update_strip(Core& live) {
     const HudSpec& h = profile_->hud;
-    bool on = h.on.match(live);
+    const Picture p = live.picture();
+    const Rect& s = h.strip;
+    bool on = h.on.match(live) && s.y + s.h <= p.h && s.w <= p.w;
+    if (!on) {
+        // The last band stays up while `keep` holds (the inventory sliding in).
+        hud_shown_ = hud_shown_ && !h.keep.empty() && h.keep.match(live);
+        hud_on_ = false;
+        return;
+    }
+    hud_on_ = hud_shown_ = true;
+    hud_w_ = s.w;
+    hud_h_ = s.h;
+    hud_image_.resize(static_cast<size_t>(s.w) * s.h);
+    uint64_t hash = 1469598103934665603ull;
+    for (int y = 0; y < s.h; ++y)
+        for (int x = 0; x < s.w; ++x) {
+            uint32_t v = p.at(s.x + x, s.y + y) | 0xFF000000u;
+            hud_image_[static_cast<size_t>(y) * s.w + x] = v;
+            hash = (hash ^ v) * 1099511628211ull;
+        }
+    strip_hash_ = hash;
+}
+
+void Companion::update_hud(Core& live) {
+    if (strip_mode()) {
+        update_strip(live);
+        return;
+    }
+    const HudSpec& h = profile_->hud;
+    bool on = h.on.match(live) && map_layer_shown(live, h);
+    const unsigned layers = hud_layers(live, h);
+    if (on && hud_on_ && layers != hud_layers_) {
+        // The game moved its menus to other layers: split those from the next frame.
+        live.hud_split(true, layers, h.sprite_priority);
+        hud_layers_ = layers;
+    }
     if (on != hud_on_) {
         // From the next frame on; the HUD picture is good once one is drawn.
-        if (!live.hud_split(on, h.bg_mask, h.sprite_priority)) on = false;
+        if (on) {
+            live.hud_objects(h.sprite_tiles);
+            live.hud_window_effects_off(h.window_effects_off);
+        }
+        hud_layers_ = layers;
+        if (!live.hud_split(on, layers, h.sprite_priority)) on = false;
         hud_on_ = on;
         hud_frames_ = 0;
         if (on) moves_ = false;
@@ -130,7 +201,15 @@ void Companion::make_backdrop(Core& live) {
         });
 }
 
-Picture Companion::compose_game(const Picture& game) {
+Picture Companion::compose_game(const Picture& game, bool whole) {
+    if (strip_mode()) {
+        // The band leaves the picture only where it spans it, at its top or bottom edge.
+        const Rect& s = profile_->hud.strip;
+        if (whole || !hud_on_ || s.w != game.w || s.h >= game.h) return game;
+        if (s.y == 0) return {game.px + static_cast<size_t>(s.h) * game.stride, game.w, game.h - s.h, game.stride};
+        if (s.y + s.h == game.h) return {game.px, game.w, game.h - s.h, game.stride};
+        return game;
+    }
     // Only while split: otherwise the game draws its own HUD, item box and place included.
     if (!hud_on_ || !moves_ || hud_image_.empty() || game.w != hud_w_ || game.h != hud_h_) return game;
     composed_.resize(static_cast<size_t>(game.w) * game.h);
@@ -170,6 +249,15 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
     if (have_backdrop) std::copy_n(backdrop_panel_.data(), static_cast<size_t>(out.w()) * out.h(), out.data());
     else if (h.backdrop_game && game.px) out.cover(game.px, game.w, rows, game.stride, 90);
     else out.fill(h.backdrop_game ? look.background : Rgb::hex(h.backdrop));
+    // What went back to the game screen is not shown twice.
+    std::vector<uint32_t> rest;
+    if (moves_) {
+        rest = hud_image_;
+        for (const auto& m : h.to_game)
+            for (int y = std::max(0, m.from.y); y < std::min(hud_h_, m.from.y + m.from.h); ++y)
+                std::fill_n(rest.begin() + static_cast<size_t>(y) * hud_w_ + std::max(0, m.from.x),
+                            std::max(0, std::min(hud_w_, m.from.x + m.from.w) - std::max(0, m.from.x)), hud_key_);
+    }
     if (moves_ && !h.panels.empty()) {
         // The profile's layout: each box at the largest whole scale its slot allows.
         const double sx = out.w() / 640.0, sy = out.h() / 480.0;
@@ -187,7 +275,7 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
             int scale = std::max(1, std::min(tw / f.w, th / f.h));
             box.resize(static_cast<size_t>(f.w) * f.h);
             for (int y = 0; y < f.h; ++y)
-                std::copy_n(hud_image_.begin() + static_cast<size_t>(f.y + y) * hud_w_ + f.x, f.w,
+                std::copy_n(rest.begin() + static_cast<size_t>(f.y + y) * hud_w_ + f.x, f.w,
                             box.begin() + static_cast<size_t>(y) * f.w);
             out.blit_keyed(box.data(), f.w, f.h, tx + (tw - f.w * scale) / 2, ty + (th - f.h * scale) / 2, scale,
                            hud_key_);
@@ -200,12 +288,6 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
         out.blit_keyed(hud_image_.data(), hud_w_, hud_h_, x0, y0, scale, hud_key_);
         return true;
     }
-    // What went back to the game screen is not shown twice.
-    std::vector<uint32_t> rest = hud_image_;
-    for (const auto& m : h.to_game)
-        for (int y = std::max(0, m.from.y); y < std::min(hud_h_, m.from.y + m.from.h); ++y)
-            std::fill_n(rest.begin() + static_cast<size_t>(y) * hud_w_ + std::max(0, m.from.x),
-                        std::max(0, std::min(hud_w_, m.from.x + m.from.w) - std::max(0, m.from.x)), hud_key_);
     out.blit_keyed(rest.data(), hud_w_, hud_h_, x0, y0, scale, hud_key_);
     return true;
 }
@@ -214,6 +296,11 @@ void Companion::after_frame(Core& live) {
     ++frame_;
     live_ = &live;
     if (profile_ && profile_->has_hud) update_hud(live);
+    if (party_ && frame_ % 15 == 0) {
+        party_->read(live);
+        party_shown_ = !party_->empty() && (profile_->party.on.empty() || profile_->party.on.match(live));
+    }
+    if (view_) view_->update(live, frame_);
     if (!capture_) return;
     MapImage img;
     if (capture_->poll(current_.serial, img)) take(std::move(img));
@@ -263,7 +350,14 @@ bool Companion::capture_now(Core& live) {
 }
 
 uint64_t Companion::visual_key() const {
+    if (strip_mode()) return hud_shown_ ? content_key() ^ (strip_hash_ * 31) ^ 0x2000000000000000ull : content_key();
     if (hud_shown_) return (frame_ << 1) | 0x8000000000000001ull; // the HUD is live: every frame
+    return content_key();
+}
+
+uint64_t Companion::content_key() const {
+    if (!has_current_ && party_shown_) return party_->key(frame_) | 0x4000000000000000ull;
+    if (!has_current_ && view_ && view_->shown()) return view_->key(frame_) ^ 0x0800000000000000ull;
     if (!has_current_) return menu_ ? 1 : 2;
     uint64_t since = frame_ - shown_at_;
     uint64_t fading = has_previous_ && since < static_cast<uint64_t>(crossfade_frames) ? since + 1 : 0;
@@ -331,7 +425,44 @@ void title_card(Canvas& out, const Look& look, const Font& font, const std::stri
 } // namespace
 
 void Companion::render(Canvas& out, const Look& look, const Font& font) const {
+    if (strip_mode()) {
+        if (hud_shown_ && !hud_image_.empty()) render_with_strip(out, look, font);
+        else render_content(out, look, font);
+        return;
+    }
     if (render_hud(out, look)) return;
+    render_content(out, look, font);
+}
+
+void Companion::render_with_strip(Canvas& out, const Look& look, const Font& font) const {
+    // The band at the largest whole scale that leaves most of the screen to
+    // the rest (3x for a 160-pixel band on a 640x480 panel), on its own colour.
+    const int margin = std::max(4, out.h() / 40);
+    int scale = std::max(1, std::min((out.w() - margin * 2) / hud_w_, out.h() / 5 / hud_h_));
+    if (scale * hud_w_ > out.w() * 3 / 4 && scale > 1) --scale;
+    const int band = hud_h_ * scale + margin * 2;
+    Canvas content(out.w(), out.h() - band);
+    render_content(content, look, font);
+    std::copy_n(content.data(), static_cast<size_t>(content.w()) * content.h(), out.data());
+    // The band's most common colour in its first column: the HUD's own background.
+    std::map<uint32_t, int> seen;
+    for (int y = 0; y < hud_h_; ++y) ++seen[hud_image_[static_cast<size_t>(y) * hud_w_] & 0xFFFFFF];
+    uint32_t ground = seen.empty() ? 0 : std::max_element(seen.begin(), seen.end(), [](auto& a, auto& b) {
+                                             return a.second < b.second;
+                                         })->first;
+    out.fill_rect(0, content.h(), out.w(), band, Rgb::from_px(ground));
+    out.blit(hud_image_.data(), hud_w_, hud_h_, (out.w() - hud_w_ * scale) / 2, content.h() + margin, scale);
+}
+
+void Companion::render_content(Canvas& out, const Look& look, const Font& font) const {
+    if (!has_current_ && party_shown_) {
+        party_->draw(out, look, font, frame_);
+        return;
+    }
+    if (!has_current_ && view_ && view_->shown()) {
+        view_->draw(out, look, font, frame_);
+        return;
+    }
     if (!has_current_) {
         std::string note;
         if (capture_)

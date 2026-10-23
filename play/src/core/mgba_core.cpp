@@ -125,14 +125,17 @@ public:
         options.volume = 0x100;
         options.audioBuffers = 1024;
         mCoreConfigLoadDefaults(&core_->config, &options);
+        // Super Game Boy games keep their SGB colours but not the 256x224 border.
+        mCoreConfigSetDefaultIntValue(&core_->config, "sgb.borders", 0);
         // Maps the defaults into core->opts, then applies them (volume included:
         // loadConfig alone reads opts as they were, zero, and mutes the game).
         mCoreLoadForeignConfig(core_, &core_->config);
 
+        // The buffer holds the largest picture the core can draw (a GB core's is
+        // the SGB border's 256x224); the game's own size is known once it runs.
         unsigned w = 0, h = 0;
         core_->baseVideoSize(core_, &w, &h);
-        width_ = static_cast<int>(w);
-        height_ = static_cast<int>(h);
+        stride_ = static_cast<int>(w);
         video_.assign(static_cast<size_t>(w) * h, 0);
         core_->setVideoBuffer(core_, reinterpret_cast<mColor*>(video_.data()), w);
         core_->setAudioBufferSize(core_, 1024);
@@ -148,6 +151,9 @@ public:
             return false;
         }
         core_->reset(core_);
+        core_->currentVideoSize(core_, &w, &h);
+        width_ = static_cast<int>(w);
+        height_ = static_cast<int>(h);
         mGameInfo info{};
         core_->getGameInfo(core_, &info);
         code_.assign(info.code, strnlen(info.code, sizeof(info.code)));
@@ -178,7 +184,7 @@ public:
             if (audio) mAudioBufferClear(audio);
         }
     }
-    Picture picture() const override { return {video_.data(), width_, height_, width_}; }
+    Picture picture() const override { return {video_.data(), width_, height_, stride_}; }
 
     bool save_state(std::vector<uint8_t>& out) override {
         out.resize(core_->stateSize(core_));
@@ -194,6 +200,13 @@ public:
         case 1: return core_->busRead8(core_, address);
         case 2: return core_->busRead16(core_, address);
         default: return core_->busRead32(core_, address);
+        }
+    }
+    uint32_t peek_bank(uint32_t address, int bank, int size) override {
+        switch (size) {
+        case 1: return core_->rawRead8(core_, address, bank);
+        case 2: return core_->rawRead16(core_, address, bank);
+        default: return core_->rawRead32(core_, address, bank);
         }
     }
 
@@ -214,18 +227,32 @@ public:
         return out;
     }
     uint64_t battery_revision() const override { return battery_revision_.load(); }
+    void restore_battery(const std::vector<uint8_t>& bytes) override {
+        if (!bytes.empty()) core_->savedataRestore(core_, bytes.data(), bytes.size(), false);
+    }
 
     void set_layers(unsigned mask) override {
         if (!core_->enableVideoLayer) return;
         for (size_t id = 0; id < 5; ++id) core_->enableVideoLayer(core_, id, (mask >> id) & 1);
     }
 
+    void hud_objects(const std::vector<ObjRule>& rules) override {
+        objects_.clear();
+        for (const auto& r : rules) objects_.push_back({uint16_t(r.lo), uint16_t(r.hi), int8_t(r.priority)});
+        if (split_) play_split_set_objects(split_, objects_.data(), int(objects_.size()));
+    }
+    void hud_window_effects_off(unsigned windows) override {
+        effects_off_ = windows;
+        if (split_) play_split_set_window_effects_off(split_, windows);
+    }
     bool hud_split(bool on, unsigned bg_mask, int sprite_priority) override {
         if (!split_ && on) {
             hud_.assign(static_cast<size_t>(width_) * height_, play_split_key());
             split_ = play_split_attach(core_, hud_.data());
         }
         if (!split_) return false;
+        play_split_set_objects(split_, objects_.data(), int(objects_.size()));
+        play_split_set_window_effects_off(split_, effects_off_);
         play_split_set(split_, on, bg_mask, sprite_priority);
         return true;
     }
@@ -238,17 +265,20 @@ public:
     std::unique_ptr<Core> shadow() const override {
         auto copy = std::make_unique<MgbaCore>();
         std::string error;
-        if (!copy->open(rom_, {}, true, error)) return nullptr;
+        // With the battery memory as it is now (in memory only; see restore_battery).
+        if (!copy->open(rom_, battery(), true, error)) return nullptr;
         return copy;
     }
 
 private:
     mCore* core_ = nullptr;
     PlaySplit* split_ = nullptr;
+    std::vector<PlayObjRule> objects_;
+    unsigned effects_off_ = 0;
     std::vector<uint32_t> hud_;
     RomBytes rom_;
     std::vector<uint32_t> video_;
-    int width_ = 0, height_ = 0;
+    int width_ = 0, height_ = 0, stride_ = 0;
     bool silent_ = false;
     const char* system_ = "unknown";
     std::string code_, title_;

@@ -76,6 +76,25 @@ class MenuAudio {
     std::string music_file;
     double music_position = 0;
     float music_gain = 0, music_target = 0;
+    // The volume buttons also scale everything this sink plays (see
+    // set_master): the DAC alone left the cues and the track sounding the
+    // same at every level above mute. Ramped so a button press never clicks.
+    float master_gain = 1, master_target = 1;
+    // Opening (and idling-out) the sink can stall for a long while inside ALSA's dmix; on the UI thread that froze
+    // the menu and swallowed input. Both run on a helper while the loop keeps drawing; a cue asked for meanwhile
+    // waits in `pending` and plays once the sink is up. Handing the sink on (close) still waits for the helper.
+    std::thread audio_worker;
+    std::atomic<bool> job_done{true};
+    int job = 0; // 0 none, 1 opening, 2 closing
+    SDL_AudioDeviceID new_device = 0;
+    SDL_AudioSpec new_spec{};
+    struct PendingCue {
+        MenuCue cue = MenuCue::Navigate;
+        int direction = 0;
+        float pan = 0;
+        Uint32 at = 0;
+        bool set = false;
+    } pending;
     void set_music_target(float target) {
         if (device) s.LockAudioDevice(device);
         music_target = target;
@@ -87,7 +106,7 @@ class MenuAudio {
     bool start_music() {
         if (!music_on || music_muted || !track_ready.load(std::memory_order_acquire)) return false;
         if (!device && !open()) {
-            error = "Menu audio is unavailable on this device.";
+            if (!opening()) error = "Menu audio is unavailable on this device.";
             return false;
         }
         s.LockAudioDevice(device);
@@ -144,63 +163,97 @@ class MenuAudio {
             const auto& pcm = track.samples;
             const double step = double(track.rate) / spec.freq;
             const float ramp = 1.f / (spec.freq * .6f);
+            // The loop seam is a short crossfade of the tail into the head, so the wrap never steps or clicks.
+            const size_t size = pcm.size(), seam = std::min(size / 4, size_t(track.rate / 20));
             for (size_t i = 0; i < frames; i++) {
+                if (music_position >= size) music_position = music_position - size + seam;
                 auto at = size_t(music_position);
-                if (at >= pcm.size()) {
-                    at = 0;
-                    music_position = 0;
-                }
-                const size_t next = at + 1 < pcm.size() ? at + 1 : 0;
+                if (at + 1 >= size) at = size - 2;
                 const float fraction = float(music_position - at);
-                const float sample = (pcm[at] + (pcm[next] - pcm[at]) * fraction) / 32768.f;
+                float sample = (pcm[at] + (pcm[at + 1] - pcm[at]) * fraction) / 32768.f;
+                if (seam > 0 && at >= size - seam) {
+                    const size_t head = at - (size - seam);
+                    const float mix_in = float(music_position - double(size - seam)) / seam;
+                    const float from_head = (pcm[head] + (pcm[head + 1] - pcm[head]) * fraction) / 32768.f;
+                    sample += (from_head - sample) * std::clamp(mix_in, 0.f, 1.f);
+                }
                 music_gain += std::clamp(music_target - music_gain, -ramp, ramp);
                 const float v = sample * music_gain * .7f;
                 out[i * 2] += v;
                 out[i * 2 + 1] += v;
                 music_position += step;
-                if (music_position >= pcm.size()) music_position -= pcm.size();
             }
             active = active || music_gain > .0005f || music_target > 0;
+        }
+        // Down fast (a mute never lingers), up slowly (the amplifier is still settling after an unmute).
+        const float master_down = 1.f / (spec.freq * .05f), master_up = 1.f / (spec.freq * .15f);
+        for (size_t i = 0; i < frames; i++) {
+            master_gain += std::clamp(master_target - master_gain, -master_down, master_up);
+            out[i * 2] *= master_gain;
+            out[i * 2 + 1] *= master_gain;
         }
         for (size_t i = 0; i < frames * 2; i++) out[i] = std::clamp(out[i], -.9f, .9f);
         sounding.store(active, std::memory_order_release);
     }
+    void finish_open() {
+        if (new_device) {
+            device = new_device;
+            spec = new_spec;
+            new_device = 0;
+            initialized = true;
+            paused = true;
+            quiet_since = s.GetTicks();
+            master_gain = master_target;
+            opens++;
+            if (opened) opened();
+        } else failed = true;
+    }
+    // Collects a finished helper job; `block` waits for a running one.
+    void reap(bool block) {
+        if (!job || (!block && !job_done.load(std::memory_order_acquire))) return;
+        audio_worker.join();
+        if (job == 1) finish_open();
+        job = 0;
+    }
+    bool opening() const { return job == 1; }
+    // True when the sink is up. Otherwise it is being opened (see `opening`) or cannot be.
     bool open() {
         if (device) return true;
+        reap(false);
+        if (device) return true;
         if (failed || (!loaded && !music_on)) return false; // music needs no cue bank
-        if (s.InitSubSystem(SDL_INIT_AUDIO) != 0) {
-            failed = true;
-            s.ClearError();
-            return false;
-        }
-        initialized = true;
-        // Match the 48 kHz dmix slave: a 32 kHz sink made ALSA resample every
-        // block, including silence. Clips are resampled by each voice's step.
-        SDL_AudioSpec want{};
-        want.freq = 48000;
-        want.format = AUDIO_F32SYS;
-        want.channels = 2;
-        want.samples = 512;
-        want.callback = callback;
-        want.userdata = this;
-        device = s.OpenAudioDevice(nullptr, 0, &want, &spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-        if (!device) {
-            failed = true;
-            s.QuitSubSystem(SDL_INIT_AUDIO);
-            initialized = false;
-            s.ClearError();
-            return false;
-        }
-        paused = true;
-        quiet_since = s.GetTicks();
-        opens++;
-        if (opened) opened();
-        return true;
+        if (job) return false;
+        job = 1;
+        job_done.store(false, std::memory_order_release);
+        audio_worker = std::thread([this] {
+            if (s.InitSubSystem(SDL_INIT_AUDIO) != 0) s.ClearError();
+            else {
+                // Match the 48 kHz dmix slave: a 32 kHz sink made ALSA resample every
+                // block, including silence. Clips are resampled by each voice's step.
+                SDL_AudioSpec want{};
+                want.freq = 48000;
+                want.format = AUDIO_F32SYS;
+                want.channels = 2;
+                want.samples = 1024; // fewer wake-ups: a busy launcher frame no longer starves the sink
+                want.callback = callback;
+                want.userdata = this;
+                new_device = s.OpenAudioDevice(nullptr, 0, &want, &new_spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+                if (!new_device) {
+                    s.QuitSubSystem(SDL_INIT_AUDIO);
+                    s.ClearError();
+                }
+            }
+            job_done.store(true, std::memory_order_release);
+        });
+        return false;
     }
     // Close the sink but keep the decoded bank and settings for the next cue.
-    void release() {
+    void release(bool later = false) {
+        reap(!later);
+        pending.set = false;
+        const auto closing = device;
+        const bool quit = initialized;
         if (device) {
-            s.CloseAudioDevice(device);
             device = 0;
             releases++;
         }
@@ -210,10 +263,19 @@ class MenuAudio {
         music_started = false;
         sounding.store(false, std::memory_order_release);
         paused = true;
-        if (initialized) {
-            s.QuitSubSystem(SDL_INIT_AUDIO);
-            initialized = false;
-        }
+        initialized = false;
+        if (!closing && !quit) return;
+        auto close_sink = [this, closing, quit] {
+            if (closing) s.CloseAudioDevice(closing);
+            if (quit) s.QuitSubSystem(SDL_INIT_AUDIO);
+        };
+        if (!later || job) return close_sink();
+        job = 2;
+        job_done.store(false, std::memory_order_release);
+        audio_worker = std::thread([this, close_sink] {
+            close_sink();
+            job_done.store(true, std::memory_order_release);
+        });
     }
 
 public:
@@ -273,6 +335,20 @@ public:
             music_started = false;
         }
     }
+    // The system volume level (0-100) as a software gain over a 12 dB range:
+    // full at 100, about half at 50, silent at 0.
+    static float master_for_level(int level) {
+        level = std::clamp(level, 0, 100);
+        return level == 0 ? 0.f : std::pow(10.f, -(100 - level) / 100.f * 12.f / 20.f);
+    }
+    void set_master(int level) {
+        const float target = master_for_level(level);
+        if (target == master_target) return;
+        if (device) s.LockAudioDevice(device);
+        master_target = target;
+        if (device) s.UnlockAudioDevice(device);
+    }
+    float master() const { return master_target; }
     bool music_playing() const { return music_started && device; }
     size_t music_samples() const { return track_ready.load(std::memory_order_acquire) ? track.samples.size() : 0; }
     void configure(bool on, int level, const std::filesystem::path& folder) {
@@ -341,7 +417,8 @@ public:
         auto index = size_t(cue);
         if (index >= clips.size() || clips[index].empty()) return false;
         if (!device && !open()) {
-            error = "Menu audio is unavailable on this device.";
+            if (opening()) pending = {cue, direction, pan, now, true};
+            else error = "Menu audio is unavailable on this device.";
             return false;
         }
         bool small = cue == MenuCue::Navigate || cue == MenuCue::Adjust || cue == MenuCue::Type;
@@ -386,6 +463,12 @@ public:
         return true;
     }
     void poll(Uint32 now) {
+        reap(false);
+        if (pending.set && device) {
+            const auto cue = pending;
+            pending.set = false;
+            if (now - cue.at < 600) play(cue.cue, now, cue.direction, cue.pan);
+        }
         // The decode finished, or the sink was closed under the music: (re)start it.
         if (music_on && !music_muted && !music_started && track_ready.load(std::memory_order_acquire)) start_music();
         if (!device) return;
@@ -394,7 +477,7 @@ public:
             paused = true;
             quiet_since = now;
         }
-        if (paused && idle_close_ms && now - quiet_since >= idle_close_ms) release();
+        if (paused && idle_close_ms && now - quiet_since >= idle_close_ms) release(true);
     }
     bool active() const { return sounding.load(std::memory_order_acquire); }
     // Usable when a cue is requested; the sink itself may be closed while quiet.

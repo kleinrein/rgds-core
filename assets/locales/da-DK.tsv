@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Små effekter, rulning og opstartsbe
 Springy menu changes with a colourful wobble	Fjedrende menuskift med farverige bevægelser
 Transitions	Overgange
 Subtle	Diskret
-Menu sounds	Menulyde
+Menu effects	Menueffekter
 Effects volume	Effektlydstyrke
 Preview sound	Prøv en lyd
 A little handheld magic	Lidt håndholdt magi
@@ -943,4 +943,17 @@ Next picture	Næste billede
 No pictures yet	Ingen billeder endnu
 Available	Tilgængelig
 Not downloaded	Ikke hentet
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ingen spilinfo endnu. Slå Spilinfo til under Indstillinger > Bibliotek > Coverkilder, og hent covers.
+More filters	Flere filtre
+Show games	Vis spil
+Reset filters	Nulstil filtre
+Any	Alle
+{0} active	{0} aktive
+Still reading your library. Try again in a moment.	Læser stadig biblioteket. Prøv igen om et øjeblik.
+No game has this information yet. Fetch artwork with Game info turned on.	Ingen spil har denne information endnu. Hent covers med Spilinfo slået til.
+With info	Med info
+Without info	Uden info
+Online play	Online
+1 player	1 spiller
+{0} players	{0} spillere
+No game information yet.	Ingen spilinfo endnu.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Slå Spilinfo til under Indstillinger > Bibliotek > Coverkilder, og hent covers.

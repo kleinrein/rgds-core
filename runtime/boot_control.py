@@ -47,9 +47,9 @@ def read_json(path):
         return {}
 
 
-def hook_text(root, control=CONTROL, run=Path('/run')):
+def hook_text(root, control=CONTROL, run=Path('/run'), chain=False):
     # Stock mode exits in the shell before starting Python or reading releases.
-    return (
+    body = (
         '#!/bin/sh\n' + TAG + '\n' + '[ "${RGDS_SKIP_BOOT_ONCE:-0}" != 1 ] || exit 0\n' + 'RGDS_BOOT_CONTROL=' +
         shlex.quote(str(control)) + '\n' + '[ -f "$RGDS_BOOT_CONTROL/enabled" ] || exit 0\n' +
         '[ ! -f "$RGDS_BOOT_CONTROL/installing" ] || exit 0\n' + 'RGDS_BOOT_ROOT=' + shlex.quote(str(root)) + '\n' +
@@ -65,6 +65,15 @@ def hook_text(root, control=CONTROL, run=Path('/run')):
         + 'else\n' + '  /usr/bin/python3 -B "$RGDS_BOOT_ENTRY" --control "$RGDS_BOOT_CONTROL" || exit 0\n' + 'fi\n' +
         'exit 0\n'
     )
+    if not chain: return body
+    # A hook that was there before us keeps running once our session has returned (or declined).
+    first, rest = body.split('\n', 2)[:2], body.split('\n', 2)[2]
+    original = shlex.quote(str(Path(control) / 'original-autostart'))
+    return '\n'.join(first) + '\n(\n' + rest + ')\n[ ! -s ' + original + ' ] || /bin/sh ' + original + '\nexit 0\n'
+
+
+def ours(content):
+    return TAG.encode() in content
 
 
 def inspect(root=None, system_root='/'):
@@ -111,10 +120,6 @@ def plan(root, mode, system_root='/', warning=True):
         current = hook.read_bytes()
     except FileNotFoundError:
         current = None
-    if current is not None and not (
-        saved.get('schema') == 1 and hashlib.sha256(current).hexdigest() == saved.get('hook_sha256')
-    ):
-        raise ValueError('An existing autostart hook belongs to another manager. It has been left untouched.')
     # Full verification happens when selecting/installing a boot target.
     from activate import read_pointer, verify_release
     build = read_pointer(root / 'state/active')
@@ -131,6 +136,7 @@ def plan(root, mode, system_root='/', warning=True):
         mode=mode,
         warning=warning,
         hook=str(HOOK),
+        adopts=bool(current and not ours(current) and hashlib.sha256(current).hexdigest() != saved.get('hook_sha256')),
         network_guard=capture_helper(system_root),
         preserves=['kernel splash', 'vendor init', 'Wi-Fi initialization', 'Weston', 'stock supervisor'],
         writes=['config.json', 'owned autostart hook', 'enabled marker']
@@ -161,13 +167,17 @@ def configure(root, mode, system_root='/', warning=True):
     # Disabling first makes an interrupted update fall through to stock.
     (control / 'enabled').unlink(missing_ok=True)
     saved = read_json(control / 'installation.json')
-    if not saved:
-        existed = hook.is_file()
-        original = hook.read_bytes() if existed else b''
-        previous_mode = stat.S_IMODE(hook.stat().st_mode) if existed else 0o755
-        atomic(control / 'original-autostart', original, previous_mode)
-        saved = dict(schema=1, had_hook=existed, previous_mode=previous_mode)
-    text = hook_text(Path(proposal['root']), CONTROL).encode()
+    existing = hook.read_bytes() if hook.is_file() else b''
+    stale = ours(existing)  # our own hook from an install whose control folder is gone
+    foreign = bool(existing) and not ours(existing) and hashlib.sha256(existing).hexdigest() != saved.get('hook_sha256')
+    if not saved or foreign:
+        # Someone else's hook (or a first install) is kept as the original: it runs after ours, and uninstall puts it back.
+        existing = b'' if stale else existing
+        previous_mode = stat.S_IMODE(hook.stat().st_mode) if existing else 0o755
+        atomic(control / 'original-autostart', existing, previous_mode)
+        saved = dict(schema=1, had_hook=bool(existing), previous_mode=previous_mode)
+    chain = bool(saved.get('had_hook')) and (control / 'original-autostart').is_file()
+    text = hook_text(Path(proposal['root']), CONTROL, chain=chain).encode()
     atomic(hook, text, 0o755)
     saved['hook_sha256'] = hashlib.sha256(text).hexdigest()
     atomic(control / 'installation.json', (json.dumps(saved, sort_keys=True) + '\n').encode())

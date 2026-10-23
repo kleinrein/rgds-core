@@ -339,6 +339,51 @@ def phase_frame_times(path,phases):
               p95=percentile(.95),p99=percentile(.99),maximum=values[-1],
               over_budget=sum(v>1000/59.8261 for v in values))
  return {phase:{kind:summary(values) for kind,values in kinds.items()} for phase,kinds in buckets.items()}
+
+def benchmark_validation_errors(report):
+ # A live process and a zero exit code are not proof that a GPU benchmark ran.
+ # Reject missing phases, absent frame telemetry and known PanVK/KBASE faults.
+ errors=[]
+ expected=report.get('measurement',{}).get('phases',[])
+ by_phase={phase.get('phase'):phase for phase in report.get('phases',[])}
+ for name in expected:
+  phase=by_phase.get(name)
+  if not phase:
+   errors.append('missing phase: '+name);continue
+  if not phase.get('completed'):
+   errors.append('phase ended before its full measurement window: '+name)
+  if not phase.get('speed_acknowledged'):
+   errors.append('speed request was not acknowledged: '+name)
+  if report.get('core')=='rgds-experimental':
+   frames=report.get('frame_times',{}).get(name,{}).get('emu_ms',{}).get('frames',0)
+   minimum=max(1,int(report.get('measurement',{}).get('seconds_per_phase',0)*3))
+   if frames<minimum:
+    errors.append('insufficient completed frame timing samples for '+name+': '+str(frames))
+ faults=('[KFAULT]','[KWAITFAIL]','Job Hard-Stopped','GPU fault 0x','GPU fault:','Vulkan stopped:')
+ logs='\\n'.join((report.get('engine_log',''),report.get('session_log','')))
+ for marker in faults:
+  if marker in logs:errors.append('graphics/runtime fault marker: '+marker)
+ if report.get('kernel_gpu_faults'):
+  errors.append('new kernel GPU fault during benchmark: '+str(report['kernel_gpu_faults'][0]))
+ return errors
+
+def new_kernel_gpu_faults(before,after):
+ markers=('job hard-stopped','gpu fault','gpu reset','gpu timeout')
+ counts={}
+ for line in (before or []):counts[line]=counts.get(line,0)+1
+ result=[]
+ for line in (after or []):
+  if counts.get(line,0):counts[line]-=1;continue
+  if any(marker in line.lower() for marker in markers):result.append(line)
+ return result
+
+def kernel_gpu_fault_lines():
+ try:
+  completed=subprocess.run(['dmesg'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,timeout=3)
+ except (OSError,subprocess.SubprocessError):return None
+ if completed.returncode:return None
+ markers=('job hard-stopped','gpu fault','gpu reset','gpu timeout')
+ return [line for line in completed.stdout.splitlines() if any(marker in line.lower() for marker in markers)]
 for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in options['cores']]:
  core='drastic' if variant=='superdrastic' else variant
  root=base/(variant+'-'+str(repeat))/'rgds';(root/'state').mkdir(parents=True)
@@ -373,7 +418,7 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
  result=dict(samples=[],clock_ticks=os.sysconf('SC_CLK_TCK'),core=core,backend=variant,repeat=repeat,build=build,rom=str(original_rom),test_rom=str(rom),rom_sha256=rom_sha256,root=str(root),metric='presentation',rgds_scale=options.get('rgds_scale',1),rgds_smooth=options.get('rgds_smooth',1),rgds_direct=options.get('rgds_direct',0),shader=options['shader'],threaded_3d=options.get('threaded_3d',1),resolution=('Native' if options.get('rgds_scale',1)==1 else str(options['rgds_scale'])+'x') if core=='rgds-experimental' else ('Native' if scale==1 else str(scale)+'x'),rasterizer=options.get('rasterizer','standard'),frameskip=0,seed_sha256=hashlib.sha256(seed.read_bytes()).hexdigest() if seed else None,
              fast_forward_config={'limit_multiplier':0,'render_skip':0} if options.get('max_speed') else 'profile defaults',
              engine_env={key:child_environment[key] for key in options['experiment_settings'] if key in child_environment},measurement=measurement_settings(options,bool(seed)),phases=[])
- output=(data/'runner.log').open('w');began=time.monotonic()
+ output=(data/'runner.log').open('w');began=time.monotonic();kernel_faults_before=kernel_gpu_fault_lines()
  child=subprocess.Popen([sys.executable,'-B',str(app/'runtime/session.py'),'--root',str(root),'--core',core,'--rom',str(rom)],env=child_environment,stdout=output,stderr=output,start_new_session=True)
  folder=data/'session';engine=None;owner=None;frame=None;native=None;probe_clock=None;shared_native=False;native_overlay=None
  try:
@@ -541,6 +586,12 @@ for repeat,variant in [(r,c) for r in range(options.get('repeats',1)) for c in o
   result['native_log']=(data/'logs/superdrastic.log').read_text()[-18000:] if (data/'logs/superdrastic.log').exists() else ''
   result['engine_log']=(data/'logs'/(core+'.log')).read_text()[-18000:] if (data/'logs'/(core+'.log')).exists() else ''
   result['session_log']=(data/'session.log').read_text()[-32000:] if (data/'session.log').exists() else (data/'runner.log').read_text()[-32000:]
+  kernel_faults_after=kernel_gpu_fault_lines()
+  result['kernel_log_available']=kernel_faults_before is not None and kernel_faults_after is not None
+  result['kernel_gpu_faults']=new_kernel_gpu_faults(kernel_faults_before,kernel_faults_after)
+  result['validation_errors']=benchmark_validation_errors(result)
+  if result['validation_errors']:
+   result['error']='Benchmark rejected: '+'; '.join(result['validation_errors'])
   results.append(result);(base/'results.json').write_text(json.dumps(results,indent=2)+'\n')
   print(json.dumps(result),flush=True)
  if Path('/tmp/rgds-session.lock').exists():raise SystemExit('Recovery is pending; stopped comparison.')

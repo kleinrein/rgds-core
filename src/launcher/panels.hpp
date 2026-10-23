@@ -154,8 +154,11 @@ void App::bottom(SDL_Renderer* r, int y) {
     }
     rect(r, 0, y, 640, 480, "background");
     if (!probe && settings.page != Page::Library) {
-        settings_bottom(r, y);
-        if (!(o.game_menu && menu_status["state"] == "busy")) settings_footer(r, y);
+        if (filter_sheet_active()) filter_sheet_render(r, y);
+        else {
+            settings_bottom(r, y);
+            if (!(o.game_menu && menu_status["state"] == "busy")) settings_footer(r, y);
+        }
         if (picker_open || picker_closing()) render_picker(r, y);
         return;
     }

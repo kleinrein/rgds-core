@@ -2,7 +2,34 @@
 // Home: the DSi-style column of tiles on the lower screen and its top panel.
 // Members of App in main.cpp; included once, right after the class.
 
+void App::home_bar_activate(int button) {
+    home_bar_focus = -1;
+    if (button == 1 && update_stage() == UpdateStage::None) return; // the mark left while it was focused
+    if (button == 0 || button == 2) {
+        settings.section = button == 0 ? 0 : 7;
+        settings.page = button == 0 ? Page::Display : Page::Statistics;
+        settings.focus = 0;
+        dirty = true;
+    } else if (!update_now()) dirty = true;
+}
+
 bool App::home_column_move(int code) {
+    if (home_bar_focus == 1 && update_stage() == UpdateStage::None) home_bar_focus = 0;
+    if (home_bar_focus >= 0) {
+        if (code == 8) home_bar_focus = -1;
+        else if (code == 0 || code == 1) {
+            std::vector<int> buttons = {0};
+            if (update_stage() != UpdateStage::None) buttons.push_back(1);
+            buttons.push_back(2);
+            auto at = std::find(buttons.begin(), buttons.end(), home_bar_focus);
+            if (at == buttons.end()) at = buttons.begin();
+            const auto next =
+                std::clamp<long>((at - buttons.begin()) + (code == 0 ? -1 : 1), 0, long(buttons.size()) - 1);
+            home_bar_focus = buttons[size_t(next)];
+        }
+        dirty = true;
+        return true;
+    }
     static constexpr std::array<std::array<int, 2>, 4> rows = {{{5, 5}, {1, 2}, {3, 4}, {0, 0}}};
     int row = 0, column = home_column_memory;
     for (int i = 0; i < 4; i++) {
@@ -11,6 +38,11 @@ bool App::home_column_move(int code) {
             if (rows[size_t(i)][0] != rows[size_t(i)][1]) column = rows[size_t(i)][1] == int(home_selected) ? 1 : 0;
             break;
         }
+    }
+    if (code == 9 && row == 3) {
+        home_bar_focus = 0;
+        dirty = true;
+        return true;
     }
     if (code == 8 || code == 9) row = std::clamp(row + (code == 8 ? -1 : 1), 0, 3);
     else if (code == 0 || code == 1) column = code == 0 ? 0 : 1;
@@ -27,27 +59,15 @@ void App::home_column_touch(int x, int y) {
             open_category();
             return;
         }
-    if (point_in(home_bar_left, x, y)) {
-        settings.section = 0;
-        settings.page = Page::Display;
-        settings.focus = 0;
-        dirty = true;
-        return;
-    }
-    if (point_in(home_bar_right, x, y)) {
-        settings.section = 7;
-        settings.page = Page::Statistics;
-        settings.focus = 0;
-        dirty = true;
-        return;
-    }
+    if (point_in(home_bar_left, x, y)) return home_bar_activate(0);
+    if (point_in(home_bar_right, x, y)) return home_bar_activate(2);
     if (point_in(home_bar_mark, x, y) && update_now()) return;
 }
 
 void App::home_column_bottom(SDL_Renderer* r, int y) {
     for (const auto& tile : home_column_tiles()) {
         const SDL_Rect b = tile.box;
-        const bool selected = home_selected == tile.index;
+        const bool selected = home_selected == tile.index && home_bar_focus < 0;
         int bx = b.x, by = y + b.y;
         move_element(uint32_t(tile.index), bx, by, b.w, b.h, selected);
         const bool pressed = pointer_down && point_in(b, contact_x, contact_y) && point_in(b, down_x, down_y);
@@ -93,7 +113,10 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
         raised_pill(r, b.x, y + b.y, b.w, b.h, 12, theme.at(pressed ? "focus" : "panel"), pressed ? 1 : 0);
         ui_icon(r, i ? SettingsIcon::Clock : SettingsIcon::Sun, b.x + b.w / 2, y + b.y + b.h / 2 + (pressed ? 2 : 0),
                 26, "accent");
+        if (home_bar_focus == (i ? 2 : 0)) chat_brackets(r, b.x, y + b.y, b.w, b.h, theme.at("accent"), 4);
     }
+    if (home_bar_focus == 1 && update_stage() != UpdateStage::None)
+        chat_brackets(r, home_bar_mark.x, y + home_bar_mark.y, home_bar_mark.w, home_bar_mark.h, theme.at("accent"), 4);
     brand(r, 296, y + 421, 48);
     // An update waiting: a small accent glass badge on the mark, like a DSi notice.
     if (update_stage() != UpdateStage::None) {

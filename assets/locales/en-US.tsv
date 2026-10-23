@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Small touches, scrolling and startup
 Springy menu changes with a colourful wobble	Springy menu changes with a colourful wobble
 Transitions	Transitions
 Subtle	Subtle
-Menu sounds	Menu sounds
+Menu effects	Menu effects
 Effects volume	Effects volume
 Preview sound	Preview sound
 A little handheld magic	A little handheld magic
@@ -943,4 +943,17 @@ Next picture	Next picture
 No pictures yet	No pictures yet
 Available	Available
 Not downloaded	Not downloaded
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.
+More filters	More filters
+Show games	Show games
+Reset filters	Reset filters
+Any	Any
+{0} active	{0} active
+Still reading your library. Try again in a moment.	Still reading your library. Try again in a moment.
+No game has this information yet. Fetch artwork with Game info turned on.	No game has this information yet. Fetch artwork with Game info turned on.
+With info	With info
+Without info	Without info
+Online play	Online play
+1 player	1 player
+{0} players	{0} players
+No game information yet.	No game information yet.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.

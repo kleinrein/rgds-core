@@ -28,6 +28,10 @@ void App::action(int code) {
         picker_action(code);
         return;
     }
+    if (filter_sheet_active()) {
+        filter_sheet_key(code);
+        return;
+    }
     if (settings.page == Page::Keyboard && edit_field == 4 && (code == 15 || code == 16)) {
         finish_edit(false);
         if (code == 15) jump_to_letter();
@@ -72,10 +76,10 @@ void App::action(int code) {
         if (code == 3) settings.back();
         else if (code == 8 || code == 9) settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 3);
         else if (code == 0 || code == 1 || code == 2) {
-            // Left/right step through the three choices; A moves to the next.
-            auto step = [&](int value) {
-                return code == 0 ? std::max(0, value - 1) : code == 1 ? std::min(2, value + 1) : (value + 1) % 3;
-            };
+            // Left/right step through the three choices. A is not a stepper: a
+            // pill that slid on A read as a confirm, so it leaves the choice alone.
+            if (code == 2 && settings.focus >= 2) return;
+            auto step = [&](int value) { return code == 0 ? std::max(0, value - 1) : std::min(2, value + 1); };
             if (settings.focus == 2) {
                 const int style = step(preferences.view_style == ViewStyle::Push   ? 1
                                        : preferences.view_style == ViewStyle::Zoom ? 2
@@ -123,15 +127,13 @@ void App::action(int code) {
         return;
     }
     if (settings.page == Page::SaveGallery || settings.page == Page::Discover || settings.page == Page::RomSetup ||
-        settings.page == Page::DSControls || settings.page == Page::MoreFilters) {
+        settings.page == Page::DSControls) {
         auto page = settings.page;
         if (code == 3) {
             back_to(page == Page::SaveGallery  ? gallery_return
                     : page == Page::DSControls ? ds_return
-                    : page == Page::Discover    ? discover_return
-                    : page == Page::MoreFilters ? Page::Discover
-                                                : Page::LibraryOptions);
-            if (page == Page::MoreFilters) settings.focus = 2;
+                    : page == Page::Discover   ? discover_return
+                                               : Page::LibraryOptions);
         } else if (code == 8 || code == 9)
             settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, list_count() - 1);
         else if (code == 2 || code == 4) {
@@ -144,12 +146,8 @@ void App::action(int code) {
                                     discovery_filter = n;
                                     apply_discovery();
                                 });
-                else if (settings.focus == 2) open_more_filters();
+                else if (settings.focus == 2) open_filter_sheet();
                 else clear_discovery();
-            } else if (page == Page::MoreFilters) {
-                if (settings.focus < int(facet_rows().size())) facet_picker(settings.focus);
-                else if (settings.focus == 8) apply_discovery();
-                else reset_facets();
             } else if (page == Page::RomSetup) {
                 if (settings.focus == 0)
                     show_detail(
@@ -289,7 +287,7 @@ void App::action(int code) {
         if (code == 3) {
             back_to(artwork_return);
             if (artwork_return == Page::GameOptions) settings.focus = 4;
-        } else if (code == 8 || code == 9) settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 3);
+        } else if (code == 8 || code == 9) settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 2);
         else if (code == 2) game_artwork_action();
         dirty = true;
         return;
@@ -422,7 +420,8 @@ void App::action(int code) {
         } else if (settings.page == Page::GameOptions) {
             if (other_system_selected() && (settings.focus == 1 || settings.focus == list_count() - 1)) {
             } else if (code == 0 || code == 1 || code == 2) {
-                if (settings.focus == list_count() - 2) open_gallery();
+                if (settings.focus == list_count() - 3) open_game_info(Page::GameOptions);
+                else if (settings.focus == list_count() - 2) open_gallery();
                 else if (settings.focus == list_count() - 1) open_ds_controls();
                 else if (settings.focus == 4) open_game_artwork();
                 else if (settings.focus == 3) open_controls(true, Page::GameOptions);
@@ -540,6 +539,10 @@ void App::action(int code) {
         home_column_move(code);
         return;
     }
+    if (home_menu && preferences.home_layout == 1 && home_bar_focus >= 0 && (code == 2 || code == 4)) {
+        home_bar_activate(home_bar_focus);
+        return;
+    }
     if (!home_menu && (code == 13 || code == 14)) {
         navigate(code == 13 ? -1 : 1);
         return;
@@ -588,6 +591,10 @@ void App::touch(int x, int y) {
     if (probe) return;
     if (picker_open) {
         picker_touch(x, y);
+        return;
+    }
+    if (filter_sheet_active()) {
+        filter_sheet_touch(x, y);
         return;
     }
     if (settings.page == Page::GameSwitcher && y >= 424 && x >= 200 && x < 440) {
@@ -960,6 +967,16 @@ void App::pointer_begin(int x, int y) {
         return;
     }
     if (!probe && settings.page == Page::ShaderPicker && shader_pointer_down(x, y)) return;
+    if (!probe && filter_sheet_active() && !picker_open) {
+        // A slider follows the finger from the press; elsewhere a tap toggles on release and a drag scrolls.
+        filter_touch = true;
+        filter_drag = -1;
+        filter_scroll_start = filter_scroll;
+        if (filter_slider_press(x, y)) return;
+        tap_pending = true;
+        list_touch = false;
+        return;
+    }
     if (!probe && settings.page != Page::Library) {
         bool slider = !picker_open && (settings.page == Page::Display || settings.page == Page::Sound) && x >= 44 &&
                       x <= 596 && y >= slider_band().first && y <= slider_band().second;
@@ -1028,6 +1045,14 @@ void App::pointer_move(int x, int y) {
         if (detail_rail) scroll_detail_rail(y);
         else detail_scroll = std::clamp(gesture_scroll + (down_y - y) / 28, 0, detail_max_scroll());
         dirty = true;
+        return;
+    }
+    if (filter_touch && filter_sheet_active()) {
+        if (filter_drag >= 0) filter_slider_drag(x);
+        else if (std::abs(y - down_y) > 8) {
+            tap_pending = false;
+            filter_drag_scroll(y);
+        }
         return;
     }
     if (browser_rail) {
@@ -1115,6 +1140,8 @@ void App::pointer_end(int x, int y) {
     detail_drag = detail_rail = false;
     brightness_drag = false;
     volume_drag = false;
+    filter_touch = false;
+    filter_drag = -1;
     if (o.boot_startup && boot_touch_wait_release) {
         boot_touch_wait_release = false;
         boot_touch_candidate = false;

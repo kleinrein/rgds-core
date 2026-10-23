@@ -83,12 +83,34 @@ game forces it. Network failures are retried on the next run.
 
 In the launcher, Settings → Library → Artwork sources has **Game info** (on by
 default) and **Extra pictures** (off by default: Screenshots, Title screens or
-both, because each is one more request per game). **Game options → Artwork →
-Game info** opens the page: the cover, title screen and screenshot you have, one
-at a time (L/R, Left/Right, A or the arrow buttons), and below them the facts and
-the description in your interface language, falling back to English. Up/Down or a
-tap on the upper/lower half scrolls. A game without information shows how to get
-it, and nothing else in the library or the game list changes.
+both, because each is one more request per game).
+
+**Game options → Game info** (just above Save gallery) opens the page. The top
+screen shows the picture you have (cover, title screen, screenshot) with a strip
+of thumbnails, the title, developer, publisher and release date, and chips for
+genre, rating, players, online play and series. The bottom screen shows the
+description in your interface language (English if it has none), or the details
+as a grid for games without one. L/R, Left/Right, A or the pill at the top step
+through the pictures; Up/Down or a tap on the upper/lower half scrolls. A game
+without information says how to get it, and nothing else in the library changes.
+
+### Filtering by game information
+
+**Search and filters → More filters** opens a scrollable sheet over the lower
+screen. Chips cover played state, genre, rating, online play / has game info,
+publisher and developer; each shows how many games have it and toggles at once.
+**Players** and **Released** are range sliders over a histogram of your library
+(one bar per player count or year), each with two handles: Left/Right moves the
+chosen handle, A switches between the low and high end, and a finger can drag
+either handle. A range at its full extent is not a filter. The list behind the
+sheet follows every change and the header counts the matching games. Long lists
+(genre, publisher, developer) show the commonest values and a **More…** chip that
+opens the full list. X resets; L/R jump between sections; **Show games** closes
+the sheet on the results. Filters combine (all must match), search also finds a
+game by its developer or publisher, and **Clear search and filters** resets
+everything. A game without a known player count or year never matches a narrowed
+range, and games without information only match the played-state and "Without
+info" chips.
 
 ## Play history and storage
 

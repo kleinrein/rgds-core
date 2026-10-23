@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace play {
@@ -32,8 +33,10 @@ public:
     bool open(const SessionOptions& options, std::string& error);
     void frame(uint32_t buttons);
     // The game picture for the top panel (with the HUD split, the boxes the
-    // profile puts back on it).
-    Picture game() { return companion_ ? companion_->compose_game(core_->picture()) : core_->picture(); }
+    // profile puts back on it; a Game Boy HUD band off it unless `whole`).
+    Picture game(bool whole = false) {
+        return companion_ ? companion_->compose_game(core_->picture(), whole) : core_->picture();
+    }
     void render_companion(Canvas& out, const Look& look) const;
     size_t audio(int16_t* stereo, size_t max_frames) { return core_->audio(stereo, max_frames); }
     unsigned audio_rate() const { return core_->audio_rate(); }
@@ -55,6 +58,10 @@ public:
     uint64_t frames() const { return frames_; }
 
 private:
+    std::string view_path() const;
+    void save_view();
+
+    std::thread view_writer_;
     std::unique_ptr<Core> core_;
     ProfileLibrary profiles_;
     std::vector<std::string> profile_errors_;

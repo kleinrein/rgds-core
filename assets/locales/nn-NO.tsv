@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Små effektar, rulling og oppstart
 Springy menu changes with a colourful wobble	Sprettande menybyte med fargerik rørsle
 Transitions	Overgangar
 Subtle	Diskret
-Menu sounds	Menylydar
+Menu effects	Menyeffektar
 Effects volume	Effektvolum
 Preview sound	Prøv ein lyd
 A little handheld magic	Litt handhalden magi
@@ -943,4 +943,17 @@ Next picture	Neste bilete
 No pictures yet	Ingen bilete enno
 Available	Tilgjengeleg
 Not downloaded	Ikkje lasta ned
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ingen spelinfo enno. Slå på Spelinfo under Innstillingar > Bibliotek > Omslagskjelder, og hent omslag.
+More filters	Fleire filter
+Show games	Vis spel
+Reset filters	Nullstill filter
+Any	Alle
+{0} active	{0} aktive
+Still reading your library. Try again in a moment.	Les framleis biblioteket. Prøv igjen om eit augeblink.
+No game has this information yet. Fetch artwork with Game info turned on.	Ingen spel har denne informasjonen enno. Hent omslag med Spelinfo slått på.
+With info	Med info
+Without info	Utan info
+Online play	Nettspel
+1 player	1 spelar
+{0} players	{0} spelarar
+No game information yet.	Ingen spelinfo enno.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Slå på Spelinfo under Innstillingar > Bibliotek > Omslagskjelder, og hent omslag.

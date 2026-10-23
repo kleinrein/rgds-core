@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Kleine effecten, scrollen en opstart
 Springy menu changes with a colourful wobble	Verende menuovergangen met kleurrijke bewegingen
 Transitions	Overgangen
 Subtle	Subtiel
-Menu sounds	Menugeluiden
+Menu effects	Menueffecten
 Effects volume	Effectvolume
 Preview sound	Geluid beluisteren
 A little handheld magic	Een beetje handheldmagie
@@ -943,4 +943,17 @@ Next picture	Volgende afbeelding
 No pictures yet	Nog geen afbeeldingen
 Available	Beschikbaar
 Not downloaded	Niet gedownload
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Nog geen spelinfo. Zet Spelinfo aan bij Instellingen > Bibliotheek > Hoesbronnen en haal hoezen op.
+More filters	Meer filters
+Show games	Spellen tonen
+Reset filters	Filters wissen
+Any	Alle
+{0} active	{0} actief
+Still reading your library. Try again in a moment.	De bibliotheek wordt nog gelezen. Probeer het zo opnieuw.
+No game has this information yet. Fetch artwork with Game info turned on.	Nog geen spel heeft deze informatie. Haal hoezen op met Spelinfo aan.
+With info	Met info
+Without info	Zonder info
+Online play	Online spelen
+1 player	1 speler
+{0} players	{0} spelers
+No game information yet.	Nog geen spelinfo.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Zet Spelinfo aan bij Instellingen > Bibliotheek > Hoesbronnen en haal hoezen op.

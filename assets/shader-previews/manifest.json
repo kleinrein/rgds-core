@@ -624,7 +624,7 @@
     "renderer": "Google SwiftShader",
     "version": "OpenGL ES 3.0 SwiftShader 4.6.6.6"
   },
-  "pipeline_sha256": "d053446b0469ebea29d6dec71d9ecf417131215379983aa008f54a5f6847f697",
+  "pipeline_sha256": "d5f19edad4b404805f8f41fbbfe5908941b0ac94c715b032e57ffd17495abde7",
   "packed_bytes": 6531956,
   "uncompressed_rgba_bytes": 114278400
 }

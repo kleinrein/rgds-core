@@ -28,6 +28,18 @@ PlaySplit* play_split_attach(struct mCore* core, uint32_t* hud);
  * sprite_priority (-1: none) move to the HUD. Takes effect from the next
  * frame; call between frames. */
 void play_split_set(PlaySplit* split, bool on, unsigned bg_mask, int sprite_priority);
+/* Sprites picked by tile number instead (or as well): an object moves when
+ * its first tile is in lo..hi and, unless priority is -1, its priority
+ * matches. Up to 8 rules; count 0 goes back to sprite_priority alone. */
+typedef struct {
+    uint16_t lo, hi;
+    int8_t priority;
+} PlayObjRule;
+void play_split_set_objects(PlaySplit* split, const PlayObjRule* rules, int count);
+/* While on, the game picture drops the colour effect (darkening, blending)
+ * inside window 0 (bit 0) and window 1 (bit 1): the shade a game puts
+ * behind a panel that moved to the HUD. */
+void play_split_set_window_effects_off(PlaySplit* split, unsigned windows);
 bool play_split_on(const PlaySplit* split);
 void play_split_detach(PlaySplit* split);
 

@@ -24,7 +24,7 @@ def remote_helpers():
     functions = [
         node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in (
             'benchmark_environment', 'measurement_settings', 'capture_scene', 'menu_helpers', 'menu_state', 'open_menu',
-            'resume_menu', 'phase_frame_times'
+            'resume_menu', 'phase_frame_times', 'benchmark_validation_errors', 'new_kernel_gpu_faults'
         )
     ]
     namespace = dict(Path=Path, hashlib=hashlib, time=time, os=os, struct=struct)
@@ -91,6 +91,38 @@ class BenchmarkEmulatorTests(unittest.TestCase):
             self.assertEqual(stats['work_ms']['p99'], 7)
             self.assertEqual(stats['work_ms']['over_budget'], 0)
             self.assertEqual(remote_helpers()['phase_frame_times'](path.with_name('absent'), phases), {})
+
+    def test_zero_telemetry_and_gpu_faults_reject_a_benchmark_even_when_process_exits_zero(self):
+        validate = remote_helpers()['benchmark_validation_errors']
+        report = dict(
+            core='rgds-experimental',
+            measurement=dict(phases=['normal'], seconds_per_phase=15),
+            phases=[dict(phase='normal', completed=True, speed_acknowledged=True)],
+            frame_times={'normal': {'emu_ms': {'frames': 0}}},
+            engine_log='[KFAULT] job failed', session_log=''
+        )
+        errors = validate(report)
+        self.assertTrue(any('insufficient completed frame timing samples' in error for error in errors))
+        self.assertTrue(any('fault marker' in error for error in errors))
+
+    def test_complete_benchmark_with_frame_samples_passes(self):
+        report = dict(
+            core='rgds-experimental',
+            measurement=dict(phases=['normal', 'fast_forward'], seconds_per_phase=15),
+            phases=[dict(phase=name, completed=True, speed_acknowledged=True) for name in ('normal', 'fast_forward')],
+            frame_times={name: {'emu_ms': {'frames': 45}} for name in ('normal', 'fast_forward')},
+            engine_log='', session_log=''
+        )
+        self.assertEqual(remote_helpers()['benchmark_validation_errors'](report), [])
+
+    def test_new_kernel_gpu_faults_reject_run_but_old_faults_do_not(self):
+        detect = remote_helpers()['new_kernel_gpu_faults']
+        old = ['[  1.0] GPU fault from an earlier run']
+        self.assertEqual(detect(old, old + ['[  2.0] unrelated device message']), [])
+        fresh = detect(old, old + ['[  2.0] Job Hard-Stopped after timeout'])
+        self.assertEqual(fresh, ['[  2.0] Job Hard-Stopped after timeout'])
+        report = dict(kernel_gpu_faults=fresh)
+        self.assertTrue(remote_helpers()['benchmark_validation_errors'](report))
 
     def run_cli(self, extra, output, reply=None):
         remote = SimpleNamespace(target=Mock(side_effect=lambda value: value), ssh=Mock())

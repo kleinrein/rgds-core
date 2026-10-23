@@ -4,12 +4,15 @@
 #include "app/storage.hpp"
 #include "companion/companion.hpp"
 #include "companion/map_capture.hpp"
+#include "companion/party_gb.hpp"
 #include "companion/profile.hpp"
+#include "companion/view.hpp"
 #include "ui/canvas.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
+#include <map>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -353,9 +356,159 @@ void test_canvas() {
 
 } // namespace
 
+// Game Boy memory as a map of bytes: plain addresses, and banked ones (ROM
+// banks at 4000-7FFF, work RAM banks at D000-DFFF) as core.hpp's banked().
+class GbMemory final : public Core {
+public:
+    std::map<uint32_t, uint8_t> bytes;
+    int mapped = 6; // the work RAM bank the "game" has switched in
+    void put(uint32_t address, std::initializer_list<uint8_t> values) {
+        for (uint8_t v : values) bytes[address++] = v;
+    }
+    const char* system() const override { return "gbc"; }
+    std::string game_code() const override { return "TEST"; }
+    std::string header_title() const override { return "TEST"; }
+    double frame_rate() const override { return 60; }
+    void run_frame(uint32_t) override {}
+    Picture picture() const override { return {}; }
+    bool save_state(std::vector<uint8_t>&) override { return false; }
+    bool load_state(const std::vector<uint8_t>&) override { return false; }
+    uint32_t byte(uint32_t key) const {
+        auto f = bytes.find(key);
+        return f == bytes.end() ? 0 : f->second;
+    }
+    uint32_t peek(uint32_t address, int size) override {
+        // What the bus shows: the mapped bank at D000-DFFF.
+        uint32_t v = 0;
+        for (int i = 0; i < size; ++i) {
+            uint32_t a = address + uint32_t(i);
+            v |= (a >= 0xD000 && a < 0xE000 ? byte(banked(mapped, a)) : byte(a)) << (8 * i);
+        }
+        return v;
+    }
+    uint32_t peek_bank(uint32_t address, int bank, int size) override {
+        uint32_t v = 0;
+        for (int i = 0; i < size; ++i) v |= byte(banked(bank, address + uint32_t(i))) << (8 * i);
+        return v;
+    }
+    size_t audio(int16_t*, size_t) override { return 0; }
+    unsigned audio_rate() const override { return 32768; }
+    std::vector<uint8_t> battery() const override { return {}; }
+    uint64_t battery_revision() const override { return 0; }
+    void set_layers(unsigned) override {}
+    std::unique_ptr<Core> shadow() const override { return nullptr; }
+};
+
+void test_game_boy() {
+    // Banked addresses in conditions and keys.
+    Condition c;
+    std::string e;
+    CHECK(parse_condition("mem8[1:DCD7] == 2", c, e) && c.terms[0].ref.address == banked(1, 0xDCD7));
+    CHECK(!parse_condition("mem8[100:DCD7] == 2", c, e));
+    uint32_t a;
+    CHECK(parse_address("1C:590D", a) && a == banked(0x1C, 0x590D) && parse_address("D163", a) && a == 0xD163);
+    GbMemory mem;
+    mem.put(banked(1, 0xDCD7), {2});
+    CHECK(c.match(mem)); // read from bank 1 though bank 6 is mapped
+
+    Profile p = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = gb\n[hud]\non = mem8[FF4A] == 80\n"
+                         "strip = 0 128 160 16\n[party]\nformat = pokemon2\ncount = 1:DCD7\nslots = 1:DCDF\n"
+                         "names = 1:DE41\nicons = 23:6BBF\n[view]\nformat = metroid2\non = mem8[FF9B] == 04\n"
+                         "level_bank = D058\n");
+    CHECK(p.has_hud && p.hud.strip.y == 128 && p.hud.strip.h == 16 && p.party.names == banked(1, 0xDE41));
+    CHECK(p.has_view && p.view.format == "metroid2" && p.view.values.at("level_bank") == "D058");
+    // A view missing its addresses is not made, with the reason.
+    CHECK(make_view(p.view, e) == nullptr && e.find("camera") != std::string::npos);
+    ViewSpec unknown;
+    unknown.format = "zork";
+    CHECK(make_view(unknown, e) == nullptr && e.find("zork") != std::string::npos);
+    Profile bad;
+    CHECK(!parse_profile("[game]\ntitle = x\ncodes = AB\n[hud]\non = mem8[FF4A] == 80\nstrip = 4 0 160 16\n", "x.ini",
+                         bad, e));
+
+    // Generation 2: two members in bank 1 (the second an egg), big-endian HP.
+    mem.put(banked(1, 0xDCD7), {2, 0x9E, 0xFD, 0xFF});
+    std::vector<uint8_t> totodile(48, 0), egg(48, 0);
+    totodile[0] = 0x9E, totodile[31] = 5, totodile[32] = 0x08, totodile[34] = 0, totodile[35] = 19, totodile[37] = 21;
+    totodile[21] = 0xAA, totodile[22] = 0xAA; // shiny DVs
+    egg[0] = 0xAF, egg[31] = 5, egg[35] = 0, egg[37] = 10;
+    for (int i = 0; i < 48; ++i) {
+        mem.bytes[banked(1, 0xDCDF + uint32_t(i))] = totodile[size_t(i)];
+        mem.bytes[banked(1, 0xDCDF + 48 + uint32_t(i))] = egg[size_t(i)];
+    }
+    mem.put(banked(1, 0xDE41), {0x93, 0x8E, 0x93, 0x8E, 0x83, 0x88, 0x8B, 0x84, 0x50});
+    PokemonGbTables t;
+    t.generation = 2;
+    t.count = banked(1, 0xDCD7);
+    t.slots = banked(1, 0xDCDF);
+    t.names = banked(1, 0xDE41);
+    std::vector<PartyMember> team;
+    uint64_t key = 0, before;
+    CHECK(read_pokemon_gb(mem, t, team, key) && team.size() == 2);
+    CHECK(team[0].name == "TOTODILE" && team[0].level == 5 && team[0].hp == 19 && team[0].max_hp == 21);
+    CHECK(team[0].status == "PSN" && team[0].species == (158 | 0x10000) && team[1].egg && team[1].name == "Egg");
+    before = key;
+    mem.bytes[banked(1, 0xDCDF + 35)] = 18;
+    CHECK(read_pokemon_gb(mem, t, team, key) && key != before && team[0].hp == 18);
+    mem.bytes[banked(1, 0xDCDF + 35)] = 99; // more than its maximum: mid-write
+    CHECK(!read_pokemon_gb(mem, t, team, key));
+    CHECK(pokemon12_text(std::vector<uint8_t>{0x80, 0xA1, 0xF7, 0xE7, 0x50, 0x80}.data(), 6, 1) == "Ab1!");
+
+    // Final Fantasy Legend: the first and third places filled.
+    GbMemory ffl;
+    ffl.put(0xCC00, {0x00, 0x8B, 0xA4, 0x89, 0x80, 0xB1, 60, 0, 60, 0});
+    ffl.put(0xCC40, {0x05, 0x8A, 0xFF, 0xFF, 0xFF, 0x00, 0x2C, 0x01, 0x2C, 0x01});
+    CHECK(read_saga1(ffl, 0xCC00, team, key) && team.size() == 2);
+    CHECK(team[0].name == "Ba90" && team[0].detail == "Human" && team[0].hp == 60 && team[0].level == 0);
+    CHECK(team[1].name == "A" && team[1].detail == "Monster" && team[1].max_hp == 300);
+}
+
+void test_hud_strip() {
+    // The band leaves the picture while `on` holds, and only then.
+    Profile p = parse_ok("[game]\ntitle = T\ncodes = AB\n[hud]\non = mem8[02000000] == 1\nstrip = 0 144 240 16\n");
+    FakeGame game;
+    Companion companion(game, &p, "T", "GAME BOY");
+    game.run_frame(0);
+    companion.after_frame(game);
+    Picture shown = companion.compose_game(game.picture());
+    CHECK(shown.h == 144 && shown.px == game.picture().px && companion.status().showing_hud);
+    CHECK(companion.compose_game(game.picture(), true).h == 160); // a screen filter: whole
+    Canvas out(640, 480);
+    Look look;
+    Font font;
+    companion.render(out, look, font);
+    // The band's own colour across the bottom of the second screen.
+    CHECK(out.at(320, 470) == (game.picture().at(0, 159) | 0xFF000000u));
+    uint64_t key = companion.visual_key();
+    game.run_frame(0);
+    companion.after_frame(game);
+    CHECK(companion.visual_key() == key); // nothing changed: not drawn again
+    game.s.scene = 3;                     // the map screen: no band
+    game.run_frame(0);
+    companion.after_frame(game);
+    CHECK(companion.compose_game(game.picture()).h == 160 && !companion.status().showing_hud);
+}
+
+void test_shipped_gb_profiles() {
+    ProfileLibrary lib;
+    std::vector<std::string> errors;
+    lib.load_directory(PLAY_PROFILES "/gb", errors);
+    for (const auto& e : errors) std::fprintf(stderr, "profile error: %s\n", e.c_str());
+    CHECK(errors.empty());
+    // A colour game finds its profile under gb; old carts by their header title.
+    CHECK(lib.find("gbc", "BYTE") && lib.find("gb", "AZLE") && lib.find("gb", "POKEMON_BLUE"));
+    CHECK(lib.find("gb", "METROID2") && lib.find("gb", "METROID2")->has_view);
+    std::string e;
+    CHECK(make_view(lib.find("gb", "METROID2")->view, e) != nullptr);
+    CHECK(lib.find("gba", "BYTE") == nullptr);
+}
+
 int main() {
     test_parsing();
     test_shipped_profiles();
+    test_game_boy();
+    test_hud_strip();
+    test_shipped_gb_profiles();
     test_capture();
     test_companion_scheduling();
     test_saves();

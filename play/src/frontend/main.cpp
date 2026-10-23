@@ -82,11 +82,12 @@ struct Panel {
     SDL_Renderer* renderer = nullptr;
     SDL_Texture* game = nullptr;
     SDL_Texture* sharp = nullptr; // the game at a whole multiple, for sharp fill
+    int game_w = 0, game_h = 0;   // the size `game` (and `sharp`) were made for
     SDL_Texture* companion = nullptr;
     SDL_Texture* frame = nullptr; // the frame as drawn for frame_key (its name and the game's size)
     std::string frame_key;
-    bool frame_over = false; // a picture frame: laid over the game, not under it
-    SDL_Rect area{}; // where this panel sits in its window
+    bool frame_over = false;    // a picture frame: laid over the game, not under it
+    SDL_Rect area{};            // where this panel sits in its window
     SDL_GLContext gl = nullptr; // the renderer's own GL context (none for a software renderer)
     bool owns_window = false;
 };
@@ -187,7 +188,14 @@ SDL_Rect fit_rect(const SDL_Rect& area, int w, int h, bool whole) {
 
 // Game and companion textures live on both panels (a texture belongs to one
 // renderer), so swapping the screens is a choice of what each draws.
-void make_textures(Panel& p, int gw, int gh, int cw, int ch) {
+// The game's textures follow its picture's size: a Game Boy HUD band moving
+// to the second screen makes it shorter for as long as it is there.
+void make_game_textures(Panel& p, int gw, int gh) {
+    if (p.game) SDL_DestroyTexture(p.game);
+    if (p.sharp) SDL_DestroyTexture(p.sharp);
+    p.sharp = nullptr;
+    p.game_w = gw;
+    p.game_h = gh;
     p.game = SDL_CreateTexture(p.renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, gw, gh);
     SDL_SetTextureScaleMode(p.game, SDL_ScaleModeNearest);
     if (SDL_RenderTargetSupported(p.renderer)) {
@@ -196,6 +204,10 @@ void make_textures(Panel& p, int gw, int gh, int cw, int ch) {
         p.sharp = SDL_CreateTexture(p.renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, gw * k, gh * k);
         if (p.sharp) SDL_SetTextureScaleMode(p.sharp, SDL_ScaleModeLinear);
     }
+}
+
+void make_textures(Panel& p, int gw, int gh, int cw, int ch) {
+    make_game_textures(p, gw, gh);
     p.companion = SDL_CreateTexture(p.renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, cw, ch);
 }
 
@@ -227,12 +239,15 @@ FrameChoice choose_frame(const std::string& name, const std::string& folder) {
     }
     std::string error;
     if (!folder.empty() && load_picture_frame(folder + "/" + name + ".png", f.picture, error)) f.name = name;
-    else std::fprintf(stderr, "rgds-play: frame %s not used: %s\n", name.c_str(), error.empty() ? "no frames folder" : error.c_str());
+    else
+        std::fprintf(stderr, "rgds-play: frame %s not used: %s\n", name.c_str(),
+                     error.empty() ? "no frames folder" : error.c_str());
     return f;
 }
 
 void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame, const Font& font,
                const std::string& system) {
+    if (game.w != p.game_w || game.h != p.game_h) make_game_textures(p, game.w, game.h);
     SDL_UpdateTexture(p.game, nullptr, game.px, game.stride * 4);
     SDL_Rect dest = fit_rect(p.area, game.w, game.h, fit == FitInteger);
     bool sharp = fit == FitSharp, smooth = fit == FitSmooth;
@@ -400,7 +415,8 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "rgds-play: window: %s\n", SDL_GetError());
             return 1;
         }
-        if (wayland && !(set_panel_role(upper.window, "org.rgds.top") && set_panel_role(lower.window, "org.rgds.bottom")))
+        if (wayland &&
+            !(set_panel_role(upper.window, "org.rgds.top") && set_panel_role(lower.window, "org.rgds.bottom")))
             std::fprintf(stderr, "rgds-play: could not give the windows their panels\n");
         int w, h;
         SDL_GetRendererOutputSize(upper.renderer, &w, &h);
@@ -426,17 +442,16 @@ int main(int argc, char** argv) {
     if (lower.renderer != upper.renderer) {
         use_panel(lower);
         make_textures(lower, first.w, first.h, pw, ph);
-    }
-    else {
+    } else {
         lower.game = upper.game;
         lower.sharp = upper.sharp;
         lower.companion = upper.companion;
     }
     FrameChoice frame = choose_frame(frame_choice, frames_folder);
     // What the black bar says: the system the game is for.
-    const std::string system_label = std::string(session.core().system()) == "gbc" ? "GAME BOY COLOR"
+    const std::string system_label = std::string(session.core().system()) == "gbc"  ? "GAME BOY COLOR"
                                      : std::string(session.core().system()) == "gb" ? "GAME BOY"
-                                                                                     : "GAME BOY ADVANCE";
+                                                                                    : "GAME BOY ADVANCE";
     std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit), second_name(second),
                  frame.name.c_str());
 
@@ -629,7 +644,8 @@ int main(int argc, char** argv) {
             SDL_RenderClear(window->renderer);
             for (Panel* p : {&upper, &lower}) {
                 if (p != window && !one_window) continue;
-                if (p == &game_panel) draw_game(*p, session.game(), fit, frame, session.font(), system_label);
+                if (p == &game_panel)
+                    draw_game(*p, session.game(shader_live()), fit, frame, session.font(), system_label);
                 else if (second != SecondOff) {
                     if (companion_new) SDL_UpdateTexture(p->companion, nullptr, companion.data(), pw * 4);
                     SDL_RenderCopy(p->renderer, p->companion, nullptr, &p->area);

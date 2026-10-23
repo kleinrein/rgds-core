@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Hiệu ứng nhỏ, cuộn và chuy�
 Springy menu changes with a colourful wobble	Đổi menu đàn hồi với dao động nhiều màu
 Transitions	Chuyển tiếp
 Subtle	Nhẹ
-Menu sounds	Âm thanh menu
+Menu effects	Hiệu ứng menu
 Effects volume	Âm lượng hiệu ứng
 Preview sound	Nghe thử âm thanh
 A little handheld magic	Một chút phép màu cầm tay
@@ -943,4 +943,17 @@ Next picture	Ảnh tiếp theo
 No pictures yet	Chưa có ảnh
 Available	Có sẵn
 Not downloaded	Chưa tải
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Chưa có thông tin game. Bật Thông tin game trong Cài đặt > Thư viện > Nguồn bìa, rồi tải bìa.
+More filters	Thêm bộ lọc
+Show games	Hiện game
+Reset filters	Đặt lại bộ lọc
+Any	Tất cả
+{0} active	{0} đang bật
+Still reading your library. Try again in a moment.	Đang đọc thư viện. Hãy thử lại sau giây lát.
+No game has this information yet. Fetch artwork with Game info turned on.	Chưa có game nào có thông tin này. Hãy tải bìa khi bật Thông tin game.
+With info	Có thông tin
+Without info	Không có thông tin
+Online play	Chơi trực tuyến
+1 player	1 người chơi
+{0} players	{0} người chơi
+No game information yet.	Chưa có thông tin game.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Bật Thông tin game trong Cài đặt > Thư viện > Nguồn bìa, rồi tải bìa.

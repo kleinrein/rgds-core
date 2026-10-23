@@ -97,7 +97,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title.find("Sleep") != std::string::npos || title.find("sleep") != std::string::npos)
         return SettingsIcon::Sleep;
     if (title == "Preview sound") return SettingsIcon::Play;
-    if (title == "Menu sounds" || title == "Effects volume") return SettingsIcon::Volume;
+    if (title == "Menu effects" || title == "Effects volume") return SettingsIcon::Volume;
     if (title.find("Sound") != std::string::npos || title.find("Volume") != std::string::npos ||
         title.find("Mute") != std::string::npos || title.find("mute") != std::string::npos)
         return SettingsIcon::Volume;

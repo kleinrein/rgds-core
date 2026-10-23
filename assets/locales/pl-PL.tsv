@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Drobne efekty, przewijanie i animacj
 Springy menu changes with a colourful wobble	Sprężyste zmiany menu z kolorowym kołysaniem
 Transitions	Przejścia
 Subtle	Subtelne
-Menu sounds	Dźwięki menu
+Menu effects	Efekty menu
 Effects volume	Głośność efektów
 Preview sound	Odsłuchaj dźwięk
 A little handheld magic	Odrobina kieszonkowej magii
@@ -943,4 +943,17 @@ Next picture	Następny obraz
 No pictures yet	Jeszcze brak obrazów
 Available	Dostępne
 Not downloaded	Nie pobrano
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Brak informacji o grze. Włącz Informacje o grze w Ustawienia > Biblioteka > Źródła okładek i pobierz okładki.
+More filters	Więcej filtrów
+Show games	Pokaż gry
+Reset filters	Wyczyść filtry
+Any	Wszystkie
+{0} active	{0} aktywne
+Still reading your library. Try again in a moment.	Biblioteka jest jeszcze wczytywana. Spróbuj za chwilę.
+No game has this information yet. Fetch artwork with Game info turned on.	Żadna gra nie ma jeszcze tej informacji. Pobierz okładki z włączonymi Informacjami o grze.
+With info	Z informacjami
+Without info	Bez informacji
+Online play	Gra online
+1 player	1 gracz
+{0} players	{0} graczy
+No game information yet.	Brak informacji o grze.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Włącz Informacje o grze w Ustawienia > Biblioteka > Źródła okładek i pobierz okładki.

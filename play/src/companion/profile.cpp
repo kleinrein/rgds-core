@@ -78,7 +78,7 @@ bool parse_ref(const std::string& text, Ref& out, std::string& error) {
         error = "unknown value '" + kind + "' (mem8, mem16, mem32)";
         return false;
     }
-    if (!parse_number(base.substr(open + 1, close - open - 1), out.address, true)) {
+    if (!parse_address(base.substr(open + 1, close - open - 1), out.address)) {
         error = "bad address in '" + text + "'";
         return false;
     }
@@ -125,6 +125,20 @@ bool parse_pixels(const std::string& text, std::vector<PixelProbe>& out) {
 }
 
 } // namespace
+
+// An address in hex: 03000BDE, or banked as BANK:ADDRESS (1C:590D, 1:DCD7) for a
+// Game Boy's ROM or work RAM bank (core.hpp's banked()).
+bool parse_address(const std::string& text, uint32_t& out) {
+    std::string s = trim(text);
+    auto colon = s.find(':');
+    if (colon == std::string::npos) return parse_number(s, out, true);
+    uint32_t bank = 0, address = 0;
+    if (!parse_number(s.substr(0, colon), bank, true) || !parse_number(s.substr(colon + 1), address, true) ||
+        bank > 0xFF || address > 0xFFFF)
+        return false;
+    out = banked(int(bank), address);
+    return true;
+}
 
 bool parse_buttons(const std::string& text, uint32_t& out) {
     static const std::pair<const char*, uint32_t> names[] = {
@@ -214,8 +228,13 @@ std::string Condition::describe(Core& core) const {
     std::string out;
     char text[48];
     for (const auto& t : terms) {
-        std::snprintf(text, sizeof(text), "%smem%d[%08X]=%X", out.empty() ? "" : " ", t.ref.size * 8,
-                      unsigned(t.ref.address), unsigned(t.ref.read(core)));
+        const uint32_t a = t.ref.address;
+        if (a & banked_flag)
+            std::snprintf(text, sizeof(text), "%smem%d[%X:%04X]=%X", out.empty() ? "" : " ", t.ref.size * 8,
+                          unsigned((a >> 16) & 0xFF), unsigned(a & 0xFFFF), unsigned(t.ref.read(core)));
+        else
+            std::snprintf(text, sizeof(text), "%smem%d[%08X]=%X", out.empty() ? "" : " ", t.ref.size * 8, unsigned(a),
+                          unsigned(t.ref.read(core)));
         out += text;
     }
     return out;
@@ -259,10 +278,13 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
         if (line.front() == '[') {
             if (line.back() != ']') return fail("unclosed section");
             section = trim(line.substr(1, line.size() - 2));
-            if (section != "game" && section != "companion" && section != "map" && section != "hud")
+            if (section != "game" && section != "companion" && section != "map" && section != "hud" &&
+                section != "party" && section != "view")
                 return fail("unknown section [" + section + "]");
             if (section == "map") out.has_map = true;
             if (section == "hud") out.has_hud = true;
+            if (section == "party") out.has_party = true;
+            if (section == "view") out.has_view = true;
             continue;
         }
         auto eq = line.find('=');
@@ -322,6 +344,22 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             } else if (key == "sprites") {
                 if (value == "none") h.sprite_priority = -1;
                 else ok = parse_int(value, h.sprite_priority) && h.sprite_priority >= 0 && h.sprite_priority <= 3;
+            } else if (key == "bg_priority_below") {
+                ok = parse_int(value, h.bg_priority_below) && h.bg_priority_below >= 1 && h.bg_priority_below <= 4;
+            } else if (key == "map_cnt") {
+                ok = parse_number(value, h.map_cnt, true) && h.map_cnt <= 0xFFFF && h.map_cnt != 0;
+            } else if (key == "window_effects_off") {
+                ok = parse_number(value, h.window_effects_off, true) && h.window_effects_off <= 3;
+            } else if (key == "sprite_tiles") {
+                // lo-hi [priority]
+                auto w = words(value);
+                Core::ObjRule r;
+                auto dash = w.empty() ? std::string::npos : w[0].find('-');
+                ok = dash != std::string::npos && w.size() <= 2 && parse_int(w[0].substr(0, dash), r.lo) &&
+                     parse_int(w[0].substr(dash + 1), r.hi) && r.lo >= 0 && r.hi <= 1023 && r.lo <= r.hi &&
+                     (w.size() == 1 || (parse_int(w[1], r.priority) && r.priority >= 0 && r.priority <= 3));
+                if (ok) h.sprite_tiles.push_back(r);
+                else why = "expected sprite_tiles = lo-hi [priority]";
             } else if (key == "backdrop") {
                 h.backdrop_game = value == "game";
                 if (!h.backdrop_game) ok = parse_number(value, h.backdrop, true);
@@ -344,6 +382,10 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                      parse_rect(to[0] + " " + to[1] + " " + to[2] + " " + to[3], panel.to);
                 if (ok) h.panels.push_back(panel);
                 else why = "expected panel = x y w h > X Y W H [trim]";
+            } else if (key == "strip") {
+                // x y w h, whole rows at the top or bottom of the picture
+                ok = parse_rect(value, h.strip) && h.strip.x == 0 && h.strip.y >= 0;
+                if (!ok) why = "expected strip = 0 y w h";
             } else if (key == "to_game") {
                 // x y w h > X Y
                 auto gt = value.find('>');
@@ -354,12 +396,36 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 if (ok) h.to_game.push_back(m);
                 else why = "expected to_game = x y w h > X Y";
             } else return fail("unknown key '" + key + "' in [hud]");
+        } else if (section == "party") {
+            auto& p = out.party;
+            if (key == "format") {
+                p.format = value;
+                ok = value == "pokemon1" || value == "pokemon2" || value == "pokemon3" || value == "goldensun" ||
+                     value == "saga1";
+            } else if (key == "count") ok = parse_address(value, p.count);
+            else if (key == "slots") ok = parse_address(value, p.slots);
+            else if (key == "icons") ok = parse_address(value, p.icons);
+            else if (key == "icon_palette_index") ok = parse_address(value, p.icon_palette_index);
+            else if (key == "icon_palettes") ok = parse_address(value, p.icon_palettes);
+            else if (key == "names") ok = parse_address(value, p.names);
+            else if (key == "dex_order") ok = parse_address(value, p.dex_order);
+            else if (key == "icon_kinds") ok = parse_address(value, p.icon_kinds);
+            else if (key == "on") ok = parse_condition(value, p.on, why);
+            else return fail("unknown key '" + key + "' in [party]");
+        } else if (section == "view") {
+            if (key == "format") out.view.format = value;
+            else if (key == "on") ok = parse_condition(value, out.view.on, why);
+            else out.view.values[key] = value; // the format's own keys, checked when the view is made
         } else return fail("key outside a section");
         if (!ok) return fail(why.empty() ? "bad value for '" + key + "'" : why);
     }
     if (out.codes.empty()) return fail("[game] codes is missing");
     if (out.title.empty()) return fail("[game] title is missing");
     if (out.has_hud && out.hud.on.empty()) return fail("[hud] on is missing");
+    if (out.has_view && out.view.format.empty()) return fail("[view] format is missing");
+    if (out.has_party &&
+        (out.party.format.empty() || (!out.party.count && out.party.format != "saga1") || !out.party.slots))
+        return fail("[party] needs format, count and slots");
     if (out.has_map) {
         if (out.map.open.empty()) return fail("[map] open is missing");
         if (out.map.ready.empty() && out.map.pixels.empty())

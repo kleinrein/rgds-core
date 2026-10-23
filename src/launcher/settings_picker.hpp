@@ -96,7 +96,7 @@ std::string App::emulator_choice_hint() const {
 }
 
 bool App::open_setting_picker() {
-    if ((settings.page == Page::GameOptions && settings.focus >= list_count() - 2) ||
+    if ((settings.page == Page::GameOptions && settings.focus >= list_count() - 3) ||
         (settings.page == Page::EmulatorOptions && settings.focus >= list_count() - 2))
         return false;
     int row = settings.focus;
@@ -179,8 +179,11 @@ bool App::open_setting_picker() {
         if (o.independent) return false;
         show_picker("Boot into", {"Anbernic", "RG DS Core"}, device_status["boot_mode"] == "rgds",
                     [this](int n) { change_startup(n ? 1 : -1, false); });
-    } else if (settings.page == Page::Controls && !control_capture && row == 0 && !model.games.empty()) {
-        show_picker("Profile", {"Global", "This game"}, controls_per_game, [this](int n) {
+    } else if (settings.page == Page::Controls && !control_capture && row == 0) {
+        // Without a game there is nothing to attach a profile to: the list holds only Global so A still answers.
+        std::vector<std::string> profiles = {"Global"};
+        if (!model.games.empty()) profiles.push_back("This game");
+        show_picker("Profile", profiles, controls_per_game, [this](int n) {
             controls_per_game = n;
             load_controls_editor();
             controls_notice.clear();

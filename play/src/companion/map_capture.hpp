@@ -64,6 +64,9 @@ private:
     std::condition_variable wake_;
     std::thread thread_;
     std::vector<uint8_t> pending_;
+    // The live battery memory for the shadow, taken again whenever the game saves.
+    std::vector<uint8_t> pending_battery_;
+    uint64_t battery_revision_ = 0;
     bool has_job_ = false, working_ = false, quit_ = false;
     MapImage latest_;
     uint32_t serial_ = 0;

@@ -30,6 +30,9 @@ struct PlaySplit {
     bool on;
     unsigned bg_mask;
     int sprite_priority;
+    PlayObjRule rules[8];
+    int rule_count;
+    unsigned effects_off;
 };
 
 /* The renderer an mGBA callback was called with belongs to one split; a
@@ -49,8 +52,12 @@ uint32_t play_split_key(void) { return (uint32_t)mColorFrom555(KEY_555) & 0xFFFF
 static uint16_t hidden(uint16_t attr0) { return (uint16_t)((attr0 & ~0x0300) | 0x0200); }
 
 static bool to_hud(const PlaySplit* s, const struct GBAObj* obj) {
-    if (s->sprite_priority < 0) return false;
-    return ((obj->c >> 10) & 3) == (unsigned)s->sprite_priority;
+    const int priority = (obj->c >> 10) & 3, tile = obj->c & 0x3FF;
+    for (int i = 0; i < s->rule_count; ++i) {
+        const PlayObjRule* r = &s->rules[i];
+        if (tile >= r->lo && tile <= r->hi && (r->priority < 0 || r->priority == priority)) return true;
+    }
+    return s->sprite_priority >= 0 && priority == s->sprite_priority;
 }
 
 static void filter_object(PlaySplit* s, int index) {
@@ -66,14 +73,24 @@ static void filter_all(PlaySplit* s) {
     for (int i = 0; i < 128; ++i) filter_object(s, i);
 }
 
+/* WININ as the game picture sees it: without the effect bits of the windows
+ * whose shade belonged to a panel now on the second screen. */
+static uint16_t game_winin(const PlaySplit* s, uint16_t value) {
+    if (!s->on) return value;
+    if (s->effects_off & 1) value &= (uint16_t)~0x0020;
+    if (s->effects_off & 2) value &= (uint16_t)~0x2000;
+    return value;
+}
+
 static void apply_layers(PlaySplit* s) {
     for (int i = 0; i < 4; ++i) {
         bool hud = s->on && ((s->bg_mask >> i) & 1);
         s->main->disableBG[i] = hud;
         s->hud.d.disableBG[i] = !hud;
     }
-    s->hud.d.disableOBJ = !(s->on && s->sprite_priority >= 0);
+    s->hud.d.disableOBJ = !(s->on && (s->sprite_priority >= 0 || s->rule_count > 0));
     s->main->oam = s->on ? &s->game_oam : &s->gba->video.oam;
+    s->writeVideoRegister(s->main, GBA_REG_WININ, game_winin(s, s->gba->memory.io[GBA_REG(WININ)]));
     filter_all(s);
     s->writeOAM(s->main, 0);
     s->hud.d.writeOAM(&s->hud.d, 0);
@@ -92,7 +109,9 @@ static void hud_palette(PlaySplit* s, uint32_t address, uint16_t value) {
 
 static uint16_t w_register(struct GBAVideoRenderer* r, uint32_t address, uint16_t value) {
     PlaySplit* s = split_of(r);
-    uint16_t stored = s->writeVideoRegister(r, address, value);
+    uint16_t stored = s->writeVideoRegister(r, address, address == GBA_REG_WININ ? game_winin(s, value) : value);
+    /* what the game reads back is what it wrote: only the picture drops the effect */
+    if (address == GBA_REG_WININ) stored = value & 0x3F3F;
     hud_register(s, address, value);
     return stored;
 }
@@ -184,6 +203,22 @@ void play_split_set(PlaySplit* s, bool on, unsigned bg_mask, int sprite_priority
     s->on = on;
     s->bg_mask = bg_mask & 0xF;
     s->sprite_priority = sprite_priority;
+    apply_layers(s);
+}
+
+void play_split_set_objects(PlaySplit* s, const PlayObjRule* rules, int count) {
+    if (!s) return;
+    if (count < 0) count = 0;
+    if (count > 8) count = 8;
+    if (count == s->rule_count && !memcmp(s->rules, rules, sizeof(*rules) * (size_t)count)) return;
+    memcpy(s->rules, rules, sizeof(*rules) * (size_t)count);
+    s->rule_count = count;
+    apply_layers(s);
+}
+
+void play_split_set_window_effects_off(PlaySplit* s, unsigned windows) {
+    if (!s || s->effects_off == (windows & 3)) return;
+    s->effects_off = windows & 3;
     apply_layers(s);
 }
 

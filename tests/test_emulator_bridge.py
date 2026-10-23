@@ -277,7 +277,6 @@ int main(int argc,char** argv){
  auto queued=events.size(),deferred=releases.size();
  command("speed-1","fast-forward");test_time=2530;tick();
  assert(state().find("state=fast-forward-on")!=std::string::npos);assert(fast_forward);
- if(core=="nnddss") { int n=0;auto keys=SDL_GetKeyboardState(&n);assert(keys[SDL_SCANCODE_TAB]==1 && native_keys[SDL_SCANCODE_TAB]==0); }
  assert(events.size()==queued+2 && releases.size()==deferred);
  if(core=="drastic"){assert(events[queued].jbutton.button==19 && events[queued].type==SDL_JOYBUTTONDOWN);assert(events.back().type==SDL_JOYBUTTONUP);}
  else{assert(events[queued].key.keysym.sym==SDLK_TAB && events[queued].type==SDL_KEYDOWN);assert(events.back().type==SDL_KEYUP);}
@@ -357,7 +356,7 @@ int main(int argc,char** argv){
         cls.temp.cleanup()
 
     def test_verified_atomic_writer_skips_delay_without_accepting_old_or_partial_states(self):
-        for core in ("dsperate", "drastic", "nnddss", "melonds"):
+        for core in ("dsperate", "drastic", "melonds"):
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
                 result = subprocess.run(
                     [str(self.binary), folder, core, "atomic"], capture_output=True, text=True, timeout=5
@@ -372,7 +371,7 @@ int main(int argc,char** argv){
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_each_engine_has_the_same_bounded_checkpoint_and_menu_protocol(self):
-        for core in ("drastic", "dsperate", "nnddss", "melonds", "rgds-play"):
+        for core in ("drastic", "dsperate", "melonds", "rgds-play"):
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
                 result = subprocess.run([str(self.binary), folder, core], capture_output=True, text=True, timeout=5)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

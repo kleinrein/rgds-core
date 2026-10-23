@@ -61,6 +61,13 @@ public:
 
     // Side-effect-free reads of the bus (RAM, I/O as last written).
     virtual uint32_t peek(uint32_t address, int size) = 0;
+    // The same from one bank of banked memory, whatever the game has mapped
+    // now: a Game Boy cartridge's ROM bank at 4000-7FFF, a Game Boy Color's
+    // work RAM bank at D000-DFFF. -1: as mapped.
+    virtual uint32_t peek_bank(uint32_t address, int bank, int size) {
+        (void)bank;
+        return peek(address, size);
+    }
 
     virtual size_t audio(int16_t* stereo, size_t max_frames) = 0;
     virtual unsigned audio_rate() const = 0;
@@ -69,6 +76,10 @@ public:
     // the game finishes writing its save (mGBA's settle-then-sync point).
     virtual std::vector<uint8_t> battery() const = 0;
     virtual uint64_t battery_revision() const = 0;
+    // A shadow's battery memory set to the live game's (some games read it as
+    // they draw: the European Oracles keep their language there). Memory only:
+    // a shadow never writes a save file.
+    virtual void restore_battery(const std::vector<uint8_t>& bytes) { (void)bytes; }
 
     // Layers drawn: bits 0-3 BG0-3, bit 4 sprites (0x1F = everything).
     virtual void set_layers(unsigned mask) = 0;
@@ -81,6 +92,14 @@ public:
         (void)on, (void)bg_mask, (void)sprite_priority;
         return false;
     }
+    // Sprites that are HUD by their first tile (lo..hi) and priority (-1: any),
+    // as well as sprite_priority's; set before hud_split(true).
+    struct ObjRule {
+        int lo = 0, hi = 1023, priority = -1;
+    };
+    virtual void hud_objects(const std::vector<ObjRule>& rules) { (void)rules; }
+    // While split, no colour effect inside these windows (bit 0 WIN0, bit 1 WIN1).
+    virtual void hud_window_effects_off(unsigned windows) { (void)windows; }
     // The HUD as last drawn; pixels equal to hud_key() (low 24 bits) are empty.
     virtual Picture hud() const { return {}; }
     virtual uint32_t hud_key() const { return 0; }
@@ -89,6 +108,18 @@ public:
     // memory. Null when the core cannot make one.
     virtual std::unique_ptr<Core> shadow() const = 0;
 };
+
+// A banked address ("1C:590D": ROM bank 1C; "1:DCD7": work RAM bank 1), as
+// profiles write them, in one number: bit 31 set, the bank in bits 16-23.
+constexpr uint32_t banked_flag = 0x80000000u;
+constexpr uint32_t banked(int bank, uint32_t address) {
+    return banked_flag | (uint32_t(bank & 0xFF) << 16) | (address & 0xFFFF);
+}
+// Reads a plain or banked address.
+inline uint32_t peek_address(Core& core, uint32_t address, int size) {
+    if (!(address & banked_flag)) return core.peek(address, size);
+    return core.peek_bank(address & 0xFFFF, int((address >> 16) & 0xFF), size);
+}
 
 // ROM bytes are shared read-only between the live core and its shadows.
 using RomBytes = std::shared_ptr<const std::vector<uint8_t>>;

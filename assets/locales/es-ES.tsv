@@ -691,7 +691,7 @@ Small touches, scrolling and startup motion	Pequeños efectos, desplazamiento e 
 Springy menu changes with a colourful wobble	Cambios de menú con rebotes de colores
 Transitions	Transiciones
 Subtle	Sutil
-Menu sounds	Sonidos del menú
+Menu effects	Efectos del menú
 Effects volume	Volumen de efectos
 Preview sound	Escuchar un sonido
 A little handheld magic	Un poco de magia portátil
@@ -943,4 +943,17 @@ Next picture	Siguiente imagen
 No pictures yet	Aún no hay imágenes
 Available	Disponible
 Not downloaded	No descargado
-No game information yet. Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Aún no hay información. Activa Info del juego en Ajustes > Biblioteca > Fuentes de carátulas y descarga las carátulas.
+More filters	Más filtros
+Show games	Mostrar juegos
+Reset filters	Restablecer filtros
+Any	Todos
+{0} active	{0} activos
+Still reading your library. Try again in a moment.	Aún se está leyendo la biblioteca. Inténtalo de nuevo en un momento.
+No game has this information yet. Fetch artwork with Game info turned on.	Ningún juego tiene aún esta información. Descarga las carátulas con Info del juego activada.
+With info	Con info
+Without info	Sin info
+Online play	Juego en línea
+1 player	1 jugador
+{0} players	{0} jugadores
+No game information yet.	Aún no hay información del juego.
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Activa Info del juego en Ajustes > Biblioteca > Fuentes de carátulas y descarga las carátulas.

@@ -57,11 +57,13 @@ The live core gets a second mGBA software renderer (`play/src/core/mgba_split.c`
 
 The second screen is laid out by the profile: each `panel` box of the HUD gets a slot and is drawn at the largest whole-pixel scale that fits it. `trim` cuts a box down to what the HUD has drawn in it this race, so each course's map fills its slot whatever its shape. Behind the HUD is the game's own scenery, drawn by a silent copy with only the scenery layers (no karts, no Lakitu, no HUD) every ten seconds on its own thread. `to_game` boxes go back onto the game screen where the player looks (Super Circuit: the item box and your place).
 
+On the Game Boy the HUD is usually a band of whole rows: the window layer at the bottom (Link's Awakening, Metroid II) or a status bar kept at the top (the Oracle games). A `[hud]` with `strip = 0 y w h` needs no second renderer: while `on` holds, those rows are cut from the game picture (the top panel shows a shorter picture, at a larger scale) and drawn at a whole scale along the bottom of the second screen, under the map, team or view. With a screen filter on, the top panel keeps the whole picture, since the bridge shades only full-size pictures.
+
 **Cost on the RG DS, Super Circuit racing (600 frames):** emulation 4.9 ms a frame alone, 5.3 ms with the split; drawing both panels in software 2.5 ms (the windowed player draws the top one on the GPU). About 8 ms of a 16.7 ms frame.
 
 ## Profiles
 
-A profile is a text file in `play/profiles/<system>/`, picked by the game code in the ROM header. Profiles are data: adding a game, or fixing one, needs no rebuild.
+A profile is a text file in `play/profiles/<system>/`, picked by the game code in the ROM header. Profiles are data: adding a game, or fixing one, needs no rebuild. Game Boy and Game Boy Color profiles live in `profiles/gb/`; carts older than the Game Boy Color carry no game code, so their profiles name the header title instead, upper case with `_` between words (`POKEMON_BLUE`, `METROID2`).
 
 ```ini
 [game]
@@ -103,7 +105,35 @@ backdrop_rows = 76              # only the rows above the horizon
 moves_when = mem16[06003808] == C044   # the layout below applies (racing, not results)
 to_game = 104 0 33 29 > 4 4     # a HUD box put back on the game screen at X Y
 panel = 140 64 100 96 > 136 84 488 380 trim   # HUD box > slot on a 640x480 panel
+sprite_tiles = 256-295 0        # sprites by first tile (and priority): HUD too
+window_effects_off = 1          # no shade inside WIN0 (1) / WIN1 (2) on the game screen
+bg_priority_below = 2           # HUD = the BG layers below this priority (games that move menus between layers)
+map_cnt = 4C03                  # on only while some BGxCNT holds this (the map's layer)
+
+[party]
+format = pokemon3               # pokemon1/2/3 (Red/Blue, Gold/Silver/Crystal, Ruby to LeafGreen), goldensun, saga1
+count = 03004350                # the member count (pokemon3) or party flags (goldensun)
+slots = 03004360                # the first member
+icons = 083BBD3C                # ROM icon table, palette indices and palette table (pokemon3, optional;
+icon_palette_index = 083BC41C   # checked against the palette table's tags, so another revision
+icon_palettes = 083BC5D4        # shows no icons rather than noise)
+names = 1:DE41                  # pokemon1/2: nicknames; dex_order and icon_kinds: their ROM tables
+
+[view]
+format = metroid2               # a second screen the player draws itself (companion/view.hpp)
+on = mem8[FF9B] == 04 | 08      # shown while this holds
+level_bank = D058               # the format's own keys, mostly addresses
+
+[hud]                           # Game Boy: a band of whole rows instead of layers
+on = mem8[DB95] == 0B and mem8[FF4A] == 80
+strip = 0 128 160 16            # x y w h: full width, at the top or the bottom
 ```
+
+Game Boy addresses can name a bank: `1:DCD7` is work RAM bank 1 (Game Boy Color games switch banks mid-frame, so the bus alone reads the wrong one half the time), `1C:590D` is ROM bank 1C. They work in conditions (`mem8[1:DCD7] == 01`) and in every address key.
+
+The silent copy that captures maps starts with the live game's battery memory, and gets it again whenever the game saves: the European Oracle games keep their language there, and draw garbage without it.
+
+With a `[party]` section and no map or HUD on show, the second screen draws the team live from memory: one card per member with its icon, name, level, an HP bar (and PP for Golden Sun) and status.
 
 Conditions are `memN[address] [& mask] == a | b`, `!= a`, or `in lo..hi`, joined with `and`; addresses and values are hex. A parse error names the file and line, and that profile is skipped; the game still plays.
 
@@ -115,6 +145,38 @@ Shipped today:
 | `AMTE` | Metroid Fusion (USA) | Facts from GBA DS; not yet run through RG DS Play |
 | `A2CE` | Castlevania: Aria of Sorrow (USA) | Facts from GBA DS; not yet run through RG DS Play |
 | `AMKE` `AMKP` `AMKJ` | Mario Kart: Super Circuit (USA, Europe, Japan) | HUD on the second screen while racing; the pause menu, lap times, results and TRY AGAIN / NEXT RACE stay on the game screen, with the race's last HUD kept below. Whole races driven headless with `tools/play_drive.py` (with and without items) and replayed through the real player on the RG DS |
+| `A2CP` `A2CJ`, `AMTP` `AMTJ` | Aria of Sorrow and Metroid Fusion (Europe, Japan) | GBA DS's facts, Japanese addresses shifted as GBA DS does; not yet run |
+| `ACHE` `ACHP` `ACHJ` | Castlevania: Harmony of Dissonance | Castle map (SELECT); facts from GBA DS, not yet run |
+| `AAME` `AAMP` `AAMJ` | Castlevania: Circle of the Moon | Map (SELECT); facts from GBA DS, not yet run |
+| `BMXE` `BMXP` `BMXJ` | Metroid: Zero Mission | Map (START); facts from GBA DS, not yet run |
+| `AZLE` `AZLP` `AZLJ` | The Legend of Zelda: A Link to the Past | World and dungeon maps (L); facts from GBA DS, not yet run |
+| `AA2E` `AA2P` | Super Mario Advance 2 | Status bar on the second screen in levels (item box and message boxes stay); the SELECT level list on the world map. Run on the European dump |
+| `AX4E` `AX4P` | Super Mario Advance 4 | Status line on the second screen in levels; the P-meter stays. Run on the European dump |
+| `AXVE` | Pokémon Ruby | Live team panel with the game's own icons. Run with a team on Ruby (Rev 2) |
+| `AXPE` | Pokémon Sapphire | Live team panel, no icons (Ruby's layout; no Sapphire dump to find its icon table) |
+| `BPEE` | Pokémon Emerald | Live team panel with icons; team addresses from pokeemerald, icon tables found in the dump; not yet run with a team |
+| `BPRE` `BPGE` | Pokémon FireRed and LeafGreen | Live team panel (icons on FireRed Rev 1); team addresses from pokefirered; not yet run with a team |
+| `B24E` `B24P` | Pokémon Mystery Dungeon: Red Rescue Team | The floor map and the status line on the second screen in dungeons. Run on the European dump |
+| `AGSE` `AGSP` | Golden Sun | Live party panel: name, level, HP and PP. Run on the USA/Europe dump |
+| `AWRE` `AWRP` | Advance Wars | The commander and terrain/unit panels on the second screen on the battle map. Run on the European dump |
+| `AE7E` `AE7X` | Fire Emblem | Map windows, menus with the portrait and battle stats on the second screen. Run on the European dump (the prologue) |
+| `AFXE` `AFXP` | Final Fantasy Tactics Advance | Unit panel with portrait, dialogue and menus on the second screen in battles (GBA DS's tile ranges, no ROM patch). Run on the European dump |
+| `B8KE` `B8KP` | Kirby & the Amazing Mirror | HUD (ability, lives, health, phone) on the second screen. Run on the European dump |
+| `BZME` `BZMP` | The Legend of Zelda: The Minish Cap | HUD (hearts, buttons, rupees) on the second screen. Run on the European dump |
+
+Game Boy and Game Boy Color (`profiles/gb/`):
+
+| Code | Game | State |
+| --- | --- | --- |
+| `POKEMON_BLUE` `POKEMON_RED` | Pokémon Red and Blue | Live team panel with the party icons in each species' Super Game Boy colours. Run with a team on Blue (USA, Europe) |
+| `BYTE` | Pokémon Crystal | Live team panel with each species' own icon in its normal or shiny colours, read from work RAM bank 1. Run with a team on Rev 1 |
+| `AAUE` `AAXE` | Pokémon Gold and Silver | As Crystal, addresses from pokegold's symbols; not yet run |
+| `AZLE` `AZLP` `AZLJ` | Link's Awakening DX | Status bar under the island map (SELECT outdoors). Run on Rev 2 (USA, Europe); dungeon maps not done |
+| `AZ7E` `AZ7P`, `AZ8E` `AZ8P` | Oracle of Seasons, Oracle of Ages | Status bar on the second screen. Run on Seasons (Europe); the map screen not done yet |
+| `METROID2` | Metroid II: Return of Samus | An explored-area map drawn from the cartridge's level data as Samus goes (kept beside the save), with the status bar under it. Run on the World release, on the Mac and the RG DS |
+| `AW8A` | Wario Land 3 | The level's keys, treasure chests, musical coins and coins from the pause screen, kept current while you play. Run on the World release |
+| `SAGA` | The Final Fantasy Legend | Live party panel: name, race and HP. Run on the World release (one member) |
+| `HARVEST_MOON_GB` | Harvest Moon GB | The time and gold box (SELECT) on the second screen all day. Run on the European release |
 
 ## Saves
 
@@ -171,7 +233,7 @@ Everything lives in `/mnt/mmc/rgds-play` (the player, profiles, fonts, and saves
 | Path | What |
 | --- | --- |
 | `src/core/` | The system-neutral `Core` interface, the libmgba core (GBA, GB, GBC) and its HUD split |
-| `src/companion/` | Profiles and conditions, the shadow capture engine, the second-screen logic |
+| `src/companion/` | Profiles and conditions, the shadow capture engine, the second-screen logic, the team panels (`party*.cpp`) and the player's own views (`view.cpp`; `automap.cpp` for Metroid II) |
 | `src/app/` | `Session` (one game: core, save, companion) and save storage |
 | `src/ui/` | CPU canvas, the launcher's rounded font (RGF1 atlases), panel layout, BMP output |
 | `src/frontend/` | `rgds-play` (SDL2) |

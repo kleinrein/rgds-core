@@ -5,7 +5,9 @@
 // changes, or a title card until there is something to show.
 #pragma once
 #include "companion/map_capture.hpp"
+#include "companion/party.hpp"
 #include "companion/profile.hpp"
+#include "companion/view.hpp"
 #include "ui/canvas.hpp"
 
 #include <atomic>
@@ -37,8 +39,10 @@ public:
     void after_frame(Core& live);
     void render(Canvas& out, const Look& look, const Font& font) const;
     // The game picture as the top panel shows it: with the HUD split, the
-    // profile's boxes (item box, place) are put back where the player looks.
-    Picture compose_game(const Picture& game);
+    // profile's boxes (item box, place) are put back where the player looks;
+    // a Game Boy HUD band is cut off unless `whole` (a screen filter is on,
+    // which shades only the full-size picture).
+    Picture compose_game(const Picture& game, bool whole = false);
     CompanionStatus status() const;
     // The HUD's `on` probes as they read now, for the log when it changes.
     std::string hud_probes(Core& live) const;
@@ -49,15 +53,27 @@ public:
     bool busy() const { return (capture_ && capture_->busy()) || backdrop_working_; }
     // Tools: capture right now on this thread.
     bool capture_now(Core& live);
+    // The profile's own view ([view]), if it has one this build can draw.
+    View* view() const { return view_.get(); }
 
 private:
     void take(MapImage img);
     void update_hud(Core& live);
     bool render_hud(Canvas& out, const Look& look) const;
+    // Game Boy HUD band ([hud] strip): cut from the picture, drawn under the rest.
+    bool strip_mode() const { return profile_ && profile_->has_hud && !profile_->hud.strip.empty(); }
+    void update_strip(Core& live);
+    void render_with_strip(Canvas& out, const Look& look, const Font& font) const;
+    // What the second screen shows besides a HUD: the map, the team, a view, or the title card.
+    void render_content(Canvas& out, const Look& look, const Font& font) const;
+    uint64_t content_key() const;
 
     const Profile* profile_;
     std::string title_, system_name_;
     std::unique_ptr<MapCapture> capture_;
+    std::unique_ptr<Party> party_;
+    bool party_shown_ = false;
+    std::unique_ptr<View> view_;
     MapImage current_, previous_;
     bool has_current_ = false, has_previous_ = false;
     uint64_t frame_ = 0, due_ = 30, next_periodic_ = 0, shown_at_ = 0;
@@ -69,8 +85,10 @@ private:
     bool hud_on_ = false, hud_shown_ = false, moves_ = false;
     int hud_frames_ = 0, hud_w_ = 0, hud_h_ = 0;
     uint32_t hud_key_ = 0;
+    unsigned hud_layers_ = 0;
     std::vector<uint32_t> hud_image_, composed_;
     std::vector<Rect> drawn_; // per panel: where the HUD has drawn since it came on
+    uint64_t strip_hash_ = 0;
     // The scenery behind the HUD, drawn by a shadow copy without the HUD and sprites.
     void make_backdrop(Core& live);
     // Built on its own thread (a state load and a frame, ~10 ms on the A55),
