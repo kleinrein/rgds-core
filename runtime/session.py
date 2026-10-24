@@ -169,7 +169,7 @@ def environment(app, *, standalone=False):
     configure_audio(app, env)
     print(
         'Device profile: ' + env['RGDS_DEVICE_MODEL'] + '; touch=' + env.get('RGDS_TOUCH_DEV', 'auto') +
-        '; controller=' + env.get('NNDDSS_KEYS_DEV', 'unresolved'),
+        '; controller=' + env.get('RGDS_KEYS_DEV', 'unresolved'),
         flush=True
     )
     existing = env.get("XDG_RUNTIME_DIR")

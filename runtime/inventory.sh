@@ -45,7 +45,7 @@ for d in /run/user/0 /var/run /run /tmp; do
     for f in "$d"/wayland-*; do [ ! -S "$f" ] || ls -l "$f"; done
 done
 section emulators_and_sdl
-for d in /mnt/vendor/deep/drastic_aarch64 /mnt/vendor/deep/drastic64 /mnt/mmc/nnddss; do
+for d in /mnt/vendor/deep/drastic_aarch64 /mnt/vendor/deep/drastic64; do
     [ ! -d "$d" ] || ls -l "$d"
 done
 for f in /usr/lib/libSDL2* /mnt/vendor/deep/drastic*/libs/libSDL2* /usr/lib/libdrastouch*; do

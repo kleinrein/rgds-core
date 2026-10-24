@@ -179,8 +179,8 @@ def _package():
         if sha(app / 'services/samba' / name) != expected:
             raise ValueError('SMB service changed while packaging: ' + name)
     put(ROOT / "assets/emulator-profiles/dsperate.ini", app / "emulators/dsperate.ini")
-    # From the bundle only the attributed shader presets; the retired NNDDSS
-    # payload (supplied binaries) is not shipped.
+    # From the bundle only the attributed shader presets; engine binaries are not
+    # shipped from it (an old bundle may still hold a legacy nnddss/ payload).
     bundled = lambda name: not name.startswith(("dsperate/", "nnddss/"))
     for name in sorted(filter(bundled, payloads["files"])):
         put(upstream / name, app / "emulators" / name)
@@ -363,7 +363,7 @@ def _package():
                 info = zipfile.ZipInfo(str(source.relative_to(scratch / "card")), (2026, 10, 5, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_DEFLATED
                 executable = source.suffix == ".sh" or source.name in (
-                    "rgds-launcher", "dsperate", "nnddss", "melonds", "rgds-experimental", "rgds-experimental-vulkan",
+                    "rgds-launcher", "dsperate", "melonds", "rgds-experimental", "rgds-experimental-vulkan",
                     "rgds-play", "smbd", "smbpasswd", "smbclient", "samba-dcerpcd", "rpcd_classic", "rpcd_winreg",
                     "rpcd_lsad"
                 )

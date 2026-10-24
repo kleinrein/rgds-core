@@ -185,8 +185,12 @@ class GameShader {
         }
         // HD: 1 = the preset samples hd2d() itself (one draw, no intermediate image), 2 = it reads gpu.hd.image.
         const int hd_mode = !hd ? 0 : reads_once(selected) ? 1 : 2;
+        // A one-draw program compiles the draw's source layout in (hd2d_common's HD_FIXED).
+        const bool hd_scaled = texture_width != 256 || texture_height != 192;
+        const int hd_layout = hd_mode == 1 ? 1 | hd_scaled << 1 | hd_mask << 2 | swap_channels << 3 : 0;
         const float* strength = hd2d_strength[hd_smooth.load(std::memory_order_relaxed) ? 1 : 0];
-        const std::array<int, 5> key{selected, position, coordinate, hd_mode, grid_width << 16 | grid_height};
+        const std::array<int, 5> key{selected, position, coordinate, hd_mode | hd_layout << 4,
+                                     grid_width << 16 | grid_height};
         auto found = gpu.programs.find(key);
         if (found == gpu.programs.end()) {
             Program program;
@@ -224,7 +228,10 @@ class GameShader {
                             : linear ? "uv=clamp(uv,0.5*u_texture_size.xy,vec2(1.0)-0.5*u_texture_size.xy);"
                                      : "uv=(clamp(floor(uv*u_texture_size.zw),vec2(0.0),u_texture_size.zw-1.0)+0.5)*u_texture_size.xy;";
                         const std::string sampler =
-                            hd_mode == 1 ? std::string(hd2d_common) + hd2d_sample +
+                            hd_mode == 1 ? "#define HD_FIXED\n#define HD_SCALED " + std::to_string(int(hd_scaled)) +
+                                               "\n#define HD_MASK " + std::to_string(int(hd_mask)) +
+                                               "\n#define HD_SWAP " + std::to_string(int(swap_channels)) + "\n" +
+                                               hd2d_common + hd2d_sample +
                                                "\nvec4 rgds_sample(vec2 uv){return hd2d(uv);}\n"
                                          : "vec4 rgds_sample(vec2 uv){" + sample_body +
                                                "vec4 pixel=texture2D(u_texture,u_rgds_source.xy+uv*u_rgds_source.zw);return mix(pixel,pixel.bgra,u_rgds_swap); }\n";

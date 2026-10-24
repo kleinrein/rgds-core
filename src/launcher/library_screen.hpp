@@ -15,6 +15,26 @@ void App::favourite_badge(SDL_Renderer* r, int cx, int cy, int size) {
     draw_settings_icon(s, r, SettingsIcon::Heart, cx, cy + 1, size * 11 / 20, Color{255, 255, 255});
 }
 
+bool App::game_dual(size_t index) {
+    const auto& game = model.games[index];
+    if (game.demo) return false;
+    const fs::path profiles = o.app.empty() ? fs::path("play/profiles") : o.app / "emulators/rgds-play/profiles";
+    return dual_screen_game(game.path, game.system, profiles);
+}
+
+void App::dual_badge(SDL_Renderer* r, int x, int y) {
+    // Two little stacked screens on a quiet chip: noticed when looked for, not a label.
+    const int w = 28, h = 34;
+    alpha_round(r, x, y + 2, w, h, 9, shadow_colour(), preferences.dark ? 70 : 28);
+    round_rect(r, x - 1, y - 1, w + 2, h + 2, 10, "line");
+    round_rect(r, x, y, w, h, 9, "panel");
+    for (int screen = 0; screen < 2; ++screen) {
+        const int sy = y + 6 + screen * 12;
+        round_rect(r, x + 6, sy, 16, 10, 3, "muted");
+        round_rect(r, x + 8, sy + 2, 12, 6, 1, "panel");
+    }
+}
+
 void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
     const int size = 128, box = size + 40, left = 320 - box / 2, top = y + 118;
     const Color shade = preferences.dark ? Color{0, 0, 0} : Color{24, 40, 60};
@@ -25,6 +45,7 @@ void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
     round_rect(r, left, top, box, box, 20, "panel");
     game_icon(r, model.selected, 320 - size / 2, top + 20, size);
     if (stage_favourite) favourite_badge(r, left + box - 6, top + 6, 36);
+    if (stage_dual) dual_badge(r, left + 10, top + box - 42);
     centered_wrapped(r, game_title(model.selected), y + 322, 26, 560, 2, "ink");
     if (!developer.empty()) {
         int w = std::min(560, label_width(developer, 18, false));
@@ -47,6 +68,7 @@ bool App::cover_stage(SDL_Renderer* r, int y, const fs::path& path) {
     round_rect(r, box.x - 6, box.y - 6, box.w + 12, box.h + 12, 14, "panel");
     bool drawn = media.draw(r, path, box, false, Uint8(std::lround(255 * (.8 + .2 * ease))), false, 8);
     if (stage_favourite) favourite_badge(r, box.x + box.w - 4, box.y, 36);
+    if (stage_dual) dual_badge(r, box.x + 8, box.y + box.h - 40);
     // A faint glass sheen fading down from the top edge, like the DSi's shelves.
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     const int sheen = std::max(8, box.h * 2 / 5);

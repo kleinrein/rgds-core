@@ -22,9 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def local_components():
     candidates = [
         ROOT / "build/device/rgds-launcher", ROOT / "build/device/librgdsbridge.so",
-        ROOT / "build/engines/dsperate/dsperate", ROOT / "vendor/engines/nnddss/nnddss"
+        ROOT / "build/engines/dsperate/dsperate"
     ]
-    candidates += sorted((ROOT / "vendor/engines/nnddss/lib").glob("*.so"))
     results = {}
     for path in candidates:
         label = path.relative_to(ROOT).as_posix()

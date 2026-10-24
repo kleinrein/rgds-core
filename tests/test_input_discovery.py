@@ -104,7 +104,7 @@ class InputDiscoveryTests(unittest.TestCase):
                 patch.object(Path,'is_socket',lambda path:path==fake_socket):
             env = linux_platform.environment({}, runtime_dirs=[fake_socket.parent], library_dirs=[library])
         self.assertEqual(env['RGDS_INPUT_PROFILE'], 'mainline-rg-ds')
-        self.assertEqual(env['NNDDSS_KEYS_DEV'], str(self.dev / 'event3'))
+        self.assertEqual(env['RGDS_KEYS_DEV'], str(self.dev / 'event3'))
 
     def test_missing_devices_have_no_stock_fallback(self):
         result = discover(self.sys, self.dev)

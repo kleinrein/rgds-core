@@ -454,11 +454,16 @@ class Services:
             preview(self.data, enabled)
             self.publish(sharing=int(enabled), sharing_mode=('open' if guest else 'password') if enabled else '')
         elif enabled:
-            from session import rom_roots
+            from session import rom_roots, system_roots
             from linux_platform import independent
             roots = [Path('/userdata/roms/nds'), Path('/userdata/roms/dsi')
                      ] if independent() else rom_roots(self.data.parent)
-            Sharing(self.data, self.app).start(self.fields['ip'], roots, guest=guest)
+            # Other systems' folders follow Settings > Library > Show all systems,
+            # like the launcher's own scan.
+            systems = []
+            if read_fields(self.data / 'ui.ini').get('show_systems') == '1' and not independent():
+                systems = system_roots(self.data.parent)
+            Sharing(self.data, self.app).start(self.fields['ip'], roots, guest=guest, systems=systems)
         else:
             Sharing(self.data, self.app).stop()
         self.sharing_status()

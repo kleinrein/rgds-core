@@ -6,7 +6,8 @@
 // both neighbours it faces, one of them by 48 or more (xBR's own "equal" threshold: a structural edge, not the shading
 // inside detailed art), is a candidate, and the neighbours within 16 of the pixel are where it may smooth. Only
 // candidates read the outer 12 pixels and run Hyllian's xBR level 2 corner tests. HD smooth (hd2d_strength) drops the
-// floor to 0 and smooths below 64, so shading and texture steps turn into slopes as well, with wider anti-aliasing. Output, one RGBA8 texel:
+// floor to 12 and smooths below 64, so shading and texture steps turn into slopes as well, with wider anti-aliasing.
+// Output, one RGBA8 texel:
 // R = state0 * 8 + state1, G = state2 * 8 + state3 (0 none, 1 45 degrees, 2 + shallow, 3 + steep, 4 both),
 // B = the corners' neighbour choices (bit k: first axis) + 16 where 2D owns the pixel,
 // A = the neighbours it smooths toward (right 1, down 2, left 4, up 8, then down-right, down-left, up-right, up-left).
@@ -36,20 +37,42 @@ uniform vec4 u_hd_rect;  // this screen in the texture, uv: offset, size
 uniform vec2 u_hd_px;    // the screen's size in texels (256x192 native or the 640x480 compose)
 uniform float u_hd_swap;     // 1: the texture holds BGRA
 uniform float u_hd_mask;     // 1: blue's lowest bit marks 2D ownership (the 3D compose)
-// The strength (hd2d_strength): HD smooth rebuilds every edge xBR finds and blends far wider and softer.
+// The strength (hd2d_strength): HD smooth rebuilds far fainter edges and blends far wider and softer.
 uniform mediump float u_hd_edge;   // a corner's neighbours must both differ by this much (structural edges)
 uniform mediump float u_hd_smooth; // a pixel blends toward neighbours closer than this
 uniform mediump float u_hd_soft;   // anti-aliasing width, in output pixels
 const vec2 HD_NATIVE = vec2(256.0, 192.0);
+// The bridge's one-draw programs define HD_FIXED with HD_SCALED (the source is not 256x192), HD_MASK and HD_SWAP
+// as 0 or 1, the same values the uniforms carry, so the compiler drops what the draw does not need.
 mediump vec4 hd_source(vec2 uv) {
   mediump vec4 c = texture2D(u_hd_src, u_hd_rect.xy + uv * u_hd_rect.zw);
+#ifdef HD_FIXED
+#if HD_SWAP
+  return c.bgra;
+#else
+  return c;
+#endif
+#else
   return mix(c, c.bgra, u_hd_swap);
+#endif
 }
 // Native pixel p (integral), clamped to the screen; alpha 1 where 2D owns it.
 mediump vec4 hd_fetch(vec2 p) {
   p = clamp(p, vec2(0.0), HD_NATIVE - 1.0);
+#if defined(HD_FIXED) && !HD_SCALED
+  mediump vec4 c = hd_source((p + 0.5) / HD_NATIVE);
+#else
   mediump vec4 c = hd_source((floor((p + 0.5) * (u_hd_px / HD_NATIVE)) + 0.5) / u_hd_px);
+#endif
+#ifdef HD_FIXED
+#if HD_MASK
+  c.a = mod(floor(c.b * 255.0 + 0.5), 2.0);
+#else
+  c.a = 1.0;
+#endif
+#else
   c.a = mix(1.0, mod(floor(c.b * 255.0 + 0.5), 2.0), u_hd_mask);
+#endif
   return c;
 }
 // The perceptual distance of the CPU reference, in 0..255 units: luma plus a quarter of both chroma differences.
@@ -62,7 +85,7 @@ bool hd_differ(mediump vec3 a, mediump vec3 b) { return any(notEqual(a, b)); }
 )";
 
 // u_hd_edge, u_hd_smooth, u_hd_soft for HD and for HD smooth; dscore's rgds_hd2d_rules.hpp uses the first two.
-inline constexpr float hd2d_strength[2][3] = {{48.f, 16.f, 1.f}, {0.f, 64.f, 1.5f}};
+inline constexpr float hd2d_strength[2][3] = {{48.f, 16.f, 1.f}, {12.f, 64.f, 1.5f}};
 
 inline constexpr const char* hd2d_vertex = R"(
 attribute vec2 a_position;

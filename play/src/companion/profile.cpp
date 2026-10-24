@@ -309,6 +309,7 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 }
             } else if (key == "interval") ok = parse_int(value, out.interval) && out.interval >= 10;
             else if (key == "dim_when_unavailable") out.dim_when_unavailable = value == "yes" || value == "true";
+            else if (key == "note") out.note = value;
             else return fail("unknown key '" + key + "' in [companion]");
         } else if (section == "map") {
             auto& m = out.map;

@@ -10,12 +10,13 @@
 //       up-right 64, up-left 128.
 // The corner tests are Hyllian's xBR level 2 (MIT) on the 5x5 neighbourhood. HD keeps them for structural edges
 // only: a corner whose pixel differs from both neighbours it faces, each by 48 or more; a pixel smooths toward 2D
-// neighbours that differ from it by less than 16. HD smooth tests every corner and smooths below 64, which turns
-// shading and texture steps into slopes too. Distances are luma plus a quarter of both chroma differences.
+// neighbours that differ from it by less than 16. HD smooth tests every corner whose faced neighbours differ by 12 or
+// more and smooths below 64, which turns shading and texture steps into slopes too (below 12 the corner would blend
+// colours the smoothing already blends: the same picture, at twice the corner tests on busy art). Distances are luma plus a quarter of both chroma differences.
 //
-// Cost: a pixel equal to its neighbours costs a few compares (most of any 2D frame); the four neighbours'
-// distances and the level-0 tests run eight or sixteen pixels at a time with NEON; the diagonal distances the
-// corner tests read are made per block of 16 columns, only where some pixel needs them.
+// Cost: every distance between neighbours is computed once per band of lines, sixteen pixel pairs at a time with
+// NEON (four maps: across, down and both diagonals), and the classification reads them eight pixels at a time; only
+// the corner candidates run the scalar corner tests.
 #pragma once
 #include <algorithm>
 #include <cstdint>
@@ -35,7 +36,7 @@ public:
 
   // HD, or HD smooth. The GPU rules pass takes the same two numbers as u_hd_edge and u_hd_smooth.
   static const Hd2DRules& get(bool smooth = false) {
-    static const Hd2DRules crisp(48, 16), soft(0, 64);
+    static const Hd2DRules crisp(48, 16), soft(12, 64);
     return smooth ? soft : crisp;
   }
   // `floor`: a corner's two faced neighbours must both differ by this much; `near`: smooth below this distance.
@@ -62,15 +63,16 @@ private:
   const int floor_, near_;
   static constexpr int pad = 2, row_w = int(src_w) + 2 * pad;
 
-  // Lines from `first` on, edge-clamped, with 2 px of clamped padding each side, their owners, and two maps of the
-  // diagonal neighbours' distances, made per block of 16 columns and map row where some pixel's tests read them.
+  // Lines from `first` on, edge-clamped, with 2 px of clamped padding each side, their owners, and every distance
+  // between neighbours the lines' rules read, each computed once for the band: a row's line above is the line below
+  // of the row before, and the corner tests read the same diagonals the classification does.
   struct Window {
-    static constexpr int block = 16, max_rows = band + 4;
+    static constexpr int max_rows = band + 4;
     uint32_t px[max_rows][row_w];
     uint8_t own[max_rows][row_w];
-    // dd[r][c]: distance of (r, c) and (r+1, c+1); ad[r][c]: of (r, c) and (r+1, c-1).
-    int16_t dd[max_rows - 1][row_w], ad[max_rows - 1][row_w];
-    uint32_t ready[max_rows - 1];
+    // hz[r][c]: distance of (r, c-1) and (r, c); vt[r][c]: of (r, c) and (r+1, c); dd[r][c]: of (r, c) and
+    // (r+1, c+1); ad[r][c]: of (r, c) and (r+1, c-1).
+    alignas(16) int16_t hz[max_rows][row_w], vt[max_rows - 1][row_w], dd[max_rows - 1][row_w], ad[max_rows - 1][row_w];
     int rows = 0;
     void load(const uint32_t* frame, const uint8_t* owner, int first, int count) {
       rows = count;
@@ -88,32 +90,37 @@ private:
           o[row_w - 1] = o[row_w - 2] = o[row_w - 1 - pad];
         } else std::memset(o, 1, row_w);
       }
-      std::memset(ready, 0, sizeof ready);
-    }
-    // The maps the tests of the pixel at (row, x) read: rows row-2..row+1, columns x-2..x+2.
-    void prepare(int row, int x) {
-      const uint32_t want = (2u << ((x + pad) / block)) - (1u << ((x - pad) / block));
-      for (int r = row - 2; r <= row + 1; ++r) {
-        uint32_t missing = want & ~ready[r];
-        ready[r] |= want;
-        while (missing) {
-          const int b = __builtin_ctz(missing);
-          missing &= missing - 1;
-          const uint32_t* a = px[r];
-          const uint32_t* n = px[r + 1];
-          const int c0 = b * block;
+      // The lines are rows 2..rows-3. Their classification reads hz of their own row and vt of theirs and the one
+      // above, columns 2..258; the corner tests read dd and ad of rows 0..rows-2, columns 0..259.
+      for (int r = 0; r + 1 < rows; ++r) {
+        const uint32_t* a = px[r];
+        const uint32_t* n = px[r + 1];
+        const bool line = r >= 2 && r <= rows - 3, upper = r >= 1 && r <= rows - 3;
 #if defined(__ARM_NEON)
-          if (c0 > 0 && c0 + block < row_w) { // both neighbours of every column are inside the row
-            df16(a + c0, n + c0 + 1, dd[r] + c0);
-            df16(a + c0, n + c0 - 1, ad[r] + c0);
-            continue;
-          }
-#endif
-          for (int c = c0, end = std::min(c0 + block, row_w); c < end; ++c) {
-            dd[r][c] = int16_t(c + 1 < row_w ? df(a[c], n[c + 1]) : 0);
-            ad[r][c] = int16_t(c > 0 ? df(a[c], n[c - 1]) : 0);
-          }
+        for (int c = 1; c + 16 <= row_w - 3; c += 16) {
+          df16(a + c, n + c + 1, dd[r] + c);
+          df16(a + c, n + c - 1, ad[r] + c);
         }
+        for (int c : {0, row_w - 3, row_w - 2, row_w - 1}) {
+          dd[r][c] = int16_t(c + 1 < row_w ? df(a[c], n[c + 1]) : 0);
+          ad[r][c] = int16_t(c > 0 ? df(a[c], n[c - 1]) : 0);
+        }
+        if (upper)
+          for (int c = pad; c < pad + int(src_w); c += 16) df16(a + c, n + c, vt[r] + c);
+        if (line) {
+          for (int c = pad; c < pad + int(src_w); c += 16) df16(a + c - 1, a + c, hz[r] + c);
+          hz[r][pad + src_w] = int16_t(df(a[pad + src_w - 1], a[pad + src_w]));
+        }
+#else
+        for (int c = 0; c < row_w; ++c) {
+          dd[r][c] = int16_t(c + 1 < row_w ? df(a[c], n[c + 1]) : 0);
+          ad[r][c] = int16_t(c > 0 ? df(a[c], n[c - 1]) : 0);
+        }
+        if (upper)
+          for (int c = pad; c < pad + int(src_w); ++c) vt[r][c] = int16_t(df(a[c], n[c]));
+        if (line)
+          for (int c = pad; c <= pad + int(src_w); ++c) hz[r][c] = int16_t(df(a[c - 1], a[c]));
+#endif
       }
     }
   };
@@ -189,7 +196,7 @@ private:
   // Rules of every pixel of window row `top` + 2 (which reads rows top..top+4). Every pixel's ownership and
   // smoothing, and which of its corners face two other colours beyond the floor, eight pixels at a time; then the
   // corner tests for those candidates alone.
-  void line(Window& w, int top, uint32_t* out) const {
+  void line(const Window& w, int top, uint32_t* out) const {
     const int row = top + 2;
     const uint32_t* mid = w.px[row] + pad;
     const uint32_t* above = w.px[row - 1] + pad;
@@ -197,20 +204,17 @@ private:
     const uint8_t* own_mid = w.own[row] + pad;
     const uint8_t* own_above = w.own[row - 1] + pad;
     const uint8_t* own_below = w.own[row + 1] + pad;
-    // Distances to the eight neighbours: left[x] is pixel x-1 to x (so x's right is left[x+1]).
-    alignas(16) int16_t left[src_w + 16], down[src_w], up[src_w], dr[src_w], dl[src_w], ur[src_w], ul[src_w];
+    // Distances to the eight neighbours, from the window's maps: left[x] is pixel x-1 to x (so x's right is
+    // left[x+1]); up-right is the line above's down-left one pixel on, up-left its down-right one pixel back.
+    const int16_t* left = w.hz[row] + pad;
+    const int16_t* down = w.vt[row] + pad;
+    const int16_t* up = w.vt[row - 1] + pad;
+    const int16_t* dr = w.dd[row] + pad;
+    const int16_t* dl = w.ad[row] + pad;
+    const int16_t* ur = w.ad[row - 1] + pad + 1;
+    const int16_t* ul = w.dd[row - 1] + pad - 1;
     alignas(16) uint8_t candidates[src_w];
 #if defined(__ARM_NEON)
-    for (int x = 0; x < int(src_w); x += 16) {
-      df16(mid + x - 1, mid + x, left + x);
-      df16(mid + x, below + x, down + x);
-      df16(above + x, mid + x, up + x);
-      df16(mid + x, below + x + 1, dr + x);
-      df16(mid + x, below + x - 1, dl + x);
-      df16(mid + x, above + x + 1, ur + x);
-      df16(mid + x, above + x - 1, ul + x);
-    }
-    left[src_w] = int16_t(df(mid[src_w - 1], mid[src_w]));
     // Lanes are all ones where they hold.
     auto differs = [](const uint32_t* a, const uint32_t* b) {
       return vcombine_u16(vmovn_u32(vmvnq_u32(vceqq_u32(vld1q_u32(a), vld1q_u32(b)))),
@@ -251,15 +255,6 @@ private:
       vst1q_u32(out + x + 4, vshll_n_u16(vget_high_u16(high), 16));
     }
 #else
-    for (int x = 0; x <= int(src_w); ++x) left[x] = int16_t(df(mid[x - 1], mid[x]));
-    for (int x = 0; x < int(src_w); ++x) {
-      down[x] = int16_t(df(mid[x], below[x]));
-      up[x] = int16_t(df(above[x], mid[x]));
-      dr[x] = int16_t(df(mid[x], below[x + 1]));
-      dl[x] = int16_t(df(mid[x], below[x - 1]));
-      ur[x] = int16_t(df(mid[x], above[x + 1]));
-      ul[x] = int16_t(df(mid[x], above[x - 1]));
-    }
     for (int x = 0; x < int(src_w); ++x) {
       const uint32_t e = mid[x];
       const unsigned r = e != mid[x + 1] && left[x + 1] >= floor_, l = e != mid[x - 1] && left[x] >= floor_,
@@ -285,7 +280,6 @@ private:
       // Each corner's distances to the neighbours it faces: (right, down), (up, right), (left, up), (down, left).
       const int d_r = left[x + 1], d_d = down[x], d_l = left[x], d_u = up[x];
       const int px = x + pad;
-      w.prepare(row, px);
       unsigned states[4] = {0, 0, 0, 0}, take = 0;
       if (c & 1) states[0] = corner<0>(w, row, px, mid[x], d_r, d_d, take);
       if (c & 2) states[1] = corner<1>(w, row, px, mid[x], d_u, d_r, take);

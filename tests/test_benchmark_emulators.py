@@ -34,8 +34,8 @@ def remote_helpers():
 
 class BenchmarkEmulatorTests(unittest.TestCase):
     def test_explicit_telemetry_override_wins_without_losing_environment(self):
-        inherited = {'PATH': '/usr/bin', 'DS_FPS': '7', 'NNDDSS_CPU_AFFINITY': '1'}
-        overrides = {'DS_FPS': '0', 'DS_FRAME_STATS': '0', 'NNDDSS_CPU_AFFINITY': '0', 'RGDS_LAUNCH_PROFILE': '1'}
+        inherited = {'PATH': '/usr/bin', 'DS_FPS': '7', 'DS_PIN': '1'}
+        overrides = {'DS_FPS': '0', 'DS_FRAME_STATS': '0', 'DS_PIN': '0', 'RGDS_LAUNCH_PROFILE': '1'}
         actual = remote_helpers()['benchmark_environment'](inherited, overrides)
         self.assertEqual(actual, {**inherited, **overrides})
         self.assertEqual(inherited['DS_FPS'], '7')
@@ -98,8 +98,13 @@ class BenchmarkEmulatorTests(unittest.TestCase):
             core='rgds-experimental',
             measurement=dict(phases=['normal'], seconds_per_phase=15),
             phases=[dict(phase='normal', completed=True, speed_acknowledged=True)],
-            frame_times={'normal': {'emu_ms': {'frames': 0}}},
-            engine_log='[KFAULT] job failed', session_log=''
+            frame_times={'normal': {
+                'emu_ms': {
+                    'frames': 0
+                }
+            }},
+            engine_log='[KFAULT] job failed',
+            session_log=''
         )
         errors = validate(report)
         self.assertTrue(any('insufficient completed frame timing samples' in error for error in errors))
@@ -110,8 +115,14 @@ class BenchmarkEmulatorTests(unittest.TestCase):
             core='rgds-experimental',
             measurement=dict(phases=['normal', 'fast_forward'], seconds_per_phase=15),
             phases=[dict(phase=name, completed=True, speed_acknowledged=True) for name in ('normal', 'fast_forward')],
-            frame_times={name: {'emu_ms': {'frames': 45}} for name in ('normal', 'fast_forward')},
-            engine_log='', session_log=''
+            frame_times={name: {
+                'emu_ms': {
+                    'frames': 45
+                }
+            }
+                         for name in ('normal', 'fast_forward')},
+            engine_log='',
+            session_log=''
         )
         self.assertEqual(remote_helpers()['benchmark_validation_errors'](report), [])
 
@@ -180,14 +191,13 @@ class BenchmarkEmulatorTests(unittest.TestCase):
                 [
                     '--phase', 'normal', '--seconds', '7', '--menu-cycles', '0', '--engine-env', 'DS_FPS=0',
                     '--engine-env', 'DS_FRAME_STATS=0', '--engine-env', 'RGDS_LAUNCH_PROFILE=1', '--engine-env',
-                    'NNDDSS_CPU_AFFINITY=0', '--capture-scene', '--threaded-3d', '0'
+                    'DS_PIN=0', '--capture-scene', '--threaded-3d', '0'
                 ], output
             )
             self.assertEqual(status, 0)
             options = json.loads(shlex.split(remote.ssh.call_args.args[1])[-1])
             self.assertEqual(
-                options['engine_env'],
-                dict(DS_FPS='0', DS_FRAME_STATS='0', RGDS_LAUNCH_PROFILE='1', NNDDSS_CPU_AFFINITY='0')
+                options['engine_env'], dict(DS_FPS='0', DS_FRAME_STATS='0', RGDS_LAUNCH_PROFILE='1', DS_PIN='0')
             )
             self.assertEqual(options['experiment_settings'], sorted(benchmark.EXPERIMENT_SETTINGS))
             self.assertEqual((options['phase'], options['seconds'], options['menu_cycles']), ('normal', 7, 0))

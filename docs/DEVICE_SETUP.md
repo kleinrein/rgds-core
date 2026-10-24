@@ -52,7 +52,10 @@ Windows, enter the displayed `\\` address in File Explorer and use the login
 shown on the device.
 
 Sharing exposes existing DS games folders as `Games` (and `Games2`, etc. when
-both cards have games), plus `Imports` and `Exports` for portable save archives.
+both cards have games). With Settings → Library → Show all systems on, the
+GBA, GBC and GB game folders that exist are shared as `GBA`, `GBC` and `GB`, and
+the DS folders are then named `DS`, `DS2`. Turn sharing off and on again after
+changing that setting. `Imports` and `Exports` for portable save archives.
 Put `.rgdssave.zip` archives in Imports or collect backups from Exports; use the
 save gallery to import/export them. Scan for games after transferring ROMs.
 The RGDS save store, Wi-Fi credentials and RGDS configuration are outside these shares.

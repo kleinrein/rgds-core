@@ -27,6 +27,7 @@
 #include "launcher/shader_preview.hpp"
 #include "launcher/library_cache.hpp"
 #include "launcher/game_info.hpp"
+#include "launcher/dual_screen.hpp"
 #include "launcher/pictochat_app.hpp"
 #include "platform/touch.hpp"
 #include "platform/volume_keys.hpp"
@@ -1450,101 +1451,18 @@ class App {
         SDL_Rect box{x, y, w, h};
         s.RenderFillRect(r, &box);
     }
-    void sheen(SDL_Renderer* r, int x, int y, int w, int h, const std::string& key, int strength = 12) {
-        auto base = theme.at(key);
-        for (int i = 0; i < 12; i++) {
-            int top = y + h * i / 12, bottom = y + h * (i + 1) / 12;
-            auto shade =
-                blend(base, i < 6 ? theme.at("panel") : theme.at("background"), strength * std::abs(6 - i) / 6);
-            tint_rect(r, x, top, w, bottom - top, shade);
-        }
-    }
-    void horizontal_sheen(SDL_Renderer* r, int x, int y, int w, int h, const std::string& key, int strength = 12) {
-        auto base = theme.at(key), highlight = theme.at("panel");
-        int span = std::max(1, w - 1);
-        for (int column = 0; column < w; column++)
-            tint_rect(r, x + column, y, 1, h, blend(base, highlight, strength * (w - 1 - column) / span));
-    }
-    void triangle(SDL_Renderer* r, int x, int y, int half, int height, const std::string& key, bool down = true) {
-        color(r, key);
-        for (int i = 0; i < height; i++) {
-            int width = half * (height - i) / height;
-            int row = down ? y + i : y + height - 1 - i;
-            s.RenderDrawLine(r, x - width, row, x + width, row);
-        }
-    }
-    void battery_icon(SDL_Renderer* r, int y) {
-        const int x = 576, top = y + 14;
-        round_rect(r, x, top, 38, 20, 3, "muted");
-        round_rect(r, x + 2, top + 2, 34, 16, 2, "slot");
-        rect(r, x + 38, top + 6, 3, 8, "muted");
-        int bars = hardware.battery < 0    ? 0
-                   : hardware.battery > 75 ? 4
-                   : hardware.battery > 45 ? 3
-                   : hardware.battery > 15 ? 2
-                   : hardware.battery > 0  ? 1
-                                           : 0;
-        drawn_charge_phase = hardware.charging ? int((s.GetTicks() / 420) % 4) : -1;
-        if (hardware.charging) bars = 1 + drawn_charge_phase;
-        auto level = hardware.battery >= 0 && hardware.battery <= 15 && !hardware.charging ? Color{239, 129, 75}
-                                                                                           : theme.at("accent");
-        for (int i = 0; i < 4; i++)
-            tint_rect(r, x + 5 + i * 7, top + 5, 5, 10,
-                      i < bars ? level : blend(theme.at("slot"), theme.at("muted"), 16));
-        if (hardware.charging) {
-            color(r, "accent");
-            s.RenderDrawLine(r, x - 10, top + 1, x - 16, top + 10);
-            s.RenderDrawLine(r, x - 16, top + 10, x - 9, top + 10);
-            s.RenderDrawLine(r, x - 9, top + 10, x - 15, top + 19);
-        } else if (hardware.external_power) {
-            color(r, "accent");
-            s.RenderDrawLine(r, x - 15, top + 3, x - 15, top + 8);
-            s.RenderDrawLine(r, x - 10, top + 3, x - 10, top + 8);
-            s.RenderDrawLine(r, x - 17, top + 8, x - 8, top + 8);
-            s.RenderDrawLine(r, x - 17, top + 8, x - 17, top + 12);
-            s.RenderDrawLine(r, x - 8, top + 8, x - 8, top + 12);
-            s.RenderDrawLine(r, x - 17, top + 12, x - 8, top + 12);
-            s.RenderDrawLine(r, x - 13, top + 12, x - 13, top + 18);
-        }
-    }
-    fs::path status_asset(const std::string& name) {
-        return asset_path(std::string("status/") + (preferences.dark ? "dark-" : "light-") + name + ".bmp");
-    }
-    std::string wifi_asset() {
-        if (device_status["wifi"] != "1") return "wifi-off";
-        int signal = -1;
-        if (!device_status["wifi_signal"].empty()) signal = std::atoi(device_status["wifi_signal"].c_str());
-        if (probed_signal >= 0 && device_status["wifi_connected"] == "1") signal = probed_signal;
-        int level = signal >= 67 ? 3 : signal >= 34 ? 2 : signal > 0 ? 1 : 0;
-        return "wifi-" + std::to_string(level);
-    }
+    void sheen(SDL_Renderer* r, int x, int y, int w, int h, const std::string& key, int strength = 12);
+    void horizontal_sheen(SDL_Renderer* r, int x, int y, int w, int h, const std::string& key, int strength = 12);
+    void triangle(SDL_Renderer* r, int x, int y, int half, int height, const std::string& key, bool down = true);
+    void battery_icon(SDL_Renderer* r, int y);
+    fs::path status_asset(const std::string& name);
+    std::string wifi_asset();
     std::string sound_asset() { return hardware.volume && hardware.volume_percent == 0 ? "muted" : "sound"; }
     // Covers are being fetched: a small spinner and the count beside the
     // brand, on every screen, until the artwork worker reports it is done.
-    bool artwork_busy() const {
-        auto found = service.find("state");
-        return found != service.end() && found->second == "scraping";
-    }
+    bool artwork_busy() const;
     int loader_phase(Uint32 now) const { return preferences.animations ? int((now / 110) % 8) : 0; }
-    void artwork_loader(SDL_Renderer* r, int y) {
-        static const int dx[8] = {0, 5, 7, 5, 0, -5, -7, -5}, dy[8] = {-7, -5, 0, 5, 7, 5, 0, -5};
-        const int head = drawn_loader_phase = loader_phase(s.GetTicks()), cx = 232, cy = y + 24;
-        const Color ink = theme.at("accent");
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-        for (int i = 0; i < 8; i++) {
-            static const Uint8 tail[8] = {255, 200, 150, 105, 70, 50, 40, 40};
-            s.SetRenderDrawColor(r, ink.r, ink.g, ink.b, tail[(head - i + 8) % 8]);
-            SDL_Rect dot{cx + dx[i] - 2, cy + dy[i] - 2, 4, 4};
-            s.RenderFillRect(r, &dot);
-        }
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_NONE);
-        auto count = [&](const char* key) {
-            auto found = service.find(key);
-            return found == service.end() ? std::string("0") : found->second;
-        };
-        const std::string progress = count("completed") + "/" + count("total");
-        label(r, progress, 246, status_label_y(progress, 16, y), 16, "muted", 110, false);
-    }
+    void artwork_loader(SDL_Renderer* r, int y);
     int drawn_loader_phase = -1;
     static int pixel_scale(int size) { return std::max(1, (size + 4) / 10); }
     // Classic-text width in 6-dot cells; kana and kanji take two.
@@ -1553,60 +1471,12 @@ class App {
         for (auto cp : RoundedFont::codepoints(value, limit)) cells += pixel_wide(cp) ? 2 : 1;
         return cells;
     }
-    int label_width(const std::string& source, int size, bool translate = true) {
-        auto value = translate ? locale.text(source) : source;
-        return preferences.pixel ? pixel_cells(value) * pixel_scale(size) * 6
-                                 : int(std::ceil(rounded.width(value, size)));
-    }
-    std::string status_stamp() {
-        auto now = std::time(nullptr);
-        char stamp[32];
-        const auto& local = *std::localtime(&now);
-        std::strftime(stamp, sizeof(stamp), date_format_patterns.at(system_preferences.date_format), &local);
-        return std::string(stamp) + "  " + time_text(local);
-    }
+    int label_width(const std::string& source, int size, bool translate = true);
+    std::string status_stamp();
     // The label y that puts this text's ink (capitals and digits) on `cy`.
-    int centred_label_y(const std::string& value, int size, int cy) {
-        auto bounds = preferences.pixel ? std::pair<int, int>{pixel_scale(size) * 3, pixel_scale(size) * 10}
-                                        : rounded.ink_bounds(value, size);
-        return cy - (bounds.first + bounds.second + 1) / 2;
-    }
+    int centred_label_y(const std::string& value, int size, int cy);
     int status_label_y(const std::string& value, int size, int y) { return centred_label_y(value, size, y + 24); }
-    void status_bar(SDL_Renderer* r, int y) {
-        sheen(r, 0, y, 640, 48, "background", 24);
-        if (!preferences.rich_icons) {
-            // The pixel style's own status symbols, at the same 24 px as its icons.
-            draw_pixel_glyph(s, r, pixel_status_glyph(sound_asset()), 24, y + 24, 24, theme.at("ink"));
-            draw_pixel_glyph(s, r, pixel_status_glyph(wifi_asset()), 58, y + 24, 24, theme.at("ink"));
-        } else {
-            media.draw(r, status_asset(sound_asset()), {10, y + 10, 28, 28}, false);
-            media.draw(r, status_asset(wifi_asset()), {44, y + 10, 28, 28}, false);
-        }
-        // Rendered at its drawn size; its capitals match the clock's (14 px),
-        // centred on the bar's text line (y + 24) like the labels.
-        if (!preferences.rich_icons) {
-            // The simple pixel style sets the name in its own dots, not from the rendered wordmark.
-            const int dot = pixel_scale(20);
-            color(r, "ink");
-            pixel_dots(
-                "RG DS CORE", 84, status_label_y("RG DS CORE", 20, y), dot, 12,
-                [&](const SDL_Rect& p) { s.RenderFillRect(r, &p); }, [](unsigned, int, int) {});
-        } else
-            media.draw(r, asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"),
-                       {84, y + 13, 129, 22}, false);
-        if (artwork_busy()) artwork_loader(r, y);
-        drawn_status_stamp = status_stamp();
-        const auto& stamp = drawn_status_stamp;
-        int right = hardware.battery >= 0 && system_preferences.battery_percent ? 494 : 550;
-        label(r, stamp, right - label_width(stamp, 20), status_label_y(stamp, 20, y), 20, "ink", right - 180);
-        update_status_chip(r, y, right - label_width(stamp, 20) - 14);
-        battery_icon(r, y);
-        if (system_preferences.battery_percent && hardware.battery >= 0) {
-            auto percent = std::to_string(hardware.battery) + "%";
-            label(r, percent, 554 - label_width(percent, 20), status_label_y(percent, 20, y), 20, "muted", 65);
-        }
-        rect(r, 0, y + 47, 640, 1, "line");
-    }
+    void status_bar(SDL_Renderer* r, int y);
     int point_size(int size) { return size == 1 ? 16 : size == 2 ? 20 : size == 3 ? 28 : 36; }
     // Classic 5x7 text as filled squares: `fill` takes each dot's rectangle and
     // `wide` each kana or kanji cell (the caller draws those from the rounded
@@ -1781,135 +1651,21 @@ class App {
         }
     }
     void text(SDL_Renderer* r, std::string value, int x, int y, int size, const std::string& key, int max_chars = 80,
-              bool translate = true) {
-        if (translate) value = locale.text(value);
-        if (!preferences.pixel && font_ready) {
-            rounded.draw(r, value, x, y, point_size(size), theme.at(key), max_chars, std::max(1, 612 - x));
-            return;
-        }
-        color(r, key);
-        pixel_dots(
-            value, x, y, size, max_chars, [&](const SDL_Rect& p) { s.RenderFillRect(r, &p); },
-            [&](unsigned c, int cell_x, int baseline_y) {
-                // The rounded glyph, centred in two cells and standing on the dot baseline.
-                try {
-                    const auto glyph = utf8_encode(c);
-                    const int points = size * 10;
-                    const int w = static_cast<int>(std::lround(rounded.width(glyph, points)));
-                    rounded.draw(r, glyph, cell_x + size * 6 - w / 2, baseline_y + size * 7 - rounded.ascent(points),
-                                 points, theme.at(key), 1, 1000);
-                } catch (const std::exception&) {}
-            });
-    }
-    void centered(SDL_Renderer* r, const std::string& source, int y, int size, const std::string& key, int limit = 48) {
-        auto value = locale.text(source);
-        auto count = std::min(static_cast<int>(RoundedFont::codepoints(value).size()), limit);
-        if (!preferences.pixel && font_ready) {
-            auto width = std::min(rounded.width(value, point_size(size), limit), 584.0f);
-            text(r, value, static_cast<int>(320 - width / 2), y, size, key, limit);
-            return;
-        }
-        while (count > 0 && pixel_cells(value, count) * size * 6 > 584) count--;
-        text(r, value, 320 - pixel_cells(value, count) * size * 3, y, size, key, count);
-    }
+              bool translate = true);
+    void centered(SDL_Renderer* r, const std::string& source, int y, int size, const std::string& key, int limit = 48);
     void label(SDL_Renderer* r, const std::string& source, int x, int y, int pixels, const std::string& key,
-               int width = 560, bool translate = true) {
-        auto value = translate ? locale.text(source) : source;
-        if (!preferences.pixel && font_ready) {
-            rounded.draw(r, value, x, y, pixels, theme.at(key), 1000, width);
-            return;
-        }
-        int scale = pixel_scale(pixels);
-        text(r, value, x, y, scale, key, std::min(80, width / (scale * 6)), false);
-    }
+               int width = 560, bool translate = true);
     void raw_label(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, const std::string& key,
-                   int width = 560) {
-        label(r, value, x, y, pixels, key, width, false);
-    }
-    void raw_wrapped(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, int width, int rows = 3) {
-        wrapped(r, value, x, y, pixels, width, rows, false);
-    }
+                   int width = 560);
+    void raw_wrapped(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, int width, int rows = 3);
     // The DSi's START frame around a selected tile: one accent body in one
     // continuous shade, the tile set into it and the word centred in the
     // space below over a soft engraved shadow.
-    void start_frame(SDL_Renderer* r, int x, int row, int tile, const std::string& word, int band = 45) {
-        const Color accent = theme.at("accent");
-        raised_pill(r, x - 9, row - 9, tile + 18, tile + band + 17, 8, accent);
-        fill_round(r, x - 3, row - 3, tile + 6, tile + 8, 6, blend(accent, Color{0, 0, 0}, 30));
-        round_rect(r, x - 1, row - 1, tile + 2, tile + 2, 4, "panel");
-        const int width = label_width(word, 20),
-                  word_y = centred_label_y(locale.text(word), 20, row + tile + 8 + band / 2);
-        label_colour(r, word, x + (tile - width) / 2, word_y + 1, 20, blend(accent, Color{0, 0, 0}, 40), tile);
-        label(r, word, x + (tile - width) / 2, word_y, 20, "on_accent", tile);
-    }
-    std::string category_title(size_t index) {
-        static const std::array<std::string, home_count> titles = {"Settings", "Games",     "Favourites",
-                                                                   "Recents",  "PictoChat", "Last played"};
-        return titles.at(index);
-    }
-    void category_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
-        static const std::array<SettingsIcon, home_count> symbols = {SettingsIcon::Sliders, SettingsIcon::Cartridge,
-                                                                     SettingsIcon::Heart,   SettingsIcon::Clock,
-                                                                     SettingsIcon::Chat,    SettingsIcon::Play};
-        ui_icon(r, symbols.at(index), x + size / 2, y + size / 2, size, "accent");
-    }
+    void start_frame(SDL_Renderer* r, int x, int row, int tile, const std::string& word, int band = 45);
+    std::string category_title(size_t index);
+    void category_icon(SDL_Renderer* r, size_t index, int x, int y, int size);
 
-    void settings_footer(SDL_Renderer* r, int y) {
-        if (settings.page == Page::ShaderPicker) return;
-        rect(r, 0, y + 424, 640, 56, "background");
-        rect(r, 24, y + 424, 592, 1, "line");
-        const bool pressed = footer_pressed(true), a_pressed = footer_pressed(false);
-        footer_button(r, 12, y + 432, 160, "Back", "B", false, pressed);
-        if (settings.page == Page::Keyboard) {
-            const bool searching = edit_field == 4 || edit_field == 6;
-            key_hints(r, 320, y + 452, {{"X", "Delete"}, {"Start", searching ? "Search" : "Done"}}, 0, 16, 280);
-            footer_button(r, 468, y + 432, 160, searching ? "Search" : "Done", "", true, a_pressed);
-            return;
-        }
-        if (settings.page == Page::Statistics || settings.page == Page::Microphone) return;
-        if (settings.page == Page::GameInfo) {
-            if (!picker_open && info_pictures.size() > 1)
-                key_hints(r, 320, y + 452, {{"L R", "Picture"}, {"A", "Next picture"}}, 0, 16, 280);
-            return;
-        }
-        if (settings.page == Page::GameSwitcher) key_hints(r, 320, y + 452, {{"X", "Game menu"}}, 0, 16, 280);
-        if (settings.page == Page::SaveGallery) {
-            if (!picker_open) {
-                std::vector<KeyHint> keys{{"Y", "More"}};
-                if (slot_occupied(settings.focus)) keys.insert(keys.begin(), {"X", "Delete"});
-                key_hints(r, 320, y + 452, keys, 0, 16, 280);
-            }
-            if (slot_primary_enabled(settings.focus))
-                footer_button(r, 468, y + 432, 160, slot_primary_name(), "A", true, a_pressed);
-            return;
-        }
-        if (settings.page == Page::Cheats && !picker_open)
-            key_hints(r, 320, y + 452, {{"L R", "Tabs"}, {"X", "Search"}}, 0, 16, 280);
-        if (settings.page == Page::Maintenance && !picker_open) {
-            const auto stage = update_stage();
-            if (stage != UpdateStage::None && stage != UpdateStage::Running)
-                hotkey_pill(r, 184, y + 432, 272, 40, update_action_name(stage), KeyLook::Panel,
-                            pointer_down && contact_y >= 424 && contact_x >= 200 && contact_x < 440);
-        }
-        if ((settings.page == Page::EmulatorOptions && !emulator_option_enabled(settings.focus)) ||
-            (settings.page == Page::Cheats && cheat_view != CheatView::Groups && !cheat_togglable(settings.focus)) ||
-            (settings.page == Page::GameOptions && settings.focus == 2 && superdrastic_game()) ||
-            (settings.page == Page::Motion && settings.focus >= 2))
-            return;
-        footer_button(r, 468, y + 432, 160,
-                      settings.page == Page::ShaderPicker ? "Apply"
-                      : settings.page == Page::Cheats     ? (cheat_view == CheatView::Groups ? "Open" : "Toggle")
-                      : settings.page == Page::Settings   ? "Open"
-                      : settings.page == Page::DeviceInfo ? "View"
-                      : settings.page == Page::Sound      ? (settings.focus == 2            ? "Open"
-                                                             : settings.focus == 1          ? "Test"
-                                                             : hardware.volume_percent == 0 ? "Unmute"
-                                                                                            : "Mute")
-                      : settings.page == Page::Display    ? "Done"
-                      : settings.page == Page::Motion     ? "Toggle"
-                                                          : "Select",
-                      "A", true, a_pressed);
-    }
+    void settings_footer(SDL_Renderer* r, int y);
     static const char* icon_asset(SettingsIcon symbol) {
         switch (symbol) {
         case SettingsIcon::Play: return "play";
@@ -1936,89 +1692,11 @@ class App {
         default: return nullptr;
         }
     }
-    void ui_icon(SDL_Renderer* r, SettingsIcon symbol, int x, int y, int size, const std::string& key) {
-        if (drawing_elements && view_transitions_enabled() && view_motion.active()) {
-            double pop = view_motion.accent(uint32_t(symbol), view_drawn_at);
-            size = int(std::round(size * (1 + .14 * pop)));
-            y -= int(std::round(3 * pop));
-        }
-        if (!preferences.rich_icons && draw_pixel_icon(s, r, symbol, x, y, size, theme.at(key))) return;
-        auto name = icon_asset(symbol);
-        if (preferences.rich_icons && name && size >= 20 &&
-            media.draw(r, asset_path(std::string("icons/") + name + ".bmp"), {x - size / 2, y - size / 2, size, size},
-                       false))
-            return;
-        draw_settings_icon(s, r, symbol, x, y, size, theme.at(key));
-    }
-    void settings_card(SDL_Renderer* r, int x, int y, int w, int h, bool focused = false) {
-        round_rect(r, x, y + 3, w, h, 14, "slot");
-        round_rect(r, x, y, w, h, 14, focused ? "accent" : "panel");
-        if (focused) round_rect(r, x + 2, y + 2, w - 4, h - 4, 12, "focus");
-    }
+    void ui_icon(SDL_Renderer* r, SettingsIcon symbol, int x, int y, int size, const std::string& key);
+    void settings_card(SDL_Renderer* r, int x, int y, int w, int h, bool focused = false);
     void list_row(SDL_Renderer* r, int y, int index, const std::string& title, const std::string& value = "",
-                  bool enabled = true, const Color* swatch = nullptr, bool switches = true) {
-        int row = y + list_top + index * list_stride - list_scroll;
-        bool focused = index == list_selected();
-        int dx = 24;
-        move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
-        dx -= 24;
-        settings_card(r, 24 + dx, row, 566, 66, focused);
-        round_rect(r, 38 + dx, row + 11, 44, 44, 12, focused && enabled ? "accent" : "slot");
-        ui_icon(r,
-                settings.page == Page::SaveGallery    ? gallery_icon()
-                : settings.page == Page::ShaderPicker ? SettingsIcon::Shader
-                : settings.page == Page::Cheats       ? SettingsIcon::Spark
-                : settings.page == Page::Timezone     ? SettingsIcon::Clock
-                                                      : settings_icon_for(title),
-                60 + dx, row + 33, 25, enabled ? (focused ? "on_accent" : "accent") : "muted");
-        const bool toggle = switches && (value == "On" || value == "Off");
-        const int dot = swatch ? 22 : 0;
-        const int value_width = value.empty() ? 0
-                                : toggle      ? 82
-                                              : std::min(224, label_width(value, 18) + (enabled ? 46 : 28) + dot);
-        const int text_width = 464 - (value_width ? value_width + 16 : 28);
-        label(r, title, 98 + dx, row + 19, 24, enabled ? "ink" : "muted", text_width,
-              settings.page != Page::Wifi && settings.page != Page::Cheats &&
-                  settings.page != Page::Timezone); // network and cheat names are data
-        if (toggle) {
-            draw_toggle(r, 524 + dx, row + 19, title, value == "On", enabled);
-        } else if (!value.empty()) {
-            // Even 14 px margins; text, swatch and chevron on one centre line.
-            int x = 574 - value_width + dx;
-            round_rect(r, x, row + 18, value_width, 30, 15, focused ? "panel" : "slot");
-            if (swatch) accent_swatch(r, x + 22, row + 33, 8, *swatch);
-            label(r, value, x + 14 + dot, centred_label_y(locale.text(value), 18, row + 33), 18,
-                  enabled ? "accent" : "muted", value_width - (enabled ? 46 : 28) - dot);
-            if (enabled) ui_icon(r, SettingsIcon::Chevron, x + value_width - 17, row + 33, 12, "accent");
-        } else if (enabled) ui_icon(r, SettingsIcon::Chevron, 570 + dx, row + 33, 14, focused ? "accent" : "muted");
-    }
-    void draw_toggle(SDL_Renderer* r, int x, int y, const std::string& name, bool value, bool enabled = true) {
-        auto key = std::make_pair(int(settings.page), name);
-        auto now = s.GetTicks();
-        auto found = toggle_motion.find(key);
-        if (found == toggle_motion.end())
-            found = toggle_motion.emplace(key, ToggleMotion{value, float(value), now - 100}).first;
-        auto& motion = found->second;
-        auto position = [&]() {
-            float t = preferences.animations ? std::min(1.f, (now - motion.at) / 90.f) : 1.f;
-            t = 1 - (1 - t) * (1 - t);
-            return motion.from + (float(motion.value) - motion.from) * t;
-        };
-        if (motion.value != value) {
-            motion.from = position();
-            motion.value = value;
-            motion.at = now;
-            micro_until = now + 100;
-        }
-        sunken_track(r, x, y, 44, 28, 14);
-        if (enabled && value) raised_pill(r, x + 1, y + 1, 42, 26, 13, theme.at("accent"), 0, false);
-        const int knob = x + 5 + int(14 * position());
-        alpha_round(r, knob, y + 7, 18, 18, 9, shadow_colour(), preferences.dark ? 90 : 40);
-        round_rect(r, knob, y + 5, 18, 18, 9, "panel");
-        alpha_round(r, knob + 4, y + 7, 10, 5, 2, Color{255, 255, 255}, preferences.dark ? 40 : 150);
-        label(r, value ? "On" : "Off", x - 42, centred_label_y(locale.text(value ? "On" : "Off"), 16, y + 14), 16,
-              enabled ? "ink" : "muted", 36);
-    }
+                  bool enabled = true, const Color* swatch = nullptr, bool switches = true);
+    void draw_toggle(SDL_Renderer* r, int x, int y, const std::string& name, bool value, bool enabled = true);
     void list_scrollbar(SDL_Renderer* r, int y);
     // The vertical rail after the horizontal one: a recessed groove with a
     // pip per page, a glass window under the thumb, and a glossy thumb with
@@ -2027,110 +1705,16 @@ class App {
     // and a glossy thumb with an engraved grip. Nothing changes on hover;
     // dragging only adds a soft accent glow, so the thumb never jumps.
     void draw_scrollbar(SDL_Renderer* r, int x, int y, int height, int thumb, int offset, bool dragging, bool hover,
-                        int width = 36) {
-        (void)hover;
-        const int cx = x + width / 2;
-        round_rect(r, x, y, width, height, width / 2, "slot");
-        round_rect(r, cx - 4, y + 10, 8, height - 20, 4, "line");
-        round_rect(r, cx - 3, y + 11, 6, height - 22, 3, "background");
-        const int top = y + offset, tw = width - 10, left = cx - tw / 2;
-        alpha_round(r, left, top + 3, tw, thumb, tw / 2, shadow_colour(), preferences.dark ? 70 : 30);
-        if (dragging)
-            alpha_round(r, left - 3, top - 3, tw + 6, thumb + 6, tw / 2 + 3, theme.at("accent"),
-                        preferences.dark ? 70 : 50);
-        glossy_pill(r, left, top, tw, thumb, tw / 2, theme.at("accent"), dragging ? .5 : 0);
-        for (int line = -1; line <= 1; line++) {
-            tint_rect(r, cx - 6, top + thumb / 2 + line * 6 + 1, 12, 2, blend(theme.at("accent"), Color{0, 0, 0}, 28));
-            round_rect(r, cx - 6, top + thumb / 2 + line * 6, 12, 2, 1, "on_accent");
-        }
-    }
-    void round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key) {
-        color(r, key);
-        SDL_Rect center{x + radius, y, w - 2 * radius, h};
-        s.RenderFillRect(r, &center);
-        for (int dy = 0; dy < radius; dy++) {
-            int inset =
-                radius - static_cast<int>(std::sqrt(radius * radius - (radius - dy - 0.5) * (radius - dy - 0.5)));
-            SDL_Rect a{x + inset, y + dy, w - inset * 2, 1}, b{x + inset, y + h - 1 - dy, w - inset * 2, 1};
-            s.RenderFillRect(r, &a);
-            s.RenderFillRect(r, &b);
-        }
-        rect(r, x, y + radius, w, h - radius * 2, key);
-    }
+                        int width = 36);
+    void round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key);
     // Explicit colours (DS colour tiles) reuse the themed drawing paths.
-    void fill_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill) {
-        theme["swatch"] = fill;
-        round_rect(r, x, y, w, h, radius, "swatch");
-    }
-    void label_colour(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, Color ink, int width) {
-        theme["swatch_ink"] = ink;
-        label(r, value, x, y, pixels, "swatch_ink", width);
-    }
-    void raw_label_colour(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, Color ink, int width) {
-        theme["swatch_ink"] = ink;
-        raw_label(r, value, x, y, pixels, "swatch_ink", width);
-    }
-    void check_mark(SDL_Renderer* r, int cx, int cy, Color ink) {
-        s.SetRenderDrawColor(r, ink.r, ink.g, ink.b, 255);
-        for (int w = 0; w < 2; w++) {
-            s.RenderDrawLine(r, cx - 5, cy + w, cx - 1, cy + 4 + w);
-            s.RenderDrawLine(r, cx - 1, cy + 4 + w, cx + 6, cy - 4 + w);
-        }
-    }
-    void ring(SDL_Renderer* r, int x, int y, int radius, const std::string& key) {
-        color(r, key);
-        for (int i = 0; i < 48; i++) {
-            double a = i * 6.2831853 / 48, b = (i + 1) * 6.2831853 / 48;
-            s.RenderDrawLine(r, x + int(std::cos(a) * radius), y + int(std::sin(a) * radius),
-                             x + int(std::cos(b) * radius), y + int(std::sin(b) * radius));
-        }
-    }
-    void icon(SDL_Renderer* r, int kind, int x, int y, const std::string& key) {
-        color(r, key);
-        if (kind == 0) {
-            ring(r, x, y, 11, key);
-            ring(r, x - 4, y - 3, 2, key);
-            ring(r, x + 4, y - 3, 2, key);
-            ring(r, x, y + 5, 2, key);
-        } else if (kind == 1) {
-            ring(r, x, y + 2, 10, key);
-            rect(r, x - 3, y - 12, 6, 15, "panel");
-            color(r, key);
-            s.RenderDrawLine(r, x, y - 12, x, y + 1);
-        } else if (kind == 2) {
-            rect(r, x - 11, y - 9, 24, 18, key, true);
-            s.RenderDrawLine(r, x - 4, y - 9, x - 4, y + 9);
-            s.RenderDrawLine(r, x + 4, y - 9, x + 4, y + 9);
-        } else if (kind == 3) {
-            rect(r, x - 10, y - 4, 5, 8, key);
-            s.RenderDrawLine(r, x - 5, y - 4, x + 1, y - 9);
-            s.RenderDrawLine(r, x + 1, y - 9, x + 1, y + 9);
-            s.RenderDrawLine(r, x + 1, y + 9, x - 5, y + 4);
-            s.RenderDrawLine(r, x + 6, y - 7, x + 10, y);
-            s.RenderDrawLine(r, x + 10, y, x + 6, y + 7);
-        } else if (kind == 4) {
-            for (int i = 0; i < 3; i++) {
-                int d = 5 + i * 5;
-                s.RenderDrawLine(r, x - d, y - i * 5, x, y - 5 - i * 5);
-                s.RenderDrawLine(r, x, y - 5 - i * 5, x + d, y - i * 5);
-            }
-            rect(r, x - 1, y + 5, 3, 3, key);
-        } else {
-            ring(r, x, y, 10, key);
-            s.RenderDrawLine(r, x, y - 1, x, y + 6);
-            rect(r, x - 1, y - 6, 2, 2, key);
-        }
-    }
-    void gear(SDL_Renderer* r, int x, int y) {
-        ring(r, x, y, 9, "accent");
-        ring(r, x, y, 3, "accent");
-        color(r, "accent");
-        for (int i = 0; i < 8; i++) {
-            double a = i * 6.2831853 / 8;
-            s.RenderDrawLine(r, x + int(std::cos(a) * 9), y + int(std::sin(a) * 9), x + int(std::cos(a) * 13),
-                             y + int(std::sin(a) * 13));
-        }
-    }
+    void fill_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill);
+    void label_colour(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, Color ink, int width);
+    void raw_label_colour(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, Color ink, int width);
+    void check_mark(SDL_Renderer* r, int cx, int cy, Color ink);
+    void ring(SDL_Renderer* r, int x, int y, int radius, const std::string& key);
+    void icon(SDL_Renderer* r, int kind, int x, int y, const std::string& key);
+    void gear(SDL_Renderer* r, int x, int y);
     void choose_browser_layout() {
         show_picker("Browser layout", {"Cartridges", "Covers", "List"}, preferences.layout, [this](int n) {
             preferences.layout = n;
@@ -2138,45 +1722,12 @@ class App {
             remember_appearance();
         });
     }
-    void choose_library_view() {
-        show_picker("Library view",
-                    {"All games", "Favourites", "Recents", "Cartridges", "Covers", "List", "Jump to letter",
-                     "Search games", "Clear filters"},
-                    preferences.view, [this](int n) {
-                        if (n < 3) {
-                            library_view(n);
-                            remember_appearance();
-                        } else if (n < 6) {
-                            preferences.layout = n - 3;
-                            cancel_navigation();
-                            remember_appearance();
-                        } else if (n == 6) jump_to_letter();
-                        else if (n == 7) open_discover();
-                        else clear_discovery();
-                    });
-    }
+    void choose_library_view();
     // Three sections of three equal tiles with room between them.
     static SDL_Rect library_view_choice(int index) {
         return {40 + (index % 3) * 191, 120 + (index / 3) * 100, 178, 52};
     }
-    void library_choice_icon(SDL_Renderer* r, int index, int x, int y, int size, const std::string& ink) {
-        if (index == 5) {
-            for (int i = -1; i <= 1; i++) {
-                round_rect(r, x - size / 2, y + i * size / 3 - 1, 3, 3, 1, ink);
-                round_rect(r, x - size / 2 + 7, y + i * size / 3 - 1, size - 7, 3, 1, ink);
-            }
-            return;
-        }
-        if (index == 7) {
-            search_icon(r, x, y, size, ink);
-            return;
-        }
-        static constexpr std::array<SettingsIcon, 9> icons = {
-            SettingsIcon::Cartridge, SettingsIcon::Heart,   SettingsIcon::Clock,
-            SettingsIcon::Cartridge, SettingsIcon::Art,     SettingsIcon::Library,
-            SettingsIcon::Type,      SettingsIcon::Library, SettingsIcon::Refresh};
-        ui_icon(r, icons.at(index), x, y, size, ink);
-    }
+    void library_choice_icon(SDL_Renderer* r, int index, int x, int y, int size, const std::string& ink);
     static std::string initial_letter(const std::string& title) {
         auto first = title.find_first_not_of(" ");
         if (first == std::string::npos) return "#";
@@ -2186,28 +1737,8 @@ class App {
     }
     // The displayed title when it is already known; otherwise the file name's.
     // Opening the sheet never reads metadata for every cartridge on the card.
-    std::string jump_title(size_t index) {
-        const auto& game = model.games[index];
-        if (game.demo) return game.title;
-        if (const auto* entry = library_cache.peek(game); entry && entry->title_ready) return entry->title;
-        return library_title(game.title);
-    }
-    void jump_to_letter() {
-        std::map<std::string, size_t> first;
-        for (size_t i = 0; i < model.games.size(); i++) first.emplace(initial_letter(jump_title(i)), i);
-        std::vector<std::string> letters;
-        std::vector<size_t> targets;
-        int selected = 0;
-        auto current = model.games.empty() ? "" : initial_letter(jump_title(model.selected));
-        for (const auto& entry : first) {
-            if (entry.first == current) selected = int(letters.size());
-            letters.push_back(entry.first);
-            targets.push_back(entry.second);
-        }
-        show_picker("Jump to letter", letters, selected, [this, targets](int n) {
-            if (n >= 0 && n < int(targets.size())) select_game(targets[n], false);
-        });
-    }
+    std::string jump_title(size_t index);
+    void jump_to_letter();
     void show_picker(std::string title, std::vector<std::string> options, int selected, std::function<void(int)> apply);
     void show_emulator_picker(bool per_game);
     const char* drastic_backend_name(int value) const;
@@ -2273,328 +1804,29 @@ class App {
     void keyboard_screen(SDL_Renderer* r, int y);
     void search_keyboard_top(SDL_Renderer* r, int y);
     void settings_bottom(SDL_Renderer* r, int y);
-    void cart(SDL_Renderer* r, int x, int y, int width, int height, bool selected, int number) {
-        rect(r, x + 4, y + 5, width, height, "line");
-        rect(r, x, y, width, height, selected ? "accent" : "slot");
-        rect(r, x + 10, y + 12, width - 20, height - 37, "panel");
-        rect(r, x + width - 27, y, 27, 14, "background");
-        text(r, "DS", x + 18, y + 22, 3, "ink");
-        text(r, std::to_string(number), x + 18, y + 56, 2, "muted");
-        for (int i = 0; i < 5; i++) rect(r, x + 13 + i * (width - 20) / 5, y + height - 18, 6, 10, "ink");
-    }
+    void cart(SDL_Renderer* r, int x, int y, int width, int height, bool selected, int number);
     // The clock as the user chose it: 24-hour, or 12-hour with AM/PM.
-    std::string time_text(const std::tm& t) const {
-        char buf[16];
-        if (system_preferences.time_format == 1) {
-            std::snprintf(buf, sizeof(buf), "%d:%02d %s", t.tm_hour % 12 == 0 ? 12 : t.tm_hour % 12, t.tm_min,
-                          t.tm_hour < 12 ? "AM" : "PM");
-            return buf;
-        }
-        std::snprintf(buf, sizeof(buf), "%02d:%02d", t.tm_hour, t.tm_min);
-        return buf;
-    }
-    std::string clock() {
-        auto now = std::time(nullptr);
-        return time_text(*std::localtime(&now));
-    }
+    std::string time_text(const std::tm& t) const;
+    std::string clock();
     fs::path folder_for_game(const Game& game) { return library_cache.folder(game); }
     fs::path item_folder(size_t index) { return folder_for_game(model.games[index]); }
-    std::string game_title(size_t index) {
-        auto& game = model.games[index];
-        if (game.demo) return o.game_menu ? locale.text(game.title) : game.title;
-        auto& entry = library_cache.metadata(game);
-        if (!entry.title_ready) {
-            entry.title = entry.info["title"];
-            if (entry.title.empty()) entry.title = entry.info["artwork_title"];
-            if (entry.title.empty()) entry.title = library_title(game.title);
-            if (entry.title.empty()) entry.title = entry.banner["title"];
-            if (entry.title.empty()) entry.title = media.banner(game.path).title;
-            entry.title_ready = true;
-        }
-        return entry.title;
-    }
-    void warm_icon(SDL_Renderer* r, const Game& game) {
-        if (!game.demo && !media.warm(r, game.path, true)) media.warm(r, folder_for_game(game) / "icon.bmp");
-    }
+    std::string game_title(size_t index);
+    void warm_icon(SDL_Renderer* r, const Game& game);
     void warm_icon(SDL_Renderer* r, size_t index) { warm_icon(r, model.games[index]); }
     // The same icon, read and decoded by the loader thread; it appears on the
     // frame after it arrives, so browsing never waits on the card.
-    void request_icon(SDL_Renderer* r, const Game& game) {
-        if (game.demo) return;
-        media.request(r, game.path, true);
-        media.request(r, folder_for_game(game) / "icon.bmp");
-    }
-    void prepare_render_assets() {
-        if (settings.page == Page::GameSwitcher)
-            for (auto& panel : surfaces) {
-                for (auto& game : switch_games) warm_icon(panel.renderer, game);
-                if (settings.focus < int(switch_games.size()))
-                    media.warm(panel.renderer, folder_for_game(switch_games[settings.focus]) / "box.bmp");
-            }
-        // The focused cover is ready for the very first Games frame. Keep it
-        // warm while on Home too; neighbours are prepared after presentation.
-        if (!o.game_menu && settings.page == Page::Library && !model.games.empty())
-            for (auto& panel : surfaces) {
-                media.warm(panel.renderer, item_folder(model.selected) / "box.bmp");
-                warm_icon(panel.renderer, model.selected);
-            }
-        if (home_menu && home_selected > 0 && home_selected < pictochat_tile) {
-            const auto& last = summary.groups[home_selected > 1 ? home_selected - 1 : 0].last_game;
-            if (last)
-                for (auto& panel : surfaces) warm_icon(panel.renderer, *last);
-        }
-        if (home_menu && preferences.home_layout == 1 && summary.groups[0].last_game)
-            for (auto& panel : surfaces) warm_icon(panel.renderer, *summary.groups[0].last_game);
-        if (settings.page == Page::SaveGallery) {
-            auto path = slots["image_" + std::to_string(settings.focus)];
-            if (!path.empty())
-                for (auto& panel : surfaces) media.warm(panel.renderer, path);
-        }
-        for (auto& panel : surfaces) {
-            for (const char* name : {"brand/mark-48.bmp", "brand/mark-120.bmp"})
-                media.warm(panel.renderer, asset_path(name));
-            media.warm(panel.renderer,
-                       asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"));
-            media.warm(panel.renderer,
-                       asset_path(preferences.dark ? "brand/wordmark-dark.bmp" : "brand/wordmark-light.bmp"));
-        }
-        for (auto& panel : surfaces) {
-            media.warm(panel.renderer, status_asset(sound_asset()));
-            media.warm(panel.renderer, status_asset(wifi_asset()));
-        }
-        if (preferences.rich_icons && settings.page != Page::BootWarning)
-            for (auto& panel : surfaces)
-                for (const char* name :
-                     {"settings", "games", "favorites", "recent",     "pictochat", "display",  "power",
-                      "library",  "sound", "wifi",      "system",     "controls",  "shutdown", "play",
-                      "save",     "load",  "shaders",   "brightness", "restart",   "home",     "artwork"}) {
-                    if (settings.page == Page::GameSwitcher && std::string(name) != "settings" &&
-                        std::string(name) != "games" && std::string(name) != "recent")
-                        continue;
-                    if (settings.page == Page::Library && std::string(name) != "settings" &&
-                        std::string(name) != "games" && std::string(name) != "favorites" &&
-                        std::string(name) != "recent" && std::string(name) != "pictochat" &&
-                        !(picker_open && (picker_title == "Library view" || picker_title == "Browser layout") &&
-                          std::string(name) == "artwork"))
-                        continue;
-                    media.warm(panel.renderer, asset_path(std::string("icons/") + name + ".bmp"));
-                }
-        // The Systems page draws each system's own artwork, so it is prepared
-        // with the other icons instead of during the first frame.
-        if (preferences.rich_icons)
-            for (auto& panel : surfaces)
-                for (const auto& system : listed_systems)
-                    media.warm(panel.renderer, asset_path(std::string("systems/") + system + ".bmp"));
-        // Statistics uses game identities from the summary, independent of
-        // the current library filter. Prepare only the bottom-screen icons.
-        if (settings.page == Page::Statistics && summary_ready && !surfaces.empty())
-            for (const auto& entry : summary.most_played) warm_icon(surfaces.back().renderer, entry.game);
-        carousel.item_spacing = !home_menu && browse_layout() == 1 ? 158 : Carousel::spacing;
-        if (settings.page == Page::ShaderPicker && !surfaces.empty())
-            shader_preview.warm(surfaces.front().renderer, shader_preview_folder(), shader_preview_scene,
-                                preview_shader(), true);
-        if (probe || model.games.empty() || home_menu || systems_menu) return;
-        // QuickMenu displays its own identity and controls. Defer ROM/banner
-        // metadata until a page actually needs the game title.
-        if (o.game_menu) {
-            game_title(0);
-            for (auto& panel : surfaces) media.warm(panel.renderer, o.data / "session/menu-background.bmp");
-            return;
-        }
-        game_title(model.selected);
-        if (o.game_menu || settings.page != Page::Library) return;
-        library_cache.stats(model.games[model.selected]);
-        browser_list.clamp(model.games.size());
-        int first = preferences.layout == 2 ? browser_list.first() : int(std::floor(carousel.position)) - 3;
-        int end = preferences.layout == 2 ? browser_list.last(model.games.size()) : first + 7;
-        // List metadata and icon fallbacks are ready before either draw pass.
-        if (preferences.layout == 2)
-            for (int index = std::max(0, first); index < std::min(end, int(model.games.size())); index++)
-                game_title(size_t(index));
-        // Favourite hearts: the visible cartridges' options are read here, never while drawing.
-        for (int index = std::max(0, first); index < std::min(end, int(model.games.size())); index++)
-            if (!model.games[size_t(index)].demo) library_cache.options(model.games[size_t(index)]);
-        if (!model.games[model.selected].demo) library_cache.options(model.games[model.selected]);
-        for (size_t panel = 0; panel < surfaces.size(); panel++) {
-            auto* renderer = surfaces[panel].renderer;
-            // The selected cartridge is prepared in place so its cover and
-            // title never pop in; the visible neighbours and a wide window
-            // beyond them load on the loader thread, nearest first.
-            media.warm(renderer, item_folder(model.selected) / "box.bmp");
-            warm_icon(renderer, model.selected);
-            if (!o.preview && panel == 0) continue;
-            (void)first;
-            (void)end;
-            const int reach = preferences.layout == 2 ? 14 : 10, centre = int(model.selected),
-                      count = int(model.games.size());
-            for (int distance = 1; distance <= reach; distance++)
-                for (int direction : {1, -1}) {
-                    int index = centre + direction * distance;
-                    if (index >= 0 && index < count) request_icon(renderer, model.games[size_t(index)]);
-                }
-        }
-    }
+    void request_icon(SDL_Renderer* r, const Game& game);
+    void prepare_render_assets();
     // Covers near the selection load in the background, nearest first; cached
     // misses are remembered too, so missing artwork is never asked for twice.
-    void prepare_next_cover() {
-        if (o.game_menu || home_menu || settings.page != Page::Library || preferences.layout != 1 ||
-            model.games.empty())
-            return;
-        int center = int(std::lround(carousel.position));
-        for (int distance = 1; distance <= 5; distance++)
-            for (int direction : {-1, 1}) {
-                int index = center + direction * distance;
-                if (index < 0 || index >= int(model.games.size())) continue;
-                media.request(surfaces.back().renderer, item_folder(size_t(index)) / "box.bmp");
-            }
-    }
-    void watch_library_assets(Uint32 now) {
-        if (now - library_poll < 1000) return;
-        library_poll = now;
-        bool changed = !home_menu && !model.games.empty() && library_cache.refresh(model.games[model.selected]);
-        if (media.refresh()) {
-            library_cache.invalidate_titles();
-            changed = true;
-        }
-        if (changed) dirty = true;
-    }
-    void pattern(SDL_Renderer* r, int y, int height, bool lower = false) {
-        auto bg = theme.at("background"), fg = theme.at("line");
-        if (preferences.background == 1 && lower) {
-            // The original DS touch screen: plain square tiles, 8 DS pixels a
-            // side (20 px here), each rule with a pale edge after it so the
-            // tiles read as pressed into the screen. Quieter than the paper
-            // above, so the controls on top own the contrast.
-            const Color rule = blend(bg, fg, preferences.dark ? 30 : 34),
-                        edge = blend(bg, Color{255, 255, 255}, preferences.dark ? 4 : 55);
-            for (int row = y + 19; row < y + height; row += 20) {
-                tint_colour(r, rule);
-                s.RenderDrawLine(r, 0, row, 639, row);
-                if (row + 1 < y + height) {
-                    tint_colour(r, edge);
-                    s.RenderDrawLine(r, 0, row + 1, 639, row + 1);
-                }
-            }
-            for (int column = 19; column < 640; column += 20) {
-                tint_colour(r, rule);
-                s.RenderDrawLine(r, column, y, column, y + height - 1);
-                tint_colour(r, edge);
-                s.RenderDrawLine(r, column + 1, y, column + 1, y + height - 1);
-            }
-            return;
-        }
-        if (preferences.background == 1) {
-            // The DSi's graph paper: faint rules every 4 px, a light grid every
-            // 16 px and a firmer one every 64 px, each major line with a pale
-            // edge under it so the paper reads as embossed rather than drawn on.
-            auto shade = [&](int parts) {
-                return Color{(unsigned char)((bg.r * (parts - 1) + fg.r) / parts),
-                             (unsigned char)((bg.g * (parts - 1) + fg.g) / parts),
-                             (unsigned char)((bg.b * (parts - 1) + fg.b) / parts)};
-            };
-            const Color fine = shade(22), minor = shade(9), major = shade(4),
-                        edge = blend(bg, preferences.dark ? Color{255, 255, 255} : Color{255, 255, 255},
-                                     preferences.dark ? 5 : 60);
-            tint_colour(r, fine);
-            for (int row = y; row < y + height; row += 4)
-                if (row % 16) s.RenderDrawLine(r, 0, row, 639, row);
-            tint_colour(r, minor);
-            for (int row = y + (16 - y % 16) % 16; row < y + height; row += 16)
-                if (row % 64) s.RenderDrawLine(r, 0, row, 639, row);
-            for (int column = 16; column < 640; column += 16)
-                if (column % 64) s.RenderDrawLine(r, column, y, column, y + height - 1);
-            for (int row = y + (64 - y % 64) % 64; row < y + height; row += 64) {
-                tint_colour(r, major);
-                s.RenderDrawLine(r, 0, row, 639, row);
-                if (row + 1 < y + height) {
-                    tint_colour(r, edge);
-                    s.RenderDrawLine(r, 0, row + 1, 639, row + 1);
-                }
-            }
-            for (int column = 0; column < 640; column += 64) {
-                tint_colour(r, major);
-                s.RenderDrawLine(r, column, y, column, y + height - 1);
-                tint_colour(r, edge);
-                s.RenderDrawLine(r, column + 1, y, column + 1, y + height - 1);
-            }
-            return;
-        }
-        s.SetRenderDrawColor(r, (bg.r * 19 + fg.r) / 20, (bg.g * 19 + fg.g) / 20, (bg.b * 19 + fg.b) / 20, 255);
-        for (int row = y; row < y + height; row += 4) s.RenderDrawLine(r, 0, row, 639, row);
-    }
-    void game_icon(SDL_Renderer* r, const Game& game, int x, int y, int size, size_t index = 0) {
-        SDL_Rect box{x, y, size, size};
-        if (!game.demo && ((game.system == "nds" && media.draw(r, game.path, box, true)) ||
-                           media.draw(r, folder_for_game(game) / "icon.bmp", box)))
-            return;
-        if (!game.demo) {
-            round_rect(r, x + size / 8, y + size / 8, size * 3 / 4, size * 3 / 4, 4, "slot");
-            // The system's badge, as large as fits the slot (GBA in a small switcher row too).
-            const std::string badge = system_info(game.system).badge;
-            int text = 24;
-            while (text > 10 && label_width(badge, text, false) > size * 3 / 4 - 4) text -= 2;
-            raw_label(r, badge, x + (size - label_width(badge, text, false)) / 2,
-                      centred_label_y(badge, text, y + size / 2), text, "muted", size * 3 / 4);
-            return;
-        }
-        // Original preview symbols, never Nintendo artwork.
-        int q = std::max(2, size / 8);
-        round_rect(r, x, y, size, size, 4, "focus");
-        switch (index % 5) {
-        case 0:
-            rect(r, x + q * 2, y + q * 2, q * 4, q * 4, "accent");
-            rect(r, x + q * 3, y + q, q * 2, q * 6, "ink");
-            rect(r, x + q, y + q * 3, q * 6, q * 2, "ink");
-            rect(r, x + q * 3, y + q * 3, q * 2, q * 2, "on_accent");
-            break;
-        case 1:
-            for (int i = 0; i < 4; i++)
-                rect(r, x + q * (1 + (i % 2) * 3), y + q * (1 + (i / 2) * 3), q * 2, q * 2, i % 2 ? "accent" : "ink");
-            break;
-        case 2:
-            rect(r, x + q * 3, y + q, q * 2, q * 6, "ink");
-            for (int i = 0; i < 3; i++) rect(r, x + q * 3, y + q * (1 + i * 2), q * 2, q, "on_accent");
-            break;
-        case 3:
-            ring(r, x + size / 2, y + size / 2, size / 3, "accent");
-            rect(r, x + q * 3, y + q * 3, q * 2, q * 2, "ink");
-            break;
-        default:
-            rect(r, x + q * 2, y + q * 2, q * 4, q * 4, "accent");
-            rect(r, x + q * 3, y + q * 2, q, q * 4, "on_accent");
-            rect(r, x + q * 2, y + q * 3, q * 4, q, "on_accent");
-            break;
-        }
-    }
-    void game_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
-        game_icon(r, model.games[index], x, y, size, index);
-    }
-    bool cover_art(SDL_Renderer* r, const fs::path& path, SDL_Rect box, bool selected) {
-        box = media.fitted_box(r, path, box);
-        round_rect(r, box.x, box.y + 3, box.w + 6, box.h + 6, 10, "slot");
-        round_rect(r, box.x - 3, box.y - 3, box.w + 6, box.h + 6, 10, selected ? "accent" : "line");
-        round_rect(r, box.x, box.y, box.w, box.h, 7, "panel");
-        return media.draw(r, path, box, false, 255, false, 7);
-    }
+    void prepare_next_cover();
+    void watch_library_assets(Uint32 now);
+    void pattern(SDL_Renderer* r, int y, int height, bool lower = false);
+    void game_icon(SDL_Renderer* r, const Game& game, int x, int y, int size, size_t index = 0);
+    void game_icon(SDL_Renderer* r, size_t index, int x, int y, int size);
+    bool cover_art(SDL_Renderer* r, const fs::path& path, SDL_Rect box, bool selected);
     void wrapped(SDL_Renderer* r, const std::string& source, int x, int y, int pixels, int width, int rows = 3,
-                 bool translate = true) {
-        auto value = translate ? locale.text(source) : source;
-        std::string line;
-        int row = 0;
-        auto measure = [&](const std::string& str) {
-            return preferences.pixel ? float(pixel_cells(str) * std::max(2, (pixels + 6) / 10) * 6)
-                                     : rounded.width(str, pixels);
-        };
-        for (const auto& piece : line_pieces(value)) {
-            std::string candidate = line.empty() ? piece.text : line + (piece.space_before ? " " : "") + piece.text;
-            if (!line.empty() && measure(candidate) > width) {
-                label(r, line, x, y + row * (pixels + 7), pixels, "ink", width, false);
-                if (++row >= rows) return;
-                line = piece.text;
-            } else line = candidate;
-        }
-        if (!line.empty() && row < rows) label(r, line, x, y + row * (pixels + 7), pixels, "ink", width, false);
-    }
+                 bool translate = true);
     fs::path asset_path(const std::string& name) const {
         return (o.app.empty() ? fs::path(".") : o.app) / "assets" / name;
     }
@@ -2642,46 +1874,23 @@ class App {
     void top(SDL_Renderer* r, int y);
     // Word-wrapped text centred on the screen, at most `rows` lines.
     void centered_wrapped(SDL_Renderer* r, const std::string& value, int y, int pixels, int width, int rows,
-                          const std::string& key) {
-        std::istringstream words(value);
-        std::string word, line;
-        std::vector<std::string> lines;
-        while (words >> word) {
-            std::string next = line.empty() ? word : line + " " + word;
-            if (!line.empty() && label_width(next, pixels, false) > width) {
-                lines.push_back(line);
-                line = word;
-            } else line = next;
-        }
-        if (!line.empty()) lines.push_back(line);
-        for (int i = 0; i < std::min<int>(rows, int(lines.size())); i++) {
-            int w = std::min(width, label_width(lines[size_t(i)], pixels, false));
-            raw_label(r, lines[size_t(i)], 320 - w / 2, y + i * (pixels + 8), pixels, key, width);
-        }
-    }
+                          const std::string& key);
     // PictoChat's page on Home's top screen: what it is and whether Wi-Fi is up.
     void pictochat_top(SDL_Renderer* r, int y);
     // A heart badge for favourites, on the cover stage and on the tiles below.
     bool stage_favourite = false;
     bool game_loved(size_t index);
     void favourite_badge(SDL_Renderer* r, int cx, int cy, int size);
+    // A small two-screens mark for games RG DS Play gives a second screen of
+    // their own (a map, the team, the HUD; launcher/dual_screen.hpp).
+    bool stage_dual = false;
+    bool game_dual(size_t index);
+    void dual_badge(SDL_Renderer* r, int x, int y);
     // Without a cover: the cartridge's own DS icon, large and crisp on the
     // same card as covers, with its title (the only place it is not repeated).
     void icon_stage(SDL_Renderer* r, int y, const std::string& developer);
     // Translucent rounded fill without overlapping strips (blending stays even).
-    void alpha_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill, int alpha) {
-        radius = std::clamp(radius, 0, std::min(w, h) / 2);
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-        s.SetRenderDrawColor(r, fill.r, fill.g, fill.b, Uint8(std::clamp(alpha, 0, 255)));
-        for (int dy = 0; dy < radius; dy++) {
-            int inset = radius - int(std::sqrt(radius * radius - (radius - dy - 0.5) * (radius - dy - 0.5)));
-            SDL_Rect a{x + inset, y + dy, w - inset * 2, 1}, b{x + inset, y + h - 1 - dy, w - inset * 2, 1};
-            s.RenderFillRect(r, &a);
-            s.RenderFillRect(r, &b);
-        }
-        SDL_Rect middle{x, y + radius, w, h - radius * 2};
-        s.RenderFillRect(r, &middle);
-    }
+    void alpha_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill, int alpha);
     // DSi / GammaOS-style cover stage: the box art alone, large and centred on
     // a soft shadow and a white card edge. The title already sits in the lower
     // screen's speech bubble. A new selection settles in over 190 ms.
@@ -2689,24 +1898,7 @@ class App {
     // A shoulder button seen from the front, as the DSi draws L and R: a flat
     // tab with small corners, whose outer top corner sweeps down in a deep
     // quarter ellipse. `right` puts the sweep on the right (R). Blended at `alpha`.
-    void shoulder_fill(SDL_Renderer* r, int x, int y, int w, int h, bool right, Color fill, int alpha = 255) {
-        const double rx = std::min(w * .45, h * .7), ry = h * .8;
-        const int small = std::min(4, h / 2);
-        const auto corner = [](double radius, int row) {
-            return row >= radius ? 0
-                                 : int(radius - std::sqrt(radius * radius - (radius - row - .5) * (radius - row - .5)));
-        };
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-        s.SetRenderDrawColor(r, fill.r, fill.g, fill.b, Uint8(std::clamp(alpha, 0, 255)));
-        for (int dy = 0; dy < h; dy++) {
-            const double t = std::max(0.0, (ry - dy - .5) / ry);
-            const int sweep = dy < ry ? int(std::lround(rx - rx * std::sqrt(std::max(0.0, 1 - t * t)))) : 0,
-                      flat = std::max(corner(small, dy), corner(small, h - 1 - dy)),
-                      outer = std::max(sweep, corner(small, h - 1 - dy)), inner = flat;
-            SDL_Rect line{x + (right ? inner : outer), y + dy, w - inner - outer, 1};
-            s.RenderFillRect(r, &line);
-        }
-    }
+    void shoulder_fill(SDL_Renderer* r, int x, int y, int w, int h, bool right, Color fill, int alpha = 255);
     // Every button tip looks the same: the key as an accent badge with the
     // glass highlight of a DSi key, then what it does. Face buttons are round;
     // L and R are drawn like the DSi draws its shoulders: a flat tab with a
@@ -2718,100 +1910,23 @@ class App {
     };
     static constexpr int key_badge_size = 22;
     static bool shoulder_key(const std::string& key) { return key == "L" || key == "R" || key == "L2" || key == "R2"; }
-    int key_badge_width(const std::string& key) {
-        return shoulder_key(key) ? std::max(34, label_width(key, 14, false) + 20)
-                                 : std::max(key_badge_size, label_width(key, 14, false) + 14);
-    }
-    int key_badge(SDL_Renderer* r, int x, int cy, const std::string& key, bool enabled = true, bool inverse = false) {
-        const int w = key_badge_width(key), y = cy - key_badge_size / 2;
-        const Color fill = theme.at(inverse   ? "on_accent"
-                                    : enabled ? "accent"
-                                              : "slot"),
-                    ink = theme.at(inverse   ? "accent"
-                                   : enabled ? "on_accent"
-                                             : "muted");
-        if (shoulder_key(key)) {
-            const bool right = key[0] == 'R';
-            shoulder_fill(r, x, y, w, key_badge_size, right, fill);
-            if (enabled && !inverse)
-                shoulder_fill(r, x + (right ? 3 : 8), y + 2, w - 11, 6, right, Color{255, 255, 255}, 56);
-            // The letter leans away from the deep curve, onto the flat part of the tab.
-            const int text_x = x + (w - label_width(key, 14, false)) / 2 + (right ? -3 : 3);
-            raw_label_colour(r, key, text_x, centred_label_y(key, 14, cy), 14, ink, w);
-            return w;
-        }
-        fill_round(r, x, y, w, key_badge_size, key_badge_size / 2, fill);
-        if (enabled && !inverse) alpha_round(r, x + 4, y + 2, w - 8, 7, 3, Color{255, 255, 255}, 56);
-        raw_label_colour(r, key, x + (w - label_width(key, 14, false)) / 2, centred_label_y(key, 14, cy), 14, ink, w);
-        return w;
-    }
+    int key_badge_width(const std::string& key);
+    int key_badge(SDL_Renderer* r, int x, int cy, const std::string& key, bool enabled = true, bool inverse = false);
     // A key group ("A", "Start", "L R"): its badges side by side.
-    int key_group(SDL_Renderer* r, int x, int cy, const std::string& keys, bool enabled = true, bool inverse = false) {
-        int w = 0;
-        std::istringstream words(keys);
-        for (std::string key; words >> key;) {
-            if (w) w += 4;
-            w += r ? key_badge(r, x + w, cy, key, enabled, inverse) : key_badge_width(key);
-        }
-        return w;
-    }
-    int key_hints_width(const std::vector<KeyHint>& hints, int size = 16) {
-        int w = 0;
-        for (auto& hint : hints)
-            w += (w ? 18 : 0) + key_group(nullptr, 0, 0, hint.key) +
-                 (hint.text.empty() ? 0 : 8 + label_width(hint.text, size));
-        return w;
-    }
+    int key_group(SDL_Renderer* r, int x, int cy, const std::string& keys, bool enabled = true, bool inverse = false);
+    int key_hints_width(const std::vector<KeyHint>& hints, int size = 16);
     // A row of tips from x (align -1), centred on x (0) or ending at x (1),
     // centred on cy; long translations step the text down to fit `limit`.
     int key_hints(SDL_Renderer* r, int x, int cy, const std::vector<KeyHint>& hints, int align = -1, int size = 16,
-                  int limit = 584, const std::string& ink = "muted", bool inverse = false) {
-        while (size > 12 && key_hints_width(hints, size) > limit) size -= 2;
-        const int width = key_hints_width(hints, size);
-        int at = align < 0 ? x : align == 0 ? x - width / 2 : x - width;
-        for (auto& hint : hints) {
-            at += key_group(r, at, cy, hint.key, true, inverse);
-            if (!hint.text.empty()) {
-                const auto value = locale.text(hint.text);
-                const int w = label_width(value, size, false);
-                raw_label(r, value, at + 8, centred_label_y(value, size, cy), size, ink, w + 4);
-                at += 8 + w;
-            }
-            at += 18;
-        }
-        return width;
-    }
+                  int limit = 584, const std::string& ink = "muted", bool inverse = false);
     // The DSi's note on the top screen: a panel card with an accent edge, the
     // page's icon and a title; the tip sits under it (settings_top draws it).
     // `y` places the icon and title; `screen` is the top screen's own top.
-    void dsi_note(SDL_Renderer* r, int y, int screen, SettingsIcon symbol, const std::string& title) {
-        const int x = 24, top = screen + 64, w = 592, h = 356;
-        alpha_round(r, x, top + 3, w, h, 18, shadow_colour(), preferences.dark ? 60 : 20);
-        fill_round(r, x, top, w, h, 18, theme.at("accent"));
-        fill_round(r, x + 2, top + 2, w - 4, h - 4, 16, theme.at("panel"));
-        ui_icon(r, symbol, 320, y + 118, 40, "accent");
-        centered_wrapped(r, title, y + 148, 24, 540, 1, "ink");
-    }
+    void dsi_note(SDL_Renderer* r, int y, int screen, SettingsIcon symbol, const std::string& title);
     // A shoulder tab in a lower corner of the top screen, flush with its
     // edge: the key badge on the outer end, where the button is, then what it does.
-    void shoulder_tab(SDL_Renderer* r, int y, bool right, const std::string& key, const std::string& text) {
-        const int h = 36, top = y + 430, cy = top + h / 2, size = 16;
-        const int w = std::min(300, 14 + key_badge_width(key) + 8 + label_width(text, size, false) + 16),
-                  left = right ? 640 - w : 0;
-        alpha_round(r, right ? left : left - 18, top + 3, w + 18, h, 14, shadow_colour(), preferences.dark ? 60 : 20);
-        fill_round(r, right ? left : left - 18, top, w + 18, h, 14, theme.at("panel"));
-        const int badge = right ? 640 - 14 - key_badge_width(key) : 14;
-        key_badge(r, badge, cy, key);
-        const int text_x = right ? left + 16 : badge + key_badge_width(key) + 8;
-        raw_label(r, text, text_x, centred_label_y(text, size, cy), size, "ink", w - key_badge_width(key) - 38);
-    }
-    std::string system_row_name(int row) const {
-        static const std::array<const char*, 8> names = {
-            "Language",           "Timezone",           "Date format",     "Time format",
-            "Device information", "Updates & recovery", "Return to stock", "Startup"};
-        if (row == 6 && o.independent) return "Restart menu";
-        return names[size_t(std::clamp(row, 0, 7))];
-    }
+    void shoulder_tab(SDL_Renderer* r, int y, bool right, const std::string& key, const std::string& text);
+    std::string system_row_name(int row) const;
     // What the focused row is for, on pages that explain their rows.
     std::string settings_tip(Page page);
     std::string cover_notice();
@@ -2828,102 +1943,12 @@ class App {
     void cover_caption(SDL_Renderer* r, int x, int cy, uint64_t seconds);
     // Fixed geometry, no textures or per-frame allocations for feedback rings.
     void feedback_arc(SDL_Renderer* r, int x, int y, int radius, double start, double amount, Color ink,
-                      int alpha = 255, int weight = 2) {
-        static const auto points = []() {
-            std::array<std::pair<double, double>, 64> result{};
-            for (size_t i = 0; i < result.size(); i++) {
-                double a = (double(i) / 64 - .25) * 6.283185307;
-                result[i] = {std::cos(a), std::sin(a)};
-            }
-            return result;
-        }();
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-        s.SetRenderDrawColor(r, ink.r, ink.g, ink.b, Uint8(std::clamp(alpha, 0, 255)));
-        int first = int(start * 64), count = std::clamp(int(std::ceil(amount * 64)), 0, 64);
-        for (int i = 0; i < count; i++) {
-            auto a = points[(first + i) % 64], b = points[(first + i + 1) % 64];
-            for (int w = 0; w < weight; w++)
-                s.RenderDrawLine(
-                    r, x + int(std::round(a.first * (radius + w))), y + int(std::round(a.second * (radius + w))),
-                    x + int(std::round(b.first * (radius + w))), y + int(std::round(b.second * (radius + w))));
-        }
-    }
-    bool options_hold() const {
-        return pointer_down && !probe && !home_menu && settings.page == Page::Library && carousel.dragging &&
-               !carousel.moved && !carousel.range && !model.games.empty() && pressed_game == model.selected &&
-               carousel.tapped(down_x, model.games.size()) == pressed_game &&
-               std::abs(carousel.position - pressed_game) < .08;
-    }
-    bool touch_animating(Uint32 now) const {
-        return preferences.touch_indicator && preferences.animations &&
-               ((pointer_down && (now - pointer_at < 100 || (options_hold() && now - pointer_at < 600))) ||
-                (touch_tail && now - release_at < 140));
-    }
-    void touch_feedback(SDL_Renderer* r, int y) {
-        gesture_cues(r, y);
-        if (!preferences.touch_indicator || probe || launching || chat_open || (!pointer_down && !touch_tail)) return;
-        auto now = s.GetTicks();
-        double release = pointer_down ? 0 : std::min(1.0, (now - release_at) / 140.0);
-        if (release >= 1) return;
-        int radius =
-            preferences.animations
-                ? (pointer_down ? 18 + int(4 * std::max(0.0, 1.0 - (now - pointer_at) / 100.0)) : 18 + int(release * 6))
-                : 18;
-        int alpha = int(220 * (1 - release));
-        SDL_Rect clip{0, y, 640, 480};
-        s.RenderSetClipRect(r, &clip);
-        feedback_arc(r, contact_x, y + contact_y, radius + 2, 0, 1, theme.at("panel"), alpha, 2);
-        feedback_arc(r, contact_x, y + contact_y, radius, 0, 1, theme.at("accent"), alpha, 2);
-        if (options_hold()) {
-            double progress = std::min(1.0, (now - pointer_at) / 600.0);
-            feedback_arc(r, contact_x, y + contact_y, radius + 5, 0,
-                         preferences.animations ? progress
-                         : progress >= 1        ? 1
-                                                : 0,
-                         theme.at("accent"), 255, 3);
-            if (progress >= 1) centered(r, "Release for options", y + 361, 1, "accent");
-        }
-        s.RenderSetClipRect(r, nullptr);
-    }
-    double launch_opacity(Uint32 now) const {
-        if (!preferences.animations) return launch_phase == LaunchPhase::Exiting ? 0 : 1;
-        if (launch_phase == LaunchPhase::Exiting) {
-            double t = std::min(1.0, (now - launch_exit_at) / 80.0);
-            return launch_exit_opacity * (1 - t * t);
-        }
-        double t = std::min(1.0, (now - launch_at) / 110.0);
-        return 1 - std::pow(1 - t, 3);
-    }
-    void loading_overlay(SDL_Renderer* r, int y, bool lower) {
-        if (!launching) return;
-        auto now = s.GetTicks();
-        double opacity = launch_opacity(now);
-        SDL_Rect panel{0, y, 640, 480};
-        s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-        auto background = theme.at("background");
-        double wash = launch_phase == LaunchPhase::Exiting && launch_handoff ? launch_exit_opacity : opacity;
-        s.SetRenderDrawColor(r, background.r, background.g, background.b, Uint8((lower ? 224 : 172) * wash));
-        s.RenderFillRect(r, &panel);
-        if (lower && opacity > 0) {
-            // Eight small DS-style blocks: no card, labels, textures or artwork.
-            static const std::array<std::pair<int, int>, 8> offsets = {
-                {{0, -23}, {16, -16}, {23, 0}, {16, 16}, {0, 23}, {-16, 16}, {-23, 0}, {-16, -16}}};
-            int head = preferences.animations ? int((now - launch_at) / 75) % 8 : 0;
-            auto accent = theme.at("accent");
-            for (int i = 0; i < 8; i++) {
-                int age = (head - i + 8) % 8, alpha = preferences.animations ? 255 - age * 27 : 180;
-                s.SetRenderDrawColor(r, accent.r, accent.g, accent.b, Uint8(alpha * opacity));
-                SDL_Rect block{317 + offsets[i].first, y + 237 + offsets[i].second, 6, 6};
-                s.RenderFillRect(r, &block);
-            }
-        }
-        if (launch_phase == LaunchPhase::Exiting && launch_handoff) {
-            // Clear the library into the theme's neutral colour for handoff.
-            double t = preferences.animations ? std::min(1.0, (now - launch_exit_at) / 80.0) : 1;
-            s.SetRenderDrawColor(r, background.r, background.g, background.b, Uint8(255 * t * t));
-            s.RenderFillRect(r, &panel);
-        }
-    }
+                      int alpha = 255, int weight = 2);
+    bool options_hold() const;
+    bool touch_animating(Uint32 now) const;
+    void touch_feedback(SDL_Renderer* r, int y);
+    double launch_opacity(Uint32 now) const;
+    void loading_overlay(SDL_Renderer* r, int y, bool lower);
     struct LibraryHeader {
         SDL_Rect card, back, view, options, title, search, clear;
         int category_x, category_width;
@@ -2940,69 +1965,15 @@ class App {
     // with a single bright line just inside the top edge. No band and no
     // hard edge in the middle. `press` turns the shade over, so a held
     // button looks pushed in. No shadow: callers add one.
-    void glossy_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color base, double press = 0) {
-        radius = std::clamp(radius, 0, std::min(w, h) / 2);
-        const Color white{255, 255, 255}, black{0, 0, 0};
-        const int lum = (base.r * 3 + base.g * 6 + base.b) / 10;
-        // Pale bodies (white panels) need a visible rim; saturated ones a deeper one.
-        fill_round(r, x, y, w, h, radius, blend(base, black, lum > 200 ? 16 : 26));
-        if (w <= 2 || h <= 2) return;
-        fill_round(r, x + 1, y + 1, w - 2, h - 2, std::max(0, radius - 1), base);
-        auto inset_at = [&](int row) {
-            double dy = row < radius ? radius - row - .5 : row >= h - radius ? row - (h - radius) + .5 : -1;
-            return dy < 0 ? 0 : radius - int(std::sqrt(std::max(0.0, radius * radius - dy * dy)));
-        };
-        const double lift = lum > 200 ? 0.0 : lum < 90 ? 10.0 : 30.0, deepen = lum > 200 ? 9.0 : 14.0;
-        for (int row = 1; row < h - 1; row++) {
-            int inset = inset_at(row) + 1;
-            if (w - 2 * inset <= 0) continue;
-            double t = double(row - 1) / std::max(1, h - 3);
-            if (press > 0) t = t + (1 - 2 * t) * press * .8;
-            const Color c = t < .5 ? blend(base, white, int(std::lround(lift * (1 - 2 * t))))
-                                   : blend(base, black, int(std::lround(deepen * (2 * t - 1))));
-            tint_rect(r, x + inset, y + row, w - 2 * inset, 1, c);
-        }
-        int inset = inset_at(1) + 2;
-        if (w - 2 * inset > 0 && h > 6)
-            tint_rect(r, x + inset, y + 1, w - 2 * inset, 1, blend(base, white, int(55 * (1 - .7 * press))));
-    }
+    void glossy_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color base, double press = 0);
     Color shadow_colour() const { return preferences.dark ? Color{0, 0, 0} : Color{24, 40, 60}; }
     // A raised control: soft shadow, then the glass body, sunk 2 px when pressed.
     void raised_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill, double press = 0,
-                     bool shadow = true) {
-        const int sink = int(std::lround(2 * press));
-        if (shadow)
-            alpha_round(r, x, y + 3, w, h, radius, shadow_colour(),
-                        int((preferences.dark ? 70 : 28) * (1 - .5 * press)));
-        glossy_pill(r, x, y + sink, w, h, radius, fill, press);
-    }
+                     bool shadow = true);
     // A footer or sheet button: a raised glass pill (accent when primary) with an
     // optional round key badge ("B", "A") and a label that sinks while pressed.
     void footer_button(SDL_Renderer* r, int x, int y, int w, const std::string& text, const std::string& badge,
-                       bool primary, bool pressed, Color* tint = nullptr) {
-        const Color fill = primary ? (tint ? *tint : theme.at("accent")) : theme.at(pressed ? "focus" : "panel"),
-                    ink = primary ? (tint ? tile_ink(*tint) : theme.at("on_accent")) : theme.at("ink");
-        raised_pill(r, x, y, w, 40, 12, fill, pressed ? 1 : 0);
-        const int sink = pressed ? 2 : 0;
-        int tx = x + 18;
-        if (!badge.empty()) {
-            if (primary) {
-                fill_round(r, x + w - 36, y + 9 + sink, 22, 22, 11, ink);
-                raw_label_colour(r, badge, x + w - 36 + (22 - label_width(badge, 14, false)) / 2,
-                                 centred_label_y(badge, 14, y + 20 + sink), 14, fill, 22);
-            } else {
-                round_rect(r, x + 13, y + 9 + sink, 22, 22, 11, "slot");
-                raw_label(r, badge, x + 13 + (22 - label_width(badge, 14, false)) / 2,
-                          centred_label_y(badge, 14, y + 20 + sink), 14, "ink", 22);
-                tx = x + 48;
-            }
-        }
-        const std::string value = locale.text(text);
-        raw_label_colour(r, value, tx, centred_label_y(value, 20, y + 20 + sink), 20, ink,
-                         w - (badge.empty() ? 36
-                              : primary     ? 58
-                                            : 60));
-    }
+                       bool primary, bool pressed, Color* tint = nullptr);
     bool footer_pressed(bool left) const {
         return pointer_down && contact_y >= 424 && (left ? contact_x < 200 : contact_x >= 440);
     }
@@ -3034,45 +2005,15 @@ class App {
     // The current step's progress: bytes while downloading, then the checksum,
     // then the unpacking. The step row above the bar says which one it is, so
     // the percent always matches the megabytes beside it.
-    double update_fraction() {
-        if (update_stage() == UpdateStage::Ready) return 1;
-        const std::string state = update_status["state"];
-        const double p = std::clamp(std::atof(update_status["progress"].c_str()) / 100.0, 0.0, 1.0),
-                     size = std::atof(update_status["size"].c_str()),
-                     received = std::atof(update_status["received"].c_str());
-        if (state == "verifying" || state == "staging") return p;
-        const double got = size > 0 ? std::clamp(received / size, 0.0, 1.0) : 0;
-        return state == "downloading" ? std::max(got, p) : got;
-    }
+    double update_fraction();
     // Speed and time left while bytes arrive, e.g. "1.8 MB/s · About 2 min left".
-    std::string update_speed() {
-        if (update_status["state"] != "downloading") return {};
-        const double rate = std::atof(update_status["rate"].c_str());
-        const int eta = std::atoi(update_status["eta"].c_str());
-        if (rate <= 0) return {};
-        char speed[32];
-        if (rate >= 1048576) std::snprintf(speed, sizeof speed, "%.1f MB/s", rate / 1048576.0);
-        else std::snprintf(speed, sizeof speed, "%d KB/s", std::max(1, int(rate / 1024)));
-        if (eta < 0) return speed;
-        const std::string left = eta < 60     ? locale.text("Less than a minute left")
-                                 : eta < 5400 ? locale.text("About " + std::to_string((eta + 30) / 60) + " min left")
-                                              : locale.text("About " + std::to_string((eta + 1800) / 3600) + " h left");
-        return std::string(speed) + "  ·  " + left;
-    }
+    std::string update_speed();
     // The bar's shown value eases toward the reported one between status polls.
     double update_shown = 0;
     Uint32 update_shown_at = 0, glitter_frame_at = 0;
     int drawn_banner_frame = -1;
     bool glitter_was = false;
-    void ease_update(Uint32 now) {
-        const double target = update_fraction();
-        const bool glitter = glitter_active(), arrived = glitter && !glitter_was;
-        glitter_was = glitter;
-        if (!glitter || arrived || update_stage() != UpdateStage::Running || target < update_shown - .05)
-            update_shown = target;
-        else update_shown += (target - update_shown) * std::min(1.0, (now - update_shown_at) / 220.0);
-        update_shown_at = now;
-    }
+    void ease_update(Uint32 now);
     bool glitter_active() {
         return preferences.animations && settings.page == Page::Maintenance && !chat_open &&
                (update_stage() == UpdateStage::Running || update_stage() == UpdateStage::Ready);
@@ -3095,12 +2036,7 @@ class App {
         return dy < 0 ? 0 : radius - int(std::sqrt(std::max(0.0, radius * radius - dy * dy)));
     }
     // A translucent span; callers switch the renderer to blend mode first.
-    void blend_rect(SDL_Renderer* r, int x, int y, int w, int h, Color c, int alpha) {
-        if (w <= 0 || h <= 0 || alpha <= 0) return;
-        s.SetRenderDrawColor(r, c.r, c.g, c.b, Uint8(std::min(alpha, 255)));
-        SDL_Rect b{x, y, w, h};
-        s.RenderFillRect(r, &b);
-    }
+    void blend_rect(SDL_Renderer* r, int x, int y, int w, int h, Color c, int alpha);
     // A DSi glint: a four-point star with soft arms and a white core.
     void sparkle(SDL_Renderer* r, int cx, int cy, int size, Color ink, int alpha);
     static uint32_t glint_hash(uint32_t v) {
@@ -3131,25 +2067,7 @@ class App {
     // accent on a panel, the way the footer's primary button carries its A.
     enum class KeyLook { Accent, White, Panel };
     void hotkey_pill(SDL_Renderer* r, int x, int y, int w, int h, const std::string& text, KeyLook look,
-                     bool pressed = false, const std::string& key = "Y", bool translate = true) {
-        const Color accent = theme.at("accent"),
-                    fill = look == KeyLook::White   ? Color{255, 255, 255}
-                           : look == KeyLook::Panel ? theme.at(pressed ? "focus" : "panel")
-                                                    : accent,
-                    ink = look == KeyLook::Accent ? tile_ink(accent) : accent;
-        raised_pill(r, x, y, w, h, h / 2, fill, pressed ? 1 : 0);
-        const int sink = pressed ? 2 : 0, badge = h - 14;
-        fill_round(r, x + 7, y + 7 + sink, badge, badge, badge / 2, ink);
-        raw_label_colour(r, key, x + 7 + (badge - label_width(key, 16, false)) / 2,
-                         centred_label_y(key, 16, y + h / 2 + sink), 16, fill, badge);
-        const std::string value = translate ? locale.text(text) : text;
-        const int room = w - badge - 30;
-        int size = h >= 44 ? 20 : 18;
-        while (size > 14 && label_width(value, size, false) > room)
-            size -= 2; // long translations step down before they clip
-        const int tx = x + badge + 14 + std::max(0, (room - label_width(value, size, false)) / 2);
-        raw_label_colour(r, value, tx, centred_label_y(value, size, y + h / 2 + sink), size, ink, room);
-    }
+                     bool pressed = false, const std::string& key = "Y", bool translate = true);
     std::string update_action_name(UpdateStage stage);
     // Home's notice after the DSi's balloon: an accent glass strip with the
     // release, a white key that says what Y does, glints by the disc and a
@@ -3445,256 +2363,10 @@ class App {
             }
         }
     }
-    void paint_bottom(SDL_Renderer* renderer, int y) {
-        drawing_elements = true;
-        element_origin_y = y;
-        view_drawn_at = s.GetTicks();
-        motion_hits.clear();
-        bottom(renderer, y);
-        drawing_elements = false;
-    }
-    void animated_bottom(SDL_Renderer* renderer, int y) {
-        if (chat_open) {
-            chat_bottom(renderer, y);
-            return;
-        }
-        if (view_transitions_enabled() && layered(preferences.view_style) && !view_canvas_failed) {
-            push_bottom(renderer, y);
-            return;
-        }
-        if (!view_motion.running || view_canvas_failed) {
-            paint_bottom(renderer, y);
-            return;
-        }
-        if (!view_canvas)
-            view_canvas = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
-        if (!view_canvas || s.SetRenderTarget(renderer, view_canvas) != 0) {
-            view_canvas_failed = true;
-            view_motion.stop();
-            s.ClearError();
-            paint_bottom(renderer, y);
-            return;
-        }
-        // SDL restores the window viewport/logical size when leaving a target.
-        s.RenderSetLogicalSize(renderer, 640, 480);
-        s.RenderSetClipRect(renderer, nullptr);
-        paint_bottom(renderer, 0);
-        s.RenderSetClipRect(renderer, nullptr);
-        if (s.SetRenderTarget(renderer, nullptr) != 0) throw std::runtime_error("Could not restore menu canvas");
-        s.RenderSetLogicalSize(renderer, 640, o.preview ? 960 : 480);
-        rect(renderer, 0, y, 640, 480, "background");
-        SDL_Rect clip{0, y, 640, 480};
-        s.RenderSetClipRect(renderer, &clip);
-        const auto pose = view_motion.pose(view_drawn_at);
-        SDL_Rect destination{int(std::round(320 - 320 * pose.sx + pose.x)),
-                             y + int(std::round(240 - 240 * pose.sy + pose.y)), int(std::round(640 * pose.sx)),
-                             int(std::round(480 * pose.sy))};
-        s.SetTextureBlendMode(view_canvas, SDL_BLENDMODE_BLEND);
-        // One stable surface keeps text readable throughout the small spring.
-        s.SetTextureColorMod(view_canvas, 255, 255, 255);
-        s.SetTextureAlphaMod(view_canvas, 255);
-        s.RenderCopyEx(renderer, view_canvas, nullptr, &destination, pose.tilt, nullptr, SDL_FLIP_NONE);
-        s.RenderSetClipRect(renderer, nullptr);
-        view_animation_frames++;
-    }
-    void push_bottom(SDL_Renderer* renderer, int y) {
-        // Idle: straight to the panel. The capture that a transition needs
-        // was taken when the input arrived (capture_view_for_input).
-        if (!view_motion.running || !view_previous_ready) {
-            view_previous_ready = false;
-            paint_bottom(renderer, y);
-            return;
-        }
-        if (!view_canvas)
-            view_canvas = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
-        auto fallback = [&]() {
-            s.ClearError();
-            clear_view_canvases();
-            view_canvas_failed = true;
-            view_motion.stop();
-            paint_bottom(renderer, y);
-        };
-        if (!view_canvas || s.SetRenderTarget(renderer, view_canvas) != 0) {
-            fallback();
-            return;
-        }
-        s.RenderSetLogicalSize(renderer, 640, 480);
-        s.RenderSetClipRect(renderer, nullptr);
-        s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        s.SetRenderDrawColor(renderer, 0, 0, 0, 0);
-        s.RenderClear(renderer);
-        s.SetRenderDrawBlendMode(renderer, o.game_menu ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
-        paint_bottom(renderer, 0);
-        if (s.SetRenderTarget(renderer, nullptr) != 0) throw std::runtime_error("Could not restore push canvas");
-        s.RenderSetLogicalSize(renderer, 640, o.preview ? 960 : 480);
-        SDL_Rect clip{0, y, 640, 480};
-        s.RenderSetClipRect(renderer, &clip);
-        rect(renderer, 0, y, 640, 480, "background");
-        const auto layers = view_motion.push(view_drawn_at);
-        auto layer = [&](SDL_Texture* texture, double x, double shade = 0, double alpha = 1) {
-            int light = int(std::round(255 * (1 - shade)));
-            s.SetTextureColorMod(texture, light, light, light);
-            s.SetTextureAlphaMod(texture, Uint8(std::lround(255 * alpha)));
-            s.SetTextureBlendMode(texture, alpha < 1 ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
-            SDL_Rect destination{int(std::round(x)), y, 640, 480};
-            s.RenderCopy(renderer, texture, nullptr, &destination);
-            s.SetTextureColorMod(texture, 255, 255, 255);
-            s.SetTextureAlphaMod(texture, 255);
-        };
-        if (view_motion.style == ViewStyle::Zoom) {
-            // Scaled about the panel centre; the outgoing view underneath.
-            const auto zoom = view_motion.zoom(view_drawn_at);
-            auto scaled = [&](SDL_Texture* texture, double scale, double alpha, double dx) {
-                if (alpha <= .004) return;
-                s.SetTextureAlphaMod(texture, Uint8(std::lround(255 * std::clamp(alpha, 0.0, 1.0))));
-                s.SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-                const int w = int(std::lround(640 * scale)), h = int(std::lround(480 * scale));
-                SDL_Rect destination{320 - w / 2 + int(std::lround(dx)), y + 240 - h / 2, w, h};
-                s.RenderCopy(renderer, texture, nullptr, &destination);
-                s.SetTextureAlphaMod(texture, 255);
-            };
-            scaled(view_previous, zoom.out_scale, zoom.out_alpha, zoom.out_dx);
-            scaled(view_canvas, zoom.in_scale, zoom.in_alpha, zoom.in_dx);
-        } else if (layers.incoming_above) {
-            layer(view_previous, layers.outgoing, layers.shade);
-            layer(view_canvas, layers.incoming, 0, layers.alpha);
-        } else {
-            layer(view_canvas, layers.incoming, layers.shade);
-            layer(view_previous, layers.outgoing);
-        }
-        s.RenderSetClipRect(renderer, nullptr);
-        view_animation_frames++;
-        push_animation_frames++;
-    }
-    void draw(bool screenshot = false) {
-        if (picker_was_open && !picker_open) picker_closed_at = s.GetTicks();
-        picker_was_open = picker_open;
-        sync_view_motion(s.GetTicks());
-        const auto reads = library_cache.counters.file_reads + media.counters.file_reads +
-                           shader_preview.counters.file_reads,
-                   checks = library_cache.counters.stamp_checks + media.counters.stamp_checks +
-                            shader_preview.counters.stamp_checks;
-        auto begin_panel = [&](SDL_Renderer* renderer) {
-            // A swapped back buffer has undefined contents. Clear the complete
-            // target, independently of the previous page's clip/blend state.
-            if (s.RenderSetClipRect(renderer, nullptr) != 0 ||
-                s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE) != 0)
-                throw std::runtime_error(std::string("Panel state: ") + s.GetError());
-            const auto background = theme.at("background");
-            s.SetRenderDrawColor(renderer, background.r, background.g, background.b, o.game_menu ? 0 : 255);
-            if (s.RenderClear(renderer) != 0) throw std::runtime_error(std::string("Panel clear: ") + s.GetError());
-            s.SetRenderDrawBlendMode(renderer, o.game_menu ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
-        };
-        auto flush_panel = [&](SDL_Renderer* renderer) {
-            if (s.RenderFlush(renderer) != 0) throw std::runtime_error(std::string("Panel draw: ") + s.GetError());
-        };
-        auto present_panel = [&](SDL_Renderer* renderer) {
-            s.ClearError();
-            s.RenderPresent(renderer);
-            if (const char* error = s.GetError(); error && *error)
-                throw std::runtime_error(std::string("Panel presentation: ") + error);
-        };
-        if (o.preview) {
-            begin_panel(surfaces[0].renderer);
-            top(surfaces[0].renderer, 0);
-            animated_bottom(surfaces[0].renderer, 480);
-            touch_feedback(surfaces[0].renderer, 480);
-            loading_overlay(surfaces[0].renderer, 0, false);
-            loading_overlay(surfaces[0].renderer, 480, true);
-            shutdown_overlay(surfaces[0].renderer, 0, true);
-            shutdown_overlay(surfaces[0].renderer, 480, false);
-            if (!embedded_menu) volume_feedback(surfaces[0].renderer, 0);
-            flush_panel(surfaces[0].renderer);
-            if (screenshot) save(surfaces[0].renderer, o.screenshot);
-            present_panel(surfaces[0].renderer);
-        } else {
-            // SDL GLES2 readback/present relies on the current GL context when
-            // batching is disabled. Finish each panel before drawing the next
-            // so the upper window is never read or swapped with the lower
-            // renderer's context still current.
-            auto* pixels = embedded_menu ? overlay.begin() : nullptr;
-            for (int i = 0; i < 2; i++) {
-                auto* renderer = surfaces[i].renderer;
-                if (i == 0 && chat_open && (chat.drawing || chat.view == pictochat::View::Lobby) &&
-                    chat_top_signature() == chat_top_seen)
-                    continue;
-                if (i == 0 && !screenshot) {
-                    const auto signature = top_signature(s.GetTicks());
-                    if (!signature.empty() && signature == top_seen) {
-                        top_skips++;
-                        continue;
-                    }
-                    top_seen = signature;
-                    top_drawn_at = s.GetTicks();
-                }
-                ui_trace.mark(i == 0 ? UiTrace::TopDraw : UiTrace::BottomDraw, rendered_frames,
-                              uint32_t(settings.page));
-                begin_panel(renderer);
-                if (i == 0) top(renderer, 0);
-                else {
-                    animated_bottom(renderer, 0);
-                    touch_feedback(renderer, 0);
-                }
-                loading_overlay(renderer, 0, i == 1);
-                shutdown_overlay(renderer, 0, i == 0);
-                if (i == 0 && !embedded_menu) volume_feedback(renderer, 0);
-                ui_trace.mark(i == 0 ? UiTrace::TopFlush : UiTrace::BottomFlush, rendered_frames,
-                              uint32_t(settings.page));
-                flush_panel(renderer);
-                if (screenshot) save(renderer, o.screenshot.string() + (i == 0 ? "-top.bmp" : "-bottom.bmp"));
-                if (embedded_menu) {
-                    if (s.RenderReadPixels(renderer, nullptr, SDL_PIXELFORMAT_RGBA32, pixels + i * overlay_panel_bytes,
-                                           640 * 4) != 0)
-                        throw std::runtime_error("Menu frame capture failed");
-                } else {
-                    ui_trace.mark(i == 0 ? UiTrace::TopPresent : UiTrace::BottomPresent, rendered_frames,
-                                  uint32_t(settings.page));
-                    present_panel(renderer);
-                }
-            }
-            if (embedded_menu) overlay.publish();
-        }
-        rendered_frames++;
-        render_file_reads +=
-            library_cache.counters.file_reads + media.counters.file_reads + shader_preview.counters.file_reads - reads;
-        render_stamp_checks += library_cache.counters.stamp_checks + media.counters.stamp_checks +
-                               shader_preview.counters.stamp_checks - checks;
-        ui_trace.mark(UiTrace::FrameDone, rendered_frames, uint32_t(settings.page));
-        update_health(true);
-        if (rendered_frames == 1) launch_profile.finish(o.game_menu);
-        if (rendered_frames == 1 && o.game_menu && !embedded_menu && !o.preview) {
-            if (const char* ready = std::getenv("RGDS_MENU_READY_FILE")) {
-                auto pending = std::string(ready) + ".pending";
-                std::ofstream file(pending);
-                file << getpid() << '\n';
-                file.close();
-                if (file) {
-                    std::error_code ec;
-                    fs::rename(pending, ready, ec);
-                }
-            }
-        }
-        if (o.boot_ready_fd >= 0) {
-            const char ready = '1';
-            int flags = 0;
-#ifdef MSG_NOSIGNAL
-            flags = MSG_NOSIGNAL;
-#elif defined(SO_NOSIGPIPE)
-            const int suppress = 1;
-            setsockopt(o.boot_ready_fd, SOL_SOCKET, SO_NOSIGPIPE, &suppress, sizeof(suppress));
-#endif
-            // The guardian may have exited. A failed notification never interrupts
-            // presentation, and the nonblocking socket cannot delay the first frame.
-            send(o.boot_ready_fd, &ready, 1, flags);
-            ::close(o.boot_ready_fd);
-            o.boot_ready_fd = -1;
-        }
-        if (settings.page == Page::BootWarning && !boot_displayed) {
-            boot_displayed = true;
-            boot_displayed_at = s.GetTicks();
-        }
-        dirty = false;
-    }
+    void paint_bottom(SDL_Renderer* renderer, int y);
+    void animated_bottom(SDL_Renderer* renderer, int y);
+    void push_bottom(SDL_Renderer* renderer, int y);
+    void draw(bool screenshot = false);
     void volume_feedback(SDL_Renderer* r, int y) {
         if (!volume_toast || s.GetTicks() >= volume_toast) return;
         round_rect(r, 130, y + 60, 380, 62, 10, "focus");
@@ -3705,64 +2377,7 @@ class App {
     }
     // `from_home` starts the selected game under Home instead of opening the
     // selected category.
-    void launch(bool from_home = false) {
-        if (launching) return;
-        if (worker > 0 && (worker_action == "device.reboot" || worker_action == "device.poweroff" ||
-                           worker_action == "device.update-apply")) {
-            status = "Finishing the system request";
-            dirty = true;
-            return;
-        }
-        if (probe) return;
-        if (home_menu && !from_home) {
-            open_category();
-            return;
-        }
-        if (systems_menu) {
-            choose_system(systems_selected);
-            return;
-        }
-        if (return_writes_pending()) {
-            status = "Restoring settings";
-            dirty = true;
-            return;
-        }
-        // A previous failure must not latch every core off. The runner checks
-        // writable storage and reapplies saved volume before opening any audio.
-        return_audio_failed = false;
-        if (o.boot_startup && (!library_ready || (!o.preview && (!boot_hardware_ready || system.volume_pending())))) {
-            status = "Preparing the launcher";
-            dirty = true;
-            return;
-        }
-        if (model.games.empty()) return;
-        launch_preview = o.preview || model.games[model.selected].demo || !o.allow_launch;
-        if (!launch_preview && (o.app.empty() || o.data.empty())) {
-            status = "ERROR: Launch needs app and data paths";
-            dirty = true;
-            return;
-        }
-        auto local = library_cache.options(model.games[model.selected]);
-        launching_core = unsigned(offered_core(local.core < 0 ? int(preferences.core) : local.core));
-        if (resume_launch) launching_core = unsigned(resume_core);
-        if (model.games[model.selected].system != "nds") launching_core = unsigned(play_core); // RG DS Play
-        sound_intent(MenuCue::Launch);
-        launching = true;
-        launch_at = s.GetTicks();
-        feedback_frame_at = launch_at;
-        launch_phase = LaunchPhase::Waiting;
-        sounds.fade_music();
-        launch_cancelled = launch_handoff = false;
-        launch_result = 0;
-        launch_drawn_head = -1;
-        cancel_navigation();
-        carousel.reset(model.selected);
-        dirty = true;
-        if (!launch_preview && worker > 0) {
-            kill(worker, SIGTERM);
-            worker_action.clear();
-        }
-    }
+    void launch(bool from_home = false);
     // ---- PictoChat: our own chat pad. Its rules and state live in launcher/pictochat_app.hpp;
     // this is its drawing and its hooks into the launcher's input. It uses the launcher's one keyboard,
     // and it needs no BIOS, firmware or file from Nintendo.
@@ -3915,207 +2530,12 @@ class App {
     void chat_release();
     void chat_action(int code);
     void poll_chat();
-    void begin_launch_exit(bool handoff, Uint32 now) {
-        launch_handoff = handoff;
-        if (launch_phase == LaunchPhase::Exiting) return;
-        launch_exit_opacity = launch_opacity(now);
-        launch_exit_at = now;
-        launch_phase = LaunchPhase::Exiting;
-        dirty = true;
-    }
-    void cancel_launch() {
-        if (!launching || launch_phase == LaunchPhase::Playing || launch_cancelled) return;
-        sounds.stop();
-        sound_intent(MenuCue::Back);
-        launch_cancelled = true;
-        launch_cancel_at = s.GetTicks();
-        if (launch_child > 0) kill(launch_child, SIGTERM);
-        else begin_launch_exit(false, s.GetTicks());
-        launch_handoff = false;
-    }
-    void finish_launch(bool reopen) {
-        if (launch_channel >= 0) ::close(launch_channel);
-        launch_channel = -1;
-        launching = false;
-        launch_phase = LaunchPhase::None;
-        if (!reopen) configure_sounds(); // a cancelled or preview launch: the music comes back
-        if (reopen) {
-            library_cache.clear();
-            library_summary.request(o.data, all_games);
-            open();
-            configure_sounds();
-            last_activity = s.GetTicks();
-            library_view(preferences.view);
-            if (home_menu) carousel.reset(home_selected); // back to Home, which the game was started from
-            try {
-                if (fs::exists(o.system_preferences))
-                    system_preferences = load_system_preferences(o.system_preferences);
-            } catch (const std::exception& e) {
-                std::cerr << "Could not reload system settings: " << e.what() << std::endl;
-            }
-            if (hardware.volume) {
-                hardware.volume_percent = confirmed_volume();
-                return_volume = hardware.volume_percent;
-                volume_unsaved = true;
-            }
-            if (hardware.brightness) {
-                return_brightness = system_preferences.brightness;
-                hardware.brightness_percent = system_preferences.brightness;
-                brightness_unsaved = true;
-                brightness_changed = last_activity;
-            }
-            if (hardware.power && system_preferences.power > 0) return_power = system_preferences.power;
-            return_status_needed = true;
-            begin_return_controls();
-        }
-        last_activity = s.GetTicks();
-        input_guard_until = last_activity + (reopen ? 250 : 100);
-        status = launch_cancelled      ? "Launch cancelled"
-                 : launch_result == 78 ? "The memory card is read-only"
-                 : launch_result       ? "LAUNCH ERROR " + std::to_string(launch_result) + " - SEE LOG"
-                 : launch_preview      ? "PREVIEW: " + std::string(core_names[launching_core]) + " SELECTED"
-                                       : "BACK HOME";
-        if (launch_result == 78) check_card(s.GetTicks(), true);
-        if (launch_result && !launch_cancelled) emit_sound(MenuCue::Error);
-        else if (reopen) emit_sound(MenuCue::Back);
-        dirty = true;
-    }
-    void start_launch_runner(Uint32 now) {
-        try {
-            save_switcher_library();
-        } catch (const std::exception& error) {
-            std::cerr << "Game switcher snapshot: " << error.what() << std::endl;
-            std::error_code ec;
-            fs::remove(o.data / "session/switcher-library.ini", ec);
-        }
-        int channel[2];
-        if (socketpair(AF_UNIX, SOCK_STREAM, 0, channel) < 0) {
-            launch_result = 127;
-            begin_launch_exit(false, now);
-            return;
-        }
-        if (fcntl(channel[0], F_SETFD, FD_CLOEXEC) < 0 || fcntl(channel[1], F_SETFD, FD_CLOEXEC) < 0) {
-            ::close(channel[0]);
-            ::close(channel[1]);
-            launch_result = 127;
-            begin_launch_exit(false, now);
-            return;
-        }
-#ifdef SO_NOSIGPIPE
-        const int suppress = 1;
-        setsockopt(channel[0], SOL_SOCKET, SO_NOSIGPIPE, &suppress, sizeof(suppress));
-#endif
-        std::vector<std::string> args = {"python3",
-                                         (o.app / "runtime/emulators.py").string(),
-                                         "launch",
-                                         "--app",
-                                         o.app.string(),
-                                         "--data",
-                                         o.data.string(),
-                                         "--core",
-                                         core_ids[launching_core],
-                                         "--rom",
-                                         model.games[model.selected].path.string(),
-                                         "--display-handoff-fd",
-                                         std::to_string(channel[1])};
-        save_state();
-        launch_child = fork();
-        if (launch_child == 0) {
-            if (resume_launch) setenv("RGDS_FORCE_AUTOLOAD", "1", 1);
-            ::close(channel[0]);
-            if (fcntl(channel[1], F_SETFD, 0) < 0) _exit(127);
-            std::vector<char*> argv;
-            for (auto& a : args) argv.push_back(a.data());
-            argv.push_back(nullptr);
-            execvp(argv[0], argv.data());
-            _exit(127);
-        }
-        resume_launch = false;
-        ::close(channel[1]);
-        launch_channel = channel[0];
-        launch_phase = LaunchPhase::Preparing;
-        if (launch_child < 0) {
-            launch_result = 127;
-            begin_launch_exit(false, now);
-        }
-    }
-    void poll_launch(Uint32 now) {
-        if (!launching) return;
-        if (launch_child > 0) {
-            int result = 0;
-            auto finished = waitpid(launch_child, &result, WNOHANG);
-            if (finished == launch_child || (finished < 0 && errno != EINTR)) {
-                launch_child = -1;
-                launch_result = finished < 0        ? 127
-                                : WIFEXITED(result) ? WEXITSTATUS(result)
-                                                    : 128 + (WIFSIGNALED(result) ? WTERMSIG(result) : 0);
-                if (launch_phase == LaunchPhase::Playing) {
-                    finish_launch(true);
-                    return;
-                }
-                begin_launch_exit(false, now);
-            } else if (launch_cancelled && now - launch_cancel_at >= 5000) kill(launch_child, SIGKILL);
-        }
-        if (launch_phase == LaunchPhase::Playing) return;
-        if (launch_preview) {
-            if (launch_phase != LaunchPhase::Exiting && now - launch_at >= 500) begin_launch_exit(false, now);
-        } else if (launch_phase == LaunchPhase::Waiting) {
-            // Reap helpers and drain pending controls via the ordinary event loop.
-            // No sleeps, synchronous worker shutdown or control flush on START.
-            if (worker > 0) {
-                auto done = waitpid(worker, nullptr, WNOHANG);
-                if (done > 0 || (done < 0 && errno != EINTR)) worker = -1;
-                else if (now - launch_at >= 1000) kill(worker, SIGKILL);
-            }
-            if (worker <= 0 && !system.volume_pending() && !system.brightness_pending() && !volume_unsaved &&
-                !brightness_unsaved)
-                start_launch_runner(now);
-        } else if (launch_phase == LaunchPhase::Preparing && !launch_cancelled) {
-            char ready = 0;
-            auto received = recv(launch_channel, &ready, 1, MSG_DONTWAIT);
-            if (received == 1 && ready == 'R') begin_launch_exit(true, now);
-        }
-        if (launch_phase == LaunchPhase::Exiting && (!preferences.animations || now - launch_exit_at >= 80)) {
-            if (launch_handoff && launch_child > 0) {
-                // Let the finite launch sparkle finish while input/cancel remains live.
-                if (sounds.active() && now - launch_at < 1200) return;
-                // Present the final fade frame, release SDL, then acknowledge ownership.
-                draw(!o.screenshot.empty());
-                close();
-                launch_phase = LaunchPhase::Playing;
-                int flags = 0;
-#ifdef MSG_NOSIGNAL
-                flags = MSG_NOSIGNAL;
-#endif
-                const char released = 'C';
-                if (send(launch_channel, &released, 1, flags) != 1) {
-                    kill(launch_child, SIGTERM);
-                }
-                ::close(launch_channel);
-                launch_channel = -1;
-            } else if (launch_child <= 0) finish_launch(false);
-        }
-    }
-    void stop_launch() {
-        if (launch_channel >= 0) ::close(launch_channel);
-        launch_channel = -1;
-        if (launch_child > 0) {
-            kill(launch_child, SIGTERM);
-            for (int i = 0; i < 600; i++) {
-                auto done = waitpid(launch_child, nullptr, WNOHANG);
-                if (done == launch_child || (done < 0 && errno != EINTR)) {
-                    launch_child = -1;
-                    break;
-                }
-                usleep(10000);
-            }
-            if (launch_child > 0) {
-                kill(launch_child, SIGKILL);
-                while (waitpid(launch_child, nullptr, 0) < 0 && errno == EINTR) {}
-            }
-        }
-        launch_child = -1;
-    }
+    void begin_launch_exit(bool handoff, Uint32 now);
+    void cancel_launch();
+    void finish_launch(bool reopen);
+    void start_launch_runner(Uint32 now);
+    void poll_launch(Uint32 now);
+    void stop_launch();
     void action(int code);
     void touch(int x, int y);
     int cover_hit(int x, int y);
@@ -4234,6 +2654,14 @@ public:
 #include "launcher/settings_screen.hpp"
 #include "launcher/settings_picker.hpp"
 #include "launcher/input_handling.hpp"
+#include "launcher/status_bar.hpp"
+#include "launcher/ui_widgets.hpp"
+#include "launcher/library_pickers.hpp"
+#include "launcher/render_assets.hpp"
+#include "launcher/key_hints_pills.hpp"
+#include "launcher/update_progress.hpp"
+#include "launcher/frame_draw.hpp"
+#include "launcher/game_launch.hpp"
 #include "launcher/view_transitions.hpp"
 #include "launcher/menu_sounds.hpp"
 #include "launcher/library_boot.hpp"

@@ -16,7 +16,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT = ROOT / 'vendor/engines'
 KIND = 'owner-provided-engine-bundle'
-REQUIRED = {'dsperate/dsperate', 'nnddss/nnddss'}
+REQUIRED = {'dsperate/dsperate'}  # a legacy nnddss/ payload is still accepted but no longer needed
 NNDS_LIBRARIES = {
     'libGLESv2_shim.so', 'libOpenSLES_shim.so', 'libandroid.so', 'libbionic_shim.so', 'libnnddss.so',
     'libnnddss_renegade_kid.so', 'libstdc++_stub.so', 'libz_shim.so'
@@ -144,10 +144,8 @@ def plan(source):
 
     binary = source / 'bin/dsperate'
     if (source / 'bin').is_symlink() or binary.is_symlink(): raise ValueError('Engine payload symlink: ' + str(binary))
-    if not binary.is_file() or not (source / 'nnddss_payload/nnddss').is_file():
-        raise ValueError(
-            'Select the supplied system payload directory containing bin/dsperate and nnddss_payload/nnddss.'
-        )
+    if not binary.is_file():
+        raise ValueError('Select the supplied system payload directory containing bin/dsperate.')
     select(binary, 'dsperate/dsperate')
     for folder, prefix in (('dsperate', 'dsperate'), ('nnddss_payload', 'nnddss'), ('shaders', 'shaders')):
         base = source / folder

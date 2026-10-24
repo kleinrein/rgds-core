@@ -77,10 +77,9 @@ class EngineBundleTests(unittest.TestCase):
         files = manifest['files']
         self.assertEqual(
             set(files), {
-                'dsperate/dsperate', 'dsperate/LICENSE', 'dsperate/NOTICE.txt', 'nnddss/nnddss',
-                'nnddss/lib/libbionic_shim.so', 'nnddss/lib/LICENSE.txt', 'nnddss/gamecontrollerdb.txt',
-                'nnddss/ui/icon.png', 'nnddss/shaders/Dot.dfx', 'nnddss/COPYING', 'shaders/lcd1x.dsd',
-                'shaders/README.txt'
+                'dsperate/dsperate', 'dsperate/LICENSE', 'dsperate/NOTICE.txt', 'nnddss/lib/libbionic_shim.so',
+                'nnddss/lib/LICENSE.txt', 'nnddss/gamecontrollerdb.txt', 'nnddss/ui/icon.png', 'nnddss/shaders/Dot.dfx',
+                'nnddss/COPYING', 'shaders/lcd1x.dsd', 'shaders/README.txt'
             }
         )
         for name, expected in files.items():

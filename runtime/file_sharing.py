@@ -200,7 +200,7 @@ class Sharing:
             raise ValueError('The sharing folder path is unsupported.')
         return value
 
-    def configure(self, ip, roots, username, guest=False):
+    def configure(self, ip, roots, username, guest=False, systems=()):
         lines = [
             '[global]', 'server role = standalone server', 'security = user',
             'map to guest = ' + ('Bad User' if guest else 'Never'), 'server min protocol = SMB2', 'smb ports = 445',
@@ -218,15 +218,24 @@ class Sharing:
         lines.append('passdb backend = tdbsam:' + self.config_path(self.folder / 'private-dir/passdb.tdb'))
         shares = []
         seen = set()
-        for root in roots:
+        counts = {}
+
+        def add(base, root):
             root = Path(root)
             if not root.is_dir() or root.is_symlink():
-                continue
+                return
             path = self.config_path(root)
             if path not in seen:
-                name = 'Games' if not shares else 'Games' + str(len(shares) + 1)
-                shares.append((name, path))
                 seen.add(path)
+                counts[base] = counts.get(base, 0) + 1
+                shares.append((base if counts[base] == 1 else base + str(counts[base]), path))
+
+        # With other systems shared too, "Games" would hide which system it is.
+        systems = [(str(system).upper(), root) for system, root in systems]
+        for root in roots:
+            add('DS' if systems else 'Games', root)
+        for system, root in systems:
+            add(system, root)
         for name in ('Imports', 'Exports'):
             root = self.data / name.lower()
             if root.is_symlink():
@@ -245,7 +254,7 @@ class Sharing:
         config.write_text('\n'.join(lines) + '\n')
         return config, ', '.join(name for name, _path in shares)
 
-    def start(self, ip, roots, guest=False):
+    def start(self, ip, roots, guest=False, systems=()):
         ip = str(ipaddress.IPv4Address(ip))
         with self.locked():
             if not self.supported():
@@ -259,6 +268,8 @@ class Sharing:
             # Never stop or reconfigure a firmware-owned SMB service.
             try:
                 with socket.socket() as check:
+                    # A client's TIME_WAIT leftover from the previous run is not a firmware listener.
+                    check.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     check.bind((ip, 445))
             except OSError:
                 raise ValueError(
@@ -266,7 +277,7 @@ class Sharing:
                 ) from None
             username = 'root'
             password = secrets.token_hex(6)
-            config, shares = self.configure(ip, roots, username, guest)
+            config, shares = self.configure(ip, roots, username, guest, systems)
             environment = self.environment()
             result = subprocess.run(
                 [str(self.bundle / 'bin/smbpasswd'), '-c',

@@ -144,6 +144,21 @@ class FileSharingTests(unittest.TestCase):
         self.assertNotIn('path = ' + str(self.data) + '\n', content)
         self.assertEqual(self.sharing.folder.stat().st_mode & 0o777, 0o700)
 
+    def test_other_systems_get_their_own_shares_only_when_present(self):
+        ds, gba, gbc = (self.root / name for name in ('Roms/NDS', 'Roms/GBA', 'rgds/games/gbc'))
+        for folder in (ds, gba, gbc):
+            folder.mkdir(parents=True)
+        with self.sharing.locked():
+            _config, shares = self.sharing.configure(
+                '192.168.1.42', [ds], 'root', systems=[('gba', gba), ('gba', self.root / 'missing'), ('gbc', gbc),
+                                                        ('gb', self.root / 'Roms/GB')]
+            )
+            content = _config.read_text()
+        self.assertEqual(shares, 'DS, GBA, GBC, Imports, Exports')
+        self.assertIn('[GBA]\npath = ' + str(gba.resolve()), content)
+        self.assertIn('[GBC]\npath = ' + str(gbc.resolve()), content)
+        self.assertNotIn('[GB]', content)
+
     def test_configuration_rejects_expansion_and_newline_paths_and_symlinked_transfers(self):
         for name in ('%U', 'games\n[secret]'):
             folder = self.root / name

@@ -40,9 +40,9 @@ def stock_environment(env):
     env['RGDS_DEVICE_MODEL'] = profile['model']
     inputs = discover()
     if inputs['touch']:
-        env['RGDS_TOUCH_DEV'] = env['NNDDSS_TOUCH_DEV'] = inputs['touch']
+        env['RGDS_TOUCH_DEV'] = inputs['touch']
     if inputs['keys']:
-        env['NNDDSS_KEYS_DEV'] = inputs['keys']
+        env['RGDS_KEYS_DEV'] = inputs['keys']
     if profile['model'] == 'rg-ds-plus':
         env['RGDS_TOP_DISPLAY'] = 'DSI-1'
         env['RGDS_BOTTOM_DISPLAY'] = 'DSI-2'

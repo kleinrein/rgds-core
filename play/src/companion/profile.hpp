@@ -139,6 +139,7 @@ struct Profile {
     std::vector<Ref> room; // values that change on entering a new room
     int interval = 90;     // frames between captures while nothing happens
     bool dim_when_unavailable = false;
+    std::string note; // under the title until the second screen has something (else a note per kind)
     bool has_map = false;
     MapSpec map;
     bool has_hud = false;

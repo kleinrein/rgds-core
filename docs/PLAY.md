@@ -11,6 +11,8 @@ The game runs on the top panel. The bottom panel shows the game's own map, kept 
 Other systems behave like DS games: the same library, the same in-game menu, the same saves and statistics. Everything that differs by system lives in one place in each layer, so a new system plugs into the same path.
 
 - **Show all systems** (Settings → Library, first row; `show_systems` in `ui.ini`, off by default). Off: Home and the DS library are exactly as before, and other systems' folders are not even scanned. On: Home's **Games** opens **Systems**, one DSi-style card per system with games (the DS first, then Game Boy Advance, Game Boy Color, Game Boy) and its game count. A card opens that system's games in the usual Cartridges / Covers / List views; Back returns to Systems, then Home. **Favourites**, **Recents** and **Last played** span every system.
+- **System icons:** every system has its own drawing instead of a shared cartridge, in the icon style the theme uses: the generated artwork (Rich) or the hand-drawn 16×16 mask (Simple pixel). The set covers every system of the stock Anbernic Linux card, so a system that RG DS Play opens later already has its icon. See [the icon set](../assets/systems/README.md).
+- **The two-screens mark:** a game that RG DS Play gives a second screen of its own (a map, the team, the HUD) carries a small chip with two stacked screens in the bottom-left corner of its cover on the games screen, mirroring the favourite heart in the top-right. It has no text, so it needs no translations, and it is drawn on the selected game's cover only, not on the small tiles of the carousel. The launcher finds the games from the companion profiles themselves (`src/launcher/dual_screen.hpp`): a Game Boy or Game Boy Color cart is found by its maker code or, for the older carts without one, by its header title; a Game Boy Advance cart by its code; a zipped game cannot be opened to see its header and shows no mark.
 - **Where games are found:** the stock card's `Roms/GBA`, `Roms/GBC`, `Roms/GB` and `rgds/games/gba|gbc|gb` (both cards), passed by `runtime/session.py` (`system_roots`) as `--system-dir`. A `gba` folder inside a DS folder is left out of the DS list.
 - **Which engine:** chosen from the game's system wherever it is started (library, Last played, game switcher, a restart): `runtime/play_options.py` `engine_for()`. DS games keep their DS engines; `rgds-play` is appended to the engine list (stored indexes keep their meaning) and is never offered as a DS engine.
 - **The in-game menu** is the shared one: Resume, Save and Load (the checkpoint gallery with pictures), **Graphics**, Emulator (FPS, fast-forward, power profile, Save & restart, Reset state; the DS-only rows are unavailable), Sound, Brightness, Controls, Game switcher, Return home. The bridge drives the player like any SDL engine: F5 saves the machine to the state slot, F7 loads it, Tab toggles fast-forward, quitting saves first when auto-save is on. Auto-load, quick resume, lid sleep, volume keys and playtime come from the runtime as for every engine.
@@ -73,9 +75,10 @@ codes = AMTE                    # one or more 4-letter game codes
 [companion]
 live = mem8[03000BDE] == 01     # in gameplay: captures make sense
 menu = mem8[02000000] == 0      # title/file screens: forget the map
-room = mem16[02000002]          # values that change on entering a room
+room = mem16[02000002]          # values that change on entering a new room
 interval = 90                   # frames between routine captures
 dim_when_unavailable = no
+note = The time and your gold appear once you're farming   # what the second screen will show
 
 [map]
 release = 2                     # frames with nothing held before `open`
@@ -171,12 +174,26 @@ Game Boy and Game Boy Color (`profiles/gb/`):
 | `POKEMON_BLUE` `POKEMON_RED` | Pokémon Red and Blue | Live team panel with the party icons in each species' Super Game Boy colours. Run with a team on Blue (USA, Europe) |
 | `BYTE` | Pokémon Crystal | Live team panel with each species' own icon in its normal or shiny colours, read from work RAM bank 1. Run with a team on Rev 1 |
 | `AAUE` `AAXE` | Pokémon Gold and Silver | As Crystal, addresses from pokegold's symbols; not yet run |
-| `AZLE` `AZLP` `AZLJ` | Link's Awakening DX | Status bar under the island map (SELECT outdoors). Run on Rev 2 (USA, Europe); dungeon maps not done |
-| `AZ7E` `AZ7P`, `AZ8E` `AZ8P` | Oracle of Seasons, Oracle of Ages | Status bar on the second screen. Run on Seasons (Europe); the map screen not done yet |
+| `AZLE` `AZLP` `AZLJ` | Link's Awakening DX | Status bar under the island map (SELECT outdoors). Run on Rev 2 (USA, Europe); dungeon maps not done. The name entry is confirmed with START, not A; then the PLAYER SELECT screen picks the file |
+| `AZ7E` `AZ7P`, `AZ8E` `AZ8P` | Oracle of Seasons, Oracle of Ages | Status bar on the second screen. Run on Seasons (Europe); the map screen not done yet. The state byte C2EE is the game state (2 or 3 in play, 0 in the story and the menus); the status bar sits in the top 16 rows. The Adventure Log (SELECT) only opens once Makin has given it: before that, SELECT only fades the screen white |
 | `METROID2` | Metroid II: Return of Samus | An explored-area map drawn from the cartridge's level data as Samus goes (kept beside the save), with the status bar under it. Run on the World release, on the Mac and the RG DS |
 | `AW8A` | Wario Land 3 | The level's keys, treasure chests, musical coins and coins from the pause screen, kept current while you play. Run on the World release |
 | `SAGA` | The Final Fantasy Legend | Live party panel: name, race and HP. Run on the World release (one member) |
 | `HARVEST_MOON_GB` | Harvest Moon GB | The time and gold box (SELECT) on the second screen all day. Run on the European release |
+
+### Playing a Game Boy game headless
+
+`tools/play_gobot.py` drives a Game Boy or Game Boy Color game from the console through RG DS Play and looks at the screen while it plays, so a profile's facts can be found without a human at the handheld. It tells the menus from the title screen from the cutscenes from the world, presses the right button for each, reads the game's memory and writes the picture after every step.
+
+    .cache/venv/bin/python tools/play_gobot.py --rom GAME.gbc --profile gb --script steps.txt --out shots/
+
+The Game Boy games need their opening played out: the Oracle games open with an attract demo, so the way in is the title (START), the language, the file, NEW GAME and the name (a letter, then down to the bottom row and right to OK), then the message-speed box and the story. Link's Awakening DX takes its name with START and then the PLAYER SELECT screen.
+
+### Not done yet
+
+- **Dragon Warrior Monsters** (Game Boy Color, `AWQE`): the team on the second screen, like the Pokémon games. The party is not located yet.
+- **The Oracle games' map screen:** the Adventure Log holds the regional map, and it opens with SELECT once the game gives it; the capture needs the game played to the shop.
+- **Link's Awakening DX's dungeon maps:** the profile covers the island map outdoors only.
 
 ## Saves
 

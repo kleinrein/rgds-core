@@ -135,6 +135,7 @@ void App::top(SDL_Renderer* r, int y) {
     auto& info = library_cache.metadata(model.games[model.selected]).info;
     auto seconds = library_cache.stats(model.games[model.selected]).seconds;
     stage_favourite = game_loved(model.selected);
+    stage_dual = game_dual(model.selected);
     if (!cover_stage(r, y, item / "box.bmp")) icon_stage(r, y, info["developer"]);
     cover_line(r, y, seconds);
 }

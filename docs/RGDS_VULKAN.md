@@ -136,8 +136,11 @@ resolution and under any screen filter. The work is split where each processor i
   corner tests, kept only for structural edges (both neighbours a corner faces differ by 48 or more), which
   neighbours each pixel smooths toward (2D, differing by less than 16), and where 2D owns the pixel. Bands of 8
   lines run on the compose helpers as lines finish, and a band whose lines match the previous frame keeps its
-  rules (`Gpu::hd_band`). NEON does each line's distances and tests eight or sixteen pixels at a time; on the A55
-  at 1.4 GHz a busy screen costs about 2.2-2.5 ms. The frontend uploads them with the frame as a 256x192
+  rules (`Gpu::hd_band`). Every neighbour distance is computed once per band, sixteen pairs at a time with NEON
+  (the line above's downward distances are the next line's upward ones, and the corner tests read the same
+  diagonals), and the classification runs eight pixels at a time; on the A55 at 1.4 GHz a busy screen cost about
+  2.2-2.5 ms before the distances were shared (24 October 2026: 25-30 % less on the VM, not yet measured on the
+  A55). The frontend uploads them with the frame as a 256x192
   texture paired with the screen's (`Display::hd_rules_upload`, the bridge's `rgds_hd_rules`).
 - *Reconstruction, per output pixel, on the GPU* (`src/platform/hd2d_shader.hpp`, in the bridge's screen
   draw): a pixel with no rule is shown as it is; otherwise it blends toward its flagged neighbours (gradients
@@ -159,15 +162,19 @@ Castlevania: Dawn of Sorrow at 1x ran 59.69 fps, p95 19.1 ms, 2-2.5 % of frames 
 19.8 ms and 4.3 % with native pixels; Mario Kart DS at 3x (intro and title) 59.17 fps.
 Known issue: SDL's desktop OpenGL renderer crashes in the HD draw (Mesa, offscreen); the RG DS uses GLES2.
 
-**HD smooth** (`rgds_2d=5`) is HD with the structural floor dropped and wider blends: every corner
-xBR finds is rebuilt, a pixel smooths toward neighbours closer than 64, and the anti-aliasing is 1.5 output pixels
+**HD smooth** (`rgds_2d=5`) is HD with a far lower structural floor and wider blends: every corner
+xBR finds whose faced neighbours differ by 12 or more is rebuilt, a pixel smooths toward neighbours closer than 64, and the anti-aliasing is 1.5 output pixels
 wide (`hd2d_strength` in `hd2d_shader.hpp`, `Hd2DRules::get(true)`). Shading and texture steps, which HD leaves as
 pixels, turn into slopes too: painted title art and maps come out much smoother; text and outlines stay sharp. It
 suits art drawn smooth more than deliberate pixel art. More pixels carry rules (on four test frames 10-70 % more than
 HD), so the CPU rules and the reconstruction cost more where the picture is busy: on the RG DS the rules took
 2.9-3.0 ms per screen (5.3 ms on Mario Kart DS's title art) against HD's 2.2-2.5, and the reconstruction 3.2-6.0 ms
-for both screens against 2.1-3.6 (headless, 23 October 2026). CPU and GPU rules agree on
-97-99.7 % of words, as for HD (ties in the level-1 test); the paired-rules picture is identical. A per-region "field
+for both screens against 2.1-3.6 (headless, 23 October 2026, floor 0). The floor was 0 at first; 12 gives the same
+picture (fainter corners only blend colours the smoothing already blends) with 40-60 % fewer corner tests, and with
+the shared distances the rules on the busy title art went from 1.05 to 0.40 ms per screen on the VM. The bridge's
+one-draw programs also compile the source layout in (`HD_FIXED`: native or scaled source, ownership mask, channel
+swap), so the per-pixel fetches carry no layout arithmetic; the picture is bit-identical. CPU and GPU rules agree on
+99-99.96 % of words; the paired-rules picture is identical. A per-region "field
 vote" reconstruction (quadratic B-spline membership of each colour, thresholded) was tried as an alternative and
 dropped: on 3x3 support it straightened stairs no better than xBR and pinched 1-pixel diagonals.
 

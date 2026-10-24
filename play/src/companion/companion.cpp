@@ -401,8 +401,17 @@ const std::vector<uint32_t>& frame_at(const MapImage& m, uint64_t tick) {
     return m.frames[(tick / static_cast<uint64_t>(std::max(1, m.frame_step))) % n];
 }
 
+// Two little stacked screens, the launcher's mark for a game with a second screen of its own.
+void dual_mark(Canvas& out, int x, int y, int unit, Rgb colour, Rgb ground) {
+    for (int screen = 0; screen < 2; ++screen) {
+        const int sy = y + screen * unit * 6 / 5;
+        out.rounded_rect(x, sy, unit * 8 / 5, unit, std::max(1, unit / 4), colour);
+        out.rounded_rect(x + unit / 5, sy + unit / 5, unit * 6 / 5, unit * 3 / 5, 1, ground);
+    }
+}
+
 void title_card(Canvas& out, const Look& look, const Font& font, const std::string& title, const std::string& system,
-                const std::string& note) {
+                const std::string& note, bool dual) {
     out.vertical_gradient(mix(look.background, look.panel, 96), look.background);
     const int margin = out.w() / 12;
     // A soft card in the middle, the DSi way.
@@ -417,8 +426,12 @@ void title_card(Canvas& out, const Look& look, const Font& font, const std::stri
     font.draw(out, (out.w() - font.measure(t, big)) / 2, y, t, big, look.ink);
     font.draw(out, (out.w() - font.measure(system, small)) / 2, y - big - small / 2, system, small, look.accent);
     if (!note.empty()) {
-        std::string n = font.fit(note, small, out.w() - margin * 4);
-        font.draw(out, (out.w() - font.measure(n, small)) / 2, y + small * 2, n, small, look.muted);
+        // A game with a second screen of its own: the mark, then what will come here.
+        const int unit = dual ? std::max(6, small / 2) : 0, mark = dual ? unit * 8 / 5 + small / 2 : 0;
+        std::string n = font.fit(note, small, out.w() - margin * 4 - mark);
+        const int x = (out.w() - font.measure(n, small) - mark) / 2;
+        if (dual) dual_mark(out, x, y + small * 2 - unit * 2 + unit / 3, unit, look.muted, look.panel);
+        font.draw(out, x + mark, y + small * 2, n, small, look.muted);
     }
 }
 
@@ -464,10 +477,15 @@ void Companion::render_content(Canvas& out, const Look& look, const Font& font) 
         return;
     }
     if (!has_current_) {
+        // What this game's second screen will show, until it shows it.
         std::string note;
-        if (capture_)
+        if (profile_ && !profile_->note.empty()) note = profile_->note;
+        else if (capture_)
             note = ever_shown_ ? "The map comes back once you're playing" : "The map appears once you're playing";
-        title_card(out, look, font, title_, system_name_, note);
+        else if (party_) note = "Your team appears once it's loaded";
+        else if (view_) note = "The map draws itself as you explore";
+        else if (profile_ && profile_->has_hud) note = "The status bar moves here while you play";
+        title_card(out, look, font, title_, system_name_, note, profile_ != nullptr);
         return;
     }
     // The map's own empty colour fills the panel, so it reads as the game's

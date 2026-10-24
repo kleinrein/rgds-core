@@ -96,8 +96,8 @@ def environment(clean, *, runtime_dirs=None, library_dirs=LIBRARY_DIRS):
         env['SDL_VIDEO_DISPLAY_PRIORITY'] = profile['top_display'] + ',' + profile['bottom_display']
         from input_devices import discover
         inputs = discover(bottom_hint=profile.get('bottom_touch_path_hint', ''))
-        if inputs['touch']: env['RGDS_TOUCH_DEV'] = env['NNDDSS_TOUCH_DEV'] = inputs['touch']
-        if inputs['keys']: env['NNDDSS_KEYS_DEV'] = inputs['keys']
+        if inputs['touch']: env['RGDS_TOUCH_DEV'] = inputs['touch']
+        if inputs['keys']: env['RGDS_KEYS_DEV'] = inputs['keys']
         if inputs.get('profile') == 'mainline-rg-ds': env['RGDS_INPUT_PROFILE'] = 'mainline-rg-ds'
         if inputs['lid'] and inputs['lid_wakeup']:
             env['RGDS_LID_DEV'] = inputs['lid']

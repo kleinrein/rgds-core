@@ -88,12 +88,11 @@ class PlusProfileTests(unittest.TestCase):
         environment = self.environment()
         self.assertEqual(environment['RGDS_DEVICE_MODEL'], 'rg-ds-plus')
         self.assertEqual(environment['RGDS_TOUCH_DEV'], str(self.dev / 'event9'))
-        self.assertEqual(environment['NNDDSS_KEYS_DEV'], str(self.dev / 'event6'))
+        self.assertEqual(environment['RGDS_KEYS_DEV'], str(self.dev / 'event6'))
         self.assertEqual(environment['RGDS_INPUT_AMBIGUOUS'], '0')
         with patch.dict(os.environ, environment, clear=True):
             engine = emulators.base_environment()
-        self.assertEqual(engine['NNDDSS_TOUCH_DEV'], str(self.dev / 'event9'))
-        self.assertEqual(engine['NNDDSS_KEYS_DEV'], str(self.dev / 'event6'))
+        self.assertEqual(engine['RGDS_KEYS_DEV'], str(self.dev / 'event6'))
 
     def test_stock_session_rediscovers_plus_input_after_cleaning_inherited_state(self):
         self.model('RG DS Plus')
@@ -105,7 +104,7 @@ class PlusProfileTests(unittest.TestCase):
         socket.touch()
         library = Path('/usr/lib/libSDL2-2.0.so.0')
         with patch.dict(os.environ, dict(XDG_RUNTIME_DIR=str(runtime), RGDS_TOUCH_DEV='/dev/input/event1',
-                                       NNDDSS_KEYS_DEV='/dev/input/event4', RGDS_DEVICE_MODEL='stale'), clear=True), \
+                                       RGDS_KEYS_DEV='/dev/input/event4', RGDS_DEVICE_MODEL='stale'), clear=True), \
              patch('device_profile.detect', side_effect=lambda: detect(self.sys)), \
              patch('input_devices.discover', side_effect=lambda: discover(self.sys / 'class/input', self.dev)), \
              patch.object(Path, 'is_socket', side_effect=lambda: True), \
@@ -113,7 +112,7 @@ class PlusProfileTests(unittest.TestCase):
             environment = session.environment(self.root)
         self.assertEqual(environment['RGDS_DEVICE_MODEL'], 'rg-ds-plus')
         self.assertEqual(environment['RGDS_TOUCH_DEV'], str(self.dev / 'event9'))
-        self.assertEqual(environment['NNDDSS_KEYS_DEV'], str(self.dev / 'event6'))
+        self.assertEqual(environment['RGDS_KEYS_DEV'], str(self.dev / 'event6'))
         self.assertEqual(environment['RGDS_SDL_LIBRARY'], str(library))
 
     def test_multiple_touch_candidates_do_not_guess_raw_plus_input(self):
@@ -122,7 +121,7 @@ class PlusProfileTests(unittest.TestCase):
         self.device('event1', 'Goodix two', touch=True)
         environment = self.environment()
         self.assertEqual(environment['RGDS_TOUCH_DEV'], 'none')
-        self.assertNotIn('NNDDSS_TOUCH_DEV', environment)
+        self.assertNotIn('RGDS_KEYS_DEV', environment)
         self.assertEqual(environment['RGDS_INPUT_AMBIGUOUS'], '1')
 
     def test_vendor_touch_without_direct_property_is_selected_but_trackpad_is_not(self):
