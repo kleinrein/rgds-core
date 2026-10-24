@@ -182,6 +182,26 @@ def draw_text(pixels, width, x, y, text, scale, colour):
         x += (4 if character != ' ' else 3) * scale
 
 
+def fitted_label(text, cell_width, scale=2, gap=6):
+    """The label in the biggest scale that still fits its cell.
+
+    A long name ("Nintendo Entertainment System") is drawn smaller rather than
+    running over the label of the next cell.
+    """
+    for size in range(scale, 0, -1):
+        if text_width(text, size) <= cell_width - gap:
+            return text, size
+    # Even the smallest scale is too wide: cut the name short.
+    keep = max(1, (cell_width - gap) // 4)
+    return text[:keep], 1
+
+
+def draw_label(pixels, width, x, y, cell_width, text, scale, colour):
+    """A label centred under its cell."""
+    text, size = fitted_label(text, cell_width, scale)
+    draw_text(pixels, width, x + (cell_width - text_width(text, size)) // 2, y, text, size, colour)
+
+
 def sheet(path, scale=6, columns=5):
     """A labelled review sheet: every glyph with its system name."""
     glyphs = art()
@@ -206,7 +226,7 @@ def sheet(path, scale=6, columns=5):
                         at = ((oy + y * scale + dy) * width + ox + x * scale + dx) * 3
                         pixels[at:at + 3] = bytes(colour)
         label = entry[1].upper()
-        draw_text(pixels, width, ox, oy + GRID * scale + 6, label, label_scale, muted)
+        draw_label(pixels, width, (index % columns) * cell, oy + GRID * scale + 6, cell, label, label_scale, muted)
     raw = b''.join(b'\0' + bytes(pixels[y * width * 3:(y + 1) * width * 3]) for y in range(height))
     chunk = lambda kind, body: struct.pack('>I', len(body)
                                            ) + kind + body + struct.pack('>I',

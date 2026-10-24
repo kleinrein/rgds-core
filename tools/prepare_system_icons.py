@@ -77,7 +77,7 @@ def write_bmp(path, canvas):
 
 def sheet(path, columns=5, size=176):
     """A labelled review sheet of the artwork the launcher actually loads."""
-    from build_system_icons import CATALOG, draw_text
+    from build_system_icons import CATALOG, draw_label
     label_scale = 2
     cell = size + 16
     label_height = 5 * label_scale + 14
@@ -99,7 +99,7 @@ def sheet(path, columns=5, size=176):
                     continue
                 at = ((oy + y) * width + ox + x) * 3
                 pixels[at:at + 3] = bytes((red, green, blue))
-        draw_text(pixels, width, ox, oy + size + 6, entry[1].upper(), label_scale, muted)
+        draw_label(pixels, width, (index % columns) * cell, oy + size + 6, cell, entry[1].upper(), label_scale, muted)
     raw = b''.join(b'\0' + bytes(pixels[y * width * 3:(y + 1) * width * 3]) for y in range(height))
     chunk = lambda kind, body: struct.pack('>I', len(body)
                                            ) + kind + body + struct.pack('>I',
