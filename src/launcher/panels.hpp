@@ -77,7 +77,7 @@ void App::top(SDL_Renderer* r, int y) {
         // As Home's collections: the system and its three numbers, centred in the card.
         round_rect(r, 22, y + 82, 596, 320, 10, "line");
         round_rect(r, 24, y + 84, 592, 316, 8, "panel");
-        system_icon(r, systems_selected, 288, y + 148, 64);
+        system_icon(r, systems_selected, 264, y + 100, 112);
         centered(r, system_info(listed_systems[systems_selected]).name, y + 228, 2, "ink");
         const SystemStats stats =
             systems_selected < system_stats.size() ? system_stats[systems_selected] : SystemStats{};

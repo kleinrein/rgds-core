@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""The system icon set: one drawn icon per stock Anbernic RG DS Linux system.
+
+The pixel glyphs live in `tools/system_pixel_art.py` (the hand-drawn part);
+this tool turns that single source into the launcher's masks, a pixel-perfect
+SVG per system and a labelled review sheet, so the three can never drift.
+
+    python3 tools/build_system_icons.py                  # write src/launcher/system_icons.hpp + SVG
+    python3 tools/build_system_icons.py --sheet out.png  # labelled review sheet
+
+The rich artwork (the drawn consoles) comes from imagegen; see assets/systems/README.md.
+"""
+import argparse
+from pathlib import Path
+import struct
+import sys
+import zlib
+
+ROOT = Path(__file__).resolve().parents[1]
+HEADER = ROOT / 'src/launcher/system_icons.hpp'
+SVG_DIR = ROOT / 'assets/systems/pixel'
+sys.path.insert(0, str(ROOT / 'tools'))
+
+GRID = 16
+
+# id, display name, badge on a cartridge, the stock card's folder names.
+CATALOG = [
+    ('nds', 'Nintendo DS', 'DS', 'NDS'),
+    ('3ds', 'Nintendo 3DS', '3DS', '3DS'),
+    ('gba', 'Game Boy Advance', 'GBA', 'GBA'),
+    ('gbc', 'Game Boy Color', 'GBC', 'GBC'),
+    ('gb', 'Game Boy', 'GB', 'GB'),
+    ('nes', 'Nintendo Entertainment System', 'NES', 'FC'),
+    ('snes', 'Super Nintendo', 'SNES', 'SFC'),
+    ('md', 'Mega Drive', 'MD', 'MD'),
+    ('sms', 'Master System', 'SMS', 'SMS,GG'),
+    ('neo', 'Neo Geo', 'NEO', 'NEOGEO,AES'),
+    ('ngp', 'Neo Geo Pocket', 'NGP', 'NGP,NGPC'),
+    ('pce', 'PC Engine', 'PCE', 'PCE,PCE-CD'),
+    ('msx', 'MSX', 'MSX', 'MSX,MSX2'),
+    ('psx', 'PlayStation', 'PS1', 'PS,PS1'),
+    ('psp', 'PlayStation Portable', 'PSP', 'PSP'),
+    ('dc', 'Dreamcast', 'DC', 'DC,DREAMCAST'),
+    ('saturn', 'Saturn', 'SAT', 'SATURN,SS'),
+    ('n64', 'Nintendo 64', 'N64', 'N64'),
+    ('pico8', 'Pico-8', 'PICO', 'PICO8,FAKE08'),
+    ('arcade', 'Arcade', 'ARC', 'ARCADE,MAME,FBNEO'),
+    ('dos', 'DOS PC', 'DOS', 'DOS,PC'),
+    ('atari', 'Atari 2600', '2600', 'ATARI,2600'),
+    ('coleco', 'ColecoVision', 'COLECO', 'COLECO'),
+    ('intellivision', 'Intellivision', 'INT', 'INTELLIVISION'),
+    ('vectrex', 'Vectrex', 'VECTREX', 'VECTREX'),
+    ('wonderswan', 'WonderSwan', 'WS', 'WONDERSWAN,WS'),
+    ('rpgmaker', 'RPG Maker', 'RPG', 'RPGMAKER,EASYRPG'),
+]
+
+IDS = [entry[0] for entry in CATALOG]
+
+# A 3 x 5 label font, for the review sheet only.
+FONT = {
+    'A': ('.#.', '#.#', '###', '#.#', '#.#'), 'B': ('##.', '#.#', '##.', '#.#', '##.'),
+    'C': ('.##', '#..', '#..', '#..', '.##'), 'D': ('##.', '#.#', '#.#', '#.#', '##.'),
+    'E': ('###', '#..', '##.', '#..', '###'), 'F': ('###', '#..', '##.', '#..', '#..'),
+    'G': ('.##', '#..', '#.#', '#.#', '.##'), 'H': ('#.#', '#.#', '###', '#.#', '#.#'),
+    'I': ('###', '.#.', '.#.', '.#.', '###'), 'J': ('..#', '..#', '..#', '#.#', '.#.'),
+    'K': ('#.#', '#.#', '##.', '#.#', '#.#'), 'L': ('#..', '#..', '#..', '#..', '###'),
+    'M': ('#.#', '###', '###', '#.#', '#.#'), 'N': ('#.#', '###', '###', '###', '#.#'),
+    'O': ('.#.', '#.#', '#.#', '#.#', '.#.'), 'P': ('##.', '#.#', '##.', '#..', '#..'),
+    'Q': ('.#.', '#.#', '#.#', '##.', '.##'), 'R': ('##.', '#.#', '##.', '#.#', '#.#'),
+    'S': ('.##', '#..', '.#.', '..#', '##.'), 'T': ('###', '.#.', '.#.', '.#.', '.#.'),
+    'U': ('#.#', '#.#', '#.#', '#.#', '.#.'), 'V': ('#.#', '#.#', '#.#', '.#.', '.#.'),
+    'W': ('#.#', '#.#', '###', '###', '#.#'), 'X': ('#.#', '#.#', '.#.', '#.#', '#.#'),
+    'Y': ('#.#', '#.#', '.#.', '.#.', '.#.'), 'Z': ('###', '..#', '.#.', '#..', '###'),
+    '0': ('###', '#.#', '#.#', '#.#', '###'), '1': ('.#.', '##.', '.#.', '.#.', '###'),
+    '2': ('##.', '..#', '.#.', '#..', '###'), '3': ('##.', '..#', '.#.', '..#', '##.'),
+    '4': ('#.#', '#.#', '###', '..#', '..#'), '5': ('###', '#..', '##.', '..#', '##.'),
+    '6': ('.##', '#..', '###', '#.#', '###'), '7': ('###', '..#', '.#.', '.#.', '.#.'),
+    '8': ('###', '#.#', '###', '#.#', '###'), '9': ('###', '#.#', '###', '..#', '##.'),
+    '-': ('...', '...', '###', '...', '...'), '.': ('...', '...', '...', '...', '.#.'),
+    '&': ('##.', '##.', '###', '#.#', '###'), '+': ('...', '.#.', '###', '.#.', '...'),
+    ' ': ('...', '...', '...', '...', '...'),
+}
+
+
+def art():
+    """The hand-drawn glyph table, checked for shape."""
+    from system_pixel_art import ART
+    for name, rows in ART.items():
+        if len(rows) != GRID or any(len(row) != GRID or set(row) - set('.#+') for row in rows):
+            raise ValueError('Glyph %s is not %d x %d of .#+' % (name, GRID, GRID))
+    missing = [name for name in IDS if name not in ART]
+    if missing:
+        raise ValueError('Missing glyphs: ' + ', '.join(missing))
+    return ART
+
+
+def header():
+    glyphs = art()
+
+    def literal(rows):
+        return '\n'.join('        "%s"' % row for row in rows)
+
+    cases = '\n'.join('    if(id=="%s")return\n%s;' % (name, literal(glyphs[name])) for name in IDS)
+    systems = '\n'.join('    {"%s", "%s", "%s", "%s"},' % entry for entry in CATALOG)
+    template = '''#pragma once
+// Generated by tools/build_system_icons.py; edit the glyphs in tools/system_pixel_art.py.
+#include <array>
+#include <string_view>
+
+namespace rgds {
+// A stock system of the Anbernic RG DS Linux card: the icon's name, the badge on a
+// cartridge without artwork, and the folders the stock card keeps its games in.
+struct StockSystem {
+    const char* id;
+    const char* name;
+    const char* badge;
+    const char* folders;
+};
+inline const std::array<StockSystem, __COUNT__>& stock_systems() {
+    static const std::array<StockSystem, __COUNT__> list = {{
+__SYSTEMS__
+    }};
+    return list;
+}
+// The stock system's name, for the Systems page and the library header.
+inline const StockSystem& stock_system(std::string_view id) {
+    for (const auto& system : stock_systems())
+        if (id == system.id) return system;
+    return stock_systems()[0];
+}
+// The pixel icon style for systems: a __GRID__ x __GRID__ glyph, '#' ink, '+' half-tone.
+inline std::string_view system_pixel_glyph(std::string_view id) {
+__CASES__
+    return {};
+}
+}
+'''
+    return (template.replace('__COUNT__', str(len(CATALOG))).replace('__GRID__', str(GRID))
+            .replace('__SYSTEMS__', systems).replace('__CASES__', cases))
+
+
+def svg(name, rows):
+    """One pixel-perfect SVG per system: every cell is a whole rectangle."""
+    parts = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d" '
+        'shape-rendering="crispEdges">' % (GRID, GRID, GRID, GRID),
+        '<title>%s</title>' % name,
+        '<rect width="%d" height="%d" fill="none"/>' % (GRID, GRID),
+    ]
+    for y, row in enumerate(rows):
+        for x, value in enumerate(row):
+            if value == '#':
+                parts.append('<rect x="%d" y="%d" width="1" height="1" fill="#236eae"/>' % (x, y))
+            elif value == '+':
+                parts.append('<rect x="%d" y="%d" width="1" height="1" fill="#a7c4de"/>' % (x, y))
+    parts.append('</svg>')
+    return '\n'.join(parts) + '\n'
+
+
+def write_svgs():
+    glyphs = art()
+    SVG_DIR.mkdir(parents=True, exist_ok=True)
+    for name in IDS:
+        (SVG_DIR / (name + '.svg')).write_text(svg(name, glyphs[name]))
+
+
+def text_width(text, scale=1):
+    return sum(4 if character != ' ' else 3 for character in text) * scale
+
+
+def draw_text(pixels, width, x, y, text, scale, colour):
+    for character in text.upper():
+        glyph = FONT.get(character, FONT[' '])
+        for row, line in enumerate(glyph):
+            for column, value in enumerate(line):
+                if value != '#':
+                    continue
+                for dy in range(scale):
+                    for dx in range(scale):
+                        at = ((y + row * scale + dy) * width + x + column * scale + dx) * 3
+                        pixels[at:at + 3] = bytes(colour)
+        x += (4 if character != ' ' else 3) * scale
+
+
+def sheet(path, scale=6, columns=5):
+    """A labelled review sheet: every glyph with its system name."""
+    glyphs = art()
+    label_scale = 2
+    cell = GRID * scale + 24
+    label_height = 5 * label_scale + 12
+    width = columns * cell
+    height = ((len(CATALOG) + columns - 1) // columns) * (cell + label_height)
+    pixels = bytearray(b'\xf2\xf5\xf8' * width * height)
+    ink, half, muted = (0x23, 0x6e, 0xae), (0xa7, 0xc4, 0xde), (0x7c, 0x8b, 0x99)
+    for index, entry in enumerate(CATALOG):
+        name = entry[0]
+        ox = (index % columns) * cell + 12
+        oy = (index // columns) * (cell + label_height) + 12
+        for y, row in enumerate(glyphs[name]):
+            for x, value in enumerate(row):
+                if value == '.':
+                    continue
+                colour = ink if value == '#' else half
+                for dy in range(scale):
+                    for dx in range(scale):
+                        at = ((oy + y * scale + dy) * width + ox + x * scale + dx) * 3
+                        pixels[at:at + 3] = bytes(colour)
+        label = entry[1].upper()
+        draw_text(pixels, width, ox, oy + GRID * scale + 6, label, label_scale, muted)
+    raw = b''.join(b'\0' + bytes(pixels[y * width * 3:(y + 1) * width * 3]) for y in range(height))
+    chunk = lambda kind, body: struct.pack('>I', len(body)
+                                           ) + kind + body + struct.pack('>I',
+                                                                         zlib.crc32(kind + body) & 0xffffffff)
+    Path(path).write_bytes(
+        b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)) +
+        chunk(b'IDAT', zlib.compress(raw, 9)) + chunk(b'IEND', b'')
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--sheet', type=Path)
+    args = parser.parse_args()
+    if args.sheet:
+        sheet(args.sheet)
+    else:
+        write_svgs()
+        HEADER.write_text(header())
+        print(HEADER.relative_to(ROOT))
+        print('%d SVG files in %s' % (len(CATALOG), SVG_DIR.relative_to(ROOT)))
+
+
+if __name__ == '__main__':
+    main()

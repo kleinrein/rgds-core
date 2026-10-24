@@ -1,6 +1,28 @@
 #pragma once
 // Other systems (RG DS Play): categories, the Systems page and the play view.
 // Members of App in main.cpp; included once, right after the class.
+#include "launcher/system_icons.hpp"
+#include <algorithm>
+#include <cmath>
+
+// A system's own pixel icon: the 16 x 16 glyph of tools/system_pixel_art.py,
+// drawn in whole-pixel steps only, so the simple style stays crisp.
+inline bool draw_system_pixel(Sdl& s, SDL_Renderer* renderer, std::string_view id, int cx, int cy, int size, Color ink) {
+    const std::string_view pixels = system_pixel_glyph(id);
+    if (pixels.size() != 256) return false;
+    const int scale = std::max(1, size / 16), left = cx - 8 * scale, top = cy - 8 * scale;
+    s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    for (char tone : {'#', '+'}) {
+        s.SetRenderDrawColor(renderer, ink.r, ink.g, ink.b, tone == '#' ? 255 : 110);
+        for (size_t i = 0; i < pixels.size(); i++)
+            if (pixels[i] == tone) {
+                SDL_Rect cell{left + int(i % 16) * scale, top + int(i / 16) * scale, scale, scale};
+                s.RenderFillRect(renderer, &cell);
+            }
+    }
+    s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);   // the launcher's resting mode
+    return true;
+}
 
 void App::open_last_played() {
     const auto& last = summary.groups[0].last_game;
@@ -106,6 +128,15 @@ void App::choose_system(size_t index) {
 
 void App::system_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
     const auto& info = system_info(index < listed_systems.size() ? listed_systems[index] : "nds");
+    const std::string id = info.id;
+    // Rich style: the system's own drawing (assets/systems/<id>.bmp).
+    if (preferences.rich_icons && size >= 24 &&
+        media.draw(r, asset_path("systems/" + id + ".bmp"), {x, y, size, size}, false))
+        return;
+    // Simple pixel style: the system's own 16 x 16 glyph.
+    if (!preferences.rich_icons && draw_system_pixel(s, r, id, x + size / 2, y + size / 2, size, theme.at("accent")))
+        return;
+    // No artwork for this system yet: the cartridge and its badge.
     ui_icon(r, SettingsIcon::Cartridge, x + size / 2, y + size * 2 / 5, size * 5 / 8, "accent");
     const std::string badge = info.badge;
     raw_label(r, badge, x + (size - label_width(badge, 16, false)) / 2, y + size * 3 / 4, 16, "ink", size);

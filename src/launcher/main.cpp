@@ -2379,6 +2379,12 @@ class App {
                         continue;
                     media.warm(panel.renderer, asset_path(std::string("icons/") + name + ".bmp"));
                 }
+        // The Systems page draws each system's own artwork, so it is prepared
+        // with the other icons instead of during the first frame.
+        if (preferences.rich_icons)
+            for (auto& panel : surfaces)
+                for (const auto& system : listed_systems)
+                    media.warm(panel.renderer, asset_path(std::string("systems/") + system + ".bmp"));
         // Statistics uses game identities from the summary, independent of
         // the current library filter. Prepare only the bottom-screen icons.
         if (settings.page == Page::Statistics && summary_ready && !surfaces.empty())
