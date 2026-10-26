@@ -35,6 +35,8 @@ int adaptive_calls=0,last_adaptive=-1;
 int fake_adaptive(int on){++adaptive_calls;last_adaptive=on;return 1;}
 int fake_load(){return 1;}
 int play_views=0,last_fit=-1,last_second=-1;std::string last_frame;
+int play_colours=0,last_palette=-1,last_correction=-1;
+int fake_play_color(int palette,int correction){++play_colours;last_palette=palette;last_correction=correction;return palette>=0 && palette<8 && correction>=0 && correction<3;}
 int fake_play_graphics(int fit,int second,const char* frame){++play_views;last_fit=fit;last_second=second;last_frame=frame;return fit>=0 && fit<=2 && second>=0 && second<=2;}
 // DSCore's cheat hooks: three codes, the first two in one exclusive group, the third a note.
 int cheat_states[3]={0,1,-1};int cheat_sets=0;
@@ -65,6 +67,7 @@ extern "C" void* dlsym(void*,const char* name){
  if(!std::strcmp(name,"rgds_set_threaded_3d"))return reinterpret_cast<void*>(&fake_threading);
  if(!std::strcmp(name,"rgds_load_checkpoint"))return reinterpret_cast<void*>(&fake_load);
  if(!std::strcmp(name,"rgds_play_set_graphics"))return reinterpret_cast<void*>(&fake_play_graphics);
+ if(!std::strcmp(name,"rgds_play_set_color"))return reinterpret_cast<void*>(&fake_play_color);
  if(!std::strcmp(name,"rgds_cheat_count"))return reinterpret_cast<void*>(&fake_cheat_count);
  if(!std::strcmp(name,"rgds_cheat_group_count"))return reinterpret_cast<void*>(&fake_cheat_group_count);
  if(!std::strcmp(name,"rgds_cheat_entry"))return reinterpret_cast<void*>(&fake_cheat_entry);
@@ -130,6 +133,15 @@ int main(int argc,char** argv){
    assert(state().find("token=view-bad")!=std::string::npos && state().find("state=play-graphics-failed")!=std::string::npos);
    command("view-junk","play-graphics:1:1:../x");test_time=90;tick();
    assert(state().find("token=view-junk")!=std::string::npos && state().find("state=play-graphics-failed")!=std::string::npos);
+   // The colours (palette, correction) have their own export and answer.
+   command("color-1","play-color:3:1");test_time=120;tick();
+   assert(play_colours==(play?1:0) && state().find("token=color-1")!=std::string::npos);
+   assert(state().find(play?"state=play-color-applied":"state=play-color-failed")!=std::string::npos);
+   if(play)assert(last_palette==3 && last_correction==1);
+   command("color-bad","play-color:9:0");test_time=150;tick();
+   assert(state().find("token=color-bad")!=std::string::npos && state().find("state=play-color-failed")!=std::string::npos);
+   command("color-junk","play-color:1:0:x");test_time=180;tick();
+   assert(state().find("token=color-junk")!=std::string::npos && state().find("state=play-color-failed")!=std::string::npos);
    return 0;
  }
  if(argc==4 && std::string(argv[3])=="cheats"){

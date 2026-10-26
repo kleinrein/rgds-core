@@ -54,7 +54,7 @@ fs::path App::shader_preview_folder() const {
 int App::preview_shader() const {
     int selected =
         shader_choices.empty() ? 0 : shader_choices.at(std::clamp(settings.focus, 0, int(shader_choices.size()) - 1));
-    return selected < 0 ? preferences.filter : selected;
+    return selected < 0 ? default_shader_for(shader_system.c_str(), preferences.filter) : selected;
 }
 
 void App::change_shader_preview(int code) {
@@ -248,7 +248,8 @@ void App::render_shader_carousel(SDL_Renderer* r, int y) {
                                  ? int(std::max(0.0, 1.0 - (s.GetTicks() - selected_at) / 190.0) * 4)
                                  : 0,
                       row = y + 144 - lift;
-            const int value = shader_choices[size_t(index)], shown = value < 0 ? preferences.filter : value;
+            const int value = shader_choices[size_t(index)],
+                      shown = value < 0 ? default_shader_for(shader_system.c_str(), preferences.filter) : value;
             if (selected) start_frame(r, x, row, tile, value == current ? "IN USE" : "APPLY", 30);
             round_rect(r, x, row + 4, tile, tile, 5, "line");
             round_rect(r, x, row, tile, tile, 5, "line");
@@ -271,7 +272,9 @@ void App::render_shader_carousel(SDL_Renderer* r, int y) {
     const std::string name = locale.text(shader_name(value));
     const int name_w = std::min(592, label_width(name, 22, false));
     raw_label(r, name, 320 - name_w / 2, y + 330, 22, "ink", 592);
-    const std::string note = locale.text(value < 0    ? "Follows your library shader."
+    const std::string note = locale.text(value < 0 && system_default_shader(shader_system.c_str()) >= 0
+                                             ? "This handheld's own screen."
+                                         : value < 0  ? "Follows your library shader."
                                          : value == 0 ? "Off keeps the original picture."
                                                       : shaders.at(value).description);
     const int note_w = label_width(note, 16, false);
@@ -303,11 +306,9 @@ void App::choose_shader() {
         remember_appearance();
     }
     if (o.game_menu) {
-        // Default: the global choice, or for a GBA game its own screen; never another system's screen
-        // (as emulators.py launches it).
-        int effective = selected >= 0            ? selected
-                        : shader_system == "gba" ? gba_default_shader
-                                                 : int(preferences.filter);
+        // Default: the global choice, or for another system's game its own screen; never another
+        // system's screen (as emulators.py launches it).
+        int effective = selected >= 0 ? selected : default_shader_for(shader_system.c_str(), preferences.filter);
         if (!shader_fits_system(effective, shader_system)) effective = 0;
         if (!shader_supported(effective, shader_core)) effective = 0;
         menu_request("shader:" + std::to_string(effective));

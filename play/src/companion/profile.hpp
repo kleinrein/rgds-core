@@ -60,6 +60,7 @@ struct MapSpec {
     int max_diff = 160;     // pixels allowed to change between them (a blinking marker)
     Rect crop;              // part of the screen kept (empty: all)
     Condition ready;        // memory says the map is up
+    Condition when;         // [map.<name>]: used instead of [map] while this holds
     std::vector<PixelProbe> pixels;
     int pixels_min = 0; // how many must match (0: all)
     int tolerance = 8;  // per channel
@@ -95,6 +96,7 @@ struct HudSpec {
     uint32_t map_cnt = 0;                    // >0: on only while some BGxCNT equals this (the map's layer)
     unsigned window_effects_off = 0;         // no shade inside WIN0 (1) / WIN1 (2) on the game screen
     bool backdrop_game = true;               // behind the HUD: the game, dimmed; else a colour
+    bool backdrop_theme = false;             // or the second screen's own ground (the launcher's theme and grid)
     uint32_t backdrop = 0x0C111A;
     int backdrop_rows = 0;        // only the game's top rows behind the HUD (the sky), 0: all
     unsigned backdrop_layers = 0; // drawn by the shadow copy with only these layers (bit 4:
@@ -124,6 +126,7 @@ struct PartySpec {
 // [view]: a second screen the player draws itself (companion/view.hpp). The
 // format reads its own keys (addresses mostly) from `values`.
 struct ViewSpec {
+    std::string name; // [view.<name>]; empty for [view]
     std::string format;
     std::map<std::string, std::string> values;
     Condition on; // shown only while this holds (empty: always)
@@ -142,12 +145,18 @@ struct Profile {
     std::string note; // under the title until the second screen has something (else a note per kind)
     bool has_map = false;
     MapSpec map;
+    // [map.<name>] sections: other screens captured in place of [map] while
+    // their `when` holds (Link's Awakening: the island map outdoors, the
+    // dungeon's floor map from the inventory inside one). The first that holds wins.
+    std::vector<MapSpec> alt_maps;
+    const MapSpec& map_for(Core& live) const;
     bool has_hud = false;
     HudSpec hud;
     bool has_party = false;
     PartySpec party;
     bool has_view = false;
-    ViewSpec view;
+    ViewSpec view;               // the first of views
+    std::vector<ViewSpec> views; // [view] and [view.<name>] in file order: the first shown wins
 };
 
 // Parses one profile. On failure returns false with "file:line: why".
@@ -164,6 +173,8 @@ public:
     void load_directory(const std::string& directory, std::vector<std::string>& errors);
     const Profile* find(const std::string& system, const std::string& code) const;
     size_t size() const { return profiles_.size(); }
+    // Every profile, keyed "system/code" (a profile with several codes appears once per code).
+    const std::map<std::string, Profile>& all() const { return profiles_; }
 
 private:
     std::map<std::string, Profile> profiles_; // "system/code"

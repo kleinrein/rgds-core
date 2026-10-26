@@ -137,6 +137,7 @@ int App::run() {
         }
         // The emulator owns the displays during play; keep only its lifecycle alive.
         if (launch_phase == LaunchPhase::Playing) {
+            haptics.close(); // the game's own rumble needs the pad's effect slots
             ui_trace.mark(UiTrace::Playing, rendered_frames, uint32_t(settings.page));
             poll_launch(0);
             if (launch_phase == LaunchPhase::Playing) wait_child_exit(launch_child, 1000);
@@ -158,6 +159,16 @@ int App::run() {
         sounds.set_master(hardware.volume ? hardware.volume_percent : 100);
         if (muted && sounds.active()) sounds.stop();
         sounds.poll(now);
+        haptics.poll();
+        // A long press on a game is felt the moment it counts, finger still down.
+        if (options_hold() && !hold_felt && now - pointer_at >= 600) {
+            hold_felt = true;
+            haptics.play(Haptic::Hold);
+        }
+        // Plugging in a charger, as on a phone.
+        if (charge_seen && hardware.charging && !was_charging && !probe) haptics.play(Haptic::Notify);
+        charge_seen = true;
+        was_charging = hardware.charging;
         if (!departure_action.empty() && int32_t(now - departure_at) >= 0) {
             auto request = std::move(departure_action);
             departure_action.clear();
@@ -202,7 +213,12 @@ int App::run() {
             volume_toast = 0;
             dirty = true;
         }
-        for (auto point : touchscreen.poll(now - began)) raw_touch(point, now);
+        if (o.port_menu) port_poll(now);
+        else port_files_poll(now);
+        for (auto point : touchscreen.poll(now - began))
+            if (!(o.port_menu && port_idle)) raw_touch(point, now);
+            else if (port_info_shown()) port_touch(point, now);
+        if (o.port_menu && port_idle) port_info_tick(now);
         if (!session_initialized) {
             if (o.seconds && now - began >= Uint32(o.seconds) * 1000) break;
             const bool motion = boot_animating(now);
@@ -315,6 +331,7 @@ int App::run() {
                 if (!same_hardware(previous, hardware)) dirty = true;
             }
         if (!launching || launch_preview) poll_service(now);
+        home_bar_settle();
         if (!o.preview && !o.game_menu && !launching && worker <= 0 && now - automatic_update_at > 60000) {
             automatic_update_at = now;
             start_worker("device.update-auto");
@@ -426,6 +443,7 @@ int App::run() {
         if (o.game_menu && (!menu_pending_token.empty() || menu_status["state"] == "busy"))
             wait_ms = std::min(wait_ms, 20);
         if (chat_open) wait_ms = std::min(wait_ms, 40);
+        if (options_hold() && !hold_felt) wait_ms = std::min(wait_ms, std::max(1, int(600 - (now - pointer_at))));
         if (glitter) wait_ms = std::min(wait_ms, 33);
         if (banner_shown() && preferences.animations) wait_ms = std::min(wait_ms, int(banner_wait(now)));
         if (wait_event(&e, wait_ms)) {
@@ -456,6 +474,13 @@ int App::run() {
             if (i) report << ',';
             report << sounds.counts[i];
         }
+        report << "],";
+        report << "\"menu_haptics\":" << preferences.menu_haptics
+               << ",\"haptic_strength\":" << preferences.haptic_strength
+               << ",\"game_rumble\":" << preferences.game_rumble
+               << ",\"rumble_strength\":" << preferences.rumble_strength << ",\"haptic_plays\":" << haptics.plays
+               << ",\"haptic_rumbles\":" << haptics.rumbles << ",\"haptic_counts\":[";
+        for (size_t i = 0; i < haptics.counts.size(); i++) report << (i ? "," : "") << haptics.counts[i];
         report << "],";
         report << "\"element_moves\":" << element_moves << ",\"back_transitions\":" << back_transitions
                << ",\"view_energy\":" << view_motion.energy << ",\"view_variant\":" << view_motion.variant << ',';
@@ -506,7 +531,9 @@ int App::run() {
             first_page = false;
         }
         report << "],";
-        report << "\"discovery_active\":" << discovery_active()
+        report << "\"filter_sheet\":" << filter_sheet_active() << ",\"filter_focus\":" << filter_focus
+               << ",\"filter_scroll\":" << filter_scroll << ",\"library_view\":" << preferences.view
+               << ",\"library_layout\":" << preferences.layout << ",\"discovery_active\":" << discovery_active()
                << ",\"discovery_description\":" << std::quoted(discovery_description())
                << ",\"search_preview_games\":" << search_matches.size()
                << ",\"search_preview_loading\":" << search_preview_loading << ",\"keyboard_row\":" << key_row

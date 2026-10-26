@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	DS ayarlarını uygulamak için oyunu yen
 Could not save DS settings.	DS ayarları kaydedilemedi.
 Search	Ara
 Save gallery	Kayıt galerisi
-Search and filters	Arama ve filtreler
 Add your games	Oyunlarınızı ekleyin
 DS controls	DS kontrolleri
 Back up all saves	Tüm kayıtları yedekle
@@ -626,7 +625,6 @@ Slot	Yuva
 Empty slot	Boş yuva
 Search games	Oyun ara
 Filter	Filtre
-Clear search and filters	Aramayı ve filtreleri temizle
 Missing artwork	Eksik kapak
 Where to put games	Oyunlar nereye konur
 Scan for games	Oyunları tara
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Ses kaydedilmez veya saklanmaz.
 Test the microphone on your handheld.	Konsolunuzun mikrofonunu test edin.
 Return home before testing the physical microphone.	Fiziksel mikrofonu test etmeden önce ana ekrana dönün.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Mikrofona üfleyin veya konuşun. Seviyenin yükseldiğini, durunca düştüğünü izleyin.
-No filter	Filtre yok
 Quick search	Hızlı arama
 A  Search	A  Ara
 A  Jump	A  Atla
@@ -906,14 +903,46 @@ Companion	Yardımcı ekran
 Swap screens	Ekranları değiştir
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Game Boy ve Game Boy Advance oyunlarını ekler: Oyunlar bir sistem sayfası açar.
 Frame	Çerçeve
-Indigo	Çivit
-Glacier	Buzul
-Black	Siyah
-Platinum	Platin
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Kırmızı
+Game Boy · Yellow	Game Boy · Sarı
+Game Boy · Green	Game Boy · Yeşil
+Game Boy · Blue	Game Boy · Mavi
+Game Boy · Black	Game Boy · Siyah
+Game Boy · Screen only	Game Boy · Yalnızca ekran
+Game Boy Pocket · Silver	Game Boy Pocket · Gümüş
+Game Boy Pocket · Black	Game Boy Pocket · Siyah
+Game Boy Pocket · Yellow	Game Boy Pocket · Sarı
+Game Boy Pocket · Red	Game Boy Pocket · Kırmızı
+Game Boy Pocket · Green	Game Boy Pocket · Yeşil
+Game Boy Pocket · Blue	Game Boy Pocket · Mavi
+Game Boy Pocket · Pink	Game Boy Pocket · Pembe
+Game Boy Pocket · Screen only	Game Boy Pocket · Yalnızca ekran
+Game Boy Color · Berry	Game Boy Color · Böğürtlen
+Game Boy Color · Grape	Game Boy Color · Üzüm
+Game Boy Color · Kiwi	Game Boy Color · Kivi
+Game Boy Color · Dandelion	Game Boy Color · Karahindiba
+Game Boy Color · Teal	Game Boy Color · Turkuaz
+Game Boy Color · Atomic Purple	Game Boy Color · Atom moru
+Game Boy Color · Screen only	Game Boy Color · Yalnızca ekran
+Game Boy Advance · Indigo	Game Boy Advance · Çivit
+Game Boy Advance · Glacier	Game Boy Advance · Buzul
+Game Boy Advance · Black	Game Boy Advance · Siyah
+Game Boy Advance · Platinum	Game Boy Advance · Platin
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Oniks
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platin
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Gümüş
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Siyah
+WonderSwan Color · White	WonderSwan Color · Beyaz
+WonderSwan Color · Blue	WonderSwan Color · Mavi
+PSP · Black	PSP · Siyah
+PSP · White	PSP · Beyaz
+Grey TV	Gri televizyon
+Wood-grain TV	Ahşap görünümlü televizyon
+PC monitor	PC monitörü
+Arcade cabinet	Atari kabini
 Black bar	Siyah şerit
-SP Onyx	SP Oniks
-SP Cobalt	SP Kobalt
-SP Platinum	SP Platin
 GBA Color	GBA renkleri
 GBA screen	GBA ekranı
 GBA screens	GBA ekranları
@@ -943,7 +972,6 @@ Next picture	Sonraki resim
 No pictures yet	Henüz resim yok
 Available	Mevcut
 Not downloaded	İndirilmedi
-More filters	Daha fazla filtre
 Show games	Oyunları göster
 Reset filters	Filtreleri sıfırla
 Any	Hepsi
@@ -957,3 +985,148 @@ Online play	Çevrimiçi oyun
 {0} players	{0} oyuncu
 No game information yet.	Henüz oyun bilgisi yok.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ayarlar > Kütüphane > Kapak kaynakları altında Oyun bilgisini açın ve kapakları getirin.
+Ports	Portlar
+Restart port	Portu yeniden başlat
+Quit	Çık
+Looking for the latest PortMaster	En yeni PortMaster aranıyor
+Downloading PortMaster	PortMaster indiriliyor
+Checking PortMaster	PortMaster denetleniyor
+Unpacking PortMaster	PortMaster açılıyor
+Setting up PortMaster	PortMaster hazırlanıyor
+Installing PortMaster from the card	PortMaster karttan kuruluyor
+PortMaster is ready	PortMaster hazır
+Could not set up PortMaster	PortMaster hazırlanamadı
+Get, update and remove ports	Port edin, güncelleyin ve kaldırın
+Close PortMaster	PortMaster'ı kapat
+Back to PortMaster	PortMaster'a dön
+Keep getting and updating ports	Port edinmeye ve güncellemeye devam et
+Your ports are waiting in Ports	Portlarınız Portlar'da bekliyor
+Closing PortMaster…	PortMaster kapatılıyor…
+Closing the port…	Port kapatılıyor…
+GB screens	GB ekranları
+GBC screens	GBC ekranları
+Game Boy screen	Game Boy ekranı
+Game Boy Color screen	Game Boy Color ekranı
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	İlk Game Boy'un nokta matris ekranı: açık bir piksel ızgarası ve yumuşak gölgeler.
+The Game Boy Color screen with faint gaps between its pixels.	Pikselleri arasında hafif boşluklar olan Game Boy Color ekranı.
+This handheld's own screen.	Bu el konsolunun kendi ekranı.
+Screen colours	Ekran renkleri
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Siyah beyaz
+Game Boy Color, darker	Game Boy Color, daha koyu
+Full colour	Tam renk
+Hold to save	Kaydetmek için basılı tutun
+Hold to load	Yüklemek için basılı tutun
+Screen off	Ekran kapalı
+Touch the screen to turn it on	Açmak için ekrana dokunun
+min	dk
+h	sa
+Not saved	Kaydedilmedi
+Loaded	Yüklendi
+Not loaded	Yüklenmedi
+Nothing to load	Yüklenecek bir şey yok
+Saving…	Kaydediliyor…
+Loading…	Yükleniyor…
+Info screen	Bilgi ekranı
+Team	Takım
+Lv	Sv.
+screens	ekran
+Not yet	Henüz değil
+None yet	Henüz yok
+The best there is	Daha iyisi yok
+Next:	Sonraki:
+Badges	Rozetler
+Carried	Üzerinde
+Coin bank	Para bankası
+Coins	Paralar
+Collection	Koleksiyon
+Course	Bölüm
+Day	Gündüz
+Ending so far	Şimdilik son
+Essences	Özler
+Gear	Donanım
+Golden leaves	Altın yapraklar
+Heart containers	Kalp kapları
+Heart pieces	Kalp parçaları
+Hearts	Kalpler
+In a course	Bölümde
+Instruments	Çalgılar
+Johto badges	Johto rozetleri
+Journey	Yolculuk
+Kanto badges	Kanto rozetleri
+Keys	Anahtarlar
+Lives	Canlar
+Money	Para
+Musical coins	Müzik paraları
+Night	Gece
+Pokédex caught	Pokédex yakalanan
+Pokédex seen	Pokédex görülen
+Rupees	Rupiler
+Secret seashells	Gizli deniz kabukları
+Shield	Kalkan
+Small keys	Küçük anahtarlar
+Sword	Kılıç
+Time of day	Günün saati
+Time	Süre
+Total	Toplam
+Trainer	Eğitmen
+Treasures	Hazineler
+Worlds	Dünyalar
+Your journey	Yolculuğun
+Seeds	Tohumlar
+Game switcher	Oyun değiştirici
+Switch to another game	Başka bir oyuna geç
+Hold to return home	Ana ekran için basılı tutun
+Add game files	Oyun dosyalarını ekle
+Needs your files	Dosyalarınız gerekiyor
+Files added	Dosyalar eklendi
+How to get the files	Dosyalar nasıl alınır
+Scan with your phone	Telefonunla tara
+Or open on a computer	Ya da bir bilgisayarda aç
+Code	Kod
+Connect to Wi-Fi to send files from a phone or computer.	Telefondan veya bilgisayardan dosya göndermek için Wi-Fi'ye bağlan.
+Receiving files	Dosyalar alınıyor
+Unpacking files	Dosyalar açılıyor
+Files arrived. Choose Play to start.	Dosyalar geldi. Başlamak için Oyna'yı seç.
+This port lists no instructions.	Bu portun talimatı yok.
+Play	Oyna
+Goes into	Hedef
+Phone or computer connected	Telefon veya bilgisayar bağlandı
+Vibration	Titreşim
+Menu haptics	Dokunsal menü
+Haptic strength	Dokunsal güç
+Game rumble	Oyun titreşimi
+Rumble strength	Titreşim gücü
+Try a pattern	Bir desen dene
+Feel the game	Oyunu hisset
+Feel every move	Her hareketi hisset
+No vibration motor was found on this device.	Bu cihazda titreşim motoru bulunamadı.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DS'te Rumble Pak oyunları, Game Boy ve Game Boy Advance'te titreşimli kartuşlar.
+Turn on game rumble for games made for a rumble accessory.	Titreşim aksesuarı için yapılmış oyunlarda oyun titreşimini aç.
+A light tap for every move, a firmer one when you choose, open or save.	Her harekette hafif bir dokunuş, seçerken, açarken veya kaydederken daha güçlüsü.
+Turn on menu haptics to feel the menus.	Menüleri hissetmek için dokunsal menüyü aç.
+Browse	Gezin
+Open a view	Bir görünüm aç
+Go back	Geri dön
+Switch on	Aç
+Switch off	Kapat
+Add favourite	Favorilere ekle
+Remove favourite	Favorilerden çıkar
+Start a game	Bir oyun başlat
+Save complete	Kayıt tamamlandı
+Load complete	Yükleme tamamlandı
+Try again	Tekrar dene
+Keyboard	Klavye
+Adjust	Ayarla
+End of a list	Listenin sonu
+Long press	Uzun basma
+Notification	Bildirim
+Touch screen	Dokunmatik ekran
+Point and click on top	Üstte işaretle ve tıkla
+Touch here to point and click on the top screen.	Üst ekranda işaretlemek ve tıklamak için buraya dokun.
+Hold still for a right click	Sağ tık için sabit tut
+Hold to exit	Çıkmak için basılı tut
+Touch screen off	Dokunmatik ekran kapalı
+Touch screen is not available	Dokunmatik ekran kullanılamıyor

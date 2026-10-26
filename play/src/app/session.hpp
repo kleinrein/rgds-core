@@ -22,6 +22,7 @@ struct SessionOptions {
     std::vector<std::string> profile_dirs; // shipped first, the player's own last
     std::vector<std::string> save_sources; // folders to import an existing save from
     std::string font_dir;                  // assets/fonts
+    std::string preferences;               // userdata/preferences.ini (and ui.ini beside it): the launcher's look
     bool companion = true;
 };
 
@@ -52,6 +53,11 @@ public:
     const std::string& title() const { return title_; }
     const SaveSlot& save() const { return save_; }
     const Font& font() const { return font_; }
+    Font& font() { return font_; }
+    // Theme & display as the launcher has it (the default look without preferences).
+    const Look& look() const { return look_; }
+    Look& look() { return look_; }
+    const Words& words() const { return words_; }
     const Profile* profile() const { return profile_; }
     Companion* companion() { return companion_.get(); }
     const std::vector<std::string>& profile_errors() const { return profile_errors_; }
@@ -70,6 +76,8 @@ private:
     std::unique_ptr<SaveWriter> writer_;
     SaveSlot save_;
     Font font_;
+    Look look_;
+    Words words_;
     std::string title_;
     uint64_t frames_ = 0, saved_revision_ = 0;
 };

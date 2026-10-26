@@ -676,6 +676,7 @@ u32 Bus::io_read(Cpu cpu, u32 addr, u32 width) {
   if ((addr & 0xFF000000) == 0x08000000 || (addr & 0xFF000000) == 0x09000000) {
     // Open bus pattern per GBATEK.
     u32 v = static_cast<u32>((addr >> 1) & 0xFFFF) | (static_cast<u32>(((addr + 2) >> 1) & 0xFFFF) << 16);
+    if (rumble_pak && !nds_.dsi) v &= 0xFFFDFFFDu; // the Rumble Pak pulls D1 low
     return width == 8 ? (v >> ((addr & 1) * 8)) & 0xFF : width == 16 ? v & 0xFFFF : v;
   }
   return 0;
@@ -713,6 +714,13 @@ void Bus::io_write(Cpu cpu, u32 addr, u32 width, u32 v) {
     vram_write(cpu, addr, width, v);
     return;
   }
+  case 0x08:
+  case 0x09:
+    if (rumble_pak && static_cast<u16>(v) != rumble_state) {
+      rumble_state = static_cast<u16>(v);
+      rumble_moves++;
+    }
+    return;
   default: return;
   }
 }

@@ -43,7 +43,8 @@ void App::watch_menu(Uint32 now) {
             // The engine rewrote its cheat list before answering; show that, whichever way it went.
             if (menu_sound_action.rfind("cheat:", 0) == 0) load_cheats();
             // RG DS Play's view: what the runtime stored once the player applied it.
-            if (menu_sound_action.rfind("play-graphics:", 0) == 0) load_play_view();
+            if (menu_sound_action.rfind("play-graphics:", 0) == 0 || menu_sound_action.rfind("play-color:", 0) == 0)
+                load_play_view();
             menu_sound_action.clear();
         }
         if (value["state"] != "busy") menu_pending_token.clear();

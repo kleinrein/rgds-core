@@ -15,6 +15,12 @@ namespace play {
 class Core;
 struct Look;
 
+// A finger on the second screen, in its pixels.
+struct Touch {
+    enum Kind { Down, Move, Up } kind = Down;
+    int x = 0, y = 0;
+};
+
 class View {
 public:
     virtual ~View() = default;
@@ -25,6 +31,13 @@ public:
     // Changes whenever draw() would draw something different.
     virtual uint64_t key(uint64_t frame) const = 0;
     virtual void draw(Canvas& out, const Look& look, const Font& font, uint64_t frame) const = 0;
+    // A touch on the view; true when what draw() shows changed (a page chosen).
+    virtual bool touch(const Touch& t) {
+        (void)t;
+        return false;
+    }
+    // Shown in place of a [hud] strip's band, not above it (a board of the same numbers).
+    virtual bool covers_hud() const { return false; }
     // What the view has learnt that the game itself doesn't keep (the explored
     // map), kept next to the save. Formats without any ignore these.
     virtual bool dirty() const { return false; }

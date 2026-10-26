@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Mulai ulang game untuk menerapkan pengatu
 Could not save DS settings.	Tidak dapat menyimpan pengaturan DS.
 Search	Cari
 Save gallery	Galeri simpanan
-Search and filters	Pencarian dan filter
 Add your games	Tambahkan game Anda
 DS controls	Kontrol DS
 Back up all saves	Cadangkan semua simpanan
@@ -626,7 +625,6 @@ Slot	Slot
 Empty slot	Slot kosong
 Search games	Cari game
 Filter	Filter
-Clear search and filters	Hapus pencarian dan filter
 Missing artwork	Tanpa sampul
 Where to put games	Tempat menaruh game
 Scan for games	Pindai game
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Audio tidak direkam atau disimpan.
 Test the microphone on your handheld.	Uji mikrofon pada konsol Anda.
 Return home before testing the physical microphone.	Kembali ke beranda sebelum menguji mikrofon fisik.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Tiup atau bicara ke mikrofon. Lihat levelnya naik, lalu turun saat Anda berhenti.
-No filter	Tanpa filter
 Quick search	Cari cepat
 A  Search	A  Cari
 A  Jump	A  Lompat
@@ -906,14 +903,46 @@ Companion	Pendamping
 Swap screens	Tukar layar
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Menambahkan game Game Boy dan Game Boy Advance: Game lalu membuka halaman sistem.
 Frame	Bingkai
-Indigo	Nila
-Glacier	Gletser
-Black	Hitam
-Platinum	Platinum
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Merah
+Game Boy · Yellow	Game Boy · Kuning
+Game Boy · Green	Game Boy · Hijau
+Game Boy · Blue	Game Boy · Biru
+Game Boy · Black	Game Boy · Hitam
+Game Boy · Screen only	Game Boy · Layar saja
+Game Boy Pocket · Silver	Game Boy Pocket · Perak
+Game Boy Pocket · Black	Game Boy Pocket · Hitam
+Game Boy Pocket · Yellow	Game Boy Pocket · Kuning
+Game Boy Pocket · Red	Game Boy Pocket · Merah
+Game Boy Pocket · Green	Game Boy Pocket · Hijau
+Game Boy Pocket · Blue	Game Boy Pocket · Biru
+Game Boy Pocket · Pink	Game Boy Pocket · Merah muda
+Game Boy Pocket · Screen only	Game Boy Pocket · Layar saja
+Game Boy Color · Berry	Game Boy Color · Beri
+Game Boy Color · Grape	Game Boy Color · Anggur
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Dandelion	Game Boy Color · Dandelion
+Game Boy Color · Teal	Game Boy Color · Hijau toska
+Game Boy Color · Atomic Purple	Game Boy Color · Ungu atom
+Game Boy Color · Screen only	Game Boy Color · Layar saja
+Game Boy Advance · Indigo	Game Boy Advance · Nila
+Game Boy Advance · Glacier	Game Boy Advance · Gletser
+Game Boy Advance · Black	Game Boy Advance · Hitam
+Game Boy Advance · Platinum	Game Boy Advance · Platinum
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platinum
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Perak
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Hitam
+WonderSwan Color · White	WonderSwan Color · Putih
+WonderSwan Color · Blue	WonderSwan Color · Biru
+PSP · Black	PSP · Hitam
+PSP · White	PSP · Putih
+Grey TV	TV abu-abu
+Wood-grain TV	TV motif kayu
+PC monitor	Monitor PC
+Arcade cabinet	Kabinet arkade
 Black bar	Bilah hitam
-SP Onyx	SP Onyx
-SP Cobalt	SP Kobalt
-SP Platinum	SP Platinum
 GBA Color	Warna GBA
 GBA screen	Layar GBA
 GBA screens	Layar GBA
@@ -943,7 +972,6 @@ Next picture	Gambar berikutnya
 No pictures yet	Belum ada gambar
 Available	Tersedia
 Not downloaded	Belum diunduh
-More filters	Filter lainnya
 Show games	Tampilkan game
 Reset filters	Atur ulang filter
 Any	Semua
@@ -957,3 +985,148 @@ Online play	Main online
 {0} players	{0} pemain
 No game information yet.	Belum ada info game.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Aktifkan Info game di Pengaturan > Pustaka > Sumber sampul, lalu ambil sampul.
+Ports	Port
+Restart port	Mulai ulang port
+Quit	Keluar
+Looking for the latest PortMaster	Mencari PortMaster terbaru
+Downloading PortMaster	Mengunduh PortMaster
+Checking PortMaster	Memeriksa PortMaster
+Unpacking PortMaster	Membongkar PortMaster
+Setting up PortMaster	Menyiapkan PortMaster
+Installing PortMaster from the card	Memasang PortMaster dari kartu
+PortMaster is ready	PortMaster siap
+Could not set up PortMaster	Tidak dapat menyiapkan PortMaster
+Get, update and remove ports	Dapatkan, perbarui, dan hapus port
+Close PortMaster	Tutup PortMaster
+Back to PortMaster	Kembali ke PortMaster
+Keep getting and updating ports	Terus dapatkan dan perbarui port
+Your ports are waiting in Ports	Port Anda menunggu di Port
+Closing PortMaster…	Menutup PortMaster…
+Closing the port…	Menutup port…
+GB screens	Layar GB
+GBC screens	Layar GBC
+Game Boy screen	Layar Game Boy
+Game Boy Color screen	Layar Game Boy Color
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Layar dot-matrix Game Boy asli: kisi piksel terang dan bayangan lembut.
+The Game Boy Color screen with faint gaps between its pixels.	Layar Game Boy Color dengan celah samar di antara pikselnya.
+This handheld's own screen.	Layar asli konsol genggam ini.
+Screen colours	Warna layar
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Hitam putih
+Game Boy Color, darker	Game Boy Color, lebih gelap
+Full colour	Warna penuh
+Hold to save	Tahan untuk simpan
+Hold to load	Tahan untuk muat
+Screen off	Layar mati
+Touch the screen to turn it on	Sentuh layar untuk menyalakannya
+min	mnt
+h	j
+Not saved	Tidak tersimpan
+Loaded	Dimuat
+Not loaded	Tidak dimuat
+Nothing to load	Tidak ada yang dimuat
+Saving…	Menyimpan…
+Loading…	Memuat…
+Info screen	Layar info
+Team	Tim
+Lv	Lv
+screens	layar
+Not yet	Belum
+None yet	Belum ada
+The best there is	Yang terbaik
+Next:	Berikutnya:
+Badges	Lencana
+Carried	Dibawa
+Coin bank	Bank koin
+Coins	Koin
+Collection	Koleksi
+Course	Level
+Day	Siang
+Ending so far	Akhir sejauh ini
+Essences	Esensi
+Gear	Perlengkapan
+Golden leaves	Daun emas
+Heart containers	Wadah hati
+Heart pieces	Kepingan hati
+Hearts	Hati
+In a course	Di dalam level
+Instruments	Instrumen
+Johto badges	Lencana Johto
+Journey	Perjalanan
+Kanto badges	Lencana Kanto
+Keys	Kunci
+Lives	Nyawa
+Money	Uang
+Musical coins	Koin musik
+Night	Malam
+Pokédex caught	Pokédex tertangkap
+Pokédex seen	Pokédex terlihat
+Rupees	Rupee
+Secret seashells	Kerang rahasia
+Shield	Perisai
+Small keys	Kunci kecil
+Sword	Pedang
+Time of day	Waktu
+Time	Waktu
+Total	Total
+Trainer	Pelatih
+Treasures	Harta
+Worlds	Dunia
+Your journey	Perjalananmu
+Seeds	Biji
+Game switcher	Pengalih game
+Switch to another game	Beralih ke game lain
+Hold to return home	Tahan untuk ke beranda
+Add game files	Tambahkan file game
+Needs your files	Butuh file Anda
+Files added	File ditambahkan
+How to get the files	Cara mendapatkan file
+Scan with your phone	Pindai dengan ponsel
+Or open on a computer	Atau buka di komputer
+Code	Kode
+Connect to Wi-Fi to send files from a phone or computer.	Sambungkan ke Wi-Fi untuk mengirim file dari ponsel atau komputer.
+Receiving files	Menerima file
+Unpacking files	Mengekstrak file
+Files arrived. Choose Play to start.	File sudah tiba. Pilih Main untuk memulai.
+This port lists no instructions.	Port ini tidak punya petunjuk.
+Play	Main
+Goes into	Masuk ke
+Phone or computer connected	Ponsel atau komputer tersambung
+Vibration	Getaran
+Menu haptics	Haptik menu
+Haptic strength	Kekuatan haptik
+Game rumble	Getaran game
+Rumble strength	Kekuatan getaran
+Try a pattern	Coba pola
+Feel the game	Rasakan gamenya
+Feel every move	Rasakan setiap gerakan
+No vibration motor was found on this device.	Tidak ada motor getar di perangkat ini.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Game Rumble Pak di DS, kartrid bergetar di Game Boy dan Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Nyalakan getaran game untuk game yang dibuat untuk aksesori getar.
+A light tap for every move, a firmer one when you choose, open or save.	Ketukan ringan untuk setiap gerakan, lebih tegas saat memilih, membuka, atau menyimpan.
+Turn on menu haptics to feel the menus.	Nyalakan haptik menu untuk merasakan menu.
+Browse	Jelajahi
+Open a view	Buka tampilan
+Go back	Kembali
+Switch on	Nyalakan
+Switch off	Matikan
+Add favourite	Tambah favorit
+Remove favourite	Hapus favorit
+Start a game	Mulai game
+Save complete	Simpan selesai
+Load complete	Muat selesai
+Try again	Coba lagi
+Keyboard	Keyboard
+Adjust	Sesuaikan
+End of a list	Akhir daftar
+Long press	Tekan lama
+Notification	Notifikasi
+Touch screen	Layar sentuh
+Point and click on top	Tunjuk dan klik di atas
+Touch here to point and click on the top screen.	Sentuh di sini untuk menunjuk dan mengeklik di layar atas.
+Hold still for a right click	Tahan diam untuk klik kanan
+Hold to exit	Tahan untuk keluar
+Touch screen off	Layar sentuh mati
+Touch screen is not available	Layar sentuh tidak tersedia

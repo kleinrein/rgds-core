@@ -44,17 +44,24 @@ enum class SettingsIcon {
     Restart,
     Contrast,
     Palette,
-    Chat
+    Chat,
+    Vibrate
 };
 
 inline SettingsIcon settings_icon_for(const std::string& title) {
+    if (title == "Vibration" || title == "Menu haptics" || title == "Haptic strength") return SettingsIcon::Vibrate;
+    if (title == "Game rumble" || title == "Rumble strength") return SettingsIcon::Controller;
+    if (title == "Try a pattern") return SettingsIcon::Play;
     if (title == "Updates") return SettingsIcon::Load;
     if (title == "Network file sharing") return SettingsIcon::Wifi;
+    if (title == "Play") return SettingsIcon::Play;
+    if (title == "How to get the files") return SettingsIcon::Info;
+    if (title == "Back") return SettingsIcon::Back;
     if (title == "High contrast") return SettingsIcon::Contrast;
     if (title == "Home layout") return SettingsIcon::Home;
     if (title == "Background") return SettingsIcon::Shader;
     if (title == "Touch gestures") return SettingsIcon::Touch;
-    if (title == "Accent colour") return SettingsIcon::Palette;
+    if (title == "Accent colour" || title == "Screen colours") return SettingsIcon::Palette;
     if (title == "Icon style") return SettingsIcon::Art;
     if (title == "Sharing details") return SettingsIcon::Info;
     if (title == "Game info") return SettingsIcon::Info;
@@ -63,7 +70,6 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Rating") return SettingsIcon::Info;
     if (title == "Released") return SettingsIcon::Clock;
     if (title == "Online") return SettingsIcon::Wifi;
-    if (title == "More filters") return SettingsIcon::Sliders;
     if (title == "Show games") return SettingsIcon::Play;
     if (title == "Reset filters") return SettingsIcon::Refresh;
     if (title == "Extra pictures") return SettingsIcon::Art;
@@ -73,7 +79,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
         return SettingsIcon::Volume;
     if (title == "DS controls" || title == "Close and open DS lid") return SettingsIcon::Controller;
     if (title == "DS language" || title == "Filter" || title == "Automatic updates") return SettingsIcon::Sliders;
-    if (title == "Search games" || title == "Search and filters") return SettingsIcon::Library;
+    if (title == "Search games" || title == "Library view") return SettingsIcon::Library;
     if (title == "Where to put games" || title == "Add your games" || title == "Scan for games")
         return SettingsIcon::Cartridge;
     if (title == "Library") return SettingsIcon::Library;
@@ -397,6 +403,13 @@ inline void draw_settings_icon(Sdl& s, SDL_Renderer* renderer, SettingsIcon icon
             float h = std::sqrt(std::max(0.f, 81 - (i - 12) * (i - 12)));
             line(i, 12 - h, i, 12 + h);
         }
+        break;
+    // A handheld between two zig-zag shake lines.
+    case SettingsIcon::Vibrate:
+        box(8, 3, 16, 21);
+        line(11, 18, 13, 18);
+        path({{4, 7}, {2, 9.5f}, {4, 12}, {2, 14.5f}, {4, 17}});
+        path({{20, 7}, {22, 9.5f}, {20, 12}, {22, 14.5f}, {20, 17}});
         break;
     // PictoChat: a speech bubble with a hand-drawn stroke inside it.
     case SettingsIcon::Chat:

@@ -155,3 +155,95 @@ class GameSwitcherTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class PortSwitcherTests(unittest.TestCase):
+    """A port takes part in the game switcher like any game: the Anbernic button opens it, and so does the info screen."""
+    def setUp(self):
+        import tempfile
+        import port_runner
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.clock = 100
+        for patcher in (
+            patch('game_menu.time.monotonic', side_effect=lambda: self.clock),
+            patch('port_runner.time.monotonic', side_effect=lambda: self.clock),
+            patch('port_runner.time.sleep', side_effect=self.port_exits), patch('port_runner.mount_cgroups'),
+            patch.object(port_runner, 'LEAF', self.root / 'leaf'), patch('port_runner.mixer_holder', return_value=None),
+            patch.object(port_runner.KeyGrab, 'grab')
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        ports, entry = self.root / 'ports', self.root / 'portmaster/entry'
+        ports.mkdir()
+        entry.mkdir(parents=True)
+        self.port, self.other, self.manager = ports / 'Cave Story.sh', ports / 'Apotris.sh', entry / 'PortMaster.sh'
+        self.game = self.root / 'Next game.nds'
+        for path in (self.port, self.other, self.manager, self.game):
+            path.write_text('#!/bin/bash\n')
+        self.child = menus.Process()
+        self.menu = port_runner.PortMenu(
+            None, self.root / 'app', self.root / 'data', 'portmaster', self.port.resolve(), {}, menus.Inputs()
+        )
+        self.addCleanup(self.menu.close)
+        self.menu.companion = menus.Process()  # the helper, up before the port
+        self.menu.attach(self.child)
+        write_fields(
+            self.menu.folder / 'switcher-library.ini',
+            {f'game_{i}_rom': str(path)
+             for i, path in enumerate((self.port, self.manager, self.other, self.game))}
+        )
+
+    def port_exits(self, _seconds):
+        self.child.result = 0
+
+    def press(self, key):
+        self.clock += 1
+        with patch.object(self.menu.inputs, 'poll', return_value=key):
+            self.menu.poll()
+
+    def request(self, action, token='1'):
+        write_fields(self.menu.request, dict(token=token, action=action))
+        self.menu.poll()
+
+    def test_the_anbernic_button_opens_the_switcher_with_ports_but_not_portmaster(self):
+        from library import read_fields
+        self.press('menu')
+        self.assertIsNotNone(self.menu.menu)
+        status = read_fields(self.menu.status)
+        self.assertEqual((status['view'], status['view_request']), ('switcher', '1'))
+        listed = read_fields(self.menu.folder / 'game-switcher.ini')
+        roms = [listed[f'game_{i}_rom'] for i in range(int(listed['count']))]
+        self.assertEqual(roms, [str(path.resolve()) for path in (self.port, self.other, self.game)])
+        # Home in the switcher resumes; Home again opens the game menu, the Anbernic button the switcher once more.
+        self.press('game-menu')
+        self.assertIsNone(self.menu.menu)
+        self.press('game-menu')
+        self.assertEqual(read_fields(self.menu.status)['view'], 'game-menu')
+        self.press('menu')
+        self.assertEqual(read_fields(self.menu.status)['view'], 'switcher')
+
+    def test_switching_from_a_port_closes_it_and_starts_the_next_game(self):
+        self.press('menu')
+        self.request('switch:1')
+        self.assertTrue(self.menu.user_stopped)
+        self.assertEqual(self.menu.port_result(-15), 0)
+        self.assertEqual(self.menu.completed_switch(), SwitchGame('portmaster', self.other.resolve()))
+
+    def test_switching_to_a_ds_game_uses_its_engine(self):
+        write_fields(self.menu.data / 'library' / game_key(self.game.resolve()) / 'game.ini', {'core': '3'})
+        self.press('menu')
+        self.request('switch:2')
+        self.assertEqual(self.menu.completed_switch(), SwitchGame('melonds', self.game.resolve()))
+
+    def test_the_info_screen_opens_the_switcher_and_returns_home(self):
+        from library import read_fields
+        Path(str(self.menu.control) + '.menu').write_text('1\n')
+        self.press(False)
+        self.assertEqual(read_fields(self.menu.status)['view'], 'switcher')
+        self.menu.close_menu()
+        Path(str(self.menu.control) + '.home').write_text('1\n')
+        self.press(False)
+        self.assertTrue(self.menu.user_stopped)
+        self.assertIsNone(self.menu.completed_switch())

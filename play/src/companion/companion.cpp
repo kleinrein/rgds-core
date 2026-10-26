@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "companion/companion.hpp"
+#include "ui/kit.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -8,17 +9,22 @@
 namespace play {
 
 Companion::Companion(Core& live, const Profile* profile, std::string title, std::string system_name)
-    : profile_(profile), title_(std::move(title)), system_name_(std::move(system_name)) {
+    : profile_(profile), title_(std::move(title)), system_name_(std::move(system_name)), dock_(title_, system_name_) {
     if (profile_ && profile_->has_map) {
         capture_ = std::make_unique<MapCapture>(live, *profile_);
         if (!capture_->ready()) capture_.reset();
     }
     if (profile_ && profile_->has_party) party_ = std::make_unique<Party>(profile_->party);
-    if (profile_ && profile_->has_view) {
-        std::string error;
-        view_ = make_view(profile_->view, error);
-        if (!view_) std::fprintf(stderr, "play: %s: %s\n", profile_->file.c_str(), error.c_str());
-    }
+    if (profile_)
+        for (const auto& spec : profile_->views) {
+            std::string error;
+            auto view = make_view(spec, error);
+            if (view) {
+                views_.push_back(std::move(view));
+                auto alt = spec.values.find("alternative");
+                alternative_.push_back(alt != spec.values.end() && (alt->second == "yes" || alt->second == "true"));
+            } else std::fprintf(stderr, "play: %s: %s\n", profile_->file.c_str(), error.c_str());
+        }
 }
 
 Companion::~Companion() {
@@ -74,10 +80,11 @@ void Companion::update_strip(Core& live) {
     const HudSpec& h = profile_->hud;
     const Picture p = live.picture();
     const Rect& s = h.strip;
-    bool on = h.on.match(live) && s.y + s.h <= p.h && s.w <= p.w;
+    // With the second screen off the band stays in the game picture.
+    bool on = shown_ && h.on.match(live) && s.y + s.h <= p.h && s.w <= p.w;
     if (!on) {
         // The last band stays up while `keep` holds (the inventory sliding in).
-        hud_shown_ = hud_shown_ && !h.keep.empty() && h.keep.match(live);
+        hud_shown_ = shown_ && hud_shown_ && !h.keep.empty() && h.keep.match(live);
         hud_on_ = false;
         return;
     }
@@ -101,7 +108,8 @@ void Companion::update_hud(Core& live) {
         return;
     }
     const HudSpec& h = profile_->hud;
-    bool on = h.on.match(live) && map_layer_shown(live, h);
+    // With the second screen off the game keeps its whole HUD: nothing is split.
+    bool on = shown_ && h.on.match(live) && map_layer_shown(live, h);
     const unsigned layers = hud_layers(live, h);
     if (on && hud_on_ && layers != hud_layers_) {
         // The game moved its menus to other layers: split those from the next frame.
@@ -119,13 +127,13 @@ void Companion::update_hud(Core& live) {
         hud_on_ = on;
         hud_frames_ = 0;
         if (on) moves_ = false;
-        else hud_shown_ = hud_shown_ && !h.keep.empty() && h.keep.match(live);
+        else hud_shown_ = shown_ && hud_shown_ && !h.keep.empty() && h.keep.match(live);
         // A kept picture (the pause menu, the results) stays laid out as it was.
         if (!hud_shown_) moves_ = false;
         return;
     }
     if (!on) {
-        if (hud_shown_ && (h.keep.empty() || !h.keep.match(live))) hud_shown_ = false;
+        if (hud_shown_ && (!shown_ || h.keep.empty() || !h.keep.match(live))) hud_shown_ = false;
         if (!hud_shown_) moves_ = false;
         return;
     }
@@ -248,6 +256,7 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
     }
     if (have_backdrop) std::copy_n(backdrop_panel_.data(), static_cast<size_t>(out.w()) * out.h(), out.data());
     else if (h.backdrop_game && game.px) out.cover(game.px, game.w, rows, game.stride, 90);
+    else if (h.backdrop_theme) backdrop(out, look);
     else out.fill(h.backdrop_game ? look.background : Rgb::hex(h.backdrop));
     // What went back to the game screen is not shown twice.
     std::vector<uint32_t> rest;
@@ -272,6 +281,13 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
             if (f.empty()) continue;
             int tx = int(panel.to.x * sx), ty = int(panel.to.y * sy), tw = int(panel.to.w * sx),
                 th = int(panel.to.h * sy);
+            // The dock's corner stays free: the box gives up its right or its bottom, whichever costs less.
+            const int cx = out.w() - look.reserve_w, cy = out.h() - look.reserve_h;
+            if (look.reserve_w && tx + tw > cx && ty + th > cy) {
+                const int narrower = (cx - kit::gap / 2 - tx) * th, shorter = tw * (cy - kit::gap / 2 - ty);
+                if (narrower >= shorter) tw = cx - kit::gap / 2 - tx;
+                else th = cy - kit::gap / 2 - ty;
+            }
             int scale = std::max(1, std::min(tw / f.w, th / f.h));
             box.resize(static_cast<size_t>(f.w) * f.h);
             for (int y = 0; y < f.h; ++y)
@@ -284,6 +300,10 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
     }
     int scale = std::max(1, std::min(out.w() / hud_w_, out.h() / hud_h_));
     int x0 = (out.w() - hud_w_ * scale) / 2, y0 = (out.h() - hud_h_ * scale) / 2;
+    // Clear of the dock's corner: up a little when there is room above.
+    if (look.reserve_w && x0 + hud_w_ * scale > out.w() - look.reserve_w &&
+        y0 + hud_h_ * scale > out.h() - look.reserve_h)
+        y0 = std::max(0, out.h() - look.reserve_h - hud_h_ * scale);
     if (!moves_) {
         out.blit_keyed(hud_image_.data(), hud_w_, hud_h_, x0, y0, scale, hud_key_);
         return true;
@@ -300,7 +320,8 @@ void Companion::after_frame(Core& live) {
         party_->read(live);
         party_shown_ = !party_->empty() && (profile_->party.on.empty() || profile_->party.on.match(live));
     }
-    if (view_) view_->update(live, frame_);
+    for (auto& v : views_) v->update(live, frame_);
+    dock_.set_played(frame_ / 60);
     if (!capture_) return;
     MapImage img;
     if (capture_->poll(current_.serial, img)) take(std::move(img));
@@ -349,15 +370,80 @@ bool Companion::capture_now(Core& live) {
     return true;
 }
 
+const uint32_t* Companion::shown(const uint32_t* px, int w, int h, std::vector<uint32_t>& buffer) const {
+    if (!colour_.active()) return px;
+    const Picture p = colour_.apply({px, w, h, w});
+    buffer.assign(p.px, p.px + static_cast<size_t>(w) * h);
+    return buffer.data();
+}
+
+uint32_t Companion::shown_px(uint32_t v) const {
+    if (!colour_.active()) return v;
+    return *colour_.apply({&v, 1, 1, 1}).px;
+}
+
+View* Companion::shown_view() const {
+    for (size_t i = 0; i < views_.size(); ++i)
+        if (!alternative_[i] && views_[i]->shown()) return views_[i].get();
+    return nullptr;
+}
+
+View* Companion::alternative_view() const {
+    for (size_t i = 0; i < views_.size(); ++i)
+        if (alternative_[i] && views_[i]->shown()) return views_[i].get();
+    return nullptr;
+}
+
+bool Companion::has_switch() const { return alternative_view() && (has_current_ || shown_view() || party_shown_); }
+
+bool Companion::showing_alternative() const {
+    // The alternative when chosen, or when there is nothing else to show.
+    return alternative_view() && (alt_ || !(has_current_ || shown_view() || party_shown_));
+}
+
+Box Companion::switch_box(int w) const { return {w - kit::margin - 56, kit::margin, 56, 56}; }
+
+bool Companion::touch(const Touch& t) {
+    const uint64_t before = dock_.key();
+    if (dock_.touch(t)) return dock_.key() != before;
+    if (t.kind == Touch::Down && has_switch() && switch_box(640).contains(t.x, t.y)) {
+        // The switch flips between the game's own screen (map, team) and the status board.
+        alt_ = !alt_;
+        return true;
+    }
+    if (View* a = showing_alternative() ? alternative_view() : nullptr; a && a->touch(t)) {
+        ++touch_serial_;
+        return true;
+    }
+    View* v = has_current_ ? nullptr : shown_view();
+    if (v && v->touch(t)) {
+        ++touch_serial_;
+        return true;
+    }
+    return dock_.key() != before; // the corner button brightened
+}
+
 uint64_t Companion::visual_key() const {
+    if (dock_.full() || dock_.screen_off()) return dock_.key() ^ 0x0200000000000000ull;
+    return screen_key() ^ (dock_.key() * 0x100000001B3ull);
+}
+
+uint64_t Companion::screen_key() const {
     if (strip_mode()) return hud_shown_ ? content_key() ^ (strip_hash_ * 31) ^ 0x2000000000000000ull : content_key();
     if (hud_shown_) return (frame_ << 1) | 0x8000000000000001ull; // the HUD is live: every frame
     return content_key();
 }
 
 uint64_t Companion::content_key() const {
+    if (View* a = alternative_view(); a && showing_alternative())
+        return a->key(frame_) ^ 0x0400000000000000ull ^ touch_serial_ * 0x9E37 ^ (has_switch() ? 0x77 : 0);
+    return main_key() ^ (has_switch() ? 0x0300000000000000ull : 0);
+}
+
+uint64_t Companion::main_key() const {
+    if (View* v = shown_view(); !has_current_ && v)
+        return v->key(frame_) ^ 0x0800000000000000ull ^ (uint64_t(size_t(v)) << 3) ^ touch_serial_ * 0x9E37;
     if (!has_current_ && party_shown_) return party_->key(frame_) | 0x4000000000000000ull;
-    if (!has_current_ && view_ && view_->shown()) return view_->key(frame_) ^ 0x0800000000000000ull;
     if (!has_current_) return menu_ ? 1 : 2;
     uint64_t since = frame_ - shown_at_;
     uint64_t fading = has_previous_ && since < static_cast<uint64_t>(crossfade_frames) ? since + 1 : 0;
@@ -387,6 +473,14 @@ CompanionStatus Companion::status() const {
 
 namespace {
 
+// The second screen's ground from row y down (under a band).
+void backdrop_rows(Canvas& out, const Look& look, int y) {
+    Canvas ground(out.w(), out.h());
+    backdrop(ground, look);
+    std::copy(ground.data() + size_t(y) * out.w(), ground.data() + size_t(out.w()) * out.h(),
+              out.data() + size_t(y) * out.w());
+}
+
 struct Placement {
     int scale, x, y;
 };
@@ -412,34 +506,80 @@ void dual_mark(Canvas& out, int x, int y, int unit, Rgb colour, Rgb ground) {
 
 void title_card(Canvas& out, const Look& look, const Font& font, const std::string& title, const std::string& system,
                 const std::string& note, bool dual) {
-    out.vertical_gradient(mix(look.background, look.panel, 96), look.background);
-    const int margin = out.w() / 12;
-    // A soft card in the middle, the DSi way.
-    int card_h = out.h() * 5 / 12, card_y = (out.h() - card_h) / 2;
-    out.rounded_rect(margin, card_y, out.w() - margin * 2, card_h, out.h() / 24, look.panel, 235);
+    // The launcher's DSi note: a card with an accent rim in the middle of the
+    // touch screen's grid, the system as a chip, the game's name, and what
+    // will come here.
+    backdrop(out, look);
+    const int x = kit::margin, w = out.w() - kit::margin * 2, h = 220, y = (out.h() - h) / 2;
+    soft_round(out, x, y + 3, w, h, 18, look.shadow(), look.dark ? 60 : 20);
+    out.rounded_rect(x, y, w, h, 18, look.accent);
+    out.rounded_rect(x + 2, y + 2, w - 4, h - 4, 16, look.panel);
     if (!font.loaded()) return;
-    int big = out.h() >= 700 ? 36 : 28, small = out.h() >= 700 ? 24 : 16;
-    std::string t = font.fit(title, big, out.w() - margin * 4);
-    int y = card_y + card_h / 2;
-    int pill = out.w() / 14;
-    out.rounded_rect((out.w() - pill) / 2, y - big - small * 2 - 2, pill, 4, 2, look.accent);
-    font.draw(out, (out.w() - font.measure(t, big)) / 2, y, t, big, look.ink);
-    font.draw(out, (out.w() - font.measure(system, small)) / 2, y - big - small / 2, system, small, look.accent);
+    const int cx = out.w() / 2;
+    const std::string chip_text = system;
+    const int cw = font.measure(chip_text, kit::small) + 24;
+    chip(out, look, font, cx - cw / 2, y + 48, chip_text, true);
+    const std::string t = font.fit(title, kit::large, w - 64);
+    font.draw(out, cx - font.measure(t, kit::large) / 2, y + 116, t, kit::large, look.ink);
     if (!note.empty()) {
         // A game with a second screen of its own: the mark, then what will come here.
-        const int unit = dual ? std::max(6, small / 2) : 0, mark = dual ? unit * 8 / 5 + small / 2 : 0;
-        std::string n = font.fit(note, small, out.w() - margin * 4 - mark);
-        const int x = (out.w() - font.measure(n, small) - mark) / 2;
-        if (dual) dual_mark(out, x, y + small * 2 - unit * 2 + unit / 3, unit, look.muted, look.panel);
-        font.draw(out, x + mark, y + small * 2, n, small, look.muted);
+        const int unit = dual ? 10 : 0, mark = dual ? unit * 8 / 5 + 10 : 0;
+        const std::string n = font.fit(note, kit::body, w - 64 - mark);
+        const int nx = cx - (font.measure(n, kit::body) + mark) / 2, base = y + 172;
+        if (dual) dual_mark(out, nx, base - font.ascent(kit::body) / 2 - unit * 11 / 10, unit, look.muted, look.panel);
+        font.draw(out, nx + mark, base, n, kit::body, look.muted);
     }
 }
 
 } // namespace
 
-void Companion::render(Canvas& out, const Look& look, const Font& font) const {
+void Companion::render(Canvas& out, const Look& look, const Font& font, const Words& words) const {
+    // Wide open, the dock's controls cover the whole screen and the companion is not seen.
+    if (!dock_.full() && !dock_.screen_off() && dock_.openness() < 1) {
+        const uint64_t k = screen_key();
+        const size_t n = size_t(out.w()) * out.h();
+        if (dock_.moving() && k == screen_cache_key_ && screen_cache_.w() == out.w() && screen_cache_.h() == out.h())
+            std::copy(screen_cache_.data(), screen_cache_.data() + n, out.data());
+        else {
+            Look l = look;
+            l.words = &words;
+            const Box b = dock_.box(Dock::Item::Button, out.w(), out.h());
+            l.reserve_w = out.w() - b.x + kit::gap / 2;
+            l.reserve_h = out.h() - b.y + kit::gap / 2;
+            render_screen(out, l, font);
+            // Kept for the frames that follow while the dock moves over the same picture.
+            if (dock_.moving()) {
+                screen_cache_.resize(out.w(), out.h());
+                std::copy(out.data(), out.data() + n, screen_cache_.data());
+                screen_cache_key_ = k;
+            } else screen_cache_key_ = ~k;
+        }
+    }
+    dock_.draw(out, look, font, words);
+}
+
+void Companion::render_screen(Canvas& out, const Look& look, const Font& font) const {
+    Look l = look;
+    const bool flip = has_switch();
+    if (flip) {
+        l.reserve_top_w = out.w() - switch_box(out.w()).x + kit::gap / 2;
+        l.reserve_top_h = kit::margin + 56 + kit::gap / 2;
+    }
+    render_layers(out, l, font);
+    if (!flip) return;
+    // The switch: what a tap brings up (the board, or back to the map or the team).
+    const Box b = switch_box(out.w());
+    touch_target(b);
+    raised(out, l, b.x, b.y, b.w, b.h, b.h / 2, alt_ ? l.panel : l.accent, 0);
+    const Icon back = has_current_ ? Icon::Map : party_shown_ ? Icon::Life : Icon::Back;
+    icon(out, l, alt_ ? back : Icon::Star, b.x + b.w / 2, b.y + b.h / 2, 24, alt_ ? l.accent : l.on_accent);
+}
+
+void Companion::render_layers(Canvas& out, const Look& look, const Font& font) const {
     if (strip_mode()) {
-        if (hud_shown_ && !hud_image_.empty()) render_with_strip(out, look, font);
+        View* v = shown_view();
+        const bool covered = !has_current_ && v && v->covers_hud();
+        if (hud_shown_ && !hud_image_.empty() && !covered) render_with_strip(out, look, font);
         else render_content(out, look, font);
         return;
     }
@@ -448,32 +588,45 @@ void Companion::render(Canvas& out, const Look& look, const Font& font) const {
 }
 
 void Companion::render_with_strip(Canvas& out, const Look& look, const Font& font) const {
-    // The band at the largest whole scale that leaves most of the screen to
-    // the rest (3x for a 160-pixel band on a 640x480 panel), on its own colour.
-    const int margin = std::max(4, out.h() / 40);
-    int scale = std::max(1, std::min((out.w() - margin * 2) / hud_w_, out.h() / 5 / hud_h_));
+    // The band in a card at the bottom, at the largest whole scale that leaves
+    // most of the screen to the rest (3x for a 160-pixel band on a 640x480
+    // panel), on its own colour like a strip of the game's screen.
+    const int pad = 10;
+    const int room = out.w() - look.reserve_w - (look.reserve_w ? kit::gap : kit::margin);
+    int scale = std::max(1, std::min((room - kit::margin - pad * 2) / hud_w_, out.h() / 5 / hud_h_));
     if (scale * hud_w_ > out.w() * 3 / 4 && scale > 1) --scale;
-    const int band = hud_h_ * scale + margin * 2;
-    Canvas content(out.w(), out.h() - band);
+    const int bw = hud_w_ * scale + pad * 2, bh = hud_h_ * scale + pad * 2;
+    const int band = bh + kit::margin + kit::gap;
+    Canvas content(out.w(), out.h() - band + kit::gap);
     render_content(content, look, font);
     std::copy_n(content.data(), static_cast<size_t>(content.w()) * content.h(), out.data());
+    out.fill_rect(0, content.h(), out.w(), out.h() - content.h(), look.background);
+    backdrop_rows(out, look, content.h());
     // The band's most common colour in its first column: the HUD's own background.
     std::map<uint32_t, int> seen;
     for (int y = 0; y < hud_h_; ++y) ++seen[hud_image_[static_cast<size_t>(y) * hud_w_] & 0xFFFFFF];
     uint32_t ground = seen.empty() ? 0 : std::max_element(seen.begin(), seen.end(), [](auto& a, auto& b) {
                                              return a.second < b.second;
                                          })->first;
-    out.fill_rect(0, content.h(), out.w(), band, Rgb::from_px(ground));
-    out.blit(hud_image_.data(), hud_w_, hud_h_, (out.w() - hud_w_ * scale) / 2, content.h() + margin, scale);
+    // Centred in what the dock's corner leaves of the row.
+    const int x = std::max(kit::margin, (out.w() - look.reserve_w - bw) / 2), y = out.h() - kit::margin - bh;
+    card(out, look, {x - 4, y - 4, bw + 8, bh + 8}, false, kit::radius + 4);
+    out.rounded_rect(x, y, bw, bh, kit::radius, Rgb::from_px(shown_px(ground | 0xFF000000u)));
+    out.blit(shown(hud_image_.data(), hud_w_, hud_h_, tint_a_), hud_w_, hud_h_, x + pad, y + pad, scale);
 }
 
 void Companion::render_content(Canvas& out, const Look& look, const Font& font) const {
-    if (!has_current_ && party_shown_) {
-        party_->draw(out, look, font, frame_);
+    if (View* a = alternative_view(); a && showing_alternative()) {
+        a->draw(out, look, font, frame_);
         return;
     }
-    if (!has_current_ && view_ && view_->shown()) {
-        view_->draw(out, look, font, frame_);
+    // A view that shows (a Pokémon battle) comes before the team.
+    if (View* v = shown_view(); !has_current_ && v) {
+        v->draw(out, look, font, frame_);
+        return;
+    }
+    if (!has_current_ && party_shown_) {
+        party_->draw(out, look, font, frame_);
         return;
     }
     if (!has_current_) {
@@ -483,25 +636,28 @@ void Companion::render_content(Canvas& out, const Look& look, const Font& font) 
         else if (capture_)
             note = ever_shown_ ? "The map comes back once you're playing" : "The map appears once you're playing";
         else if (party_) note = "Your team appears once it's loaded";
-        else if (view_) note = "The map draws itself as you explore";
+        else if (!views_.empty()) note = "The map draws itself as you explore";
         else if (profile_ && profile_->has_hud) note = "The status bar moves here while you play";
         title_card(out, look, font, title_, system_name_, note, profile_ != nullptr);
         return;
     }
     // The map's own empty colour fills the panel, so it reads as the game's
     // second screen rather than a picture in a frame.
-    out.fill(Rgb::from_px(current_.background));
+    out.fill(Rgb::from_px(shown_px(current_.background)));
     Placement p = place(current_, out.w(), out.h());
     uint64_t since = frame_ - shown_at_;
     if (has_previous_ && since < static_cast<uint64_t>(crossfade_frames)) {
         Placement q = place(previous_, out.w(), out.h());
-        out.fill(mix(Rgb::from_px(previous_.background), Rgb::from_px(current_.background),
+        out.fill(mix(Rgb::from_px(shown_px(previous_.background)), Rgb::from_px(shown_px(current_.background)),
                      static_cast<int>(since * 256 / crossfade_frames)));
-        out.blit(frame_at(previous_, frame_).data(), previous_.w, previous_.h, q.x, q.y, q.scale);
+        out.blit(shown(frame_at(previous_, frame_).data(), previous_.w, previous_.h, tint_b_), previous_.w, previous_.h,
+                 q.x, q.y, q.scale);
         int alpha = static_cast<int>(since * 255 / crossfade_frames);
-        out.blit(frame_at(current_, frame_).data(), current_.w, current_.h, p.x, p.y, p.scale, alpha);
+        out.blit(shown(frame_at(current_, frame_).data(), current_.w, current_.h, tint_a_), current_.w, current_.h, p.x,
+                 p.y, p.scale, alpha);
     } else {
-        out.blit(frame_at(current_, frame_).data(), current_.w, current_.h, p.x, p.y, p.scale);
+        out.blit(shown(frame_at(current_, frame_).data(), current_.w, current_.h, tint_a_), current_.w, current_.h, p.x,
+                 p.y, p.scale);
     }
     if (profile_->dim_when_unavailable && capture_ && capture_->failures() >= 2) out.dim(150);
 }

@@ -2,9 +2,16 @@
 // Home: the DSi-style column of tiles on the lower screen and its top panel.
 // Members of App in main.cpp; included once, right after the class.
 
+// A focused update mark that leaves (the update finished) hands its focus to brightness, ring and A included.
+void App::home_bar_settle() {
+    if (home_bar_focus != 1 || update_stage() != UpdateStage::None) return;
+    home_bar_focus = 0;
+    dirty = true;
+}
+
 void App::home_bar_activate(int button) {
     home_bar_focus = -1;
-    if (button == 1 && update_stage() == UpdateStage::None) return; // the mark left while it was focused
+    if (button == 1 && update_stage() == UpdateStage::None) button = 0; // the mark left while it was focused
     if (button == 0 || button == 2) {
         settings.section = button == 0 ? 0 : 7;
         settings.page = button == 0 ? Page::Display : Page::Statistics;
@@ -14,7 +21,7 @@ void App::home_bar_activate(int button) {
 }
 
 bool App::home_column_move(int code) {
-    if (home_bar_focus == 1 && update_stage() == UpdateStage::None) home_bar_focus = 0;
+    home_bar_settle();
     if (home_bar_focus >= 0) {
         if (code == 8) home_bar_focus = -1;
         else if (code == 0 || code == 1) {

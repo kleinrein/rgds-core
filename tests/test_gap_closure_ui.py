@@ -93,13 +93,14 @@ class GapClosureUiTests(unittest.TestCase):
 
     def test_discovery_and_filter_remove_played_games(self):
         write_fields(self.game / 'stats.ini', dict(sessions=1, seconds=100, last_played='2026-10-12'))
-        r = self.run_ui(['Y', 'Down', 'Down', 'Right', 'A', 'Down', 'A', 'Down', 'A'], mode='library')
+        # Y opens the Library view sheet: three rows of tiles, then Unplayed.
+        r = self.run_ui(['Y', 'Down', 'Down', 'Down', 'A'], mode='library')
         self.assertEqual(r['discovery_filter'], 1)
         self.assertEqual(r['filtered_games'], 0)
         self.assertEqual(r['render_file_reads'], 0)
 
     def test_first_run_help_is_reachable_from_library_settings(self):
-        r = self.run_ui(['Down'] * 8 + ['A'], mode='settings')
+        r = self.run_ui(['Down'] * 7 + ['A'], mode='settings')
         self.assertEqual(r['page'], 30)
 
     def test_quick_resume_is_persisted_from_startup_settings(self):
@@ -119,9 +120,9 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertEqual(r['picker_title'], 'Import slot')
         self.assertTrue(r['picker_open'])
 
-    def test_search_from_settings_opens_results_and_trims_query(self):
+    def test_search_from_the_library_opens_results_and_trims_query(self):
         (self.root / 'Zelda.nds').write_bytes(bytes(512))
-        r = self.run_ui(['Down'] * 7 + ['A', 'A'], mode='settings', text='800 text   MARIO  \n900 key Return\n')
+        r = self.run_ui(['E'], mode='library', text='800 text   MARIO  \n900 key Return\n')
         self.assertEqual(r['search_query'], 'MARIO')
         self.assertEqual(r['filtered_games'], 1)
         self.assertFalse(r['home_menu'])
@@ -129,25 +130,20 @@ class GapClosureUiTests(unittest.TestCase):
 
     def test_search_matches_artwork_title(self):
         write_fields(self.game / 'info.ini', dict(artwork_title='Super Plumber'))
-        r = self.run_ui(['Down'] * 7 + ['A', 'A'], mode='settings', text='800 text plumber\n900 key Return\n')
+        r = self.run_ui(['E'], mode='library', text='800 text plumber\n900 key Return\n')
         self.assertEqual(r['filtered_games'], 1)
         self.assertFalse(r['home_menu'])
 
     def test_empty_search_can_be_cleared(self):
+        # Y opens the sheet; two rows down and two across is the Clear filters tile.
         r = self.run_ui(
-            ['Down'] * 7 + ['A', 'A'],
-            mode='settings',
-            text='800 text missing\n900 key Return\n1000 key Y\n1150 click 511 346\n'
+            ['E'],
+            mode='library',
+            text='800 text missing\n900 key Return\n1000 key Y\n1100 key Down\n1200 key Down\n'
+            '1300 key Right\n1400 key Right\n1500 key Return\n'
         )
         self.assertEqual(r['filtered_games'], 1)
         self.assertEqual(r['search_query'], '')
-        self.assertFalse(r['home_menu'])
-
-    def test_filter_from_settings_opens_results(self):
-        write_fields(self.game / 'stats.ini', dict(sessions=1))
-        r = self.run_ui(['Down'] * 7 + ['A', 'Down', 'A', 'Down', 'A'], mode='settings')
-        self.assertEqual(r['filtered_games'], 0)
-        self.assertEqual(r['discovery_filter'], 1)
         self.assertFalse(r['home_menu'])
 
     def test_reset_requires_confirmation_and_can_be_cancelled(self):

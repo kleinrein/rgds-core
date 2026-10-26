@@ -227,7 +227,9 @@ def link_component(source, destination):
 
 def resolve_rom(rom, data, core=None):
     rom = rom.resolve(strict=True)
-    from play_options import PLAY_CORE, system_of
+    from play_options import PLAY_CORE, PORT_CORE, system_of
+    if core == PORT_CORE:
+        return rom  # a port's script, or the PortMaster entry
     if core == PLAY_CORE:
         if system_of(rom) == "nds": raise ValueError("RG DS Play opens Game Boy and Game Boy Advance games.")
         return rom  # it opens .zip archives itself
@@ -284,6 +286,18 @@ def resolve_rom(rom, data, core=None):
             return output
 
 
+def rumble_setting(data):
+    """Game rumble (Settings -> Sound -> Vibration) as RGDS_RUMBLE: its strength, "0" when off.
+
+    DSCore puts a Rumble Pak in the GBA slot only when it is on; the bridge drives the motor."""
+    ui = read_fields(data / 'ui.ini')
+    try:
+        strength = max(10, min(100, int(ui.get('rumble_strength', '80'))))
+    except ValueError:
+        strength = 80
+    return str(strength if ui.get('game_rumble', '1') != '0' else 0)
+
+
 def base_environment():
     env = os.environ.copy()
     env.pop('RGDS_STATE_ATOMIC_REPLACE', None)
@@ -334,6 +348,10 @@ def top_display(env):
 def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=False):
     if core not in CORES:
         raise ValueError("Unknown emulator: " + core)
+    if core == 'portmaster':
+        # A PortMaster port: a script and its process tree, run by port_runner (no engine, no bridge).
+        from portmaster import launch_plan as port_plan
+        return port_plan(app, data, rom, base_environment(), prepare=prepare)
     backend = None
     if core == 'drastic':
         from superdrastic import backend_choice
@@ -445,6 +463,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     env['RGDS_FPS'] = '1' if env.get('RGDS_FPS') == '1' or read_fields(data /
                                                                        'performance.ini').get('fps') == '1' else '0'
     env['RGDS_SHADER_DIR'] = str(app / 'emulators/shaders')
+    env['RGDS_RUMBLE'] = rumble_setting(data)
     global_controls, game_controls = control_paths(data, identity or rom)
     env['RGDS_CONTROLS_GLOBAL'] = str(global_controls)
     env['RGDS_CONTROLS_FILE'] = str(game_controls)
@@ -635,9 +654,12 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         ] = "1900b655010000000100000000010000,ANBERNIC-rk3568-keys,a:b0,b:b1,x:b3,y:b2,back:b6,guide:b8,start:b7,leftstick:b9,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpleft:h0.8,dpdown:h0.4,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b10,righttrigger:b11,platform:Linux,"
         shown = view(data, identity or rom)
         command += ["--rom", str(rom), "--data", str(root), "--fonts", str(app / "assets/fonts")]
+        # The launcher's Theme & display (and language, time format) for the second screen.
+        command += ["--preferences", str(data / "preferences.ini")]
         for system in ("gba", "gb"):
             command += ["--profiles", str(binary.parent / "profiles" / system)]
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
+        command += ["--palette", shown["palette"], "--colour", shown["colour"]]
         command += ["--frames", str(frames_folder(data, rom))]
     else:
         # NNDDSS is retired: its supplied binaries are no longer shipped and a
@@ -776,6 +798,8 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
     lease = None
     engine_log = EngineLog(data, core, [], app)
     original_rom = Path(rom).resolve()
+    # PortMaster itself is a tool, not a game: no playtime, so it never shows in Recents or Last played.
+    counted = core != 'portmaster' or not original_rom.match('*/entry/PortMaster.sh')
     accumulated, sessions = playtime(data, original_rom)
     began = None
     started = datetime.now(timezone.utc).isoformat()
@@ -835,19 +859,31 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             from superdrastic import VTLease
             lease = VTLease()
             lease.acquire()
+        preexec = None
+        if core == 'portmaster':
+            # The menu helper maps its windows before the port, so the port keeps keyboard focus.
+            from port_runner import PortMenu, enter_port, prepare_binds
+            menu = PortMenu(None, app, data, core, original_rom, plan['env'], inputs=inputs)
+            inputs = None
+            menu.start_companion()
+            prepare_binds()
+            preexec = enter_port
         child = subprocess.Popen(
             plan["command"],
             cwd=plan["cwd"],
             env=plan["env"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            bufsize=0
+            bufsize=0,
+            preexec_fn=preexec
         )
         engine_log.start(child.stdout)
         began = time.monotonic()
         if super_backend:
             from superdrastic import Supervisor
             menu = Supervisor(child, app, data, core, original_rom, plan['env'], inputs=inputs)
+        elif core == 'portmaster':
+            menu.attach(child)
         else:
             menu = GameMenu(child, app, data, core, original_rom, plan["env"], inputs=inputs)
         inputs = None
@@ -872,18 +908,19 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
                     child.kill()
                     child.wait()
                 break
-            if time.monotonic() - checkpoint_at >= 30:
+            if counted and time.monotonic() - checkpoint_at >= 30:
                 record_playtime(data, original_rom, accumulated + menu.played_seconds(), sessions + 1, started)
                 checkpoint_at = time.monotonic()
             time.sleep(.02)
         # Deliver the completed exit to the pause UI before closing its process.
         menu.poll()
         result = child.wait()
+        if core == 'portmaster': result = menu.port_result(result)
         if gpu_reset: return 76  # the same engine again (run() keeps the display state)
         if super_backend: result = menu.finish(result)
         if result:
             print(f"{core} exited with code {result}. Diagnostics: {engine_log.path}", file=sys.stderr, flush=True)
-        if result == 0:
+        if result == 0 and core != 'portmaster':  # quick resume reopens engines, not ports
             from quick_resume import record_exit
             try:
                 record_exit(data, original_rom, core, datetime.fromisoformat(started).timestamp())
@@ -941,7 +978,8 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         except OSError as error:
             print("Volume cleanup: " + str(error), file=sys.stderr)
         try:
-            if began is not None: record_playtime(data, original_rom, accumulated + seconds, sessions + 1, started)
+            if began is not None and counted:
+                record_playtime(data, original_rom, accumulated + seconds, sessions + 1, started)
         except OSError:
             print("Could not save playtime.", file=sys.stderr)
         finally:

@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RG DS game files</title>
+<style>
+:root {
+  --bg: #f4f5f8; --panel: #ffffff; --ink: #1d2230; --muted: #687087; --line: #e2e5ec;
+  --accent: #3b6df0; --accent-ink: #ffffff; --soft: #eaf0fe; --warn: #b4561b; --warn-soft: #fdf0e6;
+  --ok: #24875a; --ok-soft: #e5f5ec; --drop: #f8faff;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12141a; --panel: #1b1e27; --ink: #eceef4; --muted: #9aa1b5; --line: #2b2f3b;
+    --accent: #6d93ff; --accent-ink: #0d1222; --soft: #222b45; --warn: #f0a46a; --warn-soft: #3a2a1d;
+    --ok: #5fd39a; --ok-soft: #1b3328; --drop: #1f2330;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
+header .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+header .free { margin-left: auto; color: var(--muted); font-size: 13px; }
+main { display: grid; grid-template-columns: 300px 1fr; gap: 20px; max-width: 1180px; margin: 0 auto; padding: 20px; }
+@media (max-width: 760px) { main { grid-template-columns: 1fr; padding: 12px 16px; gap: 14px; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+#list { padding: 6px; align-self: start; }
+#list h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 10px 12px 6px; }
+.port { display: flex; gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.port:hover { background: var(--soft); }
+.port[aria-current="true"] { background: var(--soft); outline: 2px solid var(--accent); outline-offset: -2px; }
+.port img, .port .ph { width: 48px; height: 36px; border-radius: 6px; object-fit: cover; background: var(--line); flex: none; }
+.port .t { font-weight: 600; line-height: 1.25; }
+.badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; font-weight: 600; }
+.badge.need { background: var(--warn-soft); color: var(--warn); }
+.badge.have { background: var(--ok-soft); color: var(--ok); }
+.badge.ready { background: var(--soft); color: var(--muted); }
+#detail { padding: 22px; min-width: 0; }
+#detail h2 { margin: 0 0 4px; font-size: 24px; }
+.inst { background: var(--bg); border-radius: 10px; padding: 12px 14px; margin: 14px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.inst a, .help a { color: var(--accent); }
+.stores { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 14px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+details.help { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 0 0 16px; }
+details.help summary { cursor: pointer; font-weight: 600; }
+details.help ul { margin: 8px 0 2px; padding-left: 20px; }
+details.help code { background: var(--bg); padding: 1px 5px; border-radius: 5px; font-size: 13px; overflow-wrap: anywhere; }
+#drop { border: 2px dashed var(--line); border-radius: 14px; background: var(--drop); padding: 30px 18px; text-align: center; transition: border-color .15s, background .15s; }
+#drop.over { border-color: var(--accent); background: var(--soft); }
+#drop .big { font-size: 18px; font-weight: 650; margin-bottom: 4px; }
+#drop .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+.opts { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin: 14px 2px; color: var(--muted); font-size: 14px; }
+.opts select { font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.opts code { color: var(--ink); }
+#queue { margin-top: 10px; }
+.total { margin: 16px 0 8px; }
+.bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.total .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin-top: 6px; gap: 10px; }
+.file { display: flex; gap: 10px; align-items: center; padding: 6px 2px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.file .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file .s { color: var(--muted); flex: none; }
+.file.err .s { color: var(--warn); }
+.file.ok .s { color: var(--ok); }
+.note { border-radius: 10px; padding: 12px 14px; margin-top: 14px; }
+.note.ok { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.note.err { background: var(--warn-soft); color: var(--warn); }
+#pair { max-width: 420px; margin: 12vh auto; padding: 28px; text-align: center; }
+#pair h2 { margin: 0 0 6px; }
+#pair input { font: 600 34px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .35em; text-align: center; width: 220px; padding: 12px 0 12px .35em; margin: 18px 0 8px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--ink); }
+#pair input:focus { outline: none; border-color: var(--accent); }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header><div class="mark">DS</div><h1>Add game files</h1><span class="free" id="free"></span></header>
+
+<section id="pair" class="card hidden">
+  <h2>Connect to your RG DS</h2>
+  <div class="muted">Type the four digits shown on the handheld's top screen.</div>
+  <form id="pairform"><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]*" aria-label="Code"><br>
+  <button class="btn primary" type="submit">Connect</button></form>
+  <div id="pairerr" class="note err hidden"></div>
+</section>
+
+<main id="app" class="hidden">
+  <nav id="list" class="card" aria-label="Ports"></nav>
+  <section id="detail" class="card"></section>
+</main>
+
+<template id="detail-t">
+  <h2 class="title"></h2>
+  <div class="state"></div>
+  <div class="inst"></div>
+  <div class="stores"></div>
+  <details class="help"><summary>Where are my game files?</summary><div class="tips"></div></details>
+  <div id="drop">
+    <div class="big">Drop the game's folder or files here</div>
+    <div class="muted">A whole folder is fine: its contents go in. Zip files can be unpacked on the handheld.</div>
+    <div class="row">
+      <label class="btn primary">Choose folder<input type="file" class="pickdir hidden" webkitdirectory multiple></label>
+      <label class="btn">Choose files<input type="file" class="pickfiles hidden" multiple></label>
+    </div>
+  </div>
+  <div class="opts">
+    <label>Goes into <select class="target"></select></label>
+    <label><input type="checkbox" class="unzip" checked> Unpack .zip files</label>
+  </div>
+  <div class="total hidden"><div class="bar"><div></div></div><div class="meta"><span class="what"></span><span class="eta"></span></div></div>
+  <div class="result"></div>
+  <div id="queue"></div>
+</template>
+
+<script>
+'use strict';
+const CHUNK = 32 * 1024 * 1024;
+const FAT_LIMIT = 4 * 1024 * 1024 * 1024 - 1;
+const JUNK = new Set(['.ds_store', 'thumbs.db', 'desktop.ini', '.localized', '__macosx', '.spotlight-v100', '.trashes', '.fseventsd']);
+let state = { ports: [], selected: '', free: 0, fat: true };
+let busy = false;
+const $ = (sel, root = document) => root.querySelector(sel);
+const el = (tag, props = {}, ...children) => {
+  const node = Object.assign(document.createElement(tag), props);
+  for (const child of children) node.append(child);
+  return node;
+};
+const size = (bytes) => {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let i = 0;
+  while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
+  return (i ? bytes.toFixed(bytes < 10 ? 1 : 0) : bytes) + ' ' + units[i];
+};
+
+async function api(path, options = {}) {
+  const response = await fetch(path, Object.assign({ credentials: 'same-origin' }, options));
+  let body = {};
+  try { body = await response.json(); } catch (e) { /* empty body */ }
+  if (response.status === 401) { showPair(); throw new Error(body.error || 'Not connected'); }
+  if (!response.ok) throw Object.assign(new Error(body.error || response.statusText), { status: response.status, body });
+  return body;
+}
+
+function showPair(message) {
+  $('#app').classList.add('hidden');
+  $('#pair').classList.remove('hidden');
+  const err = $('#pairerr');
+  err.classList.toggle('hidden', !message);
+  err.textContent = message || '';
+  setTimeout(() => $('#code').focus(), 0);
+}
+
+async function pair(code) {
+  try {
+    await api('/api/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    $('#pair').classList.add('hidden');
+    await load();
+  } catch (error) {
+    showPair(error.message);
+  }
+}
+
+$('#pairform').addEventListener('submit', (event) => { event.preventDefault(); pair($('#code').value.trim()); });
+$('#code').addEventListener('input', (event) => { if (/^\d{4}$/.test(event.target.value)) pair(event.target.value); });
+
+async function load(keep) {
+  const data = await api('/api/ports');
+  state = Object.assign(state, data);
+  if (!keep) state.selected = location.hash.slice(1) || data.selected || (data.ports[0] || {}).id || '';
+  $('#app').classList.remove('hidden');
+  $('#free').textContent = size(data.free) + ' free on the card';
+  renderList();
+  if (!keep) renderDetail();
+}
+
+function badge(port) {
+  if (port.files_added > 0) return el('span', { className: 'badge have', textContent: 'Files added' });
+  if (!port.ready) return el('span', { className: 'badge need', textContent: 'Needs your files' });
+  return el('span', { className: 'badge ready', textContent: 'Ready to play' });
+}
+
+function renderList() {
+  const list = $('#list');
+  list.replaceChildren(el('h2', { textContent: 'Your ports' }));
+  if (!state.ports.length) list.append(el('p', { className: 'muted', style: 'margin:8px 12px', textContent: 'No ports installed yet. Get some in PortMaster on the handheld.' }));
+  for (const port of state.ports) {
+    const picture = port.cover ? el('img', { src: '/api/cover/' + encodeURIComponent(port.id), alt: '', loading: 'lazy' }) : el('div', { className: 'ph' });
+    const button = el('button', { className: 'port', type: 'button' }, picture, el('div', {}, el('div', { className: 't', textContent: port.title }), badge(port)));
+    button.setAttribute('aria-current', String(port.id === state.selected));
+    button.addEventListener('click', () => {
+      if (busy) return;
+      state.selected = port.id;
+      history.replaceState(null, '', '#' + port.id);
+      renderList();
+      renderDetail();
+    });
+    list.append(button);
+  }
+}
+
+// Text with its web addresses as links, built without innerHTML.
+function linked(text) {
+  const out = document.createDocumentFragment();
+  const pattern = /https?:\/\/[^\s)"'<>]+/g;
+  let at = 0, match;
+  while ((match = pattern.exec(text))) {
+    out.append(text.slice(at, match.index));
+    out.append(el('a', { href: match[0], textContent: match[0], target: '_blank', rel: 'noopener noreferrer' }));
+    at = match.index + match[0].length;
+  }
+  out.append(text.slice(at));
+  return out;
+}
+
+function tips(port) {
+  const ua = navigator.userAgent;
+  const mac = /Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua);
+  const windows = /Windows/.test(ua);
+  const phone = /Android|iPhone|iPad|Mobile/.test(ua);
+  const items = [];
+  const li = (...parts) => items.push(el('li', {}, ...parts));
+  const code = (text) => el('code', { textContent: text });
+  li(el('b', { textContent: 'Steam: ' }), 'right-click the game in your Library, then Manage → Browse local files. Drag that whole folder here.');
+  if (windows) li('Steam usually keeps games in ', code('C:\\Program Files (x86)\\Steam\\steamapps\\common\\'));
+  if (mac) li('Steam on a Mac keeps games in ', code('~/Library/Application Support/Steam/steamapps/common/'), '. Mac games are .app packages: right-click → Show Package Contents if the instructions ask for files inside.');
+  li(el('b', { textContent: 'GOG: ' }), 'in GOG Galaxy choose the game, then ⋯ → Manage installation → Show folder. On gog.com you can also download the offline installers for any system (Windows installers on a Mac too) and drop the installer here.');
+  li(el('b', { textContent: 'itch.io: ' }), 'download the game from your library on itch.io and drop the zip here, or in the itch app use ⋯ → Manage → Show in folder.');
+  if (phone) li('On a phone, files come from your Files app or Downloads. A computer is easier for big game folders.');
+  li('Prefer your file manager? Turn on File sharing in Settings → Network on the handheld; the files go in ', code('PORTS/' + port.id + (port.target ? '/' + port.target : '')), '.');
+  return el('ul', {}, ...items);
+}
+
+function renderDetail() {
+  const detail = $('#detail');
+  const port = state.ports.find((p) => p.id === state.selected);
+  if (!port) { detail.replaceChildren(el('p', { className: 'muted', textContent: 'Choose a port.' })); return; }
+  detail.replaceChildren($('#detail-t').content.cloneNode(true));
+  $('.title', detail).textContent = port.title;
+  $('.state', detail).append(badge(port), port.files_added ? el('span', { className: 'muted', textContent: '  ' + port.files_added + ' files, ' + size(port.bytes_added) }) : '');
+  $('.inst', detail).append(linked(port.instructions || 'This port lists no instructions.'));
+  for (const store of port.stores) {
+    $('.stores', detail).append(el('a', { className: 'btn', href: store.url, target: '_blank', rel: 'noopener noreferrer', textContent: 'Get it on ' + (store.name || 'the store') + ' ↗' }));
+  }
+  $('.tips', detail).append(tips(port));
+  if (matchMedia('(pointer: coarse)').matches) $('#drop .big', detail).textContent = 'Send the game\'s folder or files';
+  const select = $('.target', detail);
+  for (const name of port.targets) {
+    select.append(el('option', { value: name, textContent: 'ports/' + port.id + (name ? '/' + name : '') + (name === port.target ? '  (suggested)' : ''), selected: name === port.target }));
+  }
+  // A port that wants the zip itself says so; then nothing is unpacked unless the owner asks.
+  $('.unzip', detail).checked = !/\.zip\b/i.test(port.instructions) || /extract|unzip|unpack/i.test(port.instructions);
+  const drop = $('#drop', detail);
+  ['dragenter', 'dragover'].forEach((type) => drop.addEventListener(type, (event) => { event.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((type) => drop.addEventListener(type, () => drop.classList.remove('over')));
+  drop.addEventListener('drop', async (event) => {
+    event.preventDefault();
+    const entries = [...event.dataTransfer.items].map((item) => item.webkitGetAsEntry && item.webkitGetAsEntry()).filter(Boolean);
+    const files = entries.length ? await fromEntries(entries) : [...event.dataTransfer.files].map((file) => ({ file, path: file.name }));
+    send(port, files);
+  });
+  $('.pickdir', detail).addEventListener('change', (event) => {
+    // A chosen folder's contents go in, as with a dropped folder.
+    send(port, [...event.target.files].map((file) => ({ file, path: file.webkitRelativePath.split('/').slice(1).join('/') || file.name })));
+  });
+  $('.pickfiles', detail).addEventListener('change', (event) => send(port, [...event.target.files].map((file) => ({ file, path: file.name }))));
+}
+
+function readAll(reader) {
+  return new Promise((resolve, reject) => {
+    const all = [];
+    const next = () => reader.readEntries((batch) => { if (!batch.length) resolve(all); else { all.push(...batch); next(); } }, reject);
+    next();
+  });
+}
+
+async function walk(entry, prefix, out) {
+  if (entry.isFile) {
+    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+    out.push({ file, path: prefix + entry.name });
+  } else if (entry.isDirectory) {
+    for (const child of await readAll(entry.createReader())) await walk(child, prefix + entry.name + '/', out);
+  }
+}
+
+// One dropped folder means "these files": its contents go in, not the folder itself.
+async function fromEntries(entries) {
+  const out = [];
+  if (entries.length === 1 && entries[0].isDirectory) {
+    for (const child of await readAll(entries[0].createReader())) await walk(child, '', out);
+  } else {
+    for (const entry of entries) await walk(entry, '', out);
+  }
+  return out;
+}
+
+const junk = (path) => path.split('/').some((part) => JUNK.has(part.toLowerCase()) || part.startsWith('._'));
+
+async function send(port, picked) {
+  if (busy) return;
+  const detail = $('#detail');
+  const target = $('.target', detail).value;
+  const unzip = $('.unzip', detail).checked;
+  const files = picked.filter((item) => item.path && !junk(item.path));
+  const result = $('.result', detail);
+  result.replaceChildren();
+  if (!files.length) { result.append(el('div', { className: 'note err', textContent: 'Nothing to send: that was empty.' })); return; }
+  const total = files.reduce((sum, item) => sum + item.file.size, 0);
+  const tooBig = state.fat && files.find((item) => item.file.size > FAT_LIMIT);
+  if (tooBig) { result.append(el('div', { className: 'note err', textContent: tooBig.path + ' is bigger than 4 GB, which the games card cannot hold in one file.' })); return; }
+  if (total > state.free) { result.append(el('div', { className: 'note err', textContent: 'That is ' + size(total) + ', and the card has ' + size(state.free) + ' free.' })); return; }
+  busy = true;
+  const queue = $('#queue', detail);
+  queue.replaceChildren();
+  const rows = files.map((item) => {
+    const row = el('div', { className: 'file' }, el('span', { className: 'n', textContent: item.path, title: item.path }), el('span', { className: 's', textContent: size(item.file.size) }));
+    queue.append(row);
+    return row;
+  });
+  const box = $('.total', detail);
+  box.classList.remove('hidden');
+  const fill = $('.bar > div', box), what = $('.what', box), eta = $('.eta', box);
+  let done = 0, filesDone = 0, failed = 0;
+  const began = performance.now();
+  let reported = 0;
+  const report = (force) => {
+    const now = performance.now();
+    fill.style.width = (total ? done * 100 / total : 100).toFixed(1) + '%';
+    const rate = done / Math.max(1, (now - began) / 1000);
+    what.textContent = size(done) + ' of ' + size(total) + ' · ' + filesDone + ' of ' + files.length + ' files';
+    eta.textContent = rate > 0 && done < total ? size(rate) + '/s · ' + Math.ceil((total - done) / rate / 60) + ' min left' : '';
+    if (force || now - reported > 700) {
+      reported = now;
+      api('/api/progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ done, total, files_done: filesDone, files_total: files.length }) }).catch(() => {});
+    }
+  };
+  for (let i = 0; i < files.length; i++) {
+    const { file, path } = files[i];
+    const row = rows[i];
+    row.scrollIntoView({ block: 'nearest' });
+    const base = done;
+    try {
+      await upload(port, target, path, file, (sent) => { done = base + sent; report(); }, (text) => { $('.s', row).textContent = text; });
+      done = base + file.size;
+      if (unzip && /\.zip$/i.test(path)) {
+        $('.s', row).textContent = 'Unpacking on the handheld…';
+        const unpacked = await api('/api/unpack?' + new URLSearchParams({ port: port.id, target, path }), { method: 'POST' });
+        $('.s', row).textContent = 'Unpacked ' + unpacked.files + ' files';
+      } else {
+        $('.s', row).textContent = 'Sent';
+      }
+      row.classList.add('ok');
+    } catch (error) {
+      failed++;
+      done = base + file.size;
+      row.classList.add('err');
+      $('.s', row).textContent = error.message;
+      if (error.status === 507) break; // the card is full; the rest cannot fit either
+    }
+    filesDone++;
+    report();
+  }
+  report(true);
+  busy = false;
+  result.append(failed
+    ? el('div', { className: 'note err', textContent: failed + ' of ' + files.length + ' files did not arrive. Drop them again: finished parts are kept.' })
+    : el('div', { className: 'note ok', textContent: 'All ' + files.length + ' files are on the handheld. Press A there to play.' }));
+  load(true).catch(() => {});
+}
+
+function putChunk(url, blob, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.upload.onprogress = (event) => onProgress(event.loaded);
+    xhr.onload = () => {
+      let body = {};
+      try { body = JSON.parse(xhr.responseText || '{}'); } catch (e) { /* not JSON */ }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(body);
+      else reject(Object.assign(new Error(body.error || ('Error ' + xhr.status)), { status: xhr.status, body }));
+    };
+    xhr.onerror = () => reject(Object.assign(new Error('The connection dropped'), { status: 0 }));
+    xhr.send(blob);
+  });
+}
+
+async function upload(port, target, path, file, onProgress, say) {
+  const params = { port: port.id, target, path };
+  let offset = (await api('/api/offset?' + new URLSearchParams(params))).offset || 0;
+  if (offset > file.size) offset = 0;
+  let tries = 0;
+  while (true) {
+    const end = Math.min(file.size, offset + CHUNK);
+    const final = end === file.size;
+    const url = '/api/upload?' + new URLSearchParams(Object.assign({ offset, size: file.size, final: final ? '1' : '0' }, params));
+    try {
+      await putChunk(url, file.slice(offset, end), (loaded) => onProgress(offset + loaded));
+      offset = end;
+      tries = 0;
+      onProgress(offset);
+      if (final) return;
+    } catch (error) {
+      if (error.status === 409 && error.body && typeof error.body.offset === 'number') { offset = error.body.offset; continue; }
+      // Only a dropped connection or a busy handheld is worth retrying; a refusal says why.
+      if (!(error.status === 0 || error.status === 408 || (error.status >= 502 && error.status <= 504))) throw error;
+      if (++tries > 12) throw new Error('The handheld stopped answering. Check that it is on Wi-Fi and the page is open there.');
+      say('Reconnecting…');
+      await new Promise((resolve) => setTimeout(resolve, Math.min(15000, 500 * 2 ** tries)));
+      try { offset = (await api('/api/offset?' + new URLSearchParams(params))).offset || 0; } catch (e) { /* retried above */ }
+    }
+  }
+}
+
+window.addEventListener('beforeunload', (event) => { if (busy) { event.preventDefault(); event.returnValue = ''; } });
+
+(async () => {
+  const query = new URLSearchParams(location.search);
+  const code = query.get('c');
+  if (code) {
+    history.replaceState(null, '', location.pathname + location.hash);
+    await pair(code);
+  } else {
+    load().catch((error) => { if (!$('#pair').classList.contains('hidden')) return; showPair(error.message); });
+  }
+})();
+</script>
+</body>
+</html>

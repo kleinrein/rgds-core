@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     write_rom(folder / "named.gb", "SAGA", "", false);
     assert(dual_screen_game(folder / "named.gb", "gb", profiles));
     // A cart no profile knows.
-    write_rom(folder / "other.gb", "WARIOLAND2", "", false);
+    write_rom(folder / "other.gb", "TETRIS", "", false);
     assert(!dual_screen_game(folder / "other.gb", "gb", profiles));
     // A Game Boy Advance cart keeps its code at ACh.
     write_rom(folder / "advance.gba", "POKEMON", "AXPE", true);

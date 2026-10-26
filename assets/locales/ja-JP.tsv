@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	DSの設定を反映するにはゲーム
 Could not save DS settings.	DSの設定を保存できませんでした。
 Search	検索
 Save gallery	セーブギャラリー
-Search and filters	検索と絞り込み
 Add your games	ゲームを追加
 DS controls	DSの操作
 Back up all saves	すべてのセーブデータをバックアップ
@@ -626,7 +625,6 @@ Slot	スロット
 Empty slot	空きスロット
 Search games	ゲームを検索
 Filter	絞り込み
-Clear search and filters	検索と絞り込みを解除
 Missing artwork	画像なし
 Where to put games	ゲームの置き場所
 Scan for games	ゲームを検索
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	音声は録音も保存もされません。
 Test the microphone on your handheld.	本体のマイクをテストします。
 Return home before testing the physical microphone.	本体のマイクをテストする前にホームへ戻ってください。
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	マイクに息を吹きかけるか話しかけてください。レベルが上がり、止めると下がります。
-No filter	絞り込みなし
 Quick search	クイック検索
 A  Search	A  検索
 A  Jump	A  移動
@@ -906,14 +903,46 @@ Companion	コンパニオン
 Swap screens	画面を入れ替え
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	ゲームボーイとゲームボーイアドバンスのゲームを追加します。ゲームを開くとシステムの一覧が表示されます。
 Frame	フレーム
-Indigo	インディゴ
-Glacier	グレイシア
-Black	ブラック
-Platinum	プラチナ
+Game Boy	ゲームボーイ
+Game Boy · Red	ゲームボーイ · レッド
+Game Boy · Yellow	ゲームボーイ · イエロー
+Game Boy · Green	ゲームボーイ · グリーン
+Game Boy · Blue	ゲームボーイ · ブルー
+Game Boy · Black	ゲームボーイ · ブラック
+Game Boy · Screen only	ゲームボーイ · 画面のみ
+Game Boy Pocket · Silver	ゲームボーイポケット · シルバー
+Game Boy Pocket · Black	ゲームボーイポケット · ブラック
+Game Boy Pocket · Yellow	ゲームボーイポケット · イエロー
+Game Boy Pocket · Red	ゲームボーイポケット · レッド
+Game Boy Pocket · Green	ゲームボーイポケット · グリーン
+Game Boy Pocket · Blue	ゲームボーイポケット · ブルー
+Game Boy Pocket · Pink	ゲームボーイポケット · ピンク
+Game Boy Pocket · Screen only	ゲームボーイポケット · 画面のみ
+Game Boy Color · Berry	ゲームボーイカラー · ベリー
+Game Boy Color · Grape	ゲームボーイカラー · グレープ
+Game Boy Color · Kiwi	ゲームボーイカラー · キウイ
+Game Boy Color · Dandelion	ゲームボーイカラー · ダンデライオン
+Game Boy Color · Teal	ゲームボーイカラー · ティール
+Game Boy Color · Atomic Purple	ゲームボーイカラー · クリアパープル
+Game Boy Color · Screen only	ゲームボーイカラー · 画面のみ
+Game Boy Advance · Indigo	ゲームボーイアドバンス · インディゴ
+Game Boy Advance · Glacier	ゲームボーイアドバンス · グレイシア
+Game Boy Advance · Black	ゲームボーイアドバンス · ブラック
+Game Boy Advance · Platinum	ゲームボーイアドバンス · プラチナ
+Game Boy Advance SP · Cobalt	ゲームボーイアドバンスSP · コバルト
+Game Boy Advance SP · Onyx	ゲームボーイアドバンスSP · オニキス
+Game Boy Advance SP · Platinum	ゲームボーイアドバンスSP · プラチナ
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · シルバー
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · ブラック
+WonderSwan Color · White	WonderSwan Color · ホワイト
+WonderSwan Color · Blue	WonderSwan Color · ブルー
+PSP · Black	PSP · ブラック
+PSP · White	PSP · ホワイト
+Grey TV	グレーのテレビ
+Wood-grain TV	木目調のテレビ
+PC monitor	PCモニター
+Arcade cabinet	アーケード筐体
 Black bar	黒い帯
-SP Onyx	SP オニキス
-SP Cobalt	SP コバルト
-SP Platinum	SP プラチナ
 GBA Color	GBA の色
 GBA screen	GBA の画面
 GBA screens	GBA の画面
@@ -943,7 +972,6 @@ Next picture	次の画像
 No pictures yet	画像はまだありません
 Available	利用可能
 Not downloaded	未ダウンロード
-More filters	その他のフィルター
 Show games	ゲームを表示
 Reset filters	フィルターをリセット
 Any	すべて
@@ -957,3 +985,148 @@ Online play	オンライン対応
 {0} players	{0}人
 No game information yet.	ゲーム情報はまだありません。
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	設定 > ライブラリ > アートワークの取得元で「ゲーム情報」をオンにして、アートワークを取得してください。
+Ports	移植ゲーム
+Restart port	移植ゲームを再起動
+Quit	終了
+Looking for the latest PortMaster	最新の PortMaster を探しています
+Downloading PortMaster	PortMaster をダウンロード中
+Checking PortMaster	PortMaster を確認中
+Unpacking PortMaster	PortMaster を展開中
+Setting up PortMaster	PortMaster を準備中
+Installing PortMaster from the card	カードから PortMaster をインストール中
+PortMaster is ready	PortMaster の準備ができました
+Could not set up PortMaster	PortMaster を準備できませんでした
+Get, update and remove ports	移植ゲームの入手・更新・削除
+Close PortMaster	PortMaster を閉じる
+Back to PortMaster	PortMaster に戻る
+Keep getting and updating ports	移植ゲームの入手と更新を続ける
+Your ports are waiting in Ports	移植ゲームは「移植ゲーム」にあります
+Closing PortMaster…	PortMaster を閉じています…
+Closing the port…	移植ゲームを閉じています…
+GB screens	GB の画面
+GBC screens	GBC の画面
+Game Boy screen	ゲームボーイの画面
+Game Boy Color screen	ゲームボーイカラーの画面
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	初代ゲームボーイのドットマトリクス画面。明るいピクセルの格子と柔らかな影。
+The Game Boy Color screen with faint gaps between its pixels.	ゲームボーイカラーの画面。ピクセルの間にかすかな隙間。
+This handheld's own screen.	この携帯機本来の画面です。
+Screen colours	画面の色
+Game Boy Pocket	ゲームボーイポケット
+Game Boy Light	ゲームボーイライト
+Game Boy Color	ゲームボーイカラー
+Black and white	白黒
+Game Boy Color, darker	ゲームボーイカラー（暗め）
+Full colour	フルカラー
+Hold to save	長押しでセーブ
+Hold to load	長押しでロード
+Screen off	画面オフ
+Touch the screen to turn it on	画面にタッチすると点灯します
+min	分
+h	時間
+Not saved	セーブできませんでした
+Loaded	ロードしました
+Not loaded	ロードできませんでした
+Nothing to load	ロードするデータがありません
+Saving…	セーブ中…
+Loading…	ロード中…
+Info screen	情報画面
+Team	てもち
+Lv	Lv
+screens	画面
+Not yet	まだ
+None yet	まだなし
+The best there is	これ以上はありません
+Next:	次:
+Badges	バッジ
+Carried	所持
+Coin bank	コインバンク
+Coins	コイン
+Collection	コレクション
+Course	コース
+Day	昼
+Ending so far	今のエンディング
+Essences	エッセンス
+Gear	装備
+Golden leaves	金の葉
+Heart containers	ハートの器
+Heart pieces	ハートのかけら
+Hearts	ハート
+In a course	コース中
+Instruments	楽器
+Johto badges	ジョウトのバッジ
+Journey	旅
+Kanto badges	カントーのバッジ
+Keys	カギ
+Lives	残り人数
+Money	おこづかい
+Musical coins	音符コイン
+Night	夜
+Pokédex caught	図鑑 捕まえた数
+Pokédex seen	図鑑 見つけた数
+Rupees	ルピー
+Secret seashells	ひみつの貝がら
+Shield	盾
+Small keys	小さなカギ
+Sword	剣
+Time of day	時間帯
+Time	タイム
+Total	合計
+Trainer	トレーナー
+Treasures	宝物
+Worlds	ワールド
+Your journey	あなたの旅
+Seeds	タネ
+Game switcher	ゲーム切り替え
+Switch to another game	ほかのゲームに切り替え
+Hold to return home	長押しでホームへ戻る
+Add game files	ゲームファイルを追加
+Needs your files	ファイルが必要です
+Files added	追加したファイル
+How to get the files	ファイルの入手方法
+Scan with your phone	スマートフォンで読み取る
+Or open on a computer	またはパソコンで開く
+Code	コード
+Connect to Wi-Fi to send files from a phone or computer.	Wi-Fiに接続すると、スマートフォンやパソコンからファイルを送れます。
+Receiving files	ファイルを受信中
+Unpacking files	ファイルを展開中
+Files arrived. Choose Play to start.	ファイルが届きました。プレイを選んで開始します。
+This port lists no instructions.	このポートには説明がありません。
+Play	プレイ
+Goes into	保存先
+Phone or computer connected	スマートフォンまたはパソコンが接続されました
+Vibration	振動
+Menu haptics	メニューの触覚
+Haptic strength	触覚の強さ
+Game rumble	ゲームの振動
+Rumble strength	振動の強さ
+Try a pattern	パターンを試す
+Feel the game	ゲームを感じる
+Feel every move	操作を感じる
+No vibration motor was found on this device.	この本体には振動モーターが見つかりません。
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DSの振動カートリッジ対応ゲーム、ゲームボーイとゲームボーイアドバンスの振動カートリッジ。
+Turn on game rumble for games made for a rumble accessory.	振動アクセサリー対応のゲームでは、ゲームの振動をオンにしてください。
+A light tap for every move, a firmer one when you choose, open or save.	移動するたびに軽く、選択・開く・保存のときはしっかり振動します。
+Turn on menu haptics to feel the menus.	メニューの触覚をオンにすると、メニューを指で感じられます。
+Browse	ブラウズ
+Open a view	ビューを開く
+Go back	戻る
+Switch on	オンにする
+Switch off	オフにする
+Add favourite	お気に入りに追加
+Remove favourite	お気に入りから削除
+Start a game	ゲームを開始
+Save complete	セーブ完了
+Load complete	ロード完了
+Try again	もう一度
+Keyboard	キーボード
+Adjust	調整
+End of a list	リストの端
+Long press	長押し
+Notification	通知
+Touch screen	タッチスクリーン
+Point and click on top	上の画面をクリック
+Touch here to point and click on the top screen.	ここに触れると、上の画面を指してクリックできます。
+Hold still for a right click	動かさずに押すと右クリック
+Hold to exit	長押しで終了
+Touch screen off	タッチスクリーンをオフにしました
+Touch screen is not available	タッチスクリーンを使えません

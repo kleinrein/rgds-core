@@ -2,11 +2,13 @@
 // GBA, GB and GBC through libmgba, linked directly so the companion screen can
 // run a shadow copy of the game and choose which layers it draws.
 #include "core/core.hpp"
+#include "core/mgba_gb.h"
 #include "core/mgba_split.h"
 
 #include <mgba/core/config.h>
 #include <mgba/core/core.h>
 #include <mgba/core/log.h>
+#include <mgba/core/serialize.h>
 #include <mgba-util/audio-buffer.h>
 #include <mgba-util/vfs.h>
 
@@ -91,6 +93,13 @@ VFile* open_sync_file(const std::vector<uint8_t>& initial, std::atomic<uint64_t>
     return &f->d;
 }
 
+// mGBA integrates the motor pin over each frame and hands the result here.
+struct RumbleTap {
+    mRumbleIntegrator integrator;
+    float level;
+};
+void tap_rumble(mRumbleIntegrator* integrator, float level) { reinterpret_cast<RumbleTap*>(integrator)->level = level; }
+
 class MgbaCore final : public Core {
 public:
     ~MgbaCore() override {
@@ -127,6 +136,9 @@ public:
         mCoreConfigLoadDefaults(&core_->config, &options);
         // Super Game Boy games keep their SGB colours but not the 256x224 border.
         mCoreConfigSetDefaultIntValue(&core_->config, "sgb.borders", 0);
+        // A Super Game Boy cartridge plays on a Game Boy: its screen is the handheld's
+        // (core/mgba_gb.h). Cartridges made for the Game Boy Color still run on one.
+        mCoreConfigSetDefaultValue(&core_->config, "sgb.model", "DMG");
         // Maps the defaults into core->opts, then applies them (volume included:
         // loadConfig alone reads opts as they were, zero, and mutes the game).
         mCoreLoadForeignConfig(core_, &core_->config);
@@ -150,7 +162,14 @@ public:
             error = "The battery save could not be attached";
             return false;
         }
+        if (!silent_) {
+            mRumbleIntegratorInit(&rumble_.integrator);
+            rumble_.integrator.setRumble = tap_rumble;
+            rumble_.level = 0;
+            core_->setPeripheral(core_, mPERIPH_RUMBLE, &rumble_.integrator.d);
+        }
         core_->reset(core_);
+        play_gb_handheld_model(core_);
         core_->currentVideoSize(core_, &w, &h);
         width_ = static_cast<int>(w);
         height_ = static_cast<int>(h);
@@ -185,14 +204,59 @@ public:
         }
     }
     Picture picture() const override { return {video_.data(), width_, height_, stride_}; }
+    float rumble() const override { return rumble_.level; }
 
+    // A state is the machine followed by mGBA's extra-data block holding the
+    // cartridge RAM (the file mGBA itself writes, without the clock metadata,
+    // so the same machine always gives the same bytes). The raw machine leaves
+    // that RAM out, and games that keep their working variables there (Super
+    // Mario Land 3) hang when loaded against another moment's RAM.
     bool save_state(std::vector<uint8_t>& out) override {
-        out.resize(core_->stateSize(core_));
-        return core_->saveState(core_, out.data());
+        VFile* vf = VFileMemChunk(nullptr, 0);
+        if (!vf) return false;
+        bool ok = mCoreSaveStateNamed(core_, vf, SAVESTATE_SAVEDATA);
+        if (ok) {
+            out.resize(static_cast<size_t>(vf->size(vf)));
+            vf->seek(vf, 0, SEEK_SET);
+            ok = vf->read(vf, out.data(), out.size()) == static_cast<ssize_t>(out.size());
+        }
+        vf->close(vf);
+        return ok;
     }
     bool load_state(const std::vector<uint8_t>& in) override {
-        if (in.size() != core_->stateSize(core_)) return false;
-        return core_->loadState(core_, in.data());
+        const size_t size = core_->stateSize(core_);
+        if (in.size() < size) return false;
+        if (!core_->loadState(core_, in.data())) return false;
+        // The cartridge RAM it was saved with, when it carries it (older
+        // states are the machine alone). Into memory only: the battery on the
+        // card follows when the game next writes its RAM, so an older
+        // checkpoint never rolls an in-game save back by itself.
+        if (in.size() > size) {
+            VFile* vf = VFileFromConstMemory(in.data(), in.size());
+            mStateExtdata extdata;
+            mStateExtdataInit(&extdata);
+            mStateExtdataItem item{};
+            if (vf && mCoreExtractExtdata(core_, vf, &extdata) &&
+                mStateExtdataGet(&extdata, EXTDATA_SAVEDATA, &item) && item.data) {
+                void* current = nullptr;
+                const size_t have = core_->savedataClone(core_, &current);
+                std::free(current);
+                // Same size only: the RAM is mapped from the save file, which must not grow.
+                if (static_cast<size_t>(item.size) == have) core_->savedataRestore(core_, item.data, have, true);
+            }
+            mStateExtdataDeinit(&extdata);
+            if (vf) vf->close(vf);
+        }
+        // A state brings its model and the colours it was drawn with.
+        play_gb_handheld_model(core_);
+        play_gb_set_gbc_colours(core_, gbc_colours_);
+        return true;
+    }
+
+    bool colour_hardware() const override { return play_gb_colour_model(core_); }
+    void set_gbc_colours(bool on) override {
+        gbc_colours_ = on;
+        play_gb_set_gbc_colours(core_, on);
     }
 
     uint32_t peek(uint32_t address, int size) override {
@@ -209,6 +273,7 @@ public:
         default: return core_->rawRead32(core_, address, bank);
         }
     }
+    void poke8(uint32_t address, int bank, uint8_t value) override { core_->rawWrite8(core_, address, bank, value); }
 
     size_t audio(int16_t* stereo, size_t max_frames) override {
         mAudioBuffer* audio = core_->getAudioBuffer(core_);
@@ -267,6 +332,7 @@ public:
         std::string error;
         // With the battery memory as it is now (in memory only; see restore_battery).
         if (!copy->open(rom_, battery(), true, error)) return nullptr;
+        copy->set_gbc_colours(gbc_colours_);
         return copy;
     }
 
@@ -279,7 +345,9 @@ private:
     RomBytes rom_;
     std::vector<uint32_t> video_;
     int width_ = 0, height_ = 0, stride_ = 0;
+    RumbleTap rumble_{};
     bool silent_ = false;
+    std::atomic<bool> gbc_colours_{false}; // shadows are made on the companion's threads
     const char* system_ = "unknown";
     std::string code_, title_;
     double frame_rate_ = 60.0;

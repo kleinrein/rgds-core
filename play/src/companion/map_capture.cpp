@@ -192,6 +192,7 @@ bool MapCapture::request(Core& live) {
         std::lock_guard<std::mutex> g(lock_);
         if (has_job_ || working_) return false;
     }
+    const MapSpec* spec = &profile_.map_for(live);
     std::vector<uint8_t> state;
     if (!live.save_state(state)) return false;
     std::vector<uint8_t> battery;
@@ -202,6 +203,7 @@ bool MapCapture::request(Core& live) {
     {
         std::lock_guard<std::mutex> g(lock_);
         pending_.swap(state);
+        pending_spec_ = spec;
         if (!battery.empty()) pending_battery_.swap(battery);
         has_job_ = true;
     }
@@ -236,7 +238,7 @@ MapImage MapCapture::capture_now(Core& live) {
         battery_revision_ = live.battery_revision();
         shadow_->restore_battery(live.battery());
     }
-    img = capture_map(*shadow_, profile_.map, state);
+    img = capture_map(*shadow_, profile_.map_for(live), state);
     std::lock_guard<std::mutex> g(lock_);
     if (img.ok) {
         img.serial = ++serial_;
@@ -258,11 +260,12 @@ void MapCapture::worker() {
         std::vector<uint8_t> state, battery;
         state.swap(pending_);
         battery.swap(pending_battery_);
+        const MapSpec* spec = pending_spec_;
         has_job_ = false;
         working_ = true;
         g.unlock();
         if (!battery.empty()) shadow_->restore_battery(battery);
-        MapImage img = capture_map(*shadow_, profile_.map, state);
+        MapImage img = capture_map(*shadow_, *spec, state);
         g.lock();
         working_ = false;
         if (img.ok) {

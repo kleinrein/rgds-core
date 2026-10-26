@@ -97,7 +97,8 @@ void App::settings_footer(SDL_Renderer* r, int y) {
             key_hints(r, 320, y + 452, {{"L R", "Picture"}, {"A", "Next picture"}}, 0, 16, 280);
         return;
     }
-    if (settings.page == Page::GameSwitcher) key_hints(r, 320, y + 452, {{"X", "Game menu"}}, 0, 16, 280);
+    if (settings.page == Page::GameSwitcher && !home_switcher)
+        key_hints(r, 320, y + 452, {{"X", "Game menu"}}, 0, 16, 280);
     if (settings.page == Page::SaveGallery) {
         if (!picker_open) {
             std::vector<KeyHint> keys{{"Y", "More"}};
@@ -126,7 +127,7 @@ void App::settings_footer(SDL_Renderer* r, int y) {
                   : settings.page == Page::Cheats     ? (cheat_view == CheatView::Groups ? "Open" : "Toggle")
                   : settings.page == Page::Settings   ? "Open"
                   : settings.page == Page::DeviceInfo ? "View"
-                  : settings.page == Page::Sound      ? (settings.focus == 2            ? "Open"
+                  : settings.page == Page::Sound      ? (settings.focus >= 2            ? "Open"
                                                          : settings.focus == 1          ? "Test"
                                                          : hardware.volume_percent == 0 ? "Unmute"
                                                                                         : "Mute")

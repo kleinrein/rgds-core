@@ -1,0 +1,29 @@
+<!-- Original RGDS shader; same license as the RGDS project. One texture sample. -->
+// Original RGDS GLES2 preset: the Game Boy Color's reflective screen, with the
+// faint gaps between its pixels, one cell per game pixel. Colour is not
+// changed: the screen's own washed-out colour is Graphics > Screen colours
+// (ui/colour.cpp in RG DS Play), applied before this pass. RG DS Play draws
+// Game Boy Color games with their own 160x144 grid in place of the DS's.
+<vertex>
+attribute vec2 a_vertex_coordinate;
+attribute vec2 a_texture_coordinate;
+varying vec2 v_texture_coordinate;
+void main(){v_texture_coordinate=a_texture_coordinate;gl_Position=vec4(a_vertex_coordinate,0.0,1.0);}
+</vertex>
+<fragment>
+uniform sampler2D u_texture;
+uniform vec4 u_texture_size;
+uniform vec2 u_target_size;
+varying vec2 v_texture_coordinate;
+void main(){
+    vec4 pixel=texture2D(u_texture,v_texture_coordinate);
+    vec3 c=pixel.rgb;
+    vec2 cells=vec2(256.0,192.0),f=fract(v_texture_coordinate*cells);
+    vec2 w=min(cells/max(u_target_size,vec2(1.0)),vec2(1.0));
+    float strength=clamp(1.0/max(w.x,w.y)-1.0,0.0,1.0);
+    vec2 edge=clamp((min(f,1.0-f)-0.05)/w+0.5,0.0,1.0);
+    c*=mix(1.0,mix(0.82,1.0,edge.x*edge.y)*1.03,strength);
+    pixel.rgb=clamp(c,0.0,1.0);
+    gl_FragColor=pixel;
+}
+</fragment>

@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	重启游戏后 DS 设置才会生效。
 Could not save DS settings.	无法保存 DS 设置。
 Search	搜索
 Save gallery	存档库
-Search and filters	搜索与筛选
 Add your games	添加游戏
 DS controls	DS 操作
 Back up all saves	备份全部存档
@@ -626,7 +625,6 @@ Slot	存档位
 Empty slot	空存档位
 Search games	搜索游戏
 Filter	筛选
-Clear search and filters	清除搜索和筛选
 Missing artwork	缺少封面
 Where to put games	游戏存放位置
 Scan for games	扫描游戏
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	不会录制或保存声音。
 Test the microphone on your handheld.	测试掌机的麦克风。
 Return home before testing the physical microphone.	测试麦克风前请先返回主页。
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	对麦克风吹气或说话。音量会上升，停止后会回落。
-No filter	不筛选
 Quick search	快速搜索
 A  Search	A  搜索
 A  Jump	A  跳转
@@ -906,14 +903,46 @@ Companion	伴侣屏幕
 Swap screens	交换屏幕
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	添加 Game Boy 和 Game Boy Advance 游戏，之后进入游戏会先打开系统页面。
 Frame	边框
-Indigo	靛蓝
-Glacier	冰川
-Black	黑色
-Platinum	铂金
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · 红色
+Game Boy · Yellow	Game Boy · 黄色
+Game Boy · Green	Game Boy · 绿色
+Game Boy · Blue	Game Boy · 蓝色
+Game Boy · Black	Game Boy · 黑色
+Game Boy · Screen only	Game Boy · 仅屏幕
+Game Boy Pocket · Silver	Game Boy Pocket · 银色
+Game Boy Pocket · Black	Game Boy Pocket · 黑色
+Game Boy Pocket · Yellow	Game Boy Pocket · 黄色
+Game Boy Pocket · Red	Game Boy Pocket · 红色
+Game Boy Pocket · Green	Game Boy Pocket · 绿色
+Game Boy Pocket · Blue	Game Boy Pocket · 蓝色
+Game Boy Pocket · Pink	Game Boy Pocket · 粉色
+Game Boy Pocket · Screen only	Game Boy Pocket · 仅屏幕
+Game Boy Color · Berry	Game Boy Color · 莓红
+Game Boy Color · Grape	Game Boy Color · 葡萄紫
+Game Boy Color · Kiwi	Game Boy Color · 猕猴桃绿
+Game Boy Color · Dandelion	Game Boy Color · 蒲公英黄
+Game Boy Color · Teal	Game Boy Color · 水鸭蓝
+Game Boy Color · Atomic Purple	Game Boy Color · 透明紫
+Game Boy Color · Screen only	Game Boy Color · 仅屏幕
+Game Boy Advance · Indigo	Game Boy Advance · 靛蓝
+Game Boy Advance · Glacier	Game Boy Advance · 冰川
+Game Boy Advance · Black	Game Boy Advance · 黑色
+Game Boy Advance · Platinum	Game Boy Advance · 铂金
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · 宝蓝
+Game Boy Advance SP · Onyx	Game Boy Advance SP · 深黑
+Game Boy Advance SP · Platinum	Game Boy Advance SP · 铂金
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · 银色
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · 黑色
+WonderSwan Color · White	WonderSwan Color · 白色
+WonderSwan Color · Blue	WonderSwan Color · 蓝色
+PSP · Black	PSP · 黑色
+PSP · White	PSP · 白色
+Grey TV	灰色电视
+Wood-grain TV	木纹电视
+PC monitor	PC 显示器
+Arcade cabinet	街机机台
 Black bar	黑色横条
-SP Onyx	SP 深黑
-SP Cobalt	SP 宝蓝
-SP Platinum	SP 铂金
 GBA Color	GBA 色彩
 GBA screen	GBA 屏幕
 GBA screens	GBA 屏幕
@@ -943,7 +972,6 @@ Next picture	下一张图片
 No pictures yet	暂无图片
 Available	可用
 Not downloaded	未下载
-More filters	更多筛选
 Show games	显示游戏
 Reset filters	重置筛选
 Any	全部
@@ -957,3 +985,148 @@ Online play	支持联机
 {0} players	{0} 名玩家
 No game information yet.	暂无游戏信息。
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	请在 设置 > 游戏库 > 封面来源 中开启游戏信息，然后获取封面。
+Ports	移植游戏
+Restart port	重新启动移植游戏
+Quit	退出
+Looking for the latest PortMaster	正在查找最新的 PortMaster
+Downloading PortMaster	正在下载 PortMaster
+Checking PortMaster	正在检查 PortMaster
+Unpacking PortMaster	正在解压 PortMaster
+Setting up PortMaster	正在设置 PortMaster
+Installing PortMaster from the card	正在从存储卡安装 PortMaster
+PortMaster is ready	PortMaster 已就绪
+Could not set up PortMaster	无法设置 PortMaster
+Get, update and remove ports	获取、更新和移除移植游戏
+Close PortMaster	关闭 PortMaster
+Back to PortMaster	返回 PortMaster
+Keep getting and updating ports	继续获取和更新移植游戏
+Your ports are waiting in Ports	你的移植游戏在“移植游戏”里
+Closing PortMaster…	正在关闭 PortMaster…
+Closing the port…	正在关闭移植游戏…
+GB screens	GB 屏幕
+GBC screens	GBC 屏幕
+Game Boy screen	Game Boy 屏幕
+Game Boy Color screen	Game Boy Color 屏幕
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	初代 Game Boy 的点阵屏幕：明亮的像素网格与柔和的阴影。
+The Game Boy Color screen with faint gaps between its pixels.	Game Boy Color 屏幕，像素之间有淡淡的间隙。
+This handheld's own screen.	这台掌机自己的屏幕。
+Screen colours	屏幕颜色
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	黑白
+Game Boy Color, darker	Game Boy Color（较暗）
+Full colour	全彩
+Hold to save	按住以保存
+Hold to load	按住以读取
+Screen off	关闭屏幕
+Touch the screen to turn it on	触摸屏幕即可点亮
+min	分钟
+h	小时
+Not saved	未能保存
+Loaded	已读取
+Not loaded	未能读取
+Nothing to load	没有可读取的存档
+Saving…	正在保存…
+Loading…	正在读取…
+Info screen	信息屏幕
+Team	队伍
+Lv	Lv
+screens	个画面
+Not yet	尚未
+None yet	尚无
+The best there is	已是最好
+Next:	下一个：
+Badges	徽章
+Carried	携带
+Coin bank	金币银行
+Coins	金币
+Collection	收藏
+Course	关卡
+Day	白天
+Ending so far	目前的结局
+Essences	精华
+Gear	装备
+Golden leaves	金叶子
+Heart containers	心之容器
+Heart pieces	心之碎片
+Hearts	心
+In a course	关卡中
+Instruments	乐器
+Johto badges	城都徽章
+Journey	旅程
+Kanto badges	关都徽章
+Keys	钥匙
+Lives	剩余命数
+Money	金钱
+Musical coins	音符金币
+Night	夜晚
+Pokédex caught	图鉴 捕获
+Pokédex seen	图鉴 遇见
+Rupees	卢比
+Secret seashells	秘密贝壳
+Shield	盾
+Small keys	小钥匙
+Sword	剑
+Time of day	时段
+Time	时间
+Total	合计
+Trainer	训练家
+Treasures	宝物
+Worlds	世界
+Your journey	你的旅程
+Seeds	种子
+Game switcher	游戏切换
+Switch to another game	切换到其他游戏
+Hold to return home	按住以返回主页
+Add game files	添加游戏文件
+Needs your files	需要你的文件
+Files added	已添加文件
+How to get the files	如何获取文件
+Scan with your phone	用手机扫描
+Or open on a computer	或在电脑上打开
+Code	代码
+Connect to Wi-Fi to send files from a phone or computer.	连接 Wi-Fi 后即可从手机或电脑发送文件。
+Receiving files	正在接收文件
+Unpacking files	正在解压文件
+Files arrived. Choose Play to start.	文件已到达。选择开始游戏即可开始。
+This port lists no instructions.	此移植没有说明。
+Play	开始游戏
+Goes into	保存到
+Phone or computer connected	手机或电脑已连接
+Vibration	振动
+Menu haptics	菜单触感
+Haptic strength	触感强度
+Game rumble	游戏震动
+Rumble strength	震动强度
+Try a pattern	试试振动模式
+Feel the game	感受游戏
+Feel every move	感受每一步
+No vibration motor was found on this device.	未在此设备上找到振动马达。
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DS 上支持震动卡带的游戏，以及 Game Boy 和 Game Boy Advance 的震动卡带。
+Turn on game rumble for games made for a rumble accessory.	为支持震动配件的游戏开启游戏震动。
+A light tap for every move, a firmer one when you choose, open or save.	每次移动轻触一下，选择、打开或保存时更有力。
+Turn on menu haptics to feel the menus.	开启菜单触感即可感受菜单。
+Browse	浏览
+Open a view	打开视图
+Go back	返回
+Switch on	开启
+Switch off	关闭
+Add favourite	添加收藏
+Remove favourite	取消收藏
+Start a game	开始游戏
+Save complete	保存完成
+Load complete	读取完成
+Try again	再试一次
+Keyboard	键盘
+Adjust	调整
+End of a list	列表末尾
+Long press	长按
+Notification	通知
+Touch screen	触摸屏
+Point and click on top	在上屏指向和点击
+Touch here to point and click on the top screen.	触摸这里即可在上屏指向和点击。
+Hold still for a right click	按住不动即可右键点击
+Hold to exit	按住退出
+Touch screen off	触摸屏已关闭
+Touch screen is not available	触摸屏不可用

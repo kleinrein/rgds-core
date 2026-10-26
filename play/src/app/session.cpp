@@ -85,7 +85,14 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     if (!profile_ && std::string(core_->system()) != "gba")
         profile_ = profiles_.find(core_->system(), header_title_code(*rom));
     title_ = profile_ ? profile_->title : clean_title(file_stem(o.rom));
-    if (!o.font_dir.empty()) font_.load(o.font_dir);
+    // The launcher's appearance and language, so the second screen is part of RG DS.
+    if (!o.preferences.empty()) look_ = load_look(o.preferences);
+    else look_ = make_look(false, -1, false); // the launcher's defaults: light, its own blue
+    if (!o.font_dir.empty()) {
+        font_.load(o.font_dir, look_.language);
+        words_.load(o.font_dir + "/../locales", look_.language);
+    }
+    font_.set_pixel(look_.pixel_text);
     if (o.companion) {
         // A colour game that also plays on the first Game Boy (header flag 80)
         // runs in colour, but mGBA names it a Game Boy game (its saves stay
@@ -135,7 +142,7 @@ void Session::frame(uint32_t buttons) {
 }
 
 void Session::render_companion(Canvas& out, const Look& look) const {
-    if (companion_) companion_->render(out, look, font_);
+    if (companion_) companion_->render(out, look, font_, words_);
     else out.fill(look.background);
 }
 

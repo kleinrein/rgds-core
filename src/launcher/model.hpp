@@ -17,13 +17,16 @@ struct Game {
     bool demo = false;
     std::string system = "nds"; // "gba", "gbc", "gb": played by RG DS Play
 };
-inline constexpr const char* core_ids[] = {"drastic", "dsperate",          "nnddss",
-                                           "melonds", "rgds-experimental", "rgds-play"};
-inline constexpr const char* core_names[] = {"DraStic", "DSperate", "NNDDSS", "melonDS", "DSCore", "RG DS Play"};
+inline constexpr const char* core_ids[] = {"drastic",           "dsperate",  "nnddss",    "melonds",
+                                           "rgds-experimental", "rgds-play", "portmaster"};
+inline constexpr const char* core_names[] = {"DraStic", "DSperate",   "NNDDSS",    "melonDS",
+                                             "DSCore",  "RG DS Play", "PortMaster"};
 inline constexpr int core_count = sizeof(core_ids) / sizeof(core_ids[0]);
 // The DS engines come first; RG DS Play (appended, so stored indexes keep
 // their meaning) plays every other system and is never offered for DS games.
 inline constexpr int ds_core_count = 5, play_core = 5, dscore_core = 4;
+// PortMaster (appended after RG DS Play) runs the Ports system's scripts.
+inline constexpr int portmaster_core = 6;
 // NNDDSS is retired: it is never offered, and a saved choice of it falls back to
 // DSCore. Indices stay stable because settings store them.
 inline constexpr int retired_core = 2;
@@ -36,12 +39,13 @@ struct SystemInfo {
     const char* badge; // on a game without its own artwork
     std::initializer_list<const char*> extensions;
 };
-inline const std::array<SystemInfo, 4>& systems() {
-    static const std::array<SystemInfo, 4> list = {{
+inline const std::array<SystemInfo, 5>& systems() {
+    static const std::array<SystemInfo, 5> list = {{
         {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
         {"gb", "Game Boy", "GB", {".gb", ".sgb"}},
+        {"ports", "Ports", "PORT", {".sh"}}, // PortMaster ports: the scripts in its ports folder
     }};
     return list;
 }
@@ -138,6 +142,8 @@ inline std::vector<Game> scan(const std::vector<fs::path>& roots) {
 // in its own folders. Not recursive into another system's folder.
 inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const std::string& system) {
     const auto& info = system_info(system);
+    // A port's own folder holds more scripts and archives: only the top level's scripts are ports.
+    const bool ports = std::string(info.id) == "ports";
     std::map<std::string, Game> unique;
     for (const auto& root : roots) {
         std::error_code ec;
@@ -145,10 +151,10 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
         fs::recursive_directory_iterator it(root, fs::directory_options::skip_permission_denied, ec), end;
         while (it != end) {
             auto entry = *it;
-            if (entry.is_symlink(ec)) it.disable_recursion_pending();
+            if (entry.is_symlink(ec) || (ports && entry.is_directory(ec))) it.disable_recursion_pending();
             else if (entry.is_regular_file(ec)) {
                 const auto ext = lower(entry.path().extension().string());
-                bool wanted = ext == ".zip";
+                bool wanted = ext == ".zip" && !ports;
                 for (const char* e : info.extensions) wanted = wanted || ext == e;
                 if (wanted) {
                     auto canonical = fs::weakly_canonical(entry.path(), ec);

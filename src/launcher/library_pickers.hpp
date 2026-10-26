@@ -1,24 +1,8 @@
 #pragma once
-// The library view/layout chooser and the jump-to-letter strip.
+// The library view sheet's entry and the jump-to-letter strip.
 // Members of App in main.cpp; included once, right after the class.
 
-void App::choose_library_view() {
-    show_picker("Library view",
-                {"All games", "Favourites", "Recents", "Cartridges", "Covers", "List", "Jump to letter", "Search games",
-                 "Clear filters"},
-                preferences.view, [this](int n) {
-                    if (n < 3) {
-                        library_view(n);
-                        remember_appearance();
-                    } else if (n < 6) {
-                        preferences.layout = n - 3;
-                        cancel_navigation();
-                        remember_appearance();
-                    } else if (n == 6) jump_to_letter();
-                    else if (n == 7) open_discover();
-                    else clear_discovery();
-                });
-}
+void App::choose_library_view() { open_filter_sheet(); }
 
 void App::library_choice_icon(SDL_Renderer* r, int index, int x, int y, int size, const std::string& ink) {
     if (index == 5) {

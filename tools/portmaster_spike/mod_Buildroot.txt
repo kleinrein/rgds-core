@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: MIT
+#
+## RG DS Core spike (docs/PORTMASTER_PLAN.md): the stock card reports CFW_NAME=Buildroot.
+
+# Use for Godot 2
+GODOT2_OPTS="-r ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT} -f"
+
+# Use for Godot 3+
+GODOT_OPTS="--resolution ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT} -f"
+
+pm_platform_helper() {
+    pm_message_close
+
+    if [ -e "$PM_PIPE" ]; then
+        PortMasterDialogExit
+    fi
+}

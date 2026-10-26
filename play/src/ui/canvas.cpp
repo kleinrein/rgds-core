@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ui/canvas.hpp"
 
+#include "launcher/pixel_text.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -155,36 +157,88 @@ bool read32(std::ifstream& f, uint32_t& v) {
 }
 } // namespace
 
-bool Font::load(const std::string& directory) {
-    for (int size : {16, 20, 24, 28, 36}) {
-        std::ifstream f(directory + "/rounded-" + std::to_string(size) + ".rgf", std::ios::binary);
-        char magic[4];
-        if (!f.read(magic, 4) || std::string(magic, 4) != "RGF1") continue;
+bool Font::read_atlas(const std::string& path, Atlas& a, int size) {
+    std::ifstream f(path, std::ios::binary);
+    char magic[4];
+    if (!f.read(magic, 4) || std::string(magic, 4) != "RGF1") return false;
+    a = Atlas{};
+    a.size = size;
+    uint32_t w, h, asc, count;
+    if (!read32(f, w) || !read32(f, h) || !read32(f, asc) || !read32(f, count) || w > 1024 || h > 16384 || count > 8192)
+        return false;
+    a.width = int(w);
+    a.height = int(h);
+    a.ascent = int(asc);
+    bool ok = true;
+    for (uint32_t i = 0; i < count && ok; ++i) {
+        uint32_t v[8];
+        for (auto& x : v) ok = ok && read32(f, x);
+        Glyph g{int(v[1]), int(v[2]), int(v[3]), int(v[4]), int32_t(v[5]), int32_t(v[6]), int(v[7])};
+        ok = ok && g.x >= 0 && g.y >= 0 && g.x + g.w <= a.width && g.y + g.h <= a.height;
+        a.glyphs[v[0]] = g;
+    }
+    a.alpha.resize(static_cast<size_t>(a.width) * a.height);
+    return ok && f.read(reinterpret_cast<char*>(a.alpha.data()), std::streamsize(a.alpha.size()));
+}
+
+bool Font::load(const std::string& directory, const std::string& language) {
+    directory_ = directory;
+    // Kana, kanji and hangul come from the CJK families, the language's own first.
+    families_ = {"ja", "zh", "ko"};
+    auto own = std::find(families_.begin(), families_.end(), language.substr(0, 2));
+    if (own != families_.end()) std::rotate(families_.begin(), own, own + 1);
+    for (int size : text_sizes) {
         Atlas a;
-        a.size = size;
-        uint32_t w, h, asc, count;
-        if (!read32(f, w) || !read32(f, h) || !read32(f, asc) || !read32(f, count) || w > 1024 || h > 2048 ||
-            count > 512)
-            continue;
-        a.width = int(w);
-        a.height = int(h);
-        a.ascent = int(asc);
-        bool ok = true;
-        for (uint32_t i = 0; i < count && ok; ++i) {
-            uint32_t v[8];
-            for (auto& x : v) ok = ok && read32(f, x);
-            Glyph g{int(v[1]), int(v[2]), int(v[3]), int(v[4]), int32_t(v[5]), int32_t(v[6]), int(v[7])};
-            ok = ok && g.x >= 0 && g.y >= 0 && g.x + g.w <= a.width && g.y + g.h <= a.height;
-            a.glyphs[v[0]] = g;
-        }
-        a.alpha.resize(static_cast<size_t>(a.width) * a.height);
-        if (!ok || !f.read(reinterpret_cast<char*>(a.alpha.data()), a.alpha.size())) continue;
-        atlases_[size] = std::move(a);
+        if (read_atlas(directory + "/rounded-" + std::to_string(size) + ".rgf", a, size)) atlases_[size] = std::move(a);
     }
     return loaded();
 }
 
+Font::Found Font::find(int size, unsigned cp) const {
+    const Atlas* a = pick(size);
+    if (!a) return {};
+    auto it = a->glyphs.find(cp);
+    if (it != a->glyphs.end()) return {a, &it->second};
+    // The launcher's rule: a CJK family only for codepoints from U+2E80 up,
+    // each loaded on the first glyph it supplies.
+    if (cp >= 0x2E80 && !directory_.empty())
+        for (const auto& family : families_) {
+            const auto key = std::make_pair(family, a->size);
+            auto e = extras_.find(key);
+            if (e == extras_.end()) {
+                Atlas x;
+                if (!read_atlas(directory_ + "/rounded-" + family + "-" + std::to_string(a->size) + ".rgf", x, a->size))
+                    x = Atlas{};
+                e = extras_.emplace(key, std::move(x)).first;
+            }
+            auto g = e->second.glyphs.find(cp);
+            if (g != e->second.glyphs.end()) return {&e->second, &g->second};
+        }
+    it = a->glyphs.find('?');
+    return it != a->glyphs.end() ? Found{a, &it->second} : Found{};
+}
+
+namespace {
+std::vector<TextMark>* text_log = nullptr;
+// Pixel classic: the launcher's whole dot scales (App::pixel_scale) for each size.
+int dot_scale(int size) { return std::max(1, (Font::snap(size) + 4) / 10); }
+struct Dot {
+    int x, y, w, h;
+};
+} // namespace
+
+void set_text_log(std::vector<TextMark>* log) { text_log = log; }
+
+int Font::snap(int size) {
+    int best = text_sizes[0];
+    for (int s : text_sizes)
+        if (std::abs(s - size) < std::abs(best - size)) best = s;
+    return best;
+}
+
 const Font::Atlas* Font::pick(int size) const {
+    auto it = atlases_.find(snap(size));
+    if (it != atlases_.end()) return &it->second;
     const Atlas* best = nullptr;
     for (const auto& [s, a] : atlases_)
         if (!best || std::abs(s - size) < std::abs(best->size - size)) best = &a;
@@ -192,47 +246,86 @@ const Font::Atlas* Font::pick(int size) const {
 }
 
 int Font::ascent(int size) const {
+    if (pixel_) return 7 * dot_scale(size);
     const Atlas* a = pick(size);
-    return a ? a->ascent * size / a->size : size;
+    if (!a) return size * 7 / 10;
+    // The ink of capitals and digits: the top of 'H' above the baseline.
+    auto it = a->glyphs.find('H');
+    return it != a->glyphs.end() ? -it->second.top : a->ascent * 7 / 10;
 }
 
 int Font::measure(const std::string& text, int size) const {
-    const Atlas* a = pick(size);
-    if (!a) return 0;
-    int w = 0;
-    for (unsigned cp : utf8_codepoints(text)) {
-        auto it = a->glyphs.find(cp);
-        if (it == a->glyphs.end()) it = a->glyphs.find('?');
-        if (it != a->glyphs.end()) w += it->second.advance;
+    if (pixel_) {
+        int cells = 0;
+        for (unsigned cp : utf8_codepoints(text)) cells += rgds::pixel_wide(cp) ? 2 : 1;
+        return cells * 6 * dot_scale(size) - (cells ? dot_scale(size) : 0);
     }
-    return w * size / (a->size * 64); // advances are in 1/64 pixel
+    return measure_rounded(text, size);
+}
+
+int Font::measure_rounded(const std::string& text, int size) const {
+    int w = 0;
+    for (unsigned cp : utf8_codepoints(text))
+        if (Found f = find(size, cp); f.glyph) w += f.glyph->advance;
+    return w / 64; // advances are in 1/64 pixel
 }
 
 int Font::draw(Canvas& c, int x, int y, const std::string& text, int size, Rgb color, int alpha) const {
-    const Atlas* a = pick(size);
-    if (!a) return 0;
-    // Atlases are baked at five sizes; others scale the closest one.
-    const int num = size, den = a->size;
+    if (text_log && !text.empty()) {
+        TextMark m;
+        m.size = snap(size);
+        m.asked = size;
+        m.x = x;
+        m.w = measure(text, size);
+        m.y = y - (pixel_ ? ascent(size) : m.size * 4 / 5);
+        m.h = y + m.size / 5 - m.y;
+        m.ink = color;
+        m.text = text;
+        long r = 0, g = 0, b = 0, n = 0;
+        for (int yy = std::max(0, m.y); yy < std::min(c.h(), m.y + m.h); ++yy)
+            for (int xx = std::max(0, x); xx < std::min(c.w(), x + m.w); ++xx, ++n) {
+                Rgb p = Rgb::from_px(c.at(xx, yy));
+                r += p.r, g += p.g, b += p.b;
+            }
+        if (n) m.ground = {uint8_t(r / n), uint8_t(g / n), uint8_t(b / n)};
+        text_log->push_back(m);
+    }
+    return pixel_ ? draw_dots(c, x, y, text, size, color, alpha) : draw_rounded(c, x, y, text, size, color, alpha);
+}
+
+int Font::draw_rounded(Canvas& c, int x, int y, const std::string& text, int size, Rgb color, int alpha) const {
     int pen = 0;
     for (unsigned cp : utf8_codepoints(text)) {
-        auto it = a->glyphs.find(cp);
-        if (it == a->glyphs.end()) it = a->glyphs.find('?');
-        if (it == a->glyphs.end()) continue;
-        const Glyph& g = it->second;
+        const Found f = find(size, cp);
+        if (!f.glyph) continue;
+        const Glyph& g = *f.glyph;
+        const Atlas& a = *f.atlas;
         // g.top is the glyph's offset from the baseline (negative is up); pen is in 1/64 pixel.
-        int gx = x + (pen / 64 + g.left) * num / den, gy = y + g.top * num / den;
-        int gw = g.w * num / den, gh = g.h * num / den;
-        for (int yy = 0; yy < gh; ++yy)
-            for (int xx = 0; xx < gw; ++xx) {
-                int tx = gx + xx, ty = gy + yy;
+        const int gx = x + pen / 64 + g.left, gy = y + g.top;
+        for (int yy = 0; yy < g.h; ++yy)
+            for (int xx = 0; xx < g.w; ++xx) {
+                const int tx = gx + xx, ty = gy + yy;
                 if (tx < 0 || ty < 0 || tx >= c.w() || ty >= c.h()) continue;
-                int al = a->alpha[static_cast<size_t>(g.y + yy * den / num) * a->width + g.x + xx * den / num];
-                if (!al) continue;
-                c.fill_rect(tx, ty, 1, 1, color, al * alpha / 255);
+                const int al = a.alpha[static_cast<size_t>(g.y + yy) * a.width + g.x + xx];
+                if (al) c.fill_rect(tx, ty, 1, 1, color, al * alpha / 255);
             }
         pen += g.advance;
     }
-    return pen / 64 * num / den;
+    return pen / 64;
+}
+
+int Font::draw_dots(Canvas& c, int x, int y, const std::string& text, int size, Rgb color, int alpha) const {
+    const int k = dot_scale(size);
+    // pixel_text_dots takes the line box's top and adds 3 dots for the rounded font's visible top.
+    rgds::pixel_text_dots<Dot>(
+        text, x, y - 7 * k - 3 * k, k, 1000, [&](const Dot& r) { c.fill_rect(r.x, r.y, r.w, r.h, color, alpha); },
+        [&](unsigned cp, int cell_x, int baseline_y) {
+            // Kana and kanji have no dots: the rounded glyph, centred in two cells.
+            std::string one = rgds::utf8_encode(cp);
+            const int w = measure_rounded(one, 20);
+            draw_rounded(c, cell_x + k * 6 - w / 2, baseline_y + k * 7, one, 20, color, alpha);
+        });
+    return measure(text, size) + k;
 }
 
 std::string Font::fit(const std::string& text, int size, int max_width) const {

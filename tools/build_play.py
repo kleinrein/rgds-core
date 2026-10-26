@@ -77,14 +77,17 @@ MGBA_OPTIONS = {
 
 CORE_SOURCES = [
     "core/mgba_core.cpp", "companion/profile.cpp", "companion/map_capture.cpp", "companion/companion.cpp",
-    "companion/party.cpp", "companion/party_gb.cpp", "companion/view.cpp", "companion/automap.cpp", "ui/canvas.cpp",
-    "ui/screens.cpp", "ui/frame.cpp", "ui/png.cpp", "app/storage.cpp", "app/session.cpp"
+    "companion/party.cpp", "companion/party_gb.cpp", "companion/view.cpp", "companion/automap.cpp",
+    "companion/board.cpp", "companion/battle_gb.cpp", "companion/dock.cpp", "ui/canvas.cpp", "ui/screens.cpp",
+    "ui/frame.cpp", "ui/colour.cpp", "ui/png.cpp", "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp",
+    "app/session.cpp"
 ]
-C_SOURCES = ["core/mgba_split.c"]  # mGBA's internal renderer headers are C
+C_SOURCES = ["core/mgba_split.c", "core/mgba_gb.c"]  # mGBA's internal headers are C
 PROGRAMS = {
     "rgds-play": ("frontend/main.cpp", True),
     "play-shot": ("tools/play_shot.cpp", False),
     "play-tests": ("../tests/play_tests.cpp", False),
+    "play-lint": ("tools/play_lint.cpp", False),  # the companion rules (docs/COMPANION.md)
 }
 
 
@@ -181,18 +184,20 @@ def main():
         programs = [p for p in programs if p in args.only]
     common = compiler + [
         "-std=c++17", "-Wall", "-Wextra", "-Werror", *defines, "-I" + str(MGBA_SOURCE / "include"),
-        "-I" + str(mgba / "include"), "-I" + str(ROOT / "play/src")
+        "-I" + str(mgba / "include"), "-I" + str(ROOT / "play/src"), "-I" + str(ROOT / "src")
     ]
-    if zlib.exists():  # the device's bundled zlib, for picture frames (ui/png.cpp)
-        common += ["-I" + str(mgba / "zlib"), "-I" + str(MGBA_SOURCE / "src/third-party/zlib")]
+    # The device's bundled zlib, for picture frames (ui/png.cpp) and mGBA's own headers (crc32.h).
+    zlib_include = ["-I" + str(mgba / "zlib"), "-I" +
+                    str(MGBA_SOURCE / "src/third-party/zlib")] if zlib.exists() else []
+    common += zlib_include
     sources = [ROOT / "play/src" / s for s in CORE_SOURCES]
     for c_source in C_SOURCES:
         obj = out / (Path(c_source).stem + ".o")
         run(
             c_compiler + [
                 "-std=gnu11", "-Wall", "-Wextra", "-Werror", "-Wno-unused-parameter", *defines,
-                "-I" + str(MGBA_SOURCE / "include"), "-I" + str(mgba / "include"), "-I" + str(ROOT / "play/src"), "-c",
-                ROOT / "play/src" / c_source, "-o", obj
+                "-I" + str(MGBA_SOURCE / "include"), "-I" + str(mgba / "include"), "-I" + str(ROOT / "play/src"),
+                *zlib_include, "-c", ROOT / "play/src" / c_source, "-o", obj
             ],
             env=env
         )
@@ -222,7 +227,17 @@ def main():
 
 
 # ---- The release payload: emulators/rgds-play in a package, like the other engines.
-PAYLOAD_SOURCES = ["play", "tools/build_play.py", "tools/build_engines.py", "tools/elf_abi.py", "LICENSE"]
+# The launcher headers the player shares (its appearance settings, theme
+# colours and Pixel classic text, so the second screen follows Theme & display;
+# the calibrated touch reader for the lower panel).
+SHARED_HEADERS = [
+    "src/launcher/settings.hpp", "src/launcher/model.hpp", "src/launcher/shaders.hpp", "src/launcher/view_motion.hpp",
+    "src/launcher/accent.hpp", "src/launcher/pixel_text.hpp", "src/platform/shader_catalog.hpp",
+    "src/platform/touch.hpp"
+]
+PAYLOAD_SOURCES = [
+    "play", *SHARED_HEADERS, "tools/build_play.py", "tools/build_engines.py", "tools/elf_abi.py", "LICENSE"
+]
 
 
 def digest(path):

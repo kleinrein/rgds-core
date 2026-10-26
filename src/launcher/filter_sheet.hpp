@@ -1,26 +1,64 @@
 #pragma once
-// The filter sheet: one scrollable modal on the lower screen where the library is narrowed by what the game
+// The Library view sheet: one scrollable modal on the lower screen. Tiles choose the collection and the browser
+// layout and start a search or a jump to a letter; below them the library is narrowed by what the game
 // information knows. Chips (played state, genre, rating, online play, publisher, developer) toggle at once; players
 // and release year are range sliders with two handles over a histogram of the library. The list behind the sheet
-// follows every change and the header counts the matching games. Opened from Search and filters > More filters.
+// follows every change and the header counts the matching games. Opened with Y in the library.
 // Members of App in main.cpp, included after game_info_screen.hpp.
 
 namespace {
 constexpr int filter_chip_height = 34, filter_chip_gap = 8, filter_title_height = 26, filter_section_gap = 16;
 constexpr int filter_inner_x = 40, filter_inner_width = 520, filter_top = 100, filter_bottom = 412;
+constexpr int filter_tile_width = 168, filter_tile_height = 52;
 constexpr int filter_slider_height = 108, filter_track_inset = 16;
+// The scrollbar sits where the long lists put theirs (a picker's is at 572).
+constexpr int filter_rail_x = 572;
 // The slider ids: 0 players, 1 release year.
 constexpr int slider_players = 0, slider_year = 1;
 } // namespace
 
-bool App::filter_sheet_active() const { return filter_sheet_open && settings.page == Page::Discover; }
+bool App::filter_sheet_active() const { return filter_sheet_open && settings.page == Page::Library; }
 
-void App::open_filter_sheet() {
+void App::open_filter_sheet(bool to_filters) {
     // Counts are read again each time, so a fetch that just finished shows up.
     if (library_ready) facet_index.request(o.data, all_games);
     filter_sheet_open = true;
     filter_focus = filter_scroll = filter_thumb = 0;
     filter_drag = -1;
+    // The current collection has focus; coming from "Filter" the first chip does, with its section at the top.
+    const auto layout = filter_layout();
+    for (int i = 0; i < int(layout.chips.size()); i++) {
+        const auto& chip = layout.chips[size_t(i)];
+        if (to_filters ? chip.tile < 0 : chip.tile == preferences.view) {
+            filter_focus = i;
+            break;
+        }
+    }
+    filter_pin = to_filters;
+    dirty = true;
+}
+
+// A tile of the sheet: the collection, the browser layout, or a way to find a game.
+void App::filter_tile(int tile) {
+    if (tile < 3) {
+        library_view(tile);
+        remember_appearance();
+    } else if (tile < 6) {
+        preferences.layout = tile - 3;
+        cancel_navigation();
+        remember_appearance();
+    } else if (tile == 6) {
+        filter_sheet_open = false;
+        jump_to_letter();
+    } else if (tile == 7) {
+        filter_sheet_open = false;
+        quick_search();
+    } else {
+        search_query.clear();
+        discovery_filter = 0;
+        discovery_facets = {};
+        library_view(preferences.view);
+    }
     dirty = true;
 }
 
@@ -101,12 +139,14 @@ std::string App::filter_slider_caption(int slider) const {
 App::FilterLayout App::filter_layout() {
     struct Spec {
         const char* title;
-        std::vector<int> facets; // -1 played state; -2 players slider; -3 release slider; else a facet_rows() index
+        std::vector<int> facets; // -1 played state; -2 players slider; -3 release slider; -4 collection tiles;
+                                 // -5 layout tiles; -6 search tiles; else a facet_rows() index
         size_t limit;            // chips before "More…" (0: all)
     };
-    static const std::vector<Spec> specs = {{"Played", {-1}, 0},   {"Genre", {0}, 10},   {"Players", {-2}, 0},
-                                            {"Released", {-3}, 0}, {"Rating", {3}, 0},   {"More", {4, 5}, 0},
-                                            {"Publisher", {1}, 8}, {"Developer", {2}, 8}};
+    static const std::vector<Spec> specs = {{"Collection", {-4}, 0}, {"Browser layout", {-5}, 0}, {"Search", {-6}, 0},
+                                            {"Played", {-1}, 0},     {"Genre", {0}, 10},          {"Players", {-2}, 0},
+                                            {"Released", {-3}, 0},   {"Rating", {3}, 0},          {"More", {4, 5}, 0},
+                                            {"Publisher", {1}, 8},   {"Developer", {2}, 8}};
     FilterLayout layout;
     layout.loading = !facet_index.ready();
     int y = 0, section = 0;
@@ -119,6 +159,23 @@ App::FilterLayout App::filter_layout() {
                 FilterChip item;
                 item.slider = facet == -2 ? slider_players : slider_year;
                 chips.push_back(std::move(item));
+                continue;
+            }
+            if (facet <= -4) {
+                // Tiles: 0-2 the collections, 3-5 the layouts, 6-8 jump, search and clear. All nine always exist, so
+                // the focused item keeps its index while the filters change.
+                const int first = (-4 - facet) * 3;
+                for (int tile = first; tile < first + 3; tile++) {
+                    static const std::array<const char*, 9> names = {"All games",      "Favourites",   "Recents",
+                                                                     "Cartridges",     "Covers",       "List",
+                                                                     "Jump to letter", "Search games", "Clear filters"};
+                    FilterChip chip;
+                    chip.tile = tile;
+                    chip.label = tile == 0 && preferences.show_systems ? std::string(system_info(shown_system).name)
+                                                                       : locale.text(names[size_t(tile)]);
+                    chip.selected = tile < 3 ? tile == preferences.view : tile < 6 && tile - 3 == preferences.layout;
+                    chips.push_back(std::move(chip));
+                }
                 continue;
             }
             if (facet < 0) {
@@ -183,15 +240,18 @@ App::FilterLayout App::filter_layout() {
                 continue;
             }
             const int count_width = chip.count >= 0 ? 8 + label_width(std::to_string(chip.count), 14, false) : 0;
-            const int w = std::min(filter_inner_width, label_width(chip.label, 16, false) + count_width + 30);
+            const int w = chip.tile >= 0
+                              ? filter_tile_width
+                              : std::min(filter_inner_width, label_width(chip.label, 16, false) + count_width + 30);
+            const int h = chip.tile >= 0 ? filter_tile_height : filter_chip_height;
             if (x > 0 && x + w > filter_inner_width) {
                 x = 0;
-                y += filter_chip_height + filter_chip_gap;
+                y += h + filter_chip_gap;
             }
-            chip.box = {x, y, w, filter_chip_height};
+            chip.box = {x, y, w, h};
             chip.section = section;
             chip.title_y = title_y;
-            row_bottom = y + filter_chip_height;
+            row_bottom = y + h;
             x += w + filter_chip_gap;
             layout.chips.push_back(std::move(chip));
         }
@@ -224,6 +284,10 @@ void App::filter_activate(const FilterChip& chip) {
         facet_picker(chip.facet);
         return;
     }
+    if (chip.tile >= 0) {
+        filter_tile(chip.tile);
+        return;
+    }
     if (chip.facet < 0) {
         const int code = std::atoi(chip.value.c_str());
         discovery_filter = discovery_filter == code ? 0 : code;
@@ -236,6 +300,7 @@ void App::filter_activate(const FilterChip& chip) {
 }
 
 void App::filter_sheet_key(int code) {
+    filter_pin = false;
     auto layout = filter_layout();
     const int count = int(layout.chips.size());
     filter_focus = std::clamp(filter_focus, 0, std::max(0, count - 1));
@@ -245,7 +310,12 @@ void App::filter_sheet_key(int code) {
         filter_sheet_open = false;
         apply_discovery();
     } else if (code == 11) reset_filters();
-    else if (count == 0) {
+    else if (code == 15 || code == 16) {
+        filter_sheet_open = false;
+        if (code == 15) jump_to_letter();
+        else quick_search();
+        return;
+    } else if (count == 0) {
     } else if (code == 2) filter_activate(*focused);
     else if ((code == 0 || code == 1) && focused->slider >= 0)
         filter_slider_move(focused->slider, filter_thumb, code == 0 ? -1 : 1);
@@ -287,7 +357,7 @@ static int filter_track_width() { return filter_inner_width - 2 * filter_track_i
 
 // A touch that lands on a slider takes the nearest handle and follows the finger until it lifts.
 bool App::filter_slider_press(int x, int y) {
-    if (y < filter_top || y >= filter_bottom || x >= 590) return false;
+    if (y < filter_top || y >= filter_bottom || x >= filter_rail_x) return false;
     auto layout = filter_layout();
     const int cy = y - filter_top + filter_scroll;
     for (int i = 0; i < int(layout.chips.size()); i++) {
@@ -322,8 +392,40 @@ void App::filter_slider_drag(int x) {
     filter_slider_move(filter_drag, filter_thumb, filter_thumb == 0 ? value - span.low : value - span.high);
 }
 
+// The scrollbar's thumb height and the scroll range, sized as in the other lists.
+void App::filter_rail_metrics(const FilterLayout& layout, int& thumb, int& max) const {
+    const int view = filter_bottom - filter_top;
+    max = std::max(0, layout.height - view);
+    thumb = std::max(54, view * view / std::max(1, layout.height));
+}
+
+// A finger on the scrollbar: it grabs the thumb where it lands (the middle when it lands beside it) and drags it.
+bool App::filter_rail_press(int x, int y) {
+    if (x < filter_rail_x || y < filter_top || y >= filter_bottom) return false;
+    const auto layout = filter_layout();
+    int thumb = 0, max = 0;
+    filter_rail_metrics(layout, thumb, max);
+    if (max <= 0) return false;
+    const int view = filter_bottom - filter_top, local = y - filter_top, offset = filter_scroll * (view - thumb) / max;
+    filter_grab = local >= offset && local < offset + thumb ? local - offset : thumb / 2;
+    filter_rail = true;
+    filter_seek(y);
+    return true;
+}
+
+void App::filter_seek(int y) {
+    const auto layout = filter_layout();
+    int thumb = 0, max = 0;
+    filter_rail_metrics(layout, thumb, max);
+    const int view = filter_bottom - filter_top;
+    filter_scroll =
+        std::clamp(int(std::lround((y - filter_top - filter_grab) * double(max) / std::max(1, view - thumb))), 0, max);
+    dirty = true;
+}
+
 // Dragging the body scrolls it.
 void App::filter_drag_scroll(int y) {
+    filter_pin = false;
     auto layout = filter_layout();
     const int view = filter_bottom - filter_top;
     filter_scroll = std::clamp(filter_scroll_start + down_y - y, 0, std::max(0, layout.height - view));
@@ -331,6 +433,7 @@ void App::filter_drag_scroll(int y) {
 }
 
 void App::filter_sheet_touch(int x, int y) {
+    filter_pin = false;
     if (y < 78 && x < 90) {
         filter_sheet_key(3);
         return;
@@ -340,12 +443,6 @@ void App::filter_sheet_touch(int x, int y) {
         return;
     }
     auto layout = filter_layout();
-    const int view = filter_bottom - filter_top, max = std::max(0, layout.height - view);
-    if (x >= 590 && y >= filter_top && y < filter_bottom) {
-        filter_scroll = std::clamp((y - filter_top) * max / std::max(1, view), 0, max);
-        dirty = true;
-        return;
-    }
     const int cx = x - filter_inner_x, cy = y - filter_top + filter_scroll;
     for (int i = 0; i < int(layout.chips.size()); i++) {
         const auto& item = layout.chips[size_t(i)];
@@ -359,6 +456,32 @@ void App::filter_sheet_touch(int x, int y) {
             return;
         }
     }
+}
+
+// A tile: outlined in the accent when it is the current choice, with a filled check; the focused one wears an accent
+// ring so it reads on both palettes. Jump and search wear their own buttons on the top edge (L2, R2).
+void App::filter_draw_tile(SDL_Renderer* r, const FilterChip& item, int x, int top, bool focused) {
+    const auto& box = item.box;
+    alpha_round(r, x, top + 3, box.w, box.h, 10, shadow_colour(), preferences.dark ? 70 : 22);
+    if (focused)
+        alpha_round(r, x - 3, top - 3, box.w + 6, box.h + 6, 13, theme.at("accent"), preferences.dark ? 120 : 70);
+    round_rect(r, x, top, box.w, box.h, 10, item.selected || focused ? "accent" : "line");
+    glossy_pill(r, x + 2, top + 2, box.w - 4, box.h - 4, 8, theme.at("panel"));
+    const int chip = std::min(34, box.h - 14);
+    fill_round(r, x + 8, top + (box.h - chip) / 2, chip, chip, 9,
+               item.selected ? theme.at("accent") : theme.at("slot"));
+    library_choice_icon(r, item.tile, x + 8 + chip / 2, top + box.h / 2, chip - 12,
+                        item.selected ? "on_accent" : "accent");
+    const int width = box.w - chip - (item.selected ? 50 : 26),
+              font = label_width(item.label, 18, false) > width ? 15 : 18;
+    raw_label_colour(r, item.label, x + chip + 16, centred_label_y(item.label, font, top + box.h / 2), font,
+                     theme.at("ink"), width);
+    if (item.selected) {
+        fill_round(r, x + box.w - 28, top + box.h / 2 - 10, 20, 20, 10, theme.at("accent"));
+        check_mark(r, x + box.w - 18, top + box.h / 2, theme.at("on_accent"));
+    }
+    const std::string hotkey = item.tile == 6 ? "L2" : item.tile == 7 ? "R2" : "";
+    if (!hotkey.empty()) key_badge(r, x + box.w - 8 - key_badge_width(hotkey), top, hotkey);
 }
 
 // One slider: the caption, a histogram of the library over its span, the track and the two handles.
@@ -429,7 +552,7 @@ void App::filter_draw_slider(SDL_Renderer* r, const FilterChip& item, int top, b
 void App::filter_sheet_render(SDL_Renderer* r, int y) {
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y, 480, true);
-    settings_header(r, y, "Filters", 300);
+    settings_header(r, y, "Library view", 300);
     // The result so far, top right.
     std::string count_text =
         collection_loading ? locale.text("Finding games…")
@@ -445,9 +568,17 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
     auto layout = filter_layout();
     const int count = int(layout.chips.size());
     filter_focus = std::clamp(filter_focus, 0, std::max(0, count - 1));
+    if (filter_pin) {
+        for (const auto& chip : layout.chips)
+            if (chip.tile < 0) {
+                filter_scroll = chip.title_y;
+                break;
+            }
+        if (!layout.loading) filter_pin = false;
+    }
     filter_scroll = std::clamp(filter_scroll, 0, std::max(0, layout.height - view));
 
-    SDL_Rect clip{26, y + filter_top - 4, 570, view + 8};
+    SDL_Rect clip{26, y + filter_top - 4, filter_rail_x - 28, view + 8};
     s.RenderSetClipRect(r, &clip);
     for (const auto& title : layout.titles)
         raw_label(r, title.text, filter_inner_x, y + filter_top + title.y - filter_scroll + 2, 14, "muted", 400);
@@ -458,6 +589,10 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
         const bool focused = i == filter_focus;
         if (chip.slider >= 0) {
             filter_draw_slider(r, chip, top, focused);
+            continue;
+        }
+        if (chip.tile >= 0) {
+            filter_draw_tile(r, chip, x, top, focused);
             continue;
         }
         if (focused) {
@@ -485,11 +620,11 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
         raw_label(r, locale.text("Reading your library…"), filter_inner_x, top, 16, "muted", 480);
     }
     s.RenderSetClipRect(r, nullptr);
-    const int content = layout.height + (layout.loading ? 26 : 0);
-    if (content > view) {
-        const int thumb = std::max(40, view * view / content), travel = view - thumb, max = std::max(1, content - view);
-        draw_scrollbar(r, 586, y + filter_top, view, thumb, filter_scroll * travel / max, false, false, 24);
-    }
+    int thumb = 0, max = 0;
+    filter_rail_metrics(layout, thumb, max);
+    if (max > 0)
+        draw_scrollbar(r, filter_rail_x, y + filter_top, view, thumb, filter_scroll * (view - thumb) / max, filter_rail,
+                       scroll_hover);
 
     // Footer: Back, what the keys do, Done.
     rect(r, 0, y + 424, 640, 56, "background");

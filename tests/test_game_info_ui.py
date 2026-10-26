@@ -7,7 +7,7 @@ sys.path.insert(0, str(ROOT / 'runtime'))
 from fields import write_fields
 from library import game_key
 
-GAME_OPTIONS, DISCOVER, GAME_INFO = 19, 29, 40  # Page enum values in src/launcher/settings.hpp
+PAGE_LIBRARY, GAME_OPTIONS, GAME_INFO, KEYBOARD = 0, 19, 40, 8  # Page enum values in src/launcher/settings.hpp
 # Game options > Game info: the row above Save gallery (DSperate here: Favourite ... Artwork, Game info).
 OPEN_INFO = ['X', 'Down', 'Down', 'Down', 'Down', 'Down', 'A']
 
@@ -26,12 +26,12 @@ class LauncherFixture(unittest.TestCase):
         write_fields(self.prefs, dict(schema=1, core=1, font='rounded', mode='light'))
         self.item = self.data / 'library' / game_key(self.rom.resolve())
 
-    def run_ui(self, keys, *mode, touches=()):
-        """Keys press one by one; `touches` (script lines like 'tap 56 352') follow, 150 ms apart."""
+    def run_ui(self, keys, *mode, touches=(), start=300):
+        """Keys press one by one from `start` ms; `touches` (script lines like 'tap 56 352') follow, 150 ms apart."""
         script = self.root / 'input'
-        end = 300 + len(keys) * 180
+        end = start + len(keys) * 180
         script.write_text(
-            ''.join(f'{300+i*180} key {key}\n{340+i*180} key-up {key}\n'
+            ''.join(f'{start+i*180} key {key}\n{start+40+i*180} key-up {key}\n'
                     for i, key in enumerate(keys)) + ''.join(f'{end+i*150} {line}\n' for i, line in enumerate(touches))
         )
         report = self.root / 'report.json'
@@ -43,7 +43,7 @@ class LauncherFixture(unittest.TestCase):
                 str(self.prefs), '--state',
                 str(self.root / 'state'), '--input-script',
                 str(script), '--seconds',
-                str(max(3, (len(keys) + len(touches)) * 0.2 + 2)), '--cache-report',
+                str(max(3, (len(keys) + len(touches)) * 0.2 + 2 + (start - 300) / 1000)), '--cache-report',
                 str(report)
             ],
             cwd=ROOT,
@@ -86,11 +86,11 @@ class GameInfoUiTests(LauncherFixture):
         keys = ['Down', 'Down', 'A', 'Down', 'Down', 'Down', 'A']
         self.run_ui(keys, '--settings', '--section', 'library')
         self.assertIn('game_info=0\n', (self.data / 'ui.ini').read_text())
-        self.assertIn('extra_pictures=0\n', (self.data / 'ui.ini').read_text())
+        self.assertIn('extra_pictures=2\n', (self.data / 'ui.ini').read_text())
 
 
 class FacetFilterTests(LauncherFixture):
-    """Search and filters > More filters: library filters from the saved game information."""
+    """The Library view sheet (Y in the library): collection and layout tiles, and filters from the saved game information."""
     def setUp(self):
         super().setUp()
         self.rom.unlink()
@@ -117,14 +117,18 @@ class FacetFilterTests(LauncherFixture):
                     )
                 )
 
-    # Home opens Search and filters; its third row opens the filter sheet. In the sheet the first chip (Unplayed) has
-    # focus; Down moves to the nearest item on the next row: Genre chips, the Players slider, the Released slider,
+    # Jump to letter (Q) has an X for the filters: the sheet opens on its first chip (Unplayed) with the Played section at
+    # the top; Down moves to the nearest item on the next row: Genre chips, the Players slider, the Released slider,
     # Rating, More (With info / Without info), Publisher. Library: players 1/1/2, released 2007/2011/2004.
-    OPEN_FILTERS = ['Home', 'Down', 'Down', 'A']
+    OPEN_FILTERS = ['Q', 'X']
+
+    def run_ui(self, keys, *mode, **kwargs):
+        # The sheet's chips come from the game information read in the background: give it a moment before the keys.
+        return super().run_ui(keys, *mode, start=1200, **kwargs)
 
     def test_toggling_a_genre_chip_filters_the_library_and_says_so(self):
         report = self.run_ui(self.OPEN_FILTERS + ['Down', 'A'])
-        self.assertEqual(report['page'], DISCOVER)
+        self.assertTrue(report['filter_sheet'])
         self.assertTrue(report['discovery_active'])
         self.assertEqual(report['discovery_description'], 'Puzzle')
         self.assertEqual(report['filtered_games'], 2)
@@ -170,9 +174,39 @@ class FacetFilterTests(LauncherFixture):
 
     def test_played_state_chip_and_back_closes_the_sheet_keeping_the_filter(self):
         report = self.run_ui(self.OPEN_FILTERS + ['Right', 'A', 'B'])
-        self.assertEqual(report['page'], DISCOVER)
+        self.assertFalse(report['filter_sheet'])
+        self.assertEqual(report['page'], PAGE_LIBRARY)
         self.assertEqual(report['discovery_filter'], 2)
         self.assertEqual(report['discovery_description'], 'Played')
+
+    def test_y_opens_the_sheet_on_the_collection_tiles_and_a_tile_changes_the_view(self):
+        report = self.run_ui(['Y'])
+        self.assertTrue(report['filter_sheet'])
+        self.assertEqual(report['filter_focus'], 0)  # All games, the current collection
+        self.assertEqual(report['library_view'], 0)
+        # Right to Favourites, A chooses it and the sheet stays open; Down to the layouts (Covers, below it), A.
+        report = self.run_ui(['Y', 'Right', 'A', 'Down', 'A'])
+        self.assertTrue(report['filter_sheet'])
+        self.assertEqual(report['library_view'], 1)
+        self.assertEqual(report['library_layout'], 1)
+
+    def test_the_sheet_scrolls_to_a_focused_chip_and_b_closes_it(self):
+        report = self.run_ui(['Y'] + ['Down'] * 6)
+        self.assertGreater(report['filter_scroll'], 0)
+        report = self.run_ui(['Y', 'B'])
+        self.assertFalse(report['filter_sheet'])
+
+    def test_search_tile_leaves_the_sheet_for_the_keyboard(self):
+        report = self.run_ui(['Y', 'Down', 'Down', 'Right', 'A'])
+        self.assertFalse(report['filter_sheet'])
+        self.assertEqual(report['page'], KEYBOARD)
+
+    def test_the_scrollbar_thumb_follows_a_finger_dragging_it(self):
+        report = self.run_ui(['Y'], touches=['tap 590 120', 'drag 590 380', 'release'])
+        self.assertGreater(report['filter_scroll'], 100)
+        self.assertTrue(report['filter_sheet'])
+        report = self.run_ui(['Y'], touches=['tap 590 120', 'drag 590 380', 'drag 590 110', 'release'])
+        self.assertEqual(report['filter_scroll'], 0)
 
     def test_touch_taps_a_chip_and_drags_a_slider_handle(self):
         # The Genre chip "Puzzle" is the first of its row; the players track sits near the bottom of the first view.

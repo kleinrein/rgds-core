@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Herstart het spel om DS-instellingen toe 
 Could not save DS settings.	DS-instellingen konden niet worden opgeslagen.
 Search	Zoeken
 Save gallery	Opslaggalerij
-Search and filters	Zoeken en filters
 Add your games	Voeg je spellen toe
 DS controls	DS-besturing
 Back up all saves	Back-up van alle opgeslagen spellen
@@ -626,7 +625,6 @@ Slot	Slot
 Empty slot	Leeg slot
 Search games	Spellen zoeken
 Filter	Filter
-Clear search and filters	Zoekopdracht en filters wissen
 Missing artwork	Ontbrekende hoesafbeeldingen
 Where to put games	Waar plaats je spellen?
 Scan for games	Scannen naar spellen
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Geluid wordt niet opgenomen of opgeslagen.
 Test the microphone on your handheld.	Test de microfoon op je apparaat.
 Return home before testing the physical microphone.	Ga naar het startscherm voordat je de fysieke microfoon test.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blaas of spreek in de microfoon. Kijk hoe het niveau stijgt en weer daalt als je stopt.
-No filter	Geen filter
 Quick search	Snel zoeken
 A  Search	A  Zoeken
 A  Jump	A  Springen
@@ -906,14 +903,46 @@ Companion	Metgezel
 Swap screens	Schermen wisselen
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Voegt Game Boy- en Game Boy Advance-spellen toe: Spellen opent dan een pagina met systemen.
 Frame	Rand
-Indigo	Indigo
-Glacier	Gletsjer
-Black	Zwart
-Platinum	Platina
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Rood
+Game Boy · Yellow	Game Boy · Geel
+Game Boy · Green	Game Boy · Groen
+Game Boy · Blue	Game Boy · Blauw
+Game Boy · Black	Game Boy · Zwart
+Game Boy · Screen only	Game Boy · Alleen scherm
+Game Boy Pocket · Silver	Game Boy Pocket · Zilver
+Game Boy Pocket · Black	Game Boy Pocket · Zwart
+Game Boy Pocket · Yellow	Game Boy Pocket · Geel
+Game Boy Pocket · Red	Game Boy Pocket · Rood
+Game Boy Pocket · Green	Game Boy Pocket · Groen
+Game Boy Pocket · Blue	Game Boy Pocket · Blauw
+Game Boy Pocket · Pink	Game Boy Pocket · Roze
+Game Boy Pocket · Screen only	Game Boy Pocket · Alleen scherm
+Game Boy Color · Berry	Game Boy Color · Bes
+Game Boy Color · Grape	Game Boy Color · Druif
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Dandelion	Game Boy Color · Paardenbloem
+Game Boy Color · Teal	Game Boy Color · Blauwgroen
+Game Boy Color · Atomic Purple	Game Boy Color · Atoompaars
+Game Boy Color · Screen only	Game Boy Color · Alleen scherm
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Glacier	Game Boy Advance · Gletsjer
+Game Boy Advance · Black	Game Boy Advance · Zwart
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Zilver
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Zwart
+WonderSwan Color · White	WonderSwan Color · Wit
+WonderSwan Color · Blue	WonderSwan Color · Blauw
+PSP · Black	PSP · Zwart
+PSP · White	PSP · Wit
+Grey TV	Grijze tv
+Wood-grain TV	Houtnerf-tv
+PC monitor	Pc-monitor
+Arcade cabinet	Arcadekast
 Black bar	Zwarte balk
-SP Onyx	SP Onyx
-SP Cobalt	SP Kobalt
-SP Platinum	SP Platina
 GBA Color	GBA-kleuren
 GBA screen	GBA-scherm
 GBA screens	GBA-schermen
@@ -943,7 +972,6 @@ Next picture	Volgende afbeelding
 No pictures yet	Nog geen afbeeldingen
 Available	Beschikbaar
 Not downloaded	Niet gedownload
-More filters	Meer filters
 Show games	Spellen tonen
 Reset filters	Filters wissen
 Any	Alle
@@ -957,3 +985,148 @@ Online play	Online spelen
 {0} players	{0} spelers
 No game information yet.	Nog geen spelinfo.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Zet Spelinfo aan bij Instellingen > Bibliotheek > Hoesbronnen en haal hoezen op.
+Ports	Ports
+Restart port	Port herstarten
+Quit	Afsluiten
+Looking for the latest PortMaster	Zoeken naar de nieuwste PortMaster
+Downloading PortMaster	PortMaster downloaden
+Checking PortMaster	PortMaster controleren
+Unpacking PortMaster	PortMaster uitpakken
+Setting up PortMaster	PortMaster instellen
+Installing PortMaster from the card	PortMaster installeren vanaf de kaart
+PortMaster is ready	PortMaster is klaar
+Could not set up PortMaster	Kon PortMaster niet instellen
+Get, update and remove ports	Ports ophalen, bijwerken en verwijderen
+Close PortMaster	PortMaster sluiten
+Back to PortMaster	Terug naar PortMaster
+Keep getting and updating ports	Verder ports ophalen en bijwerken
+Your ports are waiting in Ports	Je ports wachten in Ports
+Closing PortMaster…	PortMaster wordt gesloten…
+Closing the port…	De port wordt gesloten…
+GB screens	GB-schermen
+GBC screens	GBC-schermen
+Game Boy screen	Game Boy-scherm
+Game Boy Color screen	Game Boy Color-scherm
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Het dot-matrixscherm van de originele Game Boy: een licht pixelraster en zachte schaduwen.
+The Game Boy Color screen with faint gaps between its pixels.	Het scherm van de Game Boy Color met vage ruimtes tussen de pixels.
+This handheld's own screen.	Het eigen scherm van deze handheld.
+Screen colours	Schermkleuren
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Zwart-wit
+Game Boy Color, darker	Game Boy Color, donkerder
+Full colour	Volle kleuren
+Hold to save	Vasthouden om op te slaan
+Hold to load	Vasthouden om te laden
+Screen off	Scherm uit
+Touch the screen to turn it on	Raak het scherm aan om het aan te zetten
+min	min
+h	u
+Not saved	Niet opgeslagen
+Loaded	Geladen
+Not loaded	Niet geladen
+Nothing to load	Niets om te laden
+Saving…	Opslaan…
+Loading…	Laden…
+Info screen	Infoscherm
+Team	Team
+Lv	Lv.
+screens	schermen
+Not yet	Nog niet
+None yet	Nog geen
+The best there is	Het beste wat er is
+Next:	Volgende:
+Badges	Badges
+Carried	Bij je
+Coin bank	Muntbank
+Coins	Munten
+Collection	Verzameling
+Course	Level
+Day	Dag
+Ending so far	Einde tot nu toe
+Essences	Essences
+Gear	Uitrusting
+Golden leaves	Gouden bladeren
+Heart containers	Hartcontainers
+Heart pieces	Hartstukjes
+Hearts	Harten
+In a course	In een level
+Instruments	Instrumenten
+Johto badges	Johto-badges
+Journey	Reis
+Kanto badges	Kanto-badges
+Keys	Sleutels
+Lives	Levens
+Money	Geld
+Musical coins	Muziekmunten
+Night	Nacht
+Pokédex caught	Pokédex gevangen
+Pokédex seen	Pokédex gezien
+Rupees	Rupees
+Secret seashells	Geheime schelpen
+Shield	Schild
+Small keys	Kleine sleutels
+Sword	Zwaard
+Time of day	Tijd van de dag
+Time	Tijd
+Total	Totaal
+Trainer	Trainer
+Treasures	Schatten
+Worlds	Werelden
+Your journey	Jouw reis
+Seeds	Zaden
+Game switcher	Spelwisselaar
+Switch to another game	Naar een ander spel
+Hold to return home	Vasthouden voor het startscherm
+Add game files	Spelbestanden toevoegen
+Needs your files	Heeft je bestanden nodig
+Files added	Bestanden toegevoegd
+How to get the files	Zo krijg je de bestanden
+Scan with your phone	Scan met je telefoon
+Or open on a computer	Of open op een computer
+Code	Code
+Connect to Wi-Fi to send files from a phone or computer.	Maak verbinding met wifi om bestanden vanaf een telefoon of computer te sturen.
+Receiving files	Bestanden ontvangen
+Unpacking files	Bestanden uitpakken
+Files arrived. Choose Play to start.	De bestanden zijn binnen. Kies Spelen om te starten.
+This port lists no instructions.	Deze port heeft geen instructies.
+Play	Spelen
+Goes into	Komt in
+Phone or computer connected	Telefoon of computer verbonden
+Vibration	Trillen
+Menu haptics	Menuhaptiek
+Haptic strength	Haptische sterkte
+Game rumble	Spelrumble
+Rumble strength	Rumblesterkte
+Try a pattern	Probeer een patroon
+Feel the game	Voel het spel
+Feel every move	Voel elke beweging
+No vibration motor was found on this device.	Er is geen trilmotor gevonden op dit apparaat.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-games op de DS, rumblecartridges op Game Boy en Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Zet spelrumble aan voor games gemaakt voor een rumble-accessoire.
+A light tap for every move, a firmer one when you choose, open or save.	Een lichte tik bij elke beweging, een stevigere bij kiezen, openen of opslaan.
+Turn on menu haptics to feel the menus.	Zet menuhaptiek aan om de menu's te voelen.
+Browse	Bladeren
+Open a view	Een weergave openen
+Go back	Terug
+Switch on	Aanzetten
+Switch off	Uitzetten
+Add favourite	Favoriet toevoegen
+Remove favourite	Favoriet verwijderen
+Start a game	Een game starten
+Save complete	Opgeslagen
+Load complete	Geladen
+Try again	Opnieuw proberen
+Keyboard	Toetsenbord
+Adjust	Aanpassen
+End of a list	Einde van een lijst
+Long press	Lang drukken
+Notification	Melding
+Touch screen	Touchscreen
+Point and click on top	Wijzen en klikken boven
+Touch here to point and click on the top screen.	Tik hier om op het bovenste scherm te wijzen en te klikken.
+Hold still for a right click	Stil houden voor rechtsklik
+Hold to exit	Vasthouden om te stoppen
+Touch screen off	Touchscreen uit
+Touch screen is not available	Touchscreen is niet beschikbaar

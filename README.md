@@ -7,7 +7,7 @@
 
 # RG DS Core
 
-A DSi-style home for your Nintendo DS games on the **Anbernic RG DS**, on the stock Linux firmware. Boots straight into your library, plays games in **DSCore**, our emulator with sharp 2×–5× 3D (may cause visual glitches and will struggle on high 3D games), and sleeps when you close the lid.
+A DSi-style home for your games on the **Anbernic RG DS**, on the stock Linux firmware. Boots straight into your library, plays Nintendo DS games in **DSCore**, our emulator with sharp 2×–5× 3D (may cause visual glitches and will struggle on high 3D games), plays Game Boy Advance, Game Boy and Game Boy Color games in **RG DS Play** with the game's own map or HUD on the second screen, and sleeps when you close the lid.
 
 ![Home screen, the library and the in-game menu, captured on an RG DS](docs/images/screens.png)
 
@@ -15,13 +15,16 @@ A DSi-style home for your Nintendo DS games on the **Anbernic RG DS**, on the st
 
 ## Highlights
 
-- **Library:** cartridges, covers or a list. Search, A–Z jump, favourites, recents, play time. Covers download by themselves.
-- **DSCore:** 3D at native to 5×, switchable mid-game. 20 shaders and LCD filters. Fast-forward. Reduced input latency.
-- **Original in game menu:** pause, checkpoints, cheats, game switcher and game settings.
-- **Other engines availables:** DraStic, DSperate or melonDS.
-- **Tailored:** Light or dark, accent colours, high contrast, rounded or pixel fonts, menu sounds and music, 22 languages.
+- **Library:** cartridges, covers or a list. Search, A–Z jump, favourites, recents, play time. Covers, descriptions, genres and release dates download by themselves.
+- **DSCore:** 3D at native to 5×, switchable mid-game. 32 shaders and LCD filters, plus HD 2D scaling for the flat screens. Fast-forward. Reduced input latency.
+- **GBA, GB and GBC:** play them on the same shelf (Settings → Library → Show all systems). The second screen shows what the game hides: the map in Metroid Fusion and Castlevania, the HUD in Mario Kart: Super Circuit, your team in Pokémon. About 40 games have profiles. The original screens of the Game Boy, Pocket, Light, Color and GBA, shell frames. [More](docs/PLAY.md).
+- **Original in game menu:** pause, checkpoints, cheats, game switcher and game settings, the same for every system.
+- **Cheats:** Action Replay codes in DSCore, switched on and off while you play, remembered per game. [More](docs/CHEATS.md).
+- **Ports:** PortMaster ports on the same shelf under Show all systems, with the same in-game menu. The libraries the stock firmware lacks download by themselves, so 32-bit ports, desktop-OpenGL ports and Westonpack ports run too. Games that need your own files show a QR code: open it on your phone or computer and drop the files in the browser. Mouse-driven ports can be played by tapping the bottom screen.
+- **Other engines available:** DraStic, DSperate or melonDS.
+- **Tailored:** Light or dark, accent colours, high contrast, rounded or pixel fonts, menu sounds and music, 22 languages including Japanese, Chinese and Korean, all time zones, a drawn icon for every system.
 - **PictoChat:** Our homegrown chat client. Wi-Fi rooms between RG DS Core handhelds with pens, stamps, rainbow ink. No Nintendo files. [More](docs/PICTOCHAT.md).
-- **Safe updates:** Signed over-the-air updates that roll back if they fail.
+- **Safe updates:** Signed over-the-air updates that roll back if they fail. Home shows a banner when one is out.
 
 ![Cartridge, cover and list views](docs/images/library.png)
 
@@ -55,9 +58,9 @@ Updates arrive over Wi-Fi: when one is out, Home shows a banner and **Y** instal
 ## Good to know
 
 - Only tested on the standard RG DS with anbernic linux V1.0.
-- No games, BIOS files or cover art included. DSCore needs no BIOS.
+- No games, BIOS files or cover art included. DSCore and RG DS Play need no BIOS.
+- Other systems are off until you turn on **Settings → Library → Show all systems**. Companion screens exist only for the games with a profile; the rest get a title card and play as usual.
 - Each engine keeps its own saves.
-- DSCore engine is new and not optimized properly yet.
 
 ## Developing
 

@@ -52,4 +52,10 @@ bool pokemon_gb_icon(Core& core, const PokemonGbTables& t, int species, std::vec
 // zero. False while one is being written.
 bool read_saga1(Core& core, uint32_t slots, std::vector<PartyMember>& out, uint64_t& key);
 
+// Dragon Warrior Monsters: the three monsters of the party from `slots` (0x95
+// bytes each; `places`: a byte each, FF for an empty place), with their
+// species' names from the ROM list `species_names`.
+bool read_dwm1(Core& core, uint32_t slots, uint32_t places, uint32_t species_names, std::vector<PartyMember>& out,
+               uint64_t& key);
+
 } // namespace play

@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: MIT
+#
+## RG DS Core (docs/PORTMASTER_PLAN.md): the stock RG DS card reports CFW_NAME=Buildroot.
+## Written by runtime/portmaster.py after every PortMaster install or update.
+
+# Use for Godot 2
+GODOT2_OPTS="-r ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT} -f"
+
+# Use for Godot 3+
+GODOT_OPTS="--resolution ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT} -f"
+
+pm_platform_helper() {
+    pm_message_close
+
+    if [ -e "$PM_PIPE" ]; then
+        PortMasterDialogExit
+    fi
+}

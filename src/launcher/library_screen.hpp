@@ -23,16 +23,23 @@ bool App::game_dual(size_t index) {
 }
 
 void App::dual_badge(SDL_Renderer* r, int x, int y) {
-    // Two little stacked screens on a quiet chip: noticed when looked for, not a label.
-    const int w = 28, h = 34;
-    alpha_round(r, x, y + 2, w, h, 9, shadow_colour(), preferences.dark ? 70 : 28);
-    round_rect(r, x - 1, y - 1, w + 2, h + 2, 10, "line");
-    round_rect(r, x, y, w, h, 9, "panel");
+    // A glossy accent chip in a white ring holding two bright screens stacked
+    // with a hinge gap, the lower one lit with a touch spot: "top and bottom
+    // screen" at a glance, hanging off the cover's corner like the heart.
+    const int w = 54, h = 74;
+    const Color accent = theme.at("accent"), white{255, 255, 255}, deep = mix_colour(accent, Color{0, 0, 0}, .55),
+                lit = mix_colour(accent, white, .8);
+    alpha_round(r, x - 3, y - 3 + 4, w + 6, h + 6, 20, shadow_colour(), preferences.dark ? 120 : 70);
+    fill_round(r, x - 3, y - 3, w + 6, h + 6, 20, white);
+    glossy_pill(r, x, y, w, h, 17, accent);
+    const int sw = 40, sh = 26, sx = x + (w - sw) / 2, gap = 6, top = y + (h - 2 * sh - gap) / 2;
     for (int screen = 0; screen < 2; ++screen) {
-        const int sy = y + 6 + screen * 12;
-        round_rect(r, x + 6, sy, 16, 10, 3, "muted");
-        round_rect(r, x + 8, sy + 2, 12, 6, 1, "panel");
+        const int sy = top + screen * (sh + gap);
+        fill_round(r, sx, sy, sw, sh, 6, white);
+        fill_round(r, sx + 3, sy + 3, sw - 6, sh - 6, 4, screen ? lit : deep);
     }
+    // The touch screen: a stylus dot in the accent colour.
+    fill_round(r, sx + sw / 2 - 4, top + sh + gap + sh / 2 - 4, 8, 8, 4, accent);
 }
 
 void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
@@ -45,7 +52,7 @@ void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
     round_rect(r, left, top, box, box, 20, "panel");
     game_icon(r, model.selected, 320 - size / 2, top + 20, size);
     if (stage_favourite) favourite_badge(r, left + box - 6, top + 6, 36);
-    if (stage_dual) dual_badge(r, left + 10, top + box - 42);
+    if (stage_dual) dual_badge(r, left - 6, top + box - 62);
     centered_wrapped(r, game_title(model.selected), y + 322, 26, 560, 2, "ink");
     if (!developer.empty()) {
         int w = std::min(560, label_width(developer, 18, false));
@@ -68,7 +75,7 @@ bool App::cover_stage(SDL_Renderer* r, int y, const fs::path& path) {
     round_rect(r, box.x - 6, box.y - 6, box.w + 12, box.h + 12, 14, "panel");
     bool drawn = media.draw(r, path, box, false, Uint8(std::lround(255 * (.8 + .2 * ease))), false, 8);
     if (stage_favourite) favourite_badge(r, box.x + box.w - 4, box.y, 36);
-    if (stage_dual) dual_badge(r, box.x + 8, box.y + box.h - 40);
+    if (stage_dual) dual_badge(r, box.x - 4, box.y + box.h - 64);
     // A faint glass sheen fading down from the top edge, like the DSi's shelves.
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     const int sheen = std::max(8, box.h * 2 / 5);
@@ -83,6 +90,9 @@ bool App::cover_stage(SDL_Renderer* r, int y, const fs::path& path) {
 }
 
 std::string App::cover_notice() {
+    if (!home_menu && settings.page == Page::Library && !model.games.empty() && model.selected < model.games.size() &&
+        is_port_entry(model.games[model.selected].path))
+        return "Get, update and remove ports";
     if (return_writes_pending()) return "Restoring settings…";
     if (o.boot_startup && (!boot_hardware_ready || system.volume_pending())) return "Preparing controls…";
     if (status.find("ERROR") != std::string::npos) return status;
@@ -94,10 +104,11 @@ void App::cover_line(SDL_Renderer* r, int y, uint64_t seconds) {
     const bool tips = !home_menu && settings.page == Page::Library && !picker_open && !launching,
                shoulders = tips && model.games.size() > 1;
     const std::string notice = cover_notice(), previous = locale.text("Previous"), next = locale.text("Next");
+    // The systems carousel has no library view to open: no Y there.
     const std::vector<KeyHint> view{{"Y", "View"}}, options{{"X", "Options"}};
-    const bool faces = tips && notice.empty();
+    const bool faces = tips && notice.empty(), view_shown = faces && !systems_menu;
     const int middle = notice.empty() ? caption_width(seconds) : std::min(400, label_width(notice, 16)),
-              view_w = faces ? key_hints_width(view, 14) : 0, options_w = faces ? key_hints_width(options, 14) : 0;
+              view_w = view_shown ? key_hints_width(view, 14) : 0, options_w = faces ? key_hints_width(options, 14) : 0;
     bool words = true;
     const auto shoulder = [&](const std::string& key, const std::string& text) {
         return shoulders ? key_badge_width(key) + (words ? 8 + label_width(text, 14, false) : 0) + 18 : 0;
@@ -118,7 +129,7 @@ void App::cover_line(SDL_Renderer* r, int y, uint64_t seconds) {
         }
     }
     if (faces) {
-        key_hints(r, 14 + shoulder("L", previous), cy, view, -1, 14, view_w + 1);
+        if (view_shown) key_hints(r, 14 + shoulder("L", previous), cy, view, -1, 14, view_w + 1);
         key_hints(r, 626 - shoulder("R", next), cy, options, 1, 14, options_w + 1);
     }
     if (!middle) return;
@@ -336,7 +347,7 @@ void App::rail_bubble(SDL_Renderer* r, int y, int cx, double press) {
 void App::mark_library_press(int x, int y) {
     library_press = LibraryPress::None;
     library_press_row = -1;
-    if (settings.page != Page::Library || picker_open) return;
+    if (settings.page != Page::Library || picker_open || filter_sheet_open) return;
     auto header = library_header_layout();
     if (!home_menu && point_in(header.back, x, y)) library_press = LibraryPress::Back;
     else if (!home_menu && !systems_menu && point_in(header.view, x, y)) library_press = LibraryPress::View;

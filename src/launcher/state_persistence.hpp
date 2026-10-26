@@ -69,14 +69,14 @@ void App::restore_state() {
     }
     if (file && page >= 0 &&
         (page <= int(Page::GameOptions) || page == int(Page::Startup) || page == int(Page::Statistics) ||
-         page == int(Page::RomSetup) || page == int(Page::Discover) || page == int(Page::Motion) ||
-         page == int(Page::Colours) || page == int(Page::MenuSounds)) &&
+         page == int(Page::RomSetup) || page == int(Page::Motion) || page == int(Page::Colours) ||
+         page == int(Page::MenuSounds) || page == int(Page::Haptics)) &&
         page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
         page != int(Page::Confirm) && section >= 0 && section <= 9 && focus >= 0 &&
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
                   : page == int(Page::Maintenance)    ? 6
-                  : page == int(Page::LibraryOptions) ? 10
+                  : page == int(Page::LibraryOptions) ? 9
                   : page == int(Page::Appearance)     ? 10
                   : page == int(Page::System)         ? 7
                   : page == int(Page::Wifi) ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)
@@ -96,7 +96,7 @@ void App::restore_state() {
         settings.page == Page::Colours)
         settings.section = 0;
     if (settings.page == Page::Display) settings.focus = 0;
-    if (settings.page == Page::Sound || settings.page == Page::MenuSounds) {
+    if (settings.page == Page::Sound || settings.page == Page::MenuSounds || settings.page == Page::Haptics) {
         settings.section = 3;
         settings.focus = 0;
     }

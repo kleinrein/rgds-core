@@ -4,6 +4,7 @@
 // Members of App in main.cpp; included once, right after the class.
 
 void App::top(SDL_Renderer* r, int y) {
+    if (o.port_menu) return; // under the port, which covers this panel
     if (card_repair) {
         card_top(r, y);
         return;
@@ -79,8 +80,7 @@ void App::top(SDL_Renderer* r, int y) {
         round_rect(r, 24, y + 84, 592, 316, 8, "panel");
         system_icon(r, systems_selected, 264, y + 100, 112);
         centered(r, system_info(listed_systems[systems_selected]).name, y + 228, 2, "ink");
-        const SystemStats stats =
-            systems_selected < system_stats.size() ? system_stats[systems_selected] : SystemStats{};
+        const SystemStats& stats = system_stats_for(systems_selected);
         const std::array<std::string, 3> values = {std::to_string(stats.games), std::to_string(stats.sessions),
                                                    std::to_string(stats.seconds / 3600) + "h " +
                                                        std::to_string((stats.seconds / 60) % 60) + "m"};
@@ -141,6 +141,14 @@ void App::top(SDL_Renderer* r, int y) {
 }
 
 void App::bottom(SDL_Renderer* r, int y) {
+    if (o.port_menu && port_idle) {
+        port_companion(r, y);
+        return;
+    }
+    if (o.port_menu && port_manager() && settings.page == Page::QuickMenu) {
+        port_manager_menu(r, y);
+        return;
+    }
     if (card_repair) {
         card_bottom(r, y);
         return;
@@ -154,12 +162,14 @@ void App::bottom(SDL_Renderer* r, int y) {
         return;
     }
     rect(r, 0, y, 640, 480, "background");
+    if (!probe && filter_sheet_active()) {
+        filter_sheet_render(r, y);
+        if (picker_open || picker_closing()) render_picker(r, y);
+        return;
+    }
     if (!probe && settings.page != Page::Library) {
-        if (filter_sheet_active()) filter_sheet_render(r, y);
-        else {
-            settings_bottom(r, y);
-            if (!(o.game_menu && menu_status["state"] == "busy")) settings_footer(r, y);
-        }
+        settings_bottom(r, y);
+        if (!(o.game_menu && menu_status["state"] == "busy")) settings_footer(r, y);
         if (picker_open || picker_closing()) render_picker(r, y);
         return;
     }
@@ -213,11 +223,11 @@ void App::bottom(SDL_Renderer* r, int y) {
         const int row_cy = y + back.y + back.h / 2;
         const std::string collection =
             discovery_active() ? discovery_description() : locale.text(views[preferences.view]);
-        const std::string count =
-            collection_loading ? locale.text("Searching…")
-                               : locale.text(std::to_string(model.games.size()) +
-                                             (discovery_active() ? (model.games.size() == 1 ? " match" : " matches")
-                                                                 : (model.games.size() == 1 ? " game" : " games")));
+        const std::string count = collection_loading
+                                      ? locale.text("Searching…")
+                                      : locale.text(std::to_string(listed_games()) +
+                                                    (discovery_active() ? (listed_games() == 1 ? " match" : " matches")
+                                                                        : (listed_games() == 1 ? " game" : " games")));
         const int right_edge = discovery_active() ? header.clear.x - 6 : search.x + search.w - 40,
                   count_width = label_width(count, 14, false);
         raw_label(r, count, right_edge - count_width, centred_label_y(count, 14, row_cy), 14, "muted", count_width + 4);
@@ -345,7 +355,10 @@ void App::bottom(SDL_Renderer* r, int y) {
                 }
                 move_element(uint32_t(index), x, row, tile_size, tile_size, selected, LibraryViewport::top,
                              LibraryViewport::top + LibraryViewport::height);
-                if (selected) start_frame(r, x, row, tile_size, home_menu || systems_menu ? "OPEN" : "PLAY");
+                if (selected)
+                    start_frame(r, x, row, tile_size,
+                                home_menu || systems_menu || is_port_entry(model.games[size_t(index)].path) ? "OPEN"
+                                                                                                            : "PLAY");
                 round_rect(r, x, row + 4, tile_size, tile_size, 5, "line");
                 round_rect(r, x, row, tile_size, tile_size, 5, "line");
                 round_rect(r, x + 2, row + 2, tile_size - 4, tile_size - 4, 4, "panel");

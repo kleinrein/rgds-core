@@ -259,6 +259,8 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
     out.file = file;
     std::istringstream in(text);
     std::string line, section;
+    bool alt = false;         // in a [map.<name>]
+    ViewSpec* view = nullptr; // the [view] or [view.<name>] being read
     int number = 0;
     auto fail = [&](const std::string& why) {
         error = file + ":" + std::to_string(number) + ": " + why;
@@ -278,13 +280,31 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
         if (line.front() == '[') {
             if (line.back() != ']') return fail("unclosed section");
             section = trim(line.substr(1, line.size() - 2));
+            const bool alt_map = section.rfind("map.", 0) == 0 && section.size() > 4;
+            const bool alt_view = section.rfind("view.", 0) == 0 && section.size() > 5;
             if (section != "game" && section != "companion" && section != "map" && section != "hud" &&
-                section != "party" && section != "view")
+                section != "party" && section != "view" && !alt_map && !alt_view)
                 return fail("unknown section [" + section + "]");
+            if (section == "view" || alt_view) {
+                // Several views: the first in the file whose `on` holds is shown.
+                out.views.emplace_back();
+                out.views.back().name = alt_view ? section.substr(5) : "";
+                view = &out.views.back();
+                section = "view";
+                out.has_view = true;
+                alt = false;
+                continue;
+            }
+            if (alt_map) {
+                out.alt_maps.emplace_back();
+                section = "map";
+                alt = true;
+                continue;
+            }
+            alt = false;
             if (section == "map") out.has_map = true;
             if (section == "hud") out.has_hud = true;
             if (section == "party") out.has_party = true;
-            if (section == "view") out.has_view = true;
             continue;
         }
         auto eq = line.find('=');
@@ -312,8 +332,9 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             else if (key == "note") out.note = value;
             else return fail("unknown key '" + key + "' in [companion]");
         } else if (section == "map") {
-            auto& m = out.map;
-            if (key == "open") ok = parse_steps(value, m.open, why) && !m.open.empty();
+            auto& m = alt ? out.alt_maps.back() : out.map;
+            if (key == "when" && alt) ok = parse_condition(value, m.when, why);
+            else if (key == "open") ok = parse_steps(value, m.open, why) && !m.open.empty();
             else if (key == "release") ok = parse_int(value, m.release) && m.release >= 0 && m.release <= 60;
             else if (key == "timeout") ok = parse_int(value, m.timeout) && m.timeout > 0;
             else if (key == "stable") ok = parse_int(value, m.stable) && m.stable > 0;
@@ -363,7 +384,8 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 else why = "expected sprite_tiles = lo-hi [priority]";
             } else if (key == "backdrop") {
                 h.backdrop_game = value == "game";
-                if (!h.backdrop_game) ok = parse_number(value, h.backdrop, true);
+                h.backdrop_theme = value == "theme";
+                if (!h.backdrop_game && !h.backdrop_theme) ok = parse_number(value, h.backdrop, true);
             } else if (key == "backdrop_layers") {
                 uint32_t mask;
                 ok = parse_number(value, mask, true) && mask <= 0x1F && mask != 0;
@@ -402,7 +424,7 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             if (key == "format") {
                 p.format = value;
                 ok = value == "pokemon1" || value == "pokemon2" || value == "pokemon3" || value == "goldensun" ||
-                     value == "saga1";
+                     value == "saga1" || value == "dwm1";
             } else if (key == "count") ok = parse_address(value, p.count);
             else if (key == "slots") ok = parse_address(value, p.slots);
             else if (key == "icons") ok = parse_address(value, p.icons);
@@ -414,25 +436,40 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             else if (key == "on") ok = parse_condition(value, p.on, why);
             else return fail("unknown key '" + key + "' in [party]");
         } else if (section == "view") {
-            if (key == "format") out.view.format = value;
-            else if (key == "on") ok = parse_condition(value, out.view.on, why);
-            else out.view.values[key] = value; // the format's own keys, checked when the view is made
+            if (key == "format") view->format = value;
+            else if (key == "on") ok = parse_condition(value, view->on, why);
+            else view->values[key] = value; // the format's own keys, checked when the view is made
         } else return fail("key outside a section");
         if (!ok) return fail(why.empty() ? "bad value for '" + key + "'" : why);
     }
     if (out.codes.empty()) return fail("[game] codes is missing");
     if (out.title.empty()) return fail("[game] title is missing");
     if (out.has_hud && out.hud.on.empty()) return fail("[hud] on is missing");
-    if (out.has_view && out.view.format.empty()) return fail("[view] format is missing");
+    for (const auto& v : out.views)
+        if (v.format.empty()) return fail("[view" + (v.name.empty() ? "" : "." + v.name) + "] format is missing");
+    if (!out.views.empty()) out.view = out.views.front();
     if (out.has_party &&
-        (out.party.format.empty() || (!out.party.count && out.party.format != "saga1") || !out.party.slots))
+        (out.party.format.empty() || (!out.party.count && out.party.format != "saga1" && out.party.format != "dwm1") ||
+         !out.party.slots))
         return fail("[party] needs format, count and slots");
     if (out.has_map) {
         if (out.map.open.empty()) return fail("[map] open is missing");
         if (out.map.ready.empty() && out.map.pixels.empty())
             return fail("[map] needs ready or pixels, or captures could never be checked");
     }
+    for (const auto& m : out.alt_maps) {
+        if (!out.has_map) return fail("a [map.<name>] needs a [map] to fall back on");
+        if (m.when.empty()) return fail("a [map.<name>] needs when");
+        if (m.open.empty()) return fail("a [map.<name>] needs open");
+        if (m.ready.empty() && m.pixels.empty()) return fail("a [map.<name>] needs ready or pixels");
+    }
     return true;
+}
+
+const MapSpec& Profile::map_for(Core& live) const {
+    for (const auto& m : alt_maps)
+        if (m.when.match(live)) return m;
+    return map;
 }
 
 void ProfileLibrary::load_directory(const std::string& directory, std::vector<std::string>& errors) {

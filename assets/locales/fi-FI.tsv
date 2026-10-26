@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Käynnistä peli uudelleen DS-asetusten k
 Could not save DS settings.	DS-asetuksia ei voitu tallentaa.
 Search	Haku
 Save gallery	Tallennusgalleria
-Search and filters	Haku ja suodattimet
 Add your games	Lisää pelisi
 DS controls	DS-ohjaimet
 Back up all saves	Varmuuskopioi tallennukset
@@ -626,7 +625,6 @@ Slot	Paikka
 Empty slot	Tyhjä paikka
 Search games	Hae pelejä
 Filter	Suodatin
-Clear search and filters	Tyhjennä haku ja suodattimet
 Missing artwork	Puuttuvat kansikuvat
 Where to put games	Mihin pelit laitetaan
 Scan for games	Etsi pelejä
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Ääntä ei nauhoiteta eikä tallenneta.
 Test the microphone on your handheld.	Testaa laitteesi mikrofoni.
 Return home before testing the physical microphone.	Palaa kotiin ennen fyysisen mikrofonin testaamista.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Puhalla tai puhu mikrofoniin. Taso nousee ja laskee, kun lopetat.
-No filter	Ei suodatinta
 Quick search	Pikahaku
 A  Search	A  Hae
 A  Jump	A  Siirry
@@ -906,14 +903,46 @@ Companion	Seuranäyttö
 Swap screens	Vaihda näytöt
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Lisää Game Boy- ja Game Boy Advance -pelit: Pelit avaa sitten järjestelmäsivun.
 Frame	Kehys
-Indigo	Indigo
-Glacier	Jäätikkö
-Black	Musta
-Platinum	Platina
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Punainen
+Game Boy · Yellow	Game Boy · Keltainen
+Game Boy · Green	Game Boy · Vihreä
+Game Boy · Blue	Game Boy · Sininen
+Game Boy · Black	Game Boy · Musta
+Game Boy · Screen only	Game Boy · Vain näyttö
+Game Boy Pocket · Silver	Game Boy Pocket · Hopea
+Game Boy Pocket · Black	Game Boy Pocket · Musta
+Game Boy Pocket · Yellow	Game Boy Pocket · Keltainen
+Game Boy Pocket · Red	Game Boy Pocket · Punainen
+Game Boy Pocket · Green	Game Boy Pocket · Vihreä
+Game Boy Pocket · Blue	Game Boy Pocket · Sininen
+Game Boy Pocket · Pink	Game Boy Pocket · Pinkki
+Game Boy Pocket · Screen only	Game Boy Pocket · Vain näyttö
+Game Boy Color · Berry	Game Boy Color · Marja
+Game Boy Color · Grape	Game Boy Color · Viinirypäle
+Game Boy Color · Kiwi	Game Boy Color · Kiivi
+Game Boy Color · Dandelion	Game Boy Color · Voikukka
+Game Boy Color · Teal	Game Boy Color · Sinivihreä
+Game Boy Color · Atomic Purple	Game Boy Color · Atomivioletti
+Game Boy Color · Screen only	Game Boy Color · Vain näyttö
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Glacier	Game Boy Advance · Jäätikkö
+Game Boy Advance · Black	Game Boy Advance · Musta
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Koboltti
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Hopea
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Musta
+WonderSwan Color · White	WonderSwan Color · Valkoinen
+WonderSwan Color · Blue	WonderSwan Color · Sininen
+PSP · Black	PSP · Musta
+PSP · White	PSP · Valkoinen
+Grey TV	Harmaa televisio
+Wood-grain TV	Puukuvioinen televisio
+PC monitor	PC-näyttö
+Arcade cabinet	Pelikabinetti
 Black bar	Musta palkki
-SP Onyx	SP Onyx
-SP Cobalt	SP Koboltti
-SP Platinum	SP Platina
 GBA Color	GBA-värit
 GBA screen	GBA-näyttö
 GBA screens	GBA-näytöt
@@ -943,7 +972,6 @@ Next picture	Seuraava kuva
 No pictures yet	Ei vielä kuvia
 Available	Saatavilla
 Not downloaded	Ei ladattu
-More filters	Lisää suodattimia
 Show games	Näytä pelit
 Reset filters	Nollaa suodattimet
 Any	Kaikki
@@ -957,3 +985,148 @@ Online play	Verkkopeli
 {0} players	{0} pelaajaa
 No game information yet.	Ei vielä pelin tietoja.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ota Pelin tiedot käyttöön kohdassa Asetukset > Kirjasto > Kansilähteet ja hae kannet.
+Ports	Portit
+Restart port	Käynnistä portti uudelleen
+Quit	Lopeta
+Looking for the latest PortMaster	Etsitään uusinta PortMasteria
+Downloading PortMaster	Ladataan PortMasteria
+Checking PortMaster	Tarkistetaan PortMasteria
+Unpacking PortMaster	Puretaan PortMasteria
+Setting up PortMaster	Otetaan PortMaster käyttöön
+Installing PortMaster from the card	Asennetaan PortMaster kortilta
+PortMaster is ready	PortMaster on valmis
+Could not set up PortMaster	PortMasteria ei voitu ottaa käyttöön
+Get, update and remove ports	Hae, päivitä ja poista portteja
+Close PortMaster	Sulje PortMaster
+Back to PortMaster	Takaisin PortMasteriin
+Keep getting and updating ports	Jatka porttien hakemista ja päivittämistä
+Your ports are waiting in Ports	Porttisi odottavat Porteissa
+Closing PortMaster…	Suljetaan PortMasteria…
+Closing the port…	Suljetaan porttia…
+GB screens	GB-näytöt
+GBC screens	GBC-näytöt
+Game Boy screen	Game Boy -näyttö
+Game Boy Color screen	Game Boy Color -näyttö
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Alkuperäisen Game Boyn pistematriisinäyttö: vaalea pikseliruudukko ja pehmeät varjot.
+The Game Boy Color screen with faint gaps between its pixels.	Game Boy Colorin näyttö ja sen pikselien väliset himmeät raot.
+This handheld's own screen.	Tämän käsikonsolin oma näyttö.
+Screen colours	Näytön värit
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Mustavalkoinen
+Game Boy Color, darker	Game Boy Color, tummempi
+Full colour	Täydet värit
+Hold to save	Tallenna pitämällä
+Hold to load	Lataa pitämällä
+Screen off	Näyttö pois
+Touch the screen to turn it on	Kosketa näyttöä, niin se syttyy
+min	min
+h	h
+Not saved	Ei tallennettu
+Loaded	Ladattu
+Not loaded	Ei ladattu
+Nothing to load	Ei ladattavaa
+Saving…	Tallennetaan…
+Loading…	Ladataan…
+Info screen	Infonäyttö
+Team	Joukkue
+Lv	Taso
+screens	näyttöä
+Not yet	Ei vielä
+None yet	Ei vielä yhtään
+The best there is	Parasta mitä on
+Next:	Seuraava:
+Badges	Merkit
+Carried	Mukana
+Coin bank	Kolikkopankki
+Coins	Kolikot
+Collection	Kokoelma
+Course	Kenttä
+Day	Päivä
+Ending so far	Loppu tähän asti
+Essences	Esanssit
+Gear	Varusteet
+Golden leaves	Kultaiset lehdet
+Heart containers	Sydänsäiliöt
+Heart pieces	Sydämen palat
+Hearts	Sydämet
+In a course	Kentässä
+Instruments	Soittimet
+Johto badges	Johton merkit
+Journey	Matka
+Kanto badges	Kanton merkit
+Keys	Avaimet
+Lives	Elämät
+Money	Rahat
+Musical coins	Soittokolikot
+Night	Yö
+Pokédex caught	Pokédex: pyydetyt
+Pokédex seen	Pokédex: nähdyt
+Rupees	Rupiat
+Secret seashells	Salaiset simpukat
+Shield	Kilpi
+Small keys	Pienet avaimet
+Sword	Miekka
+Time of day	Vuorokaudenaika
+Time	Aika
+Total	Yhteensä
+Trainer	Kouluttaja
+Treasures	Aarteet
+Worlds	Maailmat
+Your journey	Matkasi
+Seeds	Siemenet
+Game switcher	Pelinvaihto
+Switch to another game	Vaihda toiseen peliin
+Hold to return home	Palaa kotiin pitämällä
+Add game files	Lisää pelitiedostot
+Needs your files	Tarvitsee tiedostosi
+Files added	Tiedostoja lisätty
+How to get the files	Näin saat tiedostot
+Scan with your phone	Skannaa puhelimella
+Or open on a computer	Tai avaa tietokoneella
+Code	Koodi
+Connect to Wi-Fi to send files from a phone or computer.	Yhdistä Wi-Fiin, niin voit lähettää tiedostoja puhelimesta tai tietokoneesta.
+Receiving files	Vastaanotetaan tiedostoja
+Unpacking files	Puretaan tiedostoja
+Files arrived. Choose Play to start.	Tiedostot ovat perillä. Aloita valitsemalla Pelaa.
+This port lists no instructions.	Tällä portilla ei ole ohjeita.
+Play	Pelaa
+Goes into	Kohde
+Phone or computer connected	Puhelin tai tietokone yhdistetty
+Vibration	Värinä
+Menu haptics	Valikon haptiikka
+Haptic strength	Haptiikan voimakkuus
+Game rumble	Pelien tärinä
+Rumble strength	Tärinän voimakkuus
+Try a pattern	Kokeile kuviota
+Feel the game	Tunne peli
+Feel every move	Tunne jokainen liike
+No vibration motor was found on this device.	Tästä laitteesta ei löytynyt värinämoottoria.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak -pelit DS:llä, tärinäkasetit Game Boylla ja Game Boy Advancella.
+Turn on game rumble for games made for a rumble accessory.	Ota pelien tärinä käyttöön peleissä, jotka on tehty tärinälisälaitteelle.
+A light tap for every move, a firmer one when you choose, open or save.	Kevyt napautus jokaisesta liikkeestä, napakampi kun valitset, avaat tai tallennat.
+Turn on menu haptics to feel the menus.	Ota valikon haptiikka käyttöön tunteaksesi valikot.
+Browse	Selaa
+Open a view	Avaa näkymä
+Go back	Palaa
+Switch on	Ota käyttöön
+Switch off	Poista käytöstä
+Add favourite	Lisää suosikki
+Remove favourite	Poista suosikki
+Start a game	Käynnistä peli
+Save complete	Tallennettu
+Load complete	Ladattu
+Try again	Yritä uudelleen
+Keyboard	Näppäimistö
+Adjust	Säädä
+End of a list	Listan loppu
+Long press	Pitkä painallus
+Notification	Ilmoitus
+Touch screen	Kosketusnäyttö
+Point and click on top	Osoita ja napsauta ylhäällä
+Touch here to point and click on the top screen.	Kosketa tästä osoittaaksesi ja napsauttaaksesi yläruudulla.
+Hold still for a right click	Pidä paikallaan oikeaa napsautusta varten
+Hold to exit	Pidä poistuaksesi
+Touch screen off	Kosketusnäyttö pois
+Touch screen is not available	Kosketusnäyttö ei ole käytettävissä

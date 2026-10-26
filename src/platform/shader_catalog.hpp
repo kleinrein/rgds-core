@@ -1,4 +1,6 @@
 #pragma once
+#include <cstring>
+
 namespace rgds {
 // Only sharp bilinear presets use the destination size to reconstruct pixels.
 inline constexpr bool shader_uses_target_size(int id) { return id == 1 || (id >= 9 && id <= 11); }
@@ -33,7 +35,9 @@ inline constexpr const char* shader_files[] = {"off",
                                                "pixel_beads",
                                                "glossy_tiles",
                                                "gba_color",
-                                               "gba_screen"};
+                                               "gba_screen",
+                                               "gb_screen",
+                                               "gbc_screen"};
 inline constexpr int shader_count = sizeof(shader_files) / sizeof(shader_files[0]);
 // The community lcd1x and zfast grids were tuned for 1080p, where one DS pixel
 // spans 5.6 display pixels. On the 640x480 panels it spans 2.5, so only every
@@ -50,8 +54,9 @@ inline constexpr const char* shader_grid_defines(int id) {
 }
 // Picker order, grouped from plain pixels through DS screens to pixel art.
 // Every preset appears exactly once; IDs keep their persisted meaning.
-inline constexpr const char* shader_family_names[] = {"Original", "DS screens", "GBA screens", "Natural",
-                                                      "Vivid",    "Pixel art",  "Moods"};
+// A family named "... screens" is one handheld's own screen (shader_system_screens).
+inline constexpr const char* shader_family_names[] = {"Original", "DS screens", "GBA screens", "Natural",   "Vivid",
+                                                      "Pixel art", "Moods",     "GB screens",  "GBC screens"};
 inline constexpr int shader_family_count = sizeof(shader_family_names) / sizeof(shader_family_names[0]);
 struct ShaderPlace {
     int id, family;
@@ -59,9 +64,32 @@ struct ShaderPlace {
 inline constexpr ShaderPlace shader_order[] = {{0, 0},  {1, 0},  {21, 1}, {22, 1}, {4, 1},  {6, 1},  {9, 1},  {12, 1},
                                                {8, 1},  {11, 1}, {14, 1}, {30, 2}, {29, 2}, {23, 3}, {25, 3}, {5, 3},
                                                {7, 3},  {10, 3}, {13, 3}, {20, 3}, {15, 3}, {24, 4}, {26, 4}, {17, 4},
-                                               {27, 5}, {28, 5}, {2, 5},  {3, 5},  {16, 6}, {18, 6}, {19, 6}};
-// What a Game Boy Advance game shows when its own choice is Default: its screen, colour and pixel gaps.
-inline constexpr int gba_default_shader = 30;
+                                               {27, 5}, {28, 5}, {2, 5},  {3, 5},  {16, 6}, {18, 6}, {19, 6},
+                                               {31, 7}, {32, 8}};
+// The family of a system's own screens ("nds", "gba", "gb", "gbc"), or -1.
+inline int shader_system_screens(const char* system) {
+    const char* systems[] = {"nds", "gba", "gb", "gbc"};
+    const int families[] = {1, 2, 7, 8};
+    for (int i = 0; i < 4; ++i)
+        if (std::strcmp(system, systems[i]) == 0) return families[i];
+    return -1;
+}
+// What a game of another system shows when its own choice is Default: that handheld's screen
+// (the GBA's colour and pixel gaps, the Game Boy's dot matrix, the Game Boy Color's faint grid).
+// DS games use the default from Settings (-1).
+inline int system_default_shader(const char* system) {
+    const char* systems[] = {"gba", "gb", "gbc"};
+    const int shaders[] = {30, 31, 32};
+    for (int i = 0; i < 3; ++i)
+        if (std::strcmp(system, systems[i]) == 0) return shaders[i];
+    return -1;
+}
+// What Default draws for a game of `system`: that handheld's own screen, or for a DS game the
+// library shader from Settings.
+inline int default_shader_for(const char* system, int library) {
+    const int own = system_default_shader(system);
+    return own >= 0 ? own : library;
+}
 static_assert(sizeof(shader_order) / sizeof(shader_order[0]) == shader_count, "Every shader needs one picker place");
 inline constexpr int shader_family(int id) {
     for (auto place : shader_order)

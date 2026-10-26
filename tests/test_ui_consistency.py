@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import threading
 import unittest
 
 from tests import test_pictochat_ui as chat_ui
@@ -106,6 +107,24 @@ class UiConsistencyTests(unittest.TestCase):
         r = self.run_ui(down + '600 key A\n')
         self.assertEqual(r['page'], DISPLAY_PAGE)
         self.assertEqual(r['home_bar_focus'], -1)
+
+    def test_a_vanished_update_mark_hands_focus_and_a_to_brightness(self):
+        status = self.root / 'update/status.ini'
+        status.parent.mkdir()
+        down = ''.join(f'{100 + i * 100} key Down\n' for i in range(4)) + '600 key Right\n'
+
+        def run(script, seconds):
+            # On the mark; the update then goes away (status is re-read every 2 s while idle).
+            status.write_text('state=available\n')
+            clear = threading.Timer(1.5, lambda: status.unlink(missing_ok=True))
+            clear.start()
+            self.addCleanup(clear.cancel)
+            return self.run_ui(script, seconds=seconds)
+
+        status.write_text('state=available\n')
+        self.assertEqual(self.run_ui(down)['home_bar_focus'], 1)
+        self.assertEqual(run(down, 5)['home_bar_focus'], 0)
+        self.assertEqual(run(down + '4500 key A\n', 5.5)['page'], DISPLAY_PAGE)
 
     def test_controls_profile_answers_a_even_without_a_game(self):
         r = self.run_ui('100 key A\n', '', ('--settings', '--section', 'controls'))

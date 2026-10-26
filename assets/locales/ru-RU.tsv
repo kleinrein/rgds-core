@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Перезапустите игру, чт
 Could not save DS settings.	Не удалось сохранить настройки DS.
 Search	Поиск
 Save gallery	Галерея сохранений
-Search and filters	Поиск и фильтры
 Add your games	Добавьте игры
 DS controls	Управление DS
 Back up all saves	Резервная копия сохранений
@@ -626,7 +625,6 @@ Slot	Слот
 Empty slot	Пустой слот
 Search games	Поиск игр
 Filter	Фильтр
-Clear search and filters	Сбросить поиск и фильтры
 Missing artwork	Без обложки
 Where to put games	Куда класть игры
 Scan for games	Найти игры
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Звук не записывается и не �
 Test the microphone on your handheld.	Проверьте микрофон консоли.
 Return home before testing the physical microphone.	Вернитесь на главную перед проверкой микрофона.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Подуйте или говорите в микрофон. Уровень поднимется и опустится, когда вы замолчите.
-No filter	Без фильтра
 Quick search	Быстрый поиск
 A  Search	A  Поиск
 A  Jump	A  Перейти
@@ -906,14 +903,46 @@ Companion	Компаньон
 Swap screens	Поменять экраны
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Добавляет игры Game Boy и Game Boy Advance: раздел «Игры» откроет страницу систем.
 Frame	Рамка
-Indigo	Индиго
-Glacier	Ледник
-Black	Чёрный
-Platinum	Платина
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Красный
+Game Boy · Yellow	Game Boy · Жёлтый
+Game Boy · Green	Game Boy · Зелёный
+Game Boy · Blue	Game Boy · Синий
+Game Boy · Black	Game Boy · Чёрный
+Game Boy · Screen only	Game Boy · Только экран
+Game Boy Pocket · Silver	Game Boy Pocket · Серебристый
+Game Boy Pocket · Black	Game Boy Pocket · Чёрный
+Game Boy Pocket · Yellow	Game Boy Pocket · Жёлтый
+Game Boy Pocket · Red	Game Boy Pocket · Красный
+Game Boy Pocket · Green	Game Boy Pocket · Зелёный
+Game Boy Pocket · Blue	Game Boy Pocket · Синий
+Game Boy Pocket · Pink	Game Boy Pocket · Розовый
+Game Boy Pocket · Screen only	Game Boy Pocket · Только экран
+Game Boy Color · Berry	Game Boy Color · Ягодный
+Game Boy Color · Grape	Game Boy Color · Виноградный
+Game Boy Color · Kiwi	Game Boy Color · Киви
+Game Boy Color · Dandelion	Game Boy Color · Одуванчик
+Game Boy Color · Teal	Game Boy Color · Бирюзовый
+Game Boy Color · Atomic Purple	Game Boy Color · Атомный фиолетовый
+Game Boy Color · Screen only	Game Boy Color · Только экран
+Game Boy Advance · Indigo	Game Boy Advance · Индиго
+Game Boy Advance · Glacier	Game Boy Advance · Ледник
+Game Boy Advance · Black	Game Boy Advance · Чёрный
+Game Boy Advance · Platinum	Game Boy Advance · Платина
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Кобальт
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Оникс
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Платина
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Серебристый
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Чёрный
+WonderSwan Color · White	WonderSwan Color · Белый
+WonderSwan Color · Blue	WonderSwan Color · Синий
+PSP · Black	PSP · Чёрный
+PSP · White	PSP · Белый
+Grey TV	Серый телевизор
+Wood-grain TV	Телевизор под дерево
+PC monitor	Монитор ПК
+Arcade cabinet	Аркадный автомат
 Black bar	Чёрная полоса
-SP Onyx	SP Оникс
-SP Cobalt	SP Кобальт
-SP Platinum	SP Платина
 GBA Color	Цвета GBA
 GBA screen	Экран GBA
 GBA screens	Экраны GBA
@@ -943,7 +972,6 @@ Next picture	Следующее изображение
 No pictures yet	Изображений пока нет
 Available	Доступно
 Not downloaded	Не загружено
-More filters	Ещё фильтры
 Show games	Показать игры
 Reset filters	Сбросить фильтры
 Any	Любой
@@ -957,3 +985,148 @@ Online play	Онлайн-игра
 {0} players	Игроков: {0}
 No game information yet.	Сведений об игре пока нет.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Включите «Об игре» в Настройки > Библиотека > Источники обложек и загрузите обложки.
+Ports	Порты
+Restart port	Перезапустить порт
+Quit	Выйти
+Looking for the latest PortMaster	Поиск последней версии PortMaster
+Downloading PortMaster	Загрузка PortMaster
+Checking PortMaster	Проверка PortMaster
+Unpacking PortMaster	Распаковка PortMaster
+Setting up PortMaster	Настройка PortMaster
+Installing PortMaster from the card	Установка PortMaster с карты
+PortMaster is ready	PortMaster готов
+Could not set up PortMaster	Не удалось настроить PortMaster
+Get, update and remove ports	Загрузка, обновление и удаление портов
+Close PortMaster	Закрыть PortMaster
+Back to PortMaster	Вернуться в PortMaster
+Keep getting and updating ports	Продолжить загрузку и обновление портов
+Your ports are waiting in Ports	Ваши порты ждут в разделе «Порты»
+Closing PortMaster…	Закрытие PortMaster…
+Closing the port…	Закрытие порта…
+GB screens	Экраны GB
+GBC screens	Экраны GBC
+Game Boy screen	Экран Game Boy
+Game Boy Color screen	Экран Game Boy Color
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Точечно-матричный экран первого Game Boy: светлая сетка пикселей и мягкие тени.
+The Game Boy Color screen with faint gaps between its pixels.	Экран Game Boy Color со слабыми промежутками между пикселями.
+This handheld's own screen.	Родной экран этой портативной консоли.
+Screen colours	Цвета экрана
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Чёрно-белый
+Game Boy Color, darker	Game Boy Color, темнее
+Full colour	Полный цвет
+Hold to save	Удерживайте, чтобы сохранить
+Hold to load	Удерживайте, чтобы загрузить
+Screen off	Экран выключен
+Touch the screen to turn it on	Коснитесь экрана, чтобы включить его
+min	мин
+h	ч
+Not saved	Не сохранено
+Loaded	Загружено
+Not loaded	Не загружено
+Nothing to load	Нечего загружать
+Saving…	Сохранение…
+Loading…	Загрузка…
+Info screen	Экран сведений
+Team	Команда
+Lv	Ур.
+screens	экранов
+Not yet	Пока нет
+None yet	Пока ни одного
+The best there is	Лучше не бывает
+Next:	Далее:
+Badges	Значки
+Carried	С собой
+Coin bank	Банк монет
+Coins	Монеты
+Collection	Коллекция
+Course	Уровень
+Day	День
+Ending so far	Концовка сейчас
+Essences	Эссенции
+Gear	Снаряжение
+Golden leaves	Золотые листья
+Heart containers	Сосуды сердец
+Heart pieces	Части сердец
+Hearts	Сердца
+In a course	На уровне
+Instruments	Инструменты
+Johto badges	Значки Джото
+Journey	Путешествие
+Kanto badges	Значки Канто
+Keys	Ключи
+Lives	Жизни
+Money	Деньги
+Musical coins	Музыкальные монеты
+Night	Ночь
+Pokédex caught	Покедекс: поймано
+Pokédex seen	Покедекс: встречено
+Rupees	Рупии
+Secret seashells	Тайные ракушки
+Shield	Щит
+Small keys	Малые ключи
+Sword	Меч
+Time of day	Время суток
+Time	Время
+Total	Всего
+Trainer	Тренер
+Treasures	Сокровища
+Worlds	Миры
+Your journey	Ваше путешествие
+Seeds	Семена
+Game switcher	Смена игры
+Switch to another game	Перейти к другой игре
+Hold to return home	Удерживайте, чтобы выйти на главную
+Add game files	Добавить файлы игры
+Needs your files	Нужны ваши файлы
+Files added	Файлы добавлены
+How to get the files	Как получить файлы
+Scan with your phone	Отсканируйте телефоном
+Or open on a computer	Или откройте на компьютере
+Code	Код
+Connect to Wi-Fi to send files from a phone or computer.	Подключитесь к Wi-Fi, чтобы отправить файлы с телефона или компьютера.
+Receiving files	Получение файлов
+Unpacking files	Распаковка файлов
+Files arrived. Choose Play to start.	Файлы получены. Выберите «Играть», чтобы начать.
+This port lists no instructions.	У этого порта нет инструкций.
+Play	Играть
+Goes into	Папка
+Phone or computer connected	Телефон или компьютер подключён
+Vibration	Вибрация
+Menu haptics	Отклик в меню
+Haptic strength	Сила отклика
+Game rumble	Вибрация в играх
+Rumble strength	Сила вибрации
+Try a pattern	Попробовать шаблон
+Feel the game	Почувствуйте игру
+Feel every move	Почувствуйте каждое движение
+No vibration motor was found on this device.	На этом устройстве не найден вибромотор.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Игры с Rumble Pak на DS, картриджи с вибрацией на Game Boy и Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Включите вибрацию в играх для игр, рассчитанных на аксессуар с вибрацией.
+A light tap for every move, a firmer one when you choose, open or save.	Лёгкий толчок при каждом движении, сильнее при выборе, открытии или сохранении.
+Turn on menu haptics to feel the menus.	Включите отклик в меню, чтобы чувствовать меню.
+Browse	Просмотр
+Open a view	Открыть вид
+Go back	Назад
+Switch on	Включить
+Switch off	Выключить
+Add favourite	Добавить в избранное
+Remove favourite	Убрать из избранного
+Start a game	Запустить игру
+Save complete	Сохранено
+Load complete	Загружено
+Try again	Повторить
+Keyboard	Клавиатура
+Adjust	Настройка
+End of a list	Конец списка
+Long press	Долгое нажатие
+Notification	Уведомление
+Touch screen	Сенсорный экран
+Point and click on top	Наводить и нажимать сверху
+Touch here to point and click on the top screen.	Касайтесь здесь, чтобы наводить и нажимать на верхнем экране.
+Hold still for a right click	Удерживайте на месте для правого клика
+Hold to exit	Удерживайте для выхода
+Touch screen off	Сенсорный экран выключен
+Touch screen is not available	Сенсорный экран недоступен

@@ -1,4 +1,6 @@
 #include "launcher/model.hpp"
+#include "../../play/src/ui/frame_styles.hpp" // the frames per system (shared with the player)
+#include "../../play/src/ui/gb_palettes.hpp" // the Game Boy palettes and corrections (shared with the player)
 #include "platform/sdl_dynamic.hpp"
 #include "platform/event_wait.hpp"
 #include "platform/wayland_role.hpp"
@@ -20,6 +22,7 @@
 #include "launcher/menu_audio.hpp"
 #include "launcher/accent.hpp"
 #include "platform/alsa_mixer.hpp"
+#include "platform/haptics.hpp"
 #include "platform/net_probe.hpp"
 #include "launcher/library_viewport.hpp"
 #include "launcher/media.hpp"
@@ -30,6 +33,8 @@
 #include "launcher/dual_screen.hpp"
 #include "launcher/pictochat_app.hpp"
 #include "platform/touch.hpp"
+#include "platform/uinput_pointer.hpp"
+#include "platform/scanout_mirror.hpp"
 #include "platform/volume_keys.hpp"
 #include "launcher/repeat.hpp"
 #include "platform/overlay_frame.hpp"
@@ -140,69 +145,6 @@ static bool same_hardware(const SystemStatus& a, const SystemStatus& b) {
            a.volume_percent == b.volume_percent && a.poweroff == b.poweroff;
 }
 
-// Original, deliberately small probe font. UTF-8 paths are retained by the model;
-// full Unicode text rendering is a later UI milestone.
-static const std::map<char, std::array<unsigned char, 7>> glyphs = {{'A', {14, 17, 17, 31, 17, 17, 17}},
-                                                                    {'B', {30, 17, 17, 30, 17, 17, 30}},
-                                                                    {'C', {14, 17, 16, 16, 16, 17, 14}},
-                                                                    {'D', {30, 17, 17, 17, 17, 17, 30}},
-                                                                    {'E', {31, 16, 16, 30, 16, 16, 31}},
-                                                                    {'F', {31, 16, 16, 30, 16, 16, 16}},
-                                                                    {'G', {14, 17, 16, 23, 17, 17, 15}},
-                                                                    {'H', {17, 17, 17, 31, 17, 17, 17}},
-                                                                    {'I', {14, 4, 4, 4, 4, 4, 14}},
-                                                                    {'J', {7, 2, 2, 2, 18, 18, 12}},
-                                                                    {'K', {17, 18, 20, 24, 20, 18, 17}},
-                                                                    {'L', {16, 16, 16, 16, 16, 16, 31}},
-                                                                    {'M', {17, 27, 21, 21, 17, 17, 17}},
-                                                                    {'N', {17, 25, 21, 19, 17, 17, 17}},
-                                                                    {'O', {14, 17, 17, 17, 17, 17, 14}},
-                                                                    {'P', {30, 17, 17, 30, 16, 16, 16}},
-                                                                    {'Q', {14, 17, 17, 17, 21, 18, 13}},
-                                                                    {'R', {30, 17, 17, 30, 20, 18, 17}},
-                                                                    {'S', {15, 16, 16, 14, 1, 1, 30}},
-                                                                    {'T', {31, 4, 4, 4, 4, 4, 4}},
-                                                                    {'U', {17, 17, 17, 17, 17, 17, 14}},
-                                                                    {'V', {17, 17, 17, 17, 17, 10, 4}},
-                                                                    {'W', {17, 17, 17, 21, 21, 21, 10}},
-                                                                    {'X', {17, 17, 10, 4, 10, 17, 17}},
-                                                                    {'Y', {17, 17, 10, 4, 4, 4, 4}},
-                                                                    {'Z', {31, 1, 2, 4, 8, 16, 31}},
-                                                                    {'0', {14, 17, 19, 21, 25, 17, 14}},
-                                                                    {'1', {4, 12, 4, 4, 4, 4, 14}},
-                                                                    {'2', {14, 17, 1, 2, 4, 8, 31}},
-                                                                    {'3', {30, 1, 1, 14, 1, 1, 30}},
-                                                                    {'4', {2, 6, 10, 18, 31, 2, 2}},
-                                                                    {'5', {31, 16, 16, 30, 1, 1, 30}},
-                                                                    {'6', {14, 16, 16, 30, 17, 17, 14}},
-                                                                    {'7', {31, 1, 2, 4, 8, 8, 8}},
-                                                                    {'8', {14, 17, 17, 14, 17, 17, 14}},
-                                                                    {'9', {14, 17, 17, 15, 1, 1, 14}},
-                                                                    {'.', {0, 0, 0, 0, 0, 6, 6}},
-                                                                    {':', {0, 6, 6, 0, 6, 6, 0}},
-                                                                    {'-', {0, 0, 0, 31, 0, 0, 0}},
-                                                                    {'/', {1, 2, 2, 4, 8, 8, 16}},
-                                                                    {'+', {0, 4, 4, 31, 4, 4, 0}},
-                                                                    {'?', {14, 17, 1, 2, 4, 0, 4}},
-                                                                    {'!', {4, 4, 4, 4, 4, 0, 4}},
-                                                                    {'=', {0, 31, 0, 31, 0, 0, 0}},
-                                                                    {'%', {25, 25, 2, 4, 8, 19, 19}},
-                                                                    {'[', {14, 8, 8, 8, 8, 8, 14}},
-                                                                    {']', {14, 2, 2, 2, 2, 2, 14}},
-                                                                    {'(', {2, 4, 8, 8, 8, 4, 2}},
-                                                                    {')', {8, 4, 2, 2, 2, 4, 8}},
-                                                                    {'<', {1, 2, 4, 8, 4, 2, 1}},
-                                                                    {'>', {16, 8, 4, 2, 4, 8, 16}},
-                                                                    {'_', {0, 0, 0, 0, 0, 0, 31}},
-                                                                    {' ', {0, 0, 0, 0, 0, 0, 0}},
-                                                                    {char(0xdf), {14, 17, 17, 22, 17, 17, 22}},
-                                                                    {char(0xc6), {15, 20, 20, 30, 20, 20, 23}},
-                                                                    {char(0xd8), {15, 19, 21, 21, 25, 17, 30}},
-                                                                    {char(0xc5), {4, 10, 4, 14, 17, 31, 17}},
-                                                                    {'&', {12, 18, 20, 8, 21, 18, 13}},
-                                                                    {'\'', {4, 4, 8, 0, 0, 0, 0}},
-                                                                    {char(0xb7), {0, 0, 0, 6, 6, 0, 0}},
-                                                                    {',', {0, 0, 0, 0, 0, 4, 8}}};
 struct Section {
     const char* title;
 };
@@ -220,8 +162,8 @@ static const std::array<Section, 10> sections = {{{"Theme & display"},
 struct Options {
     bool independent = false, mainline = false;
     bool preview = false, probe = false, allow_launch = false, watch_assets = false, settings = false,
-         game_menu = false, game_switcher = false, home = false, library = false, boot_warning = false,
-         boot_startup = false, card_repair = false;
+         game_menu = false, game_switcher = false, port_menu = false, home = false, library = false,
+         boot_warning = false, boot_startup = false, card_repair = false;
     int frames = 0, seconds = 0, boot_ready_fd = -1;
     std::string top = "DSI-1", bottom = "DSI-2";
     fs::path theme, themes, screenshot, app, data, state, preferences, system_preferences, input_script, cache_report,
@@ -242,6 +184,14 @@ struct Surface {
 class App {
     Sdl s;
     MenuAudio sounds{s};
+    // The vibration motor (platform/haptics.hpp): menu cues and the touch
+    // detents below play on it alongside the sounds, also when muted.
+    Haptics haptics;
+    Uint32 edge_felt_at = 0;
+    bool hold_felt = false, charge_seen = false, was_charging = false;
+    void configure_haptics();
+    // A detent while a finger drags through a list, a carousel or a slider.
+    void haptic_detent() { haptics.play(Haptic::Detent); }
     Options o;
     Model model;
     bool session_initialized = false, library_ready = false, boot_displayed = false, boot_touch_candidate = false,
@@ -266,10 +216,13 @@ class App {
     struct SystemStats {
         size_t games = 0;
         uint64_t sessions = 0, seconds = 0;
+        bool played_ready = false; // sessions and seconds read, once the card is shown
     };
     std::vector<SystemStats> system_stats;
+    const SystemStats& system_stats_for(size_t index);
     int play_fit = 0, play_second = 0; // RG DS Play's view of the running game (play.ini)
     std::string play_frame = "off";
+    int play_palette = 0, play_correction = 0; // Game Boy colours (play.ini): palette for GB, correction for GBC
     GameOptions game_preferences;
     std::vector<Shader> shaders;
     std::vector<int> shader_choices;
@@ -380,6 +333,7 @@ class App {
         ~SoundAction() { app.finish_sound_action(); }
     };
     void menu_sounds_action(int code);
+    void haptics_action(int code);
     TouchDevice touchscreen;
     VolumeKeys volume_keys;
     HoldRepeat hold;
@@ -489,16 +443,21 @@ class App {
     std::pair<int, int> slider_band() const {
         return settings.page == Page::Sound ? std::make_pair(96, 186) : std::make_pair(163, 285);
     }
-    static int sound_row(int index) { return 198 + index * 74; }
+    // Sound's four tiles under the slider, two by two like the game menu's grid, 16 px apart:
+    // Mute, Test microphone, Sounds & music, Vibration.
+    static constexpr int sound_tile_width = 284, sound_tile_height = 84;
+    static int sound_tile_x(int index) { return 28 + (index % 2) * 300; }
+    static int sound_tile_y(int index) { return 202 + (index / 2) * 100; }
     int list_count() const {
         switch (settings.page) {
         case Page::Settings: return 10;
         case Page::MenuSounds: return 5;
+        case Page::Haptics: return 5;
         case Page::Cheats: return int(cheat_rows.size());
-        case Page::GameSwitcher: return int(switch_games.size()) + 1;
+        case Page::GameSwitcher: return int(switch_games.size()) + (home_switcher ? 0 : 1); // in a game: Game menu
         case Page::Graphics: return 8;
         case Page::Power: return 6;
-        case Page::LibraryOptions: return 11;
+        case Page::LibraryOptions: return 10;
         case Page::Appearance: return 11;
         case Page::Scraper: return 5;
         case Page::DeviceInfo: return 5;
@@ -515,8 +474,8 @@ class App {
         case Page::Network: return 5;
         case Page::Startup: return 4;
         case Page::SaveGallery: return 9;
-        case Page::Discover: return 4;
         case Page::RomSetup: return 3;
+        case Page::PortFiles: return 3;
         case Page::DSControls: return 5;
         case Page::EmulatorOptions: return o.game_core == "drastic" ? 12 : 10;
         case Page::ShaderPicker: return int(shader_choices.size());
@@ -525,12 +484,12 @@ class App {
             return std::max(
                 0, std::atoi(device_status.count("network_count") ? device_status.at("network_count").c_str() : "0"));
         case Page::Timezone: return int(timezones.size());
-        case Page::PlayGraphics: return 4;
+        case Page::PlayGraphics: return play_colour_kind() ? 5 : 4;
         default: return 0;
         }
     }
-    // Settings > Library: "Show all systems" (row 10) is shown first, the others in their order below it.
-    static int library_row(int shown) { return shown == 0 ? 10 : shown - 1; }
+    // Settings > Library: "Show all systems" (row 9) is shown first, the others in their order below it.
+    static int library_row(int shown) { return shown == 0 ? 9 : shown - 1; }
     int list_selected() const {
         return settings.page == Page::Settings ? section_row(settings.section) : settings.focus;
     }
@@ -661,12 +620,9 @@ class App {
     // RG DS Play's view of the running game, as the runtime stores it beside game.ini.
     fs::path play_view_path() { return item_folder(0) / "play.ini"; }
     void load_play_view();
-    // What RG DS Play can draw around the game (play/src/ui/frame.hpp), by their play.ini names: its own
-    // styles, then the owner's picture frames, userdata/frames/<system>/<name>.png.
-    static constexpr std::array<const char*, 9> play_frames = {"off", "indigo",  "glacier",   "black",      "platinum",
-                                                               "bar", "sp-onyx", "sp-cobalt", "sp-platinum"};
-    static constexpr std::array<const char*, 9> play_frame_names = {
-        "Off", "Indigo", "Glacier", "Black", "Platinum", "Black bar", "SP Onyx", "SP Cobalt", "SP Platinum"};
+    // What RG DS Play can draw around the game, by their play.ini names: its own styles for the game's system
+    // (play/src/ui/frame_styles.hpp), then the owner's picture frames, userdata/frames/<system>/<name>.png.
+    std::string play_system() const;
     fs::path play_frames_folder();
     std::vector<std::string> play_frame_choices();
     std::string play_frame_label(const std::string& frame) const;
@@ -674,7 +630,91 @@ class App {
     const char* play_fit_name(int fit) const;
     const char* play_second_name(int second) const;
     void play_graphics_action();
+    int play_colour_kind() const; // the colour row of the Graphics page: 0 none, 1 palette (GB), 2 correction (GBC)
+    void apply_play_colour(int palette, int correction);
     void return_home();
+    // PortMaster ports (port_menu.hpp): the helper's companion view and its switch to the menu.
+    bool port_idle = true;
+    std::string port_state_token, port_volume_token;
+    std::map<std::string, std::string> port_status;
+    int port_volume = 0;
+    Uint32 port_poll_at = 0, port_volume_at = 0;
+    bool port_game() const { return o.game_core == core_ids[portmaster_core]; }
+    void port_poll(Uint32 now);
+    void port_go_idle();
+    void port_companion(SDL_Renderer* r, int y);
+    // A port's second screen is the info screen RG DS Play shows (play/src/companion/dock.hpp):
+    // the game switcher on a tap, Return home held, brightness, screen off.
+    enum class PortItem { None, Switcher, Home, Bright, Touch, Off };
+    PortItem port_held = PortItem::None;
+    Uint32 port_held_at = 0, port_touched_at = 0, port_began = 0, port_note_at = 0, port_bright_at = 0;
+    bool port_fired = false, port_dragging = false, port_off = false;
+    int port_bright = -1; // the second screen's brightness, shared with RG DS Play (-1 until read)
+    std::string port_note;
+    bool port_info_shown() const {
+        return o.port_menu && port_idle && !port_manager() &&
+               (!port_status.count("message") || port_status.at("message").empty());
+    }
+    static SDL_Rect port_box(PortItem item);
+    int port_shown_brightness(Uint32 now) const;
+    void port_info(SDL_Renderer* r, int y);
+    void port_touch(const TouchPoint& point, Uint32 now);
+    void port_info_tick(Uint32 now);
+    void port_trigger(const char* name);
+    // Touch screen mode: the bottom panel is an absolute mouse on the top one (platform/uinput_pointer.hpp).
+    // A touch that stays put is a right click after a moment; one that moves drags with the left button.
+    UinputPointer port_pointer;
+    // The top panel's picture under the pad, read from the display controller a few times a second.
+    ScanoutMirror port_mirror;
+    SDL_Texture* port_mirror_texture = nullptr;
+    SDL_Renderer* port_mirror_renderer = nullptr;
+    int port_mirror_w = 0, port_mirror_h = 0;
+    bool port_mirror_shown = false;
+    Uint32 port_mirror_at = 0, port_touch_since = 0;
+    bool port_touch_mode = false, port_exit_held = false;
+    int port_touch_phase = 0; // 0 nothing, 1 down and waiting, 2 dragging, 3 right click sent
+    int port_touch_x = 0, port_touch_y = 0, port_touch_x0 = 0, port_touch_y0 = 0;
+    Uint32 port_touch_down_at = 0, port_exit_at = 0;
+    // A click is held for a few frames: a game that reads the button once a frame misses a 0 ms click.
+    Uint32 port_release_at = 0;
+    int port_release_button = 0;
+    void port_click(int button, Uint32 now);
+    void port_release_click();
+    static SDL_Rect port_exit_box() { return {488, 424, 140, 46}; }
+    void port_set_touch_mode(bool on, bool remember = true);
+    void port_touch_pointer(const TouchPoint& point, Uint32 now);
+    void port_touch_tick(Uint32 now);
+    void port_touch_pad(SDL_Renderer* r, int y);
+    uint64_t port_info_key = 0;
+    // PortMaster itself (runtime/portmaster_files/entry/PortMaster.sh) is the tool ports come from: pinned
+    // first in Ports, no game count or stats, and a two-choice sheet instead of the game menu.
+    std::optional<Game> port_entry;
+    static bool is_port_entry(const fs::path& path) {
+        return path.filename() == "PortMaster.sh" && path.parent_path().filename() == "entry";
+    }
+    bool port_manager() const { return port_game() && is_port_entry(o.game_rom); }
+    bool port_entry_shown() const { return !model.games.empty() && is_port_entry(model.games[0].path); }
+    // The games a library view lists: PortMaster's pinned entry is not one of them.
+    size_t listed_games() const { return model.games.size() - (port_entry_shown() ? 1 : 0); }
+    void port_manager_menu(SDL_Renderer* r, int y);
+    // Add game files (port_files_screen.hpp): runtime/port_files.py serves a web page while the page is open.
+    Game port_files_game;
+    std::map<std::string, std::string> port_files_details, port_files_status;
+    std::vector<std::string> port_files_qr;
+    std::string port_files_token;
+    pid_t port_files_child = -1;
+    Uint32 port_files_poll_at = 0;
+    bool port_needs_files(const Game& game);
+    void port_files_open(const Game& game);
+    void port_files_start();
+    void port_files_close();
+    void port_files_poll(Uint32 now);
+    int port_files_added();
+    void port_files_top(SDL_Renderer* r, int y);
+    void port_files_row(SDL_Renderer* r, int y, int i);
+    void port_files_action(int code);
+    void port_manager_action(int code);
+    void port_manager_touch(int x, int y);
     SystemPreferences system_preferences;
     bool system_configuration_loaded = false;
     Uint32 last_activity = 0, system_poll = 0, system_retry = 0, lid_poll = 0, brightness_changed = 0,
@@ -758,16 +798,18 @@ class App {
     // library) exporting. That purpose names the page and the A button.
     enum class GalleryMode { Save, Load, Manage };
     GalleryMode gallery_mode = GalleryMode::Manage;
-    Page gallery_return = Page::GameOptions, ds_return = Page::GameOptions, discover_return = Page::Library;
+    Page gallery_return = Page::GameOptions, ds_return = Page::GameOptions;
     int gallery_core = 1, discovery_filter = 0, resume_core = -1;
     std::string search_query;
     // Library filters from the game information (game_facets.hpp), and the counts that fill their pickers.
     Facets discovery_facets;
     FacetIndex facet_index;
-    // The filter sheet (filter_sheet.hpp): chips for played state and the facets, over the lower screen.
+    // The Library view sheet (filter_sheet.hpp): tiles for the collection, browser layout and search, then chips for
+    // played state and the facets, over the lower screen.
     struct FilterChip {
         int facet = -1;  // -1: the played state; otherwise a facet_rows() index
         int slider = -1; // 0 players, 1 release year: a range slider instead of a chip
+        int tile = -1;   // 0-8: a library_choice_icon() tile (collection, layout, jump, search, clear)
         int section = 0, title_y = 0;
         std::string label, value;
         int count = -1; // games with this value, shown after the label; -1: none
@@ -791,9 +833,12 @@ class App {
     };
     bool filter_sheet_open = false;
     int filter_focus = 0, filter_scroll = 0;
+    bool filter_pin = false;     // opened on the filters: the first section stays on top while the counts load
     int filter_thumb = 0;        // which handle of the focused slider the arrow keys move
     int filter_drag = -1;        // the slider a finger is dragging, or -1
     bool filter_touch = false;   // a finger is down on the sheet
+    bool filter_rail = false;    // ... on its scrollbar, holding the thumb
+    int filter_grab = 0;         // where on the thumb
     int filter_scroll_start = 0; // the scroll when the finger went down
     bool filter_slider(int slider, FilterSlider& out) const;
     void filter_slider_set(int slider, int low, int high);
@@ -802,9 +847,15 @@ class App {
     bool filter_slider_press(int x, int y);
     void filter_slider_drag(int x);
     void filter_drag_scroll(int y);
+    void filter_rail_metrics(const FilterLayout& layout, int& thumb, int& max) const;
+    bool filter_rail_press(int x, int y);
+    void filter_seek(int y);
     void filter_draw_slider(SDL_Renderer* r, const FilterChip& item, int top, bool focused);
+    void filter_draw_tile(SDL_Renderer* r, const FilterChip& item, int x, int top, bool focused);
     bool filter_sheet_active() const;
-    void open_filter_sheet();
+    // to_filters: scroll straight to the filter chips instead of starting on the collection tiles.
+    void open_filter_sheet(bool to_filters = false);
+    void filter_tile(int tile);
     void reset_filters();
     void facet_picker(int facet);
     FilterLayout filter_layout();
@@ -813,7 +864,7 @@ class App {
     void filter_sheet_key(int code);
     void filter_sheet_touch(int x, int y);
     void filter_sheet_render(SDL_Renderer* r, int y);
-    Page search_return = Page::Discover;
+    Page search_return = Page::Library;
     Uint32 automatic_update_at = 0;
     bool resume_checked = false, setup_checked = false, resume_launch = false;
     fs::path gallery_root() { return item_folder(model.selected) / "slots" / core_ids[gallery_core]; }
@@ -849,16 +900,19 @@ class App {
     void open_microphone();
     void poll_microphone(Uint32 now);
     void microphone_screen(SDL_Renderer* r, int y);
-    void open_discover() {
-        discover_return = settings.page;
-        settings.page = Page::Discover;
-        settings.focus = 0;
-        status.clear();
-        dirty = true;
-    }
     void launcher_search_shortcut();
+    void launcher_switcher_shortcut();
+    void leave_for_shortcut();
     void save_switcher_library();
     void load_switcher();
+    // The Anbernic button outside a game: the game switcher over the recent games, as in a game.
+    bool home_switcher = false;
+    Page switcher_return = Page::Library;
+    int switcher_return_focus = 0;
+    void open_home_switcher();
+    void close_home_switcher();
+    // Starts a game from wherever the launcher is (Last played, the home switcher).
+    void play_game(Game game);
     bool discovery_active() const { return !search_query.empty() || discovery_filter != 0 || discovery_facets.any(); }
     std::string discovery_filter_name() const;
     // What the list is filtered by, apart from the search words: "Unplayed  ·  Puzzle  ·  2 players".
@@ -1012,6 +1066,17 @@ class App {
     void cheat_search_top(SDL_Renderer* r, int y);
     void quick_action() {
         if (menu_status["state"] == "busy") return;
+        if (port_game() && !port_tile(settings.focus)) {
+            status = "Not available";
+            emit_sound(MenuCue::Error);
+            dirty = true;
+            return;
+        }
+        if (port_game() && (settings.focus == 7 || settings.focus == 8)) {
+            menu_request(settings.focus == 7 ? "restart" : "quit"); // no checkpoint: the port saves itself
+            dirty = true;
+            return;
+        }
 
         if (settings.focus == 0) menu_request("resume");
         else if (settings.focus == 1 || settings.focus == 2)
@@ -1050,6 +1115,10 @@ class App {
             settings.focus = 0;
         } else menu_request("quit");
         dirty = true;
+    }
+    // The game menu tiles a port can use: Resume, Sound, Brightness, Restart, Return home, Game switcher.
+    static bool port_tile(int tile) {
+        return tile == 0 || tile == 5 || tile == 6 || tile == 7 || tile == 8 || tile == 10;
     }
     int active_engine() const {
         return int(std::find(std::begin(core_ids), std::end(core_ids), o.game_core) - std::begin(core_ids));
@@ -1227,13 +1296,15 @@ class App {
     // The system of the game a shader is picked for (Settings' default is the DS games').
     std::string shader_system = "nds";
     std::string picker_game_system();
-    // A screen preset is made for one system: DS screens for DS games, GBA screens for GBA games
-    // (runtime/play_options.py keeps the same rule at launch).
+    // A screen preset is made for one system: DS screens for DS games, GBA screens for GBA games, and so
+    // on. Another system's game gets only the Original presets and its own screens: the other looks
+    // were drawn for the DS picture (runtime/play_options.py keeps the same rule at launch).
     static bool shader_fits_system(int id, const std::string& system) {
-        const std::string family = shader_family_names[shader_family(id)];
-        if (family == "DS screens") return system == "nds";
-        if (family == "GBA screens") return system == "gba";
-        return true;
+        const int family = shader_family(id), own = shader_system_screens(system.c_str());
+        if (family == 0) return true;
+        if (system == "nds") return std::string(shader_family_names[family]).find(" screens") == std::string::npos ||
+                                    family == own;
+        return family == own;
     }
     void close_shader_picker();
     fs::path shader_preview_folder() const;
@@ -1316,6 +1387,12 @@ class App {
     // An idle menu sleeps until input arrives; only held controls, pending
     // hardware writes and timed UI keep a short cadence.
     int idle_wait_ms(Uint32 now) {
+        // The port runner's menu requests arrive by file; the info screen's touches and fades want more.
+        if (o.port_menu && port_idle)
+            return port_info_shown() && (pointer_down || port_held != PortItem::None || port_dragging ||
+                                         now - port_touched_at < 17000 || now - port_note_at < 1800)
+                       ? 16
+                       : 60;
         if (!input_wake.available()) return touchscreen.available() || volume_keys.available() ? 8 : 50;
         if (hold.active() || volume_keys.holding() || pointer_down || carousel.dragging || volume_drag ||
             brightness_drag || touch_tail)
@@ -1483,172 +1560,7 @@ class App {
     // font). `y` is the line box's top, as for the rounded font.
     template <class Fill, class Wide>
     void pixel_dots(const std::string& value, int x, int y, int size, int max_chars, Fill&& fill, Wide&& wide) {
-        y += size * 3; // Match the rounded font's visible top, rather than its line-box top.
-        int n = 0;
-        for (unsigned c : RoundedFont::codepoints(value)) {
-            if (++n > max_chars) break;
-            if (pixel_wide(c)) {
-                wide(c, x, y);
-                x += size * 12;
-                continue;
-            }
-            unsigned accent = 0;
-            auto vietnamese = vietnamese_pixel_glyph(c);
-            if (vietnamese.base) c = vietnamese.base;
-            if (c >= 0xe0 && c <= 0xfe && c != 0xf7) c -= 32;
-            auto extended = extended_pixel_glyph(c);
-            if (extended.base) {
-                c = extended.base;
-                accent = static_cast<unsigned>(extended.accent);
-            }
-            switch (c) {
-            case 0xc0:
-            case 0xc1:
-            case 0xc2:
-            case 0xc3:
-            case 0xc4:
-                accent = c - 0xc0 + 1;
-                c = 'A';
-                break;
-            case 0xc8:
-            case 0xc9:
-            case 0xca:
-            case 0xcb:
-                accent = c == 0xcb ? 5 : c - 0xc8 + 1;
-                c = 'E';
-                break;
-            case 0xcc:
-            case 0xcd:
-            case 0xce:
-            case 0xcf:
-                accent = c == 0xcf ? 5 : c - 0xcc + 1;
-                c = 'I';
-                break;
-            case 0xd2:
-            case 0xd3:
-            case 0xd4:
-            case 0xd5:
-            case 0xd6:
-                accent = c - 0xd2 + 1;
-                c = 'O';
-                break;
-            case 0xd9:
-            case 0xda:
-            case 0xdb:
-            case 0xdc:
-                accent = c == 0xdc ? 5 : c - 0xd9 + 1;
-                c = 'U';
-                break;
-            case 0xd1:
-                accent = 4;
-                c = 'N';
-                break;
-            case 0xc7:
-                accent = 6;
-                c = 'C';
-                break;
-            case 0xdd:
-                accent = 2;
-                c = 'Y';
-                break;
-            case 0xa1: c = '!'; break;
-            case 0xbf: c = '?'; break;
-            default: break;
-            }
-            if (accent) {
-                auto dot = [&](int col, int row) { fill(SDL_Rect{x + col * size, y + row * size, size, size}); };
-                if (accent == 1) {
-                    dot(1, -2);
-                    dot(2, -1);
-                } else if (accent == 2) {
-                    dot(3, -2);
-                    dot(2, -1);
-                } else if (accent == 3) {
-                    dot(2, -2);
-                    dot(1, -1);
-                    dot(3, -1);
-                } else if (accent == 4) {
-                    dot(1, -2);
-                    dot(2, -2);
-                    dot(2, -1);
-                    dot(3, -1);
-                } else if (accent == 5) {
-                    dot(1, -2);
-                    dot(3, -2);
-                } else if (accent == 6) {
-                    dot(2, 7);
-                    dot(1, 8);
-                } else if (accent == 7) {
-                    dot(3, 7);
-                    dot(4, 8);
-                } else if (accent == 8) {
-                    dot(2, -2);
-                } else if (accent == 9) {
-                    dot(1, -2);
-                    dot(2, -1);
-                    dot(3, -2);
-                } else if (accent == 10) {
-                    dot(1, 3);
-                    dot(2, 2);
-                }
-            }
-            if (vietnamese.base) {
-                auto dot = [&](int col, int row) { fill(SDL_Rect{x + col * size, y + row * size, size, size}); };
-                if (vietnamese.shape == 1) {
-                    dot(2, -2);
-                    dot(1, -1);
-                    dot(3, -1);
-                } else if (vietnamese.shape == 2) {
-                    dot(1, -2);
-                    dot(2, -1);
-                    dot(3, -2);
-                } else if (vietnamese.shape == 3) {
-                    dot(4, -1);
-                    dot(5, -2);
-                } else if (vietnamese.shape == 4) {
-                    for (int col = 0; col < 4; col++) dot(col, 3);
-                }
-                int lift = vietnamese.shape && vietnamese.shape != 4 ? -2 : 0;
-                if (vietnamese.tone == 1) {
-                    dot(1, -2 + lift);
-                    dot(2, -1 + lift);
-                } else if (vietnamese.tone == 2) {
-                    dot(3, -2 + lift);
-                    dot(2, -1 + lift);
-                } else if (vietnamese.tone == 3) {
-                    dot(2, -3 + lift);
-                    dot(3, -2 + lift);
-                    dot(2, -1 + lift);
-                } else if (vietnamese.tone == 4) {
-                    dot(1, -2 + lift);
-                    dot(2, -2 + lift);
-                    dot(2, -1 + lift);
-                    dot(3, -1 + lift);
-                } else if (vietnamese.tone == 5) dot(2, 8);
-            }
-            if (c == 0xe6) c = 0xc6;
-            else if (c == 0xf8) c = 0xd8;
-            else if (c == 0xe5) c = 0xc5;
-            else if (c == 0xe9) c = 'E';
-            else if (c == 0x2019) c = '\'';
-            else if (c == 0x2026) c = '.';
-            else if (c == 0x2013 || c == 0x2014) c = '-';
-            else if (c == '"' || c == 0xab || c == 0xbb || (c >= 0x201c && c <= 0x201e)) c = '\'';
-            const auto* bitmap = cyrillic_pixel_bitmap(c);
-            if (!bitmap) {
-                char ch = c >= 'a' && c <= 'z' ? static_cast<char>(c - 'a' + 'A') : static_cast<char>(c);
-                auto it = glyphs.find(ch);
-                if (it == glyphs.end()) it = glyphs.find('?');
-                bitmap = &it->second;
-            }
-            for (int row = 0; row < 7; row++)
-                for (int col = 0; col < 5; col++) {
-                    if ((*bitmap)[row] & (1 << (4 - col))) {
-                        fill(SDL_Rect{x + col * size, y + row * size, size, size});
-                    }
-                }
-            x += size * 6;
-        }
+        pixel_text_dots<SDL_Rect>(value, x, y, size, max_chars, fill, wide);
     }
     void text(SDL_Renderer* r, std::string value, int x, int y, int size, const std::string& key, int max_chars = 80,
               bool translate = true);
@@ -1723,10 +1635,6 @@ class App {
         });
     }
     void choose_library_view();
-    // Three sections of three equal tiles with room between them.
-    static SDL_Rect library_view_choice(int index) {
-        return {40 + (index % 3) * 191, 120 + (index / 3) * 100, 178, 52};
-    }
     void library_choice_icon(SDL_Renderer* r, int index, int x, int y, int size, const std::string& ink);
     static std::string initial_letter(const std::string& title) {
         auto first = title.find_first_not_of(" ");
@@ -2129,6 +2037,7 @@ class App {
     int home_bar_focus = -1;
     bool home_column_move(int code);
     void home_bar_activate(int button);
+    void home_bar_settle();
     void home_column_touch(int x, int y);
     void home_column_bottom(SDL_Renderer* r, int y);
     // The upper screen of the column: the DSi's clock and calendar.
@@ -2148,7 +2057,12 @@ class App {
     Surface create(const char* title, int index, int h, bool device) {
         launch_profile.mark("window-start", int(surfaces.size()));
         Uint32 flags = device ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_SHOWN;
-        if (o.game_menu && !o.preview) flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+        // A port's menu helper opens before the port, which then covers its top window (port_menu.hpp).
+        if (o.game_menu && !o.preview && !o.port_menu) flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+        // Nothing of the helper is seen on the top panel, so its top window is never shown there. Shown and
+        // fullscreen, it would sit above windows a port maps maximized rather than fullscreen, such as the one
+        // PortMaster's Weston runtime draws the game in (crusty).
+        if (o.port_menu && !o.preview && std::string(title) == "RG DS Core top") flags |= SDL_WINDOW_HIDDEN;
         int width = 640, height = h;
         if (device) {
             SDL_Rect bounds{};
@@ -2201,10 +2115,13 @@ class App {
         if (!o.preview) {
             if (!std::getenv("RGDS_VOLUME_EXTERNAL")) volume_keys.open_devices();
             const char* input = std::getenv("RGDS_TOUCH_DEV");
-            if (touchscreen.open_device(input ? input : ""))
+            if (touchscreen.open_device(input ? input : "")) {
+                // Beside a port the panel is ours alone: a touch Weston saw would take the port's focus.
+                if (std::getenv("RGDS_TOUCH_GRAB") && !touchscreen.grab())
+                    std::cerr << "Touch: could not take the panel from Weston" << std::endl;
                 std::cout << "Touch: " << touchscreen.path() << " (logical 640x480; calibrated evdev range)"
                           << std::endl;
-            else std::cerr << "Direct touch unavailable; using SDL events" << std::endl;
+            } else std::cerr << "Direct touch unavailable; using SDL events" << std::endl;
             input_wake.open_all();
         }
         SDL_version version{};
@@ -2666,6 +2583,8 @@ public:
 #include "launcher/menu_sounds.hpp"
 #include "launcher/library_boot.hpp"
 #include "launcher/systems_play.hpp"
+#include "launcher/port_menu.hpp"
+#include "launcher/port_files_screen.hpp"
 #include "launcher/return_gestures.hpp"
 #include "launcher/network_menu.hpp"
 #include "launcher/gallery_slots.hpp"
@@ -2791,6 +2710,7 @@ int main(int argc, char** argv) {
             if (arg == "--preview") o.preview = true;
             else if (arg == "--probe") o.probe = true;
             else if (arg == "--game-menu") o.game_menu = true;
+            else if (arg == "--port-menu") o.game_menu = o.port_menu = true; // beside a PortMaster port
             else if (arg == "--game-switcher") {
                 o.game_switcher = true;
                 o.game_menu = true;

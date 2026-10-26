@@ -130,22 +130,26 @@ bool pokemon_gb_icon(Core& core, const PokemonGbTables& t, int species, std::vec
     px[0].assign(32 * 32, 0);
     px[1].assign(32 * 32, 0);
     if (t.generation == 1) {
-        // The ten shapes share tiles with overworld sprites. The game copies
-        // them to sprite VRAM through a table of {source, tiles, bank, VRAM
+        // The shapes share tiles with overworld sprites. The game copies them
+        // to sprite VRAM through a table of {source, tiles, bank, VRAM
         // address}: the same copy here gives the shape at tile kind*4 (step 1)
-        // and kind*4 + 0x40 (step 2).
+        // and kind*4 + 0x40 (step 2). Red and Blue have ten shapes in 28
+        // copies; Yellow adds Pikachu's (kind 10) and a trade bubble, 30.
         const int dex = species;
         if (dex < 1 || dex > 151) return false;
         uint8_t kinds = uint8_t(peek_address(core, offset(t.icon_kinds, uint32_t((dex - 1) / 2)), 1));
         const int kind = (dex & 1) ? kinds >> 4 : kinds & 15;
-        if (kind > 9) return false;
+        if (kind > 10) return false;
         std::vector<uint8_t> vram(128 * 16, 0);
-        for (int e = 0; e < 28; ++e) {
+        for (int e = 0; e < 30; ++e) {
             uint8_t entry[6];
             read_bytes(core, offset(t.icons, uint32_t(e * 6)), entry, 6);
             const uint32_t source = entry[0] | entry[1] << 8, dest = entry[4] | entry[5] << 8;
             const int tiles = entry[2], bank = entry[3];
-            if (dest < 0x8000 || dest >= 0x8800 || tiles > 8 || source < 0x4000 || source >= 0x8000) return false;
+            if (dest < 0x8000 || dest >= 0x8800 || tiles > 8 || source < 0x4000 || source >= 0x8000) {
+                if (e < 28) return false;
+                break; // past the end of a 28-copy table
+            }
             const size_t at = (dest - 0x8000) / 16 * 16;
             for (int b = 0; b < tiles * 16 && at + size_t(b) < vram.size(); ++b)
                 vram[at + size_t(b)] = uint8_t(peek_address(core, banked(bank, source + uint32_t(b)), 1));
@@ -223,6 +227,66 @@ bool read_saga1(Core& core, uint32_t slots, std::vector<PartyMember>& out, uint6
         }
         m.detail = r[0] < 2 ? "Human" : r[0] < 4 ? "Mutant" : "Monster";
         for (int c = 0; c < 10; ++c) k = mix_key(k, r[c]);
+        team.push_back(std::move(m));
+    }
+    key = k;
+    out = std::move(team);
+    return true;
+}
+
+// Dragon Warrior Monsters: three 0x95-byte monster records from `slots`.
+// The monster storage starts at CAC1, and the game puts the party at its
+// front (551D0: each member copied to C300, then the three to CAC1), leaving
+// a byte per place at `places` (C8C4), FF where the party has nobody. Name at 1 (8 letters, F0 ends it), species
+// at 9, level at 4B, HP and max HP at 50 and 52, MP and max MP at 54 and 56
+// (little-endian); layout from the dwm1 disassembly's structures/monster.asm.
+// `species_names` is the ROM's list of species names, F0 after each.
+std::string dwm1_text(const uint8_t* bytes, int max) {
+    std::string out;
+    for (int i = 0; i < max && bytes[i] != 0xF0; ++i) {
+        const uint8_t b = bytes[i];
+        if (b <= 0x09) out += char('0' + b);
+        else if (b >= 0x24 && b <= 0x3D) out += char('A' + b - 0x24);
+        else if (b >= 0x3E && b <= 0x57) out += char('a' + b - 0x3E);
+        else if (b == 0x62) out += ' ';
+        else if (b == 0x9C) out += '-';
+        else if (b == 0x5C) out += '\'';
+        else if (b == 0x5F) out += '.';
+    }
+    return out;
+}
+
+bool read_dwm1(Core& core, uint32_t slots, uint32_t places, uint32_t species_names, std::vector<PartyMember>& out,
+               uint64_t& key) {
+    std::vector<PartyMember> team;
+    uint64_t k = 1469598103934665603ull;
+    for (int i = 0; i < 3; ++i) {
+        if (places && peek_address(core, offset(places, uint32_t(i)), 1) == 0xFF) continue;
+        uint8_t r[0x58];
+        read_bytes(core, offset(slots, uint32_t(i * 0x95)), r, int(sizeof r));
+        PartyMember m;
+        m.level = r[0x4B];
+        m.hp = r[0x50] | r[0x51] << 8;
+        m.max_hp = r[0x52] | r[0x53] << 8;
+        m.pp = r[0x54] | r[0x55] << 8;
+        m.max_pp = r[0x56] | r[0x57] << 8;
+        if (m.level == 0 || m.max_hp == 0 || r[1] == 0xF0) continue; // an empty place
+        if (m.level > 99 || m.max_hp > 999 || m.hp > m.max_hp || m.pp > m.max_pp || r[9] > 0xDE) return false;
+        m.name = dwm1_text(r + 1, 8);
+        if (species_names) {
+            // The species' name: the r[9]th of the list.
+            uint32_t a = species_names;
+            for (int skip = 0; skip < r[9]; ++skip) {
+                for (int n = 0; n < 16 && peek_address(core, a, 1) != 0xF0; ++n) a = offset(a, 1);
+                a = offset(a, 1);
+            }
+            uint8_t name[12];
+            read_bytes(core, a, name, 12);
+            m.detail = dwm1_text(name, 12);
+        }
+        m.species = r[9];
+        for (int c : {int(r[9]), m.level, m.hp, m.max_hp, m.pp, m.max_pp}) k = mix_key(k, uint64_t(c));
+        for (char c : m.name) k = mix_key(k, uint8_t(c));
         team.push_back(std::move(m));
     }
     key = k;

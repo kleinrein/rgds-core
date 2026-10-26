@@ -30,3 +30,5 @@
 28	Glossy tiles	glossy_tiles	28	Bold colour; every pixel a raised, glossy tile.
 29	GBA Color	gba_color	29	The Game Boy Advance LCD's own colour and gamma.
 30	GBA screen	gba_screen	30	The Game Boy Advance screen: its colour and faint pixel gaps.
+31	Game Boy screen	gb_screen	31	The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.
+32	Game Boy Color screen	gbc_screen	32	The Game Boy Color screen with faint gaps between its pixels.

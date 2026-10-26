@@ -33,6 +33,7 @@
 #include "platform/mainline_controls.hpp"
 #include "platform/wayland_role.hpp"
 #include "platform/alsa_mixer.hpp"
+#include "platform/haptics.hpp"
 #include <sys/file.h>
 #include <fcntl.h>
 #ifdef __linux__
@@ -180,6 +181,11 @@ unsigned long long volume_poll_at = 0;
 int watched_volume = -1;
 std::string volume_token;
 std::string volume_data, block_path;
+// Game rumble (rgds_rumble): the strength the launcher passed (RGDS_RUMBLE,
+// 0 off), read again from ui.ini each time the game comes back from the
+// in-game menu, where it can be changed. -1 until first read.
+std::atomic<int> rumble_strength{-1};
+int saved_rumble_strength();
 struct FileIdentity {
     dev_t device{};
     ino_t inode{};
@@ -231,11 +237,7 @@ struct NativeTexture {
     SDL_Renderer* renderer = nullptr;
     bool game = false;
     int applied = -1;
-    bool companion = false; // RG DS Play's second screen (a 640x480 streaming texture)
 };
-// RG DS Play: panel pixels per game pixel on the game screen, so the second
-// screen's grid has the same cells (8/3 for a GBA game at sharp fill).
-std::atomic<float> play_cell{8.f / 3.f};
 std::map<SDL_Texture*, NativeTexture> native_textures;
 std::mutex textures_mutex; // native_textures and renderer_contexts
 void graphics_texture_changed(bool enhanced) {
@@ -266,6 +268,7 @@ void update_resume() {
         stats_resumed = true;
         release_controls();
         release_touch_after_resume();
+        if (!volume_data.empty()) rumble_strength = saved_rumble_strength();
         control_shortcut.menu_pending = control_shortcut.tap = control_shortcut.start_seen = false;
         control_shortcut.latched = control_shortcut.start || control_shortcut.menu;
     }
@@ -449,6 +452,15 @@ bool normalize_joystick_event(SDL_Event& event) {
         reinterpret_cast<SDL_Joystick* (*)(SDL_JoystickID)>(dlsym(RTLD_NEXT, "SDL_JoystickFromInstanceID"));
     auto stick = from_id ? from_id(event.jbutton.which) : nullptr;
     return !stick || !mainline_joystick(stick) || mainline_controls.normalize(event);
+}
+int saved_rumble_strength() {
+    int strength = std::clamp(std::atoi(env("RGDS_RUMBLE").c_str()), 0, 100);
+    std::ifstream ui(volume_data + "/ui.ini");
+    bool on = strength > 0;
+    for (std::string line; std::getline(ui, line);)
+        if (line == "game_rumble=0" || line == "game_rumble=1") on = line.back() == '1';
+        else if (line.rfind("rumble_strength=", 0) == 0) strength = std::clamp(std::atoi(line.c_str() + 16), 10, 100);
+    return on ? strength : 0;
 }
 void initialize() {
     if (initialized) return;
@@ -839,7 +851,8 @@ bool set_fast_forward(bool enabled) {
         inject(4);
         fast_forward = enabled;
     }
-    overlay_renderer.fast_forward(fast_forward && env("RGDS_OWN_FF_HUD") == "1");
+    // DSCore removed its own OSD, and RG DS Play never had one: the badge is ours for both.
+    overlay_renderer.fast_forward(fast_forward && (env("RGDS_OWN_FF_HUD") == "1" || core == "rgds-play"));
     if (!control.empty()) {
         auto path = control + ".speed-state", pending = path + ".pending";
         std::ofstream file(pending);
@@ -1112,6 +1125,17 @@ void tick(bool graphics_safe = false) {
                     valid = valid && !frame.empty() && frame.size() <= 64 && frame.find('/') == std::string::npos;
                     answer(valid && apply && apply(fit, second, frame.c_str()) ? "play-graphics-applied"
                                                                                : "play-graphics-failed");
+                } else if (command.rfind("play-color:", 0) == 0) {
+                    // RG DS Play: play-color:<palette>:<correction>, indexes into the player's lists
+                    // (ui/colour.hpp); the player checks the range and takes it up between frames.
+                    int palette = -1, correction = -1;
+                    char extra = 0;
+                    auto apply = core == "rgds-play"
+                                     ? reinterpret_cast<int (*)(int, int)>(dlsym(RTLD_DEFAULT, "rgds_play_set_color"))
+                                     : nullptr;
+                    const bool valid =
+                        std::sscanf(command.c_str(), "play-color:%d:%d%c", &palette, &correction, &extra) == 2;
+                    answer(valid && apply && apply(palette, correction) ? "play-color-applied" : "play-color-failed");
                 } else if (command.rfind("filter2d:", 0) == 0) {
                     int mode = -1;
                     char extra = 0;
@@ -1464,6 +1488,19 @@ extern "C" void SDL_DestroyRenderer(SDL_Renderer* renderer) {
 // RG DS Play draws its game texture as it is, with no render target, while a
 // screen filter is chosen, so the filter's pass can take that draw.
 extern "C" __attribute__((visibility("default"))) int rgds_shader_live() { return live_shader.load(); }
+// The engine's rumble, 0-100, from its own thread: the DS Rumble Pak in DSCore,
+// rumble cartridges in RG DS Play. Silent while the in-game menu is up.
+extern "C" __attribute__((visibility("default"))) void rgds_rumble(int level) {
+    static rgds::Haptics motor;
+    int strength = rumble_strength.load(std::memory_order_relaxed);
+    if (strength < 0) {
+        initialize();
+        rumble_strength = strength = saved_rumble_strength();
+    }
+    motor.set_strength(0);
+    motor.set_rumble_strength(blocked_shared.load(std::memory_order_relaxed) ? 0 : strength);
+    motor.rumble(std::clamp(level, 0, 100) / 100.f);
+}
 extern "C" __attribute__((visibility("default"))) void rgds_hd_rules(SDL_Texture* image, SDL_Texture* rules) {
     game_shader.pair_rules(image, rules);
 }
@@ -1491,48 +1528,30 @@ bool sdl_shader(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_Rect* so
     // Only DS screen textures are shader candidates; menus and RGDS textures
     // keep SDL's own blend/pixel path. Remember dimensions until destruction.
     const bool enhanced = enhanced_game_texture;
-    bool companion = false;
     {
         std::lock_guard<std::mutex> guard(textures_mutex);
         auto found = native_textures.find(texture);
         if (found == native_textures.end()) {
             static auto query = rgds::overlay_sdl<decltype(&SDL_QueryTexture)>("SDL_QueryTexture");
-            int width = 0, height = 0, access = 0;
-            if (!query || query(texture, nullptr, &access, &width, &height) != 0) return false;
-            // RG DS Play's second screen gets the filter too, like a DS game's bottom screen. Its frames
-            // and picture overlays are static textures and keep their own pixels.
-            const bool companion =
-                core == "rgds-play" && width == 640 && height == 480 && access == SDL_TEXTUREACCESS_STREAMING;
+            int width = 0, height = 0;
+            if (!query || query(texture, nullptr, nullptr, &width, &height) != 0) return false;
+            // RG DS Play's second screen (the companion, the info screen) is the player's own
+            // interface, drawn in the launcher's look: like the launcher, it is never filtered.
+            // Only its game picture is (240x160 or 160x144).
             found = native_textures
                         .emplace(texture, NativeTexture{renderer,
                                                         rgds::GameShader::screen_texture(width, height) ||
                                                             (enhanced && width == 640 && height == 480) ||
                                                             (core == "rgds-play" &&
-                                                             rgds::GameShader::handheld_texture(width, height)) ||
-                                                            companion,
-                                                        -1, companion})
+                                                             rgds::GameShader::handheld_texture(width, height)),
+                                                        -1})
                         .first;
         }
         if (!found->second.game) return false;
-        companion = found->second.companion;
-    }
-    int grid_w = 0, grid_h = 0;
-    if (core == "rgds-play" && target && !companion) {
-        int width = source ? source->w : 0;
-        static auto query = rgds::overlay_sdl<decltype(&SDL_QueryTexture)>("SDL_QueryTexture");
-        if (!source && query) query(texture, nullptr, nullptr, &width, nullptr);
-        if (width > 0) play_cell = float(target->w) / width;
-    }
-    if (companion) {
-        // The same cell size as the game screen: the panel's width and height in game pixels.
-        const float cell = std::max(1.f, play_cell.load());
-        const int w = target ? target->w : 640, h = target ? target->h : 480;
-        grid_w = std::max(1, int(std::lround(w / cell)));
-        grid_h = std::max(1, int(std::lround(h / cell)));
     }
     drawing_shader = true;
     bool applied = game_shader.sdl(renderer, texture, live_shader, source, target, angle, center, flip, nullptr,
-                                   enhanced, hd, core == "rgds-play", grid_w, grid_h);
+                                   enhanced, hd, core == "rgds-play");
     drawing_shader = false;
     static std::atomic<bool> said_declined{false};
     if (hd && !applied && !said_declined.exchange(true))
@@ -1616,7 +1635,8 @@ void route_ds_touch(const std::vector<rgds::TouchPoint>& points, bool blocked) {
     }
 }
 void poll_ds_touch() {
-    if (core != "dsperate" && core != "melonds") return;
+    // RG DS Play takes the lower panel's touches for its second screen (dock, boards).
+    if (core != "dsperate" && core != "melonds" && core != "rgds-play") return;
     if (!ds_touch_started) {
         ds_touch_started = true;
         auto path = std::getenv("RGDS_TOUCH_DEV");
@@ -1627,7 +1647,7 @@ void poll_ds_touch() {
 }
 namespace {
 void release_touch_after_resume() {
-    if (core != "dsperate" && core != "melonds") return;
+    if (core != "dsperate" && core != "melonds" && core != "rgds-play") return;
     route_ds_touch({}, true);
     ds_touch.discard_until_release();
     ds_touch_suppressed = false;

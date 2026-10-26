@@ -36,7 +36,7 @@ enum class Page {
     GameArtwork,
     Statistics,
     SaveGallery,
-    Discover,
+    Discover, // retired: Search and filters moved into the Library view sheet; the slot keeps stored page numbers
     RomSetup,
     DSControls,
     Microphone,
@@ -48,7 +48,9 @@ enum class Page {
     Cheats,
     // Appended: page numbers are stored in the launcher's state file.
     PlayGraphics, // in-game Graphics for RG DS Play: game screen fit, second screen
-    GameInfo // the selected game's facts, description and pictures (read-only)
+    GameInfo,     // the selected game's facts, description and pictures (read-only)
+    Haptics,      // Sound -> Vibration: menu haptics and game rumble, each with a strength
+    PortFiles     // Add game files: a port's own files, sent from a phone or computer (port_files_screen.hpp)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -64,10 +66,14 @@ struct Preferences {
     bool show_systems = false; // Library: a Systems step between Home and the games (ui.ini)
     bool menu_music = true;
     int music_volume = 40;
+    // The vibration motor: patterns in the menus, rumble in games that have it
+    // (DS Rumble Pak, GB rumble carts, GBA rumble). Strengths are 10-100%.
+    bool menu_haptics = true, game_rumble = true;
+    int haptic_strength = 60, rumble_strength = 80;
     // Artwork sources: what "Fetch missing artwork" also downloads. Game info is the text from the public
     // databases; extra_pictures is a bit set (1 screenshot, 2 title screen). Both only add to the library.
     bool game_info = true;
-    int extra_pictures = 0;
+    int extra_pictures = 2;
 };
 struct SystemPreferences {
     int power = 0, brightness = 60, idle = 0;
@@ -566,9 +572,9 @@ struct Settings {
         focus = 0;
     }
     void back() {
-        if (page == Page::MenuSounds) {
+        if (page == Page::MenuSounds || page == Page::Haptics) {
+            focus = page == Page::Haptics ? 3 : 2;
             page = Page::Sound;
-            focus = 2;
         } else if (page == Page::Motion) {
             page = Page::Appearance;
             focus = 6;
@@ -606,7 +612,7 @@ struct Settings {
     void move(int delta) {
         if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 9))];
         else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 10);
-        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 10);
+        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 9);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, 5);
         else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::Startup) focus = std::clamp(focus + delta, 0, 3);
@@ -741,12 +747,22 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
                 int value = std::stoi(line.substr(13), &end);
                 if (end == line.size() - 13 && value >= 0 && value <= 100) result.music_volume = value;
             } catch (const std::exception&) {}
+        } else if (line == "menu_haptics=0" || line == "menu_haptics=1") result.menu_haptics = line.back() == '1';
+        else if (line == "game_rumble=0" || line == "game_rumble=1") result.game_rumble = line.back() == '1';
+        else if (line.rfind("haptic_strength=", 0) == 0 || line.rfind("rumble_strength=", 0) == 0) {
+            try {
+                const size_t start = line.find('=') + 1;
+                size_t end = 0;
+                int value = std::stoi(line.substr(start), &end);
+                if (end == line.size() - start && value >= 10 && value <= 100)
+                    (line[0] == 'h' ? result.haptic_strength : result.rumble_strength) = value;
+            } catch (const std::exception&) {}
         } else if (line == "game_info=0" || line == "game_info=1") result.game_info = line.back() == '1';
         else if (line == "extra_pictures=0" || line == "extra_pictures=1" || line == "extra_pictures=2" ||
                  line == "extra_pictures=3")
             result.extra_pictures = line.back() - '0';
         else if (line == "artwork_provider=0" || line == "artwork_provider=1" || line == "artwork_provider=2" ||
-                   line == "artwork_provider=3")
+                 line == "artwork_provider=3")
             result.artwork_provider = line.back() == '3' ? 0 : line.back() - '0';
     }
 }
@@ -771,7 +787,8 @@ inline Preferences load_preferences(const fs::path& path) {
             } else if (line.rfind("core=", 0) == 0) {
                 unsigned value = 0;
                 auto parsed = std::from_chars(line.data() + 5, line.data() + line.size(), value);
-                if (parsed.ec == std::errc{} && parsed.ptr == line.data() + line.size() && value < unsigned(ds_core_count))
+                if (parsed.ec == std::errc{} && parsed.ptr == line.data() + line.size() &&
+                    value < unsigned(ds_core_count))
                     result.core = unsigned(offered_core(int(value)));
                 // A newer release may know another engine. Keep the default engine
                 // in that case, without discarding unrelated appearance/UI choices.
@@ -823,9 +840,8 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "schema=1\nmenu_sounds=" << p.menu_sounds << "\nsound_volume=" << p.sound_volume
           << "\nanimations=" << p.animations << "\nview_animations=" << p.view_animations
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
-          << "\nlayout=" << p.layout << "\nartwork_provider=" << p.artwork_provider
-          << "\ngame_info=" << p.game_info << "\nextra_pictures=" << p.extra_pictures
-          << "\ndrastic_backend=" << p.drastic_backend << '\n';
+          << "\nlayout=" << p.layout << "\nartwork_provider=" << p.artwork_provider << "\ngame_info=" << p.game_info
+          << "\nextra_pictures=" << p.extra_pictures << "\ndrastic_backend=" << p.drastic_backend << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';
     extra << "high_contrast=" << p.high_contrast << '\n';
@@ -839,6 +855,8 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "home_layout=" << (p.home_layout == 1 ? "vertical" : "carousel")
           << "\nbackground=" << (p.background == 1 ? "grid" : "plain") << "\ngestures=" << p.gestures << '\n';
     extra << "menu_music=" << p.menu_music << "\nmusic_volume=" << p.music_volume << '\n';
+    extra << "menu_haptics=" << p.menu_haptics << "\nhaptic_strength=" << p.haptic_strength
+          << "\ngame_rumble=" << p.game_rumble << "\nrumble_strength=" << p.rumble_strength << '\n';
     extra << "show_systems=" << p.show_systems << '\n';
     extra.close();
     if (!extra) throw std::runtime_error("Cannot save UI preferences");

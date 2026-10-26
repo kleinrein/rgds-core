@@ -349,14 +349,12 @@ int App::picker_first() const {
 }
 
 bool App::picker_paged() const {
-    return !picker_detail && !picker_scrollable() && picker_title != "Library view" &&
-           picker_title != "Jump to letter" && int(picker_options.size()) > picker_visible();
+    return !picker_detail && !picker_scrollable() && picker_title != "Jump to letter" &&
+           int(picker_options.size()) > picker_visible();
 }
 
 int App::picker_top() const {
-    return (picker_title == "Jump to letter" || picker_title == "Library view") ? 32
-           : picker_detail ? 96
-                           : 410 - picker_visible() * picker_stride() - 64;
+    return picker_title == "Jump to letter" ? 32 : picker_detail ? 96 : 410 - picker_visible() * picker_stride() - 64;
 }
 
 void App::picker_action(int code) {
@@ -370,21 +368,6 @@ void App::picker_action(int code) {
         dirty = true;
         return;
     }
-    if (picker_title == "Library view") {
-        if (code == 2 || code == 4) {
-            if (picker_focus < 6) {
-                if (picker_apply) picker_apply(picker_focus);
-                dirty = true;
-                return;
-            }
-        } else if (code == 8 || code == 9) {
-            // A 3 x 3 grid: Up and Down keep the column.
-            picker_focus = code == 8 ? (picker_focus >= 3 ? picker_focus - 3 : picker_focus)
-                                     : (picker_focus < 6 ? picker_focus + 3 : picker_focus);
-            dirty = true;
-            return;
-        }
-    }
     if (picker_title == "Jump to letter") {
         if (code == 12 || (picker_options.empty() && (code == 2 || code == 4))) {
             quick_search();
@@ -393,7 +376,7 @@ void App::picker_action(int code) {
         if (code == 11) {
             picker_open = false;
             picker_apply = {};
-            open_discover();
+            open_filter_sheet(true);
             return;
         }
         if (picker_options.empty() && code != 3 && code != 7) return;
@@ -421,7 +404,7 @@ void App::picker_action(int code) {
 void App::picker_touch(int x, int y) {
     if (y >= 424) {
         if (x < 200) picker_action(3);
-        else if (x >= 440) picker_action(picker_title == "Library view" ? 3 : 2);
+        else if (x >= 440) picker_action(2);
         else if (picker_title == "Jump to letter") picker_action(12);
         return;
     }
@@ -435,15 +418,6 @@ void App::picker_touch(int x, int y) {
         else if (x >= 544 && x < 592)
             picker_focus = std::min(int(picker_options.size()) - 1, picker_first() + 2 * picker_visible() - 1);
         dirty = true;
-        return;
-    }
-    if (picker_title == "Library view") {
-        for (int i = 0; i < int(picker_options.size()); i++)
-            if (point_in(library_view_choice(i), x, y)) {
-                picker_focus = i;
-                picker_action(2);
-                break;
-            }
         return;
     }
     if (picker_title == "Jump to letter") {
@@ -515,8 +489,7 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
     }
     settings_card(r, 24, top, 592, 414 - (top - y));
     round_rect(r, 294, top + 8, 52, 4, 2, "line");
-    bool library_modal =
-        picker_title == "Library view" || picker_title == "Browser layout" || picker_title == "Jump to letter";
+    bool library_modal = picker_title == "Browser layout" || picker_title == "Jump to letter";
     if (library_modal) library_choice_icon(r, picker_title == "Jump to letter" ? 6 : 0, 62, top + 38, 28, "accent");
     label(r, picker_title, library_modal ? 88 : 48, top + 24, 24, "ink",
           picker_paged()  ? 416
@@ -541,50 +514,6 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
         rect(r, 24, y + 424, 592, 1, "line");
         footer_button(r, 12, y + 432, 160, "Close", "B", false, footer_pressed(true));
         footer_button(r, 468, y + 432, 160, "Done", "A", true, footer_pressed(false));
-        return;
-    }
-    if (picker_title == "Library view") {
-        int offset = top - 32;
-        label(r, "Collection", 48, offset + 94, 16, "muted", 520);
-        label(r, "Browser layout", 48, offset + 194, 16, "muted", 520);
-        label(r, "Search", 48, offset + 294, 16, "muted", 520);
-        for (int i = 0; i < int(picker_options.size()); i++) {
-            auto box = library_view_choice(i);
-            box.y += offset;
-            bool selected = i < 3 ? i == preferences.view : i < 6 ? i - 3 == preferences.layout : false;
-            bool focused = i == picker_focus;
-            move_element(uint32_t(i + 100), box.x, box.y, box.w, box.h, focused, 0, 424);
-            // A tile: outlined in the accent when it is the current choice, with a filled
-            // check; the focused one wears an accent ring so it reads on both palettes.
-            alpha_round(r, box.x, box.y + 3, box.w, box.h, 10, shadow_colour(), preferences.dark ? 70 : 22);
-            if (focused)
-                alpha_round(r, box.x - 3, box.y - 3, box.w + 6, box.h + 6, 13, theme.at("accent"),
-                            preferences.dark ? 120 : 70);
-            round_rect(r, box.x, box.y, box.w, box.h, 10, selected || focused ? "accent" : "line");
-            glossy_pill(r, box.x + 2, box.y + 2, box.w - 4, box.h - 4, 8, theme.at("panel"));
-            const int chip = std::min(34, box.h - 14);
-            fill_round(r, box.x + 8, box.y + (box.h - chip) / 2, chip, chip, 9,
-                       selected ? theme.at("accent") : theme.at("slot"));
-            library_choice_icon(r, i, box.x + 8 + chip / 2, box.y + box.h / 2, chip - 12,
-                                selected ? "on_accent" : "accent");
-            int width = box.w - chip - (selected ? 56 : 30),
-                font = label_width(picker_options[i], 18) > width ? 15 : 18;
-            label(r, picker_options[i], box.x + chip + 18,
-                  centred_label_y(locale.text(picker_options[i]), font, box.y + box.h / 2), font, "ink", width);
-            if (selected) {
-                fill_round(r, box.x + box.w - 30, box.y + box.h / 2 - 10, 20, 20, 10, theme.at("accent"));
-                check_mark(r, box.x + box.w - 20, box.y + box.h / 2, theme.at("on_accent"));
-            }
-            // Choices with their own button wear it on the tile's top edge, clear of the label:
-            // L2 jumps to a letter, R2 searches.
-            const std::string hotkey = i == 6 ? "L2" : i == 7 ? "R2" : "";
-            if (!hotkey.empty()) key_badge(r, box.x + box.w - 8 - key_badge_width(hotkey), box.y, hotkey);
-        }
-        rect(r, 0, y + 424, 640, 56, "background");
-        rect(r, 24, y + 424, 592, 1, "line");
-        footer_button(r, 12, y + 432, 160, "Close", "B", false, footer_pressed(true));
-        key_hints(r, 320, y + 452, {{"A", "Select"}}, 0, 16, 280);
-        footer_button(r, 468, y + 432, 160, "Done", "", true, footer_pressed(false));
         return;
     }
     if (picker_title == "Jump to letter") {
@@ -619,15 +548,27 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
                 alpha_round(r, 40 + dx, row + 3, width, stride - 6, 10, shadow_colour(), preferences.dark ? 70 : 24);
             round_rect(r, 40 + dx, row, width, stride - 6, 10, focused ? "focus" : "panel");
             if (focused) round_rect(r, 40 + dx, row + (stride - 34) / 2, 4, 28, 2, "accent");
-            bool layout = picker_title == "Browser layout", swatch = picker_title == "Accent colour";
+            bool layout = picker_title == "Browser layout", swatch = picker_title == "Accent colour",
+                 palette = picker_title == "Screen colours" && play_colour_kind() == 1 && i < play::gb_palette_count;
             if (layout) library_choice_icon(r, i + 3, 70 + dx, row + (stride - 6) / 2, 28, "accent");
             if (swatch) {
                 Theme preview = preferences.dark ? dark_theme : light_theme;
                 apply_accent(preview, i - 1, preferences.dark);
                 accent_swatch(r, 74 + dx, row + (stride - 6) / 2, 12, preview.at("accent"));
             }
-            label(r, picker_options[i], (layout || swatch ? 98 : 58) + dx, row + (stride - 30) / 2, 22, "ink",
-                  width - (layout || swatch ? 134 : 94));
+            if (palette) {
+                // The palette's four colours, lightest to darkest, as one outlined strip.
+                const int top_y = row + (stride - 6) / 2 - 9;
+                rect(r, 61 + dx, top_y - 1, 74, 20, "line");
+                for (int shade = 0; shade < 4; shade++) {
+                    const uint32_t c = play::gb_palettes[i].shade[shade];
+                    tint_rect(r, 62 + dx + shade * 18, top_y, 18, 18,
+                              Color{uint8_t(c >> 16), uint8_t(c >> 8), uint8_t(c)});
+                }
+            }
+            const int text_left = palette ? 148 : layout || swatch ? 98 : 58;
+            const int text_trim = palette ? 184 : layout || swatch ? 134 : 94;
+            label(r, picker_options[i], text_left + dx, row + (stride - 30) / 2, 22, "ink", width - text_trim);
             if (i == picker_selected)
                 ui_icon(r, SettingsIcon::Check, 40 + width - 29 + dx, row + (stride - 6) / 2, 22, "accent");
             else ring(r, 40 + width - 29 + dx, row + (stride - 6) / 2, 8, focused ? "accent" : "line");

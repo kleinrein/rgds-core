@@ -82,7 +82,8 @@ class MenuAudio {
     float master_gain = 1, master_target = 1;
     // Opening (and idling-out) the sink can stall for a long while inside ALSA's dmix; on the UI thread that froze
     // the menu and swallowed input. Both run on a helper while the loop keeps drawing; a cue asked for meanwhile
-    // waits in `pending` and plays once the sink is up. Handing the sink on (close) still waits for the helper.
+    // (opening or closing) waits in `pending` and plays once the sink is up, if that is within 600 ms. Handing the
+    // sink on (close) still waits for the helper.
     std::thread audio_worker;
     std::atomic<bool> job_done{true};
     int job = 0; // 0 none, 1 opening, 2 closing
@@ -106,7 +107,7 @@ class MenuAudio {
     bool start_music() {
         if (!music_on || music_muted || !track_ready.load(std::memory_order_acquire)) return false;
         if (!device && !open()) {
-            if (!opening()) error = "Menu audio is unavailable on this device.";
+            if (!job) error = "Menu audio is unavailable on this device.";
             return false;
         }
         s.LockAudioDevice(device);
@@ -205,6 +206,7 @@ class MenuAudio {
             quiet_since = s.GetTicks();
             master_gain = master_target;
             opens++;
+            if (error == "Menu audio is unavailable on this device.") error.clear();
             if (opened) opened();
         } else failed = true;
     }
@@ -417,7 +419,8 @@ public:
         auto index = size_t(cue);
         if (index >= clips.size() || clips[index].empty()) return false;
         if (!device && !open()) {
-            if (opening()) pending = {cue, direction, pan, now, true};
+            // Opening, or the idle close still running: the cue waits and plays once the sink is (re)opened.
+            if (job) pending = {cue, direction, pan, now, true};
             else error = "Menu audio is unavailable on this device.";
             return false;
         }
@@ -464,6 +467,11 @@ public:
     }
     void poll(Uint32 now) {
         reap(false);
+        // A cue that waited out the idle close opens the sink again.
+        if (pending.set && !device && !job) {
+            open();
+            if (!device && !job) pending.set = false; // the sink cannot open
+        }
         if (pending.set && device) {
             const auto cue = pending;
             pending.set = false;

@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Spiel neu starten, um DS-Einstellungen an
 Could not save DS settings.	DS-Einstellungen konnten nicht gespeichert werden.
 Search	Suche
 Save gallery	Spielstandgalerie
-Search and filters	Suche und Filter
 Add your games	Spiele hinzufügen
 DS controls	DS-Funktionen
 Back up all saves	Alle Spielstände sichern
@@ -626,7 +625,6 @@ Slot	Platz
 Empty slot	Leerer Platz
 Search games	Spiele suchen
 Filter	Filter
-Clear search and filters	Suche und Filter löschen
 Missing artwork	Fehlende Cover
 Where to put games	Speicherort für Spiele
 Scan for games	Nach Spielen suchen
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Audio wird nicht aufgezeichnet oder gespeichert.
 Test the microphone on your handheld.	Teste das Mikrofon auf deinem Handheld.
 Return home before testing the physical microphone.	Kehre vor dem Mikrofontest zum Startbildschirm zurück.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Puste oder sprich ins Mikrofon. Der Pegel steigt und fällt wieder, wenn du aufhörst.
-No filter	Kein Filter
 Quick search	Schnellsuche
 A  Search	A  Suchen
 A  Jump	A  Springen
@@ -906,14 +903,46 @@ Companion	Begleiter
 Swap screens	Bildschirme tauschen
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Fügt Game-Boy- und Game-Boy-Advance-Spiele hinzu: Spiele öffnet dann eine Seite mit Systemen.
 Frame	Rahmen
-Indigo	Indigo
-Glacier	Gletscher
-Black	Schwarz
-Platinum	Platin
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Rot
+Game Boy · Yellow	Game Boy · Gelb
+Game Boy · Green	Game Boy · Grün
+Game Boy · Blue	Game Boy · Blau
+Game Boy · Black	Game Boy · Schwarz
+Game Boy · Screen only	Game Boy · Nur Bildschirm
+Game Boy Pocket · Silver	Game Boy Pocket · Silber
+Game Boy Pocket · Black	Game Boy Pocket · Schwarz
+Game Boy Pocket · Yellow	Game Boy Pocket · Gelb
+Game Boy Pocket · Red	Game Boy Pocket · Rot
+Game Boy Pocket · Green	Game Boy Pocket · Grün
+Game Boy Pocket · Blue	Game Boy Pocket · Blau
+Game Boy Pocket · Pink	Game Boy Pocket · Rosa
+Game Boy Pocket · Screen only	Game Boy Pocket · Nur Bildschirm
+Game Boy Color · Berry	Game Boy Color · Beere
+Game Boy Color · Grape	Game Boy Color · Traube
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Dandelion	Game Boy Color · Löwenzahn
+Game Boy Color · Teal	Game Boy Color · Petrol
+Game Boy Color · Atomic Purple	Game Boy Color · Atomic Purple
+Game Boy Color · Screen only	Game Boy Color · Nur Bildschirm
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Glacier	Game Boy Advance · Gletscher
+Game Boy Advance · Black	Game Boy Advance · Schwarz
+Game Boy Advance · Platinum	Game Boy Advance · Platin
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platin
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Silber
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Schwarz
+WonderSwan Color · White	WonderSwan Color · Weiß
+WonderSwan Color · Blue	WonderSwan Color · Blau
+PSP · Black	PSP · Schwarz
+PSP · White	PSP · Weiß
+Grey TV	Grauer Fernseher
+Wood-grain TV	Fernseher in Holzoptik
+PC monitor	PC-Monitor
+Arcade cabinet	Arcade-Automat
 Black bar	Schwarzer Balken
-SP Onyx	SP Onyx
-SP Cobalt	SP Kobalt
-SP Platinum	SP Platin
 GBA Color	GBA-Farben
 GBA screen	GBA-Bildschirm
 GBA screens	GBA-Bildschirme
@@ -943,7 +972,6 @@ Next picture	Nächstes Bild
 No pictures yet	Noch keine Bilder
 Available	Verfügbar
 Not downloaded	Nicht geladen
-More filters	Weitere Filter
 Show games	Spiele zeigen
 Reset filters	Filter zurücksetzen
 Any	Alle
@@ -957,3 +985,148 @@ Online play	Online-Spiel
 {0} players	{0} Spieler
 No game information yet.	Noch keine Spielinfos.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Aktiviere Spielinfo unter Einstellungen > Bibliothek > Cover-Quellen und lade die Cover.
+Ports	Ports
+Restart port	Port neu starten
+Quit	Beenden
+Looking for the latest PortMaster	Suche nach dem neuesten PortMaster
+Downloading PortMaster	PortMaster wird geladen
+Checking PortMaster	PortMaster wird geprüft
+Unpacking PortMaster	PortMaster wird entpackt
+Setting up PortMaster	PortMaster wird eingerichtet
+Installing PortMaster from the card	PortMaster wird von der Karte installiert
+PortMaster is ready	PortMaster ist bereit
+Could not set up PortMaster	PortMaster konnte nicht eingerichtet werden
+Get, update and remove ports	Ports holen, aktualisieren und entfernen
+Close PortMaster	PortMaster schließen
+Back to PortMaster	Zurück zu PortMaster
+Keep getting and updating ports	Weiter Ports holen und aktualisieren
+Your ports are waiting in Ports	Deine Ports warten unter Ports
+Closing PortMaster…	PortMaster wird geschlossen…
+Closing the port…	Der Port wird geschlossen…
+GB screens	GB-Bildschirme
+GBC screens	GBC-Bildschirme
+Game Boy screen	Game Boy-Bildschirm
+Game Boy Color screen	Game Boy Color-Bildschirm
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Der Punktmatrix-Bildschirm des ersten Game Boy: ein helles Pixelraster und weiche Schatten.
+The Game Boy Color screen with faint gaps between its pixels.	Der Bildschirm des Game Boy Color mit feinen Lücken zwischen den Pixeln.
+This handheld's own screen.	Der eigene Bildschirm dieses Handhelds.
+Screen colours	Bildschirmfarben
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Schwarzweiß
+Game Boy Color, darker	Game Boy Color, dunkler
+Full colour	Volle Farben
+Hold to save	Zum Speichern halten
+Hold to load	Zum Laden halten
+Screen off	Bildschirm aus
+Touch the screen to turn it on	Zum Einschalten den Bildschirm berühren
+min	Min.
+h	Std.
+Not saved	Nicht gespeichert
+Loaded	Geladen
+Not loaded	Nicht geladen
+Nothing to load	Nichts zu laden
+Saving…	Speichern…
+Loading…	Laden…
+Info screen	Infobildschirm
+Team	Team
+Lv	Lv.
+screens	Bildschirme
+Not yet	Noch nicht
+None yet	Noch keins
+The best there is	Das Beste, was es gibt
+Next:	Nächstes:
+Badges	Orden
+Carried	Dabei
+Coin bank	Münzbank
+Coins	Münzen
+Collection	Sammlung
+Course	Level
+Day	Tag
+Ending so far	Ende bisher
+Essences	Essenzen
+Gear	Ausrüstung
+Golden leaves	Goldene Blätter
+Heart containers	Herzcontainer
+Heart pieces	Herzteile
+Hearts	Herzen
+In a course	In einem Level
+Instruments	Instrumente
+Johto badges	Johto-Orden
+Journey	Reise
+Kanto badges	Kanto-Orden
+Keys	Schlüssel
+Lives	Leben
+Money	Geld
+Musical coins	Musikmünzen
+Night	Nacht
+Pokédex caught	Pokédex gefangen
+Pokédex seen	Pokédex gesehen
+Rupees	Rubine
+Secret seashells	Geheime Muscheln
+Shield	Schild
+Small keys	Kleine Schlüssel
+Sword	Schwert
+Time of day	Tageszeit
+Time	Zeit
+Total	Gesamt
+Trainer	Trainer
+Treasures	Schätze
+Worlds	Welten
+Your journey	Deine Reise
+Seeds	Samen
+Game switcher	Spielwechsel
+Switch to another game	Zu einem anderen Spiel wechseln
+Hold to return home	Zum Startmenü halten
+Add game files	Spieldateien hinzufügen
+Needs your files	Braucht deine Dateien
+Files added	Dateien hinzugefügt
+How to get the files	So bekommst du die Dateien
+Scan with your phone	Mit dem Handy scannen
+Or open on a computer	Oder am Computer öffnen
+Code	Code
+Connect to Wi-Fi to send files from a phone or computer.	Verbinde dich mit WLAN, um Dateien von einem Handy oder Computer zu senden.
+Receiving files	Dateien werden empfangen
+Unpacking files	Dateien werden entpackt
+Files arrived. Choose Play to start.	Die Dateien sind da. Wähle Spielen zum Starten.
+This port lists no instructions.	Dieser Port hat keine Anleitung.
+Play	Spielen
+Goes into	Landet in
+Phone or computer connected	Handy oder Computer verbunden
+Vibration	Vibration
+Menu haptics	Menü-Haptik
+Haptic strength	Haptikstärke
+Game rumble	Spiel-Rumble
+Rumble strength	Rumble-Stärke
+Try a pattern	Muster ausprobieren
+Feel the game	Spür das Spiel
+Feel every move	Spür jede Bewegung
+No vibration motor was found on this device.	Auf diesem Gerät wurde kein Vibrationsmotor gefunden.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble-Pak-Spiele auf dem DS, Rumble-Module auf Game Boy und Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Schalte Spiel-Rumble für Spiele mit Rumble-Zubehör ein.
+A light tap for every move, a firmer one when you choose, open or save.	Ein leichtes Tippen bei jeder Bewegung, ein festeres beim Auswählen, Öffnen oder Speichern.
+Turn on menu haptics to feel the menus.	Schalte Menü-Haptik ein, um die Menüs zu spüren.
+Browse	Blättern
+Open a view	Ansicht öffnen
+Go back	Zurück
+Switch on	Einschalten
+Switch off	Ausschalten
+Add favourite	Favorit hinzufügen
+Remove favourite	Favorit entfernen
+Start a game	Spiel starten
+Save complete	Gespeichert
+Load complete	Geladen
+Try again	Erneut versuchen
+Keyboard	Tastatur
+Adjust	Anpassen
+End of a list	Listenende
+Long press	Langes Drücken
+Notification	Benachrichtigung
+Touch screen	Touchscreen
+Point and click on top	Oben zeigen und klicken
+Touch here to point and click on the top screen.	Tippe hier, um auf dem oberen Bildschirm zu zeigen und zu klicken.
+Hold still for a right click	Für Rechtsklick still halten
+Hold to exit	Halten zum Beenden
+Touch screen off	Touchscreen aus
+Touch screen is not available	Touchscreen ist nicht verfügbar

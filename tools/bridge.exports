@@ -5,6 +5,7 @@
     rgds_present_canvas;
     rgds_hd_rules;
     rgds_shader_live;
+    rgds_rumble;
     ioctl;
     read;
     kill;

@@ -17,6 +17,7 @@ play-shot's --drive mode understands:
     read C2EE 1       read a byte of the game's memory
     dump FILE         write the whole memory (EWRAM then IWRAM; Game Boy Advance)
     layers 1f         draw only these layers (bits 0-3 background, 4 sprites)
+    poke D056 01 02   write bytes into memory from an address (set a scene up)
 
 main() only replays the script. The helpers below (is_title, is_menu,
 is_overworld, is_full_screen, press_until, cursor_on_ok) read a shot for a
@@ -217,6 +218,8 @@ def main():
                 player.cmd(f"dump {parts[1]}")
             elif what == "layers":
                 player.cmd(f"layers {parts[1]}")
+            elif what == "poke":
+                player.cmd(line)
             else:
                 raise SystemExit(f"unknown command: {line}")
     finally:

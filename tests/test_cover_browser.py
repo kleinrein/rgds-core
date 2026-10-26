@@ -151,14 +151,39 @@ class CoverBrowserTests(unittest.TestCase):
         image, _, _ = self.run_ui(home=True, home_layout='vertical')
         self.assertEqual(visuals.VisualOptionsTests.pixel(image, 76, 480 + 64), (255, 255, 0))
 
-    def test_anbernic_opens_search_from_library_modal_settings_and_keyboard(self):
+    def test_anbernic_opens_the_game_switcher_from_library_modal_settings_and_keyboard(self):
         for script in (
             '100 joy-down 8\n', '100 key Y\n300 joy-down 8\n', '100 key S\n300 joy-down 8\n',
-            '100 key Q\n300 key Y\n500 key Home\n'
+            '100 key Q\n300 key Y\n500 joy-down 8\n'
         ):
             _, counts, _ = self.run_ui(script)
-            self.assertEqual(counts['page'], 29)
+            self.assertEqual(counts['page'], 36, script)
             self.assertFalse(counts['picker_open'])
+
+    def test_the_home_key_opens_the_game_search_and_closes_it_again(self):
+        keyboard = self.run_ui('100 key Q\n300 key Y\n')[1]['page']
+        for script in ('100 key Home\n', '100 key Y\n300 key Home\n', '100 key S\n300 key Home\n',
+                       '100 joy-down 8\n300 key Home\n'):
+            _, counts, _ = self.run_ui(script)
+            self.assertEqual(counts['page'], keyboard, script)
+            self.assertFalse(counts['picker_open'])
+        # Home again while typing closes the search where it was opened: the library, or the switcher's page.
+        self.assertEqual(self.run_ui('100 key Home\n300 key Home\n')[1]['page'], 0)
+        settings = self.run_ui('100 key S\n')[1]['page']
+        self.assertEqual(self.run_ui('100 key S\n300 joy-down 8\n500 key Home\n700 key Home\n')[1]['page'], settings)
+
+    def test_the_launchers_game_switcher_plays_a_recent_game_and_goes_back(self):
+        # Game 08 is the one played: A starts it, wherever the library was.
+        _, counts, selected = self.run_ui('100 joy-down 8\n300 key A\n')
+        self.assertEqual((counts['page'], selected), (0, 8))
+        # B, or the button again, goes back to the page it was pressed on.
+        for script in ('100 key S\n300 joy-down 8\n500 key B\n', '100 key S\n300 joy-down 8\n500 joy-down 8\n'):
+            _, counts, _ = self.run_ui(script)
+            self.assertEqual(counts['page'], self.run_ui('100 key S\n')[1]['page'], script)
+        # Nothing played yet: the button leaves the page as it is.
+        (self.data / 'library' / game_key(self.roms / 'Game 08.nds') / 'stats.ini').unlink()
+        _, counts, _ = self.run_ui('100 joy-down 8\n')
+        self.assertEqual(counts['page'], 0)
 
     def test_switcher_shows_games_and_keeps_game_menu_accessible(self):
         from library import write_fields

@@ -65,6 +65,7 @@ static std::atomic<int> g_rgds_adaptive{-1};
 #include <ctime>
 #include <string>
 #include <random>
+#include <utility>
 #include <vector>
 
 #include <cstdint>
@@ -1250,6 +1251,7 @@ static int run(int argc, char** argv) {
   }
 
   NDS nds;
+  nds.bus.rumble_pak = rgds::rumble_pak();
   if (cfg.has("emu.idle_skip") && !std::getenv("DS_IDLE_SKIP"))
     nds.sched.set_idle_skip(cfg.str("emu.idle_skip").c_str()); // DS_IDLE_SKIP wins
   ds::bios::UserSettings user;
@@ -2650,6 +2652,7 @@ sdl_ready:
     const Uint64 t0 = SDL_GetPerformanceCounter();
     nds.run_frame();
     rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);
+    if (nds.bus.rumble_pak) rgds::rumble_frame(std::exchange(nds.bus.rumble_moves, 0u));
     if (nds.dsi_dsp_started && !dsp_warned) {
       dsp_warned = true;
       std::fprintf(stderr, "DSi DSP is not emulated.\n");

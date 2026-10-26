@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Khởi động lại trò chơi để áp
 Could not save DS settings.	Không thể lưu cài đặt DS.
 Search	Tìm kiếm
 Save gallery	Kho trạng thái
-Search and filters	Tìm kiếm và bộ lọc
 Add your games	Thêm trò chơi
 DS controls	Điều khiển DS
 Back up all saves	Sao lưu mọi bản lưu
@@ -626,7 +625,6 @@ Slot	Ô
 Empty slot	Ô trống
 Search games	Tìm trò chơi
 Filter	Bộ lọc
-Clear search and filters	Xóa tìm kiếm và bộ lọc
 Missing artwork	Thiếu ảnh bìa
 Where to put games	Nơi đặt trò chơi
 Scan for games	Quét trò chơi
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Âm thanh không được ghi hay lưu.
 Test the microphone on your handheld.	Thử micrô trên máy cầm tay.
 Return home before testing the physical microphone.	Về trang chủ trước khi thử micrô thật.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Thổi hoặc nói vào micrô. Mức tín hiệu tăng rồi giảm khi dừng.
-No filter	Không có bộ lọc
 Quick search	Tìm nhanh
 A  Search	A  Tìm
 A  Jump	A  Chuyển
@@ -906,14 +903,46 @@ Companion	Màn hình đồng hành
 Swap screens	Đổi màn hình
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Thêm trò chơi Game Boy và Game Boy Advance: mục Trò chơi sẽ mở trang hệ máy.
 Frame	Khung
-Indigo	Chàm
-Glacier	Băng giá
-Black	Đen
-Platinum	Bạch kim
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Đỏ
+Game Boy · Yellow	Game Boy · Vàng
+Game Boy · Green	Game Boy · Xanh lá
+Game Boy · Blue	Game Boy · Xanh dương
+Game Boy · Black	Game Boy · Đen
+Game Boy · Screen only	Game Boy · Chỉ màn hình
+Game Boy Pocket · Silver	Game Boy Pocket · Bạc
+Game Boy Pocket · Black	Game Boy Pocket · Đen
+Game Boy Pocket · Yellow	Game Boy Pocket · Vàng
+Game Boy Pocket · Red	Game Boy Pocket · Đỏ
+Game Boy Pocket · Green	Game Boy Pocket · Xanh lá
+Game Boy Pocket · Blue	Game Boy Pocket · Xanh dương
+Game Boy Pocket · Pink	Game Boy Pocket · Hồng
+Game Boy Pocket · Screen only	Game Boy Pocket · Chỉ màn hình
+Game Boy Color · Berry	Game Boy Color · Quả mọng
+Game Boy Color · Grape	Game Boy Color · Nho
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Dandelion	Game Boy Color · Bồ công anh
+Game Boy Color · Teal	Game Boy Color · Xanh mòng két
+Game Boy Color · Atomic Purple	Game Boy Color · Tím nguyên tử
+Game Boy Color · Screen only	Game Boy Color · Chỉ màn hình
+Game Boy Advance · Indigo	Game Boy Advance · Chàm
+Game Boy Advance · Glacier	Game Boy Advance · Băng giá
+Game Boy Advance · Black	Game Boy Advance · Đen
+Game Boy Advance · Platinum	Game Boy Advance · Bạch kim
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Lam coban
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Mã não
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Bạch kim
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Bạc
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Đen
+WonderSwan Color · White	WonderSwan Color · Trắng
+WonderSwan Color · Blue	WonderSwan Color · Xanh dương
+PSP · Black	PSP · Đen
+PSP · White	PSP · Trắng
+Grey TV	TV xám
+Wood-grain TV	TV vân gỗ
+PC monitor	Màn hình PC
+Arcade cabinet	Tủ máy arcade
 Black bar	Dải đen
-SP Onyx	SP Mã não
-SP Cobalt	SP Lam coban
-SP Platinum	SP Bạch kim
 GBA Color	Màu GBA
 GBA screen	Màn hình GBA
 GBA screens	Màn hình GBA
@@ -943,7 +972,6 @@ Next picture	Ảnh tiếp theo
 No pictures yet	Chưa có ảnh
 Available	Có sẵn
 Not downloaded	Chưa tải
-More filters	Thêm bộ lọc
 Show games	Hiện game
 Reset filters	Đặt lại bộ lọc
 Any	Tất cả
@@ -957,3 +985,148 @@ Online play	Chơi trực tuyến
 {0} players	{0} người chơi
 No game information yet.	Chưa có thông tin game.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Bật Thông tin game trong Cài đặt > Thư viện > Nguồn bìa, rồi tải bìa.
+Ports	Bản port
+Restart port	Khởi động lại bản port
+Quit	Thoát
+Looking for the latest PortMaster	Đang tìm PortMaster mới nhất
+Downloading PortMaster	Đang tải PortMaster
+Checking PortMaster	Đang kiểm tra PortMaster
+Unpacking PortMaster	Đang giải nén PortMaster
+Setting up PortMaster	Đang thiết lập PortMaster
+Installing PortMaster from the card	Đang cài PortMaster từ thẻ
+PortMaster is ready	PortMaster đã sẵn sàng
+Could not set up PortMaster	Không thể thiết lập PortMaster
+Get, update and remove ports	Tải, cập nhật và gỡ bản port
+Close PortMaster	Đóng PortMaster
+Back to PortMaster	Quay lại PortMaster
+Keep getting and updating ports	Tiếp tục tải và cập nhật bản port
+Your ports are waiting in Ports	Các bản port của bạn ở mục Bản port
+Closing PortMaster…	Đang đóng PortMaster…
+Closing the port…	Đang đóng bản port…
+GB screens	Màn hình GB
+GBC screens	Màn hình GBC
+Game Boy screen	Màn hình Game Boy
+Game Boy Color screen	Màn hình Game Boy Color
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Màn hình ma trận điểm của Game Boy đời đầu: lưới điểm ảnh sáng và bóng đổ mềm.
+The Game Boy Color screen with faint gaps between its pixels.	Màn hình Game Boy Color với khe hở mờ giữa các điểm ảnh.
+This handheld's own screen.	Màn hình gốc của máy cầm tay này.
+Screen colours	Màu màn hình
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Đen trắng
+Game Boy Color, darker	Game Boy Color, tối hơn
+Full colour	Đầy đủ màu
+Hold to save	Giữ để lưu
+Hold to load	Giữ để tải
+Screen off	Tắt màn hình
+Touch the screen to turn it on	Chạm vào màn hình để bật lại
+min	phút
+h	giờ
+Not saved	Chưa lưu
+Loaded	Đã tải
+Not loaded	Chưa tải
+Nothing to load	Không có gì để tải
+Saving…	Đang lưu…
+Loading…	Đang tải…
+Info screen	Màn hình thông tin
+Team	Đội
+Lv	Cấp
+screens	màn hình
+Not yet	Chưa
+None yet	Chưa có
+The best there is	Tốt nhất rồi
+Next:	Tiếp theo:
+Badges	Huy hiệu
+Carried	Đang mang
+Coin bank	Ngân hàng xu
+Coins	Xu
+Collection	Bộ sưu tập
+Course	Màn
+Day	Ngày
+Ending so far	Kết thúc hiện tại
+Essences	Tinh chất
+Gear	Trang bị
+Golden leaves	Lá vàng
+Heart containers	Bình tim
+Heart pieces	Mảnh tim
+Hearts	Tim
+In a course	Trong màn chơi
+Instruments	Nhạc cụ
+Johto badges	Huy hiệu Johto
+Journey	Hành trình
+Kanto badges	Huy hiệu Kanto
+Keys	Chìa khóa
+Lives	Mạng
+Money	Tiền
+Musical coins	Xu âm nhạc
+Night	Đêm
+Pokédex caught	Pokédex đã bắt
+Pokédex seen	Pokédex đã thấy
+Rupees	Rupee
+Secret seashells	Vỏ sò bí mật
+Shield	Khiên
+Small keys	Chìa khóa nhỏ
+Sword	Kiếm
+Time of day	Thời điểm
+Time	Thời gian
+Total	Tổng
+Trainer	Huấn luyện viên
+Treasures	Kho báu
+Worlds	Thế giới
+Your journey	Hành trình của bạn
+Seeds	Hạt giống
+Game switcher	Chuyển trò chơi
+Switch to another game	Chuyển sang trò chơi khác
+Hold to return home	Giữ để về trang chủ
+Add game files	Thêm tệp trò chơi
+Needs your files	Cần tệp của bạn
+Files added	Đã thêm tệp
+How to get the files	Cách lấy tệp
+Scan with your phone	Quét bằng điện thoại
+Or open on a computer	Hoặc mở trên máy tính
+Code	Mã
+Connect to Wi-Fi to send files from a phone or computer.	Kết nối Wi-Fi để gửi tệp từ điện thoại hoặc máy tính.
+Receiving files	Đang nhận tệp
+Unpacking files	Đang giải nén tệp
+Files arrived. Choose Play to start.	Tệp đã đến. Chọn Chơi để bắt đầu.
+This port lists no instructions.	Port này không có hướng dẫn.
+Play	Chơi
+Goes into	Lưu vào
+Phone or computer connected	Đã kết nối điện thoại hoặc máy tính
+Vibration	Rung
+Menu haptics	Phản hồi xúc giác
+Haptic strength	Độ mạnh xúc giác
+Game rumble	Rung trong trò chơi
+Rumble strength	Độ mạnh rung
+Try a pattern	Thử một kiểu rung
+Feel the game	Cảm nhận trò chơi
+Feel every move	Cảm nhận từng thao tác
+No vibration motor was found on this device.	Không tìm thấy động cơ rung trên thiết bị này.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Trò chơi Rumble Pak trên DS, băng có rung trên Game Boy và Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Bật rung trong trò chơi cho các trò chơi dành cho phụ kiện rung.
+A light tap for every move, a firmer one when you choose, open or save.	Một chạm nhẹ cho mỗi thao tác, mạnh hơn khi bạn chọn, mở hoặc lưu.
+Turn on menu haptics to feel the menus.	Bật phản hồi xúc giác để cảm nhận các menu.
+Browse	Duyệt
+Open a view	Mở một chế độ xem
+Go back	Quay lại
+Switch on	Bật
+Switch off	Tắt
+Add favourite	Thêm yêu thích
+Remove favourite	Bỏ yêu thích
+Start a game	Bắt đầu trò chơi
+Save complete	Đã lưu xong
+Load complete	Đã tải xong
+Try again	Thử lại
+Keyboard	Bàn phím
+Adjust	Điều chỉnh
+End of a list	Cuối danh sách
+Long press	Nhấn giữ
+Notification	Thông báo
+Touch screen	Màn hình cảm ứng
+Point and click on top	Trỏ và nhấp ở trên
+Touch here to point and click on the top screen.	Chạm vào đây để trỏ và nhấp trên màn hình trên.
+Hold still for a right click	Giữ yên để nhấp chuột phải
+Hold to exit	Giữ để thoát
+Touch screen off	Đã tắt màn hình cảm ứng
+Touch screen is not available	Không dùng được màn hình cảm ứng

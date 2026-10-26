@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import sys
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -101,19 +102,30 @@ class PlayRuntimeTests(unittest.TestCase):
         write_fields(self.data / "ui.ini", {"filter": "22"})  # the DS default: DS Lite
         plan = emulators.launch_plan("rgds-play", self.app, self.data, self.gba)
         self.assertEqual(plan["env"]["RGDS_SHADER"], "30")
+        write_fields(self.data / "library" / game_key(self.gba) / "game.ini", {"filter": "29"})
+        plan = emulators.launch_plan("rgds-play", self.app, self.data, self.gba)
+        self.assertEqual(plan["env"]["RGDS_SHADER"], "29")
+        # A look drawn for the DS picture (Natural Vision) is not offered for a GBA game: its own screen.
         write_fields(self.data / "library" / game_key(self.gba) / "game.ini", {"filter": "5"})
         plan = emulators.launch_plan("rgds-play", self.app, self.data, self.gba)
-        self.assertEqual(plan["env"]["RGDS_SHADER"], "5")
-        # Another system's screen is never used: a DS screen on a GBA game falls back to the GBA screen,
-        # a Game Boy Color game on a DS-screen default gets Off, and keeps a shader that fits any screen.
+        self.assertEqual(plan["env"]["RGDS_SHADER"], "30")
+        # Another system's screen is never used: a DS screen on a GBA game falls back to the GBA screen.
+        # Other systems get only the Original presets and their own screens: a Game Boy Color game on
+        # Default (or a look drawn for the DS) gets its own screen, and keeps Off or Sharp when chosen.
         write_fields(self.data / "library" / game_key(self.gba) / "game.ini", {"filter": "22"})
         plan = emulators.launch_plan("rgds-play", self.app, self.data, self.gba)
         self.assertEqual(plan["env"]["RGDS_SHADER"], "30")
         gbc = self.root / "game.gbc"
-        self.assertEqual(play_options.shader_for(gbc, -1, 22), 0)
-        self.assertEqual(play_options.shader_for(gbc, -1, 27), 27)
-        self.assertEqual(play_options.shader_for(gbc, 30, 0), 0)
+        self.assertEqual(play_options.shader_for(gbc, -1, 22), 32)
+        self.assertEqual(play_options.shader_for(gbc, 27, 0), 32)
+        self.assertEqual(play_options.shader_for(gbc, 30, 0), 32)
+        self.assertEqual(play_options.shader_for(gbc, 31, 0), 32)
+        self.assertEqual(play_options.shader_for(gbc, 0, 22), 0)
+        self.assertEqual(play_options.shader_for(gbc, 1, 22), 1)
+        self.assertEqual(play_options.shader_for(self.root / "game.gb", -1, 27), 31)
         self.assertEqual(play_options.shader_for(self.root / "game.nds", -1, 30), 0)
+        self.assertEqual(play_options.shader_for(self.root / "game.nds", -1, 27), 27)
+        self.assertEqual(play_options.shader_for(self.root / "game.nds", 31, 27), 27)
 
     def test_the_system_shader_groups_match_the_launchers_picker_families(self):
         import re
@@ -124,6 +136,11 @@ class PlayRuntimeTests(unittest.TestCase):
         places = [(int(i), int(f)) for i, f in re.findall(r"\{(\d+), (\d+)\}", order)]
         self.assertEqual({i for i, f in places if families[f] == "DS screens"}, set(play_options.DS_SCREENS))
         self.assertEqual({i for i, f in places if families[f] == "GBA screens"}, set(play_options.GBA_SCREENS))
+        self.assertEqual({i for i, f in places if families[f] == "GB screens"}, set(play_options.GB_SCREENS))
+        self.assertEqual({i for i, f in places if families[f] == "GBC screens"}, set(play_options.GBC_SCREENS))
+        self.assertEqual({i for i, f in places if families[f] == "Original"}, set(play_options.ORIGINAL))
+        defaults = re.search(r"system_default_shader.*?shaders\[\] = \{([^}]*)\}", catalog, re.S).group(1)
+        self.assertEqual([int(n) for n in defaults.split(",")], [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc")])
 
     def test_launch_plan_uses_its_own_data_and_the_shared_menu(self):
         binary = self.binary("rgds-play")
@@ -272,8 +289,80 @@ class PlayMenuTests(unittest.TestCase):
         self.assertEqual(read_fields(menu.status)["state"], "paused")
         self.assertEqual(read_fields(view)["frame"], "indigo")
         self.assertEqual(
-            play_options.view(self.root / "data", self.rom), {"fit": "smooth", "second": "off", "frame": "indigo"}
+            play_options.view(self.root / "data", self.rom), {
+                "fit": "smooth",
+                "second": "off",
+                "frame": "indigo",
+                "palette": "dmg",
+                "colour": "gbc"
+            }
         )
+
+    def test_colours_are_saved_beside_the_view_once_the_player_applied_them(self):
+        menu = self.menu("rgds-play")
+        view = self.root / "data/library" / game_key(self.rom) / "play.ini"
+        self.request(menu, "play-graphics:2:1:indigo")
+        self.result(menu, "play-graphics-applied")
+        self.request(menu, "play-color:1:1", token="2")
+        self.assertIn("play-color:1:1", menu.control.read_text())
+        self.assertEqual(read_fields(menu.status)["message"], "Applying graphics…")
+        self.assertNotIn("palette", read_fields(view))
+        self.result(menu, "play-color-applied")
+        shown = play_options.view(self.root / "data", self.rom)
+        self.assertEqual((shown["palette"], shown["colour"], shown["frame"]), ("pocket", "gbc-dim", "indigo"))
+        # A view change afterwards keeps the colours.
+        self.request(menu, "play-graphics:0:0:off", token="3")
+        self.result(menu, "play-graphics-applied")
+        self.assertEqual(play_options.view(self.root / "data", self.rom)["palette"], "pocket")
+
+    def test_palette_and_correction_names_match_the_players_list(self):
+        # play/src/ui/gb_palettes.hpp is the one list the player and the launcher read; the runtime repeats its slugs.
+        header = (Path(__file__).resolve().parents[1] / "play/src/ui/gb_palettes.hpp").read_text()
+        palettes = re.findall(r'\{"([a-z-]+)", "[^"]+", \{0x', header)
+        corrections = re.findall(r'\{"([a-z-]+)", "[^"]+"\},', header)
+        self.assertEqual(tuple(palettes), play_options.PALETTES)
+        self.assertEqual(tuple(corrections), play_options.CORRECTIONS)
+
+    def test_frame_names_and_systems_match_the_players_list(self):
+        # play/src/ui/frame_styles.hpp is the one list the player and the launcher read; the runtime repeats it.
+        header = (Path(__file__).resolve().parents[1] / "play/src/ui/frame_styles.hpp").read_text()
+        styles = re.findall(r'^    \{"([a-z0-9-]+)", "([a-z0-9,]*)", "[^"]+", FrameKind::', header, re.M)
+        self.assertEqual(dict(styles), play_options.FRAMES)
+        self.assertEqual([slug for slug, _ in styles], list(play_options.FRAMES))
+
+    def test_a_frame_is_known_only_for_its_own_system(self):
+        data = self.root / "data"
+        gb, gbc = self.root / "Tetris.gb", self.root / "Wario Land 3.gbc"
+        for rom, frame, known in ((self.rom, "indigo", True), (self.rom, "sp-cobalt", True), (self.rom, "dmg", False),
+                                  (gb, "dmg", True), (gb, "pocket-black", True), (gb, "indigo", False),
+                                  (gb, "sp-onyx", False), (gb, "gbc-berry", False), (gbc, "gbc-teal", True),
+                                  (gbc, "dmg", False), (gb, "bar", True), (gbc, "off", True)):
+            self.assertEqual(play_options.frame_known(data, rom, frame), known, (rom.suffix, frame))
+        # An old GBA frame kept for a Game Boy game falls back to off; the owner's own picture of that name is kept.
+        save = lambda: play_options.save_view(data, gb, 0, 0, "indigo")
+        save()
+        self.assertEqual(play_options.view(data, gb)["frame"], "off")
+        (data / "frames/gb").mkdir(parents=True)
+        (data / "frames/gb/indigo.png").write_bytes(b"")
+        self.assertEqual(play_options.view(data, gb)["frame"], "indigo")
+
+    def test_a_failed_colour_change_keeps_the_saved_colours(self):
+        menu = self.menu("rgds-play")
+        self.request(menu, "play-color:1:0")
+        self.result(menu, "play-color-failed")
+        self.assertEqual(read_fields(menu.status)["state"], "error")
+        self.assertFalse((self.root / "data/library" / game_key(self.rom) / "play.ini").exists())
+
+    def test_colour_requests_are_refused_for_other_engines_and_bad_values(self):
+        for core, action in (
+            ("rgds-experimental", "play-color:1:0"), ("rgds-play", "play-color:8:0"), ("rgds-play", "play-color:0:3"),
+            ("rgds-play", "play-color:x:0"), ("rgds-play", "play-color:1"), ("rgds-play", "play-color:1:0:2"),
+            ("rgds-play", "play-color:-1:0")
+        ):
+            menu = self.menu(core)
+            self.request(menu, action)
+            self.assertIsNone(menu.pending, action)
+            self.assertEqual(read_fields(menu.status)["state"], "error", action)
 
     def test_a_failed_view_change_keeps_the_saved_view(self):
         menu = self.menu("rgds-play")

@@ -31,19 +31,7 @@ void App::open_last_played() {
         dirty = true;
         return;
     }
-    library_view(0);
-    remember_appearance();
-    // The game starts over Home itself. Games opens instead only while a
-    // very large card is still being listed, or if the game has left it.
-    if (!collection_loading)
-        for (size_t i = 0; i < model.games.size(); i++)
-            if (model.games[i].path == last->path) {
-                select_game(i, false);
-                carousel.reset(home_selected); // the rail is Home's while Home is up
-                launch(true);
-                return;
-            }
-    home_menu = false;
+    play_game(*last);
 }
 
 void App::open_category() {
@@ -67,6 +55,7 @@ bool App::other_system_selected() const {
 void App::refresh_other_systems() {
     all_games = ds_games;
     listed_systems = {"nds"};
+    port_entry.reset();
     if (preferences.show_systems && !o.game_menu)
         for (const auto& info : systems()) {
             if (std::string(info.id) == "nds") continue;
@@ -74,7 +63,14 @@ void App::refresh_other_systems() {
             for (const auto& [id, path] : o.system_roots)
                 if (id == info.id) roots.push_back(path);
             auto games = scan_system(roots, info.id);
-            if (games.empty()) continue;
+            // PortMaster is not a game: it leaves the list (counts, Recents, the switcher) and is pinned in view_source.
+            auto entry = std::find_if(games.begin(), games.end(), [](const Game& g) { return is_port_entry(g.path); });
+            if (entry != games.end()) {
+                port_entry = *entry;
+                port_entry->title = "PortMaster";
+                games.erase(entry);
+            }
+            if (games.empty() && !(std::string(info.id) == "ports" && port_entry)) continue;
             listed_systems.push_back(info.id);
             all_games.insert(all_games.end(), games.begin(), games.end());
         }
@@ -85,6 +81,7 @@ void App::refresh_other_systems() {
 std::vector<Game> App::view_source(int view) const {
     if (view != 0 || !preferences.show_systems) return all_games;
     std::vector<Game> games;
+    if (shown_system == "ports" && port_entry) games.push_back(*port_entry); // always first in Ports
     for (const auto& game : all_games)
         if (game.system == shown_system) games.push_back(game);
     return games;
@@ -101,20 +98,33 @@ void App::open_systems() {
     systems_menu = true;
     auto at = std::find(listed_systems.begin(), listed_systems.end(), shown_system);
     systems_selected = at == listed_systems.end() ? 0 : size_t(at - listed_systems.begin());
-    // Each card's numbers, as Home's collections show theirs.
+    // Each card's game count now; its play numbers are read when the card is shown (system_stats_for).
     system_stats.assign(listed_systems.size(), {});
     for (const auto& game : all_games)
-        for (size_t i = 0; i < listed_systems.size(); i++)
-            if (game.system == listed_systems[i] && !game.demo) {
-                const auto& played = library_cache.stats(game, true);
-                system_stats[i].games++;
-                system_stats[i].sessions += played.sessions;
-                system_stats[i].seconds += played.seconds;
-            }
+        if (!game.demo) {
+            auto at = std::find(listed_systems.begin(), listed_systems.end(), game.system);
+            if (at != listed_systems.end()) system_stats[size_t(at - listed_systems.begin())].games++;
+        }
     selected_at = s.GetTicks();
     carousel.reset(systems_selected);
     status.clear();
     dirty = true;
+}
+
+const App::SystemStats& App::system_stats_for(size_t index) {
+    static const SystemStats none;
+    if (index >= system_stats.size()) return none;
+    auto& stats = system_stats[index];
+    if (!stats.played_ready) {
+        stats.played_ready = true;
+        for (const auto& game : all_games)
+            if (game.system == listed_systems[index] && !game.demo) {
+                const auto& played = library_cache.stats(game);
+                stats.sessions += played.sessions;
+                stats.seconds += played.seconds;
+            }
+    }
+    return stats;
 }
 
 void App::choose_system(size_t index) {
@@ -144,23 +154,44 @@ void App::system_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
 
 void App::load_play_view() {
     auto values = fields(play_view_path());
-    static const std::array<std::string, 3> fits = {"sharp", "integer", "smooth"},
-                                            seconds = {"companion", "off", "swap"};
+    static const std::array<std::string, 3> fits = {"sharp", "integer", "smooth"};
+    static const std::array<std::string, 4> seconds = {"companion", "off", "swap", "info"};
     play_fit = int(std::find(fits.begin(), fits.end(), values["fit"]) - fits.begin()) % 3;
-    play_second = int(std::find(seconds.begin(), seconds.end(), values["second"]) - seconds.begin()) % 3;
+    play_second = int(std::find(seconds.begin(), seconds.end(), values["second"]) - seconds.begin()) % 4;
     auto choices = play_frame_choices();
     play_frame = std::find(choices.begin(), choices.end(), values["frame"]) == choices.end() ? "off" : values["frame"];
+    play_palette = play_correction = 0;
+    for (int i = 0; i < play::gb_palette_count; i++)
+        if (values["palette"] == play::gb_palettes[i].slug) play_palette = i;
+    for (int i = 0; i < play::gb_correction_count; i++)
+        if (values["colour"] == play::gb_corrections[i].slug) play_correction = i;
 }
 
-fs::path App::play_frames_folder() {
+int App::play_colour_kind() const {
+    if (model.games.empty()) return 0;
     const auto& game = model.games.at(0);
-    std::string system = game.system;
-    if (system == "nds") system = system_for_path(game.path);
-    return o.data / "frames" / (system == "nds" ? "gba" : system);
+    const std::string system = game.system == "nds" ? system_for_path(game.path) : game.system;
+    if (system != "gb") return system == "gbc" ? 2 : 0;
+    // A .gb made for both handhelds (header flag 0x80, Pokémon Yellow) runs on the Game Boy Color,
+    // in its own colours, as the player does (play/src/core/mgba_gb.h).
+    std::ifstream rom(game.path, std::ios::binary);
+    char flag = 0;
+    return rom.seekg(0x143) && rom.get(flag) && (static_cast<unsigned char>(flag) & 0x80) ? 2 : 1;
 }
+
+std::string App::play_system() const {
+    const auto& game = model.games.at(0);
+    const std::string system = game.system == "nds" ? system_for_path(game.path) : game.system;
+    return system == "nds" ? "gba" : system;
+}
+
+fs::path App::play_frames_folder() { return o.data / "frames" / play_system(); }
 
 std::vector<std::string> App::play_frame_choices() {
-    std::vector<std::string> choices(play_frames.begin(), play_frames.end()), pictures;
+    std::vector<std::string> choices, pictures;
+    const std::string system = play_system();
+    for (const auto& style : play::frame_styles)
+        if (play::frame_fits(style, system)) choices.push_back(style.slug);
     std::error_code ec;
     for (fs::directory_iterator it(play_frames_folder(), ec), end; !ec && it != end; it.increment(ec)) {
         const auto name = it->path().stem().string();
@@ -174,8 +205,9 @@ std::vector<std::string> App::play_frame_choices() {
 }
 
 std::string App::play_frame_label(const std::string& frame) const {
-    auto found = std::find(play_frames.begin(), play_frames.end(), frame);
-    return found == play_frames.end() ? frame : play_frame_names[size_t(found - play_frames.begin())];
+    for (const auto& style : play::frame_styles)
+        if (frame == style.slug) return style.name;
+    return frame;
 }
 
 void App::apply_play_view(int fit, int second, const std::string& frame) {
@@ -184,13 +216,14 @@ void App::apply_play_view(int fit, int second, const std::string& frame) {
         menu_request("play-graphics:" + std::to_string(fit) + ":" + std::to_string(second) + ":" + frame);
         return;
     }
-    static const std::array<const char*, 3> fits = {"sharp", "integer", "smooth"},
-                                            seconds = {"companion", "off", "swap"};
+    static const std::array<const char*, 3> fits = {"sharp", "integer", "smooth"};
+    static const std::array<const char*, 4> seconds = {"companion", "off", "swap", "info"};
     std::error_code ec;
     fs::create_directories(play_view_path().parent_path(), ec);
     auto pending = fs::path(play_view_path().string() + ".pending");
     std::ofstream(pending) << "schema=1\nfit=" << fits[size_t(fit)] << "\nsecond=" << seconds[size_t(second)]
-                           << "\nframe=" << frame << '\n';
+                           << "\nframe=" << frame << "\npalette=" << play::gb_palettes[play_palette].slug
+                           << "\ncolour=" << play::gb_corrections[play_correction].slug << '\n';
     fs::rename(pending, play_view_path(), ec);
     play_fit = fit;
     play_second = second;
@@ -199,22 +232,39 @@ void App::apply_play_view(int fit, int second, const std::string& frame) {
     dirty = true;
 }
 
+void App::apply_play_colour(int palette, int correction) {
+    if (palette == play_palette && correction == play_correction) return;
+    if (o.game_menu && !o.preview) {
+        menu_request("play-color:" + std::to_string(palette) + ":" + std::to_string(correction));
+        return;
+    }
+    play_palette = palette;
+    play_correction = correction;
+    const int fit = play_fit;
+    play_fit = -1; // apply_play_view skips an unchanged view; this one writes the file with the colours
+    apply_play_view(fit, play_second, play_frame);
+}
+
 const char* App::play_fit_name(int fit) const {
     return fit == 1 ? "Whole pixels" : fit == 2 ? "Smooth fill" : "Sharp fill";
 }
 
 const char* App::play_second_name(int second) const {
-    return second == 1 ? "Off" : second == 2 ? "Swap screens" : "Companion";
+    return second == 1 ? "Off" : second == 2 ? "Swap screens" : second == 3 ? "Info screen" : "Companion";
 }
 
 void App::play_graphics_action() {
     if (settings.focus == 0)
         show_picker("Game screen", {"Sharp fill", "Whole pixels", "Smooth fill"}, play_fit,
                     [this](int n) { apply_play_view(n, play_second, play_frame); });
-    else if (settings.focus == 1)
-        show_picker("Second screen", {"Companion", "Off", "Swap screens"}, play_second,
-                    [this](int n) { apply_play_view(play_fit, n, play_frame); });
-    else if (settings.focus == 2) {
+    else if (settings.focus == 1) {
+        // The picker's order (the info screen beside the companion) over the menu's numbers (play-graphics).
+        static constexpr std::array<int, 4> order = {0, 3, 1, 2};
+        const int shown = int(std::find(order.begin(), order.end(), play_second) - order.begin()) % 4;
+        show_picker("Second screen", {"Companion", "Info screen", "Off", "Swap screens"}, shown, [this](int n) {
+            if (n >= 0 && n < 4) apply_play_view(play_fit, order[size_t(n)], play_frame);
+        });
+    } else if (settings.focus == 2) {
         auto choices = play_frame_choices();
         std::vector<std::string> labels;
         for (const auto& choice : choices) labels.push_back(play_frame_label(choice));
@@ -222,6 +272,15 @@ void App::play_graphics_action() {
         show_picker("Frame", labels, selected < int(choices.size()) ? selected : 0, [this, choices](int n) {
             if (n >= 0 && n < int(choices.size())) apply_play_view(play_fit, play_second, choices[size_t(n)]);
         });
+    } else if (settings.focus == 4 && play_colour_kind() == 1) {
+        std::vector<std::string> names;
+        for (const auto& palette : play::gb_palettes) names.push_back(palette.name);
+        show_picker("Screen colours", names, play_palette, [this](int n) { apply_play_colour(n, play_correction); });
+    } else if (settings.focus == 4 && play_colour_kind() == 2) {
+        std::vector<std::string> names;
+        for (const auto& correction : play::gb_corrections) names.push_back(correction.name);
+        show_picker("Screen colours", names, play_correction,
+                    [this](int n) { apply_play_colour(play_palette, n); });
     } else {
         // The same shader carousel as the DS engines: the bridge's pass draws GBA and Game Boy screens too.
         open_shader_picker(true);

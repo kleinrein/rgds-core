@@ -22,7 +22,12 @@ App::SoundState App::sound_state() const {
             home_bar_focus};
 }
 
+void App::configure_haptics() {
+    haptics.set_strength(preferences.menu_haptics && !probe ? preferences.haptic_strength : 0);
+}
+
 void App::configure_sounds() {
+    configure_haptics();
     sounds.set_master(hardware.volume ? hardware.volume_percent : 100);
     if (!sounds.opened) sounds.opened = [this] { restore_dac_level(); };
     sounds.configure(preferences.menu_sounds && !probe && !sleep_audio_parked && settings.page != Page::Microphone,
@@ -53,6 +58,8 @@ void App::restore_dac_level() {
 }
 
 bool App::emit_sound(MenuCue cue, int direction) {
+    // The motor answers first and also while muted, as a phone does on silent.
+    if (!probe) haptics.play(static_cast<Haptic>(cue));
     if (probe || settings.page == Page::Microphone || (hardware.volume && hardware.volume_percent == 0)) return false;
     return sounds.play(cue, s.GetTicks(), direction, motion_touch ? (contact_x / 640.f - .5f) * .5f : direction * .12f);
 }
@@ -105,6 +112,72 @@ void App::finish_sound_action() {
     if (before.game != after.game || before.focus != after.focus || before.pick != after.pick ||
         before.row != after.row || before.col != after.col || before.bar != after.bar)
         emit_sound(MenuCue::Navigate, direction);
+    else if (!chat_open && !filter_sheet_active() &&
+             (sound_code == 8 || sound_code == 9 ||
+              ((sound_code == 0 || sound_code == 1) && settings.page == Page::Library && !picker_open)) &&
+             (picker_open || settings.page == Page::Library || list_count() > 0)) {
+        // A move that went nowhere: the end of a list. One bump, not one per
+        // repeat while the button stays held there.
+        const Uint32 now = s.GetTicks();
+        if ((!edge_felt_at || now - edge_felt_at > 350) && !probe) haptics.play(Haptic::Edge);
+        edge_felt_at = now;
+    }
+}
+
+void App::haptics_action(int code) {
+    if (code == 3) {
+        settings.back();
+        dirty = true;
+        return;
+    }
+    if (code == 8 || code == 9) {
+        settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 4);
+        dirty = true;
+        return;
+    }
+    if (code != 0 && code != 1 && code != 2 && code != 4) return;
+    // A strength change is felt at once: a Select tap for the menus, a short
+    // burst at the new level for games.
+    auto feel = [this](bool rumble) {
+        configure_haptics();
+        if (probe) return;
+        if (rumble) {
+            haptics.set_rumble_strength(preferences.rumble_strength);
+            haptics.rumble(1, 260);
+        } else haptics.play(Haptic::Select, true);
+    };
+    const int row = settings.focus;
+    if (row == 0 || row == 2) {
+        bool& value = row == 0 ? preferences.menu_haptics : preferences.game_rumble;
+        value = (code == 2 || code == 4) ? !value : code == 1;
+        remember_appearance();
+        configure_haptics(); // turning menu haptics on is felt through the Switch on cue itself
+        if (value && row == 2) feel(true);
+        sound_intent(value ? MenuCue::Enable : MenuCue::Disable);
+    } else if (row == 1 || row == 3) {
+        int& value = row == 1 ? preferences.haptic_strength : preferences.rumble_strength;
+        if ((row == 1 && !preferences.menu_haptics) || (row == 3 && !preferences.game_rumble)) return;
+        if (code == 0 || code == 1) {
+            value = std::clamp(value + (code == 0 ? -10 : 10), 10, 100);
+            remember_appearance();
+            feel(row == 3);
+            sound_intent(MenuCue::Adjust);
+        } else
+            show_picker(row == 1 ? "Haptic strength" : "Rumble strength", {"20%", "40%", "60%", "80%", "100%"},
+                        std::clamp((value + 10) / 20 - 1, 0, 4), [this, row](int n) {
+                            (row == 1 ? preferences.haptic_strength : preferences.rumble_strength) = (n + 1) * 20;
+                            remember_appearance();
+                            configure_haptics();
+                            if (row == 3) {
+                                haptics.set_rumble_strength(preferences.rumble_strength);
+                                haptics.rumble(1, 260);
+                            } else haptics.play(Haptic::Select, true);
+                        });
+    } else if (preferences.menu_haptics) {
+        std::vector<std::string> names(haptic_labels.begin(), haptic_labels.end());
+        show_picker("Try a pattern", names, 0, [this](int n) { haptics.play(static_cast<Haptic>(n), true); });
+    }
+    dirty = true;
 }
 
 void App::menu_sounds_action(int code) {

@@ -174,7 +174,8 @@ void App::menu_request(const std::string& action) {
         return;
     }
     fs::rename(pending, path);
-    if (action == "resume") quit = true;
+    if (action == "resume" && o.port_menu) port_go_idle(); // beside a port the helper stays
+    else if (action == "resume") quit = true;
     else {
         menu_pending_token = request_token;
         menu_request_at = s.GetTicks();

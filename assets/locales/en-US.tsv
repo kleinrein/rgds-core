@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Restart the game to apply DS settings.
 Could not save DS settings.	Could not save DS settings.
 Search	Search
 Save gallery	Save gallery
-Search and filters	Search and filters
 Add your games	Add your games
 DS controls	DS controls
 Back up all saves	Back up all saves
@@ -626,7 +625,6 @@ Slot	Slot
 Empty slot	Empty slot
 Search games	Search games
 Filter	Filter
-Clear search and filters	Clear search and filters
 Missing artwork	Missing artwork
 Where to put games	Where to put games
 Scan for games	Scan for games
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Audio is not recorded or saved.
 Test the microphone on your handheld.	Test the microphone on your handheld.
 Return home before testing the physical microphone.	Return home before testing the physical microphone.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blow or speak into the microphone. Watch the level rise, then fall when you stop.
-No filter	No filter
 Quick search	Quick search
 A  Search	A  Search
 A  Jump	A  Jump
@@ -906,14 +903,46 @@ Companion	Companion
 Swap screens	Swap screens
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.
 Frame	Frame
-Indigo	Indigo
-Glacier	Glacier
-Black	Black
-Platinum	Platinum
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Red
+Game Boy · Yellow	Game Boy · Yellow
+Game Boy · Green	Game Boy · Green
+Game Boy · Blue	Game Boy · Blue
+Game Boy · Black	Game Boy · Black
+Game Boy · Screen only	Game Boy · Screen only
+Game Boy Pocket · Silver	Game Boy Pocket · Silver
+Game Boy Pocket · Black	Game Boy Pocket · Black
+Game Boy Pocket · Yellow	Game Boy Pocket · Yellow
+Game Boy Pocket · Red	Game Boy Pocket · Red
+Game Boy Pocket · Green	Game Boy Pocket · Green
+Game Boy Pocket · Blue	Game Boy Pocket · Blue
+Game Boy Pocket · Pink	Game Boy Pocket · Pink
+Game Boy Pocket · Screen only	Game Boy Pocket · Screen only
+Game Boy Color · Berry	Game Boy Color · Berry
+Game Boy Color · Grape	Game Boy Color · Grape
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Dandelion	Game Boy Color · Dandelion
+Game Boy Color · Teal	Game Boy Color · Teal
+Game Boy Color · Atomic Purple	Game Boy Color · Atomic Purple
+Game Boy Color · Screen only	Game Boy Color · Screen only
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Glacier	Game Boy Advance · Glacier
+Game Boy Advance · Black	Game Boy Advance · Black
+Game Boy Advance · Platinum	Game Boy Advance · Platinum
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platinum
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Silver
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Black
+WonderSwan Color · White	WonderSwan Color · White
+WonderSwan Color · Blue	WonderSwan Color · Blue
+PSP · Black	PSP · Black
+PSP · White	PSP · White
+Grey TV	Grey TV
+Wood-grain TV	Wood-grain TV
+PC monitor	PC monitor
+Arcade cabinet	Arcade cabinet
 Black bar	Black bar
-SP Onyx	SP Onyx
-SP Cobalt	SP Cobalt
-SP Platinum	SP Platinum
 GBA Color	GBA Color
 GBA screen	GBA screen
 GBA screens	GBA screens
@@ -943,7 +972,6 @@ Next picture	Next picture
 No pictures yet	No pictures yet
 Available	Available
 Not downloaded	Not downloaded
-More filters	More filters
 Show games	Show games
 Reset filters	Reset filters
 Any	Any
@@ -957,3 +985,148 @@ Online play	Online play
 {0} players	{0} players
 No game information yet.	No game information yet.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.
+Ports	Ports
+Restart port	Restart port
+Quit	Quit
+Looking for the latest PortMaster	Looking for the latest PortMaster
+Downloading PortMaster	Downloading PortMaster
+Checking PortMaster	Checking PortMaster
+Unpacking PortMaster	Unpacking PortMaster
+Setting up PortMaster	Setting up PortMaster
+Installing PortMaster from the card	Installing PortMaster from the card
+PortMaster is ready	PortMaster is ready
+Could not set up PortMaster	Could not set up PortMaster
+Get, update and remove ports	Get, update and remove ports
+Close PortMaster	Close PortMaster
+Back to PortMaster	Back to PortMaster
+Keep getting and updating ports	Keep getting and updating ports
+Your ports are waiting in Ports	Your ports are waiting in Ports
+Closing PortMaster…	Closing PortMaster…
+Closing the port…	Closing the port…
+GB screens	GB screens
+GBC screens	GBC screens
+Game Boy screen	Game Boy screen
+Game Boy Color screen	Game Boy Color screen
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.
+The Game Boy Color screen with faint gaps between its pixels.	The Game Boy Color screen with faint gaps between its pixels.
+This handheld's own screen.	This handheld's own screen.
+Screen colours	Screen colours
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Black and white
+Game Boy Color, darker	Game Boy Color, darker
+Full colour	Full colour
+Hold to save	Hold to save
+Hold to load	Hold to load
+Screen off	Screen off
+Touch the screen to turn it on	Touch the screen to turn it on
+min	min
+h	h
+Not saved	Not saved
+Loaded	Loaded
+Not loaded	Not loaded
+Nothing to load	Nothing to load
+Saving…	Saving…
+Loading…	Loading…
+Info screen	Info screen
+Team	Team
+Lv	Lv
+screens	screens
+Not yet	Not yet
+None yet	None yet
+The best there is	The best there is
+Next:	Next:
+Badges	Badges
+Carried	Carried
+Coin bank	Coin bank
+Coins	Coins
+Collection	Collection
+Course	Course
+Day	Day
+Ending so far	Ending so far
+Essences	Essences
+Gear	Gear
+Golden leaves	Golden leaves
+Heart containers	Heart containers
+Heart pieces	Heart pieces
+Hearts	Hearts
+In a course	In a course
+Instruments	Instruments
+Johto badges	Johto badges
+Journey	Journey
+Kanto badges	Kanto badges
+Keys	Keys
+Lives	Lives
+Money	Money
+Musical coins	Musical coins
+Night	Night
+Pokédex caught	Pokédex caught
+Pokédex seen	Pokédex seen
+Rupees	Rupees
+Secret seashells	Secret seashells
+Shield	Shield
+Small keys	Small keys
+Sword	Sword
+Time of day	Time of day
+Time	Time
+Total	Total
+Trainer	Trainer
+Treasures	Treasures
+Worlds	Worlds
+Your journey	Your journey
+Seeds	Seeds
+Game switcher	Game switcher
+Switch to another game	Switch to another game
+Hold to return home	Hold to return home
+Add game files	Add game files
+Needs your files	Needs your files
+Files added	Files added
+How to get the files	How to get the files
+Scan with your phone	Scan with your phone
+Or open on a computer	Or open on a computer
+Code	Code
+Connect to Wi-Fi to send files from a phone or computer.	Connect to Wi-Fi to send files from a phone or computer.
+Receiving files	Receiving files
+Unpacking files	Unpacking files
+Files arrived. Choose Play to start.	Files arrived. Choose Play to start.
+This port lists no instructions.	This port lists no instructions.
+Play	Play
+Goes into	Goes into
+Phone or computer connected	Phone or computer connected
+Vibration	Vibration
+Menu haptics	Menu haptics
+Haptic strength	Haptic strength
+Game rumble	Game rumble
+Rumble strength	Rumble strength
+Try a pattern	Try a pattern
+Feel the game	Feel the game
+Feel every move	Feel every move
+No vibration motor was found on this device.	No vibration motor was found on this device.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Turn on game rumble for games made for a rumble accessory.
+A light tap for every move, a firmer one when you choose, open or save.	A light tap for every move, a firmer one when you choose, open or save.
+Turn on menu haptics to feel the menus.	Turn on menu haptics to feel the menus.
+Browse	Browse
+Open a view	Open a view
+Go back	Go back
+Switch on	Switch on
+Switch off	Switch off
+Add favourite	Add favourite
+Remove favourite	Remove favourite
+Start a game	Start a game
+Save complete	Save complete
+Load complete	Load complete
+Try again	Try again
+Keyboard	Keyboard
+Adjust	Adjust
+End of a list	End of a list
+Long press	Long press
+Notification	Notification
+Touch screen	Touch screen
+Point and click on top	Point and click on top
+Touch here to point and click on the top screen.	Touch here to point and click on the top screen.
+Hold still for a right click	Hold still for a right click
+Hold to exit	Hold to exit
+Touch screen off	Touch screen off
+Touch screen is not available	Touch screen is not available

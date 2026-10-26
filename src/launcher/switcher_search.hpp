@@ -2,8 +2,28 @@
 // The game switcher and library search.
 // Members of App in main.cpp; included once, right after the class.
 
+// The Home key: the game search, wherever the launcher is; pressed again while typing it closes.
 void App::launcher_search_shortcut() {
     if (o.game_menu || !session_initialized || settings.page == Page::BootWarning) return;
+    if (settings.page == Page::Keyboard && edit_field == 4) {
+        finish_edit(false);
+        return;
+    }
+    leave_for_shortcut();
+    if (settings.page == Page::GameSwitcher && home_switcher) close_home_switcher(); // so B comes back to that page
+    quick_search();
+}
+
+// The Anbernic button: the game switcher, as the button opens it in a game; pressed again it closes.
+void App::launcher_switcher_shortcut() {
+    if (o.game_menu || !session_initialized || settings.page == Page::BootWarning) return;
+    leave_for_shortcut();
+    if (settings.page == Page::GameSwitcher && home_switcher) close_home_switcher();
+    else open_home_switcher();
+}
+
+// Whatever was half done (a picker, a capture, a test, typing) is left before either shortcut.
+void App::leave_for_shortcut() {
     cancel_navigation();
     picker_open = false;
     picker_apply = {};
@@ -19,11 +39,55 @@ void App::launcher_search_shortcut() {
     control_capture = false;
     capture_logical = -1;
     filter_sheet_open = false;
-    if (settings.page != Page::Discover) open_discover();
-    else {
-        settings.focus = 0;
+}
+
+void App::open_home_switcher() {
+    switch_games.clear();
+    for (const auto& game : summary.recent_games)
+        if (!game.demo && !is_port_entry(game.path) && switch_games.size() < 9) switch_games.push_back(game);
+    if (switch_games.empty()) {
+        status = summary_ready ? "Nothing played yet" : "Preparing…";
         dirty = true;
+        return;
     }
+    if (settings.page != Page::GameSwitcher) {
+        switcher_return = settings.page;
+        switcher_return_focus = settings.focus;
+    }
+    home_switcher = true;
+    settings.page = Page::GameSwitcher;
+    settings.focus = 0;
+    status.clear();
+    dirty = true;
+}
+
+void App::close_home_switcher() {
+    home_switcher = false;
+    settings.page = switcher_return;
+    settings.focus = switcher_return_focus;
+    dirty = true;
+}
+
+void App::play_game(Game game) {
+    home_switcher = false;
+    settings.page = Page::Library;
+    // With every system shown, the games list holds one system's games: this game's own.
+    if (preferences.show_systems &&
+        std::find(listed_systems.begin(), listed_systems.end(), game.system) != listed_systems.end())
+        shown_system = game.system;
+    library_view(0);
+    remember_appearance();
+    // The game starts over Home itself. Games opens instead only while a
+    // very large card is still being listed, or if the game has left it.
+    if (!collection_loading)
+        for (size_t i = 0; i < model.games.size(); i++)
+            if (model.games[i].path == game.path) {
+                select_game(i, false);
+                if (home_menu) carousel.reset(home_selected); // the rail is Home's while Home is up
+                launch(true);
+                return;
+            }
+    home_menu = false;
 }
 
 void App::save_switcher_library() {
@@ -110,7 +174,6 @@ void App::clear_discovery() {
 void App::quick_search() {
     picker_open = false;
     picker_apply = {};
-    discover_return = Page::Library;
     begin_edit(4);
 }
 

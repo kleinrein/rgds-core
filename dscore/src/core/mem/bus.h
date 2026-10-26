@@ -91,9 +91,16 @@ public:
   Timing& timing() { return timing_; }
   const Timing& timing() const { return timing_; }
   void update_gba_slot_timings(); // EXMEMCNT
-  void update_wifi_timings();     // WIFIWAITCNT / POWCNT2 bit 1
-  int gba_slot_applied_ = -1;     // EXMEMCNT timing bits currently applied
-  void enable_watch(u32 addr);    // debug: log writes to a main-RAM word (DS_WATCH, headless)
+  // A DS Rumble Pak in the GBA slot (set by the frontend before the cart
+  // boots). Its reads are open bus with data line 1 held low, which is how
+  // games (and libnds' isRumbleInserted) find it; each write that changes the
+  // value moves the motor. The frontend collects `rumble_moves` per frame.
+  bool rumble_pak = false;
+  u16 rumble_state = 0;
+  u32 rumble_moves = 0;
+  void update_wifi_timings();  // WIFIWAITCNT / POWCNT2 bit 1
+  int gba_slot_applied_ = -1;  // EXMEMCNT timing bits currently applied
+  void enable_watch(u32 addr); // debug: log writes to a main-RAM word (DS_WATCH, headless)
   static bool watch_active();
 
   // Slow paths, reached when the page table returns nullptr.

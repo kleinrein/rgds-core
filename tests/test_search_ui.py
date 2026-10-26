@@ -78,7 +78,8 @@ class SearchUITests(unittest.TestCase):
 
     def test_popup_filter_shortcut(self):
         r = self.run_ui("100 key Q\n250 key X\n")
-        self.assertEqual(r["page"], 29)
+        self.assertEqual(r["page"], 0)
+        self.assertTrue(r["filter_sheet"])  # the Library view sheet, on its filters
         self.assertFalse(r["picker_open"])
 
     def test_empty_results_still_offer_popup_search_and_clear(self):
@@ -109,11 +110,10 @@ class SearchUITests(unittest.TestCase):
     def test_preview_and_search_respect_favourites_and_played_filter(self):
         write_fields(self.mario / "game.ini", dict(favourite=1))
         write_fields(self.mario / "stats.ini", dict(sessions=1))
-        # L2/R2 -> X Filters -> Played -> header search.
+        # L2/R2 -> X Filters -> Played chip -> back out of the sheet -> header search.
         r = self.run_ui(
-            "100 key Q\n200 key X\n300 key Down\n320 key-up Down\n"
-            "400 key Return\n500 key Down\n520 key-up Down\n"
-            "600 key Down\n620 key-up Down\n700 key Return\n"
+            "100 key Q\n200 key X\n300 key Right\n320 key-up Right\n"
+            "400 key Return\n500 key Escape\n"
             "900 click 270 46\n1050 text mario\n",
             view=1
         )

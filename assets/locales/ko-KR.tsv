@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	DS 설정을 적용하려면 게임을 �
 Could not save DS settings.	DS 설정을 저장할 수 없습니다.
 Search	검색
 Save gallery	세이브 갤러리
-Search and filters	검색과 필터
 Add your games	게임 추가
 DS controls	DS 조작
 Back up all saves	모든 세이브 데이터 백업
@@ -626,7 +625,6 @@ Slot	슬롯
 Empty slot	빈 슬롯
 Search games	게임 검색
 Filter	필터
-Clear search and filters	검색과 필터 지우기
 Missing artwork	이미지 없음
 Where to put games	게임을 넣을 곳
 Scan for games	게임 검색
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	소리는 녹음하거나 저장하지 않습니
 Test the microphone on your handheld.	기기의 마이크를 테스트합니다.
 Return home before testing the physical microphone.	실제 마이크를 테스트하기 전에 홈으로 돌아가세요.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	마이크에 바람을 불거나 말해 보세요. 레벨이 올라갔다가 멈추면 내려갑니다.
-No filter	필터 없음
 Quick search	빠른 검색
 A  Search	A  검색
 A  Jump	A  이동
@@ -906,14 +903,46 @@ Companion	컴패니언
 Swap screens	화면 바꾸기
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	게임보이와 게임보이 어드밴스 게임을 추가합니다. 게임을 열면 시스템 페이지가 나타납니다.
 Frame	테두리
-Indigo	인디고
-Glacier	글레이셔
-Black	블랙
-Platinum	플래티넘
+Game Boy	게임보이
+Game Boy · Red	게임보이 · 레드
+Game Boy · Yellow	게임보이 · 옐로
+Game Boy · Green	게임보이 · 그린
+Game Boy · Blue	게임보이 · 블루
+Game Boy · Black	게임보이 · 블랙
+Game Boy · Screen only	게임보이 · 화면만
+Game Boy Pocket · Silver	게임보이 포켓 · 실버
+Game Boy Pocket · Black	게임보이 포켓 · 블랙
+Game Boy Pocket · Yellow	게임보이 포켓 · 옐로
+Game Boy Pocket · Red	게임보이 포켓 · 레드
+Game Boy Pocket · Green	게임보이 포켓 · 그린
+Game Boy Pocket · Blue	게임보이 포켓 · 블루
+Game Boy Pocket · Pink	게임보이 포켓 · 핑크
+Game Boy Pocket · Screen only	게임보이 포켓 · 화면만
+Game Boy Color · Berry	게임보이 컬러 · 베리
+Game Boy Color · Grape	게임보이 컬러 · 그레이프
+Game Boy Color · Kiwi	게임보이 컬러 · 키위
+Game Boy Color · Dandelion	게임보이 컬러 · 댄디라이언
+Game Boy Color · Teal	게임보이 컬러 · 틸
+Game Boy Color · Atomic Purple	게임보이 컬러 · 클리어 퍼플
+Game Boy Color · Screen only	게임보이 컬러 · 화면만
+Game Boy Advance · Indigo	게임보이 어드밴스 · 인디고
+Game Boy Advance · Glacier	게임보이 어드밴스 · 글레이셔
+Game Boy Advance · Black	게임보이 어드밴스 · 블랙
+Game Boy Advance · Platinum	게임보이 어드밴스 · 플래티넘
+Game Boy Advance SP · Cobalt	게임보이 어드밴스 SP · 코발트
+Game Boy Advance SP · Onyx	게임보이 어드밴스 SP · 오닉스
+Game Boy Advance SP · Platinum	게임보이 어드밴스 SP · 플래티넘
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · 실버
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · 블랙
+WonderSwan Color · White	WonderSwan Color · 화이트
+WonderSwan Color · Blue	WonderSwan Color · 블루
+PSP · Black	PSP · 블랙
+PSP · White	PSP · 화이트
+Grey TV	회색 TV
+Wood-grain TV	나뭇결 TV
+PC monitor	PC 모니터
+Arcade cabinet	아케이드 캐비닛
 Black bar	검은 띠
-SP Onyx	SP 오닉스
-SP Cobalt	SP 코발트
-SP Platinum	SP 플래티넘
 GBA Color	GBA 색감
 GBA screen	GBA 화면
 GBA screens	GBA 화면
@@ -943,7 +972,6 @@ Next picture	다음 이미지
 No pictures yet	아직 이미지가 없습니다
 Available	사용 가능
 Not downloaded	다운로드 안 됨
-More filters	더 많은 필터
 Show games	게임 보기
 Reset filters	필터 초기화
 Any	전체
@@ -957,3 +985,148 @@ Online play	온라인 플레이
 {0} players	{0}명
 No game information yet.	아직 게임 정보가 없습니다.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	설정 > 라이브러리 > 아트워크 소스에서 게임 정보를 켜고 아트워크를 가져오세요.
+Ports	포트
+Restart port	포트 다시 시작
+Quit	종료
+Looking for the latest PortMaster	최신 PortMaster를 찾는 중
+Downloading PortMaster	PortMaster 다운로드 중
+Checking PortMaster	PortMaster 확인 중
+Unpacking PortMaster	PortMaster 압축 해제 중
+Setting up PortMaster	PortMaster 준비 중
+Installing PortMaster from the card	카드에서 PortMaster 설치 중
+PortMaster is ready	PortMaster 준비 완료
+Could not set up PortMaster	PortMaster를 준비할 수 없습니다
+Get, update and remove ports	포트 받기, 업데이트, 삭제
+Close PortMaster	PortMaster 닫기
+Back to PortMaster	PortMaster로 돌아가기
+Keep getting and updating ports	포트 받기와 업데이트 계속하기
+Your ports are waiting in Ports	포트는 포트 메뉴에 있습니다
+Closing PortMaster…	PortMaster 닫는 중…
+Closing the port…	포트 닫는 중…
+GB screens	GB 화면
+GBC screens	GBC 화면
+Game Boy screen	게임보이 화면
+Game Boy Color screen	게임보이 컬러 화면
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	초대 게임보이의 도트 매트릭스 화면: 밝은 픽셀 격자와 부드러운 그림자.
+The Game Boy Color screen with faint gaps between its pixels.	픽셀 사이에 희미한 틈이 있는 게임보이 컬러 화면.
+This handheld's own screen.	이 휴대용 게임기 본래의 화면입니다.
+Screen colours	화면 색상
+Game Boy Pocket	게임보이 포켓
+Game Boy Light	게임보이 라이트
+Game Boy Color	게임보이 컬러
+Black and white	흑백
+Game Boy Color, darker	게임보이 컬러, 더 어둡게
+Full colour	풀 컬러
+Hold to save	길게 눌러 저장
+Hold to load	길게 눌러 불러오기
+Screen off	화면 끄기
+Touch the screen to turn it on	화면을 터치하면 켜집니다
+min	분
+h	시간
+Not saved	저장하지 못함
+Loaded	불러옴
+Not loaded	불러오지 못함
+Nothing to load	불러올 데이터 없음
+Saving…	저장 중…
+Loading…	불러오는 중…
+Info screen	정보 화면
+Team	파티
+Lv	Lv
+screens	화면
+Not yet	아직
+None yet	아직 없음
+The best there is	최고 단계
+Next:	다음:
+Badges	배지
+Carried	소지
+Coin bank	코인 은행
+Coins	코인
+Collection	컬렉션
+Course	코스
+Day	낮
+Ending so far	지금까지의 엔딩
+Essences	에센스
+Gear	장비
+Golden leaves	황금 잎
+Heart containers	하트 그릇
+Heart pieces	하트 조각
+Hearts	하트
+In a course	코스 진행 중
+Instruments	악기
+Johto badges	성도 배지
+Journey	여정
+Kanto badges	관동 배지
+Keys	열쇠
+Lives	남은 목숨
+Money	돈
+Musical coins	음표 코인
+Night	밤
+Pokédex caught	도감 잡은 수
+Pokédex seen	도감 본 수
+Rupees	루피
+Secret seashells	비밀 조개껍데기
+Shield	방패
+Small keys	작은 열쇠
+Sword	검
+Time of day	시간대
+Time	시간
+Total	합계
+Trainer	트레이너
+Treasures	보물
+Worlds	월드
+Your journey	나의 여정
+Seeds	씨앗
+Game switcher	게임 전환
+Switch to another game	다른 게임으로 전환
+Hold to return home	길게 눌러 홈으로 돌아가기
+Add game files	게임 파일 추가
+Needs your files	파일이 필요합니다
+Files added	추가한 파일
+How to get the files	파일을 얻는 방법
+Scan with your phone	휴대폰으로 스캔
+Or open on a computer	또는 컴퓨터에서 열기
+Code	코드
+Connect to Wi-Fi to send files from a phone or computer.	Wi-Fi에 연결하면 휴대폰이나 컴퓨터에서 파일을 보낼 수 있습니다.
+Receiving files	파일 받는 중
+Unpacking files	파일 압축 푸는 중
+Files arrived. Choose Play to start.	파일이 도착했습니다. 플레이를 선택해 시작하세요.
+This port lists no instructions.	이 포트에는 설명이 없습니다.
+Play	플레이
+Goes into	저장 위치
+Phone or computer connected	휴대폰 또는 컴퓨터 연결됨
+Vibration	진동
+Menu haptics	메뉴 햅틱
+Haptic strength	햅틱 강도
+Game rumble	게임 진동
+Rumble strength	진동 강도
+Try a pattern	패턴 체험
+Feel the game	게임을 느껴 보세요
+Feel every move	모든 움직임을 느껴 보세요
+No vibration motor was found on this device.	이 기기에서 진동 모터를 찾을 수 없습니다.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DS의 럼블 팩 게임, Game Boy와 Game Boy Advance의 진동 카트리지.
+Turn on game rumble for games made for a rumble accessory.	진동 액세서리용으로 만든 게임에서는 게임 진동을 켜세요.
+A light tap for every move, a firmer one when you choose, open or save.	움직일 때마다 가볍게, 선택하거나 열거나 저장할 때는 더 강하게 진동합니다.
+Turn on menu haptics to feel the menus.	메뉴를 손끝으로 느끼려면 메뉴 햅틱을 켜세요.
+Browse	둘러보기
+Open a view	보기 열기
+Go back	뒤로
+Switch on	켜기
+Switch off	끄기
+Add favourite	즐겨찾기 추가
+Remove favourite	즐겨찾기 삭제
+Start a game	게임 시작
+Save complete	저장 완료
+Load complete	불러오기 완료
+Try again	다시 시도
+Keyboard	키보드
+Adjust	조정
+End of a list	목록 끝
+Long press	길게 누르기
+Notification	알림
+Touch screen	터치스크린
+Point and click on top	위 화면에서 가리키고 클릭
+Touch here to point and click on the top screen.	여기를 터치하면 위 화면을 가리키고 클릭할 수 있습니다.
+Hold still for a right click	움직이지 않고 누르면 오른쪽 클릭
+Hold to exit	길게 눌러 종료
+Touch screen off	터치스크린 꺼짐
+Touch screen is not available	터치스크린을 사용할 수 없습니다

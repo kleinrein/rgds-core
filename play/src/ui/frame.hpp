@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // What can be drawn around the game when a frame is chosen.
 //
-// Built in, drawn here from shapes and the launcher's font, with no pictures
-// of real consoles: a handheld shell in one of the classic shell colours
-// (the game at a whole scale in a dark lens, with its power light, three
-// red-green-blue dots and a speaker grille); the black bar (the game across
-// the full width at the top, the system's name on a black bar below); and an
-// SP-style clamshell (a slim lens, the name under it).
+// Built in (ui/frame_styles.hpp, one list per system), drawn here from shapes
+// and the launcher's font, with no pictures of real consoles: the face of the
+// system's own handheld around its screen (the Game Boy, the Pocket, the
+// Game Boy Color, the Game Boy Advance and its SP, in their shell colours),
+// and the black bar (the game across the full width at the top, the system's
+// name on a black bar below).
 //
 // Picture frames are PNGs the owner puts in userdata/frames/<system>/, laid
 // over the game the way RetroArch overlays are (640x480 or any size, scaled
@@ -20,18 +20,8 @@
 
 namespace play {
 
-enum FrameStyle {
-    FrameOff = 0,
-    FrameIndigo,
-    FrameGlacier,
-    FrameBlack,
-    FramePlatinum,
-    FrameBar,
-    FrameSpOnyx,
-    FrameSpCobalt,
-    FrameSpPlatinum,
-    FrameStyles
-};
+// A style is its index in frame_styles; 0 is off.
+constexpr int FrameOff = 0;
 
 // Where the game sits: whole means a whole-number scale (drawn without
 // smoothing); otherwise it is scaled like sharp fill.
@@ -45,8 +35,9 @@ FrameLayout frame_layout(int panel_w, int panel_h, int game_w, int game_h, int s
 // `system` is what the bar says ("GAME BOY ADVANCE").
 void draw_frame(Canvas& out, const FrameLayout& screen, int style, const Font& font, const std::string& system);
 
-// A built-in style by its play.ini name, or -1 for any other name (a picture frame).
-int parse_frame(const std::string& name);
+// A built-in style for `system` by its play.ini name, or -1 for any other name (a picture frame) and for
+// another system's style.
+int parse_frame(const std::string& name, const std::string& system);
 const char* frame_name(int style);
 
 struct PictureFrame {

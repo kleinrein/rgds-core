@@ -4,11 +4,15 @@
 // the live map edge to edge on the map's own colour, cross-faded as it
 // changes, or a title card until there is something to show.
 #pragma once
+#include "companion/dock.hpp"
 #include "companion/map_capture.hpp"
 #include "companion/party.hpp"
 #include "companion/profile.hpp"
 #include "companion/view.hpp"
 #include "ui/canvas.hpp"
+#include "ui/colour.hpp"
+#include "ui/look.hpp"
+#include "ui/words.hpp"
 
 #include <atomic>
 #include <memory>
@@ -17,10 +21,6 @@
 #include <thread>
 
 namespace play {
-
-struct Look {
-    Rgb background{12, 17, 26}, panel{23, 32, 46}, ink{233, 244, 255}, muted{145, 167, 190}, accent{78, 187, 255};
-};
 
 struct CompanionStatus {
     bool has_profile = false, has_map = false, showing_map = false, showing_hud = false, hud_split = false;
@@ -37,7 +37,17 @@ public:
     Companion& operator=(const Companion&) = delete;
     // After every live frame.
     void after_frame(Core& live);
-    void render(Canvas& out, const Look& look, const Font& font) const;
+    void render(Canvas& out, const Look& look, const Font& font, const Words& words) const;
+    // A finger on the second screen: the dock first, then the view shown.
+    // True when the second screen must be drawn again.
+    bool touch(const Touch& t);
+    // The second screen's own controls (dock.hpp).
+    Dock& dock() { return dock_; }
+    // The colours the top screen shows the game in (the menu's Screen colours),
+    // so the game's own pictures here (a status-bar band, a map) match it.
+    void set_colour(const Colour& colour) { colour_ = colour; }
+    // Wall-clock milliseconds, for the dock's holds and fades.
+    void set_time(uint64_t ms) { dock_.set_time(ms); }
     // The game picture as the top panel shows it: with the HUD split, the
     // profile's boxes (item box, place) are put back where the player looks;
     // a Game Boy HUD band is cut off unless `whole` (a screen filter is on,
@@ -53,8 +63,20 @@ public:
     bool busy() const { return (capture_ && capture_->busy()) || backdrop_working_; }
     // Tools: capture right now on this thread.
     bool capture_now(Core& live);
-    // The profile's own view ([view]), if it has one this build can draw.
-    View* view() const { return view_.get(); }
+    // Whether the second screen is shown at all. Off, the game keeps its whole
+    // picture: no HUD band is cut off and no HUD is split away from it.
+    void set_shown(bool shown) { shown_ = shown; }
+    bool shown() const { return shown_; }
+    // The profile's first view ([view]), if it has one this build can draw
+    // (its explored map is what the session keeps beside the save).
+    View* view() const { return views_.empty() ? nullptr : views_.front().get(); }
+    // The view on the screen now: the first whose `on` holds (not an alternative).
+    View* shown_view() const;
+    // [view.x] alternative = yes: a board shown instead of the map or the team
+    // when the switch (top right) is tapped, or when there is nothing else.
+    View* alternative_view() const;
+    bool has_switch() const;
+    bool showing_alternative() const;
 
 private:
     void take(MapImage img);
@@ -67,13 +89,31 @@ private:
     // What the second screen shows besides a HUD: the map, the team, a view, or the title card.
     void render_content(Canvas& out, const Look& look, const Font& font) const;
     uint64_t content_key() const;
+    // What the companion itself shows, without the dock.
+    void render_screen(Canvas& out, const Look& look, const Font& font) const;
+    uint64_t screen_key() const;
 
     const Profile* profile_;
+    bool shown_ = true;
     std::string title_, system_name_;
     std::unique_ptr<MapCapture> capture_;
     std::unique_ptr<Party> party_;
     bool party_shown_ = false;
-    std::unique_ptr<View> view_;
+    std::vector<std::unique_ptr<View>> views_;
+    std::vector<bool> alternative_;
+    mutable Colour colour_;
+    mutable std::vector<uint32_t> tint_a_, tint_b_;
+    const uint32_t* shown(const uint32_t* px, int w, int h, std::vector<uint32_t>& buffer) const;
+    uint32_t shown_px(uint32_t v) const;
+    bool alt_ = false;
+    Box switch_box(int w) const;
+    void render_layers(Canvas& out, const Look& look, const Font& font) const;
+    uint64_t main_key() const;
+    Dock dock_;
+    // The companion under the dock while only the dock moves (its circle opening, its button fading).
+    mutable Canvas screen_cache_;
+    mutable uint64_t screen_cache_key_ = 0;
+    uint64_t touch_serial_ = 0; // bumped by a touch that changed a view
     MapImage current_, previous_;
     bool has_current_ = false, has_previous_ = false;
     uint64_t frame_ = 0, due_ = 30, next_periodic_ = 0, shown_at_ = 0;

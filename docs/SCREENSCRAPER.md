@@ -87,6 +87,7 @@ both, because each is one more request per game).
 
 **Game options → Game info** (just above Save gallery) opens the page. The top
 screen shows the picture you have (cover, title screen, screenshot) with a strip
+The title screen is fetched by default and is also the icon of a GBA, GBC or GB game (then the screenshot, the cover, a drawn cartridge).
 of thumbnails, the title, developer, publisher and release date, and chips for
 genre, rating, players, online play and series. The bottom screen shows the
 description in your interface language (English if it has none), or the details
@@ -96,8 +97,9 @@ without information says how to get it, and nothing else in the library changes.
 
 ### Filtering by game information
 
-**Search and filters → More filters** opens a scrollable sheet over the lower
-screen. Chips cover played state, genre, rating, online play / has game info,
+**Y** in the library opens the Library view, a scrollable sheet over the lower
+screen. Its top holds tiles for the collection, the browser layout, Jump to
+letter (L2), Search games (R2) and Clear filters; below them chips cover played state, genre, rating, online play / has game info,
 publisher and developer; each shows how many games have it and toggles at once.
 **Players** and **Released** are range sliders over a histogram of your library
 (one bar per player count or year), each with two handles: Left/Right moves the
@@ -105,10 +107,10 @@ chosen handle, A switches between the low and high end, and a finger can drag
 either handle. A range at its full extent is not a filter. The list behind the
 sheet follows every change and the header counts the matching games. Long lists
 (genre, publisher, developer) show the commonest values and a **More…** chip that
-opens the full list. X resets; L/R jump between sections; **Show games** closes
+opens the full list. X resets the filters; L/R jump between sections; **Show games** closes
 the sheet on the results. Filters combine (all must match), search also finds a
-game by its developer or publisher, and **Clear search and filters** resets
-everything. A game without a known player count or year never matches a narrowed
+game by its developer or publisher, and **Clear filters** resets
+everything, search included. A game without a known player count or year never matches a narrowed
 range, and games without information only match the played-state and "Without
 info" chips.
 

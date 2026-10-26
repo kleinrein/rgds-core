@@ -88,6 +88,14 @@ class SystemsUITests(unittest.TestCase):
         self.assertTrue(report['systems_menu'])
         self.assertEqual(report['systems_selected'], 1)  # back on the Game Boy Advance tile
 
+    def test_y_does_nothing_in_the_systems_carousel_but_opens_the_view_sheet_in_a_library(self):
+        report = self.run_ui('100 key A\n200 key Y\n', show_systems=True, home=1)
+        self.assertTrue(report['systems_menu'])
+        self.assertFalse(report['filter_sheet'])
+        report = self.run_ui('100 key A\n200 key A\n300 key Y\n', show_systems=True, home=1)
+        self.assertFalse(report['systems_menu'])
+        self.assertTrue(report['filter_sheet'])
+
     def test_a_gba_game_launches_with_rgds_play(self):
         report = self.run_ui('100 key A\n200 key Right\n300 key A\n400 key A\n', show_systems=True, home=1)
         self.assertEqual(report['launching_core'], PLAY_CORE)
@@ -115,14 +123,22 @@ class SystemsUITests(unittest.TestCase):
         menu = ('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom))
         report = self.run_ui('100 key Down\n150 key Right\n200 key Right\n300 key A\n', extra=menu)
         self.assertEqual(report['page'], PAGE_PLAY_GRAPHICS)
-        # Game screen: Whole pixels; then Second screen: Swap screens (preview saves play.ini directly).
+        # Game screen: Whole pixels; then Second screen: Swap screens, the picker's last row after
+        # Companion, Info screen and Off (preview saves play.ini directly).
         script = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key A\n500 key Down\n600 key A\n'
-        script += '700 key Down\n800 key A\n900 key Down\n1000 key Down\n1100 key A\n'
+        script += '700 key Down\n800 key A\n900 key Down\n950 key Down\n1000 key Down\n1100 key A\n'
         report = self.run_ui(script, extra=menu, seconds=2)
         view = read_fields(self.data / 'library' / game_key(rom) / 'play.ini')
         self.assertEqual(view.get('fit'), 'integer')
         self.assertEqual(view.get('second'), 'swap')
         self.assertEqual((report['play_fit'], report['play_second']), (1, 2))
+        # Info screen sits beside Companion in the picker, and is the menu's number 3.
+        script = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key Down\n500 key A\n'
+        script += '600 key Up\n650 key Up\n700 key Up\n750 key Down\n800 key A\n'
+        report = self.run_ui(script, extra=menu, seconds=2)
+        view = read_fields(self.data / 'library' / game_key(rom) / 'play.ini')
+        self.assertEqual(view.get('second'), 'info')
+        self.assertEqual(report['play_second'], 3)
 
     def test_in_game_frame_and_shader_for_rgds_play(self):
         rom = self.gba / 'Metroid Fusion (USA).gba'
@@ -142,6 +158,20 @@ class SystemsUITests(unittest.TestCase):
         (self.data / 'state').unlink(missing_ok=True)  # each menu open starts afresh
         report = self.run_ui(script + '800 key B\n', extra=menu, seconds=2)
         self.assertEqual(report['page'], PAGE_PLAY_GRAPHICS)
+
+    def test_a_game_boy_game_is_offered_only_game_boy_frames(self):
+        rom = self.root / 'Roms/GB/Tetris (World).gb'
+        rom.parent.mkdir(parents=True)
+        rom.write_bytes(bytes(0x150))
+        menu = ('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom))
+        frame = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key Down\n500 key Down\n600 key A\n'
+        # Off, Game Boy, the two Pockets, then the black bar: no Game Boy Advance shells or SPs.
+        for downs, chosen in ((1, 'dmg'), (4, 'bar')):
+            (self.data / 'state').unlink(missing_ok=True)
+            script = frame + ''.join(f'{700 + 50 * i} key Down\n' for i in range(downs)) + '1000 key A\n'
+            report = self.run_ui(script, extra=menu, seconds=2)
+            self.assertEqual(read_fields(self.data / 'library' / game_key(rom) / 'play.ini').get('frame'), chosen)
+            self.assertEqual(report['play_frame'], chosen)
 
     def test_each_system_is_offered_only_its_own_screen_shaders(self):
         ds_screens, gba_screens = {4, 6, 8, 9, 11, 12, 14, 21, 22}, {29, 30}
@@ -166,6 +196,22 @@ class SystemsUITests(unittest.TestCase):
         offered = set(report['shader_choices'])
         self.assertTrue(ds_screens <= offered)
         self.assertFalse(gba_screens & offered)
+
+    def test_a_game_boy_game_is_offered_only_the_original_presets_and_its_own_screen(self):
+        # Every look drawn for the DS picture stays off a Game Boy game's carousel: Default (its own
+        # screen), Off, Sharp bilinear and the Game Boy screen; a Game Boy Color game gets its own.
+        for name, screen in (('Tetris (World).gb', 31), ('Wario Land 3 (World).gbc', 32)):
+            rom = self.gba / name
+            rom.write_bytes(bytes(0x150))
+            (self.data / 'state').unlink(missing_ok=True)
+            script = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key Down\n500 key Down\n600 key Down\n'
+            report = self.run_ui(
+                script + '700 key A\n',
+                extra=('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom)),
+                seconds=2
+            )
+            self.assertEqual(report['page'], PAGE_SHADER_PICKER, name)
+            self.assertEqual(report['shader_choices'], [-1, 0, 1, screen], name)
 
 
 if __name__ == '__main__':

@@ -55,12 +55,15 @@ void App::load_library(std::vector<Game> games) {
                 static const std::array<std::string, 8> ids = {"theme",        "power",  "library",  "sound",
                                                                "connectivity", "system", "controls", "statistics"};
                 auto found = std::find(ids.begin(), ids.end(),
-                                       o.section == "brightness" || o.section == "motion" ? "theme" : o.section);
+                                       o.section == "brightness" || o.section == "motion" ? "theme"
+                                       : o.section == "vibration"                         ? "sound"
+                                                                                          : o.section);
                 if (found == ids.end()) throw std::runtime_error("Unknown settings section");
                 settings.section = int(found - ids.begin());
                 settings.enter();
                 if (o.section == "brightness") settings.page = Page::Display;
                 else if (o.section == "motion") settings.page = Page::Motion;
+                else if (o.section == "vibration") settings.page = Page::Haptics;
                 else if (o.section == "controls") open_controls(false);
             }
         }

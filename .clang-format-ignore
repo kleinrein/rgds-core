@@ -9,3 +9,4 @@ dscore/src/frontend/sdl/wl/**
 dscore/src/core/bios/freebios_data.cpp
 dscore/src/frontend/sdl/loader_icon.h
 src/launcher/pixel_icons.hpp
+play/src/ui/icons.hpp

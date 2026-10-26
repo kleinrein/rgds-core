@@ -37,6 +37,16 @@ void App::action(int code) {
         if (code == 15) jump_to_letter();
         return;
     }
+    if (settings.page == Page::GameSwitcher && home_switcher) {
+        // From the launcher: A plays the game, B goes back to where the button was pressed.
+        if (code == 3) close_home_switcher();
+        else if (code == 8 || code == 9 || code == 0 || code == 1)
+            settings.focus = std::clamp(settings.focus + (code == 8 || code == 0 ? -1 : 1), 0, list_count() - 1);
+        else if ((code == 2 || code == 4) && settings.focus < int(switch_games.size()))
+            play_game(switch_games[size_t(settings.focus)]);
+        dirty = true;
+        return;
+    }
     if (settings.page == Page::GameSwitcher) {
         if (menu_status["state"] == "busy" || !menu_pending_token.empty()) return;
         if (code == 7) menu_request("resume");
@@ -66,6 +76,10 @@ void App::action(int code) {
     }
     if (settings.page == Page::MenuSounds) {
         menu_sounds_action(code);
+        return;
+    }
+    if (settings.page == Page::Haptics) {
+        haptics_action(code);
         return;
     }
     if (settings.page == Page::Colours) {
@@ -118,7 +132,9 @@ void App::action(int code) {
         return;
     }
     if (settings.page == Page::Sound && (code == 8 || code == 9)) {
-        settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 2);
+        // The tiles sit two by two; Left and Right keep the volume.
+        const int next = settings.focus + (code == 8 ? -2 : 2);
+        if (next >= 0 && next <= 3) settings.focus = next;
         dirty = true;
         return;
     }
@@ -126,29 +142,21 @@ void App::action(int code) {
         controls_action(code);
         return;
     }
-    if (settings.page == Page::SaveGallery || settings.page == Page::Discover || settings.page == Page::RomSetup ||
-        settings.page == Page::DSControls) {
+    if (settings.page == Page::PortFiles) {
+        port_files_action(code);
+        return;
+    }
+    if (settings.page == Page::SaveGallery || settings.page == Page::RomSetup || settings.page == Page::DSControls) {
         auto page = settings.page;
         if (code == 3) {
             back_to(page == Page::SaveGallery  ? gallery_return
                     : page == Page::DSControls ? ds_return
-                    : page == Page::Discover   ? discover_return
                                                : Page::LibraryOptions);
         } else if (code == 8 || code == 9)
             settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, list_count() - 1);
         else if (code == 2 || code == 4) {
             if (page == Page::SaveGallery) slot_primary();
-            else if (page == Page::Discover) {
-                if (settings.focus == 0) begin_edit(4);
-                else if (settings.focus == 1)
-                    show_picker("Filter", {"No filter", "Unplayed", "Played", "Missing artwork"}, discovery_filter,
-                                [this](int n) {
-                                    discovery_filter = n;
-                                    apply_discovery();
-                                });
-                else if (settings.focus == 2) open_filter_sheet();
-                else clear_discovery();
-            } else if (page == Page::RomSetup) {
+            else if (page == Page::RomSetup) {
                 if (settings.focus == 0)
                     show_detail(
                         "Add your games",
@@ -195,6 +203,10 @@ void App::action(int code) {
                 }
             }
             dirty = true;
+            return;
+        }
+        if (settings.page == Page::QuickMenu && port_manager()) {
+            port_manager_action(code);
             return;
         }
         if (settings.page == Page::QuickMenu) {
@@ -372,8 +384,8 @@ void App::action(int code) {
         } else if (settings.page == Page::Sound) {
             if (code == 0 || code == 1) change_volume(hardware.volume_percent + (code == 0 ? -5 : 5));
             else if (code == 2) {
-                if (settings.focus == 2) {
-                    settings.page = Page::MenuSounds;
+                if (settings.focus == 2 || settings.focus == 3) {
+                    settings.page = settings.focus == 3 ? Page::Haptics : Page::MenuSounds;
                     settings.focus = 0;
                 } else if (settings.focus == 1) open_microphone();
                 else toggle_mute();
@@ -396,7 +408,7 @@ void App::action(int code) {
                 value = code == 2 ? !value : code == 1;
                 remember_appearance();
             } else if (row == 4 && (code == 0 || code == 1 || code == 2)) open_shader_picker(false);
-            else if (row == 10 && (code == 0 || code == 1 || code == 2)) {
+            else if (row == 9 && (code == 0 || code == 1 || code == 2)) {
                 preferences.show_systems = code == 2 ? !preferences.show_systems : code == 1;
                 remember_appearance();
                 refresh_other_systems();
@@ -404,11 +416,9 @@ void App::action(int code) {
                 library_summary.request(o.data, all_games);
                 library_view(0);
             } else if (row == 7 && code == 2) {
-                open_discover();
-            } else if (row == 8 && code == 2) {
                 settings.page = Page::RomSetup;
                 settings.focus = 0;
-            } else if (row == 9 && code == 2) {
+            } else if (row == 8 && code == 2) {
                 if (worker <= 0) {
                     backup_requested = true;
                     start_worker("device.library", "{\"action\":\"backup\"}");
@@ -573,7 +583,7 @@ void App::action(int code) {
             std::cerr << e.what() << std::endl;
         }
     } else if (code == 11 && !home_menu) open_game_options();
-    else if (code == 12 && !home_menu) choose_library_view();
+    else if (code == 12 && !home_menu && !systems_menu) choose_library_view();
     else if (code == 12 && home_menu) update_now();
     dirty = true;
 }
@@ -597,7 +607,7 @@ void App::touch(int x, int y) {
         filter_sheet_touch(x, y);
         return;
     }
-    if (settings.page == Page::GameSwitcher && y >= 424 && x >= 200 && x < 440) {
+    if (settings.page == Page::GameSwitcher && !home_switcher && y >= 424 && x >= 200 && x < 440) {
         action(11);
         return;
     }
@@ -707,6 +717,10 @@ void App::touch(int x, int y) {
         }
         return;
     }
+    if (settings.page == Page::QuickMenu && port_manager()) {
+        port_manager_touch(x, y);
+        return;
+    }
     if (settings.page == Page::QuickMenu) {
         if (x >= 28 && x <= 612) {
             if (y >= quick_top && y < quick_top + quick_wide_height) settings.focus = 0;
@@ -757,10 +771,13 @@ void App::touch(int x, int y) {
             if (x >= 44 && x <= 596 && y >= slider_band().first && y <= slider_band().second) {
                 volume_drag = true;
                 change_volume(std::clamp(int(std::round((x - 56) * 20.0 / 528)) * 5, 0, 100));
-            } else if (x >= 28 && x <= 612 && y >= sound_row(0) && y < sound_row(2) + 66 &&
-                       (y - sound_row(0)) % 74 < 66) {
-                settings.focus = (y - sound_row(0)) / 74;
-                action(2);
+            } else {
+                for (int i = 0; i < 4; i++)
+                    if (x >= sound_tile_x(i) && x < sound_tile_x(i) + sound_tile_width && y >= sound_tile_y(i) &&
+                        y < sound_tile_y(i) + sound_tile_height) {
+                        settings.focus = i;
+                        action(2);
+                    }
             }
         } else if (settings.page == Page::Confirm && y >= 365 && y <= 413 && x >= 28 && x <= 612) {
             settings.focus = x >= 332 ? 1 : 0;
@@ -867,6 +884,7 @@ void App::pointer_begin(int x, int y) {
     down_y = y;
     pressed_game = navigation_selected();
     pointer_at = s.GetTicks();
+    hold_felt = false;
     // A touch that begins on a gesture edge belongs to the gesture until it
     // is released: a plain release there still counts as a tap.
     if (edge_gesture != EdgeGesture::None) {
@@ -898,6 +916,18 @@ void App::pointer_begin(int x, int y) {
                 seek_picker(y);
             } else if (x >= 40 && x < 560) picker_swipe = true;
         }
+        return;
+    }
+    if (!probe && filter_sheet_active()) {
+        // A slider follows the finger from the press; elsewhere a tap toggles on release and a drag scrolls.
+        filter_touch = true;
+        filter_drag = -1;
+        filter_scroll_start = filter_scroll;
+        filter_rail = false;
+        if (filter_rail_press(x, y)) return;
+        if (filter_slider_press(x, y)) return;
+        tap_pending = true;
+        list_touch = false;
         return;
     }
     if (!probe && !home_menu && settings.page == Page::Library && browse_layout() == 2 && y >= LibraryViewport::top &&
@@ -950,6 +980,7 @@ void App::pointer_begin(int x, int y) {
         if (carousel.range) {
             auto selected = carousel.drag(x, navigation_count());
             if (home_menu) home_selected = selected;
+            else if (systems_menu) systems_selected = selected;
             else {
                 model.selected = selected;
                 browser_list.reveal(selected, navigation_count());
@@ -967,16 +998,6 @@ void App::pointer_begin(int x, int y) {
         return;
     }
     if (!probe && settings.page == Page::ShaderPicker && shader_pointer_down(x, y)) return;
-    if (!probe && filter_sheet_active() && !picker_open) {
-        // A slider follows the finger from the press; elsewhere a tap toggles on release and a drag scrolls.
-        filter_touch = true;
-        filter_drag = -1;
-        filter_scroll_start = filter_scroll;
-        if (filter_slider_press(x, y)) return;
-        tap_pending = true;
-        list_touch = false;
-        return;
-    }
     if (!probe && settings.page != Page::Library) {
         bool slider = !picker_open && (settings.page == Page::Display || settings.page == Page::Sound) && x >= 44 &&
                       x <= 596 && y >= slider_band().first && y <= slider_band().second;
@@ -1026,6 +1047,7 @@ void App::pointer_move(int x, int y) {
         if (index != settings.focus) {
             settings.focus = index;
             selected_at = s.GetTicks();
+            haptic_detent();
         }
         dirty = true;
         return;
@@ -1037,7 +1059,9 @@ void App::pointer_move(int x, int y) {
     if (picker_open && picker_swipe) {
         if (std::abs(y - down_y) > 8) {
             tap_pending = false;
+            const int row = picker_scroll / picker_stride();
             scroll_picker(picker_scroll_start + down_y - y);
+            if (picker_scroll / picker_stride() != row) haptic_detent();
         }
         return;
     }
@@ -1048,7 +1072,8 @@ void App::pointer_move(int x, int y) {
         return;
     }
     if (filter_touch && filter_sheet_active()) {
-        if (filter_drag >= 0) filter_slider_drag(x);
+        if (filter_rail) filter_seek(y);
+        else if (filter_drag >= 0) filter_slider_drag(x);
         else if (std::abs(y - down_y) > 8) {
             tap_pending = false;
             filter_drag_scroll(y);
@@ -1068,6 +1093,7 @@ void App::pointer_move(int x, int y) {
             browser_list.scroll = browser_scroll_start + down_y - y;
             browser_list.clamp(navigation_count());
             if (navigation_count()) {
+                if (size_t(browser_list.first()) != model.selected) haptic_detent();
                 model.selected = size_t(browser_list.first());
                 carousel.reset(model.selected);
             }
@@ -1079,7 +1105,9 @@ void App::pointer_move(int x, int y) {
         if (std::abs(y - down_y) > 8) list_swipe = true;
         if (list_swipe) {
             tap_pending = false;
+            const int row = list_scroll / list_stride;
             list_scroll = std::clamp(gesture_scroll + down_y - y, 0, list_max_scroll());
+            if (list_scroll / list_stride != row) haptic_detent();
             dirty = true;
         }
         return;
@@ -1094,16 +1122,20 @@ void App::pointer_move(int x, int y) {
         auto selected = carousel.drag(x, navigation_count());
         if (selected != navigation_selected()) {
             if (home_menu) home_selected = selected;
+            else if (systems_menu) systems_selected = selected;
             else {
                 model.selected = selected;
                 browser_list.reveal(selected, navigation_count());
             }
             selected_at = s.GetTicks();
+            haptic_detent();
         }
         dirty = true;
-    } else if (brightness_drag || volume_drag)
+    } else if (brightness_drag || volume_drag) {
+        const int before = volume_drag ? hardware.volume_percent : system_preferences.brightness;
         touch(std::clamp(x, 44, 596), std::clamp(y, slider_band().first, slider_band().second));
-    else if (probe) {
+        if ((volume_drag ? hardware.volume_percent : system_preferences.brightness) != before) haptic_detent();
+    } else if (probe) {
         touch_x = x;
         touch_y = y;
         last_input = "Touch " + std::to_string(x) + ", " + std::to_string(y);
@@ -1141,6 +1173,7 @@ void App::pointer_end(int x, int y) {
     brightness_drag = false;
     volume_drag = false;
     filter_touch = false;
+    filter_rail = false;
     filter_drag = -1;
     if (o.boot_startup && boot_touch_wait_release) {
         boot_touch_wait_release = false;
@@ -1213,7 +1246,7 @@ void App::pointer_end(int x, int y) {
                                y >= LibraryViewport::top && y < LibraryViewport::top + LibraryViewport::height;
         select_navigation(index);
         if (launch_selected) {
-            if (!home_menu && s.GetTicks() - pointer_at >= 600) open_game_options();
+            if (!home_menu && !systems_menu && s.GetTicks() - pointer_at >= 600) open_game_options();
             else launch();
         }
     }
@@ -1268,6 +1301,7 @@ void App::raw_touch(const TouchPoint& point, Uint32 now) {
 }
 
 void App::event(SDL_Event e) {
+    if (o.port_menu && port_idle && e.type != SDL_QUIT) return; // the port is playing
     if (o.mainline && (e.type == SDL_JOYBUTTONDOWN || e.type == SDL_JOYBUTTONUP) &&
         (o.preview || mainline_pads.count(e.jbutton.which)) && !mainline_controls.normalize(e))
         return;
@@ -1337,7 +1371,9 @@ void App::handle_input(const SDL_Event& e) {
     }
     if (!o.game_menu && session_initialized && settings.page != Page::BootWarning &&
         (anbernic_key || anbernic_button)) {
-        if (!anbernic_key || !e.key.repeat) launcher_search_shortcut();
+        // The Anbernic button opens the game switcher; the Home key the game search.
+        if (anbernic_button) launcher_switcher_shortcut();
+        else if (!e.key.repeat) launcher_search_shortcut();
         return;
     }
     if (settings.page == Page::Controls && control_capture) {

@@ -55,6 +55,10 @@ public:
 
     virtual void run_frame(uint32_t buttons) = 0;
     virtual Picture picture() const = 0;
+    // How much of the last frame the cartridge's rumble motor was on, 0-1: Game
+    // Boy rumble cartridges (MBC5), Game Boy Advance ones (Drill Dozer, WarioWare:
+    // Twisted!). 0 for every other game, and always for a shadow.
+    virtual float rumble() const { return 0; }
 
     virtual bool save_state(std::vector<uint8_t>& out) = 0;
     virtual bool load_state(const std::vector<uint8_t>& in) = 0;
@@ -67,6 +71,13 @@ public:
     virtual uint32_t peek_bank(uint32_t address, int bank, int size) {
         (void)bank;
         return peek(address, size);
+    }
+    // A byte written straight into memory (bank -1: as mapped), for test tools
+    // that set a scene up (play-shot --drive's poke); the player never writes.
+    virtual void poke8(uint32_t address, int bank, uint8_t value) {
+        (void)address;
+        (void)bank;
+        (void)value;
     }
 
     virtual size_t audio(int16_t* stereo, size_t max_frames) = 0;
@@ -83,6 +94,13 @@ public:
 
     // Layers drawn: bits 0-3 BG0-3, bit 4 sprites (0x1F = everything).
     virtual void set_layers(unsigned mask) = 0;
+
+    // Game Boy screens (core/mgba_gb.h): whether the game runs on the Game Boy
+    // Color (its own colours), and for an original Game Boy game the Game Boy
+    // Color's colours for it instead of four greys. Display only; shadows made
+    // afterwards draw the same.
+    virtual bool colour_hardware() const { return false; }
+    virtual void set_gbc_colours(bool on) { (void)on; }
 
     // HUD split: the BG layers in bg_mask (bit 0 = BG0) and the sprites of
     // priority sprite_priority (-1: none) are drawn into hud() instead of the

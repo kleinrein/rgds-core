@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "companion/party.hpp"
+#include "ui/kit.hpp"
 
 #include "companion/companion.hpp"
 #include "companion/party_gb.hpp"
@@ -46,8 +47,9 @@ bool Party::read(Core& core) {
     core_ = &core;
     std::vector<PartyMember> team;
     uint64_t key = 1469598103934665603ull;
-    bool ok = spec_.format == "goldensun"                                ? read_goldensun(core, team, key)
-              : spec_.format == "saga1"                                  ? read_saga1(core, spec_.slots, team, key)
+    bool ok = spec_.format == "goldensun" ? read_goldensun(core, team, key)
+              : spec_.format == "saga1"   ? read_saga1(core, spec_.slots, team, key)
+              : spec_.format == "dwm1"    ? read_dwm1(core, spec_.slots, spec_.count, spec_.names, team, key)
               : spec_.format == "pokemon1" || spec_.format == "pokemon2" ? read_pokemon_gb(core, gb_tables(), team, key)
                                                                          : read_pokemon3(core, team, key);
     if (!ok) return false; // mid-write: keep the last good team
@@ -175,94 +177,103 @@ const Party::Icon* Party::icon(int species) const {
 }
 
 void Party::draw(Canvas& out, const Look& look, const Font& font, uint64_t frame) const {
-    out.vertical_gradient(mix(look.background, look.panel, 96), look.background);
-    const int W = out.w(), H = out.h();
-    const double u = H / 480.0; // layout in 640x480 units
-    const int margin = int(16 * u), gap = int(12 * u);
-    const int title = font.loaded() ? int(20 * u) : 0;
-    if (font.loaded()) font.draw(out, margin + int(4 * u), margin + title, "Team", title, look.muted);
-    const int top = margin + title + gap;
-    // Pokémon carry six; Golden Sun's and Final Fantasy Legend's parties are four.
-    const int cols = 2, rows = spec_.format == "goldensun" || spec_.format == "saga1" ? 2 : 3, slots = cols * rows;
-    const int cw = (W - margin * 2 - gap) / cols, ch = (H - top - margin - gap * (rows - 1)) / rows;
+    backdrop(out, look);
+    const int W = out.w(), H = out.h(), m = kit::margin, gap = kit::gap;
+    // The header: a badge, "Team" and how many are in it.
+    icon_badge(out, look, m, m, play::Icon::Life);
+    const int cy = m + kit::badge / 2;
+    const int tw0 =
+        font.draw(out, m + kit::badge + gap, font.centred(kit::title, cy), look.tr("Team"), kit::title, look.ink);
+    // Pokémon carry six; Golden Sun's and Final Fantasy Legend's parties are four, Dragon Warrior Monsters' three.
+    const int cols = 2,
+              rows = spec_.format == "pokemon1" || spec_.format == "pokemon2" || spec_.format == "pokemon3" ? 3 : 2,
+              slots = spec_.format == "dwm1" ? 3 : cols * rows;
+    chip(out, look, font, m + kit::badge + gap + tw0 + gap, cy,
+         std::to_string(members_.size()) + " / " + std::to_string(slots), false);
+    const int top = m + kit::badge + gap + 4;
+    const int cw = (W - m * 2 - gap) / cols, ch = (H - top - m + 4 - gap * (rows - 1)) / rows;
     for (int i = 0; i < slots; ++i) {
-        const int x = margin + (i % cols) * (cw + gap), y = top + (i / cols) * (ch + gap);
+        Box b{m + (i % cols) * (cw + gap), top + (i / cols) * (ch + gap), cw, ch};
+        // The dock's corner stays free.
+        if (look.reserve_w && b.y + b.h > H - look.reserve_h && b.x + b.w > W - look.reserve_w)
+            b.w = W - look.reserve_w - gap - b.x;
         const bool there = i < int(members_.size());
-        out.rounded_rect(x, y, cw, ch, int(14 * u), look.panel, there ? 235 : 110);
-        if (!there) continue;
-        const PartyMember& m = members_[size_t(i)];
-        const bool fainted = !m.egg && m.hp == 0;
-        // The icon at a whole scale, stepping like the game's own party screen.
-        const int scale = std::max(1, int(ch * 0.8) / 32);
-        if (const Icon* ic = icon(m.species)) {
-            const auto& px = ic->px[fainted ? 0 : (frame / 16) & 1];
-            out.blit_keyed(px.data(), 32, 32, x + int(10 * u), y + (ch - 32 * scale) / 2 - int(4 * u), scale, 0);
-            if (fainted)
-                out.fill_rect(x + int(10 * u), y + (ch - 32 * scale) / 2 - int(4 * u), 32 * scale, 32 * scale,
-                              look.panel, 140);
+        if (!there) {
+            // An empty place: recessed, like an empty slot in the launcher.
+            sunken(out, look, b, kit::radius);
+            continue;
         }
-        if (!font.loaded()) continue;
-        const int tx = x + int(10 * u) + (spec_.icons ? 32 * scale + int(10 * u) : int(6 * u)),
-                  tw = x + cw - tx - int(12 * u);
-        const int big = int(26 * u), small = int(18 * u);
-        if (m.max_pp > 0) {
+        card(out, look, b);
+        const PartyMember& p = members_[size_t(i)];
+        const bool fainted = !p.egg && p.hp == 0;
+        const int x = b.x, y = b.y;
+        // The icon at a whole scale on a slot, stepping like the game's own party screen.
+        const int scale = std::max(1, std::min(2, (ch - 20) / 32)), box = 32 * scale + 8;
+        int tx = x + 16;
+        if (spec_.icons) {
+            const int bx = x + 12, by = y + (ch - box) / 2;
+            out.rounded_rect(bx, by, box, box, 12, look.slot);
+            if (const Icon* ic = icon(p.species)) {
+                const auto& px = ic->px[fainted ? 0 : (frame / 16) & 1];
+                out.blit_keyed(px.data(), 32, 32, bx + 4, by + 4, scale, 0);
+                if (fainted) out.fill_rect(bx + 4, by + 4, 32 * scale, 32 * scale, look.slot, 150);
+            }
+            tx = bx + box + 12;
+        }
+        const int right = x + b.w - 14, tw = right - tx;
+        const int big = kit::body, small = kit::small;
+        const Rgb hp_colour = p.hp * 2 > p.max_hp   ? Rgb{56, 176, 96}
+                              : p.hp * 5 > p.max_hp ? Rgb{222, 170, 30}
+                                                    : Rgb{214, 64, 56};
+        if (p.max_pp > 0) {
             // Name and level, then a row each for HP and PP: label, bar, numbers.
-            int line = y + int(14 * u) + big;
-            std::string level = "Lv " + std::to_string(m.level);
-            font.draw(out, tx + tw - font.measure(level, small), line, level, small, look.muted);
-            font.draw(out, tx, line, font.fit(m.name, big, tw - font.measure(level, small) - int(8 * u)), big,
+            int line = y + 30;
+            // The species beside the level where the name is the player's own (Dragon Warrior Monsters).
+            std::string level =
+                (p.detail.empty() ? "" : p.detail + "  ") + look.tr("Lv") + " " + std::to_string(p.level);
+            font.draw(out, right - font.measure(level, small), line, level, small, look.muted);
+            font.draw(out, tx, line, font.fit(p.name, big, tw - font.measure(level, small) - 8), big,
                       fainted ? look.muted : look.ink);
-            const int bh = std::max(4, int(10 * u)), label = font.measure("HP", small) + int(8 * u),
-                      numbers = font.measure("9999/9999", small) + int(8 * u);
+            const int label = font.measure("HP", small) + 8, numbers = font.measure("9999/9999", small) + 8;
             const struct {
                 const char* name;
                 int now, most;
                 Rgb colour;
-            } rows[2] = {{"HP", m.hp, m.max_hp,
-                          m.hp * 2 > m.max_hp   ? Rgb{88, 208, 120}
-                          : m.hp * 5 > m.max_hp ? Rgb{240, 200, 64}
-                                                : Rgb{232, 80, 72}},
-                         {"PP", m.pp, m.max_pp, Rgb{96, 160, 248}}};
+            } bars[2] = {{"HP", p.hp, p.max_hp, hp_colour},
+                         {spec_.format == "dwm1" ? "MP" : "PP", p.pp, p.max_pp, Rgb{64, 128, 232}}};
             for (int r = 0; r < 2; ++r) {
-                line += small + int(16 * u);
-                font.draw(out, tx, line, rows[r].name, small, look.muted);
-                const int bx = tx + label, bw = tw - label - numbers, by = line - small / 2 - bh / 2;
-                out.rounded_rect(bx, by, bw, bh, bh / 2, look.background);
-                const int fill = rows[r].most ? bw * rows[r].now / rows[r].most : 0;
-                if (fill > 0) out.rounded_rect(bx, by, std::max(fill, bh), bh, bh / 2, rows[r].colour);
-                std::string n = std::to_string(rows[r].now) + "/" + std::to_string(rows[r].most);
-                font.draw(out, tx + tw - font.measure(n, small), line, n, small, look.ink);
+                line += std::max(24, (ch - 40) / 2 - 2);
+                font.draw(out, tx, line, bars[r].name, small, look.muted);
+                meter(out, look, {tx + label, line - font.ascent(small) / 2 - 6, tw - label - numbers, 12},
+                      bars[r].most ? double(bars[r].now) / bars[r].most : 0, bars[r].colour);
+                std::string n = std::to_string(bars[r].now) + "/" + std::to_string(bars[r].most);
+                font.draw(out, right - font.measure(n, small), line, n, small, look.ink);
             }
             continue;
         }
-        int line = y + int(16 * u) + big;
-        font.draw(out, tx, line, font.fit(m.name, big, tw), big, fainted ? look.muted : look.ink);
-        if (m.egg) continue;
-        std::string level = m.level > 0 ? "Lv " + std::to_string(m.level) : m.detail;
-        line += small + int(8 * u);
-        font.draw(out, tx, line, level, small, look.muted);
-        if (!m.status.empty() || fainted) {
-            std::string tag = fainted ? "FNT" : m.status;
-            Rgb c = fainted        ? Rgb{150, 150, 160}
-                    : tag == "PSN" ? Rgb{176, 92, 220}
-                    : tag == "BRN" ? Rgb{240, 120, 60}
-                    : tag == "PAR" ? Rgb{230, 200, 60}
-                    : tag == "FRZ" ? Rgb{120, 200, 240}
-                                   : Rgb{150, 150, 170};
-            int sx = tx + font.measure(level, small) + int(10 * u), sw = font.measure(tag, small) + int(12 * u);
-            out.rounded_rect(sx, line - small + int(1 * u), sw, small + int(4 * u), int(6 * u), c);
-            font.draw(out, sx + int(6 * u), line, tag, small, Rgb{20, 20, 28});
+        int line = y + 32;
+        font.draw(out, tx, line, font.fit(p.name, big, tw), big, fainted ? look.muted : look.ink);
+        if (p.egg) continue;
+        std::string level = p.level > 0 ? look.tr("Lv") + " " + std::to_string(p.level) : p.detail;
+        line += 26;
+        const int lw = font.draw(out, tx, line, level, small, look.muted);
+        if (!p.status.empty() || fainted) {
+            const std::string tag = fainted ? "FNT" : p.status;
+            const Rgb c = fainted        ? Rgb{150, 150, 160}
+                          : tag == "PSN" ? Rgb{176, 92, 220}
+                          : tag == "BRN" ? Rgb{240, 120, 60}
+                          : tag == "PAR" ? Rgb{230, 200, 60}
+                          : tag == "FRZ" ? Rgb{120, 200, 240}
+                                         : Rgb{184, 184, 204};
+            const int sx = tx + lw + 10, sw = font.measure(tag, small) + 16;
+            out.rounded_rect(sx, line - font.ascent(small) - 5, sw, font.ascent(small) + 10, 8, c);
+            font.draw(out, sx + 8, line, tag, small, Look::ink_on(c));
         }
-        // HP: the bar in the game's colours, the numbers under it.
-        const int by = line + int(10 * u), bh = std::max(4, int(10 * u));
-        out.rounded_rect(tx, by, tw, bh, bh / 2, look.background);
-        const int fill = m.max_hp ? tw * m.hp / m.max_hp : 0;
-        const Rgb bar = m.hp * 2 > m.max_hp   ? Rgb{88, 208, 120}
-                        : m.hp * 5 > m.max_hp ? Rgb{240, 200, 64}
-                                              : Rgb{232, 80, 72};
-        if (fill > 0) out.rounded_rect(tx, by, std::max(fill, bh), bh, bh / 2, bar);
-        std::string hp = std::to_string(m.hp) + " / " + std::to_string(m.max_hp);
-        font.draw(out, tx + tw - font.measure(hp, small), by + bh + small + int(4 * u), hp, small, look.ink);
+        // HP: a meter in the game's colours, the numbers under it.
+        const int by = line + 12;
+        meter(out, look, {tx, by, tw, 12}, p.max_hp ? double(p.hp) / p.max_hp : 0, hp_colour);
+        const std::string hp = std::to_string(p.hp) + " / " + std::to_string(p.max_hp);
+        if (by + 12 + 22 <= y + ch) font.draw(out, right - font.measure(hp, small), by + 12 + 20, hp, small, look.ink);
     }
 }
 

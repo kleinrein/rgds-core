@@ -210,6 +210,25 @@ class PlayEndToEnd(unittest.TestCase):
         missing = self.play(f'10 state-load {self.dir / "none.dss"}\n20 quit\n')
         self.assertIn('state-load failed', missing)
 
+    def test_checkpoint_carries_the_cartridge_ram(self):
+        # The auto-load puts a checkpoint into a game before its first frame,
+        # beside whatever battery save is on the card. The checkpoint brings
+        # the cartridge RAM it was saved with (Super Mario Land 3 keeps its
+        # working variables there and hung without it), into memory only.
+        slot, again = self.dir / 'first.dss', self.dir / 'again.dss'
+        self.play(EXPLORE + f'300 state-save {slot}\n301 quit\n')
+        # The rooms the cartridge saved: 'RG', the visited rooms, the room, then unused (FF) RAM.
+        saved = slot.read_bytes()
+        at = saved.find(b'RG', 0)
+        while at >= 0 and saved[at + 5:at + 69] != b'\xff' * 64:
+            at = saved.find(b'RG', at + 1)
+        self.assertGreaterEqual(at, 0, 'no cartridge RAM in the checkpoint')
+        rooms = saved[at:at + 5]
+        self.data = self.dir / 'elsewhere/play'  # no battery save at all
+        self.play(f'0 state-load {slot}\n10 state-save {again}\n11 quit\n')
+        self.assertIn(rooms + b'\xff' * 64, again.read_bytes())
+        self.assertEqual([p for p in (self.data / 'saves').rglob('*.sav') if p.read_bytes().startswith(b'RG')], [])
+
     def test_hud_split_moves_layers_without_touching_the_game(self):
         # The test cartridge draws everything on BG2 (a bitmap mode): a profile
         # that calls BG2 the HUD while in the rooms empties the game picture and

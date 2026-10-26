@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Start spelet på nytt for å bruke DS-inn
 Could not save DS settings.	Kunne ikkje lagre DS-innstillingar.
 Search	Søk
 Save gallery	Lagringsgalleri
-Search and filters	Søk og filter
 Add your games	Legg til spel
 DS controls	DS-funksjonar
 Back up all saves	Tryggleikskopier alle lagringar
@@ -626,7 +625,6 @@ Slot	Plass
 Empty slot	Tom plass
 Search games	Søk etter spel
 Filter	Filter
-Clear search and filters	Nullstill søk og filter
 Missing artwork	Manglar omslag
 Where to put games	Kvar legg eg spel?
 Scan for games	Søk etter nye spel
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	Lyden blir ikkje teken opp eller lagra.
 Test the microphone on your handheld.	Test mikrofonen på konsollen.
 Return home before testing the physical microphone.	Gå til heimskjermen før du testar mikrofonen.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blås eller snakk i mikrofonen. Sjå at nivået stig og fell når du stoppar.
-No filter	Ingen filter
 Quick search	Hurtigsøk
 A  Search	A  Søk
 A  Jump	A  Hopp
@@ -906,14 +903,46 @@ Companion	Følgjeskjerm
 Swap screens	Byt skjermar
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Legg til Game Boy- og Game Boy Advance-spel: Spel opnar då ei side med system.
 Frame	Ramme
-Indigo	Indigo
-Glacier	Isbre
-Black	Svart
-Platinum	Platina
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Raud
+Game Boy · Yellow	Game Boy · Gul
+Game Boy · Green	Game Boy · Grøn
+Game Boy · Blue	Game Boy · Blå
+Game Boy · Black	Game Boy · Svart
+Game Boy · Screen only	Game Boy · Berre skjerm
+Game Boy Pocket · Silver	Game Boy Pocket · Sølv
+Game Boy Pocket · Black	Game Boy Pocket · Svart
+Game Boy Pocket · Yellow	Game Boy Pocket · Gul
+Game Boy Pocket · Red	Game Boy Pocket · Raud
+Game Boy Pocket · Green	Game Boy Pocket · Grøn
+Game Boy Pocket · Blue	Game Boy Pocket · Blå
+Game Boy Pocket · Pink	Game Boy Pocket · Rosa
+Game Boy Pocket · Screen only	Game Boy Pocket · Berre skjerm
+Game Boy Color · Berry	Game Boy Color · Bær
+Game Boy Color · Grape	Game Boy Color · Drue
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Dandelion	Game Boy Color · Løvetann
+Game Boy Color · Teal	Game Boy Color · Blågrøn
+Game Boy Color · Atomic Purple	Game Boy Color · Atomlilla
+Game Boy Color · Screen only	Game Boy Color · Berre skjerm
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Glacier	Game Boy Advance · Isbre
+Game Boy Advance · Black	Game Boy Advance · Svart
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobolt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Sølv
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Svart
+WonderSwan Color · White	WonderSwan Color · Kvit
+WonderSwan Color · Blue	WonderSwan Color · Blå
+PSP · Black	PSP · Svart
+PSP · White	PSP · Kvit
+Grey TV	Grå TV
+Wood-grain TV	TV i treverk
+PC monitor	PC-skjerm
+Arcade cabinet	Arkadekabinett
 Black bar	Svart stripe
-SP Onyx	SP Onyx
-SP Cobalt	SP Kobolt
-SP Platinum	SP Platina
 GBA Color	GBA-fargar
 GBA screen	GBA-skjerm
 GBA screens	GBA-skjermar
@@ -943,7 +972,6 @@ Next picture	Neste bilete
 No pictures yet	Ingen bilete enno
 Available	Tilgjengeleg
 Not downloaded	Ikkje lasta ned
-More filters	Fleire filter
 Show games	Vis spel
 Reset filters	Nullstill filter
 Any	Alle
@@ -957,3 +985,148 @@ Online play	Nettspel
 {0} players	{0} spelarar
 No game information yet.	Ingen spelinfo enno.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Slå på Spelinfo under Innstillingar > Bibliotek > Omslagskjelder, og hent omslag.
+Ports	Portar
+Restart port	Start porten på nytt
+Quit	Avslutt
+Looking for the latest PortMaster	Ser etter nyaste PortMaster
+Downloading PortMaster	Lastar ned PortMaster
+Checking PortMaster	Kontrollerer PortMaster
+Unpacking PortMaster	Pakkar ut PortMaster
+Setting up PortMaster	Gjer klar PortMaster
+Installing PortMaster from the card	Installerer PortMaster frå kortet
+PortMaster is ready	PortMaster er klar
+Could not set up PortMaster	Kunne ikkje gjere klar PortMaster
+Get, update and remove ports	Hent, oppdater og fjern portar
+Close PortMaster	Lukk PortMaster
+Back to PortMaster	Tilbake til PortMaster
+Keep getting and updating ports	Hald fram med å hente og oppdatere portar
+Your ports are waiting in Ports	Portane dine ventar i Portar
+Closing PortMaster…	Lukkar PortMaster…
+Closing the port…	Lukkar porten…
+GB screens	GB-skjermar
+GBC screens	GBC-skjermar
+Game Boy screen	Game Boy-skjerm
+Game Boy Color screen	Game Boy Color-skjerm
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Punktmatriseskjermen til den originale Game Boy-en: eit lyst pikselrutenett og mjuke skuggar.
+The Game Boy Color screen with faint gaps between its pixels.	Game Boy Color-skjermen med svake mellomrom mellom pikslane.
+This handheld's own screen.	Skjermen til denne handhaldne konsollen.
+Screen colours	Skjermfargar
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Svart-kvitt
+Game Boy Color, darker	Game Boy Color, mørkare
+Full colour	Fulle fargar
+Hold to save	Hald for å lagre
+Hold to load	Hald for å laste
+Screen off	Skjerm av
+Touch the screen to turn it on	Trykk på skjermen for å slå han på
+min	min
+h	t
+Not saved	Ikkje lagra
+Loaded	Lasta
+Not loaded	Ikkje lasta
+Nothing to load	Ingenting å laste
+Saving…	Lagrar…
+Loading…	Lastar…
+Info screen	Infoskjerm
+Team	Lag
+Lv	Niv.
+screens	skjermar
+Not yet	Ikkje enno
+None yet	Ingen enno
+The best there is	Det beste som finst
+Next:	Neste:
+Badges	Merke
+Carried	Med deg
+Coin bank	Myntbank
+Coins	Myntar
+Collection	Samling
+Course	Bane
+Day	Dag
+Ending so far	Slutt så langt
+Essences	Essensar
+Gear	Utstyr
+Golden leaves	Gylne blad
+Heart containers	Hjartebehaldarar
+Heart pieces	Hjartebitar
+Hearts	Hjarte
+In a course	På ei bane
+Instruments	Instrument
+Johto badges	Johto-merke
+Journey	Reise
+Kanto badges	Kanto-merke
+Keys	Nøklar
+Lives	Liv
+Money	Pengar
+Musical coins	Musikkmyntar
+Night	Natt
+Pokédex caught	Pokédex fanga
+Pokédex seen	Pokédex sett
+Rupees	Rupiar
+Secret seashells	Løynde skjel
+Shield	Skjold
+Small keys	Små nøklar
+Sword	Sverd
+Time of day	Tid på døgnet
+Time	Tid
+Total	Totalt
+Trainer	Trenar
+Treasures	Skattar
+Worlds	Verder
+Your journey	Reisa di
+Seeds	Frø
+Game switcher	Spelbytar
+Switch to another game	Byt til eit anna spel
+Hold to return home	Hald for å gå til hovudmenyen
+Add game files	Legg til spelfiler
+Needs your files	Treng filene dine
+Files added	Filer lagde til
+How to get the files	Slik får du filene
+Scan with your phone	Skann med telefonen
+Or open on a computer	Eller opna på ei datamaskin
+Code	Kode
+Connect to Wi-Fi to send files from a phone or computer.	Kopla til Wi-Fi for å senda filer frå ein telefon eller ei datamaskin.
+Receiving files	Tek imot filer
+Unpacking files	Pakkar ut filer
+Files arrived. Choose Play to start.	Filene er komne. Vel Spel for å starta.
+This port lists no instructions.	Denne porten har ingen instruksjonar.
+Play	Spel
+Goes into	Hamnar i
+Phone or computer connected	Telefon eller datamaskin tilkopla
+Vibration	Vibrasjon
+Menu haptics	Menyhaptikk
+Haptic strength	Haptisk styrke
+Game rumble	Spelrumling
+Rumble strength	Rumlestyrke
+Try a pattern	Prøv eit mønster
+Feel the game	Kjenn spelet
+Feel every move	Kjenn kvart trykk
+No vibration motor was found on this device.	Fann ingen vibrasjonsmotor på denne eininga.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-spel på DS, rumlekassettar på Game Boy og Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Slå på spelrumling for spel laga for eit rumletilbehøyr.
+A light tap for every move, a firmer one when you choose, open or save.	Eit lett trykk for kvar rørsle, eit fastare når du vel, opnar eller lagrar.
+Turn on menu haptics to feel the menus.	Slå på menyhaptikk for å kjenne menyane.
+Browse	Bla
+Open a view	Opne ei vising
+Go back	Gå tilbake
+Switch on	Slå på
+Switch off	Slå av
+Add favourite	Legg til favoritt
+Remove favourite	Fjern favoritt
+Start a game	Start eit spel
+Save complete	Lagra
+Load complete	Lasta inn
+Try again	Prøv igjen
+Keyboard	Tastatur
+Adjust	Juster
+End of a list	Slutten av ei liste
+Long press	Langt trykk
+Notification	Varsel
+Touch screen	Berøringsskjerm
+Point and click on top	Peik og klikk øvst
+Touch here to point and click on the top screen.	Trykk her for å peika og klikka på den øvste skjermen.
+Hold still for a right click	Hald still for høgreklikk
+Hold to exit	Hald for å avslutta
+Touch screen off	Berøringsskjerm av
+Touch screen is not available	Berøringsskjermen er ikkje tilgjengeleg

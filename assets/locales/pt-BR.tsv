@@ -617,7 +617,6 @@ Restart the game to apply DS settings.	Reinicie o jogo para aplicar os ajustes d
 Could not save DS settings.	Não foi possível salvar os ajustes do DS.
 Search	Buscar
 Save gallery	Galeria de estados
-Search and filters	Busca e filtros
 Add your games	Adicione seus jogos
 DS controls	Funções do DS
 Back up all saves	Fazer backup dos estados
@@ -626,7 +625,6 @@ Slot	Espaço
 Empty slot	Espaço vazio
 Search games	Buscar jogos
 Filter	Filtro
-Clear search and filters	Limpar busca e filtros
 Missing artwork	Sem capa
 Where to put games	Onde colocar os jogos
 Scan for games	Procurar jogos
@@ -665,7 +663,6 @@ Audio is not recorded or saved.	O áudio não é gravado nem salvo.
 Test the microphone on your handheld.	Teste o microfone no seu portátil.
 Return home before testing the physical microphone.	Volte ao início antes de testar o microfone físico.
 Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Sopre ou fale no microfone. O nível sobe e depois desce quando você para.
-No filter	Sem filtro
 Quick search	Busca rápida
 A  Search	A  Buscar
 A  Jump	A  Ir
@@ -906,14 +903,46 @@ Companion	Tela companheira
 Swap screens	Trocar telas
 Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Adiciona jogos de Game Boy e Game Boy Advance: Jogos abre então uma página de sistemas.
 Frame	Moldura
-Indigo	Índigo
-Glacier	Geleira
-Black	Preto
-Platinum	Platina
+Game Boy	Game Boy
+Game Boy · Red	Game Boy · Vermelho
+Game Boy · Yellow	Game Boy · Amarelo
+Game Boy · Green	Game Boy · Verde
+Game Boy · Blue	Game Boy · Azul
+Game Boy · Black	Game Boy · Preto
+Game Boy · Screen only	Game Boy · Só a tela
+Game Boy Pocket · Silver	Game Boy Pocket · Prata
+Game Boy Pocket · Black	Game Boy Pocket · Preto
+Game Boy Pocket · Yellow	Game Boy Pocket · Amarelo
+Game Boy Pocket · Red	Game Boy Pocket · Vermelho
+Game Boy Pocket · Green	Game Boy Pocket · Verde
+Game Boy Pocket · Blue	Game Boy Pocket · Azul
+Game Boy Pocket · Pink	Game Boy Pocket · Rosa
+Game Boy Pocket · Screen only	Game Boy Pocket · Só a tela
+Game Boy Color · Berry	Game Boy Color · Framboesa
+Game Boy Color · Grape	Game Boy Color · Uva
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Dandelion	Game Boy Color · Dente-de-leão
+Game Boy Color · Teal	Game Boy Color · Verde-azulado
+Game Boy Color · Atomic Purple	Game Boy Color · Roxo atômico
+Game Boy Color · Screen only	Game Boy Color · Só a tela
+Game Boy Advance · Indigo	Game Boy Advance · Índigo
+Game Boy Advance · Glacier	Game Boy Advance · Geleira
+Game Boy Advance · Black	Game Boy Advance · Preto
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalto
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Ônix
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Prata
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Preto
+WonderSwan Color · White	WonderSwan Color · Branco
+WonderSwan Color · Blue	WonderSwan Color · Azul
+PSP · Black	PSP · Preto
+PSP · White	PSP · Branco
+Grey TV	TV cinza
+Wood-grain TV	TV amadeirada
+PC monitor	Monitor de PC
+Arcade cabinet	Gabinete de fliperama
 Black bar	Barra preta
-SP Onyx	SP Ônix
-SP Cobalt	SP Cobalto
-SP Platinum	SP Platina
 GBA Color	Cores do GBA
 GBA screen	Tela do GBA
 GBA screens	Telas do GBA
@@ -943,7 +972,6 @@ Next picture	Próxima imagem
 No pictures yet	Ainda sem imagens
 Available	Disponível
 Not downloaded	Não baixado
-More filters	Mais filtros
 Show games	Mostrar jogos
 Reset filters	Limpar filtros
 Any	Todos
@@ -957,3 +985,148 @@ Online play	Jogo online
 {0} players	{0} jogadores
 No game information yet.	Ainda sem informações do jogo.
 Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ative Info do jogo em Configurações > Biblioteca > Fontes de capas e busque as capas.
+Ports	Ports
+Restart port	Reiniciar port
+Quit	Sair
+Looking for the latest PortMaster	Procurando o PortMaster mais recente
+Downloading PortMaster	Baixando o PortMaster
+Checking PortMaster	Verificando o PortMaster
+Unpacking PortMaster	Descompactando o PortMaster
+Setting up PortMaster	Configurando o PortMaster
+Installing PortMaster from the card	Instalando o PortMaster do cartão
+PortMaster is ready	O PortMaster está pronto
+Could not set up PortMaster	Não foi possível configurar o PortMaster
+Get, update and remove ports	Baixe, atualize e remova ports
+Close PortMaster	Fechar o PortMaster
+Back to PortMaster	Voltar ao PortMaster
+Keep getting and updating ports	Continuar baixando e atualizando ports
+Your ports are waiting in Ports	Seus ports estão em Ports
+Closing PortMaster…	Fechando o PortMaster…
+Closing the port…	Fechando o port…
+GB screens	Telas do GB
+GBC screens	Telas do GBC
+Game Boy screen	Tela do Game Boy
+Game Boy Color screen	Tela do Game Boy Color
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	A tela de matriz de pontos do Game Boy original: uma grade clara de pixels e sombras suaves.
+The Game Boy Color screen with faint gaps between its pixels.	A tela do Game Boy Color com leves espaços entre os pixels.
+This handheld's own screen.	A tela própria deste portátil.
+Screen colours	Cores da tela
+Game Boy Pocket	Game Boy Pocket
+Game Boy Light	Game Boy Light
+Game Boy Color	Game Boy Color
+Black and white	Preto e branco
+Game Boy Color, darker	Game Boy Color, mais escuro
+Full colour	Cores completas
+Hold to save	Segure para salvar
+Hold to load	Segure para carregar
+Screen off	Tela desligada
+Touch the screen to turn it on	Toque na tela para ligá-la
+min	min
+h	h
+Not saved	Não salvo
+Loaded	Carregado
+Not loaded	Não carregado
+Nothing to load	Nada para carregar
+Saving…	Salvando…
+Loading…	Carregando…
+Info screen	Tela de info
+Team	Equipe
+Lv	Nv.
+screens	telas
+Not yet	Ainda não
+None yet	Nenhum ainda
+The best there is	O melhor que há
+Next:	Próximo:
+Badges	Insígnias
+Carried	Com você
+Coin bank	Banco de moedas
+Coins	Moedas
+Collection	Coleção
+Course	Fase
+Day	Dia
+Ending so far	Final até agora
+Essences	Essências
+Gear	Equipamento
+Golden leaves	Folhas douradas
+Heart containers	Recipientes de coração
+Heart pieces	Pedaços de coração
+Hearts	Corações
+In a course	Em uma fase
+Instruments	Instrumentos
+Johto badges	Insígnias de Johto
+Journey	Jornada
+Kanto badges	Insígnias de Kanto
+Keys	Chaves
+Lives	Vidas
+Money	Dinheiro
+Musical coins	Moedas musicais
+Night	Noite
+Pokédex caught	Pokédex: capturados
+Pokédex seen	Pokédex: vistos
+Rupees	Rupias
+Secret seashells	Conchas secretas
+Shield	Escudo
+Small keys	Chaves pequenas
+Sword	Espada
+Time of day	Hora do dia
+Time	Tempo
+Total	Total
+Trainer	Treinador
+Treasures	Tesouros
+Worlds	Mundos
+Your journey	Sua jornada
+Seeds	Sementes
+Game switcher	Trocar de jogo
+Switch to another game	Mude para outro jogo
+Hold to return home	Segure para voltar ao início
+Add game files	Adicionar arquivos do jogo
+Needs your files	Precisa dos seus arquivos
+Files added	Arquivos adicionados
+How to get the files	Como conseguir os arquivos
+Scan with your phone	Escaneie com o celular
+Or open on a computer	Ou abra em um computador
+Code	Código
+Connect to Wi-Fi to send files from a phone or computer.	Conecte-se ao Wi-Fi para enviar arquivos de um celular ou computador.
+Receiving files	Recebendo arquivos
+Unpacking files	Descompactando arquivos
+Files arrived. Choose Play to start.	Os arquivos chegaram. Escolha Jogar para começar.
+This port lists no instructions.	Este port não tem instruções.
+Play	Jogar
+Goes into	Vai para
+Phone or computer connected	Celular ou computador conectado
+Vibration	Vibração
+Menu haptics	Resposta tátil
+Haptic strength	Intensidade tátil
+Game rumble	Vibração nos jogos
+Rumble strength	Intensidade da vibração
+Try a pattern	Testar um padrão
+Feel the game	Sinta o jogo
+Feel every move	Sinta cada movimento
+No vibration motor was found on this device.	Nenhum motor de vibração foi encontrado neste aparelho.
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Jogos com Rumble Pak no DS, cartuchos com vibração no Game Boy e Game Boy Advance.
+Turn on game rumble for games made for a rumble accessory.	Ative a vibração nos jogos para jogos feitos para um acessório de vibração.
+A light tap for every move, a firmer one when you choose, open or save.	Um toque leve a cada movimento e um mais firme ao escolher, abrir ou salvar.
+Turn on menu haptics to feel the menus.	Ative a resposta tátil para sentir os menus.
+Browse	Navegar
+Open a view	Abrir uma visualização
+Go back	Voltar
+Switch on	Ativar
+Switch off	Desativar
+Add favourite	Adicionar favorito
+Remove favourite	Remover favorito
+Start a game	Iniciar um jogo
+Save complete	Salvamento concluído
+Load complete	Carregamento concluído
+Try again	Tentar novamente
+Keyboard	Teclado
+Adjust	Ajustar
+End of a list	Fim de uma lista
+Long press	Toque longo
+Notification	Notificação
+Touch screen	Tela sensível ao toque
+Point and click on top	Apontar e clicar em cima
+Touch here to point and click on the top screen.	Toque aqui para apontar e clicar na tela de cima.
+Hold still for a right click	Segure parado para clique direito
+Hold to exit	Segure para sair
+Touch screen off	Tela sensível ao toque desligada
+Touch screen is not available	A tela sensível ao toque não está disponível

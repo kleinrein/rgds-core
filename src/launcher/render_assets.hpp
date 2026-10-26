@@ -1,6 +1,7 @@
 #pragma once
 // Cover and icon preparation, the pattern background and game titles.
 // Members of App in main.cpp; included once, right after the class.
+#include "launcher/cartridge_art.hpp"
 
 void App::cart(SDL_Renderer* r, int x, int y, int width, int height, bool selected, int number) {
     rect(r, x + 4, y + 5, width, height, "line");
@@ -43,6 +44,8 @@ std::string App::game_title(size_t index) {
     return entry.title;
 }
 
+inline constexpr const char* game_icon_pictures[] = {"title.bmp", "snap.bmp", "box.bmp"};
+
 void App::warm_icon(SDL_Renderer* r, const Game& game) {
     if (!game.demo && !media.warm(r, game.path, true)) media.warm(r, folder_for_game(game) / "icon.bmp");
 }
@@ -51,6 +54,8 @@ void App::request_icon(SDL_Renderer* r, const Game& game) {
     if (game.demo) return;
     media.request(r, game.path, true);
     media.request(r, folder_for_game(game) / "icon.bmp");
+    // Only the title screen ahead of time: the cover and snap are large, and queue behind nothing the player waits on.
+    if (game.system != "nds") media.request(r, folder_for_game(game) / "title.bmp");
 }
 
 void App::prepare_render_assets() {
@@ -102,7 +107,7 @@ void App::prepare_render_assets() {
                 if (settings.page == Page::Library && std::string(name) != "settings" && std::string(name) != "games" &&
                     std::string(name) != "favorites" && std::string(name) != "recent" &&
                     std::string(name) != "pictochat" &&
-                    !(picker_open && (picker_title == "Library view" || picker_title == "Browser layout") &&
+                    !((filter_sheet_open || (picker_open && picker_title == "Browser layout")) &&
                       std::string(name) == "artwork"))
                     continue;
                 media.warm(panel.renderer, asset_path(std::string("icons/") + name + ".bmp"));
@@ -171,7 +176,7 @@ void App::prepare_next_cover() {
         for (int direction : {-1, 1}) {
             int index = center + direction * distance;
             if (index < 0 || index >= int(model.games.size())) continue;
-            media.request(surfaces.back().renderer, item_folder(size_t(index)) / "box.bmp");
+            media.request(surfaces.back().renderer, item_folder(size_t(index)) / "box.bmp", false, distance <= 2);
         }
 }
 
@@ -256,14 +261,36 @@ void App::game_icon(SDL_Renderer* r, const Game& game, int x, int y, int size, s
     if (!game.demo && ((game.system == "nds" && media.draw(r, game.path, box, true)) ||
                        media.draw(r, folder_for_game(game) / "icon.bmp", box)))
         return;
+    // A game of another system has no icon in its ROM: its title screen (or screenshot, or cover), fitted in the
+    // square, stands in for it.
+    if (!game.demo && game.system != "nds")
+        for (const char* picture : game_icon_pictures) {
+            const auto path = folder_for_game(game) / picture;
+            if (!media.ready(r, path)) {
+                media.request(r, path);
+                continue;
+            }
+            const SDL_Rect fitted =
+                media.fitted_box(r, path, {x + size / 16, y + size / 16, size * 7 / 8, size * 7 / 8});
+            alpha_round(r, fitted.x - 1, fitted.y + 2, fitted.w + 2, fitted.h + 2, 4, shadow_colour(),
+                        preferences.dark ? 70 : 30);
+            if (media.draw(r, path, fitted, false, 255, false, 4)) return;
+        }
     if (!game.demo) {
-        round_rect(r, x + size / 8, y + size / 8, size * 3 / 4, size * 3 / 4, 4, "slot");
-        // The system's badge, as large as fits the slot (GBA in a small switcher row too).
+        // The system's own cartridge, with the badge on its label (the badge shrinks to fit a small row).
+        const auto art = cartridge_art(game.system, theme.at("accent"));
+        auto at = [&](int v) { return v * size / 100; };
+        for (const auto& shape : art.shapes)
+            fill_round(r, x + at(shape.x), y + at(shape.y), std::max(1, at(shape.w)), std::max(1, at(shape.h)),
+                       at(shape.radius), shape.colour);
         const std::string badge = system_info(game.system).badge;
+        const int room = at(art.label.w) - 4;
         int text = 24;
-        while (text > 10 && label_width(badge, text, false) > size * 3 / 4 - 4) text -= 2;
-        raw_label(r, badge, x + (size - label_width(badge, text, false)) / 2,
-                  centred_label_y(badge, text, y + size / 2), text, "muted", size * 3 / 4);
+        while (text > 8 && label_width(badge, text, false) > room) text -= 2;
+        if (size >= 28)
+            raw_label_colour(r, badge, x + at(art.label.x) + (at(art.label.w) - label_width(badge, text, false)) / 2,
+                             centred_label_y(badge, text, y + at(art.label.y) + at(art.label.h) / 2), text, art.ink,
+                             at(art.label.w));
         return;
     }
     // Original preview symbols, never Nintendo artwork.

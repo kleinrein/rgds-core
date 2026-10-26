@@ -12,6 +12,7 @@
 // A byte per screen says which of its edges stop the camera: the room's walls.
 #include "companion/companion.hpp"
 #include "companion/view.hpp"
+#include "ui/kit.hpp"
 #include "core/core.hpp"
 
 #include <algorithm>
@@ -83,7 +84,7 @@ public:
     }
 
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t frame) const override {
-        out.vertical_gradient(mix(look.background, look.panel, 60), look.background);
+        backdrop(out, look);
         auto found = areas_.find(bank_);
         if (found == areas_.end()) return;
         const auto& area = found->second;
@@ -134,11 +135,10 @@ public:
         const Rgb marker = (frame / 20) & 1 ? Rgb{255, 214, 92} : Rgb{255, 140, 64};
         out.rounded_rect(mx - cell, my - cell, cell * 4, cell * 6, cell, Rgb{12, 17, 26});
         out.rounded_rect(mx, my, cell * 2, cell * 4, cell / 2 + 1, marker);
-        if (font.loaded()) {
-            const int size = std::max(14, H / 26);
-            const std::string label = "SR388";
-            font.draw(out, size, size * 3 / 2, label, size, look.muted);
-        }
+        // Where this is, as a chip in the corner, and how much of it has been seen.
+        const int w = chip(out, look, font, kit::margin, kit::margin + 14, "SR388", true);
+        chip(out, look, font, kit::margin + w + 8, kit::margin + 14,
+             std::to_string(area.size()) + " " + look.tr("screens"), false);
     }
 
     bool dirty() const override { return serial_ != saved_; }

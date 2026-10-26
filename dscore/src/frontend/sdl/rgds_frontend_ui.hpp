@@ -65,6 +65,25 @@ inline PresentHook present_hook() {
   static const PresentHook hook = reinterpret_cast<PresentHook>(::dlsym(RTLD_DEFAULT, "rgds_present_canvas"));
   return hook;
 }
+// The DS Rumble Pak: in the slot when RG DS Core's Game rumble is on
+// (RGDS_RUMBLE, its strength, 0 off), or DS_RUMBLE_PAK=1 on its own.
+inline bool rumble_pak() {
+  const char* rgds = std::getenv("RGDS_RUMBLE");
+  const char* own = std::getenv("DS_RUMBLE_PAK");
+  return (rgds && std::atoi(rgds) > 0) || (own && std::strcmp(own, "1") == 0);
+}
+// A frame's Rumble Pak moves to the RG DS motor through the bridge's
+// rgds_rumble (0-100; the bridge applies the strength and lets the motor stop
+// by itself if frames stop coming). A move is felt for about a frame, so a game
+// that moves it every frame holds it on; one call more when it stops.
+inline void rumble_frame(uint32_t moves) {
+  using Hook = void (*)(int);
+  static const Hook hook = reinterpret_cast<Hook>(::dlsym(RTLD_DEFAULT, "rgds_rumble"));
+  static bool on = false;
+  if (!hook || (!moves && !on)) return;
+  on = moves != 0;
+  hook(on ? 100 : 0);
+}
 inline std::function<bool(int, bool, int)> graphics_handler;
 inline std::function<bool(int)> filter2d_handler;
 // Heavy 3D scenes: 1 adaptive (native during heavy stretches), 0 always sharp. Live.

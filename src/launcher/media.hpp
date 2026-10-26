@@ -318,7 +318,7 @@ public:
     }
     // Queue a load for the worker; nothing happens for a path already cached
     // or already on its way. Several renderers can share one decode.
-    void request(SDL_Renderer* r, const fs::path& path, bool icon = false) {
+    void request(SDL_Renderer* r, const fs::path& path, bool icon = false, bool urgent = false) {
         auto key = image_key(path, icon);
         if (images.count(std::make_pair(r, key))) return;
         std::lock_guard<std::mutex> lock(guard);
@@ -332,14 +332,19 @@ public:
                     }
                 return false;
             };
-            if (!attach(finished)) attach(queue);
+            if (!attach(finished) && attach(queue) && urgent) {
+                auto at = std::find_if(queue.begin(), queue.end(),
+                                       [&](const Job& job) { return job.icon == icon && job.path == path; });
+                std::rotate(queue.begin(), at, at + 1);
+            }
             return;
         }
         Job job;
         job.path = path;
         job.icon = icon;
         job.renderers = {r};
-        queue.push_back(std::move(job));
+        if (urgent) queue.push_front(std::move(job));
+        else queue.push_back(std::move(job));
         async_loads++;
         if (!loader.joinable()) loader = std::thread([this] { loader_main(); });
         wake.notify_one();

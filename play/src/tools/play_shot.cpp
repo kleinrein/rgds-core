@@ -3,6 +3,7 @@
 //
 //   play-shot --rom GAME --data DIR --profiles DIR --fonts DIR --script FILE --out DIR
 //             [--panel 640x480] [--no-companion] [--hashes FILE] [--async]
+//             [--preferences userdata/preferences.ini] [--palette dmg|pocket|...]
 //
 // Script lines (frame numbers ascend):
 //   120 START        hold START from frame 120 (A, B+UP, - for nothing)
@@ -14,11 +15,16 @@
 //   run 30 A+LEFT    run 30 frames holding those buttons, answers "ok FRAME"
 //   read 03001234 2  answers the value in hex
 //   dump FILE        writes EWRAM (256 KiB) then IWRAM (32 KiB)
+//   poke A B...      writes bytes from address A (Game Boy, "1:D206" a bank)
+//   bytes A N        N bytes from address A as one hex string
+//   second off       the second screen turned off (on again with "second on", "second info": the info screen)
+//   tap X Y          a finger down and up on the second screen ("touch down|move|up X Y" for each)
 //   and the script commands without a frame: shot, hudshot, status, ...
 // Captures normally run to completion before the next frame, so a run is the
 // same every time; --async lets them race the game as on the handheld.
 #include "app/session.hpp"
 #include "companion/profile.hpp"
+#include "ui/colour.hpp"
 #include "ui/screens.hpp"
 
 #include <algorithm>
@@ -41,7 +47,7 @@ struct Command {
 
 int main(int argc, char** argv) {
     SessionOptions o;
-    std::string script, out_dir = ".", hashes, state_hashes;
+    std::string script, out_dir = ".", hashes, state_hashes, palette;
     int pw = 640, ph = 480;
     bool async = false, bench = false, drive = false;
     for (int i = 1; i < argc; ++i) {
@@ -51,6 +57,8 @@ int main(int argc, char** argv) {
         else if (a == "--data") o.data_root = next();
         else if (a == "--profiles") o.profile_dirs.push_back(next());
         else if (a == "--fonts") o.font_dir = next();
+        else if (a == "--preferences") o.preferences = next();
+        else if (a == "--palette") palette = next();
         else if (a == "--save-source") o.save_sources.push_back(next());
         else if (a == "--script") script = next();
         else if (a == "--out") out_dir = next();
@@ -114,7 +122,13 @@ int main(int argc, char** argv) {
     std::FILE* state_out = state_hashes.empty() ? nullptr : std::fopen(state_hashes.c_str(), "w");
     std::vector<uint8_t> state;
     Canvas top(pw, ph), bottom(pw, ph);
-    Look look;
+    const Look& look = s.look();
+    // --palette: the top screen in a Game Boy palette, and the companion's game pictures with it.
+    Colour colour;
+    if (!palette.empty()) {
+        colour.set(s.core(), parse_palette(palette), 0);
+        if (s.companion()) s.companion()->set_colour(colour);
+    }
     uint32_t buttons = 0;
     std::vector<double> emulate_ms, draw_ms;
     auto execute = [&](const Command& c, long frame) {
@@ -122,7 +136,7 @@ int main(int argc, char** argv) {
             bool ok = s.companion()->capture_now(s.core());
             std::printf("frame %ld capture %s\n", frame, ok ? "ok" : s.companion()->status().last_failure.c_str());
         } else if (c.what == "shot") {
-            draw_game(top, s.game(), Fit::Integer);
+            draw_game(top, colour.apply(s.game()), Fit::Integer);
             s.render_companion(bottom, look);
             std::string path = out_dir + "/" + c.arg + ".bmp";
             if (!write_bmp(path, top, &bottom)) std::fprintf(stderr, "cannot write %s\n", path.c_str());
@@ -161,6 +175,14 @@ int main(int argc, char** argv) {
                 if (!parse_buttons(keys, buttons)) buttons = 0;
                 for (long i = 0; i < n; ++i, ++frame) {
                     s.frame(buttons);
+                    if (s.companion()) {
+                        // Frame time stands in for the wall clock, so a run is the same every time.
+                        s.companion()->set_time(uint64_t(frame + 1) * 1000 / 60);
+                        // What the frontend would hand the runtime from the dock (here: say so).
+                        const Dock::Action act = s.companion()->dock().take_action();
+                        if (act != Dock::Action::None)
+                            std::printf("action %s\n", act == Dock::Action::Switcher ? "switcher" : "home");
+                    }
                     if (s.companion())
                         while (s.companion()->busy()) std::this_thread::sleep_for(std::chrono::microseconds(200));
                 }
@@ -170,6 +192,21 @@ int main(int argc, char** argv) {
                 int size = 4;
                 in >> address >> size;
                 std::printf("%x\n", s.core().peek(uint32_t(std::stoul(address, nullptr, 16)), size));
+            } else if (what == "bytes") {
+                // bytes ADDRESS COUNT : that many bytes as one hex string, then "ok" ("3:5A20" a bank)
+                std::string address;
+                long count = 0;
+                in >> address >> count;
+                uint32_t a = 0;
+                std::string hex;
+                if (parse_address(address, a))
+                    for (long i = 0; i < count; ++i) {
+                        const uint32_t at = (a & 0xFFFF0000u) | ((a + uint32_t(i)) & 0xFFFF);
+                        char b[3];
+                        std::snprintf(b, sizeof b, "%02x", peek_address(s.core(), at, 1) & 0xFF);
+                        hex += b;
+                    }
+                std::printf("%s\nok\n", hex.c_str());
             } else if (what == "dump") {
                 std::getline(in, arg);
                 arg.erase(0, arg.find_first_not_of(" \t"));
@@ -180,12 +217,49 @@ int main(int argc, char** argv) {
                         out.write(reinterpret_cast<const char*>(&v), 4);
                     }
                 std::printf("ok\n");
+            } else if (what == "poke") {
+                // poke ADDRESS BYTE... : bytes into memory from ADDRESS on ("1:D206" names a bank)
+                std::string address, byte;
+                in >> address;
+                uint32_t a = 0;
+                if (!parse_address(address, a)) {
+                    std::printf("bad address\n");
+                    std::fflush(stdout);
+                    continue;
+                }
+                const int bank = (a & banked_flag) ? int((a >> 16) & 0xFF) : -1;
+                const uint32_t base = bank >= 0 ? a & 0xFFFF : a;
+                for (uint32_t i = 0; in >> byte; ++i)
+                    s.core().poke8(base + i, bank, uint8_t(std::stoul(byte, nullptr, 16)));
+                std::printf("ok\n");
             } else if (what == "layers") {
                 // Which layers the live picture draws (bits 0-3 BG0-3, bit 4 sprites): to see what is where.
                 std::string mask;
                 in >> mask;
                 s.core().set_layers(unsigned(std::stoul(mask, nullptr, 16)));
                 std::printf("ok\n");
+            } else if (what == "second") {
+                // second on|off|info : the second screen shown, turned off (the game keeps its HUD)
+                // or the info screen (the dock's controls)
+                in >> arg;
+                if (s.companion()) {
+                    s.companion()->set_shown(arg == "on");
+                    s.companion()->dock().set_full(arg == "info");
+                }
+                std::printf("ok\n");
+            } else if (what == "touch" || what == "tap") {
+                // touch down|move|up X Y, or tap X Y (down then up): a finger on the second screen
+                std::string kind = what == "tap" ? "down" : "";
+                if (what == "touch") in >> kind;
+                Touch t;
+                in >> t.x >> t.y;
+                t.kind = kind == "up" ? Touch::Up : kind == "move" ? Touch::Move : Touch::Down;
+                bool changed = s.companion() && s.companion()->touch(t);
+                if (what == "tap" && s.companion()) {
+                    t.kind = Touch::Up;
+                    changed = s.companion()->touch(t) || changed;
+                }
+                std::printf("%s\nok\n", changed ? "changed" : "same");
             } else if (what == "quit") break;
             else {
                 std::getline(in, arg);
@@ -212,7 +286,7 @@ int main(int argc, char** argv) {
         s.frame(buttons);
         if (bench) {
             auto t1 = std::chrono::steady_clock::now();
-            draw_game(top, s.game(), Fit::Integer);
+            draw_game(top, colour.apply(s.game()), Fit::Integer);
             s.render_companion(bottom, look);
             auto t2 = std::chrono::steady_clock::now();
             emulate_ms.push_back(std::chrono::duration<double, std::milli>(t1 - t0).count());

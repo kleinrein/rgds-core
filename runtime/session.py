@@ -855,6 +855,13 @@ def main(argv=None, startup_receipt=None):
             if not args.standalone:
                 for system, path in system_roots(root):
                     command += ["--system-dir", system + "=" + str(path)]
+                from portmaster import notes as port_notes, roots as port_roots
+                for path in port_roots(app):
+                    command += ["--system-dir", "ports=" + str(path)]
+                try:
+                    port_notes(data)  # which ports still need their owner's files (Add game files)
+                except Exception as error:
+                    print("RGDS session: port notes: " + str(error), file=sys.stderr)
         log_path = data / "session.log"
         with log_path.open("a", buffering=1) as log:
             log.write("\nRGDS session: " + app.name + "\n")

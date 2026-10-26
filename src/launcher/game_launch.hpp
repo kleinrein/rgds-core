@@ -33,6 +33,11 @@ void App::launch(bool from_home) {
         return;
     }
     if (model.games.empty()) return;
+    // A port that still needs its owner's files shows where to send them first (port_files_screen.hpp).
+    if (!resume_launch && port_needs_files(model.games[model.selected])) {
+        port_files_open(model.games[model.selected]);
+        return;
+    }
     launch_preview = o.preview || model.games[model.selected].demo || !o.allow_launch;
     if (!launch_preview && (o.app.empty() || o.data.empty())) {
         status = "ERROR: Launch needs app and data paths";
@@ -42,7 +47,9 @@ void App::launch(bool from_home) {
     auto local = library_cache.options(model.games[model.selected]);
     launching_core = unsigned(offered_core(local.core < 0 ? int(preferences.core) : local.core));
     if (resume_launch) launching_core = unsigned(resume_core);
-    if (model.games[model.selected].system != "nds") launching_core = unsigned(play_core); // RG DS Play
+    const std::string& system = model.games[model.selected].system;
+    if (system == "ports") launching_core = unsigned(portmaster_core); // a PortMaster port
+    else if (system != "nds") launching_core = unsigned(play_core);    // RG DS Play
     sound_intent(MenuCue::Launch);
     launching = true;
     launch_at = s.GetTicks();
@@ -88,6 +95,7 @@ void App::finish_launch(bool reopen) {
     launch_phase = LaunchPhase::None;
     if (!reopen) configure_sounds(); // a cancelled or preview launch: the music comes back
     if (reopen) {
+        if (launching_core == unsigned(portmaster_core)) refresh_other_systems(); // ports added or removed
         library_cache.clear();
         library_summary.request(o.data, all_games);
         open();

@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: MIT
+#
+# RG DS Core's control.txt for PortMaster (docs/PORTMASTER_PLAN.md), modelled on
+# PortMaster's spruce variant. runtime/portmaster.py writes it after every
+# PortMaster install or update; upstream's own copy is kept as control.upstream.txt.
+
+CUR_TTY=/dev/null
+
+export controlfolder="@CONTROL@"
+export directory="@DIRECTORY@"
+
+export ESUDO=""
+export ESUDOKILL="-1"
+export ESUDOKILL2="-1"
+
+# RG DS Core's pad mapping (runtime/emulators.py), not the stock card's, which swaps Select and Home.
+RGDS_PAD="@PAD@"
+export SDL_GAMECONTROLLERCONFIG_FILE="$controlfolder/gamecontrollerdb.rgds.txt"
+
+SDLDBFILE="${SDL_GAMECONTROLLERCONFIG_FILE}"
+SDLDBUSERFILE="${SDL_GAMECONTROLLERCONFIG_FILE}"
+
+get_controls() {
+  LOWRES="N"
+  ANALOGSTICKS=2
+  DEVICE="1900b655010000000100000000010000"
+  param_device="rgds"
+  sdl_controllerconfig="$RGDS_PAD"
+}
+
+source $controlfolder/device_info.txt
+source $controlfolder/funcs.txt
+
+# PortMaster's Weston runtime (westonwrap.sh sources this file) has a mode for libmali with a host compositor that
+# owns the display: crusty then draws into the host's Wayland display. It turns it on for ROCKNIX only, and this
+# card is the same case (libmali g24p0, Weston on both panels), so the wrapper is told it runs on ROCKNIX.
+# The runtime's libxkbcommon looks for its keymaps at a relative share/xkb, which only resolves from the runtime's
+# own folder; crusty's SDL then fails with "Failed to create XKB context". The card's keymaps are the standard ones.
+case "$0" in
+  *westonwrap*.sh)
+    export CFW_NAME="ROCKNIX"
+    [ -d /usr/share/X11/xkb ] && export XKB_CONFIG_ROOT=/usr/share/X11/xkb
+    ;;
+esac
+
+# RG DS Core's 32-bit layer (runtime/portmaster_compat.py) runs armhf-only ports, so PortMaster lists them. The
+# card itself has no armhf loader, which is what device_info.txt looks for.
+if [ -f "$controlfolder/../rgds/armhf/ld-linux-armhf.so.3" ]; then
+  export DEVICE_HAS_ARMHF="Y"
+  case " $DEVICE_CAPABILITIES " in *" armhf "*) ;; *) export DEVICE_CAPABILITIES="$DEVICE_CAPABILITIES armhf" ;; esac
+fi
+
+# One panel: device_info's DRM scan also sees the second panel and a writeback connector.
+export DISPLAY_WIDTH=@WIDTH@ DISPLAY_HEIGHT=@HEIGHT@
+
+export GPTOKEYB2="$ESUDO env LD_PRELOAD=$controlfolder/libinterpose.${DEVICE_ARCH}.so $controlfolder/gptokeyb2 $ESUDOKILL2"
+export GPTOKEYB="$ESUDO $controlfolder/gptokeyb $ESUDOKILL"

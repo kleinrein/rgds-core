@@ -2,20 +2,28 @@
 // rgds-play: the game on one panel, its companion on the other.
 //
 //   rgds-play --rom GAME --data DIR [--profiles DIR]... [--fonts DIR]
-//             [--save-source DIR]... [--fit sharp|integer|smooth] [--second companion|off|swap]
-//             [--frame NAME] [--frames DIR]
+//             [--save-source DIR]... [--fit sharp|integer|smooth] [--second companion|off|swap|info]
+//             [--frame NAME] [--frames DIR] [--palette NAME] [--colour NAME]
 //
 // --fit sharp (the default) fills the panel's width: the game is scaled up by
 // a whole number on the GPU without smoothing, then down to the panel with
 // it, so pixels stay crisp and the same size. integer keeps whole multiples
 // (smaller, pixel exact); smooth fills with plain smoothing.
 // --second: the companion on the second screen (default), nothing there
-// (off), or the companion on top and the game below (swap).
+// (off), the companion on top and the game below (swap), or the quiet info
+// screen with its own controls (info: companion/dock.hpp). The lower panel
+// is a touch screen: the companion and the dock take its touches.
+// --preferences: userdata/preferences.ini, the launcher's Theme & display
+// (and ui.ini, system.ini beside it), which the second screen follows.
 // --frame: something drawn around the game (ui/frame.hpp), which then places
-// it: a built-in style (indigo, glacier, black, platinum, bar, sp-onyx,
-// sp-cobalt, sp-platinum) or the name of a picture frame, NAME.png in
-// --frames (userdata/frames/<system>). off, or a picture that cannot be read,
-// leaves the fit to choose.
+// it: a built-in style of the game's own system (ui/frame_styles.hpp: dmg
+// and the Pockets for gb, the gbc-* colours, indigo ... sp-platinum for gba,
+// bar for all) or the name of a picture frame, NAME.png in --frames
+// (userdata/frames/<system>). off, another system's style, or a picture that
+// cannot be read, leaves the fit to choose.
+// --palette: the handheld an original Game Boy game is shown on (dmg, pocket,
+// light, color, greys); --colour: how a Game Boy Color game's screen shows its
+// colours (gbc, gbc-dim, vivid). See ui/colour.hpp.
 //
 // Under RG DS Core (RGDS_CORE set, the bridge preloaded) the shared in-game
 // menu owns Home and the pad stays shared: F5 saves the machine to
@@ -30,7 +38,11 @@
 // FRAME.bmp of both panels as presented every RGDS_PLAY_SHOT_EVERY frames
 // (600), and RGDS_PLAY_QUIT_AT a frame to save and quit at.
 #include "app/session.hpp"
+#include "app/storage.hpp"
+#include "platform/touch.hpp"
+#include "ui/gb_palettes.hpp"
 #include "frontend/evdev_pad.hpp"
+#include "ui/colour.hpp"
 #include "ui/frame.hpp"
 #include "ui/screens.hpp"
 
@@ -42,6 +54,7 @@
 #endif
 #include <SDL2/SDL_syswm.h>
 #include <dlfcn.h>
+#include <unistd.h>
 #endif
 
 #include <algorithm>
@@ -51,6 +64,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <map>
@@ -69,11 +83,12 @@ std::atomic<bool> stop_requested{false};
 void request_stop(int) { stop_requested = true; }
 
 enum FitMode { FitSharp = 0, FitInteger = 1, FitSmooth = 2 };
-enum SecondMode { SecondCompanion = 0, SecondOff = 1, SecondSwap = 2 };
+enum SecondMode { SecondCompanion = 0, SecondOff = 1, SecondSwap = 2, SecondInfo = 3 };
 
 // Asked for by the bridge from its event hook (the main thread, between
 // frames); taken up at the top of the next loop.
 std::atomic<int> wanted_fit{-1}, wanted_second{-1};
+std::atomic<int> wanted_colours{-1}; // palette * 16 + correction, set together
 std::mutex wanted_frame_lock;
 std::string wanted_frame; // empty: no change asked for
 
@@ -222,6 +237,21 @@ bool shader_live() {
 #endif
 }
 
+// The game's rumble (0-1), to the motor through RG DS Core's bridge, which
+// holds the user's Game rumble setting. Nothing happens outside RG DS Core.
+void rumble(float level) {
+#ifdef __linux__
+    static auto motor = reinterpret_cast<void (*)(int)>(dlsym(RTLD_DEFAULT, "rgds_rumble"));
+    static int last = 0;
+    const int percent = int(level * 100 + .5f);
+    // Each frame while it runs (the bridge re-arms a short effect), once when it stops.
+    if (motor && (percent || last)) motor(percent);
+    last = percent;
+#else
+    (void)level;
+#endif
+}
+
 // The frame in use: a built-in style, or a picture loaded from the frames folder.
 struct FrameChoice {
     std::string name = "off";
@@ -229,9 +259,9 @@ struct FrameChoice {
     PictureFrame picture;
     bool active() const { return style != FrameOff || !picture.px.empty(); }
 };
-FrameChoice choose_frame(const std::string& name, const std::string& folder) {
+FrameChoice choose_frame(const std::string& name, const std::string& folder, const std::string& system) {
     FrameChoice f;
-    int style = parse_frame(name);
+    int style = parse_frame(name, system);
     if (style >= 0) {
         f.style = style;
         f.name = name;
@@ -294,9 +324,39 @@ void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame,
 int parse_fit(const std::string& s) {
     return s == "integer" ? FitInteger : s == "smooth" || s == "fill" ? FitSmooth : FitSharp;
 }
-int parse_second(const std::string& s) { return s == "off" ? SecondOff : s == "swap" ? SecondSwap : SecondCompanion; }
+int parse_second(const std::string& s) {
+    return s == "off" ? SecondOff : s == "swap" ? SecondSwap : s == "info" ? SecondInfo : SecondCompanion;
+}
 const char* fit_name(int f) { return f == FitInteger ? "whole pixels" : f == FitSmooth ? "smooth fill" : "sharp fill"; }
-const char* second_name(int s) { return s == SecondOff ? "off" : s == SecondSwap ? "swapped" : "companion"; }
+const char* second_name(int s) {
+    return s == SecondOff ? "off" : s == SecondSwap ? "swapped" : s == SecondInfo ? "info" : "companion";
+}
+
+// The dock's brightness for the second screen, kept between sessions.
+int read_brightness(const std::string& path) {
+    std::ifstream f(path);
+    std::string line;
+    while (std::getline(f, line))
+        if (line.rfind("brightness=", 0) == 0) return std::atoi(line.c_str() + 11);
+    return 100;
+}
+void write_brightness(const std::string& path, int percent) {
+    std::string error;
+    const std::string text = "brightness=" + std::to_string(percent) + "\n";
+    if (!write_file_atomic(path, std::vector<uint8_t>(text.begin(), text.end()), error))
+        std::fprintf(stderr, "rgds-play: second screen brightness not kept: %s\n", error.c_str());
+}
+
+// The runtime's own triggers beside the control file, as the Anbernic button
+// and the home shortcut write them: ".menu" opens the game switcher, ".home"
+// saves and returns home (runtime/game_menu.py).
+bool ask_runtime(const char* trigger) {
+    const char* control = std::getenv("RGDS_CONTROL_FILE");
+    if (!control || !*control) return false;
+    const std::string text = std::to_string(SDL_GetTicks()) + "\n";
+    std::string error;
+    return write_file_atomic(std::string(control) + trigger, std::vector<uint8_t>(text.begin(), text.end()), error);
+}
 
 // RGDS_PLAY_INPUT: the buttons from each listed frame on.
 std::map<uint64_t, uint32_t> read_inputs(const char* path) {
@@ -323,11 +383,11 @@ bool read_panel(const Panel& p, Canvas& out) {
 } // namespace
 
 // Called by the RG DS bridge (dlsym) when the in-game menu changes the view.
-// fit: 0 sharp, 1 whole pixels, 2 smooth; second: 0 companion, 1 off, 2 swap;
+// fit: 0 sharp, 1 whole pixels, 2 smooth; second: 0 companion, 1 off, 2 swap, 3 info;
 // frame: a built-in style's name or a picture frame's (taken up between frames;
 // a picture that cannot be read is logged and drawn as no frame).
 extern "C" __attribute__((visibility("default"))) int rgds_play_set_graphics(int fit, int second, const char* frame) {
-    if (fit < 0 || fit > 2 || second < 0 || second > 2 || !frame || !*frame || std::strlen(frame) > 64 ||
+    if (fit < 0 || fit > 2 || second < 0 || second > 3 || !frame || !*frame || std::strlen(frame) > 64 ||
         std::strchr(frame, '/') || frame[0] == '.')
         return 0;
     {
@@ -339,10 +399,18 @@ extern "C" __attribute__((visibility("default"))) int rgds_play_set_graphics(int
     return 1;
 }
 
+// Called by the bridge when the in-game menu changes the colours (ui/colour.hpp).
+extern "C" __attribute__((visibility("default"))) int rgds_play_set_color(int palette, int correction) {
+    if (palette < 0 || palette >= play::palette_count() || correction < 0 || correction >= play::correction_count())
+        return 0;
+    wanted_colours = palette * 16 + correction;
+    return 1;
+}
+
 int main(int argc, char** argv) {
     SessionOptions o;
     int fit = FitSharp, second = SecondCompanion;
-    std::string frame_choice = "off", frames_folder;
+    std::string frame_choice = "off", frames_folder, palette_choice = "default", colour_choice = "off";
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
         auto next = [&]() -> std::string { return i + 1 < argc ? argv[++i] : ""; };
@@ -350,11 +418,14 @@ int main(int argc, char** argv) {
         else if (a == "--data") o.data_root = next();
         else if (a == "--profiles") o.profile_dirs.push_back(next());
         else if (a == "--fonts") o.font_dir = next();
+        else if (a == "--preferences") o.preferences = next();
         else if (a == "--save-source") o.save_sources.push_back(next());
         else if (a == "--fit") fit = parse_fit(next());
         else if (a == "--second") second = parse_second(next());
         else if (a == "--frame") frame_choice = next();
         else if (a == "--frames") frames_folder = next();
+        else if (a == "--palette") palette_choice = next();
+        else if (a == "--colour") colour_choice = next();
         else if (a == "--swap") second = SecondSwap;
         else if (a == "--no-companion") second = SecondOff;
         else {
@@ -447,7 +518,10 @@ int main(int argc, char** argv) {
         lower.sharp = upper.sharp;
         lower.companion = upper.companion;
     }
-    FrameChoice frame = choose_frame(frame_choice, frames_folder);
+    FrameChoice frame = choose_frame(frame_choice, frames_folder, session.core().system());
+    Colour colour;
+    colour.set(session.core(), parse_palette(palette_choice), parse_correction(colour_choice));
+    if (session.companion()) session.companion()->set_colour(colour);
     // What the black bar says: the system the game is for.
     const std::string system_label = std::string(session.core().system()) == "gbc"  ? "GAME BOY COLOR"
                                      : std::string(session.core().system()) == "gb" ? "GAME BOY"
@@ -487,7 +561,29 @@ int main(int argc, char** argv) {
     const bool keyboard = !device_pad.active() && !bridged;
 
     Canvas companion(pw, ph);
-    Look look;
+    Look look = session.look();
+    // A game's art on the second screen in the palette the top screen shows it in.
+    auto shade_look = [&]() {
+        const int p = colour.palette();
+        for (int i = 0; i < 4; ++i)
+            look.game_shades[i] =
+                rgb_to_px(std::strcmp(session.core().system(), "gb") == 0 && p > 0 ? gb_palettes[p].shade[i]
+                                                                                   : gb_palettes[0].shade[i]);
+    };
+    shade_look();
+    // The second screen's touches: under RG DS Core the bridge reads the
+    // lower panel (Weston does not deliver it reliably) and sends them as
+    // finger events with touchId -2; on its own the player reads it itself.
+    rgds::TouchDevice panel_touch;
+    const bool panel_touch_open =
+        !bridged && panel_touch.open_device(std::getenv("RGDS_TOUCH_DEV") ? std::getenv("RGDS_TOUCH_DEV") : "");
+    const std::string brightness_file = o.data_root + "/second-screen.ini";
+    if (session.companion()) {
+        session.companion()->dock().set_brightness(read_brightness(brightness_file));
+        session.companion()->dock().brightness_changed();
+        session.companion()->dock().set_twelve_hour(look.twelve_hour);
+    }
+    Uint32 brightness_at = 0;
     uint64_t drawn_key = ~0ull;
     const double frame_seconds = 1.0 / session.frame_rate();
     const char* input_env = std::getenv("RGDS_PLAY_INPUT");
@@ -520,10 +616,18 @@ int main(int argc, char** argv) {
         if (f >= 0 || s >= 0 || !r.empty()) {
             if (f >= 0) fit = f;
             if (s >= 0) second = s;
-            if (!r.empty() && r != frame.name) frame = choose_frame(r, frames_folder);
+            if (!r.empty() && r != frame.name) frame = choose_frame(r, frames_folder, session.core().system());
             drawn_key = ~0ull;
             std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit),
                          second_name(second), frame.name.c_str());
+        }
+        if (int both = wanted_colours.exchange(-1); both >= 0) {
+            const int pal = both / 16, col = both % 16;
+            colour.set(session.core(), pal, col);
+            if (session.companion()) session.companion()->set_colour(colour);
+            shade_look();
+            drawn_key = ~0ull;
+            std::fprintf(stderr, "rgds-play: palette %s, colour %s\n", palette_slug(pal), correction_slug(col));
         }
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
@@ -550,7 +654,48 @@ int main(int argc, char** argv) {
                 quit("Home");
             if (e.type == SDL_CONTROLLERDEVICEADDED && !pad && !device_pad.active())
                 pad = SDL_GameControllerOpen(e.cdevice.which);
+            // The second screen is the touch screen while it shows the companion or the info screen.
+            if (!session.companion() || (second != SecondCompanion && second != SecondInfo)) continue;
+            Touch t;
+            bool have = false;
+            if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERMOTION || e.type == SDL_FINGERUP) {
+                t.kind = e.type == SDL_FINGERDOWN ? Touch::Down : e.type == SDL_FINGERUP ? Touch::Up : Touch::Move;
+                if (e.tfinger.touchId == -2) { // the bridge's reader: the lower panel, 640x480
+                    t.x = int(e.tfinger.x * pw);
+                    t.y = int(e.tfinger.y * ph);
+                    have = true;
+                } else if (lower.window && e.tfinger.windowID == SDL_GetWindowID(lower.window)) {
+                    int ww = 0, wh = 0;
+                    SDL_GetWindowSize(lower.window, &ww, &wh);
+                    t.x = (int(e.tfinger.x * ww) - lower.area.x) * pw / std::max(1, lower.area.w);
+                    t.y = (int(e.tfinger.y * wh) - lower.area.y) * ph / std::max(1, lower.area.h);
+                    have = true;
+                }
+            } else if ((e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP ||
+                        (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK))) &&
+                       e.button.which != SDL_TOUCH_MOUSEID && lower.window &&
+                       e.button.windowID == SDL_GetWindowID(lower.window)) {
+                // A desktop: the mouse stands in for a finger.
+                const int mx = e.type == SDL_MOUSEMOTION ? e.motion.x : e.button.x,
+                          my = e.type == SDL_MOUSEMOTION ? e.motion.y : e.button.y;
+                t.kind = e.type == SDL_MOUSEBUTTONDOWN ? Touch::Down
+                         : e.type == SDL_MOUSEBUTTONUP ? Touch::Up
+                                                       : Touch::Move;
+                t.x = (mx - lower.area.x) * pw / std::max(1, lower.area.w);
+                t.y = (my - lower.area.y) * ph / std::max(1, lower.area.h);
+                have = t.y >= 0 && t.y < ph;
+            }
+            if (have && session.companion()->touch(t)) drawn_key = ~0ull;
         }
+        if (panel_touch_open && session.companion() && (second == SecondCompanion || second == SecondInfo))
+            for (const auto& point : panel_touch.poll())
+                if (point.kind < 3) {
+                    Touch t{point.kind == 0   ? Touch::Down
+                            : point.kind == 1 ? Touch::Move
+                                              : Touch::Up,
+                            point.x, point.y};
+                    if (session.companion()->touch(t)) drawn_key = ~0ull;
+                }
         uint32_t buttons = (keyboard ? keyboard_buttons(SDL_GetKeyboardState(nullptr)) : 0) | controller_buttons(pad);
         if (device_pad.active()) {
             bool home = false;
@@ -579,7 +724,10 @@ int main(int argc, char** argv) {
                 auto it = inputs.upper_bound(session.frames());
                 pressed = it == inputs.begin() ? 0 : std::prev(it)->second;
             }
+            // Off or the info screen: the game keeps its whole picture, HUD and all.
+            if (session.companion()) session.companion()->set_shown(second == SecondCompanion || second == SecondSwap);
             session.frame(pressed);
+            rumble(session.core().rumble());
             owed -= frame_seconds;
             // A game can change its sound resolution (and so its rate) while it runs.
             if (stream && session.audio_rate() != stream_rate) {
@@ -625,6 +773,28 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "rgds-play: game window on display %d, second window on display %d\n",
                          SDL_GetWindowDisplayIndex(upper.window), SDL_GetWindowDisplayIndex(lower.window));
 
+        if (Companion* c = session.companion()) {
+            Dock& dock = c->dock();
+            c->set_time(SDL_GetTicks());
+            dock.set_full(second == SecondInfo);
+            dock.set_reachable(second != SecondSwap);
+            switch (dock.take_action()) {
+            case Dock::Action::Switcher:
+                // On its own the player has no other games to switch to.
+                if (!bridged || !ask_runtime(".menu")) dock.report("Not available");
+                break;
+            case Dock::Action::Home:
+                // The runtime saves first, as the menu's Return home does; on its own the player saves on quitting.
+                if (!bridged || !ask_runtime(".home")) quit("Return home on the second screen");
+                break;
+            case Dock::Action::None: break;
+            }
+            if (dock.brightness_changed()) brightness_at = SDL_GetTicks() | 1;
+            if (brightness_at && SDL_GetTicks() - brightness_at > 800) {
+                write_brightness(brightness_file, dock.brightness());
+                brightness_at = 0;
+            }
+        }
         Panel& game_panel = second == SecondSwap ? lower : upper;
         bool companion_new = false;
         if (second != SecondOff &&
@@ -645,7 +815,7 @@ int main(int argc, char** argv) {
             for (Panel* p : {&upper, &lower}) {
                 if (p != window && !one_window) continue;
                 if (p == &game_panel)
-                    draw_game(*p, session.game(shader_live()), fit, frame, session.font(), system_label);
+                    draw_game(*p, colour.apply(session.game(shader_live())), fit, frame, session.font(), system_label);
                 else if (second != SecondOff) {
                     if (companion_new) SDL_UpdateTexture(p->companion, nullptr, companion.data(), pw * 4);
                     SDL_RenderCopy(p->renderer, p->companion, nullptr, &p->area);

@@ -112,7 +112,7 @@ class MenuSoundUITests(unittest.TestCase):
     def test_touch_enables_persists_volume_and_controller_disables(self):
         entry = ('--settings', '--section', 'sound')
         r = self.run_ui(
-            '100 click 180 390\n220 click 180 129\n350 key Down\n450 key Right\n', 'menu_sounds=0\n', entry=entry
+            '100 click 180 327\n220 click 180 129\n350 key Down\n450 key Right\n', 'menu_sounds=0\n', entry=entry
         )
         self.assertTrue(r['menu_sounds'])
         self.assertEqual(r['sound_volume'], 60)

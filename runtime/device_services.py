@@ -463,6 +463,9 @@ class Services:
             systems = []
             if read_fields(self.data / 'ui.ini').get('show_systems') == '1' and not independent():
                 systems = system_roots(self.data.parent)
+                # PortMaster's ports, so a computer can bring a port's game files in its own file manager.
+                from portmaster import Folders, installed
+                if installed(): systems.append(('ports', Folders().ports))
             Sharing(self.data, self.app).start(self.fields['ip'], roots, guest=guest, systems=systems)
         else:
             Sharing(self.data, self.app).stop()

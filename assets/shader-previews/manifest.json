@@ -198,6 +198,18 @@
           "rgba_sha256": "0aeda64482d5cfb379435df7f2dc09899a9620f492ecf380e0ef7e90780a9737",
           "sha256": "15a5e8472e0167c0649bfe3cd6448faa58f818c4b5a0909c850e1c644dde7584",
           "bytes": 60292
+        },
+        {
+          "id": 31,
+          "rgba_sha256": "db9fecc794fd1aebe8a61e247ac9bf1d9a8253b3d768fec626bb7d6b929592ed",
+          "sha256": "a39875003696f64e31397befb02abc1d46f12db8eae221edcc90c19165ca074e",
+          "bytes": 123692
+        },
+        {
+          "id": 32,
+          "rgba_sha256": "ee7f2cd5fadea78dc3e82702f9e665a6414460dba4d9e60a44a31be3ebb12072",
+          "sha256": "6b9373e93b984b609238af8d0b09b5b371ecf1869752ec01e564c598b08d1253",
+          "bytes": 59292
         }
       ]
     },
@@ -390,6 +402,18 @@
           "rgba_sha256": "2381252a9d8ea57e1eebaf210db5dfe61731b16f8bbe3ad1d3a862e99feb79e8",
           "sha256": "de35cf4544087c62f3097ae4da6b2834948e6de3449defbd59b9f5922d255331",
           "bytes": 70492
+        },
+        {
+          "id": 31,
+          "rgba_sha256": "6f9ab879848e598e4da4b0c3dad61848226e2bf0bc964521b367f192aaab7c6d",
+          "sha256": "198a34450b7ae14705e29e3631f34b3be688cb1f930765635fa13c8df7bdbe11",
+          "bytes": 150292
+        },
+        {
+          "id": 32,
+          "rgba_sha256": "54bcae9286d4e07395dfb3440fb6930a1aeec291580dffdebc06ce7c0ad1caf1",
+          "sha256": "4d659d5e56b4784df3b517657ef4c90d86a083e8d23956965b24c3031918a6e6",
+          "bytes": 71292
         }
       ]
     },
@@ -582,6 +606,18 @@
           "rgba_sha256": "821326e867f1d133081c185c19cbabb77ac551ea3e643fa4de75845b07d6fcf3",
           "sha256": "9e0a1aa5264b6287a6854372942dbb59c65132cab1c2cbeb375f8be4cc8ca34b",
           "bytes": 64592
+        },
+        {
+          "id": 31,
+          "rgba_sha256": "f67f9d5604186495f7bff6d2f732e8bb2ea694599d5e2a3ceab604c77a059ba3",
+          "sha256": "5b9d8357bc14e96c9f6257891544fea944cc4f686bdd92acfca422b1c3fba6cc",
+          "bytes": 119592
+        },
+        {
+          "id": 32,
+          "rgba_sha256": "69daab1336fd6c8e719c1bbf23fba315cbf579b948db30c8be9d1c6b1ffda230",
+          "sha256": "a7671fcadf025dfc731f3c8b4215403fb4b170ace7d0848d9fba04ec989420b9",
+          "bytes": 64592
         }
       ]
     }
@@ -592,8 +628,10 @@
     "cool_crisp.dsd": "2d6fdab51875e932dbf59a4e3d2aa32d9d4929da863da63cad2508f619793475",
     "ds_classic.dsd": "25dfe027036ab9edca0731c0fafabf65802adfd76982eda54dab23ee029eb7d4",
     "ds_lite.dsd": "a5a2781d22c523fee5e60388b577921f4f213e5ce1689e663bfd158c99830162",
+    "gb_screen.dsd": "8a93033172903d1c46b0e3f512daae31b123f81f7cf6af763aecb5911f87c283",
     "gba_color.dsd": "62d040b9469f212b5f752714f54507b86b2a892af0dc5751e08a1a7399771937",
     "gba_screen.dsd": "a53e4b11c59eaccdb3be151eeeb07dca66d277889474e83c0fb8296f9fad171a",
+    "gbc_screen.dsd": "557f6cb5745ab306210fa4a2b2477bfb7f50590dba50957750621caa3755c5f8",
     "glossy_tiles.dsd": "033b7951b50a38aa4eb0670ce19a56a4d6575e4ee1499761040ee2b55779b5ed",
     "lcd1x+natural_vision.dsd": "356d096cc2ff66cb4f54a38fb91e8e0a6067d71e3fd21099f6e7e664ed4778d0",
     "lcd1x+nds_color+natural_vision.dsd": "0b0e9c93f36c67a8ff6d25beea48909d61dc91515e7ca8800da7f476b202ffd8",
@@ -624,7 +662,7 @@
     "renderer": "Google SwiftShader",
     "version": "OpenGL ES 3.0 SwiftShader 4.6.6.6"
   },
-  "pipeline_sha256": "d5f19edad4b404805f8f41fbbfe5908941b0ac94c715b032e57ffd17495abde7",
-  "packed_bytes": 6531956,
-  "uncompressed_rgba_bytes": 114278400
+  "pipeline_sha256": "5d3344322272f0f286c44d8fef532b8783683f945f44f1cb788f9107836ccabd",
+  "packed_bytes": 7120708,
+  "uncompressed_rgba_bytes": 121651200
 }

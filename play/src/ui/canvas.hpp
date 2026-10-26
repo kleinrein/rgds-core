@@ -52,15 +52,39 @@ private:
     std::vector<uint32_t> px_;
 };
 
-// RGF1 atlases from assets/fonts (tools/bake_font.py), drawn in software.
+// Text drawn on a canvas, for tools that check a screen's layout (the
+// companion lint): where each string went, at what size, in what ink, over
+// what ground. Font::draw adds one while a log is set.
+struct TextMark {
+    int x = 0, y = 0, w = 0, h = 0; // the line box: from the ascent to the baseline plus a fifth
+    int size = 0, asked = 0;        // the size drawn and the size the caller asked for
+    Rgb ink, ground;                // the ground: the canvas's mean colour under the box before
+    std::string text;
+};
+void set_text_log(std::vector<TextMark>* log);
+
+// The launcher's rounded font (RGF1 atlases from assets/fonts, tools/bake_font.py)
+// or, with set_pixel, its Pixel classic 5x7 dots. Text is drawn only at the
+// sizes the atlases are baked at, one texel a pixel, so it is as crisp as the
+// launcher's: a size in between is drawn at the nearest one (text_sizes).
+// Pixel classic draws the dots at the launcher's whole scales for those sizes.
+inline constexpr int text_sizes[] = {16, 20, 24, 28, 36};
 class Font {
 public:
-    bool load(const std::string& directory);
+    // The five Latin atlases; `language` ("ja-JP") orders the CJK families tried.
+    bool load(const std::string& directory, const std::string& language = "en-US");
     bool loaded() const { return !atlases_.empty(); }
+    void set_pixel(bool pixel) { pixel_ = pixel; }
+    bool pixel() const { return pixel_; }
+    // The size text of `size` is really drawn at.
+    static int snap(int size);
     int measure(const std::string& text, int size) const;
     // Baseline at y; returns the advance.
     int draw(Canvas& c, int x, int y, const std::string& text, int size, Rgb color, int alpha = 255) const;
+    // Height of capitals and digits above the baseline.
     int ascent(int size) const;
+    // The baseline that centres capitals and digits on cy.
+    int centred(int size, int cy) const { return cy + ascent(size) / 2; }
     // Shortens with an ellipsis to fit max_width.
     std::string fit(const std::string& text, int size, int max_width) const;
 
@@ -73,8 +97,21 @@ private:
         std::map<unsigned, Glyph> glyphs;
         std::vector<uint8_t> alpha;
     };
+    struct Found {
+        const Atlas* atlas = nullptr;
+        const Glyph* glyph = nullptr;
+    };
     const Atlas* pick(int size) const;
+    Found find(int size, unsigned cp) const;
+    static bool read_atlas(const std::string& path, Atlas& a, int size);
+    int measure_rounded(const std::string& text, int size) const;
+    int draw_rounded(Canvas& c, int x, int y, const std::string& text, int size, Rgb color, int alpha) const;
+    int draw_dots(Canvas& c, int x, int y, const std::string& text, int size, Rgb color, int alpha) const;
     std::map<int, Atlas> atlases_;
+    mutable std::map<std::pair<std::string, int>, Atlas> extras_; // CJK families, loaded on first use
+    std::string directory_;
+    std::vector<std::string> families_;
+    bool pixel_ = false;
 };
 
 std::vector<unsigned> utf8_codepoints(const std::string& s);

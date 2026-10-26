@@ -7,7 +7,11 @@
 #include "companion/party_gb.hpp"
 #include "companion/profile.hpp"
 #include "companion/view.hpp"
+#include "companion/dock.hpp"
+#include "ui/kit.hpp"
 #include "ui/canvas.hpp"
+#include "ui/colour.hpp"
+#include "ui/gb_palettes.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -264,7 +268,7 @@ void test_companion_scheduling() {
 
     Canvas out(640, 480);
     Font font;
-    c.render(out, Look{}, font);
+    c.render(out, Look{}, font, Words{});
     CHECK(out.at(2, 2) == rgb_to_px(0x29007B)); // edge to edge on the map's colour
 }
 
@@ -461,6 +465,27 @@ void test_game_boy() {
     CHECK(read_saga1(ffl, 0xCC00, team, key) && team.size() == 2);
     CHECK(team[0].name == "Ba90" && team[0].detail == "Human" && team[0].hp == 60 && team[0].level == 0);
     CHECK(team[1].name == "A" && team[1].detail == "Monster" && team[1].max_hp == 300);
+
+    // Dragon Warrior Monsters: the first and second places filled, the third
+    // empty (FF), species names from a list that ends each with F0.
+    GbMemory dwm;
+    std::vector<uint8_t> slib(0x95, 0);
+    slib[1] = 0x36, slib[2] = 0x49, slib[3] = 0x46, slib[4] = 0x3F, slib[5] = 0xF0; // "Slib"
+    slib[9] = 1, slib[0x4B] = 7, slib[0x50] = 22, slib[0x52] = 30, slib[0x54] = 4, slib[0x56] = 12;
+    for (uint32_t i = 0; i < 0x95; ++i) {
+        dwm.bytes[0xCAC1 + i] = slib[i];
+        dwm.bytes[0xCAC1 + 0x95 + i] = slib[i];
+    }
+    dwm.put(0xC8C4, {0, 1, 0xFF});
+    // "Ab" then "Cd": species 1 is the second name
+    dwm.put(banked(0x41, 0x5B1F), {0x24, 0x3F, 0xF0, 0x26, 0x41, 0xF0});
+    CHECK(read_dwm1(dwm, 0xCAC1, 0xC8C4, banked(0x41, 0x5B1F), team, key) && team.size() == 2);
+    CHECK(team[0].name == "Slib" && team[0].detail == "Cd" && team[0].level == 7 && team[0].hp == 22 &&
+          team[0].max_pp == 12);
+    dwm.put(0xC8C5, {0xFF}); // the second place emptied
+    CHECK(read_dwm1(dwm, 0xCAC1, 0xC8C4, 0, team, key) && team.size() == 1 && team[0].detail.empty());
+    dwm.put(0xCAC1 + 0x50, {31}); // more HP than its most: being written
+    CHECK(!read_dwm1(dwm, 0xCAC1, 0xC8C4, 0, team, key));
 }
 
 void test_hud_strip() {
@@ -476,9 +501,9 @@ void test_hud_strip() {
     Canvas out(640, 480);
     Look look;
     Font font;
-    companion.render(out, look, font);
-    // The band's own colour across the bottom of the second screen.
-    CHECK(out.at(320, 470) == (game.picture().at(0, 159) | 0xFF000000u));
+    companion.render(out, look, font, Words{});
+    // The band's own colour in its card at the bottom of the second screen.
+    CHECK(out.at(320, 480 - 24 - 4) == (game.picture().at(0, 159) | 0xFF000000u));
     uint64_t key = companion.visual_key();
     game.run_frame(0);
     companion.after_frame(game);
@@ -487,6 +512,81 @@ void test_hud_strip() {
     game.run_frame(0);
     companion.after_frame(game);
     CHECK(companion.compose_game(game.picture()).h == 160 && !companion.status().showing_hud);
+}
+
+void test_gb_views() {
+    std::string e;
+    // A status board: BCD numbers and a count of set bits, read live.
+    Profile p = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = gb\n[view]\nformat = board\n"
+                         "on = mem8[A8C3] == 03\ncovers_hud = yes\ntile1 = Coins | bcd A97A 2\n"
+                         "tile2 = Treasures | bits A80E 2 wide of 15\n");
+    auto board = make_view(p.view, e);
+    CHECK(board != nullptr && board->covers_hud());
+    GbMemory mem;
+    mem.put(0xA8C3, {3});
+    mem.put(0xA97A, {0x01, 0x23});
+    mem.put(0xA80E, {0x06, 0x01});
+    board->update(mem, 0);
+    CHECK(board->shown());
+    uint64_t before = board->key(0);
+    mem.put(0xA97B, {0x24});
+    board->update(mem, 15);
+    CHECK(board->key(15) != before);
+    Canvas out(640, 480);
+    Look look;
+    Font font;
+    board->draw(out, look, font, 0);
+    mem.put(0xA8C3, {1}); // the map: not shown
+    board->update(mem, 30);
+    CHECK(!board->shown());
+    ViewSpec bad = p.view;
+    bad.values["tile3"] = "Lives | hex A809 1";
+    CHECK(make_view(bad, e) == nullptr && e.find("tile3") != std::string::npos);
+
+    // A generation 1 battle: Pikachu against a Pidgey, while D057 says so.
+    Profile b = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = gb\n[view]\nformat = pokemon_battle\n"
+                         "on = mem8[D057] == 01 | 02\ngeneration = 1\nplayer = D014\nplayer_name = D009\n"
+                         "enemy = CFE5\nenemy_name = CFDA\nmove_names = 2C:4000\nmoves = 0E:4000\n"
+                         "type_names = 09:7DAE\ndex_order = 10:5024\n");
+    auto battle = make_view(b.view, e);
+    CHECK(battle != nullptr);
+    if (!battle) return;
+    GbMemory gb;
+    std::vector<uint8_t> you(29, 0), them(29, 0);
+    you[0] = 0x54, you[2] = 21, you[5] = you[6] = 0x17, you[8] = 0x54, you[14] = 12, you[16] = 35, you[25] = 0x40 | 28;
+    them[0] = 0x24, them[2] = 6, them[14] = 5, them[16] = 20;
+    gb.bytes[banked(0x10, 0x5024 + 0x53)] = 25; // internal numbers to the Pokédex's
+    gb.bytes[banked(0x10, 0x5024 + 0x23)] = 16;
+    for (uint32_t i = 0; i < 29; ++i) {
+        gb.bytes[banked(6, 0xD014 + i)] = you[i]; // D000-DFFF: the mapped work RAM bank
+        gb.bytes[0xCFE5 + i] = them[i];
+    }
+    gb.put(banked(6, 0xD009), {0x8F, 0x88, 0x8A, 0x80, 0x82, 0x87, 0x94, 0x50});
+    gb.put(0xCFDA, {0x8F, 0x88, 0x83, 0x86, 0x84, 0x98, 0x50});
+    battle->update(gb, 0);
+    CHECK(!battle->shown()); // no battle on
+    gb.put(banked(6, 0xD057), {1});
+    battle->update(gb, 15);
+    CHECK(battle->shown());
+    battle->draw(out, look, font, 0);
+    gb.put(0xCFE5 + 1, {0x00, 0x30}); // more HP than its most: being written
+    battle->update(gb, 30);
+    CHECK(!battle->shown());
+
+    // [map.<name>]: another capture while its `when` holds, else [map].
+    Profile m = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = gb\n[map]\nopen = SELECT:4\n"
+                         "ready = mem8[DB95] == 07\n[map.dungeon]\nwhen = mem8[DBA5] == 01\nopen = START:4\n"
+                         "ready = mem8[DB95] == 0C\ncrop = 72 36 88 108\n");
+    CHECK(m.alt_maps.size() == 1 && m.alt_maps[0].crop.w == 88);
+    GbMemory world;
+    CHECK(&m.map_for(world) == &m.map);
+    world.put(banked(6, 0xDBA5), {1});
+    CHECK(&m.map_for(world) == &m.alt_maps[0]);
+    Profile bad_map;
+    CHECK(!parse_profile("[game]\ntitle = x\ncodes = AB\n[map]\nopen = A:4\nready = mem8[C000] == 1\n"
+                         "[map.x]\nopen = B:4\nready = mem8[C000] == 2\n",
+                         "x.ini", bad_map, e) &&
+          e.find("when") != std::string::npos);
 }
 
 void test_shipped_gb_profiles() {
@@ -500,14 +600,179 @@ void test_shipped_gb_profiles() {
     CHECK(lib.find("gb", "METROID2") && lib.find("gb", "METROID2")->has_view);
     std::string e;
     CHECK(make_view(lib.find("gb", "METROID2")->view, e) != nullptr);
+    // Every shipped view builds (the boards and the battles too).
+    for (const char* code :
+         {"POKEMON_BLUE", "POKEMON_YELLOW", "BYTE", "AAUE", "AAXE", "SUPERMARIOLAND3", "WARIOLAND2"}) {
+        const Profile* p = lib.find("gb", code);
+        CHECK(p && p->has_view && make_view(p->view, e) != nullptr);
+        if (!p || !make_view(p->view, e)) std::fprintf(stderr, "%s: %s\n", code, e.c_str());
+    }
+    CHECK(lib.find("gb", "AZLE")->alt_maps.size() == 2 && lib.find("gb", "GOLF")->has_map);
+    CHECK(lib.find("gbc", "AWQE") && lib.find("gbc", "AWQE")->party.format == "dwm1");
+    CHECK(lib.find("gbc", "AZ8P")->has_map && lib.find("gb", "AW8A")->room.size() == 4);
     CHECK(lib.find("gba", "BYTE") == nullptr);
 }
 
+void test_colour() {
+    // Four greys the way the emulator draws a Game Boy game, one colourful pixel (not an original Game Boy picture).
+    const uint32_t greys[4] = {rgb_to_px(0xF8F8F8), rgb_to_px(0xA8A8A8), rgb_to_px(0x505050), rgb_to_px(0x000000)};
+    std::vector<uint32_t> pixels = {greys[0], greys[1], greys[2], greys[3], rgb_to_px(0xC03020)};
+    Picture in{pixels.data(), 5, 1, 5};
+    Colour colour;
+    colour.set("gb", false, parse_palette("greys"), 0); // black and white: the same picture comes back
+    CHECK(!colour.active() && colour.apply(in).px == in.px);
+    colour.set("gb", false, 0, 0); // the default is the first Game Boy's screen
+    CHECK(std::string(palette_slug(0)) == "dmg");
+    Picture out = colour.apply(in);
+    CHECK(colour.active() && out.px != in.px && out.w == 5);
+    for (int i = 0; i < 4; ++i) CHECK(px_to_rgb(out.at(i, 0)) == gb_palettes[0].shade[i]);
+    CHECK(out.at(4, 0) == in.at(4, 0)); // not grey: kept
+    CHECK(pixels[0] == greys[0]);       // the source is never written
+    colour.set("gb", false, parse_palette("pocket"), 0);
+    CHECK(px_to_rgb(colour.apply(in).at(1, 0)) == gb_palettes[1].shade[1]);
+    // Old slugs (and unknown ones) are the default screen.
+    CHECK(parse_palette("bright") == 0 && parse_palette("default") == 0 && parse_palette("nonsense") == 0);
+    // The Game Boy Color's colours for an original game: the core draws them, then the GBC screen corrects.
+    colour.set("gb", false, parse_palette("color"), parse_correction("vivid"));
+    CHECK(colour.active() && px_to_rgb(colour.apply(in).at(3, 0)) == 0x000000);
+    // A game that runs on the Game Boy Color takes the correction whatever its file says; the GBA nothing.
+    colour.set("gb", true, 0, parse_correction("vivid"));
+    CHECK(!colour.active());
+    colour.set("gbc", false, 0, parse_correction("vivid"));
+    CHECK(!colour.active());
+    colour.set("gba", false, 1, 0);
+    CHECK(!colour.active());
+    colour.set("gbc", false, 0, 0); // the default is the Game Boy Color's own screen
+    out = colour.apply(in);
+    CHECK(colour.active());
+    CHECK(px_to_rgb(out.at(3, 0)) == 0x000000); // black stays black
+    CHECK(px_to_rgb(out.at(0, 0)) >= 0xF0F0F0); // near white stays near white
+    const Rgb red = Rgb::from_px(out.at(4, 0)); // 0xC03020 is a saturated red: blue gains, red loses
+    CHECK(red.r < 0xC0 && red.b > 0x20);
+    colour.set("gb", true, 0, 0); // a .gb made for both handhelds, on the colour one
+    CHECK(colour.active() && Rgb::from_px(colour.apply(in).at(4, 0)).r == red.r);
+    // The picture is the colour's own buffer: read it before applying again.
+    const int plain = Rgb::from_px(out.at(1, 0)).r;
+    colour.set("gbc", false, 0, parse_correction("gbc-dim"));
+    CHECK(Rgb::from_px(colour.apply(in).at(1, 0)).r < plain); // dimmer than plain
+    CHECK(parse_correction("off") == 0 && parse_correction("nonsense") == 0);
+    CHECK(std::string(palette_slug(99)) == palette_slug(palette_count() - 1));
+}
+
+void test_second_screen() {
+    // Off (or the info screen), the game keeps its whole picture: no band is cut away.
+    Profile p = parse_ok("[game]\ntitle = T\ncodes = AB\n[hud]\non = mem8[02000000] == 1\nstrip = 0 144 240 16\n");
+    FakeGame game;
+    Companion companion(game, &p, "T", "GAME BOY");
+    game.run_frame(0);
+    companion.after_frame(game);
+    CHECK(companion.compose_game(game.picture()).h == 144);
+    companion.set_shown(false);
+    game.run_frame(0);
+    companion.after_frame(game);
+    CHECK(companion.compose_game(game.picture()).h == 160 && !companion.status().showing_hud);
+    companion.set_shown(true);
+    game.run_frame(0);
+    companion.after_frame(game);
+    CHECK(companion.compose_game(game.picture()).h == 144);
+
+    // Text is drawn at the baked sizes only.
+    CHECK(Font::snap(16) == 16 && Font::snap(17) == 16 && Font::snap(26) == 24 && Font::snap(48) == 36);
+    // The launcher's own theme, accent and high contrast.
+    const Look light = make_look(false, -1, false), dark = make_look(true, -1, false);
+    CHECK(light.background.r == 242 && light.background.g == 245 && dark.background.r == 12);
+    CHECK(make_look(false, 9, false).accent.g > make_look(false, 9, false).accent.r); // sea green
+    CHECK(contrast(make_look(true, 5, true).ink, make_look(true, 5, true).background) >= 7);
+
+    // A board's pages are tabs, chosen by touch.
+    std::string e;
+    Profile b =
+        parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = gb\n[view]\nformat = board\nheading = H\n"
+                 "tile1 = Coins | bcd A97A 2 icon coin page One\ntile2 = Lives | num A809 1 icon life page Two\n"
+                 "tile3 = Ending | bcd A805 3 wide tiers icon trophy\ntiers3 = 300 Birdhouse; 10072 Tree trunk\n");
+    auto board = make_view(b.view, e);
+    CHECK(board != nullptr);
+    if (!board) return;
+    GbMemory mem;
+    mem.put(0xA805, {0x00, 0x30, 0x00});
+    board->update(mem, 0);
+    Canvas out(640, 480);
+    Font font;
+    CHECK(font.load(PLAY_FONTS));
+    std::vector<Box> targets;
+    set_target_log(&targets);
+    board->draw(out, light, font, 0);
+    set_target_log(nullptr);
+    CHECK(targets.size() == 2 && targets[1].w >= kit::touch && targets[1].h >= kit::touch);
+    const uint64_t first = board->key(0);
+    CHECK(!targets.empty() && board->touch({Touch::Down, targets.back().x + 4, targets.back().y + 4}));
+    CHECK(board->key(0) != first);
+    CHECK(!board->touch({Touch::Down, 5, 470})); // not on a tab
+    // Wrong words are refused with the tile's name.
+    ViewSpec bad = b.view;
+    bad.values["tile4"] = "Keys | bits A80B 1 icon nonesuch";
+    CHECK(make_view(bad, e) == nullptr && e.find("tile4") != std::string::npos);
+
+    // The dock: the switcher on a tap, Return home only when held, screen off and back on a touch.
+    Dock dock("T", "GAME BOY");
+    dock.set_full(true);
+    const Box switcher = dock.box(Dock::Item::Switcher, 640, 480), home = dock.box(Dock::Item::Home, 640, 480),
+              off = dock.box(Dock::Item::Off, 640, 480);
+    dock.set_time(100);
+    CHECK(dock.touch({Touch::Down, home.x + 10, home.y + 10}));
+    dock.set_time(600);
+    CHECK(dock.take_action() == Dock::Action::None); // not yet
+    dock.set_time(1150);
+    CHECK(dock.take_action() == Dock::Action::Home);
+    dock.touch({Touch::Up, home.x + 10, home.y + 10});
+    dock.set_time(2000);
+    dock.touch({Touch::Down, home.x + 10, home.y + 10});
+    dock.set_time(2100);
+    dock.touch({Touch::Up, home.x + 10, home.y + 10}); // a tap: not home
+    dock.set_time(4000);
+    CHECK(dock.take_action() == Dock::Action::None);
+    dock.touch({Touch::Down, switcher.x + 10, switcher.y + 10});
+    dock.touch({Touch::Up, switcher.x + 10, switcher.y + 10});
+    CHECK(dock.take_action() == Dock::Action::Switcher);
+    dock.touch({Touch::Down, switcher.x + 10, switcher.y + 10});
+    dock.touch({Touch::Move, off.x + 10, off.y + 10});
+    dock.touch({Touch::Up, off.x + 10, off.y + 10}); // slid off: nothing, and not the screen off either
+    CHECK(dock.take_action() == Dock::Action::None);
+    dock.touch({Touch::Down, off.x + 10, off.y + 10});
+    dock.touch({Touch::Up, off.x + 10, off.y + 10});
+    CHECK(dock.screen_off());
+    dock.touch({Touch::Down, home.x + 10, home.y + 10}); // wakes, and does nothing else
+    dock.set_time(6000);
+    CHECK(!dock.screen_off() && dock.take_action() == Dock::Action::None);
+    // Over the companion only the corner button takes a touch while closed.
+    Dock corner("T", "GAME BOY");
+    corner.set_time(10);
+    CHECK(!corner.touch({Touch::Down, 100, 100}) && !corner.open());
+    const Box button = corner.box(Dock::Item::Button, 640, 480);
+    CHECK(corner.touch({Touch::Down, button.x + 5, button.y + 5}) && corner.open());
+
+    // An alternative board waits behind the switch while another view shows.
+    Profile alt =
+        parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = gb\n[view.main]\nformat = board\n"
+                 "on = mem8[A8C3] == 03\ntile1 = Coins | bcd A97A 2 icon coin\n[view.status]\nformat = board\n"
+                 "alternative = yes\non = mem8[A8C3] == 03\ntile1 = Lives | num A809 1 icon life\n");
+    CHECK(alt.views.size() == 2 && alt.views[1].name == "status");
+    GbMemory live;
+    live.put(0xA8C3, {3});
+    Companion c(live, &alt, "T", "GAME BOY");
+    for (int i = 0; i < 15; ++i) c.after_frame(live); // boards read every 15 frames
+    CHECK(c.has_switch() && !c.showing_alternative());
+    CHECK(c.touch({Touch::Down, 640 - kit::margin - 20, kit::margin + 20}) && c.showing_alternative());
+}
+
 int main() {
+    test_second_screen();
+    test_colour();
     test_parsing();
     test_shipped_profiles();
     test_game_boy();
     test_hud_strip();
+    test_gb_views();
     test_shipped_gb_profiles();
     test_capture();
     test_companion_scheduling();

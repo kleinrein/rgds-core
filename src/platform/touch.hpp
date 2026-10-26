@@ -293,6 +293,14 @@ public:
         }
         return true;
     }
+    // Exclusive use of the panel (EVIOCGRAB): Weston and other readers stop seeing it.
+    bool grab() {
+#ifdef __linux__
+        return fd >= 0 && ioctl(fd, EVIOCGRAB, 1) == 0;
+#else
+        return false;
+#endif
+    }
     void close_device() {
         if (fd >= 0) ::close(fd);
         fd = -1;
