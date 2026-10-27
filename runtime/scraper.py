@@ -219,6 +219,12 @@ def image_to_bmp(content, path):
     """Use the installed SDL_image decoder; never ship another device display library."""
     sdl_name = os.environ.get("RGDS_SDL_LIBRARY") or ctypes.util.find_library("SDL2")
     image_name = ctypes.util.find_library("SDL2_image")
+    if not sdl_name:  # find_library needs ldconfig or gcc, which the device images do not ship
+        for candidate in ("/usr/lib/libSDL2-2.0.so.0", "/usr/lib/aarch64-linux-gnu/libSDL2-2.0.so.0",
+                          "/opt/homebrew/lib/libSDL2.dylib"):
+            if Path(candidate).exists():
+                sdl_name = candidate
+                break
     if not image_name:
         for candidate in ("/usr/lib/libSDL2_image-2.0.so.0", "/opt/homebrew/lib/libSDL2_image.dylib"):
             if Path(candidate).exists():

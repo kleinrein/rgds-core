@@ -73,8 +73,8 @@ int main(int argc,char**argv){
         for core in range(count):
             with self.subTest(core=core):
                 self.save(core)
-                # NNDDSS (2) is retired: a stored choice of it reads back as DSCore (4).
-                self.assertEqual(self.read(), f'{4 if core == 2 else core} 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
+                # NNDDSS (2) and melonDS (3) are retired: a stored choice of either reads back as DSCore (4).
+                self.assertEqual(self.read(), f'{4 if core in (2, 3) else core} 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
 
     def test_unknown_or_invalid_engine_does_not_reset_unrelated_preferences(self):
         for value in ('5', '99', '-1', '', 'x', '4extra', '4294967296', '999999999999999999999', ' 4'):

@@ -8,7 +8,8 @@ update: control.txt (as the CFW variants have), mod_Buildroot.txt (the stock
 card reports CFW_NAME=Buildroot) and our pad's controller line.
 
 Everything lives in one folder on the games card, outside rgds/, so updates,
-rollbacks and uninstalling RG DS Core never touch it:
+rollbacks and uninstalling RG DS Core never touch it (on RG DS OS, /data/portmaster
+on the card's data partition instead):
 
     /mnt/mmc/portmaster/PortMaster   the control folder (XDG_DATA_HOME/PortMaster)
     /mnt/mmc/portmaster/ports        port scripts and game folders
@@ -33,7 +34,13 @@ import zipfile
 sys.dont_write_bytecode = True
 from fields import read_fields, write_fields
 
-ROOT = Path(os.environ.get('RGDS_PORTMASTER_ROOT', '/mnt/mmc/portmaster'))
+
+def default_root():
+    from linux_platform import rgds_os
+    return Path('/data/portmaster') if rgds_os() else Path('/mnt/mmc/portmaster')
+
+
+ROOT = Path(os.environ.get('RGDS_PORTMASTER_ROOT') or default_root())
 RELEASE = 'https://api.github.com/repos/PortsMaster/PortMaster-GUI/releases/latest'
 CORE = 'portmaster'
 ENTRY = 'PortMaster.sh'  # the PortMaster entry in Ports (runtime/portmaster_files/entry)
@@ -44,6 +51,20 @@ PAD = (
     'leftstick:b9,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpleft:h0.8,dpdown:h0.4,'
     'dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b10,righttrigger:b11,platform:Linux,'
 )
+# RG DS OS (BananaLinux's kernel): ROCKNIX's joypad driver, mainline BTN_* codes, in SDL's order South, East, North,
+# West, L1, R1, L2, R2, Select, Start, Mode, L3, R3, then the D-pad (src/platform/mainline_controls.hpp). Labelled A
+# is East, as the launcher maps it; the Home key is a separate device, so guide is the F key (BTN_MODE).
+RGDS_OS_PAD = (
+    '19009b4d4b4800000111000000010000,retrogame_joypad,a:b1,b:b0,x:b2,y:b3,back:b8,guide:b10,start:b9,'
+    'leftstick:b11,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:b13,dpdown:b14,dpleft:b15,dpright:b16,'
+    'leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b6,righttrigger:b7,platform:Linux,'
+)
+
+
+def pad():
+    """This system's controller line for SDL (its GUID first)."""
+    from linux_platform import rgds_os
+    return RGDS_OS_PAD if rgds_os() else PAD
 
 
 class Folders:
@@ -85,9 +106,15 @@ def version(folders=None):
         return ''
 
 
+def top_connector():
+    """The top panel's connector: DSI-1 on the stock card, DSI-2 on RG DS OS (its kernel lists the bottom one first)."""
+    from linux_platform import rgds_os
+    return 'DSI-2' if rgds_os() else 'DSI-1'
+
+
 def panel_size(drm=Path('/sys/class/drm')):
-    """The top panel's mode (DSI-1): 640x480 on the RG DS, 1024x768 on the Plus."""
-    for name in ('card0-DSI-1', 'card1-DSI-1'):
+    """The top panel's mode: 640x480 on the RG DS, 1024x768 on the Plus."""
+    for name in ('card0-' + top_connector(), 'card1-' + top_connector()):
         try:
             mode = (drm / name / 'modes').read_text().split()[0]
             width, height = (int(v) for v in mode.split('x')[:2])
@@ -102,14 +129,18 @@ def overlay(app, folders):
     width, height = panel_size()
     control = (files(app) / 'control.txt').read_text()
     for key, value in (
-        ('@CONTROL@', str(folders.control)), ('@DIRECTORY@', str(folders.root).lstrip('/')), ('@PAD@', PAD),
-        ('@WIDTH@', str(width)), ('@HEIGHT@', str(height))
+        ('@CONTROL@', str(folders.control)), ('@DIRECTORY@', str(folders.root).lstrip('/')), ('@PAD@', pad()),
+        ('@DEVICE@', pad().split(',')[0]), ('@WIDTH@', str(width)), ('@HEIGHT@', str(height))
     ):
         control = control.replace(key, value)
+    mod = (files(app) / 'mod_Buildroot.txt').read_text()
     return {
         'control.txt': control,
-        'mod_Buildroot.txt': (files(app) / 'mod_Buildroot.txt').read_text(),
-        'gamecontrollerdb.rgds.txt': PAD + '\n',
+        'mod_Buildroot.txt': mod,
+        # RG DS OS: PortMaster's device_info.txt takes CFW_NAME from os-release's NAME.
+        'mod_RG DS OS.txt': mod,
+        'libgl_RG DS OS.txt': (files(app) / 'libgl_rgds_os.txt').read_text(),
+        'gamecontrollerdb.rgds.txt': pad() + '\n',
     }
 
 
@@ -307,6 +338,13 @@ def port_environment(env, app, folders=None):
         PM_CUR_TTY='/dev/null',
         RGDS_APP=str(app)
     )
+    from linux_platform import rgds_os
+    if rgds_os():
+        # No compositor: the port draws on KMS, in the top panel's DRM lease (port_runner.PanelLeases), where the
+        # top panel is the only display any SDL sees, its own bundled copy too.
+        env['SDL_VIDEODRIVER'] = 'kmsdrm'
+        for key in ('SDL_VIDEO_WAYLAND_WMCLASS', 'WAYLAND_DISPLAY', 'SDL_KMSDRM_FIRST'):
+            env.pop(key, None)
     from portmaster_compat import environment
     return environment(env, folders.root)
 
@@ -343,6 +381,9 @@ def launch_plan(app, data, rom, env, prepare=True, folders=None):
     else:
         folder = None
     env = port_environment(env, app, folders)
+    if folder is not None and armhf_only(folder):
+        import portmaster_compat
+        portmaster_compat.armhf_environment(env, folders.root)
     if folder is not None:
         import portmaster_compat
         if portmaster_compat.gl_port(folder, port_json(folder).get('attr') or {}):
@@ -520,8 +561,14 @@ def artwork(app, data, folders=None):
     from library import game_key
     from scraper import image_to_bmp
     folders = folders or Folders()
-    # PortMaster's own app icon (the one CFW menus use), else its screenshot.
-    pictures = {(entry_folder(app) / ENTRY): [folders.control / 'trimui/icon.png', folders.control / 'screenshot.png']}
+    # PortMaster's own app icon (the one CFW menus use; RG DS Core carries a copy, so the entry has it before
+    # PortMaster is installed), else its screenshot.
+    pictures = {
+        (entry_folder(app) / ENTRY): [
+            folders.control / 'trimui/icon.png',
+            files(app) / 'icon.png', folders.control / 'screenshot.png'
+        ]
+    }
     if folders.ports.is_dir():
         for script in sorted(folders.ports.glob('*.sh')):
             folder = port_folder(script, folders)
@@ -569,10 +616,16 @@ def open_portmaster(app, folders=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('action', choices=('status', 'install', 'ensure', 'open'))
+    parser.add_argument('action', choices=('status', 'install', 'ensure', 'open', 'artwork'))
     parser.add_argument('--app', type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument('--data', type=Path, help='with artwork: RG DS Core\'s userdata folder')
     args = parser.parse_args()
     folders = Folders()
+    if args.action == 'artwork':
+        # At boot (RG DS OS's session): the entry's and the ports' covers, and which ports need their files.
+        print('PortMaster artwork: %d made' % artwork(args.app, args.data, folders))
+        notes(args.data, folders)
+        return 0
     if args.action == 'status':
         print(json.dumps({'root': str(folders.root), 'installed': installed(folders), 'version': version(folders)}))
         return 0

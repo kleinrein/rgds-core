@@ -2,7 +2,7 @@
 
 SuperDrastic is now bundled as an **experimental DraStic backend**. DSperate
 remains the default emulator and Standard remains the default DraStic backend.
-Existing choices are preserved. The [device review](archive/DEVICE_REVIEW_2026-10-11.md) records native startup, three menu cycles, verified checkpoint exit and successful checkpoint loading in both directions with Standard. A subsequent original-ROM clock test proves fast-forward acceleration and normal-speed restoration. Physical touch/controls/audio, suspend and retail-game fast-forward remain acceptance items.
+Existing choices are preserved. The October 11 device review recorded native startup, three menu cycles, verified checkpoint exit and successful checkpoint loading in both directions with Standard. A subsequent original-ROM clock test proves fast-forward acceleration and normal-speed restoration. Physical touch/controls/audio, suspend and retail-game fast-forward remain acceptance items.
 
 ## Choose it
 
@@ -174,5 +174,4 @@ startup and toggle transition periods are outside the measured intervals.
 
 Logs: `userdata/logs/drastic.log`, `superdrastic.log` (plus three previous native
 logs), and per-run `userdata/session/superdrastic-*` receipts. Preserve them for subsequent
-device comparisons. See [NEXT_DEVICE_TEST.md](archive/NEXT_DEVICE_TEST.md)
-for the physical acceptance sequence.
+device comparisons.

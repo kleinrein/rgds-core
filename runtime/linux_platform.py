@@ -31,6 +31,39 @@ def independent():
     return os.environ.get(MARKER) == "independent"
 
 
+def rocknix_joypad(name):
+    """ROCKNIX's joypad driver (RG DS OS, BananaLinux's kernel): mainline BTN_* codes under the stock driver's
+    name. Only the independent session reads it as mainline; the stock firmware's own driver keeps its numbering."""
+    if isinstance(name, (bytes, bytearray)): name = bytes(name).split(b'\0')[0].decode('utf-8', 'replace')
+    return name == 'retrogame_joypad' and independent()
+
+
+# RG DS OS (os/buildroot): games live in data/roms/<system> on the card's RGDS partition.
+RGDS_OS_ROMS = Path('/data/roms')
+CPUFREQ_GOVERNOR = Path('/sys/devices/system/cpu/cpufreq/policy0/scaling_governor')
+RGDS_OS_POWER = Path('/usr/libexec/rgds/power')  # RG DS OS: suspend with the sleep hook's acknowledgement protocol
+
+
+def rgds_os(os_release=Path('/etc/os-release')):
+    try:
+        return 'ID=rgds' in os_release.read_text().splitlines()
+    except OSError:
+        return False
+
+
+def cpu_governor(name, path=CPUFREQ_GOVERNOR):
+    """RG DS OS: set the CPUs' cpufreq governor for a game (the session boots on schedutil, which ramps up late).
+
+    Returns the governor it replaced, for putting back, or None where it is not ours to set (stock, or no cpufreq)."""
+    if not rgds_os(): return None
+    try:
+        before = path.read_text().strip()
+        if before != name: path.write_text(name)
+        return before
+    except OSError:
+        return None
+
+
 def vendor_path(path):
     return any(path == prefix or path.startswith(prefix + "/") for prefix in ("/mnt/vendor", "/mnt/ports", "/oem"))
 
@@ -109,6 +142,10 @@ def environment(clean, *, runtime_dirs=None, library_dirs=LIBRARY_DIRS):
 def system_command(action):
     if action not in ("suspend", "reboot", "poweroff"):
         raise ValueError("Unsupported standalone system action")
+    if rgds_os():
+        # BusyBox init: reboot and poweroff signal init (rcK stops RG DS Core and the network, then the card);
+        # suspend goes through our own script, which plays the part of the systemd sleep hook.
+        return [str(RGDS_OS_POWER), 'suspend'] if action == 'suspend' else ['/sbin/' + action]
     binary = shutil.which("systemctl", path="/usr/bin:/bin")
     if not binary:
         raise ValueError("Standalone systemd control is unavailable")

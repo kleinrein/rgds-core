@@ -140,11 +140,12 @@ void App::shoulder_tab(SDL_Renderer* r, int y, bool right, const std::string& ke
 }
 
 std::string App::system_row_name(int row) const {
-    static const std::array<const char*, 8> names = {
-        "Language",           "Timezone",           "Date format",     "Time format",
-        "Device information", "Updates & recovery", "Return to stock", "Startup"};
-    if (row == 6 && o.independent) return "Restart menu";
-    return names[size_t(std::clamp(row, 0, 7))];
+    static const std::array<const char*, 9> names = {"Language",           "Timezone",        "Daylight saving",
+                                                     "Date format",        "Time format",     "Device information",
+                                                     "Updates & recovery", "Return to stock", "Startup"};
+    if (row == 7 && o.rgds_os) return "Startup";
+    if (row == 7 && o.independent) return "Restart menu";
+    return names[size_t(std::clamp(row, 0, 8))];
 }
 
 void App::feedback_arc(SDL_Renderer* r, int x, int y, int radius, double start, double amount, Color ink, int alpha,
@@ -249,7 +250,8 @@ void App::loading_overlay(SDL_Renderer* r, int y, bool lower) {
     }
 }
 
-void App::glossy_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color base, double press) {
+void App::glossy_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color base, double press,
+                     bool sheen) {
     radius = std::clamp(radius, 0, std::min(w, h) / 2);
     const Color white{255, 255, 255}, black{0, 0, 0};
     const int lum = (base.r * 3 + base.g * 6 + base.b) / 10;
@@ -272,15 +274,16 @@ void App::glossy_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, C
         tint_rect(r, x + inset, y + row, w - 2 * inset, 1, c);
     }
     int inset = inset_at(1) + 2;
-    if (w - 2 * inset > 0 && h > 6)
+    if (sheen && w - 2 * inset > 0 && h > 6)
         tint_rect(r, x + inset, y + 1, w - 2 * inset, 1, blend(base, white, int(55 * (1 - .7 * press))));
 }
 
-void App::raised_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill, double press, bool shadow) {
+void App::raised_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill, double press, bool shadow,
+                       bool sheen) {
     const int sink = int(std::lround(2 * press));
     if (shadow)
         alpha_round(r, x, y + 3, w, h, radius, shadow_colour(), int((preferences.dark ? 70 : 28) * (1 - .5 * press)));
-    glossy_pill(r, x, y + sink, w, h, radius, fill, press);
+    glossy_pill(r, x, y + sink, w, h, radius, fill, press, sheen);
 }
 
 void App::footer_button(SDL_Renderer* r, int x, int y, int w, const std::string& text, const std::string& badge,

@@ -130,7 +130,6 @@ void App::finish_launch(bool reopen) {
              : launch_result       ? "LAUNCH ERROR " + std::to_string(launch_result) + " - SEE LOG"
              : launch_preview      ? "PREVIEW: " + std::string(core_names[launching_core]) + " SELECTED"
                                    : "BACK HOME";
-    if (launch_result == 78) check_card(s.GetTicks(), true);
     if (launch_result && !launch_cancelled) emit_sound(MenuCue::Error);
     else if (reopen) emit_sound(MenuCue::Back);
     dirty = true;

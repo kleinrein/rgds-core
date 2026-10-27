@@ -188,25 +188,6 @@ int App::run() {
                 dirty = true;
             }
         }
-        if (!o.probe && (session_initialized || o.card_repair)) check_card(now);
-        if (card_repair) {
-            if (o.seconds && now - began >= Uint32(o.seconds) * 1000) break;
-            if (card_repair == 1 && preferences.animations && now - feedback_frame_at >= 50) {
-                feedback_frame_at = now;
-                dirty = true;
-            }
-            if (dirty || o.frames) {
-                draw(!o.screenshot.empty());
-                frames++;
-            }
-            if (o.frames && frames >= o.frames) break;
-            SDL_Event wait{};
-            if (wait_event(&wait, 50)) {
-                event(wait);
-                while (s.PollEvent(&wait)) event(wait);
-            }
-            continue;
-        }
         int volume_delta = volume_keys.poll();
         if (session_initialized && !launching && volume_delta) change_volume(hardware.volume_percent + volume_delta);
         if (volume_toast && now >= volume_toast) {
@@ -338,6 +319,7 @@ int App::run() {
         }
         poll_microphone(now);
         watch_menu(now);
+        watch_games(now);
         if (settings.page == Page::Scraper && !service_loaded && worker <= 0) {
             start_worker("status");
             service_loaded = true;

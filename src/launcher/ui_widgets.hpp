@@ -127,8 +127,8 @@ void App::settings_footer(SDL_Renderer* r, int y) {
                   : settings.page == Page::Cheats     ? (cheat_view == CheatView::Groups ? "Open" : "Toggle")
                   : settings.page == Page::Settings   ? "Open"
                   : settings.page == Page::DeviceInfo ? "View"
-                  : settings.page == Page::Sound      ? (settings.focus >= 2            ? "Open"
-                                                         : settings.focus == 1          ? "Test"
+                  : settings.page == Page::Sound      ? (settings.focus >= 3            ? "Open"
+                                                         : settings.focus == 2          ? "Test"
                                                          : hardware.volume_percent == 0 ? "Unmute"
                                                                                         : "Mute")
                   : settings.page == Page::Display    ? "Done"

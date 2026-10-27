@@ -1,0 +1,40 @@
+#!/bin/sh
+# RG DS Core, straight onto both panels (KMSDRM, no compositor), with touch read from the bottom panel's
+# touchscreen. init starts this again if it ever exits. Its log: rgds/logs/launcher.log on the card (the previous
+# run's as .1).
+APP=/usr/share/rgds/releases/$(cat /usr/share/rgds/active)
+LOG=/data/rgds/logs/launcher.log
+[ -f $LOG ] && mv -f $LOG $LOG.1
+export HOME=/root XDG_RUNTIME_DIR=/run/rgds
+# naming the render driver turns SDL2's batching off unless it is asked for (35-170 ms a panel without it)
+export SDL_VIDEODRIVER=kmsdrm SDL_KMSDRM_FIRST=DSI-2 SDL_RENDER_DRIVER=opengles2 SDL_RENDER_BATCHING=1
+export SDL_TOUCH_MOUSE_EVENTS=0 SDL_MOUSE_TOUCH_EVENTS=0 RGDS_SDL_LIBRARY=/usr/lib/libSDL2-2.0.so.0
+# RGDS_OS=1: RG DS Core hides what only stock firmware has (the Startup page's boot choice)
+export RGDS_SESSION_PLATFORM=independent RGDS_INPUT_PROFILE=mainline-rg-ds RGDS_LAUNCH_PROFILE=1 RGDS_OS=1
+export MESA_SHADER_CACHE_DIR=/data/rgds/cache/mesa
+# the bottom panel's touchscreen sits on i2c-5 (fe5e0000)
+for e in /sys/class/input/event*; do
+    case "$(readlink -f "$e/device")" in *fe5e0000.i2c*) export RGDS_TOUCH_DEV=/dev/input/${e##*/};; esac
+done
+# PortMaster (runtime/portmaster.py): its entry, then the ports it installs on the data partition
+mkdir -p /data/portmaster/ports
+# the entry's and the ports' covers (PortMaster's icon before it is installed) and which ports still need their
+# owner's files, beside the boot at low priority: the launcher picks the covers up when Ports is opened
+nice -n 10 python3 -B $APP/runtime/portmaster.py artwork --app $APP --data /data/rgds/userdata \
+    > /data/rgds/logs/portmaster-artwork.log 2>&1 &
+# the lid: the hall sensor's switch, and its platform device's wakeup file (sleep on lid close, wake on open)
+for e in /sys/class/input/event*; do
+    case "$(cat "$e/device/name" 2>/dev/null)" in gpio-keys-hall)
+        d=$(readlink -f "$e/device")  # .../platform/gpio-keys-hall/input/inputN: the platform device owns wakeup
+        export RGDS_LID_DEV=/dev/input/${e##*/} RGDS_LID_WAKEUP=${d%/input/*}/power/wakeup;; esac
+done
+read up rest < /proc/uptime; printf '%-28s %6.2f s\n' "session: RG DS Core" "$up" >> /run/rgds/boot-times
+# --boot-startup: the boot scene from the first frame, with the hardware probe and the library scan behind it
+# Startup > Touch to continue (boot.ini warning=1): a start screen that waits for a tap or A
+WARN=; grep -qx 'warning=1' /data/rgds/userdata/boot.ini 2>/dev/null && WARN=--boot-warning
+exec $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 0 --bottom-display 1 \
+    --boot-startup $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
+    --system-dir gb=/data/roms/gb \
+    --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md \
+    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir pico8=/data/roms/pico8 --system-dir ports=$APP/runtime/portmaster_files/entry \
+    --system-dir ports=/data/portmaster/ports >> $LOG 2>&1

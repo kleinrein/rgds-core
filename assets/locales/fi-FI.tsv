@@ -147,6 +147,7 @@ Desktop preview	Työpöytäesikatselu
 Development build	Kehitysversio
 Device address	Laitteen osoite
 Device information	Laitetiedot
+Display	Näyttö
 Display FPS	Näytön FPS
 Done	Valmis
 Down	Alas
@@ -441,6 +442,7 @@ Swapped	Vaihdettu
 System	Järjestelmä
 THEME ERROR - RETAINED CURRENT	TEEMAVIRHE – NYKYINEN SÄILYI
 THEME RELOADED	TEEMA LADATTU UUDELLEEN
+Turn the handheld off and on again	Sammuta laite ja käynnistä se uudelleen
 TYPEFACE	KIRJASIN
 Temporary game cache cleared. Saves and artwork are kept.	Väliaikainen pelivälimuisti tyhjennetty. Tallennukset ja kansikuvat säilyvät.
 The checkpoint did not finish saving.	Tallennustilan tallentaminen ei valmistunut.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Pidä paikallaan oikeaa napsautusta varten
 Hold to exit	Pidä poistuaksesi
 Touch screen off	Kosketusnäyttö pois
 Touch screen is not available	Kosketusnäyttö ei ole käytettävissä
+Daylight saving	Kesäaika
+Automatic	Automaattinen
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Kesäaika noudattaa aikavyöhykettäsi. Pakota se päälle tai pois, jos kello on tunnin pielessä.
+GBA true colour	Aidot GBA-värit
+Faded GBA colours made rich, as the real screen showed them.	Haalistuneet GBA-värit täyteläisinä, kuten oikea näyttö ne näytti.
+GBA true screen	Aito GBA-näyttö
+The true GBA colours on its screen, with the gaps between its pixels.	Aidot GBA-värit sen näytöllä, pikselien välisine rakoineen.

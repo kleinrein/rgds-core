@@ -83,7 +83,7 @@ class GameInfoUiTests(LauncherFixture):
         self.assertEqual(self.run_ui(OPEN_INFO)['page'], GAME_INFO)
 
     def test_artwork_sources_can_switch_game_info_off_and_it_is_remembered(self):
-        keys = ['Down', 'Down', 'A', 'Down', 'Down', 'Down', 'A']
+        keys = ['Down', 'Down', 'Down', 'A', 'Down', 'Down', 'Down', 'A']
         self.run_ui(keys, '--settings', '--section', 'library')
         self.assertIn('game_info=0\n', (self.data / 'ui.ini').read_text())
         self.assertIn('extra_pictures=2\n', (self.data / 'ui.ini').read_text())

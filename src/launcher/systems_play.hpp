@@ -7,7 +7,8 @@
 
 // A system's own pixel icon: the 16 x 16 glyph of tools/system_pixel_art.py,
 // drawn in whole-pixel steps only, so the simple style stays crisp.
-inline bool draw_system_pixel(Sdl& s, SDL_Renderer* renderer, std::string_view id, int cx, int cy, int size, Color ink) {
+inline bool draw_system_pixel(Sdl& s, SDL_Renderer* renderer, std::string_view id, int cx, int cy, int size,
+                              Color ink) {
     const std::string_view pixels = system_pixel_glyph(id);
     if (pixels.size() != 256) return false;
     const int scale = std::max(1, size / 16), left = cx - 8 * scale, top = cy - 8 * scale;
@@ -20,7 +21,7 @@ inline bool draw_system_pixel(Sdl& s, SDL_Renderer* renderer, std::string_view i
                 s.RenderFillRect(renderer, &cell);
             }
     }
-    s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);   // the launcher's resting mode
+    s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE); // the launcher's resting mode
     return true;
 }
 
@@ -116,13 +117,20 @@ const App::SystemStats& App::system_stats_for(size_t index) {
     if (index >= system_stats.size()) return none;
     auto& stats = system_stats[index];
     if (!stats.played_ready) {
-        stats.played_ready = true;
-        for (const auto& game : all_games)
+        // A big system has thousands of stats.ini files on a slow card: read a slice per frame so the carousel keeps
+        // up, and show the card's numbers as pending until the last slice is in.
+        const uint32_t start = s.GetTicks();
+        while (stats.played_next < all_games.size()) {
+            const auto& game = all_games[stats.played_next++];
             if (game.system == listed_systems[index] && !game.demo) {
                 const auto& played = library_cache.stats(game);
                 stats.sessions += played.sessions;
                 stats.seconds += played.seconds;
             }
+            if (s.GetTicks() - start >= 3) break;
+        }
+        if (stats.played_next >= all_games.size()) stats.played_ready = true;
+        else dirty = true;
     }
     return stats;
 }
@@ -279,8 +287,7 @@ void App::play_graphics_action() {
     } else if (settings.focus == 4 && play_colour_kind() == 2) {
         std::vector<std::string> names;
         for (const auto& correction : play::gb_corrections) names.push_back(correction.name);
-        show_picker("Screen colours", names, play_correction,
-                    [this](int n) { apply_play_colour(play_palette, n); });
+        show_picker("Screen colours", names, play_correction, [this](int n) { apply_play_colour(play_palette, n); });
     } else {
         // The same shader carousel as the DS engines: the bridge's pass draws GBA and Game Boy screens too.
         open_shader_picker(true);

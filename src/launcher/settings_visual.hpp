@@ -83,7 +83,8 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Where to put games" || title == "Add your games" || title == "Scan for games")
         return SettingsIcon::Cartridge;
     if (title == "Library") return SettingsIcon::Library;
-    if (title == "Statistics" || title == "Time format" || title == "Date format") return SettingsIcon::Clock;
+    if (title == "Statistics" || title == "Time format" || title == "Date format" ||
+        title == "Daylight saving") return SettingsIcon::Clock;
     if (title == "Power off") return SettingsIcon::Shutdown;
     if (title == "Profile" || title == "Shortcut action" || title == "Use global controls")
         return SettingsIcon::Controller;
@@ -161,6 +162,7 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Menu idle sleep") return "Rest after a period of inactivity";
     if (title == "Sleep on lid close") return "Close the handheld to sleep";
     if (title == "Battery percentage") return "Show the charge in the status bar";
+    if (title == "Restart") return "Turn the handheld off and on again";
     if (title == "Default emulator") return "Used by games without an override";
     if (title == "Artwork & ScreenScraper") return "Box art, titles and game details";
     if (title == "Auto-load state") return "Continue where you left off";
@@ -180,8 +182,8 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Updates & recovery") return "Manage builds and temporary files";
     if (title == "Return to stock") return "Open the Anbernic menu";
     if (title == "Startup") return "Choose what opens when you power on";
-    if (title == "Boot into") return "Your home screen after powering on";
-    if (title == "Touch to continue") return "Show the welcome screen at startup";
+    if (title == "Touch to continue") return "Show a start screen; tap or press A to go on";
+    if (title == "Resume after power off") return "Reopen the game you powered off from";
     if (title == "Available networks") return "Find and connect to a nearby network";
     if (title == "Refresh connection") return "Check the current connection";
     if (title == "Use previous build") return "Restore the last installed RGDS build";

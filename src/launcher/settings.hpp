@@ -50,7 +50,8 @@ enum class Page {
     PlayGraphics, // in-game Graphics for RG DS Play: game screen fit, second screen
     GameInfo,     // the selected game's facts, description and pictures (read-only)
     Haptics,      // Sound -> Vibration: menu haptics and game rumble, each with a strength
-    PortFiles     // Add game files: a port's own files, sent from a phone or computer (port_files_screen.hpp)
+    PortFiles,    // Add game files: a port's own files, sent from a phone or computer (port_files_screen.hpp)
+    DisplayOptions // Settings > Display: brightness, animations, touch indicator, home layout, touch gestures
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -79,9 +80,11 @@ struct SystemPreferences {
     int power = 0, brightness = 60, idle = 0;
     bool lid = true, battery_percent = true;
     std::string timezone = "Europe/Oslo";
+    int dst = 0; // daylight saving: 0 follows the zone's rules, 1 forced on, 2 forced off (standard time)
     int date_format = 0;
     int time_format = 0; // 0: 24-hour, 1: 12-hour
 };
+inline const std::array<const char*, 3> dst_names = {"Automatic", "On", "Off"};
 inline const std::array<const char*, 2> time_format_names = {"24-hour", "12-hour"};
 inline const std::array<const char*, 5> date_format_names = {"DD/MM", "MM/DD", "DD.MM", "YYYY-MM-DD", "DD-MM-YYYY"};
 inline const std::array<const char*, 5> date_format_patterns = {"%d/%m", "%m/%d", "%d.%m", "%Y-%m-%d", "%d-%m-%Y"};
@@ -506,6 +509,15 @@ inline const std::array<const char*, 419> timezones = {"UTC",
                                                        "Pacific/Tongatapu",
                                                        "Pacific/Wake",
                                                        "Pacific/Wallis"};
+// A fixed offset east of UTC as a POSIX TZ value ("<+0545>-5:45"; POSIX counts offsets west of UTC).
+inline std::string fixed_timezone(long seconds) {
+    const long magnitude = seconds < 0 ? -seconds : seconds;
+    char name[16], rule[24];
+    std::snprintf(name, sizeof(name), "%c%02ld%02ld", seconds < 0 ? '-' : '+', magnitude / 3600, magnitude / 60 % 60);
+    if (magnitude / 60 % 60) std::snprintf(rule, sizeof(rule), "%ld:%02ld", magnitude / 3600, magnitude / 60 % 60);
+    else std::snprintf(rule, sizeof(rule), "%ld", magnitude / 3600);
+    return std::string("<") + name + ">" + (seconds < 0 ? "+" : "-") + rule;
+}
 // "America/Argentina/Buenos_Aires" -> region "America", place "Buenos Aires, Argentina".
 inline std::string timezone_region(const std::string& zone) {
     auto slash = zone.find('/');
@@ -550,8 +562,14 @@ inline std::string idle_name(int index) {
     return index == 0 ? "Never" : std::to_string(idle_minutes.at(index)) + " min";
 }
 // The root list's order. Section ids stay stable (saved state and tests use
-// them); Updates (9) is listed right below System.
-inline constexpr std::array<int, 10> section_order = {0, 1, 2, 3, 4, 5, 9, 6, 7, 8};
+// them); Display (10) is listed right below Theme and Updates (9) right below System.
+inline constexpr std::array<int, 11> section_order = {0, 10, 1, 2, 3, 4, 5, 9, 6, 7, 8};
+// Theme and Display share the appearance code: the row ids are the original combined list's.
+inline int appearance_row_id(Page page, int index) {
+    static constexpr std::array<int, 6> theme = {0, 1, 2, 3, 4, 9};
+    static constexpr std::array<int, 5> display = {5, 6, 7, 8, 10};
+    return page == Page::DisplayOptions ? display.at(size_t(index)) : theme.at(size_t(index));
+}
 inline int section_row(int section) {
     for (size_t i = 0; i < section_order.size(); i++)
         if (section_order[i] == section) return int(i);
@@ -573,11 +591,11 @@ struct Settings {
     }
     void back() {
         if (page == Page::MenuSounds || page == Page::Haptics) {
-            focus = page == Page::Haptics ? 3 : 2;
+            focus = page == Page::Haptics ? 4 : 3;
             page = Page::Sound;
         } else if (page == Page::Motion) {
-            page = Page::Appearance;
-            focus = 6;
+            page = Page::DisplayOptions;
+            focus = 1;
         } else if (page == Page::Colours) {
             page = Page::Appearance;
             focus = 1;
@@ -595,11 +613,11 @@ struct Settings {
             page = Page::System;
             focus = 4;
         } else if (page == Page::Display) {
-            page = Page::Appearance;
-            focus = 5;
+            page = Page::DisplayOptions;
+            focus = 0;
         } else if (page == Page::Startup) {
             page = Page::System;
-            focus = 7;
+            focus = 8; // clamped to the last row where Startup sits earlier (RG DS OS)
         } else {
             page = page == Page::Settings || page == Page::GameOptions ? Page::Library
                    : page == Page::Scraper                             ? Page::LibraryOptions
@@ -610,20 +628,22 @@ struct Settings {
         }
     }
     void move(int delta) {
-        if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 9))];
-        else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 10);
-        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 9);
-        else if (page == Page::Power) focus = std::clamp(focus + delta, 0, 5);
+        if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 10))];
+        else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 5);
+        else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
+        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 10);
+        else if (page == Page::Power) focus = std::clamp(focus + delta, 0, 6);
         else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 4);
-        else if (page == Page::Startup) focus = std::clamp(focus + delta, 0, 3);
+        else if (page == Page::Startup) focus = std::clamp(focus + delta, 0, 0);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
         else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::System || page == Page::Display) focus = 0;
     }
     void enter() {
         if (page == Page::Settings) {
-            page = section == 0   ? Page::Appearance
-                   : section == 1 ? Page::Power
+            page = section == 0    ? Page::Appearance
+                   : section == 10 ? Page::DisplayOptions
+                   : section == 1  ? Page::Power
                    : section == 2 ? Page::LibraryOptions
                    : section == 3 ? Page::Sound
                    : section == 5 ? Page::System
@@ -632,7 +652,7 @@ struct Settings {
                    : section == 9 ? Page::Maintenance
                                   : Page::Network;
             focus = 0;
-        } else if (page == Page::Appearance && focus == 5) {
+        } else if (page == Page::DisplayOptions && focus == 0) {
             page = Page::Display;
             focus = 0;
         }
@@ -659,12 +679,12 @@ inline SystemPreferences load_system_preferences(const fs::path& path) {
         if (end != value.size() || n < low || n > high) throw std::runtime_error("Invalid system preference: " + key);
         return n;
     };
-    if (values.size() < 5 || values.size() > 9 || values.at("schema") != "1")
+    if (values.size() < 5 || values.size() > 10 || values.at("schema") != "1")
         throw std::runtime_error("Invalid system preferences schema");
     for (auto& pair : values)
         if (pair.first != "schema" && pair.first != "power" && pair.first != "brightness" && pair.first != "idle" &&
             pair.first != "lid" && pair.first != "battery_percent" && pair.first != "timezone" &&
-            pair.first != "date_format" && pair.first != "time_format")
+            pair.first != "date_format" && pair.first != "time_format" && pair.first != "dst")
             throw std::runtime_error("Unknown system preference");
     p.power = number("power", 0, 3);
     p.brightness = number("brightness", 5, 100);
@@ -673,6 +693,7 @@ inline SystemPreferences load_system_preferences(const fs::path& path) {
     if (values.count("battery_percent")) p.battery_percent = number("battery_percent", 0, 1);
     if (values.count("date_format")) p.date_format = number("date_format", 0, int(date_format_names.size()) - 1);
     if (values.count("time_format")) p.time_format = number("time_format", 0, 1);
+    if (values.count("dst")) p.dst = number("dst", 0, int(dst_names.size()) - 1);
     if (values.count("timezone")) {
         p.timezone = values.at("timezone");
         if (std::find(timezones.begin(), timezones.end(), p.timezone) == timezones.end())
@@ -689,6 +710,7 @@ inline void save_system_preferences(const fs::path& path, SystemPreferences p) {
     file << "battery_percent=" << p.battery_percent << "\ntimezone=" << p.timezone << '\n';
     if (p.date_format) file << "date_format=" << p.date_format << '\n';
     if (p.time_format) file << "time_format=" << p.time_format << '\n';
+    if (p.dst) file << "dst=" << p.dst << '\n';
     file.close();
     if (!file) throw std::runtime_error("Cannot save system preferences");
     fs::rename(pending, path);

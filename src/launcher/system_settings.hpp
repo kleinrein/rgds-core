@@ -109,8 +109,22 @@ void App::change_volume(int value) {
     dirty = true;
 }
 
+// The TZ value for a zone. Daylight saving "Automatic" is the zone name itself (tzdata knows the rules); forcing it
+// on or off pins the zone's standard offset (+1 h for on) as a fixed rule, since tzdata has no such switch.
+std::string App::timezone_value(const std::string& zone, int dst) {
+    if (dst == 0 || zone == "UTC") return zone;
+    const auto now = std::time(nullptr);
+    std::tm local{};
+    setenv("TZ", zone.c_str(), 1);
+    tzset();
+    const bool known = localtime_r(&now, &local) != nullptr;
+    long standard = known ? local.tm_gmtoff - (local.tm_isdst > 0 ? 3600 : 0) : 0;
+    return fixed_timezone(standard + (dst == 1 ? 3600 : 0));
+}
+
 void App::apply_timezone() {
-    setenv("TZ", system_preferences.timezone.c_str(), 1);
+    zone_offsets.clear();
+    setenv("TZ", timezone_value(system_preferences.timezone, system_preferences.dst).c_str(), 1);
     tzset();
     dirty = true;
 }
@@ -126,10 +140,11 @@ long App::zone_offset(const std::string& zone) {
     std::tm local{};
     long offset = 0;
     if (zone != "UTC") {
-        setenv("TZ", zone.c_str(), 1);
+        const bool chosen = zone == system_preferences.timezone;
+        setenv("TZ", timezone_value(zone, chosen ? system_preferences.dst : 0).c_str(), 1);
         tzset();
         if (localtime_r(&now, &local)) offset = local.tm_gmtoff;
-        setenv("TZ", system_preferences.timezone.c_str(), 1);
+        setenv("TZ", timezone_value(system_preferences.timezone, system_preferences.dst).c_str(), 1);
         tzset();
     }
     return zone_offsets[zone] = offset;
@@ -214,6 +229,20 @@ void App::save_time_format(int value) {
     } catch (const std::exception& e) {
         system_preferences.time_format = previous;
         status = "Could not save time format";
+        std::cerr << e.what() << std::endl;
+        dirty = true;
+    }
+}
+
+void App::save_dst(int value) {
+    auto previous = system_preferences.dst;
+    system_preferences.dst = value;
+    try {
+        save_system_preferences(o.system_preferences, system_preferences);
+        apply_timezone();
+    } catch (const std::exception& e) {
+        system_preferences.dst = previous;
+        status = "Could not save daylight saving";
         std::cerr << e.what() << std::endl;
         dirty = true;
     }

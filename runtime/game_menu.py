@@ -18,6 +18,7 @@ from shaders import supported
 from library import read_fields, write_fields, game_key
 from controls import load_profile, paths as control_paths, Shortcut, FastForwardButton, evdev_source
 from lid_sleep import LidSleep
+from linux_platform import rocknix_joypad
 from game_clocks import GameClocks
 from collections import deque
 from typing import NamedTuple
@@ -86,14 +87,15 @@ class MenuInput:
                 fcntl.ioctl(fd, 0x80604521, bits)
                 name = bytearray(128)
                 fcntl.ioctl(fd, 0x80804506, name)
-                calibrated = b"ANBERNIC" in name or b"retrogame_joypad" in name
+                rocknix = rocknix_joypad(name)
+                calibrated = b"ANBERNIC" in name or (b"retrogame_joypad" in name and not rocknix)
                 codes = ANBERNIC_MENU_CODES if calibrated else MENU_CODES
                 if any(bits[code // 8] & (1 << (code % 8)) for code in codes):
                     self.descriptors.append(fd)
                     self.codes[fd] = codes
                     self.starts[fd] = 311 if calibrated else 315
-                    self.calibrated[fd] = calibrated or b"gpio-keys-control" in name
-                    self.mainline[fd] = b"gpio-keys-control" in name
+                    self.calibrated[fd] = calibrated or b"gpio-keys-control" in name or rocknix
+                    self.mainline[fd] = b"gpio-keys-control" in name or rocknix
                 else:
                     os.close(fd)
             except OSError:
@@ -310,9 +312,11 @@ class GameMenu:
                 continue
             path = Path(name).resolve()
             # Every system's games, ports among them (a script), but not PortMaster itself: it is a tool.
-            if path.suffix.lower() not in ('.nds', '.zip', '.gba', '.gbc', '.gb', '.sgb', '.sh') or (
-                path.name == 'PortMaster.sh' and path.parent.name == 'entry'
-            ) or not path.is_file() or any(path == game[0] for game in self.switch_games):
+            if path.suffix.lower() not in ('.nds', '.zip', '.gba', '.gbc', '.gb', '.sgb',
+                                           '.sh') or (path.name == 'PortMaster.sh'
+                                                      and path.parent.name == 'entry') or not path.is_file() or any(
+                                                          path == game[0] for game in self.switch_games
+                                                      ):
                 continue
             self.switch_games.append((path, source.get(f'game_{index}_title', path.stem)))
             if len(self.switch_games) == 9:
@@ -458,9 +462,9 @@ class GameMenu:
         for key in (
             "XDG_RUNTIME_DIR", "WAYLAND_DISPLAY", "RGDS_SDL_LIBRARY", "SDL_VIDEODRIVER", "SDL_RENDER_DRIVER",
             "SDL_RENDER_BATCHING", "RGDS_LAUNCH_PROFILE", "SDL_VIDEO_WAYLAND_ALLOW_LIBDECOR", "TZ",
-            'RGDS_MENU_EXTERNAL', 'RGDS_SD_SHARED_MENU', 'RGDS_INPUT_PROFILE',
-            'RGDS_SESSION_PLATFORM', 'RGDS_TOP_DISPLAY', 'RGDS_BOTTOM_DISPLAY', 'RGDS_LID_DEV', 'RGDS_LID_WAKEUP',
-            'RGDS_TOUCH_DEV', 'RGDS_INPUT_AMBIGUOUS'
+            'RGDS_MENU_EXTERNAL', 'RGDS_SD_SHARED_MENU', 'RGDS_INPUT_PROFILE', 'RGDS_SESSION_PLATFORM',
+            'RGDS_TOP_DISPLAY', 'RGDS_BOTTOM_DISPLAY', 'RGDS_LID_DEV', 'RGDS_LID_WAKEUP', 'RGDS_TOUCH_DEV',
+            'RGDS_INPUT_AMBIGUOUS'
         ):
             if key in self.environment:
                 env[key] = self.environment[key]
@@ -677,9 +681,10 @@ class GameMenu:
             from play_options import frame_known
             # second: 0 companion, 1 off, 2 swap, 3 the info screen
             pieces, valid = action.split(':', 3), ('0', '1', '2')
-            if (self.core != 'rgds-play' or len(pieces) != 4 or pieces[1] not in valid or
-                    pieces[2] not in valid + ('3', ) or
-                    not frame_known(self.data, self.rom, pieces[3])):
+            if (
+                self.core != 'rgds-play' or len(pieces) != 4 or pieces[1] not in valid
+                or pieces[2] not in valid + ('3',) or not frame_known(self.data, self.rom, pieces[3])
+            ):
                 self.publish('error', 'Invalid graphics setting for this game.')
                 return
         if action.startswith('play-color:'):
@@ -725,11 +730,11 @@ class GameMenu:
         self.pending = dict(token=token, action=action, began=time.monotonic())
         print(f'RGDS menu: {token} {action}', flush=True)
         self.publish(
-            "busy", "Saving before switching games…"
-            if self.switch_target else 'Changing 3D threading…' if action.startswith('threaded:') else
-            'Applying graphics…' if action.startswith(('graphics:', 'play-graphics:', 'play-color:', 'filter2d:',
-                                                       'adaptive:')) else 'Applying shader…' if action.
-            startswith('shader:') else 'Applying cheat…' if action.startswith('cheat:') else
+            "busy", "Saving before switching games…" if self.switch_target else
+            'Changing 3D threading…' if action.startswith('threaded:') else 'Applying graphics…' if action.startswith(
+                ('graphics:', 'play-graphics:', 'play-color:', 'filter2d:', 'adaptive:')
+            ) else 'Applying shader…' if action.startswith('shader:') else 'Applying cheat…' if action.
+            startswith('cheat:') else
             ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…"
              ) if action == "save-quit" else 'Changing speed…' if action ==
             'fast-forward' else "Saving before returning home…" if action ==
@@ -1001,8 +1006,7 @@ class GameMenu:
                                 'play-graphics-unsaved', 'play-color-unsaved'
                             ) else 'Could not apply graphics. Your game is unchanged.' if state in (
                                 'play-graphics-failed', 'play-color-failed'
-                            ) else
-                            'Graphics applied for this session. Settings storage is unavailable.' if state ==
+                            ) else 'Graphics applied for this session. Settings storage is unavailable.' if state ==
                             'graphics-unsaved' else 'Could not apply graphics. The previous renderer is still active.'
                             if state == 'graphics-failed' else '2D filter applied. Your game keeps running.' if state ==
                             'filter2d-applied' else

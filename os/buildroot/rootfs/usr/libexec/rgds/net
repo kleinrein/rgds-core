@@ -1,0 +1,63 @@
+#!/bin/sh
+# Wi-Fi and SSH. wpa_supplicant runs on rgds/wifi.conf on the card; RG DS Core's Wi-Fi page joins and saves networks
+# through its control socket (runtime/wpa_wifi.py), and wpa-event gets an address for every network joined.
+# rgds/wifi-off keeps Wi-Fi off across boots. rgds/ssh/authorized_keys lets those keys in as root. avahi-daemon
+# answers for rgds.local.
+#   net up|down       at boot and shutdown
+#   net wifi|wifi-off the Wi-Fi switch
+CONF=/data/rgds/wifi.conf
+OFF=/data/rgds/wifi-off
+stop() { [ -f /run/rgds/$1.pid ] && kill $(cat /run/rgds/$1.pid) 2>/dev/null; rm -f /run/rgds/$1.pid; }
+
+wifi() {
+    rm -f $OFF
+    [ -S /run/wpa_supplicant/wlan0 ] && pidof wpa_supplicant > /dev/null && return 0
+    # no udev: nothing loads a module by itself
+    modprobe rtw88_8821cs 2>/dev/null
+    for i in $(seq 1 50); do [ -d /sys/class/net/wlan0 ] && break; sleep 0.1; done
+    [ -d /sys/class/net/wlan0 ] || return 1
+    # a file written by hand may hold only network blocks; wpa_supplicant rewrites it whole on its first save
+    if ! grep -q '^ctrl_interface=' $CONF 2> /dev/null; then
+        { printf 'ctrl_interface=/run/wpa_supplicant\nupdate_config=1\n\n'; cat $CONF 2> /dev/null; } > $CONF.new
+        mv $CONF.new $CONF
+    fi
+    ip link set wlan0 up
+    wpa_supplicant -B -i wlan0 -c $CONF -P /run/rgds/wpa.pid || return 1
+    for i in $(seq 1 30); do [ -S /run/wpa_supplicant/wlan0 ] && break; sleep 0.1; done
+    wpa_cli -i wlan0 -a /usr/libexec/rgds/wpa-event -B -P /run/rgds/wpa-event.pid
+}
+
+wifi_off() {
+    touch $OFF
+    stop wpa-event; stop wpa; stop udhcpc
+    ip addr flush dev wlan0 2> /dev/null
+    ip link set wlan0 down 2> /dev/null
+}
+
+case $1 in
+up)
+    [ -f $OFF ] || wifi
+    # rgds.local; RG DS Core's file sharing adds its SMB service here
+    mkdir -p /run/rgds/avahi-services
+    avahi-daemon -D --no-drop-root 2> /dev/null
+    if [ -f /data/rgds/ssh/authorized_keys ]; then
+        mkdir -p /root/.ssh /etc/dropbear
+        cp /data/rgds/ssh/authorized_keys /root/.ssh/authorized_keys
+        chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys
+        # the host key lives on the card so it stays the same across boots and updates
+        [ -f /data/rgds/ssh/host_key ] || dropbearkey -t ed25519 -f /data/rgds/ssh/host_key > /dev/null 2>&1
+        dropbear -s -g -r /data/rgds/ssh/host_key -P /run/rgds/dropbear.pid
+    fi
+    ;;
+down)
+    avahi-daemon -k 2> /dev/null
+    stop dropbear; stop wpa-event; stop wpa; stop udhcpc
+    ;;
+wifi)
+    wifi || exit 1
+    ;;
+wifi-off)
+    wifi_off
+    ;;
+esac
+exit 0

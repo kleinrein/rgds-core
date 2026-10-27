@@ -15,7 +15,8 @@ export ESUDO=""
 export ESUDOKILL="-1"
 export ESUDOKILL2="-1"
 
-# RG DS Core's pad mapping (runtime/emulators.py), not the stock card's, which swaps Select and Home.
+# RG DS Core's pad mapping (runtime/portmaster.py: the stock card's pad, or RG DS OS's ROCKNIX joypad); on the stock
+# card, not its own line, which swaps Select and Home.
 RGDS_PAD="@PAD@"
 export SDL_GAMECONTROLLERCONFIG_FILE="$controlfolder/gamecontrollerdb.rgds.txt"
 
@@ -25,7 +26,7 @@ SDLDBUSERFILE="${SDL_GAMECONTROLLERCONFIG_FILE}"
 get_controls() {
   LOWRES="N"
   ANALOGSTICKS=2
-  DEVICE="1900b655010000000100000000010000"
+  DEVICE="@DEVICE@"
   param_device="rgds"
   sdl_controllerconfig="$RGDS_PAD"
 }
@@ -38,10 +39,13 @@ source $controlfolder/funcs.txt
 # card is the same case (libmali g24p0, Weston on both panels), so the wrapper is told it runs on ROCKNIX.
 # The runtime's libxkbcommon looks for its keymaps at a relative share/xkb, which only resolves from the runtime's
 # own folder; crusty's SDL then fails with "Failed to create XKB context". The card's keymaps are the standard ones.
+# RG DS OS has no compositor (and Panfrost, not libmali), so westonwrap keeps its own mode there.
 case "$0" in
   *westonwrap*.sh)
-    export CFW_NAME="ROCKNIX"
-    [ -d /usr/share/X11/xkb ] && export XKB_CONFIG_ROOT=/usr/share/X11/xkb
+    if ! grep -qx 'ID=rgds' /etc/os-release 2>/dev/null; then
+      export CFW_NAME="ROCKNIX"
+      [ -d /usr/share/X11/xkb ] && export XKB_CONFIG_ROOT=/usr/share/X11/xkb
+    fi
     ;;
 esac
 

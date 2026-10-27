@@ -54,8 +54,7 @@ The 13 October retest completed 1×, 2×, 3× and 5× with both synthetic scenes
 The 1280×960 image was inspected and contains new subpixel detail, not enlarged
 native pixels. At 5× the unoptimized isolated renderer needed 25–30 ms in that
 run, already beyond a 60 FPS budget before CPU emulation and 2D composition.
-Subsequent controlled shader comparisons are recorded in
-[the 13 October report](archive/EXPERIMENTAL_BENCHMARK_2026-10-13.md).
+Subsequent controlled shader comparisons were recorded on 13 October (git history).
 JIT-allocation and non-conformance warnings remain. Earlier connection losses
 included confirmed system suspends; private diagnostic profiles now disable
 idle/lid sleep without changing the user's profile. This does not establish

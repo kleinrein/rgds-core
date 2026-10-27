@@ -41,6 +41,16 @@ CACHE = ROOT / '.cache/portmaster-compat'
 MIRRORS = ['http://ports.ubuntu.com/ubuntu-ports', 'http://old-releases.ubuntu.com/ubuntu']
 SUITES = ['focal', 'focal-updates', 'focal-security']
 COMPONENTS = ['main', 'universe']
+CONTENTS = ['dists/focal/Contents-%s.gz', 'dists/focal-updates/Contents-%s.gz']
+# --base bookworm (RG DS OS's armhf layer): Debian 12, whose SDL has KMSDRM (focal's 2.0.10 has only X11 and
+# Wayland, and RG DS OS has no compositor) and whose Mesa is 22.3. Debian takes superseded packages off its mirror at
+# each point release; snapshot.debian.org keeps the day they were pinned for good.
+BOOKWORM = dict(
+    mirrors=['http://deb.debian.org/debian', 'https://snapshot.debian.org/archive/debian/20261027T000000Z'],
+    suites=['bookworm', 'bookworm-updates'],
+    components=['main'],
+    contents=['dists/bookworm/main/Contents-%s.gz']
+)
 # Where a library focal does not have comes from instead, tried in this order (Wizznic and Yatka want bionic's
 # libreadline.so.7, VCMI Debian buster's ICU 63). Package keys from these carry the source: 'bionic/libreadline7'.
 FALLBACKS = {
@@ -57,13 +67,24 @@ FALLBACKS = {
         contents=['dists/buster/main/Contents-%s.gz']
     ),
 }
-LIBDIRS = ('usr/lib/aarch64-linux-gnu/', 'lib/aarch64-linux-gnu/')
+LIBDIRS = ('usr/lib/aarch64-linux-gnu/', 'lib/aarch64-linux-gnu/', 'usr/lib/aarch64-linux-gnu/pulseaudio/')
 # --arch armhf: the 32-bit layer for armhf-only ports (the card has no 32-bit userland at all).
 ARCH = dict(name='arm64', machine=183, prefix='lib/', base=True)
 ARMHF = dict(name='armhf', machine=40, prefix='armhf/lib/', base=False)
 ARMHF_LIBDIRS = ('usr/lib/arm-linux-gnueabihf/', 'lib/arm-linux-gnueabihf/', 'usr/lib/arm-linux-gnueabihf/pulseaudio/')
 # SDL2 opens these with dlopen, so no DT_NEEDED names them.
 ARMHF_DLOPEN = ['libwayland-client.so.0', 'libwayland-cursor.so.0', 'libxkbcommon.so.0', 'libasound.so.2']
+# Desktop GL and glvnd, which gl4es and its stubs stand in for (gl4es/); never in the shared lib/.
+GL_PRIVATE = {'libGL.so.1', 'libOpenGL.so.0', 'libGLX.so.0', 'libGLU.so.1', 'libGLdispatch.so.0'}
+# --mesa (RG DS OS, Panfrost rather than libmali): focal's 32-bit Mesa (21.2, which drives the Mali-G52 without a
+# debug flag). glvnd's libEGL finds Mesa's through the vendor file; EGL on the display card loads rockchip_dri.so
+# (kmsro), which renders with panfrost_dri.so: one megadriver file, placed under both names.
+MESA_LIBS = ['libEGL.so.1', 'libGLESv2.so.2', 'libGLESv1_CM.so.1', 'libgbm.so.1', 'libEGL_mesa.so.0']
+MESA_FILES = [
+    ('libgl1-mesa-dri', 'usr/lib/arm-linux-gnueabihf/dri/panfrost_dri.so', 'armhf/dri/panfrost_dri.so'),
+    ('libgl1-mesa-dri', 'usr/lib/arm-linux-gnueabihf/dri/rockchip_dri.so', 'armhf/dri/rockchip_dri.so'),
+    ('libegl-mesa0', 'usr/share/glvnd/egl_vendor.d/50_mesa.json', 'armhf/glvnd/50_mesa.json'),
+]
 # GNU tools port scripts and PortMaster's funcs.txt expect where the card has BusyBox (or nothing):
 # name in bin/ -> (package, path in the package).
 TOOLS = {
@@ -152,10 +173,10 @@ def packages(mirror=None, suites=None, components=None):
     return best
 
 
-def contents(mirror=None, paths=('dists/focal/Contents-%s.gz', 'dists/focal-updates/Contents-%s.gz')):
+def contents(mirror=None, paths=None):
     """Path in a package -> package name, for the library folders only."""
     owner = {}
-    for path in paths:
+    for path in paths or CONTENTS:
         path = path % ARCH['name']
         raw = cached(path.replace('dists/', '').replace('/', '-'), '%s/%s' % (mirror or MIRRORS[0], path))
         for line in gzip.decompress(raw).decode('utf-8', 'replace').splitlines():
@@ -168,7 +189,10 @@ def contents(mirror=None, paths=('dists/focal/Contents-%s.gz', 'dists/focal-upda
 
 def deb_members(package, mirror=None):
     """(sha256, size, {path: bytes or ('link', target)}) of a package's data.tar.xz."""
-    data = cached(Path(package['Filename']).name, (mirror or MIRRORS[0]) + '/' + package['Filename'])
+    mirror = mirror or MIRRORS[0]
+    # Debian and Ubuntu share file names for different builds (libxss1_1.2.3-1_armhf.deb): Debian's are kept apart.
+    name = Path(package['Filename']).name
+    data = cached(('debian-' if 'debian' in mirror else '') + name, mirror + '/' + package['Filename'])
     digest = hashlib.sha256(data).hexdigest()
     if digest != package['SHA256']: raise ValueError('%s: SHA-256 mismatch' % package['Package'])
     pos, members = 8, {}
@@ -182,8 +206,13 @@ def deb_members(package, mirror=None):
         with tarfile.open(fileobj=io.BytesIO(lzma.decompress(body))) as tar:
             for info in tar:
                 path = info.name.lstrip('./')
-                if info.issym(): members[path] = ('link', info.linkname)
-                elif info.isfile(): members[path] = tar.extractfile(info).read()
+                # Mesa's DRI drivers are one file under many names: hard links, named from the archive's root.
+                if info.issym():
+                    members[path] = ('link', info.linkname)
+                elif info.islnk():
+                    members[path] = ('link', '/' + info.linkname.lstrip('./'))
+                elif info.isfile():
+                    members[path] = tar.extractfile(info).read()
     return digest, len(data), members
 
 
@@ -209,11 +238,19 @@ def main():
     parser.add_argument('--tools', default=','.join(TOOLS), help='comma-separated tools for bin/')
     parser.add_argument('--arch', choices=('arm64', 'armhf'), default='arm64')
     parser.add_argument('--mali', default='', help='with --arch armhf: URL of the 32-bit libmali to pin')
+    parser.add_argument('--mesa', action='store_true', help="with --arch armhf: focal's Mesa instead (RG DS OS)")
+    parser.add_argument('--about', default='', help='what the manifest is for (its "about" text)')
+    parser.add_argument('--base', choices=('focal', 'bookworm'), default='focal', help='the archive packages come from')
     parser.add_argument('--gl-libs', default='libGLU.so.1', help='with --gl4es: libraries that go beside it')
     parser.add_argument('--gl4es', default='', help='URL#member of a PortMaster port zip carrying gl4es libGL.so.1')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
-    global LIBDIRS
+    global LIBDIRS, MIRRORS, SUITES, COMPONENTS, CONTENTS, FALLBACKS
+    if args.base == 'bookworm':
+        # focal becomes the first fallback, for the sonames bookworm moved past (libssl.so.1.1...)
+        focal = dict(mirrors=MIRRORS, suites=SUITES, components=COMPONENTS, contents=CONTENTS)
+        FALLBACKS = {'focal': focal, **FALLBACKS}
+        MIRRORS, SUITES, COMPONENTS, CONTENTS = (BOOKWORM[k] for k in ('mirrors', 'suites', 'components', 'contents'))
     if args.arch == 'armhf':
         ARCH.update(ARMHF)
         LIBDIRS = ARMHF_LIBDIRS
@@ -258,6 +295,14 @@ def main():
         # Rockchip's 32-bit libmali for this GPU (g24p0, Wayland + GBM), the 32-bit twin of the card's own driver.
         mali = cached('libmali-armhf-' + Path(args.mali).name, args.mali)
         queue += elf_dynamic(mali, ARCH['machine'])[1]
+    if args.mesa:
+        queue += MESA_LIBS
+        for package, path, target in MESA_FILES:
+            _digest, _size, members = members_of(package)
+            real, data = resolve(members, path)
+            if data is None: raise ValueError('%s: %s missing' % (package, path))
+            take(package, real, target)
+            if path.endswith('.so'): queue += elf_dynamic(data, ARCH['machine'])[1]
     for tool in [t for t in args.tools.split(',') if t]:
         package, path = TOOLS[tool]
         if tool in WRAPPERS: continue
@@ -291,7 +336,9 @@ def main():
             take(package, real, prefix + soname)
             queue += elf_dynamic(data, ARCH['machine'])[1]
 
-    close(queue, ARCH['prefix'], device)
+    # With gl4es, desktop GL comes from rgds/gl4es and only GL ports get it on their path (runtime/portmaster_compat.py):
+    # glvnd's libGL in lib/ would reach every port, with no GLX vendor behind it.
+    close(queue, ARCH['prefix'], device | (GL_PRIVATE if args.gl4es else set()))
     if args.gl4es:
         # Libraries for desktop-GL ports that sit with gl4es (gl4es/, which only such ports get on their path):
         # GLU names libGL.so.1, and a libGL.so.1 every port sees changes what PortMaster's Weston runtime does.
@@ -339,8 +386,8 @@ def main():
         ]
     manifest = dict(
         schema=1,
-        about='Ubuntu 20.04 (focal) arm64 packages for PortMaster ports on RG DS Core. Generated by '
-        'tools/portmaster_compat_manifest.py; installed by runtime/portmaster_compat.py.',
+        about=(args.about or 'Ubuntu 20.04 (focal) %s packages for PortMaster ports on RG DS Core.' % ARCH['name']) +
+        ' Generated by tools/portmaster_compat_manifest.py; installed by runtime/portmaster_compat.py.',
         mirrors=MIRRORS,
         wrappers={tool: WRAPPERS[tool]
                   for tool in args.tools.split(',') if tool in WRAPPERS},

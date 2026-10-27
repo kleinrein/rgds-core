@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,17 +68,6 @@ class DeviceServiceTests(unittest.TestCase):
         self.assertEqual(self.service.fields["wifi_signal"], "-1")
         self.assertEqual(self.service.fields["wifi_connected"], "0")
 
-    def test_independent_missing_adapter_never_calls_vendor_initializer(self):
-        with patch.dict('os.environ',{'RGDS_SESSION_PLATFORM':'independent'}), \
-                patch('boot_network.wireless_state',return_value=([],False)), \
-                patch('boot_network.capture_helper') as capture,patch('boot_network.ensure_boot_network') as vendor, \
-                patch('device_services.time.monotonic',side_effect=[0,3]), \
-                patch.object(self.service,'command'):
-            with self.assertRaisesRegex(ValueError, 'OS driver'):
-                self.service.prepare_wifi(self.root / 'sys')
-            capture.assert_not_called()
-            vendor.assert_not_called()
-
     def test_wifi_password_is_on_stdin_and_never_echoed_from_cli_failure(self):
         secret = "private $(not a shell) password"
         result = subprocess.CompletedProcess([], 4, stdout=secret, stderr=secret)
@@ -118,39 +108,6 @@ class DeviceServiceTests(unittest.TestCase):
                 self.assertNotEqual(self.service.fields["connection"], "stale SSID")
                 self.assertIn(reason, self.service.fields["wifi_reason"])
 
-    def test_prepare_wifi_unblocks_only_wlan_and_enables_networking_and_station(self):
-        sysfs = self.root / "sys"
-        for name, kind in (("rfkill0", "bluetooth"), ("rfkill1", "wlan")):
-            entry = sysfs / "class/rfkill" / name
-            entry.mkdir(parents=True)
-            (entry / "type").write_text(kind)
-            (entry / "soft").write_text("1\n")
-            (entry / "hard").write_text("0\n")
-        (sysfs / "class/net/wlan0/wireless").mkdir(parents=True)
-        (sysfs / "class/net/p2p0/wireless").mkdir(parents=True)
-        with patch.object(self.service, "command") as command, patch.object(
-            self.service, "run_command"
-        ) as run, patch("boot_network.ensure_boot_network") as recover:
-            self.service.prepare_wifi(sysfs)
-        recover.assert_not_called()
-        self.assertEqual((sysfs / "class/rfkill/rfkill0/soft").read_text(), "1\n")
-        self.assertEqual((sysfs / "class/rfkill/rfkill1/soft").read_text(), "0\n")
-        self.assertEqual(
-            [call.args[0] for call in command.call_args_list],
-            [["networking", "on"], ["radio", "wifi", "on"], ["device", "set", "wlan0", "managed", "yes"]]
-        )
-        self.assertEqual(run.call_args.args[0], ["ip", "link", "set", "dev", "wlan0", "up"])
-
-    def test_prepare_missing_adapter_uses_verified_wifi_only_recovery_without_boot_install(self):
-        sysfs = self.root / "sys"
-        (sysfs / "class/net").mkdir(parents=True)
-        guard = {"reviewed": True}
-        with patch("boot_network.capture_helper", return_value=guard), patch(
-            "boot_network.ensure_boot_network", return_value={"interfaces": ["wlan0"]}
-        ) as recover, patch.object(self.service, "command"), patch.object(self.service, "run_command"):
-            self.service.prepare_wifi(sysfs)
-        recover.assert_called_once_with({"network_guard": guard}, sysfs=sysfs)
-
     def test_hardware_block_does_not_claim_success_or_touch_bluetooth(self):
         sysfs = self.root / "sys"
         entry = sysfs / "class/rfkill/rfkill0"
@@ -158,10 +115,10 @@ class DeviceServiceTests(unittest.TestCase):
         (entry / "type").write_text("wlan")
         (entry / "hard").write_text("1")
         (entry / "soft").write_text("1")
-        with patch.object(self.service,
-                          "command") as command, self.assertRaisesRegex(ValueError, "blocked by the hardware"):
+        self.service.wpa = unittest.mock.Mock()
+        with self.assertRaisesRegex(ValueError, "blocked by the hardware"):
             self.service.prepare_wifi(sysfs)
-        command.assert_not_called()
+        self.service.wpa.start.assert_not_called()
         self.assertEqual((entry / "soft").read_text(), "1")
 
     def test_radio_on_waits_for_adapter_instead_of_trusting_command_exit(self):
@@ -380,20 +337,6 @@ class DeviceServiceTests(unittest.TestCase):
         self.assertEqual(self.service.fields["wifi"], "0")
         self.assertEqual(self.service.fields["interface"], "")
         self.assertIn("No Wi-Fi adapter", self.service.fields["message"])
-
-    def test_failed_initializer_stops_enable_and_reports_its_error(self):
-        sysfs = self.root / "sys"
-        (sysfs / "class/net").mkdir(parents=True)
-        with patch("boot_network.capture_helper", return_value={}), patch(
-            "boot_network.ensure_boot_network",
-            side_effect=ValueError("The configured Wi-Fi helper has not been reviewed.")
-        ), patch.object(self.service, "command") as command, patch.object(self.service,
-                                                                          "run_command") as run, self.assertRaisesRegex(
-                                                                              ValueError, "has not been reviewed"
-                                                                          ):
-            self.service.prepare_wifi(sysfs)
-        command.assert_not_called()
-        run.assert_not_called()
 
     def test_preview_network_toggle_scan_and_connect_are_persistent_simulations(self):
         self.service.radio(False)

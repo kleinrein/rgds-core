@@ -24,26 +24,36 @@ def clean_environment():
 
 
 class Mixer:
+    # The stock kernel names the RK817's playback volume DAC; mainline's codec driver (RG DS OS, BananaLinux) calls
+    # the same register Master.
+    CONTROLS = ("DAC", "Master")
+
+    def __init__(self):
+        self.control = None
+
     def query(self):
-        result = subprocess.run(
-            ["amixer", "-c", "0", "sget", "DAC"],
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            env=clean_environment(),
-            check=True,
-            timeout=2
-        )
-        levels = [int(v) for v in re.findall(r"\[(\d+)%\]", result.stdout)]
-        if not levels:
-            raise ValueError("DAC playback mixer unavailable")
-        return max(levels)
+        for control in ((self.control, ) if self.control else self.CONTROLS):
+            result = subprocess.run(
+                ["amixer", "-c", "0", "sget", control],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                env=clean_environment(),
+                timeout=2
+            )
+            levels = [int(v) for v in re.findall(r"\[(\d+)%\]", result.stdout)]
+            if result.returncode == 0 and levels:
+                self.control = control
+                return max(levels)
+        raise ValueError("DAC playback mixer unavailable")
 
     def set(self, level):
         # RK817's lowest ~30% lies below the speaker floor. Zero remains mute.
         percent = 0 if level == 0 else 30 + round(70 * (level - 1) / 99)
+        if not self.control:
+            self.query()
         subprocess.run(
-            ["amixer", "-q", "-c", "0", "sset", "DAC", f"{percent}%"],
+            ["amixer", "-q", "-c", "0", "sset", self.control, f"{percent}%"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             env=clean_environment(),

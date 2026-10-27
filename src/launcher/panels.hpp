@@ -5,10 +5,6 @@
 
 void App::top(SDL_Renderer* r, int y) {
     if (o.port_menu) return; // under the port, which covers this panel
-    if (card_repair) {
-        card_top(r, y);
-        return;
-    }
     if (settings.page == Page::BootWarning) {
         boot_top(r, y);
         return;
@@ -81,9 +77,11 @@ void App::top(SDL_Renderer* r, int y) {
         system_icon(r, systems_selected, 264, y + 100, 112);
         centered(r, system_info(listed_systems[systems_selected]).name, y + 228, 2, "ink");
         const SystemStats& stats = system_stats_for(systems_selected);
-        const std::array<std::string, 3> values = {std::to_string(stats.games), std::to_string(stats.sessions),
-                                                   std::to_string(stats.seconds / 3600) + "h " +
-                                                       std::to_string((stats.seconds / 60) % 60) + "m"};
+        const bool played = stats.played_ready;
+        const std::array<std::string, 3> values = {
+            std::to_string(stats.games), played ? std::to_string(stats.sessions) : "…",
+            played ? std::to_string(stats.seconds / 3600) + "h " + std::to_string((stats.seconds / 60) % 60) + "m"
+                   : "…"};
         const std::array<std::string, 3> captions = {"Games", "Times played", "Time played"};
         for (int i = 0; i < 3; i++) {
             int x = 52 + i * 182;
@@ -147,10 +145,6 @@ void App::bottom(SDL_Renderer* r, int y) {
     }
     if (o.port_menu && port_manager() && settings.page == Page::QuickMenu) {
         port_manager_menu(r, y);
-        return;
-    }
-    if (card_repair) {
-        card_bottom(r, y);
         return;
     }
     if (settings.page == Page::BootWarning) {

@@ -1,0 +1,15 @@
+config BR2_PACKAGE_RGDS_CORE
+	bool "rgds-core"
+	select BR2_PACKAGE_PYTHON3
+	select BR2_PACKAGE_SDL2
+	select BR2_PACKAGE_ALSA_UTILS
+	select BR2_PACKAGE_ALSA_UTILS_AMIXER
+	help
+	  RG DS Core: the launcher, its runtime, themes and assets, and the emulators, as one release in
+	  /usr/share/rgds/releases/<build> (named in /usr/share/rgds/active). tools/own_os_build.py stages
+	  it (BR2_PACKAGE_RGDS_CORE_STAGE) from the repository's device build and a release package.
+
+config BR2_PACKAGE_RGDS_CORE_STAGE
+	string "staged release"
+	depends on BR2_PACKAGE_RGDS_CORE
+	default "$(BR2_EXTERNAL_RGDS_PATH)/../../build/os-stage/rgds-core"

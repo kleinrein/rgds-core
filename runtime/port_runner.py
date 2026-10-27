@@ -17,6 +17,8 @@ engine with our bridge inside it, so the menu works from outside:
   thawing, the runner borrows the port's evdev descriptors (pidfd_getfd) and
   drains them, and the keyboard-like key device is grabbed while the menu is
   open so Weston queues nothing for the port either.
+* RG DS OS has no compositor: the runner leases the top panel to the port and the
+  bottom one to the helper (drm_lease.PanelLeases), so both draw on KMS at once.
 """
 import ctypes
 import ctypes.util
@@ -98,6 +100,12 @@ def prepare_binds(root=None):
         except OSError:
             pass
     return list(_BINDS)
+
+
+def lease_shims(app):
+    """librgds-drm-lease.so for LD_PRELOAD (tools/build_compat_stubs.py): $LIB is lib64 for RG DS OS's own loader and
+    lib/arm-linux-gnueabihf for the armhf layer's, so each program loads its own build and no warning is printed."""
+    return str(Path(app) / 'runtime/portmaster_files/kms/$LIB/librgds-drm-lease.so')
 
 
 def enter_port():
@@ -183,6 +191,7 @@ class PortMenu(GameMenu):
     def __init__(self, child, app, data, core, rom, environment, inputs=None):
         super().__init__(child, app, data, core, rom, environment, inputs=inputs)
         self.companion = None
+        self.leases = None  # RG DS OS: the panels' DRM leases (start_companion)
         self.state_file = self.folder / 'port-menu.state'
         self.port_status = self.folder / 'port-status.ini'
         self.state_token = 0
@@ -215,7 +224,22 @@ class PortMenu(GameMenu):
             RGDS_TOUCH_GRAB="1",
             SDL_VIDEODRIVER="wayland"
         )
+        if self.leases is not None:
+            # The bottom panel is the only display the helper sees; it reads the port's picture for the touch pad
+            # from the top panel's connector, which on RG DS OS is DSI-2.
+            env.update(SDL_VIDEODRIVER='kmsdrm', RGDS_PORT_LEASE='1', RGDS_SCANOUT_CONNECTOR='DSI-2')
+            env.pop('SDL_KMSDRM_FIRST', None)
+            env['LD_PRELOAD'] = lease_shims(self.app)
+            self.leases.environment(env, 'bottom')
         return env
+
+    def port_leases(self, env):
+        """The port's half of the leases (RG DS OS): each of its processes asks the runner for a lease of the top
+        panel when it opens the card (drm_lease.PanelLeases.serve). Returns the descriptors the port inherits: none."""
+        if self.leases is None: return ()
+        self.leases.environment(env, 'top')
+        env['LD_PRELOAD'] = ' '.join(p for p in (lease_shims(self.app), env.get('LD_PRELOAD', '')) if p)
+        return ()
 
     def write_state(self, state):
         self.state_token += 1
@@ -225,6 +249,19 @@ class PortMenu(GameMenu):
         """The helper maps its windows now, before the port, so the port is the last window and keeps focus."""
         self.ready.unlink(missing_ok=True)
         self.write_state('idle')
+        from linux_platform import rgds_os
+        if rgds_os():
+            from drm_lease import PanelLeases
+            try:
+                self.leases = PanelLeases(top='DSI-2', bottom='DSI-1')
+            except OSError as error:
+                # The port then opens the card itself and has both panels; Home returns home, with no menu.
+                print(
+                    'RGDS port: no panel leases (%s); the port runs without the menu' % error,
+                    file=sys.stderr,
+                    flush=True
+                )
+                return False
         command = [
             str(self.app / "bin/rgds-launcher"), "--port-menu", "--app",
             str(self.app), "--data",
@@ -235,7 +272,9 @@ class PortMenu(GameMenu):
         if env.get('RGDS_SESSION_PLATFORM') == 'independent' and env.get('RGDS_TOP_DISPLAY'
                                                                          ) and env.get('RGDS_BOTTOM_DISPLAY'):
             command += ['--top-display', env['RGDS_TOP_DISPLAY'], '--bottom-display', env['RGDS_BOTTOM_DISPLAY']]
-        self.companion = subprocess.Popen(command, env=env)
+        self.companion = subprocess.Popen(
+            command, env=env, pass_fds=(self.leases.fds['bottom'],) if self.leases is not None else ()
+        )
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline and self.companion.poll() is None:
             try:
@@ -388,7 +427,9 @@ class PortMenu(GameMenu):
         if self.manager and wanted: wanted = 'menu'
         if wanted and self.child.poll() is None and time.monotonic() - self.last_toggle >= .3:
             self.last_toggle = time.monotonic()
-            if wanted == 'home':
+            if self.companion is None:
+                self.stop_port()  # no helper to show a menu in (RG DS OS without panel leases): home
+            elif wanted == 'home':
                 if self.menu is None: self.open_ready()
                 self.stop_port()
             elif wanted == 'switcher':
@@ -447,6 +488,9 @@ class PortMenu(GameMenu):
                     except subprocess.TimeoutExpired:
                         self.companion.kill()
                         self.companion.wait()
+                if self.leases is not None:
+                    self.leases.close()
+                    self.leases = None
                 self.release_clocks()
                 self.inputs.close()
                 try:

@@ -16,7 +16,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 import activate
 import emulators
-import session
 
 spec = importlib.util.spec_from_file_location("device_tools", ROOT / "tools/device.py")
 device = importlib.util.module_from_spec(spec)
@@ -322,59 +321,6 @@ class ActivationTests(Fixture):
             kill.assert_not_called()
 
 
-class SessionTests(Fixture):
-    def test_frontend_releases_audio_and_returns_through_its_stock_supervisor(self):
-        record = {
-            "pid": 123,
-            "start": "old",
-            "restart": True,
-            "arguments": ["/stock/menu"],
-            "cwd": "/stock",
-            "environment": {
-                "HOME": "/root"
-            }
-        }
-        with patch.object(session, "frontend_alive", side_effect=[True, False]), \
-             patch.object(session.os, "kill") as kill:
-            session.stop_frontends([record])
-            kill.assert_called_once_with(123, session.signal.SIGTERM)
-        with patch.object(session, "restore_stock") as restore_stock, \
-             patch.object(session.subprocess, "Popen") as spawn:
-            session.restore([record], lease="owned flag")
-            restore_stock.assert_called_once_with("owned flag")
-            spawn.assert_not_called()
-
-    def test_new_session_cannot_replace_a_pending_recovery_lock(self):
-        lock = self.root / "session.lock"
-        lock.mkdir()
-        record = json.dumps({"pid": 123, "start": "123"})
-        (lock / "owner.json").write_text(record)
-        with patch.object(session, "LOCK", lock), patch.object(session, "process_identity", return_value=None):
-            with self.assertRaisesRegex(ValueError, "recovery"):
-                session.lock()
-        self.assertEqual((lock / "owner.json").read_text(), record)
-
-    def test_only_running_known_stock_frontends_are_selected(self):
-        proc = self.root / "proc"
-        proc.mkdir()
-        for pid, name, state in ((10, "dmenu.bin", "S"), (20, "muos3.bin", "T"), (30, "weston", "S")):
-            entry = proc / str(pid)
-            entry.mkdir()
-            (entry / "comm").write_text(name)
-            (entry / "stat").write_text(str(pid) + " (" + name + ") " + state + " 0" * 18 + " 999")
-        self.assertEqual(session.discover_frontends(proc), [{"pid": 10, "start": "999"}])
-
-    def test_restore_does_not_signal_a_reused_pid(self):
-        with patch.object(session, "process_identity", return_value="new"), patch.object(session.os, "kill") as kill:
-            session.restore([{"pid": 123, "start": "old"}])
-            kill.assert_not_called()
-
-    def test_restore_does_not_signal_when_process_identity_is_unknown(self):
-        with patch.object(session, "process_identity", return_value=None), patch.object(session.os, "kill") as kill:
-            session.restore([{"pid": 123, "start": None}])
-            kill.assert_not_called()
-
-
 class TransportTests(unittest.TestCase):
     def test_device_address_cannot_be_shell_or_ssh_options(self):
         for invalid in ("", "-oProxyCommand=whoami", "host;whoami", "host\nwhoami", "$(whoami)"):
@@ -384,49 +330,6 @@ class TransportTests(unittest.TestCase):
 
     def test_remote_installer_is_valid_python(self):
         compile(device.REMOTE_INSTALL, "remote_installer", "exec")
-
-    def test_fresh_installer_and_runtime_commands_do_not_mutate_release(self):
-        latest = ROOT / "dist/latest.txt"
-        if not latest.exists():
-            self.skipTest("Build the private package for the deployment integration check")
-        archive = ROOT / "dist" / latest.read_text().strip()
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "card/rgds"
-            (root / "inbox").mkdir(parents=True)
-            uploaded = root / "inbox/package.zip"
-            shutil.copy2(archive, uploaded)
-            # A new interpreter must import the staged modules for the first time.
-            # Isolate the global session marker so this test cannot signal a real session.
-            prefix = """import platform, pathlib
-platform.machine = lambda: 'aarch64'
-real_is_file = pathlib.Path.is_file
-pathlib.Path.is_file = lambda p: False if str(p) == '/tmp/rgds-session.lock/owner.json' else real_is_file(p)
-"""
-            env = os.environ.copy()
-            for name in ("PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX", "PYTHONPATH"):
-                env.pop(name, None)
-            result = subprocess.run(
-                [sys.executable, "-c", prefix + device.REMOTE_INSTALL,
-                 str(root), str(uploaded)],
-                env=env,
-                capture_output=True,
-                text=True
-            )
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            build = activate.read_pointer(root / "state/active")
-            app = root / "releases" / build
-            # Also test direct entry points without -B/environment protection.
-            for command in (
-                [sys.executable, str(app / "runtime/session.py"),
-                 "--help"], [sys.executable,
-                             str(app / "runtime/activate.py"), "verify", "--root",
-                             str(root)]
-            ):
-                result = subprocess.run(command, env=env, capture_output=True, text=True)
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertEqual(list(app.rglob("__pycache__")), [])
-            self.assertEqual(list(app.rglob("*.pyc")), [])
-            activate.verify_release(app)
 
     def test_uploaded_package_is_verified_and_installed_without_changing_saves(self):
         latest = ROOT / "dist/latest.txt"

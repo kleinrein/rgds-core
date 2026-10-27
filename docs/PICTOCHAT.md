@@ -39,7 +39,7 @@ Enter and a long space bar. In a room the key beside Q opens the accents (`àé`
 to come back) and the bottom-left key opens the stamp palette; Enter starts the second row of text.
 
 **Colours.** Chat dresses itself in your colour, as the original does. Until you pick one it
-is *automatic*: the launcher's accent colour (Settings, Theme & display), so changing the
+is *automatic*: the launcher's accent colour (Settings, Theme), so changing the
 accent changes PictoChat too. Pick any of the sixteen DS colours in your profile to
 override it; the first chip returns to automatic. Others see your messages in the nearest DS
 colour. The choice lives in `userdata/pictochat.ini`.

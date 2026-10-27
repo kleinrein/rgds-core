@@ -1,0 +1,17 @@
+#!/bin/sh
+# wpa_cli -a hook (started by net): an address for every network joined, gone again when it is left.
+#   wpa-event IFACE CONNECTED|DISCONNECTED
+stop() { [ -f /run/rgds/udhcpc.pid ] && kill $(cat /run/rgds/udhcpc.pid) 2>/dev/null; rm -f /run/rgds/udhcpc.pid; }
+case $2 in
+CONNECTED)
+    stop
+    udhcpc -b -t 10 -i "$1" -p /run/rgds/udhcpc.pid -s /usr/share/udhcpc/default.script > /dev/null 2>&1
+    # the clock, once per boot: the RTC on this unit drifts (10 days fast under Banana)
+    [ -f /run/rgds/ntp-done ] ||
+        (ntpd -q -n -p pool.ntp.org > /dev/null 2>&1 && hwclock -w && touch /run/rgds/ntp-done) &
+    ;;
+DISCONNECTED)
+    stop
+    ip addr flush dev "$1"
+    ;;
+esac

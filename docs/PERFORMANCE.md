@@ -329,5 +329,4 @@ display; with `--trace /dev/null --max 0 --interp` and `DS_TRAP_WILD=2L` it
 stops at the first ARM9 jump into unmapped memory or an odd ITCM mirror and
 prints the preceding instructions.
 
-Earlier measurements, including other emulators, are in the
-[archive](archive/PERFORMANCE_2026-10-11.md).
+Earlier measurements, including other emulators, are in the git history.

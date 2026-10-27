@@ -56,7 +56,7 @@ class SettingsInteractionTests(unittest.TestCase):
                 first = self.root / 'first.bmp'
                 last = self.root / 'last.bmp'
                 # Library's first row (Show all systems) has its own note: start on the engine row.
-                start = '50 key Down\n' if section == 'library' else ''
+                start = '40 key Down\n50 key Down\n' if section == 'library' else ''
                 self.run_ui(start, section, animations=False, screenshot=first)
                 self.run_ui(
                     start + '100 key Down\n150 key Down\n200 key Down\n250 key Down\n',
@@ -74,11 +74,11 @@ class SettingsInteractionTests(unittest.TestCase):
                     self.assertEqual(report['page'], expected)
 
     def test_touch_indicator_can_be_changed_by_touch_and_keyboard_and_persists(self):
-        # Touch indicator is the last row: scroll to the end, then tap it.
-        self.run_ui('10 wheel 0 -8\n30 click 180 379\n', 'theme')  # row 7 of 11
+        # Settings > Display: Touch indicator is the third row.
+        self.run_ui('30 click 180 290\n', 'display')
         self.assertIn('touch_indicator=0\n', (self.root / 'ui.ini').read_text())
         # A second run must load Off before toggling it back to On.
-        self.run_ui(''.join(f'{30+i*30} key Down\n' for i in range(7)) + '260 key A\n', 'theme')
+        self.run_ui(''.join(f'{30+i*30} key Down\n' for i in range(2)) + '260 key A\n', 'display')
         self.assertIn('touch_indicator=1\n', (self.root / 'ui.ini').read_text())
         self.assertIn('animations=1\n', (self.root / 'ui.ini').read_text())
         self.assertNotIn('touch_indicator', (self.root / 'preferences.ini').read_text())
@@ -86,25 +86,31 @@ class SettingsInteractionTests(unittest.TestCase):
     def test_left_right_and_a_open_without_changing_value(self):
         for key in ('Left', 'Right', 'A'):
             with self.subTest(key=key):
-                report = self.run_ui(f'20 key Down\n30 key {key}\n', 'library')
+                report = self.run_ui(f'10 key Down\n20 key Down\n30 key {key}\n', 'library')
                 self.assertEqual(report['picker_open'], 1)
                 self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
 
-    def test_melonds_is_selectable_as_third_row_and_restores(self):
-        self.run_ui('20 key Down\n30 key A\n60 key Down\n90 key Down\n120 key A\n', 'library')
-        self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())
+    def test_dscore_is_selectable_as_third_row_and_restores(self):
+        self.run_ui('10 key Down\n20 key Down\n30 key A\n60 key Down\n90 key Down\n120 key A\n', 'library')
+        self.assertIn('core=4\n', (self.root / 'preferences.ini').read_text())
         self.run_ui('', 'library')
-        self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())
+        self.assertIn('core=4\n', (self.root / 'preferences.ini').read_text())
+
+    def test_retired_melonds_default_falls_back_to_dscore(self):
+        (self.root / 'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\ncore=3\n')
+        self.run_ui('10 key Down\n20 key Down\n30 key A\n', 'library')
+        report = json.loads((self.root / 'report').read_text())
+        self.assertEqual(report['default_core'], 4)
 
     def test_choice_cancel_preserves_value_and_apply_persists(self):
-        self.run_ui('20 key Down\n30 key A\n60 key Right\n90 key Escape\n', 'library')
+        self.run_ui('10 key Down\n20 key Down\n30 key A\n60 key Right\n90 key Escape\n', 'library')
         self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
-        report = self.run_ui('20 key Down\n30 key A\n60 key Right\n90 key Right\n120 key A\n', 'library')
+        report = self.run_ui('10 key Down\n20 key Down\n30 key A\n60 key Right\n90 key Right\n120 key A\n', 'library')
         self.assertFalse(report['picker_open'])
-        self.assertIn('core=3\n', (self.root / 'preferences.ini').read_text())  # the third row: melonDS
+        self.assertIn('core=4\n', (self.root / 'preferences.ini').read_text())  # the next offered row: DSCore
 
     def test_touch_choice_is_direct_and_commits_once(self):
-        self.run_ui('30 click 180 211\n120 click 180 280\n', 'library')  # the engine row, under Show all systems
+        self.run_ui('30 click 180 293\n120 click 180 330\n', 'library')  # the engine row, under Scan and Show all systems
         self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
     def test_swipe_scrolls_without_opening_the_pressed_card(self):
@@ -136,7 +142,7 @@ class SettingsInteractionTests(unittest.TestCase):
         report = self.run_ui('90 key Down\n100 key A\n', 'library', animations=False)
         self.assertLess(report['frames'], 12)
         self.assertEqual(report['render_file_reads'], 0)
-        self.run_ui('29 key Down\n30 key A\n31 key Right\n32 key A\n', 'library', animations=False)
+        self.run_ui('28 key Down\n29 key Down\n30 key A\n31 key Right\n32 key A\n', 'library', animations=False)
         self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
 

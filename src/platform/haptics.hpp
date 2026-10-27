@@ -3,7 +3,11 @@
 // game rumble. The motor sits behind the pad's force-feedback interface
 // (ANBERNIC-rk3568-keys, FF_RUMBLE through ff-memless, a PWM on the board):
 // the strong magnitude sets the duty as magnitude / 0x8000, saturating there,
-// and anything below about 0x3000 (37% duty) leaves the motor off.
+// and anything below about 0x3000 (37% duty) leaves the motor off. ROCKNIX's
+// joypad driver (retrogame_joypad: RG DS OS, BananaLinux) sets the duty as
+// magnitude / 0xFFFF instead, so its magnitudes are doubled to mean the same:
+// left as they are, every tap drove the motor at 19-50% of its 10 kHz PWM and
+// the coil whined instead of the motor turning.
 //
 // A pattern is uploaded as one effect per pulse with its start delay, then all
 // of them are started at once, so the kernel's timers play it out. Nothing waits
@@ -239,6 +243,7 @@ private:
 #endif
     }
 #ifdef __linux__
+    bool full_scale_ffff = false;
     static bool has_rumble(int handle) {
         unsigned long bits[(FF_MAX + 8 * sizeof(long)) / (8 * sizeof(long))] = {};
         if (ioctl(handle, EVIOCGBIT(EV_FF, sizeof(bits)), bits) < 0) return false;
@@ -278,6 +283,9 @@ private:
         fd = ::open(path.c_str(), O_RDWR | O_CLOEXEC | O_NONBLOCK);
         if (fd < 0) return false;
         opens++;
+        char name[128] = {};
+        ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name);
+        full_scale_ffff = std::strcmp(name, "retrogame_joypad") == 0;
         // The gain is the pad's, not this handle's: another program may have
         // left it low. Full gain keeps the strength settings meaning the same.
         input_event gain{};
@@ -293,7 +301,7 @@ private:
         effect.id = int16_t(id);
         effect.replay.length = ms;
         effect.replay.delay = delay;
-        effect.u.rumble.strong_magnitude = value;
+        effect.u.rumble.strong_magnitude = full_scale_ffff ? uint16_t(std::min(0xFFFF, value * 2)) : value;
         effect.u.rumble.weak_magnitude = 0; // the RG DS driver reads only the strong motor
         if (ioctl(fd, EVIOCSFF, &effect) < 0) {
             // A slot taken back by the kernel (another program used them all):

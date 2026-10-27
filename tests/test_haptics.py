@@ -135,7 +135,7 @@ class VibrationUITests(unittest.TestCase):
         r = self.run_ui('100 click 300 381\n', entry=('--settings', '--section', 'sound'))
         self.assertEqual(r['page'], HAPTICS_PAGE)
         r = self.run_ui(
-            '100 key Down\n200 key Down\n300 key Down\n400 key A\n', entry=('--settings', '--section', 'sound')
+            '100 key Down\n200 key Down\n300 key Down\n400 key Down\n500 key A\n', entry=('--settings', '--section', 'sound')
         )
         self.assertEqual(r['page'], HAPTICS_PAGE)
 

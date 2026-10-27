@@ -1,0 +1,39 @@
+# RG DS OS on top of ROCKNIX's RG DS kernel configuration (linux-rocknix.config)
+CONFIG_LOCALVERSION="-rgds"
+CONFIG_DEFAULT_HOSTNAME="rgds"
+CONFIG_INITRAMFS_SOURCE=""
+# the system is a read-only squashfs slot
+CONFIG_SQUASHFS=y
+CONFIG_SQUASHFS_LZ4=y
+CONFIG_SQUASHFS_FILE_DIRECT=y
+CONFIG_SQUASHFS_COMPILE_DECOMP_MULTI_PERCPU=y
+# panels, touch and buttons built in: nothing to load before the menu
+CONFIG_INPUT_JOYSTICK=y
+CONFIG_INPUT_POLLDEV=y
+CONFIG_DRM_MIPI_DSI=y
+CONFIG_TOUCHSCREEN_GOODIX=y
+# the GPU built in too: RG DS Core draws with it from its first frame (Banana loads it as a module later)
+CONFIG_DRM_PANFROST=y
+CONFIG_SUSPEND=y
+CONFIG_PM_SLEEP=y
+CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y
+CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
+CONFIG_PM_DEVFREQ=y
+CONFIG_DEVFREQ_GOV_PERFORMANCE=y
+CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y
+# the RG DS emblem on the panel as soon as the console takes the framebuffer (about 1 s), until RG DS Core's boot
+# scene replaces it; the console's cursor is hidden on the command line (vt.global_cursor_default=0)
+CONFIG_LOGO=y
+CONFIG_LOGO_LINUX_CLUT224=y
+CONFIG_LOGO_LINUX_CLUT224_FILE="/Users/andreasrein/dev/rgds/os/buildroot/board/rgds/boot-logo.ppm"
+CONFIG_LOGO_LINUX_MONO=n
+CONFIG_LOGO_LINUX_VGA16=n
+# boot time: no debugfs (37 ms of clock entries at boot; nothing of ours reads /sys/kernel/debug). The jitter-entropy
+# RNG's 69 ms self-test stays: CRYPTO_DRBG selects it.
+CONFIG_DEBUG_FS=n
+# kernel logs kept across a hard power-off (the plan's Phase 0 evidence): pstore in RAM
+CONFIG_PSTORE=y
+CONFIG_PSTORE_CONSOLE=y
+CONFIG_PSTORE_PMSG=y
+CONFIG_PSTORE_RAM=y

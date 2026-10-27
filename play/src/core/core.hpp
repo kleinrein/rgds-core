@@ -54,7 +54,17 @@ public:
     virtual double frame_rate() const = 0;
 
     virtual void run_frame(uint32_t buttons) = 0;
+    // The sticks for the next run_frame, -32768..32767 each, right and down
+    // positive (libretro's convention). Only systems with a stick read them.
+    virtual void set_sticks(int16_t lx, int16_t ly, int16_t rx, int16_t ry) { (void)lx, (void)ly, (void)rx, (void)ry; }
     virtual Picture picture() const = 0;
+    // A light gun aimed by touch (the NES Zapper): on, the second port is the gun; set_pointer aims it at a pixel
+    // of picture() (-1: off the screen) with the trigger down or up. False when the system has none.
+    virtual bool set_lightgun(bool on) {
+        (void)on;
+        return false;
+    }
+    virtual void set_pointer(int x, int y, bool pressed) { (void)x, (void)y, (void)pressed; }
     // How much of the last frame the cartridge's rumble motor was on, 0-1: Game
     // Boy rumble cartridges (MBC5), Game Boy Advance ones (Drill Dozer, WarioWare:
     // Twisted!). 0 for every other game, and always for a shadow.
@@ -151,5 +161,23 @@ struct OpenResult {
 RomBytes read_rom(const std::string& path, std::string& error, std::string* inner_name = nullptr);
 bool is_rom_name(const std::string& name);
 OpenResult open_mgba(RomBytes rom, const std::string& name, const std::vector<uint8_t>& battery);
+// A libretro core (core/libretro_core.cpp): `library` is the core's .so, `system` the system id the launcher
+// knows the game by (nes, snes, md, ...), system_dir where the core finds BIOS files, save_dir its own files.
+OpenResult open_libretro(const std::string& library, const std::string& rom_path, const std::string& system,
+                         const std::string& system_dir, const std::string& save_dir,
+                         const std::vector<uint8_t>& battery);
+
+// A GLES context for libretro cores that draw with the GPU (the N64's GLideN64). The player makes one beside its
+// panels' and the core draws into a framebuffer of its own, read back into picture() each frame, so frames, shaders
+// and states stay the same as for any other system. Without a host (play-shot, play-tests) such a core shows black.
+struct GlHost {
+    // The core's context current, made on first use at this GLES version; false when there can be none.
+    bool (*begin)(int major, int minor) = nullptr;
+    void (*end)() = nullptr; // the core's context released (the panels bind theirs again before drawing)
+    void* (*proc)(const char* name) = nullptr;
+};
+void set_gl_host(const GlHost* host);
+// Tears a GPU-drawing core down while its context still exists: before the player closes its windows.
+void close_gpu_core();
 
 } // namespace play

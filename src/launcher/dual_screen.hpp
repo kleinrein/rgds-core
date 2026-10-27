@@ -4,6 +4,9 @@
 // cartridge's game code, or, for Game Boy carts too old to have one, by its
 // header title (play/src/app/session.cpp); this finds the same file the same way.
 #include <cctype>
+#include <cstdint>
+#include <cstdio>
+#include <iterator>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -56,6 +59,62 @@ inline std::string title_code(const unsigned char* header) {
     while (!out.empty() && out.back() == '_') out.pop_back();
     return out;
 }
+
+// The libretro systems' names for a game, as the player's core adapter gives them
+// (play/src/core/libretro_core.cpp): a name made a code ("Legend of Zelda, The (USA)"
+// -> LEGEND_OF_ZELDA) and the cartridge's CRC-32 without a dumper's header (CRC_3FE272FB).
+inline std::string name_code(std::string name) {
+    for (char open : {'(', '['}) {
+        const char close = open == '(' ? ')' : ']';
+        for (size_t at; (at = name.find(open)) != std::string::npos;) {
+            const size_t end = name.find(close, at);
+            name.erase(at, end == std::string::npos ? std::string::npos : end - at + 1);
+        }
+    }
+    std::string out;
+    for (char ch : name) {
+        auto c = static_cast<unsigned char>(ch);
+        if (c == '\'') continue;
+        if (std::isalnum(c)) out += char(std::toupper(c));
+        else if (!out.empty() && out.back() != '_') out += '_';
+    }
+    while (!out.empty() && out.back() == '_') out.pop_back();
+    if (out.size() > 4 && out.compare(out.size() - 4, 4, "_THE") == 0) out.erase(out.size() - 4);
+    if (out.rfind("THE_", 0) == 0) out.erase(0, 4);
+    return out;
+}
+
+inline std::set<std::string> cartridge_codes(const fs::path& rom, const std::string& system) {
+    std::set<std::string> codes{name_code(rom.stem().string())};
+    std::error_code error;
+    const auto size = fs::file_size(rom, error);
+    if (error || size > (16u << 20)) return codes;
+    std::ifstream file(rom, std::ios::binary);
+    std::string bytes((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    size_t skip = 0;
+    if (system == "nes" && bytes.size() > 16 && bytes.compare(0, 4, "NES\x1A") == 0) skip = 16;
+    if (system == "snes" && bytes.size() % 1024 == 512) skip = 512;
+    const auto* data = reinterpret_cast<const unsigned char*>(bytes.data()) + skip;
+    const size_t n = bytes.size() - skip;
+    uint32_t crc = 0xFFFFFFFFu;
+    for (size_t i = 0; i < n; ++i) {
+        crc ^= data[i];
+        for (int k = 0; k < 8; ++k) crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1)));
+    }
+    char text[16];
+    std::snprintf(text, sizeof text, "CRC_%08X", ~crc);
+    codes.insert(text);
+    if (system == "snes")
+        for (size_t base : {size_t(0x7FC0), size_t(0xFFC0), size_t(0x40FFC0)}) {
+            if (base + 0x20 > n) continue;
+            const unsigned complement = data[base + 0x1C] | (data[base + 0x1D] << 8);
+            const unsigned checksum = data[base + 0x1E] | (data[base + 0x1F] << 8);
+            if ((complement ^ checksum) != 0xFFFF) continue;
+            codes.insert(name_code(std::string(reinterpret_cast<const char*>(data + base), 21)));
+            break;
+        }
+    return codes;
+}
 } // namespace dual_screen_detail
 
 // `profiles` is RG DS Play's profiles folder (emulators/rgds-play/profiles in a
@@ -70,6 +129,12 @@ inline bool dual_screen_game(const fs::path& rom, const std::string& system, con
     bool& result = known[rom] = false;
     const std::string ext = upper(rom.extension().string());
     if (ext == ".ZIP" || ext == ".7Z") return result;
+    if (system == "nes" || system == "snes" || system == "sms") {
+        const auto& codes = profile_codes(profiles / system);
+        for (const auto& code : cartridge_codes(rom, system))
+            if (codes.count(code)) return result = true;
+        return result;
+    }
     unsigned char header[0x150] = {};
     std::ifstream file(rom, std::ios::binary);
     if (!file.read(reinterpret_cast<char*>(header), sizeof header)) return result;

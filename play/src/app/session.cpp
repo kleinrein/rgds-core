@@ -56,20 +56,31 @@ Session::~Session() { flush(); }
 
 bool Session::open(const SessionOptions& o, std::string& error) {
     std::string inner;
-    RomBytes rom = read_rom(o.rom, error, &inner);
-    if (!rom) return false;
-    // The save is chosen before the core starts, so the game sees it at boot.
-    // Its folder needs the system, which the core knows only once loaded:
-    // open once to learn it (cheap), then for real with the save attached.
-    {
+    RomBytes rom;
+    if (o.core_library.empty()) {
+        rom = read_rom(o.rom, error, &inner);
+        if (!rom) return false;
+        // The save is chosen before the core starts, so the game sees it at boot.
+        // Its folder needs the system, which the core knows only once loaded:
+        // open once to learn it (cheap), then for real with the save attached.
         auto probe = open_mgba(rom, inner, {});
         if (!probe.core) {
             error = probe.error;
             return false;
         }
         if (!prepare_save(o.data_root, probe.core->system(), o.rom, o.save_sources, save_, error)) return false;
+    } else {
+        // A libretro core: the launcher names the system, and the core reads the file itself.
+        if (o.system.empty()) {
+            error = "--core needs --system";
+            return false;
+        }
+        rom = std::make_shared<const std::vector<uint8_t>>();
+        if (!prepare_save(o.data_root, o.system, o.rom, o.save_sources, save_, error)) return false;
     }
-    auto opened = open_mgba(rom, inner, save_.bytes);
+    auto opened = o.core_library.empty()
+                      ? open_mgba(rom, inner, save_.bytes)
+                      : open_libretro(o.core_library, o.rom, o.system, o.system_dir, o.data_root, save_.bytes);
     if (!opened.core) {
         error = opened.error;
         return false;
@@ -82,8 +93,12 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     for (const auto& dir : o.profile_dirs) profiles_.load_directory(dir, profile_errors_);
     for (const auto& e : profile_errors_) std::fprintf(stderr, "play: profile skipped: %s\n", e.c_str());
     profile_ = profiles_.find(core_->system(), core_->game_code());
-    if (!profile_ && std::string(core_->system()) != "gba")
+    if (!profile_ && std::string(core_->system()) != "gba" && !rom->empty())
         profile_ = profiles_.find(core_->system(), header_title_code(*rom));
+    // A libretro game by its cartridge's own name (SNES) or its file's.
+    if (!profile_ && rom->empty()) profile_ = profiles_.find(core_->system(), core_->header_title());
+    if (profile_ && profile_->lightgun && !core_->set_lightgun(true))
+        std::fprintf(stderr, "play: this core has no light gun for %s\n", profile_->title.c_str());
     title_ = profile_ ? profile_->title : clean_title(file_stem(o.rom));
     // The launcher's appearance and language, so the second screen is part of RG DS.
     if (!o.preferences.empty()) look_ = load_look(o.preferences);

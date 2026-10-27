@@ -147,6 +147,7 @@ Desktop preview	Pratinjau desktop
 Development build	Build pengembangan
 Device address	Alamat perangkat
 Device information	Info perangkat
+Display	Tampilan
 Display FPS	FPS layar
 Done	Selesai
 Down	Bawah
@@ -441,6 +442,7 @@ Swapped	Ditukar
 System	Sistem
 THEME ERROR - RETAINED CURRENT	GALAT TEMA - TEMA SAAT INI DIPERTAHANKAN
 THEME RELOADED	TEMA DIMUAT ULANG
+Turn the handheld off and on again	Matikan lalu nyalakan kembali perangkat
 TYPEFACE	JENIS HURUF
 Temporary game cache cleared. Saves and artwork are kept.	Cache game sementara dihapus. Simpanan dan sampul tetap ada.
 The checkpoint did not finish saving.	Checkpoint tidak selesai disimpan.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Tahan diam untuk klik kanan
 Hold to exit	Tahan untuk keluar
 Touch screen off	Layar sentuh mati
 Touch screen is not available	Layar sentuh tidak tersedia
+Daylight saving	Waktu musim panas
+Automatic	Otomatis
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Waktu musim panas mengikuti zona waktumu. Paksa aktif atau nonaktif jika jam meleset satu jam.
+GBA true colour	Warna asli GBA
+Faded GBA colours made rich, as the real screen showed them.	Warna GBA yang pudar menjadi pekat, seperti yang ditampilkan layar aslinya.
+GBA true screen	Layar asli GBA
+The true GBA colours on its screen, with the gaps between its pixels.	Warna asli GBA di layarnya, dengan celah di antara pikselnya.

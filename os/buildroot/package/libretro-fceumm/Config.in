@@ -1,0 +1,4 @@
+config BR2_PACKAGE_LIBRETRO_FCEUMM
+	bool "libretro-fceumm"
+	help
+	  FCEUmm, the NES core (GPL-2.0): /usr/lib/libretro/fceumm_libretro.so, loaded by RG DS Play.

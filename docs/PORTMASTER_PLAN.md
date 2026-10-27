@@ -630,6 +630,91 @@ ports inside squashfs runtimes (read-only, so no PT_INTERP change), and pad
 input inside Westonpack ports (not checked). Apotris crops its picture on 4:3 panels by its own design (Integer
 Scale on scales 160 lines to 480 and cuts the sides); its Options turn it off.
 
+### PortMaster on RG DS OS (built 2026-10-27, run on the handheld)
+
+RG DS OS (`os/buildroot`, docs/OWN_OS_PLAN.md) has a mainline kernel, Panfrost Mesa, BusyBox and no compositor. The
+ports code runs there unchanged apart from what follows.
+
+- **Folders, listing, art.** The folder is `/data/portmaster` on the data partition (`portmaster.default_root`), and
+  the session script lists the PortMaster entry and `/data/portmaster/ports` as the Ports system. File sharing offers
+  the ports folder once PortMaster is installed. A niced background job in the session (`portmaster.py artwork`)
+  makes the covers at boot, so they are there before Ports is first opened: the entry's is PortMaster's own icon,
+  which RG DS Core carries (`runtime/portmaster_files/icon.png`, MIT), so it shows before PortMaster is installed.
+  The same job writes which ports still need their owner's files. Ports is not a stock system, so it had no icon.
+  Its rich icon is now PortMaster's icon on the system icons' canvas (`assets/systems/ports.bmp`, from
+  `tools/prepare_ports_icon.py`). Its pixel glyph is a cargo ship with a crane, a glyph-only entry in
+  `tools/system_pixel_art.py`, kept out of the stock folder scan.
+- **What PortMaster is told.** `device_info.txt` takes `CFW_NAME` from os-release's NAME, so the overlay also writes
+  `mod_RG DS OS.txt` (the same text as `mod_Buildroot.txt`) and `libgl_RG DS OS.txt`. PortMaster's default libgl file
+  turns on gl4es's own GBM surface (`LIBGL_FB=4`) whenever `/dev/dri/card0` exists. With Panfrost and no compositor,
+  gl4es then finds no EGL config and draws nothing (Chromium B.S.U.'s blank screen). Ours drops `LIBGL_FB`, and gl4es
+  draws through the context SDL makes. The pad is ROCKNIX's `retrogame_joypad` with mainline BTN codes, so the
+  controller line is that pad's (`portmaster.RGDS_OS_PAD`, GUID `19009b4d…`, labelled A is East as in the launcher).
+  Without it, SDL's automatic mapping puts "a" on labelled B. The top panel is DSI-2 (`portmaster.top_connector`).
+  Westonpack is not told it runs on ROCKNIX here, because there is no host compositor.
+- **The image.** bash (with `BUSYBOX_SHOW_OTHERS`; `/bin/sh` stays BusyBox). SDL2_ttf, SDL2_mixer and SDL2_image with
+  libpng and libjpeg for PortMaster's GUI: without libpng, Buildroot builds SDL_image with no PNG ("Unsupported image
+  format" on its theme). Python's bz2, lzma, pyexpat and decimal modules. fontconfig with DejaVu Sans and Mono, for
+  ports that find their font through it: 14 ports, Chromium B.S.U. among them, draw no text without it. GLES 1 in the
+  Mesa package, for Descent 1 and 2, BZFlag and Magical Broom (stock gets it from libmali).
+  Buildroot rebuilds nothing when a package's options change: Python kept its build without `_lzma` and PortMaster
+  could not start at all, until `python3-dirclean`. After such a change, dirclean the package (`sdl2_image` too).
+- **Panels: DRM leases.** A port and its menu helper each need a panel at the same time, and only one process can be
+  DRM master. Once the launcher has let go of the display, the runner (`drm_lease.PanelLeases`) becomes master and
+  leases the panels by connector, CRTC and primary plane: the bottom one to the helper, the top one to the port.
+  VOP2 gives each video port one primary plane only it may use. The preloaded `librgds-drm-lease.so` makes opening
+  the card return a lease instead. A lessee sees only its own objects, so every SDL a port might bring finds the top
+  panel as display 0.
+  - **The shim.** It is built for aarch64 and armhf by tools/build_compat_stubs.py and exports only the open calls.
+    It sits in the folders the loaders' `$LIB` names, `kms/lib64` for RG DS OS's own loader and
+    `kms/lib/arm-linux-gnueabihf` for the armhf layer's. So one `LD_PRELOAD` entry loads the right build in every
+    program, with no wrong-class warnings.
+  - **A lease per process.** A port is a sequence of processes (PortMaster's splash, its GUI, the game), and each
+    needs a lease of its own. A DRM file's events, buffers and framebuffers belong to that file. When the processes
+    shared one lease descriptor, PortMaster's GUI read the splash's queued page-flip events and crashed in SDL's flip
+    handler, jumping through pointers into the dead splash's memory. So each process asks the runner over a Unix
+    socket (`RGDS_DRM_LEASE_SOCKET`, SCM_RIGHTS) the first time it opens the card. The runner revokes the previous
+    holder's lease and makes a new one. Later opens in the same process reuse it. When a process exits, its
+    framebuffers go with its file.
+  - **The helper.** It is one process and inherits its lease. It runs bottom-only (`RGDS_PORT_LEASE`) with an
+    off-screen top canvas, drawn opaque because nothing is behind it. The touch-pad mirror opens the card with a raw
+    `openat`, which the shim does not intercept, and reads DSI-2.
+  - **The menu.** Freezing the port for the menu needs no hand-over, because the frozen port keeps its lease. Without
+    leases, the port opens the card itself and Home returns home without a menu.
+- **Compat layer.** RG DS OS has its own manifests.
+  - **arm64 (`compat-rgds-os.json`).** 171 focal packages, 58 MB, made against the image's library list and a fresh
+    audit (311 ports need something). The list is taken from the loader's own folders only (`find lib usr/lib
+    -maxdepth 1` in the Buildroot target). Counting `/usr/lib/rgds-panvk` hid the missing `libzstd.so.1` from 37
+    ports, Wizznic's first failure. PulseAudio's private folder is searched too. glvnd's libGL family stays out of
+    `lib/` (`GL_PRIVATE`), as on stock.
+  - **armhf (`compat-rgds-os-armhf.json`).** Debian 12 (bookworm), from `--base bookworm` in the manifest tool, with
+    focal as the first fallback for the sonames bookworm moved past (OpenSSL 1.1, FLAC 8...). The reason: focal's
+    32-bit SDL 2.0.10 has only X11 and Wayland, so 32-bit SDL ports could not open a display at all. Bookworm brings
+    SDL 2.26 with KMSDRM, Mesa 22.3.6 for Panfrost, glibc 2.36 and its loader. 168 packages, 74 MB, with LLVM 15.
+    Debian takes superseded packages off its mirror, so every package also names a snapshot.debian.org mirror at the
+    day it was pinned. The tool keeps Debian's and Ubuntu's same-named packages apart in its cache. Mesa's DRI drivers
+    are hard links in the .deb, and the tool and the installer follow them. An armhf port gets `LIBGL_DRIVERS_PATH`,
+    `GBM_DRIVERS_PATH` and `__EGL_VENDOR_LIBRARY_DIRS` (`portmaster_compat.armhf_environment`).
+  - **Loading.** `portmaster_compat` imports lzma only when it unpacks, so a port's launch never depends on it.
+
+Verified on the handheld on 2026-10-27, each started exactly as the launcher starts it (`emulators.py launch`), and
+read from the display controller (`tools/scanout.c`):
+
+| Started | What it tests | Result |
+| --- | --- | --- |
+| PortMaster entry | First install from GitHub, the compat download (339 packages), the GUI | Installs. The GUI shows its first-run disclaimer on the top panel and the install progress with PortMaster's icon on the bottom |
+| Wizznic | Native SDL2, libzstd and readline from the layer | Runs |
+| Bugdom | glvnd + our gl4es on Panfrost | Runs, 3D main menu |
+| Sokobrawn | armhf GameMaker (gmloader) on bookworm's SDL and Mesa | Runs, controller assigned |
+| Magical Broom Extreme | GLES 1 | Runs |
+| Chromium B.S.U. | Its own gl4es, fontconfig | Runs, with text, after `libgl_RG DS OS.txt` |
+
+The in-game menu opened on the bottom panel over a frozen port (Bugdom), and Home returned to the launcher every
+time. Not checked by hand: pad presses inside ports and in PortMaster's GUI, because the buttons cannot be pressed
+remotely. The controller line is the launcher's own mapping, and SDL reports the pad as a game controller in every
+port above. Also not checked: the touch pad's pointer in a port with its own udev-less SDL, which sees only devices
+that exist when it starts, and ports that replace `LD_PRELOAD` entirely, which would not get the display.
+
 ## 11. Compatibility tiers
 
 | Tier | Ports | Plan |

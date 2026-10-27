@@ -1,0 +1,4 @@
+config BR2_PACKAGE_LIBRETRO_SNES9X
+	bool "libretro-snes9x"
+	help
+	  Snes9x, the Super Nintendo core (non-commercial licence): /usr/lib/libretro/snes9x_libretro.so.

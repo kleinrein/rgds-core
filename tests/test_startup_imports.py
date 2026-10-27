@@ -46,14 +46,13 @@ class StartupImportTests(unittest.TestCase):
         prohibited = [
             'emulators', 'library', 'zipfile', 'game_menu', 'emulator_profiles', 'shaders', 'integration', 'engine_log'
         ]
-        for module in ('activate', 'session', 'boot'):
+        for module in ('activate',):
             with self.subTest(module=module):
                 code = '''import importlib,json,sys
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
 module=importlib.import_module(sys.argv[2])
 if sys.argv[2]=='activate':module.verify_startup(Path(sys.argv[3])/'releases/test-build')
-elif sys.argv[2]=='session':module.release(Path(sys.argv[3]),boot=True)
 print(json.dumps([name for name in json.loads(sys.argv[4]) if name in sys.modules]))
 '''
                 result = subprocess.run(

@@ -23,6 +23,7 @@
 //   mask HEX   num: only these bits (day or night in a flag byte)
 //   div N      the number divided by N (health kept in quarters of a heart)
 //   wide       the tile takes a whole row
+//   clock      num of two bytes, minutes then hours: shown as a time of day (18:05)
 //   icon NAME  a badge with one of the player's icons (ui/icons.hpp: coin, heart, ...)
 //   art NAME   a badge with the game's own tiles, from an `art.NAME` key:
 //              `gb BANK:ADDRESS COLSxROWS [clear N]` (2bpp tiles in the ROM; colour N see-through)
@@ -64,7 +65,7 @@ struct Tile {
     uint32_t address = 0;
     int size = 1, of = 0, page = 0, div = 1;
     uint32_t mask = 0xFFFFFFFFu;
-    bool wide = false, big = false, low = false, names = false;
+    bool wide = false, big = false, low = false, names = false, clock = false;
     Icon icon = Icon::None;
     std::string art;
     std::vector<Step> tiers;
@@ -146,6 +147,7 @@ public:
             for (std::string word; words >> word;) {
                 std::string arg;
                 if (word == "wide") t.wide = true;
+                else if (word == "clock") t.clock = true;
                 else if (word == "big") t.big = true;
                 else if (word == "low") t.low = true;
                 else if (word == "mask" && words >> arg && !arg.empty() &&
@@ -348,7 +350,11 @@ private:
             return;
         }
         font.draw(out, x, label_base, font.fit(look.tr(t.label), kit::small, right - x), kit::small, look.muted);
-        const std::string value = number(t.value);
+        std::string value = number(t.value);
+        if (t.clock) {
+            const long minutes = t.value & 0xFF;
+            value = std::to_string((t.value >> 8) & 0xFF) + (minutes < 10 ? ":0" : ":") + std::to_string(minutes);
+        }
         const int vw = font.draw(out, x, base, value, big, look.ink);
         if (t.of <= 0) return;
         const std::string most = "/ " + number(t.of);

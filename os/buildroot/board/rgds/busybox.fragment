@@ -1,0 +1,6 @@
+# what RG DS OS's scripts use beyond Buildroot's busybox configuration
+CONFIG_NTPD=y
+CONFIG_SYSCTL=y
+CONFIG_PGREP=y
+CONFIG_PKILL=y
+CONFIG_TIMEOUT=y

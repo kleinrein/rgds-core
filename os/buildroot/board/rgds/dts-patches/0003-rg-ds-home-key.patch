@@ -1,0 +1,16 @@
+RG DS OS: the Anbernic Home key reports KEY_HOME instead of BTN_Z
+
+RG DS Core (like the stock firmware) treats KEY_HOME as the Home key: the in-game menu's Home route, and the bridge
+keeps it from the game. BTN_Z is a gamepad button nothing maps.
+
+--- a/rk3568-anbernic-rg-ds.dts	2026-10-27 09:00:00
++++ b/rk3568-anbernic-rg-ds.dts	2026-10-27 09:00:00
+@@ -34,7 +34,7 @@
+ 
+ 		button-home {
+ 			label = "HOME";
+-			linux,code = <BTN_Z>;
++			linux,code = <KEY_HOME>;
+ 			press-threshold-microvolt = <41000>;
+ 		};
+ 	};

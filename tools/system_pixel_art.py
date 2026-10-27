@@ -48,6 +48,8 @@ BRIEF = {
     'vectrex': 'a Vectrex console: a tall body with a screen in the top half',
     'wonderswan': 'a WonderSwan: a slim landscape body with a wide screen and a small round directional pad',
     'rpgmaker': 'a computer monitor showing a pixel-art dialogue box',
+    # Not a stock system: PortMaster's ports (the Ports system), drawn after PortMaster's own icon.
+    'ports': 'a cargo ship on the water with a crane on deck lifting a container, as in PortMaster\'s icon',
 }
 
 GRID = 16
@@ -538,6 +540,24 @@ ART = {
         '....########....',
         '................',
         '................',
+        '................',
+    ],
+    'ports': [
+        '................',
+        '..##########....',
+        '..#.......##....',
+        '.###.......#....',
+        '.#+#.......#....',
+        '.###.......#....',
+        '...........#....',
+        '...###.###.#.##.',
+        '...#+#.#+#.#.##.',
+        '.##############.',
+        '.#++++++++++++#.',
+        '..#++++++++++#..',
+        '...##########...',
+        '................',
+        '.++++..++++..++.',
         '................',
     ],
 }

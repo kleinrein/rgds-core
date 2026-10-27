@@ -1,0 +1,4 @@
+config BR2_PACKAGE_LIBRETRO_PICODRIVE
+	bool "libretro-picodrive"
+	help
+	  PicoDrive, the Mega Drive, Master System and Game Gear core: /usr/lib/libretro/picodrive_libretro.so.

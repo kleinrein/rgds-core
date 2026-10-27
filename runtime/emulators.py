@@ -36,6 +36,24 @@ from engines import CORES, DSPERATE_CORES
 STOCK_DIRS = (Path("/mnt/vendor/deep/drastic_aarch64"), Path("/mnt/vendor/deep/drastic64"))
 
 
+def timezone_value(fields, now=None):
+    """The TZ for system.ini's timezone and dst (0 automatic, 1 forced on, 2 forced off), as the launcher sets it."""
+    zone = fields.get("timezone", "Europe/Oslo")
+    if fields.get("dst") not in ("1", "2") or zone == "UTC":
+        return zone
+    try:
+        from zoneinfo import ZoneInfo
+        local = (now or datetime.now(timezone.utc)).astimezone(ZoneInfo(zone))
+        seconds = int(local.utcoffset().total_seconds()) - int(local.dst().total_seconds())
+    except Exception:
+        return zone
+    seconds += 3600 if fields["dst"] == "1" else 0
+    magnitude = abs(seconds)
+    hours, minutes = magnitude // 3600, magnitude // 60 % 60
+    rule = f"{hours}:{minutes:02d}" if minutes else str(hours)
+    return f"<{'-' if seconds < 0 else '+'}{hours:02d}{minutes:02d}>{'+' if seconds < 0 else '-'}{rule}"
+
+
 def aarch64_binary(path):
     """Reject stock ARM32 binaries before preloading the AArch64 integration."""
     with path.open("rb") as stream:
@@ -97,12 +115,14 @@ def copy_missing(source, destination):
         pending.unlink(missing_ok=True)
 
 
-def dscore_cheat_database(data, rom, prepare=True):
+def dscore_cheat_database(data, rom, prepare=True, app=None):
     """The Action Replay database DSCore reads for this game, or None.
 
     A usrcheat.dat beside the game wins (the user's own). Otherwise the
     engine's cheats folder, seeded once from DraStic's copy on a stock card so
-    cheats work out of the box; a file dropped there later is kept as is.
+    cheats work out of the box; a file dropped there later is kept as is. An
+    independent image has no DraStic, so it carries the database in the release
+    (emulators/cheats/usrcheat.dat) and seeds from that.
     """
     beside = Path(rom).parent / "usrcheat.dat"
     if beside.is_file() and beside.stat().st_size:
@@ -111,6 +131,7 @@ def dscore_cheat_database(data, rom, prepare=True):
     if prepare and not own.is_file():
         from linux_platform import independent
         sources = [data / "emulators/drastic/usrcheat.dat"]
+        if app: sources.append(Path(app) / "emulators/cheats/usrcheat.dat")
         if not independent():
             sources += [directory / "usrcheat.dat" for directory in STOCK_DIRS]
         copy_missing(next((path for path in sources if path.is_file() and path.stat().st_size), None), own)
@@ -340,6 +361,9 @@ def dsperate_atomic_states(app, binary, verified_manifest):
         return False
 
 
+RGDS_OS_PANVK = Path('/usr/lib/rgds-panvk/libvulkan_panfrost.so')  # tools/build_panvk_rgds_os.py
+
+
 def top_display(env):
     """The connector of the top panel (stock RG DS: DSI-1, see device_profile)."""
     return env.get('RGDS_TOP_DISPLAY', 'DSI-1')
@@ -380,7 +404,12 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     if core == 'rgds-experimental':
         # Direct display: DSCore presents on KMS itself while Weston is stopped
         # (direct_display), skipping Weston's GL composite of every frame.
-        if tuning['rgds_direct'] and env.get('WAYLAND_DISPLAY'):
+        from linux_platform import rgds_os
+        if rgds_os():
+            # RG DS OS has no compositor at all: the engine always owns both panels, and the menu is the bridge's
+            # overlay (a menu helper window has nowhere to go).
+            display = 'kms'
+        elif tuning['rgds_direct'] and env.get('WAYLAND_DISPLAY'):
             from direct_display import available
             if available(): display = 'kms'
         try:
@@ -393,6 +422,12 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         env['RGDS_ACTIVE_SCALE'] = str(scale)
         candidate = binary.with_name('rgds-experimental-vulkan')
         driver = binary.parent / 'lib/libvulkan_panfrost.so'
+        from linux_platform import rgds_os
+        if rgds_os() and RGDS_OS_PANVK.is_file():
+            # The release's PanVK only drives the stock kernel's kbase; RG DS OS runs panfrost, with upstream PanVK,
+            # which lists Bifrost only on request (not a conformant target there).
+            driver = RGDS_OS_PANVK
+            env['PAN_I_WANT_A_BROKEN_VULKAN_DRIVER'] = '1'
         live_graphics = scale > 1 and candidate.is_file() and driver.is_file()
         if scale > 1 and not live_graphics:
             raise ValueError(
@@ -469,7 +504,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     env['RGDS_CONTROLS_FILE'] = str(game_controls)
     env['RGDS_ENGINE_BINARY'] = str(binary)
     env['RGDS_OWN_FF_HUD'] = '1' if core == 'rgds-experimental' else '0'
-    env["TZ"] = read_fields(data / "system.ini").get("timezone", "Europe/Oslo")
+    env["TZ"] = timezone_value(read_fields(data / "system.ini"))
     if backend == 'superdrastic':
         from superdrastic import launch_plan as super_plan
         return super_plan(app, data, binary, rom, env, prepare=prepare, identity=identity)
@@ -513,7 +548,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             if os.environ.get("RGDS_FORCE_AUTOLOAD") == "1": auto_load = True
             if fresh_start: auto_load = False
             # An empty cheats path leaves DSCore its own lookup (beside the game, then its config folder).
-            cheats = dscore_cheat_database(data, rom) if core == 'rgds-experimental' else None
+            cheats = dscore_cheat_database(data, rom, app=app) if core == 'rgds-experimental' else None
             section_config(
                 config, {
                     "emu": {
@@ -652,11 +687,22 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         env[
             "SDL_GAMECONTROLLERCONFIG"
         ] = "1900b655010000000100000000010000,ANBERNIC-rk3568-keys,a:b0,b:b1,x:b3,y:b2,back:b6,guide:b8,start:b7,leftstick:b9,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpleft:h0.8,dpdown:h0.4,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b10,righttrigger:b11,platform:Linux,"
+        # RG DS OS's ROCKNIX pad too, sticks included (the N64's control stick and C buttons)
+        from portmaster import RGDS_OS_PAD
+        env["SDL_GAMECONTROLLERCONFIG"] += "\n" + RGDS_OS_PAD
         shown = view(data, identity or rom)
         command += ["--rom", str(rom), "--data", str(root), "--fonts", str(app / "assets/fonts")]
+        from play_options import system_of, libretro_core, MGBA_SYSTEMS
+        system = system_of(identity or rom)
+        if system not in MGBA_SYSTEMS:
+            # Another system: a libretro core, installed by RG DS OS (its BIOS files under /data/rgds/bios).
+            library = libretro_core(system)
+            if library is None:
+                raise ValueError(f"No emulator for {system} games is installed on this handheld.")
+            command += ["--core", str(library), "--system", system, "--system-dir", "/data/rgds/bios"]
         # The launcher's Theme & display (and language, time format) for the second screen.
         command += ["--preferences", str(data / "preferences.ini")]
-        for system in ("gba", "gb"):
+        for system in ("gba", "gb", "nes", "snes", "sms"):
             command += ["--profiles", str(binary.parent / "profiles" / system)]
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
         command += ["--palette", shown["palette"], "--colour", shown["colour"]]
@@ -739,6 +785,17 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         plan['wayland_command'] = list(command)
         env.pop('WAYLAND_DISPLAY', None)
         env.update(SDL_VIDEODRIVER='KMSDRM', RGDS_MENU_LIVE='1')
+        # RG DS OS's session puts the top panel first in SDL (SDL_KMSDRM_FIRST) for RG DS Core's own windows. DSCore
+        # counts panels in the kernel's order in its direct present, so its SDL windows (a screen filter's renderer
+        # path) must too, or a filter swaps the screens.
+        env.pop('SDL_KMSDRM_FIRST', None)
+        from linux_platform import rgds_os
+        if rgds_os(): env['RGDS_DSCORE_UNSWAPPED'] = '1'  # the bridge's menu overlay: no --screen bottom swap
+        if rgds_os():
+            # RG DS OS's panels keep a clean 60.00 Hz grid, so DSCore's display phase lock (video.pace) pays off there:
+            # press-to-flip in Mario Kart 2x fell from 37 to 25 ms on the renderer sink and from 38 to 20 ms on the
+            # direct one (docs/OWN_OS_PLAN.md). Stock's grid wanders and keeps DSCore's own default, free pacing.
+            env.setdefault('DS_PACE', 'display')
         # Direct KMS scanout for DSCore: its frames (the 2x compose included)
         # are copied into dma-buf buffers and page-flipped, with no GL job in
         # the frame's path; the bridge blends the menu/HUD, captures and times
@@ -760,7 +817,9 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # display-0 window first coincided with a Mali GPU reset at start (5 of
         # 7 launches), so keep DSCore's order and swap the windows' contents:
         # the display-1 (bottom) window shows the DS bottom screen.
-        if top_display(env) == 'DSI-1':
+        # RG DS OS's SDL lists the top panel first itself (SDL_KMSDRM_FIRST, os/buildroot's session).
+        from linux_platform import rgds_os
+        if top_display(env) == 'DSI-1' and not rgds_os():
             plan['command'] = command + ['--screen', 'bottom']
     return plan
 
@@ -859,15 +918,18 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             from superdrastic import VTLease
             lease = VTLease()
             lease.acquire()
-        preexec = None
+        preexec, inherited = None, ()
         if core == 'portmaster':
             # The menu helper maps its windows before the port, so the port keeps keyboard focus.
             from port_runner import PortMenu, enter_port, prepare_binds
             menu = PortMenu(None, app, data, core, original_rom, plan['env'], inputs=inputs)
             inputs = None
             menu.start_companion()
+            inherited = menu.port_leases(plan['env'])  # RG DS OS: the top panel's DRM lease
             prepare_binds()
             preexec = enter_port
+        from linux_platform import cpu_governor
+        governor = cpu_governor('performance')  # RG DS OS: schedutil's ramp-up showed as 90 ms worst-case presses
         child = subprocess.Popen(
             plan["command"],
             cwd=plan["cwd"],
@@ -875,7 +937,8 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             bufsize=0,
-            preexec_fn=preexec
+            preexec_fn=preexec,
+            pass_fds=inherited
         )
         engine_log.start(child.stdout)
         began = time.monotonic()
@@ -915,6 +978,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         # Deliver the completed exit to the pause UI before closing its process.
         menu.poll()
         result = child.wait()
+        if governor: cpu_governor(governor)
         if core == 'portmaster': result = menu.port_result(result)
         if gpu_reset: return 76  # the same engine again (run() keeps the display state)
         if super_backend: result = menu.finish(result)

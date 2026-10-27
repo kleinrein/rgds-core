@@ -32,3 +32,5 @@
 30	GBA screen	gba_screen	30	The Game Boy Advance screen: its colour and faint pixel gaps.
 31	Game Boy screen	gb_screen	31	The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.
 32	Game Boy Color screen	gbc_screen	32	The Game Boy Color screen with faint gaps between its pixels.
+33	GBA true colour	gba_true_colour	33	Faded GBA colours made rich, as the real screen showed them.
+34	GBA true screen	gba_true_screen	34	The true GBA colours on its screen, with the gaps between its pixels.

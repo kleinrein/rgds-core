@@ -1,4 +1,5 @@
-"""NetworkManager Wi-Fi and local maintenance for the RGDS settings screens."""
+"""NetworkManager Wi-Fi (wpa_supplicant on RG DS OS, wpa_wifi.py) and local maintenance for the RGDS settings
+screens."""
 import argparse
 import hashlib
 import json
@@ -39,6 +40,11 @@ class Services:
         self.app, self.data, self.preview = Path(app), Path(data), preview
         self.status_file = self.data / "device/status.ini"
         self.fields = read_fields(self.status_file)
+        # RG DS OS has no NetworkManager; the same page drives its wpa_supplicant.
+        self.wpa = None
+        if not preview and not shutil.which("nmcli"):
+            import wpa_wifi
+            if wpa_wifi.supported(): self.wpa = wpa_wifi.WpaWifi(self)
 
     def publish(self, **fields):
         self.fields.update({key: str(value) for key, value in fields.items()})
@@ -100,6 +106,7 @@ class Services:
                 wifi_connected=int(enabled)
             )
             return "wlan0"
+        if self.wpa: return self.wpa.network_status()
         if not shutil.which("nmcli"):
             self.publish(
                 wifi_supported=0,
@@ -182,6 +189,7 @@ class Services:
     def saved_wifi(self):
         """Identify station profiles by SSID and UUID, never by their display name."""
         if self.preview: return {}
+        if self.wpa: return self.wpa.saved()
         rows = self.command(['-t', '-f', 'UUID,TYPE', 'connection', 'show']).splitlines()
         result, ranks = {}, {}
         for line in rows:
@@ -222,6 +230,8 @@ class Services:
                 ["*", "Preview Wi-Fi", "90", "WPA2"], ["", "Guest network", "65", ""],
                 ["", "Library Wi-Fi", "40", "WPA2"]
             ]
+        elif self.wpa:
+            rows = self.wpa.scan(device)
         else:
             rows = [
                 split_terse(line) for line in self.command(
@@ -292,7 +302,16 @@ class Services:
         if not device: raise ValueError("Wi-Fi is unavailable.")
         if self.fields.get('wifi') == '0': raise ValueError(self.fields.get('wifi_reason') or "Turn Wi-Fi on first.")
         self.publish(state="busy", message="Connecting…")
-        if not self.preview:
+        if self.wpa:
+            try:
+                self.wpa.connect(device, ssid, password, use_saved)
+            finally:
+                # Never leave a stale "connected" row, whichever way the join went.
+                try:
+                    self.network_status()
+                except (ValueError, OSError):
+                    self.publish(wifi_connected=0, wifi_signal=-1, connection="Not connected", ip="")
+        elif not self.preview:
             # This is an interactive request from the settings UI. The missing
             # secret is answered on stdin, never included in argv or our logs.
             candidate = None
@@ -365,9 +384,8 @@ class Services:
             time.sleep(.25)
 
     def prepare_wifi(self, sysfs=Path("/sys")):
-        from boot_network import capture_helper, ensure_boot_network, wireless_state
-        # Stock Bluetooth initialization can remove /dev/rfkill. The kernel's
-        # WLAN-only sysfs controls still work, without touching Bluetooth.
+        if not self.wpa: raise ValueError("Wi-Fi is unavailable on this system.")
+        # Only the kernel's WLAN rfkill switch is read or cleared, never Bluetooth's.
         rfkill = Path(sysfs) / "class/rfkill"
         for entry in sorted(rfkill.glob("rfkill*")):
             if (entry / "type").read_text().strip() != "wlan": continue
@@ -375,31 +393,7 @@ class Services:
                 raise ValueError("Wi-Fi is blocked by the hardware. Restart the handheld and try again.")
             if (entry / "soft").read_text().strip() == "1":
                 (entry / "soft").write_text("0\n")
-        interfaces, _phy = wireless_state(sysfs)
-        if not interfaces:
-            from linux_platform import independent
-            if independent():
-                # Kernel/NetworkManager own community-board initialization.
-                # Never run a vendor helper or reset a PHY from this OS.
-                self.command(["networking", "on"])
-                self.command(["radio", "wifi", "on"])
-                deadline = time.monotonic() + 2
-                while not interfaces and time.monotonic() < deadline:
-                    time.sleep(.1)
-                    interfaces, _phy = wireless_state(sysfs)
-                if not interfaces:
-                    raise ValueError("Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.")
-            else:
-                # Also works for APPS launches without a direct-boot configuration.
-                # The helper is hash-checked against the reviewed vendor version.
-                interfaces = ensure_boot_network({"network_guard": capture_helper()}, sysfs=sysfs)["interfaces"]
-        self.command(["networking", "on"])
-        self.command(["radio", "wifi", "on"])
-        for device in interfaces:
-            self.command(["device", "set", device, "managed", "yes"])
-            self.run_command(
-                ["ip", "link", "set", "dev", device, "up"], failure="Could not bring the Wi-Fi adapter up. Try again."
-            )
+        return self.wpa.start()
 
     def radio(self, enabled):
         self.publish(state="busy", message="Turning Wi-Fi on…" if enabled else "Turning Wi-Fi off…")
@@ -409,6 +403,8 @@ class Services:
             self.publish(wifi=int(enabled), connection="Preview Wi-Fi" if enabled else "Not connected")
         elif enabled:
             self.prepare_wifi()
+        elif self.wpa:
+            self.wpa.stop()
         else:
             self.command(["radio", "wifi", "off"])
         deadline = time.monotonic() + 8
@@ -454,18 +450,16 @@ class Services:
             preview(self.data, enabled)
             self.publish(sharing=int(enabled), sharing_mode=('open' if guest else 'password') if enabled else '')
         elif enabled:
-            from session import rom_roots, system_roots
-            from linux_platform import independent
-            roots = [Path('/userdata/roms/nds'), Path('/userdata/roms/dsi')
-                     ] if independent() else rom_roots(self.data.parent)
-            # Other systems' folders follow Settings > Library > Show all systems,
-            # like the launcher's own scan.
-            systems = []
-            if read_fields(self.data / 'ui.ini').get('show_systems') == '1' and not independent():
-                systems = system_roots(self.data.parent)
-                # PortMaster's ports, so a computer can bring a port's game files in its own file manager.
-                from portmaster import Folders, installed
-                if installed(): systems.append(('ports', Folders().ports))
+            from linux_platform import RGDS_OS_ROMS
+            # One card, one layout: every system's folder is always shared.
+            roots = [RGDS_OS_ROMS / 'nds']
+            from play_options import SYSTEMS
+            # Folders that do not exist (gg games live under sms) are skipped by Sharing.
+            systems = [(system, RGDS_OS_ROMS / system) for system in SYSTEMS]
+            # PlayStation needs its BIOS beside the games; the card keeps them in one folder.
+            systems.append(('bios', RGDS_OS_ROMS.parent / 'rgds/bios'))
+            from portmaster import Folders, installed
+            if installed(): systems.append(('ports', Folders().ports))
             Sharing(self.data, self.app).start(self.fields['ip'], roots, guest=guest, systems=systems)
         else:
             Sharing(self.data, self.app).stop()
@@ -536,19 +530,8 @@ class Services:
         self.publish(state="ready", message="Device report saved in userdata/support/.")
 
     def startup_info(self):
-        from linux_platform import independent
-        if not self.preview and independent():
-            fields = read_fields(self.data / 'boot.ini')
-            self.publish(
-                boot_installed=1,
-                boot_mode="rgds",
-                boot_warning=int(fields.get('warning', '0') == '1'),
-                state="ready",
-                message="Startup is managed by RGDS OS."
-            )
-            return
+        fields = read_fields(self.data / 'boot.ini')
         if self.preview:
-            fields = read_fields(self.data / "boot.ini")
             self.publish(
                 boot_installed=1,
                 boot_mode=fields.get("mode", "stock"),
@@ -556,62 +539,44 @@ class Services:
                 state="ready",
                 message=""
             )
-        else:
-            from boot_control import inspect
-            state = inspect(self.data.parent)
-            self.publish(
-                boot_installed=state["installed"],
-                boot_mode=state["mode"],
-                boot_warning=state["warning"],
-                state="ready",
-                message=""
-            )
+            return
+        self.publish(
+            boot_installed=1,
+            boot_mode="rgds",
+            boot_warning=int(fields.get('warning', '0') == '1'),
+            state="ready",
+            message="Startup is managed by RGDS OS."
+        )
 
     def startup(self, payload):
-        from linux_platform import independent
-        if not isinstance(payload, dict): raise ValueError("Choose Anbernic or RG DS startup.")
+        if not isinstance(payload, dict): raise ValueError("Choose RG DS startup.")
         mode = payload.get("mode")
         warning = payload.get("warning", True)
-        if mode not in ("stock", "rgds") or not isinstance(warning, bool):
-            raise ValueError("Choose Anbernic or RG DS startup.")
-        if not self.preview and independent():
+        if mode not in ("stock", "rgds") or not isinstance(warning, bool): raise ValueError("Choose RG DS startup.")
+        if self.preview:
+            write_fields(self.data / "boot.ini", dict(schema=1, mode=mode, warning=int(warning)))
+        else:
             if mode != 'rgds': raise ValueError("Anbernic startup is unavailable in RGDS OS.")
             from emulators import core_running
             if core_running(self.data): raise ValueError("Return home before changing startup.")
             write_fields(self.data / 'boot.ini', dict(schema=1, mode='rgds', warning=int(warning)))
-            self.startup_info()
-            self.publish(state='ready', message='Startup choice saved.')
-            return
-        if self.preview:
-            write_fields(self.data / "boot.ini", dict(schema=1, mode=mode, warning=int(warning)))
-        else:
-            from emulators import core_running
-            if core_running(self.data): raise ValueError("Return home before changing startup.")
-            from boot_control import configure
-            configure(self.data.parent, mode, warning=warning)
         self.startup_info()
-        self.publish(
-            state="ready", message="Startup choice saved." if not self.preview else "Startup choice simulated."
-        )
+        self.publish(state='ready', message='Startup choice saved.' if not self.preview else 'Startup choice simulated.')
 
     def system_exit(self, action):
         if self.preview:
             self.publish(state="ready", message=action.title() + " simulated.")
             return
-        from stock_handoff import request_exit, commit_exit, cancel_exit
-        receipt = request_exit(self.data, action)
+        # BusyBox init takes the action from this process, after the check that no engine runs and the resume arming.
+        from power import execute_system_action
+        if action == 'poweroff':
+            from quick_resume import arm
+            arm(self.data)
+        self.publish(state="ready", message="Restarting…" if action == "reboot" else "Powering off…")
         try:
-            if action == 'poweroff':
-                from quick_resume import arm
-                arm(self.data)
-            self.publish(state="ready", message="Restarting…" if action == "reboot" else "Powering off…")
-            commit_exit(self.data, receipt)
+            execute_system_action(action, self.data)
         except BaseException:
             (self.data / 'resume/armed.json').unlink(missing_ok=True)
-            try:
-                cancel_exit(self.data, receipt)
-            except (OSError, ValueError):
-                pass
             raise
 
     def poweroff(self):

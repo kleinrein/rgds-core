@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from unittest.mock import patch
 import zipfile
 
@@ -16,7 +17,6 @@ sys.path.insert(0, str(ROOT / "runtime"))
 import emulators
 import play_options
 import portmaster
-import session
 
 
 class PortMasterTests(unittest.TestCase):
@@ -200,12 +200,16 @@ class PortMasterTests(unittest.TestCase):
         (self.folders.ports / "Other.sh").write_text("#!/bin/bash\n")
         self.assertIsNone(portmaster.port_folder(self.folders.ports / "Other.sh", self.folders))
         made = []
+        from library import game_key
         with patch("scraper.image_to_bmp", lambda content, target: made.append((content, target))):
-            self.assertEqual(portmaster.artwork(ROOT, self.data, self.folders), 0)  # no pictures yet
+            # The PortMaster entry has PortMaster's icon before PortMaster is installed (RG DS Core's copy);
+            # the port has no picture yet.
+            self.assertEqual(portmaster.artwork(ROOT, self.data, self.folders), 1)
+            entry = self.data / "library" / game_key(portmaster.entry_folder(ROOT) / portmaster.ENTRY) / "box.bmp"
+            self.assertEqual(entry.read_bytes()[:2], b"BM")
             (folder / "screenshot.png").write_bytes(b"shot")
             (folder / "cover.png").write_bytes(b"cover")
             self.assertEqual(portmaster.artwork(ROOT, self.data, self.folders), 1)
-        from library import game_key
         self.assertEqual(made, [(b"cover", self.data / "library" / game_key(self.port) / "box.bmp")])
 
     def test_panel_size_reads_the_top_panel(self):
@@ -214,6 +218,29 @@ class PortMasterTests(unittest.TestCase):
         (drm / "card0-DSI-1/modes").write_text("1024x768\n")
         self.assertEqual(portmaster.panel_size(drm), (1024, 768))
         self.assertEqual(portmaster.panel_size(self.base / "none"), (640, 480))
+
+    def test_rgds_os_ports_draw_on_kms_in_their_own_folder(self):
+        # RG DS OS (os/buildroot): no compositor, the data partition, the top panel on DSI-2.
+        with unittest.mock.patch("linux_platform.rgds_os", return_value=True):
+            self.assertEqual(portmaster.default_root(), Path("/data/portmaster"))
+            self.assertEqual(portmaster.top_connector(), "DSI-2")
+            env = portmaster.port_environment(
+                {
+                    "WAYLAND_DISPLAY": "wayland-1",
+                    "SDL_KMSDRM_FIRST": "DSI-2"
+                }, ROOT, self.folders
+            )
+        self.assertEqual(env["SDL_VIDEODRIVER"], "kmsdrm")
+        for key in ("WAYLAND_DISPLAY", "SDL_KMSDRM_FIRST", "SDL_VIDEO_WAYLAND_WMCLASS"):
+            self.assertNotIn(key, env)
+        with unittest.mock.patch("linux_platform.rgds_os", return_value=False):
+            self.assertEqual(portmaster.default_root(), Path("/mnt/mmc/portmaster"))
+            self.assertEqual(portmaster.top_connector(), "DSI-1")
+        # PortMaster names the mod file after os-release's NAME there.
+        self.assertEqual(
+            portmaster.overlay(ROOT, self.folders)["mod_RG DS OS.txt"],
+            portmaster.overlay(ROOT, self.folders)["mod_Buildroot.txt"]
+        )
 
     def test_status_writes_message_percent_and_detail(self):
         path = self.data / "session/port-status.ini"

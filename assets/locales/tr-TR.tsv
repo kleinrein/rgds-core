@@ -147,6 +147,7 @@ Desktop preview	Masaüstü önizleme
 Development build	Geliştirme sürümü
 Device address	Cihaz adresi
 Device information	Cihaz bilgileri
+Display	Ekran
 Display FPS	Ekran FPS
 Done	Bitti
 Down	Aşağı
@@ -441,6 +442,7 @@ Swapped	Yer değişti
 System	Sistem
 THEME ERROR - RETAINED CURRENT	TEMA HATASI - GEÇERLİ KORUNDU
 THEME RELOADED	TEMA YENİDEN YÜKLENDİ
+Turn the handheld off and on again	Cihazı kapatıp yeniden açar
 TYPEFACE	YAZI TİPİ
 Temporary game cache cleared. Saves and artwork are kept.	Geçici oyun önbelleği temizlendi. Kayıtlar ve kapaklar korundu.
 The checkpoint did not finish saving.	Kayıt noktası kaydı tamamlanmadı.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Sağ tık için sabit tut
 Hold to exit	Çıkmak için basılı tut
 Touch screen off	Dokunmatik ekran kapalı
 Touch screen is not available	Dokunmatik ekran kullanılamıyor
+Daylight saving	Yaz saati
+Automatic	Otomatik
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Yaz saati saat diliminizi izler. Saat bir saat farklıysa açın veya kapatın.
+GBA true colour	Gerçek GBA renkleri
+Faded GBA colours made rich, as the real screen showed them.	Soluk GBA renkleri, gerçek ekranın gösterdiği gibi zengin.
+GBA true screen	Gerçek GBA ekranı
+The true GBA colours on its screen, with the gaps between its pixels.	Gerçek GBA renkleri kendi ekranında, pikseller arasındaki boşluklarla.

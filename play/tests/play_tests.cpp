@@ -6,6 +6,7 @@
 #include "companion/map_capture.hpp"
 #include "companion/party_gb.hpp"
 #include "companion/profile.hpp"
+#include "companion/expr.hpp"
 #include "companion/view.hpp"
 #include "companion/dock.hpp"
 #include "ui/kit.hpp"
@@ -765,6 +766,134 @@ void test_second_screen() {
     CHECK(c.touch({Touch::Down, 640 - kit::margin - 20, kit::margin + 20}) && c.showing_alternative());
 }
 
+
+// A scrolling world 4 screens wide: the picture is the world under a camera at
+// mem16[0010], each world column a colour of its own, so a map can be checked.
+class Scroller final : public Core {
+public:
+    std::map<uint32_t, uint8_t> bytes;
+    std::vector<uint32_t> fb = std::vector<uint32_t>(64 * 48);
+    void set_camera(int x) {
+        bytes[0x10] = uint8_t(x), bytes[0x11] = uint8_t(x >> 8);
+        for (int y = 0; y < 48; ++y)
+            for (int c = 0; c < 64; ++c) fb[size_t(y * 64 + c)] = rgb_to_px(uint32_t(((x + c) & 0xFF) << 16 | y));
+    }
+    const char* system() const override { return "nes"; }
+    std::string game_code() const override { return "CRC_00000000"; }
+    std::string header_title() const override { return "SCROLLER"; }
+    double frame_rate() const override { return 60; }
+    void run_frame(uint32_t) override {}
+    Picture picture() const override { return {fb.data(), 64, 48, 64}; }
+    bool save_state(std::vector<uint8_t>&) override { return false; }
+    bool load_state(const std::vector<uint8_t>&) override { return false; }
+    uint32_t peek(uint32_t address, int size) override {
+        uint32_t v = 0;
+        for (int i = 0; i < size; ++i) {
+            auto f = bytes.find(address + uint32_t(i));
+            v |= uint32_t(f == bytes.end() ? 0 : f->second) << (8 * i);
+        }
+        return v;
+    }
+    size_t audio(int16_t*, size_t) override { return 0; }
+    unsigned audio_rate() const override { return 48000; }
+    std::vector<uint8_t> battery() const override { return {}; }
+    uint64_t battery_revision() const override { return 0; }
+    void set_layers(unsigned) override {}
+    std::unique_ptr<Core> shadow() const override { return nullptr; }
+};
+
+void test_libretro_views() {
+    std::string e;
+    // Expressions: C's precedence, hex numbers, memory reads.
+    Scroller game;
+    game.set_camera(0x123);
+    Expr x;
+    CHECK(x.parse("(mem16[10] >> 4) + 2 * 3 - 1", e) && x.eval(game) == 0x12 + 5);
+    CHECK(x.parse("mem8[11] << 8 | mem8[10] & F0", e) && x.eval(game) == 0x120);
+    CHECK(!x.parse("mem8[10] +", e) && !e.empty());
+    CHECK(!x.parse("mem9[10]", e));
+
+    // mosaic: the world pasted where the camera says, two screens side by side.
+    Profile m = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = nes\n[view]\nformat = mosaic\n"
+                         "x = mem16[10]\ny = 0\ncrop = 0 8 64 40\nscale = 2\nevery = 1\nplayer_x = mem16[10] + 20\n"
+                         "player_y = 20\nname.0 = Overworld\n");
+    auto mosaic = make_view(m.view, e);
+    CHECK(mosaic != nullptr);
+    if (!mosaic) return;
+    game.set_camera(0);
+    mosaic->update(game, 0);
+    CHECK(mosaic->shown() && mosaic->dirty());
+    const uint64_t first = mosaic->key(0);
+    game.set_camera(64);
+    mosaic->update(game, 1);
+    CHECK(mosaic->key(1) != first);
+    Canvas out(640, 480);
+    Look look;
+    Font font;
+    mosaic->draw(out, look, font, 0);
+    std::string saved;
+    CHECK(mosaic->save(saved) && !mosaic->dirty());
+    // 128 world columns at scale 2: 64 map columns, two 32-pixel tiles across, one down.
+    CHECK(saved.size() == 6 + 2 * (12 + 32 * 32 * 4));
+    auto again = make_view(m.view, e);
+    again->load(saved);
+    std::string resaved;
+    CHECK(again->save(resaved) && resaved == saved);
+    ViewSpec bad = m.view;
+    bad.values["x"] = "mem16[10] +";
+    CHECK(make_view(bad, e) == nullptr && e.find(" x") != std::string::npos);
+
+    // grid: a floor in memory, seen from where the player stands and faces.
+    Profile g = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = sms\n[view]\nformat = grid\n"
+                         "cells = 100\nposition = 20\nfacing = 21\nlevel = mem8[22]\ntype_mask = 07\nwall = 1\n"
+                         "up = 2\ndoor = 4\nsight = 3\n");
+    auto grid = make_view(g.view, e);
+    CHECK(grid != nullptr);
+    if (!grid) return;
+    for (int i = 0; i < 256; ++i) game.bytes[0x100 + uint32_t(i)] = (i % 16 == 0 || i / 16 == 0) ? 1 : 0;
+    game.bytes[0x20] = 0x55; // x 5, y 5
+    game.bytes[0x21] = 0;    // facing up
+    grid->update(game, 0);
+    CHECK(grid->shown() && grid->dirty());
+    std::string floor1;
+    CHECK(grid->save(floor1));
+    game.bytes[0x21] = 1; // turned right: more of the floor seen
+    grid->update(game, 4);
+    CHECK(grid->dirty());
+    grid->draw(out, look, font, 0);
+
+    // trace: a course drawn from where the machine has been.
+    Profile t = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = snes\n[view]\nformat = trace\n"
+                         "x = mem16[10]\ny = mem8[30]\ncourse = mem8[31]\nname = Course\n");
+    auto trace = make_view(t.view, e);
+    CHECK(trace != nullptr);
+    if (!trace) return;
+    for (int step = 0; step < 40; ++step) {
+        game.bytes[0x10] = uint8_t(step * 10), game.bytes[0x11] = 0, game.bytes[0x30] = uint8_t(step * 3);
+        trace->update(game, uint64_t(step) * 2);
+    }
+    CHECK(trace->shown() && trace->dirty());
+    std::string course;
+    CHECK(trace->save(course) && course.size() > 5 + 8);
+    trace->draw(out, look, font, 0);
+
+    // The shipped profiles of the libretro systems: every view builds, Duck Hunt is a light-gun game.
+    ProfileLibrary lib;
+    std::vector<std::string> errors;
+    for (const char* system : {"/nes", "/snes", "/sms"}) lib.load_directory(std::string(PLAY_PROFILES) + system, errors);
+    for (const auto& error : errors) std::fprintf(stderr, "profile error: %s\n", error.c_str());
+    CHECK(errors.empty());
+    for (const auto& [key, p] : lib.all())
+        for (const auto& v : p.views) {
+            const bool ok = make_view(v, e) != nullptr;
+            CHECK(ok);
+            if (!ok) std::fprintf(stderr, "%s: %s\n", key.c_str(), e.c_str());
+        }
+    CHECK(lib.find("nes", "DUCK_HUNT") && lib.find("nes", "DUCK_HUNT")->lightgun);
+    CHECK(lib.find("nes", "LEGEND_OF_ZELDA") && lib.find("snes", "SUPER_MARIOKART")->hud.strip_fill);
+    CHECK(lib.find("sms", "PHANTASY_STAR") && lib.find("snes", "SUPER_METROID") && lib.find("snes", "F_ZERO"));
+}
+
 int main() {
     test_second_screen();
     test_colour();
@@ -774,6 +903,7 @@ int main() {
     test_hud_strip();
     test_gb_views();
     test_shipped_gb_profiles();
+    test_libretro_views();
     test_capture();
     test_companion_scheduling();
     test_saves();

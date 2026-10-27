@@ -54,12 +54,10 @@ void App::load_library(std::vector<Game> games) {
             else {
                 static const std::array<std::string, 8> ids = {"theme",        "power",  "library",  "sound",
                                                                "connectivity", "system", "controls", "statistics"};
-                auto found = std::find(ids.begin(), ids.end(),
-                                       o.section == "brightness" || o.section == "motion" ? "theme"
-                                       : o.section == "vibration"                         ? "sound"
-                                                                                          : o.section);
+                const bool display = o.section == "display" || o.section == "brightness" || o.section == "motion";
+                auto found = std::find(ids.begin(), ids.end(), display ? "theme" : o.section == "vibration" ? "sound" : o.section);
                 if (found == ids.end()) throw std::runtime_error("Unknown settings section");
-                settings.section = int(found - ids.begin());
+                settings.section = display ? 10 : int(found - ids.begin());
                 settings.enter();
                 if (o.section == "brightness") settings.page = Page::Display;
                 else if (o.section == "motion") settings.page = Page::Motion;
@@ -90,8 +88,41 @@ void App::stop_library_scan() {
     library_pipe = -1;
 }
 
+// The games folders' modification times, one level down: enough to notice a copy of new games.
+std::string App::games_signature() const {
+    std::string result;
+    auto stamp = [&](const fs::path& path) {
+        std::error_code error;
+        auto time = fs::last_write_time(path, error);
+        if (!error) result += path.string() + ':' + std::to_string(static_cast<long long>(time.time_since_epoch().count())) + ';';
+    };
+    auto walk = [&](const fs::path& root) {
+        stamp(root);
+        std::error_code error;
+        for (fs::directory_iterator it(root, error), end; !error && it != end; it.increment(error))
+            if (it->is_directory(error)) stamp(it->path());
+    };
+    for (const auto& root : o.roots) walk(root);
+    for (const auto& entry : o.system_roots) walk(entry.second);
+    return result;
+}
+
+// Games put on the card while the menu is open turn up by themselves: from Home (or the Library
+// settings) the folders are looked at every few seconds, and a change starts the same scan as the button.
+void App::watch_games(Uint32 now) {
+    if (o.preview || o.game_menu || launching || !library_ready || !session_initialized || worker > 0 ||
+        now - games_checked_at < 4000 || picker_open)
+        return;
+    games_checked_at = now;
+    if (!((home_menu && settings.page == Page::Library) || settings.page == Page::LibraryOptions)) return;
+    if (games_signature() == games_signature_seen) return;
+    if (!model.games.empty() && model.selected < model.games.size()) games_keep_selected = model.games[model.selected].path;
+    rescan_games(true);
+}
+
 void App::begin_library_scan() {
     library_scan_started = true;
+    games_signature_seen = games_signature();
     if (o.roots.empty()) {
         load_library({});
         return;
@@ -188,6 +219,14 @@ void App::poll_library_scan() {
     bool previous_home = home_menu;
     auto previous_category = home_selected;
     load_library(std::move(games));
+    if (!games_keep_selected.empty()) { // a scan that began by itself leaves the selection where it was
+        auto found = std::find_if(model.games.begin(), model.games.end(),
+                                  [&](const Game& g) { return g.path == games_keep_selected; });
+        if (found != model.games.end()) model.selected = size_t(found - model.games.begin());
+        games_keep_selected.clear();
+        carousel.reset(navigation_selected());
+        browser_list.reveal(model.selected, model.games.size());
+    }
     if (o.boot_startup) {
         settings = previous;
         home_menu = previous_home;
@@ -284,7 +323,10 @@ void App::snapshot_menu_input() {
             bool mainline = o.mainline && mainline_pads.count(id);
             for (int raw = 0; raw < count(joystick); raw++)
                 if (button(joystick, raw)) {
-                    int index = mainline ? MainlineControls::button(raw) : raw;
+                    int index = !mainline ? raw
+                                : MainlineControls::button(mainline_controls.joypads.count(id)
+                                                               ? MainlineControls::from_joypad(raw)
+                                                               : raw);
                     if (index >= 0) {
                         boot_blocked_buttons.insert({id, Uint8(index)});
                         held += " button " + std::to_string(index);

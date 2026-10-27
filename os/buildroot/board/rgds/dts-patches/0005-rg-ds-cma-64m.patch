@@ -1,0 +1,17 @@
+RG DS OS: a 64 MiB CMA region instead of BananaLinux's 256 MiB
+
+RG DS OS has no vendor display stack: the direct present's scanout buffers are a few MiB of CMA, and the GPU
+(panfrost) allocates from system memory. The smaller region saves about 60 ms of boot (its setup took 88 ms) and
+leaves 192 MiB to the games.
+
+--- a/rk356x-base.dtsi	2026-10-27 18:00:00
++++ b/rk356x-base.dtsi	2026-10-27 18:00:00
+@@ -207,7 +207,7 @@
+         linux,cma {
+ 			compatible = "shared-dma-pool";
+ 			reusable;
+-			size = <0x0 0x10000000>;
++			size = <0x0 0x4000000>;
+ 			alignment = <0x0 0x400000>;
+ 			linux,cma-default;
+ 		};

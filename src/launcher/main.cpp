@@ -148,7 +148,7 @@ static bool same_hardware(const SystemStatus& a, const SystemStatus& b) {
 struct Section {
     const char* title;
 };
-static const std::array<Section, 10> sections = {{{"Theme & display"},
+static const std::array<Section, 11> sections = {{{"Theme"},
                                                   {"Power"},
                                                   {"Library"},
                                                   {"Sound"},
@@ -157,13 +157,15 @@ static const std::array<Section, 10> sections = {{{"Theme & display"},
                                                   {"Controls"},
                                                   {"Statistics"},
                                                   {"Power off"},
-                                                  {"Updates"}}};
+                                                  {"Updates"},
+                                                  {"Display"}}};
 
 struct Options {
     bool independent = false, mainline = false;
+    bool rgds_os = false; // RG DS OS (RGDS_OS=1 from its session): no stock firmware beside us to boot into
     bool preview = false, probe = false, allow_launch = false, watch_assets = false, settings = false,
          game_menu = false, game_switcher = false, port_menu = false, home = false, library = false,
-         boot_warning = false, boot_startup = false, card_repair = false;
+         boot_warning = false, boot_startup = false;
     int frames = 0, seconds = 0, boot_ready_fd = -1;
     std::string top = "DSI-1", bottom = "DSI-2";
     fs::path theme, themes, screenshot, app, data, state, preferences, system_preferences, input_script, cache_report,
@@ -202,6 +204,11 @@ class App {
     pid_t library_child = -1;
     int library_pipe = -1;
     bool library_eof = false, library_scan_started = false;
+    std::string games_signature_seen; // what the games folders looked like at the last scan (see watch_games)
+    Uint32 games_checked_at = 0;
+    fs::path games_keep_selected; // the game to stay on after a scan that watch_games started
+    std::string games_signature() const;
+    void watch_games(Uint32 now);
     std::string library_bytes;
     std::vector<Game> all_games;
     // Show all systems: the DS games as scanned, the systems listed on the Systems
@@ -217,6 +224,7 @@ class App {
         size_t games = 0;
         uint64_t sessions = 0, seconds = 0;
         bool played_ready = false; // sessions and seconds read, once the card is shown
+        size_t played_next = 0;    // next all_games index to read; the read is spread over frames
     };
     std::vector<SystemStats> system_stats;
     const SystemStats& system_stats_for(size_t index);
@@ -362,6 +370,7 @@ class App {
     SystemStatus hardware;
     OverlayFrame overlay;
     bool embedded_menu = false;
+    bool port_lease = false; // RG DS OS: the port helper alone on the bottom panel's DRM lease, nothing behind it
     bool home_menu = true, scroll_drag = false, scroll_hover = false, list_touch = false, list_swipe = false,
          tap_pending = false;
     int gesture_scroll = 0, scroll_grab = 0;
@@ -443,25 +452,25 @@ class App {
     std::pair<int, int> slider_band() const {
         return settings.page == Page::Sound ? std::make_pair(96, 186) : std::make_pair(163, 285);
     }
-    // Sound's four tiles under the slider, two by two like the game menu's grid, 16 px apart:
-    // Mute, Test microphone, Sounds & music, Vibration.
-    static constexpr int sound_tile_width = 284, sound_tile_height = 84;
-    static int sound_tile_x(int index) { return 28 + (index % 2) * 300; }
-    static int sound_tile_y(int index) { return 202 + (index / 2) * 100; }
+    // Sound: row 0 is the volume slider itself (Left and Right only act there); under it one row each for
+    // Mute (1), Test microphone (2), Sounds & music (3) and Vibration (4).
+    static constexpr int sound_row_width = 584, sound_row_height = 46;
+    static int sound_row_y(int index) { return 202 + (index - 1) * 52; }
     int list_count() const {
         switch (settings.page) {
-        case Page::Settings: return 10;
+        case Page::Settings: return 11;
         case Page::MenuSounds: return 5;
         case Page::Haptics: return 5;
         case Page::Cheats: return int(cheat_rows.size());
         case Page::GameSwitcher: return int(switch_games.size()) + (home_switcher ? 0 : 1); // in a game: Game menu
         case Page::Graphics: return 8;
-        case Page::Power: return 6;
-        case Page::LibraryOptions: return 10;
-        case Page::Appearance: return 11;
+        case Page::Power: return 7;
+        case Page::LibraryOptions: return 11;
+        case Page::Appearance: return 6;
+        case Page::DisplayOptions: return 5;
         case Page::Scraper: return 5;
         case Page::DeviceInfo: return 5;
-        case Page::System: return 8;
+        case Page::System: return o.rgds_os ? 8 : 9; // RG DS OS: no Startup page (stock's boot choice)
         case Page::GameOptions:
             // The last three rows are always Game info, Save gallery and DS controls.
             if (other_system_selected()) return 8; // the rows every engine has; DS-only ones read Unavailable
@@ -472,7 +481,7 @@ class App {
         case Page::GameArtwork: return 3;
         case Page::Maintenance: return 7;
         case Page::Network: return 5;
-        case Page::Startup: return 4;
+        case Page::Startup: return 1;
         case Page::SaveGallery: return 9;
         case Page::RomSetup: return 3;
         case Page::PortFiles: return 3;
@@ -488,8 +497,9 @@ class App {
         default: return 0;
         }
     }
-    // Settings > Library: "Show all systems" (row 9) is shown first, the others in their order below it.
-    static int library_row(int shown) { return shown == 0 ? 9 : shown - 1; }
+    // Settings > Library: "Scan for games" (row 10) and "Show all systems" (row 9) are shown first,
+    // the others in their order below them.
+    static int library_row(int shown) { return shown == 0 ? 10 : shown == 1 ? 9 : shown - 2; }
     int list_selected() const {
         return settings.page == Page::Settings ? section_row(settings.section) : settings.focus;
     }
@@ -1100,8 +1110,9 @@ class App {
         else if (settings.focus == 5) {
             settings.section = 3;
             settings.page = Page::Sound;
+            settings.focus = 0;
         } else if (settings.focus == 6) {
-            settings.section = 0;
+            settings.section = 10;
             settings.page = Page::Display;
         } else if (settings.focus == 7) menu_request("restart");
         else if (settings.focus == 9) open_controls(true, Page::QuickMenu);
@@ -1471,6 +1482,7 @@ class App {
     void toggle_mute();
     void change_volume(int value);
     void apply_timezone();
+    std::string timezone_value(const std::string& zone, int dst);
     // UTC offsets per zone, read from tzdata by switching TZ for a moment and
     // putting the chosen zone back. Only rows on screen ask, and the cache
     // empties every quarter hour so a daylight-saving change shows up.
@@ -1496,6 +1508,7 @@ class App {
     void load_system_configuration();
     void save_date_format(int value);
     void save_time_format(int value);
+    void save_dst(int value);
     void save_timezone();
     bool apply_control(int focus, const SystemPreferences& value);
     void poll_brightness();
@@ -1772,13 +1785,6 @@ class App {
     void boot_bottom(SDL_Renderer* r, int y);
     // A read-only games card breaks saves, volume and launch at once. Explain
     // the automatic check plainly instead of letting every action fail.
-    int card_repair = 0;
-    bool card_repair_dismissed = false;
-    Uint32 card_check_at = 0, card_repair_at = 0;
-    void check_card(Uint32 now, bool force = false);
-    void start_card_repair(Uint32 now);
-    void card_top(SDL_Renderer* r, int y);
-    void card_bottom(SDL_Renderer* r, int y);
     void top(SDL_Renderer* r, int y);
     // Word-wrapped text centred on the screen, at most `rows` lines.
     void centered_wrapped(SDL_Renderer* r, const std::string& value, int y, int pixels, int width, int rows,
@@ -1873,11 +1879,12 @@ class App {
     // with a single bright line just inside the top edge. No band and no
     // hard edge in the middle. `press` turns the shade over, so a held
     // button looks pushed in. No shadow: callers add one.
-    void glossy_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color base, double press = 0);
+    void glossy_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color base, double press = 0,
+                     bool sheen = true);
     Color shadow_colour() const { return preferences.dark ? Color{0, 0, 0} : Color{24, 40, 60}; }
     // A raised control: soft shadow, then the glass body, sunk 2 px when pressed.
     void raised_pill(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill, double press = 0,
-                     bool shadow = true);
+                     bool shadow = true, bool sheen = true);
     // A footer or sheet button: a raised glass pill (accent when primary) with an
     // optional round key badge ("B", "A") and a label that sinks while pressed.
     void footer_button(SDL_Renderer* r, int x, int y, int w, const std::string& text, const std::string& badge,
@@ -2021,15 +2028,16 @@ class App {
         size_t index;
     };
     static std::array<HomeTile, 6> home_column_tiles() {
-        return {{{{24, 20, 592, 88}, last_played_tile},
-                 {{24, 122, 288, 92}, 1},
-                 {{328, 122, 288, 92}, 2},
-                 {{24, 228, 288, 92}, 3},
-                 {{328, 228, 288, 92}, pictochat_tile},
-                 {{24, 334, 592, 64}, 0}}};
+        // Every edge sits on a rule of the lower screen's 20 px grid (rules at 19-20, 39-40, ...).
+        return {{{{20, 20, 600, 80}, last_played_tile},
+                 {{20, 120, 280, 80}, 1},
+                 {{340, 120, 280, 80}, 2},
+                 {{20, 220, 280, 80}, 3},
+                 {{340, 220, 280, 80}, pictochat_tile},
+                 {{20, 320, 600, 60}, 0}}};
     }
-    static constexpr SDL_Rect home_bar_left{12, 418, 80, 54}, home_bar_right{548, 418, 80, 54},
-        home_bar_mark{280, 418, 80, 54};
+    static constexpr SDL_Rect home_bar_left{20, 420, 80, 48}, home_bar_right{540, 420, 80, 48},
+        home_bar_mark{280, 420, 80, 48};
     // Up and down walk the rows, left and right the two tiles of a row.
     int home_column_memory = 0; // the column (Games/Recents or Favourites/PictoChat) you were last in
     // Down from the last row walks onto the bottom bar: 0 brightness, 1 the
@@ -2152,6 +2160,19 @@ class App {
             bottom_name = "PREVIEW BOTTOM";
             if (!o.touch_recording.empty() && !touchscreen.open_replay(o.touch_recording.string()))
                 throw std::runtime_error("Cannot read Linux touch recording");
+        } else if ((port_lease = o.port_menu && std::getenv("RGDS_PORT_LEASE"))) {
+            // RG DS OS: the port holds the top panel's DRM lease and the helper the bottom one's, its only display
+            // (runtime/drm_lease.py). The top screen is drawn off screen, where nothing reads it.
+            auto* bitmap = s.CreateRGBSurfaceWithFormat(0, 640, 480, 32, SDL_PIXELFORMAT_RGBA32);
+            auto* renderer = bitmap ? s.CreateSoftwareRenderer(bitmap) : nullptr;
+            if (!renderer) {
+                if (bitmap) s.FreeSurface(bitmap);
+                throw std::runtime_error("Could not create the top screen's canvas");
+            }
+            surfaces.push_back({nullptr, renderer, 0, bitmap});
+            top_name = "DSI-2";
+            bottom_name = s.GetDisplayName(0) ? s.GetDisplayName(0) : "DSI-1";
+            surfaces.push_back(create("RG DS Core bottom", 0, 480, true));
         } else {
             int t = display(o.top, 0), b = display(o.bottom, 1);
             if (t == b) throw std::runtime_error("Top and bottom resolved to the same display.");
@@ -2174,10 +2195,12 @@ class App {
                 joysticks.push_back(j);
                 const char* name = s.JoystickName(j);
                 std::cout << "joystick " << i << " " << (name ? name : "") << std::endl;
-                if (o.mainline && name && std::string(name) == "gpio-keys-control") {
+                const bool joypad = name && std::string(name) == "retrogame_joypad";
+                if (o.mainline && name && (std::string(name) == "gpio-keys-control" || joypad)) {
                     auto instance =
                         reinterpret_cast<decltype(&SDL_JoystickInstanceID)>(dlsym(s.handle, "SDL_JoystickInstanceID"));
                     if (instance) mainline_pads.insert(instance(j));
+                    if (instance && joypad) mainline_controls.joypads.insert(instance(j));
                 }
             }
         }
@@ -2225,6 +2248,7 @@ class App {
         joysticks.clear();
         mainline_pads.clear();
         mainline_controls.directions.clear();
+        mainline_controls.joypads.clear();
         overlay.close();
         for (auto p : surfaces) {
             s.DestroyRenderer(p.renderer);
@@ -2479,6 +2503,7 @@ public:
         if (!o.boot_startup)
             shaders = load_shaders(o.app.empty() ? fs::path("assets/shaders/catalog.tsv")
                                                  : o.app / "assets/shaders/catalog.tsv");
+        launch_profile.mark("shaders-loaded");
         if (o.preferences.empty())
             o.preferences = o.data.empty() ? fs::path("build/dev/preferences.ini") : o.data / "preferences.ini";
         if (o.data.empty()) o.data = o.preferences.parent_path();
@@ -2489,10 +2514,13 @@ public:
             system_preferences.brightness = hardware.brightness_percent;
             brightness_applied = hardware.brightness_percent;
         }
+        launch_profile.mark("system-probed");
         if (!o.boot_startup && !o.preview && !probe && !o.game_menu && hardware.volume &&
             !system.set("volume", hardware.volume_percent))
             status = "Could not apply volume";
+        launch_profile.mark("volume-applied");
         if (!o.boot_warning) load_system_configuration();
+        launch_profile.mark("system-configuration-loaded");
         preferences.dark = dark_theme_file(o.theme);
         try {
             preferences = load_preferences(o.preferences);
@@ -2504,11 +2532,14 @@ public:
                 load_ui_preferences(o.preferences.parent_path() / "ui.ini", preferences);
             } catch (const std::exception&) {}
         }
+        launch_profile.mark("preferences-loaded");
         locale.load(asset_path("locales"), preferences.language);
         rounded.prefer(preferences.language);
+        launch_profile.mark("locale-loaded");
         if (!o.mode.empty()) preferences.dark = o.mode == "dark";
         if (!o.font.empty()) preferences.pixel = o.font == "pixel";
         if (!o.boot_startup || !preferences.pixel) check_fonts(o.boot_startup || o.game_menu);
+        launch_profile.mark("fonts-checked");
         try {
             reload_themes();
         } catch (const std::exception& e) {
@@ -2520,12 +2551,11 @@ public:
             settings.page = o.boot_warning ? Page::BootWarning : Page::Library;
             home_menu = true;
         } else {
+            launch_profile.mark("themes-loaded");
             session_initialized = true;
-            load_library(o.game_menu ? std::vector<Game>{} : scan(o.roots));
-        }
-        if (o.card_repair) {
-            card_repair = 1;
-            card_repair_at = s.GetTicks();
+            const auto games = o.game_menu ? std::vector<Game>{} : scan(o.roots);
+            launch_profile.mark("library-scanned", int(games.size()));
+            load_library(games);
         }
         launch_profile.mark("configuration-ready");
     }
@@ -2699,6 +2729,7 @@ int main(int argc, char** argv) {
             o.independent = std::string(platform) == "independent";
         if (const char* profile = std::getenv("RGDS_INPUT_PROFILE"))
             o.mainline = o.independent && std::string(profile) == "mainline-rg-ds";
+        if (const char* os = std::getenv("RGDS_OS")) o.rgds_os = o.independent && std::string(os) == "1";
         o.executable = fs::absolute(argv[0]);
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
@@ -2723,7 +2754,6 @@ int main(int argc, char** argv) {
             else if (arg == "--library") o.library = true;
             else if (arg == "--boot-warning") o.boot_warning = true;
             else if (arg == "--boot-startup") o.boot_startup = true;
-            else if (arg == "--card-repair") o.card_repair = true;
             else if (arg == "--boot-ready-fd") {
                 auto raw = value();
                 size_t end = 0;

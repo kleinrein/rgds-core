@@ -152,7 +152,7 @@ Host tests exercise actual signatures, tampering, expiry/replay, target/protocol
 mismatches, resumed transfers, package corruption, staging, low space, active
 games, install locking, crashes/hangs, healthy acknowledgement and interrupted
 trials. The device passed real-launcher startup/heartbeat and deliberately failed
-candidate rollback checks; see [acceptance evidence](archive/OTA_FOUNDATION_2026-10-12.md).
+candidate rollback checks.
 Starting a game during the trial retains the startup heartbeat after SDL closes.
 SDL tests exercise update navigation and progress/status layout. Production
 publishing is still blocked until a real feed/key is provisioned and accepted.

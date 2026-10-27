@@ -198,6 +198,16 @@ class AudioTests(unittest.TestCase):
             self.assertNotIn("LD_LIBRARY_PATH", run.call_args.kwargs["env"])
             self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "DAC", "0%"])
 
+    def test_mixer_falls_back_to_mainline_master(self):
+        missing = subprocess.CompletedProcess([], 1, stdout="")
+        master = subprocess.CompletedProcess([], 0, stdout="Playback 109 [43%] [-54.12dB]")
+        with patch("audio.subprocess.run", side_effect=[missing, master, master]) as run:
+            mixer = Mixer()
+            self.assertEqual(mixer.query(), 43)
+            mixer.set(0)
+            self.assertEqual(run.call_args_list[1].args[0], ["amixer", "-c", "0", "sget", "Master"])
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "Master", "0%"])
+
     def test_unavailable_mixer_fails_before_a_game_can_start(self):
         with patch.object(self.mixer, "query", side_effect=FileNotFoundError("amixer")), \
              patch("audio.volume_inputs") as inputs:

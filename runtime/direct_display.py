@@ -175,6 +175,8 @@ class DirectDisplay:
 
     def prepare(self, wanted):
         """Return the display the engine will really use ('kms' or 'wayland')."""
+        from linux_platform import rgds_os
+        if rgds_os(): return wanted  # no Weston to stop or bring back
         if wanted == 'kms' and not self.stopped:
             try:
                 self.timings['weston_stop_seconds'] = round(stop(), 3)

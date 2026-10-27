@@ -206,7 +206,7 @@ class SettingsTests(unittest.TestCase):
         # The carousel is grouped; Amber (19) is the last place.
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(28))
         self.run_preview(
-            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last + "1500 key A\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last + "1500 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
@@ -216,7 +216,7 @@ class SettingsTests(unittest.TestCase):
         self.assertIn("filter=19\n", next((self.root / "library").glob("*/game.ini")).read_text())
 
     def test_shader_groups_jump_with_up_down_shoulders_and_chips(self):
-        picker = "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n"
+        picker = "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n"
         self.run_preview(picker + "220 key Down\n300 key A\n", extra=("--settings", "--section", "library"))
         self.assertIn("filter=21\n", (self.root / "ui.ini").read_text(), "Down opens DS screens at DS Classic")
         self.state.write_text('1 3 2 ""\n')
@@ -235,14 +235,14 @@ class SettingsTests(unittest.TestCase):
     def test_dsperate_picker_offers_the_full_preset_pack(self):
         self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
         self.run_preview(
-            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key A\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=21\n", (self.root / "ui.ini").read_text())
 
     def test_shader_rail_drag_selects_the_last_shader_and_a_tile_tap_applies(self):
         self.run_preview(
-            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 tap 300 440\n260 drag 600 440\n300 release\n600 click 320 200\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 tap 300 440\n260 drag 600 440\n300 release\n600 click 320 200\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
@@ -250,7 +250,7 @@ class SettingsTests(unittest.TestCase):
     def test_shader_focus_restores_during_rebuilds_and_scrolls_into_view(self):
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(14))
         self.run_preview(
-            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last,
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last,
             extra=("--settings", "--section", "library")
         )
         self.assertIn("20 2 14\nshader 0\n", self.state.read_text())
@@ -261,7 +261,7 @@ class SettingsTests(unittest.TestCase):
 
     def test_shader_left_and_right_move_one_item(self):
         self.run_preview(
-            "20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key Left\n340 key A\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key Left\n340 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=1", (self.root / "ui.ini").read_text())
@@ -438,8 +438,7 @@ class SettingsTests(unittest.TestCase):
 
     def test_touch_brightness_slider_clamps_and_back_returns_to_appearance(self):
         self.run_preview(
-            """10 wheel 0 -8
-20 click 200 215
+            """20 click 200 130
 60 tap 596 219
 100 key Right
 140 tap 44 219
@@ -447,10 +446,10 @@ class SettingsTests(unittest.TestCase):
 220 key Right
 260 click 72 452
 """,
-            extra=("--settings", "--section", "theme")
+            extra=("--settings", "--section", "display")
         )
         self.assertIn("brightness=10\n", self.system_prefs.read_text())
-        self.assertTrue(self.state.read_text().endswith("2 0 5\n"))
+        self.assertTrue(self.state.read_text().endswith("43 10 0\n"), self.state.read_text())
         self.run_preview("20 key Return\n60 key Right\n100 key Escape\n", extra=("--settings", "--section", "theme"))
         # Opening Settings explicitly resets focus; existing brightness remains intact.
         self.assertIn("brightness=10\n", self.system_prefs.read_text())
@@ -479,6 +478,24 @@ class SettingsTests(unittest.TestCase):
             extra=("--settings", "--section", "system")
         )
         self.assertIn("timezone=America/Adak\n", self.system_prefs.read_text())
+
+    def test_daylight_saving_choice_is_saved_and_survives_a_timezone_change(self):
+        self.system_prefs.write_text(
+            "schema=1\npower=0\nbrightness=60\nidle=0\nlid=0\nbattery_percent=1\ntimezone=Europe/Oslo\n"
+        )
+        # Row 2 sits under Timezone; the picker lists Automatic, On, Off.
+        self.run_preview(
+            "20 key Down\n40 key Down\n60 key A\n100 key Down\n140 key A\n",
+            extra=("--settings", "--section", "system")
+        )
+        self.assertIn("timezone=Europe/Oslo\ndst=1\n", self.system_prefs.read_text())
+        self.run_preview(
+            "20 key Down\n40 key A\n80 key Right\n120 key Left\n160 key A\n",
+            extra=("--settings", "--section", "system")
+        )
+        saved = self.system_prefs.read_text()
+        self.assertIn("timezone=Europe/Amsterdam\n", saved)
+        self.assertIn("dst=1\n", saved)
 
     def test_saved_battery_percentage_choice_survives_other_system_changes(self):
         self.system_prefs.write_text(

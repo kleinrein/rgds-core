@@ -147,6 +147,7 @@ Desktop preview	Xem trước trên máy tính
 Development build	Bản phát triển
 Device address	Địa chỉ thiết bị
 Device information	Thông tin thiết bị
+Display	Màn hình
 Display FPS	FPS màn hình
 Done	Xong
 Down	Xuống
@@ -441,6 +442,7 @@ Swapped	Đã đảo
 System	Hệ thống
 THEME ERROR - RETAINED CURRENT	LỖI GIAO DIỆN – GIỮ HIỆN TẠI
 THEME RELOADED	ĐÃ TẢI LẠI GIAO DIỆN
+Turn the handheld off and on again	Tắt rồi bật lại máy
 TYPEFACE	KIỂU CHỮ
 Temporary game cache cleared. Saves and artwork are kept.	Đã xóa bộ nhớ đệm trò chơi tạm. Giữ bản lưu và ảnh bìa.
 The checkpoint did not finish saving.	Chưa lưu xong trạng thái.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Giữ yên để nhấp chuột phải
 Hold to exit	Giữ để thoát
 Touch screen off	Đã tắt màn hình cảm ứng
 Touch screen is not available	Không dùng được màn hình cảm ứng
+Daylight saving	Giờ mùa hè
+Automatic	Tự động
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Giờ mùa hè theo múi giờ của bạn. Bật hoặc tắt nếu đồng hồ lệch một giờ.
+GBA true colour	Màu GBA thật
+Faded GBA colours made rich, as the real screen showed them.	Màu GBA nhợt nhạt trở nên đậm đà như trên màn hình thật.
+GBA true screen	Màn hình GBA thật
+The true GBA colours on its screen, with the gaps between its pixels.	Màu GBA thật trên màn hình của nó, cùng những khe hở giữa các điểm ảnh.

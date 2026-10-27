@@ -214,8 +214,11 @@ class MenuAudio {
     void reap(bool block) {
         if (!job || (!block && !job_done.load(std::memory_order_acquire))) return;
         audio_worker.join();
-        if (job == 1) finish_open();
+        // Clear the job first: finish_open's `opened` hook can close the sink again (no DAC control to
+        // restore), and that reap must not join this finished thread a second time.
+        const int finished = job;
         job = 0;
+        if (finished == 1) finish_open();
     }
     bool opening() const { return job == 1; }
     // True when the sink is up. Otherwise it is being opened (see `opening`) or cannot be.

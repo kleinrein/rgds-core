@@ -1,0 +1,146 @@
+# RG DS OS for the Anbernic RG DS. The board layer (kernel, device tree, U-Boot) is BananaLinux's, proven on the
+# owner's unit (docs/OWN_OS_PLAN.md); the system on top boots straight into RG DS Core.
+BR2_aarch64=y
+BR2_cortex_a55=y
+BR2_OPTIMIZE_2=y
+BR2_SSP_NONE=y
+BR2_RELRO_PARTIAL=y
+BR2_GLOBAL_PATCH_DIR="$(BR2_EXTERNAL_RGDS_PATH)/patches"
+
+# Buildroot's own toolchain (Bootlin's prebuilt one only runs on x86-64 hosts). Kernel headers 6.18: GCC 14's
+# libsanitizer includes linux/scc.h, which 7.x dropped.
+BR2_TOOLCHAIN_BUILDROOT=y
+BR2_TOOLCHAIN_BUILDROOT_GLIBC=y
+BR2_KERNEL_HEADERS_6_18=y
+BR2_GCC_VERSION_14_X=y
+BR2_TOOLCHAIN_BUILDROOT_CXX=y
+BR2_CCACHE=y
+BR2_CCACHE_INITIAL_SETUP="--max-size=6G"
+
+BR2_TARGET_GENERIC_HOSTNAME="rgds"
+# the Timezone page needs the zone files: without /usr/share/zoneinfo every zone falls back to UTC
+BR2_TARGET_TZ_INFO=y
+BR2_TARGET_GENERIC_ISSUE="RG DS OS"
+BR2_INIT_BUSYBOX=y
+BR2_PACKAGE_BUSYBOX_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/busybox.fragment"
+BR2_ROOTFS_DEVICE_CREATION_DYNAMIC_DEVTMPFS=y
+BR2_ENABLE_LOCALE_PURGE=y
+BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_RGDS_PATH)/rootfs"
+BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/post-build.sh"
+BR2_ROOTFS_POST_IMAGE_SCRIPT="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/post-image.sh"
+
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_TARBALL=y
+BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION="https://github.com/gregkh/linux/archive/refs/tags/v7.2.7.tar.gz"
+BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rocknix.config"
+BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rgds.fragment"
+BR2_LINUX_KERNEL_DTS_SUPPORT=y
+BR2_LINUX_KERNEL_INTREE_DTS_NAME="rockchip/rk3568-anbernic-rg-ds"
+BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
+BR2_LINUX_KERNEL_NEEDS_HOST_LIBELF=y
+
+BR2_TARGET_UBOOT=y
+BR2_TARGET_UBOOT_BUILD_SYSTEM_KCONFIG=y
+BR2_TARGET_UBOOT_CUSTOM_TARBALL=y
+BR2_TARGET_UBOOT_CUSTOM_TARBALL_LOCATION="https://github.com/u-boot/u-boot/archive/refs/tags/v2026.01.tar.gz"
+BR2_TARGET_UBOOT_PATCH="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/uboot-patches"
+BR2_TARGET_UBOOT_BOARD_DEFCONFIG="quartz64-a-rk3566"
+BR2_TARGET_UBOOT_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/uboot-rgds.fragment"
+# SPL, TPL and U-Boot in one file at 32K (Buildroot copies it out only with its own rkbin package, which we skip)
+BR2_TARGET_UBOOT_FORMAT_CUSTOM=y
+BR2_TARGET_UBOOT_FORMAT_CUSTOM_NAME="u-boot-rockchip.bin"
+BR2_TARGET_UBOOT_NEEDS_DTC=y
+BR2_TARGET_UBOOT_NEEDS_PYLIBFDT=y
+BR2_TARGET_UBOOT_NEEDS_PYELFTOOLS=y
+BR2_TARGET_UBOOT_NEEDS_OPENSSL=y
+BR2_TARGET_UBOOT_NEEDS_GNUTLS=y
+# Rockchip's BL31 and DDR init blobs, kept in board/rgds/rkbin (rockchip-linux/rkbin at f43a462e, its LICENSE
+# beside them): Buildroot's rockchip-rkbin package clones that repository's whole history for one 58 KiB file.
+BR2_TARGET_UBOOT_CUSTOM_MAKEOPTS="BL31=$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/rkbin/rk3568_bl31_v1.45.elf ROCKCHIP_TPL=$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/rkbin/rk3568_ddr_1056MHz_v1.23.bin"
+
+BR2_TARGET_ROOTFS_SQUASHFS=y
+BR2_TARGET_ROOTFS_SQUASHFS4_LZ4=y
+# no ext2 root image: the system is the squashfs slot
+# BR2_TARGET_ROOTFS_TAR is not set
+BR2_PACKAGE_HOST_GENIMAGE=y
+BR2_PACKAGE_HOST_LZ4=y
+BR2_PACKAGE_HOST_DOSFSTOOLS=y
+BR2_PACKAGE_HOST_MTOOLS=y
+
+# hardware: Wi-Fi firmware, sound, the GPU (Mesa 25.0 Panfrost, no LLVM), SDL2 straight on KMS
+BR2_PACKAGE_LINUX_FIRMWARE=y
+BR2_PACKAGE_LINUX_FIRMWARE_RTL_RTW88=y
+BR2_PACKAGE_WIRELESS_REGDB=y
+BR2_PACKAGE_ALSA_LIB=y
+BR2_PACKAGE_ALSA_UTILS=y
+BR2_PACKAGE_ALSA_UTILS_AMIXER=y
+BR2_PACKAGE_ALSA_UTILS_ALSACTL=y
+BR2_PACKAGE_LIBDRM=y
+BR2_PACKAGE_MESA3D_PANFROST=y
+BR2_PACKAGE_LIBUDEV_ZERO=y
+BR2_PACKAGE_SDL2=y
+BR2_PACKAGE_SDL2_KMSDRM=y
+BR2_PACKAGE_SDL2_OPENGLES=y
+BR2_PACKAGE_FREETYPE=y
+BR2_PACKAGE_ZLIB=y
+
+# the card and the system tools rcS uses
+BR2_PACKAGE_EXFATPROGS=y
+BR2_PACKAGE_UTIL_LINUX=y
+BR2_PACKAGE_UTIL_LINUX_BINARIES=y
+BR2_PACKAGE_UTIL_LINUX_PARTX=y
+
+# working on the handheld: Wi-Fi and SSH (rgds/wifi.conf, rgds/ssh/authorized_keys on the card)
+BR2_PACKAGE_WPA_SUPPLICANT=y
+BR2_PACKAGE_WPA_SUPPLICANT_WPA3=y
+BR2_PACKAGE_WPA_SUPPLICANT_CLI=y
+BR2_PACKAGE_DROPBEAR=y
+BR2_PACKAGE_DROPBEAR_DISABLE_REVERSEDNS=y
+BR2_PACKAGE_AVAHI=y
+BR2_PACKAGE_AVAHI_DAEMON=y
+BR2_PACKAGE_CA_CERTIFICATES=y
+
+# RG DS Core's runtime helpers are Python
+BR2_PACKAGE_PYTHON3=y
+BR2_PACKAGE_PYTHON3_PYC_ONLY=y
+BR2_PACKAGE_PYTHON3_SSL=y
+BR2_PACKAGE_PYTHON3_ZLIB=y
+BR2_PACKAGE_PYTHON3_UNICODEDATA=y
+BR2_PACKAGE_PYTHON3_SQLITE=y
+
+BR2_PACKAGE_RGDS_CORE=y
+# RG DS Core is a verified release (manifest.json hashes): Buildroot must not strip it
+BR2_STRIP_EXCLUDE_DIRS="usr/share/rgds"
+
+# PortMaster (docs/PORTMASTER_PLAN.md): port scripts are bash; PortMaster's own GUI (pugwash) is pysdl2 with
+# SDL_ttf, SDL_image and SDL_mixer, and harbourmaster unpacks xz, bzip2 and XML. What ports link to beyond this comes
+# from the compat layer on the card (runtime/portmaster_files/compat-rgds-os.json).
+# bash is listed only beside BusyBox's own tools; /bin/sh stays BusyBox's (rcS and the session scripts)
+BR2_PACKAGE_BUSYBOX_SHOW_OTHERS=y
+BR2_SYSTEM_BIN_SH_BUSYBOX=y
+BR2_PACKAGE_BASH=y
+BR2_PACKAGE_SDL2_TTF=y
+BR2_PACKAGE_SDL2_IMAGE=y
+# SDL_image reads PNG and JPEG only with these (PortMaster's themes are PNG)
+BR2_PACKAGE_LIBPNG=y
+BR2_PACKAGE_JPEG=y
+BR2_PACKAGE_SDL2_MIXER=y
+# fontconfig's /etc/fonts and a font family for ports that find their text font through it (Chromium B.S.U. and
+# 13 more): without a config they draw no text at all
+BR2_PACKAGE_FONTCONFIG=y
+BR2_PACKAGE_DEJAVU=y
+# BR2_PACKAGE_DEJAVU_SERIF is not set
+# BR2_PACKAGE_DEJAVU_SANS_CONDENSED is not set
+# BR2_PACKAGE_DEJAVU_SERIF_CONDENSED is not set
+BR2_PACKAGE_PYTHON3_BZIP2=y
+BR2_PACKAGE_PYTHON3_XZ=y
+BR2_PACKAGE_PYTHON3_PYEXPAT=y
+BR2_PACKAGE_PYTHON3_DECIMAL=y
+# more systems for RG DS Play: libretro cores in /usr/lib/libretro
+BR2_PACKAGE_LIBRETRO_FCEUMM=y
+BR2_PACKAGE_LIBRETRO_SNES9X=y
+BR2_PACKAGE_LIBRETRO_PICODRIVE=y
+BR2_PACKAGE_LIBRETRO_PCSX_REARMED=y
+BR2_PACKAGE_LIBRETRO_FAKE08=y
+BR2_PACKAGE_LIBRETRO_MUPEN64PLUS_NEXT=y

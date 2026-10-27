@@ -1,0 +1,27 @@
+From: RG DS OS <rgds@localhost>
+Date: Tue, 27 Oct 2026 13:30:00 +0100
+Subject: [PATCH] drm/rockchip: dsi: let the command line probe it asynchronously
+
+The DSI driver forces a synchronous probe because, with a dual-channel display, one DSI reads the other's driver
+data. The RG DS drives two separate panels, one per DSI, and the panels' 650 ms power-up (their init sequences and
+reset delays) runs inside the DRM master's bind, which this probe triggers as the last component: it held the PMIC,
+and so the card and the root filesystem, behind it on the boot's only thread. With the default probe strategy the
+kernel's driver_async_probe=dw-mipi-dsi-rockchip opts in (extlinux.conf), and nothing changes for anyone else.
+---
+ drivers/gpu/drm/rockchip/dw-mipi-dsi-rockchip.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+--- a/drivers/gpu/drm/rockchip/dw-mipi-dsi-rockchip.c
++++ b/drivers/gpu/drm/rockchip/dw-mipi-dsi-rockchip.c
+@@ -1749,11 +1749,5 @@ struct platform_driver dw_mipi_dsi_rockchip_driver = {
+ 		.of_match_table = dw_mipi_dsi_rockchip_dt_ids,
+ 		.pm	= &dw_mipi_dsi_rockchip_pm_ops,
+ 		.name	= "dw-mipi-dsi-rockchip",
+-		/*
+-		 * For dual-DSI display, one DSI pokes at the other DSI's
+-		 * drvdata in dw_mipi_dsi_rockchip_find_second(). This is not
+-		 * safe for asynchronous probe.
+-		 */
+-		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+ 	},
+ };

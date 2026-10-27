@@ -852,6 +852,30 @@ bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb
     was_split = split;
     std::fprintf(stderr, "video: the windows present on %s\n", split ? "two threads" : "one thread");
   }
+  // DS_KMS_SCALE=0 keeps the CPU's scanline scaling. Otherwise a window that
+  // shows one enhanced screen hands the tier the frame's own size: VOP2 then
+  // scales it onto the panel (filtered), and the present thread copies the
+  // frame instead of resampling it into a panel-sized canvas. Decided here
+  // on the emulation thread, with the lane idle, since the canvas, the views
+  // and the tables change with it.
+  static const bool kms_scale = [] {
+    const char* e = std::getenv("DS_KMS_SCALE");
+    return !e || std::atoi(e) != 0;
+  }();
+  for (int i = 0; i < n; ++i) {
+    Display& d = *ds[i];
+    if (!kms || !kms_scale || d.rot_ != 0 || d.only_screen_ < 0) continue;
+    const bool enh = !enhanced || enhanced[d.only_screen_];
+    const int want_w = enh ? static_cast<int>(width) : 0, want_h = enh ? static_cast<int>(height) : 0;
+    const bool want = want_w > 0 && (want_w != d.out_->panel_width() || want_h != d.out_->panel_height());
+    const int have_w = d.out_->scales() ? d.out_->width() : 0, have_h = d.out_->scales() ? d.out_->height() : 0;
+    if ((want ? want_w : 0) == have_w && (want ? want_h : 0) == have_h) continue;
+    d.sync();
+    if (!d.out_->set_source(want ? want_w : 0, want ? want_h : 0)) continue;
+    d.direct_lost_ = false;
+    d.build_scale();
+    d.layout();
+  }
   struct LaneStage {
     std::vector<u32> px[2][SCREENS];
     u64 job[2] = {};
@@ -917,12 +941,12 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
   const auto tp0 = now();
   int ww = 0, wh = 0;
   SDL_GetWindowSize(win_, &ww, &wh);
-  if (ww != out_->width() || wh != out_->height()) {
+  if (ww != out_->panel_width() || wh != out_->panel_height()) {
     // A resize is followed from begin_frame() on the emulation thread, never here.
     if (!direct_lost_) {
       direct_lost_ = true;
-      std::fprintf(stderr, "video: window %dx%d but the scanout buffers are %dx%d; not presented\n", ww, wh,
-                   out_->width(), out_->height());
+      std::fprintf(stderr, "video: window %dx%d but the scanout panel is %dx%d; not presented\n", ww, wh,
+                   out_->panel_width(), out_->panel_height());
     }
     return;
   }
@@ -1225,6 +1249,11 @@ bool Display::out_size(int& w, int& h) const {
   // Window size is the truth on a scanout tier: the shm surface can lag a
   // configure by a frame, and KMSDRM has no window surface to ask at all.
   if (out_) {
+    if (out_->scales()) { // the frame's own size: the display engine puts it on the panel
+      w = out_->width();
+      h = out_->height();
+      return true;
+    }
     SDL_GetWindowSize(win_, &w, &h);
     if (rotated()) std::swap(w, h);
     return w > 0 && h > 0;

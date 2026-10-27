@@ -16,7 +16,6 @@ from device_profile import detect, stock_environment
 from input_devices import discover
 from linux_platform import hardware_profile
 import emulators
-import session
 
 
 def bitmap(value):
@@ -93,27 +92,6 @@ class PlusProfileTests(unittest.TestCase):
         with patch.dict(os.environ, environment, clear=True):
             engine = emulators.base_environment()
         self.assertEqual(engine['RGDS_KEYS_DEV'], str(self.dev / 'event6'))
-
-    def test_stock_session_rediscovers_plus_input_after_cleaning_inherited_state(self):
-        self.model('RG DS Plus')
-        self.device('event9', 'Goodix lower', touch=True)
-        self.device('event6', 'ANBERNIC-rk3568-keys')
-        runtime = self.root / 'run'
-        runtime.mkdir()
-        socket = runtime / 'wayland-0'
-        socket.touch()
-        library = Path('/usr/lib/libSDL2-2.0.so.0')
-        with patch.dict(os.environ, dict(XDG_RUNTIME_DIR=str(runtime), RGDS_TOUCH_DEV='/dev/input/event1',
-                                       RGDS_KEYS_DEV='/dev/input/event4', RGDS_DEVICE_MODEL='stale'), clear=True), \
-             patch('device_profile.detect', side_effect=lambda: detect(self.sys)), \
-             patch('input_devices.discover', side_effect=lambda: discover(self.sys / 'class/input', self.dev)), \
-             patch.object(Path, 'is_socket', side_effect=lambda: True), \
-             patch.object(Path, 'is_file', autospec=True, side_effect=lambda path: path == library):
-            environment = session.environment(self.root)
-        self.assertEqual(environment['RGDS_DEVICE_MODEL'], 'rg-ds-plus')
-        self.assertEqual(environment['RGDS_TOUCH_DEV'], str(self.dev / 'event9'))
-        self.assertEqual(environment['RGDS_KEYS_DEV'], str(self.dev / 'event6'))
-        self.assertEqual(environment['RGDS_SDL_LIBRARY'], str(library))
 
     def test_multiple_touch_candidates_do_not_guess_raw_plus_input(self):
         self.model('RG DS Plus')

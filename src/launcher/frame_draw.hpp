@@ -140,7 +140,8 @@ void App::draw(bool screenshot) {
         if (s.RenderSetClipRect(renderer, nullptr) != 0 || s.SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE) != 0)
             throw std::runtime_error(std::string("Panel state: ") + s.GetError());
         const auto background = theme.at("background");
-        s.SetRenderDrawColor(renderer, background.r, background.g, background.b, o.game_menu ? 0 : 255);
+        // A game menu is drawn over the game; the port helper on RG DS OS has a panel of its own and is opaque.
+        s.SetRenderDrawColor(renderer, background.r, background.g, background.b, o.game_menu && !port_lease ? 0 : 255);
         if (s.RenderClear(renderer) != 0) throw std::runtime_error(std::string("Panel clear: ") + s.GetError());
         s.SetRenderDrawBlendMode(renderer, o.game_menu ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
     };
@@ -203,7 +204,7 @@ void App::draw(bool screenshot) {
                 if (s.RenderReadPixels(renderer, nullptr, SDL_PIXELFORMAT_RGBA32, pixels + i * overlay_panel_bytes,
                                        640 * 4) != 0)
                     throw std::runtime_error("Menu frame capture failed");
-            } else {
+            } else if (surfaces[i].window) { // the port helper's top canvas on RG DS OS has no window
                 ui_trace.mark(i == 0 ? UiTrace::TopPresent : UiTrace::BottomPresent, rendered_frames,
                               uint32_t(settings.page));
                 present_panel(renderer);

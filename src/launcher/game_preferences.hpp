@@ -45,7 +45,7 @@ void App::change_game_option(int delta, bool toggle) {
         do
             value = toggle ? (value >= ds_core_count - 1 ? -1 : value + 1)
                            : std::clamp(value + step, -1, ds_core_count - 1);
-        while (value == retired_core);
+        while (core_retired(value));
     } else {
         open_shader_picker(true);
         return;

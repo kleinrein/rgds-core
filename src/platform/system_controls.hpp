@@ -434,7 +434,37 @@ public:
     std::optional<unsigned long long> lid_generation() const { return lid_sequence; }
     bool sleep(bool lid = false, bool menu_close = false) {
         flush_controls();
-        return invoke(lid ? "sleep_lid" : "sleep", std::nullopt, nullptr, menu_close) == 0;
+        // A closed lid: the panels go dark here, before the Python helper even starts (its start-up is most of the
+        // second between the close and a dark screen). The helper gets the levels to put back (RGDS_SLEEP_BRIGHTNESS)
+        // instead of reading the zeros it would otherwise restore.
+        std::string levels;
+        if (lid) {
+            std::error_code ec;
+            for (const auto& entry : fs::directory_iterator("/sys/class/backlight", ec)) {
+                const fs::path node = entry.path() / "brightness";
+                std::ifstream in(node);
+                std::string value;
+                if (!(in >> value)) continue;
+                std::ofstream out(node);
+                if (!(out << "0")) continue;
+                levels += (levels.empty() ? "" : ";") + node.string() + "=" + value;
+            }
+        }
+        if (!levels.empty()) setenv("RGDS_SLEEP_BRIGHTNESS", levels.c_str(), 1);
+        const bool ok = invoke(lid ? "sleep_lid" : "sleep", std::nullopt, nullptr, menu_close) == 0;
+        if (!levels.empty()) {
+            unsetenv("RGDS_SLEEP_BRIGHTNESS");
+            // Whatever the helper managed: the levels come back (a cancelled sleep included).
+            for (size_t at = 0; at < levels.size();) {
+                const size_t end = levels.find(';', at), eq = levels.find('=', at);
+                if (eq == std::string::npos || eq > end) break;
+                std::ofstream out(levels.substr(at, eq - at));
+                out << levels.substr(eq + 1, (end == std::string::npos ? levels.size() : end) - eq - 1);
+                if (end == std::string::npos) break;
+                at = end + 1;
+            }
+        }
+        return ok;
     }
     static std::optional<bool> read_lid_state(const fs::path& path,
                                               std::optional<unsigned long long>* generation = nullptr) {

@@ -579,12 +579,28 @@ void Companion::render_layers(Canvas& out, const Look& look, const Font& font) c
     if (strip_mode()) {
         View* v = shown_view();
         const bool covered = !has_current_ && v && v->covers_hud();
-        if (hud_shown_ && !hud_image_.empty() && !covered) render_with_strip(out, look, font);
+        if (hud_shown_ && !hud_image_.empty() && profile_->hud.strip_fill) render_strip_filled(out, look);
+        else if (hud_shown_ && !hud_image_.empty() && !covered) render_with_strip(out, look, font);
         else render_content(out, look, font);
         return;
     }
     if (render_hud(out, look)) return;
     render_content(out, look, font);
+}
+
+void Companion::render_strip_filled(Canvas& out, const Look& look) const {
+    // The band as large as the panel takes it with its shape kept, centred on
+    // its own ground: the second picture the game draws under the first.
+    std::map<uint32_t, int> seen;
+    for (int x = 0; x < hud_w_; ++x) ++seen[hud_image_[static_cast<size_t>(hud_h_ - 1) * hud_w_ + x] & 0xFFFFFF];
+    const uint32_t ground = std::max_element(seen.begin(), seen.end(), [](auto& a, auto& b) {
+                                return a.second < b.second;
+                            })->first;
+    out.fill(Rgb::from_px(shown_px(ground | 0xFF000000u)));
+    const int scale = std::max(1, std::min(out.w() / hud_w_, out.h() / hud_h_));
+    const int x = (out.w() - hud_w_ * scale) / 2, y = (out.h() - hud_h_ * scale) / 2;
+    out.blit(shown(hud_image_.data(), hud_w_, hud_h_, tint_a_), hud_w_, hud_h_, x, y, scale);
+    (void)look;
 }
 
 void Companion::render_with_strip(Canvas& out, const Look& look, const Font& font) const {

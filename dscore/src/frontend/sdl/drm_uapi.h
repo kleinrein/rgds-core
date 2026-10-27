@@ -79,9 +79,47 @@ struct event_vblank {
   uint32_t tv_sec, tv_usec, sequence, crtc_id;
 };
 
+// Atomic KMS: planes, properties, a mode blob and the commit (drm_mode.h).
+struct mode_get_plane_res {
+  uint64_t plane_id_ptr;
+  uint32_t count_planes, pad;
+};
+struct mode_get_plane {
+  uint32_t plane_id, crtc_id, fb_id, possible_crtcs, gamma_size, count_format_types;
+  uint64_t format_type_ptr;
+};
+struct mode_obj_get_properties {
+  uint64_t props_ptr, prop_values_ptr;
+  uint32_t count_props, obj_id, obj_type, pad;
+};
+struct mode_get_property {
+  uint64_t values_ptr, enum_blob_ptr;
+  uint32_t prop_id, flags;
+  char name[32];
+  uint32_t count_values, count_enum_blobs;
+};
+struct mode_create_blob {
+  uint64_t data;
+  uint32_t length, blob_id;
+};
+struct mode_destroy_blob {
+  uint32_t blob_id;
+};
+struct mode_atomic {
+  uint32_t flags, count_objs;
+  uint64_t objs_ptr, count_props_ptr, props_ptr, prop_values_ptr, reserved, user_data;
+};
+struct set_client_cap {
+  uint64_t capability, value;
+};
+
 constexpr uint32_t EVENT_FLIP_COMPLETE = 0x02;
 constexpr uint32_t PAGE_FLIP_EVENT = 0x01;
 constexpr uint32_t CONNECTOR_CONNECTED = 1;
+constexpr uint32_t ATOMIC_TEST_ONLY = 0x0100, ATOMIC_NONBLOCK = 0x0200, ATOMIC_ALLOW_MODESET = 0x0400;
+constexpr uint64_t CLIENT_CAP_UNIVERSAL_PLANES = 2, CLIENT_CAP_ATOMIC = 3;
+constexpr uint32_t OBJECT_CRTC = 0xcccccccc, OBJECT_CONNECTOR = 0xc0c0c0c0, OBJECT_PLANE = 0xeeeeeeee;
+constexpr uint64_t PLANE_TYPE_PRIMARY = 1;
 
 #define DS_DRM_IOWR(nr, type) _IOWR('d', (nr), type)
 
@@ -97,6 +135,14 @@ constexpr unsigned long IOCTL_MODE_GETCONNECTOR = DS_DRM_IOWR(0xA7, mode_get_con
 constexpr unsigned long IOCTL_MODE_RMFB = DS_DRM_IOWR(0xAF, unsigned int);
 constexpr unsigned long IOCTL_MODE_PAGE_FLIP = DS_DRM_IOWR(0xB0, mode_crtc_page_flip);
 constexpr unsigned long IOCTL_MODE_ADDFB2 = DS_DRM_IOWR(0xB8, mode_fb_cmd2);
+constexpr unsigned long IOCTL_SET_CLIENT_CAP = _IOW('d', 0x0d, set_client_cap);
+constexpr unsigned long IOCTL_MODE_GETPROPERTY = DS_DRM_IOWR(0xAA, mode_get_property);
+constexpr unsigned long IOCTL_MODE_GETPLANERESOURCES = DS_DRM_IOWR(0xB5, mode_get_plane_res);
+constexpr unsigned long IOCTL_MODE_GETPLANE = DS_DRM_IOWR(0xB6, mode_get_plane);
+constexpr unsigned long IOCTL_MODE_OBJ_GETPROPERTIES = DS_DRM_IOWR(0xB9, mode_obj_get_properties);
+constexpr unsigned long IOCTL_MODE_ATOMIC = DS_DRM_IOWR(0xBC, mode_atomic);
+constexpr unsigned long IOCTL_MODE_CREATEPROPBLOB = DS_DRM_IOWR(0xBD, mode_create_blob);
+constexpr unsigned long IOCTL_MODE_DESTROYPROPBLOB = DS_DRM_IOWR(0xBE, mode_destroy_blob);
 
 #undef DS_DRM_IOWR
 

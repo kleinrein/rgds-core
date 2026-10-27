@@ -2014,6 +2014,18 @@ sdl_ready:
                                   : "free-running at the limiter's rate");
   bool pace_locked = false; // this frame was paced at the display's period
   u64 pace_locked_frames = 0, pace_frames = 0;
+  // The lock pays only while a frame's lead (start-to-swap plus the band) is
+  // about a refresh: the frame then starts closer to its tick than the free
+  // pacer's held swap leaves it. Past that (3x on the RG DS: the present
+  // thread's larger upload puts start-to-swap at 19 ms and the lead at 31)
+  // every frame would start further ahead of its tick than free pacing costs,
+  // and the ticks it still misses idle the game to 45 fps (27 October 2026).
+  // So: free while the lead is over 1.5 periods, locked again under 1.3; and
+  // whatever the lead, a run of misses (6 in 120 frames) drops to free
+  // pacing for 600 frames, since a repeated frame every third tick is worse
+  // than one frame of latency.
+  bool pace_fits = true;
+  u64 pace_valve_mark = 0, pace_valve_late = 0, pace_free_until = 0, pace_valve_trips = 0;
   double pace_err_abs = 0.0; // sum of |lat - band| over locked frames with a sample, ns
   u64 pace_err_n = 0;
   u64 flip_seen[2] = {0, 0};     // newest flip number taken from each window
@@ -2958,7 +2970,26 @@ sdl_ready:
     const double scale = fast && ff_speed > 0 ? std::max(base_scale, static_cast<double>(ff_speed)) : base_scale;
     // The display lock holds at real-time speed only (a limiter within 3 % of
     // the panel's rate), once the panel's period has held still.
+    if (lock.locked()) {
+      const double lead = lock.work_ns() + lock.band_ns();
+      if (lead > lock.period_ns() * (pace_fits ? 1.5 : 1.3)) {
+        if (pace_fits) VLOG("pace: lead %.1f ms over the panel's %.1f ms; free until it shrinks\n", lead / 1e6,
+                            lock.period_ns() / 1e6);
+        pace_fits = false;
+      } else pace_fits = true;
+      if (pace_locked && pace_frames - pace_valve_mark >= 120) {
+        if (lock.late() - pace_valve_late >= 6) {
+          pace_free_until = pace_frames + 600;
+          ++pace_valve_trips;
+          VLOG("pace: %llu missed ticks in 120 frames; free for 600\n",
+               static_cast<unsigned long long>(lock.late() - pace_valve_late));
+        }
+        pace_valve_mark = pace_frames;
+        pace_valve_late = lock.late();
+      }
+    }
     const bool want_lock = pace_display && !fast && !limiter_off && speed_pct == 100 && lock.locked() &&
+                           pace_fits && pace_frames >= pace_free_until &&
                            std::fabs(frame_ns / lock.period_ns() - base_scale) < 0.03;
     if (want_lock != pace_locked) {
       pace_locked = want_lock;
@@ -2968,6 +2999,10 @@ sdl_ready:
       VLOG("pace: %s (panel %.3f ms, %.2f Hz; band %.2f ms, work %.2f ms)\n",
            want_lock ? "locked to the display" : "free again", lock.period_ns() / 1e6, 1e9 / lock.period_ns(),
            lock.band_ns() / 1e6, lock.work_ns() / 1e6);
+      if (want_lock) {
+        pace_valve_mark = pace_frames; // the window starts with the lock, not with misses from before it
+        pace_valve_late = lock.late();
+      }
     }
     frame_late_start = false;
     if ((fast && ff_speed <= 0) || limiter_off) pacer.reset(); // unthrottled: do not bank the time it gains
@@ -3115,11 +3150,12 @@ sdl_ready:
   if (pace_display && pace_frames)
     std::fprintf(
         stderr,
-        "pace: display-locked %llu of %llu frames (panel %.3f ms, %.2f Hz), start-to-swap %.2f ms mean %.2f ms used, band %.2f ms, %llu missed ticks, |lat - band| %.2f ms mean\n",
+        "pace: display-locked %llu of %llu frames (panel %.3f ms, %.2f Hz), start-to-swap %.2f ms mean %.2f ms used, band %.2f ms, %llu missed ticks, |lat - band| %.2f ms mean, valve tripped %llu times\n",
         static_cast<unsigned long long>(pace_locked_frames), static_cast<unsigned long long>(pace_frames),
         lock.period_ns() / 1e6, lock.period_ns() > 0.0 ? 1e9 / lock.period_ns() : 0.0, lock.work_mean_ns() / 1e6,
         lock.work_ns() / 1e6, lock.band_ns() / 1e6, static_cast<unsigned long long>(lock.late()),
-        pace_err_n ? pace_err_abs / 1e6 / static_cast<double>(pace_err_n) : 0.0);
+        pace_err_n ? pace_err_abs / 1e6 / static_cast<double>(pace_err_n) : 0.0,
+        static_cast<unsigned long long>(pace_valve_trips));
   if (std::getenv("DS_FRAME_STATS") || ds::prof::enabled) {
     // Emulation work only; excluded costs named on their own line. Under
     // DS_PROFILE the probes' own cost comes off first.

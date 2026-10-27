@@ -14,7 +14,6 @@ import emulators
 from game_menu import GameMenu
 from library import game_key, read_fields, write_fields
 import play_options
-import session
 
 
 class Process:
@@ -79,12 +78,37 @@ class PlayRuntimeTests(unittest.TestCase):
             self.root / "a.gb": "gb",
             self.nds: "nds",
             packed: "gba",
-            ds_packed: "nds"
+            ds_packed: "nds",
+            # libretro systems: RG DS Play too, with a core named per system
+            self.root / "a.nes": "nes",
+            self.root / "a.sfc": "snes",
+            self.root / "a.smc": "snes",
+            self.root / "a.md": "md",
+            self.root / "a.sms": "sms",
+            self.root / "a.gg": "gg",
+            self.root / "a.cue": "psx",
+            self.root / "a.chd": "psx",
+            self.root / "a.z64": "n64",
+            self.root / "a.v64": "n64",
+            self.root / "a.p8": "pico8",
         }
         for rom, system in cases.items():
             self.assertEqual(play_options.system_of(rom), system, rom)
             expected = "rgds-play" if system != "nds" else "melonds"
             self.assertEqual(play_options.engine_for(rom, "melonds"), expected)
+
+    def test_libretro_core_is_named_per_system_and_only_when_installed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(play_options, "LIBRETRO_DIR", Path(tmp)):
+                self.assertIsNone(play_options.libretro_core("nes"))  # not installed here
+                (Path(tmp) / "fceumm_libretro.so").write_bytes(b"")
+                self.assertEqual(play_options.libretro_core("nes"), Path(tmp) / "fceumm_libretro.so")
+                self.assertIsNone(play_options.libretro_core("gba"))  # mGBA's, never a libretro core
+                for system in ("md", "sms", "gg"):
+                    self.assertEqual(play_options.LIBRETRO_CORES[system], "picodrive")
+                self.assertEqual(play_options.LIBRETRO_CORES["psx"], "pcsx_rearmed")
+                self.assertEqual(play_options.LIBRETRO_CORES["pico8"], "fake08")
+                self.assertEqual(play_options.LIBRETRO_CORES["n64"], "mupen64plus_next")
         # Appended: the DS engines keep their stored indexes.
         self.assertEqual(emulators.CORES[:5], ("drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"))
         self.assertEqual(emulators.CORES[5], "rgds-play")
@@ -190,14 +214,6 @@ class PlayRuntimeTests(unittest.TestCase):
         with patch.object(emulators, "_run_once", side_effect=[75, 0]) as launch:
             emulators.run("melonds", self.app, self.data, self.nds)
         self.assertEqual(launch.call_args_list[1].args[0], "rgds-experimental")
-
-    def test_other_systems_folders_reach_the_launcher(self):
-        roots = session.system_roots(Path("/mnt/mmc/rgds"), cards=(Path("/mnt/mmc"),))
-        self.assertIn(("gba", Path("/mnt/mmc/Roms/GBA")), roots)
-        self.assertIn(("gba", Path("/mnt/mmc/rgds/games/gba")), roots)
-        self.assertIn(("gb", Path("/mnt/mmc/Roms/GB")), roots)
-        self.assertEqual(len(roots), len(set(roots)))
-
 
 class PlayArtworkTests(unittest.TestCase):
     def setUp(self):

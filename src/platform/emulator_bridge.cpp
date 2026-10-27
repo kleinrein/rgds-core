@@ -293,8 +293,9 @@ bool sync_saved_volume(const char* data) {
             if (end && !*end && value >= 0 && value <= 100) level = int(value);
         }
     }
-    bool ok =
-        schema && level >= 0 && rgds::write_mixer_percent(rgds::dac_percent_for_level(level), "DAC Playback Volume");
+    bool ok = schema && level >= 0 &&
+              (rgds::write_mixer_percent(rgds::dac_percent_for_level(level), "DAC Playback Volume") ||
+               rgds::write_mixer_percent(rgds::dac_percent_for_level(level), "Master Playback Volume"));
     flock(lock, LOCK_UN);
     close(lock);
     return ok;
@@ -385,6 +386,12 @@ extern "C" int SDL_Init(Uint32 flags) {
     }
     return result;
 }
+// ROCKNIX's joypad driver on RG DS OS (BananaLinux's kernel) reports mainline BTN_* codes with the F key as
+// BTN_MODE (MainlineControls::from_joypad). The stock firmware's driver has the same name but its own numbering, so
+// only the independent session reads it as mainline.
+bool rocknix_joypad(const char* label) {
+    return label && std::strcmp(label, "retrogame_joypad") == 0 && env("RGDS_SESSION_PLATFORM") == "independent";
+}
 extern "C" SDL_bool SDL_IsGameController(int index) {
     using Fn = SDL_bool (*)(int);
     static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "SDL_IsGameController"));
@@ -410,6 +417,11 @@ extern "C" SDL_bool SDL_IsGameController(int index) {
                     mapping =
                         std::string(identifier) + ",RGDS mainline," + faces +
                         ",back:b8,guide:b16,start:b9,leftstick:b10,rightstick:b11,leftshoulder:b4,rightshoulder:b5,dpup:b12,dpdown:b13,dpleft:b14,dpright:b15,lefttrigger:b6,righttrigger:b7,platform:Linux,";
+                } else if (rocknix_joypad(label)) {
+                    faces = "a:b1,b:b0,x:b2,y:b3";
+                    mapping =
+                        std::string(identifier) + ",RGDS mainline joypad," + faces +
+                        ",back:b8,guide:b10,start:b9,leftstick:b11,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:b13,dpdown:b14,dpleft:b15,dpright:b16,lefttrigger:b6,righttrigger:b7,platform:Linux,";
                 }
                 configured[identifier] = add(mapping.c_str()) >= 0;
             }
@@ -436,21 +448,31 @@ void* input_symbol(const char* name) {
     }
     return dlsym(RTLD_NEXT, name);
 }
-bool mainline_joystick(SDL_Joystick* stick) {
+const char* joystick_label(SDL_Joystick* stick) {
     static auto name = reinterpret_cast<const char* (*)(SDL_Joystick*)>(dlsym(RTLD_NEXT, "SDL_JoystickName"));
-    const char* label = name ? name(stick) : nullptr;
-    return label && std::strcmp(label, "gpio-keys-control") == 0;
+    return name ? name(stick) : nullptr;
+}
+bool joypad_joystick(SDL_Joystick* stick) { return rocknix_joypad(joystick_label(stick)); }
+bool mainline_joystick(SDL_Joystick* stick) {
+    const char* label = joystick_label(stick);
+    return label && (std::strcmp(label, "gpio-keys-control") == 0 || rocknix_joypad(label));
+}
+// MainlineControls numbers buttons as gpio-keys does; the joypad's own index for one of them.
+int mainline_index(SDL_Joystick* stick, int raw) {
+    return raw >= 0 && joypad_joystick(stick) ? rgds::MainlineControls::to_joypad(raw) : raw;
 }
 rgds::MainlineControls mainline_controls;
 bool normalize_joystick_event(SDL_Event& event) {
     if (event.type == SDL_JOYDEVICEREMOVED) {
         mainline_controls.directions.erase(event.jdevice.which);
+        mainline_controls.joypads.erase(event.jdevice.which);
         return true;
     }
     if (event.type != SDL_JOYBUTTONDOWN && event.type != SDL_JOYBUTTONUP) return true;
     static auto from_id =
         reinterpret_cast<SDL_Joystick* (*)(SDL_JoystickID)>(dlsym(RTLD_NEXT, "SDL_JoystickFromInstanceID"));
     auto stick = from_id ? from_id(event.jbutton.which) : nullptr;
+    if (stick && joypad_joystick(stick)) mainline_controls.joypads.insert(event.jbutton.which);
     return !stick || !mainline_joystick(stick) || mainline_controls.normalize(event);
 }
 int saved_rumble_strength() {
@@ -580,6 +602,52 @@ int logical_joystick(int button) {
 int destination_joystick(int logical) {
     return logical >= 8 && logical <= 11 && core == "drastic" ? logical + 12 : rgds::physical_button(logical);
 }
+// RGDS_LATENCY_TRACE=FILE (os/banana-probe/game_latency.py): for each button press, CLOCK_MONOTONIC microseconds
+// when the engine first read it down and of the next two presents (the frame being shown and the one that read it).
+struct LatencyTrace {
+    std::FILE* out = nullptr;
+    std::mutex mutex;
+    uint64_t seen = 0, first = 0;
+    void* panel = nullptr; // presents are counted on one panel (each frame presents once per panel)
+    bool held[16]{};
+    static uint64_t clock_us() {
+        timespec time{};
+        clock_gettime(CLOCK_MONOTONIC, &time);
+        return uint64_t(time.tv_sec) * 1000000 + time.tv_nsec / 1000;
+    }
+    LatencyTrace() {
+        if (const char* path = std::getenv("RGDS_LATENCY_TRACE")) out = std::fopen(path, "a");
+    }
+    void button(int source, bool down) {
+        if (!out || source < 0 || source >= 16) return;
+        std::lock_guard<std::mutex> guard(mutex);
+        if (down && !held[source] && !seen) seen = clock_us();
+        held[source] = down;
+    }
+    // A button-down event the engine takes from SDL_PollEvent (DSCore reads its controller that way).
+    void event(const SDL_Event& event) {
+        if (!out) return;
+        const bool press = event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_JOYBUTTONDOWN ||
+                           (event.type == SDL_JOYHATMOTION && event.jhat.value != 0);
+        if (!press) return;
+        std::lock_guard<std::mutex> guard(mutex);
+        if (!seen) seen = clock_us();
+    }
+    void present(void* source) {
+        if (!out) return;
+        std::lock_guard<std::mutex> guard(mutex);
+        if (!panel) panel = source;
+        if (!seen || source != panel) return;
+        if (!first) {
+            first = clock_us();
+            return;
+        }
+        std::fprintf(out, "%llu %llu %llu\n", (unsigned long long)seen, (unsigned long long)first,
+                     (unsigned long long)clock_us());
+        std::fflush(out);
+        seen = first = 0;
+    }
+} latency_trace;
 bool joystick_source_down(SDL_Joystick* stick, int source) {
     static auto button = reinterpret_cast<Uint8 (*)(SDL_Joystick*, int)>(input_symbol("SDL_JoystickGetButton"));
     static auto hat = reinterpret_cast<Uint8 (*)(SDL_Joystick*, int)>(input_symbol("SDL_JoystickGetHat"));
@@ -587,13 +655,14 @@ bool joystick_source_down(SDL_Joystick* stick, int source) {
     {
         NativeInputGuard guard(reading_native_buttons);
         if (mainline_joystick(stick)) {
-            int raw = rgds::MainlineControls::raw_button(source);
+            int raw = mainline_index(stick, rgds::MainlineControls::raw_button(source));
             down = button && raw >= 0 && button(stick, raw);
         } else
             down = source >= 8 && source <= 11
                        ? hat && (hat(stick, 0) & rgds::hat_bit(source))
                        : button && rgds::physical_button(source) >= 0 && button(stick, rgds::physical_button(source));
     }
+    latency_trace.button(source, down);
     if (source == rgds::control_start) {
         observe_shortcut(source, down);
         return control_shortcut.visible_start(now());
@@ -613,6 +682,7 @@ bool controller_source_down(SDL_GameController* pad, int source) {
                                             : button && controller_button(source) >= 0 &&
                                                   button(pad, SDL_GameControllerButton(controller_button(source)));
     }
+    latency_trace.button(source, down);
     if (source == rgds::control_start) {
         observe_shortcut(source, down);
         return control_shortcut.visible_start(now());
@@ -1344,6 +1414,7 @@ void shader_result(bool applied) {
 // Use a single presentation source; dual panels and SDL's nested GL swap must
 // never double the displayed FPS. Timing/file publication runs only when enabled.
 void measure_present(void* source) {
+    latency_trace.present(source);
     if (!frame_stats.enabled) return;
     std::lock_guard<std::mutex> guard(stats_mutex);
     if (!stats_source) stats_source = source;
@@ -1425,7 +1496,8 @@ extern "C" void rgds_present_canvas(int display, uint32_t* pixels, int w, int h,
     }
     tick();
     measure_present(reinterpret_cast<void*>(static_cast<uintptr_t>(display) + 1));
-    const int index = display == 1 ? 1 : 0;
+    // Which DS screen this display shows: DSCore's upper window is on display 1 (KMSDRM order).
+    const int index = rgds::dscore_screens_swapped() ? (display == 1 ? 1 : 0) : (display == 0 ? 1 : 0);
     overlay_renderer.capture_canvas(pixels, w, h, pitch, index, false);
     overlay_renderer.canvas(pixels, w, h, pitch, index, input_blocked());
     overlay_renderer.capture_canvas(pixels, w, h, pitch, index, true);
@@ -1664,6 +1736,7 @@ extern "C" int SDL_PollEvent(SDL_Event* event) {
         *event = events.front();
         events.pop_front();
         remember_control_event(*event);
+        latency_trace.event(*event);
         return 1;
     }
     auto native = [&]() {
@@ -1691,6 +1764,7 @@ extern "C" int SDL_PollEvent(SDL_Event* event) {
         *event = events.front();
         events.pop_front();
         remember_control_event(*event);
+        latency_trace.event(*event);
         return 1;
     }
     if (result && event && event->type == SDL_JOYBUTTONDOWN) joystick = event->jbutton.which;
@@ -1702,6 +1776,7 @@ extern "C" int SDL_PollEvent(SDL_Event* event) {
         return 0;
     }
     if (result && event) remember_control_event(*event);
+    latency_trace.event(*event);
     return result;
 }
 extern "C" Uint8 SDL_JoystickGetButton(SDL_Joystick* stick, int button) {
@@ -1718,7 +1793,7 @@ extern "C" Uint8 SDL_JoystickGetButton(SDL_Joystick* stick, int button) {
                  : next ? next(stick, button)
                         : 0;
     if (shared_menu && !input_blocked() && mainline_joystick(stick) && !(logical >= 0 && logical < 12)) {
-        int raw = rgds::MainlineControls::raw_button(logical);
+        int raw = mainline_index(stick, rgds::MainlineControls::raw_button(logical));
         value = next && raw >= 0 ? next(stick, raw) : 0;
     }
     if (shared_menu && logical >= 12 && control_mapping.used(logical)) value = 0;
@@ -1850,8 +1925,9 @@ bool anbernic_input(int descriptor) {
     using Fn = int (*)(int, unsigned long, ...);
     static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "ioctl"));
     char name[128]{};
+    // ROCKNIX's joypad is a mainline pad: BTN_TL2 (312) is its L2 and BTN_MODE (316) its F key.
     return next && next(descriptor, EVIOCGNAME(sizeof(name)), name) >= 0 &&
-           (std::strstr(name, "ANBERNIC") || std::strstr(name, "retrogame_joypad"));
+           (std::strstr(name, "ANBERNIC") || (std::strstr(name, "retrogame_joypad") && !rocknix_joypad(name)));
 }
 extern "C" int ioctl(int descriptor, unsigned long request, ...) noexcept {
     using Fn = int (*)(int, unsigned long, ...);

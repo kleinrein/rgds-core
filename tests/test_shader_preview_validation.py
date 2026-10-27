@@ -52,7 +52,7 @@ class ShaderPreviewValidationTests(unittest.TestCase):
             timeout=10
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('93 exact GLES previews', result.stdout)
+        self.assertIn('105 exact GLES previews', result.stdout)
 
     def test_stale_pipeline_and_shader_sources_cannot_be_packaged(self):
         self.pipeline.write_bytes(self.pipeline.read_bytes() + b'\n// changed pipeline\n')

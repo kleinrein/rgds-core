@@ -147,6 +147,7 @@ Desktop preview	Предпросмотр на ПК
 Development build	Сборка для разработки
 Device address	Адрес устройства
 Device information	Об устройстве
+Display	Экран
 Display FPS	FPS экрана
 Done	Готово
 Down	Вниз
@@ -441,6 +442,7 @@ Swapped	Поменяны
 System	Система
 THEME ERROR - RETAINED CURRENT	ОШИБКА ТЕМЫ — ОСТАВЛЕНА ТЕКУЩАЯ
 THEME RELOADED	ТЕМА ПЕРЕЗАГРУЖЕНА
+Turn the handheld off and on again	Выключить и снова включить устройство
 TYPEFACE	ШРИФТ
 Temporary game cache cleared. Saves and artwork are kept.	Временный кэш игр очищен. Сохранения и обложки остались.
 The checkpoint did not finish saving.	Сохранение не завершилось.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Удерживайте на месте для пр�
 Hold to exit	Удерживайте для выхода
 Touch screen off	Сенсорный экран выключен
 Touch screen is not available	Сенсорный экран недоступен
+Daylight saving	Летнее время
+Automatic	Автоматически
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Летнее время определяется часовым поясом. Включите или выключите его, если часы отстают или спешат на час.
+GBA true colour	Настоящие цвета GBA
+Faded GBA colours made rich, as the real screen showed them.	Блёклые цвета GBA становятся насыщенными, как на настоящем экране.
+GBA true screen	Настоящий экран GBA
+The true GBA colours on its screen, with the gaps between its pixels.	Настоящие цвета GBA на его экране, с промежутками между пикселями.

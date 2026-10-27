@@ -1,0 +1,16 @@
+RG DS OS: the vibration motor's PWM at 25 kHz instead of 10 kHz
+
+At 10 kHz the motor coil sings audibly whenever it is driven below full duty (every menu tap); 25 kHz is above
+hearing. The duty, and so the strength, is unchanged.
+
+--- a/rk3568-anbernic-rg-ds.dts	2026-10-26 22:11:36
++++ b/rk3568-anbernic-rg-ds.dts	2026-10-26 22:11:36
+@@ -52,7 +52,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&gamepad_keys_l>;
+ 
+-		pwms = <&pwm14 0 100000 0>;
++		pwms = <&pwm14 0 40000 0>;
+ 		pwm-names = "enable";
+ 		rumble-boost-weak = <0x00>;
+ 		rumble-boost-strong = <0x00>;

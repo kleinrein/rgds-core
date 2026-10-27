@@ -14,7 +14,37 @@ from library import game_key
 PLAY_CORE = "rgds-play"
 PORT_CORE = "portmaster"
 # Game files by system; anything else is a DS game for the DS engines.
-SYSTEMS = {"gba": (".gba",), "gbc": (".gbc",), "gb": (".gb", ".sgb")}
+SYSTEMS = {
+    "gba": (".gba",),
+    "gbc": (".gbc",),
+    "gb": (".gb", ".sgb"),
+    # libretro cores (RG DS OS only, /usr/lib/libretro): the player loads the core named in LIBRETRO_CORES
+    "nes": (".nes", ".fds", ".unf", ".unif"),
+    "snes": (".sfc", ".smc"),
+    "md": (".md", ".gen", ".smd", ".32x"),
+    "sms": (".sms",),
+    "gg": (".gg",),
+    # PlayStation discs by their index files only (.bin is the data track, and ambiguous); PICO-8 carts as .p8
+    "psx": (".cue", ".chd", ".pbp", ".m3u"),
+    # Nintendo 64: big-endian .z64, byte-swapped .v64, little-endian .n64; the core reads all three
+    "n64": (".z64", ".n64", ".v64"),
+    "pico8": (".p8",),
+}
+# The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
+LIBRETRO_CORES = {
+    "nes": "fceumm", "snes": "snes9x", "md": "picodrive", "sms": "picodrive", "gg": "picodrive",
+    "psx": "pcsx_rearmed", "n64": "mupen64plus_next", "pico8": "fake08"
+}
+LIBRETRO_DIR = Path("/usr/lib/libretro")
+MGBA_SYSTEMS = ("gba", "gbc", "gb")
+
+
+def libretro_core(system):
+    """The installed core library for a libretro system, or None (not such a system, or not installed)."""
+    name = LIBRETRO_CORES.get(system)
+    if not name: return None
+    path = LIBRETRO_DIR / (name + "_libretro.so")
+    return path if path.is_file() else None
 FITS = ("sharp", "integer", "smooth")
 SECONDS = ("companion", "off", "swap", "info")  # info: the second screen's own quiet controls
 # A system's own screen when a game's shader is Default (assets/shaders/catalog.tsv): GBA screen
@@ -24,7 +54,7 @@ SYSTEM_SHADERS = {"gba": 30, "gb": 31, "gbc": 32}
 # Shader groups made for one system's screen (the "... screens" families in
 # src/platform/shader_catalog.hpp): offered, and used, only for that system's games.
 DS_SCREENS = frozenset({4, 6, 8, 9, 11, 12, 14, 21, 22})
-GBA_SCREENS = frozenset({29, 30})
+GBA_SCREENS = frozenset({29, 30, 33, 34})
 GB_SCREENS = frozenset({31})
 GBC_SCREENS = frozenset({32})
 SCREENS = {"nds": DS_SCREENS, "gba": GBA_SCREENS, "gb": GB_SCREENS, "gbc": GBC_SCREENS}

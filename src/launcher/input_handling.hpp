@@ -125,16 +125,15 @@ void App::action(int code) {
         if (code == 3) {
             stop_microphone();
             settings.page = Page::Sound;
-            settings.focus = 1;
+            settings.focus = 2;
             configure_sounds();
             dirty = true;
         }
         return;
     }
     if (settings.page == Page::Sound && (code == 8 || code == 9)) {
-        // The tiles sit two by two; Left and Right keep the volume.
-        const int next = settings.focus + (code == 8 ? -2 : 2);
-        if (next >= 0 && next <= 3) settings.focus = next;
+        const int next = settings.focus + (code == 8 ? -1 : 1);
+        if (next >= 0 && next <= 4) settings.focus = next;
         dirty = true;
         return;
     }
@@ -337,7 +336,7 @@ void App::action(int code) {
     if ((code == 8 || code == 9) &&
         (settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::System ||
          settings.page == Page::Maintenance || settings.page == Page::GameOptions)) {
-        int maximum = settings.page == Page::System ? 7
+        int maximum = settings.page == Page::System ? 8
                       : (settings.page == Page::GameOptions || settings.page == Page::Maintenance ||
                          settings.page == Page::Network)
                           ? list_count() - 1
@@ -364,17 +363,19 @@ void App::action(int code) {
         } else if (code == 3) {
             bool game = settings.page == Page::GameOptions;
             settings.back();
+            if (settings.page == Page::System) settings.focus = std::min(settings.focus, list_count() - 1);
             if (game) library_view(preferences.view);
         } else if (code == 8 || code == 9) {
             settings.move(code == 8 ? -1 : 1);
             if (settings.page == Page::Scraper) settings.focus = std::min(settings.focus, list_count() - 1);
-        } else if (settings.page == Page::Appearance) {
+        } else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions) {
             if (code == 0 || code == 1 || code == 2) choose_appearance(code);
         } else if (settings.page == Page::Power) {
             if (settings.focus < 4 && (code == 0 || code == 1 || code == 2))
                 change_system(settings.focus, code == 0 ? -1 : 1, code == 2);
             else if (settings.focus == 4 && code == 2) sleep_now();
             else if (settings.focus == 5 && code == 2 && hardware.poweroff) confirm("poweroff", Page::Power);
+            else if (settings.focus == 6 && code == 2 && hardware.poweroff) confirm("reboot", Page::Power);
         } else if (settings.page == Page::Display) {
             if (code == 0 || code == 1) change_system(4, code == 0 ? -1 : 1);
             else if (code == 2) {
@@ -382,17 +383,21 @@ void App::action(int code) {
                 settings.back();
             }
         } else if (settings.page == Page::Sound) {
-            if (code == 0 || code == 1) change_volume(hardware.volume_percent + (code == 0 ? -5 : 5));
-            else if (code == 2) {
-                if (settings.focus == 2 || settings.focus == 3) {
-                    settings.page = settings.focus == 3 ? Page::Haptics : Page::MenuSounds;
+            // Left and Right only move the slider while the volume row is the selected one.
+            if (code == 0 || code == 1) {
+                if (settings.focus == 0) change_volume(hardware.volume_percent + (code == 0 ? -5 : 5));
+            } else if (code == 2) {
+                if (settings.focus == 3 || settings.focus == 4) {
+                    settings.page = settings.focus == 4 ? Page::Haptics : Page::MenuSounds;
                     settings.focus = 0;
-                } else if (settings.focus == 1) open_microphone();
+                } else if (settings.focus == 2) open_microphone();
                 else toggle_mute();
             }
         } else if (settings.page == Page::LibraryOptions) {
             const int row = library_row(settings.focus);
-            if (row == 0 && (code == 0 || code == 1 || code == 2)) {
+            if (row == 10) {
+                if (code == 2 && library_ready) rescan_games(true);
+            } else if (row == 0 && (code == 0 || code == 1 || code == 2)) {
                 {
                     int core = int(preferences.core);
                     do
@@ -444,14 +449,14 @@ void App::action(int code) {
                     settings.page = Page::Timezone;
                     auto found = std::find(timezones.begin(), timezones.end(), system_preferences.timezone);
                     settings.focus = int(found - timezones.begin());
-                } else if (settings.focus == 4) {
+                } else if (settings.focus == 5) {
                     settings.page = Page::DeviceInfo;
                     settings.focus = 0;
                     start_worker("device.info");
-                } else if (settings.focus == 5) {
+                } else if (settings.focus == 6) {
                     open_updates(Page::System);
-                } else if (settings.focus == 6) confirm("return-stock", Page::System);
-                else if (settings.focus == 7) {
+                } else if (settings.focus == 7 && !o.rgds_os) confirm("return-stock", Page::System);
+                else if (settings.focus == (o.rgds_os ? 7 : 8)) {
                     settings.page = Page::Startup;
                     settings.focus = 0;
                     start_worker("device.startup-info");
@@ -769,12 +774,13 @@ void App::touch(int x, int y) {
             change_system(4, value / 5 - system_preferences.brightness / 5);
         } else if (settings.page == Page::Sound) {
             if (x >= 44 && x <= 596 && y >= slider_band().first && y <= slider_band().second) {
+                settings.focus = 0;
                 volume_drag = true;
                 change_volume(std::clamp(int(std::round((x - 56) * 20.0 / 528)) * 5, 0, 100));
             } else {
-                for (int i = 0; i < 4; i++)
-                    if (x >= sound_tile_x(i) && x < sound_tile_x(i) + sound_tile_width && y >= sound_tile_y(i) &&
-                        y < sound_tile_y(i) + sound_tile_height) {
+                for (int i = 1; i < 5; i++)
+                    if (x >= 28 && x < 28 + sound_row_width && y >= sound_row_y(i) &&
+                        y < sound_row_y(i) + sound_row_height) {
                         settings.focus = i;
                         action(2);
                     }
@@ -1320,17 +1326,6 @@ void App::event(SDL_Event e) {
 }
 
 void App::handle_input(const SDL_Event& e) {
-    if (card_repair) {
-        if (e.type == SDL_QUIT) quit = true;
-        // The check reboots by itself; only the give-up notice is dismissable.
-        if (card_repair == 2 && (e.type == SDL_KEYDOWN || e.type == SDL_JOYBUTTONDOWN ||
-                                 e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_FINGERDOWN)) {
-            card_repair = 0;
-            card_repair_dismissed = true;
-            dirty = true;
-        }
-        return;
-    }
     SoundAction sound_action(*this, 2);
     if (!departure_action.empty()) return;
     if (e.type == SDL_KEYDOWN || e.type == SDL_JOYBUTTONDOWN || e.type == SDL_JOYHATMOTION ||

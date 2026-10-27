@@ -12,13 +12,13 @@ from Ubuntu's archive, checks them and copies the listed files into
     /mnt/mmc/portmaster/rgds/lib   last in LD_LIBRARY_PATH for ports only
 
 Only libraries the card lacks are listed, so nothing the system provides is
-ever shadowed. Nothing is shipped in the RG DS Core package; installing again
+ever shadowed. RG DS OS has its own pair (compat-rgds-os*.json): its system has
+other libraries, and its armhf layer brings 32-bit Mesa for Panfrost, not libmali. Nothing is shipped in the RG DS Core package; installing again
 after compat.json changes replaces the folder as a whole.
 """
 import hashlib
 import io
 import json
-import lzma
 import os
 from pathlib import Path
 import re
@@ -33,6 +33,7 @@ from fields import read_fields, write_fields
 FILES = Path(__file__).resolve().parent / 'portmaster_files'
 # compat.json: the 64-bit libraries and GNU tools; compat-armhf.json: the 32-bit layer for armhf-only ports.
 MANIFESTS = (FILES / 'compat.json', FILES / 'compat-armhf.json')
+RGDS_OS_MANIFESTS = (FILES / 'compat-rgds-os.json', FILES / 'compat-rgds-os-armhf.json')
 # armhf programs name /lib/ld-linux-armhf.so.3, which the card does not have (and which is not ours to add);
 # prepare_armhf points them at this copy instead. It must not be longer than the name it replaces.
 ARMHF_INTERP = b'/lib/ld-linux-armhf.so.3'
@@ -40,7 +41,9 @@ ARMHF_LOADER = '/tmp/rgds-ld-armhf.so.3'
 
 
 def manifests(path=None):
-    if path is None: return [p for p in MANIFESTS if p.is_file()]
+    if path is None:
+        from linux_platform import rgds_os
+        return [p for p in (RGDS_OS_MANIFESTS if rgds_os() else MANIFESTS) if p.is_file()]
     return list(path) if isinstance(path, (list, tuple)) else [Path(path)]
 
 
@@ -73,6 +76,7 @@ def ar_members(data):
 
 def package_files(data):
     """{path: bytes or ('link', target)} of a package's data.tar.xz."""
+    import lzma  # here, not at the top: a port's environment must never depend on Python having _lzma
     for name, body in ar_members(data):
         if not name.startswith('data.tar'): continue
         if not name.endswith('.xz'): raise ValueError('unexpected ' + name)
@@ -80,8 +84,13 @@ def package_files(data):
         with tarfile.open(fileobj=io.BytesIO(lzma.decompress(body))) as tar:
             for info in tar:
                 path = info.name.lstrip('./')
-                if info.issym(): members[path] = ('link', info.linkname)
-                elif info.isfile(): members[path] = tar.extractfile(info).read()
+                # Mesa's DRI drivers are one file under many names: hard links, named from the archive's root.
+                if info.issym():
+                    members[path] = ('link', info.linkname)
+                elif info.islnk():
+                    members[path] = ('link', '/' + info.linkname.lstrip('./'))
+                elif info.isfile():
+                    members[path] = tar.extractfile(info).read()
         return members
     raise ValueError('no data.tar in the package')
 
@@ -211,6 +220,17 @@ def patch_interp(path, new=ARMHF_LOADER.encode()):
     return False
 
 
+def armhf_environment(env, root):
+    """RG DS OS: an armhf port's GL is the layer's 32-bit Mesa (armhf/dri, armhf/glvnd). The system's 64-bit Mesa
+    passes over the 32-bit drivers on the same search path."""
+    base = folder(root) / 'armhf'
+    if not (base / 'dri/panfrost_dri.so').is_file(): return env
+    for key in ('LIBGL_DRIVERS_PATH', 'GBM_DRIVERS_PATH'):
+        env[key] = ':'.join(p for p in (str(base / 'dri'), env.get(key, ''), '/usr/lib/dri') if p)
+    env['__EGL_VENDOR_LIBRARY_DIRS'] = str(base / 'glvnd')
+    return env
+
+
 def prepare_armhf(root, port_folder):
     """Before an armhf-only port starts: the loader in /tmp, and the port's programs pointed at it."""
     source = folder(root) / 'armhf/ld-linux-armhf.so.3'
@@ -301,7 +321,7 @@ def environment(env, root):
 
 
 if __name__ == '__main__':
-    root = Path(os.environ.get('RGDS_PORTMASTER_ROOT', '/mnt/mmc/portmaster'))
+    from portmaster import ROOT as root
     if len(sys.argv) > 1 and sys.argv[1] == 'status':
         print(json.dumps(dict(current=current(root), manifest=manifest_hash())))
     else:

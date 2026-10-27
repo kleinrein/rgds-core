@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT / 'runtime'))
 import audio
 import emulators
 import shared_audio
-import stock_handoff
+import power
 
 STOCK = '''pcm.!default {
  type asym
@@ -38,7 +38,7 @@ class SharedAudioTests(unittest.TestCase):
             for child in (emulators.base_environment(), audio.clean_environment()):
                 self.assertEqual(child['ALSA_CONFIG_PATH'], config)
                 self.assertEqual(child['RGDS_SHARED_AUDIO'], '1')
-            restored = stock_handoff.clean_environment()
+            restored = power.clean_environment()
             self.assertNotIn('ALSA_CONFIG_PATH', restored)
             self.assertNotIn('RGDS_SHARED_AUDIO', restored)
         self.assertEqual(self.stock.read_text(), STOCK)
@@ -47,7 +47,7 @@ class SharedAudioTests(unittest.TestCase):
         for env in ({'ALSA_CONFIG_PATH': '/custom/audio.conf'}, {'SDL_AUDIODRIVER': 'pulse'}):
             self.assertEqual(shared_audio.configure(ROOT, env.copy(), self.stock), env)
         with patch.dict(os.environ, {'ALSA_CONFIG_PATH': '/custom/audio.conf'}, clear=True):
-            self.assertEqual(stock_handoff.clean_environment()['ALSA_CONFIG_PATH'], '/custom/audio.conf')
+            self.assertEqual(power.clean_environment()['ALSA_CONFIG_PATH'], '/custom/audio.conf')
 
     def test_home_and_xdg_audio_overrides_are_respected(self):
         home = self.stock.parent

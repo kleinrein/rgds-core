@@ -147,6 +147,7 @@ Desktop preview	デスクトップでのプレビュー
 Development build	開発版
 Device address	本体のアドレス
 Device information	本体情報
+Display	表示
 Display FPS	画面のFPS
 Done	完了
 Down	下
@@ -441,6 +442,7 @@ Swapped	入れ替え
 System	本体
 THEME ERROR - RETAINED CURRENT	テーマのエラー - 今のテーマのままです
 THEME RELOADED	テーマを再読み込みしました
+Turn the handheld off and on again	本体の電源を切って入れ直します
 TYPEFACE	書体
 Temporary game cache cleared. Saves and artwork are kept.	ゲームの一時キャッシュを消去しました。セーブデータと画像は残っています。
 The checkpoint did not finish saving.	チェックポイントの保存が終わりませんでした。
@@ -1130,3 +1132,10 @@ Hold still for a right click	動かさずに押すと右クリック
 Hold to exit	長押しで終了
 Touch screen off	タッチスクリーンをオフにしました
 Touch screen is not available	タッチスクリーンを使えません
+Daylight saving	夏時間
+Automatic	自動
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	夏時間はタイムゾーンに従います。時計が1時間ずれているときは、オンまたはオフに固定してください。
+GBA true colour	GBA の本当の色
+Faded GBA colours made rich, as the real screen showed them.	色あせて見える GBA の色を、実機の画面どおりの深い色に。
+GBA true screen	GBA の本当の画面
+The true GBA colours on its screen, with the gaps between its pixels.	GBA の本当の色を実機の画面で。ドットのすき間つき。

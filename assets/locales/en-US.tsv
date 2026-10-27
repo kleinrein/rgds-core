@@ -147,6 +147,7 @@ Desktop preview	Desktop preview
 Development build	Development build
 Device address	Device address
 Device information	Device information
+Display	Display
 Display FPS	Display FPS
 Done	Done
 Down	Down
@@ -441,6 +442,7 @@ Swapped	Swapped
 System	System
 THEME ERROR - RETAINED CURRENT	THEME ERROR - RETAINED CURRENT
 THEME RELOADED	THEME RELOADED
+Turn the handheld off and on again	Turn the handheld off and on again
 TYPEFACE	TYPEFACE
 Temporary game cache cleared. Saves and artwork are kept.	Temporary game cache cleared. Saves and artwork are kept.
 The checkpoint did not finish saving.	The checkpoint did not finish saving.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Hold still for a right click
 Hold to exit	Hold to exit
 Touch screen off	Touch screen off
 Touch screen is not available	Touch screen is not available
+Daylight saving	Daylight saving
+Automatic	Automatic
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Summer time follows your timezone. Force it on or off if the clock is an hour out.
+GBA true colour	GBA true colour
+Faded GBA colours made rich, as the real screen showed them.	Faded GBA colours made rich, as the real screen showed them.
+GBA true screen	GBA true screen
+The true GBA colours on its screen, with the gaps between its pixels.	The true GBA colours on its screen, with the gaps between its pixels.

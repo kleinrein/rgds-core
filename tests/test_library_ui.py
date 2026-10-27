@@ -148,12 +148,12 @@ class LibraryUITests(unittest.TestCase):
     def test_emulator_choice_is_saved_in_library_settings(self):
         self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
         self.run_ui(
-            # Down: from Show all systems (the first row) to Default emulator.
-            "10 key Down\n20 key A\n40 key Right\n60 key A\n80 key Escape\n120 key Escape\n160 key Escape\n",
+            # Down twice: from Scan for games and Show all systems (the first rows) to Default emulator.
+            "5 key Down\n10 key Down\n20 key A\n40 key Right\n60 key A\n80 key Escape\n120 key Escape\n160 key Escape\n",
             extra=("--settings", "--section", "library")
         )
-        # DSperate starts at core 1; one step selects melonDS (3), the next offered row.
-        self.assertIn("core=3\n", self.prefs.read_text())
+        # DSperate starts at core 1; one step skips the retired NNDDSS and melonDS and lands on DSCore (4).
+        self.assertIn("core=4\n", self.prefs.read_text())
         self.assertEqual(self.selected(), 0)
 
     def test_old_account_provider_migrates_to_public_artwork(self):

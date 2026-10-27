@@ -147,6 +147,7 @@ Desktop preview	Prévia no computador
 Development build	Versão de desenvolvimento
 Device address	Endereço do dispositivo
 Device information	Informações do dispositivo
+Display	Tela
 Display FPS	FPS da tela
 Done	Concluído
 Down	Baixo
@@ -441,6 +442,7 @@ Swapped	Invertido
 System	Sistema
 THEME ERROR - RETAINED CURRENT	ERRO NO TEMA – ATUAL MANTIDO
 THEME RELOADED	TEMA RECARREGADO
+Turn the handheld off and on again	Desligar e ligar o aparelho novamente
 TYPEFACE	TIPOGRAFIA
 Temporary game cache cleared. Saves and artwork are kept.	Cache temporário limpo. Saves e capas mantidos.
 The checkpoint did not finish saving.	O estado não terminou de salvar.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Segure parado para clique direito
 Hold to exit	Segure para sair
 Touch screen off	Tela sensível ao toque desligada
 Touch screen is not available	A tela sensível ao toque não está disponível
+Daylight saving	Horário de verão
+Automatic	Automático
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	O horário de verão segue seu fuso horário. Ligue ou desligue se o relógio estiver uma hora errado.
+GBA true colour	Cores reais do GBA
+Faded GBA colours made rich, as the real screen showed them.	As cores apagadas do GBA ficam vivas, como a tela real as mostrava.
+GBA true screen	Tela real do GBA
+The true GBA colours on its screen, with the gaps between its pixels.	As cores reais do GBA na sua tela, com as divisões entre os pixels.

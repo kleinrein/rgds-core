@@ -21,7 +21,7 @@ inline GameOptions load_game_options(const fs::path& path) {
         return fallback;
     };
     result.core = integer("core", -1, -1, ds_core_count - 1);
-    if (result.core == retired_core) result.core = -1;
+    if (core_retired(result.core)) result.core = -1;
     result.filter = integer("filter", -1, -1, shader_count - 1);
     result.favourite = integer("favourite", 0, 0, 1);
     result.threaded = integer("threaded_3d", -1, -1, 1);

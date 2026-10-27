@@ -1,0 +1,24 @@
+#!/bin/sh
+# RG DS OS: suspend to RAM for RG DS Core (runtime/system_controls.py, linux_platform.system_command). It plays
+# the part of the systemd sleep hook stock relies on: the token RG DS Core wrote to /run/rgds/suspend-request is
+# echoed to /run/rgds/suspend-state with phase=pre just before the kernel sleeps and phase=post once it is back,
+# so the menu knows the sleep really happened and waits for the resume rather than for a helper's return code.
+# Wake sources are the power key (PMIC), the lid (hall sensor) and the RTC, all wakeup-capable in the device tree.
+state=/run/rgds/suspend-state
+case "$1" in
+suspend)
+    token=$(cat /run/rgds/suspend-request 2>/dev/null)
+    sync
+    printf 'token=%s\nphase=pre\n' "$token" > $state.new && mv $state.new $state
+    # the red status LED, dim, says "asleep" (its node keeps its state through suspend, dts-patches/0004)
+    led=/sys/class/leds/red:status/brightness
+    echo 24 > $led 2>/dev/null
+    echo mem > /sys/power/state
+    rc=$?
+    echo 0 > $led 2>/dev/null
+    printf 'token=%s\nphase=post\nresult=%s\n' "$token" "$rc" > $state.new && mv $state.new $state
+    exit $rc;;
+*)
+    echo "usage: power suspend" >&2
+    exit 2;;
+esac

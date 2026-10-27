@@ -178,7 +178,7 @@ class MenuSoundUITests(unittest.TestCase):
 
     def test_microphone_test_closes_sound_output_and_restores_it_after_back(self):
         r = self.run_ui(
-            '100 key Down\n250 key A\n700 key Escape\n', 'menu_sounds=1\n', ('--settings', '--section', 'sound')
+            '50 key Down\n100 key Down\n250 key A\n700 key Escape\n', 'menu_sounds=1\n', ('--settings', '--section', 'sound')
         )
         self.assertEqual(r['page'], 11)
         self.assertEqual(r['sound_opens'], 2)

@@ -147,6 +147,7 @@ Desktop preview	데스크톱 미리 보기
 Development build	개발 빌드
 Device address	기기 주소
 Device information	기기 정보
+Display	디스플레이
 Display FPS	화면 FPS
 Done	완료
 Down	아래
@@ -441,6 +442,7 @@ Swapped	바뀜
 System	시스템
 THEME ERROR - RETAINED CURRENT	테마 오류 - 현재 테마 유지
 THEME RELOADED	테마를 다시 불러왔습니다
+Turn the handheld off and on again	기기를 껐다가 다시 켭니다
 TYPEFACE	글꼴
 Temporary game cache cleared. Saves and artwork are kept.	게임 임시 캐시를 지웠습니다. 세이브 데이터와 이미지는 남아 있습니다.
 The checkpoint did not finish saving.	체크포인트 저장이 끝나지 않았습니다.
@@ -1130,3 +1132,10 @@ Hold still for a right click	움직이지 않고 누르면 오른쪽 클릭
 Hold to exit	길게 눌러 종료
 Touch screen off	터치스크린 꺼짐
 Touch screen is not available	터치스크린을 사용할 수 없습니다
+Daylight saving	일광 절약 시간
+Automatic	자동
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	일광 절약 시간은 시간대를 따릅니다. 시계가 한 시간 어긋나면 켜거나 꺼서 고정하세요.
+GBA true colour	GBA 실제 색감
+Faded GBA colours made rich, as the real screen showed them.	바랜 듯한 GBA 색을 실제 화면처럼 진하게.
+GBA true screen	GBA 실제 화면
+The true GBA colours on its screen, with the gaps between its pixels.	GBA 실제 색감을 그 화면 그대로, 픽셀 사이 틈과 함께.

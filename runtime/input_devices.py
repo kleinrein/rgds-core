@@ -2,6 +2,8 @@
 from pathlib import Path
 import struct
 
+from linux_platform import rocknix_joypad
+
 
 def bits(path, word_bits=struct.calcsize('L') * 8):
     """Kernel sysfs prints unpadded native-long words, highest word first."""
@@ -63,8 +65,9 @@ def discover(sysfs=Path('/sys/class/input'), devices=Path('/dev/input'), bottom_
     return {
         'touch': selected_touch,
         'keys': selected_pad,
-        'profile': 'mainline-rg-ds' if any(node == selected_pad and name == 'gpio-keys-control'
-                                           for node, name in pads) else 'stock',
+        'profile': 'mainline-rg-ds'
+        if any(node == selected_pad and (name == 'gpio-keys-control' or rocknix_joypad(name))
+               for node, name in pads) else 'stock',
         'lid': lids[0][0] if len(lids) == 1 else None,
         'lid_wakeup': lids[0][1] if len(lids) == 1 else None,
         'touch_ambiguous': len(touch) > 1 and selected_touch is None,

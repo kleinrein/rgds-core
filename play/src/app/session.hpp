@@ -23,6 +23,9 @@ struct SessionOptions {
     std::vector<std::string> save_sources; // folders to import an existing save from
     std::string font_dir;                  // assets/fonts
     std::string preferences;               // userdata/preferences.ini (and ui.ini beside it): the launcher's look
+    std::string core_library;              // --core: a libretro core's .so (else mGBA for GBA, GB and GBC)
+    std::string system;                    // --system: the system id of a libretro game (nes, snes, md, ...)
+    std::string system_dir;                // --system-dir: BIOS files for libretro cores
     bool companion = true;
 };
 

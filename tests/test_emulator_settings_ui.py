@@ -26,13 +26,13 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.prefs = self.root / 'preferences.ini'
         self.prefs.write_text('schema=1\nmode=light\nfont=rounded\ncore=1\n')
         self.game = self.root / 'library' / game_key(self.rom) / 'game.ini'
-        write_fields(self.game, dict(schema=1, core=3, filter=4, favourite=1, threaded_3d=1, hires_3d=0, frameskip=0))
+        write_fields(self.game, dict(schema=1, core=0, filter=4, favourite=1, threaded_3d=1, hires_3d=0, frameskip=0))
         self.original = self.game.read_bytes()
 
     def run_ui(self, keys, core='drastic', library=False, touch='', game_library=False):
         script = self.root / 'input'
-        # Settings > Library opens on Show all systems, its first row: step onto the rows these tests count from.
-        if library: keys = ['Down', *keys]
+        # Settings > Library opens on Scan for games, then Show all systems: step onto the rows these tests count from.
+        if library: keys = ['Down', 'Down', *keys]
         script.write_text(''.join(f'{30 + i * 30} key {key}\n' for i, key in enumerate(keys)) + touch)
         state = self.root / 'state'
         state.unlink(missing_ok=True)
@@ -62,7 +62,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         return ['X', *(['Down'] * index), *keys]
 
     def test_experimental_engine_can_be_selected_without_changing_default(self):
-        report = self.run_ui(self.row(6, 'A', 'Down', 'A'))
+        report = self.run_ui(self.row(6, 'A', 'Down', 'Down', 'A'))
         self.assertEqual(report['game_core_override'], 4)
         self.assertEqual(report['default_core'], 1)
         self.assertEqual(read_fields(self.game)['core'], '4')
@@ -278,7 +278,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertEqual(self.game.stat().st_mtime_ns, stamp)
 
     def test_revert_to_default_and_explicit_engine_preserve_other_options(self):
-        report = self.run_ui(self.row(6, 'A', 'Up', 'Up', 'Up', 'A'))
+        report = self.run_ui(self.row(6, 'A', 'Up', 'A'))
         self.assertEqual(report['game_core_override'], -1)
         expected = read_fields(self.game)
         self.assertEqual(
@@ -287,8 +287,8 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         )
         self.assertEqual(read_fields(self.prefs)['core'], '1')
         report = self.run_ui(self.row(6, 'A', 'Down', 'Down', 'Down', 'A'))
-        self.assertEqual(report['game_core_override'], 3)
-        expected['core'] = '3'
+        self.assertEqual(report['game_core_override'], 4)
+        expected['core'] = '4'
         self.assertEqual(read_fields(self.game), expected)
 
     def test_failed_save_keeps_displayed_and_stored_game_tuning(self):
@@ -301,7 +301,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     def test_failed_save_keeps_displayed_and_stored_game_emulator(self):
         Path(str(self.game) + '.pending').mkdir()
         report = self.run_ui(self.row(6, 'A', 'Down', 'A'))
-        self.assertEqual(report['game_core_override'], 3)
+        self.assertEqual(report['game_core_override'], 0)
         self.assertIn('Could not save', report['settings_notice'])
         self.assertEqual(self.game.read_bytes(), self.original)
 
@@ -332,7 +332,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertEqual(report['game_hires'], 1)
 
     def test_touch_can_restore_inherited_emulator(self):
-        report = self.run_ui(self.row(6, 'A'), touch='400 click 200 176\n')
+        report = self.run_ui(self.row(6, 'A'), touch='400 click 200 228\n')
         self.assertFalse(report['picker_open'])
         self.assertEqual(report['game_core_override'], -1)
 

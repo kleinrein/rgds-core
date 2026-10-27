@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBRETRO_MUPEN64PLUS_NEXT
+	bool "libretro-mupen64plus-next"
+	depends on BR2_PACKAGE_MESA3D_PANFROST
+	help
+	  Mupen64Plus-Next, the Nintendo 64 core (GPL-2.0) with the GLideN64 renderer on GLES 3:
+	  /usr/lib/libretro/mupen64plus_next_libretro.so, loaded by RG DS Play, which gives it a GL context.

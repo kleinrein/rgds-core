@@ -45,8 +45,16 @@ public:
   }
   void close() override;
 
+  // The frame's own size as the buffers' size, scaled onto the panel by the
+  // display engine (an atomic KMS plane; VOP2 on the RG DS filters, where the
+  // CPU's scanline path only picks nearest pixels, and the present thread no
+  // longer scales 512x384 up or 768x576 down into a 640x480 canvas). Reopens
+  // when open; false (and the panel's size kept) where the plane cannot.
+  bool set_source(int w, int h) override;
   int width() const override { return w_; }
   int height() const override { return h_; }
+  int panel_width() const override { return pw_; }
+  int panel_height() const override { return ph_; }
   int bufs() const override { return nbufs_; }
   void set_bufs(int n) { nbufs_ = n < 2 ? 2 : n > BUFS ? BUFS : n; }
   int current() const override { return cur_; }
@@ -87,6 +95,13 @@ private:
   bool flip(int i, int tag, u64 queued_at_ns);
   bool alloc_buf(Buf& b);
   void drop_buf(Buf& b);
+  // Atomic KMS: the CRTC's primary plane and the property ids a commit
+  // names, the modeset that puts the first buffer on the plane (scaled when
+  // the buffers are not the panel's size), and a per-frame flip of FB_ID.
+  bool atomic_setup(u32 crtc_index);
+  u32 property(u32 object, u32 type, const char* name, u64* value = nullptr) const;
+  bool atomic_modeset(bool test_only);
+  bool atomic_flip(u32 fb);
   // Reads events on the shared DRM fd and routes each to its owning DrmOut
   // (a dual-window layout has one instance per panel). `block` waits for one.
   // Called with the tier's lock held (see display_drm.cpp), which it drops
@@ -97,7 +112,17 @@ private:
   int fd_ = -1; // SDL's DRM fd; not ours to close
   u32 crtc_ = 0, conn_ = 0;
   int display_ = 0;
-  int w_ = 0, h_ = 0;
+  int w_ = 0, h_ = 0;   // the buffers
+  int pw_ = 0, ph_ = 0; // the panel's mode
+  int sw_ = 0, sh_ = 0; // set_source(): wanted buffer size (0: the panel's)
+  SDL_Window* win_ = nullptr;
+  bool atomic_ = false; // commits go through the atomic ioctl (needed to scale)
+  u32 plane_ = 0, mode_blob_ = 0;
+  u32 mode_[32] = {}; // the panel's mode (drmu::mode_modeinfo, 68 bytes fit) for the atomic modeset's blob
+  struct Props {
+    u32 fb_id = 0, plane_crtc_id = 0, src_x = 0, src_y = 0, src_w = 0, src_h = 0, crtc_x = 0, crtc_y = 0, crtc_w = 0,
+        crtc_h = 0, mode_id = 0, active = 0, conn_crtc_id = 0;
+  } props_;
   Buf bufs_[BUFS];
   int nbufs_ = DEFAULT_BUFS;
   bool gpu_writes_ = false;

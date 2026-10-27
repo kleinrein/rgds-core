@@ -108,6 +108,9 @@ struct HudSpec {
     // bottom, a status bar at the top). While `on` holds the band leaves the
     // game picture and is shown large under the second screen's own picture.
     Rect strip;
+    // The band is a second picture of its own (Super Mario Kart's course map
+    // under the race): it fills the second screen instead of a card under it.
+    bool strip_fill = false;
 };
 
 // [party]: the team on the second screen (companion/party.hpp).
@@ -137,6 +140,9 @@ struct Profile {
     std::string system = "gba";
     std::string title;
     std::vector<std::string> codes;
+    // A light-gun game (Duck Hunt): the second port is a gun aimed by touching the
+    // game, so the game starts on the touch screen (the screens swapped).
+    bool lightgun = false;
     Condition live;        // the player is in gameplay (captures make sense)
     Condition menu;        // back on the title or file screens: forget the map
     std::vector<Ref> room; // values that change on entering a new room

@@ -23,8 +23,8 @@ class GapClosureUiTests(unittest.TestCase):
 
     def run_ui(self, keys, mode='game', text=''):
         script = self.root / 'input'
-        # Settings > Library opens on Show all systems, its first row: step onto the rows these tests count from.
-        if mode == 'settings': keys = ['Down', *keys]
+        # Settings > Library opens on Scan for games, then Show all systems: step onto the rows these tests count from.
+        if mode == 'settings': keys = ['Down', 'Down', *keys]
         script.write_text(
             ''.join(f'{60+i*65} key {key}\n{80+i*65} key-up {key}\n' for i, key in enumerate(keys)) + text
         )
@@ -103,12 +103,8 @@ class GapClosureUiTests(unittest.TestCase):
         r = self.run_ui(['Down'] * 7 + ['A'], mode='settings')
         self.assertEqual(r['page'], 30)
 
-    def test_quick_resume_is_persisted_from_startup_settings(self):
-        self.run_ui(['Down'] * 7 + ['A'] + ['Down'] * 3 + ['A'], mode='system')
-        self.assertEqual(read_fields(self.data / 'experience.ini')['quick_resume'], '1')
-
     def test_automatic_download_setting_is_persisted(self):
-        self.run_ui(['Down'] * 5 + ['A'] + ['Down'] * 6 + ['A', 'Down', 'A'], mode='system')
+        self.run_ui(['Down'] * 6 + ['A'] + ['Down'] * 6 + ['A', 'Down', 'A'], mode='system')
         self.assertEqual(read_fields(self.data / 'experience.ini')['auto_update'], '2')
 
     def test_export_import_picker_has_no_duplicate_and_lists_archive(self):
@@ -153,9 +149,9 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertFalse((self.data / 'session/game-menu.request').exists())
 
     def test_microphone_test_opens_and_returns_to_sound(self):
-        r = self.run_ui(['B', 'Down', 'A', 'Down', 'A'], mode='settings')
+        r = self.run_ui(['B', 'Down', 'A', 'Down', 'Down', 'A'], mode='settings')
         self.assertEqual(r['page'], 32)
-        r = self.run_ui(['B', 'Down', 'A', 'Down', 'A', 'B'], mode='settings')
+        r = self.run_ui(['B', 'Down', 'A', 'Down', 'Down', 'A', 'B'], mode='settings')
         self.assertEqual(r['page'], 11)
 
 

@@ -249,7 +249,7 @@ class CoreUITests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             data = Path(tmp)
             report = self.run_ui(
-                data, ''.join(f'{20+i*20} key Down\n' for i in range(8)) + '200 key A\n', ('--settings',)
+                data, ''.join(f'{20+i*20} key Down\n' for i in range(10)) + '240 key A\n', ('--settings',)
             )
             self.assertEqual(report['page'], 18)
 

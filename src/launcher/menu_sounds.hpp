@@ -50,7 +50,11 @@ void App::restore_dac_level() {
             level = -1;
         }
     }
-    if (level >= 0 && write_mixer_percent(dac_percent_for_level(level))) return;
+    // Mainline's codec driver (RG DS OS) names the same register Master: without it every first click after a
+    // quiet spell fell back to the synchronous helper below and closed the sink again (lag and a whine).
+    if (level >= 0 && (write_mixer_percent(dac_percent_for_level(level)) ||
+                       write_mixer_percent(dac_percent_for_level(level), "Master Playback Volume")))
+        return;
     if (!system.sync_volume()) {
         sounds.close();
         sounds.error = "Menu audio is unavailable on this device.";

@@ -130,9 +130,13 @@ void DrmOut::drop_buf(Buf& b) {
 bool DrmOut::open(SDL_Window* win, int w, int h, int display_index) {
   fd_ = sdl_drm_fd(win);
   if (fd_ < 0) return false;
+  win_ = win;
   display_ = display_index;
-  w_ = w;
-  h_ = h;
+  pw_ = w;
+  ph_ = h;
+  // Buffers at the frame's size when a scaled source is wanted (set_source), else the panel's.
+  w_ = sw_ > 0 ? sw_ : w;
+  h_ = sh_ > 0 ? sh_ : h;
 
   drmu::mode_card_res res = {};
   if (ioctl(fd_, drmu::IOCTL_MODE_GETRESOURCES, &res) < 0) {
@@ -172,7 +176,7 @@ bool DrmOut::open(SDL_Window* win, int w, int h, int display_index) {
     // A page flip's framebuffer must cover the CRTC, so only a mode matching
     // the window's exact size works -- no windowed (sub-panel) use here.
     for (const drmu::mode_modeinfo& m : modes)
-      if (m.hdisplay == w && m.vdisplay == h) {
+      if (m.hdisplay == pw_ && m.vdisplay == ph_) {
         mode = m;
         found = true;
         break;
@@ -215,28 +219,68 @@ bool DrmOut::open(SDL_Window* win, int w, int h, int display_index) {
     std::fprintf(stderr, "drm: no connector/crtc for display %d\n", display_index);
     return false;
   }
+  u32 crtc_index = 0;
+  for (size_t i = 0; i < crtcs.size(); ++i)
+    if (crtcs[i] == crtc_) crtc_index = static_cast<u32>(i);
+  static_assert(sizeof(mode_) >= sizeof(drmu::mode_modeinfo), "mode blob storage");
+  std::memcpy(mode_, &mode, sizeof mode);
+
+  // A scaled source needs the atomic path (a legacy flip's framebuffer must
+  // cover the CRTC). Without a usable plane the tier falls back to the
+  // panel's size and the legacy flips, as before.
+  atomic_ = w_ != pw_ || h_ != ph_;
+  if (atomic_ && !atomic_setup(crtc_index)) {
+    std::fprintf(stderr, "drm: display %d: no atomic plane to scale %dx%d onto %dx%d; panel-sized buffers\n",
+                 display_index, w_, h_, pw_, ph_);
+    atomic_ = false;
+    sw_ = sh_ = 0;
+    w_ = pw_;
+    h_ = ph_;
+  }
 
   for (int i = 0; i < nbufs_; ++i)
     if (!alloc_buf(bufs_[i])) {
       close();
       return false;
     }
+  if (atomic_ && !atomic_modeset(true)) {
+    // The plane will not take this scale (VOP2's Smart windows do not scale): the panel's size instead.
+    std::fprintf(stderr, "drm: display %d: the plane refuses %dx%d onto %dx%d; panel-sized buffers\n", display_index,
+                 w_, h_, pw_, ph_);
+    for (Buf& b : bufs_) drop_buf(b);
+    atomic_ = false;
+    sw_ = sh_ = 0;
+    w_ = pw_;
+    h_ = ph_;
+    for (int i = 0; i < nbufs_; ++i)
+      if (!alloc_buf(bufs_[i])) {
+        close();
+        return false;
+      }
+  }
   if (const char* m = std::getenv("DS_KMS_MARGIN_MS"); m && std::atof(m) >= 0.0)
     margin_ns_ = static_cast<u64>(std::atof(m) * 1e6);
 
   // A modeset, not a flip: SDL's KMSDRM only modesets on its first GL swap,
   // which never happens in scanline mode.
-  drmu::mode_crtc sc = {};
-  sc.crtc_id = crtc_;
-  sc.fb_id = bufs_[0].fb;
-  sc.mode = mode;
-  sc.mode_valid = 1;
-  sc.set_connectors_ptr = reinterpret_cast<uint64_t>(&conn_);
-  sc.count_connectors = 1;
-  if (ioctl(fd_, drmu::IOCTL_MODE_SETCRTC, &sc) < 0) {
-    std::perror("drm: SETCRTC");
-    close();
-    return false;
+  if (atomic_) {
+    if (!atomic_modeset(false)) {
+      close();
+      return false;
+    }
+  } else {
+    drmu::mode_crtc sc = {};
+    sc.crtc_id = crtc_;
+    sc.fb_id = bufs_[0].fb;
+    sc.mode = mode;
+    sc.mode_valid = 1;
+    sc.set_connectors_ptr = reinterpret_cast<uint64_t>(&conn_);
+    sc.count_connectors = 1;
+    if (ioctl(fd_, drmu::IOCTL_MODE_SETCRTC, &sc) < 0) {
+      std::perror("drm: SETCRTC");
+      close();
+      return false;
+    }
   }
   bufs_[0].busy = true;
   on_screen_ = 0;
@@ -247,8 +291,164 @@ bool DrmOut::open(SDL_Window* win, int w, int h, int display_index) {
     std::lock_guard<std::mutex> lk(g_m);
     g_outs.push_back(this);
   }
-  std::fprintf(stderr, "drm: display %d on connector %u crtc %u, %dx%d@%u\n", display_index, conn_, crtc_, w_, h_,
-               mode.vrefresh);
+  std::fprintf(stderr, "drm: display %d on connector %u crtc %u, %dx%d@%u%s\n", display_index, conn_, crtc_, pw_, ph_,
+               mode.vrefresh, atomic_ ? " (atomic)" : "");
+  if (atomic_)
+    std::fprintf(stderr, "drm: display %d: plane %u scales %dx%d buffers onto the panel\n", display_index, plane_, w_,
+                 h_);
+  return true;
+}
+
+bool DrmOut::set_source(int w, int h) {
+  if (w < 0 || h < 0) return false;
+  if (w == sw_ && h == sh_) return fd_ < 0 || (w == 0 ? !scales() : scales());
+  const int prev_w = sw_, prev_h = sh_;
+  sw_ = w;
+  sh_ = h;
+  if (fd_ < 0) return true; // taken at open()
+  const int d = display_;
+  SDL_Window* win = win_;
+  close();
+  if (!open(win, pw_, ph_, d)) {
+    // Back to what worked.
+    sw_ = prev_w;
+    sh_ = prev_h;
+    return open(win, pw_, ph_, d) && false;
+  }
+  return w == 0 ? !scales() : scales();
+}
+
+// The property named `name` of DRM object `object` (of `type`): its id, and
+// its current value when asked for. 0 when the object has no such property.
+u32 DrmOut::property(u32 object, u32 type, const char* name, u64* value) const {
+  drmu::mode_obj_get_properties gp = {};
+  gp.obj_id = object;
+  gp.obj_type = type;
+  if (ioctl(fd_, drmu::IOCTL_MODE_OBJ_GETPROPERTIES, &gp) < 0 || !gp.count_props) return 0;
+  std::vector<u32> ids(gp.count_props);
+  std::vector<u64> values(gp.count_props);
+  gp.props_ptr = reinterpret_cast<uint64_t>(ids.data());
+  gp.prop_values_ptr = reinterpret_cast<uint64_t>(values.data());
+  if (ioctl(fd_, drmu::IOCTL_MODE_OBJ_GETPROPERTIES, &gp) < 0) return 0;
+  for (u32 i = 0; i < gp.count_props && i < ids.size(); ++i) {
+    drmu::mode_get_property p = {};
+    p.prop_id = ids[i];
+    if (ioctl(fd_, drmu::IOCTL_MODE_GETPROPERTY, &p) < 0) continue;
+    if (std::strncmp(p.name, name, sizeof p.name) == 0) {
+      if (value) *value = values[i];
+      return ids[i];
+    }
+  }
+  return 0;
+}
+
+bool DrmOut::atomic_setup(u32 crtc_index) {
+  for (const u64 cap : {drmu::CLIENT_CAP_UNIVERSAL_PLANES, drmu::CLIENT_CAP_ATOMIC}) {
+    drmu::set_client_cap c = {};
+    c.capability = cap;
+    c.value = 1;
+    if (ioctl(fd_, drmu::IOCTL_SET_CLIENT_CAP, &c) < 0) {
+      std::perror("drm: SET_CLIENT_CAP");
+      return false;
+    }
+  }
+  drmu::mode_get_plane_res pr = {};
+  if (ioctl(fd_, drmu::IOCTL_MODE_GETPLANERESOURCES, &pr) < 0 || !pr.count_planes) return false;
+  std::vector<u32> planes(pr.count_planes);
+  pr.plane_id_ptr = reinterpret_cast<uint64_t>(planes.data());
+  if (ioctl(fd_, drmu::IOCTL_MODE_GETPLANERESOURCES, &pr) < 0) return false;
+  plane_ = 0;
+  for (u32 id : planes) {
+    drmu::mode_get_plane gp = {};
+    gp.plane_id = id;
+    if (ioctl(fd_, drmu::IOCTL_MODE_GETPLANE, &gp) < 0) continue;
+    if (!((gp.possible_crtcs >> crtc_index) & 1u)) continue;
+    u64 type = 0;
+    if (!property(id, drmu::OBJECT_PLANE, "type", &type) || type != drmu::PLANE_TYPE_PRIMARY) continue;
+    plane_ = id;
+    break;
+  }
+  if (!plane_) return false;
+  Props& p = props_;
+  p.fb_id = property(plane_, drmu::OBJECT_PLANE, "FB_ID");
+  p.plane_crtc_id = property(plane_, drmu::OBJECT_PLANE, "CRTC_ID");
+  p.src_x = property(plane_, drmu::OBJECT_PLANE, "SRC_X");
+  p.src_y = property(plane_, drmu::OBJECT_PLANE, "SRC_Y");
+  p.src_w = property(plane_, drmu::OBJECT_PLANE, "SRC_W");
+  p.src_h = property(plane_, drmu::OBJECT_PLANE, "SRC_H");
+  p.crtc_x = property(plane_, drmu::OBJECT_PLANE, "CRTC_X");
+  p.crtc_y = property(plane_, drmu::OBJECT_PLANE, "CRTC_Y");
+  p.crtc_w = property(plane_, drmu::OBJECT_PLANE, "CRTC_W");
+  p.crtc_h = property(plane_, drmu::OBJECT_PLANE, "CRTC_H");
+  p.mode_id = property(crtc_, drmu::OBJECT_CRTC, "MODE_ID");
+  p.active = property(crtc_, drmu::OBJECT_CRTC, "ACTIVE");
+  p.conn_crtc_id = property(conn_, drmu::OBJECT_CONNECTOR, "CRTC_ID");
+  return p.fb_id && p.plane_crtc_id && p.src_x && p.src_y && p.src_w && p.src_h && p.crtc_x && p.crtc_y && p.crtc_w &&
+         p.crtc_h && p.mode_id && p.active && p.conn_crtc_id;
+}
+
+// The whole state in one commit: the connector on the CRTC, the CRTC active
+// in the panel's mode, the first buffer on the plane scaled onto the panel.
+bool DrmOut::atomic_modeset(bool test_only) {
+  if (!mode_blob_) {
+    drmu::mode_create_blob cb = {};
+    cb.data = reinterpret_cast<uint64_t>(mode_);
+    cb.length = sizeof(drmu::mode_modeinfo);
+    if (ioctl(fd_, drmu::IOCTL_MODE_CREATEPROPBLOB, &cb) < 0) {
+      std::perror("drm: CREATEPROPBLOB");
+      return false;
+    }
+    mode_blob_ = cb.blob_id;
+  }
+  const Props& p = props_;
+  const u32 objs[3] = {conn_, crtc_, plane_};
+  const u32 counts[3] = {1, 2, 10};
+  const u32 ids[13] = {p.conn_crtc_id, p.mode_id, p.active, p.fb_id,  p.plane_crtc_id, p.src_x, p.src_y,
+                       p.src_w,        p.src_h,   p.crtc_x, p.crtc_y, p.crtc_w,        p.crtc_h};
+  const u64 values[13] = {crtc_,
+                          mode_blob_,
+                          1,
+                          bufs_[0].fb,
+                          crtc_,
+                          0,
+                          0,
+                          static_cast<u64>(w_) << 16,
+                          static_cast<u64>(h_) << 16,
+                          0,
+                          0,
+                          static_cast<u64>(pw_),
+                          static_cast<u64>(ph_)};
+  drmu::mode_atomic a = {};
+  a.flags = drmu::ATOMIC_ALLOW_MODESET | (test_only ? drmu::ATOMIC_TEST_ONLY : 0u);
+  a.count_objs = 3;
+  a.objs_ptr = reinterpret_cast<uint64_t>(objs);
+  a.count_props_ptr = reinterpret_cast<uint64_t>(counts);
+  a.props_ptr = reinterpret_cast<uint64_t>(ids);
+  a.prop_values_ptr = reinterpret_cast<uint64_t>(values);
+  if (ioctl(fd_, drmu::IOCTL_MODE_ATOMIC, &a) < 0) {
+    if (!test_only) std::perror("drm: ATOMIC modeset");
+    return false;
+  }
+  return true;
+}
+
+bool DrmOut::atomic_flip(u32 fb) {
+  const u32 objs[1] = {plane_};
+  const u32 counts[1] = {1};
+  const u32 ids[1] = {props_.fb_id};
+  const u64 values[1] = {fb};
+  drmu::mode_atomic a = {};
+  a.flags = drmu::ATOMIC_NONBLOCK | drmu::PAGE_FLIP_EVENT;
+  a.count_objs = 1;
+  a.objs_ptr = reinterpret_cast<uint64_t>(objs);
+  a.count_props_ptr = reinterpret_cast<uint64_t>(counts);
+  a.props_ptr = reinterpret_cast<uint64_t>(ids);
+  a.prop_values_ptr = reinterpret_cast<uint64_t>(values);
+  a.user_data = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(this));
+  if (ioctl(fd_, drmu::IOCTL_MODE_ATOMIC, &a) < 0) {
+    std::perror("drm: ATOMIC flip");
+    return false;
+  }
   return true;
 }
 
@@ -266,11 +466,21 @@ void DrmOut::close() {
     while (pending_ >= 0 && !dead_)
       if (!pump(lk, fd_, true)) break;
     for (Buf& b : bufs_) drop_buf(b);
+    if (mode_blob_) {
+      drmu::mode_destroy_blob db = {};
+      db.blob_id = mode_blob_;
+      ioctl(fd_, drmu::IOCTL_MODE_DESTROYPROPBLOB, &db);
+    }
   }
   g_outs.erase(std::remove(g_outs.begin(), g_outs.end(), this), g_outs.end());
   fd_ = -1;
   crtc_ = 0;
   conn_ = 0;
+  mode_blob_ = 0;
+  plane_ = 0;
+  atomic_ = false;
+  props_ = Props{};
+  pw_ = ph_ = 0;
   cur_ = on_screen_ = pending_ = queued_ = -1;
   w_ = h_ = 0;
   dead_ = false;
@@ -308,15 +518,22 @@ void DrmOut::retire(u64 at_ns) {
 }
 
 bool DrmOut::flip(int i, int tag, u64 queued_at_ns) {
-  drmu::mode_crtc_page_flip pf = {};
-  pf.crtc_id = crtc_;
-  pf.fb_id = bufs_[i].fb;
-  pf.flags = drmu::PAGE_FLIP_EVENT;
-  pf.user_data = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(this));
-  if (ioctl(fd_, drmu::IOCTL_MODE_PAGE_FLIP, &pf) < 0) {
-    std::perror("drm: PAGE_FLIP");
-    bufs_[i].busy = false;
-    return false;
+  if (atomic_) {
+    if (!atomic_flip(bufs_[i].fb)) {
+      bufs_[i].busy = false;
+      return false;
+    }
+  } else {
+    drmu::mode_crtc_page_flip pf = {};
+    pf.crtc_id = crtc_;
+    pf.fb_id = bufs_[i].fb;
+    pf.flags = drmu::PAGE_FLIP_EVENT;
+    pf.user_data = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(this));
+    if (ioctl(fd_, drmu::IOCTL_MODE_PAGE_FLIP, &pf) < 0) {
+      std::perror("drm: PAGE_FLIP");
+      bufs_[i].busy = false;
+      return false;
+    }
   }
   pending_ = i;
   pending_tag_ = tag;

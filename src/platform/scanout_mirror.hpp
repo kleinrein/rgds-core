@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <initializer_list>
 #include <vector>
@@ -18,6 +19,7 @@
 #include <drm/drm_mode.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
 #endif
 namespace rgds {
 struct ScanoutMirror {
@@ -28,18 +30,26 @@ struct ScanoutMirror {
     std::vector<uint8_t> pixels; // width * height * 4, rows packed
     bool failed = false;
 
-    // The CRTC driving the connector called name ("DSI-1" is the top panel).
-    bool open(const char* name = "DSI-1") {
+    // The CRTC driving the connector called name ("DSI-1" is the stock top panel; RGDS_SCANOUT_CONNECTOR names
+    // RG DS OS's, DSI-2).
+    bool open(const char* name = nullptr) {
 #ifdef __linux__
         if (fd >= 0) return true;
         if (failed) return false;
-        for (const char* path : {"/dev/dri/card0", "/dev/dri/card1"})
-            if ((fd = ::open(path, O_RDWR | O_CLOEXEC)) >= 0) break;
+        if (!name) name = std::getenv("RGDS_SCANOUT_CONNECTOR") ? std::getenv("RGDS_SCANOUT_CONNECTOR") : "DSI-1";
+        // The card itself, not the bottom panel's DRM lease that librgds-drm-lease.so gives an open() on RG DS OS
+        // (runtime/drm_lease.py): a raw openat is not interposed. Root reads every plane through it.
+        drm_mode_card_res res{};
+        for (const char* path : {"/dev/dri/card0", "/dev/dri/card1"}) {
+            if ((fd = int(syscall(SYS_openat, AT_FDCWD, path, O_RDWR | O_CLOEXEC))) < 0) continue;
+            res = {};
+            if (!io(DRM_IOCTL_MODE_GETRESOURCES, &res) && res.count_connectors) break; // not the GPU's own node
+            ::close(fd);
+            fd = -1;
+        }
         if (fd < 0) return fail();
         drm_set_client_cap cap{DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1};
         io(DRM_IOCTL_SET_CLIENT_CAP, &cap);
-        drm_mode_card_res res{};
-        if (io(DRM_IOCTL_MODE_GETRESOURCES, &res)) return fail();
         std::vector<uint32_t> connectors(res.count_connectors), crtcs(res.count_crtcs), encoders(res.count_encoders),
             fbs(res.count_fbs);
         res.connector_id_ptr = uintptr_t(connectors.data());

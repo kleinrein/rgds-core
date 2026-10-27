@@ -1,0 +1,5 @@
+config BR2_PACKAGE_LIBRETRO_PCSX_REARMED
+	bool "libretro-pcsx-rearmed"
+	help
+	  PCSX ReARMed, the PlayStation core (GPL-2.0; its BIOS files are the owner's, in /data/rgds/bios):
+	  /usr/lib/libretro/pcsx_rearmed_libretro.so, loaded by RG DS Play.

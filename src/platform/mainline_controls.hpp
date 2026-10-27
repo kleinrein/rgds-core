@@ -1,11 +1,17 @@
 #pragma once
 #include <SDL.h>
 #include <map>
+#include <set>
 namespace rgds {
 // Linux gpio-keys-control uses standard BTN_* codes, unlike the stock driver.
 // SDL enumerates those buttons by keycode, then adds KEY_HOME last.
 struct MainlineControls {
     std::map<SDL_JoystickID, Uint8> directions;
+    // ROCKNIX's joypad driver (retrogame_joypad, BananaLinux's kernel) reports the same BTN_* codes but has the F
+    // key as BTN_MODE instead of KEY_HOME: SDL puts it at 10, and the stick clicks and directions one later.
+    std::set<SDL_JoystickID> joypads;
+    static int from_joypad(int raw) { return raw == 10 ? 16 : raw > 10 && raw <= 16 ? raw - 1 : raw; }
+    static int to_joypad(int raw) { return raw == 16 ? 10 : raw >= 10 && raw < 16 ? raw + 1 : raw; }
     static int button(int raw) {
         constexpr int mapping[] = {1, 0, 3, 2, 4, 5, 10, 11, 6, 7, 9, 12, -1, -1, -1, -1, 8};
         return raw >= 0 && raw < 17 ? mapping[raw] : -1;
@@ -19,6 +25,7 @@ struct MainlineControls {
     bool normalize(SDL_Event& event) {
         if (event.type != SDL_JOYBUTTONDOWN && event.type != SDL_JOYBUTTONUP) return true;
         int raw = event.jbutton.button;
+        if (joypads.count(event.jbutton.which)) raw = from_joypad(raw);
         if (raw >= 12 && raw <= 15) {
             constexpr Uint8 bits[] = {SDL_HAT_UP, SDL_HAT_DOWN, SDL_HAT_LEFT, SDL_HAT_RIGHT};
             auto which = event.jbutton.which;

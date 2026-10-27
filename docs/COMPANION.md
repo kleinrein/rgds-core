@@ -1,6 +1,6 @@
 # The companion screen: rules
 
-RG DS Play's second screen is part of RG DS, not a debug overlay. It looks like the launcher, follows the owner's Theme & display settings, reads in every language the launcher speaks, takes touches, and is useful at a glance. These rules hold for every game, and two tools check them on every profile (`tools/lint_companions.py`, which runs `play-lint`).
+RG DS Play's second screen is part of RG DS, not a debug overlay. It looks like the launcher, follows the owner's Theme settings, reads in every language the launcher speaks, takes touches, and is useful at a glance. These rules hold for every game, and two tools check them on every profile (`tools/lint_companions.py`, which runs `play-lint`).
 
 What the screen shows for a game is set out in its profile (`play/profiles/<system>/<NAME>.ini`, the format is in [PLAY.md](PLAY.md)). How it is drawn is the kit in `play/src/ui/kit.hpp`. Every screen goes through the kit, so a rule changed there changes everywhere.
 

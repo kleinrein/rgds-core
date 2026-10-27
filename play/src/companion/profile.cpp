@@ -316,7 +316,11 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             if (key == "title") out.title = value;
             else if (key == "codes") out.codes = words(upper(value));
             else if (key == "system") out.system = value;
-            else return fail("unknown key '" + key + "' in [game]");
+            else if (key == "lightgun") {
+                ok = value == "yes" || value == "no";
+                out.lightgun = value == "yes";
+                if (!ok) why = "expected lightgun = yes or no";
+            } else return fail("unknown key '" + key + "' in [game]");
         } else if (section == "companion") {
             if (key == "live") ok = parse_condition(value, out.live, why);
             else if (key == "menu") ok = parse_condition(value, out.menu, why);
@@ -409,6 +413,10 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 // x y w h, whole rows at the top or bottom of the picture
                 ok = parse_rect(value, h.strip) && h.strip.x == 0 && h.strip.y >= 0;
                 if (!ok) why = "expected strip = 0 y w h";
+            } else if (key == "strip_fill") {
+                ok = value == "yes" || value == "no";
+                h.strip_fill = value == "yes";
+                if (!ok) why = "expected strip_fill = yes or no";
             } else if (key == "to_game") {
                 // x y w h > X Y
                 auto gt = value.find('>');

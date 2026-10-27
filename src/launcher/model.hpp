@@ -27,11 +27,12 @@ inline constexpr int core_count = sizeof(core_ids) / sizeof(core_ids[0]);
 inline constexpr int ds_core_count = 5, play_core = 5, dscore_core = 4;
 // PortMaster (appended after RG DS Play) runs the Ports system's scripts.
 inline constexpr int portmaster_core = 6;
-// NNDDSS is retired: it is never offered, and a saved choice of it falls back to
-// DSCore. Indices stay stable because settings store them.
-inline constexpr int retired_core = 2;
-inline constexpr bool core_offered(int core) { return core >= 0 && core < ds_core_count && core != retired_core; }
-inline constexpr int offered_core(int core) { return core == retired_core ? dscore_core : core; }
+// NNDDSS and melonDS are retired: they are never offered, and a saved choice of
+// either falls back to DSCore. Indices stay stable because settings store them.
+inline constexpr int retired_core = 2, melonds_core = 3;
+inline constexpr bool core_retired(int core) { return core == retired_core || core == melonds_core; }
+inline constexpr bool core_offered(int core) { return core >= 0 && core < ds_core_count && !core_retired(core); }
+inline constexpr int offered_core(int core) { return core_retired(core) ? dscore_core : core; }
 // The other systems RG DS Play opens, by file extension; the order of the Systems page.
 struct SystemInfo {
     const char* id;
@@ -39,12 +40,20 @@ struct SystemInfo {
     const char* badge; // on a game without its own artwork
     std::initializer_list<const char*> extensions;
 };
-inline const std::array<SystemInfo, 5>& systems() {
-    static const std::array<SystemInfo, 5> list = {{
+inline const std::array<SystemInfo, 12>& systems() {
+    static const std::array<SystemInfo, 12> list = {{
         {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
         {"gb", "Game Boy", "GB", {".gb", ".sgb"}},
+        // libretro systems through RG DS Play (runtime/play_options.py names the same extensions and the cores)
+        {"nes", "Nintendo Entertainment System", "NES", {".nes", ".fds", ".unf", ".unif"}},
+        {"snes", "Super Nintendo", "SNES", {".sfc", ".smc"}},
+        {"md", "Mega Drive", "MD", {".md", ".gen", ".smd", ".32x"}},
+        {"sms", "Master System", "SMS", {".sms", ".gg"}},
+        {"psx", "PlayStation", "PS", {".cue", ".chd", ".pbp", ".m3u"}},
+        {"n64", "Nintendo 64", "N64", {".z64", ".n64", ".v64"}},
+        {"pico8", "PICO-8", "P8", {".p8"}},
         {"ports", "Ports", "PORT", {".sh"}}, // PortMaster ports: the scripts in its ports folder
     }};
     return list;

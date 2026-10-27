@@ -103,6 +103,7 @@ struct Panel {
     std::string frame_key;
     bool frame_over = false;    // a picture frame: laid over the game, not under it
     SDL_Rect area{};            // where this panel sits in its window
+    SDL_Rect game_dest{};       // where the game was last drawn in it (a light gun aims through this)
     SDL_GLContext gl = nullptr; // the renderer's own GL context (none for a software renderer)
     bool owns_window = false;
 };
@@ -143,8 +144,45 @@ uint32_t controller_buttons(SDL_GameController* c) {
     uint32_t b = 0;
     for (const auto& [button, bit] : map)
         if (SDL_GameControllerGetButton(c, button)) b |= bit;
+    // L2 and R2 are axes to SDL (N64's Z is on L2).
+    if (SDL_GameControllerGetAxis(c, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 16384) b |= L2;
+    if (SDL_GameControllerGetAxis(c, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 16384) b |= R2;
     return b;
 }
+
+// The GLES context a GPU-drawing libretro core gets (core.hpp's GlHost): made on the top panel's window at the
+// core's first frame, beside the panel's own context, and only ever drawn into the core's own framebuffer.
+SDL_Window* gpu_core_window = nullptr; // set once the panels are open, when their renderer is GL
+SDL_GLContext gpu_core_context = nullptr;
+
+bool gpu_core_begin(int major, int minor) {
+    if (!gpu_core_window) return false;
+    if (!gpu_core_context) {
+        int profile = 0, old_major = 0, old_minor = 0;
+        SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &profile);
+        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &old_major);
+        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &old_minor);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
+        gpu_core_context = SDL_GL_CreateContext(gpu_core_window);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profile);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, old_major);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, old_minor);
+        if (!gpu_core_context) {
+            std::fprintf(stderr, "rgds-play: no GLES %d.%d context for the core: %s\n", major, minor, SDL_GetError());
+            gpu_core_window = nullptr;
+            return false;
+        }
+        std::fprintf(stderr, "rgds-play: GLES %d.%d context for the core\n", major, minor);
+    }
+    // Released first, as use_panel does: SDL's idea of the current context drifts from EGL's on the RG DS.
+    SDL_GL_MakeCurrent(gpu_core_window, nullptr);
+    return SDL_GL_MakeCurrent(gpu_core_window, gpu_core_context) == 0;
+}
+void gpu_core_end() { SDL_GL_MakeCurrent(gpu_core_window, nullptr); }
+void* gpu_core_proc(const char* name) { return SDL_GL_GetProcAddress(name); }
+const GlHost gpu_core_host{gpu_core_begin, gpu_core_end, gpu_core_proc};
 
 bool open_panel(Panel& p, int display, int w, int h, bool fullscreen, const char* title) {
     Uint32 flags = SDL_WINDOW_SHOWN | (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_RESIZABLE);
@@ -319,6 +357,7 @@ void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame,
         SDL_RenderCopy(p.renderer, p.game, nullptr, &dest);
     }
     if (over) SDL_RenderCopy(p.renderer, over, nullptr, &p.area);
+    p.game_dest = dest;
 }
 
 int parse_fit(const std::string& s) {
@@ -419,6 +458,9 @@ int main(int argc, char** argv) {
         else if (a == "--profiles") o.profile_dirs.push_back(next());
         else if (a == "--fonts") o.font_dir = next();
         else if (a == "--preferences") o.preferences = next();
+        else if (a == "--core") o.core_library = next();
+        else if (a == "--system") o.system = next();
+        else if (a == "--system-dir") o.system_dir = next();
         else if (a == "--save-source") o.save_sources.push_back(next());
         else if (a == "--fit") fit = parse_fit(next());
         else if (a == "--second") second = parse_second(next());
@@ -446,6 +488,7 @@ int main(int argc, char** argv) {
     std::signal(SIGHUP, request_stop);
     Session session;
     std::string error;
+    set_gl_host(&gpu_core_host);
     if (!session.open(o, error)) {
         std::fprintf(stderr, "rgds-play: %s\n", error.c_str());
         return 1;
@@ -507,6 +550,7 @@ int main(int argc, char** argv) {
         upper.area = {0, 0, pw, ph};
         lower.area = {0, ph, pw, ph};
     }
+    if (upper.gl) gpu_core_window = upper.window;
     Picture first = session.game();
     use_panel(upper);
     make_textures(upper, first.w, first.h, pw, ph);
@@ -526,6 +570,9 @@ int main(int argc, char** argv) {
     const std::string system_label = std::string(session.core().system()) == "gbc"  ? "GAME BOY COLOR"
                                      : std::string(session.core().system()) == "gb" ? "GAME BOY"
                                                                                     : "GAME BOY ADVANCE";
+    // A light-gun game is played by touching it: it starts on the touch screen.
+    const bool lightgun = session.profile() && session.profile()->lightgun;
+    if (lightgun && second == SecondCompanion) second = SecondSwap;
     std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit), second_name(second),
                  frame.name.c_str());
 
@@ -574,6 +621,16 @@ int main(int argc, char** argv) {
     // The second screen's touches: under RG DS Core the bridge reads the
     // lower panel (Weston does not deliver it reliably) and sends them as
     // finger events with touchId -2; on its own the player reads it itself.
+    // A finger at x, y of the lower panel (its 640x480 pixels) aims the light gun at the game pixel under it.
+    auto aim = [&](int x, int y, bool down) {
+        const SDL_Rect& d = lower.game_dest;
+        const Picture game = session.core().picture();
+        if (d.w <= 0 || d.h <= 0 || game.w <= 0 || game.h <= 0) return;
+        const int wx = lower.area.x + x * lower.area.w / std::max(1, pw), wy = lower.area.y + y * lower.area.h / std::max(1, ph);
+        const bool inside = wx >= d.x && wy >= d.y && wx < d.x + d.w && wy < d.y + d.h;
+        session.core().set_pointer(inside ? (wx - d.x) * game.w / d.w : -1, inside ? (wy - d.y) * game.h / d.h : -1,
+                                   down);
+    };
     rgds::TouchDevice panel_touch;
     const bool panel_touch_open =
         !bridged && panel_touch.open_device(std::getenv("RGDS_TOUCH_DEV") ? std::getenv("RGDS_TOUCH_DEV") : "");
@@ -654,6 +711,27 @@ int main(int argc, char** argv) {
                 quit("Home");
             if (e.type == SDL_CONTROLLERDEVICEADDED && !pad && !device_pad.active())
                 pad = SDL_GameControllerOpen(e.cdevice.which);
+            // With the screens swapped a light-gun game is on the touch screen: a finger aims and fires.
+            if (lightgun && second == SecondSwap) {
+                if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERMOTION || e.type == SDL_FINGERUP) {
+                    int x = -1, y = -1;
+                    if (e.tfinger.touchId == -2) {
+                        x = int(e.tfinger.x * pw), y = int(e.tfinger.y * ph);
+                    } else if (lower.window && e.tfinger.windowID == SDL_GetWindowID(lower.window)) {
+                        int ww = 0, wh = 0;
+                        SDL_GetWindowSize(lower.window, &ww, &wh);
+                        x = (int(e.tfinger.x * ww) - lower.area.x) * pw / std::max(1, lower.area.w);
+                        y = (int(e.tfinger.y * wh) - lower.area.y) * ph / std::max(1, lower.area.h);
+                    }
+                    aim(x, y, e.type != SDL_FINGERUP);
+                } else if ((e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP) &&
+                           e.button.which != SDL_TOUCH_MOUSEID && lower.window &&
+                           e.button.windowID == SDL_GetWindowID(lower.window)) {
+                    aim((e.button.x - lower.area.x) * pw / std::max(1, lower.area.w),
+                        (e.button.y - lower.area.y) * ph / std::max(1, lower.area.h), e.type == SDL_MOUSEBUTTONDOWN);
+                }
+                continue;
+            }
             // The second screen is the touch screen while it shows the companion or the info screen.
             if (!session.companion() || (second != SecondCompanion && second != SecondInfo)) continue;
             Touch t;
@@ -687,6 +765,9 @@ int main(int argc, char** argv) {
             }
             if (have && session.companion()->touch(t)) drawn_key = ~0ull;
         }
+        if (panel_touch_open && lightgun && second == SecondSwap)
+            for (const auto& point : panel_touch.poll())
+                if (point.kind < 3) aim(point.x, point.y, point.kind != 2);
         if (panel_touch_open && session.companion() && (second == SecondCompanion || second == SecondInfo))
             for (const auto& point : panel_touch.poll())
                 if (point.kind < 3) {
@@ -718,6 +799,11 @@ int main(int argc, char** argv) {
         }
         // After a stall (a pause or a lid sleep stops the process), don't race.
         if (owed > frame_seconds * (fast ? 8 : 4)) owed = frame_seconds;
+        if (pad)
+            session.core().set_sticks(SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTX),
+                                      SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTY),
+                                      SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_RIGHTX),
+                                      SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_RIGHTY));
         while (owed >= frame_seconds) {
             uint32_t pressed = buttons;
             if (!inputs.empty()) {
@@ -836,6 +922,8 @@ int main(int argc, char** argv) {
     if (audio) SDL_CloseAudioDevice(audio);
     if (stream) SDL_FreeAudioStream(stream);
     if (pad) SDL_GameControllerClose(pad);
+    close_gpu_core(); // while its context can still be made current
+    if (gpu_core_context) SDL_GL_DeleteContext(gpu_core_context);
     for (Panel* p : {&upper, &lower})
         if (p->owns_window) {
             SDL_DestroyRenderer(p->renderer);

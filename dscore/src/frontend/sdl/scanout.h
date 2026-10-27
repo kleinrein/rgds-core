@@ -23,8 +23,20 @@ public:
   virtual bool reopen(SDL_Window* win, int w, int h) = 0;
   virtual void close() = 0;
 
-  virtual int width() const = 0;
+  virtual int width() const = 0; // the buffers' size: the canvas the scanline path composes
   virtual int height() const = 0;
+  // A tier that scales in the display engine (DrmOut on an atomic KMS plane) keeps its buffers at the frame's own
+  // size and scans them out onto the whole panel: width()/height() are then the frame's, these the panel's.
+  virtual int panel_width() const { return width(); }
+  virtual int panel_height() const { return height(); }
+  virtual bool scales() const { return panel_width() != width() || panel_height() != height(); }
+  // Ask for buffers of this size, scaled onto the panel (0, 0: the panel's own size, no scaling). The tier may
+  // reopen; false when it cannot scale, and it stays at the panel's size.
+  virtual bool set_source(int w, int h) {
+    (void)w;
+    (void)h;
+    return false;
+  }
   virtual int stride() const { return width(); } // pixels; > width if padded (fbdev)
   // Buffer count, and index begin_frame() last handed out (0..bufs()-1, -1
   // outside a frame). Buffers are not round-robin -- lowest free is taken --

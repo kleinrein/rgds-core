@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier: MIT
+#
+## RG DS Core (docs/PORTMASTER_PLAN.md): gl4es on RG DS OS, written as "libgl_RG DS OS.txt" by runtime/portmaster.py.
+## PortMaster's default turns on gl4es's own GBM surface (LIBGL_FB=4) when /dev/dri/card0 exists; with Panfrost and no
+## compositor gl4es then finds no EGL config and draws nothing. Through the context SDL makes it draws, so no LIBGL_FB.
+## Run from the port's own folder, as the default file is.
+
+export LIBGL_ES=2
+export LIBGL_GL=21
+unset LIBGL_FB
+
+if [ -d "$PWD/gl4es.$DEVICE_ARCH" ]; then
+  export LD_LIBRARY_PATH="$PWD/gl4es.$DEVICE_ARCH:$LD_LIBRARY_PATH"
+elif [ -d "$PWD/gl4es" ]; then
+  export LD_LIBRARY_PATH="$PWD/gl4es:$LD_LIBRARY_PATH"
+fi
+
+if [ -d "$PWD/libs.$DEVICE_ARCH" ]; then
+  export LD_LIBRARY_PATH="$PWD/libs.$DEVICE_ARCH:$LD_LIBRARY_PATH"
+elif [ -d "$PWD/libs" ]; then
+  export LD_LIBRARY_PATH="$PWD/libs:$LD_LIBRARY_PATH"
+fi

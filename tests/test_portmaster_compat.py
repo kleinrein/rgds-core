@@ -18,8 +18,8 @@ import portmaster_compat
 from portmaster_compat_manifest import version_key
 
 
-def deb(files, links=()):
-    """A minimal .deb: ar archive with debian-binary and a data.tar.xz holding files and symlinks."""
+def deb(files, links=(), hardlinks=()):
+    """A minimal .deb: ar archive with debian-binary and a data.tar.xz holding files, symlinks and hard links."""
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode='w:xz') as tar:
         for path, data in files.items():
@@ -30,6 +30,11 @@ def deb(files, links=()):
             info = tarfile.TarInfo('./' + path)
             info.type = tarfile.SYMTYPE
             info.linkname = target
+            tar.addfile(info)
+        for path, target in hardlinks:
+            info = tarfile.TarInfo('./' + path)
+            info.type = tarfile.LNKTYPE
+            info.linkname = './' + target
             tar.addfile(info)
 
     def member(name, body):
@@ -259,6 +264,54 @@ class CompatTests(unittest.TestCase):
             sorted(t for _s, t in manifest['local']),
             ['gl4es/libGLX.so.0', 'gl4es/libOpenGL.so.0', 'gl4es/librgds-gl-attrs.so']
         )
+
+    def test_hard_links_resolve_to_their_file(self):
+        # Mesa's DRI drivers: one file, the other names hard links to it.
+        dri = 'usr/lib/arm-linux-gnueabihf/dri/'
+        members = portmaster_compat.package_files(
+            deb({dri + 'kms_swrast_dri.so': b'mesa'}, hardlinks=[(dri + 'panfrost_dri.so', dri + 'kms_swrast_dri.so')])
+        )
+        self.assertEqual(portmaster_compat.resolve(members, dri + 'panfrost_dri.so'), b'mesa')
+
+    def test_rgds_os_has_its_own_manifests(self):
+        with unittest.mock.patch('linux_platform.rgds_os', return_value=True):
+            names = [p.name for p in portmaster_compat.manifests()]
+        self.assertEqual(names, ['compat-rgds-os.json', 'compat-rgds-os-armhf.json'])
+        with unittest.mock.patch('linux_platform.rgds_os', return_value=False):
+            self.assertEqual([p.name for p in portmaster_compat.manifests()], ['compat.json', 'compat-armhf.json'])
+        manifest = json.loads((ROOT / 'runtime/portmaster_files/compat-rgds-os.json').read_text())
+        targets = [t for p in manifest['packages'] for _s, t in p['files']]
+        # The system's own libraries are never shadowed, and no libGL lands on every port's path.
+        for name in (
+            'lib/libc.so.6', 'lib/libSDL2-2.0.so.0', 'lib/libSDL2_ttf-2.0.so.0', 'lib/libEGL.so.1', 'lib/libpng16.so.16'
+        ):
+            self.assertNotIn(name, targets)
+        self.assertFalse([t for t in targets if t.startswith('lib/libGL')])
+        self.assertIn('lib/libvorbisfile.so.3', targets)
+        self.assertEqual(len(targets), len(set(targets)))
+        armhf = json.loads((ROOT / 'runtime/portmaster_files/compat-rgds-os-armhf.json').read_text())
+        targets = [t for p in armhf['packages']
+                   for _s, t in p['files']] + [e.get('target', '') for e in armhf['extras']]
+        self.assertTrue(all(t.startswith('armhf/') for t in targets))
+        # Mesa for Panfrost, not Rockchip's libmali (the stock kernel's kbase driver).
+        for name in (
+            'armhf/dri/panfrost_dri.so', 'armhf/dri/rockchip_dri.so', 'armhf/glvnd/50_mesa.json',
+            'armhf/lib/libEGL_mesa.so.0', 'armhf/lib/libGLESv2.so.2', 'armhf/ld-linux-armhf.so.3'
+        ):
+            self.assertIn(name, targets)
+        self.assertFalse([t for t in targets if 'mali' in t])
+        self.assertEqual(armhf['local'], [])
+
+    def test_armhf_ports_on_rgds_os_find_the_32_bit_mesa(self):
+        env = portmaster_compat.armhf_environment({}, self.root)
+        self.assertEqual(env, {})  # no Mesa in the layer: nothing changes
+        dri = self.root / 'rgds/armhf/dri'
+        dri.mkdir(parents=True)
+        (dri / 'panfrost_dri.so').write_bytes(b'mesa')
+        env = portmaster_compat.armhf_environment({}, self.root)
+        self.assertEqual(env['LIBGL_DRIVERS_PATH'], str(dri) + ':/usr/lib/dri')
+        self.assertEqual(env['GBM_DRIVERS_PATH'], str(dri) + ':/usr/lib/dri')
+        self.assertEqual(env['__EGL_VENDOR_LIBRARY_DIRS'], str(self.root / 'rgds/armhf/glvnd'))
 
     def test_dpkg_version_order(self):
         ordered = ['1.0~rc1', '1.0', '1.0-1', '1.0-1ubuntu0.1', '1.0-2', '1.0a', '1:0.1']

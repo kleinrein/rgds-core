@@ -147,6 +147,7 @@ Desktop preview	Перегляд на ПК
 Development build	Збірка для розробки
 Device address	Адреса пристрою
 Device information	Про пристрій
+Display	Екран
 Display FPS	FPS екрана
 Done	Готово
 Down	Вниз
@@ -441,6 +442,7 @@ Swapped	Переставлені
 System	Система
 THEME ERROR - RETAINED CURRENT	ПОМИЛКА ТЕМИ — ЗАЛИШЕНО ПОТОЧНУ
 THEME RELOADED	ТЕМУ ПЕРЕЗАВАНТАЖЕНО
+Turn the handheld off and on again	Вимкнути та знову ввімкнути пристрій
 TYPEFACE	ШРИФТ
 Temporary game cache cleared. Saves and artwork are kept.	Тимчасовий кеш ігор очищено. Збереження й обкладинки залишилися.
 The checkpoint did not finish saving.	Збереження не завершилося.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Утримуйте на місці для прав�
 Hold to exit	Утримуйте, щоб вийти
 Touch screen off	Сенсорний екран вимкнено
 Touch screen is not available	Сенсорний екран недоступний
+Daylight saving	Літній час
+Automatic	Автоматично
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Літній час визначається часовим поясом. Увімкніть або вимкніть його, якщо годинник відстає чи поспішає на годину.
+GBA true colour	Справжні кольори GBA
+Faded GBA colours made rich, as the real screen showed them.	Бляклі кольори GBA стають насиченими, як на справжньому екрані.
+GBA true screen	Справжній екран GBA
+The true GBA colours on its screen, with the gaps between its pixels.	Справжні кольори GBA на його екрані, з проміжками між пікселями.

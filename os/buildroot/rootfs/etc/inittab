@@ -1,0 +1,7 @@
+# RG DS OS: busybox init. rcS mounts the card and starts what the menu needs; RG DS Core then runs for as long as
+# the handheld is on (started again if it ever stops).
+::sysinit:/etc/init.d/rcS
+::respawn:/usr/libexec/rgds/session
+ttyS2::respawn:/sbin/getty -L ttyS2 1500000 vt100
+::shutdown:/etc/init.d/rcK
+::ctrlaltdel:/sbin/reboot

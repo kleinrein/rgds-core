@@ -147,6 +147,7 @@ Desktop preview	桌面预览
 Development build	开发版
 Device address	设备地址
 Device information	设备信息
+Display	显示
 Display FPS	屏幕帧率
 Done	完成
 Down	下
@@ -441,6 +442,7 @@ Swapped	已交换
 System	系统
 THEME ERROR - RETAINED CURRENT	主题错误 - 已保留当前主题
 THEME RELOADED	已重新加载主题
+Turn the handheld off and on again	关闭掌机并重新开机
 TYPEFACE	字体
 Temporary game cache cleared. Saves and artwork are kept.	已清除游戏临时缓存。存档和封面已保留。
 The checkpoint did not finish saving.	存档点未能保存完成。
@@ -1130,3 +1132,10 @@ Hold still for a right click	按住不动即可右键点击
 Hold to exit	按住退出
 Touch screen off	触摸屏已关闭
 Touch screen is not available	触摸屏不可用
+Daylight saving	夏令时
+Automatic	自动
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	夏令时跟随你的时区。如果时钟差了一小时，可以强制开启或关闭。
+GBA true colour	GBA 真实色彩
+Faded GBA colours made rich, as the real screen showed them.	让褪色的 GBA 色彩还原为真机屏幕上的浓郁色彩。
+GBA true screen	GBA 真实屏幕
+The true GBA colours on its screen, with the gaps between its pixels.	在 GBA 屏幕上呈现真实色彩，并带有像素间的缝隙。

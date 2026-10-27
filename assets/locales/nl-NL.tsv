@@ -147,6 +147,7 @@ Desktop preview	Desktopvoorbeeld
 Development build	Ontwikkelversie
 Device address	Apparaatadres
 Device information	Apparaatinformatie
+Display	Weergave
 Display FPS	Scherm-FPS
 Done	Klaar
 Down	Omlaag
@@ -441,6 +442,7 @@ Swapped	Verwisseld
 System	Systeem
 THEME ERROR - RETAINED CURRENT	THEMAFOUT - HUIDIG THEMA BEHOUDEN
 THEME RELOADED	THEMA OPNIEUW GELADEN
+Turn the handheld off and on again	Het apparaat uit- en weer aanzetten
 TYPEFACE	LETTERTYPE
 Temporary game cache cleared. Saves and artwork are kept.	Tijdelijke spelcache gewist. Opgeslagen spellen en hoesafbeeldingen blijven behouden.
 The checkpoint did not finish saving.	Het opslaan van het controlepunt is niet voltooid.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Stil houden voor rechtsklik
 Hold to exit	Vasthouden om te stoppen
 Touch screen off	Touchscreen uit
 Touch screen is not available	Touchscreen is niet beschikbaar
+Daylight saving	Zomertijd
+Automatic	Automatisch
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	De zomertijd volgt je tijdzone. Zet hem aan of uit als de klok een uur afwijkt.
+GBA true colour	Echte GBA-kleuren
+Faded GBA colours made rich, as the real screen showed them.	Fletse GBA-kleuren worden vol, zoals het echte scherm ze toonde.
+GBA true screen	Echt GBA-scherm
+The true GBA colours on its screen, with the gaps between its pixels.	De echte GBA-kleuren op zijn scherm, met de ruimtes tussen de pixels.

@@ -26,7 +26,7 @@ SLEEP_HOOK = Path('/usr/lib/systemd/system-sleep/90-rgds-resume')
 
 def suspend_linux(command, runtime=Path('/run/rgds'), clock=time.monotonic, sleep=time.sleep):
     """Wait for this request's post-resume hook, not just logind's enqueue ACK."""
-    from stock_handoff import clean_environment
+    from power import clean_environment
     runtime = Path(runtime)
     request = runtime / 'suspend-request'
     state = runtime / 'suspend-state'
@@ -219,7 +219,9 @@ class Hardware:
 
     @staticmethod
     def suspend_helper():
-        from linux_platform import independent
+        from linux_platform import independent, rgds_os, RGDS_OS_POWER
+        if rgds_os():
+            return str(RGDS_OS_POWER) if os.access(RGDS_OS_POWER, os.X_OK) else None
         if independent():
             return shutil.which("systemctl", path="/usr/bin:/bin")
         # pm-utils runs the installed vendor hooks around kernel suspend.
@@ -281,8 +283,9 @@ class Hardware:
     def sleep_supported(self):
         path = self.sysfs / "power/state"
         try:
-            from linux_platform import independent
-            if independent(
+            from linux_platform import independent, rgds_os
+            # RG DS OS's own suspend script acknowledges pre and post itself (no systemd, no sleep hook).
+            if independent() and not rgds_os(
             ) and self.sysfs == Path('/sys') and not (SLEEP_HOOK.is_file() and os.access(SLEEP_HOOK, os.X_OK)):
                 return False
             return bool(self.suspend_helper()) and self.writable(path) and "mem" in self.read(path).split()
@@ -536,7 +539,7 @@ class Hardware:
             raise ValueError(
                 "System sleep helper unavailable" if independent() else "Stock system sleep helper unavailable"
             )
-        from stock_handoff import clean_environment
+        from power import clean_environment
         command = system_command("suspend") if independent() else [self.suspend_helper()]
         volume = Volume(self.journal.parent.parent)
 
@@ -564,10 +567,19 @@ class Hardware:
         # kernel suspend: pwm-backlight would restore that zero during resume,
         # keeping the displays dark until userspace and Wi-Fi have resumed.
         panels = {str(path.relative_to(self.sysfs)): self.read(path) for path, _ in self.backlights()} if lid else {}
+        # The menu dimmed the panels itself before starting this process (system_controls.hpp) and says what to
+        # put back; reading them now would restore darkness.
+        pre_dimmed = os.environ.get('RGDS_SLEEP_BRIGHTNESS', '')
+        if lid and pre_dimmed:
+            panels = {}
+            for item in pre_dimmed.split(';'):
+                node, _, value = item.partition('=')
+                if node.startswith(str(self.sysfs) + '/') and value.isdigit():
+                    panels[str(Path(node).relative_to(self.sysfs))] = value
         started = time.monotonic()
         mark('requested')
         try:
-            if panels: self.change([(self.sysfs / name, 0) for name in panels])
+            if panels and not pre_dimmed: self.change([(self.sysfs / name, 0) for name in panels])
             mark('screen_off')
             sync_volume()
             from sleep_sounds import play

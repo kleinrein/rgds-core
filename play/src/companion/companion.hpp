@@ -86,6 +86,7 @@ private:
     bool strip_mode() const { return profile_ && profile_->has_hud && !profile_->hud.strip.empty(); }
     void update_strip(Core& live);
     void render_with_strip(Canvas& out, const Look& look, const Font& font) const;
+    void render_strip_filled(Canvas& out, const Look& look) const;
     // What the second screen shows besides a HUD: the map, the team, a view, or the title card.
     void render_content(Canvas& out, const Look& look, const Font& font) const;
     uint64_t content_key() const;

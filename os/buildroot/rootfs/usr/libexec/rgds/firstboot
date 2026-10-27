@@ -1,0 +1,20 @@
+#!/bin/sh
+# First boot: the data partition (games, saves, settings) fills the rest of the card, exFAT so any computer reads it.
+# It is named rgds-new until formatted, then rgds-data, so an interrupted first boot finishes on the next one and
+# a card with data on it is never formatted again.
+#   firstboot <disk>            make partition 4 and format it
+#   firstboot --format <disk>   format it only
+set -e
+if [ "$1" != --format ]; then
+    DISK=$1
+    echo "RG DS OS: making the data partition on $DISK" > /dev/kmsg
+    sfdisk --relocate gpt-bak-std "$DISK"
+    echo 'type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, name="rgds-new"' |
+        sfdisk --no-reread --no-tell-kernel --append --wipe-partitions always "$DISK"
+    partx --add --nr 4 "$DISK" || partx --update "$DISK"
+    for i in 1 2 3 4 5 6 7 8 9 10; do [ -b ${DISK}p4 ] && break; sleep 0.2; done
+else
+    DISK=$2
+fi
+mkfs.exfat -L RGDS ${DISK}p4
+sfdisk --no-reread --no-tell-kernel --part-label "$DISK" 4 rgds-data

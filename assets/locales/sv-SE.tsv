@@ -147,6 +147,7 @@ Desktop preview	Skrivbordsförhandsvisning
 Development build	Utvecklingsversion
 Device address	Enhetsadress
 Device information	Enhetsinformation
+Display	Skärm
 Display FPS	Skärmens FPS
 Done	Klar
 Down	Ned
@@ -441,6 +442,7 @@ Swapped	Ombytta
 System	System
 THEME ERROR - RETAINED CURRENT	TEMAFEL - BEHÅLLER AKTUELLT
 THEME RELOADED	TEMA INLÄST PÅ NYTT
+Turn the handheld off and on again	Stäng av och starta enheten igen
 TYPEFACE	TYPSNITT
 Temporary game cache cleared. Saves and artwork are kept.	Tillfällig spelcache rensad. Sparfiler och omslag behålls.
 The checkpoint did not finish saving.	Kontrollpunkten sparades inte färdigt.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Håll still för högerklick
 Hold to exit	Håll för att avsluta
 Touch screen off	Pekskärm av
 Touch screen is not available	Pekskärmen är inte tillgänglig
+Daylight saving	Sommartid
+Automatic	Automatisk
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Sommartid följer din tidszon. Slå på eller av den om klockan går en timme fel.
+GBA true colour	Äkta GBA-färger
+Faded GBA colours made rich, as the real screen showed them.	Bleka GBA-färger blir fylliga, så som den riktiga skärmen visade dem.
+GBA true screen	Äkta GBA-skärm
+The true GBA colours on its screen, with the gaps between its pixels.	De äkta GBA-färgerna på dess skärm, med gliporna mellan pixlarna.

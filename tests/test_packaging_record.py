@@ -22,8 +22,8 @@ class PackagingRecordTests(unittest.TestCase):
             "build/device/rgds-launcher", "build/device/librgdsbridge.so", "assets/emulator-profiles/drastic.cfg",
             "assets/emulator-profiles/dsperate.ini", "runtime/inventory.sh", "build/engines/dsperate/dsperate",
             "tools/build_engines.py", "tools/elf_abi.py", "THIRD_PARTY.md", "VERSION", "packaging/main.sh",
-            "packaging/update_guard.py", "packaging/update-trust.json", "README.md", "docs/DEVICE_SETUP.md",
-            "docs/DEVELOPMENT.md", "docs/SCREENSCRAPER.md", "docs/PERFORMANCE.md", "docs/BOOT.md"
+            "packaging/update_guard.py", "packaging/update-trust.json", "README.md",
+            "docs/DEVELOPMENT.md", "docs/SCREENSCRAPER.md", "docs/PERFORMANCE.md"
         )
         for name in (*names, *package.DOCUMENTS):
             path = self.root / name

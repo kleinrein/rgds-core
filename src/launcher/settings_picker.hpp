@@ -27,9 +27,7 @@ void App::show_emulator_picker(bool per_game) {
     for (int i = 0; i < core_count; i++)
         if (core_offered(i)) {
             cores.push_back(i);
-            choices.push_back(std::string(core_names[i]) + (i == 4   ? " (recommended)"
-                                                            : i == 3 ? " (experimental)"
-                                                                     : ""));
+            choices.push_back(std::string(core_names[i]) + (i == dscore_core ? " (recommended)" : ""));
         }
     const int current = per_game ? game_preferences.core : int(preferences.core);
     const int row = int(std::find(cores.begin(), cores.end(), current) - cores.begin());
@@ -118,13 +116,18 @@ bool App::open_setting_picker() {
         return true;
     }
     if (settings.page == Page::System && row == 2) {
+        show_picker("Daylight saving", {dst_names[0], dst_names[1], dst_names[2]}, system_preferences.dst,
+                    [this](int n) { save_dst(n); });
+        return true;
+    }
+    if (settings.page == Page::System && row == 3) {
         show_picker("Date format",
                     {date_format_names[0], date_format_names[1], date_format_names[2], date_format_names[3],
                      date_format_names[4]},
                     system_preferences.date_format, [this](int n) { save_date_format(n); });
         return true;
     }
-    if (settings.page == Page::System && row == 3) {
+    if (settings.page == Page::System && row == 4) {
         show_picker("Time format", {time_format_names[0], time_format_names[1]}, system_preferences.time_format,
                     [this](int n) { save_time_format(n); });
         return true;
@@ -175,10 +178,6 @@ bool App::open_setting_picker() {
         if (!hardware.sleep) return false;
         show_picker("Menu idle sleep", {idle_name(0), idle_name(1), idle_name(2), idle_name(3), idle_name(4)},
                     system_preferences.idle, [this](int n) { change_system(1, n - system_preferences.idle); });
-    } else if (settings.page == Page::Startup && row == 0) {
-        if (o.independent) return false;
-        show_picker("Boot into", {"Anbernic", "RG DS Core"}, device_status["boot_mode"] == "rgds",
-                    [this](int n) { change_startup(n ? 1 : -1, false); });
     } else if (settings.page == Page::Controls && !control_capture && row == 0) {
         // Without a game there is nothing to attach a profile to: the list holds only Global so A still answers.
         std::vector<std::string> profiles = {"Global"};

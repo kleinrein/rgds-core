@@ -8,11 +8,22 @@
 #include <map>
 #include <algorithm>
 #include <fstream>
+#include <string>
 #include <mutex>
 #include <chrono>
 #include <array>
 
 namespace rgds {
+// On the stock firmware emulators.py passes DSCore "--screen bottom": its upper window, on KMSDRM display 1, then
+// shows the DS bottom screen and the lower window the top one. RG DS OS needs no swap (its display 1 is the top
+// panel) and says so with RGDS_DSCORE_UNSWAPPED=1: each window shows its own screen.
+inline bool dscore_screens_swapped() {
+    static const bool swapped = [] {
+        const char* value = std::getenv("RGDS_DSCORE_UNSWAPPED");
+        return !(value && std::string(value) == "1");
+    }();
+    return swapped;
+}
 inline void* overlay_library() {
     static void* library = []() {
         const char* path = std::getenv("RGDS_SDL_LIBRARY");
@@ -144,7 +155,9 @@ class EmulatorOverlay {
         const char* name = window && title ? title(window) : nullptr;
         // DSCore's windows go by display: 0 is the top panel on Weston and on
         // KMSDRM, where RGDS swaps the windows' contents (--screen bottom).
-        if (name && std::strstr(name, "RG DS Core") && window && display) return display(window) == 1 ? 1 : 0;
+        // Without that swap (RG DS OS) each window shows what its title says.
+        if (name && std::strstr(name, "RG DS Core") && window && display)
+            return dscore_screens_swapped() ? (display(window) == 1 ? 1 : 0) : std::strstr(name, "Bottom") ? 1 : 0;
         return (window && display && display(window) == 1) ||
                        (name && (std::strstr(name, "Bottom") || std::strstr(name, "bottom")))
                    ? 1

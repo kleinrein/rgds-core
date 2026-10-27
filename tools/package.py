@@ -98,6 +98,9 @@ def component_abi(app, files, source_build=None):
         with path.open("rb") as stream:
             if stream.read(4) != b"\x7fELF":
                 continue
+        # 32-bit libraries for PortMaster's armhf ports (runtime/portmaster_compat.py), never loaded by RGDS itself
+        if name.startswith("runtime/portmaster_files/") and "/armhf/" in name:
+            continue
         metadata = inspect_elf(path, source=payload_source(name, source_build))
         if metadata["machine"] != "aarch64":
             raise ValueError("A device payload has the wrong architecture: " + name)

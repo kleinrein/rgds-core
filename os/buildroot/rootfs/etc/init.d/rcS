@@ -1,0 +1,68 @@
+#!/bin/sh
+# RG DS OS's whole boot: mount, find the card, make or mount the data partition, then init starts RG DS Core.
+# Panels, touch, buttons and the GPU are built into the kernel, so nothing is waited for but the data partition;
+# Wi-Fi and SSH come up in the background. Milestones go to /run/rgds/boot-times (and data/rgds/logs/boot.txt).
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev 2>/dev/null
+mkdir -p /dev/pts /dev/shm
+mount -t devpts devpts /dev/pts
+mount -t tmpfs -o mode=1777,nosuid,nodev tmpfs /dev/shm
+ln -sfn /proc/self/fd /dev/fd
+mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run
+mount -t tmpfs -o mode=1777,nosuid,nodev tmpfs /tmp
+mount -t tmpfs -o mode=0700 tmpfs /root
+mkdir -p /run/rgds /var/log
+mark() { read up rest < /proc/uptime; printf '%-28s %6.2f s\n' "$1" "$up" >> /run/rgds/boot-times; }
+mark "rcS: started"
+sysctl -q -p /etc/sysctl.d/rgds.conf
+hostname rgds
+# the device's own address is delivered through lo: down, file sharing's self-check (and anything else that
+# connects to the handheld from itself) times out
+ip link set lo up
+syslogd -O /run/rgds/messages -s 256 -b 1
+
+# the card we booted from: its partitions 2 and 3 are the root slots, 4 the data partition
+for u in /sys/class/block/*p2/uevent; do
+    grep -q '^PARTNAME=rgds-root-a$' "$u" 2>/dev/null || continue
+    p=${u%/uevent}; DISK=/dev/${p##*/}; DISK=${DISK%p2}
+done
+[ -n "$DISK" ] || DISK=/dev/mmcblk1
+echo "$DISK" > /run/rgds/disk
+SLOT=a; grep -q 'root=PARTLABEL=rgds-root-b' /proc/cmdline && SLOT=b
+echo "$SLOT" > /run/rgds/slot
+mark "rcS: slot $SLOT"
+if [ ! -b ${DISK}p4 ]; then
+    /usr/libexec/rgds/firstboot "$DISK"
+elif grep -q '^PARTNAME=rgds-new$' /sys/class/block/${DISK##*/}p4/uevent 2>/dev/null; then
+    /usr/libexec/rgds/firstboot --format "$DISK"
+fi
+data() { mount -t exfat -o noatime,uid=0,gid=0,fmask=0000,dmask=0000,iocharset=utf8,errors=remount-ro ${DISK}p4 /data 2>/dev/null; }
+data || { fsck.exfat -y ${DISK}p4 >/dev/null 2>&1; data; } || mount -o noatime ${DISK}p4 /data 2>/dev/null || {
+    mount -t tmpfs -o mode=0755 tmpfs /data
+    echo "${DISK}p4 could not be mounted" > /run/rgds/data-failed
+}
+mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ssh /data/roms/nds /data/roms/gba \
+    /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/sms /data/roms/psx /data/roms/n64 /data/roms/pico8 \
+    /data/rgds/bios
+mark "rcS: data ready"
+mount -t vfat -o ro,noatime ${DISK}p1 /boot 2>/dev/null
+# set up on a computer right after flashing, before the data partition exists: rgds-setup/ on the boot
+# partition (wifi.conf, authorized_keys) is copied in once
+[ -f /boot/rgds-setup/wifi.conf ] && [ ! -f /data/rgds/wifi.conf ] && cp /boot/rgds-setup/wifi.conf /data/rgds/wifi.conf
+[ -f /boot/rgds-setup/authorized_keys ] && [ ! -f /data/rgds/ssh/authorized_keys ] &&
+    cp /boot/rgds-setup/authorized_keys /data/rgds/ssh/authorized_keys
+
+# the amber LED follows the charger: blinking while charging, solid when full, off on battery (the power-supply
+# core's LED trigger; the LED keeps its state through sleep, dts-patches/0004)
+echo battery-charging-blink-full-solid > /sys/class/leds/amber:charging/trigger 2>/dev/null
+# the menu at full speed: the GPU's devfreq starts at its lowest clock (200 MHz), where a frame took 68 ms
+echo performance > /sys/class/devfreq/fde60000.gpu/governor 2>/dev/null
+
+(
+    hwclock -s 2>/dev/null
+    /usr/libexec/rgds/net up
+) &
+( sleep 20; cp /run/rgds/boot-times /data/rgds/logs/boot.txt; dmesg > /data/rgds/logs/dmesg.txt ) &
+exit 0

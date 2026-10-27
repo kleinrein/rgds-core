@@ -147,6 +147,7 @@ Desktop preview	Forhåndsvisning på computer
 Development build	Udviklingsversion
 Device address	Enhedsadresse
 Device information	Enhedsoplysninger
+Display	Skærm
 Display FPS	Skærmens FPS
 Done	Færdig
 Down	Ned
@@ -441,6 +442,7 @@ Swapped	Ombyttet
 System	System
 THEME ERROR - RETAINED CURRENT	TEMAFEJL - BEHOLDER AKTUELT
 THEME RELOADED	TEMA GENINDLÆST
+Turn the handheld off and on again	Sluk og tænd enheden igen
 TYPEFACE	SKRIFTTYPE
 Temporary game cache cleared. Saves and artwork are kept.	Midlertidig spilcache ryddet. Gemte spil og omslag bevares.
 The checkpoint did not finish saving.	Kontrolpunktet blev ikke gemt færdigt.
@@ -1130,3 +1132,10 @@ Hold still for a right click	Hold stille for højreklik
 Hold to exit	Hold for at afslutte
 Touch screen off	Berøringsskærm fra
 Touch screen is not available	Berøringsskærmen er ikke tilgængelig
+Daylight saving	Sommertid
+Automatic	Automatisk
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Sommertid følger din tidszone. Slå den til eller fra, hvis uret er en time forkert.
+GBA true colour	Ægte GBA-farver
+Faded GBA colours made rich, as the real screen showed them.	Blege GBA-farver gjort fyldige, som den rigtige skærm viste dem.
+GBA true screen	Ægte GBA-skærm
+The true GBA colours on its screen, with the gaps between its pixels.	De ægte GBA-farver på dens skærm, med mellemrummene mellem pixels.

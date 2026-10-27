@@ -83,9 +83,9 @@ class MenuMusicUITests(unittest.TestCase):
             self.assertEqual(r['music_volume'], 40)
 
     def test_sounds_and_music_page_toggles_music_and_saves_it(self):
-        # Sound -> Sounds & music (row 2) -> Menu music (row 2) -> A toggles it on.
+        # Sound -> Sounds & music (row 3) -> Menu music (row 2) -> A toggles it on.
         r = self.run_ui(
-            '100 key Down\n200 key Down\n300 key A\n500 key Down\n600 key Down\n700 key A\n',
+            '50 key Down\n100 key Down\n200 key Down\n300 key A\n500 key Down\n600 key Down\n700 key A\n',
             'menu_music=0\n', ('--settings', '--section', 'sound'),
             seconds=3
         )

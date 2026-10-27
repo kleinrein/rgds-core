@@ -92,7 +92,7 @@ void App::segment_row(SDL_Renderer* r, int y, int index, const std::string& titl
 }
 
 void App::appearance_row(SDL_Renderer* r, int y, int i) {
-    switch (i) {
+    switch (appearance_row_id(settings.page, i)) {
     case 0: segment_row(r, y, i, "Colour mode", preferences.dark); break;
     case 1: {
         Color swatch = theme.at("accent");
@@ -138,7 +138,7 @@ void App::show_sharing_picker() {
 }
 
 void App::choose_appearance(int choice) {
-    const int row = settings.focus;
+    const int row = appearance_row_id(settings.page, settings.focus);
     const bool step = choice != 2;
     switch (row) {
     case 0: preferences.dark = step ? choice == 1 : !preferences.dark; break;

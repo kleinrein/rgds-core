@@ -6,7 +6,7 @@ void App::refresh_network(Uint32 now) {
     connection_poll = now;
     auto probe = o.preview ? NetworkProbe{} : probe_network();
     bool details = settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::DeviceInfo ||
-                   settings.page == Page::Startup || settings.page == Page::Maintenance;
+                   settings.page == Page::Maintenance;
     if (!device_loaded || o.preview || details || probe.signature != network_signature ||
         now - device_info_at >= 300000) {
         start_worker("device.info");
@@ -43,36 +43,11 @@ void App::save_startup() {
 }
 
 void App::change_startup(int direction, bool toggle) {
-    if (settings.focus == 3) {
-        save_experience("quick_resume", experience["quick_resume"] != "1");
-        return;
-    }
-    if (o.independent) {
-        if (settings.focus == 2) confirm("reboot", Page::Startup);
-        else if (settings.focus == 1) {
-            startup_mode = "rgds";
-            startup_warning = toggle ? device_status["boot_warning"] != "1" : direction > 0;
-            save_startup();
-        }
-        return;
-    }
     if (worker > 0) return;
-    startup_mode = device_status["boot_mode"] == "rgds" ? "rgds" : "stock";
-    startup_warning = device_status["boot_warning"] == "1";
-    if (settings.focus == 2) {
-        confirm("reboot", Page::Startup);
-        return;
-    }
-    if (settings.focus == 1) {
-        startup_warning = toggle ? !startup_warning : direction > 0;
-        save_startup();
-        return;
-    }
-    auto previous = startup_mode;
-    startup_mode = toggle ? (startup_mode == "stock" ? "rgds" : "stock") : direction > 0 ? "rgds" : "stock";
-    if (startup_mode == previous) return;
-    if (startup_mode == "rgds") confirm("startup-rgds", Page::Startup);
-    else save_startup();
+    // Only the start screen is chosen here; the boot target stays as it is.
+    startup_mode = o.independent || device_status["boot_mode"] == "rgds" ? "rgds" : "stock";
+    startup_warning = toggle ? device_status["boot_warning"] != "1" : direction > 0;
+    save_startup();
 }
 
 void App::wifi_choose() {
