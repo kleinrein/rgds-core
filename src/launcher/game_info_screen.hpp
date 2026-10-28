@@ -33,10 +33,32 @@ void App::game_info_scroll_by(int delta) {
 void App::game_info_key(int code) {
     if (code == 3) {
         back_to(info_return);
-        if (info_return == Page::GameOptions) settings.focus = list_count() - 3;
+        if (info_return == Page::GameOptions) settings.focus = game_options_base() - 3;
     } else if (code == 8 || code == 9) game_info_scroll_by(code == 8 ? -50 : 50);
     else if (code == 0 || code == 13) game_info_step_picture(-1);
     else if (code == 1 || code == 14 || code == 2) game_info_step_picture(1);
+    dirty = true;
+}
+
+bool App::game_removable() const {
+    if (o.game_menu || model.games.empty() || model.selected >= model.games.size()) return false;
+    const Game& game = model.games[model.selected];
+    const std::string ext = lower(game.path.extension().string());
+    std::error_code ec;
+    return !game.demo && !is_tool_entry(game.path) && ext != ".cue" && ext != ".m3u" && ext != ".sh" &&
+           fs::is_regular_file(game.path, ec);
+}
+
+void App::remove_game() {
+    if (!game_removable()) return;
+    const Game game = model.games[model.selected];
+    std::error_code ec;
+    fs::remove(game.path, ec);
+    status = ec ? "Could not remove " + game.title : game.title + " removed";
+    settings.page = Page::Library;
+    rescan_games(false);
+    refresh_other_systems();
+    library_view(preferences.view);
     dirty = true;
 }
 

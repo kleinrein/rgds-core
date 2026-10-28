@@ -111,6 +111,9 @@ struct HudSpec {
     // The band is a second picture of its own (Super Mario Kart's course map
     // under the race): it fills the second screen instead of a card under it.
     bool strip_fill = false;
+    // Rows the game screen keeps while the band is off, from the far edge (0:
+    // all the rest). Super Mario Kart's race is rows 0-99, then a black gap.
+    int game_rows = 0;
 };
 
 // [party]: the team on the second screen (companion/party.hpp).

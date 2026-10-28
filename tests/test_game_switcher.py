@@ -167,11 +167,12 @@ class PortSwitcherTests(unittest.TestCase):
         self.root = Path(temp.name)
         self.clock = 100
         for patcher in (
-            patch('game_menu.time.monotonic', side_effect=lambda: self.clock),
-            patch('port_runner.time.monotonic', side_effect=lambda: self.clock),
+            patch('game_menu.time.monotonic',
+                  side_effect=lambda: self.clock), patch('port_runner.time.monotonic', side_effect=lambda: self.clock),
             patch('port_runner.time.sleep', side_effect=self.port_exits), patch('port_runner.mount_cgroups'),
-            patch.object(port_runner, 'LEAF', self.root / 'leaf'), patch('port_runner.mixer_holder', return_value=None),
-            patch.object(port_runner.KeyGrab, 'grab')
+            patch.object(port_runner, 'LEAF',
+                         self.root / 'leaf'), patch('port_runner.mixer_holder',
+                                                    return_value=None), patch.object(port_runner.KeyGrab, 'grab')
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -190,9 +191,10 @@ class PortSwitcherTests(unittest.TestCase):
         self.menu.companion = menus.Process()  # the helper, up before the port
         self.menu.attach(self.child)
         write_fields(
-            self.menu.folder / 'switcher-library.ini',
-            {f'game_{i}_rom': str(path)
-             for i, path in enumerate((self.port, self.manager, self.other, self.game))}
+            self.menu.folder / 'switcher-library.ini', {
+                f'game_{i}_rom': str(path)
+                for i, path in enumerate((self.port, self.manager, self.other, self.game))
+            }
         )
 
     def port_exits(self, _seconds):

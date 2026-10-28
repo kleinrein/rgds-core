@@ -107,9 +107,11 @@ def _sweep_model(pixels, ring):
     model = np.zeros((height, width, 3), np.float64)
     for channel in range(3):
         solution, *_ = np.linalg.lstsq(design, pixels[ys, xs, channel].astype(np.float64), rcond=None)
-        model[..., channel] = (solution[0] + solution[1] * grid_u[None, :] + solution[2] * grid_v[:, None]
-                               + solution[3] * grid_u[None, :] * grid_v[:, None]
-                               + solution[4] * grid_u[None, :] ** 2 + solution[5] * grid_v[:, None] ** 2)
+        model[..., channel] = (
+            solution[0] + solution[1] * grid_u[None, :] + solution[2] * grid_v[:, None] +
+            solution[3] * grid_u[None, :] * grid_v[:, None] + solution[4] * grid_u[None, :]**2 +
+            solution[5] * grid_v[:, None]**2
+        )
     return np.clip(model, 0, 255).astype(np.int16)
 
 
@@ -129,8 +131,10 @@ def _split_tones(samples):
     second = samples[lumas >= (low + high) / 2.0]
     if not len(first) or not len(second):
         return None
-    return (np.asarray([np.median(first[:, c]) for c in range(3)], np.int16),
-            np.asarray([np.median(second[:, c]) for c in range(3)], np.int16))
+    return (
+        np.asarray([np.median(first[:, c]) for c in range(3)],
+                   np.int16), np.asarray([np.median(second[:, c]) for c in range(3)], np.int16)
+    )
 
 
 def _checker_model(pixels, ring):
@@ -239,8 +243,9 @@ def matte(image, session, session2=None, alpha=None, alpha2=None):
     flat = image.convert('RGB')
     if max(flat.size) > WORK_SIZE:
         scale = WORK_SIZE / float(max(flat.size))
-        flat = flat.resize((max(1, int(flat.width * scale)), max(1, int(flat.height * scale))),
-                           Image.Resampling.LANCZOS)
+        flat = flat.resize(
+            (max(1, int(flat.width * scale)), max(1, int(flat.height * scale))), Image.Resampling.LANCZOS
+        )
     pixels = np.asarray(flat).astype(np.int16)
 
     model, kind = backdrop_model(flat)
@@ -293,7 +298,6 @@ def matte(image, session, session2=None, alpha=None, alpha2=None):
     # pixels and the studio is what they show.
     foreground &= ~(studio & ~trusted)
 
-
     # Debris: a scrap of studio floating beside the machine.
     labels, count, sizes = _components(foreground)
     if count:
@@ -314,8 +318,9 @@ def matte(image, session, session2=None, alpha=None, alpha2=None):
         _distance, indices = ndimage.distance_transform_edt(~core, return_indices=True)
         colours[rim] = colours[indices[0][rim], indices[1][rim]]
 
-    alpha_out = np.asarray(Image.fromarray((foreground * 255).astype('uint8'))
-                            .filter(ImageFilter.GaussianBlur(0.7)), dtype=np.float32) / 255.0
+    alpha_out = np.asarray(
+        Image.fromarray((foreground * 255).astype('uint8')).filter(ImageFilter.GaussianBlur(0.7)), dtype=np.float32
+    ) / 255.0
     out = Image.fromarray(colours.astype('uint8')).convert('RGBA')
     out.putalpha(Image.fromarray((alpha_out * 255).astype('uint8')))
     return out, kind
@@ -333,8 +338,9 @@ def fallback_matte(image):
     flat = image.convert('RGB')
     if max(flat.size) > WORK_SIZE:
         scale = WORK_SIZE / float(max(flat.size))
-        flat = flat.resize((max(1, int(flat.width * scale)), max(1, int(flat.height * scale))),
-                           Image.Resampling.LANCZOS)
+        flat = flat.resize(
+            (max(1, int(flat.width * scale)), max(1, int(flat.height * scale))), Image.Resampling.LANCZOS
+        )
     pixels = np.asarray(flat).astype(np.int16)
     model, _kind = backdrop_model(flat)
     deviation = np.abs(pixels - model).max(axis=2)
@@ -362,8 +368,9 @@ def fallback_matte(image):
         _distance, indices = ndimage.distance_transform_edt(~core, return_indices=True)
         colours[rim] = colours[indices[0][rim], indices[1][rim]]
 
-    alpha = np.asarray(Image.fromarray((foreground * 255).astype('uint8'))
-                       .filter(ImageFilter.GaussianBlur(0.7)), dtype=np.float32) / 255.0
+    alpha = np.asarray(
+        Image.fromarray((foreground * 255).astype('uint8')).filter(ImageFilter.GaussianBlur(0.7)), dtype=np.float32
+    ) / 255.0
     out = Image.fromarray(colours.astype('uint8')).convert('RGBA')
     out.putalpha(Image.fromarray((alpha * 255).astype('uint8')))
     return out

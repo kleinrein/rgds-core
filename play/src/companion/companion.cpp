@@ -20,11 +20,13 @@ Companion::Companion(Core& live, const Profile* profile, std::string title, std:
             std::string error;
             auto view = make_view(spec, error);
             if (view) {
+                view->set_hud(&hud_picture_);
                 views_.push_back(std::move(view));
                 auto alt = spec.values.find("alternative");
                 alternative_.push_back(alt != spec.values.end() && (alt->second == "yes" || alt->second == "true"));
             } else std::fprintf(stderr, "play: %s: %s\n", profile_->file.c_str(), error.c_str());
         }
+    hud_picture_.tint = [this](uint32_t v) { return shown_px(v); };
 }
 
 Companion::~Companion() {
@@ -148,6 +150,10 @@ void Companion::update_hud(Core& live) {
     for (int y = 0; y < p.h; ++y)
         std::copy_n(p.px + static_cast<size_t>(y) * p.stride, p.w, hud_image_.begin() + static_cast<size_t>(y) * p.w);
     hud_shown_ = true;
+    hud_picture_.px = hud_image_.data();
+    hud_picture_.w = hud_w_;
+    hud_picture_.h = hud_h_;
+    hud_picture_.key = hud_key_;
     moves_ = !h.to_game.empty() && (h.moves_when.empty() || h.moves_when.match(live));
     if (!moves_) return;
     if (h.backdrop_game && h.backdrop_layers && (backdrop_.empty() || frame_ >= backdrop_due_)) make_backdrop(live);
@@ -214,16 +220,35 @@ Picture Companion::compose_game(const Picture& game, bool whole) {
         // The band leaves the picture only where it spans it, at its top or bottom edge.
         const Rect& s = profile_->hud.strip;
         if (whole || !hud_on_ || s.w != game.w || s.h >= game.h) return game;
-        if (s.y == 0) return {game.px + static_cast<size_t>(s.h) * game.stride, game.w, game.h - s.h, game.stride};
-        if (s.y + s.h == game.h) return {game.px, game.w, game.h - s.h, game.stride};
+        // What is left, less a gap between the two pictures (game_rows).
+        const int rest = profile_->hud.game_rows > 0 ? std::min(profile_->hud.game_rows, game.h - s.h) : game.h - s.h;
+        if (s.y == 0)
+            return {game.px + static_cast<size_t>(game.h - rest) * game.stride, game.w, rest, game.stride};
+        if (s.y + s.h == game.h) return {game.px, game.w, rest, game.stride};
         return game;
     }
     // Only while split: otherwise the game draws its own HUD, item box and place included.
-    if (!hud_on_ || !moves_ || hud_image_.empty() || game.w != hud_w_ || game.h != hud_h_) return game;
+    if (!hud_on_ || hud_image_.empty() || game.w != hud_w_ || game.h != hud_h_) return game;
+    // A board that lays the HUD out itself claims its boxes; the rest of the HUD layer stays here.
+    View* board = hud_covered() ? shown_view() : nullptr;
+    if (!board && !moves_) return game;
     composed_.resize(static_cast<size_t>(game.w) * game.h);
     for (int y = 0; y < game.h; ++y)
         std::copy_n(game.px + static_cast<size_t>(y) * game.stride, game.w,
                     composed_.begin() + static_cast<size_t>(y) * game.w);
+    if (board) {
+        const std::vector<Rect> claims = board->hud_claims();
+        for (int y = 0; y < game.h; ++y)
+            for (int x = 0; x < game.w; ++x) {
+                const uint32_t v = hud_image_[static_cast<size_t>(y) * hud_w_ + x];
+                if ((v & 0xFFFFFF) == hud_key_) continue;
+                bool claimed = false;
+                for (const auto& c : claims)
+                    if (x >= c.x && y >= c.y && x < c.x + c.w && y < c.y + c.h) claimed = true;
+                if (!claimed) composed_[static_cast<size_t>(y) * game.w + x] = v;
+            }
+        return {composed_.data(), game.w, game.h, game.w};
+    }
     for (const auto& m : profile_->hud.to_game)
         for (int y = 0; y < m.from.h; ++y)
             for (int x = 0; x < m.from.w; ++x) {
@@ -236,6 +261,62 @@ Picture Companion::compose_game(const Picture& game, bool whole) {
             }
     return {composed_.data(), game.w, game.h, game.w};
 }
+
+namespace {
+
+// A picture at a size that isn't a whole multiple, the way the game screen's
+// sharp fit does it: each pixel grown to the next whole size, then smoothed
+// down to tw x th, so edges stay crisp and columns stay even. With `keyed`,
+// pixels of the key colour are see-through, and edges blend into what is under.
+void sharp_blit(Canvas& out, const uint32_t* px, int w, int h, int ox, int oy, int tw, int th, bool keyed,
+                uint32_t key) {
+    if (tw <= 0 || th <= 0) return;
+    const int k = std::max(1, int(std::max(double(tw) / w, double(th) / h)) + 1), bw = w * k, bh = h * k;
+    struct Tap {
+        int at, next, w; // the two source pixels, and how much of the second (of 256)
+    };
+    auto taps = [k](int out_n, int big_n) {
+        std::vector<Tap> t(static_cast<size_t>(out_n));
+        for (int i = 0; i < out_n; ++i) {
+            const double f = (i + 0.5) * big_n / out_n - 0.5;
+            const int b0 = std::clamp(int(f), 0, big_n - 1), b1 = std::min(b0 + 1, big_n - 1);
+            t[size_t(i)] = {b0 / k, b1 / k, int(std::clamp(f - b0, 0.0, 1.0) * 256 + 0.5)};
+        }
+        return t;
+    };
+    const std::vector<Tap> cols = taps(tw, bw), rows = taps(th, bh);
+    uint32_t* dst = out.data();
+    for (int y = 0; y < th; ++y) {
+        if (oy + y < 0 || oy + y >= out.h()) continue;
+        const Tap& r = rows[size_t(y)];
+        const uint32_t* a = px + size_t(r.at) * size_t(w);
+        const uint32_t* c = px + size_t(r.next) * size_t(w);
+        uint32_t* line = dst + size_t(oy + y) * size_t(out.w());
+        for (int x = 0; x < tw; ++x) {
+            if (ox + x < 0 || ox + x >= out.w()) continue;
+            const Tap& t = cols[size_t(x)];
+            const uint32_t p[4] = {a[t.at], a[t.next], c[t.at], c[t.next]};
+            const int wt[4] = {(256 - t.w) * (256 - r.w), t.w * (256 - r.w), (256 - t.w) * r.w, t.w * r.w};
+            uint32_t sum[3] = {0, 0, 0}, weight = 0;
+            for (int i = 0; i < 4; ++i) {
+                if (keyed && (p[i] & 0xFFFFFF) == key) continue;
+                weight += uint32_t(wt[i]);
+                for (int ch = 0; ch < 3; ++ch) sum[ch] += ((p[i] >> (8 * ch)) & 255) * uint32_t(wt[i]);
+            }
+            if (!weight) continue;
+            uint32_t& d = line[ox + x];
+            uint32_t v = 0xFF000000u;
+            for (int ch = 0; ch < 3; ++ch) {
+                // Seen through as much as the key colour made up of this pixel.
+                const uint32_t src = sum[ch] / weight, under = (d >> (8 * ch)) & 255;
+                v |= ((src * weight + under * (65536 - weight)) >> 16) << (8 * ch);
+            }
+            d = v;
+        }
+    }
+}
+
+} // namespace
 
 bool Companion::render_hud(Canvas& out, const Look& look) const {
     if (!hud_shown_ || hud_image_.empty()) return false;
@@ -298,17 +379,14 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
         }
         return true;
     }
-    int scale = std::max(1, std::min(out.w() / hud_w_, out.h() / hud_h_));
-    int x0 = (out.w() - hud_w_ * scale) / 2, y0 = (out.h() - hud_h_ * scale) / 2;
+    // The whole HUD as large as the panel's width takes it (2.67x for a GBA screen on 640x480).
+    const double fit = std::min(double(out.w()) / hud_w_, double(out.h()) / hud_h_);
+    const int tw = std::min(out.w(), int(hud_w_ * fit + 0.5)), th = std::min(out.h(), int(hud_h_ * fit + 0.5));
+    int x0 = (out.w() - tw) / 2, y0 = (out.h() - th) / 2;
     // Clear of the dock's corner: up a little when there is room above.
-    if (look.reserve_w && x0 + hud_w_ * scale > out.w() - look.reserve_w &&
-        y0 + hud_h_ * scale > out.h() - look.reserve_h)
-        y0 = std::max(0, out.h() - look.reserve_h - hud_h_ * scale);
-    if (!moves_) {
-        out.blit_keyed(hud_image_.data(), hud_w_, hud_h_, x0, y0, scale, hud_key_);
-        return true;
-    }
-    out.blit_keyed(rest.data(), hud_w_, hud_h_, x0, y0, scale, hud_key_);
+    if (look.reserve_w && x0 + tw > out.w() - look.reserve_w && y0 + th > out.h() - look.reserve_h)
+        y0 = std::max(0, out.h() - look.reserve_h - th);
+    sharp_blit(out, moves_ ? rest.data() : hud_image_.data(), hud_w_, hud_h_, x0, y0, tw, th, true, hud_key_);
     return true;
 }
 
@@ -316,6 +394,7 @@ void Companion::after_frame(Core& live) {
     ++frame_;
     live_ = &live;
     if (profile_ && profile_->has_hud) update_hud(live);
+    if (!hud_shown_) hud_picture_.px = nullptr;
     if (party_ && frame_ % 15 == 0) {
         party_->read(live);
         party_shown_ = !party_->empty() && (profile_->party.on.empty() || profile_->party.on.match(live));
@@ -394,6 +473,12 @@ View* Companion::alternative_view() const {
     return nullptr;
 }
 
+bool Companion::hud_covered() const {
+    // A board laid out from the HUD's pieces and the game's memory, in place of the HUD itself.
+    View* v = shown_view();
+    return !has_current_ && v && v->covers_hud();
+}
+
 bool Companion::has_switch() const { return alternative_view() && (has_current_ || shown_view() || party_shown_); }
 
 bool Companion::showing_alternative() const {
@@ -430,7 +515,7 @@ uint64_t Companion::visual_key() const {
 
 uint64_t Companion::screen_key() const {
     if (strip_mode()) return hud_shown_ ? content_key() ^ (strip_hash_ * 31) ^ 0x2000000000000000ull : content_key();
-    if (hud_shown_) return (frame_ << 1) | 0x8000000000000001ull; // the HUD is live: every frame
+    if (hud_shown_ && !hud_covered()) return (frame_ << 1) | 0x8000000000000001ull; // the HUD is live: every frame
     return content_key();
 }
 
@@ -504,28 +589,32 @@ void dual_mark(Canvas& out, int x, int y, int unit, Rgb colour, Rgb ground) {
     }
 }
 
-void title_card(Canvas& out, const Look& look, const Font& font, const std::string& title, const std::string& system,
-                const std::string& note, bool dual) {
-    // The launcher's DSi note: a card with an accent rim in the middle of the
-    // touch screen's grid, the system as a chip, the game's name, and what
-    // will come here.
-    backdrop(out, look);
-    const int x = kit::margin, w = out.w() - kit::margin * 2, h = 220, y = (out.h() - h) / 2;
+void title_card(Canvas& out, const Look& look, const Font& font, const Dock& dock, const std::string& title,
+                const std::string& system, const std::string& note, bool dual) {
+    // The launcher's DSi note over the game's faded box art: a card with an
+    // accent rim, the box art (else the system's picture), the system with
+    // its icon, the game's name, and what will come here.
+    dock.ground(out, look);
+    const int x = kit::margin, w = out.w() - kit::margin * 2, h = note.empty() ? 270 : 310, y = (out.h() - h) / 2;
     soft_round(out, x, y + 3, w, h, 18, look.shadow(), look.dark ? 60 : 20);
     out.rounded_rect(x, y, w, h, 18, look.accent);
     out.rounded_rect(x + 2, y + 2, w - 4, h - 4, 16, look.panel);
+    const int cx = out.w() / 2, art = 128;
+    dock.art(out, look, {cx - art / 2, y + 22, art, art});
     if (!font.loaded()) return;
-    const int cx = out.w() / 2;
-    const std::string chip_text = system;
-    const int cw = font.measure(chip_text, kit::small) + 24;
-    chip(out, look, font, cx - cw / 2, y + 48, chip_text, true);
+    // The system: its icon (when the box art took the picture's place), then its name.
+    const std::string name = font.fit(system, kit::small, w - 64 - 36);
+    const int icon = dock.has_cover() ? 28 : 0, gap = icon ? 8 : 0, sw = icon + gap + font.measure(name, kit::small);
+    const int sy = y + 22 + art + 26;
+    if (icon) dock.system_icon(out, look, cx - sw / 2, sy - icon / 2, icon);
+    font.draw(out, cx - sw / 2 + icon + gap, font.centred(kit::small, sy), name, kit::small, look.muted);
     const std::string t = font.fit(title, kit::large, w - 64);
-    font.draw(out, cx - font.measure(t, kit::large) / 2, y + 116, t, kit::large, look.ink);
+    font.draw(out, cx - font.measure(t, kit::large) / 2, font.centred(kit::large, sy + 40), t, kit::large, look.ink);
     if (!note.empty()) {
         // A game with a second screen of its own: the mark, then what will come here.
         const int unit = dual ? 10 : 0, mark = dual ? unit * 8 / 5 + 10 : 0;
         const std::string n = font.fit(note, kit::body, w - 64 - mark);
-        const int nx = cx - (font.measure(n, kit::body) + mark) / 2, base = y + 172;
+        const int nx = cx - (font.measure(n, kit::body) + mark) / 2, base = font.centred(kit::body, sy + 84);
         if (dual) dual_mark(out, nx, base - font.ascent(kit::body) / 2 - unit * 11 / 10, unit, look.muted, look.panel);
         font.draw(out, nx + mark, base, n, kit::body, look.muted);
     }
@@ -584,7 +673,7 @@ void Companion::render_layers(Canvas& out, const Look& look, const Font& font) c
         else render_content(out, look, font);
         return;
     }
-    if (render_hud(out, look)) return;
+    if (!hud_covered() && render_hud(out, look)) return;
     render_content(out, look, font);
 }
 
@@ -593,13 +682,19 @@ void Companion::render_strip_filled(Canvas& out, const Look& look) const {
     // its own ground: the second picture the game draws under the first.
     std::map<uint32_t, int> seen;
     for (int x = 0; x < hud_w_; ++x) ++seen[hud_image_[static_cast<size_t>(hud_h_ - 1) * hud_w_ + x] & 0xFFFFFF];
-    const uint32_t ground = std::max_element(seen.begin(), seen.end(), [](auto& a, auto& b) {
-                                return a.second < b.second;
-                            })->first;
+    const uint32_t ground =
+        std::max_element(seen.begin(), seen.end(), [](auto& a, auto& b) { return a.second < b.second; })->first;
     out.fill(Rgb::from_px(shown_px(ground | 0xFF000000u)));
-    const int scale = std::max(1, std::min(out.w() / hud_w_, out.h() / hud_h_));
-    const int x = (out.w() - hud_w_ * scale) / 2, y = (out.h() - hud_h_ * scale) / 2;
-    out.blit(shown(hud_image_.data(), hud_w_, hud_h_, tint_a_), hud_w_, hud_h_, x, y, scale);
+    const uint32_t* px = shown(hud_image_.data(), hud_w_, hud_h_, tint_a_);
+    const double fit = std::min(double(out.w()) / hud_w_, double(out.h()) / hud_h_);
+    const int whole = std::max(1, int(fit));
+    if (fit - whole < 0.05) {
+        out.blit(px, hud_w_, hud_h_, (out.w() - hud_w_ * whole) / 2, (out.h() - hud_h_ * whole) / 2, whole);
+        return;
+    }
+    // As large as the panel takes it, like the game screen's sharp fit.
+    const int tw = std::min(out.w(), int(hud_w_ * fit + 0.5)), th = std::min(out.h(), int(hud_h_ * fit + 0.5));
+    sharp_blit(out, px, hud_w_, hud_h_, (out.w() - tw) / 2, (out.h() - th) / 2, tw, th, false, 0);
     (void)look;
 }
 
@@ -654,7 +749,7 @@ void Companion::render_content(Canvas& out, const Look& look, const Font& font) 
         else if (party_) note = "Your team appears once it's loaded";
         else if (!views_.empty()) note = "The map draws itself as you explore";
         else if (profile_ && profile_->has_hud) note = "The status bar moves here while you play";
-        title_card(out, look, font, title_, system_name_, note, profile_ != nullptr);
+        title_card(out, look, font, dock_, title_, system_name_, note, profile_ != nullptr);
         return;
     }
     // The map's own empty colour fills the panel, so it reads as the game's

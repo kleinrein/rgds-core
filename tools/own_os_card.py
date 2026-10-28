@@ -74,8 +74,10 @@ def cmd_flash(args):
     if not image.is_file():
         sys.exit(f"{image}: no such image")
     info, parts, problems, stock = describe(disk)
-    print(f"/dev/{disk}: {info.get('MediaName', '?')}, {info.get('TotalSize', 0) / 1000**3:.1f} GB, "
-          f"{len(parts)} partitions ({', '.join(p.get('VolumeName') or p.get('Content', '?') for p in parts) or 'none'})")
+    print(
+        f"/dev/{disk}: {info.get('MediaName', '?')}, {info.get('TotalSize', 0) / 1000**3:.1f} GB, "
+        f"{len(parts)} partitions ({', '.join(p.get('VolumeName') or p.get('Content', '?') for p in parts) or 'none'})"
+    )
     if stock and args.erase_stock_looking:
         print("Erasing anyway (--erase-stock-looking): " + "; ".join(stock))
     else:

@@ -131,12 +131,6 @@ void App::action(int code) {
         }
         return;
     }
-    if (settings.page == Page::Sound && (code == 8 || code == 9)) {
-        const int next = settings.focus + (code == 8 ? -1 : 1);
-        if (next >= 0 && next <= 4) settings.focus = next;
-        dirty = true;
-        return;
-    }
     if (settings.page == Page::Controls) {
         controls_action(code);
         return;
@@ -324,6 +318,8 @@ void App::action(int code) {
             if (accepted) {
                 if (confirmation == "return-stock") quit = true;
                 else if (confirmation == "startup-rgds") save_startup();
+                else if (confirmation == "bt-forget") bluetooth_forget();
+                else if (confirmation == "remove-game") remove_game();
                 else {
                     start_worker("device." + confirmation);
                     if (confirmation == "poweroff" || confirmation == "reboot") begin_shutdown(confirmation);
@@ -334,13 +330,15 @@ void App::action(int code) {
         return;
     }
     if ((code == 8 || code == 9) &&
-        (settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::System ||
-         settings.page == Page::Maintenance || settings.page == Page::GameOptions)) {
-        int maximum = settings.page == Page::System ? 8
-                      : (settings.page == Page::GameOptions || settings.page == Page::Maintenance ||
-                         settings.page == Page::Network)
-                          ? list_count() - 1
-                          : std::max(0, std::atoi(device_status["network_count"].c_str()) - 1);
+        (settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
+         settings.page == Page::Homebrew || settings.page == Page::System || settings.page == Page::Maintenance ||
+         settings.page == Page::GameOptions)) {
+        int maximum =
+            settings.page == Page::System ? list_count() - 1
+            : (settings.page == Page::GameOptions || settings.page == Page::Maintenance ||
+               settings.page == Page::Network || settings.page == Page::Bluetooth || settings.page == Page::Homebrew)
+                ? list_count() - 1
+                : std::max(0, std::atoi(device_status["network_count"].c_str()) - 1);
         settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, maximum);
         dirty = true;
         return;
@@ -361,21 +359,32 @@ void App::action(int code) {
             updates_return = Page::Settings;
             view_route = ViewTravel::Back;
         } else if (code == 3) {
-            bool game = settings.page == Page::GameOptions;
+            bool game = settings.page == Page::GameOptions, shelf = settings.page == Page::Homebrew;
             settings.back();
             if (settings.page == Page::System) settings.focus = std::min(settings.focus, list_count() - 1);
-            if (game) library_view(preferences.view);
+            if (shelf) {
+                // back on the Homebrew tile; what was downloaded is in its system already
+                rescan_games(false);
+                refresh_other_systems();
+                open_systems();
+                const auto at = std::find(listed_systems.begin(), listed_systems.end(), "homebrew");
+                if (at != listed_systems.end()) {
+                    systems_selected = size_t(at - listed_systems.begin());
+                    carousel.reset(systems_selected);
+                }
+            } else if (game) library_view(preferences.view);
         } else if (code == 8 || code == 9) {
             settings.move(code == 8 ? -1 : 1);
             if (settings.page == Page::Scraper) settings.focus = std::min(settings.focus, list_count() - 1);
         } else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions) {
             if (code == 0 || code == 1 || code == 2) choose_appearance(code);
         } else if (settings.page == Page::Power) {
-            if (settings.focus < 4 && (code == 0 || code == 1 || code == 2))
-                change_system(settings.focus, code == 0 ? -1 : 1, code == 2);
-            else if (settings.focus == 4 && code == 2) sleep_now();
-            else if (settings.focus == 5 && code == 2 && hardware.poweroff) confirm("poweroff", Page::Power);
-            else if (settings.focus == 6 && code == 2 && hardware.poweroff) confirm("reboot", Page::Power);
+            const int id = power_rows[size_t(std::clamp(settings.focus, 0, int(power_rows.size()) - 1))];
+            if ((id < 4 || id == 7 || id == 8) && (code == 0 || code == 1 || code == 2))
+                change_system(id, code == 0 ? -1 : 1, code == 2);
+            else if (id == 4 && code == 2) sleep_now();
+            else if (id == 5 && code == 2 && hardware.poweroff) confirm("poweroff", Page::Power);
+            else if (id == 6 && code == 2 && hardware.poweroff) confirm("reboot", Page::Power);
         } else if (settings.page == Page::Display) {
             if (code == 0 || code == 1) change_system(4, code == 0 ? -1 : 1);
             else if (code == 2) {
@@ -433,11 +442,14 @@ void App::action(int code) {
                 remember_appearance();
             }
         } else if (settings.page == Page::GameOptions) {
-            if (other_system_selected() && (settings.focus == 1 || settings.focus == list_count() - 1)) {
+            const int base = game_options_base();
+            if (settings.focus == base) {
+                if (code == 2 && game_removable()) confirm("remove-game", Page::GameOptions);
+            } else if (other_system_selected() && (settings.focus == 1 || settings.focus == base - 1)) {
             } else if (code == 0 || code == 1 || code == 2) {
-                if (settings.focus == list_count() - 3) open_game_info(Page::GameOptions);
-                else if (settings.focus == list_count() - 2) open_gallery();
-                else if (settings.focus == list_count() - 1) open_ds_controls();
+                if (settings.focus == base - 3) open_game_info(Page::GameOptions);
+                else if (settings.focus == base - 2) open_gallery();
+                else if (settings.focus == base - 1) open_ds_controls();
                 else if (settings.focus == 4) open_game_artwork();
                 else if (settings.focus == 3) open_controls(true, Page::GameOptions);
                 else if (settings.focus == 2) open_shader_picker(true);
@@ -456,14 +468,8 @@ void App::action(int code) {
                 } else if (settings.focus == 6) {
                     open_updates(Page::System);
                 } else if (settings.focus == 7 && !o.rgds_os) confirm("return-stock", Page::System);
-                else if (settings.focus == (o.rgds_os ? 7 : 8)) {
-                    settings.page = Page::Startup;
-                    settings.focus = 0;
-                    start_worker("device.startup-info");
-                }
+                else if (settings.focus == (o.rgds_os ? 7 : 8)) change_startup(0, true);
             }
-        } else if (settings.page == Page::Startup) {
-            if (code == 0 || code == 1 || code == 2) change_startup(code == 0 ? -1 : 1, code == 2);
         } else if (settings.page == Page::Network) {
             if (code == 2) {
                 if (settings.focus == 0) {
@@ -473,9 +479,22 @@ void App::action(int code) {
                     settings.page = Page::Wifi;
                     settings.focus = 0;
                     start_worker("device.scan");
-                } else if (settings.focus == 2) start_worker("device.info");
-                else if (settings.focus == 3) show_sharing_picker();
-                else if (settings.focus == 4 && device_status["sharing"] == "1") {
+                } else if (settings.focus == 2) {
+                    if (device_status["bt_supported"] == "0")
+                        service_notice = "Bluetooth is not available on this handheld.";
+                    else if (device_status["bt"] == "1") confirm("bt-off", Page::Network);
+                    else start_worker("device.bt-on");
+                } else if (settings.focus == 3) {
+                    if (device_status["bt_supported"] == "0")
+                        service_notice = "Bluetooth is not available on this handheld.";
+                    else {
+                        settings.page = Page::Bluetooth;
+                        settings.focus = 0;
+                        start_worker("device.bt-scan");
+                    }
+                } else if (settings.focus == 4) start_worker("device.info");
+                else if (settings.focus == 5) show_sharing_picker();
+                else if (settings.focus == 6 && device_status["sharing"] == "1") {
                     auto login = fields(device_status["sharing_login"]);
                     if (device_status["sharing_mode"] == "open")
                         show_detail(
@@ -498,6 +517,17 @@ void App::action(int code) {
         } else if (settings.page == Page::Wifi) {
             if (code == 2) wifi_choose();
             else if (code == 11) start_worker("device.scan");
+        } else if (settings.page == Page::Homebrew) {
+            if (code == 2) homebrew_choose();
+            else if (code == 13 || code == 14) homebrew_step(code == 13 ? -1 : 1);
+        } else if (settings.page == Page::Bluetooth) {
+            if (code == 2) bluetooth_choose();
+            else if (code == 11) start_worker("device.bt-scan");
+            else if (code == 12 && list_count() > 0 && worker <= 0) {
+                bluetooth_address = device_status["bt_" + std::to_string(settings.focus) + "_address"];
+                if (device_status["bt_" + std::to_string(settings.focus) + "_paired"] == "1")
+                    confirm("bt-forget", Page::Bluetooth);
+            }
         } else if (settings.page == Page::Maintenance) {
             if (code == 12) update_now();
             else if (code == 2) {
@@ -540,7 +570,10 @@ void App::action(int code) {
             } else if (settings.page == Page::Settings && settings.section == 6) open_controls(false);
             else if (settings.page == Page::Settings && settings.section == 9) open_updates(Page::Settings);
             else if (settings.page == Page::DeviceInfo) open_device_detail();
-            else settings.enter();
+            else {
+                settings.enter();
+                if (settings.page == Page::System) start_worker("device.startup-info");
+            }
         }
         dirty = true;
         return;
@@ -655,10 +688,11 @@ void App::touch(int x, int y) {
         controls_action(3);
         return;
     }
-    if (list_count() > 0 || settings.page == Page::Wifi || settings.page == Page::Cheats) {
+    if (list_count() > 0 || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
+        settings.page == Page::Homebrew || settings.page == Page::Cheats) {
         sync_list();
-        if (settings.page == Page::Wifi && x >= 476 && y >= 24 && y <= 66) {
-            start_worker("device.scan");
+        if ((settings.page == Page::Wifi || settings.page == Page::Bluetooth) && x >= 476 && y >= 24 && y <= 66) {
+            start_worker(settings.page == Page::Wifi ? "device.scan" : "device.bt-scan");
             return;
         }
         if (settings.page == Page::Cheats && cheat_header_hit(x, y)) {
@@ -680,7 +714,11 @@ void App::touch(int x, int y) {
             if (local % list_stride < 66 && index < list_count()) {
                 if (settings.page == Page::Settings) settings.section = section_order[size_t(index)];
                 else settings.focus = index;
-                if (settings.page == Page::EmulatorOptions) {
+                if (settings.page == Page::Sound && index == 0) {
+                    volume_drag = true;
+                    change_volume(
+                        std::clamp(int(std::round((x - sound_track_x) * 20.0 / sound_track_width)) * 5, 0, 100));
+                } else if (settings.page == Page::EmulatorOptions) {
                     if (!open_setting_picker()) change_emulator_option(x < 420 ? -1 : 1);
                 } else if (settings.page == Page::Appearance && (index == 0 || index == 3) &&
                            x >= segment_bounds(index, 0).x - 4)
@@ -772,19 +810,6 @@ void App::touch(int x, int y) {
             brightness_drag = true;
             int value = std::clamp(5 + int(std::round((x - 56) * 19.0 / 528)) * 5, 5, 100);
             change_system(4, value / 5 - system_preferences.brightness / 5);
-        } else if (settings.page == Page::Sound) {
-            if (x >= 44 && x <= 596 && y >= slider_band().first && y <= slider_band().second) {
-                settings.focus = 0;
-                volume_drag = true;
-                change_volume(std::clamp(int(std::round((x - 56) * 20.0 / 528)) * 5, 0, 100));
-            } else {
-                for (int i = 1; i < 5; i++)
-                    if (x >= 28 && x < 28 + sound_row_width && y >= sound_row_y(i) &&
-                        y < sound_row_y(i) + sound_row_height) {
-                        settings.focus = i;
-                        action(2);
-                    }
-            }
         } else if (settings.page == Page::Confirm && y >= 365 && y <= 413 && x >= 28 && x <= 612) {
             settings.focus = x >= 332 ? 1 : 0;
             action(2);
@@ -808,6 +833,7 @@ void App::touch(int x, int y) {
         else if (inside(header.search)) quick_search();
         else if (discovery_active() && model.games.empty() && point_in({80, 326, 232, 48}, x, y)) quick_search();
         else if (discovery_active() && model.games.empty() && point_in({328, 326, 232, 48}, x, y)) clear_discovery();
+        else if (favourites_empty() && point_in({160, 326, 320, 48}, x, y)) browse_from_favourites();
     }
 }
 
@@ -1005,8 +1031,7 @@ void App::pointer_begin(int x, int y) {
     }
     if (!probe && settings.page == Page::ShaderPicker && shader_pointer_down(x, y)) return;
     if (!probe && settings.page != Page::Library) {
-        bool slider = !picker_open && (settings.page == Page::Display || settings.page == Page::Sound) && x >= 44 &&
-                      x <= 596 && y >= slider_band().first && y <= slider_band().second;
+        bool slider = !picker_open && slider_hit(x, y);
         bool rail = !picker_open && list_count() > 0 && x >= 596 && y >= list_top && y < list_top + list_height;
         if (!slider && !rail) {
             tap_pending = true;
@@ -1139,7 +1164,10 @@ void App::pointer_move(int x, int y) {
         dirty = true;
     } else if (brightness_drag || volume_drag) {
         const int before = volume_drag ? hardware.volume_percent : system_preferences.brightness;
-        touch(std::clamp(x, 44, 596), std::clamp(y, slider_band().first, slider_band().second));
+        if (volume_drag)
+            change_volume(
+                std::clamp(int(std::round((x - sound_track_x) * 20.0 / sound_track_width)) * 5, 0, 100));
+        else touch(std::clamp(x, 44, 596), std::clamp(y, slider_band().first, slider_band().second));
         if ((volume_drag ? hardware.volume_percent : system_preferences.brightness) != before) haptic_detent();
     } else if (probe) {
         touch_x = x;
@@ -1589,12 +1617,12 @@ void App::handle_input(const SDL_Event& e) {
             break;
         case SDLK_LEFTBRACKET:
             if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
-                (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Homebrew || (settings.page == Page::Library && !home_menu))
                 action(13);
             break;
         case SDLK_RIGHTBRACKET:
             if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
-                (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Homebrew || (settings.page == Page::Library && !home_menu))
                 action(14);
             break;
         case SDLK_q:
@@ -1615,7 +1643,7 @@ void App::handle_input(const SDL_Event& e) {
         }
 
         // The shoulders step shader families and the cheats tabs; elsewhere they stand in for Left/Right.
-        if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats) &&
+        if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats || settings.page == Page::Homebrew) &&
             (e.jbutton.button == 4 || e.jbutton.button == 5)) {
             action(e.jbutton.button == 4 ? 13 : 14);
             return;
@@ -1635,7 +1663,8 @@ void App::handle_input(const SDL_Event& e) {
         else if (e.jbutton.button == 3) action(11);
         else if (e.jbutton.button == 2 && (settings.page == Page::Library || settings.page == Page::ShaderPicker ||
                                            settings.page == Page::Keyboard || settings.page == Page::SaveGallery ||
-                                           settings.page == Page::Maintenance))
+                                           settings.page == Page::Maintenance || settings.page == Page::Bluetooth ||
+                                           settings.page == Page::Homebrew))
             action(12);
     } else if (e.type == SDL_JOYHATMOTION) {
         hold.release(2000);

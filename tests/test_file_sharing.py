@@ -150,8 +150,9 @@ class FileSharingTests(unittest.TestCase):
             folder.mkdir(parents=True)
         with self.sharing.locked():
             _config, shares = self.sharing.configure(
-                '192.168.1.42', [ds], 'root', systems=[('gba', gba), ('gba', self.root / 'missing'), ('gbc', gbc),
-                                                        ('gb', self.root / 'Roms/GB')]
+                '192.168.1.42', [ds],
+                'root',
+                systems=[('gba', gba), ('gba', self.root / 'missing'), ('gbc', gbc), ('gb', self.root / 'Roms/GB')]
             )
             content = _config.read_text()
         self.assertEqual(shares, 'DS, GBA, GBC, Imports, Exports')
@@ -295,14 +296,16 @@ class ConnectivityUiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary)
             script = folder / 'input.txt'
-            # Row 4 opens Off / Open on this Wi-Fi / Password protected.
+            # Row 6 (after Wi-Fi, Available networks, Bluetooth, Bluetooth devices and Refresh) opens
+            # Off / Open on this Wi-Fi / Password protected.
             choices = (
                 (True, 'password', '800 key Down\n850 key Down\n'), (False, '', '800 key Up\n850 key Up\n'),
                 (True, 'open', '800 key Down\n')
             )
             for enabled, mode, choose in choices:
                 script.write_text(
-                    '600 key Down\n650 key Down\n700 key Down\n750 key Return\n' + choose + '950 key Return\n'
+                    '500 key Down\n550 key Down\n600 key Down\n650 key Down\n700 key Down\n750 key Return\n' + choose +
+                    '950 key Return\n'
                 )
                 result = subprocess.run(
                     [
@@ -324,13 +327,15 @@ class ConnectivityUiTests(unittest.TestCase):
                 self.assertEqual(state['ip'], '192.168.1.42')
                 self.assertEqual((folder / 'device/sharing/login.ini').exists(), enabled)
 
-    def test_touch_toggle_and_keyboard_details_show_the_login(self):
+    def test_toggle_and_keyboard_details_show_the_login(self):
+        # Sharing sits below the fold since the Bluetooth rows came in: reach it with the keys, then as before
         import json
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary)
             script = folder / 'input.txt'
             script.write_text(
-                '600 click 280 374\n700 key Down\n750 key Down\n800 key Return\n1100 key Down\n1200 key Return\n'
+                '400 key Down\n450 key Down\n500 key Down\n550 key Down\n600 key Down\n650 key Return\n700 key Down\n'
+                '750 key Down\n800 key Return\n1100 key Down\n1200 key Return\n'
             )
             report = folder / 'report.json'
             result = subprocess.run(

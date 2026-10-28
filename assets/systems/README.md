@@ -14,6 +14,11 @@ Atari 2600, ColecoVision, Intellivision, Vectrex, WonderSwan and RPG Maker.
 the folders the stock card uses (`FC`, `SFC`, `PS`, `NEOGEO`, …), so a new
 system only needs its icon and one line.
 
+Two of the launcher's tiles are not stock-card systems and so have no folders
+to scan: **Ports** (PortMaster's ports) and **Homebrew** (the curated free DS,
+GBA and NES games). They carry icons too, drawn in the same family, and live
+in the same assets: `ports.bmp` and `homebrew.bmp`, with the matching glyphs.
+
 ## The rich artwork
 
 Generated with imagegen on 2026-10-23 as photorealistic studio product photos:
@@ -60,6 +65,10 @@ Each glyph is the system's most iconic object: the handheld itself for the
 handhelds, the controller for the home consoles, the cabinet for the arcade,
 the computer for DOS and RPG Maker. The grid is 16×16 (not the launcher's 12×12)
 because a system's shape needs that room to stay recognisable.
+
+The two non-stock tiles follow the same rule: Ports is the cargo ship of
+PortMaster's own icon, and Homebrew is a stack of three blank cartridges, the
+thing the shelf actually holds.
 
 `tools/build_system_icons.py` is the only writer: it turns the table into the
 launcher's masks (`src/launcher/system_icons.hpp`), one pixel-perfect SVG per

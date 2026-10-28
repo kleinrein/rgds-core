@@ -598,6 +598,19 @@ inline std::string_view pixel_status_glyph(std::string_view name){
         ".....##....."
         "............"
         "............";
+    if(name=="bluetooth")return
+        "............"
+        ".....#......"
+        ".....##....."
+        ".#...#.#...."
+        "..#..#..#..."
+        "...#.#.#...."
+        "....###....."
+        "...#.#.#...."
+        "..#..#..#..."
+        ".#...#.#...."
+        ".....##....."
+        ".....#......";
     // Off: arcs and dot go quiet together; only the slash is solid ink.
     if(name=="wifi-off")return
         "#..........."

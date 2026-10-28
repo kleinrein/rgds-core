@@ -6,6 +6,5 @@ source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-fceumm/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-snes9x/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-picodrive/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-pcsx-rearmed/Config.in"
-source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-fake08/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-mupen64plus-next/Config.in"
 endmenu

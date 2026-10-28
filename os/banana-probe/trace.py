@@ -9,8 +9,19 @@ import struct
 import sys
 import time
 
-STAGES = {1: "loop", 2: "top-draw", 3: "top-flush", 4: "top-present", 5: "bottom-draw", 6: "bottom-flush",
-          7: "bottom-present", 8: "done", 9: "playing", 10: "assets", 11: "events"}
+STAGES = {
+    1: "loop",
+    2: "top-draw",
+    3: "top-flush",
+    4: "top-present",
+    5: "bottom-draw",
+    6: "bottom-flush",
+    7: "bottom-present",
+    8: "done",
+    9: "playing",
+    10: "assets",
+    11: "events"
+}
 RECORD = struct.Struct("<IIIIQQII")
 
 
@@ -45,7 +56,9 @@ def main():
         print(f"{busy:7.1f} " + " ".join(f"{k}={v:.1f}" for k, v in sorted(f.items(), key=lambda kv: -kv[1])))
     if frames:
         busy = sorted(sum(v for k, v in f.items() if k not in ("loop", "done", "events")) for f in frames)
-        print(f"rendered={count - first_count} sampled={len(frames)} median_busy={busy[len(busy) // 2]:.1f}ms p90={busy[int(len(busy) * .9)]:.1f}ms")
+        print(
+            f"rendered={count - first_count} sampled={len(frames)} median_busy={busy[len(busy) // 2]:.1f}ms p90={busy[int(len(busy) * .9)]:.1f}ms"
+        )
 
 
 main()

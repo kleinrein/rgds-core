@@ -79,8 +79,9 @@ void App::start_worker(const std::string& operation, const std::string& payload)
         stop_worker();
     if (worker > 0 && worker_action == "index" && operation.rfind("device.", 0) == 0) stop_worker();
     if (worker > 0) return;
-    bool busy_visible = operation != "device.info" || settings.page == Page::Startup || settings.page == Page::Wifi ||
-                        !service_notice.empty();
+    bool busy_visible = (operation != "device.info" && operation != "device.startup-info") ||
+                        settings.page == Page::Wifi ||
+                        settings.page == Page::Bluetooth || settings.page == Page::Homebrew || !service_notice.empty();
     service_notice.clear();
     bool device = operation.rfind("device.", 0) == 0;
     auto folder = o.data / (device ? "device" : "scraper");
@@ -119,11 +120,11 @@ void App::start_worker(const std::string& operation, const std::string& payload)
             args.push_back("--rom-dir");
             args.push_back(root.string());
         }
-        if (preferences.show_systems)
-            for (const auto& [system, root] : o.system_roots) {
-                args.push_back("--system-dir");
-                args.push_back(system + "=" + root.string());
-            }
+        // Every system's games are in the library whether or not the Systems step is shown, so they all get covers.
+        for (const auto& [system, root] : o.system_roots) {
+            args.push_back("--system-dir");
+            args.push_back(system + "=" + root.string());
+        }
     }
     int channel[2];
     if (pipe(channel) != 0) {
@@ -191,7 +192,8 @@ void App::poll_service(Uint32 now) {
             worker_finished_at = now;
             service_poll = 0;
             artwork_finished = worker_action == "index" || worker_action == "scrape";
-            if (worker_action != "device.info" || settings.page == Page::Startup || settings.page == Page::Wifi)
+            if (worker_action != "device.info" || settings.page == Page::System || settings.page == Page::Wifi ||
+                settings.page == Page::Bluetooth || settings.page == Page::Homebrew)
                 dirty = true;
         }
     }

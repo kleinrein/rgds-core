@@ -1208,7 +1208,7 @@ void Gpu::hd_line(int e, int screen, u32 line, const u32* native, const u8* owne
   u8* own = hd_owner_[screen][parity].data() + line * SCREEN_W;
   if (owner) std::memcpy(own, owner, SCREEN_W);
   else std::memset(own, 1, SCREEN_W);
-  const u32 ready = line + 1 >= SCREEN_H        ? kHdBands
+  const u32 ready = line + 1 >= SCREEN_H       ? kHdBands
                     : line >= kHdBandLines + 1 ? (line - kHdBandLines - 1) / kHdBandLines + 1
                                                : 0;
   while (hd_next_band_[e] < ready) hd_publish(kHdJob | u32(e) << 8 | hd_next_band_[e]++);

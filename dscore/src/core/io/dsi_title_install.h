@@ -57,6 +57,9 @@ bool nand_has_title(NandImage& nand, const u8* bios7i, u32 title_lo);
 // (read_dsiware checks it properly when opened), .zip by the entry it holds.
 bool file_is_dsiware(const std::string& path);
 bool zip_is_dsiware(const std::string& path);
+// Whether a .nds/.dsi/.srl (loose or zipped) also runs on a DS: unit code 0 (DS) or 2 (DS with DSi extras), not 3
+// (DSi only). Homebrew built with BlocksDS is unit 2 yet carries DSiWare's title ID high (00030004).
+bool file_runs_on_ds(const std::string& path);
 // Whether a .zip's chosen entry is a .cia (needs read_dsiware to unwrap) rather than a direct image.
 bool zip_holds_cia(const std::string& path);
 // Content ID an installed title's .app is named by (CONTENT/xxxxxxxx.APP).

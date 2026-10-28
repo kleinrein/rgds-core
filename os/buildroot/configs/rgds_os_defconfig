@@ -71,6 +71,14 @@ BR2_PACKAGE_HOST_MTOOLS=y
 # hardware: Wi-Fi firmware, sound, the GPU (Mesa 25.0 Panfrost, no LLVM), SDL2 straight on KMS
 BR2_PACKAGE_LINUX_FIRMWARE=y
 BR2_PACKAGE_LINUX_FIRMWARE_RTL_RTW88=y
+# the RTL8821CS's Bluetooth half (rtl_bt/rtl8821cs_fw.bin; hci_uart + btrtl are modules) and bluez for pairing
+BR2_PACKAGE_LINUX_FIRMWARE_RTL_88XX_BT=y
+# its config file is upstream's rtl8761b_config.bin (linux-firmware makes rtl8821cs_config.bin a link to it; post-build.sh does the same)
+BR2_PACKAGE_LINUX_FIRMWARE_RTL_87XX_BT=y
+BR2_PACKAGE_BLUEZ5_UTILS=y
+BR2_PACKAGE_BLUEZ5_UTILS_CLIENT=y
+# sound over Bluetooth (A2DP source, SBC): bluealsad + its ALSA plugin; bt-audio points playback at it
+BR2_PACKAGE_BLUEZ_ALSA=y
 BR2_PACKAGE_WIRELESS_REGDB=y
 BR2_PACKAGE_ALSA_LIB=y
 BR2_PACKAGE_ALSA_UTILS=y
@@ -142,5 +150,4 @@ BR2_PACKAGE_LIBRETRO_FCEUMM=y
 BR2_PACKAGE_LIBRETRO_SNES9X=y
 BR2_PACKAGE_LIBRETRO_PICODRIVE=y
 BR2_PACKAGE_LIBRETRO_PCSX_REARMED=y
-BR2_PACKAGE_LIBRETRO_FAKE08=y
 BR2_PACKAGE_LIBRETRO_MUPEN64PLUS_NEXT=y

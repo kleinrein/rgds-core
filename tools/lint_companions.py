@@ -100,7 +100,8 @@ def check_profile(path, english, catalogs):
         words = [w for w in words if w not in proper]
         pages, page, count = [], None, {}
         for number, label, rest in tiles:
-            if "icon" not in rest and "art" not in rest:
+            # A tile of the HUD itself is the game's own drawing: it is its own badge.
+            if "icon" not in rest and "art" not in rest and rest[:1] != ["hud"]:
                 problems.append(f"{where}: badge: [{name}] tile{number} '{label}' has neither an icon nor art")
             if len(label) > MAX_LABEL:
                 problems.append(f"{where}: label: [{name}] tile{number} '{label}' is longer than {MAX_LABEL}")

@@ -7,13 +7,25 @@
 #include "companion/profile.hpp"
 #include "ui/canvas.hpp"
 
+#include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace play {
 
 class Core;
 struct Look;
+
+// The game's HUD as the split draws it this frame (Game Boy Advance), for a
+// view that lays its pieces out itself: px is null while there is none.
+// `key` is the see-through colour; `tint` gives a pixel the top screen's Colour.
+struct HudPicture {
+    const uint32_t* px = nullptr;
+    int w = 0, h = 0;
+    uint32_t key = 0;
+    std::function<uint32_t(uint32_t)> tint;
+};
 
 // A finger on the second screen, in its pixels.
 struct Touch {
@@ -38,6 +50,10 @@ public:
     }
     // Shown in place of a [hud] strip's band, not above it (a board of the same numbers).
     virtual bool covers_hud() const { return false; }
+    // The boxes of a HUD split this view shows itself. While it covers the
+    // HUD, whatever else the HUD layer draws (dialogue, a boss's bar, a
+    // message) goes back onto the game screen.
+    virtual std::vector<Rect> hud_claims() const { return {}; }
     // What the view has learnt that the game itself doesn't keep (the explored
     // map), kept next to the save. Formats without any ignore these.
     virtual bool dirty() const { return false; }
@@ -46,6 +62,11 @@ public:
         return false;
     }
     virtual void load(const std::string& bytes) { (void)bytes; }
+    // Where the HUD is, set once by the companion.
+    void set_hud(const HudPicture* hud) { hud_ = hud; }
+
+protected:
+    const HudPicture* hud_ = nullptr;
 };
 
 // The view for a profile's [view], or null for a format this build doesn't

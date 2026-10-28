@@ -29,3 +29,10 @@ define RGDS_LINUX_DRIVERS
 	done
 endef
 LINUX_POST_PATCH_HOOKS += RGDS_LINUX_DRIVERS
+# The drivers again before every kernel build: the post-patch hook runs once, at extraction, so a driver edited
+# after that (panel-generic-dsi.c on 2026-10-27) would otherwise never reach the image. cp keeps make's view right.
+define RGDS_LINUX_DRIVER_SOURCES
+	cp $(RGDS_BOARD)/kernel/panel-generic-dsi.c $(LINUX_DIR)/drivers/gpu/drm/panel/
+	cp $(RGDS_BOARD)/kernel/rocknix-singleadc-joypad.c $(RGDS_BOARD)/kernel/rocknix-joypad.h $(LINUX_DIR)/drivers/input/joystick/
+endef
+LINUX_PRE_BUILD_HOOKS += RGDS_LINUX_DRIVER_SOURCES

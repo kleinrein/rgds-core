@@ -57,9 +57,10 @@ class UiConsistencyTests(unittest.TestCase):
         self.assertEqual(self.run_ui('', 'menu_sounds=1\n', seconds=1)['sound_master'], 0)
 
     def test_music_volume_popup_has_a_mute_choice(self):
-        # Sound -> Sounds & music -> Music volume (row 3) -> A -> up to Mute -> A.
+        # Sound -> Sounds & music (row 3, under Test microphone) -> Music volume (row 3) -> A -> up to Mute -> A.
         r = self.run_ui(
-            '100 key Down\n200 key Down\n300 key A\n500 key Down\n600 key Down\n700 key Down\n800 key A\n'
+            '100 key Down\n150 key Down\n200 key Down\n300 key A\n500 key Down\n600 key Down\n700 key Down\n'
+            '800 key A\n'
             '1000 key Up\n1100 key Up\n1200 key A\n',
             'menu_music=1\nmusic_volume=40\n', ('--settings', '--section', 'sound'),
             seconds=3

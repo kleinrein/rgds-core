@@ -1,6 +1,6 @@
 #include "launcher/model.hpp"
 #include "../../play/src/ui/frame_styles.hpp" // the frames per system (shared with the player)
-#include "../../play/src/ui/gb_palettes.hpp" // the Game Boy palettes and corrections (shared with the player)
+#include "../../play/src/ui/gb_palettes.hpp"  // the Game Boy palettes and corrections (shared with the player)
 #include "platform/sdl_dynamic.hpp"
 #include "platform/event_wait.hpp"
 #include "platform/wayland_role.hpp"
@@ -284,7 +284,7 @@ class App {
     SDL_Texture *view_previous = nullptr, *view_presented = nullptr;
     bool view_snapshot_ready = false, view_previous_ready = false;
     ViewStyle last_view_style = ViewStyle::Spring;
-    std::vector<std::pair<int, bool>> view_levels;
+    std::vector<std::pair<int, int>> view_levels;
     uint64_t push_animation_frames = 0;
     void clear_view_canvases();
     void start_view_motion(Uint32 now, ViewTravel route = ViewTravel::Forward);
@@ -294,9 +294,11 @@ class App {
     // frame when an input arrives. Idle frames never render offscreen.
     void capture_view_for_input(const SDL_Event& e);
     bool view_canvas_failed = false, view_seen = false;
-    std::tuple<int, bool, int, int> last_view;
+    std::tuple<int, bool, int, int, bool, std::string> last_view;
     uint64_t view_transitions = 0, view_animation_frames = 0;
     void sync_view_motion(Uint32 now);
+    // PictoChat is a level of its own over the page it was opened from, so opening and closing it travels.
+    int view_page() const { return int(settings.page) + (chat_open ? 1000 : 0); }
     struct SoundState {
         Page page;
         bool home, picker;
@@ -387,8 +389,12 @@ class App {
     Uint32 picker_at = 0, picker_closed_at = 0;
     bool picker_was_open = false;
     // The sheet leaves with a short slide; input already belongs to the page.
+    // Sheets follow the view Speed setting, like the page transitions.
+    float sheet_in_ms() const { return float(280 * view_pace(preferences.view_speed)); }
+    float sheet_out_ms() const { return float(240 * view_pace(preferences.view_speed)); }
     bool picker_closing() const {
-        return preferences.animations && !picker_open && picker_closed_at && s.GetTicks() - picker_closed_at < 140;
+        return preferences.animations && !picker_open && picker_closed_at &&
+               float(s.GetTicks() - picker_closed_at) < sheet_out_ms();
     }
     // Closed since the last frame, or still sliding away.
     bool sheet_leaving() const { return (picker_was_open && !picker_open) || picker_closing(); }
@@ -448,40 +454,41 @@ class App {
     int list_scroll = 0, list_focus = -1;
     Page list_page = Page::Library;
     static constexpr int list_top = 96, list_height = 316, list_stride = 82;
-    // Sound and brightness: the slider card's vertical span (touch and drawing agree).
+    // Sound and brightness: the slider's vertical span (touch and drawing agree). On Sound it is the first
+    // row of the shared list, so it scrolls with it.
     std::pair<int, int> slider_band() const {
-        return settings.page == Page::Sound ? std::make_pair(96, 186) : std::make_pair(163, 285);
+        return settings.page == Page::Sound ? std::make_pair(list_top - list_scroll, list_top - list_scroll + 66)
+                                            : std::make_pair(163, 285);
     }
-    // Sound: row 0 is the volume slider itself (Left and Right only act there); under it one row each for
+    bool slider_hit(int x, int y) const {
+        if (settings.page != Page::Display && settings.page != Page::Sound) return false;
+        const auto band = slider_band();
+        if (settings.page == Page::Sound && (y < list_top || y >= list_top + list_height)) return false;
+        return x >= 44 && x <= 596 && y >= band.first && y <= band.second;
+    }
+    // Sound is a shared list: row 0 is the volume slider itself (Left and Right only act there); under it
     // Mute (1), Test microphone (2), Sounds & music (3) and Vibration (4).
-    static constexpr int sound_row_width = 584, sound_row_height = 46;
-    static int sound_row_y(int index) { return 202 + (index - 1) * 52; }
+    static constexpr int sound_track_x = 60, sound_track_width = 504;
     int list_count() const {
         switch (settings.page) {
         case Page::Settings: return 11;
+        case Page::Sound: return 5;
         case Page::MenuSounds: return 5;
         case Page::Haptics: return 5;
         case Page::Cheats: return int(cheat_rows.size());
         case Page::GameSwitcher: return int(switch_games.size()) + (home_switcher ? 0 : 1); // in a game: Game menu
         case Page::Graphics: return 8;
-        case Page::Power: return 7;
+        case Page::Power: return int(power_rows.size());
         case Page::LibraryOptions: return 11;
         case Page::Appearance: return 6;
         case Page::DisplayOptions: return 5;
         case Page::Scraper: return 5;
         case Page::DeviceInfo: return 5;
-        case Page::System: return o.rgds_os ? 8 : 9; // RG DS OS: no Startup page (stock's boot choice)
-        case Page::GameOptions:
-            // The last three rows are always Game info, Save gallery and DS controls.
-            if (other_system_selected()) return 8; // the rows every engine has; DS-only ones read Unavailable
-            if (experimental_game()) return 9;
-            return (game_preferences.core < 0 ? int(preferences.core) : game_preferences.core) == 0
-                       ? (superdrastic_game() ? 11 : 10)
-                       : 8;
+        case Page::System: return o.rgds_os ? 8 : 9; // last row: Touch to continue
+        case Page::GameOptions: return game_options_base() + (game_removable() ? 1 : 0);
         case Page::GameArtwork: return 3;
         case Page::Maintenance: return 7;
-        case Page::Network: return 5;
-        case Page::Startup: return 1;
+        case Page::Network: return 7;
         case Page::SaveGallery: return 9;
         case Page::RomSetup: return 3;
         case Page::PortFiles: return 3;
@@ -492,6 +499,12 @@ class App {
         case Page::Wifi:
             return std::max(
                 0, std::atoi(device_status.count("network_count") ? device_status.at("network_count").c_str() : "0"));
+        case Page::Bluetooth:
+            return std::max(0, std::atoi(device_status.count("bt_count") ? device_status.at("bt_count").c_str() : "0"));
+        case Page::Homebrew:
+            // rows only for the shelf on screen: a list still on its way from the previous shelf shows nothing
+            if (!device_status.count("hb_system") || device_status.at("hb_system") != homebrew_system) return 0;
+            return std::max(0, std::atoi(device_status.count("hb_count") ? device_status.at("hb_count").c_str() : "0"));
         case Page::Timezone: return int(timezones.size());
         case Page::PlayGraphics: return play_colour_kind() ? 5 : 4;
         default: return 0;
@@ -703,7 +716,7 @@ class App {
         return path.filename() == "PortMaster.sh" && path.parent_path().filename() == "entry";
     }
     bool port_manager() const { return port_game() && is_port_entry(o.game_rom); }
-    bool port_entry_shown() const { return !model.games.empty() && is_port_entry(model.games[0].path); }
+    bool port_entry_shown() const { return !model.games.empty() && is_tool_entry(model.games[0].path); }
     // The games a library view lists: PortMaster's pinned entry is not one of them.
     size_t listed_games() const { return model.games.size() - (port_entry_shown() ? 1 : 0); }
     void port_manager_menu(SDL_Renderer* r, int y);
@@ -742,6 +755,14 @@ class App {
     void poll_return_controls(bool wait = false);
     void flush_return_controls();
     LidSleep lid_sleep;
+    // A Bluetooth headset's address while playback goes to it (RG DS OS, /usr/libexec/rgds/bt-audio): the menu's
+    // sink is reopened when it changes, so the sound follows the headset.
+    std::string bt_sink;
+    Uint32 bt_sink_poll = 0;
+    // The radio is up (hci0 exists between `bt on` and `bt off`): the status bar shows the rune beside Wi-Fi. The
+    // desktop preview shows it with RGDS_PREVIEW_BLUETOOTH set.
+    bool bluetooth_on = false;
+    Uint32 bluetooth_poll = 0;
     bool font_ready = true, font_checked = false;
     void check_fonts(bool first_frame = false);
     Uint32 selected_at = 0, page_at = 0, service_poll = 0, clock_poll = 0;
@@ -788,7 +809,7 @@ class App {
     // Spawn the full status helper only for a changed link, an open network
     // page or a five-minute safety refresh. Quality comes from the kernel.
     void refresh_network(Uint32 now);
-    std::string network_id, confirmation;
+    std::string network_id, bluetooth_address, confirmation;
     std::string startup_mode = "stock";
     bool startup_warning = true;
     Page confirm_return = Page::System;
@@ -800,6 +821,39 @@ class App {
     void save_startup();
     void change_startup(int direction, bool toggle);
     void wifi_choose();
+    void bluetooth_choose();
+    // Homebrew shelves (network_menu.hpp, homebrew_screen.hpp): the shelf shown (nds, gba, nes) and a list request
+    // that waits while another job (artwork indexing after boot) holds the worker
+    std::string homebrew_system = "nds";
+    std::optional<std::string> homebrew_queued;
+    void homebrew_open(const std::string& system);
+    std::vector<std::string> homebrew_shelves() const; // the shelves with a games folder here: nds, gba, nes
+    void homebrew_step(int delta);                     // L / R: the previous or next shelf
+    void homebrew_kick();
+    void homebrew_choose();
+    // a shelf is on its way: its rows are not here yet
+    bool homebrew_loading() const {
+        return settings.page == Page::Homebrew && list_count() == 0 &&
+               (homebrew_queued || (worker > 0 && worker_action == "device.homebrew-browse"));
+    }
+    // Game info's X: the game file leaves the card (its saves stay); not for disc sets, ports or the demo
+    bool game_removable() const;
+    void remove_game();
+    // Game options' rows up to DS controls; Remove game follows them when the game can be removed
+    int game_options_base() const {
+        // The last three are always Game info, Save gallery and DS controls.
+        if (other_system_selected()) return 8; // the rows every engine has; DS-only ones read Unavailable
+        if (experimental_game()) return 9;
+        return (game_preferences.core < 0 ? int(preferences.core) : game_preferences.core) == 0
+                   ? (superdrastic_game() ? 11 : 10)
+                   : 8;
+    }
+    fs::path homebrew_folder(const std::string& system) const;
+    void homebrew_top(SDL_Renderer* r, int y);
+    std::string homebrew_row_value(int i);
+    // Tools listed among games (PortMaster in Ports): no counts, options or switcher place.
+    static bool is_tool_entry(const fs::path& path) { return is_port_entry(path); }
+    void bluetooth_forget();
     std::string menu_input = "no input";
     void note_menu_input(const SDL_Event& e);
     void menu_request(const std::string& action);
@@ -814,7 +868,7 @@ class App {
     // Library filters from the game information (game_facets.hpp), and the counts that fill their pickers.
     Facets discovery_facets;
     FacetIndex facet_index;
-    // The Library view sheet (filter_sheet.hpp): tiles for the collection, browser layout and search, then chips for
+    // The Filter sheet (filter_sheet.hpp): tiles for the collection, browser layout and search, then chips for
     // played state and the facets, over the lower screen.
     struct FilterChip {
         int facet = -1;  // -1: the played state; otherwise a facet_rows() index
@@ -924,6 +978,15 @@ class App {
     // Starts a game from wherever the launcher is (Last played, the home switcher).
     void play_game(Game game);
     bool discovery_active() const { return !search_query.empty() || discovery_filter != 0 || discovery_facets.any(); }
+    // Favourites with nothing in it yet: the bottom screen offers a way back to the games (or the Systems step).
+    bool favourites_empty() const {
+        return !home_menu && !systems_menu && preferences.view == 1 && model.games.empty() && library_ready &&
+               !collection_loading && !discovery_active();
+    }
+    void browse_from_favourites() {
+        if (preferences.show_systems) open_systems();
+        else library_view(0);
+    }
     std::string discovery_filter_name() const;
     // What the list is filtered by, apart from the search words: "Unplayed  ·  Puzzle  ·  2 players".
     std::string discovery_filters_text() const;
@@ -1313,8 +1376,8 @@ class App {
     static bool shader_fits_system(int id, const std::string& system) {
         const int family = shader_family(id), own = shader_system_screens(system.c_str());
         if (family == 0) return true;
-        if (system == "nds") return std::string(shader_family_names[family]).find(" screens") == std::string::npos ||
-                                    family == own;
+        if (system == "nds")
+            return std::string(shader_family_names[family]).find(" screens") == std::string::npos || family == own;
         return family == own;
     }
     void close_shader_picker();
@@ -1544,7 +1607,7 @@ class App {
     void sheen(SDL_Renderer* r, int x, int y, int w, int h, const std::string& key, int strength = 12);
     void horizontal_sheen(SDL_Renderer* r, int x, int y, int w, int h, const std::string& key, int strength = 12);
     void triangle(SDL_Renderer* r, int x, int y, int half, int height, const std::string& key, bool down = true);
-    void battery_icon(SDL_Renderer* r, int y);
+    void battery_icon(SDL_Renderer* r, int y, int x = 576);
     fs::path status_asset(const std::string& name);
     std::string wifi_asset();
     std::string sound_asset() { return hardware.volume && hardware.volume_percent == 0 ? "muted" : "sound"; }
@@ -1552,7 +1615,7 @@ class App {
     // brand, on every screen, until the artwork worker reports it is done.
     bool artwork_busy() const;
     int loader_phase(Uint32 now) const { return preferences.animations ? int((now / 110) % 8) : 0; }
-    void artwork_loader(SDL_Renderer* r, int y);
+    void artwork_loader(SDL_Renderer* r, int y, int shift = 0);
     int drawn_loader_phase = -1;
     static int pixel_scale(int size) { return std::max(1, (size + 4) / 10); }
     // Classic-text width in 6-dot cells; kana and kanji take two.
@@ -1623,6 +1686,7 @@ class App {
                   bool enabled = true, const Color* swatch = nullptr, bool switches = true);
     void draw_toggle(SDL_Renderer* r, int x, int y, const std::string& name, bool value, bool enabled = true);
     void list_scrollbar(SDL_Renderer* r, int y);
+    void volume_row(SDL_Renderer* r, int y);
     // The vertical rail after the horizontal one: a recessed groove with a
     // pip per page, a glass window under the thumb, and a glossy thumb with
     // an engraved grip that widens while it is held.
@@ -1773,6 +1837,8 @@ class App {
         dirty = true;
     }
     void shutdown_overlay(SDL_Renderer* r, int y, bool upper);
+    // The OS's indeterminate loader (the restart and power-off screen's): a quiet track, an accent arc going round
+    void busy_ring(SDL_Renderer* r, int cx, int cy, int radius, int weight, int alpha = 255, bool track = true);
     void brand(SDL_Renderer* r, int x, int y, int size);
     bool boot_animating(Uint32) const;
     double boot_phase() const { return preferences.animations ? ((s.GetTicks() - boot_scene_at) % 2400) / 2400.0 : 0; }
@@ -2617,6 +2683,7 @@ public:
 #include "launcher/port_files_screen.hpp"
 #include "launcher/return_gestures.hpp"
 #include "launcher/network_menu.hpp"
+#include "launcher/homebrew_screen.hpp"
 #include "launcher/gallery_slots.hpp"
 #include "launcher/microphone.hpp"
 #include "launcher/switcher_search.hpp"

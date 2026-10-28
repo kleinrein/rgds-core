@@ -1,5 +1,5 @@
 #pragma once
-// The Library view sheet: one scrollable modal on the lower screen. Tiles choose the collection and the browser
+// The Filter sheet: one scrollable modal on the lower screen. Tiles choose the collection and the browser
 // layout and start a search or a jump to a letter; below them the library is narrowed by what the game
 // information knows. Chips (played state, genre, rating, online play, publisher, developer) toggle at once; players
 // and release year are range sliders with two handles over a histogram of the library. The list behind the sheet
@@ -552,7 +552,7 @@ void App::filter_draw_slider(SDL_Renderer* r, const FilterChip& item, int top, b
 void App::filter_sheet_render(SDL_Renderer* r, int y) {
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y, 480, true);
-    settings_header(r, y, "Library view", 300);
+    settings_header(r, y, "Filter", 300);
     // The result so far, top right.
     std::string count_text =
         collection_loading ? locale.text("Finding games…")

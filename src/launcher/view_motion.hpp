@@ -15,8 +15,8 @@ inline bool layered(ViewStyle style) { return style != ViewStyle::Spring; }
 inline const char* view_style_name(ViewStyle style) {
     return style == ViewStyle::Push ? "push" : style == ViewStyle::Zoom ? "zoom" : "spring";
 }
-// Snappy, Normal, Relaxed.
-inline double view_pace(int speed) { return speed == 0 ? .55 : speed == 2 ? 1.7 : 1.0; }
+// Snappy, Normal, Relaxed: Relaxed is several times slower than Snappy.
+inline double view_pace(int speed) { return speed == 0 ? .6 : speed == 2 ? 2.8 : 1.0; }
 struct MotionRect {
     int x = 0, y = 0, w = 0, h = 0;
     bool contains(int px, int py) const { return px >= x && px < x + w && py >= y && py < y + h; }
@@ -53,14 +53,14 @@ struct MotionHits {
 // Closed-form springs settle exactly; randomness is sampled per interaction,
 // never per frame. Input cadence adds bounded energy, not queued animations.
 struct ViewMotion {
-    // Short and decisive: a transition must never feel like waiting.
-    static constexpr uint32_t travel_duration = 300, duration = 340, reaction_duration = 160;
+    // Normal pace; Snappy and Relaxed scale these (see view_pace).
+    static constexpr uint32_t travel_duration = 460, duration = 520, reaction_duration = 200;
     uint32_t started = 0, reacted = 0, last_input = 0, seed = 0x6d2b79f5u, variant = 0;
     bool running = false, reacting = false, had_input = false;
     ViewTravel travel = ViewTravel::Forward;
     ViewStyle style = ViewStyle::Spring;
     double origin_x = 320, origin_y = 240, energy = 1, flavour = 1;
-    // Transition speed: every duration scales together (Snappy .7, Relaxed 1.4).
+    // Transition speed: every duration scales together (see view_pace).
     double pace = 1;
     uint32_t span(uint32_t base) const { return uint32_t(std::lround(base * pace)); }
     struct Pose {
@@ -109,7 +109,13 @@ struct ViewMotion {
         return std::exp(-6 * t) * (std::cos(frequency * t) + 6 / frequency * std::sin(frequency * t)) *
                (1 - t * t * t * t);
     }
-    static constexpr uint32_t push_duration = 220;
+    static constexpr uint32_t push_duration = 380;
+    // Smootherstep: zero velocity and acceleration at both ends, so a slide
+    // eases off the mark instead of jumping to full speed on the first frame.
+    static double ease(double t) {
+        t = std::clamp(t, 0.0, 1.0);
+        return t * t * t * (t * (6 * t - 15) + 10);
+    }
     struct PushLayers {
         double incoming = 0, outgoing = 0, shade = 0;
         bool incoming_above = true;
@@ -117,8 +123,7 @@ struct ViewMotion {
     };
     PushLayers push(uint32_t now) const {
         if (!running || now - started >= span(push_duration)) return {};
-        double t = double(now - started) / span(push_duration), remaining = (1 - t) * (1 - t) * (1 - t),
-               progress = 1 - remaining;
+        double t = double(now - started) / span(push_duration), progress = ease(t), remaining = 1 - progress;
         if (travel == ViewTravel::Fade) return {0, 0, 0, true, progress};
         if (travel == ViewTravel::Back) return {-160 * remaining, 640 * progress, .12 * remaining, false};
         if (travel == ViewTravel::Left) return {-640 * remaining, 640 * progress, 0, true};
@@ -132,10 +137,9 @@ struct ViewMotion {
     };
     ZoomLayers zoom(uint32_t now) const {
         if (!running || now - started >= span(push_duration)) return {};
-        double t = double(now - started) / span(push_duration), p = 1 - (1 - t) * (1 - t) * (1 - t);
+        double t = double(now - started) / span(push_duration), p = ease(t);
         // Ease the fade faster than the scale, so the new view reads at once.
-        double in = std::min(1.0, 1 - (1 - t) * (1 - t) * (1 - t) * (1 - t) * (1 - t) * 1.0),
-               out = 1 - std::min(1.0, t * 1.6);
+        double in = ease(std::min(1.0, t * 1.25)), out = 1 - ease(std::min(1.0, t * 1.6));
         switch (travel) {
         case ViewTravel::Back: return {1.06 - .06 * p, in, 0, 1 - .06 * p, out, 0};
         case ViewTravel::Left: return {1, in, -40 * (1 - p), 1, out, 40 * p};
@@ -191,7 +195,7 @@ struct ViewMotion {
         double elapsed = running    ? double(now - started) - hash(variant ^ id) % 25
                          : reacting ? double(now - reacted)
                                     : 600;
-        double t = std::clamp(elapsed / 300, 0.0, 1.0);
+        double t = std::clamp(elapsed / 420, 0.0, 1.0);
         return 0.35 * std::sin(t * 3.141592653589793) * std::exp(-3 * t) * (1 - t) * (1 - t) * energy;
     }
     std::pair<int, int> unproject(int x, int y, uint32_t now) const {

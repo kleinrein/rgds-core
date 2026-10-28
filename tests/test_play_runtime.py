@@ -90,7 +90,6 @@ class PlayRuntimeTests(unittest.TestCase):
             self.root / "a.chd": "psx",
             self.root / "a.z64": "n64",
             self.root / "a.v64": "n64",
-            self.root / "a.p8": "pico8",
         }
         for rom, system in cases.items():
             self.assertEqual(play_options.system_of(rom), system, rom)
@@ -107,7 +106,7 @@ class PlayRuntimeTests(unittest.TestCase):
                 for system in ("md", "sms", "gg"):
                     self.assertEqual(play_options.LIBRETRO_CORES[system], "picodrive")
                 self.assertEqual(play_options.LIBRETRO_CORES["psx"], "pcsx_rearmed")
-                self.assertEqual(play_options.LIBRETRO_CORES["pico8"], "fake08")
+                self.assertNotIn("pico8", play_options.LIBRETRO_CORES)  # dropped with fake-08 (2026-10-28)
                 self.assertEqual(play_options.LIBRETRO_CORES["n64"], "mupen64plus_next")
         # Appended: the DS engines keep their stored indexes.
         self.assertEqual(emulators.CORES[:5], ("drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"))
@@ -164,7 +163,9 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertEqual({i for i, f in places if families[f] == "GBC screens"}, set(play_options.GBC_SCREENS))
         self.assertEqual({i for i, f in places if families[f] == "Original"}, set(play_options.ORIGINAL))
         defaults = re.search(r"system_default_shader.*?shaders\[\] = \{([^}]*)\}", catalog, re.S).group(1)
-        self.assertEqual([int(n) for n in defaults.split(",")], [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc")])
+        self.assertEqual(
+            [int(n) for n in defaults.split(",")], [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc")]
+        )
 
     def test_launch_plan_uses_its_own_data_and_the_shared_menu(self):
         binary = self.binary("rgds-play")
@@ -214,6 +215,7 @@ class PlayRuntimeTests(unittest.TestCase):
         with patch.object(emulators, "_run_once", side_effect=[75, 0]) as launch:
             emulators.run("melonds", self.app, self.data, self.nds)
         self.assertEqual(launch.call_args_list[1].args[0], "rgds-experimental")
+
 
 class PlayArtworkTests(unittest.TestCase):
     def setUp(self):
@@ -349,10 +351,11 @@ class PlayMenuTests(unittest.TestCase):
     def test_a_frame_is_known_only_for_its_own_system(self):
         data = self.root / "data"
         gb, gbc = self.root / "Tetris.gb", self.root / "Wario Land 3.gbc"
-        for rom, frame, known in ((self.rom, "indigo", True), (self.rom, "sp-cobalt", True), (self.rom, "dmg", False),
-                                  (gb, "dmg", True), (gb, "pocket-black", True), (gb, "indigo", False),
-                                  (gb, "sp-onyx", False), (gb, "gbc-berry", False), (gbc, "gbc-teal", True),
-                                  (gbc, "dmg", False), (gb, "bar", True), (gbc, "off", True)):
+        for rom, frame, known in (
+            (self.rom, "indigo", True), (self.rom, "sp-cobalt", True), (self.rom, "dmg", False), (gb, "dmg", True),
+            (gb, "pocket-black", True), (gb, "indigo", False), (gb, "sp-onyx", False), (gb, "gbc-berry", False),
+            (gbc, "gbc-teal", True), (gbc, "dmg", False), (gb, "bar", True), (gbc, "off", True)
+        ):
             self.assertEqual(play_options.frame_known(data, rom, frame), known, (rom.suffix, frame))
         # An old GBA frame kept for a Game Boy game falls back to off; the owner's own picture of that name is kept.
         save = lambda: play_options.save_view(data, gb, 0, 0, "indigo")
@@ -394,18 +397,16 @@ class PlayMenuTests(unittest.TestCase):
         menu = self.menu("rgds-play")
         self.request(menu, "play-graphics:0:0:Perfect GBA (mugwomp93)")
         self.result(menu, "play-graphics-applied")
-        self.assertEqual(
-            play_options.view(self.root / "data", self.rom)["frame"], "Perfect GBA (mugwomp93)"
-        )
+        self.assertEqual(play_options.view(self.root / "data", self.rom)["frame"], "Perfect GBA (mugwomp93)")
         # A picture that is gone falls back to no frame at the next launch.
         (folder / "Perfect GBA (mugwomp93).png").unlink()
         self.assertEqual(play_options.view(self.root / "data", self.rom)["frame"], "off")
 
     def test_view_changes_are_refused_for_other_engines_and_bad_values(self):
         for core, action in (
-            ("rgds-experimental", "play-graphics:0:0:off"), ("rgds-play", "play-graphics:3:0:off"),
-            ("rgds-play", "play-graphics:0:0"), ("rgds-play", "play-graphics:0:0:no such picture"),
-            ("rgds-play", "play-graphics:0:0:../escape")
+            ("rgds-experimental",
+             "play-graphics:0:0:off"), ("rgds-play", "play-graphics:3:0:off"), ("rgds-play", "play-graphics:0:0"),
+            ("rgds-play", "play-graphics:0:0:no such picture"), ("rgds-play", "play-graphics:0:0:../escape")
         ):
             with self.subTest(core=core, action=action):
                 menu = self.menu(core)

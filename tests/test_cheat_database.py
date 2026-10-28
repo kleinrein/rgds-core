@@ -10,7 +10,6 @@ import emulators
 
 
 class CheatDatabaseTests(unittest.TestCase):
-
     def test_independent_image_seeds_from_the_release(self):
         with tempfile.TemporaryDirectory() as root:
             root = Path(root)

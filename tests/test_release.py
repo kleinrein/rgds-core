@@ -1,4 +1,4 @@
-"""GitHub release channel: key creation, feed pinning and installer trust upgrades."""
+"""GitHub release channel: key creation and feed pinning."""
 import importlib.util
 import json
 from pathlib import Path
@@ -18,7 +18,6 @@ def load(name, path):
 
 
 release = load('release', ROOT / 'tools/release.py')
-installer = load('install_package', ROOT / 'packaging/install_package.py')
 
 
 @unittest.skipUnless(Path(release.OPENSSL).exists() or sys.platform == 'linux', 'OpenSSL 3 is required')
@@ -53,66 +52,6 @@ class ReleaseChannelTests(unittest.TestCase):
         for bad in ('not a repo', 'owner', 'a/b/c'):
             with self.assertRaises(release.argparse.ArgumentTypeError):
                 release.repo_name(bad)
-
-    def test_publish_refuses_dev_versions_and_packages_without_the_channel(self):
-        trust, key = self.init()
-        (self.root / 'packaging/update-trust.json').write_text(json.dumps(trust))
-        dist = self.root / 'dist'
-        dist.mkdir()
-        package = dist / 'RGDS-0.1.0-abc123.zip'
-        with release.zipfile.ZipFile(package, 'w') as archive:
-            archive.writestr(
-                'rgds/state/update-trust.json', json.dumps({
-                    'schema': 1,
-                    'channel': 'stable',
-                    'feed': '',
-                    'keys': {}
-                })
-            )
-        (dist / 'latest.txt').write_text(package.name + '\n')
-        args = mock.Mock(version='0.1.0', repo=None, key=key, channel='stable', notes=None, days=90, upload=False)
-        with mock.patch.object(release, 'TRUST',
-                               self.root / 'update-trust.json'), mock.patch.object(release, 'ROOT', self.root):
-            with self.assertRaisesRegex(SystemExit, 'before this channel was pinned'):
-                release.publish(args)
-            args.version = '0.2.0'
-            with self.assertRaisesRegex(SystemExit, 'set VERSION to 0.2.0'):
-                release.publish(args)
-            args.version = '0.0.1-dev'
-            with self.assertRaisesRegex(SystemExit, 'release version'):
-                release.publish(args)
-
-
-class InstallerTrustTests(unittest.TestCase):
-    def test_only_blank_trust_files_may_be_replaced(self):
-        with tempfile.TemporaryDirectory() as folder:
-            path = Path(folder) / 'update-trust.json'
-            path.write_text(json.dumps({'schema': 1, 'channel': 'stable', 'feed': '', 'keys': {}}))
-            self.assertTrue(installer.unconfigured_trust(path))
-            path.write_text(
-                json.dumps({
-                    'schema': 1,
-                    'channel': 'stable',
-                    'feed': 'https://example.org/stable.json',
-                    'keys': {}
-                })
-            )
-            self.assertTrue(installer.unconfigured_trust(path))
-            path.write_text(
-                json.dumps(
-                    {
-                        'schema': 1,
-                        'channel': 'stable',
-                        'feed': 'https://example.org/stable.json',
-                        'keys': {
-                            'k': 'ab' * 32
-                        }
-                    }
-                )
-            )
-            self.assertFalse(installer.unconfigured_trust(path))
-            path.write_text('not json')
-            self.assertFalse(installer.unconfigured_trust(path))
 
 
 if __name__ == '__main__':

@@ -36,7 +36,7 @@ enum class Page {
     GameArtwork,
     Statistics,
     SaveGallery,
-    Discover, // retired: Search and filters moved into the Library view sheet; the slot keeps stored page numbers
+    Discover, // retired: Search and filters moved into the Filter sheet; the slot keeps stored page numbers
     RomSetup,
     DSControls,
     Microphone,
@@ -47,11 +47,13 @@ enum class Page {
     Colours,
     Cheats,
     // Appended: page numbers are stored in the launcher's state file.
-    PlayGraphics, // in-game Graphics for RG DS Play: game screen fit, second screen
-    GameInfo,     // the selected game's facts, description and pictures (read-only)
-    Haptics,      // Sound -> Vibration: menu haptics and game rumble, each with a strength
-    PortFiles,    // Add game files: a port's own files, sent from a phone or computer (port_files_screen.hpp)
-    DisplayOptions // Settings > Display: brightness, animations, touch indicator, home layout, touch gestures
+    PlayGraphics,   // in-game Graphics for RG DS Play: game screen fit, second screen
+    GameInfo,       // the selected game's facts, description and pictures (read-only)
+    Haptics,        // Sound -> Vibration: menu haptics and game rumble, each with a strength
+    PortFiles,      // Add game files: a port's own files, sent from a phone or computer (port_files_screen.hpp)
+    DisplayOptions, // Settings > Display: brightness, animations, touch indicator, home layout, touch gestures,
+    Bluetooth,      // Connectivity > Bluetooth devices (RG DS OS); last so stored page numbers keep
+    Homebrew,       // a system's pinned Homebrew shelf: free homebrew from our curated feed (homebrew_store.py)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -78,6 +80,9 @@ struct Preferences {
 };
 struct SystemPreferences {
     int power = 0, brightness = 60, idle = 0;
+    // dim: the panels dim after dim_seconds[dim] without input (menu and games); game_sleep: a game with no input for
+    // game_sleep_minutes[game_sleep] sleeps like a closed lid (runtime/game_menu.py reads both from system.ini)
+    int dim = 2, game_sleep = 0;
     bool lid = true, battery_percent = true;
     std::string timezone = "Europe/Oslo";
     int dst = 0; // daylight saving: 0 follows the zone's rules, 1 forced on, 2 forced off (standard time)
@@ -561,6 +566,20 @@ inline const std::array<int, 5> idle_minutes = {0, 1, 2, 5, 10};
 inline std::string idle_name(int index) {
     return index == 0 ? "Never" : std::to_string(idle_minutes.at(index)) + " min";
 }
+inline const std::array<int, 5> dim_seconds = {0, 30, 60, 120, 300};
+inline std::string dim_name(int index) {
+    const int seconds = dim_seconds.at(index);
+    return seconds == 0   ? "Never"
+           : seconds < 60 ? std::to_string(seconds) + " s"
+                          : std::to_string(seconds / 60) + " min";
+}
+inline const std::array<int, 5> game_sleep_minutes = {0, 10, 20, 30, 60};
+inline std::string game_sleep_name(int index) {
+    return index == 0 ? "Never" : std::to_string(game_sleep_minutes.at(index)) + " min";
+}
+// The Power page's rows, top to bottom, as control ids (change_system and the original row numbers): the two
+// newer timers (7, 8) sit under Menu idle sleep.
+inline constexpr std::array<int, 9> power_rows = {0, 1, 7, 8, 2, 3, 4, 5, 6};
 // The root list's order. Section ids stay stable (saved state and tests use
 // them); Display (10) is listed right below Theme and Updates (9) right below System.
 inline constexpr std::array<int, 11> section_order = {0, 10, 1, 2, 3, 4, 5, 9, 6, 7, 8};
@@ -578,6 +597,8 @@ inline int section_row(int section) {
 struct Settings {
     Page page = Page::Library;
     int section = 0, focus = 0;
+    // Brightness and Playtime opened from Home's bottom bar: Back returns Home, not through Settings.
+    bool from_home = false;
     // The row you left each page from. Back lands on it again instead of the
     // first row, so Library -> Artwork sources -> Back keeps Artwork sources lit.
     std::array<int, 64> remembered{};
@@ -590,7 +611,11 @@ struct Settings {
         focus = 0;
     }
     void back() {
-        if (page == Page::MenuSounds || page == Page::Haptics) {
+        if (from_home && (page == Page::Display || page == Page::Statistics)) {
+            from_home = false;
+            page = Page::Library;
+            focus = 0;
+        } else if (page == Page::MenuSounds || page == Page::Haptics) {
             focus = page == Page::Haptics ? 4 : 3;
             page = Page::Sound;
         } else if (page == Page::Motion) {
@@ -615,14 +640,11 @@ struct Settings {
         } else if (page == Page::Display) {
             page = Page::DisplayOptions;
             focus = 0;
-        } else if (page == Page::Startup) {
-            page = Page::System;
-            focus = 8; // clamped to the last row where Startup sits earlier (RG DS OS)
         } else {
-            page = page == Page::Settings || page == Page::GameOptions ? Page::Library
-                   : page == Page::Scraper                             ? Page::LibraryOptions
+            page = page == Page::Settings || page == Page::GameOptions || page == Page::Homebrew ? Page::Library
+                   : page == Page::Scraper                                                       ? Page::LibraryOptions
                    : page == Page::Timezone || page == Page::DeviceInfo || page == Page::Maintenance ? Page::System
-                   : page == Page::Wifi                                                              ? Page::Network
+                   : page == Page::Wifi || page == Page::Bluetooth                                   ? Page::Network
                                                                                                      : Page::Settings;
             focus = page == Page::Settings ? 0 : recall(page);
         }
@@ -632,9 +654,8 @@ struct Settings {
         else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 5);
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 10);
-        else if (page == Page::Power) focus = std::clamp(focus + delta, 0, 6);
+        else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
         else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 4);
-        else if (page == Page::Startup) focus = std::clamp(focus + delta, 0, 0);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
         else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::System || page == Page::Display) focus = 0;
@@ -644,13 +665,13 @@ struct Settings {
             page = section == 0    ? Page::Appearance
                    : section == 10 ? Page::DisplayOptions
                    : section == 1  ? Page::Power
-                   : section == 2 ? Page::LibraryOptions
-                   : section == 3 ? Page::Sound
-                   : section == 5 ? Page::System
-                   : section == 6 ? Page::Controls
-                   : section == 7 ? Page::Statistics
-                   : section == 9 ? Page::Maintenance
-                                  : Page::Network;
+                   : section == 2  ? Page::LibraryOptions
+                   : section == 3  ? Page::Sound
+                   : section == 5  ? Page::System
+                   : section == 6  ? Page::Controls
+                   : section == 7  ? Page::Statistics
+                   : section == 9  ? Page::Maintenance
+                                   : Page::Network;
             focus = 0;
         } else if (page == Page::DisplayOptions && focus == 0) {
             page = Page::Display;
@@ -679,12 +700,13 @@ inline SystemPreferences load_system_preferences(const fs::path& path) {
         if (end != value.size() || n < low || n > high) throw std::runtime_error("Invalid system preference: " + key);
         return n;
     };
-    if (values.size() < 5 || values.size() > 10 || values.at("schema") != "1")
+    if (values.size() < 5 || values.size() > 12 || values.at("schema") != "1")
         throw std::runtime_error("Invalid system preferences schema");
     for (auto& pair : values)
         if (pair.first != "schema" && pair.first != "power" && pair.first != "brightness" && pair.first != "idle" &&
             pair.first != "lid" && pair.first != "battery_percent" && pair.first != "timezone" &&
-            pair.first != "date_format" && pair.first != "time_format" && pair.first != "dst")
+            pair.first != "date_format" && pair.first != "time_format" && pair.first != "dst" && pair.first != "dim" &&
+            pair.first != "game_sleep")
             throw std::runtime_error("Unknown system preference");
     p.power = number("power", 0, 3);
     p.brightness = number("brightness", 5, 100);
@@ -694,6 +716,8 @@ inline SystemPreferences load_system_preferences(const fs::path& path) {
     if (values.count("date_format")) p.date_format = number("date_format", 0, int(date_format_names.size()) - 1);
     if (values.count("time_format")) p.time_format = number("time_format", 0, 1);
     if (values.count("dst")) p.dst = number("dst", 0, int(dst_names.size()) - 1);
+    if (values.count("dim")) p.dim = number("dim", 0, int(dim_seconds.size()) - 1);
+    if (values.count("game_sleep")) p.game_sleep = number("game_sleep", 0, int(game_sleep_minutes.size()) - 1);
     if (values.count("timezone")) {
         p.timezone = values.at("timezone");
         if (std::find(timezones.begin(), timezones.end(), p.timezone) == timezones.end())
@@ -711,6 +735,8 @@ inline void save_system_preferences(const fs::path& path, SystemPreferences p) {
     if (p.date_format) file << "date_format=" << p.date_format << '\n';
     if (p.time_format) file << "time_format=" << p.time_format << '\n';
     if (p.dst) file << "dst=" << p.dst << '\n';
+    if (p.dim != SystemPreferences{}.dim) file << "dim=" << p.dim << '\n';
+    if (p.game_sleep) file << "game_sleep=" << p.game_sleep << '\n';
     file.close();
     if (!file) throw std::runtime_error("Cannot save system preferences");
     fs::rename(pending, path);

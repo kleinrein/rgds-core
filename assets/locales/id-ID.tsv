@@ -1,47 +1,95 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 person nearby	1 orang di dekat Anda
+1 player	1 pemain
+12-hour	12 jam
+2 seconds	2 detik
+24-hour	24 jam
+24-hour or 12-hour clock	Jam 24 atau 12 jam
+2x sharper	2x lebih tajam
 3D rendering automatically uses worker threads.	Rendering 3D otomatis memakai thread pekerja.
 3D resolution	Resolusi 3D
 3D threading changed for this session. Settings storage is unavailable.	Thread 3D diubah untuk sesi ini. Penyimpanan pengaturan tidak tersedia.
 3D threading changed. No restart needed.	Thread 3D diubah. Tidak perlu memulai ulang.
+3x sharper	3x lebih tajam
+4x (experimental)	4x (eksperimental)
+5x (experimental)	5x (eksperimental)
 A  Apply	A  Terapkan
 A  Done	A  Selesai
+A  Jump	A  Lompat
 A  Play	A  Main
+A  Search	A  Cari
+A 24-hour or 12-hour clock.	Jam 24 jam atau 12 jam.
+A carousel, or the DSi's column with your last game on top	Karosel, atau kolom ala DSi dengan game terakhir di atas
+A exports this slot to userdata/exports. X deletes it.	A mengekspor slot ini ke userdata/exports. X menghapusnya.
 A gentle scanline pattern with original colours.	Pola garis pindai lembut dengan warna asli.
+A light tap for every move, a firmer one when you choose, open or save.	Ketukan ringan untuk setiap gerakan, lebih tegas saat memilih, membuka, atau menyimpan.
+A little handheld magic	Sedikit keajaiban konsol genggam
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A memuat slot ini. Urungkan muat terakhir, di Y, mengembalikan progres Anda saat ini.
 A natural colour and contrast treatment.	Warna dan kontras alami.
+A new version is ready to download.	Versi baru siap diunduh.
+A replaces this slot with your current progress. X deletes it.	A mengganti slot ini dengan progres saat ini. X menghapusnya.
+A saves your current progress here.	A menyimpan progres saat ini di sini.
 A screen style for this cartridge	Gaya layar untuk kartrid ini
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Pegangan kecil di bagian bawah layar bawah menandakan gestur aktif; ia naik mengikuti jari, dan sebuah cincin menandai titik saat gestur terpicu.
+A soft tune plays while you browse. It fades out when a game starts.	Melodi lembut diputar saat Anda menjelajah. Memudar saat game dimulai.
 A stronger LCD texture and scanline look.	Tekstur LCD dan garis pindai yang lebih kuat.
 A subtle handheld LCD pixel pattern.	Pola piksel LCD konsol genggam yang halus.
 A subtle pixel grid with a bright, readable image.	Kisi piksel halus dengan gambar terang dan jelas.
+About {0} h left	Sekitar {0} jam lagi
+About {0} min left	Sekitar {0} menit lagi
+Accent colour	Warna aksen
+Add favourite	Tambah favorit
+Add game files	Tambahkan file game
 Add your DS games to fetch their artwork.	Tambahkan game DS untuk mengambil sampulnya.
+Add your games	Tambahkan game Anda
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Menambahkan game Game Boy dan Game Boy Advance: Game lalu membuka halaman sistem.
+Adjust	Sesuaikan
 Africa	Afrika
 After	Sesudah
 All games	Semua game
+All systems	Semua sistem
+Already connected.	Sudah terhubung.
 Amber	Kuning amber
 Americas	Amerika
+An update is already prepared. Install it or discard it first.	Pembaruan sudah disiapkan. Pasang atau buang terlebih dahulu.
 Anbernic startup is unavailable in RGDS OS.	Mulai ke Anbernic tidak tersedia di RGDS OS.
+Animate pages with the selected style	Animasikan halaman dengan gaya pilihan
 Animations	Animasi
+Another update is already running.	Pembaruan lain sedang berjalan.
 Antarctica	Antartika
+Any	Semua
 Applies immediately. Higher clocks use more battery.	Langsung diterapkan. Clock lebih tinggi memakai lebih banyak baterai.
 Applies immediately. Your game keeps its progress.	Langsung diterapkan. Progres game tetap tersimpan.
 Apply	Terapkan
+APPLY	TERAPKAN
 Applying shader…	Menerapkan filter…
+Arcade cabinet	Kabinet arkade
 Arctic	Arktik
+Arrows	Panah
 Artwork	Sampul
 Artwork & ScreenScraper	Sampul
 Artwork source	Sumber sampul
 Artwork sources	Sumber sampul
 Asia	Asia
 Atlantic Ocean	Samudra Atlantik
+Audio is not recorded or saved.	Audio tidak direkam atau disimpan.
 Australia	Australia
 Auto-load state	Muat state otomatis
 Auto-save on exit	Simpan otomatis saat keluar
 Automatic	Otomatis
 Automatic (free)	Otomatis
+Automatic updates	Pembaruan otomatis
+Available	Tersedia
 Available networks	Jaringan tersedia
 B  Cancel	B  Batal
 B  Close	B  Tutup
-BACK HOME	KEMBALI KE BERANDA
 Back	Kembali
+BACK HOME	KEMBALI KE BERANDA
+Back to PortMaster	Kembali ke PortMaster
+Back up all saves	Cadangkan semua simpanan
+Background	Latar
+Backing up your saves…	Mencadangkan simpanan…
+Badges	Lencana
 Balance battery life and speed	Seimbangkan daya tahan baterai dan kecepatan
 Balanced	Seimbang
 Battery	Baterai
@@ -50,57 +98,116 @@ Battery saver	Hemat baterai
 Before	Sebelum
 Before you play	Sebelum bermain
 Binding unchanged.	Penetapan tidak berubah.
+Black and white	Hitam putih
+Black bar	Bilah hitam
+Blow into microphone	Tiup mikrofon
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Tiup atau bicara ke mikrofon. Lihat levelnya naik, lalu turun saat Anda berhenti.
+Blue	Biru
+Bluetooth	Bluetooth
+Bluetooth devices	Perangkat Bluetooth
+Bluetooth is not available on this handheld.	Bluetooth tidak tersedia di konsol genggam ini.
+Bold colour on a close-up LCD with RGB stripes.	Warna tegas pada LCD jarak dekat dengan garis RGB.
+Bold colour with smoothed diagonal edges.	Warna tegas dengan tepi diagonal yang dihaluskan.
+Bold colour; every pixel a raised, glossy tile.	Warna tegas; setiap piksel jadi ubin timbul mengilap.
+Bold colour; every pixel a round, shiny bead.	Warna tegas; setiap piksel jadi manik bulat mengilap.
+Bombs	Bom
+Bonus stars	Bintang bonus
 Boot	Boot
 Boot into	Boot ke
+Both	Keduanya
 Both screens	Kedua layar
 Bottom display	Layar bawah
 Box art, titles and game details	Sampul, judul, dan detail game
 Brightness	Kecerahan
+Brown	Cokelat
+Browse	Jelajahi
+Browse games	Lihat game
+Browse systems	Lihat sistem
 Browser layout	Tata letak daftar
 Build, storage and device address	Build, penyimpanan, dan alamat perangkat
 Button	Tombol
 Button layout	Tata letak tombol
 Button {0}	Tombol {0}
 Buttons and the game menu shortcut	Tombol dan pintasan menu game
-COLOUR MODE	MODE WARNA
 Cancel	Batal
+Carousel	Karosel
+Carried	Dibawa
 Cartridges	Kartrid
+Change group	Ganti grup
 Changes immediately. Map a button in Controls for quick access.	Langsung berubah. Tetapkan tombol di Kontrol untuk akses cepat.
 Changing 3D threading…	Mengubah thread 3D…
 Changing speed…	Mengubah kecepatan…
+Chat is unavailable: you can still draw	Obrolan tidak tersedia: Anda tetap bisa menggambar
+Chat Room	Ruang Obrolan
+Chat Room {0}	Ruang Obrolan {0}
+Check automatically	Periksa otomatis
+Check for updates	Periksa pembaruan
+Check for updates when you are ready.	Periksa pembaruan saat Anda siap.
+Check for updates, go back to the previous build or clear temporary files.	Periksa pembaruan, kembali ke versi sebelumnya, atau hapus file sementara.
 Check the current connection	Periksa koneksi saat ini
+Checking for updates…	Memeriksa pembaruan…
+Checking PortMaster	Memeriksa PortMaster
+Checking the new version…	Memeriksa versi baru…
 Checkpoint loaded	Checkpoint dimuat
 Checkpoint loaded (preview)	Checkpoint dimuat (pratinjau)
 Checkpoint loaded.	Checkpoint dimuat.
 Checkpoint saved	Checkpoint disimpan
 Checkpoint saved (preview)	Checkpoint disimpan (pratinjau)
 Checkpoint saved.	Checkpoint disimpan.
-Choose Anbernic or RG DS startup.	Pilih mulai ke Anbernic atau RG DS.
+Choose a chat room to join	Pilih ruang obrolan untuk bergabung
+Choose a network from the list	Pilih jaringan dari daftar
 Choose an option	Pilih opsi
+Choose Anbernic or RG DS startup.	Pilih mulai ke Anbernic atau RG DS.
 Choose native or a sharper 3D image	Pilih gambar 3D asli atau lebih tajam
 Choose the core for this cartridge	Pilih core untuk kartrid ini
 Choose the display backend for the next DraStic launch. DSperate stays your default.	Pilih backend tampilan untuk peluncuran DraStic berikutnya. DSperate tetap menjadi default.
 Choose what opens when you power on	Pilih apa yang terbuka saat dinyalakan
+Classic	Klasik
+Classic blue	Biru klasik
 Clear	Hapus
+Clear filters	Hapus filter
 Clear temporary cache	Hapus cache sementara
 Clear temporary game files?	Hapus file game sementara?
 Close	Tutup
+Close and open DS lid	Tutup dan buka tutup DS
+Close lid	Tutup penutup
+Close PortMaster	Tutup PortMaster
 Close the handheld to sleep	Tutup konsol untuk tidur
+Closing PortMaster…	Menutup PortMaster…
+Closing the port…	Menutup port…
+Code	Kode
+Coin bank	Bank koin
+Coins	Koin
+Collection	Koleksi
+COLOUR MODE	MODE WARNA
+Colour mode	Mode warna
 Colour treatment inspired by the original DS display.	Warna yang terinspirasi layar DS asli.
+Column	Kolom
+Companion	Pendamping
 Compare	Bandingkan
 Confirm	Konfirmasi
 Connect	Hubungkan
+Connect the charger before installing an update.	Sambungkan pengisi daya sebelum memasang pembaruan.
+Connect to Wi-Fi to send files from a phone or computer.	Sambungkan ke Wi-Fi untuk mengirim file dari ponsel atau komputer.
 Connected	Terhubung
 Connected.	Terhubung.
+Connecting to	Menghubungkan ke
 Connecting…	Menghubungkan…
+Connection lost. Retrying…	Koneksi terputus. Mencoba lagi…
 Connectivity	Konektivitas
 Continue	Lanjutkan
 Continue where you left off	Lanjutkan dari terakhir kali
 Control unavailable on this device	Kontrol tidak tersedia di perangkat ini
+Controllers and other Bluetooth devices	Kontroler dan perangkat Bluetooth lainnya
 Controls	Kontrol
 Controls saved for this game.	Kontrol disimpan untuk game ini.
 Cool crisp	Sejuk tajam
 Cool whites with a small contrast boost.	Putih sejuk dengan sedikit tambahan kontras.
+Copies every save and checkpoint into one zip in userdata/exports.	Menyalin semua simpanan dan checkpoint ke satu zip di userdata/exports.
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Salin file .nds atau ZIP DS ke Roms/NDS di kartu game, lalu pilih Pindai game.
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Salin file .rgdssave.zip ke userdata/imports. Impor harus cocok dengan game dan emulator ini.
+Copy ability	Kemampuan salin
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Salin file .nds atau arsip ZIP DS ke Roms/NDS di kartu game. Game tidak disertakan. Simpanan tetap di userdata.
 Could not apply brightness	Tidak dapat menerapkan kecerahan
 Could not apply saved brightness	Tidak dapat menerapkan kecerahan tersimpan
 Could not apply saved power mode	Tidak dapat menerapkan mode daya tersimpan
@@ -110,6 +217,7 @@ Could not apply volume	Tidak dapat menerapkan volume
 Could not bring the Wi-Fi adapter up. Try again.	Tidak dapat menyalakan adaptor Wi-Fi. Coba lagi.
 Could not change 3D threading. Your game is unchanged.	Tidak dapat mengubah thread 3D. Game tidak berubah.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Tidak dapat memastikan koneksi Wi-Fi yang dipilih. Pindai dan coba lagi.
+Could not connect	Tidak dapat terhubung
 Could not enable lid wake	Tidak dapat mengaktifkan bangun dengan tutup
 Could not load. Resume, retry, or return without saving.	Tidak dapat memuat. Lanjutkan, coba lagi, atau kembali tanpa menyimpan.
 Could not read this collection. Try again.	Tidak dapat membaca koleksi ini. Coba lagi.
@@ -117,6 +225,7 @@ Could not restore previous hardware setting	Tidak dapat memulihkan pengaturan pe
 Could not save all settings. Check storage.	Tidak dapat menyimpan semua pengaturan. Periksa penyimpanan.
 Could not save brightness	Tidak dapat menyimpan kecerahan
 Could not save controls. Check writable storage.	Tidak dapat menyimpan kontrol. Periksa penyimpanan yang dapat ditulis.
+Could not save DS settings.	Tidak dapat menyimpan pengaturan DS.
 Could not save game settings. Previous values kept.	Tidak dapat menyimpan pengaturan game. Nilai sebelumnya dipertahankan.
 Could not save matching title.	Tidak dapat menyimpan judul yang cocok.
 Could not save settings	Tidak dapat menyimpan pengaturan
@@ -124,6 +233,7 @@ Could not save timezone	Tidak dapat menyimpan zona waktu
 Could not save volume	Tidak dapat menyimpan volume
 Could not save. Resume, retry, or return without saving.	Tidak dapat menyimpan. Lanjutkan, coba lagi, atau kembali tanpa menyimpan.
 Could not send game action	Tidak dapat mengirim aksi game
+Could not set up PortMaster	Tidak dapat menyiapkan PortMaster
 Could not set volume - see log	Tidak dapat mengatur volume - lihat log
 Could not sleep - see log	Tidak dapat tidur - lihat log
 Could not sleep. Reopen the lid and try again.	Tidak dapat tidur. Buka tutup lalu coba lagi.
@@ -132,41 +242,89 @@ Could not start library scan	Tidak dapat memulai pemindaian pustaka
 Could not write controls	Tidak dapat menulis kontrol
 Counts display updates, not emulation speed. Changes immediately.	Menghitung pembaruan layar, bukan kecepatan emulasi. Langsung berubah.
 Counts emulated game frames. Changes immediately.	Menghitung frame game yang diemulasikan. Langsung berubah.
+Course	Level
+Cover	Sampul
 Covers	Sampul
+Current progress could not be saved. No slot was changed.	Progres saat ini tidak dapat disimpan. Tidak ada slot yang berubah.
 Custom	Kustom
-DEFAULT THEME - CHECK LOG	TEMA DEFAULT - PERIKSA LOG
-DS rounded	DS bulat
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: disarankan untuk bermain sehari-hari. Resolusi asli adalah default.
+DS only	Hanya DS
 Dark	Gelap
+Dark blue	Biru tua
+Dark green	Hijau tua
 Date format	Format tanggal
+Day	Siang
+Day or night	Siang atau malam
+Daylight saving	Waktu musim panas
+Days	Hari
 Default	Default
 Default emulator	Emulator default
 Default shader	Filter default
+DEFAULT THEME - CHECK LOG	TEMA DEFAULT - PERIKSA LOG
 Delete	Hapus
+Delete slot {0}?	Hapus slot {0}?
 Desktop preview	Pratinjau desktop
+Developer	Pengembang
 Development build	Build pengembangan
 Device address	Alamat perangkat
 Device information	Info perangkat
+Discard update	Buang pembaruan
 Display	Tampilan
 Display FPS	FPS layar
 Done	Selesai
 Down	Bawah
+Download	Unduh
+Download automatically	Unduh otomatis
+Download interrupted. Retry to continue.	Unduhan terputus. Coba lagi untuk melanjutkan.
+Download paused. Retry to continue.	Unduhan dijeda. Coba lagi untuk melanjutkan.
+Download update	Unduh pembaruan
+Downloading PortMaster	Mengunduh PortMaster
+Downloading update…	Mengunduh pembaruan…
+Downloading {0}	Mengunduh {0}
+Downloads resume where they stopped if Wi-Fi drops.	Unduhan berlanjut dari titik terakhir jika Wi-Fi terputus.
 DraStic backend	Backend DraStic
 DraStic: an alternative for games that need it. Saves stay separate.	DraStic: alternatif untuk game yang membutuhkannya. Simpanan tetap terpisah.
-ERROR	GALAT
-ERROR: Could not restore settings	GALAT: Tidak dapat memulihkan pengaturan
-ERROR: Could not restore settings - see log	GALAT: Tidak dapat memulihkan pengaturan - lihat log
+Draw and chat	Menggambar dan mengobrol
+Draw and chat with nearby handhelds	Menggambar dan mengobrol dengan konsol terdekat
+Drawing on your own	Menggambar sendiri
+DS Classic	DS Classic
+DS controls	Kontrol DS
+DS controls are unavailable for this engine.	Kontrol DS tidak tersedia untuk mesin ini.
+DS language	Bahasa DS
+DS Lite	DS Lite
+DS rounded	DS bulat
+DS screens	Layar DS
+DSCore 3D resolution	Resolusi 3D DSCore
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: disarankan. Tercepat, dengan perbaikan tutup, stylus, dan 3D serta 3D 2x–5x opsional.
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: disarankan untuk bermain sehari-hari. Resolusi asli adalah default.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: mesin upstream asli. DSCore menambahkan perbaikan dan kecepatan.
+Edit	Ubah
+Edit search	Ubah pencarian
+Effects volume	Volume efek
+Empty slot	Slot kosong
 Emulator	Emulator
 Emulator settings	Pengaturan emulator
+End of a list	Akhir daftar
+Ending so far	Akhir sejauh ini
+Enemies defeated	Musuh dikalahkan
+Energy	Energi
+Energy tanks	Tangki energi
 Engine managed	Diatur oleh mesin
+English	Inggris
 Enter here	Masukkan di sini
 Enter password	Masukkan kata sandi
 Enter your username and password	Masukkan nama pengguna dan kata sandi
+ERROR	GALAT
+ERROR: Could not restore settings	GALAT: Tidak dapat memulihkan pengaturan
+ERROR: Could not restore settings - see log	GALAT: Tidak dapat memulihkan pengaturan - lihat log
+Essences	Esensi
 Europe	Eropa
 Every game in this collection has artwork.	Semua game di koleksi ini sudah punya sampul.
-FPS changed for this session. Settings storage is unavailable.	FPS diubah untuk sesi ini. Penyimpanan pengaturan tidak tersedia.
-FPS counter enabled.	Penghitung FPS aktif.
-FPS counter hidden.	Penghitung FPS disembunyikan.
+Exit your game before installing an update.	Keluar dari game sebelum memasang pembaruan.
+Experience	Pengalaman
+Export	Ekspor
+Export slot	Ekspor slot
+Extra pictures	Gambar tambahan
+Faded GBA colours made rich, as the real screen showed them.	Warna GBA yang pudar menjadi pekat, seperti yang ditampilkan layar aslinya.
 Fast	Cepat
 Fast-forward	Percepat
 Fast-forward button	Tombol percepat
@@ -174,164 +332,449 @@ Fast-forward enabled.	Percepat aktif.
 Fast-forward is unavailable for this emulator.	Percepat tidak tersedia untuk emulator ini.
 Fast-forward style	Gaya percepat
 Favourite	Favorit
+FAVOURITE COLOUR	WARNA FAVORIT
+Favourite a game and it waits for you here	Jadikan game favorit dan ia menunggu di sini
 Favourites	Favorit
+Feel every move	Rasakan setiap gerakan
+Feel the game	Rasakan gamenya
 Fetch artwork	Ambil sampul
 Fetch missing artwork	Ambil sampul yang kurang
+Figurines	Figurin
+File sharing on. Find "RG DS" under Network.	Berbagi file aktif. Cari "RG DS" di bagian Jaringan.
+Files added	File ditambahkan
+Files arrived. Choose Play to start.	File sudah tiba. Pilih Main untuk memulai.
+Filter	Filter
+Filtered	Difilter
 Find and connect to a nearby network	Temukan dan hubungkan ke jaringan terdekat
+Find, pair and connect a nearby device	Temukan, pasangkan, dan hubungkan perangkat di sekitar
+Finding games…	Mencari game…
+Finishing another task. Press Y again in a moment.	Menyelesaikan tugas lain. Tekan Y lagi sebentar lagi.
 Finishing the system request	Menyelesaikan permintaan sistem
 Follow your default button layout	Ikuti tata letak tombol default
 Following your global controls.	Mengikuti kontrol global.
 Follows your Library default. Each emulator keeps its own saves.	Mengikuti default Pustaka. Setiap emulator punya simpanan sendiri.
+Follows your library shader.	Mengikuti filter pustaka.
+Forget this device?	Lupakan perangkat ini?
+FPS changed for this session. Settings storage is unavailable.	FPS diubah untuk sesi ini. Penyimpanan pengaturan tidak tersedia.
+FPS counter enabled.	Penghitung FPS aktif.
+FPS counter hidden.	Penghitung FPS disembunyikan.
+Fr	Jum
+Frame	Bingkai
 Frameskip	Lewati frame
 Free space	Ruang kosong
 Free space while keeping your saves	Kosongkan ruang tanpa menghapus simpanan
-Game FPS	FPS game
+French	Prancis
+Friends	Teman
+Full colour	Warna penuh
+Game Boy	Game Boy
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platinum
+Game Boy Advance · Black	Game Boy Advance · Hitam
+Game Boy Advance · Glacier	Game Boy Advance · Gletser
+Game Boy Advance · Indigo	Game Boy Advance · Nila
+Game Boy Advance · Platinum	Game Boy Advance · Platinum
+Game Boy Color	Game Boy Color
+Game Boy Color screen	Layar Game Boy Color
+Game Boy Color · Atomic Purple	Game Boy Color · Ungu atom
+Game Boy Color · Berry	Game Boy Color · Beri
+Game Boy Color · Dandelion	Game Boy Color · Dandelion
+Game Boy Color · Grape	Game Boy Color · Anggur
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Screen only	Game Boy Color · Layar saja
+Game Boy Color · Teal	Game Boy Color · Hijau toska
+Game Boy Color, darker	Game Boy Color, lebih gelap
+Game Boy Light	Game Boy Light
+Game Boy Pocket	Game Boy Pocket
+Game Boy Pocket · Black	Game Boy Pocket · Hitam
+Game Boy Pocket · Blue	Game Boy Pocket · Biru
+Game Boy Pocket · Green	Game Boy Pocket · Hijau
+Game Boy Pocket · Pink	Game Boy Pocket · Merah muda
+Game Boy Pocket · Red	Game Boy Pocket · Merah
+Game Boy Pocket · Screen only	Game Boy Pocket · Layar saja
+Game Boy Pocket · Silver	Game Boy Pocket · Perak
+Game Boy Pocket · Yellow	Game Boy Pocket · Kuning
+Game Boy screen	Layar Game Boy
+Game Boy · Black	Game Boy · Hitam
+Game Boy · Blue	Game Boy · Biru
+Game Boy · Green	Game Boy · Hijau
+Game Boy · Red	Game Boy · Merah
+Game Boy · Screen only	Game Boy · Layar saja
+Game Boy · Yellow	Game Boy · Kuning
 Game emulator	Emulator game
 Game emulator saved.	Emulator game disimpan.
+Game FPS	FPS game
+Game info	Info game
 Game menu	Menu game
 Game options	Opsi game
 Game options saved	Opsi game disimpan
-GameTDB (free)	GameTDB
+Game rumble	Getaran game
+Game screen	Layar game
+Game switcher	Pengalih game
 Games	Game
+Games played	Game dimainkan
+GameTDB	GameTDB
+GameTDB (free)	GameTDB
+GB screens	Layar GB
+GBA Color	Warna GBA
+GBA screen	Layar GBA
+GBA screens	Layar GBA
+GBA true colour	Warna asli GBA
+GBA true screen	Layar asli GBA
+GBC screens	Layar GBC
+Gear	Perlengkapan
+Genre	Genre
+German	Jerman
+Get, update and remove ports	Dapatkan, perbarui, dan hapus port
 Give your eyes and hands a break.	Istirahatkan mata dan tangan Anda.
 Global	Global
 Global controls saved.	Kontrol global disimpan.
+Glossy tiles	Ubin mengilap
+Go back	Kembali
+Goes into	Masuk ke
+Golden leaves	Daun emas
+Green	Hijau
+Grey	Abu-abu
+Grey TV	TV abu-abu
+Grid	Kisi
+h	j
+Haptic strength	Kekuatan haptik
+Health	Kesehatan
+Heart containers	Wadah hati
+Heart pieces	Kepingan hati
+Hearts	Hati
+High contrast	Kontras tinggi
 Hold	Tahan
+Hold still for a right click	Tahan diam untuk klik kanan
+Hold to exit	Tahan untuk keluar
+Hold to load	Tahan untuk muat
+Hold to return home	Tahan untuk ke beranda
+Hold to save	Tahan untuk simpan
+Home	Beranda
+Home layout	Tata letak beranda
 Home shortcut	Pintasan beranda
+How dates appear at the top of the screen.	Cara tanggal tampil di bagian atas layar.
+How dates appear in the status bar	Cara tanggal tampil di bilah status
+How to get the files	Cara mendapatkan file
+Icon style	Gaya ikon
+Import help	Bantuan impor
+Import into this slot	Impor ke slot ini
+Import slot	Impor slot
+In a course	Di dalam level
+In a level	Di level
+In game	Dalam game
+IN USE	DIPAKAI
 Indian Ocean	Samudra Hindia
+Info screen	Layar info
 Inherit	Warisi
 Inherited	Diwarisi
+Install	Pasang
+Install the latest SD installer before this update.	Pasang penginstal SD terbaru sebelum pembaruan ini.
+Installed version	Versi terpasang
+Installing PortMaster from the card	Memasang PortMaster dari kartu
+Instruments	Instrumen
+Interface animations	Animasi antarmuka
+IP address	Alamat IP
+Italian	Italia
+Items	Item
+Japanese	Jepang
+Johto badges	Lencana Johto
+Join	Gabung
+Journey	Perjalanan
+Jump	Lompat
 Jump to letter	Lompat ke huruf
+Kanto badges	Lencana Kanto
 Keep a checkpoint when returning home	Simpan checkpoint saat kembali ke beranda
+Keep getting and updating ports	Terus dapatkan dan perbarui port
 Keep playing	Terus bermain
 Keep this game in Favourites	Simpan game ini di Favorit
 Kernel	Kernel
 Key {0}	Tombol {0}
-LCD + NDS Color	LCD + NDS Color
-LCD + Natural Vision	LCD + Natural Vision
+Keyboard	Keyboard
+Keys	Kunci
+Kinstone fusions	Fusi Kinstone
+Language	Bahasa
+Last played	Terakhir dimainkan
+Launch cancelled	Peluncuran dibatalkan
 LCD + both colours	LCD + kedua filter warna
+LCD + Natural Vision	LCD + Natural Vision
+LCD + NDS Color	LCD + NDS Color
 LCD pixels with natural colour and contrast.	Piksel LCD dengan warna dan kontras alami.
 LCD pixels with the DS colour treatment.	Piksel LCD dengan warna DS.
 LCD pixels, DS colour and Natural Vision together.	Piksel LCD, warna DS, dan Natural Vision sekaligus.
-Language	Bahasa
-Launch cancelled	Peluncuran dibatalkan
+Leave	Keluar
+Leave RG DS Core and go back to the stock menu.	Keluar dari RG DS Core dan kembali ke menu bawaan.
 Left	Kiri
 Left stick	Stik kiri
 Left-handed	Kidal
 Less than a minute	Kurang dari semenit
+Less than a minute left	Kurang dari semenit lagi
+Level	Level
 Library	Pustaka
 Library scan exceeded its limit	Pemindaian pustaka melebihi batas
 Library scan failed	Pemindaian pustaka gagal
+Libretro	Libretro
 Libretro (free)	Libretro
 Light	Terang
+Lime	Hijau limau
 List	Daftar
+Listening…	Mendengarkan…
 Live background	Latar hidup
+Live input	Input langsung
+Lives	Nyawa
 Load	Muat
+Load checkpoint	Muat checkpoint
+Load complete	Muat selesai
 Load requested. Resume to check your game.	Pemuatan diminta. Lanjutkan untuk memeriksa game.
+Load slot {0}?	Muat slot {0}?
 Load state	Muat state
+Loaded	Dimuat
 Loading checkpoint…	Memuat checkpoint…
+Loading…	Memuat…
+Long press	Tekan lama
+Looking for devices…	Mencari perangkat…
+Looking for games…	Mencari game…
 Looking for networks…	Mencari jaringan…
+Looking for the latest PortMaster	Mencari PortMaster terbaru
+Loud	Keras
+Lv	Lv
+Magenta	Magenta
+Magical sword	Pedang sihir
 Magnified detail	Detail diperbesar
 Manage builds and temporary files	Kelola build dan file sementara
+Matches your accent	Sesuai warna aksen
 Matching title	Judul yang cocok
 Matching title saved. Choose Fetch artwork.	Judul yang cocok disimpan. Pilih Ambil sampul.
+Menu audio is unavailable on this device.	Audio menu tidak tersedia di perangkat ini.
+Menu effects	Efek menu
+Menu haptics	Haptik menu
 Menu idle sleep	Tidur saat menu diam
+Menu music	Musik menu
+Menu sounds are unavailable.	Suara menu tidak tersedia.
+Microphone unavailable	Mikrofon tidak tersedia
+Microphone, simulated blowing, lid and DS language.	Mikrofon, simulasi tiupan, tutup, dan bahasa DS.
+min	mnt
+Minutes	Menit
+Mirror shards	Pecahan cermin
+Missile room	Kapasitas misil
+Missiles	Misil
+Missing artwork	Tanpa sampul
+Mo	Sen
+Money	Uang
+Moods	Suasana
+More	Lainnya
+Most played	Paling sering dimainkan
+Music volume	Volume musik
+Musical coins	Koin musik
 Mute	Bisukan
 Muted	Dibisukan
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: opsi kompatibilitas. Coba DSperate dulu untuk kecepatan.
 Native	Asli
+Native (fastest)	Asli (tercepat)
 Native is faster; 2x uses more GPU time. Save & restart applies it.	Asli lebih cepat; 2x memakai lebih banyak GPU. Diterapkan lewat Simpan & mulai ulang.
 Native output	Keluaran asli
+Natural	Alami
+Natural colour with smoothed diagonal edges.	Warna alami dengan tepi diagonal yang dihaluskan.
+Natural colour with soft pixels that glow together.	Warna alami dengan piksel lembut yang berpendar bersama.
+Natural glow	Pendar alami
+Natural smooth	Alami halus
 Natural Vision	Natural Vision
+Needs your files	Butuh file Anda
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Hitam
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Perak
+Network file sharing	Berbagi file jaringan
 Networking is disabled. Turn Wi-Fi on to enable it.	Jaringan nonaktif. Nyalakan Wi-Fi untuk mengaktifkannya.
 Never	Tidak pernah
+New messages below	Pesan baru di bawah
+Next	Berikutnya
 Next emulator	Emulator berikutnya
-No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Tidak ada adaptor Wi-Fi. Nyalakan Wi-Fi untuk menginisialisasi.
+Next picture	Gambar berikutnya
+Next:	Berikutnya:
+Night	Malam
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: opsi kompatibilitas. Coba DSperate dulu untuk kecepatan.
 No button detected. Try again when you're ready.	Tidak ada tombol terdeteksi. Coba lagi saat Anda siap.
 No checkpoint saved for this emulator yet.	Belum ada checkpoint untuk emulator ini.
 No cover yet	Belum ada sampul
+No devices found. Put the device in pairing mode and scan.	Tidak ada perangkat ditemukan. Aktifkan mode pemasangan pada perangkat, lalu pindai.
 No favourites yet	Belum ada favorit
+No game has this information yet. Fetch artwork with Game info turned on.	Belum ada game dengan informasi ini. Ambil sampul dengan Info game aktif.
+No game information yet.	Belum ada info game.
 No games	Tidak ada game
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Tidak ada game ditemukan. Salin file .nds atau ZIP DS ke Roms/NDS di kartu game lalu pindai lagi.
 No games in this collection.	Tidak ada game di koleksi ini.
+No letters to jump to. Search for another game.	Tidak ada huruf untuk dilompati. Cari game lain.
+No matches. Use View to change filters.	Tidak ada hasil. Ubah filter di Tampilan.
+No matching games	Tidak ada game yang cocok
 No networks found	Tidak ada jaringan ditemukan
+No pictures yet	Belum ada gambar
 No previous build available.	Tidak ada build sebelumnya.
 No recent games yet	Belum ada game terbaru
+No release notes yet.	Belum ada catatan rilis.
+No vibration motor was found on this device.	Tidak ada motor getar di perangkat ini.
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Tidak ada adaptor Wi-Fi. Nyalakan Wi-Fi untuk menginisialisasi.
+No Wi-Fi: you can still draw	Tanpa Wi-Fi: Anda tetap bisa menggambar
+Nobody else here yet	Belum ada orang lain di sini
+Nobody else is nearby yet	Belum ada orang lain di dekat Anda
+Nobody here yet	Belum ada siapa pun di sini
+None yet	Belum ada
 Normal	Normal
 Normal speed.	Kecepatan normal.
 Not available	Tidak tersedia
 Not connected	Tidak terhubung
+Not downloaded	Belum diunduh
+Not loaded	Tidak dimuat
 Not played yet	Belum dimainkan
-OPEN	BUKA
+Not saved	Tidak tersimpan
+Not yet	Belum
+Nothing played yet	Belum ada yang dimainkan
+Nothing to load	Tidak ada yang dimuat
+Nothing to load here yet.	Belum ada yang bisa dimuat di sini.
+Notification	Notifikasi
 Off	Mati
 Off (smooth)	Mati (mulus)
 Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Mati memberi gerakan mulus. Melewati frame bisa menambah kecepatan. Mulai ulang untuk menerapkan.
 Off keeps the original picture.	Mati mempertahankan gambar asli.
+Older messages	Pesan lama
 On	Nyala
+Online	Online
+Online play	Main online
+OPEN	BUKA
 Open	Buka
+Open a view	Buka tampilan
+Open lid	Buka penutup
 Open menu	Buka menu
+Open on this Wi-Fi	Terbuka di Wi-Fi ini
 Open the Anbernic menu	Buka menu Anbernic
 Options	Opsi
+Or open on a computer	Atau buka di komputer
+Orange	Oranye
+Original	Asli
 Original pixels	Piksel asli
 Original pixels and colours.	Piksel dan warna asli.
 Pacific	Pasifik
-PLAY	MAIN
+Paired	Dipasangkan
+Party	Kelompok
 Password	Kata sandi
+Password protected	Dilindungi kata sandi
+Pause download	Jeda unduhan
 Pause when you need to.	Berhentilah sejenak bila perlu.
 Paused	Dijeda
+Paused at {0}	Dijeda di {0}
+PC monitor	Monitor PC
 Performance	Performa
+Phone battery	Baterai ponsel
+Phone or computer connected	Ponsel atau komputer tersambung
+Picture	Gambar
+Pink	Merah muda
+Pixel art	Seni piksel
+Pixel beads	Manik piksel
 Pixel classic	Piksel klasik
+Plain	Polos
+Plain, or the DSi's ruled grid behind every screen	Polos, atau kisi bergaris ala DSi di balik setiap layar
+PLAY	MAIN
+Play	Main
+Play a game to start your statistics.	Mainkan game untuk memulai statistik.
 Play at a comfortable volume.	Bermainlah dengan volume yang nyaman.
+Played	Sudah dimainkan
+Players	Pemain
+Playful sounds for browsing, choosing and starting games.	Suara ceria saat menjelajah, memilih, dan memulai game.
 Please keep your handheld on	Jangan matikan konsol
 Pocket green	Hijau saku
+Point and click on top	Tunjuk dan klik di atas
+Pokédex caught	Pokédex tertangkap
+Pokédex seen	Pokédex terlihat
+PortMaster is ready	PortMaster siap
+Ports	Port
 Power	Daya
+Power bombs	Bom daya
 Power mode	Mode daya
 Power off	Matikan
 Power off your handheld?	Matikan konsol?
 Power profile	Profil daya
 Powering off…	Mematikan…
+Prepare	Siapkan
 Preparing controls…	Menyiapkan kontrol…
 Preparing the launcher	Menyiapkan peluncur
 Preparing the library…	Menyiapkan pustaka…
+Preparing update…	Menyiapkan pembaruan…
 Preparing your cartridges…	Menyiapkan kartrid…
 Preparing your library…	Menyiapkan pustaka Anda…
+Preparing your statistics…	Menyiapkan statistik Anda…
+Preparing…	Menyiapkan…
 Press a button for {0}	Tekan tombol untuk {0}
 Press a button…	Tekan tombol…
 Preview	Pratinjau
-Preview Wi-Fi	Pratinjau Wi-Fi
+PREVIEW	PRATINJAU
 Preview and choose your screen style	Pratinjau dan pilih gaya layar
 Preview game	Pratinjau game
+Preview sound	Dengarkan suara
 Preview unavailable	Pratinjau tidak tersedia
+Preview Wi-Fi	Pratinjau Wi-Fi
+Previous	Sebelumnya
 Previous build selected. Return to stock, then open RGDS again.	Build sebelumnya dipilih. Kembali ke menu bawaan, lalu buka RGDS lagi.
 Profile	Profil
+PSP · Black	PSP · Hitam
+PSP · White	PSP · Putih
+Publisher	Penerbit
+Purple	Ungu
+Push	Dorong
+Quick search	Cari cepat
+Quiet	Pelan
+Quit	Keluar
+Race	Balapan
+Rating	Peringkat usia
+Reading Roms/NDS on your games card. This takes a moment.	Membaca Roms/NDS di kartu game. Ini butuh sebentar.
 READY	SIAP
-REVIEW YOUR CHOICE	TINJAU PILIHAN ANDA
-RGDS build	Build RGDS
-ROUNDED FONT UNAVAILABLE	FON BULAT TIDAK TERSEDIA
+Ready to fetch artwork.	Siap mengambil sampul.
+Ready to restart. Your previous version is kept for recovery.	Siap dimulai ulang. Versi sebelumnya disimpan untuk pemulihan.
+Real microphone	Mikrofon asli
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Mikrofon asli aktif secara default. Aksi tiup dan tutup kembali ke game selama dua detik. Perubahan bahasa berlaku setelah mulai ulang.
+Receiving files	Menerima file
 Recents	Terbaru
+Red	Merah
 Reduce rendering work when needed	Kurangi beban rendering bila perlu
 Refresh	Segarkan
 Refresh connection	Segarkan koneksi
 Release for options	Lepas untuk opsi
+Release notes	Catatan rilis
+Released	Rilis
 Remap	Atur ulang
+Remove favourite	Hapus favorit
+Replace	Ganti
+Replace slot {0}?	Ganti slot {0}?
 Request cancelled.	Permintaan dibatalkan.
 Request failed. Check the connection or device log and try again.	Permintaan gagal. Periksa koneksi atau log perangkat lalu coba lagi.
+Reserve	Cadangan
 Reset	Reset
+Reset filters	Atur ulang filter
+Reset state	Reset state
 Rest after a period of inactivity	Istirahat setelah tidak aktif
 Restart	Mulai ulang
+Restart & install	Mulai ulang & pasang
+Restart and install the update?	Mulai ulang dan pasang pembaruan?
+Restart from the title screen. In-game saves and save slots are kept.	Mulai ulang dari layar judul. Simpanan dalam game dan slot tetap ada.
 Restart menu	Mulai ulang menu
-Restart the RGDS menu?	Mulai ulang menu RGDS?
+Restart port	Mulai ulang port
+Restart RG DS Core before installing the update.	Mulai ulang RG DS Core sebelum memasang pembaruan.
 Restart the device?	Mulai ulang perangkat?
+Restart the game to apply DS settings.	Mulai ulang game untuk menerapkan pengaturan DS.
+Restart the RGDS menu.	Mulai ulang menu RGDS.
+Restart the RGDS menu?	Mulai ulang menu RGDS?
 Restart uses {0}. Saves and checkpoints stay separate per emulator.	Mulai ulang memakai {0}. Simpanan dan checkpoint terpisah per emulator.
+Restart without loading a state?	Mulai ulang tanpa memuat state?
+Restarting into the update…	Memulai ulang ke pembaruan…
 Restarting…	Memulai ulang…
 Restore defaults	Pulihkan default
 Restore the last installed RGDS build	Pulihkan build RGDS yang terakhir dipasang
 Restoring settings	Memulihkan pengaturan
 Restoring settings…	Memulihkan pengaturan…
 Resume	Lanjutkan
+Resume after power off	Lanjutkan setelah dimatikan
+Resume download	Lanjutkan unduhan
 Resume game	Lanjutkan game
 Return	Kembali
 Return home	Ke beranda
 Return home before changing startup.	Kembali ke beranda sebelum mengubah mulai.
+Return home before testing the physical microphone.	Kembali ke beranda sebelum menguji mikrofon fisik.
 Return home from your game first.	Kembali ke beranda dari game terlebih dahulu.
 Return to game	Kembali ke game
 Return to stock	Kembali ke bawaan
@@ -340,16 +783,30 @@ Return to the stock menu?	Kembali ke menu bawaan?
 Return without saving	Kembali tanpa menyimpan
 Returning home…	Kembali ke beranda…
 Review unmatched	Tinjau yang belum cocok
+REVIEW YOUR CHOICE	TINJAU PILIHAN ANDA
+RGDS build	Build RGDS
+Rich	Detail
 Right	Kanan
 Right stick	Stik kanan
 Rollback simulated.	Rollback disimulasikan.
-START	START
+Round	Ronde
+ROUNDED FONT UNAVAILABLE	FON BULAT TIDAK TERSEDIA
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Game Rumble Pak di DS, kartrid bergetar di Game Boy dan Game Boy Advance.
+Rumble strength	Kekuatan getaran
+Rupees	Rupee
+Sa	Sab
 Save	Simpan
 Save & restart	Simpan & mulai ulang
 Save & restart applies Threaded 3D.	Simpan & mulai ulang menerapkan 3D berthread.
 Save & restart keeps your checkpoint and applies pending settings.	Simpan & mulai ulang menyimpan checkpoint dan menerapkan pengaturan tertunda.
 Save a report for troubleshooting	Simpan laporan untuk pemecahan masalah
+Save backup created in userdata/exports.	Cadangan simpanan dibuat di userdata/exports.
+Save checkpoint	Simpan checkpoint
+Save complete	Simpan selesai
 Save device report	Simpan laporan perangkat
+Save gallery	Galeri simpanan
+Save here	Simpan di sini
+Save library updated.	Pustaka simpanan diperbarui.
 Save state	Simpan state
 Save your checkpoint and restart	Simpan checkpoint lalu mulai ulang
 Saved	Disimpan
@@ -366,16 +823,42 @@ Saving before returning home…	Menyimpan sebelum kembali ke beranda…
 Saving checkpoint before restarting…	Menyimpan checkpoint sebelum memulai ulang…
 Saving checkpoint…	Menyimpan checkpoint…
 Saving your progress…	Menyimpan progres Anda…
+Saving…	Menyimpan…
 Scan	Pindai
+Scan complete	Pemindaian selesai
+Scan for games	Pindai game
+Scan with your phone	Pindai dengan ponsel
+Scanning…	Memindai…
 Scene	Adegan
+Score	Skor
 Screen brightness	Kecerahan layar
+Screen colours	Warna layar
+Screen off	Layar mati
 Screen order	Urutan layar
+screens	layar
 ScreenScraper needs project credentials and your account	ScreenScraper memerlukan kredensial proyek dan akun Anda
+Screenshot	Tangkapan layar
+Screenshots	Tangkapan layar
+Screenshots and title screens	Tangkapan layar dan layar judul
+Sea green	Hijau laut
+Search	Cari
+Search games	Cari game
+Search in	Cari di
+Searching…	Mencari…
+Second screen	Layar kedua
+Seconds	Detik
+Secret seashells	Kerang rahasia
+Seeds	Biji
 Select	Pilih
 Select a network again and enter its password.	Pilih jaringan lagi dan masukkan kata sandinya.
 Select a network again.	Pilih jaringan lagi.
 Selected	Dipilih
+Selected row	Baris terpilih
+Send	Kirim
+Series	Seri
+Set the clock to where you are.	Atur jam sesuai lokasi Anda.
 Sets Standard DraStic screen order for this game. Save & restart applies it.	Mengatur urutan layar DraStic Standar untuk game ini. Diterapkan lewat Simpan & mulai ulang.
+Setting up PortMaster	Menyiapkan PortMaster
 Settings	Pengaturan
 Settings saved	Pengaturan disimpan
 Shader	Filter
@@ -386,21 +869,27 @@ Shader saved for next launch	Filter disimpan untuk peluncuran berikutnya
 Shader saved. Restart this game to apply it.	Filter disimpan. Mulai ulang game ini untuk menerapkannya.
 Shader studio	Studio filter
 Shaders	Filter
-Sharp + NDS Color	Tajam + NDS Color
-Sharp + Natural Vision	Tajam + Natural Vision
 Sharp + both colours	Tajam + kedua filter warna
+Sharp + Natural Vision	Tajam + Natural Vision
+Sharp + NDS Color	Tajam + NDS Color
 Sharp bilinear	Bilinear tajam
+Sharp fill	Isi tajam
 Sharp pixel edges with smoother scaling.	Tepi piksel tajam dengan penskalaan lebih halus.
 Sharp scaling with natural colour and contrast.	Penskalaan tajam dengan warna dan kontras alami.
 Sharp scaling with the DS colour treatment.	Penskalaan tajam dengan warna DS.
 Sharp scaling, DS colour and Natural Vision together.	Penskalaan tajam, warna DS, dan Natural Vision sekaligus.
+Shield	Perisai
 Shift	Shift
 Shortcut action	Aksi pintasan
+Shots	Tembakan
+Show games	Tampilkan game
 Show the charge in the status bar	Tampilkan daya di bilah status
 Show the welcome screen at startup	Tampilkan layar sambutan saat mulai
 Sign in	Masuk
 Sign out	Keluar
+Signal	Sinyal
 Signing in…	Masuk…
+Simple pixel	Piksel sederhana
 Simulated handheld	Konsol simulasi
 Sleep	Tidur
 Sleep now	Tidur sekarang
@@ -409,23 +898,45 @@ Sleep simulated - press any control	Tidur disimulasikan - tekan tombol apa saja
 Sleep simulated - settings retained	Tidur disimulasikan - pengaturan dipertahankan
 Sleep unavailable on this device	Tidur tidak tersedia di perangkat ini
 Sleeping - use Power to wake	Tidur - tekan Daya untuk bangun
-Soft LCD grid	Kisi LCD lembut
+Slide into pages; slide back to return	Geser masuk ke halaman; geser balik untuk kembali
+Slot	Slot
+Slot change undone.	Perubahan slot diurungkan.
+Slot exported to userdata/exports.	Slot diekspor ke userdata/exports.
+Slot {0} deleted.	Slot {0} dihapus.
+Small keys	Kunci kecil
+Small touches, scrolling and startup motion	Sentuhan kecil, gulir, dan gerakan saat mulai
+Smooth fill	Isi halus
 Soft green monochrome with full-resolution detail.	Monokrom hijau lembut dengan detail resolusi penuh.
+Soft LCD grid	Kisi LCD lembut
 Soft scanlines	Garis pindai lembut
+Some menu sounds are unavailable.	Beberapa suara menu tidak tersedia.
 Sound	Suara
+Sounds & music	Suara & musik
+Source	Sumber
 Space	Spasi
+Spanish	Spanyol
+Spring	Pegas
+Springy menu changes with a colourful wobble	Perpindahan menu memantul dengan goyangan warna-warni
+Stable	Stabil
 Standard	Standar
 Standard DraStic only. Applies on the next launch; game saves are kept.	Hanya DraStic Standar. Berlaku pada peluncuran berikutnya; simpanan game tetap ada.
 Standard screen order	Urutan layar standar
+START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
+Start a game	Mulai game
 Start RG DS automatically on future boots?	Mulai RG DS otomatis pada boot berikutnya?
+Start Send   X Undo   L R Scroll	Start Kirim   X Urungkan   L R Gulir
 Start with a familiar layout	Mulai dengan tata letak yang familier
 Start, then Anbernic	Start, lalu Anbernic
+Starting…	Memulai…
 Startup	Mulai
 Startup choice saved.	Pilihan mulai disimpan.
 Startup choice simulated.	Pilihan mulai disimulasikan.
 Startup is managed by RGDS OS.	Mulai diatur oleh RGDS OS.
+Statistics	Statistik
+Step {0} of 4	Langkah {0} dari 4
+Still reading your library. Try again in a moment.	Pustaka masih dibaca. Coba lagi sebentar lagi.
 Stock	Bawaan
 Stock firmware	Firmware bawaan
 Stop fetching	Hentikan pengambilan
@@ -435,76 +946,196 @@ Stop scraping before changing source	Hentikan scraping sebelum mengganti sumber
 Stopping after this request	Berhenti setelah permintaan ini
 Stopping after this request.	Berhenti setelah permintaan ini.
 Storage read-only - use internal RGDS	Penyimpanan hanya-baca - gunakan RGDS internal
+Su	Min
+Subtle	Halus
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Waktu musim panas mengikuti zona waktumu. Paksa aktif atau nonaktif jika jam meleset satu jam.
+Super missiles	Misil super
 SuperDrastic (experimental)	SuperDrastic (eksperimental)
 SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic saat ini memakai keluaran asli. Pilihan filter standar Anda tetap disimpan.
 SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic memakai menu jeda dan jalur tampilannya sendiri. Eksperimental; pengujian RG DS masih berlangsung.
+Swap screens	Tukar layar
 Swapped	Ditukar
+Swipe in from the left edge to go Back.	Usap dari tepi kiri untuk Kembali.
+Swipe up from the bottom edge to go Home from anywhere.	Usap ke atas dari tepi bawah untuk ke Beranda dari mana saja.
+Swipe up from the bottom for Home, in from the left for Back	Usap ke atas dari bawah untuk Beranda, dari kiri untuk Kembali
+Switch off	Matikan
+Switch on	Nyalakan
+Switch to another game	Beralih ke game lain
+Switches and values	Sakelar dan nilai
+Sword	Pedang
 System	Sistem
-THEME ERROR - RETAINED CURRENT	GALAT TEMA - TEMA SAAT INI DIPERTAHANKAN
-THEME RELOADED	TEMA DIMUAT ULANG
-Turn the handheld off and on again	Matikan lalu nyalakan kembali perangkat
-TYPEFACE	JENIS HURUF
+System update	Pembaruan sistem
+Systems	Sistem
+Tap to type, or use the D-pad and A	Ketuk untuk mengetik, atau gunakan D-pad dan A
+Team	Tim
 Temporary game cache cleared. Saves and artwork are kept.	Cache game sementara dihapus. Simpanan dan sampul tetap ada.
+Test	Uji
+Test microphone	Uji mikrofon
+Test the microphone on your handheld.	Uji mikrofon pada konsol Anda.
+Testing	Uji coba
+Th	Kam
+That message could not be sent	Pesan itu tidak dapat dikirim
+That room is full	Ruang itu penuh
+The backup did not finish. Please try again.	Pencadangan tidak selesai. Silakan coba lagi.
+The best there is	Yang terbaik
+The brighter DS Lite screen with a faint pixel grid.	Layar DS Lite yang lebih terang dengan kisi piksel samar.
 The checkpoint did not finish saving.	Checkpoint tidak selesai disimpan.
 The emulator did not finish. Resume, retry, or return without saving.	Emulator tidak selesai. Lanjutkan, coba lagi, atau kembali tanpa menyimpan.
+The first DS screen: muted colour and a fine pixel grid.	Layar DS pertama: warna redup dan kisi piksel halus.
+The Game Boy Advance LCD's own colour and gamma.	Warna dan gamma asli LCD Game Boy Advance.
+The Game Boy Advance screen: its colour and faint pixel gaps.	Layar Game Boy Advance: warnanya dan celah piksel yang samar.
+The Game Boy Color screen with faint gaps between its pixels.	Layar Game Boy Color dengan celah samar di antara pikselnya.
 The game menu did not respond. Resume or return without saving.	Menu game tidak merespons. Lanjutkan atau kembali tanpa menyimpan.
+The language for menus and messages.	Bahasa untuk menu dan pesan.
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Layar dot-matrix Game Boy asli: kisi piksel terang dan bayangan lembut.
+The pad is full: send it or clear it	Kertas penuh: kirim atau hapus
+The true GBA colours on its screen, with the gaps between its pixels.	Warna asli GBA di layarnya, dengan celah di antara pikselnya.
+The update could not be downloaded. Check for updates again.	Pembaruan tidak dapat diunduh. Periksa pembaruan lagi.
+The update could not start. Your previous version was restored.	Pembaruan tidak dapat dimulai. Versi sebelumnya telah dipulihkan.
 The zFast LCD texture with both colour treatments.	Tekstur LCD zFast dengan kedua filter warna.
 The zFast LCD texture with natural colour and contrast.	Tekstur LCD zFast dengan warna dan kontras alami.
 The zFast LCD texture with the DS colour treatment.	Tekstur LCD zFast dengan warna DS.
 Theme	Tema
 Theme & display	Tema & tampilan
+THEME ERROR - RETAINED CURRENT	GALAT TEMA - TEMA SAAT INI DIPERTAHANKAN
+THEME RELOADED	TEMA DIMUAT ULANG
+There is not enough free space for this update.	Ruang kosong tidak cukup untuk pembaruan ini.
+This can take a few seconds	Ini bisa memakan waktu beberapa detik
 This emulator does not expose a frameskip setting.	Emulator ini tidak punya pengaturan lewati frame.
 This emulator uses native resolution. No resolution switch is available.	Emulator ini memakai resolusi asli. Resolusi tidak bisa diganti.
 This engine does not expose a threading switch.	Mesin ini tidak punya sakelar thread.
 This engine has no live threading control.	Mesin ini tidak bisa mengubah thread saat berjalan.
 This game	Game ini
+This handheld's own screen.	Layar asli konsol genggam ini.
 This network requires an enterprise profile.	Jaringan ini memerlukan profil perusahaan.
+This port lists no instructions.	Port ini tidak punya petunjuk.
 This request did not finish. Please try again.	Permintaan ini tidak selesai. Silakan coba lagi.
 This shader is unavailable for the current emulator.	Filter ini tidak tersedia untuk emulator saat ini.
+This stock firmware has not been validated for updates.	Firmware bawaan ini belum divalidasi untuk pembaruan.
+This version failed to start. Waiting for a newer update.	Versi ini gagal dimulai. Menunggu pembaruan yang lebih baru.
 Threaded 3D	3D berthread
+Time	Waktu
+Time format	Format waktu
+Time of day	Waktu
 Time played	Waktu bermain
+Times played	Kali dimainkan
 Timezone	Zona waktu
+Title screen	Layar judul
+Title screens	Layar judul
 Toggle	Alihkan
+Too much on the pad: erase some of it	Isi kertas terlalu banyak: hapus sebagian
+Tools	Alat
 Top display	Layar atas
+Total	Total
 Touch	Sentuh
+Touch gestures	Gestur sentuh
+Touch here to point and click on the top screen.	Sentuh di sini untuk menunjuk dan mengeklik di layar atas.
 Touch indicator	Indikator sentuhan
+Touch screen	Layar sentuh
+Touch screen is not available	Layar sentuh tidak tersedia
+Touch screen off	Layar sentuh mati
+Touch the screen to turn it on	Sentuh layar untuk menyalakannya
 Touch to continue	Sentuh untuk melanjutkan
 Touch {0}	Sentuh {0}
+Trainer	Pelatih
+Transition style	Gaya transisi
+Transitions	Transisi
+Treasures	Harta
+Try a pattern	Coba pola
+Try a shorter title or clear your filter.	Coba judul yang lebih pendek atau hapus filter.
+Try again	Coba lagi
+Try another title or clear your filters	Coba judul lain atau hapus filter
 Try saving again	Coba simpan lagi
+Tu	Sel
+Turn Bluetooth off?	Matikan Bluetooth?
+Turn Bluetooth on to find devices.	Nyalakan Bluetooth untuk menemukan perangkat.
+Turn it on to find networks	Nyalakan untuk mencari jaringan
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Aktifkan Info game di Pengaturan > Pustaka > Sumber sampul, lalu ambil sampul.
+Turn on game rumble for games made for a rumble accessory.	Nyalakan getaran game untuk game yang dibuat untuk aksesori getar.
+Turn on menu haptics to feel the menus.	Nyalakan haptik menu untuk merasakan menu.
+Turn on menu music for a soft tune while you browse.	Nyalakan musik menu untuk melodi lembut saat menjelajah.
+Turn on menu sounds to hear the previews.	Nyalakan suara menu untuk mendengar pratinjau.
+Turn the handheld off and on again	Matikan lalu nyalakan kembali perangkat
 Turn Wi-Fi off?	Matikan Wi-Fi?
 Turn Wi-Fi on first.	Nyalakan Wi-Fi terlebih dahulu.
 Turn Wi-Fi on to find networks.	Nyalakan Wi-Fi untuk mencari jaringan.
+Turning Bluetooth off…	Mematikan Bluetooth…
+Turning Bluetooth on…	Menyalakan Bluetooth…
 Turning Wi-Fi off…	Mematikan Wi-Fi…
 Turning Wi-Fi on…	Menyalakan Wi-Fi…
+Turquoise	Toska
+Type	Ketik
+Type a game title…	Ketik judul game…
+Type your name	Ketik nama Anda
+TYPEFACE	JENIS HURUF
 Typeface	Jenis huruf
 Unassigned	Belum ditetapkan
 Unavailable	Tidak tersedia
+Undo last load	Urungkan muat terakhir
+Undo last slot change	Urungkan perubahan slot terakhir
 Unmatched artwork	Sampul belum cocok
 Unmute	Bunyikan
+Unpacking files	Mengekstrak file
+Unpacking PortMaster	Membongkar PortMaster
+Unplayed	Belum dimainkan
+Up	Atas
+Update	Perbarui
+Update available in Maintenance	Pembaruan tersedia di Pemeliharaan
+Update discarded. Your installed version is unchanged.	Pembaruan dibuang. Versi terpasang tidak berubah.
+Update failed. Check Wi-Fi and try again.	Pembaruan gagal. Periksa Wi-Fi lalu coba lagi.
+Update information has expired or the device clock is incorrect.	Info pembaruan kedaluwarsa atau jam perangkat salah.
+Update installed.	Pembaruan terpasang.
+Update now	Perbarui sekarang
+Update verification failed. Check for updates again.	Verifikasi pembaruan gagal. Periksa pembaruan lagi.
+Updates	Pembaruan
 Updates & recovery	Pembaruan & pemulihan
-Use ROM identity	Gunakan identitas ROM
+Updates will be available when the release channel opens.	Pembaruan akan tersedia saat kanal rilis dibuka.
 Use an additional rendering thread	Gunakan thread rendering tambahan
 Use default ({0})	Gunakan default ({0})
 Use global controls	Gunakan kontrol global
 Use previous build	Gunakan build sebelumnya
+Use ROM identity	Gunakan identitas ROM
+Use the engine's native controls for microphone and DS settings.	Gunakan kontrol bawaan mesin untuk mikrofon dan pengaturan DS.
 Use the previous RGDS build?	Gunakan build RGDS sebelumnya?
 Used by games without an override	Dipakai game tanpa pengaturan khusus
 Username	Nama pengguna
+Verify	Verifikasi
+Verifying update…	Memverifikasi pembaruan…
+Version {0} is ready	Versi {0} siap
+Version {0} is ready to install	Versi {0} siap dipasang
+Versions, free space and the network address of your handheld.	Versi, ruang kosong, dan alamat jaringan perangkat Anda.
+Vibration	Getaran
 View	Tampilan
+View transitions	Transisi tampilan
+Violet	Violet
+Vivid	Cerah
+Vivid LCD	LCD cerah
+Vivid smooth	Cerah halus
 Volume	Volume
 Volume control unavailable	Kontrol volume tidak tersedia
+Waiting for an address…	Menunggu alamat…
 WAITING FOR INPUT	MENUNGGU INPUT
 Warm monochrome with preserved highlight detail.	Monokrom hangat dengan detail terang yang terjaga.
 Warm paper	Kertas hangat
 Warm whites and softened contrast for evening play.	Putih hangat dan kontras lembut untuk bermain malam hari.
+We	Rab
 Welcome back	Selamat datang kembali
+What happens when you turn the handheld on.	Apa yang terjadi saat Anda menyalakan perangkat.
 What the shortcut opens	Yang dibuka pintasan
+What's new	Yang baru
+Where covers and titles come from.	Asal sampul dan judul.
+Where games go on the card, and a fresh scan.	Tempat game di kartu, dan pemindaian baru.
 Where this layout applies	Tempat tata letak ini berlaku
+Where to put games	Tempat menaruh game
+White sword	Pedang putih
+Whole pixels	Piksel utuh
 Wi-Fi	Wi-Fi
 Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Adaptor Wi-Fi belum siap. Periksa driver OS atau mulai ulang konsol.
 Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Adaptor Wi-Fi belum siap. Nyalakan Wi-Fi untuk mencoba lagi.
+Wi-Fi connected	Wi-Fi terhubung
 Wi-Fi did not turn on. Try again.	Wi-Fi tidak menyala. Coba lagi.
 Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi diblokir oleh perangkat keras. Mulai ulang konsol lalu coba lagi.
+Wi-Fi is off	Wi-Fi mati
 Wi-Fi is still on. Try turning it off again.	Wi-Fi masih menyala. Coba matikan lagi.
 Wi-Fi is unavailable.	Wi-Fi tidak tersedia.
 Wi-Fi off.	Wi-Fi mati.
@@ -512,630 +1143,53 @@ Wi-Fi on.	Wi-Fi nyala.
 Wi-Fi request failed. Check the password and signal, then try again.	Permintaan Wi-Fi gagal. Periksa kata sandi dan sinyal, lalu coba lagi.
 Wi-Fi request timed out. Check signal and try again.	Waktu permintaan Wi-Fi habis. Periksa sinyal lalu coba lagi.
 Wi-Fi service is unavailable.	Layanan Wi-Fi tidak tersedia.
+With info	Dengan info
 With shader	Dengan filter
+Without info	Tanpa info
+WonderSwan Color · Blue	WonderSwan Color · Biru
+WonderSwan Color · White	WonderSwan Color · Putih
+Wood-grain TV	TV motif kayu
+Wooden sword	Pedang kayu
 Working…	Memproses…
+World	Dunia
+World map	Peta dunia
+Worlds	Dunia
+Y imports a save into this slot.	Y mengimpor simpanan ke slot ini.
+Yellow	Kuning
+Yes	Ya
+You	Anda
+You appear like this to others	Beginilah Anda terlihat oleh orang lain
+You are in Room {0}	Anda di Ruang {0}
+You are up to date.	Versi Anda sudah terbaru.
 Your cartridges go here	Kartrid Anda ada di sini
+Your colour	Warna Anda
+Your DS library starts here	Pustaka DS Anda dimulai di sini
+Your games and saves are not touched.	Game dan simpanan Anda tidak tersentuh.
 Your home screen after powering on	Layar beranda setelah dinyalakan
+Your journey	Perjalananmu
+Your last game will appear here	Game terakhir Anda akan muncul di sini
 Your local time and date	Waktu dan tanggal lokal
 Your menu shortcut	Pintasan menu Anda
+Your name	Nama Anda
+Your ports are waiting in Ports	Port Anda menunggu di Port
+Your saves are safe. See you soon!	Simpanan Anda aman. Sampai jumpa!
 Your shader choice is still available.	Pilihan filter Anda masih tersedia.
-zFast + NDS Color	zFast + NDS Color
-zFast + Natural Vision	zFast + Natural Vision
 zFast + both colours	zFast + kedua filter warna
+zFast + Natural Vision	zFast + Natural Vision
+zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (eksperimental)
 {0} (recommended)	{0} (disarankan)
+{0} active	{0} aktif
+{0} found. Choose Done to go to your library.	{0} ditemukan. Pilih Selesai untuk ke pustaka.
 {0} frames	{0} frame
+{0} game	{0} game
 {0} games	{0} game
-{0} settings	Pengaturan {0}
-Up	Atas
-Times played	Kali dimainkan
-Last played	Terakhir dimainkan
-GameTDB	GameTDB
-Libretro	Libretro
-Ready to fetch artwork.	Siap mengambil sampul.
-Icon style	Gaya ikon
-Simple pixel	Piksel sederhana
-Rich	Detail
-Statistics	Statistik
-Games played	Game dimainkan
-Most played	Paling sering dimainkan
-Preparing your statistics…	Menyiapkan statistik Anda…
-Play a game to start your statistics.	Mainkan game untuk memulai statistik.
-Installed version	Versi terpasang
-Check for updates	Periksa pembaruan
-Restart & install	Mulai ulang & pasang
-Download update	Unduh pembaruan
-Pause download	Jeda unduhan
-Release notes	Catatan rilis
-Discard update	Buang pembaruan
-No release notes yet.	Belum ada catatan rilis.
-Restart and install the update?	Mulai ulang dan pasang pembaruan?
-Check for updates when you are ready.	Periksa pembaruan saat Anda siap.
-Updates will be available when the release channel opens.	Pembaruan akan tersedia saat kanal rilis dibuka.
-Checking for updates…	Memeriksa pembaruan…
-You are up to date.	Versi Anda sudah terbaru.
-A new version is ready to download.	Versi baru siap diunduh.
-This version failed to start. Waiting for a newer update.	Versi ini gagal dimulai. Menunggu pembaruan yang lebih baru.
-Downloading update…	Mengunduh pembaruan…
-Verifying update…	Memverifikasi pembaruan…
-Preparing update…	Menyiapkan pembaruan…
-Ready to restart. Your previous version is kept for recovery.	Siap dimulai ulang. Versi sebelumnya disimpan untuk pemulihan.
-Restarting into the update…	Memulai ulang ke pembaruan…
-Checking the new version…	Memeriksa versi baru…
-Update installed.	Pembaruan terpasang.
-The update could not start. Your previous version was restored.	Pembaruan tidak dapat dimulai. Versi sebelumnya telah dipulihkan.
-Download paused. Retry to continue.	Unduhan dijeda. Coba lagi untuk melanjutkan.
-Update discarded. Your installed version is unchanged.	Pembaruan dibuang. Versi terpasang tidak berubah.
-Connect the charger before installing an update.	Sambungkan pengisi daya sebelum memasang pembaruan.
-There is not enough free space for this update.	Ruang kosong tidak cukup untuk pembaruan ini.
-Exit your game before installing an update.	Keluar dari game sebelum memasang pembaruan.
-Install the latest SD installer before this update.	Pasang penginstal SD terbaru sebelum pembaruan ini.
-Restart RG DS Core before installing the update.	Mulai ulang RG DS Core sebelum memasang pembaruan.
-Download interrupted. Retry to continue.	Unduhan terputus. Coba lagi untuk melanjutkan.
-An update is already prepared. Install it or discard it first.	Pembaruan sudah disiapkan. Pasang atau buang terlebih dahulu.
-Another update is already running.	Pembaruan lain sedang berjalan.
-Update information has expired or the device clock is incorrect.	Info pembaruan kedaluwarsa atau jam perangkat salah.
-This stock firmware has not been validated for updates.	Firmware bawaan ini belum divalidasi untuk pembaruan.
-Update verification failed. Check for updates again.	Verifikasi pembaruan gagal. Periksa pembaruan lagi.
-Update failed. Check Wi-Fi and try again.	Pembaruan gagal. Periksa Wi-Fi lalu coba lagi.
-Stable	Stabil
-Testing	Uji coba
-Import slot	Impor slot
-Export slot	Ekspor slot
-Save checkpoint	Simpan checkpoint
-Load checkpoint	Muat checkpoint
-Save here	Simpan di sini
-Export	Ekspor
-More	Lainnya
-Replace slot {0}?	Ganti slot {0}?
-Load slot {0}?	Muat slot {0}?
-Delete slot {0}?	Hapus slot {0}?
-Undo last slot change	Urungkan perubahan slot terakhir
-Undo last load	Urungkan muat terakhir
-Import into this slot	Impor ke slot ini
-Slot {0} deleted.	Slot {0} dihapus.
-Slot change undone.	Perubahan slot diurungkan.
-A saves your current progress here.	A menyimpan progres saat ini di sini.
-A replaces this slot with your current progress. X deletes it.	A mengganti slot ini dengan progres saat ini. X menghapusnya.
-A loads this slot. Undo last load, under Y, brings back the progress you have now.	A memuat slot ini. Urungkan muat terakhir, di Y, mengembalikan progres Anda saat ini.
-Nothing to load here yet.	Belum ada yang bisa dimuat di sini.
-A exports this slot to userdata/exports. X deletes it.	A mengekspor slot ini ke userdata/exports. X menghapusnya.
-Y imports a save into this slot.	Y mengimpor simpanan ke slot ini.
-Import help	Bantuan impor
-Replace	Ganti
-Blow into microphone	Tiup mikrofon
-Close and open DS lid	Tutup dan buka tutup DS
-DS language	Bahasa DS
-Real microphone	Mikrofon asli
-Japanese	Jepang
-English	Inggris
-French	Prancis
-German	Jerman
-Italian	Italia
-Spanish	Spanyol
-2 seconds	2 detik
-In game	Dalam game
-Restart the game to apply DS settings.	Mulai ulang game untuk menerapkan pengaturan DS.
-Could not save DS settings.	Tidak dapat menyimpan pengaturan DS.
-Search	Cari
-Save gallery	Galeri simpanan
-Add your games	Tambahkan game Anda
-DS controls	Kontrol DS
-Back up all saves	Cadangkan semua simpanan
-Resume after power off	Lanjutkan setelah dimatikan
-Slot	Slot
-Empty slot	Slot kosong
-Search games	Cari game
-Filter	Filter
-Missing artwork	Tanpa sampul
-Where to put games	Tempat menaruh game
-Scan for games	Pindai game
-Automatic updates	Pembaruan otomatis
-Download automatically	Unduh otomatis
-Check automatically	Periksa otomatis
-Update available in Maintenance	Pembaruan tersedia di Pemeliharaan
-Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Salin file .rgdssave.zip ke userdata/imports. Impor harus cocok dengan game dan emulator ini.
-Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Salin file .nds atau arsip ZIP DS ke Roms/NDS di kartu game. Game tidak disertakan. Simpanan tetap di userdata.
-Save backup created in userdata/exports.	Cadangan simpanan dibuat di userdata/exports.
-Slot exported to userdata/exports.	Slot diekspor ke userdata/exports.
-Save library updated.	Pustaka simpanan diperbarui.
-Current progress could not be saved. No slot was changed.	Progres saat ini tidak dapat disimpan. Tidak ada slot yang berubah.
-DS controls are unavailable for this engine.	Kontrol DS tidak tersedia untuk mesin ini.
-Your DS library starts here	Pustaka DS Anda dimulai di sini
-Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Salin file .nds atau ZIP DS ke Roms/NDS di kartu game, lalu pilih Pindai game.
-Use the engine's native controls for microphone and DS settings.	Gunakan kontrol bawaan mesin untuk mikrofon dan pengaturan DS.
-Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Mikrofon asli aktif secara default. Aksi tiup dan tutup kembali ke game selama dua detik. Perubahan bahasa berlaku setelah mulai ulang.
-Unplayed	Belum dimainkan
-Played	Sudah dimainkan
-Filtered	Difilter
-No matching games	Tidak ada game yang cocok
-No matches. Use View to change filters.	Tidak ada hasil. Ubah filter di Tampilan.
-Reset state	Reset state
-Restart without loading a state?	Mulai ulang tanpa memuat state?
-Restart from the title screen. In-game saves and save slots are kept.	Mulai ulang dari layar judul. Simpanan dalam game dan slot tetap ada.
-Microphone, simulated blowing, lid and DS language.	Mikrofon, simulasi tiupan, tutup, dan bahasa DS.
-Test microphone	Uji mikrofon
-Test	Uji
-Live input	Input langsung
-Quiet	Pelan
-Loud	Keras
-Listening…	Mendengarkan…
-Microphone unavailable	Mikrofon tidak tersedia
-Audio is not recorded or saved.	Audio tidak direkam atau disimpan.
-Test the microphone on your handheld.	Uji mikrofon pada konsol Anda.
-Return home before testing the physical microphone.	Kembali ke beranda sebelum menguji mikrofon fisik.
-Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Tiup atau bicara ke mikrofon. Lihat levelnya naik, lalu turun saat Anda berhenti.
-Quick search	Cari cepat
-A  Search	A  Cari
-A  Jump	A  Lompat
-Edit search	Ubah pencarian
-Clear filters	Hapus filter
-Try another title or clear your filters	Coba judul lain atau hapus filter
-Type a game title…	Ketik judul game…
-Finding games…	Mencari game…
-Searching…	Mencari…
-Search in	Cari di
-Try a shorter title or clear your filter.	Coba judul yang lebih pendek atau hapus filter.
-Type	Ketik
-Tap to type, or use the D-pad and A	Ketuk untuk mengetik, atau gunakan D-pad dan A
-No letters to jump to. Search for another game.	Tidak ada huruf untuk dilompati. Cari game lain.
+{0} joined	{0} bergabung
+{0} left	{0} keluar
 {0} match	{0} hasil
 {0} matches	{0} hasil
 {0} matching game	{0} game cocok
 {0} matching games	{0} game cocok
-{0} game	{0} game
-Interface animations	Animasi antarmuka
-View transitions	Transisi tampilan
-Small touches, scrolling and startup motion	Sentuhan kecil, gulir, dan gerakan saat mulai
-Springy menu changes with a colourful wobble	Perpindahan menu memantul dengan goyangan warna-warni
-Transitions	Transisi
-Subtle	Halus
-Menu effects	Efek menu
-Effects volume	Volume efek
-Preview sound	Dengarkan suara
-A little handheld magic	Sedikit keajaiban konsol genggam
-Playful sounds for browsing, choosing and starting games.	Suara ceria saat menjelajah, memilih, dan memulai game.
-Turn on menu sounds to hear the previews.	Nyalakan suara menu untuk mendengar pratinjau.
-Some menu sounds are unavailable.	Beberapa suara menu tidak tersedia.
-Menu audio is unavailable on this device.	Audio menu tidak tersedia di perangkat ini.
-Menu sounds are unavailable.	Suara menu tidak tersedia.
-Close lid	Tutup penutup
-Open lid	Buka penutup
-Spring	Pegas
-Push	Dorong
-Transition style	Gaya transisi
-Animate pages with the selected style	Animasikan halaman dengan gaya pilihan
-Slide into pages; slide back to return	Geser masuk ke halaman; geser balik untuk kembali
-Accent colour	Warna aksen
-FAVOURITE COLOUR	WARNA FAVORIT
-Classic	Klasik
-Classic blue	Biru klasik
-High contrast	Kontras tinggi
-PREVIEW	PRATINJAU
-Selected row	Baris terpilih
-Switches and values	Sakelar dan nilai
-Grey	Abu-abu
-Brown	Cokelat
-Red	Merah
-Pink	Merah muda
-Orange	Oranye
-Yellow	Kuning
-Lime	Hijau limau
-Green	Hijau
-Dark green	Hijau tua
-Sea green	Hijau laut
-Turquoise	Toska
-Blue	Biru
-Dark blue	Biru tua
-Purple	Ungu
-Violet	Violet
-Magenta	Magenta
-Network file sharing	Berbagi file jaringan
-Open on this Wi-Fi	Terbuka di Wi-Fi ini
-Password protected	Dilindungi kata sandi
-File sharing on. Find "RG DS" under Network.	Berbagi file aktif. Cari "RG DS" di bagian Jaringan.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: mesin upstream asli. DSCore menambahkan perbaikan dan kecepatan.
-DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: disarankan. Tercepat, dengan perbaikan tutup, stylus, dan 3D serta 3D 2x–5x opsional.
-DSCore 3D resolution	Resolusi 3D DSCore
-Native (fastest)	Asli (tercepat)
-2x sharper	2x lebih tajam
-3x sharper	3x lebih tajam
-4x (experimental)	4x (eksperimental)
-5x (experimental)	5x (eksperimental)
-Colour mode	Mode warna
-Draw and chat with nearby handhelds	Menggambar dan mengobrol dengan konsol terdekat
-Wi-Fi connected	Wi-Fi terhubung
-No Wi-Fi: you can still draw	Tanpa Wi-Fi: Anda tetap bisa menggambar
-Type your name	Ketik nama Anda
-You appear like this to others	Beginilah Anda terlihat oleh orang lain
-Starting…	Memulai…
-Chat is unavailable: you can still draw	Obrolan tidak tersedia: Anda tetap bisa menggambar
-Nobody else is nearby yet	Belum ada orang lain di dekat Anda
-1 person nearby	1 orang di dekat Anda
 {0} people nearby	{0} orang di dekat Anda
-Your colour	Warna Anda
-Leave	Keluar
-Your name	Nama Anda
-Send	Kirim
-You are in Room {0}	Anda di Ruang {0}
-{0} joined	{0} bergabung
-{0} left	{0} keluar
-New messages below	Pesan baru di bawah
-Older messages	Pesan lama
-The pad is full: send it or clear it	Kertas penuh: kirim atau hapus
-Too much on the pad: erase some of it	Isi kertas terlalu banyak: hapus sebagian
-That message could not be sent	Pesan itu tidak dapat dikirim
-That room is full	Ruang itu penuh
-Chat Room {0}	Ruang Obrolan {0}
-Choose a chat room to join	Pilih ruang obrolan untuk bergabung
-Edit	Ubah
-Join	Gabung
-Matches your accent	Sesuai warna aksen
-Nobody here yet	Belum ada siapa pun di sini
-Start Send   X Undo   L R Scroll	Start Kirim   X Urungkan   L R Gulir
-You	Anda
-Time format	Format waktu
-24-hour	24 jam
-12-hour	12 jam
-24-hour or 12-hour clock	Jam 24 atau 12 jam
-How dates appear in the status bar	Cara tanggal tampil di bilah status
-Connecting to	Menghubungkan ke
-This can take a few seconds	Ini bisa memakan waktu beberapa detik
-Waiting for an address…	Menunggu alamat…
-IP address	Alamat IP
-Signal	Sinyal
-Could not connect	Tidak dapat terhubung
-Wi-Fi is off	Wi-Fi mati
-Turn it on to find networks	Nyalakan untuk mencari jaringan
-Choose a network from the list	Pilih jaringan dari daftar
-Preparing…	Menyiapkan…
-Home layout	Tata letak beranda
-Background	Latar
-Touch gestures	Gestur sentuh
-Carousel	Karosel
-Column	Kolom
-Plain	Polos
-Grid	Kisi
-A carousel, or the DSi's column with your last game on top	Karosel, atau kolom ala DSi dengan game terakhir di atas
-Plain, or the DSi's ruled grid behind every screen	Polos, atau kisi bergaris ala DSi di balik setiap layar
-Swipe up from the bottom for Home, in from the left for Back	Usap ke atas dari bawah untuk Beranda, dari kiri untuk Kembali
-Nothing played yet	Belum ada yang dimainkan
-Your last game will appear here	Game terakhir Anda akan muncul di sini
-Draw and chat	Menggambar dan mengobrol
-Su	Min
-Mo	Sen
-Tu	Sel
-We	Rab
-Th	Kam
-Fr	Jum
-Sa	Sab
-Chat Room	Ruang Obrolan
-Nobody else here yet	Belum ada orang lain di sini
-Drawing on your own	Menggambar sendiri
-Jump	Lompat
-Home	Beranda
-Swipe up from the bottom edge to go Home from anywhere.	Usap ke atas dari tepi bawah untuk ke Beranda dari mana saja.
-Swipe in from the left edge to go Back.	Usap dari tepi kiri untuk Kembali.
-A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Pegangan kecil di bagian bawah layar bawah menandakan gestur aktif; ia naik mengikuti jari, dan sebuah cincin menandai titik saat gestur terpicu.
-Your saves are safe. See you soon!	Simpanan Anda aman. Sampai jumpa!
-DS Classic	DS Classic
-DS Lite	DS Lite
-Natural glow	Pendar alami
-Vivid LCD	LCD cerah
-Natural smooth	Alami halus
-Vivid smooth	Cerah halus
-Pixel beads	Manik piksel
-Glossy tiles	Ubin mengilap
-The first DS screen: muted colour and a fine pixel grid.	Layar DS pertama: warna redup dan kisi piksel halus.
-The brighter DS Lite screen with a faint pixel grid.	Layar DS Lite yang lebih terang dengan kisi piksel samar.
-Natural colour with soft pixels that glow together.	Warna alami dengan piksel lembut yang berpendar bersama.
-Bold colour on a close-up LCD with RGB stripes.	Warna tegas pada LCD jarak dekat dengan garis RGB.
-Natural colour with smoothed diagonal edges.	Warna alami dengan tepi diagonal yang dihaluskan.
-Bold colour with smoothed diagonal edges.	Warna tegas dengan tepi diagonal yang dihaluskan.
-Bold colour; every pixel a round, shiny bead.	Warna tegas; setiap piksel jadi manik bulat mengilap.
-Bold colour; every pixel a raised, glossy tile.	Warna tegas; setiap piksel jadi ubin timbul mengilap.
-IN USE	DIPAKAI
-APPLY	TERAPKAN
-Follows your library shader.	Mengikuti filter pustaka.
-Original	Asli
-DS screens	Layar DS
-Natural	Alami
-Vivid	Cerah
-Pixel art	Seni piksel
-Moods	Suasana
-Change group	Ganti grup
-Sounds & music	Suara & musik
-Menu music	Musik menu
-Music volume	Volume musik
-A soft tune plays while you browse. It fades out when a game starts.	Melodi lembut diputar saat Anda menjelajah. Memudar saat game dimulai.
-Turn on menu music for a soft tune while you browse.	Nyalakan musik menu untuk melodi lembut saat menjelajah.
-Scanning…	Memindai…
-Scan complete	Pemindaian selesai
-Looking for games…	Mencari game…
-Reading Roms/NDS on your games card. This takes a moment.	Membaca Roms/NDS di kartu game. Ini butuh sebentar.
-{0} found. Choose Done to go to your library.	{0} ditemukan. Pilih Selesai untuk ke pustaka.
-No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Tidak ada game ditemukan. Salin file .nds atau ZIP DS ke Roms/NDS di kartu game lalu pindai lagi.
-Backing up your saves…	Mencadangkan simpanan…
-The backup did not finish. Please try again.	Pencadangan tidak selesai. Silakan coba lagi.
-Copies every save and checkpoint into one zip in userdata/exports.	Menyalin semua simpanan dan checkpoint ke satu zip di userdata/exports.
-Where games go on the card, and a fresh scan.	Tempat game di kartu, dan pemindaian baru.
-Where covers and titles come from.	Asal sampul dan judul.
-System update	Pembaruan sistem
-Version {0} is ready	Versi {0} siap
-Version {0} is ready to install	Versi {0} siap dipasang
-Downloading {0}	Mengunduh {0}
-Paused at {0}	Dijeda di {0}
-Update now	Perbarui sekarang
-Resume download	Lanjutkan unduhan
-Update	Perbarui
-Install	Pasang
-What's new	Yang baru
-Download	Unduh
-Verify	Verifikasi
-Prepare	Siapkan
-Step {0} of 4	Langkah {0} dari 4
-Less than a minute left	Kurang dari semenit lagi
-About {0} min left	Sekitar {0} menit lagi
-About {0} h left	Sekitar {0} jam lagi
-Downloads resume where they stopped if Wi-Fi drops.	Unduhan berlanjut dari titik terakhir jika Wi-Fi terputus.
-Your games and saves are not touched.	Game dan simpanan Anda tidak tersentuh.
-Connection lost. Retrying…	Koneksi terputus. Mencoba lagi…
-The update could not be downloaded. Check for updates again.	Pembaruan tidak dapat diunduh. Periksa pembaruan lagi.
-Finishing another task. Press Y again in a moment.	Menyelesaikan tugas lain. Tekan Y lagi sebentar lagi.
-Updates	Pembaruan
-The language for menus and messages.	Bahasa untuk menu dan pesan.
-Set the clock to where you are.	Atur jam sesuai lokasi Anda.
-How dates appear at the top of the screen.	Cara tanggal tampil di bagian atas layar.
-A 24-hour or 12-hour clock.	Jam 24 jam atau 12 jam.
-Versions, free space and the network address of your handheld.	Versi, ruang kosong, dan alamat jaringan perangkat Anda.
-Check for updates, go back to the previous build or clear temporary files.	Periksa pembaruan, kembali ke versi sebelumnya, atau hapus file sementara.
-Leave RG DS Core and go back to the stock menu.	Keluar dari RG DS Core dan kembali ke menu bawaan.
-What happens when you turn the handheld on.	Apa yang terjadi saat Anda menyalakan perangkat.
-Restart the RGDS menu.	Mulai ulang menu RGDS.
-Previous	Sebelumnya
-Next	Berikutnya
-Show all systems	Tampilkan semua sistem
-Systems	Sistem
-Game screen	Layar game
-Second screen	Layar kedua
-Sharp fill	Isi tajam
-Whole pixels	Piksel utuh
-Smooth fill	Isi halus
-Companion	Pendamping
-Swap screens	Tukar layar
-Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Menambahkan game Game Boy dan Game Boy Advance: Game lalu membuka halaman sistem.
-Frame	Bingkai
-Game Boy	Game Boy
-Game Boy · Red	Game Boy · Merah
-Game Boy · Yellow	Game Boy · Kuning
-Game Boy · Green	Game Boy · Hijau
-Game Boy · Blue	Game Boy · Biru
-Game Boy · Black	Game Boy · Hitam
-Game Boy · Screen only	Game Boy · Layar saja
-Game Boy Pocket · Silver	Game Boy Pocket · Perak
-Game Boy Pocket · Black	Game Boy Pocket · Hitam
-Game Boy Pocket · Yellow	Game Boy Pocket · Kuning
-Game Boy Pocket · Red	Game Boy Pocket · Merah
-Game Boy Pocket · Green	Game Boy Pocket · Hijau
-Game Boy Pocket · Blue	Game Boy Pocket · Biru
-Game Boy Pocket · Pink	Game Boy Pocket · Merah muda
-Game Boy Pocket · Screen only	Game Boy Pocket · Layar saja
-Game Boy Color · Berry	Game Boy Color · Beri
-Game Boy Color · Grape	Game Boy Color · Anggur
-Game Boy Color · Kiwi	Game Boy Color · Kiwi
-Game Boy Color · Dandelion	Game Boy Color · Dandelion
-Game Boy Color · Teal	Game Boy Color · Hijau toska
-Game Boy Color · Atomic Purple	Game Boy Color · Ungu atom
-Game Boy Color · Screen only	Game Boy Color · Layar saja
-Game Boy Advance · Indigo	Game Boy Advance · Nila
-Game Boy Advance · Glacier	Game Boy Advance · Gletser
-Game Boy Advance · Black	Game Boy Advance · Hitam
-Game Boy Advance · Platinum	Game Boy Advance · Platinum
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platinum
-Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Perak
-Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Hitam
-WonderSwan Color · White	WonderSwan Color · Putih
-WonderSwan Color · Blue	WonderSwan Color · Biru
-PSP · Black	PSP · Hitam
-PSP · White	PSP · Putih
-Grey TV	TV abu-abu
-Wood-grain TV	TV motif kayu
-PC monitor	Monitor PC
-Arcade cabinet	Kabinet arkade
-Black bar	Bilah hitam
-GBA Color	Warna GBA
-GBA screen	Layar GBA
-GBA screens	Layar GBA
-The Game Boy Advance LCD's own colour and gamma.	Warna dan gamma asli LCD Game Boy Advance.
-The Game Boy Advance screen: its colour and faint pixel gaps.	Layar Game Boy Advance: warnanya dan celah piksel yang samar.
-Game info	Info game
-Extra pictures	Gambar tambahan
-Screenshots	Tangkapan layar
-Title screens	Layar judul
-Screenshots and title screens	Tangkapan layar dan layar judul
-Both	Keduanya
-Cover	Sampul
-Title screen	Layar judul
-Screenshot	Tangkapan layar
-Developer	Pengembang
-Publisher	Penerbit
-Genre	Genre
-Released	Rilis
-Rating	Peringkat usia
-Players	Pemain
-Series	Seri
-Online	Online
-Yes	Ya
-Source	Sumber
-Picture	Gambar
-Next picture	Gambar berikutnya
-No pictures yet	Belum ada gambar
-Available	Tersedia
-Not downloaded	Belum diunduh
-Show games	Tampilkan game
-Reset filters	Atur ulang filter
-Any	Semua
-{0} active	{0} aktif
-Still reading your library. Try again in a moment.	Pustaka masih dibaca. Coba lagi sebentar lagi.
-No game has this information yet. Fetch artwork with Game info turned on.	Belum ada game dengan informasi ini. Ambil sampul dengan Info game aktif.
-With info	Dengan info
-Without info	Tanpa info
-Online play	Main online
-1 player	1 pemain
 {0} players	{0} pemain
-No game information yet.	Belum ada info game.
-Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Aktifkan Info game di Pengaturan > Pustaka > Sumber sampul, lalu ambil sampul.
-Ports	Port
-Restart port	Mulai ulang port
-Quit	Keluar
-Looking for the latest PortMaster	Mencari PortMaster terbaru
-Downloading PortMaster	Mengunduh PortMaster
-Checking PortMaster	Memeriksa PortMaster
-Unpacking PortMaster	Membongkar PortMaster
-Setting up PortMaster	Menyiapkan PortMaster
-Installing PortMaster from the card	Memasang PortMaster dari kartu
-PortMaster is ready	PortMaster siap
-Could not set up PortMaster	Tidak dapat menyiapkan PortMaster
-Get, update and remove ports	Dapatkan, perbarui, dan hapus port
-Close PortMaster	Tutup PortMaster
-Back to PortMaster	Kembali ke PortMaster
-Keep getting and updating ports	Terus dapatkan dan perbarui port
-Your ports are waiting in Ports	Port Anda menunggu di Port
-Closing PortMaster…	Menutup PortMaster…
-Closing the port…	Menutup port…
-GB screens	Layar GB
-GBC screens	Layar GBC
-Game Boy screen	Layar Game Boy
-Game Boy Color screen	Layar Game Boy Color
-The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Layar dot-matrix Game Boy asli: kisi piksel terang dan bayangan lembut.
-The Game Boy Color screen with faint gaps between its pixels.	Layar Game Boy Color dengan celah samar di antara pikselnya.
-This handheld's own screen.	Layar asli konsol genggam ini.
-Screen colours	Warna layar
-Game Boy Pocket	Game Boy Pocket
-Game Boy Light	Game Boy Light
-Game Boy Color	Game Boy Color
-Black and white	Hitam putih
-Game Boy Color, darker	Game Boy Color, lebih gelap
-Full colour	Warna penuh
-Hold to save	Tahan untuk simpan
-Hold to load	Tahan untuk muat
-Screen off	Layar mati
-Touch the screen to turn it on	Sentuh layar untuk menyalakannya
-min	mnt
-h	j
-Not saved	Tidak tersimpan
-Loaded	Dimuat
-Not loaded	Tidak dimuat
-Nothing to load	Tidak ada yang dimuat
-Saving…	Menyimpan…
-Loading…	Memuat…
-Info screen	Layar info
-Team	Tim
-Lv	Lv
-screens	layar
-Not yet	Belum
-None yet	Belum ada
-The best there is	Yang terbaik
-Next:	Berikutnya:
-Badges	Lencana
-Carried	Dibawa
-Coin bank	Bank koin
-Coins	Koin
-Collection	Koleksi
-Course	Level
-Day	Siang
-Ending so far	Akhir sejauh ini
-Essences	Esensi
-Gear	Perlengkapan
-Golden leaves	Daun emas
-Heart containers	Wadah hati
-Heart pieces	Kepingan hati
-Hearts	Hati
-In a course	Di dalam level
-Instruments	Instrumen
-Johto badges	Lencana Johto
-Journey	Perjalanan
-Kanto badges	Lencana Kanto
-Keys	Kunci
-Lives	Nyawa
-Money	Uang
-Musical coins	Koin musik
-Night	Malam
-Pokédex caught	Pokédex tertangkap
-Pokédex seen	Pokédex terlihat
-Rupees	Rupee
-Secret seashells	Kerang rahasia
-Shield	Perisai
-Small keys	Kunci kecil
-Sword	Pedang
-Time of day	Waktu
-Time	Waktu
-Total	Total
-Trainer	Pelatih
-Treasures	Harta
-Worlds	Dunia
-Your journey	Perjalananmu
-Seeds	Biji
-Game switcher	Pengalih game
-Switch to another game	Beralih ke game lain
-Hold to return home	Tahan untuk ke beranda
-Add game files	Tambahkan file game
-Needs your files	Butuh file Anda
-Files added	File ditambahkan
-How to get the files	Cara mendapatkan file
-Scan with your phone	Pindai dengan ponsel
-Or open on a computer	Atau buka di komputer
-Code	Kode
-Connect to Wi-Fi to send files from a phone or computer.	Sambungkan ke Wi-Fi untuk mengirim file dari ponsel atau komputer.
-Receiving files	Menerima file
-Unpacking files	Mengekstrak file
-Files arrived. Choose Play to start.	File sudah tiba. Pilih Main untuk memulai.
-This port lists no instructions.	Port ini tidak punya petunjuk.
-Play	Main
-Goes into	Masuk ke
-Phone or computer connected	Ponsel atau komputer tersambung
-Vibration	Getaran
-Menu haptics	Haptik menu
-Haptic strength	Kekuatan haptik
-Game rumble	Getaran game
-Rumble strength	Kekuatan getaran
-Try a pattern	Coba pola
-Feel the game	Rasakan gamenya
-Feel every move	Rasakan setiap gerakan
-No vibration motor was found on this device.	Tidak ada motor getar di perangkat ini.
-Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Game Rumble Pak di DS, kartrid bergetar di Game Boy dan Game Boy Advance.
-Turn on game rumble for games made for a rumble accessory.	Nyalakan getaran game untuk game yang dibuat untuk aksesori getar.
-A light tap for every move, a firmer one when you choose, open or save.	Ketukan ringan untuk setiap gerakan, lebih tegas saat memilih, membuka, atau menyimpan.
-Turn on menu haptics to feel the menus.	Nyalakan haptik menu untuk merasakan menu.
-Browse	Jelajahi
-Open a view	Buka tampilan
-Go back	Kembali
-Switch on	Nyalakan
-Switch off	Matikan
-Add favourite	Tambah favorit
-Remove favourite	Hapus favorit
-Start a game	Mulai game
-Save complete	Simpan selesai
-Load complete	Muat selesai
-Try again	Coba lagi
-Keyboard	Keyboard
-Adjust	Sesuaikan
-End of a list	Akhir daftar
-Long press	Tekan lama
-Notification	Notifikasi
-Touch screen	Layar sentuh
-Point and click on top	Tunjuk dan klik di atas
-Touch here to point and click on the top screen.	Sentuh di sini untuk menunjuk dan mengeklik di layar atas.
-Hold still for a right click	Tahan diam untuk klik kanan
-Hold to exit	Tahan untuk keluar
-Touch screen off	Layar sentuh mati
-Touch screen is not available	Layar sentuh tidak tersedia
-Daylight saving	Waktu musim panas
-Automatic	Otomatis
-Summer time follows your timezone. Force it on or off if the clock is an hour out.	Waktu musim panas mengikuti zona waktumu. Paksa aktif atau nonaktif jika jam meleset satu jam.
-GBA true colour	Warna asli GBA
-Faded GBA colours made rich, as the real screen showed them.	Warna GBA yang pudar menjadi pekat, seperti yang ditampilkan layar aslinya.
-GBA true screen	Layar asli GBA
-The true GBA colours on its screen, with the gaps between its pixels.	Warna asli GBA di layarnya, dengan celah di antara pikselnya.
+{0} settings	Pengaturan {0}

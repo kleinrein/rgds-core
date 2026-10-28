@@ -31,11 +31,8 @@ class MelonDSLaunchTests(Fixture):
         binary = self.setup_engine()
         rom = self.root / 'game.nds'
         write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(core=3, threaded_3d=0))
-        with patch.object(emulators, 'stock_file', side_effect=AssertionError('stock lookup')), patch.dict(
-            os.environ, {
-                'RGDS_NATIVE_AUTOLOAD': '1'
-            }, clear=True
-        ):
+        with patch.object(emulators, 'stock_file', side_effect=AssertionError('stock lookup')
+                          ), patch.dict(os.environ, {'RGDS_NATIVE_AUTOLOAD': '1'}, clear=True):
             plan = emulators.launch_plan('melonds', self.app, self.data, rom)
         self.assertEqual(plan['command'][0], str(binary.resolve()))
         self.assertEqual(plan['env']['RGDS_THREADED_3D'], '0')

@@ -1,0 +1,72 @@
+drm/rockchip: vop2: start a video port in step with a running one
+
+RG DS OS: the two panels share the dclk source, so once their ports start at the same frame start they stay in
+step; started one after the other by the first modeset they sat a fixed 2.5 ms apart (os/banana-probe/vblank_phase.c),
+so a frame flipped to both panels could land on different refreshes. The port is held in standby until the running
+port's frame start (vop2.in_step=0 disables it; vop2.in_step_delay_us tunes the release).
+
+--- a/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
++++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop2.c
+@@ -12,6 +12,7 @@
+ #include <linux/media-bus-format.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
++#include <linux/moduleparam.h>
+ #include <linux/of.h>
+ #include <linux/of_graph.h>
+ #include <linux/platform_device.h>
+@@ -1624,6 +1625,45 @@
+ 	return us * mode->clock / mode->htotal / 1000;
+ }
+ 
++
++/*
++ * RG DS OS: start a video port in step with one already running. The RG DS's two panels share the dclk source,
++ * so two ports started at the same frame start stay in step and both panels show a frame flipped to them on the
++ * same refresh; started one after the other (as the first modeset does) they sat a fixed 2.5 ms apart. The port
++ * is held in standby until the running port's frame start, then released. in_step_delay_us adds a fixed delay
++ * before the release (tuning).
++ */
++static bool vop2_in_step = true;
++module_param_named(in_step, vop2_in_step, bool, 0444);
++MODULE_PARM_DESC(in_step, "Start a video port at a running port's frame start (RG DS panels)");
++static unsigned int vop2_in_step_delay_us;
++module_param_named(in_step_delay_us, vop2_in_step_delay_us, uint, 0644);
++
++static void vop2_start_in_step(struct vop2_video_port *vp, u32 dsp_ctrl)
++{
++	struct vop2 *vop2 = vp->vop2;
++	struct drm_crtc *other;
++
++	if (!vop2_in_step)
++		goto start;
++	drm_for_each_crtc(other, vop2->drm) {
++		if (other == &vp->crtc || !other->state || !other->state->active)
++			continue;
++		if (!drm_crtc_vblank_get(other)) {
++			vop2_vp_write(vp, RK3568_VP_DSP_CTRL, dsp_ctrl | RK3568_VP_DSP_CTRL__STANDBY);
++			drm_crtc_wait_one_vblank(other);
++			drm_crtc_vblank_put(other);
++			if (vop2_in_step_delay_us)
++				udelay(vop2_in_step_delay_us);
++			drm_dbg(vop2->drm, "vp%d started in step with vp%d\n", vp->id,
++				to_vop2_video_port(other)->id);
++		}
++		break;
++	}
++start:
++	vop2_vp_write(vp, RK3568_VP_DSP_CTRL, dsp_ctrl);
++}
++
+ static void vop2_crtc_atomic_enable(struct drm_crtc *crtc,
+ 				    struct drm_atomic_commit *state)
+ {
+@@ -1806,7 +1846,7 @@
+ 
+ 	vop2_cfg_done(vp);
+ 
+-	vop2_vp_write(vp, RK3568_VP_DSP_CTRL, dsp_ctrl);
++	vop2_start_in_step(vp, dsp_ctrl);
+ 
+ 	vop2_crtc_atomic_try_set_gamma(vop2, vp, crtc, crtc_state);
+ 

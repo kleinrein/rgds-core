@@ -7,15 +7,34 @@
 #   net wifi|wifi-off the Wi-Fi switch
 CONF=/data/rgds/wifi.conf
 OFF=/data/rgds/wifi-off
+# The RTL8821CS's Wi-Fi half sits on its own SDIO host (mmc2; the system card is fe2b0000.mmc, never this one).
+# Unbinding the host runs its mmc-pwrseq-simple: the chip's reset line goes low, so the chip is powered down.
+# Binding it again powers it up and probes it from scratch. After a warm restart (an update's, say) the chip could
+# come back answering every SDIO access with -110 and never make wlan0 until the handheld was switched off; a power
+# cycle here brings it back in about 1.5 s (2026-10-28).
+WIFI_HOST=fe000000.mmc
+MMC=/sys/bus/platform/drivers/dwmmc_rockchip
 stop() { [ -f /run/rgds/$1.pid ] && kill $(cat /run/rgds/$1.pid) 2>/dev/null; rm -f /run/rgds/$1.pid; }
+
+chip_on() {
+    [ -e $MMC/$WIFI_HOST ] || echo $WIFI_HOST > $MMC/bind
+    # no udev: nothing loads a module by itself
+    modprobe rtw88_8821cs 2>/dev/null
+    for i in $(seq 1 50); do [ -d /sys/class/net/wlan0 ] && return 0; sleep 0.1; done
+    return 1
+}
+
+chip_off() {
+    timeout 5 ip link set wlan0 down 2> /dev/null
+    timeout 5 modprobe -r rtw88_8821cs 2> /dev/null
+    [ -e $MMC/$WIFI_HOST ] && echo $WIFI_HOST > $MMC/unbind
+}
 
 wifi() {
     rm -f $OFF
     [ -S /run/wpa_supplicant/wlan0 ] && pidof wpa_supplicant > /dev/null && return 0
-    # no udev: nothing loads a module by itself
-    modprobe rtw88_8821cs 2>/dev/null
-    for i in $(seq 1 50); do [ -d /sys/class/net/wlan0 ] && break; sleep 0.1; done
-    [ -d /sys/class/net/wlan0 ] || return 1
+    # a chip that does not come up gets one power cycle
+    chip_on || { chip_off; sleep 1; chip_on; } || return 1
     # a file written by hand may hold only network blocks; wpa_supplicant rewrites it whole on its first save
     if ! grep -q '^ctrl_interface=' $CONF 2> /dev/null; then
         { printf 'ctrl_interface=/run/wpa_supplicant\nupdate_config=1\n\n'; cat $CONF 2> /dev/null; } > $CONF.new
@@ -30,8 +49,9 @@ wifi() {
 wifi_off() {
     touch $OFF
     stop wpa-event; stop wpa; stop udhcpc
-    ip addr flush dev wlan0 2> /dev/null
-    ip link set wlan0 down 2> /dev/null
+    timeout 5 ip addr flush dev wlan0 2> /dev/null
+    # off is off: the chip powered down (and the next "on" starts it from scratch)
+    chip_off
 }
 
 case $1 in
@@ -52,6 +72,8 @@ up)
 down)
     avahi-daemon -k 2> /dev/null
     stop dropbear; stop wpa-event; stop wpa; stop udhcpc
+    # a restart does not power the chip down by itself: do it here, so it comes up clean after a reboot
+    chip_off
     ;;
 wifi)
     wifi || exit 1

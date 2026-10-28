@@ -68,9 +68,10 @@ void App::restore_state() {
         return;
     }
     if (file && page >= 0 &&
-        (page <= int(Page::GameOptions) || page == int(Page::Startup) || page == int(Page::Statistics) ||
+        (page <= int(Page::GameOptions) || page == int(Page::Statistics) ||
          page == int(Page::RomSetup) || page == int(Page::Motion) || page == int(Page::Colours) ||
-         page == int(Page::MenuSounds) || page == int(Page::Haptics) || page == int(Page::DisplayOptions)) &&
+         page == int(Page::MenuSounds) || page == int(Page::Haptics) || page == int(Page::DisplayOptions) ||
+         page == int(Page::Bluetooth) || page == int(Page::Homebrew)) &&
         page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
         page != int(Page::Confirm) && section >= 0 && section <= 10 && focus >= 0 &&
         focus <= (page == int(Page::Motion)           ? 3
@@ -79,8 +80,10 @@ void App::restore_state() {
                   : page == int(Page::LibraryOptions) ? 10
                   : page == int(Page::Appearance)     ? 5
                   : page == int(Page::System)         ? (o.rgds_os ? 7 : 8)
-                  : page == int(Page::Wifi) ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)
-                                            : 4))
+                  : page == int(Page::Wifi)      ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)
+                  : page == int(Page::Bluetooth) ? std::max(0, std::atoi(device_status["bt_count"].c_str()) - 1)
+                  : page == int(Page::Homebrew)  ? std::max(0, std::atoi(device_status["hb_count"].c_str()) - 1)
+                                                 : 4))
         settings = {static_cast<Page>(page), section, focus};
     if (settings.page == Page::Power) {
         settings.section = 1;
@@ -101,13 +104,11 @@ void App::restore_state() {
         settings.focus = 0;
     }
     if (settings.page == Page::System || settings.page == Page::Timezone) settings.section = 5;
-    if (settings.page == Page::System) settings.focus = std::min(settings.focus, 8);
-    if (settings.page == Page::Startup) {
-        settings.section = 5;
-        settings.focus = 0;
+    if (settings.page == Page::System) {
+        settings.focus = std::min(settings.focus, list_count() - 1);
         start_worker("device.startup-info");
     }
-    if (settings.page == Page::Network) settings.focus = std::min(settings.focus, 4);
+    if (settings.page == Page::Network) settings.focus = std::min(settings.focus, 6);
     if (settings.page == Page::Maintenance) settings.focus = std::min(settings.focus, 6);
     if (settings.page == Page::Statistics) settings.section = 7;
     if (settings.page == Page::GameOptions) {

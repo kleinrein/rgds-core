@@ -18,10 +18,14 @@ from shaders import supported
 from library import read_fields, write_fields, game_key
 from controls import load_profile, paths as control_paths, Shortcut, FastForwardButton, evdev_source
 from lid_sleep import LidSleep
+from idle_watch import IdleWatch, PanelDim, timers
 from linux_platform import rocknix_joypad
 from game_clocks import GameClocks
 from collections import deque
 from typing import NamedTuple
+
+# written by usr/libexec/rgds/power when a sleep ends only to power off (the launcher acts on it too)
+POWEROFF_REQUEST = Path('/run/rgds/poweroff-requested')
 
 
 class SwitchGame(NamedTuple):
@@ -233,6 +237,10 @@ class GameMenu:
         self.direct_ready = False
         self.inputs = inputs if inputs is not None else MenuInput()
         self.lid = LidSleep(self.data)
+        self.idle = IdleWatch()
+        self.panels = PanelDim()
+        self.timers_at = float('-inf')
+        self.dim_after = self.sleep_after = 0
         self.folder = self.data / "session"
         self.control = self.folder / "emulator.control"
         self.request = self.folder / "game-menu.request"
@@ -768,6 +776,8 @@ class GameMenu:
         if self.lid.poll(ready=self.pending is None and self.child.poll() is None):
             self.sleep_for_lid()
             return
+        if self.poll_idle():
+            return
         key = self.inputs.poll()
         if isinstance(key, str) and key.startswith('fast-forward-'):
             self.request_speed(key)
@@ -1092,7 +1102,33 @@ class GameMenu:
         self.send('save-quit')
         return True
 
-    def sleep_for_lid(self):
+    def poll_idle(self):
+        """Dim the panels after the chosen idle time (Power page: Dim when idle); past the sleep timer (Sleep timer in
+        games) the game sleeps as for a closed lid and the power key wakes it. True when it slept."""
+        now = time.monotonic()
+        if now - self.timers_at >= 2:
+            self.timers_at = now
+            self.dim_after, self.sleep_after = timers(self.data)
+        idle = self.idle.idle()
+        if self.dim_after and idle >= self.dim_after: self.panels.dim()
+        elif self.panels.dimmed: self.panels.restore()
+        playing = self.pending is None and self.menu is None and self.child.poll() is None
+        if not (playing and self.sleep_after and idle >= self.sleep_after): return False
+        self.panels.restore()
+        self.sleep_for_lid(lid=False)
+        return True
+
+    def power_off_after_sleep(self):
+        """RG DS OS woke from a long sleep (or on an empty battery) only to power off (usr/libexec/rgds/power): the
+        game saves and quits like Return home, and the launcher, seeing the same request, powers off."""
+        if not POWEROFF_REQUEST.exists() or self.pending or self.child.poll() is not None: return
+        print('Power off requested during sleep: saving and quitting', flush=True)
+        if self.menu is None: self.open()
+        self.restart = False
+        self.switch_target = None
+        self.send('save-quit')
+
+    def sleep_for_lid(self, lid=True):
         was_paused, was_blocked = self.paused, self.block.exists()
         paused_menu = None
         audio_requested = False
@@ -1106,7 +1142,8 @@ class GameMenu:
                 audio_requested = self.park_menu_audio()
                 self.menu.send_signal(signal.SIGSTOP)
                 paused_menu = self.menu
-            self.lid.hardware.sleep_lid()
+            if lid: self.lid.hardware.sleep_lid()
+            else: self.lid.hardware.sleep()
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             print('Lid sleep failed: ' + str(error), flush=True)
             if self.menu is not None:
@@ -1146,6 +1183,8 @@ class GameMenu:
                         if not was_paused:
                             self.resume_engine()
             self.last_toggle = time.monotonic()
+        self.idle.touch()
+        self.power_off_after_sleep()
 
     def release_clocks(self):
         clocks, self.clocks = self.clocks, None
@@ -1161,6 +1200,8 @@ class GameMenu:
         finally:
             self.release_clocks()
             self.inputs.close()
+            self.panels.restore()
+            self.idle.close()
             if self.overlay_path: self.overlay_path.unlink(missing_ok=True)
             if self.stats_path and self.stats_path.is_file():
                 try:

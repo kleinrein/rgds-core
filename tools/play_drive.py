@@ -98,8 +98,9 @@ def main():
             best = None
             for trail in trails[1:]:
                 if len(trail) < 5: continue
-                near, distance = min(((i, (px - x)**2 + (py - y)**2) for i, (x, y) in enumerate(trail)),
-                                     key=lambda e: e[1])
+                near, distance = min(
+                    ((i, (px - x)**2 + (py - y)**2) for i, (x, y) in enumerate(trail)), key=lambda e: e[1]
+                )
                 ahead = min(near + 6, len(trail) - 1)
                 if distance <= 40 * 40 and ahead > near and (best is None or distance < best[0]):
                     best = (distance, trail[ahead])
@@ -119,8 +120,11 @@ def main():
                 status = game.lines("status")
                 split = ["hud=" + status.split("hud=")[1].split()[0], status.split("split=")[1].split()[0]]
                 if (registers, split) != watched:
-                    print(f"{game.frame:6d} DISPCNT={registers[0]:04X} BG0CNT={registers[1]:04X} "
-                          f"LAP cell={registers[2]:04X} {split[0]} split={split[1]}", flush=True)
+                    print(
+                        f"{game.frame:6d} DISPCNT={registers[0]:04X} BG0CNT={registers[1]:04X} "
+                        f"LAP cell={registers[2]:04X} {split[0]} split={split[1]}",
+                        flush=True
+                    )
                     game.ask(f"shot change-{game.frame:06d}")
                     watched = (registers, split)
             if step % 600 == 0: game.ask(f"shot race-{game.frame:06d}")

@@ -45,6 +45,8 @@ class Services:
         if not preview and not shutil.which("nmcli"):
             import wpa_wifi
             if wpa_wifi.supported(): self.wpa = wpa_wifi.WpaWifi(self)
+        from bluetooth import Bluetooth
+        self.bluetooth = Bluetooth(self)
 
     def publish(self, **fields):
         self.fields.update({key: str(value) for key, value in fields.items()})
@@ -487,6 +489,11 @@ class Services:
             previous = (root / "state/previous").read_text().strip()
         except OSError:
             previous = ""
+        from linux_platform import rgds_os
+        if not self.preview and rgds_os():
+            # RG DS OS keeps the previous version in the other root slot, and U-Boot falls back to it by itself
+            # (os_update.py); a state/previous copied over from a stock card names a stock release
+            previous = ""
         self.publish(
             build=manifest.get("build", "Development build"),
             firmware="Simulated handheld" if self.preview else firmware,
@@ -498,6 +505,7 @@ class Services:
         )
         self.network_status()
         self.sharing_status()
+        self.bluetooth.status()
 
     def rollback(self):
         if self.preview:
@@ -561,7 +569,9 @@ class Services:
             if core_running(self.data): raise ValueError("Return home before changing startup.")
             write_fields(self.data / 'boot.ini', dict(schema=1, mode='rgds', warning=int(warning)))
         self.startup_info()
-        self.publish(state='ready', message='Startup choice saved.' if not self.preview else 'Startup choice simulated.')
+        self.publish(
+            state='ready', message='Startup choice saved.' if not self.preview else 'Startup choice simulated.'
+        )
 
     def system_exit(self, action):
         if self.preview:
@@ -593,7 +603,8 @@ def main():
         choices=(
             "info", "scan", "connect", "wifi-on", "wifi-off", "sharing-on", "sharing-open", "sharing-off", "rollback",
             "clear-cache", "diagnostics", "poweroff", "reboot", "startup", "startup-info", "update-info",
-            "update-check", "update-download", "update-apply", "update-discard", "update-auto", "library"
+            "update-check", "update-download", "update-apply", "update-discard", "update-auto", "library", "bt-on",
+            "bt-off", "bt-scan", "bt-pair", "bt-forget", "homebrew-browse", "homebrew-get"
         )
     )
     parser.add_argument("--app", required=True, type=Path)
@@ -612,9 +623,20 @@ def main():
             from library_services import run
             run(service, json.loads(sys.stdin.read(16384)))
         elif args.action.startswith("update-"):
-            from ota import Updater
+            from linux_platform import rgds_os
+            if rgds_os():
+                from os_update import OsUpdater as Updater  # the whole OS, into the slot that is not running
+            else:
+                from ota import Updater
             Updater(args.app, args.data, args.preview).run(args.action[7:])
             service.publish(state="ready", message="")
+        elif args.action.startswith("homebrew-"):
+            from homebrew_store import HomebrewStore
+            getattr(HomebrewStore(service), args.action[9:])(json.loads(sys.stdin.read(4096)))
+        elif args.action in ("bt-pair", "bt-forget"):
+            getattr(service.bluetooth, args.action[3:])(json.loads(sys.stdin.read(4096)))
+        elif args.action.startswith("bt-"):
+            getattr(service.bluetooth, args.action[3:])()
         elif args.action in ("connect", "startup"):
             getattr(service, args.action)(json.loads(sys.stdin.read(4096)))
         elif args.action in ("wifi-on", "wifi-off"):

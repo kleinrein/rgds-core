@@ -325,6 +325,7 @@ void App::change_system(int focus, int delta, bool cycle) {
                      : focus == 1 ? hardware.sleep
                      : focus == 2 ? hardware.lid
                      : focus == 3 ? hardware.battery >= 0
+                     : focus == 8 ? hardware.sleep
                                   : hardware.brightness;
     if (!available) {
         status = "Control unavailable on this device";
@@ -335,11 +336,18 @@ void App::change_system(int focus, int delta, bool cycle) {
     else if (focus == 1) next.idle = cycle ? (next.idle + 1) % 5 : std::clamp(next.idle + delta, 0, 4);
     else if (focus == 2) next.lid = cycle ? !next.lid : delta > 0;
     else if (focus == 3) next.battery_percent = cycle ? !next.battery_percent : delta > 0;
-    else if (focus == 4)
+    else if (focus == 7) {
+        const int last = int(dim_seconds.size()) - 1;
+        next.dim = cycle ? (next.dim + 1) % (last + 1) : std::clamp(next.dim + delta, 0, last);
+    } else if (focus == 8) {
+        const int last = int(game_sleep_minutes.size()) - 1;
+        next.game_sleep = cycle ? (next.game_sleep + 1) % (last + 1) : std::clamp(next.game_sleep + delta, 0, last);
+    } else if (focus == 4)
         next.brightness = cycle ? (next.brightness >= 100 ? 5 : std::min(100, (next.brightness / 5 + 1) * 5))
                                 : std::clamp((next.brightness / 5 + delta) * 5, 5, 100);
     if (next.power == previous.power && next.idle == previous.idle && next.lid == previous.lid &&
-        next.brightness == previous.brightness && next.battery_percent == previous.battery_percent)
+        next.brightness == previous.brightness && next.battery_percent == previous.battery_percent &&
+        next.dim == previous.dim && next.game_sleep == previous.game_sleep)
         return;
     if (focus == 4) {
         system_preferences.brightness = next.brightness;
@@ -422,8 +430,47 @@ void App::watch_system(Uint32 now) {
         system_retry = now;
         if (system.request_status()) system_poll = now;
     }
+    homebrew_kick();
+    if (now - bluetooth_poll >= 1000) {
+        bluetooth_poll = now;
+        std::error_code ec;
+        const bool on =
+            o.preview ? std::getenv("RGDS_PREVIEW_BLUETOOTH") != nullptr : fs::exists("/sys/class/bluetooth/hci0", ec);
+        if (on != bluetooth_on) {
+            bluetooth_on = on;
+            // The Connectivity row (and what A does on it) follows the radio too, not just the last device.info:
+            // Bluetooth turned on or off outside the menu otherwise left the row saying the opposite.
+            if (!o.preview && device_status["bt_supported"] != "0" && worker <= 0) device_status["bt"] = on ? "1" : "0";
+            dirty = true;
+        }
+    }
     // The game runner owns lid sleep while playing, including its overlay.
     if (o.preview || probe || o.game_menu) return;
+    // RG DS OS woke from a long sleep (or with an empty battery) only to power off (usr/libexec/rgds/power); a game
+    // that was asleep has saved and quit by now (runtime/game_menu.py)
+    if (hardware.poweroff && shutdown_at == 0 && now - bt_sink_poll >= 1000) {
+        std::error_code ec;
+        if (fs::remove("/run/rgds/poweroff-requested", ec)) {
+            begin_shutdown("poweroff");
+            return;
+        }
+    }
+    if (now - bt_sink_poll >= 1000) {
+        bt_sink_poll = now;
+        std::error_code ec;
+        std::string sink = fs::exists("/run/rgds/bt-sink", ec) ? read_text_file("/run/rgds/bt-sink", 64) : "";
+        while (!sink.empty() && std::isspace(static_cast<unsigned char>(sink.back()))) sink.pop_back();
+        if (sink != bt_sink) {
+            bt_sink = sink;
+            // ALSA reads where playback goes at every open: a fresh sink lands on the headset (or the speaker)
+            sounds.close();
+            configure_sounds();
+        }
+    }
+    const Uint32 dim_after = Uint32(dim_seconds[size_t(std::clamp(system_preferences.dim, 0, 4))]) * 1000;
+    const bool idle = dim_after > 0 && hardware.brightness && !pointer_down && now - last_activity >= dim_after;
+    if (idle && !system.panels_dimmed() && !system.brightness_pending()) system.dim_panels(25);
+    else if (!idle && system.panels_dimmed()) system.undim_panels();
     if (now - lid_poll >= 50) {
         lid_poll = now;
         auto closed = system.lid_closed();

@@ -1108,6 +1108,16 @@ static int run(int argc, char** argv) {
     std::fprintf(stderr, "cannot read %s\n", config_arg);
     return 2;
   }
+  // A title that only looks like DSiWare (BlocksDS homebrew: DSiWare's title ID, unit code 2) also runs on a DS: with
+  // no DSi BIOS pair to start the DSi machine, it plays as a DS game rather than not at all.
+  if (dsi_mode && !dsi_mode_asked && !rom_shortcut && rom && ds::io::file_runs_on_ds(rom)) {
+    const std::string b9 = bios9i ? std::string(bios9i) : cfg.str("paths.bios9i");
+    const std::string b7 = bios7i ? std::string(bios7i) : cfg.str("paths.bios7i");
+    if (b9.empty() || b7.empty() || !std::filesystem::exists(b9) || !std::filesystem::exists(b7)) {
+      dsi_mode = false;
+      std::fprintf(stderr, "%s also runs on a DS; no DSi BIOS pair, so it starts in DS mode\n", rom);
+    }
+  }
   // paths.dsi_nand stands in for --dsi-nand only under --dsi-mode.
   const std::string dsi_nand_cfg = dsi_mode_asked && !dsi_nand ? cfg.str("paths.dsi_nand") : std::string();
   if (!dsi_nand_cfg.empty()) dsi_nand = dsi_nand_cfg.c_str();
@@ -2973,8 +2983,9 @@ sdl_ready:
     if (lock.locked()) {
       const double lead = lock.work_ns() + lock.band_ns();
       if (lead > lock.period_ns() * (pace_fits ? 1.5 : 1.3)) {
-        if (pace_fits) VLOG("pace: lead %.1f ms over the panel's %.1f ms; free until it shrinks\n", lead / 1e6,
-                            lock.period_ns() / 1e6);
+        if (pace_fits)
+          VLOG("pace: lead %.1f ms over the panel's %.1f ms; free until it shrinks\n", lead / 1e6,
+               lock.period_ns() / 1e6);
         pace_fits = false;
       } else pace_fits = true;
       if (pace_locked && pace_frames - pace_valve_mark >= 120) {
@@ -2988,9 +2999,8 @@ sdl_ready:
         pace_valve_late = lock.late();
       }
     }
-    const bool want_lock = pace_display && !fast && !limiter_off && speed_pct == 100 && lock.locked() &&
-                           pace_fits && pace_frames >= pace_free_until &&
-                           std::fabs(frame_ns / lock.period_ns() - base_scale) < 0.03;
+    const bool want_lock = pace_display && !fast && !limiter_off && speed_pct == 100 && lock.locked() && pace_fits &&
+                           pace_frames >= pace_free_until && std::fabs(frame_ns / lock.period_ns() - base_scale) < 0.03;
     if (want_lock != pace_locked) {
       pace_locked = want_lock;
       lock.reset();

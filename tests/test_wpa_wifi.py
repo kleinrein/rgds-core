@@ -31,6 +31,7 @@ class FakeSupplicant:
         self.attached = set()
         self.commands = []
         self.saved = 0
+        self.joining = None  # a saved network's name: STATUS reports it being joined
         self.scan = (
             f"bssid / frequency / signal level / flags / ssid\n"
             f"{HOME}\t2412\t-45\t[WPA2-PSK-CCMP][ESS]\tHome\\xe2\\x80\\x99s\n"
@@ -66,6 +67,7 @@ class FakeSupplicant:
         elif command == "SCAN_RESULTS":
             return self.scan
         elif command == "STATUS":
+            if self.joining: return f"bssid={HOME}\nssid={self.joining}\nwpa_state=4WAY_HANDSHAKE\n"
             if self.current is None: return "wpa_state=SCANNING\n"
             ssid = self.networks[self.current]["ssid"]
             return f"bssid={HOME}\nssid={ssid}\nwpa_state=COMPLETED\nip_address=192.168.68.50\n"
@@ -204,6 +206,19 @@ class WpaWifiTests(unittest.TestCase):
         self.service.network_status()
         self.assertEqual(self.service.fields["wifi_radio"], "1")
         self.assertEqual(self.service.fields["wifi"], "0")
+
+    def test_joining_and_looking_by_itself_are_reported(self):
+        # no saved network: looking for one is not worth a spinner
+        self.service.network_status()
+        self.assertEqual((self.service.fields["wifi_looking"], self.service.fields["wifi_joining"]), ("0", ""))
+        self.supplicant.networks[0] = dict(ssid="Home", psk="x", temp=False)
+        self.service.network_status()
+        self.assertEqual(self.service.fields["wifi_looking"], "1")
+        self.assertEqual(self.service.fields["connection"], "Not connected")
+        self.supplicant.joining = "Home"
+        self.service.network_status()
+        self.assertEqual((self.service.fields["wifi_joining"], self.service.fields["wifi_looking"]), ("Home", "0"))
+        self.assertEqual(self.service.fields["wifi_connected"], "0")
 
     def test_radio_switch_runs_the_os_script(self):
         with patch.object(self.service, "run_command") as run:

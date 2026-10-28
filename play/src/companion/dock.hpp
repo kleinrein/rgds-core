@@ -13,6 +13,10 @@
 //   - the "Info" second screen: the controls are the whole screen, and it
 //     fades down when left alone.
 // Animations follow the launcher's setting: off, everything is instant.
+//
+// The game's box art, when the library has it, lies faded over the whole
+// screen and sits beside the name; the system's own icon (rich or pixel, as
+// the launcher's icon style) marks the system line.
 #pragma once
 #include "companion/view.hpp"
 #include "ui/canvas.hpp"
@@ -22,14 +26,23 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace play {
 
 class Dock {
 public:
     enum class Action { None, Switcher, Home };
+    // A picture as read_bmp gives it (bytes R, G, B, A).
+    struct Image {
+        int w = 0, h = 0;
+        std::vector<uint32_t> px;
+        bool empty() const { return px.empty() || w <= 0 || h <= 0; }
+    };
 
     Dock(std::string title, std::string system);
+    // The system's id (nes, gba, ...), its rich picture and the game's box art; any may be missing.
+    void set_art(const std::string& system_id, Image system_picture, Image cover);
     // The whole screen (the Info second screen) or a button over the companion.
     void set_full(bool full);
     bool full() const { return full_; }
@@ -68,6 +81,15 @@ public:
     }
     bool screen_off() const { return off_; }
 
+    // The game's art, for the companion's title card too:
+    // the ground under the controls (the backdrop, with the box art faded over it),
+    bool has_cover() const { return !cover_.empty(); }
+    void ground(Canvas& out, const Look& look) const;
+    // the box art in a square box with a rim and a shadow (else the system's picture on a slot),
+    void art(Canvas& out, const Look& look, const Box& b) const;
+    // and the system's icon in a size x size square at x, y.
+    void system_icon(Canvas& out, const Look& look, int x, int y, int size) const;
+
     // Layout (in 640x480 units), public for tests.
     enum class Item { None, Button, Switcher, Home, Bright, Off, Count };
     Box box(Item item, int w, int h) const;
@@ -82,7 +104,9 @@ private:
     void reveal(Canvas& out, const Canvas& layer, double cx, double cy, double radius) const;
     void draw_button(Canvas& out, const Look& look) const;
     void hold_button(Canvas& out, const Look& look, const Font& font, const Words& words, Item item, Icon glyph,
-                     const std::string& name, const std::string& hint) const;
+                     const std::string& name) const;
+    // The status bar's battery (src/launcher/status_bar.hpp) with its top left at x, y.
+    void battery(Canvas& out, const Look& look, int x, int y) const;
     // Return home is held; the switcher only opens, so a tap does.
     static bool held_item(Item item) { return item == Item::Home; }
     static constexpr uint64_t hold_ms = 1000;
@@ -101,6 +125,15 @@ private:
     uint64_t toast_at_ = 0;
     // The battery's charge, read now and then (the handheld's power supply).
     mutable int battery_ = -2;
+    mutable bool charging_ = false;
+    std::string system_id_;
+    Image system_picture_, cover_;
+    // Scaled once: the cover for the card, the system picture for its line.
+    Image system_small_;
+    mutable Image thumb_; // the cover (or the system picture) at the last art() size
+    // The faded cover over the backdrop, kept while the look stays.
+    mutable Canvas ground_;
+    mutable uint64_t ground_key_ = 0;
     mutable uint64_t battery_at_ = 0;
     // The controls drawn once while they open or close over the companion.
     mutable Canvas layer_;

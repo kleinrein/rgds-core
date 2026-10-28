@@ -1,0 +1,27 @@
+#!/bin/sh
+# Low-battery shutdown: with no charger connected and the gauge at or under 3 % on three readings in a row
+# (a minute apart; a glitch on one reading does not count), the handheld powers off cleanly (init sends every
+# process SIGTERM: the engines save their cart RAM and states on it, the launcher its settings). Started by rcS.
+B=${RGDS_BATTERY_DIR:-/sys/class/power_supply/battery}
+C=${RGDS_CHARGER_DIR:-/sys/class/power_supply/charger}
+LIMIT=${RGDS_BATTERY_LIMIT:-3}
+LOG=${RGDS_BATTERY_LOG:-/data/rgds/logs/battery.log}
+POWEROFF=${RGDS_POWEROFF:-poweroff}
+low=0
+while sleep "${RGDS_BATTERY_INTERVAL:-30}"; do
+    cap=$(cat $B/capacity 2>/dev/null) || continue
+    case "$cap" in ''|*[!0-9]*) continue;; esac
+    if [ "$(cat $C/online 2>/dev/null)" = 1 ] || [ "$(cat $B/status 2>/dev/null)" = Charging ]; then low=0; continue; fi
+    if [ "$cap" -le "$LIMIT" ]; then
+        low=$((low + 1))
+        if [ $low -ge 3 ]; then
+            echo "battery-watch: $cap % with no charger, powering off" >&2
+            echo "$(date '+%F %T') battery $cap %: powered off" >> "$LOG" 2>/dev/null
+            sync
+            $POWEROFF
+            exit 0
+        fi
+    else
+        low=0
+    fi
+done

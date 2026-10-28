@@ -324,7 +324,10 @@ int App::run() {
             start_worker("status");
             service_loaded = true;
         }
-        if (!o.game_menu && !launching && worker <= 0 && (!device_loaded || now - connection_poll >= 15000))
+        // every 15 s, every 2 s while Wi-Fi joins or looks for a saved network by itself (the status card follows it)
+        const Uint32 poll =
+            !device_status["wifi_joining"].empty() || device_status["wifi_looking"] == "1" ? 2000 : 15000;
+        if (!o.game_menu && !launching && worker <= 0 && (!device_loaded || now - connection_poll >= poll))
             refresh_network(now);
         poll_launch(now);
         poll_chat();
@@ -336,6 +339,7 @@ int App::run() {
         }
         bool launch_transition =
             launching && preferences.animations && (now - launch_at < 110 || launch_phase == LaunchPhase::Exiting);
+        if (preferences.animations && homebrew_loading()) dirty = true; // the loader turns
         if (launching && preferences.animations) {
             int head = int((now - launch_at) / 75) % 8;
             if (head != launch_drawn_head) {
@@ -347,13 +351,17 @@ int App::run() {
         bool view_active = view_motion.active();
         if (view_motion.update(now) && !view_motion.active()) dirty = true;
         bool rail_animating = update_rail_feedback(now);
-        bool feedback_active = view_active || rail_animating || (preferences.animations && shutting_down()) ||
-                               (o.game_menu && menu_status["state"] == "busy" && preferences.animations) ||
-                               (preferences.animations && network_busy() &&
-                                (settings.page == Page::Network || settings.page == Page::Wifi)) ||
-                               boot_animating(now) || launch_transition || touch_animating(now) ||
-                               (preferences.animations &&
-                                (now < micro_until || (picker_open && now - picker_at < 170) || picker_closing()));
+        bool feedback_active =
+            view_active || rail_animating || (preferences.animations && shutting_down()) ||
+            (o.game_menu && menu_status["state"] == "busy" && preferences.animations) ||
+            (preferences.animations &&
+             (network_busy() || (device_status["wifi_connected"] != "1" &&
+                                 (!device_status["wifi_joining"].empty() || device_status["wifi_looking"] == "1"))) &&
+             (settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
+              settings.page == Page::Homebrew)) ||
+            boot_animating(now) || launch_transition || touch_animating(now) ||
+            (preferences.animations &&
+             (now < micro_until || (picker_open && float(now - picker_at) < sheet_in_ms() + 10) || picker_closing()));
         // Stop refreshing a stationary held contact after its cue completes.
         if (feedback_active && now - feedback_frame_at >= 16) {
             feedback_frame_at = now;
@@ -443,15 +451,15 @@ int App::run() {
                << ",\"detail_scroll\":" << detail_scroll << ",\"picker_open\":" << picker_open
                << ",\"picker_focus\":" << picker_focus << ",\"picker_scroll\":" << picker_scroll
                << ",\"list_scroll\":" << list_scroll << ",\"status_stamp\":" << std::quoted(drawn_status_stamp) << ',';
-        report << "\"menu_music\":" << preferences.menu_music << ",\"music_volume\":" << preferences.music_volume
-               << ",\"music_reads\":" << sounds.music_reads << ",\"music_playing\":" << sounds.music_playing()
-               << ",\"music_samples\":" << sounds.music_samples() << ",\"menu_sounds\":" << preferences.menu_sounds
-               << ",\"sound_volume\":" << preferences.sound_volume << ",\"sound_master\":" << sounds.master()
-               << ",\"home_bar_focus\":" << home_bar_focus << ",\"sound_plays\":" << sounds.plays
-               << ",\"sound_opens\":" << sounds.opens << ",\"sound_releases\":" << sounds.releases
-               << ",\"sound_open_now\":" << sounds.open_now() << ",\"sound_reads\":" << sounds.reads
-               << ",\"sound_bytes\":" << sounds.bytes() << ",\"sound_active\":" << sounds.active()
-               << ",\"sound_counts\":[";
+        report << "\"shown_games\":" << model.games.size() << ",\"menu_music\":" << preferences.menu_music
+               << ",\"music_volume\":" << preferences.music_volume << ",\"music_reads\":" << sounds.music_reads
+               << ",\"music_playing\":" << sounds.music_playing() << ",\"music_samples\":" << sounds.music_samples()
+               << ",\"menu_sounds\":" << preferences.menu_sounds << ",\"sound_volume\":" << preferences.sound_volume
+               << ",\"sound_master\":" << sounds.master() << ",\"home_bar_focus\":" << home_bar_focus
+               << ",\"sound_plays\":" << sounds.plays << ",\"sound_opens\":" << sounds.opens
+               << ",\"sound_releases\":" << sounds.releases << ",\"sound_open_now\":" << sounds.open_now()
+               << ",\"sound_reads\":" << sounds.reads << ",\"sound_bytes\":" << sounds.bytes()
+               << ",\"sound_active\":" << sounds.active() << ",\"sound_counts\":[";
         for (size_t i = 0; i < sounds.counts.size(); i++) {
             if (i) report << ',';
             report << sounds.counts[i];

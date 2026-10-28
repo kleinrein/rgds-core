@@ -76,12 +76,11 @@ MGBA_OPTIONS = {
 }
 
 CORE_SOURCES = [
-    "core/mgba_core.cpp", "core/libretro_core.cpp", "companion/profile.cpp", "companion/map_capture.cpp", "companion/companion.cpp",
-    "companion/party.cpp", "companion/party_gb.cpp", "companion/view.cpp", "companion/automap.cpp",
-    "companion/mosaic.cpp", "companion/grid.cpp", "companion/trace.cpp",
-    "companion/board.cpp", "companion/battle_gb.cpp", "companion/dock.cpp", "ui/canvas.cpp", "ui/screens.cpp",
-    "ui/frame.cpp", "ui/colour.cpp", "ui/png.cpp", "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp",
-    "app/session.cpp"
+    "core/mgba_core.cpp", "core/libretro_core.cpp", "companion/profile.cpp", "companion/map_capture.cpp",
+    "companion/companion.cpp", "companion/party.cpp", "companion/party_gb.cpp", "companion/view.cpp",
+    "companion/automap.cpp", "companion/mosaic.cpp", "companion/grid.cpp", "companion/trace.cpp", "companion/board.cpp",
+    "companion/battle_gb.cpp", "companion/dock.cpp", "ui/canvas.cpp", "ui/screens.cpp", "ui/frame.cpp", "ui/colour.cpp",
+    "ui/png.cpp", "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp", "app/session.cpp"
 ]
 C_SOURCES = ["core/mgba_split.c", "core/mgba_gb.c"]  # mGBA's internal headers are C
 PROGRAMS = {

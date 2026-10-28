@@ -41,9 +41,8 @@ class Grid final : public View {
 public:
     bool parse(const ViewSpec& spec, std::string& error) {
         on_ = spec.on;
-        for (auto [key, out] : {std::pair<const char*, uint32_t*>{"cells", &cells_},
-                                {"position", &position_},
-                                {"facing", &facing_}}) {
+        for (auto [key, out] :
+             {std::pair<const char*, uint32_t*>{"cells", &cells_}, {"position", &position_}, {"facing", &facing_}}) {
             auto found = spec.values.find(key);
             if (found == spec.values.end() || !parse_address(found->second, *out)) {
                 error = std::string("[view] grid needs an address for ") + key;
@@ -61,7 +60,7 @@ public:
             } else if (key == "type_mask") {
                 ok = parse_address(value, mask_);
             } else if (key == "open" || key == "wall" || key == "up" || key == "down" || key == "door") {
-                const Kind kind = key == "open" ? Open
+                const Kind kind = key == "open"   ? Open
                                   : key == "wall" ? Wall
                                   : key == "up"   ? Up
                                   : key == "down" ? Down
@@ -134,7 +133,8 @@ public:
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t frame) const override {
         backdrop(out, look);
         const int top = kit::margin * 2 + 28;
-        const int cell = std::max(4, std::min((out.w() - 2 * kit::margin - 12) / w_, (out.h() - top - kit::margin - 12) / h_));
+        const int cell =
+            std::max(4, std::min((out.w() - 2 * kit::margin - 12) / w_, (out.h() - top - kit::margin - 12) / h_));
         const int gw = cell * w_, gh = cell * h_;
         const int gx = (out.w() - gw) / 2, gy = top + (out.h() - top - kit::margin - gh) / 2;
         card(out, look, {gx - 6, gy - 6, gw + 12, gh + 12}, false, kit::radius);
@@ -151,12 +151,13 @@ public:
                 }
                 const Kind k = floor_[i];
                 out.fill_rect(X, Y, cell, cell, k == Wall ? rock : floor);
-                if (k == Door) out.rounded_rect(X + cell / 6, Y + cell / 6, cell - cell / 3, cell - cell / 3, cell / 6, door);
+                if (k == Door)
+                    out.rounded_rect(X + cell / 6, Y + cell / 6, cell - cell / 3, cell - cell / 3, cell / 6, door);
                 if (k == Up || k == Down) {
                     // Three steps, rising toward the top for stairs up, the bottom for down.
                     for (int s = 0; s < 3; ++s) {
-                        const int sw = cell * (s + 1) / 4, sy = k == Up ? Y + cell / 6 + s * cell / 4
-                                                                         : Y + cell - cell / 6 - (s + 1) * cell / 4;
+                        const int sw = cell * (s + 1) / 4,
+                                  sy = k == Up ? Y + cell / 6 + s * cell / 4 : Y + cell - cell / 6 - (s + 1) * cell / 4;
                         out.fill_rect(X + (cell - sw) / 2, sy, sw, std::max(1, cell / 5), stairs);
                     }
                 }
@@ -173,7 +174,9 @@ public:
         disc(out, cx, cy, r, marker);
         disc(out, cx + dx[facing_now_] * r, cy + dy[facing_now_] * r, std::max(2, r / 2), Rgb{12, 17, 26});
         const auto n = names_.find(level_now_);
-        const std::string name = n != names_.end() ? n->second : name_.empty() ? "" : name_ + " " + std::to_string(level_now_);
+        const std::string name = n != names_.end() ? n->second
+                                 : name_.empty()   ? ""
+                                                   : name_ + " " + std::to_string(level_now_);
         if (!name.empty()) chip(out, look, font, kit::margin, kit::margin + 14, name, true);
     }
 

@@ -120,12 +120,14 @@ class DualScreenTests(unittest.TestCase):
             binary = root / 'dual'
             source.write_text(SOURCE)
             subprocess.run(
-                ['clang++', '-std=c++17', '-I' + str(ROOT / 'src'), str(source), '-o', str(binary)],
-                check=True, capture_output=True, text=True
+                ['clang++', '-std=c++17', '-I' + str(ROOT / 'src'),
+                 str(source), '-o', str(binary)],
+                check=True,
+                capture_output=True,
+                text=True
             )
             result = subprocess.run(
-                [str(binary), str(root / 'roms'), str(root / 'profiles')],
-                capture_output=True, text=True, timeout=20
+                [str(binary), str(root / 'roms'), str(root / 'profiles')], capture_output=True, text=True, timeout=20
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

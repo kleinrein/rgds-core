@@ -76,12 +76,13 @@ class VisualOptionsTests(unittest.TestCase):
         self.assertIn('icon_style=pixel', (self.root / 'ui.ini').read_text())
 
     def test_language_is_first_and_sorted_italian_is_touch_reachable(self):
-        self.run_ui('20 key A\n40 key-up A\n200 click 180 307\n', ('--settings', '--section', 'system'))
+        # English, then the native names sorted: Italiano is the eighth row, 48 px apart
+        self.run_ui('20 key A\n40 key-up A\n200 click 180 348\n', ('--settings', '--section', 'system'))
         self.assertIn('language=it-IT', (self.root / 'ui.ini').read_text())
 
-    def test_touch_can_scroll_to_nynorsk_and_swedish_and_back_to_english(self):
-        # The sheet's scrollbar: a drag to the end shows the last languages.
-        for language, y in [('nn-NO', 190), ('sv-SE', 350)]:
+    def test_touch_can_scroll_to_the_last_languages_and_back_to_english(self):
+        # The sheet's scrollbar: a drag to the end shows the last languages, Svenska to 한국어.
+        for language, y in [('sv-SE', 110), ('ko-KR', 372)]:
             with self.subTest(language=language):
                 (self.root / 'ui.ini').write_text('schema=1\nlanguage=en-US\n')
                 self.run_ui(

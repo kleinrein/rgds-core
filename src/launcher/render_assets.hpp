@@ -94,6 +94,7 @@ void App::prepare_render_assets() {
     for (auto& panel : surfaces) {
         media.warm(panel.renderer, status_asset(sound_asset()));
         media.warm(panel.renderer, status_asset(wifi_asset()));
+        if (bluetooth_on) media.warm(panel.renderer, status_asset("bluetooth"));
     }
     if (preferences.rich_icons && settings.page != Page::BootWarning)
         for (auto& panel : surfaces)

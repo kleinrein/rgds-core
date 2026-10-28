@@ -114,8 +114,7 @@ class RoundedFont {
         auto path = directory / ("rounded-" + family + "-" + std::to_string(key.second) + ".rgf");
         try {
             if (fs::exists(path)) return &extras.emplace(key, read_atlas(path, {2048, 16384, 16384})).first->second;
-        } catch (const std::exception&) {
-        }
+        } catch (const std::exception&) {}
         missing.insert(key);
         return nullptr;
     }

@@ -79,7 +79,7 @@ class SearchUITests(unittest.TestCase):
     def test_popup_filter_shortcut(self):
         r = self.run_ui("100 key Q\n250 key X\n")
         self.assertEqual(r["page"], 0)
-        self.assertTrue(r["filter_sheet"])  # the Library view sheet, on its filters
+        self.assertTrue(r["filter_sheet"])  # the Filter sheet, on its filters
         self.assertFalse(r["picker_open"])
 
     def test_empty_results_still_offer_popup_search_and_clear(self):

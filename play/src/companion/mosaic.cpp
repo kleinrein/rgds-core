@@ -130,8 +130,9 @@ public:
     bool shown() const override { return playing_; }
 
     uint64_t key(uint64_t frame) const override {
-        return (uint64_t(serial_) << 24) ^ (uint64_t(area_now_ & 0xFF) << 56) ^ (uint64_t(player_x_now_ & 0xFFF) << 12) ^
-               uint64_t(player_y_now_ & 0xFFF) ^ (has_player() && (frame / 20) & 1 ? 0x800000 : 0);
+        return (uint64_t(serial_) << 24) ^ (uint64_t(area_now_ & 0xFF) << 56) ^
+               (uint64_t(player_x_now_ & 0xFFF) << 12) ^ uint64_t(player_y_now_ & 0xFFF) ^
+               (has_player() && (frame / 20) & 1 ? 0x800000 : 0);
     }
 
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t frame) const override {
@@ -166,8 +167,7 @@ public:
     void load(const std::string& bytes) override {
         const size_t entry = 12 + sizeof(Tile::px);
         // A map made at another scale is of no use at this one.
-        if (bytes.size() < 6 || bytes.compare(0, 4, "RGMS") != 0 || bytes[4] != 1 || bytes[5] != char(scale_))
-            return;
+        if (bytes.size() < 6 || bytes.compare(0, 4, "RGMS") != 0 || bytes[4] != 1 || bytes[5] != char(scale_)) return;
         for (size_t at = 6; at + entry <= bytes.size(); at += entry) {
             int32_t head[3];
             std::memcpy(head, bytes.data() + at, sizeof head);

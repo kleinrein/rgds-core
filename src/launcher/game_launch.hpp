@@ -32,6 +32,10 @@ void App::launch(bool from_home) {
         dirty = true;
         return;
     }
+    if (favourites_empty()) {
+        browse_from_favourites();
+        return;
+    }
     if (model.games.empty()) return;
     // A port that still needs its owner's files shows where to send them first (port_files_screen.hpp).
     if (!resume_launch && port_needs_files(model.games[model.selected])) {

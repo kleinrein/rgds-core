@@ -5,8 +5,8 @@
 void App::refresh_network(Uint32 now) {
     connection_poll = now;
     auto probe = o.preview ? NetworkProbe{} : probe_network();
-    bool details = settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::DeviceInfo ||
-                   settings.page == Page::Maintenance;
+    bool details = settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
+                   settings.page == Page::DeviceInfo || settings.page == Page::Maintenance;
     if (!device_loaded || o.preview || details || probe.signature != network_signature ||
         now - device_info_at >= 300000) {
         start_worker("device.info");
@@ -88,6 +88,107 @@ void App::wifi_choose() {
         start_worker("device.connect", payload.str());
         settings.page = Page::Network;
     } else begin_edit(2);
+    dirty = true;
+}
+
+// Homebrew shelves (runtime/homebrew_store.py): A on a system's pinned Homebrew opens its shelf; A on a game downloads it
+// into that system's folder. The DS shelf fills the first games folder.
+fs::path App::homebrew_folder(const std::string& system) const {
+    if (system == "nds") return o.roots.empty() ? (o.preview ? o.data / "roms/nds" : fs::path()) : o.roots.front();
+    for (const auto& [id, root] : o.system_roots)
+        if (id == system) return root;
+    return o.preview ? o.data / "roms" / system : fs::path();
+}
+
+std::vector<std::string> App::homebrew_shelves() const {
+    std::vector<std::string> shelves;
+    for (const char* id : {"nds", "gba", "nes"})
+        if (!homebrew_folder(id).empty()) shelves.push_back(id);
+    return shelves;
+}
+
+void App::homebrew_step(int delta) {
+    const auto shelves = homebrew_shelves();
+    if (shelves.size() < 2) return;
+    auto at = std::find(shelves.begin(), shelves.end(), homebrew_system);
+    const int i = at == shelves.end() ? 0 : int(at - shelves.begin());
+    const int next = (i + delta + int(shelves.size())) % int(shelves.size());
+    homebrew_open(shelves[size_t(next)]);
+    view_route = delta < 0 ? ViewTravel::Back : ViewTravel::Forward;
+}
+
+void App::homebrew_open(const std::string& system) {
+    homebrew_system = system;
+    settings.page = Page::Homebrew;
+    settings.focus = 0;
+    list_scroll = 0;
+    list_focus = -1;
+    // the previous shelf's rows must not flash up under this one
+    for (auto it = device_status.begin(); it != device_status.end();)
+        it = it->first.rfind("hb_", 0) == 0 ? device_status.erase(it) : std::next(it);
+    homebrew_queued = system;
+    homebrew_kick();
+    dirty = true;
+}
+
+// Sends a waiting shelf request once the worker is free; artwork indexing gives way to it (start_worker stops it).
+void App::homebrew_kick() {
+    if (!homebrew_queued) return;
+    // another shelf's list (still fetching its covers) gives way; a download in progress finishes first
+    if (worker > 0 && worker_action == "device.homebrew-browse") stop_worker();
+    if (worker > 0 && worker_action != "index") return;
+    const std::string system = *homebrew_queued;
+    homebrew_queued.reset();
+    std::ostringstream payload;
+    payload << "{\"system\":" << std::quoted(system) << ",\"folder\":" << std::quoted(homebrew_folder(system).string())
+            << "}";
+    start_worker("device.homebrew-browse", payload.str());
+    dirty = true;
+}
+
+void App::homebrew_choose() {
+    auto prefix = "hb_" + std::to_string(settings.focus) + "_";
+    const auto id = device_status[prefix + "id"];
+    if (id.empty()) return;
+    if (device_status[prefix + "installed"] == "1") {
+        service_notice = "Already in your library.";
+        dirty = true;
+        return;
+    }
+    if (worker > 0 || homebrew_queued) {
+        service_notice = worker_action == "device.homebrew-get" ? "One download at a time." : "One moment.";
+        dirty = true;
+        return;
+    }
+    std::ostringstream payload;
+    payload << "{\"id\":" << std::quoted(id) << ",\"folder\":" << std::quoted(homebrew_folder(homebrew_system).string())
+            << "}";
+    start_worker("device.homebrew-get", payload.str());
+    dirty = true;
+}
+
+// Bluetooth devices: A pairs (then trusts and connects) or connects a paired device; X forgets a paired one.
+void App::bluetooth_choose() {
+    if (worker > 0) return;
+    auto prefix = "bt_" + std::to_string(settings.focus) + "_";
+    bluetooth_address = device_status[prefix + "address"];
+    if (bluetooth_address.empty()) return;
+    if (device_status[prefix + "connected"] == "1") {
+        service_notice = "Already connected.";
+        dirty = true;
+        return;
+    }
+    std::ostringstream payload;
+    payload << "{\"address\":" << std::quoted(bluetooth_address) << "}";
+    start_worker("device.bt-pair", payload.str());
+    dirty = true;
+}
+
+void App::bluetooth_forget() {
+    if (worker > 0 || bluetooth_address.empty()) return;
+    std::ostringstream payload;
+    payload << "{\"address\":" << std::quoted(bluetooth_address) << "}";
+    start_worker("device.bt-forget", payload.str());
     dirty = true;
 }
 

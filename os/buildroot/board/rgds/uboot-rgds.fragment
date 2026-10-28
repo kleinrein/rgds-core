@@ -46,8 +46,21 @@ CONFIG_SPL_SPI_LOAD=n
 CONFIG_ROCKCHIP_SPI_IMAGE=n
 CONFIG_ROCKCHIP_SFC=n
 # the card (mmc1 in this U-Boot's device tree) scanned first, the eMMC not brought up before it; the plain scan
-# stays as the fallback should the label ever not resolve
+# stays as the fallback should the label ever not resolve. (A boot splash from U-Boot was built and dropped: it cost
+# 0.45 s for ~2 s of logo before the kernel resets the panels; board/rgds/shelved/uboot-splash, docs/OWN_OS_PLAN.md.)
 CONFIG_BOOTCOMMAND="bootflow scan -lb mmc1 || bootflow scan -lb"
 # only the SD card is a boot target: the RG DS's eMMC holds the factory Android and is never touched
 CONFIG_ENV_IS_NOWHERE=y
 CONFIG_ENV_IS_IN_MMC=n
+# A/B fallback: the boot counter lives in /bootcount on the FAT boot partition (4 bytes: magic bd, version 1,
+# count, upgrade-in-progress). It only counts while an update is in progress (the handheld arms it when it
+# switches slots, usr/libexec/rgds/trial); past bootlimit, altbootcmd (uboot-patches/003) boots the extlinux
+# FALLBACK label, the slot that ran before. CONFIG_SYS_BOOTCOUNT_ADDR is scratch RAM below kernel_addr_r.
+CONFIG_BOOTCOUNT_LIMIT=y
+CONFIG_BOOTCOUNT_FS=y
+CONFIG_SYS_BOOTCOUNT_FS_INTERFACE="mmc"
+CONFIG_SYS_BOOTCOUNT_FS_DEVPART="1:1"
+CONFIG_SYS_BOOTCOUNT_FS_NAME="/bootcount"
+CONFIG_SYS_BOOTCOUNT_ADDR=0x00f00000
+CONFIG_BOOTCOUNT_BOOTLIMIT=3
+CONFIG_FAT_WRITE=y

@@ -459,6 +459,24 @@ bool zip_is_dsiware(const std::string& path) {
   return is_dsiware(head, nullptr);
 }
 
+bool file_runs_on_ds(const std::string& path) {
+  const size_t dot = path.find_last_of('.');
+  if (dot == std::string::npos) return false;
+  std::string ext = path.substr(dot + 1);
+  for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  std::vector<u8> head(0x200);
+  if (ext == "zip") {
+    cart::ZipEntry e;
+    std::unique_ptr<cart::RomSource> src = zip_entry_of(path, e);
+    if (!src || e.cia || cart::peek_entry(src->page(0), src->size(), e, head.data(), head.size()) != head.size())
+      return false;
+  } else if (ext == "nds" || ext == "dsi" || ext == "srl") {
+    std::ifstream f(path, std::ios::binary);
+    if (!f.read(reinterpret_cast<char*>(head.data()), static_cast<std::streamsize>(head.size()))) return false;
+  } else return false;
+  return (head[0x12] & 3) != 3;
+}
+
 bool zip_holds_cia(const std::string& path) {
   cart::ZipEntry e;
   return zip_entry_of(path, e) != nullptr && e.cia;

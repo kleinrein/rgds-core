@@ -36,8 +36,8 @@ class DeviceLifecycleTests(unittest.TestCase):
             armed.parent.mkdir(parents=True)
             armed.write_text("{}")
 
-        with patch("quick_resume.arm", side_effect=arm), patch("power.execute_system_action",
-                                                                  side_effect=OSError("refused")):
+        with patch("quick_resume.arm",
+                   side_effect=arm), patch("power.execute_system_action", side_effect=OSError("refused")):
             with self.assertRaises(OSError):
                 self.service.poweroff()
         self.assertFalse(armed.exists())
@@ -50,9 +50,10 @@ class DeviceLifecycleTests(unittest.TestCase):
 
     def test_action_runs_the_init_command_and_records_the_outcome(self):
         completed = subprocess.CompletedProcess([], 0)
-        with patch("emulators.core_running", return_value=False), patch(
-            "linux_platform.system_command", return_value=["/sbin/reboot"]
-        ), patch("power.subprocess.run", return_value=completed) as run:
+        with patch("emulators.core_running",
+                   return_value=False), patch("linux_platform.system_command", return_value=[
+                       "/sbin/reboot"
+                   ]), patch("power.subprocess.run", return_value=completed) as run:
             power.execute_system_action("reboot", self.service.data)
         self.assertEqual(run.call_args.args[0], ["/sbin/reboot"])
         self.assertIn("request-accepted", (self.service.data / "logs/system-exit.ini").read_text())
@@ -94,11 +95,7 @@ class DeviceLifecycleTests(unittest.TestCase):
     def test_wifi_command_uses_a_clean_environment_without_old_preloads(self):
         completed = subprocess.CompletedProcess([], 0, stdout="enabled", stderr="")
         with patch.dict(
-            os.environ,
-            RGDS_ROOT="/private",
-            LD_PRELOAD="old.so",
-            LD_LIBRARY_PATH="/old/lib",
-            PATH="/old/bin"
+            os.environ, RGDS_ROOT="/private", LD_PRELOAD="old.so", LD_LIBRARY_PATH="/old/lib", PATH="/old/bin"
         ), patch("device_services.subprocess.run", return_value=completed) as run:
             self.assertEqual(self.service.command(["radio", "wifi"]), "enabled")
         environment = run.call_args.kwargs["env"]

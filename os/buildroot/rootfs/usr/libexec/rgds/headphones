@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Headphone routing on RG DS OS: the speakers follow the jack (simple-audio-card reports the jack as a switch on
+its "rk817_ext Headphones" input device; the "Internal Speakers" mixer pin is ours to turn off while something is
+plugged in, which also powers the AW87391 amplifiers down). Started by rcS; reads the jack's state first, then
+sleeps on its events."""
+import array
+import fcntl
+import glob
+import struct
+import subprocess
+import sys
+import time
+
+SW_HEADPHONE_INSERT = 2
+EV_SW = 5
+EVIOCGSW = (2 << 30) | (8 << 16) | (ord('E') << 8) | 0x1b
+EVIOCGNAME = (2 << 30) | (64 << 16) | (ord('E') << 8) | 0x06
+
+
+def jack_device():
+    for path in sorted(glob.glob('/dev/input/event*')):
+        try:
+            with open(path, 'rb') as f:
+                name = array.array('B', [0] * 64)
+                fcntl.ioctl(f, EVIOCGNAME, name)
+                if b'Headphones' in name.tobytes():
+                    return path
+        except OSError:
+            continue
+    return None
+
+
+def speakers(on):
+    subprocess.run(['amixer', '-q', '-c', '0', 'sset', 'Internal Speakers', 'on' if on else 'off'], check=False)
+    print('headphones: speakers', 'on' if on else 'off', file=sys.stderr, flush=True)
+
+
+def main():
+    path = None
+    while path is None:
+        path = jack_device()
+        if path is None:
+            time.sleep(5)
+    with open(path, 'rb', buffering=0) as f:
+        state = array.array('B', [0] * 8)
+        fcntl.ioctl(f, EVIOCGSW, state)
+        plugged = bool(state[0] & (1 << SW_HEADPHONE_INSERT))
+        speakers(not plugged)
+        size = struct.calcsize('llHHi')
+        while True:
+            data = f.read(size)
+            if len(data) < size:
+                return
+            _, _, kind, code, value = struct.unpack('llHHi', data)
+            if kind == EV_SW and code == SW_HEADPHONE_INSERT and bool(value) != plugged:
+                plugged = bool(value)
+                speakers(not plugged)
+
+
+if __name__ == '__main__':
+    main()

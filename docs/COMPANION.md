@@ -32,7 +32,7 @@ What the screen shows for a game is set out in its profile (`play/profiles/<syst
 
 ## Usefulness
 
-18. **Show what the game hides.** A good companion shows what the top screen doesn't: the coin bank and treasures in a Wario Land course, the ending the money reaches so far, seashells and instruments in Link's Awakening, the Pokédex and badges in Pokémon. Don't repeat the status bar unless it takes the status bar's place (`covers_hud`).
+18. **Show what the game hides.** A good companion shows what the top screen doesn't: the coin bank and treasures in a Wario Land course, the ending the money reaches so far, seashells and instruments in Link's Awakening, the Pokédex and badges in Pokémon. Don't repeat the status bar unless it takes the status bar's place (`covers_hud`). Never a dimmed copy of the game behind a HUD: a Game Boy Advance HUD becomes a board, its pieces (`hud X Y W H` tiles) in cards beside what the game keeps in memory, and only while the game is really in play, not on its menus or in its story.
 19. **The right screen for the moment.** Use `on` conditions: a course board in a course, a journey board on the world map, the battle in a battle, the team otherwise. An `alternative = yes` board waits behind the switch.
 20. **Facts with sources.** Every profile starts with a comment saying what the screen shows and where each address comes from (a disassembly, Data Crystal, a RAM search), and what was checked on a real save. *(static lint)*
 21. **Verified, or said not to be.** Shots from `play-shot`/`tools/play_gobot.py` with a real save, and the lint's shots (`--shots DIR`) in all four looks, before a profile ships.

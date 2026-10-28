@@ -21,17 +21,18 @@ void App::shutdown_overlay(SDL_Renderer* r, int y, bool upper) {
                     int((preferences.dark ? 60 : 18) * alpha / 255));
         round_rect(r, cx - 70, cy - 70, 140, 140, 34, "panel");
         brand(r, cx - 48, cy - 48, 96);
-        const double spin = preferences.animations ? (now % 1400) / 1400.0 : 0;
-        feedback_arc(r, cx, cy, 86, 0, 1, theme.at("slot"), alpha, 5);
-        feedback_arc(r, cx, cy, 86, spin, .28, theme.at("accent"), alpha, 5);
+        busy_ring(r, cx, cy, 86, 5, alpha);
         const std::string text = locale.text(shutdown_kind == "reboot" ? "Restarting…" : "Powering off…");
         raw_label(r, text, 320 - label_width(text, 26, false) / 2, y + 318, 26, "ink", 400);
         const std::string note = locale.text("Your saves are safe. See you soon!");
         raw_label(r, note, 320 - label_width(note, 16, false) / 2, y + 358, 16, "muted", 500);
-    } else {
-        const double spin = preferences.animations ? (now % 1400) / 1400.0 : 0;
-        feedback_arc(r, 320, y + 240, 26, spin, .3, theme.at("accent"), alpha, 4);
-    }
+    } else busy_ring(r, 320, y + 240, 26, 4, alpha, false);
+}
+
+void App::busy_ring(SDL_Renderer* r, int cx, int cy, int radius, int weight, int alpha, bool track) {
+    const double spin = preferences.animations ? (s.GetTicks() % 1400) / 1400.0 : 0;
+    if (track) feedback_arc(r, cx, cy, radius, 0, 1, theme.at("slot"), alpha, weight);
+    feedback_arc(r, cx, cy, radius, spin, track ? .28 : .3, theme.at("accent"), alpha, weight);
 }
 
 void App::brand(SDL_Renderer* r, int x, int y, int size) {

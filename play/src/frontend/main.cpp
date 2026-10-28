@@ -3,7 +3,7 @@
 //
 //   rgds-play --rom GAME --data DIR [--profiles DIR]... [--fonts DIR]
 //             [--save-source DIR]... [--fit sharp|integer|smooth] [--second companion|off|swap|info]
-//             [--frame NAME] [--frames DIR] [--palette NAME] [--colour NAME]
+//             [--frame NAME] [--frames DIR] [--palette NAME] [--colour NAME] [--art DIR]
 //
 // --fit sharp (the default) fills the panel's width: the game is scaled up by
 // a whole number on the GPU without smoothing, then down to the panel with
@@ -55,6 +55,9 @@
 #include <SDL2/SDL_syswm.h>
 #include <dlfcn.h>
 #include <unistd.h>
+#ifdef __linux__
+#include <sched.h>
+#endif
 #endif
 
 #include <algorithm>
@@ -461,6 +464,7 @@ int main(int argc, char** argv) {
         else if (a == "--core") o.core_library = next();
         else if (a == "--system") o.system = next();
         else if (a == "--system-dir") o.system_dir = next();
+        else if (a == "--art") o.art_dir = next();
         else if (a == "--save-source") o.save_sources.push_back(next());
         else if (a == "--fit") fit = parse_fit(next());
         else if (a == "--second") second = parse_second(next());
@@ -592,6 +596,19 @@ int main(int argc, char** argv) {
                      have.channels, have.samples, stream_rate, stream ? "" : ", but no converter");
     } else std::fprintf(stderr, "rgds-play: no sound: %s\n", SDL_GetError());
     const bool debug = std::getenv("RGDS_PLAY_DEBUG") != nullptr;
+#ifdef __linux__
+    // RGDS_PLAY_CPU=N (RG DS OS): the main loop, which runs the core and draws, gets a core of its own at
+    // round-robin priority; the threads already started (SDL's audio) keep the session's CPUs.
+    if (const char* pin = std::getenv("RGDS_PLAY_CPU"); pin && *pin) {
+        cpu_set_t set;
+        CPU_ZERO(&set);
+        CPU_SET(std::atoi(pin), &set);
+        if (sched_setaffinity(0, sizeof set, &set) != 0) std::perror("rgds-play: sched_setaffinity");
+        sched_param sp{};
+        sp.sched_priority = 5;
+        if (sched_setscheduler(0, SCHED_RR, &sp) != 0) std::perror("rgds-play: sched_setscheduler");
+    }
+#endif
     int peak = 0;
     const Uint32 target_queue = Uint32(have.freq / 20) * 4; // 50 ms of stereo s16
 
@@ -626,7 +643,8 @@ int main(int argc, char** argv) {
         const SDL_Rect& d = lower.game_dest;
         const Picture game = session.core().picture();
         if (d.w <= 0 || d.h <= 0 || game.w <= 0 || game.h <= 0) return;
-        const int wx = lower.area.x + x * lower.area.w / std::max(1, pw), wy = lower.area.y + y * lower.area.h / std::max(1, ph);
+        const int wx = lower.area.x + x * lower.area.w / std::max(1, pw),
+                  wy = lower.area.y + y * lower.area.h / std::max(1, ph);
         const bool inside = wx >= d.x && wy >= d.y && wx < d.x + d.w && wy < d.y + d.h;
         session.core().set_pointer(inside ? (wx - d.x) * game.w / d.w : -1, inside ? (wy - d.y) * game.h / d.h : -1,
                                    down);
@@ -655,6 +673,11 @@ int main(int argc, char** argv) {
     int logged_hud = 0;
     double owed = 0;
     bool fast = false;
+    // While RG DS Core's menu is up (the runtime's ".blocked" beside the control file) the game holds still and
+    // quiet, and the frames go on: on RG DS OS the bridge draws the menu into them (runtime/emulators.py).
+    const char* control_env = std::getenv("RGDS_CONTROL_FILE");
+    const std::string menu_block = bridged && control_env && *control_env ? std::string(control_env) + ".blocked" : "";
+    bool held = false;
     Uint64 last = SDL_GetPerformanceCounter();
     Uint32 quit_held_since = 0;
     std::vector<int16_t> samples(4096 * 2);
@@ -799,6 +822,15 @@ int main(int argc, char** argv) {
         }
         // After a stall (a pause or a lid sleep stops the process), don't race.
         if (owed > frame_seconds * (fast ? 8 : 4)) owed = frame_seconds;
+        if (const bool hold = !menu_block.empty() && access(menu_block.c_str(), F_OK) == 0; hold != held) {
+            held = hold;
+            if (audio) {
+                if (hold) SDL_ClearQueuedAudio(audio);
+                SDL_PauseAudioDevice(audio, hold ? 1 : 0);
+            }
+            std::fprintf(stderr, "rgds-play: %s\n", hold ? "held under the menu" : "playing again");
+        }
+        if (held) owed = 0;
         if (pad)
             session.core().set_sticks(SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTX),
                                       SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTY),

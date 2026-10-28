@@ -513,6 +513,21 @@ void test_hud_strip() {
     game.run_frame(0);
     companion.after_frame(game);
     CHECK(companion.compose_game(game.picture()).h == 160 && !companion.status().showing_hud);
+
+    // A second picture under the first (Super Mario Kart): the game keeps its
+    // own rows without the gap between them, and the band fills the panel's
+    // width at a scale that isn't whole (640 / 240).
+    Profile two = parse_ok("[game]\ntitle = T\ncodes = AB\n[hud]\non = mem8[02000000] == 1\nstrip = 0 100 240 60\n"
+                           "strip_fill = yes\ngame_rows = 90\n");
+    game.s.scene = 1;
+    game.run_frame(0);
+    Companion lower(game, &two, "T", "GAME BOY");
+    lower.after_frame(game);
+    CHECK(lower.compose_game(game.picture()).h == 90 && lower.compose_game(game.picture(), true).h == 160);
+    Canvas filled(640, 480);
+    lower.render(filled, look, font, Words{});
+    CHECK(filled.at(0, 240) == (game.picture().at(0, 130) | 0xFF000000u) &&
+          filled.at(639, 240) == (game.picture().at(239, 130) | 0xFF000000u));
 }
 
 void test_gb_views() {
@@ -766,7 +781,6 @@ void test_second_screen() {
     CHECK(c.touch({Touch::Down, 640 - kit::margin - 20, kit::margin + 20}) && c.showing_alternative());
 }
 
-
 // A scrolling world 4 screens wide: the picture is the world under a camera at
 // mem16[0010], each world column a colour of its own, so a map can be checked.
 class Scroller final : public Core {
@@ -880,7 +894,8 @@ void test_libretro_views() {
     // The shipped profiles of the libretro systems: every view builds, Duck Hunt is a light-gun game.
     ProfileLibrary lib;
     std::vector<std::string> errors;
-    for (const char* system : {"/nes", "/snes", "/sms"}) lib.load_directory(std::string(PLAY_PROFILES) + system, errors);
+    for (const char* system : {"/nes", "/snes", "/sms"})
+        lib.load_directory(std::string(PLAY_PROFILES) + system, errors);
     for (const auto& error : errors) std::fprintf(stderr, "profile error: %s\n", error.c_str());
     CHECK(errors.empty());
     for (const auto& [key, p] : lib.all())

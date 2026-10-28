@@ -29,7 +29,7 @@ class OTAUITests(unittest.TestCase):
         )
 
     def test_updates_are_reachable_and_unconfigured_is_explicit(self):
-        script = '20 key Down\n40 key-up Down\n80 key Down\n100 key-up Down\n140 key Down\n160 key-up Down\n180 key Down\n190 key-up Down\n200 key Down\n210 key-up Down\n260 key A\n'  # Updates & recovery is the sixth System row
+        script = '20 key Down\n40 key-up Down\n80 key Down\n100 key-up Down\n140 key Down\n160 key-up Down\n180 key Down\n190 key-up Down\n200 key Down\n210 key-up Down\n220 key Down\n230 key-up Down\n260 key A\n'  # Updates & recovery is the seventh System row
         self.run_ui(script, ('--settings', '--section', 'system'))
         self.assertIn('17 5 0', (self.root / 'state').read_text())
         self.assertIn('state=unconfigured', (self.root / 'data/update/status.ini').read_text())
@@ -130,12 +130,17 @@ else:os.execv(sys.executable,[sys.executable,*sys.argv[1:]])
 
     def test_updates_is_a_root_entry_below_system(self):
         # Section ids stay stable; Updates (9) is listed between System (5) and Controls (6).
-        (self.root/'state').write_text('1 0 0 ""\n1 5 0\n')
-        self.run_ui('300 key Down\n340 key-up Down\n');self.assertIn('1 9 0',(self.root/'state').read_text())
-        self.run_ui('300 key Down\n340 key-up Down\n');self.assertIn('1 6 0',(self.root/'state').read_text())
-        (self.root/'state').write_text('1 0 0 ""\n1 9 0\n')
-        self.run_ui('300 key A\n340 key-up A\n');self.assertIn('17 9 0',(self.root/'state').read_text())
-        self.run_ui('300 key Escape\n340 key-up Escape\n');self.assertIn('1 9 0',(self.root/'state').read_text())   # B lands on Updates again
+        (self.root / 'state').write_text('1 0 0 ""\n1 5 0\n')
+        self.run_ui('300 key Down\n340 key-up Down\n')
+        self.assertIn('1 9 0', (self.root / 'state').read_text())
+        self.run_ui('300 key Down\n340 key-up Down\n')
+        self.assertIn('1 6 0', (self.root / 'state').read_text())
+        (self.root / 'state').write_text('1 0 0 ""\n1 9 0\n')
+        self.run_ui('300 key A\n340 key-up A\n')
+        self.assertIn('17 9 0', (self.root / 'state').read_text())
+        self.run_ui('300 key Escape\n340 key-up Escape\n')
+        self.assertIn('1 9 0', (self.root / 'state').read_text())  # B lands on Updates again
+
     def test_footer_key_resumes_a_paused_download(self):
         self.offer(state='cancelled', received='5000', progress='40')
         (self.root / 'state').write_text('1 0 0 ""\n17 5 0\n')

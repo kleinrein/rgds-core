@@ -76,6 +76,10 @@ void App::top(SDL_Renderer* r, int y) {
         round_rect(r, 24, y + 84, 592, 316, 8, "panel");
         system_icon(r, systems_selected, 264, y + 100, 112);
         centered(r, system_info(listed_systems[systems_selected]).name, y + 228, 2, "ink");
+        if (listed_systems[systems_selected] == "homebrew") {
+            centered_wrapped(r, "Free DS, GBA and NES games, picked for RG DS.", y + 290, 18, 500, 2, "muted");
+            return;
+        }
         const SystemStats& stats = system_stats_for(systems_selected);
         const bool played = stats.played_ready;
         const std::array<std::string, 3> values = {
@@ -124,7 +128,8 @@ void App::top(SDL_Renderer* r, int y) {
     }
     if (model.games.empty()) {
         label(r,
-              library_ready && !collection_loading ? (discovery_active() ? "No matching games" : "No games")
+              library_ready && !collection_loading
+                  ? (discovery_active() ? "No matching games" : preferences.view == 1 ? "No favourites yet" : "No games")
                                                    : "Preparing the library…",
               30, y + 160, 28, "ink");
         return;
@@ -139,6 +144,10 @@ void App::top(SDL_Renderer* r, int y) {
 }
 
 void App::bottom(SDL_Renderer* r, int y) {
+    if (chat_open) {
+        chat_bottom(r, y);
+        return;
+    }
     if (o.port_menu && port_idle) {
         port_companion(r, y);
         return;
@@ -256,6 +265,14 @@ void App::bottom(SDL_Renderer* r, int y) {
         raised_pill(r, 328, y + 326, 232, 48, 12, theme.at("panel"));
         label(r, "Clear filters", 368, y + 338, 20, "accent", 200);
     }
+    if (favourites_empty()) {
+        favourite_badge(r, 320, y + 196, 56);
+        centered(r, "No favourites yet", y + 243, 2, "ink");
+        centered(r, "Favourite a game and it waits for you here", y + 282, 1, "muted");
+        const std::string go = preferences.show_systems ? "Browse systems" : "Browse games";
+        raised_pill(r, 160, y + 326, 320, 48, 12, theme.at("accent"));
+        label(r, go, 320 - label_width(go, 20) / 2, y + 338, 20, "on_accent", 296);
+    }
     size_t count = navigation_count(), selection = navigation_selected();
     if (count && !home_menu && browse_layout() == 2) {
         SDL_Rect clip{24, y + LibraryViewport::top, 568, LibraryViewport::height};
@@ -351,7 +368,7 @@ void App::bottom(SDL_Renderer* r, int y) {
                              LibraryViewport::top + LibraryViewport::height);
                 if (selected)
                     start_frame(r, x, row, tile_size,
-                                home_menu || systems_menu || is_port_entry(model.games[size_t(index)].path) ? "OPEN"
+                                home_menu || systems_menu || is_tool_entry(model.games[size_t(index)].path) ? "OPEN"
                                                                                                             : "PLAY");
                 round_rect(r, x, row + 4, tile_size, tile_size, 5, "line");
                 round_rect(r, x, row, tile_size, tile_size, 5, "line");

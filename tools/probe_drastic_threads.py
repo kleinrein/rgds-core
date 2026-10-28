@@ -115,9 +115,8 @@ def main():
         raise ValueError('Fixture binaries changed; rebuild before probing')
     tests = [
         ('recognized', 'drastic', '1', 'guarded'), ('unknown', 'drastic', '1', 'bypass'),
-        ('recognized', 'dsperate', '1', 'bypass'),
-        ('recognized', 'melonds', '1', 'bypass'), ('recognized', 'drastic', '0', 'bypass'),
-        ('recognized', 'drastic', '1', 'timeout')
+        ('recognized', 'dsperate', '1', 'bypass'), ('recognized', 'melonds', '1', 'bypass'),
+        ('recognized', 'drastic', '0', 'bypass'), ('recognized', 'drastic', '1', 'timeout')
     ]
     results = []
     for name, core, enabled, mode in tests:

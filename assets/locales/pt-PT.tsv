@@ -1,47 +1,95 @@
 # UTF-8 source\ttranslation. One entry per line.
+1 person nearby	1 pessoa por perto
+1 player	1 jogador
+12-hour	12 horas
+2 seconds	2 segundos
+24-hour	24 horas
+24-hour or 12-hour clock	Relógio de 24 ou 12 horas
+2x sharper	2x mais nítido
 3D rendering automatically uses worker threads.	A renderização 3D usa várias threads automaticamente.
 3D resolution	Resolução 3D
 3D threading changed for this session. Settings storage is unavailable.	Threads 3D alteradas nesta sessão. Não foi possível guardar as definições.
 3D threading changed. No restart needed.	Threads 3D alteradas. Não é preciso reiniciar.
+3x sharper	3x mais nítido
+4x (experimental)	4x (experimental)
+5x (experimental)	5x (experimental)
 A  Apply	A  Aplicar
 A  Done	A  Concluir
+A  Jump	A  Ir
 A  Play	A  Jogar
+A  Search	A  Pesquisar
+A 24-hour or 12-hour clock.	Um relógio de 24 ou 12 horas.
+A carousel, or the DSi's column with your last game on top	Um carrossel ou a coluna da DSi com o último jogo no topo
+A exports this slot to userdata/exports. X deletes it.	A exporta este espaço para userdata/exports. X apaga-o.
 A gentle scanline pattern with original colours.	Linhas suaves com cores originais.
+A light tap for every move, a firmer one when you choose, open or save.	Um toque leve a cada movimento e um mais firme ao escolher, abrir ou guardar.
+A little handheld magic	Um pouco de magia portátil
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A carrega este espaço. Anular o último carregamento, em Y, recupera o teu progresso atual.
 A natural colour and contrast treatment.	Cores e contraste naturais.
+A new version is ready to download.	Uma nova versão está pronta para transferir.
+A replaces this slot with your current progress. X deletes it.	A substitui este espaço pelo teu progresso. X apaga-o.
+A saves your current progress here.	A guarda o teu progresso aqui.
 A screen style for this cartridge	Estilo de ecrã deste cartucho
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Uma pequena pega no fundo do ecrã inferior mostra que os gestos estão ativos; sobe com o dedo e um anel marca o ponto quando um gesto é acionado.
+A soft tune plays while you browse. It fades out when a game starts.	Uma melodia suave toca enquanto navega. Desvanece quando um jogo começa.
 A stronger LCD texture and scanline look.	Textura LCD e linhas de varrimento mais intensas.
 A subtle handheld LCD pixel pattern.	Predefinição subtil de pixels LCD portátil.
 A subtle pixel grid with a bright, readable image.	Grelha subtil com imagem clara e legível.
+About {0} h left	Cerca de {0} h restantes
+About {0} min left	Cerca de {0} min restantes
+Accent colour	Cor de destaque
+Add favourite	Adicionar favorito
+Add game files	Adicionar ficheiros do jogo
 Add your DS games to fetch their artwork.	Adicione jogos de DS para transferir as capas.
+Add your games	Adicione os seus jogos
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Adiciona jogos Game Boy e Game Boy Advance: Jogos abre então uma página de sistemas.
+Adjust	Ajustar
 Africa	África
 After	Depois
 All games	Todos os jogos
+All systems	Todos os sistemas
+Already connected.	Já ligado.
 Amber	Âmbar
 Americas	Américas
+An update is already prepared. Install it or discard it first.	Uma atualização já está pronta. Instale ou descarte primeiro.
 Anbernic startup is unavailable in RGDS OS.	O arranque Anbernic está indisponível no RGDS OS.
+Animate pages with the selected style	Animar páginas com o estilo escolhido
 Animations	Animações
+Another update is already running.	Já está a decorrer outra atualização.
 Antarctica	Antártida
+Any	Todos
 Applies immediately. Higher clocks use more battery.	Aplica-se imediatamente. Frequências maiores gastam mais bateria.
 Applies immediately. Your game keeps its progress.	Aplica-se imediatamente. O progresso do jogo é mantido.
 Apply	Aplicar
+APPLY	APLICAR
 Applying shader…	A aplicar filtro…
+Arcade cabinet	Máquina de arcada
 Arctic	Ártico
+Arrows	Flechas
 Artwork	Capas
 Artwork & ScreenScraper	Capas
 Artwork source	Fonte das capas
 Artwork sources	Fontes das capas
 Asia	Ásia
 Atlantic Ocean	Oceano Atlântico
+Audio is not recorded or saved.	O áudio não é gravado nem guardado.
 Australia	Austrália
 Auto-load state	Carregar automaticamente
 Auto-save on exit	Guardar ao sair
 Automatic	Automático
 Automatic (free)	Automático
+Automatic updates	Atualizações automáticas
+Available	Disponível
 Available networks	Redes disponíveis
 B  Cancel	B  Cancelar
 B  Close	B  Fechar
-BACK HOME	VOLTAR AO INÍCIO
 Back	Voltar
+BACK HOME	VOLTAR AO INÍCIO
+Back to PortMaster	Voltar ao PortMaster
+Back up all saves	Criar cópia das gravações
+Background	Fundo
+Backing up your saves…	A fazer cópia dos seus jogos guardados…
+Badges	Crachás
 Balance battery life and speed	Equilibrar bateria e velocidade
 Balanced	Equilibrado
 Battery	Bateria
@@ -50,57 +98,116 @@ Battery saver	Poupança de bateria
 Before	Antes
 Before you play	Antes de jogar
 Binding unchanged.	Mapeamento inalterado.
+Black and white	Preto e branco
+Black bar	Barra preta
+Blow into microphone	Soprar no microfone
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Sopre ou fale para o microfone. O nível sobe e desce quando para.
+Blue	Azul
+Bluetooth	Bluetooth
+Bluetooth devices	Dispositivos Bluetooth
+Bluetooth is not available on this handheld.	O Bluetooth não está disponível nesta consola.
+Bold colour on a close-up LCD with RGB stripes.	Cores fortes num LCD visto de perto, com riscas RGB.
+Bold colour with smoothed diagonal edges.	Cores fortes com contornos diagonais suavizados.
+Bold colour; every pixel a raised, glossy tile.	Cores fortes; cada píxel, um azulejo brilhante em relevo.
+Bold colour; every pixel a round, shiny bead.	Cores fortes; cada píxel, uma conta redonda e brilhante.
+Bombs	Bombas
+Bonus stars	Estrelas bónus
 Boot	Arranque
 Boot into	Arrancar em
+Both	Ambas
 Both screens	Ambos os ecrãs
 Bottom display	Ecrã inferior
 Box art, titles and game details	Capas, títulos e detalhes dos jogos
 Brightness	Brilho
+Brown	Castanho
+Browse	Navegar
+Browse games	Ver jogos
+Browse systems	Ver sistemas
 Browser layout	Disposição da biblioteca
 Build, storage and device address	Versão, armazenamento e endereço
 Button	Botão
 Button layout	Disposição dos botões
 Button {0}	Botão {0}
 Buttons and the game menu shortcut	Botões e atalho do menu do jogo
-COLOUR MODE	MODO DE COR
 Cancel	Cancelar
+Carousel	Carrossel
+Carried	Contigo
 Cartridges	Cartuchos
+Change group	Mudar de grupo
 Changes immediately. Map a button in Controls for quick access.	Aplica imediatamente. Atribua um botão em Controlos.
 Changing 3D threading…	A alterar threads 3D…
 Changing speed…	A alterar velocidade…
+Chat is unavailable: you can still draw	Conversa indisponível: ainda podes desenhar
+Chat Room	Sala
+Chat Room {0}	Sala de conversa {0}
+Check automatically	Verificar automaticamente
+Check for updates	Procurar atualizações
+Check for updates when you are ready.	Procure atualizações quando quiser.
+Check for updates, go back to the previous build or clear temporary files.	Procure atualizações, volte à versão anterior ou limpe ficheiros temporários.
 Check the current connection	Verificar ligação atual
+Checking for updates…	A procurar atualizações…
+Checking PortMaster	A verificar o PortMaster
+Checking the new version…	A verificar a nova versão…
 Checkpoint loaded	Estado carregado
 Checkpoint loaded (preview)	Estado carregado (pré-visualização)
 Checkpoint loaded.	Estado carregado
 Checkpoint saved	Estado guardado
 Checkpoint saved (preview)	Estado guardado (pré-visualização)
 Checkpoint saved.	Estado guardado
-Choose Anbernic or RG DS startup.	Escolha iniciar Anbernic ou RG DS.
+Choose a chat room to join	Escolhe uma sala de conversa para entrar
+Choose a network from the list	Escolha uma rede da lista
 Choose an option	Escolha uma opção
+Choose Anbernic or RG DS startup.	Escolha iniciar Anbernic ou RG DS.
 Choose native or a sharper 3D image	Escolha imagem 3D nativa ou mais nítida
 Choose the core for this cartridge	Emulador deste cartucho
 Choose the display backend for the next DraStic launch. DSperate stays your default.	Escolha a apresentação no próximo arranque do DraStic. DSperate continua predefinido.
 Choose what opens when you power on	Escolha o que abrir ao ligar
+Classic	Clássico
+Classic blue	Azul clássico
 Clear	Limpar
+Clear filters	Limpar filtros
 Clear temporary cache	Limpar cache temporário
 Clear temporary game files?	Limpar ficheiros temporários dos jogos?
 Close	Fechar
+Close and open DS lid	Fechar e abrir o DS
+Close lid	Fechar a tampa
+Close PortMaster	Fechar o PortMaster
 Close the handheld to sleep	Feche a consola para suspender
+Closing PortMaster…	A fechar o PortMaster…
+Closing the port…	A fechar o port…
+Code	Código
+Coin bank	Banco de moedas
+Coins	Moedas
+Collection	Coleção
+COLOUR MODE	MODO DE COR
+Colour mode	Modo de cor
 Colour treatment inspired by the original DS display.	Cores inspiradas no ecrã DS original.
+Column	Coluna
+Companion	Ecrã companheiro
 Compare	Comparar
 Confirm	Confirmar
 Connect	Ligar
+Connect the charger before installing an update.	Ligue o carregador antes de instalar uma atualização.
+Connect to Wi-Fi to send files from a phone or computer.	Ligue-se ao Wi-Fi para enviar ficheiros de um telemóvel ou computador.
 Connected	Ligado
 Connected.	Ligado.
+Connecting to	A ligar a
 Connecting…	A ligar…
+Connection lost. Retrying…	Ligação perdida. A tentar novamente…
 Connectivity	Conectividade
 Continue	Continuar
 Continue where you left off	Continue de onde parou
 Control unavailable on this device	Controlo indisponível neste dispositivo
+Controllers and other Bluetooth devices	Comandos e outros dispositivos Bluetooth
 Controls	Controlos
 Controls saved for this game.	Controlos guardados para este jogo.
 Cool crisp	Frio e nítido
 Cool whites with a small contrast boost.	Brancos frios com leve aumento de contraste.
+Copies every save and checkpoint into one zip in userdata/exports.	Copia todos os jogos guardados e pontos de controlo para um zip em userdata/exports.
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão e escolha Procurar jogos.
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Copie ficheiros .rgdssave.zip para userdata/imports. O jogo e o emulador devem corresponder.
+Copy ability	Habilidade copiada
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão. Jogos não incluídos. Os estados ficam em userdata.
 Could not apply brightness	Não foi possível aplicar o brilho
 Could not apply saved brightness	Não foi possível aplicar o brilho guardado
 Could not apply saved power mode	Não foi possível aplicar o modo de energia guardado
@@ -110,6 +217,7 @@ Could not apply volume	Não foi possível aplicar o volume
 Could not bring the Wi-Fi adapter up. Try again.	Não foi possível ativar o adaptador Wi-Fi. Tente novamente.
 Could not change 3D threading. Your game is unchanged.	Não foi possível alterar as threads 3D. Jogo inalterado.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Ligação Wi-Fi não confirmada. Procure redes e tente novamente.
+Could not connect	Não foi possível ligar
 Could not enable lid wake	Não foi possível ativar o despertar ao abrir
 Could not load. Resume, retry, or return without saving.	Falha ao carregar. Continue, tente novamente ou volte sem guardar.
 Could not read this collection. Try again.	Não foi possível ler a coleção. Tente novamente.
@@ -117,6 +225,7 @@ Could not restore previous hardware setting	Não foi possível restaurar a defin
 Could not save all settings. Check storage.	Nem todas as definições foram guardadas. Verifique o armazenamento.
 Could not save brightness	Não foi possível guardar o brilho
 Could not save controls. Check writable storage.	Controlos não guardados. Verifique a permissão de escrita.
+Could not save DS settings.	Não foi possível guardar as definições do DS.
 Could not save game settings. Previous values kept.	Definições do jogo não guardadas. Valores anteriores mantidos.
 Could not save matching title.	Não foi possível guardar o título de pesquisa.
 Could not save settings	Não foi possível guardar as definições
@@ -124,6 +233,7 @@ Could not save timezone	Não foi possível guardar o fuso horário
 Could not save volume	Não foi possível guardar o volume
 Could not save. Resume, retry, or return without saving.	Falha ao guardar. Continue, tente novamente ou volte sem guardar.
 Could not send game action	Não foi possível enviar a ação ao jogo
+Could not set up PortMaster	Não foi possível configurar o PortMaster
 Could not set volume - see log	Não foi possível ajustar o volume – ver registo
 Could not sleep - see log	Falha ao suspender – ver registo
 Could not sleep. Reopen the lid and try again.	Falha ao suspender. Abra a tampa e tente novamente.
@@ -132,41 +242,89 @@ Could not start library scan	Não foi possível iniciar a pesquisa na biblioteca
 Could not write controls	Não foi possível gravar os controlos
 Counts display updates, not emulation speed. Changes immediately.	Conta atualizações do ecrã, não a velocidade de emulação. Efeito imediato.
 Counts emulated game frames. Changes immediately.	Conta fotogramas emulados do jogo. Efeito imediato.
+Course	Nível
+Cover	Capa
 Covers	Capas
+Current progress could not be saved. No slot was changed.	Não foi possível guardar o progresso. Nenhuma posição foi alterada.
 Custom	Personalizado
-DEFAULT THEME - CHECK LOG	TEMA PADRÃO – VER REGISTRO
-DS rounded	DS arredondado
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: recomendado para uso diário. Resolução nativa por predefinição.
+DS only	Só DS
 Dark	Escuro
+Dark blue	Azul-escuro
+Dark green	Verde-escuro
 Date format	Formato de data
+Day	Dia
+Day or night	Dia ou noite
+Daylight saving	Hora de verão
+Days	Dias
 Default	Predefinição
 Default emulator	Emulador predefinido
 Default shader	Filtro predefinido
+DEFAULT THEME - CHECK LOG	TEMA PADRÃO – VER REGISTRO
 Delete	Apagar
+Delete slot {0}?	Apagar o espaço {0}?
 Desktop preview	Pré-visualização no computador
+Developer	Programadora
 Development build	Versão de desenvolvimento
 Device address	Endereço do dispositivo
 Device information	Informações do dispositivo
+Discard update	Descartar atualização
 Display	Ecrã
 Display FPS	FPS do ecrã
 Done	Concluído
 Down	Baixo
+Download	Transferir
+Download automatically	Transferir automaticamente
+Download interrupted. Retry to continue.	Transferência interrompida. Tente novamente para continuar.
+Download paused. Retry to continue.	Transferência em pausa. Tente novamente para continuar.
+Download update	Transferir atualização
+Downloading PortMaster	A transferir o PortMaster
+Downloading update…	A transferir atualização…
+Downloading {0}	A transferir {0}
+Downloads resume where they stopped if Wi-Fi drops.	As transferências continuam onde pararam se o Wi-Fi falhar.
 DraStic backend	Sistema de apresentação DraStic
 DraStic: an alternative for games that need it. Saves stay separate.	DraStic: alternativa para alguns jogos. As gravações ficam separadas.
-ERROR	ERRO
-ERROR: Could not restore settings	ERRO: não foi possível restaurar as definições
-ERROR: Could not restore settings - see log	ERRO: definições não restauradas – ver registo
+Draw and chat	Desenhe e converse
+Draw and chat with nearby handhelds	Desenha e conversa com consolas por perto
+Drawing on your own	A desenhar sozinho
+DS Classic	DS Clássico
+DS controls	Funções do DS
+DS controls are unavailable for this engine.	Funções do DS indisponíveis neste emulador.
+DS language	Idioma do DS
+DS Lite	DS Lite
+DS rounded	DS arredondado
+DS screens	Ecrãs DS
+DSCore 3D resolution	Resolução 3D do DSCore
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: recomendado. O mais rápido, com correções da tampa, caneta e 3D e 3D opcional de 2x–5x.
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: recomendado para uso diário. Resolução nativa por predefinição.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: o emulador original. O DSCore acrescenta correções e velocidade.
+Edit	Editar
+Edit search	Editar pesquisa
+Effects volume	Volume dos efeitos
+Empty slot	Posição vazia
 Emulator	Emulador
 Emulator settings	Definições do emulador
+End of a list	Fim de uma lista
+Ending so far	Final até agora
+Enemies defeated	Inimigos derrotados
+Energy	Energia
+Energy tanks	Tanques de energia
 Engine managed	Gerido pelo emulador
+English	Inglês
 Enter here	Escreva aqui
 Enter password	Introduza a palavra-passe
 Enter your username and password	Introduza o nome de utilizador e a palavra-passe
+ERROR	ERRO
+ERROR: Could not restore settings	ERRO: não foi possível restaurar as definições
+ERROR: Could not restore settings - see log	ERRO: definições não restauradas – ver registo
+Essences	Essências
 Europe	Europa
 Every game in this collection has artwork.	Todos os jogos desta coleção têm capa.
-FPS changed for this session. Settings storage is unavailable.	FPS alterado nesta sessão. Não foi possível guardar as definições.
-FPS counter enabled.	Contador de FPS ativado.
-FPS counter hidden.	Contador de FPS oculto.
+Exit your game before installing an update.	Saia do jogo antes de instalar uma atualização.
+Experience	Experiência
+Export	Exportar
+Export slot	Exportar estado
+Extra pictures	Imagens extra
+Faded GBA colours made rich, as the real screen showed them.	As cores desbotadas do GBA ficam vivas, como o ecrã real as mostrava.
 Fast	Rápido
 Fast-forward	Avanço rápido
 Fast-forward button	Botão de avanço rápido
@@ -174,164 +332,449 @@ Fast-forward enabled.	Avanço rápido ativado.
 Fast-forward is unavailable for this emulator.	Avanço rápido indisponível neste emulador.
 Fast-forward style	Modo de avanço rápido
 Favourite	Favorito
+FAVOURITE COLOUR	COR FAVORITA
+Favourite a game and it waits for you here	Marque um jogo como favorito e ele espera por si aqui
 Favourites	Favoritos
+Feel every move	Sinta cada movimento
+Feel the game	Sinta o jogo
 Fetch artwork	Transferir capa
 Fetch missing artwork	Transferir capas ausentes
+Figurines	Estatuetas
+File sharing on. Find "RG DS" under Network.	Partilha de ficheiros ativada. Procure "RG DS" em Rede.
+Files added	Ficheiros adicionados
+Files arrived. Choose Play to start.	Os ficheiros chegaram. Escolha Jogar para começar.
+Filter	Filtro
+Filtered	Filtrados
 Find and connect to a nearby network	Procurar uma rede próxima e ligar
+Find, pair and connect a nearby device	Encontre, emparelhe e ligue um dispositivo próximo
+Finding games…	A procurar jogos…
+Finishing another task. Press Y again in a moment.	A terminar outra tarefa. Prime Y novamente daqui a pouco.
 Finishing the system request	A concluir o pedido do sistema
 Follow your default button layout	Seguir a disposição predefinida dos botões
 Following your global controls.	A usar os controlos globais.
 Follows your Library default. Each emulator keeps its own saves.	Segue a predefinição da biblioteca. Cada emulador mantém as suas gravações.
+Follows your library shader.	Segue o filtro da sua biblioteca.
+Forget this device?	Esquecer este dispositivo?
+FPS changed for this session. Settings storage is unavailable.	FPS alterado nesta sessão. Não foi possível guardar as definições.
+FPS counter enabled.	Contador de FPS ativado.
+FPS counter hidden.	Contador de FPS oculto.
+Fr	Se
+Frame	Moldura
 Frameskip	Saltar fotogramas
 Free space	Espaço livre
 Free space while keeping your saves	Libertar espaço mantendo as gravações
-Game FPS	FPS do jogo
+French	Francês
+Friends	Amigos
+Full colour	Cores completas
+Game Boy	Game Boy
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalto
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Ónix
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Game Boy Advance · Black	Game Boy Advance · Preto
+Game Boy Advance · Glacier	Game Boy Advance · Glaciar
+Game Boy Advance · Indigo	Game Boy Advance · Índigo
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Color	Game Boy Color
+Game Boy Color screen	Ecrã do Game Boy Color
+Game Boy Color · Atomic Purple	Game Boy Color · Roxo atómico
+Game Boy Color · Berry	Game Boy Color · Framboesa
+Game Boy Color · Dandelion	Game Boy Color · Dente-de-leão
+Game Boy Color · Grape	Game Boy Color · Uva
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Screen only	Game Boy Color · Só o ecrã
+Game Boy Color · Teal	Game Boy Color · Verde-azulado
+Game Boy Color, darker	Game Boy Color, mais escuro
+Game Boy Light	Game Boy Light
+Game Boy Pocket	Game Boy Pocket
+Game Boy Pocket · Black	Game Boy Pocket · Preto
+Game Boy Pocket · Blue	Game Boy Pocket · Azul
+Game Boy Pocket · Green	Game Boy Pocket · Verde
+Game Boy Pocket · Pink	Game Boy Pocket · Rosa
+Game Boy Pocket · Red	Game Boy Pocket · Vermelho
+Game Boy Pocket · Screen only	Game Boy Pocket · Só o ecrã
+Game Boy Pocket · Silver	Game Boy Pocket · Prata
+Game Boy Pocket · Yellow	Game Boy Pocket · Amarelo
+Game Boy screen	Ecrã do Game Boy
+Game Boy · Black	Game Boy · Preto
+Game Boy · Blue	Game Boy · Azul
+Game Boy · Green	Game Boy · Verde
+Game Boy · Red	Game Boy · Vermelho
+Game Boy · Screen only	Game Boy · Só o ecrã
+Game Boy · Yellow	Game Boy · Amarelo
 Game emulator	Emulador do jogo
 Game emulator saved.	Emulador do jogo guardado.
+Game FPS	FPS do jogo
+Game info	Info do jogo
 Game menu	Menu do jogo
 Game options	Opções do jogo
 Game options saved	Opções guardadas
-GameTDB (free)	GameTDB
+Game rumble	Vibração nos jogos
+Game screen	Ecrã de jogo
+Game switcher	Mudar de jogo
 Games	Jogos
+Games played	Jogos jogados
+GameTDB	GameTDB
+GameTDB (free)	GameTDB
+GB screens	Ecrãs do GB
+GBA Color	Cores do GBA
+GBA screen	Ecrã do GBA
+GBA screens	Ecrãs do GBA
+GBA true colour	Cores reais do GBA
+GBA true screen	Ecrã real do GBA
+GBC screens	Ecrãs do GBC
+Gear	Equipamento
+Genre	Género
+German	Alemão
+Get, update and remove ports	Obtenha, atualize e remova ports
 Give your eyes and hands a break.	Descanse os olhos e as mãos.
 Global	Global
 Global controls saved.	Controlos globais guardados.
+Glossy tiles	Azulejos brilhantes
+Go back	Voltar
+Goes into	Vai para
+Golden leaves	Folhas douradas
+Green	Verde
+Grey	Cinzento
+Grey TV	Televisor cinzento
+Grid	Grelha
+h	h
+Haptic strength	Intensidade tátil
+Health	Vida
+Heart containers	Recipientes de coração
+Heart pieces	Pedaços de coração
+Hearts	Corações
+High contrast	Alto contraste
 Hold	Segurar
+Hold still for a right click	Mantenha parado para clique direito
+Hold to exit	Mantenha para sair
+Hold to load	Mantenha para carregar
+Hold to return home	Mantenha para voltar ao início
+Hold to save	Mantenha para guardar
+Home	Início
+Home layout	Esquema do ecrã inicial
 Home shortcut	Atalho de início
+How dates appear at the top of the screen.	Como as datas aparecem no topo do ecrã.
+How dates appear in the status bar	Como as datas aparecem na barra de estado
+How to get the files	Como obter os ficheiros
+Icon style	Estilo dos ícones
+Import help	Ajuda de importação
+Import into this slot	Importar para este espaço
+Import slot	Importar estado
+In a course	Num nível
+In a level	No nível
+In game	No jogo
+IN USE	EM USO
 Indian Ocean	Oceano Índico
+Info screen	Ecrã de info
 Inherit	Herdar
 Inherited	Herdado
+Install	Instalar
+Install the latest SD installer before this update.	Use o instalador SD mais recente antes desta atualização.
+Installed version	Versão instalada
+Installing PortMaster from the card	A instalar o PortMaster a partir do cartão
+Instruments	Instrumentos
+Interface animations	Animações da interface
+IP address	Endereço IP
+Italian	Italiano
+Items	Itens
+Japanese	Japonês
+Johto badges	Crachás de Johto
+Join	Entrar
+Journey	Viagem
+Jump	Ir
 Jump to letter	Ir para uma letra
+Kanto badges	Crachás de Kanto
 Keep a checkpoint when returning home	Guardar estado ao voltar ao início
+Keep getting and updating ports	Continuar a obter e atualizar ports
 Keep playing	Continuar jogando
 Keep this game in Favourites	Manter este jogo nos favoritos
 Kernel	Kernel
 Key {0}	Tecla {0}
-LCD + NDS Color	LCD + NDS Color
-LCD + Natural Vision	LCD + Natural Vision
+Keyboard	Teclado
+Keys	Chaves
+Kinstone fusions	Fusões de Kinstone
+Language	Idioma
+Last played	Último jogo
+Launch cancelled	Arranque cancelado
 LCD + both colours	LCD + ambas as cores
+LCD + Natural Vision	LCD + Natural Vision
+LCD + NDS Color	LCD + NDS Color
 LCD pixels with natural colour and contrast.	Pixels LCD com cores e contraste naturais.
 LCD pixels with the DS colour treatment.	Pixels LCD com cores do DS.
 LCD pixels, DS colour and Natural Vision together.	Pixels LCD, cores DS e Natural Vision juntos.
-Language	Idioma
-Launch cancelled	Arranque cancelado
+Leave	Sair
+Leave RG DS Core and go back to the stock menu.	Saia do RG DS Core e volte ao menu original.
 Left	Esquerda
 Left stick	Manípulo esquerdo
 Left-handed	Canhoto
 Less than a minute	Menos de um minuto
+Less than a minute left	Menos de um minuto
+Level	Nível
 Library	Biblioteca
 Library scan exceeded its limit	A pesquisa na biblioteca excedeu o limite
 Library scan failed	Falha na pesquisa da biblioteca
+Libretro	Libretro
 Libretro (free)	Libretro
 Light	Claro
+Lime	Lima
 List	Lista
+Listening…	A ouvir…
 Live background	Fundo ao vivo
+Live input	Entrada ao vivo
+Lives	Vidas
 Load	Carregar
+Load checkpoint	Carregar estado
+Load complete	Carregamento concluído
 Load requested. Resume to check your game.	Carregamento pedido. Continue para verificar o jogo.
+Load slot {0}?	Carregar o espaço {0}?
 Load state	Carregar estado
+Loaded	Carregado
 Loading checkpoint…	A carregar estado…
+Loading…	A carregar…
+Long press	Toque longo
+Looking for devices…	A procurar dispositivos…
+Looking for games…	A procurar jogos…
 Looking for networks…	A procurar redes…
+Looking for the latest PortMaster	A procurar o PortMaster mais recente
+Loud	Alto
+Lv	Nv.
+Magenta	Magenta
+Magical sword	Espada mágica
 Magnified detail	Detalhe ampliado
 Manage builds and temporary files	Gerir versões e ficheiros temporários
+Matches your accent	Segue a cor de destaque
 Matching title	Título de pesquisa
 Matching title saved. Choose Fetch artwork.	Título guardado. Escolha Transferir capa.
+Menu audio is unavailable on this device.	O áudio do menu está indisponível neste dispositivo.
+Menu effects	Efeitos do menu
+Menu haptics	Resposta tátil
 Menu idle sleep	Suspensão no menu
+Menu music	Música do menu
+Menu sounds are unavailable.	Os sons do menu estão indisponíveis.
+Microphone unavailable	Microfone indisponível
+Microphone, simulated blowing, lid and DS language.	Microfone, sopro simulado, tampa e idioma DS.
+min	min
+Minutes	Minutos
+Mirror shards	Fragmentos do espelho
+Missile room	Capacidade de mísseis
+Missiles	Mísseis
+Missing artwork	Sem capa
+Mo	Se
+Money	Dinheiro
+Moods	Ambientes
+More	Mais
+Most played	Mais jogados
+Music volume	Volume da música
+Musical coins	Moedas musicais
 Mute	Silenciar
 Muted	Silenciado
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: opção de compatibilidade. Teste DSperate para mais velocidade.
 Native	Nativa
+Native (fastest)	Nativa (mais rápida)
 Native is faster; 2x uses more GPU time. Save & restart applies it.	A resolução nativa é mais rápida; 2x usa mais GPU. Guarde e reinicie para aplicar.
 Native output	Saída nativa
+Natural	Natural
+Natural colour with smoothed diagonal edges.	Cores naturais com contornos diagonais suavizados.
+Natural colour with soft pixels that glow together.	Cores naturais com píxeis suaves que brilham juntos.
+Natural glow	Brilho natural
+Natural smooth	Suave natural
 Natural Vision	Natural Vision
+Needs your files	Precisa dos seus ficheiros
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Preto
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Prata
+Network file sharing	Partilha de ficheiros em rede
 Networking is disabled. Turn Wi-Fi on to enable it.	Rede desativada. Ative o Wi-Fi.
 Never	Nunca
+New messages below	Novas mensagens abaixo
+Next	Seguinte
 Next emulator	Próximo emulador
-No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Sem adaptador Wi-Fi. Ative o Wi-Fi para inicializar.
+Next picture	Imagem seguinte
+Next:	Seguinte:
+Night	Noite
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: opção de compatibilidade. Teste DSperate para mais velocidade.
 No button detected. Try again when you're ready.	Nenhum botão detetado. Tente novamente quando estiver pronto.
 No checkpoint saved for this emulator yet.	Nenhum estado guardado para este emulador.
 No cover yet	Ainda sem capa
+No devices found. Put the device in pairing mode and scan.	Nenhum dispositivo encontrado. Coloque o dispositivo em modo de emparelhamento e procure.
 No favourites yet	Ainda sem favoritos
+No game has this information yet. Fetch artwork with Game info turned on.	Nenhum jogo tem ainda esta informação. Obtenha as capas com Info do jogo ativada.
+No game information yet.	Ainda sem informações do jogo.
 No games	Sem jogos
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Nenhum jogo encontrado. Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão de jogos e procure de novo.
 No games in this collection.	Nenhum jogo nesta coleção.
+No letters to jump to. Search for another game.	Não há letras disponíveis. Pesquise outro jogo.
+No matches. Use View to change filters.	Sem resultados. Altere os filtros em Visualizar.
+No matching games	Nenhum jogo encontrado
 No networks found	Nenhuma rede encontrada
+No pictures yet	Ainda sem imagens
 No previous build available.	Nenhuma versão anterior disponível.
 No recent games yet	Ainda sem jogos recentes
+No release notes yet.	Ainda não há notas da versão.
+No vibration motor was found on this device.	Não foi encontrado nenhum motor de vibração neste dispositivo.
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Sem adaptador Wi-Fi. Ative o Wi-Fi para inicializar.
+No Wi-Fi: you can still draw	Sem Wi-Fi: ainda podes desenhar
+Nobody else here yet	Mais ninguém aqui ainda
+Nobody else is nearby yet	Ninguém por perto ainda
+Nobody here yet	Ninguém aqui ainda
+None yet	Nenhum ainda
 Normal	Normal
 Normal speed.	Velocidade normal.
 Not available	Indisponível
 Not connected	Desligado
+Not downloaded	Não transferido
+Not loaded	Não carregado
 Not played yet	Ainda não jogado
-OPEN	ABRIR
+Not saved	Não guardado
+Not yet	Ainda não
+Nothing played yet	Ainda não jogou nada
+Nothing to load	Nada para carregar
+Nothing to load here yet.	Ainda não há nada para carregar aqui.
+Notification	Notificação
 Off	Desativado
 Off (smooth)	Desativado (fluido)
 Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Desativado permite movimento fluido. Saltar fotogramas pode acelerar. Reinicie para aplicar.
 Off keeps the original picture.	Desativado mantém a imagem original.
+Older messages	Mensagens anteriores
 On	Ativado
+Online	Online
+Online play	Jogo online
+OPEN	ABRIR
 Open	Abrir
+Open a view	Abrir uma vista
+Open lid	Abrir a tampa
 Open menu	Abrir menu
+Open on this Wi-Fi	Aberto nesta rede Wi-Fi
 Open the Anbernic menu	Abrir menu Anbernic
 Options	Opções
+Or open on a computer	Ou abra num computador
+Orange	Laranja
+Original	Original
 Original pixels	Pixels originais
 Original pixels and colours.	Pixels e cores originais.
 Pacific	Pacífico
-PLAY	JOGAR
+Paired	Emparelhado
+Party	Grupo
 Password	Palavra-passe
+Password protected	Protegido por palavra-passe
+Pause download	Pausar transferência
 Pause when you need to.	Faça uma pausa quando precisar.
 Paused	Em pausa
+Paused at {0}	Em pausa em {0}
+PC monitor	Monitor de PC
 Performance	Desempenho
+Phone battery	Bateria do telemóvel
+Phone or computer connected	Telemóvel ou computador ligado
+Picture	Imagem
+Pink	Cor-de-rosa
+Pixel art	Pixel art
+Pixel beads	Contas de píxeis
 Pixel classic	Pixel clássico
+Plain	Simples
+Plain, or the DSi's ruled grid behind every screen	Simples ou a grelha pautada da DSi atrás de cada ecrã
+PLAY	JOGAR
+Play	Jogar
+Play a game to start your statistics.	Jogue para começar as suas estatísticas.
 Play at a comfortable volume.	Jogue com um volume confortável.
+Played	Jogados
+Players	Jogadores
+Playful sounds for browsing, choosing and starting games.	Sons divertidos ao navegar, escolher e iniciar jogos.
 Please keep your handheld on	Mantenha a consola ligada
 Pocket green	Verde portátil
+Point and click on top	Apontar e clicar em cima
+Pokédex caught	Pokédex: capturados
+Pokédex seen	Pokédex: vistos
+PortMaster is ready	O PortMaster está pronto
+Ports	Ports
 Power	Energia
+Power bombs	Power bombs
 Power mode	Modo de energia
 Power off	Desligar
 Power off your handheld?	Desligar a consola?
 Power profile	Perfil de energia
 Powering off…	A desligar…
+Prepare	Preparar
 Preparing controls…	A preparar controlos…
 Preparing the launcher	A preparar o início
 Preparing the library…	A preparar biblioteca…
+Preparing update…	A preparar atualização…
 Preparing your cartridges…	A preparar os seus cartuchos…
 Preparing your library…	A preparar a sua biblioteca…
+Preparing your statistics…	A preparar estatísticas…
+Preparing…	A preparar…
 Press a button for {0}	Pressione um botão para {0}
 Press a button…	Pressione um botão…
 Preview	Pré-visualização
-Preview Wi-Fi	Pré-visualização do Wi-Fi
+PREVIEW	PRÉ-VISUALIZAÇÃO
 Preview and choose your screen style	Pré-visualize e escolha o estilo de ecrã
 Preview game	Jogo de demonstração
+Preview sound	Ouvir um som
 Preview unavailable	Pré-visualização indisponível
+Preview Wi-Fi	Pré-visualização do Wi-Fi
+Previous	Anterior
 Previous build selected. Return to stock, then open RGDS again.	Versão anterior selecionada. Volte ao menu original e abra RGDS novamente.
 Profile	Perfil
+PSP · Black	PSP · Preto
+PSP · White	PSP · Branco
+Publisher	Editora
+Purple	Roxo
+Push	Deslizar
+Quick search	Pesquisa rápida
+Quiet	Baixo
+Quit	Sair
+Race	Corrida
+Rating	Classificação
+Reading Roms/NDS on your games card. This takes a moment.	A ler Roms/NDS no cartão de jogos. Demora um momento.
 READY	PRONTO
-REVIEW YOUR CHOICE	REVEJA A SUA ESCOLHA
-RGDS build	Versão do RGDS
-ROUNDED FONT UNAVAILABLE	FONTE ARREDONDADA INDISPONÍVEL
+Ready to fetch artwork.	Pronto para transferir as imagens.
+Ready to restart. Your previous version is kept for recovery.	Pronto para reiniciar. A versão anterior é mantida para recuperação.
+Real microphone	Microfone real
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	O microfone real vem ativado. Sopro e tampa duram dois segundos no jogo. Reinicie para mudar o idioma.
+Receiving files	A receber ficheiros
 Recents	Recentes
+Red	Vermelho
 Reduce rendering work when needed	Reduza a carga gráfica quando necessário
 Refresh	Atualizar
 Refresh connection	Atualizar ligação
 Release for options	Solte para ver opções
+Release notes	Notas da versão
+Released	Lançamento
 Remap	Remapear
+Remove favourite	Remover favorito
+Replace	Substituir
+Replace slot {0}?	Substituir o espaço {0}?
 Request cancelled.	Pedido cancelado.
 Request failed. Check the connection or device log and try again.	O pedido falhou. Verifique a ligação ou o registo e tente novamente.
+Reserve	Reserva
 Reset	Redefinir
+Reset filters	Repor filtros
+Reset state	Reiniciar estado
 Rest after a period of inactivity	Suspender após um período de inatividade
 Restart	Reiniciar
+Restart & install	Reiniciar e instalar
+Restart and install the update?	Reiniciar e instalar a atualização?
+Restart from the title screen. In-game saves and save slots are kept.	Reinicia no ecrã de título. As gravações do jogo e os estados guardados são mantidos.
 Restart menu	Reiniciar menu
-Restart the RGDS menu?	Reiniciar o menu RGDS?
+Restart port	Reiniciar port
+Restart RG DS Core before installing the update.	Reinicie RG DS Core antes de instalar a atualização.
 Restart the device?	Reiniciar o dispositivo?
+Restart the game to apply DS settings.	Reinicie o jogo para aplicar as definições do DS.
+Restart the RGDS menu.	Reinicie o menu RGDS.
+Restart the RGDS menu?	Reiniciar o menu RGDS?
 Restart uses {0}. Saves and checkpoints stay separate per emulator.	O reinício usa {0}. Gravações e estados ficam separados por emulador.
+Restart without loading a state?	Reiniciar sem carregar um estado?
+Restarting into the update…	A reiniciar com a atualização…
 Restarting…	A reiniciar…
 Restore defaults	Restaurar predefinições
 Restore the last installed RGDS build	Restaurar a última versão instalada do RGDS
 Restoring settings	A restaurar definições
 Restoring settings…	A restaurar definições…
 Resume	Continuar
+Resume after power off	Retomar após desligar
+Resume download	Retomar transferência
 Resume game	Continuar jogo
 Return	Voltar
 Return home	Voltar ao início
 Return home before changing startup.	Volte ao início antes de alterar o arranque.
+Return home before testing the physical microphone.	Volte ao início antes de testar o microfone físico.
 Return home from your game first.	Primeiro volte ao início a partir do jogo.
 Return to game	Voltar ao jogo
 Return to stock	Voltar ao menu original
@@ -340,16 +783,30 @@ Return to the stock menu?	Voltar ao menu original?
 Return without saving	Voltar sem guardar
 Returning home…	A voltar ao início…
 Review unmatched	Rever sem correspondência
+REVIEW YOUR CHOICE	REVEJA A SUA ESCOLHA
+RGDS build	Versão do RGDS
+Rich	Detalhado
 Right	Direita
 Right stick	Manípulo direito
 Rollback simulated.	Restauração simulada.
-START	INICIAR
+Round	Ronda
+ROUNDED FONT UNAVAILABLE	FONTE ARREDONDADA INDISPONÍVEL
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Jogos com Rumble Pak na DS, cartuchos com vibração na Game Boy e Game Boy Advance.
+Rumble strength	Intensidade da vibração
+Rupees	Rupias
+Sa	Sá
 Save	Guardar
 Save & restart	Guardar e reiniciar
 Save & restart applies Threaded 3D.	Guardar e reiniciar aplica o 3D com threads.
 Save & restart keeps your checkpoint and applies pending settings.	Guardar e reiniciar mantém o estado e aplica as definições pendentes.
 Save a report for troubleshooting	Guardar relatório de diagnóstico
+Save backup created in userdata/exports.	Cópia de segurança criada em userdata/exports.
+Save checkpoint	Guardar estado
+Save complete	Gravação concluída
 Save device report	Guardar relatório
+Save gallery	Galeria de estados
+Save here	Guardar aqui
+Save library updated.	Biblioteca de estados atualizada.
 Save state	Guardar estado
 Save your checkpoint and restart	Guardar estado e reiniciar
 Saved	Guardado
@@ -366,16 +823,42 @@ Saving before returning home…	A guardar antes de voltar ao início…
 Saving checkpoint before restarting…	A guardar estado antes de reiniciar…
 Saving checkpoint…	A guardar estado…
 Saving your progress…	A guardar o seu progresso…
+Saving…	A guardar…
 Scan	Procurar
+Scan complete	Procura concluída
+Scan for games	Procurar jogos
+Scan with your phone	Leia com o telemóvel
+Scanning…	A procurar…
 Scene	Cena
+Score	Pontuação
 Screen brightness	Brilho do ecrã
+Screen colours	Cores do ecrã
+Screen off	Ecrã desligado
 Screen order	Ordem dos ecrãs
+screens	ecrãs
 ScreenScraper needs project credentials and your account	Capas
+Screenshot	Captura de ecrã
+Screenshots	Capturas de ecrã
+Screenshots and title screens	Capturas e ecrãs de título
+Sea green	Verde-mar
+Search	Pesquisar
+Search games	Pesquisar jogos
+Search in	Pesquisar em
+Searching…	A pesquisar…
+Second screen	Segundo ecrã
+Seconds	Segundos
+Secret seashells	Conchas secretas
+Seeds	Sementes
 Select	Selecionar
 Select a network again and enter its password.	Selecione novamente a rede e introduza a palavra-passe.
 Select a network again.	Selecione uma rede novamente.
 Selected	Selecionado
+Selected row	Linha selecionada
+Send	Enviar
+Series	Série
+Set the clock to where you are.	Acerte o relógio para onde está.
 Sets Standard DraStic screen order for this game. Save & restart applies it.	Define a ordem dos ecrãs no DraStic Standard. Guarde e reinicie para aplicar.
+Setting up PortMaster	A configurar o PortMaster
 Settings	Definições
 Settings saved	Definições guardadas
 Shader	Filtro
@@ -386,21 +869,27 @@ Shader saved for next launch	Filtro guardado para o próximo arranque
 Shader saved. Restart this game to apply it.	Filtro guardado. Reinicie o jogo para aplicar.
 Shader studio	Estúdio de filtros
 Shaders	Filtros
-Sharp + NDS Color	Nítido + NDS Color
-Sharp + Natural Vision	Nítido + Natural Vision
 Sharp + both colours	Nítido + ambas as cores
+Sharp + Natural Vision	Nítido + Natural Vision
+Sharp + NDS Color	Nítido + NDS Color
 Sharp bilinear	Bilinear nítido
+Sharp fill	Preenchimento nítido
 Sharp pixel edges with smoother scaling.	Bordas de pixels nítidas com escala suave.
 Sharp scaling with natural colour and contrast.	Escala nítida com cores e contraste naturais.
 Sharp scaling with the DS colour treatment.	Escala nítida com cores do DS.
 Sharp scaling, DS colour and Natural Vision together.	Escala nítida, cores DS e Natural Vision juntos.
+Shield	Escudo
 Shift	Maiúsculas
 Shortcut action	Ação do atalho
+Shots	Tiros
+Show games	Mostrar jogos
 Show the charge in the status bar	Mostrar carga na barra de status
 Show the welcome screen at startup	Mostrar boas-vindas ao iniciar
 Sign in	Iniciar sessão
 Sign out	Terminar sessão
+Signal	Sinal
 Signing in…	A iniciar sessão…
+Simple pixel	Pixels simples
 Simulated handheld	Consola simulado
 Sleep	Suspender
 Sleep now	Suspender agora
@@ -409,23 +898,45 @@ Sleep simulated - press any control	Suspensão simulada – pressione um botão
 Sleep simulated - settings retained	Suspensão simulada – definições mantidas
 Sleep unavailable on this device	Suspensão indisponível neste dispositivo
 Sleeping - use Power to wake	Em suspensão – use Power para despertar
-Soft LCD grid	Grelha LCD suave
+Slide into pages; slide back to return	Deslize para as páginas; deslize de volta para regressar
+Slot	Posição
+Slot change undone.	Alteração anulada.
+Slot exported to userdata/exports.	Estado exportado para userdata/exports.
+Slot {0} deleted.	Espaço {0} apagado.
+Small keys	Chaves pequenas
+Small touches, scrolling and startup motion	Pequenos efeitos, deslocamento e movimento no arranque
+Smooth fill	Preenchimento suave
 Soft green monochrome with full-resolution detail.	Monocromático verde suave em resolução completa.
+Soft LCD grid	Grelha LCD suave
 Soft scanlines	Linhas de varrimento suaves
+Some menu sounds are unavailable.	Alguns sons do menu estão indisponíveis.
 Sound	Som
+Sounds & music	Sons e música
+Source	Fonte
 Space	Espaço
+Spanish	Espanhol
+Spring	Mola
+Springy menu changes with a colourful wobble	Mudanças de menu com um balanço colorido
+Stable	Estável
 Standard	Standard
 Standard DraStic only. Applies on the next launch; game saves are kept.	Apenas DraStic Standard. Aplica-se no próximo arranque; gravações mantidas.
 Standard screen order	Ordem standard dos ecrãs
+START	INICIAR
 Start	Iniciar
 Start + Anbernic	Start + Anbernic
+Start a game	Iniciar um jogo
 Start RG DS automatically on future boots?	Iniciar RG DS automaticamente ao ligar?
+Start Send   X Undo   L R Scroll	Start Enviar   X Anular   L R Deslocar
 Start with a familiar layout	Comece com uma disposição familiar
 Start, then Anbernic	Start e depois Anbernic
+Starting…	A iniciar…
 Startup	Arranque
 Startup choice saved.	Opção de arranque guardada.
 Startup choice simulated.	Opção de arranque simulada.
 Startup is managed by RGDS OS.	O arranque é gerido pelo RGDS OS.
+Statistics	Estatísticas
+Step {0} of 4	Passo {0} de 4
+Still reading your library. Try again in a moment.	A biblioteca ainda está a ser lida. Tente de novo daqui a pouco.
 Stock	Original
 Stock firmware	Firmware original
 Stop fetching	Parar transferência
@@ -435,76 +946,196 @@ Stop scraping before changing source	Pare a pesquisa antes de mudar a fonte
 Stopping after this request	A parar após este pedido
 Stopping after this request.	A parar após este pedido.
 Storage read-only - use internal RGDS	Armazenamento só de leitura – use o RGDS interno
+Su	Do
+Subtle	Subtil
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	A hora de verão segue o teu fuso horário. Liga-a ou desliga-a se o relógio estiver uma hora desfasado.
+Super missiles	Supermísseis
 SuperDrastic (experimental)	SuperDrastic (experimental)
 SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic usa saída nativa. O filtro predefinido é mantido.
 SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic usa menu de pausa e exibição próprios. Experimental; testes no RG DS pendentes.
+Swap screens	Trocar ecrãs
 Swapped	Invertido
+Swipe in from the left edge to go Back.	Deslize a partir do rebordo esquerdo para voltar.
+Swipe up from the bottom edge to go Home from anywhere.	Deslize para cima a partir do rebordo inferior para ir ao Início de qualquer lado.
+Swipe up from the bottom for Home, in from the left for Back	Deslize de baixo para Início e a partir da esquerda para Voltar
+Switch off	Desativar
+Switch on	Ativar
+Switch to another game	Mude para outro jogo
+Switches and values	Interruptores e valores
+Sword	Espada
 System	Sistema
-THEME ERROR - RETAINED CURRENT	ERRO NO TEMA – ATUAL MANTIDO
-THEME RELOADED	TEMA RECARREGADO
-Turn the handheld off and on again	Desligar e voltar a ligar a consola
-TYPEFACE	TIPOGRAFIA
+System update	Atualização do sistema
+Systems	Sistemas
+Tap to type, or use the D-pad and A	Toque para escrever ou use o comando direcional e A
+Team	Equipa
 Temporary game cache cleared. Saves and artwork are kept.	Cache temporária limpa. Gravações e capas mantidas.
+Test	Testar
+Test microphone	Testar microfone
+Test the microphone on your handheld.	Teste o microfone na sua consola.
+Testing	Testes
+Th	Qu
+That message could not be sent	Não foi possível enviar a mensagem
+That room is full	Essa sala está cheia
+The backup did not finish. Please try again.	A cópia de segurança não terminou. Tente de novo.
+The best there is	O melhor que há
+The brighter DS Lite screen with a faint pixel grid.	O ecrã mais claro da DS Lite com uma grelha discreta.
 The checkpoint did not finish saving.	O estado não terminou de guardar.
 The emulator did not finish. Resume, retry, or return without saving.	O emulador não terminou. Continue, tente novamente ou volte sem guardar.
+The first DS screen: muted colour and a fine pixel grid.	O primeiro ecrã da DS: cores suaves e uma grelha fina de píxeis.
+The Game Boy Advance LCD's own colour and gamma.	As cores e a gama do ecrã LCD do Game Boy Advance.
+The Game Boy Advance screen: its colour and faint pixel gaps.	O ecrã do Game Boy Advance: as suas cores e as leves divisões entre os píxeis.
+The Game Boy Color screen with faint gaps between its pixels.	O ecrã do Game Boy Color com ligeiros espaços entre os píxeis.
 The game menu did not respond. Resume or return without saving.	O menu do jogo não respondeu. Continue ou volte sem guardar.
+The language for menus and messages.	O idioma dos menus e mensagens.
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	O ecrã de matriz de pontos do Game Boy original: uma grelha clara de píxeis e sombras suaves.
+The pad is full: send it or clear it	O bloco está cheio: envia ou limpa
+The true GBA colours on its screen, with the gaps between its pixels.	As cores reais do GBA no seu ecrã, com as divisões entre os píxeis.
+The update could not be downloaded. Check for updates again.	Não foi possível transferir a atualização. Procura atualizações novamente.
+The update could not start. Your previous version was restored.	A atualização não iniciou. A versão anterior foi restaurada.
 The zFast LCD texture with both colour treatments.	Textura LCD zFast com ambos os tratamentos de cor.
 The zFast LCD texture with natural colour and contrast.	Textura LCD zFast com cores e contraste naturais.
 The zFast LCD texture with the DS colour treatment.	Textura LCD zFast com cores do DS.
 Theme	Tema
 Theme & display	Tema e ecrã
+THEME ERROR - RETAINED CURRENT	ERRO NO TEMA – ATUAL MANTIDO
+THEME RELOADED	TEMA RECARREGADO
+There is not enough free space for this update.	Não há espaço livre suficiente para esta atualização.
+This can take a few seconds	Isto pode demorar alguns segundos
 This emulator does not expose a frameskip setting.	Este emulador não oferece opção de pular fotogramas.
 This emulator uses native resolution. No resolution switch is available.	Este emulador usa resolução nativa. Não é possível alterar.
 This engine does not expose a threading switch.	Este emulador não oferece definição de threads.
 This engine has no live threading control.	Este emulador não permite alterar threads ao vivo.
 This game	Este jogo
+This handheld's own screen.	O ecrã próprio desta consola portátil.
 This network requires an enterprise profile.	Esta rede exige um perfil empresarial.
+This port lists no instructions.	Este port não tem instruções.
 This request did not finish. Please try again.	O pedido não terminou. Tente novamente.
 This shader is unavailable for the current emulator.	Filtro indisponível neste emulador.
+This stock firmware has not been validated for updates.	Este firmware original não foi validado para atualizações.
+This version failed to start. Waiting for a newer update.	Esta versão não iniciou. A aguardar uma atualização mais recente.
 Threaded 3D	3D com threads
+Time	Tempo
+Time format	Formato da hora
+Time of day	Hora do dia
 Time played	Tempo de jogo
+Times played	Sessões
 Timezone	Fuso horário
+Title screen	Ecrã de título
+Title screens	Ecrãs de título
 Toggle	Alternar
+Too much on the pad: erase some of it	Demasiado no bloco: apaga algo
+Tools	Ferramentas
 Top display	Ecrã superior
+Total	Total
 Touch	Toque
+Touch gestures	Gestos de toque
+Touch here to point and click on the top screen.	Toque aqui para apontar e clicar no ecrã de cima.
 Touch indicator	Indicador de toque
+Touch screen	Ecrã tátil
+Touch screen is not available	O ecrã tátil não está disponível
+Touch screen off	Ecrã tátil desligado
+Touch the screen to turn it on	Toque no ecrã para o ligar
 Touch to continue	Toque para continuar
 Touch {0}	Toque {0}
+Trainer	Treinador
+Transition style	Estilo de transição
+Transitions	Transições
+Treasures	Tesouros
+Try a pattern	Experimentar um padrão
+Try a shorter title or clear your filter.	Tente um título mais curto ou limpe o filtro.
+Try again	Tentar novamente
+Try another title or clear your filters	Tente outro título ou limpe os filtros
 Try saving again	Tentar guardar novamente
+Tu	Te
+Turn Bluetooth off?	Desativar o Bluetooth?
+Turn Bluetooth on to find devices.	Ative o Bluetooth para encontrar dispositivos.
+Turn it on to find networks	Ligue para encontrar redes
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ative Info do jogo em Definições > Biblioteca > Fontes de capas e obtenha as capas.
+Turn on game rumble for games made for a rumble accessory.	Ative a vibração nos jogos para jogos feitos para um acessório de vibração.
+Turn on menu haptics to feel the menus.	Ative a resposta tátil para sentir os menus.
+Turn on menu music for a soft tune while you browse.	Ative a música do menu para uma melodia suave enquanto navega.
+Turn on menu sounds to hear the previews.	Ative os sons do menu para ouvi-los.
+Turn the handheld off and on again	Desligar e voltar a ligar a consola
 Turn Wi-Fi off?	Desativar o Wi-Fi?
 Turn Wi-Fi on first.	Ative o Wi-Fi primeiro.
 Turn Wi-Fi on to find networks.	Ative o Wi-Fi para procurar redes.
+Turning Bluetooth off…	A desativar o Bluetooth…
+Turning Bluetooth on…	A ativar o Bluetooth…
 Turning Wi-Fi off…	A desativar Wi-Fi…
 Turning Wi-Fi on…	A ativar Wi-Fi…
+Turquoise	Turquesa
+Type	Escrever
+Type a game title…	Escreva o título de um jogo…
+Type your name	Escreve o teu nome
+TYPEFACE	TIPOGRAFIA
 Typeface	Tipografia
 Unassigned	Não atribuído
 Unavailable	Indisponível
+Undo last load	Anular o último carregamento
+Undo last slot change	Anular a última alteração
 Unmatched artwork	Capas sem correspondência
 Unmute	Ativar som
+Unpacking files	A descompactar ficheiros
+Unpacking PortMaster	A descompactar o PortMaster
+Unplayed	Não jogados
+Up	Cima
+Update	Atualizar
+Update available in Maintenance	Atualização disponível em Manutenção
+Update discarded. Your installed version is unchanged.	Atualização descartada. A versão instalada não mudou.
+Update failed. Check Wi-Fi and try again.	A atualização falhou. Verifique o Wi-Fi e tente novamente.
+Update information has expired or the device clock is incorrect.	As informações expiraram ou o relógio do dispositivo está incorreto.
+Update installed.	Atualização instalada.
+Update now	Atualizar agora
+Update verification failed. Check for updates again.	A verificação falhou. Procure atualizações novamente.
+Updates	Atualizações
 Updates & recovery	Atualizações e recuperação
-Use ROM identity	Usar identidade da ROM
+Updates will be available when the release channel opens.	As atualizações estarão disponíveis quando o canal abrir.
 Use an additional rendering thread	Usar uma thread de renderização adicional
 Use default ({0})	Usar predefinição ({0})
 Use global controls	Usar controlos globais
 Use previous build	Usar versão anterior
+Use ROM identity	Usar identidade da ROM
+Use the engine's native controls for microphone and DS settings.	Use os controlos do emulador para o microfone e as definições do DS.
 Use the previous RGDS build?	Usar a versão anterior do RGDS?
 Used by games without an override	Para jogos sem definição próprio
 Username	Nome de utilizador
+Verify	Verificar
+Verifying update…	A verificar atualização…
+Version {0} is ready	A versão {0} está pronta
+Version {0} is ready to install	A versão {0} está pronta a instalar
+Versions, free space and the network address of your handheld.	Versões, espaço livre e endereço de rede da sua consola.
+Vibration	Vibração
 View	Visualizar
+View transitions	Transições de ecrã
+Violet	Violeta
+Vivid	Vívido
+Vivid LCD	LCD vívido
+Vivid smooth	Suave vívido
 Volume	Volume
 Volume control unavailable	Controlo de volume indisponível
+Waiting for an address…	A aguardar um endereço…
 WAITING FOR INPUT	A AGUARDAR ENTRADA
 Warm monochrome with preserved highlight detail.	Monocromático quente que preserva detalhes claros.
 Warm paper	Papel quente
 Warm whites and softened contrast for evening play.	Brancos quentes e contraste suave para jogar à noite.
+We	Qu
 Welcome back	Bem-vindo de volta
+What happens when you turn the handheld on.	O que acontece ao ligar a consola.
 What the shortcut opens	O que o atalho abre
+What's new	Novidades
+Where covers and titles come from.	De onde vêm as capas e os títulos.
+Where games go on the card, and a fresh scan.	Onde ficam os jogos no cartão, e uma nova procura.
 Where this layout applies	Onde se aplica esta disposição
+Where to put games	Onde colocar os jogos
+White sword	Espada branca
+Whole pixels	Píxeis inteiros
 Wi-Fi	Wi-Fi
 Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Adaptador Wi-Fi não pronto. Verifique o driver ou reinicie.
 Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Adaptador Wi-Fi não pronto. Ative o Wi-Fi para tentar novamente.
+Wi-Fi connected	Wi-Fi ligado
 Wi-Fi did not turn on. Try again.	Wi-Fi não foi ativado. Tente novamente.
 Wi-Fi is blocked by the hardware. Restart the handheld and try again.	O hardware bloqueou o Wi-Fi. Reinicie a consola e tente novamente.
+Wi-Fi is off	Wi-Fi desligado
 Wi-Fi is still on. Try turning it off again.	Wi-Fi continua ativo. Tente desativar novamente.
 Wi-Fi is unavailable.	Wi-Fi indisponível.
 Wi-Fi off.	Wi-Fi desativado.
@@ -512,630 +1143,53 @@ Wi-Fi on.	Wi-Fi ativado.
 Wi-Fi request failed. Check the password and signal, then try again.	Falha no Wi-Fi. Verifique palavra-passe e sinal e tente novamente.
 Wi-Fi request timed out. Check signal and try again.	Tempo do Wi-Fi esgotado. Verifique o sinal e tente novamente.
 Wi-Fi service is unavailable.	Serviço Wi-Fi indisponível.
+With info	Com info
 With shader	Com filtro
+Without info	Sem info
+WonderSwan Color · Blue	WonderSwan Color · Azul
+WonderSwan Color · White	WonderSwan Color · Branco
+Wood-grain TV	Televisor em madeira
+Wooden sword	Espada de madeira
 Working…	A processar…
+World	Mundo
+World map	Mapa do mundo
+Worlds	Mundos
+Y imports a save into this slot.	Y importa um estado para este espaço.
+Yellow	Amarelo
+Yes	Sim
+You	Tu
+You appear like this to others	É assim que os outros te veem
+You are in Room {0}	Estás na sala {0}
+You are up to date.	Está atualizado.
 Your cartridges go here	Os seus cartuchos aparecem aqui
+Your colour	A tua cor
+Your DS library starts here	A sua biblioteca DS começa aqui
+Your games and saves are not touched.	Os teus jogos e gravações não são alterados.
 Your home screen after powering on	O seu ecrã inicial ao ligar
+Your journey	A tua viagem
+Your last game will appear here	O último jogo aparece aqui
 Your local time and date	A sua data e hora locais
 Your menu shortcut	O seu atalho do menu
+Your name	O teu nome
+Your ports are waiting in Ports	Os seus ports estão em Ports
+Your saves are safe. See you soon!	Os seus jogos guardados estão seguros. Até breve!
 Your shader choice is still available.	A sua escolha de filtro continua disponível.
-zFast + NDS Color	zFast + NDS Color
-zFast + Natural Vision	zFast + Natural Vision
 zFast + both colours	zFast + ambas as cores
+zFast + Natural Vision	zFast + Natural Vision
+zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (experimental)
 {0} (recommended)	{0} (recomendado)
+{0} active	{0} ativos
+{0} found. Choose Done to go to your library.	{0} encontrados. Escolha Concluído para ir à sua biblioteca.
 {0} frames	{0} fotogramas
+{0} game	{0} jogo
 {0} games	{0} jogos
-{0} settings	Definições de {0}
-Up	Cima
-Times played	Sessões
-Last played	Último jogo
-GameTDB	GameTDB
-Libretro	Libretro
-Ready to fetch artwork.	Pronto para transferir as imagens.
-Icon style	Estilo dos ícones
-Simple pixel	Pixels simples
-Rich	Detalhado
-Statistics	Estatísticas
-Games played	Jogos jogados
-Most played	Mais jogados
-Preparing your statistics…	A preparar estatísticas…
-Play a game to start your statistics.	Jogue para começar as suas estatísticas.
-Installed version	Versão instalada
-Check for updates	Procurar atualizações
-Restart & install	Reiniciar e instalar
-Download update	Transferir atualização
-Pause download	Pausar transferência
-Release notes	Notas da versão
-Discard update	Descartar atualização
-No release notes yet.	Ainda não há notas da versão.
-Restart and install the update?	Reiniciar e instalar a atualização?
-Check for updates when you are ready.	Procure atualizações quando quiser.
-Updates will be available when the release channel opens.	As atualizações estarão disponíveis quando o canal abrir.
-Checking for updates…	A procurar atualizações…
-You are up to date.	Está atualizado.
-A new version is ready to download.	Uma nova versão está pronta para transferir.
-This version failed to start. Waiting for a newer update.	Esta versão não iniciou. A aguardar uma atualização mais recente.
-Downloading update…	A transferir atualização…
-Verifying update…	A verificar atualização…
-Preparing update…	A preparar atualização…
-Ready to restart. Your previous version is kept for recovery.	Pronto para reiniciar. A versão anterior é mantida para recuperação.
-Restarting into the update…	A reiniciar com a atualização…
-Checking the new version…	A verificar a nova versão…
-Update installed.	Atualização instalada.
-The update could not start. Your previous version was restored.	A atualização não iniciou. A versão anterior foi restaurada.
-Download paused. Retry to continue.	Transferência em pausa. Tente novamente para continuar.
-Update discarded. Your installed version is unchanged.	Atualização descartada. A versão instalada não mudou.
-Connect the charger before installing an update.	Ligue o carregador antes de instalar uma atualização.
-There is not enough free space for this update.	Não há espaço livre suficiente para esta atualização.
-Exit your game before installing an update.	Saia do jogo antes de instalar uma atualização.
-Install the latest SD installer before this update.	Use o instalador SD mais recente antes desta atualização.
-Restart RG DS Core before installing the update.	Reinicie RG DS Core antes de instalar a atualização.
-Download interrupted. Retry to continue.	Transferência interrompida. Tente novamente para continuar.
-An update is already prepared. Install it or discard it first.	Uma atualização já está pronta. Instale ou descarte primeiro.
-Another update is already running.	Já está a decorrer outra atualização.
-Update information has expired or the device clock is incorrect.	As informações expiraram ou o relógio do dispositivo está incorreto.
-This stock firmware has not been validated for updates.	Este firmware original não foi validado para atualizações.
-Update verification failed. Check for updates again.	A verificação falhou. Procure atualizações novamente.
-Update failed. Check Wi-Fi and try again.	A atualização falhou. Verifique o Wi-Fi e tente novamente.
-Stable	Estável
-Testing	Testes
-Import slot	Importar estado
-Export slot	Exportar estado
-Save checkpoint	Guardar estado
-Load checkpoint	Carregar estado
-Save here	Guardar aqui
-Export	Exportar
-More	Mais
-Replace slot {0}?	Substituir o espaço {0}?
-Load slot {0}?	Carregar o espaço {0}?
-Delete slot {0}?	Apagar o espaço {0}?
-Undo last slot change	Anular a última alteração
-Undo last load	Anular o último carregamento
-Import into this slot	Importar para este espaço
-Slot {0} deleted.	Espaço {0} apagado.
-Slot change undone.	Alteração anulada.
-A saves your current progress here.	A guarda o teu progresso aqui.
-A replaces this slot with your current progress. X deletes it.	A substitui este espaço pelo teu progresso. X apaga-o.
-A loads this slot. Undo last load, under Y, brings back the progress you have now.	A carrega este espaço. Anular o último carregamento, em Y, recupera o teu progresso atual.
-Nothing to load here yet.	Ainda não há nada para carregar aqui.
-A exports this slot to userdata/exports. X deletes it.	A exporta este espaço para userdata/exports. X apaga-o.
-Y imports a save into this slot.	Y importa um estado para este espaço.
-Import help	Ajuda de importação
-Replace	Substituir
-Blow into microphone	Soprar no microfone
-Close and open DS lid	Fechar e abrir o DS
-DS language	Idioma do DS
-Real microphone	Microfone real
-Japanese	Japonês
-English	Inglês
-French	Francês
-German	Alemão
-Italian	Italiano
-Spanish	Espanhol
-2 seconds	2 segundos
-In game	No jogo
-Restart the game to apply DS settings.	Reinicie o jogo para aplicar as definições do DS.
-Could not save DS settings.	Não foi possível guardar as definições do DS.
-Search	Pesquisar
-Save gallery	Galeria de estados
-Add your games	Adicione os seus jogos
-DS controls	Funções do DS
-Back up all saves	Criar cópia das gravações
-Resume after power off	Retomar após desligar
-Slot	Posição
-Empty slot	Posição vazia
-Search games	Pesquisar jogos
-Filter	Filtro
-Missing artwork	Sem capa
-Where to put games	Onde colocar os jogos
-Scan for games	Procurar jogos
-Automatic updates	Atualizações automáticas
-Download automatically	Transferir automaticamente
-Check automatically	Verificar automaticamente
-Update available in Maintenance	Atualização disponível em Manutenção
-Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Copie ficheiros .rgdssave.zip para userdata/imports. O jogo e o emulador devem corresponder.
-Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão. Jogos não incluídos. Os estados ficam em userdata.
-Save backup created in userdata/exports.	Cópia de segurança criada em userdata/exports.
-Slot exported to userdata/exports.	Estado exportado para userdata/exports.
-Save library updated.	Biblioteca de estados atualizada.
-Current progress could not be saved. No slot was changed.	Não foi possível guardar o progresso. Nenhuma posição foi alterada.
-DS controls are unavailable for this engine.	Funções do DS indisponíveis neste emulador.
-Your DS library starts here	A sua biblioteca DS começa aqui
-Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão e escolha Procurar jogos.
-Use the engine's native controls for microphone and DS settings.	Use os controlos do emulador para o microfone e as definições do DS.
-Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	O microfone real vem ativado. Sopro e tampa duram dois segundos no jogo. Reinicie para mudar o idioma.
-Unplayed	Não jogados
-Played	Jogados
-Filtered	Filtrados
-No matching games	Nenhum jogo encontrado
-No matches. Use View to change filters.	Sem resultados. Altere os filtros em Visualizar.
-Reset state	Reiniciar estado
-Restart without loading a state?	Reiniciar sem carregar um estado?
-Restart from the title screen. In-game saves and save slots are kept.	Reinicia no ecrã de título. As gravações do jogo e os estados guardados são mantidos.
-Microphone, simulated blowing, lid and DS language.	Microfone, sopro simulado, tampa e idioma DS.
-Test microphone	Testar microfone
-Test	Testar
-Live input	Entrada ao vivo
-Quiet	Baixo
-Loud	Alto
-Listening…	A ouvir…
-Microphone unavailable	Microfone indisponível
-Audio is not recorded or saved.	O áudio não é gravado nem guardado.
-Test the microphone on your handheld.	Teste o microfone na sua consola.
-Return home before testing the physical microphone.	Volte ao início antes de testar o microfone físico.
-Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Sopre ou fale para o microfone. O nível sobe e desce quando para.
-Quick search	Pesquisa rápida
-A  Search	A  Pesquisar
-A  Jump	A  Ir
-Edit search	Editar pesquisa
-Clear filters	Limpar filtros
-Try another title or clear your filters	Tente outro título ou limpe os filtros
-Type a game title…	Escreva o título de um jogo…
-Finding games…	A procurar jogos…
-Searching…	A pesquisar…
-Search in	Pesquisar em
-Try a shorter title or clear your filter.	Tente um título mais curto ou limpe o filtro.
-Type	Escrever
-Tap to type, or use the D-pad and A	Toque para escrever ou use o comando direcional e A
-No letters to jump to. Search for another game.	Não há letras disponíveis. Pesquise outro jogo.
+{0} joined	{0} entrou
+{0} left	{0} saiu
 {0} match	{0} resultado
 {0} matches	{0} resultados
 {0} matching game	{0} jogo encontrado
 {0} matching games	{0} jogos encontrados
-{0} game	{0} jogo
-Interface animations	Animações da interface
-View transitions	Transições de ecrã
-Small touches, scrolling and startup motion	Pequenos efeitos, deslocamento e movimento no arranque
-Springy menu changes with a colourful wobble	Mudanças de menu com um balanço colorido
-Transitions	Transições
-Subtle	Subtil
-Menu effects	Efeitos do menu
-Effects volume	Volume dos efeitos
-Preview sound	Ouvir um som
-A little handheld magic	Um pouco de magia portátil
-Playful sounds for browsing, choosing and starting games.	Sons divertidos ao navegar, escolher e iniciar jogos.
-Turn on menu sounds to hear the previews.	Ative os sons do menu para ouvi-los.
-Some menu sounds are unavailable.	Alguns sons do menu estão indisponíveis.
-Menu audio is unavailable on this device.	O áudio do menu está indisponível neste dispositivo.
-Menu sounds are unavailable.	Os sons do menu estão indisponíveis.
-Close lid	Fechar a tampa
-Open lid	Abrir a tampa
-Spring	Mola
-Push	Deslizar
-Transition style	Estilo de transição
-Animate pages with the selected style	Animar páginas com o estilo escolhido
-Slide into pages; slide back to return	Deslize para as páginas; deslize de volta para regressar
-Accent colour	Cor de destaque
-FAVOURITE COLOUR	COR FAVORITA
-Classic	Clássico
-Classic blue	Azul clássico
-High contrast	Alto contraste
-PREVIEW	PRÉ-VISUALIZAÇÃO
-Selected row	Linha selecionada
-Switches and values	Interruptores e valores
-Grey	Cinzento
-Brown	Castanho
-Red	Vermelho
-Pink	Cor-de-rosa
-Orange	Laranja
-Yellow	Amarelo
-Lime	Lima
-Green	Verde
-Dark green	Verde-escuro
-Sea green	Verde-mar
-Turquoise	Turquesa
-Blue	Azul
-Dark blue	Azul-escuro
-Purple	Roxo
-Violet	Violeta
-Magenta	Magenta
-Network file sharing	Partilha de ficheiros em rede
-Open on this Wi-Fi	Aberto nesta rede Wi-Fi
-Password protected	Protegido por palavra-passe
-File sharing on. Find "RG DS" under Network.	Partilha de ficheiros ativada. Procure "RG DS" em Rede.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: o emulador original. O DSCore acrescenta correções e velocidade.
-DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: recomendado. O mais rápido, com correções da tampa, caneta e 3D e 3D opcional de 2x–5x.
-DSCore 3D resolution	Resolução 3D do DSCore
-Native (fastest)	Nativa (mais rápida)
-2x sharper	2x mais nítido
-3x sharper	3x mais nítido
-4x (experimental)	4x (experimental)
-5x (experimental)	5x (experimental)
-Colour mode	Modo de cor
-Draw and chat with nearby handhelds	Desenha e conversa com consolas por perto
-Wi-Fi connected	Wi-Fi ligado
-No Wi-Fi: you can still draw	Sem Wi-Fi: ainda podes desenhar
-Type your name	Escreve o teu nome
-You appear like this to others	É assim que os outros te veem
-Starting…	A iniciar…
-Chat is unavailable: you can still draw	Conversa indisponível: ainda podes desenhar
-Nobody else is nearby yet	Ninguém por perto ainda
-1 person nearby	1 pessoa por perto
 {0} people nearby	{0} pessoas por perto
-Your colour	A tua cor
-Leave	Sair
-Your name	O teu nome
-Send	Enviar
-You are in Room {0}	Estás na sala {0}
-{0} joined	{0} entrou
-{0} left	{0} saiu
-New messages below	Novas mensagens abaixo
-Older messages	Mensagens anteriores
-The pad is full: send it or clear it	O bloco está cheio: envia ou limpa
-Too much on the pad: erase some of it	Demasiado no bloco: apaga algo
-That message could not be sent	Não foi possível enviar a mensagem
-That room is full	Essa sala está cheia
-Chat Room {0}	Sala de conversa {0}
-Choose a chat room to join	Escolhe uma sala de conversa para entrar
-Edit	Editar
-Join	Entrar
-Matches your accent	Segue a cor de destaque
-Nobody here yet	Ninguém aqui ainda
-Start Send   X Undo   L R Scroll	Start Enviar   X Anular   L R Deslocar
-You	Tu
-Time format	Formato da hora
-24-hour	24 horas
-12-hour	12 horas
-24-hour or 12-hour clock	Relógio de 24 ou 12 horas
-How dates appear in the status bar	Como as datas aparecem na barra de estado
-Connecting to	A ligar a
-This can take a few seconds	Isto pode demorar alguns segundos
-Waiting for an address…	A aguardar um endereço…
-IP address	Endereço IP
-Signal	Sinal
-Could not connect	Não foi possível ligar
-Wi-Fi is off	Wi-Fi desligado
-Turn it on to find networks	Ligue para encontrar redes
-Choose a network from the list	Escolha uma rede da lista
-Preparing…	A preparar…
-Home layout	Esquema do ecrã inicial
-Background	Fundo
-Touch gestures	Gestos de toque
-Carousel	Carrossel
-Column	Coluna
-Plain	Simples
-Grid	Grelha
-A carousel, or the DSi's column with your last game on top	Um carrossel ou a coluna da DSi com o último jogo no topo
-Plain, or the DSi's ruled grid behind every screen	Simples ou a grelha pautada da DSi atrás de cada ecrã
-Swipe up from the bottom for Home, in from the left for Back	Deslize de baixo para Início e a partir da esquerda para Voltar
-Nothing played yet	Ainda não jogou nada
-Your last game will appear here	O último jogo aparece aqui
-Draw and chat	Desenhe e converse
-Su	Do
-Mo	Se
-Tu	Te
-We	Qu
-Th	Qu
-Fr	Se
-Sa	Sá
-Chat Room	Sala
-Nobody else here yet	Mais ninguém aqui ainda
-Drawing on your own	A desenhar sozinho
-Jump	Ir
-Home	Início
-Swipe up from the bottom edge to go Home from anywhere.	Deslize para cima a partir do rebordo inferior para ir ao Início de qualquer lado.
-Swipe in from the left edge to go Back.	Deslize a partir do rebordo esquerdo para voltar.
-A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Uma pequena pega no fundo do ecrã inferior mostra que os gestos estão ativos; sobe com o dedo e um anel marca o ponto quando um gesto é acionado.
-Your saves are safe. See you soon!	Os seus jogos guardados estão seguros. Até breve!
-DS Classic	DS Clássico
-DS Lite	DS Lite
-Natural glow	Brilho natural
-Vivid LCD	LCD vívido
-Natural smooth	Suave natural
-Vivid smooth	Suave vívido
-Pixel beads	Contas de píxeis
-Glossy tiles	Azulejos brilhantes
-The first DS screen: muted colour and a fine pixel grid.	O primeiro ecrã da DS: cores suaves e uma grelha fina de píxeis.
-The brighter DS Lite screen with a faint pixel grid.	O ecrã mais claro da DS Lite com uma grelha discreta.
-Natural colour with soft pixels that glow together.	Cores naturais com píxeis suaves que brilham juntos.
-Bold colour on a close-up LCD with RGB stripes.	Cores fortes num LCD visto de perto, com riscas RGB.
-Natural colour with smoothed diagonal edges.	Cores naturais com contornos diagonais suavizados.
-Bold colour with smoothed diagonal edges.	Cores fortes com contornos diagonais suavizados.
-Bold colour; every pixel a round, shiny bead.	Cores fortes; cada píxel, uma conta redonda e brilhante.
-Bold colour; every pixel a raised, glossy tile.	Cores fortes; cada píxel, um azulejo brilhante em relevo.
-IN USE	EM USO
-APPLY	APLICAR
-Follows your library shader.	Segue o filtro da sua biblioteca.
-Original	Original
-DS screens	Ecrãs DS
-Natural	Natural
-Vivid	Vívido
-Pixel art	Pixel art
-Moods	Ambientes
-Change group	Mudar de grupo
-Sounds & music	Sons e música
-Menu music	Música do menu
-Music volume	Volume da música
-A soft tune plays while you browse. It fades out when a game starts.	Uma melodia suave toca enquanto navega. Desvanece quando um jogo começa.
-Turn on menu music for a soft tune while you browse.	Ative a música do menu para uma melodia suave enquanto navega.
-Scanning…	A procurar…
-Scan complete	Procura concluída
-Looking for games…	A procurar jogos…
-Reading Roms/NDS on your games card. This takes a moment.	A ler Roms/NDS no cartão de jogos. Demora um momento.
-{0} found. Choose Done to go to your library.	{0} encontrados. Escolha Concluído para ir à sua biblioteca.
-No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Nenhum jogo encontrado. Copie ficheiros .nds ou ZIP de DS para Roms/NDS no cartão de jogos e procure de novo.
-Backing up your saves…	A fazer cópia dos seus jogos guardados…
-The backup did not finish. Please try again.	A cópia de segurança não terminou. Tente de novo.
-Copies every save and checkpoint into one zip in userdata/exports.	Copia todos os jogos guardados e pontos de controlo para um zip em userdata/exports.
-Where games go on the card, and a fresh scan.	Onde ficam os jogos no cartão, e uma nova procura.
-Where covers and titles come from.	De onde vêm as capas e os títulos.
-System update	Atualização do sistema
-Version {0} is ready	A versão {0} está pronta
-Version {0} is ready to install	A versão {0} está pronta a instalar
-Downloading {0}	A transferir {0}
-Paused at {0}	Em pausa em {0}
-Update now	Atualizar agora
-Resume download	Retomar transferência
-Update	Atualizar
-Install	Instalar
-What's new	Novidades
-Download	Transferir
-Verify	Verificar
-Prepare	Preparar
-Step {0} of 4	Passo {0} de 4
-Less than a minute left	Menos de um minuto
-About {0} min left	Cerca de {0} min restantes
-About {0} h left	Cerca de {0} h restantes
-Downloads resume where they stopped if Wi-Fi drops.	As transferências continuam onde pararam se o Wi-Fi falhar.
-Your games and saves are not touched.	Os teus jogos e gravações não são alterados.
-Connection lost. Retrying…	Ligação perdida. A tentar novamente…
-The update could not be downloaded. Check for updates again.	Não foi possível transferir a atualização. Procura atualizações novamente.
-Finishing another task. Press Y again in a moment.	A terminar outra tarefa. Prime Y novamente daqui a pouco.
-Updates	Atualizações
-The language for menus and messages.	O idioma dos menus e mensagens.
-Set the clock to where you are.	Acerte o relógio para onde está.
-How dates appear at the top of the screen.	Como as datas aparecem no topo do ecrã.
-A 24-hour or 12-hour clock.	Um relógio de 24 ou 12 horas.
-Versions, free space and the network address of your handheld.	Versões, espaço livre e endereço de rede da sua consola.
-Check for updates, go back to the previous build or clear temporary files.	Procure atualizações, volte à versão anterior ou limpe ficheiros temporários.
-Leave RG DS Core and go back to the stock menu.	Saia do RG DS Core e volte ao menu original.
-What happens when you turn the handheld on.	O que acontece ao ligar a consola.
-Restart the RGDS menu.	Reinicie o menu RGDS.
-Previous	Anterior
-Next	Seguinte
-Show all systems	Mostrar todos os sistemas
-Systems	Sistemas
-Game screen	Ecrã de jogo
-Second screen	Segundo ecrã
-Sharp fill	Preenchimento nítido
-Whole pixels	Píxeis inteiros
-Smooth fill	Preenchimento suave
-Companion	Ecrã companheiro
-Swap screens	Trocar ecrãs
-Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Adiciona jogos Game Boy e Game Boy Advance: Jogos abre então uma página de sistemas.
-Frame	Moldura
-Game Boy	Game Boy
-Game Boy · Red	Game Boy · Vermelho
-Game Boy · Yellow	Game Boy · Amarelo
-Game Boy · Green	Game Boy · Verde
-Game Boy · Blue	Game Boy · Azul
-Game Boy · Black	Game Boy · Preto
-Game Boy · Screen only	Game Boy · Só o ecrã
-Game Boy Pocket · Silver	Game Boy Pocket · Prata
-Game Boy Pocket · Black	Game Boy Pocket · Preto
-Game Boy Pocket · Yellow	Game Boy Pocket · Amarelo
-Game Boy Pocket · Red	Game Boy Pocket · Vermelho
-Game Boy Pocket · Green	Game Boy Pocket · Verde
-Game Boy Pocket · Blue	Game Boy Pocket · Azul
-Game Boy Pocket · Pink	Game Boy Pocket · Rosa
-Game Boy Pocket · Screen only	Game Boy Pocket · Só o ecrã
-Game Boy Color · Berry	Game Boy Color · Framboesa
-Game Boy Color · Grape	Game Boy Color · Uva
-Game Boy Color · Kiwi	Game Boy Color · Kiwi
-Game Boy Color · Dandelion	Game Boy Color · Dente-de-leão
-Game Boy Color · Teal	Game Boy Color · Verde-azulado
-Game Boy Color · Atomic Purple	Game Boy Color · Roxo atómico
-Game Boy Color · Screen only	Game Boy Color · Só o ecrã
-Game Boy Advance · Indigo	Game Boy Advance · Índigo
-Game Boy Advance · Glacier	Game Boy Advance · Glaciar
-Game Boy Advance · Black	Game Boy Advance · Preto
-Game Boy Advance · Platinum	Game Boy Advance · Platina
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalto
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Ónix
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
-Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Prata
-Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Preto
-WonderSwan Color · White	WonderSwan Color · Branco
-WonderSwan Color · Blue	WonderSwan Color · Azul
-PSP · Black	PSP · Preto
-PSP · White	PSP · Branco
-Grey TV	Televisor cinzento
-Wood-grain TV	Televisor em madeira
-PC monitor	Monitor de PC
-Arcade cabinet	Máquina de arcada
-Black bar	Barra preta
-GBA Color	Cores do GBA
-GBA screen	Ecrã do GBA
-GBA screens	Ecrãs do GBA
-The Game Boy Advance LCD's own colour and gamma.	As cores e a gama do ecrã LCD do Game Boy Advance.
-The Game Boy Advance screen: its colour and faint pixel gaps.	O ecrã do Game Boy Advance: as suas cores e as leves divisões entre os píxeis.
-Game info	Info do jogo
-Extra pictures	Imagens extra
-Screenshots	Capturas de ecrã
-Title screens	Ecrãs de título
-Screenshots and title screens	Capturas e ecrãs de título
-Both	Ambas
-Cover	Capa
-Title screen	Ecrã de título
-Screenshot	Captura de ecrã
-Developer	Programadora
-Publisher	Editora
-Genre	Género
-Released	Lançamento
-Rating	Classificação
-Players	Jogadores
-Series	Série
-Online	Online
-Yes	Sim
-Source	Fonte
-Picture	Imagem
-Next picture	Imagem seguinte
-No pictures yet	Ainda sem imagens
-Available	Disponível
-Not downloaded	Não transferido
-Show games	Mostrar jogos
-Reset filters	Repor filtros
-Any	Todos
-{0} active	{0} ativos
-Still reading your library. Try again in a moment.	A biblioteca ainda está a ser lida. Tente de novo daqui a pouco.
-No game has this information yet. Fetch artwork with Game info turned on.	Nenhum jogo tem ainda esta informação. Obtenha as capas com Info do jogo ativada.
-With info	Com info
-Without info	Sem info
-Online play	Jogo online
-1 player	1 jogador
 {0} players	{0} jogadores
-No game information yet.	Ainda sem informações do jogo.
-Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ative Info do jogo em Definições > Biblioteca > Fontes de capas e obtenha as capas.
-Ports	Ports
-Restart port	Reiniciar port
-Quit	Sair
-Looking for the latest PortMaster	A procurar o PortMaster mais recente
-Downloading PortMaster	A transferir o PortMaster
-Checking PortMaster	A verificar o PortMaster
-Unpacking PortMaster	A descompactar o PortMaster
-Setting up PortMaster	A configurar o PortMaster
-Installing PortMaster from the card	A instalar o PortMaster a partir do cartão
-PortMaster is ready	O PortMaster está pronto
-Could not set up PortMaster	Não foi possível configurar o PortMaster
-Get, update and remove ports	Obtenha, atualize e remova ports
-Close PortMaster	Fechar o PortMaster
-Back to PortMaster	Voltar ao PortMaster
-Keep getting and updating ports	Continuar a obter e atualizar ports
-Your ports are waiting in Ports	Os seus ports estão em Ports
-Closing PortMaster…	A fechar o PortMaster…
-Closing the port…	A fechar o port…
-GB screens	Ecrãs do GB
-GBC screens	Ecrãs do GBC
-Game Boy screen	Ecrã do Game Boy
-Game Boy Color screen	Ecrã do Game Boy Color
-The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	O ecrã de matriz de pontos do Game Boy original: uma grelha clara de píxeis e sombras suaves.
-The Game Boy Color screen with faint gaps between its pixels.	O ecrã do Game Boy Color com ligeiros espaços entre os píxeis.
-This handheld's own screen.	O ecrã próprio desta consola portátil.
-Screen colours	Cores do ecrã
-Game Boy Pocket	Game Boy Pocket
-Game Boy Light	Game Boy Light
-Game Boy Color	Game Boy Color
-Black and white	Preto e branco
-Game Boy Color, darker	Game Boy Color, mais escuro
-Full colour	Cores completas
-Hold to save	Mantenha para guardar
-Hold to load	Mantenha para carregar
-Screen off	Ecrã desligado
-Touch the screen to turn it on	Toque no ecrã para o ligar
-min	min
-h	h
-Not saved	Não guardado
-Loaded	Carregado
-Not loaded	Não carregado
-Nothing to load	Nada para carregar
-Saving…	A guardar…
-Loading…	A carregar…
-Info screen	Ecrã de info
-Team	Equipa
-Lv	Nv.
-screens	ecrãs
-Not yet	Ainda não
-None yet	Nenhum ainda
-The best there is	O melhor que há
-Next:	Seguinte:
-Badges	Crachás
-Carried	Contigo
-Coin bank	Banco de moedas
-Coins	Moedas
-Collection	Coleção
-Course	Nível
-Day	Dia
-Ending so far	Final até agora
-Essences	Essências
-Gear	Equipamento
-Golden leaves	Folhas douradas
-Heart containers	Recipientes de coração
-Heart pieces	Pedaços de coração
-Hearts	Corações
-In a course	Num nível
-Instruments	Instrumentos
-Johto badges	Crachás de Johto
-Journey	Viagem
-Kanto badges	Crachás de Kanto
-Keys	Chaves
-Lives	Vidas
-Money	Dinheiro
-Musical coins	Moedas musicais
-Night	Noite
-Pokédex caught	Pokédex: capturados
-Pokédex seen	Pokédex: vistos
-Rupees	Rupias
-Secret seashells	Conchas secretas
-Shield	Escudo
-Small keys	Chaves pequenas
-Sword	Espada
-Time of day	Hora do dia
-Time	Tempo
-Total	Total
-Trainer	Treinador
-Treasures	Tesouros
-Worlds	Mundos
-Your journey	A tua viagem
-Seeds	Sementes
-Game switcher	Mudar de jogo
-Switch to another game	Mude para outro jogo
-Hold to return home	Mantenha para voltar ao início
-Add game files	Adicionar ficheiros do jogo
-Needs your files	Precisa dos seus ficheiros
-Files added	Ficheiros adicionados
-How to get the files	Como obter os ficheiros
-Scan with your phone	Leia com o telemóvel
-Or open on a computer	Ou abra num computador
-Code	Código
-Connect to Wi-Fi to send files from a phone or computer.	Ligue-se ao Wi-Fi para enviar ficheiros de um telemóvel ou computador.
-Receiving files	A receber ficheiros
-Unpacking files	A descompactar ficheiros
-Files arrived. Choose Play to start.	Os ficheiros chegaram. Escolha Jogar para começar.
-This port lists no instructions.	Este port não tem instruções.
-Play	Jogar
-Goes into	Vai para
-Phone or computer connected	Telemóvel ou computador ligado
-Vibration	Vibração
-Menu haptics	Resposta tátil
-Haptic strength	Intensidade tátil
-Game rumble	Vibração nos jogos
-Rumble strength	Intensidade da vibração
-Try a pattern	Experimentar um padrão
-Feel the game	Sinta o jogo
-Feel every move	Sinta cada movimento
-No vibration motor was found on this device.	Não foi encontrado nenhum motor de vibração neste dispositivo.
-Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Jogos com Rumble Pak na DS, cartuchos com vibração na Game Boy e Game Boy Advance.
-Turn on game rumble for games made for a rumble accessory.	Ative a vibração nos jogos para jogos feitos para um acessório de vibração.
-A light tap for every move, a firmer one when you choose, open or save.	Um toque leve a cada movimento e um mais firme ao escolher, abrir ou guardar.
-Turn on menu haptics to feel the menus.	Ative a resposta tátil para sentir os menus.
-Browse	Navegar
-Open a view	Abrir uma vista
-Go back	Voltar
-Switch on	Ativar
-Switch off	Desativar
-Add favourite	Adicionar favorito
-Remove favourite	Remover favorito
-Start a game	Iniciar um jogo
-Save complete	Gravação concluída
-Load complete	Carregamento concluído
-Try again	Tentar novamente
-Keyboard	Teclado
-Adjust	Ajustar
-End of a list	Fim de uma lista
-Long press	Toque longo
-Notification	Notificação
-Touch screen	Ecrã tátil
-Point and click on top	Apontar e clicar em cima
-Touch here to point and click on the top screen.	Toque aqui para apontar e clicar no ecrã de cima.
-Hold still for a right click	Mantenha parado para clique direito
-Hold to exit	Mantenha para sair
-Touch screen off	Ecrã tátil desligado
-Touch screen is not available	O ecrã tátil não está disponível
-Daylight saving	Hora de verão
-Automatic	Automático
-Summer time follows your timezone. Force it on or off if the clock is an hour out.	A hora de verão segue o teu fuso horário. Liga-a ou desliga-a se o relógio estiver uma hora desfasado.
-GBA true colour	Cores reais do GBA
-Faded GBA colours made rich, as the real screen showed them.	As cores desbotadas do GBA ficam vivas, como o ecrã real as mostrava.
-GBA true screen	Ecrã real do GBA
-The true GBA colours on its screen, with the gaps between its pixels.	As cores reais do GBA no seu ecrã, com as divisões entre os píxeis.
+{0} settings	Definições de {0}

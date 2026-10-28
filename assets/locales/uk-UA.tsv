@@ -1,47 +1,95 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 person nearby	Поруч 1 людина
+1 player	1 гравець
+12-hour	12 годин
+2 seconds	2 секунди
+24-hour	24 години
+24-hour or 12-hour clock	24- або 12-годинний формат
+2x sharper	Удвічі чіткіше
 3D rendering automatically uses worker threads.	3D-рендеринг автоматично використовує робочі потоки.
 3D resolution	Роздільність 3D
 3D threading changed for this session. Settings storage is unavailable.	Потоки 3D змінено для цього сеансу. Сховище налаштувань недоступне.
 3D threading changed. No restart needed.	Потоки 3D змінено. Перезапуск не потрібен.
+3x sharper	Утричі чіткіше
+4x (experimental)	4x (експериментально)
+5x (experimental)	5x (експериментально)
 A  Apply	A  Застосувати
 A  Done	A  Готово
+A  Jump	A  Перейти
 A  Play	A  Грати
+A  Search	A  Пошук
+A 24-hour or 12-hour clock.	24- або 12-годинний формат.
+A carousel, or the DSi's column with your last game on top	Карусель або колонка як на DSi з останньою грою вгорі
+A exports this slot to userdata/exports. X deletes it.	A експортує слот у userdata/exports. X видаляє його.
 A gentle scanline pattern with original colours.	М’які лінії розгортки з оригінальними кольорами.
+A light tap for every move, a firmer one when you choose, open or save.	Легкий поштовх за кожного руху, сильніший під час вибору, відкриття чи збереження.
+A little handheld magic	Трохи кишенькової магії
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A завантажує слот. «Скасувати завантаження» в меню Y поверне поточний прогрес.
 A natural colour and contrast treatment.	Природні кольори й контраст.
+A new version is ready to download.	Нова версія готова до завантаження.
+A replaces this slot with your current progress. X deletes it.	A замінює слот поточним прогресом. X видаляє його.
+A saves your current progress here.	A зберігає сюди поточний прогрес.
 A screen style for this cartridge	Стиль екрана для цього картриджа
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Маленький язичок унизу нижнього екрана показує, що жести ввімкнено; він піднімається за пальцем, а кільце позначає місце спрацювання жесту.
+A soft tune plays while you browse. It fades out when a game starts.	Під час перегляду грає тиха мелодія. Вона стихає під час запуску гри.
 A stronger LCD texture and scanline look.	Виразніша текстура РК і лінії розгортки.
 A subtle handheld LCD pixel pattern.	Легкий піксельний візерунок РК-екрана консолі.
 A subtle pixel grid with a bright, readable image.	Легка піксельна сітка та яскраве, чітке зображення.
+About {0} h left	Лишилося близько {0} год
+About {0} min left	Лишилося близько {0} хв
+Accent colour	Колір акценту
+Add favourite	Додати до вибраного
+Add game files	Додати файли гри
 Add your DS games to fetch their artwork.	Додайте ігри DS, щоб завантажити обкладинки.
+Add your games	Додайте ігри
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Додає ігри Game Boy і Game Boy Advance: розділ «Ігри» відкриє сторінку систем.
+Adjust	Налаштування
 Africa	Африка
 After	Після
 All games	Усі ігри
+All systems	Усі системи
+Already connected.	Уже підключено.
 Amber	Бурштин
 Americas	Америка
+An update is already prepared. Install it or discard it first.	Оновлення вже підготовлено. Спершу встановіть або скасуйте його.
 Anbernic startup is unavailable in RGDS OS.	Запуск Anbernic недоступний у RGDS OS.
+Animate pages with the selected style	Анімувати сторінки вибраним стилем
 Animations	Анімації
+Another update is already running.	Уже виконується інше оновлення.
 Antarctica	Антарктида
+Any	Будь-який
 Applies immediately. Higher clocks use more battery.	Застосовується одразу. Вищі частоти витрачають більше заряду.
 Applies immediately. Your game keeps its progress.	Застосовується одразу. Прогрес гри зберігається.
 Apply	Застосувати
+APPLY	ЗАСТОСУВАТИ
 Applying shader…	Застосування фільтра…
+Arcade cabinet	Аркадний автомат
 Arctic	Арктика
+Arrows	Стріли
 Artwork	Обкладинки
 Artwork & ScreenScraper	Обкладинки
 Artwork source	Джерело обкладинок
 Artwork sources	Джерела обкладинок
 Asia	Азія
 Atlantic Ocean	Атлантичний океан
+Audio is not recorded or saved.	Звук не записується й не зберігається.
 Australia	Австралія
 Auto-load state	Автозавантаження стану
 Auto-save on exit	Автозбереження під час виходу
 Automatic	Автоматично
 Automatic (free)	Автоматично
+Automatic updates	Автооновлення
+Available	Доступно
 Available networks	Доступні мережі
 B  Cancel	B  Скасувати
 B  Close	B  Закрити
-BACK HOME	НА ГОЛОВНУ
 Back	Назад
+BACK HOME	НА ГОЛОВНУ
+Back to PortMaster	Повернутися до PortMaster
+Back up all saves	Резервна копія збережень
+Background	Фон
+Backing up your saves…	Резервне копіювання збережень…
+Badges	Значки
 Balance battery life and speed	Баланс автономності й швидкості
 Balanced	Збалансований
 Battery	Батарея
@@ -50,57 +98,116 @@ Battery saver	Економія заряду
 Before	До
 Before you play	Перед грою
 Binding unchanged.	Призначення не змінено.
+Black and white	Чорно-білий
+Black bar	Чорна смуга
+Blow into microphone	Подути в мікрофон
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Подуйте або говоріть у мікрофон. Рівень підніметься й опуститься, коли ви замовкнете.
+Blue	Синій
+Bluetooth	Bluetooth
+Bluetooth devices	Пристрої Bluetooth
+Bluetooth is not available on this handheld.	Bluetooth недоступний на цій консолі.
+Bold colour on a close-up LCD with RGB stripes.	Насичені кольори на великому РК зі смугами RGB.
+Bold colour with smoothed diagonal edges.	Насичені кольори зі згладженими діагоналями.
+Bold colour; every pixel a raised, glossy tile.	Насичені кольори; кожен піксель — опукла глянцева плитка.
+Bold colour; every pixel a round, shiny bead.	Насичені кольори; кожен піксель — кругла блискуча намистина.
+Bombs	Бомби
+Bonus stars	Бонусні зірки
 Boot	Завантаження
 Boot into	Завантажувати в
+Both	Обидва
 Both screens	Обидва екрани
 Bottom display	Нижній екран
 Box art, titles and game details	Обкладинки, назви й відомості про ігри
 Brightness	Яскравість
+Brown	Коричневий
+Browse	Перегляд
+Browse games	Переглянути ігри
+Browse systems	Переглянути системи
 Browser layout	Вигляд списку
 Build, storage and device address	Збірка, пам’ять і адреса пристрою
 Button	Кнопка
 Button layout	Розкладка кнопок
 Button {0}	Кнопка {0}
 Buttons and the game menu shortcut	Кнопки та виклик ігрового меню
-COLOUR MODE	РЕЖИМ КОЛЬОРУ
 Cancel	Скасувати
+Carousel	Карусель
+Carried	З собою
 Cartridges	Картриджі
+Change group	Змінити групу
 Changes immediately. Map a button in Controls for quick access.	Змінюється одразу. Призначте кнопку в «Керуванні» для швидкого доступу.
 Changing 3D threading…	Зміна потоків 3D…
 Changing speed…	Зміна швидкості…
+Chat is unavailable: you can still draw	Чат недоступний: малювати все одно можна
+Chat Room	Кімната чату
+Chat Room {0}	Кімната {0}
+Check automatically	Перевіряти автоматично
+Check for updates	Перевірити оновлення
+Check for updates when you are ready.	Перевірте оновлення, коли будете готові.
+Check for updates, go back to the previous build or clear temporary files.	Перевірити оновлення, повернутися до попередньої збірки або видалити тимчасові файли.
 Check the current connection	Перевірити поточне з’єднання
+Checking for updates…	Перевірка оновлень…
+Checking PortMaster	Перевірка PortMaster
+Checking the new version…	Перевірка нової версії…
 Checkpoint loaded	Збереження завантажено
 Checkpoint loaded (preview)	Збереження завантажено (перегляд)
 Checkpoint loaded.	Збереження завантажено.
 Checkpoint saved	Збереження створено
 Checkpoint saved (preview)	Збереження створено (перегляд)
 Checkpoint saved.	Збереження створено.
-Choose Anbernic or RG DS startup.	Виберіть запуск Anbernic або RG DS.
+Choose a chat room to join	Виберіть кімнату для чату
+Choose a network from the list	Виберіть мережу зі списку
 Choose an option	Виберіть варіант
+Choose Anbernic or RG DS startup.	Виберіть запуск Anbernic або RG DS.
 Choose native or a sharper 3D image	Вихідне або чіткіше 3D-зображення
 Choose the core for this cartridge	Виберіть ядро для цього картриджа
 Choose the display backend for the next DraStic launch. DSperate stays your default.	Виберіть виведення зображення для наступного запуску DraStic. DSperate лишається типовим.
 Choose what opens when you power on	Що відкривається після ввімкнення
+Classic	Класика
+Classic blue	Класичний синій
 Clear	Очистити
+Clear filters	Скинути фільтри
 Clear temporary cache	Очистити тимчасовий кеш
 Clear temporary game files?	Видалити тимчасові файли ігор?
 Close	Закрити
+Close and open DS lid	Закрити й відкрити кришку DS
+Close lid	Закрити кришку
+Close PortMaster	Закрити PortMaster
 Close the handheld to sleep	Закрийте консоль, щоб перейти в сон
+Closing PortMaster…	Закриття PortMaster…
+Closing the port…	Закриття порту…
+Code	Код
+Coin bank	Банк монет
+Coins	Монети
+Collection	Колекція
+COLOUR MODE	РЕЖИМ КОЛЬОРУ
+Colour mode	Режим кольору
 Colour treatment inspired by the original DS display.	Кольори в дусі оригінального екрана DS.
+Column	Колонка
+Companion	Компаньйон
 Compare	Порівняти
 Confirm	Підтвердити
 Connect	Під’єднати
+Connect the charger before installing an update.	Під’єднайте зарядний пристрій перед установленням оновлення.
+Connect to Wi-Fi to send files from a phone or computer.	Підключіться до Wi-Fi, щоб надіслати файли з телефона чи комп'ютера.
 Connected	Під’єднано
 Connected.	Під’єднано.
+Connecting to	Під’єднання до
 Connecting…	Під’єднання…
+Connection lost. Retrying…	З’єднання втрачено. Повтор…
 Connectivity	Зв’язок
 Continue	Продовжити
 Continue where you left off	Продовжити з того ж місця
 Control unavailable on this device	Керування недоступне на цьому пристрої
+Controllers and other Bluetooth devices	Контролери та інші пристрої Bluetooth
 Controls	Керування
 Controls saved for this game.	Керування збережено для цієї гри.
 Cool crisp	Холодний чіткий
 Cool whites with a small contrast boost.	Холодний білий і трохи більше контрасту.
+Copies every save and checkpoint into one zip in userdata/exports.	Копіює всі збереження в один zip у userdata/exports.
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Скопіюйте файли .nds або ZIP DS у Roms/NDS на картці з іграми й виберіть «Знайти ігри».
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Скопіюйте файли .rgdssave.zip у userdata/imports. Імпорт має відповідати грі та емулятору.
+Copy ability	Скопійована сила
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Скопіюйте файли .nds або ZIP-архіви DS у Roms/NDS на картці з іграми. Ігри не входять до комплекту. Збереження зберігаються в userdata.
 Could not apply brightness	Не вдалося застосувати яскравість
 Could not apply saved brightness	Не вдалося застосувати збережену яскравість
 Could not apply saved power mode	Не вдалося застосувати збережений режим живлення
@@ -110,6 +217,7 @@ Could not apply volume	Не вдалося застосувати гучніст
 Could not bring the Wi-Fi adapter up. Try again.	Не вдалося ввімкнути адаптер Wi-Fi. Спробуйте ще раз.
 Could not change 3D threading. Your game is unchanged.	Не вдалося змінити потоки 3D. Гру не змінено.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Не вдалося підтвердити з’єднання Wi-Fi. Виконайте пошук і спробуйте ще раз.
+Could not connect	Не вдалося під’єднатися
 Could not enable lid wake	Не вдалося ввімкнути пробудження кришкою
 Could not load. Resume, retry, or return without saving.	Не вдалося завантажити. Продовжте, повторіть або вийдіть без збереження.
 Could not read this collection. Try again.	Не вдалося прочитати колекцію. Спробуйте ще раз.
@@ -117,6 +225,7 @@ Could not restore previous hardware setting	Не вдалося повернут
 Could not save all settings. Check storage.	Не вдалося зберегти всі налаштування. Перевірте пам’ять.
 Could not save brightness	Не вдалося зберегти яскравість
 Could not save controls. Check writable storage.	Не вдалося зберегти керування. Перевірте доступ до запису.
+Could not save DS settings.	Не вдалося зберегти налаштування DS.
 Could not save game settings. Previous values kept.	Не вдалося зберегти налаштування гри. Попередні значення залишено.
 Could not save matching title.	Не вдалося зберегти зіставлену назву.
 Could not save settings	Не вдалося зберегти налаштування
@@ -124,6 +233,7 @@ Could not save timezone	Не вдалося зберегти часовий по
 Could not save volume	Не вдалося зберегти гучність
 Could not save. Resume, retry, or return without saving.	Не вдалося зберегти. Продовжте, повторіть або вийдіть без збереження.
 Could not send game action	Не вдалося надіслати дію грі
+Could not set up PortMaster	Не вдалося налаштувати PortMaster
 Could not set volume - see log	Не вдалося встановити гучність — див. журнал
 Could not sleep - see log	Не вдалося перейти в сон — див. журнал
 Could not sleep. Reopen the lid and try again.	Не вдалося перейти в сон. Відкрийте кришку й спробуйте ще раз.
@@ -132,41 +242,89 @@ Could not start library scan	Не вдалося почати скануванн
 Could not write controls	Не вдалося записати керування
 Counts display updates, not emulation speed. Changes immediately.	Рахує оновлення екрана, а не швидкість емуляції. Змінюється одразу.
 Counts emulated game frames. Changes immediately.	Рахує емульовані кадри гри. Змінюється одразу.
+Course	Рівень
+Cover	Обкладинка
 Covers	Обкладинки
+Current progress could not be saved. No slot was changed.	Не вдалося зберегти поточний прогрес. Слоти не змінено.
 Custom	Власний
-DEFAULT THEME - CHECK LOG	ТИПОВА ТЕМА — ДИВ. ЖУРНАЛ
-DS rounded	DS заокруглений
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: рекомендовано для щоденної гри. Типово вихідна роздільність.
+DS only	Лише DS
 Dark	Темна
+Dark blue	Темно-синій
+Dark green	Темно-зелений
 Date format	Формат дати
+Day	День
+Day or night	День чи ніч
+Daylight saving	Літній час
+Days	Дні
 Default	Типово
 Default emulator	Типовий емулятор
 Default shader	Типовий фільтр
+DEFAULT THEME - CHECK LOG	ТИПОВА ТЕМА — ДИВ. ЖУРНАЛ
 Delete	Видалити
+Delete slot {0}?	Видалити слот {0}?
 Desktop preview	Перегляд на ПК
+Developer	Розробник
 Development build	Збірка для розробки
 Device address	Адреса пристрою
 Device information	Про пристрій
+Discard update	Скасувати оновлення
 Display	Екран
 Display FPS	FPS екрана
 Done	Готово
 Down	Вниз
+Download	Завантаження
+Download automatically	Завантажувати автоматично
+Download interrupted. Retry to continue.	Завантаження перервано. Повторіть, щоб продовжити.
+Download paused. Retry to continue.	Завантаження призупинено. Повторіть, щоб продовжити.
+Download update	Завантажити оновлення
+Downloading PortMaster	Завантаження PortMaster
+Downloading update…	Завантаження оновлення…
+Downloading {0}	Завантаження {0}
+Downloads resume where they stopped if Wi-Fi drops.	У разі обриву Wi-Fi завантаження продовжиться з того ж місця.
 DraStic backend	Виведення DraStic
 DraStic: an alternative for games that need it. Saves stay separate.	DraStic: альтернатива для ігор, яким він потрібен. Збереження зберігаються окремо.
-ERROR	ПОМИЛКА
-ERROR: Could not restore settings	ПОМИЛКА: не вдалося відновити налаштування
-ERROR: Could not restore settings - see log	ПОМИЛКА: не вдалося відновити налаштування — див. журнал
+Draw and chat	Малювати й спілкуватися
+Draw and chat with nearby handhelds	Малюйте й спілкуйтеся з консолями поруч
+Drawing on your own	Малюєте самі
+DS Classic	DS Classic
+DS controls	Керування DS
+DS controls are unavailable for this engine.	Керування DS недоступне для цього рушія.
+DS language	Мова DS
+DS Lite	DS Lite
+DS rounded	DS заокруглений
+DS screens	Екрани DS
+DSCore 3D resolution	Роздільність 3D у DSCore
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: рекомендовано. Найшвидший, з виправленнями кришки, стилуса й 3D та 3D 2x–5x за бажанням.
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: рекомендовано для щоденної гри. Типово вихідна роздільність.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: оригінальний рушій. DSCore додає виправлення й швидкість.
+Edit	Змінити
+Edit search	Змінити пошук
+Effects volume	Гучність ефектів
+Empty slot	Порожній слот
 Emulator	Емулятор
 Emulator settings	Налаштування емулятора
+End of a list	Кінець списку
+Ending so far	Фінал наразі
+Enemies defeated	Переможено ворогів
+Energy	Енергія
+Energy tanks	Енергобаки
 Engine managed	Керує рушій
+English	Англійська
 Enter here	Введіть тут
 Enter password	Введіть пароль
 Enter your username and password	Введіть ім’я користувача та пароль
+ERROR	ПОМИЛКА
+ERROR: Could not restore settings	ПОМИЛКА: не вдалося відновити налаштування
+ERROR: Could not restore settings - see log	ПОМИЛКА: не вдалося відновити налаштування — див. журнал
+Essences	Есенції
 Europe	Європа
 Every game in this collection has artwork.	Усі ігри в колекції мають обкладинки.
-FPS changed for this session. Settings storage is unavailable.	FPS змінено для цього сеансу. Сховище налаштувань недоступне.
-FPS counter enabled.	Лічильник FPS увімкнено.
-FPS counter hidden.	Лічильник FPS приховано.
+Exit your game before installing an update.	Вийдіть із гри перед установленням оновлення.
+Experience	Досвід
+Export	Експорт
+Export slot	Експорт слота
+Extra pictures	Дод. зображення
+Faded GBA colours made rich, as the real screen showed them.	Бляклі кольори GBA стають насиченими, як на справжньому екрані.
 Fast	Швидкий
 Fast-forward	Прискорення
 Fast-forward button	Кнопка прискорення
@@ -174,164 +332,449 @@ Fast-forward enabled.	Прискорення увімкнено.
 Fast-forward is unavailable for this emulator.	Прискорення недоступне для цього емулятора.
 Fast-forward style	Режим прискорення
 Favourite	Улюблене
+FAVOURITE COLOUR	УЛЮБЛЕНИЙ КОЛІР
+Favourite a game and it waits for you here	Додайте гру до улюблених, і вона чекатиме тут
 Favourites	Улюблене
+Feel every move	Відчуйте кожен рух
+Feel the game	Відчуйте гру
 Fetch artwork	Завантажити обкладинки
 Fetch missing artwork	Завантажити відсутні обкладинки
+Figurines	Фігурки
+File sharing on. Find "RG DS" under Network.	Спільний доступ увімкнено. Знайдіть «RG DS» у розділі «Мережа».
+Files added	Файли додано
+Files arrived. Choose Play to start.	Файли отримано. Виберіть «Грати», щоб почати.
+Filter	Фільтр
+Filtered	З фільтром
 Find and connect to a nearby network	Знайти мережу поруч і під’єднатися
+Find, pair and connect a nearby device	Знайти, створити пару й підключити пристрій поблизу
+Finding games…	Пошук ігор…
+Finishing another task. Press Y again in a moment.	Завершується інше завдання. Натисніть Y трохи згодом.
 Finishing the system request	Завершення системного запиту
 Follow your default button layout	Як у типовій розкладці
 Following your global controls.	Використовується спільне керування.
 Follows your Library default. Each emulator keeps its own saves.	Як у налаштуваннях бібліотеки. Кожен емулятор має власні збереження.
+Follows your library shader.	Як фільтр бібліотеки.
+Forget this device?	Забути цей пристрій?
+FPS changed for this session. Settings storage is unavailable.	FPS змінено для цього сеансу. Сховище налаштувань недоступне.
+FPS counter enabled.	Лічильник FPS увімкнено.
+FPS counter hidden.	Лічильник FPS приховано.
+Fr	Пт
+Frame	Рамка
 Frameskip	Пропуск кадрів
 Free space	Вільно
 Free space while keeping your saves	Звільнити місце, зберігши збереження
-Game FPS	FPS гри
+French	Французька
+Friends	Друзі
+Full colour	Повний колір
+Game Boy	Game Boy
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Кобальт
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Онікс
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Платина
+Game Boy Advance · Black	Game Boy Advance · Чорний
+Game Boy Advance · Glacier	Game Boy Advance · Льодовик
+Game Boy Advance · Indigo	Game Boy Advance · Індиго
+Game Boy Advance · Platinum	Game Boy Advance · Платина
+Game Boy Color	Game Boy Color
+Game Boy Color screen	Екран Game Boy Color
+Game Boy Color · Atomic Purple	Game Boy Color · Атомний фіолетовий
+Game Boy Color · Berry	Game Boy Color · Ягідний
+Game Boy Color · Dandelion	Game Boy Color · Кульбаба
+Game Boy Color · Grape	Game Boy Color · Виноградний
+Game Boy Color · Kiwi	Game Boy Color · Ківі
+Game Boy Color · Screen only	Game Boy Color · Лише екран
+Game Boy Color · Teal	Game Boy Color · Бірюзовий
+Game Boy Color, darker	Game Boy Color, темніше
+Game Boy Light	Game Boy Light
+Game Boy Pocket	Game Boy Pocket
+Game Boy Pocket · Black	Game Boy Pocket · Чорний
+Game Boy Pocket · Blue	Game Boy Pocket · Синій
+Game Boy Pocket · Green	Game Boy Pocket · Зелений
+Game Boy Pocket · Pink	Game Boy Pocket · Рожевий
+Game Boy Pocket · Red	Game Boy Pocket · Червоний
+Game Boy Pocket · Screen only	Game Boy Pocket · Лише екран
+Game Boy Pocket · Silver	Game Boy Pocket · Сріблястий
+Game Boy Pocket · Yellow	Game Boy Pocket · Жовтий
+Game Boy screen	Екран Game Boy
+Game Boy · Black	Game Boy · Чорний
+Game Boy · Blue	Game Boy · Синій
+Game Boy · Green	Game Boy · Зелений
+Game Boy · Red	Game Boy · Червоний
+Game Boy · Screen only	Game Boy · Лише екран
+Game Boy · Yellow	Game Boy · Жовтий
 Game emulator	Емулятор гри
 Game emulator saved.	Емулятор гри збережено.
+Game FPS	FPS гри
+Game info	Про гру
 Game menu	Ігрове меню
 Game options	Параметри гри
 Game options saved	Параметри гри збережено
-GameTDB (free)	GameTDB
+Game rumble	Вібрація в іграх
+Game screen	Ігровий екран
+Game switcher	Зміна гри
 Games	Ігри
+Games played	Зіграно ігор
+GameTDB	GameTDB
+GameTDB (free)	GameTDB
+GB screens	Екрани GB
+GBA Color	Кольори GBA
+GBA screen	Екран GBA
+GBA screens	Екрани GBA
+GBA true colour	Справжні кольори GBA
+GBA true screen	Справжній екран GBA
+GBC screens	Екрани GBC
+Gear	Спорядження
+Genre	Жанр
+German	Німецька
+Get, update and remove ports	Отримання, оновлення й видалення портів
 Give your eyes and hands a break.	Дайте відпочити очам і рукам.
 Global	Спільні
 Global controls saved.	Спільне керування збережено.
+Glossy tiles	Глянцеві плитки
+Go back	Назад
+Goes into	Тека
+Golden leaves	Золоте листя
+Green	Зелений
+Grey	Сірий
+Grey TV	Сірий телевізор
+Grid	Сітка
+h	год
+Haptic strength	Сила відгуку
+Health	Здоров’я
+Heart containers	Посудини сердець
+Heart pieces	Частини сердець
+Hearts	Серця
+High contrast	Високий контраст
 Hold	Утримання
+Hold still for a right click	Утримуйте на місці для правого кліку
+Hold to exit	Утримуйте, щоб вийти
+Hold to load	Утримуйте, щоб завантажити
+Hold to return home	Утримуйте, щоб вийти на головну
+Hold to save	Утримуйте, щоб зберегти
+Home	Головна
+Home layout	Вигляд головного екрана
 Home shortcut	Кнопка «Додому»
+How dates appear at the top of the screen.	Як дати виглядають угорі екрана.
+How dates appear in the status bar	Як дати виглядають у рядку стану
+How to get the files	Як отримати файли
+Icon style	Стиль значків
+Import help	Довідка з імпорту
+Import into this slot	Імпортувати в цей слот
+Import slot	Імпорт слота
+In a course	На рівні
+In a level	На рівні
+In game	У грі
+IN USE	ВИБРАНО
 Indian Ocean	Індійський океан
+Info screen	Екран відомостей
 Inherit	Успадкувати
 Inherited	Успадковано
+Install	Установити
+Install the latest SD installer before this update.	Перед цим оновленням установіть найновіший інсталятор для SD.
+Installed version	Встановлена версія
+Installing PortMaster from the card	Встановлення PortMaster з картки
+Instruments	Інструменти
+Interface animations	Анімації інтерфейсу
+IP address	IP-адреса
+Italian	Італійська
+Items	Предмети
+Japanese	Японська
+Johto badges	Значки Джото
+Join	Увійти
+Journey	Подорож
+Jump	Перейти
 Jump to letter	До літери
+Kanto badges	Значки Канто
 Keep a checkpoint when returning home	Зберігатися під час виходу на головну
+Keep getting and updating ports	Далі отримувати й оновлювати порти
 Keep playing	Грати далі
 Keep this game in Favourites	Тримати гру в улюблених
 Kernel	Ядро ОС
 Key {0}	Клавіша {0}
-LCD + NDS Color	LCD + NDS Color
-LCD + Natural Vision	LCD + Natural Vision
+Keyboard	Клавіатура
+Keys	Ключі
+Kinstone fusions	Злиття кінстоунів
+Language	Мова
+Last played	Останній запуск
+Launch cancelled	Запуск скасовано
 LCD + both colours	LCD + обидва фільтри кольору
+LCD + Natural Vision	LCD + Natural Vision
+LCD + NDS Color	LCD + NDS Color
 LCD pixels with natural colour and contrast.	Пікселі РК із природними кольорами й контрастом.
 LCD pixels with the DS colour treatment.	Пікселі РК із кольорами DS.
 LCD pixels, DS colour and Natural Vision together.	Пікселі РК, кольори DS і Natural Vision разом.
-Language	Мова
-Launch cancelled	Запуск скасовано
+Leave	Вийти
+Leave RG DS Core and go back to the stock menu.	Вийти з RG DS Core і повернутися до стандартного меню.
 Left	Ліворуч
 Left stick	Лівий стік
 Left-handed	Для лівші
 Less than a minute	Менше хвилини
+Less than a minute left	Лишилося менше хвилини
+Level	Рівень
 Library	Бібліотека
 Library scan exceeded its limit	Сканування бібліотеки перевищило ліміт
 Library scan failed	Помилка сканування бібліотеки
+Libretro	Libretro
 Libretro (free)	Libretro
 Light	Світла
+Lime	Лаймовий
 List	Список
+Listening…	Слухаю…
 Live background	Живий фон
+Live input	Вхідний сигнал
+Lives	Життя
 Load	Завантажити
+Load checkpoint	Завантажити прогрес
+Load complete	Завантажено
 Load requested. Resume to check your game.	Завантаження запитано. Продовжте, щоб перевірити гру.
+Load slot {0}?	Завантажити слот {0}?
 Load state	Завантажити стан
+Loaded	Завантажено
 Loading checkpoint…	Завантаження збереження…
+Loading…	Завантаження…
+Long press	Довге натискання
+Looking for devices…	Пошук пристроїв…
+Looking for games…	Пошук ігор…
 Looking for networks…	Пошук мереж…
+Looking for the latest PortMaster	Пошук найновішого PortMaster
+Loud	Гучно
+Lv	Рів.
+Magenta	Маджента
+Magical sword	Чарівний меч
 Magnified detail	Збільшений фрагмент
 Manage builds and temporary files	Збірки й тимчасові файли
+Matches your accent	Як колір акценту
 Matching title	Зіставлена назва
 Matching title saved. Choose Fetch artwork.	Назву збережено. Виберіть «Завантажити обкладинки».
+Menu audio is unavailable on this device.	Звук меню недоступний на цьому пристрої.
+Menu effects	Ефекти меню
+Menu haptics	Відгук у меню
 Menu idle sleep	Сон меню під час бездіяльності
+Menu music	Музика меню
+Menu sounds are unavailable.	Звуки меню недоступні.
+Microphone unavailable	Мікрофон недоступний
+Microphone, simulated blowing, lid and DS language.	Мікрофон, імітація подуву, кришка й мова DS.
+min	хв
+Minutes	Хвилини
+Mirror shards	Уламки дзеркала
+Missile room	Запас ракет
+Missiles	Ракети
+Missing artwork	Без обкладинки
+Mo	Пн
+Money	Гроші
+Moods	Настрої
+More	Ще
+Most played	Найчастіше
+Music volume	Гучність музики
+Musical coins	Музичні монети
 Mute	Без звуку
 Muted	Звук вимкнено
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: варіант для сумісності. Для швидкості спершу спробуйте DSperate.
 Native	Вихідна
+Native (fastest)	Вихідна (найшвидше)
 Native is faster; 2x uses more GPU time. Save & restart applies it.	Вихідна швидша; 2x більше навантажує GPU. Застосовується через «Зберегти й перезапустити».
 Native output	Вихідне виведення
+Natural	Природні
+Natural colour with smoothed diagonal edges.	Природні кольори зі згладженими діагоналями.
+Natural colour with soft pixels that glow together.	Природні кольори й м’які пікселі, що світяться разом.
+Natural glow	Природне світіння
+Natural smooth	Природний згладжений
 Natural Vision	Natural Vision
+Needs your files	Потрібні ваші файли
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Чорний
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Сріблястий
+Network file sharing	Спільний доступ до файлів у мережі
 Networking is disabled. Turn Wi-Fi on to enable it.	Мережу вимкнено. Увімкніть Wi-Fi.
 Never	Ніколи
+New messages below	Нові повідомлення нижче
+Next	Далі
 Next emulator	Наступний емулятор
-No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Немає адаптера Wi-Fi. Увімкніть Wi-Fi для ініціалізації.
+Next picture	Наступне зображення
+Next:	Далі:
+Night	Ніч
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: варіант для сумісності. Для швидкості спершу спробуйте DSperate.
 No button detected. Try again when you're ready.	Кнопку не виявлено. Спробуйте ще раз, коли будете готові.
 No checkpoint saved for this emulator yet.	Для цього емулятора ще немає збережень.
 No cover yet	Обкладинки ще немає
+No devices found. Put the device in pairing mode and scan.	Пристроїв не знайдено. Переведіть пристрій у режим створення пари й повторіть пошук.
 No favourites yet	Улюбленого ще немає
+No game has this information yet. Fetch artwork with Game info turned on.	Жодна гра поки не має цих відомостей. Завантажте обкладинки з увімкненою функцією «Про гру».
+No game information yet.	Відомостей про гру поки немає.
 No games	Немає ігор
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Ігор не знайдено. Скопіюйте файли .nds або ZIP DS у Roms/NDS на картці з іграми й повторіть пошук.
 No games in this collection.	У цій колекції немає ігор.
+No letters to jump to. Search for another game.	Немає літер для переходу. Знайдіть іншу гру.
+No matches. Use View to change filters.	Нічого не знайдено. Змініть фільтри у «Вигляді».
+No matching games	Немає відповідних ігор
 No networks found	Мереж не знайдено
+No pictures yet	Зображень поки немає
 No previous build available.	Попередньої збірки немає.
 No recent games yet	Нещодавніх ігор ще немає
+No release notes yet.	Приміток до випуску ще немає.
+No vibration motor was found on this device.	На цьому пристрої не знайдено вібромотора.
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Немає адаптера Wi-Fi. Увімкніть Wi-Fi для ініціалізації.
+No Wi-Fi: you can still draw	Немає Wi-Fi: малювати все одно можна
+Nobody else here yet	Тут поки більше нікого
+Nobody else is nearby yet	Поруч поки нікого немає
+Nobody here yet	Тут поки нікого
+None yet	Ще жодного
 Normal	Звичайний
 Normal speed.	Звичайна швидкість.
 Not available	Недоступно
 Not connected	Не під’єднано
+Not downloaded	Не завантажено
+Not loaded	Не завантажено
 Not played yet	Ще не запускалася
-OPEN	ВІДКРИТИ
+Not saved	Не збережено
+Not yet	Ще ні
+Nothing played yet	Поки нічого не запускалося
+Nothing to load	Нічого завантажувати
+Nothing to load here yet.	Тут поки нічого завантажувати.
+Notification	Сповіщення
 Off	Вимк.
 Off (smooth)	Вимк. (плавно)
 Off gives smooth motion. Skipping frames can help speed. Restart to apply.	«Вимк.» дає плавний рух. Пропуск кадрів пришвидшує гру. Потрібен перезапуск.
 Off keeps the original picture.	«Вимк.» залишає оригінальне зображення.
+Older messages	Старіші повідомлення
 On	Увімк.
+Online	Онлайн
+Online play	Онлайн-гра
+OPEN	ВІДКРИТИ
 Open	Відкрити
+Open a view	Відкрити вигляд
+Open lid	Відкрити кришку
 Open menu	Відкрити меню
+Open on this Wi-Fi	Відкрито в цій мережі Wi-Fi
 Open the Anbernic menu	Відкрити меню Anbernic
 Options	Параметри
+Or open on a computer	Або відкрийте на комп'ютері
+Orange	Помаранчевий
+Original	Оригінальний
 Original pixels	Оригінальні пікселі
 Original pixels and colours.	Оригінальні пікселі й кольори.
 Pacific	Тихий океан
-PLAY	ГРАТИ
+Paired	Пару створено
+Party	Загін
 Password	Пароль
+Password protected	Захищено паролем
+Pause download	Призупинити завантаження
 Pause when you need to.	Робіть паузи, коли потрібно.
 Paused	Пауза
+Paused at {0}	Пауза на {0}
+PC monitor	Монітор ПК
 Performance	Продуктивність
+Phone battery	Батарея телефона
+Phone or computer connected	Телефон або комп'ютер підключено
+Picture	Зображення
+Pink	Рожевий
+Pixel art	Піксель-арт
+Pixel beads	Піксельні намистини
 Pixel classic	Піксельний класичний
+Plain	Простий
+Plain, or the DSi's ruled grid behind every screen	Простий фон або сітка в стилі DSi на кожному екрані
+PLAY	ГРАТИ
+Play	Грати
+Play a game to start your statistics.	Зіграйте в гру, щоб почати статистику.
 Play at a comfortable volume.	Грайте з комфортною гучністю.
+Played	Запускалися
+Players	Гравці
+Playful sounds for browsing, choosing and starting games.	Веселі звуки під час перегляду, вибору й запуску ігор.
 Please keep your handheld on	Не вимикайте консоль
 Pocket green	Зелений кишеньковий
+Point and click on top	Наводити й натискати вгорі
+Pokédex caught	Покедекс: спіймано
+Pokédex seen	Покедекс: бачено
+PortMaster is ready	PortMaster готовий
+Ports	Порти
 Power	Живлення
+Power bombs	Потужні бомби
 Power mode	Режим живлення
 Power off	Вимкнути
 Power off your handheld?	Вимкнути консоль?
 Power profile	Профіль живлення
 Powering off…	Вимкнення…
+Prepare	Підготовка
 Preparing controls…	Підготовка керування…
 Preparing the launcher	Підготовка лаунчера
 Preparing the library…	Підготовка бібліотеки…
+Preparing update…	Підготовка оновлення…
 Preparing your cartridges…	Підготовка картриджів…
 Preparing your library…	Підготовка вашої бібліотеки…
+Preparing your statistics…	Підготовка статистики…
+Preparing…	Підготовка…
 Press a button for {0}	Натисніть кнопку для {0}
 Press a button…	Натисніть кнопку…
 Preview	Перегляд
-Preview Wi-Fi	Перегляд Wi-Fi
+PREVIEW	ПЕРЕГЛЯД
 Preview and choose your screen style	Перегляньте й виберіть стиль екрана
 Preview game	Перегляд гри
+Preview sound	Прослухати звук
 Preview unavailable	Перегляд недоступний
+Preview Wi-Fi	Перегляд Wi-Fi
+Previous	Назад
 Previous build selected. Return to stock, then open RGDS again.	Вибрано попередню збірку. Поверніться до штатного меню й знову відкрийте RGDS.
 Profile	Профіль
+PSP · Black	PSP · Чорний
+PSP · White	PSP · Білий
+Publisher	Видавець
+Purple	Пурпуровий
+Push	Зсув
+Quick search	Швидкий пошук
+Quiet	Тихо
+Quit	Вийти
+Race	Перегони
+Rating	Вікова категорія
+Reading Roms/NDS on your games card. This takes a moment.	Читання Roms/NDS на картці з іграми. Це займе трохи часу.
 READY	ГОТОВО
-REVIEW YOUR CHOICE	ПЕРЕВІРТЕ ВИБІР
-RGDS build	Збірка RGDS
-ROUNDED FONT UNAVAILABLE	ЗАОКРУГЛЕНИЙ ШРИФТ НЕДОСТУПНИЙ
+Ready to fetch artwork.	Готово до завантаження обкладинок.
+Ready to restart. Your previous version is kept for recovery.	Готово до перезапуску. Попередню версію збережено для відновлення.
+Real microphone	Справжній мікрофон
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Справжній мікрофон типово ввімкнено. Подув і кришка повертають до гри на дві секунди. Зміна мови застосовується після перезапуску.
+Receiving files	Отримання файлів
 Recents	Нещодавні
+Red	Червоний
 Reduce rendering work when needed	Зменшувати навантаження рендерингу за потреби
 Refresh	Оновити
 Refresh connection	Оновити з’єднання
 Release for options	Відпустіть для параметрів
+Release notes	Примітки до випуску
+Released	Випущена
 Remap	Перепризначити
+Remove favourite	Прибрати з вибраного
+Replace	Замінити
+Replace slot {0}?	Замінити слот {0}?
 Request cancelled.	Запит скасовано.
 Request failed. Check the connection or device log and try again.	Помилка запиту. Перевірте з’єднання або журнал пристрою й спробуйте ще раз.
+Reserve	Резерв
 Reset	Скинути
+Reset filters	Скинути фільтри
+Reset state	Скинути стан
 Rest after a period of inactivity	Відпочивати після бездіяльності
 Restart	Перезапуск
+Restart & install	Перезапустити й установити
+Restart and install the update?	Перезапустити й установити оновлення?
+Restart from the title screen. In-game saves and save slots are kept.	Перезапуск із титульного екрана. Ігрові збереження й слоти залишаться.
 Restart menu	Перезапустити меню
-Restart the RGDS menu?	Перезапустити меню RGDS?
+Restart port	Перезапустити порт
+Restart RG DS Core before installing the update.	Перезапустіть RG DS Core перед установленням оновлення.
 Restart the device?	Перезавантажити пристрій?
+Restart the game to apply DS settings.	Перезапустіть гру, щоб застосувати налаштування DS.
+Restart the RGDS menu.	Перезапустити меню RGDS.
+Restart the RGDS menu?	Перезапустити меню RGDS?
 Restart uses {0}. Saves and checkpoints stay separate per emulator.	Після перезапуску: {0}. Збереження кожного емулятора зберігаються окремо.
+Restart without loading a state?	Перезапустити без завантаження стану?
+Restarting into the update…	Перезапуск в оновлення…
 Restarting…	Перезапуск…
 Restore defaults	Скинути налаштування
 Restore the last installed RGDS build	Повернути останню встановлену збірку RGDS
 Restoring settings	Відновлення налаштувань
 Restoring settings…	Відновлення налаштувань…
 Resume	Продовжити
+Resume after power off	Продовжувати після вимкнення
+Resume download	Продовжити завантаження
 Resume game	Продовжити гру
 Return	Повернутися
 Return home	На головну
 Return home before changing startup.	Перед зміною запуску поверніться на головну.
+Return home before testing the physical microphone.	Поверніться на головну перед перевіркою мікрофона.
 Return home from your game first.	Спершу вийдіть із гри на головну.
 Return to game	Повернутися до гри
 Return to stock	Повернутися до штатного меню
@@ -340,16 +783,30 @@ Return to the stock menu?	Повернутися до штатного меню?
 Return without saving	Вийти без збереження
 Returning home…	Повернення на головну…
 Review unmatched	Переглянути незіставлені
+REVIEW YOUR CHOICE	ПЕРЕВІРТЕ ВИБІР
+RGDS build	Збірка RGDS
+Rich	Детальні
 Right	Праворуч
 Right stick	Правий стік
 Rollback simulated.	Відкат змодельовано.
-START	START
+Round	Раунд
+ROUNDED FONT UNAVAILABLE	ЗАОКРУГЛЕНИЙ ШРИФТ НЕДОСТУПНИЙ
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Ігри з Rumble Pak на DS, картриджі з вібрацією на Game Boy і Game Boy Advance.
+Rumble strength	Сила вібрації
+Rupees	Рупії
+Sa	Сб
 Save	Зберегти
 Save & restart	Зберегти й перезапустити
 Save & restart applies Threaded 3D.	«Зберегти й перезапустити» застосує багатопотокове 3D.
 Save & restart keeps your checkpoint and applies pending settings.	«Зберегти й перезапустити» збереже прогрес і застосує зміни.
 Save a report for troubleshooting	Зберегти звіт для діагностики
+Save backup created in userdata/exports.	Резервну копію збережень створено в userdata/exports.
+Save checkpoint	Зберегти прогрес
+Save complete	Збережено
 Save device report	Зберегти звіт пристрою
+Save gallery	Галерея збережень
+Save here	Зберегти сюди
+Save library updated.	Бібліотеку збережень оновлено.
 Save state	Зберегти стан
 Save your checkpoint and restart	Зберегтися й перезапустити
 Saved	Збережено
@@ -366,16 +823,42 @@ Saving before returning home…	Збереження перед виходом �
 Saving checkpoint before restarting…	Збереження прогресу перед перезапуском…
 Saving checkpoint…	Збереження прогресу…
 Saving your progress…	Збереження вашого прогресу…
+Saving…	Збереження…
 Scan	Пошук
+Scan complete	Пошук завершено
+Scan for games	Знайти ігри
+Scan with your phone	Відскануйте телефоном
+Scanning…	Пошук…
 Scene	Сцена
+Score	Очки
 Screen brightness	Яскравість екрана
+Screen colours	Кольори екрана
+Screen off	Екран вимкнено
 Screen order	Порядок екранів
+screens	екранів
 ScreenScraper needs project credentials and your account	Для ScreenScraper потрібні дані проєкту та ваш обліковий запис
+Screenshot	Знімок екрана
+Screenshots	Знімки екрана
+Screenshots and title screens	Знімки екрана й титульні екрани
+Sea green	Морський зелений
+Search	Пошук
+Search games	Пошук ігор
+Search in	Шукати в
+Searching…	Пошук…
+Second screen	Другий екран
+Seconds	Секунди
+Secret seashells	Таємні мушлі
+Seeds	Насіння
 Select	Вибрати
 Select a network again and enter its password.	Знову виберіть мережу та введіть пароль.
 Select a network again.	Знову виберіть мережу.
 Selected	Вибрано
+Selected row	Вибраний рядок
+Send	Надіслати
+Series	Серія
+Set the clock to where you are.	Налаштуйте годинник за місцем, де ви є.
 Sets Standard DraStic screen order for this game. Save & restart applies it.	Порядок екранів стандартного DraStic для цієї гри. Застосовується через «Зберегти й перезапустити».
+Setting up PortMaster	Налаштування PortMaster
 Settings	Налаштування
 Settings saved	Налаштування збережено
 Shader	Фільтр
@@ -386,21 +869,27 @@ Shader saved for next launch	Фільтр збережено для наступ
 Shader saved. Restart this game to apply it.	Фільтр збережено. Перезапустіть гру, щоб застосувати його.
 Shader studio	Студія фільтрів
 Shaders	Фільтри
-Sharp + NDS Color	Чіткий + NDS Color
-Sharp + Natural Vision	Чіткий + Natural Vision
 Sharp + both colours	Чіткий + обидва фільтри кольору
+Sharp + Natural Vision	Чіткий + Natural Vision
+Sharp + NDS Color	Чіткий + NDS Color
 Sharp bilinear	Чіткий білінійний
+Sharp fill	Чітке заповнення
 Sharp pixel edges with smoother scaling.	Чіткі краї пікселів і плавне масштабування.
 Sharp scaling with natural colour and contrast.	Чітке масштабування з природними кольорами й контрастом.
 Sharp scaling with the DS colour treatment.	Чітке масштабування з кольорами DS.
 Sharp scaling, DS colour and Natural Vision together.	Чітке масштабування, кольори DS і Natural Vision разом.
+Shield	Щит
 Shift	Shift
 Shortcut action	Дія кнопки
+Shots	Постріли
+Show games	Показати ігри
 Show the charge in the status bar	Показувати заряд у рядку стану
 Show the welcome screen at startup	Показувати привітання під час запуску
 Sign in	Увійти
 Sign out	Вийти
+Signal	Сигнал
 Signing in…	Вхід…
+Simple pixel	Прості піксельні
 Simulated handheld	Симульована консоль
 Sleep	Сон
 Sleep now	Заснути зараз
@@ -409,23 +898,45 @@ Sleep simulated - press any control	Сон змодельовано — нати
 Sleep simulated - settings retained	Сон змодельовано — налаштування збережено
 Sleep unavailable on this device	Сон недоступний на цьому пристрої
 Sleeping - use Power to wake	Сон — натисніть живлення, щоб пробудити
-Soft LCD grid	М’яка сітка РК
+Slide into pages; slide back to return	Сторінки в’їжджають і від’їжджають назад
+Slot	Слот
+Slot change undone.	Зміну слота скасовано.
+Slot exported to userdata/exports.	Слот експортовано в userdata/exports.
+Slot {0} deleted.	Слот {0} видалено.
+Small keys	Малі ключі
+Small touches, scrolling and startup motion	Дрібні ефекти, прокручування й анімація запуску
+Smooth fill	Плавне заповнення
 Soft green monochrome with full-resolution detail.	М’який зелений монохром із повною деталізацією.
+Soft LCD grid	М’яка сітка РК
 Soft scanlines	М’які лінії розгортки
+Some menu sounds are unavailable.	Деякі звуки меню недоступні.
 Sound	Звук
+Sounds & music	Звуки й музика
+Source	Джерело
 Space	Пробіл
+Spanish	Іспанська
+Spring	Пружина
+Springy menu changes with a colourful wobble	Пружна зміна меню з кольоровим похитуванням
+Stable	Стабільний
 Standard	Стандартний
 Standard DraStic only. Applies on the next launch; game saves are kept.	Лише стандартний DraStic. Застосується під час наступного запуску; збереження залишаться.
 Standard screen order	Стандартний порядок екранів
+START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
+Start a game	Запустити гру
 Start RG DS automatically on future boots?	Запускати RG DS автоматично під час наступних завантажень?
+Start Send   X Undo   L R Scroll	Start Надіслати   X Скасувати   L R Гортати
 Start with a familiar layout	Почніть зі знайомої розкладки
 Start, then Anbernic	Start, потім Anbernic
+Starting…	Запуск…
 Startup	Запуск
 Startup choice saved.	Вибір запуску збережено.
 Startup choice simulated.	Вибір запуску змодельовано.
 Startup is managed by RGDS OS.	Запуском керує RGDS OS.
+Statistics	Статистика
+Step {0} of 4	Крок {0} з 4
+Still reading your library. Try again in a moment.	Бібліотека ще читається. Спробуйте за хвилину.
 Stock	Штатне
 Stock firmware	Штатна прошивка
 Stop fetching	Зупинити завантаження
@@ -435,76 +946,196 @@ Stop scraping before changing source	Зупиніть збирання пере�
 Stopping after this request	Зупинка після цього запиту
 Stopping after this request.	Зупинка після цього запиту.
 Storage read-only - use internal RGDS	Пам’ять лише для читання — використовуйте вбудований RGDS
+Su	Нд
+Subtle	Стримані
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Літній час визначається часовим поясом. Увімкніть або вимкніть його, якщо годинник відстає чи поспішає на годину.
+Super missiles	Суперракети
 SuperDrastic (experimental)	SuperDrastic (експериментально)
 SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic поки використовує вихідне виведення. Ваш стандартний фільтр збережено.
 SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic має власне меню паузи й виведення зображення. Експериментально; перевірку на RG DS ще не завершено.
+Swap screens	Поміняти екрани
 Swapped	Переставлені
+Swipe in from the left edge to go Back.	Свайп від лівого краю — назад.
+Swipe up from the bottom edge to go Home from anywhere.	Свайп угору від нижнього краю відкриє головну звідусіль.
+Swipe up from the bottom for Home, in from the left for Back	Свайп знизу вгору — головна, зліва — назад
+Switch off	Вимкнути
+Switch on	Увімкнути
+Switch to another game	Перейти до іншої гри
+Switches and values	Перемикачі й значення
+Sword	Меч
 System	Система
-THEME ERROR - RETAINED CURRENT	ПОМИЛКА ТЕМИ — ЗАЛИШЕНО ПОТОЧНУ
-THEME RELOADED	ТЕМУ ПЕРЕЗАВАНТАЖЕНО
-Turn the handheld off and on again	Вимкнути та знову ввімкнути пристрій
-TYPEFACE	ШРИФТ
+System update	Оновлення системи
+Systems	Системи
+Tap to type, or use the D-pad and A	Торкніться, щоб друкувати, або використовуйте хрестовину й A
+Team	Команда
 Temporary game cache cleared. Saves and artwork are kept.	Тимчасовий кеш ігор очищено. Збереження й обкладинки залишилися.
+Test	Перевірити
+Test microphone	Перевірити мікрофон
+Test the microphone on your handheld.	Перевірте мікрофон консолі.
+Testing	Тестовий
+Th	Чт
+That message could not be sent	Не вдалося надіслати повідомлення
+That room is full	Ця кімната заповнена
+The backup did not finish. Please try again.	Резервне копіювання не завершилося. Спробуйте ще раз.
+The best there is	Краще не буває
+The brighter DS Lite screen with a faint pixel grid.	Яскравіший екран DS Lite з ледь помітною сіткою.
 The checkpoint did not finish saving.	Збереження не завершилося.
 The emulator did not finish. Resume, retry, or return without saving.	Емулятор не завершив роботу. Продовжте, повторіть або вийдіть без збереження.
+The first DS screen: muted colour and a fine pixel grid.	Екран першої DS: приглушені кольори й тонка піксельна сітка.
+The Game Boy Advance LCD's own colour and gamma.	Власні кольори й гамма РК-екрана Game Boy Advance.
+The Game Boy Advance screen: its colour and faint pixel gaps.	Екран Game Boy Advance: його кольори й ледь помітні проміжки між пікселями.
+The Game Boy Color screen with faint gaps between its pixels.	Екран Game Boy Color зі слабкими проміжками між пікселями.
 The game menu did not respond. Resume or return without saving.	Ігрове меню не відповідає. Продовжте або вийдіть без збереження.
+The language for menus and messages.	Мова меню та повідомлень.
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Точково-матричний екран першого Game Boy: світла сітка пікселів і м'які тіні.
+The pad is full: send it or clear it	Аркуш заповнено: надішліть або очистьте його
+The true GBA colours on its screen, with the gaps between its pixels.	Справжні кольори GBA на його екрані, з проміжками між пікселями.
+The update could not be downloaded. Check for updates again.	Не вдалося завантажити оновлення. Перевірте оновлення знову.
+The update could not start. Your previous version was restored.	Оновлення не запустилося. Попередню версію відновлено.
 The zFast LCD texture with both colour treatments.	Текстура РК zFast з обома фільтрами кольору.
 The zFast LCD texture with natural colour and contrast.	Текстура РК zFast із природними кольорами й контрастом.
 The zFast LCD texture with the DS colour treatment.	Текстура РК zFast із кольорами DS.
 Theme	Тема
 Theme & display	Тема й екран
+THEME ERROR - RETAINED CURRENT	ПОМИЛКА ТЕМИ — ЗАЛИШЕНО ПОТОЧНУ
+THEME RELOADED	ТЕМУ ПЕРЕЗАВАНТАЖЕНО
+There is not enough free space for this update.	Недостатньо місця для цього оновлення.
+This can take a few seconds	Це може тривати кілька секунд
 This emulator does not expose a frameskip setting.	Цей емулятор не має налаштування пропуску кадрів.
 This emulator uses native resolution. No resolution switch is available.	Цей емулятор використовує вихідну роздільність. Зміна роздільності недоступна.
 This engine does not expose a threading switch.	Цей рушій не має перемикача потоків.
 This engine has no live threading control.	У цьому рушії не можна змінювати потоки на льоту.
 This game	Ця гра
+This handheld's own screen.	Рідний екран цієї портативної консолі.
 This network requires an enterprise profile.	Цій мережі потрібен корпоративний профіль.
+This port lists no instructions.	Цей порт не має інструкцій.
 This request did not finish. Please try again.	Запит не завершився. Спробуйте ще раз.
 This shader is unavailable for the current emulator.	Цей фільтр недоступний для поточного емулятора.
+This stock firmware has not been validated for updates.	Цю штатну прошивку не перевірено для оновлень.
+This version failed to start. Waiting for a newer update.	Ця версія не запустилася. Очікується новіше оновлення.
 Threaded 3D	Багатопотокове 3D
+Time	Час
+Time format	Формат часу
+Time of day	Час доби
 Time played	Час у грі
+Times played	Запусків
 Timezone	Часовий пояс
+Title screen	Титульний екран
+Title screens	Титульні екрани
 Toggle	Перемикання
+Too much on the pad: erase some of it	На аркуші забагато: зітріть частину
+Tools	Інструменти
 Top display	Верхній екран
+Total	Усього
 Touch	Дотик
+Touch gestures	Жести дотиком
+Touch here to point and click on the top screen.	Торкайтеся тут, щоб наводити й натискати на верхньому екрані.
 Touch indicator	Індикатор дотику
+Touch screen	Сенсорний екран
+Touch screen is not available	Сенсорний екран недоступний
+Touch screen off	Сенсорний екран вимкнено
+Touch the screen to turn it on	Торкніться екрана, щоб увімкнути його
 Touch to continue	Торкніться, щоб продовжити
 Touch {0}	Дотик {0}
+Trainer	Тренер
+Transition style	Стиль переходів
+Transitions	Переходи
+Treasures	Скарби
+Try a pattern	Спробувати шаблон
+Try a shorter title or clear your filter.	Спробуйте коротшу назву або скиньте фільтр.
+Try again	Повторити
+Try another title or clear your filters	Спробуйте іншу назву або скиньте фільтри
 Try saving again	Зберегти ще раз
+Tu	Вт
+Turn Bluetooth off?	Вимкнути Bluetooth?
+Turn Bluetooth on to find devices.	Увімкніть Bluetooth, щоб знайти пристрої.
+Turn it on to find networks	Увімкніть його для пошуку мереж
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Увімкніть «Про гру» в Налаштування > Бібліотека > Джерела обкладинок і завантажте обкладинки.
+Turn on game rumble for games made for a rumble accessory.	Увімкніть вібрацію в іграх для ігор, розрахованих на аксесуар із вібрацією.
+Turn on menu haptics to feel the menus.	Увімкніть відгук у меню, щоб відчувати меню.
+Turn on menu music for a soft tune while you browse.	Увімкніть музику меню, щоб чути тиху мелодію.
+Turn on menu sounds to hear the previews.	Увімкніть звуки меню, щоб прослухати їх.
+Turn the handheld off and on again	Вимкнути та знову ввімкнути пристрій
 Turn Wi-Fi off?	Вимкнути Wi-Fi?
 Turn Wi-Fi on first.	Спершу ввімкніть Wi-Fi.
 Turn Wi-Fi on to find networks.	Увімкніть Wi-Fi для пошуку мереж.
+Turning Bluetooth off…	Вимкнення Bluetooth…
+Turning Bluetooth on…	Увімкнення Bluetooth…
 Turning Wi-Fi off…	Вимкнення Wi-Fi…
 Turning Wi-Fi on…	Увімкнення Wi-Fi…
+Turquoise	Бірюзовий
+Type	Ввід
+Type a game title…	Введіть назву гри…
+Type your name	Введіть ім’я
+TYPEFACE	ШРИФТ
 Typeface	Шрифт
 Unassigned	Не призначено
 Unavailable	Недоступно
+Undo last load	Скасувати завантаження
+Undo last slot change	Скасувати зміну слота
 Unmatched artwork	Незіставлені обкладинки
 Unmute	Увімкнути звук
+Unpacking files	Розпакування файлів
+Unpacking PortMaster	Розпакування PortMaster
+Unplayed	Не запускалися
+Up	Вгору
+Update	Оновити
+Update available in Maintenance	Оновлення доступне в «Обслуговуванні»
+Update discarded. Your installed version is unchanged.	Оновлення скасовано. Встановлена версія не змінилася.
+Update failed. Check Wi-Fi and try again.	Помилка оновлення. Перевірте Wi-Fi і спробуйте ще раз.
+Update information has expired or the device clock is incorrect.	Дані про оновлення застаріли або годинник пристрою неправильний.
+Update installed.	Оновлення встановлено.
+Update now	Оновити зараз
+Update verification failed. Check for updates again.	Перевірку оновлення не пройдено. Перевірте оновлення знову.
+Updates	Оновлення
 Updates & recovery	Оновлення й відновлення
-Use ROM identity	Дані з ROM
+Updates will be available when the release channel opens.	Оновлення з’являться, коли відкриється канал випусків.
 Use an additional rendering thread	Додатковий потік рендерингу
 Use default ({0})	Типово ({0})
 Use global controls	Спільне керування
 Use previous build	Попередня збірка
+Use ROM identity	Дані з ROM
+Use the engine's native controls for microphone and DS settings.	Мікрофон і налаштування DS — через власне керування рушія.
 Use the previous RGDS build?	Використати попередню збірку RGDS?
 Used by games without an override	Для ігор без власних налаштувань
 Username	Ім’я користувача
+Verify	Перевірка
+Verifying update…	Перевірка оновлення…
+Version {0} is ready	Версія {0} готова
+Version {0} is ready to install	Версія {0} готова до встановлення
+Versions, free space and the network address of your handheld.	Версії, вільне місце та мережева адреса консолі.
+Vibration	Вібрація
 View	Вигляд
+View transitions	Переходи між екранами
+Violet	Фіолетовий
+Vivid	Яскраві
+Vivid LCD	Яскравий РК
+Vivid smooth	Яскравий згладжений
 Volume	Гучність
 Volume control unavailable	Регулювання гучності недоступне
+Waiting for an address…	Очікування адреси…
 WAITING FOR INPUT	ОЧІКУВАННЯ ВВЕДЕННЯ
 Warm monochrome with preserved highlight detail.	Теплий монохром зі збереженням деталей у світлах.
 Warm paper	Теплий папір
 Warm whites and softened contrast for evening play.	Теплий білий і м’який контраст для вечірньої гри.
+We	Ср
 Welcome back	З поверненням
+What happens when you turn the handheld on.	Що відбувається під час увімкнення консолі.
 What the shortcut opens	Що відкриває кнопка
+What's new	Що нового
+Where covers and titles come from.	Звідки беруться обкладинки й назви.
+Where games go on the card, and a fresh scan.	Куди класти ігри на картці та новий пошук.
 Where this layout applies	Де діє розкладка
+Where to put games	Куди класти ігри
+White sword	Білий меч
+Whole pixels	Цілі пікселі
 Wi-Fi	Wi-Fi
 Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Адаптер Wi-Fi не готовий. Перевірте драйвер ОС або перезапустіть консоль.
 Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Адаптер Wi-Fi не готовий. Увімкніть Wi-Fi, щоб повторити.
+Wi-Fi connected	Wi-Fi під’єднано
 Wi-Fi did not turn on. Try again.	Wi-Fi не ввімкнувся. Спробуйте ще раз.
 Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi заблоковано обладнанням. Перезапустіть консоль і спробуйте ще раз.
+Wi-Fi is off	Wi-Fi вимкнено
 Wi-Fi is still on. Try turning it off again.	Wi-Fi досі ввімкнено. Спробуйте вимкнути ще раз.
 Wi-Fi is unavailable.	Wi-Fi недоступний.
 Wi-Fi off.	Wi-Fi вимкнено.
@@ -512,630 +1143,53 @@ Wi-Fi on.	Wi-Fi увімкнено.
 Wi-Fi request failed. Check the password and signal, then try again.	Помилка запиту Wi-Fi. Перевірте пароль і сигнал, потім спробуйте ще раз.
 Wi-Fi request timed out. Check signal and try again.	Час запиту Wi-Fi минув. Перевірте сигнал і спробуйте ще раз.
 Wi-Fi service is unavailable.	Служба Wi-Fi недоступна.
+With info	Зі відомостями
 With shader	З фільтром
+Without info	Без відомостей
+WonderSwan Color · Blue	WonderSwan Color · Синій
+WonderSwan Color · White	WonderSwan Color · Білий
+Wood-grain TV	Телевізор під дерево
+Wooden sword	Дерев’яний меч
 Working…	Виконується…
+World	Світ
+World map	Мапа світу
+Worlds	Світи
+Y imports a save into this slot.	Y імпортує збереження в цей слот.
+Yellow	Жовтий
+Yes	Так
+You	Ви
+You appear like this to others	Так вас бачать інші
+You are in Room {0}	Ви в кімнаті {0}
+You are up to date.	Встановлено найновішу версію.
 Your cartridges go here	Тут будуть ваші картриджі
+Your colour	Ваш колір
+Your DS library starts here	Тут починається ваша бібліотека DS
+Your games and saves are not touched.	Ігри й збереження не змінюються.
 Your home screen after powering on	Головний екран після ввімкнення
+Your journey	Ваша подорож
+Your last game will appear here	Тут з’явиться остання гра
 Your local time and date	Місцевий час і дата
 Your menu shortcut	Кнопка виклику меню
+Your name	Ваше ім’я
+Your ports are waiting in Ports	Ваші порти чекають у розділі «Порти»
+Your saves are safe. See you soon!	Ваші збереження в безпеці. До зустрічі!
 Your shader choice is still available.	Вибраний фільтр досі доступний.
-zFast + NDS Color	zFast + NDS Color
-zFast + Natural Vision	zFast + Natural Vision
 zFast + both colours	zFast + обидва фільтри кольору
+zFast + Natural Vision	zFast + Natural Vision
+zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (експериментально)
 {0} (recommended)	{0} (рекомендовано)
+{0} active	Активно: {0}
+{0} found. Choose Done to go to your library.	Знайдено: {0}. Виберіть «Готово», щоб відкрити бібліотеку.
 {0} frames	Кадрів: {0}
+{0} game	Ігор: {0}
 {0} games	Ігор: {0}
-{0} settings	Налаштування: {0}
-Up	Вгору
-Times played	Запусків
-Last played	Останній запуск
-GameTDB	GameTDB
-Libretro	Libretro
-Ready to fetch artwork.	Готово до завантаження обкладинок.
-Icon style	Стиль значків
-Simple pixel	Прості піксельні
-Rich	Детальні
-Statistics	Статистика
-Games played	Зіграно ігор
-Most played	Найчастіше
-Preparing your statistics…	Підготовка статистики…
-Play a game to start your statistics.	Зіграйте в гру, щоб почати статистику.
-Installed version	Встановлена версія
-Check for updates	Перевірити оновлення
-Restart & install	Перезапустити й установити
-Download update	Завантажити оновлення
-Pause download	Призупинити завантаження
-Release notes	Примітки до випуску
-Discard update	Скасувати оновлення
-No release notes yet.	Приміток до випуску ще немає.
-Restart and install the update?	Перезапустити й установити оновлення?
-Check for updates when you are ready.	Перевірте оновлення, коли будете готові.
-Updates will be available when the release channel opens.	Оновлення з’являться, коли відкриється канал випусків.
-Checking for updates…	Перевірка оновлень…
-You are up to date.	Встановлено найновішу версію.
-A new version is ready to download.	Нова версія готова до завантаження.
-This version failed to start. Waiting for a newer update.	Ця версія не запустилася. Очікується новіше оновлення.
-Downloading update…	Завантаження оновлення…
-Verifying update…	Перевірка оновлення…
-Preparing update…	Підготовка оновлення…
-Ready to restart. Your previous version is kept for recovery.	Готово до перезапуску. Попередню версію збережено для відновлення.
-Restarting into the update…	Перезапуск в оновлення…
-Checking the new version…	Перевірка нової версії…
-Update installed.	Оновлення встановлено.
-The update could not start. Your previous version was restored.	Оновлення не запустилося. Попередню версію відновлено.
-Download paused. Retry to continue.	Завантаження призупинено. Повторіть, щоб продовжити.
-Update discarded. Your installed version is unchanged.	Оновлення скасовано. Встановлена версія не змінилася.
-Connect the charger before installing an update.	Під’єднайте зарядний пристрій перед установленням оновлення.
-There is not enough free space for this update.	Недостатньо місця для цього оновлення.
-Exit your game before installing an update.	Вийдіть із гри перед установленням оновлення.
-Install the latest SD installer before this update.	Перед цим оновленням установіть найновіший інсталятор для SD.
-Restart RG DS Core before installing the update.	Перезапустіть RG DS Core перед установленням оновлення.
-Download interrupted. Retry to continue.	Завантаження перервано. Повторіть, щоб продовжити.
-An update is already prepared. Install it or discard it first.	Оновлення вже підготовлено. Спершу встановіть або скасуйте його.
-Another update is already running.	Уже виконується інше оновлення.
-Update information has expired or the device clock is incorrect.	Дані про оновлення застаріли або годинник пристрою неправильний.
-This stock firmware has not been validated for updates.	Цю штатну прошивку не перевірено для оновлень.
-Update verification failed. Check for updates again.	Перевірку оновлення не пройдено. Перевірте оновлення знову.
-Update failed. Check Wi-Fi and try again.	Помилка оновлення. Перевірте Wi-Fi і спробуйте ще раз.
-Stable	Стабільний
-Testing	Тестовий
-Import slot	Імпорт слота
-Export slot	Експорт слота
-Save checkpoint	Зберегти прогрес
-Load checkpoint	Завантажити прогрес
-Save here	Зберегти сюди
-Export	Експорт
-More	Ще
-Replace slot {0}?	Замінити слот {0}?
-Load slot {0}?	Завантажити слот {0}?
-Delete slot {0}?	Видалити слот {0}?
-Undo last slot change	Скасувати зміну слота
-Undo last load	Скасувати завантаження
-Import into this slot	Імпортувати в цей слот
-Slot {0} deleted.	Слот {0} видалено.
-Slot change undone.	Зміну слота скасовано.
-A saves your current progress here.	A зберігає сюди поточний прогрес.
-A replaces this slot with your current progress. X deletes it.	A замінює слот поточним прогресом. X видаляє його.
-A loads this slot. Undo last load, under Y, brings back the progress you have now.	A завантажує слот. «Скасувати завантаження» в меню Y поверне поточний прогрес.
-Nothing to load here yet.	Тут поки нічого завантажувати.
-A exports this slot to userdata/exports. X deletes it.	A експортує слот у userdata/exports. X видаляє його.
-Y imports a save into this slot.	Y імпортує збереження в цей слот.
-Import help	Довідка з імпорту
-Replace	Замінити
-Blow into microphone	Подути в мікрофон
-Close and open DS lid	Закрити й відкрити кришку DS
-DS language	Мова DS
-Real microphone	Справжній мікрофон
-Japanese	Японська
-English	Англійська
-French	Французька
-German	Німецька
-Italian	Італійська
-Spanish	Іспанська
-2 seconds	2 секунди
-In game	У грі
-Restart the game to apply DS settings.	Перезапустіть гру, щоб застосувати налаштування DS.
-Could not save DS settings.	Не вдалося зберегти налаштування DS.
-Search	Пошук
-Save gallery	Галерея збережень
-Add your games	Додайте ігри
-DS controls	Керування DS
-Back up all saves	Резервна копія збережень
-Resume after power off	Продовжувати після вимкнення
-Slot	Слот
-Empty slot	Порожній слот
-Search games	Пошук ігор
-Filter	Фільтр
-Missing artwork	Без обкладинки
-Where to put games	Куди класти ігри
-Scan for games	Знайти ігри
-Automatic updates	Автооновлення
-Download automatically	Завантажувати автоматично
-Check automatically	Перевіряти автоматично
-Update available in Maintenance	Оновлення доступне в «Обслуговуванні»
-Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Скопіюйте файли .rgdssave.zip у userdata/imports. Імпорт має відповідати грі та емулятору.
-Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Скопіюйте файли .nds або ZIP-архіви DS у Roms/NDS на картці з іграми. Ігри не входять до комплекту. Збереження зберігаються в userdata.
-Save backup created in userdata/exports.	Резервну копію збережень створено в userdata/exports.
-Slot exported to userdata/exports.	Слот експортовано в userdata/exports.
-Save library updated.	Бібліотеку збережень оновлено.
-Current progress could not be saved. No slot was changed.	Не вдалося зберегти поточний прогрес. Слоти не змінено.
-DS controls are unavailable for this engine.	Керування DS недоступне для цього рушія.
-Your DS library starts here	Тут починається ваша бібліотека DS
-Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Скопіюйте файли .nds або ZIP DS у Roms/NDS на картці з іграми й виберіть «Знайти ігри».
-Use the engine's native controls for microphone and DS settings.	Мікрофон і налаштування DS — через власне керування рушія.
-Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Справжній мікрофон типово ввімкнено. Подув і кришка повертають до гри на дві секунди. Зміна мови застосовується після перезапуску.
-Unplayed	Не запускалися
-Played	Запускалися
-Filtered	З фільтром
-No matching games	Немає відповідних ігор
-No matches. Use View to change filters.	Нічого не знайдено. Змініть фільтри у «Вигляді».
-Reset state	Скинути стан
-Restart without loading a state?	Перезапустити без завантаження стану?
-Restart from the title screen. In-game saves and save slots are kept.	Перезапуск із титульного екрана. Ігрові збереження й слоти залишаться.
-Microphone, simulated blowing, lid and DS language.	Мікрофон, імітація подуву, кришка й мова DS.
-Test microphone	Перевірити мікрофон
-Test	Перевірити
-Live input	Вхідний сигнал
-Quiet	Тихо
-Loud	Гучно
-Listening…	Слухаю…
-Microphone unavailable	Мікрофон недоступний
-Audio is not recorded or saved.	Звук не записується й не зберігається.
-Test the microphone on your handheld.	Перевірте мікрофон консолі.
-Return home before testing the physical microphone.	Поверніться на головну перед перевіркою мікрофона.
-Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Подуйте або говоріть у мікрофон. Рівень підніметься й опуститься, коли ви замовкнете.
-Quick search	Швидкий пошук
-A  Search	A  Пошук
-A  Jump	A  Перейти
-Edit search	Змінити пошук
-Clear filters	Скинути фільтри
-Try another title or clear your filters	Спробуйте іншу назву або скиньте фільтри
-Type a game title…	Введіть назву гри…
-Finding games…	Пошук ігор…
-Searching…	Пошук…
-Search in	Шукати в
-Try a shorter title or clear your filter.	Спробуйте коротшу назву або скиньте фільтр.
-Type	Ввід
-Tap to type, or use the D-pad and A	Торкніться, щоб друкувати, або використовуйте хрестовину й A
-No letters to jump to. Search for another game.	Немає літер для переходу. Знайдіть іншу гру.
+{0} joined	{0} приєднується
+{0} left	{0} виходить
 {0} match	Збігів: {0}
 {0} matches	Збігів: {0}
 {0} matching game	Відповідних ігор: {0}
 {0} matching games	Відповідних ігор: {0}
-{0} game	Ігор: {0}
-Interface animations	Анімації інтерфейсу
-View transitions	Переходи між екранами
-Small touches, scrolling and startup motion	Дрібні ефекти, прокручування й анімація запуску
-Springy menu changes with a colourful wobble	Пружна зміна меню з кольоровим похитуванням
-Transitions	Переходи
-Subtle	Стримані
-Menu effects	Ефекти меню
-Effects volume	Гучність ефектів
-Preview sound	Прослухати звук
-A little handheld magic	Трохи кишенькової магії
-Playful sounds for browsing, choosing and starting games.	Веселі звуки під час перегляду, вибору й запуску ігор.
-Turn on menu sounds to hear the previews.	Увімкніть звуки меню, щоб прослухати їх.
-Some menu sounds are unavailable.	Деякі звуки меню недоступні.
-Menu audio is unavailable on this device.	Звук меню недоступний на цьому пристрої.
-Menu sounds are unavailable.	Звуки меню недоступні.
-Close lid	Закрити кришку
-Open lid	Відкрити кришку
-Spring	Пружина
-Push	Зсув
-Transition style	Стиль переходів
-Animate pages with the selected style	Анімувати сторінки вибраним стилем
-Slide into pages; slide back to return	Сторінки в’їжджають і від’їжджають назад
-Accent colour	Колір акценту
-FAVOURITE COLOUR	УЛЮБЛЕНИЙ КОЛІР
-Classic	Класика
-Classic blue	Класичний синій
-High contrast	Високий контраст
-PREVIEW	ПЕРЕГЛЯД
-Selected row	Вибраний рядок
-Switches and values	Перемикачі й значення
-Grey	Сірий
-Brown	Коричневий
-Red	Червоний
-Pink	Рожевий
-Orange	Помаранчевий
-Yellow	Жовтий
-Lime	Лаймовий
-Green	Зелений
-Dark green	Темно-зелений
-Sea green	Морський зелений
-Turquoise	Бірюзовий
-Blue	Синій
-Dark blue	Темно-синій
-Purple	Пурпуровий
-Violet	Фіолетовий
-Magenta	Маджента
-Network file sharing	Спільний доступ до файлів у мережі
-Open on this Wi-Fi	Відкрито в цій мережі Wi-Fi
-Password protected	Захищено паролем
-File sharing on. Find "RG DS" under Network.	Спільний доступ увімкнено. Знайдіть «RG DS» у розділі «Мережа».
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: оригінальний рушій. DSCore додає виправлення й швидкість.
-DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: рекомендовано. Найшвидший, з виправленнями кришки, стилуса й 3D та 3D 2x–5x за бажанням.
-DSCore 3D resolution	Роздільність 3D у DSCore
-Native (fastest)	Вихідна (найшвидше)
-2x sharper	Удвічі чіткіше
-3x sharper	Утричі чіткіше
-4x (experimental)	4x (експериментально)
-5x (experimental)	5x (експериментально)
-Colour mode	Режим кольору
-Draw and chat with nearby handhelds	Малюйте й спілкуйтеся з консолями поруч
-Wi-Fi connected	Wi-Fi під’єднано
-No Wi-Fi: you can still draw	Немає Wi-Fi: малювати все одно можна
-Type your name	Введіть ім’я
-You appear like this to others	Так вас бачать інші
-Starting…	Запуск…
-Chat is unavailable: you can still draw	Чат недоступний: малювати все одно можна
-Nobody else is nearby yet	Поруч поки нікого немає
-1 person nearby	Поруч 1 людина
 {0} people nearby	Людей поруч: {0}
-Your colour	Ваш колір
-Leave	Вийти
-Your name	Ваше ім’я
-Send	Надіслати
-You are in Room {0}	Ви в кімнаті {0}
-{0} joined	{0} приєднується
-{0} left	{0} виходить
-New messages below	Нові повідомлення нижче
-Older messages	Старіші повідомлення
-The pad is full: send it or clear it	Аркуш заповнено: надішліть або очистьте його
-Too much on the pad: erase some of it	На аркуші забагато: зітріть частину
-That message could not be sent	Не вдалося надіслати повідомлення
-That room is full	Ця кімната заповнена
-Chat Room {0}	Кімната {0}
-Choose a chat room to join	Виберіть кімнату для чату
-Edit	Змінити
-Join	Увійти
-Matches your accent	Як колір акценту
-Nobody here yet	Тут поки нікого
-Start Send   X Undo   L R Scroll	Start Надіслати   X Скасувати   L R Гортати
-You	Ви
-Time format	Формат часу
-24-hour	24 години
-12-hour	12 годин
-24-hour or 12-hour clock	24- або 12-годинний формат
-How dates appear in the status bar	Як дати виглядають у рядку стану
-Connecting to	Під’єднання до
-This can take a few seconds	Це може тривати кілька секунд
-Waiting for an address…	Очікування адреси…
-IP address	IP-адреса
-Signal	Сигнал
-Could not connect	Не вдалося під’єднатися
-Wi-Fi is off	Wi-Fi вимкнено
-Turn it on to find networks	Увімкніть його для пошуку мереж
-Choose a network from the list	Виберіть мережу зі списку
-Preparing…	Підготовка…
-Home layout	Вигляд головного екрана
-Background	Фон
-Touch gestures	Жести дотиком
-Carousel	Карусель
-Column	Колонка
-Plain	Простий
-Grid	Сітка
-A carousel, or the DSi's column with your last game on top	Карусель або колонка як на DSi з останньою грою вгорі
-Plain, or the DSi's ruled grid behind every screen	Простий фон або сітка в стилі DSi на кожному екрані
-Swipe up from the bottom for Home, in from the left for Back	Свайп знизу вгору — головна, зліва — назад
-Nothing played yet	Поки нічого не запускалося
-Your last game will appear here	Тут з’явиться остання гра
-Draw and chat	Малювати й спілкуватися
-Su	Нд
-Mo	Пн
-Tu	Вт
-We	Ср
-Th	Чт
-Fr	Пт
-Sa	Сб
-Chat Room	Кімната чату
-Nobody else here yet	Тут поки більше нікого
-Drawing on your own	Малюєте самі
-Jump	Перейти
-Home	Головна
-Swipe up from the bottom edge to go Home from anywhere.	Свайп угору від нижнього краю відкриє головну звідусіль.
-Swipe in from the left edge to go Back.	Свайп від лівого краю — назад.
-A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Маленький язичок унизу нижнього екрана показує, що жести ввімкнено; він піднімається за пальцем, а кільце позначає місце спрацювання жесту.
-Your saves are safe. See you soon!	Ваші збереження в безпеці. До зустрічі!
-DS Classic	DS Classic
-DS Lite	DS Lite
-Natural glow	Природне світіння
-Vivid LCD	Яскравий РК
-Natural smooth	Природний згладжений
-Vivid smooth	Яскравий згладжений
-Pixel beads	Піксельні намистини
-Glossy tiles	Глянцеві плитки
-The first DS screen: muted colour and a fine pixel grid.	Екран першої DS: приглушені кольори й тонка піксельна сітка.
-The brighter DS Lite screen with a faint pixel grid.	Яскравіший екран DS Lite з ледь помітною сіткою.
-Natural colour with soft pixels that glow together.	Природні кольори й м’які пікселі, що світяться разом.
-Bold colour on a close-up LCD with RGB stripes.	Насичені кольори на великому РК зі смугами RGB.
-Natural colour with smoothed diagonal edges.	Природні кольори зі згладженими діагоналями.
-Bold colour with smoothed diagonal edges.	Насичені кольори зі згладженими діагоналями.
-Bold colour; every pixel a round, shiny bead.	Насичені кольори; кожен піксель — кругла блискуча намистина.
-Bold colour; every pixel a raised, glossy tile.	Насичені кольори; кожен піксель — опукла глянцева плитка.
-IN USE	ВИБРАНО
-APPLY	ЗАСТОСУВАТИ
-Follows your library shader.	Як фільтр бібліотеки.
-Original	Оригінальний
-DS screens	Екрани DS
-Natural	Природні
-Vivid	Яскраві
-Pixel art	Піксель-арт
-Moods	Настрої
-Change group	Змінити групу
-Sounds & music	Звуки й музика
-Menu music	Музика меню
-Music volume	Гучність музики
-A soft tune plays while you browse. It fades out when a game starts.	Під час перегляду грає тиха мелодія. Вона стихає під час запуску гри.
-Turn on menu music for a soft tune while you browse.	Увімкніть музику меню, щоб чути тиху мелодію.
-Scanning…	Пошук…
-Scan complete	Пошук завершено
-Looking for games…	Пошук ігор…
-Reading Roms/NDS on your games card. This takes a moment.	Читання Roms/NDS на картці з іграми. Це займе трохи часу.
-{0} found. Choose Done to go to your library.	Знайдено: {0}. Виберіть «Готово», щоб відкрити бібліотеку.
-No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Ігор не знайдено. Скопіюйте файли .nds або ZIP DS у Roms/NDS на картці з іграми й повторіть пошук.
-Backing up your saves…	Резервне копіювання збережень…
-The backup did not finish. Please try again.	Резервне копіювання не завершилося. Спробуйте ще раз.
-Copies every save and checkpoint into one zip in userdata/exports.	Копіює всі збереження в один zip у userdata/exports.
-Where games go on the card, and a fresh scan.	Куди класти ігри на картці та новий пошук.
-Where covers and titles come from.	Звідки беруться обкладинки й назви.
-System update	Оновлення системи
-Version {0} is ready	Версія {0} готова
-Version {0} is ready to install	Версія {0} готова до встановлення
-Downloading {0}	Завантаження {0}
-Paused at {0}	Пауза на {0}
-Update now	Оновити зараз
-Resume download	Продовжити завантаження
-Update	Оновити
-Install	Установити
-What's new	Що нового
-Download	Завантаження
-Verify	Перевірка
-Prepare	Підготовка
-Step {0} of 4	Крок {0} з 4
-Less than a minute left	Лишилося менше хвилини
-About {0} min left	Лишилося близько {0} хв
-About {0} h left	Лишилося близько {0} год
-Downloads resume where they stopped if Wi-Fi drops.	У разі обриву Wi-Fi завантаження продовжиться з того ж місця.
-Your games and saves are not touched.	Ігри й збереження не змінюються.
-Connection lost. Retrying…	З’єднання втрачено. Повтор…
-The update could not be downloaded. Check for updates again.	Не вдалося завантажити оновлення. Перевірте оновлення знову.
-Finishing another task. Press Y again in a moment.	Завершується інше завдання. Натисніть Y трохи згодом.
-Updates	Оновлення
-The language for menus and messages.	Мова меню та повідомлень.
-Set the clock to where you are.	Налаштуйте годинник за місцем, де ви є.
-How dates appear at the top of the screen.	Як дати виглядають угорі екрана.
-A 24-hour or 12-hour clock.	24- або 12-годинний формат.
-Versions, free space and the network address of your handheld.	Версії, вільне місце та мережева адреса консолі.
-Check for updates, go back to the previous build or clear temporary files.	Перевірити оновлення, повернутися до попередньої збірки або видалити тимчасові файли.
-Leave RG DS Core and go back to the stock menu.	Вийти з RG DS Core і повернутися до стандартного меню.
-What happens when you turn the handheld on.	Що відбувається під час увімкнення консолі.
-Restart the RGDS menu.	Перезапустити меню RGDS.
-Previous	Назад
-Next	Далі
-Show all systems	Показувати всі системи
-Systems	Системи
-Game screen	Ігровий екран
-Second screen	Другий екран
-Sharp fill	Чітке заповнення
-Whole pixels	Цілі пікселі
-Smooth fill	Плавне заповнення
-Companion	Компаньйон
-Swap screens	Поміняти екрани
-Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Додає ігри Game Boy і Game Boy Advance: розділ «Ігри» відкриє сторінку систем.
-Frame	Рамка
-Game Boy	Game Boy
-Game Boy · Red	Game Boy · Червоний
-Game Boy · Yellow	Game Boy · Жовтий
-Game Boy · Green	Game Boy · Зелений
-Game Boy · Blue	Game Boy · Синій
-Game Boy · Black	Game Boy · Чорний
-Game Boy · Screen only	Game Boy · Лише екран
-Game Boy Pocket · Silver	Game Boy Pocket · Сріблястий
-Game Boy Pocket · Black	Game Boy Pocket · Чорний
-Game Boy Pocket · Yellow	Game Boy Pocket · Жовтий
-Game Boy Pocket · Red	Game Boy Pocket · Червоний
-Game Boy Pocket · Green	Game Boy Pocket · Зелений
-Game Boy Pocket · Blue	Game Boy Pocket · Синій
-Game Boy Pocket · Pink	Game Boy Pocket · Рожевий
-Game Boy Pocket · Screen only	Game Boy Pocket · Лише екран
-Game Boy Color · Berry	Game Boy Color · Ягідний
-Game Boy Color · Grape	Game Boy Color · Виноградний
-Game Boy Color · Kiwi	Game Boy Color · Ківі
-Game Boy Color · Dandelion	Game Boy Color · Кульбаба
-Game Boy Color · Teal	Game Boy Color · Бірюзовий
-Game Boy Color · Atomic Purple	Game Boy Color · Атомний фіолетовий
-Game Boy Color · Screen only	Game Boy Color · Лише екран
-Game Boy Advance · Indigo	Game Boy Advance · Індиго
-Game Boy Advance · Glacier	Game Boy Advance · Льодовик
-Game Boy Advance · Black	Game Boy Advance · Чорний
-Game Boy Advance · Platinum	Game Boy Advance · Платина
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Кобальт
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Онікс
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Платина
-Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Сріблястий
-Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Чорний
-WonderSwan Color · White	WonderSwan Color · Білий
-WonderSwan Color · Blue	WonderSwan Color · Синій
-PSP · Black	PSP · Чорний
-PSP · White	PSP · Білий
-Grey TV	Сірий телевізор
-Wood-grain TV	Телевізор під дерево
-PC monitor	Монітор ПК
-Arcade cabinet	Аркадний автомат
-Black bar	Чорна смуга
-GBA Color	Кольори GBA
-GBA screen	Екран GBA
-GBA screens	Екрани GBA
-The Game Boy Advance LCD's own colour and gamma.	Власні кольори й гамма РК-екрана Game Boy Advance.
-The Game Boy Advance screen: its colour and faint pixel gaps.	Екран Game Boy Advance: його кольори й ледь помітні проміжки між пікселями.
-Game info	Про гру
-Extra pictures	Дод. зображення
-Screenshots	Знімки екрана
-Title screens	Титульні екрани
-Screenshots and title screens	Знімки екрана й титульні екрани
-Both	Обидва
-Cover	Обкладинка
-Title screen	Титульний екран
-Screenshot	Знімок екрана
-Developer	Розробник
-Publisher	Видавець
-Genre	Жанр
-Released	Випущена
-Rating	Вікова категорія
-Players	Гравці
-Series	Серія
-Online	Онлайн
-Yes	Так
-Source	Джерело
-Picture	Зображення
-Next picture	Наступне зображення
-No pictures yet	Зображень поки немає
-Available	Доступно
-Not downloaded	Не завантажено
-Show games	Показати ігри
-Reset filters	Скинути фільтри
-Any	Будь-який
-{0} active	Активно: {0}
-Still reading your library. Try again in a moment.	Бібліотека ще читається. Спробуйте за хвилину.
-No game has this information yet. Fetch artwork with Game info turned on.	Жодна гра поки не має цих відомостей. Завантажте обкладинки з увімкненою функцією «Про гру».
-With info	Зі відомостями
-Without info	Без відомостей
-Online play	Онлайн-гра
-1 player	1 гравець
 {0} players	Гравців: {0}
-No game information yet.	Відомостей про гру поки немає.
-Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Увімкніть «Про гру» в Налаштування > Бібліотека > Джерела обкладинок і завантажте обкладинки.
-Ports	Порти
-Restart port	Перезапустити порт
-Quit	Вийти
-Looking for the latest PortMaster	Пошук найновішого PortMaster
-Downloading PortMaster	Завантаження PortMaster
-Checking PortMaster	Перевірка PortMaster
-Unpacking PortMaster	Розпакування PortMaster
-Setting up PortMaster	Налаштування PortMaster
-Installing PortMaster from the card	Встановлення PortMaster з картки
-PortMaster is ready	PortMaster готовий
-Could not set up PortMaster	Не вдалося налаштувати PortMaster
-Get, update and remove ports	Отримання, оновлення й видалення портів
-Close PortMaster	Закрити PortMaster
-Back to PortMaster	Повернутися до PortMaster
-Keep getting and updating ports	Далі отримувати й оновлювати порти
-Your ports are waiting in Ports	Ваші порти чекають у розділі «Порти»
-Closing PortMaster…	Закриття PortMaster…
-Closing the port…	Закриття порту…
-GB screens	Екрани GB
-GBC screens	Екрани GBC
-Game Boy screen	Екран Game Boy
-Game Boy Color screen	Екран Game Boy Color
-The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Точково-матричний екран першого Game Boy: світла сітка пікселів і м'які тіні.
-The Game Boy Color screen with faint gaps between its pixels.	Екран Game Boy Color зі слабкими проміжками між пікселями.
-This handheld's own screen.	Рідний екран цієї портативної консолі.
-Screen colours	Кольори екрана
-Game Boy Pocket	Game Boy Pocket
-Game Boy Light	Game Boy Light
-Game Boy Color	Game Boy Color
-Black and white	Чорно-білий
-Game Boy Color, darker	Game Boy Color, темніше
-Full colour	Повний колір
-Hold to save	Утримуйте, щоб зберегти
-Hold to load	Утримуйте, щоб завантажити
-Screen off	Екран вимкнено
-Touch the screen to turn it on	Торкніться екрана, щоб увімкнути його
-min	хв
-h	год
-Not saved	Не збережено
-Loaded	Завантажено
-Not loaded	Не завантажено
-Nothing to load	Нічого завантажувати
-Saving…	Збереження…
-Loading…	Завантаження…
-Info screen	Екран відомостей
-Team	Команда
-Lv	Рів.
-screens	екранів
-Not yet	Ще ні
-None yet	Ще жодного
-The best there is	Краще не буває
-Next:	Далі:
-Badges	Значки
-Carried	З собою
-Coin bank	Банк монет
-Coins	Монети
-Collection	Колекція
-Course	Рівень
-Day	День
-Ending so far	Фінал наразі
-Essences	Есенції
-Gear	Спорядження
-Golden leaves	Золоте листя
-Heart containers	Посудини сердець
-Heart pieces	Частини сердець
-Hearts	Серця
-In a course	На рівні
-Instruments	Інструменти
-Johto badges	Значки Джото
-Journey	Подорож
-Kanto badges	Значки Канто
-Keys	Ключі
-Lives	Життя
-Money	Гроші
-Musical coins	Музичні монети
-Night	Ніч
-Pokédex caught	Покедекс: спіймано
-Pokédex seen	Покедекс: бачено
-Rupees	Рупії
-Secret seashells	Таємні мушлі
-Shield	Щит
-Small keys	Малі ключі
-Sword	Меч
-Time of day	Час доби
-Time	Час
-Total	Усього
-Trainer	Тренер
-Treasures	Скарби
-Worlds	Світи
-Your journey	Ваша подорож
-Seeds	Насіння
-Game switcher	Зміна гри
-Switch to another game	Перейти до іншої гри
-Hold to return home	Утримуйте, щоб вийти на головну
-Add game files	Додати файли гри
-Needs your files	Потрібні ваші файли
-Files added	Файли додано
-How to get the files	Як отримати файли
-Scan with your phone	Відскануйте телефоном
-Or open on a computer	Або відкрийте на комп'ютері
-Code	Код
-Connect to Wi-Fi to send files from a phone or computer.	Підключіться до Wi-Fi, щоб надіслати файли з телефона чи комп'ютера.
-Receiving files	Отримання файлів
-Unpacking files	Розпакування файлів
-Files arrived. Choose Play to start.	Файли отримано. Виберіть «Грати», щоб почати.
-This port lists no instructions.	Цей порт не має інструкцій.
-Play	Грати
-Goes into	Тека
-Phone or computer connected	Телефон або комп'ютер підключено
-Vibration	Вібрація
-Menu haptics	Відгук у меню
-Haptic strength	Сила відгуку
-Game rumble	Вібрація в іграх
-Rumble strength	Сила вібрації
-Try a pattern	Спробувати шаблон
-Feel the game	Відчуйте гру
-Feel every move	Відчуйте кожен рух
-No vibration motor was found on this device.	На цьому пристрої не знайдено вібромотора.
-Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Ігри з Rumble Pak на DS, картриджі з вібрацією на Game Boy і Game Boy Advance.
-Turn on game rumble for games made for a rumble accessory.	Увімкніть вібрацію в іграх для ігор, розрахованих на аксесуар із вібрацією.
-A light tap for every move, a firmer one when you choose, open or save.	Легкий поштовх за кожного руху, сильніший під час вибору, відкриття чи збереження.
-Turn on menu haptics to feel the menus.	Увімкніть відгук у меню, щоб відчувати меню.
-Browse	Перегляд
-Open a view	Відкрити вигляд
-Go back	Назад
-Switch on	Увімкнути
-Switch off	Вимкнути
-Add favourite	Додати до вибраного
-Remove favourite	Прибрати з вибраного
-Start a game	Запустити гру
-Save complete	Збережено
-Load complete	Завантажено
-Try again	Повторити
-Keyboard	Клавіатура
-Adjust	Налаштування
-End of a list	Кінець списку
-Long press	Довге натискання
-Notification	Сповіщення
-Touch screen	Сенсорний екран
-Point and click on top	Наводити й натискати вгорі
-Touch here to point and click on the top screen.	Торкайтеся тут, щоб наводити й натискати на верхньому екрані.
-Hold still for a right click	Утримуйте на місці для правого кліку
-Hold to exit	Утримуйте, щоб вийти
-Touch screen off	Сенсорний екран вимкнено
-Touch screen is not available	Сенсорний екран недоступний
-Daylight saving	Літній час
-Automatic	Автоматично
-Summer time follows your timezone. Force it on or off if the clock is an hour out.	Літній час визначається часовим поясом. Увімкніть або вимкніть його, якщо годинник відстає чи поспішає на годину.
-GBA true colour	Справжні кольори GBA
-Faded GBA colours made rich, as the real screen showed them.	Бляклі кольори GBA стають насиченими, як на справжньому екрані.
-GBA true screen	Справжній екран GBA
-The true GBA colours on its screen, with the gaps between its pixels.	Справжні кольори GBA на його екрані, з проміжками між пікселями.
+{0} settings	Налаштування: {0}

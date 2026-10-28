@@ -26,6 +26,7 @@ struct SessionOptions {
     std::string core_library;              // --core: a libretro core's .so (else mGBA for GBA, GB and GBC)
     std::string system;                    // --system: the system id of a libretro game (nes, snes, md, ...)
     std::string system_dir;                // --system-dir: BIOS files for libretro cores
+    std::string art_dir;                   // --art: the game's library folder (box.bmp, its box art)
     bool companion = true;
 };
 

@@ -32,9 +32,15 @@ read up rest < /proc/uptime; printf '%-28s %6.2f s\n' "session: RG DS Core" "$up
 # --boot-startup: the boot scene from the first frame, with the hardware probe and the library scan behind it
 # Startup > Touch to continue (boot.ini warning=1): a start screen that waits for a tap or A
 WARN=; grep -qx 'warning=1' /data/rgds/userdata/boot.ini 2>/dev/null && WARN=--boot-warning
-exec $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 0 --bottom-display 1 \
+# CPU 3 is the emulation core (DSCore's thread layout pins its emulation thread there, RG DS Play its main
+# loop): the launcher and everything it starts stay on CPUs 0-2, so a game's frame is never queued behind them
+PIN=; command -v taskset > /dev/null && PIN="taskset -c 0-2"
+# a slot on trial after an update is committed once the launcher has stayed up a minute ($$ is the launcher after
+# the exec; a crash and a respawn give the session a new pid). The updater commits earlier, when Home is reached.
+( sleep 60; kill -0 $$ 2>/dev/null && /usr/libexec/rgds/trial commit ) &
+exec $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 0 --bottom-display 1 \
     --boot-startup $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
     --system-dir gb=/data/roms/gb \
     --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md \
-    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir pico8=/data/roms/pico8 --system-dir ports=$APP/runtime/portmaster_files/entry \
+    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir ports=$APP/runtime/portmaster_files/entry \
     --system-dir ports=/data/portmaster/ports >> $LOG 2>&1

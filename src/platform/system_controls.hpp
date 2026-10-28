@@ -41,6 +41,7 @@ struct SystemStatusUpdate {
 };
 class SystemControls {
     int lid_device = -1;
+    std::vector<std::pair<fs::path, long>> dimmed_levels;
     std::optional<unsigned long long> lid_sequence;
     bool preview;
     fs::path app, data;
@@ -359,6 +360,7 @@ public:
     // Queue size stays at one even when a touchscreen produces many motions.
     void request_brightness(int value) {
         cancel_status();
+        dimmed_levels.clear(); // the new level replaces whatever an idle dim would have put back
         value = std::clamp(value, 5, 100);
         if (brightness_child > 0 && value == active_brightness) pending_brightness.reset();
         else pending_brightness = value;
@@ -415,6 +417,7 @@ public:
     }
     bool set(const std::string& command, int value) {
         flush_controls();
+        if (command == "brightness") dimmed_levels.clear();
         bool success = invoke(command, value) == 0;
         if (success) {
             if (command == "brightness") {
@@ -432,7 +435,30 @@ public:
         return invoke("volume", std::nullopt) == 0;
     }
     std::optional<unsigned long long> lid_generation() const { return lid_sequence; }
+    // Idle dimming: each panel to `percent` of its current level straight through sysfs (no helper, nothing saved);
+    // undim_panels puts back exactly what was there. A dimmed level never reaches the saved brightness.
+    bool panels_dimmed() const { return !dimmed_levels.empty(); }
+    void dim_panels(int percent) {
+        if (preview || !dimmed_levels.empty()) return;
+        std::error_code ec;
+        for (const auto& entry : fs::directory_iterator("/sys/class/backlight", ec)) {
+            const fs::path node = entry.path() / "brightness";
+            std::ifstream in(node);
+            long value = 0;
+            if (!(in >> value) || value <= 1) continue;
+            std::ofstream out(node);
+            if (out << std::max(1L, value * percent / 100)) dimmed_levels.emplace_back(node, value);
+        }
+    }
+    void undim_panels() {
+        for (const auto& [node, value] : dimmed_levels) {
+            std::ofstream out(node);
+            out << value;
+        }
+        dimmed_levels.clear();
+    }
     bool sleep(bool lid = false, bool menu_close = false) {
+        undim_panels();
         flush_controls();
         // A closed lid: the panels go dark here, before the Python helper even starts (its start-up is most of the
         // second between the close and a dark screen). The helper gets the levels to put back (RGDS_SLEEP_BRIGHTNESS)

@@ -23,6 +23,10 @@ def clean_environment():
     return env
 
 
+BT_SINK = Path("/run/rgds/bt-sink")
+BT_AUDIO = Path("/usr/libexec/rgds/bt-audio")
+
+
 class Mixer:
     # The stock kernel names the RK817's playback volume DAC; mainline's codec driver (RG DS OS, BananaLinux) calls
     # the same register Master.
@@ -32,7 +36,7 @@ class Mixer:
         self.control = None
 
     def query(self):
-        for control in ((self.control, ) if self.control else self.CONTROLS):
+        for control in ((self.control,) if self.control else self.CONTROLS):
             result = subprocess.run(
                 ["amixer", "-c", "0", "sget", control],
                 text=True,
@@ -59,6 +63,19 @@ class Mixer:
             env=clean_environment(),
             check=True,
             timeout=2
+        )
+
+
+def headset_volume(level):
+    """A Bluetooth headset (RG DS OS, /usr/libexec/rgds/bt-audio) follows the saved level on its own control."""
+    if BT_SINK.is_file() and BT_AUDIO.is_file():
+        subprocess.run(
+            [str(BT_AUDIO), "volume", str(level)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=clean_environment(),
+            timeout=5,
+            check=False
         )
 
 
@@ -133,6 +150,7 @@ class Volume:
                 except OSError:
                     self.mixer.set(previous)
                     raise
+                headset_volume(target)
             return target
 
 

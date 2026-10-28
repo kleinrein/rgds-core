@@ -16,25 +16,35 @@
 //
 // Kinds: `bcd ADDRESS BYTES` (two digits a byte, the first byte the highest),
 // `num ADDRESS SIZE` (a little-endian number of 1 to 4 bytes) and
-// `bits ADDRESS BYTES` (how many bits are set, up to 32 bytes: a Pokédex). Words after it:
+// `bits ADDRESS BYTES` (how many bits are set, up to 32 bytes: a Pokédex) and
+// `count ADDRESS BYTES is HEX` (how many of the bytes hold that value: one item
+// in an inventory of slots, up to 64 bytes). Words after it:
 //   of N       a meter out of N (for bits up to 16 with an icon: a row of them, lit or not)
 //   big        num: the first byte the highest (big-endian)
 //   low        bcd: the first byte the lowest (a little-endian word of BCD)
 //   mask HEX   num: only these bits (day or night in a flag byte)
 //   div N      the number divided by N (health kept in quarters of a heart)
+//   plus N     N added after (lives kept one less than the game shows)
 //   wide       the tile takes a whole row
+//   tall       the tile's row is twice as high (a big HUD panel)
+//   or X Y W H hud: the same piece at another place (panels that move to the
+//              side the cursor isn't on): the first box with something drawn shows
 //   clock      num of two bytes, minutes then hours: shown as a time of day (18:05)
 //   icon NAME  a badge with one of the player's icons (ui/icons.hpp: coin, heart, ...)
 //   art NAME   a badge with the game's own tiles, from an `art.NAME` key:
 //              `gb BANK:ADDRESS COLSxROWS [clear N]` (2bpp tiles in the ROM; colour N see-through)
+//              or `hud X Y W H` (a box of the HUD the split takes off the game: Game Boy Advance)
+//   max ADDR   a meter out of the byte at ADDR (health whose most grows)
 //   page NAME  the tile is on that page; a board with pages shows them as tabs
 //              in its header, chosen by touch (tiles before the first page: the first)
 //   tiers      the value names a step from `tiersN` ("AT NAME; AT NAME; ..."):
 //              the step reached, and a meter to the next one
 //   names      the same list, but the steps are names, not goals (a sword's
 //              level, day or night): the name, and a dot for each step
-// `covers_hud = yes` puts the board in place of a [hud] strip's band: the
-// band still leaves the game picture, but the board already shows its numbers.
+// `Label | hud X Y W H` is a tile of the HUD itself: that box of what the split
+// draws, as large as the tile takes it (a copy ability's name, a health bar).
+// `covers_hud = yes` puts the board in place of a [hud] strip's band or a HUD
+// split's picture: the HUD still leaves the game, but the board shows it.
 #include "companion/companion.hpp"
 #include "companion/view.hpp"
 #include "core/core.hpp"
@@ -48,8 +58,14 @@
 namespace play {
 namespace {
 
+struct HudBox {
+    int x = 0, y = 0, w = 0, h = 0;
+};
+
 struct Art {
     uint32_t address = 0;
+    bool from_hud = false;
+    HudBox box;
     int cols = 1, rows = 1, clear = -1;
     GameArt art;
     bool read = false;
@@ -62,10 +78,12 @@ struct Step {
 
 struct Tile {
     std::string label, kind;
-    uint32_t address = 0;
-    int size = 1, of = 0, page = 0, div = 1;
+    uint32_t address = 0, max = 0;
+    HudBox box;                 // kind hud
+    std::vector<HudBox> others; // `or`: where else it may be
+    int size = 1, of = 0, page = 0, div = 1, plus = 0, is = 0;
     uint32_t mask = 0xFFFFFFFFu;
-    bool wide = false, big = false, low = false, names = false, clock = false;
+    bool wide = false, tall = false, big = false, low = false, names = false, clock = false;
     Icon icon = Icon::None;
     std::string art;
     std::vector<Step> tiers;
@@ -94,7 +112,17 @@ public:
             Art a;
             std::istringstream words(line);
             std::string kind, address, size, word;
-            words >> kind >> address >> size;
+            words >> kind;
+            if (kind == "hud") {
+                a.from_hud = true;
+                if (!(words >> a.box.x >> a.box.y >> a.box.w >> a.box.h) || a.box.w < 1 || a.box.h < 1) {
+                    error = "[view] board: '" + key + "' needs 'hud X Y W H'";
+                    return false;
+                }
+                arts_[key.substr(4)] = a;
+                continue;
+            }
+            words >> address >> size;
             if (kind != "gb" || !parse_address(address, a.address) ||
                 std::sscanf(size.c_str(), "%dx%d", &a.cols, &a.rows) != 2 || a.cols < 1 || a.rows < 1 ||
                 a.cols * a.rows > 16) {
@@ -137,9 +165,15 @@ public:
             t.label = trim(line.substr(0, bar));
             std::istringstream words(line.substr(bar + 1));
             std::string address;
-            words >> t.kind >> address >> t.size;
-            if ((t.kind != "bcd" && t.kind != "num" && t.kind != "bits") || !parse_address(address, t.address) ||
-                t.size < 1 || t.size > (t.kind == "bits" ? 32 : 4)) {
+            words >> t.kind;
+            if (t.kind == "hud") {
+                if (!(words >> t.box.x >> t.box.y >> t.box.w >> t.box.h) || t.box.w < 1 || t.box.h < 1) {
+                    error = "[view] board: " + name + " needs 'hud X Y W H'";
+                    return false;
+                }
+            } else if (!(words >> address >> t.size) || (t.kind != "bcd" && t.kind != "num" && t.kind != "bits" && t.kind != "count") ||
+                       !parse_address(address, t.address) || t.size < 1 ||
+                       t.size > (t.kind == "bits" ? 32 : t.kind == "count" ? 64 : 4)) {
                 error = "[view] board: " + name + " has a bad kind, address or size";
                 return false;
             }
@@ -147,6 +181,15 @@ public:
             for (std::string word; words >> word;) {
                 std::string arg;
                 if (word == "wide") t.wide = true;
+                else if (word == "tall") t.tall = true;
+                else if (word == "or" && t.kind == "hud") {
+                    HudBox o;
+                    if (!(words >> o.x >> o.y >> o.w >> o.h) || o.w < 1 || o.h < 1) {
+                        error = "[view] board: " + name + ": 'or' needs X Y W H";
+                        return false;
+                    }
+                    t.others.push_back(o);
+                }
                 else if (word == "clock") t.clock = true;
                 else if (word == "big") t.big = true;
                 else if (word == "low") t.low = true;
@@ -154,9 +197,13 @@ public:
                          arg.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos)
                     t.mask = uint32_t(std::strtoul(arg.c_str(), nullptr, 16));
                 else if (word == "div" && words >> t.div && t.div > 0) continue;
+                else if (word == "plus" && words >> t.plus) continue;
+                else if (word == "is" && t.kind == "count" && words >> arg)
+                    t.is = int(std::strtol(arg.c_str(), nullptr, 16));
                 else if (word == "tiers") tiers = true;
                 else if (word == "names") tiers = t.names = true;
                 else if (word == "of" && words >> t.of && t.of > 0) continue;
+                else if (word == "max" && words >> arg && parse_address(arg, t.max)) continue;
                 else if (word == "icon" && words >> arg && icon_named(arg) != Icon::None) t.icon = icon_named(arg);
                 else if (word == "art" && words >> arg && arts_.count(arg)) t.art = arg;
                 else if (word == "page" && words >> arg) {
@@ -202,11 +249,25 @@ public:
     }
 
     void update(Core& live, uint64_t frame) override {
+        if (frame % 3 == 0 && hud_) {
+            // The HUD's pieces change with the game (a new ability, a hit): redraw when they do.
+            uint64_t h = 1469598103934665603ull;
+            hud_drawn_ = false;
+            if (hud_->px)
+                for (const auto& [box, art] : hud_boxes())
+                    for (int y = std::max(0, box.y); y < std::min(hud_->h, box.y + box.h); ++y)
+                        for (int x = std::max(0, box.x); x < std::min(hud_->w, box.x + box.w); ++x) {
+                            const uint32_t v = hud_->px[size_t(y) * size_t(hud_->w) + size_t(x)];
+                            hud_drawn_ = hud_drawn_ || (v & 0xFFFFFF) != (hud_->key & 0xFFFFFF);
+                            h = (h ^ v) * 1099511628211ull;
+                        }
+            hud_key_ = hud_->px ? h : 0;
+        }
         if (frame % 15) return;
         playing_ = on_.empty() || on_.match(live);
         if (!playing_) return;
         for (auto& [name, a] : arts_) {
-            if (a.read) continue;
+            if (a.read || a.from_hud) continue;
             std::vector<uint8_t> bytes(size_t(a.cols * a.rows * 16));
             for (size_t i = 0; i < bytes.size(); ++i)
                 bytes[i] = uint8_t(peek_address(live, step(a.address, int(i)), 1));
@@ -216,6 +277,11 @@ public:
         uint64_t key = 1469598103934665603ull;
         for (auto& t : tiles_) {
             long v = 0;
+            if (t.max) {
+                t.of = int(peek_address(live, t.max, 1) & 0xFF) / t.div;
+                key = (key ^ uint64_t(t.of)) * 1099511628211ull;
+            }
+            if (t.kind == "hud") continue;
             if (t.kind == "num") {
                 uint32_t n = 0;
                 for (int i = 0; i < t.size; ++i) {
@@ -223,22 +289,30 @@ public:
                     n = t.big ? (n << 8) | b : n | (b << (8 * i));
                 }
                 v = long(n & t.mask);
+            } else if (t.kind == "count") {
+                for (int i = 0; i < t.size; ++i) v += int(peek_address(live, step(t.address, i), 1) & 0xFF) == t.is;
             } else
                 for (int i = 0; i < t.size; ++i) {
                     const uint32_t b = peek_address(live, step(t.address, t.low ? t.size - 1 - i : i), 1);
                     if (t.kind == "bits") v += __builtin_popcount(b);
                     else v = v * 100 + long((b >> 4) % 10 * 10 + (b & 15) % 10);
                 }
-            t.value = v / t.div;
+            t.value = v / t.div + t.plus;
             key = (key ^ uint64_t(v)) * 1099511628211ull;
         }
         key_ = key;
         read_ = true;
     }
 
-    bool shown() const override { return playing_ && read_; }
+    // A board of the HUD's pieces waits for the HUD to draw them (not in a cutscene that hides it).
+    bool shown() const override { return playing_ && read_ && (hud_drawn_ || hud_boxes().empty()); }
     bool covers_hud() const override { return covers_hud_; }
-    uint64_t key(uint64_t) const override { return key_ ^ (uint64_t(page_) << 56); }
+    std::vector<Rect> hud_claims() const override {
+        std::vector<Rect> claims;
+        for (const auto& [box, art] : hud_boxes()) claims.push_back({box.x, box.y, box.w, box.h});
+        return claims;
+    }
+    uint64_t key(uint64_t) const override { return key_ ^ hud_key_ ^ (uint64_t(page_) << 56); }
 
     bool touch(const Touch& t) override {
         if (t.kind != Touch::Down) return false;
@@ -282,10 +356,18 @@ public:
         }
         const int n = int(rows.size());
         if (!n) return;
-        const int bottom = H - kit::margin + 4;
-        const int rh = std::min(104, (bottom - top - kit::gap * (n - 1)) / n);
+        // A tall tile makes its row two high.
+        std::vector<int> units(size_t(n), 1);
+        int total = 0;
         for (int r = 0; r < n; ++r) {
-            const int y = top + r * (rh + kit::gap);
+            for (const Tile* t : rows[size_t(r)])
+                if (t->tall) units[size_t(r)] = 2;
+            total += units[size_t(r)];
+        }
+        const int bottom = H - kit::margin + 4;
+        const int unit = std::min(104, (bottom - top - kit::gap * (total - 1)) / total);
+        for (int r = 0, y = top; r < n; y += units[size_t(r)] * (unit + kit::gap), ++r) {
+            const int rh = units[size_t(r)] * unit + (units[size_t(r)] - 1) * kit::gap;
             const int cols = rows[size_t(r)][0]->wide ? 1 : 2;
             const int cw = (W - kit::margin * 2 - kit::gap * (cols - 1)) / cols;
             for (size_t c = 0; c < rows[size_t(r)].size(); ++c) {
@@ -303,9 +385,55 @@ private:
         return (address & 0xFFFF0000u) | ((address + uint32_t(n)) & 0xFFFF);
     }
 
+    // The HUD boxes the board shows (tiles and badges), to see when they change.
+    std::vector<std::pair<HudBox, bool>> hud_boxes() const {
+        std::vector<std::pair<HudBox, bool>> boxes;
+        for (const auto& t : tiles_)
+            if (t.kind == "hud") {
+                boxes.push_back({t.box, false});
+                for (const auto& o : t.others) boxes.push_back({o, false});
+            }
+        for (const auto& [name, a] : arts_)
+            if (a.from_hud) boxes.push_back({a.box, true});
+        return boxes;
+    }
+
+    // What the HUD drew inside a box (a right-aligned score, a row that is still empty), or nothing.
+    HudBox drawn(const HudBox& box) const {
+        int x0 = hud_->w, y0 = hud_->h, x1 = -1, y1 = -1;
+        for (int y = std::max(0, box.y); y < std::min(hud_->h, box.y + box.h); ++y)
+            for (int x = std::max(0, box.x); x < std::min(hud_->w, box.x + box.w); ++x)
+                if ((hud_->px[size_t(y) * size_t(hud_->w) + size_t(x)] & 0xFFFFFF) != (hud_->key & 0xFFFFFF)) {
+                    x0 = std::min(x0, x), y0 = std::min(y0, y), x1 = std::max(x1, x), y1 = std::max(y1, y);
+                }
+        return x1 < 0 ? HudBox{} : HudBox{x0, y0, x1 - x0 + 1, y1 - y0 + 1};
+    }
+
+    // What the HUD drew in a box, at a whole scale (up to `most`) in `into`: from
+    // its left (`centre`: in its middle), see-through where the HUD has nothing.
+    // The width the box may grow to sets the scale, so a score keeps its size as it grows.
+    void draw_hud(Canvas& out, const HudBox& box, const Box& into, bool centre, int most = 6) const {
+        if (!hud_ || !hud_->px) return;
+        const HudBox d = drawn(box);
+        if (d.w <= 0) return;
+        const int k = std::max(1, std::min({most, into.w / box.w, into.h / d.h}));
+        const int ox = centre ? into.x + (into.w - d.w * k) / 2 : into.x, oy = into.y + (into.h - d.h * k) / 2;
+        for (int y = 0; y < d.h; ++y)
+            for (int x = 0; x < d.w; ++x) {
+                const uint32_t v = hud_->px[size_t(d.y + y) * size_t(hud_->w) + size_t(d.x + x)];
+                if ((v & 0xFFFFFF) == (hud_->key & 0xFFFFFF)) continue;
+                out.fill_rect(ox + x * k, oy + y * k, k, k, Rgb::from_px(hud_->tint ? hud_->tint(v) : v));
+            }
+    }
+
     void badge(Canvas& out, const Look& look, const std::string& name, int x, int y) const {
         auto it = arts_.find(name);
-        if (it != arts_.end()) art_badge(out, look, x, y, it->second.art, look.game_shades);
+        if (it != arts_.end() && it->second.from_hud) {
+            // The HUD's own piece on a little screen, in a slot rim (as art_badge).
+            out.rounded_rect(x, y, kit::badge, kit::badge, 12, look.slot);
+            out.rounded_rect(x + 3, y + 3, kit::badge - 6, kit::badge - 6, 9, look.panel);
+            draw_hud(out, it->second.box, {x + 5, y + 5, kit::badge - 10, kit::badge - 10}, true);
+        } else if (it != arts_.end()) art_badge(out, look, x, y, it->second.art, look.game_shades);
         else icon_badge(out, look, x, y, icon_named(name));
     }
 
@@ -347,6 +475,16 @@ private:
         const int base = roomy ? b.y + b.h - 20 : font.centred(big, b.y + b.h * 2 / 3 + 2);
         if (!t.tiers.empty()) {
             draw_tiers(out, look, font, t, x, right, label_base, base);
+            return;
+        }
+        if (t.kind == "hud") {
+            // The label, and under it the HUD's own piece as large as the tile takes it, from the left.
+            font.draw(out, x, label_base, font.fit(look.tr(t.label), kit::small, right - x), kit::small, look.muted);
+            const int top = label_base + 10;
+            const HudBox* box = &t.box;
+            for (const auto& o : t.others)
+                if (hud_ && hud_->px && drawn(*box).w <= 0 && drawn(o).w > 0) box = &o;
+            draw_hud(out, *box, {x, top, right - x, b.y + b.h - 12 - top}, false, 5);
             return;
         }
         font.draw(out, x, label_base, font.fit(look.tr(t.label), kit::small, right - x), kit::small, look.muted);
@@ -421,7 +559,8 @@ private:
     int page_ = 0;
     mutable std::vector<Box> tabs_;
     bool playing_ = false, read_ = false, covers_hud_ = false;
-    uint64_t key_ = 0;
+    uint64_t key_ = 0, hud_key_ = 0;
+    bool hud_drawn_ = false;
 };
 
 } // namespace

@@ -75,7 +75,7 @@ class SystemsUITests(unittest.TestCase):
         report = self.run_ui('100 key A\n', show_systems=True, home=1)
         self.assertEqual(report['page'], PAGE_LIBRARY)
         self.assertTrue(report['systems_menu'])  # the library's carousel, its tiles the systems
-        self.assertEqual(report['listed_systems'], 2)  # the DS and Game Boy Advance
+        self.assertEqual(report['listed_systems'], 3)  # the DS, Game Boy Advance and the Homebrew shelves
         report = self.run_ui('100 key A\n200 key Right\n300 key A\n', show_systems=True, home=1)
         self.assertEqual(report['page'], PAGE_LIBRARY)
         self.assertEqual(report['shown_system'], 'gba')
@@ -87,6 +87,33 @@ class SystemsUITests(unittest.TestCase):
         report = self.run_ui('100 key A\n200 key Right\n300 key A\n400 key B\n', show_systems=True, home=1)
         self.assertTrue(report['systems_menu'])
         self.assertEqual(report['systems_selected'], 1)  # back on the Game Boy Advance tile
+
+    def test_systems_to_games_and_back_travel_with_view_animations(self):
+        ui = 'schema=1\nhome_layout=carousel\nbackground=plain\nshow_systems=1\nanimations=1\nview_animations=1\n'
+        (self.data / 'ui.ini').write_text(ui)
+        state = self.data / 'state'
+        state.write_text('1 0 4 ""\nhome 1\n')
+        script = '100 key A\n700 key A\n1300 key B\n'
+        (self.data / 'input').write_text(script)
+        subprocess.run(
+            [
+                str(BINARY), '--preview', '--data',
+                str(self.data), '--rom-dir',
+                str(self.nds), '--system-dir', 'gba=' + str(self.gba), '--input-script',
+                str(self.data / 'input'), '--state',
+                str(state), '--seconds', '3', '--cache-report',
+                str(self.data / 'report.json')
+            ],
+            cwd=ROOT,
+            env=dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy'),
+            capture_output=True,
+            timeout=20,
+            check=True
+        )
+        report = json.loads((self.data / 'report.json').read_text())
+        self.assertTrue(report['systems_menu'])
+        self.assertEqual(report['view_transitions'], 3)  # Home -> Systems -> games -> Systems
+        self.assertEqual(report['back_transitions'], 1)
 
     def test_y_does_nothing_in_the_systems_carousel_but_opens_the_view_sheet_in_a_library(self):
         report = self.run_ui('100 key A\n200 key Y\n', show_systems=True, home=1)
@@ -101,7 +128,7 @@ class SystemsUITests(unittest.TestCase):
         self.assertEqual(report['launching_core'], PLAY_CORE)
 
     def test_library_setting_turns_systems_on_and_is_saved(self):
-        script = '100 key A\n'  # the first row of Settings > Library
+        script = '100 key Down\n200 key A\n'  # the second row of Settings > Library, under Scan for games
         report = self.run_ui(script, extra=('--settings', '--section', 'library'))
         self.assertEqual(report['page'], PAGE_LIBRARY_OPTIONS)
         self.assertTrue(report['show_systems'])
@@ -165,10 +192,13 @@ class SystemsUITests(unittest.TestCase):
         rom.write_bytes(bytes(0x150))
         menu = ('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom))
         frame = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key Down\n500 key Down\n600 key A\n'
-        # Off, Game Boy, the two Pockets, then the black bar: no Game Boy Advance shells or SPs.
-        for downs, chosen in ((1, 'dmg'), (4, 'bar')):
+        # Off, the Game Boy and Pocket shells, then the black bar: no Game Boy Advance shells or SPs.
+        from play_options import FRAMES
+        offered = [name for name, systems in FRAMES.items() if not systems or 'gb' in systems.split(',')]
+        self.assertFalse({'indigo', 'sp-cobalt'} & set(offered))
+        for downs, chosen in ((1, 'dmg'), (offered.index('bar'), 'bar')):
             (self.data / 'state').unlink(missing_ok=True)
-            script = frame + ''.join(f'{700 + 50 * i} key Down\n' for i in range(downs)) + '1000 key A\n'
+            script = frame + ''.join(f'{700 + 50 * i} key Down\n' for i in range(downs)) + f'{750 + 50 * downs} key A\n'
             report = self.run_ui(script, extra=menu, seconds=2)
             self.assertEqual(read_fields(self.data / 'library' / game_key(rom) / 'play.ini').get('frame'), chosen)
             self.assertEqual(report['play_frame'], chosen)
@@ -178,7 +208,9 @@ class SystemsUITests(unittest.TestCase):
         rom = self.gba / 'Metroid Fusion (USA).gba'
         script = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key Down\n500 key Down\n600 key Down\n'
         report = self.run_ui(
-            script + '700 key A\n', extra=('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom)), seconds=2
+            script + '700 key A\n',
+            extra=('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom)),
+            seconds=2
         )
         self.assertEqual(report['page'], PAGE_SHADER_PICKER)
         offered = set(report['shader_choices'])

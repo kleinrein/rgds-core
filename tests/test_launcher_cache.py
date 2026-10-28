@@ -246,6 +246,7 @@ class RedrawCacheTests(unittest.TestCase):
             self.assertEqual(counts["render_file_reads"], 0)
             self.assertLessEqual(counts["metadata_entries"], 128)
             self.assertGreaterEqual(counts["evictions"], 72)
+            self.assertEqual(counts["shown_games"], 30)
 
     def test_running_launcher_refreshes_created_replaced_and_deleted_artwork(self):
         with tempfile.TemporaryDirectory() as folder:

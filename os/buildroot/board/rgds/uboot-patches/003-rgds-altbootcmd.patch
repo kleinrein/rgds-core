@@ -1,0 +1,18 @@
+RG DS OS: boot the extlinux FALLBACK label once a new slot has failed to boot bootlimit times.
+
+U-Boot keeps the boot counter in /bootcount on the FAT boot partition (CONFIG_BOOTCOUNT_FS, uboot-rgds.fragment);
+RG DS OS arms it when it switches slots and clears it once RG DS Core is up (usr/libexec/rgds/trial). Past the
+limit, autoboot runs altbootcmd instead of bootcmd: the extlinux boot method is told to take the FALLBACK label
+(the slot that was running before the update) and the card is scanned as usual.
+
+diff --git a/include/configs/rk3568_common.h b/include/configs/rk3568_common.h
+--- a/include/configs/rk3568_common.h
++++ b/include/configs/rk3568_common.h
+@@ -35,6 +35,7 @@
+ 	"fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0"	\
+ 	ENV_MEM_LAYOUT_SETTINGS		\
+ 	ROCKCHIP_DEVICE_SETTINGS	\
++	"altbootcmd=bootmeth set extlinux fallback 1; bootflow scan -lb mmc1 || bootflow scan -lb\0" \
+ 	"boot_targets=" BOOT_TARGETS "\0"
+ 
+ #endif /* __CONFIG_RK3568_COMMON_H */

@@ -272,11 +272,11 @@ void App::render_shader_carousel(SDL_Renderer* r, int y) {
     const std::string name = locale.text(shader_name(value));
     const int name_w = std::min(592, label_width(name, 22, false));
     raw_label(r, name, 320 - name_w / 2, y + 330, 22, "ink", 592);
-    const std::string note = locale.text(value < 0 && system_default_shader(shader_system.c_str()) >= 0
-                                             ? "This handheld's own screen."
-                                         : value < 0  ? "Follows your library shader."
-                                         : value == 0 ? "Off keeps the original picture."
-                                                      : shaders.at(value).description);
+    const std::string note =
+        locale.text(value < 0 && system_default_shader(shader_system.c_str()) >= 0 ? "This handheld's own screen."
+                    : value < 0                                                    ? "Follows your library shader."
+                    : value == 0                                                   ? "Off keeps the original picture."
+                                                                                   : shaders.at(value).description);
     const int note_w = label_width(note, 16, false);
     if (note_w <= 592) raw_label(r, note, 320 - note_w / 2, y + 364, 16, "muted", 592);
     else wrapped(r, note, 24, y + 358, 16, 592, 2, false);

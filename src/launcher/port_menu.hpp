@@ -436,17 +436,18 @@ void App::port_info(SDL_Renderer* r, int y) {
     raw_label(r, locale.text("Ports") + "  ·  " + locale.text("Played") + " " + played, tx, y + 84, 16, "muted",
               text_w);
     if (hardware.battery >= 0) {
+        // The status bar's battery, the charge beside it.
         const std::string charge = std::to_string(hardware.battery) + "%";
         const int bw = label_width(charge, 16, false);
-        raw_label(r, charge, right - bw, y + 88, 16, "muted", bw + 4);
-        ui_icon(r, SettingsIcon::Battery, right - bw - 16, y + 99, 20, "muted");
+        battery_icon(r, y + 70, right - 41);
+        raw_label(r, charge, right - 41 - (hardware.charging ? 22 : 8) - bw, y + 88, 16, "muted", bw + 4);
     }
     auto badge = [&](int cx, int cy, SettingsIcon symbol, bool lit) {
         round_rect(r, cx - 22, cy - 22, 44, 44, 12, lit ? "accent" : "slot");
         ui_icon(r, symbol, cx, cy, 25, lit ? "on_accent" : "accent");
     };
     // The game switcher opens on a tap; Return home is held, and the hold fills a ring round its badge.
-    auto button = [&](PortItem item, SettingsIcon symbol, const std::string& name, const std::string& hint) {
+    auto button = [&](PortItem item, SettingsIcon symbol, const std::string& name) {
         const SDL_Rect b = port_box(item);
         const bool held = port_held == item && !port_fired;
         const int top = y + b.y + (held ? 2 : 0), cx = b.x + 38, cy = top + b.h / 2;
@@ -464,11 +465,10 @@ void App::port_info(SDL_Renderer* r, int y) {
             }
         }
         const int lx = b.x + 76, lw = b.x + b.w - 12 - lx;
-        label(r, name, lx, cy - 28, 24, "ink", lw);
-        label(r, hint, lx, cy + 6, 16, "muted", lw);
+        label(r, name, lx, centred_label_y(locale.text(name), 24, cy), 24, "ink", lw);
     };
-    button(PortItem::Switcher, SettingsIcon::Library, "Game switcher", "Switch to another game");
-    button(PortItem::Home, SettingsIcon::Home, "Return home", "Hold to return home");
+    button(PortItem::Switcher, SettingsIcon::Library, "Game switcher");
+    button(PortItem::Home, SettingsIcon::Home, "Return home");
     // Brightness: a slider, dragged.
     const SDL_Rect br = port_box(PortItem::Bright);
     settings_card(r, br.x, y + br.y, br.w, br.h, port_dragging);
@@ -484,17 +484,16 @@ void App::port_info(SDL_Renderer* r, int y) {
     const int pw = label_width(pct, 20, false);
     raw_label(r, pct, br.x + br.w - 18 - pw, centred_label_y(pct, 20, bcy), 20, "ink", pw + 4);
     // Touch screen and screen off, side by side.
-    auto half = [&](PortItem item, SettingsIcon symbol, const std::string& name, const std::string& hint) {
+    auto half = [&](PortItem item, SettingsIcon symbol, const std::string& name) {
         const SDL_Rect b = port_box(item);
         const bool held = port_held == item;
         settings_card(r, b.x, y + b.y, b.w, b.h, held);
         const int cy = y + b.y + b.h / 2, lx = b.x + 76, lw = b.x + b.w - 12 - lx;
         badge(b.x + 38, cy, symbol, held);
-        label(r, name, lx, cy - 24, 20, "ink", lw);
-        label(r, hint, lx, cy + 2, 14, "muted", lw);
+        label(r, name, lx, centred_label_y(locale.text(name), 20, cy), 20, "ink", lw);
     };
-    half(PortItem::Touch, SettingsIcon::Touch, "Touch screen", "Point and click on top");
-    half(PortItem::Off, SettingsIcon::Sleep, "Screen off", "Touch the screen to turn it on");
+    half(PortItem::Touch, SettingsIcon::Touch, "Touch screen");
+    half(PortItem::Off, SettingsIcon::Sleep, "Screen off");
     // A note near the bottom, over everything: the volume as it changes, or what a tap did.
     std::string note;
     if (port_volume_at) note = locale.text("Volume") + " " + std::to_string(std::clamp(port_volume, 0, 100)) + "%";

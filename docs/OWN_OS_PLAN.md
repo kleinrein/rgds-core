@@ -211,6 +211,116 @@ by the power script around the suspend, and `dts-patches/0004` keeps the red and
 The amber LED follows the charger through the power-supply core's trigger (`battery-charging-blink-full-solid`,
 set in `rcS`): blinking while charging, solid when full. Lid sleep's second of delay is left as is for now.
 
+### Updates, the emulation core and the panels (2026-10-27, late)
+
+**OS updates over Wi-Fi** (docs/OTA.md, "RG DS OS: whole-system updates"): `runtime/os_update.py` reuses the signed
+application updater's feed, download and pages, and installs the whole image into the other slot; `Restart &
+install` switches `DEFAULT`, sets the running slot as `FALLBACK` and arms U-Boot's file boot counter
+(`CONFIG_BOOTCOUNT_FS`, `/bootcount` on the boot partition, limit 3; `altbootcmd` from `uboot-patches/003` tells the
+extlinux boot method to take the `FALLBACK` label). `/usr/libexec/rgds/trial` arms, commits (the launcher's first
+update check, or the session a minute after the launcher stayed up) and records a fallback for the launcher; `rcS`
+restarts a trial slot that never commits after four minutes, and the kernel restarts on a panic (`panic=10`).
+`tools/own_os_release.py` packs and signs the release (`stable-os.json` beside `stable.json`); `own_os_push.py` arms
+the same trial for a developer push. Host tests in `tests/test_os_update.py`; the handheld run is below.
+
+**The emulation core.** DSCore already pins its emulation thread to CPU 3 at round-robin priority (its thread
+layout); what was missing is everything else staying off that core. The session now runs the launcher and all it
+starts under `taskset -c 0-2` (BusyBox taskset added), `rcS` moves every device interrupt to CPU 0 (DSCore's aux
+core), and RG DS Play pins its main loop (core and drawing) to CPU 3 at SCHED_RR when the launcher passes
+`RGDS_PLAY_CPU=3` on RG DS OS. JIT block linking and fastmem, listed under "DSCore" above, turned out to be in
+already (`dscore/src/core/cpu/jit/README.md`: linked branches are one instruction, `DS_FASTMEM` views); what is
+left there is the per-slice overhead and the translated code's own cost, which the README's measurements put at
+6-11 % of the process. Not a 3-5x lever; the renderer is.
+
+**The panels' 700 ms.** The two panels were prepared one after the other inside the first modeset: regulators,
+reset and the init delay (80 ms), ninety DCS writes, then a 120 ms sleep-out wait before the panel core switched
+the backlight on. `panel-generic-dsi.c` (`early_power`, default on) now powers and resets each panel from its probe
+on a worker, long before DRM binds, and turns the 120 ms wait into a deadline for its own backlight (a delayed work)
+instead of a sleep, so the second panel's DCS sequence overlaps the first's wait and the backlight still comes on
+only when the panel is ready. Measured on the handheld (`/run/rgds/boot-times`, same kernel otherwise): rcS starts
+at **1.40 s** against 1.82 s, so init is 0.42 s earlier and the whole kernel now takes 1.4 s from U-Boot's jump.
+Both panels come up clean. A Buildroot lesson on the way: the post-patch hook that copies the driver runs once, at
+extraction, so two images shipped without the change; `external.mk` now copies the drivers before every kernel
+build.
+
+**Verified the same evening** (image os2e5f0ec2 on slot A, U-Boot written with `--uboot`):
+- The fallback, end to end: a trial armed for slot B (the N64 build there has no trial script, so it can never
+  commit) counted 1, 2, 3 over three reboots, and the fourth boot came up on slot A with the counter idle, `DEFAULT`
+  restored, the `FALLBACK` line gone and `update-result.json` saying `rolled-back` for that build. The counter sits at
+  `bd 01 00 00` after a normal boot, and a card made before the counter existed gets the idle file from `trial boot`
+  or from `own_os_push.py`.
+- The core layout in a running game (Mario Kart DS, DSCore): the emulation thread alone on CPU 3 at SCHED_RR 5,
+  the 2D engines on 1 and 2, both present threads, audio and the launcher (affinity mask 7) on CPUs 0-2, every
+  movable interrupt on CPU 0. The remaining all-CPU interrupts are the per-CPU timers and the PMIC's and GPIO
+  expander's nested children, which cannot be moved. The fastmem views are up (DSCore only reports when they are
+  not). Measured the next morning on the heavy attract scene (2400 frames, three runs, the session held so only
+  the interrupt placement differs): frames over budget 0.75 % and 0.83 % with the interrupts on CPU 0, 1.62 % with
+  them spread over all four (p95 15.2 vs 15.7 ms, the same worst frame). Half the over-budget frames, for free.
+
+**The two panels' phase** (`os/banana-probe/vblank_phase.c`, waits for vblanks on both CRTCs without DRM master):
+both panels run at 60.001 Hz from the same clock, but CRTC 1's vblank sits a fixed 14.18 ms after CRTC 0's (2.5 ms
+before it), the time the first modeset took between starting the two video ports. So a frame flipped to both
+panels inside that window shows on different refreshes, and a joint atomic commit alone would not change that:
+the display engine latches each port at its own vblank. The fix is in the kernel: `linux-patches/7-rgds-0002`
+holds the second port in standby until the first port's frame start and releases it there (`vop2.in_step`,
+`vop2.in_step_delay_us` to tune). Result, same probe after the reboot: CRTC 1 now 0.33-0.62 ms after CRTC 0 (the
+probe samples the two ports one after the other, so a few tenths of a millisecond is its own jitter), both at
+60.00 Hz. A frame flipped to both panels within a refresh now shows on both at the same vblank, which is what the
+plan's "one atomic commit for both panels" was for; the joint commit itself is no longer needed for that, since the
+display engine latches each port at its own, now shared, vblank. The in-step wait costs at most one refresh at the
+first modeset.
+
+### Battery, headphones and Bluetooth (2026-10-28)
+
+Phase 3's three unverified services, on RG DS OS:
+- **Low battery.** Nothing powered the handheld off before. `usr/libexec/rgds/battery-watch` (from `rcS`) reads
+  the gauge every 30 s and powers off after three readings in a row at or under 3 % with no charger connected
+  (`RGDS_BATTERY_LIMIT`); BusyBox's poweroff sends every process SIGTERM, which the engines save on. Tested with a
+  fake sysfs (discharging at 2 % powers off after three readings; a charger holds it); the real empty battery is
+  the owner's to run once.
+- **Headphones.** The jack is already a switch on the sound card's input device ("rk817_ext Headphones",
+  `SW_HEADPHONE_INSERT`), but nothing turned the speakers off. `usr/libexec/rgds/headphones` (from `rcS`) reads the
+  jack's state, then sleeps on its events and flips the "Internal Speakers" mixer pin, which also powers the
+  AW87391 amplifiers down. Both watchers run on the handheld; the plug itself is the owner's to try.
+- **Bluetooth.** The RTL8821CS's Bluetooth half sits on uart1 (`hci_uart` + `btrtl`, kernel modules so the boot
+  does not load them). The driver insists on `rtl_bt/rtl8821cs_config.bin`, which the 2025 linux-firmware snapshot
+  lacks; upstream (2026) ships it as a link to `rtl8761b_config.bin`, so `post-build.sh` makes the same link
+  (`BR2_PACKAGE_LINUX_FIRMWARE_RTL_87XX_BT` + `_88XX_BT`). bluez and its D-Bus are in the image; nothing starts at
+  boot. `usr/libexec/rgds/bt on|off|status` brings the radio up, and pairing is `bluetoothctl` over SSH for now: a
+  paired controller is a joystick like any other. Sound over Bluetooth (A2DP) is not wired and would need an
+  audio stack the image does not have. On the handheld: the firmware and its config load (`fw version
+  0x75b8f098`), the adapter powers on, scans and is pairable. Two things bluez needed on this OS: its daemon is
+  `/usr/libexec/bluetooth/bluetoothd` (not on PATH), and its storage folders are named after Bluetooth addresses,
+  with colons, which the exFAT data partition cannot hold, so `bt` keeps them on a tmpfs filled from
+  `/data/rgds/bluetooth.tar` and saved by `bt save`, `bt off` and `rcK` at shutdown. Pairing a real device is
+  the owner's to try (`bluetoothctl` over SSH: `scan on`, `pair`, `trust`, `connect`).
+  **The settings page** (same day): Connectivity has two new rows, Bluetooth (on/off, with a confirmation to turn
+  it off) and Bluetooth devices, a page like Available networks: Y scans, A pairs, trusts and connects (or
+  connects a paired device), X forgets a paired one. `runtime/bluetooth.py` drives bluetoothctl and publishes
+  `bt_supported`, `bt`, `bt_count` and `bt_<n>_{address,name,paired,connected}`; `device_services.py` gained
+  `bt-on/off/scan/pair/forget`. On stock firmware the rows show Unavailable. Host tests: `tests/test_bluetooth.py`
+  (a fake bluetoothctl) and `tests/test_bluetooth_ui.py` (the preview backend has two devices).
+  Two Buildroot lessons on the way: `own_os_build.py` re-reads the defconfig only with `--reconfigure` (new
+  packages are otherwise silently absent), and a package whose options changed (linux-firmware) needs its
+  `-dirclean`.
+
+### Wi-Fi that does not come back, and 0.8.0 over the air (2026-10-28)
+
+- **The first public OTA.** 0.7.1 (slot B) → 0.8.0 (slot A), then 0.8.0 → the final 0.8.0 build (slot B), both
+  through the launcher from a local HTTPS feed signed with the release key (docs/OTA.md, "A local test before
+  publishing"). The first run found that no OS update action had ever worked: `OsUpdater.run` was shadowed by a path
+  attribute, and a `state/update-trust.json` skipped the `-os` feed.
+- **Wi-Fi after a warm restart.** After the second update's restart the owner saw "Could not start Wi-Fi" and could
+  not turn Wi-Fi off either, until a power-off. The RTL8821CS's SDIO half logs `sdio read32 failed: -110` at every
+  probe; after a restart without a power cycle it can stop answering altogether, so `wlan0` never appears. Unbinding
+  `fe000000.mmc` (the Wi-Fi host; the system card is `fe2b0000.mmc`) runs its `mmc-pwrseq-simple` and powers the chip
+  down; binding again probes it from scratch in about 1.5 s, and it rejoins by itself. `usr/libexec/rgds/net` now
+  powers the chip down for Wi-Fi off and at shutdown (`net down`, from `rcK`), and on gives a chip that makes no
+  `wlan0` one power cycle. The failure itself did not come back in the restarts since, so the clean power-down is
+  not proven to prevent it; Wi-Fi off and on recovers it either way.
+- **Joining shown.** `wpa_wifi.py` publishes `wifi_joining` (the saved network wpa_supplicant is joining by itself)
+  and `wifi_looking`; Connectivity's card shows "Connecting to …" with the spinner, and polls every 2 s meanwhile.
+
 ### More systems: the libretro adapter (2026-10-27)
 
 RG DS Play now plays libretro cores: `play/src/core/libretro_core.cpp` puts a core's `.so` behind `play::Core`
@@ -317,6 +427,60 @@ worker, which `late_initcall` flushes, so the PMIC and the card still queue behi
 panel delays (`delays=20,10,50,120,50` per panel in the DT, run in sequence for the two panels), or the two panels
 prepared in parallel.
 
+### U-Boot splash (2026-10-28)
+
+Goal: light the panels from U-Boot, about 1.6 s after power, instead of leaving them dark until the kernel logo at
+~5.1 s. Feasibility, from the v2026.01 tree in the builder and the kernel's own drivers:
+
+| Piece | In U-Boot 2026.01 | Work |
+| --- | --- | --- |
+| VOP2 (RK3568 display controller) | none (`drivers/video/rockchip` is rk3288/3328/3399 only) | new minimal driver: one video port, timings, interface mux, background colour; then one Esmart plane for a picture. Registers from the kernel's `rockchip_drm_vop2.c` (GPL), not the vendor's 5000-line `rockchip_vop2.c` |
+| DSI host | `dw_mipi_dsi_rockchip.c` lists rk3568 (Chris Morgan, for the RG353), as a video bridge nothing uses yet | none for one panel; it takes the *first* panel and DSI host, so two panels need a fix there |
+| D-PHY | `phy-rockchip-inno-dsidphy.c` lists rk3568 | none |
+| Clocks | `clk_rk3568.c` sets ACLK/HCLK/DCLK_VOP0-2 and HPLL/VPLL | none expected (DCLK_VOP0 on HPLL as the DT assigns) |
+| Panel | no generic-dsi | new driver: parse `panel_description` from the DT (G/M/I lines), power and reset with the DT delays, DCS init, display on, sleep out |
+| Regulators, backlight | fixed GPIO regulators, `rk_pwm` (rk3328 fallback), `pwm_backlight` | DT only |
+| Device tree | U-Boot runs the quartz64-a DT, no panels | the RG DS nodes (panel, LCD supplies, PWM12 backlight, dsi0, dphy0, vop) in `rk3566-quartz64-a-u-boot.dtsi`; the boot path's nodes stay as they are |
+| Power domain PD_VO | no Rockchip power-domain driver in U-Boot | relies on PD_VO being on from reset (it is on the RK3568 until the kernel turns unused domains off) |
+| Handover to the kernel | — | kernel side, see below |
+
+Boot time cost, one panel: the panel's own delays (20 + 10 + 50 ms power/reset/init, 120 ms after sleep-out) plus
+~10 ms of DCS commands and register writes, so ~0.2 s more from power to the kernel; both panels ~0.3 s if their
+waits overlap. The fail-safe marker below adds one FAT read and two small FAT writes (to be measured in the
+bootstage table, `rgds_splash` mark). In return the panels show something ~3.5 s earlier.
+
+**No UART, so a fail-safe first.** A hang in U-Boot means re-flashing the card on the Mac. The splash runs as the
+`rgds_splash` command at the start of `bootcmd`, not at stdio start-up, so it can check the boot partition first:
+it writes `/splash.log` = `try` before touching the display, rewrites it with the result (`lit ...` or the failing
+step and error), and Linux rewrites it to `ok` once rcS has the boot partition. If U-Boot finds `try` or `lit`
+(the last splash did not reach Linux), it skips the splash, so a hang costs a long press of power and one more
+boot, not a re-flash. `/splash-off` on the boot partition turns it off; deleting `/splash.log` re-arms it.
+
+Handover without a blank flash (later step): today the kernel resets the panels at probe (early_power) and the
+fixed LCD regulators start off, so the U-Boot picture would go dark ~0.3 s into the kernel until DRM's first
+modeset. Needed: `regulator-boot-on` on the LCD supplies, the generic-dsi driver told (kernel argument from U-Boot)
+which panel is already lit so it skips power, reset and init for it, and the VOP/DSI clocks kept until DRM binds
+(DRM binds before `clk_disable_unused`, so possibly nothing to do). The kernel's DSI and VOP set-up will still
+interrupt the stream for a few frames; whether the panel holds its last picture through that is a device test.
+
+Estimate: two to four days, most of it blind iteration on the device. Step 1, 2026-10-28: dsi0's panel, solid
+#F2F5F7 (the kernel logo's background) from the VP0 background colour, no plane, `uboot-patches/004`. **On the
+device** (second U-Boot write; the first stopped at `fail panel -22`, a mode-line parser bug, and the fail-safe
+booted on as designed): `/splash.log` = `lit dclk=42000019 version=40158023`, and the colour showed, but **dsi0 is
+the bottom screen**, not the top. The splash command's own cost was 39 ms when it failed early; the lit run's cost
+is not measured yet. The owner's verdict: a near-white bottom screen alone "is not good".
+
+Step 2, the same day: both screens (dsi1, the top, on VP1; `dw_mipi_dsi_rockchip.c` patched to take each host's
+own panel), the emblem through one Esmart window per port over one frame buffer, drawn from `/splash.bmp` before any
+window or backlight shows, and the two panels' sleep-out waits shared. On the device: `lit vp0=on vp1=on bmp=0
+ms=464`. **Dropped by the owner**: 464 ms in U-Boot (kernel jump at 3.73 s instead of 3.07 s) bought about 2 s of
+emblem, then the screens went dark when the kernel reset the panels, then the kernel logo; "better if we drop it to
+make boot faster". The card is back on the U-Boot from before, the build no longer applies the patch, and the work
+is kept in `board/rgds/shelved/uboot-splash/` (patch, BMP maker, how to turn it back on). Worth it only with a
+kernel handover (panels left powered and not re-initialised, display clocks kept), and even then the kernel's DSI
+and VOP set-up may blank a few frames. The cheaper levers for light on the panels are in the kernel: shorter panel
+delays and both panels prepared at once (boot chart above).
+
 ### Button latency in games on RG DS OS (2026-10-27)
 
 Measured as press to completed page flip (the panel's own scan-out, up to one refresh, comes on top), Mario Kart DS,
@@ -372,6 +536,46 @@ The owner would rather not carry ROCKNIX's drivers. Swap them one at a time on t
    ran; watch for the Armbian blanking.
 3. The kernel patches (charger, AW87391 amp, Goodix, sleep): keep what mainline lacks as our own small patch set.
 
+### Console comforts (2026-10-28)
+
+- **Bluetooth audio (A2DP).** bluez-alsa 4.3.1 (`BR2_PACKAGE_BLUEZ_ALSA`). `bt on` starts `bluealsad -p a2dp-source`
+  and `usr/libexec/rgds/bt-audio watch`. `/etc/asound.conf` plays through `@func refer` to
+  `/run/rgds/audio-out.conf`, which alsa-lib re-reads at **every** open, also inside a running process (checked on the
+  handheld with two opens in one Python process). rcS copies `/etc/asound-speaker.conf` there. The watcher swaps in a
+  `type bluealsa` PCM while a headset's A2DP sink exists and writes its address to `/run/rgds/bt-sink`. The launcher
+  reopens its menu sink when that file changes; a game picks the headset up at its next launch. The volume follows
+  through `bt-audio volume N` (audio.headset_volume). Not built into an image yet, and not tried with a real headset.
+- **RTC checks while asleep** (`usr/libexec/rgds/power`). The script arms the RTC every CHECK seconds. On a wake at
+  the alarm with the lid still closed, the panels stay dark and it checks the battery. It sleeps again, or ends with
+  `wake=poweroff` and `/run/rgds/poweroff-requested` at 5 % or after 3 days off the charger. A running game then
+  save-quits (game_menu.power_off_after_sleep) and the launcher powers off (watch_system).
+  A bare `echo +20 > wakealarm; echo mem > /sys/power/state` woke the handheld on time, and the kernel cleared the
+  alarm. The first try through the script froze the handheld (no pstore; cause unknown), so the checks are **opt-in**:
+  `/data/rgds/sleep-check` holds the seconds (21600). Turn them on by default only after several clean dark wakes
+  with the lid closed. The lid is read with EVIOCGSW on `/dev/input/<gpio-keys-hall's event>`.
+- **No ambient light sensor.** i2c holds the RK817 (0-0020), the SYR827 (0-0040), two AW87391 (2-0058/005b), two
+  GT911 (3-0014, 5-0014), an ICM-42607P IMU (2-0068, WHO_AM_I 0x60) and the SW2001 crypto chip (5-003c); the panels
+  report no light either. In place of auto brightness: **Dim when idle** (panels to 25 % after 30 s - 5 min,
+  default 1 min, menu and games) and **Sleep timer in games** (10-60 min without input sleeps the game like a
+  closed lid). Both are on the Power page and in system.ini (`dim`, `game_sleep`); runtime/idle_watch.py is the game side.
+- **U-Boot splash: built, tried on the device and dropped** (cost 0.45 s for ~2 s of logo), see "U-Boot splash
+  (2026-10-28)" under the boot chart.
+- **Homebrew shelves** (runtime/homebrew_store.py, src/launcher/homebrew_screen.hpp). Homebrew is a tile of its own,
+  last in the Systems carousel. Its page has DS / GBA / NES tabs, and L and R switch shelves with the library's
+  shoulder tabs. Each shelf comes from **our own feed**: `assets/homebrew/feed.json`, made by `tools/build_homebrew_feed.py`. The feed has 81 entries: 6 DS
+  games from GitHub releases, and GBA and NES games from Homebrew Hub's gbadev-org/games and nesdev-org/homebrew-db
+  at a fixed commit. An entry goes in only with an explicit open license, an open-licensed repository, or GBA Jam
+  2026 consent to archiving on Homebrew Hub. Third-party brands and tools are excluded by hand (EXCLUDE in the tool).
+  The handheld reads the published copy (raw GitHub, main branch) when online, else its cache, else the copy in the
+  release. Every download is checked against the feed's size and hash (a release file's SHA-256 or a database
+  file's git blob SHA-1) before it lands in the system's folder with its cover, maker and license.
+  **PICO-8 was dropped on 2026-10-28** (fake-08 is an unofficial re-creation): the libretro-fake08 package, the
+  PICO-8 system and the BBS cart browser are gone, and post-build.sh deletes the old core from the target.
+  BlocksDS homebrew is unit code 2 (DS and DSi) but carries DSiWare's title ID high (00030004), so DSCore forced DSi
+  mode and refused without the DSi BIOS (launch error 2). It now starts such titles in DS mode when no DSi BIOS
+  pair is installed (dsi_title_install file_runs_on_ds, frontend/sdl/main.cpp; dscore/tests/dsi_header_test.cpp).
+  Game info's X removes a game file from the card; its saves stay.
+
 ### After v0: speed, picture and more systems
 
 Rule one: **measure before and after every change**, on the same scenes, on stock and on RG DS OS. The tools exist:
@@ -421,7 +625,7 @@ system gets the same library, in-game menu, saves, frames and shaders as the DS.
 one adapter brings many systems, all under RG DS Play's menu and frames:
 - First wave: NES (fceumm or nestopia), SNES (snes9x), Mega Drive, Master System and Game Gear (genesis_plus_gx or
   picodrive), PC Engine (beetle-pce-fast), Neo Geo Pocket (beetle-ngp), WonderSwan (beetle-wswan), PlayStation
-  (pcsx_rearmed), PICO-8 (fake08).
+  (pcsx_rearmed). (PICO-8 through fake08 was tried and dropped on 2026-10-28.)
 - Second wave: N64 (mupen64plus-next, GLES), arcade (fbneo), Dreamcast and PSP if they are fast enough on the A55s.
 - The cores are built in Buildroot as packages (Banana's `libretro-*` recipes are a starting point). Each system
   gets the companion screen where it makes sense (SNES and PlayStation maps, as GBA does).

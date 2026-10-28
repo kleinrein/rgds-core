@@ -74,7 +74,8 @@ void App::capture_view_for_input(const SDL_Event& e) {
 }
 
 void App::sync_view_motion(Uint32 now) {
-    auto key = std::make_tuple(int(settings.page), home_menu, preferences.view, preferences.layout);
+    auto key =
+        std::make_tuple(view_page(), home_menu, preferences.view, preferences.layout, systems_menu, shown_system);
     bool enabled = view_transitions_enabled();
     view_motion.pace = view_pace(preferences.view_speed);
     if (last_view_style != preferences.view_style) {
@@ -84,8 +85,14 @@ void App::sync_view_motion(Uint32 now) {
         view_canvas_failed = false;
         last_view_style = preferences.view_style;
     }
-    auto level = std::make_pair(int(settings.page), home_menu);
-    if (view_seen && level != std::make_pair(std::get<0>(last_view), std::get<1>(last_view))) {
+    if (settings.page == Page::Library) settings.from_home = false; // however Home was reached again
+    // Home, the systems carousel and a system's games are three levels of one stack, so each step in travels
+    // and each Back travels out.
+    const auto level_of = [](int page, bool home, bool systems) {
+        return std::make_pair(page, int(home) + 2 * int(systems));
+    };
+    auto level = level_of(view_page(), home_menu, systems_menu);
+    if (view_seen && level != level_of(std::get<0>(last_view), std::get<1>(last_view), std::get<4>(last_view))) {
         auto parent = std::find(view_levels.begin(), view_levels.end(), level);
         if (parent != view_levels.end()) {
             view_route = ViewTravel::Back;
@@ -97,7 +104,7 @@ void App::sync_view_motion(Uint32 now) {
         }
     } else if (!view_seen) view_levels = {level};
     const bool same_page = settings.page == Page::Library && std::get<0>(last_view) == int(Page::Library) &&
-                           home_menu == std::get<1>(last_view);
+                           home_menu == std::get<1>(last_view) && systems_menu == std::get<4>(last_view);
     // A choice on the view sheet changes the page under the sheet, and the
     // sheet's own slide away is the whole transition. A crossfade as well
     // would keep the old frame, sheet and all, over the closing sheet until

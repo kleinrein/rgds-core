@@ -1,0 +1,1429 @@
+{
+ "schema": 1,
+ "updated": "2026-10-28",
+ "shelves": [
+  {
+   "system": "nds",
+   "title": "Nintendo DS"
+  },
+  {
+   "system": "gba",
+   "title": "Game Boy Advance"
+  },
+  {
+   "system": "nes",
+   "title": "NES"
+  }
+ ],
+ "entries": [
+  {
+   "id": "gba/basil-termini_2048-advance",
+   "system": "gba",
+   "title": "2048 Advance",
+   "developer": "Basil Termini",
+   "license": "CC0-1.0",
+   "description": "",
+   "page": "https://basil-termini.itch.io/2048-advance",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/basil-termini_2048-advance/files/2048_jam.gba",
+    "name": "files/2048_jam.gba",
+    "size": 247232,
+    "git_sha1": "e5999e5cd7623af0df073f43d385473947462449"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/basil-termini_2048-advance/cover.png"
+  },
+  {
+   "id": "gba/zartan917_i",
+   "system": "gba",
+   "title": ">i",
+   "developer": "RetroGamma",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://zartan917.itch.io/i",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/zartan917_i/files/greaterthanIDEMO_jam.gba",
+    "name": "files/greaterthanIDEMO_jam.gba",
+    "size": 258284,
+    "git_sha1": "ce8060ebad32336d9c8aa60460f8eb6a74390d09"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/zartan917_i/cover.png"
+  },
+  {
+   "id": "gba/drkylstein_a-betty-and-claude-cartoon",
+   "system": "gba",
+   "title": "A Betty and Claude Cartoon",
+   "developer": "OutOfSync",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://drkylstein.itch.io/a-betty-and-claude-cartoon",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/drkylstein_a-betty-and-claude-cartoon/files/betty_and_claude_jam.gba",
+    "name": "files/betty_and_claude_jam.gba",
+    "size": 1399056,
+    "git_sha1": "a9eb663512c66c77b2acef942c53b175aba237b9"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/drkylstein_a-betty-and-claude-cartoon/cover.png"
+  },
+  {
+   "id": "gba/glitchcauldron_ambushed",
+   "system": "gba",
+   "title": "Ambushed",
+   "developer": "Glitch Cauldron",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://glitchcauldron.itch.io/ambushed",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/glitchcauldron_ambushed/files/ambushed_jam.gba",
+    "name": "files/ambushed_jam.gba",
+    "size": 2979284,
+    "git_sha1": "ffaa9ee037beb0e3e851f29db165c4f338699782"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/glitchcauldron_ambushed/cover.png"
+  },
+  {
+   "id": "gba/pyro-pyro_antibody",
+   "system": "gba",
+   "title": "Antibody",
+   "developer": [
+    "Pyro_Pyro",
+    "exelotl",
+    "ReyOruga",
+    "Pixel _Jamp"
+   ],
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://pyro-pyro.itch.io/antibody",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/pyro-pyro_antibody/files/Antibody.gba",
+    "name": "files/Antibody.gba",
+    "size": 4558616,
+    "git_sha1": "50d22f6e4d1d17fd568b0187573acb78d18e163f"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/pyro-pyro_antibody/cover.png"
+  },
+  {
+   "id": "gba/attack-on-voxelburg",
+   "system": "gba",
+   "title": "Attack on Voxelburg",
+   "developer": "nuclear",
+   "license": "GPL-3.0-or-later",
+   "description": "GameBoy Advance terrain shooter game for the gbajam22",
+   "page": "https://nuclear.itch.io/attack-on-voxelburg",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/attack-on-voxelburg/voxelburg_jam.gba",
+    "name": "voxelburg_jam.gba",
+    "size": 827676,
+    "git_sha1": "0775d3cdf45ec16dd6f9d8a3d8eacedd4c09b33f"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/attack-on-voxelburg/cover.png"
+  },
+  {
+   "id": "gba/rodrigocard_aurora-mission",
+   "system": "gba",
+   "title": "Aurora Mission GBA",
+   "developer": "Rodrigo Rocha",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://rodrigocard.itch.io/aurora-mission",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/rodrigocard_aurora-mission/files/AuroraMission_jam.gba",
+    "name": "files/AuroraMission_jam.gba",
+    "size": 547696,
+    "git_sha1": "1831f10050ff91bf8227a67be593ec53fde30f82"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/rodrigocard_aurora-mission/cover.png"
+  },
+  {
+   "id": "gba/xanthus_ballidarity-forever",
+   "system": "gba",
+   "title": "Ballidarity Forever (GBAJam ver)",
+   "developer": "Xanthus",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://xanthus.itch.io/ballidarity-forever",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/xanthus_ballidarity-forever/files/Ballidarity_Forever_v0-4_jam.gba",
+    "name": "files/Ballidarity_Forever_v0-4_jam.gba",
+    "size": 286640,
+    "git_sha1": "d60d8109a13876f125d4fdb26f35b3f80272f3ca"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/xanthus_ballidarity-forever/cover.png"
+  },
+  {
+   "id": "gba/plourples_banans-gba",
+   "system": "gba",
+   "title": "Banan's Peel Out Mini for GBA",
+   "developer": "plourples",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://plourples.itch.io/banans-gba",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/plourples_banans-gba/files/BanansPeelOutMini_jam.gba",
+    "name": "files/BanansPeelOutMini_jam.gba",
+    "size": 370120,
+    "git_sha1": "964c90cb1e4ed16a6162b8c0dc8d162d1153a32c"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/plourples_banans-gba/cover.png"
+  },
+  {
+   "id": "gba/afska_beat-beast",
+   "system": "gba",
+   "title": "BeatBeast",
+   "developer": "Multiple authors",
+   "license": "MIT",
+   "description": "",
+   "page": "https://afska.itch.io/beat-beast",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/afska_beat-beast/files/BeatBeast_jam.gba",
+    "name": "files/BeatBeast_jam.gba",
+    "size": 33506864,
+    "git_sha1": "0af197420af4ed8ae53997cc320cf00355237288"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/afska_beat-beast/cover.gif"
+  },
+  {
+   "id": "gba/bloxorz-gba",
+   "system": "gba",
+   "title": "BLOXORZ.gba",
+   "developer": "Nostabyte Interactive",
+   "license": "GPL-3.0",
+   "description": "A complete port of the classic flash game Bloxorz",
+   "page": "https://nostabyte.itch.io/bloxorzgba",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/bloxorz-gba/bloxorz.gba",
+    "name": "bloxorz.gba",
+    "size": 1594972,
+    "git_sha1": "f950c5b650922e353f1adcf8d7ce137ef82833c9"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/bloxorz-gba/cover.png"
+  },
+  {
+   "id": "gba/xcelfr_breakoid",
+   "system": "gba",
+   "title": "Breakoid",
+   "developer": "CeL",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://xcelfr.itch.io/breakoid",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/xcelfr_breakoid/files/Breakoid_jam.gba",
+    "name": "files/Breakoid_jam.gba",
+    "size": 3889132,
+    "git_sha1": "27fca23bac09ddb49056c2fe11b1bd4c717a23e9"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/xcelfr_breakoid/cover.png"
+  },
+  {
+   "id": "gba/brotherjauffre_brother-jauffres-untitled-puzzle-game",
+   "system": "gba",
+   "title": "Brother Jauffre's Untitled Puzzle Game with Two Characters and Three Levels, the Last of Which is Fairly Difficult",
+   "developer": "brotherjauffre",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://brotherjauffre.itch.io/brother-jauffres-untitled-puzzle-game",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/brotherjauffre_brother-jauffres-untitled-puzzle-game/files/brother-jauffre's-untitled-puzzle-game_jam.gba",
+    "name": "files/brother-jauffre's-untitled-puzzle-game_jam.gba",
+    "size": 105976,
+    "git_sha1": "933d43b92648ac7abc46aa217faca341034924aa"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/brotherjauffre_brother-jauffres-untitled-puzzle-game/cover.png"
+  },
+  {
+   "id": "gba/butano-fighter",
+   "system": "gba",
+   "title": "Butano Fighter",
+   "developer": "GValiente",
+   "license": "Zlib",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/butano-fighter",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/butano-fighter/butano-fighter.gba",
+    "name": "butano-fighter.gba",
+    "size": 3482456,
+    "git_sha1": "14cb3080a4f8492bc3c23cf2e8a0c502ea1b76f5"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/butano-fighter/1.gif"
+  },
+  {
+   "id": "gba/goldcube_cat-fish",
+   "system": "gba",
+   "title": "Cat Fish",
+   "developer": "goldcube",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://goldcube.itch.io/cat-fish",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/goldcube_cat-fish/files/pounce_jam.gba",
+    "name": "files/pounce_jam.gba",
+    "size": 1404824,
+    "git_sha1": "7c49390a7387935de82cb7b68a7555b0b1f9f0a2"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/goldcube_cat-fish/cover.gif"
+  },
+  {
+   "id": "gba/collie-defence",
+   "system": "gba",
+   "title": "Collie Defence",
+   "developer": "vayan",
+   "license": "CC-BY-SA-4.0",
+   "description": "New tower defence game for the Game Boy Advance! Protect your sheep!",
+   "page": "https://xvayan.itch.io/collie-defence",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/collie-defence/collie-defence_jam.gba",
+    "name": "collie-defence_jam.gba",
+    "size": 1207868,
+    "git_sha1": "5289f723e370994e6692c4347994b5e8de450649"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/collie-defence/cover.png"
+  },
+  {
+   "id": "gba/coquiman",
+   "system": "gba",
+   "title": "Coquiman",
+   "developer": [
+    "Nikku4211",
+    "PMProg"
+   ],
+   "license": "MIT",
+   "description": "Title screen for grappling game.",
+   "page": "https://nikku4211.itch.io/coquiman",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/coquiman/coquiman.gba",
+    "name": "coquiman.gba",
+    "size": 330784,
+    "git_sha1": "eb10d165508ae02256860c5c58e3838d6bfca82c"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/coquiman/cover.png"
+  },
+  {
+   "id": "gba/tarsi_cozy-arcade-redemption-game-gba",
+   "system": "gba",
+   "title": "Cozy Arcade Redemption Game [GBA]",
+   "developer": "tarsi",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://tarsi.itch.io/cozy-arcade-redemption-game-gba",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/tarsi_cozy-arcade-redemption-game-gba/files/COZYARCADEREDEMPTION_jam.gba",
+    "name": "files/COZYARCADEREDEMPTION_jam.gba",
+    "size": 4888892,
+    "git_sha1": "2d4f162e421d5639c4f3dc19463e3b94c7976dcd"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/tarsi_cozy-arcade-redemption-game-gba/cover.png"
+  },
+  {
+   "id": "gba/setsquare_damage-report",
+   "system": "gba",
+   "title": "Damage Report",
+   "developer": [
+    "setsquare",
+    "LostImmortal",
+    "samwilliamssound",
+    "Crazy_Jake"
+   ],
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://setsquare.itch.io/damage-report",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/setsquare_damage-report/files/damage-report_jam.gba",
+    "name": "files/damage-report_jam.gba",
+    "size": 21743790,
+    "git_sha1": "308c5c616c6b024d3f19a289a58d01f810a16958"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/setsquare_damage-report/cover.png"
+  },
+  {
+   "id": "gba/daretosquare_dare-to-doku",
+   "system": "gba",
+   "title": "Dare To Doku - a GBA puzzle game",
+   "developer": "Dare To Square",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://daretosquare.itch.io/dare-to-doku",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/daretosquare_dare-to-doku/files/DareToDoku_jam.gba",
+    "name": "files/DareToDoku_jam.gba",
+    "size": 2136888,
+    "git_sha1": "378fc4aa9e4fe634ae94f29d5e1cba5b1368e3e2"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/daretosquare_dare-to-doku/cover.png"
+  },
+  {
+   "id": "gba/ticolol_doom-escaping",
+   "system": "gba",
+   "title": "Doom Escaping",
+   "developer": "Thiago Amendola",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://ticolol.itch.io/doom-escaping",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/ticolol_doom-escaping/files/doom-escaping_jam.gba",
+    "name": "files/doom-escaping_jam.gba",
+    "size": 2792084,
+    "git_sha1": "1ce3af7b7b6fce6c15fad3dfd83895b737f57562"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/ticolol_doom-escaping/cover.png"
+  },
+  {
+   "id": "gba/setsquare_dungeon-tactics",
+   "system": "gba",
+   "title": "Dungeon Tactics",
+   "developer": [
+    "setsquare",
+    "LostImmortal",
+    "samwilliamssound"
+   ],
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://setsquare.itch.io/dungeon-tactics",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/setsquare_dungeon-tactics/files/dungeon-tactics.gba",
+    "name": "files/dungeon-tactics.gba",
+    "size": 30006242,
+    "git_sha1": "f5c04d5603992e606e2293e4e44569a29a196e3b"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/setsquare_dungeon-tactics/cover.png"
+  },
+  {
+   "id": "gba/viidev_elementary",
+   "system": "gba",
+   "title": "Elementary",
+   "developer": "veebs",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://viidev.itch.io/elementary",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/viidev_elementary/files/elementary_jam.gba",
+    "name": "files/elementary_jam.gba",
+    "size": 1399812,
+    "git_sha1": "b502b625d6175c580923f65156a2247c2c0b0109"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/viidev_elementary/cover.png"
+  },
+  {
+   "id": "gba/feline",
+   "system": "gba",
+   "title": "Feline",
+   "developer": "Jono Shields",
+   "license": "MIT",
+   "description": "Ever wondered what its's like to be a cat?",
+   "page": "https://foopod.itch.io/feline",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/feline/feline.gba",
+    "name": "feline.gba",
+    "size": 1504920,
+    "git_sha1": "a87f21bfb92594725849ec892dbea1814b84ea2b"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/feline/cover.gif"
+  },
+  {
+   "id": "gba/origamiscienceguy_forever-witch-fighter-gba",
+   "system": "gba",
+   "title": "Forever Witch Fighter GBA",
+   "developer": "origamiscienceguy",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://origamiscienceguy.itch.io/forever-witch-fighter-gba",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/origamiscienceguy_forever-witch-fighter-gba/files/Forever_Witch_Fighter_GBA_jam.gba",
+    "name": "files/Forever_Witch_Fighter_GBA_jam.gba",
+    "size": 8286508,
+    "git_sha1": "da430defd5c25efe6d26a1f8b61b7875e779fc63"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/origamiscienceguy_forever-witch-fighter-gba/cover.png"
+  },
+  {
+   "id": "gba/delphanpan_frog",
+   "system": "gba",
+   "title": "frog",
+   "developer": "DelphanPAN",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://delphanpan.itch.io/frog",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/delphanpan_frog/files/frog_jam.gba",
+    "name": "files/frog_jam.gba",
+    "size": 770368,
+    "git_sha1": "b83a04081b0a63afdb743ed1556c9489039bf4d3"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/delphanpan_frog/cover.png"
+  },
+  {
+   "id": "gba/origamiscienceguy_galactic-quest",
+   "system": "gba",
+   "title": "Galactic Quest",
+   "developer": "origamiscienceguy",
+   "license": "GPL-3.0",
+   "description": "",
+   "page": "https://origamiscienceguy.itch.io/galactic-quest",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/origamiscienceguy_galactic-quest/files/Galactic_Quest_jam.gba",
+    "name": "files/Galactic_Quest_jam.gba",
+    "size": 2687076,
+    "git_sha1": "12edee79e17f40a37995262a02a5c759ad899a6d"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/origamiscienceguy_galactic-quest/cover.png"
+  },
+  {
+   "id": "gba/fliing_gba-football-league",
+   "system": "gba",
+   "title": "GBA Football League",
+   "developer": "Fliing",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://fliing.itch.io/gba-football-league",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/fliing_gba-football-league/files/fantasy-football-gba_jam.gba",
+    "name": "files/fantasy-football-gba_jam.gba",
+    "size": 315392,
+    "git_sha1": "db27bee420fd26dee45f443abdaafd251f33eeee"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/fliing_gba-football-league/cover.png"
+  },
+  {
+   "id": "gba/gbamicrojam23",
+   "system": "gba",
+   "title": "GBA Microjam '23 game",
+   "developer": "gba microjam '23 contributors",
+   "license": "MIT",
+   "description": "Trick or treat! The GBA Microjam '23 is a spooky microgame collection for the Game Boy Advance created by the members of the gbadev.net community. If you've played WarioWare you'll know what to expect! (If you haven't... then heck, why not download it anyway and see what it's all",
+   "page": "https://gbadev.itch.io/gba-microjam-23",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/gbamicrojam23/microjam23.gba",
+    "name": "microjam23.gba",
+    "size": 11166428,
+    "git_sha1": "b97292b10d968287c90224791dae6052570e56e0"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/gbamicrojam23/VM2sR.png"
+  },
+  {
+   "id": "gba/codename-b_gba-minesweeper-6d",
+   "system": "gba",
+   "title": "GBA MINESWEEPER 6D",
+   "developer": "codename_B",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://codename-b.itch.io/gba-minesweeper-6d",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/codename-b_gba-minesweeper-6d/files/MINESWEEPER6D_jam.gba",
+    "name": "files/MINESWEEPER6D_jam.gba",
+    "size": 342804,
+    "git_sha1": "67005eb836456a400afd3c0c872a1186ff3931f1"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/codename-b_gba-minesweeper-6d/cover.gif"
+  },
+  {
+   "id": "gba/glaciadungeon",
+   "system": "gba",
+   "title": "Glacia Dungeon",
+   "developer": "NotImplementedLife",
+   "license": "GPL-3.0",
+   "description": "",
+   "page": "https://notimplementedlife.itch.io/glaciadungeon",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/glaciadungeon/GlaciaDungeon_jam.gba",
+    "name": "GlaciaDungeon_jam.gba",
+    "size": 1224688,
+    "git_sha1": "4b89080cfe2dc88c0a6af44532144ae44edf1488"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/glaciadungeon/cover.png"
+  },
+  {
+   "id": "gba/ian8tor_gravity-cave",
+   "system": "gba",
+   "title": "Gravity Cave",
+   "developer": "Ian8tor",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://ian8tor.itch.io/gravity-cave",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/ian8tor_gravity-cave/files/GravityCave_Jam.gba",
+    "name": "files/GravityCave_Jam.gba",
+    "size": 504268,
+    "git_sha1": "e539b86e7290d013b9203bae8bc51e92070e32a3"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/ian8tor_gravity-cave/cover.png"
+  },
+  {
+   "id": "gba/grimlight",
+   "system": "gba",
+   "title": "GRIMLIGHT: The Hollow Bell",
+   "developer": "retroromrunner",
+   "license": "MIT",
+   "description": "A turn-based gothic puzzle game for the Game Boy Advance. On Halloween night, the Hollow Bell of Grimlight Manor tolls for the dead - and something has stolen the manor's soul relics. You are the last lantern-keeper: cross 30 rooms in six chapters, from the manor, crypt, and belf",
+   "page": "https://retroromrunner.itch.io/grimlight",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/grimlight/grimlight-v14.gba",
+    "name": "grimlight-v14.gba",
+    "size": 51716,
+    "git_sha1": "7979c6a26bbb5e5660cd6ee21e146370a2319a19"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/grimlight/title.png"
+  },
+  {
+   "id": "gba/hexes",
+   "system": "gba",
+   "title": "HEXES",
+   "developer": "Dania Rifki",
+   "license": "MIT",
+   "description": "The fast-paced puzzle shoot'em up!",
+   "page": "https://kaleidosium.itch.io/hexes",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/hexes/HEXES.gba",
+    "name": "HEXES.gba",
+    "size": 10436680,
+    "git_sha1": "c4b68a8be98ec96c325cd977b18fca17660d5411"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/hexes/cover.png"
+  },
+  {
+   "id": "gba/6teloiv_hive-keepers-advance",
+   "system": "gba",
+   "title": "Hive Keepers Advance",
+   "developer": [
+    "6TELOIV",
+    "Akisako"
+   ],
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://6teloiv.itch.io/hive-keepers-advance",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/6teloiv_hive-keepers-advance/files/HIVE_KEEPERS_ADVANCE_jam.gba",
+    "name": "files/HIVE_KEEPERS_ADVANCE_jam.gba",
+    "size": 8736576,
+    "git_sha1": "13d1b383ef6730ba96f28644f8b7fd7bfb0fbea4"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/6teloiv_hive-keepers-advance/cover.png"
+  },
+  {
+   "id": "gba/gordonshamway23_it-matters",
+   "system": "gba",
+   "title": "It Matters",
+   "developer": [
+    "gordonshamway23",
+    "WTBasil"
+   ],
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://gordonshamway23.itch.io/it-matters",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/gordonshamway23_it-matters/files/it_matters_jam.gba",
+    "name": "files/it_matters_jam.gba",
+    "size": 366792,
+    "git_sha1": "a0208f08204bc127f15619f79ac76532b2dc1f9c"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/gordonshamway23_it-matters/cover.png"
+  },
+  {
+   "id": "gba/stuck-pixel-studio_knock-time",
+   "system": "gba",
+   "title": "Knock Time",
+   "developer": [
+    "Stuck Pixel Studio",
+    "Negoro_Sama",
+    "Nabo Games",
+    "Luife"
+   ],
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://stuck-pixel-studio.itch.io/knock-time",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/stuck-pixel-studio_knock-time/files/KnockTime_jam.gba",
+    "name": "files/KnockTime_jam.gba",
+    "size": 5281044,
+    "git_sha1": "9bcdefa5958f80c0d3ab92f76bee907aa0ef157c"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/stuck-pixel-studio_knock-time/cover.png"
+  },
+  {
+   "id": "gba/eyecrown_la-crypte-de-pictavie",
+   "system": "gba",
+   "title": "La Crypte de Pictavie",
+   "developer": "Théo Carrasco - EyeCrown - 13th Prog",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://eyecrown.itch.io/la-crypte-de-pictavie",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/eyecrown_la-crypte-de-pictavie/files/LACRYPTEDEPICTAVIE_jam.gba",
+    "name": "files/LACRYPTEDEPICTAVIE_jam.gba",
+    "size": 480568,
+    "git_sha1": "c32a38135ff5d1419d82fa698e19d5b8fafc9980"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/eyecrown_la-crypte-de-pictavie/cover.png"
+  },
+  {
+   "id": "gba/edefelice_lander-advance",
+   "system": "gba",
+   "title": "Lander Advance",
+   "developer": "edefelice",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://edefelice.itch.io/lander-advance",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/edefelice_lander-advance/files/lander-advance_jam.gba",
+    "name": "files/lander-advance_jam.gba",
+    "size": 260716,
+    "git_sha1": "b7c844e8a04d396bb85e8071f5dd18f134e10176"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/edefelice_lander-advance/cover.jpg"
+  },
+  {
+   "id": "gba/bump-dev_let-it-recoil",
+   "system": "gba",
+   "title": "Let It Recoil!",
+   "developer": "Bump Dev",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://bump-dev.itch.io/let-it-recoil",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/bump-dev_let-it-recoil/files/let-it-recoil_jam.gba",
+    "name": "files/let-it-recoil_jam.gba",
+    "size": 318668,
+    "git_sha1": "4d43cc7490ecb821b9e2342f99ee212c0884d1ef"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/bump-dev_let-it-recoil/cover.png"
+  },
+  {
+   "id": "gba/hollowbarrel_madam",
+   "system": "gba",
+   "title": "Madam",
+   "developer": "HollowBarrel",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://hollowbarrel.itch.io/madam",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/hollowbarrel_madam/files/Madam_jam.gba",
+    "name": "files/Madam_jam.gba",
+    "size": 1656984,
+    "git_sha1": "ea6d81c07faffae639eeac2a8ee2eb1880f9377c"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/hollowbarrel_madam/cover.png"
+  },
+  {
+   "id": "gba/meteorain-gba-jam-2021",
+   "system": "gba",
+   "title": "MeteoRain (GBA Jam 2021)",
+   "developer": "Dr. Ludos",
+   "license": "MIT",
+   "description": "",
+   "page": "https://drludos.itch.io/meteorain-gba-jam-2021",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/meteorain-gba-jam-2021/MeteoRain.gba",
+    "name": "MeteoRain.gba",
+    "size": 1710503,
+    "git_sha1": "858f34983697772c051e154caba88deecf3d6329"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/meteorain-gba-jam-2021/cover.gif"
+  },
+  {
+   "id": "gba/copyrat90_mimiclime",
+   "system": "gba",
+   "title": "mimiclime",
+   "developer": "copyrat90",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://copyrat90.itch.io/mimiclime",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/copyrat90_mimiclime/files/game.gba",
+    "name": "files/game.gba",
+    "size": 736604,
+    "git_sha1": "5cffe56f3280ed4962f069fd3abf4d8af9719833"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/copyrat90_mimiclime/cover.png"
+  },
+  {
+   "id": "gba/lipucka_mordoboy-gba",
+   "system": "gba",
+   "title": "MORDOBOY GBA",
+   "developer": "lipucka",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://lipucka.itch.io/mordoboy-gba",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/lipucka_mordoboy-gba/files/MORDOBOY_jam.gba",
+    "name": "files/MORDOBOY_jam.gba",
+    "size": 2528564,
+    "git_sha1": "b56e04209a4f160a3c9a3d2c2a4200b7bb6d56b4"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/lipucka_mordoboy-gba/cover.png"
+  },
+  {
+   "id": "gba/songoku2000_my-beautiful-dere",
+   "system": "gba",
+   "title": "My Beautiful Dere",
+   "developer": "SonGoku2000",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://songoku2000.itch.io/my-beautiful-dere",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/songoku2000_my-beautiful-dere/files/my-beautiful-dere_jam.gba",
+    "name": "files/my-beautiful-dere_jam.gba",
+    "size": 355864,
+    "git_sha1": "90e2740ebd6652ebd246a1c8041b49ce6fc1b8b1"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/songoku2000_my-beautiful-dere/cover.png"
+  },
+  {
+   "id": "gba/the-dharex_nave-gba2",
+   "system": "gba",
+   "title": "Nave gba",
+   "developer": "the dharex",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://the-dharex.itch.io/nave-gba2",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/the-dharex_nave-gba2/files/nave_jam.gba",
+    "name": "files/nave_jam.gba",
+    "size": 1981108,
+    "git_sha1": "bb15ab19e1ce4db3deb43df12185ad2545abedbc"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/the-dharex_nave-gba2/cover.png"
+  },
+  {
+   "id": "gba/zegalur_noonlight-paradox",
+   "system": "gba",
+   "title": "Noonlight Paradox",
+   "developer": "zegalur",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://zegalur.itch.io/noonlight-paradox",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/zegalur_noonlight-paradox/files/noonlight_paradox_jam.gba",
+    "name": "files/noonlight_paradox_jam.gba",
+    "size": 1016004,
+    "git_sha1": "4f5f6f9c617ae9c2d222aec8199ac88b3721715e"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/zegalur_noonlight-paradox/cover.jpg"
+  },
+  {
+   "id": "gba/fralacticus_ounfo-tan-sispann",
+   "system": "gba",
+   "title": "Ounfò Tan Sispann",
+   "developer": "Fralacticus",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://fralacticus.itch.io/ounfo-tan-sispann",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/fralacticus_ounfo-tan-sispann/files/ounfo_tan_sispann_jam.gba",
+    "name": "files/ounfo_tan_sispann_jam.gba",
+    "size": 20885048,
+    "git_sha1": "6fd322e5139bd7d93821871a928b27308b0d4cbc"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/fralacticus_ounfo-tan-sispann/cover.png"
+  },
+  {
+   "id": "gba/christopherthompsonut_paladado-demo",
+   "system": "gba",
+   "title": "Paladado Demo",
+   "developer": "ChristopherThompsonUT",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://christopherthompsonut.itch.io/paladado-demo",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/christopherthompsonut_paladado-demo/files/Paladado_jam.gba",
+    "name": "files/Paladado_jam.gba",
+    "size": 9997532,
+    "git_sha1": "54a241a91e6c253636f6d974d0b75029dbb794b8"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/christopherthompsonut_paladado-demo/cover.png"
+  },
+  {
+   "id": "gba/saraitakemoto_pinball-galaxy-demo-ver",
+   "system": "gba",
+   "title": "Pinball Galaxy Demo Ver",
+   "developer": "Sarai Takemoto",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://saraitakemoto.itch.io/pinball-galaxy-demo-ver",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/saraitakemoto_pinball-galaxy-demo-ver/files/pgdv260914_jam.gba",
+    "name": "files/pgdv260914_jam.gba",
+    "size": 1499476,
+    "git_sha1": "b37cde83e6ad1191bdcf197e5737296b7e29f14e"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/saraitakemoto_pinball-galaxy-demo-ver/cover.gif"
+  },
+  {
+   "id": "gba/fixxiefixx_pinball-simulator-2026-advanced",
+   "system": "gba",
+   "title": "Pinball Simulator 2026 Advanced",
+   "developer": "fixxiefixx",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://fixxiefixx.itch.io/pinball-simulator-2026-advanced",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/fixxiefixx_pinball-simulator-2026-advanced/files/PinballSimulator2026Advanced_jam.gba",
+    "name": "files/PinballSimulator2026Advanced_jam.gba",
+    "size": 2868904,
+    "git_sha1": "df8f06a656eed1ab97e8ab1aed61d34511f57eec"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/fixxiefixx_pinball-simulator-2026-advanced/cover.png"
+  },
+  {
+   "id": "gba/romw314_pixeltower26-gba",
+   "system": "gba",
+   "title": "Pixel Tower 26",
+   "developer": "romw314",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://romw314.itch.io/pixeltower26-gba",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/romw314_pixeltower26-gba/files/pixel-tower-26.gba",
+    "name": "files/pixel-tower-26.gba",
+    "size": 201120,
+    "git_sha1": "1d783b9f1a04db2732e6f19f80d02dce2290c7d7"
+   },
+   "cover": ""
+  },
+  {
+   "id": "gba/chickendude_save-the-princess-rpg",
+   "system": "gba",
+   "title": "Save The Princess RPG",
+   "developer": "chickendude",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://chickendude.itch.io/save-the-princess-rpg",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/chickendude_save-the-princess-rpg/files/SaveThePrincessRPG_jam.gba",
+    "name": "files/SaveThePrincessRPG_jam.gba",
+    "size": 206528,
+    "git_sha1": "199ed078b772760e8ab17a2d5080bbe1ba13de05"
+   },
+   "cover": ""
+  },
+  {
+   "id": "gba/skyland",
+   "system": "gba",
+   "title": "Skyland",
+   "developer": "evanbowman",
+   "license": "MPL-2.0",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/skyland",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/skyland/Skyland.gba",
+    "name": "Skyland.gba",
+    "size": 24693968,
+    "git_sha1": "9bbd71ce7f542619adabfb87a86ad295b60b9225"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/skyland/windmill.gif"
+  },
+  {
+   "id": "gba/vhaugan_sleepyheads",
+   "system": "gba",
+   "title": "Sleepyheads",
+   "developer": "VHaugan",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://vhaugan.itch.io/sleepyheads",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/vhaugan_sleepyheads/files/SLEEPYHEADS_jam.gba",
+    "name": "files/SLEEPYHEADS_jam.gba",
+    "size": 2338700,
+    "git_sha1": "2eeb36f6da25bdadbd9437f226ff0558b8edf6a9"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/vhaugan_sleepyheads/cover.png"
+  },
+  {
+   "id": "gba/solar-guard",
+   "system": "gba",
+   "title": "Solar Guard",
+   "developer": "Deft Spade",
+   "license": "GPL-3.0",
+   "description": "A homebrew Game Boy Advance game made for GBA Jam 2021.",
+   "page": "https://deft-spade.itch.io/solar-guard",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/solar-guard/Solar_Guard_GBA_JAM_2021.gba",
+    "name": "Solar_Guard_GBA_JAM_2021.gba",
+    "size": 4272776,
+    "git_sha1": "972a779531cfe3cb58214b72c6c95e7dcfbd330c"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/solar-guard/cover.png"
+  },
+  {
+   "id": "gba/sfiera_spindown",
+   "system": "gba",
+   "title": "Spindown",
+   "developer": "sfiera",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://sfiera.itch.io/spindown",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/sfiera_spindown/files/spindown_jam.gba",
+    "name": "files/spindown_jam.gba",
+    "size": 60604,
+    "git_sha1": "f674804053c606fedf3f0fb82f2bb11a0378105a"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/sfiera_spindown/cover.png"
+  },
+  {
+   "id": "gba/dreamnoid_starfall-advance",
+   "system": "gba",
+   "title": "Starfall Advance",
+   "developer": "Dreamnoid",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://dreamnoid.itch.io/starfall-advance",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/dreamnoid_starfall-advance/files/StarfallAdvance_jam.gba",
+    "name": "files/StarfallAdvance_jam.gba",
+    "size": 9019160,
+    "git_sha1": "863a2c06cd6311266d38502dec67974081c050cc"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/dreamnoid_starfall-advance/cover.png"
+  },
+  {
+   "id": "gba/mtthgn_sun-rise",
+   "system": "gba",
+   "title": "Sun Rise",
+   "developer": [
+    "mtthgn",
+    "EF_Kyron",
+    "etarrh"
+   ],
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://mtthgn.itch.io/sun-rise",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/mtthgn_sun-rise/files/sun_rise.gba",
+    "name": "files/sun_rise.gba",
+    "size": 4907500,
+    "git_sha1": "306ea1402e20a50663c92373d0abd146f69d4c56"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/mtthgn_sun-rise/cover.png"
+  },
+  {
+   "id": "gba/eragnarok_the-artifact",
+   "system": "gba",
+   "title": "The Artifact",
+   "developer": "eragnarok",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://eragnarok.itch.io/the-artifact",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/eragnarok_the-artifact/files/The_Artifact_jam.gba",
+    "name": "files/The_Artifact_jam.gba",
+    "size": 2237156,
+    "git_sha1": "9f59ea34205136083387c34764ef621868714d83"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/eragnarok_the-artifact/cover.png"
+  },
+  {
+   "id": "gba/the-hat-chooses-the-wizard",
+   "system": "gba",
+   "title": "The Hat Chooses the Wizard",
+   "developer": "Corwin Kuiper and Gwilym Kuiper",
+   "license": "MPL-2.0",
+   "description": "",
+   "page": "https://lostimmortal.itch.io/the-hat-chooses-the-wizard",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/the-hat-chooses-the-wizard/the-hat-chooses-the-wizard.gba",
+    "name": "the-hat-chooses-the-wizard.gba",
+    "size": 2097152,
+    "git_sha1": "e08874658952dfe4b4c60acf1d59523d42776c02"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/the-hat-chooses-the-wizard/1.png"
+  },
+  {
+   "id": "gba/the-purple-night",
+   "system": "gba",
+   "title": "The purple night",
+   "developer": "Corwin Kuiper and Gwilym Kuiper, with music by Sam Williams",
+   "license": "MPL-2.0",
+   "description": "",
+   "page": "https://lostimmortal.itch.io/the-purple-night",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/the-purple-night/the-purple-night.gba",
+    "name": "the-purple-night.gba",
+    "size": 8388608,
+    "git_sha1": "e8cb53e1de089e85503d194bcfff82d6f0375b9c"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/the-purple-night/1.png"
+  },
+  {
+   "id": "gba/intjt2_sps",
+   "system": "gba",
+   "title": "The Space Project Ship",
+   "developer": "INTJT2",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://intjt2.itch.io/sps",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/intjt2_sps/files/TheSpaceProjectShip_jam.gba",
+    "name": "files/TheSpaceProjectShip_jam.gba",
+    "size": 13832,
+    "git_sha1": "e631426daa55182c1c4952870c55111e8e88ec76"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/intjt2_sps/cover.png"
+  },
+  {
+   "id": "gba/soingamedev_tiny-relic-quest-gba-edition",
+   "system": "gba",
+   "title": "Tiny Relic Quest - GBA Edition",
+   "developer": "Soin GameDev",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://soingamedev.itch.io/tiny-relic-quest-gba-edition",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/soingamedev_tiny-relic-quest-gba-edition/files/TINYRELICQUEST_jam.gba",
+    "name": "files/TINYRELICQUEST_jam.gba",
+    "size": 2411984,
+    "git_sha1": "8aede6a2d282d4a7e958b86490562675b61b8ba3"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/soingamedev_tiny-relic-quest-gba-edition/cover.png"
+  },
+  {
+   "id": "gba/nowgames_tower-of-life",
+   "system": "gba",
+   "title": "Tower of Life",
+   "developer": "Now Games",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://nowgames.itch.io/tower-of-life",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/nowgames_tower-of-life/files/TowerOfLife_jam.gba",
+    "name": "files/TowerOfLife_jam.gba",
+    "size": 773592,
+    "git_sha1": "08b5910d3d0be90441fe3bec6147808a5ace398b"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/nowgames_tower-of-life/cover.png"
+  },
+  {
+   "id": "gba/ucity-advance",
+   "system": "gba",
+   "title": "uCity Advance",
+   "developer": "AntonioND",
+   "license": "GPL-3.0-or-later",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/ucity-advance",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/ucity-advance/ucity-advance-v1.0.1.gba",
+    "name": "ucity-advance-v1.0.1.gba",
+    "size": 1925124,
+    "git_sha1": "c6c58d11ced3cd801c092661c2539f6346692715"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/ucity-advance/screenshot-0.png"
+  },
+  {
+   "id": "gba/varooom3d",
+   "system": "gba",
+   "title": "Varooom 3D",
+   "developer": "GValiente, tempest, Kaappis",
+   "license": "Zlib",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/varooom3d",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/varooom3d/varooom-3d.gba",
+    "name": "varooom-3d.gba",
+    "size": 7975756,
+    "git_sha1": "738cdcca4667e2e51bf4f85452100405e1f27512"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/varooom3d/1.png"
+  },
+  {
+   "id": "gba/factor64_wfx",
+   "system": "gba",
+   "title": "WFX",
+   "developer": "Factor",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://factor64.itch.io/wfx",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/factor64_wfx/files/WFX_jam.gba",
+    "name": "files/WFX_jam.gba",
+    "size": 1119808,
+    "git_sha1": "c580588cf08cc45f08c3c8e06ea22de38ae0da6a"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/factor64_wfx/cover.png"
+  },
+  {
+   "id": "gba/coffeepasta_witchxbullet",
+   "system": "gba",
+   "title": "Witch×Bullet",
+   "developer": "CoffeePasta",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://coffeepasta.itch.io/witchxbullet",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/coffeepasta_witchxbullet/files/witchxbullet_jam.gba",
+    "name": "files/witchxbullet_jam.gba",
+    "size": 11673116,
+    "git_sha1": "1bfbf10c7d25466bd768655e88e522eee4db9737"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/coffeepasta_witchxbullet/cover.png"
+  },
+  {
+   "id": "gba/tito888_wizard-battle",
+   "system": "gba",
+   "title": "Wizard Battle",
+   "developer": "Tito888",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://tito888.itch.io/wizard-battle",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/tito888_wizard-battle/files/WIZARDBATTLE_jam.gba",
+    "name": "files/WIZARDBATTLE_jam.gba",
+    "size": 2287972,
+    "git_sha1": "82f8b7847cb157bb22d89fe61599739af69d2150"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/tito888_wizard-battle/cover.png"
+  },
+  {
+   "id": "gba/nostabyte_xo89",
+   "system": "gba",
+   "title": "xo89",
+   "developer": "Nostabyte Interactive",
+   "license": "GBA Jam 2026 (archived on Homebrew Hub with the entrant's consent)",
+   "description": "",
+   "page": "https://nostabyte.itch.io/xo89",
+   "source": "Homebrew Hub (gbadev-org/games)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/nostabyte_xo89/files/xo89_jam.gba",
+    "name": "files/xo89_jam.gba",
+    "size": 1760960,
+    "git_sha1": "c2ae538a30f8cd1ede76eb151e6a27f271ac3231"
+   },
+   "cover": "https://raw.githubusercontent.com/gbadev-org/games/6d707b4c2df62d49209278dc80cbaa3a1c951de2/entries/nostabyte_xo89/cover.png"
+  },
+  {
+   "id": "nds/2048-nds",
+   "system": "nds",
+   "title": "2048",
+   "developer": "mdmrk",
+   "license": "MIT",
+   "description": "Slide and merge the tiles to reach 2048.",
+   "page": "https://github.com/mdmrk/2048-nds",
+   "source": "GitHub release mdmrk/2048-nds v1.0.2",
+   "file": {
+    "url": "https://github.com/mdmrk/2048-nds/releases/download/v1.0.2/2048-nds.nds",
+    "name": "2048-nds.nds",
+    "size": 923648,
+    "sha256": "dc81c7cfc8919328ef5d5b5a7c1d61bd6b1f4b9d6ef988f2440999c3ff8d2314"
+   },
+   "cover": ""
+  },
+  {
+   "id": "nds/balloon-pop-ds",
+   "system": "nds",
+   "title": "Balloon Pop DS",
+   "developer": "Warioware64",
+   "license": "Apache-2.0",
+   "description": "Pop the balloons with the stylus.",
+   "page": "https://github.com/Warioware64/Balloon-Pop-DS",
+   "source": "GitHub release Warioware64/Balloon-Pop-DS 1.0.0",
+   "file": {
+    "url": "https://github.com/Warioware64/Balloon-Pop-DS/releases/download/1.0.0/balloon-touch-ds.nds",
+    "name": "balloon-touch-ds.nds",
+    "size": 292864,
+    "sha256": "fd4457199110b1a41ccb50e44c5603b0438d46265188aa9db88f63e81fe0aee4"
+   },
+   "cover": ""
+  },
+  {
+   "id": "nds/bunnygarden",
+   "system": "nds",
+   "title": "Bunny Garden",
+   "developer": "kkzero241",
+   "license": "MIT",
+   "description": "Hop a bunny around floating 3D platforms.",
+   "page": "https://github.com/kkzero241/bunnygarden",
+   "source": "GitHub release kkzero241/bunnygarden 1.0",
+   "file": {
+    "url": "https://github.com/kkzero241/bunnygarden/releases/download/1.0/bunnygarden.nds",
+    "name": "bunnygarden.nds",
+    "size": 340992,
+    "sha256": "bdbf40737727d3c1eee241eb438a6ae020dee4a469a80036560a0a86c081a6e2"
+   },
+   "cover": ""
+  },
+  {
+   "id": "nds/delve-nds",
+   "system": "nds",
+   "title": "Delve",
+   "developer": "pandymic",
+   "license": "MIT",
+   "description": "An endless room-to-room action roguelike in isometric 3D.",
+   "page": "https://github.com/pandymic/delve-nds",
+   "source": "GitHub release pandymic/delve-nds v2.5.1",
+   "file": {
+    "url": "https://github.com/pandymic/delve-nds/releases/download/v2.5.1/delve.nds",
+    "name": "delve.nds",
+    "size": 2520064,
+    "sha256": "4957cf1c4094c66fbf898c1da2fe15a016a7ce2fa84840545340c185ba386815"
+   },
+   "cover": ""
+  },
+  {
+   "id": "nds/pistol-pong-ds",
+   "system": "nds",
+   "title": "Pistol Pong DS",
+   "developer": "Jonatan6",
+   "license": "GPL-3.0",
+   "description": "The classic paddle game, but with guns.",
+   "page": "https://github.com/Jonatan6/Pistol-Pong-DS",
+   "source": "GitHub release Jonatan6/Pistol-Pong-DS v1.0",
+   "file": {
+    "url": "https://github.com/Jonatan6/Pistol-Pong-DS/releases/download/v1.0/Pistol-Pong-DS.nds",
+    "name": "Pistol-Pong-DS.nds",
+    "size": 190976,
+    "sha256": "7074568e93813b29fc89e6efdfb7b0e3964df867e790c95919fb6c917aca9a12"
+   },
+   "cover": ""
+  },
+  {
+   "id": "nds/traffic-escape-ds",
+   "system": "nds",
+   "title": "Traffic Escape DS",
+   "developer": "Warioware64",
+   "license": "Apache-2.0",
+   "description": "Slide the cars to clear the exit: a sliding-block traffic puzzle.",
+   "page": "https://github.com/Warioware64/Traffic-Escape-DS",
+   "source": "GitHub release Warioware64/Traffic-Escape-DS v1.2",
+   "file": {
+    "url": "https://github.com/Warioware64/Traffic-Escape-DS/releases/download/v1.2/Traffic_Escape_DS.nds",
+    "name": "Traffic_Escape_DS.nds",
+    "size": 19252224,
+    "sha256": "3eea9b2aed4a689b5a127bb185c873f6e5f8a7ff921580a4450d86ab717e9b45"
+   },
+   "cover": ""
+  },
+  {
+   "id": "nes/croom",
+   "system": "nes",
+   "title": "Concentration Room",
+   "developer": "Damian Yerrick",
+   "license": "GPL-3.0",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/croom",
+   "source": "Homebrew Hub (nesdev-org/homebrew-db)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/croom/croom.nes",
+    "name": "croom.nes",
+    "size": 24592,
+    "git_sha1": "7c1a49becb491c29d8e8e391b9d320008506ec5a"
+   },
+   "cover": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/croom/croom-title.png"
+  },
+  {
+   "id": "nes/cybercoaster",
+   "system": "nes",
+   "title": "Cybercoaster",
+   "developer": "Fizzer & noby",
+   "license": "CC-BY-4.0",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/cybercoaster",
+   "source": "Homebrew Hub (nesdev-org/homebrew-db)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/cybercoaster/cybercoaster.nes",
+    "name": "cybercoaster.nes",
+    "size": 49168,
+    "git_sha1": "74ba658f5d7f820b157f02b7bb6cf8d2c1e3c96f"
+   },
+   "cover": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/cybercoaster/cybercoaster_000.png"
+  },
+  {
+   "id": "nes/novathesquirrel",
+   "system": "nes",
+   "title": "Nova the Squirrel",
+   "developer": "Nova Squirrel",
+   "license": "GPL-3.0",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/novathesquirrel",
+   "source": "Homebrew Hub (nesdev-org/homebrew-db)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/novathesquirrel/nova.nes",
+    "name": "nova.nes",
+    "size": 262160,
+    "git_sha1": "0c5fff81c4e1a3e89c79e0097e542e453df73e3a"
+   },
+   "cover": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/novathesquirrel/1.png"
+  },
+  {
+   "id": "nes/thwaite",
+   "system": "nes",
+   "title": "Thwaite",
+   "developer": "Damian Yerrick",
+   "license": "GPL-3.0",
+   "description": "",
+   "page": "https://hh.gbdev.io/game/thwaite",
+   "source": "Homebrew Hub (nesdev-org/homebrew-db)",
+   "file": {
+    "url": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/thwaite/thwaite128.nes",
+    "name": "thwaite128.nes",
+    "size": 24592,
+    "git_sha1": "5ef9de1e3ca5ca5499a6780bd550ffab9a340361"
+   },
+   "cover": "https://raw.githubusercontent.com/nesdev-org/homebrew-db/d64e75852f552249151d69a11ea3765badf77bbc/entries/thwaite/thwaite-title.png"
+  }
+ ]
+}

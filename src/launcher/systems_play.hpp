@@ -71,6 +71,11 @@ void App::refresh_other_systems() {
                 port_entry->title = "PortMaster";
                 games.erase(entry);
             }
+            if (std::string(info.id) == "homebrew") {
+                // last in the carousel, where any of its shelves has a folder to fill
+                if (!homebrew_shelves().empty()) listed_systems.push_back(info.id);
+                continue;
+            }
             if (games.empty() && !(std::string(info.id) == "ports" && port_entry)) continue;
             listed_systems.push_back(info.id);
             all_games.insert(all_games.end(), games.begin(), games.end());
@@ -137,6 +142,14 @@ const App::SystemStats& App::system_stats_for(size_t index) {
 
 void App::choose_system(size_t index) {
     if (index >= listed_systems.size()) return;
+    if (listed_systems[index] == "homebrew") {
+        // the shelves page, over the carousel: Back returns to this tile
+        systems_selected = index;
+        const auto shelves = homebrew_shelves();
+        const bool known = std::find(shelves.begin(), shelves.end(), homebrew_system) != shelves.end();
+        homebrew_open(known ? homebrew_system : shelves.front());
+        return;
+    }
     shown_system = listed_systems[index];
     systems_menu = false;
     library_view(0);

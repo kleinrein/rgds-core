@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1] / 'assets/status'
 ROOT.mkdir(parents=True, exist_ok=True)
 S = 4
 for theme, ink, quiet in [('light', '#2d3944', '#bfccd7'), ('dark', '#e5eef7', '#405368')]:
-    for name in ['sound', 'muted', 'wifi-off', 'wifi-0', 'wifi-1', 'wifi-2', 'wifi-3']:
+    for name in ['sound', 'muted', 'wifi-off', 'wifi-0', 'wifi-1', 'wifi-2', 'wifi-3', 'bluetooth']:
         im = Image.new('RGBA', (28 * S, 28 * S))
         d = ImageDraw.Draw(im)
 
@@ -17,7 +17,10 @@ for theme, ink, quiet in [('light', '#2d3944', '#bfccd7'), ('dark', '#e5eef7', '
             for x, y in (pts[0], pts[-1]):
                 d.ellipse((x - width * S / 2, y - width * S / 2, x + width * S / 2, y + width * S / 2), fill=fill)
 
-        if name in ['sound', 'muted']:
+        if name == 'bluetooth':
+            # the rune, shown beside Wi-Fi while the radio is on
+            line([(8.5, 9), (19, 18.5), (14, 23.5), (14, 4.5), (19, 9.5), (8.5, 19)], width=2.2)
+        elif name in ['sound', 'muted']:
             d.polygon([(x * S, y * S) for x, y in [(3, 10), (7, 10), (13, 5), (13, 23), (7, 18), (3, 18)]], fill=ink)
             if name == 'sound':
                 for radius in [6, 11]:

@@ -8,11 +8,8 @@ Packaging requires an independently provisioned, ignored `vendor/engines/` bundl
 
 ```sh
 python3 tools/provision_engines.py --source /path/to/owner-supplied/system
-make build-device
-make build-melonds
-make build-superdrastic
-make package
-make installer
+make package               # the release that the RG DS OS image is built around
+make image
 ```
 
 Do not fetch unspecified proprietary payloads. Provisioning does not resolve redistribution rights; see [third-party provenance](../THIRD_PARTY.md). The supplied DSperate binary is excluded from new packages in favor of the source build. DraStic uses the compatible stock card installation. Source builders record pinned commits, patched corresponding source, toolchain inputs and hashes; packaging rejects stale or changed build outputs. [SuperDrastic](SUPERDRASTIC.md) has additional Linux builder requirements.
@@ -60,45 +57,28 @@ DS rounded uses the bundled, open-licensed Nunito font at weight 600. Native ren
 
 ## The device loop
 
-Boot RG DS OS and confirm SSH works (root@rgds.local). The host address below is an example. Use the address shown by your RG DS.
-
-The unattended watcher requires SSH key authentication and an already verified host key. Connect manually first, then check that this exits without prompting:
-
-```sh
-ssh root@192.0.2.10
-ssh -o BatchMode=yes root@192.0.2.10 true
-```
-
-Exit the first SSH session before running the second command. If the second needs a password, install your existing public SSH key on the stock development card before starting the watcher. Do not disable host-key verification. If keys are not ready, `make deploy` and `make run` still support an interactive SSH connection.
-
-Start save-to-device refresh:
+The handheld runs RG DS OS from its own card (`docs/OWN_OS_PLAN.md`; `tools/own_os_card.py` flashes a spare one).
+Boot it, join Wi-Fi from Settings, and SSH in as `root@rgds.local` (key authentication; the card's boot partition
+takes `rgds-setup/authorized_keys` on the first boot). The system is a read-only image, so a change reaches the
+handheld as a new image in its other slot:
 
 ```sh
-make dev-device DEVICE=root@192.0.2.10
+make image                 # tools/own_os_build.py: Buildroot in the Lima VM, after the package and engine builds
+make push                  # tools/own_os_push.py rgds.local --reboot: the inactive slot, on trial, then a restart
+make shot                  # both panels as one PNG in build/shots/
 ```
 
-The first successful build uploads the private package and starts a temporary development session. Later source saves build and upload a new release; runtime and packaging edits also trigger a device build. Theme-only saves transfer the small selected `.ini` file into `rgds/userdata/dev/theme.ini`, which the running menu reloads. Hashed release contents stay intact. Colours can therefore be tuned without packaging all the cores again.
+`own_os_build.py` stages the launcher from `build/device` and refuses one older than the tree (run
+`tools/build.py device` first), and takes runtime, themes and assets from the checkout. `own_os_push.py` arms the
+same boot trial an over-the-air update uses (docs/OTA.md), so a push that does not come up falls back by itself;
+games and saves stay on the data partition. Logs are in `/data/rgds/logs` and `/run/rgds/messages`; boot marks in
+`/run/rgds/boot-times`.
 
-While a game is running, changes stay queued, including while the common pause menu is open. Choose Return home there; the watcher applies the newest build after the game exits. The installer takes the activity lock and checks again before stopping our menu, covering a launch that races the watcher. Saves, ROMs and emulator configuration are retained. Use our launcher/session for this workflow.
-
-Connection failures retain the candidate and retry after five seconds while the watcher continues watching local edits. A failed device launch stops the watcher and prints logs, keeping recovery bounded. A `userdata/boot_stock` recovery marker prevents the watcher from starting another session. Ctrl+C stops watching; it leaves the current device session available. B returns through the menu hierarchy; leaving the library stays in RG DS Core. Use the startup/recovery controls for stock handoff.
-
-Python cache writes are disabled during staging, verification and runtime startup. Release directories must remain identical to their manifests; generated `__pycache__` / `.pyc` files are not exempted from verification. An older watcher that reports `Unlisted files in release` during first deployment must be stopped and restarted after updating the tools. The repaired installer recreates its staging directory before checking it.
-
-Activity records now use flushed temporary files and atomic replacement. Readers retry short-lived incomplete writes; a persistently unreadable record keeps updates queued instead of treating the device as idle. If a previous interrupted session leaves empty/stale records, exit to stock and run `make doctor DEVICE=<your SSH address>`. Doctor refuses to repair while a session/recovery lock, launcher, emulator or recorded live process exists. Eligible records are renamed to diagnostic backups, not deleted.
-
-Useful commands in a second terminal:
-
-```sh
-make logs DEVICE=root@192.0.2.10
-make status DEVICE=root@192.0.2.10
-make rollback DEVICE=root@192.0.2.10
-make run-dev DEVICE=root@192.0.2.10
-```
-
-Stop `make dev-device` before manual rollback, otherwise a pending development build may be applied again. Rollback switches the release; `make run-dev` starts it with the existing live theme. `make run` uses the theme inside the release instead. Delete `rgds/userdata/dev/theme.ini` while our session is stopped to reset the live override. Use `SD_ROOT=/actual/mount` if the inventory shows a different mount than `/mnt/mmc`.
-
-Stop the watcher before manual emulator/hardware tests too. Use `runtime/session.py --root /mnt/mmc/rgds --core drastic --rom '/path/to/game.nds'` on the device for a direct test under the same recovery guardian. Substitute `dsperate`, `melonds` or `rgds-experimental`. Packaging is serialized with a filesystem lock, and ZIP/latest outputs are replaced atomically; two local package requests cannot delete one another's staging files.
+Init respawns the launcher whenever it exits (`killall rgds-launcher` restarts the menu); to keep it down for a
+hand-run, bind-mount a copy of `/usr/libexec/rgds/session` that waits instead (the copy must be executable, or init
+gives up on it). The launcher opens its input devices when it starts, so a virtual uinput keyboard for remote keys
+must exist before it does. BusyBox `pgrep -f` matches its own SSH command; anchor patterns or read
+`/proc/*/cmdline`.
 
 For a quiet hardware test, open Settings → Sound and select Mute before launching. The saved level follows all engines, and physical volume keys work during play. Increase it deliberately after confirming muted startup and return. The 2026-10-07 volume fix has offline coverage but has not yet been checked on hardware.
 
@@ -107,10 +87,6 @@ The game runner owns the menu process and both hardware menu keys. By default it
 Checkpoint saves acknowledge a changed, stable expected engine slot and flush the independent checkpoint before replacement. A failed save keeps the prior checkpoint and presents retry/resume/return-without-saving. DraStic and DSperate load replies acknowledge dispatch; melonDS returns its native checkpoint-load result. Actual restored game progress still needs hardware checks. Keep these distinctions when reporting test results.
 
 Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so older development builds can still read the base appearance file. Per-cartridge overrides and favourite flags live in `userdata/library/<key>/game.ini`. The versioned IDs in `assets/shaders/catalog.tsv` preserve Off/Sharp/LCD at 0/1/2 and add the full supplied pack. Both launcher and Python adapters read that catalog. DraStic maps to the supplied shader IDs, and DSperate/melonDS use the shared SDL/GLES shader path. All four paths support the current 28 effects plus Off. The picker is a Home-style carousel in six groups (Original, DS screens, Natural, Vivid, Pixel art, Moods): Left/Right browse, Up/Down, L/R or the group chips jump between groups, each tile shows its preset at 1:1 from the packaged previews, and per-game Default inheritance is kept. The eight original presets added on 18 October 2026 (DS Classic, DS Lite, Natural glow, Vivid LCD, Natural/Vivid smooth, Pixel beads, Glossy tiles) draw their pixel structure on the DS's own 256×192 grid, anti-aliased from `u_target_size`, so they hold up at the RG DS's 2.5× and the Plus's 4× and fade out below 2×. Library choices take effect on launch; in-game choices update the running renderer and keep the picker open. Actual appearance and frame pacing must still be checked on the Mali driver. The picker remembers its page during the development rebuild loop.
-
-Restart the watcher after modifying `tools/dev.py` or `tools/device.py`; those Python modules are loaded by the watcher itself. The watcher watches renderer/runtime/theme files and build inputs, rather than arbitrary files in the repository. New emulator payloads must be provisioned into the separate engine bundle, then packaged and provenance-reviewed.
-
-Code deployments transfer the complete private package, including all four emulator adapters and the bundled font. Theme refresh is small and fast. A live override's `mode` hint identifies the palette it edits; switch to that colour mode in Settings to see it. Measure code-to-screen latency on your Wi-Fi connection before setting performance targets. Hardware input, display orientation, sleep/wake, emulator return, and actual rendering smoothness still need testing on the stock card.
 
 ## Refining the interface
 
@@ -248,15 +224,10 @@ Touch contact gets a small ring (toggle Touch indicator under Display), selected
 
 The horizontal rail has glossy primary-colour caret buttons with 84×71 touch targets. Its thumb expands and spreads its grip while captured, even if the finger moves outside the rail or the touch indicator is disabled. Press feedback eases in over 100 ms and releases over 180 ms; disabling animations keeps immediate static pressed states. Settled controls return to idle rendering. Grabbing the thumb preserves the contact offset instead of jumping to a different selection; tapping the track seeks and the carets retain step/wrap navigation. Empty and single-item rails use a muted appearance. SDL regression checks cover both palettes, release/focus-loss cleanup and dragging; physical touch feel and frame pacing still need handheld verification.
 
-For an explicit one-shot hardware capture, create `rgds/userdata/session/capture-request` while our launcher runs. The next frame writes `ui-snapshot-top.bmp` and `ui-snapshot-bottom.bmp` in the same directory and removes the request. This is a development-only filesystem control; the launcher does not continuously capture screens. Password entry remains masked. Profile animation frame time on the device before adding further effects.
+For an explicit one-shot hardware capture, create `rgds/userdata/session/capture-request` while our launcher runs. The next frame writes `ui-snapshot-top.bmp` and `ui-snapshot-bottom.bmp` in the same directory and removes the request. This is a development-only filesystem control; the launcher does not continuously capture screens.
 
+`make shot` (or `tools/device_shot.py`) drives this over SSH: it asks, wakes an idle launcher with a harmless key, pulls both panels in one connection and stitches them with numpy. `DEVICE` defaults to `rgds.local`; while a game runs it uses the emulator bridge's `emulator.control.capture` instead. Output goes to `build/shots/`. Options: `--style float|device|plain`, `--layout stack|side`, `--bg auto|transparent|#RRGGBB`, `--scale 1-4`, `--raw` (each panel as its own PNG), `--copy` (clipboard, macOS), `--open`, and `--from TOP.bmp BOTTOM.bmp` to restyle saved panels without the device, for example `make shot SHOT_ARGS="--style device --layout side --open"`. Password entry remains masked. Profile animation frame time on the device before adding further effects.
 
-The default SSH root follows the configured installation even when automatic
-startup is disabled or Startup is set to stock. Omit `SD_ROOT` to keep APPS, boot
-and deployment on the same release; specify it only when deliberately testing
-another installation. Installation also refreshes existing RG DS Core and Probe
-entries on the stock card mounts, so internal-storage deployments update the
-entries actually opened by the stock menu.
 
 ## Fourth engine and local verification
 

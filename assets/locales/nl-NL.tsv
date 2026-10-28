@@ -1,47 +1,95 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 person nearby	1 persoon in de buurt
+1 player	1 speler
+12-hour	12 uur
+2 seconds	2 seconden
+24-hour	24 uur
+24-hour or 12-hour clock	24-uurs- of 12-uursklok
+2x sharper	2x scherper
 3D rendering automatically uses worker threads.	3D-weergave gebruikt automatisch werkthreads.
 3D resolution	3D-resolutie
 3D threading changed for this session. Settings storage is unavailable.	3D-threads gewijzigd voor deze sessie. Instellingen kunnen niet worden opgeslagen.
 3D threading changed. No restart needed.	3D-threads gewijzigd. Opnieuw starten is niet nodig.
+3x sharper	3x scherper
+4x (experimental)	4x (experimenteel)
+5x (experimental)	5x (experimenteel)
 A  Apply	A  Toepassen
 A  Done	A  Klaar
+A  Jump	A  Springen
 A  Play	A  Spelen
+A  Search	A  Zoeken
+A 24-hour or 12-hour clock.	Een 24- of 12-uursklok.
+A carousel, or the DSi's column with your last game on top	Een carrousel, of de DSi-kolom met je laatste spel bovenaan
+A exports this slot to userdata/exports. X deletes it.	A exporteert dit slot naar userdata/exports. X verwijdert het.
 A gentle scanline pattern with original colours.	Een subtiel scanlijnpatroon met originele kleuren.
+A light tap for every move, a firmer one when you choose, open or save.	Een lichte tik bij elke beweging, een stevigere bij kiezen, openen of opslaan.
+A little handheld magic	Een beetje handheldmagie
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A laadt dit slot. Laatste laden ongedaan maken onder Y brengt je huidige voortgang terug.
 A natural colour and contrast treatment.	Natuurlijke kleuren en contrasten.
+A new version is ready to download.	Een nieuwe versie is klaar om te downloaden.
+A replaces this slot with your current progress. X deletes it.	A vervangt dit slot door je voortgang. X verwijdert het.
+A saves your current progress here.	A slaat je voortgang hier op.
 A screen style for this cartridge	Een schermstijl voor deze cartridge
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Een klein handvat onderaan het onderste scherm laat zien dat gebaren aan staan; het volgt je vinger en een ring markeert de plek wanneer een gebaar wordt uitgevoerd.
+A soft tune plays while you browse. It fades out when a game starts.	Een zachte melodie speelt terwijl je bladert. Ze vervaagt wanneer een spel start.
 A stronger LCD texture and scanline look.	Een duidelijkere LCD-textuur en scanlijnen.
 A subtle handheld LCD pixel pattern.	Een subtiel pixelpatroon van een draagbaar LCD-scherm.
 A subtle pixel grid with a bright, readable image.	Een subtiel pixelraster met een helder, leesbaar beeld.
+About {0} h left	Ongeveer {0} u over
+About {0} min left	Ongeveer {0} min over
+Accent colour	Accentkleur
+Add favourite	Favoriet toevoegen
+Add game files	Spelbestanden toevoegen
 Add your DS games to fetch their artwork.	Voeg je DS-spellen toe om hoesafbeeldingen op te halen.
+Add your games	Voeg je spellen toe
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Voegt Game Boy- en Game Boy Advance-spellen toe: Spellen opent dan een pagina met systemen.
+Adjust	Aanpassen
 Africa	Afrika
 After	Na
 All games	Alle spellen
+All systems	Alle systemen
+Already connected.	Al verbonden.
 Amber	Amber
 Americas	Amerika
+An update is already prepared. Install it or discard it first.	Er staat al een update klaar. Installeer of verwijder deze eerst.
 Anbernic startup is unavailable in RGDS OS.	Anbernic opstarten is niet beschikbaar in RGDS OS.
+Animate pages with the selected style	Animeer pagina’s met de gekozen stijl
 Animations	Animaties
+Another update is already running.	Er wordt al een andere update uitgevoerd.
 Antarctica	Antarctica
+Any	Alle
 Applies immediately. Higher clocks use more battery.	Geldt direct. Hogere kloksnelheden verbruiken meer batterij.
 Applies immediately. Your game keeps its progress.	Geldt direct. Je spelvoortgang blijft behouden.
 Apply	Toepassen
+APPLY	TOEPASSEN
 Applying shader…	Shader toepassen…
+Arcade cabinet	Arcadekast
 Arctic	Noordpool
+Arrows	Pijlen
 Artwork	Hoesafbeeldingen
 Artwork & ScreenScraper	Hoesafbeeldingen
 Artwork source	Bron voor hoesafbeeldingen
 Artwork sources	Bronnen voor hoesafbeeldingen
 Asia	Azië
 Atlantic Ocean	Atlantische Oceaan
+Audio is not recorded or saved.	Geluid wordt niet opgenomen of opgeslagen.
 Australia	Australië
 Auto-load state	Spelstatus automatisch laden
 Auto-save on exit	Automatisch opslaan bij afsluiten
 Automatic	Automatisch
 Automatic (free)	Automatisch
+Automatic updates	Automatische updates
+Available	Beschikbaar
 Available networks	Beschikbare netwerken
 B  Cancel	B  Annuleren
 B  Close	B  Sluiten
-BACK HOME	NAAR STARTSCHERM
 Back	Terug
+BACK HOME	NAAR STARTSCHERM
+Back to PortMaster	Terug naar PortMaster
+Back up all saves	Back-up van alle opgeslagen spellen
+Background	Achtergrond
+Backing up your saves…	Je opgeslagen spellen worden geback-upt…
+Badges	Badges
 Balance battery life and speed	Breng batterijduur en snelheid in balans
 Balanced	Gebalanceerd
 Battery	Batterij
@@ -50,57 +98,116 @@ Battery saver	Batterijbesparing
 Before	Voor
 Before you play	Voordat je speelt
 Binding unchanged.	Knoptoewijzing is ongewijzigd.
+Black and white	Zwart-wit
+Black bar	Zwarte balk
+Blow into microphone	Blaas in de microfoon
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blaas of spreek in de microfoon. Kijk hoe het niveau stijgt en weer daalt als je stopt.
+Blue	Blauw
+Bluetooth	Bluetooth
+Bluetooth devices	Bluetooth-apparaten
+Bluetooth is not available on this handheld.	Bluetooth is niet beschikbaar op deze handheld.
+Bold colour on a close-up LCD with RGB stripes.	Felle kleuren op een LCD van dichtbij met RGB-strepen.
+Bold colour with smoothed diagonal edges.	Felle kleuren met gladde diagonale randen.
+Bold colour; every pixel a raised, glossy tile.	Felle kleuren; elke pixel een verhoogde, glanzende tegel.
+Bold colour; every pixel a round, shiny bead.	Felle kleuren; elke pixel een ronde, glimmende kraal.
+Bombs	Bommen
+Bonus stars	Bonussterren
 Boot	Opstarten
 Boot into	Opstarten met
+Both	Beide
 Both screens	Beide schermen
 Bottom display	Onderste scherm
 Box art, titles and game details	Hoesafbeeldingen, titels en speldetails
 Brightness	Helderheid
+Brown	Bruin
+Browse	Bladeren
+Browse games	Spellen bekijken
+Browse systems	Systemen bekijken
 Browser layout	Bibliotheekindeling
 Build, storage and device address	Versie, opslag en apparaatadres
 Button	Knop
 Button layout	Knopindeling
 Button {0}	Knop {0}
 Buttons and the game menu shortcut	Knoppen en sneltoets voor het spelmenu
-COLOUR MODE	KLEURMODUS
 Cancel	Annuleren
+Carousel	Carrousel
+Carried	Bij je
 Cartridges	Cartridges
+Change group	Andere groep
 Changes immediately. Map a button in Controls for quick access.	Verandert direct. Wijs een knop toe bij Besturing voor snelle toegang.
 Changing 3D threading…	3D-threads wijzigen…
 Changing speed…	Snelheid wijzigen…
+Chat is unavailable: you can still draw	Chat niet beschikbaar: je kunt nog steeds tekenen
+Chat Room	Chatruimte
+Chat Room {0}	Chatroom {0}
+Check automatically	Automatisch controleren
+Check for updates	Zoeken naar updates
+Check for updates when you are ready.	Zoek naar updates wanneer je klaar bent.
+Check for updates, go back to the previous build or clear temporary files.	Zoek naar updates, ga terug naar de vorige versie of wis tijdelijke bestanden.
 Check the current connection	Controleer de huidige verbinding
+Checking for updates…	Zoeken naar updates…
+Checking PortMaster	PortMaster controleren
+Checking the new version…	De nieuwe versie controleren…
 Checkpoint loaded	Controlepunt geladen
 Checkpoint loaded (preview)	Controlepunt geladen (voorbeeld)
 Checkpoint loaded.	Controlepunt geladen.
 Checkpoint saved	Controlepunt opgeslagen
 Checkpoint saved (preview)	Controlepunt opgeslagen (voorbeeld)
 Checkpoint saved.	Controlepunt opgeslagen.
-Choose Anbernic or RG DS startup.	Kies opstarten met Anbernic of RG DS.
+Choose a chat room to join	Kies een chatroom om aan deel te nemen
+Choose a network from the list	Kies een netwerk uit de lijst
 Choose an option	Kies een optie
+Choose Anbernic or RG DS startup.	Kies opstarten met Anbernic of RG DS.
 Choose native or a sharper 3D image	Kies oorspronkelijke resolutie of scherper 3D-beeld
 Choose the core for this cartridge	Kies de kern voor deze cartridge
 Choose the display backend for the next DraStic launch. DSperate stays your default.	Kies de weergavemotor voor de volgende DraStic-start. DSperate blijft standaard.
 Choose what opens when you power on	Kies wat er opent bij het inschakelen
+Classic	Klassiek
+Classic blue	Klassiek blauw
 Clear	Wissen
+Clear filters	Filters wissen
 Clear temporary cache	Tijdelijke cache wissen
 Clear temporary game files?	Tijdelijke spelbestanden wissen?
 Close	Sluiten
+Close and open DS lid	Sluit en open het DS-deksel
+Close lid	Deksel sluiten
+Close PortMaster	PortMaster sluiten
 Close the handheld to sleep	Sluit het deksel voor slaapstand
+Closing PortMaster…	PortMaster wordt gesloten…
+Closing the port…	De port wordt gesloten…
+Code	Code
+Coin bank	Muntbank
+Coins	Munten
+Collection	Verzameling
+COLOUR MODE	KLEURMODUS
+Colour mode	Kleurmodus
 Colour treatment inspired by the original DS display.	Kleurbehandeling geïnspireerd op het originele DS-scherm.
+Column	Kolom
+Companion	Metgezel
 Compare	Vergelijken
 Confirm	Bevestigen
 Connect	Verbinden
+Connect the charger before installing an update.	Sluit de oplader aan voordat je een update installeert.
+Connect to Wi-Fi to send files from a phone or computer.	Maak verbinding met wifi om bestanden vanaf een telefoon of computer te sturen.
 Connected	Verbonden
 Connected.	Verbonden.
+Connecting to	Verbinden met
 Connecting…	Verbinden…
+Connection lost. Retrying…	Verbinding verbroken. Opnieuw proberen…
 Connectivity	Verbindingen
 Continue	Doorgaan
 Continue where you left off	Ga verder waar je gebleven was
 Control unavailable on this device	Bediening niet beschikbaar op dit apparaat
+Controllers and other Bluetooth devices	Controllers en andere Bluetooth-apparaten
 Controls	Besturing
 Controls saved for this game.	Besturing opgeslagen voor dit spel.
 Cool crisp	Koel en helder
 Cool whites with a small contrast boost.	Koele wittinten met iets meer contrast.
+Copies every save and checkpoint into one zip in userdata/exports.	Kopieert elk opgeslagen spel en controlepunt naar één zip in userdata/exports.
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopieer .nds- of DS ZIP-bestanden naar Roms/NDS op je spelkaart en kies Scannen naar spellen.
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopieer .rgdssave.zip-bestanden naar userdata/imports. Imports moeten bij dit spel en deze emulator passen.
+Copy ability	Kopieerkracht
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopieer .nds-bestanden of DS ZIP-archieven naar Roms/NDS op de spelkaart. Spellen zijn niet inbegrepen. Opgeslagen spellen blijven in userdata.
 Could not apply brightness	Helderheid kon niet worden toegepast
 Could not apply saved brightness	Opgeslagen helderheid kon niet worden toegepast
 Could not apply saved power mode	Opgeslagen energiemodus kon niet worden toegepast
@@ -110,6 +217,7 @@ Could not apply volume	Volume kon niet worden toegepast
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi-adapter kon niet worden gestart. Probeer opnieuw.
 Could not change 3D threading. Your game is unchanged.	3D-threads konden niet worden gewijzigd. Je spel is ongewijzigd.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Gekozen Wi-Fi-verbinding kon niet worden bevestigd. Scan en probeer opnieuw.
+Could not connect	Verbinden mislukt
 Could not enable lid wake	Wekken via het deksel kon niet worden ingeschakeld
 Could not load. Resume, retry, or return without saving.	Laden mislukt. Hervat, probeer opnieuw of keer terug zonder op te slaan.
 Could not read this collection. Try again.	Deze verzameling kon niet worden gelezen. Probeer opnieuw.
@@ -117,6 +225,7 @@ Could not restore previous hardware setting	Vorige hardware-instelling kon niet 
 Could not save all settings. Check storage.	Niet alle instellingen konden worden opgeslagen. Controleer de opslag.
 Could not save brightness	Helderheid kon niet worden opgeslagen
 Could not save controls. Check writable storage.	Besturing kon niet worden opgeslagen. Controleer of de opslag beschrijfbaar is.
+Could not save DS settings.	DS-instellingen konden niet worden opgeslagen.
 Could not save game settings. Previous values kept.	Spelinstellingen konden niet worden opgeslagen. Vorige waarden blijven behouden.
 Could not save matching title.	Overeenkomende titel kon niet worden opgeslagen.
 Could not save settings	Instellingen konden niet worden opgeslagen
@@ -124,6 +233,7 @@ Could not save timezone	Tijdzone kon niet worden opgeslagen
 Could not save volume	Volume kon niet worden opgeslagen
 Could not save. Resume, retry, or return without saving.	Opslaan mislukt. Hervat, probeer opnieuw of keer terug zonder op te slaan.
 Could not send game action	Spelactie kon niet worden verzonden
+Could not set up PortMaster	Kon PortMaster niet instellen
 Could not set volume - see log	Volume kon niet worden ingesteld - zie logboek
 Could not sleep - see log	Slaapstand mislukt - zie logboek
 Could not sleep. Reopen the lid and try again.	Slaapstand mislukt. Open het deksel en probeer opnieuw.
@@ -132,41 +242,89 @@ Could not start library scan	Bibliotheekscan kon niet worden gestart
 Could not write controls	Besturing kon niet worden weggeschreven
 Counts display updates, not emulation speed. Changes immediately.	Telt schermverversingen, geen emulatiesnelheid. Verandert direct.
 Counts emulated game frames. Changes immediately.	Telt geëmuleerde spelbeelden. Verandert direct.
+Course	Level
+Cover	Hoes
 Covers	Hoesjes
+Current progress could not be saved. No slot was changed.	Huidige voortgang kon niet worden opgeslagen. Geen slot is gewijzigd.
 Custom	Aangepast
-DEFAULT THEME - CHECK LOG	STANDAARDTHEMA - ZIE LOGBOEK
-DS rounded	DS afgerond
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: aanbevolen voor dagelijks spelen. Oorspronkelijke resolutie is standaard.
+DS only	Alleen DS
 Dark	Donker
+Dark blue	Donkerblauw
+Dark green	Donkergroen
 Date format	Datumnotatie
+Day	Dag
+Day or night	Dag of nacht
+Daylight saving	Zomertijd
+Days	Dagen
 Default	Standaard
 Default emulator	Standaardemulator
 Default shader	Standaardshader
+DEFAULT THEME - CHECK LOG	STANDAARDTHEMA - ZIE LOGBOEK
 Delete	Verwijderen
+Delete slot {0}?	Slot {0} verwijderen?
 Desktop preview	Desktopvoorbeeld
+Developer	Ontwikkelaar
 Development build	Ontwikkelversie
 Device address	Apparaatadres
 Device information	Apparaatinformatie
+Discard update	Update verwijderen
 Display	Weergave
 Display FPS	Scherm-FPS
 Done	Klaar
 Down	Omlaag
+Download	Downloaden
+Download automatically	Automatisch downloaden
+Download interrupted. Retry to continue.	Download onderbroken. Probeer opnieuw om door te gaan.
+Download paused. Retry to continue.	Download gepauzeerd. Probeer opnieuw om door te gaan.
+Download update	Update downloaden
+Downloading PortMaster	PortMaster downloaden
+Downloading update…	Update downloaden…
+Downloading {0}	{0} downloaden
+Downloads resume where they stopped if Wi-Fi drops.	Downloads gaan verder waar ze stopten als wifi wegvalt.
 DraStic backend	DraStic-backend
 DraStic: an alternative for games that need it. Saves stay separate.	DraStic: een alternatief voor spellen die het nodig hebben. Opgeslagen spellen blijven gescheiden.
-ERROR	FOUT
-ERROR: Could not restore settings	FOUT: Instellingen konden niet worden hersteld
-ERROR: Could not restore settings - see log	FOUT: Instellingen konden niet worden hersteld - zie logboek
+Draw and chat	Teken en chat
+Draw and chat with nearby handhelds	Teken en chat met apparaten in de buurt
+Drawing on your own	Je tekent alleen
+DS Classic	DS Klassiek
+DS controls	DS-besturing
+DS controls are unavailable for this engine.	DS-besturing is niet beschikbaar voor deze engine.
+DS language	DS-taal
+DS Lite	DS Lite
+DS rounded	DS afgerond
+DS screens	DS-schermen
+DSCore 3D resolution	DSCore 3D-resolutie
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: aanbevolen. Het snelst, met fixes voor klep, stylus en 3D en optionele 2x–5x 3D.
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: aanbevolen voor dagelijks spelen. Oorspronkelijke resolutie is standaard.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: de oorspronkelijke engine. DSCore voegt fixes en snelheid toe.
+Edit	Wijzig
+Edit search	Zoekopdracht bewerken
+Effects volume	Effectvolume
+Empty slot	Leeg slot
 Emulator	Emulator
 Emulator settings	Emulatorinstellingen
+End of a list	Einde van een lijst
+Ending so far	Einde tot nu toe
+Enemies defeated	Verslagen vijanden
+Energy	Energie
+Energy tanks	Energietanks
 Engine managed	Beheerd door de engine
+English	Engels
 Enter here	Typ hier
 Enter password	Wachtwoord invoeren
 Enter your username and password	Voer je gebruikersnaam en wachtwoord in
+ERROR	FOUT
+ERROR: Could not restore settings	FOUT: Instellingen konden niet worden hersteld
+ERROR: Could not restore settings - see log	FOUT: Instellingen konden niet worden hersteld - zie logboek
+Essences	Essences
 Europe	Europa
 Every game in this collection has artwork.	Elk spel in deze verzameling heeft een hoesafbeelding.
-FPS changed for this session. Settings storage is unavailable.	FPS gewijzigd voor deze sessie. Instellingen kunnen niet worden opgeslagen.
-FPS counter enabled.	FPS-teller ingeschakeld.
-FPS counter hidden.	FPS-teller verborgen.
+Exit your game before installing an update.	Sluit je spel af voordat je een update installeert.
+Experience	Ervaring
+Export	Exporteren
+Export slot	Slot exporteren
+Extra pictures	Extra afbeeldingen
+Faded GBA colours made rich, as the real screen showed them.	Fletse GBA-kleuren worden vol, zoals het echte scherm ze toonde.
 Fast	Snel
 Fast-forward	Vooruitspoelen
 Fast-forward button	Vooruitspoelknop
@@ -174,164 +332,449 @@ Fast-forward enabled.	Vooruitspoelen ingeschakeld.
 Fast-forward is unavailable for this emulator.	Vooruitspoelen is niet beschikbaar voor deze emulator.
 Fast-forward style	Vooruitspoelmodus
 Favourite	Favoriet
+FAVOURITE COLOUR	LIEVELINGSKLEUR
+Favourite a game and it waits for you here	Maak een spel favoriet en het wacht hier op je
 Favourites	Favorieten
+Feel every move	Voel elke beweging
+Feel the game	Voel het spel
 Fetch artwork	Hoesafbeeldingen ophalen
 Fetch missing artwork	Ontbrekende hoesafbeeldingen ophalen
+Figurines	Beeldjes
+File sharing on. Find "RG DS" under Network.	Bestanden delen staat aan. Zoek "RG DS" onder Netwerk.
+Files added	Bestanden toegevoegd
+Files arrived. Choose Play to start.	De bestanden zijn binnen. Kies Spelen om te starten.
+Filter	Filter
+Filtered	Gefilterd
 Find and connect to a nearby network	Zoek en verbind met een netwerk in de buurt
+Find, pair and connect a nearby device	Zoek, koppel en verbind een apparaat in de buurt
+Finding games…	Spellen zoeken…
+Finishing another task. Press Y again in a moment.	Een andere taak wordt afgerond. Druk zo opnieuw op Y.
 Finishing the system request	Systeemverzoek afronden
 Follow your default button layout	Volg je standaardknopindeling
 Following your global controls.	Volgt je algemene besturing.
 Follows your Library default. Each emulator keeps its own saves.	Volgt je bibliotheekstandaard. Elke emulator bewaart eigen opgeslagen spellen.
+Follows your library shader.	Volgt je bibliotheekshader.
+Forget this device?	Dit apparaat vergeten?
+FPS changed for this session. Settings storage is unavailable.	FPS gewijzigd voor deze sessie. Instellingen kunnen niet worden opgeslagen.
+FPS counter enabled.	FPS-teller ingeschakeld.
+FPS counter hidden.	FPS-teller verborgen.
+Fr	Vr
+Frame	Rand
 Frameskip	Frames overslaan
 Free space	Vrije ruimte
 Free space while keeping your saves	Maak ruimte vrij en behoud je opgeslagen spellen
-Game FPS	Spel-FPS
+French	Frans
+Friends	Vrienden
+Full colour	Volle kleuren
+Game Boy	Game Boy
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Game Boy Advance · Black	Game Boy Advance · Zwart
+Game Boy Advance · Glacier	Game Boy Advance · Gletsjer
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Color	Game Boy Color
+Game Boy Color screen	Game Boy Color-scherm
+Game Boy Color · Atomic Purple	Game Boy Color · Atoompaars
+Game Boy Color · Berry	Game Boy Color · Bes
+Game Boy Color · Dandelion	Game Boy Color · Paardenbloem
+Game Boy Color · Grape	Game Boy Color · Druif
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Screen only	Game Boy Color · Alleen scherm
+Game Boy Color · Teal	Game Boy Color · Blauwgroen
+Game Boy Color, darker	Game Boy Color, donkerder
+Game Boy Light	Game Boy Light
+Game Boy Pocket	Game Boy Pocket
+Game Boy Pocket · Black	Game Boy Pocket · Zwart
+Game Boy Pocket · Blue	Game Boy Pocket · Blauw
+Game Boy Pocket · Green	Game Boy Pocket · Groen
+Game Boy Pocket · Pink	Game Boy Pocket · Roze
+Game Boy Pocket · Red	Game Boy Pocket · Rood
+Game Boy Pocket · Screen only	Game Boy Pocket · Alleen scherm
+Game Boy Pocket · Silver	Game Boy Pocket · Zilver
+Game Boy Pocket · Yellow	Game Boy Pocket · Geel
+Game Boy screen	Game Boy-scherm
+Game Boy · Black	Game Boy · Zwart
+Game Boy · Blue	Game Boy · Blauw
+Game Boy · Green	Game Boy · Groen
+Game Boy · Red	Game Boy · Rood
+Game Boy · Screen only	Game Boy · Alleen scherm
+Game Boy · Yellow	Game Boy · Geel
 Game emulator	Spelemulator
 Game emulator saved.	Spelemulator opgeslagen.
+Game FPS	Spel-FPS
+Game info	Spelinfo
 Game menu	Spelmenu
 Game options	Spelopties
 Game options saved	Spelopties opgeslagen
-GameTDB (free)	GameTDB
+Game rumble	Spelrumble
+Game screen	Spelscherm
+Game switcher	Spelwisselaar
 Games	Spellen
+Games played	Gespeelde spellen
+GameTDB	GameTDB
+GameTDB (free)	GameTDB
+GB screens	GB-schermen
+GBA Color	GBA-kleuren
+GBA screen	GBA-scherm
+GBA screens	GBA-schermen
+GBA true colour	Echte GBA-kleuren
+GBA true screen	Echt GBA-scherm
+GBC screens	GBC-schermen
+Gear	Uitrusting
+Genre	Genre
+German	Duits
+Get, update and remove ports	Ports ophalen, bijwerken en verwijderen
 Give your eyes and hands a break.	Geef je ogen en handen een pauze.
 Global	Algemeen
 Global controls saved.	Algemene besturing opgeslagen.
+Glossy tiles	Glanzende tegels
+Go back	Terug
+Goes into	Komt in
+Golden leaves	Gouden bladeren
+Green	Groen
+Grey	Grijs
+Grey TV	Grijze tv
+Grid	Raster
+h	u
+Haptic strength	Haptische sterkte
+Health	Gezondheid
+Heart containers	Hartcontainers
+Heart pieces	Hartstukjes
+Hearts	Harten
+High contrast	Hoog contrast
 Hold	Ingedrukt houden
+Hold still for a right click	Stil houden voor rechtsklik
+Hold to exit	Vasthouden om te stoppen
+Hold to load	Vasthouden om te laden
+Hold to return home	Vasthouden voor het startscherm
+Hold to save	Vasthouden om op te slaan
+Home	Home
+Home layout	Indeling startscherm
 Home shortcut	Sneltoets startscherm
+How dates appear at the top of the screen.	Hoe datums bovenaan het scherm verschijnen.
+How dates appear in the status bar	Hoe datums in de statusbalk verschijnen
+How to get the files	Zo krijg je de bestanden
+Icon style	Pictogramstijl
+Import help	Importhulp
+Import into this slot	Importeren in dit slot
+Import slot	Slot importeren
+In a course	In een level
+In a level	In een level
+In game	In het spel
+IN USE	IN GEBRUIK
 Indian Ocean	Indische Oceaan
+Info screen	Infoscherm
 Inherit	Overnemen
 Inherited	Overgenomen
+Install	Installeren
+Install the latest SD installer before this update.	Installeer het nieuwste SD-installatieprogramma vóór deze update.
+Installed version	Geïnstalleerde versie
+Installing PortMaster from the card	PortMaster installeren vanaf de kaart
+Instruments	Instrumenten
+Interface animations	Interfaceanimaties
+IP address	IP-adres
+Italian	Italiaans
+Items	Voorwerpen
+Japanese	Japans
+Johto badges	Johto-badges
+Join	Deelnemen
+Journey	Reis
+Jump	Ga
 Jump to letter	Naar letter springen
+Kanto badges	Kanto-badges
 Keep a checkpoint when returning home	Bewaar een controlepunt bij terugkeer naar het startscherm
+Keep getting and updating ports	Verder ports ophalen en bijwerken
 Keep playing	Verder spelen
 Keep this game in Favourites	Bewaar dit spel bij Favorieten
 Kernel	Kernel
 Key {0}	Toets {0}
-LCD + NDS Color	LCD + NDS Color
-LCD + Natural Vision	LCD + Natural Vision
+Keyboard	Toetsenbord
+Keys	Sleutels
+Kinstone fusions	Kinstone-fusies
+Language	Taal
+Last played	Laatst gespeeld
+Launch cancelled	Starten geannuleerd
 LCD + both colours	LCD + beide kleureffecten
+LCD + Natural Vision	LCD + Natural Vision
+LCD + NDS Color	LCD + NDS Color
 LCD pixels with natural colour and contrast.	LCD-pixels met natuurlijke kleuren en contrasten.
 LCD pixels with the DS colour treatment.	LCD-pixels met DS-kleurbehandeling.
 LCD pixels, DS colour and Natural Vision together.	LCD-pixels, DS-kleuren en Natural Vision samen.
-Language	Taal
-Launch cancelled	Starten geannuleerd
+Leave	Verlaat
+Leave RG DS Core and go back to the stock menu.	Verlaat RG DS Core en ga terug naar het standaardmenu.
 Left	Links
 Left stick	Linkerstick
 Left-handed	Linkshandig
 Less than a minute	Minder dan een minuut
+Less than a minute left	Minder dan een minuut over
+Level	Niveau
 Library	Bibliotheek
 Library scan exceeded its limit	Bibliotheekscan heeft de limiet overschreden
 Library scan failed	Bibliotheekscan mislukt
+Libretro	Libretro
 Libretro (free)	Libretro
 Light	Licht
+Lime	Limoen
 List	Lijst
+Listening…	Luisteren…
 Live background	Live achtergrond
+Live input	Live invoer
+Lives	Levens
 Load	Laden
+Load checkpoint	Spelstand laden
+Load complete	Geladen
 Load requested. Resume to check your game.	Laden aangevraagd. Hervat om je spel te controleren.
+Load slot {0}?	Slot {0} laden?
 Load state	Spelstatus laden
+Loaded	Geladen
 Loading checkpoint…	Controlepunt laden…
+Loading…	Laden…
+Long press	Lang drukken
+Looking for devices…	Zoeken naar apparaten…
+Looking for games…	Spellen zoeken…
 Looking for networks…	Netwerken zoeken…
+Looking for the latest PortMaster	Zoeken naar de nieuwste PortMaster
+Loud	Luid
+Lv	Lv.
+Magenta	Magenta
+Magical sword	Magisch zwaard
 Magnified detail	Uitvergroot detail
 Manage builds and temporary files	Beheer versies en tijdelijke bestanden
+Matches your accent	Volgt je accentkleur
 Matching title	Overeenkomende titel
 Matching title saved. Choose Fetch artwork.	Overeenkomende titel opgeslagen. Kies Hoesafbeeldingen ophalen.
+Menu audio is unavailable on this device.	Menu-audio is niet beschikbaar op dit apparaat.
+Menu effects	Menueffecten
+Menu haptics	Menuhaptiek
 Menu idle sleep	Slaapstand bij inactief menu
+Menu music	Menumuziek
+Menu sounds are unavailable.	Menugeluiden zijn niet beschikbaar.
+Microphone unavailable	Microfoon niet beschikbaar
+Microphone, simulated blowing, lid and DS language.	Microfoon, gesimuleerd blazen, deksel en DS-taal.
+min	min
+Minutes	Minuten
+Mirror shards	Spiegelscherven
+Missile room	Raketcapaciteit
+Missiles	Raketten
+Missing artwork	Ontbrekende hoesafbeeldingen
+Mo	Ma
+Money	Geld
+Moods	Sferen
+More	Meer
+Most played	Meest gespeeld
+Music volume	Muziekvolume
+Musical coins	Muziekmunten
 Mute	Dempen
 Muted	Gedempt
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: een compatibiliteitsoptie. Probeer eerst DSperate voor snelheid.
 Native	Oorspronkelijk
+Native (fastest)	Origineel (snelst)
 Native is faster; 2x uses more GPU time. Save & restart applies it.	Oorspronkelijk is sneller; 2x vraagt meer GPU-tijd. Opslaan en herstarten past dit toe.
 Native output	Oorspronkelijke uitvoer
+Natural	Natuurlijk
+Natural colour with smoothed diagonal edges.	Natuurlijke kleuren met gladde diagonale randen.
+Natural colour with soft pixels that glow together.	Natuurlijke kleuren met zachte pixels die samen gloeien.
+Natural glow	Natuurlijke gloed
+Natural smooth	Natuurlijk glad
 Natural Vision	Natural Vision
+Needs your files	Heeft je bestanden nodig
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Zwart
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Zilver
+Network file sharing	Bestanden delen via netwerk
 Networking is disabled. Turn Wi-Fi on to enable it.	Netwerk is uitgeschakeld. Schakel Wi-Fi in om het te activeren.
 Never	Nooit
+New messages below	Nieuwe berichten onderaan
+Next	Volgende
 Next emulator	Volgende emulator
-No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Geen Wi-Fi-adapter. Schakel Wi-Fi in om deze te initialiseren.
+Next picture	Volgende afbeelding
+Next:	Volgende:
+Night	Nacht
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: een compatibiliteitsoptie. Probeer eerst DSperate voor snelheid.
 No button detected. Try again when you're ready.	Geen knop gedetecteerd. Probeer opnieuw als je klaar bent.
 No checkpoint saved for this emulator yet.	Nog geen controlepunt opgeslagen voor deze emulator.
 No cover yet	Nog geen hoesje
+No devices found. Put the device in pairing mode and scan.	Geen apparaten gevonden. Zet het apparaat in koppelmodus en zoek opnieuw.
 No favourites yet	Nog geen favorieten
+No game has this information yet. Fetch artwork with Game info turned on.	Nog geen spel heeft deze informatie. Haal hoezen op met Spelinfo aan.
+No game information yet.	Nog geen spelinfo.
 No games	Geen spellen
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Geen spellen gevonden. Kopieer .nds- of DS ZIP-bestanden naar Roms/NDS op je spelkaart en zoek opnieuw.
 No games in this collection.	Geen spellen in deze verzameling.
+No letters to jump to. Search for another game.	Geen letters om naartoe te springen. Zoek een ander spel.
+No matches. Use View to change filters.	Geen resultaten. Wijzig filters bij Weergave.
+No matching games	Geen overeenkomende spellen
 No networks found	Geen netwerken gevonden
+No pictures yet	Nog geen afbeeldingen
 No previous build available.	Geen vorige versie beschikbaar.
 No recent games yet	Nog geen recente spellen
+No release notes yet.	Nog geen versieopmerkingen.
+No vibration motor was found on this device.	Er is geen trilmotor gevonden op dit apparaat.
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Geen Wi-Fi-adapter. Schakel Wi-Fi in om deze te initialiseren.
+No Wi-Fi: you can still draw	Geen Wi-Fi: je kunt nog steeds tekenen
+Nobody else here yet	Nog niemand anders hier
+Nobody else is nearby yet	Nog niemand in de buurt
+Nobody here yet	Nog niemand hier
+None yet	Nog geen
 Normal	Normaal
 Normal speed.	Normale snelheid.
 Not available	Niet beschikbaar
 Not connected	Niet verbonden
+Not downloaded	Niet gedownload
+Not loaded	Niet geladen
 Not played yet	Nog niet gespeeld
-OPEN	OPENEN
+Not saved	Niet opgeslagen
+Not yet	Nog niet
+Nothing played yet	Nog niets gespeeld
+Nothing to load	Niets om te laden
+Nothing to load here yet.	Hier is nog niets te laden.
+Notification	Melding
 Off	Uit
 Off (smooth)	Uit (vloeiend)
 Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Uit geeft vloeiende beweging. Frames overslaan kan helpen. Herstart om toe te passen.
 Off keeps the original picture.	Uit behoudt het oorspronkelijke beeld.
+Older messages	Oudere berichten
 On	Aan
+Online	Online
+Online play	Online spelen
+OPEN	OPENEN
 Open	Openen
+Open a view	Een weergave openen
+Open lid	Deksel openen
 Open menu	Menu openen
+Open on this Wi-Fi	Open op deze wifi
 Open the Anbernic menu	Het Anbernic-menu openen
 Options	Opties
+Or open on a computer	Of open op een computer
+Orange	Oranje
+Original	Origineel
 Original pixels	Originele pixels
 Original pixels and colours.	Originele pixels en kleuren.
 Pacific	Stille Oceaan
-PLAY	SPELEN
+Paired	Gekoppeld
+Party	Groep
 Password	Wachtwoord
+Password protected	Met wachtwoord beveiligd
+Pause download	Download pauzeren
 Pause when you need to.	Pauzeer wanneer je dat nodig hebt.
 Paused	Gepauzeerd
+Paused at {0}	Gepauzeerd bij {0}
+PC monitor	Pc-monitor
 Performance	Prestaties
+Phone battery	Telefoonbatterij
+Phone or computer connected	Telefoon of computer verbonden
+Picture	Afbeelding
+Pink	Roze
+Pixel art	Pixelkunst
+Pixel beads	Pixelkralen
 Pixel classic	Klassieke pixels
+Plain	Effen
+Plain, or the DSi's ruled grid behind every screen	Effen, of het gelinieerde DSi-raster achter elk scherm
+PLAY	SPELEN
+Play	Spelen
+Play a game to start your statistics.	Speel een spel om je statistieken te starten.
 Play at a comfortable volume.	Speel op een prettig volume.
+Played	Gespeeld
+Players	Spelers
+Playful sounds for browsing, choosing and starting games.	Speelse geluiden bij bladeren, kiezen en starten van spellen.
 Please keep your handheld on	Laat je apparaat ingeschakeld
 Pocket green	Zakgroen
+Point and click on top	Wijzen en klikken boven
+Pokédex caught	Pokédex gevangen
+Pokédex seen	Pokédex gezien
+PortMaster is ready	PortMaster is klaar
+Ports	Ports
 Power	Energie
+Power bombs	Power bombs
 Power mode	Energiemodus
 Power off	Uitschakelen
 Power off your handheld?	Je apparaat uitschakelen?
 Power profile	Energieprofiel
 Powering off…	Uitschakelen…
+Prepare	Voorbereiden
 Preparing controls…	Besturing voorbereiden…
 Preparing the launcher	Startmenu voorbereiden
 Preparing the library…	Bibliotheek voorbereiden…
+Preparing update…	Update voorbereiden…
 Preparing your cartridges…	Je cartridges voorbereiden…
 Preparing your library…	Je bibliotheek voorbereiden…
+Preparing your statistics…	Je statistieken voorbereiden…
+Preparing…	Voorbereiden…
 Press a button for {0}	Druk op een knop voor {0}
 Press a button…	Druk op een knop…
 Preview	Voorbeeld
-Preview Wi-Fi	Wi-Fi-voorbeeld
+PREVIEW	VOORBEELD
 Preview and choose your screen style	Bekijk en kies je schermstijl
 Preview game	Spelvoorbeeld
+Preview sound	Geluid beluisteren
 Preview unavailable	Voorbeeld niet beschikbaar
+Preview Wi-Fi	Wi-Fi-voorbeeld
+Previous	Vorige
 Previous build selected. Return to stock, then open RGDS again.	Vorige versie gekozen. Keer terug naar het originele menu en open RGDS opnieuw.
 Profile	Profiel
+PSP · Black	PSP · Zwart
+PSP · White	PSP · Wit
+Publisher	Uitgever
+Purple	Paars
+Push	Schuiven
+Quick search	Snel zoeken
+Quiet	Zacht
+Quit	Afsluiten
+Race	Race
+Rating	Leeftijdsclassificatie
+Reading Roms/NDS on your games card. This takes a moment.	Roms/NDS op je spelkaart wordt gelezen. Dit duurt even.
 READY	GEREED
-REVIEW YOUR CHOICE	CONTROLEER JE KEUZE
-RGDS build	RGDS-versie
-ROUNDED FONT UNAVAILABLE	AFGEROND LETTERTYPE ONTBREEKT
+Ready to fetch artwork.	Klaar om hoesafbeeldingen op te halen.
+Ready to restart. Your previous version is kept for recovery.	Klaar voor herstarten. Je vorige versie blijft bewaard voor herstel.
+Real microphone	Fysieke microfoon
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	De fysieke microfoon staat standaard aan. Blaas- en dekselacties keren twee seconden terug naar het spel. Taalwijzigingen gelden na herstarten.
+Receiving files	Bestanden ontvangen
 Recents	Recent
+Red	Rood
 Reduce rendering work when needed	Verminder het renderwerk wanneer nodig
 Refresh	Vernieuwen
 Refresh connection	Verbinding vernieuwen
 Release for options	Loslaten voor opties
+Release notes	Versieopmerkingen
+Released	Uitgebracht
 Remap	Opnieuw toewijzen
+Remove favourite	Favoriet verwijderen
+Replace	Vervangen
+Replace slot {0}?	Slot {0} vervangen?
 Request cancelled.	Verzoek geannuleerd.
 Request failed. Check the connection or device log and try again.	Verzoek mislukt. Controleer de verbinding of het apparaatlogboek en probeer opnieuw.
+Reserve	Reserve
 Reset	Resetten
+Reset filters	Filters wissen
+Reset state	Spelstatus resetten
 Rest after a period of inactivity	Slaapstand na een periode van inactiviteit
 Restart	Herstarten
+Restart & install	Herstarten en installeren
+Restart and install the update?	Herstarten en de update installeren?
+Restart from the title screen. In-game saves and save slots are kept.	Herstart vanaf het titelscherm. Opgeslagen spellen en opslagslots blijven behouden.
 Restart menu	Menu herstarten
-Restart the RGDS menu?	Het RGDS-menu herstarten?
+Restart port	Port herstarten
+Restart RG DS Core before installing the update.	Herstart RG DS Core voordat je de update installeert.
 Restart the device?	Het apparaat herstarten?
+Restart the game to apply DS settings.	Herstart het spel om DS-instellingen toe te passen.
+Restart the RGDS menu.	Start het RGDS-menu opnieuw.
+Restart the RGDS menu?	Het RGDS-menu herstarten?
 Restart uses {0}. Saves and checkpoints stay separate per emulator.	Herstarten gebruikt {0}. Opgeslagen spellen en controlepunten blijven gescheiden per emulator.
+Restart without loading a state?	Herstarten zonder een spelstatus te laden?
+Restarting into the update…	De bijgewerkte versie starten…
 Restarting…	Herstarten…
 Restore defaults	Standaardwaarden herstellen
 Restore the last installed RGDS build	Herstel de laatst geïnstalleerde RGDS-versie
 Restoring settings	Instellingen herstellen
 Restoring settings…	Instellingen herstellen…
 Resume	Hervatten
+Resume after power off	Hervatten na uitschakelen
+Resume download	Download hervatten
 Resume game	Spel hervatten
 Return	Terugkeren
 Return home	Naar startscherm
 Return home before changing startup.	Ga naar het startscherm voordat je de opstart wijzigt.
+Return home before testing the physical microphone.	Ga naar het startscherm voordat je de fysieke microfoon test.
 Return home from your game first.	Ga eerst vanuit je spel naar het startscherm.
 Return to game	Terug naar spel
 Return to stock	Naar origineel menu
@@ -340,16 +783,30 @@ Return to the stock menu?	Terugkeren naar het originele menu?
 Return without saving	Terug zonder opslaan
 Returning home…	Terug naar startscherm…
 Review unmatched	Zonder overeenkomst bekijken
+REVIEW YOUR CHOICE	CONTROLEER JE KEUZE
+RGDS build	RGDS-versie
+Rich	Gedetailleerd
 Right	Rechts
 Right stick	Rechterstick
 Rollback simulated.	Terugzetten gesimuleerd.
-START	START
+Round	Ronde
+ROUNDED FONT UNAVAILABLE	AFGEROND LETTERTYPE ONTBREEKT
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-games op de DS, rumblecartridges op Game Boy en Game Boy Advance.
+Rumble strength	Rumblesterkte
+Rupees	Rupees
+Sa	Za
 Save	Opslaan
 Save & restart	Opslaan & herstart
 Save & restart applies Threaded 3D.	Opslaan en herstarten past 3D-threads toe.
 Save & restart keeps your checkpoint and applies pending settings.	Opslaan en herstarten bewaart je controlepunt en past wachtende instellingen toe.
 Save a report for troubleshooting	Sla een rapport op voor probleemoplossing
+Save backup created in userdata/exports.	Back-up gemaakt in userdata/exports.
+Save checkpoint	Spelstand opslaan
+Save complete	Opgeslagen
 Save device report	Apparaatrapport opslaan
+Save gallery	Opslaggalerij
+Save here	Hier opslaan
+Save library updated.	Opslagbibliotheek bijgewerkt.
 Save state	Spelstatus opslaan
 Save your checkpoint and restart	Sla je controlepunt op en herstart
 Saved	Opgeslagen
@@ -366,16 +823,42 @@ Saving before returning home…	Opslaan voor terugkeer naar startscherm…
 Saving checkpoint before restarting…	Controlepunt opslaan voor herstarten…
 Saving checkpoint…	Controlepunt opslaan…
 Saving your progress…	Je voortgang opslaan…
+Saving…	Opslaan…
 Scan	Scannen
+Scan complete	Zoeken voltooid
+Scan for games	Scannen naar spellen
+Scan with your phone	Scan met je telefoon
+Scanning…	Zoeken…
 Scene	Scène
+Score	Score
 Screen brightness	Schermhelderheid
+Screen colours	Schermkleuren
+Screen off	Scherm uit
 Screen order	Schermvolgorde
+screens	schermen
 ScreenScraper needs project credentials and your account	ScreenScraper vereist projectgegevens en je account
+Screenshot	Schermafbeelding
+Screenshots	Schermafbeeldingen
+Screenshots and title screens	Schermafbeeldingen en titelschermen
+Sea green	Zeegroen
+Search	Zoeken
+Search games	Spellen zoeken
+Search in	Zoeken in
+Searching…	Zoeken…
+Second screen	Tweede scherm
+Seconds	Seconden
+Secret seashells	Geheime schelpen
+Seeds	Zaden
 Select	Selecteren
 Select a network again and enter its password.	Selecteer opnieuw een netwerk en voer het wachtwoord in.
 Select a network again.	Selecteer opnieuw een netwerk.
 Selected	Geselecteerd
+Selected row	Geselecteerde rij
+Send	Stuur
+Series	Serie
+Set the clock to where you are.	Zet de klok op de plek waar je bent.
 Sets Standard DraStic screen order for this game. Save & restart applies it.	Stelt de schermvolgorde in Standard DraStic in voor dit spel. Opslaan en herstarten past dit toe.
+Setting up PortMaster	PortMaster instellen
 Settings	Instellingen
 Settings saved	Instellingen opgeslagen
 Shader	Shader
@@ -386,21 +869,27 @@ Shader saved for next launch	Shader opgeslagen voor volgende start
 Shader saved. Restart this game to apply it.	Shader opgeslagen. Herstart dit spel om deze toe te passen.
 Shader studio	Shaderstudio
 Shaders	Shaders
-Sharp + NDS Color	Scherp + NDS Color
-Sharp + Natural Vision	Scherp + Natural Vision
 Sharp + both colours	Scherp + beide kleureffecten
+Sharp + Natural Vision	Scherp + Natural Vision
+Sharp + NDS Color	Scherp + NDS Color
 Sharp bilinear	Scherp bilineair
+Sharp fill	Scherp vullen
 Sharp pixel edges with smoother scaling.	Scherpe pixelranden met vloeiendere schaling.
 Sharp scaling with natural colour and contrast.	Scherpe schaling met natuurlijke kleuren en contrasten.
 Sharp scaling with the DS colour treatment.	Scherpe schaling met DS-kleurbehandeling.
 Sharp scaling, DS colour and Natural Vision together.	Scherpe schaling, DS-kleuren en Natural Vision samen.
+Shield	Schild
 Shift	Shift
 Shortcut action	Sneltoetsactie
+Shots	Schoten
+Show games	Spellen tonen
 Show the charge in the status bar	Toon de lading in de statusbalk
 Show the welcome screen at startup	Toon het welkomstscherm bij opstarten
 Sign in	Aanmelden
 Sign out	Afmelden
+Signal	Signaal
 Signing in…	Aanmelden…
+Simple pixel	Eenvoudige pixels
 Simulated handheld	Gesimuleerd apparaat
 Sleep	Slaapstand
 Sleep now	Nu slapen
@@ -409,23 +898,45 @@ Sleep simulated - press any control	Slaapstand gesimuleerd - druk op een knop
 Sleep simulated - settings retained	Slaapstand gesimuleerd - instellingen behouden
 Sleep unavailable on this device	Slaapstand niet beschikbaar op dit apparaat
 Sleeping - use Power to wake	Slaapstand - wekken met aan-uitknop
-Soft LCD grid	Zacht LCD-raster
+Slide into pages; slide back to return	Schuif naar pagina’s; schuif terug om terug te keren
+Slot	Slot
+Slot change undone.	Wijziging ongedaan gemaakt.
+Slot exported to userdata/exports.	Slot geëxporteerd naar userdata/exports.
+Slot {0} deleted.	Slot {0} verwijderd.
+Small keys	Kleine sleutels
+Small touches, scrolling and startup motion	Kleine effecten, scrollen en opstartbewegingen
+Smooth fill	Zacht vullen
 Soft green monochrome with full-resolution detail.	Zacht groen monochroom met details op volledige resolutie.
+Soft LCD grid	Zacht LCD-raster
 Soft scanlines	Zachte scanlijnen
+Some menu sounds are unavailable.	Sommige menugeluiden zijn niet beschikbaar.
 Sound	Geluid
+Sounds & music	Geluiden en muziek
+Source	Bron
 Space	Spatie
+Spanish	Spaans
+Spring	Veer
+Springy menu changes with a colourful wobble	Verende menuovergangen met kleurrijke bewegingen
+Stable	Stabiel
 Standard	Standaard
 Standard DraStic only. Applies on the next launch; game saves are kept.	Alleen Standard DraStic. Geldt bij de volgende start; opgeslagen spellen blijven behouden.
 Standard screen order	Standaardschermvolgorde
+START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
+Start a game	Een game starten
 Start RG DS automatically on future boots?	RG DS automatisch starten bij volgende opstarts?
+Start Send   X Undo   L R Scroll	Start Stuur   X Herstel   L R Scrollen
 Start with a familiar layout	Begin met een vertrouwde indeling
 Start, then Anbernic	Start, daarna Anbernic
+Starting…	Starten…
 Startup	Opstarten
 Startup choice saved.	Opstartkeuze opgeslagen.
 Startup choice simulated.	Opstartkeuze gesimuleerd.
 Startup is managed by RGDS OS.	Opstarten wordt beheerd door RGDS OS.
+Statistics	Statistieken
+Step {0} of 4	Stap {0} van 4
+Still reading your library. Try again in a moment.	De bibliotheek wordt nog gelezen. Probeer het zo opnieuw.
 Stock	Origineel
 Stock firmware	Originele firmware
 Stop fetching	Ophalen stoppen
@@ -435,76 +946,196 @@ Stop scraping before changing source	Stop het ophalen voordat je de bron wijzigt
 Stopping after this request	Stoppen na dit verzoek
 Stopping after this request.	Stoppen na dit verzoek.
 Storage read-only - use internal RGDS	Opslag is alleen-lezen - gebruik interne RGDS
+Su	Zo
+Subtle	Subtiel
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	De zomertijd volgt je tijdzone. Zet hem aan of uit als de klok een uur afwijkt.
+Super missiles	Superraketten
 SuperDrastic (experimental)	SuperDrastic (experimenteel)
 SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic gebruikt momenteel oorspronkelijke uitvoer. Je standaardshader blijft behouden.
 SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic heeft een eigen pauzemenu en weergavepad. Experimenteel; testen op RG DS volgt nog.
+Swap screens	Schermen wisselen
 Swapped	Verwisseld
+Swipe in from the left edge to go Back.	Veeg vanaf de linkerrand naar binnen om terug te gaan.
+Swipe up from the bottom edge to go Home from anywhere.	Veeg omhoog vanaf de onderrand om overal naar Home te gaan.
+Swipe up from the bottom for Home, in from the left for Back	Veeg omhoog vanaf de onderkant voor Home, vanaf links voor Terug
+Switch off	Uitzetten
+Switch on	Aanzetten
+Switch to another game	Naar een ander spel
+Switches and values	Schakelaars en waarden
+Sword	Zwaard
 System	Systeem
-THEME ERROR - RETAINED CURRENT	THEMAFOUT - HUIDIG THEMA BEHOUDEN
-THEME RELOADED	THEMA OPNIEUW GELADEN
-Turn the handheld off and on again	Het apparaat uit- en weer aanzetten
-TYPEFACE	LETTERTYPE
+System update	Systeemupdate
+Systems	Systemen
+Tap to type, or use the D-pad and A	Tik om te typen, of gebruik de richtingstoetsen en A
+Team	Team
 Temporary game cache cleared. Saves and artwork are kept.	Tijdelijke spelcache gewist. Opgeslagen spellen en hoesafbeeldingen blijven behouden.
+Test	Test
+Test microphone	Microfoon testen
+Test the microphone on your handheld.	Test de microfoon op je apparaat.
+Testing	Test
+Th	Do
+That message could not be sent	Het bericht kon niet worden verstuurd
+That room is full	Die kamer is vol
+The backup did not finish. Please try again.	De back-up is niet voltooid. Probeer het opnieuw.
+The best there is	Het beste wat er is
+The brighter DS Lite screen with a faint pixel grid.	Het helderdere DS Lite-scherm met een vaag pixelraster.
 The checkpoint did not finish saving.	Het opslaan van het controlepunt is niet voltooid.
 The emulator did not finish. Resume, retry, or return without saving.	De emulator was niet klaar. Hervat, probeer opnieuw of keer terug zonder op te slaan.
+The first DS screen: muted colour and a fine pixel grid.	Het eerste DS-scherm: gedempte kleuren en een fijn pixelraster.
+The Game Boy Advance LCD's own colour and gamma.	De eigen kleuren en gamma van het Game Boy Advance-lcd.
+The Game Boy Advance screen: its colour and faint pixel gaps.	Het Game Boy Advance-scherm: zijn kleuren en vage ruimtes tussen de pixels.
+The Game Boy Color screen with faint gaps between its pixels.	Het scherm van de Game Boy Color met vage ruimtes tussen de pixels.
 The game menu did not respond. Resume or return without saving.	Het spelmenu reageerde niet. Hervat of keer terug zonder op te slaan.
+The language for menus and messages.	De taal van menu's en berichten.
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Het dot-matrixscherm van de originele Game Boy: een licht pixelraster en zachte schaduwen.
+The pad is full: send it or clear it	Het blok is vol: verstuur of wis het
+The true GBA colours on its screen, with the gaps between its pixels.	De echte GBA-kleuren op zijn scherm, met de ruimtes tussen de pixels.
+The update could not be downloaded. Check for updates again.	De update kon niet worden gedownload. Zoek opnieuw naar updates.
+The update could not start. Your previous version was restored.	De update kon niet starten. Je vorige versie is hersteld.
 The zFast LCD texture with both colour treatments.	De zFast LCD-textuur met beide kleureffecten.
 The zFast LCD texture with natural colour and contrast.	De zFast LCD-textuur met natuurlijke kleuren en contrasten.
 The zFast LCD texture with the DS colour treatment.	De zFast LCD-textuur met DS-kleurbehandeling.
 Theme	Thema
 Theme & display	Thema en scherm
+THEME ERROR - RETAINED CURRENT	THEMAFOUT - HUIDIG THEMA BEHOUDEN
+THEME RELOADED	THEMA OPNIEUW GELADEN
+There is not enough free space for this update.	Er is niet genoeg vrije ruimte voor deze update.
+This can take a few seconds	Dit kan enkele seconden duren
 This emulator does not expose a frameskip setting.	Deze emulator heeft geen instelling voor frames overslaan.
 This emulator uses native resolution. No resolution switch is available.	Deze emulator gebruikt de oorspronkelijke resolutie. De resolutie kan niet worden gewijzigd.
 This engine does not expose a threading switch.	Deze engine heeft geen instelling voor threads.
 This engine has no live threading control.	Deze engine kan threads niet tijdens het spelen wijzigen.
 This game	Dit spel
+This handheld's own screen.	Het eigen scherm van deze handheld.
 This network requires an enterprise profile.	Dit netwerk vereist een bedrijfsprofiel.
+This port lists no instructions.	Deze port heeft geen instructies.
 This request did not finish. Please try again.	Dit verzoek is niet voltooid. Probeer opnieuw.
 This shader is unavailable for the current emulator.	Deze shader is niet beschikbaar voor de huidige emulator.
+This stock firmware has not been validated for updates.	Deze originele firmware is niet gevalideerd voor updates.
+This version failed to start. Waiting for a newer update.	Deze versie kon niet starten. Wachten op een nieuwere update.
 Threaded 3D	3D-threads
+Time	Tijd
+Time format	Tijdnotatie
+Time of day	Tijd van de dag
 Time played	Speeltijd
+Times played	Keer gespeeld
 Timezone	Tijdzone
+Title screen	Titelscherm
+Title screens	Titelschermen
 Toggle	Omschakelen
+Too much on the pad: erase some of it	Te veel op het blok: wis iets
+Tools	Gereedschap
 Top display	Bovenste scherm
+Total	Totaal
 Touch	Aanraking
+Touch gestures	Aanraakgebaren
+Touch here to point and click on the top screen.	Tik hier om op het bovenste scherm te wijzen en te klikken.
 Touch indicator	Aanraakindicator
+Touch screen	Touchscreen
+Touch screen is not available	Touchscreen is niet beschikbaar
+Touch screen off	Touchscreen uit
+Touch the screen to turn it on	Raak het scherm aan om het aan te zetten
 Touch to continue	Tik om door te gaan
 Touch {0}	Aanraking {0}
+Trainer	Trainer
+Transition style	Overgangsstijl
+Transitions	Overgangen
+Treasures	Schatten
+Try a pattern	Probeer een patroon
+Try a shorter title or clear your filter.	Probeer een kortere titel of wis je filter.
+Try again	Opnieuw proberen
+Try another title or clear your filters	Probeer een andere titel of wis je filters
 Try saving again	Probeer opnieuw op te slaan
+Tu	Di
+Turn Bluetooth off?	Bluetooth uitschakelen?
+Turn Bluetooth on to find devices.	Schakel Bluetooth in om apparaten te vinden.
+Turn it on to find networks	Zet het aan om netwerken te vinden
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Zet Spelinfo aan bij Instellingen > Bibliotheek > Hoesbronnen en haal hoezen op.
+Turn on game rumble for games made for a rumble accessory.	Zet spelrumble aan voor games gemaakt voor een rumble-accessoire.
+Turn on menu haptics to feel the menus.	Zet menuhaptiek aan om de menu's te voelen.
+Turn on menu music for a soft tune while you browse.	Zet menumuziek aan voor een zachte melodie terwijl je bladert.
+Turn on menu sounds to hear the previews.	Zet menugeluiden aan om ze te beluisteren.
+Turn the handheld off and on again	Het apparaat uit- en weer aanzetten
 Turn Wi-Fi off?	Wi-Fi uitschakelen?
 Turn Wi-Fi on first.	Schakel eerst Wi-Fi in.
 Turn Wi-Fi on to find networks.	Schakel Wi-Fi in om netwerken te zoeken.
+Turning Bluetooth off…	Bluetooth wordt uitgeschakeld…
+Turning Bluetooth on…	Bluetooth wordt ingeschakeld…
 Turning Wi-Fi off…	Wi-Fi uitschakelen…
 Turning Wi-Fi on…	Wi-Fi inschakelen…
+Turquoise	Turkoois
+Type	Typen
+Type a game title…	Typ een speltitel…
+Type your name	Typ je naam
+TYPEFACE	LETTERTYPE
 Typeface	Lettertype
 Unassigned	Niet toegewezen
 Unavailable	Niet beschikbaar
+Undo last load	Laatste laden ongedaan maken
+Undo last slot change	Laatste wijziging ongedaan maken
 Unmatched artwork	Hoesafbeeldingen zonder overeenkomst
 Unmute	Dempen opheffen
+Unpacking files	Bestanden uitpakken
+Unpacking PortMaster	PortMaster uitpakken
+Unplayed	Ongespeeld
+Up	Omhoog
+Update	Bijwerken
+Update available in Maintenance	Update beschikbaar bij Onderhoud
+Update discarded. Your installed version is unchanged.	Update verwijderd. Je geïnstalleerde versie is ongewijzigd.
+Update failed. Check Wi-Fi and try again.	Update mislukt. Controleer Wi-Fi en probeer opnieuw.
+Update information has expired or the device clock is incorrect.	Updategegevens zijn verlopen of de apparaatklok staat verkeerd.
+Update installed.	Update geïnstalleerd.
+Update now	Nu bijwerken
+Update verification failed. Check for updates again.	Updateverificatie mislukt. Zoek opnieuw naar updates.
+Updates	Updates
 Updates & recovery	Updates en herstel
-Use ROM identity	ROM-identiteit gebruiken
+Updates will be available when the release channel opens.	Updates worden beschikbaar zodra het releasekanaal opent.
 Use an additional rendering thread	Gebruik een extra renderthread
 Use default ({0})	Standaard gebruiken ({0})
 Use global controls	Algemene besturing gebruiken
 Use previous build	Vorige versie gebruiken
+Use ROM identity	ROM-identiteit gebruiken
+Use the engine's native controls for microphone and DS settings.	Gebruik de eigen besturing van de engine voor microfoon en DS-instellingen.
 Use the previous RGDS build?	De vorige RGDS-versie gebruiken?
 Used by games without an override	Gebruikt door spellen zonder eigen instelling
 Username	Gebruikersnaam
+Verify	Controleren
+Verifying update…	Update verifiëren…
+Version {0} is ready	Versie {0} is klaar
+Version {0} is ready to install	Versie {0} is klaar om te installeren
+Versions, free space and the network address of your handheld.	Versies, vrije ruimte en het netwerkadres van je handheld.
+Vibration	Trillen
 View	Weergave
+View transitions	Weergaveovergangen
+Violet	Violet
+Vivid	Levendig
+Vivid LCD	Levendig LCD
+Vivid smooth	Levendig glad
 Volume	Volume
 Volume control unavailable	Volumeregeling niet beschikbaar
+Waiting for an address…	Wachten op een adres…
 WAITING FOR INPUT	WACHTEN OP INVOER
 Warm monochrome with preserved highlight detail.	Warm monochroom met behoud van details in lichte delen.
 Warm paper	Warm papier
 Warm whites and softened contrast for evening play.	Warme wittinten en zachter contrast voor spelen in de avond.
+We	Wo
 Welcome back	Welkom terug
+What happens when you turn the handheld on.	Wat er gebeurt als je de handheld aanzet.
 What the shortcut opens	Wat de sneltoets opent
+What's new	Wat is er nieuw
+Where covers and titles come from.	Waar hoezen en titels vandaan komen.
+Where games go on the card, and a fresh scan.	Waar spellen op de kaart horen, en een nieuwe zoekopdracht.
 Where this layout applies	Waar deze indeling geldt
+Where to put games	Waar plaats je spellen?
+White sword	Wit zwaard
+Whole pixels	Hele pixels
 Wi-Fi	Wi-Fi
 Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi-adapter is niet gereed. Controleer het stuurprogramma of herstart het apparaat.
 Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi-adapter is niet gereed. Schakel Wi-Fi in om opnieuw te proberen.
+Wi-Fi connected	Wi-Fi verbonden
 Wi-Fi did not turn on. Try again.	Wi-Fi is niet ingeschakeld. Probeer opnieuw.
 Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi wordt geblokkeerd door de hardware. Herstart het apparaat en probeer opnieuw.
+Wi-Fi is off	Wifi staat uit
 Wi-Fi is still on. Try turning it off again.	Wi-Fi staat nog aan. Probeer het opnieuw uit te schakelen.
 Wi-Fi is unavailable.	Wi-Fi is niet beschikbaar.
 Wi-Fi off.	Wi-Fi uit.
@@ -512,630 +1143,53 @@ Wi-Fi on.	Wi-Fi aan.
 Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi-verzoek mislukt. Controleer het wachtwoord en signaal en probeer opnieuw.
 Wi-Fi request timed out. Check signal and try again.	Wi-Fi-verzoek verlopen. Controleer het signaal en probeer opnieuw.
 Wi-Fi service is unavailable.	Wi-Fi-dienst is niet beschikbaar.
+With info	Met info
 With shader	Met shader
+Without info	Zonder info
+WonderSwan Color · Blue	WonderSwan Color · Blauw
+WonderSwan Color · White	WonderSwan Color · Wit
+Wood-grain TV	Houtnerf-tv
+Wooden sword	Houten zwaard
 Working…	Bezig…
+World	Wereld
+World map	Wereldkaart
+Worlds	Werelden
+Y imports a save into this slot.	Y importeert een save in dit slot.
+Yellow	Geel
+Yes	Ja
+You	Jij
+You appear like this to others	Zo zien anderen je
+You are in Room {0}	Je bent in kamer {0}
+You are up to date.	Je bent up-to-date.
 Your cartridges go here	Je cartridges komen hier
+Your colour	Jouw kleur
+Your DS library starts here	Je DS-bibliotheek begint hier
+Your games and saves are not touched.	Je games en opslagbestanden blijven onaangeroerd.
 Your home screen after powering on	Je startscherm na inschakelen
+Your journey	Jouw reis
+Your last game will appear here	Je laatste spel verschijnt hier
 Your local time and date	Je lokale tijd en datum
 Your menu shortcut	Je menusneltoets
+Your name	Jouw naam
+Your ports are waiting in Ports	Je ports wachten in Ports
+Your saves are safe. See you soon!	Je saves zijn veilig. Tot gauw!
 Your shader choice is still available.	Je shaderkeuze is nog steeds beschikbaar.
-zFast + NDS Color	zFast + NDS Color
-zFast + Natural Vision	zFast + Natural Vision
 zFast + both colours	zFast + beide kleureffecten
+zFast + Natural Vision	zFast + Natural Vision
+zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (experimenteel)
 {0} (recommended)	{0} (aanbevolen)
+{0} active	{0} actief
+{0} found. Choose Done to go to your library.	{0} gevonden. Kies Klaar om naar je bibliotheek te gaan.
 {0} frames	{0} frames
+{0} game	{0} spel
 {0} games	{0} spellen
-{0} settings	Instellingen voor {0}
-Up	Omhoog
-Times played	Keer gespeeld
-Last played	Laatst gespeeld
-GameTDB	GameTDB
-Libretro	Libretro
-Ready to fetch artwork.	Klaar om hoesafbeeldingen op te halen.
-Icon style	Pictogramstijl
-Simple pixel	Eenvoudige pixels
-Rich	Gedetailleerd
-Statistics	Statistieken
-Games played	Gespeelde spellen
-Most played	Meest gespeeld
-Preparing your statistics…	Je statistieken voorbereiden…
-Play a game to start your statistics.	Speel een spel om je statistieken te starten.
-Installed version	Geïnstalleerde versie
-Check for updates	Zoeken naar updates
-Restart & install	Herstarten en installeren
-Download update	Update downloaden
-Pause download	Download pauzeren
-Release notes	Versieopmerkingen
-Discard update	Update verwijderen
-No release notes yet.	Nog geen versieopmerkingen.
-Restart and install the update?	Herstarten en de update installeren?
-Check for updates when you are ready.	Zoek naar updates wanneer je klaar bent.
-Updates will be available when the release channel opens.	Updates worden beschikbaar zodra het releasekanaal opent.
-Checking for updates…	Zoeken naar updates…
-You are up to date.	Je bent up-to-date.
-A new version is ready to download.	Een nieuwe versie is klaar om te downloaden.
-This version failed to start. Waiting for a newer update.	Deze versie kon niet starten. Wachten op een nieuwere update.
-Downloading update…	Update downloaden…
-Verifying update…	Update verifiëren…
-Preparing update…	Update voorbereiden…
-Ready to restart. Your previous version is kept for recovery.	Klaar voor herstarten. Je vorige versie blijft bewaard voor herstel.
-Restarting into the update…	De bijgewerkte versie starten…
-Checking the new version…	De nieuwe versie controleren…
-Update installed.	Update geïnstalleerd.
-The update could not start. Your previous version was restored.	De update kon niet starten. Je vorige versie is hersteld.
-Download paused. Retry to continue.	Download gepauzeerd. Probeer opnieuw om door te gaan.
-Update discarded. Your installed version is unchanged.	Update verwijderd. Je geïnstalleerde versie is ongewijzigd.
-Connect the charger before installing an update.	Sluit de oplader aan voordat je een update installeert.
-There is not enough free space for this update.	Er is niet genoeg vrije ruimte voor deze update.
-Exit your game before installing an update.	Sluit je spel af voordat je een update installeert.
-Install the latest SD installer before this update.	Installeer het nieuwste SD-installatieprogramma vóór deze update.
-Restart RG DS Core before installing the update.	Herstart RG DS Core voordat je de update installeert.
-Download interrupted. Retry to continue.	Download onderbroken. Probeer opnieuw om door te gaan.
-An update is already prepared. Install it or discard it first.	Er staat al een update klaar. Installeer of verwijder deze eerst.
-Another update is already running.	Er wordt al een andere update uitgevoerd.
-Update information has expired or the device clock is incorrect.	Updategegevens zijn verlopen of de apparaatklok staat verkeerd.
-This stock firmware has not been validated for updates.	Deze originele firmware is niet gevalideerd voor updates.
-Update verification failed. Check for updates again.	Updateverificatie mislukt. Zoek opnieuw naar updates.
-Update failed. Check Wi-Fi and try again.	Update mislukt. Controleer Wi-Fi en probeer opnieuw.
-Stable	Stabiel
-Testing	Test
-Import slot	Slot importeren
-Export slot	Slot exporteren
-Save checkpoint	Spelstand opslaan
-Load checkpoint	Spelstand laden
-Save here	Hier opslaan
-Export	Exporteren
-More	Meer
-Replace slot {0}?	Slot {0} vervangen?
-Load slot {0}?	Slot {0} laden?
-Delete slot {0}?	Slot {0} verwijderen?
-Undo last slot change	Laatste wijziging ongedaan maken
-Undo last load	Laatste laden ongedaan maken
-Import into this slot	Importeren in dit slot
-Slot {0} deleted.	Slot {0} verwijderd.
-Slot change undone.	Wijziging ongedaan gemaakt.
-A saves your current progress here.	A slaat je voortgang hier op.
-A replaces this slot with your current progress. X deletes it.	A vervangt dit slot door je voortgang. X verwijdert het.
-A loads this slot. Undo last load, under Y, brings back the progress you have now.	A laadt dit slot. Laatste laden ongedaan maken onder Y brengt je huidige voortgang terug.
-Nothing to load here yet.	Hier is nog niets te laden.
-A exports this slot to userdata/exports. X deletes it.	A exporteert dit slot naar userdata/exports. X verwijdert het.
-Y imports a save into this slot.	Y importeert een save in dit slot.
-Import help	Importhulp
-Replace	Vervangen
-Blow into microphone	Blaas in de microfoon
-Close and open DS lid	Sluit en open het DS-deksel
-DS language	DS-taal
-Real microphone	Fysieke microfoon
-Japanese	Japans
-English	Engels
-French	Frans
-German	Duits
-Italian	Italiaans
-Spanish	Spaans
-2 seconds	2 seconden
-In game	In het spel
-Restart the game to apply DS settings.	Herstart het spel om DS-instellingen toe te passen.
-Could not save DS settings.	DS-instellingen konden niet worden opgeslagen.
-Search	Zoeken
-Save gallery	Opslaggalerij
-Add your games	Voeg je spellen toe
-DS controls	DS-besturing
-Back up all saves	Back-up van alle opgeslagen spellen
-Resume after power off	Hervatten na uitschakelen
-Slot	Slot
-Empty slot	Leeg slot
-Search games	Spellen zoeken
-Filter	Filter
-Missing artwork	Ontbrekende hoesafbeeldingen
-Where to put games	Waar plaats je spellen?
-Scan for games	Scannen naar spellen
-Automatic updates	Automatische updates
-Download automatically	Automatisch downloaden
-Check automatically	Automatisch controleren
-Update available in Maintenance	Update beschikbaar bij Onderhoud
-Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopieer .rgdssave.zip-bestanden naar userdata/imports. Imports moeten bij dit spel en deze emulator passen.
-Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopieer .nds-bestanden of DS ZIP-archieven naar Roms/NDS op de spelkaart. Spellen zijn niet inbegrepen. Opgeslagen spellen blijven in userdata.
-Save backup created in userdata/exports.	Back-up gemaakt in userdata/exports.
-Slot exported to userdata/exports.	Slot geëxporteerd naar userdata/exports.
-Save library updated.	Opslagbibliotheek bijgewerkt.
-Current progress could not be saved. No slot was changed.	Huidige voortgang kon niet worden opgeslagen. Geen slot is gewijzigd.
-DS controls are unavailable for this engine.	DS-besturing is niet beschikbaar voor deze engine.
-Your DS library starts here	Je DS-bibliotheek begint hier
-Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopieer .nds- of DS ZIP-bestanden naar Roms/NDS op je spelkaart en kies Scannen naar spellen.
-Use the engine's native controls for microphone and DS settings.	Gebruik de eigen besturing van de engine voor microfoon en DS-instellingen.
-Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	De fysieke microfoon staat standaard aan. Blaas- en dekselacties keren twee seconden terug naar het spel. Taalwijzigingen gelden na herstarten.
-Unplayed	Ongespeeld
-Played	Gespeeld
-Filtered	Gefilterd
-No matching games	Geen overeenkomende spellen
-No matches. Use View to change filters.	Geen resultaten. Wijzig filters bij Weergave.
-Reset state	Spelstatus resetten
-Restart without loading a state?	Herstarten zonder een spelstatus te laden?
-Restart from the title screen. In-game saves and save slots are kept.	Herstart vanaf het titelscherm. Opgeslagen spellen en opslagslots blijven behouden.
-Microphone, simulated blowing, lid and DS language.	Microfoon, gesimuleerd blazen, deksel en DS-taal.
-Test microphone	Microfoon testen
-Test	Test
-Live input	Live invoer
-Quiet	Zacht
-Loud	Luid
-Listening…	Luisteren…
-Microphone unavailable	Microfoon niet beschikbaar
-Audio is not recorded or saved.	Geluid wordt niet opgenomen of opgeslagen.
-Test the microphone on your handheld.	Test de microfoon op je apparaat.
-Return home before testing the physical microphone.	Ga naar het startscherm voordat je de fysieke microfoon test.
-Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blaas of spreek in de microfoon. Kijk hoe het niveau stijgt en weer daalt als je stopt.
-Quick search	Snel zoeken
-A  Search	A  Zoeken
-A  Jump	A  Springen
-Edit search	Zoekopdracht bewerken
-Clear filters	Filters wissen
-Try another title or clear your filters	Probeer een andere titel of wis je filters
-Type a game title…	Typ een speltitel…
-Finding games…	Spellen zoeken…
-Searching…	Zoeken…
-Search in	Zoeken in
-Try a shorter title or clear your filter.	Probeer een kortere titel of wis je filter.
-Type	Typen
-Tap to type, or use the D-pad and A	Tik om te typen, of gebruik de richtingstoetsen en A
-No letters to jump to. Search for another game.	Geen letters om naartoe te springen. Zoek een ander spel.
+{0} joined	{0} doet mee
+{0} left	{0} is weg
 {0} match	{0} resultaat
 {0} matches	{0} resultaten
 {0} matching game	{0} overeenkomend spel
 {0} matching games	{0} overeenkomende spellen
-{0} game	{0} spel
-Interface animations	Interfaceanimaties
-View transitions	Weergaveovergangen
-Small touches, scrolling and startup motion	Kleine effecten, scrollen en opstartbewegingen
-Springy menu changes with a colourful wobble	Verende menuovergangen met kleurrijke bewegingen
-Transitions	Overgangen
-Subtle	Subtiel
-Menu effects	Menueffecten
-Effects volume	Effectvolume
-Preview sound	Geluid beluisteren
-A little handheld magic	Een beetje handheldmagie
-Playful sounds for browsing, choosing and starting games.	Speelse geluiden bij bladeren, kiezen en starten van spellen.
-Turn on menu sounds to hear the previews.	Zet menugeluiden aan om ze te beluisteren.
-Some menu sounds are unavailable.	Sommige menugeluiden zijn niet beschikbaar.
-Menu audio is unavailable on this device.	Menu-audio is niet beschikbaar op dit apparaat.
-Menu sounds are unavailable.	Menugeluiden zijn niet beschikbaar.
-Close lid	Deksel sluiten
-Open lid	Deksel openen
-Spring	Veer
-Push	Schuiven
-Transition style	Overgangsstijl
-Animate pages with the selected style	Animeer pagina’s met de gekozen stijl
-Slide into pages; slide back to return	Schuif naar pagina’s; schuif terug om terug te keren
-Accent colour	Accentkleur
-FAVOURITE COLOUR	LIEVELINGSKLEUR
-Classic	Klassiek
-Classic blue	Klassiek blauw
-High contrast	Hoog contrast
-PREVIEW	VOORBEELD
-Selected row	Geselecteerde rij
-Switches and values	Schakelaars en waarden
-Grey	Grijs
-Brown	Bruin
-Red	Rood
-Pink	Roze
-Orange	Oranje
-Yellow	Geel
-Lime	Limoen
-Green	Groen
-Dark green	Donkergroen
-Sea green	Zeegroen
-Turquoise	Turkoois
-Blue	Blauw
-Dark blue	Donkerblauw
-Purple	Paars
-Violet	Violet
-Magenta	Magenta
-Network file sharing	Bestanden delen via netwerk
-Open on this Wi-Fi	Open op deze wifi
-Password protected	Met wachtwoord beveiligd
-File sharing on. Find "RG DS" under Network.	Bestanden delen staat aan. Zoek "RG DS" onder Netwerk.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: de oorspronkelijke engine. DSCore voegt fixes en snelheid toe.
-DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: aanbevolen. Het snelst, met fixes voor klep, stylus en 3D en optionele 2x–5x 3D.
-DSCore 3D resolution	DSCore 3D-resolutie
-Native (fastest)	Origineel (snelst)
-2x sharper	2x scherper
-3x sharper	3x scherper
-4x (experimental)	4x (experimenteel)
-5x (experimental)	5x (experimenteel)
-Colour mode	Kleurmodus
-Draw and chat with nearby handhelds	Teken en chat met apparaten in de buurt
-Wi-Fi connected	Wi-Fi verbonden
-No Wi-Fi: you can still draw	Geen Wi-Fi: je kunt nog steeds tekenen
-Type your name	Typ je naam
-You appear like this to others	Zo zien anderen je
-Starting…	Starten…
-Chat is unavailable: you can still draw	Chat niet beschikbaar: je kunt nog steeds tekenen
-Nobody else is nearby yet	Nog niemand in de buurt
-1 person nearby	1 persoon in de buurt
 {0} people nearby	{0} personen in de buurt
-Your colour	Jouw kleur
-Leave	Verlaat
-Your name	Jouw naam
-Send	Stuur
-You are in Room {0}	Je bent in kamer {0}
-{0} joined	{0} doet mee
-{0} left	{0} is weg
-New messages below	Nieuwe berichten onderaan
-Older messages	Oudere berichten
-The pad is full: send it or clear it	Het blok is vol: verstuur of wis het
-Too much on the pad: erase some of it	Te veel op het blok: wis iets
-That message could not be sent	Het bericht kon niet worden verstuurd
-That room is full	Die kamer is vol
-Chat Room {0}	Chatroom {0}
-Choose a chat room to join	Kies een chatroom om aan deel te nemen
-Edit	Wijzig
-Join	Deelnemen
-Matches your accent	Volgt je accentkleur
-Nobody here yet	Nog niemand hier
-Start Send   X Undo   L R Scroll	Start Stuur   X Herstel   L R Scrollen
-You	Jij
-Time format	Tijdnotatie
-24-hour	24 uur
-12-hour	12 uur
-24-hour or 12-hour clock	24-uurs- of 12-uursklok
-How dates appear in the status bar	Hoe datums in de statusbalk verschijnen
-Connecting to	Verbinden met
-This can take a few seconds	Dit kan enkele seconden duren
-Waiting for an address…	Wachten op een adres…
-IP address	IP-adres
-Signal	Signaal
-Could not connect	Verbinden mislukt
-Wi-Fi is off	Wifi staat uit
-Turn it on to find networks	Zet het aan om netwerken te vinden
-Choose a network from the list	Kies een netwerk uit de lijst
-Preparing…	Voorbereiden…
-Home layout	Indeling startscherm
-Background	Achtergrond
-Touch gestures	Aanraakgebaren
-Carousel	Carrousel
-Column	Kolom
-Plain	Effen
-Grid	Raster
-A carousel, or the DSi's column with your last game on top	Een carrousel, of de DSi-kolom met je laatste spel bovenaan
-Plain, or the DSi's ruled grid behind every screen	Effen, of het gelinieerde DSi-raster achter elk scherm
-Swipe up from the bottom for Home, in from the left for Back	Veeg omhoog vanaf de onderkant voor Home, vanaf links voor Terug
-Nothing played yet	Nog niets gespeeld
-Your last game will appear here	Je laatste spel verschijnt hier
-Draw and chat	Teken en chat
-Su	Zo
-Mo	Ma
-Tu	Di
-We	Wo
-Th	Do
-Fr	Vr
-Sa	Za
-Chat Room	Chatruimte
-Nobody else here yet	Nog niemand anders hier
-Drawing on your own	Je tekent alleen
-Jump	Ga
-Home	Home
-Swipe up from the bottom edge to go Home from anywhere.	Veeg omhoog vanaf de onderrand om overal naar Home te gaan.
-Swipe in from the left edge to go Back.	Veeg vanaf de linkerrand naar binnen om terug te gaan.
-A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Een klein handvat onderaan het onderste scherm laat zien dat gebaren aan staan; het volgt je vinger en een ring markeert de plek wanneer een gebaar wordt uitgevoerd.
-Your saves are safe. See you soon!	Je saves zijn veilig. Tot gauw!
-DS Classic	DS Klassiek
-DS Lite	DS Lite
-Natural glow	Natuurlijke gloed
-Vivid LCD	Levendig LCD
-Natural smooth	Natuurlijk glad
-Vivid smooth	Levendig glad
-Pixel beads	Pixelkralen
-Glossy tiles	Glanzende tegels
-The first DS screen: muted colour and a fine pixel grid.	Het eerste DS-scherm: gedempte kleuren en een fijn pixelraster.
-The brighter DS Lite screen with a faint pixel grid.	Het helderdere DS Lite-scherm met een vaag pixelraster.
-Natural colour with soft pixels that glow together.	Natuurlijke kleuren met zachte pixels die samen gloeien.
-Bold colour on a close-up LCD with RGB stripes.	Felle kleuren op een LCD van dichtbij met RGB-strepen.
-Natural colour with smoothed diagonal edges.	Natuurlijke kleuren met gladde diagonale randen.
-Bold colour with smoothed diagonal edges.	Felle kleuren met gladde diagonale randen.
-Bold colour; every pixel a round, shiny bead.	Felle kleuren; elke pixel een ronde, glimmende kraal.
-Bold colour; every pixel a raised, glossy tile.	Felle kleuren; elke pixel een verhoogde, glanzende tegel.
-IN USE	IN GEBRUIK
-APPLY	TOEPASSEN
-Follows your library shader.	Volgt je bibliotheekshader.
-Original	Origineel
-DS screens	DS-schermen
-Natural	Natuurlijk
-Vivid	Levendig
-Pixel art	Pixelkunst
-Moods	Sferen
-Change group	Andere groep
-Sounds & music	Geluiden en muziek
-Menu music	Menumuziek
-Music volume	Muziekvolume
-A soft tune plays while you browse. It fades out when a game starts.	Een zachte melodie speelt terwijl je bladert. Ze vervaagt wanneer een spel start.
-Turn on menu music for a soft tune while you browse.	Zet menumuziek aan voor een zachte melodie terwijl je bladert.
-Scanning…	Zoeken…
-Scan complete	Zoeken voltooid
-Looking for games…	Spellen zoeken…
-Reading Roms/NDS on your games card. This takes a moment.	Roms/NDS op je spelkaart wordt gelezen. Dit duurt even.
-{0} found. Choose Done to go to your library.	{0} gevonden. Kies Klaar om naar je bibliotheek te gaan.
-No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Geen spellen gevonden. Kopieer .nds- of DS ZIP-bestanden naar Roms/NDS op je spelkaart en zoek opnieuw.
-Backing up your saves…	Je opgeslagen spellen worden geback-upt…
-The backup did not finish. Please try again.	De back-up is niet voltooid. Probeer het opnieuw.
-Copies every save and checkpoint into one zip in userdata/exports.	Kopieert elk opgeslagen spel en controlepunt naar één zip in userdata/exports.
-Where games go on the card, and a fresh scan.	Waar spellen op de kaart horen, en een nieuwe zoekopdracht.
-Where covers and titles come from.	Waar hoezen en titels vandaan komen.
-System update	Systeemupdate
-Version {0} is ready	Versie {0} is klaar
-Version {0} is ready to install	Versie {0} is klaar om te installeren
-Downloading {0}	{0} downloaden
-Paused at {0}	Gepauzeerd bij {0}
-Update now	Nu bijwerken
-Resume download	Download hervatten
-Update	Bijwerken
-Install	Installeren
-What's new	Wat is er nieuw
-Download	Downloaden
-Verify	Controleren
-Prepare	Voorbereiden
-Step {0} of 4	Stap {0} van 4
-Less than a minute left	Minder dan een minuut over
-About {0} min left	Ongeveer {0} min over
-About {0} h left	Ongeveer {0} u over
-Downloads resume where they stopped if Wi-Fi drops.	Downloads gaan verder waar ze stopten als wifi wegvalt.
-Your games and saves are not touched.	Je games en opslagbestanden blijven onaangeroerd.
-Connection lost. Retrying…	Verbinding verbroken. Opnieuw proberen…
-The update could not be downloaded. Check for updates again.	De update kon niet worden gedownload. Zoek opnieuw naar updates.
-Finishing another task. Press Y again in a moment.	Een andere taak wordt afgerond. Druk zo opnieuw op Y.
-Updates	Updates
-The language for menus and messages.	De taal van menu's en berichten.
-Set the clock to where you are.	Zet de klok op de plek waar je bent.
-How dates appear at the top of the screen.	Hoe datums bovenaan het scherm verschijnen.
-A 24-hour or 12-hour clock.	Een 24- of 12-uursklok.
-Versions, free space and the network address of your handheld.	Versies, vrije ruimte en het netwerkadres van je handheld.
-Check for updates, go back to the previous build or clear temporary files.	Zoek naar updates, ga terug naar de vorige versie of wis tijdelijke bestanden.
-Leave RG DS Core and go back to the stock menu.	Verlaat RG DS Core en ga terug naar het standaardmenu.
-What happens when you turn the handheld on.	Wat er gebeurt als je de handheld aanzet.
-Restart the RGDS menu.	Start het RGDS-menu opnieuw.
-Previous	Vorige
-Next	Volgende
-Show all systems	Alle systemen tonen
-Systems	Systemen
-Game screen	Spelscherm
-Second screen	Tweede scherm
-Sharp fill	Scherp vullen
-Whole pixels	Hele pixels
-Smooth fill	Zacht vullen
-Companion	Metgezel
-Swap screens	Schermen wisselen
-Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Voegt Game Boy- en Game Boy Advance-spellen toe: Spellen opent dan een pagina met systemen.
-Frame	Rand
-Game Boy	Game Boy
-Game Boy · Red	Game Boy · Rood
-Game Boy · Yellow	Game Boy · Geel
-Game Boy · Green	Game Boy · Groen
-Game Boy · Blue	Game Boy · Blauw
-Game Boy · Black	Game Boy · Zwart
-Game Boy · Screen only	Game Boy · Alleen scherm
-Game Boy Pocket · Silver	Game Boy Pocket · Zilver
-Game Boy Pocket · Black	Game Boy Pocket · Zwart
-Game Boy Pocket · Yellow	Game Boy Pocket · Geel
-Game Boy Pocket · Red	Game Boy Pocket · Rood
-Game Boy Pocket · Green	Game Boy Pocket · Groen
-Game Boy Pocket · Blue	Game Boy Pocket · Blauw
-Game Boy Pocket · Pink	Game Boy Pocket · Roze
-Game Boy Pocket · Screen only	Game Boy Pocket · Alleen scherm
-Game Boy Color · Berry	Game Boy Color · Bes
-Game Boy Color · Grape	Game Boy Color · Druif
-Game Boy Color · Kiwi	Game Boy Color · Kiwi
-Game Boy Color · Dandelion	Game Boy Color · Paardenbloem
-Game Boy Color · Teal	Game Boy Color · Blauwgroen
-Game Boy Color · Atomic Purple	Game Boy Color · Atoompaars
-Game Boy Color · Screen only	Game Boy Color · Alleen scherm
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Glacier	Game Boy Advance · Gletsjer
-Game Boy Advance · Black	Game Boy Advance · Zwart
-Game Boy Advance · Platinum	Game Boy Advance · Platina
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
-Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Zilver
-Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Zwart
-WonderSwan Color · White	WonderSwan Color · Wit
-WonderSwan Color · Blue	WonderSwan Color · Blauw
-PSP · Black	PSP · Zwart
-PSP · White	PSP · Wit
-Grey TV	Grijze tv
-Wood-grain TV	Houtnerf-tv
-PC monitor	Pc-monitor
-Arcade cabinet	Arcadekast
-Black bar	Zwarte balk
-GBA Color	GBA-kleuren
-GBA screen	GBA-scherm
-GBA screens	GBA-schermen
-The Game Boy Advance LCD's own colour and gamma.	De eigen kleuren en gamma van het Game Boy Advance-lcd.
-The Game Boy Advance screen: its colour and faint pixel gaps.	Het Game Boy Advance-scherm: zijn kleuren en vage ruimtes tussen de pixels.
-Game info	Spelinfo
-Extra pictures	Extra afbeeldingen
-Screenshots	Schermafbeeldingen
-Title screens	Titelschermen
-Screenshots and title screens	Schermafbeeldingen en titelschermen
-Both	Beide
-Cover	Hoes
-Title screen	Titelscherm
-Screenshot	Schermafbeelding
-Developer	Ontwikkelaar
-Publisher	Uitgever
-Genre	Genre
-Released	Uitgebracht
-Rating	Leeftijdsclassificatie
-Players	Spelers
-Series	Serie
-Online	Online
-Yes	Ja
-Source	Bron
-Picture	Afbeelding
-Next picture	Volgende afbeelding
-No pictures yet	Nog geen afbeeldingen
-Available	Beschikbaar
-Not downloaded	Niet gedownload
-Show games	Spellen tonen
-Reset filters	Filters wissen
-Any	Alle
-{0} active	{0} actief
-Still reading your library. Try again in a moment.	De bibliotheek wordt nog gelezen. Probeer het zo opnieuw.
-No game has this information yet. Fetch artwork with Game info turned on.	Nog geen spel heeft deze informatie. Haal hoezen op met Spelinfo aan.
-With info	Met info
-Without info	Zonder info
-Online play	Online spelen
-1 player	1 speler
 {0} players	{0} spelers
-No game information yet.	Nog geen spelinfo.
-Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Zet Spelinfo aan bij Instellingen > Bibliotheek > Hoesbronnen en haal hoezen op.
-Ports	Ports
-Restart port	Port herstarten
-Quit	Afsluiten
-Looking for the latest PortMaster	Zoeken naar de nieuwste PortMaster
-Downloading PortMaster	PortMaster downloaden
-Checking PortMaster	PortMaster controleren
-Unpacking PortMaster	PortMaster uitpakken
-Setting up PortMaster	PortMaster instellen
-Installing PortMaster from the card	PortMaster installeren vanaf de kaart
-PortMaster is ready	PortMaster is klaar
-Could not set up PortMaster	Kon PortMaster niet instellen
-Get, update and remove ports	Ports ophalen, bijwerken en verwijderen
-Close PortMaster	PortMaster sluiten
-Back to PortMaster	Terug naar PortMaster
-Keep getting and updating ports	Verder ports ophalen en bijwerken
-Your ports are waiting in Ports	Je ports wachten in Ports
-Closing PortMaster…	PortMaster wordt gesloten…
-Closing the port…	De port wordt gesloten…
-GB screens	GB-schermen
-GBC screens	GBC-schermen
-Game Boy screen	Game Boy-scherm
-Game Boy Color screen	Game Boy Color-scherm
-The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Het dot-matrixscherm van de originele Game Boy: een licht pixelraster en zachte schaduwen.
-The Game Boy Color screen with faint gaps between its pixels.	Het scherm van de Game Boy Color met vage ruimtes tussen de pixels.
-This handheld's own screen.	Het eigen scherm van deze handheld.
-Screen colours	Schermkleuren
-Game Boy Pocket	Game Boy Pocket
-Game Boy Light	Game Boy Light
-Game Boy Color	Game Boy Color
-Black and white	Zwart-wit
-Game Boy Color, darker	Game Boy Color, donkerder
-Full colour	Volle kleuren
-Hold to save	Vasthouden om op te slaan
-Hold to load	Vasthouden om te laden
-Screen off	Scherm uit
-Touch the screen to turn it on	Raak het scherm aan om het aan te zetten
-min	min
-h	u
-Not saved	Niet opgeslagen
-Loaded	Geladen
-Not loaded	Niet geladen
-Nothing to load	Niets om te laden
-Saving…	Opslaan…
-Loading…	Laden…
-Info screen	Infoscherm
-Team	Team
-Lv	Lv.
-screens	schermen
-Not yet	Nog niet
-None yet	Nog geen
-The best there is	Het beste wat er is
-Next:	Volgende:
-Badges	Badges
-Carried	Bij je
-Coin bank	Muntbank
-Coins	Munten
-Collection	Verzameling
-Course	Level
-Day	Dag
-Ending so far	Einde tot nu toe
-Essences	Essences
-Gear	Uitrusting
-Golden leaves	Gouden bladeren
-Heart containers	Hartcontainers
-Heart pieces	Hartstukjes
-Hearts	Harten
-In a course	In een level
-Instruments	Instrumenten
-Johto badges	Johto-badges
-Journey	Reis
-Kanto badges	Kanto-badges
-Keys	Sleutels
-Lives	Levens
-Money	Geld
-Musical coins	Muziekmunten
-Night	Nacht
-Pokédex caught	Pokédex gevangen
-Pokédex seen	Pokédex gezien
-Rupees	Rupees
-Secret seashells	Geheime schelpen
-Shield	Schild
-Small keys	Kleine sleutels
-Sword	Zwaard
-Time of day	Tijd van de dag
-Time	Tijd
-Total	Totaal
-Trainer	Trainer
-Treasures	Schatten
-Worlds	Werelden
-Your journey	Jouw reis
-Seeds	Zaden
-Game switcher	Spelwisselaar
-Switch to another game	Naar een ander spel
-Hold to return home	Vasthouden voor het startscherm
-Add game files	Spelbestanden toevoegen
-Needs your files	Heeft je bestanden nodig
-Files added	Bestanden toegevoegd
-How to get the files	Zo krijg je de bestanden
-Scan with your phone	Scan met je telefoon
-Or open on a computer	Of open op een computer
-Code	Code
-Connect to Wi-Fi to send files from a phone or computer.	Maak verbinding met wifi om bestanden vanaf een telefoon of computer te sturen.
-Receiving files	Bestanden ontvangen
-Unpacking files	Bestanden uitpakken
-Files arrived. Choose Play to start.	De bestanden zijn binnen. Kies Spelen om te starten.
-This port lists no instructions.	Deze port heeft geen instructies.
-Play	Spelen
-Goes into	Komt in
-Phone or computer connected	Telefoon of computer verbonden
-Vibration	Trillen
-Menu haptics	Menuhaptiek
-Haptic strength	Haptische sterkte
-Game rumble	Spelrumble
-Rumble strength	Rumblesterkte
-Try a pattern	Probeer een patroon
-Feel the game	Voel het spel
-Feel every move	Voel elke beweging
-No vibration motor was found on this device.	Er is geen trilmotor gevonden op dit apparaat.
-Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-games op de DS, rumblecartridges op Game Boy en Game Boy Advance.
-Turn on game rumble for games made for a rumble accessory.	Zet spelrumble aan voor games gemaakt voor een rumble-accessoire.
-A light tap for every move, a firmer one when you choose, open or save.	Een lichte tik bij elke beweging, een stevigere bij kiezen, openen of opslaan.
-Turn on menu haptics to feel the menus.	Zet menuhaptiek aan om de menu's te voelen.
-Browse	Bladeren
-Open a view	Een weergave openen
-Go back	Terug
-Switch on	Aanzetten
-Switch off	Uitzetten
-Add favourite	Favoriet toevoegen
-Remove favourite	Favoriet verwijderen
-Start a game	Een game starten
-Save complete	Opgeslagen
-Load complete	Geladen
-Try again	Opnieuw proberen
-Keyboard	Toetsenbord
-Adjust	Aanpassen
-End of a list	Einde van een lijst
-Long press	Lang drukken
-Notification	Melding
-Touch screen	Touchscreen
-Point and click on top	Wijzen en klikken boven
-Touch here to point and click on the top screen.	Tik hier om op het bovenste scherm te wijzen en te klikken.
-Hold still for a right click	Stil houden voor rechtsklik
-Hold to exit	Vasthouden om te stoppen
-Touch screen off	Touchscreen uit
-Touch screen is not available	Touchscreen is niet beschikbaar
-Daylight saving	Zomertijd
-Automatic	Automatisch
-Summer time follows your timezone. Force it on or off if the clock is an hour out.	De zomertijd volgt je tijdzone. Zet hem aan of uit als de klok een uur afwijkt.
-GBA true colour	Echte GBA-kleuren
-Faded GBA colours made rich, as the real screen showed them.	Fletse GBA-kleuren worden vol, zoals het echte scherm ze toonde.
-GBA true screen	Echt GBA-scherm
-The true GBA colours on its screen, with the gaps between its pixels.	De echte GBA-kleuren op zijn scherm, met de ruimtes tussen de pixels.
+{0} settings	Instellingen voor {0}

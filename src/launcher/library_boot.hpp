@@ -55,7 +55,10 @@ void App::load_library(std::vector<Game> games) {
                 static const std::array<std::string, 8> ids = {"theme",        "power",  "library",  "sound",
                                                                "connectivity", "system", "controls", "statistics"};
                 const bool display = o.section == "display" || o.section == "brightness" || o.section == "motion";
-                auto found = std::find(ids.begin(), ids.end(), display ? "theme" : o.section == "vibration" ? "sound" : o.section);
+                auto found = std::find(ids.begin(), ids.end(),
+                                       display                    ? "theme"
+                                       : o.section == "vibration" ? "sound"
+                                                                  : o.section);
                 if (found == ids.end()) throw std::runtime_error("Unknown settings section");
                 settings.section = display ? 10 : int(found - ids.begin());
                 settings.enter();
@@ -94,7 +97,9 @@ std::string App::games_signature() const {
     auto stamp = [&](const fs::path& path) {
         std::error_code error;
         auto time = fs::last_write_time(path, error);
-        if (!error) result += path.string() + ':' + std::to_string(static_cast<long long>(time.time_since_epoch().count())) + ';';
+        if (!error)
+            result +=
+                path.string() + ':' + std::to_string(static_cast<long long>(time.time_since_epoch().count())) + ';';
     };
     auto walk = [&](const fs::path& root) {
         stamp(root);
@@ -116,7 +121,8 @@ void App::watch_games(Uint32 now) {
     games_checked_at = now;
     if (!((home_menu && settings.page == Page::Library) || settings.page == Page::LibraryOptions)) return;
     if (games_signature() == games_signature_seen) return;
-    if (!model.games.empty() && model.selected < model.games.size()) games_keep_selected = model.games[model.selected].path;
+    if (!model.games.empty() && model.selected < model.games.size())
+        games_keep_selected = model.games[model.selected].path;
     rescan_games(true);
 }
 
@@ -324,9 +330,9 @@ void App::snapshot_menu_input() {
             for (int raw = 0; raw < count(joystick); raw++)
                 if (button(joystick, raw)) {
                     int index = !mainline ? raw
-                                : MainlineControls::button(mainline_controls.joypads.count(id)
-                                                               ? MainlineControls::from_joypad(raw)
-                                                               : raw);
+                                          : MainlineControls::button(mainline_controls.joypads.count(id)
+                                                                         ? MainlineControls::from_joypad(raw)
+                                                                         : raw);
                     if (index >= 0) {
                         boot_blocked_buttons.insert({id, Uint8(index)});
                         held += " button " + std::to_string(index);

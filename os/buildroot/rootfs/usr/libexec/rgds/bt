@@ -1,0 +1,50 @@
+#!/bin/sh
+# Bluetooth on RG DS OS: the RTL8821CS's Bluetooth half sits on uart1 (hci_uart + btrtl, modules so the boot does
+# not pay for them); bluetoothd needs the system D-Bus. Nothing starts at boot: `bt on` brings the radio up,
+# `bt off` takes it down, `bt status` prints the adapter, `bt save` keeps the pairings (bt off and the shutdown
+# do it too). Pairing for now: bluetoothctl (scan on, pair, connect);
+# a game controller paired this way is a joystick like any other. Sound: bluealsad (bluez-alsa) offers each connected
+# headset's A2DP sink and bt-audio moves playback to it (/etc/asound.conf) and back to the speaker when it goes.
+case "$1" in
+on)
+    modprobe hci_uart 2>/dev/null; modprobe btrtl 2>/dev/null
+    mkdir -p /run/dbus /var/lib/bluetooth 2>/dev/null
+    # bluez's storage path is fixed at build time and the root is read-only; its folders are named after
+    # Bluetooth addresses (colons), which the exFAT data partition cannot hold. So: a tmpfs, filled from
+    # /data/rgds/bluetooth.tar and saved back by `bt save` (also `bt off` and rcK at shutdown).
+    if ! mountpoint -q /var/lib/bluetooth; then
+        mount -t tmpfs -o mode=0700,size=4m tmpfs /var/lib/bluetooth
+        [ -f /data/rgds/bluetooth.tar ] && tar -xf /data/rgds/bluetooth.tar -C /var/lib/bluetooth 2>/dev/null
+    fi
+    pgrep -x dbus-daemon > /dev/null || dbus-daemon --system --nofork --nopidfile > /dev/null 2>&1 &
+    pgrep -x bluetoothd > /dev/null || { /usr/libexec/bluetooth/bluetoothd -n > /data/rgds/logs/bluetooth.log 2>&1 & }
+    for i in 1 2 3 4 5 6 7 8 9 10; do [ -d /sys/class/bluetooth/hci0 ] && break; sleep 1; done
+    [ -d /sys/class/bluetooth/hci0 ] || { echo "bt: no adapter (dmesg | grep -i bluetooth)" >&2; exit 1; }
+    sleep 1
+    # A2DP source only (no headset microphone profiles); 4.2 renamed the daemon bluealsa -> bluealsad
+    daemon=$(command -v bluealsad || command -v bluealsa)
+    if [ -n "$daemon" ] && ! pidof bluealsad bluealsa > /dev/null; then
+        opts="-p a2dp-source"
+        "$daemon" --help 2>&1 | grep -q -- --multi-client && opts="$opts --multi-client"
+        "$daemon" $opts >> /data/rgds/logs/bluetooth.log 2>&1 &
+        ( sleep 1; /usr/libexec/rgds/bt-audio watch >> /data/rgds/logs/bluetooth.log 2>&1 ) &
+    fi
+    timeout 10 bluetoothctl power on > /dev/null 2>&1
+    timeout 10 bluetoothctl pairable on > /dev/null 2>&1
+    timeout 10 bluetoothctl show | grep -E "Name|Powered|Alias" ;;
+save)
+    # the pairings, if the daemon ever ran this boot
+    mountpoint -q /var/lib/bluetooth || exit 0
+    tar -cf /data/rgds/bluetooth.tar.new -C /var/lib/bluetooth . 2>/dev/null && mv /data/rgds/bluetooth.tar.new /data/rgds/bluetooth.tar && sync ;;
+off)
+    timeout 10 bluetoothctl power off > /dev/null 2>&1
+    "$0" save
+    killall bluealsad bluealsa 2>/dev/null
+    /usr/libexec/rgds/bt-audio speaker
+    killall bluetoothd 2>/dev/null
+    rmmod hci_uart btrtl 2>/dev/null ;;
+status)
+    [ -d /sys/class/bluetooth/hci0 ] && timeout 10 bluetoothctl show | grep -E "Name|Powered|Discoverable|Pairable" || echo "bt: off" ;;
+*)
+    echo "usage: bt on|off|save|status" >&2; exit 2 ;;
+esac

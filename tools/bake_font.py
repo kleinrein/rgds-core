@@ -12,12 +12,16 @@ SIZES = (16, 20, 24, 28, 36)
 VIETNAMESE = [0x102, 0x103, 0x110, 0x111, 0x128, 0x129, 0x168, 0x169, 0x1A0, 0x1A1, 0x1AF, 0x1B0
               ] + list(range(0x1EA0, 0x1EFA))
 # Polish and Turkish letters outside Latin-1: Ą Ć Ę Ł Ń Ś Ź Ż, Ğ İ ı Ş.
-LATIN_EXTENDED = [0x104, 0x105, 0x106, 0x107, 0x118, 0x119, 0x11E, 0x11F, 0x130, 0x131, 0x141, 0x142, 0x143, 0x144,
-                  0x15A, 0x15B, 0x15E, 0x15F, 0x179, 0x17A, 0x17B, 0x17C]
+LATIN_EXTENDED = [
+    0x104, 0x105, 0x106, 0x107, 0x118, 0x119, 0x11E, 0x11F, 0x130, 0x131, 0x141, 0x142, 0x143, 0x144, 0x15A, 0x15B,
+    0x15E, 0x15F, 0x179, 0x17A, 0x17B, 0x17C
+]
 # Russian and Ukrainian: the basic Cyrillic block plus Ґ ґ.
 CYRILLIC = list(range(0x400, 0x460)) + [0x490, 0x491]
-CODEPOINTS = (list(range(32, 127)) + list(range(160, 256)) + [0x2013, 0x2014, 0x2019, 0x201C, 0x201D, 0x201E, 0x2026]
-              + VIETNAMESE + LATIN_EXTENDED + CYRILLIC)
+CODEPOINTS = (
+    list(range(32, 127)) + list(range(160, 256)) + [0x2013, 0x2014, 0x2019, 0x201C, 0x201D, 0x201E, 0x2026] +
+    VIETNAMESE + LATIN_EXTENDED + CYRILLIC
+)
 
 
 def national(encoding, first_row, last_row):
@@ -39,8 +43,8 @@ def national(encoding, first_row, last_row):
 # 2,965 JIS X 0208 level-1 kanji. Simplified Chinese: the 3,755 GB 2312 level-1
 # hanzi. Korean: the 2,350 KS X 1001 hangul syllables and compatibility jamo.
 CJK_SYMBOLS = list(range(0x3000, 0x3040)) + list(range(0xFF01, 0xFF5F))
-JAPANESE = CJK_SYMBOLS + list(range(0x3041, 0x3100)) + list(range(0xFF5F, 0xFFA0)) + national(
-    "euc_jp", 1, 8) + national("euc_jp", 16, 47)
+JAPANESE = CJK_SYMBOLS + list(range(0x3041, 0x3100)) + list(range(0xFF5F, 0xFFA0)
+                                                            ) + national("euc_jp", 1, 8) + national("euc_jp", 16, 47)
 CHINESE = CJK_SYMBOLS + national("gb2312", 1, 9) + national("gb2312", 16, 55)
 KOREAN = CJK_SYMBOLS + list(range(0x3131, 0x318F)) + national("euc_kr", 16, 40)
 # Source fonts live in tools/fonts, outside the shipped assets; the Noto files

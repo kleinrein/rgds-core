@@ -236,8 +236,8 @@ public:
             mStateExtdata extdata;
             mStateExtdataInit(&extdata);
             mStateExtdataItem item{};
-            if (vf && mCoreExtractExtdata(core_, vf, &extdata) &&
-                mStateExtdataGet(&extdata, EXTDATA_SAVEDATA, &item) && item.data) {
+            if (vf && mCoreExtractExtdata(core_, vf, &extdata) && mStateExtdataGet(&extdata, EXTDATA_SAVEDATA, &item) &&
+                item.data) {
                 void* current = nullptr;
                 const size_t have = core_->savedataClone(core_, &current);
                 std::free(current);

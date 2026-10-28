@@ -9,6 +9,8 @@ cd "$BINARIES_DIR"
 # (a legacy frame, which it does not recognise and which left the slot unbootable on 27 October 2026).
 "$HOST_DIR/bin/lz4" -9 -f --no-frame-crc Image Image.lz4 > /dev/null
 sed "s/@DTB@/$DTB/g" "$HERE/extlinux.conf.in" > extlinux.conf
+# U-Boot's boot counter, idle (upgrade-in-progress 0): it only counts while a slot switch is being tried
+printf '\275\001\000\000' > bootcount
 sed "s/@DTB@/$DTB/g" "$HERE/genimage.cfg.in" > genimage.cfg
 rm -rf "$BUILD_DIR/genimage.tmp"
 genimage --rootpath "$TARGET_DIR" --tmppath "$BUILD_DIR/genimage.tmp" --inputpath "$BINARIES_DIR" \

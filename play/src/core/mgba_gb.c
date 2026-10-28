@@ -9,7 +9,7 @@
 #include <mgba/internal/gb/video.h>
 
 static struct GB* gb_of(struct mCore* core) {
-    return core && core->platform(core) == mPLATFORM_GB ? (struct GB*) core->board : NULL;
+    return core && core->platform(core) == mPLATFORM_GB ? (struct GB*)core->board : NULL;
 }
 
 /* The three DMG palette registers again, so the renderer takes new colours now
@@ -51,7 +51,7 @@ void play_gb_set_gbc_colours(struct mCore* core, bool on) {
                                           0x943A3A, 0x000000, 0xFFFFFF, 0xFF8484, 0x943A3A, 0x000000};
     uint32_t colours[12];
     struct GBCartridgeOverride found = {0};
-    found.headerCrc32 = (int) doCrc32(&gb->memory.rom[0x100], sizeof(struct GBCartridge));
+    found.headerCrc32 = (int)doCrc32(&gb->memory.rom[0x100], sizeof(struct GBCartridge));
     const bool listed = on && GBOverrideColorFind(&found, GB_COLORS_CGB);
     for (int i = 0; i < 12; ++i) {
         /* A table entry sets bit 24 for the colours it gives; the rest repeat
@@ -59,7 +59,7 @@ void play_gb_set_gbc_colours(struct mCore* core, bool on) {
         uint32_t c = !on ? greys[i & 3] : !listed ? fallback[i] : found.gbColors[i];
         if (listed && !(c & 0xFF000000)) c = i >= 4 ? colours[i - 4] : greys[i & 3];
         colours[i] = c & 0xFFFFFF;
-        GBVideoSetPalette(&gb->video, (unsigned) i, colours[i]);
+        GBVideoSetPalette(&gb->video, (unsigned)i, colours[i]);
     }
     rewrite_palettes(gb);
 }

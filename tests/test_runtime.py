@@ -17,10 +17,6 @@ sys.path.insert(0, str(ROOT / "runtime"))
 import activate
 import emulators
 
-spec = importlib.util.spec_from_file_location("device_tools", ROOT / "tools/device.py")
-device = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(device)
-
 
 class Fixture(unittest.TestCase):
     def setUp(self):
@@ -108,7 +104,7 @@ class EmulatorTests(Fixture):
         hook.parent.mkdir(parents=True)
         hook.write_bytes(b'bridge')
         for core in emulators.CORES:
-            if core == 'nnddss': continue  # retired: never launched
+            if core in ('nnddss', 'rgds-play', 'portmaster'): continue  # retired, or not a DS player
             self.binary(core)
             automatic = self.data / 'library' / emulators.game_key(rom) / ('auto-' + core + '.dss')
             automatic.parent.mkdir(parents=True, exist_ok=True)
@@ -193,6 +189,7 @@ class EmulatorTests(Fixture):
     def test_all_three_engines_have_distinct_launch_arguments(self):
         rom = self.root / "A game; $(echo nope).nds"
         for core in emulators.CORES:
+            if core in ('rgds-play', 'portmaster'): continue  # not DS players: other systems, ports
             binary = self.binary(core)
             if core == 'nnddss':  # retired: never launched
                 with self.assertRaisesRegex(ValueError, 'retired'):
@@ -319,62 +316,6 @@ class ActivationTests(Fixture):
             with self.assertRaisesRegex(ValueError, "game is running"):
                 activate.stop_session(self.data)
             kill.assert_not_called()
-
-
-class TransportTests(unittest.TestCase):
-    def test_device_address_cannot_be_shell_or_ssh_options(self):
-        for invalid in ("", "-oProxyCommand=whoami", "host;whoami", "host\nwhoami", "$(whoami)"):
-            with self.assertRaises(ValueError):
-                device.target(invalid)
-        self.assertEqual(device.target("192.168.1.42"), "root@192.168.1.42")
-
-    def test_remote_installer_is_valid_python(self):
-        compile(device.REMOTE_INSTALL, "remote_installer", "exec")
-
-    def test_uploaded_package_is_verified_and_installed_without_changing_saves(self):
-        latest = ROOT / "dist/latest.txt"
-        if not latest.exists():
-            self.skipTest("Build the private package for the deployment integration check")
-        archive = ROOT / "dist" / latest.read_text().strip()
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "card/rgds"
-            (root / "inbox").mkdir(parents=True)
-            save = root / "userdata/game.sav"
-            save.parent.mkdir()
-            save.write_bytes(b"keep me")
-            uploaded = root / "inbox/package.zip"
-            shutil.copy2(archive, uploaded)
-            with patch.object(sys, "argv", ["installer", str(root), str(uploaded)
-                                            ]), patch("platform.machine",
-                                                      return_value="aarch64"), patch.object(activate, "stop_session"):
-                exec(compile(device.REMOTE_INSTALL, "remote_installer", "exec"), {"__name__": "__main__"})
-            build = activate.read_pointer(root / "state/active")
-            activate.verify_release(root / "releases" / build)
-            self.assertEqual(save.read_bytes(), b"keep me")
-            self.assertTrue((root.parent / "Roms/APPS/Uninstall RG DS Core.sh").is_file())
-            self.assertFalse(uploaded.exists())
-
-    def test_tampered_upload_is_rejected_before_activation(self):
-        latest = ROOT / "dist/latest.txt"
-        if not latest.exists():
-            self.skipTest("Build the private package for the deployment integration check")
-        source = ROOT / "dist" / latest.read_text().strip()
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "card/rgds"
-            (root / "state").mkdir(parents=True)
-            (root / "state/active").write_text("working\n")
-            archive = root / "tampered.zip"
-            with zipfile.ZipFile(source) as original, zipfile.ZipFile(archive, "w") as modified:
-                for info in original.infolist():
-                    content = original.read(info)
-                    if info.filename.endswith("themes/default/light.ini"):
-                        content += b"altered\n"
-                    modified.writestr(info, content)
-            with patch.object(sys, "argv", ["installer", str(root), str(archive)
-                                            ]), patch("platform.machine", return_value="aarch64"):
-                with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
-                    exec(compile(device.REMOTE_INSTALL, "remote_installer", "exec"), {"__name__": "__main__"})
-            self.assertEqual((root / "state/active").read_text(), "working\n")
 
 
 if __name__ == "__main__":

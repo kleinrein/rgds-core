@@ -34,7 +34,10 @@ class SystemIconTest(unittest.TestCase):
     def test_pixel_glyphs_are_square_and_drawn(self):
         module = generator()
         glyphs = module.art()
-        self.assertEqual(len(glyphs), len(module.CATALOG))
+        self.assertEqual(
+            len(glyphs),
+            len(module.CATALOG) + len(module.GLYPH_ONLY)
+        )  # Ports and Homebrew: no stock folder
         for name, rows in glyphs.items():
             self.assertEqual(len(rows), module.GRID, name)
             for row in rows:

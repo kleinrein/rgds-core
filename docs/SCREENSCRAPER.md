@@ -97,7 +97,7 @@ without information says how to get it, and nothing else in the library changes.
 
 ### Filtering by game information
 
-**Y** in the library opens the Library view, a scrollable sheet over the lower
+**Y** in the library opens the Filter sheet, a scrollable sheet over the lower
 screen. Its top holds tiles for the collection, the browser layout, Jump to
 letter (L2), Search games (R2) and Clear filters; below them chips cover played state, genre, rating, online play / has game info,
 publisher and developer; each shows how many games have it and toggles at once.

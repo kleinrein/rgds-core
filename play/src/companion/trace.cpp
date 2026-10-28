@@ -84,8 +84,9 @@ public:
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t frame) const override {
         backdrop(out, look);
         const auto n = names_.find(course_now_);
-        const std::string name =
-            n != names_.end() ? n->second : name_.empty() ? "" : name_ + " " + std::to_string(course_now_ + 1);
+        const std::string name = n != names_.end() ? n->second
+                                 : name_.empty()   ? ""
+                                                   : name_ + " " + std::to_string(course_now_ + 1);
         if (!name.empty()) chip(out, look, font, kit::margin, kit::margin + 14, name, true);
         auto found = courses_.find(course_now_);
         if (found == courses_.end() || found->second.size() < 2) {
@@ -104,10 +105,13 @@ public:
         min_y = std::min(min_y, py_), max_y = std::max(max_y, py_);
         const int top = kit::margin * 2 + 28, room_w = out.w() - 2 * kit::margin - 40,
                   room_h = out.h() - top - kit::margin - 40;
-        const double s = std::min(room_w / double(std::max(1, max_x - min_x)), room_h / double(std::max(1, max_y - min_y)));
+        const double s =
+            std::min(room_w / double(std::max(1, max_x - min_x)), room_h / double(std::max(1, max_y - min_y)));
         const int cx = kit::margin + 20 + (room_w - int((max_x - min_x) * s)) / 2;
         const int cy = top + 20 + (room_h - int((max_y - min_y) * s)) / 2;
-        auto at = [&](int x, int y) { return std::pair<int, int>{cx + int((x - min_x) * s), cy + int((y - min_y) * s)}; };
+        auto at = [&](int x, int y) {
+            return std::pair<int, int>{cx + int((x - min_x) * s), cy + int((y - min_y) * s)};
+        };
         // The road: a wide light band, then a thin line down its middle.
         const Rgb road = mix(look.muted, look.ink, 50), centre = mix(look.background, look.panel, 120);
         const int r = std::max(5, out.w() / 70);

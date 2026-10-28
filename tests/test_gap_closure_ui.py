@@ -93,7 +93,7 @@ class GapClosureUiTests(unittest.TestCase):
 
     def test_discovery_and_filter_remove_played_games(self):
         write_fields(self.game / 'stats.ini', dict(sessions=1, seconds=100, last_played='2026-10-12'))
-        # Y opens the Library view sheet: three rows of tiles, then Unplayed.
+        # Y opens the Filter sheet: three rows of tiles, then Unplayed.
         r = self.run_ui(['Y', 'Down', 'Down', 'Down', 'A'], mode='library')
         self.assertEqual(r['discovery_filter'], 1)
         self.assertEqual(r['filtered_games'], 0)

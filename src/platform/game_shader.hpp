@@ -205,8 +205,8 @@ class GameShader {
                         const std::string ds_grid = "vec2(256.0,192.0)";
                         if (grid_width > 0 && grid_height > 0)
                             for (size_t at = 0; (at = prepared.find(ds_grid, at)) != std::string::npos;) {
-                                const std::string grid = "vec2(" + std::to_string(grid_width) + ".0," +
-                                                         std::to_string(grid_height) + ".0)";
+                                const std::string grid =
+                                    "vec2(" + std::to_string(grid_width) + ".0," + std::to_string(grid_height) + ".0)";
                                 prepared.replace(at, ds_grid.size(), grid);
                                 at += grid.size();
                             }
@@ -224,21 +224,23 @@ class GameShader {
                         // different texel at half-texture/source-region boundaries.
                         // HD: the source is the reconstruction at the output's own size, read as it is.
                         std::string sample_body =
-                            hd_mode  ? ""
-                            : linear ? "uv=clamp(uv,0.5*u_texture_size.xy,vec2(1.0)-0.5*u_texture_size.xy);"
-                                     : "uv=(clamp(floor(uv*u_texture_size.zw),vec2(0.0),u_texture_size.zw-1.0)+0.5)*u_texture_size.xy;";
+                            hd_mode ? ""
+                            : linear
+                                ? "uv=clamp(uv,0.5*u_texture_size.xy,vec2(1.0)-0.5*u_texture_size.xy);"
+                                : "uv=(clamp(floor(uv*u_texture_size.zw),vec2(0.0),u_texture_size.zw-1.0)+0.5)*u_texture_size.xy;";
                         const std::string sampler =
-                            hd_mode == 1 ? "#define HD_FIXED\n#define HD_SCALED " + std::to_string(int(hd_scaled)) +
-                                               "\n#define HD_MASK " + std::to_string(int(hd_mask)) +
-                                               "\n#define HD_SWAP " + std::to_string(int(swap_channels)) + "\n" +
-                                               hd2d_common + hd2d_sample +
-                                               "\nvec4 rgds_sample(vec2 uv){return hd2d(uv);}\n"
-                                         : "vec4 rgds_sample(vec2 uv){" + sample_body +
-                                               "vec4 pixel=texture2D(u_texture,u_rgds_source.xy+uv*u_rgds_source.zw);return mix(pixel,pixel.bgra,u_rgds_swap); }\n";
+                            hd_mode == 1
+                                ? "#define HD_FIXED\n#define HD_SCALED " + std::to_string(int(hd_scaled)) +
+                                      "\n#define HD_MASK " + std::to_string(int(hd_mask)) + "\n#define HD_SWAP " +
+                                      std::to_string(int(swap_channels)) + "\n" + hd2d_common + hd2d_sample +
+                                      "\nvec4 rgds_sample(vec2 uv){return hd2d(uv);}\n"
+                                : "vec4 rgds_sample(vec2 uv){" + sample_body +
+                                      "vec4 pixel=texture2D(u_texture,u_rgds_source.xy+uv*u_rgds_source.zw);return mix(pixel,pixel.bgra,u_rgds_swap); }\n";
                         if (at != std::string::npos)
-                            prepared.insert(at + declaration.size(),
-                                            "\nuniform vec4 u_rgds_source;uniform float u_rgds_swap;uniform vec4 u_rgds_modulation;\n" +
-                                                sampler);
+                            prepared.insert(
+                                at + declaration.size(),
+                                "\nuniform vec4 u_rgds_source;uniform float u_rgds_swap;uniform vec4 u_rgds_modulation;\n" +
+                                    sampler);
                     }
                     if (type == 0x8b30) {
                         auto main = prepared.find("void main()");
@@ -681,8 +683,8 @@ public:
     }
     bool sdl(SDL_Renderer* renderer, SDL_Texture* texture, int selected, const SDL_Rect* source, const SDL_Rect* target,
              double angle = 0, const SDL_Point* center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE,
-             const SDL_FPoint* exact_center = nullptr, bool enhanced = false, bool hd = false,
-             bool handheld = false, int grid_width = 0, int grid_height = 0) {
+             const SDL_FPoint* exact_center = nullptr, bool enhanced = false, bool hd = false, bool handheld = false,
+             int grid_width = 0, int grid_height = 0) {
         // grid_width/height: a picture made of cells of that many across and down (RG DS Play's second
         // screen, drawn at the panel's size), shaded as a screen of that many pixels.
         static auto query = overlay_sdl<decltype(&SDL_QueryTexture)>("SDL_QueryTexture");
@@ -705,8 +707,8 @@ public:
         Uint32 format = 0;
         int tw = 0, th = 0;
         if (query(texture, &format, nullptr, &tw, &th) != 0 ||
-            !(screen_texture(tw, th) || (enhanced && tw == 640 && th == 480) || (handheld && handheld_texture(tw, th)) ||
-              (handheld && grid_width > 0 && grid_height > 0)))
+            !(screen_texture(tw, th) || (enhanced && tw == 640 && th == 480) ||
+              (handheld && handheld_texture(tw, th)) || (handheld && grid_width > 0 && grid_height > 0)))
             return false;
         SDL_RendererInfo driver{};
         if (info(renderer, &driver) != 0 || !driver.name ||

@@ -17,6 +17,7 @@
 //   dump FILE        writes EWRAM (256 KiB) then IWRAM (32 KiB)
 //   poke A B...      writes bytes from address A (Game Boy, "1:D206" a bank)
 //   bytes A N        N bytes from address A as one hex string
+//   state save FILE  the whole machine to a file ("state load FILE" to come back)
 //   second off       the second screen turned off (on again with "second on", "second info": the info screen)
 //   tap X Y          a finger down and up on the second screen ("touch down|move|up X Y" for each)
 //   and the script commands without a frame: shot, hudshot, status, ...
@@ -57,6 +58,7 @@ int main(int argc, char** argv) {
         else if (a == "--data") o.data_root = next();
         else if (a == "--profiles") o.profile_dirs.push_back(next());
         else if (a == "--fonts") o.font_dir = next();
+        else if (a == "--art") o.art_dir = next();
         else if (a == "--preferences") o.preferences = next();
         else if (a == "--palette") palette = next();
         else if (a == "--save-source") o.save_sources.push_back(next());
@@ -217,6 +219,16 @@ int main(int argc, char** argv) {
                         out.write(reinterpret_cast<const char*>(&v), 4);
                     }
                 std::printf("ok\n");
+            } else if (what == "state") {
+                // state save|load FILE : the whole machine to or from a file (to come back to a scene)
+                std::string verb, error;
+                in >> verb;
+                std::getline(in, arg);
+                arg.erase(0, arg.find_first_not_of(" \t"));
+                const bool ok = verb == "save"   ? s.save_state_file(arg, error)
+                                : verb == "load" ? s.load_state_file(arg, error)
+                                                 : (error = "state save|load FILE", false);
+                std::printf("%s%s\n", ok ? "ok" : "failed: ", error.c_str());
             } else if (what == "poke") {
                 // poke ADDRESS BYTE... : bytes into memory from ADDRESS on ("1:D206" names a bank)
                 std::string address, byte;

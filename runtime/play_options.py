@@ -24,16 +24,20 @@ SYSTEMS = {
     "md": (".md", ".gen", ".smd", ".32x"),
     "sms": (".sms",),
     "gg": (".gg",),
-    # PlayStation discs by their index files only (.bin is the data track, and ambiguous); PICO-8 carts as .p8
+    # PlayStation discs by their index files only (.bin is the data track, and ambiguous)
     "psx": (".cue", ".chd", ".pbp", ".m3u"),
     # Nintendo 64: big-endian .z64, byte-swapped .v64, little-endian .n64; the core reads all three
     "n64": (".z64", ".n64", ".v64"),
-    "pico8": (".p8",),
 }
 # The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
 LIBRETRO_CORES = {
-    "nes": "fceumm", "snes": "snes9x", "md": "picodrive", "sms": "picodrive", "gg": "picodrive",
-    "psx": "pcsx_rearmed", "n64": "mupen64plus_next", "pico8": "fake08"
+    "nes": "fceumm",
+    "snes": "snes9x",
+    "md": "picodrive",
+    "sms": "picodrive",
+    "gg": "picodrive",
+    "psx": "pcsx_rearmed",
+    "n64": "mupen64plus_next"
 }
 LIBRETRO_DIR = Path("/usr/lib/libretro")
 MGBA_SYSTEMS = ("gba", "gbc", "gb")
@@ -45,6 +49,8 @@ def libretro_core(system):
     if not name: return None
     path = LIBRETRO_DIR / (name + "_libretro.so")
     return path if path.is_file() else None
+
+
 FITS = ("sharp", "integer", "smooth")
 SECONDS = ("companion", "off", "swap", "info")  # info: the second screen's own quiet controls
 # A system's own screen when a game's shader is Default (assets/shaders/catalog.tsv): GBA screen

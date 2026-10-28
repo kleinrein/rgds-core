@@ -50,6 +50,8 @@ enum class SettingsIcon {
 
 inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Vibration" || title == "Menu haptics" || title == "Haptic strength") return SettingsIcon::Vibrate;
+    if (title == "Mute" || title == "Unmute") return SettingsIcon::Volume;
+    if (title == "Sounds & music") return SettingsIcon::Spark;
     if (title == "Game rumble" || title == "Rumble strength") return SettingsIcon::Controller;
     if (title == "Try a pattern") return SettingsIcon::Play;
     if (title == "Updates") return SettingsIcon::Load;
@@ -79,13 +81,16 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
         return SettingsIcon::Volume;
     if (title == "DS controls" || title == "Close and open DS lid") return SettingsIcon::Controller;
     if (title == "DS language" || title == "Filter" || title == "Automatic updates") return SettingsIcon::Sliders;
-    if (title == "Search games" || title == "Library view") return SettingsIcon::Library;
+    if (title == "Search games" ) return SettingsIcon::Library;
     if (title == "Where to put games" || title == "Add your games" || title == "Scan for games")
         return SettingsIcon::Cartridge;
     if (title == "Library") return SettingsIcon::Library;
-    if (title == "Statistics" || title == "Time format" || title == "Date format" ||
-        title == "Daylight saving") return SettingsIcon::Clock;
+    if (title == "Statistics" || title == "Time format" || title == "Date format" || title == "Daylight saving")
+        return SettingsIcon::Clock;
     if (title == "Power off") return SettingsIcon::Shutdown;
+    if (title == "Remove game") return SettingsIcon::Trash;
+    if (title == "Dim when idle") return SettingsIcon::Sun;
+    if (title == "Sleep timer in games") return SettingsIcon::Moon;
     if (title == "Profile" || title == "Shortcut action" || title == "Use global controls")
         return SettingsIcon::Controller;
     if (title == "Restore defaults") return SettingsIcon::Refresh;
@@ -135,7 +140,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
         title.find("previous") != std::string::npos || title.find("recovery") != std::string::npos)
         return SettingsIcon::Refresh;
     if (title.find("Return") != std::string::npos || title.find("home") != std::string::npos ||
-        title.find("Boot") != std::string::npos || title == "Startup")
+        title.find("Boot") != std::string::npos || title == "Touch to continue")
         return SettingsIcon::Home;
     if (title.find("Resume") != std::string::npos || title.find("playing") != std::string::npos)
         return SettingsIcon::Play;
@@ -161,6 +166,8 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Power mode") return "Balance battery life and speed";
     if (title == "Menu idle sleep") return "Rest after a period of inactivity";
     if (title == "Sleep on lid close") return "Close the handheld to sleep";
+    if (title == "Dim when idle") return "Lower the screens until you press a button";
+    if (title == "Sleep timer in games") return "Sleep a game nobody is playing";
     if (title == "Battery percentage") return "Show the charge in the status bar";
     if (title == "Restart") return "Turn the handheld off and on again";
     if (title == "Default emulator") return "Used by games without an override";
@@ -181,11 +188,12 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Device information") return "Build, storage and device address";
     if (title == "Updates & recovery") return "Manage builds and temporary files";
     if (title == "Return to stock") return "Open the Anbernic menu";
-    if (title == "Startup") return "Choose what opens when you power on";
     if (title == "Touch to continue") return "Show a start screen; tap or press A to go on";
     if (title == "Resume after power off") return "Reopen the game you powered off from";
     if (title == "Available networks") return "Find and connect to a nearby network";
     if (title == "Refresh connection") return "Check the current connection";
+    if (title == "Bluetooth") return "Controllers and other Bluetooth devices";
+    if (title == "Bluetooth devices") return "Find, pair and connect a nearby device";
     if (title == "Use previous build") return "Restore the last installed RGDS build";
     if (title == "Clear temporary cache") return "Free space while keeping your saves";
     if (title == "Save device report") return "Save a report for troubleshooting";

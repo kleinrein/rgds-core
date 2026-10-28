@@ -18,7 +18,14 @@ CATALOGS = {
     "nds": "Nintendo - Nintendo DS",
     "gba": "Nintendo - Game Boy Advance",
     "gbc": "Nintendo - Game Boy Color",
-    "gb": "Nintendo - Game Boy"
+    "gb": "Nintendo - Game Boy",
+    "nes": "Nintendo - Nintendo Entertainment System",
+    "snes": "Nintendo - Super Nintendo Entertainment System",
+    "n64": "Nintendo - Nintendo 64",
+    "md": "Sega - Mega Drive - Genesis",
+    "sms": "Sega - Master System - Mark III",
+    "gg": "Sega - Game Gear",
+    "psx": "Sony - PlayStation"
 }
 
 
@@ -310,6 +317,7 @@ class PublicClient:
     def artwork(self, rom, name_override=""):
         system, name, code = rom_identity(rom)
         if system != "nds":
+            if system not in CATALOGS: raise NotFound("There is no public cover catalog for this system.")
             # Other systems: Libretro's catalogue for that system (GameTDB has DS covers only).
             return self.libretro(name_override.strip() or name, "" if name_override.strip() else code, system)
         name, code = rom_details(rom)

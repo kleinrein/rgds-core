@@ -104,8 +104,8 @@ void App::cover_line(SDL_Renderer* r, int y, uint64_t seconds) {
     const bool tips = !home_menu && settings.page == Page::Library && !picker_open && !launching,
                shoulders = tips && model.games.size() > 1;
     const std::string notice = cover_notice(), previous = locale.text("Previous"), next = locale.text("Next");
-    // The systems carousel has no library view to open: no Y there.
-    const std::vector<KeyHint> view{{"Y", "View"}}, options{{"X", "Options"}};
+    // The systems carousel has no filter sheet to open: no Y there.
+    const std::vector<KeyHint> view{{"Y", "Filter"}}, options{{"X", "Options"}};
     const bool faces = tips && notice.empty(), view_shown = faces && !systems_menu;
     const int middle = notice.empty() ? caption_width(seconds) : std::min(400, label_width(notice, 16)),
               view_w = view_shown ? key_hints_width(view, 14) : 0, options_w = faces ? key_hints_width(options, 14) : 0;
@@ -386,7 +386,7 @@ void App::library_header_action(SDL_Renderer* r, int y, SDL_Rect bounds, const s
     auto hit = bounds;
     bounds.y += y + 4;
     bounds.h -= 8;
-    bool pressed = library_control_active(title == "View" ? LibraryPress::View : LibraryPress::Options, hit);
+    bool pressed = library_control_active(title == "Filter" ? LibraryPress::View : LibraryPress::Options, hit);
     int offset = pressed ? 1 : 0;
     round_rect(r, bounds.x, bounds.y + 1, bounds.w, bounds.h, 10, "slot");
     round_rect(r, bounds.x + offset, bounds.y + offset, bounds.w, bounds.h, 10, pressed ? "focus" : "panel");

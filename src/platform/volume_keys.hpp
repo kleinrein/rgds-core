@@ -47,9 +47,9 @@ public:
     int poll() {
         int delta = 0;
 #ifdef __linux__
-        auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-                       std::chrono::steady_clock::now().time_since_epoch())
-                       .count();
+        auto now =
+            std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+                .count();
         for (int fd : descriptors) {
             input_event event{};
             while (::read(fd, &event, sizeof(event)) == sizeof(event)) {

@@ -55,8 +55,8 @@ CATALOG = [
 ]
 
 IDS = [entry[0] for entry in CATALOG]
-# Glyphs for systems that are not the stock card's (no folders to scan): PortMaster's Ports.
-GLYPH_ONLY = ['ports']
+# Glyphs for systems that are not the stock card's (no folders to scan): PortMaster's Ports and the homebrew.
+GLYPH_ONLY = ['ports', 'homebrew']
 
 # A 3 x 5 label font, for the review sheet only.
 FONT = {
@@ -210,11 +210,13 @@ def sheet(path, scale=6, columns=5):
     label_scale = 2
     cell = GRID * scale + 24
     label_height = 5 * label_scale + 12
+    # The stock systems first, then the glyph-only ones (Ports, Homebrew).
+    entries = list(CATALOG) + [(name, name.capitalize(), '', '') for name in GLYPH_ONLY]
     width = columns * cell
-    height = ((len(CATALOG) + columns - 1) // columns) * (cell + label_height)
+    height = ((len(entries) + columns - 1) // columns) * (cell + label_height)
     pixels = bytearray(b'\xf2\xf5\xf8' * width * height)
     ink, half, muted = (0x23, 0x6e, 0xae), (0xa7, 0xc4, 0xde), (0x7c, 0x8b, 0x99)
-    for index, entry in enumerate(CATALOG):
+    for index, entry in enumerate(entries):
         name = entry[0]
         ox = (index % columns) * cell + 12
         oy = (index // columns) * (cell + label_height) + 12

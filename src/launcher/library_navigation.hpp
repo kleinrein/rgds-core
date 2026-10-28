@@ -70,6 +70,7 @@ void App::library_view(int view) {
         }
         std::stable_sort(recent.begin(), recent.end(),
                          [](const auto& a, const auto& b) { return a.second > b.second; });
+        if (recent.size() > kRecentsLimit) recent.erase(recent.begin() + kRecentsLimit, recent.end());
         model.games.clear();
         model.games.reserve(recent.size());
         for (auto& item : recent) model.games.push_back(std::move(item.first));

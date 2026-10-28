@@ -108,6 +108,10 @@ def stage(release):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(payload / name, target)
     shutil.copy2(ROOT / 'build/device/build.json', app / 'build/rgds.json')
+    # OS updates (runtime/os_update.py): the update channel and the guard ship with the image, read-only
+    (app / 'os').mkdir(exist_ok=True)
+    shutil.copy2(ROOT / 'packaging/update_guard.py', app / 'os/update_guard.py')
+    shutil.copy2(ROOT / 'packaging/update-trust.json', app / 'os/update-trust.json')
     shutil.copy2(launcher, app / 'bin/rgds-launcher')
     shutil.copy2(ROOT / 'build/device/librgdsbridge.so', app / 'emulators/hooks/librgdsbridge.so')
     (app / 'bin/rgds-launcher').chmod(0o755)
@@ -170,6 +174,7 @@ def native(args):
     # what tools/own_os_push.py writes into a running handheld's other slot
     for name in ('rootfs.squashfs', 'Image.lz4', 'rk3568-anbernic-rg-ds.dtb', 'extlinux.conf', 'u-boot-rockchip.bin'):
         shutil.copy2(out / 'images' / name, target / name)
+    (target / 'build-id').write_text(build + '\n')  # what own_os_push.py and own_os_release.py call this build
     run('sha256sum', target / image.name)
 
 

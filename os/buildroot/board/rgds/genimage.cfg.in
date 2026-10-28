@@ -7,6 +7,7 @@ image boot.vfat {
 		file a/Image.lz4 { image = "Image.lz4" }
 		file a/@DTB@.dtb { image = "@DTB@.dtb" }
 		file extlinux/extlinux.conf { image = "extlinux.conf" }
+		file bootcount { image = "bootcount" }
 	}
 	# two kernels (about 10 MiB each, LZ4) and room to replace one
 	size = 128M

@@ -206,7 +206,8 @@ class SettingsTests(unittest.TestCase):
         # The carousel is grouped; Amber (19) is the last place.
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(28))
         self.run_preview(
-            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last + "1500 key A\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" +
+            select_last + "1500 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
@@ -405,6 +406,8 @@ class SettingsTests(unittest.TestCase):
 180 key Right
 200 key A
 220 key Down
+230 key Down
+240 key Down
 260 key Right
 300 key Down
 330 key Down
@@ -427,6 +430,26 @@ class SettingsTests(unittest.TestCase):
         )
         self.assertIn("power=1\n", self.system_prefs.read_text())
         self.assertIn("idle=2\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n", self.system_prefs.read_text())
+
+    def test_dim_and_game_sleep_timers_are_saved_only_when_changed(self):
+        # rows 2 and 3 sit under Menu idle sleep, each with a picker; the default dim (1 min) is not written
+        self.run_preview("20 key A\n40 key Right\n60 key A\n", extra=("--settings", "--section", "power"))
+        self.assertNotIn("dim=", self.system_prefs.read_text())
+        self.run_preview(
+            "100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key A\n300 key Down\n340 key A\n"
+            "380 key Right\n420 key Right\n460 key A\n",
+            extra=("--settings", "--section", "power")
+        )
+        saved = self.system_prefs.read_text()
+        self.assertIn("dim=3\n", saved)
+        self.assertIn("game_sleep=2\n", saved)
+        # back to the default: the line goes, the other choice stays
+        self.run_preview(
+            "100 key Down\n140 key Down\n180 key A\n220 key Left\n260 key A\n",
+            extra=("--settings", "--section", "power")
+        )
+        self.assertNotIn("dim=", self.system_prefs.read_text())
+        self.assertIn("game_sleep=2\n", self.system_prefs.read_text())
 
     def test_new_settings_enable_lid_sleep_but_existing_off_stays_off(self):
         script = "20 key A\n40 key Right\n60 key A\n"

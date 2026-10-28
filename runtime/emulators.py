@@ -676,6 +676,10 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # RG DS Play: every system but the DS. Its saves, states and backups
         # live under userdata/emulators/rgds-play; the view is per game (play.ini).
         from play_options import view, frames_folder
+        from linux_platform import rgds_os
+        # RG DS OS has no compositor for a paused menu window: as for DSCore, the player holds its game while the
+        # menu is up and the bridge draws the menu (and the switcher) over the player's own frames.
+        if rgds_os(): display = 'kms'
         root = data / "emulators/rgds-play"
         if prepare:
             for folder in ("home", "states"):
@@ -692,6 +696,10 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         env["SDL_GAMECONTROLLERCONFIG"] += "\n" + RGDS_OS_PAD
         shown = view(data, identity or rom)
         command += ["--rom", str(rom), "--data", str(root), "--fonts", str(app / "assets/fonts")]
+        from linux_platform import rgds_os
+        if rgds_os():
+            # The emulation core: the session keeps itself on CPUs 0-2, Play's main loop goes to CPU 3, real-time.
+            env.setdefault("RGDS_PLAY_CPU", "3")
         from play_options import system_of, libretro_core, MGBA_SYSTEMS
         system = system_of(identity or rom)
         if system not in MGBA_SYSTEMS:
@@ -707,6 +715,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
         command += ["--palette", shown["palette"], "--colour", shown["colour"]]
         command += ["--frames", str(frames_folder(data, rom))]
+        # The game's box art from the library, for the second screen's info controls.
+        command += ["--art", str(data / "library" / game_key(identity or rom))]
     else:
         # NNDDSS is retired: its supplied binaries are no longer shipped and a
         # saved choice falls back to DSCore before a launch gets here.
@@ -785,6 +795,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         plan['wayland_command'] = list(command)
         env.pop('WAYLAND_DISPLAY', None)
         env.update(SDL_VIDEODRIVER='KMSDRM', RGDS_MENU_LIVE='1')
+    if display == 'kms' and selected_hooks.bridge and core in DSPERATE_CORES:
         # RG DS OS's session puts the top panel first in SDL (SDL_KMSDRM_FIRST) for RG DS Core's own windows. DSCore
         # counts panels in the kernel's order in its direct present, so its SDL windows (a screen filter's renderer
         # path) must too, or a filter swaps the screens.

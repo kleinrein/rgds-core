@@ -13,6 +13,19 @@ namespace {
 
 uint32_t be32(const uint8_t* p) { return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3]; }
 
+uint32_t le32(const uint8_t* p) {
+    return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24;
+}
+
+// The 0-255 value under a colour mask (0: the channel is absent).
+int channel(uint32_t v, uint32_t mask) {
+    if (!mask) return -1;
+    int shift = 0;
+    while (!(mask >> shift & 1)) ++shift;
+    const uint32_t top = mask >> shift;
+    return int(((v & mask) >> shift) * 255 / top);
+}
+
 int paeth(int a, int b, int c) {
     int p = a + b - c, pa = std::abs(p - a), pb = std::abs(p - b), pc = std::abs(p - c);
     return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
@@ -67,7 +80,11 @@ bool read_png(const std::string& path, std::vector<uint32_t>& pixels, int& width
         for (size_t i = 0; i < stride; ++i) {
             int left = i >= size_t(channels) ? row[i - channels] : 0, up = previous[i],
                 corner = i >= size_t(channels) ? previous[i - channels] : 0;
-            int add = filter == 1 ? left : filter == 2 ? up : filter == 3 ? (left + up) / 2 : filter == 4 ? paeth(left, up, corner) : 0;
+            int add = filter == 1   ? left
+                      : filter == 2 ? up
+                      : filter == 3 ? (left + up) / 2
+                      : filter == 4 ? paeth(left, up, corner)
+                                    : 0;
             row[i] = uint8_t(row[i] + add);
         }
         std::memcpy(previous.data(), row, stride);
@@ -98,6 +115,52 @@ bool read_png(const std::string& path, std::vector<uint32_t>& pixels, int& width
                 if (channels == 4) a = p[3];
             }
             pixels[size_t(y) * width + x] = r | g << 8 | b << 16 | a << 24;
+        }
+    }
+    return true;
+}
+
+bool read_bmp(const std::string& path, std::vector<uint32_t>& pixels, int& width, int& height, std::string& error) {
+    std::ifstream file(path, std::ios::binary);
+    std::vector<uint8_t> data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    if (data.size() < 54 || data[0] != 'B' || data[1] != 'M') {
+        error = "not a BMP";
+        return false;
+    }
+    const uint32_t offset = le32(&data[10]), header = le32(&data[14]), compression = le32(&data[30]);
+    const int w = int(le32(&data[18])), h = int(le32(&data[22])), bits = data[28] | data[29] << 8;
+    const bool top_down = h < 0;
+    const int rows = top_down ? -h : h;
+    if (w <= 0 || rows <= 0 || w > 4096 || rows > 4096 || (bits != 24 && bits != 32) ||
+        (compression != 0 && compression != 3)) {
+        error = "an unsupported BMP";
+        return false;
+    }
+    uint32_t r = 0x00FF0000, g = 0x0000FF00, b = 0x000000FF, a = 0;
+    if (bits == 32 && compression == 3 && data.size() >= 66) {
+        r = le32(&data[54]), g = le32(&data[58]), b = le32(&data[62]);
+        a = header >= 56 && data.size() >= 70 ? le32(&data[66]) : 0;
+    }
+    const size_t stride = (size_t(w) * bits / 8 + 3) & ~size_t(3);
+    if (offset > data.size() || data.size() - offset < stride * rows) {
+        error = "a cut-off BMP";
+        return false;
+    }
+    width = w, height = rows;
+    pixels.assign(size_t(w) * rows, 0);
+    for (int y = 0; y < rows; ++y) {
+        const uint8_t* row = &data[offset + stride * size_t(top_down ? y : rows - 1 - y)];
+        uint32_t* out = &pixels[size_t(y) * w];
+        for (int x = 0; x < w; ++x) {
+            if (bits == 24) {
+                const uint8_t* p = row + x * 3;
+                out[x] = uint32_t(p[2]) | uint32_t(p[1]) << 8 | uint32_t(p[0]) << 16 | 0xFF000000u;
+                continue;
+            }
+            const uint32_t v = le32(row + x * 4);
+            const int alpha = channel(v, a);
+            out[x] = uint32_t(channel(v, r)) | uint32_t(channel(v, g)) << 8 | uint32_t(channel(v, b)) << 16 |
+                     uint32_t(alpha < 0 ? 255 : alpha) << 24;
         }
     }
     return true;

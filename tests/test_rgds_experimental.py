@@ -153,6 +153,7 @@ namespace ds::sdl {
 class Display { public:
  int screen=1;
  u32 window_id() const { return screen==1?2:1; }
+ int only_screen() const { return screen; }
  void output_size(int& w,int& h) const { w=640;h=480; }
  bool map_point(int x,int y,int& s,int& sx,int& sy) const {
   if(x<0 || y<0 || x>=640 || y>=480)return false;

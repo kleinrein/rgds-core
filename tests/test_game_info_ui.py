@@ -90,7 +90,7 @@ class GameInfoUiTests(LauncherFixture):
 
 
 class FacetFilterTests(LauncherFixture):
-    """The Library view sheet (Y in the library): collection and layout tiles, and filters from the saved game information."""
+    """The Filter sheet (Y in the library): collection and layout tiles, and filters from the saved game information."""
     def setUp(self):
         super().setUp()
         self.rom.unlink()

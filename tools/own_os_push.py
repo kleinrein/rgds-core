@@ -16,6 +16,9 @@ from pathlib import Path
 import subprocess
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+from os_update import replace_label  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / '.cache/own-os/build'
 DTB = 'rk3568-anbernic-rg-ds.dtb'
@@ -40,37 +43,6 @@ def digest(path):
         for block in iter(lambda: stream.read(1 << 20), b''):
             hash.update(block)
     return hash.hexdigest()
-
-
-def replace_label(conf, slot, template):
-    """extlinux.conf with `slot`'s LABEL block taken from the build's template (the other lines unchanged)."""
-    def blocks(text):
-        result, current = {}, None
-        for line in text.splitlines():
-            if line.startswith('LABEL '):
-                current = line.split()[1]
-                result[current] = [line]
-            elif current and line.startswith(' '):
-                result[current].append(line)
-            else:
-                current = None
-        return result
-
-    wanted = blocks(template)[slot]
-    out, skipping, done = [], False, False
-    for line in conf.splitlines():
-        if line.startswith('LABEL '):
-            skipping = line.split()[1] == slot
-            if skipping:
-                out.extend(wanted)
-                done = True
-                continue
-        elif skipping and line.startswith(' '):
-            continue
-        skipping = False
-        out.append(line)
-    if not done: out.extend(wanted)
-    return '\n'.join(out) + '\n'
 
 
 def main():
@@ -110,7 +82,12 @@ def main():
                 )
         if on_slot() != digest(rootfs):
             raise SystemExit(f'Slot {slot} does not match the image after writing; the running slot stays default.')
-        ssh(args.host, f'mount -o remount,rw /boot && mkdir -p /boot/{slot} && rm -f /boot/{slot}/Image')
+        ssh(
+            args.host,
+            f'mount -o remount,rw /boot && mkdir -p /boot/{slot} && rm -f /boot/{slot}/Image && '
+            # U-Boot's boot counter, idle, for a card made before it existed (usr/libexec/rgds/trial)
+            '[ -f /boot/bootcount ] || printf \'\\275\\001\\000\\000\' > /boot/bootcount'
+        )
         try:
             for name in (KERNEL, DTB):
                 remote = ssh(
@@ -158,6 +135,14 @@ def main():
                 f'dd of=$D bs=512 seek=64 conv=fsync 2>/dev/null && sync',
                 stdin=stream
             )
+    if slot != running:
+        # The same safety net an OTA update gets (usr/libexec/rgds/trial): three failed boots of the new slot and
+        # U-Boot boots the running one again.
+        build = (BUILD / 'build-id').read_text().strip() if (BUILD / 'build-id').is_file() else 'push'
+        ssh(
+            args.host,
+            f'[ -x /usr/libexec/rgds/trial ] && /usr/libexec/rgds/trial arm {slot} {running} {build} push; true'
+        )
     if args.reboot:
         # The connection drops as the handheld goes down.
         ssh(args.host, 'reboot', check=False)

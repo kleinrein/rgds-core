@@ -1,0 +1,1098 @@
+RG DS OS: light both panels with the boot logo from U-Boot (docs/OWN_OS_PLAN.md, "U-Boot splash").
+
+A minimal RK3566/RK3568 VOP2 driver (VP0 -> MIPI0 -> dsi0, the bottom screen; VP1 -> MIPI1 -> dsi1, the top
+screen; an Esmart window each over one frame buffer), a driver for ROCKNIX's generic-dsi panels (panel_description
+strings in the DT, as the kernel's panel-generic-dsi.c reads them), the rgds_splash command that brings them up from
+bootcmd behind a fail-safe marker (/splash.log on the boot partition) and draws /splash.bmp, and the RG DS's panels,
+supplies and backlights in the quartz64-a tree U-Boot runs. dw_mipi_dsi_rockchip.c takes each host's own panel and
+DSI host child instead of the first in the system; the D-PHY driver is U-Boot's own.
+
+diff --git a/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi b/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi
+index 19d2316..3be2390 100644
+--- a/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi
++++ b/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi
+@@ -40,3 +40,243 @@
+ &vcc_sd_h {
+ 	bootph-pre-ram;
+ };
++
++/*
++ * RG DS OS: the RG DS's two panels for the boot splash (rgds_splash, drivers/video/rockchip/rk3568_vop2.c). U-Boot
++ * runs this quartz64-a tree for the boot path; these nodes add the panels as the kernel's
++ * board/rgds/dts/rk3568-anbernic-rg-ds.dts describes them: LCD supplies, resets, PWM12/13 backlights, dsi0 (the
++ * bottom screen, on VP0) and dsi1 (the top screen, on VP1) with their D-PHYs. The panel_description strings are
++ * copies of dsi0's and dsi1's in that file and must follow them.
++ */
++/ {
++	rgds_vdd_lcd0: regulator-rgds-vdd-lcd0 {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio0 RK_PC7 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&rgds_vdd_lcd0_h>;
++		regulator-name = "vdd_lcd0";
++	};
++
++	rgds_vccio_lcd0: regulator-rgds-vccio-lcd0 {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&rgds_vccio_lcd0_h>;
++		regulator-name = "vccio_lcd0";
++	};
++
++	rgds_vdd_lcd1: regulator-rgds-vdd-lcd1 {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&rgds_vdd_lcd1_h>;
++		regulator-name = "vdd_lcd1";
++	};
++
++	rgds_vccio_lcd1: regulator-rgds-vccio-lcd1 {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio0 RK_PC1 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&rgds_vccio_lcd1_h>;
++		regulator-name = "vccio_lcd1";
++	};
++
++	rgds_backlight1: rgds-backlight1 {
++		compatible = "pwm-backlight";
++		enable-gpios = <&gpio4 RK_PA3 GPIO_ACTIVE_HIGH>;
++		pwms = <&pwm13 0 25000 0>;
++	};
++
++	rgds_backlight0: rgds-backlight0 {
++		compatible = "pwm-backlight";
++		enable-gpios = <&gpio4 RK_PA4 GPIO_ACTIVE_HIGH>;
++		pwms = <&pwm12 0 25000 0>;
++	};
++};
++
++&pinctrl {
++	rgds-lcd0 {
++		rgds_lcd0_rst: rgds-lcd0-rst {
++			rockchip,pins = <0 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		rgds_vdd_lcd0_h: rgds-vdd-lcd0-h {
++			rockchip,pins = <0 RK_PC7 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		rgds_vccio_lcd0_h: rgds-vccio-lcd0-h {
++			rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		rgds_lcd1_rst: rgds-lcd1-rst {
++			rockchip,pins = <0 RK_PB4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		rgds_vdd_lcd1_h: rgds-vdd-lcd1-h {
++			rockchip,pins = <0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		rgds_vccio_lcd1_h: rgds-vccio-lcd1-h {
++			rockchip,pins = <0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++&pwm12 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm12m1_pins>;
++	status = "okay";
++};
++
++&pwm13 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm13m1_pins>;
++	status = "okay";
++};
++
++&dsi_dphy0 {
++	status = "okay";
++};
++
++&dsi_dphy1 {
++	status = "okay";
++};
++
++&dsi0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	panel@0 {
++		compatible = "rocknix,generic-dsi";
++		reg = <0>;
++		backlight = <&rgds_backlight0>;
++		reset-gpios = <&gpio0 RK_PB3 GPIO_ACTIVE_LOW>;
++		vdd-supply = <&rgds_vdd_lcd0>;
++		iovcc-supply = <&rgds_vccio_lcd0>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&rgds_lcd0_rst>;
++		panel_description =
++			"G size=81,61 delays=20,10,50,120,50 format=rgb888 lanes=4 flags=0xc03",
++			"M clock=42134 horizontal=640,260,220,260 vertical=480,10,2,16 default=1",
++			"I seq=e000", "I seq=e193", "I seq=e265", "I seq=e3f8",
++			"I seq=8003",
++			"I seq=e001",
++			"I seq=0000", "I seq=016a", "I seq=0310", "I seq=046a",
++			"I seq=0c74",
++			"I seq=1700",
++			"I seq=18bf", "I seq=1901", "I seq=1a00", "I seq=1bbf", "I seq=1c01",
++			"I seq=24fe",
++			"I seq=3709",
++			"I seq=3802", "I seq=3908", "I seq=3a1f", "I seq=3cf7", "I seq=3dff", "I seq=3eff", "I seq=3fff",
++			"I seq=4003", "I seq=413c", "I seq=42ff", "I seq=430a", "I seq=4411", "I seq=4578",
++			"I seq=5502", "I seq=576d",
++			"I seq=580a", "I seq=590a", "I seq=5a1f", "I seq=5b1f", "I seq=5d7f", "I seq=5e56", "I seq=5f43",
++			"I seq=6034", "I seq=612f", "I seq=6220", "I seq=6322", "I seq=640c", "I seq=6524", "I seq=6624", "I seq=6725",
++			"I seq=6843", "I seq=6933", "I seq=6a3a", "I seq=6b2d", "I seq=6c28", "I seq=6d1b", "I seq=6e0b", "I seq=6f00",
++			"I seq=707f", "I seq=7156", "I seq=7243", "I seq=7334", "I seq=742f", "I seq=7520", "I seq=7622", "I seq=770c",
++			"I seq=7824", "I seq=7924", "I seq=7a25", "I seq=7b43", "I seq=7c33", "I seq=7d3a", "I seq=7e2d", "I seq=7f28",
++			"I seq=801b", "I seq=810b", "I seq=8200",
++			"I seq=e002",
++			"I seq=005f", "I seq=015f", "I seq=025f", "I seq=035e", "I seq=0450", "I seq=0540", "I seq=065f", "I seq=0757",
++			"I seq=0877", "I seq=0948", "I seq=0a48", "I seq=0b4a", "I seq=0c4a", "I seq=0d44", "I seq=0e44", "I seq=0f46",
++			"I seq=1046", "I seq=115f", "I seq=125f", "I seq=135f", "I seq=145f", "I seq=155f", "I seq=165f", "I seq=175f",
++			"I seq=185f", "I seq=195e", "I seq=1a50", "I seq=1b41", "I seq=1c5f", "I seq=1d57", "I seq=1e77", "I seq=1f49",
++			"I seq=2049", "I seq=214b", "I seq=224b", "I seq=2345", "I seq=2445", "I seq=2547", "I seq=2647", "I seq=275f",
++			"I seq=285f", "I seq=295f", "I seq=2a5f", "I seq=2b5f", "I seq=2c1f", "I seq=2d1f", "I seq=2e1e", "I seq=2f1f",
++			"I seq=3010", "I seq=3101", "I seq=321f", "I seq=3317", "I seq=3417", "I seq=3507", "I seq=3607", "I seq=3705",
++			"I seq=3805", "I seq=390b", "I seq=3a0b", "I seq=3b09", "I seq=3c09", "I seq=3d1f", "I seq=3e1f", "I seq=3f1f",
++			"I seq=401f", "I seq=411f", "I seq=421f", "I seq=431f", "I seq=441e", "I seq=451f", "I seq=4610", "I seq=4700",
++			"I seq=481f", "I seq=4917", "I seq=4a17", "I seq=4b06", "I seq=4c06", "I seq=4d04", "I seq=4e04", "I seq=4f0a",
++			"I seq=500a", "I seq=5108", "I seq=5208", "I seq=531f", "I seq=541f", "I seq=551f", "I seq=561f", "I seq=571f",
++			"I seq=5840", "I seq=5900", "I seq=5a00", "I seq=5b10", "I seq=5c07", "I seq=5d30", "I seq=5e01", "I seq=5f02",
++			"I seq=6030", "I seq=6101", "I seq=6202", "I seq=6306", "I seq=64e9", "I seq=6540", "I seq=6602", "I seq=6773",
++			"I seq=680b", "I seq=6906", "I seq=6ae9", "I seq=6b08",
++			"I seq=75da", "I seq=7600", "I seq=7701",
++			"I seq=78fc",
++			"I seq=8108", "I seq=83f4", "I seq=8710",
++			"I seq=e004",
++			"I seq=000e", "I seq=02b3",
++			"I seq=0960", "I seq=0e48",
++			"I seq=1e00",
++			"I seq=3758",
++			"I seq=2b0f",
++			"I seq=e005",
++			"I seq=151d",
++			"I seq=e000";
++	};
++};
++
++&dsi1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	panel@0 {
++		compatible = "rocknix,generic-dsi";
++		reg = <0>;
++		backlight = <&rgds_backlight1>;
++		reset-gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_LOW>;
++		vdd-supply = <&rgds_vdd_lcd1>;
++		iovcc-supply = <&rgds_vccio_lcd1>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&rgds_lcd1_rst>;
++		panel_description =
++			"G size=81,61 delays=20,10,50,120,50 format=rgb888 lanes=4 flags=0xc03",
++			"M clock=42134 horizontal=640,260,220,260 vertical=480,10,2,16 default=1",
++			"I seq=e000", "I seq=e193", "I seq=e265", "I seq=e3f8",
++			"I seq=8003",
++			"I seq=e001",
++			"I seq=0000", "I seq=016a", "I seq=0310", "I seq=046a",
++			"I seq=0c74",
++			"I seq=1700",
++			"I seq=18bf", "I seq=1901", "I seq=1a00", "I seq=1bbf", "I seq=1c01",
++			"I seq=24fe",
++			"I seq=3705",
++			"I seq=3802", "I seq=3908", "I seq=3a1f", "I seq=3cf7", "I seq=3dff", "I seq=3eff", "I seq=3fff",
++			"I seq=4003", "I seq=413c", "I seq=42ff", "I seq=430a", "I seq=4411", "I seq=4578",
++			"I seq=5502", "I seq=576d",
++			"I seq=580a", "I seq=590a", "I seq=5a1f", "I seq=5b1f", "I seq=5d7f", "I seq=5e56", "I seq=5f43",
++			"I seq=6034", "I seq=612f", "I seq=6220", "I seq=6322", "I seq=640c", "I seq=6524", "I seq=6624", "I seq=6725",
++			"I seq=6843", "I seq=6933", "I seq=6a3a", "I seq=6b2d", "I seq=6c28", "I seq=6d1b", "I seq=6e0b", "I seq=6f00",
++			"I seq=707f", "I seq=7156", "I seq=7243", "I seq=7334", "I seq=742f", "I seq=7520", "I seq=7622", "I seq=770c",
++			"I seq=7824", "I seq=7924", "I seq=7a25", "I seq=7b43", "I seq=7c33", "I seq=7d3a", "I seq=7e2d", "I seq=7f28",
++			"I seq=801b", "I seq=810b", "I seq=8200",
++			"I seq=e002",
++			"I seq=005f", "I seq=015f", "I seq=025f", "I seq=035e", "I seq=0450", "I seq=0540", "I seq=065f", "I seq=0757",
++			"I seq=0877", "I seq=0948", "I seq=0a48", "I seq=0b4a", "I seq=0c4a", "I seq=0d44", "I seq=0e44", "I seq=0f46",
++			"I seq=1046", "I seq=115f", "I seq=125f", "I seq=135f", "I seq=145f", "I seq=155f", "I seq=165f", "I seq=175f",
++			"I seq=185f", "I seq=195e", "I seq=1a50", "I seq=1b41", "I seq=1c5f", "I seq=1d57", "I seq=1e77", "I seq=1f49",
++			"I seq=2049", "I seq=214b", "I seq=224b", "I seq=2345", "I seq=2445", "I seq=2547", "I seq=2647", "I seq=275f",
++			"I seq=285f", "I seq=295f", "I seq=2a5f", "I seq=2b5f", "I seq=2c1f", "I seq=2d1f", "I seq=2e1e", "I seq=2f1f",
++			"I seq=3010", "I seq=3101", "I seq=321f", "I seq=3317", "I seq=3417", "I seq=3507", "I seq=3607", "I seq=3705",
++			"I seq=3805", "I seq=390b", "I seq=3a0b", "I seq=3b09", "I seq=3c09", "I seq=3d1f", "I seq=3e1f", "I seq=3f1f",
++			"I seq=401f", "I seq=411f", "I seq=421f", "I seq=431f", "I seq=441e", "I seq=451f", "I seq=4610", "I seq=4700",
++			"I seq=481f", "I seq=4917", "I seq=4a17", "I seq=4b06", "I seq=4c06", "I seq=4d04", "I seq=4e04", "I seq=4f0a",
++			"I seq=500a", "I seq=5108", "I seq=5208", "I seq=531f", "I seq=541f", "I seq=551f", "I seq=561f", "I seq=571f",
++			"I seq=5840", "I seq=5900", "I seq=5a00", "I seq=5b10", "I seq=5c07", "I seq=5d30", "I seq=5e01", "I seq=5f02",
++			"I seq=6030", "I seq=6101", "I seq=6202", "I seq=6306", "I seq=64e9", "I seq=6540", "I seq=6602", "I seq=6773",
++			"I seq=680b", "I seq=6906", "I seq=6ae9", "I seq=6b08",
++			"I seq=75da", "I seq=7600", "I seq=7701",
++			"I seq=78fc",
++			"I seq=8108", "I seq=83f4", "I seq=8710",
++			"I seq=e004",
++			"I seq=000e", "I seq=02b3",
++			"I seq=0960", "I seq=0e48",
++			"I seq=1e00",
++			"I seq=3758",
++			"I seq=2b0f",
++			"I seq=e005",
++			"I seq=151d",
++			"I seq=e000";
++	};
++};
++
++/* bound before relocation, so video_reserve() sets its frame buffer aside */
++&vop {
++	bootph-some-ram;
++};
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index b5777da..8c23075 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -549,6 +549,15 @@ config VIDEO_LCD_HIMAX_HX8394
+ 	Say Y here if you want to enable support for Himax HX8394
+ 	dsi 4dl panel.
+ 
++config VIDEO_LCD_GENERIC_DSI
++	bool "ROCKNIX generic DSI panel (panel_description in the device tree)"
++	depends on PANEL && BACKLIGHT
++	select VIDEO_MIPI_DSI
++	help
++	  Say Y here for panels described by ROCKNIX's "rocknix,generic-dsi"
++	  binding: mode, delays and the DCS init sequence as panel_description
++	  strings in the device tree (the Anbernic RG DS).
++
+ config VIDEO_LCD_MOT
+ 	tristate "Atrix 4G and Droid X2 540x960 DSI video mode panel"
+ 	depends on PANEL && BACKLIGHT
+diff --git a/drivers/video/Makefile b/drivers/video/Makefile
+index 96c7ce7..746d0ae 100644
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -60,6 +60,7 @@ obj-$(CONFIG_VIDEO_IVYBRIDGE_IGD) += ivybridge_igd.o
+ obj-$(CONFIG_VIDEO_LCD_ANX9804) += anx9804.o
+ obj-$(CONFIG_VIDEO_LCD_ENDEAVORU) += endeavoru-panel.o
+ obj-$(CONFIG_VIDEO_LCD_HIMAX_HX8394) += himax-hx8394.o
++obj-$(CONFIG_VIDEO_LCD_GENERIC_DSI) += panel-generic-dsi.o
+ obj-$(CONFIG_VIDEO_LCD_HITACHI_TX10D07VM0BAA) += hitachi-tx10d07vm0baa.o
+ obj-$(CONFIG_VIDEO_LCD_HITACHI_TX18D42VM) += hitachi_tx18d42vm_lcd.o
+ obj-$(CONFIG_VIDEO_LCD_LG_LD070WX3) += lg-ld070wx3.o
+diff --git a/drivers/video/panel-generic-dsi.c b/drivers/video/panel-generic-dsi.c
+new file mode 100644
+index 0000000..ae2b1c0
+--- /dev/null
++++ b/drivers/video/panel-generic-dsi.c
+@@ -0,0 +1,305 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * ROCKNIX's generic DSI panel (compatible "rocknix,generic-dsi") for U-Boot: the panel's globals, mode and DCS
++ * init sequence come from the device tree's panel_description strings, read the way the kernel's
++ * panel-generic-dsi.c reads them:
++ *
++ *   "G size=81,61 delays=20,10,50,120,50 format=rgb888 lanes=4 flags=0xc03"
++ *   "M clock=42134 horizontal=640,260,220,260 vertical=480,10,2,16 default=1"
++ *   "I seq=e000" ... ("I seq=<hex bytes> wait=<hex ms>", sent as one DCS write)
++ *
++ * delays are prepare, reset, init, enable (after sleep-out) and ready, in ms; horizontal and vertical are
++ * active, front porch, sync and back porch; clock is in kHz.
++ *
++ * RG DS OS: lights both panels for the boot splash (rk3568_vop2.c).
++ */
++#include <backlight.h>
++#include <dm.h>
++#include <malloc.h>
++#include <mipi_dsi.h>
++#include <panel.h>
++#include <time.h>
++#include <asm/gpio.h>
++#include <dm/device_compat.h>
++#include <linux/ctype.h>
++#include <linux/delay.h>
++#include <power/regulator.h>
++#include <vsprintf.h>
++
++#define GENERIC_DSI_MAX_SEQ	512
++
++struct generic_dsi_seq {
++	u8 len;
++	u8 wait;
++	u8 data[14];
++};
++
++struct generic_dsi_priv {
++	struct udevice *vdd;
++	struct udevice *iovcc;
++	struct udevice *backlight;
++	struct gpio_desc reset;
++	int delays[5];
++	struct display_timing timing;
++	struct generic_dsi_seq *seq;
++	int seq_count;
++	ulong reset_released;
++	ulong awake;
++};
++
++/* "a,b,c" into up to n ints; returns how many were read */
++static int generic_dsi_ints(const char *val, int *out, int n)
++{
++	int i = 0;
++
++	while (*val && i < n) {
++		out[i++] = simple_strtol(val, (char **)&val, 0);
++		if (*val != ',')
++			break;
++		val++;
++	}
++	return i;
++}
++
++static int generic_dsi_nibble(char c)
++{
++	return c <= '9' ? c - '0' : (c | 0x20) - 'a' + 10;
++}
++
++static int generic_dsi_hex(const char *val, u8 *out, int n)
++{
++	int len = 0;
++
++	while (isxdigit(val[0]) && isxdigit(val[1]) && len < n) {
++		out[len++] = generic_dsi_nibble(val[0]) << 4 | generic_dsi_nibble(val[1]);
++		val += 2;
++	}
++	return len;
++}
++
++static void generic_dsi_line(struct udevice *dev, const char *line)
++{
++	struct generic_dsi_priv *priv = dev_get_priv(dev);
++	struct mipi_dsi_panel_plat *plat = dev_get_plat(dev);
++	struct display_timing *t = &priv->timing;
++	struct generic_dsi_seq *seq = NULL;
++	char kind = line[0];
++	char word[64];
++	int v[4];
++
++	/* the first mode only; the RG DS has one */
++	if (kind == 'M' && t->pixelclock.typ)
++		return;
++	if (kind == 'I') {
++		if (priv->seq_count >= GENERIC_DSI_MAX_SEQ)
++			return;
++		seq = &priv->seq[priv->seq_count];
++		memset(seq, 0, sizeof(*seq));
++	}
++	for (line++; *line;) {
++		const char *val;
++		int n = 0;
++
++		while (*line == ' ')
++			line++;
++		while (line[n] && line[n] != ' ' && n < (int)sizeof(word) - 1)
++			n++;
++		memcpy(word, line, n);
++		word[n] = 0;
++		line += n;
++		val = strchr(word, '=');
++		if (!val)
++			continue;
++		val++;
++		if (kind == 'G') {
++			if (!strncmp(word, "delays=", 7))
++				generic_dsi_ints(val, priv->delays, 5);
++			else if (!strncmp(word, "lanes=", 6))
++				plat->lanes = simple_strtoul(val, NULL, 0);
++			else if (!strncmp(word, "flags=", 6))
++				plat->mode_flags = simple_strtoul(val, NULL, 0);
++			else if (!strncmp(word, "format=", 7))
++				plat->format = !strcmp(val, "rgb666") ? MIPI_DSI_FMT_RGB666 :
++					       !strcmp(val, "rgb565") ? MIPI_DSI_FMT_RGB565 : MIPI_DSI_FMT_RGB888;
++		} else if (kind == 'M') {
++			if (!strncmp(word, "clock=", 6)) {
++				t->pixelclock.typ = simple_strtoul(val, NULL, 0) * 1000;
++			} else if (!strncmp(word, "horizontal=", 11) && generic_dsi_ints(val, v, 4) == 4) {
++				t->hactive.typ = v[0];
++				t->hfront_porch.typ = v[1];
++				t->hsync_len.typ = v[2];
++				t->hback_porch.typ = v[3];
++			} else if (!strncmp(word, "vertical=", 9) && generic_dsi_ints(val, v, 4) == 4) {
++				t->vactive.typ = v[0];
++				t->vfront_porch.typ = v[1];
++				t->vsync_len.typ = v[2];
++				t->vback_porch.typ = v[3];
++			}
++		} else if (seq) {
++			if (!strncmp(word, "seq=", 4))
++				seq->len = generic_dsi_hex(val, seq->data, sizeof(seq->data));
++			else if (!strncmp(word, "wait=", 5))
++				seq->wait = hextoul(val, NULL);
++		}
++	}
++	if (seq && seq->len)
++		priv->seq_count++;
++}
++
++static int generic_dsi_of_to_plat(struct udevice *dev)
++{
++	struct generic_dsi_priv *priv = dev_get_priv(dev);
++	struct mipi_dsi_panel_plat *plat = dev_get_plat(dev);
++	int count, i, ret;
++
++	priv->delays[0] = 5;
++	priv->delays[1] = 1;
++	priv->delays[2] = 25;
++	priv->delays[3] = 120;
++	priv->delays[4] = 50;
++	plat->lanes = 4;
++	plat->format = MIPI_DSI_FMT_RGB888;
++	plat->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
++
++	priv->seq = calloc(GENERIC_DSI_MAX_SEQ, sizeof(*priv->seq));
++	if (!priv->seq)
++		return -ENOMEM;
++	count = dev_read_string_count(dev, "panel_description");
++	for (i = 0; i < count; i++) {
++		const char *line;
++
++		if (!dev_read_string_index(dev, "panel_description", i, &line))
++			generic_dsi_line(dev, line);
++	}
++	if (!priv->timing.pixelclock.typ || !priv->timing.hactive.typ || !priv->timing.vactive.typ) {
++		dev_err(dev, "no mode in panel_description\n");
++		return -EINVAL;
++	}
++	/* the kernel driver always gives its modes negative syncs */
++	priv->timing.flags = DISPLAY_FLAGS_HSYNC_LOW | DISPLAY_FLAGS_VSYNC_LOW;
++
++	ret = device_get_supply_regulator(dev, "vdd-supply", &priv->vdd);
++	if (ret && ret != -ENOENT)
++		return ret;
++	ret = device_get_supply_regulator(dev, "iovcc-supply", &priv->iovcc);
++	if (ret && ret != -ENOENT)
++		return ret;
++	ret = gpio_request_by_name(dev, "reset-gpios", 0, &priv->reset, GPIOD_IS_OUT);
++	if (ret && ret != -ENOENT)
++		return ret;
++	ret = uclass_get_device_by_phandle(UCLASS_PANEL_BACKLIGHT, dev, "backlight", &priv->backlight);
++	if (ret)
++		priv->backlight = NULL;
++
++	return 0;
++}
++
++/* power and reset; the panel's init delay then runs while the DSI host is set up */
++static int generic_dsi_probe(struct udevice *dev)
++{
++	struct generic_dsi_priv *priv = dev_get_priv(dev);
++	int ret;
++
++	if (priv->vdd) {
++		ret = regulator_set_enable(priv->vdd, true);
++		if (ret && ret != -EALREADY)
++			return ret;
++	}
++	if (priv->iovcc) {
++		ret = regulator_set_enable(priv->iovcc, true);
++		if (ret && ret != -EALREADY)
++			return ret;
++	}
++	mdelay(priv->delays[0]);
++	if (dm_gpio_is_valid(&priv->reset)) {
++		dm_gpio_set_value(&priv->reset, 1);
++		mdelay(priv->delays[1]);
++		dm_gpio_set_value(&priv->reset, 0);
++	}
++	priv->reset_released = get_timer(0);
++
++	return 0;
++}
++
++/*
++ * The DCS sequence, display on and sleep out (in the kernel driver's order). The backlight waits for
++ * set_backlight, which keeps the enable delay after sleep-out, so two panels share one wait.
++ */
++static int generic_dsi_enable_backlight(struct udevice *dev)
++{
++	struct generic_dsi_priv *priv = dev_get_priv(dev);
++	struct mipi_dsi_panel_plat *plat = dev_get_plat(dev);
++	struct mipi_dsi_device *device = plat->device;
++	ulong waited;
++	int i, ret;
++
++	ret = mipi_dsi_attach(device);
++	if (ret < 0)
++		return ret;
++
++	waited = get_timer(priv->reset_released);
++	if (waited < priv->delays[2])
++		mdelay(priv->delays[2] - waited);
++	for (i = 0; i < priv->seq_count; i++) {
++		ret = mipi_dsi_dcs_write_buffer(device, priv->seq[i].data, priv->seq[i].len);
++		if (ret < 0)
++			return ret;
++		if (priv->seq[i].wait)
++			mdelay(priv->seq[i].wait);
++	}
++	ret = mipi_dsi_dcs_set_display_on(device);
++	if (ret < 0)
++		return ret;
++	ret = mipi_dsi_dcs_exit_sleep_mode(device);
++	if (ret < 0)
++		return ret;
++	priv->awake = get_timer(0);
++
++	return 0;
++}
++
++static int generic_dsi_set_backlight(struct udevice *dev, int percent)
++{
++	struct generic_dsi_priv *priv = dev_get_priv(dev);
++	ulong waited = get_timer(priv->awake);
++	int ret;
++
++	if (waited < priv->delays[3])
++		mdelay(priv->delays[3] - waited);
++	if (!priv->backlight)
++		return 0;
++	ret = backlight_enable(priv->backlight);
++	if (ret)
++		return ret;
++	return backlight_set_brightness(priv->backlight, percent);
++}
++
++static int generic_dsi_get_display_timing(struct udevice *dev, struct display_timing *timing)
++{
++	struct generic_dsi_priv *priv = dev_get_priv(dev);
++
++	memcpy(timing, &priv->timing, sizeof(*timing));
++	return 0;
++}
++
++static const struct panel_ops generic_dsi_ops = {
++	.enable_backlight	= generic_dsi_enable_backlight,
++	.set_backlight		= generic_dsi_set_backlight,
++	.get_display_timing	= generic_dsi_get_display_timing,
++};
++
++static const struct udevice_id generic_dsi_ids[] = {
++	{ .compatible = "rocknix,generic-dsi" },
++	{ }
++};
++
++U_BOOT_DRIVER(generic_dsi_panel) = {
++	.name		= "generic_dsi_panel",
++	.id		= UCLASS_PANEL,
++	.of_match	= generic_dsi_ids,
++	.ops		= &generic_dsi_ops,
++	.of_to_plat	= generic_dsi_of_to_plat,
++	.probe		= generic_dsi_probe,
++	.plat_auto	= sizeof(struct mipi_dsi_panel_plat),
++	.priv_auto	= sizeof(struct generic_dsi_priv),
++};
+diff --git a/drivers/video/rockchip/Kconfig b/drivers/video/rockchip/Kconfig
+index 0f4550a..5cac46f 100644
+--- a/drivers/video/rockchip/Kconfig
++++ b/drivers/video/rockchip/Kconfig
+@@ -78,4 +78,12 @@ config DISPLAY_ROCKCHIP_DW_MIPI
+ 	  Select the Designware MIPI DSI controller in use on some Rockchip
+ 	  SOCs.
+ 
++config VIDEO_ROCKCHIP_VOP2_RGDS
++	bool "RK3566/RK3568 VOP2 boot splash (RG DS)"
++	depends on VIDEO_ROCKCHIP && VIDEO_BRIDGE && FS_FAT && CMDLINE
++	help
++	  A minimal VOP2 driver for one video port on MIPI0, brought up by
++	  the rgds_splash command with a fail-safe marker on the boot
++	  partition (RG DS OS).
++
+ endif
+diff --git a/drivers/video/rockchip/Makefile b/drivers/video/rockchip/Makefile
+index f55bece..bb684a0 100644
+--- a/drivers/video/rockchip/Makefile
++++ b/drivers/video/rockchip/Makefile
+@@ -18,4 +18,5 @@ obj-mipi-$(CONFIG_ROCKCHIP_RK3288) += rk3288_mipi.o
+ obj-mipi-$(CONFIG_ROCKCHIP_RK3399) += rk3399_mipi.o
+ obj-$(CONFIG_DISPLAY_ROCKCHIP_MIPI) += rk_mipi.o $(obj-mipi-y)
+ obj-$(CONFIG_DISPLAY_ROCKCHIP_DW_MIPI) += dw_mipi_dsi_rockchip.o
++obj-$(CONFIG_VIDEO_ROCKCHIP_VOP2_RGDS) += rk3568_vop2.o
+ endif
+diff --git a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+index fa51217..0a2dcf4 100644
+--- a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
++++ b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+@@ -716,7 +716,10 @@ static int dw_mipi_dsi_rockchip_attach(struct udevice *dev)
+ 	struct display_timing timings;
+ 	int ret;
+ 
+-	ret = uclass_first_device_err(UCLASS_PANEL, &priv->panel);
++	/* this host's own panel (RG DS OS: two DSI hosts, a panel on each) */
++	ret = device_find_first_child_by_uclass(dev, UCLASS_PANEL, &priv->panel);
++	if (!ret)
++		ret = device_probe(priv->panel);
+ 	if (ret) {
+ 		dev_err(dev, "panel device error %d\n", ret);
+ 		return ret;
+@@ -738,7 +741,9 @@ static int dw_mipi_dsi_rockchip_attach(struct udevice *dev)
+ 		}
+ 	}
+ 
+-	ret = uclass_get_device(UCLASS_DSI_HOST, 0, &priv->dsi_host);
++	ret = device_find_first_child_by_uclass(dev, UCLASS_DSI_HOST, &priv->dsi_host);
++	if (!ret)
++		ret = device_probe(priv->dsi_host);
+ 	if (ret) {
+ 		dev_err(dev, "No video dsi host detected %d\n", ret);
+ 		return ret;
+diff --git a/drivers/video/rockchip/rk3568_vop2.c b/drivers/video/rockchip/rk3568_vop2.c
+new file mode 100644
+index 0000000..e3a4eeb
+--- /dev/null
++++ b/drivers/video/rockchip/rk3568_vop2.c
+@@ -0,0 +1,438 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * RG DS OS: a minimal RK3566/RK3568 VOP2 driver for the boot splash. Each DSI host (dw_mipi_dsi_rockchip.c) gets
++ * a video port: dsi0 (the RG DS's bottom screen) on VP0 through MIPI0, dsi1 (the top screen) on VP1 through
++ * MIPI1. Each port shows one Esmart window (Esmart0, Esmart1) over the one frame buffer, so both screens show the
++ * same picture, the port's background colour around it. The register sequence follows the kernel's
++ * rockchip_drm_vop2.c (vop2_crtc_atomic_enable, rk3568_set_intf_mux, vop2_post_config,
++ * rk3568_vop2_setup_layer_mixer, vop2_plane_atomic_update); a single layer on a port needs no alpha set-up.
++ *
++ * The display is brought up only by the rgds_splash command (bootcmd), not at stdio start-up, so the command can
++ * keep a fail-safe on the boot partition first: /splash.log is "try" while the display is set up, then the result
++ * ("lit ..." or the step that failed); Linux prefixes it with "ok" once it has booted. A log still at "try" or
++ * "lit" means the last splash did not get as far as Linux, and the splash is skipped. /splash-off turns it off.
++ * The picture is /splash.bmp (an 8-bit BMP, the kernel's boot logo; board/rgds/ppm2bmp.py).
++ */
++#include <bootstage.h>
++#include <clk.h>
++#include <command.h>
++#include <cpu_func.h>
++#include <dm.h>
++#include <fs.h>
++#include <malloc.h>
++#include <mapmem.h>
++#include <panel.h>
++#include <time.h>
++#include <video.h>
++#include <video_bridge.h>
++#include <asm/io.h>
++#include <dm/device-internal.h>
++#include <dm/device_compat.h>
++#include <dm/uclass-internal.h>
++#include <linux/bitfield.h>
++#include <linux/bitops.h>
++
++#define RK3568_REG_CFG_DONE			0x000
++#define RK3568_VERSION_INFO			0x004
++#define RK3568_SYS_AUTO_GATING_CTRL		0x008
++#define RK3568_DSP_IF_EN			0x028
++#define RK3568_DSP_IF_POL			0x030
++#define RK3568_OVL_CTRL				0x600
++#define RK3568_OVL_LAYER_SEL			0x604
++#define RK3568_OVL_PORT_SEL			0x608
++#define RK3568_VP_BG_MIX_CTRL(vp)		(0x6e0 + (vp) * 4)
++
++#define RK3568_VP(vp)				(0xc00 + (vp) * 0x100)
++#define RK3568_VP_DSP_CTRL			0x00
++#define RK3568_VP_MIPI_CTRL			0x04
++#define RK3568_VP_DSP_BG			0x2c
++#define RK3568_VP_PRE_SCAN_HTIMING		0x30
++#define RK3568_VP_POST_DSP_HACT_INFO		0x34
++#define RK3568_VP_POST_DSP_VACT_INFO		0x38
++#define RK3568_VP_POST_SCL_FACTOR_YRGB		0x3c
++#define RK3568_VP_POST_SCL_CTRL			0x40
++#define RK3568_VP_DSP_HTOTAL_HS_END		0x48
++#define RK3568_VP_DSP_HACT_ST_END		0x4c
++#define RK3568_VP_DSP_VTOTAL_VS_END		0x50
++#define RK3568_VP_DSP_VACT_ST_END		0x54
++
++/* Esmart0 (0x1800) for VP0, Esmart1 (0x1a00) for VP1 */
++#define RK3568_ESMART(vp)			(0x1800 + (vp) * 0x200)
++#define RK3568_SMART_CTRL0			0x00
++#define RK3568_SMART_REGION0_CTRL		0x10
++#define RK3568_SMART_REGION0_YRGB_MST		0x14
++#define RK3568_SMART_REGION0_VIR		0x1c
++#define RK3568_SMART_REGION0_ACT_INFO		0x20
++#define RK3568_SMART_REGION0_DSP_INFO		0x24
++#define RK3568_SMART_REGION0_DSP_ST		0x28
++#define RK3568_SMART_REGION0_SCL_CTRL		0x30
++
++#define RK3568_REG_CFG_DONE__GLB_CFG_DONE_EN	BIT(15)
++#define RK3568_SYS_AUTO_GATING_CTRL__AUTO_GATING_EN BIT(31)
++#define RK3568_SYS_DSP_INFACE_EN_MIPI0		BIT(4)
++#define RK3568_SYS_DSP_INFACE_EN_MIPI0_MUX	GENMASK(17, 16)
++#define RK3568_SYS_DSP_INFACE_EN_MIPI1		BIT(20)
++#define RK3568_SYS_DSP_INFACE_EN_MIPI1_MUX	GENMASK(22, 21)
++#define RK3568_DSP_IF_POL__MIPI_PIN_POL		GENMASK(19, 16)
++#define RK3568_DSP_IF_POL__CFG_DONE_IMD		BIT(28)
++#define RK3568_OVL_CTRL__LAYERSEL_REGDONE_SEL	GENMASK(31, 30)
++#define RK3568_OVL_CTRL__LAYERSEL_REGDONE_IMD	BIT(28)
++#define RK3568_OVL_CTRL__YUV_MODE(vp)		BIT(vp)
++/* the kernel's pre_scan_max_dly[3] for VP0 and VP1 */
++static const u8 rk3568_vp_bg_dly[] = { 42, 40 };
++
++/*
++ * Overlay: layer 0 is Esmart0 (layer_sel_id 2) for VP0, layer 1 Esmart1 (6) for VP1; the other windows fill
++ * layers 2-5 on VP2, which has no output (port mux 8). Port sel: each window's port in the high half
++ * (Cluster0/1 [19:16] and Smart0/1 [31:28] on VP2, Esmart0 [25:24] VP0, Esmart1 [27:26] VP1), each port's last
++ * layer in the low half.
++ */
++#define RGDS_OVL_LAYER_SEL			(2 | 6 << 4 | 0 << 8 | 1 << 12 | 3 << 16 | 7 << 20)
++#define RGDS_OVL_PORT_SEL			(2 << 16 | 2 << 18 | 0 << 24 | 1 << 26 | 2 << 28 | 2 << 30 | \
++						 8 << 8 | 1 << 4 | 0)
++
++/* the kernel logo's background (board/rgds/boot-logo.ppm) */
++#define RGDS_SPLASH_RGB				0xf2f5f7
++#define RGDS_SPLASH_DEV				"1:1"
++#define RGDS_SPLASH_BMP_MAX			(512 * 1024)
++
++struct rk3568_vop2_port {
++	struct udevice *bridge;
++	struct udevice *panel;
++	struct display_timing timing;
++};
++
++struct rk3568_vop2_priv {
++	void __iomem *regs;
++	struct clk aclk;
++	struct clk hclk;
++	struct rk3568_vop2_port port[2];
++};
++
++static bool rgds_splash_armed;
++static char rgds_splash_status[160];
++
++static void vop2_write(struct rk3568_vop2_priv *vop2, u32 reg, u32 val)
++{
++	writel(val, vop2->regs + reg);
++}
++
++static void vp_write(struct rk3568_vop2_priv *vop2, int vp, u32 reg, u32 val)
++{
++	writel(val, vop2->regs + RK3568_VP(vp) + reg);
++}
++
++static void win_write(struct rk3568_vop2_priv *vop2, int vp, u32 reg, u32 val)
++{
++	writel(val, vop2->regs + RK3568_ESMART(vp) + reg);
++}
++
++static void vop2_cfg_done(struct rk3568_vop2_priv *vop2, int vp)
++{
++	setbits_le32(vop2->regs + RK3568_REG_CFG_DONE,
++		     RK3568_REG_CFG_DONE__GLB_CFG_DONE_EN | BIT(vp) | BIT(vp) << 16);
++}
++
++static u32 vop2_bg(u32 rgb)
++{
++	u32 r = (rgb >> 16) & 0xff, g = (rgb >> 8) & 0xff, b = rgb & 0xff;
++
++	/* 10 bits a channel */
++	return (r << 2 | r >> 6) << 20 | (g << 2 | g >> 6) << 10 | (b << 2 | b >> 6);
++}
++
++static void vop2_mode_set(struct rk3568_vop2_priv *vop2, int vp, const struct display_timing *t)
++{
++	u32 hdisplay = t->hactive.typ, vdisplay = t->vactive.typ;
++	u32 hsync_len = t->hsync_len.typ, vsync_len = t->vsync_len.typ;
++	u32 htotal = hdisplay + t->hfront_porch.typ + hsync_len + t->hback_porch.typ;
++	u32 vtotal = vdisplay + t->vfront_porch.typ + vsync_len + t->vback_porch.typ;
++	u32 hact_st = hsync_len + t->hback_porch.typ, hact_end = hact_st + hdisplay;
++	u32 vact_st = vsync_len + t->vback_porch.typ, vact_end = vact_st + vdisplay;
++	u32 die, dip;
++
++	/* MIPI0 from VP0 or MIPI1 from VP1, negative syncs (polarity bits clear) */
++	die = readl(vop2->regs + RK3568_DSP_IF_EN);
++	if (vp == 0) {
++		die &= ~RK3568_SYS_DSP_INFACE_EN_MIPI0_MUX;
++		die |= RK3568_SYS_DSP_INFACE_EN_MIPI0;
++	} else {
++		die &= ~RK3568_SYS_DSP_INFACE_EN_MIPI1_MUX;
++		die |= RK3568_SYS_DSP_INFACE_EN_MIPI1 | FIELD_PREP(RK3568_SYS_DSP_INFACE_EN_MIPI1_MUX, vp);
++	}
++	dip = readl(vop2->regs + RK3568_DSP_IF_POL);
++	dip &= ~RK3568_DSP_IF_POL__MIPI_PIN_POL;
++	dip |= RK3568_DSP_IF_POL__CFG_DONE_IMD;
++	vop2_write(vop2, RK3568_DSP_IF_EN, die);
++	vop2_write(vop2, RK3568_DSP_IF_POL, dip);
++
++	vp_write(vop2, vp, RK3568_VP_DSP_HTOTAL_HS_END, htotal << 16 | hsync_len);
++	vp_write(vop2, vp, RK3568_VP_DSP_HACT_ST_END, hact_st << 16 | hact_end);
++	vp_write(vop2, vp, RK3568_VP_DSP_VACT_ST_END, vact_st << 16 | vact_end);
++	vp_write(vop2, vp, RK3568_VP_DSP_VTOTAL_VS_END, vtotal << 16 | vsync_len);
++	vp_write(vop2, vp, RK3568_VP_MIPI_CTRL, 0);
++
++	/* post config without margins or scaling */
++	vop2_write(vop2, RK3568_VP_BG_MIX_CTRL(vp), rk3568_vp_bg_dly[vp] << 24);
++	vp_write(vop2, vp, RK3568_VP_PRE_SCAN_HTIMING, (rk3568_vp_bg_dly[vp] + (hdisplay >> 1) - 1) << 16 | hsync_len);
++	vp_write(vop2, vp, RK3568_VP_POST_DSP_HACT_INFO, hact_st << 16 | hact_end);
++	vp_write(vop2, vp, RK3568_VP_POST_DSP_VACT_INFO, vact_st << 16 | vact_end);
++	vp_write(vop2, vp, RK3568_VP_POST_SCL_FACTOR_YRGB, 0x1000 << 16 | 0x1000);
++	vp_write(vop2, vp, RK3568_VP_POST_SCL_CTRL, 0);
++	vp_write(vop2, vp, RK3568_VP_DSP_BG, vop2_bg(RGDS_SPLASH_RGB));
++	vop2_cfg_done(vop2, vp);
++
++	/* out of standby, RGB888 out (ROCKCHIP_OUT_MODE_P888) */
++	vp_write(vop2, vp, RK3568_VP_DSP_CTRL, 0);
++	vop2_cfg_done(vop2, vp);
++}
++
++/* the port's Esmart window over the frame buffer (XRGB8888), centred */
++static void vop2_window_set(struct rk3568_vop2_priv *vop2, int vp, ulong fb, u32 width, u32 height)
++{
++	const struct display_timing *t = &vop2->port[vp].timing;
++	u32 w = min(width, t->hactive.typ), h = min(height, t->vactive.typ);
++	u32 x = (t->hactive.typ - w) / 2 + t->hsync_len.typ + t->hback_porch.typ;
++	u32 y = (t->vactive.typ - h) / 2 + t->vsync_len.typ + t->vback_porch.typ;
++
++	win_write(vop2, vp, RK3568_SMART_CTRL0, 0);
++	win_write(vop2, vp, RK3568_SMART_REGION0_YRGB_MST, (u32)fb);
++	win_write(vop2, vp, RK3568_SMART_REGION0_VIR, width);
++	win_write(vop2, vp, RK3568_SMART_REGION0_ACT_INFO, (h - 1) << 16 | (w - 1));
++	win_write(vop2, vp, RK3568_SMART_REGION0_DSP_INFO, (h - 1) << 16 | (w - 1));
++	win_write(vop2, vp, RK3568_SMART_REGION0_DSP_ST, y << 16 | x);
++	win_write(vop2, vp, RK3568_SMART_REGION0_SCL_CTRL, 0);
++	/* enable, format 0 (VOP2_FMT_ARGB8888, which XRGB8888 uses), no R/B swap */
++	win_write(vop2, vp, RK3568_SMART_REGION0_CTRL, BIT(0));
++}
++
++#define fail(step, ret) ({ \
++	snprintf(rgds_splash_status, sizeof(rgds_splash_status), "fail %s %d\n", step, ret); \
++	ret; })
++
++/* the port a DSI host feeds: dsi0 (0xfe060000) VP0, dsi1 (0xfe070000) VP1 */
++static int rk3568_vop2_port_of(struct udevice *bridge)
++{
++	fdt_addr_t reg = dev_read_addr(bridge);
++
++	return reg == 0xfe060000 ? 0 : reg == 0xfe070000 ? 1 : -1;
++}
++
++/*
++ * Panels powered and through their init sequence, ports running with the background colour, DSI hosts in video
++ * mode; the windows and the backlights wait for rk3568_vop2_show(), once the picture is in the frame buffer.
++ */
++static int rk3568_vop2_probe(struct udevice *dev)
++{
++	struct video_priv *uc_priv = dev_get_uclass_priv(dev);
++	struct rk3568_vop2_priv *vop2 = dev_get_priv(dev);
++	struct udevice *bridge;
++	char name[12];
++	int vp, ret, lit = 0;
++	u32 ovl;
++
++	/* only from the rgds_splash command, see above */
++	if (!rgds_splash_armed)
++		return -EAGAIN;
++
++	vop2->regs = dev_read_addr_index_ptr(dev, 0);
++	if (!vop2->regs)
++		return fail("regs", -EINVAL);
++	ret = clk_get_by_name(dev, "aclk", &vop2->aclk);
++	if (!ret)
++		ret = clk_get_by_name(dev, "hclk", &vop2->hclk);
++	if (ret)
++		return fail("clocks", ret);
++	clk_enable(&vop2->aclk);
++	clk_enable(&vop2->hclk);
++
++	/*
++	 * Each panel's probe powers it and releases reset; probing both first lets their init delays run together,
++	 * while the ports are set up.
++	 */
++	for (uclass_find_first_device(UCLASS_VIDEO_BRIDGE, &bridge); bridge;
++	     uclass_find_next_device(&bridge)) {
++		vp = rk3568_vop2_port_of(bridge);
++		if (vp < 0)
++			continue;
++		ret = device_probe(bridge);
++		if (!ret)
++			ret = device_find_first_child_by_uclass(bridge, UCLASS_PANEL, &vop2->port[vp].panel);
++		if (!ret)
++			ret = device_probe(vop2->port[vp].panel);
++		if (!ret)
++			ret = panel_get_display_timing(vop2->port[vp].panel, &vop2->port[vp].timing);
++		if (ret)
++			return fail(vp ? "panel1" : "panel0", ret);
++		vop2->port[vp].bridge = bridge;
++	}
++
++	vop2_write(vop2, RK3568_REG_CFG_DONE, RK3568_REG_CFG_DONE__GLB_CFG_DONE_EN);
++	clrbits_le32(vop2->regs + RK3568_SYS_AUTO_GATING_CTRL, RK3568_SYS_AUTO_GATING_CTRL__AUTO_GATING_EN);
++	ovl = readl(vop2->regs + RK3568_OVL_CTRL);
++	ovl &= ~(RK3568_OVL_CTRL__LAYERSEL_REGDONE_IMD | RK3568_OVL_CTRL__LAYERSEL_REGDONE_SEL |
++		 RK3568_OVL_CTRL__YUV_MODE(0) | RK3568_OVL_CTRL__YUV_MODE(1));
++	vop2_write(vop2, RK3568_OVL_CTRL, ovl);
++	vop2_write(vop2, RK3568_OVL_LAYER_SEL, RGDS_OVL_LAYER_SEL);
++	vop2_write(vop2, RK3568_OVL_PORT_SEL, RGDS_OVL_PORT_SEL);
++
++	for (vp = 0; vp < 2; vp++) {
++		struct rk3568_vop2_port *port = &vop2->port[vp];
++		struct clk dclk;
++		ulong rate;
++
++		if (!port->bridge)
++			continue;
++		snprintf(name, sizeof(name), "dclk_vp%d", vp);
++		ret = clk_get_by_name(dev, name, &dclk);
++		if (ret)
++			return fail(name, ret);
++		clk_enable(&dclk);
++		rate = clk_set_rate(&dclk, port->timing.pixelclock.typ);
++		if (IS_ERR_VALUE(rate))
++			return fail(name, (int)rate);
++		vop2_mode_set(vop2, vp, &port->timing);
++		ret = video_bridge_attach(port->bridge);
++		if (ret)
++			return fail(vp ? "attach1" : "attach0", ret);
++		/* the panel's init sequence and sleep out (no backlight yet), then the DSI host's video mode */
++		ret = video_bridge_set_backlight(port->bridge, 0);
++		if (ret)
++			return fail(vp ? "enable1" : "enable0", ret);
++		lit++;
++	}
++	if (!lit)
++		return fail("no-dsi", -ENODEV);
++
++	uc_priv->xsize = vop2->port[vop2->port[0].bridge ? 0 : 1].timing.hactive.typ;
++	uc_priv->ysize = vop2->port[vop2->port[0].bridge ? 0 : 1].timing.vactive.typ;
++	uc_priv->bpix = VIDEO_BPP32;
++	uc_priv->format = VIDEO_X8R8G8B8;
++	video_set_flush_dcache(dev, true);
++
++	return 0;
++}
++
++/* the windows over the frame buffer (when there is a picture), then the backlights at the panels' delay */
++static void rk3568_vop2_show(struct udevice *dev, bool picture)
++{
++	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
++	struct video_priv *uc_priv = dev_get_uclass_priv(dev);
++	struct rk3568_vop2_priv *vop2 = dev_get_priv(dev);
++	int vp;
++
++	for (vp = 0; vp < 2; vp++) {
++		if (!vop2->port[vp].bridge)
++			continue;
++		if (picture) {
++			vop2_window_set(vop2, vp, plat->base, uc_priv->xsize, uc_priv->ysize);
++			vop2_cfg_done(vop2, vp);
++		}
++	}
++	for (vp = 0; vp < 2; vp++)
++		if (vop2->port[vp].bridge)
++			panel_set_backlight(vop2->port[vp].panel, 50);
++}
++
++static int rk3568_vop2_bind(struct udevice *dev)
++{
++	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
++
++	/* one 640x480 XRGB8888 frame, the panels' size */
++	plat->size = 640 * 480 * 4;
++
++	return 0;
++}
++
++static const struct udevice_id rk3568_vop2_ids[] = {
++	{ .compatible = "rockchip,rk3566-vop" },
++	{ .compatible = "rockchip,rk3568-vop" },
++	{ }
++};
++
++U_BOOT_DRIVER(rk3568_vop2) = {
++	.name		= "rk3568_vop2",
++	.id		= UCLASS_VIDEO,
++	.of_match	= rk3568_vop2_ids,
++	.bind		= rk3568_vop2_bind,
++	.probe		= rk3568_vop2_probe,
++	.priv_auto	= sizeof(struct rk3568_vop2_priv),
++};
++
++static int rgds_splash_read(const char *name, void *buf, int size)
++{
++	loff_t len = 0;
++
++	if (fs_set_blk_dev("mmc", RGDS_SPLASH_DEV, FS_TYPE_FAT))
++		return -ENODEV;
++	if (fs_read(name, map_to_sysmem(buf), 0, size, &len))
++		return -ENOENT;
++	return len;
++}
++
++static int rgds_splash_write(const char *text)
++{
++	loff_t len;
++
++	if (fs_set_blk_dev("mmc", RGDS_SPLASH_DEV, FS_TYPE_FAT))
++		return -ENODEV;
++	return fs_write("/splash.log", map_to_sysmem(text), 0, strlen(text), &len);
++}
++
++static int do_rgds_splash(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++	struct rk3568_vop2_priv *vop2;
++	struct udevice *dev;
++	char log[16] = "";
++	ulong start = get_timer(0);
++	void *bmp;
++	int len, ret;
++
++	bootstage_mark_name(BOOTSTAGE_ID_ALLOC, "rgds_splash");
++	if (rgds_splash_read("/splash-off", log, sizeof(log) - 1) >= 0)
++		return CMD_RET_SUCCESS;
++	len = rgds_splash_read("/splash.log", log, sizeof(log) - 1);
++	if (len >= 0) {
++		log[len] = 0;
++		if (!strncmp(log, "try", 3) || !strncmp(log, "lit", 3)) {
++			printf("rgds_splash: the last splash did not reach Linux (%s), skipped\n", log);
++			return CMD_RET_SUCCESS;
++		}
++	}
++	if (rgds_splash_write("try\n"))
++		return CMD_RET_SUCCESS;
++
++	rgds_splash_armed = true;
++	strcpy(rgds_splash_status, "fail probe\n");
++	if (uclass_first_device_err(UCLASS_VIDEO, &dev)) {
++		rgds_splash_write(rgds_splash_status);
++		return CMD_RET_SUCCESS;
++	}
++	vop2 = dev_get_priv(dev);
++
++	/* the picture into the frame buffer before any window or backlight shows it */
++	ret = -ENOMEM;
++	bmp = malloc(RGDS_SPLASH_BMP_MAX);
++	if (bmp) {
++		ret = rgds_splash_read("/splash.bmp", bmp, RGDS_SPLASH_BMP_MAX);
++		if (ret > 0)
++			ret = video_bmp_display(dev, map_to_sysmem(bmp), 0, 0, false);
++		if (!ret)
++			ret = video_sync(dev, true);
++		free(bmp);
++	}
++	rk3568_vop2_show(dev, !ret);
++
++	snprintf(rgds_splash_status, sizeof(rgds_splash_status),
++		 "lit vp0=%s vp1=%s bmp=%d ms=%lu version=%08x\n", vop2->port[0].bridge ? "on" : "off",
++		 vop2->port[1].bridge ? "on" : "off", ret, get_timer(start),
++		 readl(vop2->regs + RK3568_VERSION_INFO));
++	rgds_splash_write(rgds_splash_status);
++	bootstage_mark_name(BOOTSTAGE_ID_ALLOC, "rgds_splash_done");
++
++	return CMD_RET_SUCCESS;
++}
++
++U_BOOT_CMD(rgds_splash, 1, 0, do_rgds_splash,
++	   "light the RG DS's panels with the boot logo",
++	   "");

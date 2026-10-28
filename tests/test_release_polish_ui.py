@@ -20,7 +20,7 @@ class ReleasePolishTests(unittest.TestCase):
         data = self.run_ui(extra=('--game-menu', '--game-core', 'dsperate', '--game-rom', '/tmp/Mario.nds'))
         for i in range(10):
             x = 60 if i == 0 else 120 + ((i - 1) % 3) * 200
-            y = 604 if i == 0 else 669 + ((i - 1) // 3) * 82
+            y = 604 if i == 0 else 656 + ((i - 1) // 3) * 68  # the icon in each tile of the three-column grid
             colors = {self.pixel(data, cx, cy) for cy in range(y - 12, y + 12) for cx in range(x - 12, x + 12)}
             self.assertGreater(len(colors), 20, f'Action {i} fell back to a plain glyph')
 

@@ -162,8 +162,9 @@ class CoverBrowserTests(unittest.TestCase):
 
     def test_the_home_key_opens_the_game_search_and_closes_it_again(self):
         keyboard = self.run_ui('100 key Q\n300 key Y\n')[1]['page']
-        for script in ('100 key Home\n', '100 key Y\n300 key Home\n', '100 key S\n300 key Home\n',
-                       '100 joy-down 8\n300 key Home\n'):
+        for script in (
+            '100 key Home\n', '100 key Y\n300 key Home\n', '100 key S\n300 key Home\n', '100 joy-down 8\n300 key Home\n'
+        ):
             _, counts, _ = self.run_ui(script)
             self.assertEqual(counts['page'], keyboard, script)
             self.assertFalse(counts['picker_open'])

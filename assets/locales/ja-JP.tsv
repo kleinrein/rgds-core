@@ -1,47 +1,95 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 person nearby	近くに1人
+1 player	1人
+12-hour	12時間
+2 seconds	2秒
+24-hour	24時間
+24-hour or 12-hour clock	24時間制か12時間制
+2x sharper	2倍くっきり
 3D rendering automatically uses worker threads.	3D描画は自動でワーカースレッドを使います。
 3D resolution	3D解像度
 3D threading changed for this session. Settings storage is unavailable.	3Dスレッドをこのセッションだけ変更しました。設定を保存できません。
 3D threading changed. No restart needed.	3Dスレッドを変更しました。再起動は不要です。
+3x sharper	3倍くっきり
+4x (experimental)	4倍（試験版）
+5x (experimental)	5倍（試験版）
 A  Apply	A  適用
 A  Done	A  完了
+A  Jump	A  移動
 A  Play	A  プレイ
+A  Search	A  検索
+A 24-hour or 12-hour clock.	24時間制か12時間制か。
+A carousel, or the DSi's column with your last game on top	カルーセルか、最後に遊んだゲームが上に来るDSi風の縦一列
+A exports this slot to userdata/exports. X deletes it.	Aでこのスロットをuserdata/exportsに書き出します。Xで削除します。
 A gentle scanline pattern with original colours.	元の色のまま、やさしい走査線を重ねます。
+A light tap for every move, a firmer one when you choose, open or save.	移動するたびに軽く、選択・開く・保存のときはしっかり振動します。
+A little handheld magic	携帯機のちょっとした魔法
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	Aでこのスロットを読み込みます。Yの「読み込みを取り消す」で今の進行状況に戻せます。
 A natural colour and contrast treatment.	自然な色とコントラストに整えます。
+A new version is ready to download.	新しいバージョンをダウンロードできます。
+A replaces this slot with your current progress. X deletes it.	Aでこのスロットを今の進行状況で上書きします。Xで削除します。
+A saves your current progress here.	Aで今の進行状況をここに保存します。
 A screen style for this cartridge	このカートリッジの画面スタイル
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	下画面の下にある小さなつまみは、ジェスチャーがオンの印です。指に合わせて上がり、ジェスチャーが働くと輪で場所を示します。
+A soft tune plays while you browse. It fades out when a game starts.	ゲームを探している間、やさしい曲が流れます。ゲームが始まるとフェードアウトします。
 A stronger LCD texture and scanline look.	液晶の質感と走査線をより強くします。
 A subtle handheld LCD pixel pattern.	携帯機の液晶らしい控えめなドット模様。
 A subtle pixel grid with a bright, readable image.	控えめなドットの格子で、明るく見やすい画面。
+About {0} h left	残り約{0}時間
+About {0} min left	残り約{0}分
+Accent colour	アクセントカラー
+Add favourite	お気に入りに追加
+Add game files	ゲームファイルを追加
 Add your DS games to fetch their artwork.	DSのゲームを追加するとパッケージ画像を取得できます。
+Add your games	ゲームを追加
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	ゲームボーイとゲームボーイアドバンスのゲームを追加します。ゲームを開くとシステムの一覧が表示されます。
+Adjust	調整
 Africa	アフリカ
 After	後
 All games	すべてのゲーム
+All systems	すべてのシステム
+Already connected.	すでに接続されています。
 Amber	アンバー
 Americas	南北アメリカ
+An update is already prepared. Install it or discard it first.	更新はすでに準備されています。先にインストールするか破棄してください。
 Anbernic startup is unavailable in RGDS OS.	RGDS OSではAnbernicで起動できません。
+Animate pages with the selected style	選んだスタイルでページを切り替える
 Animations	アニメーション
+Another update is already running.	別の更新が実行中です。
 Antarctica	南極
+Any	すべて
 Applies immediately. Higher clocks use more battery.	すぐに反映されます。クロックが高いほどバッテリーを多く使います。
 Applies immediately. Your game keeps its progress.	すぐに反映されます。ゲームの進行はそのままです。
 Apply	適用
+APPLY	適用
 Applying shader…	フィルターを適用中…
+Arcade cabinet	アーケード台
 Arctic	北極
+Arrows	矢
 Artwork	パッケージ画像
 Artwork & ScreenScraper	パッケージ画像
 Artwork source	画像の取得元
 Artwork sources	画像の取得元
 Asia	アジア
 Atlantic Ocean	大西洋
+Audio is not recorded or saved.	音声は録音も保存もされません。
 Australia	オーストラリア
 Auto-load state	ステートを自動で読み込む
 Auto-save on exit	終了時に自動セーブ
 Automatic	自動
 Automatic (free)	自動
+Automatic updates	自動更新
+Available	利用可能
 Available networks	接続できるネットワーク
 B  Cancel	B  キャンセル
 B  Close	B  閉じる
-BACK HOME	ホームへ戻る
 Back	戻る
+BACK HOME	ホームへ戻る
+Back to PortMaster	PortMaster に戻る
+Back up all saves	すべてのセーブデータをバックアップ
+Background	背景
+Backing up your saves…	セーブデータをバックアップ中…
+Badges	バッジ
 Balance battery life and speed	バッテリーと速さのバランス
 Balanced	バランス
 Battery	バッテリー
@@ -50,57 +98,116 @@ Battery saver	省電力
 Before	前
 Before you play	遊ぶ前に
 Binding unchanged.	割り当ては変わっていません。
+Black and white	白黒
+Black bar	黒い帯
+Blow into microphone	マイクに息を吹きかける
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	マイクに息を吹きかけるか話しかけてください。レベルが上がり、止めると下がります。
+Blue	ブルー
+Bluetooth	Bluetooth
+Bluetooth devices	Bluetoothデバイス
+Bluetooth is not available on this handheld.	この携帯機ではBluetoothを使用できません。
+Bold colour on a close-up LCD with RGB stripes.	RGBの縞が見える液晶に、あざやかな色。
+Bold colour with smoothed diagonal edges.	あざやかな色で、斜めの輪郭をなめらかに。
+Bold colour; every pixel a raised, glossy tile.	あざやかな色で、ドットひとつひとつが盛り上がったつやのあるタイルに。
+Bold colour; every pixel a round, shiny bead.	あざやかな色で、ドットひとつひとつが丸く光るビーズに。
+Bombs	バクダン
+Bonus stars	ボーナススター
 Boot	起動
 Boot into	起動先
+Both	両方
 Both screens	両画面
 Bottom display	下画面
 Box art, titles and game details	パッケージ画像、タイトル、ゲーム情報
 Brightness	明るさ
+Brown	ブラウン
+Browse	ブラウズ
+Browse games	ゲームを見る
+Browse systems	システムを見る
 Browser layout	一覧の表示
 Build, storage and device address	ビルド、ストレージ、本体のアドレス
 Button	ボタン
 Button layout	ボタン配置
 Button {0}	ボタン {0}
 Buttons and the game menu shortcut	ボタンとゲームメニューのショートカット
-COLOUR MODE	カラーモード
 Cancel	キャンセル
+Carousel	カルーセル
+Carried	所持
 Cartridges	カートリッジ
+Change group	グループを切り替え
 Changes immediately. Map a button in Controls for quick access.	すぐに切り替わります。「操作設定」でボタンを割り当てるとすばやく使えます。
 Changing 3D threading…	3Dスレッドを変更中…
 Changing speed…	速度を変更中…
+Chat is unavailable: you can still draw	チャットは使えません：絵は描けます
+Chat Room	チャットルーム
+Chat Room {0}	チャットルーム{0}
+Check automatically	自動で確認
+Check for updates	更新を確認
+Check for updates when you are ready.	準備ができたら更新を確認してください。
+Check for updates, go back to the previous build or clear temporary files.	更新の確認、前のビルドへの切り替え、一時ファイルの消去。
 Check the current connection	今の接続を確認
+Checking for updates…	更新を確認中…
+Checking PortMaster	PortMaster を確認中
+Checking the new version…	新しいバージョンを確認中…
 Checkpoint loaded	チェックポイントを読み込みました
 Checkpoint loaded (preview)	チェックポイントを読み込みました（プレビュー）
 Checkpoint loaded.	チェックポイントを読み込みました。
 Checkpoint saved	チェックポイントを保存しました
 Checkpoint saved (preview)	チェックポイントを保存しました（プレビュー）
 Checkpoint saved.	チェックポイントを保存しました。
-Choose Anbernic or RG DS startup.	AnbernicかRG DSのどちらで起動するか選んでください。
+Choose a chat room to join	入るチャットルームを選んでください
+Choose a network from the list	一覧からネットワークを選んでください
 Choose an option	項目を選んでください
+Choose Anbernic or RG DS startup.	AnbernicかRG DSのどちらで起動するか選んでください。
 Choose native or a sharper 3D image	等倍か、よりくっきりした3D映像か
 Choose the core for this cartridge	このカートリッジのコアを選ぶ
 Choose the display backend for the next DraStic launch. DSperate stays your default.	次にDraSticを起動するときの表示方式を選びます。DSperateは標準のままです。
 Choose what opens when you power on	電源を入れたときに開くもの
+Classic	クラシック
+Classic blue	クラシックブルー
 Clear	消去
+Clear filters	絞り込みを解除
 Clear temporary cache	一時キャッシュを消去
 Clear temporary game files?	ゲームの一時ファイルを消去しますか？
 Close	閉じる
+Close and open DS lid	DSのふたを閉じて開ける
+Close lid	ふたを閉じる
+Close PortMaster	PortMaster を閉じる
 Close the handheld to sleep	本体を閉じてスリープ
+Closing PortMaster…	PortMaster を閉じています…
+Closing the port…	移植ゲームを閉じています…
+Code	コード
+Coin bank	コインバンク
+Coins	コイン
+Collection	コレクション
+COLOUR MODE	カラーモード
+Colour mode	カラーモード
 Colour treatment inspired by the original DS display.	初代DSの画面を思わせる色合い。
+Column	縦一列
+Companion	コンパニオン
 Compare	比較
 Confirm	確認
 Connect	接続
+Connect the charger before installing an update.	更新をインストールする前に充電器をつないでください。
+Connect to Wi-Fi to send files from a phone or computer.	Wi-Fiに接続すると、スマートフォンやパソコンからファイルを送れます。
 Connected	接続済み
 Connected.	接続しました。
+Connecting to	接続先
 Connecting…	接続中…
+Connection lost. Retrying…	接続が切れました。再試行中…
 Connectivity	通信
 Continue	続ける
 Continue where you left off	前回の続きから
 Control unavailable on this device	この本体では操作できません
+Controllers and other Bluetooth devices	コントローラーなどのBluetoothデバイス
 Controls	操作設定
 Controls saved for this game.	このゲームの操作設定を保存しました。
 Cool crisp	クールでくっきり
 Cool whites with a small contrast boost.	青みのある白と、少し強めのコントラスト。
+Copies every save and checkpoint into one zip in userdata/exports.	すべてのセーブデータとチェックポイントを、userdata/exportsの1つのzipにコピーします。
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	.ndsかDSのZIPファイルをゲーム用カードのRoms/NDSにコピーしてから、「ゲームを検索」を選んでください。
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	.rgdssave.zipファイルをuserdata/importsにコピーしてください。このゲームとエミュレーターに合うものだけ読み込めます。
+Copy ability	コピー能力
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	.ndsファイルかDSのZIPアーカイブを、ゲーム用カードのRoms/NDSにコピーしてください。ゲームは付属していません。セーブデータはuserdataに残ります。
 Could not apply brightness	明るさを反映できませんでした
 Could not apply saved brightness	保存した明るさを反映できませんでした
 Could not apply saved power mode	保存した電源モードを反映できませんでした
@@ -110,6 +217,7 @@ Could not apply volume	音量を反映できませんでした
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fiアダプターを起動できませんでした。もう一度お試しください。
 Could not change 3D threading. Your game is unchanged.	3Dスレッドを変更できませんでした。ゲームはそのままです。
 Could not confirm the selected Wi-Fi connection. Scan and try again.	選んだWi-Fiに接続できたか確認できませんでした。検索してもう一度お試しください。
+Could not connect	接続できませんでした
 Could not enable lid wake	ふたを開けての復帰を有効にできませんでした
 Could not load. Resume, retry, or return without saving.	読み込めませんでした。再開、再試行、または保存せずに戻ってください。
 Could not read this collection. Try again.	このコレクションを読み込めませんでした。もう一度お試しください。
@@ -117,6 +225,7 @@ Could not restore previous hardware setting	前のハードウェア設定に戻
 Could not save all settings. Check storage.	一部の設定を保存できませんでした。ストレージを確認してください。
 Could not save brightness	明るさを保存できませんでした
 Could not save controls. Check writable storage.	操作設定を保存できませんでした。書き込めるストレージか確認してください。
+Could not save DS settings.	DSの設定を保存できませんでした。
 Could not save game settings. Previous values kept.	ゲームの設定を保存できませんでした。前の設定のままです。
 Could not save matching title.	一致するタイトルを保存できませんでした。
 Could not save settings	設定を保存できませんでした
@@ -124,6 +233,7 @@ Could not save timezone	タイムゾーンを保存できませんでした
 Could not save volume	音量を保存できませんでした
 Could not save. Resume, retry, or return without saving.	保存できませんでした。再開、再試行、または保存せずに戻ってください。
 Could not send game action	ゲームに操作を送れませんでした
+Could not set up PortMaster	PortMaster を準備できませんでした
 Could not set volume - see log	音量を設定できませんでした - ログを確認してください
 Could not sleep - see log	スリープできませんでした - ログを確認してください
 Could not sleep. Reopen the lid and try again.	スリープできませんでした。ふたを開けてもう一度お試しください。
@@ -132,41 +242,89 @@ Could not start library scan	ライブラリの検索を開始できませんで
 Could not write controls	操作設定を書き込めませんでした
 Counts display updates, not emulation speed. Changes immediately.	エミュレーションの速さではなく画面の更新回数を数えます。すぐに切り替わります。
 Counts emulated game frames. Changes immediately.	エミュレートしたゲームのフレーム数を数えます。すぐに切り替わります。
+Course	コース
+Cover	カバー
 Covers	パッケージ
+Current progress could not be saved. No slot was changed.	今の進行状況を保存できませんでした。スロットは変わっていません。
 Custom	カスタム
-DEFAULT THEME - CHECK LOG	標準テーマ - ログを確認
-DS rounded	DS 丸ゴシック
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate：ふだん遊ぶならこちら。標準は等倍解像度です。
+DS only	DSのみ
 Dark	ダーク
+Dark blue	ダークブルー
+Dark green	ダークグリーン
 Date format	日付の形式
+Day	昼
+Day or night	昼か夜
+Daylight saving	夏時間
+Days	日数
 Default	標準
 Default emulator	標準のエミュレーター
 Default shader	標準のフィルター
+DEFAULT THEME - CHECK LOG	標準テーマ - ログを確認
 Delete	削除
+Delete slot {0}?	スロット{0}を削除しますか？
 Desktop preview	デスクトップでのプレビュー
+Developer	開発元
 Development build	開発版
 Device address	本体のアドレス
 Device information	本体情報
+Discard update	更新を破棄
 Display	表示
 Display FPS	画面のFPS
 Done	完了
 Down	下
+Download	ダウンロード
+Download automatically	自動でダウンロード
+Download interrupted. Retry to continue.	ダウンロードが中断されました。再試行すると続きから始まります。
+Download paused. Retry to continue.	ダウンロードを一時停止しました。再試行すると続きから始まります。
+Download update	更新をダウンロード
+Downloading PortMaster	PortMaster をダウンロード中
+Downloading update…	更新をダウンロード中…
+Downloading {0}	{0}をダウンロード中
+Downloads resume where they stopped if Wi-Fi drops.	Wi-Fiが切れても、ダウンロードは止まったところから再開します。
 DraStic backend	DraSticの表示方式
 DraStic: an alternative for games that need it. Saves stay separate.	DraStic：必要なゲーム向けの選択肢です。セーブデータは別に保存されます。
-ERROR	エラー
-ERROR: Could not restore settings	エラー：設定を元に戻せませんでした
-ERROR: Could not restore settings - see log	エラー：設定を元に戻せませんでした - ログを確認してください
+Draw and chat	描いてチャット
+Draw and chat with nearby handhelds	近くの本体と、絵を描いてチャット
+Drawing on your own	ひとりで描いています
+DS Classic	DS Classic
+DS controls	DSの操作
+DS controls are unavailable for this engine.	このエンジンではDSの操作を使えません。
+DS language	DSの言語
+DS Lite	DS Lite
+DS rounded	DS 丸ゴシック
+DS screens	DSの画面
+DSCore 3D resolution	DSCoreの3D解像度
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore：おすすめ。いちばん速く、ふた・タッチペン・3Dの修正入り。3Dは2x–5xにもできます。
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate：ふだん遊ぶならこちら。標準は等倍解像度です。
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate：元になったエンジンです。DSCoreは修正と高速化を加えています。
+Edit	編集
+Edit search	検索を編集
+Effects volume	効果音の音量
+Empty slot	空きスロット
 Emulator	エミュレーター
 Emulator settings	エミュレーターの設定
+End of a list	リストの端
+Ending so far	今のエンディング
+Enemies defeated	倒した敵
+Energy	エネルギー
+Energy tanks	エネルギータンク
 Engine managed	エンジンが管理
+English	英語
 Enter here	ここに入力
 Enter password	パスワードを入力
 Enter your username and password	ユーザー名とパスワードを入力
+ERROR	エラー
+ERROR: Could not restore settings	エラー：設定を元に戻せませんでした
+ERROR: Could not restore settings - see log	エラー：設定を元に戻せませんでした - ログを確認してください
+Essences	エッセンス
 Europe	ヨーロッパ
 Every game in this collection has artwork.	このコレクションのゲームはすべて画像があります。
-FPS changed for this session. Settings storage is unavailable.	FPSをこのセッションだけ変更しました。設定を保存できません。
-FPS counter enabled.	FPSを表示しました。
-FPS counter hidden.	FPSを非表示にしました。
+Exit your game before installing an update.	更新をインストールする前にゲームを終了してください。
+Experience	経験値
+Export	書き出す
+Export slot	スロットを書き出す
+Extra pictures	追加の画像
+Faded GBA colours made rich, as the real screen showed them.	色あせて見える GBA の色を、実機の画面どおりの深い色に。
 Fast	高速
 Fast-forward	早送り
 Fast-forward button	早送りボタン
@@ -174,164 +332,449 @@ Fast-forward enabled.	早送りをオンにしました。
 Fast-forward is unavailable for this emulator.	このエミュレーターでは早送りできません。
 Fast-forward style	早送りの方式
 Favourite	お気に入り
+FAVOURITE COLOUR	好きな色
+Favourite a game and it waits for you here	ゲームをお気に入りにすると、ここで待っています
 Favourites	お気に入り
+Feel every move	操作を感じる
+Feel the game	ゲームを感じる
 Fetch artwork	画像を取得
 Fetch missing artwork	足りない画像を取得
+Figurines	フィギュア
+File sharing on. Find "RG DS" under Network.	ファイル共有をオンにしました。「ネットワーク」で「RG DS」を探してください。
+Files added	追加したファイル
+Files arrived. Choose Play to start.	ファイルが届きました。プレイを選んで開始します。
+Filter	絞り込み
+Filtered	絞り込み中
 Find and connect to a nearby network	近くのネットワークを探して接続
+Find, pair and connect a nearby device	近くのデバイスを検索してペアリング・接続
+Finding games…	ゲームを探しています…
+Finishing another task. Press Y again in a moment.	別の処理を終えています。少ししてからもう一度Yを押してください。
 Finishing the system request	システムの処理を完了しています
 Follow your default button layout	標準のボタン配置に合わせる
 Following your global controls.	共通の操作設定を使っています。
 Follows your Library default. Each emulator keeps its own saves.	ライブラリの標準に合わせます。セーブデータはエミュレーターごとに分かれます。
+Follows your library shader.	ライブラリのフィルターに合わせます。
+Forget this device?	このデバイスの登録を解除しますか？
+FPS changed for this session. Settings storage is unavailable.	FPSをこのセッションだけ変更しました。設定を保存できません。
+FPS counter enabled.	FPSを表示しました。
+FPS counter hidden.	FPSを非表示にしました。
+Fr	金
+Frame	フレーム
 Frameskip	フレームスキップ
 Free space	空き容量
 Free space while keeping your saves	セーブデータを残して空き容量を増やす
-Game FPS	ゲームのFPS
+French	フランス語
+Friends	仲間
+Full colour	フルカラー
+Game Boy	ゲームボーイ
+Game Boy Advance SP · Cobalt	ゲームボーイアドバンスSP · コバルト
+Game Boy Advance SP · Onyx	ゲームボーイアドバンスSP · オニキス
+Game Boy Advance SP · Platinum	ゲームボーイアドバンスSP · プラチナ
+Game Boy Advance · Black	ゲームボーイアドバンス · ブラック
+Game Boy Advance · Glacier	ゲームボーイアドバンス · グレイシア
+Game Boy Advance · Indigo	ゲームボーイアドバンス · インディゴ
+Game Boy Advance · Platinum	ゲームボーイアドバンス · プラチナ
+Game Boy Color	ゲームボーイカラー
+Game Boy Color screen	ゲームボーイカラーの画面
+Game Boy Color · Atomic Purple	ゲームボーイカラー · クリアパープル
+Game Boy Color · Berry	ゲームボーイカラー · ベリー
+Game Boy Color · Dandelion	ゲームボーイカラー · ダンデライオン
+Game Boy Color · Grape	ゲームボーイカラー · グレープ
+Game Boy Color · Kiwi	ゲームボーイカラー · キウイ
+Game Boy Color · Screen only	ゲームボーイカラー · 画面のみ
+Game Boy Color · Teal	ゲームボーイカラー · ティール
+Game Boy Color, darker	ゲームボーイカラー（暗め）
+Game Boy Light	ゲームボーイライト
+Game Boy Pocket	ゲームボーイポケット
+Game Boy Pocket · Black	ゲームボーイポケット · ブラック
+Game Boy Pocket · Blue	ゲームボーイポケット · ブルー
+Game Boy Pocket · Green	ゲームボーイポケット · グリーン
+Game Boy Pocket · Pink	ゲームボーイポケット · ピンク
+Game Boy Pocket · Red	ゲームボーイポケット · レッド
+Game Boy Pocket · Screen only	ゲームボーイポケット · 画面のみ
+Game Boy Pocket · Silver	ゲームボーイポケット · シルバー
+Game Boy Pocket · Yellow	ゲームボーイポケット · イエロー
+Game Boy screen	ゲームボーイの画面
+Game Boy · Black	ゲームボーイ · ブラック
+Game Boy · Blue	ゲームボーイ · ブルー
+Game Boy · Green	ゲームボーイ · グリーン
+Game Boy · Red	ゲームボーイ · レッド
+Game Boy · Screen only	ゲームボーイ · 画面のみ
+Game Boy · Yellow	ゲームボーイ · イエロー
 Game emulator	ゲームのエミュレーター
 Game emulator saved.	ゲームのエミュレーターを保存しました。
+Game FPS	ゲームのFPS
+Game info	ゲーム情報
 Game menu	ゲームメニュー
 Game options	ゲームのオプション
 Game options saved	ゲームのオプションを保存しました
-GameTDB (free)	GameTDB
+Game rumble	ゲームの振動
+Game screen	ゲーム画面
+Game switcher	ゲーム切り替え
 Games	ゲーム
+Games played	遊んだゲーム
+GameTDB	GameTDB
+GameTDB (free)	GameTDB
+GB screens	GB の画面
+GBA Color	GBA の色
+GBA screen	GBA の画面
+GBA screens	GBA の画面
+GBA true colour	GBA の本当の色
+GBA true screen	GBA の本当の画面
+GBC screens	GBC の画面
+Gear	装備
+Genre	ジャンル
+German	ドイツ語
+Get, update and remove ports	移植ゲームの入手・更新・削除
 Give your eyes and hands a break.	目と手を休めましょう。
 Global	共通
 Global controls saved.	共通の操作設定を保存しました。
+Glossy tiles	つやタイル
+Go back	戻る
+Goes into	保存先
+Golden leaves	金の葉
+Green	グリーン
+Grey	グレー
+Grey TV	グレーのテレビ
+Grid	方眼
+h	時間
+Haptic strength	触覚の強さ
+Health	体力
+Heart containers	ハートの器
+Heart pieces	ハートのかけら
+Hearts	ハート
+High contrast	ハイコントラスト
 Hold	長押し
+Hold still for a right click	動かさずに押すと右クリック
+Hold to exit	長押しで終了
+Hold to load	長押しでロード
+Hold to return home	長押しでホームへ戻る
+Hold to save	長押しでセーブ
+Home	ホーム
+Home layout	ホームのレイアウト
 Home shortcut	ホームのショートカット
+How dates appear at the top of the screen.	画面上部での日付の表示です。
+How dates appear in the status bar	ステータスバーでの日付の表示
+How to get the files	ファイルの入手方法
+Icon style	アイコンのスタイル
+Import help	読み込みのヘルプ
+Import into this slot	このスロットに読み込む
+Import slot	スロットに読み込む
+In a course	コース中
+In a level	コース中
+In game	ゲーム内
+IN USE	使用中
 Indian Ocean	インド洋
+Info screen	情報画面
 Inherit	引き継ぐ
 Inherited	引き継ぎ
+Install	インストール
+Install the latest SD installer before this update.	この更新の前に最新のSDインストーラーを入れてください。
+Installed version	インストール済みのバージョン
+Installing PortMaster from the card	カードから PortMaster をインストール中
+Instruments	楽器
+Interface animations	画面のアニメーション
+IP address	IPアドレス
+Italian	イタリア語
+Items	アイテム
+Japanese	日本語
+Johto badges	ジョウトのバッジ
+Join	入室
+Journey	旅
+Jump	移動
 Jump to letter	頭文字へ移動
+Kanto badges	カントーのバッジ
 Keep a checkpoint when returning home	ホームへ戻るときにチェックポイントを残す
+Keep getting and updating ports	移植ゲームの入手と更新を続ける
 Keep playing	遊び続ける
 Keep this game in Favourites	このゲームをお気に入りに入れる
 Kernel	カーネル
 Key {0}	キー {0}
-LCD + NDS Color	LCD + NDS Color
-LCD + Natural Vision	LCD + Natural Vision
+Keyboard	キーボード
+Keys	カギ
+Kinstone fusions	キノピース合わせ
+Language	言語
+Last played	最後に遊んだ日
+Launch cancelled	起動をキャンセルしました
 LCD + both colours	LCD + 両方の色補正
+LCD + Natural Vision	LCD + Natural Vision
+LCD + NDS Color	LCD + NDS Color
 LCD pixels with natural colour and contrast.	自然な色とコントラストの液晶ドット。
 LCD pixels with the DS colour treatment.	DSの色合いの液晶ドット。
 LCD pixels, DS colour and Natural Vision together.	液晶ドット、DSの色合い、Natural Visionの組み合わせ。
-Language	言語
-Launch cancelled	起動をキャンセルしました
+Leave	退室
+Leave RG DS Core and go back to the stock menu.	RG DS Coreを終了して標準メニューに戻ります。
 Left	左
 Left stick	左スティック
 Left-handed	左利き
 Less than a minute	1分未満
+Less than a minute left	残り1分未満
+Level	レベル
 Library	ライブラリ
 Library scan exceeded its limit	ライブラリの検索が上限を超えました
 Library scan failed	ライブラリの検索に失敗しました
+Libretro	Libretro
 Libretro (free)	Libretro
 Light	ライト
+Lime	ライム
 List	リスト
+Listening…	聞いています…
 Live background	動く背景
+Live input	入力レベル
+Lives	残り人数
 Load	読み込む
+Load checkpoint	ロードする
+Load complete	ロード完了
 Load requested. Resume to check your game.	読み込みを要求しました。再開してゲームを確認してください。
+Load slot {0}?	スロット{0}を読み込みますか？
 Load state	ステートを読み込む
+Loaded	ロードしました
 Loading checkpoint…	チェックポイントを読み込み中…
+Loading…	ロード中…
+Long press	長押し
+Looking for devices…	デバイスを検索中…
+Looking for games…	ゲームを探しています…
 Looking for networks…	ネットワークを検索中…
+Looking for the latest PortMaster	最新の PortMaster を探しています
+Loud	大
+Lv	Lv
+Magenta	マゼンタ
+Magical sword	マジカルソード
 Magnified detail	拡大表示
 Manage builds and temporary files	ビルドと一時ファイルの管理
+Matches your accent	アクセントカラーに合わせる
 Matching title	一致するタイトル
 Matching title saved. Choose Fetch artwork.	一致するタイトルを保存しました。「画像を取得」を選んでください。
+Menu audio is unavailable on this device.	この本体ではメニューの音を使えません。
+Menu effects	メニューの効果音
+Menu haptics	メニューの触覚
 Menu idle sleep	放置時のスリープ
+Menu music	メニューの音楽
+Menu sounds are unavailable.	メニューの効果音を使えません。
+Microphone unavailable	マイクを使えません
+Microphone, simulated blowing, lid and DS language.	マイク、息の吹きかけ、ふた、DSの言語。
+min	分
+Minutes	分
+Mirror shards	鏡のかけら
+Missile room	ミサイル最大数
+Missiles	ミサイル
+Missing artwork	画像なし
+Mo	月
+Money	おこづかい
+Moods	雰囲気
+More	その他
+Most played	よく遊んだゲーム
+Music volume	音楽の音量
+Musical coins	音符コイン
 Mute	消音
 Muted	消音中
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS：互換性重視の選択肢です。速さならまずDSperateを試してください。
 Native	等倍
+Native (fastest)	等倍（いちばん速い）
 Native is faster; 2x uses more GPU time. Save & restart applies it.	等倍のほうが速く、2xはGPUを多く使います。「保存して再起動」で反映されます。
 Native output	等倍出力
+Natural	ナチュラル
+Natural colour with smoothed diagonal edges.	自然な色で、斜めの輪郭をなめらかに。
+Natural colour with soft pixels that glow together.	自然な色で、やわらかいドットがにじむように光ります。
+Natural glow	ナチュラルグロー
+Natural smooth	ナチュラルスムーズ
 Natural Vision	Natural Vision
+Needs your files	ファイルが必要です
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · ブラック
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · シルバー
+Network file sharing	ネットワークでのファイル共有
 Networking is disabled. Turn Wi-Fi on to enable it.	ネットワークが無効です。Wi-Fiをオンにしてください。
 Never	しない
+New messages below	新しいメッセージは下にあります
+Next	次へ
 Next emulator	次のエミュレーター
-No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Wi-Fiアダプターがありません。Wi-Fiをオンにして初期化してください。
+Next picture	次の画像
+Next:	次:
+Night	夜
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS：互換性重視の選択肢です。速さならまずDSperateを試してください。
 No button detected. Try again when you're ready.	ボタンが押されませんでした。準備ができたらもう一度どうぞ。
 No checkpoint saved for this emulator yet.	このエミュレーターのチェックポイントはまだありません。
 No cover yet	パッケージ画像はまだありません
+No devices found. Put the device in pairing mode and scan.	デバイスが見つかりません。デバイスをペアリングモードにして検索してください。
 No favourites yet	お気に入りはまだありません
+No game has this information yet. Fetch artwork with Game info turned on.	この情報を持つゲームはまだありません。ゲーム情報をオンにしてアートワークを取得してください。
+No game information yet.	ゲーム情報はまだありません。
 No games	ゲームがありません
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	ゲームが見つかりません。.ndsかDSのZIPファイルをゲーム用カードのRoms/NDSにコピーして、もう一度検索してください。
 No games in this collection.	このコレクションにゲームはありません。
+No letters to jump to. Search for another game.	移動できる文字がありません。別のゲームを検索してください。
+No matches. Use View to change filters.	一致するものがありません。「表示」で絞り込みを変えてください。
+No matching games	一致するゲームはありません
 No networks found	ネットワークが見つかりません
+No pictures yet	画像はまだありません
 No previous build available.	前のビルドはありません。
 No recent games yet	最近遊んだゲームはまだありません
+No release notes yet.	リリースノートはまだありません。
+No vibration motor was found on this device.	この本体には振動モーターが見つかりません。
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Wi-Fiアダプターがありません。Wi-Fiをオンにして初期化してください。
+No Wi-Fi: you can still draw	Wi-Fiなし：絵は描けます
+Nobody else here yet	ほかにはまだだれもいません
+Nobody else is nearby yet	近くにはまだだれもいません
+Nobody here yet	まだだれもいません
+None yet	まだなし
 Normal	通常
 Normal speed.	通常の速さです。
 Not available	利用できません
 Not connected	未接続
+Not downloaded	未ダウンロード
+Not loaded	ロードできませんでした
 Not played yet	まだ遊んでいません
-OPEN	開く
+Not saved	セーブできませんでした
+Not yet	まだ
+Nothing played yet	まだ何も遊んでいません
+Nothing to load	ロードするデータがありません
+Nothing to load here yet.	ここにはまだ読み込めるものがありません。
+Notification	通知
 Off	オフ
 Off (smooth)	オフ（なめらか）
 Off gives smooth motion. Skipping frames can help speed. Restart to apply.	オフで動きがなめらかになります。フレームを飛ばすと速くなることがあります。再起動で反映されます。
 Off keeps the original picture.	オフで元の画面のままです。
+Older messages	前のメッセージ
 On	オン
+Online	オンライン
+Online play	オンライン対応
+OPEN	開く
 Open	開く
+Open a view	ビューを開く
+Open lid	ふたを開ける
 Open menu	メニューを開く
+Open on this Wi-Fi	このWi-Fiで公開
 Open the Anbernic menu	Anbernicのメニューを開く
 Options	オプション
+Or open on a computer	またはパソコンで開く
+Orange	オレンジ
+Original	オリジナル
 Original pixels	元のドット
 Original pixels and colours.	元のドットと色のまま。
 Pacific	太平洋
-PLAY	プレイ
+Paired	ペアリング済み
+Party	パーティ
 Password	パスワード
+Password protected	パスワードで保護
+Pause download	ダウンロードを一時停止
 Pause when you need to.	必要なときは休憩しましょう。
 Paused	一時停止中
+Paused at {0}	{0}で一時停止中
+PC monitor	PCモニター
 Performance	パフォーマンス
+Phone battery	ケータイの電池
+Phone or computer connected	スマートフォンまたはパソコンが接続されました
+Picture	画像
+Pink	ピンク
+Pixel art	ドット絵
+Pixel beads	ドットビーズ
 Pixel classic	クラシックドット
+Plain	無地
+Plain, or the DSi's ruled grid behind every screen	無地か、どの画面にもDSi風の方眼
+PLAY	プレイ
+Play	プレイ
+Play a game to start your statistics.	ゲームを遊ぶと記録が始まります。
 Play at a comfortable volume.	ちょうどよい音量で遊びましょう。
+Played	プレイ済み
+Players	プレイ人数
+Playful sounds for browsing, choosing and starting games.	ゲームを探す、選ぶ、始めるときの楽しい効果音。
 Please keep your handheld on	本体の電源を切らないでください
 Pocket green	ポケットグリーン
+Point and click on top	上の画面をクリック
+Pokédex caught	図鑑 捕まえた数
+Pokédex seen	図鑑 見つけた数
+PortMaster is ready	PortMaster の準備ができました
+Ports	移植ゲーム
 Power	電源
+Power bombs	パワーボム
 Power mode	電源モード
 Power off	電源を切る
 Power off your handheld?	本体の電源を切りますか？
 Power profile	電源プロファイル
 Powering off…	電源を切っています…
+Prepare	準備
 Preparing controls…	操作設定を準備中…
 Preparing the launcher	ランチャーを準備中
 Preparing the library…	ライブラリを準備中…
+Preparing update…	更新を準備中…
 Preparing your cartridges…	カートリッジを準備中…
 Preparing your library…	ライブラリを準備中…
+Preparing your statistics…	記録を準備中…
+Preparing…	準備中…
 Press a button for {0}	{0}に割り当てるボタンを押してください
 Press a button…	ボタンを押してください…
 Preview	プレビュー
-Preview Wi-Fi	Wi-Fiのプレビュー
+PREVIEW	プレビュー
 Preview and choose your screen style	画面スタイルをプレビューして選ぶ
 Preview game	ゲームのプレビュー
+Preview sound	音を試聴
 Preview unavailable	プレビューできません
+Preview Wi-Fi	Wi-Fiのプレビュー
+Previous	前へ
 Previous build selected. Return to stock, then open RGDS again.	前のビルドを選びました。標準メニューに戻ってから、もう一度RGDSを開いてください。
 Profile	プロファイル
+PSP · Black	PSP · ブラック
+PSP · White	PSP · ホワイト
+Publisher	発売元
+Purple	パープル
+Push	スライド
+Quick search	クイック検索
+Quiet	小
+Quit	終了
+Race	レース
+Rating	レーティング
+Reading Roms/NDS on your games card. This takes a moment.	ゲーム用カードのRoms/NDSを読み込んでいます。少しお待ちください。
 READY	準備完了
-REVIEW YOUR CHOICE	選んだ内容を確認
-RGDS build	RGDSのビルド
-ROUNDED FONT UNAVAILABLE	丸ゴシックを使えません
+Ready to fetch artwork.	画像を取得する準備ができました。
+Ready to restart. Your previous version is kept for recovery.	再起動の準備ができました。前のバージョンは復元用に残してあります。
+Real microphone	本体のマイク
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	本体のマイクは最初からオンです。息の吹きかけとふたの操作は、2秒間ゲームに戻って行います。言語の変更は再起動後に反映されます。
+Receiving files	ファイルを受信中
 Recents	最近遊んだゲーム
+Red	レッド
 Reduce rendering work when needed	必要なときに描画を減らす
 Refresh	更新
 Refresh connection	接続を更新
 Release for options	離すとオプション
+Release notes	リリースノート
+Released	発売日
 Remap	割り当て直す
+Remove favourite	お気に入りから削除
+Replace	上書き
+Replace slot {0}?	スロット{0}を上書きしますか？
 Request cancelled.	要求をキャンセルしました。
 Request failed. Check the connection or device log and try again.	要求に失敗しました。接続か本体のログを確認して、もう一度お試しください。
+Reserve	リザーブ
 Reset	リセット
+Reset filters	フィルターをリセット
+Reset state	状態をリセット
 Rest after a period of inactivity	しばらく操作がないと休止
 Restart	再起動
+Restart & install	再起動してインストール
+Restart and install the update?	再起動して更新をインストールしますか？
+Restart from the title screen. In-game saves and save slots are kept.	タイトル画面からやり直します。ゲーム内のセーブとセーブスロットは残ります。
 Restart menu	メニューを再起動
-Restart the RGDS menu?	RGDSのメニューを再起動しますか？
+Restart port	移植ゲームを再起動
+Restart RG DS Core before installing the update.	更新をインストールする前にRG DS Coreを再起動してください。
 Restart the device?	本体を再起動しますか？
+Restart the game to apply DS settings.	DSの設定を反映するにはゲームを再起動してください。
+Restart the RGDS menu.	RGDSのメニューを再起動します。
+Restart the RGDS menu?	RGDSのメニューを再起動しますか？
 Restart uses {0}. Saves and checkpoints stay separate per emulator.	再起動後は{0}を使います。セーブデータとチェックポイントはエミュレーターごとに分かれます。
+Restart without loading a state?	ステートを読み込まずに再起動しますか？
+Restarting into the update…	更新を適用して再起動中…
 Restarting…	再起動中…
 Restore defaults	初期設定に戻す
 Restore the last installed RGDS build	前にインストールしたRGDSのビルドに戻す
 Restoring settings	設定を元に戻しています
 Restoring settings…	設定を元に戻しています…
 Resume	再開
+Resume after power off	電源を切ったあとも再開
+Resume download	ダウンロードを再開
 Resume game	ゲームを再開
 Return	戻る
 Return home	ホームへ戻る
 Return home before changing startup.	起動先を変える前にホームへ戻ってください。
+Return home before testing the physical microphone.	本体のマイクをテストする前にホームへ戻ってください。
 Return home from your game first.	先にゲームからホームへ戻ってください。
 Return to game	ゲームに戻る
 Return to stock	標準メニューに戻る
@@ -340,16 +783,30 @@ Return to the stock menu?	標準メニューに戻りますか？
 Return without saving	保存せずに戻る
 Returning home…	ホームへ戻っています…
 Review unmatched	一致しないものを確認
+REVIEW YOUR CHOICE	選んだ内容を確認
+RGDS build	RGDSのビルド
+Rich	リッチ
 Right	右
 Right stick	右スティック
 Rollback simulated.	ロールバックをシミュレートしました。
-START	START
+Round	ラウンド
+ROUNDED FONT UNAVAILABLE	丸ゴシックを使えません
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DSの振動カートリッジ対応ゲーム、ゲームボーイとゲームボーイアドバンスの振動カートリッジ。
+Rumble strength	振動の強さ
+Rupees	ルピー
+Sa	土
 Save	保存
 Save & restart	保存して再起動
 Save & restart applies Threaded 3D.	「保存して再起動」で3Dのマルチスレッドが反映されます。
 Save & restart keeps your checkpoint and applies pending settings.	「保存して再起動」でチェックポイントを残し、変更した設定を反映します。
 Save a report for troubleshooting	トラブル調査用のレポートを保存
+Save backup created in userdata/exports.	userdata/exportsにセーブデータのバックアップを作りました。
+Save checkpoint	セーブする
+Save complete	セーブ完了
 Save device report	本体のレポートを保存
+Save gallery	セーブギャラリー
+Save here	ここに保存
+Save library updated.	セーブライブラリを更新しました。
 Save state	ステートを保存
 Save your checkpoint and restart	チェックポイントを保存して再起動
 Saved	保存しました
@@ -366,16 +823,42 @@ Saving before returning home…	ホームへ戻る前に保存中…
 Saving checkpoint before restarting…	再起動の前にチェックポイントを保存中…
 Saving checkpoint…	チェックポイントを保存中…
 Saving your progress…	進行状況を保存中…
+Saving…	セーブ中…
 Scan	検索
+Scan complete	検索が終わりました
+Scan for games	ゲームを検索
+Scan with your phone	スマートフォンで読み取る
+Scanning…	検索中…
 Scene	シーン
+Score	スコア
 Screen brightness	画面の明るさ
+Screen colours	画面の色
+Screen off	画面オフ
 Screen order	画面の順番
+screens	画面
 ScreenScraper needs project credentials and your account	ScreenScraperにはプロジェクトの認証情報とあなたのアカウントが必要です
+Screenshot	スクリーンショット
+Screenshots	スクリーンショット
+Screenshots and title screens	スクリーンショットとタイトル画面
+Sea green	シーグリーン
+Search	検索
+Search games	ゲームを検索
+Search in	検索対象
+Searching…	検索中…
+Second screen	セカンド画面
+Seconds	秒
+Secret seashells	ひみつの貝がら
+Seeds	タネ
 Select	選ぶ
 Select a network again and enter its password.	もう一度ネットワークを選んでパスワードを入力してください。
 Select a network again.	もう一度ネットワークを選んでください。
 Selected	選択中
+Selected row	選択中の行
+Send	送信
+Series	シリーズ
+Set the clock to where you are.	時計を今いる場所に合わせます。
 Sets Standard DraStic screen order for this game. Save & restart applies it.	このゲームの標準DraSticの画面の順番を設定します。「保存して再起動」で反映されます。
+Setting up PortMaster	PortMaster を準備中
 Settings	設定
 Settings saved	設定を保存しました
 Shader	フィルター
@@ -386,21 +869,27 @@ Shader saved for next launch	次回起動用にフィルターを保存しまし
 Shader saved. Restart this game to apply it.	フィルターを保存しました。ゲームを再起動すると反映されます。
 Shader studio	フィルタースタジオ
 Shaders	フィルター
-Sharp + NDS Color	シャープ + NDS Color
-Sharp + Natural Vision	シャープ + Natural Vision
 Sharp + both colours	シャープ + 両方の色補正
+Sharp + Natural Vision	シャープ + Natural Vision
+Sharp + NDS Color	シャープ + NDS Color
 Sharp bilinear	シャープバイリニア
+Sharp fill	くっきり拡大
 Sharp pixel edges with smoother scaling.	ドットの輪郭はくっきり、拡大はなめらか。
 Sharp scaling with natural colour and contrast.	自然な色とコントラストでくっきり拡大。
 Sharp scaling with the DS colour treatment.	DSの色合いでくっきり拡大。
 Sharp scaling, DS colour and Natural Vision together.	くっきり拡大、DSの色合い、Natural Visionの組み合わせ。
+Shield	盾
 Shift	シフト
 Shortcut action	ショートカットの動作
+Shots	残り弾数
+Show games	ゲームを表示
 Show the charge in the status bar	ステータスバーに残量を表示
 Show the welcome screen at startup	起動時にようこそ画面を表示
 Sign in	ログイン
 Sign out	ログアウト
+Signal	電波
 Signing in…	ログイン中…
+Simple pixel	シンプルなドット
 Simulated handheld	シミュレートした本体
 Sleep	スリープ
 Sleep now	今すぐスリープ
@@ -409,23 +898,45 @@ Sleep simulated - press any control	スリープをシミュレート - いず�
 Sleep simulated - settings retained	スリープをシミュレート - 設定はそのままです
 Sleep unavailable on this device	この本体ではスリープできません
 Sleeping - use Power to wake	スリープ中 - 電源ボタンで復帰
-Soft LCD grid	やわらかい液晶格子
+Slide into pages; slide back to return	ページへスライドして入り、戻るときは逆にスライド
+Slot	スロット
+Slot change undone.	スロットの変更を取り消しました。
+Slot exported to userdata/exports.	スロットをuserdata/exportsに書き出しました。
+Slot {0} deleted.	スロット{0}を削除しました。
+Small keys	小さなカギ
+Small touches, scrolling and startup motion	細かな動き、スクロール、起動時の動き
+Smooth fill	なめらか拡大
 Soft green monochrome with full-resolution detail.	細部まで見える、やわらかな緑のモノクロ。
+Soft LCD grid	やわらかい液晶格子
 Soft scanlines	やわらかい走査線
+Some menu sounds are unavailable.	一部のメニューの効果音を使えません。
 Sound	サウンド
+Sounds & music	効果音と音楽
+Source	提供元
 Space	スペース
+Spanish	スペイン語
+Spring	バネ
+Springy menu changes with a colourful wobble	カラフルに弾むメニューの切り替え
+Stable	安定版
 Standard	標準
 Standard DraStic only. Applies on the next launch; game saves are kept.	標準のDraSticだけが対象です。次回起動時に反映され、セーブデータは残ります。
 Standard screen order	標準の画面の順番
+START	START
 Start	スタート
 Start + Anbernic	Start + Anbernic
+Start a game	ゲームを開始
 Start RG DS automatically on future boots?	次回からRG DSを自動で起動しますか？
+Start Send   X Undo   L R Scroll	Start 送信   X 取り消し   L R スクロール
 Start with a familiar layout	なじみのある配置から始める
 Start, then Anbernic	Start、次にAnbernic
+Starting…	起動中…
 Startup	起動
 Startup choice saved.	起動先を保存しました。
 Startup choice simulated.	起動先をシミュレートしました。
 Startup is managed by RGDS OS.	起動はRGDS OSが管理しています。
+Statistics	記録
+Step {0} of 4	ステップ {0}/4
+Still reading your library. Try again in a moment.	ライブラリを読み込み中です。しばらくしてからもう一度お試しください。
 Stock	標準
 Stock firmware	標準ファームウェア
 Stop fetching	取得を中止
@@ -435,76 +946,196 @@ Stop scraping before changing source	取得元を変える前に取得を中止�
 Stopping after this request	この要求のあとで中止します
 Stopping after this request.	この要求のあとで中止します。
 Storage read-only - use internal RGDS	ストレージが読み取り専用です - 内蔵のRGDSを使ってください
+Su	日
+Subtle	控えめ
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	夏時間はタイムゾーンに従います。時計が1時間ずれているときは、オンまたはオフに固定してください。
+Super missiles	スーパーミサイル
 SuperDrastic (experimental)	SuperDrastic（試験版）
 SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrasticは今のところ等倍出力です。標準のフィルターの選択はそのままです。
 SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrasticは独自のポーズメニューと表示方式を使います。試験版で、RG DSでの検証はまだです。
+Swap screens	画面を入れ替え
 Swapped	入れ替え
+Swipe in from the left edge to go Back.	左の端からスワイプすると戻ります。
+Swipe up from the bottom edge to go Home from anywhere.	どこからでも、下の端から上へスワイプするとホームに戻ります。
+Swipe up from the bottom for Home, in from the left for Back	下から上へスワイプでホーム、左からスワイプで戻る
+Switch off	オフにする
+Switch on	オンにする
+Switch to another game	ほかのゲームに切り替え
+Switches and values	スイッチと値
+Sword	剣
 System	本体
-THEME ERROR - RETAINED CURRENT	テーマのエラー - 今のテーマのままです
-THEME RELOADED	テーマを再読み込みしました
-Turn the handheld off and on again	本体の電源を切って入れ直します
-TYPEFACE	書体
+System update	本体の更新
+Systems	システム
+Tap to type, or use the D-pad and A	タッチで入力するか、十字ボタンとAを使います
+Team	てもち
 Temporary game cache cleared. Saves and artwork are kept.	ゲームの一時キャッシュを消去しました。セーブデータと画像は残っています。
+Test	テスト
+Test microphone	マイクをテスト
+Test the microphone on your handheld.	本体のマイクをテストします。
+Testing	テスト版
+Th	木
+That message could not be sent	メッセージを送れませんでした
+That room is full	そのルームは満員です
+The backup did not finish. Please try again.	バックアップが終わりませんでした。もう一度お試しください。
+The best there is	これ以上はありません
+The brighter DS Lite screen with a faint pixel grid.	より明るいDS Liteの画面に、うっすらとドットの格子。
 The checkpoint did not finish saving.	チェックポイントの保存が終わりませんでした。
 The emulator did not finish. Resume, retry, or return without saving.	エミュレーターの処理が終わりませんでした。再開、再試行、または保存せずに戻ってください。
+The first DS screen: muted colour and a fine pixel grid.	初代DSの画面：落ち着いた色と細かいドットの格子。
+The Game Boy Advance LCD's own colour and gamma.	ゲームボーイアドバンスの液晶本来の色とガンマ。
+The Game Boy Advance screen: its colour and faint pixel gaps.	ゲームボーイアドバンスの画面：その色と、ドットのかすかなすき間。
+The Game Boy Color screen with faint gaps between its pixels.	ゲームボーイカラーの画面。ピクセルの間にかすかな隙間。
 The game menu did not respond. Resume or return without saving.	ゲームメニューが応答しません。再開するか、保存せずに戻ってください。
+The language for menus and messages.	メニューとメッセージの言語です。
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	初代ゲームボーイのドットマトリクス画面。明るいピクセルの格子と柔らかな影。
+The pad is full: send it or clear it	用紙がいっぱいです：送るか消してください
+The true GBA colours on its screen, with the gaps between its pixels.	GBA の本当の色を実機の画面で。ドットのすき間つき。
+The update could not be downloaded. Check for updates again.	更新をダウンロードできませんでした。もう一度更新を確認してください。
+The update could not start. Your previous version was restored.	更新を開始できませんでした。前のバージョンに戻しました。
 The zFast LCD texture with both colour treatments.	zFastの液晶の質感に両方の色補正。
 The zFast LCD texture with natural colour and contrast.	zFastの液晶の質感に自然な色とコントラスト。
 The zFast LCD texture with the DS colour treatment.	zFastの液晶の質感にDSの色合い。
 Theme	テーマ
 Theme & display	テーマと表示
+THEME ERROR - RETAINED CURRENT	テーマのエラー - 今のテーマのままです
+THEME RELOADED	テーマを再読み込みしました
+There is not enough free space for this update.	この更新に必要な空き容量がありません。
+This can take a few seconds	数秒かかることがあります
 This emulator does not expose a frameskip setting.	このエミュレーターにはフレームスキップの設定がありません。
 This emulator uses native resolution. No resolution switch is available.	このエミュレーターは等倍解像度です。解像度は切り替えられません。
 This engine does not expose a threading switch.	このエンジンにはスレッドの切り替えがありません。
 This engine has no live threading control.	このエンジンは動作中にスレッドを変更できません。
 This game	このゲーム
+This handheld's own screen.	この携帯機本来の画面です。
 This network requires an enterprise profile.	このネットワークには企業向けプロファイルが必要です。
+This port lists no instructions.	このポートには説明がありません。
 This request did not finish. Please try again.	要求が終わりませんでした。もう一度お試しください。
 This shader is unavailable for the current emulator.	今のエミュレーターではこのフィルターを使えません。
+This stock firmware has not been validated for updates.	この標準ファームウェアは更新の検証がされていません。
+This version failed to start. Waiting for a newer update.	このバージョンは起動できませんでした。新しい更新を待っています。
 Threaded 3D	3Dマルチスレッド
+Time	タイム
+Time format	時刻の形式
+Time of day	時間帯
 Time played	プレイ時間
+Times played	プレイ回数
 Timezone	タイムゾーン
+Title screen	タイトル画面
+Title screens	タイトル画面
 Toggle	切り替え
+Too much on the pad: erase some of it	用紙に描きすぎです：少し消してください
+Tools	道具
 Top display	上画面
+Total	合計
 Touch	タッチ
+Touch gestures	タッチジェスチャー
+Touch here to point and click on the top screen.	ここに触れると、上の画面を指してクリックできます。
 Touch indicator	タッチ位置の表示
+Touch screen	タッチスクリーン
+Touch screen is not available	タッチスクリーンを使えません
+Touch screen off	タッチスクリーンをオフにしました
+Touch the screen to turn it on	画面にタッチすると点灯します
 Touch to continue	タッチして続ける
 Touch {0}	タッチ {0}
+Trainer	トレーナー
+Transition style	切り替えのスタイル
+Transitions	切り替え効果
+Treasures	宝物
+Try a pattern	パターンを試す
+Try a shorter title or clear your filter.	短いタイトルで試すか、絞り込みを解除してください。
+Try again	もう一度
+Try another title or clear your filters	別のタイトルを試すか、絞り込みを解除してください
 Try saving again	もう一度保存する
+Tu	火
+Turn Bluetooth off?	Bluetoothをオフにしますか？
+Turn Bluetooth on to find devices.	デバイスを探すにはBluetoothをオンにしてください。
+Turn it on to find networks	オンにするとネットワークを探せます
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	設定 > ライブラリ > アートワークの取得元で「ゲーム情報」をオンにして、アートワークを取得してください。
+Turn on game rumble for games made for a rumble accessory.	振動アクセサリー対応のゲームでは、ゲームの振動をオンにしてください。
+Turn on menu haptics to feel the menus.	メニューの触覚をオンにすると、メニューを指で感じられます。
+Turn on menu music for a soft tune while you browse.	メニューの音楽をオンにすると、探している間やさしい曲が流れます。
+Turn on menu sounds to hear the previews.	試聴するにはメニューの効果音をオンにしてください。
+Turn the handheld off and on again	本体の電源を切って入れ直します
 Turn Wi-Fi off?	Wi-Fiをオフにしますか？
 Turn Wi-Fi on first.	先にWi-Fiをオンにしてください。
 Turn Wi-Fi on to find networks.	ネットワークを探すにはWi-Fiをオンにしてください。
+Turning Bluetooth off…	Bluetoothをオフにしています…
+Turning Bluetooth on…	Bluetoothをオンにしています…
 Turning Wi-Fi off…	Wi-Fiをオフにしています…
 Turning Wi-Fi on…	Wi-Fiをオンにしています…
+Turquoise	ターコイズ
+Type	入力
+Type a game title…	ゲームのタイトルを入力…
+Type your name	名前を入力
+TYPEFACE	書体
 Typeface	書体
 Unassigned	未割り当て
 Unavailable	利用できません
+Undo last load	読み込みを取り消す
+Undo last slot change	スロットの変更を取り消す
 Unmatched artwork	一致しない画像
 Unmute	消音を解除
+Unpacking files	ファイルを展開中
+Unpacking PortMaster	PortMaster を展開中
+Unplayed	未プレイ
+Up	上
+Update	更新
+Update available in Maintenance	「メンテナンス」に更新があります
+Update discarded. Your installed version is unchanged.	更新を破棄しました。インストール済みのバージョンはそのままです。
+Update failed. Check Wi-Fi and try again.	更新に失敗しました。Wi-Fiを確認して、もう一度お試しください。
+Update information has expired or the device clock is incorrect.	更新の情報が期限切れか、本体の時計がずれています。
+Update installed.	更新をインストールしました。
+Update now	今すぐ更新
+Update verification failed. Check for updates again.	更新の検証に失敗しました。もう一度更新を確認してください。
+Updates	更新
 Updates & recovery	更新と復元
-Use ROM identity	ROMの情報を使う
+Updates will be available when the release channel opens.	リリースチャンネルが開いたら更新できるようになります。
 Use an additional rendering thread	描画用のスレッドを追加で使う
 Use default ({0})	標準を使う（{0}）
 Use global controls	共通の操作設定を使う
 Use previous build	前のビルドを使う
+Use ROM identity	ROMの情報を使う
+Use the engine's native controls for microphone and DS settings.	マイクとDSの設定はエンジン側の操作を使ってください。
 Use the previous RGDS build?	前のRGDSのビルドを使いますか？
 Used by games without an override	個別の設定がないゲームで使います
 Username	ユーザー名
+Verify	検証
+Verifying update…	更新を検証中…
+Version {0} is ready	バージョン{0}の準備ができました
+Version {0} is ready to install	バージョン{0}をインストールできます
+Versions, free space and the network address of your handheld.	本体のバージョン、空き容量、ネットワークアドレス。
+Vibration	振動
 View	表示
+View transitions	画面の切り替え
+Violet	バイオレット
+Vivid	ビビッド
+Vivid LCD	ビビッド液晶
+Vivid smooth	ビビッドスムーズ
 Volume	音量
 Volume control unavailable	音量を調整できません
+Waiting for an address…	アドレスを待っています…
 WAITING FOR INPUT	入力待ち
 Warm monochrome with preserved highlight detail.	明るい部分の細部を残した、あたたかいモノクロ。
 Warm paper	あたたかい紙
 Warm whites and softened contrast for evening play.	夜に遊ぶための、あたたかい白とやわらかいコントラスト。
+We	水
 Welcome back	おかえりなさい
+What happens when you turn the handheld on.	本体の電源を入れたときの動作です。
 What the shortcut opens	ショートカットで開くもの
+What's new	新しくなったところ
+Where covers and titles come from.	パッケージ画像とタイトルの取得元。
+Where games go on the card, and a fresh scan.	カードのゲームの置き場所と、検索のやり直し。
 Where this layout applies	この配置を使う場所
+Where to put games	ゲームの置き場所
+White sword	ホワイトソード
+Whole pixels	整数倍
 Wi-Fi	Wi-Fi
 Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fiアダプターの準備ができていません。OSのドライバーを確認するか、本体を再起動してください。
 Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fiアダプターの準備ができていません。Wi-Fiをオンにしてやり直してください。
+Wi-Fi connected	Wi-Fiに接続済み
 Wi-Fi did not turn on. Try again.	Wi-Fiがオンになりませんでした。もう一度お試しください。
 Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fiがハードウェアで止められています。本体を再起動してもう一度お試しください。
+Wi-Fi is off	Wi-Fiはオフです
 Wi-Fi is still on. Try turning it off again.	Wi-Fiがまだオンです。もう一度オフにしてください。
 Wi-Fi is unavailable.	Wi-Fiを使えません。
 Wi-Fi off.	Wi-Fiをオフにしました。
@@ -512,630 +1143,53 @@ Wi-Fi on.	Wi-Fiをオンにしました。
 Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fiの要求に失敗しました。パスワードと電波を確認して、もう一度お試しください。
 Wi-Fi request timed out. Check signal and try again.	Wi-Fiの要求がタイムアウトしました。電波を確認して、もう一度お試しください。
 Wi-Fi service is unavailable.	Wi-Fiサービスを使えません。
+With info	情報あり
 With shader	フィルターあり
+Without info	情報なし
+WonderSwan Color · Blue	WonderSwan Color · ブルー
+WonderSwan Color · White	WonderSwan Color · ホワイト
+Wood-grain TV	木目調のテレビ
+Wooden sword	木の剣
 Working…	処理中…
+World	ワールド
+World map	ワールドマップ
+Worlds	ワールド
+Y imports a save into this slot.	Yでこのスロットにセーブデータを読み込みます。
+Yellow	イエロー
+Yes	はい
+You	あなた
+You appear like this to others	ほかの人からはこう見えます
+You are in Room {0}	ルーム{0}にいます
+You are up to date.	最新の状態です。
 Your cartridges go here	ここにカートリッジが並びます
+Your colour	あなたの色
+Your DS library starts here	ここからDSライブラリが始まります
+Your games and saves are not touched.	ゲームとセーブデータには触れません。
 Your home screen after powering on	電源を入れたあとのホーム画面
+Your journey	あなたの旅
+Your last game will appear here	最後に遊んだゲームがここに表示されます
 Your local time and date	現地の日付と時刻
 Your menu shortcut	メニューのショートカット
+Your name	あなたの名前
+Your ports are waiting in Ports	移植ゲームは「移植ゲーム」にあります
+Your saves are safe. See you soon!	セーブデータは無事です。また遊んでね！
 Your shader choice is still available.	選んだフィルターは引き続き使えます。
-zFast + NDS Color	zFast + NDS Color
-zFast + Natural Vision	zFast + Natural Vision
 zFast + both colours	zFast + 両方の色補正
+zFast + Natural Vision	zFast + Natural Vision
+zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0}（試験版）
 {0} (recommended)	{0}（おすすめ）
+{0} active	{0}件有効
+{0} found. Choose Done to go to your library.	{0}見つかりました。「完了」を選ぶとライブラリへ移動します。
 {0} frames	{0}フレーム
+{0} game	{0}本
 {0} games	{0}本
-{0} settings	{0}の設定
-Up	上
-Times played	プレイ回数
-Last played	最後に遊んだ日
-GameTDB	GameTDB
-Libretro	Libretro
-Ready to fetch artwork.	画像を取得する準備ができました。
-Icon style	アイコンのスタイル
-Simple pixel	シンプルなドット
-Rich	リッチ
-Statistics	記録
-Games played	遊んだゲーム
-Most played	よく遊んだゲーム
-Preparing your statistics…	記録を準備中…
-Play a game to start your statistics.	ゲームを遊ぶと記録が始まります。
-Installed version	インストール済みのバージョン
-Check for updates	更新を確認
-Restart & install	再起動してインストール
-Download update	更新をダウンロード
-Pause download	ダウンロードを一時停止
-Release notes	リリースノート
-Discard update	更新を破棄
-No release notes yet.	リリースノートはまだありません。
-Restart and install the update?	再起動して更新をインストールしますか？
-Check for updates when you are ready.	準備ができたら更新を確認してください。
-Updates will be available when the release channel opens.	リリースチャンネルが開いたら更新できるようになります。
-Checking for updates…	更新を確認中…
-You are up to date.	最新の状態です。
-A new version is ready to download.	新しいバージョンをダウンロードできます。
-This version failed to start. Waiting for a newer update.	このバージョンは起動できませんでした。新しい更新を待っています。
-Downloading update…	更新をダウンロード中…
-Verifying update…	更新を検証中…
-Preparing update…	更新を準備中…
-Ready to restart. Your previous version is kept for recovery.	再起動の準備ができました。前のバージョンは復元用に残してあります。
-Restarting into the update…	更新を適用して再起動中…
-Checking the new version…	新しいバージョンを確認中…
-Update installed.	更新をインストールしました。
-The update could not start. Your previous version was restored.	更新を開始できませんでした。前のバージョンに戻しました。
-Download paused. Retry to continue.	ダウンロードを一時停止しました。再試行すると続きから始まります。
-Update discarded. Your installed version is unchanged.	更新を破棄しました。インストール済みのバージョンはそのままです。
-Connect the charger before installing an update.	更新をインストールする前に充電器をつないでください。
-There is not enough free space for this update.	この更新に必要な空き容量がありません。
-Exit your game before installing an update.	更新をインストールする前にゲームを終了してください。
-Install the latest SD installer before this update.	この更新の前に最新のSDインストーラーを入れてください。
-Restart RG DS Core before installing the update.	更新をインストールする前にRG DS Coreを再起動してください。
-Download interrupted. Retry to continue.	ダウンロードが中断されました。再試行すると続きから始まります。
-An update is already prepared. Install it or discard it first.	更新はすでに準備されています。先にインストールするか破棄してください。
-Another update is already running.	別の更新が実行中です。
-Update information has expired or the device clock is incorrect.	更新の情報が期限切れか、本体の時計がずれています。
-This stock firmware has not been validated for updates.	この標準ファームウェアは更新の検証がされていません。
-Update verification failed. Check for updates again.	更新の検証に失敗しました。もう一度更新を確認してください。
-Update failed. Check Wi-Fi and try again.	更新に失敗しました。Wi-Fiを確認して、もう一度お試しください。
-Stable	安定版
-Testing	テスト版
-Import slot	スロットに読み込む
-Export slot	スロットを書き出す
-Save checkpoint	セーブする
-Load checkpoint	ロードする
-Save here	ここに保存
-Export	書き出す
-More	その他
-Replace slot {0}?	スロット{0}を上書きしますか？
-Load slot {0}?	スロット{0}を読み込みますか？
-Delete slot {0}?	スロット{0}を削除しますか？
-Undo last slot change	スロットの変更を取り消す
-Undo last load	読み込みを取り消す
-Import into this slot	このスロットに読み込む
-Slot {0} deleted.	スロット{0}を削除しました。
-Slot change undone.	スロットの変更を取り消しました。
-A saves your current progress here.	Aで今の進行状況をここに保存します。
-A replaces this slot with your current progress. X deletes it.	Aでこのスロットを今の進行状況で上書きします。Xで削除します。
-A loads this slot. Undo last load, under Y, brings back the progress you have now.	Aでこのスロットを読み込みます。Yの「読み込みを取り消す」で今の進行状況に戻せます。
-Nothing to load here yet.	ここにはまだ読み込めるものがありません。
-A exports this slot to userdata/exports. X deletes it.	Aでこのスロットをuserdata/exportsに書き出します。Xで削除します。
-Y imports a save into this slot.	Yでこのスロットにセーブデータを読み込みます。
-Import help	読み込みのヘルプ
-Replace	上書き
-Blow into microphone	マイクに息を吹きかける
-Close and open DS lid	DSのふたを閉じて開ける
-DS language	DSの言語
-Real microphone	本体のマイク
-Japanese	日本語
-English	英語
-French	フランス語
-German	ドイツ語
-Italian	イタリア語
-Spanish	スペイン語
-2 seconds	2秒
-In game	ゲーム内
-Restart the game to apply DS settings.	DSの設定を反映するにはゲームを再起動してください。
-Could not save DS settings.	DSの設定を保存できませんでした。
-Search	検索
-Save gallery	セーブギャラリー
-Add your games	ゲームを追加
-DS controls	DSの操作
-Back up all saves	すべてのセーブデータをバックアップ
-Resume after power off	電源を切ったあとも再開
-Slot	スロット
-Empty slot	空きスロット
-Search games	ゲームを検索
-Filter	絞り込み
-Missing artwork	画像なし
-Where to put games	ゲームの置き場所
-Scan for games	ゲームを検索
-Automatic updates	自動更新
-Download automatically	自動でダウンロード
-Check automatically	自動で確認
-Update available in Maintenance	「メンテナンス」に更新があります
-Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	.rgdssave.zipファイルをuserdata/importsにコピーしてください。このゲームとエミュレーターに合うものだけ読み込めます。
-Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	.ndsファイルかDSのZIPアーカイブを、ゲーム用カードのRoms/NDSにコピーしてください。ゲームは付属していません。セーブデータはuserdataに残ります。
-Save backup created in userdata/exports.	userdata/exportsにセーブデータのバックアップを作りました。
-Slot exported to userdata/exports.	スロットをuserdata/exportsに書き出しました。
-Save library updated.	セーブライブラリを更新しました。
-Current progress could not be saved. No slot was changed.	今の進行状況を保存できませんでした。スロットは変わっていません。
-DS controls are unavailable for this engine.	このエンジンではDSの操作を使えません。
-Your DS library starts here	ここからDSライブラリが始まります
-Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	.ndsかDSのZIPファイルをゲーム用カードのRoms/NDSにコピーしてから、「ゲームを検索」を選んでください。
-Use the engine's native controls for microphone and DS settings.	マイクとDSの設定はエンジン側の操作を使ってください。
-Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	本体のマイクは最初からオンです。息の吹きかけとふたの操作は、2秒間ゲームに戻って行います。言語の変更は再起動後に反映されます。
-Unplayed	未プレイ
-Played	プレイ済み
-Filtered	絞り込み中
-No matching games	一致するゲームはありません
-No matches. Use View to change filters.	一致するものがありません。「表示」で絞り込みを変えてください。
-Reset state	状態をリセット
-Restart without loading a state?	ステートを読み込まずに再起動しますか？
-Restart from the title screen. In-game saves and save slots are kept.	タイトル画面からやり直します。ゲーム内のセーブとセーブスロットは残ります。
-Microphone, simulated blowing, lid and DS language.	マイク、息の吹きかけ、ふた、DSの言語。
-Test microphone	マイクをテスト
-Test	テスト
-Live input	入力レベル
-Quiet	小
-Loud	大
-Listening…	聞いています…
-Microphone unavailable	マイクを使えません
-Audio is not recorded or saved.	音声は録音も保存もされません。
-Test the microphone on your handheld.	本体のマイクをテストします。
-Return home before testing the physical microphone.	本体のマイクをテストする前にホームへ戻ってください。
-Blow or speak into the microphone. Watch the level rise, then fall when you stop.	マイクに息を吹きかけるか話しかけてください。レベルが上がり、止めると下がります。
-Quick search	クイック検索
-A  Search	A  検索
-A  Jump	A  移動
-Edit search	検索を編集
-Clear filters	絞り込みを解除
-Try another title or clear your filters	別のタイトルを試すか、絞り込みを解除してください
-Type a game title…	ゲームのタイトルを入力…
-Finding games…	ゲームを探しています…
-Searching…	検索中…
-Search in	検索対象
-Try a shorter title or clear your filter.	短いタイトルで試すか、絞り込みを解除してください。
-Type	入力
-Tap to type, or use the D-pad and A	タッチで入力するか、十字ボタンとAを使います
-No letters to jump to. Search for another game.	移動できる文字がありません。別のゲームを検索してください。
+{0} joined	{0}が入室しました
+{0} left	{0}が退室しました
 {0} match	{0}件
 {0} matches	{0}件
 {0} matching game	一致するゲーム{0}本
 {0} matching games	一致するゲーム{0}本
-{0} game	{0}本
-Interface animations	画面のアニメーション
-View transitions	画面の切り替え
-Small touches, scrolling and startup motion	細かな動き、スクロール、起動時の動き
-Springy menu changes with a colourful wobble	カラフルに弾むメニューの切り替え
-Transitions	切り替え効果
-Subtle	控えめ
-Menu effects	メニューの効果音
-Effects volume	効果音の音量
-Preview sound	音を試聴
-A little handheld magic	携帯機のちょっとした魔法
-Playful sounds for browsing, choosing and starting games.	ゲームを探す、選ぶ、始めるときの楽しい効果音。
-Turn on menu sounds to hear the previews.	試聴するにはメニューの効果音をオンにしてください。
-Some menu sounds are unavailable.	一部のメニューの効果音を使えません。
-Menu audio is unavailable on this device.	この本体ではメニューの音を使えません。
-Menu sounds are unavailable.	メニューの効果音を使えません。
-Close lid	ふたを閉じる
-Open lid	ふたを開ける
-Spring	バネ
-Push	スライド
-Transition style	切り替えのスタイル
-Animate pages with the selected style	選んだスタイルでページを切り替える
-Slide into pages; slide back to return	ページへスライドして入り、戻るときは逆にスライド
-Accent colour	アクセントカラー
-FAVOURITE COLOUR	好きな色
-Classic	クラシック
-Classic blue	クラシックブルー
-High contrast	ハイコントラスト
-PREVIEW	プレビュー
-Selected row	選択中の行
-Switches and values	スイッチと値
-Grey	グレー
-Brown	ブラウン
-Red	レッド
-Pink	ピンク
-Orange	オレンジ
-Yellow	イエロー
-Lime	ライム
-Green	グリーン
-Dark green	ダークグリーン
-Sea green	シーグリーン
-Turquoise	ターコイズ
-Blue	ブルー
-Dark blue	ダークブルー
-Purple	パープル
-Violet	バイオレット
-Magenta	マゼンタ
-Network file sharing	ネットワークでのファイル共有
-Open on this Wi-Fi	このWi-Fiで公開
-Password protected	パスワードで保護
-File sharing on. Find "RG DS" under Network.	ファイル共有をオンにしました。「ネットワーク」で「RG DS」を探してください。
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate：元になったエンジンです。DSCoreは修正と高速化を加えています。
-DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore：おすすめ。いちばん速く、ふた・タッチペン・3Dの修正入り。3Dは2x–5xにもできます。
-DSCore 3D resolution	DSCoreの3D解像度
-Native (fastest)	等倍（いちばん速い）
-2x sharper	2倍くっきり
-3x sharper	3倍くっきり
-4x (experimental)	4倍（試験版）
-5x (experimental)	5倍（試験版）
-Colour mode	カラーモード
-Draw and chat with nearby handhelds	近くの本体と、絵を描いてチャット
-Wi-Fi connected	Wi-Fiに接続済み
-No Wi-Fi: you can still draw	Wi-Fiなし：絵は描けます
-Type your name	名前を入力
-You appear like this to others	ほかの人からはこう見えます
-Starting…	起動中…
-Chat is unavailable: you can still draw	チャットは使えません：絵は描けます
-Nobody else is nearby yet	近くにはまだだれもいません
-1 person nearby	近くに1人
 {0} people nearby	近くに{0}人
-Your colour	あなたの色
-Leave	退室
-Your name	あなたの名前
-Send	送信
-You are in Room {0}	ルーム{0}にいます
-{0} joined	{0}が入室しました
-{0} left	{0}が退室しました
-New messages below	新しいメッセージは下にあります
-Older messages	前のメッセージ
-The pad is full: send it or clear it	用紙がいっぱいです：送るか消してください
-Too much on the pad: erase some of it	用紙に描きすぎです：少し消してください
-That message could not be sent	メッセージを送れませんでした
-That room is full	そのルームは満員です
-Chat Room {0}	チャットルーム{0}
-Choose a chat room to join	入るチャットルームを選んでください
-Edit	編集
-Join	入室
-Matches your accent	アクセントカラーに合わせる
-Nobody here yet	まだだれもいません
-Start Send   X Undo   L R Scroll	Start 送信   X 取り消し   L R スクロール
-You	あなた
-Time format	時刻の形式
-24-hour	24時間
-12-hour	12時間
-24-hour or 12-hour clock	24時間制か12時間制
-How dates appear in the status bar	ステータスバーでの日付の表示
-Connecting to	接続先
-This can take a few seconds	数秒かかることがあります
-Waiting for an address…	アドレスを待っています…
-IP address	IPアドレス
-Signal	電波
-Could not connect	接続できませんでした
-Wi-Fi is off	Wi-Fiはオフです
-Turn it on to find networks	オンにするとネットワークを探せます
-Choose a network from the list	一覧からネットワークを選んでください
-Preparing…	準備中…
-Home layout	ホームのレイアウト
-Background	背景
-Touch gestures	タッチジェスチャー
-Carousel	カルーセル
-Column	縦一列
-Plain	無地
-Grid	方眼
-A carousel, or the DSi's column with your last game on top	カルーセルか、最後に遊んだゲームが上に来るDSi風の縦一列
-Plain, or the DSi's ruled grid behind every screen	無地か、どの画面にもDSi風の方眼
-Swipe up from the bottom for Home, in from the left for Back	下から上へスワイプでホーム、左からスワイプで戻る
-Nothing played yet	まだ何も遊んでいません
-Your last game will appear here	最後に遊んだゲームがここに表示されます
-Draw and chat	描いてチャット
-Su	日
-Mo	月
-Tu	火
-We	水
-Th	木
-Fr	金
-Sa	土
-Chat Room	チャットルーム
-Nobody else here yet	ほかにはまだだれもいません
-Drawing on your own	ひとりで描いています
-Jump	移動
-Home	ホーム
-Swipe up from the bottom edge to go Home from anywhere.	どこからでも、下の端から上へスワイプするとホームに戻ります。
-Swipe in from the left edge to go Back.	左の端からスワイプすると戻ります。
-A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	下画面の下にある小さなつまみは、ジェスチャーがオンの印です。指に合わせて上がり、ジェスチャーが働くと輪で場所を示します。
-Your saves are safe. See you soon!	セーブデータは無事です。また遊んでね！
-DS Classic	DS Classic
-DS Lite	DS Lite
-Natural glow	ナチュラルグロー
-Vivid LCD	ビビッド液晶
-Natural smooth	ナチュラルスムーズ
-Vivid smooth	ビビッドスムーズ
-Pixel beads	ドットビーズ
-Glossy tiles	つやタイル
-The first DS screen: muted colour and a fine pixel grid.	初代DSの画面：落ち着いた色と細かいドットの格子。
-The brighter DS Lite screen with a faint pixel grid.	より明るいDS Liteの画面に、うっすらとドットの格子。
-Natural colour with soft pixels that glow together.	自然な色で、やわらかいドットがにじむように光ります。
-Bold colour on a close-up LCD with RGB stripes.	RGBの縞が見える液晶に、あざやかな色。
-Natural colour with smoothed diagonal edges.	自然な色で、斜めの輪郭をなめらかに。
-Bold colour with smoothed diagonal edges.	あざやかな色で、斜めの輪郭をなめらかに。
-Bold colour; every pixel a round, shiny bead.	あざやかな色で、ドットひとつひとつが丸く光るビーズに。
-Bold colour; every pixel a raised, glossy tile.	あざやかな色で、ドットひとつひとつが盛り上がったつやのあるタイルに。
-IN USE	使用中
-APPLY	適用
-Follows your library shader.	ライブラリのフィルターに合わせます。
-Original	オリジナル
-DS screens	DSの画面
-Natural	ナチュラル
-Vivid	ビビッド
-Pixel art	ドット絵
-Moods	雰囲気
-Change group	グループを切り替え
-Sounds & music	効果音と音楽
-Menu music	メニューの音楽
-Music volume	音楽の音量
-A soft tune plays while you browse. It fades out when a game starts.	ゲームを探している間、やさしい曲が流れます。ゲームが始まるとフェードアウトします。
-Turn on menu music for a soft tune while you browse.	メニューの音楽をオンにすると、探している間やさしい曲が流れます。
-Scanning…	検索中…
-Scan complete	検索が終わりました
-Looking for games…	ゲームを探しています…
-Reading Roms/NDS on your games card. This takes a moment.	ゲーム用カードのRoms/NDSを読み込んでいます。少しお待ちください。
-{0} found. Choose Done to go to your library.	{0}見つかりました。「完了」を選ぶとライブラリへ移動します。
-No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	ゲームが見つかりません。.ndsかDSのZIPファイルをゲーム用カードのRoms/NDSにコピーして、もう一度検索してください。
-Backing up your saves…	セーブデータをバックアップ中…
-The backup did not finish. Please try again.	バックアップが終わりませんでした。もう一度お試しください。
-Copies every save and checkpoint into one zip in userdata/exports.	すべてのセーブデータとチェックポイントを、userdata/exportsの1つのzipにコピーします。
-Where games go on the card, and a fresh scan.	カードのゲームの置き場所と、検索のやり直し。
-Where covers and titles come from.	パッケージ画像とタイトルの取得元。
-System update	本体の更新
-Version {0} is ready	バージョン{0}の準備ができました
-Version {0} is ready to install	バージョン{0}をインストールできます
-Downloading {0}	{0}をダウンロード中
-Paused at {0}	{0}で一時停止中
-Update now	今すぐ更新
-Resume download	ダウンロードを再開
-Update	更新
-Install	インストール
-What's new	新しくなったところ
-Download	ダウンロード
-Verify	検証
-Prepare	準備
-Step {0} of 4	ステップ {0}/4
-Less than a minute left	残り1分未満
-About {0} min left	残り約{0}分
-About {0} h left	残り約{0}時間
-Downloads resume where they stopped if Wi-Fi drops.	Wi-Fiが切れても、ダウンロードは止まったところから再開します。
-Your games and saves are not touched.	ゲームとセーブデータには触れません。
-Connection lost. Retrying…	接続が切れました。再試行中…
-The update could not be downloaded. Check for updates again.	更新をダウンロードできませんでした。もう一度更新を確認してください。
-Finishing another task. Press Y again in a moment.	別の処理を終えています。少ししてからもう一度Yを押してください。
-Updates	更新
-The language for menus and messages.	メニューとメッセージの言語です。
-Set the clock to where you are.	時計を今いる場所に合わせます。
-How dates appear at the top of the screen.	画面上部での日付の表示です。
-A 24-hour or 12-hour clock.	24時間制か12時間制か。
-Versions, free space and the network address of your handheld.	本体のバージョン、空き容量、ネットワークアドレス。
-Check for updates, go back to the previous build or clear temporary files.	更新の確認、前のビルドへの切り替え、一時ファイルの消去。
-Leave RG DS Core and go back to the stock menu.	RG DS Coreを終了して標準メニューに戻ります。
-What happens when you turn the handheld on.	本体の電源を入れたときの動作です。
-Restart the RGDS menu.	RGDSのメニューを再起動します。
-Previous	前へ
-Next	次へ
-Show all systems	すべてのシステムを表示
-Systems	システム
-Game screen	ゲーム画面
-Second screen	セカンド画面
-Sharp fill	くっきり拡大
-Whole pixels	整数倍
-Smooth fill	なめらか拡大
-Companion	コンパニオン
-Swap screens	画面を入れ替え
-Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	ゲームボーイとゲームボーイアドバンスのゲームを追加します。ゲームを開くとシステムの一覧が表示されます。
-Frame	フレーム
-Game Boy	ゲームボーイ
-Game Boy · Red	ゲームボーイ · レッド
-Game Boy · Yellow	ゲームボーイ · イエロー
-Game Boy · Green	ゲームボーイ · グリーン
-Game Boy · Blue	ゲームボーイ · ブルー
-Game Boy · Black	ゲームボーイ · ブラック
-Game Boy · Screen only	ゲームボーイ · 画面のみ
-Game Boy Pocket · Silver	ゲームボーイポケット · シルバー
-Game Boy Pocket · Black	ゲームボーイポケット · ブラック
-Game Boy Pocket · Yellow	ゲームボーイポケット · イエロー
-Game Boy Pocket · Red	ゲームボーイポケット · レッド
-Game Boy Pocket · Green	ゲームボーイポケット · グリーン
-Game Boy Pocket · Blue	ゲームボーイポケット · ブルー
-Game Boy Pocket · Pink	ゲームボーイポケット · ピンク
-Game Boy Pocket · Screen only	ゲームボーイポケット · 画面のみ
-Game Boy Color · Berry	ゲームボーイカラー · ベリー
-Game Boy Color · Grape	ゲームボーイカラー · グレープ
-Game Boy Color · Kiwi	ゲームボーイカラー · キウイ
-Game Boy Color · Dandelion	ゲームボーイカラー · ダンデライオン
-Game Boy Color · Teal	ゲームボーイカラー · ティール
-Game Boy Color · Atomic Purple	ゲームボーイカラー · クリアパープル
-Game Boy Color · Screen only	ゲームボーイカラー · 画面のみ
-Game Boy Advance · Indigo	ゲームボーイアドバンス · インディゴ
-Game Boy Advance · Glacier	ゲームボーイアドバンス · グレイシア
-Game Boy Advance · Black	ゲームボーイアドバンス · ブラック
-Game Boy Advance · Platinum	ゲームボーイアドバンス · プラチナ
-Game Boy Advance SP · Cobalt	ゲームボーイアドバンスSP · コバルト
-Game Boy Advance SP · Onyx	ゲームボーイアドバンスSP · オニキス
-Game Boy Advance SP · Platinum	ゲームボーイアドバンスSP · プラチナ
-Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · シルバー
-Neo Geo Pocket Color · Black	Neo Geo Pocket Color · ブラック
-WonderSwan Color · White	WonderSwan Color · ホワイト
-WonderSwan Color · Blue	WonderSwan Color · ブルー
-PSP · Black	PSP · ブラック
-PSP · White	PSP · ホワイト
-Grey TV	グレーのテレビ
-Wood-grain TV	木目調のテレビ
-PC monitor	PCモニター
-Arcade cabinet	アーケード筐体
-Black bar	黒い帯
-GBA Color	GBA の色
-GBA screen	GBA の画面
-GBA screens	GBA の画面
-The Game Boy Advance LCD's own colour and gamma.	ゲームボーイアドバンスの液晶本来の色とガンマ。
-The Game Boy Advance screen: its colour and faint pixel gaps.	ゲームボーイアドバンスの画面：その色と、ドットのかすかなすき間。
-Game info	ゲーム情報
-Extra pictures	追加の画像
-Screenshots	スクリーンショット
-Title screens	タイトル画面
-Screenshots and title screens	スクリーンショットとタイトル画面
-Both	両方
-Cover	カバー
-Title screen	タイトル画面
-Screenshot	スクリーンショット
-Developer	開発元
-Publisher	発売元
-Genre	ジャンル
-Released	発売日
-Rating	レーティング
-Players	プレイ人数
-Series	シリーズ
-Online	オンライン
-Yes	はい
-Source	提供元
-Picture	画像
-Next picture	次の画像
-No pictures yet	画像はまだありません
-Available	利用可能
-Not downloaded	未ダウンロード
-Show games	ゲームを表示
-Reset filters	フィルターをリセット
-Any	すべて
-{0} active	{0}件有効
-Still reading your library. Try again in a moment.	ライブラリを読み込み中です。しばらくしてからもう一度お試しください。
-No game has this information yet. Fetch artwork with Game info turned on.	この情報を持つゲームはまだありません。ゲーム情報をオンにしてアートワークを取得してください。
-With info	情報あり
-Without info	情報なし
-Online play	オンライン対応
-1 player	1人
 {0} players	{0}人
-No game information yet.	ゲーム情報はまだありません。
-Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	設定 > ライブラリ > アートワークの取得元で「ゲーム情報」をオンにして、アートワークを取得してください。
-Ports	移植ゲーム
-Restart port	移植ゲームを再起動
-Quit	終了
-Looking for the latest PortMaster	最新の PortMaster を探しています
-Downloading PortMaster	PortMaster をダウンロード中
-Checking PortMaster	PortMaster を確認中
-Unpacking PortMaster	PortMaster を展開中
-Setting up PortMaster	PortMaster を準備中
-Installing PortMaster from the card	カードから PortMaster をインストール中
-PortMaster is ready	PortMaster の準備ができました
-Could not set up PortMaster	PortMaster を準備できませんでした
-Get, update and remove ports	移植ゲームの入手・更新・削除
-Close PortMaster	PortMaster を閉じる
-Back to PortMaster	PortMaster に戻る
-Keep getting and updating ports	移植ゲームの入手と更新を続ける
-Your ports are waiting in Ports	移植ゲームは「移植ゲーム」にあります
-Closing PortMaster…	PortMaster を閉じています…
-Closing the port…	移植ゲームを閉じています…
-GB screens	GB の画面
-GBC screens	GBC の画面
-Game Boy screen	ゲームボーイの画面
-Game Boy Color screen	ゲームボーイカラーの画面
-The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	初代ゲームボーイのドットマトリクス画面。明るいピクセルの格子と柔らかな影。
-The Game Boy Color screen with faint gaps between its pixels.	ゲームボーイカラーの画面。ピクセルの間にかすかな隙間。
-This handheld's own screen.	この携帯機本来の画面です。
-Screen colours	画面の色
-Game Boy Pocket	ゲームボーイポケット
-Game Boy Light	ゲームボーイライト
-Game Boy Color	ゲームボーイカラー
-Black and white	白黒
-Game Boy Color, darker	ゲームボーイカラー（暗め）
-Full colour	フルカラー
-Hold to save	長押しでセーブ
-Hold to load	長押しでロード
-Screen off	画面オフ
-Touch the screen to turn it on	画面にタッチすると点灯します
-min	分
-h	時間
-Not saved	セーブできませんでした
-Loaded	ロードしました
-Not loaded	ロードできませんでした
-Nothing to load	ロードするデータがありません
-Saving…	セーブ中…
-Loading…	ロード中…
-Info screen	情報画面
-Team	てもち
-Lv	Lv
-screens	画面
-Not yet	まだ
-None yet	まだなし
-The best there is	これ以上はありません
-Next:	次:
-Badges	バッジ
-Carried	所持
-Coin bank	コインバンク
-Coins	コイン
-Collection	コレクション
-Course	コース
-Day	昼
-Ending so far	今のエンディング
-Essences	エッセンス
-Gear	装備
-Golden leaves	金の葉
-Heart containers	ハートの器
-Heart pieces	ハートのかけら
-Hearts	ハート
-In a course	コース中
-Instruments	楽器
-Johto badges	ジョウトのバッジ
-Journey	旅
-Kanto badges	カントーのバッジ
-Keys	カギ
-Lives	残り人数
-Money	おこづかい
-Musical coins	音符コイン
-Night	夜
-Pokédex caught	図鑑 捕まえた数
-Pokédex seen	図鑑 見つけた数
-Rupees	ルピー
-Secret seashells	ひみつの貝がら
-Shield	盾
-Small keys	小さなカギ
-Sword	剣
-Time of day	時間帯
-Time	タイム
-Total	合計
-Trainer	トレーナー
-Treasures	宝物
-Worlds	ワールド
-Your journey	あなたの旅
-Seeds	タネ
-Game switcher	ゲーム切り替え
-Switch to another game	ほかのゲームに切り替え
-Hold to return home	長押しでホームへ戻る
-Add game files	ゲームファイルを追加
-Needs your files	ファイルが必要です
-Files added	追加したファイル
-How to get the files	ファイルの入手方法
-Scan with your phone	スマートフォンで読み取る
-Or open on a computer	またはパソコンで開く
-Code	コード
-Connect to Wi-Fi to send files from a phone or computer.	Wi-Fiに接続すると、スマートフォンやパソコンからファイルを送れます。
-Receiving files	ファイルを受信中
-Unpacking files	ファイルを展開中
-Files arrived. Choose Play to start.	ファイルが届きました。プレイを選んで開始します。
-This port lists no instructions.	このポートには説明がありません。
-Play	プレイ
-Goes into	保存先
-Phone or computer connected	スマートフォンまたはパソコンが接続されました
-Vibration	振動
-Menu haptics	メニューの触覚
-Haptic strength	触覚の強さ
-Game rumble	ゲームの振動
-Rumble strength	振動の強さ
-Try a pattern	パターンを試す
-Feel the game	ゲームを感じる
-Feel every move	操作を感じる
-No vibration motor was found on this device.	この本体には振動モーターが見つかりません。
-Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DSの振動カートリッジ対応ゲーム、ゲームボーイとゲームボーイアドバンスの振動カートリッジ。
-Turn on game rumble for games made for a rumble accessory.	振動アクセサリー対応のゲームでは、ゲームの振動をオンにしてください。
-A light tap for every move, a firmer one when you choose, open or save.	移動するたびに軽く、選択・開く・保存のときはしっかり振動します。
-Turn on menu haptics to feel the menus.	メニューの触覚をオンにすると、メニューを指で感じられます。
-Browse	ブラウズ
-Open a view	ビューを開く
-Go back	戻る
-Switch on	オンにする
-Switch off	オフにする
-Add favourite	お気に入りに追加
-Remove favourite	お気に入りから削除
-Start a game	ゲームを開始
-Save complete	セーブ完了
-Load complete	ロード完了
-Try again	もう一度
-Keyboard	キーボード
-Adjust	調整
-End of a list	リストの端
-Long press	長押し
-Notification	通知
-Touch screen	タッチスクリーン
-Point and click on top	上の画面をクリック
-Touch here to point and click on the top screen.	ここに触れると、上の画面を指してクリックできます。
-Hold still for a right click	動かさずに押すと右クリック
-Hold to exit	長押しで終了
-Touch screen off	タッチスクリーンをオフにしました
-Touch screen is not available	タッチスクリーンを使えません
-Daylight saving	夏時間
-Automatic	自動
-Summer time follows your timezone. Force it on or off if the clock is an hour out.	夏時間はタイムゾーンに従います。時計が1時間ずれているときは、オンまたはオフに固定してください。
-GBA true colour	GBA の本当の色
-Faded GBA colours made rich, as the real screen showed them.	色あせて見える GBA の色を、実機の画面どおりの深い色に。
-GBA true screen	GBA の本当の画面
-The true GBA colours on its screen, with the gaps between its pixels.	GBA の本当の色を実機の画面で。ドットのすき間つき。
+{0} settings	{0}の設定

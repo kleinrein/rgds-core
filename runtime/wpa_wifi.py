@@ -101,6 +101,12 @@ class Control:
         return True
 
 
+# wpa_supplicant's states on the way to a network (wpa_supplicant/README: "wpa_state"), and the ones where it looks
+# for one; with a saved network those mean it is joining or looking by itself (at boot, after Wi-Fi on, out of range)
+JOINING = frozenset({"AUTHENTICATING", "ASSOCIATING", "ASSOCIATED", "4WAY_HANDSHAKE", "GROUP_HANDSHAKE"})
+LOOKING = frozenset({"SCANNING", "DISCONNECTED"})
+
+
 class WpaWifi:
     def __init__(self, service, sockets=SOCKETS, off=OFF, control=Control):
         self.service, self.sockets, self.off, self.control = service, Path(sockets), Path(off), control
@@ -122,7 +128,7 @@ class WpaWifi:
     def network_status(self):
         radio = not self.off.exists()
         device = self.interface() if radio else None
-        status = {}
+        status, saved = {}, 0
         if device:
             try:
                 ctrl = self.open(device)
@@ -132,6 +138,11 @@ class WpaWifi:
                 try:
                     status = self.fields(ctrl.request("STATUS"))
                     signal = self.fields(ctrl.request("SIGNAL_POLL")) if status.get("wpa_state") == "COMPLETED" else {}
+                    if status.get("wpa_state") in JOINING | LOOKING:
+                        saved = sum(
+                            1 for line in ctrl.request("LIST_NETWORKS").splitlines()[1:]
+                            if "[DISABLED]" not in line and line.split("\t")[0].isdigit()
+                        )
                 finally:
                     ctrl.close()
         if not device:
@@ -145,10 +156,13 @@ class WpaWifi:
                 connection="Not connected",
                 ip="",
                 wifi_signal=-1,
-                wifi_connected=0
+                wifi_connected=0,
+                wifi_joining="",
+                wifi_looking=0
             )
             return None
         connected = status.get("wpa_state") == "COMPLETED"
+        joining = status.get("wpa_state") in JOINING and saved > 0
         try:
             strength = percent(int(signal.get("RSSI", ""))) if connected else -1
         except ValueError:
@@ -162,7 +176,10 @@ class WpaWifi:
             wifi_connected=int(connected),
             connection=decode(status.get("ssid", "")) if connected else "Not connected",
             ip=status.get("ip_address", "") if connected else "",
-            interface=device
+            interface=device,
+            # the network it is joining by itself (the launcher shows "Connecting to …"), or 1 while it looks for one
+            wifi_joining=(decode(status.get("ssid", "")) or "Wi-Fi") if joining else "",
+            wifi_looking=int(status.get("wpa_state") in LOOKING and saved > 0)
         )
         return device
 

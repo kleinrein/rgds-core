@@ -178,7 +178,8 @@ class MenuSoundUITests(unittest.TestCase):
 
     def test_microphone_test_closes_sound_output_and_restores_it_after_back(self):
         r = self.run_ui(
-            '50 key Down\n100 key Down\n250 key A\n700 key Escape\n', 'menu_sounds=1\n', ('--settings', '--section', 'sound')
+            '50 key Down\n100 key Down\n250 key A\n700 key Escape\n', 'menu_sounds=1\n',
+            ('--settings', '--section', 'sound')
         )
         self.assertEqual(r['page'], 11)
         self.assertEqual(r['sound_opens'], 2)
@@ -186,7 +187,8 @@ class MenuSoundUITests(unittest.TestCase):
         self.assertEqual(r['sound_counts'][3], 1)
 
     def test_sleep_preview_has_distinct_close_and_unlock_cues_and_releases_audio(self):
-        script = '100 key Down\n200 key Down\n300 key Down\n400 key Down\n550 key A\n'
+        # Sleep now: the sixth row (Dim when idle and Sleep timer in games sit under Menu idle sleep)
+        script = '100 key Down\n200 key Down\n300 key Down\n400 key Down\n500 key Down\n600 key Down\n750 key A\n'
         for enabled in (0, 1):
             r = self.run_ui(
                 script, f'menu_sounds={enabled}\nanimations=0\nview_animations=0\n',

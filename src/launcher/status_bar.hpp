@@ -27,8 +27,8 @@ void App::triangle(SDL_Renderer* r, int x, int y, int half, int height, const st
     }
 }
 
-void App::battery_icon(SDL_Renderer* r, int y) {
-    const int x = 576, top = y + 14;
+void App::battery_icon(SDL_Renderer* r, int y, int x) {
+    const int top = y + 14;
     round_rect(r, x, top, 38, 20, 3, "muted");
     round_rect(r, x + 2, top + 2, 34, 16, 2, "slot");
     rect(r, x + 38, top + 6, 3, 8, "muted");
@@ -79,9 +79,9 @@ bool App::artwork_busy() const {
     return found != service.end() && found->second == "scraping";
 }
 
-void App::artwork_loader(SDL_Renderer* r, int y) {
+void App::artwork_loader(SDL_Renderer* r, int y, int shift) {
     static const int dx[8] = {0, 5, 7, 5, 0, -5, -7, -5}, dy[8] = {-7, -5, 0, 5, 7, 5, 0, -5};
-    const int head = drawn_loader_phase = loader_phase(s.GetTicks()), cx = 232, cy = y + 24;
+    const int head = drawn_loader_phase = loader_phase(s.GetTicks()), cx = 232 + shift, cy = y + 24;
     const Color ink = theme.at("accent");
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     for (int i = 0; i < 8; i++) {
@@ -96,7 +96,7 @@ void App::artwork_loader(SDL_Renderer* r, int y) {
         return found == service.end() ? std::string("0") : found->second;
     };
     const std::string progress = count("completed") + "/" + count("total");
-    label(r, progress, 246, status_label_y(progress, 16, y), 16, "muted", 110, false);
+    label(r, progress, 246 + shift, status_label_y(progress, 16, y), 16, "muted", 110 - shift, false);
 }
 
 int App::label_width(const std::string& source, int size, bool translate) {
@@ -124,10 +124,14 @@ void App::status_bar(SDL_Renderer* r, int y) {
         // The pixel style's own status symbols, at the same 24 px as its icons.
         draw_pixel_glyph(s, r, pixel_status_glyph(sound_asset()), 24, y + 24, 24, theme.at("ink"));
         draw_pixel_glyph(s, r, pixel_status_glyph(wifi_asset()), 58, y + 24, 24, theme.at("ink"));
+        if (bluetooth_on) draw_pixel_glyph(s, r, pixel_status_glyph("bluetooth"), 90, y + 24, 24, theme.at("ink"));
     } else {
         media.draw(r, status_asset(sound_asset()), {10, y + 10, 28, 28}, false);
         media.draw(r, status_asset(wifi_asset()), {44, y + 10, 28, 28}, false);
+        if (bluetooth_on) media.draw(r, status_asset("bluetooth"), {74, y + 10, 28, 28}, false);
     }
+    // the wordmark (and the artwork loader beside it) make room for the Bluetooth rune
+    const int shift = bluetooth_on ? 28 : 0;
     // Rendered at its drawn size; its capitals match the clock's (14 px),
     // centred on the bar's text line (y + 24) like the labels.
     if (!preferences.rich_icons) {
@@ -135,12 +139,12 @@ void App::status_bar(SDL_Renderer* r, int y) {
         const int dot = pixel_scale(20);
         color(r, "ink");
         pixel_dots(
-            "RG DS CORE", 84, status_label_y("RG DS CORE", 20, y), dot, 12,
+            "RG DS CORE", 84 + shift, status_label_y("RG DS CORE", 20, y), dot, 12,
             [&](const SDL_Rect& p) { s.RenderFillRect(r, &p); }, [](unsigned, int, int) {});
     } else
         media.draw(r, asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"),
-                   {84, y + 13, 129, 22}, false);
-    if (artwork_busy()) artwork_loader(r, y);
+                   {84 + shift, y + 13, 129, 22}, false);
+    if (artwork_busy()) artwork_loader(r, y, shift);
     drawn_status_stamp = status_stamp();
     const auto& stamp = drawn_status_stamp;
     int right = hardware.battery >= 0 && system_preferences.battery_percent ? 494 : 550;

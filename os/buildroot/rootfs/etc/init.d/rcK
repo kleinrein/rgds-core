@@ -5,6 +5,7 @@ for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
     pidof rgds-launcher > /dev/null || break
     sleep 0.1
 done
+/usr/libexec/rgds/bt save 2>/dev/null
 /usr/libexec/rgds/net down 2>/dev/null
 hwclock -w 2>/dev/null
 dmesg > /data/rgds/logs/dmesg.txt 2>/dev/null

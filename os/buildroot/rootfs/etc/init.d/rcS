@@ -14,6 +14,8 @@ mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run
 mount -t tmpfs -o mode=1777,nosuid,nodev tmpfs /tmp
 mount -t tmpfs -o mode=0700 tmpfs /root
 mkdir -p /run/rgds /var/log
+# playback goes to the speaker until a Bluetooth headset takes it (/etc/asound.conf, usr/libexec/rgds/bt-audio)
+cp /etc/asound-speaker.conf /run/rgds/audio-out.conf
 mark() { read up rest < /proc/uptime; printf '%-28s %6.2f s\n' "$1" "$up" >> /run/rgds/boot-times; }
 mark "rcS: started"
 sysctl -q -p /etc/sysctl.d/rgds.conf
@@ -44,10 +46,14 @@ data || { fsck.exfat -y ${DISK}p4 >/dev/null 2>&1; data; } || mount -o noatime $
     echo "${DISK}p4 could not be mounted" > /run/rgds/data-failed
 }
 mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ssh /data/roms/nds /data/roms/gba \
-    /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/sms /data/roms/psx /data/roms/n64 /data/roms/pico8 \
+    /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/sms /data/roms/psx /data/roms/n64 \
     /data/rgds/bios
 mark "rcS: data ready"
 mount -t vfat -o ro,noatime ${DISK}p1 /boot 2>/dev/null
+# a slot switch on trial (usr/libexec/rgds/trial): a fallback U-Boot made is recorded for the launcher, and a trial
+# slot that never commits (the session commits once RG DS Core has stayed up) restarts so U-Boot's counter advances
+/usr/libexec/rgds/trial boot
+case "$(/usr/libexec/rgds/trial status)" in trial*) ( sleep 240; case "$(/usr/libexec/rgds/trial status)" in trial*) reboot;; esac ) & ;; esac
 # set up on a computer right after flashing, before the data partition exists: rgds-setup/ on the boot
 # partition (wifi.conf, authorized_keys) is copied in once
 [ -f /boot/rgds-setup/wifi.conf ] && [ ! -f /data/rgds/wifi.conf ] && cp /boot/rgds-setup/wifi.conf /data/rgds/wifi.conf
@@ -59,10 +65,16 @@ mount -t vfat -o ro,noatime ${DISK}p1 /boot 2>/dev/null
 echo battery-charging-blink-full-solid > /sys/class/leds/amber:charging/trigger 2>/dev/null
 # the menu at full speed: the GPU's devfreq starts at its lowest clock (200 MHz), where a frame took 68 ms
 echo performance > /sys/class/devfreq/fde60000.gpu/governor 2>/dev/null
+# device interrupts on CPU 0 only (DSCore's aux core); CPUs 1-3 run the emulator's threads undisturbed
+echo 1 > /proc/irq/default_smp_affinity 2>/dev/null
+for i in /proc/irq/[0-9]*/smp_affinity; do echo 1 > "$i" 2>/dev/null; done
 
 (
     hwclock -s 2>/dev/null
     /usr/libexec/rgds/net up
 ) &
+# the speakers follow the headphone jack; the handheld powers off before the battery is empty
+/usr/libexec/rgds/headphones >> /run/rgds/messages 2>&1 &
+/usr/libexec/rgds/battery-watch >> /run/rgds/messages 2>&1 &
 ( sleep 20; cp /run/rgds/boot-times /data/rgds/logs/boot.txt; dmesg > /data/rgds/logs/dmesg.txt ) &
 exit 0

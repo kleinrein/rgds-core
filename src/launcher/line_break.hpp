@@ -31,7 +31,11 @@ inline std::vector<LinePiece> line_pieces(const std::string& value) {
     unsigned previous = 0;
     for (size_t i = 0; i < value.size();) {
         auto lead = static_cast<unsigned char>(value[i]);
-        size_t length = lead < 0x80 ? 1 : (lead & 0xe0) == 0xc0 ? 2 : (lead & 0xf0) == 0xe0 ? 3 : (lead & 0xf8) == 0xf0 ? 4 : 1;
+        size_t length = lead < 0x80             ? 1
+                        : (lead & 0xe0) == 0xc0 ? 2
+                        : (lead & 0xf0) == 0xe0 ? 3
+                        : (lead & 0xf8) == 0xf0 ? 4
+                                                : 1;
         length = std::min(length, value.size() - i);
         unsigned cp = length == 1 ? lead : lead & (0x7f >> length);
         for (size_t n = 1; n < length; n++) cp = (cp << 6) | (static_cast<unsigned char>(value[i + n]) & 0x3f);
@@ -42,8 +46,8 @@ inline std::vector<LinePiece> line_pieces(const std::string& value) {
             fresh = true;
             continue;
         }
-        bool split = fresh || ((breaks_without_space(previous) || breaks_without_space(cp)) &&
-                               !never_starts_line(cp) && !never_ends_line(previous));
+        bool split = fresh || ((breaks_without_space(previous) || breaks_without_space(cp)) && !never_starts_line(cp) &&
+                               !never_ends_line(previous));
         if (split) pieces.push_back({bytes, space});
         else pieces.back().text += bytes;
         space = fresh = false;

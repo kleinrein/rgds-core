@@ -120,21 +120,25 @@ void App::settings_footer(SDL_Renderer* r, int y) {
     if ((settings.page == Page::EmulatorOptions && !emulator_option_enabled(settings.focus)) ||
         (settings.page == Page::Cheats && cheat_view != CheatView::Groups && !cheat_togglable(settings.focus)) ||
         (settings.page == Page::GameOptions && settings.focus == 2 && superdrastic_game()) ||
-        (settings.page == Page::Motion && settings.focus >= 2))
+        (settings.page == Page::Motion && settings.focus >= 2) ||
+        (settings.page == Page::Homebrew && list_count() == 0))
         return;
-    footer_button(r, 468, y + 432, 160,
-                  settings.page == Page::ShaderPicker ? "Apply"
-                  : settings.page == Page::Cheats     ? (cheat_view == CheatView::Groups ? "Open" : "Toggle")
-                  : settings.page == Page::Settings   ? "Open"
-                  : settings.page == Page::DeviceInfo ? "View"
-                  : settings.page == Page::Sound      ? (settings.focus >= 3            ? "Open"
-                                                         : settings.focus == 2          ? "Test"
-                                                         : hardware.volume_percent == 0 ? "Unmute"
-                                                                                        : "Mute")
-                  : settings.page == Page::Display    ? "Done"
-                  : settings.page == Page::Motion     ? "Toggle"
-                                                      : "Select",
-                  "A", true, a_pressed);
+    footer_button(
+        r, 468, y + 432, 160,
+        settings.page == Page::ShaderPicker ? "Apply"
+        : settings.page == Page::Cheats     ? (cheat_view == CheatView::Groups ? "Open" : "Toggle")
+        : settings.page == Page::Settings   ? "Open"
+        : settings.page == Page::DeviceInfo ? "View"
+        : settings.page == Page::Sound      ? (settings.focus >= 3            ? "Open"
+                                               : settings.focus == 2          ? "Test"
+                                               : hardware.volume_percent == 0 ? "Unmute"
+                                                                              : "Mute")
+        : settings.page == Page::Display    ? "Done"
+        : settings.page == Page::Motion     ? "Toggle"
+        : settings.page == Page::Homebrew
+            ? (device_status["hb_" + std::to_string(settings.focus) + "_installed"] == "1" ? "In library" : "Download")
+            : "Select",
+        "A", true, a_pressed);
 }
 
 void App::ui_icon(SDL_Renderer* r, SettingsIcon symbol, int x, int y, int size, const std::string& key) {
@@ -181,8 +185,8 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
                                           : std::min(224, label_width(value, 18) + (enabled ? 46 : 28) + dot);
     const int text_width = 464 - (value_width ? value_width + 16 : 28);
     label(r, title, 98 + dx, row + 19, 24, enabled ? "ink" : "muted", text_width,
-          settings.page != Page::Wifi && settings.page != Page::Cheats &&
-              settings.page != Page::Timezone); // network and cheat names are data
+          settings.page != Page::Wifi && settings.page != Page::Bluetooth && settings.page != Page::Cheats &&
+              settings.page != Page::Homebrew && settings.page != Page::Timezone); // network and cheat names are data
     if (toggle) {
         draw_toggle(r, 524 + dx, row + 19, title, value == "On", enabled);
     } else if (!value.empty()) {

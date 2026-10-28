@@ -1,0 +1,76 @@
+#!/bin/sh
+# A slot switch on trial: U-Boot's boot counter (/bootcount on the boot partition: magic bd, version 1, count,
+# upgrade-in-progress) counts the boots of the new slot until RG DS Core reports in; past its limit (3) U-Boot boots
+# the extlinux FALLBACK label, the slot that ran before. /boot/rgds-trial.json names the trial. Used by rcS (boot),
+# the session (commit, once the launcher has stayed up) and the updater (arm, commit, status).
+#   trial arm SLOT PREVIOUS BUILD VERSION   DEFAULT and FALLBACK in extlinux.conf, the record, the counter armed
+#   trial boot                              at boot: a fallback that happened is recorded, nothing else
+#   trial commit                            the running slot is good: counter idle, record gone, result success
+#   trial status                            "none", "trial SLOT" or "fallen-back SLOT"
+BOOT=/boot
+RECORD=$BOOT/rgds-trial.json
+COUNTER=$BOOT/bootcount
+RESULT=/data/rgds/state/update-result.json
+SLOT=$(cat /run/rgds/slot 2>/dev/null)
+
+rw() { mount -o remount,rw $BOOT; }
+ro() { sync; mount -o remount,ro $BOOT; }
+field() { sed -n "s/.*\"$1\": *\"\([^\"]*\)\".*/\1/p" "$RECORD" 2>/dev/null; }
+counter() { printf '\275\001\000%b' "$1" > $COUNTER; }  # $1: '\000' idle, '\001' armed (count 0)
+result() {  # STATE BUILD PREVIOUS REASON
+    mkdir -p "${RESULT%/*}"
+    printf '{"build": "%s", "previous": "%s", "reason": "%s", "state": "%s"}\n' "$2" "$3" "$4" "$1" > $RESULT.new
+    mv $RESULT.new $RESULT
+}
+
+case "$1" in
+arm)
+    [ $# -eq 5 ] || { echo "usage: trial arm SLOT PREVIOUS BUILD VERSION" >&2; exit 2; }
+    rw
+    { grep -v -E '^(DEFAULT|FALLBACK) ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
+    { printf 'DEFAULT %s\nFALLBACK %s\n' "$2" "$3"; cat $BOOT/extlinux/extlinux.conf.new; } > $BOOT/extlinux/extlinux.conf.arm
+    mv $BOOT/extlinux/extlinux.conf.arm $BOOT/extlinux/extlinux.conf
+    rm -f $BOOT/extlinux/extlinux.conf.new
+    printf '{"slot": "%s", "previous": "%s", "build": "%s", "version": "%s"}\n' "$2" "$3" "$4" "$5" > $RECORD
+    counter '\001'
+    ro
+    ;;
+boot)
+    if [ ! -f $RECORD ]; then
+        # no trial: the counter must sit idle, or U-Boot counts every boot (a card made before the counter existed)
+        [ "$(od -An -tx1 $COUNTER 2>/dev/null | tr -d ' \n')" = bd010000 ] || { rw; counter '\000'; ro; }
+        exit 0
+    fi
+    if [ "$(field slot)" != "$SLOT" ]; then
+        # U-Boot took the FALLBACK label (or the owner switched back by hand): the trial slot never came up
+        rw
+        { grep -v -E '^(DEFAULT|FALLBACK) ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
+        { printf 'DEFAULT %s\n' "$SLOT"; cat $BOOT/extlinux/extlinux.conf.new; } > $BOOT/extlinux/extlinux.conf.back
+        mv $BOOT/extlinux/extlinux.conf.back $BOOT/extlinux/extlinux.conf
+        rm -f $BOOT/extlinux/extlinux.conf.new
+        result rolled-back "$(field build)" "$(field previous)" "slot $(field slot) did not boot"
+        rm -f $RECORD
+        counter '\000'
+        ro
+        echo "trial: slot $SLOT is back, the update did not boot" >&2
+    fi
+    ;;
+commit)
+    [ -f $RECORD ] && [ "$(field slot)" = "$SLOT" ] || exit 0
+    rw
+    { grep -v -E '^FALLBACK ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
+    mv $BOOT/extlinux/extlinux.conf.new $BOOT/extlinux/extlinux.conf
+    result installed "$(field build)" "$(field previous)" ""
+    rm -f $RECORD
+    counter '\000'
+    ro
+    echo "trial: slot $SLOT committed" >&2
+    ;;
+status)
+    if [ ! -f $RECORD ]; then echo none
+    elif [ "$(field slot)" = "$SLOT" ]; then echo "trial $SLOT"
+    else echo "fallen-back $SLOT"; fi
+    ;;
+*)
+    echo "usage: trial arm|boot|commit|status" >&2; exit 2;;
+esac

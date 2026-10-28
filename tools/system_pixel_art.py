@@ -50,6 +50,8 @@ BRIEF = {
     'rpgmaker': 'a computer monitor showing a pixel-art dialogue box',
     # Not a stock system: PortMaster's ports (the Ports system), drawn after PortMaster's own icon.
     'ports': 'a cargo ship on the water with a crane on deck lifting a container, as in PortMaster\'s icon',
+    # Not a stock system either: the curated free homebrew (the Homebrew system).
+    'homebrew': 'three blank game cartridges standing on their edges in a tight stack, like books on a shelf',
 }
 
 GRID = 16
@@ -559,6 +561,24 @@ ART = {
         '................',
         '.++++..++++..++.',
         '................',
+    ],
+    'homebrew': [
+        '................',
+        '....########....',
+        '....#++++++#....',
+        '....#++++++#....',
+        '...##########...',
+        '..#++++++++++#..',
+        '..#++++++++++#..',
+        '..#++++++++++#..',
+        '...##########...',
+        '...##########...',
+        '...#++++++++#...',
+        '...#++++++++#...',
+        '..#++++++++++#..',
+        '..#++++++++++#..',
+        '..#++++++++++#..',
+        '...##########...',
     ],
 }
 

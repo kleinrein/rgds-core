@@ -12,10 +12,6 @@ void App::paint_bottom(SDL_Renderer* renderer, int y) {
 }
 
 void App::animated_bottom(SDL_Renderer* renderer, int y) {
-    if (chat_open) {
-        chat_bottom(renderer, y);
-        return;
-    }
     if (view_transitions_enabled() && layered(preferences.view_style) && !view_canvas_failed) {
         push_bottom(renderer, y);
         return;

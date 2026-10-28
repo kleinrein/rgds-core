@@ -14,7 +14,6 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import dev
-import device
 
 
 class WatchTests(unittest.TestCase):
@@ -35,81 +34,6 @@ class WatchTests(unittest.TestCase):
             self.assertFalse(watcher.poll(after, 1.2))
             self.assertTrue(watcher.poll(after, 1.4))
             self.assertFalse(watcher.poll(after, 2))
-
-    def test_newest_build_waits_for_game_and_restarts_only_after_deployment(self):
-        queue = dev.DeviceQueue("root@device", Path("/mnt/mmc/rgds"), Path("theme.ini"))
-        busy = {"game": True, "launcher": True, "session": True, "lock": True, "recovery": False}
-        idle = dict(busy, game=False)
-        operations = []
-        with patch.object(device, "status", side_effect=[busy, idle]), \
-             patch.object(device, "deploy", side_effect=lambda _d, _r, archive, **_kw: operations.append(("deploy", archive.name))), \
-             patch.object(device, "sync_theme", side_effect=lambda *_a, **_kw: operations.append(("theme", None))), \
-             patch.object(device, "start_dev_session", side_effect=lambda *_a: operations.append(("start", None))), \
-             patch("sys.stdout", new_callable=io.StringIO):
-            queue.archive = Path("old.zip")
-            queue.theme_pending = True
-            queue.flush()
-            self.assertEqual(operations, [])
-            queue.archive = Path("newest.zip")
-            queue.flush()
-        self.assertEqual(operations, [("deploy", "newest.zip"), ("theme", None), ("start", None)])
-        self.assertIsNone(queue.archive)
-
-    def test_game_launch_race_keeps_candidate_queued_without_restart(self):
-        queue = dev.DeviceQueue("root@device", Path("/mnt/mmc/rgds"), Path("theme.ini"))
-        queue.archive = Path("candidate.zip")
-        idle = {"game": False, "launcher": True, "session": True, "lock": True, "recovery": False}
-        with patch.object(device, "status", return_value=idle), \
-             patch.object(device, "deploy", side_effect=subprocess.CalledProcessError(1, "ssh")), \
-             patch.object(device, "start_dev_session") as start, \
-             patch("sys.stdout", new_callable=io.StringIO):
-            with self.assertRaises(subprocess.CalledProcessError):
-                queue.flush()
-            start.assert_not_called()
-            self.assertEqual(queue.archive, Path("candidate.zip"))
-
-    def test_invalid_theme_does_not_get_uploaded(self):
-        with tempfile.TemporaryDirectory() as folder:
-            theme = Path(folder) / "theme.ini"
-            theme.write_text("schema=1\naccent=oops\n")
-            with patch.object(device, "ssh") as ssh:
-                with self.assertRaises(ValueError):
-                    device.sync_theme("root@device", Path("/mnt/mmc/rgds"), theme)
-                ssh.assert_not_called()
-
-    def test_rejected_theme_is_reported_without_claiming_upload(self):
-        queue = dev.DeviceQueue("root@device", Path("/mnt/mmc/rgds"), Path("theme.ini"))
-        queue.theme_pending = True
-        idle = {"game": False, "launcher": True, "session": True, "lock": True, "recovery": False}
-        with patch.object(device, "status", return_value=idle), \
-             patch.object(device, "sync_theme", side_effect=ValueError("Invalid colour")), \
-             patch.object(device, "start_dev_session") as start, \
-             patch("sys.stdout", new_callable=io.StringIO) as output:
-            queue.flush()
-            start.assert_not_called()
-            self.assertIn("keeping the device's current theme", output.getvalue())
-            self.assertNotIn("uploaded", output.getvalue())
-
-    def test_failed_device_start_is_reported_once_for_missing_session_log(self):
-        with patch.object(device, "run_session"), patch.object(device.time, "sleep"), \
-             patch.object(device, "status", return_value={"launcher": False}), \
-             patch.object(device, "ssh", return_value=subprocess.CompletedProcess("ssh", 0, stdout="session log missing")) as ssh:
-            with self.assertRaisesRegex(RuntimeError, "did not stay running"):
-                device.start_dev_session("root@device", Path("/mnt/mmc/rgds"))
-            self.assertTrue(ssh.call_args.args[1].endswith("|| :"))
-
-    def test_remote_theme_upload_is_atomic_and_outside_release(self):
-        compile(device.REMOTE_STATUS, "remote-status", "exec")
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder) / "rgds"
-            release = root / "releases/working/theme.ini"
-            release.parent.mkdir(parents=True)
-            release.write_text("immutable")
-            content = b"schema=1\naccent=123456\n"
-            subprocess.run([sys.executable, "-c", device.REMOTE_THEME, str(root)], input=content, check=True)
-            self.assertEqual((root / "userdata/dev/theme.ini").read_bytes(), content)
-            self.assertEqual(release.read_text(), "immutable")
-            self.assertFalse((root / "userdata/dev/theme.ini.upload").exists())
 
     def test_failed_compiler_keeps_last_successful_binary(self):
         # Run the real build tool against an isolated tree and a failing compiler.
@@ -247,45 +171,3 @@ class LiveThemeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-class ConfiguredRootTests(unittest.TestCase):
-    def test_remote_selection_keeps_configured_root_in_stock_mode(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            control = Path(temporary) / 'control'
-            control.mkdir()
-            root = Path(temporary) / 'internal install/rgds'
-            root.mkdir(parents=True)
-            (root / 'main.sh').touch()
-
-            def remote(device_name, command, **kwargs):
-                script = kwargs['input'].replace('/userdata/rgds-boot', str(control))
-                return subprocess.run(
-                    [sys.executable, '-B', '-'], input=script, text=True, capture_output=True, check=True
-                )
-
-            for mode in ('stock', 'rgds'):
-                with self.subTest(mode=mode):
-                    (control / 'config.json').write_text(json.dumps(dict(root=str(root), mode=mode)))
-                    with patch.object(device, 'ssh', side_effect=remote), patch('sys.stdout', new_callable=io.StringIO):
-                        self.assertEqual(device.configured_root('root@device'), root)
-            for content in ('[]', '{broken', json.dumps(dict(root='relative', mode='stock'))):
-                (control / 'config.json').write_text(content)
-                with patch.object(device, 'ssh', side_effect=remote), patch('sys.stdout', new_callable=io.StringIO):
-                    self.assertEqual(device.configured_root('root@device'), Path('/mnt/mmc/rgds'))
-
-    def test_default_follows_boot_root_and_explicit_mount_does_not_probe(self):
-        with patch.object(
-            device, 'ssh', return_value=subprocess.CompletedProcess([], 0, '/userdata/rgds-device-test/rgds\n', '')
-        ) as ssh, patch('sys.stdout', new_callable=io.StringIO):
-            self.assertEqual(device.configured_root('root@device'), Path('/userdata/rgds-device-test/rgds'))
-            ssh.assert_called_once()
-            ssh.reset_mock()
-            self.assertEqual(device.configured_root('root@device', Path('/mnt/SDCARD')), Path('/mnt/SDCARD/rgds'))
-            ssh.assert_not_called()
-
-    def test_invalid_remote_path_cannot_become_a_deploy_target(self):
-        for value in ('relative/path', '/mnt/../etc', '/safe\n/other'):
-            with patch.object(device, 'ssh', return_value=subprocess.CompletedProcess([], 0, value, '')):
-                with self.assertRaises(ValueError):
-                    device.configured_root('root@device')

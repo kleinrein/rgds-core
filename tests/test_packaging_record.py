@@ -21,11 +21,11 @@ class PackagingRecordTests(unittest.TestCase):
         names = (
             "build/device/rgds-launcher", "build/device/librgdsbridge.so", "assets/emulator-profiles/drastic.cfg",
             "assets/emulator-profiles/dsperate.ini", "runtime/inventory.sh", "build/engines/dsperate/dsperate",
-            "tools/build_engines.py", "tools/elf_abi.py", "THIRD_PARTY.md", "VERSION", "packaging/main.sh",
-            "packaging/update_guard.py", "packaging/update-trust.json", "README.md",
-            "docs/DEVELOPMENT.md", "docs/SCREENSCRAPER.md", "docs/PERFORMANCE.md"
+            "tools/build_engines.py", "tools/elf_abi.py", "THIRD_PARTY.md", "VERSION", "packaging/update_guard.py",
+            "packaging/update-trust.json", "README.md", "docs/DEVELOPMENT.md", "docs/SCREENSCRAPER.md",
+            "docs/PERFORMANCE.md"
         )
-        for name in (*names, *package.DOCUMENTS):
+        for name in names:
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"fixture " + name.encode())
@@ -216,8 +216,8 @@ class PackagingRecordTests(unittest.TestCase):
         archive = package._package()
         with zipfile.ZipFile(archive) as release:
             path = next(name for name in release.namelist() if name.endswith("/build/rgds.json"))
-            for document in package.DOCUMENTS:
-                self.assertIn('rgds/docs/' + document, release.namelist())
+            # the release alone: no stock card bootstraps (main.sh, Roms/APPS) or documents beside it
+            self.assertTrue(all(name.startswith('rgds/releases/') for name in release.namelist()))
             experiment = next(
                 name for name in release.namelist() if name.endswith('/emulators/rgds-experimental/rgds-experimental')
             )

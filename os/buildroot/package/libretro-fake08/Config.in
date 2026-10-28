@@ -1,4 +1,0 @@
-config BR2_PACKAGE_LIBRETRO_FAKE08
-	bool "libretro-fake08"
-	help
-	  fake-08, a PICO-8 player (MIT): /usr/lib/libretro/fake08_libretro.so, loaded by RG DS Play for .p8 carts.

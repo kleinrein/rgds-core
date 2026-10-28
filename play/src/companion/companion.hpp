@@ -110,6 +110,7 @@ private:
     Box switch_box(int w) const;
     void render_layers(Canvas& out, const Look& look, const Font& font) const;
     uint64_t main_key() const;
+    bool hud_covered() const;
     Dock dock_;
     // The companion under the dock while only the dock moves (its circle opening, its button fading).
     mutable Canvas screen_cache_;
@@ -128,6 +129,7 @@ private:
     uint32_t hud_key_ = 0;
     unsigned hud_layers_ = 0;
     std::vector<uint32_t> hud_image_, composed_;
+    HudPicture hud_picture_; // the HUD for views that lay it out themselves
     std::vector<Rect> drawn_; // per panel: where the HUD has drawn since it came on
     uint64_t strip_hash_ = 0;
     // The scenery behind the HUD, drawn by a shadow copy without the HUD and sprites.

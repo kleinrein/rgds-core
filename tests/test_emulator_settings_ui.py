@@ -342,7 +342,9 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     # The header's tabs (All, Groups, On) stand at x 272..488, 72 px each; the X search key at 500..616.
     def test_cheats_bar_opens_the_groups_overview_and_toggles_inside_a_group(self):
         report = self.run_ui(['Down'] * 4 + ['Right'] + ['A'], 'rgds-experimental')
-        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 0, 3, 1))
+        self.assertEqual(
+            (report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 0, 3, 1)
+        )
         self.assertTrue(report['cheats_available'])
         report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'Down', 'A'], 'rgds-experimental')
         self.assertEqual((report['cheat_view'], report['cheat_group'], report['cheat_rows']), (1, 0, 2))
@@ -388,7 +390,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
 
     def test_cheats_bar_explains_itself_for_other_engines(self):
         report = self.run_ui(['Down'] * 4 + ['Right'] + ['A'], 'drastic')
-        self.assertEqual(report['page'], 12)   # still the game menu
+        self.assertEqual(report['page'], 12)  # still the game menu
         self.assertFalse(report['cheats_available'])
         self.assertTrue(report['picker_detail'])
         self.assertEqual(report['picker_title'], 'Cheats')
@@ -405,7 +407,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         report = self.run_ui([], 'rgds-experimental', touch='300 click 470 380\n500 click 308 60\n')
         self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 2, 6))
         report = self.run_ui([], 'rgds-experimental', touch='300 click 470 380\n500 click 560 45\n')
-        self.assertEqual(report['page'], 8)   # Page::Keyboard, the cheat search
+        self.assertEqual(report['page'], 8)  # Page::Keyboard, the cheat search
 
     def test_cheats_empty_views_keep_their_header_and_the_shoulders_change_tabs(self):
         # Nothing matches 'zzz': the page stays, its tabs still answer, and the pad's R (button 5) opens On.
@@ -414,19 +416,41 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 2, 0))
         report = self.run_ui(keys, 'rgds-experimental', touch='400 text zzz\n500 key Return\n600 click 380 45\n')
         self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 0, 3))
-        report = self.run_ui(keys, 'rgds-experimental', touch='400 text zzz\n500 key Return\n600 joy-down 5\n700 joy-down 5\n')
+        report = self.run_ui(
+            keys, 'rgds-experimental', touch='400 text zzz\n500 key Return\n600 joy-down 5\n700 joy-down 5\n'
+        )
         self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 3, 1))
         # With 99 coins switched off, the On tab is empty but still the Cheats page; L (button 4) goes back to Groups.
         report = self.run_ui(keys[:-1] + ['Down', 'A', 'A'], 'rgds-experimental', touch='400 joy-down 5\n')
-        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 3, 0, 0))
-        report = self.run_ui(keys[:-1] + ['Down', 'A', 'A'], 'rgds-experimental', touch='400 joy-down 5\n500 joy-down 4\n')
+        self.assertEqual(
+            (report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 3, 0, 0)
+        )
+        report = self.run_ui(
+            keys[:-1] + ['Down', 'A', 'A'], 'rgds-experimental', touch='400 joy-down 5\n500 joy-down 4\n'
+        )
         self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows']), (38, 0, 3))
 
     def test_cheats_page_lists_the_engine_file_flat_when_it_has_no_groups(self):
-        write_fields(self.root / 'session/emulator.control.cheats', dict(count=2, groups=0, cheat_0='Moon jump', cheat_0_description='', cheat_0_group=-1, cheat_0_state=1, cheat_1='Notes', cheat_1_description='', cheat_1_group=-1, cheat_1_state=-1))
+        write_fields(
+            self.root / 'session/emulator.control.cheats',
+            dict(
+                count=2,
+                groups=0,
+                cheat_0='Moon jump',
+                cheat_0_description='',
+                cheat_0_group=-1,
+                cheat_0_state=1,
+                cheat_1='Notes',
+                cheat_1_description='',
+                cheat_1_group=-1,
+                cheat_1_state=-1
+            )
+        )
         report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'Down', 'A'], 'rgds-experimental')
         # No overview for a flat list, so it opens on All; the note cannot be toggled, so the one code stays on.
-        self.assertEqual((report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 2, 2, 1))
+        self.assertEqual(
+            (report['page'], report['cheat_view'], report['cheat_rows'], report['cheats_on']), (38, 2, 2, 1)
+        )
         report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'A'], 'rgds-experimental')
         self.assertEqual(report['cheats_on'], 0)
         report = self.run_ui(['Down'] * 4 + ['Right'] + ['A', 'B'], 'rgds-experimental')

@@ -220,7 +220,10 @@ class CoreUITests(unittest.TestCase):
 
     def test_language_picker_persists_and_game_menu_loads_same_preference(self):
         languages = [line.split('\t')[0] for line in (ROOT / 'assets/locales/languages.tsv').read_text().splitlines()]
-        for language in ('nb-NO', 'nn-NO', 'sv-SE', 'da-DK', 'nl-NL', 'fi-FI', 'pt-PT', 'vi-VN', 'pl-PL', 'ru-RU', 'uk-UA', 'ja-JP', 'zh-CN', 'ko-KR'):
+        for language in (
+            'nb-NO', 'nn-NO', 'sv-SE', 'da-DK', 'nl-NL', 'fi-FI', 'pt-PT', 'vi-VN', 'pl-PL', 'ru-RU', 'uk-UA', 'ja-JP',
+            'zh-CN', 'ko-KR'
+        ):
             with self.subTest(language=language), tempfile.TemporaryDirectory() as tmp:
                 data = Path(tmp)
                 steps = languages.index(language)

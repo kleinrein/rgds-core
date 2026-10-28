@@ -98,6 +98,10 @@ def strict_json(raw):
 
 
 class Updater:
+    # What a feed must be for (os_update.py's OsUpdater has its own).
+    target = TARGET
+    base = 'anbernic-buildroot-2024.02'
+
     def __init__(self, app, data, preview=False, opener=None):
         self.app = Path(app)
         self.data = Path(data)
@@ -128,7 +132,7 @@ class Updater:
         values = dict(configured=int(configured), current=self.app.name, channel=config.get('channel', 'stable'))
         existing = read_fields(self.folder / 'status.ini')
         if configured:
-            pending = guard_module(self.root).read(self.root / 'state/update-pending.json')
+            pending = self.load_guard().read(self.root / 'state/update-pending.json')
             values['prepared'] = int(pending.get('phase') == 'staged')
             if values['prepared']:
                 self.publish(
@@ -158,8 +162,15 @@ class Updater:
         if self.preview or not config.get('feed') or not config.get('keys'):
             raise ValueError('Updates will be available when the release channel opens.')
         https_url(config['feed'])
-        self.guard = guard_module(self.root)
+        self.guard = self.load_guard()
         return config
+
+    def load_guard(self):
+        return guard_module(self.root)
+
+    def staging_space(self, value):
+        """Bytes the card must have free beyond the download itself (the unpacked release)."""
+        return value['unpacked_size']
 
     def request(self, url, headers=None):
         req = urllib.request.Request(https_url(url), headers={'User-Agent': 'RG-DS-Core-Updater/1', **(headers or {})})
@@ -179,7 +190,7 @@ class Updater:
         if not verify_signature(public, signature, signed): raise ValueError('Update signature is not trusted.')
         value = strict_json(signed)
         now = int(time.time() if now is None else now)
-        if not isinstance(value, dict) or value.get('schema') != 1 or value.get('target') != TARGET or value.get(
+        if not isinstance(value, dict) or value.get('schema') != 1 or value.get('target') != self.target or value.get(
             'channel'
         ) != config.get('channel', 'stable'):
             raise ValueError('This update is not for this device or channel.')
@@ -190,7 +201,7 @@ class Updater:
             raise ValueError('Update information has expired or the device clock is incorrect.')
         if value['minimum_updater'] > self.guard.PROTOCOL:
             raise ValueError('Install the latest SD installer before this update.')
-        if value.get('base') != 'anbernic-buildroot-2024.02':
+        if value.get('base') != self.base:
             raise ValueError('This update requires a different stock firmware.')
         if not isinstance(value.get('build'), str) or not self.guard.BUILD.fullmatch(value['build']):
             raise ValueError('Invalid update build.')
@@ -269,7 +280,7 @@ class Updater:
             for stale in self.folder.glob('*.part'):
                 if stale != archive: stale.unlink(missing_ok=True)
             offset = archive.stat().st_size if archive.exists() else 0
-            required = max(0, value['size'] - offset) + value['unpacked_size'] + 16 * 1024 * 1024
+            required = max(0, value['size'] - offset) + self.staging_space(value) + 16 * 1024 * 1024
             if shutil.disk_usage(self.root).free < required:
                 raise ValueError('There is not enough free space for this update.')
             self.fetch(value, archive)

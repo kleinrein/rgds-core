@@ -1,47 +1,95 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 person nearby	1 person i nærleiken
+1 player	1 spelar
+12-hour	12 timar
+2 seconds	2 sekund
+24-hour	24 timar
+24-hour or 12-hour clock	24- eller 12-timars klokke
+2x sharper	2x skarpare
 3D rendering automatically uses worker threads.	3D-grafikken brukar automatisk fleire trådar.
 3D resolution	3D-oppløysing
 3D threading changed for this session. Settings storage is unavailable.	3D-trådar endra for denne økta. Innstillingane kan ikkje lagrast.
 3D threading changed. No restart needed.	3D-trådar endra. Ingen omstart naudsynt.
+3x sharper	3x skarpare
+4x (experimental)	4x (eksperimentell)
+5x (experimental)	5x (eksperimentell)
 A  Apply	A  Bruk
 A  Done	A  Ferdig
+A  Jump	A  Hopp
 A  Play	A  Spel
+A  Search	A  Søk
+A 24-hour or 12-hour clock.	Klokke med 24 eller 12 timar.
+A carousel, or the DSi's column with your last game on top	Ein karusell, eller DSi-kolonnen med siste spel øvst
+A exports this slot to userdata/exports. X deletes it.	A eksporterer plassen til userdata/exports. X slettar han.
 A gentle scanline pattern with original colours.	Mjuke skannlinjer med opphavlege fargar.
+A light tap for every move, a firmer one when you choose, open or save.	Eit lett trykk for kvar rørsle, eit fastare når du vel, opnar eller lagrar.
+A little handheld magic	Litt handhalden magi
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A lastar inn plassen. Angre siste innlasting under Y hentar tilbake framdrifta du har no.
 A natural colour and contrast treatment.	Naturlege fargar og kontrast.
+A new version is ready to download.	Ein ny versjon er klar til nedlasting.
+A replaces this slot with your current progress. X deletes it.	A erstattar plassen med framdrifta di. X slettar han.
+A saves your current progress here.	A lagrar framdrifta di her.
 A screen style for this cartridge	Eit skjermfilter for dette spelet
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Eit lite handtak nedst på den nedre skjermen viser at rørsler er på; det følgjer fingeren din, og ein ring markerer staden når ei rørsle blir utløyst.
+A soft tune plays while you browse. It fades out when a game starts.	Ein mjuk melodi spelar medan du blar. Han tonar ut når eit spel startar.
 A stronger LCD texture and scanline look.	Tydelegare LCD-tekstur og skannlinjer.
 A subtle handheld LCD pixel pattern.	Eit diskret pikselmønster frå handhalden LCD.
 A subtle pixel grid with a bright, readable image.	Eit diskret pikselrutenett med lyst og tydeleg bilete.
+About {0} h left	Om lag {0} t att
+About {0} min left	Om lag {0} min att
+Accent colour	Aksentfarge
+Add favourite	Legg til favoritt
+Add game files	Legg til spelfiler
 Add your DS games to fetch their artwork.	Legg til DS-spel for å hente bilete.
+Add your games	Legg til spel
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Legg til Game Boy- og Game Boy Advance-spel: Spel opnar då ei side med system.
+Adjust	Juster
 Africa	Afrika
 After	Etter
 All games	Alle spel
+All systems	Alle system
+Already connected.	Allereie tilkopla.
 Amber	Ravgult
 Americas	Amerika
+An update is already prepared. Install it or discard it first.	Ei oppdatering er allereie klar. Installer eller forkast henne først.
 Anbernic startup is unavailable in RGDS OS.	Oppstart i Anbernic er ikkje tilgjengeleg i RG DS Core.
+Animate pages with the selected style	Animer sider med vald stil
 Animations	Animasjonar
+Another update is already running.	Ei anna oppdatering er allereie i gang.
 Antarctica	Antarktis
+Any	Alle
 Applies immediately. Higher clocks use more battery.	Gjeld straks. Høgare fart brukar meir batteri.
 Applies immediately. Your game keeps its progress.	Gjeld straks. Framgangen i spelet blir teken vare på.
 Apply	Bruk
+APPLY	BRUK
 Applying shader…	Brukar skjermfilter …
+Arcade cabinet	Arkadekabinett
 Arctic	Arktis
+Arrows	Piler
 Artwork	Omslag og bilete
 Artwork & ScreenScraper	Bilete
 Artwork source	Biletkjelde
 Artwork sources	Biletkjelder
 Asia	Asia
 Atlantic Ocean	Atlanterhavet
+Audio is not recorded or saved.	Lyden blir ikkje teken opp eller lagra.
 Australia	Australia
 Auto-load state	Last inn tilstand automatisk
 Auto-save on exit	Lagre ved avslutning
 Automatic	Automatisk
 Automatic (free)	Automatisk
+Automatic updates	Automatiske oppdateringar
+Available	Tilgjengeleg
 Available networks	Tilgjengelege nettverk
 B  Cancel	B  Avbryt
 B  Close	B  Lukk
-BACK HOME	TIL HOVUDMENYEN
 Back	Tilbake
+BACK HOME	TIL HOVUDMENYEN
+Back to PortMaster	Tilbake til PortMaster
+Back up all saves	Tryggleikskopier alle lagringar
+Background	Bakgrunn
+Backing up your saves…	Tryggingskopierer lagringane dine…
+Badges	Merke
 Balance battery life and speed	Balanser batteritid og fart
 Balanced	Balansert
 Battery	Batteri
@@ -50,57 +98,116 @@ Battery saver	Batterisparing
 Before	Før
 Before you play	Før du spelar
 Binding unchanged.	Knappetildelinga er uendra.
+Black and white	Svart-kvitt
+Black bar	Svart stripe
+Blow into microphone	Blås i mikrofonen
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blås eller snakk i mikrofonen. Sjå at nivået stig og fell når du stoppar.
+Blue	Blå
+Bluetooth	Bluetooth
+Bluetooth devices	Bluetooth-einingar
+Bluetooth is not available on this handheld.	Bluetooth er ikkje tilgjengeleg på denne maskina.
+Bold colour on a close-up LCD with RGB stripes.	Kraftige fargar på ein LCD på nært hald med RGB-striper.
+Bold colour with smoothed diagonal edges.	Kraftige fargar med glatta diagonale kantar.
+Bold colour; every pixel a raised, glossy tile.	Kraftige fargar; kvar piksel ei heva, blank flis.
+Bold colour; every pixel a round, shiny bead.	Kraftige fargar; kvar piksel ei rund, skinande perle.
+Bombs	Bomber
+Bonus stars	Bonusstjerner
 Boot	Oppstart
 Boot into	Start i
+Both	Begge
 Both screens	Begge skjermane
 Bottom display	Nedre skjerm
 Box art, titles and game details	Omslag, titlar og spelinformasjon
 Brightness	Lysstyrke
+Brown	Brun
+Browse	Bla
+Browse games	Bla gjennom spel
+Browse systems	Bla gjennom system
 Browser layout	Bibliotekvising
 Build, storage and device address	Versjon, lagringsplass og adresse
 Button	Knapp
 Button layout	Knappoppsett
 Button {0}	Knapp {0}
 Buttons and the game menu shortcut	Knappar og snarveg til spelmenyen
-COLOUR MODE	FARGEMODUS
 Cancel	Avbryt
+Carousel	Karusell
+Carried	Med deg
 Cartridges	Spelkort
+Change group	Byt gruppe
 Changes immediately. Map a button in Controls for quick access.	Blir endra straks. Vel ein snarveg under Kontrollar.
 Changing 3D threading…	Endrar 3D-trådar …
 Changing speed…	Endrar fart …
+Chat is unavailable: you can still draw	Chat er utilgjengeleg: du kan framleis teikne
+Chat Room	Chatrom
+Chat Room {0}	Chatterom {0}
+Check automatically	Sjekk automatisk
+Check for updates	Sjå etter oppdateringar
+Check for updates when you are ready.	Sjå etter oppdateringar når du er klar.
+Check for updates, go back to the previous build or clear temporary files.	Sjå etter oppdateringar, gå tilbake til førre versjon eller tøm mellombelse filer.
 Check the current connection	Sjekk den aktive tilkoplinga
+Checking for updates…	Ser etter oppdateringar…
+Checking PortMaster	Kontrollerer PortMaster
+Checking the new version…	Kontrollerer den nye versjonen…
 Checkpoint loaded	Speltilstand lasta
 Checkpoint loaded (preview)	Speltilstand lasta (førehandsvising)
 Checkpoint loaded.	Speltilstand lasta.
 Checkpoint saved	Speltilstand lagra
 Checkpoint saved (preview)	Speltilstand lagra (førehandsvising)
 Checkpoint saved.	Speltilstand lagra.
-Choose Anbernic or RG DS startup.	Vel oppstart i Anbernic eller RG DS Core.
+Choose a chat room to join	Vel eit chatterom å bli med i
+Choose a network from the list	Vel eit nettverk frå lista
 Choose an option	Vel eit alternativ
+Choose Anbernic or RG DS startup.	Vel oppstart i Anbernic eller RG DS Core.
 Choose native or a sharper 3D image	Vel opphavleg eller skarpare 3D-bilete
 Choose the core for this cartridge	Vel emulator for dette spelet
 Choose the display backend for the next DraStic launch. DSperate stays your default.	Vel vising for neste DraStic-start. DSperate er framleis standard.
 Choose what opens when you power on	Vel kva som blir opna ved oppstart
+Classic	Klassisk
+Classic blue	Klassisk blå
 Clear	Tøm
+Clear filters	Nullstill filter
 Clear temporary cache	Tøm mellombels lager
 Clear temporary game files?	Slette mellombelse spelfiler?
 Close	Lukk
+Close and open DS lid	Lukk og opne DS-lokket
+Close lid	Lat att loket
+Close PortMaster	Lukk PortMaster
 Close the handheld to sleep	Lukk eininga for å gå i kvilemodus
+Closing PortMaster…	Lukkar PortMaster…
+Closing the port…	Lukkar porten…
+Code	Kode
+Coin bank	Myntbank
+Coins	Myntar
+Collection	Samling
+COLOUR MODE	FARGEMODUS
+Colour mode	Fargemodus
 Colour treatment inspired by the original DS display.	Fargar inspirerte av den opphavlege DS-skjermen.
+Column	Kolonne
+Companion	Følgjeskjerm
 Compare	Samanlikn
 Confirm	Stadfest
 Connect	Kople til
+Connect the charger before installing an update.	Kople til ladaren før du installerer ei oppdatering.
+Connect to Wi-Fi to send files from a phone or computer.	Kopla til Wi-Fi for å senda filer frå ein telefon eller ei datamaskin.
 Connected	Tilkopla
 Connected.	Tilkopla.
+Connecting to	Koplar til
 Connecting…	Koplar til …
+Connection lost. Retrying…	Mista sambandet. Prøver igjen…
 Connectivity	Tilkopling
 Continue	Hald fram
 Continue where you left off	Hald fram der du slapp
 Control unavailable on this device	Kontrollen er ikkje tilgjengeleg
+Controllers and other Bluetooth devices	Kontrollarar og andre Bluetooth-einingar
 Controls	Kontrollar
 Controls saved for this game.	Kontrollar lagra for dette spelet.
 Cool crisp	Kjøleg og skarpt
 Cool whites with a small contrast boost.	Kjølege kvittonar med litt ekstra kontrast.
+Copies every save and checkpoint into one zip in userdata/exports.	Kopierer alle lagringar og sjekkpunkt til éin zip i userdata/exports.
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopier .nds- eller DS ZIP-filer til Roms/NDS på spelkortet. Vel deretter Søk etter nye spel.
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopier .rgdssave.zip-filer til userdata/imports. Dei må samsvare med spelet og emulatoren.
+Copy ability	Kopievne
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopier .nds-filer eller DS ZIP-arkiv til Roms/NDS på spelkortet. Spel følgjer ikkje med. Lagringar ligg i userdata.
 Could not apply brightness	Kunne ikkje endre lysstyrken
 Could not apply saved brightness	Kunne ikkje bruke lagra lysstyrke
 Could not apply saved power mode	Kunne ikkje bruke lagra straummodus
@@ -110,6 +217,7 @@ Could not apply volume	Kunne ikkje endre volumet
 Could not bring the Wi-Fi adapter up. Try again.	Kunne ikkje starte Wi-Fi-adapteren. Prøv att.
 Could not change 3D threading. Your game is unchanged.	Kunne ikkje endre 3D-trådar. Spelet er uendra.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Kunne ikkje stadfeste Wi-Fi-tilkoplinga. Søk og prøv att.
+Could not connect	Kunne ikkje kople til
 Could not enable lid wake	Kunne ikkje aktivere vekking med lokket
 Could not load. Resume, retry, or return without saving.	Kunne ikkje laste. Hald fram, prøv att eller avslutt utan å lagre.
 Could not read this collection. Try again.	Kunne ikkje lese samlinga. Prøv att.
@@ -117,6 +225,7 @@ Could not restore previous hardware setting	Kunne ikkje gjenopprette førre mask
 Could not save all settings. Check storage.	Kunne ikkje lagre alle innstillingar. Sjekk lagringsplassen.
 Could not save brightness	Kunne ikkje lagre lysstyrken
 Could not save controls. Check writable storage.	Kunne ikkje lagre kontrollar. Sjekk at lagringsplassen er skrivbar.
+Could not save DS settings.	Kunne ikkje lagre DS-innstillingar.
 Could not save game settings. Previous values kept.	Kunne ikkje lagre spelinnstillingar. Dei førre verdiane er tekne vare på.
 Could not save matching title.	Kunne ikkje lagre søketittelen.
 Could not save settings	Kunne ikkje lagre innstillingar
@@ -124,6 +233,7 @@ Could not save timezone	Kunne ikkje lagre tidssonen
 Could not save volume	Kunne ikkje lagre volumet
 Could not save. Resume, retry, or return without saving.	Kunne ikkje lagre. Hald fram, prøv att eller avslutt utan å lagre.
 Could not send game action	Kunne ikkje sende spelhandling
+Could not set up PortMaster	Kunne ikkje gjere klar PortMaster
 Could not set volume - see log	Kunne ikkje endre volumet – sjå loggen
 Could not sleep - see log	Kunne ikkje gå i kvilemodus – sjå loggen
 Could not sleep. Reopen the lid and try again.	Kunne ikkje gå i kvilemodus. Opne lokket og prøv att.
@@ -132,41 +242,89 @@ Could not start library scan	Kunne ikkje starte biblioteksøk
 Could not write controls	Kunne ikkje lagre kontrollar
 Counts display updates, not emulation speed. Changes immediately.	Tel skjermoppdateringar, ikkje emuleringsfart. Blir endra straks.
 Counts emulated game frames. Changes immediately.	Tel emulerte spelbilete. Blir endra straks.
+Course	Bane
+Cover	Omslag
 Covers	Omslag
+Current progress could not be saved. No slot was changed.	Kunne ikkje lagre framgangen. Ingen lagringsplassar vart endra.
 Custom	Eigendefinert
-DEFAULT THEME - CHECK LOG	STANDARDTEMA – SJÅ LOGGEN
-DS rounded	DS avrunda
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: tilrådd til dagleg speling. Opphavleg oppløysing er standard.
+DS only	Berre DS
 Dark	Mørkt
+Dark blue	Mørkeblå
+Dark green	Mørkegrøn
 Date format	Datoformat
+Day	Dag
+Day or night	Dag eller natt
+Daylight saving	Sommartid
+Days	Dagar
 Default	Standard
 Default emulator	Standardemulator
 Default shader	Standardfilter
+DEFAULT THEME - CHECK LOG	STANDARDTEMA – SJÅ LOGGEN
 Delete	Slett
+Delete slot {0}?	Slette plass {0}?
 Desktop preview	Førehandsvising på datamaskin
+Developer	Utviklar
 Development build	Utviklingsversjon
 Device address	Einingsadresse
 Device information	Einingsinformasjon
+Discard update	Forkast oppdatering
 Display	Skjerm
 Display FPS	Biletfrekvens på skjermen
 Done	Ferdig
 Down	Ned
+Download	Last ned
+Download automatically	Last ned automatisk
+Download interrupted. Retry to continue.	Nedlastinga vart avbroten. Prøv att for å halde fram.
+Download paused. Retry to continue.	Nedlastinga er sett på pause. Prøv att for å halde fram.
+Download update	Last ned oppdatering
+Downloading PortMaster	Lastar ned PortMaster
+Downloading update…	Lastar ned oppdatering…
+Downloading {0}	Lastar ned {0}
+Downloads resume where they stopped if Wi-Fi drops.	Nedlastinga held fram der ho stoppa om Wi-Fi fell ut.
 DraStic backend	DraStic-vising
 DraStic: an alternative for games that need it. Saves stay separate.	DraStic: eit alternativ for spel som treng det. Lagringar blir haldne åtskilde.
-ERROR	FEIL
-ERROR: Could not restore settings	FEIL: Kunne ikkje gjenopprette innstillingar
-ERROR: Could not restore settings - see log	FEIL: Kunne ikkje gjenopprette innstillingar – sjå loggen
+Draw and chat	Teikn og chat
+Draw and chat with nearby handhelds	Teikn og chat med einingar i nærleiken
+Drawing on your own	Teiknar for deg sjølv
+DS Classic	DS Klassisk
+DS controls	DS-funksjonar
+DS controls are unavailable for this engine.	DS-funksjonar er ikkje tilgjengelege for denne emulatoren.
+DS language	DS-språk
+DS Lite	DS Lite
+DS rounded	DS avrunda
+DS screens	DS-skjermar
+DSCore 3D resolution	DSCore 3D-oppløysing
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: tilrådd. Raskast, med rettingar for lok, penn og 3D og valfri 2x–5x 3D.
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: tilrådd til dagleg speling. Opphavleg oppløysing er standard.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: den opphavlege motoren. DSCore legg til rettingar og fart.
+Edit	Endre
+Edit search	Endre søk
+Effects volume	Effektvolum
+Empty slot	Tom plass
 Emulator	Emulator
 Emulator settings	Emulatorinnstillingar
+End of a list	Slutten av ei liste
+Ending so far	Slutt så langt
+Enemies defeated	Nedkjempa fiendar
+Energy	Energi
+Energy tanks	Energitankar
 Engine managed	Blir styrt av emulatoren
+English	Engelsk
 Enter here	Skriv her
 Enter password	Skriv inn passord
 Enter your username and password	Skriv inn brukarnamn og passord
+ERROR	FEIL
+ERROR: Could not restore settings	FEIL: Kunne ikkje gjenopprette innstillingar
+ERROR: Could not restore settings - see log	FEIL: Kunne ikkje gjenopprette innstillingar – sjå loggen
+Essences	Essensar
 Europe	Europa
 Every game in this collection has artwork.	Alle spela i samlinga har bilete.
-FPS changed for this session. Settings storage is unavailable.	Biletfrekvensvising endra for denne økta. Innstillingane kan ikkje lagrast.
-FPS counter enabled.	Biletfrekvensvising aktivert.
-FPS counter hidden.	Biletfrekvensvising skjult.
+Exit your game before installing an update.	Avslutt spelet før du installerer ei oppdatering.
+Experience	Erfaring
+Export	Eksporter
+Export slot	Eksporter lagring
+Extra pictures	Ekstra bilete
+Faded GBA colours made rich, as the real screen showed them.	Bleike GBA-fargar blir fyldige, slik den ekte skjermen viste dei.
 Fast	Rask
 Fast-forward	Hurtigspoling
 Fast-forward button	Hurtigspolingsknapp
@@ -174,164 +332,449 @@ Fast-forward enabled.	Hurtigspoling aktivert.
 Fast-forward is unavailable for this emulator.	Hurtigspoling er ikkje tilgjengeleg i denne emulatoren.
 Fast-forward style	Hurtigspolingsmåte
 Favourite	Favoritt
+FAVOURITE COLOUR	FAVORITTFARGE
+Favourite a game and it waits for you here	Gjer eit spel til favoritt, så ventar det her
 Favourites	Favorittar
+Feel every move	Kjenn kvart trykk
+Feel the game	Kjenn spelet
 Fetch artwork	Hent bilete
 Fetch missing artwork	Hent manglande bilete
+Figurines	Figurar
+File sharing on. Find "RG DS" under Network.	Fildeling er på. Finn "RG DS" under Nettverk.
+Files added	Filer lagde til
+Files arrived. Choose Play to start.	Filene er komne. Vel Spel for å starta.
+Filter	Filter
+Filtered	Filtrert
 Find and connect to a nearby network	Finn og kople til eit nettverk
+Find, pair and connect a nearby device	Finn, par og kopla til ei eining i nærleiken
+Finding games…	Finn spel…
+Finishing another task. Press Y again in a moment.	Fullfører ei anna oppgåve. Trykk Y igjen om litt.
 Finishing the system request	Fullfører systemhandlinga
 Follow your default button layout	Følg standardoppsettet ditt
 Following your global controls.	Brukar standardkontrollane dine.
 Follows your Library default. Each emulator keeps its own saves.	Følgjer standardvalet i biblioteket. Kvar emulator har eigne lagringar.
+Follows your library shader.	Følgjer biblioteksfilteret ditt.
+Forget this device?	Gløyme denne eininga?
+FPS changed for this session. Settings storage is unavailable.	Biletfrekvensvising endra for denne økta. Innstillingane kan ikkje lagrast.
+FPS counter enabled.	Biletfrekvensvising aktivert.
+FPS counter hidden.	Biletfrekvensvising skjult.
+Fr	Fr
+Frame	Ramme
 Frameskip	Bilethopp
 Free space	Ledig plass
 Free space while keeping your saves	Frigjer plass og ta vare på lagra spel
-Game FPS	Biletfrekvens i spelet
+French	Fransk
+Friends	Vener
+Full colour	Fulle fargar
+Game Boy	Game Boy
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobolt
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Game Boy Advance · Black	Game Boy Advance · Svart
+Game Boy Advance · Glacier	Game Boy Advance · Isbre
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Color	Game Boy Color
+Game Boy Color screen	Game Boy Color-skjerm
+Game Boy Color · Atomic Purple	Game Boy Color · Atomlilla
+Game Boy Color · Berry	Game Boy Color · Bær
+Game Boy Color · Dandelion	Game Boy Color · Løvetann
+Game Boy Color · Grape	Game Boy Color · Drue
+Game Boy Color · Kiwi	Game Boy Color · Kiwi
+Game Boy Color · Screen only	Game Boy Color · Berre skjerm
+Game Boy Color · Teal	Game Boy Color · Blågrøn
+Game Boy Color, darker	Game Boy Color, mørkare
+Game Boy Light	Game Boy Light
+Game Boy Pocket	Game Boy Pocket
+Game Boy Pocket · Black	Game Boy Pocket · Svart
+Game Boy Pocket · Blue	Game Boy Pocket · Blå
+Game Boy Pocket · Green	Game Boy Pocket · Grøn
+Game Boy Pocket · Pink	Game Boy Pocket · Rosa
+Game Boy Pocket · Red	Game Boy Pocket · Raud
+Game Boy Pocket · Screen only	Game Boy Pocket · Berre skjerm
+Game Boy Pocket · Silver	Game Boy Pocket · Sølv
+Game Boy Pocket · Yellow	Game Boy Pocket · Gul
+Game Boy screen	Game Boy-skjerm
+Game Boy · Black	Game Boy · Svart
+Game Boy · Blue	Game Boy · Blå
+Game Boy · Green	Game Boy · Grøn
+Game Boy · Red	Game Boy · Raud
+Game Boy · Screen only	Game Boy · Berre skjerm
+Game Boy · Yellow	Game Boy · Gul
 Game emulator	Spelemulator
 Game emulator saved.	Emulatoren for spelet er lagra.
+Game FPS	Biletfrekvens i spelet
+Game info	Spelinfo
 Game menu	Spelmeny
 Game options	Spelval
 Game options saved	Spelval lagra
-GameTDB (free)	GameTDB
+Game rumble	Spelrumling
+Game screen	Spelskjerm
+Game switcher	Spelbytar
 Games	Spel
+Games played	Spel som er spela
+GameTDB	GameTDB
+GameTDB (free)	GameTDB
+GB screens	GB-skjermar
+GBA Color	GBA-fargar
+GBA screen	GBA-skjerm
+GBA screens	GBA-skjermar
+GBA true colour	Ekte GBA-fargar
+GBA true screen	Ekte GBA-skjerm
+GBC screens	GBC-skjermar
+Gear	Utstyr
+Genre	Sjanger
+German	Tysk
+Get, update and remove ports	Hent, oppdater og fjern portar
 Give your eyes and hands a break.	La auga og hendene få ein pause.
 Global	Felles
 Global controls saved.	Standardkontrollar lagra.
+Glossy tiles	Blanke fliser
+Go back	Gå tilbake
+Goes into	Hamnar i
+Golden leaves	Gylne blad
+Green	Grøn
+Grey	Grå
+Grey TV	Grå TV
+Grid	Rutenett
+h	t
+Haptic strength	Haptisk styrke
+Health	Helse
+Heart containers	Hjartebehaldarar
+Heart pieces	Hjartebitar
+Hearts	Hjarte
+High contrast	Høg kontrast
 Hold	Hald inne
+Hold still for a right click	Hald still for høgreklikk
+Hold to exit	Hald for å avslutta
+Hold to load	Hald for å laste
+Hold to return home	Hald for å gå til hovudmenyen
+Hold to save	Hald for å lagre
+Home	Heim
+Home layout	Heim-oppsett
 Home shortcut	Heimsnarveg
+How dates appear at the top of the screen.	Korleis datoar blir viste øvst på skjermen.
+How dates appear in the status bar	Slik blir datoar viste i statuslinja
+How to get the files	Slik får du filene
+Icon style	Ikonstil
+Import help	Importhjelp
+Import into this slot	Importer til denne plassen
+Import slot	Importer lagring
+In a course	På ei bane
+In a level	I ei bane
+In game	I spelet
+IN USE	I BRUK
 Indian Ocean	Indiahavet
+Info screen	Infoskjerm
 Inherit	Arv
 Inherited	Arva
+Install	Installer
+Install the latest SD installer before this update.	Bruk det nyaste SD-installasjonsprogrammet før denne oppdateringa.
+Installed version	Installert versjon
+Installing PortMaster from the card	Installerer PortMaster frå kortet
+Instruments	Instrument
+Interface animations	Grensesnittanimasjonar
+IP address	IP-adresse
+Italian	Italiensk
+Items	Gjenstandar
+Japanese	Japansk
+Johto badges	Johto-merke
+Join	Bli med
+Journey	Reise
+Jump	Hopp
 Jump to letter	Hopp til bokstav
+Kanto badges	Kanto-merke
 Keep a checkpoint when returning home	Lagre tilstanden før hovudmenyen
+Keep getting and updating ports	Hald fram med å hente og oppdatere portar
 Keep playing	Hald fram med å spele
 Keep this game in Favourites	Legg dette spelet i Favorittar
 Kernel	Kjerne
 Key {0}	Tast {0}
-LCD + NDS Color	LCD + DS-fargar
-LCD + Natural Vision	LCD + naturleg bilete
+Keyboard	Tastatur
+Keys	Nøklar
+Kinstone fusions	Kinstone-fusjonar
+Language	Språk
+Last played	Sist spela
+Launch cancelled	Oppstart avbroten
 LCD + both colours	LCD + begge fargeeffektane
+LCD + Natural Vision	LCD + naturleg bilete
+LCD + NDS Color	LCD + DS-fargar
 LCD pixels with natural colour and contrast.	LCD-pikslar med naturlege fargar og kontrast.
 LCD pixels with the DS colour treatment.	LCD-pikslar med DS-fargar.
 LCD pixels, DS colour and Natural Vision together.	LCD-pikslar, DS-fargar og naturleg bilete saman.
-Language	Språk
-Launch cancelled	Oppstart avbroten
+Leave	Forlat
+Leave RG DS Core and go back to the stock menu.	Forlat RG DS Core og gå tilbake til standardmenyen.
 Left	Venstre
 Left stick	Venstre spak
 Left-handed	Venstrehendt
 Less than a minute	Under eitt minutt
+Less than a minute left	Under eitt minutt att
+Level	Nivå
 Library	Spelbibliotek
 Library scan exceeded its limit	Biblioteksøket gjekk over grensa
 Library scan failed	Biblioteksøket mislukkast
+Libretro	Libretro
 Libretro (free)	Libretro
 Light	Lyst
+Lime	Limegrøn
 List	Liste
+Listening…	Lyttar…
 Live background	Levande bakgrunn
+Live input	Lydnivå no
+Lives	Liv
 Load	Last inn
+Load checkpoint	Last inn speltilstand
+Load complete	Lasta inn
 Load requested. Resume to check your game.	Innlasting førespurd. Hald fram for å sjekke spelet.
+Load slot {0}?	Laste inn plass {0}?
 Load state	Last inn tilstand
+Loaded	Lasta
 Loading checkpoint…	Lastar speltilstand …
+Loading…	Lastar…
+Long press	Langt trykk
+Looking for devices…	Ser etter einingar…
+Looking for games…	Leitar etter spel…
 Looking for networks…	Søkjer etter nettverk …
+Looking for the latest PortMaster	Ser etter nyaste PortMaster
+Loud	Høgt
+Lv	Niv.
+Magenta	Magenta
+Magical sword	Magisk sverd
 Magnified detail	Forstørra detalj
 Manage builds and temporary files	Administrer versjonar og mellombelse filer
+Matches your accent	Følgjer aksentfargen
 Matching title	Tittel for biletsøk
 Matching title saved. Choose Fetch artwork.	Søketittel lagra. Vel Hent bilete.
+Menu audio is unavailable on this device.	Menylyd er utilgjengeleg på denne eininga.
+Menu effects	Menyeffektar
+Menu haptics	Menyhaptikk
 Menu idle sleep	Kvile ved inaktivitet
+Menu music	Menymusikk
+Menu sounds are unavailable.	Menylydar er utilgjengelege.
+Microphone unavailable	Mikrofon utilgjengeleg
+Microphone, simulated blowing, lid and DS language.	Mikrofon, simulert blåsing, lokk og DS-språk.
+min	min
+Minutes	Minutt
+Mirror shards	Spegelbitar
+Missile room	Missilkapasitet
+Missiles	Missil
+Missing artwork	Manglar omslag
+Mo	Må
+Money	Pengar
+Moods	Stemningar
+More	Meir
+Most played	Mest spela
+Music volume	Musikkvolum
+Musical coins	Musikkmyntar
 Mute	Demp
 Muted	Dempa
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: eit alternativ for kompatibilitet. Prøv DSperate først for fart.
 Native	Opphavleg
+Native (fastest)	Opphavleg (raskast)
 Native is faster; 2x uses more GPU time. Save & restart applies it.	Opphavleg er raskare; 2x krev meir grafikkraft. Lagre og start på nytt for å ta det i bruk.
 Native output	Opphavleg bilete
+Natural	Naturleg
+Natural colour with smoothed diagonal edges.	Naturlege fargar med glatta diagonale kantar.
+Natural colour with soft pixels that glow together.	Naturlege fargar med mjuke pikslar som glør saman.
+Natural glow	Naturleg glød
+Natural smooth	Naturleg glatt
 Natural Vision	Naturleg bilete
+Needs your files	Treng filene dine
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Svart
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Sølv
+Network file sharing	Fildeling i nettverk
 Networking is disabled. Turn Wi-Fi on to enable it.	Nettverk er deaktivert. Slå på Wi-Fi for å aktivere det.
 Never	Aldri
+New messages below	Nye meldingar nedanfor
+Next	Neste
 Next emulator	Neste emulator
-No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Ingen Wi-Fi-adapter. Slå på Wi-Fi for å starte den.
+Next picture	Neste bilete
+Next:	Neste:
+Night	Natt
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: eit alternativ for kompatibilitet. Prøv DSperate først for fart.
 No button detected. Try again when you're ready.	Ingen knapp registrert. Prøv att når du er klar.
 No checkpoint saved for this emulator yet.	Ingen speltilstand er lagra for denne emulatoren enno.
 No cover yet	Manglar omslag
+No devices found. Put the device in pairing mode and scan.	Fann ingen einingar. Set eininga i paringsmodus og søk.
 No favourites yet	Ingen favorittar enno
+No game has this information yet. Fetch artwork with Game info turned on.	Ingen spel har denne informasjonen enno. Hent omslag med Spelinfo slått på.
+No game information yet.	Ingen spelinfo enno.
 No games	Ingen spel
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Ingen spel funne. Kopier .nds- eller DS ZIP-filer til Roms/NDS på spelkortet og søk på nytt.
 No games in this collection.	Ingen spel i denne samlinga.
+No letters to jump to. Search for another game.	Ingen bokstavar å hoppe til. Søk etter eit anna spel.
+No matches. Use View to change filters.	Ingen treff. Endre filter under Vising.
+No matching games	Ingen spel funne
 No networks found	Fann ingen nettverk
+No pictures yet	Ingen bilete enno
 No previous build available.	Ingen tidlegare versjon tilgjengeleg.
 No recent games yet	Ingen nylege spel enno
+No release notes yet.	Ingen versjonsnyhende enno.
+No vibration motor was found on this device.	Fann ingen vibrasjonsmotor på denne eininga.
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Ingen Wi-Fi-adapter. Slå på Wi-Fi for å starte den.
+No Wi-Fi: you can still draw	Ikkje på Wi-Fi: du kan framleis teikne
+Nobody else here yet	Ingen andre her enno
+Nobody else is nearby yet	Ingen andre i nærleiken enno
+Nobody here yet	Ingen her enno
+None yet	Ingen enno
 Normal	Normal
 Normal speed.	Normal fart.
 Not available	Ikkje tilgjengeleg
 Not connected	Ikkje tilkopla
+Not downloaded	Ikkje lasta ned
+Not loaded	Ikkje lasta
 Not played yet	Ikkje spela enno
-OPEN	OPNE
+Not saved	Ikkje lagra
+Not yet	Ikkje enno
+Nothing played yet	Ingenting spelt enno
+Nothing to load	Ingenting å laste
+Nothing to load here yet.	Ingenting å laste inn her enno.
+Notification	Varsel
 Off	Av
 Off (smooth)	Av (jamn rørsle)
 Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Av gjev jamn rørsle. Bilethopp kan auke farten. Start på nytt for å bruke valet.
 Off keeps the original picture.	Av tek vare på det opphavlege biletet.
+Older messages	Eldre meldingar
 On	På
+Online	Nettspel
+Online play	Nettspel
+OPEN	OPNE
 Open	Opne
+Open a view	Opne ei vising
+Open lid	Opne loket
 Open menu	Opne meny
+Open on this Wi-Fi	Open på dette Wi-Fi-nettet
 Open the Anbernic menu	Opne Anbernic-menyen
 Options	Val
+Or open on a computer	Eller opna på ei datamaskin
+Orange	Oransje
+Original	Original
 Original pixels	Opphavlege pikslar
 Original pixels and colours.	Opphavlege pikslar og fargar.
 Pacific	Stillehavet
-PLAY	SPEL
+Paired	Para
+Party	Gruppe
 Password	Passord
+Password protected	Passordverna
+Pause download	Sett nedlasting på pause
 Pause when you need to.	Ta ein pause når du treng det.
 Paused	Sett på pause
+Paused at {0}	Pausa ved {0}
+PC monitor	PC-skjerm
 Performance	Yting
+Phone battery	Telefonbatteri
+Phone or computer connected	Telefon eller datamaskin tilkopla
+Picture	Bilete
+Pink	Rosa
+Pixel art	Pikselkunst
+Pixel beads	Pikselperler
 Pixel classic	Klassisk piksel
+Plain	Enkel
+Plain, or the DSi's ruled grid behind every screen	Enkel, eller DSi-rutenettet bak alle skjermar
+PLAY	SPEL
+Play	Spel
+Play a game to start your statistics.	Spel eit spel for å starte statistikken.
 Play at a comfortable volume.	Spel med eit behageleg lydnivå.
+Played	Spela
+Players	Spelarar
+Playful sounds for browsing, choosing and starting games.	Leikne lydar når du blar, vel og startar spel.
 Please keep your handheld on	La eininga vere på
 Pocket green	Lommegrønt
+Point and click on top	Peik og klikk øvst
+Pokédex caught	Pokédex fanga
+Pokédex seen	Pokédex sett
+PortMaster is ready	PortMaster er klar
+Ports	Portar
 Power	Straum
+Power bombs	Kraftbomber
 Power mode	Straummodus
 Power off	Slå av
 Power off your handheld?	Slå av eininga?
 Power profile	Straumprofil
 Powering off…	Slår av …
+Prepare	Gjer klar
 Preparing controls…	Klargjer kontrollar …
 Preparing the launcher	Klargjer hovudmenyen
 Preparing the library…	Klargjer biblioteket …
+Preparing update…	Klargjer oppdateringa…
 Preparing your cartridges…	Klargjer spelkorta …
 Preparing your library…	Klargjer spelbiblioteket …
+Preparing your statistics…	Klargjer statistikken…
+Preparing…	Førebur…
 Press a button for {0}	Trykk på ein knapp for {0}
 Press a button…	Trykk på ein knapp …
 Preview	Førehandsvising
-Preview Wi-Fi	Wi-Fi-førehandsvising
+PREVIEW	FØREHANDSVISING
 Preview and choose your screen style	Førehandsvis og vel skjermfilter
 Preview game	Dømespel
+Preview sound	Prøv ein lyd
 Preview unavailable	Førehandsvising utilgjengeleg
+Preview Wi-Fi	Wi-Fi-førehandsvising
+Previous	Førre
 Previous build selected. Return to stock, then open RGDS again.	Førre versjon valt. Gå til Anbernic og opne RG DS Core att.
 Profile	Profil
+PSP · Black	PSP · Svart
+PSP · White	PSP · Kvit
+Publisher	Utgjevar
+Purple	Lilla
+Push	Skyv
+Quick search	Hurtigsøk
+Quiet	Stille
+Quit	Avslutt
+Race	Løp
+Rating	Aldersgrense
+Reading Roms/NDS on your games card. This takes a moment.	Les Roms/NDS på spelkortet. Det tek ei lita stund.
 READY	KLAR
-REVIEW YOUR CHOICE	SJÅ OVER VALET DITT
-RGDS build	RG DS Core-versjon
-ROUNDED FONT UNAVAILABLE	AVRUNDA SKRIFT UTILGJENGELEG
+Ready to fetch artwork.	Klar til å hente bilete.
+Ready to restart. Your previous version is kept for recovery.	Klar til omstart. Førre versjon blir teken vare på for gjenoppretting.
+Real microphone	Fysisk mikrofon
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Fysisk mikrofon er på som standard. Blås- og lokkfunksjonane varer i to sekund i spelet. Språkendringar krev omstart.
+Receiving files	Tek imot filer
 Recents	Nyleg spela
+Red	Raud
 Reduce rendering work when needed	Reduser grafikkarbeidet ved behov
 Refresh	Oppdater
 Refresh connection	Oppdater tilkopling
 Release for options	Slepp for å sjå val
+Release notes	Versjonsnyhende
+Released	Utgjeve
 Remap	Endre knappar
+Remove favourite	Fjern favoritt
+Replace	Erstatt
+Replace slot {0}?	Erstatte plass {0}?
 Request cancelled.	Førespurnaden vart avbroten.
 Request failed. Check the connection or device log and try again.	Førespurnaden mislukkast. Sjekk tilkoplinga eller loggen og prøv att.
+Reserve	Reserve
 Reset	Nullstill
+Reset filters	Nullstill filter
+Reset state	Nullstill tilstand
 Rest after a period of inactivity	Gå i kvilemodus etter inaktivitet
 Restart	Start på nytt
+Restart & install	Start på nytt og installer
+Restart and install the update?	Starte på nytt og installere oppdateringa?
+Restart from the title screen. In-game saves and save slots are kept.	Start frå tittelskjermen. Spellagringar og lagringsplassar blir tekne vare på.
 Restart menu	Start menyen på nytt
-Restart the RGDS menu?	Starte RG DS Core-menyen på nytt?
+Restart port	Start porten på nytt
+Restart RG DS Core before installing the update.	Start RG DS Core på nytt før du installerer oppdateringa.
 Restart the device?	Starte eininga på nytt?
+Restart the game to apply DS settings.	Start spelet på nytt for å bruke DS-innstillingane.
+Restart the RGDS menu.	Start RGDS-menyen på nytt.
+Restart the RGDS menu?	Starte RG DS Core-menyen på nytt?
 Restart uses {0}. Saves and checkpoints stay separate per emulator.	Omstart brukar {0}. Lagra spel og tilstandar blir haldne åtskilde per emulator.
+Restart without loading a state?	Starte på nytt utan å laste ein tilstand?
+Restarting into the update…	Startar den nye versjonen…
 Restarting…	Startar på nytt …
 Restore defaults	Gjenopprett standard
 Restore the last installed RGDS build	Gjenopprett førre RG DS Core-versjon
 Restoring settings	Gjenopprettar innstillingar
 Restoring settings…	Gjenopprettar innstillingar …
 Resume	Hald fram
+Resume after power off	Hald fram etter avslåing
+Resume download	Hald fram med nedlastinga
 Resume game	Hald fram med spelet
 Return	Tilbake
 Return home	Til hovudmenyen
 Return home before changing startup.	Gå til hovudmenyen før du endrar oppstart.
+Return home before testing the physical microphone.	Gå til heimskjermen før du testar mikrofonen.
 Return home from your game first.	Avslutt spelet til hovudmenyen først.
 Return to game	Tilbake til spelet
 Return to stock	Til Anbernic-menyen
@@ -340,16 +783,30 @@ Return to the stock menu?	Gå til Anbernic-menyen?
 Return without saving	Avslutt utan å lagre
 Returning home…	Går til hovudmenyen …
 Review unmatched	Sjå spel utan treff
+REVIEW YOUR CHOICE	SJÅ OVER VALET DITT
+RGDS build	RG DS Core-versjon
+Rich	Detaljerte
 Right	Høgre
 Right stick	Høgre spak
 Rollback simulated.	Gjenoppretting simulert.
-START	START
+Round	Runde
+ROUNDED FONT UNAVAILABLE	AVRUNDA SKRIFT UTILGJENGELEG
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-spel på DS, rumlekassettar på Game Boy og Game Boy Advance.
+Rumble strength	Rumlestyrke
+Rupees	Rupiar
+Sa	La
 Save	Lagre
 Save & restart	Lagre og start på nytt
 Save & restart applies Threaded 3D.	Lagre og start på nytt for å bruke fleirtråda 3D.
 Save & restart keeps your checkpoint and applies pending settings.	Lagre og start på nytt tek vare på tilstanden og brukar nye innstillingar.
 Save a report for troubleshooting	Lagre ein rapport for feilsøking
+Save backup created in userdata/exports.	Tryggleikskopi laga i userdata/exports.
+Save checkpoint	Lagre speltilstand
+Save complete	Lagra
 Save device report	Lagre einingsrapport
+Save gallery	Lagringsgalleri
+Save here	Lagre her
+Save library updated.	Lagringsbibliotek oppdatert.
 Save state	Lagre tilstand
 Save your checkpoint and restart	Lagre speltilstanden og start på nytt
 Saved	Lagra
@@ -366,16 +823,42 @@ Saving before returning home…	Lagrar før hovudmenyen …
 Saving checkpoint before restarting…	Lagrar speltilstand før omstart …
 Saving checkpoint…	Lagrar speltilstand …
 Saving your progress…	Lagrar framgangen din …
+Saving…	Lagrar…
 Scan	Søk
+Scan complete	Søk fullført
+Scan for games	Søk etter nye spel
+Scan with your phone	Skann med telefonen
+Scanning…	Søkjer…
 Scene	Scene
+Score	Poeng
 Screen brightness	Lysstyrke
+Screen colours	Skjermfargar
+Screen off	Skjerm av
 Screen order	Skjermrekkjefølgje
+screens	skjermar
 ScreenScraper needs project credentials and your account	ScreenScraper treng prosjektnøklar og kontoen din
+Screenshot	Skjermbilete
+Screenshots	Skjermbilete
+Screenshots and title screens	Skjermbilete og tittelskjermar
+Sea green	Sjøgrøn
+Search	Søk
+Search games	Søk etter spel
+Search in	Søk i
+Searching…	Søkjer…
+Second screen	Andre skjerm
+Seconds	Sekund
+Secret seashells	Løynde skjel
+Seeds	Frø
 Select	Vel
 Select a network again and enter its password.	Vel eit nettverk på nytt og skriv inn passordet.
 Select a network again.	Vel eit nettverk på nytt.
 Selected	Valt
+Selected row	Vald rad
+Send	Send
+Series	Serie
+Set the clock to where you are.	Still klokka etter der du er.
 Sets Standard DraStic screen order for this game. Save & restart applies it.	Vel skjermrekkjefølgje i standard DraStic. Lagre og start på nytt.
+Setting up PortMaster	Gjer klar PortMaster
 Settings	Innstillingar
 Settings saved	Innstillingar lagra
 Shader	Skjermfilter
@@ -386,21 +869,27 @@ Shader saved for next launch	Filter lagra for neste oppstart
 Shader saved. Restart this game to apply it.	Filter lagra. Start spelet på nytt for å bruke det.
 Shader studio	Filterstudio
 Shaders	Skjermfilter
-Sharp + NDS Color	Skarp + DS-fargar
-Sharp + Natural Vision	Skarp + naturleg bilete
 Sharp + both colours	Skarp + begge fargeeffektane
+Sharp + Natural Vision	Skarp + naturleg bilete
+Sharp + NDS Color	Skarp + DS-fargar
 Sharp bilinear	Skarp bilineær
+Sharp fill	Skarp utfylling
 Sharp pixel edges with smoother scaling.	Skarpe pikselkantar med jamnare skalering.
 Sharp scaling with natural colour and contrast.	Skarp skalering med naturlege fargar og kontrast.
 Sharp scaling with the DS colour treatment.	Skarp skalering med DS-fargar.
 Sharp scaling, DS colour and Natural Vision together.	Skarp skalering, DS-fargar og naturleg bilete saman.
+Shield	Skjold
 Shift	Skift
 Shortcut action	Snarveghandling
+Shots	Skot
+Show games	Vis spel
 Show the charge in the status bar	Vis batteriprosenten øvst
 Show the welcome screen at startup	Vis velkomstskjermen ved oppstart
 Sign in	Logg inn
 Sign out	Logg ut
+Signal	Signal
 Signing in…	Loggar inn …
+Simple pixel	Enkle pikslar
 Simulated handheld	Simulert eining
 Sleep	Kvilemodus
 Sleep now	Kvilemodus no
@@ -409,23 +898,45 @@ Sleep simulated - press any control	Simulert kvilemodus – trykk på ein knapp
 Sleep simulated - settings retained	Simulert kvilemodus – innstillingane er tekne vare på
 Sleep unavailable on this device	Kvilemodus er ikkje tilgjengeleg
 Sleeping - use Power to wake	Kvilemodus – trykk på straumknappen for å vekke
-Soft LCD grid	Mjukt LCD-rutenett
+Slide into pages; slide back to return	Skyv inn på sider; skyv tilbake for å gå tilbake
+Slot	Plass
+Slot change undone.	Endringa er angra.
+Slot exported to userdata/exports.	Lagring eksportert til userdata/exports.
+Slot {0} deleted.	Plass {0} sletta.
+Small keys	Små nøklar
+Small touches, scrolling and startup motion	Små effektar, rulling og oppstart
+Smooth fill	Mjuk utfylling
 Soft green monochrome with full-resolution detail.	Mjukt grønt monokromt bilete i full oppløysing.
+Soft LCD grid	Mjukt LCD-rutenett
 Soft scanlines	Mjuke skannlinjer
+Some menu sounds are unavailable.	Nokre menylydar er utilgjengelege.
 Sound	Lyd
+Sounds & music	Lydar og musikk
+Source	Kjelde
 Space	Mellomrom
+Spanish	Spansk
+Spring	Fjør
+Springy menu changes with a colourful wobble	Sprettande menybyte med fargerik rørsle
+Stable	Stabil
 Standard	Standard
 Standard DraStic only. Applies on the next launch; game saves are kept.	Berre standard DraStic. Gjeld neste oppstart; lagra spel blir tekne vare på.
 Standard screen order	Standard skjermrekkjefølgje
+START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
+Start a game	Start eit spel
 Start RG DS automatically on future boots?	Starte RG DS Core automatisk ved oppstart?
+Start Send   X Undo   L R Scroll	Start Send   X Angre   L R Bla
 Start with a familiar layout	Vel eit kjent knappoppsett
 Start, then Anbernic	Start, deretter Anbernic
+Starting…	Startar…
 Startup	Oppstart
 Startup choice saved.	Oppstartsvalet er lagra.
 Startup choice simulated.	Oppstartsvalet er simulert.
 Startup is managed by RGDS OS.	Oppstart blir styrt av RG DS Core.
+Statistics	Statistikk
+Step {0} of 4	Steg {0} av 4
+Still reading your library. Try again in a moment.	Les framleis biblioteket. Prøv igjen om eit augeblink.
 Stock	Standard
 Stock firmware	Anbernic-fastvare
 Stop fetching	Stopp henting
@@ -435,76 +946,196 @@ Stop scraping before changing source	Stopp bilethenting før du byter kjelde
 Stopping after this request	Stoppar etter denne førespurnaden
 Stopping after this request.	Stoppar etter denne førespurnaden.
 Storage read-only - use internal RGDS	Lagringa er skriveverna – bruk intern RG DS Core
+Su	Su
+Subtle	Diskret
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Sommartid følgjer tidssona di. Slå han på eller av om klokka går ein time feil.
+Super missiles	Supermissil
 SuperDrastic (experimental)	SuperDrastic (eksperimentell)
 SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic brukar opphavleg bilete. Standardfilteret ditt blir teke vare på.
 SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic har eiga pausemeny og vising. Eksperimentell; testing på RG DS står att.
+Swap screens	Byt skjermar
 Swapped	Bytt
+Swipe in from the left edge to go Back.	Sveip inn frå venstre kant for å gå tilbake.
+Swipe up from the bottom edge to go Home from anywhere.	Sveip opp frå nedste kant for å gå til Heim kvar som helst frå.
+Swipe up from the bottom for Home, in from the left for Back	Sveip opp frå botnen for Heim, inn frå venstre for Tilbake
+Switch off	Slå av
+Switch on	Slå på
+Switch to another game	Byt til eit anna spel
+Switches and values	Brytarar og verdiar
+Sword	Sverd
 System	System
-THEME ERROR - RETAINED CURRENT	TEMAFEIL – BEHELD GJELDANDE
-THEME RELOADED	TEMA LASTA PÅ NYTT
-Turn the handheld off and on again	Slå eininga av og på att
-TYPEFACE	SKRIFTTYPE
+System update	Systemoppdatering
+Systems	System
+Tap to type, or use the D-pad and A	Trykk for å skrive, eller bruk styrekorset og A
+Team	Lag
 Temporary game cache cleared. Saves and artwork are kept.	Mellombels spellager tømt. Lagra spel og bilete blir tekne vare på.
+Test	Test
+Test microphone	Test mikrofon
+Test the microphone on your handheld.	Test mikrofonen på konsollen.
+Testing	Testing
+Th	To
+That message could not be sent	Meldinga kunne ikkje sendast
+That room is full	Det rommet er fullt
+The backup did not finish. Please try again.	Tryggingskopien vart ikkje fullført. Prøv igjen.
+The best there is	Det beste som finst
+The brighter DS Lite screen with a faint pixel grid.	Den lysare DS Lite-skjermen med eit svakt pikselrutenett.
 The checkpoint did not finish saving.	Lagringa vart ikkje fullført.
 The emulator did not finish. Resume, retry, or return without saving.	Emulatoren vart ikkje ferdig. Hald fram, prøv att eller avslutt utan å lagre.
+The first DS screen: muted colour and a fine pixel grid.	Den første DS-skjermen: dempa fargar og fint pikselrutenett.
+The Game Boy Advance LCD's own colour and gamma.	Game Boy Advance-skjermen sine eigne fargar og gamma.
+The Game Boy Advance screen: its colour and faint pixel gaps.	Game Boy Advance-skjermen: fargane og dei svake mellomromma mellom pikslane.
+The Game Boy Color screen with faint gaps between its pixels.	Game Boy Color-skjermen med svake mellomrom mellom pikslane.
 The game menu did not respond. Resume or return without saving.	Spelmenyen svarte ikkje. Hald fram eller avslutt utan å lagre.
+The language for menus and messages.	Språket for menyar og meldingar.
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Punktmatriseskjermen til den originale Game Boy-en: eit lyst pikselrutenett og mjuke skuggar.
+The pad is full: send it or clear it	Teiknebrettet er fullt: send eller tøm det
+The true GBA colours on its screen, with the gaps between its pixels.	Dei ekte GBA-fargane på skjermen, med mellomromma mellom pikslane.
+The update could not be downloaded. Check for updates again.	Oppdateringa kunne ikkje lastast ned. Sjå etter oppdateringar på nytt.
+The update could not start. Your previous version was restored.	Oppdateringa kunne ikkje starte. Førre versjon er gjenoppretta.
 The zFast LCD texture with both colour treatments.	zFast LCD-tekstur med begge fargebehandlingane.
 The zFast LCD texture with natural colour and contrast.	zFast LCD-tekstur med naturlege fargar og kontrast.
 The zFast LCD texture with the DS colour treatment.	zFast LCD-tekstur med DS-fargar.
 Theme	Tema
 Theme & display	Tema og skjerm
+THEME ERROR - RETAINED CURRENT	TEMAFEIL – BEHELD GJELDANDE
+THEME RELOADED	TEMA LASTA PÅ NYTT
+There is not enough free space for this update.	Det er ikkje nok ledig plass til oppdateringa.
+This can take a few seconds	Dette kan ta nokre sekund
 This emulator does not expose a frameskip setting.	Denne emulatoren har ikkje eit val for bilethopp.
 This emulator uses native resolution. No resolution switch is available.	Denne emulatoren brukar opphavleg oppløysing. Ho kan ikkje endrast.
 This engine does not expose a threading switch.	Denne emulatoren har ikkje eit val for trådar.
 This engine has no live threading control.	Denne emulatoren kan ikkje endre trådar under speling.
 This game	Dette spelet
+This handheld's own screen.	Skjermen til denne handhaldne konsollen.
 This network requires an enterprise profile.	Dette nettverket krev ein bedriftsprofil.
+This port lists no instructions.	Denne porten har ingen instruksjonar.
 This request did not finish. Please try again.	Førespurnaden vart ikkje fullført. Prøv att.
 This shader is unavailable for the current emulator.	Dette filteret er ikkje tilgjengeleg for denne emulatoren.
+This stock firmware has not been validated for updates.	Denne originalfastvara er ikkje validert for oppdateringar.
+This version failed to start. Waiting for a newer update.	Denne versjonen kunne ikkje starte. Ventar på ei nyare oppdatering.
 Threaded 3D	Fleirtråda 3D
+Time	Tid
+Time format	Tidsformat
+Time of day	Tid på døgnet
 Time played	Speletid
+Times played	Speløkter
 Timezone	Tidssone
+Title screen	Tittelskjerm
+Title screens	Tittelskjermar
 Toggle	Veksle
+Too much on the pad: erase some of it	For mykje på brettet: visk ut noko
+Tools	Verktøy
 Top display	Øvre skjerm
+Total	Totalt
 Touch	Berøring
+Touch gestures	Berøringsrørsler
+Touch here to point and click on the top screen.	Trykk her for å peika og klikka på den øvste skjermen.
 Touch indicator	Berøringsindikator
+Touch screen	Berøringsskjerm
+Touch screen is not available	Berøringsskjermen er ikkje tilgjengeleg
+Touch screen off	Berøringsskjerm av
+Touch the screen to turn it on	Trykk på skjermen for å slå han på
 Touch to continue	Trykk for å halde fram
 Touch {0}	Berøring {0}
+Trainer	Trenar
+Transition style	Overgangsstil
+Transitions	Overgangar
+Treasures	Skattar
+Try a pattern	Prøv eit mønster
+Try a shorter title or clear your filter.	Prøv ein kortare tittel eller nullstill filteret.
+Try again	Prøv igjen
+Try another title or clear your filters	Prøv ein annan tittel eller nullstill filtera
 Try saving again	Prøv å lagre att
+Tu	Ty
+Turn Bluetooth off?	Slå av Bluetooth?
+Turn Bluetooth on to find devices.	Slå på Bluetooth for å finne einingar.
+Turn it on to find networks	Slå det på for å finne nettverk
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Slå på Spelinfo under Innstillingar > Bibliotek > Omslagskjelder, og hent omslag.
+Turn on game rumble for games made for a rumble accessory.	Slå på spelrumling for spel laga for eit rumletilbehøyr.
+Turn on menu haptics to feel the menus.	Slå på menyhaptikk for å kjenne menyane.
+Turn on menu music for a soft tune while you browse.	Slå på menymusikk for ein mjuk melodi medan du blar.
+Turn on menu sounds to hear the previews.	Slå på menylydar for å prøve lydane.
+Turn the handheld off and on again	Slå eininga av og på att
 Turn Wi-Fi off?	Slå av Wi-Fi?
 Turn Wi-Fi on first.	Slå på Wi-Fi først.
 Turn Wi-Fi on to find networks.	Slå på Wi-Fi for å finne nettverk.
+Turning Bluetooth off…	Slår av Bluetooth…
+Turning Bluetooth on…	Slår på Bluetooth…
 Turning Wi-Fi off…	Slår av Wi-Fi …
 Turning Wi-Fi on…	Slår på Wi-Fi …
+Turquoise	Turkis
+Type	Skriv
+Type a game title…	Skriv ein speltittel…
+Type your name	Skriv namnet ditt
+TYPEFACE	SKRIFTTYPE
 Typeface	Skrifttype
 Unassigned	Ikkje tildelt
 Unavailable	Utilgjengeleg
+Undo last load	Angre siste innlasting
+Undo last slot change	Angre siste endring
 Unmatched artwork	Spel utan bilettreff
 Unmute	Slå på lyd
+Unpacking files	Pakkar ut filer
+Unpacking PortMaster	Pakkar ut PortMaster
+Unplayed	Ikkje spela
+Up	Opp
+Update	Oppdater
+Update available in Maintenance	Oppdatering klar i Vedlikehald
+Update discarded. Your installed version is unchanged.	Oppdateringa er forkasta. Installert versjon er uendra.
+Update failed. Check Wi-Fi and try again.	Oppdateringa mislukkast. Kontroller Wi-Fi og prøv att.
+Update information has expired or the device clock is incorrect.	Oppdateringsinformasjonen er utgått, eller einingsklokka er feil.
+Update installed.	Oppdateringa er installert.
+Update now	Oppdater no
+Update verification failed. Check for updates again.	Oppdateringa kunne ikkje verifiserast. Sjå etter oppdateringar på nytt.
+Updates	Oppdateringar
 Updates & recovery	Oppdatering og gjenoppretting
-Use ROM identity	Bruk ROM-tittel
+Updates will be available when the release channel opens.	Oppdateringar blir tilgjengelege når utgjevingskanalen opnar.
 Use an additional rendering thread	Bruk ein ekstra tråd for grafikk
 Use default ({0})	Bruk standard ({0})
 Use global controls	Bruk standardkontrollar
 Use previous build	Bruk førre versjon
+Use ROM identity	Bruk ROM-tittel
+Use the engine's native controls for microphone and DS settings.	Bruk emulatoren sine eigne kontrollar for mikrofon og DS-innstillingar.
 Use the previous RGDS build?	Bruke førre RG DS Core-versjon?
 Used by games without an override	Blir brukt av spel utan eigne val
 Username	Brukarnamn
+Verify	Kontroller
+Verifying update…	Kontrollerer oppdateringa…
+Version {0} is ready	Versjon {0} er klar
+Version {0} is ready to install	Versjon {0} er klar til installering
+Versions, free space and the network address of your handheld.	Versjonar, ledig plass og nettverksadressa til handkonsollen.
+Vibration	Vibrasjon
 View	Vising
+View transitions	Visingsovergangar
+Violet	Fiolett
+Vivid	Livleg
+Vivid LCD	Livleg LCD
+Vivid smooth	Livleg glatt
 Volume	Volum
 Volume control unavailable	Volumkontroll er utilgjengeleg
+Waiting for an address…	Ventar på ei adresse…
 WAITING FOR INPUT	VENTAR PÅ INNDATA
 Warm monochrome with preserved highlight detail.	Varmt monokromt bilete med detaljar i lyse område.
 Warm paper	Varmt papir
 Warm whites and softened contrast for evening play.	Varme kvittonar og mjukare kontrast for kveldsspeling.
+We	On
 Welcome back	Velkomen tilbake
+What happens when you turn the handheld on.	Kva som skjer når du slår på handkonsollen.
 What the shortcut opens	Kva snarvegen opnar
+What's new	Nytt i denne versjonen
+Where covers and titles come from.	Kvar omslag og titlar vert henta frå.
+Where games go on the card, and a fresh scan.	Kvar spel skal liggje på kortet, og eit nytt søk.
 Where this layout applies	Kvar dette oppsettet blir brukt
+Where to put games	Kvar legg eg spel?
+White sword	Kvitt sverd
+Whole pixels	Heile pikslar
 Wi-Fi	Wi-Fi
 Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi-adapteren er ikkje klar. Sjekk drivaren eller start eininga på nytt.
 Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi-adapteren er ikkje klar. Slå på Wi-Fi for å prøve att.
+Wi-Fi connected	Wi-Fi tilkopla
 Wi-Fi did not turn on. Try again.	Wi-Fi vart ikkje slått på. Prøv att.
 Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Wi-Fi er blokkert av maskinvara. Start eininga på nytt og prøv att.
+Wi-Fi is off	Wi-Fi er av
 Wi-Fi is still on. Try turning it off again.	Wi-Fi er framleis på. Prøv å slå det av att.
 Wi-Fi is unavailable.	Wi-Fi er utilgjengeleg.
 Wi-Fi off.	Wi-Fi er av.
@@ -512,630 +1143,53 @@ Wi-Fi on.	Wi-Fi er på.
 Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi-førespurnaden mislukkast. Sjekk passordet og signalet, og prøv att.
 Wi-Fi request timed out. Check signal and try again.	Wi-Fi-førespurnaden tok for lang tid. Sjekk signalet og prøv att.
 Wi-Fi service is unavailable.	Wi-Fi-tenesta er utilgjengeleg.
+With info	Med info
 With shader	Med filter
+Without info	Utan info
+WonderSwan Color · Blue	WonderSwan Color · Blå
+WonderSwan Color · White	WonderSwan Color · Kvit
+Wood-grain TV	TV i treverk
+Wooden sword	Tresverd
 Working…	Arbeider …
+World	Verda
+World map	Verdskart
+Worlds	Verder
+Y imports a save into this slot.	Y importerer ei lagring til denne plassen.
+Yellow	Gul
+Yes	Ja
+You	Du
+You appear like this to others	Slik ser andre deg
+You are in Room {0}	Du er i rom {0}
+You are up to date.	Du har nyaste versjon.
 Your cartridges go here	Spelkorta dine blir viste her
+Your colour	Di farge
+Your DS library starts here	DS-biblioteket ditt startar her
+Your games and saves are not touched.	Spela og lagringane dine vert ikkje rørte.
 Your home screen after powering on	Hovudmenyen etter oppstart
+Your journey	Reisa di
+Your last game will appear here	Siste spel blir vist her
 Your local time and date	Lokal tid og dato
 Your menu shortcut	Snarvegen til menyen
+Your name	Ditt namn
+Your ports are waiting in Ports	Portane dine ventar i Portar
+Your saves are safe. See you soon!	Lagringane dine er trygge. Vi sest snart!
 Your shader choice is still available.	Filtervalet ditt er framleis tilgjengeleg.
-zFast + NDS Color	zFast + DS-fargar
-zFast + Natural Vision	zFast + naturleg bilete
 zFast + both colours	zFast + begge fargeeffektane
+zFast + Natural Vision	zFast + naturleg bilete
+zFast + NDS Color	zFast + DS-fargar
 {0} (experimental)	{0} (eksperimentell)
 {0} (recommended)	{0} (tilrådd)
+{0} active	{0} aktive
+{0} found. Choose Done to go to your library.	{0} funne. Vel Ferdig for å gå til biblioteket.
 {0} frames	{0} bilete
+{0} game	{0} spel
 {0} games	{0} spel
-{0} settings	{0}-innstillingar
-Up	Opp
-Times played	Speløkter
-Last played	Sist spela
-GameTDB	GameTDB
-Libretro	Libretro
-Ready to fetch artwork.	Klar til å hente bilete.
-Icon style	Ikonstil
-Simple pixel	Enkle pikslar
-Rich	Detaljerte
-Statistics	Statistikk
-Games played	Spel som er spela
-Most played	Mest spela
-Preparing your statistics…	Klargjer statistikken…
-Play a game to start your statistics.	Spel eit spel for å starte statistikken.
-Installed version	Installert versjon
-Check for updates	Sjå etter oppdateringar
-Restart & install	Start på nytt og installer
-Download update	Last ned oppdatering
-Pause download	Sett nedlasting på pause
-Release notes	Versjonsnyhende
-Discard update	Forkast oppdatering
-No release notes yet.	Ingen versjonsnyhende enno.
-Restart and install the update?	Starte på nytt og installere oppdateringa?
-Check for updates when you are ready.	Sjå etter oppdateringar når du er klar.
-Updates will be available when the release channel opens.	Oppdateringar blir tilgjengelege når utgjevingskanalen opnar.
-Checking for updates…	Ser etter oppdateringar…
-You are up to date.	Du har nyaste versjon.
-A new version is ready to download.	Ein ny versjon er klar til nedlasting.
-This version failed to start. Waiting for a newer update.	Denne versjonen kunne ikkje starte. Ventar på ei nyare oppdatering.
-Downloading update…	Lastar ned oppdatering…
-Verifying update…	Kontrollerer oppdateringa…
-Preparing update…	Klargjer oppdateringa…
-Ready to restart. Your previous version is kept for recovery.	Klar til omstart. Førre versjon blir teken vare på for gjenoppretting.
-Restarting into the update…	Startar den nye versjonen…
-Checking the new version…	Kontrollerer den nye versjonen…
-Update installed.	Oppdateringa er installert.
-The update could not start. Your previous version was restored.	Oppdateringa kunne ikkje starte. Førre versjon er gjenoppretta.
-Download paused. Retry to continue.	Nedlastinga er sett på pause. Prøv att for å halde fram.
-Update discarded. Your installed version is unchanged.	Oppdateringa er forkasta. Installert versjon er uendra.
-Connect the charger before installing an update.	Kople til ladaren før du installerer ei oppdatering.
-There is not enough free space for this update.	Det er ikkje nok ledig plass til oppdateringa.
-Exit your game before installing an update.	Avslutt spelet før du installerer ei oppdatering.
-Install the latest SD installer before this update.	Bruk det nyaste SD-installasjonsprogrammet før denne oppdateringa.
-Restart RG DS Core before installing the update.	Start RG DS Core på nytt før du installerer oppdateringa.
-Download interrupted. Retry to continue.	Nedlastinga vart avbroten. Prøv att for å halde fram.
-An update is already prepared. Install it or discard it first.	Ei oppdatering er allereie klar. Installer eller forkast henne først.
-Another update is already running.	Ei anna oppdatering er allereie i gang.
-Update information has expired or the device clock is incorrect.	Oppdateringsinformasjonen er utgått, eller einingsklokka er feil.
-This stock firmware has not been validated for updates.	Denne originalfastvara er ikkje validert for oppdateringar.
-Update verification failed. Check for updates again.	Oppdateringa kunne ikkje verifiserast. Sjå etter oppdateringar på nytt.
-Update failed. Check Wi-Fi and try again.	Oppdateringa mislukkast. Kontroller Wi-Fi og prøv att.
-Stable	Stabil
-Testing	Testing
-Import slot	Importer lagring
-Export slot	Eksporter lagring
-Save checkpoint	Lagre speltilstand
-Load checkpoint	Last inn speltilstand
-Save here	Lagre her
-Export	Eksporter
-More	Meir
-Replace slot {0}?	Erstatte plass {0}?
-Load slot {0}?	Laste inn plass {0}?
-Delete slot {0}?	Slette plass {0}?
-Undo last slot change	Angre siste endring
-Undo last load	Angre siste innlasting
-Import into this slot	Importer til denne plassen
-Slot {0} deleted.	Plass {0} sletta.
-Slot change undone.	Endringa er angra.
-A saves your current progress here.	A lagrar framdrifta di her.
-A replaces this slot with your current progress. X deletes it.	A erstattar plassen med framdrifta di. X slettar han.
-A loads this slot. Undo last load, under Y, brings back the progress you have now.	A lastar inn plassen. Angre siste innlasting under Y hentar tilbake framdrifta du har no.
-Nothing to load here yet.	Ingenting å laste inn her enno.
-A exports this slot to userdata/exports. X deletes it.	A eksporterer plassen til userdata/exports. X slettar han.
-Y imports a save into this slot.	Y importerer ei lagring til denne plassen.
-Import help	Importhjelp
-Replace	Erstatt
-Blow into microphone	Blås i mikrofonen
-Close and open DS lid	Lukk og opne DS-lokket
-DS language	DS-språk
-Real microphone	Fysisk mikrofon
-Japanese	Japansk
-English	Engelsk
-French	Fransk
-German	Tysk
-Italian	Italiensk
-Spanish	Spansk
-2 seconds	2 sekund
-In game	I spelet
-Restart the game to apply DS settings.	Start spelet på nytt for å bruke DS-innstillingane.
-Could not save DS settings.	Kunne ikkje lagre DS-innstillingar.
-Search	Søk
-Save gallery	Lagringsgalleri
-Add your games	Legg til spel
-DS controls	DS-funksjonar
-Back up all saves	Tryggleikskopier alle lagringar
-Resume after power off	Hald fram etter avslåing
-Slot	Plass
-Empty slot	Tom plass
-Search games	Søk etter spel
-Filter	Filter
-Missing artwork	Manglar omslag
-Where to put games	Kvar legg eg spel?
-Scan for games	Søk etter nye spel
-Automatic updates	Automatiske oppdateringar
-Download automatically	Last ned automatisk
-Check automatically	Sjekk automatisk
-Update available in Maintenance	Oppdatering klar i Vedlikehald
-Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopier .rgdssave.zip-filer til userdata/imports. Dei må samsvare med spelet og emulatoren.
-Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopier .nds-filer eller DS ZIP-arkiv til Roms/NDS på spelkortet. Spel følgjer ikkje med. Lagringar ligg i userdata.
-Save backup created in userdata/exports.	Tryggleikskopi laga i userdata/exports.
-Slot exported to userdata/exports.	Lagring eksportert til userdata/exports.
-Save library updated.	Lagringsbibliotek oppdatert.
-Current progress could not be saved. No slot was changed.	Kunne ikkje lagre framgangen. Ingen lagringsplassar vart endra.
-DS controls are unavailable for this engine.	DS-funksjonar er ikkje tilgjengelege for denne emulatoren.
-Your DS library starts here	DS-biblioteket ditt startar her
-Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopier .nds- eller DS ZIP-filer til Roms/NDS på spelkortet. Vel deretter Søk etter nye spel.
-Use the engine's native controls for microphone and DS settings.	Bruk emulatoren sine eigne kontrollar for mikrofon og DS-innstillingar.
-Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Fysisk mikrofon er på som standard. Blås- og lokkfunksjonane varer i to sekund i spelet. Språkendringar krev omstart.
-Unplayed	Ikkje spela
-Played	Spela
-Filtered	Filtrert
-No matching games	Ingen spel funne
-No matches. Use View to change filters.	Ingen treff. Endre filter under Vising.
-Reset state	Nullstill tilstand
-Restart without loading a state?	Starte på nytt utan å laste ein tilstand?
-Restart from the title screen. In-game saves and save slots are kept.	Start frå tittelskjermen. Spellagringar og lagringsplassar blir tekne vare på.
-Microphone, simulated blowing, lid and DS language.	Mikrofon, simulert blåsing, lokk og DS-språk.
-Test microphone	Test mikrofon
-Test	Test
-Live input	Lydnivå no
-Quiet	Stille
-Loud	Høgt
-Listening…	Lyttar…
-Microphone unavailable	Mikrofon utilgjengeleg
-Audio is not recorded or saved.	Lyden blir ikkje teken opp eller lagra.
-Test the microphone on your handheld.	Test mikrofonen på konsollen.
-Return home before testing the physical microphone.	Gå til heimskjermen før du testar mikrofonen.
-Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Blås eller snakk i mikrofonen. Sjå at nivået stig og fell når du stoppar.
-Quick search	Hurtigsøk
-A  Search	A  Søk
-A  Jump	A  Hopp
-Edit search	Endre søk
-Clear filters	Nullstill filter
-Try another title or clear your filters	Prøv ein annan tittel eller nullstill filtera
-Type a game title…	Skriv ein speltittel…
-Finding games…	Finn spel…
-Searching…	Søkjer…
-Search in	Søk i
-Try a shorter title or clear your filter.	Prøv ein kortare tittel eller nullstill filteret.
-Type	Skriv
-Tap to type, or use the D-pad and A	Trykk for å skrive, eller bruk styrekorset og A
-No letters to jump to. Search for another game.	Ingen bokstavar å hoppe til. Søk etter eit anna spel.
+{0} joined	{0} kom inn
+{0} left	{0} gjekk ut
 {0} match	{0} treff
 {0} matches	{0} treff
 {0} matching game	{0} spel funne
 {0} matching games	{0} spel funne
-{0} game	{0} spel
-Interface animations	Grensesnittanimasjonar
-View transitions	Visingsovergangar
-Small touches, scrolling and startup motion	Små effektar, rulling og oppstart
-Springy menu changes with a colourful wobble	Sprettande menybyte med fargerik rørsle
-Transitions	Overgangar
-Subtle	Diskret
-Menu effects	Menyeffektar
-Effects volume	Effektvolum
-Preview sound	Prøv ein lyd
-A little handheld magic	Litt handhalden magi
-Playful sounds for browsing, choosing and starting games.	Leikne lydar når du blar, vel og startar spel.
-Turn on menu sounds to hear the previews.	Slå på menylydar for å prøve lydane.
-Some menu sounds are unavailable.	Nokre menylydar er utilgjengelege.
-Menu audio is unavailable on this device.	Menylyd er utilgjengeleg på denne eininga.
-Menu sounds are unavailable.	Menylydar er utilgjengelege.
-Close lid	Lat att loket
-Open lid	Opne loket
-Spring	Fjør
-Push	Skyv
-Transition style	Overgangsstil
-Animate pages with the selected style	Animer sider med vald stil
-Slide into pages; slide back to return	Skyv inn på sider; skyv tilbake for å gå tilbake
-Accent colour	Aksentfarge
-FAVOURITE COLOUR	FAVORITTFARGE
-Classic	Klassisk
-Classic blue	Klassisk blå
-High contrast	Høg kontrast
-PREVIEW	FØREHANDSVISING
-Selected row	Vald rad
-Switches and values	Brytarar og verdiar
-Grey	Grå
-Brown	Brun
-Red	Raud
-Pink	Rosa
-Orange	Oransje
-Yellow	Gul
-Lime	Limegrøn
-Green	Grøn
-Dark green	Mørkegrøn
-Sea green	Sjøgrøn
-Turquoise	Turkis
-Blue	Blå
-Dark blue	Mørkeblå
-Purple	Lilla
-Violet	Fiolett
-Magenta	Magenta
-Network file sharing	Fildeling i nettverk
-Open on this Wi-Fi	Open på dette Wi-Fi-nettet
-Password protected	Passordverna
-File sharing on. Find "RG DS" under Network.	Fildeling er på. Finn "RG DS" under Nettverk.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: den opphavlege motoren. DSCore legg til rettingar og fart.
-DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: tilrådd. Raskast, med rettingar for lok, penn og 3D og valfri 2x–5x 3D.
-DSCore 3D resolution	DSCore 3D-oppløysing
-Native (fastest)	Opphavleg (raskast)
-2x sharper	2x skarpare
-3x sharper	3x skarpare
-4x (experimental)	4x (eksperimentell)
-5x (experimental)	5x (eksperimentell)
-Colour mode	Fargemodus
-Draw and chat with nearby handhelds	Teikn og chat med einingar i nærleiken
-Wi-Fi connected	Wi-Fi tilkopla
-No Wi-Fi: you can still draw	Ikkje på Wi-Fi: du kan framleis teikne
-Type your name	Skriv namnet ditt
-You appear like this to others	Slik ser andre deg
-Starting…	Startar…
-Chat is unavailable: you can still draw	Chat er utilgjengeleg: du kan framleis teikne
-Nobody else is nearby yet	Ingen andre i nærleiken enno
-1 person nearby	1 person i nærleiken
 {0} people nearby	{0} personar i nærleiken
-Your colour	Di farge
-Leave	Forlat
-Your name	Ditt namn
-Send	Send
-You are in Room {0}	Du er i rom {0}
-{0} joined	{0} kom inn
-{0} left	{0} gjekk ut
-New messages below	Nye meldingar nedanfor
-Older messages	Eldre meldingar
-The pad is full: send it or clear it	Teiknebrettet er fullt: send eller tøm det
-Too much on the pad: erase some of it	For mykje på brettet: visk ut noko
-That message could not be sent	Meldinga kunne ikkje sendast
-That room is full	Det rommet er fullt
-Chat Room {0}	Chatterom {0}
-Choose a chat room to join	Vel eit chatterom å bli med i
-Edit	Endre
-Join	Bli med
-Matches your accent	Følgjer aksentfargen
-Nobody here yet	Ingen her enno
-Start Send   X Undo   L R Scroll	Start Send   X Angre   L R Bla
-You	Du
-Time format	Tidsformat
-24-hour	24 timar
-12-hour	12 timar
-24-hour or 12-hour clock	24- eller 12-timars klokke
-How dates appear in the status bar	Slik blir datoar viste i statuslinja
-Connecting to	Koplar til
-This can take a few seconds	Dette kan ta nokre sekund
-Waiting for an address…	Ventar på ei adresse…
-IP address	IP-adresse
-Signal	Signal
-Could not connect	Kunne ikkje kople til
-Wi-Fi is off	Wi-Fi er av
-Turn it on to find networks	Slå det på for å finne nettverk
-Choose a network from the list	Vel eit nettverk frå lista
-Preparing…	Førebur…
-Home layout	Heim-oppsett
-Background	Bakgrunn
-Touch gestures	Berøringsrørsler
-Carousel	Karusell
-Column	Kolonne
-Plain	Enkel
-Grid	Rutenett
-A carousel, or the DSi's column with your last game on top	Ein karusell, eller DSi-kolonnen med siste spel øvst
-Plain, or the DSi's ruled grid behind every screen	Enkel, eller DSi-rutenettet bak alle skjermar
-Swipe up from the bottom for Home, in from the left for Back	Sveip opp frå botnen for Heim, inn frå venstre for Tilbake
-Nothing played yet	Ingenting spelt enno
-Your last game will appear here	Siste spel blir vist her
-Draw and chat	Teikn og chat
-Su	Su
-Mo	Må
-Tu	Ty
-We	On
-Th	To
-Fr	Fr
-Sa	La
-Chat Room	Chatrom
-Nobody else here yet	Ingen andre her enno
-Drawing on your own	Teiknar for deg sjølv
-Jump	Hopp
-Home	Heim
-Swipe up from the bottom edge to go Home from anywhere.	Sveip opp frå nedste kant for å gå til Heim kvar som helst frå.
-Swipe in from the left edge to go Back.	Sveip inn frå venstre kant for å gå tilbake.
-A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Eit lite handtak nedst på den nedre skjermen viser at rørsler er på; det følgjer fingeren din, og ein ring markerer staden når ei rørsle blir utløyst.
-Your saves are safe. See you soon!	Lagringane dine er trygge. Vi sest snart!
-DS Classic	DS Klassisk
-DS Lite	DS Lite
-Natural glow	Naturleg glød
-Vivid LCD	Livleg LCD
-Natural smooth	Naturleg glatt
-Vivid smooth	Livleg glatt
-Pixel beads	Pikselperler
-Glossy tiles	Blanke fliser
-The first DS screen: muted colour and a fine pixel grid.	Den første DS-skjermen: dempa fargar og fint pikselrutenett.
-The brighter DS Lite screen with a faint pixel grid.	Den lysare DS Lite-skjermen med eit svakt pikselrutenett.
-Natural colour with soft pixels that glow together.	Naturlege fargar med mjuke pikslar som glør saman.
-Bold colour on a close-up LCD with RGB stripes.	Kraftige fargar på ein LCD på nært hald med RGB-striper.
-Natural colour with smoothed diagonal edges.	Naturlege fargar med glatta diagonale kantar.
-Bold colour with smoothed diagonal edges.	Kraftige fargar med glatta diagonale kantar.
-Bold colour; every pixel a round, shiny bead.	Kraftige fargar; kvar piksel ei rund, skinande perle.
-Bold colour; every pixel a raised, glossy tile.	Kraftige fargar; kvar piksel ei heva, blank flis.
-IN USE	I BRUK
-APPLY	BRUK
-Follows your library shader.	Følgjer biblioteksfilteret ditt.
-Original	Original
-DS screens	DS-skjermar
-Natural	Naturleg
-Vivid	Livleg
-Pixel art	Pikselkunst
-Moods	Stemningar
-Change group	Byt gruppe
-Sounds & music	Lydar og musikk
-Menu music	Menymusikk
-Music volume	Musikkvolum
-A soft tune plays while you browse. It fades out when a game starts.	Ein mjuk melodi spelar medan du blar. Han tonar ut når eit spel startar.
-Turn on menu music for a soft tune while you browse.	Slå på menymusikk for ein mjuk melodi medan du blar.
-Scanning…	Søkjer…
-Scan complete	Søk fullført
-Looking for games…	Leitar etter spel…
-Reading Roms/NDS on your games card. This takes a moment.	Les Roms/NDS på spelkortet. Det tek ei lita stund.
-{0} found. Choose Done to go to your library.	{0} funne. Vel Ferdig for å gå til biblioteket.
-No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Ingen spel funne. Kopier .nds- eller DS ZIP-filer til Roms/NDS på spelkortet og søk på nytt.
-Backing up your saves…	Tryggingskopierer lagringane dine…
-The backup did not finish. Please try again.	Tryggingskopien vart ikkje fullført. Prøv igjen.
-Copies every save and checkpoint into one zip in userdata/exports.	Kopierer alle lagringar og sjekkpunkt til éin zip i userdata/exports.
-Where games go on the card, and a fresh scan.	Kvar spel skal liggje på kortet, og eit nytt søk.
-Where covers and titles come from.	Kvar omslag og titlar vert henta frå.
-System update	Systemoppdatering
-Version {0} is ready	Versjon {0} er klar
-Version {0} is ready to install	Versjon {0} er klar til installering
-Downloading {0}	Lastar ned {0}
-Paused at {0}	Pausa ved {0}
-Update now	Oppdater no
-Resume download	Hald fram med nedlastinga
-Update	Oppdater
-Install	Installer
-What's new	Nytt i denne versjonen
-Download	Last ned
-Verify	Kontroller
-Prepare	Gjer klar
-Step {0} of 4	Steg {0} av 4
-Less than a minute left	Under eitt minutt att
-About {0} min left	Om lag {0} min att
-About {0} h left	Om lag {0} t att
-Downloads resume where they stopped if Wi-Fi drops.	Nedlastinga held fram der ho stoppa om Wi-Fi fell ut.
-Your games and saves are not touched.	Spela og lagringane dine vert ikkje rørte.
-Connection lost. Retrying…	Mista sambandet. Prøver igjen…
-The update could not be downloaded. Check for updates again.	Oppdateringa kunne ikkje lastast ned. Sjå etter oppdateringar på nytt.
-Finishing another task. Press Y again in a moment.	Fullfører ei anna oppgåve. Trykk Y igjen om litt.
-Updates	Oppdateringar
-The language for menus and messages.	Språket for menyar og meldingar.
-Set the clock to where you are.	Still klokka etter der du er.
-How dates appear at the top of the screen.	Korleis datoar blir viste øvst på skjermen.
-A 24-hour or 12-hour clock.	Klokke med 24 eller 12 timar.
-Versions, free space and the network address of your handheld.	Versjonar, ledig plass og nettverksadressa til handkonsollen.
-Check for updates, go back to the previous build or clear temporary files.	Sjå etter oppdateringar, gå tilbake til førre versjon eller tøm mellombelse filer.
-Leave RG DS Core and go back to the stock menu.	Forlat RG DS Core og gå tilbake til standardmenyen.
-What happens when you turn the handheld on.	Kva som skjer når du slår på handkonsollen.
-Restart the RGDS menu.	Start RGDS-menyen på nytt.
-Previous	Førre
-Next	Neste
-Show all systems	Vis alle system
-Systems	System
-Game screen	Spelskjerm
-Second screen	Andre skjerm
-Sharp fill	Skarp utfylling
-Whole pixels	Heile pikslar
-Smooth fill	Mjuk utfylling
-Companion	Følgjeskjerm
-Swap screens	Byt skjermar
-Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Legg til Game Boy- og Game Boy Advance-spel: Spel opnar då ei side med system.
-Frame	Ramme
-Game Boy	Game Boy
-Game Boy · Red	Game Boy · Raud
-Game Boy · Yellow	Game Boy · Gul
-Game Boy · Green	Game Boy · Grøn
-Game Boy · Blue	Game Boy · Blå
-Game Boy · Black	Game Boy · Svart
-Game Boy · Screen only	Game Boy · Berre skjerm
-Game Boy Pocket · Silver	Game Boy Pocket · Sølv
-Game Boy Pocket · Black	Game Boy Pocket · Svart
-Game Boy Pocket · Yellow	Game Boy Pocket · Gul
-Game Boy Pocket · Red	Game Boy Pocket · Raud
-Game Boy Pocket · Green	Game Boy Pocket · Grøn
-Game Boy Pocket · Blue	Game Boy Pocket · Blå
-Game Boy Pocket · Pink	Game Boy Pocket · Rosa
-Game Boy Pocket · Screen only	Game Boy Pocket · Berre skjerm
-Game Boy Color · Berry	Game Boy Color · Bær
-Game Boy Color · Grape	Game Boy Color · Drue
-Game Boy Color · Kiwi	Game Boy Color · Kiwi
-Game Boy Color · Dandelion	Game Boy Color · Løvetann
-Game Boy Color · Teal	Game Boy Color · Blågrøn
-Game Boy Color · Atomic Purple	Game Boy Color · Atomlilla
-Game Boy Color · Screen only	Game Boy Color · Berre skjerm
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Glacier	Game Boy Advance · Isbre
-Game Boy Advance · Black	Game Boy Advance · Svart
-Game Boy Advance · Platinum	Game Boy Advance · Platina
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobolt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
-Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Sølv
-Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Svart
-WonderSwan Color · White	WonderSwan Color · Kvit
-WonderSwan Color · Blue	WonderSwan Color · Blå
-PSP · Black	PSP · Svart
-PSP · White	PSP · Kvit
-Grey TV	Grå TV
-Wood-grain TV	TV i treverk
-PC monitor	PC-skjerm
-Arcade cabinet	Arkadekabinett
-Black bar	Svart stripe
-GBA Color	GBA-fargar
-GBA screen	GBA-skjerm
-GBA screens	GBA-skjermar
-The Game Boy Advance LCD's own colour and gamma.	Game Boy Advance-skjermen sine eigne fargar og gamma.
-The Game Boy Advance screen: its colour and faint pixel gaps.	Game Boy Advance-skjermen: fargane og dei svake mellomromma mellom pikslane.
-Game info	Spelinfo
-Extra pictures	Ekstra bilete
-Screenshots	Skjermbilete
-Title screens	Tittelskjermar
-Screenshots and title screens	Skjermbilete og tittelskjermar
-Both	Begge
-Cover	Omslag
-Title screen	Tittelskjerm
-Screenshot	Skjermbilete
-Developer	Utviklar
-Publisher	Utgjevar
-Genre	Sjanger
-Released	Utgjeve
-Rating	Aldersgrense
-Players	Spelarar
-Series	Serie
-Online	Nettspel
-Yes	Ja
-Source	Kjelde
-Picture	Bilete
-Next picture	Neste bilete
-No pictures yet	Ingen bilete enno
-Available	Tilgjengeleg
-Not downloaded	Ikkje lasta ned
-Show games	Vis spel
-Reset filters	Nullstill filter
-Any	Alle
-{0} active	{0} aktive
-Still reading your library. Try again in a moment.	Les framleis biblioteket. Prøv igjen om eit augeblink.
-No game has this information yet. Fetch artwork with Game info turned on.	Ingen spel har denne informasjonen enno. Hent omslag med Spelinfo slått på.
-With info	Med info
-Without info	Utan info
-Online play	Nettspel
-1 player	1 spelar
 {0} players	{0} spelarar
-No game information yet.	Ingen spelinfo enno.
-Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Slå på Spelinfo under Innstillingar > Bibliotek > Omslagskjelder, og hent omslag.
-Ports	Portar
-Restart port	Start porten på nytt
-Quit	Avslutt
-Looking for the latest PortMaster	Ser etter nyaste PortMaster
-Downloading PortMaster	Lastar ned PortMaster
-Checking PortMaster	Kontrollerer PortMaster
-Unpacking PortMaster	Pakkar ut PortMaster
-Setting up PortMaster	Gjer klar PortMaster
-Installing PortMaster from the card	Installerer PortMaster frå kortet
-PortMaster is ready	PortMaster er klar
-Could not set up PortMaster	Kunne ikkje gjere klar PortMaster
-Get, update and remove ports	Hent, oppdater og fjern portar
-Close PortMaster	Lukk PortMaster
-Back to PortMaster	Tilbake til PortMaster
-Keep getting and updating ports	Hald fram med å hente og oppdatere portar
-Your ports are waiting in Ports	Portane dine ventar i Portar
-Closing PortMaster…	Lukkar PortMaster…
-Closing the port…	Lukkar porten…
-GB screens	GB-skjermar
-GBC screens	GBC-skjermar
-Game Boy screen	Game Boy-skjerm
-Game Boy Color screen	Game Boy Color-skjerm
-The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Punktmatriseskjermen til den originale Game Boy-en: eit lyst pikselrutenett og mjuke skuggar.
-The Game Boy Color screen with faint gaps between its pixels.	Game Boy Color-skjermen med svake mellomrom mellom pikslane.
-This handheld's own screen.	Skjermen til denne handhaldne konsollen.
-Screen colours	Skjermfargar
-Game Boy Pocket	Game Boy Pocket
-Game Boy Light	Game Boy Light
-Game Boy Color	Game Boy Color
-Black and white	Svart-kvitt
-Game Boy Color, darker	Game Boy Color, mørkare
-Full colour	Fulle fargar
-Hold to save	Hald for å lagre
-Hold to load	Hald for å laste
-Screen off	Skjerm av
-Touch the screen to turn it on	Trykk på skjermen for å slå han på
-min	min
-h	t
-Not saved	Ikkje lagra
-Loaded	Lasta
-Not loaded	Ikkje lasta
-Nothing to load	Ingenting å laste
-Saving…	Lagrar…
-Loading…	Lastar…
-Info screen	Infoskjerm
-Team	Lag
-Lv	Niv.
-screens	skjermar
-Not yet	Ikkje enno
-None yet	Ingen enno
-The best there is	Det beste som finst
-Next:	Neste:
-Badges	Merke
-Carried	Med deg
-Coin bank	Myntbank
-Coins	Myntar
-Collection	Samling
-Course	Bane
-Day	Dag
-Ending so far	Slutt så langt
-Essences	Essensar
-Gear	Utstyr
-Golden leaves	Gylne blad
-Heart containers	Hjartebehaldarar
-Heart pieces	Hjartebitar
-Hearts	Hjarte
-In a course	På ei bane
-Instruments	Instrument
-Johto badges	Johto-merke
-Journey	Reise
-Kanto badges	Kanto-merke
-Keys	Nøklar
-Lives	Liv
-Money	Pengar
-Musical coins	Musikkmyntar
-Night	Natt
-Pokédex caught	Pokédex fanga
-Pokédex seen	Pokédex sett
-Rupees	Rupiar
-Secret seashells	Løynde skjel
-Shield	Skjold
-Small keys	Små nøklar
-Sword	Sverd
-Time of day	Tid på døgnet
-Time	Tid
-Total	Totalt
-Trainer	Trenar
-Treasures	Skattar
-Worlds	Verder
-Your journey	Reisa di
-Seeds	Frø
-Game switcher	Spelbytar
-Switch to another game	Byt til eit anna spel
-Hold to return home	Hald for å gå til hovudmenyen
-Add game files	Legg til spelfiler
-Needs your files	Treng filene dine
-Files added	Filer lagde til
-How to get the files	Slik får du filene
-Scan with your phone	Skann med telefonen
-Or open on a computer	Eller opna på ei datamaskin
-Code	Kode
-Connect to Wi-Fi to send files from a phone or computer.	Kopla til Wi-Fi for å senda filer frå ein telefon eller ei datamaskin.
-Receiving files	Tek imot filer
-Unpacking files	Pakkar ut filer
-Files arrived. Choose Play to start.	Filene er komne. Vel Spel for å starta.
-This port lists no instructions.	Denne porten har ingen instruksjonar.
-Play	Spel
-Goes into	Hamnar i
-Phone or computer connected	Telefon eller datamaskin tilkopla
-Vibration	Vibrasjon
-Menu haptics	Menyhaptikk
-Haptic strength	Haptisk styrke
-Game rumble	Spelrumling
-Rumble strength	Rumlestyrke
-Try a pattern	Prøv eit mønster
-Feel the game	Kjenn spelet
-Feel every move	Kjenn kvart trykk
-No vibration motor was found on this device.	Fann ingen vibrasjonsmotor på denne eininga.
-Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-spel på DS, rumlekassettar på Game Boy og Game Boy Advance.
-Turn on game rumble for games made for a rumble accessory.	Slå på spelrumling for spel laga for eit rumletilbehøyr.
-A light tap for every move, a firmer one when you choose, open or save.	Eit lett trykk for kvar rørsle, eit fastare når du vel, opnar eller lagrar.
-Turn on menu haptics to feel the menus.	Slå på menyhaptikk for å kjenne menyane.
-Browse	Bla
-Open a view	Opne ei vising
-Go back	Gå tilbake
-Switch on	Slå på
-Switch off	Slå av
-Add favourite	Legg til favoritt
-Remove favourite	Fjern favoritt
-Start a game	Start eit spel
-Save complete	Lagra
-Load complete	Lasta inn
-Try again	Prøv igjen
-Keyboard	Tastatur
-Adjust	Juster
-End of a list	Slutten av ei liste
-Long press	Langt trykk
-Notification	Varsel
-Touch screen	Berøringsskjerm
-Point and click on top	Peik og klikk øvst
-Touch here to point and click on the top screen.	Trykk her for å peika og klikka på den øvste skjermen.
-Hold still for a right click	Hald still for høgreklikk
-Hold to exit	Hald for å avslutta
-Touch screen off	Berøringsskjerm av
-Touch screen is not available	Berøringsskjermen er ikkje tilgjengeleg
-Daylight saving	Sommartid
-Automatic	Automatisk
-Summer time follows your timezone. Force it on or off if the clock is an hour out.	Sommartid følgjer tidssona di. Slå han på eller av om klokka går ein time feil.
-GBA true colour	Ekte GBA-fargar
-Faded GBA colours made rich, as the real screen showed them.	Bleike GBA-fargar blir fyldige, slik den ekte skjermen viste dei.
-GBA true screen	Ekte GBA-skjerm
-The true GBA colours on its screen, with the gaps between its pixels.	Dei ekte GBA-fargane på skjermen, med mellomromma mellom pikslane.
+{0} settings	{0}-innstillingar

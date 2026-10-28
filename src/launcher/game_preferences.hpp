@@ -3,7 +3,7 @@
 // Members of App in main.cpp; included once, right after the class.
 
 void App::open_game_options() {
-    if (model.games.empty() || is_port_entry(model.games[model.selected].path)) return; // a tool, no options
+    if (model.games.empty() || is_tool_entry(model.games[model.selected].path)) return; // a tool, no options
     game_preferences = library_cache.options(model.games[model.selected], true);
     status.clear();
     settings.page = Page::GameOptions;

@@ -30,7 +30,7 @@ int main(int argc,char**argv){
  rgds::Preferences prefs;assert(!prefs.view_animations && prefs.animations);
  rgds::ViewMotion m;assert(!m.update(100));assert(m.pose(100).sx==1);
  m.start(100);bool overshoot=false;
- for(unsigned n=100;n<580;n++){
+ for(unsigned n=100;n<640;n++){
   auto p=m.pose(n);assert(p.sx>.97 && p.sx<1.03 && p.sy>.97 && p.sy<1.03);assert(p.tilt==0);assert(std::abs(p.x)<35);
   if(p.x<0)overshoot=true;
   double angle=p.tilt*3.141592653589793/180;
@@ -42,7 +42,7 @@ int main(int argc,char**argv){
  rgds::ViewMotion push;
  for(auto route:{rgds::ViewTravel::Forward,rgds::ViewTravel::Back,rgds::ViewTravel::Left,rgds::ViewTravel::Right}){
   push.start(100,route,rgds::ViewStyle::Push);double previous=1;
-  for(unsigned n=100;n<400;n++){
+  for(unsigned n=100;n<520;n++){
    auto layers=push.push(n);auto p=push.pose(n);
    assert(p.y==0 && p.sx==1 && p.sy==1 && p.tilt==0 && p.trail==0);
    assert(std::abs(layers.incoming)<=640 && std::abs(layers.outgoing)<=640);
@@ -50,11 +50,11 @@ int main(int argc,char**argv){
    assert(push.element(0,{24,96,566,66},true,n).x==0 && push.element(0,{24,96,566,66},true,n).y==0 && push.accent(0,n)==0);
    int x=int(std::round(180+p.x));auto hit=push.unproject(x,220,n);assert(std::abs(hit.first-180)<=1 && hit.second==220);
   }
-  assert(push.pose(400).x==0);assert(push.update(400) && !push.active() && !push.update(401));
+  assert(push.pose(520).x==0);assert(push.update(520) && !push.active() && !push.update(521));
  }
  push.start(100,rgds::ViewTravel::Forward,rgds::ViewStyle::Push);auto enter=push.push(100);assert(enter.incoming==640 && enter.outgoing==0 && enter.incoming_above);
  push.start(100,rgds::ViewTravel::Back,rgds::ViewStyle::Push);auto leave=push.push(100);assert(leave.incoming==-160 && leave.outgoing==0 && !leave.incoming_above);
- push.start(UINT32_MAX-100,rgds::ViewTravel::Back,rgds::ViewStyle::Push);assert(push.update(30) && push.running);push.update(200);assert(!push.running);
+ push.start(UINT32_MAX-100,rgds::ViewTravel::Back,rgds::ViewStyle::Push);assert(push.update(30) && push.running);push.update(400);assert(!push.running);
  assert(overshoot);assert(m.update(720));assert(!m.running && !m.update(721));
  assert(m.pose(580).sx==1 && m.pose(580).x==0);
  m.start(800);auto forward=m.pose(800);m.start(820,rgds::ViewTravel::Back);auto back=m.pose(820);assert(back.x<0 && forward.x>0 && back.sx>1 && forward.sx<1);
@@ -204,6 +204,25 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertGreater(report['view_animation_frames'], 10)
         self.assert_settled(report)
 
+    def test_back_from_home_bar_pages_returns_home(self):
+        self.enable()
+        (self.root / 'ui.ini').write_text('schema=1\nanimations=1\nview_animations=1\nhome_layout=column\n')
+        for button, page in (('A', 5), ('Right\n700 key A', 27)):
+            report = self.run_ui(
+                f'100 key Up\n150 key Up\n200 key Up\n250 key Up\n300 key Down\n350 key Down\n400 key Down\n450 key Down\n500 key Down\n600 key {button}\n',
+                ('--home',),
+                seconds=2
+            )
+            self.assertEqual(report['page'], page, report)
+            report = self.run_ui(
+                f'100 key Up\n150 key Up\n200 key Up\n250 key Up\n300 key Down\n350 key Down\n400 key Down\n450 key Down\n500 key Down\n600 key {button}\n1500 key Escape\n',
+                ('--home',),
+                seconds=3
+            )
+            self.assertEqual(report['page'], 0, report)
+            self.assertTrue(report['home_menu'])
+            self.assertEqual(report['back_transitions'], 1)
+
     def test_push_selection_is_optional_and_persists_with_touch_and_controller(self):
         report = self.run_ui('100 click 430 290\n', ('--settings', '--section', 'motion'))
         self.assertEqual(report['view_transition_style'], 'push')
@@ -260,13 +279,22 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertGreater(report['push_animation_frames'], 10)
         self.assert_settled(report)
 
+    def test_pictochat_opens_and_closes_with_the_view_transition(self):
+        (self.root / 'state').write_text('1 0 0 ""\nhome 4\n')
+        (self.root /
+         'ui.ini').write_text('schema=1\nhome_layout=carousel\nbackground=plain\nanimations=1\nview_animations=1\n')
+        report = self.run_ui('100 key A\n160 key-up A\n600 key Escape\n', ('--home',), seconds=3)
+        self.assertEqual(report['view_transitions'], 2)
+        self.assertEqual(report['back_transitions'], 1)
+        self.assert_settled(report)
+
     def test_push_touch_only_activates_the_incoming_page(self):
         self.enable(style='push')
         report = self.run_ui('100 key A\n130 click 70 50\n')
         self.assertEqual(report['page'], 2)  # The old Settings page is still visible on the left.
         self.assertEqual(report['view_transitions'], 1)
         self.assert_settled(report)
-        report = self.run_ui('100 key A\n280 click 312 211\n')
+        report = self.run_ui('100 key A\n430 click 312 211\n')
         self.assertEqual(report['page'], 37)  # Visible Accent colour row during the push.
         self.assertGreaterEqual(report['view_transitions'], 2)
         self.assert_settled(report)

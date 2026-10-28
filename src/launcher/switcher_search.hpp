@@ -44,7 +44,7 @@ void App::leave_for_shortcut() {
 void App::open_home_switcher() {
     switch_games.clear();
     for (const auto& game : summary.recent_games)
-        if (!game.demo && !is_port_entry(game.path) && switch_games.size() < 9) switch_games.push_back(game);
+        if (!game.demo && !is_tool_entry(game.path) && switch_games.size() < 9) switch_games.push_back(game);
     if (switch_games.empty()) {
         status = summary_ready ? "Nothing played yet" : "Preparing…";
         dirty = true;

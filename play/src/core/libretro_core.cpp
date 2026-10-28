@@ -7,6 +7,7 @@
 #include "libretro/libretro.h"
 
 #include <algorithm>
+#include <chrono>
 #include <array>
 #include <cctype>
 #include <cstdarg>
@@ -179,14 +180,15 @@ public:
         rom_path_ = rom_path;
         if (system == "n64") {
             // GLideN64 at the N64's own 320 x 240 (a quarter of the drawing and the read-back of 640 x 480; the panel
-            // shows it at 2x), on the dynarec and the HLE RSP, the renderer on the player's thread (the threaded one
-            // adds a frame of input lag). No framebuffer emulation: GLideN64 then draws straight into the player's
+            // shows it at 2x), on the dynarec and the HLE RSP. The threaded renderer: the emulation on a thread of its
+            // own beside GLideN64's drawing took Mario Kart 64's race from ~13 to ~9 ms a frame on the A55s (frames
+            // over budget from ~120 to ~15 in 300), for a frame of input lag. No framebuffer emulation: GLideN64 then draws straight into the player's
             // framebuffer, faster on the Mali-G52, and its copy of an emulated framebuffer to the screen made Mesa
             // 25.0's Panfrost crash in pan_preload_emit_pre_frame_dcd a minute into Mario Kart 64 (every run, the same
             // race moment).
-            variables_ = {{"mupen64plus-rdp-plugin", "gliden64"},    {"mupen64plus-EnableFBEmulation", "False"},
-                          {"mupen64plus-rsp-plugin", "hle"},         {"mupen64plus-cpucore", "dynamic_recompiler"},
-                          {"mupen64plus-ThreadedRenderer", "False"}, {"mupen64plus-aspect", "4:3"},
+            variables_ = {{"mupen64plus-rdp-plugin", "gliden64"},   {"mupen64plus-EnableFBEmulation", "False"},
+                          {"mupen64plus-rsp-plugin", "hle"},        {"mupen64plus-cpucore", "dynamic_recompiler"},
+                          {"mupen64plus-ThreadedRenderer", "True"}, {"mupen64plus-aspect", "4:3"},
                           {"mupen64plus-43screensize", "320x240"}};
         }
         // RGDS_PLAY_CORE_OPTIONS="key=value;key=value": options over the player's own, for trying a core's settings.
@@ -273,12 +275,20 @@ public:
                 gpu_failed_ = true; // stays black instead of retrying every frame
                 return;
             }
-            if (!pending_state_.empty()) {
-                if (!retro_unserialize_(pending_state_.data(), pending_state_.size()))
-                    std::fputs("play: the saved state could not be loaded\n", stderr);
-                pending_state_.clear();
-            }
+            const auto run_start = profile_clock::now();
             retro_run_();
+            profile_.add(0, run_start);
+            // The auto-load: mupen64plus takes a state only once its emulation has started, inside the first
+            // retro_run, so after it (a few tries, then given up).
+            if (!pending_state_.empty()) {
+                if (retro_unserialize_(pending_state_.data(), pending_state_.size())) {
+                    std::fprintf(stderr, "play: state loaded at frame %llu\n", (unsigned long long)frames_ + 1);
+                    pending_state_.clear();
+                } else if (frames_ >= 10) {
+                    std::fputs("play: the saved state could not be loaded\n", stderr);
+                    pending_state_.clear();
+                }
+            }
             g_gl->end();
         } else {
             retro_run_();
@@ -516,14 +526,19 @@ private:
     // The frame the core just drew, into frame_: rows bottom-up in GL, bytes R, G, B, A as Picture wants them.
     void read_back(unsigned w, unsigned h) {
         if (!fbo_ || !w || !h) return;
-        resize(static_cast<int>(w), static_cast<int>(h));
         readback_.resize(static_cast<size_t>(w) * h);
         gl_.BindFramebuffer(gl::READ_FRAMEBUFFER, fbo_);
         gl_.PixelStorei(gl::PACK_ALIGNMENT, 4);
+        const auto read_start = profile_clock::now();
         gl_.ReadPixels(0, 0, static_cast<int>(w), static_cast<int>(h), gl::RGBA, gl::UNSIGNED_BYTE, readback_.data());
+        profile_.add(1, read_start);
+        copy_frame(readback_.data(), w, h);
+    }
+    void copy_frame(const uint32_t* px, unsigned w, unsigned h) {
+        resize(static_cast<int>(w), static_cast<int>(h));
         const bool flip = hw_.bottom_left_origin;
         for (unsigned y = 0; y < h; ++y) {
-            const uint32_t* src = readback_.data() + static_cast<size_t>(flip ? h - 1 - y : y) * w;
+            const uint32_t* src = px + static_cast<size_t>(flip ? h - 1 - y : y) * w;
             uint32_t* dst = frame_.data() + static_cast<size_t>(y) * fw_;
             for (unsigned x = 0; x < w; ++x) dst[x] = src[x] | 0xFF000000u;
         }
@@ -578,9 +593,13 @@ private:
         }
         if ((device & 0xFF) != RETRO_DEVICE_JOYPAD) return 0;
         uint32_t b = g_active->buttons_;
-        // N64: Z (mupen64plus's L2: items in Mario Kart, aiming in Zelda) on L, where a handheld's thumb rests; the
-        // rarely used N64 L shoulder goes to L2.
-        if (g_active->system_ == "n64") b = (b & ~(L | L2)) | (b & L ? L2 : 0) | (b & L2 ? L : 0);
+        // N64: the buttons by their labels (mupen64plus reads N64 A from RetroPad B and N64 B from RetroPad Y, an
+        // Xbox pad's places; X and Y have no N64 meaning, the C buttons are the right stick), and Z (mupen64plus's
+        // L2: items in Mario Kart, aiming in Zelda) on L, where a handheld's thumb rests; the rarely used N64 L
+        // shoulder goes to L2.
+        if (g_active->system_ == "n64")
+            b = (b & ~(A | B | X | Y | L | L2)) | (b & A ? B : 0) | (b & B ? Y : 0) | (b & L ? L2 : 0) |
+                (b & L2 ? L : 0);
         static const struct {
             unsigned id;
             uint32_t bit;
@@ -678,7 +697,7 @@ private:
             return true;
         case RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY:
         case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
-        case RETRO_ENVIRONMENT_SET_CONTROLLER_INFO:
+        case RETRO_ENVIRONMENT_SET_CONTROLLER_INFO: return true;
         case RETRO_ENVIRONMENT_SET_MEMORY_MAPS: {
             // Where each part of the system's memory is, so peek() reads the addresses profiles write.
             const auto* map = static_cast<const retro_memory_map*>(data);
@@ -698,6 +717,10 @@ private:
             apply_av(*static_cast<const retro_system_av_info*>(data));
             return true;
         case RETRO_ENVIRONMENT_GET_FASTFORWARDING: *static_cast<bool*>(data) = false; return true;
+        case 0x800003: // RetroArch's GET_CLEAR_ALL_THREAD_WAITS_CB: mupen64plus's threaded renderer calls it
+            // unchecked when it stops or saves a state; the player has no thread waits to clear
+            *static_cast<retro_environment_t*>(data) = [](unsigned, void*) { return true; };
+            return true;
         case RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER:
             *static_cast<unsigned*>(data) = RETRO_HW_CONTEXT_OPENGLES3;
             return g_gl != nullptr;
@@ -814,6 +837,27 @@ private:
     gl::uint fbo_ = 0, colour_ = 0, depth_ = 0;
     std::vector<uint32_t> readback_;
     std::vector<uint8_t> pending_state_;
+    // RGDS_PLAY_PROFILE=1: every 300 frames, the core's frame (retro_run, the read-back included) and the read-back
+    // alone, average and worst in ms, for measuring a GPU core's speed on the device.
+    using profile_clock = std::chrono::steady_clock;
+    struct Profile {
+        bool on = std::getenv("RGDS_PLAY_PROFILE") != nullptr;
+        double sum[2]{}, worst[2]{};
+        unsigned count[2]{}, over = 0;
+        void add(int i, profile_clock::time_point start) {
+            if (!on) return;
+            const double ms = std::chrono::duration<double, std::milli>(profile_clock::now() - start).count();
+            sum[i] += ms;
+            worst[i] = std::max(worst[i], ms);
+            ++count[i];
+            if (i == 0 && ms > 16.7) ++over;
+            if (i == 0 && count[0] == 300) {
+                std::fprintf(stderr, "play: profile run %.2f avg %.2f worst (%u over 16.7) read %.2f avg %.2f worst\n",
+                             sum[0] / count[0], worst[0], over, count[1] ? sum[1] / count[1] : 0.0, worst[1]);
+                *this = Profile{};
+            }
+        }
+    } profile_;
     uint64_t frames_ = 0, battery_seen_ = 0, battery_revision_ = 0;
 };
 

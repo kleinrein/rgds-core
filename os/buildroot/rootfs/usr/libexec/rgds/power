@@ -4,19 +4,108 @@
 # echoed to /run/rgds/suspend-state with phase=pre just before the kernel sleeps and phase=post once it is back,
 # so the menu knows the sleep really happened and waits for the resume rather than for a helper's return code.
 # Wake sources are the power key (PMIC), the lid (hall sensor) and the RTC, all wakeup-capable in the device tree.
-state=/run/rgds/suspend-state
+#
+# Like a console, a sleeping handheld looks after its battery: the RTC wakes it every CHECK seconds (6 h, opt-in for now) with the
+# panels dark. If nobody opened it, it checks the battery and goes back to sleep, unless the charge is at LOW % or
+# it has slept for LIMIT seconds (3 days) away from a charger: then it wakes for good with poweroff-requested in
+# /run/rgds, and RG DS Core saves the running game, quits it and powers off (runtime/game_menu.py, the launcher's
+# watch_system). Paths can be overridden for tests (tests/test_os_scripts.py); RG DS Core's helper environment
+# never passes RGDS_* variables.
+RUN=${RGDS_RUN:-/run/rgds}
+RTC=${RGDS_RTC:-/sys/class/rtc/rtc0}
+BATTERY=${RGDS_BATTERY_DIR:-/sys/class/power_supply/battery}
+CHARGER=${RGDS_CHARGER_DIR:-/sys/class/power_supply/charger}
+BACKLIGHTS=${RGDS_BACKLIGHTS:-/sys/class/backlight}
+LED=${RGDS_SLEEP_LED:-/sys/class/leds/red:status/brightness}
+# Off until verified on hardware: the first RTC-armed test sleep on 2026-10-28 ended in a frozen handheld (cause not
+# known yet). /data/rgds/sleep-check holding a number of seconds (21600 = 6 h) turns the dark wakes on.
+CHECK=${RGDS_SLEEP_CHECK:-$(cat /data/rgds/sleep-check 2>/dev/null)}
+case "$CHECK" in ''|*[!0-9]*) CHECK=0;; esac
+LIMIT=${RGDS_SLEEP_LIMIT:-259200}
+LOW=${RGDS_SLEEP_LOW:-5}
+LOG=${RGDS_SLEEP_LOG:-/data/rgds/logs/sleep.log}
+state=$RUN/suspend-state
+
+suspend_now() {
+    if [ -n "$RGDS_SUSPEND_CMD" ]; then $RGDS_SUSPEND_CMD; else echo mem > /sys/power/state; fi
+}
+
+# 1 while the lid is closed (EVIOCGSW on the hall sensor's input device), 0 open, empty when unknown
+lid_closed() {
+    if [ -n "$RGDS_LID_CMD" ]; then $RGDS_LID_CMD; return; fi
+    for n in /sys/class/input/input*; do
+        [ "$(cat $n/name 2>/dev/null)" = gpio-keys-hall ] || continue
+        for e in $n/event*; do
+            python3 -c 'import array, fcntl, sys
+b = array.array("B", [0] * 8)
+with open(sys.argv[1], "rb") as f: fcntl.ioctl(f, (2 << 30) | (8 << 16) | (69 << 8) | 0x1b, b)
+print(b[0] & 1)' /dev/input/${e##*/} 2>/dev/null
+            return
+        done
+    done
+}
+
+charging() {
+    [ "$(cat $CHARGER/online 2>/dev/null)" = 1 ] || [ "$(cat $BATTERY/status 2>/dev/null)" = Charging ]
+}
+
+# the panels resume lit; on a dark wake they go to 0, and the levels they had before the first sleep come back once
+# a person wakes the handheld
+saved_levels=
+dark=
+panels_save() {
+    for b in $BACKLIGHTS/*/brightness; do [ -f "$b" ] && saved_levels="$saved_levels $b=$(cat $b)"; done
+}
+panels_dark() {
+    for b in $BACKLIGHTS/*/brightness; do [ -f "$b" ] && echo 0 > $b; done
+    dark=1
+}
+panels_back() {
+    [ -n "$dark" ] || return 0
+    for item in $saved_levels; do echo "${item#*=}" > "${item%=*}"; done
+}
+
 case "$1" in
 suspend)
-    token=$(cat /run/rgds/suspend-request 2>/dev/null)
+    token=$(cat $RUN/suspend-request 2>/dev/null)
     sync
     printf 'token=%s\nphase=pre\n' "$token" > $state.new && mv $state.new $state
     # the red status LED, dim, says "asleep" (its node keeps its state through suspend, dts-patches/0004)
-    led=/sys/class/leds/red:status/brightness
-    echo 24 > $led 2>/dev/null
-    echo mem > /sys/power/state
-    rc=$?
-    echo 0 > $led 2>/dev/null
-    printf 'token=%s\nphase=post\nresult=%s\n' "$token" "$rc" > $state.new && mv $state.new $state
+    echo 24 > $LED 2>/dev/null
+    started=$(cat $RTC/since_epoch 2>/dev/null)
+    panels_save
+    wake=user
+    while :; do
+        due=
+        if [ -n "$started" ] && [ "$CHECK" -gt 0 ]; then
+            echo 0 > $RTC/wakealarm 2>/dev/null
+            echo +$CHECK > $RTC/wakealarm 2>/dev/null && due=$(($(cat $RTC/since_epoch) + CHECK))
+        fi
+        suspend_now
+        rc=$?
+        [ $rc = 0 ] || break
+        # woken before the alarm: the lid, the power key or the charger, a person
+        now=$(cat $RTC/since_epoch 2>/dev/null)
+        [ -n "$due" ] && [ -n "$now" ] && [ "$now" -ge $((due - 2)) ] || break
+        [ "$(lid_closed)" = 1 ] || break
+        panels_dark
+        capacity=$(cat $BATTERY/capacity 2>/dev/null)
+        slept=$((now - started))
+        echo "$(date '+%F %T') dark wake: battery ${capacity:-?} %, asleep $slept s" >> "$LOG" 2>/dev/null
+        if ! charging; then
+            case "$capacity" in ''|*[!0-9]*) ;; *) [ "$capacity" -le "$LOW" ] && { wake=poweroff; break; } ;; esac
+            [ "$slept" -ge "$LIMIT" ] && { wake=poweroff; break; }
+        fi
+        sync
+    done
+    echo 0 > $RTC/wakealarm 2>/dev/null
+    panels_back
+    echo 0 > $LED 2>/dev/null
+    if [ $wake = poweroff ]; then
+        echo "$(date '+%F %T') powering off after the sleep" >> "$LOG" 2>/dev/null
+        : > $RUN/poweroff-requested
+    fi
+    printf 'token=%s\nphase=post\nresult=%s\nwake=%s\n' "$token" "$rc" "$wake" > $state.new && mv $state.new $state
     exit $rc;;
 *)
     echo "usage: power suspend" >&2

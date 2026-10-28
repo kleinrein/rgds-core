@@ -16,6 +16,7 @@ void App::home_bar_activate(int button) {
         settings.section = button == 0 ? 10 : 7;
         settings.page = button == 0 ? Page::Display : Page::Statistics;
         settings.focus = 0;
+        settings.from_home = true;
         dirty = true;
     } else if (!update_now()) dirty = true;
 }

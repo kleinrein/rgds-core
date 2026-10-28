@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "companion/dock.hpp"
 
+#include "launcher/system_icons.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -15,7 +17,7 @@ constexpr uint64_t open_ms = 280, fade_after_ms = 15000, fade_ms = 1500, faint_a
                    close_after_ms = 15000;
 
 // The handheld's battery charge in percent, or -1 (no battery: a desktop).
-int read_battery() {
+int read_battery(bool& charging) {
     DIR* dir = opendir("/sys/class/power_supply");
     if (!dir) return -1;
     int found = -1;
@@ -27,6 +29,9 @@ int read_battery() {
         int c = -1;
         if (type >> t && t == "Battery" && capacity >> c && c >= 0 && c <= 100) {
             found = c;
+            std::ifstream status(base + "/status");
+            std::string state;
+            charging = status >> state && state == "Charging";
             break;
         }
     }
@@ -55,6 +60,65 @@ uint64_t look_key(const Look& look) {
     return k ^ std::hash<std::string>()(look.language);
 }
 
+// A picture shrunk to fit a w x h box, keeping its shape: each pixel the mean
+// of the source pixels under it (alpha-weighted, so see-through edges stay clean).
+Dock::Image fitted(const Dock::Image& src, int w, int h) {
+    Dock::Image out;
+    if (src.empty() || w <= 0 || h <= 0) return out;
+    const double k = std::min(double(w) / src.w, double(h) / src.h);
+    out.w = std::max(1, int(std::lround(src.w * k)));
+    out.h = std::max(1, int(std::lround(src.h * k)));
+    out.px.resize(size_t(out.w) * out.h);
+    for (int y = 0; y < out.h; ++y) {
+        const int y0 = y * src.h / out.h, y1 = std::max(y0 + 1, (y + 1) * src.h / out.h);
+        for (int x = 0; x < out.w; ++x) {
+            const int x0 = x * src.w / out.w, x1 = std::max(x0 + 1, (x + 1) * src.w / out.w);
+            uint64_t r = 0, g = 0, b = 0, a = 0, n = 0;
+            for (int sy = y0; sy < y1; ++sy)
+                for (int sx = x0; sx < x1; ++sx) {
+                    const uint32_t v = src.px[size_t(sy) * src.w + sx], va = v >> 24;
+                    r += (v & 0xFF) * va, g += (v >> 8 & 0xFF) * va, b += (v >> 16 & 0xFF) * va, a += va, ++n;
+                }
+            out.px[size_t(y) * out.w + x] =
+                a ? uint32_t(r / a) | uint32_t(g / a) << 8 | uint32_t(b / a) << 16 | uint32_t(a / n) << 24 : 0;
+        }
+    }
+    return out;
+}
+
+// A picture at x, y, blended by its own alpha.
+void paint(Canvas& out, const Dock::Image& img, int x, int y, int alpha = 255) {
+    for (int j = 0; j < img.h; ++j)
+        for (int i = 0; i < img.w; ++i) {
+            const uint32_t v = img.px[size_t(j) * img.w + i];
+            const int a = int(v >> 24) * alpha / 255;
+            if (a) out.fill_rect(x + i, y + j, 1, 1, Rgb::from_px(v), a);
+        }
+}
+
+// A box blur of `radius`, rows then columns, in place.
+void blur(Canvas& c, int radius) {
+    const int W = c.w(), H = c.h();
+    std::vector<uint32_t> line(size_t(std::max(W, H)));
+    auto pass = [&](uint32_t* first, int count, int step) {
+        for (int i = 0; i < count; ++i) line[size_t(i)] = first[size_t(i) * step];
+        uint32_t r = 0, g = 0, b = 0;
+        auto add = [&](int i, int sign) {
+            const uint32_t v = line[size_t(std::clamp(i, 0, count - 1))];
+            r += sign * (v & 0xFF), g += sign * (v >> 8 & 0xFF), b += sign * (v >> 16 & 0xFF);
+        };
+        for (int i = -radius; i <= radius; ++i) add(i, 1);
+        const uint32_t n = uint32_t(radius * 2 + 1);
+        for (int i = 0; i < count; ++i) {
+            first[size_t(i) * step] = (r / n) | (g / n) << 8 | (b / n) << 16 | 0xFF000000u;
+            add(i + radius + 1, 1);
+            add(i - radius, -1);
+        }
+    };
+    for (int y = 0; y < H; ++y) pass(c.data() + size_t(y) * W, W, 1);
+    for (int x = 0; x < W; ++x) pass(c.data() + x, H, W);
+}
+
 int clock_minute() {
     std::time_t now = std::time(nullptr);
     std::tm local{};
@@ -65,6 +129,16 @@ int clock_minute() {
 } // namespace
 
 Dock::Dock(std::string title, std::string system) : title_(std::move(title)), system_(std::move(system)) {}
+
+void Dock::set_art(const std::string& system_id, Image system_picture, Image cover) {
+    system_id_ = system_id;
+    system_picture_ = std::move(system_picture);
+    cover_ = std::move(cover);
+    thumb_ = {};
+    system_small_ = fitted(system_picture_, 32, 32);
+    ground_key_ = 0;
+    layer_key_ = 0;
+}
 
 void Dock::set_full(bool full) {
     if (full == full_) return;
@@ -133,8 +207,8 @@ Box Dock::box(Item item, int w, int h) const {
     const int m = kit::margin, g = kit::gap, half = (w - m * 2 - g) / 2;
     switch (item) {
     case Item::Button: return {w - m - 56, h - m - 56, 56, 56};
-    case Item::Switcher: return {m, 140, half, 112};
-    case Item::Home: return {m + half + g, 140, half, 112};
+    case Item::Switcher: return {m, 156, half, 96};
+    case Item::Home: return {m + half + g, 156, half, 96};
     case Item::Bright: return {m, 264, w - m * 2, 88};
     // Over the companion the button keeps its corner.
     case Item::Off: return {m, 364, w - m * 2 - (full_ ? 0 : 56 + g), 72};
@@ -217,6 +291,7 @@ uint64_t Dock::key() const {
     uint64_t k = (uint64_t(full_) << 1) | uint64_t(open_) | (uint64_t(brightness_) << 8) |
                  (uint64_t(shown_brightness()) << 16) | (uint64_t(dragging_) << 24);
     k ^= uint64_t(clock_minute()) << 32 ^ (played_ / 60) << 44;
+    if (charging_ && open()) k ^= (1 + now_ / 420 % 4) << 26; // the charging bars fill in turn, as in the status bar
     k ^= std::hash<std::string>()(toast_) * (now_ - toast_at_ < toast_ms ? 3 : 0);
     if (!full_ && !open_) k ^= now_ - touched_at_ < faint_after_ms ? 0x5000 : 0;
     if (moving()) k ^= now_ * 0x9E3779B97F4A7C15ull;
@@ -225,11 +300,12 @@ uint64_t Dock::key() const {
 
 uint64_t Dock::controls_key() const {
     if (battery_ == -2 || now_ - battery_at_ > 30000) {
-        battery_ = read_battery();
+        battery_ = read_battery(charging_);
         battery_at_ = now_;
     }
     uint64_t k = uint64_t(brightness_) | uint64_t(dragging_) << 8 | uint64_t(held_) << 9 | uint64_t(fired_) << 13 |
-                 uint64_t(twelve_hour_) << 14 | uint64_t(full_) << 15 | uint64_t(battery_ + 2) << 16;
+                 uint64_t(twelve_hour_) << 14 | uint64_t(full_) << 15 | uint64_t(battery_ + 2) << 16 |
+                 uint64_t(charging_ ? 1 + now_ / 420 % 4 : 0) << 24;
     k ^= uint64_t(clock_minute()) << 32 ^ (played_ / 60) << 44;
     if (held_item(held_) && !fired_) k ^= (now_ - held_at_ + 1) * 0x9E3779B97F4A7C15ull; // the ring fills
     return k;
@@ -280,7 +356,7 @@ void Dock::draw(Canvas& out, const Look& look, const Font& font, const Words& wo
     }
     const double open = openness();
     if (full_) {
-        backdrop(out, look);
+        ground(out, look);
         draw_controls(out, look, font, words);
     } else if (open > 0) {
         // The controls open out of the button, inside a circle that grows
@@ -289,7 +365,7 @@ void Dock::draw(Canvas& out, const Look& look, const Font& font, const Words& wo
         const uint64_t k = controls_key() ^ look_key(look);
         if (layer_.w() != out.w() || layer_.h() != out.h() || k != layer_key_) {
             layer_.resize(out.w(), out.h());
-            backdrop(layer_, look);
+            ground(layer_, look);
             draw_controls(layer_, look, font, words);
             layer_key_ = k;
         }
@@ -330,49 +406,126 @@ void Dock::draw_button(Canvas& out, const Look& look) const {
 }
 
 void Dock::hold_button(Canvas& out, const Look& look, const Font& font, const Words& words, Item item, Icon glyph,
-                       const std::string& name, const std::string& hint) const {
+                       const std::string& name) const {
     const Box b = box(item, out.w(), out.h());
     const bool held = held_ == item && !fired_;
     const double progress = held ? std::min(1.0, double(now_ - held_at_) / hold_ms) : 0;
-    raised(out, look, b.x, b.y, b.w, b.h, kit::radius, held ? look.focus : look.panel, held ? 1 : 0);
+    raised(out, look, b.x, b.y, b.w, b.h, kit::radius, held ? look.focus : look.panel, held ? 1 : 0, true, false);
     const int sink = held ? 2 : 0, cx = b.x + 16 + kit::badge / 2, cy = b.y + b.h / 2 + sink;
     icon_badge(out, look, cx - kit::badge / 2, cy - kit::badge / 2, glyph, held);
     // The hold fills a ring round the badge; at the top, it is done.
     if (held && held_item(item)) ring(out, cx, cy, kit::badge / 2 + 7, 4, progress, look.accent);
     const int tx = b.x + 16 + kit::badge + 16;
-    font.draw(out, tx, font.centred(kit::title, b.y + b.h / 2 - 12 + sink),
-              font.fit(words(name), kit::title, b.x + b.w - 12 - tx), kit::title, look.ink);
-    font.draw(out, tx, font.centred(kit::small, b.y + b.h / 2 + 18 + sink),
-              font.fit(words(hint), kit::small, b.x + b.w - 12 - tx), kit::small, look.muted);
+    font.draw(out, tx, font.centred(kit::title, cy), font.fit(words(name), kit::title, b.x + b.w - 12 - tx), kit::title,
+              look.ink);
+}
+
+void Dock::ground(Canvas& out, const Look& look) const {
+    if (cover_.empty()) {
+        backdrop(out, look);
+        return;
+    }
+    const uint64_t k = look_key(look) ^ uint64_t(out.w()) << 48 ^ uint64_t(out.h()) << 36;
+    if (ground_.w() != out.w() || ground_.h() != out.h() || k != ground_key_) {
+        // The box art over the whole screen, soft and faint: a colour of the game, not a picture to read.
+        ground_.resize(out.w(), out.h());
+        backdrop(ground_, look);
+        Canvas art(out.w(), out.h());
+        art.cover(cover_.px.data(), cover_.w, cover_.h, cover_.w, 256);
+        blur(art, 6);
+        blur(art, 6);
+        const int alpha = look.high_contrast ? 0 : look.dark ? 72 : 60;
+        for (size_t i = 0; i < size_t(out.w()) * out.h(); ++i)
+            ground_.data()[i] = mix(Rgb::from_px(ground_.data()[i]), Rgb::from_px(art.data()[i]), alpha).px();
+        ground_key_ = k;
+    }
+    std::copy(ground_.data(), ground_.data() + size_t(out.w()) * out.h(), out.data());
+}
+
+void Dock::art(Canvas& out, const Look& look, const Box& b) const {
+    if (cover_.empty()) {
+        out.rounded_rect(b.x, b.y, b.w, b.h, 12, look.slot);
+        system_icon(out, look, b.x + b.w / 12, b.y + b.h / 12, b.w - b.w / 6);
+        return;
+    }
+    if (std::max(thumb_.w, thumb_.h) != std::min(b.w, b.h)) thumb_ = fitted(cover_, b.w, b.h);
+    // A shadow under the box and a thin rim round it, so a pale cover still has an edge.
+    const int ax = b.x + (b.w - thumb_.w) / 2, ay = b.y + (b.h - thumb_.h) / 2;
+    soft_round(out, ax, ay + 3, thumb_.w, thumb_.h, 6, look.shadow(), look.dark ? 90 : 40);
+    out.fill_rect(ax - 1, ay - 1, thumb_.w + 2, thumb_.h + 2, look.line);
+    paint(out, thumb_, ax, ay);
+}
+
+void Dock::system_icon(Canvas& out, const Look& look, int x, int y, int size) const {
+    const std::string_view glyph = rgds::system_pixel_glyph(system_id_);
+    if (look.rich_icons && !system_picture_.empty()) {
+        const Image& img = size == system_small_.h ? system_small_ : fitted(system_picture_, size, size);
+        paint(out, img, x + (size - img.w) / 2, y + (size - img.h) / 2);
+    } else if (glyph.size() == 256) {
+        // The launcher's pixel style: a 16 x 16 glyph at a whole scale, '+' as a half tone.
+        const int k = std::max(1, size / 16), left = x + (size - 16 * k) / 2, top = y + (size - 16 * k) / 2;
+        for (int j = 0; j < 16; ++j)
+            for (int i = 0; i < 16; ++i)
+                if (const char c = glyph[size_t(j * 16 + i)]; c == '#' || c == '+')
+                    out.fill_rect(left + i * k, top + j * k, k, k, look.ink, c == '#' ? 255 : 110);
+    } else icon(out, look, Icon::Cartridge, x + size / 2, y + size / 2, size, look.accent);
+}
+
+void Dock::battery(Canvas& out, const Look& look, int x, int y) const {
+    // As the launcher's status bar draws it: a shell, four bars, a nub; the bars fill in turn while charging.
+    out.rounded_rect(x, y, 38, 20, 3, look.muted);
+    out.rounded_rect(x + 2, y + 2, 34, 16, 2, look.slot);
+    out.fill_rect(x + 38, y + 6, 3, 8, look.muted);
+    int bars = battery_ > 75 ? 4 : battery_ > 45 ? 3 : battery_ > 15 ? 2 : battery_ > 0 ? 1 : 0;
+    if (charging_) bars = 1 + int(now_ / 420 % 4);
+    const Rgb level = battery_ <= 15 && !charging_ ? Rgb{239, 129, 75} : look.accent;
+    for (int i = 0; i < 4; ++i)
+        out.fill_rect(x + 5 + i * 7, y + 5, 5, 10, i < bars ? level : mix(look.slot, look.muted, 41));
+    if (charging_)
+        for (int j = 0; j < 19; ++j) {
+            // The status bar's lightning, two strokes and a step.
+            const int px = j < 9 ? x - 10 - j * 6 / 9 : j == 9 ? x - 16 : x - 9 - (j - 10) * 6 / 9;
+            out.fill_rect(px, y + 1 + j, j == 9 ? 8 : 2, 1, look.accent);
+        }
 }
 
 void Dock::draw_controls(Canvas& out, const Look& look, const Font& font, const Words& words) const {
     const int W = out.w(), m = kit::margin;
     for (Item item : {Item::Switcher, Item::Home, Item::Bright, Item::Off}) touch_target(box(item, W, out.h()));
-    // The game: its name, the system and this session's time; the clock and battery.
-    const Box top{m, kit::margin, W - m * 2, 104};
+    // The game: its box art (else its system), name, system and this session's time; the clock and battery.
+    const Box top{m, kit::margin, W - m * 2, 120};
     card(out, look, top);
-    icon_badge(out, look, top.x + 16, top.y + (top.h - kit::badge) / 2, Icon::Cartridge, true);
+    const Box art{top.x + 12, top.y + 12, 96, 96};
+    this->art(out, look, art);
     const std::string clock = clock_text(twelve_hour_);
     const int clock_w = font.measure(clock, kit::number), right = top.x + top.w - 18;
-    const int tx = top.x + 16 + kit::badge + 16;
-    font.draw(out, tx, top.y + 46, font.fit(title_, kit::large, right - clock_w - 20 - tx), kit::large, look.ink);
+    const int tx = art.x + art.w + 16, text_w = right - clock_w - 20 - tx;
+    font.draw(out, tx, font.centred(kit::large, top.y + 32), font.fit(title_, kit::large, text_w), kit::large,
+              look.ink);
+    int sx = tx;
+    if (!cover_.empty()) {
+        system_icon(out, look, tx, top.y + 50, 32);
+        sx += 40;
+    }
+    font.draw(out, sx, font.centred(kit::small, top.y + 66), font.fit(system_, kit::small, right - sx), kit::small,
+              look.ink);
     const unsigned long long minutes = played_ / 60;
     const std::string played = minutes < 60 ? std::to_string(minutes) + " " + words("min")
                                             : std::to_string(minutes / 60) + " " + words("h") + " " +
                                                   std::to_string(minutes % 60) + " " + words("min");
-    const std::string line = system_ + "  ·  " + words("Played") + " " + played;
-    font.draw(out, tx, top.y + 80, font.fit(line, kit::small, right - clock_w - 20 - tx), kit::small, look.muted);
-    font.draw(out, right - clock_w, top.y + 56, clock, kit::number, look.ink);
+    font.draw(out, tx, font.centred(kit::small, top.y + 98),
+              font.fit(words("Played") + " " + played, kit::small, right - tx - 100), kit::small, look.muted);
+    font.draw(out, right - clock_w, font.centred(kit::number, top.y + 32), clock, kit::number, look.ink);
     controls_key(); // reads the battery now and then
     if (battery_ >= 0) {
         const std::string b = std::to_string(battery_) + "%";
         const int bw = font.measure(b, kit::small);
-        font.draw(out, right - bw, top.y + 84, b, kit::small, look.muted);
-        icon(out, look, Icon::Battery, right - bw - 16, top.y + 79, 20, look.muted);
+        battery(out, look, right - 41, top.y + 88);
+        font.draw(out, right - 41 - (charging_ ? 22 : 8) - bw, font.centred(kit::small, top.y + 98), b, kit::small,
+                  look.muted);
     }
-    hold_button(out, look, font, words, Item::Switcher, Icon::Library, "Game switcher", "Switch to another game");
-    hold_button(out, look, font, words, Item::Home, Icon::Home, "Return home", "Hold to return home");
+    hold_button(out, look, font, words, Item::Switcher, Icon::Library, "Game switcher");
+    hold_button(out, look, font, words, Item::Home, Icon::Home, "Return home");
     // Brightness: a slider, dragged.
     const Box br = box(Item::Bright, W, out.h());
     card(out, look, br, dragging_);
@@ -389,13 +542,10 @@ void Dock::draw_controls(Canvas& out, const Look& look, const Font& font, const 
     // Screen off.
     const Box off = box(Item::Off, W, out.h());
     raised(out, look, off.x, off.y, off.w, off.h, kit::radius, held_ == Item::Off ? look.focus : look.panel,
-           held_ == Item::Off ? 1 : 0);
+           held_ == Item::Off ? 1 : 0, true, false);
     icon_badge(out, look, off.x + 16, off.y + (off.h - kit::badge) / 2, Icon::Sleep);
     const int ox = off.x + 16 + kit::badge + 16;
-    font.draw(out, ox, font.centred(kit::body, off.y + off.h / 2 - 10), words("Screen off"), kit::body, look.ink);
-    font.draw(out, ox, font.centred(kit::small, off.y + off.h / 2 + 14),
-              font.fit(words("Touch the screen to turn it on"), kit::small, off.x + off.w - 12 - ox), kit::small,
-              look.muted);
+    font.draw(out, ox, font.centred(kit::title, off.y + off.h / 2), words("Screen off"), kit::title, look.ink);
 }
 
 } // namespace play

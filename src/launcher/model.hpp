@@ -53,8 +53,9 @@ inline const std::array<SystemInfo, 12>& systems() {
         {"sms", "Master System", "SMS", {".sms", ".gg"}},
         {"psx", "PlayStation", "PS", {".cue", ".chd", ".pbp", ".m3u"}},
         {"n64", "Nintendo 64", "N64", {".z64", ".n64", ".v64"}},
-        {"pico8", "PICO-8", "P8", {".p8"}},
         {"ports", "Ports", "PORT", {".sh"}}, // PortMaster ports: the scripts in its ports folder
+        // not a system with games of its own: the shelves of free DS, GBA and NES homebrew (homebrew_screen.hpp)
+        {"homebrew", "Homebrew", "FREE", {}},
     }};
     return list;
 }

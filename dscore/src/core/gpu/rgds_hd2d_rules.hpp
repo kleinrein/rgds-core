@@ -146,8 +146,8 @@ private:
       const int16x8_t dy = vshrq_n_s16(vaddq_s16(sum, vandq_s16(vshrq_n_s16(sum, 15), vdupq_n_s16(127))), 7);
       return vaddq_s16(vabsq_s16(dy), vshrq_n_s16(vaddq_s16(vabdq_s16(db, dy), vabdq_s16(dr, dy)), 2));
     };
-    vst1q_s16(out, eight(vget_low_u8(pa.val[0]), vget_low_u8(pa.val[1]), vget_low_u8(pa.val[2]),
-                         vget_low_u8(pb.val[0]), vget_low_u8(pb.val[1]), vget_low_u8(pb.val[2])));
+    vst1q_s16(out, eight(vget_low_u8(pa.val[0]), vget_low_u8(pa.val[1]), vget_low_u8(pa.val[2]), vget_low_u8(pb.val[0]),
+                         vget_low_u8(pb.val[1]), vget_low_u8(pb.val[2])));
     vst1q_s16(out + 8, eight(vget_high_u8(pa.val[0]), vget_high_u8(pa.val[1]), vget_high_u8(pa.val[2]),
                              vget_high_u8(pb.val[0]), vget_high_u8(pb.val[1]), vget_high_u8(pb.val[2])));
   }
@@ -162,7 +162,7 @@ private:
   static constexpr int axes[4][4] = {{1, 0, 0, 1}, {0, -1, 1, 0}, {-1, 0, 0, -1}, {0, 1, -1, 0}};
   static constexpr Offset slot(int k, int s) {
     constexpr Offset base[SE + 1] = {{0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1},
-                                     {1, 1},  {2, 1},  {1, 2},  {0, 2}, {2, 0}, {0, 0}};
+                                     {1, 1},  {2, 1},  {1, 2},  {0, 2}, {2, 0},  {0, 0}};
     return {base[s].dx * axes[k][0] + base[s].dy * axes[k][2], base[s].dx * axes[k][1] + base[s].dy * axes[k][3]};
   }
   // A distance between diagonal neighbours a and b as a map entry relative to the pixel.
@@ -291,8 +291,7 @@ private:
 
   // Corner K's state; sets bit K of `take` when it turns into its first-axis neighbour. ef, eh: the pixel's
   // distances to the corner's two neighbours.
-  template <int K>
-  unsigned corner(const Window& w, int row, int x, uint32_t e, int ef, int eh, unsigned& take) const {
+  template <int K> unsigned corner(const Window& w, int row, int x, uint32_t e, int ef, int eh, unsigned& take) const {
     const int fb = dist<K, SF, SB>(w, row, x), hd = dist<K, SH, SD>(w, row, x), ei = dist<K, SE, SI>(w, row, x),
               fi4 = dist<K, SF, SI4>(w, row, x), hi5 = dist<K, SH, SI5>(w, row, x), eg = dist<K, SE, SG>(w, row, x),
               ec = dist<K, SE, SC>(w, row, x);
@@ -300,7 +299,8 @@ private:
     // Level 1: no rule on a real corner of the art.
     if (!((!eq(fb) && !eq(hd)) || (eq(ei) && !eq(fi4) && !eq(hi5)) || eq(eg) || eq(ec))) return None;
     // The edge runs along f-h when the e-i direction is the busier one.
-    const int along = ec + eg + dist<K, SI, SH5>(w, row, x) + dist<K, SI, SF4>(w, row, x) + 4 * dist<K, SH, SF>(w, row, x);
+    const int along =
+        ec + eg + dist<K, SI, SH5>(w, row, x) + dist<K, SI, SF4>(w, row, x) + 4 * dist<K, SH, SF>(w, row, x);
     if (along >= hd + hi5 + fi4 + fb + 4 * ei) return None;
     const uint32_t g = at<K, SG>(w, row, x), c = at<K, SC>(w, row, x);
     const int fg = knight<K, SF, SG>(w, row, x), hc = knight<K, SH, SC>(w, row, x);

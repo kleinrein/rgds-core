@@ -417,6 +417,10 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 ok = value == "yes" || value == "no";
                 h.strip_fill = value == "yes";
                 if (!ok) why = "expected strip_fill = yes or no";
+            } else if (key == "game_rows") {
+                h.game_rows = std::atoi(value.c_str());
+                ok = h.game_rows > 0;
+                if (!ok) why = "expected game_rows = a number of rows";
             } else if (key == "to_game") {
                 // x y w h > X Y
                 auto gt = value.find('>');

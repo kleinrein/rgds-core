@@ -94,7 +94,7 @@ std::string App::emulator_choice_hint() const {
 }
 
 bool App::open_setting_picker() {
-    if ((settings.page == Page::GameOptions && settings.focus >= list_count() - 3) ||
+    if ((settings.page == Page::GameOptions && settings.focus >= game_options_base() - 3) ||
         (settings.page == Page::EmulatorOptions && settings.focus >= list_count() - 2))
         return false;
     int row = settings.focus;
@@ -170,6 +170,16 @@ bool App::open_setting_picker() {
                     });
     } else if (settings.page == Page::GameOptions && row == 1) {
         show_emulator_picker(true);
+    } else if (settings.page == Page::Power && power_rows[size_t(row)] == 7) {
+        if (!hardware.brightness) return false;
+        show_picker("Dim when idle", {dim_name(0), dim_name(1), dim_name(2), dim_name(3), dim_name(4)},
+                    system_preferences.dim, [this](int n) { change_system(7, n - system_preferences.dim); });
+    } else if (settings.page == Page::Power && power_rows[size_t(row)] == 8) {
+        if (!hardware.sleep) return false;
+        show_picker(
+            "Sleep timer in games",
+            {game_sleep_name(0), game_sleep_name(1), game_sleep_name(2), game_sleep_name(3), game_sleep_name(4)},
+            system_preferences.game_sleep, [this](int n) { change_system(8, n - system_preferences.game_sleep); });
     } else if ((settings.page == Page::Power && row == 0) || (settings.page == Page::EmulatorOptions && row == 2)) {
         if (!hardware.power) return false;
         show_picker("Power mode", {power_names[0], power_names[1], power_names[2], power_names[3]},
@@ -469,13 +479,13 @@ void App::render_picker(SDL_Renderer* r, int y) {
 void App::render_picker_body(SDL_Renderer* r, int y) {
     const bool closing = !picker_open;
     if (drawing_elements && !closing) motion_hits.clear(); // The modal owns input, including its empty spaces.
-    // A sheet: it rises in (160 ms) and slides away when closed (140 ms).
+    // A sheet: it rises in and slides away when closed, both scaled by the view Speed.
     // Input and persistence never wait for either.
     const Uint32 now = s.GetTicks();
     float progress = !preferences.animations ? 1.f
-                     : closing               ? 1.f - std::min(1.f, (now - picker_closed_at) / 140.f)
-                                             : std::min(1.f, (now - picker_at) / 160.f);
-    const float ease = 1 - (1 - progress) * (1 - progress) * (1 - progress);
+                     : closing               ? 1.f - std::min(1.f, (now - picker_closed_at) / sheet_out_ms())
+                                             : std::min(1.f, (now - picker_at) / sheet_in_ms());
+    const float ease = progress * progress * progress * (progress * (6 * progress - 15) + 10);
     int top = y + picker_top() + int(std::lround((closing ? 420 : 28) * (1 - ease)));
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     s.SetRenderDrawColor(r, 0, 0, 0, Uint8(std::lround(92 * ease)));

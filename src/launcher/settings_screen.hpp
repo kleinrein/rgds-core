@@ -10,6 +10,33 @@ void App::list_scrollbar(SDL_Renderer* r, int y) {
                    scroll_drag, scroll_hover);
 }
 
+// Sound's first list row: the same card as its neighbours with the volume slider inside it.
+void App::volume_row(SDL_Renderer* r, int y) {
+    int row = y + list_top - list_scroll;
+    const int value = hardware.volume_percent;
+    const bool focused = settings.focus == 0;
+    int dx = 24;
+    move_element(0, dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
+    dx -= 24;
+    settings_card(r, 24 + dx, row, 566, 66, focused);
+    ui_icon(r, SettingsIcon::Volume, 50 + dx, row + 19, 22, "accent");
+    label(r, "Volume", 72 + dx, row + 7, 22, "ink", 300);
+    {
+        const std::string shown = hardware.volume ? std::to_string(value) + "%" : locale.text("Unavailable");
+        raw_label(r, shown, 566 - label_width(shown, hardware.volume ? 22 : 18, false) + dx,
+                  row + (hardware.volume ? 7 : 10), hardware.volume ? 22 : 18, "accent", 200);
+    }
+    const int track = row + 46, position = sound_track_x + value * sound_track_width / 100 + dx;
+    sunken_track(r, sound_track_x - 4 + dx, track - 2, sound_track_width + 8, 14, 7);
+    if (position - sound_track_x - dx > 8)
+        glossy_pill(r, sound_track_x + dx, track, std::max(10, position - sound_track_x - dx), 10, 5,
+                    theme.at("accent"));
+    raised_pill(r, std::clamp(position - 14, 40 + dx, 548 + dx), track - 10, 28, 30, 10,
+                theme.at(hardware.volume ? "accent" : "muted"), volume_drag ? .6 : 0);
+    ui_icon(r, SettingsIcon::Sliders, std::clamp(position, sound_track_x + dx, sound_track_x + sound_track_width + dx),
+            track + 5 + (volume_drag ? 1 : 0), 14, "on_accent");
+}
+
 void App::choice(SDL_Renderer* r, int x, int y, const std::string& title, bool selected, bool focused) {
     move_element(uint32_t(x + y), x, y, 280, 48, focused && selected);
     alpha_round(r, x, y + 3, 280, 48, 12, shadow_colour(), preferences.dark ? 70 : 26);
@@ -36,6 +63,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
     }
     if (settings.page == Page::ShaderPicker) {
         render_shader_preview(r, y);
+        return;
+    }
+    if (settings.page == Page::Homebrew) {
+        homebrew_top(r, y);
         return;
     }
     // Navigation belongs on the lower panel. Keep this identity independent
@@ -74,6 +105,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
         symbol = SettingsIcon::Power;
         break;
     case Page::LibraryOptions:
+    case Page::Homebrew:
         title = "Library";
         symbol = SettingsIcon::Library;
         break;
@@ -101,6 +133,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
         break;
     case Page::Network:
     case Page::Wifi:
+    case Page::Bluetooth:
         title = "Connectivity";
         symbol = SettingsIcon::Wifi;
         break;
@@ -111,10 +144,6 @@ void App::settings_top(SDL_Renderer* r, int y) {
     case Page::System:
     case Page::DeviceInfo:
     case Page::Maintenance: title = "System"; break;
-    case Page::Startup:
-        title = "Startup";
-        symbol = SettingsIcon::Home;
-        break;
     case Page::SaveGallery:
         title = gallery_title();
         symbol = gallery_icon();
@@ -173,7 +202,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
         if (!cover_art(r, folder_for_game(game) / "box.bmp", {46, y + 104, 174, 174}, true))
             game_icon(r, game, 89, y + 147, 88);
         label(r,
-              home_switcher       ? std::string(system_info(game.system).name)
+              home_switcher         ? std::string(system_info(game.system).name)
               : settings.focus == 0 ? "Resume"
                                     : "Switch game",
               246, y + 103, 18, "accent", 344);
@@ -353,7 +382,8 @@ void App::settings_top(SDL_Renderer* r, int y) {
     const std::string focused_zone =
         zone ? timezones[size_t(std::clamp(settings.focus, 0, int(timezones.size()) - 1))] : "";
     // Pages that draw a card or prompt inside the note keep their words near its top.
-    const bool crowded = page == Page::Network || page == Page::Wifi || page == Page::GameArtwork ||
+    const bool crowded = page == Page::Network || page == Page::Wifi || page == Page::Bluetooth ||
+                         page == Page::Homebrew || page == Page::GameArtwork ||
                          (page == Page::Keyboard && edit_field == 3) ||
                          (settings.page == Page::Controls && control_capture);
     const int note_y = crowded ? y : y + 64;
@@ -456,7 +486,8 @@ void App::settings_top(SDL_Renderer* r, int y) {
             else if (row == 7) message = "Where games go on the card, and a fresh scan.";
             else if (row == 1) message = "Where covers and titles come from.";
         }
-    } else if (page == Page::Startup || page == Page::Network || page == Page::Wifi || page == Page::Maintenance) {
+    } else if (page == Page::System || page == Page::Network || page == Page::Wifi || page == Page::Bluetooth ||
+               page == Page::Maintenance) {
         if (device_status["state"] == "error") message = device_status["message"];
     } else if (page == Page::Scraper || page == Page::GameArtwork) {
         if (service["state"] == "scraping") message = service["completed"] + " / " + service["total"] + " games";
@@ -472,10 +503,13 @@ void App::settings_top(SDL_Renderer* r, int y) {
 void App::network_status_card(SDL_Renderer* r, int y) {
     const bool connected = device_status["wifi_connected"] == "1", radio = device_status["wifi"] == "1",
                busy = network_busy(), failed = !busy && device_status["state"] == "error";
+    // wpa_supplicant joining or looking for a saved network by itself (at boot, after Wi-Fi on): runtime/wpa_wifi.py
+    const bool joining = !busy && !connected && radio && !device_status["wifi_joining"].empty(),
+               looking = !busy && !connected && !joining && radio && device_status["wifi_looking"] == "1";
     const int left = 40, top = y + 296, width = 560, height = 116;
     const Color green = preferences.dark ? Color{36, 128, 76} : Color{44, 160, 92}, white{255, 255, 255};
-    const Color tone = busy ? theme.at("accent") : green;
-    const bool lit = busy || connected;
+    const Color tone = busy || joining ? theme.at("accent") : green;
+    const bool lit = busy || connected || joining;
     alpha_round(r, left, top + 4, width, height, 16, shadow_colour(), preferences.dark ? 60 : 22);
     if (lit) glossy_pill(r, left, top, width, height, 16, tone);
     else {
@@ -486,8 +520,9 @@ void App::network_status_card(SDL_Renderer* r, int y) {
     // The badge on the left: a spinner, signal bars, or the radio glyph.
     const int bx = left + 54, by = top + height / 2;
     fill_round(r, bx - 30, by - 30, 60, 60, 30, lit ? blend(tone, white, 18) : theme.at("slot"));
-    if (busy)
-        feedback_arc(r, bx, by, 19, preferences.animations ? (s.GetTicks() % 1400) / 1400.0 : 0, .7, white, 255, 3);
+    if (busy || joining || looking)
+        feedback_arc(r, bx, by, 19, preferences.animations ? (s.GetTicks() % 1400) / 1400.0 : 0, .7,
+                     lit ? white : theme.at("accent"), 255, 3);
     else if (connected) {
         int signal = device_status["wifi_signal"].empty() ? -1 : std::atoi(device_status["wifi_signal"].c_str());
         if (probed_signal >= 0) signal = probed_signal;
@@ -507,8 +542,13 @@ void App::network_status_card(SDL_Renderer* r, int y) {
     std::string headline, detail, extra;
     bool translate_headline = true;
     if (busy) {
-        headline = worker_action == "device.scan"      ? "Looking for networks…"
-                   : worker_action == "device.wifi-on" ? "Turning Wi-Fi on…"
+        headline = worker_action == "device.scan"                                             ? "Looking for networks…"
+                   : worker_action == "device.wifi-on"                                        ? "Turning Wi-Fi on…"
+                   : worker_action == "device.bt-on"                                          ? "Turning Bluetooth on…"
+                   : worker_action == "device.bt-off"                                         ? "Turning Bluetooth off…"
+                   : worker_action == "device.bt-scan"                                        ? "Looking for devices…"
+                   : worker_action == "device.bt-pair" || worker_action == "device.bt-forget" ? "Working…"
+                   : worker_action == "device.homebrew-get"                                   ? "Downloading…"
                    : worker_action == "device.wifi-off"
                        ? "Turning Wi-Fi off…"
                        : locale.text("Connecting to") + " " +
@@ -523,6 +563,10 @@ void App::network_status_card(SDL_Renderer* r, int y) {
         int signal = device_status["wifi_signal"].empty() ? -1 : std::atoi(device_status["wifi_signal"].c_str());
         if (probed_signal >= 0) signal = probed_signal;
         if (signal >= 0) extra = locale.text("Signal") + "  " + std::to_string(signal) + "%";
+    } else if (joining) {
+        headline = locale.text("Connecting to") + " " + device_status["wifi_joining"] + "…";
+        translate_headline = false;
+        detail = locale.text("This can take a few seconds");
     } else if (failed) {
         headline = "Could not connect";
         detail = device_status["message"];
@@ -530,6 +574,9 @@ void App::network_status_card(SDL_Renderer* r, int y) {
         headline = "Wi-Fi is off";
         detail = device_status["wifi_supported"] == "0" ? device_status["wifi_reason"]
                                                         : locale.text("Turn it on to find networks");
+    } else if (looking) {
+        headline = "Looking for networks…";
+        detail = locale.text("Choose a network from the list");
     } else {
         headline = "Not connected";
         detail = locale.text("Choose a network from the list");
@@ -627,25 +674,28 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
     sync_list();
     int count = list_count();
     // Pages that keep their header and controls while their list is empty.
-    if (count > 0 || settings.page == Page::Wifi || settings.page == Page::Cheats) {
+    if (count > 0 || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
+        settings.page == Page::Homebrew || settings.page == Page::Cheats) {
         std::string title = settings.page == Page::Graphics || settings.page == Page::PlayGraphics ? "Graphics"
                             : settings.page == Page::Cheats                                        ? cheats_title()
+                            : settings.page == Page::Sound                                         ? "Sound"
                             : settings.page == Page::MenuSounds                                    ? "Sounds & music"
                             : settings.page == Page::Haptics                                       ? "Vibration"
                             : settings.page == Page::SaveGallery                                   ? gallery_title()
-                            : settings.page == Page::RomSetup        ? "Add your games"
-                            : settings.page == Page::PortFiles       ? "Add game files"
-                            : settings.page == Page::DSControls      ? "DS controls"
-                            : settings.page == Page::Settings        ? "Settings"
-                            : settings.page == Page::Appearance      ? "Theme"
-                            : settings.page == Page::DisplayOptions  ? "Display"
-                            : settings.page == Page::Power           ? "Power"
-                            : settings.page == Page::LibraryOptions  ? "Library"
-                            : settings.page == Page::GameOptions     ? "Game options"
-                            : settings.page == Page::System          ? "System"
-                            : settings.page == Page::Startup         ? "Startup"
-                            : settings.page == Page::Network         ? "Connectivity"
+                            : settings.page == Page::RomSetup                                      ? "Add your games"
+                            : settings.page == Page::PortFiles                                     ? "Add game files"
+                            : settings.page == Page::DSControls                                    ? "DS controls"
+                            : settings.page == Page::Settings                                      ? "Settings"
+                            : settings.page == Page::Appearance                                    ? "Theme"
+                            : settings.page == Page::DisplayOptions                                ? "Display"
+                            : settings.page == Page::Power                                         ? "Power"
+                            : settings.page == Page::LibraryOptions                                ? "Library"
+                            : settings.page == Page::GameOptions                                   ? "Game options"
+                            : settings.page == Page::System                                        ? "System"
+                            : settings.page == Page::Network                                       ? "Connectivity"
                             : settings.page == Page::Wifi            ? "Available networks"
+                            : settings.page == Page::Bluetooth       ? "Bluetooth devices"
+                            : settings.page == Page::Homebrew        ? "Homebrew"
                             : settings.page == Page::Timezone        ? "Timezone"
                             : settings.page == Page::ShaderPicker    ? "Shaders"
                             : settings.page == Page::EmulatorOptions ? "Emulator settings"
@@ -656,11 +706,22 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         if (settings.page == Page::Timezone) title = timezone_title();
         settings_header(r, y, title,
                         settings.page == Page::Cheats     ? cheat_tabs_left() - 88 - 16
+                        : settings.page == Page::Homebrew ? 616 - int(homebrew_shelves().size()) * 72 - 88 - 16
                         : settings.page == Page::Timezone ? 600 - 88
                                                           : 475,
                         settings.page != Page::Cheats); // group names are data
         if (settings.page == Page::Cheats) cheat_header(r, y);
-        if (settings.page == Page::Wifi) {
+        if (settings.page == Page::Homebrew) {
+            // the shelves as tabs, L and R between them (the Cheats page's strip)
+            std::vector<std::string> names;
+            int selected = 0;
+            for (const auto& id : homebrew_shelves()) {
+                if (id == homebrew_system) selected = int(names.size());
+                names.push_back(id == "nds" ? "DS" : id == "gba" ? "GBA" : "NES");
+            }
+            tab_strip(r, 616 - int(names.size()) * 72, y + 77, 72, names, selected);
+        }
+        if (settings.page == Page::Wifi || settings.page == Page::Bluetooth) {
             secondary_button(r, 476, y + 24, 150, 42, 12,
                              pointer_down && contact_x >= 476 && contact_y >= 24 && contact_y <= 66);
             ui_icon(r, SettingsIcon::Refresh, 498, y + 45, 18, "accent");
@@ -684,46 +745,52 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             if (settings.page == Page::Settings)
                 list_row(r, y, i, sections[size_t(section_order[size_t(i)])].title,
                          section_order[size_t(i)] == 9 ? update_badge() : "");
-            else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions) appearance_row(r, y, i);
+            else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions)
+                appearance_row(r, y, i);
             else if (settings.page == Page::ShaderPicker) {
                 int value = shader_choices[i];
                 list_row(r, y, i, shader_name(value),
                          (shader_per_game ? game_preferences.filter : preferences.filter) == value ? "Selected" : "");
             } else if (settings.page == Page::Power) {
-                const std::array<std::string, 7> names = {"Power mode",         "Menu idle sleep", "Sleep on lid close",
-                                                          "Battery percentage", "Sleep now",       "Power off",
-                                                          "Restart"};
-                const std::array<std::string, 7> values = {power_names[system_preferences.power],
+                // indexed by control id; power_rows gives the order on the page
+                const std::array<std::string, 9> names = {
+                    "Power mode", "Menu idle sleep", "Sleep on lid close", "Battery percentage",  "Sleep now",
+                    "Power off",  "Restart",         "Dim when idle",      "Sleep timer in games"};
+                const std::array<std::string, 9> values = {power_names[system_preferences.power],
                                                            idle_name(system_preferences.idle),
                                                            system_preferences.lid ? "On" : "Off",
                                                            system_preferences.battery_percent ? "On" : "Off",
                                                            "Sleep",
                                                            "Power off",
-                                                           "Restart"};
-                const std::array<bool, 7> enabled = {hardware.power,        hardware.sleep, hardware.lid,
-                                                     hardware.battery >= 0, hardware.sleep, hardware.poweroff,
-                                                     hardware.poweroff};
-                list_row(r, y, i, names[i], enabled[i] ? values[i] : "Unavailable", enabled[i]);
+                                                           "Restart",
+                                                           dim_name(system_preferences.dim),
+                                                           game_sleep_name(system_preferences.game_sleep)};
+                const std::array<bool, 9> enabled = {hardware.power,        hardware.sleep,      hardware.lid,
+                                                     hardware.battery >= 0, hardware.sleep,      hardware.poweroff,
+                                                     hardware.poweroff,     hardware.brightness, hardware.sleep};
+                const int id = power_rows[size_t(i)];
+                list_row(r, y, i, names[id], enabled[id] ? values[id] : "Unavailable", enabled[id]);
             } else if (settings.page == Page::LibraryOptions) {
                 const std::array<std::string, 11> names = {"Default emulator",  "Artwork sources", "Auto-load state",
                                                            "Auto-save on exit", "Default shader",  "Browser layout",
                                                            "DraStic backend",   "Add your games",  "Back up all saves",
-                                                           "Show all systems",  "Scan for games"};
-                const std::array<std::string, 11> values = {core_names[preferences.core],
-                                                            "",
-                                                            preferences.auto_load ? "On" : "Off",
-                                                            preferences.auto_save ? "On" : "Off",
-                                                            shader_name(preferences.filter),
-                                                            preferences.layout == 0   ? "Cartridges"
-                                                            : preferences.layout == 1 ? "Covers"
-                                                                                      : "List",
-                                                            drastic_backend_name(preferences.drastic_backend),
-                                                            "",
-                                                            "",
-                                                            preferences.show_systems ? "On" : "Off",
-                                                            !library_ready ? locale.text("Scanning…")
-                                                                           : locale.text(std::to_string(all_games.size()) +
-                                                                                         (all_games.size() == 1 ? " game" : " games"))};
+                                                           "Systems",           "Scan for games"};
+                const std::array<std::string, 11> values = {
+                    core_names[preferences.core],
+                    "",
+                    preferences.auto_load ? "On" : "Off",
+                    preferences.auto_save ? "On" : "Off",
+                    shader_name(preferences.filter),
+                    preferences.layout == 0   ? "Cartridges"
+                    : preferences.layout == 1 ? "Covers"
+                                              : "List",
+                    drastic_backend_name(preferences.drastic_backend),
+                    "",
+                    "",
+                    preferences.show_systems ? "All systems" : "DS only",
+                    !library_ready
+                        ? locale.text("Scanning…")
+                        : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games"))};
                 list_row(r, y, i, names[size_t(library_row(i))], values[size_t(library_row(i))]);
             } else if (settings.page == Page::PlayGraphics) {
                 const bool palette = play_colour_kind() == 1;
@@ -739,15 +806,18 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 const uint32_t tone = play::gb_palettes[play_palette].shade[1];
                 const Color dot{uint8_t(tone >> 16), uint8_t(tone >> 8), uint8_t(tone)};
                 list_row(r, y, i, names[size_t(i)], values[size_t(i)], true, palette && i == 4 ? &dot : nullptr);
-            } else if (settings.page == Page::GameOptions && other_system_selected() && (i == 1 || i == count - 1))
+            } else if (settings.page == Page::GameOptions && i == game_options_base())
+                list_row(r, y, i, "Remove game", ""); // only listed when game_removable()
+            else if (settings.page == Page::GameOptions && other_system_selected() &&
+                     (i == 1 || i == game_options_base() - 1))
                 list_row(r, y, i, i == 1 ? "Emulator" : "DS controls", i == 1 ? core_names[play_core] : "Unavailable",
                          false);
-            else if (settings.page == Page::GameOptions && i == count - 3) {
+            else if (settings.page == Page::GameOptions && i == game_options_base() - 3) {
                 const bool have = !model.games.empty() &&
                                   !library_cache.metadata(model.games[model.selected]).info["info_version"].empty();
                 list_row(r, y, i, "Game info", have ? "Available" : "Not downloaded");
-            } else if (settings.page == Page::GameOptions && i >= count - 2)
-                list_row(r, y, i, i == count - 2 ? "Save gallery" : "DS controls");
+            } else if (settings.page == Page::GameOptions && i >= game_options_base() - 2)
+                list_row(r, y, i, i == game_options_base() - 2 ? "Save gallery" : "DS controls");
             else if (settings.page == Page::GameOptions && i == 5 && experimental_game())
                 list_row(r, y, i, "3D resolution", experimental_resolution_name());
             else if (settings.page == Page::GameOptions) {
@@ -767,7 +837,19 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                                      superdrastic_resolution_name()};
                 list_row(r, y, i, names[i], values[i], (i != 2 && i != 6) || !superdrastic_game());
             } else if (settings.page == Page::Controls) list_row(r, y, i, controls_row_name(i), controls_row_value(i));
-            else if (settings.page == Page::MenuSounds) {
+            else if (settings.page == Page::Sound) {
+                if (i == 0) volume_row(r, y);
+                else {
+                    const bool on = i == 4 ? preferences.menu_haptics || preferences.game_rumble
+                                           : preferences.menu_sounds || preferences.menu_music;
+                    list_row(r, y, i,
+                             i == 4   ? "Vibration"
+                             : i == 3 ? "Sounds & music"
+                             : i == 2 ? "Test microphone"
+                                      : (hardware.volume_percent == 0 ? "Unmute" : "Mute"),
+                             i >= 3 ? (on ? "On" : "Off") : "", true, nullptr, false);
+                }
+            } else if (settings.page == Page::MenuSounds) {
                 const std::array<std::string, 5> names = {"Menu effects", "Effects volume", "Menu music",
                                                           "Music volume", "Preview sound"};
                 list_row(r, y, i, names[i],
@@ -794,9 +876,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          : i == 2 ? dst_names.at(system_preferences.dst)
                          : i == 3 ? date_format_names.at(system_preferences.date_format)
                          : i == 4 ? time_format_names.at(system_preferences.time_format)
+                         : i == (o.rgds_os ? 7 : 8) ? (device_status["boot_warning"] == "1" ? "On" : "Off")
                                   : "");
-            } else if (settings.page == Page::Startup) {
-                list_row(r, y, i, "Touch to continue", device_status["boot_warning"] == "1" ? "On" : "Off");
             } else if (settings.page == Page::SaveGallery)
                 list_row(r, y, i, locale.text("Slot") + " " + std::to_string(i + 1),
                          slot_occupied(i) ? slots["slot_" + std::to_string(i)] : "Empty slot", slot_primary_enabled(i));
@@ -813,20 +894,34 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             else if (settings.page == Page::Cheats) cheat_row(r, y, i);
             else if (settings.page == Page::DSControls) ds_controls_row(r, y, i);
             else if (settings.page == Page::Network) {
-                const std::array<std::string, 5> names = {"Wi-Fi", "Available networks", "Refresh connection",
-                                                          "Network file sharing", "Sharing details"};
+                const std::array<std::string, 7> names = {"Wi-Fi",
+                                                          "Available networks",
+                                                          "Bluetooth",
+                                                          "Bluetooth devices",
+                                                          "Refresh connection",
+                                                          "Network file sharing",
+                                                          "Sharing details"};
+                const bool bt_working = worker > 0 && worker_action.rfind("device.bt-", 0) == 0;
                 std::string value = i == 0   ? (device_status["wifi_supported"] == "0" ? "Unavailable"
                                                 : device_status["wifi"] == "1"         ? "On"
                                                                                        : "Off")
                                     : i == 1 ? (network_busy()                           ? "Working…"
                                                 : device_status["wifi_connected"] == "1" ? device_status["connection"]
+                                                : !device_status["wifi_joining"].empty() ? "Connecting…"
                                                                                          : "")
-                                    : i == 3 ? (device_status["sharing"] != "1"           ? "Off"
+                                    : i == 2 ? (device_status["bt_supported"] == "0" ? "Unavailable"
+                                                : bt_working                         ? "Working…"
+                                                : device_status["bt"] == "1"         ? "On"
+                                                                                     : "Off")
+                                    : i == 3 ? (device_status["bt_supported"] == "0" ? "" : device_status["bt_count"])
+                                    : i == 5 ? (device_status["sharing"] != "1"           ? "Off"
                                                 : device_status["sharing_mode"] == "open" ? "Open"
                                                                                           : "Password")
-                                    : i == 4 ? "SMB"
+                                    : i == 6 ? "SMB"
                                              : "";
-                list_row(r, y, i, names[i], value, i != 4 || device_status["sharing"] == "1");
+                list_row(r, y, i, names[i], value,
+                         i == 2 || i == 3 ? device_status["bt_supported"] != "0"
+                                          : i != 6 || device_status["sharing"] == "1");
             } else if (settings.page == Page::Wifi) {
                 auto prefix = "network_" + std::to_string(i) + "_";
                 const bool joining =
@@ -837,6 +932,18 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                              ? "Connected"
                              : (device_status[prefix + "saved"] == "1" ? "Saved · " : "") +
                                    device_status[prefix + "signal"] + "%");
+            } else if (settings.page == Page::Homebrew) {
+                list_row(r, y, i, device_status["hb_" + std::to_string(i) + "_title"], homebrew_row_value(i));
+            } else if (settings.page == Page::Bluetooth) {
+                auto prefix = "bt_" + std::to_string(i) + "_";
+                const bool working = worker > 0 &&
+                                     (worker_action == "device.bt-pair" || worker_action == "device.bt-forget") &&
+                                     device_status[prefix + "address"] == bluetooth_address;
+                list_row(r, y, i, device_status[prefix + "name"],
+                         working                                      ? "Working…"
+                         : device_status[prefix + "connected"] == "1" ? "Connected"
+                         : device_status[prefix + "paired"] == "1"    ? "Paired"
+                                                                      : "");
             } else if (settings.page == Page::Timezone) {
                 const std::string zone = timezones[size_t(i)];
                 const auto offset = offset_text(zone_offset(zone));
@@ -945,6 +1052,20 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     : !device_status["message"].empty()     ? device_status["message"]
                     : !device_status["wifi_reason"].empty() ? device_status["wifi_reason"]
                                                             : "No networks found",
+                    30, y + 145, 24, 560, 4);
+        if (settings.page == Page::Homebrew && !count) {
+            if (homebrew_loading()) busy_ring(r, 320, y + 250, 26, 4);
+            else
+                wrapped(r, !device_status["message"].empty() ? device_status["message"] : "Nothing on this shelf yet.",
+                        30, y + 145, 24, 560, 4);
+        }
+        if (settings.page == Page::Bluetooth && !count)
+            wrapped(r,
+                    worker > 0                             ? "Looking for devices…"
+                    : device_status["bt_supported"] == "0" ? "Bluetooth is not available on this handheld."
+                    : device_status["bt"] != "1"           ? "Turn Bluetooth on to find devices."
+                    : !device_status["message"].empty() ? device_status["message"]
+                                                        : "No devices found. Put the device in pairing mode and scan.",
                     30, y + 145, 24, 560, 4);
         if (settings.page == Page::Cheats && !count)
             wrapped(r,
@@ -1082,8 +1203,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                  : style == 2 ? "Pages zoom and fade in, like the DSi menu"
                               : "Springy menu changes with a colourful wobble");
         segments(3, "Speed", {"Snappy", "Normal", "Relaxed"}, preferences.view_speed,
-                 preferences.view_speed == 0   ? "Quickest transitions, about 0.1 s"
-                 : preferences.view_speed == 2 ? "Slower, calmer transitions"
+                 preferences.view_speed == 0   ? "Quick, crisp transitions"
+                 : preferences.view_speed == 2 ? "Slow, unhurried, very smooth transitions"
                                                : "Balanced for everyday use");
         return;
     }
@@ -1091,59 +1212,30 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         microphone_screen(r, y);
         return;
     }
-    if (settings.page == Page::Sound || settings.page == Page::Display) {
-        bool sound = settings.page == Page::Sound, available = sound ? hardware.volume : hardware.brightness;
-        int value = sound ? hardware.volume_percent : system_preferences.brightness;
-        settings_header(r, y, sound ? "Sound" : "Screen brightness");
+    if (settings.page == Page::Display) {
+        const bool available = hardware.brightness;
+        const int value = system_preferences.brightness;
+        settings_header(r, y, "Screen brightness");
         const auto band = slider_band();
-        const int card_top = band.first, card_height = band.second - band.first, track = card_top + (sound ? 50 : 52);
+        const int card_top = band.first, card_height = band.second - band.first, track = card_top + 52;
         // Title and value inside the card, the slider below them.
-        settings_card(r, 28, y + card_top, 584, card_height, sound && settings.focus == 0);
-        ui_icon(r, sound ? SettingsIcon::Volume : SettingsIcon::Sun, 58, y + card_top + 22, 22, "accent");
-        label(r, sound ? "Volume" : "Both screens", 82, y + card_top + 8, 22, "ink", 300);
+        settings_card(r, 28, y + card_top, 584, card_height, false);
+        ui_icon(r, SettingsIcon::Sun, 58, y + card_top + 22, 22, "accent");
+        label(r, "Both screens", 82, y + card_top + 8, 22, "ink", 300);
         {
             const std::string shown = available ? std::to_string(value) + "%" : locale.text("Unavailable");
             raw_label(r, shown, 584 - label_width(shown, available ? 26 : 18, false),
                       y + card_top + (available ? 5 : 10), available ? 26 : 18, "accent", 200);
         }
         sunken_track(r, 54, y + track - 2, 532, 14, 7);
-        int position = 56 + (sound ? value * 528 / 100 : (value - 5) * 528 / 95);
+        int position = 56 + (value - 5) * 528 / 95;
         if (position - 56 > 8) glossy_pill(r, 56, y + track, std::max(10, position - 56), 10, 5, theme.at("accent"));
         raised_pill(r, std::clamp(position - 17, 39, 567), y + track - 13, 34, 36, 12,
-                    theme.at(available ? "accent" : "muted"), (volume_drag || brightness_drag) ? .6 : 0);
-        ui_icon(r, SettingsIcon::Sliders, std::clamp(position, 56, 584),
-                y + track + 5 + ((volume_drag || brightness_drag) ? 1 : 0), 16, "on_accent");
-        label(r, sound ? "Mute" : "5%", 56, y + track + 22, 14, "muted", 100);
+                    theme.at(available ? "accent" : "muted"), brightness_drag ? .6 : 0);
+        ui_icon(r, SettingsIcon::Sliders, std::clamp(position, 56, 584), y + track + 5 + (brightness_drag ? 1 : 0), 16,
+                "on_accent");
+        label(r, "5%", 56, y + track + 22, 14, "muted", 100);
         label(r, "100%", 545, y + track + 22, 14, "muted", 60);
-        if (sound) {
-            for (int i = 1; i < 5; i++) {
-                const int ty = sound_row_y(i), row = y + ty;
-                const bool focused = settings.focus == i,
-                           pressed = pointer_down && contact_x >= 28 && contact_x < 28 + sound_row_width &&
-                                     contact_y >= ty && contact_y < ty + sound_row_height;
-                const int dy = pressed ? 2 : 0;
-                settings_card(r, 28, row + dy, sound_row_width, sound_row_height, focused);
-                round_rect(r, 40, row + 5 + dy, 36, 36, 10, focused ? "accent" : "slot");
-                ui_icon(r,
-                        i == 4   ? SettingsIcon::Vibrate
-                        : i == 3 ? SettingsIcon::Spark
-                                 : SettingsIcon::Volume,
-                        58, row + 23 + dy, 22, focused ? "on_accent" : "accent");
-                label(r,
-                      i == 4       ? "Vibration"
-                      : i == 3     ? "Sounds & music"
-                      : i == 2     ? "Test microphone"
-                      : value == 0 ? "Unmute"
-                                   : "Mute",
-                      90, row + 10 + dy, 20, "ink", 330);
-                if (i >= 3) {
-                    const bool on = i == 4 ? preferences.menu_haptics || preferences.game_rumble
-                                           : preferences.menu_sounds || preferences.menu_music;
-                    const std::string state = locale.text(on ? "On" : "Off");
-                    label(r, state, 580 - label_width(state, 16), row + 14 + dy, 16, "accent", 120);
-                }
-            }
-        }
         return;
     }
     if (settings.page == Page::Confirm) {
@@ -1153,6 +1245,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                              : confirmation == "return-stock"
                                  ? (o.independent ? "Restart the RGDS menu?" : "Return to the stock menu?")
                              : confirmation == "wifi-off"     ? "Turn Wi-Fi off?"
+                             : confirmation == "bt-off"       ? "Turn Bluetooth off?"
+                             : confirmation == "bt-forget"    ? "Forget this device?"
+                             : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
                              : confirmation == "poweroff"     ? "Power off your handheld?"
                              : confirmation == "update-apply" ? "Restart and install the update?"
                              : confirmation == "rollback"     ? "Use the previous RGDS build?"
@@ -1182,11 +1277,10 @@ std::string App::settings_tip(Page page) {
             "Versions, free space and the network address of your handheld.",
             "Check for updates, go back to the previous build or clear temporary files.",
             "Leave RG DS Core and go back to the stock menu.",
-            "What happens when you turn the handheld on."};
+            "Show a start screen when the handheld turns on. Tap it or press A to continue."};
         if (settings.focus == 7 && o.rgds_os) return tips[8];
         if (settings.focus == 7 && o.independent) return "Restart the RGDS menu.";
         return tips[size_t(std::clamp(settings.focus, 0, 8))];
     }
-    if (page == Page::Startup) return "Show a start screen when the handheld turns on. Tap it or press A to continue.";
     return "";
 }

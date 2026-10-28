@@ -133,8 +133,9 @@ class DirectDisplayPlanTests(Fixture):
         rom = self.prepare()
         for mode in ('4', '5'):
             with self.subTest(rgds_2d=mode):
-                write_fields(self.data / 'library' / game_key(rom) / 'game.ini',
-                             dict(rgds_direct=1, filter=0, rgds_2d=mode))
+                write_fields(
+                    self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=1, filter=0, rgds_2d=mode)
+                )
                 plan = self.plan(rom)
                 self.assertEqual(plan['env']['RGDS_2D_FILTER'], mode)
                 self.assertEqual(plan['env']['DS_DIRECT_PRESENT'], '0')

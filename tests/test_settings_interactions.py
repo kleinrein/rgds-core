@@ -110,7 +110,9 @@ class SettingsInteractionTests(unittest.TestCase):
         self.assertIn('core=4\n', (self.root / 'preferences.ini').read_text())  # the next offered row: DSCore
 
     def test_touch_choice_is_direct_and_commits_once(self):
-        self.run_ui('30 click 180 293\n120 click 180 330\n', 'library')  # the engine row, under Scan and Show all systems
+        self.run_ui(
+            '30 click 180 293\n120 click 180 330\n', 'library'
+        )  # the engine row, under Scan and Show all systems
         self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
     def test_swipe_scrolls_without_opening_the_pressed_card(self):

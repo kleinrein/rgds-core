@@ -108,9 +108,7 @@ public:
   u64 take_hires_wait_ns();
   // HD (rgds_2d=4 or 5): the CPU's HD rules for the screen's last finished frame (rgds::Hd2DRules words, 256x192), which
   // the bridge's GPU reconstruction draws from; null when HD is off or the screen has none yet.
-  const u32* hd_rules(int screen) const {
-    return hd_mode() && hd_valid_[screen] ? hd_rules_[screen].data() : nullptr;
-  }
+  const u32* hd_rules(int screen) const { return hd_mode() && hd_valid_[screen] ? hd_rules_[screen].data() : nullptr; }
   const u32* enhanced_framebuffer(int screen) const {
     return enhanced_[screen].empty() ? nullptr : enhanced_[screen].data();
   }
@@ -484,9 +482,9 @@ private:
   std::vector<u32> hd_native_[2][2], hd_rules_[2];
   std::vector<u8> hd_owner_[2][2];
   u8 hd_parity_[2] = {};
-  int hd_screen_[2] = {-1, -1}; // per engine: the screen it draws this frame
-  u32 hd_next_band_[2] = {};    // per engine: the next band to publish
-  bool hd_valid_[2] = {};       // the screen's rules describe a finished frame
+  int hd_screen_[2] = {-1, -1};                        // per engine: the screen it draws this frame
+  u32 hd_next_band_[2] = {};                           // per engine: the next band to publish
+  bool hd_valid_[2] = {};                              // the screen's rules describe a finished frame
   std::array<std::array<u8, kHdBands>, 2> hd_fresh_{}; // the band's rules match the previous frame's lines
   std::atomic_flag hd_publish_lock_ = ATOMIC_FLAG_INIT;
   bool hd_mode() const { return filter2d_.load(std::memory_order_relaxed) >= int(rgds::Filter2D::HD); }

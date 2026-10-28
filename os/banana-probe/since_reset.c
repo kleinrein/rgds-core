@@ -10,6 +10,7 @@ int main(void) {
     asm volatile("mrs %0, cntfrq_el0" : "=r"(frq));
     clock_gettime(CLOCK_BOOTTIME, &up);
     double since_reset = (double)cnt / (double)frq, uptime = up.tv_sec + up.tv_nsec / 1e9;
-    printf("since reset %.3f s, kernel uptime %.3f s, before the kernel %.3f s\n", since_reset, uptime, since_reset - uptime);
+    printf("since reset %.3f s, kernel uptime %.3f s, before the kernel %.3f s\n", since_reset, uptime,
+           since_reset - uptime);
     return 0;
 }

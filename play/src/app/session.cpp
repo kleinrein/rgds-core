@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "app/session.hpp"
 
+#include "launcher/system_icons.hpp"
+#include "ui/png.hpp"
+
+#include <cctype>
 #include <cstdio>
 
 namespace play {
@@ -49,6 +53,13 @@ std::string system_display_name(const std::string& system) {
     if (system == "gba") return "GAME BOY ADVANCE";
     if (system == "gbc") return "GAME BOY COLOR";
     if (system == "gb") return "GAME BOY";
+    // The launcher's own names for the rest (its Systems page), in the same capitals.
+    for (const auto& known : rgds::stock_systems())
+        if (system == known.id) {
+            std::string name = known.name;
+            for (char& c : name) c = char(std::toupper(static_cast<unsigned char>(c)));
+            return name;
+        }
     return system;
 }
 
@@ -115,6 +126,13 @@ bool Session::open(const SessionOptions& o, std::string& error) {
         std::string system = core_->system();
         if (system == "gb" && rom->size() > 0x143 && ((*rom)[0x143] & 0x80)) system = "gbc";
         companion_ = std::make_unique<Companion>(*core_, profile_, title_, system_display_name(system));
+        // The system's picture beside the fonts in the release (assets/systems), the box art in the library.
+        Dock::Image picture, cover;
+        std::string unread;
+        if (!o.font_dir.empty())
+            read_bmp(o.font_dir + "/../systems/" + system + ".bmp", picture.px, picture.w, picture.h, unread);
+        if (!o.art_dir.empty()) read_bmp(o.art_dir + "/box.bmp", cover.px, cover.w, cover.h, unread);
+        companion_->dock().set_art(system, std::move(picture), std::move(cover));
         // What a view has learnt (the explored map) lives beside the save.
         std::vector<uint8_t> bytes;
         if (companion_->view() && read_file(view_path(), bytes))

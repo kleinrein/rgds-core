@@ -1,0 +1,63 @@
+#!/bin/sh
+# Sound over Bluetooth on RG DS OS (A2DP source, through bluez-alsa). `bt on` starts bluealsad and `bt-audio watch`;
+# the watcher follows bluealsad's PCMs: while a headset's A2DP sink is there, /run/rgds/audio-out.conf (which
+# /etc/asound.conf reads at every open) points playback at it and /run/rgds/bt-sink holds its address; when it goes,
+# the speaker comes back. Streams opened before the switch keep their device: the menu reopens its sink when
+# bt-sink changes, a game picks the new device up at its next launch.
+#   bt-audio watch          follow bluealsad until it stops (then the speaker again)
+#   bt-audio refresh        check once
+#   bt-audio volume N       the headset's volume, N in 0-100 (also set from the saved level on connect)
+OUT=${RGDS_AUDIO_OUT:-/run/rgds/audio-out.conf}
+SINK=${RGDS_BT_SINK:-/run/rgds/bt-sink}
+SPEAKER=${RGDS_AUDIO_SPEAKER:-/etc/asound-speaker.conf}
+VOLUME=${RGDS_VOLUME_FILE:-/data/rgds/userdata/volume.ini}
+CTL=${RGDS_BLUEALSA_CTL:-$(command -v bluealsactl || command -v bluealsa-cli)}
+
+speaker() {
+    [ -f "$SINK" ] || return 0
+    cp "$SPEAKER" "$OUT.new" && mv "$OUT.new" "$OUT"
+    rm -f "$SINK"
+    echo "bt-audio: speaker" >&2
+}
+
+volume() {
+    # every playback control bluealsa offers for the connected device ("<name> A2DP")
+    amixer -D bluealsa scontrols 2>/dev/null | sed -n "s/^Simple mixer control '\(.*A2DP\)',0$/\1/p" |
+        while read -r control; do amixer -q -D bluealsa sset "$control" "$1%" 2>/dev/null; done
+}
+
+refresh() {
+    # the first A2DP sink bluealsad offers: /org/bluealsa/hci0/dev_XX_XX_XX_XX_XX_XX/a2dpsrc/sink
+    address=$("$CTL" list-pcms 2>/dev/null | sed -n 's#.*/dev_\([0-9A-Fa-f_]*\)/a2dpsrc/sink$#\1#p' | head -n 1 |
+        tr '_a-f' ':A-F')
+    if [ -z "$address" ]; then speaker; return 0; fi
+    [ "$(cat "$SINK" 2>/dev/null)" = "$address" ] && return 0
+    printf 'pcm.rgds_out {\n    type plug\n    slave.pcm {\n        type bluealsa\n        device "%s"\n        profile "a2dp"\n    }\n}\n' \
+        "$address" > "$OUT.new" && mv "$OUT.new" "$OUT"
+    echo "$address" > "$SINK"
+    level=$(sed -n 's/^volume=\([0-9]*\)$/\1/p' "$VOLUME" 2>/dev/null)
+    [ -n "$level" ] && volume "$level"
+    echo "bt-audio: playback on $address" >&2
+}
+
+case "$1" in
+watch)
+    [ -n "$CTL" ] || { echo "bt-audio: no bluealsactl" >&2; exit 1; }
+    trap 'speaker; exit 0' TERM INT
+    # monitor prints a line per PCM added or removed; it ends when bluealsad goes
+    while pidof bluealsad bluealsa > /dev/null; do
+        refresh
+        "$CTL" monitor 2>/dev/null | while read -r _; do refresh; done
+        sleep 1
+    done
+    speaker ;;
+refresh)
+    refresh ;;
+speaker)
+    speaker ;;
+volume)
+    case "$2" in ''|*[!0-9]*) echo "usage: bt-audio volume 0-100" >&2; exit 2;; esac
+    if [ -f "$SINK" ]; then volume "$2"; fi ;;
+*)
+    echo "usage: bt-audio watch|refresh|speaker|volume N" >&2; exit 2 ;;
+esac

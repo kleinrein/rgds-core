@@ -24,7 +24,8 @@
 static int fd;
 static int io(unsigned long req, void* arg) {
     int r;
-    do r = ioctl(fd, req, arg); while (r == -1 && (errno == EINTR || errno == EAGAIN));
+    do r = ioctl(fd, req, arg);
+    while (r == -1 && (errno == EINTR || errno == EAGAIN));
     return r;
 }
 static uint64_t prop(uint32_t obj, uint32_t type, const char* want) {
@@ -50,10 +51,16 @@ static void bmp(const char* path, const uint8_t* px, int w, int h, int pitch) {
     uint32_t size = 54 + (uint32_t)w * h * 4;
     uint8_t hdr[54] = {'B', 'M'};
     memcpy(hdr + 2, &size, 4);
-    uint32_t v = 54; memcpy(hdr + 10, &v, 4);
-    v = 40; memcpy(hdr + 14, &v, 4);
-    int32_t sw = w, sh = -h; memcpy(hdr + 18, &sw, 4); memcpy(hdr + 22, &sh, 4);
-    uint16_t planes = 1, bits = 32; memcpy(hdr + 26, &planes, 2); memcpy(hdr + 28, &bits, 2);
+    uint32_t v = 54;
+    memcpy(hdr + 10, &v, 4);
+    v = 40;
+    memcpy(hdr + 14, &v, 4);
+    int32_t sw = w, sh = -h;
+    memcpy(hdr + 18, &sw, 4);
+    memcpy(hdr + 22, &sh, 4);
+    uint16_t planes = 1, bits = 32;
+    memcpy(hdr + 26, &planes, 2);
+    memcpy(hdr + 28, &bits, 2);
     fwrite(hdr, 1, 54, f);
     for (int y = 0; y < h; y++) fwrite(px + (size_t)y * pitch, 1, (size_t)w * 4, f);
     fclose(f);
@@ -62,7 +69,10 @@ int main(int argc, char** argv) {
     const char* out = argc > 1 ? argv[1] : "/tmp/scanout";
     fd = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
     if (fd < 0) fd = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
-    if (fd < 0) { perror("open"); return 1; }
+    if (fd < 0) {
+        perror("open");
+        return 1;
+    }
     struct drm_set_client_cap cap = {DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1};
     io(DRM_IOCTL_SET_CLIENT_CAP, &cap);
     struct drm_mode_get_plane_res res = {0};
@@ -75,8 +85,10 @@ int main(int argc, char** argv) {
         if (io(DRM_IOCTL_MODE_GETPLANE, &p) || !p.fb_id) continue;
         struct drm_mode_fb_cmd2 fb = {.fb_id = p.fb_id};
         int got = io(DRM_IOCTL_MODE_GETFB2, &fb);
-        uint64_t cx = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_X"), cy = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_Y"),
-                 cw = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_W"), ch = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_H"),
+        uint64_t cx = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_X"),
+                 cy = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_Y"),
+                 cw = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_W"),
+                 ch = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "CRTC_H"),
                  z = prop(p.plane_id, DRM_MODE_OBJECT_PLANE, "zpos");
         char four[5] = {0};
         memcpy(four, &fb.pixel_format, 4);
@@ -84,8 +96,11 @@ int main(int argc, char** argv) {
                p.crtc_id, p.fb_id, fb.width, fb.height, four, (unsigned long long)fb.modifier[0], fb.pitches[0],
                (long long)cx, (long long)cy, (long long)cw, (long long)ch, (long long)z, got ? " (no handle)" : "");
         if (got || !fb.handles[0]) continue;
-        if (fb.modifier[0] != 0 && fb.modifier[0] != DRM_FORMAT_MOD_INVALID && !(fb.flags & 0) ) {
-            if (fb.flags & DRM_MODE_FB_MODIFIERS) { printf("  compressed/tiled, not dumped\n"); continue; }
+        if (fb.modifier[0] != 0 && fb.modifier[0] != DRM_FORMAT_MOD_INVALID && !(fb.flags & 0)) {
+            if (fb.flags & DRM_MODE_FB_MODIFIERS) {
+                printf("  compressed/tiled, not dumped\n");
+                continue;
+            }
         }
         if (fb.pixel_format != DRM_FORMAT_XRGB8888 && fb.pixel_format != DRM_FORMAT_ARGB8888 &&
             fb.pixel_format != DRM_FORMAT_XBGR8888 && fb.pixel_format != DRM_FORMAT_ABGR8888) {
@@ -93,14 +108,25 @@ int main(int argc, char** argv) {
             continue;
         }
         struct drm_prime_handle prime = {.handle = fb.handles[0], .flags = DRM_CLOEXEC | DRM_RDWR};
-        if (io(DRM_IOCTL_PRIME_HANDLE_TO_FD, &prime)) { perror("  prime"); continue; }
+        if (io(DRM_IOCTL_PRIME_HANDLE_TO_FD, &prime)) {
+            perror("  prime");
+            continue;
+        }
         size_t size = (size_t)fb.pitches[0] * fb.height + fb.offsets[0];
         uint8_t* map = mmap(NULL, size, PROT_READ, MAP_SHARED, prime.fd, 0);
-        if (map == MAP_FAILED) { perror("  mmap"); close(prime.fd); continue; }
+        if (map == MAP_FAILED) {
+            perror("  mmap");
+            close(prime.fd);
+            continue;
+        }
         uint8_t* copy = malloc(size);
         memcpy(copy, map, size);
         if (fb.pixel_format == DRM_FORMAT_XBGR8888 || fb.pixel_format == DRM_FORMAT_ABGR8888)
-            for (size_t k = fb.offsets[0]; k + 3 < size; k += 4) { uint8_t t = copy[k]; copy[k] = copy[k + 2]; copy[k + 2] = t; }
+            for (size_t k = fb.offsets[0]; k + 3 < size; k += 4) {
+                uint8_t t = copy[k];
+                copy[k] = copy[k + 2];
+                copy[k + 2] = t;
+            }
         char path[256];
         snprintf(path, sizeof path, "%s-crtc%u-plane%u.bmp", out, p.crtc_id, p.plane_id);
         bmp(path, copy + fb.offsets[0], fb.width, fb.height, fb.pitches[0]);

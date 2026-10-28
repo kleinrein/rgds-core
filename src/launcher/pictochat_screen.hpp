@@ -497,8 +497,8 @@ void App::chat_bottom(SDL_Renderer* r, int y) {
 }
 
 std::string App::top_signature(Uint32 now) {
-    if (settings.page != Page::Library || chat_open || o.game_menu || probe || launching ||
-        embedded_menu || (o.boot_startup && !library_ready) || now - top_drawn_at >= 2000)
+    if (settings.page != Page::Library || chat_open || o.game_menu || probe || launching || embedded_menu ||
+        (o.boot_startup && !library_ready) || now - top_drawn_at >= 2000)
         return {};
     std::ostringstream k;
     const auto accent = theme.at("accent"), background = theme.at("background");
@@ -517,7 +517,12 @@ std::string App::top_signature(Uint32 now) {
       << device_status["wifi_connected"] << '|' << (volume_toast && now < volume_toast ? now : 0) << '|'
       << (preferences.animations && cover_motion_at && now - cover_motion_at < 110 ? now : 0) << '|'
       << (home_menu && preferences.home_layout == 1 ? std::time(nullptr) : 0);
-    if (!home_menu && !model.games.empty() && !surfaces.empty()) {
+    if (systems_menu) {
+        // The Systems card: its system and numbers (reading them here advances the slice-per-frame play totals).
+        const auto& stats = system_stats_for(systems_selected);
+        k << "|systems|" << systems_selected << '|' << listed_systems.size() << '|' << stats.games << ','
+          << stats.played_ready << ',' << stats.sessions << ',' << stats.seconds;
+    } else if (!home_menu && !model.games.empty() && !surfaces.empty()) {
         const auto& game = model.games[model.selected];
         auto item = item_folder(model.selected);
         auto* r = surfaces.front().renderer;

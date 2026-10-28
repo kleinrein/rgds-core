@@ -36,19 +36,6 @@ else:
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Keep the documentation tree intact so relative links work in the SD package.
-# Historical reports live below docs/archive, separate from current guides.
-DOCUMENTS = (
-    'README.md',
-    'THIRD_PARTY.md',
-    'src/experimental/rgds/README.md',
-    # Maintained guides only: the dated reports in docs/archive stay in the repository.
-    *(
-        path.relative_to(ROOT).as_posix()
-        for path in sorted((ROOT / 'docs').rglob('*.md')) if 'archive' not in path.parts
-    ),
-)
-
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -98,8 +85,9 @@ def component_abi(app, files, source_build=None):
         with path.open("rb") as stream:
             if stream.read(4) != b"\x7fELF":
                 continue
-        # 32-bit libraries for PortMaster's armhf ports (runtime/portmaster_compat.py), never loaded by RGDS itself
-        if name.startswith("runtime/portmaster_files/") and "/armhf/" in name:
+        # 32-bit libraries for PortMaster's armhf ports (runtime/portmaster_compat.py; kms/lib/arm-linux-gnueabihf is
+        # the DRM lease preload's 32-bit build), never loaded by RGDS itself
+        if name.startswith("runtime/portmaster_files/") and ("/armhf/" in name or "/arm-linux-gnueabihf/" in name):
             continue
         metadata = inspect_elf(path, source=payload_source(name, source_build))
         if metadata["machine"] != "aarch64":
@@ -301,9 +289,8 @@ def _package():
     files = {str(p.relative_to(app)): sha(p) for p in sorted(app.rglob("*")) if p.is_file()}
     abi = component_abi(app, files, engine_build)
     version = (ROOT / "VERSION").read_text().strip()
-    # Bootstrap changes also yield a different build identity.
-    salt = {p.name: sha(p) for p in sorted((ROOT / "packaging").glob("*.sh"))}
-    salt.update({name: sha(ROOT / "packaging" / name) for name in ("update_guard.py", "update-trust.json")})
+    # The update channel and its guard (shipped in the image's app/os/) also yield a different build identity.
+    salt = {name: sha(ROOT / "packaging" / name) for name in ("update_guard.py", "update-trust.json")}
     digest = hashlib.sha256(
         json.dumps({
             "files": files,
@@ -346,16 +333,7 @@ def _package():
     release = root / "releases" / build_id
     release.parent.mkdir(parents=True)
     app.rename(release)
-    put(ROOT / "packaging/main.sh", root / "main.sh")
-    (root / "state").mkdir()
-    put(ROOT / "packaging/update_guard.py", root / "update_guard.py")
-    put(ROOT / "packaging/update-trust.json", root / "state/update-trust.json")
-    (root / "state/active").write_text(build_id + "\n")
-    for source in sorted((ROOT / "packaging").glob("*.sh")):
-        if source.name != "main.sh":
-            put(source, scratch / "card/Roms/APPS" / source.name)
-    for name in DOCUMENTS:
-        put(ROOT / name, root / "docs" / name)
+    # Only the release itself: tools/own_os_build.py stages rgds/releases/<build>/ into the RG DS OS image.
     dist = ROOT / "dist"
     dist.mkdir(exist_ok=True)
     archive = dist / ("RGDS-" + build_id + ".zip")

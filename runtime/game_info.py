@@ -378,6 +378,7 @@ class GameInfo:
             try:
                 if system is None:
                     system, name, code = art.rom_identity(rom)
+                if system != "nds" and system not in art.CATALOGS: raise NotFound("No public catalog for this system.")
                 if kind == "info":
                     fields, synopses, provider = self.information(rom, system, code)
                     self.save_information(item, fields, synopses, provider)

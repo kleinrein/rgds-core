@@ -1,47 +1,95 @@
 # UTF-8 source\ttranslation. One entry per line.
+1 person nearby	1 henkilö lähellä
+1 player	1 pelaaja
+12-hour	12 tuntia
+2 seconds	2 sekuntia
+24-hour	24 tuntia
+24-hour or 12-hour clock	24 tai 12 tunnin kello
+2x sharper	2x terävämpi
 3D rendering automatically uses worker threads.	3D-renderöinti käyttää automaattisesti työsäikeitä.
 3D resolution	3D-tarkkuus
 3D threading changed for this session. Settings storage is unavailable.	3D-säikeistys muutettu tälle istunnolle. Asetuksia ei voi tallentaa.
 3D threading changed. No restart needed.	3D-säikeistys muutettu. Uudelleenkäynnistystä ei tarvita.
+3x sharper	3x terävämpi
+4x (experimental)	4x (kokeellinen)
+5x (experimental)	5x (kokeellinen)
 A  Apply	A  Käytä
 A  Done	A  Valmis
+A  Jump	A  Siirry
 A  Play	A  Pelaa
+A  Search	A  Hae
+A 24-hour or 12-hour clock.	24 tai 12 tunnin kello.
+A carousel, or the DSi's column with your last game on top	Karuselli tai DSi:n sarake, jossa viimeisin peli on ylinnä
+A exports this slot to userdata/exports. X deletes it.	A vie paikan kansioon userdata/exports. X poistaa sen.
 A gentle scanline pattern with original colours.	Hienovaraiset vaakajuovat ja alkuperäiset värit.
+A light tap for every move, a firmer one when you choose, open or save.	Kevyt napautus jokaisesta liikkeestä, napakampi kun valitset, avaat tai tallennat.
+A little handheld magic	Hieman kannettavan taikaa
+A loads this slot. Undo last load, under Y, brings back the progress you have now.	A lataa paikan. Kumoa viimeisin lataus Y-valikosta palauttaa nykyisen edistymisesi.
 A natural colour and contrast treatment.	Luonnolliset värit ja kontrasti.
+A new version is ready to download.	Uusi versio on valmis ladattavaksi.
+A replaces this slot with your current progress. X deletes it.	A korvaa paikan edistymiselläsi. X poistaa sen.
+A saves your current progress here.	A tallentaa edistymisesi tähän.
 A screen style for this cartridge	Tämän pelin näyttötyyli
+A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Pieni kahva alanäytön alareunassa näyttää, että eleet ovat käytössä; se nousee sormen mukana, ja rengas merkitsee kohdan, kun ele laukeaa.
+A soft tune plays while you browse. It fades out when a game starts.	Pehmeä sävel soi selatessasi. Se häipyy, kun peli käynnistyy.
 A stronger LCD texture and scanline look.	Voimakkaampi LCD-tekstuuri ja vaakajuovat.
 A subtle handheld LCD pixel pattern.	Hienovarainen kannettavan LCD-näytön pikselikuvio.
 A subtle pixel grid with a bright, readable image.	Hienovarainen pikseliruudukko ja kirkas, selkeä kuva.
+About {0} h left	Noin {0} h jäljellä
+About {0} min left	Noin {0} min jäljellä
+Accent colour	Korostusväri
+Add favourite	Lisää suosikki
+Add game files	Lisää pelitiedostot
 Add your DS games to fetch their artwork.	Lisää DS-pelisi, jotta voit hakea niiden kansikuvat.
+Add your games	Lisää pelisi
+Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Lisää Game Boy- ja Game Boy Advance -pelit: Pelit avaa sitten järjestelmäsivun.
+Adjust	Säädä
 Africa	Afrikka
 After	Jälkeen
 All games	Kaikki pelit
+All systems	Kaikki järjestelmät
+Already connected.	Yhteys on jo muodostettu.
 Amber	Meripihka
 Americas	Amerikka
+An update is already prepared. Install it or discard it first.	Päivitys on jo valmis. Asenna tai hylkää se ensin.
 Anbernic startup is unavailable in RGDS OS.	Anbernic-käynnistys ei ole käytettävissä RGDS OS:ssa.
+Animate pages with the selected style	Animoi sivut valitulla tyylillä
 Animations	Animaatiot
+Another update is already running.	Toinen päivitys on jo käynnissä.
 Antarctica	Etelämanner
+Any	Kaikki
 Applies immediately. Higher clocks use more battery.	Tulee voimaan heti. Suurempi kellotaajuus kuluttaa enemmän akkua.
 Applies immediately. Your game keeps its progress.	Tulee voimaan heti. Pelisi edistyminen säilyy.
 Apply	Käytä
+APPLY	KÄYTÄ
 Applying shader…	Otetaan suodatinta käyttöön…
+Arcade cabinet	Pelikabinetti
 Arctic	Arktis
+Arrows	Nuolet
 Artwork	Kansikuvat
 Artwork & ScreenScraper	Kansikuvat
 Artwork source	Kansikuvien lähde
 Artwork sources	Kansikuvien lähteet
 Asia	Aasia
 Atlantic Ocean	Atlantti
+Audio is not recorded or saved.	Ääntä ei nauhoiteta eikä tallenneta.
 Australia	Australia
 Auto-load state	Lataa tila automaattisesti
 Auto-save on exit	Tallenna poistuttaessa
 Automatic	Automaattinen
 Automatic (free)	Automaattinen
+Automatic updates	Automaattiset päivitykset
+Available	Saatavilla
 Available networks	Käytettävissä olevat verkot
 B  Cancel	B  Peruuta
 B  Close	B  Sulje
-BACK HOME	TAKAISIN KOTIIN
 Back	Takaisin
+BACK HOME	TAKAISIN KOTIIN
+Back to PortMaster	Takaisin PortMasteriin
+Back up all saves	Varmuuskopioi tallennukset
+Background	Tausta
+Backing up your saves…	Varmuuskopioidaan tallennuksia…
+Badges	Merkit
 Balance battery life and speed	Tasapainota akkukesto ja nopeus
 Balanced	Tasapainoinen
 Battery	Akku
@@ -50,57 +98,116 @@ Battery saver	Virransäästö
 Before	Ennen
 Before you play	Ennen pelaamista
 Binding unchanged.	Painikemääritys ennallaan.
+Black and white	Mustavalkoinen
+Black bar	Musta palkki
+Blow into microphone	Puhalla mikrofoniin
+Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Puhalla tai puhu mikrofoniin. Taso nousee ja laskee, kun lopetat.
+Blue	Sininen
+Bluetooth	Bluetooth
+Bluetooth devices	Bluetooth-laitteet
+Bluetooth is not available on this handheld.	Bluetooth ei ole käytettävissä tässä laitteessa.
+Bold colour on a close-up LCD with RGB stripes.	Voimakkaat värit lähikuvan LCD:llä ja RGB-raidoilla.
+Bold colour with smoothed diagonal edges.	Voimakkaat värit ja pehmennetyt viistot reunat.
+Bold colour; every pixel a raised, glossy tile.	Voimakkaat värit; jokainen pikseli koholla oleva kiiltävä laatta.
+Bold colour; every pixel a round, shiny bead.	Voimakkaat värit; jokainen pikseli pyöreä, kiiltävä helmi.
+Bombs	Pommit
+Bonus stars	Bonustähdet
 Boot	Käynnistys
 Boot into	Käynnistä kohteeseen
+Both	Molemmat
 Both screens	Molemmat näytöt
 Bottom display	Alanäyttö
 Box art, titles and game details	Kansikuvat, nimet ja pelitiedot
 Brightness	Kirkkaus
+Brown	Ruskea
+Browse	Selaa
+Browse games	Selaa pelejä
+Browse systems	Selaa järjestelmiä
 Browser layout	Kirjaston asettelu
 Build, storage and device address	Versio, tallennustila ja laitteen osoite
 Button	Painike
 Button layout	Painikeasettelu
 Button {0}	Painike {0}
 Buttons and the game menu shortcut	Painikkeet ja pelivalikon pikavalinta
-COLOUR MODE	VÄRITILA
 Cancel	Peruuta
+Carousel	Karuselli
+Carried	Mukana
 Cartridges	Pelikasetit
+Change group	Vaihda ryhmää
 Changes immediately. Map a button in Controls for quick access.	Tulee voimaan heti. Määritä pikapainike ohjainasetuksissa.
 Changing 3D threading…	Muutetaan 3D-säikeistystä…
 Changing speed…	Muutetaan nopeutta…
+Chat is unavailable: you can still draw	Keskustelu ei ole käytettävissä: voit silti piirtää
+Chat Room	Chat-huone
+Chat Room {0}	Keskusteluhuone {0}
+Check automatically	Tarkista automaattisesti
+Check for updates	Tarkista päivitykset
+Check for updates when you are ready.	Tarkista päivitykset, kun olet valmis.
+Check for updates, go back to the previous build or clear temporary files.	Tarkista päivitykset, palaa edelliseen versioon tai tyhjennä väliaikaiset tiedostot.
 Check the current connection	Tarkista nykyinen yhteys
+Checking for updates…	Tarkistetaan päivityksiä…
+Checking PortMaster	Tarkistetaan PortMasteria
+Checking the new version…	Tarkistetaan uutta versiota…
 Checkpoint loaded	Tallennustila ladattu
 Checkpoint loaded (preview)	Tallennustila ladattu (esikatselu)
 Checkpoint loaded.	Tallennustila ladattu.
 Checkpoint saved	Tallennustila tallennettu
 Checkpoint saved (preview)	Tallennustila tallennettu (esikatselu)
 Checkpoint saved.	Tallennustila tallennettu.
-Choose Anbernic or RG DS startup.	Valitse Anbernic- tai RG DS -käynnistys.
+Choose a chat room to join	Valitse keskusteluhuone, johon liityt
+Choose a network from the list	Valitse verkko luettelosta
 Choose an option	Valitse vaihtoehto
+Choose Anbernic or RG DS startup.	Valitse Anbernic- tai RG DS -käynnistys.
 Choose native or a sharper 3D image	Valitse alkuperäinen tai tarkempi 3D-kuva
 Choose the core for this cartridge	Valitse tämän pelin emulaattori
 Choose the display backend for the next DraStic launch. DSperate stays your default.	Valitse seuraavan DraStic-käynnistyksen näyttötausta. DSperate säilyy oletuksena.
 Choose what opens when you power on	Valitse, mitä avataan virran kytkennän jälkeen
+Classic	Klassinen
+Classic blue	Klassinen sininen
 Clear	Tyhjennä
+Clear filters	Tyhjennä suodattimet
 Clear temporary cache	Tyhjennä väliaikainen välimuisti
 Clear temporary game files?	Poistetaanko väliaikaiset pelitiedostot?
 Close	Sulje
+Close and open DS lid	Sulje ja avaa DS-kansi
+Close lid	Sulje kansi
+Close PortMaster	Sulje PortMaster
 Close the handheld to sleep	Sulje laite lepotilaan siirtymiseksi
+Closing PortMaster…	Suljetaan PortMasteria…
+Closing the port…	Suljetaan porttia…
+Code	Koodi
+Coin bank	Kolikkopankki
+Coins	Kolikot
+Collection	Kokoelma
+COLOUR MODE	VÄRITILA
+Colour mode	Väritila
 Colour treatment inspired by the original DS display.	Alkuperäisen DS-näytön inspiroimat värit.
+Column	Sarake
+Companion	Seuranäyttö
 Compare	Vertaa
 Confirm	Vahvista
 Connect	Yhdistä
+Connect the charger before installing an update.	Kytke laturi ennen päivityksen asentamista.
+Connect to Wi-Fi to send files from a phone or computer.	Yhdistä Wi-Fiin, niin voit lähettää tiedostoja puhelimesta tai tietokoneesta.
 Connected	Yhdistetty
 Connected.	Yhdistetty.
+Connecting to	Yhdistetään verkkoon
 Connecting…	Yhdistetään…
+Connection lost. Retrying…	Yhteys katkesi. Yritetään uudelleen…
 Connectivity	Yhteydet
 Continue	Jatka
 Continue where you left off	Jatka siitä, mihin jäit
 Control unavailable on this device	Ohjaus ei ole käytettävissä tällä laitteella
+Controllers and other Bluetooth devices	Ohjaimet ja muut Bluetooth-laitteet
 Controls	Ohjaimet
 Controls saved for this game.	Ohjaimet tallennettu tälle pelille.
 Cool crisp	Viileä ja terävä
 Cool whites with a small contrast boost.	Viileät valkoiset ja hieman vahvempi kontrasti.
+Copies every save and checkpoint into one zip in userdata/exports.	Kopioi kaikki tallennukset ja tarkistuspisteet yhteen zip-tiedostoon kansioon userdata/exports.
+Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopioi .nds- tai DS ZIP -tiedostot pelikortin Roms/NDS-kansioon ja valitse Etsi pelejä.
+Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopioi .rgdssave.zip-tiedostot kansioon userdata/imports. Pelin ja emulaattorin on vastattava.
+Copy ability	Kopiokyky
+Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopioi .nds-tiedostot tai DS ZIP -arkistot pelikortin Roms/NDS-kansioon. Pelejä ei sisälly. Tallennukset säilyvät userdata-kansiossa.
 Could not apply brightness	Kirkkautta ei voitu asettaa
 Could not apply saved brightness	Tallennettua kirkkautta ei voitu asettaa
 Could not apply saved power mode	Tallennettua virtatilaa ei voitu asettaa
@@ -110,6 +217,7 @@ Could not apply volume	Äänenvoimakkuutta ei voitu asettaa
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi-sovitinta ei voitu käynnistää. Yritä uudelleen.
 Could not change 3D threading. Your game is unchanged.	3D-säikeistystä ei voitu muuttaa. Peli säilyy ennallaan.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Wi-Fi-yhteyttä ei voitu vahvistaa. Hae verkot ja yritä uudelleen.
+Could not connect	Yhdistäminen epäonnistui
 Could not enable lid wake	Kannen avauksella herätystä ei voitu ottaa käyttöön
 Could not load. Resume, retry, or return without saving.	Lataaminen epäonnistui. Jatka, yritä uudelleen tai palaa tallentamatta.
 Could not read this collection. Try again.	Kokoelmaa ei voitu lukea. Yritä uudelleen.
@@ -117,6 +225,7 @@ Could not restore previous hardware setting	Edellistä laitteistoasetusta ei voi
 Could not save all settings. Check storage.	Kaikkia asetuksia ei voitu tallentaa. Tarkista tallennustila.
 Could not save brightness	Kirkkautta ei voitu tallentaa
 Could not save controls. Check writable storage.	Ohjaimia ei voitu tallentaa. Tarkista kirjoitusoikeudet.
+Could not save DS settings.	DS-asetuksia ei voitu tallentaa.
 Could not save game settings. Previous values kept.	Peliasetuksia ei voitu tallentaa. Edelliset arvot säilyvät.
 Could not save matching title.	Hakutunnistetta ei voitu tallentaa.
 Could not save settings	Asetuksia ei voitu tallentaa
@@ -124,6 +233,7 @@ Could not save timezone	Aikavyöhykettä ei voitu tallentaa
 Could not save volume	Äänenvoimakkuutta ei voitu tallentaa
 Could not save. Resume, retry, or return without saving.	Tallentaminen epäonnistui. Jatka, yritä uudelleen tai palaa tallentamatta.
 Could not send game action	Pelitoimintoa ei voitu lähettää
+Could not set up PortMaster	PortMasteria ei voitu ottaa käyttöön
 Could not set volume - see log	Äänenvoimakkuutta ei voitu asettaa – katso loki
 Could not sleep - see log	Lepotila epäonnistui – katso loki
 Could not sleep. Reopen the lid and try again.	Lepotila epäonnistui. Avaa kansi ja yritä uudelleen.
@@ -132,41 +242,89 @@ Could not start library scan	Kirjastohakua ei voitu käynnistää
 Could not write controls	Ohjainasetuksia ei voitu kirjoittaa
 Counts display updates, not emulation speed. Changes immediately.	Laskee näyttöpäivityksiä, ei emulointinopeutta. Tulee voimaan heti.
 Counts emulated game frames. Changes immediately.	Laskee emuloituja peliruutuja. Tulee voimaan heti.
+Course	Kenttä
+Cover	Kansi
 Covers	Kannet
+Current progress could not be saved. No slot was changed.	Edistymistä ei voitu tallentaa. Tallennuspaikkoja ei muutettu.
 Custom	Mukautettu
-DEFAULT THEME - CHECK LOG	OLETUSTEEMA – KATSO LOKI
-DS rounded	DS pyöristetty
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: suositeltu päivittäiseen pelaamiseen. Alkuperäinen tarkkuus on oletus.
+DS only	Vain DS
 Dark	Tumma
+Dark blue	Tummansininen
+Dark green	Tummanvihreä
 Date format	Päivämäärän muoto
+Day	Päivä
+Day or night	Päivä vai yö
+Daylight saving	Kesäaika
+Days	Päivät
 Default	Oletus
 Default emulator	Oletusemulaattori
 Default shader	Oletussuodatin
+DEFAULT THEME - CHECK LOG	OLETUSTEEMA – KATSO LOKI
 Delete	Poista
+Delete slot {0}?	Poistetaanko paikka {0}?
 Desktop preview	Työpöytäesikatselu
+Developer	Kehittäjä
 Development build	Kehitysversio
 Device address	Laitteen osoite
 Device information	Laitetiedot
+Discard update	Hylkää päivitys
 Display	Näyttö
 Display FPS	Näytön FPS
 Done	Valmis
 Down	Alas
+Download	Lataa
+Download automatically	Lataa automaattisesti
+Download interrupted. Retry to continue.	Lataus katkesi. Jatka yrittämällä uudelleen.
+Download paused. Retry to continue.	Lataus keskeytetty. Jatka yrittämällä uudelleen.
+Download update	Lataa päivitys
+Downloading PortMaster	Ladataan PortMasteria
+Downloading update…	Ladataan päivitystä…
+Downloading {0}	Ladataan {0}
+Downloads resume where they stopped if Wi-Fi drops.	Lataus jatkuu siitä, mihin se jäi, jos Wi-Fi katkeaa.
 DraStic backend	DraStic-näyttötausta
 DraStic: an alternative for games that need it. Saves stay separate.	DraStic: vaihtoehto sitä tarvitseville peleille. Tallennukset säilyvät erillään.
-ERROR	VIRHE
-ERROR: Could not restore settings	VIRHE: asetuksia ei voitu palauttaa
-ERROR: Could not restore settings - see log	VIRHE: asetuksia ei voitu palauttaa – katso loki
+Draw and chat	Piirrä ja juttele
+Draw and chat with nearby handhelds	Piirrä ja keskustele lähellä olevien laitteiden kanssa
+Drawing on your own	Piirrät yksin
+DS Classic	DS Klassinen
+DS controls	DS-ohjaimet
+DS controls are unavailable for this engine.	DS-ohjaimet eivät ole käytettävissä tässä emulaattorissa.
+DS language	DS-kieli
+DS Lite	DS Lite
+DS rounded	DS pyöristetty
+DS screens	DS-näytöt
+DSCore 3D resolution	DSCoren 3D-resoluutio
+DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: suositeltu. Nopein, kansi-, kynä- ja 3D-korjauksilla sekä valinnaisella 2x–5x-3D:llä.
+DSperate: recommended for everyday play. Native resolution is the default.	DSperate: suositeltu päivittäiseen pelaamiseen. Alkuperäinen tarkkuus on oletus.
+DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: alkuperäinen moottori. DSCore tuo korjauksia ja nopeutta.
+Edit	Muokkaa
+Edit search	Muokkaa hakua
+Effects volume	Tehosteiden voimakkuus
+Empty slot	Tyhjä paikka
 Emulator	Emulaattori
 Emulator settings	Emulaattorin asetukset
+End of a list	Listan loppu
+Ending so far	Loppu tähän asti
+Enemies defeated	Voitetut viholliset
+Energy	Energia
+Energy tanks	Energiatankit
 Engine managed	Emulaattorin hallitsema
+English	Englanti
 Enter here	Kirjoita tähän
 Enter password	Anna salasana
 Enter your username and password	Anna käyttäjätunnus ja salasana
+ERROR	VIRHE
+ERROR: Could not restore settings	VIRHE: asetuksia ei voitu palauttaa
+ERROR: Could not restore settings - see log	VIRHE: asetuksia ei voitu palauttaa – katso loki
+Essences	Esanssit
 Europe	Eurooppa
 Every game in this collection has artwork.	Jokaisella kokoelman pelillä on kansikuva.
-FPS changed for this session. Settings storage is unavailable.	FPS muutettu tälle istunnolle. Asetuksia ei voi tallentaa.
-FPS counter enabled.	FPS-laskuri käytössä.
-FPS counter hidden.	FPS-laskuri piilotettu.
+Exit your game before installing an update.	Poistu pelistä ennen päivityksen asentamista.
+Experience	Kokemus
+Export	Vie
+Export slot	Vie tallennustila
+Extra pictures	Lisäkuvat
+Faded GBA colours made rich, as the real screen showed them.	Haalistuneet GBA-värit täyteläisinä, kuten oikea näyttö ne näytti.
 Fast	Nopea
 Fast-forward	Pikakelaus
 Fast-forward button	Pikakelauspainike
@@ -174,164 +332,449 @@ Fast-forward enabled.	Pikakelaus käytössä.
 Fast-forward is unavailable for this emulator.	Pikakelaus ei ole käytettävissä tässä emulaattorissa.
 Fast-forward style	Pikakelaustapa
 Favourite	Suosikki
+FAVOURITE COLOUR	LEMPIVÄRI
+Favourite a game and it waits for you here	Merkitse peli suosikiksi, niin se odottaa täällä
 Favourites	Suosikit
+Feel every move	Tunne jokainen liike
+Feel the game	Tunne peli
 Fetch artwork	Hae kansikuva
 Fetch missing artwork	Hae puuttuvat kansikuvat
+Figurines	Figuurit
+File sharing on. Find "RG DS" under Network.	Tiedostonjako on päällä. "RG DS" löytyy kohdasta Verkko.
+Files added	Tiedostoja lisätty
+Files arrived. Choose Play to start.	Tiedostot ovat perillä. Aloita valitsemalla Pelaa.
+Filter	Suodatin
+Filtered	Suodatetut
 Find and connect to a nearby network	Etsi lähiverkko ja yhdistä siihen
+Find, pair and connect a nearby device	Etsi, muodosta pari ja yhdistä lähellä oleva laite
+Finding games…	Etsitään pelejä…
+Finishing another task. Press Y again in a moment.	Toinen tehtävä on kesken. Paina Y uudelleen hetken päästä.
 Finishing the system request	Viimeistellään järjestelmäpyyntöä
 Follow your default button layout	Käytä oletuspainikeasettelua
 Following your global controls.	Käytetään yhteisiä ohjainasetuksia.
 Follows your Library default. Each emulator keeps its own saves.	Käyttää kirjaston oletusta. Emulaattoreilla on omat tallennuksensa.
+Follows your library shader.	Seuraa kirjaston suodatinta.
+Forget this device?	Unohdetaanko tämä laite?
+FPS changed for this session. Settings storage is unavailable.	FPS muutettu tälle istunnolle. Asetuksia ei voi tallentaa.
+FPS counter enabled.	FPS-laskuri käytössä.
+FPS counter hidden.	FPS-laskuri piilotettu.
+Fr	Pe
+Frame	Kehys
 Frameskip	Ruutujen ohitus
 Free space	Vapaa tila
 Free space while keeping your saves	Vapauta tilaa ja säilytä tallennukset
-Game FPS	Pelin FPS
+French	Ranska
+Friends	Ystävät
+Full colour	Täydet värit
+Game Boy	Game Boy
+Game Boy Advance SP · Cobalt	Game Boy Advance SP · Koboltti
+Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
+Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
+Game Boy Advance · Black	Game Boy Advance · Musta
+Game Boy Advance · Glacier	Game Boy Advance · Jäätikkö
+Game Boy Advance · Indigo	Game Boy Advance · Indigo
+Game Boy Advance · Platinum	Game Boy Advance · Platina
+Game Boy Color	Game Boy Color
+Game Boy Color screen	Game Boy Color -näyttö
+Game Boy Color · Atomic Purple	Game Boy Color · Atomivioletti
+Game Boy Color · Berry	Game Boy Color · Marja
+Game Boy Color · Dandelion	Game Boy Color · Voikukka
+Game Boy Color · Grape	Game Boy Color · Viinirypäle
+Game Boy Color · Kiwi	Game Boy Color · Kiivi
+Game Boy Color · Screen only	Game Boy Color · Vain näyttö
+Game Boy Color · Teal	Game Boy Color · Sinivihreä
+Game Boy Color, darker	Game Boy Color, tummempi
+Game Boy Light	Game Boy Light
+Game Boy Pocket	Game Boy Pocket
+Game Boy Pocket · Black	Game Boy Pocket · Musta
+Game Boy Pocket · Blue	Game Boy Pocket · Sininen
+Game Boy Pocket · Green	Game Boy Pocket · Vihreä
+Game Boy Pocket · Pink	Game Boy Pocket · Pinkki
+Game Boy Pocket · Red	Game Boy Pocket · Punainen
+Game Boy Pocket · Screen only	Game Boy Pocket · Vain näyttö
+Game Boy Pocket · Silver	Game Boy Pocket · Hopea
+Game Boy Pocket · Yellow	Game Boy Pocket · Keltainen
+Game Boy screen	Game Boy -näyttö
+Game Boy · Black	Game Boy · Musta
+Game Boy · Blue	Game Boy · Sininen
+Game Boy · Green	Game Boy · Vihreä
+Game Boy · Red	Game Boy · Punainen
+Game Boy · Screen only	Game Boy · Vain näyttö
+Game Boy · Yellow	Game Boy · Keltainen
 Game emulator	Pelin emulaattori
 Game emulator saved.	Pelin emulaattori tallennettu.
+Game FPS	Pelin FPS
+Game info	Pelin tiedot
 Game menu	Pelivalikko
 Game options	Peliasetukset
 Game options saved	Peliasetukset tallennettu
-GameTDB (free)	GameTDB
+Game rumble	Pelien tärinä
+Game screen	Pelinäyttö
+Game switcher	Pelinvaihto
 Games	Pelit
+Games played	Pelattuja pelejä
+GameTDB	GameTDB
+GameTDB (free)	GameTDB
+GB screens	GB-näytöt
+GBA Color	GBA-värit
+GBA screen	GBA-näyttö
+GBA screens	GBA-näytöt
+GBA true colour	Aidot GBA-värit
+GBA true screen	Aito GBA-näyttö
+GBC screens	GBC-näytöt
+Gear	Varusteet
+Genre	Tyylilaji
+German	Saksa
+Get, update and remove ports	Hae, päivitä ja poista portteja
 Give your eyes and hands a break.	Anna silmien ja käsien levätä.
 Global	Yhteinen
 Global controls saved.	Yhteiset ohjainasetukset tallennettu.
+Glossy tiles	Kiiltävät laatat
+Go back	Palaa
+Goes into	Kohde
+Golden leaves	Kultaiset lehdet
+Green	Vihreä
+Grey	Harmaa
+Grey TV	Harmaa televisio
+Grid	Ruudukko
+h	h
+Haptic strength	Haptiikan voimakkuus
+Health	Terveys
+Heart containers	Sydänsäiliöt
+Heart pieces	Sydämen palat
+Hearts	Sydämet
+High contrast	Suuri kontrasti
 Hold	Pidä painettuna
+Hold still for a right click	Pidä paikallaan oikeaa napsautusta varten
+Hold to exit	Pidä poistuaksesi
+Hold to load	Lataa pitämällä
+Hold to return home	Palaa kotiin pitämällä
+Hold to save	Tallenna pitämällä
+Home	Koti
+Home layout	Kotinäkymän asettelu
 Home shortcut	Kotipikavalinta
+How dates appear at the top of the screen.	Miten päivämäärät näkyvät näytön yläreunassa.
+How dates appear in the status bar	Miten päivämäärät näkyvät tilapalkissa
+How to get the files	Näin saat tiedostot
+Icon style	Kuvaketyyli
+Import help	Tuontiohje
+Import into this slot	Tuo tähän paikkaan
+Import slot	Tuo tallennustila
+In a course	Kentässä
+In a level	Kentässä
+In game	Pelissä
+IN USE	KÄYTÖSSÄ
 Indian Ocean	Intian valtameri
+Info screen	Infonäyttö
 Inherit	Peri
 Inherited	Peritty
+Install	Asenna
+Install the latest SD installer before this update.	Asenna uusin SD-asennuspaketti ennen tätä päivitystä.
+Installed version	Asennettu versio
+Installing PortMaster from the card	Asennetaan PortMaster kortilta
+Instruments	Soittimet
+Interface animations	Käyttöliittymän animaatiot
+IP address	IP-osoite
+Italian	Italia
+Items	Esineet
+Japanese	Japani
+Johto badges	Johton merkit
+Join	Liity
+Journey	Matka
+Jump	Siirry
 Jump to letter	Siirry kirjaimeen
+Kanto badges	Kanton merkit
 Keep a checkpoint when returning home	Säilytä tallennustila kotiin palatessa
+Keep getting and updating ports	Jatka porttien hakemista ja päivittämistä
 Keep playing	Jatka pelaamista
 Keep this game in Favourites	Pidä tämä peli suosikeissa
 Kernel	Ydin
 Key {0}	Näppäin {0}
-LCD + NDS Color	LCD + NDS Color
-LCD + Natural Vision	LCD + Natural Vision
+Keyboard	Näppäimistö
+Keys	Avaimet
+Kinstone fusions	Kinstone-fuusiot
+Language	Kieli
+Last played	Viimeksi pelattu
+Launch cancelled	Käynnistys peruutettu
 LCD + both colours	LCD + molemmat värit
+LCD + Natural Vision	LCD + Natural Vision
+LCD + NDS Color	LCD + NDS Color
 LCD pixels with natural colour and contrast.	LCD-pikselit, luonnolliset värit ja kontrasti.
 LCD pixels with the DS colour treatment.	LCD-pikselit DS-värikäsittelyllä.
 LCD pixels, DS colour and Natural Vision together.	LCD-pikselit, DS-värit ja Natural Vision yhdessä.
-Language	Kieli
-Launch cancelled	Käynnistys peruutettu
+Leave	Poistu
+Leave RG DS Core and go back to the stock menu.	Poistu RG DS Coresta ja palaa vakiovalikkoon.
 Left	Vasen
 Left stick	Vasen sauva
 Left-handed	Vasenkätinen
 Less than a minute	Alle minuutti
+Less than a minute left	Alle minuutti jäljellä
+Level	Taso
 Library	Kirjasto
 Library scan exceeded its limit	Kirjastohaku ylitti rajansa
 Library scan failed	Kirjastohaku epäonnistui
+Libretro	Libretro
 Libretro (free)	Libretro
 Light	Vaalea
+Lime	Limenvihreä
 List	Luettelo
+Listening…	Kuunnellaan…
 Live background	Elävä tausta
+Live input	Reaaliaikainen syöte
+Lives	Elämät
 Load	Lataa
+Load checkpoint	Lataa tila
+Load complete	Ladattu
 Load requested. Resume to check your game.	Latausta pyydetty. Jatka tarkistaaksesi pelin.
+Load slot {0}?	Ladataanko paikka {0}?
 Load state	Lataa tila
+Loaded	Ladattu
 Loading checkpoint…	Ladataan tallennustilaa…
+Loading…	Ladataan…
+Long press	Pitkä painallus
+Looking for devices…	Etsitään laitteita…
+Looking for games…	Etsitään pelejä…
 Looking for networks…	Etsitään verkkoja…
+Looking for the latest PortMaster	Etsitään uusinta PortMasteria
+Loud	Voimakas
+Lv	Taso
+Magenta	Magenta
+Magical sword	Taikamiekka
 Magnified detail	Suurennettu yksityiskohta
 Manage builds and temporary files	Hallitse versioita ja väliaikaisia tiedostoja
+Matches your accent	Seuraa korostusväriä
 Matching title	Hakutunniste
 Matching title saved. Choose Fetch artwork.	Hakutunniste tallennettu. Valitse Hae kansikuva.
+Menu audio is unavailable on this device.	Valikkoääni ei ole käytettävissä tällä laitteella.
+Menu effects	Valikkotehosteet
+Menu haptics	Valikon haptiikka
 Menu idle sleep	Valikon lepotilaviive
+Menu music	Valikkomusiikki
+Menu sounds are unavailable.	Valikkoäänet eivät ole käytettävissä.
+Microphone unavailable	Mikrofoni ei ole käytettävissä
+Microphone, simulated blowing, lid and DS language.	Mikrofoni, simuloitu puhallus, kansi ja DS-kieli.
+min	min
+Minutes	Minuutit
+Mirror shards	Peilin sirpaleet
+Missile room	Ohjuskapasiteetti
+Missiles	Ohjukset
+Missing artwork	Puuttuvat kansikuvat
+Mo	Ma
+Money	Rahat
+Moods	Tunnelmat
+More	Lisää
+Most played	Eniten pelatut
+Music volume	Musiikin voimakkuus
+Musical coins	Soittokolikot
 Mute	Mykistä
 Muted	Mykistetty
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: yhteensopivuusvaihtoehto. Kokeile ensin DSperatea nopeuden vuoksi.
 Native	Alkuperäinen
+Native (fastest)	Alkuperäinen (nopein)
 Native is faster; 2x uses more GPU time. Save & restart applies it.	Alkuperäinen on nopeampi; 2x kuormittaa GPU:ta enemmän. Tallenna ja käynnistä uudelleen.
 Native output	Alkuperäinen kuva
+Natural	Luonnollinen
+Natural colour with smoothed diagonal edges.	Luonnolliset värit ja pehmennetyt viistot reunat.
+Natural colour with soft pixels that glow together.	Luonnolliset värit ja pehmeät, yhteen hehkuvat pikselit.
+Natural glow	Luonnollinen hehku
+Natural smooth	Luonnollinen pehmeä
 Natural Vision	Natural Vision
+Needs your files	Tarvitsee tiedostosi
+Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Musta
+Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Hopea
+Network file sharing	Verkon tiedostonjako
 Networking is disabled. Turn Wi-Fi on to enable it.	Verkko on pois käytöstä. Ota Wi-Fi käyttöön.
 Never	Ei koskaan
+New messages below	Uusia viestejä alla
+Next	Seuraava
 Next emulator	Seuraava emulaattori
-No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Ei Wi-Fi-sovitinta. Käynnistä se ottamalla Wi-Fi käyttöön.
+Next picture	Seuraava kuva
+Next:	Seuraava:
+Night	Yö
+NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: yhteensopivuusvaihtoehto. Kokeile ensin DSperatea nopeuden vuoksi.
 No button detected. Try again when you're ready.	Painiketta ei havaittu. Yritä uudelleen, kun olet valmis.
 No checkpoint saved for this emulator yet.	Tälle emulaattorille ei ole vielä tallennustilaa.
 No cover yet	Ei vielä kansikuvaa
+No devices found. Put the device in pairing mode and scan.	Laitteita ei löytynyt. Aseta laite parinmuodostustilaan ja etsi.
 No favourites yet	Ei vielä suosikkeja
+No game has this information yet. Fetch artwork with Game info turned on.	Millään pelillä ei ole vielä tätä tietoa. Hae kannet Pelin tiedot päällä.
+No game information yet.	Ei vielä pelin tietoja.
 No games	Ei pelejä
+No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Pelejä ei löytynyt. Kopioi .nds- tai DS ZIP -tiedostot pelikortin Roms/NDS-kansioon ja etsi uudelleen.
 No games in this collection.	Tässä kokoelmassa ei ole pelejä.
+No letters to jump to. Search for another game.	Ei kirjaimia, joihin siirtyä. Hae toista peliä.
+No matches. Use View to change filters.	Ei tuloksia. Muuta suodattimia Näkymä-valikossa.
+No matching games	Vastaavia pelejä ei löytynyt
 No networks found	Verkkoja ei löytynyt
+No pictures yet	Ei vielä kuvia
 No previous build available.	Edellistä versiota ei ole saatavilla.
 No recent games yet	Ei vielä viimeksi pelattuja
+No release notes yet.	Ei vielä julkaisutietoja.
+No vibration motor was found on this device.	Tästä laitteesta ei löytynyt värinämoottoria.
+No Wi-Fi adapter. Turn Wi-Fi on to initialize it.	Ei Wi-Fi-sovitinta. Käynnistä se ottamalla Wi-Fi käyttöön.
+No Wi-Fi: you can still draw	Ei Wi-Fiä: voit silti piirtää
+Nobody else here yet	Ei vielä muita täällä
+Nobody else is nearby yet	Ketään muuta ei ole vielä lähellä
+Nobody here yet	Täällä ei ole vielä ketään
+None yet	Ei vielä yhtään
 Normal	Normaali
 Normal speed.	Normaali nopeus.
 Not available	Ei käytettävissä
 Not connected	Ei yhteyttä
+Not downloaded	Ei ladattu
+Not loaded	Ei ladattu
 Not played yet	Ei vielä pelattu
-OPEN	AVAA
+Not saved	Ei tallennettu
+Not yet	Ei vielä
+Nothing played yet	Ei vielä pelattu
+Nothing to load	Ei ladattavaa
+Nothing to load here yet.	Täällä ei ole vielä ladattavaa.
+Notification	Ilmoitus
 Off	Pois
 Off (smooth)	Pois (sulava)
 Off gives smooth motion. Skipping frames can help speed. Restart to apply.	Pois antaa sulavan liikkeen. Ruutujen ohitus voi nopeuttaa. Käynnistä uudelleen.
 Off keeps the original picture.	Pois säilyttää alkuperäisen kuvan.
+Older messages	Vanhemmat viestit
 On	Päällä
+Online	Verkossa
+Online play	Verkkopeli
+OPEN	AVAA
 Open	Avaa
+Open a view	Avaa näkymä
+Open lid	Avaa kansi
 Open menu	Avaa valikko
+Open on this Wi-Fi	Avoin tässä Wi-Fi-verkossa
 Open the Anbernic menu	Avaa Anbernic-valikko
 Options	Valinnat
+Or open on a computer	Tai avaa tietokoneella
+Orange	Oranssi
+Original	Alkuperäinen
 Original pixels	Alkuperäiset pikselit
 Original pixels and colours.	Alkuperäiset pikselit ja värit.
 Pacific	Tyynimeri
-PLAY	PELAA
+Paired	Pari muodostettu
+Party	Ryhmä
 Password	Salasana
+Password protected	Salasanasuojattu
+Pause download	Keskeytä lataus
 Pause when you need to.	Pidä tauko tarvittaessa.
 Paused	Keskeytetty
+Paused at {0}	Keskeytetty kohdassa {0}
+PC monitor	PC-näyttö
 Performance	Suorituskyky
+Phone battery	Puhelimen akku
+Phone or computer connected	Puhelin tai tietokone yhdistetty
+Picture	Kuva
+Pink	Pinkki
+Pixel art	Pikselitaide
+Pixel beads	Pikselihelmet
 Pixel classic	Klassiset pikselit
+Plain	Yksinkertainen
+Plain, or the DSi's ruled grid behind every screen	Yksinkertainen tai DSi:n viivoitettu ruudukko jokaisen näytön takana
+PLAY	PELAA
+Play	Pelaa
+Play a game to start your statistics.	Aloita tilastot pelaamalla peliä.
 Play at a comfortable volume.	Pelaa sopivalla äänenvoimakkuudella.
+Played	Pelatut
+Players	Pelaajat
+Playful sounds for browsing, choosing and starting games.	Leikkisät äänet selaamiseen, valitsemiseen ja pelien käynnistykseen.
 Please keep your handheld on	Pidä laitteesi päällä
 Pocket green	Taskuvihreä
+Point and click on top	Osoita ja napsauta ylhäällä
+Pokédex caught	Pokédex: pyydetyt
+Pokédex seen	Pokédex: nähdyt
+PortMaster is ready	PortMaster on valmis
+Ports	Portit
 Power	Virta
+Power bombs	Voimapommit
 Power mode	Virtatila
 Power off	Sammuta
 Power off your handheld?	Sammutetaanko laite?
 Power profile	Virtaprofiili
 Powering off…	Sammutetaan…
+Prepare	Valmistele
 Preparing controls…	Valmistellaan ohjaimia…
 Preparing the launcher	Valmistellaan käynnistintä
 Preparing the library…	Valmistellaan kirjastoa…
+Preparing update…	Valmistellaan päivitystä…
 Preparing your cartridges…	Valmistellaan pelikasetteja…
 Preparing your library…	Valmistellaan pelikirjastoasi…
+Preparing your statistics…	Valmistellaan tilastoja…
+Preparing…	Valmistellaan…
 Press a button for {0}	Paina painiketta toiminnolle {0}
 Press a button…	Paina painiketta…
 Preview	Esikatselu
-Preview Wi-Fi	Wi-Fi-esikatselu
+PREVIEW	ESIKATSELU
 Preview and choose your screen style	Esikatsele ja valitse näyttötyyli
 Preview game	Esikatselupeli
+Preview sound	Esikuuntele ääni
 Preview unavailable	Esikatselu ei ole käytettävissä
+Preview Wi-Fi	Wi-Fi-esikatselu
+Previous	Edellinen
 Previous build selected. Return to stock, then open RGDS again.	Edellinen versio valittu. Palaa alkuperäiseen valikkoon ja avaa RGDS uudelleen.
 Profile	Profiili
+PSP · Black	PSP · Musta
+PSP · White	PSP · Valkoinen
+Publisher	Julkaisija
+Purple	Purppura
+Push	Työntö
+Quick search	Pikahaku
+Quiet	Hiljainen
+Quit	Lopeta
+Race	Kilpailu
+Rating	Ikäraja
+Reading Roms/NDS on your games card. This takes a moment.	Luetaan pelikortin Roms/NDS-kansiota. Tämä kestää hetken.
 READY	VALMIS
-REVIEW YOUR CHOICE	TARKISTA VALINTASI
-RGDS build	RGDS-versio
-ROUNDED FONT UNAVAILABLE	PYÖRISTETTY FONTTI EI OLE SAATAVILLA
+Ready to fetch artwork.	Valmis hakemaan kansikuvia.
+Ready to restart. Your previous version is kept for recovery.	Valmis käynnistämään uudelleen. Edellinen versio säilyy palautusta varten.
+Real microphone	Oikea mikrofoni
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Oikea mikrofoni on oletuksena käytössä. Puhallus ja kansitoiminnot palaavat peliin kahdeksi sekunniksi. Kielimuutos vaatii uudelleenkäynnistyksen.
+Receiving files	Vastaanotetaan tiedostoja
 Recents	Viimeksi pelatut
+Red	Punainen
 Reduce rendering work when needed	Vähennä renderöintikuormaa tarvittaessa
 Refresh	Päivitä
 Refresh connection	Päivitä yhteys
 Release for options	Vapauta nähdäksesi valinnat
+Release notes	Julkaisutiedot
+Released	Julkaistu
 Remap	Määritä uudelleen
+Remove favourite	Poista suosikki
+Replace	Korvaa
+Replace slot {0}?	Korvataanko paikka {0}?
 Request cancelled.	Pyyntö peruutettu.
 Request failed. Check the connection or device log and try again.	Pyyntö epäonnistui. Tarkista yhteys tai laitteen loki ja yritä uudelleen.
+Reserve	Varanto
 Reset	Nollaa
+Reset filters	Nollaa suodattimet
+Reset state	Nollaa tila
 Rest after a period of inactivity	Siirry lepotilaan käyttämättömyyden jälkeen
 Restart	Käynnistä uudelleen
+Restart & install	Käynnistä ja asenna
+Restart and install the update?	Käynnistetäänkö uudelleen ja asennetaan päivitys?
+Restart from the title screen. In-game saves and save slots are kept.	Käynnistä otsikkoruudusta. Pelin sisäiset tallennukset ja tallennuspaikat säilyvät.
 Restart menu	Käynnistä valikko uudelleen
-Restart the RGDS menu?	Käynnistetäänkö RGDS-valikko uudelleen?
+Restart port	Käynnistä portti uudelleen
+Restart RG DS Core before installing the update.	Käynnistä RG DS Core uudelleen ennen päivityksen asentamista.
 Restart the device?	Käynnistetäänkö laite uudelleen?
+Restart the game to apply DS settings.	Käynnistä peli uudelleen DS-asetusten käyttämiseksi.
+Restart the RGDS menu.	Käynnistä RGDS-valikko uudelleen.
+Restart the RGDS menu?	Käynnistetäänkö RGDS-valikko uudelleen?
 Restart uses {0}. Saves and checkpoints stay separate per emulator.	Uudelleenkäynnistys käyttää emulaattoria {0}. Tallennukset ja tilat säilyvät erillään.
+Restart without loading a state?	Käynnistetäänkö ilman tallennustilan latausta?
+Restarting into the update…	Käynnistetään päivitetty versio…
 Restarting…	Käynnistetään uudelleen…
 Restore defaults	Palauta oletukset
 Restore the last installed RGDS build	Palauta viimeksi asennettu RGDS-versio
 Restoring settings	Palautetaan asetuksia
 Restoring settings…	Palautetaan asetuksia…
 Resume	Jatka
+Resume after power off	Jatka sammutuksen jälkeen
+Resume download	Jatka latausta
 Resume game	Jatka peliä
 Return	Palaa
 Return home	Palaa kotiin
 Return home before changing startup.	Palaa kotiin ennen käynnistyksen muuttamista.
+Return home before testing the physical microphone.	Palaa kotiin ennen fyysisen mikrofonin testaamista.
 Return home from your game first.	Palaa ensin kotiin pelistä.
 Return to game	Palaa peliin
 Return to stock	Palaa alkuperäiseen valikkoon
@@ -340,16 +783,30 @@ Return to the stock menu?	Palataanko alkuperäiseen valikkoon?
 Return without saving	Palaa tallentamatta
 Returning home…	Palataan kotiin…
 Review unmatched	Tarkista tunnistamattomat
+REVIEW YOUR CHOICE	TARKISTA VALINTASI
+RGDS build	RGDS-versio
+Rich	Yksityiskohtainen
 Right	Oikea
 Right stick	Oikea sauva
 Rollback simulated.	Palautuksen simulointi.
-START	ALOITA
+Round	Kierros
+ROUNDED FONT UNAVAILABLE	PYÖRISTETTY FONTTI EI OLE SAATAVILLA
+Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak -pelit DS:llä, tärinäkasetit Game Boylla ja Game Boy Advancella.
+Rumble strength	Tärinän voimakkuus
+Rupees	Rupiat
+Sa	La
 Save	Tallenna
 Save & restart	Tallenna ja käynnistä uudelleen
 Save & restart applies Threaded 3D.	Tallenna ja käynnistä uudelleen ottaa 3D-säikeistyksen käyttöön.
 Save & restart keeps your checkpoint and applies pending settings.	Säilyttää tallennustilan ja ottaa odottavat asetukset käyttöön.
 Save a report for troubleshooting	Tallenna raportti vianmääritystä varten
+Save backup created in userdata/exports.	Tallennusten varmuuskopio luotu kansioon userdata/exports.
+Save checkpoint	Tallenna tila
+Save complete	Tallennettu
 Save device report	Tallenna laiteraportti
+Save gallery	Tallennusgalleria
+Save here	Tallenna tähän
+Save library updated.	Tallennuskirjasto päivitetty.
 Save state	Tallenna tila
 Save your checkpoint and restart	Tallenna tila ja käynnistä uudelleen
 Saved	Tallennettu
@@ -366,16 +823,42 @@ Saving before returning home…	Tallennetaan ennen kotiin palaamista…
 Saving checkpoint before restarting…	Tallennetaan tila ennen uudelleenkäynnistystä…
 Saving checkpoint…	Tallennetaan tilaa…
 Saving your progress…	Tallennetaan edistymistäsi…
+Saving…	Tallennetaan…
 Scan	Hae
+Scan complete	Haku valmis
+Scan for games	Etsi pelejä
+Scan with your phone	Skannaa puhelimella
+Scanning…	Etsitään…
 Scene	Näkymä
+Score	Pisteet
 Screen brightness	Näytön kirkkaus
+Screen colours	Näytön värit
+Screen off	Näyttö pois
 Screen order	Näyttöjärjestys
+screens	näyttöä
 ScreenScraper needs project credentials and your account	ScreenScraper tarvitsee projektitunnukset ja käyttäjätilisi
+Screenshot	Kuvakaappaus
+Screenshots	Kuvakaappaukset
+Screenshots and title screens	Kuvakaappaukset ja otsikkoruudut
+Sea green	Merenvihreä
+Search	Haku
+Search games	Hae pelejä
+Search in	Hae kohteesta
+Searching…	Haetaan…
+Second screen	Toinen näyttö
+Seconds	Sekunnit
+Secret seashells	Salaiset simpukat
+Seeds	Siemenet
 Select	Valitse
 Select a network again and enter its password.	Valitse verkko uudelleen ja anna salasana.
 Select a network again.	Valitse verkko uudelleen.
 Selected	Valittu
+Selected row	Valittu rivi
+Send	Lähetä
+Series	Sarja
+Set the clock to where you are.	Aseta kello sijaintisi mukaan.
 Sets Standard DraStic screen order for this game. Save & restart applies it.	Määrittää pelin Standard DraStic -näyttöjärjestyksen. Tallenna ja käynnistä uudelleen.
+Setting up PortMaster	Otetaan PortMaster käyttöön
 Settings	Asetukset
 Settings saved	Asetukset tallennettu
 Shader	Suodatin
@@ -386,21 +869,27 @@ Shader saved for next launch	Suodatin tallennettu seuraavaa käynnistystä varte
 Shader saved. Restart this game to apply it.	Suodatin tallennettu. Käynnistä peli uudelleen.
 Shader studio	Suodatinstudio
 Shaders	Suodattimet
-Sharp + NDS Color	Terävä + NDS Color
-Sharp + Natural Vision	Terävä + Natural Vision
 Sharp + both colours	Terävä + molemmat värit
+Sharp + Natural Vision	Terävä + Natural Vision
+Sharp + NDS Color	Terävä + NDS Color
 Sharp bilinear	Terävä bilineaarinen
+Sharp fill	Terävä täyttö
 Sharp pixel edges with smoother scaling.	Terävät pikselireunat ja pehmeämpi skaalaus.
 Sharp scaling with natural colour and contrast.	Terävä skaalaus, luonnolliset värit ja kontrasti.
 Sharp scaling with the DS colour treatment.	Terävä skaalaus DS-värikäsittelyllä.
 Sharp scaling, DS colour and Natural Vision together.	Terävä skaalaus, DS-värit ja Natural Vision yhdessä.
+Shield	Kilpi
 Shift	Vaihto
 Shortcut action	Pikavalinnan toiminto
+Shots	Laukaukset
+Show games	Näytä pelit
 Show the charge in the status bar	Näytä akun varaus tilapalkissa
 Show the welcome screen at startup	Näytä tervetuloruutu käynnistettäessä
 Sign in	Kirjaudu sisään
 Sign out	Kirjaudu ulos
+Signal	Signaali
 Signing in…	Kirjaudutaan…
+Simple pixel	Yksinkertaiset pikselit
 Simulated handheld	Simuloitu laite
 Sleep	Lepotila
 Sleep now	Lepotilaan nyt
@@ -409,23 +898,45 @@ Sleep simulated - press any control	Simuloitu lepotila – paina mitä tahansa p
 Sleep simulated - settings retained	Simuloitu lepotila – asetukset säilyvät
 Sleep unavailable on this device	Lepotila ei ole käytettävissä tällä laitteella
 Sleeping - use Power to wake	Lepotilassa – herätä virtapainikkeella
-Soft LCD grid	Pehmeä LCD-ruudukko
+Slide into pages; slide back to return	Liu'u sivuille ja palaa liukumalla takaisin
+Slot	Paikka
+Slot change undone.	Muutos kumottu.
+Slot exported to userdata/exports.	Tallennustila viety kansioon userdata/exports.
+Slot {0} deleted.	Paikka {0} poistettu.
+Small keys	Pienet avaimet
+Small touches, scrolling and startup motion	Pienet tehosteet, vieritys ja käynnistysliike
+Smooth fill	Pehmeä täyttö
 Soft green monochrome with full-resolution detail.	Pehmeä vihreä yksivärikuva täydellä tarkkuudella.
+Soft LCD grid	Pehmeä LCD-ruudukko
 Soft scanlines	Pehmeät vaakajuovat
+Some menu sounds are unavailable.	Osa valikkoäänistä ei ole käytettävissä.
 Sound	Ääni
+Sounds & music	Äänet ja musiikki
+Source	Lähde
 Space	Välilyönti
+Spanish	Espanja
+Spring	Jousi
+Springy menu changes with a colourful wobble	Joustavat valikonvaihdot värikkäällä heilahduksella
+Stable	Vakaa
 Standard	Standard
 Standard DraStic only. Applies on the next launch; game saves are kept.	Vain Standard DraStic. Tulee voimaan seuraavalla käynnistyksellä; tallennukset säilyvät.
 Standard screen order	Vakionäyttöjärjestys
+START	ALOITA
 Start	Aloita
 Start + Anbernic	Start + Anbernic
+Start a game	Käynnistä peli
 Start RG DS automatically on future boots?	Käynnistetäänkö RG DS automaattisesti jatkossa?
+Start Send   X Undo   L R Scroll	Start Lähetä   X Kumoa   L R Vieritä
 Start with a familiar layout	Aloita tutulla asettelulla
 Start, then Anbernic	Start, sitten Anbernic
+Starting…	Käynnistyy…
 Startup	Käynnistys
 Startup choice saved.	Käynnistysvalinta tallennettu.
 Startup choice simulated.	Käynnistysvalinta simuloitu.
 Startup is managed by RGDS OS.	RGDS OS hallitsee käynnistystä.
+Statistics	Tilastot
+Step {0} of 4	Vaihe {0}/4
+Still reading your library. Try again in a moment.	Kirjastoa luetaan vielä. Yritä hetken päästä uudelleen.
 Stock	Alkuperäinen
 Stock firmware	Alkuperäinen laiteohjelmisto
 Stop fetching	Lopeta haku
@@ -435,76 +946,196 @@ Stop scraping before changing source	Lopeta haku ennen lähteen vaihtamista
 Stopping after this request	Lopetetaan tämän pyynnön jälkeen
 Stopping after this request.	Lopetetaan tämän pyynnön jälkeen.
 Storage read-only - use internal RGDS	Tallennustila vain luku – käytä sisäistä RGDS:ää
+Su	Su
+Subtle	Hienovarainen
+Summer time follows your timezone. Force it on or off if the clock is an hour out.	Kesäaika noudattaa aikavyöhykettäsi. Pakota se päälle tai pois, jos kello on tunnin pielessä.
+Super missiles	Superohjukset
 SuperDrastic (experimental)	SuperDrastic (kokeellinen)
 SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic käyttää alkuperäistä kuvaa. Oletussuodattimesi säilyy.
 SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic käyttää omaa taukovalikkoa ja näyttöpolkua. Kokeellinen; RG DS -testit odottavat.
+Swap screens	Vaihda näytöt
 Swapped	Vaihdettu
+Swipe in from the left edge to go Back.	Pyyhkäise vasemmasta reunasta sisään palataksesi.
+Swipe up from the bottom edge to go Home from anywhere.	Pyyhkäise alareunasta ylös päästäksesi kotiin mistä tahansa.
+Swipe up from the bottom for Home, in from the left for Back	Pyyhkäise alhaalta ylös kotiin, vasemmalta takaisin
+Switch off	Poista käytöstä
+Switch on	Ota käyttöön
+Switch to another game	Vaihda toiseen peliin
+Switches and values	Kytkimet ja arvot
+Sword	Miekka
 System	Järjestelmä
-THEME ERROR - RETAINED CURRENT	TEEMAVIRHE – NYKYINEN SÄILYI
-THEME RELOADED	TEEMA LADATTU UUDELLEEN
-Turn the handheld off and on again	Sammuta laite ja käynnistä se uudelleen
-TYPEFACE	KIRJASIN
+System update	Järjestelmäpäivitys
+Systems	Järjestelmät
+Tap to type, or use the D-pad and A	Kosketa kirjoittaaksesi tai käytä ristiohjainta ja A:ta
+Team	Joukkue
 Temporary game cache cleared. Saves and artwork are kept.	Väliaikainen pelivälimuisti tyhjennetty. Tallennukset ja kansikuvat säilyvät.
+Test	Testaa
+Test microphone	Testaa mikrofoni
+Test the microphone on your handheld.	Testaa laitteesi mikrofoni.
+Testing	Testaus
+Th	To
+That message could not be sent	Viestiä ei voitu lähettää
+That room is full	Huone on täynnä
+The backup did not finish. Please try again.	Varmuuskopiointi ei valmistunut. Yritä uudelleen.
+The best there is	Parasta mitä on
+The brighter DS Lite screen with a faint pixel grid.	Kirkkaampi DS Lite -näyttö ja himmeä pikseliruudukko.
 The checkpoint did not finish saving.	Tallennustilan tallentaminen ei valmistunut.
 The emulator did not finish. Resume, retry, or return without saving.	Emulaattori ei valmistunut. Jatka, yritä uudelleen tai palaa tallentamatta.
+The first DS screen: muted colour and a fine pixel grid.	Ensimmäinen DS-näyttö: hillityt värit ja hieno pikseliruudukko.
+The Game Boy Advance LCD's own colour and gamma.	Game Boy Advancen LCD-näytön omat värit ja gamma.
+The Game Boy Advance screen: its colour and faint pixel gaps.	Game Boy Advancen näyttö: sen värit ja himmeät pikselien raot.
+The Game Boy Color screen with faint gaps between its pixels.	Game Boy Colorin näyttö ja sen pikselien väliset himmeät raot.
 The game menu did not respond. Resume or return without saving.	Pelivalikko ei vastannut. Jatka tai palaa tallentamatta.
+The language for menus and messages.	Valikkojen ja viestien kieli.
+The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Alkuperäisen Game Boyn pistematriisinäyttö: vaalea pikseliruudukko ja pehmeät varjot.
+The pad is full: send it or clear it	Piirtoalusta on täynnä: lähetä tai tyhjennä se
+The true GBA colours on its screen, with the gaps between its pixels.	Aidot GBA-värit sen näytöllä, pikselien välisine rakoineen.
+The update could not be downloaded. Check for updates again.	Päivitystä ei voitu ladata. Tarkista päivitykset uudelleen.
+The update could not start. Your previous version was restored.	Päivitys ei käynnistynyt. Edellinen versio palautettiin.
 The zFast LCD texture with both colour treatments.	zFast LCD -tekstuuri molemmilla värikäsittelyillä.
 The zFast LCD texture with natural colour and contrast.	zFast LCD -tekstuuri luonnollisilla väreillä ja kontrastilla.
 The zFast LCD texture with the DS colour treatment.	zFast LCD -tekstuuri DS-värikäsittelyllä.
 Theme	Teema
 Theme & display	Teema ja näyttö
+THEME ERROR - RETAINED CURRENT	TEEMAVIRHE – NYKYINEN SÄILYI
+THEME RELOADED	TEEMA LADATTU UUDELLEEN
+There is not enough free space for this update.	Päivitykselle ei ole riittävästi vapaata tilaa.
+This can take a few seconds	Tämä voi kestää muutaman sekunnin
 This emulator does not expose a frameskip setting.	Tässä emulaattorissa ei ole ruutujen ohituksen asetusta.
 This emulator uses native resolution. No resolution switch is available.	Tämä emulaattori käyttää alkuperäistä tarkkuutta. Tarkkuutta ei voi vaihtaa.
 This engine does not expose a threading switch.	Tässä emulaattorissa ei ole säikeistysvalintaa.
 This engine has no live threading control.	Tässä emulaattorissa ei voi muuttaa säikeistystä käytön aikana.
 This game	Tämä peli
+This handheld's own screen.	Tämän käsikonsolin oma näyttö.
 This network requires an enterprise profile.	Tämä verkko tarvitsee yritysprofiilin.
+This port lists no instructions.	Tällä portilla ei ole ohjeita.
 This request did not finish. Please try again.	Pyyntö ei valmistunut. Yritä uudelleen.
 This shader is unavailable for the current emulator.	Suodatin ei ole käytettävissä nykyisessä emulaattorissa.
+This stock firmware has not been validated for updates.	Tätä alkuperäistä laiteohjelmistoa ei ole hyväksytty päivityksiin.
+This version failed to start. Waiting for a newer update.	Tämä versio ei käynnistynyt. Odotetaan uudempaa päivitystä.
 Threaded 3D	3D-säikeistys
+Time	Aika
+Time format	Ajan muoto
+Time of day	Vuorokaudenaika
 Time played	Peliaika
+Times played	Pelikerrat
 Timezone	Aikavyöhyke
+Title screen	Otsikkoruutu
+Title screens	Otsikkoruudut
 Toggle	Vaihda
+Too much on the pad: erase some of it	Alustalla on liikaa: pyyhi jotain pois
+Tools	Työkalut
 Top display	Ylänäyttö
+Total	Yhteensä
 Touch	Kosketus
+Touch gestures	Kosketuseleet
+Touch here to point and click on the top screen.	Kosketa tästä osoittaaksesi ja napsauttaaksesi yläruudulla.
 Touch indicator	Kosketusilmaisin
+Touch screen	Kosketusnäyttö
+Touch screen is not available	Kosketusnäyttö ei ole käytettävissä
+Touch screen off	Kosketusnäyttö pois
+Touch the screen to turn it on	Kosketa näyttöä, niin se syttyy
 Touch to continue	Jatka koskettamalla
 Touch {0}	Kosketus {0}
+Trainer	Kouluttaja
+Transition style	Siirtymätyyli
+Transitions	Siirtymät
+Treasures	Aarteet
+Try a pattern	Kokeile kuviota
+Try a shorter title or clear your filter.	Kokeile lyhyempää nimeä tai tyhjennä suodatin.
+Try again	Yritä uudelleen
+Try another title or clear your filters	Kokeile toista nimeä tai tyhjennä suodattimet
 Try saving again	Yritä tallentaa uudelleen
+Tu	Ti
+Turn Bluetooth off?	Poistetaanko Bluetooth käytöstä?
+Turn Bluetooth on to find devices.	Ota Bluetooth käyttöön, niin voit etsiä laitteita.
+Turn it on to find networks	Kytke päälle löytääksesi verkkoja
+Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ota Pelin tiedot käyttöön kohdassa Asetukset > Kirjasto > Kansilähteet ja hae kannet.
+Turn on game rumble for games made for a rumble accessory.	Ota pelien tärinä käyttöön peleissä, jotka on tehty tärinälisälaitteelle.
+Turn on menu haptics to feel the menus.	Ota valikon haptiikka käyttöön tunteaksesi valikot.
+Turn on menu music for a soft tune while you browse.	Ota valikkomusiikki käyttöön, niin pehmeä sävel soi selatessasi.
+Turn on menu sounds to hear the previews.	Ota valikkoäänet käyttöön kuullaksesi esikuuntelut.
+Turn the handheld off and on again	Sammuta laite ja käynnistä se uudelleen
 Turn Wi-Fi off?	Poistetaanko Wi-Fi käytöstä?
 Turn Wi-Fi on first.	Ota Wi-Fi ensin käyttöön.
 Turn Wi-Fi on to find networks.	Ota Wi-Fi käyttöön verkkojen löytämiseksi.
+Turning Bluetooth off…	Poistetaan Bluetooth käytöstä…
+Turning Bluetooth on…	Otetaan Bluetooth käyttöön…
 Turning Wi-Fi off…	Poistetaan Wi-Fi käytöstä…
 Turning Wi-Fi on…	Otetaan Wi-Fi käyttöön…
+Turquoise	Turkoosi
+Type	Kirjoita
+Type a game title…	Kirjoita pelin nimi…
+Type your name	Kirjoita nimesi
+TYPEFACE	KIRJASIN
 Typeface	Kirjasin
 Unassigned	Määrittämätön
 Unavailable	Ei käytettävissä
+Undo last load	Kumoa viimeisin lataus
+Undo last slot change	Kumoa viimeisin muutos
 Unmatched artwork	Tunnistamattomat kansikuvat
 Unmute	Poista mykistys
+Unpacking files	Puretaan tiedostoja
+Unpacking PortMaster	Puretaan PortMasteria
+Unplayed	Pelaamattomat
+Up	Ylös
+Update	Päivitä
+Update available in Maintenance	Päivitys saatavilla huoltovalikossa
+Update discarded. Your installed version is unchanged.	Päivitys hylätty. Asennettu versio on ennallaan.
+Update failed. Check Wi-Fi and try again.	Päivitys epäonnistui. Tarkista Wi-Fi ja yritä uudelleen.
+Update information has expired or the device clock is incorrect.	Päivitystiedot ovat vanhentuneet tai laitteen kello on väärässä.
+Update installed.	Päivitys asennettu.
+Update now	Päivitä nyt
+Update verification failed. Check for updates again.	Päivityksen tarkistus epäonnistui. Tarkista päivitykset uudelleen.
+Updates	Päivitykset
 Updates & recovery	Päivitykset ja palautus
-Use ROM identity	Käytä ROM-tunnistetta
+Updates will be available when the release channel opens.	Päivitykset tulevat saataville julkaisukanavan avautuessa.
 Use an additional rendering thread	Käytä lisärenderöintisäiettä
 Use default ({0})	Käytä oletusta ({0})
 Use global controls	Käytä yhteisiä ohjainasetuksia
 Use previous build	Käytä edellistä versiota
+Use ROM identity	Käytä ROM-tunnistetta
+Use the engine's native controls for microphone and DS settings.	Käytä emulaattorin omia mikrofoni- ja DS-asetuksia.
 Use the previous RGDS build?	Käytetäänkö edellistä RGDS-versiota?
 Used by games without an override	Peleille, joilla ei ole omaa asetusta
 Username	Käyttäjätunnus
+Verify	Tarkista
+Verifying update…	Tarkistetaan päivitystä…
+Version {0} is ready	Versio {0} on valmis
+Version {0} is ready to install	Versio {0} on valmis asennettavaksi
+Versions, free space and the network address of your handheld.	Laitteen versiot, vapaa tila ja verkko-osoite.
+Vibration	Värinä
 View	Näkymä
+View transitions	Näkymäsiirtymät
+Violet	Violetti
+Vivid	Eloisa
+Vivid LCD	Eloisa LCD
+Vivid smooth	Eloisa pehmeä
 Volume	Äänenvoimakkuus
 Volume control unavailable	Äänenvoimakkuuden säätö ei ole käytettävissä
+Waiting for an address…	Odotetaan osoitetta…
 WAITING FOR INPUT	ODOTETAAN SYÖTETTÄ
 Warm monochrome with preserved highlight detail.	Lämmin yksivärikuva säilyttää vaaleat yksityiskohdat.
 Warm paper	Lämmin paperi
 Warm whites and softened contrast for evening play.	Lämpimät valkoiset ja pehmeä kontrasti iltapelaamiseen.
+We	Ke
 Welcome back	Tervetuloa takaisin
+What happens when you turn the handheld on.	Mitä tapahtuu, kun käynnistät laitteen.
 What the shortcut opens	Mitä pikavalinta avaa
+What's new	Uutta tässä versiossa
+Where covers and titles come from.	Mistä kannet ja nimet haetaan.
+Where games go on the card, and a fresh scan.	Mihin pelit laitetaan kortilla, ja uusi haku.
 Where this layout applies	Missä tätä asettelua käytetään
+Where to put games	Mihin pelit laitetaan
+White sword	Valkoinen miekka
+Whole pixels	Kokonaiset pikselit
 Wi-Fi	Wi-Fi
 Wi-Fi adapter is not ready. Check the OS driver or restart the handheld.	Wi-Fi-sovitin ei ole valmis. Tarkista ajuri tai käynnistä laite uudelleen.
 Wi-Fi adapter is not ready. Turn Wi-Fi on to retry.	Wi-Fi-sovitin ei ole valmis. Ota Wi-Fi käyttöön ja yritä uudelleen.
+Wi-Fi connected	Wi-Fi yhdistetty
 Wi-Fi did not turn on. Try again.	Wi-Fi ei käynnistynyt. Yritä uudelleen.
 Wi-Fi is blocked by the hardware. Restart the handheld and try again.	Laitteisto estää Wi-Fi:n. Käynnistä laite uudelleen ja yritä uudelleen.
+Wi-Fi is off	Wi-Fi on pois päältä
 Wi-Fi is still on. Try turning it off again.	Wi-Fi on yhä päällä. Yritä sammuttaa se uudelleen.
 Wi-Fi is unavailable.	Wi-Fi ei ole käytettävissä.
 Wi-Fi off.	Wi-Fi pois.
@@ -512,630 +1143,53 @@ Wi-Fi on.	Wi-Fi päällä.
 Wi-Fi request failed. Check the password and signal, then try again.	Wi-Fi-pyyntö epäonnistui. Tarkista salasana ja signaali ja yritä uudelleen.
 Wi-Fi request timed out. Check signal and try again.	Wi-Fi-pyyntö aikakatkaistiin. Tarkista signaali ja yritä uudelleen.
 Wi-Fi service is unavailable.	Wi-Fi-palvelu ei ole käytettävissä.
+With info	Tiedoilla
 With shader	Suodattimella
+Without info	Ilman tietoja
+WonderSwan Color · Blue	WonderSwan Color · Sininen
+WonderSwan Color · White	WonderSwan Color · Valkoinen
+Wood-grain TV	Puukuvioinen televisio
+Wooden sword	Puumiekka
 Working…	Työskennellään…
+World	Maailma
+World map	Maailmankartta
+Worlds	Maailmat
+Y imports a save into this slot.	Y tuo tallennuksen tähän paikkaan.
+Yellow	Keltainen
+Yes	Kyllä
+You	Sinä
+You appear like this to others	Näin muut näkevät sinut
+You are in Room {0}	Olet huoneessa {0}
+You are up to date.	Käytössä on uusin versio.
 Your cartridges go here	Pelikasettisi näkyvät täällä
+Your colour	Värisi
+Your DS library starts here	DS-kirjastosi alkaa tästä
+Your games and saves are not touched.	Pelisi ja tallennuksesi pysyvät koskemattomina.
 Your home screen after powering on	Kotinäyttösi virran kytkennän jälkeen
+Your journey	Matkasi
+Your last game will appear here	Viimeisin pelisi näkyy tässä
 Your local time and date	Paikallinen aika ja päivämäärä
 Your menu shortcut	Valikon pikavalintasi
+Your name	Nimesi
+Your ports are waiting in Ports	Porttisi odottavat Porteissa
+Your saves are safe. See you soon!	Tallennuksesi ovat turvassa. Nähdään pian!
 Your shader choice is still available.	Suodatinvalintasi on yhä käytettävissä.
-zFast + NDS Color	zFast + NDS Color
-zFast + Natural Vision	zFast + Natural Vision
 zFast + both colours	zFast + molemmat värit
+zFast + Natural Vision	zFast + Natural Vision
+zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (kokeellinen)
 {0} (recommended)	{0} (suositeltu)
+{0} active	{0} käytössä
+{0} found. Choose Done to go to your library.	{0} löytyi. Valitse Valmis siirtyäksesi kirjastoon.
 {0} frames	{0} ruutua
+{0} game	{0} peli
 {0} games	{0} peliä
-{0} settings	{0}: asetukset
-Up	Ylös
-Times played	Pelikerrat
-Last played	Viimeksi pelattu
-GameTDB	GameTDB
-Libretro	Libretro
-Ready to fetch artwork.	Valmis hakemaan kansikuvia.
-Icon style	Kuvaketyyli
-Simple pixel	Yksinkertaiset pikselit
-Rich	Yksityiskohtainen
-Statistics	Tilastot
-Games played	Pelattuja pelejä
-Most played	Eniten pelatut
-Preparing your statistics…	Valmistellaan tilastoja…
-Play a game to start your statistics.	Aloita tilastot pelaamalla peliä.
-Installed version	Asennettu versio
-Check for updates	Tarkista päivitykset
-Restart & install	Käynnistä ja asenna
-Download update	Lataa päivitys
-Pause download	Keskeytä lataus
-Release notes	Julkaisutiedot
-Discard update	Hylkää päivitys
-No release notes yet.	Ei vielä julkaisutietoja.
-Restart and install the update?	Käynnistetäänkö uudelleen ja asennetaan päivitys?
-Check for updates when you are ready.	Tarkista päivitykset, kun olet valmis.
-Updates will be available when the release channel opens.	Päivitykset tulevat saataville julkaisukanavan avautuessa.
-Checking for updates…	Tarkistetaan päivityksiä…
-You are up to date.	Käytössä on uusin versio.
-A new version is ready to download.	Uusi versio on valmis ladattavaksi.
-This version failed to start. Waiting for a newer update.	Tämä versio ei käynnistynyt. Odotetaan uudempaa päivitystä.
-Downloading update…	Ladataan päivitystä…
-Verifying update…	Tarkistetaan päivitystä…
-Preparing update…	Valmistellaan päivitystä…
-Ready to restart. Your previous version is kept for recovery.	Valmis käynnistämään uudelleen. Edellinen versio säilyy palautusta varten.
-Restarting into the update…	Käynnistetään päivitetty versio…
-Checking the new version…	Tarkistetaan uutta versiota…
-Update installed.	Päivitys asennettu.
-The update could not start. Your previous version was restored.	Päivitys ei käynnistynyt. Edellinen versio palautettiin.
-Download paused. Retry to continue.	Lataus keskeytetty. Jatka yrittämällä uudelleen.
-Update discarded. Your installed version is unchanged.	Päivitys hylätty. Asennettu versio on ennallaan.
-Connect the charger before installing an update.	Kytke laturi ennen päivityksen asentamista.
-There is not enough free space for this update.	Päivitykselle ei ole riittävästi vapaata tilaa.
-Exit your game before installing an update.	Poistu pelistä ennen päivityksen asentamista.
-Install the latest SD installer before this update.	Asenna uusin SD-asennuspaketti ennen tätä päivitystä.
-Restart RG DS Core before installing the update.	Käynnistä RG DS Core uudelleen ennen päivityksen asentamista.
-Download interrupted. Retry to continue.	Lataus katkesi. Jatka yrittämällä uudelleen.
-An update is already prepared. Install it or discard it first.	Päivitys on jo valmis. Asenna tai hylkää se ensin.
-Another update is already running.	Toinen päivitys on jo käynnissä.
-Update information has expired or the device clock is incorrect.	Päivitystiedot ovat vanhentuneet tai laitteen kello on väärässä.
-This stock firmware has not been validated for updates.	Tätä alkuperäistä laiteohjelmistoa ei ole hyväksytty päivityksiin.
-Update verification failed. Check for updates again.	Päivityksen tarkistus epäonnistui. Tarkista päivitykset uudelleen.
-Update failed. Check Wi-Fi and try again.	Päivitys epäonnistui. Tarkista Wi-Fi ja yritä uudelleen.
-Stable	Vakaa
-Testing	Testaus
-Import slot	Tuo tallennustila
-Export slot	Vie tallennustila
-Save checkpoint	Tallenna tila
-Load checkpoint	Lataa tila
-Save here	Tallenna tähän
-Export	Vie
-More	Lisää
-Replace slot {0}?	Korvataanko paikka {0}?
-Load slot {0}?	Ladataanko paikka {0}?
-Delete slot {0}?	Poistetaanko paikka {0}?
-Undo last slot change	Kumoa viimeisin muutos
-Undo last load	Kumoa viimeisin lataus
-Import into this slot	Tuo tähän paikkaan
-Slot {0} deleted.	Paikka {0} poistettu.
-Slot change undone.	Muutos kumottu.
-A saves your current progress here.	A tallentaa edistymisesi tähän.
-A replaces this slot with your current progress. X deletes it.	A korvaa paikan edistymiselläsi. X poistaa sen.
-A loads this slot. Undo last load, under Y, brings back the progress you have now.	A lataa paikan. Kumoa viimeisin lataus Y-valikosta palauttaa nykyisen edistymisesi.
-Nothing to load here yet.	Täällä ei ole vielä ladattavaa.
-A exports this slot to userdata/exports. X deletes it.	A vie paikan kansioon userdata/exports. X poistaa sen.
-Y imports a save into this slot.	Y tuo tallennuksen tähän paikkaan.
-Import help	Tuontiohje
-Replace	Korvaa
-Blow into microphone	Puhalla mikrofoniin
-Close and open DS lid	Sulje ja avaa DS-kansi
-DS language	DS-kieli
-Real microphone	Oikea mikrofoni
-Japanese	Japani
-English	Englanti
-French	Ranska
-German	Saksa
-Italian	Italia
-Spanish	Espanja
-2 seconds	2 sekuntia
-In game	Pelissä
-Restart the game to apply DS settings.	Käynnistä peli uudelleen DS-asetusten käyttämiseksi.
-Could not save DS settings.	DS-asetuksia ei voitu tallentaa.
-Search	Haku
-Save gallery	Tallennusgalleria
-Add your games	Lisää pelisi
-DS controls	DS-ohjaimet
-Back up all saves	Varmuuskopioi tallennukset
-Resume after power off	Jatka sammutuksen jälkeen
-Slot	Paikka
-Empty slot	Tyhjä paikka
-Search games	Hae pelejä
-Filter	Suodatin
-Missing artwork	Puuttuvat kansikuvat
-Where to put games	Mihin pelit laitetaan
-Scan for games	Etsi pelejä
-Automatic updates	Automaattiset päivitykset
-Download automatically	Lataa automaattisesti
-Check automatically	Tarkista automaattisesti
-Update available in Maintenance	Päivitys saatavilla huoltovalikossa
-Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator.	Kopioi .rgdssave.zip-tiedostot kansioon userdata/imports. Pelin ja emulaattorin on vastattava.
-Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata.	Kopioi .nds-tiedostot tai DS ZIP -arkistot pelikortin Roms/NDS-kansioon. Pelejä ei sisälly. Tallennukset säilyvät userdata-kansiossa.
-Save backup created in userdata/exports.	Tallennusten varmuuskopio luotu kansioon userdata/exports.
-Slot exported to userdata/exports.	Tallennustila viety kansioon userdata/exports.
-Save library updated.	Tallennuskirjasto päivitetty.
-Current progress could not be saved. No slot was changed.	Edistymistä ei voitu tallentaa. Tallennuspaikkoja ei muutettu.
-DS controls are unavailable for this engine.	DS-ohjaimet eivät ole käytettävissä tässä emulaattorissa.
-Your DS library starts here	DS-kirjastosi alkaa tästä
-Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.	Kopioi .nds- tai DS ZIP -tiedostot pelikortin Roms/NDS-kansioon ja valitse Etsi pelejä.
-Use the engine's native controls for microphone and DS settings.	Käytä emulaattorin omia mikrofoni- ja DS-asetuksia.
-Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting.	Oikea mikrofoni on oletuksena käytössä. Puhallus ja kansitoiminnot palaavat peliin kahdeksi sekunniksi. Kielimuutos vaatii uudelleenkäynnistyksen.
-Unplayed	Pelaamattomat
-Played	Pelatut
-Filtered	Suodatetut
-No matching games	Vastaavia pelejä ei löytynyt
-No matches. Use View to change filters.	Ei tuloksia. Muuta suodattimia Näkymä-valikossa.
-Reset state	Nollaa tila
-Restart without loading a state?	Käynnistetäänkö ilman tallennustilan latausta?
-Restart from the title screen. In-game saves and save slots are kept.	Käynnistä otsikkoruudusta. Pelin sisäiset tallennukset ja tallennuspaikat säilyvät.
-Microphone, simulated blowing, lid and DS language.	Mikrofoni, simuloitu puhallus, kansi ja DS-kieli.
-Test microphone	Testaa mikrofoni
-Test	Testaa
-Live input	Reaaliaikainen syöte
-Quiet	Hiljainen
-Loud	Voimakas
-Listening…	Kuunnellaan…
-Microphone unavailable	Mikrofoni ei ole käytettävissä
-Audio is not recorded or saved.	Ääntä ei nauhoiteta eikä tallenneta.
-Test the microphone on your handheld.	Testaa laitteesi mikrofoni.
-Return home before testing the physical microphone.	Palaa kotiin ennen fyysisen mikrofonin testaamista.
-Blow or speak into the microphone. Watch the level rise, then fall when you stop.	Puhalla tai puhu mikrofoniin. Taso nousee ja laskee, kun lopetat.
-Quick search	Pikahaku
-A  Search	A  Hae
-A  Jump	A  Siirry
-Edit search	Muokkaa hakua
-Clear filters	Tyhjennä suodattimet
-Try another title or clear your filters	Kokeile toista nimeä tai tyhjennä suodattimet
-Type a game title…	Kirjoita pelin nimi…
-Finding games…	Etsitään pelejä…
-Searching…	Haetaan…
-Search in	Hae kohteesta
-Try a shorter title or clear your filter.	Kokeile lyhyempää nimeä tai tyhjennä suodatin.
-Type	Kirjoita
-Tap to type, or use the D-pad and A	Kosketa kirjoittaaksesi tai käytä ristiohjainta ja A:ta
-No letters to jump to. Search for another game.	Ei kirjaimia, joihin siirtyä. Hae toista peliä.
+{0} joined	{0} liittyi
+{0} left	{0} poistui
 {0} match	{0} tulos
 {0} matches	{0} tulosta
 {0} matching game	{0} vastaava peli
 {0} matching games	{0} vastaavaa peliä
-{0} game	{0} peli
-Interface animations	Käyttöliittymän animaatiot
-View transitions	Näkymäsiirtymät
-Small touches, scrolling and startup motion	Pienet tehosteet, vieritys ja käynnistysliike
-Springy menu changes with a colourful wobble	Joustavat valikonvaihdot värikkäällä heilahduksella
-Transitions	Siirtymät
-Subtle	Hienovarainen
-Menu effects	Valikkotehosteet
-Effects volume	Tehosteiden voimakkuus
-Preview sound	Esikuuntele ääni
-A little handheld magic	Hieman kannettavan taikaa
-Playful sounds for browsing, choosing and starting games.	Leikkisät äänet selaamiseen, valitsemiseen ja pelien käynnistykseen.
-Turn on menu sounds to hear the previews.	Ota valikkoäänet käyttöön kuullaksesi esikuuntelut.
-Some menu sounds are unavailable.	Osa valikkoäänistä ei ole käytettävissä.
-Menu audio is unavailable on this device.	Valikkoääni ei ole käytettävissä tällä laitteella.
-Menu sounds are unavailable.	Valikkoäänet eivät ole käytettävissä.
-Close lid	Sulje kansi
-Open lid	Avaa kansi
-Spring	Jousi
-Push	Työntö
-Transition style	Siirtymätyyli
-Animate pages with the selected style	Animoi sivut valitulla tyylillä
-Slide into pages; slide back to return	Liu'u sivuille ja palaa liukumalla takaisin
-Accent colour	Korostusväri
-FAVOURITE COLOUR	LEMPIVÄRI
-Classic	Klassinen
-Classic blue	Klassinen sininen
-High contrast	Suuri kontrasti
-PREVIEW	ESIKATSELU
-Selected row	Valittu rivi
-Switches and values	Kytkimet ja arvot
-Grey	Harmaa
-Brown	Ruskea
-Red	Punainen
-Pink	Pinkki
-Orange	Oranssi
-Yellow	Keltainen
-Lime	Limenvihreä
-Green	Vihreä
-Dark green	Tummanvihreä
-Sea green	Merenvihreä
-Turquoise	Turkoosi
-Blue	Sininen
-Dark blue	Tummansininen
-Purple	Purppura
-Violet	Violetti
-Magenta	Magenta
-Network file sharing	Verkon tiedostonjako
-Open on this Wi-Fi	Avoin tässä Wi-Fi-verkossa
-Password protected	Salasanasuojattu
-File sharing on. Find "RG DS" under Network.	Tiedostonjako on päällä. "RG DS" löytyy kohdasta Verkko.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: alkuperäinen moottori. DSCore tuo korjauksia ja nopeutta.
-DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: suositeltu. Nopein, kansi-, kynä- ja 3D-korjauksilla sekä valinnaisella 2x–5x-3D:llä.
-DSCore 3D resolution	DSCoren 3D-resoluutio
-Native (fastest)	Alkuperäinen (nopein)
-2x sharper	2x terävämpi
-3x sharper	3x terävämpi
-4x (experimental)	4x (kokeellinen)
-5x (experimental)	5x (kokeellinen)
-Colour mode	Väritila
-Draw and chat with nearby handhelds	Piirrä ja keskustele lähellä olevien laitteiden kanssa
-Wi-Fi connected	Wi-Fi yhdistetty
-No Wi-Fi: you can still draw	Ei Wi-Fiä: voit silti piirtää
-Type your name	Kirjoita nimesi
-You appear like this to others	Näin muut näkevät sinut
-Starting…	Käynnistyy…
-Chat is unavailable: you can still draw	Keskustelu ei ole käytettävissä: voit silti piirtää
-Nobody else is nearby yet	Ketään muuta ei ole vielä lähellä
-1 person nearby	1 henkilö lähellä
 {0} people nearby	{0} henkilöä lähellä
-Your colour	Värisi
-Leave	Poistu
-Your name	Nimesi
-Send	Lähetä
-You are in Room {0}	Olet huoneessa {0}
-{0} joined	{0} liittyi
-{0} left	{0} poistui
-New messages below	Uusia viestejä alla
-Older messages	Vanhemmat viestit
-The pad is full: send it or clear it	Piirtoalusta on täynnä: lähetä tai tyhjennä se
-Too much on the pad: erase some of it	Alustalla on liikaa: pyyhi jotain pois
-That message could not be sent	Viestiä ei voitu lähettää
-That room is full	Huone on täynnä
-Chat Room {0}	Keskusteluhuone {0}
-Choose a chat room to join	Valitse keskusteluhuone, johon liityt
-Edit	Muokkaa
-Join	Liity
-Matches your accent	Seuraa korostusväriä
-Nobody here yet	Täällä ei ole vielä ketään
-Start Send   X Undo   L R Scroll	Start Lähetä   X Kumoa   L R Vieritä
-You	Sinä
-Time format	Ajan muoto
-24-hour	24 tuntia
-12-hour	12 tuntia
-24-hour or 12-hour clock	24 tai 12 tunnin kello
-How dates appear in the status bar	Miten päivämäärät näkyvät tilapalkissa
-Connecting to	Yhdistetään verkkoon
-This can take a few seconds	Tämä voi kestää muutaman sekunnin
-Waiting for an address…	Odotetaan osoitetta…
-IP address	IP-osoite
-Signal	Signaali
-Could not connect	Yhdistäminen epäonnistui
-Wi-Fi is off	Wi-Fi on pois päältä
-Turn it on to find networks	Kytke päälle löytääksesi verkkoja
-Choose a network from the list	Valitse verkko luettelosta
-Preparing…	Valmistellaan…
-Home layout	Kotinäkymän asettelu
-Background	Tausta
-Touch gestures	Kosketuseleet
-Carousel	Karuselli
-Column	Sarake
-Plain	Yksinkertainen
-Grid	Ruudukko
-A carousel, or the DSi's column with your last game on top	Karuselli tai DSi:n sarake, jossa viimeisin peli on ylinnä
-Plain, or the DSi's ruled grid behind every screen	Yksinkertainen tai DSi:n viivoitettu ruudukko jokaisen näytön takana
-Swipe up from the bottom for Home, in from the left for Back	Pyyhkäise alhaalta ylös kotiin, vasemmalta takaisin
-Nothing played yet	Ei vielä pelattu
-Your last game will appear here	Viimeisin pelisi näkyy tässä
-Draw and chat	Piirrä ja juttele
-Su	Su
-Mo	Ma
-Tu	Ti
-We	Ke
-Th	To
-Fr	Pe
-Sa	La
-Chat Room	Chat-huone
-Nobody else here yet	Ei vielä muita täällä
-Drawing on your own	Piirrät yksin
-Jump	Siirry
-Home	Koti
-Swipe up from the bottom edge to go Home from anywhere.	Pyyhkäise alareunasta ylös päästäksesi kotiin mistä tahansa.
-Swipe in from the left edge to go Back.	Pyyhkäise vasemmasta reunasta sisään palataksesi.
-A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires.	Pieni kahva alanäytön alareunassa näyttää, että eleet ovat käytössä; se nousee sormen mukana, ja rengas merkitsee kohdan, kun ele laukeaa.
-Your saves are safe. See you soon!	Tallennuksesi ovat turvassa. Nähdään pian!
-DS Classic	DS Klassinen
-DS Lite	DS Lite
-Natural glow	Luonnollinen hehku
-Vivid LCD	Eloisa LCD
-Natural smooth	Luonnollinen pehmeä
-Vivid smooth	Eloisa pehmeä
-Pixel beads	Pikselihelmet
-Glossy tiles	Kiiltävät laatat
-The first DS screen: muted colour and a fine pixel grid.	Ensimmäinen DS-näyttö: hillityt värit ja hieno pikseliruudukko.
-The brighter DS Lite screen with a faint pixel grid.	Kirkkaampi DS Lite -näyttö ja himmeä pikseliruudukko.
-Natural colour with soft pixels that glow together.	Luonnolliset värit ja pehmeät, yhteen hehkuvat pikselit.
-Bold colour on a close-up LCD with RGB stripes.	Voimakkaat värit lähikuvan LCD:llä ja RGB-raidoilla.
-Natural colour with smoothed diagonal edges.	Luonnolliset värit ja pehmennetyt viistot reunat.
-Bold colour with smoothed diagonal edges.	Voimakkaat värit ja pehmennetyt viistot reunat.
-Bold colour; every pixel a round, shiny bead.	Voimakkaat värit; jokainen pikseli pyöreä, kiiltävä helmi.
-Bold colour; every pixel a raised, glossy tile.	Voimakkaat värit; jokainen pikseli koholla oleva kiiltävä laatta.
-IN USE	KÄYTÖSSÄ
-APPLY	KÄYTÄ
-Follows your library shader.	Seuraa kirjaston suodatinta.
-Original	Alkuperäinen
-DS screens	DS-näytöt
-Natural	Luonnollinen
-Vivid	Eloisa
-Pixel art	Pikselitaide
-Moods	Tunnelmat
-Change group	Vaihda ryhmää
-Sounds & music	Äänet ja musiikki
-Menu music	Valikkomusiikki
-Music volume	Musiikin voimakkuus
-A soft tune plays while you browse. It fades out when a game starts.	Pehmeä sävel soi selatessasi. Se häipyy, kun peli käynnistyy.
-Turn on menu music for a soft tune while you browse.	Ota valikkomusiikki käyttöön, niin pehmeä sävel soi selatessasi.
-Scanning…	Etsitään…
-Scan complete	Haku valmis
-Looking for games…	Etsitään pelejä…
-Reading Roms/NDS on your games card. This takes a moment.	Luetaan pelikortin Roms/NDS-kansiota. Tämä kestää hetken.
-{0} found. Choose Done to go to your library.	{0} löytyi. Valitse Valmis siirtyäksesi kirjastoon.
-No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again.	Pelejä ei löytynyt. Kopioi .nds- tai DS ZIP -tiedostot pelikortin Roms/NDS-kansioon ja etsi uudelleen.
-Backing up your saves…	Varmuuskopioidaan tallennuksia…
-The backup did not finish. Please try again.	Varmuuskopiointi ei valmistunut. Yritä uudelleen.
-Copies every save and checkpoint into one zip in userdata/exports.	Kopioi kaikki tallennukset ja tarkistuspisteet yhteen zip-tiedostoon kansioon userdata/exports.
-Where games go on the card, and a fresh scan.	Mihin pelit laitetaan kortilla, ja uusi haku.
-Where covers and titles come from.	Mistä kannet ja nimet haetaan.
-System update	Järjestelmäpäivitys
-Version {0} is ready	Versio {0} on valmis
-Version {0} is ready to install	Versio {0} on valmis asennettavaksi
-Downloading {0}	Ladataan {0}
-Paused at {0}	Keskeytetty kohdassa {0}
-Update now	Päivitä nyt
-Resume download	Jatka latausta
-Update	Päivitä
-Install	Asenna
-What's new	Uutta tässä versiossa
-Download	Lataa
-Verify	Tarkista
-Prepare	Valmistele
-Step {0} of 4	Vaihe {0}/4
-Less than a minute left	Alle minuutti jäljellä
-About {0} min left	Noin {0} min jäljellä
-About {0} h left	Noin {0} h jäljellä
-Downloads resume where they stopped if Wi-Fi drops.	Lataus jatkuu siitä, mihin se jäi, jos Wi-Fi katkeaa.
-Your games and saves are not touched.	Pelisi ja tallennuksesi pysyvät koskemattomina.
-Connection lost. Retrying…	Yhteys katkesi. Yritetään uudelleen…
-The update could not be downloaded. Check for updates again.	Päivitystä ei voitu ladata. Tarkista päivitykset uudelleen.
-Finishing another task. Press Y again in a moment.	Toinen tehtävä on kesken. Paina Y uudelleen hetken päästä.
-Updates	Päivitykset
-The language for menus and messages.	Valikkojen ja viestien kieli.
-Set the clock to where you are.	Aseta kello sijaintisi mukaan.
-How dates appear at the top of the screen.	Miten päivämäärät näkyvät näytön yläreunassa.
-A 24-hour or 12-hour clock.	24 tai 12 tunnin kello.
-Versions, free space and the network address of your handheld.	Laitteen versiot, vapaa tila ja verkko-osoite.
-Check for updates, go back to the previous build or clear temporary files.	Tarkista päivitykset, palaa edelliseen versioon tai tyhjennä väliaikaiset tiedostot.
-Leave RG DS Core and go back to the stock menu.	Poistu RG DS Coresta ja palaa vakiovalikkoon.
-What happens when you turn the handheld on.	Mitä tapahtuu, kun käynnistät laitteen.
-Restart the RGDS menu.	Käynnistä RGDS-valikko uudelleen.
-Previous	Edellinen
-Next	Seuraava
-Show all systems	Näytä kaikki järjestelmät
-Systems	Järjestelmät
-Game screen	Pelinäyttö
-Second screen	Toinen näyttö
-Sharp fill	Terävä täyttö
-Whole pixels	Kokonaiset pikselit
-Smooth fill	Pehmeä täyttö
-Companion	Seuranäyttö
-Swap screens	Vaihda näytöt
-Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.	Lisää Game Boy- ja Game Boy Advance -pelit: Pelit avaa sitten järjestelmäsivun.
-Frame	Kehys
-Game Boy	Game Boy
-Game Boy · Red	Game Boy · Punainen
-Game Boy · Yellow	Game Boy · Keltainen
-Game Boy · Green	Game Boy · Vihreä
-Game Boy · Blue	Game Boy · Sininen
-Game Boy · Black	Game Boy · Musta
-Game Boy · Screen only	Game Boy · Vain näyttö
-Game Boy Pocket · Silver	Game Boy Pocket · Hopea
-Game Boy Pocket · Black	Game Boy Pocket · Musta
-Game Boy Pocket · Yellow	Game Boy Pocket · Keltainen
-Game Boy Pocket · Red	Game Boy Pocket · Punainen
-Game Boy Pocket · Green	Game Boy Pocket · Vihreä
-Game Boy Pocket · Blue	Game Boy Pocket · Sininen
-Game Boy Pocket · Pink	Game Boy Pocket · Pinkki
-Game Boy Pocket · Screen only	Game Boy Pocket · Vain näyttö
-Game Boy Color · Berry	Game Boy Color · Marja
-Game Boy Color · Grape	Game Boy Color · Viinirypäle
-Game Boy Color · Kiwi	Game Boy Color · Kiivi
-Game Boy Color · Dandelion	Game Boy Color · Voikukka
-Game Boy Color · Teal	Game Boy Color · Sinivihreä
-Game Boy Color · Atomic Purple	Game Boy Color · Atomivioletti
-Game Boy Color · Screen only	Game Boy Color · Vain näyttö
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Glacier	Game Boy Advance · Jäätikkö
-Game Boy Advance · Black	Game Boy Advance · Musta
-Game Boy Advance · Platinum	Game Boy Advance · Platina
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Koboltti
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
-Neo Geo Pocket Color · Silver	Neo Geo Pocket Color · Hopea
-Neo Geo Pocket Color · Black	Neo Geo Pocket Color · Musta
-WonderSwan Color · White	WonderSwan Color · Valkoinen
-WonderSwan Color · Blue	WonderSwan Color · Sininen
-PSP · Black	PSP · Musta
-PSP · White	PSP · Valkoinen
-Grey TV	Harmaa televisio
-Wood-grain TV	Puukuvioinen televisio
-PC monitor	PC-näyttö
-Arcade cabinet	Pelikabinetti
-Black bar	Musta palkki
-GBA Color	GBA-värit
-GBA screen	GBA-näyttö
-GBA screens	GBA-näytöt
-The Game Boy Advance LCD's own colour and gamma.	Game Boy Advancen LCD-näytön omat värit ja gamma.
-The Game Boy Advance screen: its colour and faint pixel gaps.	Game Boy Advancen näyttö: sen värit ja himmeät pikselien raot.
-Game info	Pelin tiedot
-Extra pictures	Lisäkuvat
-Screenshots	Kuvakaappaukset
-Title screens	Otsikkoruudut
-Screenshots and title screens	Kuvakaappaukset ja otsikkoruudut
-Both	Molemmat
-Cover	Kansi
-Title screen	Otsikkoruutu
-Screenshot	Kuvakaappaus
-Developer	Kehittäjä
-Publisher	Julkaisija
-Genre	Tyylilaji
-Released	Julkaistu
-Rating	Ikäraja
-Players	Pelaajat
-Series	Sarja
-Online	Verkossa
-Yes	Kyllä
-Source	Lähde
-Picture	Kuva
-Next picture	Seuraava kuva
-No pictures yet	Ei vielä kuvia
-Available	Saatavilla
-Not downloaded	Ei ladattu
-Show games	Näytä pelit
-Reset filters	Nollaa suodattimet
-Any	Kaikki
-{0} active	{0} käytössä
-Still reading your library. Try again in a moment.	Kirjastoa luetaan vielä. Yritä hetken päästä uudelleen.
-No game has this information yet. Fetch artwork with Game info turned on.	Millään pelillä ei ole vielä tätä tietoa. Hae kannet Pelin tiedot päällä.
-With info	Tiedoilla
-Without info	Ilman tietoja
-Online play	Verkkopeli
-1 player	1 pelaaja
 {0} players	{0} pelaajaa
-No game information yet.	Ei vielä pelin tietoja.
-Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.	Ota Pelin tiedot käyttöön kohdassa Asetukset > Kirjasto > Kansilähteet ja hae kannet.
-Ports	Portit
-Restart port	Käynnistä portti uudelleen
-Quit	Lopeta
-Looking for the latest PortMaster	Etsitään uusinta PortMasteria
-Downloading PortMaster	Ladataan PortMasteria
-Checking PortMaster	Tarkistetaan PortMasteria
-Unpacking PortMaster	Puretaan PortMasteria
-Setting up PortMaster	Otetaan PortMaster käyttöön
-Installing PortMaster from the card	Asennetaan PortMaster kortilta
-PortMaster is ready	PortMaster on valmis
-Could not set up PortMaster	PortMasteria ei voitu ottaa käyttöön
-Get, update and remove ports	Hae, päivitä ja poista portteja
-Close PortMaster	Sulje PortMaster
-Back to PortMaster	Takaisin PortMasteriin
-Keep getting and updating ports	Jatka porttien hakemista ja päivittämistä
-Your ports are waiting in Ports	Porttisi odottavat Porteissa
-Closing PortMaster…	Suljetaan PortMasteria…
-Closing the port…	Suljetaan porttia…
-GB screens	GB-näytöt
-GBC screens	GBC-näytöt
-Game Boy screen	Game Boy -näyttö
-Game Boy Color screen	Game Boy Color -näyttö
-The original Game Boy dot-matrix screen: a light pixel grid and soft shadows.	Alkuperäisen Game Boyn pistematriisinäyttö: vaalea pikseliruudukko ja pehmeät varjot.
-The Game Boy Color screen with faint gaps between its pixels.	Game Boy Colorin näyttö ja sen pikselien väliset himmeät raot.
-This handheld's own screen.	Tämän käsikonsolin oma näyttö.
-Screen colours	Näytön värit
-Game Boy Pocket	Game Boy Pocket
-Game Boy Light	Game Boy Light
-Game Boy Color	Game Boy Color
-Black and white	Mustavalkoinen
-Game Boy Color, darker	Game Boy Color, tummempi
-Full colour	Täydet värit
-Hold to save	Tallenna pitämällä
-Hold to load	Lataa pitämällä
-Screen off	Näyttö pois
-Touch the screen to turn it on	Kosketa näyttöä, niin se syttyy
-min	min
-h	h
-Not saved	Ei tallennettu
-Loaded	Ladattu
-Not loaded	Ei ladattu
-Nothing to load	Ei ladattavaa
-Saving…	Tallennetaan…
-Loading…	Ladataan…
-Info screen	Infonäyttö
-Team	Joukkue
-Lv	Taso
-screens	näyttöä
-Not yet	Ei vielä
-None yet	Ei vielä yhtään
-The best there is	Parasta mitä on
-Next:	Seuraava:
-Badges	Merkit
-Carried	Mukana
-Coin bank	Kolikkopankki
-Coins	Kolikot
-Collection	Kokoelma
-Course	Kenttä
-Day	Päivä
-Ending so far	Loppu tähän asti
-Essences	Esanssit
-Gear	Varusteet
-Golden leaves	Kultaiset lehdet
-Heart containers	Sydänsäiliöt
-Heart pieces	Sydämen palat
-Hearts	Sydämet
-In a course	Kentässä
-Instruments	Soittimet
-Johto badges	Johton merkit
-Journey	Matka
-Kanto badges	Kanton merkit
-Keys	Avaimet
-Lives	Elämät
-Money	Rahat
-Musical coins	Soittokolikot
-Night	Yö
-Pokédex caught	Pokédex: pyydetyt
-Pokédex seen	Pokédex: nähdyt
-Rupees	Rupiat
-Secret seashells	Salaiset simpukat
-Shield	Kilpi
-Small keys	Pienet avaimet
-Sword	Miekka
-Time of day	Vuorokaudenaika
-Time	Aika
-Total	Yhteensä
-Trainer	Kouluttaja
-Treasures	Aarteet
-Worlds	Maailmat
-Your journey	Matkasi
-Seeds	Siemenet
-Game switcher	Pelinvaihto
-Switch to another game	Vaihda toiseen peliin
-Hold to return home	Palaa kotiin pitämällä
-Add game files	Lisää pelitiedostot
-Needs your files	Tarvitsee tiedostosi
-Files added	Tiedostoja lisätty
-How to get the files	Näin saat tiedostot
-Scan with your phone	Skannaa puhelimella
-Or open on a computer	Tai avaa tietokoneella
-Code	Koodi
-Connect to Wi-Fi to send files from a phone or computer.	Yhdistä Wi-Fiin, niin voit lähettää tiedostoja puhelimesta tai tietokoneesta.
-Receiving files	Vastaanotetaan tiedostoja
-Unpacking files	Puretaan tiedostoja
-Files arrived. Choose Play to start.	Tiedostot ovat perillä. Aloita valitsemalla Pelaa.
-This port lists no instructions.	Tällä portilla ei ole ohjeita.
-Play	Pelaa
-Goes into	Kohde
-Phone or computer connected	Puhelin tai tietokone yhdistetty
-Vibration	Värinä
-Menu haptics	Valikon haptiikka
-Haptic strength	Haptiikan voimakkuus
-Game rumble	Pelien tärinä
-Rumble strength	Tärinän voimakkuus
-Try a pattern	Kokeile kuviota
-Feel the game	Tunne peli
-Feel every move	Tunne jokainen liike
-No vibration motor was found on this device.	Tästä laitteesta ei löytynyt värinämoottoria.
-Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak -pelit DS:llä, tärinäkasetit Game Boylla ja Game Boy Advancella.
-Turn on game rumble for games made for a rumble accessory.	Ota pelien tärinä käyttöön peleissä, jotka on tehty tärinälisälaitteelle.
-A light tap for every move, a firmer one when you choose, open or save.	Kevyt napautus jokaisesta liikkeestä, napakampi kun valitset, avaat tai tallennat.
-Turn on menu haptics to feel the menus.	Ota valikon haptiikka käyttöön tunteaksesi valikot.
-Browse	Selaa
-Open a view	Avaa näkymä
-Go back	Palaa
-Switch on	Ota käyttöön
-Switch off	Poista käytöstä
-Add favourite	Lisää suosikki
-Remove favourite	Poista suosikki
-Start a game	Käynnistä peli
-Save complete	Tallennettu
-Load complete	Ladattu
-Try again	Yritä uudelleen
-Keyboard	Näppäimistö
-Adjust	Säädä
-End of a list	Listan loppu
-Long press	Pitkä painallus
-Notification	Ilmoitus
-Touch screen	Kosketusnäyttö
-Point and click on top	Osoita ja napsauta ylhäällä
-Touch here to point and click on the top screen.	Kosketa tästä osoittaaksesi ja napsauttaaksesi yläruudulla.
-Hold still for a right click	Pidä paikallaan oikeaa napsautusta varten
-Hold to exit	Pidä poistuaksesi
-Touch screen off	Kosketusnäyttö pois
-Touch screen is not available	Kosketusnäyttö ei ole käytettävissä
-Daylight saving	Kesäaika
-Automatic	Automaattinen
-Summer time follows your timezone. Force it on or off if the clock is an hour out.	Kesäaika noudattaa aikavyöhykettäsi. Pakota se päälle tai pois, jos kello on tunnin pielessä.
-GBA true colour	Aidot GBA-värit
-Faded GBA colours made rich, as the real screen showed them.	Haalistuneet GBA-värit täyteläisinä, kuten oikea näyttö ne näytti.
-GBA true screen	Aito GBA-näyttö
-The true GBA colours on its screen, with the gaps between its pixels.	Aidot GBA-värit sen näytöllä, pikselien välisine rakoineen.
+{0} settings	{0}: asetukset

@@ -10,3 +10,6 @@ dscore/src/core/bios/freebios_data.cpp
 dscore/src/frontend/sdl/loader_icon.h
 src/launcher/pixel_icons.hpp
 play/src/ui/icons.hpp
+# Vendored from upstream projects (libretro API header, ROCKNIX kernel drivers).
+play/src/core/libretro/libretro.h
+os/buildroot/board/rgds/kernel/**

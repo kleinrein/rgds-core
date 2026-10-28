@@ -7,6 +7,9 @@
 #include <optional>
 
 namespace rgds {
+// The Recents view shows this many of the most recently played games.
+constexpr size_t kRecentsLimit = 30;
+
 // One cancellable reader at a time. Slow cards never hold the render thread
 // while Favourites/Recently played inspect thousands of small records.
 class CollectionFilter {
@@ -101,6 +104,7 @@ public:
                 if (request.view == 2) {
                     std::stable_sort(recent.begin(), recent.end(),
                                      [](const auto& a, const auto& b) { return a.second > b.second; });
+                    if (recent.size() > kRecentsLimit) recent.erase(recent.begin() + kRecentsLimit, recent.end());
                     for (auto& entry : recent) result.games.push_back(std::move(entry.first));
                 }
                 return result;
