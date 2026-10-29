@@ -2,7 +2,6 @@
 #include <SDL.h>
 #include "touch.hpp"
 #include "frame_rate.hpp"
-#include "drastic_threads.hpp"
 #include "dsperate_state.hpp"
 #include <dlfcn.h>
 #include <dirent.h>
@@ -293,9 +292,7 @@ bool sync_saved_volume(const char* data) {
             if (end && !*end && value >= 0 && value <= 100) level = int(value);
         }
     }
-    bool ok = schema && level >= 0 &&
-              (rgds::write_mixer_percent(rgds::dac_percent_for_level(level), "DAC Playback Volume") ||
-               rgds::write_mixer_percent(rgds::dac_percent_for_level(level), "Master Playback Volume"));
+    bool ok = schema && level >= 0 && rgds::write_saved_level(level);
     flock(lock, LOCK_UN);
     close(lock);
     return ok;

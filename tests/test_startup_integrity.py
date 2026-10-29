@@ -74,32 +74,6 @@ class StartupIntegrityTests(unittest.TestCase):
             with self.subTest(core=core), self.assertRaisesRegex(ValueError, "SHA-256"):
                 activate.verify_engine(self.app, core)
 
-    def test_optional_backend_hash_is_only_required_on_its_selected_launch(self):
-        for name in (
-            'emulators/superdrastic/libsuperdrastic.so', 'emulators/superdrastic/source.tar.gz',
-            'emulators/superdrastic/sdl/libSDL2-2.0.so.0', 'emulators/superdrastic/sdl/source.tar.gz'
-        ):
-            path = self.app / name
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(b'checked')
-            self.manifest['files'][name] = hashlib.sha256(b'checked').hexdigest()
-        self.save()
-        (self.app / 'emulators/superdrastic/source.tar.gz').write_bytes(b'changed source')
-        (self.app / 'emulators/superdrastic/sdl/source.tar.gz').write_bytes(b'changed SDL source')
-        activate.verify_engine(self.app, 'drastic', backend='superdrastic')
-        sdl = self.app / 'emulators/superdrastic/sdl/libSDL2-2.0.so.0'
-        previous = sdl.read_bytes()
-        sdl.write_bytes(b'changed runtime')
-        with self.assertRaises(ValueError):
-            activate.verify_engine(self.app, 'drastic', backend='superdrastic')
-        sdl.write_bytes(previous)
-        (self.app / 'emulators/superdrastic/libsuperdrastic.so').write_bytes(b'changed backend')
-        activate.verify_startup(self.app)
-        activate.verify_engine(self.app, 'dsperate')
-        activate.verify_engine(self.app, 'drastic')
-        with self.assertRaisesRegex(ValueError, 'SHA-256'):
-            activate.verify_engine(self.app, 'drastic', backend='superdrastic')
-
     def test_engine_launch_defers_corresponding_source_but_install_verifies_it(self):
         for name in ("emulators/dsperate/source.tar.gz", "emulators/dsperate/rgds-build/tools/build_engines.py"):
             (self.app / name).write_bytes(b"changed source")

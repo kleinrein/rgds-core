@@ -3,9 +3,9 @@ TIMEOUT 0
 PROMPT 0
 LABEL a
   LINUX /a/Image.lz4
-  FDT /a/@DTB@.dtb
-  APPEND root=PARTLABEL=rgds-root-a rootfstype=squashfs ro rootwait quiet loglevel=3 console=ttyS2,1500000 init=/sbin/init rcupdate.rcu_expedited=1 vt.global_cursor_default=0 driver_async_probe=Goodix-TS,dw-mipi-dsi-rockchip panic=10
+  @FDT@ /a/@DTB@
+  APPEND root=PARTLABEL=rgds-root-a rootfstype=squashfs ro rootwait quiet loglevel=3 console=ttyS2,1500000 init=/sbin/init rcupdate.rcu_expedited=1 vt.global_cursor_default=0 driver_async_probe=Goodix-TS,dw-mipi-dsi-rockchip panic=10 rgds.detected=${rgds_board} rgds.adc=${rgds_adc}
 LABEL b
   LINUX /b/Image.lz4
-  FDT /b/@DTB@.dtb
-  APPEND root=PARTLABEL=rgds-root-b rootfstype=squashfs ro rootwait quiet loglevel=3 console=ttyS2,1500000 init=/sbin/init rcupdate.rcu_expedited=1 vt.global_cursor_default=0 driver_async_probe=Goodix-TS,dw-mipi-dsi-rockchip panic=10
+  @FDT@ /b/@DTB@
+  APPEND root=PARTLABEL=rgds-root-b rootfstype=squashfs ro rootwait quiet loglevel=3 console=ttyS2,1500000 init=/sbin/init rcupdate.rcu_expedited=1 vt.global_cursor_default=0 driver_async_probe=Goodix-TS,dw-mipi-dsi-rockchip panic=10 rgds.detected=${rgds_board} rgds.adc=${rgds_adc}

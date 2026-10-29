@@ -22,27 +22,30 @@ std::string App::homebrew_row_value(int i) {
     return homebrew_size(size);
 }
 
-void App::homebrew_top(SDL_Renderer* r, int y) {
-    settings_card(r, 24, y + 56, 592, 368);
+void App::homebrew_top(SDL_Renderer* r, int screen) {
+    const int count = list_count();
+    // The note when the shelf is empty is the settings pages' own card; otherwise the shelf's card with the content
+    // centred in it (`y` is that content's origin).
+    const int y = screen + 24;
+    if (count || homebrew_loading()) settings_card(r, 24, screen + top_card_y, 592, top_card_h);
     // L and R as in a game library: the shoulder tabs name the shelves either side
     const auto shelves = homebrew_shelves();
     if (shelves.size() > 1) {
         const auto at = std::find(shelves.begin(), shelves.end(), homebrew_system);
         const size_t i = at == shelves.end() ? 0 : size_t(at - shelves.begin()), n = shelves.size();
         auto name = [](const std::string& id) { return id == "gba" ? "GBA" : id == "nes" ? "NES" : "DS"; };
-        shoulder_tab(r, y, false, "L", name(shelves[(i + n - 1) % n]));
-        shoulder_tab(r, y, true, "R", name(shelves[(i + 1) % n]));
+        shoulder_tab(r, screen, false, "L", name(shelves[(i + n - 1) % n]));
+        shoulder_tab(r, screen, true, "R", name(shelves[(i + 1) % n]));
     }
-    const int count = list_count();
     const std::string shelf = homebrew_system == "gba"   ? "Game Boy Advance"
                               : homebrew_system == "nes" ? "NES"
                                                          : "Nintendo DS";
     if (homebrew_loading()) {
-        busy_ring(r, 320, y + 240, 34, 5);
+        busy_ring(r, 320, screen + top_card_y + top_card_h / 2, 34, 5);
         return;
     }
     if (!count) {
-        dsi_note(r, y, y, SettingsIcon::Library, locale.text("Homebrew") + " · " + shelf);
+        dsi_note(r, screen + 128, screen, SettingsIcon::Library, locale.text("Homebrew") + " · " + shelf);
         return;
     }
     const int i = std::clamp(settings.focus, 0, count - 1);

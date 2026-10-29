@@ -124,7 +124,7 @@ void App::colours_screen(SDL_Renderer* r, int y) {
 void App::colours_top(SDL_Renderer* r, int y) {
     // Live preview of real interface parts in the current colours: the
     // name, a button pair, a switch and a bar, centred in the panel.
-    const int top = y + 140, left = 48, right = 592;
+    const int top = y + top_card_y + (top_card_h - 240) / 2, left = 48, right = 592;
     settings_card(r, 24, top, 592, 240);
     label(r, accent_name(preferences.accent), left, top + 22, 28, "accent", 300);
     if (preferences.high_contrast) {

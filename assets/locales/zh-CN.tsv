@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1 天
 1 person nearby	附近有 1 人
 1 player	1 名玩家
 12-hour	12 小时制
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	已在本次会话中更改 3D 线程。无法保存设置。
 3D threading changed. No restart needed.	已更改 3D 线程，无需重启。
 3x sharper	3 倍清晰
+4 weeks ago	4 周前
 4x (experimental)	4 倍（实验性）
 5x (experimental)	5 倍（实验性）
 A  Apply	A  应用
@@ -81,6 +83,7 @@ Automatic (free)	自动
 Automatic updates	自动更新
 Available	可用
 Available networks	可用网络
+Average session	平均时长
 B  Cancel	B  取消
 B  Close	B  关闭
 Back	返回
@@ -97,6 +100,7 @@ Battery percentage	电量百分比
 Battery saver	省电
 Before	之前
 Before you play	开始游戏前
+Bezel	边框
 Binding unchanged.	按键设置未更改。
 Black and white	黑白
 Black bar	黑色横条
@@ -159,8 +163,6 @@ Choose a network from the list	从列表中选择网络
 Choose an option	请选择
 Choose Anbernic or RG DS startup.	请选择从 Anbernic 还是 RG DS 启动。
 Choose native or a sharper 3D image	原生分辨率或更清晰的 3D 画面
-Choose the core for this cartridge	选择此卡带的核心
-Choose the display backend for the next DraStic launch. DSperate stays your default.	选择下次启动 DraStic 时的显示方式。默认仍为 DSperate。
 Choose what opens when you power on	选择开机时打开的内容
 Classic	经典
 Classic blue	经典蓝
@@ -183,6 +185,7 @@ COLOUR MODE	色彩模式
 Colour mode	色彩模式
 Colour treatment inspired by the original DS display.	仿照初代 DS 屏幕的色彩。
 Column	竖列
+Commander	指挥官
 Companion	伴侣屏幕
 Compare	对比
 Confirm	确认
@@ -247,17 +250,16 @@ Cover	封面
 Covers	封面
 Current progress could not be saved. No slot was changed.	无法保存当前进度，存档位未更改。
 Custom	自定义
-DS only	仅DS
 Dark	深色
 Dark blue	深蓝色
 Dark green	深绿色
 Date format	日期格式
 Day	白天
 Day or night	昼夜
+Day streak	连续天数
 Daylight saving	夏令时
 Days	天数
 Default	默认
-Default emulator	默认模拟器
 Default shader	默认滤镜
 DEFAULT THEME - CHECK LOG	默认主题 - 请查看日志
 Delete	删除
@@ -281,8 +283,6 @@ Downloading PortMaster	正在下载 PortMaster
 Downloading update…	正在下载更新…
 Downloading {0}	正在下载 {0}
 Downloads resume where they stopped if Wi-Fi drops.	Wi-Fi 断开后，下载会从中断处继续。
-DraStic backend	DraStic 显示方式
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic：供有需要的游戏使用。存档单独保存。
 Draw and chat	画画聊天
 Draw and chat with nearby handhelds	与附近的掌机画画聊天
 Drawing on your own	正在独自画画
@@ -291,12 +291,11 @@ DS controls	DS 操作
 DS controls are unavailable for this engine.	此引擎无法使用 DS 操作。
 DS language	DS 语言
 DS Lite	DS Lite
+DS only	仅DS
 DS rounded	DS 圆体
 DS screens	DS 屏幕
 DSCore 3D resolution	DSCore 3D 分辨率
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore：推荐。速度最快，修复了翻盖、触控笔和 3D 问题，3D 可选 2x–5x。
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate：日常游玩推荐使用。默认为原生分辨率。
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate：原版上游引擎。DSCore 在此基础上加入了修复和提速。
 Edit	编辑
 Edit search	编辑搜索
 Effects volume	音效音量
@@ -332,8 +331,8 @@ Fast-forward enabled.	已开启快进。
 Fast-forward is unavailable for this emulator.	此模拟器不支持快进。
 Fast-forward style	快进方式
 Favourite	收藏
-FAVOURITE COLOUR	喜欢的颜色
 Favourite a game and it waits for you here	将游戏设为收藏，它就会在这里等你
+FAVOURITE COLOUR	喜欢的颜色
 Favourites	收藏
 Feel every move	感受每一步
 Feel the game	感受游戏
@@ -351,15 +350,13 @@ Finding games…	正在查找游戏…
 Finishing another task. Press Y again in a moment.	正在完成另一项任务。请稍后再按 Y。
 Finishing the system request	正在完成系统请求
 Follow your default button layout	跟随默认按键布局
-Following your global controls.	正在使用通用按键设置。
-Follows your Library default. Each emulator keeps its own saves.	跟随游戏库的默认设置。每个模拟器的存档各自独立。
+Following the default controls.	正在使用通用按键设置。
 Follows your library shader.	跟随游戏库的滤镜。
 Forget this device?	要忘记此设备吗？
 FPS changed for this session. Settings storage is unavailable.	已在本次会话中更改帧率显示。无法保存设置。
 FPS counter enabled.	已显示帧率。
 FPS counter hidden.	已隐藏帧率。
 Fr	五
-Frame	边框
 Frameskip	跳帧
 Free space	可用空间
 Free space while keeping your saves	释放空间并保留存档
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · 绿色
 Game Boy · Red	Game Boy · 红色
 Game Boy · Screen only	Game Boy · 仅屏幕
 Game Boy · Yellow	Game Boy · 黄色
-Game emulator	游戏模拟器
-Game emulator saved.	已保存游戏模拟器。
 Game FPS	游戏帧率
 Game info	游戏信息
 Game menu	游戏菜单
@@ -428,7 +423,7 @@ German	德语
 Get, update and remove ports	获取、更新和移除移植游戏
 Give your eyes and hands a break.	让眼睛和双手休息一下吧。
 Global	通用
-Global controls saved.	已保存通用按键设置。
+Default controls saved.	已保存通用按键设置。
 Glossy tiles	光泽方块
 Go back	返回
 Goes into	保存到
@@ -444,6 +439,7 @@ Heart containers	心之容器
 Heart pieces	心之碎片
 Hearts	心
 High contrast	高对比度
+History starts with your next game	下次游戏起开始记录
 Hold	长按
 Hold still for a right click	按住不动即可右键点击
 Hold to exit	按住退出
@@ -494,6 +490,8 @@ Keyboard	键盘
 Keys	钥匙
 Kinstone fusions	合成奇石
 Language	语言
+Last 4 weeks	最近 4 周
+Last 7 days	最近 7 天
 Last played	最近游玩
 Launch cancelled	已取消启动
 LCD + both colours	LCD + 两种色彩校正
@@ -532,6 +530,7 @@ Loaded	已读取
 Loading checkpoint…	正在读取存档点…
 Loading…	正在读取…
 Long press	长按
+Longest session	最长一次
 Looking for devices…	正在查找设备…
 Looking for games…	正在查找游戏…
 Looking for networks…	正在搜索网络…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	网络已停用。请开启 
 Never	从不
 New messages below	下方有新消息
 Next	下一个
-Next emulator	下一个模拟器
 Next picture	下一张图片
 Next:	下一个：
 Night	夜晚
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS：兼容性选项。追求速度请先试试 DSperate。
 No button detected. Try again when you're ready.	未检测到按键。准备好后请重试。
 No checkpoint saved for this emulator yet.	此模拟器还没有存档点。
 No cover yet	暂无封面
@@ -650,6 +647,7 @@ Orange	橙色
 Original	原始
 Original pixels	原始像素
 Original pixels and colours.	原始像素与色彩。
+Other	其他
 Pacific	太平洋
 Paired	已配对
 Party	队伍
@@ -759,7 +757,6 @@ Restart the device?	要重启设备吗？
 Restart the game to apply DS settings.	重启游戏后 DS 设置才会生效。
 Restart the RGDS menu.	重启 RGDS 菜单。
 Restart the RGDS menu?	要重启 RGDS 菜单吗？
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	重启后使用 {0}。每个模拟器的存档和存档点各自独立。
 Restart without loading a state?	要不读取即时存档直接重启吗？
 Restarting into the update…	正在重启并应用更新…
 Restarting…	正在重启…
@@ -797,7 +794,6 @@ Rupees	卢比
 Sa	六
 Save	保存
 Save & restart	保存并重启
-Save & restart applies Threaded 3D.	通过“保存并重启”启用多线程 3D。
 Save & restart keeps your checkpoint and applies pending settings.	“保存并重启”会保留存档点并应用待生效的设置。
 Save a report for troubleshooting	保存故障排查报告
 Save backup created in userdata/exports.	已在 userdata/exports 中创建存档备份。
@@ -811,11 +807,8 @@ Save state	保存即时存档
 Save your checkpoint and restart	保存存档点并重启
 Saved	已保存
 Saved - desktop simulation	已保存 - 桌面模拟
-Saved for the next Standard DraStic launch.	已保存，下次启动标准 DraStic 时使用。
 Saved network	已保存的网络
 Saved · {0}	已保存 · {0}
-Saved. Applies on your next DraStic launch.	已保存，下次启动 DraStic 时生效。
-Saved. Save & restart applies screen order.	已保存。通过“保存并重启”应用屏幕顺序。
 Saved. Save & restart applies this change.	已保存。通过“保存并重启”应用此更改。
 Saved. Save & restart changes the emulator.	已保存。通过“保存并重启”切换模拟器。
 Saving before restarting…	正在重启前保存…
@@ -834,7 +827,6 @@ Score	得分
 Screen brightness	屏幕亮度
 Screen colours	屏幕颜色
 Screen off	关闭屏幕
-Screen order	屏幕顺序
 screens	个画面
 ScreenScraper needs project credentials and your account	ScreenScraper 需要项目凭据和你的账号
 Screenshot	截图
@@ -857,7 +849,6 @@ Selected row	选中的行
 Send	发送
 Series	系列
 Set the clock to where you are.	将时钟设为你所在的地区。
-Sets Standard DraStic screen order for this game. Save & restart applies it.	设置此游戏在标准 DraStic 中的屏幕顺序。通过“保存并重启”生效。
 Setting up PortMaster	正在设置 PortMaster
 Settings	设置
 Settings saved	已保存设置
@@ -919,8 +910,6 @@ Spring	弹簧
 Springy menu changes with a colourful wobble	带有彩色弹跳的菜单切换
 Stable	稳定版
 Standard	标准
-Standard DraStic only. Applies on the next launch; game saves are kept.	仅限标准 DraStic。下次启动时生效，游戏存档会保留。
-Standard screen order	标准屏幕顺序
 START	START
 Start	开始
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	日
 Subtle	柔和
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	夏令时跟随你的时区。如果时钟差了一小时，可以强制开启或关闭。
 Super missiles	超级导弹
-SuperDrastic (experimental)	SuperDrastic（实验性）
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic 目前使用原生输出。你的标准滤镜选择会保留。
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic 使用自己的暂停菜单和显示方式。实验性功能，尚未在 RG DS 上完成测试。
 Swap screens	交换屏幕
 Swapped	已交换
 Swipe in from the left edge to go Back.	从左侧边缘滑入即可返回。
@@ -969,6 +955,7 @@ Systems	系统
 Tap to type, or use the D-pad and A	触摸输入，或使用十字键和 A
 Team	队伍
 Temporary game cache cleared. Saves and artwork are kept.	已清除游戏临时缓存。存档和封面已保留。
+Terrain and unit	地形与部队
 Test	测试
 Test microphone	测试麦克风
 Test the microphone on your handheld.	测试掌机的麦克风。
@@ -1022,6 +1009,7 @@ Times played	游玩次数
 Timezone	时区
 Title screen	标题画面
 Title screens	标题画面
+Today	今天
 Toggle	切换
 Too much on the pad: erase some of it	画板内容太多：请擦除一部分
 Tools	工具
@@ -1092,12 +1080,11 @@ Updates & recovery	更新与恢复
 Updates will be available when the release channel opens.	发布渠道开放后即可更新。
 Use an additional rendering thread	使用额外的渲染线程
 Use default ({0})	使用默认值（{0}）
-Use global controls	使用通用按键设置
+Use default controls	使用通用按键设置
 Use previous build	使用之前的版本
 Use ROM identity	使用 ROM 信息
 Use the engine's native controls for microphone and DS settings.	麦克风和 DS 设置请使用引擎自带的操作。
 Use the previous RGDS build?	要使用之前的 RGDS 版本吗？
-Used by games without an override	用于没有单独设置的游戏
 Username	用户名
 Verify	验证
 Verifying update…	正在验证更新…
@@ -1157,6 +1144,7 @@ Worlds	世界
 Y imports a save into this slot.	按 Y 将存档导入此存档位。
 Yellow	黄色
 Yes	是
+Yesterday	昨天
 You	你
 You appear like this to others	其他人看到的你是这样的
 You are in Room {0}	你在房间 {0}
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0}（实验性）
 {0} (recommended)	{0}（推荐）
 {0} active	已启用 {0} 项
+{0} days	{0} 天
+{0} days ago	{0} 天前
 {0} found. Choose Done to go to your library.	找到 {0}。选择“完成”进入游戏库。
 {0} frames	{0} 帧
 {0} game	{0} 款游戏

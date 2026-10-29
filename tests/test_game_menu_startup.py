@@ -78,7 +78,7 @@ class GameMenuStartupTests(unittest.TestCase):
 
         def pixels(title):
             (self.item / 'info.ini').write_text('title=' + title + '\n')
-            state.write_text('1 0 1 ""\n19 0 4\n')
+            state.write_text('1 0 1 ""\n19 0 3\n')
             counts, _ = self.run_ui(
                 (
                     '--state', str(state), '--input-script', str(script), '--seconds', '1', '--screenshot',

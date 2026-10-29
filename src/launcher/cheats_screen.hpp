@@ -22,7 +22,7 @@ bool App::cheat_togglable(int row) const {
 }
 
 std::string App::cheats_note() const {
-    if (!experimental_game()) return "DSCore only";
+    if (!cheats_engine()) return "DSCore and Play only";
     if (cheat_codes.empty()) return "None for this game";
     const int on = cheats_on();
     return on ? std::to_string(on) + (on == 1 ? " cheat on" : " cheats on") : "All off";
@@ -109,7 +109,7 @@ void App::load_cheats() {
     cheat_groups.clear();
     cheat_group_order.clear();
     auto path = o.data / "session/emulator.control.cheats";
-    if (o.preview && !fs::exists(path) && experimental_game()) {
+    if (o.preview && !fs::exists(path) && cheats_engine()) {
         cheat_groups = {{"Coins", true}, {"Movement", false}};
         cheat_codes = {{"Infinite lives", "Lives never go down.", -1, 0},
                        {"Codes from usrcheat.dat", "", -1, -1},
@@ -149,8 +149,10 @@ void App::open_cheats() {
         show_detail(
             "Cheats",
             locale.text(
-                !experimental_game()
-                    ? "Cheats are available when a game runs with DSCore."
+                !cheats_engine() ? "Cheats are available when a game runs with DSCore or RG DS Play."
+                : !experimental_game()
+                    ? "No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside "
+                      "the game or in userdata/play/cheats, then start the game again."
                     : "No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside "
                       "your games or in userdata/emulators/rgds-experimental/cheats, then start the game again."));
         return;
@@ -278,8 +280,9 @@ void App::cheat_row(SDL_Renderer* r, int y, int i) {
 }
 
 void App::cheats_top(SDL_Renderer* r, int y) {
-    // The switcher's card size: the game's name card sits at y+320 under it.
-    settings_card(r, 24, y + 82, 592, 222);
+    // The card, the key bar under it, then the game and the engine's last answer; the words are centred in the card.
+    settings_card(r, 24, y + top_card_y, 592, 266);
+    y += 4;
     const int total = int(cheat_codes.size()), on = cheats_on();
     const bool overview = cheat_view == CheatView::Groups;
     std::string context = cheats_context();
@@ -342,9 +345,9 @@ void App::cheats_top(SDL_Renderer* r, int y) {
     if (overview ? cheat_rows.empty() : !cheat_togglable(settings.focus))
         keys.erase(std::remove_if(keys.begin(), keys.end(), [](const Key& key) { return std::string(key.key) == "A"; }),
                    keys.end());
-    key_bar(r, 24, y + 304, 592, 44, keys);
-    if (!model.games.empty()) raw_label(r, game_title(0), 28, y + 366, 18, "muted", 584);
-    if (!menu_status["message"].empty()) wrapped(r, menu_status["message"], 32, y + 404, 16, 576, 2);
+    key_bar(r, 24, y + 326, 592, 44, keys);
+    if (!model.games.empty()) raw_label(r, game_title(0), 28, y + 388, 18, "muted", 584);
+    if (!menu_status["message"].empty()) wrapped(r, menu_status["message"], 32, y + 426, 16, 576, 2);
 }
 
 void App::cheat_search_top(SDL_Renderer* r, int y) {

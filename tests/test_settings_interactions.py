@@ -55,11 +55,13 @@ class SettingsInteractionTests(unittest.TestCase):
             with self.subTest(section=section):
                 first = self.root / 'first.bmp'
                 last = self.root / 'last.bmp'
-                # Library's first row (Show all systems) has its own note: start on the engine row.
-                start = '40 key Down\n50 key Down\n' if section == 'library' else ''
+                # Library's first rows (Scan, Systems, Artwork sources) have their own notes: start on Auto-load
+                # and stay among the rows without one (through Browser layout).
+                start = '30 key Down\n40 key Down\n50 key Down\n' if section == 'library' else ''
+                moves = 3 if section == 'library' else 4
                 self.run_ui(start, section, animations=False, screenshot=first)
                 self.run_ui(
-                    start + '100 key Down\n150 key Down\n200 key Down\n250 key Down\n',
+                    start + ''.join(f'{100 + 50 * n} key Down\n' for n in range(moves)),
                     section,
                     animations=False,
                     screenshot=last
@@ -83,37 +85,11 @@ class SettingsInteractionTests(unittest.TestCase):
         self.assertIn('animations=1\n', (self.root / 'ui.ini').read_text())
         self.assertNotIn('touch_indicator', (self.root / 'preferences.ini').read_text())
 
-    def test_left_right_and_a_open_without_changing_value(self):
-        for key in ('Left', 'Right', 'A'):
-            with self.subTest(key=key):
-                report = self.run_ui(f'10 key Down\n20 key Down\n30 key {key}\n', 'library')
-                self.assertEqual(report['picker_open'], 1)
-                self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
-
-    def test_dscore_is_selectable_as_third_row_and_restores(self):
-        self.run_ui('10 key Down\n20 key Down\n30 key A\n60 key Down\n90 key Down\n120 key A\n', 'library')
-        self.assertIn('core=4\n', (self.root / 'preferences.ini').read_text())
-        self.run_ui('', 'library')
-        self.assertIn('core=4\n', (self.root / 'preferences.ini').read_text())
-
-    def test_retired_melonds_default_falls_back_to_dscore(self):
-        (self.root / 'preferences.ini').write_text('schema=1\nmode=light\nfont=rounded\ncore=3\n')
-        self.run_ui('10 key Down\n20 key Down\n30 key A\n', 'library')
-        report = json.loads((self.root / 'report').read_text())
-        self.assertEqual(report['default_core'], 4)
-
-    def test_choice_cancel_preserves_value_and_apply_persists(self):
-        self.run_ui('10 key Down\n20 key Down\n30 key A\n60 key Right\n90 key Escape\n', 'library')
-        self.assertIn('core=0\n', (self.root / 'preferences.ini').read_text())
-        report = self.run_ui('10 key Down\n20 key Down\n30 key A\n60 key Right\n90 key Right\n120 key A\n', 'library')
-        self.assertFalse(report['picker_open'])
-        self.assertIn('core=4\n', (self.root / 'preferences.ini').read_text())  # the next offered row: DSCore
-
-    def test_touch_choice_is_direct_and_commits_once(self):
-        self.run_ui(
-            '30 click 180 293\n120 click 180 330\n', 'library'
-        )  # the engine row, under Scan and Show all systems
-        self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
+    def test_retired_default_engines_fall_back_to_dscore(self):
+        for core in (0, 1, 3):
+            with self.subTest(core=core):
+                (self.root / 'preferences.ini').write_text(f'schema=1\nmode=light\nfont=rounded\ncore={core}\n')
+                self.assertEqual(self.run_ui('', 'library')['default_core'], 4)
 
     def test_swipe_scrolls_without_opening_the_pressed_card(self):
         report = self.run_ui('30 tap 210 375\n60 drag 210 250\n90 drag 210 115\n120 release\n')
@@ -144,8 +120,6 @@ class SettingsInteractionTests(unittest.TestCase):
         report = self.run_ui('90 key Down\n100 key A\n', 'library', animations=False)
         self.assertLess(report['frames'], 12)
         self.assertEqual(report['render_file_reads'], 0)
-        self.run_ui('28 key Down\n29 key Down\n30 key A\n31 key Right\n32 key A\n', 'library', animations=False)
-        self.assertIn('core=1\n', (self.root / 'preferences.ini').read_text())
 
 
 if __name__ == '__main__':

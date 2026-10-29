@@ -320,7 +320,13 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 ok = value == "yes" || value == "no";
                 out.lightgun = value == "yes";
                 if (!ok) why = "expected lightgun = yes or no";
-            } else return fail("unknown key '" + key + "' in [game]");
+            } else if (key == "mouse") {
+                ok = value == "yes" || value == "no";
+                out.mouse = value == "yes";
+                if (!ok) why = "expected mouse = yes or no";
+            } else if (key == "cursor_x") out.cursor_x = value;
+            else if (key == "cursor_y") out.cursor_y = value;
+            else return fail("unknown key '" + key + "' in [game]");
         } else if (section == "companion") {
             if (key == "live") ok = parse_condition(value, out.live, why);
             else if (key == "menu") ok = parse_condition(value, out.menu, why);
@@ -417,6 +423,33 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 ok = value == "yes" || value == "no";
                 h.strip_fill = value == "yes";
                 if (!ok) why = "expected strip_fill = yes or no";
+            } else if (key == "extend") {
+                h.extend = std::atoi(value.c_str());
+                ok = h.extend > 0 && h.extend <= 200;
+                if (!ok) why = "expected extend = rows (1-200)";
+            } else if (key == "extend_sprites") {
+                ok = parse_address(value, h.extend_sprites);
+                if (!ok) why = "expected extend_sprites = ADDRESS";
+            } else if (key == "extend_places") {
+                // X Y STEP COUNT: the X and Y words of the first, the step to the next
+                std::istringstream words(value);
+                std::string x, y, step;
+                words >> x >> y >> step >> h.places;
+                ok = parse_address(x, h.places_x) && parse_address(y, h.places_y) && parse_address(step, h.places_step) &&
+                     h.places > 0 && h.places <= 64;
+                if (!ok) why = "expected extend_places = X Y STEP COUNT";
+            } else if (key == "extend_tiles") {
+                // the first tile of each place's sprite, in the places' order
+                std::istringstream words(value);
+                h.place_tiles.clear();
+                for (std::string word; words >> word;) {
+                    uint32_t tile = 0;
+                    ok = parse_address(word, tile) && tile < 0x200;
+                    if (!ok) break;
+                    h.place_tiles.push_back(int(tile));
+                }
+                ok = ok && !h.place_tiles.empty();
+                if (!ok) why = "expected extend_tiles = TILE TILE ... (000-1FF)";
             } else if (key == "game_rows") {
                 h.game_rows = std::atoi(value.c_str());
                 ok = h.game_rows > 0;

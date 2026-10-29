@@ -9,7 +9,7 @@
 #   bt-audio volume N       the headset's volume, N in 0-100 (also set from the saved level on connect)
 OUT=${RGDS_AUDIO_OUT:-/run/rgds/audio-out.conf}
 SINK=${RGDS_BT_SINK:-/run/rgds/bt-sink}
-SPEAKER=${RGDS_AUDIO_SPEAKER:-/etc/asound-speaker.conf}
+SPEAKER=${RGDS_AUDIO_SPEAKER:-/run/rgds/audio-local.conf}
 VOLUME=${RGDS_VOLUME_FILE:-/data/rgds/userdata/volume.ini}
 CTL=${RGDS_BLUEALSA_CTL:-$(command -v bluealsactl || command -v bluealsa-cli)}
 

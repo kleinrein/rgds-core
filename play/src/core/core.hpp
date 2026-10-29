@@ -42,6 +42,13 @@ inline uint32_t rgb_to_px(uint32_t rgb) {
 }
 inline uint32_t px_to_rgb(uint32_t px) { return ((px & 0xFF) << 16) | (px & 0xFF00) | ((px >> 16) & 0xFF); }
 
+// One cheat: its code text as libretro's cheat files (.cht) write it (GameShark, Game Genie, Action Replay,
+// "+" or spaces between the parts), switched on or off.
+struct CheatCode {
+    std::string name, description, code;
+    bool on = false;
+};
+
 // One running game. The companion screen asks for a shadow(): a silent copy of
 // the same game that it can load the live game's state into and play on its
 // own, without ever touching the game being played.
@@ -65,6 +72,15 @@ public:
         return false;
     }
     virtual void set_pointer(int x, int y, bool pressed) { (void)x, (void)y, (void)pressed; }
+    // A mouse moved by touch (the SNES Mouse, for Mario Paint): on, the first port is the mouse, and set_pointer
+    // says where the finger is; the mouse moves the game's cursor there, then holds its left button while the
+    // finger is down. set_mouse_cursor tells it where the game draws its cursor (-1: unknown, the mouse counts
+    // its own moves). A and B are the left and right buttons, the D-pad nudges the cursor. False when none.
+    virtual bool set_mouse(bool on) {
+        (void)on;
+        return false;
+    }
+    virtual void set_mouse_cursor(int x, int y) { (void)x, (void)y; }
     // How much of the last frame the cartridge's rumble motor was on, 0-1: Game
     // Boy rumble cartridges (MBC5), Game Boy Advance ones (Drill Dozer, WarioWare:
     // Twisted!). 0 for every other game, and always for a shadow.
@@ -102,6 +118,13 @@ public:
     // a shadow never writes a save file.
     virtual void restore_battery(const std::vector<uint8_t>& bytes) { (void)bytes; }
 
+    // The whole cheat list, with each code's state: called when the game starts and after every change, on the
+    // game thread between frames. False when the core has no cheats (or none could be read).
+    virtual bool apply_cheats(const std::vector<CheatCode>& codes) {
+        (void)codes;
+        return false;
+    }
+
     // Layers drawn: bits 0-3 BG0-3, bit 4 sprites (0x1F = everything).
     virtual void set_layers(unsigned mask) = 0;
 
@@ -135,6 +158,26 @@ public:
     // A silent copy for the companion: no audio, no battery file, its own
     // memory. Null when the core cannot make one.
     virtual std::unique_ptr<Core> shadow() const = 0;
+
+    // The Super Nintendo's Mode 7 as the last frame drew it, for a picture
+    // larger than the game's (Super Mario Kart's road under the race view):
+    // each scanline's matrix A, B, C, D, centre X, Y and scroll H, V (240 x 8),
+    // the palette (256 BGR555) and video memory (64 KiB), and the scanline the
+    // picture's first row shows. False when the core keeps none of it. Where
+    // the core's layout is known, OBJSEL too: the sprites' name base and second
+    // table (byte addresses in video memory) and their size pair.
+    struct Mode7 {
+        const int16_t* lines = nullptr;
+        const uint16_t* palette = nullptr;
+        const uint8_t* vram = nullptr;
+        int first_line = 0;
+        bool objsel = false;
+        int obj_base = 0, obj_second = 0, obj_sizes = 0;
+    };
+    virtual bool mode7(Mode7& out) const {
+        (void)out;
+        return false;
+    }
 };
 
 // A banked address ("1C:590D": ROM bank 1C; "1:DCD7": work RAM bank 1), as

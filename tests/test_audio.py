@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
-from audio import EVENT, Mixer, Volume, VolumeWatch, clean_environment
+from audio import EVENT, Amplifier, Mixer, Volume, VolumeWatch, capture_device, clean_environment, mixer_target
 from library import read_fields
 from system_controls import Hardware
 
@@ -207,6 +207,43 @@ class AudioTests(unittest.TestCase):
             mixer.set(0)
             self.assertEqual(run.call_args_list[1].args[0], ["amixer", "-c", "0", "sget", "Master"])
             self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "Master", "0%"])
+
+    def test_mixer_follows_the_card_that_plays(self):
+        # RG DS OS's RG DS Plus: the RK817 is not card 0, and the jack moves playback to it
+        result = subprocess.CompletedProcess([], 0, stdout="Playback 109 [43%] [-54.12dB]")
+        with patch("audio.subprocess.run", return_value=result) as run:
+            Mixer(target=lambda: (1, "rk817")).set(50)
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "1", "sset", "DAC", "65%"])
+        with tempfile.TemporaryDirectory() as folder:
+            route = Path(folder) / "audio-mixer"
+            self.assertEqual(mixer_target(route), (0, "rk817"))
+            route.write_text("2 aw88166\n")
+            self.assertEqual(mixer_target(route), (2, "aw88166"))
+            route.write_text("garbage")
+            self.assertEqual(mixer_target(route), (0, "rk817"))
+
+    def test_plus_amplifiers_take_an_attenuation(self):
+        def amixer(command, **kwargs):
+            if command[3] == "sget" and command[4] == "Left PCM":
+                return subprocess.CompletedProcess(command, 0, stdout="  Mono: Playback 267 [26%] [-25.03dB]\n")
+            return subprocess.CompletedProcess(command, 0 if "sset" in command else 1, stdout="")
+
+        with patch("audio.subprocess.run", side_effect=amixer) as run:
+            mixer = Mixer(target=lambda: (0, "aw88166"))
+            # 267 is level 50: reported on the RK817's scale, so Volume compares it as it always has
+            self.assertEqual(mixer.query(), 30 + round(70 * 49 / 99))
+            mixer.set(100)
+            self.assertEqual([c.args[0][5:] for c in run.call_args_list[-2:]], [["Left PCM", "0"], ["Right PCM", "0"]])
+            mixer.set(0)
+            self.assertEqual(run.call_args.args[0][5:], ["Right PCM", "1023"])
+        self.assertEqual([Amplifier.from_raw(Amplifier.raw(level)) for level in (0, 1, 37, 100)], [0, 1, 37, 100])
+
+    def test_the_microphone_is_named_on_rg_ds_os(self):
+        with tempfile.TemporaryDirectory() as folder:
+            conf = Path(folder) / "audio-capture.conf"
+            self.assertEqual(capture_device(conf), "plughw:0,0")
+            conf.write_text("pcm.rgds_in { type plug slave.pcm \"hw:1,0\" }\n")
+            self.assertEqual(capture_device(conf), "rgds_mic")
 
     def test_unavailable_mixer_fails_before_a_game_can_start(self):
         with patch.object(self.mixer, "query", side_effect=FileNotFoundError("amixer")), \

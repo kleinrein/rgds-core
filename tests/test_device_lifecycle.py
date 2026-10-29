@@ -72,8 +72,8 @@ class DeviceLifecycleTests(unittest.TestCase):
         self.assertEqual(self.service.fields["boot_warning"], "0")
         self.assertIn("simulated", self.service.fields["message"])
 
-    def test_anbernic_startup_is_refused_outside_the_preview(self):
-        with self.assertRaisesRegex(ValueError, "unavailable in RGDS OS"):
+    def test_anbernic_startup_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "Choose RG DS startup"):
             self.service.startup(dict(mode="stock"))
 
     def test_startup_choice_is_saved_and_requires_home(self):

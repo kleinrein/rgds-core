@@ -1,0 +1,19 @@
+RG DS OS: the SARADC in U-Boot, to tell the RG DS from the RG DS Plus before booting.
+
+One card serves both handhelds: the SARADC's channel 5 reads about 1.06 V on the RG DS and 1.77 V on the RG DS Plus
+(BananaLinux measured both in Linux), and uboot-rgds.fragment's preboot picks the device tree by it. The Quartz64's
+device tree leaves the SARADC disabled; its reference is stated here as the fixed 1.8 V both handhelds' device trees
+give it (U-Boot reads vdd-microvolts, not Linux's vref-supply, and this tree's regulators are not the handhelds').
+Taken from BananaLinux's uboot-patches-universal.
+
+--- a/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi
++++ b/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi
+@@ -40,3 +40,8 @@
+ &vcc_sd_h {
+ 	bootph-pre-ram;
+ };
++
++&saradc {
++	vdd-microvolts = <1800000>;
++	status = "okay";
++};

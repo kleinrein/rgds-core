@@ -29,7 +29,7 @@ class GapClosureUiTests(unittest.TestCase):
             ''.join(f'{60+i*65} key {key}\n{80+i*65} key-up {key}\n' for i, key in enumerate(keys)) + text
         )
         report = self.root / 'report.json'
-        args = ['--game-menu', '--game-core', 'dsperate', '--game-rom',
+        args = ['--game-menu', '--game-core', 'rgds-experimental', '--game-rom',
                 str(self.rom)] if mode == 'game' else ['--settings', '--section', 'system'] if mode == 'system' else [
                     '--settings', '--section', 'library'
                 ] if mode == 'settings' else ['--library', '--rom-dir', str(self.root)]
@@ -54,7 +54,7 @@ class GapClosureUiTests(unittest.TestCase):
         return json.loads(report.read_text())
 
     def test_save_checkpoint_asks_before_replacing_an_occupied_slot(self):
-        write_fields(self.game / 'slots/dsperate/index.ini', dict(slot_0='2026-10-12 12:30'))
+        write_fields(self.game / 'slots/rgds-experimental/index.ini', dict(slot_0='2026-10-12 12:30'))
         r = self.run_ui(['Down', 'A', 'A'])
         self.assertEqual(r['page'], 28)
         self.assertEqual(r['picker_title'], 'Replace slot 1?')
@@ -62,7 +62,7 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertEqual(r['render_file_reads'], 0)
 
     def test_load_checkpoint_asks_on_an_occupied_slot_and_ignores_an_empty_one(self):
-        write_fields(self.game / 'slots/dsperate/index.ini', dict(slot_0='2026-10-12 12:30'))
+        write_fields(self.game / 'slots/rgds-experimental/index.ini', dict(slot_0='2026-10-12 12:30'))
         r = self.run_ui(['Down', 'Right', 'A', 'A'])
         self.assertEqual(r['page'], 28)
         self.assertEqual(r['picker_title'], 'Load slot 1?')
@@ -72,7 +72,7 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertFalse(r['picker_open'])
 
     def test_x_deletes_an_occupied_slot_after_asking_and_y_opens_more(self):
-        write_fields(self.game / 'slots/dsperate/index.ini', dict(slot_0='2026-10-12 12:30'))
+        write_fields(self.game / 'slots/rgds-experimental/index.ini', dict(slot_0='2026-10-12 12:30'))
         r = self.run_ui(['Down', 'A', 'X'])
         self.assertEqual(r['picker_title'], 'Delete slot 1?')
         self.assertEqual(r['picker_focus'], 0)
@@ -87,7 +87,7 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertEqual(r['picker_title'], 'Delete slot 1?')
 
     def test_ds_language_and_real_microphone_persist(self):
-        r = self.run_ui(['X'] + ['Down'] * 8 + ['A', 'Down', 'Down', 'A', 'Down', 'Down', 'A'])
+        r = self.run_ui(['X'] + ['Down'] * 7 + ['A', 'Down', 'Down', 'A', 'Down', 'Down', 'A'])
         self.assertEqual(read_fields(self.game / 'ds-input.ini')['language'], '3')
         self.assertEqual(r['page'], 31)
 
@@ -98,10 +98,6 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertEqual(r['discovery_filter'], 1)
         self.assertEqual(r['filtered_games'], 0)
         self.assertEqual(r['render_file_reads'], 0)
-
-    def test_first_run_help_is_reachable_from_library_settings(self):
-        r = self.run_ui(['Down'] * 7 + ['A'], mode='settings')
-        self.assertEqual(r['page'], 30)
 
     def test_automatic_download_setting_is_persisted(self):
         self.run_ui(['Down'] * 6 + ['A'] + ['Down'] * 6 + ['A', 'Down', 'A'], mode='system')

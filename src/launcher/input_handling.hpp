@@ -139,7 +139,15 @@ void App::action(int code) {
         port_files_action(code);
         return;
     }
-    if (settings.page == Page::SaveGallery || settings.page == Page::RomSetup || settings.page == Page::DSControls) {
+    if (settings.page == Page::SystemDefaults) {
+        if (code == 3) back_to(Page::LibraryOptions);
+        else if (code == 8 || code == 9)
+            settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, list_count() - 1);
+        else if (code == 2 || code == 4 || (settings.focus == 0 && (code == 0 || code == 1))) system_defaults_action(code);
+        dirty = true;
+        return;
+    }
+    if (settings.page == Page::SaveGallery || settings.page == Page::DSControls) {
         auto page = settings.page;
         if (code == 3) {
             back_to(page == Page::SaveGallery  ? gallery_return
@@ -149,28 +157,7 @@ void App::action(int code) {
             settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, list_count() - 1);
         else if (code == 2 || code == 4) {
             if (page == Page::SaveGallery) slot_primary();
-            else if (page == Page::RomSetup) {
-                if (settings.focus == 0)
-                    show_detail(
-                        "Add your games",
-                        locale.text(
-                            "Copy your .nds files or DS ZIP archives to Roms/NDS on the games card. Games are not included. Saves stay in userdata."));
-                else if (settings.focus == 1) {
-                    if (library_ready) {
-                        setup_scanned = true;
-                        rescan_games(true);
-                    }
-                } else {
-                    fs::create_directories(o.data);
-                    std::ofstream(o.data / "setup-complete").put('1');
-                    setup_scanned = false;
-                    if (setup_first_run) {
-                        setup_first_run = false;
-                        settings.page = Page::Library;
-                        home_menu = true;
-                    } else back_to(Page::LibraryOptions);
-                }
-            } else ds_controls_action();
+            else ds_controls_action();
         } else if (page == Page::SaveGallery && code == 11) slot_delete();
         else if (page == Page::SaveGallery && code == 12) slot_more();
         dirty = true;
@@ -291,7 +278,7 @@ void App::action(int code) {
     if (settings.page == Page::GameArtwork) {
         if (code == 3) {
             back_to(artwork_return);
-            if (artwork_return == Page::GameOptions) settings.focus = 4;
+            if (artwork_return == Page::GameOptions) settings.focus = 3;
         } else if (code == 8 || code == 9) settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 2);
         else if (code == 2) game_artwork_action();
         dirty = true;
@@ -406,16 +393,6 @@ void App::action(int code) {
             const int row = library_row(settings.focus);
             if (row == 10) {
                 if (code == 2 && library_ready) rescan_games(true);
-            } else if (row == 0 && (code == 0 || code == 1 || code == 2)) {
-                {
-                    int core = int(preferences.core);
-                    do
-                        core = code == 2 ? (core + 1) % ds_core_count
-                                         : std::clamp(core + (code == 0 ? -1 : 1), 0, ds_core_count - 1);
-                    while (!core_offered(core));
-                    preferences.core = unsigned(core);
-                }
-                remember_appearance();
             } else if (row == 1 && code == 2) open_scraper();
             else if (row < 4 && row >= 2 && (code == 0 || code == 1 || code == 2)) {
                 bool& value = row == 2 ? preferences.auto_load : preferences.auto_save;
@@ -429,10 +406,8 @@ void App::action(int code) {
                 summary_ready = false;
                 library_summary.request(o.data, all_games);
                 library_view(0);
-            } else if (row == 7 && code == 2) {
-                settings.page = Page::RomSetup;
-                settings.focus = 0;
-            } else if (row == 8 && code == 2) {
+            } else if (row == 11 && code == 2) open_system_defaults();
+            else if (row == 8 && code == 2) {
                 if (worker <= 0) {
                     backup_requested = true;
                     start_worker("device.library", "{\"action\":\"backup\"}");
@@ -445,14 +420,15 @@ void App::action(int code) {
             const int base = game_options_base();
             if (settings.focus == base) {
                 if (code == 2 && game_removable()) confirm("remove-game", Page::GameOptions);
-            } else if (other_system_selected() && (settings.focus == 1 || settings.focus == base - 1)) {
+            } else if (other_system_selected() && settings.focus == base - 1) {
             } else if (code == 0 || code == 1 || code == 2) {
                 if (settings.focus == base - 3) open_game_info(Page::GameOptions);
                 else if (settings.focus == base - 2) open_gallery();
                 else if (settings.focus == base - 1) open_ds_controls();
-                else if (settings.focus == 4) open_game_artwork();
-                else if (settings.focus == 3) open_controls(true, Page::GameOptions);
-                else if (settings.focus == 2) open_shader_picker(true);
+                else if (settings.focus == 4) show_experimental_resolution_picker();
+                else if (settings.focus == 3) open_game_artwork();
+                else if (settings.focus == 2) open_controls(true, Page::GameOptions);
+                else if (settings.focus == 1) open_shader_picker(true);
                 else change_game_option(code == 0 ? -1 : 1, code == 2);
             }
         } else if (settings.page == Page::System) {
@@ -578,6 +554,7 @@ void App::action(int code) {
         dirty = true;
         return;
     }
+    if (systems_menu && (code == 15 || code == 16)) return; // the systems carousel has nothing to jump to or search
     if (!home_menu && (code == 15 || code == 16)) {
         if (code == 15) jump_to_letter();
         else quick_search();
@@ -697,6 +674,17 @@ void App::touch(int x, int y) {
         }
         if (settings.page == Page::Cheats && cheat_header_hit(x, y)) {
             cheat_header_tap(x);
+            return;
+        }
+        if (settings.page == Page::Homebrew && homebrew_header_hit(x, y)) {
+            const auto shelves = homebrew_shelves();
+            const auto at = std::find(shelves.begin(), shelves.end(), homebrew_system);
+            const int from = at == shelves.end() ? 0 : int(at - shelves.begin());
+            const int to = (x - homebrew_tabs_left()) / 72;
+            if (to != from) {
+                homebrew_open(shelves[size_t(to)]);
+                view_route = to < from ? ViewTravel::Back : ViewTravel::Forward;
+            }
             return;
         }
         if (x >= 596 && y >= list_top && y < list_top + list_height) {
@@ -954,6 +942,7 @@ void App::pointer_begin(int x, int y) {
         // A slider follows the finger from the press; elsewhere a tap toggles on release and a drag scrolls.
         filter_touch = true;
         filter_drag = -1;
+        filter_armed = false;
         filter_scroll_start = filter_scroll;
         filter_rail = false;
         if (filter_rail_press(x, y)) return;
@@ -1104,7 +1093,19 @@ void App::pointer_move(int x, int y) {
     }
     if (filter_touch && filter_sheet_active()) {
         if (filter_rail) filter_seek(y);
-        else if (filter_drag >= 0) filter_slider_drag(x);
+        else if (filter_drag >= 0 && filter_armed) {
+            const int dx = std::abs(x - down_x), dy = std::abs(y - down_y);
+            if (dy > 10 && dy > dx) {
+                // a vertical swipe that began on a slider scrolls the sheet instead
+                filter_drag = -1;
+                filter_armed = false;
+                tap_pending = false;
+                filter_drag_scroll(y);
+            } else if (dx >= 6) {
+                filter_armed = false;
+                filter_slider_drag(x);
+            }
+        } else if (filter_drag >= 0) filter_slider_drag(x);
         else if (std::abs(y - down_y) > 8) {
             tap_pending = false;
             filter_drag_scroll(y);
@@ -1208,7 +1209,9 @@ void App::pointer_end(int x, int y) {
     volume_drag = false;
     filter_touch = false;
     filter_rail = false;
+    if (filter_drag >= 0 && filter_armed) filter_slider_drag(x); // a tap: the handle jumps to the stop touched
     filter_drag = -1;
+    filter_armed = false;
     if (o.boot_startup && boot_touch_wait_release) {
         boot_touch_wait_release = false;
         boot_touch_candidate = false;

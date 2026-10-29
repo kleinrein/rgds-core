@@ -149,5 +149,23 @@ class BannerAndPlaytimeTests(unittest.TestCase):
             self.assertEqual(library.playtime(data, rom), (210, 2))
             self.assertEqual(rom.read_bytes(), b"game")
 
+    def test_session_history_rewrites_checkpoints_and_keeps_the_newest_rows(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            rom = root / "game.nds"
+            rom.write_bytes(b"game")
+            data = root / "data"
+            history = data / "library" / library.game_key(rom) / "sessions.tsv"
+            first, second = "2026-10-05T18:00:00+00:00", "2026-10-06T07:30:00+00:00"
+            library.record_playtime(data, rom, 30, 1, first, 30)
+            library.record_playtime(data, rom, 60, 1, first, 60)  # a checkpoint of the same session
+            library.record_playtime(data, rom, 75, 2, second, 15)
+            self.assertEqual(history.read_text(), "1791223200\t60\n1791271800\t15\n")
+            library.record_playtime(data, rom, 75, 2, "not a date", 15)
+            self.assertEqual(len(history.read_text().splitlines()), 2)
+            for minute in range(library.SESSION_LIMIT + 5):
+                library.record_session(history, "2026-10-07T00:%02d:00+00:00" % (minute % 60), 1)
+            self.assertLessEqual(len(history.read_text().splitlines()), library.SESSION_LIMIT)
+
 
 if __name__ == "__main__": unittest.main()

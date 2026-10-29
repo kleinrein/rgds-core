@@ -65,6 +65,11 @@ std::string system_display_name(const std::string& system) {
 
 Session::~Session() { flush(); }
 
+bool Session::set_cheat(size_t index, bool on) {
+    if (!cheats_.set(index, on)) return false;
+    return core_->apply_cheats(cheats_.codes());
+}
+
 bool Session::open(const SessionOptions& o, std::string& error) {
     std::string inner;
     RomBytes rom;
@@ -98,6 +103,11 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     }
     core_ = std::move(opened.core);
     writer_ = std::make_unique<SaveWriter>(save_.path);
+    data_root_ = o.data_root;
+    if (cheats_.load(o.data_root, core_->system(), o.rom)) {
+        core_->apply_cheats(cheats_.codes());
+        std::fprintf(stderr, "play: %zu cheats from %s\n", cheats_.codes().size(), cheats_.path().c_str());
+    }
     if (!save_.imported_from.empty())
         std::fprintf(stderr, "play: copied the save from %s (left in place)\n", save_.imported_from.c_str());
 
@@ -110,6 +120,12 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     if (!profile_ && rom->empty()) profile_ = profiles_.find(core_->system(), core_->header_title());
     if (profile_ && profile_->lightgun && !core_->set_lightgun(true))
         std::fprintf(stderr, "play: this core has no light gun for %s\n", profile_->title.c_str());
+    if (profile_ && profile_->mouse) {
+        if (!core_->set_mouse(true)) std::fprintf(stderr, "play: this core has no mouse for %s\n", profile_->title.c_str());
+        std::string why;
+        if (!profile_->cursor_x.empty() && (!cursor_x_.parse(profile_->cursor_x, why) || !cursor_y_.parse(profile_->cursor_y, why)))
+            std::fprintf(stderr, "play: the cursor is not read: %s\n", why.c_str()), cursor_x_ = cursor_y_ = Expr{};
+    }
     title_ = profile_ ? profile_->title : clean_title(file_stem(o.rom));
     // The launcher's appearance and language, so the second screen is part of RG DS.
     if (!o.preferences.empty()) look_ = load_look(o.preferences);
@@ -162,6 +178,7 @@ void Session::save_view() {
 }
 
 void Session::frame(uint32_t buttons) {
+    if (!cursor_x_.empty()) core_->set_mouse_cursor(int(cursor_x_.eval(*core_)), int(cursor_y_.eval(*core_)));
     core_->run_frame(buttons);
     ++frames_;
     if (companion_) companion_->after_frame(*core_);

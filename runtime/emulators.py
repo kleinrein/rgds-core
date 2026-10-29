@@ -21,9 +21,9 @@ import zipfile
 sys.dont_write_bytecode = True
 from library import playtime, record_playtime
 from records import process_identity, read_record, write_record
-from emulator_profiles import drastic_home, drastic_game_profile, section_config, flat_config, policy, game_options, display_filter, FILTERS, dsperate_input_profile
+from emulator_profiles import section_config, flat_config, policy, game_options, display_filter, FILTERS, dsperate_input_profile
 from library import read_fields, game_key
-from audio import VolumeWatch
+from audio import VolumeWatch, capture_device
 from game_menu import GameMenu, MenuInput, SwitchGame
 from shaders import supported, SHADERS
 from integration import select_hooks, engine_libraries
@@ -31,9 +31,8 @@ from engine_log import EngineLog
 from hud_theme import hud_theme
 from controls import paths as control_paths
 
-from engines import CORES, DSPERATE_CORES
+from engines import CORES, DSPERATE_CORES, RETIRED
 
-STOCK_DIRS = (Path("/mnt/vendor/deep/drastic_aarch64"), Path("/mnt/vendor/deep/drastic64"))
 
 
 def timezone_value(fields, now=None):
@@ -88,19 +87,7 @@ def find_binary(core, app):
     override = os.environ.get(core.upper() + "_BIN")
     candidates = [Path(override)] if override else []
     candidates += [app / "emulators" / core / core]
-    if core == "drastic":
-        candidates += [d / name for d in STOCK_DIRS for name in ("drastic", "drastic_oga")]
     return next((p.resolve() for p in candidates if p.is_file() and os.access(p, os.X_OK) and aarch64_binary(p)), None)
-
-
-def stock_file(names, extra=()):
-    for root in (*extra, *STOCK_DIRS, Path("/oem/retro")):
-        for directory in (root / "system", root):
-            for name in names:
-                path = directory / name
-                if path.is_file() and path.stat().st_size:
-                    return path
-    return None
 
 
 def copy_missing(source, destination):
@@ -119,22 +106,17 @@ def dscore_cheat_database(data, rom, prepare=True, app=None):
     """The Action Replay database DSCore reads for this game, or None.
 
     A usrcheat.dat beside the game wins (the user's own). Otherwise the
-    engine's cheats folder, seeded once from DraStic's copy on a stock card so
-    cheats work out of the box; a file dropped there later is kept as is. An
-    independent image has no DraStic, so it carries the database in the release
-    (emulators/cheats/usrcheat.dat) and seeds from that.
+    engine's cheats folder, seeded once from the database the release carries
+    (emulators/cheats/usrcheat.dat) so cheats work out of the box; a file
+    dropped there later is kept as is.
     """
     beside = Path(rom).parent / "usrcheat.dat"
     if beside.is_file() and beside.stat().st_size:
         return beside
     own = data / "emulators/rgds-experimental/cheats/usrcheat.dat"
     if prepare and not own.is_file():
-        from linux_platform import independent
-        sources = [data / "emulators/drastic/usrcheat.dat"]
-        if app: sources.append(Path(app) / "emulators/cheats/usrcheat.dat")
-        if not independent():
-            sources += [directory / "usrcheat.dat" for directory in STOCK_DIRS]
-        copy_missing(next((path for path in sources if path.is_file() and path.stat().st_size), None), own)
+        source = Path(app) / "emulators/cheats/usrcheat.dat" if app else None
+        copy_missing(source if source and source.is_file() and source.stat().st_size else None, own)
     return own if own.is_file() and own.stat().st_size else None
 
 
@@ -340,27 +322,6 @@ def base_environment():
     return env
 
 
-def dsperate_atomic_states(app, binary, verified_manifest):
-    """Grant the bridge's early save ack only to the reviewed packaged writer."""
-    if not isinstance(verified_manifest, dict) or binary.resolve() != (app / 'emulators/dsperate/dsperate').resolve():
-        return False
-    files = verified_manifest.get('files', {})
-    if 'emulators/dsperate/build.json' not in files:
-        return False
-    try:
-        record = json.loads((app / 'emulators/dsperate/build.json').read_text())
-        return (
-            record.get('kind') == 'source-built-dsperate'
-            and record.get('source', {}).get('commit') == '1b76c355109c9f7576363ccc023927b3137d3c6f'
-            and record.get('source', {}).get('patched_inputs_sha256')
-            == 'c8f4a7243832dd609cca4b0b33fed3120fadbf0a3106c0f8b497981c91ec9129'
-            and record.get('binary', {}).get('sha256') == files.get('emulators/dsperate/dsperate')
-            and isinstance(files.get('emulators/dsperate/dsperate'), str)
-        )
-    except (OSError, ValueError, AttributeError):
-        return False
-
-
 RGDS_OS_PANVK = Path('/usr/lib/rgds-panvk/libvulkan_panfrost.so')  # tools/build_panvk_rgds_os.py
 
 
@@ -372,33 +333,33 @@ def top_display(env):
 def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=False):
     if core not in CORES:
         raise ValueError("Unknown emulator: " + core)
+    if core in RETIRED:
+        # DraStic, DSperate, NNDDSS and melonDS are retired: DSCore plays every DS game.
+        raise ValueError(core + " is retired; DSCore plays DS games.")
     if core == 'portmaster':
         # A PortMaster port: a script and its process tree, run by port_runner (no engine, no bridge).
         from portmaster import launch_plan as port_plan
         return port_plan(app, data, rom, base_environment(), prepare=prepare)
-    backend = None
-    if core == 'drastic':
-        from superdrastic import backend_choice
-        backend = backend_choice(data, identity or rom)
-    verified_manifest = None
     if prepare and (app / "manifest.json").is_file():
         from activate import verify_engine
-        if backend == 'superdrastic': verify_engine(app, core, backend=backend)
-        else: verified_manifest = verify_engine(app, core)
+        verify_engine(app, core)
     binary = find_binary(core, app)
     if not binary:
         from linux_platform import independent
         raise ValueError(
             core + " is missing. Install its verified application payload." if independent() else core +
-            " is missing. Copy the supplied local emulator payload or verify stock DraStic."
+            " is missing. Copy the supplied local emulator payload."
         )
     env = base_environment()
     filter_choice = display_filter(data, identity or rom)
     if core == 'rgds-play':
         # A game on Default gets its system's screen (GBA screen for the GBA), and never a DS screen.
-        from play_options import shader_for
+        from play_options import shader_for, system_defaults, system_of
         own = read_fields(data / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
-        filter_choice = shader_for(rom, int(own) if own.lstrip('-').isdigit() else -1, filter_choice)
+        filter_choice = shader_for(
+            rom, int(own) if own.lstrip('-').isdigit() else -1, filter_choice,
+            system_defaults(data, system_of(identity or rom)).get('filter', -1)
+        )
     tuning = game_options(data, identity or rom)
     display = 'wayland'
     if core == 'rgds-experimental':
@@ -505,37 +466,11 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     env['RGDS_ENGINE_BINARY'] = str(binary)
     env['RGDS_OWN_FF_HUD'] = '1' if core == 'rgds-experimental' else '0'
     env["TZ"] = timezone_value(read_fields(data / "system.ini"))
-    if backend == 'superdrastic':
-        from superdrastic import launch_plan as super_plan
-        return super_plan(app, data, binary, rom, env, prepare=prepare, identity=identity)
     command = [str(binary)]
     cwd = binary.parent
     hooks = app / "emulators/hooks"
     selected_hooks = select_hooks(core, hooks)
-    if core == "drastic":
-        home = drastic_home(
-            app, data, binary.parent, mapped_controls=bool(selected_hooks.bridge)
-        ) if prepare else data / "emulators/drastic"
-        if prepare: drastic_game_profile(home, rom, tuning)
-        env["HOME"] = str(home)
-        cwd = home
-        from linux_platform import independent
-        engine_libraries(env, private=(binary.parent / "libs",), stock_independent=independent())
-        env["SDL_RENDER_DRIVER"] = "opengles2"
-        touch_candidates = (binary.parent / "libs/libdrastouch.so",) if independent(
-        ) else (binary.parent / "libs/libdrastouch.so", Path("/usr/lib/libdrastouch.so"))
-        touch = next((p for p in touch_candidates if p.is_file()), None)
-        if independent() and touch is None:
-            raise ValueError(
-                "DraStic's verified private display/touch adapter is missing; reinstall its complete payload."
-            )
-        if touch:
-            env["LD_PRELOAD"] = str(touch)
-            env['RGDS_TOUCH_LIBRARY'] = str(touch)
-        command.append(str(rom))
-    elif core in DSPERATE_CORES:
-        if dsperate_atomic_states(app, binary, verified_manifest):
-            env['RGDS_STATE_ATOMIC_REPLACE'] = '1'
+    if core in DSPERATE_CORES:
         root = data / "emulators" / core
         home = root / "home"
         config = root / "config.ini"
@@ -619,7 +554,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                     },
                     "audio": {
                         "mic": str(ds_microphone).lower(),
-                        "mic_dev": "plughw:0,0",
+                        "mic_dev": capture_device(),
                         "mic_gain": "1.0",
                         "mic_gate": "2.0"
                     }
@@ -651,27 +586,6 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # Explicit empty CLI values also override stale native configuration
         # paths left by earlier releases that searched the stock installation.
         command += ["--bios7", "", "--bios9", "", "--firmware", ""]
-    elif core == "melonds":
-        root = data / "emulators/melonds"
-        key = game_key(identity or rom)
-        if prepare:
-            for folder in ("home", "saves", "states"):
-                (root / folder).mkdir(parents=True, exist_ok=True)
-        env["HOME"] = str(root / "home")
-        cwd = root
-        engine_libraries(env, private=(binary.parent / "lib",), stock_independent=True)
-        env["SDL_RENDER_DRIVER"] = "opengles2"
-        env["RGDS_THREADED_3D"] = str(tuning["threaded"])
-        env["RGDS_NATIVE_AUTOLOAD"] = "0"
-        env[
-            "SDL_GAMECONTROLLERCONFIG"
-        ] = "1900b655010000000100000000010000,ANBERNIC-rk3568-keys,a:b0,b:b1,x:b3,y:b2,back:b6,guide:b8,start:b7,leftstick:b9,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpleft:h0.8,dpdown:h0.4,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b10,righttrigger:b11,platform:Linux,"
-        command += [
-            "--rom",
-            str(rom), "--save",
-            str(root / "saves" / (key + ".sav")), "--state",
-            str(root / "states" / (key + ".dss"))
-        ]
     elif core == "rgds-play":
         # RG DS Play: every system but the DS. Its saves, states and backups
         # live under userdata/emulators/rgds-play; the view is per game (play.ini).
@@ -710,30 +624,21 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             command += ["--core", str(library), "--system", system, "--system-dir", "/data/rgds/bios"]
         # The launcher's Theme & display (and language, time format) for the second screen.
         command += ["--preferences", str(data / "preferences.ini")]
-        for system in ("gba", "gb", "nes", "snes", "sms"):
+        for system in ("gba", "gb", "nes", "snes", "sms", "n64"):
             command += ["--profiles", str(binary.parent / "profiles" / system)]
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
         command += ["--palette", shown["palette"], "--colour", shown["colour"]]
         command += ["--frames", str(frames_folder(data, rom))]
         # The game's box art from the library, for the second screen's info controls.
         command += ["--art", str(data / "library" / game_key(identity or rom))]
-    else:
-        # NNDDSS is retired: its supplied binaries are no longer shipped and a
-        # saved choice falls back to DSCore before a launch gets here.
-        raise ValueError('NNDDSS is retired; choose DSCore for this game.')
     if selected_hooks.bridge:
         preload = [str(selected_hooks.bridge)]
         env["SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS"] = "0"
-        if core == "drastic" and env.get("LD_PRELOAD"):
-            preload.append(env["LD_PRELOAD"])
         env["LD_PRELOAD"] = ":".join(preload)
         auto_load, auto_save = policy(data)
         if os.environ.get("RGDS_FORCE_AUTOLOAD") == "1": auto_load = True
         if fresh_start: auto_load = False
-        state_dir = data / (
-            "emulators/drastic/savestates" if core == "drastic" else
-            "emulators/melonds/states" if core == "melonds" else "emulators/" + core + "/states"
-        )
+        state_dir = data / "emulators" / core / "states"
         auto = data / "library" / game_key(identity or rom) / ("auto-" + core + ".dss")
         env.update(
             RGDS_CORE="dsperate" if core in DSPERATE_CORES else core,
@@ -745,8 +650,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             RGDS_SHARED_MENU="1",
             RGDS_MENU_LIVE="0"
         )
-        slot_name = rom.stem + ("_1.dss" if core == "drastic" else "_8.dss")
-        if core == "melonds": slot_name = game_key(identity or rom) + ".dss"
+        slot_name = rom.stem + "_8.dss"
         if core in DSPERATE_CORES and prepare:
             with rom.open("rb") as stream:
                 stream.seek(12)
@@ -755,11 +659,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                 raise ValueError("DSperate game header has no valid game code")
             slot_name = code + ".0.dss"
         env["RGDS_STATE_SLOT"] = str(state_dir / slot_name)
-        newer_battery = False
-        if prepare and core == 'drastic' and auto.is_file():
-            battery = home / 'backup' / (rom.stem + '.dsv')
-            newer_battery = battery.is_file() and battery.stat().st_mtime_ns > auto.stat().st_mtime_ns
-        if prepare and core not in DSPERATE_CORES and auto_load and auto.is_file() and not newer_battery:
+        if prepare and core not in DSPERATE_CORES and auto_load and auto.is_file():
             destination = state_dir / slot_name
             destination.parent.mkdir(parents=True, exist_ok=True)
             if destination.is_file() and not same_file_content(destination, auto):
@@ -775,11 +675,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                 )
                 copy_missing(destination, backup)
             shutil.copy2(auto, destination)
-            # melonDS and RG DS Play load it before their first frame; the others get F7 from the bridge.
-            env["RGDS_NATIVE_AUTOLOAD" if core in ("melonds", "rgds-play") else "RGDS_AUTOLOAD"] = "1"
-        if prepare and core == "drastic":
-            for shader in (app / "emulators/shaders").glob("*"):
-                copy_missing(shader, data / "emulators/drastic/shaders" / shader.name)
+            # RG DS Play loads it before its first frame.
+            env["RGDS_NATIVE_AUTOLOAD"] = "1"
     if core in DSPERATE_CORES:
         # A host sleep freezes the engine (SIGSTOP) and the game carries on where
         # it was on wake, like the pause menu. DSCore's own hinge pulse on resume
@@ -865,7 +762,6 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
     volume = VolumeWatch(data)
     menu = None
     inputs = None
-    lease = None
     engine_log = EngineLog(data, core, [], app)
     original_rom = Path(rom).resolve()
     # PortMaster itself is a tool, not a game: no playtime, so it never shows in Recents or Last played.
@@ -911,11 +807,6 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         plan["env"]["RGDS_VOLUME_KEYS"] = "1" if volume.descriptors else "0"
         inputs = MenuInput(data, original_rom)
         plan['env']['RGDS_MENU_EXTERNAL'] = '1' if inputs.descriptors else '0'
-        super_backend = plan.get('backend') == 'superdrastic'
-        if super_backend and not inputs.descriptors:
-            raise ValueError(
-                'SuperDrastic needs readable RG DS menu controls. Choose Standard DraStic until input access is restored.'
-            )
         release_launcher_display(display_handoff)
         if display is not None:
             wanted = plan.get('display', 'wayland')
@@ -925,10 +816,6 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
                 from direct_display import use_wayland
                 use_wayland(plan['env'], plan['wayland'])
                 plan['command'] = plan['wayland_command']
-        if super_backend:
-            from superdrastic import VTLease
-            lease = VTLease()
-            lease.acquire()
         preexec, inherited = None, ()
         if core == 'portmaster':
             # The menu helper maps its windows before the port, so the port keeps keyboard focus.
@@ -953,10 +840,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         )
         engine_log.start(child.stdout)
         began = time.monotonic()
-        if super_backend:
-            from superdrastic import Supervisor
-            menu = Supervisor(child, app, data, core, original_rom, plan['env'], inputs=inputs)
-        elif core == 'portmaster':
+        if core == 'portmaster':
             menu.attach(child)
         else:
             menu = GameMenu(child, app, data, core, original_rom, plan["env"], inputs=inputs)
@@ -983,7 +867,10 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
                     child.wait()
                 break
             if counted and time.monotonic() - checkpoint_at >= 30:
-                record_playtime(data, original_rom, accumulated + menu.played_seconds(), sessions + 1, started)
+                record_playtime(
+                    data, original_rom, accumulated + menu.played_seconds(), sessions + 1, started,
+                    menu.played_seconds()
+                )
                 checkpoint_at = time.monotonic()
             time.sleep(.02)
         # Deliver the completed exit to the pause UI before closing its process.
@@ -992,7 +879,6 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         if governor: cpu_governor(governor)
         if core == 'portmaster': result = menu.port_result(result)
         if gpu_reset: return 76  # the same engine again (run() keeps the display state)
-        if super_backend: result = menu.finish(result)
         if result:
             print(f"{core} exited with code {result}. Diagnostics: {engine_log.path}", file=sys.stderr, flush=True)
         if result == 0 and core != 'portmaster':  # quick resume reopens engines, not ports
@@ -1036,16 +922,9 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             except subprocess.TimeoutExpired:
                 child.kill()
                 child.wait()
-        restore_error = None
-        if lease:
-            try:
-                lease.close()
-            except OSError as error:
-                restore_error = error
-                print('SuperDrastic display restoration failed: ' + str(error), file=sys.stderr)
         if engine_log:
             try:
-                engine_log.finish(child.poll() if child else None, sys.exc_info()[1] or restore_error)
+                engine_log.finish(child.poll() if child else None, sys.exc_info()[1])
             except OSError as error:
                 print("Could not save engine diagnostics: " + str(error), file=sys.stderr)
         try:
@@ -1054,7 +933,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             print("Volume cleanup: " + str(error), file=sys.stderr)
         try:
             if began is not None and counted:
-                record_playtime(data, original_rom, accumulated + seconds, sessions + 1, started)
+                record_playtime(data, original_rom, accumulated + seconds, sessions + 1, started, seconds)
         except OSError:
             print("Could not save playtime.", file=sys.stderr)
         finally:
@@ -1062,10 +941,6 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
                 marker.unlink(missing_ok=True)
             except OSError as error:
                 print("Could not clear game activity: " + str(error), file=sys.stderr)
-        if restore_error and sys.exc_info()[0] is None:
-            raise OSError(
-                'SuperDrastic could not restore the original display console; see the engine log.'
-            ) from restore_error
 
 
 def run(core, app, data, rom, display_handoff=None):
@@ -1105,8 +980,7 @@ def _run_games(core, app, data, rom, display_handoff, display):
         defaults = read_fields(Path(data) / 'preferences.ini')
         selection = options['core'] if options['core'] >= 0 else int(defaults.get('core', '4'))
         core = CORES[selection] if 0 <= selection < len(CORES) else core
-        if core == 'nnddss': core = 'rgds-experimental'  # retired: a saved choice falls back to DSCore
-        core = engine_for(rom, core)  # other systems always restart in RG DS Play
+        core = engine_for(rom, core)  # DSCore for DS games, RG DS Play for other systems
 
 
 def main():
@@ -1114,7 +988,7 @@ def main():
     parser.add_argument("action", choices=("catalog", "launch", "plan"))
     parser.add_argument("--app", type=Path, required=True)
     parser.add_argument("--data", type=Path, default=Path("userdata"))
-    parser.add_argument("--core", choices=CORES, default="dsperate")
+    parser.add_argument("--core", choices=CORES, default="rgds-experimental")
     parser.add_argument("--rom", type=Path)
     parser.add_argument("--display-handoff-fd", type=int, default=-1, help=argparse.SUPPRESS)
     args = parser.parse_args()

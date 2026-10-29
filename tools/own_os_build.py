@@ -86,12 +86,11 @@ def stage(release):
                 target = app / source.relative_to(ROOT)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, target)
-    # What package.py adds to a release from this tree: emulator profiles, the RGDS shader presets, RG DS Play.
-    for name in ('drastic.cfg', 'dsperate.ini'):
-        shutil.copy2(ROOT / 'assets/emulator-profiles' / name, app / 'emulators' / name)
+    # What package.py adds to a release from this tree: DSCore's profile, the RGDS shader presets, RG DS Play.
+    shutil.copy2(ROOT / 'assets/emulator-profiles/dsperate.ini', app / 'emulators/dsperate.ini')
     for source in sorted((ROOT / 'assets/shaders').glob('*.dsd')):
         shutil.copy2(source, app / 'emulators/shaders' / source.name)
-    # No DraStic on this OS to seed the cheat database from (runtime/emulators.py dscore_cheat_database).
+    # The Action Replay database DSCore seeds its cheats from (runtime/emulators.py dscore_cheat_database).
     cheats = ROOT / 'vendor/drastic/usrcheat.dat'
     if cheats.is_file():
         (app / 'emulators/cheats').mkdir(parents=True, exist_ok=True)
@@ -167,15 +166,18 @@ def native(args):
     build = (STAGE / 'build-id').read_text().strip()
     verify_release(out / 'target/usr/share/rgds/releases' / build)
     print(f'{build} verified in the image', flush=True)
-    image = out / 'images/rgds-os.img.gz'
     target = ROOT / '.cache/own-os/build'
     target.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(image, target / image.name)
+    # the card for both handhelds, and the one fixed to the RG DS Plus (board/rgds/post-image.sh)
+    images = [out / 'images/rgds-os.img.gz', out / 'images/rgds-os-plus.img.gz']
+    for image in images:
+        shutil.copy2(image, target / image.name)
     # what tools/own_os_push.py writes into a running handheld's other slot
-    for name in ('rootfs.squashfs', 'Image.lz4', 'rk3568-anbernic-rg-ds.dtb', 'extlinux.conf', 'u-boot-rockchip.bin'):
+    for name in ('rootfs.squashfs', 'Image.lz4', 'rk3568-anbernic-rg-ds.dtb', 'rk3568-anbernic-rg-ds-plus.dtb',
+                 'extlinux.conf', 'u-boot-rockchip.bin'):
         shutil.copy2(out / 'images' / name, target / name)
     (target / 'build-id').write_text(build + '\n')  # what own_os_push.py and own_os_release.py call this build
-    run('sha256sum', target / image.name)
+    run('sha256sum', *(target / image.name for image in images))
 
 
 def main():

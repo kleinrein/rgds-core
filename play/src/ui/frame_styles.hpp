@@ -40,6 +40,7 @@ enum class FrameKind {
     DmgInner,    // the Game Boy's dark bezel: the two lines and "DOT MATRIX WITH STEREO SOUND" over the screen
     PocketInner, // the Pocket's dark bezel
     BezelInner,  // the Color's black bezel with its name under the screen
+    SpInner,     // the SP's lid close up: its window and logo, the game at 2x, the hinge below the panel
 };
 
 struct FrameStyleInfo {
@@ -112,12 +113,18 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      "GAME BOY ADVANCE", 0, 0, 0},
     {"platinum", "gba", "Game Boy Advance · Platinum", FrameKind::Agb, 0xD9D9DE, 0xAEAEB6, 5, 0x2A2A31, 0x60606C,
      0xB9BBC8, "GAME BOY ADVANCE", 0, 0, 0},
-    {"sp-cobalt", "gba", "Game Boy Advance SP · Cobalt", FrameKind::Sp, 0x3A5BB8, 0x253E86, 5, 0x10121A, 0x5D72B0,
-     0xD6DEF5, "GAME BOY ADVANCE SP", 0, 0, 0},
-    {"sp-onyx", "gba", "Game Boy Advance SP · Onyx", FrameKind::Sp, 0x2A2A30, 0x16161A, 4, 0x0E0E11, 0x4C4C56, 0xB8B8C2,
+    {"sp-cobalt", "gba", "Game Boy Advance SP · Cobalt", FrameKind::Sp, 0x3A5BB8, 0x253E86, 5, 0x33353B, 0x6B6E78,
+     0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-onyx", "gba", "Game Boy Advance SP · Onyx", FrameKind::Sp, 0x36363D, 0x1E1E23, 4, 0x33353B, 0x6B6E78, 0xEEEFF3,
      "GAME BOY ADVANCE SP", 0, 0, 0},
-    {"sp-platinum", "gba", "Game Boy Advance SP · Platinum", FrameKind::Sp, 0xDCDEE4, 0xA9ACB6, 3, 0x16171C, 0x6A6C78,
-     0x4A4C56, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-platinum", "gba", "Game Boy Advance SP · Platinum", FrameKind::Sp, 0xDCDEE4, 0xA9ACB6, 3, 0x33353B, 0x6B6E78,
+     0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-cobalt-screen", "gba", "Game Boy Advance SP · Cobalt · Screen only", FrameKind::SpInner, 0x3A5BB8, 0x253E86, 5,
+     0x33353B, 0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-onyx-screen", "gba", "Game Boy Advance SP · Onyx · Screen only", FrameKind::SpInner, 0x36363D, 0x1E1E23, 4,
+     0x33353B, 0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-platinum-screen", "gba", "Game Boy Advance SP · Platinum · Screen only", FrameKind::SpInner, 0xDCDEE4,
+     0xA9ACB6, 3, 0x33353B, 0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
     // Other handhelds
     {"ngpc-silver", "ngp", "Neo Geo Pocket Color · Silver", FrameKind::Ngpc, 0xCDD0D6, 0x9EA2AA, 3, 0x1C1C21, 0x4A4A55,
      0xC9CBD3, "NEOGEO POCKET COLOR", 0, 0, 0},

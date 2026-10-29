@@ -37,7 +37,7 @@ enum class Page {
     Statistics,
     SaveGallery,
     Discover, // retired: Search and filters moved into the Filter sheet; the slot keeps stored page numbers
-    RomSetup,
+    RomSetup, // retired: Add your games; the slot keeps stored page numbers
     DSControls,
     Microphone,
     Motion,
@@ -54,6 +54,7 @@ enum class Page {
     DisplayOptions, // Settings > Display: brightness, animations, touch indicator, home layout, touch gestures,
     Bluetooth,      // Connectivity > Bluetooth devices (RG DS OS); last so stored page numbers keep
     Homebrew,       // a system's pinned Homebrew shelf: free homebrew from our curated feed (homebrew_store.py)
+    SystemDefaults, // Library > System defaults: what a system's games share until a game says otherwise
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -63,7 +64,7 @@ struct Preferences {
     int view_speed = 1;
     std::string language = "en-US";
     unsigned core = 4;
-    int filter = 0, view = 0, layout = 0, artwork_provider = 0, drastic_backend = 0, sound_volume = 55;
+    int filter = 0, view = 0, layout = 0, artwork_provider = 0, sound_volume = 55;
     int home_layout = 1, background = 1;
     bool gestures = false;
     bool show_systems = false; // Library: a Systems step between Home and the games (ui.ini)
@@ -653,7 +654,7 @@ struct Settings {
         if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 10))];
         else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 5);
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
-        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 10);
+        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 8);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
         else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
@@ -772,7 +773,6 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
             result.touch_indicator = line.back() == '1';
         else if (filter_field(line, result.filter)) {
         } else if (line == "view=0" || line == "view=1" || line == "view=2") result.view = line.back() - '0';
-        else if (line == "drastic_backend=0" || line == "drastic_backend=1") result.drastic_backend = line.back() - '0';
         else if (line == "icon_style=pixel" || line == "icon_style=rich") result.rich_icons = line == "icon_style=rich";
         else if (line == "high_contrast=0" || line == "high_contrast=1") result.high_contrast = line.back() == '1';
         else if (line.rfind("accent=", 0) == 0) {
@@ -889,7 +889,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
           << "\nanimations=" << p.animations << "\nview_animations=" << p.view_animations
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
           << "\nlayout=" << p.layout << "\nartwork_provider=" << p.artwork_provider << "\ngame_info=" << p.game_info
-          << "\nextra_pictures=" << p.extra_pictures << "\ndrastic_backend=" << p.drastic_backend << '\n';
+          << "\nextra_pictures=" << p.extra_pictures << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';
     extra << "high_contrast=" << p.high_contrast << '\n';

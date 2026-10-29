@@ -5,7 +5,8 @@
     python3 tools/own_os_release.py --version 0.8.0 [--notes notes.txt] [--channel stable] [--upload]
 
 writes dist/release-os/<version>/: the card image for new installs (RG-DS-OS-<version>.img.gz and its .sha256),
-the update RG-DS-OS-<build>.zip (rootfs.squashfs, Image.lz4, the device tree, extlinux.conf and manifest.json under
+RG-DS-OS-Plus-<version>.img.gz (the card fixed to the RG DS Plus, should its detection pick wrong),
+the update RG-DS-OS-<build>.zip (rootfs.squashfs, Image.lz4, the device trees, extlinux.conf and manifest.json under
 <build>/) and <channel>-os.json, the feed signed with the key tools/release.py init made. Handhelds read the feed
 from the latest GitHub release (packaging/update-trust.json's stable.json -> stable-os.json), so a release is only
 offered once it is published and marked latest. Without --upload it prints the `gh release create --draft` command;
@@ -27,13 +28,14 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'runtime'))
 sys.path.insert(0, str(ROOT / 'tools'))
-from os_update import DTB, PAYLOAD, TARGET, BASE  # noqa: E402
+from os_update import DTBS, PAYLOAD, TARGET, BASE  # noqa: E402
 from ota import MAX_EXPANDED, MAX_PACKAGE  # noqa: E402
 from publish_update import sign  # noqa: E402
 from release import DEFAULT_KEY, TRUST, feed_url, public_key, repo_name  # noqa: E402
 
 BUILD = ROOT / '.cache/own-os/build'
 IMAGE = 'rgds-os.img.gz'
+PLUS_IMAGE = 'rgds-os-plus.img.gz'
 
 
 def package(build, out):
@@ -47,7 +49,7 @@ def package(build, out):
             z.write(
                 source, f'{build}/{name}', zipfile.ZIP_STORED if name == 'rootfs.squashfs' else zipfile.ZIP_DEFLATED
             )
-        manifest = dict(schema=1, build=build, target=TARGET, dtb=DTB, files=files)
+        manifest = dict(schema=1, build=build, target=TARGET, dtbs=list(DTBS), files=files)
         z.writestr(f'{build}/manifest.json', json.dumps(manifest, indent=2, sort_keys=True) + '\n')
     with zipfile.ZipFile(archive) as z:
         unpacked = sum(e.file_size for e in z.infolist())
@@ -71,7 +73,7 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r'\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?', args.version) or 'dev' in args.version:
         raise SystemExit(f'Use a release version such as 0.1.0, not {args.version}.')
-    missing = [n for n in (*PAYLOAD, 'build-id', IMAGE) if not (BUILD / n).is_file()]
+    missing = [n for n in (*PAYLOAD, 'build-id', IMAGE, PLUS_IMAGE) if not (BUILD / n).is_file()]
     if missing:
         raise SystemExit('Missing in .cache/own-os/build: ' + ', '.join(missing) + '. Run tools/own_os_build.py.')
     build = (BUILD / 'build-id').read_text().strip()
@@ -89,10 +91,14 @@ def main():
     out = ROOT / 'dist/release-os' / args.version
     out.mkdir(parents=True, exist_ok=True)
     archive, unpacked = package(build, out)
-    image = out / f'RG-DS-OS-{args.version}.img.gz'
-    shutil.copyfile(BUILD / IMAGE, image)
-    digest = hashlib.sha256(image.read_bytes()).hexdigest()
-    image.with_name(image.name + '.sha256').write_text(f'{digest}  {image.name}\n')
+    images = []
+    for source, name in ((IMAGE, f'RG-DS-OS-{args.version}.img.gz'), (PLUS_IMAGE, f'RG-DS-OS-Plus-{args.version}.img.gz')):
+        image = out / name
+        shutil.copyfile(BUILD / source, image)
+        digest = hashlib.sha256(image.read_bytes()).hexdigest()
+        image.with_name(image.name + '.sha256').write_text(f'{digest}  {image.name}\n')
+        images += [image, image.with_name(image.name + '.sha256')]
+    image = images[0]
     tag = 'v' + args.version
     now = int(time.time())
     metadata = dict(
@@ -115,10 +121,10 @@ def main():
     feed = out / f'{args.channel}-os.json'
     sign(metadata, key, key_id, feed)
     print(f'{archive.relative_to(ROOT)} ({metadata["size"] / 1048576:.0f} MiB), feed {feed.relative_to(ROOT)}')
-    print(f'{image.relative_to(ROOT)} ({image.stat().st_size / 1048576:.0f} MiB), the card image')
+    print(f'{image.relative_to(ROOT)} ({image.stat().st_size / 1048576:.0f} MiB), the card image (both handhelds)')
     notes = out / 'notes.md'
     notes.write_text(metadata['notes'])
-    files = [image, image.with_name(image.name + '.sha256'), archive, feed]
+    files = [*images, archive, feed]
     command = [
         'gh', 'release', 'create', tag, '--repo', repo, '--draft', '--title', f'RG DS OS {args.version}',
         '--notes-file',

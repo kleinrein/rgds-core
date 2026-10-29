@@ -41,6 +41,6 @@ PIN=; command -v taskset > /dev/null && PIN="taskset -c 0-2"
 exec $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 0 --bottom-display 1 \
     --boot-startup $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
     --system-dir gb=/data/roms/gb \
-    --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md \
+    --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md --system-dir md=/data/roms/genesis \
     --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir ports=$APP/runtime/portmaster_files/entry \
     --system-dir ports=/data/portmaster/ports >> $LOG 2>&1

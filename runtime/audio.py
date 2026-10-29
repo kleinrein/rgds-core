@@ -1,4 +1,4 @@
-"""One saved volume for the menu and all engines on the RG DS RK817 codec."""
+"""One saved volume for the menu and all engines on the RG DS RK817 codec (or the RG DS Plus's AW88166 speakers)."""
 import argparse
 from contextlib import contextmanager
 import fcntl
@@ -25,6 +25,30 @@ def clean_environment():
 
 BT_SINK = Path("/run/rgds/bt-sink")
 BT_AUDIO = Path("/usr/libexec/rgds/bt-audio")
+# RG DS OS: "<card> rk817|aw88166", the card that plays now (/usr/libexec/rgds/audio); absent: the RK817 as card 0
+AUDIO_MIXER = Path("/run/rgds/audio-mixer")
+
+
+CAPTURE_CONF = Path("/run/rgds/audio-capture.conf")
+
+
+def capture_device(conf=CAPTURE_CONF):
+    """The microphone's ALSA device: RG DS OS names it (the RK817 is not card 0 on every RG DS Plus), stock has the
+    codec as card 0."""
+    return "rgds_mic" if conf.is_file() else "plughw:0,0"
+
+
+def dac_percent(level):
+    # RK817's lowest ~30% lies below the speaker floor. Zero remains mute.
+    return 0 if level == 0 else 30 + round(70 * (level - 1) / 99)
+
+
+def mixer_target(path=AUDIO_MIXER):
+    try:
+        card, kind = path.read_text().split()[:2]
+        return int(card), kind
+    except (OSError, ValueError):
+        return 0, "rk817"
 
 
 class Mixer:
@@ -32,13 +56,20 @@ class Mixer:
     # the same register Master.
     CONTROLS = ("DAC", "Master")
 
-    def __init__(self):
+    def __init__(self, target=mixer_target):
         self.control = None
+        self.target = target
+        self.card = None
 
     def query(self):
+        card, kind = self.target()
+        if card != self.card:
+            self.card, self.control = card, None
+        if kind == "aw88166":
+            return dac_percent(Amplifier(card).level())
         for control in ((self.control,) if self.control else self.CONTROLS):
             result = subprocess.run(
-                ["amixer", "-c", "0", "sget", control],
+                ["amixer", "-c", str(card), "sget", control],
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
@@ -52,18 +83,68 @@ class Mixer:
         raise ValueError("DAC playback mixer unavailable")
 
     def set(self, level):
-        # RK817's lowest ~30% lies below the speaker floor. Zero remains mute.
-        percent = 0 if level == 0 else 30 + round(70 * (level - 1) / 99)
-        if not self.control:
+        card, kind = self.target()
+        if kind == "aw88166":
+            Amplifier(card).set(level)
+            return
+        if not self.control or card != self.card:
             self.query()
         subprocess.run(
-            ["amixer", "-q", "-c", "0", "sset", self.control, f"{percent}%"],
+            ["amixer", "-q", "-c", str(card), "sset", self.control, f"{dac_percent(level)}%"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             env=clean_environment(),
             check=True,
             timeout=2
         )
+
+
+class Amplifier:
+    """The RG DS Plus's two AW88166 speaker amplifiers. Their control is an attenuation, not a level: 0 the loudest,
+    1023 mute, 64 a 6 dB step (BananaLinux's measurements). Level 1-100 spans 50 dB, 0 is mute. The kernel calls the
+    controls "Left PCM" and "Right PCM" (or one "PCM")."""
+    CONTROLS = (("Left PCM", "Right PCM"), ("PCM",))
+
+    def __init__(self, card, run=None):
+        self.card = card
+        self.run = run or subprocess.run
+
+    @staticmethod
+    def raw(level):
+        return 1023 if level <= 0 else round((100 - min(100, level)) * 16 / 3)
+
+    @staticmethod
+    def from_raw(value):
+        return 0 if value >= 1023 else max(1, min(100, round(100 - value * 3 / 16)))
+
+    def get(self, control):
+        result = self.run(["amixer", "-c", str(self.card), "sget", control],
+                          text=True,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.DEVNULL,
+                          env=clean_environment(),
+                          timeout=2)
+        match = re.search(r"Playback (\d+) \[", result.stdout or "")
+        return int(match[1]) if result.returncode == 0 and match else None
+
+    def controls(self):
+        for names in self.CONTROLS:
+            if self.get(names[0]) is not None:
+                return names
+        raise ValueError("AW88166 playback control unavailable")
+
+    def level(self):
+        return self.from_raw(self.get(self.controls()[0]))
+
+    def set(self, level):
+        for control in self.controls():
+            self.run(["amixer", "-q", "-c", str(self.card), "sset", control,
+                      str(self.raw(level))],
+                     stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL,
+                     env=clean_environment(),
+                     check=True,
+                     timeout=2)
 
 
 def headset_volume(level):
@@ -141,7 +222,7 @@ class Volume:
             previous = saved if saved is not None else self.initial()
             target = max(0, min(100, previous + delta)) if value is None else value
             # Check the actual mixer: opening a new sink may reset it to 100%.
-            expected = 0 if target == 0 else 30 + round(70 * (target - 1) / 99)
+            expected = dac_percent(target)
             if abs(self.mixer.query() - expected) > 1:
                 self.mixer.set(target)
             if saved != target:

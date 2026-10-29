@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a verified DSperate source tree with GCC 13.3 and upstream's PGO profile.
+"""Build a verified DSCore source tree (the DSperate fork) with GCC 13.3 and upstream's PGO profile.
 
 Upstream DSperate's releases are GCC 13.3 builds that apply the profile
 committed under pgo/aarch64 (made by upstream's tools/pgo_refresh.sh from

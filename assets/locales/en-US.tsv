@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1 day
 1 person nearby	1 person nearby
 1 player	1 player
 12-hour	12-hour
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	3D threading changed for this session. Settings storage is unavailable.
 3D threading changed. No restart needed.	3D threading changed. No restart needed.
 3x sharper	3x sharper
+4 weeks ago	4 weeks ago
 4x (experimental)	4x (experimental)
 5x (experimental)	5x (experimental)
 A  Apply	A  Apply
@@ -81,6 +83,7 @@ Automatic (free)	Automatic
 Automatic updates	Automatic updates
 Available	Available
 Available networks	Available networks
+Average session	Average session
 B  Cancel	B  Cancel
 B  Close	B  Close
 Back	Back
@@ -97,6 +100,7 @@ Battery percentage	Battery percentage
 Battery saver	Battery saver
 Before	Before
 Before you play	Before you play
+Bezel	Bezel
 Binding unchanged.	Binding unchanged.
 Black and white	Black and white
 Black bar	Black bar
@@ -159,8 +163,6 @@ Choose a network from the list	Choose a network from the list
 Choose an option	Choose an option
 Choose Anbernic or RG DS startup.	Choose Anbernic or RG DS startup.
 Choose native or a sharper 3D image	Choose native or a sharper 3D image
-Choose the core for this cartridge	Choose the core for this cartridge
-Choose the display backend for the next DraStic launch. DSperate stays your default.	Choose the display backend for the next DraStic launch. DSperate stays your default.
 Choose what opens when you power on	Choose what opens when you power on
 Classic	Classic
 Classic blue	Classic blue
@@ -183,6 +185,7 @@ COLOUR MODE	COLOR MODE
 Colour mode	Color mode
 Colour treatment inspired by the original DS display.	Color treatment inspired by the original DS display.
 Column	Column
+Commander	Commander
 Companion	Companion
 Compare	Compare
 Confirm	Confirm
@@ -247,17 +250,16 @@ Cover	Cover
 Covers	Covers
 Current progress could not be saved. No slot was changed.	Current progress could not be saved. No slot was changed.
 Custom	Custom
-DS only	DS only
 Dark	Dark
 Dark blue	Dark blue
 Dark green	Dark green
 Date format	Date format
 Day	Day
 Day or night	Day or night
+Day streak	Day streak
 Daylight saving	Daylight saving
 Days	Days
 Default	Default
-Default emulator	Default emulator
 Default shader	Default shader
 DEFAULT THEME - CHECK LOG	DEFAULT THEME - CHECK LOG
 Delete	Delete
@@ -281,8 +283,6 @@ Downloading PortMaster	Downloading PortMaster
 Downloading update…	Downloading update…
 Downloading {0}	Downloading {0}
 Downloads resume where they stopped if Wi-Fi drops.	Downloads resume where they stopped if Wi-Fi drops.
-DraStic backend	DraStic backend
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: an alternative for games that need it. Saves stay separate.
 Draw and chat	Draw and chat
 Draw and chat with nearby handhelds	Draw and chat with nearby handhelds
 Drawing on your own	Drawing on your own
@@ -291,12 +291,11 @@ DS controls	DS controls
 DS controls are unavailable for this engine.	DS controls are unavailable for this engine.
 DS language	DS language
 DS Lite	DS Lite
+DS only	DS only
 DS rounded	DS rounded
 DS screens	DS screens
 DSCore 3D resolution	DSCore 3D resolution
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: recommended for everyday play. Native resolution is the default.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: the original upstream engine. DSCore adds fixes and speed.
 Edit	Edit
 Edit search	Edit search
 Effects volume	Effects volume
@@ -332,8 +331,8 @@ Fast-forward enabled.	Fast-forward enabled.
 Fast-forward is unavailable for this emulator.	Fast-forward is unavailable for this emulator.
 Fast-forward style	Fast-forward style
 Favourite	Favourite
-FAVOURITE COLOUR	FAVOURITE COLOUR
 Favourite a game and it waits for you here	Favourite a game and it waits for you here
+FAVOURITE COLOUR	FAVOURITE COLOUR
 Favourites	Favorites
 Feel every move	Feel every move
 Feel the game	Feel the game
@@ -351,15 +350,13 @@ Finding games…	Finding games…
 Finishing another task. Press Y again in a moment.	Finishing another task. Press Y again in a moment.
 Finishing the system request	Finishing the system request
 Follow your default button layout	Follow your default button layout
-Following your global controls.	Following your global controls.
-Follows your Library default. Each emulator keeps its own saves.	Follows your Library default. Each emulator keeps its own saves.
+Following the default controls.	Following the default controls.
 Follows your library shader.	Follows your library shader.
 Forget this device?	Forget this device?
 FPS changed for this session. Settings storage is unavailable.	FPS changed for this session. Settings storage is unavailable.
 FPS counter enabled.	FPS counter enabled.
 FPS counter hidden.	FPS counter hidden.
 Fr	Fr
-Frame	Frame
 Frameskip	Frameskip
 Free space	Free space
 Free space while keeping your saves	Free space while keeping your saves
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · Green
 Game Boy · Red	Game Boy · Red
 Game Boy · Screen only	Game Boy · Screen only
 Game Boy · Yellow	Game Boy · Yellow
-Game emulator	Game emulator
-Game emulator saved.	Game emulator saved.
 Game FPS	Game FPS
 Game info	Game info
 Game menu	Game menu
@@ -428,7 +423,7 @@ German	German
 Get, update and remove ports	Get, update and remove ports
 Give your eyes and hands a break.	Give your eyes and hands a break.
 Global	Global
-Global controls saved.	Global controls saved.
+Default controls saved.	Default controls saved.
 Glossy tiles	Glossy tiles
 Go back	Go back
 Goes into	Goes into
@@ -444,6 +439,7 @@ Heart containers	Heart containers
 Heart pieces	Heart pieces
 Hearts	Hearts
 High contrast	High contrast
+History starts with your next game	History starts with your next game
 Hold	Hold
 Hold still for a right click	Hold still for a right click
 Hold to exit	Hold to exit
@@ -494,6 +490,8 @@ Keyboard	Keyboard
 Keys	Keys
 Kinstone fusions	Kinstone fusions
 Language	Language
+Last 4 weeks	Last 4 weeks
+Last 7 days	Last 7 days
 Last played	Last played
 Launch cancelled	Launch cancelled
 LCD + both colours	LCD + both colors
@@ -532,6 +530,7 @@ Loaded	Loaded
 Loading checkpoint…	Loading checkpoint…
 Loading…	Loading…
 Long press	Long press
+Longest session	Longest session
 Looking for devices…	Looking for devices…
 Looking for games…	Looking for games…
 Looking for networks…	Looking for networks…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	Networking is disabled. Turn
 Never	Never
 New messages below	New messages below
 Next	Next
-Next emulator	Next emulator
 Next picture	Next picture
 Next:	Next:
 Night	Night
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: a compatibility option. Try DSperate first for speed.
 No button detected. Try again when you're ready.	No button detected. Try again when you're ready.
 No checkpoint saved for this emulator yet.	No checkpoint saved for this emulator yet.
 No cover yet	No cover yet
@@ -650,6 +647,7 @@ Orange	Orange
 Original	Original
 Original pixels	Original pixels
 Original pixels and colours.	Original pixels and colors.
+Other	Other
 Pacific	Pacific
 Paired	Paired
 Party	Party
@@ -759,7 +757,6 @@ Restart the device?	Restart the device?
 Restart the game to apply DS settings.	Restart the game to apply DS settings.
 Restart the RGDS menu.	Restart the RGDS menu.
 Restart the RGDS menu?	Restart the RGDS menu?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	Restart uses {0}. Saves and checkpoints stay separate per emulator.
 Restart without loading a state?	Restart without loading a state?
 Restarting into the update…	Restarting into the update…
 Restarting…	Restarting…
@@ -797,7 +794,6 @@ Rupees	Rupees
 Sa	Sa
 Save	Save
 Save & restart	Save & restart
-Save & restart applies Threaded 3D.	Save & restart applies Threaded 3D.
 Save & restart keeps your checkpoint and applies pending settings.	Save & restart keeps your checkpoint and applies pending settings.
 Save a report for troubleshooting	Save a report for troubleshooting
 Save backup created in userdata/exports.	Save backup created in userdata/exports.
@@ -811,11 +807,8 @@ Save state	Save state
 Save your checkpoint and restart	Save your checkpoint and restart
 Saved	Saved
 Saved - desktop simulation	Saved - desktop simulation
-Saved for the next Standard DraStic launch.	Saved for the next Standard DraStic launch.
 Saved network	Saved network
 Saved · {0}	Saved · {0}
-Saved. Applies on your next DraStic launch.	Saved. Applies on your next DraStic launch.
-Saved. Save & restart applies screen order.	Saved. Save & restart applies screen order.
 Saved. Save & restart applies this change.	Saved. Save & restart applies this change.
 Saved. Save & restart changes the emulator.	Saved. Save & restart changes the emulator.
 Saving before restarting…	Saving before restarting…
@@ -834,7 +827,6 @@ Score	Score
 Screen brightness	Screen brightness
 Screen colours	Screen colours
 Screen off	Screen off
-Screen order	Screen order
 screens	screens
 ScreenScraper needs project credentials and your account	ScreenScraper needs project credentials and your account
 Screenshot	Screenshot
@@ -857,7 +849,6 @@ Selected row	Selected row
 Send	Send
 Series	Series
 Set the clock to where you are.	Set the clock to where you are.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	Sets Standard DraStic screen order for this game. Save & restart applies it.
 Setting up PortMaster	Setting up PortMaster
 Settings	Settings
 Settings saved	Settings saved
@@ -919,8 +910,6 @@ Spring	Spring
 Springy menu changes with a colourful wobble	Springy menu changes with a colourful wobble
 Stable	Stable
 Standard	Standard
-Standard DraStic only. Applies on the next launch; game saves are kept.	Standard DraStic only. Applies on the next launch; game saves are kept.
-Standard screen order	Standard screen order
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	Su
 Subtle	Subtle
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	Summer time follows your timezone. Force it on or off if the clock is an hour out.
 Super missiles	Super missiles
-SuperDrastic (experimental)	SuperDrastic (experimental)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic currently uses native output. Your standard shader choice is kept.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.
 Swap screens	Swap screens
 Swapped	Swapped
 Swipe in from the left edge to go Back.	Swipe in from the left edge to go Back.
@@ -969,6 +955,7 @@ Systems	Systems
 Tap to type, or use the D-pad and A	Tap to type, or use the D-pad and A
 Team	Team
 Temporary game cache cleared. Saves and artwork are kept.	Temporary game cache cleared. Saves and artwork are kept.
+Terrain and unit	Terrain and unit
 Test	Test
 Test microphone	Test microphone
 Test the microphone on your handheld.	Test the microphone on your handheld.
@@ -1022,6 +1009,7 @@ Times played	Times played
 Timezone	Timezone
 Title screen	Title screen
 Title screens	Title screens
+Today	Today
 Toggle	Toggle
 Too much on the pad: erase some of it	Too much on the pad: erase some of it
 Tools	Tools
@@ -1092,12 +1080,11 @@ Updates & recovery	Updates & recovery
 Updates will be available when the release channel opens.	Updates will be available when the release channel opens.
 Use an additional rendering thread	Use an additional rendering thread
 Use default ({0})	Use default ({0})
-Use global controls	Use global controls
+Use default controls	Use default controls
 Use previous build	Use previous build
 Use ROM identity	Use ROM identity
 Use the engine's native controls for microphone and DS settings.	Use the engine's native controls for microphone and DS settings.
 Use the previous RGDS build?	Use the previous RGDS build?
-Used by games without an override	Used by games without an override
 Username	Username
 Verify	Verify
 Verifying update…	Verifying update…
@@ -1157,6 +1144,7 @@ Worlds	Worlds
 Y imports a save into this slot.	Y imports a save into this slot.
 Yellow	Yellow
 Yes	Yes
+Yesterday	Yesterday
 You	You
 You appear like this to others	You appear like this to others
 You are in Room {0}	You are in Room {0}
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (experimental)
 {0} (recommended)	{0} (recommended)
 {0} active	{0} active
+{0} days	{0} days
+{0} days ago	{0} days ago
 {0} found. Choose Done to go to your library.	{0} found. Choose Done to go to your library.
 {0} frames	{0} frames
 {0} game	{0} game

@@ -27,10 +27,10 @@ inline constexpr int core_count = sizeof(core_ids) / sizeof(core_ids[0]);
 inline constexpr int ds_core_count = 5, play_core = 5, dscore_core = 4;
 // PortMaster (appended after RG DS Play) runs the Ports system's scripts.
 inline constexpr int portmaster_core = 6;
-// NNDDSS and melonDS are retired: they are never offered, and a saved choice of
-// either falls back to DSCore. Indices stay stable because settings store them.
-inline constexpr int retired_core = 2, melonds_core = 3;
-inline constexpr bool core_retired(int core) { return core == retired_core || core == melonds_core; }
+// DSCore is the only DS engine. DraStic, DSperate, NNDDSS and melonDS are retired:
+// never offered, and a saved choice of any falls back to DSCore. Indices stay
+// stable because settings store them.
+inline constexpr bool core_retired(int core) { return core >= 0 && core < ds_core_count && core != dscore_core; }
 inline constexpr bool core_offered(int core) { return core >= 0 && core < ds_core_count && !core_retired(core); }
 inline constexpr int offered_core(int core) { return core_retired(core) ? dscore_core : core; }
 // The other systems RG DS Play opens, by file extension; the order of the Systems page.
@@ -49,7 +49,7 @@ inline const std::array<SystemInfo, 12>& systems() {
         // libretro systems through RG DS Play (runtime/play_options.py names the same extensions and the cores)
         {"nes", "Nintendo Entertainment System", "NES", {".nes", ".fds", ".unf", ".unif"}},
         {"snes", "Super Nintendo", "SNES", {".sfc", ".smc"}},
-        {"md", "Mega Drive", "MD", {".md", ".gen", ".smd", ".32x"}},
+        {"md", "Mega Drive", "MD", {".md", ".gen", ".smd", ".32x", ".bin"}},
         {"sms", "Master System", "SMS", {".sms", ".gg"}},
         {"psx", "PlayStation", "PS", {".cue", ".chd", ".pbp", ".m3u"}},
         {"n64", "Nintendo 64", "N64", {".z64", ".n64", ".v64"}},
@@ -187,7 +187,7 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
 struct Model {
     std::vector<Game> games;
     size_t selected = 0;
-    unsigned core = 0;
+    unsigned core = dscore_core;
     void move(int delta) {
         if (games.empty()) return;
         auto n = static_cast<long>(games.size());

@@ -238,7 +238,7 @@ void App::poll_launch(Uint32 now) {
     if (launch_phase == LaunchPhase::Exiting && (!preferences.animations || now - launch_exit_at >= 80)) {
         if (launch_handoff && launch_child > 0) {
             // Let the finite launch sparkle finish while input/cancel remains live.
-            if (sounds.active() && now - launch_at < 1200) return;
+            if (sounds.active() && now - launch_at < 700) return;
             // Present the final fade frame, release SDL, then acknowledge ownership.
             draw(!o.screenshot.empty());
             close();

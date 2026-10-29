@@ -1,0 +1,101 @@
+#!/bin/sh
+# Where sound goes on RG DS OS, on either handheld. The RG DS has one card, the RK817 codec, whose output feeds the
+# jack and the speaker amplifiers (the "Internal Speakers" pin switch, which the headphones watcher turns off while
+# something is plugged in). The RG DS Plus has two: the AW88166 speaker amplifiers on their own I2S, and the RK817
+# for the jack and the microphone. Playback follows the jack there by changing card.
+#   audio setup                  the cards and the route (rcS at boot; the watcher again once the Plus's amplifier
+#                                card is up, which waits for its firmware)
+#   audio route speaker|headphones
+#   audio cards                  what was found: "codec=N speaker=M" (M empty on the RG DS)
+# Files in $RUN, all re-read by ALSA at every open (/etc/asound.conf refers to them):
+#   audio-local.conf    pcm.rgds_out on this handheld's own output (the speaker, or the Plus's jack)
+#   audio-out.conf      where playback goes now: audio-local.conf's copy, or a Bluetooth headset's (bt-audio)
+#   audio-capture.conf  pcm.rgds_in, the microphone
+#   audio-mixer         "<card> rk817|aw88166": the card and kind whose volume follows the saved level
+#   audio-route         speaker or headphones (RG DS Core reopens its sounds when this or bt-sink changes)
+RUN=${RGDS_AUDIO_RUN:-/run/rgds}
+CARDS=${RGDS_ASOUND_CARDS:-/proc/asound/cards}
+AMIXER=${RGDS_AMIXER:-amixer}
+# the playback stream's dmix keys: the speaker's is the one shared_audio.MIXER_KEY watches, the Plus's jack the next
+KEY=1380402259
+
+# card numbers by what they are (" 0 [rk817ext       ]: simple-card - rk817_ext"); the codec is card 0 if no
+# line names it, as before the Plus
+find_cards() {
+    CODEC=$(sed -n 's/^ *\([0-9][0-9]*\) \[.*[Rr][Kk]817.*/\1/p' "$CARDS" 2>/dev/null | head -n 1)
+    SPEAKER=$(sed -n 's/^ *\([0-9][0-9]*\) \[.*[Aa][Ww]88166.*/\1/p' "$CARDS" 2>/dev/null | head -n 1)
+    [ -n "$CODEC" ] || CODEC=0
+}
+
+# dmix at 48 kHz, S16 stereo: the AW88166 plays 48 kHz whatever the I2S is set to (BananaLinux measured 44.1 kHz
+# audio 9% fast), and one rate for every client keeps the RK817's shared DAI from refusing the microphone
+dmix() {
+    printf '# %s (usr/libexec/rgds/audio)\npcm.rgds_out {\n    type plug\n    slave.pcm {\n        type dmix\n' "$3"
+    printf '        ipc_key %s\n        ipc_perm 0666\n        slave {\n            pcm "hw:%s,0"\n' "$2" "$1"
+    printf '            format S16_LE\n            rate 48000\n            channels 2\n            period_size 512\n'
+    printf '            buffer_size 2048\n        }\n    }\n}\n'
+}
+
+put() {  # put <file> <text>: atomically
+    printf '%s' "$2" > "$1.new" && mv "$1.new" "$1"
+}
+
+route() {
+    find_cards
+    if [ -n "$SPEAKER" ] && [ "$1" = speaker ]; then
+        put "$RUN/audio-local.conf" "$(dmix "$SPEAKER" $KEY "the RG DS Plus's speakers")
+"
+        put "$RUN/audio-mixer" "$SPEAKER aw88166
+"
+    elif [ -n "$SPEAKER" ]; then
+        put "$RUN/audio-local.conf" "$(dmix "$CODEC" $((KEY + 1)) "the RG DS Plus's headphone jack")
+"
+        put "$RUN/audio-mixer" "$CODEC rk817
+"
+        # a stream still open on the amplifiers (a game started before the jack) goes quiet instead of playing on
+        "$AMIXER" -q -c "$SPEAKER" sset 'Left PCM' 1023 2>/dev/null
+        "$AMIXER" -q -c "$SPEAKER" sset 'Right PCM' 1023 2>/dev/null
+        "$AMIXER" -q -c "$SPEAKER" sset PCM 1023 2>/dev/null
+    else
+        put "$RUN/audio-local.conf" "$(dmix "$CODEC" $KEY "the RK817 (the speakers or the headphone jack)")
+"
+        put "$RUN/audio-mixer" "$CODEC rk817
+"
+    fi
+    [ -f "$RUN/bt-sink" ] || cp "$RUN/audio-local.conf" "$RUN/audio-out.conf"
+    put "$RUN/audio-route" "$1
+"
+    # the saved volume on the card that plays now (the launcher's helper; best effort, absent in tests)
+    app=/usr/share/rgds/releases/$(cat /usr/share/rgds/active 2>/dev/null)
+    [ -n "$SPEAKER" ] && [ -f "$app/runtime/audio.py" ] && [ -z "$RGDS_AUDIO_RUN" ] &&
+        python3 -B "$app/runtime/audio.py" sync --data /data/rgds/userdata 2>/dev/null
+    echo "audio: $1 (codec card $CODEC${SPEAKER:+, speaker card $SPEAKER})" >&2
+}
+
+setup() {
+    find_cards
+    # the microphone, always the RK817; on the Plus pinned to the playback's 48 kHz, since its headphone stream
+    # shares the codec's DAI (a 44.1 kHz capture against it is refused); the RG DS keeps the plain device it had
+    if [ -n "$SPEAKER" ]; then
+        put "$RUN/audio-capture.conf" "pcm.rgds_in {
+    type plug
+    slave { pcm \"hw:$CODEC,0\" format S16_LE channels 2 rate 48000 }
+}
+"
+        # the codec's output to its headphone driver (BananaLinux sets the same)
+        "$AMIXER" -q -c "$CODEC" sset 'Playback Mux' HP 2>/dev/null
+    else
+        put "$RUN/audio-capture.conf" "pcm.rgds_in { type plug slave.pcm \"hw:$CODEC,0\" }
+"
+    fi
+    current=$(cat "$RUN/audio-route" 2>/dev/null)
+    route "${current:-speaker}"
+}
+
+case "$1" in
+setup) setup ;;
+route)
+    case "$2" in speaker|headphones) route "$2" ;; *) echo "usage: audio route speaker|headphones" >&2; exit 2 ;; esac ;;
+cards) find_cards; echo "codec=$CODEC speaker=$SPEAKER" ;;
+*) echo "usage: audio setup | route speaker|headphones | cards" >&2; exit 2 ;;
+esac

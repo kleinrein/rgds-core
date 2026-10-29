@@ -1,0 +1,28 @@
+RG DS OS: both RG DS Plus panels at 59.9986 Hz instead of 60.17 Hz
+
+The Plus's VOP clock is PLL 816 MHz / 13 = 62769231 Hz (the 62770 kHz the panels ask for). Front porches 127 and 14
+instead of 120 and 16: 62769231 / (1311 x 798) = 59.9986 Hz. This is BananaLinux's banana-panel-tune search (the
+smallest front porch change within 0.002 Hz of 60, each number keeping its digit count) run offline with that clock;
+on a real Plus BananaLinux reports 60.17 -> 59.999 Hz from it. The sync and back porches are unchanged. Not yet seen
+on our own Plus: if the panels stay dark, this patch is the first suspect.
+
+--- a/rk3568-anbernic-rg-ds-plus.dts
++++ b/rk3568-anbernic-rg-ds-plus.dts
+@@ -514,7 +514,7 @@
+ 		panel_description =
+ 			"G size=87,66 delays=10,10,10,10,20 format=rgb888 lanes=2 flags=0xe03",
+ 
+-			"M clock=62770 horizontal=1024,120,80,80 vertical=768,16,8,8 default=1",
++			"M clock=62770 horizontal=1024,127,80,80 vertical=768,14,8,8 default=1",
+ 
+ 			"I seq=3000",
+ 			"I seq=f749610200",
+@@ -594,7 +594,7 @@
+ 		panel_description =
+ 			"G size=87,66 delays=10,10,10,10,20 format=rgb888 lanes=2 flags=0xe03",
+ 
+-			"M clock=62770 horizontal=1024,120,80,80 vertical=768,16,8,8 default=1",
++			"M clock=62770 horizontal=1024,127,80,80 vertical=768,14,8,8 default=1",
+ 
+ 			"I seq=3000",
+ 			"I seq=f749610200",

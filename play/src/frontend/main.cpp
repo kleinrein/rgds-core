@@ -94,6 +94,8 @@ std::atomic<int> wanted_fit{-1}, wanted_second{-1};
 std::atomic<int> wanted_colours{-1}; // palette * 16 + correction, set together
 std::mutex wanted_frame_lock;
 std::string wanted_frame; // empty: no change asked for
+// The game, for the bridge's cheat calls (set once the session is open, cleared before it closes).
+std::atomic<Session*> cheat_session{nullptr};
 
 struct Panel {
     SDL_Window* window = nullptr;
@@ -449,6 +451,31 @@ extern "C" __attribute__((visibility("default"))) int rgds_play_set_color(int pa
     return 1;
 }
 
+// Cheats, called by the bridge as for DSCore's (rgds_cheat_* in its frontend): from its event hook on the main
+// thread between frames, so a switch is applied to the core before the call returns. Codes have no groups here.
+extern "C" __attribute__((visibility("default"))) int rgds_cheat_count() {
+    Session* s = cheat_session.load();
+    return s ? int(s->cheats().codes().size()) : 0;
+}
+extern "C" __attribute__((visibility("default"))) int rgds_cheat_group_count() { return 0; }
+extern "C" __attribute__((visibility("default"))) int rgds_cheat_group(int, const char**, int*) { return 0; }
+extern "C" __attribute__((visibility("default"))) int
+rgds_cheat_entry(int index, const char** name, const char** description, int* group, int* state) {
+    Session* s = cheat_session.load();
+    if (!s || index < 0 || size_t(index) >= s->cheats().codes().size()) return 0;
+    const play::CheatCode& c = s->cheats().codes()[size_t(index)];
+    if (name) *name = c.name.c_str();
+    if (description) *description = c.description.c_str();
+    if (group) *group = -1;
+    if (state) *state = c.on ? 1 : 0;
+    return 1;
+}
+extern "C" __attribute__((visibility("default"))) int rgds_set_cheat(int index, int on) {
+    Session* s = cheat_session.load();
+    if (!s || index < 0 || on < 0 || on > 1) return 0;
+    return s->set_cheat(size_t(index), on != 0) ? 1 : 0;
+}
+
 int main(int argc, char** argv) {
     SessionOptions o;
     int fit = FitSharp, second = SecondCompanion;
@@ -491,12 +518,16 @@ int main(int argc, char** argv) {
     std::signal(SIGINT, request_stop);
     std::signal(SIGHUP, request_stop);
     Session session;
+    struct CheatsClosed { // before the session goes, whichever way main returns
+        ~CheatsClosed() { cheat_session = nullptr; }
+    } cheats_closed;
     std::string error;
     set_gl_host(&gpu_core_host);
     if (!session.open(o, error)) {
         std::fprintf(stderr, "rgds-play: %s\n", error.c_str());
         return 1;
     }
+    cheat_session = &session;
     // Auto-load: the checkpoint the runtime put in the state slot, before the
     // first frame, so the game never shows its boot first (melonDS does the same).
     if (const char* native = std::getenv("RGDS_NATIVE_AUTOLOAD");
@@ -575,7 +606,8 @@ int main(int argc, char** argv) {
                                      : std::string(session.core().system()) == "gb" ? "GAME BOY"
                                                                                     : "GAME BOY ADVANCE";
     // A light-gun game is played by touching it: it starts on the touch screen.
-    const bool lightgun = session.profile() && session.profile()->lightgun;
+    // A light gun or a mouse game is played on the touch screen: it starts there, a finger aims or draws.
+    const bool lightgun = session.profile() && (session.profile()->lightgun || session.profile()->mouse);
     if (lightgun && second == SecondCompanion) second = SecondSwap;
     std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit), second_name(second),
                  frame.name.c_str());
@@ -734,7 +766,8 @@ int main(int argc, char** argv) {
                 quit("Home");
             if (e.type == SDL_CONTROLLERDEVICEADDED && !pad && !device_pad.active())
                 pad = SDL_GameControllerOpen(e.cdevice.which);
-            // With the screens swapped a light-gun game is on the touch screen: a finger aims and fires.
+            // With the screens swapped a light-gun or mouse game is on the touch screen: a finger aims and fires, or
+            // draws.
             if (lightgun && second == SecondSwap) {
                 if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERMOTION || e.type == SDL_FINGERUP) {
                     int x = -1, y = -1;
@@ -752,6 +785,12 @@ int main(int argc, char** argv) {
                            e.button.windowID == SDL_GetWindowID(lower.window)) {
                     aim((e.button.x - lower.area.x) * pw / std::max(1, lower.area.w),
                         (e.button.y - lower.area.y) * ph / std::max(1, lower.area.h), e.type == SDL_MOUSEBUTTONDOWN);
+                } else if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK) &&
+                           e.motion.which != SDL_TOUCH_MOUSEID && lower.window &&
+                           e.motion.windowID == SDL_GetWindowID(lower.window)) {
+                    // A desktop's mouse dragged: a finger drawing (Mario Paint).
+                    aim((e.motion.x - lower.area.x) * pw / std::max(1, lower.area.w),
+                        (e.motion.y - lower.area.y) * ph / std::max(1, lower.area.h), true);
                 }
                 continue;
             }
@@ -894,7 +933,7 @@ int main(int argc, char** argv) {
         if (Companion* c = session.companion()) {
             Dock& dock = c->dock();
             c->set_time(SDL_GetTicks());
-            dock.set_full(second == SecondInfo);
+            c->set_info(second == SecondInfo);
             dock.set_reachable(second != SecondSwap);
             switch (dock.take_action()) {
             case Dock::Action::Switcher:

@@ -15,8 +15,8 @@ class PackagingABITests(unittest.TestCase):
     def test_floor_accounts_for_every_bundled_binary(self):
         components = {
             "bin/rgds-launcher": dict(glibc_minimum="2.17"),
-            "emulators/dsperate/dsperate": dict(glibc_minimum="2.34"),
-            "emulators/superdrastic/sdl/libSDL2.so": dict(glibc_minimum=None)
+            "emulators/rgds-experimental/rgds-experimental": dict(glibc_minimum="2.34"),
+            "services/samba/bin/smbd": dict(glibc_minimum=None)
         }
         self.assertEqual(glibc_floor(components), "2.34")
         self.assertEqual(glibc_floor({}), "2.17")
@@ -24,11 +24,8 @@ class PackagingABITests(unittest.TestCase):
 
     def test_owned_bridge_and_external_cores_have_distinct_provenance(self):
         self.assertEqual(payload_source("emulators/hooks/librgdsbridge.so"), "RGDS source build")
-        self.assertIn("Supplied DSperate", payload_source("emulators/dsperate/dsperate"))
-        record = {"source": {"commit": "pinned-source"}}
-        self.assertEqual(
-            payload_source("emulators/dsperate/dsperate", record), "DSperate source build at pinned-source"
-        )
+        self.assertIn("DSperate", payload_source("emulators/rgds-experimental/rgds-experimental"))
+        self.assertEqual(payload_source("emulators/shaders/lib.so"), "External engine runtime library")
 
     def test_nonelf_assets_are_skipped_and_elf_hash_is_checked(self):
         with tempfile.TemporaryDirectory() as directory:

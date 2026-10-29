@@ -1,15 +1,18 @@
 """RG DS OS updates: a signed image written to the slot that is not running (docs/OTA.md, "RG DS OS").
 
 The feed, the download and its signature are ota.py's; what differs is what an update is. A release is a zip holding
-<build>/rootfs.squashfs, Image.lz4, the device tree, extlinux.conf (both LABEL blocks) and manifest.json (their
-hashes). Staging writes the root filesystem to the other slot's partition and its kernel and device tree to that
-slot's folder on the boot partition, and checks every byte back; nothing the running slot uses is touched. Applying
+<build>/rootfs.squashfs, Image.lz4, both handhelds' device trees, extlinux.conf (both LABEL blocks) and manifest.json
+(their hashes). Staging writes the root filesystem to the other slot's partition and its kernel and device trees to
+that slot's folder on the boot partition, and checks every byte back; nothing the running slot uses is touched. The
+new slot's label loads the device tree U-Boot picks (FDTDIR) only when that U-Boot picked this handheld's; otherwise
+it names this handheld's own (fit_label). Applying
 switches extlinux.conf's DEFAULT to the new slot with the running one as FALLBACK and arms U-Boot's boot counter
 (/usr/libexec/rgds/trial), then restarts: if the new slot does not come up and commit itself within three boots, U-Boot
 boots the old one again and the launcher is told. The trust file and the update guard ship with the image (app/os/).
 """
 import hashlib
 import os
+import re
 from pathlib import Path
 import shutil
 import stat
@@ -21,8 +24,10 @@ from ota import Updater, guard_module
 
 TARGET = 'rgds-os-rk3566'
 BASE = 'rgds-os'
-DTB = 'rk3568-anbernic-rg-ds.dtb'
-PAYLOAD = ('rootfs.squashfs', 'Image.lz4', DTB, 'extlinux.conf')
+# the RG DS's, the RG DS Plus's (one card for both: U-Boot picks, uboot-rgds.fragment)
+DTBS = ('rk3568-anbernic-rg-ds.dtb', 'rk3568-anbernic-rg-ds-plus.dtb')
+BOARDS = ('rgds', 'rgds-plus')
+PAYLOAD = ('rootfs.squashfs', 'Image.lz4', *DTBS, 'extlinux.conf')
 PARTITIONS = {'a': 2, 'b': 3}
 TRIAL = Path('/usr/libexec/rgds/trial')
 BOOT = Path('/boot')
@@ -60,6 +65,24 @@ def replace_label(conf, slot, template):
     if not done:
         out.extend(wanted)
     return '\n'.join(out) + '\n'
+
+
+def board(compatible):
+    """rgds or rgds-plus from the device tree's compatible strings (/proc/device-tree/compatible)."""
+    return BOARDS[1] if b'anbernic,rg-ds-plus' in compatible else BOARDS[0]
+
+
+def fit_label(template, cmdline, compatible):
+    """The LABEL blocks of a release's extlinux.conf for this handheld. They load the device tree U-Boot picked
+    (FDTDIR, by the board's ID voltage) only when the running U-Boot picked this handheld's: an older U-Boot sets no
+    $fdtfile (rgds.detected= is empty) and FDTDIR would load a file that is not there, and a Plus that boots from
+    rgds-os-plus.img may be one whose voltage reads wrong. Otherwise this handheld's own is named (FDT)."""
+    here = board(compatible)
+    match = re.search(r'(?:^|\s)rgds\.detected=(\S*)', cmdline)
+    if match and match[1] == here:
+        return template
+    dtb = DTBS[BOARDS.index(here)]
+    return re.sub(r'^(\s*)FDTDIR (/[ab]/)\s*$', lambda m: f'{m[1]}FDT {m[2]}{dtb}', template, flags=re.M)
 
 
 def hash_file(path, size=None, report=None):
@@ -184,6 +207,18 @@ class OsUpdater(Updater):
                 raise ValueError('Update archive inventory is invalid.')
         return {name: (entries[f'{build}/{name}'], files[name]) for name in PAYLOAD}
 
+    def cmdline(self):
+        try:
+            return Path('/proc/cmdline').read_text()
+        except OSError:
+            return ''
+
+    def compatible(self):
+        try:
+            return Path('/proc/device-tree/compatible').read_bytes()
+        except OSError:
+            return b''
+
     def partition_size(self, device):
         return int(Path('/sys/class/block', device.name, 'size').read_text()) * 512
 
@@ -236,10 +271,12 @@ class OsUpdater(Updater):
                 self.write_partition(z, entry, digest, device)
                 self.remount('rw')
                 try:
-                    for name in ('Image.lz4', DTB):
+                    for name in ('Image.lz4', *DTBS):
                         entry, digest = payload[name]
                         self.write_boot_file(z, entry, digest, self.boot / other / name)
-                    template = z.read(payload['extlinux.conf'][0]).decode('utf-8')
+                    template = fit_label(
+                        z.read(payload['extlinux.conf'][0]).decode('utf-8'), self.cmdline(), self.compatible()
+                    )
                     conf = self.boot / 'extlinux/extlinux.conf'
                     new = replace_label(conf.read_text(), other, template)
                     conf.with_name('extlinux.conf.new').write_text(new)

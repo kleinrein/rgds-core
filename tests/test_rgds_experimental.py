@@ -21,7 +21,6 @@ ENGINE = 'rgds-experimental'
 class ExperimentalLaunchTests(Fixture):
     def prepare(self):
         self.binary(ENGINE)
-        self.binary('dsperate')
         bridge = self.app / 'emulators/hooks/librgdsbridge.so'
         bridge.parent.mkdir(parents=True)
         bridge.write_bytes(b'bridge')
@@ -32,8 +31,6 @@ class ExperimentalLaunchTests(Fixture):
     def test_selection_launch_and_saves_are_independent(self):
         rom = self.prepare()
         write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(core=4))
-        baseline = emulators.launch_plan('dsperate', self.app, self.data, rom)
-        before = {p: p.read_bytes() for p in (self.data / 'emulators/dsperate').rglob('*') if p.is_file()}
         plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)
         self.assertEqual(game_options(self.data, rom)['core'], 4)
         self.assertEqual(Path(plan['command'][0]).name, ENGINE)
@@ -41,14 +38,12 @@ class ExperimentalLaunchTests(Fixture):
         self.assertIn('--no-autoload', plan['command'])
         self.assertEqual(plan['env']['RGDS_CORE'], 'dsperate')  # shared native protocol
         self.assertEqual(plan['env']['RGDS_OWN_FF_HUD'], '1')
-        self.assertEqual(baseline['env']['RGDS_OWN_FF_HUD'], '0')
         self.assertNotIn('RGDS_STATE_ATOMIC_REPLACE', plan['env'])
         for key in ('HOME', 'XDG_CONFIG_HOME', 'RGDS_STATE_DIR', 'RGDS_STATE_SLOT', 'RGDS_AUTOSTATE_FILE'):
-            self.assertNotEqual(plan['env'][key], baseline['env'][key])
             self.assertIn(ENGINE, plan['env'][key])
         config = (self.data / 'emulators' / ENGINE / 'config.ini').read_text()
         self.assertIn(str(self.data / 'emulators' / ENGINE / 'saves'), config)
-        self.assertEqual(before, {p: p.read_bytes() for p in before})
+        self.assertFalse((self.data / 'emulators/dsperate').exists())
 
     def test_high_resolution_selects_private_renderer_and_preserves_core_identity(self):
         rom = self.prepare()

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 
+from audio import capture_device
 from records import read_record, process_identity
 
 
@@ -48,7 +49,7 @@ def run(data):
         env.pop('LD_PRELOAD', None)
         env.pop('LD_LIBRARY_PATH', None)
         capture = subprocess.Popen(
-            ['arecord', '-q', '-D', 'plughw:0,0', '-t', 'raw', '-f', 'S16_LE', '-r', '16000', '-c', '1'],
+            ['arecord', '-q', '-D', capture_device(), '-t', 'raw', '-f', 'S16_LE', '-r', '16000', '-c', '1'],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             env=env

@@ -315,13 +315,13 @@ def low_resolution(path):
 
 def system_games(entries):
     """Other systems' games (RG DS Play) from --system-dir system=path entries."""
-    from play_options import SYSTEMS
+    from play_options import SYSTEMS, FOLDER_EXTENSIONS
     result = set()
     for entry in entries:
         system, _, folder = entry.partition("=")
         root = Path(folder)
         if system not in SYSTEMS or not root.is_dir(): continue
-        suffixes = SYSTEMS[system] + (".zip",)
+        suffixes = SYSTEMS[system] + FOLDER_EXTENSIONS.get(system, ()) + (".zip",)
         result.update(
             p.resolve() for p in root.rglob("*") if p.is_file() and not p.is_symlink() and p.suffix.lower() in suffixes
         )

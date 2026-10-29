@@ -1,0 +1,15 @@
+RG DS OS: the RG DS Plus's key under the screens reports KEY_HOME instead of BTN_Z (as 0003 for the RG DS)
+
+The Plus's device tree calls it BACK; it is the same ADC key, in the same place, as the RG DS's Home key.
+
+--- a/rk3568-anbernic-rg-ds-plus.dts
++++ b/rk3568-anbernic-rg-ds-plus.dts
+@@ -35,7 +35,7 @@
+ 
+ 		button-back {
+ 			label = "BACK";
+-			linux,code = <BTN_Z>;
++			linux,code = <KEY_HOME>;
+ 			press-threshold-microvolt = <41000>;
+ 		};
+ 	};

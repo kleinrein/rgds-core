@@ -20,7 +20,7 @@ default, where heavy GPU stretches drop to native resolution for a moment.
 | Zelda: Phantom Hourglass, intro | 60 | 54 | 54 | display capture keeps the CPU rasterizer on |
 | Zelda: Spirit Tracks, intro | 60 | 47 | 48 | as above; about 13 ms of CPU raster a frame |
 | COP: The Recruit, intro | 41 | 45 | 45 | CPU-bound at every scale |
-| Hotel Dusk: Room 215 | — | — | — | crashes during boot; starts in DraStic by default |
+| Hotel Dusk: Room 215 | — | — | — | crashes during boot |
 
 Intro scenes are the first 40 s after boot, so they mostly show logos, menus and
 cutscenes. Gameplay can be lighter or heavier. Checkpoints from demanding scenes

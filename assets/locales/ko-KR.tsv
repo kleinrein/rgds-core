@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1일
 1 person nearby	주변에 1명
 1 player	1명
 12-hour	12시간
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	이번 세션에만 3D 스레드를 변경했습니다. 설정을 저장할 수 없습니다.
 3D threading changed. No restart needed.	3D 스레드를 변경했습니다. 다시 시작할 필요가 없습니다.
 3x sharper	3배 선명
+4 weeks ago	4주 전
 4x (experimental)	4배(실험적)
 5x (experimental)	5배(실험적)
 A  Apply	A  적용
@@ -81,6 +83,7 @@ Automatic (free)	자동
 Automatic updates	자동 업데이트
 Available	사용 가능
 Available networks	사용 가능한 네트워크
+Average session	평균 플레이
 B  Cancel	B  취소
 B  Close	B  닫기
 Back	뒤로
@@ -97,6 +100,7 @@ Battery percentage	배터리 잔량(%)
 Battery saver	절전
 Before	전
 Before you play	플레이하기 전에
+Bezel	테두리
 Binding unchanged.	버튼 할당이 바뀌지 않았습니다.
 Black and white	흑백
 Black bar	검은 띠
@@ -159,8 +163,6 @@ Choose a network from the list	목록에서 네트워크를 선택하세요
 Choose an option	항목을 선택하세요
 Choose Anbernic or RG DS startup.	Anbernic과 RG DS 중 어느 쪽으로 시작할지 선택하세요.
 Choose native or a sharper 3D image	원본 해상도 또는 더 선명한 3D 화면
-Choose the core for this cartridge	이 카트리지의 코어 선택
-Choose the display backend for the next DraStic launch. DSperate stays your default.	다음에 DraStic을 실행할 때 쓸 화면 방식을 선택합니다. 기본값은 계속 DSperate입니다.
 Choose what opens when you power on	전원을 켜면 열릴 화면
 Classic	클래식
 Classic blue	클래식 블루
@@ -183,6 +185,7 @@ COLOUR MODE	색상 모드
 Colour mode	색상 모드
 Colour treatment inspired by the original DS display.	초대 DS 화면을 닮은 색감.
 Column	세로 목록
+Commander	지휘관
 Companion	컴패니언
 Compare	비교
 Confirm	확인
@@ -247,17 +250,16 @@ Cover	커버
 Covers	커버
 Current progress could not be saved. No slot was changed.	현재 진행 상황을 저장할 수 없습니다. 슬롯은 바뀌지 않았습니다.
 Custom	사용자 지정
-DS only	DS만
 Dark	다크
 Dark blue	남색
 Dark green	진초록색
 Date format	날짜 형식
 Day	낮
 Day or night	낮과 밤
+Day streak	연속 플레이
 Daylight saving	일광 절약 시간
 Days	일수
 Default	기본
-Default emulator	기본 에뮬레이터
 Default shader	기본 필터
 DEFAULT THEME - CHECK LOG	기본 테마 - 로그 확인
 Delete	삭제
@@ -281,8 +283,6 @@ Downloading PortMaster	PortMaster 다운로드 중
 Downloading update…	업데이트 다운로드 중…
 Downloading {0}	{0} 다운로드 중
 Downloads resume where they stopped if Wi-Fi drops.	Wi-Fi가 끊겨도 다운로드는 멈춘 곳부터 이어집니다.
-DraStic backend	DraStic 화면 방식
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: 필요한 게임을 위한 대안입니다. 세이브 데이터는 따로 저장됩니다.
 Draw and chat	그림 채팅
 Draw and chat with nearby handhelds	주변 기기와 그림을 그리며 채팅
 Drawing on your own	혼자 그리는 중
@@ -291,12 +291,11 @@ DS controls	DS 조작
 DS controls are unavailable for this engine.	이 엔진에서는 DS 조작을 쓸 수 없습니다.
 DS language	DS 언어
 DS Lite	DS Lite
+DS only	DS만
 DS rounded	DS 둥근 글꼴
 DS screens	DS 화면
 DSCore 3D resolution	DSCore 3D 해상도
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: 추천. 가장 빠르며 덮개·스타일러스·3D 문제를 고쳤고, 3D를 2x–5x로 높일 수도 있습니다.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: 평소 플레이에 추천합니다. 기본값은 원본 해상도입니다.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: 원래 업스트림 엔진입니다. DSCore는 여기에 수정과 속도 향상을 더했습니다.
 Edit	편집
 Edit search	검색어 편집
 Effects volume	효과음 음량
@@ -332,8 +331,8 @@ Fast-forward enabled.	빨리 감기를 켰습니다.
 Fast-forward is unavailable for this emulator.	이 에뮬레이터에서는 빨리 감기를 쓸 수 없습니다.
 Fast-forward style	빨리 감기 방식
 Favourite	즐겨찾기
-FAVOURITE COLOUR	좋아하는 색
 Favourite a game and it waits for you here	게임을 즐겨찾기에 추가하면 여기에 있어요
+FAVOURITE COLOUR	좋아하는 색
 Favourites	즐겨찾기
 Feel every move	모든 움직임을 느껴 보세요
 Feel the game	게임을 느껴 보세요
@@ -351,15 +350,13 @@ Finding games…	게임 찾는 중…
 Finishing another task. Press Y again in a moment.	다른 작업을 마무리하는 중입니다. 잠시 후 Y를 다시 누르세요.
 Finishing the system request	시스템 요청을 마무리하는 중
 Follow your default button layout	기본 버튼 배치 따르기
-Following your global controls.	공통 조작 설정을 사용 중입니다.
-Follows your Library default. Each emulator keeps its own saves.	라이브러리 기본값을 따릅니다. 세이브 데이터는 에뮬레이터마다 따로 보관됩니다.
+Following the default controls.	공통 조작 설정을 사용 중입니다.
 Follows your library shader.	라이브러리 필터를 따릅니다.
 Forget this device?	이 기기를 삭제할까요?
 FPS changed for this session. Settings storage is unavailable.	이번 세션에만 FPS 표시를 변경했습니다. 설정을 저장할 수 없습니다.
 FPS counter enabled.	FPS를 표시합니다.
 FPS counter hidden.	FPS를 숨겼습니다.
 Fr	금
-Frame	테두리
 Frameskip	프레임 건너뛰기
 Free space	남은 공간
 Free space while keeping your saves	세이브 데이터는 남기고 공간 확보
@@ -401,8 +398,6 @@ Game Boy · Green	게임보이 · 그린
 Game Boy · Red	게임보이 · 레드
 Game Boy · Screen only	게임보이 · 화면만
 Game Boy · Yellow	게임보이 · 옐로
-Game emulator	게임 에뮬레이터
-Game emulator saved.	게임 에뮬레이터를 저장했습니다.
 Game FPS	게임 FPS
 Game info	게임 정보
 Game menu	게임 메뉴
@@ -428,7 +423,7 @@ German	독일어
 Get, update and remove ports	포트 받기, 업데이트, 삭제
 Give your eyes and hands a break.	눈과 손을 쉬게 해 주세요.
 Global	공통
-Global controls saved.	공통 조작 설정을 저장했습니다.
+Default controls saved.	공통 조작 설정을 저장했습니다.
 Glossy tiles	반짝이는 타일
 Go back	뒤로
 Goes into	저장 위치
@@ -444,6 +439,7 @@ Heart containers	하트 그릇
 Heart pieces	하트 조각
 Hearts	하트
 High contrast	고대비
+History starts with your next game	다음 게임부터 기록이 시작됩니다
 Hold	길게 누르기
 Hold still for a right click	움직이지 않고 누르면 오른쪽 클릭
 Hold to exit	길게 눌러 종료
@@ -494,6 +490,8 @@ Keyboard	키보드
 Keys	열쇠
 Kinstone fusions	키노 조각 맞추기
 Language	언어
+Last 4 weeks	최근 4주
+Last 7 days	최근 7일
 Last played	마지막 플레이
 Launch cancelled	실행을 취소했습니다
 LCD + both colours	LCD + 두 가지 색 보정
@@ -532,6 +530,7 @@ Loaded	불러옴
 Loading checkpoint…	체크포인트 불러오는 중…
 Loading…	불러오는 중…
 Long press	길게 누르기
+Longest session	최장 플레이
 Looking for devices…	기기를 찾는 중…
 Looking for games…	게임 찾는 중…
 Looking for networks…	네트워크 검색 중…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	네트워크가 꺼져 있�
 Never	안 함
 New messages below	아래에 새 메시지가 있습니다
 Next	다음
-Next emulator	다음 에뮬레이터
 Next picture	다음 이미지
 Next:	다음:
 Night	밤
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: 호환성 옵션입니다. 속도가 중요하면 DSperate를 먼저 써 보세요.
 No button detected. Try again when you're ready.	버튼 입력이 없었습니다. 준비되면 다시 시도하세요.
 No checkpoint saved for this emulator yet.	이 에뮬레이터의 체크포인트가 아직 없습니다.
 No cover yet	아직 커버 이미지가 없습니다
@@ -650,6 +647,7 @@ Orange	주황색
 Original	원본
 Original pixels	원래 픽셀
 Original pixels and colours.	원래 픽셀과 색 그대로.
+Other	기타
 Pacific	태평양
 Paired	페어링됨
 Party	파티
@@ -759,7 +757,6 @@ Restart the device?	기기를 다시 시작할까요?
 Restart the game to apply DS settings.	DS 설정을 적용하려면 게임을 다시 시작하세요.
 Restart the RGDS menu.	RGDS 메뉴를 다시 시작합니다.
 Restart the RGDS menu?	RGDS 메뉴를 다시 시작할까요?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	다시 시작하면 {0}을(를) 사용합니다. 세이브 데이터와 체크포인트는 에뮬레이터마다 따로 보관됩니다.
 Restart without loading a state?	상태를 불러오지 않고 다시 시작할까요?
 Restarting into the update…	업데이트를 적용해 다시 시작하는 중…
 Restarting…	다시 시작하는 중…
@@ -797,7 +794,6 @@ Rupees	루피
 Sa	토
 Save	저장
 Save & restart	저장 후 다시 시작
-Save & restart applies Threaded 3D.	'저장 후 다시 시작'으로 멀티스레드 3D가 적용됩니다.
 Save & restart keeps your checkpoint and applies pending settings.	'저장 후 다시 시작'은 체크포인트를 남기고 바뀐 설정을 적용합니다.
 Save a report for troubleshooting	문제 해결용 보고서 저장
 Save backup created in userdata/exports.	userdata/exports에 세이브 데이터 백업을 만들었습니다.
@@ -811,11 +807,8 @@ Save state	상태 저장
 Save your checkpoint and restart	체크포인트 저장 후 다시 시작
 Saved	저장했습니다
 Saved - desktop simulation	저장했습니다 - 데스크톱 시뮬레이션
-Saved for the next Standard DraStic launch.	다음 기본 DraStic 실행을 위해 저장했습니다.
 Saved network	저장된 네트워크
 Saved · {0}	저장됨 · {0}
-Saved. Applies on your next DraStic launch.	저장했습니다. 다음에 DraStic을 실행할 때 적용됩니다.
-Saved. Save & restart applies screen order.	저장했습니다. 화면 순서는 '저장 후 다시 시작'으로 적용됩니다.
 Saved. Save & restart applies this change.	저장했습니다. 이 변경은 '저장 후 다시 시작'으로 적용됩니다.
 Saved. Save & restart changes the emulator.	저장했습니다. 에뮬레이터는 '저장 후 다시 시작'으로 바뀝니다.
 Saving before restarting…	다시 시작하기 전에 저장하는 중…
@@ -834,7 +827,6 @@ Score	점수
 Screen brightness	화면 밝기
 Screen colours	화면 색상
 Screen off	화면 끄기
-Screen order	화면 순서
 screens	화면
 ScreenScraper needs project credentials and your account	ScreenScraper에는 프로젝트 인증 정보와 사용자 계정이 필요합니다
 Screenshot	스크린샷
@@ -857,7 +849,6 @@ Selected row	선택한 줄
 Send	보내기
 Series	시리즈
 Set the clock to where you are.	지금 있는 곳에 맞춰 시계를 설정합니다.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	이 게임의 기본 DraStic 화면 순서를 정합니다. '저장 후 다시 시작'으로 적용됩니다.
 Setting up PortMaster	PortMaster 준비 중
 Settings	설정
 Settings saved	설정을 저장했습니다
@@ -919,8 +910,6 @@ Spring	스프링
 Springy menu changes with a colourful wobble	알록달록 통통 튀는 메뉴 전환
 Stable	안정판
 Standard	기본
-Standard DraStic only. Applies on the next launch; game saves are kept.	기본 DraStic 전용입니다. 다음 실행 때 적용되며 세이브 데이터는 유지됩니다.
-Standard screen order	기본 화면 순서
 START	START
 Start	시작
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	일
 Subtle	은은하게
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	일광 절약 시간은 시간대를 따릅니다. 시계가 한 시간 어긋나면 켜거나 꺼서 고정하세요.
 Super missiles	슈퍼 미사일
-SuperDrastic (experimental)	SuperDrastic(실험적)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic은 현재 원본 출력을 사용합니다. 기본 필터 선택은 유지됩니다.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic은 자체 일시 정지 메뉴와 화면 방식을 사용합니다. 실험적 기능이며 RG DS 테스트는 아직입니다.
 Swap screens	화면 바꾸기
 Swapped	바뀜
 Swipe in from the left edge to go Back.	왼쪽 가장자리에서 밀면 뒤로 갑니다.
@@ -969,6 +955,7 @@ Systems	시스템
 Tap to type, or use the D-pad and A	터치로 입력하거나 십자 버튼과 A를 사용하세요
 Team	파티
 Temporary game cache cleared. Saves and artwork are kept.	게임 임시 캐시를 지웠습니다. 세이브 데이터와 이미지는 남아 있습니다.
+Terrain and unit	지형과 유닛
 Test	테스트
 Test microphone	마이크 테스트
 Test the microphone on your handheld.	기기의 마이크를 테스트합니다.
@@ -1022,6 +1009,7 @@ Times played	플레이 횟수
 Timezone	시간대
 Title screen	타이틀 화면
 Title screens	타이틀 화면
+Today	오늘
 Toggle	전환
 Too much on the pad: erase some of it	종이에 너무 많이 그렸습니다: 조금 지우세요
 Tools	도구
@@ -1092,12 +1080,11 @@ Updates & recovery	업데이트와 복구
 Updates will be available when the release channel opens.	릴리스 채널이 열리면 업데이트할 수 있습니다.
 Use an additional rendering thread	추가 렌더링 스레드 사용
 Use default ({0})	기본값 사용({0})
-Use global controls	공통 조작 설정 사용
+Use default controls	공통 조작 설정 사용
 Use previous build	이전 빌드 사용
 Use ROM identity	ROM 정보 사용
 Use the engine's native controls for microphone and DS settings.	마이크와 DS 설정은 엔진 자체 조작을 사용하세요.
 Use the previous RGDS build?	이전 RGDS 빌드를 사용할까요?
-Used by games without an override	개별 설정이 없는 게임에 사용
 Username	사용자 이름
 Verify	확인
 Verifying update…	업데이트 확인 중…
@@ -1157,6 +1144,7 @@ Worlds	월드
 Y imports a save into this slot.	Y를 누르면 이 슬롯으로 세이브 데이터를 가져옵니다.
 Yellow	노란색
 Yes	예
+Yesterday	어제
 You	나
 You appear like this to others	다른 사람에게는 이렇게 보입니다
 You are in Room {0}	{0}번 방에 있습니다
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0}(실험적)
 {0} (recommended)	{0}(추천)
 {0} active	{0}개 사용 중
+{0} days	{0}일
+{0} days ago	{0}일 전
 {0} found. Choose Done to go to your library.	{0} 찾았습니다. '완료'를 선택하면 라이브러리로 갑니다.
 {0} frames	{0}프레임
 {0} game	게임 {0}개

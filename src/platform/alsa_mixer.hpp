@@ -1,7 +1,8 @@
 #pragma once
 #include <cmath>
-#ifdef __linux__
+#include <cstdio>
 #include <cstring>
+#ifdef __linux__
 #include <fcntl.h>
 #include <sound/asound.h>
 #include <sys/ioctl.h>
@@ -41,5 +42,26 @@ inline bool write_mixer_percent(int percent, const char* name = "DAC Playback Vo
     (void)device;
     return true;
 #endif
+}
+
+// The saved level on the card that plays now. RG DS OS names it in /run/rgds/audio-mixer ("<card> rk817|aw88166",
+// /usr/libexec/rgds/audio); without the file the RK817 is card 0. The RG DS Plus's AW88166 speakers keep the level
+// runtime/audio.py gave them (an attenuation, and no reset when a sink opens), so there is nothing to restore.
+inline bool write_saved_level(int level, const char* route = "/run/rgds/audio-mixer") {
+    int card = 0;
+    char kind[16] = "rk817";
+    if (FILE* f = std::fopen(route, "r")) {
+        if (std::fscanf(f, "%d %15s", &card, kind) != 2 || card < 0) {
+            card = 0;
+            std::strcpy(kind, "rk817");
+        }
+        std::fclose(f);
+    }
+    if (std::strcmp(kind, "aw88166") == 0) return true;
+    char device[32];
+    std::snprintf(device, sizeof device, "/dev/snd/controlC%d", card);
+    const int percent = dac_percent_for_level(level);
+    return write_mixer_percent(percent, "DAC Playback Volume", device) ||
+           write_mixer_percent(percent, "Master Playback Volume", device);
 }
 }

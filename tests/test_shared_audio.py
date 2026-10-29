@@ -159,6 +159,16 @@ class StopOutsideMixerTests(unittest.TestCase):
 
     def test_host_without_the_mixer_reports_none(self):
         self.assertIsNone(shared_audio.mixer_holder(key=0x5247DEAD))
+        # without a key, both RG DS streams (the RG DS Plus's jack has its own): a holder in either wins
+        answers = {shared_audio.MIXER_KEY: 0, shared_audio.MIXER_KEY + 1: 4242}
+        original = shared_audio.mixer_holder
+        with patch.object(shared_audio, 'mixer_holder',
+                          side_effect=lambda key=None: original(key) if key is None else answers[key]):
+            self.assertEqual(shared_audio.mixer_holder(), 4242)
+            answers[shared_audio.MIXER_KEY + 1] = None
+            self.assertEqual(shared_audio.mixer_holder(), 0)
+            answers[shared_audio.MIXER_KEY] = None
+            self.assertIsNone(shared_audio.mixer_holder())
 
 
 if __name__ == '__main__': unittest.main()

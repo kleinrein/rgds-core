@@ -232,15 +232,6 @@ int App::run() {
             summary_ready = true;
             dirty = true;
         }
-        if (!o.game_menu && library_ready && !setup_checked) {
-            setup_checked = true;
-            if (!o.preview && !fs::exists(o.data / "setup-complete") && fs::exists(o.data / "setup-required")) {
-                settings.page = Page::RomSetup;
-                settings.focus = 0;
-                setup_first_run = true;
-                dirty = true;
-            }
-        }
         if (!o.game_menu && o.boot_startup && library_ready && boot_hardware_ready && !return_writes_pending() &&
             !system.volume_pending() && !system.brightness_pending() && !resume_checked &&
             settings.page != Page::BootWarning) {
@@ -494,8 +485,6 @@ int App::run() {
                << ",\"controls_preset\":" << std::quoted(edited_controls.preset) << ',';
         report << "\"system_configuration_loaded\":" << system_configuration_loaded
                << ",\"timezone\":" << std::quoted(system_preferences.timezone) << ',';
-        report << "\"drastic_backend\":" << preferences.drastic_backend
-               << ",\"game_drastic_backend\":" << game_preferences.drastic_backend << ",";
         report << "\"systems_menu\":" << systems_menu << ",\"systems_selected\":" << systems_selected << ',';
         report << "\"show_systems\":" << preferences.show_systems << ",\"shown_system\":" << std::quoted(shown_system)
                << ",\"listed_systems\":" << listed_systems.size() << ",\"launching_core\":" << launching_core

@@ -69,7 +69,7 @@ void App::restore_state() {
     }
     if (file && page >= 0 &&
         (page <= int(Page::GameOptions) || page == int(Page::Statistics) ||
-         page == int(Page::RomSetup) || page == int(Page::Motion) || page == int(Page::Colours) ||
+         page == int(Page::Motion) || page == int(Page::Colours) ||
          page == int(Page::MenuSounds) || page == int(Page::Haptics) || page == int(Page::DisplayOptions) ||
          page == int(Page::Bluetooth) || page == int(Page::Homebrew)) &&
         page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
@@ -77,7 +77,7 @@ void App::restore_state() {
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
                   : page == int(Page::Maintenance)    ? 6
-                  : page == int(Page::LibraryOptions) ? 10
+                  : page == int(Page::LibraryOptions) ? 8
                   : page == int(Page::Appearance)     ? 5
                   : page == int(Page::System)         ? (o.rgds_os ? 7 : 8)
                   : page == int(Page::Wifi)      ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)

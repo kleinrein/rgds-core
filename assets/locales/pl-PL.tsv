@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1 dzień
 1 person nearby	1 osoba w pobliżu
 1 player	1 gracz
 12-hour	12-godzinny
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	Wątki 3D zmienione na tę sesję. Zapis ustawień jest niedostępny.
 3D threading changed. No restart needed.	Wątki 3D zmienione. Restart nie jest potrzebny.
 3x sharper	3x ostrzej
+4 weeks ago	4 tygodnie temu
 4x (experimental)	4x (eksperymentalnie)
 5x (experimental)	5x (eksperymentalnie)
 A  Apply	A  Zastosuj
@@ -81,6 +83,7 @@ Automatic (free)	Automatycznie
 Automatic updates	Automatyczne aktualizacje
 Available	Dostępne
 Available networks	Dostępne sieci
+Average session	Średnia sesja
 B  Cancel	B  Anuluj
 B  Close	B  Zamknij
 Back	Wstecz
@@ -97,6 +100,7 @@ Battery percentage	Procent baterii
 Battery saver	Oszczędzanie baterii
 Before	Przed
 Before you play	Zanim zagrasz
+Bezel	Bezel
 Binding unchanged.	Przypisanie bez zmian.
 Black and white	Czarno-biały
 Black bar	Czarny pasek
@@ -159,8 +163,6 @@ Choose a network from the list	Wybierz sieć z listy
 Choose an option	Wybierz opcję
 Choose Anbernic or RG DS startup.	Wybierz uruchamianie Anbernic lub RG DS.
 Choose native or a sharper 3D image	Natywny lub ostrzejszy obraz 3D
-Choose the core for this cartridge	Wybierz rdzeń dla tego kartridża
-Choose the display backend for the next DraStic launch. DSperate stays your default.	Wybierz wyświetlanie dla następnego uruchomienia DraStic. DSperate pozostaje domyślny.
 Choose what opens when you power on	Co otwiera się po włączeniu
 Classic	Klasyczny
 Classic blue	Klasyczny niebieski
@@ -183,6 +185,7 @@ COLOUR MODE	TRYB KOLORÓW
 Colour mode	Tryb kolorów
 Colour treatment inspired by the original DS display.	Kolory inspirowane oryginalnym ekranem DS.
 Column	Kolumna
+Commander	Dowódca
 Companion	Ekran towarzyszący
 Compare	Porównaj
 Confirm	Potwierdź
@@ -247,17 +250,16 @@ Cover	Okładka
 Covers	Okładki
 Current progress could not be saved. No slot was changed.	Nie udało się zapisać bieżącego postępu. Żaden slot nie został zmieniony.
 Custom	Własny
-DS only	Tylko DS
 Dark	Ciemny
 Dark blue	Granatowy
 Dark green	Ciemnozielony
 Date format	Format daty
 Day	Dzień
 Day or night	Dzień czy noc
+Day streak	Dni z rzędu
 Daylight saving	Czas letni
 Days	Dni
 Default	Domyślne
-Default emulator	Domyślny emulator
 Default shader	Domyślny filtr
 DEFAULT THEME - CHECK LOG	DOMYŚLNY MOTYW — ZOBACZ DZIENNIK
 Delete	Usuń
@@ -281,8 +283,6 @@ Downloading PortMaster	Pobieranie PortMastera
 Downloading update…	Pobieranie aktualizacji…
 Downloading {0}	Pobieranie {0}
 Downloads resume where they stopped if Wi-Fi drops.	Po utracie Wi-Fi pobieranie wznowi się od miejsca przerwania.
-DraStic backend	Wyświetlanie DraStic
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: alternatywa dla gier, które go potrzebują. Zapisy są oddzielne.
 Draw and chat	Rysuj i czatuj
 Draw and chat with nearby handhelds	Rysuj i czatuj z pobliskimi konsolami
 Drawing on your own	Rysujesz sam
@@ -291,12 +291,11 @@ DS controls	Sterowanie DS
 DS controls are unavailable for this engine.	Sterowanie DS jest niedostępne dla tego silnika.
 DS language	Język DS
 DS Lite	DS Lite
+DS only	Tylko DS
 DS rounded	DS zaokrąglony
 DS screens	Ekrany DS
 DSCore 3D resolution	Rozdzielczość 3D w DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: zalecany. Najszybszy, z poprawkami klapki, rysika i 3D oraz opcjonalnym 3D 2x–5x.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: zalecany do codziennej gry. Domyślnie natywna rozdzielczość.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: oryginalny silnik. DSCore dodaje poprawki i szybkość.
 Edit	Edytuj
 Edit search	Edytuj wyszukiwanie
 Effects volume	Głośność efektów
@@ -332,8 +331,8 @@ Fast-forward enabled.	Przyspieszenie włączone.
 Fast-forward is unavailable for this emulator.	Przyspieszenie jest niedostępne w tym emulatorze.
 Fast-forward style	Tryb przyspieszenia
 Favourite	Ulubione
-FAVOURITE COLOUR	ULUBIONY KOLOR
 Favourite a game and it waits for you here	Dodaj grę do ulubionych, a będzie tu czekać
+FAVOURITE COLOUR	ULUBIONY KOLOR
 Favourites	Ulubione
 Feel every move	Poczuj każdy ruch
 Feel the game	Poczuj grę
@@ -351,15 +350,13 @@ Finding games…	Szukanie gier…
 Finishing another task. Press Y again in a moment.	Kończenie innego zadania. Naciśnij Y za chwilę.
 Finishing the system request	Kończenie żądania systemowego
 Follow your default button layout	Zgodnie z domyślnym układem przycisków
-Following your global controls.	Używane jest wspólne sterowanie.
-Follows your Library default. Each emulator keeps its own saves.	Zgodnie z ustawieniem biblioteki. Każdy emulator ma własne zapisy.
+Following the default controls.	Używane jest wspólne sterowanie.
 Follows your library shader.	Jak filtr biblioteki.
 Forget this device?	Zapomnieć to urządzenie?
 FPS changed for this session. Settings storage is unavailable.	FPS zmienione na tę sesję. Zapis ustawień jest niedostępny.
 FPS counter enabled.	Licznik FPS włączony.
 FPS counter hidden.	Licznik FPS ukryty.
 Fr	Pt
-Frame	Ramka
 Frameskip	Pomijanie klatek
 Free space	Wolne miejsce
 Free space while keeping your saves	Zwolnij miejsce, zachowując zapisy
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · Zielony
 Game Boy · Red	Game Boy · Czerwony
 Game Boy · Screen only	Game Boy · Sam ekran
 Game Boy · Yellow	Game Boy · Żółty
-Game emulator	Emulator gry
-Game emulator saved.	Emulator gry zapisany.
 Game FPS	FPS gry
 Game info	Informacje o grze
 Game menu	Menu gry
@@ -428,7 +423,7 @@ German	Niemiecki
 Get, update and remove ports	Pobieraj, aktualizuj i usuwaj porty
 Give your eyes and hands a break.	Daj odpocząć oczom i dłoniom.
 Global	Wspólne
-Global controls saved.	Wspólne sterowanie zapisane.
+Default controls saved.	Wspólne sterowanie zapisane.
 Glossy tiles	Błyszczące płytki
 Go back	Wróć
 Goes into	Trafia do
@@ -444,6 +439,7 @@ Heart containers	Pojemniki na serca
 Heart pieces	Kawałki serca
 Hearts	Serca
 High contrast	Wysoki kontrast
+History starts with your next game	Historia zacznie się od następnej gry
 Hold	Przytrzymanie
 Hold still for a right click	Przytrzymaj nieruchomo, aby kliknąć prawym
 Hold to exit	Przytrzymaj, aby wyjść
@@ -494,6 +490,8 @@ Keyboard	Klawiatura
 Keys	Klucze
 Kinstone fusions	Fuzje Kinstone
 Language	Język
+Last 4 weeks	Ostatnie 4 tygodnie
+Last 7 days	Ostatnie 7 dni
 Last played	Ostatnio grano
 Launch cancelled	Uruchamianie anulowane
 LCD + both colours	LCD + oba filtry kolorów
@@ -532,6 +530,7 @@ Loaded	Wczytano
 Loading checkpoint…	Wczytywanie punktu zapisu…
 Loading…	Wczytywanie…
 Long press	Długie naciśnięcie
+Longest session	Najdłuższa sesja
 Looking for devices…	Szukanie urządzeń…
 Looking for games…	Szukanie gier…
 Looking for networks…	Szukanie sieci…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	Sieć jest wyłączona. Wł�
 Never	Nigdy
 New messages below	Nowe wiadomości poniżej
 Next	Następna
-Next emulator	Następny emulator
 Next picture	Następny obraz
 Next:	Następne:
 Night	Noc
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: opcja zgodności. Dla szybkości najpierw spróbuj DSperate.
 No button detected. Try again when you're ready.	Nie wykryto przycisku. Spróbuj ponownie, gdy będziesz gotowy.
 No checkpoint saved for this emulator yet.	Brak punktów zapisu dla tego emulatora.
 No cover yet	Brak okładki
@@ -650,6 +647,7 @@ Orange	Pomarańczowy
 Original	Oryginalny
 Original pixels	Oryginalne piksele
 Original pixels and colours.	Oryginalne piksele i kolory.
+Other	Inne
 Pacific	Pacyfik
 Paired	Sparowane
 Party	Drużyna
@@ -759,7 +757,6 @@ Restart the device?	Uruchomić ponownie urządzenie?
 Restart the game to apply DS settings.	Uruchom grę ponownie, aby zastosować ustawienia DS.
 Restart the RGDS menu.	Uruchom ponownie menu RGDS.
 Restart the RGDS menu?	Uruchomić ponownie menu RGDS?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	Po restarcie: {0}. Zapisy każdego emulatora są oddzielne.
 Restart without loading a state?	Uruchomić ponownie bez wczytywania stanu?
 Restarting into the update…	Uruchamianie aktualizacji…
 Restarting…	Ponowne uruchamianie…
@@ -797,7 +794,6 @@ Rupees	Rupie
 Sa	So
 Save	Zapisz
 Save & restart	Zapisz i uruchom ponownie
-Save & restart applies Threaded 3D.	Zapisz i uruchom ponownie włącza wielowątkowe 3D.
 Save & restart keeps your checkpoint and applies pending settings.	Zapisz i uruchom ponownie zachowa postęp i zastosuje zmiany.
 Save a report for troubleshooting	Zapisz raport diagnostyczny
 Save backup created in userdata/exports.	Kopia zapisów utworzona w userdata/exports.
@@ -811,11 +807,8 @@ Save state	Zapisz stan
 Save your checkpoint and restart	Zapisz postęp i uruchom ponownie
 Saved	Zapisano
 Saved - desktop simulation	Zapisano — symulacja na komputerze
-Saved for the next Standard DraStic launch.	Zapisano na następne uruchomienie standardowego DraStic.
 Saved network	Zapisana sieć
 Saved · {0}	Zapisano · {0}
-Saved. Applies on your next DraStic launch.	Zapisano. Zadziała przy następnym uruchomieniu DraStic.
-Saved. Save & restart applies screen order.	Zapisano. Kolejność ekranów zadziała po Zapisz i uruchom ponownie.
 Saved. Save & restart applies this change.	Zapisano. Zmiana zadziała po Zapisz i uruchom ponownie.
 Saved. Save & restart changes the emulator.	Zapisano. Emulator zmieni się po Zapisz i uruchom ponownie.
 Saving before restarting…	Zapisywanie przed restartem…
@@ -834,7 +827,6 @@ Score	Wynik
 Screen brightness	Jasność ekranu
 Screen colours	Kolory ekranu
 Screen off	Ekran wyłączony
-Screen order	Kolejność ekranów
 screens	ekranów
 ScreenScraper needs project credentials and your account	ScreenScraper wymaga danych projektu i Twojego konta
 Screenshot	Zrzut ekranu
@@ -857,7 +849,6 @@ Selected row	Wybrany wiersz
 Send	Wyślij
 Series	Seria
 Set the clock to where you are.	Ustaw zegar według miejsca, w którym jesteś.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	Kolejność ekranów standardowego DraStic dla tej gry. Działa po Zapisz i uruchom ponownie.
 Setting up PortMaster	Konfigurowanie PortMastera
 Settings	Ustawienia
 Settings saved	Ustawienia zapisane
@@ -919,8 +910,6 @@ Spring	Sprężyna
 Springy menu changes with a colourful wobble	Sprężyste zmiany menu z kolorowym kołysaniem
 Stable	Stabilny
 Standard	Standardowy
-Standard DraStic only. Applies on the next launch; game saves are kept.	Tylko standardowy DraStic. Zadziała przy następnym uruchomieniu; zapisy gier zostaną zachowane.
-Standard screen order	Standardowa kolejność ekranów
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	Nd
 Subtle	Subtelne
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	Czas letni wynika ze strefy czasowej. Włącz go lub wyłącz, jeśli zegar różni się o godzinę.
 Super missiles	Superrakiety
-SuperDrastic (experimental)	SuperDrastic (eksperymentalny)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic na razie używa natywnego obrazu. Twój standardowy filtr zostaje zachowany.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic ma własne menu pauzy i wyświetlanie. Eksperymentalny; testy na RG DS w toku.
 Swap screens	Zamień ekrany
 Swapped	Zamienione
 Swipe in from the left edge to go Back.	Przesuń od lewej krawędzi, aby wrócić.
@@ -969,6 +955,7 @@ Systems	Systemy
 Tap to type, or use the D-pad and A	Dotknij, aby pisać, lub użyj krzyżaka i A
 Team	Drużyna
 Temporary game cache cleared. Saves and artwork are kept.	Pamięć tymczasowa gier wyczyszczona. Zapisy i okładki zachowane.
+Terrain and unit	Teren i jednostka
 Test	Testuj
 Test microphone	Testuj mikrofon
 Test the microphone on your handheld.	Przetestuj mikrofon konsoli.
@@ -1022,6 +1009,7 @@ Times played	Uruchomienia
 Timezone	Strefa czasowa
 Title screen	Ekran tytułowy
 Title screens	Ekrany tytułowe
+Today	Dzisiaj
 Toggle	Przełącz
 Too much on the pad: erase some of it	Za dużo na kartce: zmaż część
 Tools	Narzędzia
@@ -1092,12 +1080,11 @@ Updates & recovery	Aktualizacje i odzyskiwanie
 Updates will be available when the release channel opens.	Aktualizacje będą dostępne po otwarciu kanału wydań.
 Use an additional rendering thread	Użyj dodatkowego wątku renderowania
 Use default ({0})	Domyślne ({0})
-Use global controls	Użyj wspólnego sterowania
+Use default controls	Użyj wspólnego sterowania
 Use previous build	Użyj poprzedniej wersji
 Use ROM identity	Użyj danych z ROM-u
 Use the engine's native controls for microphone and DS settings.	Mikrofon i ustawienia DS obsługuje sterowanie silnika.
 Use the previous RGDS build?	Użyć poprzedniej wersji RGDS?
-Used by games without an override	Dla gier bez własnych ustawień
 Username	Nazwa użytkownika
 Verify	Weryfikacja
 Verifying update…	Weryfikacja aktualizacji…
@@ -1157,6 +1144,7 @@ Worlds	Światy
 Y imports a save into this slot.	Y importuje zapis do tego slotu.
 Yellow	Żółty
 Yes	Tak
+Yesterday	Wczoraj
 You	Ty
 You appear like this to others	Tak widzą Cię inni
 You are in Room {0}	Jesteś w pokoju {0}
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (eksperymentalny)
 {0} (recommended)	{0} (zalecany)
 {0} active	{0} aktywne
+{0} days	{0} dni
+{0} days ago	{0} dni temu
 {0} found. Choose Done to go to your library.	Znaleziono: {0}. Wybierz Gotowe, aby przejść do biblioteki.
 {0} frames	Klatki: {0}
 {0} game	Gry: {0}

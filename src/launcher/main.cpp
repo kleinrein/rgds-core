@@ -230,6 +230,16 @@ class App {
     const SystemStats& system_stats_for(size_t index);
     int play_fit = 0, play_second = 0; // RG DS Play's view of the running game (play.ini)
     std::string play_frame = "off";
+    // What a system's games share until a game says otherwise (userdata/system-defaults/<system>.ini): the same
+    // choices as a game's play.ini, as indexes, plus the shader (-1: the system's own screen or the library's).
+    struct SystemView {
+        int fit = 0, second = 0, palette = 0, correction = 0, filter = -1;
+        std::string frame = "off";
+    };
+    SystemView play_default; // the running game's system
+    std::string defaults_system = "gba"; // Library > System defaults: the system being edited
+    bool shader_defaults = false;        // the shader picker is choosing that system's default
+    mutable std::map<std::string, SystemView> system_views;
     int play_palette = 0, play_correction = 0; // Game Boy colours (play.ini): palette for GB, correction for GBC
     GameOptions game_preferences;
     std::vector<Shader> shaders;
@@ -382,8 +392,7 @@ class App {
     int detail_scroll = 0;
     std::string picker_title;
     std::vector<std::string> picker_options;
-    int picker_focus = 0, picker_selected = 0, picker_core_offset = -1;
-    std::vector<int> picker_cores; // emulator picker rows -> core indices
+    int picker_focus = 0, picker_selected = 0;
     int picker_scroll = 0, picker_grab = 0, picker_scroll_start = 0;
     bool picker_rail = false, picker_swipe = false;
     Uint32 picker_at = 0, picker_closed_at = 0;
@@ -479,7 +488,7 @@ class App {
         case Page::GameSwitcher: return int(switch_games.size()) + (home_switcher ? 0 : 1); // in a game: Game menu
         case Page::Graphics: return 8;
         case Page::Power: return int(power_rows.size());
-        case Page::LibraryOptions: return 11;
+        case Page::LibraryOptions: return 9;
         case Page::Appearance: return 6;
         case Page::DisplayOptions: return 5;
         case Page::Scraper: return 5;
@@ -490,10 +499,9 @@ class App {
         case Page::Maintenance: return 7;
         case Page::Network: return 7;
         case Page::SaveGallery: return 9;
-        case Page::RomSetup: return 3;
         case Page::PortFiles: return 3;
         case Page::DSControls: return 5;
-        case Page::EmulatorOptions: return o.game_core == "drastic" ? 12 : 10;
+        case Page::EmulatorOptions: return 9;
         case Page::ShaderPicker: return int(shader_choices.size());
         case Page::Controls: return 19;
         case Page::Wifi:
@@ -506,13 +514,18 @@ class App {
             if (!device_status.count("hb_system") || device_status.at("hb_system") != homebrew_system) return 0;
             return std::max(0, std::atoi(device_status.count("hb_count") ? device_status.at("hb_count").c_str() : "0"));
         case Page::Timezone: return int(timezones.size());
-        case Page::PlayGraphics: return play_colour_kind() ? 5 : 4;
+        case Page::PlayGraphics: return play_colour_kind() ? 6 : 5;
+        case Page::SystemDefaults: return defaults_colour_kind() ? 6 : 5;
         default: return 0;
         }
     }
     // Settings > Library: "Scan for games" (row 10) and "Show all systems" (row 9) are shown first,
-    // the others in their order below them.
-    static int library_row(int shown) { return shown == 0 ? 10 : shown == 1 ? 9 : shown - 2; }
+    // the others in their order below them. Rows 0 (Default emulator) and 6 (DraStic backend) are
+    // retired: DSCore is the only DS engine.
+    static int library_row(int shown) {
+        static constexpr int rest[] = {1, 2, 3, 4, 5, 8};
+        return shown == 0 ? 10 : shown == 1 ? 9 : shown == 2 ? 11 : rest[std::clamp(shown - 3, 0, 5)];
+    }
     int list_selected() const {
         return settings.page == Page::Settings ? section_row(settings.section) : settings.focus;
     }
@@ -647,7 +660,19 @@ class App {
     // (play/src/ui/frame_styles.hpp), then the owner's picture frames, userdata/frames/<system>/<name>.png.
     std::string play_system() const;
     fs::path play_frames_folder();
-    std::vector<std::string> play_frame_choices();
+    std::vector<std::string> play_frame_choices(std::string system = {}) const;
+    fs::path system_defaults_path(const std::string& system) const { return o.data / "system-defaults" / (system + ".ini"); }
+    SystemView system_view(const std::string& system) const;
+    void save_system_view(const std::string& system, const SystemView& view);
+    int default_shader(const std::string& system) const; // what Default draws: the system's choice, its screen, or the library's
+    int shader_current() const { return shader_defaults ? system_view(defaults_system).filter : shader_per_game ? game_preferences.filter : preferences.filter; }
+    std::vector<std::string> default_systems() const;
+    int defaults_colour_kind() const { return defaults_system == "gb" ? 1 : defaults_system == "gbc" ? 2 : 0; }
+    void system_defaults_action(int code);
+    void open_system_defaults();
+    void open_system_default_shader();
+    int play_graphics_row(int shown) const; // the row a shown line stands for (the colours row is only for Game Boy games)
+    void save_play_default();
     std::string play_frame_label(const std::string& frame) const;
     void apply_play_view(int fit, int second, const std::string& frame);
     const char* play_fit_name(int fit) const;
@@ -810,7 +835,7 @@ class App {
     // page or a five-minute safety refresh. Quality comes from the kernel.
     void refresh_network(Uint32 now);
     std::string network_id, bluetooth_address, confirmation;
-    std::string startup_mode = "stock";
+    std::string startup_mode = "rgds";
     bool startup_warning = true;
     Page confirm_return = Page::System;
     Uint32 menu_poll = 0;
@@ -839,14 +864,10 @@ class App {
     // Game info's X: the game file leaves the card (its saves stay); not for disc sets, ports or the demo
     bool game_removable() const;
     void remove_game();
-    // Game options' rows up to DS controls; Remove game follows them when the game can be removed
+    // Game options' rows up to DS controls; Remove game follows them when the game can be removed:
+    // Favourite, Shader, Controls, Artwork, (DS: 3D resolution), Game info, Save gallery, DS controls.
     int game_options_base() const {
-        // The last three are always Game info, Save gallery and DS controls.
-        if (other_system_selected()) return 8; // the rows every engine has; DS-only ones read Unavailable
-        if (experimental_game()) return 9;
-        return (game_preferences.core < 0 ? int(preferences.core) : game_preferences.core) == 0
-                   ? (superdrastic_game() ? 11 : 10)
-                   : 8;
+        return other_system_selected() ? 7 : 8; // other systems: DS controls reads Unavailable
     }
     fs::path homebrew_folder(const std::string& system) const;
     void homebrew_top(SDL_Renderer* r, int y);
@@ -899,7 +920,9 @@ class App {
     int filter_focus = 0, filter_scroll = 0;
     bool filter_pin = false;     // opened on the filters: the first section stays on top while the counts load
     int filter_thumb = 0;        // which handle of the focused slider the arrow keys move
-    int filter_drag = -1;        // the slider a finger is dragging, or -1
+    int filter_drag = -1;        // the slider a finger is on or dragging, or -1
+    bool filter_armed = false;   // that finger has not yet moved far enough to be a drag or a scroll
+    int filter_slider_grab = 0;  // the handle's offset from the finger when the drag began
     bool filter_touch = false;   // a finger is down on the sheet
     bool filter_rail = false;    // ... on its scrollbar, holding the thumb
     int filter_grab = 0;         // where on the thumb
@@ -930,7 +953,7 @@ class App {
     void filter_sheet_render(SDL_Renderer* r, int y);
     Page search_return = Page::Library;
     Uint32 automatic_update_at = 0;
-    bool resume_checked = false, setup_checked = false, resume_launch = false;
+    bool resume_checked = false, resume_launch = false;
     fs::path gallery_root() { return item_folder(model.selected) / "slots" / core_ids[gallery_core]; }
     void save_experience(const std::string& key, int value) {
         std::ostringstream body;
@@ -1018,12 +1041,8 @@ class App {
     void ds_controls_action();
     void save_ds_setting(const std::string& key, int value) { save_ds_setting(key, std::to_string(value)); }
     void save_ds_setting(const std::string& key, const std::string& value);
-    bool scan_stay = false; // a scan from Add your games keeps that page open
+    bool scan_stay = false; // a scan from Scan for games keeps the Library page open
     void rescan_games(bool stay = false);
-    // Add your games: opened by itself on a first start (Done then goes to the
-    // library) or from Library settings (Done goes back there). A scan from the
-    // page stays on it and reports what it found.
-    bool setup_first_run = false, setup_scanned = false;
     bool backup_requested = false; // Back up all saves was chosen; its outcome shows on the Library page
     void confirm_reset_state();
     // Cheats: the Action Replay codes DSCore loaded for this game, from the list
@@ -1059,7 +1078,8 @@ class App {
                          quick_tile_height = 60, quick_bottom_top = 360;
     int cheats_on() const;
     int cheats_in(int group, bool only_on = false) const;
-    bool cheats_available() const { return experimental_game() && !cheat_codes.empty(); }
+    bool cheats_engine() const { return experimental_game() || (o.game_menu && o.game_core == "rgds-play"); }
+    bool cheats_available() const { return cheats_engine() && !cheat_codes.empty(); }
     // Two or more groups get the overview; a flat database opens on its codes.
     bool cheat_overview() const { return cheat_group_order.size() > 1; }
     bool cheat_togglable(int row) const;
@@ -1115,6 +1135,11 @@ class App {
     void tab_strip(SDL_Renderer* r, int x, int rule, int w, const std::vector<std::string>& names, int selected,
                    int pressed = -1);
     void cheat_header(SDL_Renderer* r, int y);
+    // The Homebrew shelves' strip: 72 px tabs ending at the right margin, standing on the header's rule.
+    int homebrew_tabs_left() const { return 616 - int(homebrew_shelves().size()) * 72; }
+    bool homebrew_header_hit(int x, int y) const {
+        return homebrew_shelves().size() > 1 && y >= 24 && y <= 77 && x >= homebrew_tabs_left() && x < 616;
+    }
     void cheat_header_tap(int x);
     void cheat_row(SDL_Renderer* r, int y, int i);
     // The top screen: where you are, the focused group or code with its
@@ -1282,16 +1307,16 @@ class App {
         else if (settings.focus == 7) menu_request("restart");
         dirty = true;
     }
+    // Game FPS, Fast-forward, Power profile, Threaded 3D, 3D resolution, Frameskip, Save & restart,
+    // DS controls, Reset state.
     bool emulator_option_enabled(int row) {
-        // RG DS Play: no DS engine to switch to and no DS to control.
-        if (active_engine() == play_core && (row == 6 || row == list_count() - 2)) return false;
-        if (row >= (active_engine() == 0 ? 10 : 8) && row < list_count()) return true;
-        if (superdrastic_game() && (row == 0 || row == 9)) return false;
+        // RG DS Play: no DS to control.
+        if (active_engine() == play_core && row == list_count() - 2) return false;
+        if (row >= 6 && row < list_count()) return true;
         if (row == 2) return hardware.power;
-        if (row == 3) return active_engine() == 0 || active_engine() == 3;
-        if (row == 4) return active_engine() == 0 || active_engine() == 2 || active_engine() == 4;
-        if (row == 5) return active_engine() == 0 || active_engine() == 1 || active_engine() == 4;
-        return row >= 0 && (row < 8 || ((row == 8 || row == 9) && active_engine() == 0));
+        if (row == 3) return false; // DSCore threads its 3D itself
+        if (row == 4 || row == 5) return active_engine() == dscore_core;
+        return row >= 0 && row < 2;
     }
     void change_emulator_option(int direction) {
         if (settings.focus == list_count() - 1) {
@@ -1303,7 +1328,7 @@ class App {
             return;
         }
         if (!emulator_option_enabled(settings.focus)) return;
-        int row = settings.focus - 1, engine = active_engine();
+        int row = settings.focus - 1;
         if (row < 0) {
             if (o.preview) {
                 menu_status["fps"] = menu_status["fps"] == "1" ? "0" : "1";
@@ -1319,17 +1344,11 @@ class App {
             change_system(0, direction);
             return;
         }
-        if (row == 2 && engine == 3) {
-            menu_request(menu_status["threaded"] == "0" ? "threaded:1" : "threaded:0");
-            return;
-        }
         auto next = game_preferences;
-        if (row == 2 && engine == 0) next.threaded = next.threaded == 0 ? 1 : 0;
-        else if (row == 3) next.hires = next.hires == 1 ? 0 : 1;
-        else if (row == 4) {
+        if (row == 4) {
             if (!direction) return;
             next.frameskip = std::clamp((next.frameskip < 0 ? 0 : next.frameskip) + direction, 0, 3);
-        } else if (row == 6) {
+        } else if (row == 5) {
             menu_request("restart");
             return;
         } else return;
@@ -1356,16 +1375,12 @@ class App {
     void poll_collection();
     void open_game_options();
     bool apply_game_preferences(const GameOptions& next, const char* message);
-    void choose_game_emulator(int core);
     void change_game_option(int delta, bool toggle = false);
     std::string shader_name(int value);
+    std::string inherited_label(const std::string& resolved) { return locale.text("Default") + " (" + resolved + ")"; }
     bool experimental_game() const;
     std::string experimental_resolution_name() const;
     void show_experimental_resolution_picker();
-    bool superdrastic_game() const;
-    int superdrastic_resolution() const;
-    const char* superdrastic_resolution_name() const;
-    void show_superdrastic_resolution_picker();
     void open_shader_picker(bool per_game);
     // The system of the game a shader is picked for (Settings' default is the DS games').
     std::string shader_system = "nds";
@@ -1424,6 +1439,14 @@ class App {
     void game_info_scroll_by(int delta);
     void game_info_top(SDL_Renderer* r, int y);
     void game_info_bottom(SDL_Renderer* r, int y);
+    // The Playtime page (playtime_screen.hpp).
+    void playtime_top(SDL_Renderer* r, int y);
+    void playtime_bottom(SDL_Renderer* r, int y);
+    std::string playtime_days(int days);
+    // An anti-aliased ring piece (start/amount in turns, clockwise from the top), cached as a texture.
+    void smooth_arc(SDL_Renderer* r, int cx, int cy, int radius, int thickness, double start, double amount, Color ink,
+                    int alpha = 255, bool round_caps = true);
+    std::map<std::tuple<SDL_Renderer*, int, int, int, int, bool>, SDL_Texture*> arc_textures;
     Page artwork_return = Page::GameOptions;
     std::string artwork_match;
     std::map<std::string, std::string> artwork_result;
@@ -1725,11 +1748,6 @@ class App {
     std::string jump_title(size_t index);
     void jump_to_letter();
     void show_picker(std::string title, std::vector<std::string> options, int selected, std::function<void(int)> apply);
-    void show_emulator_picker(bool per_game);
-    const char* drastic_backend_name(int value) const;
-    void show_drastic_backend_picker(bool per_game);
-    void show_drastic_screen_picker();
-    std::string emulator_choice_hint() const;
     bool open_setting_picker();
     std::string device_info_name(int row) const;
     std::string device_info_value(int row);
@@ -1903,6 +1921,9 @@ class App {
     // page's icon and a title; the tip sits under it (settings_top draws it).
     // `y` places the icon and title; `screen` is the top screen's own top.
     void dsi_note(SDL_Renderer* r, int y, int screen, SettingsIcon symbol, const std::string& title);
+    // The top screen's card, on the grid: 16 px under the status bar (48) and 16 px above the lower edge, 24 px
+    // in from the sides. Its words are centred in it; shoulder tabs (36 px) sit inside its lower corners.
+    static constexpr int top_card_y = 64, top_card_h = 400;
     // A shoulder tab in a lower corner of the top screen, flush with its
     // edge: the key badge on the outer end, where the button is, then what it does.
     void shoulder_tab(SDL_Renderer* r, int y, bool right, const std::string& key, const std::string& text);
@@ -2709,6 +2730,7 @@ public:
 #include "launcher/controls_editor.hpp"
 #include "launcher/keyboard_screen.hpp"
 #include "launcher/game_info_screen.hpp"
+#include "launcher/playtime_screen.hpp"
 #include "launcher/filter_sheet.hpp"
 
 static int self_test() {
@@ -2731,7 +2753,7 @@ static int self_test() {
         m.next_core();
         ok = ok && core_offered(int(m.core));
     }
-    ok = ok && m.core == 0;
+    ok = ok && m.core == unsigned(dscore_core);
     Model empty;
     empty.move(-99);
     ok = ok && empty.selected == 0;
@@ -2864,7 +2886,7 @@ int main(int argc, char** argv) {
                     << "--cache-report PATH (development asset-cache counters)\n"
                     << "--touch-recording FILE (preview Linux AArch64 evdev capture)\n"
                     << "--settings [--section theme|brightness|power|library|sound|connectivity|system|controls]\n"
-                    << "--game-menu --game-core drastic|dsperate|melonds|rgds-experimental [--game-rom FILE]\n"
+                    << "--game-menu --game-core rgds-experimental|rgds-play [--game-rom FILE]\n"
                     << "--mode light|dark --font rounded|pixel --preferences FILE --themes DIR\n"
                     << "--system-preferences FILE (power, brightness and menu sleep)\n"
                     << "--input-script FILE (desktop-only timed key/tap events)\n"

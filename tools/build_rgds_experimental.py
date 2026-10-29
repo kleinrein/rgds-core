@@ -13,10 +13,10 @@ import tarfile
 import tempfile
 
 try:
-    from . import build_engines as base
+    from . import engine_toolchain as base
     from . import build_rgds_vulkan_shaders as shaders
 except ImportError:
-    import build_engines as base
+    import engine_toolchain as base
     import build_rgds_vulkan_shaders as shaders
 
 ROOT = base.ROOT
@@ -27,7 +27,7 @@ SHADER_DIR = 'src/core/gpu/vk/shaders'
 GENERATED = frozenset(f'{SHADER_DIR}/{name}' for name in shaders.SHADERS)
 # What the corresponding-source archive carries beside the DSperate/ tree.
 EXTRAS = (
-    'tools/build_rgds_experimental.py', 'tools/build_rgds_vulkan_shaders.py', 'tools/build_engines.py',
+    'tools/build_rgds_experimental.py', 'tools/build_rgds_vulkan_shaders.py', 'tools/engine_toolchain.py',
     'tools/build_engines_gcc.py', 'tools/elf_abi.py', 'dscore/FORK.md', 'src/experimental/rgds/README.md'
 )
 OPTIONS = {
@@ -172,24 +172,15 @@ def validate_build(directory):
 def build(args):
     scratch = ROOT / 'build/rgds-experimental-cross'
     scratch.mkdir(parents=True, exist_ok=True)
-    sdk = ROOT / 'build/engine-cross/sdl-sdk'
-    if not (sdk / 'lib/cmake/SDL2').is_dir():
-        raise ValueError('Run make build-engines first to prepare the SDL link SDK')
     source, files = prepare_source(TREE, scratch)
     gcc_build = getattr(args, 'compiler', 'zig') == base.gcc.COMPILER
     if gcc_build:
+        # The Lima VM links against its own SDL2 development files: no link SDK needed.
         return publish(source, files, args, *base.gcc.build(source, 'rgds-experimental', GCC_OPTIONS))
+    sdk = base.sdl_sdk(getattr(args, 'fetch', False), args.jobs)
     tool = {name: base.find_tool(name) for name in ('zig', 'cmake', 'ninja')}
-    env = os.environ.copy()
-    for name in (
-        'CFLAGS', 'CXXFLAGS', 'LDFLAGS', 'CPPFLAGS', 'CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'LIBRARY_PATH',
-        'SDKROOT', 'MACOSX_DEPLOYMENT_TARGET', 'PKG_CONFIG_PATH', 'SDL2_DIR'
-    ):
-        env.pop(name, None)
-    env.update(
-        ZIG_GLOBAL_CACHE_DIR=str(ROOT / '.cache/zig'), ZIG_LOCAL_CACHE_DIR=str(ROOT / '.cache/zig-rgds-experimental')
-    )
-    chain = base.toolchain(scratch / 'toolchain', tool['zig'], source, ROOT / '.cache/engine-sdk/SDL2-2.32.10')
+    env = base.cross_environment('zig-rgds-experimental')
+    chain = base.toolchain(scratch / 'toolchain', tool['zig'], source, base.SDL_SOURCE)
     build_dir = scratch / 'build'
     base.configure(
         tool['cmake'], tool['ninja'], source, build_dir, chain, {
@@ -255,6 +246,7 @@ def main():
         default='zig',
         help='gcc-pgo: GCC 13.3 + upstream PGO profile in the Lima ARM64 VM'
     )
+    parser.add_argument('--fetch', action='store_true', help='zig: download the pinned SDL source for the link SDK')
     args = parser.parse_args()
     if args.jobs < 1: parser.error('--jobs must be positive')
     try:

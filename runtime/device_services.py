@@ -542,7 +542,7 @@ class Services:
         if self.preview:
             self.publish(
                 boot_installed=1,
-                boot_mode=fields.get("mode", "stock"),
+                boot_mode="rgds",
                 boot_warning=fields.get("warning", "1"),
                 state="ready",
                 message=""
@@ -560,11 +560,10 @@ class Services:
         if not isinstance(payload, dict): raise ValueError("Choose RG DS startup.")
         mode = payload.get("mode")
         warning = payload.get("warning", True)
-        if mode not in ("stock", "rgds") or not isinstance(warning, bool): raise ValueError("Choose RG DS startup.")
+        if mode != "rgds" or not isinstance(warning, bool): raise ValueError("Choose RG DS startup.")
         if self.preview:
             write_fields(self.data / "boot.ini", dict(schema=1, mode=mode, warning=int(warning)))
         else:
-            if mode != 'rgds': raise ValueError("Anbernic startup is unavailable in RGDS OS.")
             from emulators import core_running
             if core_running(self.data): raise ValueError("Return home before changing startup.")
             write_fields(self.data / 'boot.ini', dict(schema=1, mode='rgds', warning=int(warning)))

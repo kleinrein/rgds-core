@@ -64,3 +64,13 @@ CONFIG_SYS_BOOTCOUNT_FS_NAME="/bootcount"
 CONFIG_SYS_BOOTCOUNT_ADDR=0x00f00000
 CONFIG_BOOTCOUNT_BOOTLIMIT=3
 CONFIG_FAT_WRITE=y
+# One card for the RG DS and the RG DS Plus: before booting, the SARADC's channel 5 (uboot-patches/004) names the
+# handheld, about 1.06 V on the RG DS and 1.77 V on the Plus, and $fdtfile becomes its device tree, which the card's
+# extlinux.conf loads (FDTDIR). No reading at all (an error) leaves the RG DS's. rgds_board and rgds_adc go on the
+# kernel's command line (rgds.detected=, rgds.adc=) for the logs and for the updater, which keeps FDTDIR only on a
+# U-Boot that sets them. A card made for one handheld (rgds-os-plus.img) names its device tree itself (FDT).
+CONFIG_ADC=y
+CONFIG_SARADC_ROCKCHIP=y
+CONFIG_CMD_ADC=y
+CONFIG_USE_PREBOOT=y
+CONFIG_PREBOOT="setenv rgds_board rgds; setenv rgds_adc none; setenv fdtfile rk3568-anbernic-rg-ds.dtb; adc single saradc@fe720000 5 rgds_adc; if test ${rgds_adc} -gt 1400000; then setenv rgds_board rgds-plus; setenv fdtfile rk3568-anbernic-rg-ds-plus.dtb; fi"

@@ -13,25 +13,19 @@ if __package__:
     from .elf_abi import inspect_elf
     from .provision_engines import validate_bundle
     from .build import validate_build as validate_rgds_build
-    from .build_engines import validate_build as validate_engine_build
     from .validate_shader_previews import validate_shader_previews
-    from .build_melonds import validate_engine as validate_melonds
     from .build_play import validate_payload as validate_play
     from .build_rgds_experimental import validate_build as validate_experimental
     from .package_rgds_vulkan import validate_payload as validate_vulkan
-    from .build_superdrastic import validate_build as validate_superdrastic
     from .build_samba import validate_build as validate_samba
 else:
     from elf_abi import inspect_elf
     from provision_engines import validate_bundle
     from build import validate_build as validate_rgds_build
-    from build_engines import validate_build as validate_engine_build
     from validate_shader_previews import validate_shader_previews
-    from build_melonds import validate_engine as validate_melonds
     from build_play import validate_payload as validate_play
     from build_rgds_experimental import validate_build as validate_experimental
     from package_rgds_vulkan import validate_payload as validate_vulkan
-    from build_superdrastic import validate_build as validate_superdrastic
     from build_samba import validate_build as validate_samba
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,29 +50,19 @@ def checked_record(path, validated):
         raise ValueError("Build record changed while packaging: " + str(path))
 
 
-def payload_source(name, source_build=None):
+def payload_source(name):
     if name.startswith('services/samba/'):
         return 'Pinned Samba SMB service with private runtime dependencies'
     if name == "bin/rgds-launcher" or name.endswith("/librgdsbridge.so"):
         return "RGDS source build"
-    if name.startswith("emulators/dsperate/"):
-        if source_build:
-            return "DSperate source build at " + source_build["source"]["commit"]
-        return "Supplied DSperate payload; upstream engine, supplied build"
     if name.startswith("emulators/rgds-experimental/"):
         return "RG DS experimental source fork of pinned DSperate"
-    if name.startswith("emulators/melonds/"):
-        return "Pinned melonDS source build with original RGDS SDL frontend"
     if name.startswith("emulators/rgds-play/"):
         return "RG DS Play source build with pinned libmgba"
-    if name.startswith("emulators/superdrastic/sdl/"):
-        return "Pinned SDL2 2.32.10 private runtime for SuperDrastic"
-    if name.startswith("emulators/superdrastic/"):
-        return "Pinned SuperDrastic source build with RGDS integration"
     return "External engine runtime library"
 
 
-def component_abi(app, files, source_build=None):
+def component_abi(app, files):
     result = {}
     for name in files:
         path = app / name
@@ -89,7 +73,7 @@ def component_abi(app, files, source_build=None):
         # the DRM lease preload's 32-bit build), never loaded by RGDS itself
         if name.startswith("runtime/portmaster_files/") and ("/armhf/" in name or "/arm-linux-gnueabihf/" in name):
             continue
-        metadata = inspect_elf(path, source=payload_source(name, source_build))
+        metadata = inspect_elf(path, source=payload_source(name))
         if metadata["machine"] != "aarch64":
             raise ValueError("A device payload has the wrong architecture: " + name)
         if metadata["sha256"] != files[name]:
@@ -119,21 +103,12 @@ def _package():
     if header[:6] != b"\x7fELF\x02\x01" or struct.unpack_from("<H", header, 18)[0] != 183:
         raise ValueError("The device launcher must be an AArch64 ELF, not a desktop binary.")
     rgds_build = validate_rgds_build(binary.parent)
-    engine_source = ROOT / "build/engines/dsperate"
-    try:
-        engine_build = validate_engine_build(engine_source)
-    except (OSError, ValueError, KeyError, TypeError) as error:
-        raise ValueError("Source-built DSperate rejected: " + str(error) + ". Run make build-engines.") from error
     experimental_source = ROOT / "build/engines/rgds-experimental"
     experimental_build = validate_experimental(experimental_source)
     vulkan_source = ROOT / "build/engines/rgds-vulkan"
     vulkan_build = validate_vulkan(vulkan_source)
-    melon_source = ROOT / "build/melonds-experiment"
-    melon_build = validate_melonds(melon_source)
     play_source = ROOT / "build/play/device/payload"
     play_build = validate_play(play_source)
-    super_source = ROOT / 'build/superdrastic'
-    super_build = validate_superdrastic(super_source)
     samba_source = ROOT / 'build/samba'
     samba_build = validate_samba(samba_source)
     upstream = ROOT / "vendor/engines"
@@ -155,7 +130,6 @@ def _package():
     put(ROOT / "build/device/librgdsbridge.so", app / "emulators/hooks/librgdsbridge.so")
     put(binary.parent / "build.json", app / "build/rgds.json")
     checked_record(app / "build/rgds.json", rgds_build)
-    put(ROOT / "assets/emulator-profiles/drastic.cfg", app / "emulators/drastic.cfg")
     for folder in ("runtime", "themes", "assets"):
         for source in sorted((ROOT / folder).rglob("*")):
             if source.is_file(
@@ -171,28 +145,12 @@ def _package():
             raise ValueError('SMB service changed while packaging: ' + name)
     put(ROOT / "assets/emulator-profiles/dsperate.ini", app / "emulators/dsperate.ini")
     # From the bundle only the attributed shader presets; engine binaries are not
-    # shipped from it (an old bundle may still hold a legacy nnddss/ payload).
+    # shipped from it (an old bundle may still hold legacy dsperate/ and nnddss/ payloads).
     bundled = lambda name: not name.startswith(("dsperate/", "nnddss/"))
     for name in sorted(filter(bundled, payloads["files"])):
         put(upstream / name, app / "emulators" / name)
     for source in sorted((ROOT / "assets/shaders").glob("*.dsd")):
         put(source, app / "emulators/shaders" / source.name)
-    for name in (*sorted(engine_build["files"]), "build.json"):
-        put(engine_source / name, app / "emulators/dsperate" / name)
-    checked_record(app / "emulators/dsperate/build.json", engine_build)
-    for name in ("tools/build_engines.py", "tools/elf_abi.py"):
-        put(ROOT / name, app / "emulators/dsperate/rgds-build" / name)
-    driver_hash = engine_build.get("build_driver_sha256")
-    if driver_hash and sha(app / "emulators/dsperate/rgds-build/tools/build_engines.py") != driver_hash:
-        raise ValueError("Source engine build driver changed since compilation; rebuild DSperate")
-    patches = ROOT / "tools/engine_patches"
-    for recorded_patch in engine_build.get("source", {}).get("patches", []):
-        source = patches / recorded_patch['name']
-        if source.is_file(): put(source, app / "emulators/dsperate/rgds-build" / source.relative_to(ROOT))
-    for recorded_patch in engine_build.get("source", {}).get("patches", []):
-        patched = app / "emulators/dsperate/rgds-build/tools/engine_patches" / recorded_patch["name"]
-        if not patched.is_file() or sha(patched) != recorded_patch["sha256"]:
-            raise ValueError("Source engine portability patch changed since compilation; rebuild DSperate")
     for name in (*sorted(experimental_build['files']), 'build.json'):
         put(experimental_source / name, app / 'emulators/rgds-experimental' / name)
     checked_record(app / 'emulators/rgds-experimental/build.json', experimental_build)
@@ -206,13 +164,6 @@ def _package():
     for name, expected in experimental_build['files'].items():
         if sha(app / 'emulators/rgds-experimental' / name) != expected:
             raise ValueError('Experimental payload changed while packaging: ' + name)
-    for name in ('melonds', 'source.tar.gz', 'COPYING', 'build.json'):
-        put(melon_source / name, app / 'emulators/melonds' / name)
-    checked_record(app / 'emulators/melonds/build.json', melon_build)
-    if sha(app / 'emulators/melonds/melonds') != melon_build['engine']['sha256'] or sha(
-        app / 'emulators/melonds/source.tar.gz'
-    ) != melon_build['source']['archive_sha256']:
-        raise ValueError('melonDS payload changed during packaging')
     # RG DS Play: every system but the DS (python3 tools/build_play.py device).
     for name in (*sorted(play_build['files']), 'build.json'):
         put(play_source / name, app / 'emulators/rgds-play' / name)
@@ -220,19 +171,10 @@ def _package():
     for name, expected in play_build['files'].items():
         if sha(app / 'emulators/rgds-play' / name) != expected:
             raise ValueError('RG DS Play payload changed during packaging: ' + name)
-    for name in (*sorted(super_build['files']), 'build.json'):
-        put(super_source / name, app / 'emulators/superdrastic' / name)
-    checked_record(app / 'emulators/superdrastic/build.json', super_build)
-    for name, expected in super_build['files'].items():
-        if sha(app / 'emulators/superdrastic' / name) != expected:
-            raise ValueError('SuperDrastic payload changed during packaging: ' + name)
     for name, expected in payloads["files"].items():
         if not bundled(name): continue
         if sha(app / "emulators" / name) != expected:
             raise ValueError("Engine payload changed while packaging: " + name)
-    for name, expected in engine_build["files"].items():
-        if sha(app / "emulators/dsperate" / name) != expected:
-            raise ValueError("Source engine changed while packaging: " + name)
     for name, info in rgds_build["artifacts"].items():
         copied = app / ("bin/rgds-launcher" if name == "rgds-launcher" else "emulators/hooks/librgdsbridge.so")
         if sha(copied) != info["sha256"]: raise ValueError("RGDS artifact changed while packaging: " + name)
@@ -240,34 +182,13 @@ def _package():
     packaged_payloads["components"] = dict(
         {
             k: v
-            for k, v in payloads["components"].items() if k != "nnddss"
+            for k, v in payloads["components"].items() if k not in ("dsperate", "nnddss")
         },
-        dsperate="Pinned DSperate source build with corresponding source and build record",
-        melonds="Pinned melonDS source build with RGDS SDL frontend and corresponding source",
-        superdrastic="Optional pinned SuperDrastic backend with RGDS integration and corresponding source",
         **{"rgds-play": "RG DS Play (GBA, GB, GBC) with pinned libmgba and corresponding source"}
     )
     packaged_payloads["components"]["rgds-experimental"
                                     ] = "Experimental DSperate fork with isolated saves and corresponding source"
     packaged_payloads["files"] = {name: checksum for name, checksum in payloads["files"].items() if bundled(name)}
-    packaged_payloads["files"].update(
-        {
-            "dsperate/" + name: checksum
-            for name, checksum in engine_build["files"].items()
-        }
-    )
-    packaged_payloads["files"].update(
-        {
-            "melonds/" + name: sha(app / "emulators/melonds" / name)
-            for name in ("melonds", "source.tar.gz", "COPYING", "build.json")
-        }
-    )
-    packaged_payloads['files'].update(
-        {
-            'superdrastic/' + name: sha(app / 'emulators/superdrastic' / name)
-            for name in (*super_build['files'], 'build.json')
-        }
-    )
     packaged_payloads["files"].update(
         {
             "rgds-experimental/" + name: sha(app / "emulators/rgds-experimental" / name)
@@ -287,7 +208,7 @@ def _package():
     (app / "emulators/payloads.json").write_text(json.dumps(packaged_payloads, indent=2, sort_keys=True) + "\n")
     put(ROOT / "THIRD_PARTY.md", app / "THIRD_PARTY.md")
     files = {str(p.relative_to(app)): sha(p) for p in sorted(app.rglob("*")) if p.is_file()}
-    abi = component_abi(app, files, engine_build)
+    abi = component_abi(app, files)
     version = (ROOT / "VERSION").read_text().strip()
     # The update channel and its guard (shipped in the image's app/os/) also yield a different build identity.
     salt = {name: sha(ROOT / "packaging" / name) for name in ("update_guard.py", "update-trust.json")}
@@ -312,20 +233,14 @@ def _package():
             "samba": "services/samba/build.json",
             "rgds-experimental": "emulators/rgds-experimental/build.json",
             "rgds": "build/rgds.json",
-            "dsperate": "emulators/dsperate/build.json",
-            "melonds": "emulators/melonds/build.json",
-            "rgds-play": "emulators/rgds-play/build.json",
-            "superdrastic": "emulators/superdrastic/build.json"
+            "rgds-play": "emulators/rgds-play/build.json"
         },
         "shader_previews": {
             "manifest": "assets/shader-previews/manifest.json",
             "scenes": len(previews["scenes"]),
             "presets": len(previews["scenes"][0]["presets"])
         },
-        "cores": ["drastic", "dsperate", "melonds", "rgds-experimental", "rgds-play"],
-        "optional_backends": {
-            "drastic": ["standard", "superdrastic"]
-        },
+        "cores": ["rgds-experimental", "rgds-play"],
         "files": files
     }
     (app / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
@@ -344,7 +259,7 @@ def _package():
                 info = zipfile.ZipInfo(str(source.relative_to(scratch / "card")), (2026, 10, 5, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_DEFLATED
                 executable = source.suffix == ".sh" or source.name in (
-                    "rgds-launcher", "dsperate", "melonds", "rgds-experimental", "rgds-experimental-vulkan",
+                    "rgds-launcher", "rgds-experimental", "rgds-experimental-vulkan",
                     "rgds-play", "smbd", "smbpasswd", "smbclient", "samba-dcerpcd", "rpcd_classic", "rpcd_winreg",
                     "rpcd_lsad"
                 )
@@ -357,7 +272,7 @@ def _package():
     pointer.replace(dist / "latest.txt")
     print(str(archive))
     print(
-        "Package: source-built RGDS, DSCore, DSperate, melonDS and optional SuperDrastic; stock DraStic from the card."
+        "Package: source-built RGDS, DSCore and RG DS Play."
     )
     return archive
 

@@ -218,7 +218,7 @@ def verify_startup_receipt(app, receipt):
         raise ValueError("Release changed after startup verification.")
 
 
-def verify_engine(app, core, backend=None):
+def verify_engine(app, core):
     if core not in CORES:
         raise ValueError("Unknown engine")
 
@@ -229,14 +229,9 @@ def verify_engine(app, core, backend=None):
         if name in (
             "emulators/dsperate/source.tar.gz", "emulators/rgds-experimental/source.tar.gz",
             "emulators/rgds-experimental/vulkan-source.tar.gz", "emulators/rgds-experimental/panvk-source.tar.gz",
-            "emulators/melonds/source.tar.gz", "emulators/superdrastic/source.tar.gz",
-            "emulators/superdrastic/sdl/source.tar.gz", "emulators/rgds-play/source.tar.gz"
+            "emulators/melonds/source.tar.gz", "emulators/rgds-play/source.tar.gz"
         ) or name.startswith("emulators/dsperate/rgds-build/"):
             return False
-        if core == 'drastic' and backend == 'superdrastic' and name.startswith(
-            ('emulators/superdrastic/', 'assets/fonts/source/')
-        ):
-            return True
         return name.startswith("runtime/") or name == "emulators/hooks/librgdsbridge.so" or name.startswith(
             "emulators/" + core + "/"
         ) or name in ("emulators/" + core + ".ini", "emulators/" + core +

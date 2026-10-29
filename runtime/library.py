@@ -1,4 +1,5 @@
 """Persistent artwork metadata and session playtime, separate from immutable releases."""
+from datetime import datetime
 import os
 from pathlib import Path
 import tempfile
@@ -22,35 +23,50 @@ def playtime(data, rom):
         return 0, 0
 
 
-def record_playtime(data, rom, seconds, sessions, started):
+SESSION_LIMIT = 1000
+
+
+def record_playtime(data, rom, seconds, sessions, started, session=None):
+    """Store the totals; with session (this session's seconds) also its row in the history."""
+    folder = Path(data) / "library" / game_key(rom)
     write_fields(
-        Path(data) / "library" / game_key(rom) / "stats.ini", {
+        folder / "stats.ini", {
             "seconds": max(0, int(seconds)),
             "sessions": max(0, int(sessions)),
             "last_played": started
         }
     )
+    if session is not None: record_session(folder / "sessions.tsv", started, session)
 
 
-# Titles DSCore cannot run correctly yet, by game code prefix (all regions):
-# the engine a newly indexed copy starts on, and why. A per-game choice the
-# player makes always wins; only a game with no choice of its own is set.
-COMPATIBILITY = {
-    "AWI": ("drastic", "Hotel Dusk: Room 215 crashes during boot in DSCore and DSperate"),
-}
-CORE_INDEX = {"drastic": 0, "dsperate": 1, "nnddss": 2, "melonds": 3, "rgds-experimental": 4}
+def record_session(path, started, seconds):
+    """One row per session, "start (Unix seconds)<TAB>seconds played": the Playtime page's days and streaks.
 
-
-def apply_compatibility(data, rom, code):
-    entry = COMPATIBILITY.get(code[:3]) if code else None
-    if not entry: return False
-    path = Path(data) / "library" / game_key(rom) / "game.ini"
-    fields = read_fields(path)
-    if "core" in fields or fields.get("compatibility") == "1": return False
-    fields.update(core=CORE_INDEX[entry[0]], compatibility=1)
+    Checkpoints rewrite the row of the session they belong to, so a power cut
+    keeps the session up to its last checkpoint.
+    """
+    try:
+        began = int(datetime.fromisoformat(started).timestamp())
+    except (TypeError, ValueError):
+        return
+    try:
+        rows = [line for line in path.read_text().splitlines() if line.count("\t") == 1]
+    except (OSError, UnicodeError):
+        rows = []
+    row = "%d\t%d" % (began, max(0, int(seconds)))
+    if rows and rows[-1].split("\t")[0] == str(began): rows[-1] = row
+    else: rows.append(row)
+    content = "".join(line + "\n" for line in rows[-SESSION_LIMIT:])
     path.parent.mkdir(parents=True, exist_ok=True)
-    write_fields(path, fields)
-    return True
+    fd, pending = tempfile.mkstemp(prefix=".pending-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(pending, path)
+    finally:
+        Path(pending).unlink(missing_ok=True)
 
 
 def banner_data(path, code=None):
@@ -84,13 +100,9 @@ def index_banner(data, rom):
     stamp = str(rom.stat().st_mtime_ns) + ":" + str(rom.stat().st_size)
     indexed = read_fields(marker)
     if indexed.get("stamp") == stamp:
-        if indexed.get("code") and indexed.get("compat") != "1":
-            apply_compatibility(data, rom, indexed["code"])
-            write_fields(marker, dict(indexed, compat=1))
         return
     code = []
     banner = banner_data(rom, code)
-    if code: apply_compatibility(data, rom, code[0])
     if not banner: return
     palette = struct.unpack_from("<16H", banner, 0x220)
     pixels = bytearray()

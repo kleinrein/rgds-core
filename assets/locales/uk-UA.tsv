@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1 день
 1 person nearby	Поруч 1 людина
 1 player	1 гравець
 12-hour	12 годин
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	Потоки 3D змінено для цього сеансу. Сховище налаштувань недоступне.
 3D threading changed. No restart needed.	Потоки 3D змінено. Перезапуск не потрібен.
 3x sharper	Утричі чіткіше
+4 weeks ago	4 тижні тому
 4x (experimental)	4x (експериментально)
 5x (experimental)	5x (експериментально)
 A  Apply	A  Застосувати
@@ -81,6 +83,7 @@ Automatic (free)	Автоматично
 Automatic updates	Автооновлення
 Available	Доступно
 Available networks	Доступні мережі
+Average session	Середня сесія
 B  Cancel	B  Скасувати
 B  Close	B  Закрити
 Back	Назад
@@ -97,6 +100,7 @@ Battery percentage	Заряд у відсотках
 Battery saver	Економія заряду
 Before	До
 Before you play	Перед грою
+Bezel	Безель
 Binding unchanged.	Призначення не змінено.
 Black and white	Чорно-білий
 Black bar	Чорна смуга
@@ -159,8 +163,6 @@ Choose a network from the list	Виберіть мережу зі списку
 Choose an option	Виберіть варіант
 Choose Anbernic or RG DS startup.	Виберіть запуск Anbernic або RG DS.
 Choose native or a sharper 3D image	Вихідне або чіткіше 3D-зображення
-Choose the core for this cartridge	Виберіть ядро для цього картриджа
-Choose the display backend for the next DraStic launch. DSperate stays your default.	Виберіть виведення зображення для наступного запуску DraStic. DSperate лишається типовим.
 Choose what opens when you power on	Що відкривається після ввімкнення
 Classic	Класика
 Classic blue	Класичний синій
@@ -183,6 +185,7 @@ COLOUR MODE	РЕЖИМ КОЛЬОРУ
 Colour mode	Режим кольору
 Colour treatment inspired by the original DS display.	Кольори в дусі оригінального екрана DS.
 Column	Колонка
+Commander	Командир
 Companion	Компаньйон
 Compare	Порівняти
 Confirm	Підтвердити
@@ -247,17 +250,16 @@ Cover	Обкладинка
 Covers	Обкладинки
 Current progress could not be saved. No slot was changed.	Не вдалося зберегти поточний прогрес. Слоти не змінено.
 Custom	Власний
-DS only	Лише DS
 Dark	Темна
 Dark blue	Темно-синій
 Dark green	Темно-зелений
 Date format	Формат дати
 Day	День
 Day or night	День чи ніч
+Day streak	Днів поспіль
 Daylight saving	Літній час
 Days	Дні
 Default	Типово
-Default emulator	Типовий емулятор
 Default shader	Типовий фільтр
 DEFAULT THEME - CHECK LOG	ТИПОВА ТЕМА — ДИВ. ЖУРНАЛ
 Delete	Видалити
@@ -281,8 +283,6 @@ Downloading PortMaster	Завантаження PortMaster
 Downloading update…	Завантаження оновлення…
 Downloading {0}	Завантаження {0}
 Downloads resume where they stopped if Wi-Fi drops.	У разі обриву Wi-Fi завантаження продовжиться з того ж місця.
-DraStic backend	Виведення DraStic
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: альтернатива для ігор, яким він потрібен. Збереження зберігаються окремо.
 Draw and chat	Малювати й спілкуватися
 Draw and chat with nearby handhelds	Малюйте й спілкуйтеся з консолями поруч
 Drawing on your own	Малюєте самі
@@ -291,12 +291,11 @@ DS controls	Керування DS
 DS controls are unavailable for this engine.	Керування DS недоступне для цього рушія.
 DS language	Мова DS
 DS Lite	DS Lite
+DS only	Лише DS
 DS rounded	DS заокруглений
 DS screens	Екрани DS
 DSCore 3D resolution	Роздільність 3D у DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: рекомендовано. Найшвидший, з виправленнями кришки, стилуса й 3D та 3D 2x–5x за бажанням.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: рекомендовано для щоденної гри. Типово вихідна роздільність.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: оригінальний рушій. DSCore додає виправлення й швидкість.
 Edit	Змінити
 Edit search	Змінити пошук
 Effects volume	Гучність ефектів
@@ -332,8 +331,8 @@ Fast-forward enabled.	Прискорення увімкнено.
 Fast-forward is unavailable for this emulator.	Прискорення недоступне для цього емулятора.
 Fast-forward style	Режим прискорення
 Favourite	Улюблене
-FAVOURITE COLOUR	УЛЮБЛЕНИЙ КОЛІР
 Favourite a game and it waits for you here	Додайте гру до улюблених, і вона чекатиме тут
+FAVOURITE COLOUR	УЛЮБЛЕНИЙ КОЛІР
 Favourites	Улюблене
 Feel every move	Відчуйте кожен рух
 Feel the game	Відчуйте гру
@@ -351,15 +350,13 @@ Finding games…	Пошук ігор…
 Finishing another task. Press Y again in a moment.	Завершується інше завдання. Натисніть Y трохи згодом.
 Finishing the system request	Завершення системного запиту
 Follow your default button layout	Як у типовій розкладці
-Following your global controls.	Використовується спільне керування.
-Follows your Library default. Each emulator keeps its own saves.	Як у налаштуваннях бібліотеки. Кожен емулятор має власні збереження.
+Following the default controls.	Використовується спільне керування.
 Follows your library shader.	Як фільтр бібліотеки.
 Forget this device?	Забути цей пристрій?
 FPS changed for this session. Settings storage is unavailable.	FPS змінено для цього сеансу. Сховище налаштувань недоступне.
 FPS counter enabled.	Лічильник FPS увімкнено.
 FPS counter hidden.	Лічильник FPS приховано.
 Fr	Пт
-Frame	Рамка
 Frameskip	Пропуск кадрів
 Free space	Вільно
 Free space while keeping your saves	Звільнити місце, зберігши збереження
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · Зелений
 Game Boy · Red	Game Boy · Червоний
 Game Boy · Screen only	Game Boy · Лише екран
 Game Boy · Yellow	Game Boy · Жовтий
-Game emulator	Емулятор гри
-Game emulator saved.	Емулятор гри збережено.
 Game FPS	FPS гри
 Game info	Про гру
 Game menu	Ігрове меню
@@ -428,7 +423,7 @@ German	Німецька
 Get, update and remove ports	Отримання, оновлення й видалення портів
 Give your eyes and hands a break.	Дайте відпочити очам і рукам.
 Global	Спільні
-Global controls saved.	Спільне керування збережено.
+Default controls saved.	Спільне керування збережено.
 Glossy tiles	Глянцеві плитки
 Go back	Назад
 Goes into	Тека
@@ -444,6 +439,7 @@ Heart containers	Посудини сердець
 Heart pieces	Частини сердець
 Hearts	Серця
 High contrast	Високий контраст
+History starts with your next game	Історія почнеться з наступної гри
 Hold	Утримання
 Hold still for a right click	Утримуйте на місці для правого кліку
 Hold to exit	Утримуйте, щоб вийти
@@ -494,6 +490,8 @@ Keyboard	Клавіатура
 Keys	Ключі
 Kinstone fusions	Злиття кінстоунів
 Language	Мова
+Last 4 weeks	Останні 4 тижні
+Last 7 days	Останні 7 днів
 Last played	Останній запуск
 Launch cancelled	Запуск скасовано
 LCD + both colours	LCD + обидва фільтри кольору
@@ -532,6 +530,7 @@ Loaded	Завантажено
 Loading checkpoint…	Завантаження збереження…
 Loading…	Завантаження…
 Long press	Довге натискання
+Longest session	Найдовша сесія
 Looking for devices…	Пошук пристроїв…
 Looking for games…	Пошук ігор…
 Looking for networks…	Пошук мереж…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	Мережу вимкнен�
 Never	Ніколи
 New messages below	Нові повідомлення нижче
 Next	Далі
-Next emulator	Наступний емулятор
 Next picture	Наступне зображення
 Next:	Далі:
 Night	Ніч
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: варіант для сумісності. Для швидкості спершу спробуйте DSperate.
 No button detected. Try again when you're ready.	Кнопку не виявлено. Спробуйте ще раз, коли будете готові.
 No checkpoint saved for this emulator yet.	Для цього емулятора ще немає збережень.
 No cover yet	Обкладинки ще немає
@@ -650,6 +647,7 @@ Orange	Помаранчевий
 Original	Оригінальний
 Original pixels	Оригінальні пікселі
 Original pixels and colours.	Оригінальні пікселі й кольори.
+Other	Інше
 Pacific	Тихий океан
 Paired	Пару створено
 Party	Загін
@@ -759,7 +757,6 @@ Restart the device?	Перезавантажити пристрій?
 Restart the game to apply DS settings.	Перезапустіть гру, щоб застосувати налаштування DS.
 Restart the RGDS menu.	Перезапустити меню RGDS.
 Restart the RGDS menu?	Перезапустити меню RGDS?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	Після перезапуску: {0}. Збереження кожного емулятора зберігаються окремо.
 Restart without loading a state?	Перезапустити без завантаження стану?
 Restarting into the update…	Перезапуск в оновлення…
 Restarting…	Перезапуск…
@@ -797,7 +794,6 @@ Rupees	Рупії
 Sa	Сб
 Save	Зберегти
 Save & restart	Зберегти й перезапустити
-Save & restart applies Threaded 3D.	«Зберегти й перезапустити» застосує багатопотокове 3D.
 Save & restart keeps your checkpoint and applies pending settings.	«Зберегти й перезапустити» збереже прогрес і застосує зміни.
 Save a report for troubleshooting	Зберегти звіт для діагностики
 Save backup created in userdata/exports.	Резервну копію збережень створено в userdata/exports.
@@ -811,11 +807,8 @@ Save state	Зберегти стан
 Save your checkpoint and restart	Зберегтися й перезапустити
 Saved	Збережено
 Saved - desktop simulation	Збережено — симуляція на ПК
-Saved for the next Standard DraStic launch.	Збережено для наступного запуску стандартного DraStic.
 Saved network	Збережена мережа
 Saved · {0}	Збережено · {0}
-Saved. Applies on your next DraStic launch.	Збережено. Застосується під час наступного запуску DraStic.
-Saved. Save & restart applies screen order.	Збережено. Порядок екранів застосує «Зберегти й перезапустити».
 Saved. Save & restart applies this change.	Збережено. Зміну застосує «Зберегти й перезапустити».
 Saved. Save & restart changes the emulator.	Збережено. Емулятор зміниться після «Зберегти й перезапустити».
 Saving before restarting…	Збереження перед перезапуском…
@@ -834,7 +827,6 @@ Score	Очки
 Screen brightness	Яскравість екрана
 Screen colours	Кольори екрана
 Screen off	Екран вимкнено
-Screen order	Порядок екранів
 screens	екранів
 ScreenScraper needs project credentials and your account	Для ScreenScraper потрібні дані проєкту та ваш обліковий запис
 Screenshot	Знімок екрана
@@ -857,7 +849,6 @@ Selected row	Вибраний рядок
 Send	Надіслати
 Series	Серія
 Set the clock to where you are.	Налаштуйте годинник за місцем, де ви є.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	Порядок екранів стандартного DraStic для цієї гри. Застосовується через «Зберегти й перезапустити».
 Setting up PortMaster	Налаштування PortMaster
 Settings	Налаштування
 Settings saved	Налаштування збережено
@@ -919,8 +910,6 @@ Spring	Пружина
 Springy menu changes with a colourful wobble	Пружна зміна меню з кольоровим похитуванням
 Stable	Стабільний
 Standard	Стандартний
-Standard DraStic only. Applies on the next launch; game saves are kept.	Лише стандартний DraStic. Застосується під час наступного запуску; збереження залишаться.
-Standard screen order	Стандартний порядок екранів
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	Нд
 Subtle	Стримані
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	Літній час визначається часовим поясом. Увімкніть або вимкніть його, якщо годинник відстає чи поспішає на годину.
 Super missiles	Суперракети
-SuperDrastic (experimental)	SuperDrastic (експериментально)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic поки використовує вихідне виведення. Ваш стандартний фільтр збережено.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic має власне меню паузи й виведення зображення. Експериментально; перевірку на RG DS ще не завершено.
 Swap screens	Поміняти екрани
 Swapped	Переставлені
 Swipe in from the left edge to go Back.	Свайп від лівого краю — назад.
@@ -969,6 +955,7 @@ Systems	Системи
 Tap to type, or use the D-pad and A	Торкніться, щоб друкувати, або використовуйте хрестовину й A
 Team	Команда
 Temporary game cache cleared. Saves and artwork are kept.	Тимчасовий кеш ігор очищено. Збереження й обкладинки залишилися.
+Terrain and unit	Місцевість і загін
 Test	Перевірити
 Test microphone	Перевірити мікрофон
 Test the microphone on your handheld.	Перевірте мікрофон консолі.
@@ -1022,6 +1009,7 @@ Times played	Запусків
 Timezone	Часовий пояс
 Title screen	Титульний екран
 Title screens	Титульні екрани
+Today	Сьогодні
 Toggle	Перемикання
 Too much on the pad: erase some of it	На аркуші забагато: зітріть частину
 Tools	Інструменти
@@ -1092,12 +1080,11 @@ Updates & recovery	Оновлення й відновлення
 Updates will be available when the release channel opens.	Оновлення з’являться, коли відкриється канал випусків.
 Use an additional rendering thread	Додатковий потік рендерингу
 Use default ({0})	Типово ({0})
-Use global controls	Спільне керування
+Use default controls	Спільне керування
 Use previous build	Попередня збірка
 Use ROM identity	Дані з ROM
 Use the engine's native controls for microphone and DS settings.	Мікрофон і налаштування DS — через власне керування рушія.
 Use the previous RGDS build?	Використати попередню збірку RGDS?
-Used by games without an override	Для ігор без власних налаштувань
 Username	Ім’я користувача
 Verify	Перевірка
 Verifying update…	Перевірка оновлення…
@@ -1157,6 +1144,7 @@ Worlds	Світи
 Y imports a save into this slot.	Y імпортує збереження в цей слот.
 Yellow	Жовтий
 Yes	Так
+Yesterday	Учора
 You	Ви
 You appear like this to others	Так вас бачать інші
 You are in Room {0}	Ви в кімнаті {0}
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (експериментально)
 {0} (recommended)	{0} (рекомендовано)
 {0} active	Активно: {0}
+{0} days	{0} дн.
+{0} days ago	{0} дн. тому
 {0} found. Choose Done to go to your library.	Знайдено: {0}. Виберіть «Готово», щоб відкрити бібліотеку.
 {0} frames	Кадрів: {0}
 {0} game	Ігор: {0}

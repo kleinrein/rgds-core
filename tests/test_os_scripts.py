@@ -192,3 +192,85 @@ esac
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class AudioRouteTest(unittest.TestCase):
+    """usr/libexec/rgds/audio: one shared stream on the RG DS's single card; on the RG DS Plus the speakers' card or
+    the codec's, by the jack."""
+    RG_DS = ' 0 [rk817ext       ]: simple-card - rk817_ext\n                      rk817_ext\n'
+    PLUS = (' 0 [rk817hp        ]: simple-card - rk817_hp\n                      rk817_hp\n'
+            ' 1 [aw88166        ]: audio-graph-card2 - aw88166\n                      aw88166\n')
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.dir = Path(self.temp.name)
+        self.bin = self.dir / 'bin'
+        self.bin.mkdir()
+        self.run_dir = self.dir / 'run'
+        self.run_dir.mkdir()
+        self.cards = self.dir / 'cards'
+        self.amixer_log = self.dir / 'amixer.log'
+        tool(self.bin, 'amixer', f'echo "$@" >> {self.amixer_log}\n')
+        self.env = dict(
+            os.environ,
+            PATH=f'{self.bin}:/usr/bin:/bin',
+            RGDS_AUDIO_RUN=str(self.run_dir),
+            RGDS_ASOUND_CARDS=str(self.cards),
+            RGDS_AMIXER=str(self.bin / 'amixer')
+        )
+
+    def audio(self, *args):
+        result = subprocess.run(
+            ['sh', str(LIBEXEC / 'audio'), *args], env=self.env, capture_output=True, text=True, timeout=10
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result
+
+    def read(self, name):
+        return (self.run_dir / name).read_text()
+
+    def test_rg_ds_plays_on_its_one_card_as_before(self):
+        self.cards.write_text(self.RG_DS)
+        self.audio('setup')
+        self.assertIn('pcm "hw:0,0"', self.read('audio-out.conf'))
+        self.assertIn('ipc_key 1380402259', self.read('audio-out.conf'))
+        self.assertEqual(self.read('audio-mixer'), '0 rk817\n')
+        self.assertEqual(self.read('audio-route'), 'speaker\n')
+        self.assertIn('slave.pcm "hw:0,0"', self.read('audio-capture.conf'))
+        self.assertFalse(self.amixer_log.exists())  # the RG DS's mixer is the headphones watcher's alone
+        self.assertEqual(self.audio('cards').stdout.strip(), 'codec=0 speaker=')
+
+    def test_plus_speakers_then_the_jack(self):
+        self.cards.write_text(self.PLUS)
+        self.audio('setup')
+        self.assertIn('pcm "hw:1,0"', self.read('audio-out.conf'))
+        self.assertEqual(self.read('audio-mixer'), '1 aw88166\n')
+        self.assertIn('pcm "hw:0,0"', self.read('audio-capture.conf'))
+        self.assertIn('rate 48000', self.read('audio-capture.conf'))
+        self.assertIn('-c 0 sset Playback Mux HP', self.amixer_log.read_text())
+        self.audio('route', 'headphones')
+        out = self.read('audio-out.conf')
+        self.assertIn('pcm "hw:0,0"', out)
+        self.assertIn('ipc_key 1380402260', out)  # a stream of its own: the speakers' may still be open
+        self.assertEqual(self.read('audio-mixer'), '0 rk817\n')
+        self.assertEqual(self.read('audio-route'), 'headphones\n')
+        self.assertIn('-c 1 sset Left PCM 1023', self.amixer_log.read_text())
+        self.audio('route', 'speaker')
+        self.assertIn('pcm "hw:1,0"', self.read('audio-out.conf'))
+        # setup again (the watcher, once the amplifier card is up) keeps the route it finds
+        self.audio('route', 'headphones')
+        self.audio('setup')
+        self.assertEqual(self.read('audio-route'), 'headphones\n')
+
+    def test_a_bluetooth_headset_keeps_playback(self):
+        self.cards.write_text(self.PLUS)
+        (self.run_dir / 'bt-sink').write_text('AC:C1:22:33:44:5F\n')
+        (self.run_dir / 'audio-out.conf').write_text('pcm.rgds_out "headset"\n')
+        self.audio('route', 'headphones')
+        self.assertEqual(self.read('audio-out.conf'), 'pcm.rgds_out "headset"\n')
+        self.assertIn('hw:0,0', self.read('audio-local.conf'))  # what bt-audio gives playback back to
+
+    def test_no_card_list_still_names_card_0(self):
+        self.audio('setup')
+        self.assertIn('pcm "hw:0,0"', self.read('audio-out.conf'))

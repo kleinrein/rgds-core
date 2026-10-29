@@ -69,8 +69,8 @@ or patch step is involved; upstream is only the pin recorded in FORK.md.
 `DSperate/` contains the complete fork source (the `dscore/` tree). `rgds/` contains
 the build tools and `dscore/FORK.md`. A direct CMake build of `DSperate/` does not
 require git or patch application. Use Zig 0.13 targeting
-`aarch64-linux-gnu.2.17`, CMake and Ninja, plus an ARM64 SDL2 link SDK. Generate
-compiler wrappers with `rgds/tools/build_engines.py::toolchain`, and configure
+`aarch64-linux-gnu.2.17`, CMake and Ninja, plus an ARM64 SDL2 link SDK (`rgds/tools/engine_toolchain.py --fetch`
+builds one). Generate compiler wrappers with `rgds/tools/engine_toolchain.py::toolchain`, and configure
 CMake with the options in `rgds/tools/build_rgds_experimental.py::OPTIONS`,
 `SDL2_DIR=<sdk>/lib/cmake/SDL2`, `CMAKE_FIND_ROOT_PATH=<sdk>` and
 `CMAKE_PREFIX_PATH=<sdk>`. Build target `dsperate`; install the result as

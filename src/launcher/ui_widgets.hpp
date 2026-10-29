@@ -119,7 +119,6 @@ void App::settings_footer(SDL_Renderer* r, int y) {
     }
     if ((settings.page == Page::EmulatorOptions && !emulator_option_enabled(settings.focus)) ||
         (settings.page == Page::Cheats && cheat_view != CheatView::Groups && !cheat_togglable(settings.focus)) ||
-        (settings.page == Page::GameOptions && settings.focus == 2 && superdrastic_game()) ||
         (settings.page == Page::Motion && settings.focus >= 2) ||
         (settings.page == Page::Homebrew && list_count() == 0))
         return;

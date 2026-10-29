@@ -14,6 +14,7 @@
 #include "ui/look.hpp"
 #include "ui/words.hpp"
 
+#include <array>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -66,6 +67,9 @@ public:
     // Whether the second screen is shown at all. Off, the game keeps its whole
     // picture: no HUD band is cut off and no HUD is split away from it.
     void set_shown(bool shown) { shown_ = shown; }
+    // The info screen: the title card every game has before its own second screen appears, and the corner button.
+    void set_info(bool info) { info_ = info; }
+    bool info() const { return info_; }
     bool shown() const { return shown_; }
     // The profile's first view ([view]), if it has one this build can draw
     // (its explored map is what the session keeps beside the save).
@@ -95,7 +99,7 @@ private:
     uint64_t screen_key() const;
 
     const Profile* profile_;
-    bool shown_ = true;
+    bool shown_ = true, info_ = false;
     std::string title_, system_name_;
     std::unique_ptr<MapCapture> capture_;
     std::unique_ptr<Party> party_;
@@ -129,6 +133,8 @@ private:
     uint32_t hud_key_ = 0;
     unsigned hud_layers_ = 0;
     std::vector<uint32_t> hud_image_, composed_;
+    std::vector<uint8_t> strip_sprites_;               // the lower picture's sprite table (hud.extend_sprites), read each frame
+    std::vector<std::array<double, 2>> strip_places_; // and the exact places of what it shows (hud.extend_places)
     HudPicture hud_picture_; // the HUD for views that lay it out themselves
     std::vector<Rect> drawn_; // per panel: where the HUD has drawn since it came on
     uint64_t strip_hash_ = 0;

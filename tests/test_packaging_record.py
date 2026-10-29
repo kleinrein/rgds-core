@@ -19,9 +19,8 @@ class PackagingRecordTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         names = (
-            "build/device/rgds-launcher", "build/device/librgdsbridge.so", "assets/emulator-profiles/drastic.cfg",
-            "assets/emulator-profiles/dsperate.ini", "runtime/inventory.sh", "build/engines/dsperate/dsperate",
-            "tools/build_engines.py", "tools/elf_abi.py", "THIRD_PARTY.md", "VERSION", "packaging/update_guard.py",
+            "build/device/rgds-launcher", "build/device/librgdsbridge.so", "assets/emulator-profiles/dsperate.ini",
+            "runtime/inventory.sh", "THIRD_PARTY.md", "VERSION", "packaging/update_guard.py",
             "packaging/update-trust.json", "README.md", "docs/DEVELOPMENT.md", "docs/SCREENSCRAPER.md",
             "docs/PERFORMANCE.md"
         )
@@ -38,26 +37,11 @@ class PackagingRecordTests(unittest.TestCase):
                 for name in ("rgds-launcher", "librgdsbridge.so")
             }
         )
-        self.engine_record = dict(
-            source=dict(commit="pinned-source", patches=[]),
-            files=dict(dsperate=package.sha(self.root / "build/engines/dsperate/dsperate")),
-            build_driver_sha256=package.sha(self.root / "tools/build_engines.py")
-        )
         (self.root / "build/device/build.json").write_text(json.dumps(self.rgds_record))
-        (self.root / "build/engines/dsperate/build.json").write_text(json.dumps(self.engine_record))
         dist = self.root / "dist"
         dist.mkdir()
         (dist / "latest.txt").write_text("previous.zip\n")
         (dist / "previous.zip").write_bytes(b"last working archive")
-        melon = self.root / 'build/melonds-experiment'
-        melon.mkdir(parents=True)
-        for name in ('melonds', 'source.tar.gz', 'COPYING'):
-            (melon / name).write_bytes(b'fixture ' + name.encode())
-        self.melon_record = dict(
-            engine=dict(sha256=package.sha(melon / 'melonds')),
-            source=dict(archive_sha256=package.sha(melon / 'source.tar.gz'))
-        )
-        (melon / 'build.json').write_text(json.dumps(self.melon_record))
         play = self.root / 'build/play/device/payload'
         (play / 'profiles/gba').mkdir(parents=True)
         for name in ('rgds-play', 'source.tar.gz', 'COPYING', 'COPYING.mgba', 'profiles/gba/AMKE.ini'):
@@ -67,12 +51,6 @@ class PackagingRecordTests(unittest.TestCase):
                    for p in play.rglob('*') if p.is_file()}
         )
         (play / 'build.json').write_text(json.dumps(self.play_record))
-        backend = self.root / 'build/superdrastic'
-        backend.mkdir(parents=True)
-        for name in ('libsuperdrastic.so', 'source.tar.gz', 'LICENSE', 'THIRD_PARTY.md', 'VERSION'):
-            (backend / name).write_bytes(b'fixture ' + name.encode())
-        self.super_record = dict(files={p.name: package.sha(p) for p in backend.iterdir()})
-        (backend / 'build.json').write_text(json.dumps(self.super_record))
         experiment = self.root / 'build/engines/rgds-experimental'
         experiment.mkdir(parents=True)
         for name in ('rgds-experimental', 'source.tar.gz', 'LICENSE', 'NOTICE.txt'):
@@ -101,12 +79,9 @@ class PackagingRecordTests(unittest.TestCase):
         self.addCleanup(patch.stopall)
         patch.object(package, "ROOT", self.root).start()
         patch.object(package, "validate_rgds_build", return_value=self.rgds_record).start()
-        patch.object(package, "validate_engine_build", return_value=self.engine_record).start()
         patch.object(package, "validate_experimental", return_value=self.experimental_record).start()
         patch.object(package, 'validate_vulkan', return_value=self.vulkan_record).start()
-        patch.object(package, "validate_melonds", return_value=self.melon_record).start()
         patch.object(package, "validate_play", return_value=self.play_record).start()
-        patch.object(package, "validate_superdrastic", return_value=self.super_record).start()
         patch.object(package, 'validate_samba', return_value=self.samba_record).start()
         patch.object(package, "validate_bundle", return_value=dict(files={}, components={})).start()
         patch.object(
@@ -143,28 +118,6 @@ class PackagingRecordTests(unittest.TestCase):
                 package._package()
         self.assert_previous_archive_preserved()
 
-    def test_engine_rebuild_between_binary_and_record_copy_cannot_publish(self):
-        with patch.object(
-            package,
-            "put",
-            side_effect=self.rewritten_record("build/engines/dsperate/dsperate", "build/engines/dsperate/build.json")
-        ):
-            with self.assertRaisesRegex(ValueError, "record changed while packaging"):
-                package._package()
-        self.assert_previous_archive_preserved()
-
-    def test_melonds_rebuild_during_copy_cannot_publish(self):
-        with patch.object(
-            package,
-            "put",
-            side_effect=self.rewritten_record(
-                "build/melonds-experiment/melonds", "build/melonds-experiment/build.json"
-            )
-        ):
-            with self.assertRaisesRegex(ValueError, "record changed while packaging"):
-                package._package()
-        self.assert_previous_archive_preserved()
-
     def test_experimental_rebuild_during_copy_cannot_publish(self):
         with patch.object(
             package,
@@ -177,39 +130,12 @@ class PackagingRecordTests(unittest.TestCase):
                 package._package()
         self.assert_previous_archive_preserved()
 
-    def test_superdrastic_rebuild_during_copy_cannot_publish(self):
-        with patch.object(
-            package,
-            'put',
-            side_effect=self.rewritten_record('build/superdrastic/libsuperdrastic.so', 'build/superdrastic/build.json')
-        ):
-            with self.assertRaisesRegex(ValueError, 'record changed while packaging'):
-                package._package()
-        self.assert_previous_archive_preserved()
-
     def test_samba_rebuild_during_copy_cannot_publish(self):
         with patch.object(
             package, 'put', side_effect=self.rewritten_record('build/samba/bin/smbd', 'build/samba/build.json')
         ):
             with self.assertRaisesRegex(ValueError, 'record changed while packaging'):
                 package._package()
-        self.assert_previous_archive_preserved()
-
-    def test_edited_driver_cannot_be_presented_as_the_original_build_driver(self):
-        (self.root / "tools/build_engines.py").write_bytes(b"new driver after build")
-        with self.assertRaisesRegex(ValueError, "build driver changed since compilation"):
-            package._package()
-        self.assert_previous_archive_preserved()
-
-    def test_edited_portability_patch_cannot_be_presented_as_original(self):
-        portability = self.root / "tools/engine_patches/portability.patch"
-        portability.parent.mkdir()
-        portability.write_bytes(b"original portability patch")
-        self.engine_record["source"]["patches"] = [dict(name=portability.name, sha256=package.sha(portability))]
-        (self.root / "build/engines/dsperate/build.json").write_text(json.dumps(self.engine_record))
-        portability.write_bytes(b"edited portability patch")
-        with self.assertRaisesRegex(ValueError, "portability patch changed since compilation"):
-            package._package()
         self.assert_previous_archive_preserved()
 
     def test_stable_inputs_publish_records_matching_the_checked_binary_bytes(self):
@@ -233,8 +159,8 @@ class PackagingRecordTests(unittest.TestCase):
                 record["artifacts"]["rgds-launcher"]["sha256"],
                 hashlib.sha256(release.read(launcher)).hexdigest()
             )
-            engine_path = next(name for name in release.namelist() if name.endswith("/emulators/dsperate/build.json"))
-            self.assertEqual(json.loads(release.read(engine_path)), self.engine_record)
+            # DSCore is the only DS engine: no retired engine is packaged
+            self.assertFalse([n for n in release.namelist() if '/emulators/dsperate/' in n or '/emulators/melonds/' in n])
 
 
 if __name__ == "__main__": unittest.main()

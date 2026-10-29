@@ -30,7 +30,7 @@ void App::close_controls() {
     control_capture = false;
     capture_logical = -1;
     settings.page = controls_return;
-    settings.focus = controls_return == Page::QuickMenu ? 9 : controls_return == Page::GameOptions ? 3 : 0;
+    settings.focus = controls_return == Page::QuickMenu ? 9 : controls_return == Page::GameOptions ? 2 : 0;
     if (controls_return == Page::GameOptions) settings.section = 2;
     if (controls_return == Page::Settings) settings.section = 6;
     dirty = true;
@@ -53,9 +53,9 @@ bool App::save_controls_editor() {
         file.close();
         if (!file) throw std::runtime_error("Could not write controls");
         fs::rename(pending, path);
-        controls_notice = controls_inherit    ? "Following your global controls."
+        controls_notice = controls_inherit    ? "Following the default controls."
                           : controls_per_game ? "Controls saved for this game."
-                                              : "Global controls saved.";
+                                              : "Default controls saved.";
         dirty = true;
         return true;
     } catch (const std::exception& error) {
@@ -97,16 +97,16 @@ std::string App::controls_row_name(int row) {
     if (row == 1) return "Button layout";
     if (row == 2) return "Home shortcut";
     if (row == 3) return "Shortcut action";
-    if (row == 16) return controls_per_game ? "Use global controls" : "Restore defaults";
+    if (row == 16) return controls_per_game ? "Use default controls" : "Restore defaults";
     if (row == 17) return "Fast-forward button";
     if (row == 18) return "Fast-forward style";
     return "Button " + control_title(row - 4);
 }
 
 std::string App::controls_row_value(int row) {
-    if (row == 0) return controls_per_game ? "This game" : "Global";
+    if (row == 0) return controls_per_game ? "This game" : "All games";
     if (row == 1)
-        return controls_inherit                          ? "Inherited"
+        return controls_inherit                          ? "Default"
                : edited_controls.preset == "default"     ? "Default"
                : edited_controls.preset == "ab-swap"     ? "A / B swapped"
                : edited_controls.preset == "left-handed" ? "Left-handed"
@@ -116,7 +116,7 @@ std::string App::controls_row_value(int row) {
                : edited_controls.shortcut == "startthenmenu" ? "Start, then Anbernic"
                                                              : "Anbernic";
     if (row == 3) return edited_controls.shortcut_action == "home" ? "Return home" : "Open menu";
-    if (row == 16) return controls_per_game ? "Inherit" : "Reset";
+    if (row == 16) return controls_per_game ? "Default" : "Reset";
     if (row == 17)
         return control_capture && capture_logical == 12 ? "Press a button…"
                                                         : control_title(edited_controls.fast_forward_source);

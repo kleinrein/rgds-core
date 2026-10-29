@@ -5,6 +5,7 @@
 #include "core/mgba_gb.h"
 #include "core/mgba_split.h"
 
+#include <mgba/core/cheats.h>
 #include <mgba/core/config.h>
 #include <mgba/core/core.h>
 #include <mgba/core/log.h>
@@ -294,6 +295,43 @@ public:
     uint64_t battery_revision() const override { return battery_revision_.load(); }
     void restore_battery(const std::vector<uint8_t>& bytes) override {
         if (!bytes.empty()) core_->savedataRestore(core_, bytes.data(), bytes.size(), false);
+    }
+
+    // Each code that is on becomes a set of lines in mGBA's cheat device, which runs them every frame. A code's
+    // parts are split by "+" or spaces: a Game Boy Advance line is two parts ("AAAAAAAA BBBBBBBB"), a Game Boy one
+    // part (GameShark 01VVAAAA, Game Genie XXX-XXX-XXX).
+    bool apply_cheats(const std::vector<CheatCode>& codes) override {
+        mCheatDevice* device = core_->cheatDevice(core_);
+        if (!device) return false;
+        mCheatDeviceClear(device);
+        const bool advance = std::strcmp(system(), "gba") == 0;
+        for (const auto& c : codes) {
+            if (!c.on) continue;
+            std::vector<std::string> parts;
+            std::string part;
+            for (char ch : c.code + " ") {
+                if (ch == '+' || std::isspace(static_cast<unsigned char>(ch))) {
+                    if (!part.empty()) parts.push_back(part);
+                    part.clear();
+                } else {
+                    part += ch;
+                }
+            }
+            mCheatSet* set = device->createSet(device, c.name.c_str());
+            for (size_t i = 0; i < parts.size(); i += advance ? 2 : 1) {
+                std::string line = parts[i];
+                if (advance) {
+                    if (i + 1 >= parts.size()) break;
+                    line += " " + parts[i + 1];
+                }
+                if (!mCheatAddLine(set, line.c_str(), 0))
+                    std::fprintf(stderr, "play: cheat \"%s\": \"%s\" is not a code for this system\n", c.name.c_str(),
+                                 line.c_str());
+            }
+            set->enabled = true;
+            mCheatAddSet(device, set);
+        }
+        return true;
     }
 
     void set_layers(unsigned mask) override {

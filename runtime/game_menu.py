@@ -347,20 +347,9 @@ class GameMenu:
         except (ValueError, IndexError, AttributeError, OSError):
             self.publish('error', 'This game is no longer available.')
             return None
-        options = read_fields(self.data / 'library' / game_key(rom) / 'game.ini')
-        defaults = read_fields(self.data / 'preferences.ini')
-        try:
-            core = int(options.get('core', '-1'))
-            if core < 0:
-                core = int(defaults.get('core', '1'))
-            if not 0 <= core < len(CORES):
-                raise ValueError('Invalid emulator')
-        except ValueError:
-            self.publish('error', 'Choose an emulator for this game in the library.')
-            return None
         from play_options import engine_for
-        # NNDDSS is retired; other systems always play in RG DS Play, ports in PortMaster.
-        return SwitchGame(engine_for(rom, 'rgds-experimental' if CORES[core] == 'nnddss' else CORES[core]), rom)
+        # DSCore for DS games, RG DS Play for other systems, PortMaster for ports.
+        return SwitchGame(engine_for(rom), rom)
 
     def switch_game(self, index):
         if self.pending:
@@ -661,7 +650,7 @@ class GameMenu:
             return
         if self.pending:
             return
-        if action.startswith('threaded:') and (self.core != 'melonds' or action not in ('threaded:0', 'threaded:1')):
+        if action.startswith('threaded:'):
             self.publish('error', 'This engine has no live threading control.')
             return
         if action.startswith('graphics:'):
@@ -706,10 +695,10 @@ class GameMenu:
                 self.publish('error', 'Invalid colour setting for this game.')
                 return
         if action.startswith('cheat:'):
-            # cheat:<index>:<0|1>; DSCore lists its codes in emulator.control.cheats and toggles them live.
+            # cheat:<index>:<0|1>; DSCore and RG DS Play list their codes in emulator.control.cheats and toggle them live.
             pieces = action.split(':')
-            if self.core != 'rgds-experimental':
-                self.publish('error', 'Cheats are available when a game runs with DSCore.')
+            if self.core not in ('rgds-experimental', 'rgds-play'):
+                self.publish('error', 'Cheats are available when a game runs with DSCore or RG DS Play.')
                 return
             if len(pieces) != 3 or not pieces[1].isdigit() or pieces[2] not in ('0', '1'):
                 self.publish('error', 'Invalid cheat request.')

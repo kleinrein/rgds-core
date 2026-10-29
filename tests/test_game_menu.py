@@ -487,22 +487,6 @@ class GameMenuTests(unittest.TestCase):
         self.assertEqual(read_fields(self.menu.status)['state'], 'paused')
         self.assertIn('Settings storage', read_fields(self.menu.status)['message'])
 
-    def test_threading_result_preserves_fps_and_only_persists_successful_threading(self):
-        self.menu.core = 'melonds'
-        self.request('fps:1', token='enable-fps')
-        self.result('fps-on')
-        preference = self.menu.data / 'performance.ini'
-        before = preference.read_bytes(), preference.stat().st_ino
-        for state in ('threaded-off', 'threaded-on', 'threaded-failed'):
-            previous = self.menu.threaded
-            self.request('threaded:0', token=state)
-            self.result(state)
-            self.assertEqual((preference.read_bytes(), preference.stat().st_ino), before)
-            self.assertTrue(self.menu.fps)
-            self.assertEqual(self.menu.threaded, previous if state == 'threaded-failed' else state == 'threaded-on')
-            self.assertTrue(self.menu.paused)
-            self.assertIn('3D threading', read_fields(self.menu.status)['message'])
-
     def test_live_graphics_persists_only_after_success_and_keeps_process(self):
         from library import game_key
         self.menu.core = 'rgds-experimental'
@@ -574,6 +558,10 @@ class GameMenuTests(unittest.TestCase):
         self.menu.send('cheat:0:1')
         self.assertIsNone(self.menu.pending)
         self.assertEqual(read_fields(self.menu.status)['state'], 'error')
+        self.menu.core = 'rgds-play'
+        self.menu.send('cheat:3:1')
+        self.assertEqual(self.menu.pending['action'], 'cheat:3:1')
+        self.menu.pending = None
         self.menu.core = 'rgds-experimental'
         for command in ('cheat:', 'cheat:0', 'cheat:0:2', 'cheat:x:1', 'cheat:0:1:0', 'cheat:-1:1'):
             self.menu.send(command)

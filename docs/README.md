@@ -10,7 +10,6 @@ Start with the [project README](../README.md).
 | [Cheats](CHEATS.md) | Action Replay codes in DSCore: the database, the menu and per-game memory |
 | [Artwork](SCREENSCRAPER.md) | Where covers come from and how matching works |
 | [PictoChat](PICTOCHAT.md) | The home-screen chat pad: rooms, drawing, Wi-Fi, security and tests |
-| [SuperDrastic](SUPERDRASTIC.md) | The experimental native DraStic backend |
 | [Menu sounds](MENU_SOUNDS.md) | The optional sound palette |
 
 ## Developing

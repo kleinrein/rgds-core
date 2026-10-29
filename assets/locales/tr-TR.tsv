@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1 gün
 1 person nearby	Yakında 1 kişi
 1 player	1 oyuncu
 12-hour	12 saat
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	3D iş parçacığı bu oturum için değişti. Ayar depolama kullanılamıyor.
 3D threading changed. No restart needed.	3D iş parçacığı değişti. Yeniden başlatma gerekmez.
 3x sharper	3x daha keskin
+4 weeks ago	4 hafta önce
 4x (experimental)	4x (deneysel)
 5x (experimental)	5x (deneysel)
 A  Apply	A  Uygula
@@ -81,6 +83,7 @@ Automatic (free)	Otomatik
 Automatic updates	Otomatik güncellemeler
 Available	Mevcut
 Available networks	Kullanılabilir ağlar
+Average session	Ortalama oturum
 B  Cancel	B  İptal
 B  Close	B  Kapat
 Back	Geri
@@ -97,6 +100,7 @@ Battery percentage	Pil yüzdesi
 Battery saver	Pil tasarrufu
 Before	Önce
 Before you play	Oynamadan önce
+Bezel	Bezel
 Binding unchanged.	Atama değişmedi.
 Black and white	Siyah beyaz
 Black bar	Siyah şerit
@@ -159,8 +163,6 @@ Choose a network from the list	Listeden bir ağ seçin
 Choose an option	Bir seçenek belirleyin
 Choose Anbernic or RG DS startup.	Anbernic veya RG DS ile başlatmayı seçin.
 Choose native or a sharper 3D image	Doğal veya daha keskin 3D görüntü
-Choose the core for this cartridge	Bu kartuş için çekirdeği seçin
-Choose the display backend for the next DraStic launch. DSperate stays your default.	Bir sonraki DraStic açılışı için görüntü arka ucunu seçin. DSperate varsayılan kalır.
 Choose what opens when you power on	Açılışta neyin açılacağını seçin
 Classic	Klasik
 Classic blue	Klasik mavi
@@ -183,6 +185,7 @@ COLOUR MODE	RENK MODU
 Colour mode	Renk modu
 Colour treatment inspired by the original DS display.	Orijinal DS ekranından esinlenen renkler.
 Column	Sütun
+Commander	Komutan
 Companion	Yardımcı ekran
 Compare	Karşılaştır
 Confirm	Onayla
@@ -247,17 +250,16 @@ Cover	Kapak
 Covers	Kapaklar
 Current progress could not be saved. No slot was changed.	Geçerli ilerleme kaydedilemedi. Hiçbir yuva değişmedi.
 Custom	Özel
-DS only	Yalnızca DS
 Dark	Koyu
 Dark blue	Koyu mavi
 Dark green	Koyu yeşil
 Date format	Tarih biçimi
 Day	Gündüz
 Day or night	Gündüz mü gece mi
+Day streak	Gün serisi
 Daylight saving	Yaz saati
 Days	Günler
 Default	Varsayılan
-Default emulator	Varsayılan emülatör
 Default shader	Varsayılan filtre
 DEFAULT THEME - CHECK LOG	VARSAYILAN TEMA - GÜNLÜĞE BAKIN
 Delete	Sil
@@ -281,8 +283,6 @@ Downloading PortMaster	PortMaster indiriliyor
 Downloading update…	Güncelleme indiriliyor…
 Downloading {0}	{0} indiriliyor
 Downloads resume where they stopped if Wi-Fi drops.	Wi-Fi kesilirse indirmeler kaldığı yerden sürer.
-DraStic backend	DraStic arka ucu
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: buna ihtiyaç duyan oyunlar için bir alternatif. Kayıtlar ayrı tutulur.
 Draw and chat	Çiz ve sohbet et
 Draw and chat with nearby handhelds	Yakındaki konsollarla çizin ve sohbet edin
 Drawing on your own	Tek başınıza çiziyorsunuz
@@ -291,12 +291,11 @@ DS controls	DS kontrolleri
 DS controls are unavailable for this engine.	Bu motor için DS kontrolleri kullanılamıyor.
 DS language	DS dili
 DS Lite	DS Lite
+DS only	Yalnızca DS
 DS rounded	DS yuvarlak
 DS screens	DS ekranları
 DSCore 3D resolution	DSCore 3D çözünürlüğü
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: önerilen. En hızlısı; kapak, kalem ve 3D düzeltmeleri ve isteğe bağlı 2x–5x 3D ile.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: günlük oyun için önerilir. Varsayılan doğal çözünürlüktür.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: orijinal ana motor. DSCore düzeltme ve hız ekler.
 Edit	Düzenle
 Edit search	Aramayı düzenle
 Effects volume	Efekt ses düzeyi
@@ -332,8 +331,8 @@ Fast-forward enabled.	Hızlı ileri açık.
 Fast-forward is unavailable for this emulator.	Bu emülatörde hızlı ileri kullanılamaz.
 Fast-forward style	Hızlı ileri türü
 Favourite	Favori
-FAVOURITE COLOUR	SEVDİĞİNİZ RENK
 Favourite a game and it waits for you here	Bir oyunu favorilere ekle, burada seni beklesin
+FAVOURITE COLOUR	SEVDİĞİNİZ RENK
 Favourites	Favoriler
 Feel every move	Her hareketi hisset
 Feel the game	Oyunu hisset
@@ -351,15 +350,13 @@ Finding games…	Oyunlar bulunuyor…
 Finishing another task. Press Y again in a moment.	Başka bir iş bitiriliyor. Birazdan Y'ye yeniden basın.
 Finishing the system request	Sistem isteği tamamlanıyor
 Follow your default button layout	Varsayılan düğme düzenini izle
-Following your global controls.	Genel kontroller kullanılıyor.
-Follows your Library default. Each emulator keeps its own saves.	Kitaplık varsayılanını izler. Her emülatörün kendi kayıtları vardır.
+Following the default controls.	Genel kontroller kullanılıyor.
 Follows your library shader.	Kitaplık filtrenizi izler.
 Forget this device?	Bu cihaz unutulsun mu?
 FPS changed for this session. Settings storage is unavailable.	FPS bu oturum için değişti. Ayar depolama kullanılamıyor.
 FPS counter enabled.	FPS sayacı açık.
 FPS counter hidden.	FPS sayacı gizlendi.
 Fr	Cu
-Frame	Çerçeve
 Frameskip	Kare atlama
 Free space	Boş alan
 Free space while keeping your saves	Kayıtları koruyarak yer aç
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · Yeşil
 Game Boy · Red	Game Boy · Kırmızı
 Game Boy · Screen only	Game Boy · Yalnızca ekran
 Game Boy · Yellow	Game Boy · Sarı
-Game emulator	Oyun emülatörü
-Game emulator saved.	Oyun emülatörü kaydedildi.
 Game FPS	Oyun FPS
 Game info	Oyun bilgisi
 Game menu	Oyun menüsü
@@ -428,7 +423,7 @@ German	Almanca
 Get, update and remove ports	Port edin, güncelleyin ve kaldırın
 Give your eyes and hands a break.	Gözlerinizi ve ellerinizi dinlendirin.
 Global	Genel
-Global controls saved.	Genel kontroller kaydedildi.
+Default controls saved.	Genel kontroller kaydedildi.
 Glossy tiles	Parlak karolar
 Go back	Geri dön
 Goes into	Hedef
@@ -444,6 +439,7 @@ Heart containers	Kalp kapları
 Heart pieces	Kalp parçaları
 Hearts	Kalpler
 High contrast	Yüksek kontrast
+History starts with your next game	Geçmiş bir sonraki oyununla başlar
 Hold	Basılı tut
 Hold still for a right click	Sağ tık için sabit tut
 Hold to exit	Çıkmak için basılı tut
@@ -494,6 +490,8 @@ Keyboard	Klavye
 Keys	Anahtarlar
 Kinstone fusions	Kinstone birleştirme
 Language	Dil
+Last 4 weeks	Son 4 hafta
+Last 7 days	Son 7 gün
 Last played	Son oynanma
 Launch cancelled	Başlatma iptal edildi
 LCD + both colours	LCD + iki renk filtresi
@@ -532,6 +530,7 @@ Loaded	Yüklendi
 Loading checkpoint…	Kayıt noktası yükleniyor…
 Loading…	Yükleniyor…
 Long press	Uzun basma
+Longest session	En uzun oturum
 Looking for devices…	Cihazlar aranıyor…
 Looking for games…	Oyunlar aranıyor…
 Looking for networks…	Ağlar aranıyor…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	Ağ devre dışı. Etkinleş
 Never	Asla
 New messages below	Yeni mesajlar aşağıda
 Next	Sonraki
-Next emulator	Sonraki emülatör
 Next picture	Sonraki resim
 Next:	Sonraki:
 Night	Gece
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: bir uyumluluk seçeneği. Hız için önce DSperate'i deneyin.
 No button detected. Try again when you're ready.	Düğme algılanmadı. Hazır olduğunuzda yeniden deneyin.
 No checkpoint saved for this emulator yet.	Bu emülatör için henüz kayıt noktası yok.
 No cover yet	Henüz kapak yok
@@ -650,6 +647,7 @@ Orange	Turuncu
 Original	Orijinal
 Original pixels	Orijinal pikseller
 Original pixels and colours.	Orijinal pikseller ve renkler.
+Other	Diğer
 Pacific	Pasifik
 Paired	Eşleştirildi
 Party	Ekip
@@ -759,7 +757,6 @@ Restart the device?	Cihaz yeniden başlatılsın mı?
 Restart the game to apply DS settings.	DS ayarlarını uygulamak için oyunu yeniden başlatın.
 Restart the RGDS menu.	RGDS menüsünü yeniden başlat.
 Restart the RGDS menu?	RGDS menüsü yeniden başlatılsın mı?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	Yeniden başlatınca {0} kullanılır. Kayıtlar her emülatör için ayrı tutulur.
 Restart without loading a state?	Durum yüklemeden yeniden başlatılsın mı?
 Restarting into the update…	Güncellemeyle yeniden başlatılıyor…
 Restarting…	Yeniden başlatılıyor…
@@ -797,7 +794,6 @@ Rupees	Rupiler
 Sa	Ct
 Save	Kaydet
 Save & restart	Kaydet ve yeniden başlat
-Save & restart applies Threaded 3D.	Kaydet ve yeniden başlat, çok iş parçacıklı 3D'yi uygular.
 Save & restart keeps your checkpoint and applies pending settings.	Kaydet ve yeniden başlat, kayıt noktanızı korur ve bekleyen ayarları uygular.
 Save a report for troubleshooting	Sorun giderme için rapor kaydet
 Save backup created in userdata/exports.	Kayıt yedeği userdata/exports içinde oluşturuldu.
@@ -811,11 +807,8 @@ Save state	Durumu kaydet
 Save your checkpoint and restart	Kayıt noktası al ve yeniden başlat
 Saved	Kaydedildi
 Saved - desktop simulation	Kaydedildi - masaüstü simülasyonu
-Saved for the next Standard DraStic launch.	Bir sonraki Standart DraStic açılışı için kaydedildi.
 Saved network	Kayıtlı ağ
 Saved · {0}	Kaydedildi · {0}
-Saved. Applies on your next DraStic launch.	Kaydedildi. Bir sonraki DraStic açılışında uygulanır.
-Saved. Save & restart applies screen order.	Kaydedildi. Ekran sırası Kaydet ve yeniden başlat ile uygulanır.
 Saved. Save & restart applies this change.	Kaydedildi. Bu değişiklik Kaydet ve yeniden başlat ile uygulanır.
 Saved. Save & restart changes the emulator.	Kaydedildi. Emülatör Kaydet ve yeniden başlat ile değişir.
 Saving before restarting…	Yeniden başlatmadan önce kaydediliyor…
@@ -834,7 +827,6 @@ Score	Skor
 Screen brightness	Ekran parlaklığı
 Screen colours	Ekran renkleri
 Screen off	Ekran kapalı
-Screen order	Ekran sırası
 screens	ekran
 ScreenScraper needs project credentials and your account	ScreenScraper proje kimlik bilgileri ve hesabınızı gerektirir
 Screenshot	Ekran görüntüsü
@@ -857,7 +849,6 @@ Selected row	Seçili satır
 Send	Gönder
 Series	Seri
 Set the clock to where you are.	Saati bulunduğun yere göre ayarla.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	Bu oyun için Standart DraStic ekran sırasını ayarlar. Kaydet ve yeniden başlat ile uygulanır.
 Setting up PortMaster	PortMaster hazırlanıyor
 Settings	Ayarlar
 Settings saved	Ayarlar kaydedildi
@@ -919,8 +910,6 @@ Spring	Yay
 Springy menu changes with a colourful wobble	Renkli bir sallanmayla yaylı menü geçişleri
 Stable	Kararlı
 Standard	Standart
-Standard DraStic only. Applies on the next launch; game saves are kept.	Yalnızca Standart DraStic. Bir sonraki açılışta uygulanır; oyun kayıtları korunur.
-Standard screen order	Standart ekran sırası
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	Pz
 Subtle	Hafif
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	Yaz saati saat diliminizi izler. Saat bir saat farklıysa açın veya kapatın.
 Super missiles	Süper füzeler
-SuperDrastic (experimental)	SuperDrastic (deneysel)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic şimdilik doğal çıktı kullanır. Standart filtre seçiminiz korunur.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic kendi duraklatma menüsünü ve görüntü yolunu kullanır. Deneysel; RG DS testi sürüyor.
 Swap screens	Ekranları değiştir
 Swapped	Yer değişti
 Swipe in from the left edge to go Back.	Geri gitmek için sol kenardan içeri kaydırın.
@@ -969,6 +955,7 @@ Systems	Sistemler
 Tap to type, or use the D-pad and A	Yazmak için dokunun veya yön tuşları ve A'yı kullanın
 Team	Takım
 Temporary game cache cleared. Saves and artwork are kept.	Geçici oyun önbelleği temizlendi. Kayıtlar ve kapaklar korundu.
+Terrain and unit	Arazi ve birlik
 Test	Test et
 Test microphone	Mikrofonu test et
 Test the microphone on your handheld.	Konsolunuzun mikrofonunu test edin.
@@ -1022,6 +1009,7 @@ Times played	Oynanma sayısı
 Timezone	Saat dilimi
 Title screen	Başlık ekranı
 Title screens	Başlık ekranları
+Today	Bugün
 Toggle	Aç/kapat
 Too much on the pad: erase some of it	Sayfada çok fazla şey var: bir kısmını silin
 Tools	Araçlar
@@ -1092,12 +1080,11 @@ Updates & recovery	Güncelleme ve kurtarma
 Updates will be available when the release channel opens.	Güncellemeler sürüm kanalı açıldığında kullanılabilir olacak.
 Use an additional rendering thread	Ek bir işleme iş parçacığı kullan
 Use default ({0})	Varsayılanı kullan ({0})
-Use global controls	Genel kontrolleri kullan
+Use default controls	Genel kontrolleri kullan
 Use previous build	Önceki sürümü kullan
 Use ROM identity	ROM kimliğini kullan
 Use the engine's native controls for microphone and DS settings.	Mikrofon ve DS ayarları için motorun kendi kontrollerini kullanın.
 Use the previous RGDS build?	Önceki RGDS sürümü kullanılsın mı?
-Used by games without an override	Özel ayarı olmayan oyunlar için
 Username	Kullanıcı adı
 Verify	Doğrula
 Verifying update…	Güncelleme doğrulanıyor…
@@ -1157,6 +1144,7 @@ Worlds	Dünyalar
 Y imports a save into this slot.	Y bu yuvaya bir kayıt aktarır.
 Yellow	Sarı
 Yes	Evet
+Yesterday	Dün
 You	Siz
 You appear like this to others	Başkaları sizi böyle görür
 You are in Room {0}	{0} numaralı odadasınız
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (deneysel)
 {0} (recommended)	{0} (önerilen)
 {0} active	{0} etkin
+{0} days	{0} gün
+{0} days ago	{0} gün önce
 {0} found. Choose Done to go to your library.	{0} bulundu. Kitaplığınıza gitmek için Bitti'yi seçin.
 {0} frames	{0} kare
 {0} game	{0} oyun

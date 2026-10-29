@@ -82,7 +82,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "DS controls" || title == "Close and open DS lid") return SettingsIcon::Controller;
     if (title == "DS language" || title == "Filter" || title == "Automatic updates") return SettingsIcon::Sliders;
     if (title == "Search games" ) return SettingsIcon::Library;
-    if (title == "Where to put games" || title == "Add your games" || title == "Scan for games")
+    if (title == "Scan for games")
         return SettingsIcon::Cartridge;
     if (title == "Library") return SettingsIcon::Library;
     if (title == "Statistics" || title == "Time format" || title == "Date format" || title == "Daylight saving")
@@ -91,7 +91,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Remove game") return SettingsIcon::Trash;
     if (title == "Dim when idle") return SettingsIcon::Sun;
     if (title == "Sleep timer in games") return SettingsIcon::Moon;
-    if (title == "Profile" || title == "Shortcut action" || title == "Use global controls")
+    if (title == "Profile" || title == "Shortcut action" || title == "Use default controls")
         return SettingsIcon::Controller;
     if (title == "Restore defaults") return SettingsIcon::Refresh;
     if (title == "DS rounded" || title == "Pixel classic") return SettingsIcon::Type;
@@ -161,7 +161,7 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Button layout") return "Start with a familiar layout";
     if (title == "Home shortcut") return "Your menu shortcut";
     if (title == "Shortcut action") return "What the shortcut opens";
-    if (title == "Use global controls") return "Follow your default button layout";
+    if (title == "Use default controls") return "Follow your default button layout";
     if (title == "Restore defaults") return "Return to the original button layout";
     if (title == "Power mode") return "Balance battery life and speed";
     if (title == "Menu idle sleep") return "Rest after a period of inactivity";
@@ -170,13 +170,11 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Sleep timer in games") return "Sleep a game nobody is playing";
     if (title == "Battery percentage") return "Show the charge in the status bar";
     if (title == "Restart") return "Turn the handheld off and on again";
-    if (title == "Default emulator") return "Used by games without an override";
     if (title == "Artwork & ScreenScraper") return "Box art, titles and game details";
     if (title == "Auto-load state") return "Continue where you left off";
     if (title == "Auto-save on exit") return "Keep a checkpoint when returning home";
     if (title == "Default shader") return "Preview and choose your screen style";
     if (title == "Favourite") return "Keep this game in Favourites";
-    if (title == "Emulator") return "Choose the core for this cartridge";
     if (title == "Shader") return "A screen style for this cartridge";
     if (title == "Controls") return "Buttons and the game menu shortcut";
     if (title == "Home layout") return "A carousel, or the DSi's column with your last game on top";

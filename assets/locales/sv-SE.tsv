@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1 dag
 1 person nearby	1 person i närheten
 1 player	1 spelare
 12-hour	12 timmar
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	3D-trådning ändrad för denna session. Inställningar kan inte sparas.
 3D threading changed. No restart needed.	3D-trådning ändrad. Ingen omstart behövs.
 3x sharper	3x skarpare
+4 weeks ago	4 veckor sedan
 4x (experimental)	4x (experimentell)
 5x (experimental)	5x (experimentell)
 A  Apply	A  Verkställ
@@ -81,6 +83,7 @@ Automatic (free)	Automatisk
 Automatic updates	Automatiska uppdateringar
 Available	Tillgänglig
 Available networks	Tillgängliga nätverk
+Average session	Snitt/session
 B  Cancel	B  Avbryt
 B  Close	B  Stäng
 Back	Tillbaka
@@ -97,6 +100,7 @@ Battery percentage	Batteriprocent
 Battery saver	Batterisparläge
 Before	Före
 Before you play	Innan du spelar
+Bezel	Bezel
 Binding unchanged.	Knappkopplingen är oförändrad.
 Black and white	Svartvitt
 Black bar	Svart list
@@ -159,8 +163,6 @@ Choose a network from the list	Välj ett nätverk i listan
 Choose an option	Välj ett alternativ
 Choose Anbernic or RG DS startup.	Välj att starta med Anbernic eller RG DS.
 Choose native or a sharper 3D image	Välj originalupplösning eller skarpare 3D-bild
-Choose the core for this cartridge	Välj kärna för denna kassett
-Choose the display backend for the next DraStic launch. DSperate stays your default.	Välj visningsmotor för nästa DraStic-start. DSperate förblir standard.
 Choose what opens when you power on	Välj vad som öppnas vid start
 Classic	Klassisk
 Classic blue	Klassisk blå
@@ -183,6 +185,7 @@ COLOUR MODE	FÄRGLÄGE
 Colour mode	Färgläge
 Colour treatment inspired by the original DS display.	Färgbehandling inspirerad av den ursprungliga DS-skärmen.
 Column	Kolumn
+Commander	Befälhavare
 Companion	Följeskärm
 Compare	Jämför
 Confirm	Bekräfta
@@ -247,17 +250,16 @@ Cover	Omslag
 Covers	Omslag
 Current progress could not be saved. No slot was changed.	Aktuella framsteg kunde inte sparas. Ingen sparplats ändrades.
 Custom	Anpassad
-DS only	Bara DS
 Dark	Mörk
 Dark blue	Mörkblå
 Dark green	Mörkgrön
 Date format	Datumformat
 Day	Dag
 Day or night	Dag eller natt
+Day streak	Dagar i rad
 Daylight saving	Sommartid
 Days	Dagar
 Default	Standard
-Default emulator	Standardemulator
 Default shader	Standardshader
 DEFAULT THEME - CHECK LOG	STANDARDTEMA - SE LOGGEN
 Delete	Radera
@@ -281,8 +283,6 @@ Downloading PortMaster	Laddar ner PortMaster
 Downloading update…	Hämtar uppdatering…
 Downloading {0}	Hämtar {0}
 Downloads resume where they stopped if Wi-Fi drops.	Hämtningar fortsätter där de slutade om Wi-Fi tappas.
-DraStic backend	DraStic-motor
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: ett alternativ för spel som behöver det. Sparfiler hålls åtskilda.
 Draw and chat	Rita och chatta
 Draw and chat with nearby handhelds	Rita och chatta med enheter i närheten
 Drawing on your own	Ritar för dig själv
@@ -291,12 +291,11 @@ DS controls	DS-kontroller
 DS controls are unavailable for this engine.	DS-kontroller saknas för denna motor.
 DS language	DS-språk
 DS Lite	DS Lite
+DS only	Bara DS
 DS rounded	DS rundad
 DS screens	DS-skärmar
 DSCore 3D resolution	DSCore 3D-upplösning
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: rekommenderas. Snabbast, med rättningar för lock, penna och 3D samt valfri 2x–5x 3D.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: rekommenderas för vardagsspel. Originalupplösning är standard.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: den ursprungliga motorn. DSCore lägger till rättningar och fart.
 Edit	Ändra
 Edit search	Ändra sökning
 Effects volume	Effektvolym
@@ -332,8 +331,8 @@ Fast-forward enabled.	Snabbspolning aktiverad.
 Fast-forward is unavailable for this emulator.	Snabbspolning saknas för denna emulator.
 Fast-forward style	Snabbspolningsläge
 Favourite	Favorit
-FAVOURITE COLOUR	FAVORITFÄRG
 Favourite a game and it waits for you here	Favoritmarkera ett spel så väntar det här
+FAVOURITE COLOUR	FAVORITFÄRG
 Favourites	Favoriter
 Feel every move	Känn varje rörelse
 Feel the game	Känn spelet
@@ -351,15 +350,13 @@ Finding games…	Letar efter spel…
 Finishing another task. Press Y again in a moment.	Slutför en annan uppgift. Tryck Y igen om en stund.
 Finishing the system request	Slutför systembegäran
 Follow your default button layout	Följ din standardlayout för knappar
-Following your global controls.	Följer dina globala kontroller.
-Follows your Library default. Each emulator keeps its own saves.	Följer bibliotekets standard. Varje emulator har egna sparfiler.
+Following the default controls.	Följer dina globala kontroller.
 Follows your library shader.	Följer ditt biblioteksfilter.
 Forget this device?	Glömma den här enheten?
 FPS changed for this session. Settings storage is unavailable.	FPS ändrad för denna session. Inställningar kan inte sparas.
 FPS counter enabled.	FPS-räknare aktiverad.
 FPS counter hidden.	FPS-räknare dold.
 Fr	Fr
-Frame	Ram
 Frameskip	Bildhopp
 Free space	Ledigt utrymme
 Free space while keeping your saves	Frigör utrymme och behåll sparfiler
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · Grön
 Game Boy · Red	Game Boy · Röd
 Game Boy · Screen only	Game Boy · Endast skärm
 Game Boy · Yellow	Game Boy · Gul
-Game emulator	Spelets emulator
-Game emulator saved.	Spelets emulator sparad.
 Game FPS	Spelets FPS
 Game info	Spelinfo
 Game menu	Spelmeny
@@ -428,7 +423,7 @@ German	Tyska
 Get, update and remove ports	Hämta, uppdatera och ta bort portar
 Give your eyes and hands a break.	Låt ögon och händer vila en stund.
 Global	Global
-Global controls saved.	Globala kontroller sparade.
+Default controls saved.	Globala kontroller sparade.
 Glossy tiles	Blanka plattor
 Go back	Gå tillbaka
 Goes into	Hamnar i
@@ -444,6 +439,7 @@ Heart containers	Hjärtbehållare
 Heart pieces	Hjärtbitar
 Hearts	Hjärtan
 High contrast	Hög kontrast
+History starts with your next game	Historiken börjar med ditt nästa spel
 Hold	Håll in
 Hold still for a right click	Håll still för högerklick
 Hold to exit	Håll för att avsluta
@@ -494,6 +490,8 @@ Keyboard	Tangentbord
 Keys	Nycklar
 Kinstone fusions	Kinstone-fusioner
 Language	Språk
+Last 4 weeks	Senaste 4 veckorna
+Last 7 days	Senaste 7 dagarna
 Last played	Senast spelat
 Launch cancelled	Start avbruten
 LCD + both colours	LCD + båda färgeffekterna
@@ -532,6 +530,7 @@ Loaded	Inläst
 Loading checkpoint…	Läser in kontrollpunkt…
 Loading…	Läser in…
 Long press	Långt tryck
+Longest session	Längsta session
 Looking for devices…	Söker efter enheter…
 Looking for games…	Letar efter spel…
 Looking for networks…	Söker efter nätverk…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	Nätverk är avstängt. Slå
 Never	Aldrig
 New messages below	Nya meddelanden nedan
 Next	Nästa
-Next emulator	Nästa emulator
 Next picture	Nästa bild
 Next:	Nästa:
 Night	Natt
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: ett kompatibilitetsalternativ. Prova DSperate först för hastighet.
 No button detected. Try again when you're ready.	Ingen knapp upptäcktes. Försök igen när du är redo.
 No checkpoint saved for this emulator yet.	Ingen kontrollpunkt sparad för denna emulator ännu.
 No cover yet	Inget omslag ännu
@@ -650,6 +647,7 @@ Orange	Orange
 Original	Original
 Original pixels	Originalpixlar
 Original pixels and colours.	Originalpixlar och originalfärger.
+Other	Övrigt
 Pacific	Stilla havet
 Paired	Parkopplad
 Party	Grupp
@@ -759,7 +757,6 @@ Restart the device?	Starta om enheten?
 Restart the game to apply DS settings.	Starta om spelet för att tillämpa DS-inställningarna.
 Restart the RGDS menu.	Starta om RGDS-menyn.
 Restart the RGDS menu?	Starta om RGDS-menyn?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	Omstart använder {0}. Sparfiler och kontrollpunkter hålls åtskilda per emulator.
 Restart without loading a state?	Starta om utan att läsa in ett spelläge?
 Restarting into the update…	Startar den uppdaterade versionen…
 Restarting…	Startar om…
@@ -797,7 +794,6 @@ Rupees	Rupier
 Sa	Lö
 Save	Spara
 Save & restart	Spara och starta om
-Save & restart applies Threaded 3D.	Spara och starta om tillämpar trådad 3D.
 Save & restart keeps your checkpoint and applies pending settings.	Spara och starta om behåller kontrollpunkten och tillämpar väntande inställningar.
 Save a report for troubleshooting	Spara en rapport för felsökning
 Save backup created in userdata/exports.	Säkerhetskopia skapad i userdata/exports.
@@ -811,11 +807,8 @@ Save state	Spara spelläge
 Save your checkpoint and restart	Spara kontrollpunkten och starta om
 Saved	Sparat
 Saved - desktop simulation	Sparat - skrivbordssimulering
-Saved for the next Standard DraStic launch.	Sparat för nästa start av Standard DraStic.
 Saved network	Sparat nätverk
 Saved · {0}	Sparat · {0}
-Saved. Applies on your next DraStic launch.	Sparat. Gäller vid nästa DraStic-start.
-Saved. Save & restart applies screen order.	Sparat. Spara och starta om tillämpar skärmordningen.
 Saved. Save & restart applies this change.	Sparat. Spara och starta om tillämpar ändringen.
 Saved. Save & restart changes the emulator.	Sparat. Spara och starta om byter emulator.
 Saving before restarting…	Sparar före omstart…
@@ -834,7 +827,6 @@ Score	Poäng
 Screen brightness	Skärmens ljusstyrka
 Screen colours	Skärmfärger
 Screen off	Skärm av
-Screen order	Skärmordning
 screens	skärmar
 ScreenScraper needs project credentials and your account	ScreenScraper behöver projektuppgifter och ditt konto
 Screenshot	Skärmbild
@@ -857,7 +849,6 @@ Selected row	Vald rad
 Send	Skicka
 Series	Serie
 Set the clock to where you are.	Ställ klockan efter var du är.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	Ställer in skärmordning i Standard DraStic för spelet. Spara och starta om för att tillämpa.
 Setting up PortMaster	Förbereder PortMaster
 Settings	Inställningar
 Settings saved	Inställningar sparade
@@ -919,8 +910,6 @@ Spring	Fjäder
 Springy menu changes with a colourful wobble	Studsande menybyten med färgglada rörelser
 Stable	Stabil
 Standard	Standard
-Standard DraStic only. Applies on the next launch; game saves are kept.	Endast Standard DraStic. Gäller nästa start; sparfiler behålls.
-Standard screen order	Standardordning för skärmar
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	Sö
 Subtle	Diskret
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	Sommartid följer din tidszon. Slå på eller av den om klockan går en timme fel.
 Super missiles	Supermissiler
-SuperDrastic (experimental)	SuperDrastic (experimentell)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic använder för närvarande originalupplösning. Ditt standardval av shader behålls.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic har egen pausmeny och visningsmotor. Experimentell; tester på RG DS återstår.
 Swap screens	Byt skärmar
 Swapped	Ombytta
 Swipe in from the left edge to go Back.	Svep in från vänsterkanten för att gå tillbaka.
@@ -969,6 +955,7 @@ Systems	System
 Tap to type, or use the D-pad and A	Tryck för att skriva, eller använd styrkorset och A
 Team	Lag
 Temporary game cache cleared. Saves and artwork are kept.	Tillfällig spelcache rensad. Sparfiler och omslag behålls.
+Terrain and unit	Terräng och enhet
 Test	Test
 Test microphone	Testa mikrofon
 Test the microphone on your handheld.	Testa mikrofonen på enheten.
@@ -1022,6 +1009,7 @@ Times played	Speltillfällen
 Timezone	Tidszon
 Title screen	Titelskärm
 Title screens	Titelskärmar
+Today	I dag
 Toggle	Växla
 Too much on the pad: erase some of it	För mycket på blocket: sudda bort något
 Tools	Verktyg
@@ -1092,12 +1080,11 @@ Updates & recovery	Uppdatering och återställning
 Updates will be available when the release channel opens.	Uppdateringar blir tillgängliga när versionskanalen öppnar.
 Use an additional rendering thread	Använd en extra renderingstråd
 Use default ({0})	Använd standard ({0})
-Use global controls	Använd globala kontroller
+Use default controls	Använd globala kontroller
 Use previous build	Använd tidigare version
 Use ROM identity	Använd ROM-identitet
 Use the engine's native controls for microphone and DS settings.	Använd motorns egna kontroller för mikrofon och DS-inställningar.
 Use the previous RGDS build?	Använd tidigare RGDS-version?
-Used by games without an override	Används av spel utan eget val
 Username	Användarnamn
 Verify	Kontrollera
 Verifying update…	Verifierar uppdatering…
@@ -1157,6 +1144,7 @@ Worlds	Världar
 Y imports a save into this slot.	Y importerar en sparfil till den här platsen.
 Yellow	Gul
 Yes	Ja
+Yesterday	I går
 You	Du
 You appear like this to others	Så ser andra dig
 You are in Room {0}	Du är i rum {0}
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (experimentell)
 {0} (recommended)	{0} (rekommenderad)
 {0} active	{0} aktiva
+{0} days	{0} dagar
+{0} days ago	{0} dagar sedan
 {0} found. Choose Done to go to your library.	{0} hittades. Välj Klar för att gå till biblioteket.
 {0} frames	{0} bildrutor
 {0} game	{0} spel

@@ -182,7 +182,7 @@ class PortMasterTests(unittest.TestCase):
     def test_engine_and_system_of_a_port(self):
         self.assertEqual(play_options.system_of(self.port), "ports")
         self.assertEqual(play_options.engine_for(self.port, "melonds"), "portmaster")
-        self.assertEqual(play_options.engine_for(self.base / "game.nds", "melonds"), "melonds")
+        self.assertEqual(play_options.engine_for(self.base / "game.nds", "melonds"), "rgds-experimental")  # DSCore only
         self.assertEqual(emulators.CORES.index("portmaster"), 6)
         self.assertEqual(emulators.resolve_rom(self.port, self.data, "portmaster"), self.port.resolve())
         with patch.object(portmaster, "Folders", return_value=self.folders):

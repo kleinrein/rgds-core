@@ -62,6 +62,15 @@ class DeviceShotTests(unittest.TestCase):
                 self.assertEqual(clear.shape[2], 4)
                 self.assertEqual(clear[0, 0, 3], 0)
 
+    def test_device_shells(self):
+        top = np.full((240, 320, 3), 120, np.uint8)
+        sizes = {
+            shell: device_shot.compose(top, top, 'device', 'stack', 'auto', 1, shell).shape
+            for shell in device_shot.SHELLS
+        }
+        self.assertEqual(len(set(sizes.values())), 1)
+        self.assertGreater(sizes['black'][0], sizes['black'][1])  # an open clamshell is taller than wide
+
 
 if __name__ == '__main__':
     unittest.main()

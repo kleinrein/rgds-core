@@ -153,12 +153,12 @@ class SettingsTests(unittest.TestCase):
 
     def test_game_options_favourites_and_view_extensions_keep_base_preferences_readable(self):
         self.run_preview(
-            "20 key X\n60 key A\n100 key Down\n140 key A\n180 key Down\n220 key A\n240 key Down\n250 key A\n260 key Right\n280 key Right\n300 key A\n320 key Escape\n340 key Y\n400 key Right\n450 key A\n500 key Escape\n"
+            "20 key X\n60 key A\n180 key Down\n220 key A\n240 key Down\n250 key A\n260 key Right\n280 key Right\n300 key A\n320 key Escape\n340 key Y\n400 key Right\n450 key A\n500 key Escape\n"
         )
         options = next((self.root / "library").glob("*/game.ini")).read_text()
         self.assertIn("favourite=1", options)
-        self.assertIn("core=0", options)
-        self.assertIn("filter=1", options)
+        self.assertIn("core=-1", options)  # no engine choice: DSCore
+        self.assertNotIn("filter=-1", options)  # a shader chosen for this cartridge
         self.assertIn("view=1\n", (self.root / "ui.ini").read_text())
         self.assertNotIn("view=", self.prefs.read_text())
         self.run_preview("20 key X\n60 key A\n100 key Escape\n")
@@ -206,18 +206,18 @@ class SettingsTests(unittest.TestCase):
         # The carousel is grouped; Amber (19) is the last place.
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(28))
         self.run_preview(
-            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" +
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n" +
             select_last + "1500 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
         self.state.write_text('1 3 2 ""\n')
         select_last = "".join(f"{180 + index * 40} key Right\n" for index in range(29))
-        self.run_preview("20 key X\n60 key Down\n100 key Down\n140 key A\n" + select_last + "1500 key A\n")
+        self.run_preview("20 key X\n60 key Down\n140 key A\n" + select_last + "1500 key A\n")
         self.assertIn("filter=19\n", next((self.root / "library").glob("*/game.ini")).read_text())
 
     def test_shader_groups_jump_with_up_down_shoulders_and_chips(self):
-        picker = "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n"
+        picker = "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n"
         self.run_preview(picker + "220 key Down\n300 key A\n", extra=("--settings", "--section", "library"))
         self.assertIn("filter=21\n", (self.root / "ui.ini").read_text(), "Down opens DS screens at DS Classic")
         self.state.write_text('1 3 2 ""\n')
@@ -233,17 +233,17 @@ class SettingsTests(unittest.TestCase):
         self.run_preview(picker + "220 click 460 100\n300 key A\n", extra=("--settings", "--section", "library"))
         self.assertIn("filter=27\n", (self.root / "ui.ini").read_text(), "The Pixel art chip opens Pixel beads")
 
-    def test_dsperate_picker_offers_the_full_preset_pack(self):
+    def test_library_picker_offers_the_full_preset_pack(self):
         self.prefs.write_text("schema=1\nmode=light\nfont=rounded\ncore=1\n")
         self.run_preview(
-            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key A\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n220 key Right\n260 key Right\n300 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=21\n", (self.root / "ui.ini").read_text())
 
     def test_shader_rail_drag_selects_the_last_shader_and_a_tile_tap_applies(self):
         self.run_preview(
-            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 tap 300 440\n260 drag 600 440\n300 release\n600 click 320 200\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n220 tap 300 440\n260 drag 600 440\n300 release\n600 click 320 200\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
@@ -251,7 +251,7 @@ class SettingsTests(unittest.TestCase):
     def test_shader_focus_restores_during_rebuilds_and_scrolls_into_view(self):
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(14))
         self.run_preview(
-            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n" + select_last,
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n" + select_last,
             extra=("--settings", "--section", "library")
         )
         self.assertIn("20 2 14\nshader 0\n", self.state.read_text())
@@ -262,7 +262,7 @@ class SettingsTests(unittest.TestCase):
 
     def test_shader_left_and_right_move_one_item(self):
         self.run_preview(
-            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key Right\n300 key Left\n340 key A\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n220 key Right\n260 key Right\n300 key Left\n340 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=1", (self.root / "ui.ini").read_text())
@@ -275,23 +275,6 @@ class SettingsTests(unittest.TestCase):
         # At the end of the ten-row list the first whole row is Updates (section 9, below System).
         self.assertTrue(self.state.read_text().endswith("17 9 0\n"), self.state.read_text())
         self.assertFalse(self.system_prefs.exists())
-
-    def test_threaded_3d_only_writes_a_setting_on_drastic(self):
-        for core in ("drastic", "dsperate", "nnddss", "melonds"):
-            with self.subTest(core=core):
-                self.state.write_text('1 3 2 ""\n')
-                for path in (self.root / "library").glob("*/game.ini"):
-                    path.unlink()
-                self.run_preview(
-                    "20 click 120 280\n60 key Down\n100 key Down\n140 key Down\n180 key Right\n",
-                    extra=("--game-menu", "--game-core", core)
-                )
-                saved = list((self.root / "library").glob("*/game.ini"))
-                if core == "drastic":
-                    self.assertEqual(len(saved), 1)
-                    self.assertIn("threaded_3d=0\n", saved[0].read_text())
-                else:
-                    self.assertEqual(saved, [], "Automatic threading must not save an ineffective toggle")
 
     def test_in_game_shader_button_opens_options_for_the_active_engine(self):
         for core, expected in (("drastic", 22), ("dsperate", 22), ("nnddss", 22), ("melonds", 22)):

@@ -1,0 +1,17 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] libretro: export the per-line Mode 7 state for RG DS Play
+
+RG DS Play draws more of a Mode 7 race than the game itself draws (Super
+Mario Kart's road under the race view) from the core's own record of each
+scanline's Mode 7 matrix, centre and scroll and the palette. The unix
+version script exports only retro_*; export those two tables as well (read
+only; nothing in the core changes).
+
+--- a/libretro/link.T
++++ b/libretro/link.T
+@@ -1,4 +1,4 @@
+ {
+-   global: retro_*;
++   global: retro_*; LineMatrixData; PPU;
+    local: *;
+ };

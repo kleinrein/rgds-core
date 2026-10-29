@@ -143,14 +143,11 @@ class DirectDisplayPlanTests(Fixture):
                 config.read(self.data / 'emulators' / ENGINE / 'config.ini')
                 self.assertEqual(config['video']['sink'], 'renderer')
 
-    def test_other_engines_and_independent_linux_keep_weston(self):
+    def test_independent_linux_keeps_weston(self):
         rom = self.prepare()
         write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=1))
         with patch.dict(os.environ, WAYLAND_DISPLAY='wayland-0'), patch('direct_display.available', return_value=False):
             self.assertNotIn('display', emulators.launch_plan(ENGINE, self.app, self.data, rom))
-        self.binary('melonds')
-        with patch.dict(os.environ, WAYLAND_DISPLAY='wayland-0'), patch('direct_display.available', return_value=True):
-            self.assertNotIn('display', emulators.launch_plan('melonds', self.app, self.data, rom))
 
 
 class GpuFaultTests(Fixture):

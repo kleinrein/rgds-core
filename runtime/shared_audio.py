@@ -35,15 +35,21 @@ def configure(app, env, stock=Path('/etc/asound.conf')):
 
 # alsa-lib guards the dmix stream with a SysV semaphore at ipc_key (+ uid):
 # start, recovery after an underrun, open and close all take it for a moment.
+# RG DS OS's RG DS Plus plays on its headphone jack through a second stream, the next key (/usr/libexec/rgds/audio).
 MIXER_KEY = 1380402259
+MIXER_KEYS = (MIXER_KEY, MIXER_KEY + 1)
 _GETPID, _GETVAL = 11, 12
 
 
-def mixer_holder(key=MIXER_KEY):
+def mixer_holder(key=None):
     """Pid of the process inside the shared mixer's critical section.
 
     0 when the semaphore is free, None when there is no shared mixer (nobody
-    has the stream open) or it cannot be read on this platform."""
+    has the stream open) or it cannot be read on this platform. Without a
+    key, every RG DS stream's: a holder in any of them, else 0 if one is open."""
+    if key is None:
+        found = [mixer_holder(k) for k in MIXER_KEYS]
+        return next((pid for pid in found if pid), 0 if 0 in found else None)
     if sys.platform != 'linux':
         return None
     try:

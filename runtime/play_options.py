@@ -13,7 +13,8 @@ from library import game_key
 
 PLAY_CORE = "rgds-play"
 PORT_CORE = "portmaster"
-# Game files by system; anything else is a DS game for the DS engines.
+DS_CORE = "rgds-experimental"  # DSCore, the only DS engine
+# Game files by system; anything else is a DS game for DSCore.
 SYSTEMS = {
     "gba": (".gba",),
     "gbc": (".gbc",),
@@ -21,7 +22,7 @@ SYSTEMS = {
     # libretro cores (RG DS OS only, /usr/lib/libretro): the player loads the core named in LIBRETRO_CORES
     "nes": (".nes", ".fds", ".unf", ".unif"),
     "snes": (".sfc", ".smc"),
-    "md": (".md", ".gen", ".smd", ".32x"),
+    "md": (".md", ".gen", ".smd", ".32x"),  # .bin too, but only in an md folder: FOLDER_SYSTEMS
     "sms": (".sms",),
     "gg": (".gg",),
     # PlayStation discs by their index files only (.bin is the data track, and ambiguous)
@@ -29,6 +30,10 @@ SYSTEMS = {
     # Nintendo 64: big-endian .z64, byte-swapped .v64, little-endian .n64; the core reads all three
     "n64": (".z64", ".n64", ".v64"),
 }
+# Folders that name a system for files whose extension cannot (Mega Drive dumps are mostly plain .bin, which a
+# PlayStation data track also is): the games folders under /data/roms, with the names other frontends use.
+FOLDER_SYSTEMS = {"md": "md", "genesis": "md", "megadrive": "md", "mega drive": "md"}
+FOLDER_EXTENSIONS = {"md": (".bin",)}
 # The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
 LIBRETRO_CORES = {
     "nes": "fceumm",
@@ -106,6 +111,9 @@ FRAMES = {
     "sp-cobalt": "gba",
     "sp-onyx": "gba",
     "sp-platinum": "gba",
+    "sp-cobalt-screen": "gba",
+    "sp-onyx-screen": "gba",
+    "sp-platinum-screen": "gba",
     "ngpc-silver": "ngp",
     "ngpc-black": "ngp",
     "wsc-white": "wonderswan",
@@ -143,17 +151,27 @@ def _system_of_name(name):
     return next((system for system, suffixes in SYSTEMS.items() if suffix in suffixes), None)
 
 
+def _system_of_folder(rom, name):
+    """The system whose games folder holds rom, when name's extension is one that folder claims (a plain .bin)."""
+    suffix = Path(name).suffix.lower()
+    for folder in rom.parents:
+        system = FOLDER_SYSTEMS.get(folder.name.lower())
+        if system and suffix in FOLDER_EXTENSIONS.get(system, ()):
+            return system
+    return None
+
+
 def system_of(rom):
-    """'gba', 'gbc', 'gb', or 'nds'. A .zip is the system of the game inside it."""
+    """'gba', 'gbc', 'gb', 'md', ..., or 'nds'. A .zip is the system of the game inside it."""
     rom = Path(rom)
-    system = _system_of_name(rom.name)
+    system = _system_of_name(rom.name) or _system_of_folder(rom, rom.name)
     if system:
         return system
     if rom.suffix.lower() == ".zip":
         try:
             with zipfile.ZipFile(rom) as archive:
                 for name in archive.namelist():
-                    system = _system_of_name(name)
+                    system = _system_of_name(name) or _system_of_folder(rom, name)
                     if system:
                         return system
         except (OSError, zipfile.BadZipFile):
@@ -168,18 +186,22 @@ def shader_fits(rom, shader):
     return system == "nds" and not any(shader in screens for screens in SCREENS.values())
 
 
-def shader_for(rom, own, default):
-    """The shader rom plays with: its own choice (-1 for Default), else its system's
-    screen, else the default from Settings; never another system's screen (then Off)."""
+def shader_for(rom, own, default, system_choice=-1):
+    """The shader rom plays with: its own choice (-1 for Default), else its system's default
+    (System defaults, system_choice), else the system's own screen, else the default from Settings;
+    never another system's screen (then Off)."""
     if own >= 0 and shader_fits(rom, own): return own
+    if system_choice >= 0 and shader_fits(rom, system_choice): return system_choice
     chosen = SYSTEM_SHADERS.get(system_of(rom), default)
     return chosen if shader_fits(rom, chosen) else 0
 
 
-def engine_for(rom, chosen):
-    """The engine to run rom with: PortMaster for ports, RG DS Play for other systems, else the DS engine chosen."""
+def engine_for(rom, chosen=None):
+    """The engine to run rom with: PortMaster for ports, RG DS Play for other systems, DSCore for DS games.
+
+    chosen (a stored engine choice) no longer matters: DSCore is the only DS engine."""
     system = system_of(rom)
-    return PORT_CORE if system == "ports" else PLAY_CORE if system != "nds" else chosen
+    return PORT_CORE if system == "ports" else PLAY_CORE if system != "nds" else DS_CORE
 
 
 def _path(data, rom):
@@ -191,31 +213,74 @@ def frames_folder(data, rom):
     return Path(data) / "frames" / system_of(rom)
 
 
-def frame_known(data, rom, frame):
-    """A built-in style for the game's system, or a picture frame (frame.png) in the system's folder."""
+def frame_fits(data, system, frame):
+    """A built-in style for the system, or a picture frame (frame.png) in the system's folder."""
     systems = FRAMES.get(frame)
-    if systems is not None and (systems == "" or system_of(rom) in systems.split(",")): return True
+    if systems is not None and (systems == "" or system in systems.split(",")): return True
     if not frame or len(frame) > 64 or "/" in frame or frame.startswith("."): return False
-    return (frames_folder(data, rom) / (frame + ".png")).is_file()
+    return (Path(data) / "frames" / system / (frame + ".png")).is_file()
+
+
+def frame_known(data, rom, frame):
+    return frame_fits(data, system_of(rom), frame)
+
+
+# What a system's games share until a game says otherwise: userdata/system-defaults/<system>.ini
+# (Settings > Library > System defaults). The same keys as a game's play.ini, plus `filter` (a shader id).
+# A game's own play.ini holds a key only where the game differs from this.
+BUILT_IN = {"fit": "sharp", "second": "companion", "frame": "off", "palette": PALETTES[0], "colour": CORRECTIONS[0]}
+
+
+def defaults_path(data, system):
+    return Path(data) / "system-defaults" / (system + ".ini")
+
+
+def system_defaults(data, system):
+    """The system's own defaults, only the keys that are set and valid (see BUILT_IN for the rest)."""
+    fields = read_fields(defaults_path(data, system))
+    chosen = {}
+    if fields.get("fit") in FITS: chosen["fit"] = fields["fit"]
+    if fields.get("second") in SECONDS: chosen["second"] = fields["second"]
+    if fields.get("frame") and frame_fits(data, system, fields["frame"]): chosen["frame"] = fields["frame"]
+    if fields.get("palette") in PALETTES: chosen["palette"] = fields["palette"]
+    if fields.get("colour") in CORRECTIONS: chosen["colour"] = fields["colour"]
+    filter_text = fields.get("filter", "").strip()
+    if filter_text.isdigit(): chosen["filter"] = int(filter_text)
+    return chosen
+
+
+def view_defaults(data, system):
+    """The view a game of `system` has when its play.ini says nothing."""
+    return {**BUILT_IN, **{key: value for key, value in system_defaults(data, system).items() if key in BUILT_IN}}
 
 
 def view(data, rom):
     fields = read_fields(_path(data, rom))
-    fit, second, frame = fields.get("fit", "sharp"), fields.get("second", "companion"), fields.get("frame", "off")
-    return {
-        "fit": fit if fit in FITS else "sharp",
-        "second": second if second in SECONDS else "companion",
-        "frame": frame if frame_known(data, rom, frame) else "off",
-        "palette": fields.get("palette") if fields.get("palette") in PALETTES else PALETTES[0],
-        "colour": fields.get("colour") if fields.get("colour") in CORRECTIONS else CORRECTIONS[0],
-    }
+    system = system_of(rom)
+    shown = view_defaults(data, system)
+    if fields.get("fit") in FITS: shown["fit"] = fields["fit"]
+    if fields.get("second") in SECONDS: shown["second"] = fields["second"]
+    if fields.get("frame") and frame_fits(data, system, fields["frame"]): shown["frame"] = fields["frame"]
+    if fields.get("palette") in PALETTES: shown["palette"] = fields["palette"]
+    if fields.get("colour") in CORRECTIONS: shown["colour"] = fields["colour"]
+    return shown
+
+
+def _keep_differences(data, rom, fields, **chosen):
+    """Store a game's key only where it differs from its system's default: picking the default again means
+    following it."""
+    base = view_defaults(data, system_of(rom))
+    fields["schema"] = 1
+    for key, value in chosen.items():
+        if value == base[key]: fields.pop(key, None)
+        else: fields[key] = value
 
 
 def save_view(data, rom, fit, second, frame="off"):
     """fit and second as indexes, frame by name (the menu's play-graphics:<fit>:<second>:<frame>)."""
     path = _path(data, rom)
     fields = read_fields(path)
-    fields.update(schema=1, fit=FITS[fit], second=SECONDS[second], frame=frame)
+    _keep_differences(data, rom, fields, fit=FITS[fit], second=SECONDS[second], frame=frame)
     path.parent.mkdir(parents=True, exist_ok=True)
     write_fields(path, fields)
 
@@ -224,6 +289,6 @@ def save_colour(data, rom, palette, correction):
     """palette and correction as indexes (the menu's play-color:<palette>:<correction>)."""
     path = _path(data, rom)
     fields = read_fields(path)
-    fields.update(schema=1, palette=PALETTES[palette], colour=CORRECTIONS[correction])
+    _keep_differences(data, rom, fields, palette=PALETTES[palette], colour=CORRECTIONS[correction])
     path.parent.mkdir(parents=True, exist_ok=True)
     write_fields(path, fields)

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Headphone routing on RG DS OS: the speakers follow the jack (simple-audio-card reports the jack as a switch on
-its "rk817_ext Headphones" input device; the "Internal Speakers" mixer pin is ours to turn off while something is
-plugged in, which also powers the AW87391 amplifiers down). Started by rcS; reads the jack's state first, then
-sleeps on its events."""
+its "rk817_ext Headphones" input device, "rk817_hp Headphones" on the RG DS Plus). On the RG DS the "Internal
+Speakers" mixer pin is ours to turn off while something is plugged in, which also powers the AW87391 amplifiers
+down. The RG DS Plus's speakers are a card of their own (AW88166): playback changes card instead, through
+/usr/libexec/rgds/audio. Started by rcS; reads the jack's state first, then sleeps on its events."""
 import array
 import fcntl
 import glob
@@ -30,12 +31,46 @@ def jack_device():
     return None
 
 
-def speakers(on):
-    subprocess.run(['amixer', '-q', '-c', '0', 'sset', 'Internal Speakers', 'on' if on else 'off'], check=False)
+AUDIO = '/usr/libexec/rgds/audio'
+
+
+def plus():
+    try:
+        with open('/proc/device-tree/compatible', 'rb') as f:
+            return b'anbernic,rg-ds-plus' in f.read()
+    except OSError:
+        return False
+
+
+def speaker_card(wait):
+    """The RG DS Plus's amplifier card, once it is there: it registers after its firmware has loaded."""
+    deadline = time.monotonic() + wait
+    while True:
+        try:
+            with open('/proc/asound/cards') as f:
+                if 'aw88166' in f.read().lower():
+                    return True
+        except OSError:
+            pass
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(1)
+
+
+def speakers(on, separate):
+    if separate:
+        subprocess.run([AUDIO, 'route', 'speaker' if on else 'headphones'], check=False)
+    else:
+        subprocess.run(['amixer', '-q', '-c', '0', 'sset', 'Internal Speakers', 'on' if on else 'off'], check=False)
     print('headphones: speakers', 'on' if on else 'off', file=sys.stderr, flush=True)
 
 
 def main():
+    separate = plus() and speaker_card(60)
+    if separate:
+        subprocess.run([AUDIO, 'setup'], check=False)
+    elif plus():
+        print('headphones: no AW88166 card after 60 s; the RG DS Plus plays on the codec only', file=sys.stderr, flush=True)
     path = None
     while path is None:
         path = jack_device()
@@ -45,7 +80,7 @@ def main():
         state = array.array('B', [0] * 8)
         fcntl.ioctl(f, EVIOCGSW, state)
         plugged = bool(state[0] & (1 << SW_HEADPHONE_INSERT))
-        speakers(not plugged)
+        speakers(not plugged, separate)
         size = struct.calcsize('llHHi')
         while True:
             data = f.read(size)
@@ -54,7 +89,7 @@ def main():
             _, _, kind, code, value = struct.unpack('llHHi', data)
             if kind == EV_SW and code == SW_HEADPHONE_INSERT and bool(value) != plugged:
                 plugged = bool(value)
-                speakers(not plugged)
+                speakers(not plugged, separate)
 
 
 if __name__ == '__main__':

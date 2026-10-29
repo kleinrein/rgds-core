@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.	
+1 day	1 dag
 1 person nearby	1 person i nærheden
 1 player	1 spiller
 12-hour	12 timer
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	3D-tråde ændret for denne session. Indstillinger kan ikke gemmes.
 3D threading changed. No restart needed.	3D-tråde ændret. Genstart er ikke nødvendig.
 3x sharper	3x skarpere
+4 weeks ago	4 uger siden
 4x (experimental)	4x (eksperimentel)
 5x (experimental)	5x (eksperimentel)
 A  Apply	A  Anvend
@@ -81,6 +83,7 @@ Automatic (free)	Automatisk
 Automatic updates	Automatiske opdateringer
 Available	Tilgængelig
 Available networks	Tilgængelige netværk
+Average session	Gns. session
 B  Cancel	B  Annuller
 B  Close	B  Luk
 Back	Tilbage
@@ -97,6 +100,7 @@ Battery percentage	Batteriprocent
 Battery saver	Batterisparer
 Before	Før
 Before you play	Før du spiller
+Bezel	Bezel
 Binding unchanged.	Knaptildelingen er uændret.
 Black and white	Sort-hvid
 Black bar	Sort bjælke
@@ -159,8 +163,6 @@ Choose a network from the list	Vælg et netværk på listen
 Choose an option	Vælg en mulighed
 Choose Anbernic or RG DS startup.	Vælg at starte med Anbernic eller RG DS.
 Choose native or a sharper 3D image	Vælg original opløsning eller et skarpere 3D-billede
-Choose the core for this cartridge	Vælg kerne til denne spilkassette
-Choose the display backend for the next DraStic launch. DSperate stays your default.	Vælg visningsmotor til næste DraStic-start. DSperate forbliver standard.
 Choose what opens when you power on	Vælg, hvad der åbnes ved opstart
 Classic	Klassisk
 Classic blue	Klassisk blå
@@ -183,6 +185,7 @@ COLOUR MODE	FARVETILSTAND
 Colour mode	Farvetilstand
 Colour treatment inspired by the original DS display.	Farvebehandling inspireret af den originale DS-skærm.
 Column	Kolonne
+Commander	Kommandør
 Companion	Følgeskærm
 Compare	Sammenlign
 Confirm	Bekræft
@@ -247,17 +250,16 @@ Cover	Cover
 Covers	Omslag
 Current progress could not be saved. No slot was changed.	Aktuelle fremskridt kunne ikke gemmes. Ingen gemmeplads blev ændret.
 Custom	Tilpasset
-DS only	Kun DS
 Dark	Mørk
 Dark blue	Mørkeblå
 Dark green	Mørkegrøn
 Date format	Datoformat
 Day	Dag
 Day or night	Dag eller nat
+Day streak	Dage i træk
 Daylight saving	Sommertid
 Days	Dage
 Default	Standard
-Default emulator	Standardemulator
 Default shader	Standardshader
 DEFAULT THEME - CHECK LOG	STANDARDTEMA - SE LOGGEN
 Delete	Slet
@@ -281,8 +283,6 @@ Downloading PortMaster	Henter PortMaster
 Downloading update…	Henter opdatering…
 Downloading {0}	Henter {0}
 Downloads resume where they stopped if Wi-Fi drops.	Downloads fortsætter, hvor de stoppede, hvis Wi-Fi falder ud.
-DraStic backend	DraStic-motor
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: et alternativ til spil, der har brug for det. Gemte spil holdes adskilt.
 Draw and chat	Tegn og chat
 Draw and chat with nearby handhelds	Tegn og chat med enheder i nærheden
 Drawing on your own	Tegner for dig selv
@@ -291,12 +291,11 @@ DS controls	DS-styring
 DS controls are unavailable for this engine.	DS-styring er ikke tilgængelig for denne motor.
 DS language	DS-sprog
 DS Lite	DS Lite
+DS only	Kun DS
 DS rounded	DS afrundet
 DS screens	DS-skærme
 DSCore 3D resolution	DSCore 3D-opløsning
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: anbefalet. Hurtigst, med rettelser til låg, stylus og 3D samt valgfri 2x–5x 3D.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: anbefales til dagligt spil. Original opløsning er standard.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: den oprindelige motor. DSCore tilføjer rettelser og fart.
 Edit	Rediger
 Edit search	Rediger søgning
 Effects volume	Effektlydstyrke
@@ -332,8 +331,8 @@ Fast-forward enabled.	Hurtig fremspoling aktiveret.
 Fast-forward is unavailable for this emulator.	Hurtig fremspoling er ikke tilgængelig for denne emulator.
 Fast-forward style	Fremspolingstilstand
 Favourite	Favorit
-FAVOURITE COLOUR	YNDLINGSFARVE
 Favourite a game and it waits for you here	Gør et spil til favorit, så venter det her
+FAVOURITE COLOUR	YNDLINGSFARVE
 Favourites	Favoritter
 Feel every move	Mærk hvert tryk
 Feel the game	Mærk spillet
@@ -351,15 +350,13 @@ Finding games…	Finder spil…
 Finishing another task. Press Y again in a moment.	Afslutter en anden opgave. Tryk Y igen om lidt.
 Finishing the system request	Afslutter systemanmodningen
 Follow your default button layout	Følg dit standardlayout for knapper
-Following your global controls.	Følger din globale styring.
-Follows your Library default. Each emulator keeps its own saves.	Følger bibliotekets standard. Hver emulator har sine egne gemte spil.
+Following the default controls.	Følger din globale styring.
 Follows your library shader.	Følger dit biblioteksfilter.
 Forget this device?	Glem denne enhed?
 FPS changed for this session. Settings storage is unavailable.	FPS ændret for denne session. Indstillinger kan ikke gemmes.
 FPS counter enabled.	FPS-tæller aktiveret.
 FPS counter hidden.	FPS-tæller skjult.
 Fr	Fr
-Frame	Ramme
 Frameskip	Billedspring
 Free space	Ledig plads
 Free space while keeping your saves	Frigør plads, og behold gemte spil
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · Grøn
 Game Boy · Red	Game Boy · Rød
 Game Boy · Screen only	Game Boy · Kun skærm
 Game Boy · Yellow	Game Boy · Gul
-Game emulator	Spillets emulator
-Game emulator saved.	Spillets emulator gemt.
 Game FPS	Spillets FPS
 Game info	Spilinfo
 Game menu	Spilmenu
@@ -428,7 +423,7 @@ German	Tysk
 Get, update and remove ports	Hent, opdater og fjern porte
 Give your eyes and hands a break.	Giv dine øjne og hænder en pause.
 Global	Global
-Global controls saved.	Global styring gemt.
+Default controls saved.	Global styring gemt.
 Glossy tiles	Blanke fliser
 Go back	Gå tilbage
 Goes into	Lægges i
@@ -444,6 +439,7 @@ Heart containers	Hjertebeholdere
 Heart pieces	Hjertestykker
 Hearts	Hjerter
 High contrast	Høj kontrast
+History starts with your next game	Historikken starter med dit næste spil
 Hold	Hold nede
 Hold still for a right click	Hold stille for højreklik
 Hold to exit	Hold for at afslutte
@@ -494,6 +490,8 @@ Keyboard	Tastatur
 Keys	Nøgler
 Kinstone fusions	Kinstone-fusioner
 Language	Sprog
+Last 4 weeks	Seneste 4 uger
+Last 7 days	Seneste 7 dage
 Last played	Sidst spillet
 Launch cancelled	Start annulleret
 LCD + both colours	LCD + begge farveeffekter
@@ -532,6 +530,7 @@ Loaded	Indlæst
 Loading checkpoint…	Indlæser kontrolpunkt…
 Loading…	Indlæser…
 Long press	Langt tryk
+Longest session	Længste session
 Looking for devices…	Leder efter enheder…
 Looking for games…	Leder efter spil…
 Looking for networks…	Søger efter netværk…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	Netværk er deaktiveret. Sl�
 Never	Aldrig
 New messages below	Nye beskeder nedenfor
 Next	Næste
-Next emulator	Næste emulator
 Next picture	Næste billede
 Next:	Næste:
 Night	Nat
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: en kompatibilitetsmulighed. Prøv først DSperate for hastighed.
 No button detected. Try again when you're ready.	Ingen knap registreret. Prøv igen, når du er klar.
 No checkpoint saved for this emulator yet.	Intet kontrolpunkt gemt for denne emulator endnu.
 No cover yet	Intet omslag endnu
@@ -650,6 +647,7 @@ Orange	Orange
 Original	Original
 Original pixels	Originale pixels
 Original pixels and colours.	Originale pixels og farver.
+Other	Andet
 Pacific	Stillehavet
 Paired	Parret
 Party	Gruppe
@@ -759,7 +757,6 @@ Restart the device?	Genstart enheden?
 Restart the game to apply DS settings.	Genstart spillet for at anvende DS-indstillingerne.
 Restart the RGDS menu.	Genstart RGDS-menuen.
 Restart the RGDS menu?	Genstart RGDS-menuen?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	Genstart bruger {0}. Gemte spil og kontrolpunkter holdes adskilt pr. emulator.
 Restart without loading a state?	Genstart uden at indlæse en spiltilstand?
 Restarting into the update…	Starter den opdaterede version…
 Restarting…	Genstarter…
@@ -797,7 +794,6 @@ Rupees	Rupier
 Sa	Lø
 Save	Gem
 Save & restart	Gem og genstart
-Save & restart applies Threaded 3D.	Gem og genstart anvender 3D med tråde.
 Save & restart keeps your checkpoint and applies pending settings.	Gem og genstart bevarer dit kontrolpunkt og anvender ventende indstillinger.
 Save a report for troubleshooting	Gem en rapport til fejlfinding
 Save backup created in userdata/exports.	Sikkerhedskopi oprettet i userdata/exports.
@@ -811,11 +807,8 @@ Save state	Gem spiltilstand
 Save your checkpoint and restart	Gem dit kontrolpunkt, og genstart
 Saved	Gemt
 Saved - desktop simulation	Gemt - computersimulering
-Saved for the next Standard DraStic launch.	Gemt til næste start af Standard DraStic.
 Saved network	Gemt netværk
 Saved · {0}	Gemt · {0}
-Saved. Applies on your next DraStic launch.	Gemt. Gælder ved næste DraStic-start.
-Saved. Save & restart applies screen order.	Gemt. Gem og genstart anvender skærmrækkefølgen.
 Saved. Save & restart applies this change.	Gemt. Gem og genstart anvender ændringen.
 Saved. Save & restart changes the emulator.	Gemt. Gem og genstart skifter emulator.
 Saving before restarting…	Gemmer før genstart…
@@ -834,7 +827,6 @@ Score	Point
 Screen brightness	Skærmens lysstyrke
 Screen colours	Skærmfarver
 Screen off	Skærm slukket
-Screen order	Skærmrækkefølge
 screens	skærme
 ScreenScraper needs project credentials and your account	ScreenScraper kræver projektoplysninger og din konto
 Screenshot	Skærmbillede
@@ -857,7 +849,6 @@ Selected row	Valgt række
 Send	Send
 Series	Serie
 Set the clock to where you are.	Indstil uret efter, hvor du er.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	Indstiller skærmrækkefølgen i Standard DraStic for spillet. Gem og genstart for at anvende.
 Setting up PortMaster	Klargør PortMaster
 Settings	Indstillinger
 Settings saved	Indstillinger gemt
@@ -919,8 +910,6 @@ Spring	Fjeder
 Springy menu changes with a colourful wobble	Fjedrende menuskift med farverige bevægelser
 Stable	Stabil
 Standard	Standard
-Standard DraStic only. Applies on the next launch; game saves are kept.	Kun Standard DraStic. Gælder ved næste start; gemte spil bevares.
-Standard screen order	Standardrækkefølge for skærme
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	Sø
 Subtle	Diskret
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	Sommertid følger din tidszone. Slå den til eller fra, hvis uret er en time forkert.
 Super missiles	Supermissiler
-SuperDrastic (experimental)	SuperDrastic (eksperimentel)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic bruger i øjeblikket original opløsning. Dit standardvalg af shader bevares.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic har egen pausemenu og visningsmotor. Eksperimentel; test på RG DS afventer.
 Swap screens	Byt skærme
 Swapped	Ombyttet
 Swipe in from the left edge to go Back.	Stryg ind fra venstre kant for at gå tilbage.
@@ -969,6 +955,7 @@ Systems	Systemer
 Tap to type, or use the D-pad and A	Tryk for at skrive, eller brug styrekrydset og A
 Team	Hold
 Temporary game cache cleared. Saves and artwork are kept.	Midlertidig spilcache ryddet. Gemte spil og omslag bevares.
+Terrain and unit	Terræn og enhed
 Test	Test
 Test microphone	Test mikrofon
 Test the microphone on your handheld.	Test mikrofonen på enheden.
@@ -1022,6 +1009,7 @@ Times played	Spilsessioner
 Timezone	Tidszone
 Title screen	Titelskærm
 Title screens	Titelskærme
+Today	I dag
 Toggle	Skift
 Too much on the pad: erase some of it	For meget på blokken: slet noget
 Tools	Værktøj
@@ -1092,12 +1080,11 @@ Updates & recovery	Opdatering og gendannelse
 Updates will be available when the release channel opens.	Opdateringer bliver tilgængelige, når udgivelseskanalen åbner.
 Use an additional rendering thread	Brug en ekstra gengivelsestråd
 Use default ({0})	Brug standard ({0})
-Use global controls	Brug global styring
+Use default controls	Brug global styring
 Use previous build	Brug tidligere version
 Use ROM identity	Brug ROM-identitet
 Use the engine's native controls for microphone and DS settings.	Brug motorens egen styring til mikrofon og DS-indstillinger.
 Use the previous RGDS build?	Brug den tidligere RGDS-version?
-Used by games without an override	Bruges af spil uden eget valg
 Username	Brugernavn
 Verify	Kontroller
 Verifying update…	Verificerer opdatering…
@@ -1157,6 +1144,7 @@ Worlds	Verdener
 Y imports a save into this slot.	Y importerer et gemt spil til denne plads.
 Yellow	Gul
 Yes	Ja
+Yesterday	I går
 You	Du
 You appear like this to others	Sådan ser andre dig
 You are in Room {0}	Du er i rum {0}
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (eksperimentel)
 {0} (recommended)	{0} (anbefalet)
 {0} active	{0} aktive
+{0} days	{0} dage
+{0} days ago	{0} dage siden
 {0} found. Choose Done to go to your library.	{0} fundet. Vælg Færdig for at gå til dit bibliotek.
 {0} frames	{0} billeder
 {0} game	{0} spil

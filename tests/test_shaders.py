@@ -28,7 +28,7 @@ class ShaderTests(unittest.TestCase):
             root = Path(folder)
             data = root / "userdata"
             app = root / "app"
-            binary = app / "emulators/dsperate/dsperate"
+            binary = app / "emulators/rgds-experimental/rgds-experimental"
             binary.parent.mkdir(parents=True)
             binary.write_text("fixture")
             binary.chmod(0o755)
@@ -39,39 +39,36 @@ class ShaderTests(unittest.TestCase):
             content = bytearray(128)
             content[12:16] = b"RGDS"
             rom.write_bytes(content)
-            plan = launch_plan("dsperate", app, data, rom)
+            plan = launch_plan("rgds-experimental", app, data, rom)
             self.assertEqual(plan["env"]["LD_PRELOAD"], str(bridge))
 
-    def test_extended_ids_roundtrip_and_dsperate_uses_the_shared_gpu_pass(self):
+    def test_extended_ids_roundtrip_and_dscore_uses_the_shared_gpu_pass(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             data = root / "data"
             app = root / "app"
             rom = root / "game.nds"
-            binary = app / "emulators/dsperate/dsperate"
+            binary = app / "emulators/rgds-experimental/rgds-experimental"
             binary.parent.mkdir(parents=True)
             binary.write_text("fixture")
             binary.chmod(0o755)
             write_fields(data / "ui.ini", dict(schema=1, filter=14))
             self.assertEqual(display_filter(data, rom), 14)
-            plan = launch_plan("dsperate", app, data, rom)
+            plan = launch_plan("rgds-experimental", app, data, rom)
             config = configparser.ConfigParser()
-            config.read(data / "emulators/dsperate/config.ini")
+            config.read(data / "emulators/rgds-experimental/config.ini")
             self.assertEqual(config["video"]["lcd_grid"], "0")
             self.assertFalse(config["video"].getboolean("linear"))
             self.assertEqual(plan["env"]["RGDS_SHADER"], "14")
             self.assertEqual(plan["env"]["SDL_RENDER_DRIVER"], "opengles2")
             write_fields(data / "ui.ini", dict(schema=1, filter=1))
-            self.assertEqual(launch_plan("dsperate", app, data, rom)["env"]["RGDS_SHADER"], "1")
-            config.read(data / "emulators/dsperate/config.ini")
+            self.assertEqual(launch_plan("rgds-experimental", app, data, rom)["env"]["RGDS_SHADER"], "1")
+            config.read(data / "emulators/rgds-experimental/config.ini")
             self.assertFalse(config["video"].getboolean("linear"), "The shared Sharp shader owns interpolation")
             write_fields(data / "library" / game_key(rom) / "game.ini", dict(schema=1, filter=13))
             self.assertEqual(display_filter(data, rom), 13)
         self.assertEqual(
-            [index for index in range(len(SHADERS)) if supported("dsperate", index)], list(range(len(SHADERS)))
-        )
-        self.assertTrue(
-            all(supported("drastic", index) and supported("nnddss", index) for index in range(len(SHADERS)))
+            [index for index in range(len(SHADERS)) if supported("rgds-experimental", index)], list(range(len(SHADERS)))
         )
         self.assertFalse(supported("unknown", 1))
 

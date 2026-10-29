@@ -4,4 +4,7 @@
 # PortMaster (appended after it) runs ports, the scripts of the Ports system.
 CORES = ("drastic", "dsperate", "nnddss", "melonds", "rgds-experimental", "rgds-play", "portmaster")
 
-DSPERATE_CORES = ("dsperate", "rgds-experimental")
+# DSCore (rgds-experimental, the DSperate fork) is the only DS engine. The others
+# keep their slots so stored indexes keep their meaning; a launch refuses them.
+RETIRED = ("drastic", "dsperate", "nnddss", "melonds")
+DSPERATE_CORES = ("rgds-experimental",)

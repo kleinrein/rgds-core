@@ -5,11 +5,14 @@
 //
 //   x = (mem8[50] << 8) + mem8[FD]
 //   y = (mem8[EB] >> 4) * B0 - 40
+//   x = f32[800F69A4]          # a 32-bit float (an N64's places), its whole part
 #pragma once
 #include "companion/profile.hpp"
 #include "core/core.hpp"
 
 #include <cctype>
+#include <cmath>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <vector>
@@ -36,7 +39,7 @@ public:
 
 private:
     struct Node {
-        char op = 0; // 0: a number, 'm': memory, else the operator ('<' <<, '>' >>)
+        char op = 0; // 0: a number, 'm': memory, 'f': a float in memory, else the operator ('<' <<, '>' >>)
         long value = 0;
         uint32_t address = 0;
         int size = 1, a = -1, b = -1;
@@ -93,16 +96,17 @@ private:
             ++at_;
             return inner;
         }
-        if (text_.compare(at_, 3, "mem") == 0) {
+        const bool real = text_.compare(at_, 4, "f32[") == 0;
+        if (real || text_.compare(at_, 3, "mem") == 0) {
             const size_t open = text_.find('[', at_), close = text_.find(']', at_);
             if (open == std::string::npos || close == std::string::npos || close < open) {
                 error = "expected mem8[ADDRESS]";
                 return -1;
             }
             Node n;
-            n.op = 'm';
+            n.op = real ? 'f' : 'm';
             const std::string width = text_.substr(at_ + 3, open - at_ - 3);
-            n.size = width == "8" ? 1 : width == "16" ? 2 : width == "32" ? 4 : 0;
+            n.size = real ? 4 : width == "8" ? 1 : width == "16" ? 2 : width == "32" ? 4 : 0;
             if (!n.size || !parse_address(text_.substr(open + 1, close - open - 1), n.address)) {
                 error = "bad memory read '" + text_.substr(at_, close - at_ + 1) + "'";
                 return -1;
@@ -127,6 +131,12 @@ private:
         const Node& n = nodes_[size_t(i)];
         if (n.op == 0) return n.value;
         if (n.op == 'm') return long(peek_address(core, n.address, n.size));
+        if (n.op == 'f') {
+            const uint32_t bits = peek_address(core, n.address, 4);
+            float f;
+            std::memcpy(&f, &bits, 4);
+            return std::isfinite(f) && std::fabs(f) < 1e9f ? long(f) : 0;
+        }
         const long a = eval(core, n.a), b = eval(core, n.b);
         switch (n.op) {
         case '+': return a + b;

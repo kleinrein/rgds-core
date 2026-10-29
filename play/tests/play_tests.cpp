@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Unit tests for RG DS Play: profiles, conditions, the capture engine against a
 // scripted fake game, and the save rules. Run: build/play/host/play-tests
+#include "app/cheats.hpp"
 #include "app/storage.hpp"
 #include "companion/companion.hpp"
 #include "companion/map_capture.hpp"
@@ -288,6 +289,30 @@ std::string read(const std::string& path) {
     return std::string(b.begin(), b.end());
 }
 
+void test_cheats() {
+    auto codes = parse_cht("cheats = 3\n\ncheat0_desc = \"Infinite lives\"\ncheat0_code = \"82003DE4+0063\"\n"
+                           "cheat0_enable = false\ncheat1_desc = \"No code\"\ncheat2_code = \"01FF12D3\"\n"
+                           "cheat2_enable = true\n");
+    CHECK(codes.size() == 2); // a cheat with no code is dropped
+    CHECK(codes[0].name == "Infinite lives" && codes[0].code == "82003DE4+0063" && !codes[0].on);
+    CHECK(codes[1].name == "Code 3" && codes[1].on); // unnamed: numbered, the file's enable flag is the start
+
+    std::string dir = temp_dir(), roms = dir + "/Roms/GBA", root = dir + "/play";
+    make_directories(roms);
+    write(roms + "/Hero (USA).gba", "rom");
+    CheatBook none;
+    CHECK(!none.load(root, "gba", roms + "/Hero (USA).gba"));
+    write(roms + "/Hero (USA).cht", "cheats = 2\ncheat0_desc = \"A\"\ncheat0_code = \"11111111 2222\"\n"
+                                    "cheat1_desc = \"B\"\ncheat1_code = \"33333333 4444\"\ncheat1_enable = true\n");
+    CheatBook book;
+    CHECK(book.load(root, "gba", roms + "/Hero (USA).gba"));
+    CHECK(book.codes().size() == 2 && !book.codes()[0].on && book.codes()[1].on);
+    CHECK(book.set(0, true) && book.set(1, false) && !book.set(2, true));
+    CheatBook again; // the choice is remembered by name, over the file's own flags
+    CHECK(again.load(root, "gba", roms + "/Hero (USA).gba"));
+    CHECK(again.codes()[0].on && !again.codes()[1].on);
+}
+
 void test_saves() {
     std::string dir = temp_dir();
     std::string roms = dir + "/Roms/GBA", root = dir + "/play";
@@ -487,6 +512,131 @@ void test_game_boy() {
     CHECK(read_dwm1(dwm, 0xCAC1, 0xC8C4, 0, team, key) && team.size() == 1 && team[0].detail.empty());
     dwm.put(0xCAC1 + 0x50, {31}); // more HP than its most: being written
     CHECK(!read_dwm1(dwm, 0xCAC1, 0xC8C4, 0, team, key));
+}
+
+// A Super Nintendo picture with Mode 7 (Super Mario Kart): the race view
+// as a perspective on lines 24-106, the map's own perspective from 115, and
+// above the race (the sky, not Mode 7 now) a flat block an earlier screen left
+// in the core's record, as after a restart.
+class FakeMode7 final : public Core {
+public:
+    FakeMode7() {
+        fb.assign(256 * 224, rgb_to_px(0x3060A0));
+        vram.assign(0x10000, 0);
+        for (int i = 0; i < 0x4000; ++i) vram[size_t(i) * 2] = uint8_t(i & 1); // tiles 0 and 1 in turn
+        for (int i = 0; i < 64; ++i) vram[1 + (1 << 7) + size_t(i) * 2] = 5;    // tile 1 is colour 5
+        palette.assign(256, 0);
+        palette[5] = 0x7C1F;
+        for (int l = 8; l < 24; ++l) set(l, 1078, 0, 0, 2099, 512, 984, 384, 770); // stale and flat
+        for (int l = 24; l <= 106; ++l) {
+            const int scale = 5000 / (l - 20);
+            set(l, scale, 0, 0, scale * 3, 1005, 162, 878, 61);
+        }
+        for (int l = 115; l < 239; ++l) set(l, 2000 - l * 4, 0, 0, 4000 - l * 8, 512, 984, 384, 770);
+        for (uint32_t i = 0; i < 128; ++i) ram[0x7E0420 + 4 * i + 1] = 0xF0; // off the screen
+    }
+    const char* system() const override { return "snes"; }
+    std::string game_code() const override { return "SUPER_MARIOKART"; }
+    std::string header_title() const override { return "SUPER_MARIOKART"; }
+    double frame_rate() const override { return 60; }
+    void run_frame(uint32_t) override {}
+    Picture picture() const override { return {fb.data(), 256, 224, 256}; }
+    bool save_state(std::vector<uint8_t>&) override { return false; }
+    bool load_state(const std::vector<uint8_t>&) override { return false; }
+    uint32_t peek(uint32_t address, int size) override {
+        if (address == 0x7E10C1) return 0x80;
+        uint32_t v = 0;
+        for (int i = 0; i < size; ++i) {
+            auto found = ram.find(address + uint32_t(i));
+            v |= uint32_t(found == ram.end() ? 0 : found->second) << (8 * i);
+        }
+        return v;
+    }
+    size_t audio(int16_t*, size_t) override { return 0; }
+    unsigned audio_rate() const override { return 32040; }
+    std::vector<uint8_t> battery() const override { return {}; }
+    uint64_t battery_revision() const override { return 0; }
+    void set_layers(unsigned) override {}
+    std::unique_ptr<Core> shadow() const override { return nullptr; }
+    bool mode7(Mode7& out) const override {
+        out = {lines.data(), palette.data(), vram.data(), 8};
+        out.objsel = true, out.obj_base = 0x8000, out.obj_second = 0xA000, out.obj_sizes = 0; // 8x8 and 16x16
+        return true;
+    }
+    // A racer's place (16.8, at 7E1017 and 7E101B, 100 bytes apart) and its kart
+    // on the map: one 16x16 sprite of its own tile, in a palette of its own colour.
+    void racer(int n, double x, double y, int tile, int sprite, int map_x, int map_y, uint16_t colour) {
+        auto put = [&](uint32_t at, uint32_t v) {
+            for (int i = 0; i < 3; ++i) ram[at + uint32_t(i)] = uint8_t(v >> (8 * i));
+        };
+        put(0x7E1017 + 0x100 * uint32_t(n), uint32_t(x * 256));
+        put(0x7E101B + 0x100 * uint32_t(n), uint32_t(y * 256));
+        const uint32_t o = 0x7E0420 + 4 * uint32_t(sprite);
+        ram[o] = uint8_t(map_x), ram[o + 1] = uint8_t(map_y), ram[o + 2] = uint8_t(tile), ram[o + 3] = uint8_t((tile >> 8) | (n << 1));
+        ram[0x7E0420 + 512 + uint32_t(sprite) / 4] |= uint8_t(2 << (2 * (sprite & 3))); // large
+        for (int t : {0, 1, 16, 17})
+            for (int r = 0; r < 8; ++r) vram[size_t(0xA000 + ((tile + t) & 0xFF) * 32 + r * 2)] = 0xFF; // colour 1
+        palette[size_t(128 + n * 16 + 1)] = colour;
+    }
+    std::map<uint32_t, uint8_t> ram;
+
+private:
+    void set(int l, int a, int b, int c, int d, int x0, int y0, int h, int v) {
+        const int16_t row[8] = {int16_t(a), int16_t(b), int16_t(c), int16_t(d),
+                                int16_t(x0), int16_t(y0), int16_t(h), int16_t(v)};
+        std::copy(row, row + 8, lines.begin() + size_t(l) * 8);
+    }
+    std::vector<uint32_t> fb;
+    std::vector<int16_t> lines = std::vector<int16_t>(240 * 8, 0);
+    std::vector<uint16_t> palette;
+    std::vector<uint8_t> vram;
+};
+
+void test_mode7_extend() {
+    // The race goes on under the game's own rows: the stale block above it and
+    // the map below it are not taken for the race.
+    Profile p = parse_ok("[game]\ntitle = T\ncodes = SUPER_MARIOKART\nsystem = snes\n[hud]\n"
+                         "on = mem8[7E10C1] in 7F..84\nstrip = 0 108 256 116\nstrip_fill = yes\n"
+                         "game_rows = 100\nextend = 92\n");
+    FakeMode7 snes;
+    Companion companion(snes, &p, "T", "SUPER NINTENDO");
+    companion.after_frame(snes);
+    const Picture shown = companion.compose_game(snes.picture());
+    CHECK(shown.w == 256 && shown.h == 99 + 92); // lines 8-106 kept, 92 drawn
+    CHECK(shown.px && shown.px[0] == snes.picture().px[0]);
+    bool drawn = false; // the course's colour 5 somewhere in the new rows
+    for (int y = 99; y < shown.h && shown.px; ++y)
+        for (int x = 0; x < 256; ++x) drawn = drawn || shown.px[size_t(y) * 256 + x] != snes.picture().px[0];
+    CHECK(drawn);
+    CHECK(companion.compose_game(snes.picture(), true).h == 224); // a screen filter: the game as it is
+
+    // What stands behind the player: the map's sprites at the racers' places, in
+    // the rows that look there (the course here is about X 1005, Y 166-194 down
+    // the new rows), the player's own (the first place) not drawn again.
+    Profile q = parse_ok("[game]\ntitle = T\ncodes = SUPER_MARIOKART\nsystem = snes\n[hud]\n"
+                         "on = mem8[7E10C1] in 7F..84\nstrip = 0 108 256 116\nstrip_fill = yes\n"
+                         "game_rows = 100\nextend = 92\nextend_sprites = 7E0420\n"
+                         "extend_places = 7E1017 7E101B 100 2\nextend_tiles = 180 184\n");
+    FakeMode7 race;
+    race.racer(0, 1000, 190, 0x180, 0, 40, 150, 0x001F); // the player, red
+    race.racer(1, 1005, 185, 0x184, 1, 90, 150, 0x03E0); // behind them, green
+    Companion behind(race, &q, "T", "SUPER NINTENDO");
+    behind.after_frame(race);
+    const Picture seen = behind.compose_game(race.picture());
+    std::map<uint32_t, int> colours;
+    int lowest = -1, left = 256, right = -1;
+    for (int y = 99; y < seen.h && seen.px; ++y)
+        for (int x = 0; x < 256; ++x) {
+            const uint32_t c = seen.px[size_t(y) * 256 + x];
+            ++colours[c];
+            if (c != seen.px[size_t(seen.h - 1) * 256] && colours[c] < 2000) {
+                lowest = std::max(lowest, y);
+                left = std::min(left, x), right = std::max(right, x);
+            }
+        }
+    CHECK(colours.size() == 3); // the road's two colours and one kart's
+    CHECK(lowest > 120 && lowest < 180 && left < 128 && right > 128); // standing in the middle, larger than 16
+    CHECK(right - left + 1 > 16);
 }
 
 void test_hud_strip() {
@@ -826,6 +976,13 @@ void test_libretro_views() {
     CHECK(x.parse("mem8[11] << 8 | mem8[10] & F0", e) && x.eval(game) == 0x120);
     CHECK(!x.parse("mem8[10] +", e) && !e.empty());
     CHECK(!x.parse("mem9[10]", e));
+    // A float's whole part (an N64 place), in the core's own order.
+    const float real = -1234.75f;
+    uint32_t bits;
+    std::memcpy(&bits, &real, 4);
+    for (int i = 0; i < 4; ++i) game.bytes[0x60 + uint32_t(i)] = uint8_t(bits >> (8 * i));
+    e.clear();
+    CHECK(x.parse("f32[60] + 4", e) && x.eval(game) == -1230);
 
     // mosaic: the world pasted where the camera says, two screens side by side.
     Profile m = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = nes\n[view]\nformat = mosaic\n"
@@ -891,10 +1048,107 @@ void test_libretro_views() {
     CHECK(trace->save(course) && course.size() > 5 + 8);
     trace->draw(out, look, font, 0);
 
+    // F-Zero's places count round (x at 0x1000, y at 0x2000) and a course may
+    // cross where they wrap: a loop through both wraps is traced in one piece,
+    // the junk place before the race starts is dropped, and a restart lands
+    // back on the drawn loop instead of a second copy one wrap away.
+    Profile w = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = snes\n[view]\nformat = trace\n"
+                         "x = mem16[40]\ny = 0 - mem16[42]\ncourse = mem8[44]\nwrap_x = 1000\nwrap_y = 2000\n");
+    auto wrapped = make_view(w.view, e);
+    CHECK(wrapped != nullptr);
+    if (!wrapped) return;
+    auto place = [&](double a, uint64_t frame) {
+        const int x = (int(4060 + 300 * std::cos(a)) + 4096) % 4096, y = (int(8150 + 300 * std::sin(a)) + 8192) % 8192;
+        game.bytes[0x40] = uint8_t(x), game.bytes[0x41] = uint8_t(x >> 8);
+        game.bytes[0x42] = uint8_t(y), game.bytes[0x43] = uint8_t(y >> 8);
+        wrapped->update(game, frame);
+    };
+    game.bytes[0x40] = game.bytes[0x41] = game.bytes[0x42] = game.bytes[0x43] = game.bytes[0x44] = 0;
+    wrapped->update(game, 0); // the place before the race: (0, 0)
+    uint64_t f = 2;
+    for (int lap = 0; lap < 2; ++lap)
+        for (int i = 0; i < 400; ++i, f += 2) place(i * 2 * M_PI / 400, f);
+    place(M_PI, f += 2); // restarted, on the far side of the loop
+    for (int i = 200; i < 260; ++i, f += 2) place(i * 2 * M_PI / 400, f);
+    std::string kept;
+    CHECK(wrapped->save(kept) && kept.size() > 17 && kept[4] == 3);
+    int32_t cell = 1, head[2] = {0, 0};
+    if (kept.size() > 17) std::memcpy(&cell, kept.data() + 5, 4), std::memcpy(head, kept.data() + 9, sizeof head);
+    int lo_x = INT_MAX, hi_x = INT_MIN, lo_y = INT_MAX, hi_y = INT_MIN;
+    for (int i = 0; i < head[1] && 17 + size_t(i) * 4 + 4 <= kept.size(); ++i) {
+        int16_t sq[2];
+        std::memcpy(sq, kept.data() + 17 + size_t(i) * 4, sizeof sq);
+        lo_x = std::min<int>(lo_x, sq[0] * cell), hi_x = std::max<int>(hi_x, sq[0] * cell);
+        lo_y = std::min<int>(lo_y, sq[1] * cell), hi_y = std::max<int>(hi_y, sq[1] * cell);
+    }
+    // One loop, 600 across and the road's width (40) wide; the place before the race is gone.
+    CHECK(head[0] == 0 && head[1] > 20 && hi_x - lo_x < 700 && hi_y - lo_y < 700 && hi_x - lo_x > 600);
+    wrapped->draw(out, look, font, 0);
+    // A second lap on another line, inside the road's width, widens the road a little, no second loop.
+    const int32_t one_lap = head[1];
+    for (int i = 0; i < 400; ++i, f += 2) {
+        const double a = i * 2 * M_PI / 400;
+        const int x = (int(4060 + 316 * std::cos(a)) + 4096) % 4096, y = (int(8150 + 316 * std::sin(a)) + 8192) % 8192;
+        game.bytes[0x40] = uint8_t(x), game.bytes[0x41] = uint8_t(x >> 8);
+        game.bytes[0x42] = uint8_t(y), game.bytes[0x43] = uint8_t(y >> 8);
+        wrapped->update(game, f);
+    }
+    CHECK(wrapped->save(kept) && kept.size() > 17);
+    if (kept.size() > 17) std::memcpy(head, kept.data() + 9, sizeof head);
+    CHECK(head[1] > one_lap && head[1] < one_lap * 3 / 2);
+    // Kept and read back: the same squares; points kept by version 2 are painted as strokes.
+    auto reread = make_view(w.view, e);
+    reread->load(kept);
+    std::string back;
+    CHECK(reread->save(back) && back.size() == kept.size());
+    std::string v2 = std::string("RGTR\x02", 5);
+    const int32_t v2_head[2] = {0, 3};
+    const int16_t v2_points[6] = {100, 100, 130, 100, 160, 110};
+    v2.append(reinterpret_cast<const char*>(v2_head), 8).append(reinterpret_cast<const char*>(v2_points), 12);
+    auto old = make_view(w.view, e);
+    old->load(v2);
+    CHECK(old->save(back) && back.size() > 17 + 4 * 20);
+
+    // A course from the game's own path (Mario Kart 64's waypoints): drawn whole at once, edges giving the
+    // road's width; driving then paints nothing, so a shortcut over the grass stays off the map.
+    Profile pa = parse_ok("[game]\ntitle = T\ncodes = AB\nsystem = n64\n[view]\nformat = trace\n"
+                          "x = mem16[50]\ny = mem16[52]\ncourse = 1\npath = mem16[54]\npath_count = mem16[56]\n"
+                          "path_left = 2000\npath_right = 3000\nwidth = 20\n");
+    auto pathed = make_view(pa.view, e);
+    CHECK(pathed != nullptr);
+    if (!pathed) return;
+    auto put16 = [&](uint32_t a, int v) { game.bytes[a] = uint8_t(v), game.bytes[a + 1] = uint8_t(v >> 8); };
+    const int points = 80;
+    for (int i = 0; i < points; ++i) {
+        const double a = i * 2 * M_PI / points;
+        const int x = int(1000 + 400 * std::cos(a)), y = int(1000 + 400 * std::sin(a));
+        put16(0x1000 + uint32_t(i) * 8, x), put16(0x1004 + uint32_t(i) * 8, y);
+        put16(0x2000 + uint32_t(i) * 8, int(1000 + 360 * std::cos(a))), put16(0x2004 + uint32_t(i) * 8, int(1000 + 360 * std::sin(a)));
+        put16(0x3000 + uint32_t(i) * 8, int(1000 + 440 * std::cos(a))), put16(0x3004 + uint32_t(i) * 8, int(1000 + 440 * std::sin(a)));
+    }
+    put16(0x54, 0x1000), put16(0x56, points), put16(0x50, 3000), put16(0x52, 3000);
+    pathed->update(game, 0); // the player nowhere near it: the last course's path, still in memory while this one loads
+    std::string none;
+    CHECK(!pathed->save(none) || none.size() <= 9);
+    put16(0x50, 1400), put16(0x52, 1000);
+    pathed->update(game, 30);
+    std::string road;
+    CHECK(pathed->shown() && pathed->save(road) && road.size() > 17);
+    int32_t pathed_head[2] = {0, 0}, pathed_cell = 1;
+    if (road.size() > 17) std::memcpy(&pathed_cell, road.data() + 5, 4), std::memcpy(pathed_head, road.data() + 9, 8);
+    // A ring 800 across and 80 wide (the edges), not the 20 of `width`: about pi * 800 * 80 units.
+    const double area = double(pathed_head[1]) * pathed_cell * pathed_cell;
+    CHECK(area > 150000 && area < 260000);
+    put16(0x50, 1000), put16(0x52, 1000); // across the grass in the middle
+    for (uint64_t frame = 32; frame < 80; frame += 2) pathed->update(game, frame);
+    std::string after;
+    CHECK(pathed->save(after) && after.size() == road.size());
+    pathed->draw(out, look, font, 0);
+
     // The shipped profiles of the libretro systems: every view builds, Duck Hunt is a light-gun game.
     ProfileLibrary lib;
     std::vector<std::string> errors;
-    for (const char* system : {"/nes", "/snes", "/sms"})
+    for (const char* system : {"/nes", "/snes", "/sms", "/n64"})
         lib.load_directory(std::string(PLAY_PROFILES) + system, errors);
     for (const auto& error : errors) std::fprintf(stderr, "profile error: %s\n", error.c_str());
     CHECK(errors.empty());
@@ -903,9 +1157,24 @@ void test_libretro_views() {
             const bool ok = make_view(v, e) != nullptr;
             CHECK(ok);
             if (!ok) std::fprintf(stderr, "%s: %s\n", key.c_str(), e.c_str());
+            // The N64 keeps its numbers big-endian: a board's num tile there says so (Mario Kart's lap read 257).
+            for (const auto& [name, value] : v.values) {
+                if (p.system != "n64" || name.rfind("tile", 0) != 0 || value.find("| num ") == std::string::npos) continue;
+                const bool big = value.find(" big") != std::string::npos;
+                CHECK(big);
+                if (!big) std::fprintf(stderr, "%s: %s is not big-endian\n", key.c_str(), name.c_str());
+            }
         }
     CHECK(lib.find("nes", "DUCK_HUNT") && lib.find("nes", "DUCK_HUNT")->lightgun);
     CHECK(lib.find("nes", "LEGEND_OF_ZELDA") && lib.find("snes", "SUPER_MARIOKART")->hud.strip_fill);
+    CHECK(lib.find("nes", "HOGANS_ALLEY") && lib.find("nes", "HOGANS_ALLEY")->lightgun);
+    CHECK(lib.find("snes", "LEGEND_OF_ZELDA") && lib.find("n64", "MARIO_KART_64"));
+    // Mario Paint: the SNES Mouse, the cursor read so the mouse takes it to the finger.
+    const Profile* paint = lib.find("snes", "MARIOPAINT");
+    CHECK(paint && paint->mouse && !paint->lightgun && !paint->cursor_x.empty());
+    Expr cursor;
+    e.clear();
+    CHECK(paint && cursor.parse(paint->cursor_y, e));
     CHECK(lib.find("sms", "PHANTASY_STAR") && lib.find("snes", "SUPER_METROID") && lib.find("snes", "F_ZERO"));
 }
 
@@ -916,11 +1185,13 @@ int main() {
     test_shipped_profiles();
     test_game_boy();
     test_hud_strip();
+    test_mode7_extend();
     test_gb_views();
     test_shipped_gb_profiles();
     test_libretro_views();
     test_capture();
     test_companion_scheduling();
+    test_cheats();
     test_saves();
     test_canvas();
     std::printf("%d checks, %d failed\n", checks, failures);

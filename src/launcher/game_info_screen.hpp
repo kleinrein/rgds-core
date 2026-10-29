@@ -72,7 +72,8 @@ void App::game_info_touch(int x, int y) {
 }
 
 void App::game_info_top(SDL_Renderer* r, int y) {
-    settings_card(r, 24, y + 56, 592, 368);
+    settings_card(r, 24, y + top_card_y, 592, top_card_h);
+    y += 24; // the content, centred in the card
     const std::string title = info_facts.title.empty() ? game_title(model.selected) : info_facts.title;
     const int count = int(info_pictures.size());
     const int selected = count ? std::clamp(info_picture, 0, count - 1) : 0;

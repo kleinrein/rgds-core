@@ -10,7 +10,7 @@ import zipfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime"))
 
 import os_update
-from os_update import OsUpdater, replace_label
+from os_update import OsUpdater, fit_label, replace_label
 
 TEMPLATE = """DEFAULT a
 TIMEOUT 0
@@ -37,11 +37,50 @@ class ReplaceLabelTests(unittest.TestCase):
         self.assertIn("LABEL b\n  LINUX /b/Image.lz4", out)
 
 
+UNIVERSAL = """DEFAULT a
+LABEL a
+  LINUX /a/Image.lz4
+  FDTDIR /a/
+  APPEND root=PARTLABEL=rgds-root-a rgds.detected=${rgds_board}
+LABEL b
+  LINUX /b/Image.lz4
+  FDTDIR /b/
+  APPEND root=PARTLABEL=rgds-root-b rgds.detected=${rgds_board}
+"""
+
+
+class FitLabelTests(unittest.TestCase):
+    RG_DS = b"anbernic,rg-ds\0rockchip,rk3568\0"
+    PLUS = b"anbernic,rg-ds-plus\0rockchip,rk3568\0"
+
+    def test_keeps_fdtdir_when_u_boot_picked_this_handheld(self):
+        self.assertEqual(fit_label(UNIVERSAL, "ro rgds.detected=rgds rgds.adc=1061000", self.RG_DS), UNIVERSAL)
+        self.assertEqual(fit_label(UNIVERSAL, "rgds.detected=rgds-plus rgds.adc=1770000", self.PLUS), UNIVERSAL)
+
+    def test_names_the_tree_under_a_u_boot_that_picks_none(self):
+        # an older U-Boot sets no $fdtfile: FDTDIR would load the Quartz64's default, which is not on the card
+        out = fit_label(UNIVERSAL, "ro rgds.detected= rgds.adc= panic=10", self.RG_DS)
+        self.assertIn("  FDT /a/rk3568-anbernic-rg-ds.dtb\n", out)
+        self.assertIn("  FDT /b/rk3568-anbernic-rg-ds.dtb\n", out)
+        self.assertNotIn("FDTDIR", out)
+        self.assertNotIn("FDTDIR", fit_label(UNIVERSAL, "ro panic=10", self.RG_DS))
+
+    def test_names_the_plus_tree_when_the_voltage_picked_wrong(self):
+        out = fit_label(UNIVERSAL, "rgds.detected=rgds rgds.adc=1061000", self.PLUS)
+        self.assertIn("  FDT /b/rk3568-anbernic-rg-ds-plus.dtb\n", out)
+        self.assertNotIn("FDTDIR", out)
+
+    def test_a_label_that_names_its_tree_is_left_alone(self):
+        named = UNIVERSAL.replace("FDTDIR /a/", "FDT /a/rk3568-anbernic-rg-ds-plus.dtb")
+        self.assertIn("FDT /a/rk3568-anbernic-rg-ds-plus.dtb", fit_label(named, "", self.RG_DS))
+
+
 def make_release(folder, build):
     payload = {
         "rootfs.squashfs": os.urandom(3000),
         "Image.lz4": b"kernel" * 100,
-        os_update.DTB: b"dtb",
+        os_update.DTBS[0]: b"dtb",
+        os_update.DTBS[1]: b"dtb-plus",
         "extlinux.conf": TEMPLATE.encode()
     }
     import hashlib
@@ -136,7 +175,8 @@ class StageTests(unittest.TestCase):
         u.stage(archive, dict(build=build, unpacked_size=unpacked, sequence=5, version="0.7.1"))
         self.assertEqual(self.device.read_bytes()[:3000], payload["rootfs.squashfs"])
         self.assertEqual((self.boot / "b/Image.lz4").read_bytes(), payload["Image.lz4"])
-        self.assertEqual((self.boot / "b" / os_update.DTB).read_bytes(), b"dtb")
+        self.assertEqual((self.boot / "b" / os_update.DTBS[0]).read_bytes(), b"dtb")
+        self.assertEqual((self.boot / "b" / os_update.DTBS[1]).read_bytes(), b"dtb-plus")
         conf = (self.boot / "extlinux/extlinux.conf").read_text()
         self.assertTrue(conf.startswith("DEFAULT a\n"))
         self.assertIn("APPEND old-a", conf)

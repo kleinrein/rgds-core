@@ -5,8 +5,7 @@ namespace rgds {
 struct GameOptions {
     int core = -1, filter = -1;
     bool favourite = false;
-    int threaded = -1, hires = -1, frameskip = -1, drastic_backend = -1, drastic_screen_swap = -1, gengis_scale = 0,
-        rgds_scale = 1, rgds_smooth = 1, rgds_2d = 0, rgds_adaptive = 1;
+    int threaded = -1, hires = -1, frameskip = -1, rgds_scale = 1, rgds_smooth = 1, rgds_2d = 0, rgds_adaptive = 1;
 };
 inline GameOptions load_game_options(const fs::path& path) {
     auto values = fields(path);
@@ -27,9 +26,6 @@ inline GameOptions load_game_options(const fs::path& path) {
     result.threaded = integer("threaded_3d", -1, -1, 1);
     result.hires = integer("hires_3d", -1, -1, 1);
     result.frameskip = integer("frameskip", -1, -1, 3);
-    result.drastic_backend = integer("drastic_backend", -1, -1, 1);
-    result.drastic_screen_swap = integer("drastic_screen_swap", -1, -1, 1);
-    result.gengis_scale = integer("gengis_scale", 0, 2, 3);
     result.rgds_scale = integer("rgds_scale", 1, 1, 5);
     result.rgds_smooth = integer("rgds_smooth", 1, 0, 1);
     result.rgds_2d = integer("rgds_2d", 0, 0, 5);
@@ -43,9 +39,6 @@ inline void save_game_options(const fs::path& path, GameOptions value) {
     file << "schema=1\ncore=" << value.core << "\nfilter=" << value.filter << "\nfavourite=" << value.favourite << '\n';
     file << "threaded_3d=" << value.threaded << "\nhires_3d=" << value.hires << "\nframeskip=" << value.frameskip
          << '\n';
-    if (value.drastic_backend >= 0) file << "drastic_backend=" << value.drastic_backend << '\n';
-    if (value.drastic_screen_swap >= 0) file << "drastic_screen_swap=" << value.drastic_screen_swap << '\n';
-    if (value.gengis_scale >= 2 && value.gengis_scale <= 3) file << "gengis_scale=" << value.gengis_scale << '\n';
     if (value.rgds_scale > 1) file << "rgds_scale=" << value.rgds_scale << '\n';
     if (!value.rgds_smooth) file << "rgds_smooth=0\n";
     if (value.rgds_2d > 0) file << "rgds_2d=" << value.rgds_2d << '\n';

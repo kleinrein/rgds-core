@@ -3,8 +3,10 @@
 // screen. No windows or sound devices here, so the headless tool and the
 // tests drive exactly what the handheld runs.
 #pragma once
+#include "app/cheats.hpp"
 #include "app/storage.hpp"
 #include "companion/companion.hpp"
+#include "companion/expr.hpp"
 #include "companion/profile.hpp"
 #include "core/core.hpp"
 #include "ui/canvas.hpp"
@@ -53,6 +55,10 @@ public:
     bool save_state_file(const std::string& path, std::string& error);
     bool load_state_file(const std::string& path, std::string& error);
 
+    // The game's cheats (a .cht file for it, if there is one), already applied to the core.
+    const CheatBook& cheats() const { return cheats_; }
+    bool set_cheat(size_t index, bool on);
+
     Core& core() { return *core_; }
     const std::string& title() const { return title_; }
     const SaveSlot& save() const { return save_; }
@@ -79,11 +85,14 @@ private:
     std::unique_ptr<Companion> companion_;
     std::unique_ptr<SaveWriter> writer_;
     SaveSlot save_;
+    CheatBook cheats_;
     Font font_;
     Look look_;
     Words words_;
     std::string title_;
+    std::string data_root_;
     uint64_t frames_ = 0, saved_revision_ = 0;
+    Expr cursor_x_, cursor_y_; // where a mouse game draws its cursor (the profile's cursor_x, cursor_y)
 };
 
 } // namespace play

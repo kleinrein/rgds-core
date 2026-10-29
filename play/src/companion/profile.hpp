@@ -114,6 +114,22 @@ struct HudSpec {
     // Rows the game screen keeps while the band is off, from the far edge (0:
     // all the rest). Super Mario Kart's race is rows 0-99, then a black gap.
     int game_rows = 0;
+    // Mode 7 rows drawn under the game's own race view, continuing its
+    // perspective from the course in video memory (Super Mario Kart's road
+    // the game never draws): the game screen then shows this much more.
+    int extend = 0;
+    // The lower picture's sprite table as the game builds it in RAM (544 bytes
+    // in OAM's layout; Super Mario Kart's map, which it puts in OAM between the
+    // two pictures): what stands in the extension is drawn from it. 0: none.
+    uint32_t extend_sprites = 0;
+    // Where the game keeps the exact places of what the map shows coarsely (the
+    // racers): the X and Y words' addresses, the step from one to the next, how
+    // many (16.8 fixed point, the fraction byte first). A map sprite that shows
+    // one (the first of its tiles is that place's in `extend_tiles`) stands
+    // there instead; the first place is the player's, which the race view draws.
+    uint32_t places_x = 0, places_y = 0, places_step = 0;
+    int places = 0;
+    std::vector<int> place_tiles;
 };
 
 // [party]: the team on the second screen (companion/party.hpp).
@@ -146,6 +162,10 @@ struct Profile {
     // A light-gun game (Duck Hunt): the second port is a gun aimed by touching the
     // game, so the game starts on the touch screen (the screens swapped).
     bool lightgun = false;
+    // [game] mouse = yes: the first port is a mouse moved by touch; cursor_x/cursor_y (expressions, expr.hpp)
+    // say where the game draws its cursor, so the mouse takes it to the finger.
+    bool mouse = false;
+    std::string cursor_x, cursor_y;
     Condition live;        // the player is in gameplay (captures make sense)
     Condition menu;        // back on the title or file screens: forget the map
     std::vector<Ref> room; // values that change on entering a new room

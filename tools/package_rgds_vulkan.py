@@ -86,7 +86,7 @@ def main():
     pending = Path(tempfile.mkdtemp(prefix='.vulkan-', dir=target.parent))
     extras = [
         'tools/build_rgds_vulkan.py', 'tools/build_rgds_vulkan_shaders.py', 'tools/package_rgds_vulkan.py',
-        'tools/build_rgds_experimental.py', 'tools/build_engines.py', 'tools/build_engines_gcc.py', 'tools/elf_abi.py',
+        'tools/build_rgds_experimental.py', 'tools/engine_toolchain.py', 'tools/build_engines_gcc.py', 'tools/elf_abi.py',
         'tools/build_panvk.py', 'dscore/FORK.md', 'src/experimental/rgds/README.md',
         'src/experimental/rgds/hires_compositor_test.cpp', 'src/experimental/rgds/firmware_identity_test.cpp',
         'tools/engine_patches/panvk-kbase-linux.patch', 'tools/engine_patches/panvk-kbase-lazy-warmup.patch'

@@ -1,0 +1,13 @@
+RG DS OS: the RG DS Plus's vibration motor PWM at 25 kHz instead of 10 kHz (as 0002 for the RG DS)
+
+--- a/rk3568-anbernic-rg-ds-plus.dts
++++ b/rk3568-anbernic-rg-ds-plus.dts
+@@ -53,7 +53,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&gamepad_keys_l>;
+ 
+-		pwms = <&pwm14 0 100000 0>;
++		pwms = <&pwm14 0 40000 0>;
+ 		pwm-names = "enable";
+ 		rumble-boost-weak = <0x00>;
+ 		rumble-boost-strong = <0x00>;

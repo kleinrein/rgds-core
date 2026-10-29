@@ -10,8 +10,6 @@
     read;
     kill;
     snd_pcm_open;
-    pthread_create;
-    pthread_cond_init;
   local:
     *;
 };

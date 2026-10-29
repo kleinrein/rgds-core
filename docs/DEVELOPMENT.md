@@ -12,7 +12,7 @@ make package               # the release that the RG DS OS image is built around
 make image
 ```
 
-Do not fetch unspecified proprietary payloads. Provisioning does not resolve redistribution rights; see [third-party provenance](../THIRD_PARTY.md). The supplied DSperate binary is excluded from new packages in favor of the source build. DraStic uses the compatible stock card installation. Source builders record pinned commits, patched corresponding source, toolchain inputs and hashes; packaging rejects stale or changed build outputs. [SuperDrastic](SUPERDRASTIC.md) has additional Linux builder requirements.
+Do not fetch unspecified proprietary payloads. Provisioning does not resolve redistribution rights; see [third-party provenance](../THIRD_PARTY.md). The supplied DSperate binary is excluded from new packages in favor of the source build. RG DS OS ships no DraStic. Source builders record pinned commits, patched corresponding source, toolchain inputs and hashes; packaging rejects stale or changed build outputs.
 
 Community shader data lives in `vendor/engines/shaders/`; original RGDS effects and the catalog live in `assets/shaders/`. `tools/build_shader_previews.py --shader-dir /path/to/presets` can use another explicit community pack.
 
@@ -51,7 +51,7 @@ Open Settings with S from the desktop preview, or launch it directly with `make 
 
 Power and brightness have desktop simulation and device capability checks. Sound has a shared slider/mute; System has timezone, device information and local recovery. Connectivity scans and joins Wi-Fi, shows its IP address, and toggles session-scoped SMB sharing using the bundled service. Sharing details contains the address and temporary login; the desktop preview simulates the toggle without opening a server. Library offers emulator/filter defaults, automatic checkpoint preferences and ScreenScraper. X/long press opens cartridge options; Y cycles All/Favourites/Recent. Display settings can disable animations and the touch indicator independently. Display → Animations also offers optional Spring and Push transition styles. Spring keeps the playful menu motion; Push slides level pages in from the right and reveals the parent from the left on Back, with a short parallax movement. The style is saved as `view_transition_style=spring|push` in `ui.ini`; existing preferences keep Spring and the current transition toggle. Push uses three reusable 640×480 render targets, including the last displayed composition so rapid navigation can interrupt a transition without queuing input. It settles in 300 ms and returns to idle; renderers without target support use immediate navigation.
 
-`make game-menu` opens the shared in-game screen on the desktop. It uses the same renderer and settings as home, with simulated save/load actions. `--game-core drastic|dsperate|melonds|rgds-experimental` changes its engine label; all share the RGDS controls. Preview opens no emulator and no audio device.
+`make game-menu` opens the shared in-game screen on the desktop. It uses the same renderer and settings as home, with simulated save/load actions. `--game-core rgds-experimental|rgds-play` changes its engine label; all share the RGDS controls. Preview opens no emulator and no audio device.
 
 DS rounded uses the bundled, open-licensed Nunito font at weight 600. Native rendering reads prebuilt alpha atlases, so the card requires no additional font library. Latin/Latin-1 text is covered. To regenerate the atlases after a deliberate font change, run `tools/bake_font.py` with a Python environment containing Pillow. The font source, exact upstream commit, license and generated atlases live under `assets/fonts/`. Ordinary builds do not need Pillow or font downloads.
 
@@ -84,7 +84,7 @@ For a quiet hardware test, open Settings → Sound and select Mute before launch
 
 The game runner owns the menu process and both hardware menu keys. By default it pauses the owned engine process and draws the menu in its own GPU windows. A first-frame timeout restores the game if menu rendering fails. The optional live background uses shared canvases and is opt-in. The bridge filters Guide/Home before legacy handlers see them and discards queued input from the menu when play resumes. GPIO button ordering on the recorded ANBERNIC device places raw joystick button 8 at Linux code 312; code 316 belongs to another stick button. Generic controller Guide remains code 316. This mapping and the process/display handoff need device confirmation.
 
-Checkpoint saves acknowledge a changed, stable expected engine slot and flush the independent checkpoint before replacement. A failed save keeps the prior checkpoint and presents retry/resume/return-without-saving. DraStic and DSperate load replies acknowledge dispatch; melonDS returns its native checkpoint-load result. Actual restored game progress still needs hardware checks. Keep these distinctions when reporting test results.
+Checkpoint saves acknowledge a changed, stable expected engine slot and flush the independent checkpoint before replacement. A failed save keeps the prior checkpoint and presents retry/resume/return-without-saving. DSCore's load reply acknowledges dispatch only. Actual restored game progress still needs hardware checks. Keep these distinctions when reporting test results.
 
 Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so older development builds can still read the base appearance file. Per-cartridge overrides and favourite flags live in `userdata/library/<key>/game.ini`. The versioned IDs in `assets/shaders/catalog.tsv` preserve Off/Sharp/LCD at 0/1/2 and add the full supplied pack. Both launcher and Python adapters read that catalog. DraStic maps to the supplied shader IDs, and DSperate/melonDS use the shared SDL/GLES shader path. All four paths support the current 28 effects plus Off. The picker is a Home-style carousel in six groups (Original, DS screens, Natural, Vivid, Pixel art, Moods): Left/Right browse, Up/Down, L/R or the group chips jump between groups, each tile shows its preset at 1:1 from the packaged previews, and per-game Default inheritance is kept. The eight original presets added on 18 October 2026 (DS Classic, DS Lite, Natural glow, Vivid LCD, Natural/Vivid smooth, Pixel beads, Glossy tiles) draw their pixel structure on the DS's own 256×192 grid, anti-aliased from `u_target_size`, so they hold up at the RG DS's 2.5× and the Plus's 4× and fade out below 2×. Library choices take effect on launch; in-game choices update the running renderer and keep the picker open. Actual appearance and frame pacing must still be checked on the Mali driver. The picker remembers its page during the development rebuild loop.
 
@@ -226,12 +226,16 @@ The horizontal rail has glossy primary-colour caret buttons with 84×71 touch ta
 
 For an explicit one-shot hardware capture, create `rgds/userdata/session/capture-request` while our launcher runs. The next frame writes `ui-snapshot-top.bmp` and `ui-snapshot-bottom.bmp` in the same directory and removes the request. This is a development-only filesystem control; the launcher does not continuously capture screens.
 
-`make shot` (or `tools/device_shot.py`) drives this over SSH: it asks, wakes an idle launcher with a harmless key, pulls both panels in one connection and stitches them with numpy. `DEVICE` defaults to `rgds.local`; while a game runs it uses the emulator bridge's `emulator.control.capture` instead. Output goes to `build/shots/`. Options: `--style float|device|plain`, `--layout stack|side`, `--bg auto|transparent|#RRGGBB`, `--scale 1-4`, `--raw` (each panel as its own PNG), `--copy` (clipboard, macOS), `--open`, and `--from TOP.bmp BOTTOM.bmp` to restyle saved panels without the device, for example `make shot SHOT_ARGS="--style device --layout side --open"`. Password entry remains masked. Profile animation frame time on the device before adding further effects.
+`make shot` (or `tools/device_shot.py`) drives this over SSH: it asks, wakes an idle launcher with a harmless key, pulls both panels in one connection and stitches them with numpy. `DEVICE` defaults to `rgds.local`; while a game runs it uses the emulator bridge's `emulator.control.capture` instead. Output goes to `build/shots/`. Options: `--style float|device|plain` (`device` draws the open RG DS to scale, 160 x 172 mm around 88 x 66 mm panels that fill the screen wells like the photo,: red lid rim, grey lid face with seven-dot speakers, black hinge barrel, D-pad, ABXY, both sticks, four small keys and the green lights; it only stacks, and `--shell red|black|white|turquoise` picks the lid colour, the base stays dark), `--layout stack|side`, `--bg auto|transparent|#RRGGBB`, `--scale 1-4` (2 by default, 1 for `device`), `--raw` (each panel as its own PNG), `--copy` (clipboard, macOS), `--open`, and `--from TOP.bmp BOTTOM.bmp` to restyle saved panels without the device, for example `make shot SHOT_ARGS="--style device --layout side --open"`. Password entry remains masked. Profile animation frame time on the device before adding further effects.
 
 
-## Fourth engine and local verification
+## DS engine and local verification
 
-`make build-melonds` builds the pinned ARM64 melonDS core and SDL frontend; `make package` includes it with DSperate while retaining the stock DraStic adapter. Engine IDs 0–2 are unchanged (2, NNDDSS, is retired and never offered); melonDS is 3. The optional local Ubuntu VM supports these executable checks; it is not an Armbian image builder. The old OS build and flash targets have been removed.
+DSCore (`rgds-experimental`) is the only DS engine. DraStic, DSperate, NNDDSS and melonDS are retired: engine IDs 0–3
+keep their slots because settings store the index, but they are never offered and a saved choice of any falls back to
+DSCore. DSCore's source is `dscore/`, a fork of DSperate at a pinned commit (`dscore/FORK.md`); nothing builds or
+ships DSperate itself. `tools/engine_toolchain.py` holds the shared cross-build pieces (zig toolchain, CMake, the SDL2
+link SDK it builds on first use) for DSCore, its Vulkan renderer and RG DS Play.
 
 For local launch/menu work, build the host launcher and run the focused checks:
 
@@ -239,7 +243,7 @@ For local launch/menu work, build the host launcher and run the focused checks:
 python3 -B tools/build.py host
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=tests:runtime python3 -m unittest \
   test_launch_preparation test_game_menu \
-  test_game_menu_ui test_shader_pixels test_melonds_integration
+  test_game_menu_ui test_shader_pixels
 ```
 
 `test_shader_pixels` uses a real host EGL/GLES implementation (Mesa or the
@@ -253,8 +257,7 @@ the runtime's log-worker wakeups and component-copy overhead on the host.
 Keep core/user saves out of benchmark fixtures. No deploy watcher or hardware
 command is needed for these checks. [Save locations](SAVES.md) document the current boundaries.
 
-The October 11 DraStic add-on/settings review pinned both
-candidate repositories without executing their installers. Run
+Run
 `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=tests:runtime python3 -m unittest test_emulator_settings_ui test_settings_interactions`
 after building the host launcher to exercise disabled options, picker cancel/apply,
 default inheritance, restart selection and failed preference writes. The tests
@@ -279,10 +282,3 @@ python3 tools/format.py --changed      # only files changed against HEAD
 Formatting a file under `dscore/` changes the fork's source hash, so rebuild
 the engines before packaging.
 
-## Optional SuperDrastic backend
-
-`make build-superdrastic` builds the pinned ARM64 library in local Linux (the existing
-Lima builder on this Mac). `make package` validates and includes it with source
-and notices. Nothing deploys until a separate device command is requested.
-See [SUPERDRASTIC.md](SUPERDRASTIC.md) for prerequisites, local tests and the
-remaining display/save/performance acceptance gates. DSperate stays the default.

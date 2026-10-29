@@ -80,7 +80,7 @@ class ReleasePolishTests(unittest.TestCase):
                 screen = self.run_ui(extra=('--settings', '--section', 'statistics', '--rom-dir', str(roms)))
                 for i, color in enumerate(colors):
                     # Both icon corners remain inside the ranked card, including row 5.
-                    for x, y in [(78, 588 + i * 64), (122, 632 + i * 64)]:
+                    for x, y in [(73, 660 + i * 49), (103, 690 + i * 49)]:
                         self.assertEqual(self.pixel(screen, x, y), color, (mode, i, x, y))
 
 

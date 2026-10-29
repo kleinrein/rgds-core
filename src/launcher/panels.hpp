@@ -29,8 +29,9 @@ void App::top(SDL_Renderer* r, int y) {
             settings_top(r, y);
             if (settings.page != Page::ShaderPicker && settings.page != Page::SaveGallery &&
                 settings.page != Page::Cheats && !model.games.empty()) {
-                round_rect(r, 24, y + 320, 592, 76, 14, "panel");
-                raw_wrapped(r, game_title(0), 44, y + 336, 24, 552, 2);
+                // Inside the card, 24 px up from its lower edge
+                round_rect(r, 40, y + top_card_y + top_card_h - 24 - 76, 560, 76, 14, "panel");
+                raw_wrapped(r, game_title(0), 60, y + top_card_y + top_card_h - 24 - 60, 24, 520, 2);
             }
             return;
         }

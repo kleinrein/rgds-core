@@ -31,9 +31,13 @@ Style style_of(int index) {
 }
 
 // At the panel's 640x480 scale.
-constexpr int lens_side = 30, lens_top = 26, lens_bottom = 46, lens_radius = 18;        // the Game Boy Advance's lens
-constexpr int bar_min = 50;                                                             // the black bar
-constexpr int sp_side = 20, sp_top = 18, sp_bottom = 62, sp_margin = 9, sp_radius = 10; // the SP
+constexpr int lens_side = 30, lens_top = 26, lens_bottom = 46, lens_radius = 18; // the Game Boy Advance's lens
+constexpr int bar_min = 50;                                                      // the black bar
+// The Game Boy Advance SP's own measurements, in millimetres: the screen, the window it sits in (wider below for
+// the logo), the lid around that, the hinge's barrel, the lid's top corners and where its bumpers sit.
+constexpr double sp_screen_mm = 61, sp_window_side = 3, sp_window_top = 3, sp_window_bottom = 9.5, sp_lid_mm = 82,
+                 sp_lid_top = 5, sp_lid_bottom = 5.5, sp_hinge_mm = 11, sp_lid_radius = 5, sp_window_radius = 1.5,
+                 sp_bumper_in = 3.4;
 // The Game Boy Advance's own proportions, at the panel's scale. The AGB is a wide, squat body (about 2:1): the screen
 // sits in a dark lens in the upper half, the lower edge of the shell tapers in, and a strip of body below the screen
 // carries the logo on the left and the speaker's round holes on the right.
@@ -953,55 +957,123 @@ void draw_bar(Canvas& out, const FrameLayout& screen, const Style& s, const Font
          accent_for(system));
 }
 
-// The Game Boy Advance SP: a slim clamshell, the game in a small lens in the lid, the logo under it and the hinge
-// along the bottom edge.
+// The Game Boy Advance SP (AGS-001), open and seen from the front, to its own measurements in millimetres (the
+// screen is 61 wide): a near-square glossy lid with a round bumper in each corner, a dark grey glass window holding
+// the screen with the white logo under it, the hinge's barrel under the lid (its long middle knuckle between the
+// lower half's two short ones) and a strip of the lower half below.
 void draw_sp(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
     const int w = out.w(), h = out.h();
-    const double sx = w / 640.0, sy = h / 480.0, unit = std::min(sx, sy);
-    body(out, s, sx, sy, 14, 0.10);
-
-    // The lid: the SP is a slim clamshell, so its body is a little wider and taller than the screen, with a
-    // soft shadow where the lid's lower edge overhangs the hinge.
-    const double m = sp_margin * unit;
-    const double lx = screen.x - m, ly = screen.y - m, lw = screen.w + 2 * m, lh = screen.h + 2 * m;
-    const double bx = std::max(0.0, lx - 16 * sx), bw = std::min(w - bx, lw + 32 * sx);
-    const double by = std::max(0.0, ly - 14 * sy), bh = std::min(h - by, lh + 14 * sy + 54 * sy);
-    // The lid's own soft edge: the shell is lit from above and rounds away at its sides.
-    for (int y = int(by); y < int(by + bh); ++y)
-        for (int x = int(bx); x < int(bx + bw); ++x) {
-            if (x < 0 || y < 0 || x >= w || y >= h) continue;
-            const double ex = std::min(x - bx, bx + bw - x) / (20 * sx);
-            const double ey = std::min(y - by, by + bh - y) / (12 * sy);
-            Rgb c = Rgb::from_px(out.data()[size_t(y) * w + x]);
-            c = scale(c, 0.90 + 0.10 * std::sqrt(std::clamp(std::min(ex, ey), 0.0, 1.0)));
-            out.data()[size_t(y) * w + x] = c.px();
+    const double k = screen.w / sp_screen_mm; // pixels to the millimetre
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x) {
+            const double dx = (x - w / 2.0) / w, dy = (y - h * 0.45) / h;
+            out.data()[size_t(y) * w + x] = scale(Rgb::hex(0x1A1B20), 1 - 0.9 * (dx * dx + dy * dy)).px();
         }
-    // The hinge along the bottom edge, and the seam above it.
-    const double hinge = by + bh - 14 * sy;
-    for (int y = int(hinge - 2 * sy); y < int(hinge); ++y)
-        for (int x = int(bx); x < int(bx + bw); ++x) {
-            if (x < 0 || y < 0 || x >= w || y >= h) continue;
-            Rgb c = Rgb::from_px(out.data()[size_t(y) * w + x]);
-            out.data()[size_t(y) * w + x] = shade(c, -22).px();
-        }
-    for (int y = int(hinge); y < h; ++y)
-        for (int x = 0; x < w; ++x) put(out, x, y, scale(s.bottom, 0.5), 170);
+    const double wx = screen.x - sp_window_side * k, ww = screen.w + 2 * sp_window_side * k;
+    const double wy = screen.y - sp_window_top * k, wh = screen.h + (sp_window_top + sp_window_bottom) * k;
+    const double lx = (w - sp_lid_mm * k) / 2, lw = sp_lid_mm * k;
+    const double ly = wy - sp_lid_top * k, lh = wh + (sp_lid_top + sp_lid_bottom) * k;
+    const double hinge_d = sp_hinge_mm * k, by = ly + lh - 3 * k; // the barrel, its top behind the lid
+    // The shell at a point: glossy, lit from the upper left, a broad sheen across it, with its grain.
+    auto shell = [&](int x, int y, double t, double lit) {
+        Rgb c = mix(s.top, s.bottom, int(256 * std::clamp(t, 0.0, 1.0)));
+        const double u = (x - lx) / lw - 0.6 * (y - ly) / lh;
+        c = scale(c, lit * (0.94 + 0.12 * std::exp(-std::pow((u - 0.15) / 0.22, 2))));
+        const uint32_t n = hash(x, y);
+        if (s.speckle && (n & 7) == 0) c = shade(c, int(n >> 8) % (2 * s.speckle + 1) - s.speckle);
+        return c;
+    };
 
-    lens(out, s, lx, ly, lw, lh, sp_radius * unit, unit);
-    recess(out, screen, std::max(3, int(4 * unit)), scale(s.lens, 0.6));
-    // The logo under the screen, in the lid: "GAME BOY ADVANCE SP", with SP in the sweep.
-    const int size = int(20 * unit);
-    const double baseline = screen.y + screen.h + m + 18 * sy;
-    const bool pale = s.bottom.r + s.bottom.g + s.bottom.b > 430;
-    name(out, font, s.print, w / 2.0, int(baseline), size, std::max(1, int(2 * unit)),
-         pale ? Rgb::hex(0x2A2A34) : s.ink, pale ? std::vector<Rgb>{} : accent_for(s.print));
+    // The lower half, in shade under the open lid.
+    const double base_y = by + hinge_d * 0.6, base_r = 4 * k;
+    for (int y = std::max(0, int(base_y)); y < h; ++y)
+        for (int x = std::max(0, int(lx)); x < std::min(w, int(lx + lw + 1)); ++x) {
+            const double d = rounded_distance(x + 0.5, y + 0.5, lx, base_y, lw, h + 2 * base_r, base_r);
+            if (d >= 0.5) continue;
+            const double edge = std::clamp(-d / (1.5 * k), 0.0, 1.0);
+            put(out, x, y, shell(x, y, 1, 0.55 + 0.12 * std::sqrt(edge)), int(256 * std::clamp(0.5 - d, 0.0, 1.0)));
+        }
+    // The barrel: round, so a bright highlight along its upper middle and dark above and below; the knuckles parted by
+    // narrow gaps.
+    const double bx = lx + 1 * k, bw = lw - 2 * k;
+    const double gap0 = bx + bw * 0.17, gap1 = bx + bw * 0.83;
+    for (int y = std::max(0, int(by)); y < std::min(h, int(by + hinge_d + 1)); ++y) {
+        const double t = std::clamp((y + 0.5 - by) / hinge_d, 0.0, 1.0);
+        const double lit = 0.40 + 0.55 * std::sin(3.14159 * t) + 0.30 * std::exp(-std::pow((t - 0.38) / 0.08, 2));
+        for (int x = std::max(0, int(bx)); x < std::min(w, int(bx + bw + 1)); ++x) {
+            const double d = rounded_distance(x + 0.5, y + 0.5, bx, by, bw, hinge_d, 1.5 * k);
+            if (d >= 0.5) continue;
+            Rgb c = shell(x, y, 1, lit);
+            const double g = std::min(std::abs(x + 0.5 - gap0), std::abs(x + 0.5 - gap1));
+            if (g < 0.25 * k) c = scale(c, 0.3);
+            put(out, x, y, c, int(256 * std::clamp(0.5 - d, 0.0, 1.0)));
+        }
+    }
+
+    // The lid, its soft shadow falling on the barrel.
+    const double top_r = sp_lid_radius * k, low_r = 2 * k;
+    for (int y = std::max(0, int(ly - 1)); y < std::min(h, int(ly + lh + 2 * k)); ++y)
+        for (int x = std::max(0, int(lx - 1)); x < std::min(w, int(lx + lw + 2)); ++x) {
+            const double r = y + 0.5 > ly + lh / 2 ? low_r : top_r;
+            const double d = rounded_distance(x + 0.5, y + 0.5, lx, ly, lw, lh, r);
+            if (d >= 0.5) {
+                const double below = rounded_distance(x + 0.5, y + 0.5 - 1.2 * k, lx, ly, lw, lh, r);
+                if (below < 0 && y > ly + lh / 2)
+                    put(out, x, y, Rgb{0, 0, 0}, int(130 * std::clamp(-below / (0.6 * k), 0.0, 1.0)));
+                continue;
+            }
+            // The edge is bevelled: light along the top and left, a shade along the bottom and right.
+            const double t = (y - ly) / lh;
+            Rgb c = shell(x, y, t, 1);
+            if (-d < 0.7 * k) {
+                const double side = (x - lx) / lw - t; // < 0 towards the upper left
+                c = side < 0 ? mix(c, Rgb{255, 255, 255}, int(70 * std::min(1.0, -side * 2)))
+                             : scale(c, 1 - 0.25 * std::min(1.0, side * 2));
+            }
+            put(out, x, y, c, int(256 * std::clamp(0.5 - d, 0.0, 1.0)));
+        }
+    // The round bumpers the closed lid rests on, one in each corner.
+    for (int i = 0; i < 4; ++i) {
+        const double cx = i % 2 ? lx + lw - sp_bumper_in * k : lx + sp_bumper_in * k;
+        const double cy = i < 2 ? ly + sp_bumper_in * k : ly + lh - sp_bumper_in * k;
+        disc(out, cx, cy + 0.12 * k, 1.25 * k, shade(s.top, 30), 110);
+        disc(out, cx, cy, 1.25 * k, scale(s.bottom, 0.85), 256);
+        disc(out, cx - 0.15 * k, cy - 0.15 * k, 0.95 * k, scale(s.top, 0.97), 256);
+    }
+
+    // The window: dark grey glass, flush with the lid, a fine light edge and a faint glare across it.
+    for (int y = std::max(0, int(wy - 1)); y < std::min(h, int(wy + wh + 2)); ++y)
+        for (int x = std::max(0, int(wx - 1)); x < std::min(w, int(wx + ww + 2)); ++x) {
+            const double d = rounded_distance(x + 0.5, y + 0.5, wx, wy, ww, wh, sp_window_radius * k);
+            if (d >= 0.5) continue;
+            Rgb c = shade(s.lens, int(6 - 12.0 * (y - wy) / wh));
+            if (-d < 0.35 * k) c = mix(c, s.rim, 200);
+            else if (-d < 0.7 * k) c = scale(c, 0.8);
+            const double band = (x - wx) - 0.55 * (y - wy);
+            if (band > ww * 0.55 && band < ww * 0.68) c = shade(c, 6);
+            put(out, x, y, c, int(256 * std::clamp(0.5 - d, 0.0, 1.0)));
+        }
+    recess(out, screen, std::max(2, int(0.4 * k)), scale(s.lens, 0.5));
+    // The logo: GAME BOY ADVANCE in small slanted capitals and a larger SP, centred in the strip under the screen.
+    if (!font.loaded()) return;
+    auto baked = [](double px) { return px < 18 ? 16 : px < 22 ? 20 : px < 26 ? 24 : px < 32 ? 28 : 36; };
+    const int small = baked(2.3 * k), large = baked(3.4 * k), gap = large / 3;
+    const std::string words = "GAME BOY ADVANCE";
+    // Each capital is drawn a pixel heavier than slanted_width counts (GAME BOY's own logo never needed it).
+    const int capitals =
+        int(std::count_if(words.begin(), words.end(), [](char c) { return std::isupper(uint8_t(c)); }));
+    const int w0 = slanted_width(font, words, small, 1) + capitals, w1 = slanted_width(font, "SP", large, 1) + 2;
+    const int x0 = int(screen.x + (screen.w - (w0 + gap + w1)) / 2.0);
+    const int baseline = int(screen.y + screen.h + (sp_window_bottom * k + font.ascent(large)) / 2);
+    slanted_from(out, font, words, x0, baseline, small, 1, s.ink, {});
+    slanted_from(out, font, "SP", x0 + w0 + gap, baseline, large, 1, s.ink, {});
 }
 
 } // namespace
 
 FrameLayout frame_layout(int panel_w, int panel_h, int game_w, int game_h, int style) {
     FrameLayout l;
-    const double sx = panel_w / 640.0, sy = panel_h / 480.0, unit = std::min(sx, sy);
+    const double sx = panel_w / 640.0, sy = panel_h / 480.0;
     game_w = std::max(1, game_w);
     game_h = std::max(1, game_h);
     const Kind kind = style > FrameOff && style < frame_style_count ? frame_styles[style].kind : Kind::Lens;
@@ -1013,15 +1085,32 @@ FrameLayout frame_layout(int panel_w, int panel_h, int game_w, int game_h, int s
         l.whole = std::abs(s - std::round(s)) < 1e-6;
         return l;
     };
-    if (kind == Kind::Bar || kind == Kind::Sp) {
-        // As large as fits: across the full width at the top, or inside the slim SP lens, which leaves room for the
-        // lid around it and the logo under the screen.
-        const double room_w = kind == Kind::Bar ? panel_w : panel_w - 2 * (sp_side * sx + sp_margin * unit);
-        const double room_h = kind == Kind::Bar ? panel_h - bar_min * sy
-                                                : panel_h - (sp_top + sp_bottom) * sy - 2 * sp_margin * unit - 70 * sy;
-        const double s = std::min(room_w / game_w, room_h / game_h);
-        place(s, 0, 0, panel_w, 0);
-        l.y = kind == Kind::Bar ? 0 : int(sp_top * sy + sp_margin * unit);
+    if (kind == Kind::Bar) {
+        // As large as fits, across the full width at the top.
+        place(std::min(double(panel_w) / game_w, (panel_h - bar_min * sy) / game_h), 0, 0, panel_w, 0);
+        l.y = 0;
+        return l;
+    }
+    if (kind == Kind::SpInner) {
+        // The lid close up at the largest whole scale (2x on the 640x480 panel): the window and the strip of lid
+        // under it end at the panel's foot, the lid's top and sides run off the panel and the hinge is below it.
+        const double below_mm = sp_window_bottom + sp_lid_bottom, mm = double(game_w) / sp_screen_mm;
+        const int s = std::max(1, int(std::min((panel_w - 16 * sx) / (game_w + 2 * sp_window_side * mm),
+                                               (panel_h - 8 * sy) / (game_h + (sp_window_top + below_mm) * mm))));
+        l.w = game_w * s;
+        l.h = game_h * s;
+        l.x = (panel_w - l.w) / 2;
+        l.y = int(panel_h - l.h - below_mm * l.w / sp_screen_mm);
+        return l;
+    }
+    if (kind == Kind::Sp) {
+        // The whole lid to the SP's own proportions, as large as the panel's height allows with the barrel showing
+        // under it (about 1.7x on the 640x480 panel): the screen centred across, the lid's top near the panel's.
+        const double lid_mm = sp_lid_top + sp_window_top + sp_window_bottom + sp_lid_bottom, below_mm = 7;
+        const double k = std::min((panel_h - 4 * sy) / (lid_mm + game_h * sp_screen_mm / game_w + below_mm),
+                                  (panel_w - 8 * sx) / sp_lid_mm);
+        place(k * sp_screen_mm / game_w, 0, 0, panel_w, 0);
+        l.y = int(4 * sy + (sp_lid_top + sp_window_top) * k);
         return l;
     }
     if (kind == Kind::Wsc || kind == Kind::Ngpc) {
@@ -1107,7 +1196,8 @@ void draw_frame(Canvas& out, const FrameLayout& screen, int style, const Font& f
     const Style s = style_of(style);
     switch (s.kind) {
     case Kind::Bar: draw_bar(out, screen, s, font, system); break;
-    case Kind::Sp: draw_sp(out, screen, s, font); break;
+    case Kind::Sp:
+    case Kind::SpInner: draw_sp(out, screen, s, font); break;
     case Kind::Agb: draw_agb(out, screen, s, font); break;
     case Kind::Nes: draw_nes(out, screen, s, font); break;
     case Kind::Wsc:

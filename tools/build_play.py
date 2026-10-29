@@ -4,7 +4,7 @@
   python3 tools/build_play.py host [--fetch]     build/play/host: rgds-play, play-shot, play-tests
   python3 tools/build_play.py device [--fetch]   build/play/device: rgds-play for the RG DS (aarch64, glibc 2.17)
 
-The device build needs `make build-engines` once (it prepares the SDL link SDK).
+The device build needs the SDL link SDK once: python3 tools/engine_toolchain.py --fetch
 """
 import argparse
 import gzip
@@ -21,12 +21,12 @@ import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-import build_engines as base  # noqa: E402  (find_tool, toolchain)
+import engine_toolchain as base  # noqa: E402  (find_tool, toolchain, sdl_sdk)
 
 MGBA_URL = "https://github.com/mgba-emu/mgba.git"
 MGBA_COMMIT = "143adf5aa2a60c6036810b0cd72445e13d74b0e6"  # mGBA master, 23 August 2026
 MGBA_SOURCE = ROOT / ".cache/mgba-source"
-SDL_SDK = ROOT / "build/engine-cross/sdl-sdk"
+SDL_SDK = base.SDL_SDK
 
 # A full libmgba with every frontend and optional library off. Not LIBMGBA_ONLY:
 # that also turns zlib off, and .zip ROMs need it. The GB core stays on: Game
@@ -80,7 +80,7 @@ CORE_SOURCES = [
     "companion/companion.cpp", "companion/party.cpp", "companion/party_gb.cpp", "companion/view.cpp",
     "companion/automap.cpp", "companion/mosaic.cpp", "companion/grid.cpp", "companion/trace.cpp", "companion/board.cpp",
     "companion/battle_gb.cpp", "companion/dock.cpp", "ui/canvas.cpp", "ui/screens.cpp", "ui/frame.cpp", "ui/colour.cpp",
-    "ui/png.cpp", "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp", "app/session.cpp"
+    "ui/png.cpp", "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp", "app/session.cpp", "app/cheats.cpp"
 ]
 C_SOURCES = ["core/mgba_split.c", "core/mgba_gb.c"]  # mGBA's internal headers are C
 PROGRAMS = {
@@ -163,7 +163,7 @@ def main():
 
     if args.target == "device":
         if not (SDL_SDK / "include/SDL2/SDL.h").is_file():
-            raise SystemExit("SDL link SDK missing: run `make build-engines` first")
+            raise SystemExit("SDL link SDK missing: run `python3 tools/engine_toolchain.py --fetch` first")
         compiler = [base.find_tool("zig"), "c++", "-target", base.TARGET, "-mcpu=cortex_a55", "-O2", "-flto=thin"]
         c_compiler = [base.find_tool("zig"), "cc", "-target", base.TARGET, "-mcpu=cortex_a55", "-O2"]
         sdl = ["-I" + str(SDL_SDK / "include"), "-L" + str(SDL_SDK / "lib"), "-lSDL2"]
@@ -236,7 +236,7 @@ SHARED_HEADERS = [
     "src/platform/touch.hpp"
 ]
 PAYLOAD_SOURCES = [
-    "play", *SHARED_HEADERS, "tools/build_play.py", "tools/build_engines.py", "tools/elf_abi.py", "LICENSE"
+    "play", *SHARED_HEADERS, "tools/build_play.py", "tools/engine_toolchain.py", "tools/elf_abi.py", "LICENSE"
 ]
 
 

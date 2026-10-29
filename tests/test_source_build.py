@@ -114,7 +114,7 @@ class SourceBuildTests(unittest.TestCase):
         def compile(command, **kwargs):
             Path(command[-1]).write_bytes(b"candidate")
 
-        for required in ('snd_pcm_open', 'pthread_create', 'pthread_cond_init'):
+        for required in ('snd_pcm_open', 'rgds_rumble'):
             with self.subTest(symbol=required), patch.object(build.subprocess, "run", side_effect=compile), patch(
                 "tools.elf_abi.inspect_elf",
                 return_value=dict(

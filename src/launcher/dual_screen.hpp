@@ -86,6 +86,7 @@ inline std::string name_code(std::string name) {
 
 inline std::set<std::string> cartridge_codes(const fs::path& rom, const std::string& system) {
     std::set<std::string> codes{name_code(rom.stem().string())};
+    if (system == "n64") return codes; // a 12 MiB cartridge is too slow to sum while the library scans: by name
     std::error_code error;
     const auto size = fs::file_size(rom, error);
     if (error || size > (16u << 20)) return codes;
@@ -129,7 +130,7 @@ inline bool dual_screen_game(const fs::path& rom, const std::string& system, con
     bool& result = known[rom] = false;
     const std::string ext = upper(rom.extension().string());
     if (ext == ".ZIP" || ext == ".7Z") return result;
-    if (system == "nes" || system == "snes" || system == "sms") {
+    if (system == "nes" || system == "snes" || system == "sms" || system == "n64") {
         const auto& codes = profile_codes(profiles / system);
         for (const auto& code : cartridge_codes(rom, system))
             if (codes.count(code)) return result = true;

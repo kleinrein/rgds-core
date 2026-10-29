@@ -31,14 +31,14 @@ int main(int argc,char**argv){
    p.dark=true;p.pixel=true;p.auto_load=false;p.auto_save=false;
    p.menu_sounds=true;p.sound_volume=70;p.animations=true;p.view_animations=true;
    p.touch_indicator=false;p.rich_icons=false;p.language="nb-NO";
-   p.layout=2;p.view=2;p.filter=14;p.artwork_provider=2;p.drastic_backend=1;
+   p.layout=2;p.view=2;p.filter=14;p.artwork_provider=2;
    rgds::save_preferences(path,p);return 0;
   }
   auto p=rgds::load_preferences(path);
   std::cout<<p.core<<' '<<p.dark<<' '<<p.pixel<<' '<<p.auto_load<<' '<<p.auto_save<<' '
    <<p.menu_sounds<<' '<<p.sound_volume<<' '<<p.animations<<' '<<p.view_animations<<' '
    <<p.touch_indicator<<' '<<p.rich_icons<<' '<<p.language<<' '<<p.layout<<' '<<p.view<<' '
-   <<p.filter<<' '<<p.artwork_provider<<' '<<p.drastic_backend<<'\n';
+   <<p.filter<<' '<<p.artwork_provider<<'\n';
  }catch(const std::exception&e){std::cerr<<e.what();return 1;}
 }
 '''
@@ -73,8 +73,8 @@ int main(int argc,char**argv){
         for core in range(count):
             with self.subTest(core=core):
                 self.save(core)
-                # NNDDSS (2) and melonDS (3) are retired: a stored choice of either reads back as DSCore (4).
-                self.assertEqual(self.read(), f'{4 if core in (2, 3) else core} 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
+                # DSCore (4) is the only DS engine: a stored choice of any other reads back as DSCore.
+                self.assertEqual(self.read(), '4 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2')
 
     def test_unknown_or_invalid_engine_does_not_reset_unrelated_preferences(self):
         for value in ('5', '99', '-1', '', 'x', '4extra', '4294967296', '999999999999999999999', ' 4'):
@@ -82,7 +82,7 @@ int main(int argc,char**argv){
                 self.save(4)
                 self.path.write_text(self.path.read_text().replace('core=4\n', 'core=' + value + '\n'))
                 # An unknown engine falls back to the default, DSCore (4).
-                self.assertEqual(self.read(), '4 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
+                self.assertEqual(self.read(), '4 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2')
 
     @unittest.skipUnless(BINARY.exists(), 'Build host launcher first')
     def test_actual_launcher_reloads_experimental_preferences_without_fallback(self):
@@ -108,7 +108,7 @@ int main(int argc,char**argv){
             self.assertEqual(
                 (observed['menu_sounds'], observed['sound_volume'], observed['view_animations']), (1, 70, 1)
             )
-            self.assertEqual(self.read(), '4 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2 1')
+            self.assertEqual(self.read(), '4 1 1 0 0 1 70 1 1 0 0 nb-NO 2 2 14 2')
 
 
 if __name__ == '__main__': unittest.main()

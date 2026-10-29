@@ -25,7 +25,7 @@ RECIPES = {
     'disable': ('Pocket Portal', .35, .9, 2.2, .83, .24, False),
     'favourite': ('Crystal Keepsake', .10, 3.2, 4, 1.15, .64, False),
     'unfavourite': ('Crystal Keepsake', .12, 1.5, 3, .84, .33, True),
-    'launch': ('Stardust Launch', .10, 5.8, 4, 1, 1.35, False),
+    'launch': ('Stardust Launch', .10, 5.8, 4, 1, .70, False),
     'resume': ('Stardust Launch', .30, .65, 3, 1.14, .15, False),
     'save': ('Crystal Keepsake', .10, 2.8, 4, 1, .55, False),
     'load': ('Pocket Portal', .12, 2.6, 4, 1.08, .50, True),

@@ -45,7 +45,6 @@ void App::save_startup() {
 void App::change_startup(int direction, bool toggle) {
     if (worker > 0) return;
     // Only the start screen is chosen here; the boot target stays as it is.
-    startup_mode = o.independent || device_status["boot_mode"] == "rgds" ? "rgds" : "stock";
     startup_warning = toggle ? device_status["boot_warning"] != "1" : direction > 0;
     save_startup();
 }

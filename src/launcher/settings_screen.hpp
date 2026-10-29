@@ -148,10 +148,6 @@ void App::settings_top(SDL_Renderer* r, int y) {
         title = gallery_title();
         symbol = gallery_icon();
         break;
-    case Page::RomSetup:
-        title = "Add your games";
-        symbol = SettingsIcon::Cartridge;
-        break;
     case Page::PortFiles:
         title = "Add game files";
         symbol = SettingsIcon::Load;
@@ -177,6 +173,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
         title = "Graphics";
         symbol = SettingsIcon::Display;
         break;
+    case Page::SystemDefaults:
+        title = "System defaults";
+        symbol = SettingsIcon::Cartridge;
+        break;
     case Page::EmulatorOptions:
         title = std::string(core_names[active_engine()]) + " settings";
         symbol = SettingsIcon::Cartridge;
@@ -197,25 +197,28 @@ void App::settings_top(SDL_Renderer* r, int y) {
         return;
     }
     if (page == Page::GameSwitcher && !switch_games.empty()) {
-        settings_card(r, 24, y + 82, 592, 222);
+        // In the game menu the game's name takes the card's lower part, so the words sit above it.
+        const int dy = o.game_menu ? 24 : 72;
+        settings_card(r, 24, y + top_card_y, 592, top_card_h);
         const auto& game = switch_games[std::min(settings.focus, int(switch_games.size()) - 1)];
-        if (!cover_art(r, folder_for_game(game) / "box.bmp", {46, y + 104, 174, 174}, true))
-            game_icon(r, game, 89, y + 147, 88);
+        if (!cover_art(r, folder_for_game(game) / "box.bmp", {46, y + 104 + dy, 174, 174}, true))
+            game_icon(r, game, 89, y + 147 + dy, 88);
         label(r,
               home_switcher         ? std::string(system_info(game.system).name)
               : settings.focus == 0 ? "Resume"
                                     : "Switch game",
-              246, y + 103, 18, "accent", 344);
-        raw_wrapped(r, library_title(game.title), 246, y + 139, 26, 344, 2);
-        if (!home_switcher) wrapped(r, "Your current game is saved before switching.", 246, y + 222, 16, 344, 2);
-        if (!menu_status["message"].empty()) wrapped(r, menu_status["message"], 32, y + 408, 18, 576, 2);
+              246, y + 103 + dy, 18, "accent", 344);
+        raw_wrapped(r, library_title(game.title), 246, y + 139 + dy, 26, 344, 2);
+        if (!home_switcher) wrapped(r, "Your current game is saved before switching.", 246, y + 222 + dy, 16, 344, 2);
+        if (!menu_status["message"].empty())
+            wrapped(r, menu_status["message"], 40, o.game_menu ? y + 318 : y + 420, 16, 560, 2);
         return;
     }
     if (page == Page::MenuSounds) {
-        settings_card(r, 28, y + 106, 584, 264);
+        settings_card(r, 24, y + top_card_y, 592, top_card_h);
         ui_icon(r, settings.focus >= 2 && settings.focus <= 3 ? SettingsIcon::Spark : SettingsIcon::Volume, 320,
-                y + 160, 48, "accent");
-        centered(r, "A little handheld magic", y + 205, 2, "ink");
+                y + 186, 48, "accent");
+        centered(r, "A little handheld magic", y + 231, 2, "ink");
         std::string note =
             settings.focus >= 2 && settings.focus <= 3
                 ? (preferences.menu_music
@@ -225,14 +228,14 @@ void App::settings_top(SDL_Renderer* r, int y) {
             : preferences.menu_sounds
                 ? (sounds.error.empty() ? "Playful sounds for browsing, choosing and starting games." : sounds.error)
                 : "Turn on menu sounds to hear the previews.";
-        wrapped(r, note, 52, y + 258, 20, 536, 3);
+        wrapped(r, note, 52, y + 284, 20, 536, 3);
         return;
     }
     if (page == Page::Haptics) {
-        settings_card(r, 28, y + 106, 584, 264);
-        ui_icon(r, SettingsIcon::Vibrate, 320, y + 160, 48, "accent");
+        settings_card(r, 24, y + top_card_y, 592, top_card_h);
+        ui_icon(r, SettingsIcon::Vibrate, 320, y + 186, 48, "accent");
         const bool games = settings.focus == 2 || settings.focus == 3;
-        centered(r, games ? "Feel the game" : "Feel every move", y + 205, 2, "ink");
+        centered(r, games ? "Feel the game" : "Feel every move", y + 231, 2, "ink");
         std::string note =
             !haptics.available() ? "No vibration motor was found on this device."
             : games              ? (preferences.game_rumble
@@ -240,114 +243,49 @@ void App::settings_top(SDL_Renderer* r, int y) {
                                         : "Turn on game rumble for games made for a rumble accessory.")
             : preferences.menu_haptics ? "A light tap for every move, a firmer one when you choose, open or save."
                                        : "Turn on menu haptics to feel the menus.";
-        wrapped(r, note, 52, y + 258, 20, 536, 3);
+        wrapped(r, note, 52, y + 284, 20, 536, 3);
         return;
     }
     if (page == Page::SaveGallery) {
-        round_rect(r, 24, y + 80, 592, 326, 12, "panel");
+        settings_card(r, 24, y + top_card_y, 592, top_card_h);
         auto key = std::to_string(settings.focus);
         const bool occupied = slot_occupied(settings.focus);
-        if (!media.draw(r, slots["image_" + key], {40, y + 104, 320, 240}, false))
-            ui_icon(r, gallery_icon(), 200, y + 220, 70, "muted");
-        label(r, locale.text("Slot") + " " + std::to_string(settings.focus + 1), 388, y + 122, 28, "ink", 208);
-        raw_label(r, core_names[gallery_core], 388, y + 173, 20, "accent", 208);
-        raw_wrapped(r, occupied ? slots["slot_" + key] : locale.text("Empty slot"), 388, y + 219, 20, 208, 2);
-        wrapped(r, slot_hint(occupied), 388, y + 272, 16, 208, 5);
-        wrapped(r, o.game_menu ? menu_status["message"] : device_status["message"], 36, y + 418, 16, 568, 2);
+        if (!media.draw(r, slots["image_" + key], {40, y + 116, 320, 240}, false))
+            ui_icon(r, gallery_icon(), 200, y + 232, 70, "muted");
+        label(r, locale.text("Slot") + " " + std::to_string(settings.focus + 1), 388, y + 134, 28, "ink", 208);
+        raw_label(r, core_names[gallery_core], 388, y + 185, 20, "accent", 208);
+        raw_wrapped(r, occupied ? slots["slot_" + key] : locale.text("Empty slot"), 388, y + 231, 20, 208, 2);
+        wrapped(r, slot_hint(occupied), 388, y + 284, 16, 208, 5);
+        wrapped(r, o.game_menu ? menu_status["message"] : device_status["message"], 36, y + 392, 16, 568, 2);
         return;
     }
     if (page == Page::Microphone) {
-        round_rect(r, 24, y + 82, 592, 320, 12, "panel");
-        ui_icon(r, SettingsIcon::Volume, 320, y + 145, 52, "accent");
-        centered(r, "Test microphone", y + 202, 2, "ink");
-        wrapped(r, "Blow or speak into the microphone. Watch the level rise, then fall when you stop.", 54, y + 255, 22,
+        round_rect(r, 24, y + top_card_y, 592, top_card_h, 12, "panel");
+        ui_icon(r, SettingsIcon::Volume, 320, y + 167, 52, "accent");
+        centered(r, "Test microphone", y + 224, 2, "ink");
+        wrapped(r, "Blow or speak into the microphone. Watch the level rise, then fall when you stop.", 54, y + 277, 22,
                 532, 4);
         return;
     }
     if (page == Page::DSControls) {
-        round_rect(r, 24, y + 82, 592, 320, 12, "panel");
-        ui_icon(r, SettingsIcon::Controller, 320, y + 126, 48, "accent");
-        centered(r, "DS controls", y + 181, 2, "ink");
+        round_rect(r, 24, y + top_card_y, 592, top_card_h, 12, "panel");
+        ui_icon(r, SettingsIcon::Controller, 320, y + 148, 48, "accent");
+        centered(r, "DS controls", y + 203, 2, "ink");
         wrapped(
             r,
             !ds_supported() ? "Use the engine's native controls for microphone and DS settings."
             : status.empty()
                 ? "Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting."
                 : status,
-            54, y + 242, 22, 532, 5);
+            54, y + 264, 22, 532, 5);
         return;
     }
     if (page == Page::PortFiles) {
         port_files_top(r, y);
         return;
     }
-    if (page == Page::RomSetup) {
-        round_rect(r, 24, y + 82, 592, 320, 12, "panel");
-        ui_icon(r, SettingsIcon::Cartridge, 320, y + 128, 48, "accent");
-        centered(r,
-                 !library_ready  ? "Looking for games…"
-                 : setup_scanned ? "Scan complete"
-                                 : "Your DS library starts here",
-                 y + 177, 2, "ink");
-        const size_t found = model.games.size();
-        if (!library_ready)
-            wrapped(r, "Reading Roms/NDS on your games card. This takes a moment.", 54, y + 242, 24, 532, 4);
-        else if (setup_scanned)
-            wrapped(
-                r,
-                found ? locale.text(locale.text(std::to_string(found) + (found == 1 ? " game" : " games")) +
-                                    " found. Choose Done to go to your library.")
-                      : locale.text(
-                            "No games found. Copy .nds or DS ZIP files to Roms/NDS on your games card and scan again."),
-                54, y + 242, 24, 532, 4);
-        else
-            wrapped(r, "Copy .nds or DS ZIP files to Roms/NDS on your games card, then choose Scan for games.", 54,
-                    y + 242, 24, 532, 4);
-        return;
-    }
     if (page == Page::Statistics) {
-        const auto& group = summary.groups[0];
-        // A ring of your collection: the played share fills it, the hours sit inside.
-        settings_card(r, 24, y + 66, 592, 344);
-        const double share = group.games ? double(group.played) / double(group.games) : 0;
-        const int rx = 150, ry = y + 190;
-        feedback_arc(r, rx, ry, 78, 0, 1, theme.at("slot"), 255, 12);
-        if (summary_ready && share > 0)
-            feedback_arc(r, rx, ry, 78, 0, std::max(.02, share), theme.at("accent"), 255, 12);
-        const std::string hours = summary_ready ? std::to_string(group.seconds / 3600) + "h" : "…",
-                          minutes = summary_ready ? std::to_string((group.seconds / 60) % 60) + "m" : "";
-        raw_label(r, hours, rx - label_width(hours, 36, false) / 2, ry - 34, 36, "ink", 160);
-        raw_label(r, minutes, rx - label_width(minutes, 20, false) / 2, ry + 10, 20, "muted", 160);
-        {
-            const std::string caption = locale.text("Time played");
-            raw_label(r, caption, rx - label_width(caption, 14, false) / 2, ry + 94, 14, "muted", 200);
-        }
-        // Three tiles on the right.
-        const std::array<std::string, 3> values = {
-            summary_ready ? std::to_string(group.games) : "…",
-            summary_ready ? std::to_string(group.played) +
-                                (group.games ? "  ·  " + std::to_string(int(std::lround(share * 100))) + "%" : "")
-                          : "…",
-            summary_ready ? std::to_string(group.sessions) : "…"};
-        const std::array<const char*, 3> titles = {"Games", "Games played", "Times played"};
-        for (int i = 0; i < 3; i++) {
-            const int row = y + 92 + i * 72;
-            round_rect(r, 276, row, 320, 60, 12, "slot");
-            round_rect(r, 277, row + 1, 318, 58, 11, "background");
-            label(r, titles[i], 296, row + 8, 14, "muted", 280);
-            raw_label(r, values[size_t(i)], 296, row + 27, 24, "ink", 280);
-        }
-        // The favourite: the most played game, with its icon.
-        round_rect(r, 276, y + 310, 320, 76, 12, "focus");
-        if (summary_ready && !summary.most_played.empty()) {
-            const auto& top = summary.most_played[0];
-            game_icon(r, top.game, 292, y + 324, 48, 0);
-            label(r, "Most played", 352, y + 320, 14, "muted", 232);
-            raw_label(r, top.title, 352, y + 341, 20, "ink", 232);
-        } else {
-            ui_icon(r, SettingsIcon::Heart, 316, y + 348, 28, "muted");
-            label(r, summary_ready ? "Nothing played yet" : "Preparing…", 352, y + 338, 16, "muted", 232);
-        }
+        playtime_top(r, y);
         return;
     }
     if (page == Page::Maintenance) {
@@ -386,43 +324,11 @@ void App::settings_top(SDL_Renderer* r, int y) {
                          page == Page::Homebrew || page == Page::GameArtwork ||
                          (page == Page::Keyboard && edit_field == 3) ||
                          (settings.page == Page::Controls && control_capture);
-    const int note_y = crowded ? y : y + 64;
-    dsi_note(r, note_y, y, symbol,
-             zone                   ? timezone_place(focused_zone)
-             : page == Page::System ? locale.text(system_row_name(settings.focus))
-                                    : locale.text(title));
-    if (zone) {
-        const auto [previous, next] = timezone_neighbours();
-        if (!previous.empty()) shoulder_tab(r, y, false, "L", previous);
-        if (!next.empty()) shoulder_tab(r, y, true, "R", next);
-    }
-    if ((page == Page::GameArtwork || (page == Page::Keyboard && edit_field == 3)) && !model.games.empty()) {
-        auto name = game_title(model.selected);
-        int name_width = std::min(576, label_width(name, 20));
-        label(r, name, 320 - name_width / 2, y + 318, 20, "ink", 576);
-    }
-    if (page == Page::Network || page == Page::Wifi) network_status_card(r, y);
-    if (settings.page == Page::Controls && control_capture) {
-        const std::string prompt = "Press a button for " + (capture_logical == 12 ? std::string("fast-forward")
-                                                                                  : control_title(capture_logical));
-        label(r, prompt, 320 - label_width(prompt, 20) / 2, y + 320, 20, "ink", 584);
-        key_hints(r, 320, y + 363, {{"Anbernic", "Cancel"}}, 0);
-    }
     // Operational feedback remains visible, without permanent advice cards.
     std::string message;
     if (o.game_menu && (menu_status["state"] == "busy" || menu_status["state"] == "error"))
         message = menu_status["message"];
-    else if (picker_open && picker_core_offset >= 0) message = emulator_choice_hint();
-    else if (picker_open && picker_title == "Standard screen order")
-        message = "Standard DraStic only. Applies on the next launch; game saves are kept.";
-    else if (picker_open && picker_title == "DraStic backend")
-        message = "SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.";
     else if (status.rfind("Could not save", 0) == 0) message = status;
-    else if (settings.page == Page::GameOptions && settings.focus == 2 && superdrastic_game())
-        message = "SuperDrastic currently uses native output. Your standard shader choice is kept.";
-    else if (settings.page == Page::GameOptions && settings.focus == 7 && superdrastic_game())
-        message =
-            "Gengis is experimental. 3x smooths 3D into a 2x picture and costs more CPU; some effects may differ.";
     else if (settings.page == Page::Graphics) {
         static const char* hints[] = {
             "True 3D resolution. 3x balances quality and speed; 5x is experimental.",
@@ -435,37 +341,20 @@ void App::settings_top(SDL_Renderer* r, int y) {
             "Save a checkpoint and restart with your chosen graphics settings."};
         message = status.empty() ? hints[std::clamp(settings.focus, 0, 7)] : status;
     } else if (settings.page == Page::EmulatorOptions) {
-        int engine = active_engine(), next = game_preferences.core < 0 ? int(preferences.core) : game_preferences.core;
         if (settings.focus == list_count() - 1)
             message = "Restart from the title screen. In-game saves and save slots are kept.";
         else if (settings.focus == list_count() - 2) message = "Microphone, simulated blowing, lid and DS language.";
-        else if (settings.focus == 0)
-            message = engine != 0 ? "Counts emulated game frames. Changes immediately."
-                                  : "Counts display updates, not emulation speed. Changes immediately.";
+        else if (settings.focus == 0) message = "Counts emulated game frames. Changes immediately.";
         else if (settings.focus == 1) message = "Changes immediately. Map a button in Controls for quick access.";
         else if (settings.focus == 2) message = "Applies immediately. Higher clocks use more battery.";
-        else if (settings.focus == 3)
-            message = engine == 1   ? "3D rendering automatically uses worker threads."
-                      : engine == 2 ? "This engine does not expose a threading switch."
-                      : engine == 3 ? "Applies immediately. Your game keeps its progress."
-                                    : "Save & restart applies Threaded 3D.";
+        else if (settings.focus == 3) message = "3D rendering automatically uses worker threads.";
         else if (settings.focus == 4 && experimental_game())
             message = "Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.";
-        else if (settings.focus == 4)
-            message = emulator_option_enabled(4)
-                          ? "Native is faster; 2x uses more GPU time. Save & restart applies it."
-                          : "This emulator uses native resolution. No resolution switch is available.";
+        else if (settings.focus == 4) message = "This emulator uses native resolution. No resolution switch is available.";
         else if (settings.focus == 5)
             message = emulator_option_enabled(5)
                           ? "Off gives smooth motion. Skipping frames can help speed. Restart to apply."
                           : "This emulator does not expose a frameskip setting.";
-        else if (settings.focus == 9)
-            message = "Sets Standard DraStic screen order for this game. Save & restart applies it.";
-        else if (settings.focus == 8)
-            message = "Choose the display backend for the next DraStic launch. DSperate stays your default.";
-        else if (settings.focus == 6 || next != engine)
-            message =
-                "Restart uses " + std::string(core_names[next]) + ". Saves and checkpoints stay separate per emulator.";
         else message = "Save & restart keeps your checkpoint and applies pending settings.";
     } else if (settings.page == Page::Controls && controls_notice.rfind("Could not", 0) == 0) message = controls_notice;
     else if (settings.page == Page::Controls && settings.focus == 0 && model.games.empty())
@@ -481,9 +370,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
         if (message.empty()) {
             const int row = library_row(settings.focus);
             if (row == 10) message = "Looks through your games card again. It also runs by itself when games change.";
+            else if (row == 11)
+                message = "What each system's games share until a game says otherwise: bezel, screen, shader.";
             else if (row == 9) message = "Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.";
             else if (row == 8) message = "Copies every save and checkpoint into one zip in userdata/exports.";
-            else if (row == 7) message = "Where games go on the card, and a fresh scan.";
             else if (row == 1) message = "Where covers and titles come from.";
         }
     } else if (page == Page::System || page == Page::Network || page == Page::Wifi || page == Page::Bluetooth ||
@@ -497,6 +387,32 @@ void App::settings_top(SDL_Renderer* r, int y) {
     if (message.empty())
         message =
             zone ? offset_text(zone_offset(focused_zone)) + "  ·  " + zone_time(focused_zone) : settings_tip(page);
+    // The icon and title (and the tip under them, when there is one) centred in the card; the crowded pages
+    // keep the words at the top, over what they draw below.
+    const bool network = page == Page::Network || page == Page::Wifi || page == Page::Bluetooth;
+    const bool titled = o.game_menu && !model.games.empty(); // the game's name takes the card's lower part
+    const int note_y = network ? y + 24 : crowded ? y + 8 : titled ? y + 72 : message.empty() ? y + 128 : y + 96;
+    dsi_note(r, note_y, y, symbol,
+             zone                   ? timezone_place(focused_zone)
+             : page == Page::System ? locale.text(system_row_name(settings.focus))
+                                    : locale.text(title));
+    if (zone) {
+        const auto [previous, next] = timezone_neighbours();
+        if (!previous.empty()) shoulder_tab(r, y, false, "L", previous);
+        if (!next.empty()) shoulder_tab(r, y, true, "R", next);
+    }
+    if ((page == Page::GameArtwork || (page == Page::Keyboard && edit_field == 3)) && !model.games.empty()) {
+        auto name = game_title(model.selected);
+        int name_width = std::min(576, label_width(name, 20));
+        label(r, name, 320 - name_width / 2, y + 326, 20, "ink", 576);
+    }
+    if (page == Page::Network || page == Page::Wifi) network_status_card(r, y);
+    if (settings.page == Page::Controls && control_capture) {
+        const std::string prompt = "Press a button for " + (capture_logical == 12 ? std::string("fast-forward")
+                                                                                  : control_title(capture_logical));
+        label(r, prompt, 320 - label_width(prompt, 20) / 2, y + 328, 20, "ink", 584);
+        key_hints(r, 320, y + 371, {{"Anbernic", "Cancel"}}, 0);
+    }
     if (!message.empty()) centered_wrapped(r, locale.text(message), note_y + 196, 20, 528, 3, "ink");
 }
 
@@ -506,7 +422,7 @@ void App::network_status_card(SDL_Renderer* r, int y) {
     // wpa_supplicant joining or looking for a saved network by itself (at boot, after Wi-Fi on): runtime/wpa_wifi.py
     const bool joining = !busy && !connected && radio && !device_status["wifi_joining"].empty(),
                looking = !busy && !connected && !joining && radio && device_status["wifi_looking"] == "1";
-    const int left = 40, top = y + 296, width = 560, height = 116;
+    const int left = 40, width = 560, height = 116, top = y + top_card_y + top_card_h - 16 - height;
     const Color green = preferences.dark ? Color{36, 128, 76} : Color{44, 160, 92}, white{255, 255, 255};
     const Color tone = busy || joining ? theme.at("accent") : green;
     const bool lit = busy || connected || joining;
@@ -603,38 +519,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         return;
     }
     if (settings.page == Page::Statistics) {
-        settings_header(r, y, "Most played");
-        if (!summary_ready) wrapped(r, "Preparing your statistics…", 32, y + 126, 24, 560, 2);
-        else if (summary.most_played.empty())
-            wrapped(r, "Play a game to start your statistics.", 32, y + 126, 24, 560, 3);
-        else
-            for (size_t i = 0; i < summary.most_played.size(); i++) {
-                auto& entry = summary.most_played[i];
-                int row = y + 100 + int(i) * 64;
-                alpha_round(r, 28, row + 3, 584, 60, 10, shadow_colour(), preferences.dark ? 50 : 16);
-                round_rect(r, 28, row, 584, 60, 10, "panel");
-                // Gold, silver and bronze for the top three; a plain number after that.
-                static const std::array<Color, 3> medals = {Color{236, 178, 48}, Color{168, 180, 192},
-                                                            Color{196, 128, 78}};
-                if (i < 3) {
-                    fill_round(r, 40, row + 16, 28, 28, 14, medals[i]);
-                    alpha_round(r, 45, row + 19, 18, 8, 4, Color{255, 255, 255}, 90);
-                    const std::string n = std::to_string(i + 1);
-                    raw_label_colour(r, n, 54 - label_width(n, 16, false) / 2, centred_label_y(n, 16, row + 30), 16,
-                                     Color{255, 255, 255}, 24);
-                } else raw_label(r, std::to_string(i + 1), 42, row + 19, 20, "muted", 28);
-                game_icon(r, entry.game, 76, row + 6, 48, i);
-                raw_label(r, entry.title, 140, row + 9, 20, "ink", 286);
-                auto time =
-                    std::to_string(entry.seconds / 3600) + "h " + std::to_string((entry.seconds / 60) % 60) + "m";
-                raw_label(r, time, 450, row + 10, 18, "accent", 146);
-                round_rect(r, 140, row + 43, 286, 4, 2, "slot");
-                round_rect(
-                    r, 140, row + 43,
-                    std::max(3, int(286 * entry.seconds / std::max<uint64_t>(1, summary.most_played[0].seconds))), 4, 2,
-                    "accent");
-                raw_label(r, std::to_string(entry.sessions) + " ×", 450, row + 34, 14, "muted", 145);
-            }
+        playtime_bottom(r, y);
         return;
     }
     if (settings.page == Page::GameSwitcher) {
@@ -677,12 +562,12 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
     if (count > 0 || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
         settings.page == Page::Homebrew || settings.page == Page::Cheats) {
         std::string title = settings.page == Page::Graphics || settings.page == Page::PlayGraphics ? "Graphics"
+                            : settings.page == Page::SystemDefaults                                ? "System defaults"
                             : settings.page == Page::Cheats                                        ? cheats_title()
                             : settings.page == Page::Sound                                         ? "Sound"
                             : settings.page == Page::MenuSounds                                    ? "Sounds & music"
                             : settings.page == Page::Haptics                                       ? "Vibration"
                             : settings.page == Page::SaveGallery                                   ? gallery_title()
-                            : settings.page == Page::RomSetup                                      ? "Add your games"
                             : settings.page == Page::PortFiles                                     ? "Add game files"
                             : settings.page == Page::DSControls                                    ? "DS controls"
                             : settings.page == Page::Settings                                      ? "Settings"
@@ -750,7 +635,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             else if (settings.page == Page::ShaderPicker) {
                 int value = shader_choices[i];
                 list_row(r, y, i, shader_name(value),
-                         (shader_per_game ? game_preferences.filter : preferences.filter) == value ? "Selected" : "");
+                         shader_current() == value ? "Selected" : "");
             } else if (settings.page == Page::Power) {
                 // indexed by control id; power_rows gives the order on the page
                 const std::array<std::string, 9> names = {
@@ -771,12 +656,13 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 const int id = power_rows[size_t(i)];
                 list_row(r, y, i, names[id], enabled[id] ? values[id] : "Unavailable", enabled[id]);
             } else if (settings.page == Page::LibraryOptions) {
-                const std::array<std::string, 11> names = {"Default emulator",  "Artwork sources", "Auto-load state",
+                // Rows 0 and 6 are retired; library_row never shows them.
+                const std::array<std::string, 12> names = {"",                  "Artwork sources", "Auto-load state",
                                                            "Auto-save on exit", "Default shader",  "Browser layout",
-                                                           "DraStic backend",   "Add your games",  "Back up all saves",
-                                                           "Systems",           "Scan for games"};
-                const std::array<std::string, 11> values = {
-                    core_names[preferences.core],
+                                                           "",                  "",                "Back up all saves",
+                                                           "Systems",           "Scan for games",  "System defaults"};
+                const std::array<std::string, 12> values = {
+                    "",
                     "",
                     preferences.auto_load ? "On" : "Off",
                     preferences.auto_save ? "On" : "Off",
@@ -784,58 +670,76 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     preferences.layout == 0   ? "Cartridges"
                     : preferences.layout == 1 ? "Covers"
                                               : "List",
-                    drastic_backend_name(preferences.drastic_backend),
+                    "",
                     "",
                     "",
                     preferences.show_systems ? "All systems" : "DS only",
                     !library_ready
                         ? locale.text("Scanning…")
-                        : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games"))};
+                        : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games")),
+                    ""};
                 list_row(r, y, i, names[size_t(library_row(i))], values[size_t(library_row(i))]);
             } else if (settings.page == Page::PlayGraphics) {
                 const bool palette = play_colour_kind() == 1;
-                const std::array<std::string, 5> names = {"Game screen", "Second screen", "Frame", "Shader",
-                                                          "Screen colours"};
-                const std::array<std::string, 5> values = {
-                    play_fit_name(play_fit), play_second_name(play_second), play_frame_label(play_frame),
-                    // Default is this handheld's own screen: name it.
-                    shader_name(game_preferences.filter < 0 ? default_shader_for(picker_game_system().c_str(), -1)
-                                                            : game_preferences.filter),
-                    palette ? play::gb_palettes[play_palette].name : play::gb_corrections[play_correction].name};
+                const int id = play_graphics_row(i);
+                const std::array<std::string, 6> names = {"Game screen", "Second screen",       "Bezel",
+                                                          "Shader",      "Screen colours",     "Save as system default"};
+                // A choice equal to the system's default follows it: say so, and name what that is.
+                const auto shown = [&](bool follows, const std::string& name) {
+                    return follows ? inherited_label(locale.text(name)) : name;
+                };
+                const std::array<std::string, 6> values = {
+                    shown(play_fit == play_default.fit, play_fit_name(play_fit)),
+                    shown(play_second == play_default.second, play_second_name(play_second)),
+                    shown(play_frame == play_default.frame, play_frame_label(play_frame)),
+                    game_preferences.filter < 0 ? inherited_label(shader_name(default_shader(play_system())))
+                                                : shader_name(game_preferences.filter),
+                    palette ? shown(play_palette == play_default.palette, play::gb_palettes[play_palette].name)
+                            : shown(play_correction == play_default.correction,
+                                    play::gb_corrections[play_correction].name),
+                    system_info(play_system()).badge};
                 // A palette's row wears its second-lightest colour, so the choice shows at a glance.
                 const uint32_t tone = play::gb_palettes[play_palette].shade[1];
                 const Color dot{uint8_t(tone >> 16), uint8_t(tone >> 8), uint8_t(tone)};
-                list_row(r, y, i, names[size_t(i)], values[size_t(i)], true, palette && i == 4 ? &dot : nullptr);
+                list_row(r, y, i, names[size_t(id)], values[size_t(id)], true, palette && id == 4 ? &dot : nullptr);
+            } else if (settings.page == Page::SystemDefaults) {
+                const auto view = system_view(defaults_system);
+                const bool palette = defaults_colour_kind() == 1;
+                const std::array<std::string, 6> names = {"System", "Game screen", "Second screen",
+                                                          "Bezel",  "Shader",      "Screen colours"};
+                const std::array<std::string, 6> values = {
+                    system_info(defaults_system).name,
+                    play_fit_name(view.fit),
+                    play_second_name(view.second),
+                    play_frame_label(view.frame),
+                    view.filter < 0 ? inherited_label(shader_name(default_shader(defaults_system)))
+                                    : shader_name(view.filter),
+                    palette ? play::gb_palettes[view.palette].name : play::gb_corrections[view.correction].name};
+                const uint32_t tone = play::gb_palettes[view.palette].shade[1];
+                const Color dot{uint8_t(tone >> 16), uint8_t(tone >> 8), uint8_t(tone)};
+                list_row(r, y, i, names[size_t(i)], values[size_t(i)], true, palette && i == 5 ? &dot : nullptr);
             } else if (settings.page == Page::GameOptions && i == game_options_base())
                 list_row(r, y, i, "Remove game", ""); // only listed when game_removable()
-            else if (settings.page == Page::GameOptions && other_system_selected() &&
-                     (i == 1 || i == game_options_base() - 1))
-                list_row(r, y, i, i == 1 ? "Emulator" : "DS controls", i == 1 ? core_names[play_core] : "Unavailable",
-                         false);
+            else if (settings.page == Page::GameOptions && other_system_selected() && i == game_options_base() - 1)
+                list_row(r, y, i, "DS controls", "Unavailable", false);
             else if (settings.page == Page::GameOptions && i == game_options_base() - 3) {
                 const bool have = !model.games.empty() &&
                                   !library_cache.metadata(model.games[model.selected]).info["info_version"].empty();
                 list_row(r, y, i, "Game info", have ? "Available" : "Not downloaded");
             } else if (settings.page == Page::GameOptions && i >= game_options_base() - 2)
                 list_row(r, y, i, i == game_options_base() - 2 ? "Save gallery" : "DS controls");
-            else if (settings.page == Page::GameOptions && i == 5 && experimental_game())
+            else if (settings.page == Page::GameOptions && i == 4 && experimental_game())
                 list_row(r, y, i, "3D resolution", experimental_resolution_name());
             else if (settings.page == Page::GameOptions) {
-                const std::array<std::string, 8> names = {"Favourite",    "Emulator",     "Shader",
-                                                          "Controls",     "Artwork",      "DraStic backend",
-                                                          "Screen order", "3D resolution"},
+                const std::array<std::string, 4> names = {"Favourite", "Shader", "Controls", "Artwork"},
                                                  values = {
                                                      game_preferences.favourite ? "On" : "Off",
-                                                     game_preferences.core < 0 ? "Default"
-                                                                               : core_names[game_preferences.core],
-                                                     superdrastic_game() ? "Native output"
-                                                                         : shader_name(game_preferences.filter),
-                                                     "",
-                                                     "",
-                                                     drastic_backend_name(game_preferences.drastic_backend),
-                                                     game_preferences.drastic_screen_swap == 1 ? "Swapped" : "Normal",
-                                                     superdrastic_resolution_name()};
-                list_row(r, y, i, names[i], values[i], (i != 2 && i != 6) || !superdrastic_game());
+                                                     game_preferences.filter < 0
+                                                         ? inherited_label(shader_name(default_shader_for(
+                                                               picker_game_system().c_str(), preferences.filter)))
+                                                         : shader_name(game_preferences.filter),
+                                                     "", ""};
+                list_row(r, y, i, names[size_t(i)], values[size_t(i)]);
             } else if (settings.page == Page::Controls) list_row(r, y, i, controls_row_name(i), controls_row_value(i));
             else if (settings.page == Page::Sound) {
                 if (i == 0) volume_row(r, y);
@@ -881,16 +785,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             } else if (settings.page == Page::SaveGallery)
                 list_row(r, y, i, locale.text("Slot") + " " + std::to_string(i + 1),
                          slot_occupied(i) ? slots["slot_" + std::to_string(i)] : "Empty slot", slot_primary_enabled(i));
-            else if (settings.page == Page::RomSetup) {
-                const std::array<std::string, 3> names = {"Where to put games", "Scan for games", "Done"};
-                const size_t found = model.games.size();
-                list_row(r, y, i, names[i],
-                         i == 1
-                             ? (!library_ready  ? locale.text("Scanning…")
-                                : setup_scanned ? locale.text(std::to_string(found) + (found == 1 ? " game" : " games"))
-                                                : std::string())
-                             : std::string());
-            } else if (settings.page == Page::PortFiles) port_files_row(r, y, i);
+            else if (settings.page == Page::PortFiles) port_files_row(r, y, i);
             else if (settings.page == Page::Cheats) cheat_row(r, y, i);
             else if (settings.page == Page::DSControls) ds_controls_row(r, y, i);
             else if (settings.page == Page::Network) {
@@ -1011,36 +906,19 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, i == count - 2 ? "DS controls" : "Reset state");
             else if (settings.page == Page::EmulatorOptions) {
                 int engine = active_engine();
-                const std::array<std::string, 10> names = {engine != 0 ? "Game FPS" : "Display FPS",
-                                                           "Fast-forward",
-                                                           "Power profile",
-                                                           "Threaded 3D",
-                                                           "3D resolution",
-                                                           "Frameskip",
-                                                           "Next emulator",
-                                                           "Save & restart",
-                                                           "DraStic backend",
-                                                           "Screen order"};
+                const std::array<std::string, 7> names = {"Game FPS",     "Fast-forward", "Power profile",
+                                                          "Threaded 3D",  "3D resolution", "Frameskip",
+                                                          "Save & restart"};
                 bool enabled = emulator_option_enabled(i);
-                const std::array<std::string, 10> values = {
+                const std::array<std::string, 7> values = {
                     menu_status["fps"] == "1" ? "On" : "Off",
                     menu_status["fast_forward"] == "1" ? "On" : "Off",
                     power_names[system_preferences.power],
-                    (engine == 1 || engine == 4)     ? "Automatic"
-                    : engine == 2                    ? "Engine managed"
-                    : engine == 3                    ? (menu_status["threaded"] == "0" ? "Off" : "On")
-                    : game_preferences.threaded == 0 ? "Off"
-                                                     : "On",
-                    experimental_game()           ? experimental_resolution_name()
-                    : superdrastic_game()         ? superdrastic_resolution_name()
-                    : game_preferences.hires == 1 ? "2x"
-                                                  : "Native",
+                    engine == dscore_core ? "Automatic" : "Engine managed",
+                    experimental_game() ? experimental_resolution_name() : "Native",
                     game_preferences.frameskip > 0 ? std::to_string(game_preferences.frameskip) + " frames"
                                                    : "Off (smooth)",
-                    game_preferences.core < 0 ? "Default" : core_names[game_preferences.core],
-                    "",
-                    drastic_backend_name(game_preferences.drastic_backend),
-                    game_preferences.drastic_screen_swap == 1 ? "Swapped" : "Normal"};
+                    ""};
                 list_row(r, y, i, names[i], enabled || i == 3 ? values[i] : "Unavailable", enabled);
             }
         }

@@ -1,4 +1,4 @@
-"""Automatic DSperate resume must load the selected game and preserve newer saves."""
+"""Automatic DSCore resume (DSperate's state format) must load the selected game and preserve newer saves."""
 import os
 import json
 import struct
@@ -15,12 +15,12 @@ from test_runtime import Fixture
 class DSperateResumeTests(Fixture):
     def setUp(self):
         super().setUp()
-        self.binary('dsperate')
+        self.binary('rgds-experimental')
         self.rom = self.root / 'Game.nds'
         self.rom.write_bytes(b'\0' * 12 + b'ABCD' + b'\0' * 496)
-        self.canonical = self.data / 'library' / game_key(self.rom) / 'auto-dsperate.dss'
-        self.native = self.data / 'emulators/dsperate/states/ABCD.auto.dss'
-        self.battery = self.data / 'emulators/dsperate/saves/Game.sav'
+        self.canonical = self.data / 'library' / game_key(self.rom) / 'auto-rgds-experimental.dss'
+        self.native = self.data / 'emulators/rgds-experimental/states/ABCD.auto.dss'
+        self.battery = self.data / 'emulators/rgds-experimental/saves/Game.sav'
         self.manual = self.native.with_name('ABCD.0.dss')
         self.saved_bytes = {}
 
@@ -48,7 +48,7 @@ class DSperateResumeTests(Fixture):
 
     def plan(self, **kwargs):
         with patch.dict(os.environ, {}, clear=True):
-            return emulators.launch_plan('dsperate', self.app, self.data, self.rom, **kwargs)
+            return emulators.launch_plan('rgds-experimental', self.app, self.data, self.rom, **kwargs)
 
     def selected(self, plan):
         command = plan['command']
@@ -113,7 +113,7 @@ class DSperateResumeTests(Fixture):
 
     def test_archive_identity_selects_its_canonical_state(self):
         archive = self.root / 'collection/Game.zip'
-        selected = self.data / 'library' / game_key(archive) / 'auto-dsperate.dss'
+        selected = self.data / 'library' / game_key(archive) / 'auto-rgds-experimental.dss'
         self.saved(selected, b'archive state', 200)
         self.saved(self.canonical, b'extracted path state', 300)
         self.assertEqual(self.selected(self.plan(identity=archive)), selected)
@@ -122,41 +122,6 @@ class DSperateResumeTests(Fixture):
         with patch.object(emulators, 'dsperate_resume_state', side_effect=AssertionError('Dry run reads states')):
             self.assertIsNone(self.selected(self.plan(prepare=False)))
         self.assertFalse(self.data.exists())
-
-    def test_atomic_save_capability_requires_verified_packaged_source_and_binary(self):
-        binary = self.app / 'emulators/dsperate/dsperate'
-        record = dict(
-            kind='source-built-dsperate',
-            source=dict(
-                commit='1b76c355109c9f7576363ccc023927b3137d3c6f',
-                patched_inputs_sha256='c8f4a7243832dd609cca4b0b33fed3120fadbf0a3106c0f8b497981c91ec9129'
-            ),
-            binary=dict(sha256='a' * 64)
-        )
-        build = binary.parent / 'build.json'
-        build.write_text(json.dumps(record))
-        manifest = dict(files={'emulators/dsperate/build.json': 'b' * 64, 'emulators/dsperate/dsperate': 'a' * 64})
-        self.assertTrue(emulators.dsperate_atomic_states(self.app, binary, manifest))
-        (self.app / 'manifest.json').write_text('{}')
-        with patch('activate.verify_engine', return_value=manifest) as verify:
-            self.assertEqual(self.plan()['env'].get('RGDS_STATE_ATOMIC_REPLACE'), '1')
-            verify.assert_called_once_with(self.app, 'dsperate')
-            self.assertNotIn('RGDS_STATE_ATOMIC_REPLACE', self.plan(prepare=False)['env'])
-        (self.app / 'manifest.json').unlink()
-        self.assertFalse(emulators.dsperate_atomic_states(self.app, binary, None))
-        self.assertFalse(emulators.dsperate_atomic_states(self.app, self.root / 'external-dsperate', manifest))
-        self.assertFalse(emulators.dsperate_atomic_states(self.app, binary, dict(files={})))
-        for field in ('commit', 'patched_inputs_sha256'):
-            modified = json.loads(json.dumps(record))
-            modified['source'][field] = 'unreviewed'
-            build.write_text(json.dumps(modified))
-            self.assertFalse(emulators.dsperate_atomic_states(self.app, binary, manifest))
-        build.write_text(json.dumps(record))
-        manifest['files']['emulators/dsperate/dsperate'] = 'c' * 64
-        self.assertFalse(emulators.dsperate_atomic_states(self.app, binary, manifest))
-        with patch.dict(os.environ, {'RGDS_STATE_ATOMIC_REPLACE': '1'}, clear=True):
-            self.assertNotIn('RGDS_STATE_ATOMIC_REPLACE', emulators.base_environment())
-        self.assertNotIn('RGDS_STATE_ATOMIC_REPLACE', self.plan()['env'])
 
 
 if __name__ == '__main__': unittest.main()

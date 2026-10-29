@@ -217,7 +217,7 @@ void App::update_card(SDL_Renderer* r, int y) {
     const Uint32 now = s.GetTicks();
     const bool moving = preferences.animations;
     const Color accent = theme.at("accent"), ink = tile_ink(accent), black{0, 0, 0};
-    const int x = 24, w = 592, top = y + 60, height = 398, header = 86;
+    const int x = 24, w = 592, top = y + top_card_y, height = top_card_h, header = 86;
     settings_card(r, x, top, w, height);
     glossy_pill(r, x, top, w, header + 16, 14, accent);
     rect(r, x, top + header, w, 17, "panel");

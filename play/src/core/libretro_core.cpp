@@ -169,6 +169,14 @@ public:
         SYM(retro_get_memory_data)
         SYM(retro_get_memory_size)
 #undef SYM
+        // Optional: snes9x's record of each scanline's Mode 7 state and its PPU
+        // (the palette is 70 bytes in), exported by our build (libretro-snes9x
+        // 0001-export-mode7-line-data.patch) and by the libretro buildbot's macOS one.
+        mode7_lines_ = reinterpret_cast<const int16_t*>(dlsym(lib_, "LineMatrixData"));
+        mode7_ppu_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "PPU"));
+        // Optional: a core without cheats just lists none.
+        retro_cheat_reset_ = reinterpret_cast<decltype(retro_cheat_reset_)>(dlsym(lib_, "retro_cheat_reset"));
+        retro_cheat_set_ = reinterpret_cast<decltype(retro_cheat_set_)>(dlsym(lib_, "retro_cheat_set"));
         if (retro_api_version_() != RETRO_API_VERSION) {
             error = "The core speaks another libretro API version";
             close();
@@ -263,6 +271,7 @@ public:
 
     void run_frame(uint32_t buttons) override {
         buttons_ = buttons;
+        if (mouse_) move_mouse();
         trigger_now_ = trigger_frames_ > 0 || aim_down_;
         if (trigger_frames_ > 0) --trigger_frames_;
         rumble_ = 0;
@@ -303,6 +312,39 @@ public:
     }
     void set_sticks(int16_t lx, int16_t ly, int16_t rx, int16_t ry) override { sticks_ = {lx, ly, rx, ry}; }
     Picture picture() const override { return {frame_.data(), fw_, fh_, fw_}; }
+
+    bool mode7(Mode7& out) const override {
+        if (system_ != "snes" || !mode7_lines_ || !mode7_ppu_ || memory_size(RETRO_MEMORY_VIDEO_RAM) < 0x10000)
+            return false;
+        out.lines = mode7_lines_;
+        out.palette = reinterpret_cast<const uint16_t*>(mode7_ppu_ + 70);
+        out.vram = static_cast<const uint8_t*>(memory(RETRO_MEMORY_VIDEO_RAM));
+        // snes9x leaves the overscan out of a 224-line picture: its first row is scanline 8.
+        out.first_line = fh_ == 224 ? 8 : 0;
+        // OBJSEL's parts 2122, 2124 and 2126 bytes in (ppu.h), trusted only while
+        // the core's decoded sprite table (OBJ[128], 12 bytes each from 582: HPos,
+        // VPos) agrees with the table it decoded (OAMData, 2140 in).
+        const uint8_t* oam = mode7_ppu_ + 2140;
+        bool same = true;
+        for (int i = 0; i < 128 && same; ++i) {
+            int16_t h;
+            uint16_t v;
+            std::memcpy(&h, mode7_ppu_ + 582 + 12 * i, 2);
+            std::memcpy(&v, mode7_ppu_ + 584 + 12 * i, 2);
+            const int x = oam[4 * i] | (((oam[512 + i / 4] >> (2 * (i & 3))) & 1) << 8);
+            same = (x & 0x100 ? x - 512 : x) == h && v == oam[4 * i + 1];
+        }
+        if (same) {
+            uint16_t base, second;
+            std::memcpy(&base, mode7_ppu_ + 2122, 2);
+            std::memcpy(&second, mode7_ppu_ + 2124, 2);
+            out.objsel = true;
+            out.obj_base = base;
+            out.obj_second = base + 0x2000 + second;
+            out.obj_sizes = mode7_ppu_[2126] & 7;
+        }
+        return out.vram != nullptr;
+    }
     float rumble() const override { return rumble_; }
 
     // A GPU-drawing core emulates on until the state is taken (mupen64plus does), so its context is current then too.
@@ -311,23 +353,61 @@ public:
             const size_t size = retro_serialize_size_();
             if (!size) return false;
             out.resize(size);
-            return retro_serialize_(out.data(), size);
+            if (!retro_serialize_(out.data(), size)) return false;
+            // snes9x's libretro side keeps the mouse's place as the sum of every move it was told, outside the
+            // state, while the state holds where the SNES last saw it: kept after the state, so a load in a new
+            // run can put the sum back (else the core walks the gap 127 counts a poll, the cursor still for seconds).
+            if (mouse_) {
+                const int16_t sum[2] = {sum_x_, sum_y_};
+                out.insert(out.end(), mouse_tag, mouse_tag + 4);
+                out.insert(out.end(), reinterpret_cast<const uint8_t*>(sum), reinterpret_cast<const uint8_t*>(sum) + 4);
+            }
+            return true;
         });
     }
-    bool load_state(const std::vector<uint8_t>& in) override {
-        if (in.empty()) return false;
+    // retro_cheat_reset, then every code that is on at its own index (cores replace a code by index).
+    bool apply_cheats(const std::vector<CheatCode>& codes) override {
+        if (!loaded_ || !retro_cheat_reset_ || !retro_cheat_set_) return false;
+        retro_cheat_reset_(); // storing codes needs no GL context, so this works before a GPU core's first frame
+        for (size_t i = 0; i < codes.size(); ++i)
+            if (codes[i].on) retro_cheat_set_(unsigned(i), true, codes[i].code.c_str());
+        return true;
+    }
+
+    bool load_state(const std::vector<uint8_t>& given) override {
+        if (given.empty()) return false;
+        std::vector<uint8_t> in = given;
+        if (in.size() > 8 && std::memcmp(in.data() + in.size() - 8, mouse_tag, 4) == 0) {
+            int16_t sum[2];
+            std::memcpy(sum, in.data() + in.size() - 4, 4);
+            in.resize(in.size() - 8);
+            // The next poll moves the sum to where it was when the state was kept (int16 wraps, as the core's).
+            sync_x_ = int16_t(sum[0] - sum_x_), sync_y_ = int16_t(sum[1] - sum_y_), syncing_ = true;
+        }
         if (loaded_ && hw_.context_type != RETRO_HW_CONTEXT_NONE && !fbo_ && !gpu_failed_) {
             pending_state_ = in; // the auto-load comes before the first frame makes the context
             return true;
         }
-        return on_gpu([&] { return retro_unserialize_(in.data(), in.size()); });
+        const bool ok = on_gpu([&] { return retro_unserialize_(in.data(), in.size()); });
+        // A state comes back with the core's own idea of what is plugged in: the gun goes back in.
+        if (ok && lightgun_) retro_set_controller_port_device_(1, RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_MOUSE, 0));
+        return ok;
     }
 
     // Addresses as the system's CPU sees them: an NES's 0000-07FF and its cartridge RAM at 6000, a SNES's work RAM
     // at 7E0000-7FFFFF, a Master System's at C000-DFFF. Little-endian, one byte at a time, so a value may span pages.
+    // An N64's are its RDRAM by physical address (profiles write 0F69A4 for 800F69A4: their top bit marks a banked
+    // address), big-endian like its CPU.
     uint32_t peek(uint32_t address, int size) override {
         if (size < 1 || size > 4) return 0;
         uint32_t value = 0;
+        if (system_ == "n64") {
+            for (int i = 0; i < size; ++i) {
+                const uint8_t* p = byte_at(address + uint32_t(i));
+                value = (value << 8) | (p ? *p : 0);
+            }
+            return value;
+        }
         for (int i = size - 1; i >= 0; --i) {
             const uint8_t* p = byte_at(address + uint32_t(i));
             value = (value << 8) | (p ? *p : 0);
@@ -347,6 +427,59 @@ public:
         // fceumm's Zapper: a subclass of the mouse on the second port.
         retro_set_controller_port_device_(1, on ? RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_MOUSE, 0) : RETRO_DEVICE_JOYPAD);
         return true;
+    }
+    // Mario Paint's SNES Mouse: the first port is the mouse, moved by touch (core.hpp).
+    bool set_mouse(bool on) override {
+        if (!loaded_ || system_ != "snes") return false;
+        mouse_ = on;
+        retro_set_controller_port_device_(0, on ? RETRO_DEVICE_MOUSE : RETRO_DEVICE_JOYPAD);
+        return true;
+    }
+    void set_mouse_cursor(int x, int y) override { cursor_x_ = x, cursor_y_ = y; }
+    // This frame's motion and buttons: toward the finger (or where the D-pad nudged it), the left button held only
+    // once the cursor is there, so touching down doesn't draw a line from where the cursor was.
+    void move_mouse() {
+        const bool known = cursor_x_ >= 0 && cursor_y_ >= 0;
+        const int cx = known ? cursor_x_ : guess_x_, cy = known ? cursor_y_ : guess_y_;
+        const bool finger = aim_down_ && aim_x_ >= 0 && aim_y_ >= 0;
+        if (finger) goal_x_ = aim_x_, goal_y_ = aim_y_;
+        const int nudge_x = (buttons_ & Button::Right ? 2 : 0) - (buttons_ & Button::Left ? 2 : 0),
+                  nudge_y = (buttons_ & Button::Down ? 2 : 0) - (buttons_ & Button::Up ? 2 : 0);
+        if (!finger && (nudge_x || nudge_y)) goal_x_ = cx + nudge_x, goal_y_ = cy + nudge_y;
+        if (goal_x_ < 0) goal_x_ = cx, goal_y_ = cy;
+        // A known cursor is chased by half the way a frame (a game that moves it more than a pixel a count
+        // still settles); an unknown one is counted as moving a pixel a count.
+        auto step = [&](int to, int at) {
+            const int d = to - at;
+            return std::clamp(known && std::abs(d) > 1 ? d / 2 : d, -24, 24);
+        };
+        mouse_dx_ = int16_t(step(goal_x_, cx));
+        mouse_dy_ = int16_t(step(goal_y_, cy));
+        if (!known) guess_x_ = std::clamp(guess_x_ + mouse_dx_, 0, std::max(0, fw_ - 1)),
+                    guess_y_ = std::clamp(guess_y_ + mouse_dy_, 0, std::max(0, fh_ - 1));
+        const bool there = std::abs(goal_x_ - cx) <= 2 && std::abs(goal_y_ - cy) <= 2;
+        if (!finger) settled_ = false;
+        else if (there) settled_ = true;
+        mouse_left_ = (finger && settled_) || (buttons_ & Button::A);
+        mouse_right_ = (buttons_ & Button::B) != 0;
+    }
+    int16_t mouse(unsigned id) {
+        switch (id) {
+        case RETRO_DEVICE_ID_MOUSE_X: {
+            const int16_t d = syncing_ ? sync_x_ : mouse_dx_;
+            sum_x_ = int16_t(sum_x_ + d);
+            return d;
+        }
+        case RETRO_DEVICE_ID_MOUSE_Y: {
+            const int16_t d = syncing_ ? sync_y_ : mouse_dy_;
+            sum_y_ = int16_t(sum_y_ + d);
+            syncing_ = false; // the core reads X, then Y
+            return d;
+        }
+        case RETRO_DEVICE_ID_MOUSE_LEFT: return mouse_left_ ? 1 : 0;
+        case RETRO_DEVICE_ID_MOUSE_RIGHT: return mouse_right_ ? 1 : 0;
+        default: return 0;
+        }
     }
     void set_pointer(int x, int y, bool pressed) override {
         aim_x_ = x;
@@ -405,6 +538,8 @@ private:
         if (g_active == this) g_active = nullptr;
         if (lib_) dlclose(lib_);
         lib_ = nullptr;
+        mode7_lines_ = nullptr;
+        mode7_ppu_ = nullptr;
     }
     template <class F> bool on_gpu(F&& call) {
         if (!loaded_) return false;
@@ -420,6 +555,12 @@ private:
     // match `start`, `disconnect` the bits that are dropped), else from its work RAM where each system keeps it.
     const uint8_t* byte_at(uint32_t address) const {
         if (!loaded_) return nullptr;
+        if (system_ == "n64") {
+            // mupen64plus keeps RDRAM as the CPU's 32-bit words in the host's order: a byte is at its address ^ 3.
+            const auto* ram = static_cast<const uint8_t*>(memory(RETRO_MEMORY_SYSTEM_RAM));
+            const uint32_t offset = (address & 0x1FFFFFFF) ^ 3;
+            return ram && offset < memory_size(RETRO_MEMORY_SYSTEM_RAM) ? ram + offset : nullptr;
+        }
         for (const auto& d : maps_) {
             if (!d.ptr || !d.len || (d.flags & RETRO_MEMDESC_CONST) || (d.addrspace && *d.addrspace)) continue;
             const uint64_t select = d.select ? d.select : ~uint64_t(0);
@@ -584,6 +725,8 @@ private:
     static int16_t input_state_cb(unsigned port, unsigned device, unsigned index, unsigned id) {
         if (g_active && port == 1 && g_active->lightgun_ && (device & 0xFF) == RETRO_DEVICE_LIGHTGUN)
             return g_active->lightgun(id);
+        if (g_active && port == 0 && g_active->mouse_ && (device & 0xFF) == RETRO_DEVICE_MOUSE)
+            return g_active->mouse(id);
         if (!g_active || port != 0) return 0;
         if ((device & 0xFF) == RETRO_DEVICE_ANALOG) {
             const auto& s = g_active->sticks_;
@@ -813,13 +956,23 @@ private:
     void (*retro_unload_game_)() = nullptr;
     void* (*retro_get_memory_data_)(unsigned) = nullptr;
     size_t (*retro_get_memory_size_)(unsigned) = nullptr;
+    void (*retro_cheat_reset_)() = nullptr;
+    void (*retro_cheat_set_)(unsigned, bool, const char*) = nullptr;
 
     std::string system_, name_, rom_path_, system_dir_, save_dir_;
     std::vector<uint8_t> rom_;
     std::string code_, title_; // identify()
     std::vector<retro_memory_descriptor> maps_;
+    const int16_t* mode7_lines_ = nullptr;
+    const uint8_t* mode7_ppu_ = nullptr;
     bool lightgun_ = false, aim_down_ = false, trigger_now_ = false;
     int aim_x_ = -1, aim_y_ = -1, trigger_frames_ = 0;
+    bool mouse_ = false, mouse_left_ = false, mouse_right_ = false, settled_ = false;
+    int cursor_x_ = -1, cursor_y_ = -1, guess_x_ = 128, guess_y_ = 112, goal_x_ = -1, goal_y_ = -1;
+    int16_t mouse_dx_ = 0, mouse_dy_ = 0;
+    int16_t sum_x_ = 0, sum_y_ = 0, sync_x_ = 0, sync_y_ = 0; // what the core has been told in all; a load's catch-up
+    bool syncing_ = false;
+    static constexpr uint8_t mouse_tag[4] = {'R', 'G', 'M', 'O'};
     std::map<std::string, std::string> variables_;
     enum retro_pixel_format pixel_format_ = RETRO_PIXEL_FORMAT_0RGB1555;
     std::vector<uint32_t> frame_;

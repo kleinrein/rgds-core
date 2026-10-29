@@ -459,10 +459,15 @@ void App::watch_system(Uint32 now) {
         bt_sink_poll = now;
         std::error_code ec;
         std::string sink = fs::exists("/run/rgds/bt-sink", ec) ? read_text_file("/run/rgds/bt-sink", 64) : "";
+        // the RG DS Plus's jack changes card (/usr/libexec/rgds/audio says "headphones"; the RG DS stays "speaker")
+        if (fs::exists("/run/rgds/audio-route", ec) &&
+            read_text_file("/run/rgds/audio-route", 32).rfind("headphones", 0) == 0)
+            sink += "|headphones";
         while (!sink.empty() && std::isspace(static_cast<unsigned char>(sink.back()))) sink.pop_back();
         if (sink != bt_sink) {
             bt_sink = sink;
-            // ALSA reads where playback goes at every open: a fresh sink lands on the headset (or the speaker)
+            // ALSA reads where playback goes at every open: a fresh sink lands on the headset, the jack (or the
+            // speaker)
             sounds.close();
             configure_sounds();
         }

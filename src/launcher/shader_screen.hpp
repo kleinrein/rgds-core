@@ -3,12 +3,8 @@
 // Members of App in main.cpp; included once, right after the class.
 
 void App::open_shader_picker(bool per_game) {
-    if (superdrastic_game()) {
-        status = "SuperDrastic currently uses native output. Your standard shader choice is kept.";
-        dirty = true;
-        return;
-    }
     shader_per_game = per_game;
+    shader_defaults = false;
     shader_return = per_game ? Page::GameOptions : Page::LibraryOptions;
     shader_core = o.game_menu                              ? active_engine()
                   : per_game && game_preferences.core >= 0 ? game_preferences.core
@@ -40,10 +36,11 @@ std::string App::picker_game_system() {
 void App::close_shader_picker() {
     settings.page = shader_return;
     settings.focus = shader_return == Page::QuickMenu      ? 3
+                     : shader_return == Page::SystemDefaults ? 4
                      : shader_return == Page::Graphics     ? 4
                      : shader_return == Page::PlayGraphics ? 3
-                     : shader_per_game                     ? 2
-                                                           : 4;
+                     : shader_per_game                     ? 1
+                                                           : 5;
     dirty = true;
 }
 
@@ -54,7 +51,7 @@ fs::path App::shader_preview_folder() const {
 int App::preview_shader() const {
     int selected =
         shader_choices.empty() ? 0 : shader_choices.at(std::clamp(settings.focus, 0, int(shader_choices.size()) - 1));
-    return selected < 0 ? default_shader_for(shader_system.c_str(), preferences.filter) : selected;
+    return selected < 0 ? default_shader(shader_system) : selected;
 }
 
 void App::change_shader_preview(int code) {
@@ -151,7 +148,7 @@ bool App::shader_pointer_down(int x, int y) {
 void App::render_shader_preview(SDL_Renderer* r, int y) {
     int selected = preview_shader();
     const int focused = shader_choices.empty() ? 0 : shader_choices.at(settings.focus);
-    const bool in_use = (shader_per_game ? game_preferences.filter : preferences.filter) == focused;
+    const bool in_use = shader_current() == focused;
     const std::string group =
         locale.text("Shader studio") + "  ·  " + locale.text(shader_family_names[shader_choice_family(settings.focus)]);
     raw_label(r, group, 30, y + 65, 16, "muted", in_use ? 440 : 580);
@@ -231,7 +228,7 @@ void App::render_shader_carousel(SDL_Renderer* r, int y) {
     int budget = 2;
     bool pending = false;
     const int first = int(std::floor(shader_carousel.position)) - 3;
-    const int current = shader_per_game ? game_preferences.filter : preferences.filter;
+    const int current = shader_current();
     for (int pass = 0; pass < 2; pass++)
         for (int offset = 0; offset < 8; offset++) {
             const int index = first + offset;
@@ -249,7 +246,7 @@ void App::render_shader_carousel(SDL_Renderer* r, int y) {
                                  : 0,
                       row = y + 144 - lift;
             const int value = shader_choices[size_t(index)],
-                      shown = value < 0 ? default_shader_for(shader_system.c_str(), preferences.filter) : value;
+                      shown = value < 0 ? default_shader(shader_system) : value;
             if (selected) start_frame(r, x, row, tile, value == current ? "IN USE" : "APPLY", 30);
             round_rect(r, x, row + 4, tile, tile, 5, "line");
             round_rect(r, x, row, tile, tile, 5, "line");
@@ -297,6 +294,13 @@ void App::choose_shader() {
         return;
     }
     int selected = shader_choices.at(settings.focus);
+    if (shader_defaults) {
+        auto next = system_view(defaults_system);
+        next.filter = selected;
+        save_system_view(defaults_system, next);
+        close_shader_picker();
+        return;
+    }
     if (shader_per_game) {
         auto next = game_preferences;
         next.filter = selected;
@@ -308,7 +312,7 @@ void App::choose_shader() {
     if (o.game_menu) {
         // Default: the global choice, or for another system's game its own screen; never another
         // system's screen (as emulators.py launches it).
-        int effective = selected >= 0 ? selected : default_shader_for(shader_system.c_str(), preferences.filter);
+        int effective = selected >= 0 ? selected : default_shader(shader_system);
         if (!shader_fits_system(effective, shader_system)) effective = 0;
         if (!shader_supported(effective, shader_core)) effective = 0;
         menu_request("shader:" + std::to_string(effective));

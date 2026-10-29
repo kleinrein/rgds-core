@@ -21,7 +21,7 @@ bool App::filter_sheet_active() const { return filter_sheet_open && settings.pag
 
 void App::open_filter_sheet(bool to_filters) {
     // Counts are read again each time, so a fetch that just finished shows up.
-    if (library_ready) facet_index.request(o.data, all_games);
+    if (library_ready) facet_index.request(o.data, view_source(0)); // the shown system, not every system
     filter_sheet_open = true;
     filter_focus = filter_scroll = filter_thumb = 0;
     filter_drag = -1;
@@ -355,7 +355,9 @@ void App::filter_sheet_key(int code) {
 static int filter_track_left() { return filter_inner_x + filter_track_inset; }
 static int filter_track_width() { return filter_inner_width - 2 * filter_track_inset; }
 
-// A touch that lands on a slider takes the nearest handle and follows the finger until it lifts.
+// A touch that lands on a slider takes the nearest handle but waits to see what the finger does: a mostly vertical
+// swipe scrolls the sheet (it starts on a slider as often as not), a sideways one drags the handle, and a tap jumps the
+// handle to the stop under the finger.
 bool App::filter_slider_press(int x, int y) {
     if (y < filter_top || y >= filter_bottom || x >= filter_rail_x) return false;
     auto layout = filter_layout();
@@ -365,7 +367,7 @@ bool App::filter_slider_press(int x, int y) {
         if (item.slider < 0 || cy < item.box.y - 6 || cy >= item.box.y + item.box.h + 6) continue;
         FilterSlider span;
         if (!filter_slider(item.slider, span)) return false;
-        const int stops = span.high_bound - span.low_bound;
+        const int stops = std::max(1, span.high_bound - span.low_bound);
         const int value = std::clamp(span.low_bound + int(std::lround(double(x - filter_track_left()) * stops /
                                                                       std::max(1, filter_track_width()))),
                                      span.low_bound, span.high_bound);
@@ -374,9 +376,13 @@ bool App::filter_slider_press(int x, int y) {
                        : std::abs(value - span.low) > std::abs(value - span.high) ? 1
                        : value > span.high                                        ? 1
                                                                                   : 0;
+        // A finger on the handle keeps its offset to it while dragging; elsewhere the handle jumps under the finger.
+        const int handle_x = filter_track_left() + ((filter_thumb == 0 ? span.low : span.high) - span.low_bound) *
+                                                       filter_track_width() / stops;
+        filter_slider_grab = std::abs(handle_x - x) <= 28 ? handle_x - x : 0;
         filter_focus = i;
         filter_drag = item.slider;
-        filter_slider_drag(x);
+        filter_armed = true;
         return true;
     }
     return false;
@@ -386,10 +392,13 @@ void App::filter_slider_drag(int x) {
     FilterSlider span;
     if (filter_drag < 0 || !filter_slider(filter_drag, span)) return;
     const int stops = span.high_bound - span.low_bound;
-    const int value = std::clamp(
-        span.low_bound + int(std::lround(double(x - filter_track_left()) * stops / std::max(1, filter_track_width()))),
-        span.low_bound, span.high_bound);
-    filter_slider_move(filter_drag, filter_thumb, filter_thumb == 0 ? value - span.low : value - span.high);
+    const int value = std::clamp(span.low_bound + int(std::lround(double(x + filter_slider_grab - filter_track_left()) *
+                                                                   stops / std::max(1, filter_track_width()))),
+                                 span.low_bound, span.high_bound);
+    const int before = filter_thumb == 0 ? span.low : span.high;
+    filter_slider_move(filter_drag, filter_thumb, value - before);
+    FilterSlider after;
+    if (filter_slider(filter_drag, after) && (filter_thumb == 0 ? after.low : after.high) != before) haptic_detent();
 }
 
 // The scrollbar's thumb height and the scroll range, sized as in the other lists.
@@ -553,13 +562,14 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y, 480, true);
     settings_header(r, y, "Filter", 300);
-    // The result so far, top right.
+    // The result so far, top right; with nothing narrowed, the games of the system being browsed.
+    const size_t scope_count = discovery_active() ? 0 : view_source(0).size() - (preferences.show_systems && shown_system == "ports" && port_entry ? 1 : 0);
     std::string count_text =
         collection_loading ? locale.text("Finding games…")
         : discovery_active()
             ? locale.text(std::to_string(model.games.size()) +
                           (model.games.size() == 1 ? " matching game" : " matching games"))
-            : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games"));
+            : locale.text(std::to_string(scope_count) + (scope_count == 1 ? " game" : " games"));
     raw_label(r, count_text, 612 - std::min(240, label_width(count_text, 18, false)), y + 30, 18, "accent", 240);
 
     const int view = filter_bottom - filter_top;

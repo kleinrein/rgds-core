@@ -82,6 +82,19 @@ class LibraryUITests(unittest.TestCase):
         self.assertIn("view=1", (self.root / "ui.ini").read_text())
         self.assertEqual(self.selected(), 0)
 
+    def test_empty_favourites_button_goes_to_the_games(self):
+        def button_pixel(script):
+            self.run_ui(script, seconds=3, extra=("--home",))
+            data = self.bmp.read_bytes()
+            offset, width, height = struct.unpack_from("<I", data, 10)[0], *struct.unpack_from("<ii", data, 18)
+            stride = (width * 4 + 3) // 4 * 4
+            at = offset + (height - 1 - 832) * stride + 200 * 4  # inside the "Browse games" button
+            return data[at:at + 3]
+
+        opened = button_pixel("20 key Right\n40 key-up Right\n60 key A\n100 key-up A\n")
+        pressed = button_pixel("20 key Right\n40 key-up Right\n60 key A\n100 key-up A\n140 key A\n180 key-up A\n")
+        self.assertNotEqual(opened, pressed)
+
     def test_fresh_start_defaults_to_games_in_the_root_carousel(self):
         self.state.unlink()
         self.run_ui("", seconds=1, initial_library=False)
@@ -256,8 +269,6 @@ class LibraryUITests(unittest.TestCase):
 160 key-up Down
 200 key Down
 220 key-up Down
-260 key Down
-280 key-up Down
 320 key A
 400 key A
 500 text Puzzle 2

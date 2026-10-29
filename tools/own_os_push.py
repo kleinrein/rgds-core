@@ -9,6 +9,9 @@ touched, and the old slot stays as it was: `--slot a|b --switch-only` boots back
   own_os_push.py HOST --slot a --switch-only [--reboot]
   own_os_push.py HOST --uboot [--reboot]    also writes the build's U-Boot at 32K (the running one is kept in
                                             /data/rgds/logs/u-boot-before-<time>.bin)
+  own_os_push.py HOST --fdtdir ...          the new slot loads the device tree U-Boot picks by the board's ID
+                                            voltage, even where the running U-Boot did not pick this handheld's (to
+                                            try the detection; otherwise this handheld's own is named, as the OTA does)
 """
 import argparse
 import hashlib
@@ -17,13 +20,12 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
-from os_update import replace_label  # noqa: E402
+from os_update import DTBS, board, fit_label, replace_label  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / '.cache/own-os/build'
-DTB = 'rk3568-anbernic-rg-ds.dtb'
 KERNEL = 'Image.lz4'
-FILES = ('rootfs.squashfs', KERNEL, DTB, 'extlinux.conf', 'u-boot-rockchip.bin')
+FILES = ('rootfs.squashfs', KERNEL, *DTBS, 'extlinux.conf', 'u-boot-rockchip.bin')
 
 
 def ssh(host, command, check=True, **kwargs):
@@ -51,6 +53,7 @@ def main():
     parser.add_argument('--slot', choices=('a', 'b'), help='default: the one not running')
     parser.add_argument('--switch-only', action='store_true', help='only change the slot that boots next')
     parser.add_argument('--uboot', action='store_true', help="also write the build's U-Boot to the card")
+    parser.add_argument('--fdtdir', action='store_true', help="keep the build's FDTDIR (U-Boot picks the tree)")
     parser.add_argument('--reboot', action='store_true')
     args = parser.parse_args()
     running = ssh(args.host, 'cat /run/rgds/slot', capture_output=True, text=True).stdout.strip()
@@ -89,7 +92,7 @@ def main():
             '[ -f /boot/bootcount ] || printf \'\\275\\001\\000\\000\' > /boot/bootcount'
         )
         try:
-            for name in (KERNEL, DTB):
+            for name in (KERNEL, *DTBS):
                 remote = ssh(
                     args.host,
                     f'sha256sum /boot/{slot}/{name} 2>/dev/null',
@@ -113,7 +116,16 @@ def main():
     # extlinux.conf: this slot's LABEL block from the build (its kernel's name, its command line), the other slot's
     # kept as it is (it still boots what it holds), and DEFAULT moved to this slot.
     current = ssh(args.host, 'cat /boot/extlinux/extlinux.conf', capture_output=True, text=True).stdout
-    if not args.switch_only: current = replace_label(current, slot, (BUILD / 'extlinux.conf').read_text())
+    if not args.switch_only:
+        template = (BUILD / 'extlinux.conf').read_text()
+        if not args.fdtdir:
+            cmdline = ssh(args.host, 'cat /proc/cmdline', capture_output=True, text=True).stdout
+            compatible = ssh(args.host, 'cat /proc/device-tree/compatible', capture_output=True).stdout
+            template = fit_label(template, cmdline, compatible)
+            print(f'{board(compatible)}: the new slot loads ' + (
+                'the device tree U-Boot picks' if 'FDTDIR' in template else 'its own device tree'
+            ), flush=True)
+        current = replace_label(current, slot, template)
     current = '\n'.join(
         f'DEFAULT {slot}' if line.startswith('DEFAULT ') else line for line in current.splitlines()
     ) + '\n'

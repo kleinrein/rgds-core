@@ -1,7 +1,7 @@
 # Cheats
 
 DSCore runs Action Replay codes from a `usrcheat.dat` database, the same file
-DraStic and R4 cards use. The in-game menu lists the codes for the running game
+R4 cards use. The in-game menu lists the codes for the running game
 behind the **Cheats** tile (bottom row, beside the game switcher), and each one
 switches on or off while the game keeps running. Which codes are on is remembered per game.
 
@@ -11,15 +11,27 @@ DSCore looks for the database in this order when a game starts:
 
 1. `usrcheat.dat` beside your games (`Roms/NDS/usrcheat.dat`). Put your own
    copy there and it wins.
-2. `userdata/emulators/rgds-experimental/cheats/usrcheat.dat`. On a stock card
-   RG DS Core copies DraStic's database here the first time DSCore starts, so
-   cheats work out of the box. On an independent install, or when DraStic has
-   no database, drop a file here yourself.
+2. `userdata/emulators/rgds-experimental/cheats/usrcheat.dat`. RG DS Core
+   copies the database the release carries here the first time DSCore starts,
+   so cheats work out of the box; a file you drop here yourself is kept.
 3. DSCore's own fallback beside the configuration, for a hand-edited setup.
 
 A game is matched by its game code and header checksum. When the database has
 no entry for it, or the game runs with another engine, the Cheats bar stays
 muted and says why.
+
+## Other systems (RG DS Play)
+
+GBA, Game Boy, Game Boy Color, NES, SNES, Mega Drive, N64 and the other systems RG DS Play runs have the same
+**Cheats** tile and page. Their codes come from a libretro cheat file (`GAME.cht`, the format RetroArch and the
+libretro-database use: GameShark, Game Genie or Action Replay lines per code). The file is looked for in
+`userdata/play/cheats/<system>/`, beside the ROM, then `userdata/play/cheats/`, and is named like the ROM
+without its extension (`Metroid Fusion (USA).gba` → `Metroid Fusion (USA).cht`). Without a file the tile
+stays muted and says so. Codes are one flat list (no groups) and switch on and off live; the choice is kept by
+name in `userdata/play/cheats/<system>/<game>.on`. GBA and Game Boy games run the codes in mGBA's cheat
+device; the other systems hand them to their libretro core (`retro_cheat_set`), whose own code formats apply.
+The player exports the same `rgds_cheat_*` / `rgds_set_cheat` functions as DSCore, so the menu and the bridge
+are shared.
 
 ## In the menu
 

@@ -93,8 +93,20 @@ class PlayRuntimeTests(unittest.TestCase):
         }
         for rom, system in cases.items():
             self.assertEqual(play_options.system_of(rom), system, rom)
-            expected = "rgds-play" if system != "nds" else "melonds"
+            expected = "rgds-play" if system != "nds" else "rgds-experimental"  # a stored choice no longer counts
             self.assertEqual(play_options.engine_for(rom, "melonds"), expected)
+
+    def test_a_plain_bin_is_a_mega_drive_game_only_in_a_mega_drive_folder(self):
+        for folder in ("md", "genesis", "Genesis", "megadrive"):
+            rom = self.root / "roms" / folder / "Sonic.bin"
+            self.assertEqual(play_options.system_of(rom), "md", folder)
+            packed = self.root / "roms" / folder / "Sonic.zip"
+            packed.parent.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(packed, "w") as archive:
+                archive.writestr("Sonic The Hedgehog (USA, Europe).bin", b"x")
+            self.assertEqual(play_options.system_of(packed), "md", folder)
+            self.assertEqual(play_options.engine_for(packed, "melonds"), "rgds-play")
+        self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.bin"), "nds")
 
     def test_libretro_core_is_named_per_system_and_only_when_installed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -166,6 +178,38 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertEqual(
             [int(n) for n in defaults.split(",")], [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc")]
         )
+
+    def test_system_defaults_sit_between_the_built_in_view_and_a_game(self):
+        # Nothing set anywhere: the built-in view.
+        self.assertEqual(play_options.view(self.data, self.gba)["frame"], "off")
+        defaults = self.data / "system-defaults" / "gba.ini"
+        defaults.parent.mkdir(parents=True)
+        defaults.write_text("schema=1\nfit=smooth\nsecond=info\nframe=black\nfilter=33\n")
+        shown = play_options.view(self.data, self.gba)
+        self.assertEqual((shown["fit"], shown["second"], shown["frame"]), ("smooth", "info", "black"))
+        # A game that differs keeps only that key; picking the default again follows it.
+        play_options.save_view(self.data, self.gba, 1, 3, "indigo")
+        stored = play_options.read_fields(play_options._path(self.data, self.gba))
+        self.assertEqual((stored.get("fit"), stored.get("second"), stored.get("frame")), ("integer", None, "indigo"))
+        play_options.save_view(self.data, self.gba, 2, 3, "black")
+        self.assertNotIn("fit", play_options.read_fields(play_options._path(self.data, self.gba)))
+        defaults.write_text("schema=1\nfit=sharp\n")
+        self.assertEqual(play_options.view(self.data, self.gba)["fit"], "sharp")
+        # Only valid keys count; another system's defaults are another file.
+        defaults.write_text("fit=bogus\nframe=sp-cobalt\npalette=nope\n")
+        self.assertEqual(play_options.view(self.data, self.gba)["fit"], "sharp")
+        self.assertEqual(play_options.view(self.data, self.gba)["frame"], "sp-cobalt")
+        self.assertEqual(play_options.system_defaults(self.data, "gb"), {})
+
+    def test_a_systems_default_shader_beats_its_own_screen_but_not_the_games(self):
+        defaults = self.data / "system-defaults" / "gba.ini"
+        defaults.parent.mkdir(parents=True)
+        defaults.write_text("filter=33\n")
+        choice = play_options.system_defaults(self.data, "gba")["filter"]
+        self.assertEqual(play_options.shader_for(self.gba, -1, 0, choice), 33)  # system default
+        self.assertEqual(play_options.shader_for(self.gba, 34, 0, choice), 34)  # the game's own choice
+        self.assertEqual(play_options.shader_for(self.gba, -1, 0), 30)  # none: the GBA screen
+        self.assertEqual(play_options.shader_for(self.gba, -1, 0, 31), 30)  # another system's screen never applies
 
     def test_launch_plan_uses_its_own_data_and_the_shared_menu(self):
         binary = self.binary("rgds-play")

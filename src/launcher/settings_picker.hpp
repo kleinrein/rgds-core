@@ -9,7 +9,6 @@ void App::show_picker(std::string title, std::vector<std::string> options, int s
     picker_options = std::move(options);
     picker_selected = picker_focus = std::clamp(selected, 0, std::max(0, int(picker_options.size()) - 1));
     picker_apply = std::move(apply);
-    picker_core_offset = -1;
     picker_detail = false;
     picker_open = true;
     picker_scroll = 0;
@@ -20,86 +19,11 @@ void App::show_picker(std::string title, std::vector<std::string> options, int s
     dirty = true;
 }
 
-void App::show_emulator_picker(bool per_game) {
-    std::vector<std::string> choices;
-    if (per_game) choices.push_back("Use default (" + std::string(core_names[preferences.core]) + ")");
-    std::vector<int> cores;
-    for (int i = 0; i < core_count; i++)
-        if (core_offered(i)) {
-            cores.push_back(i);
-            choices.push_back(std::string(core_names[i]) + (i == dscore_core ? " (recommended)" : ""));
-        }
-    const int current = per_game ? game_preferences.core : int(preferences.core);
-    const int row = int(std::find(cores.begin(), cores.end(), current) - cores.begin());
-    show_picker(per_game ? "Game emulator" : "Default emulator", choices, per_game ? (current < 0 ? 0 : row + 1) : row,
-                [this, per_game, cores](int n) {
-                    const int core = per_game ? (n == 0 ? -1 : cores.at(n - 1)) : cores.at(n);
-                    if (per_game) choose_game_emulator(core);
-                    else if (int(preferences.core) != core) {
-                        preferences.core = unsigned(core);
-                        remember_appearance();
-                    }
-                });
-    picker_core_offset = per_game ? 1 : 0;
-    picker_cores = cores;
-}
-
-const char* App::drastic_backend_name(int value) const {
-    return value < 0 ? "Default" : value == 1 ? "SuperDrastic" : "Standard";
-}
-
-void App::show_drastic_backend_picker(bool per_game) {
-    std::vector<std::string> choices;
-    if (per_game)
-        choices.push_back("Use default (" + std::string(drastic_backend_name(preferences.drastic_backend)) + ")");
-    choices.push_back("Standard");
-    choices.push_back("SuperDrastic (experimental)");
-    show_picker("DraStic backend", choices,
-                per_game ? game_preferences.drastic_backend + 1 : preferences.drastic_backend, [this, per_game](int n) {
-                    if (per_game) {
-                        if (game_preferences.drastic_backend == n - 1) return;
-                        auto next = game_preferences;
-                        next.drastic_backend = n - 1;
-                        apply_game_preferences(next, "Saved. Applies on your next DraStic launch.");
-                    } else if (preferences.drastic_backend != n) {
-                        preferences.drastic_backend = n;
-                        remember_appearance();
-                    }
-                });
-}
-
-void App::show_drastic_screen_picker() {
-    show_picker("Standard screen order", {"Normal", "Swapped"}, game_preferences.drastic_screen_swap == 1,
-                [this](int n) {
-                    if (n == (game_preferences.drastic_screen_swap == 1)) return;
-                    auto next = game_preferences;
-                    next.drastic_screen_swap = n;
-                    apply_game_preferences(next, o.game_menu ? "Saved. Save & restart applies screen order."
-                                                             : "Saved for the next Standard DraStic launch.");
-                });
-}
-
-std::string App::emulator_choice_hint() const {
-    const int row = picker_focus - picker_core_offset;
-    if (row < 0 || row >= int(picker_cores.size()))
-        return "Follows your Library default. Each emulator keeps its own saves.";
-    const int core = picker_cores[row];
-    static const std::array<const char*, ds_core_count> hints = {
-        "DraStic: an alternative for games that need it. Saves stay separate.",
-        "DSperate: the original upstream engine. DSCore adds fixes and speed.",
-        "NNDDSS: retired. A saved choice of it plays in DSCore.",
-        "melonDS: experimental. RG DS game testing is still pending.",
-        "DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D."};
-    return hints.at(core);
-}
-
 bool App::open_setting_picker() {
     if ((settings.page == Page::GameOptions && settings.focus >= game_options_base() - 3) ||
         (settings.page == Page::EmulatorOptions && settings.focus >= list_count() - 2))
         return false;
     int row = settings.focus;
-    // Other systems play in RG DS Play: no DS engine to pick for them.
-    if (settings.page == Page::GameOptions && other_system_selected() && row == 1) return false;
     if (settings.page == Page::System && row == 0) {
         std::vector<std::string> names;
         int selected = 0;
@@ -133,23 +57,10 @@ bool App::open_setting_picker() {
         return true;
     }
     if (settings.page == Page::EmulatorOptions && !emulator_option_enabled(row)) return false;
-    if (settings.page == Page::LibraryOptions && library_row(row) == 0) {
-        show_emulator_picker(false);
-    } else if (settings.page == Page::LibraryOptions && library_row(row) == 5) {
+    if (settings.page == Page::LibraryOptions && library_row(row) == 5) {
         choose_browser_layout();
-    } else if (settings.page == Page::LibraryOptions && library_row(row) == 6) {
-        show_drastic_backend_picker(false);
-    } else if (settings.page == Page::GameOptions && row == 5 && experimental_game()) {
+    } else if (settings.page == Page::GameOptions && row == 4 && experimental_game()) {
         show_experimental_resolution_picker();
-    } else if ((settings.page == Page::GameOptions && row == 5) ||
-               (settings.page == Page::EmulatorOptions && row == 8)) {
-        show_drastic_backend_picker(true);
-    } else if ((settings.page == Page::GameOptions && row == 6) ||
-               (settings.page == Page::EmulatorOptions && row == 9)) {
-        if (settings.page == Page::GameOptions && superdrastic_game()) return true;
-        show_drastic_screen_picker();
-    } else if (settings.page == Page::GameOptions && row == 7 && superdrastic_game()) {
-        show_superdrastic_resolution_picker();
     } else if (settings.page == Page::Scraper && row == 0) {
         if (worker > 0 && worker_action == "scrape") {
             service_notice = "Stop scraping before changing source";
@@ -168,8 +79,6 @@ bool App::open_setting_picker() {
                         preferences.extra_pictures = n;
                         remember_appearance();
                     });
-    } else if (settings.page == Page::GameOptions && row == 1) {
-        show_emulator_picker(true);
     } else if (settings.page == Page::Power && power_rows[size_t(row)] == 7) {
         if (!hardware.brightness) return false;
         show_picker("Dim when idle", {dim_name(0), dim_name(1), dim_name(2), dim_name(3), dim_name(4)},
@@ -189,8 +98,8 @@ bool App::open_setting_picker() {
         show_picker("Menu idle sleep", {idle_name(0), idle_name(1), idle_name(2), idle_name(3), idle_name(4)},
                     system_preferences.idle, [this](int n) { change_system(1, n - system_preferences.idle); });
     } else if (settings.page == Page::Controls && !control_capture && row == 0) {
-        // Without a game there is nothing to attach a profile to: the list holds only Global so A still answers.
-        std::vector<std::string> profiles = {"Global"};
+        // Without a game there is nothing to attach a profile to: the list holds only All games so A still answers.
+        std::vector<std::string> profiles = {"All games"};
         if (!model.games.empty()) profiles.push_back("This game");
         show_picker("Profile", profiles, controls_per_game, [this](int n) {
             controls_per_game = n;
@@ -239,23 +148,11 @@ bool App::open_setting_picker() {
                                 controls_inherit = inherit;
                             }
                         });
-    } else if (settings.page == Page::EmulatorOptions && row == 6) {
-        show_emulator_picker(true);
     } else if (settings.page == Page::EmulatorOptions && row == 5) {
         show_picker("Frameskip", {"Off", "1 frame", "2 frames", "3 frames"}, std::max(0, game_preferences.frameskip),
                     [this](int n) { change_emulator_option(n - std::max(0, game_preferences.frameskip)); });
     } else if (settings.page == Page::EmulatorOptions && row == 4) {
-        if (experimental_game()) {
-            show_experimental_resolution_picker();
-            return true;
-        }
-        if (superdrastic_game()) {
-            show_superdrastic_resolution_picker();
-            return true;
-        }
-        show_picker("3D resolution", {"Native", "2x"}, game_preferences.hires == 1, [this](int n) {
-            if (n != (game_preferences.hires == 1)) change_emulator_option(1);
-        });
+        show_experimental_resolution_picker();
     } else return false;
     return true;
 }
@@ -273,7 +170,6 @@ std::string App::device_info_value(int row) {
 }
 
 void App::show_detail(const std::string& title, const std::string& value) {
-    picker_core_offset = -1;
     picker_title = title;
     std::string line;
     detail_lines.clear();

@@ -4,6 +4,7 @@
 //   play-shot --rom GAME --data DIR --profiles DIR --fonts DIR --script FILE --out DIR
 //             [--panel 640x480] [--no-companion] [--hashes FILE] [--async]
 //             [--preferences userdata/preferences.ini] [--palette dmg|pocket|...]
+//             [--core CORE.so --system snes [--system-dir BIOS]]
 //
 // Script lines (frame numbers ascend):
 //   120 START        hold START from frame 120 (A, B+UP, - for nothing)
@@ -59,6 +60,9 @@ int main(int argc, char** argv) {
         else if (a == "--profiles") o.profile_dirs.push_back(next());
         else if (a == "--fonts") o.font_dir = next();
         else if (a == "--art") o.art_dir = next();
+        else if (a == "--core") o.core_library = next(); // a libretro core (with --system), as rgds-play takes it
+        else if (a == "--system") o.system = next();
+        else if (a == "--system-dir") o.system_dir = next();
         else if (a == "--preferences") o.preferences = next();
         else if (a == "--palette") palette = next();
         else if (a == "--save-source") o.save_sources.push_back(next());
@@ -252,11 +256,11 @@ int main(int argc, char** argv) {
                 std::printf("ok\n");
             } else if (what == "second") {
                 // second on|off|info : the second screen shown, turned off (the game keeps its HUD)
-                // or the info screen (the dock's controls)
+                // or the info screen (the title card and the dock's button)
                 in >> arg;
                 if (s.companion()) {
                     s.companion()->set_shown(arg == "on");
-                    s.companion()->dock().set_full(arg == "info");
+                    s.companion()->set_info(arg == "info");
                 }
                 std::printf("ok\n");
             } else if (what == "touch" || what == "tap") {
@@ -272,6 +276,12 @@ int main(int argc, char** argv) {
                     changed = s.companion()->touch(t) || changed;
                 }
                 std::printf("%s\nok\n", changed ? "changed" : "same");
+            } else if (what == "point") {
+                // point X Y down|up : a finger on the game picture's pixel X, Y (a light gun or a mouse game)
+                int x = -1, y = -1;
+                in >> x >> y >> arg;
+                s.core().set_pointer(x, y, arg != "up");
+                std::printf("ok\n");
             } else if (what == "quit") break;
             else {
                 std::getline(in, arg);

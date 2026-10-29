@@ -1,4 +1,5 @@
 # UTF-8 source\ttranslation. One entry per line.
+1 day	1 ngày
 1 person nearby	1 người ở gần
 1 player	1 người chơi
 12-hour	12 giờ
@@ -11,6 +12,7 @@
 3D threading changed for this session. Settings storage is unavailable.	Đã đổi luồng 3D cho phiên này. Không thể lưu cài đặt.
 3D threading changed. No restart needed.	Đã đổi luồng 3D. Không cần khởi động lại.
 3x sharper	Sắc nét 3x
+4 weeks ago	4 tuần trước
 4x (experimental)	4x (thử nghiệm)
 5x (experimental)	5x (thử nghiệm)
 A  Apply	A  Áp dụng
@@ -81,6 +83,7 @@ Automatic (free)	Tự động
 Automatic updates	Cập nhật tự động
 Available	Có sẵn
 Available networks	Mạng khả dụng
+Average session	Phiên trung bình
 B  Cancel	B  Hủy
 B  Close	B  Đóng
 Back	Quay lại
@@ -97,6 +100,7 @@ Battery percentage	Phần trăm pin
 Battery saver	Tiết kiệm pin
 Before	Trước
 Before you play	Trước khi chơi
+Bezel	Viền
 Binding unchanged.	Gán nút không đổi.
 Black and white	Đen trắng
 Black bar	Dải đen
@@ -159,8 +163,6 @@ Choose a network from the list	Chọn một mạng trong danh sách
 Choose an option	Chọn một tùy chọn
 Choose Anbernic or RG DS startup.	Chọn khởi động Anbernic hoặc RG DS.
 Choose native or a sharper 3D image	Chọn hình ảnh 3D gốc hoặc sắc nét hơn
-Choose the core for this cartridge	Chọn trình giả lập cho băng này
-Choose the display backend for the next DraStic launch. DSperate stays your default.	Chọn cách hiển thị cho lần chạy DraStic tiếp theo. DSperate vẫn là mặc định.
 Choose what opens when you power on	Chọn nội dung mở khi bật máy
 Classic	Cổ điển
 Classic blue	Xanh cổ điển
@@ -183,6 +185,7 @@ COLOUR MODE	CHẾ ĐỘ MÀU
 Colour mode	Chế độ màu
 Colour treatment inspired by the original DS display.	Màu sắc lấy cảm hứng từ màn hình DS gốc.
 Column	Cột
+Commander	Chỉ huy
 Companion	Màn hình đồng hành
 Compare	So sánh
 Confirm	Xác nhận
@@ -247,17 +250,16 @@ Cover	Bìa
 Covers	Ảnh bìa
 Current progress could not be saved. No slot was changed.	Không thể lưu tiến trình. Không thay đổi ô nào.
 Custom	Tùy chỉnh
-DS only	Chỉ DS
 Dark	Tối
 Dark blue	Xanh dương đậm
 Dark green	Xanh lá đậm
 Date format	Định dạng ngày
 Day	Ngày
 Day or night	Ngày hay đêm
+Day streak	Chuỗi ngày
 Daylight saving	Giờ mùa hè
 Days	Số ngày
 Default	Mặc định
-Default emulator	Trình giả lập mặc định
 Default shader	Bộ lọc mặc định
 DEFAULT THEME - CHECK LOG	GIAO DIỆN MẶC ĐỊNH – XEM NHẬT KÝ
 Delete	Xóa
@@ -281,8 +283,6 @@ Downloading PortMaster	Đang tải PortMaster
 Downloading update…	Đang tải cập nhật…
 Downloading {0}	Đang tải {0}
 Downloads resume where they stopped if Wi-Fi drops.	Tải xuống sẽ tiếp tục từ chỗ dừng nếu mất Wi-Fi.
-DraStic backend	Cách hiển thị DraStic
-DraStic: an alternative for games that need it. Saves stay separate.	DraStic: lựa chọn cho các trò chơi cần nó. Các bản lưu được giữ riêng.
 Draw and chat	Vẽ và trò chuyện
 Draw and chat with nearby handhelds	Vẽ và trò chuyện với máy ở gần
 Drawing on your own	Đang vẽ một mình
@@ -291,12 +291,11 @@ DS controls	Điều khiển DS
 DS controls are unavailable for this engine.	Trình giả lập này không hỗ trợ điều khiển DS.
 DS language	Ngôn ngữ DS
 DS Lite	DS Lite
+DS only	Chỉ DS
 DS rounded	DS bo tròn
 DS screens	Màn hình DS
 DSCore 3D resolution	Độ phân giải 3D của DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: khuyên dùng. Nhanh nhất, có sửa lỗi nắp, bút cảm ứng và 3D, cùng 3D 2x–5x tùy chọn.
-DSperate: recommended for everyday play. Native resolution is the default.	DSperate: khuyên dùng hằng ngày. Độ phân giải gốc là mặc định.
-DSperate: the original upstream engine. DSCore adds fixes and speed.	DSperate: trình giả lập gốc. DSCore bổ sung bản sửa lỗi và tốc độ.
 Edit	Sửa
 Edit search	Sửa tìm kiếm
 Effects volume	Âm lượng hiệu ứng
@@ -332,8 +331,8 @@ Fast-forward enabled.	Đã bật tua nhanh.
 Fast-forward is unavailable for this emulator.	Trình giả lập này không hỗ trợ tua nhanh.
 Fast-forward style	Kiểu tua nhanh
 Favourite	Yêu thích
-FAVOURITE COLOUR	MÀU YÊU THÍCH
 Favourite a game and it waits for you here	Đánh dấu yêu thích một trò chơi, nó sẽ ở đây
+FAVOURITE COLOUR	MÀU YÊU THÍCH
 Favourites	Yêu thích
 Feel every move	Cảm nhận từng thao tác
 Feel the game	Cảm nhận trò chơi
@@ -351,15 +350,13 @@ Finding games…	Đang tìm trò chơi…
 Finishing another task. Press Y again in a moment.	Đang hoàn tất tác vụ khác. Hãy nhấn Y lại sau giây lát.
 Finishing the system request	Đang hoàn tất yêu cầu hệ thống
 Follow your default button layout	Dùng bố cục nút mặc định
-Following your global controls.	Đang dùng điều khiển chung.
-Follows your Library default. Each emulator keeps its own saves.	Dùng mặc định của thư viện. Mỗi trình giả lập có bản lưu riêng.
+Following the default controls.	Đang dùng điều khiển chung.
 Follows your library shader.	Theo bộ lọc của thư viện.
 Forget this device?	Quên thiết bị này?
 FPS changed for this session. Settings storage is unavailable.	Đã đổi FPS cho phiên này. Không thể lưu cài đặt.
 FPS counter enabled.	Đã bật bộ đếm FPS.
 FPS counter hidden.	Đã ẩn bộ đếm FPS.
 Fr	T6
-Frame	Khung
 Frameskip	Bỏ khung hình
 Free space	Dung lượng trống
 Free space while keeping your saves	Giải phóng dung lượng và giữ bản lưu
@@ -401,8 +398,6 @@ Game Boy · Green	Game Boy · Xanh lá
 Game Boy · Red	Game Boy · Đỏ
 Game Boy · Screen only	Game Boy · Chỉ màn hình
 Game Boy · Yellow	Game Boy · Vàng
-Game emulator	Trình giả lập trò chơi
-Game emulator saved.	Đã lưu trình giả lập trò chơi.
 Game FPS	FPS trò chơi
 Game info	Thông tin game
 Game menu	Menu trò chơi
@@ -428,7 +423,7 @@ German	Tiếng Đức
 Get, update and remove ports	Tải, cập nhật và gỡ bản port
 Give your eyes and hands a break.	Cho mắt và tay nghỉ ngơi.
 Global	Chung
-Global controls saved.	Đã lưu điều khiển chung.
+Default controls saved.	Đã lưu điều khiển chung.
 Glossy tiles	Ô gạch bóng
 Go back	Quay lại
 Goes into	Lưu vào
@@ -444,6 +439,7 @@ Heart containers	Bình tim
 Heart pieces	Mảnh tim
 Hearts	Tim
 High contrast	Độ tương phản cao
+History starts with your next game	Lịch sử bắt đầu từ trò chơi tiếp theo
 Hold	Giữ
 Hold still for a right click	Giữ yên để nhấp chuột phải
 Hold to exit	Giữ để thoát
@@ -494,6 +490,8 @@ Keyboard	Bàn phím
 Keys	Chìa khóa
 Kinstone fusions	Ghép Kinstone
 Language	Ngôn ngữ
+Last 4 weeks	4 tuần qua
+Last 7 days	7 ngày qua
 Last played	Lần chơi gần nhất
 Launch cancelled	Đã hủy khởi chạy
 LCD + both colours	LCD + cả hai màu
@@ -532,6 +530,7 @@ Loaded	Đã tải
 Loading checkpoint…	Đang tải trạng thái…
 Loading…	Đang tải…
 Long press	Nhấn giữ
+Longest session	Phiên dài nhất
 Looking for devices…	Đang tìm thiết bị…
 Looking for games…	Đang tìm trò chơi…
 Looking for networks…	Đang tìm mạng…
@@ -586,11 +585,9 @@ Networking is disabled. Turn Wi-Fi on to enable it.	Mạng đã tắt. Bật Wi-
 Never	Không bao giờ
 New messages below	Tin nhắn mới bên dưới
 Next	Tiếp
-Next emulator	Trình giả lập tiếp theo
 Next picture	Ảnh tiếp theo
 Next:	Tiếp theo:
 Night	Đêm
-NNDDSS: a compatibility option. Try DSperate first for speed.	NNDDSS: lựa chọn tương thích. Thử DSperate trước để có tốc độ tốt hơn.
 No button detected. Try again when you're ready.	Không phát hiện nút. Thử lại khi sẵn sàng.
 No checkpoint saved for this emulator yet.	Chưa có trạng thái cho trình giả lập này.
 No cover yet	Chưa có ảnh bìa
@@ -650,6 +647,7 @@ Orange	Cam
 Original	Gốc
 Original pixels	Điểm ảnh gốc
 Original pixels and colours.	Điểm ảnh và màu sắc gốc.
+Other	Khác
 Pacific	Thái Bình Dương
 Paired	Đã ghép đôi
 Party	Nhóm
@@ -759,7 +757,6 @@ Restart the device?	Khởi động lại thiết bị?
 Restart the game to apply DS settings.	Khởi động lại trò chơi để áp dụng cài đặt DS.
 Restart the RGDS menu.	Khởi động lại menu RGDS.
 Restart the RGDS menu?	Khởi động lại menu RGDS?
-Restart uses {0}. Saves and checkpoints stay separate per emulator.	Khởi động lại dùng {0}. Bản lưu và trạng thái được giữ riêng theo trình giả lập.
 Restart without loading a state?	Khởi động lại không tải trạng thái?
 Restarting into the update…	Đang khởi động bản cập nhật…
 Restarting…	Đang khởi động lại…
@@ -797,7 +794,6 @@ Rupees	Rupee
 Sa	T7
 Save	Lưu
 Save & restart	Lưu và khởi động lại
-Save & restart applies Threaded 3D.	Lưu và khởi động lại áp dụng 3D đa luồng.
 Save & restart keeps your checkpoint and applies pending settings.	Lưu và khởi động lại giữ trạng thái và áp dụng cài đặt đang chờ.
 Save a report for troubleshooting	Lưu báo cáo để khắc phục sự cố
 Save backup created in userdata/exports.	Đã tạo bản sao lưu trong userdata/exports.
@@ -811,11 +807,8 @@ Save state	Lưu trạng thái
 Save your checkpoint and restart	Lưu trạng thái và khởi động lại
 Saved	Đã lưu
 Saved - desktop simulation	Đã lưu – mô phỏng trên máy tính
-Saved for the next Standard DraStic launch.	Đã lưu cho lần chạy DraStic Standard tiếp theo.
 Saved network	Mạng đã lưu
 Saved · {0}	Đã lưu · {0}
-Saved. Applies on your next DraStic launch.	Đã lưu. Áp dụng ở lần chạy DraStic tiếp theo.
-Saved. Save & restart applies screen order.	Đã lưu. Lưu và khởi động lại để áp dụng thứ tự màn hình.
 Saved. Save & restart applies this change.	Đã lưu. Lưu và khởi động lại để áp dụng thay đổi này.
 Saved. Save & restart changes the emulator.	Đã lưu. Lưu và khởi động lại để đổi trình giả lập.
 Saving before restarting…	Đang lưu trước khi khởi động lại…
@@ -834,7 +827,6 @@ Score	Điểm
 Screen brightness	Độ sáng màn hình
 Screen colours	Màu màn hình
 Screen off	Tắt màn hình
-Screen order	Thứ tự màn hình
 screens	màn hình
 ScreenScraper needs project credentials and your account	ScreenScraper cần thông tin dự án và tài khoản của bạn
 Screenshot	Ảnh chụp màn hình
@@ -857,7 +849,6 @@ Selected row	Hàng đang chọn
 Send	Gửi
 Series	Series
 Set the clock to where you are.	Chỉnh đồng hồ theo nơi bạn ở.
-Sets Standard DraStic screen order for this game. Save & restart applies it.	Đặt thứ tự màn hình DraStic Standard cho trò chơi này. Lưu và khởi động lại để áp dụng.
 Setting up PortMaster	Đang thiết lập PortMaster
 Settings	Cài đặt
 Settings saved	Đã lưu cài đặt
@@ -919,8 +910,6 @@ Spring	Lò xo
 Springy menu changes with a colourful wobble	Đổi menu đàn hồi với dao động nhiều màu
 Stable	Ổn định
 Standard	Standard
-Standard DraStic only. Applies on the next launch; game saves are kept.	Chỉ DraStic Standard. Áp dụng lần chạy sau; giữ bản lưu trò chơi.
-Standard screen order	Thứ tự màn hình Standard
 START	BẮT ĐẦU
 Start	Bắt đầu
 Start + Anbernic	Start + Anbernic
@@ -950,9 +939,6 @@ Su	CN
 Subtle	Nhẹ
 Summer time follows your timezone. Force it on or off if the clock is an hour out.	Giờ mùa hè theo múi giờ của bạn. Bật hoặc tắt nếu đồng hồ lệch một giờ.
 Super missiles	Tên lửa siêu
-SuperDrastic (experimental)	SuperDrastic (thử nghiệm)
-SuperDrastic currently uses native output. Your standard shader choice is kept.	SuperDrastic dùng hình ảnh gốc. Lựa chọn bộ lọc chuẩn được giữ lại.
-SuperDrastic uses its own pause menu and display path. Experimental; RG DS testing is pending.	SuperDrastic có menu tạm dừng và cách hiển thị riêng. Thử nghiệm; chưa kiểm thử RG DS.
 Swap screens	Đổi màn hình
 Swapped	Đã đảo
 Swipe in from the left edge to go Back.	Vuốt từ cạnh trái vào để Quay lại.
@@ -969,6 +955,7 @@ Systems	Hệ máy
 Tap to type, or use the D-pad and A	Chạm để nhập hoặc dùng phím điều hướng và A
 Team	Đội
 Temporary game cache cleared. Saves and artwork are kept.	Đã xóa bộ nhớ đệm trò chơi tạm. Giữ bản lưu và ảnh bìa.
+Terrain and unit	Địa hình và đơn vị
 Test	Thử
 Test microphone	Thử micrô
 Test the microphone on your handheld.	Thử micrô trên máy cầm tay.
@@ -1022,6 +1009,7 @@ Times played	Số lần chơi
 Timezone	Múi giờ
 Title screen	Màn hình tiêu đề
 Title screens	Màn hình tiêu đề
+Today	Hôm nay
 Toggle	Chuyển
 Too much on the pad: erase some of it	Quá nhiều trên bảng: hãy tẩy bớt
 Tools	Công cụ
@@ -1092,12 +1080,11 @@ Updates & recovery	Cập nhật và khôi phục
 Updates will be available when the release channel opens.	Sẽ có cập nhật khi kênh phát hành mở.
 Use an additional rendering thread	Dùng thêm một luồng kết xuất
 Use default ({0})	Dùng mặc định ({0})
-Use global controls	Dùng điều khiển chung
+Use default controls	Dùng điều khiển chung
 Use previous build	Dùng phiên bản trước
 Use ROM identity	Dùng nhận dạng ROM
 Use the engine's native controls for microphone and DS settings.	Dùng điều khiển gốc của trình giả lập cho micrô và cài đặt DS.
 Use the previous RGDS build?	Dùng phiên bản RGDS trước?
-Used by games without an override	Dùng cho trò chơi không có cài đặt riêng
 Username	Tên người dùng
 Verify	Kiểm tra
 Verifying update…	Đang xác minh cập nhật…
@@ -1157,6 +1144,7 @@ Worlds	Thế giới
 Y imports a save into this slot.	Y nhập bản lưu vào ô này.
 Yellow	Vàng
 Yes	Có
+Yesterday	Hôm qua
 You	Bạn
 You appear like this to others	Đây là cách người khác thấy bạn
 You are in Room {0}	Bạn đang ở phòng {0}
@@ -1180,6 +1168,8 @@ zFast + NDS Color	zFast + NDS Color
 {0} (experimental)	{0} (thử nghiệm)
 {0} (recommended)	{0} (khuyên dùng)
 {0} active	{0} đang bật
+{0} days	{0} ngày
+{0} days ago	{0} ngày trước
 {0} found. Choose Done to go to your library.	Đã tìm thấy {0}. Chọn Xong để đến thư viện.
 {0} frames	{0} khung hình
 {0} game	{0} trò chơi

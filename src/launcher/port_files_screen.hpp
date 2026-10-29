@@ -115,7 +115,8 @@ int App::port_files_added() {
 
 // The top screen: the QR code for a phone, the address and code for a computer, and what is arriving.
 void App::port_files_top(SDL_Renderer* r, int y) {
-    settings_card(r, 24, y + 82, 592, 320);
+    settings_card(r, 24, y + top_card_y, 592, top_card_h);
+    y += 22; // the content, centred in the card
     const auto at = [&](const char* key) {
         auto found = port_files_status.find(key);
         return found == port_files_status.end() ? std::string() : found->second;

@@ -5,35 +5,27 @@ THEME ?= themes/default/light.ini
 # gcc-pgo: GCC 13.3 + upstream PGO in the Lima ARM64 VM (~8% less emulation time); zig: host cross build
 ENGINE_COMPILER ?= gcc-pgo
 
-.PHONY: preview settings game-menu dev build-host build-device build-engines build-melonds build-melonds-experiment build-rgds-experimental build-rgds-vulkan build-superdrastic build-samba package image push release test shot format format-check
+.PHONY: preview settings game-menu dev build-host build-device build-rgds-experimental build-rgds-vulkan build-samba package image push release test shot format format-check
 build-host:
 	$(PYTHON) tools/build.py host
 build-device:
 	$(PYTHON) tools/build.py device
-build-engines:
-	$(PYTHON) tools/build_engines.py --fetch --compiler $(ENGINE_COMPILER)
-build-melonds: build-engines
-	$(PYTHON) tools/build_melonds.py --fetch --frontend
-build-rgds-experimental: build-engines
-	$(PYTHON) tools/build_rgds_experimental.py --compiler $(ENGINE_COMPILER)
+build-rgds-experimental:
+	$(PYTHON) tools/build_rgds_experimental.py --fetch --compiler $(ENGINE_COMPILER)
 build-rgds-vulkan: build-rgds-experimental
 	$(PYTHON) tools/build_rgds_vulkan.py
 	$(PYTHON) tools/package_rgds_vulkan.py
-build-melonds-experiment:
-	$(PYTHON) tools/build_melonds.py --fetch
-build-superdrastic:
-	$(PYTHON) tools/build_superdrastic.py --fetch
 preview: build-host
 	build/host/rgds-launcher --preview --watch-assets --theme "$(THEME)"
 settings: build-host
 	build/host/rgds-launcher --preview --settings --watch-assets --theme "$(THEME)"
 game-menu: build-host
-	build/host/rgds-launcher --preview --game-menu --game-core dsperate --watch-assets --theme "$(THEME)"
+	build/host/rgds-launcher --preview --game-menu --game-core rgds-experimental --watch-assets --theme "$(THEME)"
 dev:
 	$(PYTHON) tools/dev.py --theme "$(THEME)"
 build-samba:
 	$(PYTHON) tools/build_samba.py --fetch
-package: build-device build-melonds build-superdrastic build-rgds-vulkan build-samba
+package: build-device build-rgds-vulkan build-samba
 	$(PYTHON) tools/package.py
 # RG DS OS: the card image (Buildroot in the Lima VM, docs/OWN_OS_PLAN.md), a push of it to the handheld's other
 # slot over SSH, and the release folder (card image, signed OTA package and feed; uploads nothing)

@@ -36,7 +36,8 @@ BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
 BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rocknix.config"
 BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rgds.fragment"
 BR2_LINUX_KERNEL_DTS_SUPPORT=y
-BR2_LINUX_KERNEL_INTREE_DTS_NAME="rockchip/rk3568-anbernic-rg-ds"
+# both handhelds: U-Boot picks the one it finds itself in (uboot-rgds.fragment, post-image.sh)
+BR2_LINUX_KERNEL_INTREE_DTS_NAME="rockchip/rk3568-anbernic-rg-ds rockchip/rk3568-anbernic-rg-ds-plus"
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
 BR2_LINUX_KERNEL_NEEDS_HOST_LIBELF=y
 
@@ -71,6 +72,8 @@ BR2_PACKAGE_HOST_MTOOLS=y
 # hardware: Wi-Fi firmware, sound, the GPU (Mesa 25.0 Panfrost, no LLVM), SDL2 straight on KMS
 BR2_PACKAGE_LINUX_FIRMWARE=y
 BR2_PACKAGE_LINUX_FIRMWARE_RTL_RTW88=y
+# the RG DS Plus's speaker amplifiers stay off without their configuration file (aw88166_acf.bin)
+BR2_PACKAGE_ROCKNIX_EXTRA_FIRMWARE=y
 # the RTL8821CS's Bluetooth half (rtl_bt/rtl8821cs_fw.bin; hci_uart + btrtl are modules) and bluez for pairing
 BR2_PACKAGE_LINUX_FIRMWARE_RTL_88XX_BT=y
 # its config file is upstream's rtl8761b_config.bin (linux-firmware makes rtl8821cs_config.bin a link to it; post-build.sh does the same)

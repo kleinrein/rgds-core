@@ -104,7 +104,7 @@ class EmulatorTests(Fixture):
         hook.parent.mkdir(parents=True)
         hook.write_bytes(b'bridge')
         for core in emulators.CORES:
-            if core in ('nnddss', 'rgds-play', 'portmaster'): continue  # retired, or not a DS player
+            if core in emulators.RETIRED or core in ('rgds-play', 'portmaster'): continue  # retired, or not a DS player
             self.binary(core)
             automatic = self.data / 'library' / emulators.game_key(rom) / ('auto-' + core + '.dss')
             automatic.parent.mkdir(parents=True, exist_ok=True)
@@ -128,84 +128,82 @@ class EmulatorTests(Fixture):
         from library import game_key
         rom = self.root / 'game.nds'
         write_fields(self.data / 'library' / game_key(rom) / 'ds-input.ini', dict(language=3, microphone=0))
-        for core in ('dsperate', 'melonds'):
-            self.binary(core)
-            with patch.dict(os.environ, {}, clear=True):
-                plan = emulators.launch_plan(core, self.app, self.data, rom)
-            self.assertEqual(plan['env']['RGDS_DS_LANGUAGE'], '3')
-            self.assertEqual(plan['env']['RGDS_MICROPHONE'], '0')
-        config = (self.data / 'emulators/dsperate/config.ini').read_text()
+        self.binary('rgds-experimental')
+        with patch.dict(os.environ, {}, clear=True):
+            plan = emulators.launch_plan('rgds-experimental', self.app, self.data, rom)
+        self.assertEqual(plan['env']['RGDS_DS_LANGUAGE'], '3')
+        self.assertEqual(plan['env']['RGDS_MICROPHONE'], '0')
+        config = (self.data / 'emulators/rgds-experimental/config.ini').read_text()
         self.assertIn('language = 3', config)
         self.assertIn('mic = false', config)
         self.assertIn('mic_dev = plughw:0,0', config)
 
-    def test_dsperate_uses_embedded_bios_even_with_stale_native_paths(self):
-        self.binary("dsperate")
-        config = self.data / 'emulators/dsperate/config.ini'
+    def test_dscore_uses_embedded_bios_even_with_stale_native_paths(self):
+        self.binary("rgds-experimental")
+        config = self.data / 'emulators/rgds-experimental/config.ini'
         config.parent.mkdir(parents=True)
         config.write_text('[paths]\nbios7=/mnt/vendor/old.bin\nfirmware=/oem/old.bin\n')
-        with patch.object(emulators, 'stock_file', side_effect=AssertionError('stock lookup')), \
-             patch.dict(os.environ, {}, clear=True):
-            plan = emulators.launch_plan('dsperate', self.app, self.data, self.root / 'game.nds')
+        with patch.dict(os.environ, {}, clear=True):
+            plan = emulators.launch_plan('rgds-experimental', self.app, self.data, self.root / 'game.nds')
         for switch in ('--bios7', '--bios9', '--firmware'):
             self.assertEqual(plan['command'][plan['command'].index(switch) + 1], '')
         self.assertNotIn('/mnt/', plan['env']['LD_LIBRARY_PATH'])
         self.assertNotIn('/oem/', plan['env']['LD_LIBRARY_PATH'])
 
     def test_mixer_failure_prevents_emulator_start_and_cleans_activity_marker(self):
-        self.binary("drastic")
+        self.binary("rgds-experimental")
         rom = self.root / "game.nds"
-        rom.write_bytes(b"game")
+        rom.write_bytes(b'\0' * 12 + b'ABCD' + bytes(496))
         with patch.object(emulators, "VolumeWatch") as watch, \
              patch.object(emulators.subprocess, "Popen") as spawn:
             watch.return_value.start.side_effect = ValueError("Mixer unavailable")
             with self.assertRaisesRegex(ValueError, "Mixer unavailable"):
-                emulators.run("drastic", self.app, self.data, rom)
+                emulators.run("rgds-experimental", self.app, self.data, rom)
             spawn.assert_not_called()
             watch.return_value.close.assert_called_once()
         self.assertFalse((self.data / "session/core.json").exists())
-        diagnostic = (self.data / 'logs/drastic.log').read_text()
+        diagnostic = (self.data / 'logs/rgds-experimental.log').read_text()
         self.assertIn('Runtime error: Mixer unavailable', diagnostic)
 
     def test_automatic_state_import_preserves_the_previous_manual_slot(self):
-        self.binary("drastic")
+        # RG DS Play: its automatic checkpoint goes through an engine slot (DSCore loads it by name instead).
+        self.binary("rgds-play")
         hook = self.app / "emulators/hooks/librgdsbridge.so"
         hook.parent.mkdir(parents=True)
         hook.write_bytes(b"fixture hook")
-        rom = self.root / "game.nds"
-        slot = self.data / "emulators/drastic/savestates/game_1.dss"
+        rom = self.root / "game.gba"
+        slot = self.data / "emulators/rgds-play/states/game_8.dss"
         slot.parent.mkdir(parents=True)
         slot.write_bytes(b"manual state")
-        automatic = self.data / "library" / emulators.game_key(rom) / "auto-drastic.dss"
+        automatic = self.data / "library" / emulators.game_key(rom) / "auto-rgds-play.dss"
         automatic.parent.mkdir(parents=True)
         automatic.write_bytes(b"automatic state")
-        plan = emulators.launch_plan("drastic", self.app, self.data, rom)
-        backups = list((automatic.parent / "manual-state-backups/drastic").glob("*.dss"))
+        plan = emulators.launch_plan("rgds-play", self.app, self.data, rom)
+        backups = list((automatic.parent / "manual-state-backups/rgds-play").glob("*.dss"))
         self.assertEqual(len(backups), 1)
         self.assertEqual(backups[0].read_bytes(), b"manual state")
         self.assertEqual(slot.read_bytes(), b"automatic state")
-        self.assertEqual(plan["env"]["RGDS_AUTOLOAD"], "1")
+        self.assertEqual(plan["env"]["RGDS_NATIVE_AUTOLOAD"], "1")
 
-    def test_all_three_engines_have_distinct_launch_arguments(self):
+    def test_dscore_launches_and_retired_engines_are_refused(self):
         rom = self.root / "A game; $(echo nope).nds"
         for core in emulators.CORES:
             if core in ('rgds-play', 'portmaster'): continue  # not DS players: other systems, ports
             binary = self.binary(core)
-            if core == 'nnddss':  # retired: never launched
+            if core in emulators.RETIRED:  # DraStic, DSperate, NNDDSS, melonDS: never launched
                 with self.assertRaisesRegex(ValueError, 'retired'):
                     emulators.launch_plan(core, self.app, self.data, rom, prepare=False)
                 continue
             plan = emulators.launch_plan(core, self.app, self.data, rom, prepare=False)
             self.assertEqual(plan["command"][0], str(binary.resolve()))
             self.assertIn(str(rom), plan["command"])
-            if core == "dsperate":
-                self.assertIn("--dual-window", plan["command"])
+            self.assertIn("--dual-window", plan["command"])
         self.assertFalse(self.data.exists(), "A dry-run must not create or alter save folders")
 
     def test_launch_never_inherits_a_previous_core_hook(self):
-        self.binary("drastic")
+        self.binary("rgds-experimental")
         with patch.dict(os.environ, {"LD_PRELOAD": "/old/libhook.so"}):
-            plan = emulators.launch_plan("drastic", self.app, self.data, self.root / "game.nds", prepare=False)
+            plan = emulators.launch_plan("rgds-experimental", self.app, self.data, self.root / "game.nds", prepare=False)
         self.assertNotIn("LD_PRELOAD", plan["env"])
 
     def test_archive_extracts_one_game_and_preserves_its_filename(self):
@@ -236,18 +234,19 @@ class EmulatorTests(Fixture):
             emulators.resolve_rom(archive, self.data)
 
     def test_actual_subprocess_receives_rom_path_as_one_literal_argument(self):
-        binary = self.binary("drastic")
+        binary = self.binary("rgds-experimental")
         binary.write_text(
             '#!/bin/sh\nprintf "%s\\n" "$@" > "$HOME/result.txt"\nprintf "%s" "$RGDS_VOLUME_KEYS" > "$HOME/volume-keys.txt"\n'
         )
         rom = self.root / "A game; $(echo nope).nds"
-        rom.write_bytes(b"game")
+        rom.write_bytes(b'\0' * 12 + b'ABCD' + bytes(496))
         with patch.object(emulators, "VolumeWatch") as volume:
             volume.return_value.descriptors = []
-            result = emulators.run("drastic", self.app.resolve(), self.data.resolve(), rom)
+            result = emulators.run("rgds-experimental", self.app.resolve(), self.data.resolve(), rom)
         self.assertEqual(result, 0)
-        self.assertEqual((self.data / "emulators/drastic/result.txt").read_text(), str(rom.resolve()) + "\n")
-        self.assertEqual((self.data / "emulators/drastic/volume-keys.txt").read_text(), "0")
+        home = self.data / "emulators/rgds-experimental/home"
+        self.assertEqual((home / "result.txt").read_text().split("\n")[0], str(rom.resolve()))
+        self.assertEqual((home / "volume-keys.txt").read_text(), "0")
         self.assertFalse((self.data / "session/core.json").exists())
 
     def test_activity_checks_start_time_and_refuses_unreadable_records(self):
@@ -263,14 +262,14 @@ class EmulatorTests(Fixture):
             emulators.core_running(self.data)
 
     def test_engine_startup_error_is_captured_before_returning_home(self):
-        binary = self.binary('drastic')
+        binary = self.binary('rgds-experimental')
         binary.write_text('#!/bin/sh\nprintf "missing runtime dependency\\n" >&2\nexit 17\n')
         rom = self.root / 'game.nds'
-        rom.write_bytes(b'game')
+        rom.write_bytes(b'\0' * 12 + b'ABCD' + bytes(496))
         with patch.object(emulators, 'VolumeWatch') as volume:
             volume.return_value.descriptors = []
-            self.assertEqual(emulators.run('drastic', self.app, self.data, rom), 17)
-        output = (self.data / 'logs/drastic.log').read_text()
+            self.assertEqual(emulators.run('rgds-experimental', self.app, self.data, rom), 17)
+        output = (self.data / 'logs/rgds-experimental.log').read_text()
         self.assertIn('missing runtime dependency', output)
         self.assertIn('Exit code: 17', output)
         self.assertFalse((self.data / 'session/core.json').exists())

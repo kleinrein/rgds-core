@@ -119,7 +119,7 @@ int App::key_hints(SDL_Renderer* r, int x, int cy, const std::vector<KeyHint>& h
 }
 
 void App::dsi_note(SDL_Renderer* r, int y, int screen, SettingsIcon symbol, const std::string& title) {
-    const int x = 24, top = screen + 64, w = 592, h = 356;
+    const int x = 24, top = screen + top_card_y, w = 592, h = top_card_h;
     alpha_round(r, x, top + 3, w, h, 18, shadow_colour(), preferences.dark ? 60 : 20);
     fill_round(r, x, top, w, h, 18, theme.at("accent"));
     fill_round(r, x + 2, top + 2, w - 4, h - 4, 16, theme.at("panel"));
@@ -128,7 +128,7 @@ void App::dsi_note(SDL_Renderer* r, int y, int screen, SettingsIcon symbol, cons
 }
 
 void App::shoulder_tab(SDL_Renderer* r, int y, bool right, const std::string& key, const std::string& text) {
-    const int h = 36, top = y + 430, cy = top + h / 2, size = 16;
+    const int h = 36, top = y + top_card_y + top_card_h - h, cy = top + h / 2, size = 16;
     const int w = std::min(300, 14 + key_badge_width(key) + 8 + label_width(text, size, false) + 16),
               left = right ? 640 - w : 0;
     alpha_round(r, right ? left : left - 18, top + 3, w + 18, h, 14, shadow_colour(), preferences.dark ? 60 : 20);

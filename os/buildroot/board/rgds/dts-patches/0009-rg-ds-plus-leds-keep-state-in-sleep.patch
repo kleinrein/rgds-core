@@ -1,0 +1,22 @@
+RG DS OS: the RG DS Plus's status and charging LEDs keep their state through sleep (as 0004 for the RG DS)
+
+The Plus's red status LED is a GPIO, not a PWM: the sleep indicator is on, not dim.
+
+--- a/rk3568-anbernic-rg-ds-plus.dts
++++ b/rk3568-anbernic-rg-ds-plus.dts
+@@ -271,6 +271,7 @@
+ 			function = LED_FUNCTION_CHARGING;
+ 			max-brightness = <255>;
+ 			pwms = <&pwm6 0 25000 0>;
++			retain-state-suspended;
+ 		};
+ 	};
+ 
+@@ -284,6 +285,7 @@
+ 			default-state = "off";
+ 			function = LED_FUNCTION_STATUS;
+ 			gpios = <&gpio3 RK_PB6 GPIO_ACTIVE_HIGH>;
++			retain-state-suspended;
+ 		};
+ 	};
+ 

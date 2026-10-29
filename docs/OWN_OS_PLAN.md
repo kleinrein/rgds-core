@@ -541,7 +541,8 @@ The owner would rather not carry ROCKNIX's drivers. Swap them one at a time on t
 - **Bluetooth audio (A2DP).** bluez-alsa 4.3.1 (`BR2_PACKAGE_BLUEZ_ALSA`). `bt on` starts `bluealsad -p a2dp-source`
   and `usr/libexec/rgds/bt-audio watch`. `/etc/asound.conf` plays through `@func refer` to
   `/run/rgds/audio-out.conf`, which alsa-lib re-reads at **every** open, also inside a running process (checked on the
-  handheld with two opens in one Python process). rcS copies `/etc/asound-speaker.conf` there. The watcher swaps in a
+  handheld with two opens in one Python process). rcS has `usr/libexec/rgds/audio setup` write it (see "One card for
+  both handhelds"). The watcher swaps in a
   `type bluealsa` PCM while a headset's A2DP sink exists and writes its address to `/run/rgds/bt-sink`. The launcher
   reopens its menu sink when that file changes; a game picks the headset up at its next launch. The volume follows
   through `bt-audio volume N` (audio.headset_volume). Not built into an image yet, and not tried with a real headset.
@@ -575,6 +576,46 @@ The owner would rather not carry ROCKNIX's drivers. Swap them one at a time on t
   mode and refused without the DSi BIOS (launch error 2). It now starts such titles in DS mode when no DSi BIOS
   pair is installed (dsi_title_install file_runs_on_ds, frontend/sdl/main.cpp; dscore/tests/dsi_header_test.cpp).
   Game info's X removes a game file from the card; its saves stay.
+
+### One card for both handhelds (2026-10-29)
+
+The same image boots the RG DS and the RG DS Plus. The tester guide is [RG_DS_PLUS_TEST.md](RG_DS_PLUS_TEST.md).
+
+- **Detection in U-Boot.** The SARADC's channel 5 is a board ID: 1.06 V on the RG DS (our unit reads raw 607 of
+  1023 at 1.758 mV, 1.067 V) and 1.77 V on the Plus (BananaLinux's measurement). `uboot-patches/004` turns the
+  SARADC on in U-Boot's device tree, with `vdd-microvolts` as its reference: U-Boot does not read Linux's
+  `vref-supply`. The preboot in `uboot-rgds.fragment` sets `$fdtfile` to the Plus's tree above 1.4 V and to the RG
+  DS's otherwise, including when the reading fails. `extlinux.conf` loads it with `FDTDIR /a/`. `rgds.detected=` and
+  `rgds.adc=` go on the kernel command line. BananaLinux's universal card never booted its RG DS (clang build, cause
+  unknown); ours is built with GCC.
+- **Verified on our RG DS (2026-10-29, build 0.8.0-0dac2b9bab68-ose0952b33, slot b, `own_os_push.py --uboot
+  --fdtdir`).** U-Boot read 1,064,516 µV, picked `rgds` and booted slot b through `FDTDIR`, with the same boot times
+  (session at 1.87 s). The trial committed. Playback and capture open through `default`, `rgds_speaker` and
+  `rgds_mic`. `hardware.txt` was written. The Plus side is untested.
+- **Two images from one build** (`post-image.sh`): `rgds-os.img` with both trees, and `rgds-os-plus.img`, whose
+  extlinux names the Plus tree outright, as a fallback should the voltage ever read wrong on a Plus.
+- **Updates keep it safe** (`os_update.fit_label`, also in `own_os_push.py`). A slot keeps `FDTDIR` only when the
+  running U-Boot picked this handheld's tree (`rgds.detected=` matches `/proc/device-tree/compatible`). Otherwise
+  its own tree is named: an older U-Boot sets no `$fdtfile`, and FDTDIR would then load the Quartz64's default,
+  which is not on the card. Releases carry both trees. `own_os_push.py --fdtdir` forces FDTDIR, to try detection.
+- **The Plus's device tree** gets our RG DS patches as 0006-0009. Panels: 59.9986 Hz from front porches 127/14 at
+  816 MHz / 13; BananaLinux reports 59.999 Hz on a real Plus. Motor PWM: 25 kHz. Home key: the Plus's BACK, made
+  KEY_HOME. LEDs kept in sleep; the red one is a GPIO there, so it shows full, not dim.
+- **Sound on the Plus** is two cards: the AW88166 amplifiers on I2S3 and the RK817 (jack and microphone). The
+  amplifiers need `aw88166_acf.bin` (`package/rocknix-extra-firmware`). `usr/libexec/rgds/audio` finds both cards
+  by name and writes `audio-local.conf` (a 48 kHz dmix on the speakers, or on the codec while headphones are in,
+  under its own ipc_key). It also writes `audio-mixer` (the card and kind the volume follows), `audio-capture.conf`
+  (the microphone, pinned to 48 kHz because the codec's DAI is symmetric) and `audio-route`.
+  - The headphones watcher waits up to 60 s for the amplifier card, then switches the route on jack events. The
+    amplifiers go to full attenuation while headphones are in.
+  - `runtime/audio.py` drives the amplifiers as an attenuation: 0 loudest, 1023 mute, level 1-100 over 50 dB.
+    `alsa_mixer.hpp` `write_saved_level` uses the named card for the RK817.
+  - The launcher reopens its sounds when the route changes. A running game keeps the card it opened (known gap).
+  - On the RG DS, nothing changes but where the files come from.
+- **Report on the card.** rcS writes `rgds/logs/hardware.txt` at 20 s and 2 min: model, cmdline, sound cards, panel
+  modes and the system log.
+- **Not yet known:** whether the AW88166's mixer names match BananaLinux's (`Left PCM`/`Right PCM`), DSCore's present
+  on 1024x768 panels under RG DS OS (it ran on the Plus under ROCKNIX/Sway), and the Plus's boot time.
 
 ### After v0: speed, picture and more systems
 

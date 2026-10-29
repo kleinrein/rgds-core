@@ -7,7 +7,6 @@ release, or changes a device. See docs/RGDS_VULKAN.md.
 """
 import argparse
 import json
-import os
 from pathlib import Path
 import shutil
 
@@ -31,6 +30,7 @@ def main():
         default='zig',
         help='gcc-pgo: GCC 13.3 + upstream PGO in the Lima ARM64 VM'
     )
+    parser.add_argument('--fetch', action='store_true', help='zig: download the pinned SDL source for the link SDK')
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error('--jobs must be positive')
@@ -48,9 +48,7 @@ def main():
     headers = ROOT / '.cache/panvk-kbase-source/include'
     if not (headers / 'vulkan/vulkan.h').is_file():
         parser.error('Prepare the pinned PanVK checkout first.')
-    sdk = ROOT / 'build/engine-cross/sdl-sdk'
-    if not (sdk / 'lib/cmake/SDL2').is_dir():
-        parser.error('Build the normal engines first to prepare the SDL link SDK.')
+    sdk = base.SDL_SDK
     if args.compiler == base.gcc.COMPILER:
         # Same verified tree, headers and shaders; GCC + PGO in the Lima VM,
         # which sees this checkout at the same path.
@@ -62,6 +60,7 @@ def main():
         build = None
     else:
         gcc_record = None
+        sdk = base.sdl_sdk(args.fetch, args.jobs)
         binary = configure_zig(scratch, source, sdk, headers, args)
     actual = {p.relative_to(source).as_posix(): base.digest(p) for p in source.rglob('*') if p.is_file()}
     if actual != files:
@@ -105,14 +104,8 @@ def zig_options(sdk, headers):
 
 def configure_zig(scratch, source, sdk, headers, args):
     tool = {name: base.find_tool(name) for name in ('zig', 'cmake', 'ninja')}
-    env = dict(os.environ)
-    for name in (
-        'CFLAGS', 'CXXFLAGS', 'LDFLAGS', 'CPPFLAGS', 'CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'LIBRARY_PATH',
-        'SDKROOT', 'MACOSX_DEPLOYMENT_TARGET', 'PKG_CONFIG_PATH', 'SDL2_DIR'
-    ):
-        env.pop(name, None)
-    env.update(ZIG_GLOBAL_CACHE_DIR=str(ROOT / '.cache/zig'), ZIG_LOCAL_CACHE_DIR=str(ROOT / '.cache/zig-rgds-vulkan'))
-    chain = base.toolchain(scratch / 'toolchain', tool['zig'], source, ROOT / '.cache/engine-sdk/SDL2-2.32.10')
+    env = base.cross_environment('zig-rgds-vulkan')
+    chain = base.toolchain(scratch / 'toolchain', tool['zig'], source, base.SDL_SOURCE)
     build = scratch / 'build'
     base.configure(tool['cmake'], tool['ninja'], source, build, chain, zig_options(sdk, headers), env)
     base.run([tool['cmake'], '--build', build, '--target', 'dsperate', '--parallel', args.jobs], env=env)

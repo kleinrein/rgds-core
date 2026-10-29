@@ -28,7 +28,7 @@ What the screen shows for a game is set out in its profile (`play/profiles/<syst
 ## Motion
 
 16. **Animations follow the launcher's setting.** With Animations off everything is instant: the dock opens without its circle and fades without steps. With them on, motion is short (about 260 ms) and eases out.
-17. **Low-key when left alone.** The dock's button fades to faint after 4 s. The Info screen dims to about a third after 15 s. Controls left open over the companion close after 15 s.
+17. **Low-key when left alone.** The dock's button fades to faint after 4 s. Controls left open over the companion close after 15 s.
 
 ## Usefulness
 
@@ -48,7 +48,7 @@ The in-game menu's Graphics page sets **Second screen**:
 
 Brightness is the second screen's own, 10 to 100 %, kept in `userdata/emulators/rgds-play/second-screen.ini`. The game switcher and Return home are the runtime's own triggers beside the control file (`emulator.control.menu` and `.home`, the same the Anbernic button and the home shortcut write), so Return home saves first exactly as the menu's does. Save and Load stay in the menu, with its gallery.
 
-A port's second screen (`rgds-launcher --port-menu`, `src/launcher/port_menu.hpp`) is this same Info screen in the launcher's drawing: same places, same holds and fades, the same brightness file. PortMaster itself keeps its install progress there instead.
+A port's second screen (`rgds-launcher --port-menu`, `src/launcher/port_menu.hpp`) is the dock's controls in the launcher's drawing: same places, same holds and fades, the same brightness file. PortMaster itself keeps its install progress there instead.
 
 ## Running the lint
 
