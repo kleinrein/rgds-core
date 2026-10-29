@@ -431,21 +431,23 @@ bool extend_mode7(const Core::Mode7& m, const uint8_t* oam, const std::vector<st
     // One l0 for the four, then a for each by least squares: the game's lines
     // are a plain perspective (no constant: 1 / size falls on a straight line),
     // and a constant fitted from the far lines bends the near rows away.
+    // Each value's squared error at its best a is sum(v²) - sxv² / sxx, and sum(v²) is the same for every l0: the
+    // best l0 has the largest sum of sxv² / sxx, one pass over the lines each (a race frame's 2.8 ms on the
+    // handheld's A55 with the error summed out, 29 October 2026).
     const int from = s + 2;
-    double best = 1e300, best_l0 = 0, fa[4] = {};
+    double best = -1, best_l0 = 0, fa[4] = {};
     for (double l0 = s - 60; l0 < s - 0.2; l0 += 0.25) {
-        double sxx = 0, err = 0, a[4];
-        for (int l = from; l <= e; ++l) sxx += 1 / ((l - l0) * (l - l0));
-        for (int k = 0; k < 4; ++k) {
-            double sxv = 0;
-            for (int l = from; l <= e; ++l) sxv += line(l)[k] / (l - l0);
-            a[k] = sxv / sxx;
-            for (int l = from; l <= e; ++l) {
-                const double d = a[k] / (l - l0) - line(l)[k];
-                err += d * d;
-            }
+        double sxx = 0, sxv[4] = {};
+        for (int l = from; l <= e; ++l) {
+            const double u = 1 / (l - l0);
+            sxx += u * u;
+            for (int k = 0; k < 4; ++k) sxv[k] += line(l)[k] * u;
         }
-        if (err < best) best = err, best_l0 = l0, std::copy(a, a + 4, fa);
+        const double fit = (sxv[0] * sxv[0] + sxv[1] * sxv[1] + sxv[2] * sxv[2] + sxv[3] * sxv[3]) / sxx;
+        if (fit > best) {
+            best = fit, best_l0 = l0;
+            for (int k = 0; k < 4; ++k) fa[k] = sxv[k] / sxx;
+        }
     }
     // The palette as the picture has it (the core's BGR555 through its RGB565).
     uint32_t colours[256];

@@ -7,7 +7,7 @@
 
 **Our own operating system for the Anbernic RG DS.** A lightweight Linux image that boots straight into a DSi-style library in a few seconds, plays DS, GBA, Game Boy and more, and sleeps when you close the lid.
 
-![Home screen, the library and the in-game menu, captured on an RG DS](docs/images/screens.png)
+![Home screen, the Nintendo 64 shelf and a kart game's pause board, captured on an RG DS](docs/images/screens.png)
 
 > **Early release.** RG DS OS 0.8.0 is the first public image. The standard RG DS is tested; the RG DS Plus runs the same image but is still being checked ([Plus tester guide](docs/RG_DS_PLUS_TEST.md)). Details in [Status](#status).
 
@@ -25,8 +25,6 @@
 - **Yours:** light/dark, accent colours, 22 languages, menu sounds and music.
 
 ![Cartridge, cover and list views](docs/images/library.png)
-
-![PictoChat lobby and a chat room](docs/images/pictochat.png)
 
 ## Second-screen games
 
@@ -47,9 +45,11 @@ The game plays on the top panel. The bottom panel shows what the game hides. A s
 | Golden Sun                                     | Live party panel             |
 | Advance Wars                                   | Commander and terrain panels |
 
+![Pokémon, Super Mario Advance 4, Super Mario Kart and Mario Kart 64 with their bottom-screen panels](docs/images/second-screen.png)
+
 Over 50 games have profiles. Everything else shows a title card and plays as normal. [Full list](docs/PLAY.md)
 
-![Mario Kart DS and New Super Mario Bros in DSCore, and the Graphics page](docs/images/dscore.png)
+![More second screens: kart standings, Castlevania, Yoshi's Island and Duck Hunt](docs/images/dscore.png)
 
 ## Install
 

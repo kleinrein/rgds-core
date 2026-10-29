@@ -656,7 +656,7 @@ struct Settings {
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 8);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
-        else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 4);
+        else if (page == Page::Scraper || page == Page::Sound) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
         else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::System || page == Page::Display) focus = 0;
