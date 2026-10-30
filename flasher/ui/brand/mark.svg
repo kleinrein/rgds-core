@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><defs>
+<linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4FA6EF"/><stop offset="1" stop-color="#2580D2"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4F1FC"/></linearGradient>
+</defs><rect x="4" y="4" width="112" height="112" rx="32" fill="url(#tile)"/>
+<path d="M4 36a32 32 0 0 1 32-32h48a32 32 0 0 1 32 32v8q-56 14-112 0z" fill="url(#shine)"/>
+<rect x="28" y="19" width="64" height="40" rx="10" fill="url(#screen)"/>
+<rect x="28" y="63" width="64" height="40" rx="10" fill="url(#screen)"/>
+<path d="M70 94L84 78" stroke="#2580D2" stroke-width="5" stroke-linecap="round"/>
+<circle cx="69" cy="95" r="2.6" fill="#2580D2"/></svg>

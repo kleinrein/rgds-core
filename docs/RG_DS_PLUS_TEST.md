@@ -14,7 +14,7 @@ Each release has two card images:
 | `RG-DS-OS-<version>.img.gz` | Try this first. It works on both handhelds. |
 | `RG-DS-OS-Plus-<version>.img.gz` | Use this if the first one shows nothing on the screens. It always loads the Plus's device tree. |
 
-Write the image to a spare microSD card (8 GB or more) with balenaEtcher, rufus or Raspberry Pi Imager. Put the card
+Write the image to a spare microSD card (8 GB or more) with balenaEtcher or Raspberry Pi Imager (not Rufus: its cards stay black). Put the card
 in the **first** card slot and power on. The Plus has two slots, and the handheld only boots from the first one. If
 nothing happens, try the other slot.
 

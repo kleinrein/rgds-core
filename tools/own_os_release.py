@@ -7,8 +7,9 @@
 writes dist/release-os/<version>/: the card image for new installs (RG-DS-OS-<version>.img.gz and its .sha256),
 RG-DS-OS-Plus-<version>.img.gz (the card fixed to the RG DS Plus, should its detection pick wrong),
 the update RG-DS-OS-<build>.zip (rootfs.squashfs, Image.lz4, the device trees, extlinux.conf and manifest.json under
-<build>/) and <channel>-os.json, the feed signed with the key tools/release.py init made. Handhelds read the feed
-from the latest GitHub release (packaging/update-trust.json's stable.json -> stable-os.json), so a release is only
+<build>/), <channel>-os.json, the feed signed with the key tools/release.py init made, and RG DS Flasher
+(flasher/build.sh: RG-DS-Flasher-Windows.exe, -macOS.zip and -Linux-x64; --no-flasher leaves it out). Handhelds read
+the feed from the latest GitHub release (packaging/update-trust.json's stable.json -> stable-os.json), so a release is only
 offered once it is published and marked latest. Without --upload it prints the `gh release create --draft` command;
 with it, it runs that command: the release is created as a draft, and nothing is public until it is published on
 GitHub.
@@ -36,6 +37,8 @@ from release import DEFAULT_KEY, TRUST, feed_url, public_key, repo_name  # noqa:
 BUILD = ROOT / '.cache/own-os/build'
 IMAGE = 'rgds-os.img.gz'
 PLUS_IMAGE = 'rgds-os-plus.img.gz'
+FLASHER = ROOT / 'flasher'
+FLASHER_ASSETS = ('RG-DS-Flasher-Windows.exe', 'RG-DS-Flasher-macOS.zip', 'RG-DS-Flasher-Linux-x64')
 
 
 def package(build, out):
@@ -59,6 +62,16 @@ def package(build, out):
     return archive, unpacked
 
 
+def flasher(out):
+    """The card flasher players use instead of Etcher; it always fetches the latest release, so any build works."""
+    subprocess.run([str(FLASHER / 'build.sh'), '--test'], check=True)
+    files = []
+    for name in FLASHER_ASSETS:
+        shutil.copyfile(FLASHER / 'dist' / name, out / name)
+        files.append(out / name)
+    return files
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--version', required=True)
@@ -70,6 +83,7 @@ def main():
     parser.add_argument(
         '--upload', action='store_true', help='create the draft release instead of printing the command'
     )
+    parser.add_argument('--no-flasher', action='store_true', help='leave RG DS Flasher out (it needs Go to build)')
     args = parser.parse_args()
     if not re.fullmatch(r'\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?', args.version) or 'dev' in args.version:
         raise SystemExit(f'Use a release version such as 0.1.0, not {args.version}.')
@@ -124,7 +138,7 @@ def main():
     print(f'{image.relative_to(ROOT)} ({image.stat().st_size / 1048576:.0f} MiB), the card image (both handhelds)')
     notes = out / 'notes.md'
     notes.write_text(metadata['notes'])
-    files = [*images, archive, feed]
+    files = [*images, archive, feed, *([] if args.no_flasher else flasher(out))]
     command = [
         'gh', 'release', 'create', tag, '--repo', repo, '--draft', '--title', f'RG DS OS {args.version}',
         '--notes-file',
