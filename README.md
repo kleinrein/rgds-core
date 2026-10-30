@@ -54,7 +54,7 @@ Over 50 games have profiles. Everything else shows a title card and plays as nor
 ## Install
 
 1. Download `RG-DS-OS-<version>.img.gz` from [releases](https://github.com/kleinrein/rgds-core/releases) (it works on the RG DS and the RG DS Plus) and check it against its `.sha256`.
-2. Write it to a spare microSD card (8 GB or more) with [rufus](https://rufus.ie), [balenaEtcher](https://etcher.balena.io) or Raspberry Pi Imager.
+2. Write it to a spare microSD card (8 GB or more) with [balenaEtcher](https://etcher.balena.io) or Raspberry Pi Imager.
 3. Put the card in and power on. First boot sets up the rest of the card.
 4. Join Wi-Fi in Settings and turn on file sharing. Copy games into `roms/nds`, `roms/gba` and so on from a computer.
 
