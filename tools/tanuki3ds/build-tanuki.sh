@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds Tanuki3DS for aarch64 (desktop GL 3.3 core through SDL3) plus the SDL3 it links, under ~/3ds-spike.
+# Builds our Tanuki3DS fork for aarch64 (desktop GL 3.3 core through SDL3) plus the SDL3 it links, under ~/3ds-spike.
 set -e
 W=$HOME/3ds-spike
 mkdir -p "$W"
@@ -14,11 +14,20 @@ if [ ! -d SDL ]; then
   log clone SDL3
   git clone -q --depth 1 -b release-3.2.24 https://github.com/libsdl-org/SDL SDL || git clone -q --depth 1 https://github.com/libsdl-org/SDL SDL
 fi
+# Our fork of Tanuki3DS; TANUKI_REF picks a branch, tag or commit of it (the rgds branch by default).
+TANUKI_REPO=${TANUKI_REPO:-https://github.com/kleinrein/Tanuki3DS-rgds}
+TANUKI_REF=${TANUKI_REF:-rgds}
 if [ ! -d tanuki ]; then
   log clone tanuki
-  git clone -q --depth 1 https://github.com/burhanr13/Tanuki3DS tanuki
+  git clone -q "$TANUKI_REPO" tanuki
 fi
-log "SDL $(git -C SDL describe --tags 2>/dev/null || git -C SDL rev-parse --short HEAD), tanuki $(git -C tanuki rev-parse --short HEAD)"
+if [ -z "$TANUKI_KEEP" ]; then
+  [ -z "$(git -C tanuki status --porcelain)" ] || { echo "tanuki has local changes; commit them or set TANUKI_KEEP=1"; exit 1; }
+  [ "$(git -C tanuki remote get-url origin)" = "$TANUKI_REPO" ] || git -C tanuki remote set-url origin "$TANUKI_REPO"
+  git -C tanuki fetch -q origin
+  git -C tanuki checkout -q --detach "origin/$TANUKI_REF" 2>/dev/null || git -C tanuki checkout -q --detach "$TANUKI_REF"
+fi
+log "SDL $(git -C SDL describe --tags 2>/dev/null || git -C SDL rev-parse --short HEAD), tanuki $(git -C tanuki rev-parse --short HEAD) ($TANUKI_REF)"
 
 # SDL3 with KMSDRM (the handheld has no compositor), installed into a private prefix.
 log build SDL3

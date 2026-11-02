@@ -1,10 +1,10 @@
 # Plan: fork Tanuki3DS and make 3DS games faster
 
-Nothing here has been started. The only change on the handheld so far is the frame skip limit of 3 in the engine's `run.sh`.
+The fork exists (2026-11-02): [kleinrein/Tanuki3DS-rgds](https://github.com/kleinrein/Tanuki3DS-rgds), branch `rgds`, and `tools/tanuki3ds` builds from it. No speed work has started. The only change on the handheld so far is the frame skip limit of 3 in the engine's `run.sh`.
 
-**Yes, fork it, but a fork won't add any speed.** We are effectively running a fork already, kept as a patch file. The speed work below is what fixes the lag.
+**A fork adds no speed.** The speed work below is what fixes the lag.
 
-- Size of our changes: `tools/tanuki3ds/tanuki-rgds.patch` is about 6,100 lines across 32 files.
+- Size of our changes: about 6,100 lines across 32 files, one commit on the `rgds` branch.
 - Upstream: our base commit `879a1e7` is still its latest, and recent commits there are mostly build and CI changes, so there is little to merge.
 - Licence: Tanuki3DS is GPL-3, so the source has to be offered if we ship the engine anyway. A public fork is the simplest way to do that.
 
@@ -31,11 +31,12 @@ If that is not enough, decide per game whether it is worth keeping. Azahar is no
 
 | # | Step | Why |
 |---|------|-----|
-| 1 | The owner creates the fork on GitHub, with an `rgds` branch from commit `879a1e7` | Real history |
-| 2 | Prepare the patch as a handful of commits: renderer, CPU, save states, menu, sound, build | Makes it possible to track down which change broke something |
+| 1 | Done: the fork on GitHub, `rgds` branch from commit `879a1e7`, our changes as one commit | Real history |
+| 2 | Done: `tools/tanuki3ds/build-tanuki.sh` clones the fork and checks out `TANUKI_REF` (default `rgds`); delete `tanuki-rgds.patch` once the branch is pushed | One source of truth |
 | 3 | Sort the `SPIKE_*` test switches into real settings and debug-only ones | Some test hooks are still acting as live settings |
-| 4 | Point `tools/tanuki3ds` at a fork commit instead of the patch file | One source of truth |
-| 5 | Automated builds and a way to install the engine | New cards do not get the engine today |
+| 4 | Automated builds and a way to install the engine | New cards do not get the engine today |
+
+Splitting the one commit into renderer, CPU, save states, menu and sound pieces was dropped: a day of work that fixes no lag. Bisect by the speed commits that follow it instead.
 
 ## Things to know first
 

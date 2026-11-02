@@ -1,10 +1,11 @@
 # Tanuki3DS for the RG DS
 
-The Nintendo 3DS engine: [Tanuki3DS](https://github.com/burhanr13/Tanuki3DS) at commit `879a1e7` (GPL-3.0) with
-`tanuki-rgds.patch`, SDL 3.2.24 and a patched Mesa 25.2.8. It lives on the data partition, in
-`/data/rgds/engines/tanuki3ds`, because it needs about 380 MB and the OS image has no room for it.
+The Nintendo 3DS engine: our fork [kleinrein/Tanuki3DS-rgds](https://github.com/kleinrein/Tanuki3DS-rgds), branch
+`rgds` (GPL-3.0), on [Tanuki3DS](https://github.com/burhanr13/Tanuki3DS) commit `879a1e7`, with SDL 3.2.24 and a
+patched Mesa 25.2.8. It lives on the data partition, in `/data/rgds/engines/tanuki3ds`, because it needs about 380 MB
+and the OS image has no room for it.
 
-Still a spike. The patch mixes real changes with test hooks (the `SPIKE_*` variables, which the launch plan also uses
+Still a spike. The fork mixes real changes with test hooks (the `SPIKE_*` variables, which the launch plan also uses
 as settings):
 
 - the renderer on its own thread, with command lists and vertex data copied when the game submits them;
@@ -29,7 +30,7 @@ as settings):
 
 Build in the Lima VM (`rgds-image`), under `~/3ds-spike`:
 
-    sh build-tanuki.sh   # SDL3 and Tanuki3DS (apply tanuki-rgds.patch to the clone first)
+    sh build-tanuki.sh   # SDL3 and the fork's rgds branch (TANUKI_REF=<branch or commit> for another, TANUKI_KEEP=1 to build the clone as it is)
     sh build-mesa.sh     # Mesa with Panfrost's buffer cache patched
     sh bundle-tanuki.sh  # tanuki-bundle.tar
 
