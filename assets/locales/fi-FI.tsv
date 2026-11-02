@@ -18,6 +18,7 @@
 A  Apply	A  Käytä
 A  Done	A  Valmis
 A  Jump	A  Siirry
+A  Leave	A  Poistu
 A  Play	A  Pelaa
 A  Search	A  Hae
 A 24-hour or 12-hour clock.	24 tai 12 tunnin kello.
@@ -77,6 +78,7 @@ Atlantic Ocean	Atlantti
 Audio is not recorded or saved.	Ääntä ei nauhoiteta eikä tallenneta.
 Australia	Australia
 Auto-load state	Lataa tila automaattisesti
+Auto-save	Automaattitallennus
 Auto-save on exit	Tallenna poistuttaessa
 Automatic	Automaattinen
 Automatic (free)	Automaattinen
@@ -128,12 +130,15 @@ Browse	Selaa
 Browse games	Selaa pelejä
 Browse systems	Selaa järjestelmiä
 Browser layout	Kirjaston asettelu
+Bubble Gum	Purukumi
 Build, storage and device address	Versio, tallennustila ja laitteen osoite
 Button	Painike
 Button layout	Painikeasettelu
 Button {0}	Painike {0}
 Buttons and the game menu shortcut	Painikkeet ja pelivalikon pikavalinta
 Cancel	Peruuta
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Karuselli
 Carried	Mukana
 Cartridges	Pelikasetit
@@ -141,6 +146,7 @@ Change group	Vaihda ryhmää
 Changes immediately. Map a button in Controls for quick access.	Tulee voimaan heti. Määritä pikapainike ohjainasetuksissa.
 Changing 3D threading…	Muutetaan 3D-säikeistystä…
 Changing speed…	Muutetaan nopeutta…
+Chaos Emeralds	Kaosmaragdit
 Chat is unavailable: you can still draw	Keskustelu ei ole käytettävissä: voit silti piirtää
 Chat Room	Chat-huone
 Chat Room {0}	Keskusteluhuone {0}
@@ -191,6 +197,7 @@ Compare	Vertaa
 Confirm	Vahvista
 Connect	Yhdistä
 Connect the charger before installing an update.	Kytke laturi ennen päivityksen asentamista.
+Connect the handheld to a computer first.	Yhdistä laite ensin tietokoneeseen.
 Connect to Wi-Fi to send files from a phone or computer.	Yhdistä Wi-Fiin, niin voit lähettää tiedostoja puhelimesta tai tietokoneesta.
 Connected	Yhdistetty
 Connected.	Yhdistetty.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Yhteys katkesi. Yritetään uudelleen…
 Connectivity	Yhteydet
 Continue	Jatka
 Continue where you left off	Jatka siitä, mihin jäit
+Continues	Jatkot
 Control unavailable on this device	Ohjaus ei ole käytettävissä tällä laitteella
 Controllers and other Bluetooth devices	Ohjaimet ja muut Bluetooth-laitteet
 Controls	Ohjaimet
@@ -219,6 +227,7 @@ Could not apply this shader.	Suodatinta ei voitu käyttää.
 Could not apply volume	Äänenvoimakkuutta ei voitu asettaa
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi-sovitinta ei voitu käynnistää. Yritä uudelleen.
 Could not change 3D threading. Your game is unchanged.	3D-säikeistystä ei voitu muuttaa. Peli säilyy ennallaan.
+Could not change USB data transfer.	USB-tiedonsiirtoa ei voitu muuttaa.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Wi-Fi-yhteyttä ei voitu vahvistaa. Hae verkot ja yritä uudelleen.
 Could not connect	Yhdistäminen epäonnistui
 Could not enable lid wake	Kannen avauksella herätystä ei voitu ottaa käyttöön
@@ -270,6 +279,7 @@ Development build	Kehitysversio
 Device address	Laitteen osoite
 Device information	Laitetiedot
 Discard update	Hylkää päivitys
+Disk	Levyke
 Display	Näyttö
 Display FPS	Näytön FPS
 Done	Valmis
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Muokkaa
 Edit search	Muokkaa hakua
 Effects volume	Tehosteiden voimakkuus
+Eject the drive on your computer when you are done	Poista asema tietokoneelta, kun olet valmis
 Empty slot	Tyhjä paikka
 Emulator	Emulaattori
 Emulator settings	Emulaattorin asetukset
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	VIRHE: asetuksia ei voitu palauttaa
 ERROR: Could not restore settings - see log	VIRHE: asetuksia ei voitu palauttaa – katso loki
 Essences	Esanssit
 Europe	Eurooppa
+Event	Laji
+Events	Lajit
 Every game in this collection has artwork.	Jokaisella kokoelman pelillä on kansikuva.
 Exit your game before installing an update.	Poistu pelistä ennen päivityksen asentamista.
 Experience	Kokemus
@@ -341,9 +354,11 @@ Fetch missing artwork	Hae puuttuvat kansikuvat
 Figurines	Figuurit
 File sharing on. Find "RG DS" under Network.	Tiedostonjako on päällä. "RG DS" löytyy kohdasta Verkko.
 Files added	Tiedostoja lisätty
+Files and SSH by cable; charging always works	Tiedostot ja SSH kaapelilla; lataus toimii aina
 Files arrived. Choose Play to start.	Tiedostot ovat perillä. Aloita valitsemalla Pelaa.
 Filter	Suodatin
 Filtered	Suodatetut
+Final	Lopputulos
 Find and connect to a nearby network	Etsi lähiverkko ja yhdistä siihen
 Find, pair and connect a nearby device	Etsi, muodosta pari ja yhdistä lähellä oleva laite
 Finding games…	Etsitään pelejä…
@@ -489,6 +504,7 @@ Key {0}	Näppäin {0}
 Keyboard	Näppäimistö
 Keys	Avaimet
 Kinstone fusions	Kinstone-fuusiot
+Lamppost	Lyhtypylväs
 Language	Kieli
 Last 4 weeks	Viimeiset 4 viikkoa
 Last 7 days	Viimeiset 7 päivää
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Leikkisät äänet sel
 Please keep your handheld on	Pidä laitteesi päällä
 Pocket green	Taskuvihreä
 Point and click on top	Osoita ja napsauta ylhäällä
+Points	Pisteet
 Pokédex caught	Pokédex: pyydetyt
 Pokédex seen	Pokédex: nähdyt
+Popcorn	Popcorn
 PortMaster is ready	PortMaster on valmis
 Ports	Portit
 Power	Virta
@@ -785,9 +803,11 @@ RGDS build	RGDS-versio
 Rich	Yksityiskohtainen
 Right	Oikea
 Right stick	Oikea sauva
+Rings	Renkaat
 Rollback simulated.	Palautuksen simulointi.
 Round	Kierros
 ROUNDED FONT UNAVAILABLE	PYÖRISTETTY FONTTI EI OLE SAATAVILLA
+Route	Reitti
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak -pelit DS:llä, tärinäkasetit Game Boylla ja Game Boy Advancella.
 Rumble strength	Tärinän voimakkuus
 Rupees	Rupiat
@@ -826,7 +846,9 @@ Scene	Näkymä
 Score	Pisteet
 Screen brightness	Näytön kirkkaus
 Screen colours	Näytön värit
-Screen off	Näyttö pois
+Menu	Valikko
+Switch	Vaihda
+Turn off screen	Sammuta näyttö
 screens	näyttöä
 ScreenScraper needs project credentials and your account	ScreenScraper tarvitsee projektitunnukset ja käyttäjätilisi
 Screenshot	Kuvakaappaus
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Terävä skaalaus DS-värikäsittely
 Sharp scaling, DS colour and Natural Vision together.	Terävä skaalaus, DS-värit ja Natural Vision yhdessä.
 Shield	Kilpi
 Shift	Vaihto
+Shift keys stay down until the next key	Vaihtonäppäimet pysyvät alhaalla seuraavaan näppäimeen
 Shortcut action	Pikavalinnan toiminto
 Shots	Laukaukset
 Show games	Näytä pelit
@@ -909,7 +932,9 @@ Spanish	Espanja
 Spring	Jousi
 Springy menu changes with a colourful wobble	Joustavat valikonvaihdot värikkäällä heilahduksella
 Stable	Vakaa
+Stage	Osuus
 Standard	Standard
+Standings	Tilanne
 START	ALOITA
 Start	Aloita
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Järjestelmäpäivitys
 Systems	Järjestelmät
 Tap to type, or use the D-pad and A	Kosketa kirjoittaaksesi tai käytä ristiohjainta ja A:ta
 Team	Joukkue
+Temper	Kiukku
 Temporary game cache cleared. Saves and artwork are kept.	Väliaikainen pelivälimuisti tyhjennetty. Tallennukset ja kansikuvat säilyvät.
 Terrain and unit	Maasto ja yksikkö
 Test	Testaa
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Tämä verkko tarvitsee yritysprofi
 This port lists no instructions.	Tällä portilla ei ole ohjeita.
 This request did not finish. Please try again.	Pyyntö ei valmistunut. Yritä uudelleen.
 This shader is unavailable for the current emulator.	Suodatin ei ole käytettävissä nykyisessä emulaattorissa.
+This stage	Tämä osuus
 This stock firmware has not been validated for updates.	Tätä alkuperäistä laiteohjelmistoa ei ole hyväksytty päivityksiin.
 This version failed to start. Waiting for a newer update.	Tämä versio ei käynnistynyt. Odotetaan uudempaa päivitystä.
 Threaded 3D	3D-säikeistys
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Päivityksen tarkistus epä
 Updates	Päivitykset
 Updates & recovery	Päivitykset ja palautus
 Updates will be available when the release channel opens.	Päivitykset tulevat saataville julkaisukanavan avautuessa.
+USB data transfer	USB-tiedonsiirto
+USB data transfer is not available on this handheld.	USB-tiedonsiirto ei ole käytettävissä tässä laitteessa.
+USB data transfer off.	USB-tiedonsiirto pois.
+USB data transfer on.	USB-tiedonsiirto päällä.
+USB drive mode	USB-asematila
 Use an additional rendering thread	Käytä lisärenderöintisäiettä
+Use as USB drive	Käytä USB-asemana
 Use default ({0})	Käytä oletusta ({0})
 Use default controls	Käytä yhteisiä ohjainasetuksia
 Use previous build	Käytä edellistä versiota
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	{0} henkilöä lähellä
 {0} players	{0} pelaajaa
 {0} settings	{0}: asetukset
+Welcome!	Tervetuloa!
+Let's get your handheld ready. It takes about a minute.	Laitetaan laitteesi valmiiksi. Se vie noin minuutin.
+Pick your colour	Valitse värisi
+The menus take it on. You can change it whenever you like.	Valikot saavat sen värin. Voit vaihtaa sen milloin vain.
+What's your name?	Mikä sinun nimesi on?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat näyttää sen lähellä oleville, ja DS-pelit käyttävät sitä omistajan nimenä.
+Is this the right time?	Onko aika oikein?
+You're connected	Yhteys on muodostettu
+Connect to Wi-Fi	Yhdistä Wi-Fi-verkkoon
+For box art, updates and PictoChat. Everything else works without it.	Kansikuvia, päivityksiä ja PictoChatia varten. Kaikki muu toimii ilmankin.
+You're all set!	Kaikki valmista!
+Play at a comfortable volume, and give your eyes and hands a break.	Pelaa miellyttävällä äänenvoimakkuudella ja anna silmien ja käsien levätä.
+In a game, the Anbernic button opens saves, cheats and settings.	Pelissä Anbernic-painike avaa tallennukset, huijaukset ja asetukset.
+Close the lid to sleep. Your game waits for you.	Sulje kansi, niin laite nukkuu. Pelisi odottaa sinua.
+Copy more games any time. They show up by themselves.	Kopioi lisää pelejä milloin vain. Ne ilmestyvät itsestään.
+Skip setup	Ohita käyttöönotto
+Run setup again	Tee käyttöönotto uudelleen
+Turn on Wi-Fi	Laita Wi-Fi päälle
+Turn on USB data transfer	Laita USB-tiedonsiirto päälle
+Connect to Wi-Fi first	Yhdistä ensin Wi-Fi-verkkoon
+Zoom	Zoomaus
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Liitä USB-C-kaapeli ja valitse Käytä USB-asemana, tai laita tämä kortti tietokoneeseen. Avaa RGDS-asema ja kopioi pelit roms-kansion kansioihin: nds, gba, gb, gbc, nes, snes, md ja muut.
+What do you want to play?	Mitä haluat pelata?
+You can change this later in Settings > Library.	Voit muuttaa tämän myöhemmin kohdassa Asetukset > Kirjasto.
+A clean library with only DS games.	Selkeä kirjasto, jossa on vain DS-pelejä.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation ja muita, järjestelmittäin.

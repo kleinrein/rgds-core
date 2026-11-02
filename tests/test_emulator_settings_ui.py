@@ -79,6 +79,18 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.run_ui(keys + ['Backspace'], 'rgds-experimental', touch='850 key Escape\n')
         self.assertEqual(read_fields(path)['nickname'], 'NineCharsX')
 
+    def test_ds_local_wireless_picker_writes_the_mode(self):
+        path = self.game.parent / 'ds-input.ini'
+        write_fields(path, dict(nickname='Old'))
+        keys = self.row(7, 'A', 'Down', 'Down', 'Down', 'Down', 'Down', 'A')
+        report = self.run_ui(keys, 'rgds-experimental')
+        self.assertEqual(report['picker_title'], 'Local wireless')
+        self.assertEqual(report['picker_focus'], 0)
+        self.run_ui(keys + ['Right', 'A'], 'rgds-experimental')
+        self.assertEqual(read_fields(path), dict(nickname='Old', wireless='1'))
+        report = self.run_ui(keys, 'rgds-experimental')
+        self.assertEqual(report['picker_focus'], 1)
+
     def test_dscore_is_the_default_and_capabilities_match_fork(self):
         report = self.run_ui([], library=True)
         self.assertEqual(report['default_core'], 4)  # the stored DSperate (1) is retired

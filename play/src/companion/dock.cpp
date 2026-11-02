@@ -204,11 +204,12 @@ bool Dock::moving() const {
 }
 
 Box Dock::box(Item item, int w, int h) const {
-    const int m = kit::margin, g = kit::gap, half = (w - m * 2 - g) / 2;
+    const int m = kit::margin, g = kit::gap, third = (w - m * 2 - g * 2) / 3;
     switch (item) {
     case Item::Button: return {w - m - 56, h - m - 56, 56, 56};
-    case Item::Switcher: return {m, 156, half, 96};
-    case Item::Home: return {m + half + g, 156, half, 96};
+    case Item::GameMenu: return {m, 156, third, 96};
+    case Item::Switcher: return {m + third + g, 156, third, 96};
+    case Item::Home: return {w - m - third, 156, third, 96};
     case Item::Bright: return {m, 264, w - m * 2, 88};
     // Over the companion the button keeps its corner.
     case Item::Off: return {m, 364, w - m * 2 - (full_ ? 0 : 56 + g), 72};
@@ -246,7 +247,7 @@ bool Dock::touch(const Touch& t) {
             closed_at_ = now_ | 1;
             return true;
         }
-        for (Item item : {Item::Switcher, Item::Home, Item::Off})
+        for (Item item : {Item::GameMenu, Item::Switcher, Item::Home, Item::Off})
             if (inside(item)) {
                 held_ = item;
                 held_at_ = now_;
@@ -271,9 +272,9 @@ bool Dock::touch(const Touch& t) {
     if (held_ != Item::None && t.kind == Touch::Move && !inside(held_)) held_ = Item::None; // slid off: cancelled
     if (t.kind == Touch::Up) {
         wake();
-        if (held_ == Item::Switcher && inside(Item::Switcher)) {
-            action_ = Action::Switcher;
-            // The switcher opens over both screens; the companion is what comes back.
+        if ((held_ == Item::GameMenu || held_ == Item::Switcher) && inside(held_)) {
+            action_ = held_ == Item::GameMenu ? Action::GameMenu : Action::Switcher;
+            // They open over both screens; the companion is what comes back.
             if (!full_) {
                 open_ = false;
                 opened_at_ = closed_at_ = 0;
@@ -411,12 +412,13 @@ void Dock::hold_button(Canvas& out, const Look& look, const Font& font, const Wo
     const bool held = held_ == item && !fired_;
     const double progress = held ? std::min(1.0, double(now_ - held_at_) / hold_ms) : 0;
     raised(out, look, b.x, b.y, b.w, b.h, kit::radius, held ? look.focus : look.panel, held ? 1 : 0, true, false);
-    const int sink = held ? 2 : 0, cx = b.x + 16 + kit::badge / 2, cy = b.y + b.h / 2 + sink;
+    const int sink = held ? 2 : 0, cx = b.x + b.w / 2, cy = b.y + 33 + sink;
     icon_badge(out, look, cx - kit::badge / 2, cy - kit::badge / 2, glyph, held);
     // The hold fills a ring round the badge; at the top, it is done.
     if (held && held_item(item)) ring(out, cx, cy, kit::badge / 2 + 7, 4, progress, look.accent);
-    const int tx = b.x + 16 + kit::badge + 16;
-    font.draw(out, tx, font.centred(kit::title, cy), font.fit(words(name), kit::title, b.x + b.w - 12 - tx), kit::title,
+    // Three in a row: the name under the badge.
+    const std::string text = font.fit(words(name), kit::title, b.w - 12);
+    font.draw(out, cx - font.measure(text, kit::title) / 2, font.centred(kit::title, b.y + 76 + sink), text, kit::title,
               look.ink);
 }
 
@@ -491,7 +493,8 @@ void Dock::battery(Canvas& out, const Look& look, int x, int y) const {
 
 void Dock::draw_controls(Canvas& out, const Look& look, const Font& font, const Words& words) const {
     const int W = out.w(), m = kit::margin;
-    for (Item item : {Item::Switcher, Item::Home, Item::Bright, Item::Off}) touch_target(box(item, W, out.h()));
+    for (Item item : {Item::GameMenu, Item::Switcher, Item::Home, Item::Bright, Item::Off})
+        touch_target(box(item, W, out.h()));
     // The game: its box art (else its system), name, system and this session's time; the clock and battery.
     const Box top{m, kit::margin, W - m * 2, 120};
     card(out, look, top);
@@ -524,8 +527,9 @@ void Dock::draw_controls(Canvas& out, const Look& look, const Font& font, const 
         font.draw(out, right - 41 - (charging_ ? 22 : 8) - bw, font.centred(kit::small, top.y + 98), b, kit::small,
                   look.muted);
     }
-    hold_button(out, look, font, words, Item::Switcher, Icon::Library, "Game switcher");
-    hold_button(out, look, font, words, Item::Home, Icon::Home, "Return home");
+    hold_button(out, look, font, words, Item::GameMenu, Icon::Controller, "Menu");
+    hold_button(out, look, font, words, Item::Switcher, Icon::Library, "Switch");
+    hold_button(out, look, font, words, Item::Home, Icon::Home, "Home");
     // Brightness: a slider, dragged.
     const Box br = box(Item::Bright, W, out.h());
     card(out, look, br, dragging_);
@@ -539,13 +543,13 @@ void Dock::draw_controls(Canvas& out, const Look& look, const Font& font, const 
     const std::string pct = std::to_string(brightness_) + "%";
     font.draw(out, br.x + br.w - 18 - font.measure(pct, kit::body), font.centred(kit::body, br.y + br.h / 2), pct,
               kit::body, look.ink);
-    // Screen off.
+    // Turn off screen.
     const Box off = box(Item::Off, W, out.h());
     raised(out, look, off.x, off.y, off.w, off.h, kit::radius, held_ == Item::Off ? look.focus : look.panel,
            held_ == Item::Off ? 1 : 0, true, false);
     icon_badge(out, look, off.x + 16, off.y + (off.h - kit::badge) / 2, Icon::Sleep);
     const int ox = off.x + 16 + kit::badge + 16;
-    font.draw(out, ox, font.centred(kit::title, off.y + off.h / 2), words("Screen off"), kit::title, look.ink);
+    font.draw(out, ox, font.centred(kit::title, off.y + off.h / 2), words("Turn off screen"), kit::title, look.ink);
 }
 
 } // namespace play

@@ -18,6 +18,7 @@
 A  Apply	A  Apply
 A  Done	A  Done
 A  Jump	A  Jump
+A  Leave	A  Leave
 A  Play	A  Play
 A  Search	A  Search
 A 24-hour or 12-hour clock.	A 24-hour or 12-hour clock.
@@ -77,6 +78,7 @@ Atlantic Ocean	Atlantic Ocean
 Audio is not recorded or saved.	Audio is not recorded or saved.
 Australia	Australia
 Auto-load state	Auto-load state
+Auto-save	Auto-save
 Auto-save on exit	Auto-save on exit
 Automatic	Automatic
 Automatic (free)	Automatic
@@ -128,12 +130,15 @@ Browse	Browse
 Browse games	Browse games
 Browse systems	Browse systems
 Browser layout	Browser layout
+Bubble Gum	Bubble Gum
 Build, storage and device address	Build, storage and device address
 Button	Button
 Button layout	Button layout
 Button {0}	Button {0}
 Buttons and the game menu shortcut	Buttons and the game menu shortcut
 Cancel	Cancel
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Carousel
 Carried	Carried
 Cartridges	Cartridges
@@ -141,6 +146,7 @@ Change group	Change group
 Changes immediately. Map a button in Controls for quick access.	Changes immediately. Map a button in Controls for quick access.
 Changing 3D threading…	Changing 3D threading…
 Changing speed…	Changing speed…
+Chaos Emeralds	Chaos Emeralds
 Chat is unavailable: you can still draw	Chat is unavailable: you can still draw
 Chat Room	Chat Room
 Chat Room {0}	Chat Room {0}
@@ -191,6 +197,7 @@ Compare	Compare
 Confirm	Confirm
 Connect	Connect
 Connect the charger before installing an update.	Connect the charger before installing an update.
+Connect the handheld to a computer first.	Connect the handheld to a computer first.
 Connect to Wi-Fi to send files from a phone or computer.	Connect to Wi-Fi to send files from a phone or computer.
 Connected	Connected
 Connected.	Connected.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Connection lost. Retrying…
 Connectivity	Connectivity
 Continue	Continue
 Continue where you left off	Continue where you left off
+Continues	Continues
 Control unavailable on this device	Control unavailable on this device
 Controllers and other Bluetooth devices	Controllers and other Bluetooth devices
 Controls	Controls
@@ -219,6 +227,7 @@ Could not apply this shader.	Could not apply this shader.
 Could not apply volume	Could not apply volume
 Could not bring the Wi-Fi adapter up. Try again.	Could not bring the Wi-Fi adapter up. Try again.
 Could not change 3D threading. Your game is unchanged.	Could not change 3D threading. Your game is unchanged.
+Could not change USB data transfer.	Could not change USB data transfer.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Could not confirm the selected Wi-Fi connection. Scan and try again.
 Could not connect	Could not connect
 Could not enable lid wake	Could not enable lid wake
@@ -270,6 +279,7 @@ Development build	Development build
 Device address	Device address
 Device information	Device information
 Discard update	Discard update
+Disk	Disk
 Display	Display
 Display FPS	Display FPS
 Done	Done
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Edit
 Edit search	Edit search
 Effects volume	Effects volume
+Eject the drive on your computer when you are done	Eject the drive on your computer when you are done
 Empty slot	Empty slot
 Emulator	Emulator
 Emulator settings	Emulator settings
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	ERROR: Could not restore settings
 ERROR: Could not restore settings - see log	ERROR: Could not restore settings - see log
 Essences	Essences
 Europe	Europe
+Event	Event
+Events	Events
 Every game in this collection has artwork.	Every game in this collection has artwork.
 Exit your game before installing an update.	Exit your game before installing an update.
 Experience	Experience
@@ -341,9 +354,11 @@ Fetch missing artwork	Fetch missing artwork
 Figurines	Figurines
 File sharing on. Find "RG DS" under Network.	File sharing on. Find "RG DS" under Network.
 Files added	Files added
+Files and SSH by cable; charging always works	Files and SSH by cable; charging always works
 Files arrived. Choose Play to start.	Files arrived. Choose Play to start.
 Filter	Filter
 Filtered	Filtered
+Final	Final
 Find and connect to a nearby network	Find and connect to a nearby network
 Find, pair and connect a nearby device	Find, pair and connect a nearby device
 Finding games…	Finding games…
@@ -489,6 +504,7 @@ Key {0}	Key {0}
 Keyboard	Keyboard
 Keys	Keys
 Kinstone fusions	Kinstone fusions
+Lamppost	Lamppost
 Language	Language
 Last 4 weeks	Last 4 weeks
 Last 7 days	Last 7 days
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Playful sounds for bro
 Please keep your handheld on	Please keep your handheld on
 Pocket green	Pocket green
 Point and click on top	Point and click on top
+Points	Points
 Pokédex caught	Pokédex caught
 Pokédex seen	Pokédex seen
+Popcorn	Popcorn
 PortMaster is ready	PortMaster is ready
 Ports	Ports
 Power	Power
@@ -785,9 +803,11 @@ RGDS build	RGDS build
 Rich	Rich
 Right	Right
 Right stick	Right stick
+Rings	Rings
 Rollback simulated.	Rollback simulated.
 Round	Round
 ROUNDED FONT UNAVAILABLE	ROUNDED FONT UNAVAILABLE
+Route	Route
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.
 Rumble strength	Rumble strength
 Rupees	Rupees
@@ -826,7 +846,9 @@ Scene	Scene
 Score	Score
 Screen brightness	Screen brightness
 Screen colours	Screen colours
-Screen off	Screen off
+Menu	Menu
+Switch	Switch
+Turn off screen	Turn off screen
 screens	screens
 ScreenScraper needs project credentials and your account	ScreenScraper needs project credentials and your account
 Screenshot	Screenshot
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Sharp scaling with the DS color trea
 Sharp scaling, DS colour and Natural Vision together.	Sharp scaling, DS color and Natural Vision together.
 Shield	Shield
 Shift	Shift
+Shift keys stay down until the next key	Shift keys stay down until the next key
 Shortcut action	Shortcut action
 Shots	Shots
 Show games	Show games
@@ -909,7 +932,9 @@ Spanish	Spanish
 Spring	Spring
 Springy menu changes with a colourful wobble	Springy menu changes with a colourful wobble
 Stable	Stable
+Stage	Stage
 Standard	Standard
+Standings	Standings
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	System update
 Systems	Systems
 Tap to type, or use the D-pad and A	Tap to type, or use the D-pad and A
 Team	Team
+Temper	Temper
 Temporary game cache cleared. Saves and artwork are kept.	Temporary game cache cleared. Saves and artwork are kept.
 Terrain and unit	Terrain and unit
 Test	Test
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	This network requires an enterprise
 This port lists no instructions.	This port lists no instructions.
 This request did not finish. Please try again.	This request did not finish. Please try again.
 This shader is unavailable for the current emulator.	This shader is unavailable for the current emulator.
+This stage	This stage
 This stock firmware has not been validated for updates.	This stock firmware has not been validated for updates.
 This version failed to start. Waiting for a newer update.	This version failed to start. Waiting for a newer update.
 Threaded 3D	Threaded 3D
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Update verification failed.
 Updates	Updates
 Updates & recovery	Updates & recovery
 Updates will be available when the release channel opens.	Updates will be available when the release channel opens.
+USB data transfer	USB data transfer
+USB data transfer is not available on this handheld.	USB data transfer is not available on this handheld.
+USB data transfer off.	USB data transfer off.
+USB data transfer on.	USB data transfer on.
+USB drive mode	USB drive mode
 Use an additional rendering thread	Use an additional rendering thread
+Use as USB drive	Use as USB drive
 Use default ({0})	Use default ({0})
 Use default controls	Use default controls
 Use previous build	Use previous build
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	{0} people nearby
 {0} players	{0} players
 {0} settings	{0} settings
+Welcome!	Welcome!
+Let's get your handheld ready. It takes about a minute.	Let's get your handheld ready. It takes about a minute.
+Pick your colour	Pick your colour
+The menus take it on. You can change it whenever you like.	The menus take it on. You can change it whenever you like.
+What's your name?	What's your name?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat shows it to people nearby, and DS games use it as the owner's name.
+Is this the right time?	Is this the right time?
+You're connected	You're connected
+Connect to Wi-Fi	Connect to Wi-Fi
+For box art, updates and PictoChat. Everything else works without it.	For box art, updates and PictoChat. Everything else works without it.
+You're all set!	You're all set!
+Play at a comfortable volume, and give your eyes and hands a break.	Play at a comfortable volume, and give your eyes and hands a break.
+In a game, the Anbernic button opens saves, cheats and settings.	In a game, the Anbernic button opens saves, cheats and settings.
+Close the lid to sleep. Your game waits for you.	Close the lid to sleep. Your game waits for you.
+Copy more games any time. They show up by themselves.	Copy more games any time. They show up by themselves.
+Skip setup	Skip setup
+Run setup again	Run setup again
+Turn on Wi-Fi	Turn on Wi-Fi
+Turn on USB data transfer	Turn on USB data transfer
+Connect to Wi-Fi first	Connect to Wi-Fi first
+Zoom	Zoom
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.
+What do you want to play?	What do you want to play?
+You can change this later in Settings > Library.	You can change this later in Settings > Library.
+A clean library with only DS games.	A clean library with only DS games.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation and more, sorted by system.

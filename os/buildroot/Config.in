@@ -7,5 +7,8 @@ source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-snes9x/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-picodrive/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-pcsx-rearmed/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-mupen64plus-next/Config.in"
+source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-fuse/Config.in"
+source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-vice/Config.in"
+source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-ppsspp/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/rocknix-extra-firmware/Config.in"
 endmenu

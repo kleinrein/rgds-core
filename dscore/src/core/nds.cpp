@@ -668,7 +668,7 @@ bool NDS::save_state(state::Writer& w, std::string& err) {
     err = "the NAND is written through to its file, which a state cannot carry";
     return false;
   }
-  if (!sched.at_slice_boundary() || gpu.line() != 0 || !gpu.at_line_start()) {
+  if (!sched.at_slice_boundary() || !gpu.at_frame_edge() || !gpu.at_line_start()) {
     err = "not at a frame boundary";
     return false;
   }

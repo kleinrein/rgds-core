@@ -18,6 +18,7 @@
 A  Apply	A  应用
 A  Done	A  完成
 A  Jump	A  跳转
+A  Leave	A  退出
 A  Play	A  开始游戏
 A  Search	A  搜索
 A 24-hour or 12-hour clock.	24 小时制或 12 小时制。
@@ -77,6 +78,7 @@ Atlantic Ocean	大西洋
 Audio is not recorded or saved.	不会录制或保存声音。
 Australia	澳大利亚
 Auto-load state	自动读取即时存档
+Auto-save	自动存档
 Auto-save on exit	退出时自动存档
 Automatic	自动
 Automatic (free)	自动
@@ -128,12 +130,15 @@ Browse	浏览
 Browse games	浏览游戏
 Browse systems	浏览系统
 Browser layout	列表布局
+Bubble Gum	泡泡糖
 Build, storage and device address	版本、存储空间和设备地址
 Button	按键
 Button layout	按键布局
 Button {0}	按键 {0}
 Buttons and the game menu shortcut	按键与游戏菜单快捷键
 Cancel	取消
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	轮播
 Carried	携带
 Cartridges	卡带
@@ -141,6 +146,7 @@ Change group	切换分组
 Changes immediately. Map a button in Controls for quick access.	立即切换。在“按键设置”中指定按键可快速使用。
 Changing 3D threading…	正在更改 3D 线程…
 Changing speed…	正在更改速度…
+Chaos Emeralds	混沌翡翠
 Chat is unavailable: you can still draw	无法聊天：仍然可以画画
 Chat Room	聊天室
 Chat Room {0}	聊天室 {0}
@@ -191,6 +197,7 @@ Compare	对比
 Confirm	确认
 Connect	连接
 Connect the charger before installing an update.	安装更新前请连接充电器。
+Connect the handheld to a computer first.	请先将掌机连接到电脑。
 Connect to Wi-Fi to send files from a phone or computer.	连接 Wi-Fi 后即可从手机或电脑发送文件。
 Connected	已连接
 Connected.	已连接。
@@ -200,6 +207,7 @@ Connection lost. Retrying…	连接已断开，正在重试…
 Connectivity	网络
 Continue	继续
 Continue where you left off	从上次的进度继续
+Continues	接关次数
 Control unavailable on this device	此设备不支持该操作
 Controllers and other Bluetooth devices	手柄和其他蓝牙设备
 Controls	按键设置
@@ -219,6 +227,7 @@ Could not apply this shader.	无法应用此滤镜。
 Could not apply volume	无法应用音量
 Could not bring the Wi-Fi adapter up. Try again.	无法启动 Wi-Fi 适配器，请重试。
 Could not change 3D threading. Your game is unchanged.	无法更改 3D 线程，游戏不受影响。
+Could not change USB data transfer.	无法更改 USB 数据传输。
 Could not confirm the selected Wi-Fi connection. Scan and try again.	无法确认所选的 Wi-Fi 连接。请重新搜索后再试。
 Could not connect	无法连接
 Could not enable lid wake	无法启用开盖唤醒
@@ -270,6 +279,7 @@ Development build	开发版
 Device address	设备地址
 Device information	设备信息
 Discard update	放弃更新
+Disk	磁盘
 Display	显示
 Display FPS	屏幕帧率
 Done	完成
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	编辑
 Edit search	编辑搜索
 Effects volume	音效音量
+Eject the drive on your computer when you are done	完成后请在电脑上推出驱动器
 Empty slot	空存档位
 Emulator	模拟器
 Emulator settings	模拟器设置
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	错误：无法恢复设置
 ERROR: Could not restore settings - see log	错误：无法恢复设置 - 请查看日志
 Essences	精华
 Europe	欧洲
+Event	项目
+Events	项目
 Every game in this collection has artwork.	此合集中的游戏都已有封面。
 Exit your game before installing an update.	安装更新前请先退出游戏。
 Experience	经验
@@ -341,9 +354,11 @@ Fetch missing artwork	获取缺少的封面
 Figurines	手办
 File sharing on. Find "RG DS" under Network.	已开启文件共享。请在“网络”中查找“RG DS”。
 Files added	已添加文件
+Files and SSH by cable; charging always works	用线缆传文件和 SSH；始终可以充电
 Files arrived. Choose Play to start.	文件已到达。选择开始游戏即可开始。
 Filter	筛选
 Filtered	已筛选
+Final	最终
 Find and connect to a nearby network	搜索并连接附近的网络
 Find, pair and connect a nearby device	查找、配对并连接附近的设备
 Finding games…	正在查找游戏…
@@ -489,6 +504,7 @@ Key {0}	按键 {0}
 Keyboard	键盘
 Keys	钥匙
 Kinstone fusions	合成奇石
+Lamppost	路灯
 Language	语言
 Last 4 weeks	最近 4 周
 Last 7 days	最近 7 天
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	浏览、选择和开�
 Please keep your handheld on	请勿关闭掌机
 Pocket green	口袋绿
 Point and click on top	在上屏指向和点击
+Points	分数
 Pokédex caught	图鉴 捕获
 Pokédex seen	图鉴 遇见
+Popcorn	爆米花
 PortMaster is ready	PortMaster 已就绪
 Ports	移植游戏
 Power	电源
@@ -785,9 +803,11 @@ RGDS build	RGDS 版本
 Rich	精致
 Right	右
 Right stick	右摇杆
+Rings	圆环
 Rollback simulated.	已模拟回滚。
 Round	回合
 ROUNDED FONT UNAVAILABLE	圆体字体不可用
+Route	路线
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DS 上支持震动卡带的游戏，以及 Game Boy 和 Game Boy Advance 的震动卡带。
 Rumble strength	震动强度
 Rupees	卢比
@@ -826,7 +846,9 @@ Scene	场景
 Score	得分
 Screen brightness	屏幕亮度
 Screen colours	屏幕颜色
-Screen off	关闭屏幕
+Menu	菜单
+Switch	切换
+Turn off screen	关闭屏幕
 screens	个画面
 ScreenScraper needs project credentials and your account	ScreenScraper 需要项目凭据和你的账号
 Screenshot	截图
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	锐利缩放，DS 色彩。
 Sharp scaling, DS colour and Natural Vision together.	锐利缩放、DS 色彩与 Natural Vision 的组合。
 Shield	盾
 Shift	Shift
+Shift keys stay down until the next key	Shift 键会保持按下，直到按下一个键
 Shortcut action	快捷键功能
 Shots	剩余子弹
 Show games	显示游戏
@@ -909,7 +932,9 @@ Spanish	西班牙语
 Spring	弹簧
 Springy menu changes with a colourful wobble	带有彩色弹跳的菜单切换
 Stable	稳定版
+Stage	赛段
 Standard	标准
+Standings	排名
 START	START
 Start	开始
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	系统更新
 Systems	系统
 Tap to type, or use the D-pad and A	触摸输入，或使用十字键和 A
 Team	队伍
+Temper	怒气
 Temporary game cache cleared. Saves and artwork are kept.	已清除游戏临时缓存。存档和封面已保留。
 Terrain and unit	地形与部队
 Test	测试
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	此网络需要企业配置文件�
 This port lists no instructions.	此移植没有说明。
 This request did not finish. Please try again.	请求未完成，请重试。
 This shader is unavailable for the current emulator.	当前模拟器无法使用此滤镜。
+This stage	本赛段
 This stock firmware has not been validated for updates.	此原厂固件尚未经过更新验证。
 This version failed to start. Waiting for a newer update.	此版本无法启动，正在等待更新的版本。
 Threaded 3D	多线程 3D
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	更新验证失败。请重
 Updates	更新
 Updates & recovery	更新与恢复
 Updates will be available when the release channel opens.	发布渠道开放后即可更新。
+USB data transfer	USB 数据传输
+USB data transfer is not available on this handheld.	此掌机不支持 USB 数据传输。
+USB data transfer off.	USB 数据传输已关闭。
+USB data transfer on.	USB 数据传输已开启。
+USB drive mode	USB 驱动器模式
 Use an additional rendering thread	使用额外的渲染线程
+Use as USB drive	用作 USB 驱动器
 Use default ({0})	使用默认值（{0}）
 Use default controls	使用通用按键设置
 Use previous build	使用之前的版本
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	附近有 {0} 人
 {0} players	{0} 名玩家
 {0} settings	{0} 设置
+Welcome!	欢迎!
+Let's get your handheld ready. It takes about a minute.	让我们准备好你的掌机。大约需要一分钟。
+Pick your colour	选择你的颜色
+The menus take it on. You can change it whenever you like.	菜单会使用这个颜色。可以随时更改。
+What's your name?	你叫什么名字?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat 会向附近的人显示它,DS 游戏会将其用作机主名称。
+Is this the right time?	时间正确吗?
+You're connected	已连接
+Connect to Wi-Fi	连接 Wi-Fi
+For box art, updates and PictoChat. Everything else works without it.	用于封面、更新和 PictoChat。其他功能无需联网。
+You're all set!	全部就绪!
+Play at a comfortable volume, and give your eyes and hands a break.	请以舒适的音量游戏,并让眼睛和双手休息。
+In a game, the Anbernic button opens saves, cheats and settings.	在游戏中,按 Anbernic 键可打开存档、金手指和设置。
+Close the lid to sleep. Your game waits for you.	合上盖子即可休眠。游戏会等着你。
+Copy more games any time. They show up by themselves.	随时可以复制更多游戏。它们会自动出现。
+Skip setup	跳过设置
+Run setup again	重新运行设置
+Turn on Wi-Fi	打开 Wi-Fi
+Turn on USB data transfer	打开 USB 数据传输
+Connect to Wi-Fi first	请先连接 Wi-Fi
+Zoom	缩放
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	连接 USB-C 数据线并选择“用作 USB 驱动器”,或将此卡插入电脑。打开 RGDS 驱动器,将游戏复制到 roms 内的文件夹:nds、gba、gb、gbc、nes、snes、md 等。
+What do you want to play?	你想玩什么?
+You can change this later in Settings > Library.	之后可以在“设置 > 游戏库”中更改。
+A clean library with only DS games.	只有 DS 游戏的简洁游戏库。
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS、Game Boy、SNES、PlayStation 等,按系统排列。

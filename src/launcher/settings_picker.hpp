@@ -12,6 +12,7 @@ void App::show_picker(std::string title, std::vector<std::string> options, int s
     picker_detail = false;
     picker_open = true;
     picker_scroll = 0;
+    picker_motion.stop();
     picker_rail = picker_swipe = scroll_hover = false;
     reveal_picker_focus();
     picker_at = s.GetTicks();
@@ -444,7 +445,7 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
             std::min(int(picker_options.size()), picker_first() + picker_visible() + (picker_scrollable() ? 1 : 0));
         for (int i = picker_first(); i < end; i++) {
             int stride = picker_stride(),
-                row = top + 64 + (picker_scrollable() ? i * stride - picker_scroll : (i - picker_first()) * stride),
+                row = top + 64 + (picker_scrollable() ? i * stride - picker_scroll - picker_shift() : (i - picker_first()) * stride),
                 dx = 40, width = picker_scrollable() ? 520 : 560;
             bool focused = i == picker_focus;
             if (!picker_scrollable()) move_element(uint32_t(i + 100), dx, row, width, stride - 6, focused, 0, 424);

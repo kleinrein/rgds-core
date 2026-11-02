@@ -4,7 +4,8 @@
 
 // The Home key: the game search, wherever the launcher is; pressed again while typing it closes.
 void App::launcher_search_shortcut() {
-    if (o.game_menu || !session_initialized || settings.page == Page::BootWarning) return;
+    if (o.game_menu || !session_initialized || settings.page == Page::BootWarning || settings.page == Page::Welcome)
+        return;
     if (settings.page == Page::Keyboard && edit_field == 4) {
         finish_edit(false);
         return;
@@ -16,7 +17,8 @@ void App::launcher_search_shortcut() {
 
 // The Anbernic button: the game switcher, as the button opens it in a game; pressed again it closes.
 void App::launcher_switcher_shortcut() {
-    if (o.game_menu || !session_initialized || settings.page == Page::BootWarning) return;
+    if (o.game_menu || !session_initialized || settings.page == Page::BootWarning || settings.page == Page::Welcome)
+        return;
     leave_for_shortcut();
     if (settings.page == Page::GameSwitcher && home_switcher) close_home_switcher();
     else open_home_switcher();

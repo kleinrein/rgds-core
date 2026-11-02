@@ -90,6 +90,29 @@ class GameInfoTests(unittest.TestCase):
         path.write_bytes(b'\0' * 12 + b'ABCE' + b'\0' * 500)
         return path
 
+    def rom_3ds(self, name='mk7.cci', code='AMKP'):
+        header = bytearray(0x4200)
+        header[0x100:0x104] = b'NCSD'
+        header[0x4100:0x4104] = b'NCCH'
+        serial = ('CTR-P-' + code).encode()
+        header[0x4150:0x4150 + len(serial)] = serial
+        path = self.root / name
+        path.write_bytes(bytes(header))
+        return path
+
+    def test_a_3ds_game_is_known_by_its_product_code_not_its_file_name(self):
+        self.assertEqual(art.rom_identity(self.rom_3ds()), ('3ds', 'mk7', 'AMKP'))
+        # a lone CXI has its one partition at the start
+        cxi = bytearray(0x200)
+        cxi[0x100:0x104] = b'NCCH'
+        cxi[0x150:0x15A] = b'CTR-P-ABEP'
+        self.assertEqual(art.ctr_code(bytes(cxi)), 'ABEP')
+        self.assertEqual(art.ctr_code(b'\0' * 0x4200), '')
+
+    def test_3ds_serials_in_the_no_intro_list_are_found_by_game_code(self):
+        raw = 'game (\n\tname "Mario Kart 7 (Europe)"\n\tserial "CTR-P-AMKP"\n)\n'
+        self.assertEqual(art.serial_index(raw), {'AMKP': ['Mario Kart 7 (Europe)']})
+
     def test_parse_kinds_ignores_unknown_words_and_keeps_order(self):
         self.assertEqual(game_info.parse_kinds('title, info,bogus'), ('info', 'title'))
         self.assertEqual(game_info.parse_kinds(''), ())

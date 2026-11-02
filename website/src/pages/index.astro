@@ -1,0 +1,216 @@
+---
+import '@fontsource-variable/nunito';
+import '../styles/site.css';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const repo = 'https://github.com/kleinrein/rgds-core';
+const flasher = `${repo}/releases/latest/download/RG-DS-Flasher`;
+const title = 'RG DS OS: a fast, free operating system for the Anbernic RG DS';
+const description = 'A fast, free Linux OS for the Anbernic RG DS. Boots into your library, plays on both screens and updates safely.';
+
+const secondScreen = [
+  { id: 'pokemon', game: 'Pokémon', panel: 'Live team and battle panel', alt: 'Pokémon on the top screen, the current team on the bottom screen.' },
+  { id: 'sma4', game: 'Super Mario Advance 4', panel: 'Status board', alt: 'Super Mario Advance 4 on the top screen, world, lives, time, coins and score on the bottom screen.' },
+  { id: 'circuit', game: 'Mario Kart: Super Circuit', panel: 'HUD and course map', alt: 'Mario Kart: Super Circuit on the top screen, the laps, top four and course map on the bottom screen.' },
+  { id: 'mk64', game: 'Mario Kart 64', panel: 'Whole course and your place', alt: 'Mario Kart 64 on the top screen, the whole course with your position on the bottom screen.' },
+];
+
+const views = [
+  { id: 'cartridges', name: 'Cartridges', alt: 'Library as a row of cartridge tiles, with the selected game’s cover on the top screen.' },
+  { id: 'covers', name: 'Covers', alt: 'Library as a shelf of box covers.' },
+  { id: 'list', name: 'List', alt: 'Library as a scrolling list of game titles.' },
+];
+
+const features = [
+  { name: 'DSCore', text: 'Crisp 3D at up to 5x. The most demanding games may slow down or show glitches.' },
+  { name: 'A unified in-game menu', text: 'Checkpoints, cheats and game switching, consistent across every system.' },
+  { name: 'Refined picture', text: 'More than 30 shaders and LCD filters to suit each game.' },
+  { name: 'Dependable updates', text: 'Signed, delivered over Wi-Fi and reversed automatically if anything goes wrong.' },
+  { name: 'True sleep', text: 'Close the lid and it rests on minimal power, ready to resume where you left off.' },
+  { name: 'Simple file transfer', text: 'Copy games over Wi-Fi or USB-C, or connect it as a USB drive.' },
+  { name: 'Classic computers', text: 'ZX Spectrum and Commodore 64, with a keyboard on the second screen.' },
+  { name: 'PortMaster', text: 'PC games adapted for handhelds.' },
+  { name: 'PictoChat', text: 'Our own take on the classic: Wi-Fi chat between handhelds.' },
+  { name: 'Tailored', text: 'Light and dark themes, accent colours and 22 languages.' },
+];
+
+const systems = [
+  ['nds', 'Nintendo DS'], ['3ds', 'Nintendo 3DS'], ['gba', 'Game Boy Advance'], ['gb', 'Game Boy'], ['gbc', 'Game Boy Color'],
+  ['nes', 'NES'], ['snes', 'SNES'], ['md', 'Mega Drive'], ['sms', 'Master System'], ['psx', 'PlayStation'],
+  ['psp', 'PlayStation Portable'], ['n64', 'Nintendo 64'], ['zx', 'ZX Spectrum'], ['c64', 'Commodore 64'], ['ports', 'Ports'],
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0c111a" />
+    <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
+    <link rel="canonical" href={new URL(`${base}/`, Astro.site)} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={new URL(`${base}/`, Astro.site)} />
+    <meta property="og:image" content={new URL(`${base}/og.png`, Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Two RG DS handhelds running RG DS OS: the home screen, and a racing game with its map on the bottom screen." />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap">
+        <a class="logo" href={`${base}/`}><img src={`${base}/favicon.svg`} alt="" width="32" height="32" /><span>RG DS OS</span></a>
+        <nav aria-label="Main">
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#install">Install</a></li>
+            <li><a href={repo}>GitHub</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-text">
+            <h1 id="hero-title">The OS your RG&nbsp;DS should have shipped with.</h1>
+            <p class="lead">Boots straight into your library, plays on both screens and sleeps when you close the lid.</p>
+            <div class="actions">
+              <a class="button primary" id="download" href="#install">Download</a>
+              <a class="button" href={repo}>View on GitHub</a>
+            </div>
+            <p class="note">Free and open source. Early release: tested on the RG DS, still being checked on the RG DS Plus.</p>
+          </div>
+          <img class="hero-device" src={`${base}/shots/home.webp`} width="584" height="631" fetchpriority="high"
+            alt="RG DS showing a clock and calendar on the top screen, and the home menu with the last played game on the bottom screen." />
+        </section>
+
+        <dl class="facts">
+          <div><dt>Power to menu</dt><dd>7 s</dd></div>
+          <div><dt>Button to finished frame in menus</dt><dd>24 ms</dd></div>
+          <div><dt>Sharpest DS 3D</dt><dd>5x</dd></div>
+          <div><dt>Games with second-screen panels</dt><dd>50+</dd></div>
+        </dl>
+      </div>
+
+      <section class="section" aria-labelledby="second-title">
+        <div class="wrap">
+          <div class="section-head">
+            <h2 id="second-title">Two screens, even for one-screen games.</h2>
+            <p class="lead">The game plays on top. Maps, teams and HUDs move to the bottom.</p>
+          </div>
+          <div class="shots four">
+            {secondScreen.map((s) => (
+              <figure>
+                <img src={`${base}/shots/${s.id}.webp`} width="468" height="505" loading="lazy" alt={s.alt} />
+                <figcaption><strong>{s.game}</strong><span>{s.panel}</span></figcaption>
+              </figure>
+            ))}
+          </div>
+          <p class="section-foot"><a href={`${repo}/blob/main/docs/PLAY.md`}>See all supported games</a></p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="library-title">
+        <div class="wrap">
+          <div class="section-head">
+            <h2 id="library-title">A library worth browsing.</h2>
+            <p class="lead">Search, favourites, recents and play time, presented the way you prefer.</p>
+          </div>
+          <div class="shots three">
+            {views.map((v) => (
+              <figure>
+                <img src={`${base}/shots/${v.id}.webp`} width="468" height="505" loading="lazy" alt={v.alt} />
+                <figcaption><strong>{v.name}</strong></figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features" aria-labelledby="features-title">
+        <div class="wrap">
+          <div class="split">
+            <img src={`${base}/shots/pause.webp`} width="584" height="631" loading="lazy"
+              alt="Mario Kart DS paused, with Continue and Quit over the race standings on the bottom screen." />
+            <div>
+              <div class="section-head">
+                <h2 id="features-title">Considered in every detail.</h2>
+              </div>
+              <ul class="features" role="list">
+                {features.map((f) => (
+                  <li><h3>{f.name}</h3><p>{f.text}</p></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <ul class="systems" role="list" aria-label="Supported systems">
+            {systems.map(([id, name]) => (
+              <li><img src={`${base}/systems/${id}.svg`} width="48" height="48" loading="lazy" alt="" />{name}</li>
+            ))}
+          </ul>
+          <p class="note systems-note">Nintendo DS is on from the start. Enable the others in Settings → Library → Systems.</p>
+        </div>
+      </section>
+
+      <section class="section install" id="install" aria-labelledby="install-title">
+        <div class="wrap">
+          <div class="section-head">
+            <h2 id="install-title">Ready in three steps.</h2>
+          </div>
+          <ol class="steps" role="list">
+            <li><h3>Flash a card</h3><p>Open RG DS Flasher, pick a microSD card of 8 GB or more and press Flash.</p></li>
+            <li><h3>Power on</h3><p>Put the card in your RG DS. The first boot sets up the rest of the card.</p></li>
+            <li><h3>Add your games</h3><p>Join Wi-Fi, turn on file sharing in Settings and copy games into each system’s folder, like <code>roms/nds</code> or <code>roms/gba</code>.</p></li>
+          </ol>
+          <div class="actions downloads">
+            <a class="button" id="flasher-windows" href={`${flasher}-Windows.exe`}>Flasher for Windows</a>
+            <a class="button" id="flasher-macos" href={`${flasher}-macOS.zip`}>Flasher for macOS</a>
+            <a class="button" id="flasher-linux" href={`${flasher}-Linux-x64`}>Flasher for Linux</a>
+          </div>
+          <p class="note">The flasher isn’t code-signed yet, so the first open needs an extra step. Windows: More info, then Run anyway. macOS: right-click the app, then Open. Linux: run <code>chmod +x</code> on the file first.</p>
+          <p class="note">Prefer doing it by hand? Get the card image from <a href={`${repo}/releases/latest`}>the latest release</a> and write it with balenaEtcher or Raspberry Pi Imager, not Rufus. No games, BIOS files or cover art are included.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>RG DS OS is an independent open source project under the GPL-3.0, not affiliated with Anbernic or Nintendo. Game names and images belong to their owners.</p>
+        <nav aria-label="Footer">
+          <ul>
+            <li><a href={repo}>GitHub</a></li>
+            <li><a href={`${repo}/releases`}>Releases</a></li>
+            <li><a href={`${repo}/blob/main/docs/README.md`}>Documentation</a></li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
+
+    <script is:inline>
+      // Points the main button at this computer's flasher and highlights it in the install section.
+      // Without JS, or on a phone, the main button goes to the install section.
+      (function () {
+        var ua = navigator.userAgent;
+        var touchMac = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+        if (/Android|iPhone|iPad/.test(ua) || touchMac) return;
+        var os = /Windows/.test(ua) ? ['windows', 'Windows']
+          : /Macintosh/.test(ua) ? ['macos', 'macOS']
+          : /Linux x86_64/.test(ua) ? ['linux', 'Linux'] : null;
+        if (!os) return;
+        var button = document.getElementById('download');
+        var flasher = document.getElementById('flasher-' + os[0]);
+        flasher.classList.add('primary');
+        button.href = flasher.href;
+        button.textContent = 'Download for ' + os[1];
+      })();
+    </script>
+  </body>
+</html>

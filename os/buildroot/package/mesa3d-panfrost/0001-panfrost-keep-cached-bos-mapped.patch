@@ -1,0 +1,75 @@
+panfrost: keep cached BOs mapped.
+
+A batch makes its pool BOs from the cache, and each one cost an mmap, a munmap and a madvise pair: OutRun 2006 on
+PPSSPP submits 19 batches a frame on the RG DS (33.7 -> 29.6 ms a frame). Mapped BOs cost only address space, and
+stale ones still leave the cache after a second.
+
+--- a/src/gallium/drivers/panfrost/pan_bo.c
++++ b/src/gallium/drivers/panfrost/pan_bo.c
+@@ -232,10 +232,6 @@
+       list_del(&entry->bucket_link);
+       list_del(&entry->lru_link);
+ 
+-      if (!pan_kmod_bo_make_unevictable(entry->kmod_bo)) {
+-         panfrost_bo_free(entry);
+-         continue;
+-      }
+       /* Let's go! */
+       bo = entry;
+       bo->label = label;
+@@ -246,6 +242,8 @@
+    return bo;
+ }
+ 
++static void panfrost_bo_munmap(struct panfrost_bo *bo);
++
+ static void
+ panfrost_bo_cache_evict_stale_bos(struct panfrost_device *dev)
+ {
+@@ -267,6 +265,7 @@
+ 
+       list_del(&entry->bucket_link);
+       list_del(&entry->lru_link);
++      panfrost_bo_munmap(entry);
+       panfrost_bo_free(entry);
+    }
+ }
+@@ -288,8 +287,6 @@
+    struct list_head *bucket = pan_bucket(dev, MAX2(panfrost_bo_size(bo), 4096));
+    struct timespec time;
+ 
+-   pan_kmod_bo_make_evictable(bo->kmod_bo);
+-
+    /* Add us to the bucket */
+    list_addtail(&bo->bucket_link, bucket);
+ 
+@@ -327,6 +324,7 @@
+       list_for_each_entry_safe(struct panfrost_bo, entry, bucket, bucket_link) {
+          list_del(&entry->bucket_link);
+          list_del(&entry->lru_link);
++         panfrost_bo_munmap(entry);
+          panfrost_bo_free(entry);
+       }
+    }
+@@ -458,8 +456,7 @@
+     * lock, let's make sure it's still not referenced before freeing it.
+     */
+    if (p_atomic_read(&bo->refcnt) == 0) {
+-      /* When the reference count goes to zero, we need to cleanup */
+-      panfrost_bo_munmap(bo);
++      /* A cached BO stays mapped: an mmap and munmap per batch cost more than the address space. */
+ 
+       if (dev->debug & (PAN_DBG_TRACE | PAN_DBG_SYNC))
+          pandecode_inject_free(dev->decode_ctx, bo->ptr.gpu,
+@@ -468,8 +465,10 @@
+       /* Rather than freeing the BO now, we'll cache the BO for later
+        * allocations if we're allowed to.
+        */
+-      if (!panfrost_bo_cache_put(bo))
++      if (!panfrost_bo_cache_put(bo)) {
++         panfrost_bo_munmap(bo);
+          panfrost_bo_free(bo);
++      }
+    }
+    pthread_mutex_unlock(&dev->bo_map_lock);
+ }

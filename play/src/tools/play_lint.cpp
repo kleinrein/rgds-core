@@ -223,6 +223,29 @@ int main(int argc, char** argv) {
         });
     }
 
+    // The computers' keyboards, in each state with other legends: a finger on the keys isn't lint's to judge.
+    for (const auto& lc : looks()) {
+        for (const char* system : {"zx", "c64"}) {
+            auto keyboard = make_keyboard(system);
+            const std::string name = std::string("keyboard/") + system;
+            run(name, lc, true, [&](const Look& l, const Font& f) { keyboard->draw(out, l, f, 0); });
+            const auto keys = targets;
+            // A Spectrum's shifts (left and second from the right on the last row), a C64's More.
+            const bool zx = std::string(system) == "zx";
+            for (size_t i : zx ? std::vector<size_t>{keys.size() - 2, keys.size() - 10} : std::vector<size_t>{keys.size() - 1}) {
+                const Box& b = keys[i];
+                keyboard->touch({Touch::Down, b.x + b.w / 2, b.y + b.h / 2});
+                keyboard->touch({Touch::Up, b.x + b.w / 2, b.y + b.h / 2});
+                run(name + " " + std::to_string(i), lc, true,
+                    [&](const Look& l, const Font& f) { keyboard->draw(out, l, f, 0); });
+                if (zx) {
+                    keyboard->touch({Touch::Down, b.x + b.w / 2, b.y + b.h / 2});
+                    keyboard->touch({Touch::Up, b.x + b.w / 2, b.y + b.h / 2});
+                }
+            }
+        }
+    }
+
     for (const auto& dir : profile_dirs) {
         ProfileLibrary lib;
         std::vector<std::string> errors;

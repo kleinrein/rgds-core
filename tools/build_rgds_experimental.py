@@ -34,7 +34,7 @@ OPTIONS = {
     **base.ENGINE_OPTIONS, 'DSPERATE_VERSION': '3.0.0-rgds-experimental.1',
     'DSPERATE_TUNE': '-mcpu=cortex_a55',
     'DSPERATE_CHEEVOS': 'OFF',
-    'DSPERATE_NET': 'OFF'
+    'DSPERATE_NET': 'ON'  # local wireless between handhelds (ENet); 2026-10-30
 }
 FILES = {'rgds-experimental', 'LICENSE', 'NOTICE.txt', 'source.tar.gz'}
 GCC_OPTIONS = base.gcc.gcc_options(OPTIONS)

@@ -18,6 +18,7 @@
 A  Apply	A  Toepassen
 A  Done	A  Klaar
 A  Jump	A  Springen
+A  Leave	A  Verlaten
 A  Play	A  Spelen
 A  Search	A  Zoeken
 A 24-hour or 12-hour clock.	Een 24- of 12-uursklok.
@@ -77,6 +78,7 @@ Atlantic Ocean	Atlantische Oceaan
 Audio is not recorded or saved.	Geluid wordt niet opgenomen of opgeslagen.
 Australia	Australië
 Auto-load state	Spelstatus automatisch laden
+Auto-save	Automatisch opslaan
 Auto-save on exit	Automatisch opslaan bij afsluiten
 Automatic	Automatisch
 Automatic (free)	Automatisch
@@ -128,12 +130,15 @@ Browse	Bladeren
 Browse games	Spellen bekijken
 Browse systems	Systemen bekijken
 Browser layout	Bibliotheekindeling
+Bubble Gum	Kauwgom
 Build, storage and device address	Versie, opslag en apparaatadres
 Button	Knop
 Button layout	Knopindeling
 Button {0}	Knop {0}
 Buttons and the game menu shortcut	Knoppen en sneltoets voor het spelmenu
 Cancel	Annuleren
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Carrousel
 Carried	Bij je
 Cartridges	Cartridges
@@ -141,6 +146,7 @@ Change group	Andere groep
 Changes immediately. Map a button in Controls for quick access.	Verandert direct. Wijs een knop toe bij Besturing voor snelle toegang.
 Changing 3D threading…	3D-threads wijzigen…
 Changing speed…	Snelheid wijzigen…
+Chaos Emeralds	Chaos-smaragden
 Chat is unavailable: you can still draw	Chat niet beschikbaar: je kunt nog steeds tekenen
 Chat Room	Chatruimte
 Chat Room {0}	Chatroom {0}
@@ -191,6 +197,7 @@ Compare	Vergelijken
 Confirm	Bevestigen
 Connect	Verbinden
 Connect the charger before installing an update.	Sluit de oplader aan voordat je een update installeert.
+Connect the handheld to a computer first.	Sluit de handheld eerst aan op een computer.
 Connect to Wi-Fi to send files from a phone or computer.	Maak verbinding met wifi om bestanden vanaf een telefoon of computer te sturen.
 Connected	Verbonden
 Connected.	Verbonden.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Verbinding verbroken. Opnieuw proberen…
 Connectivity	Verbindingen
 Continue	Doorgaan
 Continue where you left off	Ga verder waar je gebleven was
+Continues	Credits
 Control unavailable on this device	Bediening niet beschikbaar op dit apparaat
 Controllers and other Bluetooth devices	Controllers en andere Bluetooth-apparaten
 Controls	Besturing
@@ -219,6 +227,7 @@ Could not apply this shader.	Deze shader kon niet worden toegepast.
 Could not apply volume	Volume kon niet worden toegepast
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi-adapter kon niet worden gestart. Probeer opnieuw.
 Could not change 3D threading. Your game is unchanged.	3D-threads konden niet worden gewijzigd. Je spel is ongewijzigd.
+Could not change USB data transfer.	Kan USB-gegevensoverdracht niet wijzigen.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Gekozen Wi-Fi-verbinding kon niet worden bevestigd. Scan en probeer opnieuw.
 Could not connect	Verbinden mislukt
 Could not enable lid wake	Wekken via het deksel kon niet worden ingeschakeld
@@ -270,6 +279,7 @@ Development build	Ontwikkelversie
 Device address	Apparaatadres
 Device information	Apparaatinformatie
 Discard update	Update verwijderen
+Disk	Schijf
 Display	Weergave
 Display FPS	Scherm-FPS
 Done	Klaar
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Wijzig
 Edit search	Zoekopdracht bewerken
 Effects volume	Effectvolume
+Eject the drive on your computer when you are done	Werp de schijf uit op de computer als je klaar bent
 Empty slot	Leeg slot
 Emulator	Emulator
 Emulator settings	Emulatorinstellingen
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	FOUT: Instellingen konden niet worden hersteld
 ERROR: Could not restore settings - see log	FOUT: Instellingen konden niet worden hersteld - zie logboek
 Essences	Essences
 Europe	Europa
+Event	Onderdeel
+Events	Onderdelen
 Every game in this collection has artwork.	Elk spel in deze verzameling heeft een hoesafbeelding.
 Exit your game before installing an update.	Sluit je spel af voordat je een update installeert.
 Experience	Ervaring
@@ -341,9 +354,11 @@ Fetch missing artwork	Ontbrekende hoesafbeeldingen ophalen
 Figurines	Beeldjes
 File sharing on. Find "RG DS" under Network.	Bestanden delen staat aan. Zoek "RG DS" onder Netwerk.
 Files added	Bestanden toegevoegd
+Files and SSH by cable; charging always works	Bestanden en SSH via kabel; opladen werkt altijd
 Files arrived. Choose Play to start.	De bestanden zijn binnen. Kies Spelen om te starten.
 Filter	Filter
 Filtered	Gefilterd
+Final	Eindstand
 Find and connect to a nearby network	Zoek en verbind met een netwerk in de buurt
 Find, pair and connect a nearby device	Zoek, koppel en verbind een apparaat in de buurt
 Finding games…	Spellen zoeken…
@@ -489,6 +504,7 @@ Key {0}	Toets {0}
 Keyboard	Toetsenbord
 Keys	Sleutels
 Kinstone fusions	Kinstone-fusies
+Lamppost	Lantaarnpaal
 Language	Taal
 Last 4 weeks	Afgelopen 4 weken
 Last 7 days	Afgelopen 7 dagen
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Speelse geluiden bij b
 Please keep your handheld on	Laat je apparaat ingeschakeld
 Pocket green	Zakgroen
 Point and click on top	Wijzen en klikken boven
+Points	Punten
 Pokédex caught	Pokédex gevangen
 Pokédex seen	Pokédex gezien
+Popcorn	Popcorn
 PortMaster is ready	PortMaster is klaar
 Ports	Ports
 Power	Energie
@@ -785,9 +803,11 @@ RGDS build	RGDS-versie
 Rich	Gedetailleerd
 Right	Rechts
 Right stick	Rechterstick
+Rings	Ringen
 Rollback simulated.	Terugzetten gesimuleerd.
 Round	Ronde
 ROUNDED FONT UNAVAILABLE	AFGEROND LETTERTYPE ONTBREEKT
+Route	Route
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-games op de DS, rumblecartridges op Game Boy en Game Boy Advance.
 Rumble strength	Rumblesterkte
 Rupees	Rupees
@@ -826,7 +846,9 @@ Scene	Scène
 Score	Score
 Screen brightness	Schermhelderheid
 Screen colours	Schermkleuren
-Screen off	Scherm uit
+Menu	Menu
+Switch	Wissel
+Turn off screen	Scherm uitzetten
 screens	schermen
 ScreenScraper needs project credentials and your account	ScreenScraper vereist projectgegevens en je account
 Screenshot	Schermafbeelding
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Scherpe schaling met DS-kleurbehande
 Sharp scaling, DS colour and Natural Vision together.	Scherpe schaling, DS-kleuren en Natural Vision samen.
 Shield	Schild
 Shift	Shift
+Shift keys stay down until the next key	Shift-toetsen blijven ingedrukt tot de volgende toets
 Shortcut action	Sneltoetsactie
 Shots	Schoten
 Show games	Spellen tonen
@@ -909,7 +932,9 @@ Spanish	Spaans
 Spring	Veer
 Springy menu changes with a colourful wobble	Verende menuovergangen met kleurrijke bewegingen
 Stable	Stabiel
+Stage	Etappe
 Standard	Standaard
+Standings	Stand
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Systeemupdate
 Systems	Systemen
 Tap to type, or use the D-pad and A	Tik om te typen, of gebruik de richtingstoetsen en A
 Team	Team
+Temper	Woede
 Temporary game cache cleared. Saves and artwork are kept.	Tijdelijke spelcache gewist. Opgeslagen spellen en hoesafbeeldingen blijven behouden.
 Terrain and unit	Terrein en eenheid
 Test	Test
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Dit netwerk vereist een bedrijfspro
 This port lists no instructions.	Deze port heeft geen instructies.
 This request did not finish. Please try again.	Dit verzoek is niet voltooid. Probeer opnieuw.
 This shader is unavailable for the current emulator.	Deze shader is niet beschikbaar voor de huidige emulator.
+This stage	Deze etappe
 This stock firmware has not been validated for updates.	Deze originele firmware is niet gevalideerd voor updates.
 This version failed to start. Waiting for a newer update.	Deze versie kon niet starten. Wachten op een nieuwere update.
 Threaded 3D	3D-threads
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Updateverificatie mislukt. 
 Updates	Updates
 Updates & recovery	Updates en herstel
 Updates will be available when the release channel opens.	Updates worden beschikbaar zodra het releasekanaal opent.
+USB data transfer	USB-gegevensoverdracht
+USB data transfer is not available on this handheld.	USB-gegevensoverdracht is niet beschikbaar op deze handheld.
+USB data transfer off.	USB-gegevensoverdracht uit.
+USB data transfer on.	USB-gegevensoverdracht aan.
+USB drive mode	USB-schijfmodus
 Use an additional rendering thread	Gebruik een extra renderthread
+Use as USB drive	Gebruiken als USB-schijf
 Use default ({0})	Standaard gebruiken ({0})
 Use default controls	Algemene besturing gebruiken
 Use previous build	Vorige versie gebruiken
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	{0} personen in de buurt
 {0} players	{0} spelers
 {0} settings	Instellingen voor {0}
+Welcome!	Welkom!
+Let's get your handheld ready. It takes about a minute.	We maken je handheld klaar. Dat duurt ongeveer een minuut.
+Pick your colour	Kies je kleur
+The menus take it on. You can change it whenever you like.	De menu's nemen hem over. Je kunt hem altijd wijzigen.
+What's your name?	Hoe heet je?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat toont het aan mensen in de buurt en DS-games gebruiken het als naam van de eigenaar.
+Is this the right time?	Klopt de tijd?
+You're connected	Je bent verbonden
+Connect to Wi-Fi	Verbinden met wifi
+For box art, updates and PictoChat. Everything else works without it.	Voor hoesafbeeldingen, updates en PictoChat. Al het andere werkt ook zonder.
+You're all set!	Alles is klaar!
+Play at a comfortable volume, and give your eyes and hands a break.	Speel op een prettig volume en gun je ogen en handen een pauze.
+In a game, the Anbernic button opens saves, cheats and settings.	In een game opent de Anbernic-knop opslag, cheats en instellingen.
+Close the lid to sleep. Your game waits for you.	Sluit de klep om te slapen. Je game wacht op je.
+Copy more games any time. They show up by themselves.	Kopieer altijd meer games. Ze verschijnen vanzelf.
+Skip setup	Instellen overslaan
+Run setup again	Instellen opnieuw doen
+Turn on Wi-Fi	Wifi inschakelen
+Turn on USB data transfer	USB-gegevensoverdracht inschakelen
+Connect to Wi-Fi first	Verbind eerst met wifi
+Zoom	Zoom
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Sluit een USB-C-kabel aan en kies Gebruiken als USB-schijf, of plaats deze kaart in een computer. Open de schijf RGDS en kopieer games naar de mappen in roms: nds, gba, gb, gbc, nes, snes, md en meer.
+What do you want to play?	Wat wil je spelen?
+You can change this later in Settings > Library.	Je kunt dit later wijzigen via Instellingen > Bibliotheek.
+A clean library with only DS games.	Een opgeruimde bibliotheek met alleen DS-games.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation en meer, per systeem gesorteerd.

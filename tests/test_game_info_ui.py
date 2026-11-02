@@ -88,6 +88,11 @@ class GameInfoUiTests(LauncherFixture):
         self.assertIn('game_info=0\n', (self.data / 'ui.ini').read_text())
         self.assertIn('extra_pictures=2\n', (self.data / 'ui.ini').read_text())
 
+    def test_auto_fetch_new_games_toggle_is_remembered(self):
+        keys = ['Down', 'Down', 'Down', 'A', 'Down', 'Down', 'Down', 'Down', 'Down', 'A']  # ... Artwork sources, then Auto-fetch new games
+        self.run_ui(keys, '--settings', '--section', 'library')
+        self.assertIn('auto_scrape=1\n', (self.data / 'ui.ini').read_text())
+
 
 class FacetFilterTests(LauncherFixture):
     """The Filter sheet (Y in the library): collection and layout tiles, and filters from the saved game information."""

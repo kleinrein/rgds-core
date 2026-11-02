@@ -5,7 +5,8 @@
 void App::begin_edit(int field) {
     if (field == 4) search_return = settings.page;
     edit_field = field;
-    edit_buffer = field == 5   ? (ds_settings.count("nickname") ? ds_settings["nickname"] : "RG DS Core")
+    edit_buffer = field == 5   ? (ds_settings.count("nickname") ? ds_settings["nickname"] : ds_owner_name())
+                  : field == 7 ? (ds_owner_name() == "RG DS Core" ? std::string() : ds_owner_name())
                   : field == 4 ? search_query
                   : field == 6 ? cheat_query
                   : field == 0 ? username
@@ -24,6 +25,15 @@ void App::begin_edit(int field) {
 }
 
 void App::finish_edit(bool commit) {
+    if (edit_field == 7) {
+        if (commit) save_owner_name(edit_buffer);
+        edit_buffer.clear();
+        s.StopTextInput();
+        settings.page = Page::Welcome;
+        if (commit) welcome_enter(WelcomeHome);
+        dirty = true;
+        return;
+    }
     if (edit_field == 6) {
         // An empty search lists every code flat, which has its own use.
         if (commit) {
@@ -37,7 +47,7 @@ void App::finish_edit(bool commit) {
         return;
     }
     if (edit_field == 5) {
-        if (commit) save_ds_setting("nickname", edit_buffer.empty() ? std::string("RG DS Core") : edit_buffer);
+        if (commit) save_ds_setting("nickname", edit_buffer.empty() ? ds_owner_name() : edit_buffer);
         edit_buffer.clear();
         s.StopTextInput();
         settings.page = Page::DSControls;
@@ -80,7 +90,8 @@ void App::finish_edit(bool commit) {
         std::fill(edit_buffer.begin(), edit_buffer.end(), '\0');
         edit_buffer.clear();
         s.StopTextInput();
-        settings.page = Page::Network;
+        if (welcome_detour) welcome_detour_end();
+        else settings.page = Page::Network;
         settings.focus = 1;
         dirty = true;
         return;
@@ -111,7 +122,7 @@ void App::move_edit_cursor(int direction) {
 
 void App::insert_text(const std::string& value) {
     if (edit_field == 6 && RoundedFont::codepoints(edit_buffer + value).size() > 16) return;
-    if (edit_field == 5) {
+    if (edit_field == 5 || edit_field == 7) {
         auto text = edit_buffer;
         text.insert(edit_cursor, value);
         auto points = RoundedFont::codepoints(text);
@@ -147,6 +158,12 @@ void App::delete_character() {
 }
 
 void App::scraper_action() {
+    if (settings.focus == 5) {
+        preferences.auto_scrape = !preferences.auto_scrape;
+        if (!preferences.auto_scrape) auto_scrape_pending = false;
+        remember_appearance();
+        return;
+    }
     if (settings.focus == 3) {
         preferences.game_info = !preferences.game_info;
         remember_appearance();

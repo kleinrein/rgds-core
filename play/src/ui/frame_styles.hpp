@@ -6,11 +6,13 @@
 //
 // Each is drawn from shapes and the launcher's font (no pictures of real
 // consoles, no logos): a handheld's own face around its screen; a home
-// console's colours with its name on a strip under the screen; the kind of
+// console's own front around the game, as large as its rails leave room for; the kind of
 // television, monitor or cabinet its games were played on. Systems are the
 // launcher's stock system ids (src/launcher/system_icons.hpp), comma
-// separated; "" is every system (off and the black bar). The DS and 3DS have
-// their own engines and two screens, so nothing here is for them.
+// separated; "" is every system (off and the black bar). The DS has its own
+// engine and two screens, so nothing here is for it. Tanuki3DS draws the 3DS
+// lids itself (rgds_bezel_draw in tools/tanuki3ds): they are listed here for
+// the pickers, with the same slugs.
 #pragma once
 #include <cstdint>
 #include <string_view>
@@ -23,19 +25,20 @@ enum class FrameKind {
     Pocket,  // the Game Boy Pocket: a slim dark bezel, the name under it
     Bezel,   // a black bezel with the name in it under the screen (Game Boy Color, Neo Geo Pocket Color)
     Agb,     // the Game Boy Advance: a wide squat body, the lens in the upper half, the logo and speaker below
-    Nes,     // the Nintendo Entertainment System: the red stripe with a blue line under it, the front badge
-    Wsc,     // the WonderSwan Color: a tall portrait handheld, the screen in its upper half
-    Ngpc,    // the Neo Geo Pocket Color: a portrait handheld, the screen in its upper half
-    Psp,     // the PlayStation Portable: a wide lens with the button row and the speaker under it
-    Lens,    // a wide dark lens, the name under the screen, a speaker (WonderSwan, PSP)
+    Wsc,     // the WonderSwan Color: wide, its two pads on the left, A and B on the right
+    Ngpc,    // the Neo Geo Pocket Color: wide, the stick on the left, A and B on the right
+    Gg,      // the Game Gear: wide and black, the pad on the left, the 1 and 2 buttons on the right
+    Psp,     // the PlayStation Portable: the game at full width, the machine's colour above and below
+    Lens,    // a wide dark lens, the name under the screen, a speaker (WonderSwan)
     Sp,      // the Game Boy Advance SP: a slim lens on the clamshell's lid
-    Console, // a home console's colours, its name on a strip under the screen
+    Console, // a home console's own front, on the rails beside the game and the bands above and below it
     Tv,      // a grey television, its controls under the screen
     TvWood,  // a wood-grain television, its dials beside the screen
     Monitor, // a beige computer monitor
     Arcade,  // an arcade cabinet: a lit marquee over the screen, buttons under it
     Vectrex, // the Vectrex: its own upright black screen
     Bar,     // the game across the top, the system's name on a black bar below
+    Ctr,     // the 3DS lid over its top screen: drawn by the 3DS engine, not by this player
     // Only the screen's own bezel, edge to edge, so the game is as large as the panel allows (3x on a Game Boy)
     DmgInner,    // the Game Boy's dark bezel: the two lines and "DOT MATRIX WITH STEREO SOUND" over the screen
     PocketInner, // the Pocket's dark bezel
@@ -134,13 +137,14 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0xB9BBC8, "WONDERSWAN COLOR", 0, 0, 0},
     {"wsc-blue", "wonderswan", "WonderSwan Color · Blue", FrameKind::Wsc, 0x3D6CCB, 0x24479A, 5, 0x1A1C24, 0x50607E,
      0xC7CEE0, "WONDERSWAN COLOR", 0, 0, 0},
+    {"gg", "gg", "Game Gear", FrameKind::Gg, 0x2B2B30, 0x18181C, 3, 0x0B0B0D, 0x3A3A44, 0xE8E8EC, "GAME GEAR", 0, 0, 0},
     {"psp-black", "psp", "PSP · Black", FrameKind::Psp, 0x1C1C1F, 0x09090A, 2, 0x0B0B0C, 0x3A3A40, 0x8A8A92, "", 0, 0,
      0},
     {"psp-white", "psp", "PSP · White", FrameKind::Psp, 0xF2F2F0, 0xD5D5D2, 2, 0x111113, 0x45454C, 0x8A8A92, "", 0, 0,
      0},
     // Home consoles, in their own colours
-    {"nes", "nes", "Nintendo Entertainment System", FrameKind::Nes, 0x6A6A6E, 0x444448, 3, 0x1C1C1E, 0x55555A, 0xD22630,
-     "NINTENDO ENTERTAINMENT SYSTEM", 0x2F2F31, 0x8A8A8E, 0},
+    {"nes", "nes", "Nintendo Entertainment System", FrameKind::Console, 0xCBC9C2, 0xB9B7B0, 3, 0x1C1C1E, 0x55555A,
+     0xD22630, "NINTENDO ENTERTAINMENT SYSTEM", 0x2F2F31, 0x8A8A8E, 0},
     {"snes", "snes", "Super Nintendo", FrameKind::Console, 0xD6D4DC, 0xB4B2BC, 3, 0x1C1C20, 0x5A5868, 0x3E3958,
      "SUPER NINTENDO", 0x3A3A44, 0x6A5BA8, 0},
     {"md", "md", "Mega Drive", FrameKind::Console, 0x242427, 0x111113, 4, 0x0A0A0B, 0x3C3C40, 0xEDEDED,
@@ -151,9 +155,9 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0xE4E2DA, 0xE06A1A, 0},
     {"neo", "neo", "Neo Geo", FrameKind::Console, 0x1A1A1C, 0x0D0D0E, 4, 0x070708, 0x3A3A3E, 0xD8B45A, "NEO GEO",
      0x101012, 0xC9A34E, 0},
-    {"psx", "psx", "PlayStation", FrameKind::Console, 0x3A3A3E, 0x242427, 3, 0x1C1C1E, 0x55555A, 0x3A3A3E,
+    {"psx", "psx", "PlayStation", FrameKind::Console, 0xC2C0BA, 0xA8A69F, 2, 0x1C1C1E, 0x55555A, 0x3A3A3E,
      "PlayStation", 0x2E2E31, 0x2A5FBF, 0},
-    {"n64", "n64", "Nintendo 64", FrameKind::Console, 0x4A5A52, 0x2A3630, 4, 0x0B0B0D, 0x3E3E46, 0xDADADF,
+    {"n64", "n64", "Nintendo 64", FrameKind::Console, 0x33353B, 0x1D1E22, 3, 0x0B0B0D, 0x3E3E46, 0xDADADF,
      "NINTENDO 64", 0x36443E, 0x4A4A52, 0},
     {"saturn", "saturn", "Saturn", FrameKind::Console, 0x2B2B30, 0x15151A, 4, 0x09090B, 0x3C3C44, 0xD7DBE6, "SATURN",
      0x0E0E11, 0x3A6FD8, 0},
@@ -167,6 +171,10 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0x2A1A0C, "INTELLIVISION", 0xC9A34E, 0x8C6A2A, 2},
     {"msx", "msx", "MSX", FrameKind::Console, 0x222224, 0x111113, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6, "MSX", 0x2C2C30,
      0x8C8C92, 0},
+    {"zx", "zx", "ZX Spectrum", FrameKind::Console, 0x1E1E20, 0x0C0C0D, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6, "ZX SPECTRUM",
+     0x141416, 0x6E6E74, 0},
+    {"c64", "c64", "Commodore 64", FrameKind::Console, 0xB8AD92, 0xA09479, 3, 0x1C1A18, 0x4E4A44, 0x3A322A,
+     "COMMODORE 64", 0x5A4E40, 0x3E352C, 0},
     {"pico8", "pico8", "PICO-8", FrameKind::Console, 0x1D2B53, 0x111A35, 0, 0x000000, 0x5F574F, 0xFFF1E8, "PICO-8",
      0x7E2553, 0xFF004D, 0},
     // What the games were played on
@@ -176,12 +184,19 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0xD02A2A, 0x2A5BD0, 0},
     {"vectrex", "vectrex", "Vectrex", FrameKind::Vectrex, 0x1C1C1E, 0x0B0B0C, 3, 0x050506, 0x3C3C42, 0xEDEDED,
      "VECTREX", 0x26262A, 0x8C8C92, 0},
-    {"tv-grey", "nes,snes,md,sms,pce,neo,psx,n64,saturn,dc,msx", "Grey TV", FrameKind::Tv, 0x9C9C9E, 0x7C7C80, 3,
+    {"tv-grey", "nes,snes,md,sms,pce,neo,psx,n64,saturn,dc,msx,zx,c64", "Grey TV", FrameKind::Tv, 0x9C9C9E, 0x7C7C80, 3,
      0x0E1012, 0x3A3D42, 0x4A4A4E, "", 0x5A5A5E, 0xE0302A, 0},
     {"tv-wood", "nes,sms,atari,coleco,intellivision", "Wood-grain TV", FrameKind::TvWood, 0x7A4E2A, 0x4E2F17, 0,
      0x0E1012, 0x3A3D42, 0x2A2A2C, "", 0xB9B4A8, 0xE0302A, 2},
-    {"monitor", "dos,msx", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42, 0x6F6858, "",
-     0xCDC4AA, 0x4CD964, 0},
+    {"monitor", "dos,msx,zx,c64", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42, 0x6F6858,
+     "", 0xCDC4AA, 0x4CD964, 0},
+    {"ctr-dark", "3ds", "3DS · Clean dark", FrameKind::Ctr, 0x15161A, 0x0F1013, 0, 0, 0, 0, "", 0, 0, 0},
+    {"ctr-cosmos", "3ds", "3DS · Cosmos Black", FrameKind::Ctr, 0x34373D, 0x1E2024, 0, 0, 0, 0, "", 0, 0, 0},
+    {"ctr-aqua", "3ds", "3DS · Aqua Blue", FrameKind::Ctr, 0x4FB6D6, 0x2F8FB0, 0, 0, 0, 0, "", 0, 0, 0},
+    {"ctr-flame", "3ds", "3DS · Flame Red", FrameKind::Ctr, 0xD0303A, 0xA01C26, 0, 0, 0, 0, "", 0, 0, 0},
+    {"ctr-pink", "3ds", "3DS · Pearl Pink", FrameKind::Ctr, 0xF6C6D4, 0xE6A4B8, 0, 0, 0, 0, "", 0, 0, 0},
+    {"ctr-white", "3ds", "3DS · Pure White", FrameKind::Ctr, 0xF2F2EF, 0xD8D8D4, 0, 0, 0, 0, "", 0, 0, 0},
+    {"ctr-midnight", "3ds", "3DS · Midnight Purple", FrameKind::Ctr, 0x4E3A78, 0x322450, 0, 0, 0, 0, "", 0, 0, 0},
     {"bar", "", "Black bar", FrameKind::Bar, 0x060607, 0x060607, 0, 0, 0x1E1E24, 0xC4C4CC, "", 0, 0, 0},
 };
 inline constexpr int frame_style_count = int(sizeof(frame_styles) / sizeof(frame_styles[0]));
@@ -199,43 +214,17 @@ constexpr bool frame_fits(const FrameStyleInfo& style, std::string_view system) 
     return false;
 }
 
-// The mark a console carries on its front, so a frame reads as that machine and not as a strip of text. Each is
-// drawn from shapes, in the console's own colours.
-enum class Badge {
-    None,
-    Snes,          // the Super Nintendo: the purple mark on a dark panel
-    Md,            // the Mega Drive: SEGA above the red 16-BIT band
-    Sms,           // the Master System: the red 16-BIT band
-    Pce,           // the PC Engine: the orange HuCARD band
-    Neo,           // the Neo Geo: the gold band
-    Psx,           // the PlayStation: the blue PS line above the wordmark
-    N64,           // the Nintendo 64: the wordmark with the N in colour
-    Saturn,        // the Saturn: the wordmark with the planet ring
-    Dc,            // the Dreamcast: the orange spiral
-    Atari,         // the Atari 2600: the gold Atari mark
-    Coleco,        // the ColecoVision: the white and gold mark
-    Msx,           // the MSX: the white mark
-    Pico8,         // the PICO-8: its own palette, a cart of its own
-    Intellivision, // the Intellivision: the tan badge
-};
-
-// The badge a style carries, from its slug. The marks are the hardware's own, so each console frame shows the
-// logo its console wears.
+// Which machine's front a console frame draws, from its slug (None: the plain front in the style's colours).
+enum class Badge { None, Nes, Snes, Md, Sms, Psx, N64, Zx, C64 };
 constexpr Badge badge_of(std::string_view slug) {
+    if (slug == "nes") return Badge::Nes;
     if (slug == "snes") return Badge::Snes;
     if (slug == "md") return Badge::Md;
     if (slug == "sms") return Badge::Sms;
-    if (slug == "pce") return Badge::Pce;
-    if (slug == "neo") return Badge::Neo;
     if (slug == "psx") return Badge::Psx;
     if (slug == "n64") return Badge::N64;
-    if (slug == "saturn") return Badge::Saturn;
-    if (slug == "dc") return Badge::Dc;
-    if (slug == "atari") return Badge::Atari;
-    if (slug == "coleco") return Badge::Coleco;
-    if (slug == "msx") return Badge::Msx;
-    if (slug == "pico8") return Badge::Pico8;
-    if (slug == "intellivision") return Badge::Intellivision;
+    if (slug == "zx") return Badge::Zx;
+    if (slug == "c64") return Badge::C64;
     return Badge::None;
 }
 

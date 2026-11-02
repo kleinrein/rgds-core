@@ -9,6 +9,10 @@ void App::top(SDL_Renderer* r, int y) {
         boot_top(r, y);
         return;
     }
+    if (settings.page == Page::Welcome) {
+        welcome_top(r, y);
+        return;
+    }
     if (o.boot_startup && !library_ready) {
         boot_scene(r, y);
         return;
@@ -161,13 +165,36 @@ void App::bottom(SDL_Renderer* r, int y) {
         boot_bottom(r, y);
         return;
     }
+    if (settings.page == Page::Welcome) {
+        welcome_bottom(r, y);
+        return;
+    }
     if (o.boot_startup && !library_ready) {
         boot_scene(r, y);
         return;
     }
     rect(r, 0, y, 640, 480, "background");
-    if (!probe && filter_sheet_active()) {
-        filter_sheet_render(r, y);
+    if (!probe && !sheet_underlay && (filter_sheet_active() || filter_sheet_closing())) {
+        // The Filter sheet rises over the library and slides back down; the library shows dimmed beneath it meanwhile.
+        const Uint32 now = s.GetTicks();
+        const double shown = filter_sheet_shown(now);
+        if (shown < 1) {
+            sheet_underlay = true;
+            bottom(r, y);
+            sheet_underlay = false;
+            motion_hits.clear(); // the sheet owns the touches
+            s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
+            s.SetRenderDrawColor(r, 0, 0, 0, Uint8(std::lround(92 * shown)));
+            SDL_Rect shade{0, y, 640, 480};
+            s.RenderFillRect(r, &shade);
+            s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_NONE);
+            sheet_frames++;
+        }
+        const int lift = int(std::lround(480 * (1 - shown)));
+        SDL_Rect clip{0, y, 640, 480};
+        s.RenderSetClipRect(r, &clip);
+        filter_sheet_render(r, y + lift);
+        s.RenderSetClipRect(r, nullptr);
         if (picker_open || picker_closing()) render_picker(r, y);
         return;
     }
@@ -279,7 +306,7 @@ void App::bottom(SDL_Renderer* r, int y) {
         SDL_Rect clip{24, y + LibraryViewport::top, 568, LibraryViewport::height};
         s.RenderSetClipRect(r, &clip);
         for (int index = browser_list.first(); index < browser_list.last(count); index++) {
-            int row = y + LibraryViewport::top + index * LibraryViewport::stride - browser_list.scroll;
+            int row = y + LibraryViewport::top + index * LibraryViewport::stride - browser_list.scroll - browser_shift();
             bool selected = size_t(index) == model.selected;
             SDL_Rect bounds{24, row - y, 568, 48};
             bool pressed = library_press_row == index && library_control_active(LibraryPress::Row, bounds);

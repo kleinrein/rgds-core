@@ -5,6 +5,7 @@
 # answers for rgds.local.
 #   net up|down       at boot and shutdown
 #   net wifi|wifi-off the Wi-Fi switch
+#   net wifi-sleep    Wi-Fi down with the chip powered off, for a suspend (power); wifi brings it back
 CONF=/data/rgds/wifi.conf
 OFF=/data/rgds/wifi-off
 # The RTL8821CS's Wi-Fi half sits on its own SDIO host (mmc2; the system card is fe2b0000.mmc, never this one).
@@ -46,12 +47,18 @@ wifi() {
     wpa_cli -i wlan0 -a /usr/libexec/rgds/wpa-event -B -P /run/rgds/wpa-event.pid
 }
 
-wifi_off() {
-    touch $OFF
+# Wi-Fi down with the chip powered off: the switch (wifi-off, remembered across boots) and the sleep (wifi-sleep,
+# usr/libexec/rgds/power: the chip would otherwise stay powered through the suspend). The next "wifi" starts it
+# from scratch.
+wifi_sleep() {
     stop wpa-event; stop wpa; stop udhcpc
     timeout 5 ip addr flush dev wlan0 2> /dev/null
-    # off is off: the chip powered down (and the next "on" starts it from scratch)
     chip_off
+}
+
+wifi_off() {
+    touch $OFF
+    wifi_sleep
 }
 
 case $1 in
@@ -80,6 +87,9 @@ wifi)
     ;;
 wifi-off)
     wifi_off
+    ;;
+wifi-sleep)
+    wifi_sleep
     ;;
 esac
 exit 0

@@ -12,7 +12,11 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
+#if defined(__linux__)
 #include <sys/vfs.h>
+#else
+#include <sys/mount.h> // statfs on macOS (no tmpfs there: the fallback finds no shared-memory directory)
+#endif
 #include <unistd.h>
 #endif
 

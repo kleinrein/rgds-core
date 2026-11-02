@@ -72,5 +72,7 @@ protected:
 // The view for a profile's [view], or null for a format this build doesn't
 // know or addresses that don't parse (`error` says which).
 std::unique_ptr<View> make_view(const ViewSpec& spec, std::string& error);
+// The system's own keyboard, for the home computers; null for a system without one.
+std::unique_ptr<View> make_keyboard(const std::string& system);
 
 } // namespace play

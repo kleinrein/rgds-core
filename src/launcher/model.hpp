@@ -40,8 +40,8 @@ struct SystemInfo {
     const char* badge; // on a game without its own artwork
     std::initializer_list<const char*> extensions;
 };
-inline const std::array<SystemInfo, 12>& systems() {
-    static const std::array<SystemInfo, 12> list = {{
+inline const std::array<SystemInfo, 16>& systems() {
+    static const std::array<SystemInfo, 16> list = {{
         {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
@@ -53,6 +53,15 @@ inline const std::array<SystemInfo, 12>& systems() {
         {"sms", "Master System", "SMS", {".sms", ".gg"}},
         {"psx", "PlayStation", "PS", {".cue", ".chd", ".pbp", ".m3u"}},
         {"n64", "Nintendo 64", "N64", {".z64", ".n64", ".v64"}},
+        {"zx", "ZX Spectrum", "ZX", {".tzx", ".tap", ".z80", ".sna", ".szx", ".dsk", ".trd", ".scl"}},
+        // .tap and .m3u are the Spectrum's and the PlayStation's by extension, the C64's in its own folder
+        {"c64",
+         "Commodore 64",
+         "C64",
+         {".d64", ".g64", ".d71", ".d81", ".t64", ".crt", ".prg", ".p00", ".x64", ".tap", ".m3u"}},
+        {"3ds", "Nintendo 3DS", "3DS", {".3ds", ".cci", ".cxi", ".3dsx"}}, // Tanuki3DS (emulators.tanuki_plan)
+        // .pbp and .chd are the PlayStation's by extension, the PSP's in its own folder
+        {"psp", "PlayStation Portable", "PSP", {".iso", ".cso", ".pbp", ".chd"}},
         {"ports", "Ports", "PORT", {".sh"}}, // PortMaster ports: the scripts in its ports folder
         // not a system with games of its own: the shelves of free DS, GBA and NES homebrew (homebrew_screen.hpp)
         {"homebrew", "Homebrew", "FREE", {}},
@@ -166,7 +175,8 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
                 const auto ext = lower(entry.path().extension().string());
                 bool wanted = ext == ".zip" && !ports;
                 for (const char* e : info.extensions) wanted = wanted || ext == e;
-                if (wanted) {
+                // not the AppleDouble files macOS writes beside each game on a drive it mounts
+                if (wanted && entry.path().filename().string().rfind("._", 0) != 0) {
                     auto canonical = fs::weakly_canonical(entry.path(), ec);
                     if (!ec) unique[canonical.string()] = {entry.path().stem().string(), canonical, false, info.id};
                 }
@@ -174,6 +184,18 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
             ec.clear();
             it.increment(ec);
             if (ec) break;
+        }
+    }
+    // A game on several discs or disks is its .m3u: the files it lists are not games of their own.
+    for (const auto& [path, game] : std::map<std::string, Game>(unique)) {
+        if (lower(game.path.extension().string()) != ".m3u") continue;
+        std::ifstream list(game.path);
+        for (std::string line; std::getline(list, line);) {
+            while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
+            if (line.empty() || line[0] == '#') continue;
+            std::error_code ec;
+            const auto listed = fs::weakly_canonical(game.path.parent_path() / line.substr(0, line.find('|')), ec);
+            if (!ec && listed != game.path) unique.erase(listed.string());
         }
     }
     std::vector<Game> games;

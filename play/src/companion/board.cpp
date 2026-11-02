@@ -24,6 +24,7 @@
 //   low        bcd: the first byte the lowest (a little-endian word of BCD)
 //   mask HEX   num: only these bits (day or night in a flag byte)
 //   div N      the number divided by N (health kept in quarters of a heart)
+//   times N    the number multiplied by N (a score kept in tens)
 //   plus N     N added after (lives kept one less than the game shows)
 //   wide       the tile takes a whole row
 //   tall       the tile's row is twice as high (a big HUD panel)
@@ -81,7 +82,7 @@ struct Tile {
     uint32_t address = 0, max = 0;
     HudBox box;                 // kind hud
     std::vector<HudBox> others; // `or`: where else it may be
-    int size = 1, of = 0, page = 0, div = 1, plus = 0, is = 0;
+    int size = 1, of = 0, page = 0, div = 1, times = 1, plus = 0, is = 0;
     uint32_t mask = 0xFFFFFFFFu;
     bool wide = false, tall = false, big = false, low = false, names = false, clock = false;
     Icon icon = Icon::None;
@@ -197,6 +198,7 @@ public:
                          arg.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos)
                     t.mask = uint32_t(std::strtoul(arg.c_str(), nullptr, 16));
                 else if (word == "div" && words >> t.div && t.div > 0) continue;
+                else if (word == "times" && words >> t.times && t.times > 0) continue;
                 else if (word == "plus" && words >> t.plus) continue;
                 else if (word == "is" && t.kind == "count" && words >> arg)
                     t.is = int(std::strtol(arg.c_str(), nullptr, 16));
@@ -297,7 +299,7 @@ public:
                     if (t.kind == "bits") v += __builtin_popcount(b);
                     else v = v * 100 + long((b >> 4) % 10 * 10 + (b & 15) % 10);
                 }
-            t.value = v / t.div + t.plus;
+            t.value = v * t.times / t.div + t.plus;
             key = (key ^ uint64_t(v)) * 1099511628211ull;
         }
         key_ = key;

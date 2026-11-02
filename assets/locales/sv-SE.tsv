@@ -18,6 +18,7 @@
 A  Apply	A  Verkställ
 A  Done	A  Klar
 A  Jump	A  Hoppa
+A  Leave	A  Lämna
 A  Play	A  Spela
 A  Search	A  Sök
 A 24-hour or 12-hour clock.	En 24- eller 12-timmarsklocka.
@@ -77,6 +78,7 @@ Atlantic Ocean	Atlanten
 Audio is not recorded or saved.	Ljud spelas inte in eller sparas.
 Australia	Australien
 Auto-load state	Läs in spelläge automatiskt
+Auto-save	Autospara
 Auto-save on exit	Spara automatiskt vid avslut
 Automatic	Automatisk
 Automatic (free)	Automatisk
@@ -128,12 +130,15 @@ Browse	Bläddra
 Browse games	Bläddra bland spel
 Browse systems	Bläddra bland system
 Browser layout	Bibliotekslayout
+Bubble Gum	Tuggummi
 Build, storage and device address	Version, lagring och enhetsadress
 Button	Knapp
 Button layout	Knapplayout
 Button {0}	Knapp {0}
 Buttons and the game menu shortcut	Knappar och genväg till spelmenyn
 Cancel	Avbryt
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Karusell
 Carried	Med dig
 Cartridges	Kassetter
@@ -141,6 +146,7 @@ Change group	Byt grupp
 Changes immediately. Map a button in Controls for quick access.	Ändras direkt. Tilldela en knapp under Kontroller för snabb åtkomst.
 Changing 3D threading…	Ändrar 3D-trådning…
 Changing speed…	Ändrar hastighet…
+Chaos Emeralds	Kaossmaragder
 Chat is unavailable: you can still draw	Chatten är inte tillgänglig: du kan ändå rita
 Chat Room	Chattrum
 Chat Room {0}	Chattrum {0}
@@ -191,6 +197,7 @@ Compare	Jämför
 Confirm	Bekräfta
 Connect	Anslut
 Connect the charger before installing an update.	Anslut laddaren innan du installerar en uppdatering.
+Connect the handheld to a computer first.	Anslut enheten till en dator först.
 Connect to Wi-Fi to send files from a phone or computer.	Anslut till Wi-Fi för att skicka filer från en telefon eller dator.
 Connected	Ansluten
 Connected.	Ansluten.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Anslutningen bröts. Försöker igen…
 Connectivity	Anslutningar
 Continue	Fortsätt
 Continue where you left off	Fortsätt där du slutade
+Continues	Fortsättningar
 Control unavailable on this device	Kontrollen saknas på denna enhet
 Controllers and other Bluetooth devices	Handkontroller och andra Bluetooth-enheter
 Controls	Kontroller
@@ -219,6 +227,7 @@ Could not apply this shader.	Kunde inte tillämpa denna shader.
 Could not apply volume	Kunde inte ändra volymen
 Could not bring the Wi-Fi adapter up. Try again.	Kunde inte starta Wi-Fi-adaptern. Försök igen.
 Could not change 3D threading. Your game is unchanged.	Kunde inte ändra 3D-trådning. Ditt spel är oförändrat.
+Could not change USB data transfer.	Det gick inte att ändra USB-dataöverföring.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Kunde inte bekräfta vald Wi-Fi-anslutning. Sök och försök igen.
 Could not connect	Kunde inte ansluta
 Could not enable lid wake	Kunde inte aktivera väckning med locket
@@ -270,6 +279,7 @@ Development build	Utvecklingsversion
 Device address	Enhetsadress
 Device information	Enhetsinformation
 Discard update	Kasta uppdatering
+Disk	Diskett
 Display	Skärm
 Display FPS	Skärmens FPS
 Done	Klar
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Ändra
 Edit search	Ändra sökning
 Effects volume	Effektvolym
+Eject the drive on your computer when you are done	Mata ut enheten på datorn när du är klar
 Empty slot	Tom plats
 Emulator	Emulator
 Emulator settings	Emulatorinställningar
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	FEL: Kunde inte återställa inställningar
 ERROR: Could not restore settings - see log	FEL: Kunde inte återställa inställningar - se loggen
 Essences	Essenser
 Europe	Europa
+Event	Gren
+Events	Grenar
 Every game in this collection has artwork.	Alla spel i samlingen har omslag.
 Exit your game before installing an update.	Avsluta spelet innan du installerar en uppdatering.
 Experience	Erfarenhet
@@ -341,9 +354,11 @@ Fetch missing artwork	Hämta saknade omslag
 Figurines	Figurer
 File sharing on. Find "RG DS" under Network.	Fildelning är på. Hitta "RG DS" under Nätverk.
 Files added	Filer tillagda
+Files and SSH by cable; charging always works	Filer och SSH via kabel; laddning fungerar alltid
 Files arrived. Choose Play to start.	Filerna har kommit. Välj Spela för att starta.
 Filter	Filter
 Filtered	Filtrerat
+Final	Slutresultat
 Find and connect to a nearby network	Hitta och anslut till ett nätverk i närheten
 Find, pair and connect a nearby device	Hitta, parkoppla och anslut en enhet i närheten
 Finding games…	Letar efter spel…
@@ -489,6 +504,7 @@ Key {0}	Tangent {0}
 Keyboard	Tangentbord
 Keys	Nycklar
 Kinstone fusions	Kinstone-fusioner
+Lamppost	Lyktstolpe
 Language	Språk
 Last 4 weeks	Senaste 4 veckorna
 Last 7 days	Senaste 7 dagarna
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Lekfulla ljud när du 
 Please keep your handheld on	Låt enheten vara påslagen
 Pocket green	Fickgrönt
 Point and click on top	Peka och klicka överst
+Points	Poäng
 Pokédex caught	Pokédex fångade
 Pokédex seen	Pokédex sedda
+Popcorn	Popcorn
 PortMaster is ready	PortMaster är klar
 Ports	Portar
 Power	Ström
@@ -785,9 +803,11 @@ RGDS build	RGDS-version
 Rich	Detaljerad
 Right	Höger
 Right stick	Höger styrspak
+Rings	Ringar
 Rollback simulated.	Återställning simulerad.
 Round	Omgång
 ROUNDED FONT UNAVAILABLE	RUNDAT TYPSNITT SAKNAS
+Route	Rutt
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Rumble Pak-spel på DS, vibrationskassetter på Game Boy och Game Boy Advance.
 Rumble strength	Vibrationsstyrka
 Rupees	Rupier
@@ -826,7 +846,9 @@ Scene	Scen
 Score	Poäng
 Screen brightness	Skärmens ljusstyrka
 Screen colours	Skärmfärger
-Screen off	Skärm av
+Menu	Meny
+Switch	Byt
+Turn off screen	Stäng av skärmen
 screens	skärmar
 ScreenScraper needs project credentials and your account	ScreenScraper behöver projektuppgifter och ditt konto
 Screenshot	Skärmbild
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Skarp skalning med DS-färgbehandlin
 Sharp scaling, DS colour and Natural Vision together.	Skarp skalning, DS-färger och Natural Vision tillsammans.
 Shield	Sköld
 Shift	Skift
+Shift keys stay down until the next key	Skifttangenter hålls nere till nästa tangent
 Shortcut action	Genvägsåtgärd
 Shots	Skott
 Show games	Visa spel
@@ -909,7 +932,9 @@ Spanish	Spanska
 Spring	Fjäder
 Springy menu changes with a colourful wobble	Studsande menybyten med färgglada rörelser
 Stable	Stabil
+Stage	Etapp
 Standard	Standard
+Standings	Ställning
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Systemuppdatering
 Systems	System
 Tap to type, or use the D-pad and A	Tryck för att skriva, eller använd styrkorset och A
 Team	Lag
+Temper	Humör
 Temporary game cache cleared. Saves and artwork are kept.	Tillfällig spelcache rensad. Sparfiler och omslag behålls.
 Terrain and unit	Terräng och enhet
 Test	Test
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Detta nätverk kräver en företags
 This port lists no instructions.	Den här porten har inga instruktioner.
 This request did not finish. Please try again.	Begäran slutfördes inte. Försök igen.
 This shader is unavailable for the current emulator.	Denna shader är inte tillgänglig för aktuell emulator.
+This stage	Den här etappen
 This stock firmware has not been validated for updates.	Detta originalsystem har inte verifierats för uppdateringar.
 This version failed to start. Waiting for a newer update.	Denna version kunde inte starta. Väntar på en nyare uppdatering.
 Threaded 3D	Trådad 3D
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Verifieringen misslyckades.
 Updates	Uppdateringar
 Updates & recovery	Uppdatering och återställning
 Updates will be available when the release channel opens.	Uppdateringar blir tillgängliga när versionskanalen öppnar.
+USB data transfer	USB-dataöverföring
+USB data transfer is not available on this handheld.	USB-dataöverföring är inte tillgänglig på den här enheten.
+USB data transfer off.	USB-dataöverföring av.
+USB data transfer on.	USB-dataöverföring på.
+USB drive mode	USB-enhetsläge
 Use an additional rendering thread	Använd en extra renderingstråd
+Use as USB drive	Använd som USB-enhet
 Use default ({0})	Använd standard ({0})
 Use default controls	Använd globala kontroller
 Use previous build	Använd tidigare version
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	{0} personer i närheten
 {0} players	{0} spelare
 {0} settings	Inställningar för {0}
+Welcome!	Välkommen!
+Let's get your handheld ready. It takes about a minute.	Nu gör vi din handhållna klar. Det tar ungefär en minut.
+Pick your colour	Välj din färg
+The menus take it on. You can change it whenever you like.	Menyerna får den färgen. Du kan ändra den när du vill.
+What's your name?	Vad heter du?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat visar det för folk i närheten, och DS-spel använder det som ägarens namn.
+Is this the right time?	Stämmer klockan?
+You're connected	Du är ansluten
+Connect to Wi-Fi	Anslut till Wi-Fi
+For box art, updates and PictoChat. Everything else works without it.	För omslagsbilder, uppdateringar och PictoChat. Allt annat fungerar utan.
+You're all set!	Allt är klart!
+Play at a comfortable volume, and give your eyes and hands a break.	Spela på behaglig volym och ge ögon och händer en paus.
+In a game, the Anbernic button opens saves, cheats and settings.	I ett spel öppnar Anbernic-knappen sparningar, fusk och inställningar.
+Close the lid to sleep. Your game waits for you.	Stäng locket för att sova. Ditt spel väntar på dig.
+Copy more games any time. They show up by themselves.	Kopiera fler spel när du vill. De dyker upp av sig själva.
+Skip setup	Hoppa över installationen
+Run setup again	Kör installationen igen
+Turn on Wi-Fi	Slå på Wi-Fi
+Turn on USB data transfer	Slå på USB-dataöverföring
+Connect to Wi-Fi first	Anslut till Wi-Fi först
+Zoom	Zoom
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Anslut en USB-C-kabel och välj Använd som USB-enhet, eller sätt det här kortet i en dator. Öppna enheten RGDS och kopiera spel till mapparna i roms: nds, gba, gb, gbc, nes, snes, md med flera.
+What do you want to play?	Vad vill du spela?
+You can change this later in Settings > Library.	Du kan ändra det senare under Inställningar > Bibliotek.
+A clean library with only DS games.	Ett prydligt bibliotek med bara DS-spel.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation med mera, sorterat efter system.

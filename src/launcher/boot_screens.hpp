@@ -97,6 +97,12 @@ void App::boot_scene(SDL_Renderer* r, int y) {
 }
 
 void App::boot_top(SDL_Renderer* r, int y) {
+    if (o.usb_drive_screen) {
+        rect(r, 0, y, 640, 480, "background");
+        boot_caption(r, "USB drive mode", y + 180, 32, "ink");
+        boot_caption(r, "Eject the drive on your computer when you are done", y + 240, 20, "muted");
+        return;
+    }
     rect(r, 0, y, 640, 480, "background");
     // Small, deliberate safety mark and an open text layout, like the
     // original handheld welcome screen rather than a settings dialog.
@@ -132,6 +138,11 @@ void App::boot_stylus(SDL_Renderer* r, int x, int y) {
 
 void App::boot_bottom(SDL_Renderer* r, int y) {
     rect(r, 0, y, 640, 480, "background");
+    if (o.usb_drive_screen) {
+        boot_emblem(r, y + 110);
+        key_hints(r, 320, y + 428, {{"A  Leave", ""}}, 0);
+        return;
+    }
     boot_emblem(r, y + 70);
     boot_wordmark(r, y + 222, 332);
     boot_stylus(r, 309, y + 309);

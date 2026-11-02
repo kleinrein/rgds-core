@@ -5,8 +5,10 @@
 #include "app/storage.hpp"
 #include "companion/companion.hpp"
 #include "companion/map_capture.hpp"
+#include "companion/mode7.hpp"
 #include "companion/party_gb.hpp"
 #include "companion/profile.hpp"
+#include "core/libretro/libretro.h"
 #include "companion/expr.hpp"
 #include "companion/view.hpp"
 #include "companion/dock.hpp"
@@ -56,6 +58,12 @@ public:
     mutable int peeks = 0;
     std::vector<uint32_t> fb = std::vector<uint32_t>(240 * 160);
 
+    std::vector<std::pair<unsigned, bool>> keys;
+    void set_key(unsigned key, bool down) override { keys.push_back({key, down}); }
+    int disks = 0, disk = 0;
+    int disk_count() override { return disks; }
+    int disk_index() override { return disk; }
+    void set_disk(int index) override { disk = index; }
     const char* system() const override { return "gba"; }
     std::string game_code() const override { return "FAKE"; }
     std::string header_title() const override { return "FAKE"; }
@@ -544,7 +552,7 @@ public:
     bool save_state(std::vector<uint8_t>&) override { return false; }
     bool load_state(const std::vector<uint8_t>&) override { return false; }
     uint32_t peek(uint32_t address, int size) override {
-        if (address == 0x7E10C1) return 0x80;
+        if (address == 0x7E10C1 && !ram.count(address)) return 0x80; // in a race
         uint32_t v = 0;
         for (int i = 0; i < size; ++i) {
             auto found = ram.find(address + uint32_t(i));
@@ -637,6 +645,54 @@ void test_mode7_extend() {
     CHECK(colours.size() == 3); // the road's two colours and one kart's
     CHECK(lowest > 120 && lowest < 180 && left < 128 && right > 128); // standing in the middle, larger than 16
     CHECK(right - left + 1 > 16);
+}
+
+void test_course_view() {
+    // The course from above in place of the map band: each racer at its own
+    // place as its map kart, the standings in place order, a tap close up,
+    // then the game's own band, then back.
+    std::string e;
+    Profile p = parse_ok("[game]\ntitle = T\ncodes = SUPER_MARIOKART\nsystem = snes\n[view]\nformat = course\n"
+                         "on = mem8[7E10C1] in 7F..84\nsprites = 7E0420\nplaces = 7E1017 7E101B 100 2\n"
+                         "tiles = 180 184\nranks = 7E10E6 2\nlap = mem8[7E10C1] - 7F\nlaps = 5\n");
+    auto course = make_view(p.view, e);
+    CHECK(course != nullptr);
+    if (!course) return;
+    FakeMode7 race;
+    race.racer(0, 1000, 190, 0x180, 0, 40, 150, 0x001F); // the player, red, 2nd
+    race.racer(1, 300, 700, 0x184, 1, 90, 150, 0x03E0);  // green, 1st
+    race.ram[0x7E10E6] = 2, race.ram[0x7E11E6] = 0;
+    course->update(race, 0);
+    CHECK(course->shown() && course->covers_hud());
+    Canvas out(640, 480);
+    Look look;
+    Font font;
+    course->draw(out, look, font, 0);
+    // Where each kart is on a 456-pixel map 12 pixels in: red near (437, 108), green near (146, 323).
+    auto near = [&](int cx, int cy, uint32_t px) {
+        for (int y = cy - 20; y <= cy + 20; ++y)
+            for (int x = cx - 20; x <= cx + 20; ++x)
+                if (out.at(x, y) == px) return true;
+        return false;
+    };
+    const uint32_t red = mode7::colour(0x001F), green = mode7::colour(0x03E0);
+    CHECK(near(12 + 1000 * 456 / 1024, 12 + 190 * 456 / 1024, red));
+    CHECK(near(12 + 300 * 456 / 1024, 12 + 700 * 456 / 1024, green));
+    // The standings: green's row (1st) above red's.
+    int green_row = -1, red_row = -1;
+    for (int y = 0; y < 480; ++y)
+        for (int x = 480; x < 640; ++x) {
+            if (out.at(x, y) == green && green_row < 0) green_row = y;
+            if (out.at(x, y) == red && red_row < 0) red_row = y;
+        }
+    CHECK(green_row > 0 && red_row > green_row);
+    const uint64_t whole = course->key(0);
+    CHECK(course->touch({Touch::Down, 100, 100}) && course->key(0) != whole && course->covers_hud()); // close up
+    CHECK(course->touch({Touch::Down, 100, 100}) && !course->covers_hud());                          // the game's band
+    CHECK(course->touch({Touch::Down, 100, 100}) && course->covers_hud());                           // the whole course
+    race.ram[0x7E10C1] = 0x85; // the race over
+    course->update(race, 2);
+    CHECK(!course->shown());
 }
 
 void test_hud_strip() {
@@ -900,6 +956,11 @@ void test_second_screen() {
     dock.touch({Touch::Down, switcher.x + 10, switcher.y + 10});
     dock.touch({Touch::Up, switcher.x + 10, switcher.y + 10});
     CHECK(dock.take_action() == Dock::Action::Switcher);
+    const Box game_menu = dock.box(Dock::Item::GameMenu, 640, 480);
+    CHECK(game_menu.x + game_menu.w <= switcher.x && switcher.x + switcher.w <= home.x && home.x + home.w <= 616);
+    dock.touch({Touch::Down, game_menu.x + 10, game_menu.y + 10});
+    dock.touch({Touch::Up, game_menu.x + 10, game_menu.y + 10});
+    CHECK(dock.take_action() == Dock::Action::GameMenu);
     dock.touch({Touch::Down, switcher.x + 10, switcher.y + 10});
     dock.touch({Touch::Move, off.x + 10, off.y + 10});
     dock.touch({Touch::Up, off.x + 10, off.y + 10}); // slid off: nothing, and not the screen off either
@@ -936,6 +997,12 @@ void test_second_screen() {
 class Scroller final : public Core {
 public:
     std::map<uint32_t, uint8_t> bytes;
+    std::vector<uint8_t> rom;
+    bool read_rom(uint32_t offset, uint32_t size, std::vector<uint8_t>& out) override {
+        if (offset >= rom.size()) return false;
+        out.assign(rom.begin() + offset, rom.begin() + std::min<size_t>(rom.size(), size_t(offset) + size));
+        return true;
+    }
     std::vector<uint32_t> fb = std::vector<uint32_t>(64 * 48);
     void set_camera(int x) {
         bytes[0x10] = uint8_t(x), bytes[0x11] = uint8_t(x >> 8);
@@ -1145,6 +1212,76 @@ void test_libretro_views() {
     CHECK(pathed->save(after) && after.size() == road.size());
     pathed->draw(out, look, font, 0);
 
+    // The other racers on that course, with the standings; their faces unpacked from a MIO0 block in the ROM: a
+    // palette whose colour 1 is magenta, an 8 x 8 texture of it, the last 60 of its bytes a copy.
+    std::vector<uint8_t> unpacked(512 + 64, 0);
+    unpacked[2] = 0xF8, unpacked[3] = 0x3F;
+    std::fill(unpacked.begin() + 512, unpacked.end(), uint8_t(1));
+    const uint32_t literal = 512 + 4, packed_size = uint32_t(unpacked.size());
+    const uint32_t copies_at = 16 + (literal + 4 + 7) / 8, bytes_at = copies_at + 8;
+    std::vector<uint8_t> packed(bytes_at + literal, 0);
+    std::memcpy(packed.data(), "MIO0", 4);
+    auto big32 = [&](uint32_t a, uint32_t v) {
+        for (int i = 0; i < 4; ++i) packed[a + uint32_t(i)] = uint8_t(v >> (24 - 8 * i));
+    };
+    big32(4, packed_size), big32(8, copies_at), big32(12, bytes_at);
+    for (uint32_t i = 0; i < literal; ++i) packed[16 + i / 8] |= uint8_t(0x80 >> (i % 8));
+    for (int i = 0; i < 3; ++i) packed[copies_at + uint32_t(i) * 2] = 0xF0; // 18 bytes from 1 back
+    packed[copies_at + 6] = 0x30;                                           // the last 6
+    std::copy(unpacked.begin(), unpacked.begin() + literal, packed.begin() + bytes_at);
+    game.rom.assign(0x10, 0);
+    game.rom.insert(game.rom.end(), packed.begin(), packed.end());
+    auto put_float = [&](uint32_t a, float v) {
+        uint32_t word;
+        std::memcpy(&word, &v, 4);
+        for (int i = 0; i < 4; ++i) game.bytes[a + uint32_t(i)] = uint8_t(word >> (8 * i));
+    };
+    auto racer = [&](uint32_t slot, int in_use, float x, float y, int rank) {
+        const uint32_t a = 0x4000 + slot * 0x10;
+        put16(a, in_use), put16(a + 2, 0), put_float(a + 4, x), put_float(a + 8, y), put16(a + 12, rank), put16(a + 14, 1);
+    };
+    const std::string racers_ini = "[game]\ntitle = T\ncodes = AB\nsystem = n64\n[view]\nformat = trace\n"
+                                   "x = mem16[50]\ny = mem16[52]\ncourse = 1\npath = mem16[54]\npath_count = mem16[56]\n"
+                                   "width = 20\nracers = 4000 10 3\nracer_exists = 0 8000\nracer_x = 4\nracer_y = 8\n"
+                                   "racer_rank = C\nracer_lap = E\nracer_kind = 2\nlaps = 3\nfaces = 10 8 8\n"
+                                   "face.0 = 0 200\n";
+    put16(0x50, 1400), put16(0x52, 1000);
+    racer(0, 0x8000, 1400, 1000, 1), racer(1, 0x8000, 600, 1000, 0), racer(2, 0, 1000, 600, 2); // the third not in use
+    auto magenta = [](const Canvas& c, int from_x) {
+        int count = 0;
+        for (int y = 0; y < c.h(); ++y)
+            for (int x = from_x; x < c.w(); ++x) count += c.data()[size_t(y) * c.w() + x] == 0xFFFF00FFu;
+        return count;
+    };
+    Profile rp = parse_ok(racers_ini);
+    auto rivals = make_view(rp.view, e);
+    CHECK(rivals != nullptr);
+    if (!rivals) return;
+    const uint64_t still = rivals->key(0);
+    rivals->update(game, 0);
+    CHECK(rivals->shown() && rivals->key(4) != still);
+    Canvas field(640, 480);
+    rivals->draw(field, look, font, 0);
+    CHECK(magenta(field, 640 - 12 - 116) == 2 * 64); // two in the standings, the third not there
+    CHECK(magenta(field, 0) == 2 * 64 + 64 + 6 * 6); // on the map the player's whole, the rival's smaller
+    const std::vector<uint8_t> whole_rom = game.rom;
+    game.rom.clear(); // no ROM to read: the rival a dot, nothing magenta
+    auto faceless = make_view(rp.view, e);
+    CHECK(faceless != nullptr);
+    if (!faceless) return;
+    faceless->update(game, 0);
+    faceless->draw(field, look, font, 0);
+    CHECK(magenta(field, 0) == 0);
+    game.rom = whole_rom;
+    game.rom[0x10] = 'X'; // not a MIO0 block
+    auto not_mio = make_view(rp.view, e);
+    CHECK(not_mio != nullptr);
+    if (!not_mio) return;
+    not_mio->update(game, 0);
+    not_mio->draw(field, look, font, 0);
+    CHECK(magenta(field, 0) == 0);
+    game.rom.clear();
+
     // The shipped profiles of the libretro systems: every view builds, Duck Hunt is a light-gun game.
     ProfileLibrary lib;
     std::vector<std::string> errors;
@@ -1178,6 +1315,62 @@ void test_libretro_views() {
     CHECK(lib.find("sms", "PHANTASY_STAR") && lib.find("snes", "SUPER_METROID") && lib.find("snes", "F_ZERO"));
 }
 
+void test_keyboard() {
+    CHECK(!make_keyboard("gba"));
+    auto keyboard = make_keyboard("zx");
+    CHECK(keyboard && keyboard->shown());
+    FakeGame game;
+    uint64_t frame = 0;
+    auto tap = [&](int x, int y) {
+        keyboard->touch({Touch::Down, x, y});
+        keyboard->touch({Touch::Up, x, y});
+    };
+    auto frames = [&](int n) {
+        while (n--) keyboard->update(game, ++frame);
+    };
+    using Keys = std::vector<std::pair<unsigned, bool>>;
+    const int a_x = 51, a_y = 269, caps_x = 51, caps_y = 346;
+    // Caps Shift stays down for the next key, and comes up with it.
+    tap(caps_x, caps_y);
+    frames(2);
+    CHECK((game.keys == Keys{{RETROK_LSHIFT, true}}));
+    tap(a_x, a_y);
+    frames(3);
+    CHECK((game.keys == Keys{{RETROK_LSHIFT, true}, {RETROK_a, true}})); // a tap is still held for a game to see
+    frames(4);
+    CHECK((game.keys == Keys{{RETROK_LSHIFT, true}, {RETROK_a, true}, {RETROK_a, false}, {RETROK_LSHIFT, false}}));
+    // Tapped again before the first has come up, a key is still seen twice.
+    game.keys.clear();
+    frames(4);
+    tap(a_x, a_y);
+    tap(a_x, a_y);
+    frames(20);
+    CHECK((game.keys == Keys{{RETROK_a, true}, {RETROK_a, false}, {RETROK_a, true}, {RETROK_a, false}}));
+    // A finger left on a key holds it; a shift tapped twice is up again without a key.
+    game.keys.clear();
+    keyboard->touch({Touch::Down, a_x, a_y});
+    frames(30);
+    CHECK((game.keys == Keys{{RETROK_a, true}}));
+    keyboard->touch({Touch::Up, a_x, a_y});
+    frames(10);
+    CHECK(game.keys.size() == 2 && !game.keys.back().second);
+    game.keys.clear();
+    tap(caps_x, caps_y);
+    frames(2);
+    tap(caps_x, caps_y);
+    frames(2);
+    CHECK((game.keys == Keys{{RETROK_LSHIFT, true}, {RETROK_LSHIFT, false}}));
+    // Off the keys is nothing, and the disk button only shows with disks to change.
+    CHECK(!keyboard->touch({Touch::Down, 300, 40}));
+    CHECK(!keyboard->touch({Touch::Down, 460, 50}));
+    game.disks = 3;
+    frames(1);
+    CHECK(keyboard->touch({Touch::Down, 460, 50}));
+    keyboard->touch({Touch::Up, 460, 50});
+    frames(1);
+    CHECK(game.disk == 1);
+}
+
 int main() {
     test_second_screen();
     test_colour();
@@ -1186,6 +1379,7 @@ int main() {
     test_game_boy();
     test_hud_strip();
     test_mode7_extend();
+    test_course_view();
     test_gb_views();
     test_shipped_gb_profiles();
     test_libretro_views();
@@ -1194,6 +1388,7 @@ int main() {
     test_cheats();
     test_saves();
     test_canvas();
+    test_keyboard();
     std::printf("%d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

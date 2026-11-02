@@ -1,0 +1,5 @@
+config BR2_PACKAGE_LIBRETRO_VICE
+	bool "libretro-vice"
+	help
+	  VICE's fast C64 (x64), the Commodore 64 core RG DS Play loads for .d64, .t64, .crt and .prg games:
+	  /usr/lib/libretro/vice_x64_libretro.so. The C64's ROMs are built in.

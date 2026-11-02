@@ -20,6 +20,7 @@
 //   bytes A N        N bytes from address A as one hex string
 //   state save FILE  the whole machine to a file ("state load FILE" to come back)
 //   second off       the second screen turned off (on again with "second on", "second info": the info screen)
+//   disk N           the game's disk N in the drive
 //   tap X Y          a finger down and up on the second screen ("touch down|move|up X Y" for each)
 //   and the script commands without a frame: shot, hudshot, status, ...
 // Captures normally run to completion before the next frame, so a run is the
@@ -187,7 +188,9 @@ int main(int argc, char** argv) {
                         // What the frontend would hand the runtime from the dock (here: say so).
                         const Dock::Action act = s.companion()->dock().take_action();
                         if (act != Dock::Action::None)
-                            std::printf("action %s\n", act == Dock::Action::Switcher ? "switcher" : "home");
+                            std::printf("action %s\n", act == Dock::Action::GameMenu   ? "game-menu"
+                                                       : act == Dock::Action::Switcher ? "switcher"
+                                                                                       : "home");
                     }
                     if (s.companion())
                         while (s.companion()->busy()) std::this_thread::sleep_for(std::chrono::microseconds(200));
@@ -263,6 +266,12 @@ int main(int argc, char** argv) {
                     s.companion()->set_info(arg == "info");
                 }
                 std::printf("ok\n");
+            } else if (what == "disk") {
+                int n = 0;
+                in >> n;
+                s.core().set_disk(n);
+                std::printf("ok disk %d of %d\n", s.core().disk_index(), s.core().disk_count());
+                std::fflush(stdout);
             } else if (what == "touch" || what == "tap") {
                 // touch down|move|up X Y, or tap X Y (down then up): a finger on the second screen
                 std::string kind = what == "tap" ? "down" : "";

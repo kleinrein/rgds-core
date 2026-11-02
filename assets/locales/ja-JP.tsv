@@ -18,6 +18,7 @@
 A  Apply	A  適用
 A  Done	A  完了
 A  Jump	A  移動
+A  Leave	A  終了
 A  Play	A  プレイ
 A  Search	A  検索
 A 24-hour or 12-hour clock.	24時間制か12時間制か。
@@ -77,6 +78,7 @@ Atlantic Ocean	大西洋
 Audio is not recorded or saved.	音声は録音も保存もされません。
 Australia	オーストラリア
 Auto-load state	ステートを自動で読み込む
+Auto-save	自動セーブ
 Auto-save on exit	終了時に自動セーブ
 Automatic	自動
 Automatic (free)	自動
@@ -128,12 +130,15 @@ Browse	ブラウズ
 Browse games	ゲームを見る
 Browse systems	システムを見る
 Browser layout	一覧の表示
+Bubble Gum	風船ガム
 Build, storage and device address	ビルド、ストレージ、本体のアドレス
 Button	ボタン
 Button layout	ボタン配置
 Button {0}	ボタン {0}
 Buttons and the game menu shortcut	ボタンとゲームメニューのショートカット
 Cancel	キャンセル
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	カルーセル
 Carried	所持
 Cartridges	カートリッジ
@@ -141,6 +146,7 @@ Change group	グループを切り替え
 Changes immediately. Map a button in Controls for quick access.	すぐに切り替わります。「操作設定」でボタンを割り当てるとすばやく使えます。
 Changing 3D threading…	3Dスレッドを変更中…
 Changing speed…	速度を変更中…
+Chaos Emeralds	カオスエメラルド
 Chat is unavailable: you can still draw	チャットは使えません：絵は描けます
 Chat Room	チャットルーム
 Chat Room {0}	チャットルーム{0}
@@ -191,6 +197,7 @@ Compare	比較
 Confirm	確認
 Connect	接続
 Connect the charger before installing an update.	更新をインストールする前に充電器をつないでください。
+Connect the handheld to a computer first.	先に本体をコンピュータに接続してください。
 Connect to Wi-Fi to send files from a phone or computer.	Wi-Fiに接続すると、スマートフォンやパソコンからファイルを送れます。
 Connected	接続済み
 Connected.	接続しました。
@@ -200,6 +207,7 @@ Connection lost. Retrying…	接続が切れました。再試行中…
 Connectivity	通信
 Continue	続ける
 Continue where you left off	前回の続きから
+Continues	コンティニュー
 Control unavailable on this device	この本体では操作できません
 Controllers and other Bluetooth devices	コントローラーなどのBluetoothデバイス
 Controls	操作設定
@@ -219,6 +227,7 @@ Could not apply this shader.	このフィルターを適用できませんでし
 Could not apply volume	音量を反映できませんでした
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fiアダプターを起動できませんでした。もう一度お試しください。
 Could not change 3D threading. Your game is unchanged.	3Dスレッドを変更できませんでした。ゲームはそのままです。
+Could not change USB data transfer.	USBデータ転送を変更できませんでした。
 Could not confirm the selected Wi-Fi connection. Scan and try again.	選んだWi-Fiに接続できたか確認できませんでした。検索してもう一度お試しください。
 Could not connect	接続できませんでした
 Could not enable lid wake	ふたを開けての復帰を有効にできませんでした
@@ -270,6 +279,7 @@ Development build	開発版
 Device address	本体のアドレス
 Device information	本体情報
 Discard update	更新を破棄
+Disk	ディスク
 Display	表示
 Display FPS	画面のFPS
 Done	完了
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	編集
 Edit search	検索を編集
 Effects volume	効果音の音量
+Eject the drive on your computer when you are done	終わったらコンピュータでドライブを取り出してください
 Empty slot	空きスロット
 Emulator	エミュレーター
 Emulator settings	エミュレーターの設定
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	エラー：設定を元に戻せませんで�
 ERROR: Could not restore settings - see log	エラー：設定を元に戻せませんでした - ログを確認してください
 Essences	エッセンス
 Europe	ヨーロッパ
+Event	種目
+Events	種目
 Every game in this collection has artwork.	このコレクションのゲームはすべて画像があります。
 Exit your game before installing an update.	更新をインストールする前にゲームを終了してください。
 Experience	経験値
@@ -341,9 +354,11 @@ Fetch missing artwork	足りない画像を取得
 Figurines	フィギュア
 File sharing on. Find "RG DS" under Network.	ファイル共有をオンにしました。「ネットワーク」で「RG DS」を探してください。
 Files added	追加したファイル
+Files and SSH by cable; charging always works	ケーブルでファイルとSSH。充電は常に可能
 Files arrived. Choose Play to start.	ファイルが届きました。プレイを選んで開始します。
 Filter	絞り込み
 Filtered	絞り込み中
+Final	最終結果
 Find and connect to a nearby network	近くのネットワークを探して接続
 Find, pair and connect a nearby device	近くのデバイスを検索してペアリング・接続
 Finding games…	ゲームを探しています…
@@ -489,6 +504,7 @@ Key {0}	キー {0}
 Keyboard	キーボード
 Keys	カギ
 Kinstone fusions	キノピース合わせ
+Lamppost	ポイントマーカー
 Language	言語
 Last 4 weeks	過去4週間
 Last 7 days	過去7日間
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	ゲームを探す、�
 Please keep your handheld on	本体の電源を切らないでください
 Pocket green	ポケットグリーン
 Point and click on top	上の画面をクリック
+Points	ポイント
 Pokédex caught	図鑑 捕まえた数
 Pokédex seen	図鑑 見つけた数
+Popcorn	ポップコーン
 PortMaster is ready	PortMaster の準備ができました
 Ports	移植ゲーム
 Power	電源
@@ -785,9 +803,11 @@ RGDS build	RGDSのビルド
 Rich	リッチ
 Right	右
 Right stick	右スティック
+Rings	リング
 Rollback simulated.	ロールバックをシミュレートしました。
 Round	ラウンド
 ROUNDED FONT UNAVAILABLE	丸ゴシックを使えません
+Route	ルート
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DSの振動カートリッジ対応ゲーム、ゲームボーイとゲームボーイアドバンスの振動カートリッジ。
 Rumble strength	振動の強さ
 Rupees	ルピー
@@ -826,7 +846,9 @@ Scene	シーン
 Score	スコア
 Screen brightness	画面の明るさ
 Screen colours	画面の色
-Screen off	画面オフ
+Menu	メニュー
+Switch	切り替え
+Turn off screen	画面オフ
 screens	画面
 ScreenScraper needs project credentials and your account	ScreenScraperにはプロジェクトの認証情報とあなたのアカウントが必要です
 Screenshot	スクリーンショット
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	DSの色合いでくっきり拡大�
 Sharp scaling, DS colour and Natural Vision together.	くっきり拡大、DSの色合い、Natural Visionの組み合わせ。
 Shield	盾
 Shift	シフト
+Shift keys stay down until the next key	シフトキーは次のキーまで押されたままです
 Shortcut action	ショートカットの動作
 Shots	残り弾数
 Show games	ゲームを表示
@@ -909,7 +932,9 @@ Spanish	スペイン語
 Spring	バネ
 Springy menu changes with a colourful wobble	カラフルに弾むメニューの切り替え
 Stable	安定版
+Stage	ステージ
 Standard	標準
+Standings	順位
 START	START
 Start	スタート
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	本体の更新
 Systems	システム
 Tap to type, or use the D-pad and A	タッチで入力するか、十字ボタンとAを使います
 Team	てもち
+Temper	かんしゃく
 Temporary game cache cleared. Saves and artwork are kept.	ゲームの一時キャッシュを消去しました。セーブデータと画像は残っています。
 Terrain and unit	地形とユニット
 Test	テスト
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	このネットワークには企�
 This port lists no instructions.	このポートには説明がありません。
 This request did not finish. Please try again.	要求が終わりませんでした。もう一度お試しください。
 This shader is unavailable for the current emulator.	今のエミュレーターではこのフィルターを使えません。
+This stage	このステージ
 This stock firmware has not been validated for updates.	この標準ファームウェアは更新の検証がされていません。
 This version failed to start. Waiting for a newer update.	このバージョンは起動できませんでした。新しい更新を待っています。
 Threaded 3D	3Dマルチスレッド
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	更新の検証に失敗し
 Updates	更新
 Updates & recovery	更新と復元
 Updates will be available when the release channel opens.	リリースチャンネルが開いたら更新できるようになります。
+USB data transfer	USBデータ転送
+USB data transfer is not available on this handheld.	この本体ではUSBデータ転送を利用できません。
+USB data transfer off.	USBデータ転送オフ。
+USB data transfer on.	USBデータ転送オン。
+USB drive mode	USBドライブモード
 Use an additional rendering thread	描画用のスレッドを追加で使う
+Use as USB drive	USBドライブとして使用
 Use default ({0})	標準を使う（{0}）
 Use default controls	共通の操作設定を使う
 Use previous build	前のビルドを使う
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	近くに{0}人
 {0} players	{0}人
 {0} settings	{0}の設定
+Welcome!	ようこそ!
+Let's get your handheld ready. It takes about a minute.	本体の準備をしましょう。1分ほどで終わります。
+Pick your colour	好きな色を選ぶ
+The menus take it on. You can change it whenever you like.	メニューの色になります。いつでも変更できます。
+What's your name?	お名前は?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChatで近くの人に表示され、DSゲームでは持ち主の名前として使われます。
+Is this the right time?	時刻は合っていますか?
+You're connected	接続しました
+Connect to Wi-Fi	Wi-Fiに接続
+For box art, updates and PictoChat. Everything else works without it.	カバーアート、アップデート、PictoChatに使います。ほかの機能はなくても動きます。
+You're all set!	準備完了!
+Play at a comfortable volume, and give your eyes and hands a break.	快適な音量で遊び、目と手を休ませましょう。
+In a game, the Anbernic button opens saves, cheats and settings.	ゲーム中にAnbernicボタンを押すと、セーブ、チート、設定を開けます。
+Close the lid to sleep. Your game waits for you.	ふたを閉じるとスリープします。ゲームはそのまま待っています。
+Copy more games any time. They show up by themselves.	ゲームはいつでも追加できます。自動で表示されます。
+Skip setup	設定をスキップ
+Run setup again	設定をやり直す
+Turn on Wi-Fi	Wi-Fiをオンにする
+Turn on USB data transfer	USBデータ転送をオンにする
+Connect to Wi-Fi first	先にWi-Fiに接続してください
+Zoom	ズーム
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	USB-CケーブルをつないでUSBドライブとして使うを選ぶか、このカードをパソコンに入れてください。RGDSドライブを開き、romsの中のフォルダにゲームをコピーします: nds, gba, gb, gbc, nes, snes, md など。
+What do you want to play?	何で遊びますか?
+You can change this later in Settings > Library.	あとで設定 > ライブラリから変更できます。
+A clean library with only DS games.	DSゲームだけのすっきりしたライブラリです。
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS、ゲームボーイ、SNES、PlayStationなどをシステムごとに並べます。

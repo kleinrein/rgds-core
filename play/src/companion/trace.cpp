@@ -26,6 +26,22 @@
 //   path_y = 4                             # same units as x and y
 // Driving then paints nothing: a shortcut over the grass is not the road.
 //
+// The other racers, if the game keeps them in a table, go on the map with the
+// standings beside it (on a course with a path: an arena has no places):
+//   racers = 0F6990 DD8 8                  # the table, the bytes a racer, how many; the first is the player
+//   racer_exists = 0 8000                  # offset and mask of what says the slot is in use (16-bit)
+//   racer_x = 14                           # float x and y, the same units as x and y
+//   racer_y = 1C
+//   racer_rank = 4                         # 16-bit: the place from 0
+//   racer_lap = 8                          # 16-bit: the laps done, and how many a race has
+//   laps = 3
+//   racer_kind = 254                       # 16-bit: who drives, for the face
+// Their faces, as the game's own standings draw them, come from the ROM: a
+// MIO0 block of 8-bit textures with 16-bit palettes (RGBA 5551), offsets into
+// the block once unpacked, per kind. Without them a racer is a dot.
+//   faces = 132B50 32 32                   # the block in the ROM, each face's width and height
+//   face.0 = 1A4D8 1B6D8                   # kind 0's palette and texture
+//
 // The road is painted, not dotted: each stretch driven is a stroke of the
 // road's width into a grid of small squares, so a second lap on a different
 // line widens the road a little instead of drawing a second squiggle. The
@@ -42,6 +58,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <sstream>
 #include <unordered_set>
 #include <vector>
 
@@ -71,6 +88,75 @@ struct Road {
 };
 
 int floor_div(long v, int d) { return int(v >= 0 ? v / d : -((-v + d - 1) / d)); }
+
+uint32_t big32(const uint8_t* p) { return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3]; }
+
+// A MIO0 block: a bit per step (1: a byte as it is, 0: a copy from what is already out), the copies' and the bytes'
+// tables at the offsets its header gives. Empty when the block is not one or runs off its end.
+std::vector<uint8_t> unpack_mio0(const std::vector<uint8_t>& in) {
+    if (in.size() < 16 || std::memcmp(in.data(), "MIO0", 4) != 0) return {};
+    const size_t size = big32(&in[4]);
+    size_t copies = big32(&in[8]), bytes = big32(&in[12]), step = 0;
+    if (size > 0x800000) return {};
+    std::vector<uint8_t> out;
+    out.reserve(size);
+    while (out.size() < size) {
+        const size_t flag = 16 + step / 8;
+        if (flag >= in.size()) return {};
+        if ((in[flag] >> (7 - step % 8)) & 1) {
+            if (bytes >= in.size()) return {};
+            out.push_back(in[bytes++]);
+        } else {
+            if (copies + 1 >= in.size()) return {};
+            const int word = in[copies] << 8 | in[copies + 1];
+            copies += 2;
+            const size_t back = size_t(word & 0xFFF) + 1;
+            if (back > out.size()) return {};
+            for (int n = (word >> 12) + 3; n > 0; --n) out.push_back(out[out.size() - back]);
+        }
+        ++step;
+    }
+    out.resize(size);
+    return out;
+}
+
+// A face, in the canvas's pixels (alpha 0 where clear).
+struct Face {
+    int w = 0, h = 0;
+    std::vector<uint32_t> px;
+    bool empty() const { return px.empty(); }
+};
+
+// Drawn with its clear pixels left out, whatever is under them.
+void stamp(Canvas& out, const Face& face, int left, int top) {
+    for (int y = 0; y < face.h; ++y) {
+        const int oy = top + y;
+        if (oy < 0 || oy >= out.h()) continue;
+        for (int x = 0; x < face.w; ++x) {
+            const int ox = left + x;
+            const uint32_t c = face.px[size_t(y) * face.w + x];
+            if (c >> 24 && ox >= 0 && ox < out.w()) out.data()[size_t(oy) * out.w() + ox] = c;
+        }
+    }
+}
+
+// Smaller by whole-area means, each output pixel what lies under it: the rival's face on a crowded map.
+Face shrunk(const Face& big, int w, int h) {
+    Face small;
+    small.w = w, small.h = h;
+    small.px.assign(size_t(w) * h, 0);
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x) {
+            uint32_t r = 0, g = 0, b = 0, solid = 0, all = 0;
+            for (int v = y * big.h / h; v < std::max(y * big.h / h + 1, (y + 1) * big.h / h); ++v)
+                for (int u = x * big.w / w; u < std::max(x * big.w / w + 1, (x + 1) * big.w / w); ++u, ++all) {
+                    const uint32_t c = big.px[size_t(v) * big.w + u];
+                    if (c >> 24) r += c & 0xFF, g += (c >> 8) & 0xFF, b += (c >> 16) & 0xFF, ++solid;
+                }
+            if (solid * 2 >= all && solid) small.px[size_t(y) * w + x] = 0xFF000000u | (r / solid) | ((g / solid) << 8) | ((b / solid) << 16);
+        }
+    return small;
+}
 
 class Trace final : public View {
 public:
@@ -104,6 +190,54 @@ public:
                     return false;
                 }
                 (key == "path_stride" ? path_stride_ : key == "path_x" ? path_dx_ : path_dy_) = int(v);
+            } else if (key == "racers") {
+                std::istringstream words(value);
+                std::string base, step;
+                words >> base >> step >> racer_count_;
+                if (!parse_address(base, racer_base_) || !parse_address(step, racer_step_) || racer_count_ < 1 ||
+                    racer_count_ > 16) {
+                    error = "[view] trace: bad racers '" + value + "'";
+                    return false;
+                }
+            } else if (key == "racer_exists") {
+                std::istringstream words(value);
+                std::string at, mask;
+                words >> at >> mask;
+                if (!parse_address(at, racer_exists_at_) || !parse_address(mask, racer_exists_mask_)) {
+                    error = "[view] trace: bad racer_exists '" + value + "'";
+                    return false;
+                }
+            } else if (key == "racer_x" || key == "racer_y" || key == "racer_rank" || key == "racer_lap" ||
+                       key == "racer_kind") {
+                uint32_t& at = key == "racer_x"    ? racer_x_
+                               : key == "racer_y"  ? racer_y_
+                               : key == "racer_rank" ? racer_rank_
+                               : key == "racer_lap"  ? racer_lap_
+                                                     : racer_kind_;
+                if (!parse_address(value, at)) {
+                    error = "[view] trace: bad " + key + " '" + value + "'";
+                    return false;
+                }
+            } else if (key == "laps") {
+                laps_ = std::atoi(value.c_str());
+            } else if (key == "faces") {
+                std::istringstream words(value);
+                std::string at;
+                words >> at >> face_w_ >> face_h_;
+                if (!parse_address(at, faces_at_) || face_w_ < 8 || face_w_ > 64 || face_h_ < 8 || face_h_ > 64) {
+                    error = "[view] trace: bad faces '" + value + "'";
+                    return false;
+                }
+            } else if (key.rfind("face.", 0) == 0) {
+                std::istringstream words(value);
+                std::string palette, texture;
+                words >> palette >> texture;
+                uint32_t p = 0, t = 0;
+                if (!parse_address(palette, p) || !parse_address(texture, t)) {
+                    error = "[view] trace: bad " + key + " '" + value + "'";
+                    return false;
+                }
+                face_places_[int(std::strtol(key.c_str() + 5, nullptr, 16))] = {p, t};
             } else if (key == "name") {
                 name_ = value;
             } else if (key.rfind("name.", 0) == 0) {
@@ -126,6 +260,7 @@ public:
         const long course = course_.eval(live);
         Road& road = courses_[course];
         if (!path_.empty() && frame % 30 == 0) read_path(live, road); // twice a second: a new course's comes soon
+        if (racer_count_ && frame % 4 == 0) read_racers(live);
         long x = x_.eval(live) + off_x_, y = y_.eval(live) + off_y_;
         // Unwrapped: the step from the last sample is the short way round.
         auto near = [](long& v, long& off, long last, long period) {
@@ -179,8 +314,9 @@ public:
     bool shown() const override { return playing_; }
 
     uint64_t key(uint64_t frame) const override {
-        return (uint64_t(layer_serial_) << 28) ^ (uint64_t(moves_) << 2) ^ (uint64_t(course_now_ & 0xFF) << 56) ^
-               ((frame / 16) & 1);
+        // With rivals on it the map moves all the time: drawn as they are read, 15 times a second.
+        return (uint64_t(layer_serial_) << 28) ^ (uint64_t(racer_count_ ? frame / 4 : moves_) << 2) ^
+               (uint64_t(course_now_ & 0xFF) << 56) ^ ((frame / 16) & 1);
     }
 
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t frame) const override {
@@ -196,6 +332,46 @@ public:
         }
         std::memcpy(out.data(), layer_.data(), size_t(out.w()) * size_t(out.h()) * sizeof(uint32_t));
         if (!drawn) return;
+        const bool places = standings(&found->second);
+        const int map_right = places ? column_x(out) - kit::gap : out.w();
+        // The rivals, last place first so the leaders stay on top; the player over them all, below.
+        std::vector<const Racer*> order;
+        for (size_t i = 0; i < racers_.size(); ++i)
+            if (racers_[i].there) order.push_back(&racers_[i]);
+        std::stable_sort(order.begin(), order.end(), [](const Racer* a, const Racer* b) { return a->place > b->place; });
+        for (const Racer* racer : order) {
+            if (racer == &racers_[0]) continue;
+            const Face* face = face_of(*racer, true);
+            const int half = face ? face->w / 2 + 1 : 8;
+            const int mx = std::clamp(int(ox_ + (racer->x - wx0_) * s_), half + 2, map_right - half - 2);
+            const int my = std::clamp(int(oy_ + (racer->y - wy0_) * s_), half + 2, out.h() - half - 2);
+            if (face) {
+                out.rounded_rect(mx - half, my - half, half * 2, half * 2, 4, Rgb{12, 17, 26});
+                stamp(out, *face, mx - face->w / 2, my - face->h / 2);
+            } else {
+                disc(out, mx, my, 8, Rgb{12, 17, 26});
+                disc(out, mx, my, 6, look.ink);
+            }
+        }
+        if (places) draw_standings(out, look, font, order);
+        const Face* you = racers_.empty() || !racers_[0].there ? nullptr : face_of(racers_[0], false);
+        if (you) {
+            // The player's own face, larger, on a ring in the accent with the nose toward where it is going.
+            const int half = you->w / 2 + 3;
+            const int mx = std::clamp(int(ox_ + (px_ - wx0_) * s_), half + 2, map_right - half - 2);
+            const int my = std::clamp(int(oy_ + (py_ - wy0_) * s_), half + 2, out.h() - half - 2);
+            const double len = std::hypot(double(heading_x_), double(heading_y_));
+            const Rgb lit = (frame / 16) & 1 ? Rgb{255, 214, 92} : Rgb{255, 140, 64}, dark{12, 17, 26};
+            if (len > 0) {
+                const double ux = heading_x_ / len, uy = heading_y_ / len;
+                disc(out, mx + int(ux * (half + 6)), my + int(uy * (half + 6)), 8, dark);
+                disc(out, mx + int(ux * (half + 6)), my + int(uy * (half + 6)), 6, lit);
+            }
+            out.rounded_rect(mx - half - 1, my - half - 1, half * 2 + 2, half * 2 + 2, 7, dark);
+            out.rounded_rect(mx - half, my - half, half * 2, half * 2, 6, lit);
+            stamp(out, *you, mx - you->w / 2, my - you->h / 2);
+            return;
+        }
         // The player: a disc with a nose toward where it is going, kept inside the map.
         const int r = std::max(4, out.w() / 80);
         const int mx = std::clamp(int(ox_ + (px_ - wx0_) * s_), r + 4, out.w() - r - 4);
@@ -277,6 +453,94 @@ public:
     }
 
 private:
+    struct Racer {
+        bool there = false;
+        double x = 0, y = 0;
+        int place = 0, lap = 0, kind = -1;
+    };
+
+    // Where the table says everyone is. A float that is no place (the table not filled in yet) hides that racer.
+    void read_racers(Core& live) {
+        racers_.resize(size_t(racer_count_));
+        if (!faces_read_) read_faces(live);
+        for (int i = 0; i < racer_count_; ++i) {
+            const uint32_t at = racer_base_ + racer_step_ * uint32_t(i);
+            Racer& r = racers_[size_t(i)];
+            r.there = !racer_exists_mask_ || (peek_address(live, at + racer_exists_at_, 2) & racer_exists_mask_);
+            const uint32_t fx = peek_address(live, at + racer_x_, 4), fy = peek_address(live, at + racer_y_, 4);
+            float x, y;
+            std::memcpy(&x, &fx, 4), std::memcpy(&y, &fy, 4);
+            if (!std::isfinite(x) || !std::isfinite(y) || std::abs(x) > 0x40000 || std::abs(y) > 0x40000) r.there = false;
+            r.x = x, r.y = y;
+            r.place = std::clamp(int(int16_t(peek_address(live, at + racer_rank_, 2))) + 1, 1, racer_count_);
+            r.lap = std::clamp(int(int16_t(peek_address(live, at + racer_lap_, 2))) + 1, 1, laps_ ? laps_ : 99);
+            r.kind = int(peek_address(live, at + racer_kind_, 2));
+        }
+    }
+
+    // The faces, once: unpacked from the ROM and turned into pixels, the block then let go.
+    void read_faces(Core& live) {
+        faces_read_ = true;
+        if (face_places_.empty()) return;
+        std::vector<uint8_t> packed;
+        if (!live.read_rom(faces_at_, 0x80000, packed)) return;
+        const std::vector<uint8_t> block = unpack_mio0(packed);
+        for (const auto& [kind, where] : face_places_) {
+            const size_t palette = where.first, texture = where.second, texels = size_t(face_w_) * face_h_;
+            if (palette + 512 > block.size() || texture + texels > block.size()) continue;
+            Face face;
+            face.w = face_w_, face.h = face_h_;
+            face.px.resize(texels);
+            for (size_t i = 0; i < texels; ++i) {
+                const uint8_t* entry = &block[palette + size_t(block[texture + i]) * 2];
+                const int c = entry[0] << 8 | entry[1];
+                const uint32_t r = uint32_t((c >> 11) & 31) * 255 / 31, g = uint32_t((c >> 6) & 31) * 255 / 31,
+                               b = uint32_t((c >> 1) & 31) * 255 / 31;
+                face.px[i] = c & 1 ? 0xFF000000u | r | (g << 8) | (b << 16) : 0;
+            }
+            small_faces_[kind] = shrunk(face, face_w_ * 3 / 4, face_h_ * 3 / 4);
+            faces_[kind] = std::move(face);
+        }
+    }
+
+    const Face* face_of(const Racer& racer, bool small) const {
+        const auto& from = small ? small_faces_ : faces_;
+        const auto found = from.find(racer.kind);
+        return found == from.end() ? nullptr : &found->second;
+    }
+
+    // A race's course (it has a path) and a table of racers: places to show. An arena has neither laps nor places.
+    bool standings(const Road* road) const { return road && road->path_count && racer_count_; }
+    static int column_x(const Canvas& out) { return out.w() - kit::gap - column_w; }
+
+    // The player's lap, then everyone by place, clear of the dock's corner.
+    void draw_standings(Canvas& out, const Look& look, const Font& font, const std::vector<const Racer*>& worst_first) const {
+        const int x = column_x(out);
+        int y = kit::gap;
+        if (racers_[0].there) {
+            std::string lap = look.tr("Lap") + " " + std::to_string(racers_[0].lap);
+            if (laps_) lap += "/" + std::to_string(laps_);
+            card(out, look, {x, y, column_w, 40});
+            font.draw(out, x + 14, font.centred(kit::body, y + 20), lap, kit::body, look.ink);
+            y += 40 + kit::gap / 2;
+        }
+        if (worst_first.empty()) return;
+        const int room = out.h() - look.reserve_h - kit::gap - y;
+        const int row = std::min(44, room / int(worst_first.size()));
+        for (auto it = worst_first.rbegin(); it != worst_first.rend(); ++it) {
+            const Racer& racer = **it;
+            const bool you = &racer == &racers_[0];
+            const Box line{x, y, column_w, row - 4};
+            if (you) out.rounded_rect(line.x, line.y, line.w, line.h, kit::radius, look.accent);
+            else card(out, look, line);
+            font.draw(out, line.x + 14, font.centred(kit::body, line.y + line.h / 2), std::to_string(racer.place),
+                      kit::body, you ? look.on_accent : look.ink);
+            const Face* face = face_of(racer, line.h < face_h_ + 2);
+            if (face) stamp(out, *face, line.x + line.w - face->w - 8, line.y + (line.h - face->h) / 2);
+            y += row;
+        }
+    }
+
     // The course from the game's own path, once a course (again if its length changes): each stretch between two
     // points painted as wide as the edges are apart there, or `width`.
     // While a course loads, memory still holds the last one's path: taken only once the player is on it.
@@ -362,7 +626,7 @@ private:
         // The course fitted to the room under the chips, its shape kept.
         wx0_ = double(road->lo_x) * cell_, wy0_ = double(road->lo_y) * cell_;
         const double ww = double(road->hi_x - road->lo_x + 1) * cell_, wh = double(road->hi_y - road->lo_y + 1) * cell_;
-        const int top = kit::margin * 2 + 28, room_w = out.w() - 2 * kit::margin - 24,
+        const int top = kit::margin * 2 + 28, room_w = (standings(road) ? column_x(out) : out.w()) - 2 * kit::margin - 24,
                   room_h = out.h() - top - kit::margin - 24;
         s_ = std::min(room_w / ww, room_h / wh);
         ox_ = kit::margin + 12 + (room_w - ww * s_) / 2;
@@ -462,6 +726,14 @@ private:
     std::map<long, Road> courses_;
     int width_ = 0x40, cell_ = 8;
     Expr path_, path_count_, path_left_, path_right_;
+    static constexpr int column_w = 116;
+    uint32_t racer_base_ = 0, racer_step_ = 0, racer_exists_at_ = 0, racer_exists_mask_ = 0, racer_x_ = 0, racer_y_ = 0,
+             racer_rank_ = 0, racer_lap_ = 0, racer_kind_ = 0, faces_at_ = 0;
+    int racer_count_ = 0, laps_ = 0, face_w_ = 32, face_h_ = 32;
+    std::map<int, std::pair<uint32_t, uint32_t>> face_places_;
+    std::vector<Racer> racers_;
+    std::map<int, Face> faces_, small_faces_;
+    bool faces_read_ = false;
     int path_stride_ = 8, path_dx_ = 0, path_dy_ = 4;
     bool playing_ = false, sampled_ = false, pen_down_ = false;
     long course_now_ = 0;

@@ -112,6 +112,17 @@ class ExperimentalLaunchTests(Fixture):
             emulators.launch_plan(ENGINE, self.app, self.data, rom)
         self.assertEqual(resume.call_args.args[-1], ENGINE)
 
+    def test_local_wireless_setting_becomes_dscore_net_mode(self):
+        rom = self.prepare()
+        emulators.launch_plan(ENGINE, self.app, self.data, rom)
+        config = self.data / 'emulators' / ENGINE / 'config.ini'
+        self.assertIn('[net]', config.read_text())
+        self.assertIn('mode = off', config.read_text())
+        for value, mode in (('1', 'auto'), ('2', 'host'), ('3', 'guest'), ('9', 'off')):
+            write_fields(self.data / 'library' / game_key(rom) / 'ds-input.ini', dict(wireless=value))
+            emulators.launch_plan(ENGINE, self.app, self.data, rom)
+            self.assertIn('mode = ' + mode, config.read_text())
+
     def test_native_launch_uses_the_lean_engine_and_high_resolution_uses_vulkan(self):
         rom = self.prepare()
         engine = self.app / 'emulators' / ENGINE

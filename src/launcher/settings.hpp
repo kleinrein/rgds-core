@@ -55,6 +55,7 @@ enum class Page {
     Bluetooth,      // Connectivity > Bluetooth devices (RG DS OS); last so stored page numbers keep
     Homebrew,       // a system's pinned Homebrew shelf: free homebrew from our curated feed (homebrew_store.py)
     SystemDefaults, // Library > System defaults: what a system's games share until a game says otherwise
+    Welcome,        // setup on a new card, and Settings > System > Run setup again (welcome_screen.hpp)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -77,6 +78,8 @@ struct Preferences {
     // Artwork sources: what "Fetch missing artwork" also downloads. Game info is the text from the public
     // databases; extra_pictures is a bit set (1 screenshot, 2 title screen). Both only add to the library.
     bool game_info = true;
+    // Fetch missing artwork by itself when the folder watcher finds new games (off: only the button does).
+    bool auto_scrape = false;
     int extra_pictures = 2;
 };
 struct SystemPreferences {
@@ -656,7 +659,8 @@ struct Settings {
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 8);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
-        else if (page == Page::Scraper || page == Page::Sound) focus = std::clamp(focus + delta, 0, 4);
+        else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 5);
+        else if (page == Page::Sound) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
         else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::System || page == Page::Display) focus = 0;
@@ -806,6 +810,7 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
                     (line[0] == 'h' ? result.haptic_strength : result.rumble_strength) = value;
             } catch (const std::exception&) {}
         } else if (line == "game_info=0" || line == "game_info=1") result.game_info = line.back() == '1';
+        else if (line == "auto_scrape=0" || line == "auto_scrape=1") result.auto_scrape = line.back() == '1';
         else if (line == "extra_pictures=0" || line == "extra_pictures=1" || line == "extra_pictures=2" ||
                  line == "extra_pictures=3")
             result.extra_pictures = line.back() - '0';
@@ -889,6 +894,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
           << "\nanimations=" << p.animations << "\nview_animations=" << p.view_animations
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
           << "\nlayout=" << p.layout << "\nartwork_provider=" << p.artwork_provider << "\ngame_info=" << p.game_info
+          << "\nauto_scrape=" << p.auto_scrape
           << "\nextra_pictures=" << p.extra_pictures << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';

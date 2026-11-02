@@ -24,6 +24,12 @@ case "$CHECK" in ''|*[!0-9]*) CHECK=0;; esac
 LIMIT=${RGDS_SLEEP_LIMIT:-259200}
 LOW=${RGDS_SLEEP_LOW:-5}
 LOG=${RGDS_SLEEP_LOG:-/data/rgds/logs/sleep.log}
+# the radios: the Wi-Fi chip is powered down for the sleep (net wifi-sleep) and the Bluetooth radio closed, each
+# brought back on a person's wake if it was on (the dark wakes keep them down)
+NET=${RGDS_NET_CMD:-/usr/libexec/rgds/net}
+WLAN=${RGDS_WLAN_DIR:-/sys/class/net/wlan0}
+HCI=${RGDS_HCI_DIR:-/sys/class/bluetooth/hci0}
+BTCTL=${RGDS_BTCTL:-bluetoothctl}
 state=$RUN/suspend-state
 
 suspend_now() {
@@ -65,6 +71,23 @@ panels_back() {
     for item in $saved_levels; do echo "${item#*=}" > "${item%=*}"; done
 }
 
+# The RTL8821CS stays powered through a suspend otherwise (keep-power-in-suspend on its SDIO host, its 3.3 V
+# always on) and the Bluetooth half keeps its enable line high while an adapter is up. Both are closed for the
+# sleep: net wifi-sleep stops wpa_supplicant and powers the chip down through its SDIO host, bluetoothctl power off
+# closes the HCI, which drops the enable line. On the wake, Wi-Fi comes back from scratch (net wifi: power up,
+# probe, join, address) and the adapter is powered again, pairings kept.
+wifi_was=
+bt_was=
+radios_down() {
+    if [ -d $WLAN ]; then wifi_was=1; $NET wifi-sleep > /dev/null 2>&1; fi
+    if [ -d $HCI ]; then bt_was=1; timeout 10 $BTCTL power off > /dev/null 2>&1; fi
+}
+radios_up() {
+    [ -n "$bt_was" ] && timeout 10 $BTCTL power on > /dev/null 2>&1
+    [ -n "$wifi_was" ] && $NET wifi > /dev/null 2>&1
+    return 0
+}
+
 case "$1" in
 suspend)
     token=$(cat $RUN/suspend-request 2>/dev/null)
@@ -74,6 +97,7 @@ suspend)
     echo 24 > $LED 2>/dev/null
     started=$(cat $RTC/since_epoch 2>/dev/null)
     panels_save
+    radios_down
     wake=user
     while :; do
         due=
@@ -100,6 +124,7 @@ suspend)
     done
     echo 0 > $RTC/wakealarm 2>/dev/null
     panels_back
+    radios_up
     echo 0 > $LED 2>/dev/null
     if [ $wake = poweroff ]; then
         echo "$(date '+%F %T') powering off after the sleep" >> "$LOG" 2>/dev/null

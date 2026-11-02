@@ -76,7 +76,7 @@ void App::restore_state() {
         page != int(Page::Confirm) && section >= 0 && section <= 10 && focus >= 0 &&
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
-                  : page == int(Page::Maintenance)    ? 6
+                  : page == int(Page::Maintenance)    ? 7
                   : page == int(Page::LibraryOptions) ? 8
                   : page == int(Page::Appearance)     ? 5
                   : page == int(Page::System)         ? (o.rgds_os ? 7 : 8)
@@ -108,8 +108,8 @@ void App::restore_state() {
         settings.focus = std::min(settings.focus, list_count() - 1);
         start_worker("device.startup-info");
     }
-    if (settings.page == Page::Network) settings.focus = std::min(settings.focus, 6);
-    if (settings.page == Page::Maintenance) settings.focus = std::min(settings.focus, 6);
+    if (settings.page == Page::Network) settings.focus = std::min(settings.focus, 8);
+    if (settings.page == Page::Maintenance) settings.focus = std::min(settings.focus, 7);
     if (settings.page == Page::Statistics) settings.section = 7;
     if (settings.page == Page::GameOptions) {
         if (model.games.empty()) settings.page = Page::Library;
@@ -119,7 +119,9 @@ void App::restore_state() {
 }
 
 void App::save_state() {
-    if (o.state.empty() || !session_initialized || !library_ready || settings.page == Page::BootWarning) return;
+    if (o.state.empty() || !session_initialized || !library_ready || settings.page == Page::BootWarning ||
+        settings.page == Page::Welcome)
+        return;
     try {
         if (!o.state.parent_path().empty()) fs::create_directories(o.state.parent_path());
         auto pending = o.state.string() + ".tmp";

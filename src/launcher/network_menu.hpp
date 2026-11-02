@@ -6,7 +6,8 @@ void App::refresh_network(Uint32 now) {
     connection_poll = now;
     auto probe = o.preview ? NetworkProbe{} : probe_network();
     bool details = settings.page == Page::Network || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
-                   settings.page == Page::DeviceInfo || settings.page == Page::Maintenance;
+                   settings.page == Page::DeviceInfo || settings.page == Page::Maintenance ||
+                   (settings.page == Page::Welcome && welcome_step == WelcomeWifi);
     if (!device_loaded || o.preview || details || probe.signature != network_signature ||
         now - device_info_at >= 300000) {
         start_worker("device.info");
@@ -55,7 +56,8 @@ void App::wifi_choose() {
     network_id = device_status[prefix + "id"];
     if (network_id.empty()) return;
     if (device_status[prefix + "connected"] == "1") {
-        settings.page = Page::Network;
+        if (welcome_detour) welcome_detour_end();
+        else settings.page = Page::Network;
         service_notice = "Already connected.";
         dirty = true;
         return;
@@ -71,7 +73,8 @@ void App::wifi_choose() {
             std::ostringstream payload;
             payload << "{\"network\":" << std::quoted(network_id) << ",\"use_saved\":true}";
             start_worker("device.connect", payload.str());
-            settings.page = Page::Network;
+            if (welcome_detour) welcome_detour_end();
+            else settings.page = Page::Network;
             settings.focus = 1;
         });
         return;
@@ -85,7 +88,8 @@ void App::wifi_choose() {
         std::ostringstream payload;
         payload << "{\"network\":" << std::quoted(network_id) << ",\"password\":\"\"}";
         start_worker("device.connect", payload.str());
-        settings.page = Page::Network;
+        if (welcome_detour) welcome_detour_end();
+        else settings.page = Page::Network;
     } else begin_edit(2);
     dirty = true;
 }
@@ -233,7 +237,9 @@ void App::menu_request(const std::string& action) {
                                  : action.rfind("shader:", 0) == 0 ? "Shader change requested (preview)"
                                                                    : "";
         if (action.rfind("shader:", 0) == 0) std::cout << "Shader request (preview): " << action << std::endl;
-        if (action == "resume" || action == "quit" || action == "force-quit" || action == "restart") quit = true;
+        if (action == "resume" || action == "quit" || action == "quit-discard" || action == "force-quit" ||
+            action == "restart")
+            quit = true;
         dirty = true;
         return;
     }
@@ -262,7 +268,7 @@ void App::menu_request(const std::string& action) {
                                      ? "Applying graphics…"
                                  : action.rfind("shader:", 0) == 0 ? "Applying shader…"
                                  : action == "restart"             ? "Saving before restarting…"
-                                 : action == "quit"                ? "Returning home…"
+                                 : action == "quit" || action == "quit-discard" ? "Returning home…"
                                                                    : "Working…";
     }
     dirty = true;

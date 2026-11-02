@@ -617,6 +617,142 @@ The same image boots the RG DS and the RG DS Plus. The tester guide is [RG_DS_PL
 - **Not yet known:** whether the AW88166's mixer names match BananaLinux's (`Left PCM`/`Right PCM`), DSCore's present
   on 1024x768 panels under RG DS OS (it ran on the Plus under ROCKNIX/Sway), and the Plus's boot time.
 
+### After 0.8.0: a review of what shipped (2026-10-30)
+
+A read of the public image's boot and the services it starts, on the owner's handheld, looking for what a user would
+hit. Two findings, both fixed and verified on the handheld (build `0.8.0-0dac2b9bab68-ose765e86e`, slot B):
+
+- **The Wi-Fi regulatory database never loaded.** cfg80211 is built in and asks for `regulatory.db` at 1.1 s, before
+  the card is mounted; the request failed, and `CONFIG_FW_LOADER_USER_HELPER_FALLBACK` then waited 60 s for a helper
+  the OS does not have ("failed to load regulatory.db" at 62 s in every boot's log). The chip ran with the kernel's
+  built-in world channel plan: 29 of its 53 channels marked NO_IR (12, 13 and all of 5 GHz: passive scanning only,
+  so a 5 GHz network is found late or not at all) and no country hint could take. `wireless-regdb`'s two files are now
+  compiled into the kernel (`CONFIG_EXTRA_FIRMWARE`, `board/rgds/firmware`, copied into the kernel tree by
+  `external.mk`; `post-build.sh` fails the build when the copy differs from the package's) and the sysfs fallback is
+  off. The new kernel loads it silently; `wpa_cli get_capability freq` shows 0 NO_IR channels, the old kernel 29.
+- **Use previous build did nothing on the OS.** Maintenance's row always said "No previous build available" and the
+  action behind it was stock's. `OsUpdater.previous()` now reads the other slot (mounted read-only for a moment:
+  `usr/share/rgds/active`, `os-release`) when it is bootable, not this build and not a staged update;
+  `OsUpdater.rollback()` arms the same trial an update gets, the other way round, and restarts. Exercised for real:
+  slot B (this build) → slot A (the public 0.8.0) through the worker, committed, "You are up to date"; the public build
+  has no OS rollback of its own, so the way back was `own_os_push.py --slot b --switch-only --reboot`. docs/OTA.md
+  "What an update does" has the user side.
+
+Looked at and left: `rcS`, `trial`, `net`, `power`, `battery-watch`, `session`, `charge-led` read correctly against
+the boot log (`/run/rgds/boot-times`: RG DS Core at 1.90 s), the counter sits idle (`bd 01 00 00`), the public feed
+(`stable-os.json` on the v0.8.0 release) is the one the image trusts and the handheld checked it today. The launcher
+still logs "uses wireless extensions" at boot (a `SIOCGIW` read somewhere in its network status); harmless until a
+Wi-Fi 7 kernel drops the ioctl.
+
+### DS local multiplayer between handhelds (2026-10-31)
+
+DSCore carried melonDS's LAN protocol (`src/net/lan_mp.cpp`: discovery by UDP broadcast on 7063, frames over ENet
+on 7064, a melonDS can be the other end) and the DS Wi-Fi block, but nothing on the handheld used them: the RG DS
+engine was built with `DSPERATE_NET=OFF`, the SDL frontend never created the transport (only the headless test
+frontend did), and RG DS Core had no switch. Now:
+
+- **DS controls → Local wireless** (per game, `ds-input.ini wireless`): Off, Join or host (join a session heard on
+  the Wi-Fi within 2.5 s, else host one), Host, Join. `emulators.py` writes it as DSCore's `net.mode`; the DS nickname
+  is the player name. While a session is live DSCore holds save states, fast forward and the speed knobs, so both
+  consoles stay on one clock; the setting is deliberately per game and off by default.
+- **The frontend** (`dscore/src/frontend/sdl/main.cpp`) starts `LanMp` before the game and services it once a frame
+  on the emulation thread; a session that cannot start leaves the game playable alone. Both handheld engines
+  (`build_rgds_experimental.py`, `build_rgds_vulkan.py`) carry `DSPERATE_NET`.
+- **The real blocker was the generated firmware.** With no Nintendo dumps DSCore makes its own firmware, and its
+  Wi-Fi calibration block held nine words of baseband init and nothing else: Nintendo's wireless library programs
+  the baseband and RF chips from those tables and never brought the radio up, so no game ever transmitted a frame
+  (the LAN link itself was fine: "client 1 is Mac-guest" on the host, nothing on the air). melonDS's default
+  calibration (`SPI_Firmware.cpp`: BB init, RF init, the per-channel register values) is now in
+  `core/bios/firmware_gen.cpp`; with it the host beacons, the chip reports channels 1, 7 and 13 as the game hops
+  them, and the host CMD / client reply exchange runs.
+- **Verified** with two DSCore consoles playing Mario Kart DS, both driven by replayed button logs
+  (`os/banana-probe/dsin.py` writes a DSIN input log from "frame buttons" lines; the headless frontend's
+  `--dump-frames` shows the screens): Multiplayer → CREATE GROUP → NORMAL on the host, the group slot on the guest.
+  On the Mac (two headless consoles, interpreter cores): both lobbies show CURRENT RACERS 2/8, 1905 of 1957 host
+  commands answered by the client (the misses are frames the interpreter ran late). Handheld (host, the Vulkan engine the launcher picks at 2x, build `0.8.0-0dac2b9bab68-os601f7421`) ↔ Mac guest over the house Wi-Fi: the handheld's screen shows SEEKING OPPONENTS, the guest's lobby 2/8 with both racers; 265 beacons, 4276 host commands of which 2353 were answered in time (55 %: the reply window over real Wi-Fi is tighter than on one machine, and the interpreter-only Mac console ran 1 % of its frames late). The first two handheld runs never beaconed: the handheld's DSCore keeps its battery save under `userdata/emulators/rgds-experimental/saves/`, not beside the cartridge, so its Mario Kart licence had already been through the first-time prompts and the replayed presses landed on other screens; pinning the same save with `--save` made both consoles walk the same menus.
+- **Gotchas.** A pushed slot's trial must commit before the launcher is held for a hand run (the session only commits after 60 s up; held earlier, `rcS`'s four-minute watchdog reboots the handheld mid-test). A console's player name and the DS nickname are both "RG DS Core" by default, so two stock handhelds
+  show two "RG DS Core" racers (set DS nickname). The Lima VM cannot be the second console: its NAT passes TCP to the
+  LAN but not UDP. The SDL frontend built natively in the VM crashes in recompiled code with SDL's dummy video
+  driver (not investigated); the headless frontend is the test peer. For a macOS host build of the headless
+  frontend, `aes.c`, `fastmem.cpp` and `dsi_font.cpp` learned Mach-O (`DSPERATE_JIT=OFF`, link with `-lresolv`).
+
+### True sleep (2026-10-31)
+
+The owner's complaint about stock is the sleep drain, so RG DS OS's had to be measured before it could be called
+better. The gauge is the RK817's coulomb counter: `rk817-charger` logs the raw counter at its suspend and resume
+callbacks (`resume after Ns: counter X uAh (Y at suspend)`), which brackets the sleep more tightly than
+`charge_now` (a display value refreshed every few seconds; a 90 s window read through sysfs is off by half).
+Every number below is that counter's difference divided by the time asleep, off the charger, backlights at 0,
+launcher at Home, no game, unless the row says otherwise. The owner's own lid sleeps are in
+`/data/rgds/userdata/logs/sleep-journal.jsonl` (`charge_now` before and after; fine over hours).
+
+| State | Drain | How measured |
+|---|---|---|
+| Menu idle, Home, backlights 50 % | ~515 mA | `current_avg`, a minute of samples |
+| A DS game (Mario Kart DS) | ~840 mA | `current_avg` |
+| Sleep as shipped (0.8.0, kernel #10) | 37 mA in a 5 min window; 20-28 mA over the owner's 3-8 h lid sleeps | counter; journal |
+| Sleep, PMIC asleep + BL31 deep mode (live trial) | 23 mA, 5 min | counter |
+| Sleep through `power suspend` with the fixes baked in (kernel #11, #12) | 21-25 mA, four 5 min runs | counter |
+| The same, 30 min or longer | not yet measured: the battery was flat when the slot came (see below) | journal will show it |
+
+Short windows read high: the first seconds of a sleep, before BL31 has the rails down, weigh more in 5 minutes than
+in 8 hours, so the like-for-like comparison is the 5-minute one (37 mA to 21-25 mA). What a long sleep on the
+fixed image gives is the open number; the shipped image already read 20 mA over one 7.9 h night, so the
+per-night gain is unproven until the owner's next lid sleep on this build.
+
+**Why the sleep was shallow.** Two things, both invisible from the shell:
+
+- **The RK817 never slept.** Its SLEEP pin hangs on GPIO0_A2, and that pin was a plain GPIO input with a pull-down
+  (PMU_GRF `GPIO0A_IOMUX_L`, read with `devmem 0xFDC20000`): the PMU's `pmic_sleep` function was never muxed, on
+  this dts as on mainline's RG353 trees it descends from. The kernel's `rk8xx-core` does switch the PMIC's pin
+  function to "sleep" at every suspend, but nothing drove the pin, so every `regulator-off-in-suspend` and
+  suspend voltage in the device tree (GPU, CPU, SD I/O, the 0.9 V analog rail, the camera rails, the boost) was
+  dead letter: all rails stayed at their running state through the sleep. The dts now adds `&pmic_pins` to the
+  PMIC's pinctrl, and `vdd_logic` is off in suspend like the vendor's (the logic domain is off under LOGOFF
+  anyway; 20.6 and 24.8 mA in two 5 min runs against 24.8 mA before it, so the change is inside the noise).
+- **BL31 slept with its defaults.** The RK356x deep sleep is done by Rockchip's closed BL31, and the vendor kernel
+  tells it how deep through a SiP call (`0x82000003`: a sleep-mode word and a wake-source word) from a
+  `rockchip-suspend` node; mainline has no such driver, so BL31 ran whatever it does unasked. The pin alone, with
+  BL31's default mode, **hung the handheld** (one trial on 2026-10-31: the resume never came, the owner
+  power-cycled it; most likely the PMIC cut a rail BL31's default mode still relied on). Never ship `&pmic_pins`
+  without the node. With the vendor's word (`ARMOFF_LOGOFF | CENTER_OFF | HW_PLLS_OFF | PMUALIVE_32K | OSC_DIS |
+  PMIC_LP | 32K_PVTM`, wake on the PMU's GPIO bank, which carries the lid, the power key and the PMIC interrupt the
+  RTC alarm comes through) both sleep and resume are clean, and the kernel's `usb usb1: root hub lost power` at
+  resume says the logic domain really went down. `board/rgds/kernel/rockchip_pm_config.c` is the small driver
+  (the vendor's `rockchip_pm_config` cut to the two words and the debug switch, sent at probe and before every
+  suspend), with the vendor's `dt-bindings/suspend/rockchip-rk3568.h`; `external.mk` copies both into the kernel
+  tree at every build, and now also refreshes the board device trees and re-applies `dts-patches` before every
+  kernel build, so a dts edit no longer needs a kernel re-extract.
+- **The Wi-Fi chip stayed powered.** `sdmmc2` has `keep-power-in-suspend` and `vcc_wifi` is always on, and rtw88's
+  SDIO suspend only deauthenticates: the RTL8821CS sat through every sleep with its firmware up. `usr/libexec/rgds/power`
+  now runs `net wifi-sleep` before the sleep (wpa_supplicant and udhcpc stopped, the chip held in reset through its
+  SDIO host, as the Wi-Fi switch does) and `net wifi` after a person's wake (power up, probe, join, address: the
+  handheld is back on the network about 7 s after the panels), and closes an open Bluetooth adapter the same way
+  (`bluetoothctl power off`; pairings are kept). Dark RTC wakes keep both down. `tests/test_os_scripts.py` covers
+  the order. Measured gain: none the counter can see over 5 minutes (24.8 mA either way), so this is hygiene, not
+  the win. Cutting the module's 3.3 V as well (`vcc_wifi` driven low behind the kernel's back) was tried once and
+  the handheld never came back from that sleep; the log was in RAM and is gone, the battery was flat by evening.
+  Not pursued: the module shares that rail with Bluetooth and the kernel owns the GPIO.
+
+All of it was tried live first, without an image: the pin mux by writing the iomux register, the SiP words from a
+throwaway module (`rgds_pm_test.ko`, built against the VM's kernel tree with `make M=`), the sleeps timed by the
+RTC alarm from a detached script, because SSH dies with Wi-Fi. The image with everything (kernel `#12`) is on slot
+B and running; slot A has kernel `#11` (the same without `vdd_logic` off). Both share the build id
+`0.8.0-0dac2b9bab68-os601f7421` with the previous build, because the id hashes RG DS Core's files, which did not
+change; `uname -a` tells them apart.
+
+**What is verified and what is not.** The drain numbers above are from the owner's handheld. The RTC alarm woke
+every sleep, and its interrupt comes through the same PMIC line and GPIO bank as the power key; the lid and the
+power key as wake sources after these changes, a sleep with a game running (the engine is SIGSTOPped across it),
+and any sleep of 30 minutes or more on the fixed image are **not yet tried**: the next lid sleep off the charger
+writes its own line to the journal, and that is the number this section is waiting for. The RG DS Plus dts
+carries the same changes, untested. Left on the table, a few mA at most each: the SD card's own rail
+(`vcc3v3_sd`, a GPIO regulator, stays on), the amplifiers' `vcc_amp` (a fixed regulator; the codec driver cuts it
+at suspend), the GT911 touch controllers (on `vcc3v3_pmu`, always on; the Goodix driver sleeps them over i2c),
+DDR self-refresh and the PMIC's own quiescent draw, which together are most of what is left. The dark RTC wakes
+stay opt-in (`/data/rgds/sleep-check`). One thing the day showed in passing: a handheld left awake at Home with
+the lid open drains a half battery in about four hours; there is no idle timer that sleeps it.
+
 ### After v0: speed, picture and more systems
 
 Rule one: **measure before and after every change**, on the same scenes, on stock and on RG DS OS. The tools exist:

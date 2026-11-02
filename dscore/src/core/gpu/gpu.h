@@ -53,6 +53,8 @@ public:
       probe_vramcnt_base_ = 0; // latches POWCNT/FIFO/capture state; runs at line 0
   bool frame_begun() const { return frame_begun_; }
   bool at_line_start() const { return !hblank_done_; }
+  // Where a frame ends: line 0, or line 192 when the frame was cut at VBlank (DS_FRAME_EDGE=vblank).
+  bool at_frame_edge() const { return line_ == 0 || (cut_at_vblank_ && line_ == SCREEN_H); }
 
   // Save states, taken at line 0. quiesce() joins the worker and drains
   // journals without changing guest state; prepare_load() also lifts the VRAM
@@ -219,6 +221,8 @@ private:
   bool screen_visible_[2] = {true, true};
   bool skipped_[2] = {false, false}; // this engine's last line was skipped: its next drawn line re-renders its sprites
   bool skip_req_ = false;            // frameskip: the frontend's request, taken at line 215
+  bool vblank_edge_ = false;         // DS_FRAME_EDGE=vblank: a frame ends where VBlank begins (line 192)
+  bool cut_at_vblank_ = false;       // this frame ended there, so line 0 does not end it again
   bool skip_next_ = false;           // taken there: the next frame's display lines are skipped
   bool skip_frame_ = false;          // latched in begin_frame from skip_next_, gated by skippable()
   // Never skip a frame the guest reads back; capture_recent_ extends that a

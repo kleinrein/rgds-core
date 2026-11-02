@@ -63,7 +63,7 @@ SDL_Rect App::segment_bounds(int index, int option) {
 }
 
 void App::segment_row(SDL_Renderer* r, int y, int index, const std::string& title, bool second) {
-    int row = y + list_top + index * list_stride - list_scroll;
+    int row = y + list_top + index * list_stride - list_scroll - list_shift();
     bool focused = index == list_selected();
     int dx = 24;
     move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);

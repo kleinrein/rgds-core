@@ -367,15 +367,27 @@ static void CipherSw(state_t* state, const uint8_t RoundKey[AES_keyExpSize]) {
  * reader run whole titles through this, a block at a time. */
 #if defined(__aarch64__) && defined(__GNUC__)
 #include <arm_neon.h>
+#if defined(__APPLE__)
+/* Apple silicon always has the instructions (the macOS host build of the headless frontend). */
+#include <sys/sysctl.h>
+#define DSPERATE_AES_TARGET
+static int hw_detect(void) {
+  int v = 0;
+  size_t n = sizeof v;
+  return sysctlbyname("hw.optional.arm.FEAT_AES", &v, &n, NULL, 0) == 0 && v;
+}
+#else
 #include <sys/auxv.h>
 #define HWCAP_AES_BIT (1UL << 3)
-__attribute__((target("+crypto"))) static void CipherHw(state_t* state, const uint8_t* rk) {
+#define DSPERATE_AES_TARGET __attribute__((target("+crypto")))
+static int hw_detect(void) { return (getauxval(AT_HWCAP) & HWCAP_AES_BIT) != 0; }
+#endif
+DSPERATE_AES_TARGET static void CipherHw(state_t* state, const uint8_t* rk) {
   uint8x16_t s = vld1q_u8((const uint8_t*)state);
   for (int r = 0; r < Nr - 1; ++r) s = vaesmcq_u8(vaeseq_u8(s, vld1q_u8(rk + r * 16)));
   s = veorq_u8(vaeseq_u8(s, vld1q_u8(rk + (Nr - 1) * 16)), vld1q_u8(rk + Nr * 16));
   vst1q_u8((uint8_t*)state, s);
 }
-static int hw_detect(void) { return (getauxval(AT_HWCAP) & HWCAP_AES_BIT) != 0; }
 #elif defined(__x86_64__) && defined(__GNUC__)
 #include <wmmintrin.h>
 __attribute__((target("aes,sse2"))) static void CipherHw(state_t* state, const uint8_t* rk) {

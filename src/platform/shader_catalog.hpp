@@ -79,9 +79,9 @@ inline int shader_system_screens(const char* system) {
 // (the GBA's colour and pixel gaps, the Game Boy's dot matrix, the Game Boy Color's faint grid).
 // DS games use the default from Settings (-1).
 inline int system_default_shader(const char* system) {
-    const char* systems[] = {"gba", "gb", "gbc"};
-    const int shaders[] = {30, 31, 32};
-    for (int i = 0; i < 3; ++i)
+    const char* systems[] = {"gba", "gb", "gbc", "3ds"};
+    const int shaders[] = {30, 31, 32, 0};
+    for (int i = 0; i < 4; ++i)
         if (std::strcmp(system, systems[i]) == 0) return shaders[i];
     return -1;
 }

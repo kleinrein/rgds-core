@@ -234,7 +234,7 @@ int App::run() {
         }
         if (!o.game_menu && o.boot_startup && library_ready && boot_hardware_ready && !return_writes_pending() &&
             !system.volume_pending() && !system.brightness_pending() && !resume_checked &&
-            settings.page != Page::BootWarning) {
+            settings.page != Page::BootWarning && settings.page != Page::Welcome) {
             resume_checked = true;
             auto ticket = o.data / "session/resume-launch.ini";
             auto saved = fields(ticket);
@@ -342,8 +342,9 @@ int App::run() {
         bool view_active = view_motion.active();
         if (view_motion.update(now) && !view_motion.active()) dirty = true;
         bool rail_animating = update_rail_feedback(now);
+        const bool kinetic = kinetics_update(now) || filter_sheet_animating(now);
         bool feedback_active =
-            view_active || rail_animating || (preferences.animations && shutting_down()) ||
+            view_active || rail_animating || kinetic || (preferences.animations && shutting_down()) ||
             (o.game_menu && menu_status["state"] == "busy" && preferences.animations) ||
             (preferences.animations &&
              (network_busy() || (device_status["wifi_connected"] != "1" &&
@@ -353,6 +354,8 @@ int App::run() {
             boot_animating(now) || launch_transition || touch_animating(now) ||
             (preferences.animations &&
              (now < micro_until || (picker_open && float(now - picker_at) < sheet_in_ms() + 10) || picker_closing()));
+        if (settings.page == Page::Welcome && welcome_step == WelcomeTime && now - feedback_frame_at >= 1000)
+            feedback_active = true; // the clock being checked
         // Stop refreshing a stationary held contact after its cue completes.
         if (feedback_active && now - feedback_frame_at >= 16) {
             feedback_frame_at = now;
@@ -469,6 +472,12 @@ int App::run() {
                << ",\"push_animation_frames\":" << push_animation_frames << ',';
         report << "\"view_animations\":" << preferences.view_animations << ",\"view_transitions\":" << view_transitions
                << ",\"view_animation_frames\":" << view_animation_frames
+               << ",\"top_animation_frames\":" << top_animation_frames
+               << ",\"top_fade_reversals\":" << top_fade_reversals << ",\"kinetic_frames\":" << kinetic_frames
+               << ",\"gesture_frames\":" << gesture_frames << ",\"sheet_frames\":" << sheet_frames
+               << ",\"kinetics_active\":" << (list_motion.active() || picker_motion.active() || filter_motion.active() ||
+                                             browser_motion.active() || page_drag.active())
+               << ",\"home_origin\":" << (home_origin == SIZE_MAX ? -1 : int(home_origin))
                << ",\"view_animation_active\":" << view_motion.active()
                << ",\"view_canvas_failed\":" << view_canvas_failed << ',';
         report << "\"font_atlases\":" << rounded.loaded_atlases() << ",\"font_bytes\":" << rounded.loaded_bytes()

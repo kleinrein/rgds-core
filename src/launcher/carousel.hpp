@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include "launcher/kinetics.hpp"
 namespace rgds {
 // The DSi scroll bar: square arrow buttons, a recessed tick track between them
 // and a glass grabber over the ticks, all `top` px down the bottom panel's rail.
@@ -50,6 +51,9 @@ struct Carousel {
     double start_position = 0;
     static constexpr double spacing = 136;
     double item_spacing = spacing;
+    // A tween's length grows with the distance, so a hard flick across many items reads as a coast.
+    unsigned duration = 190;
+    FingerSpeed speed; // items per ms while a finger drags
     void reset(size_t selected) {
         position = from = target = static_cast<double>(selected);
         moving = false;
@@ -58,11 +62,12 @@ struct Carousel {
         from = position;
         target = static_cast<double>(selected);
         began = now;
+        duration = 190 + 40 * unsigned(std::clamp(std::abs(from - target) - 1, 0.0, 8.0));
         moving = std::abs(from - target) > 0.001;
     }
     bool update(unsigned now) {
         if (!moving) return false;
-        double t = std::min(1.0, (now - began) / 190.0);
+        double t = std::min(1.0, (now - began) / double(duration));
         position = from + (target - from) * (1 - std::pow(1 - t, 3));
         if (t >= 1) {
             position = target;
@@ -86,6 +91,19 @@ struct Carousel {
         start_y = y;
         start_position = position;
         moving = false;
+        speed.reset();
+        speed.add(now, position);
+    }
+    // After a drag moved `position`: remembers where the finger has it, for the flick at the lift.
+    void sample(unsigned now) { speed.add(now, position); }
+    // Where a lifted finger leaves the carousel: the nearest item, unless it was a hard flick, which coasts on.
+    size_t flick_target(unsigned now, size_t count) const {
+        if (!count) return 0;
+        const double pixels = range ? 0 : speed.estimate(now) * item_spacing; // px per ms
+        double landing = position;
+        if (std::abs(pixels) > FingerSpeed::hard_flick)
+            landing += std::copysign(1.5 + (std::min(std::abs(pixels), 8.0) - FingerSpeed::hard_flick) * 2, pixels);
+        return static_cast<size_t>(std::llround(std::clamp(landing, 0.0, double(count - 1))));
     }
     void seek_down(int x, int y, size_t count, unsigned now) {
         sync_input(now);

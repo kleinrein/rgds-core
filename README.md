@@ -45,7 +45,7 @@ The game plays on the top panel. The bottom panel shows what the game hides. A s
 | Golden Sun                                     | Live party panel             |
 | Advance Wars                                   | Commander and terrain panels |
 
-![Pokémon, Super Mario Advance 4, Super Mario Kart and Mario Kart 64 with their bottom-screen panels](docs/images/second-screen.png)
+![Pokémon, Super Mario Advance 4, Mario Kart: Super Circuit and Mario Kart 64 with their bottom-screen panels](docs/images/second-screen.png)
 
 Over 50 games have profiles. Everything else shows a title card and plays as normal. [Full list](docs/PLAY.md)
 
@@ -54,7 +54,7 @@ Over 50 games have profiles. Everything else shows a title card and plays as nor
 ## Install
 
 1. Download **RG DS Flasher** for [Windows](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Windows.exe), [macOS](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-macOS.zip) or [Linux](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Linux-x64) and open it. Put a spare microSD card (8 GB or more) in your computer, pick it and press Flash. It downloads the latest RG DS OS, writes it, checks it and ejects the card. [More about the flasher](flasher/README.md)
-2. Put the card in and power on. First boot sets up the rest of the card.
+2. Put the card in and power on. First boot sets up the rest of the card, then a short setup asks for your language, colour, name, Home and animations, DS or all systems, time and Wi-Fi, and shows how to add games. Every step can be skipped.
 3. Join Wi-Fi in Settings and turn on file sharing. Copy games into `roms/nds`, `roms/gba` and so on from a computer.
 
 Prefer doing it by hand? Download `RG-DS-OS-<version>.img.gz` from [releases](https://github.com/kleinrein/rgds-core/releases) (it works on the RG DS and the RG DS Plus), check it against its `.sha256` and write it with [balenaEtcher](https://etcher.balena.io) or Raspberry Pi Imager. Not Rufus: its cards stay black.
@@ -82,4 +82,4 @@ make release        # card image, signed update and feed in dist/release-os/ (up
 
 See [development](docs/DEVELOPMENT.md), the [documentation index](docs/README.md) and [releases with automatic updates](docs/OTA.md). The emulator lives in [`dscore/`](dscore/README.md).
 
-AI tools helped write the code, documentation and artwork, so keep backups of your saves. Tested on a RG DS, not a plus. Third-party components keep their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).
+AI tools helped write the code, documentation and artwork. Tested on a RG DS, not a plus. Third-party components keep their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).

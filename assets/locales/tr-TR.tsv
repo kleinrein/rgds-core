@@ -18,6 +18,7 @@
 A  Apply	A  Uygula
 A  Done	A  Bitti
 A  Jump	A  Atla
+A  Leave	A  Çık
 A  Play	A  Oyna
 A  Search	A  Ara
 A 24-hour or 12-hour clock.	24 veya 12 saatlik saat.
@@ -77,6 +78,7 @@ Atlantic Ocean	Atlas Okyanusu
 Audio is not recorded or saved.	Ses kaydedilmez veya saklanmaz.
 Australia	Avustralya
 Auto-load state	Durumu otomatik yükle
+Auto-save	Otomatik kayıt
 Auto-save on exit	Çıkışta otomatik kaydet
 Automatic	Otomatik
 Automatic (free)	Otomatik
@@ -128,12 +130,15 @@ Browse	Gezin
 Browse games	Oyunlara göz at
 Browse systems	Sistemlere göz at
 Browser layout	Liste düzeni
+Bubble Gum	Sakız
 Build, storage and device address	Sürüm, depolama ve cihaz adresi
 Button	Düğme
 Button layout	Düğme düzeni
 Button {0}	Düğme {0}
 Buttons and the game menu shortcut	Düğmeler ve oyun menüsü kısayolu
 Cancel	İptal
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Atlıkarınca
 Carried	Üzerinde
 Cartridges	Kartuşlar
@@ -141,6 +146,7 @@ Change group	Grubu değiştir
 Changes immediately. Map a button in Controls for quick access.	Hemen değişir. Hızlı erişim için Kontroller'de bir düğme atayın.
 Changing 3D threading…	3D iş parçacığı değiştiriliyor…
 Changing speed…	Hız değiştiriliyor…
+Chaos Emeralds	Kaos Zümrütleri
 Chat is unavailable: you can still draw	Sohbet kullanılamıyor: yine de çizebilirsiniz
 Chat Room	Sohbet Odası
 Chat Room {0}	Sohbet Odası {0}
@@ -191,6 +197,7 @@ Compare	Karşılaştır
 Confirm	Onayla
 Connect	Bağlan
 Connect the charger before installing an update.	Güncelleme kurmadan önce şarj cihazını takın.
+Connect the handheld to a computer first.	Önce cihazı bir bilgisayara bağlayın.
 Connect to Wi-Fi to send files from a phone or computer.	Telefondan veya bilgisayardan dosya göndermek için Wi-Fi'ye bağlan.
 Connected	Bağlandı
 Connected.	Bağlandı.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Bağlantı koptu. Yeniden deneniyor…
 Connectivity	Bağlantı
 Continue	Devam
 Continue where you left off	Kaldığınız yerden devam edin
+Continues	Devam hakkı
 Control unavailable on this device	Bu cihazda kontrol kullanılamıyor
 Controllers and other Bluetooth devices	Kontrolcüler ve diğer Bluetooth cihazları
 Controls	Kontroller
@@ -219,6 +227,7 @@ Could not apply this shader.	Bu filtre uygulanamadı.
 Could not apply volume	Ses düzeyi uygulanamadı
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi bağdaştırıcısı açılamadı. Yeniden deneyin.
 Could not change 3D threading. Your game is unchanged.	3D iş parçacığı değiştirilemedi. Oyununuz değişmedi.
+Could not change USB data transfer.	USB veri aktarımı değiştirilemedi.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Seçilen Wi-Fi bağlantısı doğrulanamadı. Tarayıp yeniden deneyin.
 Could not connect	Bağlanılamadı
 Could not enable lid wake	Kapakla uyandırma açılamadı
@@ -270,6 +279,7 @@ Development build	Geliştirme sürümü
 Device address	Cihaz adresi
 Device information	Cihaz bilgileri
 Discard update	Güncellemeyi at
+Disk	Disk
 Display	Ekran
 Display FPS	Ekran FPS
 Done	Bitti
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Düzenle
 Edit search	Aramayı düzenle
 Effects volume	Efekt ses düzeyi
+Eject the drive on your computer when you are done	İşiniz bitince sürücüyü bilgisayardan çıkarın
 Empty slot	Boş yuva
 Emulator	Emülatör
 Emulator settings	Emülatör ayarları
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	HATA: Ayarlar geri yüklenemedi
 ERROR: Could not restore settings - see log	HATA: Ayarlar geri yüklenemedi - günlüğe bakın
 Essences	Özler
 Europe	Avrupa
+Event	Etkinlik
+Events	Etkinlikler
 Every game in this collection has artwork.	Bu koleksiyondaki her oyunun kapağı var.
 Exit your game before installing an update.	Güncelleme kurmadan önce oyundan çıkın.
 Experience	Deneyim
@@ -341,9 +354,11 @@ Fetch missing artwork	Eksik kapakları indir
 Figurines	Figürler
 File sharing on. Find "RG DS" under Network.	Dosya paylaşımı açık. Ağ altında "RG DS" öğesini bulun.
 Files added	Dosyalar eklendi
+Files and SSH by cable; charging always works	Kabloyla dosya ve SSH; şarj her zaman çalışır
 Files arrived. Choose Play to start.	Dosyalar geldi. Başlamak için Oyna'yı seç.
 Filter	Filtre
 Filtered	Filtreli
+Final	Sonuç
 Find and connect to a nearby network	Yakındaki bir ağı bulup bağlanın
 Find, pair and connect a nearby device	Yakındaki bir cihazı bulun, eşleştirin ve bağlayın
 Finding games…	Oyunlar bulunuyor…
@@ -489,6 +504,7 @@ Key {0}	Tuş {0}
 Keyboard	Klavye
 Keys	Anahtarlar
 Kinstone fusions	Kinstone birleştirme
+Lamppost	Sokak lambası
 Language	Dil
 Last 4 weeks	Son 4 hafta
 Last 7 days	Son 7 gün
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Gezinme, seçme ve oyu
 Please keep your handheld on	Lütfen konsolu kapatmayın
 Pocket green	Cep yeşili
 Point and click on top	Üstte işaretle ve tıkla
+Points	Puan
 Pokédex caught	Pokédex yakalanan
 Pokédex seen	Pokédex görülen
+Popcorn	Patlamış mısır
 PortMaster is ready	PortMaster hazır
 Ports	Portlar
 Power	Güç
@@ -785,9 +803,11 @@ RGDS build	RGDS sürümü
 Rich	Ayrıntılı
 Right	Sağ
 Right stick	Sağ çubuk
+Rings	Halkalar
 Rollback simulated.	Geri alma simüle edildi.
 Round	Tur
 ROUNDED FONT UNAVAILABLE	YUVARLAK YAZI TİPİ KULLANILAMIYOR
+Route	Rota
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DS'te Rumble Pak oyunları, Game Boy ve Game Boy Advance'te titreşimli kartuşlar.
 Rumble strength	Titreşim gücü
 Rupees	Rupiler
@@ -826,7 +846,9 @@ Scene	Sahne
 Score	Skor
 Screen brightness	Ekran parlaklığı
 Screen colours	Ekran renkleri
-Screen off	Ekran kapalı
+Menu	Menü
+Switch	Değiştir
+Turn off screen	Ekranı kapat
 screens	ekran
 ScreenScraper needs project credentials and your account	ScreenScraper proje kimlik bilgileri ve hesabınızı gerektirir
 Screenshot	Ekran görüntüsü
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	DS renkleriyle keskin ölçekleme.
 Sharp scaling, DS colour and Natural Vision together.	Keskin ölçekleme, DS renkleri ve Natural Vision bir arada.
 Shield	Kalkan
 Shift	Shift
+Shift keys stay down until the next key	Shift tuşları sonraki tuşa kadar basılı kalır
 Shortcut action	Kısayol eylemi
 Shots	Atışlar
 Show games	Oyunları göster
@@ -909,7 +932,9 @@ Spanish	İspanyolca
 Spring	Yay
 Springy menu changes with a colourful wobble	Renkli bir sallanmayla yaylı menü geçişleri
 Stable	Kararlı
+Stage	Etap
 Standard	Standart
+Standings	Sıralama
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Sistem güncellemesi
 Systems	Sistemler
 Tap to type, or use the D-pad and A	Yazmak için dokunun veya yön tuşları ve A'yı kullanın
 Team	Takım
+Temper	Öfke
 Temporary game cache cleared. Saves and artwork are kept.	Geçici oyun önbelleği temizlendi. Kayıtlar ve kapaklar korundu.
 Terrain and unit	Arazi ve birlik
 Test	Test et
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Bu ağ kurumsal profil gerektirir.
 This port lists no instructions.	Bu portun talimatı yok.
 This request did not finish. Please try again.	Bu istek tamamlanmadı. Lütfen yeniden deneyin.
 This shader is unavailable for the current emulator.	Bu filtre geçerli emülatör için kullanılamıyor.
+This stage	Bu etap
 This stock firmware has not been validated for updates.	Bu fabrika yazılımı güncellemeler için doğrulanmadı.
 This version failed to start. Waiting for a newer update.	Bu sürüm başlatılamadı. Daha yeni bir güncelleme bekleniyor.
 Threaded 3D	Çok iş parçacıklı 3D
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Güncelleme doğrulanamadı
 Updates	Güncellemeler
 Updates & recovery	Güncelleme ve kurtarma
 Updates will be available when the release channel opens.	Güncellemeler sürüm kanalı açıldığında kullanılabilir olacak.
+USB data transfer	USB veri aktarımı
+USB data transfer is not available on this handheld.	USB veri aktarımı bu cihazda kullanılamıyor.
+USB data transfer off.	USB veri aktarımı kapalı.
+USB data transfer on.	USB veri aktarımı açık.
+USB drive mode	USB sürücü modu
 Use an additional rendering thread	Ek bir işleme iş parçacığı kullan
+Use as USB drive	USB sürücü olarak kullan
 Use default ({0})	Varsayılanı kullan ({0})
 Use default controls	Genel kontrolleri kullan
 Use previous build	Önceki sürümü kullan
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	Yakında {0} kişi
 {0} players	{0} oyuncu
 {0} settings	{0} ayarları
+Welcome!	Hoş geldin!
+Let's get your handheld ready. It takes about a minute.	Cihazını hazırlayalım. Yaklaşık bir dakika sürer.
+Pick your colour	Rengini seç
+The menus take it on. You can change it whenever you like.	Menüler bu rengi alır. İstediğin zaman değiştirebilirsin.
+What's your name?	Adın ne?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat bunu yakındaki kişilere gösterir, DS oyunları da sahip adı olarak kullanır.
+Is this the right time?	Saat doğru mu?
+You're connected	Bağlandın
+Connect to Wi-Fi	Wi-Fi'ye bağlan
+For box art, updates and PictoChat. Everything else works without it.	Kapak görselleri, güncellemeler ve PictoChat için. Geri kalan her şey onsuz çalışır.
+You're all set!	Her şey hazır!
+Play at a comfortable volume, and give your eyes and hands a break.	Rahat bir ses düzeyinde oyna, gözlerini ve ellerini dinlendir.
+In a game, the Anbernic button opens saves, cheats and settings.	Oyundayken Anbernic düğmesi kayıtları, hileleri ve ayarları açar.
+Close the lid to sleep. Your game waits for you.	Uyutmak için kapağı kapat. Oyunun seni bekler.
+Copy more games any time. They show up by themselves.	İstediğin zaman daha fazla oyun kopyala. Kendiliğinden görünürler.
+Skip setup	Kurulumu atla
+Run setup again	Kurulumu yeniden çalıştır
+Turn on Wi-Fi	Wi-Fi'yi aç
+Turn on USB data transfer	USB veri aktarımını aç
+Connect to Wi-Fi first	Önce Wi-Fi'ye bağlan
+Zoom	Yakınlaştırma
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Bir USB-C kablosu tak ve USB sürücü olarak kullan'ı seç ya da bu kartı bir bilgisayara tak. RGDS sürücüsünü aç ve oyunları roms içindeki klasörlere kopyala: nds, gba, gb, gbc, nes, snes, md ve diğerleri.
+What do you want to play?	Ne oynamak istersin?
+You can change this later in Settings > Library.	Bunu daha sonra Ayarlar > Kitaplık bölümünden değiştirebilirsin.
+A clean library with only DS games.	Yalnızca DS oyunlarından oluşan sade bir kitaplık.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation ve daha fazlası, sisteme göre sıralı.

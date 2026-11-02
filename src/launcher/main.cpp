@@ -17,6 +17,7 @@
 #include "launcher/font.hpp"
 #include "launcher/pixel_text.hpp"
 #include "launcher/line_break.hpp"
+#include "launcher/kinetics.hpp"
 #include "launcher/carousel.hpp"
 #include "launcher/view_motion.hpp"
 #include "launcher/menu_audio.hpp"
@@ -165,7 +166,7 @@ struct Options {
     bool rgds_os = false; // RG DS OS (RGDS_OS=1 from its session): no stock firmware beside us to boot into
     bool preview = false, probe = false, allow_launch = false, watch_assets = false, settings = false,
          game_menu = false, game_switcher = false, port_menu = false, home = false, library = false,
-         boot_warning = false, boot_startup = false;
+         boot_warning = false, boot_startup = false, usb_drive_screen = false, first_run = false;
     int frames = 0, seconds = 0, boot_ready_fd = -1;
     std::string top = "DSI-1", bottom = "DSI-2";
     fs::path theme, themes, screenshot, app, data, state, preferences, system_preferences, input_script, cache_report,
@@ -174,6 +175,7 @@ struct Options {
     std::vector<fs::path> roots;
     std::vector<std::pair<std::string, fs::path>> system_roots; // --system-dir gba=PATH: RG DS Play's games
     fs::path game_rom;
+    std::string game_system; // from the runtime, which also looks inside a .zip and at the folder
     std::string game_core = "dsperate";
     fs::path executable;
 };
@@ -206,6 +208,7 @@ class App {
     bool library_eof = false, library_scan_started = false;
     std::string games_signature_seen; // what the games folders looked like at the last scan (see watch_games)
     Uint32 games_checked_at = 0;
+    bool auto_scrape_pending = false; // watch_games found new games: fetch their artwork once the index step ends
     fs::path games_keep_selected; // the game to stay on after a scan that watch_games started
     std::string games_signature() const;
     void watch_games(Uint32 now);
@@ -275,6 +278,34 @@ class App {
     ViewMotion view_motion;
     int view_touch_dx = 0, view_touch_dy = 0;
     MotionHits motion_hits;
+    // Touch kinetics (kinetics.hpp): lists coast after a flick and give at their ends, a focus change glides,
+    // and the page follows an edge gesture before it flies away.
+    ScrollMotion list_motion, picker_motion, filter_motion, browser_motion;
+    PageDrag page_drag;
+    SDL_Texture* gesture_canvas = nullptr;
+    bool gesture_canvas_failed = false;
+    // What the drawing adds to each list's clamped scroll: the rubber band, a bounce or a glide in progress.
+    int list_shift() const { return int(std::lround(list_motion.stretch(list_scroll))); }
+    int picker_shift() const { return int(std::lround(picker_motion.stretch(picker_scroll))); }
+    int filter_shift() const { return int(std::lround(filter_motion.stretch(filter_scroll))); }
+    int browser_shift() const { return int(std::lround(browser_motion.stretch(browser_list.scroll))); }
+    bool kinetics_update(Uint32 now);
+    void page_drag_follow(int x, int y);
+    void draw_dragged_page(SDL_Renderer* renderer, int y);
+    // The upper screen travels with the lower one. Every upper frame is drawn to a canvas and copied to the panel,
+    // so the frame before a transition is at hand without drawing anything twice (a texture belongs to one
+    // renderer, and the panels may have one each).
+    SDL_Texture *top_canvas = nullptr, *top_previous = nullptr;
+    bool top_previous_ready = false, top_canvas_failed = false;
+    uint64_t top_animation_frames = 0, kinetic_frames = 0, gesture_frames = 0, sheet_frames = 0;
+    uint64_t top_fade_reversals = 0; // the upper crossfade stepped backwards within one transition: never
+    Uint32 top_fade_at = 0;
+    double top_fade_seen = 0;
+    bool top_fading = false;
+    // The Home tile the library was entered from, and whether through the Systems step: Back returns there, not to
+    // the tile of whatever collection is showing now.
+    size_t home_origin = SIZE_MAX;
+    bool systems_origin = false;
     ViewTravel view_route = ViewTravel::Forward;
     bool motion_touch = false, drawing_elements = false;
     int element_origin_y = 0;
@@ -406,7 +437,10 @@ class App {
                float(s.GetTicks() - picker_closed_at) < sheet_out_ms();
     }
     // Closed since the last frame, or still sliding away.
-    bool sheet_leaving() const { return (picker_was_open && !picker_open) || picker_closing(); }
+    bool sheet_leaving() const {
+        return (picker_was_open && !picker_open) || picker_closing() || (filter_was_open && !filter_sheet_open) ||
+               filter_sheet_closing();
+    }
     std::function<void(int)> picker_apply;
     struct ToggleMotion {
         bool value = false;
@@ -491,16 +525,16 @@ class App {
         case Page::LibraryOptions: return 9;
         case Page::Appearance: return 6;
         case Page::DisplayOptions: return 5;
-        case Page::Scraper: return 5;
+        case Page::Scraper: return 6;
         case Page::DeviceInfo: return 5;
-        case Page::System: return o.rgds_os ? 8 : 9; // last row: Touch to continue
+        case Page::System: return o.rgds_os ? 9 : 10; // last rows: Touch to continue, Run setup again
         case Page::GameOptions: return game_options_base() + (game_removable() ? 1 : 0);
         case Page::GameArtwork: return 3;
-        case Page::Maintenance: return 7;
-        case Page::Network: return 7;
-        case Page::SaveGallery: return 9;
+        case Page::Maintenance: return 8;
+        case Page::Network: return 9;
+        case Page::SaveGallery: return gallery_has_auto() ? 10 : 9; // row 10 is the auto-save
         case Page::PortFiles: return 3;
-        case Page::DSControls: return 5;
+        case Page::DSControls: return 6;
         case Page::EmulatorOptions: return 9;
         case Page::ShaderPicker: return int(shader_choices.size());
         case Page::Controls: return 19;
@@ -549,10 +583,14 @@ class App {
         }
         int focus = list_selected();
         if (focus != list_focus) {
+            const int before = list_scroll;
             list_focus = focus;
             int top = focus * list_stride, bottom = top + 66;
             if (top < list_scroll) list_scroll = top;
             if (bottom > list_scroll + list_height) list_scroll = bottom - list_height;
+            list_scroll = std::clamp(list_scroll, 0, list_max_scroll());
+            // Moved by a key: the rows glide there instead of jumping.
+            if (list_scroll != before) list_motion.glide(s.GetTicks(), before, list_scroll, preferences.animations);
         }
         list_scroll = std::clamp(list_scroll, 0, list_max_scroll());
     }
@@ -676,7 +714,7 @@ class App {
     std::string play_frame_label(const std::string& frame) const;
     void apply_play_view(int fit, int second, const std::string& frame);
     const char* play_fit_name(int fit) const;
-    const char* play_second_name(int second) const;
+    const char* play_second_name(int second, const std::string& system = {}) const;
     void play_graphics_action();
     int play_colour_kind() const; // the colour row of the Graphics page: 0 none, 1 palette (GB), 2 correction (GBC)
     void apply_play_colour(int palette, int correction);
@@ -693,7 +731,7 @@ class App {
     void port_companion(SDL_Renderer* r, int y);
     // A port's second screen is the info screen RG DS Play shows (play/src/companion/dock.hpp):
     // the game switcher on a tap, Return home held, brightness, screen off.
-    enum class PortItem { None, Switcher, Home, Bright, Touch, Off };
+    enum class PortItem { None, GameMenu, Switcher, Home, Bright, Touch, Off };
     PortItem port_held = PortItem::None;
     Uint32 port_held_at = 0, port_touched_at = 0, port_began = 0, port_note_at = 0, port_bright_at = 0;
     bool port_fired = false, port_dragging = false, port_off = false;
@@ -916,7 +954,23 @@ class App {
         int height = 0;
         bool loading = false;
     };
-    bool filter_sheet_open = false;
+    bool filter_sheet_open = false, filter_was_open = false, sheet_underlay = false;
+    Uint32 filter_opened_at = 0, filter_closed_at = 0;
+    bool filter_sheet_closing() const {
+        return !filter_sheet_open && settings.page == Page::Library && filter_closed_at &&
+               float(s.GetTicks() - filter_closed_at) < sheet_out_ms();
+    }
+    // How much of the sheet is up (0 below the panel, 1 in place), with the view Speed.
+    double filter_sheet_shown(Uint32 now) const {
+        if (!preferences.animations) return filter_sheet_open ? 1 : 0;
+        const float t = filter_sheet_open ? std::min(1.f, (now - filter_opened_at) / sheet_in_ms())
+                                          : 1.f - std::min(1.f, (now - filter_closed_at) / sheet_out_ms());
+        return t * t * t * (t * (6 * t - 15) + 10);
+    }
+    bool filter_sheet_animating(Uint32 now) const {
+        return preferences.animations && settings.page == Page::Library &&
+               ((filter_sheet_open && float(now - filter_opened_at) < sheet_in_ms() + 10) || filter_sheet_closing());
+    }
     int filter_focus = 0, filter_scroll = 0;
     bool filter_pin = false;     // opened on the filters: the first section stays on top while the counts load
     int filter_thumb = 0;        // which handle of the focused slider the arrow keys move
@@ -935,6 +989,7 @@ class App {
     void filter_slider_drag(int x);
     void filter_drag_scroll(int y);
     void filter_rail_metrics(const FilterLayout& layout, int& thumb, int& max) const;
+    int filter_max_scroll();
     bool filter_rail_press(int x, int y);
     void filter_seek(int y);
     void filter_draw_slider(SDL_Renderer* r, const FilterChip& item, int top, bool focused);
@@ -971,6 +1026,10 @@ class App {
     const char* gallery_title() const;
     SettingsIcon gallery_icon() const;
     bool slot_occupied(int slot) const;
+    // The automatic checkpoint, taken when a game is left, is the tenth row while loading from the game menu.
+    // It is not a numbered slot: it cannot be saved over, deleted or exported.
+    static constexpr int auto_slot = 9;
+    bool gallery_has_auto() const { return o.game_menu && gallery_mode == GalleryMode::Load && slot_occupied(auto_slot); }
     bool slot_primary_enabled(int slot) const { return gallery_mode == GalleryMode::Save || slot_occupied(slot); }
     const char* slot_primary_name() const;
     const char* slot_hint(bool occupied) const;
@@ -1039,6 +1098,8 @@ class App {
     }
     void ds_controls_row(SDL_Renderer* r, int y, int i);
     void ds_controls_action();
+    std::vector<std::string> wireless_names() const;
+    int ds_wireless();
     void save_ds_setting(const std::string& key, int value) { save_ds_setting(key, std::to_string(value)); }
     void save_ds_setting(const std::string& key, const std::string& value);
     bool scan_stay = false; // a scan from Scan for games keeps the Library page open
@@ -1162,6 +1223,14 @@ class App {
     }
     // The top screen while typing a cheat search: the live match count and the first names.
     void cheat_search_top(SDL_Renderer* r, int y);
+    // Return home normally takes a checkpoint first; Y on that tile leaves without one, and the last auto-save stays.
+    bool can_return_without_saving() const { return preferences.auto_save && !port_game(); }
+    void return_without_saving() {
+        if (settings.focus != 8 || menu_status["state"] == "busy" || !can_return_without_saving()) return;
+        show_picker("Return home", {"Cancel", "Return without saving"}, 0, [this](int yes) {
+            if (yes) menu_request("quit-discard");
+        });
+    }
     void quick_action() {
         if (menu_status["state"] == "busy") return;
         if (port_game() && !port_tile(settings.focus)) {
@@ -1391,7 +1460,7 @@ class App {
     static bool shader_fits_system(int id, const std::string& system) {
         const int family = shader_family(id), own = shader_system_screens(system.c_str());
         if (family == 0) return true;
-        if (system == "nds")
+        if (system == "nds" || system == "3ds" || system == "psp")
             return std::string(shader_family_names[family]).find(" screens") == std::string::npos || family == own;
         return family == own;
     }
@@ -1865,6 +1934,43 @@ class App {
     void boot_wordmark(SDL_Renderer* r, int y, int);
     void boot_scene(SDL_Renderer* r, int y);
     void boot_top(SDL_Renderer* r, int y);
+    // Setup (welcome_screen.hpp). Items are found by id: a step's own from 0, the footer's from welcome_back.
+    enum WelcomeStep { WelcomeLanguage, WelcomeColour, WelcomeName, WelcomeHome, WelcomeLibrary, WelcomeTime, WelcomeWifi, WelcomeGames, WelcomeDone };
+    static constexpr int welcome_steps = 9, welcome_back = 100, welcome_next = 101, welcome_skip = 102, welcome_mode = 20,
+                         welcome_layout = 0, welcome_ground = 10, welcome_motion = 20, welcome_face = 30, welcome_clock = 10;
+    struct WelcomeItem {
+        int id;
+        SDL_Rect box;
+    };
+    bool welcome_active = false, welcome_fresh = false, welcome_detour = false;
+    int welcome_step = 0, welcome_focus = welcome_next;
+    Page welcome_return = Page::Library;
+    bool welcome_needed();
+    void welcome_save(bool done);
+    void open_welcome();
+    void welcome_begin();
+    void welcome_enter(int step, ViewTravel route = ViewTravel::Forward);
+    void welcome_finish();
+    void welcome_detour_end();
+    void welcome_language_defaults();
+    std::string ds_owner_name() const;
+    void save_owner_name(std::string name);
+    size_t welcome_game_count() const;
+    std::vector<WelcomeItem> welcome_items();
+    void welcome_move(int code);
+    void welcome_choose_motion(int choice);
+    void welcome_activate(int id);
+    void welcome_action(int code);
+    void welcome_touch(int x, int y);
+    SDL_Rect welcome_item_box(int id);
+    void welcome_focus_ring(SDL_Renderer* r, const SDL_Rect& b, int radius);
+    void welcome_chip(SDL_Renderer* r, int y, int id, const std::string& text, bool selected, bool translate = true);
+    void welcome_row(SDL_Renderer* r, int y, int id, SettingsIcon icon, const std::string& title, const std::string& value);
+    void welcome_system_icon(SDL_Renderer* r, const std::string& id, int x, int y, int size);
+    void welcome_library_card(SDL_Renderer* r, int y, int id, const std::string& title, const std::string& note);
+    void welcome_top_heading(SDL_Renderer* r, int y, const std::string& title, const std::string& body);
+    void welcome_top(SDL_Renderer* r, int y);
+    void welcome_bottom(SDL_Renderer* r, int y);
     void boot_stylus(SDL_Renderer* r, int x, int y);
     void boot_bottom(SDL_Renderer* r, int y);
     // A read-only games card breaks saves, volume and launch at once. Explain
@@ -1883,7 +1989,7 @@ class App {
     // their own (a map, the team, the HUD; launcher/dual_screen.hpp).
     bool stage_dual = false;
     bool game_dual(size_t index);
-    void dual_badge(SDL_Renderer* r, int x, int y);
+    void dual_badge(SDL_Renderer* r, int cx, int cy, int size);
     // Without a cover: the cartridge's own DS icon, large and crisp on the
     // same card as covers, with its title (the only place it is not repeated).
     void icon_stage(SDL_Renderer* r, int y, const std::string& developer);
@@ -2324,7 +2430,8 @@ class App {
         carousel.dragging = false;
         volume_drag = false;
         clear_view_canvases();
-        view_canvas_failed = false;
+        view_canvas_failed = top_canvas_failed = gesture_canvas_failed = false;
+        page_drag.reset();
         view_seen = false;
         view_levels.clear();
         view_motion.stop();
@@ -2393,7 +2500,9 @@ class App {
     }
     void paint_bottom(SDL_Renderer* renderer, int y);
     void animated_bottom(SDL_Renderer* renderer, int y);
+    void animated_page(SDL_Renderer* renderer, int y);
     void push_bottom(SDL_Renderer* renderer, int y);
+    void animated_top(SDL_Renderer* renderer, int y);
     void draw(bool screenshot = false);
     void volume_feedback(SDL_Renderer* r, int y) {
         if (!volume_toast || s.GetTicks() >= volume_toast) return;
@@ -2596,6 +2705,8 @@ public:
         if (o.data.empty()) o.data = o.preferences.parent_path();
         library_cache.reset(o.data);
         if (o.system_preferences.empty()) o.system_preferences = o.preferences.parent_path() / "system.ini";
+        welcome_active = o.first_run && o.boot_startup && !o.usb_drive_screen && welcome_needed();
+        if (welcome_active) o.boot_warning = false; // setup says what that screen says, once
         if (!o.boot_startup && (!o.game_menu || o.preview)) {
             refresh_system();
             system_preferences.brightness = hardware.brightness_percent;
@@ -2697,6 +2808,7 @@ public:
 #include "launcher/frame_draw.hpp"
 #include "launcher/game_launch.hpp"
 #include "launcher/view_transitions.hpp"
+#include "launcher/touch_kinetics.hpp"
 #include "launcher/menu_sounds.hpp"
 #include "launcher/library_boot.hpp"
 #include "launcher/systems_play.hpp"
@@ -2718,6 +2830,7 @@ public:
 #include "launcher/system_settings.hpp"
 #include "launcher/state_persistence.hpp"
 #include "launcher/boot_screens.hpp"
+#include "launcher/welcome_screen.hpp"
 #include "launcher/run_loop.hpp"
 #include "launcher/update_banner.hpp"
 #include "launcher/pictochat_screen.hpp"
@@ -2836,13 +2949,16 @@ int main(int argc, char** argv) {
                 o.game_menu = true;
             } else if (arg == "--game-core") o.game_core = value();
             else if (arg == "--game-rom") o.game_rom = value();
+            else if (arg == "--game-system") o.game_system = value();
             else if (arg == "--allow-launch") o.allow_launch = true;
             else if (arg == "--watch-assets") o.watch_assets = true;
             else if (arg == "--settings") o.settings = true;
             else if (arg == "--home") o.home = true;
             else if (arg == "--library") o.library = true;
             else if (arg == "--boot-warning") o.boot_warning = true;
+            else if (arg == "--usb-drive-screen") o.usb_drive_screen = o.boot_warning = true;
             else if (arg == "--boot-startup") o.boot_startup = true;
+            else if (arg == "--first-run") o.first_run = true;
             else if (arg == "--boot-ready-fd") {
                 auto raw = value();
                 size_t end = 0;
@@ -2886,7 +3002,7 @@ int main(int argc, char** argv) {
                     << "--cache-report PATH (development asset-cache counters)\n"
                     << "--touch-recording FILE (preview Linux AArch64 evdev capture)\n"
                     << "--settings [--section theme|brightness|power|library|sound|connectivity|system|controls]\n"
-                    << "--game-menu --game-core rgds-experimental|rgds-play [--game-rom FILE]\n"
+                    << "--game-menu --game-core rgds-experimental|rgds-play [--game-rom FILE] [--game-system ID]\n"
                     << "--mode light|dark --font rounded|pixel --preferences FILE --themes DIR\n"
                     << "--system-preferences FILE (power, brightness and menu sleep)\n"
                     << "--input-script FILE (desktop-only timed key/tap events)\n"

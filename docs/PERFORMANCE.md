@@ -235,6 +235,85 @@ frame's completion and the panel's vblank (uniform over a refresh as the
 (`DS_PACE=display`) is the lever for that, and with a 2 ms present instead of
 a 5–6 ms one its margin can be far narrower than measured on 18 October.
 
+### Input latency on RG DS OS, 30 October
+
+Measured on the handheld (RG DS OS 0.8.0, 2x, renderer sink, `DS_PACE=display`),
+25 B presses on the pad node per run with `os/banana-probe` (`game_latency.py`,
+`press_to_flip.py`; the scratch `trial.sh` is `pace_trial.sh` with
+`DS_PRESENT_PROFILE=1`), median time from a press to the completed flip of the
+frame whose poll read it:
+
+| Run | Before | After |
+| --- | ---: | ---: |
+| New Super Mario Bros, HD off | 30.1 ms | — |
+| New Super Mario Bros, HD smooth (`rgds_2d=5`) | 40.4 ms | 30.4 ms |
+| Mario Kart DS, HD off, no filter | 30.9 ms | — |
+| Mario Kart DS, HD smooth, no filter | 31.9 ms | — |
+
+**HD smooth fell out of the display lock.** HD adds 1–2 ms of present (the
+rules texture and a heavier draw), and that was enough to start the game
+outside the lock's 1.5-period lead. Free pacing then held every swap for the
+previous flip, the busy present lane made the emulation thread wait at the
+hand-off, and the lock counted that wait as work (15.2 ms start-to-hand-off
+free vs 8.6 locked), so the lead stayed at 25–28 ms. When it did lock, a run of
+misses tripped the valve, and the band only relaxed on locked flips, so it
+stayed at 6.3 ms and the lock never came back (120 of 1680 frames locked).
+Fixed in `phase_lock.h`: the lane wait (`Display::take_lane_wait_ns()`,
+`PhaseLock::queued()`) comes off the work sample, and the band decays on
+free-running flips too (`dscore/tests/phase_lock_test.cpp` has both). After:
+1751 of 1773 frames locked.
+
+**The frame edge moved to VBlank** (`DS_FRAME_EDGE=vblank`, set by
+`runtime/emulators.py` for DSCore). A frame used to end at line 0, but the
+picture is complete at line 192 and games read keys and touch in VBlank,
+showing the result in the next frame's lines; so a press read in frame N
+appeared in frame N+1's picture, a refresh later. Ending the frame at line 192
+(joining the lines' batch and the compose there, `Gpu::on_scanline_start`)
+puts the poll just before the game's read and hands over the frame that
+answers it. Measured with a per-frame picture hash (`DS_CADENCE_HASH=1`,
+`press_to_change.py`) in NSMB's pause menu, Down/Up alternating, HD smooth at
+2x: the menu answered 2 frames after the read with the edge at line 0 and 1
+frame after with it at VBlank, 24 of 24 presses each; press to the answering
+flip **74.2 ms → 52.1 ms** median. The picture is the same frame; the cost is
+the join no longer overlapping VBlank (start-to-hand-off median 9.37 → 9.55 ms,
+p95 11.5 → 13.9 in NSMB HD smooth, no more frames over 20 ms). Frameskip keeps
+the line-0 edge. Save states are taken at either edge (`Gpu::at_frame_edge`).
+
+**A heavy scene turned the lock off for good.** Once free, nearly every swap
+is held for the previous flip (13 ms at 2x; 0-2 of 300 flips unheld in the
+logs), and held swaps taught the lock nothing, so the work stayed what the
+heavy stretch left it. Frames returned to 10 ms while the lead stayed over the
+relock test for the rest of the run, at either frame edge. Free-running frames
+now learn from held swaps too (`phase_lock.h`, host case in
+`dscore/tests/phase_lock_test.cpp`). Same engine and edge, each run from the
+same restored state, 1 November:
+
+| Run | Before | After |
+| --- | ---: | ---: |
+| NSMB HD smooth, read to flip | 27.3 ms | 19.3 ms |
+| NSMB HD smooth, frames locked | 850 of 1751 | 1535 of 1647 |
+| NSMB pause menu, press to answering flip | 52.1 ms | 43.9 ms |
+| Mario Kart filter 21, read to flip | 29.7 ms | 26.4 ms |
+| Mario Kart filter 21, frames locked | 527 of 1739 | 865 of 1720 |
+
+The "before" runs resumed from whatever the previous trial saved, so their
+scenes are not identical to the "after" ones. Mario Kart with a filter still
+trips the valve and takes more missed ticks (31 against 16); no presses landed
+on a repeated flip.
+
+**Run-ahead does not fit.** One rollback frame needs a hidden frame, a visible
+frame, a save and a load inside 16.7 ms. The emulation thread takes 9-10 ms per
+frame with or without drawing (`--frameskip 1 --frameskip-mode fixed`: NSMB
+hidden 10.6, drawn 14.1; Mario Kart hidden 8.8, drawn 9.4), so two frames alone
+are 18-25 ms before any state work. One timed save and load to memory: 19-32 ms
+and 48 ms, the next frame 17-58 ms slower (the load flushes the JIT). A probe
+doing this every 30 frames hung the engine after its first pass, so those are
+single samples.
+
+A chosen screen filter is a separate cost: Mario Kart with filter 21 flips
+about 15 ms after its swap (the filter's GPU pass), the lock trips its valve
+and comes and goes (34.4 ms with the installed engine). Not changed here.
+
 ## What made DSCore fast
 
 - **3D on the GPU.** Polygons are rasterized by Vulkan on the Mali-G52 at the

@@ -21,6 +21,8 @@ import zlib
 
 import numpy as np
 
+from device_addr import device_addr
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIRS = ('/data/rgds/userdata', '/mnt/mmc/rgds/userdata')
 
@@ -525,8 +527,8 @@ def main():
     parser.add_argument(
         '-d',
         '--device',
-        default=os.environ.get('DEVICE') or 'rgds.local',
-        help='SSH address (default: $DEVICE or rgds.local)'
+        default=os.environ.get('DEVICE') or device_addr(),
+        help='SSH address (default: $DEVICE, else the USB cable, else rgds.local)'
     )
     parser.add_argument('-o', '--out', help='output PNG (default: build/shots/rgds-<time>.png)')
     parser.add_argument(

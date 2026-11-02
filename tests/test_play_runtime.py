@@ -90,6 +90,17 @@ class PlayRuntimeTests(unittest.TestCase):
             self.root / "a.chd": "psx",
             self.root / "a.z64": "n64",
             self.root / "a.v64": "n64",
+            self.root / "a.tzx": "zx",
+            self.root / "a.tap": "zx",
+            self.root / "a.z80": "zx",
+            self.root / "a.d64": "c64",
+            self.root / "a.t64": "c64",
+            self.root / "a.crt": "c64",
+            self.root / "a.cci": "3ds",
+            self.root / "a.iso": "psp",
+            self.root / "a.cso": "psp",
+            self.root / "a.3ds": "3ds",
+            self.root / "a.3dsx": "3ds",
         }
         for rom, system in cases.items():
             self.assertEqual(play_options.system_of(rom), system, rom)
@@ -108,6 +119,16 @@ class PlayRuntimeTests(unittest.TestCase):
             self.assertEqual(play_options.engine_for(packed, "melonds"), "rgds-play")
         self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.bin"), "nds")
 
+    def test_a_tape_or_disk_list_in_a_c64_folder_is_the_c64s(self):
+        for folder in ("c64", "C64", "commodore"):
+            self.assertEqual(play_options.system_of(self.root / "roms" / folder / "Game.tap"), "c64", folder)
+            self.assertEqual(play_options.system_of(self.root / "roms" / folder / "Game.m3u"), "c64", folder)
+        self.assertEqual(play_options.system_of(self.root / "roms" / "zx" / "Game.tap"), "zx")
+        self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.m3u"), "psx")
+        for name in ("Game.pbp", "Game.chd"):
+            self.assertEqual(play_options.system_of(self.root / "roms" / "psp" / name), "psp", name)
+        self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.chd"), "psx")
+
     def test_libretro_core_is_named_per_system_and_only_when_installed(self):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.object(play_options, "LIBRETRO_DIR", Path(tmp)):
@@ -120,9 +141,37 @@ class PlayRuntimeTests(unittest.TestCase):
                 self.assertEqual(play_options.LIBRETRO_CORES["psx"], "pcsx_rearmed")
                 self.assertNotIn("pico8", play_options.LIBRETRO_CORES)  # dropped with fake-08 (2026-10-28)
                 self.assertEqual(play_options.LIBRETRO_CORES["n64"], "mupen64plus_next")
+                self.assertEqual(play_options.LIBRETRO_CORES["zx"], "fuse")
+                self.assertEqual(play_options.LIBRETRO_CORES["c64"], "vice_x64")
+                self.assertEqual(play_options.LIBRETRO_CORES["psp"], "ppsspp")
         # Appended: the DS engines keep their stored indexes.
         self.assertEqual(emulators.CORES[:5], ("drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"))
         self.assertEqual(emulators.CORES[5], "rgds-play")
+
+    def test_a_3ds_game_runs_tanuki_from_the_data_partition_with_its_files_in_userdata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            engine, data = Path(tmp) / "engine", Path(tmp) / "data"
+            with self.assertRaisesRegex(ValueError, "No emulator for 3DS"):
+                emulators.tanuki_plan(data, Path(tmp) / "a.cci", engine=engine)
+            engine.mkdir()
+            (engine / "run.sh").write_text("")
+            (engine / "ctremu.ini").write_text("Volume = 150")
+            plan = emulators.tanuki_plan(data, Path(tmp) / "a.cci", engine=engine)
+            # the shared menu, with the engine holding the display
+            self.assertEqual(plan["env"]["RGDS_MENU_LIVE"], "1")
+            self.assertEqual(plan["env"]["RGDS_CONTROL_FILE"], str(data / "session/emulator.control"))
+            self.assertNotIn("RGDS_NATIVE_AUTOLOAD", plan["env"])
+            # the looks made for sharp modern screens fit a 3DS game, another handheld's screen does not
+            rom = Path(tmp) / "a.cci"
+            self.assertTrue(play_options.shader_fits(rom, 15))
+            self.assertFalse(play_options.shader_fits(rom, 21))
+            self.assertFalse(play_options.shader_fits(rom, 30))
+            self.assertEqual(plan["env"]["HOME"], str(data / "emulators/rgds-play/3ds"))
+            settings = data / "emulators/rgds-play/3ds/.local/share/Tanuki3DS/ctremu.ini"
+            self.assertEqual(settings.read_text(), "Volume = 150")
+            settings.write_text("Volume = 90")  # the owner's own settings survive the next launch
+            emulators.tanuki_plan(data, Path(tmp) / "a.cci", engine=engine)
+            self.assertEqual(settings.read_text(), "Volume = 90")
 
     def test_roms_are_refused_by_the_wrong_engine(self):
         self.assertEqual(emulators.resolve_rom(self.gba, self.data, "rgds-play"), self.gba.resolve())
@@ -176,7 +225,7 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertEqual({i for i, f in places if families[f] == "Original"}, set(play_options.ORIGINAL))
         defaults = re.search(r"system_default_shader.*?shaders\[\] = \{([^}]*)\}", catalog, re.S).group(1)
         self.assertEqual(
-            [int(n) for n in defaults.split(",")], [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc")]
+            [int(n) for n in defaults.split(",")], [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc", "3ds")]
         )
 
     def test_system_defaults_sit_between_the_built_in_view_and_a_game(self):

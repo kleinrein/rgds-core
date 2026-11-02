@@ -409,6 +409,75 @@ int main() {
         sim.lat[0] / MS);
   }
 
+  // Free-running frames on the renderer tier: a frame held for the previous
+  // flip keeps its present lane busy, and the next frame waits to be handed
+  // to it (Display::take_lane_wait_ns()). That wait, reported through
+  // queued(), is not work: the lock learns the frame's own 10 ms, not the 16
+  // its swap came after, so its lead fits a refresh (HD smooth at 2x read
+  // 25-28 ms of lead and never locked, 30 October 2026).
+  {
+    PhaseLock lock;
+    u64 t = 1'000'000'000ull;
+    for (int i = 0; i < 10; ++i, t += static_cast<u64>(panel_period)) lock.flip(0, t, 0);
+    CHECK(lock.locked());
+    for (int i = 0; i < 60; ++i) {
+      const u64 start = t - static_cast<u64>(17.0 * MS); // swapped 1 ms before its flip, 16 ms after its start
+      lock.started(start);
+      lock.queued(static_cast<u64>(6.0 * MS));
+      lock.flip(0, t, start + static_cast<u64>(16.0 * MS));
+      t += static_cast<u64>(panel_period);
+    }
+    std::fprintf(stderr, "phase lock: queued hand-off, work mean %.3f ms (frame 10, queued 6)\n",
+                 lock.work_mean_ns() / MS);
+    CHECK(near(lock.work_mean_ns(), 10.0 * MS, 50'000.0));
+  }
+
+  // A band widened by misses relaxes while the lock is off as well, or the
+  // lead it is tested against (main.cpp: free over 1.5 periods, locked again
+  // under 1.3) would keep the lock out for the rest of the session.
+  {
+    PhaseLock::Params p;
+    p.band_ns = 6.0 * MS;
+    PhaseLock lock(p);
+    u64 t = 1'000'000'000ull;
+    for (int i = 0; i < 10; ++i, t += static_cast<u64>(panel_period)) lock.flip(0, t, 0);
+    for (int i = 0; i < 60 * 60; ++i, t += static_cast<u64>(panel_period)) {
+      const u64 start = t - static_cast<u64>(12.0 * MS);
+      lock.started(start); // no deadline asked: free-running
+      lock.flip(0, t, start + static_cast<u64>(9.0 * MS));
+    }
+    std::fprintf(stderr, "phase lock: free for a minute, band 6.00 -> %.2f ms\n", lock.band_ns() / MS);
+    CHECK(lock.band_ns() < 3.0 * MS);
+  }
+
+  // Free pacing settles with nearly every swap held for the previous flip
+  // (13 ms at 2x). Those frames still teach the work, or the estimate stays
+  // what the last heavy scene left and the lead never fits again (frames back
+  // at 10 ms, lock off for the rest of the run, 30 October 2026).
+  {
+    PhaseLock lock;
+    const u64 period = static_cast<u64>(panel_period);
+    u64 t = 1'000'000'000ull;
+    for (int i = 0; i < 10; ++i, t += period) lock.flip(0, t, 0);
+    for (int i = 0; i < 120; ++i, t += period) { // a heavy scene, swaps not held, the work swinging 14 to 20 ms
+      const u64 work = static_cast<u64>((i % 2 ? 14.0 : 20.0) * MS);
+      const u64 start = t - work - static_cast<u64>(2.0 * MS);
+      lock.started(start);
+      lock.flip(0, t, start + work);
+    }
+    const double heavy = lock.work_ns();
+    CHECK(heavy > 17.0 * MS);
+    for (int i = 0; i < 300; ++i, t += period) { // light again: ready after 13 ms, held 13 more, flipped 3 ms on
+      const u64 start = t - static_cast<u64>(29.0 * MS);
+      lock.started(start);
+      lock.flip(0, t, start + static_cast<u64>(26.0 * MS), static_cast<u64>(13.0 * MS));
+    }
+    std::fprintf(stderr, "phase lock: free with held swaps, work %.2f -> %.2f ms (frame 13)\n", heavy / MS,
+                 lock.work_ns() / MS);
+    CHECK(near(lock.work_mean_ns(), 13.0 * MS, 100'000.0));
+    CHECK(lock.work_ns() + 2.5 * MS < lock.period_ns() * 1.3); // main.cpp's relock test
+  }
+
   std::fprintf(stderr, "phase_lock: ok\n");
   return 0;
 }

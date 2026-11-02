@@ -94,6 +94,13 @@ public:
   bool scanout_direct() const { return out_ != nullptr && !disp_ && !ren_; }
   static bool draw_scanout_async(Display* const ds[], int n, const u32* const fb[SCREENS], u32 width = SCREEN_W,
                                  u32 height = SCREEN_H, const bool* enhanced = nullptr);
+  // How long the draw_*_async calls since the last take waited for a present thread still busy with an earlier
+  // frame, ns.
+  static u64 take_lane_wait_ns() {
+    const u64 w = lane_wait_ns_;
+    lane_wait_ns_ = 0;
+    return w;
+  }
 
   // Per-scanline scaling: the core scales each line into place as it's
   // produced, straight into the window surface or a scanout tier's buffer
@@ -308,6 +315,7 @@ private:
   u32 texture_width_[SCREENS] = {SCREEN_W, SCREEN_W}, texture_height_[SCREENS] = {SCREEN_H, SCREEN_H};
   SDL_Texture* tex_[SCREENS] = {nullptr, nullptr};
   inline static const u32* hd_rules_next_[SCREENS] = {nullptr, nullptr}; // set_hd_rules()
+  inline static u64 lane_wait_ns_ = 0;                                   // take_lane_wait_ns()
   const u32* hd_rules_in_flight_[SCREENS] = {nullptr, nullptr};          // the frame draw_renderer() draws
   SDL_Texture* rules_tex_[SCREENS] = {nullptr, nullptr};
   bool rules_paired_[SCREENS] = {false, false};

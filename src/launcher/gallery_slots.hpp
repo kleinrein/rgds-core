@@ -72,7 +72,11 @@ void App::slot_primary() {
             if (yes) menu_request("slot-save:" + std::to_string(slot) + ":yes");
         });
     } else if (gallery_mode == GalleryMode::Load) {
-        if (occupied)
+        if (occupied && slot == auto_slot)
+            show_picker("Auto-save", {"Cancel", "Load"}, 0, [this](int yes) {
+                if (yes) menu_request("load");
+            });
+        else if (occupied)
             show_picker(slot_question("Load", slot), {"Cancel", "Load"}, 0, [this, slot](int yes) {
                 if (yes) menu_request("slot-load:" + std::to_string(slot));
             });
@@ -81,7 +85,7 @@ void App::slot_primary() {
 
 void App::slot_delete() {
     const int slot = settings.focus;
-    if (!slot_occupied(slot)) return;
+    if (slot == auto_slot || !slot_occupied(slot)) return;
     show_picker(slot_question("Delete", slot), {"Cancel", "Delete"}, 0, [this, slot](int yes) {
         if (!yes) return;
         if (o.game_menu) menu_request("slot-delete:" + std::to_string(slot));
@@ -122,11 +126,11 @@ void App::slot_more() {
     const int slot = settings.focus;
     std::vector<std::string> actions;
     if (o.game_menu) {
-        if (slot_occupied(slot)) actions.push_back("Export slot");
+        if (slot_occupied(slot) && slot != auto_slot) actions.push_back("Export slot");
         actions.push_back("Undo last slot change");
         actions.push_back("Undo last load");
     } else actions = {"Import into this slot", "Undo last slot change", "Import help"};
-    show_picker(locale.text("Slot") + " " + std::to_string(slot + 1), actions, 0, [this, slot, actions](int choice) {
+    show_picker(slot == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(slot + 1), actions, 0, [this, slot, actions](int choice) {
         const auto& action = actions.at(choice);
         if (action == "Export slot") menu_request("slot-export:" + std::to_string(slot));
         else if (action == "Undo last slot change") {

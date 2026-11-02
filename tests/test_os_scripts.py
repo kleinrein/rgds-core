@@ -127,8 +127,20 @@ esac
         self.lid = d / 'lid'
         self.lid.write_text('1\n')
         tool(d / 'bin', 'lid', f'cat {self.lid}\n')
+        # the radios: fake net and bluetoothctl log their calls; wlan0 and hci0 exist unless a test removes them
+        self.radio_log = d / 'radios.log'
+        tool(d / 'bin', 'net', f'echo "net $*" >> {self.radio_log}\n')
+        tool(d / 'bin', 'bluetoothctl', f'echo "bluetoothctl $*" >> {self.radio_log}\n')
+        tool(d / 'bin', 'timeout', 'shift; exec "$@"\n')  # BusyBox has it, macOS does not
+        (d / 'wlan0').mkdir()
+        (d / 'hci0').mkdir()
         self.env = dict(
             os.environ,
+            PATH=f"{d / 'bin'}:{os.environ.get('PATH', '')}",
+            RGDS_NET_CMD=str(d / 'bin/net'),
+            RGDS_BTCTL=str(d / 'bin/bluetoothctl'),
+            RGDS_WLAN_DIR=str(d / 'wlan0'),
+            RGDS_HCI_DIR=str(d / 'hci0'),
             RGDS_RUN=str(d / 'run'),
             RGDS_RTC=str(d / 'rtc'),
             RGDS_BATTERY_DIR=str(d / 'battery'),
@@ -188,6 +200,22 @@ esac
         code, state = self.sleep('rtc', 'user 5')
         self.assertEqual(state['wake'], 'user')
         self.assertEqual(self.wakes.read_text(), 'user 5\n')
+
+    def test_radios_are_powered_down_for_the_sleep_and_back_on_the_wake(self):
+        # the dark wakes in between leave them down: one down, one up, however many sleeps
+        code, state = self.sleep('rtc', 'rtc', 'user 5')
+        self.assertEqual(state['wake'], 'user')
+        self.assertEqual(
+            self.radio_log.read_text().splitlines(),
+            ['net wifi-sleep', 'bluetoothctl power off', 'bluetoothctl power on', 'net wifi']
+        )
+
+    def test_radios_that_were_off_stay_off(self):
+        (self.dir / 'wlan0').rmdir()
+        (self.dir / 'hci0').rmdir()
+        code, state = self.sleep('user 5')
+        self.assertEqual(state['wake'], 'user')
+        self.assertFalse(self.radio_log.exists())
 
 
 if __name__ == '__main__':

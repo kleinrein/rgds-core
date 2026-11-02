@@ -70,6 +70,11 @@ void Gpu::reset() {
     filter2d_ = m > 0 && m < rgds::kFilter2DModes ? m : 0;
   }
   pending_row_ = snapshot_row_ = -1;
+  {
+    const char* edge = std::getenv("DS_FRAME_EDGE");
+    vblank_edge_ = edge && !std::strcmp(edge, "vblank");
+    cut_at_vblank_ = false;
+  }
   if (hd_mode()) hd_start();
   const char* scale = std::getenv("RGDS_VK_SCALE");
   compose_.join();
@@ -654,8 +659,22 @@ void Gpu::on_scanline_start() {
       prof::Scope b(prof::BEGIN_FRAME);
       begin_frame();
     }
-    nds_.frame_ready = true;
+    if (!cut_at_vblank_) nds_.frame_ready = true;
+    cut_at_vblank_ = false;
   } else if (line_ == 192) {
+    // DS_FRAME_EDGE=vblank: the frame ends here, with every display line drawn and composed, instead of at line 0.
+    // Games read the keys and the touchscreen in VBlank and show the result in the next frame's lines, so the
+    // frontend's input poll then lands just before that read, and the frame it hands over is the one answering it:
+    // a refresh sooner than a frame that runs on through VBlank. The lines' batch and the compose are joined now
+    // rather than overlapping VBlank. Frameskip keeps line 0 (its request is taken at line 215 for begin_frame).
+    if (vblank_edge_ && !skip_req_ && frame_begun_) {
+      prof::Scope j(prof::JOIN0);
+      join_worker(JoinSite::Line0);
+      if (pending_row_ >= 0) submit_pending_row(SCREEN_H);
+      compose_.join();
+      cut_at_vblank_ = true;
+      nds_.frame_ready = true;
+    }
     if (probe_enabled_) async_probe_check(false);
     nds_.io.set_vblank(true);
     fifo_rd_ = fifo_wr_ = 0;

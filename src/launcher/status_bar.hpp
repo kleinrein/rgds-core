@@ -120,18 +120,22 @@ int App::centred_label_y(const std::string& value, int size, int cy) {
 
 void App::status_bar(SDL_Renderer* r, int y) {
     sheen(r, 0, y, 640, 48, "background", 24);
+    // Wi-Fi only shows while connected; the symbols after it close the gap.
+    const bool wifi_on = device_status["wifi_connected"] == "1";
+    const int slot = wifi_on ? 0 : 34;
     if (!preferences.rich_icons) {
         // The pixel style's own status symbols, at the same 24 px as its icons.
         draw_pixel_glyph(s, r, pixel_status_glyph(sound_asset()), 24, y + 24, 24, theme.at("ink"));
-        draw_pixel_glyph(s, r, pixel_status_glyph(wifi_asset()), 58, y + 24, 24, theme.at("ink"));
-        if (bluetooth_on) draw_pixel_glyph(s, r, pixel_status_glyph("bluetooth"), 90, y + 24, 24, theme.at("ink"));
+        if (wifi_on) draw_pixel_glyph(s, r, pixel_status_glyph(wifi_asset()), 58, y + 24, 24, theme.at("ink"));
+        if (bluetooth_on)
+            draw_pixel_glyph(s, r, pixel_status_glyph("bluetooth"), 90 - slot, y + 24, 24, theme.at("ink"));
     } else {
         media.draw(r, status_asset(sound_asset()), {10, y + 10, 28, 28}, false);
-        media.draw(r, status_asset(wifi_asset()), {44, y + 10, 28, 28}, false);
-        if (bluetooth_on) media.draw(r, status_asset("bluetooth"), {74, y + 10, 28, 28}, false);
+        if (wifi_on) media.draw(r, status_asset(wifi_asset()), {44, y + 10, 28, 28}, false);
+        if (bluetooth_on) media.draw(r, status_asset("bluetooth"), {74 - slot, y + 10, 28, 28}, false);
     }
     // the wordmark (and the artwork loader beside it) make room for the Bluetooth rune
-    const int shift = bluetooth_on ? 28 : 0;
+    const int shift = (bluetooth_on ? 28 : 0) - slot;
     // Rendered at its drawn size; its capitals match the clock's (14 px),
     // centred on the bar's text line (y + 24) like the labels.
     if (!preferences.rich_icons) {

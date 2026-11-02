@@ -19,6 +19,7 @@ import stat
 import subprocess
 import zipfile
 
+from fields import read_fields
 import ota
 from ota import Updater, guard_module
 
@@ -146,7 +147,11 @@ class OsUpdater(Updater):
         (self.root / 'state/update-pending.json').unlink(missing_ok=True)
         if result.get('state') == 'rolled-back' and result.get('build') == pending.get('build'):
             self.publish(
-                'rolled-back', 'The update could not start. Your previous version was restored.', prepared=0, offer=''
+                'rolled-back',
+                'The previous version could not start. This version was kept.'
+                if pending.get('rollback') else 'The update could not start. Your previous version was restored.',
+                prepared=0,
+                offer=''
             )
         else:
             self.publish(
@@ -180,6 +185,75 @@ class OsUpdater(Updater):
             raise ValueError('Update failed. Check Wi-Fi and try again.')
         other = 'b' if running == 'a' else 'a'
         return running, other, Path(f'{disk}p{PARTITIONS[other]}')
+
+    # -- the slot that is not running: Maintenance's "Use previous build" --
+    def slot_release(self, slot, device):
+        """(build, version) read from a root slot's filesystem, mounted read-only for the moment it takes; None when
+        the slot holds no filesystem (empty until the first update) or no release."""
+        mount = self.run_dir / f'slot-{slot}'
+        mount.mkdir(exist_ok=True)
+        if subprocess.run(
+            ['mount', '-t', 'squashfs', '-o', 'ro', str(device),
+             str(mount)], capture_output=True
+        ).returncode:
+            return None
+        try:
+            build = (mount / 'usr/share/rgds/active').read_text().strip()
+            version = next(
+                (
+                    line.partition('=')[2].strip('"')
+                    for line in (mount / 'usr/lib/os-release').read_text().splitlines() if line.startswith('VERSION=')
+                ), ''
+            )
+        except OSError:
+            return None
+        finally:
+            subprocess.run(['umount', str(mount)], check=False)
+        return build, version
+
+    def previous(self):
+        """The build in the other slot and its version, or None: nothing bootable there, this very build, or a slot
+        spoken for by a staged update."""
+        try:
+            running, other, device = self.slots()
+            conf = (self.boot / 'extlinux/extlinux.conf').read_text()
+        except (OSError, ValueError):
+            return None
+        if not re.search(rf'^LABEL {other}$', conf, re.M) or not (self.boot / other / 'Image.lz4').is_file():
+            return None
+        if self.load_guard().read(self.root / 'state/update-pending.json').get('phase') == 'staged': return None
+        if read_fields(self.folder / 'status.ini').get('state') in ('staging', 'restarting'): return None
+        release = self.slot_release(other, device)
+        if not release or not release[0] or release[0] == self.app.name: return None
+        return release
+
+    def rollback(self):
+        """Boot the other slot: a trial like an update's, with this slot as the fallback should it not come up."""
+        from emulators import activity_lock, core_running
+        self.guard = self.load_guard()
+        release = self.previous()
+        if release is None: raise ValueError('No previous build available.')
+        build, version = release
+        with self.guard.update_lock(self.root), activity_lock(self.data):
+            if core_running(self.data): raise ValueError('Exit your game before changing builds.')
+            self.power_check()
+            running, other, _ = self.slots()
+            subprocess.run([str(self.trial), 'arm', other, running, build, version], check=True)
+            self.guard.save(
+                self.root / 'state/update-pending.json',
+                dict(
+                    schema=1,
+                    phase='trial',
+                    build=build,
+                    previous=self.app.name,
+                    slot=other,
+                    running=running,
+                    version=version,
+                    rollback=1
+                )
+            )
+            self.publish('restarting', 'Restarting into the previous version…', progress=100, offer='')
+            self.restart()
 
     def inventory(self, z, value):
         build = value['build']

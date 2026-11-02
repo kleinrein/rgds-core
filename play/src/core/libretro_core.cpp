@@ -19,6 +19,7 @@
 #include <map>
 #include <mutex>
 #include <type_traits>
+#include <unistd.h>
 
 namespace play {
 
@@ -36,7 +37,9 @@ using uint = unsigned;
 constexpr uint FRAMEBUFFER = 0x8D40, READ_FRAMEBUFFER = 0x8CA8, RENDERBUFFER = 0x8D41, COLOR_ATTACHMENT0 = 0x8CE0,
                DEPTH_STENCIL_ATTACHMENT = 0x821A, DEPTH_ATTACHMENT = 0x8D00, RGBA8 = 0x8058, DEPTH24_STENCIL8 = 0x88F0,
                DEPTH_COMPONENT24 = 0x81A6, RGBA = 0x1908, UNSIGNED_BYTE = 0x1401, FRAMEBUFFER_COMPLETE = 0x8CD5,
-               PACK_ALIGNMENT = 0x0D05;
+               PACK_ALIGNMENT = 0x0D05, DRAW_FRAMEBUFFER = 0x8CA9, READ_FRAMEBUFFER_BINDING = 0x8CAA,
+               DRAW_FRAMEBUFFER_BINDING = 0x8CA6, TEXTURE_2D = 0x0DE1, COLOR_BUFFER_BIT = 0x4000, NEAREST = 0x2600,
+               SCISSOR_TEST = 0x0C11, COLOR_WRITEMASK = 0x0C23;
 struct Api {
     void (*GenFramebuffers)(int, uint*);
     void (*DeleteFramebuffers)(int, const uint*);
@@ -49,6 +52,15 @@ struct Api {
     uint (*CheckFramebufferStatus)(uint);
     void (*PixelStorei)(uint, int);
     void (*ReadPixels)(int, int, int, int, uint, uint, void*);
+    // For a frame copied by the GPU into the panel's texture; without them frames are read back.
+    void (*FramebufferTexture2D)(uint, uint, uint, uint, int);
+    void (*BlitFramebuffer)(int, int, int, int, int, int, int, int, uint, uint);
+    void (*GetIntegerv)(uint, int*);
+    void (*GetBooleanv)(uint, unsigned char*);
+    unsigned char (*IsEnabled)(uint);
+    void (*Enable)(uint);
+    void (*Disable)(uint);
+    void (*ColorMask)(unsigned char, unsigned char, unsigned char, unsigned char);
     bool load() {
         bool ok = true;
         auto get = [&](auto& fn, const char* name) {
@@ -66,8 +78,19 @@ struct Api {
         get(CheckFramebufferStatus, "glCheckFramebufferStatus");
         get(PixelStorei, "glPixelStorei");
         get(ReadPixels, "glReadPixels");
-        return ok;
+        const bool needed = ok;
+        get(FramebufferTexture2D, "glFramebufferTexture2D");
+        get(BlitFramebuffer, "glBlitFramebuffer");
+        get(GetIntegerv, "glGetIntegerv");
+        get(GetBooleanv, "glGetBooleanv");
+        get(IsEnabled, "glIsEnabled");
+        get(Enable, "glEnable");
+        get(Disable, "glDisable");
+        get(ColorMask, "glColorMask");
+        can_blit = ok;
+        return needed;
     }
+    bool can_blit = false;
 };
 } // namespace gl
 
@@ -123,6 +146,19 @@ std::string snes_title(const uint8_t* rom, size_t size) {
     return {};
 }
 
+// QuackShot's Rev A cartridge (the common 512 KiB dump) wires its two 256 KiB halves to 000000-0FFFFF (the lower,
+// repeated) and 100000-13FFFF (the upper), as its header's ROM end says; the game jumps there at boot. Genesis Plus
+// GX maps it so; PicoDrive doesn't and hangs on a black screen, so the player hands it the image as the bus sees it.
+std::vector<uint8_t> md_bus_image(const std::vector<uint8_t>& rom) {
+    if (rom.size() != 0x80000 || std::memcmp(rom.data() + 0x180, "GM 00004054-01", 14) != 0 || rom[0x18E] != 0xA4 ||
+        rom[0x18F] != 0xB3)
+        return {};
+    std::vector<uint8_t> bus(0x140000);
+    for (size_t at = 0; at < 0x100000; at += 0x40000) std::memcpy(bus.data() + at, rom.data(), 0x40000);
+    std::memcpy(bus.data() + 0x100000, rom.data() + 0x40000, 0x40000);
+    return bus;
+}
+
 } // namespace
 
 class LibretroCore final : public Core {
@@ -174,6 +210,12 @@ public:
         // 0001-export-mode7-line-data.patch) and by the libretro buildbot's macOS one.
         mode7_lines_ = reinterpret_cast<const int16_t*>(dlsym(lib_, "LineMatrixData"));
         mode7_ppu_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "PPU"));
+        // Fuse's read map (os/buildroot/package/libretro-fuse/0001-export-memory-map.patch): its memory as the Z80
+        // sees it, the 128K's banks paged in.
+        zx_pages_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "memory_map_read"));
+        zx_tape_playing_ = reinterpret_cast<int (*)()>(dlsym(lib_, "tape_is_playing"));
+        zx_tape_loading_ = reinterpret_cast<int (*)()>(dlsym(lib_, "loader_tape_loading"));
+        zx_cpu_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "z80"));
         // Optional: a core without cheats just lists none.
         retro_cheat_reset_ = reinterpret_cast<decltype(retro_cheat_reset_)>(dlsym(lib_, "retro_cheat_reset"));
         retro_cheat_set_ = reinterpret_cast<decltype(retro_cheat_set_)>(dlsym(lib_, "retro_cheat_set"));
@@ -199,6 +241,36 @@ public:
                           {"mupen64plus-ThreadedRenderer", "True"}, {"mupen64plus-aspect", "4:3"},
                           {"mupen64plus-43screensize", "320x240"}};
         }
+        if (system == "zx") {
+            // A Spectrum 48K, a 128K for the tapes that need one (SpeedLock's 128K loaders reset a 128K given a
+            // 48K-and-128K tape like Out Run's), no border (256 x 192, so profiles can name rows), tapes at the
+            // machine's own speed (run_frame hurries them) and quietly.
+            variables_ = {{"fuse_machine", "Spectrum 48K"},
+                          {"fuse_auto_machine", "enabled"},
+                          {"fuse_size_border", "none"},
+                          {"fuse_fast_load", "disabled"},
+                          {"fuse_load_sound", "disabled"},
+                          // The keys a Spectrum game's menus ask for (1 Keyboard, 2 Kempston ...; ENTER or 0 to start)
+                          // on the buttons the joystick leaves free; Select brings up Fuse's keyboard for the rest.
+                          {"fuse_joypad_x", "1"},
+                          {"fuse_joypad_y", "2"},
+                          {"fuse_joypad_l", "3"},
+                          {"fuse_joypad_r", "4"},
+                          {"fuse_joypad_start", "Enter"},
+                          {"fuse_joypad_l2", "Space"},
+                          {"fuse_joypad_r2", "0"}};
+        }
+        if (system == "c64") variables_ = {{"vice_autoloadwarp", "enabled"}}; // a disk or tape loads at full speed
+        // The PSP's own 480 x 272 on the JIT: every extra pixel is drawing and read-back the A55s and the Mali-G52 lack.
+        // Two frames queued for the GPU, so the emulation and the GL calls run side by side. A frame left undrawn when
+        // the game falls behind, so its speed and sound hold: OutRun 2006's races draw 24-42 fps at full speed on the
+        // RG DS, and only a game too heavy for 60 gives anything up.
+        if (system == "psp")
+            variables_ = {{"ppsspp_internal_resolution", "480x272"},
+                          {"ppsspp_cpu_core", "JIT"},
+                          {"ppsspp_inflight_frames", "Up to 2"},
+                          {"ppsspp_frameskip", "1"},
+                          {"ppsspp_auto_frameskip", "enabled"}};
         // RGDS_PLAY_CORE_OPTIONS="key=value;key=value": options over the player's own, for trying a core's settings.
         if (const char* extra = std::getenv("RGDS_PLAY_CORE_OPTIONS")) {
             std::string list = extra;
@@ -235,7 +307,25 @@ public:
         name_ = info.library_name ? info.library_name : "libretro";
         retro_game_info game{};
         game.path = rom_path_.c_str();
-        if (!info.need_fullpath) {
+        if (system_ == "md") {
+            std::ifstream in(rom_path_, std::ios::binary);
+            const std::vector<uint8_t> file{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+            bus_ = md_bus_image(file);
+            if (!bus_.empty() && info.need_fullpath) {
+                // The core reads the game from a file: a copy with the bus's layout, removed on close.
+                const char* tmp = std::getenv("TMPDIR");
+                bus_path_ = std::string(tmp && *tmp ? tmp : "/tmp") + "/rgds-play-" + std::to_string(getpid()) + ".md";
+                std::ofstream out(bus_path_, std::ios::binary);
+                out.write(reinterpret_cast<const char*>(bus_.data()), std::streamsize(bus_.size()));
+                out.close();
+                if (out) game.path = bus_path_.c_str();
+            } else if (!bus_.empty()) {
+                game.data = bus_.data();
+                game.size = bus_.size();
+            }
+            if (!bus_.empty()) rom_ = file; // the cartridge's own bytes name the game (identify)
+        }
+        if (!info.need_fullpath && bus_.empty()) {
             std::ifstream in(rom_path_, std::ios::binary);
             rom_.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
             if (rom_.empty()) {
@@ -255,7 +345,7 @@ public:
         retro_system_av_info av{};
         retro_get_system_av_info_(&av);
         apply_av(av);
-        retro_set_controller_port_device_(0, RETRO_DEVICE_JOYPAD);
+        retro_set_controller_port_device_(0, joypad_);
         identify();
         restore_battery(battery);
         battery_seen_ = battery_hash();
@@ -265,6 +355,25 @@ public:
     const char* system() const override { return system_.c_str(); }
     // The cartridge's CRC-32 (without a dumper's header): "CRC_3FE272FB", the same for every name a file is given.
     std::string game_code() const override { return code_; }
+    bool read_rom(uint32_t offset, uint32_t size, std::vector<uint8_t>& out) override {
+        std::ifstream in(rom_path_, std::ios::binary);
+        uint8_t head[4] = {};
+        if (!in.read(reinterpret_cast<char*>(head), 4)) return false;
+        // An N64 dump's order shows in its first word (80 37 12 40 as the cartridge has it): a whole word or
+        // halfword is read, then put right.
+        const int swap = system_ != "n64" ? 0 : head[0] == 0x40 ? 4 : head[0] == 0x37 ? 2 : 0;
+        const uint32_t start = swap ? offset & ~3u : offset, skip = offset - start;
+        std::vector<uint8_t> bytes(size_t(size) + skip + 4);
+        in.seekg(start);
+        in.read(reinterpret_cast<char*>(bytes.data()), std::streamsize(bytes.size()));
+        bytes.resize(size_t(in.gcount()));
+        if (swap)
+            for (size_t i = 0; i + size_t(swap) <= bytes.size(); i += size_t(swap))
+                std::reverse(bytes.begin() + std::ptrdiff_t(i), bytes.begin() + std::ptrdiff_t(i) + swap);
+        if (bytes.size() <= skip) return false;
+        out.assign(bytes.begin() + skip, bytes.begin() + std::min<size_t>(bytes.size(), skip + size_t(size)));
+        return true;
+    }
     // The cartridge's own name where it has one (SNES), else the file's name: LEGEND_OF_ZELDA.
     std::string header_title() const override { return title_; }
     double frame_rate() const override { return fps_ > 1.0 ? fps_ : 60.0; }
@@ -285,6 +394,7 @@ public:
                 return;
             }
             const auto run_start = profile_clock::now();
+            profile_.start(run_start);
             retro_run_();
             profile_.add(0, run_start);
             // The auto-load: mupen64plus takes a state only once its emulation has started, inside the first
@@ -301,6 +411,15 @@ public:
             g_gl->end();
         } else {
             retro_run_();
+            // A Spectrum tape runs through at the machine's own speed (Fuse's fast load breaks SpeedLock's
+            // loaders): while it loads, more of the machine's frames per frame shown, heard as silence. A game that
+            // loads its stages (Out Run) leaves the tape playing while it runs, so loading is a loader reading the
+            // tape (our Fuse's loader_tape_loading), or, in a Fuse without it, the tape playing with interrupts off.
+            if (zx_tape_loading()) {
+                const size_t heard = audio_.size();
+                for (int i = 0; i < zx_tape_frames && zx_tape_loading(); ++i) retro_run_();
+                audio_.resize(heard);
+            }
         }
         if (++frames_ % 60 == 0) {
             const uint64_t h = battery_hash();
@@ -312,6 +431,12 @@ public:
     }
     void set_sticks(int16_t lx, int16_t ly, int16_t rx, int16_t ry) override { sticks_ = {lx, ly, rx, ry}; }
     Picture picture() const override { return {frame_.data(), fw_, fh_, fw_}; }
+    void set_gl_target(unsigned texture, int w, int h) override {
+        target_ = texture;
+        target_w_ = w;
+        target_h_ = h;
+    }
+    bool drew_gl_target() const override { return drew_target_; }
 
     bool mode7(Mode7& out) const override {
         if (system_ != "snes" || !mode7_lines_ || !mode7_ppu_ || memory_size(RETRO_MEMORY_VIDEO_RAM) < 0x10000)
@@ -397,11 +522,12 @@ public:
     // Addresses as the system's CPU sees them: an NES's 0000-07FF and its cartridge RAM at 6000, a SNES's work RAM
     // at 7E0000-7FFFFF, a Master System's at C000-DFFF. Little-endian, one byte at a time, so a value may span pages.
     // An N64's are its RDRAM by physical address (profiles write 0F69A4 for 800F69A4: their top bit marks a banked
-    // address), big-endian like its CPU.
+    // address), big-endian like its CPU. A Mega Drive's are the 68000's work RAM at FF0000-FFFFFF, big-endian too.
+    // A Spectrum's are its Z80's 64 KiB, the banks paged in now; a C64's its 64 KiB of RAM (under the ROMs and I/O).
     uint32_t peek(uint32_t address, int size) override {
         if (size < 1 || size > 4) return 0;
         uint32_t value = 0;
-        if (system_ == "n64") {
+        if (system_ == "n64" || system_ == "md") {
             for (int i = 0; i < size; ++i) {
                 const uint8_t* p = byte_at(address + uint32_t(i));
                 value = (value << 8) | (p ? *p : 0);
@@ -432,7 +558,7 @@ public:
     bool set_mouse(bool on) override {
         if (!loaded_ || system_ != "snes") return false;
         mouse_ = on;
-        retro_set_controller_port_device_(0, on ? RETRO_DEVICE_MOUSE : RETRO_DEVICE_JOYPAD);
+        retro_set_controller_port_device_(0, on ? RETRO_DEVICE_MOUSE : joypad_);
         return true;
     }
     void set_mouse_cursor(int x, int y) override { cursor_x_ = x, cursor_y_ = y; }
@@ -481,6 +607,21 @@ public:
         default: return 0;
         }
     }
+    void set_key(unsigned key, bool down) override {
+        if (key >= keys_.size() || keys_[key] == down) return;
+        keys_[key] = down;
+        if (keyboard_event_) keyboard_event_(down, key, 0, 0);
+    }
+
+    int disk_count() override { return disk_.get_num_images ? int(disk_.get_num_images()) : 0; }
+    int disk_index() override { return disk_.get_image_index ? int(disk_.get_image_index()) : 0; }
+    void set_disk(int index) override {
+        if (index < 0 || index >= disk_count() || !disk_.set_eject_state || !disk_.set_image_index) return;
+        disk_.set_eject_state(true);
+        disk_.set_image_index(unsigned(index));
+        disk_.set_eject_state(false);
+    }
+
     void set_pointer(int x, int y, bool pressed) override {
         aim_x_ = x;
         aim_y_ = y;
@@ -522,11 +663,12 @@ public:
         loaded_ = inited_ = false;
         if (current) {
             if (fbo_) gl_.DeleteFramebuffers(1, &fbo_);
+            if (target_fbo_) gl_.DeleteFramebuffers(1, &target_fbo_);
             if (depth_) gl_.DeleteRenderbuffers(1, &depth_);
             if (colour_) gl_.DeleteRenderbuffers(1, &colour_);
             g_gl->end();
         }
-        fbo_ = depth_ = colour_ = 0;
+        fbo_ = depth_ = colour_ = target_fbo_ = attached_ = 0;
     }
 
 private:
@@ -540,6 +682,13 @@ private:
         lib_ = nullptr;
         mode7_lines_ = nullptr;
         mode7_ppu_ = nullptr;
+        zx_pages_ = nullptr;
+        zx_tape_playing_ = nullptr;
+        zx_tape_loading_ = nullptr;
+        zx_cpu_ = nullptr;
+        if (!bus_path_.empty()) std::remove(bus_path_.c_str());
+        bus_path_.clear();
+        bus_.clear();
     }
     template <class F> bool on_gpu(F&& call) {
         if (!loaded_) return false;
@@ -555,6 +704,12 @@ private:
     // match `start`, `disconnect` the bits that are dropped), else from its work RAM where each system keeps it.
     const uint8_t* byte_at(uint32_t address) const {
         if (!loaded_) return nullptr;
+        if (system_ == "zx") {
+            // Fuse's read map: 32 pages of 2 KiB, each entry (32 bytes) starting with the pointer to its bytes.
+            if (!zx_pages_ || address > 0xFFFF) return nullptr;
+            const uint8_t* page = *reinterpret_cast<const uint8_t* const*>(zx_pages_ + 32 * (address >> 11));
+            return page ? page + (address & 0x7FF) : nullptr;
+        }
         if (system_ == "n64") {
             // mupen64plus keeps RDRAM as the CPU's 32-bit words in the host's order: a byte is at its address ^ 3.
             const auto* ram = static_cast<const uint8_t*>(memory(RETRO_MEMORY_SYSTEM_RAM));
@@ -589,6 +744,11 @@ private:
                 offset = address & 0x1FFF; // the low 8 KiB mirrored into the system banks
         } else if (system_ == "sms" || system_ == "gg") {
             if (address >= 0xC000) offset = (address - 0xC000) & 0x1FFF;
+        } else if (system_ == "md") {
+            // PicoDrive keeps the 64 KiB (mirrored from E00000 up) as the 68000's 16-bit words in the host's
+            // order: a byte is at its address ^ 1.
+            if ((address & 0xFFFFFF) < 0xE00000) return nullptr;
+            offset = (address & 0xFFFF) ^ 1;
         }
         return offset < total ? ram + offset : nullptr;
     }
@@ -612,6 +772,9 @@ private:
             std::snprintf(crc, sizeof crc, "CRC_%08X", crc32(bytes, size));
             code_ = crc;
             if (system_ == "snes") title_ = title_code(snes_title(bytes, size));
+            // A Mega Drive cartridge's overseas name (48 bytes at 150), under "SEGA" at 100.
+            if (system_ == "md" && size >= 0x180 && std::memcmp(bytes + 0x100, "SEGA", 4) == 0)
+                title_ = title_code(std::string(reinterpret_cast<const char*>(bytes + 0x150), 48));
         }
         if (title_.empty()) {
             auto slash = rom_path_.rfind('/');
@@ -663,6 +826,39 @@ private:
         std::fprintf(stderr, "play: GPU core framebuffer %d x %d\n", w, h);
         if (hw_.context_reset) hw_.context_reset();
         return true;
+    }
+    // The frame the core just drew, into the panel's texture by the GPU, the right way up: no wait for the drawing to
+    // finish and no copy through uncached memory (OutRun 2006's races lost 17-20 ms a frame to glReadPixels).
+    // The blit obeys the scissor and the colour mask, which are the core's: put back after.
+    bool blit_to_target(unsigned w, unsigned h) {
+        if (!target_ || !gl_.can_blit || int(w) != target_w_ || int(h) != target_h_) return false;
+        int read = 0, draw = 0;
+        gl_.GetIntegerv(gl::READ_FRAMEBUFFER_BINDING, &read);
+        gl_.GetIntegerv(gl::DRAW_FRAMEBUFFER_BINDING, &draw);
+        if (!target_fbo_) gl_.GenFramebuffers(1, &target_fbo_);
+        gl_.BindFramebuffer(gl::DRAW_FRAMEBUFFER, target_fbo_);
+        if (attached_ != target_) {
+            gl_.FramebufferTexture2D(gl::DRAW_FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, target_, 0);
+            attached_ = gl_.CheckFramebufferStatus(gl::DRAW_FRAMEBUFFER) == gl::FRAMEBUFFER_COMPLETE ? target_ : 0;
+            std::fprintf(stderr, "play: frames %s the panel's texture\n", attached_ ? "drawn into" : "cannot go into");
+        }
+        const bool ok = attached_ != 0;
+        if (ok) {
+            gl_.BindFramebuffer(gl::READ_FRAMEBUFFER, fbo_);
+            const unsigned char scissor = gl_.IsEnabled(gl::SCISSOR_TEST);
+            unsigned char mask[4] = {1, 1, 1, 1};
+            gl_.GetBooleanv(gl::COLOR_WRITEMASK, mask);
+            if (scissor) gl_.Disable(gl::SCISSOR_TEST);
+            gl_.ColorMask(1, 1, 1, 1);
+            const int sw = int(w), sh = int(h), flip = hw_.bottom_left_origin;
+            gl_.BlitFramebuffer(0, 0, sw, sh, 0, flip ? sh : 0, sw, flip ? 0 : sh, gl::COLOR_BUFFER_BIT, gl::NEAREST);
+            gl_.ColorMask(mask[0], mask[1], mask[2], mask[3]);
+            if (scissor) gl_.Enable(gl::SCISSOR_TEST);
+            resize(sw, sh);
+        }
+        gl_.BindFramebuffer(gl::READ_FRAMEBUFFER, gl::uint(read));
+        gl_.BindFramebuffer(gl::DRAW_FRAMEBUFFER, gl::uint(draw));
+        return ok;
     }
     // The frame the core just drew, into frame_: rows bottom-up in GL, bytes R, G, B, A as Picture wants them.
     void read_back(unsigned w, unsigned h) {
@@ -727,6 +923,8 @@ private:
             return g_active->lightgun(id);
         if (g_active && port == 0 && g_active->mouse_ && (device & 0xFF) == RETRO_DEVICE_MOUSE)
             return g_active->mouse(id);
+        // Whichever port the core keeps its keyboard on (Fuse: the third).
+        if ((device & 0xFF) == RETRO_DEVICE_KEYBOARD) return g_active && id < g_active->keys_.size() && g_active->keys_[id];
         if (!g_active || port != 0) return 0;
         if ((device & 0xFF) == RETRO_DEVICE_ANALOG) {
             const auto& s = g_active->sticks_;
@@ -839,8 +1037,24 @@ private:
             option_defaults(static_cast<const retro_core_options_v2_intl*>(data)->us->definitions);
             return true;
         case RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY:
-        case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
-        case RETRO_ENVIRONMENT_SET_CONTROLLER_INFO: return true;
+        case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS: return true;
+        case RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE:
+            disk_ = *static_cast<const retro_disk_control_callback*>(data);
+            return true;
+        case RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK:
+            keyboard_event_ = static_cast<const retro_keyboard_callback*>(data)->callback;
+            return true;
+        case RETRO_ENVIRONMENT_SET_CONTROLLER_INFO: {
+            // The pad as the system's own joystick where the core offers several: a Spectrum's Kempston, the
+            // interface most of its games read (Fuse's first port is otherwise the cursor keys).
+            const auto* port = static_cast<const retro_controller_info*>(data);
+            const char* wanted = system_ == "zx" ? "Kempston Joystick" : nullptr;
+            if (wanted && port && port->types)
+                for (unsigned i = 0; i < port->num_types; ++i)
+                    if (port->types[i].desc && std::strcmp(port->types[i].desc, wanted) == 0)
+                        joypad_ = port->types[i].id;
+            return true;
+        }
         case RETRO_ENVIRONMENT_SET_MEMORY_MAPS: {
             // Where each part of the system's memory is, so peek() reads the addresses profiles write.
             const auto* map = static_cast<const retro_memory_map*>(data);
@@ -904,7 +1118,12 @@ private:
 
     void video(const void* data, unsigned w, unsigned h, size_t pitch) {
         if (!data) return; // a duplicated frame: the last picture stands
-        if (data == RETRO_HW_FRAME_BUFFER_VALID) return read_back(w, h);
+        if (data == RETRO_HW_FRAME_BUFFER_VALID) {
+            drew_target_ = blit_to_target(w, h);
+            if (!drew_target_) read_back(w, h);
+            return;
+        }
+        drew_target_ = false;
         resize(static_cast<int>(w), static_cast<int>(h));
         const auto* src = static_cast<const uint8_t*>(data);
         for (unsigned y = 0; y < h; ++y) {
@@ -959,12 +1178,25 @@ private:
     void (*retro_cheat_reset_)() = nullptr;
     void (*retro_cheat_set_)(unsigned, bool, const char*) = nullptr;
 
-    std::string system_, name_, rom_path_, system_dir_, save_dir_;
-    std::vector<uint8_t> rom_;
-    std::string code_, title_; // identify()
+    std::string system_, name_, rom_path_, system_dir_, save_dir_, bus_path_;
+    std::vector<uint8_t> rom_, bus_; // bus_: an image laid out as the cartridge's bus (md_bus_image)
+    std::string code_, title_;       // identify()
     std::vector<retro_memory_descriptor> maps_;
     const int16_t* mode7_lines_ = nullptr;
     const uint8_t* mode7_ppu_ = nullptr;
+    const uint8_t* zx_pages_ = nullptr;  // Fuse's memory_map_read
+    int (*zx_tape_playing_)() = nullptr; // Fuse's tape_is_playing
+    int (*zx_tape_loading_)() = nullptr; // our Fuse's loader_tape_loading (libretro-fuse 0002)
+    const uint8_t* zx_cpu_ = nullptr;    // Fuse's z80 (processor in fuse/z80/z80.h), iff1 at byte 36
+    bool zx_tape_loading() const {
+        if (zx_tape_loading_) return zx_tape_loading_();
+        return zx_tape_playing_ && zx_tape_playing_() && (!zx_cpu_ || !zx_cpu_[36]);
+    }
+    static constexpr int zx_tape_frames = 16;
+    unsigned joypad_ = RETRO_DEVICE_JOYPAD; // the first port's device (SET_CONTROLLER_INFO)
+    std::array<bool, RETROK_LAST> keys_{};
+    retro_disk_control_callback disk_{};
+    retro_keyboard_event_t keyboard_event_ = nullptr; // VICE hears its keys, Fuse reads them
     bool lightgun_ = false, aim_down_ = false, trigger_now_ = false;
     int aim_x_ = -1, aim_y_ = -1, trigger_frames_ = 0;
     bool mouse_ = false, mouse_left_ = false, mouse_right_ = false, settled_ = false;
@@ -988,15 +1220,29 @@ private:
     bool hw_refused_ = false, gpu_failed_ = false;
     gl::Api gl_{};
     gl::uint fbo_ = 0, colour_ = 0, depth_ = 0;
+    gl::uint target_ = 0, target_fbo_ = 0, attached_ = 0; // the panel's texture (set_gl_target) and its framebuffer
+    int target_w_ = 0, target_h_ = 0;
+    bool drew_target_ = false;
     std::vector<uint32_t> readback_;
     std::vector<uint8_t> pending_state_;
-    // RGDS_PLAY_PROFILE=1: every 300 frames, the core's frame (retro_run, the read-back included) and the read-back
-    // alone, average and worst in ms, for measuring a GPU core's speed on the device.
+    // RGDS_PLAY_PROFILE=1: every 300 frames, the core's frame (retro_run, the read-back included), the read-back alone
+    // and the time from one frame's start to the next, average and worst in ms, for measuring a GPU core's speed on the
+    // device.
     using profile_clock = std::chrono::steady_clock;
     struct Profile {
         bool on = std::getenv("RGDS_PLAY_PROFILE") != nullptr;
-        double sum[2]{}, worst[2]{};
-        unsigned count[2]{}, over = 0;
+        double sum[3]{}, worst[3]{};
+        unsigned count[3]{}, over = 0;
+        profile_clock::time_point started{};
+        void start(profile_clock::time_point now) {
+            if (on && started != profile_clock::time_point{}) {
+                const double ms = std::chrono::duration<double, std::milli>(now - started).count();
+                sum[2] += ms;
+                worst[2] = std::max(worst[2], ms);
+                ++count[2];
+            }
+            started = now;
+        }
         void add(int i, profile_clock::time_point start) {
             if (!on) return;
             const double ms = std::chrono::duration<double, std::milli>(profile_clock::now() - start).count();
@@ -1005,9 +1251,14 @@ private:
             ++count[i];
             if (i == 0 && ms > 16.7) ++over;
             if (i == 0 && count[0] == 300) {
-                std::fprintf(stderr, "play: profile run %.2f avg %.2f worst (%u over 16.7) read %.2f avg %.2f worst\n",
-                             sum[0] / count[0], worst[0], over, count[1] ? sum[1] / count[1] : 0.0, worst[1]);
+                std::fprintf(stderr,
+                             "play: profile run %.2f avg %.2f worst (%u over 16.7) read %.2f avg %.2f worst, "
+                             "frame %.2f avg %.2f worst\n",
+                             sum[0] / count[0], worst[0], over, count[1] ? sum[1] / count[1] : 0.0, worst[1],
+                             count[2] ? sum[2] / count[2] : 0.0, worst[2]);
+                const auto kept = started;
                 *this = Profile{};
+                started = kept;
             }
         }
     } profile_;

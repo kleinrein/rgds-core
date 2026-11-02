@@ -248,7 +248,14 @@ inline const std::map<char, std::array<unsigned char, 7>>& pixel_glyphs() {
                                                                         {'&', {12, 18, 20, 8, 21, 18, 13}},
                                                                         {'\'', {4, 4, 8, 0, 0, 0, 0}},
                                                                         {char(0xb7), {0, 0, 0, 6, 6, 0, 0}},
-                                                                        {',', {0, 0, 0, 0, 0, 4, 8}}};
+                                                                        {',', {0, 0, 0, 0, 0, 4, 8}},
+                                                                        {'@', {14, 17, 23, 21, 23, 16, 14}},
+                                                                        {'#', {10, 10, 31, 10, 31, 10, 10}},
+                                                                        {'$', {4, 15, 20, 14, 5, 30, 4}},
+                                                                        {'*', {0, 4, 21, 14, 21, 4, 0}},
+                                                                        {';', {0, 6, 6, 0, 6, 2, 4}},
+                                                                        {'"', {10, 10, 0, 0, 0, 0, 0}},
+                                                                        {char(0xa3), {6, 9, 8, 30, 8, 8, 31}}};
     return glyphs;
 }
 
@@ -431,7 +438,7 @@ void pixel_text_dots(const std::string& value, int x, int y, int size, int max_c
         else if (c == 0x2019) c = '\'';
         else if (c == 0x2026) c = '.';
         else if (c == 0x2013 || c == 0x2014) c = '-';
-        else if (c == '"' || c == 0xab || c == 0xbb || (c >= 0x201c && c <= 0x201e)) c = '\'';
+        else if (c == 0xab || c == 0xbb || (c >= 0x201c && c <= 0x201e)) c = '\'';
         const auto* bitmap = cyrillic_pixel_bitmap(c);
         if (!bitmap) {
             char ch = c >= 'a' && c <= 'z' ? static_cast<char>(c - 'a' + 'A') : static_cast<char>(c);

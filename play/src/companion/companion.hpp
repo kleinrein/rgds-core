@@ -51,8 +51,9 @@ public:
     void set_time(uint64_t ms) { dock_.set_time(ms); }
     // The game picture as the top panel shows it: with the HUD split, the
     // profile's boxes (item box, place) are put back where the player looks;
-    // a Game Boy HUD band is cut off unless `whole` (a screen filter is on,
-    // which shades only the full-size picture).
+    // a Game Boy HUD band is cut off unless `whole` (a screen filter is on
+    // and the bridge shades only the full-size picture: one without
+    // rgds_play_screen).
     Picture compose_game(const Picture& game, bool whole = false);
     CompanionStatus status() const;
     // The HUD's `on` probes as they read now, for the log when it changes.
@@ -124,7 +125,7 @@ private:
     bool has_current_ = false, has_previous_ = false;
     uint64_t frame_ = 0, due_ = 30, next_periodic_ = 0, shown_at_ = 0;
     uint64_t room_key_ = 0;
-    bool in_fade_ = false, menu_ = false, ever_shown_ = false;
+    bool in_fade_ = false, menu_ = false;
     int requests_ = 0;
     // HUD split
     const Core* live_ = nullptr;

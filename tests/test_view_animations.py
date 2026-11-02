@@ -59,6 +59,7 @@ int main(int argc,char**argv){
  assert(m.pose(580).sx==1 && m.pose(580).x==0);
  m.start(800);auto forward=m.pose(800);m.start(820,rgds::ViewTravel::Back);auto back=m.pose(820);assert(back.x<0 && forward.x>0 && back.sx>1 && forward.sx<1);
  m.stop();assert(m.unproject(180,220,621)==std::make_pair(180,220));
+ assert(m.fade(621)==1);m.start(1000);assert(m.fade(990)==0 && m.fade(1000)==0 && m.fade(1190)==.5 && m.fade(1380)==1);m.stop();
  m.start(UINT32_MAX-100);assert(m.update(30) && m.running);m.update(600);assert(!m.running);
  rgds::MotionRect first{24,96,566,66},last{24,342,566,66};
  m.interact(1000,60,120);assert(m.energy==1);m.interact(1060,60,120);assert(m.energy>1 && m.energy<=1.05);
@@ -348,6 +349,64 @@ class ViewAnimationUITests(unittest.TestCase):
         report = self.run_ui('100 key A\n')
         self.assertEqual(report['view_animation_frames'], 0)
         self.assert_settled(report)
+
+    def test_upper_screen_only_crossfades_and_never_steps_back(self):
+        for style in ('spring', 'push', 'zoom'):
+            with self.subTest(style=style):
+                self.enable(style=style)
+                (self.root / 'ui.ini').write_text(
+                    (self.root / 'ui.ini').read_text() + 'home_layout=carousel\nbackground=plain\n'
+                )
+                report = self.run_ui('300 key A\n1200 key Escape\n', ('--home',), seconds=3)
+                self.assertEqual(report['view_transitions'], 2, style)
+                self.assertGreater(report['top_animation_frames'], 6, style)
+                self.assertEqual(report['top_fade_reversals'], 0, style)
+                self.assert_settled(report)
+        self.enable(enabled=False)
+        report = self.run_ui('300 key A\n1200 key Escape\n', ('--home',), seconds=3)
+        self.assertEqual(report['top_animation_frames'], 0)
+
+    def test_settings_flick_coasts_past_the_finger_and_settles(self):
+        self.enable()
+        report = self.run_ui(
+            '100 tap 300 300\n116 drag 300 282\n132 drag 300 256\n148 drag 300 222\n164 drag 300 182\n180 drag 300 140\n196 release\n',
+            seconds=2
+        )
+        self.assertGreater(report['kinetic_frames'], 5)
+        self.assertGreater(report['list_scroll'], 160)  # further than the finger's 160 px
+        self.assertFalse(report['kinetics_active'])
+        self.assertEqual(report['page'], 1)  # a swipe, not a tap on a row
+
+    def test_filter_sheet_rises_and_slides_away(self):
+        self.enable()
+        report = self.run_ui('300 key Y\n1200 key Escape\n', ('--library',), seconds=3)
+        self.assertGreater(report['sheet_frames'], 6)
+        self.assert_settled(report)
+
+    def test_home_gesture_drags_the_page_away(self):
+        self.enable()
+        (self.root / 'ui.ini').write_text(
+            (self.root / 'ui.ini').read_text() + 'gestures=1\nhome_layout=carousel\nbackground=plain\n'
+        )
+        swipe = ''.join('%d drag 320 %d\n' % (700 + i * 16, 474 - i * 30) for i in range(1, 7))
+        report = self.run_ui('100 key A\n700 tap 320 474\n' + swipe + '820 release\n', ('--home',), seconds=3)
+        self.assertTrue(report['home_menu'])
+        self.assertGreater(report['gesture_frames'], 3)
+        self.assertFalse(report['kinetics_active'])
+        self.assert_settled(report)
+
+    def test_back_returns_to_the_tile_the_library_was_entered_from(self):
+        # Recents, then All games through the Filter sheet, then Back: Home lands on Recents again.
+        (self.root / 'state').write_text('1 0 0 ""\nhome 3\n')
+        (self.root / 'ui.ini').write_text('schema=1\nhome_layout=carousel\nbackground=plain\n')
+        report = self.run_ui(
+            '200 key A\n600 key Y\n900 key Left\n1000 key Left\n1100 key A\n1400 key Escape\n1800 key Escape\n',
+            ('--home',),
+            seconds=3
+        )
+        self.assertTrue(report['home_menu'])
+        self.assertEqual(report['home_origin'], 3)
+        self.assertIn('home 3', (self.root / 'state').read_text())
 
 
 if __name__ == '__main__': unittest.main()

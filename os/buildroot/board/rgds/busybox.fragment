@@ -1,5 +1,7 @@
 # what RG DS OS's scripts use beyond Buildroot's busybox configuration
 CONFIG_NTPD=y
+# the address for the computer on the USB cable (usr/libexec/rgds/usb)
+CONFIG_UDHCPD=y
 CONFIG_SYSCTL=y
 CONFIG_PGREP=y
 CONFIG_PKILL=y

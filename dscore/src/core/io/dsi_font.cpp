@@ -7,15 +7,25 @@
 #include <cstring>
 
 // The directory comes from CMake (DSPERATE_DSI_FONT_DIR), absolute.
+#if defined(__APPLE__)
+// Mach-O (the macOS host build of the headless frontend): C symbols carry a leading underscore, read-only data
+// lives in __TEXT,__const, and there is no .previous.
+#define DSPERATE_FONT_PREFIX "_"
+#define DSPERATE_FONT_SECTION "\t.section __TEXT,__const\n"
+#define DSPERATE_FONT_SECTION_END ""
+#else
+#define DSPERATE_FONT_PREFIX ""
+#define DSPERATE_FONT_SECTION "\t.section .rodata.dsperate_dsi_font,\"a\",%progbits\n"
+#define DSPERATE_FONT_SECTION_END "\t.previous\n"
+#endif
 #define DSPERATE_FONT_BLOB(sym, file)                                                                                  \
   "\t.balign 4\n"                                                                                                      \
-  "\t.globl " sym "_begin\n" sym "_begin:\n"                                                                           \
+  "\t.globl " DSPERATE_FONT_PREFIX sym "_begin\n" DSPERATE_FONT_PREFIX sym "_begin:\n"                                 \
   "\t.incbin \"" DSPERATE_DSI_FONT_DIR "/" file "\"\n"                                                                 \
-  "\t.globl " sym "_end\n" sym "_end:\n"
-__asm__("\t.section .rodata.dsperate_dsi_font,\"a\",%progbits\n" DSPERATE_FONT_BLOB("dsperate_dsi_font",
-                                                                                    "TWLFontTable.dat")
+  "\t.globl " DSPERATE_FONT_PREFIX sym "_end\n" DSPERATE_FONT_PREFIX sym "_end:\n"
+__asm__(DSPERATE_FONT_SECTION DSPERATE_FONT_BLOB("dsperate_dsi_font", "TWLFontTable.dat")
             DSPERATE_FONT_BLOB("dsperate_dsi_font_cn", "TWLFontTable-cn.dat")
-                DSPERATE_FONT_BLOB("dsperate_dsi_font_kr", "TWLFontTable-kr.dat") "\t.previous\n");
+                DSPERATE_FONT_BLOB("dsperate_dsi_font_kr", "TWLFontTable-kr.dat") DSPERATE_FONT_SECTION_END);
 extern "C" const ds::u8 dsperate_dsi_font_begin[], dsperate_dsi_font_end[];
 extern "C" const ds::u8 dsperate_dsi_font_cn_begin[], dsperate_dsi_font_cn_end[];
 extern "C" const ds::u8 dsperate_dsi_font_kr_begin[], dsperate_dsi_font_kr_end[];

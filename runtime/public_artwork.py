@@ -25,7 +25,11 @@ CATALOGS = {
     "md": "Sega - Mega Drive - Genesis",
     "sms": "Sega - Master System - Mark III",
     "gg": "Sega - Game Gear",
-    "psx": "Sony - PlayStation"
+    "psx": "Sony - PlayStation",
+    "zx": "Sinclair - ZX Spectrum",
+    "c64": "Commodore - 64",
+    "3ds": "Nintendo - Nintendo 3DS",
+    "psp": "Sony - PlayStation Portable"
 }
 
 
@@ -60,7 +64,8 @@ def serial_index(raw):
     result = {}
     for block in re.findall(r'^game \(\s*$(.*?)^\)', raw, re.M | re.S):
         name = re.search(r'^\s*name "([^"\n]+)"', block, re.M)
-        code = re.search(r'^\s*serial "([A-Z0-9]{4})"', block, re.M)
+        # 3DS lists give the whole product code: CTR-P-AMKP
+        code = re.search(r'^\s*serial "(?:CTR-[A-Z]-)?([A-Z0-9]{4})"', block, re.M)
         if name and code:
             result.setdefault(code[1], []).append(name[1])
     if not result: raise ScraperError("The artwork title catalog was unreadable.")
@@ -98,8 +103,18 @@ def rom_details(path):
     return name, code if re.fullmatch(r"[A-Z0-9]{4}", code) and code not in ("####", "0000") else ""
 
 
+def ctr_code(header):
+    """A 3DS game's code from its product code, CTR-P-AMKP: in the first partition of a card image, or a lone CXI."""
+    for base in (0x4000, 0):
+        if header[base + 0x100:base + 0x104] == b"NCCH":
+            serial = header[base + 0x150:base + 0x160].split(b"\0")[0].decode("ascii", errors="replace")
+            found = re.fullmatch(r"CTR-[A-Z]-([A-Z0-9]{4})", serial)
+            return found[1] if found else ""
+    return ""
+
+
 def rom_identity(path):
-    """(system, name, game code). Other systems' codes: the GBA header's at 0xAC; GB has none."""
+    """(system, name, game code). Other systems' codes: the GBA header's at 0xAC, the 3DS's product code; GB has none."""
     from play_options import SYSTEMS, system_of
     system = system_of(path)
     if system == "nds":
@@ -117,8 +132,9 @@ def rom_identity(path):
             name = Path(entries[0].filename).stem
     else:
         with path.open("rb") as stream:
-            header = stream.read(0xB0)
+            header = stream.read(0x4200 if system == "3ds" else 0xB0)
         name = path.stem
+    if system == "3ds": return system, name, ctr_code(header)
     code = header[0xAC:0xB0].decode("ascii", errors="replace") if system == "gba" else ""
     return system, name, code if re.fullmatch(r"[A-Z0-9]{4}", code) else ""
 
@@ -253,6 +269,36 @@ class PublicClient:
                 pass
         raise NotFound("No matching GameTDB cover found.")
 
+    def gametdb_3ds(self, code):
+        """GameTDB's 3DS cover for an exact game code: the flat front, 400 px wide."""
+        if not code: raise NotFound("This ROM has no retail game code.")
+        region = {
+            "E": "US",
+            "J": "JA",
+            "D": "DE",
+            "F": "FR",
+            "I": "IT",
+            "S": "ES",
+            "K": "KO",
+            "H": "NL",
+            "Z": "ZH"
+        }.get(code[-1], "EN")
+        for language in dict.fromkeys((region, "EN", "US", "JA")):
+            for kind, extension in (("coverM", "jpg"), ("box", "png")):
+                url = "https://art.gametdb.com/3ds/%s/%s/%s.%s" % (kind, language, code, extension)
+                try:
+                    raw = self.fetch(url)
+                except NotFound:
+                    continue
+                meta = {"provider": "GameTDB", "provider_id": code, "artwork_url": url, "artwork_match": "game_code"}
+                try:
+                    names = self.names_for_code(code, "3ds")
+                except ScraperError:
+                    names = []  # the picture is what was asked for
+                if names: meta["artwork_title"] = display_title(names[0])
+                return raw, meta
+        raise NotFound("No matching GameTDB cover found.")
+
     def libretro(self, name, code, system="nds"):
         base = LIBRETRO if system == "nds" else libretro_base(system)
         exact = re.sub(r'[&*/:`<>?\\|]', '_', name)
@@ -318,6 +364,12 @@ class PublicClient:
         system, name, code = rom_identity(rom)
         if system != "nds":
             if system not in CATALOGS: raise NotFound("There is no public cover catalog for this system.")
+            if system == "3ds" and code and not name_override.strip():
+                # File names say little here (mk7.cci); the game code is exact.
+                try:
+                    return self.gametdb_3ds(code)
+                except NotFound:
+                    pass
             # Other systems: Libretro's catalogue for that system (GameTDB has DS covers only).
             return self.libretro(name_override.strip() or name, "" if name_override.strip() else code, system)
         name, code = rom_details(rom)

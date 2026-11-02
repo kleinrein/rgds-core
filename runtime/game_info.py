@@ -25,6 +25,7 @@ from scraper import ScraperError, NotFound, image_to_bmp
 
 VERSION = 1
 GAMETDB = "https://www.gametdb.com/dstdb.zip"
+GAMETDB_3DS = "https://www.gametdb.com/3dstdb.zip"
 METADATA = "https://raw.githubusercontent.com/libretro/libretro-database/master/metadat/"
 # Libretro metadata lists (keyed by ROM CRC32): directory -> the key inside a game block.
 LISTS = {
@@ -181,6 +182,7 @@ class GameInfo:
     def __init__(self, client, kinds):
         self.client, self.kinds = client, tuple(kinds)
         self.records = {}  # GameTDB: game code -> record
+        self.records_3ds = {}  # the same from its 3DS database: a code can mean another game there
         self.records_error = ""
         self.lists = {}  # system -> {directory: {crc: (name, value)}}
         self.names = {}  # system -> {crc: No-Intro name}
@@ -198,33 +200,35 @@ class GameInfo:
         return False
 
     def prepare(self, roms, data_item, force=False):
-        """Download GameTDB once if some DS game still needs information. `data_item(rom)` is its library folder."""
+        """Download GameTDB once if some DS or 3DS game still needs information. `data_item(rom)` is its library folder."""
         if "info" not in self.kinds: return
         from play_options import system_of
-        wanted = set()
+        wanted, wanted_3ds = set(), set()
         for rom in roms:
-            if system_of(rom) != "nds" or not self.needs(data_item(rom), "info", force): continue
+            system = system_of(rom)
+            if system not in ("nds", "3ds") or not self.needs(data_item(rom), "info", force): continue
             try:
-                code = art.rom_details(rom)[1]
+                code = art.rom_details(rom)[1] if system == "nds" else art.rom_identity(rom)[2]
             except (NotFound, OSError, ValueError, zipfile.BadZipFile):
                 continue
-            if code: wanted.add(code)
-        if not wanted: return
+            if code: (wanted if system == "nds" else wanted_3ds).add(code)
         try:
-            self.records = gametdb_records(self.gametdb_file(), wanted)
+            if wanted: self.records = gametdb_records(self.gametdb_file(), wanted)
+            if wanted_3ds:
+                self.records_3ds = gametdb_records(self.gametdb_file("gametdb-3ds.zip", GAMETDB_3DS), wanted_3ds)
         except ScraperError as error:
             self.records_error = str(error)
 
-    def gametdb_file(self):
+    def gametdb_file(self, name="gametdb-ds.zip", url=GAMETDB):
         cache = self.client.cache
-        path = cache / "gametdb-ds.zip" if cache else None
+        path = cache / name if cache else None
         if path:
             try:
                 if time.time() - path.stat().st_mtime < 7 * 86400: return path
             except OSError:
                 pass
         try:
-            raw = self.client.fetch(GAMETDB, limit=MAX_ZIP)
+            raw = self.client.fetch(url, limit=MAX_ZIP)
             if raw[:2] != b"PK": raise ScraperError("The game information database was unreadable.")
         except ScraperError:
             if path and path.exists(): return path  # an older copy beats none
@@ -263,9 +267,9 @@ class GameInfo:
     # --- information ----------------------------------------------------------------------------------------------
     def information(self, rom, system, code):
         """({info.ini fields}, {language: synopsis}, provider) for one game."""
-        if system == "nds":
+        if system in ("nds", "3ds"):
             if self.records_error: raise ScraperError(self.records_error)
-            record = self.records.get(code)
+            record = (self.records if system == "nds" else self.records_3ds).get(code)
             if not record: raise NotFound("No entry in the game information database.")
             language = {
                 "E": "EN",
@@ -352,14 +356,15 @@ class GameInfo:
         override = read_fields(item / "artwork.ini").get("match_title", "").strip()
         candidates = [override] if override else []
         if info.get("provider") == "Libretro" and info.get("provider_id"): candidates.append(info["provider_id"])
-        if system != "nds":
+        if system not in ("nds", "3ds"):
             # The ROM's CRC names it exactly in No-Intro, which is how Libretro names its pictures.
+            # (Not on a 3DS card image, gigabytes: its game code does that below.)
             try:
                 candidates.append(self.crc_names(system).get(rom_crc(rom), ""))
             except (NotFound, OSError, zipfile.BadZipFile):
                 pass
         candidates.append(name)
-        if code and system in ("nds", "gba"): candidates.extend(self.client.names_for_code(code, system))
+        if code and system in ("nds", "gba", "3ds"): candidates.extend(self.client.names_for_code(code, system))
         selected = pick_name(index, [c for c in candidates if c], code)
         if not selected: raise NotFound("No matching picture in the public catalog.")
         raw = self.client.fetch(base + art.urllib.parse.quote(selected, safe="") + ".png")

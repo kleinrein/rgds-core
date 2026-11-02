@@ -111,8 +111,9 @@ void App::port_companion(SDL_Renderer* r, int y) {
 // The info screen's places (640 x 480), as RG DS Play lays them out (Dock::box).
 SDL_Rect App::port_box(PortItem item) {
     switch (item) {
-    case PortItem::Switcher: return {24, 140, 290, 112};
-    case PortItem::Home: return {326, 140, 290, 112};
+    case PortItem::GameMenu: return {24, 140, 189, 112};
+    case PortItem::Switcher: return {225, 140, 189, 112};
+    case PortItem::Home: return {427, 140, 189, 112};
     case PortItem::Bright: return {24, 264, 592, 88};
     case PortItem::Touch: return {24, 364, 290, 72};
     case PortItem::Off: return {326, 364, 290, 72};
@@ -129,7 +130,8 @@ int App::port_shown_brightness(Uint32 now) const {
     return int(std::lround(chosen + (rest - chosen) * t));
 }
 
-// The runner's triggers beside the control file: ".menu" opens the game switcher, ".home" returns home.
+// The runner's triggers beside the control file: ".game-menu" opens the game menu, ".menu" the game switcher,
+// ".home" returns home.
 void App::port_trigger(const char* name) {
     std::ofstream(o.data / ("session/emulator.control" + std::string(name))) << s.GetTicks() << '\n';
 }
@@ -201,7 +203,7 @@ void App::port_touch(const TouchPoint& point, Uint32 now) {
     }
     if (point.kind == 0) {
         if (faded) return; // the first touch on a dimmed screen only wakes it
-        for (PortItem item : {PortItem::Switcher, PortItem::Home, PortItem::Touch, PortItem::Off})
+        for (PortItem item : {PortItem::GameMenu, PortItem::Switcher, PortItem::Home, PortItem::Touch, PortItem::Off})
             if (inside(item)) {
                 port_held = item;
                 port_held_at = now;
@@ -223,7 +225,8 @@ void App::port_touch(const TouchPoint& point, Uint32 now) {
     }
     if (port_held != PortItem::None && point.kind == 1 && !inside(port_held)) port_held = PortItem::None; // slid off
     if (point.kind == 2) {
-        if (port_held == PortItem::Switcher && inside(PortItem::Switcher)) port_trigger(".menu");
+        if (port_held == PortItem::GameMenu && inside(PortItem::GameMenu)) port_trigger(".game-menu");
+        else if (port_held == PortItem::Switcher && inside(PortItem::Switcher)) port_trigger(".menu");
         else if (port_held == PortItem::Home && !port_fired) {
             port_note = "Hold to return home"; // a tap is not enough
             port_note_at = now;
@@ -446,11 +449,11 @@ void App::port_info(SDL_Renderer* r, int y) {
         round_rect(r, cx - 22, cy - 22, 44, 44, 12, lit ? "accent" : "slot");
         ui_icon(r, symbol, cx, cy, 25, lit ? "on_accent" : "accent");
     };
-    // The game switcher opens on a tap; Return home is held, and the hold fills a ring round its badge.
+    // The game menu and the game switcher open on a tap; Return home is held, and the hold fills a ring round its badge.
     auto button = [&](PortItem item, SettingsIcon symbol, const std::string& name) {
         const SDL_Rect b = port_box(item);
         const bool held = port_held == item && !port_fired;
-        const int top = y + b.y + (held ? 2 : 0), cx = b.x + 38, cy = top + b.h / 2;
+        const int top = y + b.y + (held ? 2 : 0), cx = b.x + b.w / 2, cy = top + 42;
         settings_card(r, b.x, top, b.w, b.h, held);
         badge(cx, cy, symbol, held);
         if (held && item == PortItem::Home) {
@@ -464,11 +467,12 @@ void App::port_info(SDL_Renderer* r, int y) {
                         cx + int(std::lround(std::cos(e) * radius)), cy + int(std::lround(std::sin(e) * radius)));
             }
         }
-        const int lx = b.x + 76, lw = b.x + b.w - 12 - lx;
-        label(r, name, lx, centred_label_y(locale.text(name), 24, cy), 24, "ink", lw);
+        const int lw = std::min(label_width(locale.text(name), 24, false), b.w - 12);
+        label(r, name, cx - lw / 2, centred_label_y(locale.text(name), 24, top + 88), 24, "ink", b.w - 12);
     };
-    button(PortItem::Switcher, SettingsIcon::Library, "Game switcher");
-    button(PortItem::Home, SettingsIcon::Home, "Return home");
+    button(PortItem::GameMenu, SettingsIcon::Controller, "Menu");
+    button(PortItem::Switcher, SettingsIcon::Library, "Switch");
+    button(PortItem::Home, SettingsIcon::Home, "Home");
     // Brightness: a slider, dragged.
     const SDL_Rect br = port_box(PortItem::Bright);
     settings_card(r, br.x, y + br.y, br.w, br.h, port_dragging);
@@ -493,7 +497,7 @@ void App::port_info(SDL_Renderer* r, int y) {
         label(r, name, lx, centred_label_y(locale.text(name), 20, cy), 20, "ink", lw);
     };
     half(PortItem::Touch, SettingsIcon::Touch, "Touch screen");
-    half(PortItem::Off, SettingsIcon::Sleep, "Screen off");
+    half(PortItem::Off, SettingsIcon::Sleep, "Turn off screen");
     // A note near the bottom, over everything: the volume as it changes, or what a tap did.
     std::string note;
     if (port_volume_at) note = locale.text("Volume") + " " + std::to_string(std::clamp(port_volume, 0, 100)) + "%";

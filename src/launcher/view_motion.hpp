@@ -110,6 +110,12 @@ struct ViewMotion {
                (1 - t * t * t * t);
     }
     static constexpr uint32_t push_duration = 380;
+    // How far the upper screen's crossfade has come: 0 until the transition starts, 1 once it has run out.
+    double fade(uint32_t now) const {
+        if (!running) return 1;
+        const int32_t elapsed = int32_t(now - started);
+        return ease(std::max(0, elapsed) / std::max(1.0, double(span(push_duration))));
+    }
     // Smootherstep: zero velocity and acceleration at both ends, so a slide
     // eases off the mark instead of jumping to full speed on the first frame.
     static double ease(double t) {

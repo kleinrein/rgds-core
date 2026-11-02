@@ -6,6 +6,7 @@ press, when the next frame was presented, and when the frame after that (the one
 All times are CLOCK_MONOTONIC. The panel's own scan-out (up to one refresh after a page flip) comes on top.
 
   game_latency.py TRACE DEVICE [PRESSES] [CODE] [PRESSES_OUT]    e.g. game_latency.py /run/rgds/latency /dev/input/event7 20 304
+CODE may list several key codes (545,544: Down, Up), pressed in turn, for a menu cursor that must move every time.
 PRESSES_OUT gets one "pressed_us seen_us" line per traced press, for press_to_flip.py.
 """
 import random
@@ -33,11 +34,12 @@ def lines(path):
 def main():
     trace, device = sys.argv[1], sys.argv[2]
     presses = int(sys.argv[3]) if len(sys.argv) > 3 else 20
-    code = int(sys.argv[4]) if len(sys.argv) > 4 else 304  # BTN_SOUTH: B
+    codes = [int(c) for c in sys.argv[4].split(",")] if len(sys.argv) > 4 else [304]  # BTN_SOUTH: B
     out = open(sys.argv[5], "w") if len(sys.argv) > 5 else None
     rows = []
     with open(device, "wb", buffering=0) as pad:
-        for _ in range(presses):
+        for n in range(presses):
+            code = codes[n % len(codes)]
             time.sleep(random.uniform(0.35, 0.7))
             known = len(lines(trace))
             pressed = time.monotonic() * 1e6

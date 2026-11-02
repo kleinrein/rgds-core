@@ -1227,6 +1227,7 @@ Io::Special Io::read32_special(Cpu cpu, u32 addr) {
   if (addr == 0x04100000)
     return {ipc_fifo_recv(cpu), true}; // the two 0x0410xxxx ports, kept out of the dense index below
   if (addr == 0x04100010) return {cart_read_data(), true};
+  if (BenchPort::owns(addr)) return {cpu == Cpu::ARM9 ? bench.read(addr) : 0, true};
   switch ((addr - 0x04000000u) >> 2) { // dense index: GCC emits a jump table
   case 0x82: return {c.ime, true};
   case 0x84: return {c.ie, true};
@@ -1267,6 +1268,10 @@ Io::Special Io::read32_special(Cpu cpu, u32 addr) {
 
 Io::Special Io::write32_special(Cpu cpu, u32 addr, u32 value) {
   CpuIo& c = cpu_io[ci(cpu)];
+  if (BenchPort::owns(addr)) {
+    if (cpu == Cpu::ARM9) bench.write(addr, value);
+    return {0, true};
+  }
   switch ((addr - 0x04000000u) >> 2) { // dense index: GCC emits a jump table
   case 0x82:
     c.ime = value & 1;

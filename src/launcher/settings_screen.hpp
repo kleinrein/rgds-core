@@ -12,7 +12,7 @@ void App::list_scrollbar(SDL_Renderer* r, int y) {
 
 // Sound's first list row: the same card as its neighbours with the volume slider inside it.
 void App::volume_row(SDL_Renderer* r, int y) {
-    int row = y + list_top - list_scroll;
+    int row = y + list_top - list_scroll - list_shift();
     const int value = hardware.volume_percent;
     const bool focused = settings.focus == 0;
     int dx = 24;
@@ -115,13 +115,17 @@ void App::settings_top(SDL_Renderer* r, int y) {
         symbol = SettingsIcon::Art;
         break;
     case Page::Keyboard:
-        title = edit_field == 5   ? "DS nickname"
+        title = edit_field == 7   ? "Your name"
+                : edit_field == 5 ? "DS nickname"
                 : edit_field == 2 ? "Connectivity"
                 : edit_field == 3 ? "Artwork"
                 : edit_field == 4 ? "Search"
                 : edit_field == 6 ? "Cheats"
                                   : "ScreenScraper";
-        symbol = edit_field == 2 ? SettingsIcon::Wifi : edit_field == 6 ? SettingsIcon::Spark : SettingsIcon::Art;
+        symbol = edit_field == 2   ? SettingsIcon::Wifi
+                 : edit_field == 6 ? SettingsIcon::Spark
+                 : edit_field == 7 ? SettingsIcon::Type
+                                   : SettingsIcon::Art;
         break;
     case Page::Microphone:
         title = "Test microphone";
@@ -252,7 +256,8 @@ void App::settings_top(SDL_Renderer* r, int y) {
         const bool occupied = slot_occupied(settings.focus);
         if (!media.draw(r, slots["image_" + key], {40, y + 116, 320, 240}, false))
             ui_icon(r, gallery_icon(), 200, y + 232, 70, "muted");
-        label(r, locale.text("Slot") + " " + std::to_string(settings.focus + 1), 388, y + 134, 28, "ink", 208);
+        label(r, settings.focus == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(settings.focus + 1), 388,
+              y + 134, 28, "ink", 208);
         raw_label(r, core_names[gallery_core], 388, y + 185, 20, "accent", 208);
         raw_wrapped(r, occupied ? slots["slot_" + key] : locale.text("Empty slot"), 388, y + 231, 20, 208, 2);
         wrapped(r, slot_hint(occupied), 388, y + 284, 16, 208, 5);
@@ -275,7 +280,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
             r,
             !ds_supported() ? "Use the engine's native controls for microphone and DS settings."
             : status.empty()
-                ? "Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting."
+                ? "Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live."
                 : status,
             54, y + 264, 22, 532, 5);
         return;
@@ -463,7 +468,9 @@ void App::network_status_card(SDL_Renderer* r, int y) {
                    : worker_action == "device.bt-on"                                          ? "Turning Bluetooth on…"
                    : worker_action == "device.bt-off"                                         ? "Turning Bluetooth off…"
                    : worker_action == "device.bt-scan"                                        ? "Looking for devices…"
-                   : worker_action == "device.bt-pair" || worker_action == "device.bt-forget" ? "Working…"
+                   : worker_action == "device.bt-pair" || worker_action == "device.bt-forget" ||
+                           worker_action == "device.usb-on" || worker_action == "device.usb-off"
+                       ? "Working…"
                    : worker_action == "device.homebrew-get"                                   ? "Downloading…"
                    : worker_action == "device.wifi-off"
                        ? "Turning Wi-Fi off…"
@@ -528,7 +535,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         SDL_Rect clip{20, y + list_top, 575, list_height};
         s.RenderSetClipRect(r, &clip);
         for (int i = 0; i < list_count(); i++) {
-            int row = y + list_top + i * list_stride - list_scroll;
+            int row = y + list_top + i * list_stride - list_scroll - list_shift();
             if (row + 66 < y + list_top || row > y + list_top + list_height) continue;
             if (i == int(switch_games.size())) {
                 list_row(r, y, i, "Game menu");
@@ -626,7 +633,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         SDL_Rect clip{20, y + list_top, 575, list_height};
         s.RenderSetClipRect(r, &clip);
         for (int i = 0; i < count; i++) {
-            if (i * list_stride - list_scroll + 66 < 0 || i * list_stride - list_scroll > list_height) continue;
+            if (i * list_stride - list_scroll - list_shift() + 66 < 0 || i * list_stride - list_scroll - list_shift() > list_height)
+                continue;
             if (settings.page == Page::Settings)
                 list_row(r, y, i, sections[size_t(section_order[size_t(i)])].title,
                          section_order[size_t(i)] == 9 ? update_badge() : "");
@@ -690,7 +698,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 };
                 const std::array<std::string, 6> values = {
                     shown(play_fit == play_default.fit, play_fit_name(play_fit)),
-                    shown(play_second == play_default.second, play_second_name(play_second)),
+                    shown(play_second == play_default.second, play_second_name(play_second, play_system())),
                     shown(play_frame == play_default.frame, play_frame_label(play_frame)),
                     game_preferences.filter < 0 ? inherited_label(shader_name(default_shader(play_system())))
                                                 : shader_name(game_preferences.filter),
@@ -710,7 +718,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 const std::array<std::string, 6> values = {
                     system_info(defaults_system).name,
                     play_fit_name(view.fit),
-                    play_second_name(view.second),
+                    play_second_name(view.second, defaults_system),
                     play_frame_label(view.frame),
                     view.filter < 0 ? inherited_label(shader_name(default_shader(defaults_system)))
                                     : shader_name(view.filter),
@@ -783,19 +791,21 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          : i == (o.rgds_os ? 7 : 8) ? (device_status["boot_warning"] == "1" ? "On" : "Off")
                                   : "");
             } else if (settings.page == Page::SaveGallery)
-                list_row(r, y, i, locale.text("Slot") + " " + std::to_string(i + 1),
+                list_row(r, y, i, i == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(i + 1),
                          slot_occupied(i) ? slots["slot_" + std::to_string(i)] : "Empty slot", slot_primary_enabled(i));
             else if (settings.page == Page::PortFiles) port_files_row(r, y, i);
             else if (settings.page == Page::Cheats) cheat_row(r, y, i);
             else if (settings.page == Page::DSControls) ds_controls_row(r, y, i);
             else if (settings.page == Page::Network) {
-                const std::array<std::string, 7> names = {"Wi-Fi",
+                const std::array<std::string, 9> names = {"Wi-Fi",
                                                           "Available networks",
                                                           "Bluetooth",
                                                           "Bluetooth devices",
                                                           "Refresh connection",
                                                           "Network file sharing",
-                                                          "Sharing details"};
+                                                          "Sharing details",
+                                                          "USB data transfer",
+                                                          "Use as USB drive"};
                 const bool bt_working = worker > 0 && worker_action.rfind("device.bt-", 0) == 0;
                 std::string value = i == 0   ? (device_status["wifi_supported"] == "0" ? "Unavailable"
                                                 : device_status["wifi"] == "1"         ? "On"
@@ -813,9 +823,15 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                                 : device_status["sharing_mode"] == "open" ? "Open"
                                                                                           : "Password")
                                     : i == 6 ? "SMB"
+                                    : i == 7 ? (device_status["usb_supported"] == "0"   ? "Unavailable"
+                                                : device_status["usb_connected"] == "1" ? "Connected"
+                                                : device_status["usb"] == "1"           ? "On"
+                                                                                        : "Off")
                                              : "";
                 list_row(r, y, i, names[i], value,
                          i == 2 || i == 3 ? device_status["bt_supported"] != "0"
+                         : i == 7         ? device_status["usb_supported"] != "0"
+                         : i == 8         ? device_status["usb_supported"] != "0" && device_status["usb"] != "0"
                                           : i != 6 || device_status["sharing"] == "1");
             } else if (settings.page == Page::Wifi) {
                 auto prefix = "network_" + std::to_string(i) + "_";
@@ -847,23 +863,25 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                                              : offset + " · " + zone_time(zone));
             } else if (settings.page == Page::Maintenance) {
                 bool busy = worker > 0 && worker_action.rfind("device.update-", 0) == 0;
-                const std::array<std::string, 7> names = {"Check for updates",
+                const std::array<std::string, 8> names = {"Check for updates",
                                                           update_status["prepared"] == "1"        ? "Restart & install"
                                                           : update_stage() == UpdateStage::Paused ? "Resume download"
                                                                                                   : "Download update",
                                                           busy ? "Pause download" : "Release notes",
                                                           "Use previous build",
                                                           "Clear temporary cache",
-                                                          update_status["prepared"] == "1" ? "Discard update"
-                                                                                           : "Save device report",
-                                                          "Automatic updates"};
+                                                          "Save device report",
+                                                          "Automatic updates",
+                                                          "Cancel update"};
                 bool enabled = !busy || (i == 2 && worker_action == "device.update-download");
                 if (i == 1)
                     enabled = enabled && (update_status["state"] == "available" || update_status["prepared"] == "1" ||
                                           update_status["state"] == "cancelled" || update_status["state"] == "error");
+                if (i == 7) enabled = !busy && update_stage() != UpdateStage::None;
                 list_row(r, y, i, names[i],
                          i == 0   ? (update_status["channel"] == "testing" ? "Testing" : "Stable")
                          : i == 1 ? update_status["version"]
+                         : i == 3 ? device_status["previous_version"]
                          : i == 6 ? experience["auto_update"] == "0"   ? "Off"
                                     : experience["auto_update"] == "2" ? "Download automatically"
                                                                        : "Check automatically"
@@ -877,13 +895,14 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             } else if (settings.page == Page::Scraper) {
                 const std::array<std::string, 3> providers = {"Automatic", "GameTDB", "Libretro"};
                 const std::array<std::string, 4> pictures = {"Off", "Screenshots", "Title screens", "Both"};
-                const std::array<std::string, 5> names = {
+                const std::array<std::string, 6> names = {
                     "Artwork source",
                     worker > 0 && worker_action == "scrape" ? "Stop scraping" : "Fetch missing artwork",
-                    "Review unmatched", "Game info", "Extra pictures"};
+                    "Review unmatched", "Game info", "Extra pictures", "Auto-fetch new games"};
                 list_row(r, y, i, names[i],
                          i == 0   ? providers.at(preferences.artwork_provider)
                          : i == 3 ? (preferences.game_info ? "On" : "Off")
+                         : i == 5 ? (preferences.auto_scrape ? "On" : "Off")
                          : i == 4 ? pictures.at(size_t(std::clamp(preferences.extra_pictures, 0, 3)))
                                   : "");
             } else if (settings.page == Page::DeviceInfo) list_row(r, y, i, device_info_name(i), device_info_value(i));
@@ -984,7 +1003,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             move_element(uint32_t(i), x, row, width, height, focused);
             settings_card(r, x, row, width, height, focused);
             // Tiles with their own button wear it in the corner: B resumes, X opens the emulator.
-            const std::string hotkey = i == 0 ? "B" : i == 4 ? "X" : "";
+            const std::string hotkey = i == 0 ? "B" : i == 4 ? "X" : i == 8 && can_return_without_saving() ? "Y" : "";
             if (!hotkey.empty())
                 key_badge(r, x + width - 10 - key_badge_width(hotkey), wide ? row + 26 : row + 17, hotkey, enabled);
             if (wide) {
@@ -1128,6 +1147,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                              : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
                              : confirmation == "poweroff"     ? "Power off your handheld?"
                              : confirmation == "update-apply" ? "Restart and install the update?"
+                             : confirmation == "update-discard"
+                                 ? "Cancel the update? Anything already downloaded is removed."
                              : confirmation == "rollback"     ? "Use the previous RGDS build?"
                                                               : "Clear temporary game files?";
         settings_card(r, 28, y + 105, 584, 209);

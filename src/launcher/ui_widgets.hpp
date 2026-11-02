@@ -102,7 +102,7 @@ void App::settings_footer(SDL_Renderer* r, int y) {
     if (settings.page == Page::SaveGallery) {
         if (!picker_open) {
             std::vector<KeyHint> keys{{"Y", "More"}};
-            if (slot_occupied(settings.focus)) keys.insert(keys.begin(), {"X", "Delete"});
+            if (slot_occupied(settings.focus) && settings.focus != auto_slot) keys.insert(keys.begin(), {"X", "Delete"});
             key_hints(r, 320, y + 452, keys, 0, 16, 280);
         }
         if (slot_primary_enabled(settings.focus))
@@ -163,7 +163,7 @@ void App::settings_card(SDL_Renderer* r, int x, int y, int w, int h, bool focuse
 
 void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, const std::string& value, bool enabled,
                    const Color* swatch, bool switches) {
-    int row = y + list_top + index * list_stride - list_scroll;
+    int row = y + list_top + index * list_stride - list_scroll - list_shift();
     bool focused = index == list_selected();
     int dx = 24;
     move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);

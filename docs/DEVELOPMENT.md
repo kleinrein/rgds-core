@@ -68,6 +68,19 @@ make push                  # tools/own_os_push.py rgds.local --reboot: the inact
 make shot                  # both panels as one PNG in build/shots/
 ```
 
+A USB-C cable to the computer is faster than Wi-Fi and needs no network: the port is a USB network card
+(`usr/libexec/rgds/usb`, CDC NCM, no driver needed on macOS, Linux or Windows 10 and later). The handheld is always
+`10.55.0.1`, and the computer gets an address from it but no route, so its internet is untouched. `make push`,
+`make shot` and `make ssh` use the cable when it answers (`tools/device_addr.py`) and fall back to `rgds.local`;
+`DEVICE=` overrides that. `rsync` is on the image. File sharing listens on the cable too and works without Wi-Fi:
+`smb://10.55.0.1`, or the address and login in Sharing details. Settings > Connectivity > USB data transfer switches it
+off across boots, and the port still charges (`/data/rgds/usb-off`).
+
+Settings > Connectivity > Use as USB drive makes the data partition a real drive on the computer (`usb drive`, run by
+the session with the menu quit and `/data` unmounted, since a second writer would corrupt the card). Ejecting it, pulling
+the cable or pressing A on the handheld brings `/data` and the menu back, with a partition check and macOS's clutter
+files removed. SSH over the cable stays up throughout.
+
 `own_os_build.py` stages the launcher from `build/device` and refuses one older than the tree (run
 `tools/build.py device` first), and takes runtime, themes and assets from the checkout. `own_os_push.py` arms the
 same boot trial an over-the-air update uses (docs/OTA.md), so a push that does not come up falls back by itself;
@@ -89,6 +102,49 @@ Checkpoint saves acknowledge a changed, stable expected engine slot and flush th
 Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so older development builds can still read the base appearance file. Per-cartridge overrides and favourite flags live in `userdata/library/<key>/game.ini`. The versioned IDs in `assets/shaders/catalog.tsv` preserve Off/Sharp/LCD at 0/1/2 and add the full supplied pack. Both launcher and Python adapters read that catalog. DraStic maps to the supplied shader IDs, and DSperate/melonDS use the shared SDL/GLES shader path. All four paths support the current 28 effects plus Off. The picker is a Home-style carousel in six groups (Original, DS screens, Natural, Vivid, Pixel art, Moods): Left/Right browse, Up/Down, L/R or the group chips jump between groups, each tile shows its preset at 1:1 from the packaged previews, and per-game Default inheritance is kept. The eight original presets added on 18 October 2026 (DS Classic, DS Lite, Natural glow, Vivid LCD, Natural/Vivid smooth, Pixel beads, Glossy tiles) draw their pixel structure on the DS's own 256×192 grid, anti-aliased from `u_target_size`, so they hold up at the RG DS's 2.5× and the Plus's 4× and fade out below 2×. Library choices take effect on launch; in-game choices update the running renderer and keep the picker open. Actual appearance and frame pacing must still be checked on the Mali driver. The picker remembers its page during the development rebuild loop.
 
 ## Refining the interface
+
+### The 2026-11-01 motion pass
+
+Touch and transitions got physics (`src/launcher/kinetics.hpp`, driven each frame by
+`kinetics_update` in `touch_kinetics.hpp`; `tests/test_kinetics.py` pins the numbers):
+
+- **Flicks coast.** The settings list, the Filter sheet, pickers and the library's list layout
+  read the finger's speed over its last ~100 ms (`FingerSpeed`) and coast on after the lift
+  with exponential friction (a firm flick runs about a second), ticking a haptic detent per
+  row. Pulled past an end they give like a rubber band (`ScrollMotion::band`, at most 72 px,
+  less and less) and spring back; a coast into an end bounces a little. The launcher still
+  reads each list's clamped integer scroll; `list_shift()` and friends are what the drawing
+  adds. A D-pad focus change glides the rows there with a small overshoot instead of jumping.
+- **A hard flick goes far.** Above `FingerSpeed::hard_flick` (2.2 px/ms) a list's coast speed is
+  boosted steeply, a flick during a coast adds to the one running (up to 32 px/ms, about 140
+  rows), and the rows stop ticking the motor above 3 px/ms. An end only ever takes 3 px/ms, so the
+  bounce stays small however fast the coast came in.
+- **Carousels only coast on a hard flick** (`Carousel::flick_target`): an ordinary swipe settles
+  on the nearest item, a hard one travels 1.5 to about 14 items, and a long tween takes up to
+  510 ms.
+- **Edge gestures move the page.** Under a Home pull the live page lifts and shrinks with the
+  finger (drawn through `gesture_canvas`), under a Back pull it slides aside; when the gesture
+  fires it flies away over the page it revealed (`PageDrag`), when the finger lifts short of it
+  the page springs back. Needs the master `animations` switch, not view transitions.
+- **The upper screen travels with the lower one** again, cheaply this time: with view
+  transitions on, every upper frame is drawn to `top_canvas` and copied to the panel, and the
+  canvas is swapped into `top_previous` after each idle frame, so the frame a transition leaves
+  from is at hand without ever rendering the upper screen twice (the 2026-10-28 attempt
+  re-rendered it on every key press and was reverted). `top_signature` is void while a
+  transition runs. Whatever the lower screen's style, the upper screen only crossfades and is
+  never moved or scaled: the first device trial moved and scaled the slab per style and the
+  text shimmered, a 12-24 px drift still glitched. Part of that glitch was a clock bug: the upper
+  panel is drawn first, `view_drawn_at` was still older than the transition's start, and the
+  unsigned difference finished the fade on the first frame (new page, back to the old one, fade
+  in). `ViewMotion::fade` keeps its own clock; `top_fade_reversals` in the report stays 0.
+- **The Filter sheet rises** over the dimmed library and slides back down (same 280/240 ms as
+  the pickers, scaled by the view Speed); the library underneath is drawn with
+  `sheet_underlay` set so the sheet branch of `bottom` does not recurse.
+- **Back returns to the tile you came from.** `home_origin` remembers the Home tile the
+  library was entered from (and `systems_origin` whether through Systems), so switching the
+  collection on the way (Recents → All games through the sheet) no longer lands Back on the
+  new collection's tile. Report fields: `home_origin`, `kinetic_frames`, `gesture_frames`,
+  `sheet_frames`, `top_animation_frames`, `kinetics_active`.
 
 ### The 2026-10-22 follow-up
 
@@ -282,3 +338,13 @@ python3 tools/format.py --changed      # only files changed against HEAD
 Formatting a file under `dscore/` changes the fork's source hash, so rebuild
 the engines before packaging.
 
+## Setup on a new card
+
+`src/launcher/welcome_screen.hpp` is the wizard a new card opens with (`Page::Welcome`), and Settings > System > Run setup again opens the same steps. The steps are language, colour and light/dark, name, Home (layout, background, animations, typeface), DS only or all systems, time, Wi-Fi, how to add games, and a last page of tips.
+
+- **When it runs.** The session passes `--first-run`. The launcher runs setup unless `userdata/setup.ini` says `done=1`. With no `setup.ini`, any of `preferences.ini`, `ui.ini`, `system.ini`, `pictochat.ini`, `ds.ini` or `device/status.ini` means the card has been used: it writes `done=1` and setup never appears, so an update never interrupts anyone. `library/` is not a sign of use, because the PortMaster artwork job can create it beside the first boot.
+- **Saving.** Every choice goes to the normal settings files as it is made. `setup.ini` only keeps `step=N`, so a power cut or Use as USB drive (which restarts the launcher) comes back to the same step.
+- **Input.** Items are rectangles from `welcome_items()`; the D-pad and touch both work from that list. Timezone, Wi-Fi networks and the name keyboard are the normal pages, with `welcome_detour` bringing them back into setup.
+- **Defaults.** The language preselects a timezone and clock and date formats. A new card starts on all systems; the Systems step or Library settings can narrow it to DS.
+- **The name.** `userdata/ds.ini` `nickname` is the handheld's name for DS games (`runtime/emulators.py`), under a game's own DS nickname. Setup also writes it to PictoChat's profile.
+- **Testing.** `tests/test_welcome_ui.py`. Put `step=N` in `setup.ini` to open a step directly with `--preview --boot-startup --first-run --data <folder>`.

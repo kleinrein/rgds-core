@@ -19,6 +19,9 @@
 #include "core/io/dsi_nand_launch.h"
 #include "core/cheat/database.h"
 #include "core/cart/miniz/miniz_tdef.h"
+#if DSPERATE_NET
+#include "net/lan_mp.h"
+#endif
 #if DSPERATE_JIT
 #include "core/cpu/jit/jit.h"
 #endif
@@ -35,6 +38,7 @@ static std::atomic<int> g_rgds_adaptive{-1};
 #include "cpu_gov.h"
 #include "pacer.h"
 #include "phase_lock.h"
+#include "bench_recorder.h"
 #include "kms_flips.h"
 #include "display_drm.h"
 #include "present_thread.h"
@@ -51,6 +55,7 @@ static std::atomic<int> g_rgds_adaptive{-1};
 #include <deque>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <dlfcn.h>
 #include <algorithm>
 #include <cmath>
 #include <csignal>
@@ -1310,6 +1315,41 @@ static int run(int argc, char** argv) {
       nds.set_wifi_mac_suffix(suffix);
     }
   }
+  // Local wireless with other emulators on the LAN (net/lan_mp.h, melonDS's protocol). Started here, before the
+  // game, so the console is on the air from its first frame; a session that cannot start leaves the game playable
+  // alone rather than refusing to run. net_live (below) then gates what would desynchronise two consoles.
+#if DSPERATE_NET
+  std::unique_ptr<ds::net::LanMp> lan;
+  if (lan_host || lan_join || netplay || lan_guest) {
+    lan = std::make_unique<ds::net::LanMp>();
+    bool up = false;
+    if (!lan->ok()) std::fprintf(stderr, "lan: %s\n", lan->error().c_str());
+    else if (netplay || lan_guest) {
+      const auto role = lan->start_auto(lan_name, 2500, 16, !lan_guest);
+      up = role != ds::net::LanMp::Role::None;
+      if (up)
+        std::fprintf(stderr, "netplay: %s\n",
+                     role == ds::net::LanMp::Role::Host ? "no session heard, hosting"
+                                                        : ("joined " + lan->peer_name()).c_str());
+      else std::fprintf(stderr, "lan: no session heard on the LAN; playing alone\n");
+    } else {
+      up = lan_host ? lan->start_host(lan_host, 16) : lan->start_client(lan_name, lan_join);
+      if (!up) std::fprintf(stderr, "lan: %s; playing alone\n", lan->error().c_str());
+    }
+    if (up) {
+      std::fprintf(stderr, "lan: %s, player %d\n", lan->is_host() ? "hosting" : "joined", lan->my_id());
+      nds.io.wifi.set_transport(lan.get());
+    } else lan.reset();
+  }
+  // The transport is unhooked before lan goes (declared after it, so destroyed first).
+  struct TransportOff {
+    decltype(nds)& n;
+    ~TransportOff() { n.io.wifi.set_transport(nullptr); }
+  } transport_off{nds};
+#else
+  if (lan_host || lan_join || netplay || lan_guest)
+    std::fprintf(stderr, "lan: local wireless is not built into this engine; playing alone\n");
+#endif
   if (!nds.bios_native)
     std::fprintf(stderr, "bios: %s, using the built-in FreeBIOS (direct boot only; timing is not Nintendo's)\n",
                  bios9.empty() ? "no dumps given" : "dumps not found");
@@ -2065,6 +2105,9 @@ sdl_ready:
   // Set once the transport has actually started (not from the flags). While
   // live, gates save states, fast forward, frameskip, speed knobs, and pause.
   bool net_live = false;
+#if DSPERATE_NET
+  net_live = lan != nullptr;
+#endif
   int state_slot = 0;
   // Fast forward: ff_speed floors the limiter (0 = uncapped); ff_skip
   // presents one frame in ff_skip+1, every frame still emulated exactly.
@@ -2266,6 +2309,129 @@ sdl_ready:
     std::fprintf(stderr, "RG DS heavy 3D scenes: %s\n", on ? "adaptive" : "always sharp");
     return true;
   };
+  // RG DS: the Impeccable benchmark ROM (bench/ds, core/io/bench_port.h). Only that cart gets the port.
+  ds::sdl::BenchRecorder bench;
+  const int bench_user_skip = ff_skip, bench_user_speed = ff_speed;
+  const bool bench_cart = nds.cart && !std::memcmp(nds.cart->header().game_title, "RGDS IMPECC", 11) &&
+                          !std::memcmp(nds.cart->header().game_code, "RGIM", 4);
+  if (bench_cart) {
+    const std::string bench_control = std::getenv("RGDS_CONTROL_FILE") ? std::getenv("RGDS_CONTROL_FILE") : "";
+    const std::string bench_dir =
+        bench_control.empty() ? std::string("rgds-bench")
+                              : std::filesystem::path(bench_control).parent_path().parent_path().string() + "/bench";
+    const u32 bench_session = static_cast<u32>(mono_ns() >> 10) | 1;
+    const auto bench_temp = [] {
+      u32 mc = 0;
+      if (std::FILE* f = std::fopen("/sys/class/thermal/thermal_zone0/temp", "r")) {
+        if (std::fscanf(f, "%u", &mc) != 1) mc = 0;
+        std::fclose(f);
+      }
+      return mc;
+    };
+    nds.io.bench.handler = [&, bench_control, bench_dir, bench_session, bench_temp](
+                               u32 command, const u32* args, std::array<u32, ds::io::BenchPort::BUFFER_WORDS>& buf) -> u32 {
+      const std::string blob = bench_dir + "/impeccable-ds.bin";
+      switch (command) {
+      case 1: { // INFO
+        auto& r3d = nds.gpu3d.renderer();
+        const char* vk = std::getenv("RGDS_VK_SCALE");
+        static const auto shader_live = reinterpret_cast<int (*)()>(dlsym(RTLD_DEFAULT, "rgds_shader_live"));
+        buf[0] = 1;
+        buf[1] = bench_session;
+        buf[2] = r3d.hires_active() && vk ? static_cast<u32>(std::atoi(vk)) : 1;
+        buf[3] = static_cast<u32>(nds.gpu.filter2d());
+        // The bridge's shader; without the bridge nothing draws one, and the launch's choice is all there is to report.
+        buf[4] = shader_live ? static_cast<u32>(shader_live())
+                             : static_cast<u32>(std::getenv("RGDS_SHADER") ? std::atoi(std::getenv("RGDS_SHADER")) : 0);
+        buf[5] = display.scanout() ? 1 : 0;
+        buf[6] = g_rgds_adaptive.load(std::memory_order_relaxed) > 0 ? 1 : 0;
+        buf[7] = bench_control.empty() ? 0 : 1;
+        // RGDS_BENCH_AUTO: start with no key press, for tools/impeccable.py: 1 full, 2 quick, 3 a smoke run of every test.
+        buf[8] = std::getenv("RGDS_BENCH_AUTO") ? static_cast<u32>(std::atoi(std::getenv("RGDS_BENCH_AUTO"))) : 0;
+        return 9;
+      }
+      case 2: // BEGIN: args[0] 0 paced, 1 fast forward as the player has it, 2 uncapped with every frame shown
+        ff_toggle = args[0] != 0;
+        ff_skip = args[0] == 2 ? 0 : bench_user_skip;
+        ff_speed = args[0] ? 0 : bench_user_speed;
+        bench.begin(bench_temp(), audio.stats().dry);
+        return 1;
+      case 3: { // END
+        ff_toggle = false;
+        ff_skip = bench_user_skip;
+        ff_speed = bench_user_speed;
+        const auto& summary = bench.end(bench_temp(), audio.stats().dry);
+        std::copy(summary.begin(), summary.end(), buf.begin());
+        return ds::sdl::BenchRecorder::FIELD_COUNT;
+      }
+      case 5: { // REQUEST: args scale, 2D filter, shader; the launcher's game menu applies them with a restart
+        if (bench_control.empty()) return 0;
+        const std::string temporary = bench_control + ".bench.engine";
+        if (std::FILE* f = std::fopen(temporary.c_str(), "w")) {
+          std::fprintf(f, "%u %u %u\n", args[0], args[1], args[2]);
+          std::fclose(f);
+          return std::rename(temporary.c_str(), (bench_control + ".bench").c_str()) == 0 ? 1 : 0;
+        }
+        return 0;
+      }
+      case 6: { // LOAD: the ROM's saved run, into the buffer; the words read
+        std::FILE* f = std::fopen(blob.c_str(), "rb");
+        if (!f) return 0;
+        const size_t words = std::fread(buf.data(), 4, buf.size(), f);
+        std::fclose(f);
+        return static_cast<u32>(words);
+      }
+      case 7: { // SAVE: args[0] words of the buffer, replacing the file whole
+        ::mkdir(bench_dir.c_str(), 0755);
+        const std::string temporary = blob + ".tmp";
+        std::FILE* f = std::fopen(temporary.c_str(), "wb");
+        if (!f) return 0;
+        const size_t words = std::min<size_t>(args[0], buf.size());
+        const bool wrote = std::fwrite(buf.data(), 4, words, f) == words;
+        std::fclose(f);
+        return wrote && std::rename(temporary.c_str(), blob.c_str()) == 0 ? 1 : 0;
+      }
+      case 8: { // LOG: args[0] bytes of text from the buffer, one line of the results log
+        ::mkdir(bench_dir.c_str(), 0755);
+        std::FILE* f = std::fopen((bench_dir + "/impeccable-ds.jsonl").c_str(), "a");
+        if (!f) return 0;
+        // What produced the line, in front of the ROM's own fields: a score means nothing without its engine and release.
+        static const std::string stamp = [] {
+          unsigned long long hash = 1469598103934665603ull;
+          if (std::FILE* exe = std::fopen("/proc/self/exe", "rb")) {
+            static char chunk[65536];
+            for (size_t got; (got = std::fread(chunk, 1, sizeof chunk, exe)) > 0;)
+              for (size_t i = 0; i < got; ++i) hash = (hash ^ static_cast<unsigned char>(chunk[i])) * 1099511628211ull;
+            std::fclose(exe);
+          }
+          char release[80] = "";
+          if (std::FILE* active = std::fopen("/usr/share/rgds/active", "r")) {
+            if (std::fscanf(active, "%79[A-Za-z0-9._-]", release) != 1) release[0] = 0;
+            std::fclose(active);
+          }
+          char out[160];
+          std::snprintf(out, sizeof out, "\"engine\":\"%016llx\",\"release\":\"%s\",", hash, release);
+          return std::string(out);
+        }();
+        char when[32] = "";
+        const std::time_t now = std::time(nullptr);
+        if (std::tm utc{}; gmtime_r(&now, &utc)) std::strftime(when, sizeof when, "%Y-%m-%dT%H:%M:%SZ", &utc);
+        const char* text = reinterpret_cast<const char*>(buf.data());
+        const size_t bytes = std::min<size_t>(args[0], buf.size() * 4);
+        if (bytes && text[0] == '{') {
+          std::fprintf(f, "{\"at\":\"%s\",%s", when, stamp.c_str());
+          std::fwrite(text + 1, 1, bytes - 1, f);
+        } else std::fwrite(text, 1, bytes, f);
+        std::fputc('\n', f);
+        std::fclose(f);
+        return 1;
+      }
+      case 9: shot_pending = true; return 1; // SHOT: a screenshot of this frame, in smoke runs
+      case 10: return static_cast<u32>(mono_ns() / 1000000); // NOW: real time in milliseconds
+      default: return 0;
+      }
+    };
+  }
   // RG DS game menu cheats: the codes Session::open loaded for this cart,
   // toggled between frames on this thread (the ARM7 VBlank runs them), so
   // the engine never sees a half-applied change. Which codes are on is saved
@@ -2672,6 +2838,9 @@ sdl_ready:
     fb_current = present && !scaled; // a skipped frame renders nothing
 
     const Uint64 t0 = SDL_GetPerformanceCounter();
+#if DSPERATE_NET
+    if (lan) lan->process(); // the LAN's turn, once a frame, on this thread
+#endif
     nds.run_frame();
     rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);
     if (nds.bus.rumble_pak) rgds::rumble_frame(std::exchange(nds.bus.rumble_moves, 0u));
@@ -2831,6 +3000,7 @@ sdl_ready:
     }
     const Uint64 t2 = SDL_GetPerformanceCounter();
     const u64 frame_done_ns = mono_ns(); // the frame is handed to the present thread (or drawn)
+    if (const u64 queued = ds::sdl::Display::take_lane_wait_ns(); queued && pace_display) lock.queued(queued);
     emu_ticks += t1 - t0;
     draw_ticks += t2 - t1;
     draw_ticks_total += t2 - t1;
@@ -2975,6 +3145,12 @@ sdl_ready:
         }
       }
     }
+    if (bench.active()) {
+      bench.frame(frame_start_ns, frame_done_ns, present, skipped, nds.gpu3d.renderer().hires_active(), pace_locked);
+      for (int w = 0; w < 2; ++w)
+        for (int i = 0; i < flips_n[w]; ++i)
+          bench.flip(w, flips_new[w][i].at_ns, flips_new[w][i].issue_ns, flips_new[w][i].tag);
+    }
     // base_scale is the limiter+emu.speed clock; fast forward floors it
     // rather than multiplying (ff_speed is a multiple of real time). 0 uncaps.
     const double scale = fast && ff_speed > 0 ? std::max(base_scale, static_cast<double>(ff_speed)) : base_scale;
@@ -3063,10 +3239,23 @@ sdl_ready:
                          static_cast<ull>(flips_new[w][i].at_ns), static_cast<ull>(flips_new[w][i].issue_ns),
                          flips_new[w][i].tag, static_cast<ull>(flips_new[w][i].wait_ns));
         const u64 now = nds.gpu3d.swap_count();
-        std::fprintf(cad, "%llu %llu %u %d %llu %llu %llu %d %.0f\n", static_cast<ull>(frames),
+        // DS_CADENCE_HASH=1: each screen's native picture as this frame left it, hashed at the end of the line, to
+        // find the first frame that answers a press (os/banana-probe/press_to_change.py).
+        char hashes[40] = "";
+        if (static const bool hash = std::getenv("DS_CADENCE_HASH") != nullptr; hash) {
+          u64 h[2];
+          for (int s = 0; s < 2; ++s) {
+            const u32* px = nds.gpu.framebuffer(s);
+            h[s] = 1469598103934665603ull;
+            for (u32 i = 0; i < ds::SCREEN_W * ds::SCREEN_H; ++i)
+              h[s] = (h[s] ^ (px[i] & 0xFFFFFFu)) * 1099511628211ull;
+          }
+          std::snprintf(hashes, sizeof hashes, " %016llx %016llx", static_cast<ull>(h[0]), static_cast<ull>(h[1]));
+        }
+        std::fprintf(cad, "%llu %llu %u %d %llu %llu %llu %d %.0f%s\n", static_cast<ull>(frames),
                      static_cast<ull>(now - cad_prev), nds.gpu3d.render_polygon_count(), present ? 1 : 0,
                      static_cast<ull>(frame_start_ns), static_cast<ull>(frame_done_ns), static_cast<ull>(next_start_ns),
-                     pace_locked ? 1 : 0, lock.band_ns());
+                     pace_locked ? 1 : 0, lock.band_ns(), hashes);
         cad_prev = now;
         if (frames % 256 == 0) std::fflush(cad);
       }
@@ -3191,6 +3380,11 @@ sdl_ready:
             static_cast<double>(ps.wait_ns) / 1e6, static_cast<unsigned long long>(ps.long_waits));
     ds::handoff::report(stderr);
   }
+#if DSPERATE_NET
+  if (lan)
+    std::fprintf(stderr, "lan: reply/host waits %u, total %.1f ms, max %.1f ms, timeouts %u\n", lan->wait_count(),
+                 lan->wait_total_ms(), lan->wait_max_ms(), lan->wait_timeouts());
+#endif
   log.close();
   ds::prof::report();
   lid.close();

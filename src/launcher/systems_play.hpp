@@ -37,6 +37,8 @@ void App::open_last_played() {
 
 void App::open_category() {
     cancel_navigation();
+    home_origin = home_selected;
+    systems_origin = false;
     if (home_selected == last_played_tile) open_last_played();
     else if (home_selected == pictochat_tile) open_pictochat();
     else if (home_selected == 0) settings.open();
@@ -101,6 +103,8 @@ size_t App::system_games(const std::string& id) const {
 
 void App::open_systems() {
     cancel_navigation();
+    systems_origin = true;
+    if (home_origin == SIZE_MAX) home_origin = 1;
     settings.page = Page::Library;
     home_menu = false;
     systems_menu = true;
@@ -263,6 +267,8 @@ int App::play_colour_kind() const {
 std::string App::play_system() const {
     const auto& game = model.games.at(0);
     const std::string system = game.system == "nds" ? system_for_path(game.path) : game.system;
+    // The Game Gear shares the Master System's shelf, not its bezels.
+    if (system == "sms" && lower(game.path.extension().string()) == ".gg") return "gg";
     return system == "nds" ? "gba" : system;
 }
 
@@ -273,6 +279,7 @@ std::vector<std::string> App::play_frame_choices(std::string system) const {
     if (system.empty()) system = play_system();
     for (const auto& style : play::frame_styles)
         if (play::frame_fits(style, system)) choices.push_back(style.slug);
+    if (system == "3ds") return choices; // Tanuki3DS draws the built-in two only
     std::error_code ec;
     for (fs::directory_iterator it(o.data / "frames" / system, ec), end; !ec && it != end; it.increment(ec)) {
         const auto name = it->path().stem().string();
@@ -336,8 +343,16 @@ const char* App::play_fit_name(int fit) const {
     return fit == 1 ? "Whole pixels" : fit == 2 ? "Smooth fill" : "Sharp fill";
 }
 
-const char* App::play_second_name(int second) const {
+const char* App::play_second_name(int second, const std::string& system) const {
+    // The 3DS's lower screen is the game's own: no companion and no info screen there.
+    if (system == "3ds" && (second == 0 || second == 3)) return "Both screens";
     return second == 1 ? "Off" : second == 2 ? "Swap screens" : second == 3 ? "Info screen" : "Companion";
+}
+
+// The Second screen picker's order over the menu's numbers (play-graphics).
+static std::vector<int> play_second_order(const std::string& system) {
+    if (system == "3ds") return {0, 1, 2};
+    return {0, 3, 1, 2}; // the info screen beside the companion
 }
 
 // A picker line naming the system's default, so choosing it again means following it.
@@ -365,7 +380,7 @@ void App::save_play_default() {
 }
 
 void App::play_graphics_action() {
-    static constexpr std::array<int, 4> order = {0, 3, 1, 2};
+    const auto order = play_second_order(play_system());
     switch (play_graphics_row(settings.focus)) {
     case 0: {
         std::vector<std::string> names;
@@ -374,12 +389,12 @@ void App::play_graphics_action() {
         break;
     }
     case 1: {
-        // The picker's order (the info screen beside the companion) over the menu's numbers (play-graphics).
-        const int shown = int(std::find(order.begin(), order.end(), play_second) - order.begin()) % 4;
+        const int shown = int(std::find(order.begin(), order.end(), play_second) - order.begin()) % int(order.size());
         std::vector<std::string> names;
-        for (int id : order) names.push_back(marked_default(locale, play_second_name(id), id == play_default.second));
-        show_picker("Second screen", names, shown, [this](int n) {
-            if (n >= 0 && n < 4) apply_play_view(play_fit, order[size_t(n)], play_frame);
+        for (int id : order)
+            names.push_back(marked_default(locale, play_second_name(id, play_system()), id == play_default.second));
+        show_picker("Second screen", names, shown, [this, order](int n) {
+            if (n >= 0 && n < int(order.size())) apply_play_view(play_fit, order[size_t(n)], play_frame);
         });
         break;
     }
@@ -481,14 +496,15 @@ void App::system_defaults_action(int code) {
             save(next);
         });
     } else if (row == 2) {
-        static constexpr std::array<int, 4> order = {0, 3, 1, 2};
-        const int shown = int(std::find(order.begin(), order.end(), view.second) - order.begin()) % 4;
-        show_picker("Second screen", {"Companion", "Info screen", "Off", "Swap screens"}, shown,
-                    [view, save](int n) {
-                        auto next = view;
-                        next.second = order[size_t(std::clamp(n, 0, 3))];
-                        save(next);
-                    });
+        const auto order = play_second_order(defaults_system);
+        const int shown = int(std::find(order.begin(), order.end(), view.second) - order.begin()) % int(order.size());
+        std::vector<std::string> names;
+        for (int id : order) names.push_back(play_second_name(id, defaults_system));
+        show_picker("Second screen", names, shown, [view, save, order](int n) {
+            auto next = view;
+            next.second = order[size_t(std::clamp(n, 0, int(order.size()) - 1))];
+            save(next);
+        });
     } else if (row == 3) {
         auto choices = play_frame_choices(defaults_system);
         std::vector<std::string> labels;

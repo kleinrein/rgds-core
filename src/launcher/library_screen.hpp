@@ -22,24 +22,24 @@ bool App::game_dual(size_t index) {
     return dual_screen_game(game.path, game.system, profiles);
 }
 
-void App::dual_badge(SDL_Renderer* r, int x, int y) {
-    // A glossy accent chip in a white ring holding two bright screens stacked
-    // with a hinge gap, the lower one lit with a touch spot: "top and bottom
-    // screen" at a glance, hanging off the cover's corner like the heart.
-    const int w = 54, h = 74;
-    const Color accent = theme.at("accent"), white{255, 255, 255}, deep = mix_colour(accent, Color{0, 0, 0}, .55),
-                lit = mix_colour(accent, white, .8);
-    alpha_round(r, x - 3, y - 3 + 4, w + 6, h + 6, 20, shadow_colour(), preferences.dark ? 120 : 70);
-    fill_round(r, x - 3, y - 3, w + 6, h + 6, 20, white);
-    glossy_pill(r, x, y, w, h, 17, accent);
-    const int sw = 40, sh = 26, sx = x + (w - sw) / 2, gap = 6, top = y + (h - 2 * sh - gap) / 2;
+void App::dual_badge(SDL_Renderer* r, int cx, int cy, int size) {
+    // The heart's partner on the opposite corner: a round glossy accent badge
+    // in a panel ring holding two little screens stacked on a hinge, the upper
+    // one dark with the game, the lower one lit with a stylus dot.
+    const Color accent = theme.at("accent"), white{255, 255, 255}, deep = mix_colour(accent, Color{0, 0, 0}, .45),
+                lit = mix_colour(accent, white, .78);
+    alpha_round(r, cx - size / 2, cy - size / 2 + 2, size, size, size / 2, shadow_colour(), preferences.dark ? 80 : 36);
+    round_rect(r, cx - size / 2 - 2, cy - size / 2 - 2, size + 4, size + 4, size / 2 + 2, "panel");
+    glossy_pill(r, cx - size / 2, cy - size / 2, size, size, size / 2, accent);
+    const int sw = size * 11 / 20, sh = size * 7 / 20, gap = std::max(2, size / 14), edge = std::max(2, size / 16);
+    const int sx = cx - sw / 2, top = cy - (2 * sh + gap) / 2;
     for (int screen = 0; screen < 2; ++screen) {
         const int sy = top + screen * (sh + gap);
-        fill_round(r, sx, sy, sw, sh, 6, white);
-        fill_round(r, sx + 3, sy + 3, sw - 6, sh - 6, 4, screen ? lit : deep);
+        fill_round(r, sx, sy, sw, sh, std::max(2, size / 14), white);
+        fill_round(r, sx + edge, sy + edge, sw - 2 * edge, sh - 2 * edge, 1, screen ? lit : deep);
     }
-    // The touch screen: a stylus dot in the accent colour.
-    fill_round(r, sx + sw / 2 - 4, top + sh + gap + sh / 2 - 4, 8, 8, 4, accent);
+    const int dot = std::max(4, size / 9) & ~1;
+    fill_round(r, cx + sw / 5 - dot / 2, top + sh + gap + (sh - dot) / 2, dot, dot, 0, accent);
 }
 
 void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
@@ -52,7 +52,7 @@ void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
     round_rect(r, left, top, box, box, 20, "panel");
     game_icon(r, model.selected, 320 - size / 2, top + 20, size);
     if (stage_favourite) favourite_badge(r, left + box - 6, top + 6, 36);
-    if (stage_dual) dual_badge(r, left - 6, top + box - 62);
+    if (stage_dual) dual_badge(r, left + 6, top + box - 6, 44);
     centered_wrapped(r, game_title(model.selected), y + 322, 26, 560, 2, "ink");
     if (!developer.empty()) {
         int w = std::min(560, label_width(developer, 18, false));
@@ -75,7 +75,7 @@ bool App::cover_stage(SDL_Renderer* r, int y, const fs::path& path) {
     round_rect(r, box.x - 6, box.y - 6, box.w + 12, box.h + 12, 14, "panel");
     bool drawn = media.draw(r, path, box, false, Uint8(std::lround(255 * (.8 + .2 * ease))), false, 8);
     if (stage_favourite) favourite_badge(r, box.x + box.w - 4, box.y, 36);
-    if (stage_dual) dual_badge(r, box.x - 4, box.y + box.h - 64);
+    if (stage_dual) dual_badge(r, box.x + 4, box.y + box.h, 44);
     // A faint glass sheen fading down from the top edge, like the DSi's shelves.
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     const int sheen = std::max(8, box.h * 2 / 5);

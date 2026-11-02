@@ -330,9 +330,66 @@ def top_display(env):
     return env.get('RGDS_TOP_DISPLAY', 'DSI-1')
 
 
+# Tanuki3DS with its own Mesa (tools/tanuki3ds), about 380 MB: on the data partition, the OS image has no room for it.
+TANUKI_ENGINE = Path('/data/rgds/engines/tanuki3ds')
+
+
+def tanuki_plan(data, rom, prepare=True, engine=TANUKI_ENGINE, identity=None, fresh_start=False, app=None):
+    """Nintendo 3DS games. Tanuki3DS is SDL3, so not on the bridge; it speaks the shared menu's files itself.
+
+    Its settings and the games' saves stay under userdata, as the home folder /root is RAM on RG DS OS."""
+    if not (engine / 'run.sh').is_file():
+        raise ValueError('No emulator for 3DS games is installed on this handheld.')
+    home = Path(data) / 'emulators/rgds-play/3ds'
+    settings = home / '.local/share/Tanuki3DS'
+    if prepare:
+        settings.mkdir(parents=True, exist_ok=True)
+        if not (settings / 'ctremu.ini').is_file() and (engine / 'ctremu.ini').is_file():
+            shutil.copyfile(engine / 'ctremu.ini', settings / 'ctremu.ini')
+    env = base_environment()
+    for key in ('XDG_DATA_HOME', 'SDL_VIDEODRIVER', 'SDL_RENDER_DRIVER', 'SDL_KMSDRM_FIRST'):
+        env.pop(key, None)
+    # the renderer on its own thread, each screen on its panel, the patched Mesa; main thread CPU 3, renderer CPU 2
+    env.update(HOME=str(home), SPIKE_NOGUI='1', SPIKE_PANELS='1', SPIKE_PIN='1', MESA_NEW='1')
+    auto_load, auto_save = policy(data)
+    if os.environ.get('RGDS_FORCE_AUTOLOAD') == '1': auto_load = True
+    if fresh_start: auto_load = False
+    auto = Path(data) / 'library' / game_key(identity or rom) / 'auto-rgds-play.dss'
+    env.update(
+        RGDS_CORE='rgds-play',
+        RGDS_CONTROL_FILE=str(Path(data) / 'session/emulator.control'),
+        RGDS_AUTOSTATE_FILE=str(auto),
+        RGDS_AUTOSAVE='1' if auto_save else '0',
+        RGDS_SHARED_MENU='1',
+        RGDS_MENU_LIVE='1'
+    )
+    if auto_load and auto.is_file(): env['RGDS_NATIVE_AUTOLOAD'] = '1'
+    # the game's Graphics page, the volume bar and the FPS counter
+    from play_options import FITS, SECONDS, shader_for, system_defaults, view
+    shown = view(data, identity or rom)
+    own = read_fields(Path(data) / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
+    shader = shader_for(
+        identity or rom, int(own) if own.lstrip('-').isdigit() else -1, 0,
+        system_defaults(data, '3ds').get('filter', -1)
+    )
+    if app: env['RGDS_SHADER_DIR'] = str(Path(app) / 'emulators/shaders')
+    env.update(
+        RGDS_VOLUME_DATA=str(data),
+        RGDS_FPS='1' if read_fields(Path(data) / 'performance.ini').get('fps') == '1' else '0',
+        RGDS_3DS_VIEW=' '.join(
+            str(n) for n in (FITS.index(shown['fit']), SECONDS.index(shown['second']), shader, shown['frame'])
+        )
+    )
+    return {'command': ['nice', '-n', '-5', 'sh', str(engine / 'run.sh'), str(rom)], 'cwd': str(home), 'env': env}
+
+
 def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=False):
     if core not in CORES:
         raise ValueError("Unknown emulator: " + core)
+    if core == 'rgds-play':
+        from play_options import system_of
+        if system_of(identity or rom) == '3ds':
+            return tanuki_plan(data, rom, prepare=prepare, identity=identity, fresh_start=fresh_start, app=app)
     if core in RETIRED:
         # DraStic, DSperate, NNDDSS and melonDS are retired: DSCore plays every DS game.
         raise ValueError(core + " is retired; DSCore plays DS games.")
@@ -443,8 +500,11 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         ds_language = 1
     ds_language = max(0, min(5, ds_language))
     ds_microphone = ds_input.get('microphone', '1') != '0'
+    # Local wireless (DS controls → Local wireless): DSCore's net.mode, a session with another console on the LAN
+    ds_wireless = {'1': 'auto', '2': 'host', '3': 'guest'}.get(ds_input.get('wireless', '0'), 'off')
     ds_nickname = ''.join(
-        c for c in ds_input.get('nickname', 'RG DS Core' if core == 'rgds-experimental' else 'DSperate')
+        c for c in ds_input.get('nickname') or read_fields(data / 'ds.ini').get('nickname') or
+        ('RG DS Core' if core == 'rgds-experimental' else 'DSperate')
         if c.isprintable()
     )
     ds_nickname = ds_nickname.encode('utf-16-le')[:20].decode('utf-16-le', errors='ignore') or 'RG DS Core'
@@ -552,6 +612,9 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                         "language": ds_language,
                         "nickname": ds_nickname
                     },
+                    "net": {
+                        "mode": ds_wireless
+                    },
                     "audio": {
                         "mic": str(ds_microphone).lower(),
                         "mic_dev": capture_device(),
@@ -611,20 +674,24 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         shown = view(data, identity or rom)
         command += ["--rom", str(rom), "--data", str(root), "--fonts", str(app / "assets/fonts")]
         from linux_platform import rgds_os
-        if rgds_os():
+        from play_options import system_of, libretro_core, LIBRETRO_SYSTEM_DIRS, MGBA_SYSTEMS
+        system = system_of(identity or rom)
+        # PPSSPP starts its emulation and GPU threads after the pin below and they would share its one core: the frame
+        # read-back alone went from 5.3 to 11.6 ms. Mupen64Plus's threaded renderer starts its emulation thread after it
+        # too: Mario Kart 64's first 300 frames had 42 over budget pinned, 4 not.
+        if rgds_os() and system not in ("psp", "n64"):
             # The emulation core: the session keeps itself on CPUs 0-2, Play's main loop goes to CPU 3, real-time.
             env.setdefault("RGDS_PLAY_CPU", "3")
-        from play_options import system_of, libretro_core, MGBA_SYSTEMS
-        system = system_of(identity or rom)
         if system not in MGBA_SYSTEMS:
             # Another system: a libretro core, installed by RG DS OS (its BIOS files under /data/rgds/bios).
             library = libretro_core(system)
             if library is None:
                 raise ValueError(f"No emulator for {system} games is installed on this handheld.")
-            command += ["--core", str(library), "--system", system, "--system-dir", "/data/rgds/bios"]
+            command += ["--core", str(library), "--system", system]
+            command += ["--system-dir", LIBRETRO_SYSTEM_DIRS.get(system, "/data/rgds/bios")]
         # The launcher's Theme & display (and language, time format) for the second screen.
         command += ["--preferences", str(data / "preferences.ini")]
-        for system in ("gba", "gb", "nes", "snes", "sms", "n64"):
+        for system in ("gba", "gb", "nes", "snes", "sms", "md", "n64", "zx", "c64"):
             command += ["--profiles", str(binary.parent / "profiles" / system)]
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
         command += ["--palette", shown["palette"], "--colour", shown["colour"]]
@@ -683,6 +750,10 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # closed the emulated lid for five frames: a game that had not reached its
         # sleep by the open edge stayed asleep (panels off, saves refused).
         env['DS_LID_PULSE'] = '0'
+        # DSCore ends each frame where VBlank begins, not at line 0: games read the buttons and the touchscreen in
+        # VBlank, so the next poll lands just before that read and the frame handed over answers it, a refresh sooner
+        # (NSMB pause menu at 2x, HD smooth: press to the answering flip 74 -> 52 ms, 30 October 2026). Same picture.
+        env.setdefault('DS_FRAME_EDGE', 'vblank')
     plan = {"command": command, "cwd": str(cwd), "env": env}
     if display == 'kms' and selected_hooks.bridge:
         # No compositor is left for a paused-menu window: the engine keeps

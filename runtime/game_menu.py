@@ -487,11 +487,12 @@ class GameMenu:
             switcher_ready = False
             self.switch_games = []
             print('Game switcher unavailable: ' + str(error), file=sys.stderr)
+        from play_options import system_of
         command = [
             str(self.app / "bin/rgds-launcher"), "--game-menu", "--app",
             str(self.app), "--data",
             str(self.data), "--game-core", self.core, "--game-rom",
-            str(self.rom)
+            str(self.rom), "--game-system", system_of(self.rom)
         ]
         if switcher_ready: command.append('--game-switcher')
         if env.get('RGDS_SESSION_PLATFORM') == 'independent' and env.get('RGDS_TOP_DISPLAY'
@@ -735,8 +736,8 @@ class GameMenu:
             ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…"
              ) if action == "save-quit" else 'Changing speed…' if action ==
             'fast-forward' else "Saving before returning home…" if action ==
-            "quit" and policy(self.data)[1] else "Returning home…" if action ==
-            "quit" else "Saving checkpoint…" if action == "save" else "Loading checkpoint…"
+            "quit" and policy(self.data)[1] else "Returning home…" if action in
+            ("quit", "quit-discard") else "Saving checkpoint…" if action == "save" else "Loading checkpoint…"
         )
         self.resume_engine()
 
@@ -762,6 +763,7 @@ class GameMenu:
 
     def poll(self):
         self.poll_snapshot()
+        self.poll_bench()
         if self.lid.poll(ready=self.pending is None and self.child.poll() is None):
             self.sleep_for_lid()
             return
@@ -861,7 +863,7 @@ class GameMenu:
                 self.restart_same_core = False
                 self.send('save-quit')
             elif action in ("ds:blow", "ds:lid") or action.startswith("slot-") or action in (
-                "save", "load", "quit", "fast-forward"
+                "save", "load", "quit", "quit-discard", "fast-forward"
             ) or action.startswith(
                 ('shader:', 'graphics:', 'play-graphics:', 'play-color:', 'filter2d:', 'cheat:')
             ) or action in ('fps:0', 'fps:1', 'threaded:0', 'threaded:1', 'adaptive:0', 'adaptive:1'):
@@ -1063,6 +1065,33 @@ class GameMenu:
         while not ready.exists() and self.menu.poll() is None and time.monotonic() < deadline:
             time.sleep(.005)
         return True
+
+    def poll_bench(self):
+        """The Impeccable benchmark ROM asks for other settings (bench/ds): the same game.ini and restart as the menu's."""
+        path = Path(str(self.control) + '.bench')
+        if self.pending or self.core != 'rgds-experimental' or not path.exists() or self.child.poll() is not None:
+            return
+        try:
+            scale, mode, shader = map(int, path.read_text().split())
+            path.unlink(missing_ok=True)
+            if not (1 <= scale <= 5 and 0 <= mode <= 5 and supported(self.core, shader)): return
+            game = self.data / 'library' / game_key(self.rom) / 'game.ini'
+            game.parent.mkdir(parents=True, exist_ok=True)
+            settings = read_fields(game)
+            # Always sharp: adaptive resolution would hide a slow renderer behind the native one.
+            settings.update(rgds_scale=scale, rgds_2d=mode, filter=shader, rgds_adaptive=0, frameskip=0)
+            write_fields(game, settings)
+        except (OSError, ValueError) as error:
+            print(f'RGDS bench request: {error}', file=sys.stderr, flush=True)
+            path.unlink(missing_ok=True)
+            return
+        self.switch_target = None
+        self.reset_state = False
+        self.restart = True
+        self.restart_same_core = True
+        self.last_toggle = time.monotonic()
+        if self.menu is None: self.open()
+        self.send('save-quit')
 
     def renderer_restart(self, action):
         """Native <-> 2x-5x needs the other binary: save the choice, checkpoint, relaunch."""

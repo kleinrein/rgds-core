@@ -29,11 +29,30 @@ SYSTEMS = {
     "psx": (".cue", ".chd", ".pbp", ".m3u"),
     # Nintendo 64: big-endian .z64, byte-swapped .v64, little-endian .n64; the core reads all three
     "n64": (".z64", ".n64", ".v64"),
+    # ZX Spectrum tapes, snapshots and disks (Fuse); a .tap in a C64 folder is a C64 tape: FOLDER_SYSTEMS
+    "zx": (".tzx", ".tap", ".z80", ".sna", ".szx", ".dsk", ".trd", ".scl"),
+    # Commodore 64 disks, tapes, cartridges and programs (VICE); .m3u lists the disks of a game on several
+    "c64": (".d64", ".g64", ".d71", ".d81", ".t64", ".crt", ".prg", ".p00", ".x64"),
+    # Nintendo 3DS: not a libretro core, Tanuki3DS from the data partition (emulators.tanuki_plan)
+    "3ds": (".3ds", ".cci", ".cxi", ".3dsx"),
+    # PlayStation Portable discs (PPSSPP); .pbp and .chd are the PlayStation's unless in a PSP folder: FOLDER_SYSTEMS
+    "psp": (".iso", ".cso"),
 }
 # Folders that name a system for files whose extension cannot (Mega Drive dumps are mostly plain .bin, which a
 # PlayStation data track also is): the games folders under /data/roms, with the names other frontends use.
-FOLDER_SYSTEMS = {"md": "md", "genesis": "md", "megadrive": "md", "mega drive": "md"}
-FOLDER_EXTENSIONS = {"md": (".bin",)}
+FOLDER_SYSTEMS = {
+    "md": "md",
+    "genesis": "md",
+    "megadrive": "md",
+    "mega drive": "md",
+    "c64": "c64",
+    "commodore": "c64",
+    "commodore 64": "c64",
+    "psp": "psp"
+}
+# The C64's tapes are .tap like the Spectrum's, and a C64 game on several disks is listed by an .m3u like a
+# PlayStation disc set: in a C64 folder both are the C64's.
+FOLDER_EXTENSIONS = {"md": (".bin",), "c64": (".tap", ".m3u"), "psp": (".pbp", ".chd")}
 # The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
 LIBRETRO_CORES = {
     "nes": "fceumm",
@@ -42,8 +61,13 @@ LIBRETRO_CORES = {
     "sms": "picodrive",
     "gg": "picodrive",
     "psx": "pcsx_rearmed",
-    "n64": "mupen64plus_next"
+    "n64": "mupen64plus_next",
+    "zx": "fuse",
+    "c64": "vice_x64",
+    "psp": "ppsspp"
 }
+# A core's system folder when not the owner's BIOS folder: PPSSPP's assets come with the core and need no BIOS.
+LIBRETRO_SYSTEM_DIRS = {"psp": "/usr/share/libretro"}
 LIBRETRO_DIR = Path("/usr/lib/libretro")
 MGBA_SYSTEMS = ("gba", "gbc", "gb")
 
@@ -61,7 +85,7 @@ SECONDS = ("companion", "off", "swap", "info")  # info: the second screen's own 
 # A system's own screen when a game's shader is Default (assets/shaders/catalog.tsv): GBA screen
 # (its LCD's colour and pixel gaps), Game Boy screen (the dot matrix), Game Boy Color screen (its
 # faint grid). DS games use the default from Settings.
-SYSTEM_SHADERS = {"gba": 30, "gb": 31, "gbc": 32}
+SYSTEM_SHADERS = {"gba": 30, "gb": 31, "gbc": 32, "3ds": 0, "psp": 0}
 # Shader groups made for one system's screen (the "... screens" families in
 # src/platform/shader_catalog.hpp): offered, and used, only for that system's games.
 DS_SCREENS = frozenset({4, 6, 8, 9, 11, 12, 14, 21, 22})
@@ -118,6 +142,7 @@ FRAMES = {
     "ngpc-black": "ngp",
     "wsc-white": "wonderswan",
     "wsc-blue": "wonderswan",
+    "gg": "gg",
     "psp-black": "psp",
     "psp-white": "psp",
     "nes": "nes",
@@ -134,13 +159,22 @@ FRAMES = {
     "coleco": "coleco",
     "intellivision": "intellivision",
     "msx": "msx",
+    "zx": "zx",
+    "c64": "c64",
     "pico8": "pico8",
     "arcade": "arcade",
     "mvs": "neo",
     "vectrex": "vectrex",
-    "tv-grey": "nes,snes,md,sms,pce,neo,psx,n64,saturn,dc,msx",
+    "tv-grey": "nes,snes,md,sms,pce,neo,psx,n64,saturn,dc,msx,zx,c64",
     "tv-wood": "nes,sms,atari,coleco,intellivision",
-    "monitor": "dos,msx",
+    "monitor": "dos,msx,zx,c64",
+    "ctr-dark": "3ds",
+    "ctr-cosmos": "3ds",
+    "ctr-aqua": "3ds",
+    "ctr-flame": "3ds",
+    "ctr-pink": "3ds",
+    "ctr-white": "3ds",
+    "ctr-midnight": "3ds",
     "bar": ""
 }
 
@@ -164,14 +198,14 @@ def _system_of_folder(rom, name):
 def system_of(rom):
     """'gba', 'gbc', 'gb', 'md', ..., or 'nds'. A .zip is the system of the game inside it."""
     rom = Path(rom)
-    system = _system_of_name(rom.name) or _system_of_folder(rom, rom.name)
+    system = _system_of_folder(rom, rom.name) or _system_of_name(rom.name)
     if system:
         return system
     if rom.suffix.lower() == ".zip":
         try:
             with zipfile.ZipFile(rom) as archive:
                 for name in archive.namelist():
-                    system = _system_of_name(name) or _system_of_folder(rom, name)
+                    system = _system_of_folder(rom, name) or _system_of_name(name)
                     if system:
                         return system
         except (OSError, zipfile.BadZipFile):
@@ -180,10 +214,11 @@ def system_of(rom):
 
 
 def shader_fits(rom, shader):
-    """Original presets fit every game; a system's screens fit only its games; the DS looks only DS games."""
+    """Original presets fit every game; a system's screens fit only its games; the other looks DS, 3DS and PSP games
+    (drawn for sharp modern screens, not another handheld's)."""
     system = system_of(rom)
     if shader in ORIGINAL or shader in SCREENS.get(system, ()): return True
-    return system == "nds" and not any(shader in screens for screens in SCREENS.values())
+    return system in ("nds", "3ds", "psp") and not any(shader in screens for screens in SCREENS.values())
 
 
 def shader_for(rom, own, default, system_choice=-1):

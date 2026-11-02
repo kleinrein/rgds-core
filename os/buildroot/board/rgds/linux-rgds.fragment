@@ -37,3 +37,9 @@ CONFIG_PSTORE=y
 CONFIG_PSTORE_CONSOLE=y
 CONFIG_PSTORE_PMSG=y
 CONFIG_PSTORE_RAM=y
+# the Wi-Fi regulatory database in the kernel (board/rgds/firmware): cfg80211 is built in and asks for it before the
+# card is mounted; from /lib/firmware it never loaded and the chip kept the world channel plan. No sysfs fallback:
+# nothing in the OS answers it, each missing firmware file only waited 60 s on it
+CONFIG_EXTRA_FIRMWARE="regulatory.db regulatory.db.p7s"
+CONFIG_EXTRA_FIRMWARE_DIR="firmware"
+CONFIG_FW_LOADER_USER_HELPER_FALLBACK=n

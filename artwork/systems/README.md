@@ -6,7 +6,7 @@ camera and one lighting setup for the whole set, no text and no logos.
 
 They live here rather than in `assets/` because they are the source, not a
 shipped asset. `assets/systems/*.bmp` is what the handheld draws; these are
-89 MB of photographs that only the pipeline needs.
+98 MB of photographs that only the pipeline needs.
 
 ## Where they come from
 

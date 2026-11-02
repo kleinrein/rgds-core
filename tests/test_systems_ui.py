@@ -203,6 +203,17 @@ class SystemsUITests(unittest.TestCase):
             self.assertEqual(read_fields(self.data / 'library' / game_key(rom) / 'play.ini').get('frame'), chosen)
             self.assertEqual(report['play_frame'], chosen)
 
+    def test_a_zipped_game_is_offered_its_own_systems_bezels(self):
+        # The runtime looks inside a .zip and says which system it holds: a zipped SNES game is not a GBA one.
+        rom = self.root / 'Roms/SFC/Super Metroid (USA).zip'
+        rom.parent.mkdir(parents=True)
+        rom.write_bytes(bytes(32))
+        menu = ('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom), '--game-system', 'snes')
+        frame = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key Down\n500 key Down\n600 key A\n'
+        report = self.run_ui(frame + '700 key Down\n750 key A\n', extra=menu, seconds=2)
+        self.assertEqual(read_fields(self.data / 'library' / game_key(rom) / 'play.ini').get('frame'), 'snes')
+        self.assertEqual(report['play_frame'], 'snes')
+
     def test_each_system_is_offered_only_its_own_screen_shaders(self):
         ds_screens, gba_screens = {4, 6, 8, 9, 11, 12, 14, 21, 22}, {29, 30}
         rom = self.gba / 'Metroid Fusion (USA).gba'

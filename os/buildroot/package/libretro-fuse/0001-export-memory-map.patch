@@ -1,0 +1,14 @@
+Export Fuse's read map and its tape state, so RG DS Play's companion can read the
+Spectrum's memory as its Z80 sees it (Fuse answers retro_get_memory_data with
+nothing; 32 pages of 2 KiB, each entry starting with the pointer to its bytes)
+and the player can hurry a tape along while a loader reads it (tape_is_playing,
+loader_tape_loading from 0002).
+
+--- a/build/link.T
++++ b/build/link.T
+@@ -1,4 +1,4 @@
+ {
+-   global: retro_*;
++   global: retro_*; memory_map_read; tape_is_playing; loader_tape_loading;
+    local: *;
+ };

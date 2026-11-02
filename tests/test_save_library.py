@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'runtime'))
 from save_library import SaveLibrary, digest
 from quick_resume import arm, consume, record_exit, invalidate
-from fields import write_fields
+from fields import read_fields, write_fields
 
 
 class SaveLibraryTests(unittest.TestCase):
@@ -43,6 +43,24 @@ class SaveLibraryTests(unittest.TestCase):
             self.v.delete(1)
         with self.assertRaises(ValueError):
             self.v.delete('0')
+
+    def test_auto_save_is_published_as_row_nine_with_its_thumbnail(self):
+        self.v.publish()
+        index = read_fields(self.v.root / 'index.ini')
+        self.assertRegex(index['slot_9'], r'^\d{4}-\d\d-\d\d \d\d:\d\d$')
+        self.assertEqual(index['image_9'], '')  # a stand-in state carries no picture
+        picture = bytes([0x00, 0xF8]) * (128 * 96)  # RGB565 red
+        header = b'DSST' + (4).to_bytes(4, 'little') + b'HEAD' + (52 + 128 * 96 * 2).to_bytes(4, 'little')
+        header += bytes(40) + (128).to_bytes(4, 'little') + (96).to_bytes(4, 'little')
+        self.v.canonical.write_bytes(header + picture)
+        self.v.publish()
+        index = read_fields(self.v.root / 'index.ini')
+        bmp = Path(index['image_9']).read_bytes()
+        self.assertEqual((bmp[:2], len(bmp)), (b'BM', 54 + 128 * 96 * 3))
+        self.assertEqual(bmp[54:57], bytes([0, 0, 0xFF]))  # BGR red
+        self.v.canonical.unlink()
+        self.v.publish()
+        self.assertEqual(read_fields(self.v.root / 'index.ini')['slot_9'], '')
 
     def test_load_keeps_current_progress_for_undo(self):
         self.v.store(0)

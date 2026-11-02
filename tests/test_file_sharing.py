@@ -50,6 +50,16 @@ class FileSharingTests(unittest.TestCase):
         self.assertNotIn('guest ok = yes', text)
         self.assertIn('veto files = /._*/.DS_Store/', text)
 
+    def test_samba_also_listens_on_the_usb_cable(self):
+        games = self.root / 'games'
+        games.mkdir()
+        self.sharing.folder.mkdir(parents=True)
+        with patch('file_sharing.USB_INTERFACE', self.root):
+            config, _shares = self.sharing.configure('192.168.1.42', [games], 'root')
+            self.assertIn('interfaces = 192.168.1.42 10.55.0.1\n', config.read_text())
+            config, _shares = self.sharing.configure('10.55.0.1', [games], 'root')
+            self.assertIn('interfaces = 10.55.0.1\n', config.read_text())
+
     def test_bonjour_service_is_advertised_only_while_sharing(self):
         service = self.root / 'etc/avahi/services/rgds-smb.service'
         self.sharing.avahi_service = service
@@ -326,6 +336,30 @@ class ConnectivityUiTests(unittest.TestCase):
                 self.assertEqual(state.get('sharing_mode', ''), mode)
                 self.assertEqual(state['ip'], '192.168.1.42')
                 self.assertEqual((folder / 'device/sharing/login.ini').exists(), enabled)
+
+    def test_usb_connection_row_switches_off_and_on(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            script = folder / 'input.txt'
+            keys = ''.join(f'{500 + i * 50} key Down\n' for i in range(7))
+            for expected in ('0', '1'):
+                script.write_text(keys + '900 key Return\n')
+                result = subprocess.run(
+                    [
+                        str(ROOT / 'build/host/rgds-launcher'), '--preview', '--settings', '--section', 'connectivity',
+                        '--data',
+                        str(folder), '--input-script',
+                        str(script), '--seconds', '2'
+                    ],
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                    env=dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy'),
+                    timeout=8
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                state = read_fields(folder / 'device/status.ini')
+                self.assertEqual(state['usb'], expected)
 
     def test_toggle_and_keyboard_details_show_the_login(self):
         # Sharing sits below the fold since the Bluetooth rows came in: reach it with the keys, then as before

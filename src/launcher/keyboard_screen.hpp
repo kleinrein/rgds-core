@@ -5,7 +5,8 @@
 
 void App::keyboard_screen(SDL_Renderer* r, int y) {
     settings_header(r, y,
-                    edit_field == 5   ? "DS nickname"
+                    edit_field == 7   ? "Your name"
+                    : edit_field == 5 ? "DS nickname"
                     : edit_field == 4 ? "Search games"
                     : edit_field == 6 ? "Search cheats"
                     : edit_field == 3 ? "Matching title"
@@ -13,7 +14,7 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
                                       : "Password");
     round_rect(r, 20, y + 91, 600, 62, 12, "accent");
     round_rect(r, 22, y + 93, 596, 58, 10, "panel");
-    std::string value = (edit_field == 0 || edit_field == 3 || edit_field == 4 || edit_field == 5 || edit_field == 6)
+    std::string value = (edit_field == 0 || edit_field == 3 || edit_field == 4 || edit_field == 5 || edit_field == 6 || edit_field == 7)
                             ? edit_buffer
                             : std::string(RoundedFont::codepoints(edit_buffer).size(), '*');
     bool hidden = edit_field == 1 || edit_field == 2;

@@ -38,10 +38,6 @@ constexpr int bar_min = 50;                                                     
 constexpr double sp_screen_mm = 61, sp_window_side = 3, sp_window_top = 3, sp_window_bottom = 9.5, sp_lid_mm = 82,
                  sp_lid_top = 5, sp_lid_bottom = 5.5, sp_hinge_mm = 11, sp_lid_radius = 5, sp_window_radius = 1.5,
                  sp_bumper_in = 3.4;
-// The Game Boy Advance's own proportions, at the panel's scale. The AGB is a wide, squat body (about 2:1): the screen
-// sits in a dark lens in the upper half, the lower edge of the shell tapers in, and a strip of body below the screen
-// carries the logo on the left and the speaker's round holes on the right.
-constexpr int agb_side = 26, agb_top = 20, agb_bottom = 26, agb_radius = 14, agb_edge = 22;
 // The flat bezels of the Game Boy, the Pocket and the Color: their margins from the game to the bezel's edge (the
 // power light sits in the wider left one), the body left showing above and below them, and their corners (the
 // low-right one is the Game Boy's big curve).
@@ -61,8 +57,8 @@ struct Room {
 };
 bool inner(Kind kind) { return kind == Kind::DmgInner || kind == Kind::PocketInner || kind == Kind::BezelInner; }
 bool roomy(Kind kind) {
-    return kind == Kind::Console || kind == Kind::Tv || kind == Kind::TvWood || kind == Kind::Monitor ||
-           kind == Kind::Arcade || kind == Kind::Vectrex || inner(kind);
+    return kind == Kind::Tv || kind == Kind::TvWood || kind == Kind::Monitor || kind == Kind::Arcade ||
+           kind == Kind::Vectrex || inner(kind);
 }
 Room room_of(Kind kind) {
     switch (kind) {
@@ -70,7 +66,6 @@ Room room_of(Kind kind) {
     case Kind::DmgInner: return {88, 72, 34, 14};
     case Kind::PocketInner: return {88, 72, 24, 24};
     case Kind::BezelInner: return {88, 72, 14, 34};
-    case Kind::Console: return {54, 54, 34, 116};
     case Kind::Tv: return {46, 46, 38, 84};
     case Kind::TvWood: return {40, 160, 42, 42};
     case Kind::Monitor: return {48, 48, 40, 82};
@@ -331,11 +326,12 @@ void recess(Canvas& out, const FrameLayout& screen, int ring, Rgb dark) {
 }
 
 // The power light with BATTERY under it, as printed on the Game Boy's face.
-void battery_light(Canvas& out, const Font& font, double cx, double cy, double unit, int room, Rgb ink) {
+void battery_light(Canvas& out, const Font& font, double cx, double cy, double unit, int room, Rgb ink,
+                   const char* label = "BATTERY") {
     power_light(out, cx, cy, unit, Rgb::hex(0xFF3B3B));
     const int size = 16, spacing = -1; // set a little tight, as the lettering is
-    if (!font.loaded() || spaced_width(font, "BATTERY", size, spacing) > room) return;
-    name(out, font, "BATTERY", cx, int(cy + 12 * unit + font.ascent(size)), size, spacing, ink, {});
+    if (!font.loaded() || spaced_width(font, label, size, spacing) > room) return;
+    name(out, font, label, cx, int(cy + 12 * unit + font.ascent(size)), size, spacing, ink, {});
 }
 bool gameboy_name(const Style& s) { return s.print.rfind("GAME BOY", 0) == 0; }
 
@@ -368,7 +364,7 @@ void draw_face(Canvas& out, const FrameLayout& screen, const Style& s, const Fon
     recess(out, screen, std::max(3, int(recess_width * unit)), scale(s.lens, 0.55));
     if (gameboy_name(s) || s.kind == Kind::Dmg)
         battery_light(out, font, bx + f.left * sx / 2 - 3 * unit, screen.y + screen.h * 0.22, unit,
-                      int((f.left - 6) * sx), Rgb::hex(0xC9CAD3));
+                      int((f.left - 6) * sx), Rgb::hex(0xC9CAD3), s.kind == Kind::Bezel ? "POWER" : "BATTERY");
     else power_light(out, bx + f.left * sx / 2, screen.y + screen.h * 0.22, unit, Rgb::hex(0xFF3B3B));
     if (s.kind == Kind::Dmg) {
         dot_matrix(out, font, bx + 2 * unit, bx + bw - 2 * unit, by + 16 * sy, bx + bw * 0.60, unit);
@@ -384,9 +380,10 @@ void draw_face(Canvas& out, const FrameLayout& screen, const Style& s, const Fon
                      accent_for(s.print));
     } else {
         // The name on the body under the bezel, from its left edge.
-        const int size = int(28 * unit);
-        slanted_from(out, font, s.print, int(bx + 6 * unit), int(by + bh + (f.below * sy + font.ascent(size)) / 2),
-                     size, std::max(1, int(2 * unit)), s.ink, {});
+        const int size = int(28 * unit), base = int(by + bh + (f.below * sy + font.ascent(size)) / 2);
+        const int word = s.kind == Kind::Dmg ? font.measure("Nintendo", 20) + int(12 * unit) : 0;
+        if (word) name_from(out, font, "Nintendo", int(bx + 6 * unit), base, 20, 0, s.ink, {});
+        slanted_from(out, font, s.print, int(bx + 6 * unit) + word, base, size, std::max(1, int(2 * unit)), s.ink, {});
     }
 }
 
@@ -397,7 +394,8 @@ void draw_inner(Canvas& out, const FrameLayout& screen, const Style& s, const Fo
     body(out, s, sx, sy, 0);
     recess(out, screen, std::max(3, int(recess_width * unit)), scale(s.lens, 0.55));
     const double led_x = screen.x / 2.0 - 4 * unit, led_y = screen.y + screen.h * 0.16;
-    battery_light(out, font, led_x, led_y, unit, int(screen.x - 8 * sx), Rgb::hex(0xC9CAD3));
+    battery_light(out, font, led_x, led_y, unit, int(screen.x - 8 * sx), Rgb::hex(0xC9CAD3),
+                  s.kind == Kind::BezelInner ? "POWER" : "BATTERY");
     if (s.kind == Kind::DmgInner) dot_matrix(out, font, 0, out.w(), screen.y - 21 * sy, out.w() * 0.62, unit);
     if (s.kind == Kind::BezelInner) {
         const int size = 16, spacing = std::max(1, int(2 * unit)), ring = std::max(3, int(recess_width * unit));
@@ -408,146 +406,7 @@ void draw_inner(Canvas& out, const FrameLayout& screen, const Style& s, const Fo
     }
 }
 
-// The Game Boy Advance: a wide, squat body with a dark lens in the upper half, the green power light beside the
-// screen, the GAME BOY ADVANCE logo low on the left and the speaker's round holes low on the right.
-void draw_agb(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
-    const int w = out.w(), h = out.h();
-    const double sx = w / 640.0, sy = h / 480.0, unit = std::min(sx, sy);
-    // The lens the screen sits in.
-    const double lx = screen.x - agb_side * sx, ly = screen.y - agb_top * sy, lw = screen.w + 2 * agb_side * sx,
-                 lh = screen.h + (agb_top + agb_bottom) * sy;
-    // The shell: the AGB's body is wider than its lens on both sides and runs a strip below it for the logo.
-    const double body_w = std::min(w - 8 * sx, lw + 60 * sx);
-    const double body_h = std::min(h - 8 * sy, lh + 2 * 20 * sy + 96 * sy);
-    const double bx = (w - body_w) / 2, bw = body_w;
-    const double by = std::max(0.0, std::min(ly - 20 * sy, h - body_h)), bh = body_h;
-    // The AGB's body: a wide shell whose lower edge tapers in, the way the real one does at its belly.
-    const double strip_h = 96 * sy; // the strip of body under the lens, for the logo and the speaker
-    for (int y = int(by); y < int(by + bh); ++y) {
-        const double t = (y - by) / std::max(1.0, bh); // 0 at the top, 1 at the bottom
-        // The taper: the shell narrows towards the bottom, in the last third of its height.
-        const double k = std::max(0.0, (t - 0.55) / 0.45);
-        const double taper = 30 * sx * k * k;
-        for (int x = int(bx + taper); x < int(bx + bw - taper); ++x) {
-            if (x < 0 || x >= w) continue;
-            const double ex = std::min(x - bx, bx + bw - x) / (30 * sx);
-            const double ey = std::min(y - by, by + bh - y) / (16 * sy);
-            Rgb c = mix(s.top, s.bottom, int(200 * t));
-            c = scale(c, 0.88 + 0.12 * std::sqrt(std::clamp(std::min(ex, ey), 0.0, 1.0)));
-            if (y < by + 14 * sy) c = mix(c, Rgb{255, 255, 255}, int(36 * (1 - (y - by) / (14 * sy))));
-            const uint32_t n = hash(x, y);
-            if (s.speckle && (n & 7) == 0) c = shade(c, int(n >> 8) % (2 * s.speckle + 1) - s.speckle);
-            out.data()[size_t(y) * w + x] = c.px();
-        }
-    }
-    // The seam where the lower shell meets the upper one.
-    const double seam = by + bh - strip_h;
-    for (int y = int(seam); y < int(seam + 2 * sy); ++y)
-        for (int x = int(bx); x < int(bx + bw); ++x) {
-            if (x < 0 || y < 0 || x >= w || y >= h) continue;
-            Rgb c = Rgb::from_px(out.data()[size_t(y) * w + x]);
-            out.data()[size_t(y) * w + x] = shade(c, -20).px();
-        }
-
-    lens(out, s, lx, ly, lw, lh, agb_radius * unit, unit);
-    recess(out, screen, std::max(3, int(4 * unit)), scale(s.lens, 0.6));
-    // The green power light, left of the screen, in the dark lens.
-    power_light(out, lx + agb_side * sx / 2, screen.y + screen.h * 0.30, unit, Rgb::hex(0x4CFA7A));
-
-    // The logo, low on the left of the body: "GAME BOY" over "ADVANCE", the ADVANCE letters in the sweep. The ink is
-    // picked so it reads on the body it is printed on: dark on a pale shell, pale on a dark one.
-    const int size = int(16 * unit), spacing = std::max(1, int(1 * unit));
-    const double logo_x = bx + 28 * sx, logo_y = seam + 14 * sy;
-    const bool pale = s.bottom.r + s.bottom.g + s.bottom.b > 430;
-    const Rgb logo_ink = pale ? Rgb::hex(0x2A2A34) : s.ink;
-    name_from(out, font, "GAME BOY", int(logo_x), int(logo_y + font.ascent(size)), size, spacing, logo_ink, {});
-    name_from(out, font, "ADVANCE", int(logo_x), int(logo_y + font.ascent(size) + int(16 * unit)), size, spacing,
-              logo_ink, accent_for("GAME BOY ADVANCE"));
-
-    // The speaker: round holes in a wide patch, low on the right of the body.
-    const double gx = bx + bw - 150 * sx, gy = seam + 12 * sy;
-    for (int row = 0; row < 4; ++row)
-        for (int col = 0; col < 8; ++col) {
-            const double hx = gx + col * 15 * unit + (row % 2) * 7.5 * unit, hy = gy + row * 13 * unit;
-            if (hx > bx + bw - 20 * sx || hy > by + bh - 6 * sy) continue;
-            Rgb at =
-                Rgb::from_px(out.data()[size_t(std::clamp(int(hy), 0, h - 1)) * w + std::clamp(int(hx), 0, w - 1)]);
-            disc(out, hx, hy + 0.8 * unit, 3.6 * unit, shade(at, 26), 130);
-            disc(out, hx, hy, 3.6 * unit, scale(at, 0.42), 256);
-        }
-}
-
-// The WonderSwan Color and the Neo Geo Pocket Color: tall portrait handhelds, the screen in the upper half and the
-// controls below it.
-void draw_portrait(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
-    const int w = out.w(), h = out.h();
-    const double sx = w / 640.0, sy = h / 480.0, unit = std::min(sx, sy);
-    // The body: a tall shell, wider than the screen, with the screen in the upper part of it.
-    const double body_h = h - 12 * sy;
-    const double body_w = std::min(w - 20 * sx, body_h / 1.35);
-    const double bx = (w - body_w) / 2, bw = body_w;
-    const double by = std::max(0.0, (h - body_h) / 2), bh = body_h;
-    body(out, s, sx, sy, 16, 0.16);
-
-    // The screen: a dark window in the upper half of the shell.
-    const double m = 12 * unit;
-    lens(out, s, screen.x - m, screen.y - m, screen.w + 2 * m, screen.h + 2 * m, 8 * unit, unit);
-    recess(out, screen, std::max(3, int(4 * unit)), scale(s.lens, 0.6));
-    // The green power light above the screen.
-    power_light(out, screen.x + screen.w / 2, screen.y - m - 8 * unit, unit, Rgb::hex(0x4CFA7A));
-
-    // The controls below the screen: the D-pad on the left, the A and B buttons on the right, the speaker between.
-    const double cy = by + bh - 82 * sy;
-    // The D-pad: a cross, in the shell's own dark grey.
-    const double dx = bx + 46 * sx, dsize = 13 * unit;
-    const Rgb dark = scale(s.bottom, 0.55);
-    rounded(out, dx - dsize, cy - dsize * 0.5, dsize * 2, dsize, dsize * 0.4, dark, 255);
-    rounded(out, dx - dsize * 0.5, cy - dsize, dsize, dsize * 2, dsize * 0.4, dark, 255);
-    // The A and B buttons, angled as the WonderSwan's are.
-    disc(out, bx + bw - 66 * sx, cy - 10 * unit, 12 * unit, dark, 255);
-    disc(out, bx + bw - 36 * sx, cy + 10 * unit, 12 * unit, dark, 255);
-    // The speaker's holes, between them.
-    for (int row = 0; row < 3; ++row)
-        for (int col = 0; col < 3; ++col)
-            disc(out, bx + bw / 2 - 14 * unit + col * 14 * unit, cy - 14 * unit + row * 14 * unit, 4 * unit,
-                 scale(s.bottom, 0.3), 245);
-
-    // The name under the screen, on the shell.
-    const int size = int(14 * unit);
-    name(out, font, s.print, w / 2.0, int(by + bh - 18 * sy), size, std::max(1, int(2 * unit)), s.ink,
-         accent_for(s.print));
-}
-
-// The PlayStation Portable: a wide lens across the body, the buttons and the speaker under it.
-void draw_psp(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
-    (void)font; // the PSP carries no name on its face
-    const int w = out.w(), h = out.h();
-    const double sx = w / 640.0, sy = h / 480.0, unit = std::min(sx, sy);
-    body(out, s, sx, sy, 16, 0.16);
-    // The lens: a wide, shallow window across the top of the body.
-    const double m = 18 * unit;
-    lens(out, s, screen.x - m, screen.y - m, screen.w + 2 * m, screen.h + 2 * m, 12 * unit, unit);
-    recess(out, screen, std::max(3, int(4 * unit)), scale(s.lens, 0.6));
-    // The power light beside the screen.
-    power_light(out, screen.x + screen.w + m + 10 * unit, screen.y + 12 * unit, unit, Rgb::hex(0x4CFA7A));
-    // The controls under the screen: the D-pad on the left, the face buttons on the right, the speaker between.
-    const double cy = screen.y + screen.h + m + 46 * sy;
-    const double dx = screen.x + 44 * sx, dsize = 13 * unit;
-    rounded(out, dx - dsize, cy - dsize * 0.5, dsize * 2, dsize, dsize * 0.4, s.bottom, 255);
-    rounded(out, dx - dsize * 0.5, cy - dsize, dsize, dsize * 2, dsize * 0.4, s.bottom, 255);
-    // The face buttons: the four symbols of the PSP, in their own colours.
-    const Rgb face[4] = {Rgb::hex(0x6E8FD8), Rgb::hex(0xD85A72), Rgb::hex(0x62C86E), Rgb::hex(0xE0B24C)};
-    for (int i = 0; i < 4; ++i) {
-        const double fx = screen.x + screen.w - 74 * sx + (i % 2) * 30 * unit;
-        const double fy = cy - 15 * unit + (i / 2) * 30 * unit;
-        disc(out, fx, fy + 1.5 * unit, 11 * unit, scale(s.bottom, 0.35), 220);
-        disc(out, fx, fy, 11 * unit, face[i], 256);
-    }
-    // The speaker's slots, between the controls.
-    slots(out, screen.x + screen.w / 2 - 30 * unit, cy - 14 * unit, 60 * unit, 4, s.bottom, unit);
-}
-
-// The WonderSwan Color and the PSP: a wide dark lens, the power light left of the screen, the name under it.
+// The WonderSwan Color: a wide dark lens, the power light left of the screen, the name under it.
 void draw_lens(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
     const int w = out.w(), h = out.h();
     const double sx = w / 640.0, sy = h / 480.0, unit = std::min(sx, sy);
@@ -574,258 +433,537 @@ void draw_lens(Canvas& out, const FrameLayout& screen, const Style& s, const Fon
         }
 }
 
-// The Nintendo Entertainment System: the dark grey console with the red stripe across its front and the thin blue
-// line under it, the front badge on the left and the power light on the right.
-void draw_nes(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
-    const int w = out.w(), h = out.h();
-    const double sx = w / 640.0, sy = h / 480.0, unit = std::min(sx, sy);
-    body(out, s, sx, sy, 18, 0.16);
-
-    // The stripe: the red band across the front with the thin blue line under it, above the screen.
-    const double stripe_h = 16 * sy, blue_h = 5 * sy;
-    const double sy0 = screen.y - 30 * sy;
-    for (int y = int(sy0); y < int(sy0 + stripe_h + blue_h); ++y)
-        for (int x = 0; x < w; ++x) {
-            const bool red = y < sy0 + stripe_h;
-            Rgb c = red ? Rgb::hex(0xD8282E) : Rgb::hex(0x2A5FBF);
-            // Lit along its top edge, a shade darker at its bottom.
-            c = shade(c, red ? (y == int(sy0) ? 26 : 0) : (y == int(sy0 + stripe_h) ? 18 : 0));
-            if (y == int(sy0 + stripe_h)) c = shade(c, -40);
-            out.data()[size_t(y) * w + x] = c.px();
-        }
-
-    // The screen, set into the front panel.
-    bezel(out, s, screen.x - 14 * sx, screen.y - 14 * sy, screen.w + 28 * sx, screen.h + 28 * sy, 10 * unit, 10 * unit,
-          unit);
-    screen_edge(out, screen, std::max(2, int(2 * unit)));
-
-    // The front badge on the left: the "Nintendo Entertainment System" mark in a rounded box.
-    const double badge_x = 16 * sx, badge_y = screen.y + screen.h + 18 * sy;
-    const double badge_w = 232 * sx, badge_h = 54 * sy;
-    rounded(out, badge_x, badge_y, badge_w, badge_h, 8 * unit, Rgb::hex(0x2A2A2E), 235);
-    rounded(out, badge_x + 3 * sx, badge_y + 3 * sx, badge_w - 6 * sx, badge_h - 6 * sx, 6 * unit, Rgb::hex(0x1C1C20),
-            235);
-    // The badge's own lettering: "Nintendo" over "Entertainment System", the way the badge is stacked.
-    const int size = int(15 * unit);
-    name(out, font, "Nintendo", badge_x + badge_w / 2, int(badge_y + 23 * sy), size, std::max(1, int(1 * unit)),
-         Rgb::hex(0xD8D8DC), {});
-    name(out, font, "ENTERTAINMENT SYSTEM", badge_x + badge_w / 2, int(badge_y + 41 * sy), int(9 * unit),
-         std::max(1, int(1 * unit)), Rgb::hex(0xC0C0C6), {});
-
-    // The power light on the right, in the front.
-    power_light(out, w - 40 * sx, screen.y + screen.h + 34 * sy, unit, Rgb::hex(0xFF3B3B));
-    // The vents on the right, the way the console's top is ribbed.
-    for (int i = 0; i < 6; ++i) {
-        const double vx = w - 120 * sx + i * 11 * unit;
-        rounded(out, vx, screen.y + screen.h + 22 * sy, 5 * unit, 22 * sy, 2 * unit, scale(s.bottom, 0.45), 200);
+// Text laid along a rail, reading upward, from the same crisp atlases: drawn level in a scratch picture, then turned.
+void rail_text(Canvas& out, const Font& font, const std::string& text, double cx, double cy, int size, int spacing,
+               Rgb ink, const std::vector<Rgb>& accent = {}) {
+    if (!font.loaded() || text.empty()) return;
+    const int w = spaced_width(font, text, size, spacing) + 4, h = size * 2, base = size + size / 3;
+    Canvas colour(w, h), cover(w, h);
+    colour.fill(ink);
+    name_from(colour, font, text, 2, base, size, spacing, ink, accent);
+    name_from(cover, font, text, 2, base, size, spacing, Rgb{255, 255, 255}, {});
+    const int left = int(cx - base + font.ascent(size) / 2.0), bottom = int(cy + w / 2.0);
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x)
+            put(out, left + y, bottom - x, Rgb::from_px(colour.at(x, y)), int(cover.at(x, y) & 0xFF) * 256 / 255);
+}
+// The largest baked size whose lettering fits `room` (0: not even the smallest).
+int size_fitting(const Font& font, const std::string& text, int spacing, double room) {
+    int best = 0;
+    for (const int size : text_sizes)
+        if (spaced_width(font, text, size, spacing) <= room) best = size;
+    return best;
+}
+// Lines moulded into the shell: each a dark groove with light on its low edge.
+void ribs(Canvas& out, double x, double y, double w, double h, double pitch, Rgb on, bool across = true) {
+    const double length = across ? w : h, room = across ? h : w;
+    for (int i = 0; (i + 0.5) * pitch < room; ++i) {
+        const double at = (across ? y : x) + i * pitch;
+        const double dark_x = across ? x : at, dark_y = across ? at : y, tw = across ? length : 2,
+                     th = across ? 2 : length;
+        rounded(out, dark_x + (across ? 0 : 1), dark_y + (across ? 1 : 0), tw, th, 1, shade(on, 24), 150);
+        rounded(out, dark_x, dark_y, tw, th, 1, scale(on, 0.42), 230);
     }
 }
+// A round button: its well, the cap lit from above, a speck of shine.
+void cap(Canvas& out, double x, double y, double r, Rgb c, double unit) {
+    disc(out, x, y + 1.5 * unit, r + 1.5 * unit, Rgb{0, 0, 0}, 170);
+    disc(out, x, y, r, scale(c, 0.78), 256);
+    disc(out, x, y - r * 0.10, r * 0.86, c, 256);
+    disc(out, x - r * 0.30, y - r * 0.36, r * 0.24, mix(c, Rgb{255, 255, 255}, 170), 190);
+}
+// A plus-shaped pad in its round dish.
+void dpad(Canvas& out, double x, double y, double r, Rgb c, Rgb dish, double unit) {
+    disc(out, x, y, r * 1.22, dish, 256);
+    const double t = r * 0.66;
+    for (const double shift : {1.6 * unit, 0.0}) {
+        const Rgb k = shift > 0 ? Rgb{0, 0, 0} : c;
+        const int a = shift > 0 ? 150 : 256;
+        rounded(out, x - r, y - t / 2 + shift, 2 * r, t, 2 * unit, k, a);
+        rounded(out, x - t / 2, y - r + shift, t, 2 * r, 2 * unit, k, a);
+    }
+    disc(out, x, y, t * 0.30, scale(c, 0.68), 256);
+}
+// A rectangular push button in a dark surround.
+void push(Canvas& out, double x, double y, double w, double h, Rgb c, double unit) {
+    rounded(out, x - 2 * unit, y - 2 * unit, w + 4 * unit, h + 4 * unit, 2.5 * unit, Rgb::hex(0x0C0C0E));
+    rounded(out, x, y, w, h, 1.5 * unit, scale(c, 0.8));
+    rounded(out, x, y, w, h - 2 * unit, 1.5 * unit, c);
+}
+// A socket the controller plugs into.
+void port(Canvas& out, double x, double y, double w, double h, double unit) {
+    rounded(out, x, y, w, h, 3 * unit, Rgb::hex(0x050506));
+    rounded(out, x + 2 * unit, y + 2 * unit, w - 4 * unit, h - 4 * unit, 2 * unit, Rgb::hex(0x26262A));
+}
+Rgb ink_on(Rgb ground) { return ground.r + ground.g + ground.b > 400 ? Rgb::hex(0x24242A) : Rgb::hex(0xE6E6EA); }
 
-// A console's own mark, drawn from shapes in the console's colours: the Super Nintendo's purple on its dark
-// panel, the Mega Drive's SEGA above the red 16-BIT band, the PlayStation's blue line, the Nintendo 64's N, the
-// Saturn's planet ring, the Dreamcast's orange spiral.
-void draw_badge(Canvas& out, const Font& font, Badge badge, double cx, double cy, double unit, const Style& s) {
-    (void)s; // each mark carries its own colours
-    switch (badge) {
-    case Badge::Snes: {
-        // The Super Nintendo: the mark on the console's dark front panel, the purple letters and the three blocks.
-        const int size = int(13 * unit);
-        const double panel_h = 46 * unit;
-        rounded(out, cx - 78 * unit, cy - panel_h / 2, 156 * unit, panel_h, 4 * unit, Rgb::hex(0x2A2A32), 235);
-        name(out, font, "SUPER", cx, int(cy - 12 * unit), size, std::max(1, int(3 * unit)), Rgb::hex(0xB4A0DC), {});
-        name(out, font, "NINTENDO", cx, int(cy + 3 * unit), size, std::max(1, int(3 * unit)), Rgb::hex(0xB4A0DC), {});
-        const Rgb blocks[3] = {Rgb::hex(0xD8282E), Rgb::hex(0xF2F2F4), Rgb::hex(0x2A5FBF)};
-        for (int i = 0; i < 3; ++i)
-            rounded(out, cx - 20 * unit + i * 14 * unit, cy + 9 * unit, 11 * unit, 7 * unit, 1.5 * unit, blocks[i]);
-        break;
-    }
-    case Badge::Md: {
-        // The Mega Drive: SEGA's mark above the red band with 16-BIT in it.
-        const int size = int(17 * unit);
-        name(out, font, "SEGA", cx, int(cy - 6 * unit), size, std::max(1, int(4 * unit)), Rgb::hex(0xE8E8EC), {});
-        rounded(out, cx - 58 * unit, cy + 2 * unit, 116 * unit, 20 * unit, 3 * unit, Rgb::hex(0xC8202A));
-        name(out, font, "16-BIT", cx, int(cy + 17 * unit), int(12 * unit), std::max(1, int(3 * unit)),
-             Rgb::hex(0xF6F6F8), {});
-        break;
-    }
-    case Badge::Sms: {
-        // The Master System: the red 16-BIT band with the name under it.
-        rounded(out, cx - 58 * unit, cy - 8 * unit, 116 * unit, 20 * unit, 3 * unit, Rgb::hex(0xD0202A));
-        name(out, font, "16-BIT", cx, int(cy + 7 * unit), int(12 * unit), std::max(1, int(3 * unit)),
-             Rgb::hex(0xF6F6F8), {});
-        name(out, font, "MASTER SYSTEM", cx, int(cy + 28 * unit), int(12 * unit), std::max(1, int(2 * unit)),
-             Rgb::hex(0xF0F0F0), {});
-        break;
-    }
-    case Badge::Pce: {
-        // The PC Engine: the orange band with the name on it.
-        rounded(out, cx - 66 * unit, cy - 10 * unit, 132 * unit, 22 * unit, 3 * unit, Rgb::hex(0xE06A1A));
-        name(out, font, "PC ENGINE", cx, int(cy + 6 * unit), int(13 * unit), std::max(1, int(3 * unit)),
-             Rgb::hex(0xFFFFFF), {});
-        break;
-    }
-    case Badge::Neo: {
-        // The Neo Geo: the gold band with the name in it.
-        rounded(out, cx - 56 * unit, cy - 10 * unit, 112 * unit, 22 * unit, 3 * unit, Rgb::hex(0xC9A34E));
-        name(out, font, "NEO GEO", cx, int(cy + 6 * unit), int(13 * unit), std::max(1, int(3 * unit)),
-             Rgb::hex(0x1A1A1C), {});
-        break;
-    }
-    case Badge::Psx: {
-        // The PlayStation: the blue PS line over the wordmark.
-        const int size = int(15 * unit);
-        name(out, font, "PlayStation", cx, int(cy + 12 * unit), size, std::max(1, int(2 * unit)), Rgb::hex(0xD8D8DE),
-             {});
-        // The PS mark: the two strokes of the P and the S, in the console's blue.
-        const double px = cx - 46 * unit, py = cy - 16 * unit;
-        for (int i = 0; i < 3; ++i) {
-            const double o = i * 7 * unit;
-            for (int y = 0; y < int(12 * unit); ++y)
-                for (int x = 0; x < int(26 * unit); ++x) {
-                    const double fx = x / (26 * unit), fy = y / (12 * unit);
-                    if (std::abs(fx - fy * 0.9) > 0.09 && std::abs(fx + fy * 0.9 - 0.95) > 0.09) continue;
-                    put(out, int(px + o + x), int(py + y), Rgb::hex(0x2A5FBF), 220);
-                }
+// What a home console frame shares: the shell, the game seated in it, and the rails and bands left around the game.
+struct Front {
+    double rail, above, below, unit;
+    int w, h;
+};
+Front console_front(Canvas& out, const FrameLayout& screen, const Style& s) {
+    const double sx = out.w() / 640.0, sy = out.h() / 480.0;
+    body(out, s, sx, sy, 10, 0.12);
+    return {double(screen.x), double(screen.y), double(out.h() - screen.y - screen.h),
+            std::min(sx, sy), out.w(),          out.h()};
+}
+// The game's seat, drawn last so nothing on the shell runs into the picture.
+void seat(Canvas& out, const FrameLayout& screen, double unit) {
+    recess(out, screen, std::max(3, int(5 * unit)), Rgb::hex(0x121214));
+}
+// Fills a rectangle of the shell with one colour, lit along its top edge.
+void shell_band(Canvas& out, double x, double y, double w, double h, Rgb c) {
+    for (int py = std::max(0, int(y)); py < std::min(out.h(), int(y + h)); ++py)
+        for (int px = std::max(0, int(x)); px < std::min(out.w(), int(x + w)); ++px) {
+            Rgb k = mix(c, scale(c, 0.86), int(256 * (py - y) / std::max(1.0, h)));
+            if (py == int(y)) k = shade(k, 28);
+            out.data()[size_t(py) * out.w() + px] = k.px();
         }
-        break;
-    }
-    case Badge::N64: {
-        // The Nintendo 64: the wordmark with the N in the console's colours, the N standing between the words.
-        const int size = int(15 * unit);
-        name(out, font, "NINTENDO", cx - 30 * unit, int(cy), size, std::max(1, int(2 * unit)), Rgb::hex(0xE0E0E6), {});
-        name(out, font, "64", cx + 44 * unit, int(cy), size, std::max(1, int(2 * unit)), Rgb::hex(0xE0E0E6), {});
-        // The N: the three strokes, in red, green and blue.
-        const double nx = cx - 8 * unit, ny = cy - 13 * unit, nw = 9 * unit, nh = 26 * unit;
-        const Rgb n_col[3] = {Rgb::hex(0xD8282E), Rgb::hex(0x2A8A3E), Rgb::hex(0x2A5FBF)};
-        for (int i = 0; i < 3; ++i) {
-            const double o = i * (nw - 2 * unit);
-            for (int y = 0; y < int(nh); ++y) {
-                const double fy = y / nh;
-                for (int x = 0; x < int(nw - 2 * unit); ++x) {
-                    const double fx = x / (nw - 2 * unit);
-                    if (i == 0 && std::abs(fx - fy) > 0.30) continue; // the first stroke leans
-                    if (i == 2 && std::abs(fx + fy - 1.0) > 0.30) continue;
-                    put(out, int(nx + o + x), int(ny + y), n_col[i], 235);
-                }
-            }
-        }
-        break;
-    }
-    case Badge::Saturn: {
-        // The Saturn: the wordmark with the planet's ring round it.
-        const int size = int(16 * unit);
-        name(out, font, "SATURN", cx + 10 * unit, int(cy + 6 * unit), size, std::max(1, int(3 * unit)),
-             Rgb::hex(0xB4C4E4), {});
-        // The planet: a disc with the ring across it.
-        const double px = cx - 44 * unit, py = cy - 6 * unit, pr = 11 * unit;
-        disc(out, px, py, pr, Rgb::hex(0x3A6FD8), 235);
-        for (int y = -int(pr) - 4; y <= int(pr) + 4; ++y)
-            for (int x = -int(pr) - 12; x <= int(pr) + 12; ++x) {
-                const double rx = (x - 4) / 1.0, ry = (y - 2) / 0.34;
-                const double d = std::abs(std::hypot(rx, ry) - pr);
-                if (d < 1.4) put(out, int(px + x), int(py + y), Rgb::hex(0xB4C4E4), 220);
-            }
-        break;
-    }
-    case Badge::Dc: {
-        // The Dreamcast: the orange spiral, with the wordmark under it.
-        const double px = cx, py = cy - 8 * unit;
-        for (int y = -22; y <= 22; ++y)
-            for (int x = -22; x <= 22; ++x) {
-                const double r = std::hypot(x, y), a = std::atan2(y, x);
-                // The spiral: the radius grows with the angle.
-                const double target = 3.0 + 6.5 * (a + 3.14159) / (2 * 3.14159);
-                if (std::abs(r - target) < 1.5) put(out, int(px + x), int(py + y), Rgb::hex(0xE86A18), 235);
-            }
-        name(out, font, "Dreamcast", px, int(py + 34 * unit), int(13 * unit), std::max(1, int(1 * unit)),
-             Rgb::hex(0x2B2B2E), {});
-        break;
-    }
-    case Badge::Atari: {
-        // The Atari 2600: the gold Atari mark on the faux woodgrain front.
-        const int size = int(20 * unit);
-        name(out, font, "ATARI", cx, int(cy), size, std::max(1, int(4 * unit)), Rgb::hex(0xE8D8B0), {});
-        // The three lines of the Atari fuji.
-        for (int i = 0; i < 3; ++i) {
-            const double o = (i - 1) * 12 * unit;
-            for (int y = 0; y < int(16 * unit); ++y)
-                for (int x = 0; x < int(5 * unit); ++x)
-                    put(out, int(cx + o + x - 6 * unit), int(cy - 30 * unit + y), Rgb::hex(0xE8D8B0), 235);
-        }
-        break;
-    }
-    case Badge::Coleco: {
-        // The ColecoVision: the white mark with the gold line under it.
-        const int size = int(15 * unit);
-        name(out, font, "COLECO", cx, int(cy - 2 * unit), size, std::max(1, int(3 * unit)), Rgb::hex(0xE6E6E6), {});
-        name(out, font, "VISION", cx, int(cy + 14 * unit), size, std::max(1, int(3 * unit)), Rgb::hex(0xE6E6E6), {});
-        for (int x = int(cx - 54 * unit); x < int(cx + 54 * unit); ++x)
-            put(out, x, int(cy + 22 * unit), Rgb::hex(0xB8BAC2), 235);
-        break;
-    }
-    case Badge::Msx: {
-        // The MSX: the mark in the console's own blocky letters, on its own black band.
-        rounded(out, cx - 60 * unit, cy - 15 * unit, 120 * unit, 30 * unit, 3 * unit, Rgb::hex(0x141416));
-        const int size = int(17 * unit);
-        name(out, font, "MSX", cx, int(cy + 6 * unit), size, std::max(1, int(5 * unit)), Rgb::hex(0xE6E6E6), {});
-        break;
-    }
-    case Badge::Intellivision: {
-        // The Intellivision: the tan badge with the name across it.
-        const int size = int(17 * unit);
-        rounded(out, cx - 78 * unit, cy - 16 * unit, 156 * unit, 32 * unit, 3 * unit, Rgb::hex(0x2A1A0C));
-        name(out, font, "INTELLIVISION", cx, int(cy + 6 * unit), size, std::max(1, int(2 * unit)), Rgb::hex(0xC9A34E),
-             {});
-        break;
-    }
-    case Badge::Pico8: {
-        // The PICO-8: its own palette, a cart of its own, with the colourful label.
-        const double px = cx, py = cy - 4 * unit;
-        rounded(out, px - 52 * unit, py - 26 * unit, 104 * unit, 52 * unit, 4 * unit, Rgb::hex(0x1D2B53));
-        rounded(out, px - 48 * unit, py - 22 * unit, 96 * unit, 44 * unit, 3 * unit, Rgb::hex(0x111A35));
-        // The label: the PICO-8's colourful bars.
-        const Rgb bars[4] = {Rgb::hex(0xFF004D), Rgb::hex(0xFFEC27), Rgb::hex(0x00A8C6), Rgb::hex(0x62D60F)};
-        for (int i = 0; i < 4; ++i)
-            rounded(out, px - 42 * unit + i * 22 * unit, py - 18 * unit, 17 * unit, 16 * unit, 2 * unit, bars[i]);
-        name(out, font, "PICO-8", px, int(py + 12 * unit), int(13 * unit), std::max(1, int(2 * unit)),
-             Rgb::hex(0xFFF1E8), {});
-        break;
-    }
-    case Badge::None: break;
-    }
 }
 
-// A home console: its body, the screen set into it, the console's own mark on the strip under the screen, the
-// power light.
+// The NES: a pale grey case over a dark front; POWER and RESET with the red light and the two sockets on the left,
+// the ribbed top and the name on the right.
+void front_nes(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit, split = f.h * 0.56, cx = f.rail / 2, rx = f.w - f.rail / 2;
+    const Rgb dark = Rgb::hex(0x2B2B2E);
+    shell_band(out, 0, split, f.w, f.h - split, dark);
+    for (const double x : {0.0, f.w - f.rail})
+        ribs(out, x + 6 * u, 18 * u, f.rail - 12 * u, split - 34 * u, 9 * u, s.top);
+    rounded(out, 0, split - 7 * u, f.w, 4 * u, 0, Rgb::hex(0xC8202A));
+    const double bw = std::min(f.rail - 22 * u, 32 * u);
+    disc(out, cx, split + 26 * u, 3.5 * u, Rgb::hex(0xFF3B3B), 256);
+    disc(out, cx, split + 26 * u, 8 * u, Rgb::hex(0xFF3B3B), 46);
+    push(out, cx - bw / 2, split + 42 * u, bw, 15 * u, Rgb::hex(0xC8C6BF), u);
+    push(out, cx - bw / 2, split + 68 * u, bw, 15 * u, Rgb::hex(0xC8C6BF), u);
+    port(out, cx - bw / 2, split + 100 * u, bw, 36 * u, u);
+    port(out, cx - bw / 2, split + 146 * u, bw, 36 * u, u);
+    const std::string word = "Nintendo";
+    if (const int size = size_fitting(font, word, 1, (f.h - split) * 0.7)) {
+        rounded(out, rx - 13 * u, split + 34 * u, 26 * u, spaced_width(font, word, size, 1) + 20 * u, 4 * u,
+                Rgb::hex(0xC8202A));
+        rail_text(out, font, word, rx, split + 44 * u + spaced_width(font, word, size, 1) / 2.0, size, 1,
+                  Rgb::hex(0xF4F4F4));
+    }
+    seat(out, screen, u);
+}
+
+// The Super Nintendo: two greys, its sliders and four-colour mark on the left, its sockets and the pad's four coloured
+// buttons on the right.
+void front_snes(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit, cx = f.rail / 2, rx = f.w - f.rail / 2, r = std::min(f.rail / 7.0, 8.5 * u);
+    const Rgb low = Rgb::hex(0x8F8D96), plum = Rgb::hex(0x4F4A78);
+    shell_band(out, 0, f.h - std::max(f.below, 6 * u), f.w, std::max(f.below, 6 * u), low);
+    const double sw = std::min(f.rail - 24 * u, 28 * u);
+    rounded(out, cx - sw / 2, 18 * u, sw, 62 * u, 3 * u, scale(low, 0.5));
+    rounded(out, cx - sw / 2 + 3 * u, 24 * u, sw - 6 * u, 22 * u, 2 * u, Rgb::hex(0xE4E2E8));
+    rounded(out, cx - sw / 2, 90 * u, sw, 40 * u, 3 * u, scale(low, 0.5));
+    rounded(out, cx - sw / 2 + 3 * u, 95 * u, sw - 6 * u, 18 * u, 2 * u, plum);
+    const std::string word = "SUPER NINTENDO";
+    if (const int size = std::min(size_fitting(font, word, 2, f.h - 210 * u), int(f.rail * 0.52)))
+        rail_text(out, font, word, cx, 273 * u, Font::snap(size), 2, plum);
+    const Rgb dots[4] = {Rgb::hex(0xD8282E), Rgb::hex(0xF2C21E), Rgb::hex(0x2DA84A), Rgb::hex(0x2F62C8)};
+    for (int i = 0; i < 4; ++i) disc(out, cx, f.h - 58 * u + i * 10 * u, 3.6 * u, dots[i], 256);
+    ribs(out, f.w - f.rail + 8 * u, 18 * u, f.rail - 16 * u, 74 * u, 9 * u, s.top);
+    port(out, rx - sw / 2, 108 * u, sw, 44 * u, u);
+    port(out, rx - sw / 2, 162 * u, sw, 44 * u, u);
+    const double py = f.h - 84 * u, gap = r * 1.5;
+    disc(out, rx, py, gap + r + 5 * u, scale(low, 0.72), 256);
+    cap(out, rx, py - gap, r, dots[2 + 1], u); // X, blue
+    cap(out, rx + gap, py, r, dots[0], u);     // A, red
+    cap(out, rx, py + gap, r, dots[1], u);     // B, yellow
+    cap(out, rx - gap, py, r, dots[2], u);     // Y, green
+    seat(out, screen, u);
+}
+
+// The Mega Drive: gloss black, the gold ring of its cartridge door running behind the game, HIGH DEFINITION GRAPHICS
+// over it, the name with 16-BIT in gold under it, the red light and volume slider on the right.
+void front_md(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit, mx = f.w / 2.0, my = f.h / 2.0;
+    const Rgb gold = Rgb::hex(0xCDAA55);
+    for (int y = 0; y < f.h; ++y)
+        for (int x = 0; x < f.w; ++x) {
+            const double d = std::hypot(x + 0.5 - mx, y + 0.5 - my);
+            const double a = std::abs(d - 322 * u), b = std::abs(d - 336 * u), c = std::abs(d - 366 * u);
+            if (a < 1.3 * u) put(out, x, y, gold, 225);
+            else if (b < 5 * u) put(out, x, y, Rgb{0, 0, 0}, 150);
+            else if (c < 0.8 * u) put(out, x, y, scale(gold, 0.55), 180);
+        }
+    const double rail_ribs = std::max(4.0, f.rail - 16 * u);
+    ribs(out, 8 * u, f.h * 0.34, rail_ribs, f.h * 0.32, 8 * u, s.top);
+    ribs(out, f.w - f.rail + 8 * u, f.h * 0.46, rail_ribs, f.h * 0.18, 8 * u, s.top);
+    const double rx = f.w - f.rail / 2;
+    disc(out, rx, f.h * 0.28, 3.5 * u, Rgb::hex(0xFF2A2A), 256);
+    disc(out, rx, f.h * 0.28, 8 * u, Rgb::hex(0xFF2A2A), 55);
+    rounded(out, rx - 3 * u, f.h * 0.33, 6 * u, 46 * u, 3 * u, Rgb::hex(0x050506));
+    rounded(out, rx - 7 * u, f.h * 0.33 + 24 * u, 14 * u, 8 * u, 2 * u, Rgb::hex(0x77777C));
+    const std::string top = "HIGH DEFINITION GRAPHICS";
+    if (f.above >= 22 * u) {
+        const int base = font.centred(16, int(f.above / 2));
+        const int tw = spaced_width(font, top, 16, 2);
+        rounded(out, mx - tw / 2.0 - 10 * u, f.above / 2 - 11 * u, tw + 20 * u, 22 * u, 0, s.top);
+        name(out, font, top, mx, base, 16, 2, gold, {});
+    }
+    if (f.below >= 26 * u) {
+        const int size = f.below >= 40 * u ? 24 : 20, base = font.centred(size, int(f.h - f.below / 2));
+        const int mw = spaced_width(font, "MEGA DRIVE", size, 3), gw = spaced_width(font, "16-BIT", size, 3);
+        rounded(out, mx - (mw + gw + 34) / 2.0 - 10 * u, f.h - f.below + 2 * u, mw + gw + 54, f.below - 4 * u, 0,
+                s.top);
+        const int x0 = int(mx - (mw + gw + 34) / 2.0);
+        name_from(out, font, "MEGA DRIVE", x0, base, size, 3, Rgb::hex(0xEDEDED), {});
+        name_from(out, font, "16-BIT", x0 + mw + 34, base, size, 3, gold, {});
+    }
+    seat(out, screen, u);
+}
+
+// The Master System: black with its fine white grid, the red band with the name, the power and pause buttons.
+void front_sms(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit, pitch = 16 * u, band_h = std::max(f.below * 0.82, 10 * u), band_y = f.h - band_h - 2 * u;
+    const Rgb red = Rgb::hex(0xD0202A);
+    for (int y = 0; y < int(band_y); ++y)
+        for (int x = 0; x < f.w; ++x)
+            if (std::fmod(x, pitch) < 1 || std::fmod(y, pitch) < 1) put(out, x, y, Rgb::hex(0xE8E8EC), 56);
+    shell_band(out, 0, band_y, f.w, band_h, red);
+    if (const int size = size_fitting(font, "MASTER SYSTEM", 4, f.w * 0.6); size && band_h >= 28 * u) {
+        const int shown = std::min(size, band_h >= 40 * u ? 28 : 20);
+        name(out, font, "MASTER SYSTEM", f.w / 2.0, font.centred(shown, int(band_y + band_h / 2)), shown, 4,
+             Rgb::hex(0xF6F6F8), {});
+    }
+    if (f.above >= 28 * u) {
+        const int size = f.above >= 40 * u ? 28 : 20, tw = spaced_width(font, "SEGA", size, 5);
+        rounded(out, f.w / 2.0 - tw / 2.0 - 12 * u, f.above / 2 - size * 0.66, tw + 24 * u, size * 1.32, 2 * u, s.top);
+        name(out, font, "SEGA", f.w / 2.0, font.centred(size, int(f.above / 2)), size, 5, Rgb::hex(0xF0F0F0), {});
+    }
+    const double cx = f.rail / 2, rx = f.w - f.rail / 2, bw = std::min(f.rail - 22 * u, 30 * u);
+    push(out, cx - bw / 2, f.h * 0.44, bw, 16 * u, Rgb::hex(0x3A3A3E), u);
+    disc(out, cx, f.h * 0.40, 3.5 * u, Rgb::hex(0xFF2A2A), 256);
+    push(out, rx - bw / 2, f.h * 0.44, bw, 16 * u, red, u);
+    seat(out, screen, u);
+}
+
+// The PlayStation: pale grey, its round Open button, the pad's four
+// shapes in their colours, the name under the game.
+void front_psx(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit, mx = f.w / 2.0, cx = f.rail / 2, rx = f.w - f.rail / 2;
+    const double open_r = std::min(f.rail * 0.34, 18 * u);
+    disc(out, cx, 78 * u, open_r + 2.5 * u, scale(s.bottom, 0.62), 256);
+    disc(out, cx, 78 * u, open_r, s.top, 256);
+    disc(out, cx, 76 * u, open_r - 2 * u, shade(s.top, 10), 256);
+    cap(out, cx, 150 * u, std::min(f.rail * 0.18, 8 * u), s.bottom, u);
+    cap(out, cx, 182 * u, std::min(f.rail * 0.18, 8 * u), s.bottom, u);
+    ribs(out, 8 * u, f.h * 0.58, f.rail - 16 * u, f.h * 0.3, 8 * u, s.top);
+    // The four shapes, down the right-hand rail.
+    const double r = std::min(f.rail * 0.26, 11 * u), t = std::max(2.0, r * 0.28);
+    const auto ring = [&](double y, auto inside) {
+        disc(out, rx, y, r + 5 * u, Rgb::hex(0x3B3B40), 256);
+        inside(y);
+    };
+    ring(f.h * 0.34, [&](double y) { // triangle, green
+        const Rgb c = Rgb::hex(0x3FC88C);
+        for (int py = int(y - r); py <= int(y + r); ++py)
+            for (int px = int(rx - r - 1); px <= int(rx + r + 1); ++px) {
+                const double fy = (py - (y - r)) / (2 * r), half = fy * r * 1.05, row = std::abs(px + 0.5 - rx);
+                if (fy >= 0 && fy <= 1 && row <= half && (row >= half - t * 1.25 || fy > 1 - t / r / 1.8))
+                    put(out, px, py, c, 256);
+            }
+    });
+    ring(f.h * 0.46, [&](double y) { // circle, red
+        disc(out, rx, y, r * 0.86, Rgb::hex(0xF0555A), 256);
+        disc(out, rx, y, r * 0.86 - t, Rgb::hex(0x3B3B40), 256);
+    });
+    ring(f.h * 0.58, [&](double y) { // cross, blue
+        for (int py = int(y - r); py <= int(y + r); ++py)
+            for (int px = int(rx - r); px <= int(rx + r); ++px) {
+                const double dx = px + 0.5 - rx, dy = py + 0.5 - y;
+                if (std::abs(std::abs(dx) - std::abs(dy)) < t && std::abs(dx) < r * 0.8)
+                    put(out, px, py, Rgb::hex(0x6E9BE8), 256);
+            }
+    });
+    ring(f.h * 0.70, [&](double y) { // square, pink
+        const double e = r * 0.72;
+        rounded(out, rx - e, y - e, 2 * e, 2 * e, 0, Rgb::hex(0xEE8FD0));
+        rounded(out, rx - e + t, y - e + t, 2 * e - 2 * t, 2 * e - 2 * t, 0, Rgb::hex(0x3B3B40));
+    });
+    if (f.below >= 24 * u) {
+        const int size = f.below >= 36 * u ? 24 : 20;
+        name(out, font, "PlayStation", mx, font.centred(size, int(f.h - f.below / 2)), size, 1, Rgb::hex(0x3A3A40), {});
+    }
+    seat(out, screen, u);
+}
+
+// The Nintendo 64: charcoal, its four sockets under the game, the pad's stick and red Start on the left, the yellow C
+// buttons with blue A and green B on the right.
+void front_n64(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit, cx = f.rail / 2, rx = f.w - f.rail / 2, r = std::min(f.rail * 0.13, 6.5 * u);
+    const Rgb red = Rgb::hex(0xE0322E), green = Rgb::hex(0x2BAA52), blue = Rgb::hex(0x2F6BDE),
+              yellow = Rgb::hex(0xF4BE1E);
+    ribs(out, 8 * u, 14 * u, f.rail - 16 * u, 70 * u, 8 * u, s.top);
+    ribs(out, f.w - f.rail + 8 * u, 14 * u, f.rail - 16 * u, 70 * u, 8 * u, s.top);
+    const double stick = std::min(f.rail * 0.34, 18 * u), sy = f.h * 0.36;
+    disc(out, cx, sy, stick + 3 * u, Rgb::hex(0x0E0E10), 256);
+    cap(out, cx, sy, stick * 0.66, Rgb::hex(0x8E9096), u);
+    cap(out, cx, sy + 62 * u, r * 1.1, red, u);
+    const double gap = r * 1.5, cy = f.h * 0.32;
+    for (int i = 0; i < 4; ++i)
+        cap(out, rx + (i == 0 ? gap : i == 1 ? -gap : 0), cy + (i == 2 ? -gap : i == 3 ? gap : 0), r * 0.8, yellow, u);
+    cap(out, rx + r * 0.3, cy + 62 * u, r * 1.25, blue, u);
+    cap(out, rx - r * 0.6, cy + 92 * u, r * 1.1, green, u);
+    if (f.below >= 24 * u) {
+        const int size = f.below >= 36 * u ? 24 : 20, spacing = 3, base = font.centred(size, int(f.h - f.below / 2));
+        const int nw = spaced_width(font, "NINTENDO", size, spacing), dw = spaced_width(font, "64", size, spacing);
+        const int x0 = int(f.w / 2.0 - (nw + dw + 12) / 2.0);
+        name_from(out, font, "NINTENDO", x0, base, size, spacing, Rgb::hex(0xE4E4EA), {});
+        const int d = font.draw(out, x0 + nw + 12, base, "6", size, red) + spacing;
+        font.draw(out, x0 + nw + 12 + d, base, "4", size, green);
+        // The four sockets, either side of the name.
+        const double pw = 20 * u, py = f.h - f.below / 2 - 9 * u;
+        for (int i = 0; i < 2; ++i) {
+            port(out, x0 - 66 * u + i * 28 * u, py, pw, 18 * u, u);
+            port(out, x0 + nw + dw + 12 + 18 * u + i * 28 * u, py, pw, 18 * u, u);
+        }
+    }
+    seat(out, screen, u);
+}
+
+// The ZX Spectrum: black with rows of grey rubber keys, the name, and the four stripes across the low right corner.
+void front_zx(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit;
+    rounded(out, 0, 0, f.w, 3 * u, 0, Rgb::hex(0xB6B8BE));
+    const Rgb rubber = Rgb::hex(0x8A929C);
+    const double kw = std::max(10.0, (f.rail - 16 * u)), kh = 15 * u;
+    for (const double x : {8 * u, f.w - f.rail + 8 * u})
+        for (int i = 0; i < 11; ++i) {
+            if (x > f.rail && i > 6) break;
+            const double ky = 22 * u + i * (kh + 11 * u);
+            rounded(out, x, ky + 2 * u, kw, kh, 2.5 * u, Rgb{0, 0, 0}, 200);
+            rounded(out, x, ky, kw, kh, 2.5 * u, rubber);
+            rounded(out, x + 1.5 * u, ky + 1 * u, kw - 3 * u, 3 * u, 1.5 * u, shade(rubber, 26));
+        }
+    const Rgb stripes[4] = {Rgb::hex(0xD8282E), Rgb::hex(0xF2C21E), Rgb::hex(0x2AA84A), Rgb::hex(0x22A6D8)};
+    const double sw = 9 * u, across = f.w + f.h * 0.68; // the four run up to the right, x + y constant
+    for (int y = f.h / 2; y < f.h; ++y)
+        for (int x = f.w / 2; x < f.w; ++x) {
+            const int k = int(std::floor((x + y - across) / sw));
+            if (k >= 0 && k < 4) put(out, x, y, stripes[k], 256);
+        }
+    if (f.below >= 20 * u) {
+        const int size = f.below >= 34 * u ? 24 : 20, base = font.centred(size, int(f.h - f.below / 2));
+        name_from(out, font, "ZX Spectrum", int(f.rail + 4 * u), base, size, 1, Rgb::hex(0xE8E8EC), {});
+    }
+    if (f.above >= 20 * u)
+        name_from(out, font, "sinclair", int(f.rail + 4 * u), font.centred(20, int(f.above / 2 + 2 * u)), 20, 1,
+                  Rgb::hex(0xE8E8EC), {});
+    seat(out, screen, u);
+}
+
+// The Commodore 64: the bread bin's beige, moulded lines, the red light, brown function keys, the dark badge with its
+// rainbow.
+void front_c64(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit, cx = f.rail / 2, rx = f.w - f.rail / 2;
+    ribs(out, 7 * u, 18 * u, f.rail - 14 * u, f.h * 0.44, 8 * u, s.top);
+    disc(out, cx, f.h * 0.62, 3.5 * u, Rgb::hex(0xFF3030), 256);
+    disc(out, cx, f.h * 0.62, 8 * u, Rgb::hex(0xFF3030), 60);
+    const Rgb key = Rgb::hex(0x5A4A3A);
+    const double kw = std::max(12.0, f.rail - 12 * u);
+    for (int i = 0; i < 4; ++i) {
+        const double ky = f.h * 0.58 + i * 30 * u;
+        rounded(out, rx - kw / 2 - 2 * u, ky - 2 * u, kw + 4 * u, 26 * u, 3 * u, Rgb::hex(0x2A241E));
+        rounded(out, rx - kw / 2, ky, kw, 20 * u, 2.5 * u, key);
+        rounded(out, rx - kw / 2 + 2 * u, ky + 2 * u, kw - 4 * u, 12 * u, 2 * u, shade(key, 22));
+    }
+    ribs(out, f.w - f.rail + 7 * u, 18 * u, f.rail - 14 * u, f.h * 0.44, 8 * u, s.top);
+    if (f.below >= 24 * u) {
+        const double bh = f.below - 8 * u, by = f.h - f.below + 4 * u, bw = 300 * u, bx = (f.w - bw) / 2;
+        rounded(out, bx, by, bw, bh, 3 * u, Rgb::hex(0x3A3026));
+        const int size = 20, base = font.centred(size, int(by + bh / 2));
+        const int tw = spaced_width(font, "commodore", size, 1);
+        name_from(out, font, "commodore", int(bx + 12 * u), base, size, 1, Rgb::hex(0xEDE6D6), {});
+        const Rgb rainbow[5] = {Rgb::hex(0xD8282E), Rgb::hex(0xEE8A1E), Rgb::hex(0xF2C21E), Rgb::hex(0x2AA84A),
+                                Rgb::hex(0x2A6FD8)};
+        const double sx = bx + 12 * u + tw + 10 * u, stripe = bh * 0.7 / 5, sy0 = by + bh * 0.15;
+        const double sw = bx + bw - 44 * u - sx;
+        for (int i = 0; i < 5; ++i) rounded(out, sx, sy0 + i * stripe, sw, stripe, 0, rainbow[i]);
+        name_from(out, font, "64", int(bx + bw - 36 * u), base, size, 1, Rgb::hex(0xEDE6D6), {});
+    }
+    seat(out, screen, u);
+}
+
+// Any other console: its colours, a stripe down each rail in its accent, the name along the left one.
+void front_plain(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const Front f = console_front(out, screen, s);
+    const double u = f.unit;
+    const Rgb ground = s.wood == 2 ? scale(s.top, 0.8) : s.top;
+    const double stripe = std::max(3.0, f.rail * 0.08);
+    const double rail_room = f.h - 160 * u;
+    int size = 16;
+    for (const int k : text_sizes)
+        if (spaced_width(font, s.print, k, 3) <= rail_room && k <= f.rail * 0.62) size = k;
+    rounded(out, f.rail - 8 * u - stripe, 0, stripe, f.h, 0, s.line);
+    rounded(out, f.w - f.rail + 14 * u, 0, stripe, f.h, 0, s.line);
+    rounded(out, f.w - f.rail + 14 * u + stripe + 3 * u, 0, std::max(1.0, stripe / 2), f.h, 0, s.band, 200);
+    rail_text(out, font, s.print, (f.rail - 8 * u - stripe) / 2, f.h / 2.0, size, 3, ink_on(ground));
+    ribs(out, f.w - f.rail + 14 * u + 2 * stripe + 8 * u, f.h * 0.12,
+         std::max(6.0, f.rail - 14 * u - 2 * stripe - 16 * u), f.h * 0.34, 8 * u, s.top);
+    power_light(out, f.w - (f.rail - 14 * u - 2 * stripe) / 2, f.h * 0.82, u, Rgb::hex(0xFF3B3B));
+    seat(out, screen, u);
+}
+
 void draw_console(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
-    const int w = out.w(), h = out.h();
-    const double sx = w / 640.0, sy = h / 480.0, unit = std::min(sx, sy), m = 12 * unit;
-    body(out, s, sx, sy);
-    bezel(out, s, screen.x - m, screen.y - m, screen.w + 2 * m, screen.h + 2 * m, 10 * unit, 10 * unit, unit);
-    screen_edge(out, screen, std::max(2, int(2 * unit)));
-    // The strip: lit along its top edge, a fine line inside each edge.
-    const int y0 = int(screen.y + screen.h + m + 16 * sy), y1 = std::min(h - int(10 * sy), y0 + int(84 * sy));
-    const int t = std::max(1, int(2 * unit));
-    for (int y = std::max(0, y0); y < std::min(h, y1); ++y)
-        for (int x = 0; x < w; ++x) {
-            Rgb c = mix(s.band, shade(s.band, -16), (y - y0) * 256 / std::max(1, y1 - y0));
-            if (s.wood == 1) c = wood_at(c, x, y, unit);
-            if (y == y0) c = shade(c, 30);
-            if (y == y1 - 1) c = shade(c, -30);
-            if ((y >= y0 + int(6 * unit) && y < y0 + int(6 * unit) + t) ||
-                (y >= y1 - int(6 * unit) - t && y < y1 - int(6 * unit)))
-                c = s.line;
-            out.data()[size_t(y) * w + x] = c.px();
-        }
-    // The console's own mark on the strip, in its own colours; without one, its name in plain ink.
-    if (s.badge != Badge::None) draw_badge(out, font, s.badge, w / 2.0, (y0 + y1) / 2.0, unit, s);
-    else {
-        const int spacing = std::max(1, int(3 * unit));
-        int size = int(24 * unit);
-        if (spaced_width(font, s.print, size, spacing) > w - 130 * unit) size = int(20 * unit);
-        name(out, font, s.print, w / 2.0, (y0 + y1 + font.ascent(size)) / 2, size, spacing, s.ink, accent_for(s.print));
+    switch (s.badge) {
+    case Badge::Nes: front_nes(out, screen, s, font); break;
+    case Badge::Snes: front_snes(out, screen, s, font); break;
+    case Badge::Md: front_md(out, screen, s, font); break;
+    case Badge::Sms: front_sms(out, screen, s, font); break;
+    case Badge::Psx: front_psx(out, screen, s, font); break;
+    case Badge::N64: front_n64(out, screen, s, font); break;
+    case Badge::Zx: front_zx(out, screen, s, font); break;
+    case Badge::C64: front_c64(out, screen, s, font); break;
+    case Badge::None: front_plain(out, screen, s, font); break;
     }
-    power_light(out, w - 34 * sx, (y0 + y1) / 2.0, unit, Rgb::hex(0xFF3B3B));
+}
+
+// The handhelds held sideways, whole on the panel: the shell, the dark lens around the screen, the controls beside it.
+void draw_wide_handheld(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const double sx = out.w() / 640.0, sy = out.h() / 480.0, u = std::min(sx, sy);
+    const double lens_x = s.kind == Kind::Wsc ? 12 * u : 16 * u, above = s.kind == Kind::Wsc ? 18 * u : 12 * u;
+    const double name_h = out.h() - screen.y - screen.h >= 60 * u ? 40 * u : 26 * u;
+    body(out, s, sx, sy, 12, 0.12);
+    lens(out, s, screen.x - lens_x, screen.y - above, screen.w + 2 * lens_x, screen.h + above + name_h, 10 * u, u);
+    recess(out, screen, std::max(3, int(3 * u)), scale(s.lens, 0.6));
+    const double left = (screen.x - lens_x) / 2, right = out.w() - left, cy = screen.y + screen.h * 0.46;
+    const double r = std::min(left * 0.5, 24 * u);
+    const Rgb dish = shade(s.bottom, -18), dark = Rgb::hex(0x1C1C20);
+    const int base = font.centred(16, int(screen.y + screen.h + name_h / 2));
+    if (s.kind == Kind::Gg) {
+        dpad(out, left, cy, r, dark, dish, u);
+        cap(out, right + r * 0.52, cy - r * 0.42, r * 0.5, Rgb::hex(0x3A4BA8), u);
+        cap(out, right - r * 0.56, cy + r * 0.42, r * 0.5, Rgb::hex(0x3A4BA8), u);
+        cap(out, right - 2 * u, cy - r * 1.7, r * 0.26, Rgb::hex(0x3A4BA8), u);
+        for (int row = 0; row < 4; ++row)
+            for (int col = 0; col < 5; ++col)
+                if (right - 28 * u + col * 11 * u < out.w())
+                    disc(out, right - 22 * u + col * 11 * u, cy + r * 1.8 + row * 11 * u, 3 * u, Rgb{0, 0, 0}, 220);
+        power_light(out, left, cy - r * 1.9, u, Rgb::hex(0xFF3B3B));
+        const int tw = spaced_width(font, s.print, 20, 3);
+        name(out, font, s.print, screen.x + screen.w / 2.0, font.centred(20, int(screen.y + screen.h + name_h / 2)), 20,
+             3, s.ink, {});
+        const Rgb bars[3] = {Rgb::hex(0xD8282E), Rgb::hex(0xF2C21E), Rgb::hex(0x2F62C8)};
+        for (int i = 0; i < 3; ++i)
+            rounded(out, screen.x + screen.w / 2.0 + tw / 2.0 + 12 * u + i * 7 * u,
+                    screen.y + screen.h + name_h / 2 - 7 * u, 5 * u, 14 * u, 1, bars[i]);
+        name(out, font, "SEGA", screen.x + screen.w / 2.0, font.centred(16, int(screen.y / 2 - above / 2 + 2 * u)), 16,
+             4, s.bottom.r > 128 ? Rgb::hex(0x25252A) : Rgb::hex(0xE8E8EC), {});
+    } else if (s.kind == Kind::Ngpc) {
+        // The clicking stick in its round well, A over B set on a slant.
+        disc(out, left, cy, r * 1.05, dish, 256);
+        disc(out, left, cy, r * 0.82, scale(dish, 0.65), 256);
+        cap(out, left, cy, r * 0.56, Rgb::hex(0x9CA0A8), u);
+        cap(out, right + r * 0.5, cy - r * 0.5, r * 0.52, dark, u);
+        cap(out, right - r * 0.5, cy + r * 0.5, r * 0.52, dark, u);
+        power_light(out, screen.x - lens_x / 2, screen.y + 24 * u, u, Rgb::hex(0x4CFA7A));
+        name(out, font, s.print, screen.x + screen.w / 2.0, base, 16, 2, s.ink, accent_for(s.print));
+    } else {
+        // The WonderSwan: X pad and Y pad in the shell's own colour, A and B on the right, the speaker under them.
+        const Rgb pad = shade(s.bottom, -40);
+        dpad(out, left, cy - r * 0.2, r * 0.8, pad, dish, u);
+        dpad(out, left, cy - r * 2.5, r * 0.62, pad, dish, u);
+        cap(out, right + r * 0.46, cy - r * 0.46, r * 0.48, pad, u);
+        cap(out, right - r * 0.46, cy + r * 0.46, r * 0.48, pad, u);
+        for (int row = 0; row < 3; ++row)
+            for (int col = 0; col < 3; ++col)
+                disc(out, right - 11 * u + col * 11 * u, cy + r * 2 + row * 11 * u, 3 * u, scale(s.bottom, 0.4), 240);
+        power_light(out, screen.x + screen.w + lens_x / 2, screen.y + 20 * u, u, Rgb::hex(0x4CFA7A));
+        name(out, font, s.print, screen.x + screen.w / 2.0, base, 16, 2, s.ink, accent_for(s.print));
+    }
+}
+
+// The Game Boy Advance, whole: the wide shell filling the panel with its low corners rounded off and its shoulder
+// buttons, the dark lens with the name under the screen, the pad and START/SELECT on the left, A and B and the speaker
+// on the right.
+void draw_agb(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const int w = out.w(), h = out.h();
+    const double sx = w / 640.0, sy = h / 480.0, u = std::min(sx, sy);
+    const double lens_x = 14 * sx, lens_top = 16 * sy, lens_bottom = 46 * sy;
+    const double lx = screen.x - lens_x, ly = screen.y - lens_top, lw = screen.w + 2 * lens_x,
+                 lh = screen.h + lens_top + lens_bottom;
+    const Rgb room = Rgb::hex(0x121216);
+    for (int y = 0; y < h; ++y) {
+        const double t = double(y) / std::max(1, h - 1);
+        const Rgb row = mix(s.top, s.bottom, int(210 * t));
+        for (int x = 0; x < w; ++x) {
+            const double d = rounded_distance(x + 0.5, y + 0.5, 0, -40 * u, w, h + 40 * u, 58 * u);
+            Rgb c = scale(row, 0.90 + 0.10 * std::sqrt(std::clamp(-d / (22 * u), 0.0, 1.0)));
+            if (y < 12 * sy) c = mix(c, Rgb{255, 255, 255}, int(30 * (1 - y / (12 * sy))));
+            const uint32_t n = hash(x, y);
+            if (s.speckle && (n & 7) == 0) c = shade(c, int(n >> 8) % (2 * s.speckle + 1) - s.speckle);
+            out.data()[size_t(y) * w + x] = mix(room, c, int(256 * std::clamp(0.5 - d, 0.0, 1.0))).px();
+        }
+    }
+    // The shoulders: L and R in the top corners, a shade darker, parted from the shell by a seam.
+    for (const double x : {0.0, w - 72.0 * u}) {
+        rounded(out, x, -8 * u, 72 * u, 24 * u, 8 * u, scale(s.bottom, 0.72));
+        rounded(out, x + 4 * u, -8 * u, 64 * u, 20 * u, 6 * u, scale(s.top, 0.82));
+    }
+    lens(out, s, lx, ly, lw, lh, 12 * u, u);
+    recess(out, screen, std::max(3, int(3 * u)), scale(s.lens, 0.6));
+    const double left = lx / 2, right = w - left, cy = screen.y + screen.h * 0.42;
+    const double r = std::min(left * 0.68, 25 * u);
+    const Rgb dark = shade(s.bottom, -60);
+    dpad(out, left, cy, r, s.bottom.r + s.bottom.g + s.bottom.b > 420 ? Rgb::hex(0x34343A) : Rgb::hex(0x17171B),
+         s.bottom.r + s.bottom.g + s.bottom.b > 200 ? scale(s.bottom, 0.82) : shade(s.bottom, 30), u);
+    const Rgb ab = s.bottom.r + s.bottom.g + s.bottom.b > 420 ? Rgb::hex(0x4A4A52) : shade(s.top, 34);
+    cap(out, right + r * 0.28, cy - r * 0.46, r * 0.46, ab, u);
+    cap(out, right - r * 0.42, cy + r * 0.40, r * 0.46, ab, u);
+    power_light(out, left, cy - r * 2.0, u, Rgb::hex(0x4CFA7A));
+    // START and SELECT, low on the left; the speaker's holes, low on the right.
+    const double below = ly + lh + (h - ly - lh) / 2;
+    for (int i = 0; i < 2; ++i) rounded(out, lx + 4 * u + i * 44 * u, below - 4 * u, 34 * u, 8 * u, 4 * u, dark);
+    for (int row = 0; row < 3; ++row)
+        for (int col = 0; col < 8; ++col) {
+            const double hx = w - 160 * u + col * 12 * u + (row % 2) * 6 * u, hy = below - 12 * u + row * 11 * u;
+            disc(out, hx, hy + 0.8 * u, 3.2 * u, shade(s.bottom, 26), 120);
+            disc(out, hx, hy, 3.2 * u, scale(s.bottom, 0.38), 256);
+        }
+    // The name on the lens, under the screen, ADVANCE in its sweep.
+    const int size = 20, spacing = 2;
+    slanted_from(out, font, "GAME BOY ADVANCE",
+                 int(screen.x + screen.w / 2.0 - (slanted_width(font, "GAME BOY ADVANCE", size, spacing) + 12) / 2.0),
+                 font.centred(size, int(screen.y + screen.h + lens_bottom / 2 + 1 * sy)), size, spacing, s.ink,
+                 accent_for("GAME BOY ADVANCE"));
+}
+
+// The PlayStation Portable: the game across the panel's whole width (the real face's controls beside the screen would
+// cost a quarter of the picture), gloss above and below it, SONY over the screen, the row of small buttons under it.
+void draw_psp(Canvas& out, const FrameLayout& screen, const Style& s, const Font& font) {
+    const int w = out.w(), h = out.h();
+    const double sy = h / 480.0, u = std::min(w / 640.0, sy), low = screen.y + screen.h;
+    for (int y = 0; y < h; ++y) {
+        const double t = y < screen.y ? double(y) / std::max(1, screen.y) : (y - low) / std::max(1.0, h - low);
+        const Rgb c = mix(s.top, s.bottom, int(256 * std::clamp(t, 0.0, 1.0)));
+        for (int x = 0; x < w; ++x) out.data()[size_t(y) * w + x] = c.px();
+    }
+    const bool pale = s.top.r > 128;
+    const Rgb ink = pale ? Rgb::hex(0x55555C) : Rgb::hex(0xB4B4BC),
+              pill = pale ? Rgb::hex(0xC8C8C4) : Rgb::hex(0x33333A);
+    rounded(out, 0, 0, w, 2 * u, 0, pale ? Rgb::hex(0xFFFFFF) : Rgb::hex(0x55555E));
+    recess(out, screen, std::max(2, int(3 * u)), s.lens);
+    if (screen.y >= 28 * u) name(out, font, "SONY", w / 2.0, font.centred(16, screen.y / 2), 16, 5, ink, {});
+    if (h - low >= 28 * u) {
+        const double cy = low + (h - low) / 2;
+        name(out, font, "PSP", 44 * u, font.centred(16, int(cy)), 16, 3, ink, {});
+        const double pw = 40 * u, gap = 12 * u, x0 = w / 2.0 - (6 * pw + 5 * gap) / 2;
+        for (int i = 0; i < 6; ++i) rounded(out, x0 + i * (pw + gap), cy - 4 * u, pw, 8 * u, 4 * u, pill);
+        for (int col = 0; col < 7; ++col)
+            rounded(out, w - 90 * u + col * 9 * u, cy - 8 * u, 3 * u, 16 * u, 1.5 * u, scale(s.top, pale ? 0.72 : 0.4));
+    }
 }
 
 // A television: the set's front around its tube, the curved glass, and its controls under the screen (a grey
@@ -891,8 +1029,8 @@ void draw_arcade(Canvas& out, const FrameLayout& screen, const Style& s, const F
         for (int x = 0; x < w; ++x) {
             if (x > screen.x - glass - 12 * unit && x < screen.x + screen.w + glass + 12 * unit) continue;
             const int k = int(std::floor((x + y) / stripe)) & 3;
-            if (k == 0) put(out, x, y, s.band, 210);
-            else if (k == 2) put(out, x, y, s.line, 210);
+            if (k == 0) put(out, x, y, s.band, 120);
+            else if (k == 2) put(out, x, y, s.line, 120);
         }
     // The marquee: a light box, brightest in the middle.
     const double mx = 24 * unit, my = 10 * unit, mw = w - 2 * mx, mh = screen.y - glass - 24 * unit;
@@ -901,7 +1039,7 @@ void draw_arcade(Canvas& out, const FrameLayout& screen, const Style& s, const F
         for (int x = int(mx); x < int(mx + mw); ++x) {
             const double dx = (x - (mx + mw / 2)) / (mw / 2), dy = (y - (my + mh / 2)) / (mh / 2);
             const double lit = std::clamp(1.0 - 0.55 * (dx * dx) - 0.35 * (dy * dy), 0.0, 1.0);
-            put(out, x, y, mix(scale(s.band, 0.55), mix(s.band, Rgb{255, 255, 240}, 110), int(256 * lit)), 256);
+            put(out, x, y, mix(scale(s.band, 0.72), mix(s.band, Rgb{255, 214, 150}, 90), int(256 * lit)), 256);
         }
     const int size = int(36 * unit), spacing = std::max(1, int(5 * unit));
     const int baseline = int(my + (mh + font.ascent(size)) / 2);
@@ -1113,39 +1251,30 @@ FrameLayout frame_layout(int panel_w, int panel_h, int game_w, int game_h, int s
         l.y = int(4 * sy + (sp_lid_top + sp_window_top) * k);
         return l;
     }
-    if (kind == Kind::Wsc || kind == Kind::Ngpc) {
-        // The WonderSwan Color and the Neo Geo Pocket Color are tall portrait handhelds: the picture sits in their
-        // upper half, and the body below it carries the controls.
-        const double body_h = panel_h - 12 * sy;
-        const double body_w = std::min(panel_w - 20 * sx, body_h / 1.35);
-        // The screen across the body's width, filling it.
-        const double s = std::min((body_w - 2 * 20 * sx) / game_w, (body_h * 0.55) / game_h);
-        l.w = int(game_w * s);
-        l.h = int(game_h * s);
-        l.whole = std::abs(s - std::round(s)) < 1e-6;
-        l.x = (panel_w - l.w) / 2;
-        l.y = int((panel_h - body_h) / 2 + 18 * sy);
+    if (kind == Kind::Console) {
+        // As large as leaves the machine's rails beside the game, in steps of a quarter so a 256-wide game is 2x and a
+        // 320-wide one 1.75x. No room is kept above and below: the rails carry the machine (the NES fills the height).
+        const int rail = int((style > FrameOff && badge_of(frame_styles[style].slug) == Badge::C64 ? 32 : 40) * sx);
+        const double fit = std::min(double(panel_w - 2 * rail) / game_w, double(panel_h) / game_h);
+        const double s = std::max(1.0, std::floor(fit * 4 + 1e-6) / 4);
+        return place(s, 0, 0, panel_w, panel_h);
+    }
+    if (kind == Kind::Wsc || kind == Kind::Ngpc || kind == Kind::Gg) {
+        // Whole on the panel: the controls take the sides, the name the strip under the screen. The WonderSwan's wide
+        // picture has room at 2x, the square ones at 2.75x (3x would leave no name).
+        const double s = kind == Kind::Wsc ? 2 : 2.75 * std::min(sx, sy) * 160 / std::max(160, game_w);
+        place(s, 0, 0, panel_w, 0);
+        const double room = panel_h - l.h;
+        l.y = int(room * (kind == Kind::Ngpc ? 0.30 : 0.42));
         return l;
     }
     if (kind == Kind::Psp) {
-        // The PSP: a wide lens across the top of the body, the controls under it.
-        const int room_w = panel_w - int(2 * 46 * sx), room_h = panel_h - int(2 * 90 * sy);
-        const int s = std::max(1, std::min(room_w / game_w, room_h / game_h));
-        l.w = game_w * s;
-        l.h = game_h * s;
-        l.x = (panel_w - l.w) / 2;
-        l.y = int(30 * sy);
-        return l;
-    }
-    if (kind == Kind::Nes) {
-        // The NES: the screen in the middle of the front, the red stripe above it and the badge below. The screen
-        // sits a little left of centre, the way it does on the console, with the badge beside it.
-        const int room_w = panel_w - int(2 * 40 * sx), room_h = panel_h - int((26 + 74) * sy);
-        const int s = std::max(1, std::min(room_w / game_w, room_h / game_h));
-        l.w = game_w * s;
-        l.h = game_h * s;
-        l.x = (panel_w - l.w) / 2 - int(78 * sx);
-        l.y = int((panel_h - l.h) / 2 - 4 * sy);
+        // The PSP: as wide as the panel, smoothed like sharp fill.
+        l.w = panel_w;
+        l.h = panel_w * game_h / game_w;
+        l.whole = false;
+        l.x = 0;
+        l.y = (panel_h - l.h) / 2;
         return l;
     }
     if (flat_face(kind)) {
@@ -1166,18 +1295,13 @@ FrameLayout frame_layout(int panel_w, int panel_h, int game_w, int game_h, int s
     }
     // The lens: the largest whole scale that leaves the body room around it.
     if (kind == Kind::Agb) {
-        // The Game Boy Advance: a wide body with the screen in a lens in its upper half and a strip of body below it
-        // for the logo and the speaker. The body is the anchor: as wide as the panel allows, and as tall as the lens
-        // and that strip need.
-        const double body_w = panel_w - 2 * agb_edge * sx;
-        // The scale: the lens is the game with the AGB's margins around it, and the body is the lens plus the strip.
-        const int s = std::max(1, int((body_w - 2 * 52 * sx) / game_w));
-        const double lens_h = game_h * s + (agb_top + agb_bottom) * sy;
-        const double body_h = std::min(panel_h - 2 * agb_edge * sy, lens_h + 2 * 20 * sy + 96 * sy);
+        // The Game Boy Advance: the largest whole scale that leaves the pad and the buttons their sides, a little above
+        // the panel's middle so the lens's name strip and the speaker fit under it.
+        const int s = std::max(1, std::min(int((panel_w - 2 * 76 * sx) / game_w), int((panel_h - 112 * sy) / game_h)));
         l.w = game_w * s;
         l.h = game_h * s;
         l.x = (panel_w - l.w) / 2;
-        l.y = int(std::max(agb_edge * sy, (panel_h - body_h) / 2 + 10 * sy));
+        l.y = int(28 * sy + (panel_h - 112 * sy - l.h) * 0.4);
         return l;
     }
     const int room_w = panel_w - int(2 * (lens_side + 50) * sx),
@@ -1199,9 +1323,9 @@ void draw_frame(Canvas& out, const FrameLayout& screen, int style, const Font& f
     case Kind::Sp:
     case Kind::SpInner: draw_sp(out, screen, s, font); break;
     case Kind::Agb: draw_agb(out, screen, s, font); break;
-    case Kind::Nes: draw_nes(out, screen, s, font); break;
     case Kind::Wsc:
-    case Kind::Ngpc: draw_portrait(out, screen, s, font); break;
+    case Kind::Ngpc:
+    case Kind::Gg: draw_wide_handheld(out, screen, s, font); break;
     case Kind::Psp: draw_psp(out, screen, s, font); break;
     case Kind::Dmg:
     case Kind::Pocket:

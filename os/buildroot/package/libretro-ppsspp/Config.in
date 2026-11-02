@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBRETRO_PPSSPP
+	bool "libretro-ppsspp"
+	help
+	  PPSSPP, the PlayStation Portable core RG DS Play loads for .iso and .cso games:
+	  /usr/lib/libretro/ppsspp_libretro.so, with its assets (fonts and compatibility lists; no Sony files are
+	  needed) in /usr/share/libretro/PPSSPP.

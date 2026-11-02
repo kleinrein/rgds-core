@@ -23,8 +23,10 @@ void App::load_library(std::vector<Game> games) {
         if (!o.game_rom.empty()) o.game_rom = fs::weakly_canonical(o.game_rom);
         model.games = {
             {o.game_rom.empty() ? "Preview game" : o.game_rom.stem().string(), o.game_rom, o.game_rom.empty()}};
-        // Its system, for its icon and the Graphics it offers (a zipped game in RG DS Play is a GBA one).
-        model.games[0].system = system_for_path(o.game_rom);
+        // Its system, for its icon and the Graphics it offers. Only the runtime knows a zipped game's or a shared
+        // extension's; without it, a zipped game in RG DS Play is taken for a GBA one.
+        model.games[0].system = o.game_system.empty() ? system_for_path(o.game_rom) : o.game_system;
+        if (model.games[0].system == "gg") model.games[0].system = "sms"; // on the Master System's shelf
         if (model.games[0].system == "nds" && o.game_core == "rgds-play") model.games[0].system = "gba";
         model.selected = 0;
         home_menu = false;
@@ -119,10 +121,13 @@ void App::watch_games(Uint32 now) {
         now - games_checked_at < 4000 || picker_open)
         return;
     games_checked_at = now;
-    if (!((home_menu && settings.page == Page::Library) || settings.page == Page::LibraryOptions)) return;
+    if (!((home_menu && settings.page == Page::Library) || settings.page == Page::LibraryOptions ||
+          (settings.page == Page::Welcome && welcome_step == WelcomeGames)))
+        return;
     if (games_signature() == games_signature_seen) return;
     if (!model.games.empty() && model.selected < model.games.size())
         games_keep_selected = model.games[model.selected].path;
+    auto_scrape_pending = preferences.auto_scrape;
     rescan_games(true);
 }
 
@@ -268,10 +273,15 @@ void App::start_boot_session() {
         boot_hardware_ready = true;
     } else system.request_status();
     begin_library_scan();
+    if (welcome_active) welcome_begin();
     dirty = true;
 }
 
 void App::continue_boot() {
+    if (o.usb_drive_screen) {
+        quit = true;
+        return;
+    }
     if (settings.page == Page::BootWarning && boot_displayed) start_boot_session();
 }
 

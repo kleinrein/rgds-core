@@ -1,0 +1,5 @@
+config BR2_PACKAGE_LIBRETRO_FUSE
+	bool "libretro-fuse"
+	help
+	  Fuse, the ZX Spectrum core RG DS Play loads for .tzx, .tap, .z80 and .sna games:
+	  /usr/lib/libretro/fuse_libretro.so. The Spectrum's ROMs are built in.

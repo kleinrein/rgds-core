@@ -9,6 +9,9 @@ std::unique_ptr<View> make_pokemon_battle(const ViewSpec& spec, std::string& err
 std::unique_ptr<View> make_mosaic(const ViewSpec& spec, std::string& error);
 std::unique_ptr<View> make_grid(const ViewSpec& spec, std::string& error);
 std::unique_ptr<View> make_trace(const ViewSpec& spec, std::string& error);
+std::unique_ptr<View> make_course(const ViewSpec& spec, std::string& error);
+std::unique_ptr<View> make_route(const ViewSpec& spec, std::string& error);
+std::unique_ptr<View> make_events(const ViewSpec& spec, std::string& error);
 
 std::unique_ptr<View> make_view(const ViewSpec& spec, std::string& error) {
     if (spec.format == "metroid2") return make_automap(spec, error);
@@ -17,6 +20,9 @@ std::unique_ptr<View> make_view(const ViewSpec& spec, std::string& error) {
     if (spec.format == "mosaic") return make_mosaic(spec, error);
     if (spec.format == "grid") return make_grid(spec, error);
     if (spec.format == "trace") return make_trace(spec, error);
+    if (spec.format == "course") return make_course(spec, error);
+    if (spec.format == "route") return make_route(spec, error);
+    if (spec.format == "events") return make_events(spec, error);
     error = "[view] format '" + spec.format + "' is not known to this build";
     return nullptr;
 }

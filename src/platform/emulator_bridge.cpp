@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <set>
 #include <string>
 #include <sys/stat.h>
 #include <time.h>
@@ -236,9 +237,11 @@ struct NativeTexture {
     SDL_Renderer* renderer = nullptr;
     bool game = false;
     int applied = -1;
+    int grid_w = 0, grid_h = 0; // RG DS Play's named game picture: shaded as a screen of its own size
 };
 std::map<SDL_Texture*, NativeTexture> native_textures;
-std::mutex textures_mutex; // native_textures and renderer_contexts
+std::set<SDL_Texture*> play_screens; // named by rgds_play_screen
+std::mutex textures_mutex;           // native_textures and renderer_contexts
 void graphics_texture_changed(bool enhanced) {
     std::lock_guard<std::mutex> guard(textures_mutex);
     enhanced_game_texture = enhanced;
@@ -1142,6 +1145,13 @@ void tick(bool graphics_safe = false) {
                 else if (command == "quit") {
                     failed = false;
                     request_quit();
+                } else if (command == "quit-discard") {
+                    // Leave without a checkpoint; the previous auto-save stays as it was.
+                    failed = false;
+                    if (!quitting) {
+                        quitting = true;
+                        quit_events();
+                    }
                 } else if (command == "fps:0" || command == "fps:1") {
                     std::lock_guard<std::mutex> guard(stats_mutex);
                     frame_stats.enabled = command == "fps:1";
@@ -1557,6 +1567,14 @@ extern "C" void SDL_DestroyRenderer(SDL_Renderer* renderer) {
 // RG DS Play draws its game texture as it is, with no render target, while a
 // screen filter is chosen, so the filter's pass can take that draw.
 extern "C" __attribute__((visibility("default"))) int rgds_shader_live() { return live_shader.load(); }
+// RG DS Play names the texture it draws its game picture from, whatever its size (a
+// race with the map moved to the second screen): the filter shades it as a screen of
+// that many pixels, so the player no longer has to show the game's whole picture for it.
+extern "C" __attribute__((visibility("default"))) void rgds_play_screen(SDL_Texture* texture) {
+    std::lock_guard<std::mutex> guard(textures_mutex);
+    play_screens.insert(texture);
+    native_textures.erase(texture);
+}
 // The engine's rumble, 0-100, from its own thread: the DS Rumble Pak in DSCore,
 // rumble cartridges in RG DS Play. Silent while the in-game menu is up.
 extern "C" __attribute__((visibility("default"))) void rgds_rumble(int level) {
@@ -1579,6 +1597,7 @@ extern "C" void SDL_DestroyTexture(SDL_Texture* texture) {
     {
         std::lock_guard<std::mutex> guard(textures_mutex);
         native_textures.erase(texture);
+        play_screens.erase(texture);
     }
     game_shader.pair_rules(texture, nullptr);
     if (next) next(texture);
@@ -1597,6 +1616,7 @@ bool sdl_shader(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_Rect* so
     // Only DS screen textures are shader candidates; menus and RGDS textures
     // keep SDL's own blend/pixel path. Remember dimensions until destruction.
     const bool enhanced = enhanced_game_texture;
+    int grid_w = 0, grid_h = 0;
     {
         std::lock_guard<std::mutex> guard(textures_mutex);
         auto found = native_textures.find(texture);
@@ -1606,21 +1626,23 @@ bool sdl_shader(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_Rect* so
             if (!query || query(texture, nullptr, nullptr, &width, &height) != 0) return false;
             // RG DS Play's second screen (the companion, the info screen) is the player's own
             // interface, drawn in the launcher's look: like the launcher, it is never filtered.
-            // Only its game picture is (240x160 or 160x144).
-            found = native_textures
-                        .emplace(texture, NativeTexture{renderer,
-                                                        rgds::GameShader::screen_texture(width, height) ||
-                                                            (enhanced && width == 640 && height == 480) ||
-                                                            (core == "rgds-play" &&
-                                                             rgds::GameShader::handheld_texture(width, height)),
-                                                        -1})
-                        .first;
+            // Only its game picture is: 240x160 or 160x144, or whatever size it names
+            // (a Super Nintendo race with the map moved off it is 256x99).
+            const bool named = play_screens.count(texture) > 0;
+            NativeTexture entry{
+                renderer,
+                rgds::GameShader::screen_texture(width, height) || (enhanced && width == 640 && height == 480) ||
+                    (core == "rgds-play" && (named || rgds::GameShader::handheld_texture(width, height))),
+                -1};
+            if (named) entry.grid_w = width, entry.grid_h = height;
+            found = native_textures.emplace(texture, entry).first;
         }
         if (!found->second.game) return false;
+        grid_w = found->second.grid_w, grid_h = found->second.grid_h;
     }
     drawing_shader = true;
     bool applied = game_shader.sdl(renderer, texture, live_shader, source, target, angle, center, flip, nullptr,
-                                   enhanced, hd, core == "rgds-play");
+                                   enhanced, hd, core == "rgds-play", grid_w, grid_h);
     drawing_shader = false;
     static std::atomic<bool> said_declined{false};
     if (hd && !applied && !said_declined.exchange(true))

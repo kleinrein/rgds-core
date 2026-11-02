@@ -1,0 +1,218 @@
+#!/bin/sh
+# The USB-C port as a network card for the computer on the other end: SSH and file sharing over the cable, at USB 2
+# speed and whatever Wi-Fi is doing. One CDC NCM function through configfs (macOS and Linux need no driver; the
+# Microsoft descriptors make Windows 10 and later bind its own). The handheld is always 10.55.0.1; udhcpd gives the
+# computer an address and no router or DNS, so its internet stays where it was. Settings > Connectivity > USB data
+# transfer runs on and off, and rgds/usb-off keeps it off across boots; charging does not depend on any of this.
+#
+# Beside it an empty removable mass storage drive. Settings > Connectivity > Use as USB drive gives it the data
+# partition, a real drive on the computer: the session runs "usb drive" with the menu gone and /data unmounted,
+# because a second writer on the partition would corrupt the card. Ejecting on the computer, pulling the cable or
+# leaving on the handheld brings /data and the menu back.
+#
+# The USB PHY's driver keeps the PHY off unless a computer is on the cable (no cable, or a wall charger), and the
+# controller cannot start without its clock: binding then logs "failed to enable ep0out" and nothing retries it. So
+# watch rebinds when a computer appears (extcon SDP or CDP, the charger detection on the OTG port).
+#   usb up|down   at boot and shutdown
+#   usb on|off    the switch, remembered
+#   usb drive CMD...  the data partition as the drive while CMD (the screen saying so) runs
+#   usb status|watch
+G=/sys/kernel/config/usb_gadget/rgds
+ADDRESS=10.55.0.1
+RUN=/run/rgds
+EXTCON=/sys/class/extcon/extcon0/state
+LUN=$G/functions/mass_storage.usb0/lun.0
+
+# stable across boots, so the computer keeps treating it as the same network, and different per handheld
+ids() {
+    SERIAL=$(tr -d '\0' < /proc/device-tree/serial-number 2> /dev/null)
+    hash=$(printf '%s' "${SERIAL:-rgds}" | md5sum)
+    SERIAL=${SERIAL:-rgds}
+    tail=$(printf '%s' "$hash" | sed 's/^\(..\)\(..\)\(..\)\(..\).*/\1:\2:\3:\4/')
+    # locally administered, unicast
+    DEV_MAC=02:55:$tail
+    HOST_MAC=06:55:$tail
+}
+
+gadget_up() {
+    grep -qs ' /sys/kernel/config ' /proc/mounts || mount -t configfs none /sys/kernel/config || return 1
+    [ -e $G ] && return 0
+    udc=$(ls /sys/class/udc 2> /dev/null | head -n 1)
+    [ -n "$udc" ] || return 1
+    ids
+    mkdir $G || return 1
+    cd $G || return 1
+    # Linux Foundation's Multifunction Composite Gadget, with the interface association a Windows driver expects
+    echo 0x1d6b > idVendor
+    echo 0x0104 > idProduct
+    echo 0x0100 > bcdDevice
+    echo 0x0200 > bcdUSB
+    echo 0xef > bDeviceClass
+    echo 0x02 > bDeviceSubClass
+    echo 0x01 > bDeviceProtocol
+    mkdir strings/0x409
+    echo "$SERIAL" > strings/0x409/serialnumber
+    echo "RG DS OS" > strings/0x409/manufacturer
+    echo "RG DS" > strings/0x409/product
+    mkdir functions/ncm.usb0
+    echo "$DEV_MAC" > functions/ncm.usb0/dev_addr
+    echo "$HOST_MAC" > functions/ncm.usb0/host_addr
+    mkdir configs/c.1 configs/c.1/strings/0x409
+    echo "Network" > configs/c.1/strings/0x409/configuration
+    echo 500 > configs/c.1/MaxPower
+    echo 1 > os_desc/use
+    echo 0xcd > os_desc/b_vendor_code
+    echo MSFT100 > os_desc/qw_sign
+    echo WINNCM > functions/ncm.usb0/os_desc/interface.ncm/compatible_id
+    ln -s functions/ncm.usb0 configs/c.1/
+    mkdir functions/mass_storage.usb0
+    echo 1 > functions/mass_storage.usb0/lun.0/removable
+    echo "RG DS   Card" > functions/mass_storage.usb0/lun.0/inquiry_string
+    ln -s functions/mass_storage.usb0 configs/c.1/
+    ln -s configs/c.1 os_desc/
+    echo "$udc" > UDC
+}
+
+# shell builtins only: this runs every two seconds
+computer_on_cable() {
+    while read -r line; do
+        case $line in USB=1 | SDP=1 | CDP=1) return 0 ;; esac
+    done < $EXTCON
+    return 1
+}
+
+network_up() {
+    ip addr replace $ADDRESS/24 dev usb0
+    ip link set usb0 up
+}
+
+rebind() {
+    read -r udc < $G/UDC
+    echo > $G/UDC
+    echo "$udc" > $G/UDC
+    network_up
+}
+
+mount_data() {
+    mount -t exfat -o noatime,uid=0,gid=0,fmask=0000,dmask=0000,iocharset=utf8,errors=remount-ro "$1" /data 2> /dev/null
+}
+
+# what macOS leaves on a drive: file sharing vetoes the same names (runtime/file_sharing.py)
+clean_mac_clutter() {
+    rm -rf /data/.Spotlight-V100 /data/.fseventsd /data/.Trashes /data/.TemporaryItems /data/.apdisk /data/.DS_Store
+    [ -d /data/roms ] && find /data/roms \( -name '._*' -o -name .DS_Store \) -type f -exec rm -f {} +
+}
+
+drive() {
+    part=$(cat $RUN/disk)p4
+    sync
+    tries=0
+    until umount /data 2> /dev/null; do
+        tries=$((tries + 1))
+        [ $tries -ge 5 ] && return 1
+        sleep 1
+    done
+    echo "$part" > $LUN/file
+    rebind
+    "$@" &
+    screen=$!
+    gone=0
+    while kill -0 $screen 2> /dev/null; do
+        sleep 1
+        # ejected on the computer: the kernel closed the file
+        read -r file < $LUN/file
+        [ -z "$file" ] && break
+        if computer_on_cable; then gone=0; else gone=$((gone + 1)); fi
+        [ $gone -ge 2 ] && break
+    done
+    kill $screen 2> /dev/null
+    echo 1 > $LUN/forced_eject
+    rebind
+    sync
+    # pulling the cable before an eject leaves the volume marked dirty
+    fsck.exfat -p "$part" > /dev/null 2>&1
+    mount_data "$part" || { fsck.exfat -y "$part" > /dev/null 2>&1; mount_data "$part"; } || return 1
+    clean_mac_clutter
+}
+
+# a computer on the cable that has not enumerated the gadget for three polls gets a fresh bind, now that the PHY is on
+watch() {
+    read -r udc < $G/UDC
+    waited=0
+    while :; do
+        read -r state < /sys/class/udc/$udc/state
+        if [ "$state" = "not attached" ] && computer_on_cable; then
+            waited=$((waited + 1))
+            if [ $waited -ge 3 ]; then
+                waited=0
+                rebind
+            fi
+        else
+            waited=0
+        fi
+        sleep 2
+    done
+}
+
+gadget_down() {
+    [ -e $G ] || return 0
+    cd $G || return 1
+    echo > UDC
+    rm -f os_desc/c.1 configs/c.1/ncm.usb0 configs/c.1/mass_storage.usb0
+    rmdir configs/c.1/strings/0x409 configs/c.1 functions/ncm.usb0 functions/mass_storage.usb0 strings/0x409
+    cd /
+    rmdir $G
+}
+
+case $1 in
+up)
+    [ -f /data/rgds/usb-off ] && exit 0
+    gadget_up || exit 1
+    network_up
+    [ -f $RUN/usb-watch.pid ] && kill -0 "$(cat $RUN/usb-watch.pid)" 2> /dev/null && exit 0
+    "$0" watch > /dev/null 2>&1 &
+    echo $! > $RUN/usb-watch.pid
+    cat > $RUN/udhcpd.conf << EOF
+interface usb0
+start 10.55.0.2
+end 10.55.0.20
+lease_file $RUN/udhcpd.leases
+opt subnet 255.255.255.0
+opt lease 86400
+EOF
+    touch $RUN/udhcpd.leases
+    udhcpd $RUN/udhcpd.conf
+    ;;
+on)
+    rm -f /data/rgds/usb-off
+    exec "$0" up
+    ;;
+off)
+    touch /data/rgds/usb-off
+    exec "$0" down
+    ;;
+down)
+    # BusyBox here is built without pid files, so udhcpd is found by name
+    pid=$(pidof udhcpd) && kill $pid
+    [ -f $RUN/usb-watch.pid ] && kill "$(cat $RUN/usb-watch.pid)" 2> /dev/null
+    rm -f $RUN/usb-watch.pid
+    gadget_down
+    ;;
+watch)
+    watch
+    ;;
+drive)
+    shift
+    drive "$@" || exit 1
+    ;;
+status)
+    # configured = a computer has enumerated it, not attached = no cable or a charger
+    cat /sys/class/udc/*/state 2> /dev/null
+    ip -o -f inet addr show dev usb0 2> /dev/null
+    ;;
+*)
+    echo "usage: usb up|down|on|off|drive|status|watch" >&2
+    exit 2
+    ;;
+esac
+exit 0

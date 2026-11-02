@@ -436,16 +436,62 @@ class Services:
             )
         else:
             from file_sharing import Sharing
-            self.publish(
-                **Sharing(self.data, self.app
-                          ).status(self.fields.get('ip', '') if self.fields.get('wifi_connected') == '1' else '')
+            self.publish(**Sharing(self.data, self.app).status(self.sharing_ip()))
+
+    def usb_status(self):
+        if self.preview:
+            enabled = self.fields.get('usb', '1') != '0'
+            self.publish(usb_supported=1, usb=int(enabled), usb_connected=0)
+            return
+        from file_sharing import USB_HELPER, USB_OFF
+        supported = USB_HELPER.is_file()
+        enabled = supported and not USB_OFF.exists()
+        attached = False
+        for state in Path('/sys/class/udc').glob('*/state'):
+            try:
+                attached = attached or state.read_text().strip() == 'configured'
+            except OSError:
+                pass
+        self.publish(usb_supported=int(supported), usb=int(enabled), usb_connected=int(enabled and attached))
+
+    def usb(self, enabled):
+        if not self.preview:
+            from file_sharing import USB_HELPER
+            self.run_command(
+                [str(USB_HELPER), 'on' if enabled else 'off'], failure='Could not change USB data transfer.'
             )
+        else:
+            self.publish(usb=int(enabled))
+        self.usb_status()
+        # the cable's address may have been the one sharing was on
+        self.sharing_status()
+        self.publish(state='ready', message='USB data transfer on.' if enabled else 'USB data transfer off.')
+
+    def usb_drive(self):
+        """The session gives the data partition to the computer once the menu has quit (usr/libexec/rgds/usb)."""
+        if self.preview:
+            self.publish(state='ready', message='USB drive simulated.')
+            return
+        attached = any(state.read_text().strip() == 'configured' for state in Path('/sys/class/udc').glob('*/state'))
+        if not attached:
+            raise ValueError('Connect the handheld to a computer first.')
+        if self.fields.get('sharing') == '1':
+            self.sharing(False)
+        Path('/run/rgds/usb-drive').touch()
+        self.publish(state='ready', message='')
+
+    def sharing_ip(self):
+        """Wi-Fi's address, or the USB cable's without Wi-Fi; Samba listens on both when both are up."""
+        from file_sharing import usb_address
+        if self.fields.get('wifi_connected') == '1' and self.fields.get('ip'):
+            return self.fields['ip']
+        return usb_address()
 
     def sharing(self, enabled, guest=False):
         from file_sharing import Sharing, preview
         if enabled:
             self.network_status()
-            if self.fields.get('wifi_connected') != '1' or not self.fields.get('ip'):
+            if not self.sharing_ip():
                 raise ValueError('Connect to Wi-Fi before turning file sharing on.')
         self.publish(state='busy', message='Starting file sharing…' if enabled else 'Stopping file sharing…')
         if self.preview:
@@ -462,7 +508,7 @@ class Services:
             systems.append(('bios', RGDS_OS_ROMS.parent / 'rgds/bios'))
             from portmaster import Folders, installed
             if installed(): systems.append(('ports', Folders().ports))
-            Sharing(self.data, self.app).start(self.fields['ip'], roots, guest=guest, systems=systems)
+            Sharing(self.data, self.app).start(self.sharing_ip(), roots, guest=guest, systems=systems)
         else:
             Sharing(self.data, self.app).stop()
         self.sharing_status()
@@ -490,26 +536,42 @@ class Services:
         except OSError:
             previous = ""
         from linux_platform import rgds_os
+        previous_version = ""
         if not self.preview and rgds_os():
-            # RG DS OS keeps the previous version in the other root slot, and U-Boot falls back to it by itself
-            # (os_update.py); a state/previous copied over from a stock card names a stock release
+            # RG DS OS keeps the previous build in the other root slot (os_update.py); a state/previous copied over
+            # from a stock card names a stock release
             previous = ""
+            try:
+                from os_update import OsUpdater
+                release = OsUpdater(self.app, self.data).previous()
+            except Exception:  # a slot that cannot be read offers nothing; the rest of the report still comes
+                release = None
+            if release: previous, previous_version = release
         self.publish(
             build=manifest.get("build", "Development build"),
             firmware="Simulated handheld" if self.preview else firmware,
             kernel="Preview" if self.preview else platform.release(),
             free_gb=f"{usage.free/1024**3:.1f}",
             previous=previous,
+            previous_version=previous_version,
             state="ready",
             message=""
         )
         self.network_status()
         self.sharing_status()
+        self.usb_status()
         self.bluetooth.status()
 
     def rollback(self):
         if self.preview:
             self.publish(state="ready", message="Rollback simulated.")
+            return
+        from linux_platform import rgds_os
+        if rgds_os():
+            # the other root slot on trial, with this one as the fallback (os_update.py); the handheld restarts
+            from os_update import OsUpdater
+            OsUpdater(self.app, self.data).rollback()
+            self.publish(state="ready", message="Restarting into the previous version…")
             return
         from activate import rollback
         from emulators import activity_lock, core_running
@@ -541,11 +603,7 @@ class Services:
         fields = read_fields(self.data / 'boot.ini')
         if self.preview:
             self.publish(
-                boot_installed=1,
-                boot_mode="rgds",
-                boot_warning=fields.get("warning", "1"),
-                state="ready",
-                message=""
+                boot_installed=1, boot_mode="rgds", boot_warning=fields.get("warning", "1"), state="ready", message=""
             )
             return
         self.publish(
@@ -603,7 +661,8 @@ def main():
             "info", "scan", "connect", "wifi-on", "wifi-off", "sharing-on", "sharing-open", "sharing-off", "rollback",
             "clear-cache", "diagnostics", "poweroff", "reboot", "startup", "startup-info", "update-info",
             "update-check", "update-download", "update-apply", "update-discard", "update-auto", "library", "bt-on",
-            "bt-off", "bt-scan", "bt-pair", "bt-forget", "homebrew-browse", "homebrew-get"
+            "bt-off", "bt-scan", "bt-pair", "bt-forget", "homebrew-browse", "homebrew-get", "usb-on", "usb-off",
+            "usb-drive"
         )
     )
     parser.add_argument("--app", required=True, type=Path)
@@ -640,6 +699,8 @@ def main():
             getattr(service, args.action)(json.loads(sys.stdin.read(4096)))
         elif args.action in ("wifi-on", "wifi-off"):
             service.radio(args.action == "wifi-on")
+        elif args.action in ("usb-on", "usb-off"):
+            service.usb(args.action == "usb-on")
         elif args.action in ("sharing-on", "sharing-open", "sharing-off"):
             service.sharing(args.action != "sharing-off", guest=args.action == "sharing-open")
         else:

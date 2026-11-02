@@ -18,6 +18,7 @@
 A  Apply	A  적용
 A  Done	A  완료
 A  Jump	A  이동
+A  Leave	A  나가기
 A  Play	A  플레이
 A  Search	A  검색
 A 24-hour or 12-hour clock.	24시간제 또는 12시간제입니다.
@@ -77,6 +78,7 @@ Atlantic Ocean	대서양
 Audio is not recorded or saved.	소리는 녹음하거나 저장하지 않습니다.
 Australia	오스트레일리아
 Auto-load state	상태 자동 불러오기
+Auto-save	자동 저장
 Auto-save on exit	종료 시 자동 저장
 Automatic	자동
 Automatic (free)	자동
@@ -128,12 +130,15 @@ Browse	둘러보기
 Browse games	게임 보기
 Browse systems	시스템 보기
 Browser layout	목록 보기
+Bubble Gum	풍선껌
 Build, storage and device address	빌드, 저장 공간, 기기 주소
 Button	버튼
 Button layout	버튼 배치
 Button {0}	버튼 {0}
 Buttons and the game menu shortcut	버튼과 게임 메뉴 단축키
 Cancel	취소
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	캐러셀
 Carried	소지
 Cartridges	카트리지
@@ -141,6 +146,7 @@ Change group	그룹 바꾸기
 Changes immediately. Map a button in Controls for quick access.	바로 바뀝니다. '조작 설정'에서 버튼을 할당하면 빠르게 쓸 수 있습니다.
 Changing 3D threading…	3D 스레드 변경 중…
 Changing speed…	속도 변경 중…
+Chaos Emeralds	카오스 에메랄드
 Chat is unavailable: you can still draw	채팅을 쓸 수 없음: 그림은 그릴 수 있습니다
 Chat Room	채팅방
 Chat Room {0}	채팅방 {0}
@@ -191,6 +197,7 @@ Compare	비교
 Confirm	확인
 Connect	연결
 Connect the charger before installing an update.	업데이트를 설치하기 전에 충전기를 연결하세요.
+Connect the handheld to a computer first.	먼저 기기를 컴퓨터에 연결하세요.
 Connect to Wi-Fi to send files from a phone or computer.	Wi-Fi에 연결하면 휴대폰이나 컴퓨터에서 파일을 보낼 수 있습니다.
 Connected	연결됨
 Connected.	연결되었습니다.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	연결이 끊겼습니다. 다시 시도하는 중�
 Connectivity	통신
 Continue	계속
 Continue where you left off	마지막으로 하던 곳부터
+Continues	컨티뉴
 Control unavailable on this device	이 기기에서는 조작할 수 없습니다
 Controllers and other Bluetooth devices	컨트롤러 및 기타 Bluetooth 기기
 Controls	조작 설정
@@ -219,6 +227,7 @@ Could not apply this shader.	이 필터를 적용할 수 없습니다.
 Could not apply volume	음량을 적용할 수 없습니다
 Could not bring the Wi-Fi adapter up. Try again.	Wi-Fi 어댑터를 켤 수 없습니다. 다시 시도하세요.
 Could not change 3D threading. Your game is unchanged.	3D 스레드를 변경할 수 없습니다. 게임은 그대로입니다.
+Could not change USB data transfer.	USB 데이터 전송을 변경할 수 없습니다.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	선택한 Wi-Fi 연결을 확인할 수 없습니다. 다시 검색한 뒤 시도하세요.
 Could not connect	연결할 수 없습니다
 Could not enable lid wake	덮개를 열어 깨우기를 켤 수 없습니다
@@ -270,6 +279,7 @@ Development build	개발 빌드
 Device address	기기 주소
 Device information	기기 정보
 Discard update	업데이트 버리기
+Disk	디스크
 Display	디스플레이
 Display FPS	화면 FPS
 Done	완료
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	편집
 Edit search	검색어 편집
 Effects volume	효과음 음량
+Eject the drive on your computer when you are done	끝나면 컴퓨터에서 드라이브를 꺼내세요
 Empty slot	빈 슬롯
 Emulator	에뮬레이터
 Emulator settings	에뮬레이터 설정
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	오류: 설정을 복원할 수 없습니다
 ERROR: Could not restore settings - see log	오류: 설정을 복원할 수 없습니다 - 로그를 확인하세요
 Essences	에센스
 Europe	유럽
+Event	종목
+Events	종목
 Every game in this collection has artwork.	이 컬렉션의 모든 게임에 이미지가 있습니다.
 Exit your game before installing an update.	업데이트를 설치하기 전에 게임을 종료하세요.
 Experience	경험치
@@ -341,9 +354,11 @@ Fetch missing artwork	없는 이미지 가져오기
 Figurines	피규어
 File sharing on. Find "RG DS" under Network.	파일 공유를 켰습니다. '네트워크'에서 "RG DS"를 찾으세요.
 Files added	추가한 파일
+Files and SSH by cable; charging always works	케이블로 파일과 SSH 사용, 충전은 항상 가능
 Files arrived. Choose Play to start.	파일이 도착했습니다. 플레이를 선택해 시작하세요.
 Filter	필터
 Filtered	필터 적용됨
+Final	최종
 Find and connect to a nearby network	주변 네트워크를 찾아 연결
 Find, pair and connect a nearby device	주변 기기를 찾아 페어링하고 연결합니다
 Finding games…	게임 찾는 중…
@@ -489,6 +504,7 @@ Key {0}	키 {0}
 Keyboard	키보드
 Keys	열쇠
 Kinstone fusions	키노 조각 맞추기
+Lamppost	가로등
 Language	언어
 Last 4 weeks	최근 4주
 Last 7 days	최근 7일
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	게임을 둘러보고
 Please keep your handheld on	기기 전원을 끄지 마세요
 Pocket green	포켓 그린
 Point and click on top	위 화면에서 가리키고 클릭
+Points	점수
 Pokédex caught	도감 잡은 수
 Pokédex seen	도감 본 수
+Popcorn	팝콘
 PortMaster is ready	PortMaster 준비 완료
 Ports	포트
 Power	전원
@@ -785,9 +803,11 @@ RGDS build	RGDS 빌드
 Rich	리치
 Right	오른쪽
 Right stick	오른쪽 스틱
+Rings	링
 Rollback simulated.	롤백을 시뮬레이션했습니다.
 Round	라운드
 ROUNDED FONT UNAVAILABLE	둥근 글꼴을 쓸 수 없습니다
+Route	경로
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	DS의 럼블 팩 게임, Game Boy와 Game Boy Advance의 진동 카트리지.
 Rumble strength	진동 강도
 Rupees	루피
@@ -826,7 +846,9 @@ Scene	장면
 Score	점수
 Screen brightness	화면 밝기
 Screen colours	화면 색상
-Screen off	화면 끄기
+Menu	메뉴
+Switch	전환
+Turn off screen	화면 끄기
 screens	화면
 ScreenScraper needs project credentials and your account	ScreenScraper에는 프로젝트 인증 정보와 사용자 계정이 필요합니다
 Screenshot	스크린샷
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	DS 색감으로 선명하게 확대.
 Sharp scaling, DS colour and Natural Vision together.	선명한 확대, DS 색감, Natural Vision을 함께.
 Shield	방패
 Shift	Shift
+Shift keys stay down until the next key	Shift 키는 다음 키까지 눌린 상태로 유지됩니다
 Shortcut action	단축키 동작
 Shots	남은 탄
 Show games	게임 보기
@@ -909,7 +932,9 @@ Spanish	스페인어
 Spring	스프링
 Springy menu changes with a colourful wobble	알록달록 통통 튀는 메뉴 전환
 Stable	안정판
+Stage	스테이지
 Standard	기본
+Standings	순위
 START	START
 Start	시작
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	시스템 업데이트
 Systems	시스템
 Tap to type, or use the D-pad and A	터치로 입력하거나 십자 버튼과 A를 사용하세요
 Team	파티
+Temper	분노
 Temporary game cache cleared. Saves and artwork are kept.	게임 임시 캐시를 지웠습니다. 세이브 데이터와 이미지는 남아 있습니다.
 Terrain and unit	지형과 유닛
 Test	테스트
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	이 네트워크에는 기업용 �
 This port lists no instructions.	이 포트에는 설명이 없습니다.
 This request did not finish. Please try again.	요청이 끝나지 않았습니다. 다시 시도하세요.
 This shader is unavailable for the current emulator.	현재 에뮬레이터에서는 이 필터를 쓸 수 없습니다.
+This stage	이번 스테이지
 This stock firmware has not been validated for updates.	이 기본 펌웨어는 업데이트 검증을 거치지 않았습니다.
 This version failed to start. Waiting for a newer update.	이 버전을 시작하지 못했습니다. 더 새로운 업데이트를 기다리는 중입니다.
 Threaded 3D	멀티스레드 3D
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	업데이트 검증에 실�
 Updates	업데이트
 Updates & recovery	업데이트와 복구
 Updates will be available when the release channel opens.	릴리스 채널이 열리면 업데이트할 수 있습니다.
+USB data transfer	USB 데이터 전송
+USB data transfer is not available on this handheld.	이 기기에서는 USB 데이터 전송을 사용할 수 없습니다.
+USB data transfer off.	USB 데이터 전송 꺼짐.
+USB data transfer on.	USB 데이터 전송 켜짐.
+USB drive mode	USB 드라이브 모드
 Use an additional rendering thread	추가 렌더링 스레드 사용
+Use as USB drive	USB 드라이브로 사용
 Use default ({0})	기본값 사용({0})
 Use default controls	공통 조작 설정 사용
 Use previous build	이전 빌드 사용
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	주변에 {0}명
 {0} players	{0}명
 {0} settings	{0} 설정
+Welcome!	환영합니다!
+Let's get your handheld ready. It takes about a minute.	기기를 준비해 볼게요. 1분 정도 걸립니다.
+Pick your colour	내 색상 고르기
+The menus take it on. You can change it whenever you like.	메뉴에 적용됩니다. 언제든 바꿀 수 있습니다.
+What's your name?	이름이 무엇인가요?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat에서 주변 사람에게 표시되고 DS 게임에서는 소유자 이름으로 쓰입니다.
+Is this the right time?	시간이 맞나요?
+You're connected	연결되었습니다
+Connect to Wi-Fi	Wi-Fi 연결
+For box art, updates and PictoChat. Everything else works without it.	커버 아트, 업데이트, PictoChat에 쓰입니다. 나머지는 없어도 작동합니다.
+You're all set!	모두 준비되었습니다!
+Play at a comfortable volume, and give your eyes and hands a break.	편안한 음량으로 즐기고 눈과 손을 쉬게 해 주세요.
+In a game, the Anbernic button opens saves, cheats and settings.	게임 중 Anbernic 버튼을 누르면 저장, 치트, 설정이 열립니다.
+Close the lid to sleep. Your game waits for you.	덮개를 닫으면 절전 모드가 됩니다. 게임은 그대로 기다립니다.
+Copy more games any time. They show up by themselves.	언제든 게임을 더 복사하세요. 저절로 나타납니다.
+Skip setup	설정 건너뛰기
+Run setup again	설정 다시 실행
+Turn on Wi-Fi	Wi-Fi 켜기
+Turn on USB data transfer	USB 데이터 전송 켜기
+Connect to Wi-Fi first	먼저 Wi-Fi에 연결하세요
+Zoom	확대
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	USB-C 케이블을 연결하고 USB 드라이브로 사용을 선택하거나 이 카드를 컴퓨터에 넣으세요. RGDS 드라이브를 열고 roms 안의 폴더에 게임을 복사하세요: nds, gba, gb, gbc, nes, snes, md 등.
+What do you want to play?	무엇을 플레이할까요?
+You can change this later in Settings > Library.	나중에 설정 > 라이브러리에서 바꿀 수 있습니다.
+A clean library with only DS games.	DS 게임만 있는 깔끔한 라이브러리입니다.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, 게임보이, SNES, PlayStation 등을 시스템별로 정리합니다.

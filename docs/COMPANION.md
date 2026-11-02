@@ -23,7 +23,7 @@ What the screen shows for a game is set out in its profile (`play/profiles/<syst
 12. **The lower panel is a touch screen.** Under RG DS Core the bridge reads it and sends it on (as for the DS engines). On its own, the player reads it itself (`src/platform/touch.hpp`, shared with the launcher). On a desktop the mouse stands in for a finger.
 13. **Targets at least 48×48.** *(lint: target)*
 14. **The corners belong to the system.** Bottom right is the dock's button, and top right is the switch between the game's own screen and its status board. Content never puts text there. Boards give up the end of a tile instead. *(lint: corner)*
-15. **Nothing important on one careless tap.** Return home from the second screen is held (1 s, a ring fills). A tap only says how. The game switcher opens on a tap: it only pauses the game. Screen off is a tap, and any touch brings the screen back, doing nothing else. A dimmed screen's first touch only wakes it.
+15. **Nothing important on one careless tap.** Return home from the second screen is held (1 s, a ring fills). A tap only says how. The game menu and the game switcher open on a tap: they only pause the game. Turn off screen is a tap, and any touch brings the screen back, doing nothing else. A dimmed screen's first touch only wakes it.
 
 ## Motion
 
@@ -42,11 +42,11 @@ What the screen shows for a game is set out in its profile (`play/profiles/<syst
 The in-game menu's Graphics page sets **Second screen**:
 
 - **Companion**: the profile's screen, with the dock's button.
-- **Info**: no companion, just the dock as a quiet screen. It has the game's name, the session's time, the clock and battery, the game switcher, a held Return home, brightness, and screen off. The game keeps its whole picture, HUD and all.
+- **Info**: no companion, just the dock as a quiet screen. It has the game's name, the session's time, the clock and battery, Menu (the game menu), Switch (the game switcher), a held Home (Return home), brightness, and Turn off screen. The game keeps its whole picture, HUD and all.
 - **Off**: nothing on the second screen, and the game keeps its whole picture. A HUD band or HUD split is only taken off the game while a companion shows it.
 - **Swapped**: the companion on top, the game below (no touch, since the top panel is not a touch screen).
 
-Brightness is the second screen's own, 10 to 100 %, kept in `userdata/emulators/rgds-play/second-screen.ini`. The game switcher and Return home are the runtime's own triggers beside the control file (`emulator.control.menu` and `.home`, the same the Anbernic button and the home shortcut write), so Return home saves first exactly as the menu's does. Save and Load stay in the menu, with its gallery.
+Brightness is the second screen's own, 10 to 100 %, kept in `userdata/emulators/rgds-play/second-screen.ini`. The game menu, the game switcher and Return home are the runtime's own triggers beside the control file (`emulator.control.game-menu`, `.menu` and `.home`, the same the Home key, the Anbernic button and the home shortcut write), so Return home saves first exactly as the menu's does. Save and Load stay in the menu, with its gallery.
 
 A port's second screen (`rgds-launcher --port-menu`, `src/launcher/port_menu.hpp`) is the dock's controls in the launcher's drawing: same places, same holds and fades, the same brightness file. PortMaster itself keeps its install progress there instead.
 

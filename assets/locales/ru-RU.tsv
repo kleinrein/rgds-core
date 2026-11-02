@@ -18,6 +18,7 @@
 A  Apply	A  Применить
 A  Done	A  Готово
 A  Jump	A  Перейти
+A  Leave	A  Выйти
 A  Play	A  Играть
 A  Search	A  Поиск
 A 24-hour or 12-hour clock.	24- или 12-часовой формат.
@@ -77,6 +78,7 @@ Atlantic Ocean	Атлантический океан
 Audio is not recorded or saved.	Звук не записывается и не сохраняется.
 Australia	Австралия
 Auto-load state	Автозагрузка состояния
+Auto-save	Автосохранение
 Auto-save on exit	Автосохранение при выходе
 Automatic	Автоматически
 Automatic (free)	Автоматически
@@ -128,12 +130,15 @@ Browse	Просмотр
 Browse games	Смотреть игры
 Browse systems	Смотреть системы
 Browser layout	Вид списка
+Bubble Gum	Жвачка
 Build, storage and device address	Сборка, память и адрес устройства
 Button	Кнопка
 Button layout	Раскладка кнопок
 Button {0}	Кнопка {0}
 Buttons and the game menu shortcut	Кнопки и вызов игрового меню
 Cancel	Отмена
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Карусель
 Carried	С собой
 Cartridges	Картриджи
@@ -141,6 +146,7 @@ Change group	Сменить группу
 Changes immediately. Map a button in Controls for quick access.	Меняется сразу. Назначьте кнопку в «Управлении» для быстрого доступа.
 Changing 3D threading…	Изменение потоков 3D…
 Changing speed…	Изменение скорости…
+Chaos Emeralds	Изумруды Хаоса
 Chat is unavailable: you can still draw	Чат недоступен: рисовать всё равно можно
 Chat Room	Комната чата
 Chat Room {0}	Комната {0}
@@ -191,6 +197,7 @@ Compare	Сравнить
 Confirm	Подтвердить
 Connect	Подключить
 Connect the charger before installing an update.	Подключите зарядку перед установкой обновления.
+Connect the handheld to a computer first.	Сначала подключите устройство к компьютеру.
 Connect to Wi-Fi to send files from a phone or computer.	Подключитесь к Wi-Fi, чтобы отправить файлы с телефона или компьютера.
 Connected	Подключено
 Connected.	Подключено.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Соединение потеряно. Повтор
 Connectivity	Связь
 Continue	Продолжить
 Continue where you left off	Продолжить с того же места
+Continues	Продолжения
 Control unavailable on this device	Управление недоступно на этом устройстве
 Controllers and other Bluetooth devices	Контроллеры и другие устройства Bluetooth
 Controls	Управление
@@ -219,6 +227,7 @@ Could not apply this shader.	Не удалось применить этот ф�
 Could not apply volume	Не удалось применить громкость
 Could not bring the Wi-Fi adapter up. Try again.	Не удалось включить адаптер Wi-Fi. Попробуйте снова.
 Could not change 3D threading. Your game is unchanged.	Не удалось изменить потоки 3D. Игра не изменена.
+Could not change USB data transfer.	Не удалось изменить передачу данных по USB.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Не удалось подтвердить подключение Wi-Fi. Выполните поиск и попробуйте снова.
 Could not connect	Не удалось подключиться
 Could not enable lid wake	Не удалось включить пробуждение крышкой
@@ -270,6 +279,7 @@ Development build	Сборка для разработки
 Device address	Адрес устройства
 Device information	Об устройстве
 Discard update	Отменить обновление
+Disk	Диск
 Display	Экран
 Display FPS	FPS экрана
 Done	Готово
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Изменить
 Edit search	Изменить поиск
 Effects volume	Громкость эффектов
+Eject the drive on your computer when you are done	Когда закончите, извлеките диск на компьютере
 Empty slot	Пустой слот
 Emulator	Эмулятор
 Emulator settings	Настройки эмулятора
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	ОШИБКА: не удалось восста
 ERROR: Could not restore settings - see log	ОШИБКА: не удалось восстановить настройки — см. журнал
 Essences	Эссенции
 Europe	Европа
+Event	Дисциплина
+Events	Дисциплины
 Every game in this collection has artwork.	У всех игр в коллекции есть обложки.
 Exit your game before installing an update.	Выйдите из игры перед установкой обновления.
 Experience	Опыт
@@ -341,9 +354,11 @@ Fetch missing artwork	Загрузить недостающие обложки
 Figurines	Фигурки
 File sharing on. Find "RG DS" under Network.	Общий доступ включён. Найдите «RG DS» в разделе «Сеть».
 Files added	Файлы добавлены
+Files and SSH by cable; charging always works	Файлы и SSH по кабелю; зарядка работает всегда
 Files arrived. Choose Play to start.	Файлы получены. Выберите «Играть», чтобы начать.
 Filter	Фильтр
 Filtered	С фильтром
+Final	Итог
 Find and connect to a nearby network	Найти сеть рядом и подключиться
 Find, pair and connect a nearby device	Найти, создать пару и подключить устройство поблизости
 Finding games…	Поиск игр…
@@ -489,6 +504,7 @@ Key {0}	Клавиша {0}
 Keyboard	Клавиатура
 Keys	Ключи
 Kinstone fusions	Слияния кинстоунов
+Lamppost	Фонарь
 Language	Язык
 Last 4 weeks	Последние 4 недели
 Last 7 days	Последние 7 дней
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Весёлые зву�
 Please keep your handheld on	Не выключайте консоль
 Pocket green	Зелёный карманный
 Point and click on top	Наводить и нажимать сверху
+Points	Очки
 Pokédex caught	Покедекс: поймано
 Pokédex seen	Покедекс: встречено
+Popcorn	Попкорн
 PortMaster is ready	PortMaster готов
 Ports	Порты
 Power	Питание
@@ -785,9 +803,11 @@ RGDS build	Сборка RGDS
 Rich	Подробные
 Right	Вправо
 Right stick	Правый стик
+Rings	Кольца
 Rollback simulated.	Откат смоделирован.
 Round	Раунд
 ROUNDED FONT UNAVAILABLE	СКРУГЛЁННЫЙ ШРИФТ НЕДОСТУПЕН
+Route	Маршрут
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Игры с Rumble Pak на DS, картриджи с вибрацией на Game Boy и Game Boy Advance.
 Rumble strength	Сила вибрации
 Rupees	Рупии
@@ -826,7 +846,9 @@ Scene	Сцена
 Score	Очки
 Screen brightness	Яркость экрана
 Screen colours	Цвета экрана
-Screen off	Экран выключен
+Menu	Меню
+Switch	Сменить
+Turn off screen	Выключить экран
 screens	экранов
 ScreenScraper needs project credentials and your account	Для ScreenScraper нужны данные проекта и ваша учётная запись
 Screenshot	Скриншот
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Чёткое масштабиров�
 Sharp scaling, DS colour and Natural Vision together.	Чёткое масштабирование, цвета DS и Natural Vision вместе.
 Shield	Щит
 Shift	Shift
+Shift keys stay down until the next key	Клавиши Shift остаются нажатыми до следующей клавиши
 Shortcut action	Действие кнопки
 Shots	Выстрелы
 Show games	Показать игры
@@ -909,7 +932,9 @@ Spanish	Испанский
 Spring	Пружина
 Springy menu changes with a colourful wobble	Пружинистая смена меню с цветным покачиванием
 Stable	Стабильный
+Stage	Этап
 Standard	Стандартный
+Standings	Положение
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Обновление системы
 Systems	Системы
 Tap to type, or use the D-pad and A	Коснитесь, чтобы печатать, или используйте крестовину и A
 Team	Команда
+Temper	Гнев
 Temporary game cache cleared. Saves and artwork are kept.	Временный кэш игр очищен. Сохранения и обложки остались.
 Terrain and unit	Местность и отряд
 Test	Проверить
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Этой сети нужен кор
 This port lists no instructions.	У этого порта нет инструкций.
 This request did not finish. Please try again.	Запрос не завершился. Попробуйте снова.
 This shader is unavailable for the current emulator.	Этот фильтр недоступен для текущего эмулятора.
+This stage	Этот этап
 This stock firmware has not been validated for updates.	Эта штатная прошивка не проверена для обновлений.
 This version failed to start. Waiting for a newer update.	Эта версия не запустилась. Ожидается более новое обновление.
 Threaded 3D	Многопоточное 3D
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Проверка обнов
 Updates	Обновления
 Updates & recovery	Обновления и восстановление
 Updates will be available when the release channel opens.	Обновления появятся, когда откроется канал выпусков.
+USB data transfer	Передача данных по USB
+USB data transfer is not available on this handheld.	Передача данных по USB недоступна на этом устройстве.
+USB data transfer off.	Передача данных по USB выключена.
+USB data transfer on.	Передача данных по USB включена.
+USB drive mode	Режим USB-диска
 Use an additional rendering thread	Дополнительный поток рендеринга
+Use as USB drive	Использовать как USB-диск
 Use default ({0})	По умолчанию ({0})
 Use default controls	Общее управление
 Use previous build	Предыдущая сборка
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	Рядом человек: {0}
 {0} players	Игроков: {0}
 {0} settings	Настройки: {0}
+Welcome!	Добро пожаловать!
+Let's get your handheld ready. It takes about a minute.	Подготовим консоль. Это займёт около минуты.
+Pick your colour	Выберите свой цвет
+The menus take it on. You can change it whenever you like.	Меню примут этот цвет. Его можно сменить в любой момент.
+What's your name?	Как вас зовут?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat показывает имя людям поблизости, а игры DS используют его как имя владельца.
+Is this the right time?	Время указано верно?
+You're connected	Подключено
+Connect to Wi-Fi	Подключиться к Wi-Fi
+For box art, updates and PictoChat. Everything else works without it.	Для обложек, обновлений и PictoChat. Всё остальное работает и без этого.
+You're all set!	Всё готово!
+Play at a comfortable volume, and give your eyes and hands a break.	Играйте на комфортной громкости и давайте отдых глазам и рукам.
+In a game, the Anbernic button opens saves, cheats and settings.	В игре кнопка Anbernic открывает сохранения, читы и настройки.
+Close the lid to sleep. Your game waits for you.	Закройте крышку, чтобы перейти в сон. Игра вас подождёт.
+Copy more games any time. They show up by themselves.	Копируйте новые игры в любое время. Они появятся сами.
+Skip setup	Пропустить настройку
+Run setup again	Запустить настройку снова
+Turn on Wi-Fi	Включить Wi-Fi
+Turn on USB data transfer	Включить передачу данных по USB
+Connect to Wi-Fi first	Сначала подключитесь к Wi-Fi
+Zoom	Масштаб
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Подключите кабель USB-C и выберите Использовать как USB-накопитель или вставьте эту карту в компьютер. Откройте диск RGDS и скопируйте игры в папки внутри roms: nds, gba, gb, gbc, nes, snes, md и другие.
+What do you want to play?	Во что хотите играть?
+You can change this later in Settings > Library.	Это можно изменить позже в разделе Настройки > Библиотека.
+A clean library with only DS games.	Аккуратная библиотека только с играми DS.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation и другие, по системам.

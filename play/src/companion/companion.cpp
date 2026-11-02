@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "companion/companion.hpp"
+#include "companion/mode7.hpp"
 #include "ui/kit.hpp"
 
 #include <algorithm>
@@ -28,6 +29,11 @@ Companion::Companion(Core& live, const Profile* profile, std::string title, std:
                 alternative_.push_back(alt != spec.values.end() && (alt->second == "yes" || alt->second == "true"));
             } else std::fprintf(stderr, "play: %s: %s\n", profile_->file.c_str(), error.c_str());
         }
+    // Last, so a profile's own view stays the one kept beside the save.
+    if (auto keyboard = make_keyboard(live.system())) {
+        views_.push_back(std::move(keyboard));
+        alternative_.push_back(true);
+    }
     hud_picture_.tint = [this](uint32_t v) { return shown_px(v); };
 }
 
@@ -54,7 +60,6 @@ void Companion::take(MapImage img) {
     }
     current_ = std::move(img);
     has_current_ = true;
-    ever_shown_ = true;
 }
 
 namespace {
@@ -227,21 +232,6 @@ void Companion::make_backdrop(Core& live) {
 
 namespace {
 
-// Where a scanline looks on the course with this matrix: the place under its
-// first pixel is (aa + bb, cc + dd) / 256 and a pixel steps A and C on, in
-// snes9x's arithmetic (its rounding to 1/64, before the course wraps).
-struct Ray {
-    int aa, bb, cc, dd;
-};
-Ray mode7_ray(const int mat[4], const int16_t* k, int starty) {
-    auto signed13 = [](int v) { return (v << 19) >> 19; };
-    auto clip10 = [](int v) { return (v & 0x2000) ? (v | ~0x3ff) : (v & 0x3ff); };
-    const int x0 = signed13(k[4]), y0 = signed13(k[5]), h = signed13(k[6]), v = signed13(k[7]);
-    const int xx = clip10(h - x0), yy = clip10(v - y0);
-    return {(mat[0] * xx) & ~63, ((mat[1] * starty) & ~63) + ((mat[1] * yy) & ~63) + (x0 << 8), (mat[2] * xx) & ~63,
-            ((mat[3] * starty) & ~63) + ((mat[3] * yy) & ~63) + (y0 << 8)};
-}
-
 // The karts and items behind the player, which the game leaves out of its race
 // view and shows only on its map (the next Mode 7 run, the lower picture). A
 // sprite's feet there are a place on the course; the extension's row that looks
@@ -251,82 +241,37 @@ Ray mode7_ray(const int mat[4], const int16_t* k, int starty) {
 void draw_behind(const Core::Mode7& m, const uint8_t* oam, const std::vector<std::array<double, 2>>& places,
                  const std::vector<int>& tiles, int e, int kept, const std::vector<std::array<int, 4>>& mats,
                  const uint32_t* colours, std::vector<uint32_t>& out) {
-    auto line = [&](int l) { return m.lines + size_t(l) * 8; };
-    auto matrix = [&](int l) { return line(l)[0] | line(l)[1] | line(l)[2] | line(l)[3]; };
-    // The map: the next run of 16 or more Mode 7 lines that share a centre and
-    // scroll (a line or two between the pictures keeps an older screen's).
-    int ms = e + 1, me = ms;
-    for (; ms < 240; ms = me + 1) {
-        while (ms < 240 && !matrix(ms)) ++ms;
-        for (me = ms; me + 1 < 240 && matrix(me + 1) && std::equal(line(me + 1) + 4, line(me + 1) + 8, line(ms) + 4);) ++me;
-        if (me - ms >= 16) break;
-    }
-    if (ms >= 240 || me - ms < 16) return;
+    using namespace mode7;
+    int ms = 0, me = 0;
+    if (!map_lines(m, e, ms, me)) return;
     const int extra = int(mats.size()) - 1;
     std::vector<Ray> rays(mats.size());
-    for (size_t i = 0; i < mats.size(); ++i) rays[i] = mode7_ray(mats[i].data(), line(e), e + int(i) + 1);
-    // The pieces (a kart is four 16x16 sprites), grouped as the game lists them:
-    // one after another in one palette, touching, no larger than 2x2 large sprites.
-    static const int sizes[8][4] = {{8, 8, 16, 16},  {8, 8, 32, 32},   {8, 8, 64, 64},   {16, 16, 32, 32},
-                                    {16, 16, 64, 64}, {32, 32, 64, 64}, {16, 32, 32, 64}, {16, 32, 32, 32}};
-    const int* size = sizes[m.obj_sizes];
-    struct Piece {
-        int x, y, w, h;
-        const uint8_t* o;
-    };
+    for (size_t i = 0; i < mats.size(); ++i) rays[i] = ray(mats[i].data(), line(m, e), e + int(i) + 1);
     struct Thing {
-        int x = 0, y = 0, w = 0, h = 0;
-        std::vector<Piece> pieces;
+        Sprite sprite;
         bool on_map = false;
         double px = 0, py = 0; // its place on the course
-        int place = -1;                   // the kept place it stands on
+        int place = -1;        // the kept place it stands on
         double row = 0, at = 0, scale = 1;
     };
     std::vector<Thing> things;
-    for (int i = 0; i < 128; ++i) {
-        const uint8_t* o = oam + 4 * i;
-        const int hi = (oam[512 + i / 4] >> (2 * (i & 3))) & 3;
-        int x = o[0] | ((hi & 1) << 8);
-        if (x >= 256) x -= 512;
-        const Piece piece{x, o[1], size[hi & 2 ? 2 : 0], size[hi & 2 ? 3 : 1], o};
-        if (piece.y >= 224 || piece.x + piece.w <= 0) continue;
-        if (!things.empty()) {
-            Thing& t = things.back();
-            const int x0 = std::min(t.x, piece.x), y0 = std::min(t.y, piece.y);
-            const int x1 = std::max(t.x + t.w, piece.x + piece.w), y1 = std::max(t.y + t.h, piece.y + piece.h);
-            const bool touching = piece.x <= t.x + t.w && t.x <= piece.x + piece.w && piece.y <= t.y + t.h && t.y <= piece.y + piece.h;
-            if ((t.pieces[0].o[3] & 0x3E) == (o[3] & 0x3E) && touching && x1 - x0 <= 2 * size[2] && y1 - y0 <= 2 * size[3]) {
-                t.x = x0, t.y = y0, t.w = x1 - x0, t.h = y1 - y0;
-                t.pieces.push_back(piece);
-                continue;
-            }
-        }
-        Thing t;
-        t.x = piece.x, t.y = piece.y, t.w = piece.w, t.h = piece.h;
-        t.pieces.push_back(piece);
-        things.push_back(std::move(t));
-    }
+    for (Sprite& sprite : sprites(oam, m.obj_sizes)) things.push_back({std::move(sprite)});
     // Where each is on the course: the map centres a sprite on its place (a
     // sprite at Y starts on row Y), to a map pixel: several course units.
     for (Thing& t : things) {
-        const int place = t.y + t.h / 2 + m.first_line;
+        const int place = t.sprite.y + t.sprite.h / 2 + m.first_line;
         if (place < ms || place > me) continue;
-        const int16_t* k = line(place);
-        const int mat[4] = {k[0], k[1], k[2], k[3]};
-        const Ray r = mode7_ray(mat, k, place + 1);
-        const double fx = t.x + t.w / 2.0;
-        t.px = (r.aa + r.bb + fx * mat[0]) / 256.0, t.py = (r.cc + r.dd + fx * mat[2]) / 256.0;
+        course_at(m, place, t.sprite.x + t.sprite.w / 2.0, t.px, t.py);
         t.on_map = true;
     }
     // Where the game keeps a place exactly, that: the sprite that shows it is
     // the one drawn from its tiles.
     for (Thing& t : things)
         for (size_t q = 0; t.on_map && q < places.size() && q < tiles.size(); ++q)
-            for (const Piece& piece : t.pieces)
-                if ((piece.o[2] | ((piece.o[3] & 1) << 8)) == tiles[q]) {
-                    t.place = int(q);
-                    t.px = places[q][0], t.py = places[q][1];
-                }
+            if (t.sprite.drawn_from(tiles[q])) {
+                t.place = int(q);
+                t.px = places[q][0], t.py = places[q][1];
+            }
     // It stands between the two rows of the extension its place lies between.
     const double unit = std::hypot(mats[0][0], mats[0][2]);
     std::vector<Thing*> standing;
@@ -352,81 +297,35 @@ void draw_behind(const Core::Mode7& m, const uint8_t* oam, const std::vector<std
         }
     }
     std::sort(standing.begin(), standing.end(), [](const Thing* a, const Thing* b) { return a->row < b->row; });
-    // A piece's pixel: its colour in the sprite palette, 0 where it is clear.
-    auto pixel = [&](const Piece& p, int sx, int sy) {
-        const uint8_t* o = p.o;
-        const int name = o[2] | ((o[3] & 1) << 8);
-        if (o[3] & 0x40) sx = p.w - 1 - sx;
-        if (o[3] & 0x80) sy = p.h - 1 - sy;
-        const int tile = (((name & 0xf0) + (sy >> 3) * 16) & 0xf0) | ((name + (sx >> 3)) & 0x0f);
-        const int at = (((name & 0x100) ? m.obj_second : m.obj_base) + tile * 32 + (sy & 7) * 2) & 0xffff;
-        const int bit = 7 - (sx & 7);
-        const int c = ((m.vram[at] >> bit) & 1) | (((m.vram[(at + 1) & 0xffff] >> bit) & 1) << 1) |
-                      (((m.vram[(at + 16) & 0xffff] >> bit) & 1) << 2) | (((m.vram[(at + 17) & 0xffff] >> bit) & 1) << 3);
-        return c ? 128 + ((o[3] >> 1) & 7) * 16 + c : 0;
-    };
     const int rows = kept + extra;
     for (const Thing* t : standing) {
-        const int W = int(std::lround(t->w * t->scale)), H = int(std::lround(t->h * t->scale));
+        const Sprite& sp = t->sprite;
+        const int W = int(std::lround(sp.w * t->scale)), H = int(std::lround(sp.h * t->scale));
         // The game stands a racer a quarter of its height under its place, 3 pixels
         // right of where the road has it (Mario's own kart, measured).
         const int left = int(std::lround(t->at + 3 * t->scale - W / 2.0));
         const int top = kept - 1 + int(std::lround(t->row + H / 4.0)) - H + 1;
-        for (int dy = std::max(0, -top); dy < H && top + dy < rows; ++dy) {
-            const int sy = t->y + dy * t->h / H;
-            for (int dx = std::max(0, -left); dx < W && left + dx < 256; ++dx) {
-                const int sx = t->x + dx * t->w / W;
-                // The first piece listed is in front, as the PPU has it.
-                for (const Piece& p : t->pieces) {
-                    if (sx < p.x || sx >= p.x + p.w || sy < p.y || sy >= p.y + p.h) continue;
-                    if (const int c = pixel(p, sx - p.x, sy - p.y)) {
-                        out[size_t(top + dy) * 256 + size_t(left + dx)] = colours[c];
-                        break;
-                    }
-                }
-            }
-        }
+        for (int dy = std::max(0, -top); dy < H && top + dy < rows; ++dy)
+            for (int dx = std::max(0, -left); dx < W && left + dx < 256; ++dx)
+                if (const int c = pixel(m, sp, dx * sp.w / W, dy * sp.h / H))
+                    out[size_t(top + dy) * 256 + size_t(left + dx)] = colours[c];
     }
 }
 
 // More of a Mode 7 race than the game draws (Super Mario Kart's road under its
-// race view). The race is the run of scanlines from the first Mode 7 line that
-// share one centre and scroll; its matrix shrinks with distance as
+// race view). The race (mode7::race_lines) is a run of scanlines that share
+// one centre and scroll; its matrix shrinks with distance as
 // a / (line - l0), so the rows after it continue that curve from the course
 // in video memory, with the core's own arithmetic (its rounding to 1/64 and
 // line + 1), in its palette. With `oam`, the lower picture's sprites stand on
 // it (draw_behind). `kept` is how many of the game's rows stay (the race itself).
 bool extend_mode7(const Core::Mode7& m, const uint8_t* oam, const std::vector<std::array<double, 2>>& places,
-                  const std::vector<int>& tiles, const Picture& game, int extra, std::vector<uint32_t>& out, int& kept) {
+                  const std::vector<int>& tiles, const Picture& game, int extra, std::vector<uint32_t>& out,
+                  int& kept) {
     if (game.w != 256 || extra <= 0) return false;
-    auto line = [&](int l) { return m.lines + size_t(l) * 8; };
-    auto matrix = [&](int l) { return line(l)[0] | line(l)[1] | line(l)[2] | line(l)[3]; };
-    // snes9x rewrites a line's record only when that line is Mode 7, so lines
-    // that are something else now (the sky) keep whatever an earlier screen left
-    // there (a restart's full-screen Mode 7 picture). The race is the first run
-    // of lines sharing a centre and scroll whose matrix shrinks line by line, as
-    // a perspective does (the map under it is the second); a stale block is flat
-    // and never passes.
-    auto size = [&](int l) { return std::abs(line(l)[0]) + std::abs(line(l)[1]) + std::abs(line(l)[2]) + std::abs(line(l)[3]); };
+    using namespace mode7;
     int s = -1, e = -1;
-    for (int l = m.first_line; l < 240;) {
-        if (!matrix(l)) {
-            ++l;
-            continue;
-        }
-        int end = l;
-        bool shrinks = true;
-        while (end + 1 < 240 && matrix(end + 1) && std::equal(line(end + 1) + 4, line(end + 1) + 8, line(l) + 4)) {
-            shrinks = shrinks && size(end + 1) <= size(end);
-            ++end;
-        }
-        if (shrinks && end - l >= 16 && size(l) > size(end) * 3 / 2) {
-            s = l, e = end;
-            break;
-        }
-        l = end + 1;
-    }
-    if (s < 0) return false;
+    if (!race_lines(m, s, e)) return false;
     kept = std::min(game.h, e - m.first_line + 1);
     // One l0 for the four, then a for each by least squares: the game's lines
     // are a plain perspective (no constant: 1 / size falls on a straight line),
@@ -441,7 +340,7 @@ bool extend_mode7(const Core::Mode7& m, const uint8_t* oam, const std::vector<st
         for (int l = from; l <= e; ++l) {
             const double u = 1 / (l - l0);
             sxx += u * u;
-            for (int k = 0; k < 4; ++k) sxv[k] += line(l)[k] * u;
+            for (int k = 0; k < 4; ++k) sxv[k] += line(m, l)[k] * u;
         }
         const double fit = (sxv[0] * sxv[0] + sxv[1] * sxv[1] + sxv[2] * sxv[2] + sxv[3] * sxv[3]) / sxx;
         if (fit > best) {
@@ -451,29 +350,21 @@ bool extend_mode7(const Core::Mode7& m, const uint8_t* oam, const std::vector<st
     }
     // The palette as the picture has it (the core's BGR555 through its RGB565).
     uint32_t colours[256];
-    for (int i = 0; i < 256; ++i) {
-        const uint16_t v = m.palette[i];
-        const uint32_t r5 = v & 31, g5 = (v >> 5) & 31, b5 = (v >> 10) & 31, g6 = (g5 << 1) | ((g5 >> 4) & 1);
-        colours[i] = rgb_to_px(((r5 * 255 / 31) << 16) | ((g6 * 255 / 63) << 8) | (b5 * 255 / 31));
-    }
+    for (int i = 0; i < 256; ++i) colours[i] = colour(m.palette[i]);
     out.resize(size_t(game.w) * size_t(kept + extra));
     for (int y = 0; y < kept; ++y)
         std::copy_n(game.px + size_t(y) * game.stride, game.w, out.begin() + size_t(y) * game.w);
     std::vector<std::array<int, 4>> mats(size_t(extra) + 1);
-    for (int j = 0; j < 4; ++j) mats[0][size_t(j)] = line(e)[j];
+    for (int j = 0; j < 4; ++j) mats[0][size_t(j)] = line(m, e)[j];
     for (int i = 0; i < extra; ++i) {
         const int l = e + 1 + i;
         int* mat = mats[size_t(i) + 1].data();
-        for (int j = 0; j < 4; ++j)
-            mat[j] = int(std::lround(std::clamp(fa[j] / (l - best_l0), -32768.0, 32767.0)));
-        const Ray r = mode7_ray(mat, line(e), l + 1);
+        for (int j = 0; j < 4; ++j) mat[j] = int(std::lround(std::clamp(fa[j] / (l - best_l0), -32768.0, 32767.0)));
+        const Ray r = ray(mat, line(m, e), l + 1);
         int aa = r.aa, cc = r.cc;
         uint32_t* row = out.data() + size_t(kept + i) * game.w;
-        for (int x = 0; x < 256; ++x, aa += mat[0], cc += mat[2]) {
-            const int X = ((aa + r.bb) >> 8) & 0x3ff, Y = ((cc + r.dd) >> 8) & 0x3ff;
-            const uint8_t tile = m.vram[((Y & ~7) << 5) + ((X >> 2) & ~1)];
-            row[x] = colours[m.vram[1 + (tile << 7) + ((Y & 7) << 4) + ((X & 7) << 1)]];
-        }
+        for (int x = 0; x < 256; ++x, aa += mat[0], cc += mat[2])
+            row[x] = colours[course_index(m.vram, (aa + r.bb) >> 8, (cc + r.dd) >> 8)];
     }
     if (oam && m.objsel) draw_behind(m, oam, places, tiles, e, kept, mats, colours, out);
     return true;
@@ -490,13 +381,12 @@ Picture Companion::compose_game(const Picture& game, bool whole) {
         Core::Mode7 m;
         int kept = 0;
         if (profile_->hud.extend > 0 && s.y + s.h == game.h && live_ && live_->mode7(m) &&
-            extend_mode7(m, strip_sprites_.empty() ? nullptr : strip_sprites_.data(), strip_places_, profile_->hud.place_tiles,
-                         game, profile_->hud.extend, composed_, kept))
+            extend_mode7(m, strip_sprites_.empty() ? nullptr : strip_sprites_.data(), strip_places_,
+                         profile_->hud.place_tiles, game, profile_->hud.extend, composed_, kept))
             return {composed_.data(), game.w, kept + profile_->hud.extend, game.w};
         // What is left, less a gap between the two pictures (game_rows).
         const int rest = profile_->hud.game_rows > 0 ? std::min(profile_->hud.game_rows, game.h - s.h) : game.h - s.h;
-        if (s.y == 0)
-            return {game.px + static_cast<size_t>(game.h - rest) * game.stride, game.w, rest, game.stride};
+        if (s.y == 0) return {game.px + static_cast<size_t>(game.h - rest) * game.stride, game.w, rest, game.stride};
         if (s.y + s.h == game.h) return {game.px, game.w, rest, game.stride};
         return game;
     }
@@ -854,44 +744,48 @@ const std::vector<uint32_t>& frame_at(const MapImage& m, uint64_t tick) {
     return m.frames[(tick / static_cast<uint64_t>(std::max(1, m.frame_step))) % n];
 }
 
-// Two little stacked screens, the launcher's mark for a game with a second screen of its own.
-void dual_mark(Canvas& out, int x, int y, int unit, Rgb colour, Rgb ground) {
+// The launcher's dual-screen badge (library_screen.hpp): a round glossy accent
+// badge in a panel ring with two little screens stacked on a hinge, the upper
+// one dark with the game, the lower one lit with a stylus dot.
+void dual_badge(Canvas& out, const Look& look, int cx, int cy, int size) {
+    const Rgb white{255, 255, 255}, deep = mix(look.accent, Rgb{0, 0, 0}, 115), lit = mix(look.accent, white, 200);
+    soft_round(out, cx - size / 2, cy - size / 2 + 2, size, size, size / 2, look.shadow(), look.dark ? 80 : 36);
+    out.rounded_rect(cx - size / 2 - 2, cy - size / 2 - 2, size + 4, size + 4, size / 2 + 2, look.panel);
+    glossy(out, cx - size / 2, cy - size / 2, size, size, size / 2, look.accent);
+    const int sw = size * 11 / 20, sh = size * 7 / 20, gap = std::max(2, size / 14), edge = std::max(2, size / 16);
+    const int sx = cx - sw / 2, top = cy - (2 * sh + gap) / 2;
     for (int screen = 0; screen < 2; ++screen) {
-        const int sy = y + screen * unit * 6 / 5;
-        out.rounded_rect(x, sy, unit * 8 / 5, unit, std::max(1, unit / 4), colour);
-        out.rounded_rect(x + unit / 5, sy + unit / 5, unit * 6 / 5, unit * 3 / 5, 1, ground);
+        const int sy = top + screen * (sh + gap);
+        out.rounded_rect(sx, sy, sw, sh, std::max(2, size / 14), white);
+        out.rounded_rect(sx + edge, sy + edge, sw - 2 * edge, sh - 2 * edge, 1, screen ? lit : deep);
     }
+    const int dot = std::max(4, size / 9) & ~1;
+    out.rounded_rect(cx + sw / 5 - dot / 2, top + sh + gap + (sh - dot) / 2, dot, dot, 0, look.accent);
 }
 
 void title_card(Canvas& out, const Look& look, const Font& font, const Dock& dock, const std::string& title,
-                const std::string& system, const std::string& note, bool dual) {
+                const std::string& system, bool dual) {
     // The launcher's DSi note over the game's faded box art: a card with an
     // accent rim, the box art (else the system's picture), the system with
-    // its icon, the game's name, and what will come here.
+    // its icon, the game's name, and for a game with a second screen of its
+    // own, the dual-screen badge.
     dock.ground(out, look);
-    const int x = kit::margin, w = out.w() - kit::margin * 2, h = note.empty() ? 270 : 310, y = (out.h() - h) / 2;
+    const int x = kit::margin, w = out.w() - kit::margin * 2, h = dual ? 328 : 270, y = (out.h() - h) / 2;
     soft_round(out, x, y + 3, w, h, 18, look.shadow(), look.dark ? 60 : 20);
     out.rounded_rect(x, y, w, h, 18, look.accent);
     out.rounded_rect(x + 2, y + 2, w - 4, h - 4, 16, look.panel);
     const int cx = out.w() / 2, art = 128;
     dock.art(out, look, {cx - art / 2, y + 22, art, art});
+    const int sy = y + 22 + art + 26;
+    if (dual) dual_badge(out, look, cx, sy + 98, 44);
     if (!font.loaded()) return;
     // The system: its icon (when the box art took the picture's place), then its name.
     const std::string name = font.fit(system, kit::small, w - 64 - 36);
     const int icon = dock.has_cover() ? 28 : 0, gap = icon ? 8 : 0, sw = icon + gap + font.measure(name, kit::small);
-    const int sy = y + 22 + art + 26;
     if (icon) dock.system_icon(out, look, cx - sw / 2, sy - icon / 2, icon);
     font.draw(out, cx - sw / 2 + icon + gap, font.centred(kit::small, sy), name, kit::small, look.muted);
     const std::string t = font.fit(title, kit::large, w - 64);
     font.draw(out, cx - font.measure(t, kit::large) / 2, font.centred(kit::large, sy + 40), t, kit::large, look.ink);
-    if (!note.empty()) {
-        // A game with a second screen of its own: the mark, then what will come here.
-        const int unit = dual ? 10 : 0, mark = dual ? unit * 8 / 5 + 10 : 0;
-        const std::string n = font.fit(note, kit::body, w - 64 - mark);
-        const int nx = cx - (font.measure(n, kit::body) + mark) / 2, base = font.centred(kit::body, sy + 84);
-        if (dual) dual_mark(out, nx, base - font.ascent(kit::body) / 2 - unit * 11 / 10, unit, look.muted, look.panel);
-        font.draw(out, nx + mark, base, n, kit::body, look.muted);
-    }
 }
 
 } // namespace
@@ -925,7 +819,7 @@ void Companion::render_screen(Canvas& out, const Look& look, const Font& font) c
     Look l = look;
     if (info_) {
         // As a game with no second screen of its own: the card, no note, and the dock's button.
-        title_card(out, l, font, dock_, title_, system_name_, "", false);
+        title_card(out, l, font, dock_, title_, system_name_, false);
         return;
     }
     const bool flip = has_switch();
@@ -947,7 +841,9 @@ void Companion::render_layers(Canvas& out, const Look& look, const Font& font) c
     if (strip_mode()) {
         View* v = shown_view();
         const bool covered = !has_current_ && v && v->covers_hud();
-        if (hud_shown_ && !hud_image_.empty() && profile_->hud.strip_fill) render_strip_filled(out, look);
+        // A view drawn in place of the band (Super Mario Kart's course from above) comes first.
+        if (covered) render_content(out, look, font);
+        else if (hud_shown_ && !hud_image_.empty() && profile_->hud.strip_fill) render_strip_filled(out, look);
         else if (hud_shown_ && !hud_image_.empty() && !covered) render_with_strip(out, look, font);
         else render_content(out, look, font);
         return;
@@ -1020,15 +916,8 @@ void Companion::render_content(Canvas& out, const Look& look, const Font& font) 
         return;
     }
     if (!has_current_) {
-        // What this game's second screen will show, until it shows it.
-        std::string note;
-        if (profile_ && !profile_->note.empty()) note = profile_->note;
-        else if (capture_)
-            note = ever_shown_ ? "The map comes back once you're playing" : "The map appears once you're playing";
-        else if (party_) note = "Your team appears once it's loaded";
-        else if (!views_.empty()) note = "The map draws itself as you explore";
-        else if (profile_ && profile_->has_hud) note = "The status bar moves here while you play";
-        title_card(out, look, font, dock_, title_, system_name_, note, profile_ != nullptr);
+        // Until the second screen has something to show: the card with the dual-screen badge.
+        title_card(out, look, font, dock_, title_, system_name_, profile_ != nullptr);
         return;
     }
     // The map's own empty colour fills the panel, so it reads as the game's

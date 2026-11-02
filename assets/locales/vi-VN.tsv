@@ -18,6 +18,7 @@
 A  Apply	A  Áp dụng
 A  Done	A  Xong
 A  Jump	A  Chuyển
+A  Leave	A  Thoát
 A  Play	A  Chơi
 A  Search	A  Tìm
 A 24-hour or 12-hour clock.	Đồng hồ 24 giờ hoặc 12 giờ.
@@ -77,6 +78,7 @@ Atlantic Ocean	Đại Tây Dương
 Audio is not recorded or saved.	Âm thanh không được ghi hay lưu.
 Australia	Úc
 Auto-load state	Tự động tải trạng thái
+Auto-save	Tự động lưu
 Auto-save on exit	Tự động lưu khi thoát
 Automatic	Tự động
 Automatic (free)	Tự động
@@ -128,12 +130,15 @@ Browse	Duyệt
 Browse games	Xem trò chơi
 Browse systems	Xem hệ máy
 Browser layout	Bố cục thư viện
+Bubble Gum	Kẹo cao su
 Build, storage and device address	Phiên bản, bộ nhớ và địa chỉ thiết bị
 Button	Nút
 Button layout	Bố cục nút
 Button {0}	Nút {0}
 Buttons and the game menu shortcut	Các nút và phím tắt menu trò chơi
 Cancel	Hủy
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Băng chuyền
 Carried	Đang mang
 Cartridges	Băng trò chơi
@@ -141,6 +146,7 @@ Change group	Đổi nhóm
 Changes immediately. Map a button in Controls for quick access.	Áp dụng ngay. Gán nút trong Điều khiển để truy cập nhanh.
 Changing 3D threading…	Đang đổi luồng 3D…
 Changing speed…	Đang đổi tốc độ…
+Chaos Emeralds	Ngọc Hỗn Mang
 Chat is unavailable: you can still draw	Không dùng được trò chuyện: bạn vẫn có thể vẽ
 Chat Room	Phòng chat
 Chat Room {0}	Phòng trò chuyện {0}
@@ -191,6 +197,7 @@ Compare	So sánh
 Confirm	Xác nhận
 Connect	Kết nối
 Connect the charger before installing an update.	Cắm sạc trước khi cài bản cập nhật.
+Connect the handheld to a computer first.	Hãy kết nối máy với máy tính trước.
 Connect to Wi-Fi to send files from a phone or computer.	Kết nối Wi-Fi để gửi tệp từ điện thoại hoặc máy tính.
 Connected	Đã kết nối
 Connected.	Đã kết nối.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Mất kết nối. Đang thử lại…
 Connectivity	Kết nối mạng
 Continue	Tiếp tục
 Continue where you left off	Tiếp tục từ chỗ đã dừng
+Continues	Lượt chơi tiếp
 Control unavailable on this device	Không có điều khiển trên thiết bị này
 Controllers and other Bluetooth devices	Tay cầm và các thiết bị Bluetooth khác
 Controls	Điều khiển
@@ -219,6 +227,7 @@ Could not apply this shader.	Không thể áp dụng bộ lọc này.
 Could not apply volume	Không thể áp dụng âm lượng
 Could not bring the Wi-Fi adapter up. Try again.	Không thể bật bộ điều hợp Wi-Fi. Hãy thử lại.
 Could not change 3D threading. Your game is unchanged.	Không thể đổi luồng 3D. Trò chơi không thay đổi.
+Could not change USB data transfer.	Không thể thay đổi truyền dữ liệu USB.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Không thể xác nhận kết nối Wi-Fi đã chọn. Quét và thử lại.
 Could not connect	Không thể kết nối
 Could not enable lid wake	Không thể bật đánh thức khi mở nắp
@@ -270,6 +279,7 @@ Development build	Bản phát triển
 Device address	Địa chỉ thiết bị
 Device information	Thông tin thiết bị
 Discard update	Hủy bản cập nhật
+Disk	Đĩa
 Display	Màn hình
 Display FPS	FPS màn hình
 Done	Xong
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Sửa
 Edit search	Sửa tìm kiếm
 Effects volume	Âm lượng hiệu ứng
+Eject the drive on your computer when you are done	Hãy đẩy ổ đĩa ra trên máy tính khi xong
 Empty slot	Ô trống
 Emulator	Trình giả lập
 Emulator settings	Cài đặt trình giả lập
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	LỖI: không thể khôi phục cài đặt
 ERROR: Could not restore settings - see log	LỖI: không thể khôi phục cài đặt – xem nhật ký
 Essences	Tinh chất
 Europe	Châu Âu
+Event	Nội dung
+Events	Nội dung
 Every game in this collection has artwork.	Mọi trò chơi trong bộ sưu tập này đều có ảnh bìa.
 Exit your game before installing an update.	Thoát trò chơi trước khi cài bản cập nhật.
 Experience	Kinh nghiệm
@@ -341,9 +354,11 @@ Fetch missing artwork	Tải ảnh bìa còn thiếu
 Figurines	Tượng nhỏ
 File sharing on. Find "RG DS" under Network.	Đã bật chia sẻ tệp. Tìm "RG DS" trong mục Mạng.
 Files added	Đã thêm tệp
+Files and SSH by cable; charging always works	Tệp và SSH qua cáp; sạc luôn hoạt động
 Files arrived. Choose Play to start.	Tệp đã đến. Chọn Chơi để bắt đầu.
 Filter	Bộ lọc
 Filtered	Đã lọc
+Final	Chung cuộc
 Find and connect to a nearby network	Tìm và kết nối mạng gần đây
 Find, pair and connect a nearby device	Tìm, ghép đôi và kết nối thiết bị ở gần
 Finding games…	Đang tìm trò chơi…
@@ -489,6 +504,7 @@ Key {0}	Phím {0}
 Keyboard	Bàn phím
 Keys	Chìa khóa
 Kinstone fusions	Ghép Kinstone
+Lamppost	Cột đèn
 Language	Ngôn ngữ
 Last 4 weeks	4 tuần qua
 Last 7 days	7 ngày qua
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Âm thanh vui khi duy�
 Please keep your handheld on	Hãy giữ máy luôn bật
 Pocket green	Xanh bỏ túi
 Point and click on top	Trỏ và nhấp ở trên
+Points	Điểm
 Pokédex caught	Pokédex đã bắt
 Pokédex seen	Pokédex đã thấy
+Popcorn	Bỏng ngô
 PortMaster is ready	PortMaster đã sẵn sàng
 Ports	Bản port
 Power	Nguồn
@@ -785,9 +803,11 @@ RGDS build	Phiên bản RGDS
 Rich	Chi tiết
 Right	Phải
 Right stick	Cần phải
+Rings	Nhẫn
 Rollback simulated.	Mô phỏng khôi phục.
 Round	Vòng
 ROUNDED FONT UNAVAILABLE	KHÔNG CÓ PHÔNG BO TRÒN
+Route	Lộ trình
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Trò chơi Rumble Pak trên DS, băng có rung trên Game Boy và Game Boy Advance.
 Rumble strength	Độ mạnh rung
 Rupees	Rupee
@@ -826,7 +846,9 @@ Scene	Cảnh
 Score	Điểm
 Screen brightness	Độ sáng màn hình
 Screen colours	Màu màn hình
-Screen off	Tắt màn hình
+Menu	Menu
+Switch	Chuyển
+Turn off screen	Tắt màn hình
 screens	màn hình
 ScreenScraper needs project credentials and your account	ScreenScraper cần thông tin dự án và tài khoản của bạn
 Screenshot	Ảnh chụp màn hình
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Phóng hình sắc nét với màu D
 Sharp scaling, DS colour and Natural Vision together.	Phóng hình sắc nét, màu DS và Natural Vision kết hợp.
 Shield	Khiên
 Shift	Shift
+Shift keys stay down until the next key	Phím Shift được giữ cho đến phím tiếp theo
 Shortcut action	Tác vụ phím tắt
 Shots	Lượt bắn
 Show games	Hiện game
@@ -909,7 +932,9 @@ Spanish	Tiếng Tây Ban Nha
 Spring	Lò xo
 Springy menu changes with a colourful wobble	Đổi menu đàn hồi với dao động nhiều màu
 Stable	Ổn định
+Stage	Chặng
 Standard	Standard
+Standings	Xếp hạng
 START	BẮT ĐẦU
 Start	Bắt đầu
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Cập nhật hệ thống
 Systems	Hệ máy
 Tap to type, or use the D-pad and A	Chạm để nhập hoặc dùng phím điều hướng và A
 Team	Đội
+Temper	Cơn giận
 Temporary game cache cleared. Saves and artwork are kept.	Đã xóa bộ nhớ đệm trò chơi tạm. Giữ bản lưu và ảnh bìa.
 Terrain and unit	Địa hình và đơn vị
 Test	Thử
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Mạng này cần cấu hình doanh
 This port lists no instructions.	Port này không có hướng dẫn.
 This request did not finish. Please try again.	Yêu cầu chưa hoàn tất. Hãy thử lại.
 This shader is unavailable for the current emulator.	Bộ lọc này không dùng được với trình giả lập hiện tại.
+This stage	Chặng này
 This stock firmware has not been validated for updates.	Phần mềm hệ thống gốc này chưa được xác nhận hỗ trợ cập nhật.
 This version failed to start. Waiting for a newer update.	Phiên bản này không chạy được. Đang chờ bản cập nhật mới hơn.
 Threaded 3D	3D đa luồng
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Xác minh cập nhật th�
 Updates	Cập nhật
 Updates & recovery	Cập nhật và khôi phục
 Updates will be available when the release channel opens.	Sẽ có cập nhật khi kênh phát hành mở.
+USB data transfer	Truyền dữ liệu USB
+USB data transfer is not available on this handheld.	Truyền dữ liệu USB không khả dụng trên máy này.
+USB data transfer off.	Đã tắt truyền dữ liệu USB.
+USB data transfer on.	Đã bật truyền dữ liệu USB.
+USB drive mode	Chế độ ổ USB
 Use an additional rendering thread	Dùng thêm một luồng kết xuất
+Use as USB drive	Dùng làm ổ USB
 Use default ({0})	Dùng mặc định ({0})
 Use default controls	Dùng điều khiển chung
 Use previous build	Dùng phiên bản trước
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	{0} người ở gần
 {0} players	{0} người chơi
 {0} settings	Cài đặt {0}
+Welcome!	Chào mừng!
+Let's get your handheld ready. It takes about a minute.	Hãy chuẩn bị máy của bạn. Chỉ mất khoảng một phút.
+Pick your colour	Chọn màu của bạn
+The menus take it on. You can change it whenever you like.	Các menu sẽ dùng màu này. Bạn có thể đổi bất cứ lúc nào.
+What's your name?	Tên bạn là gì?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat hiển thị tên cho người ở gần, và game DS dùng nó làm tên chủ máy.
+Is this the right time?	Giờ đã đúng chưa?
+You're connected	Bạn đã kết nối
+Connect to Wi-Fi	Kết nối Wi-Fi
+For box art, updates and PictoChat. Everything else works without it.	Dùng cho ảnh bìa, cập nhật và PictoChat. Mọi thứ khác vẫn chạy mà không cần.
+You're all set!	Đã xong!
+Play at a comfortable volume, and give your eyes and hands a break.	Hãy chơi với âm lượng vừa phải và cho mắt, tay được nghỉ ngơi.
+In a game, the Anbernic button opens saves, cheats and settings.	Trong game, nút Anbernic mở bản lưu, mã gian lận và cài đặt.
+Close the lid to sleep. Your game waits for you.	Gập nắp để ngủ. Game sẽ chờ bạn.
+Copy more games any time. They show up by themselves.	Chép thêm game bất cứ lúc nào. Chúng sẽ tự xuất hiện.
+Skip setup	Bỏ qua thiết lập
+Run setup again	Chạy lại thiết lập
+Turn on Wi-Fi	Bật Wi-Fi
+Turn on USB data transfer	Bật truyền dữ liệu USB
+Connect to Wi-Fi first	Hãy kết nối Wi-Fi trước
+Zoom	Thu phóng
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Cắm cáp USB-C và chọn Dùng làm ổ USB, hoặc đưa thẻ này vào máy tính. Mở ổ RGDS và chép game vào các thư mục trong roms: nds, gba, gb, gbc, nes, snes, md và hơn thế nữa.
+What do you want to play?	Bạn muốn chơi gì?
+You can change this later in Settings > Library.	Bạn có thể đổi sau trong Cài đặt > Thư viện.
+A clean library with only DS games.	Thư viện gọn gàng chỉ có game DS.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation và nhiều hơn nữa, xếp theo hệ máy.

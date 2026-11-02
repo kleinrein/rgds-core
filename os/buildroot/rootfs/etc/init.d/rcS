@@ -47,7 +47,7 @@ data || { fsck.exfat -y ${DISK}p4 >/dev/null 2>&1; data; } || mount -o noatime $
     echo "${DISK}p4 could not be mounted" > /run/rgds/data-failed
 }
 mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ssh /data/roms/nds /data/roms/gba \
-    /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/genesis /data/roms/sms /data/roms/psx /data/roms/n64 \
+    /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/genesis /data/roms/sms /data/roms/psx /data/roms/n64 /data/roms/zx /data/roms/c64 /data/roms/3ds /data/roms/psp \
     /data/rgds/bios
 mark "rcS: data ready"
 mount -t vfat -o ro,noatime ${DISK}p1 /boot 2>/dev/null
@@ -73,6 +73,8 @@ for i in /proc/irq/[0-9]*/smp_affinity; do echo 1 > "$i" 2>/dev/null; done
 
 (
     hwclock -s 2>/dev/null
+    # the USB cable as a network; before net, which starts SSH
+    /usr/libexec/rgds/usb up 2>> /run/rgds/messages
     /usr/libexec/rgds/net up
 ) &
 # the speakers follow the headphone jack; the handheld powers off before the battery is empty

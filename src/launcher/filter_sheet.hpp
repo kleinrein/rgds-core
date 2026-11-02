@@ -23,6 +23,8 @@ void App::open_filter_sheet(bool to_filters) {
     // Counts are read again each time, so a fetch that just finished shows up.
     if (library_ready) facet_index.request(o.data, view_source(0)); // the shown system, not every system
     filter_sheet_open = true;
+    filter_opened_at = s.GetTicks();
+    filter_motion.stop();
     filter_focus = filter_scroll = filter_thumb = 0;
     filter_drag = -1;
     // The current collection has focus; coming from "Filter" the first chip does, with its section at the top.
@@ -433,11 +435,15 @@ void App::filter_seek(int y) {
 }
 
 // Dragging the body scrolls it.
+int App::filter_max_scroll() {
+    int thumb = 0, max = 0;
+    filter_rail_metrics(filter_layout(), thumb, max);
+    return max;
+}
+
 void App::filter_drag_scroll(int y) {
     filter_pin = false;
-    auto layout = filter_layout();
-    const int view = filter_bottom - filter_top;
-    filter_scroll = std::clamp(filter_scroll_start + down_y - y, 0, std::max(0, layout.height - view));
+    filter_scroll = filter_motion.drag(s.GetTicks(), filter_scroll_start + down_y - y, 0, filter_max_scroll());
     dirty = true;
 }
 
@@ -591,10 +597,11 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
     SDL_Rect clip{26, y + filter_top - 4, filter_rail_x - 28, view + 8};
     s.RenderSetClipRect(r, &clip);
     for (const auto& title : layout.titles)
-        raw_label(r, title.text, filter_inner_x, y + filter_top + title.y - filter_scroll + 2, 14, "muted", 400);
+        raw_label(r, title.text, filter_inner_x, y + filter_top + title.y - filter_scroll - filter_shift() + 2, 14, "muted",
+                  400);
     for (int i = 0; i < count; i++) {
         const auto& chip = layout.chips[size_t(i)];
-        const int x = filter_inner_x + chip.box.x, top = y + filter_top + chip.box.y - filter_scroll;
+        const int x = filter_inner_x + chip.box.x, top = y + filter_top + chip.box.y - filter_scroll - filter_shift();
         if (top + chip.box.h < y + filter_top - 12 || top > y + filter_bottom + 12) continue;
         const bool focused = i == filter_focus;
         if (chip.slider >= 0) {
@@ -626,7 +633,7 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
         }
     }
     if (layout.loading) {
-        const int top = y + filter_top + layout.height - 6 - filter_scroll;
+        const int top = y + filter_top + layout.height - 6 - filter_scroll - filter_shift();
         raw_label(r, locale.text("Reading your library…"), filter_inner_x, top, 16, "muted", 480);
     }
     s.RenderSetClipRect(r, nullptr);

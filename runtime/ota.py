@@ -501,6 +501,9 @@ class Updater:
         with self.guard.update_lock(self.root):
             pending = self.guard.read(self.root / 'state/update-pending.json')
             if pending.get('phase') == 'trial': raise ValueError('The new version is being checked.')
+            # Remember what was turned down so the quiet background check does not bring the banner back.
+            version = read_fields(self.folder / 'status.ini').get('version', '')
+            if version: self.guard.save(self.root / 'state/update-dismissed.json', dict(version=version))
             (self.root / 'state/update-pending.json').unlink(missing_ok=True)
             (self.root / 'state/update-apply.json').unlink(missing_ok=True)
             for path in self.folder.glob('*.part'):
@@ -511,7 +514,10 @@ class Updater:
                 progress=0,
                 prepared=0,
                 offer='',
-                received=0
+                received=0,
+                version='',
+                notes='',
+                size=0
             )
 
     def auto(self):
@@ -527,6 +533,12 @@ class Updater:
         self.guard.save(self.root / 'state/update-auto.json', dict(checked=now))
         try:
             self.check()
+            seen = read_fields(self.folder / 'status.ini')
+            if seen.get('state') == 'available' and seen.get('version') and seen.get(
+                'version'
+            ) == self.guard.read(self.root / 'state/update-dismissed.json').get('version'):
+                self.publish('idle', 'Check for updates when you are ready.', progress=0, offer='', received=0)
+                return
             if mode == '2' and read_fields(self.folder / 'status.ini').get('state') == 'available': self.download()
         except Exception:
             # Offline is normal for a handheld: look again in half an hour.

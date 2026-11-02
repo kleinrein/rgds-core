@@ -8,6 +8,7 @@
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/soc/rockchip,vop2.h>
+#include <dt-bindings/suspend/rockchip-rk3568.h>
 #include "rk3568.dtsi"
 
 / {
@@ -326,6 +327,33 @@
 		simple-audio-card,cpu {
 			sound-dai = <&i2s1_8ch>;
 		};
+	};
+
+	/*
+	 * RG DS OS, true sleep: what BL31 does for "mem" (docs/OWN_OS_PLAN.md "True sleep"). Without this word BL31
+	 * keeps its defaults, and without the pmic_sleep pin (rk817's pinctrl) the PMIC never sees the sleep at all:
+	 * the regulators' state-mem settings below only take effect with both. Wake sources: the GPIO bank in the PMU
+	 * domain carries the lid (hall sensor), the power key and the RTC alarm (both PMIC interrupts).
+	 */
+	rockchip_suspend: rockchip-suspend {
+		compatible = "rockchip,pm-rk3568";
+		rockchip,sleep-debug-en = <0>;
+		rockchip,sleep-mode-config = <
+			(0
+			| RKPM_SLP_ARMOFF_LOGOFF
+			| RKPM_SLP_CENTER_OFF
+			| RKPM_SLP_HW_PLLS_OFF
+			| RKPM_SLP_PMUALIVE_32K
+			| RKPM_SLP_OSC_DIS
+			| RKPM_SLP_PMIC_LP
+			| RKPM_SLP_32K_PVTM
+			)
+		>;
+		rockchip,wakeup-config = <
+			(0
+			| RKPM_GPIO_WKUP_EN
+			)
+		>;
 	};
 
 	vdd_lcd0: regulator-vdd-lcd0 {
@@ -654,7 +682,8 @@
 		clocks = <&cru I2S1_MCLKOUT_TX>;
 		interrupt-parent = <&gpio0>;
 		interrupts = <RK_PA3 IRQ_TYPE_LEVEL_LOW>;
-		pinctrl-0 = <&i2s1m0_mclk &pmic_int_l>;
+		/* pmic_pins: GPIO0_A2 as the PMU's pmic_sleep output, so the RK817 sleeps with the SoC (rockchip-suspend) */
+		pinctrl-0 = <&i2s1m0_mclk &pmic_int_l &pmic_pins>;
 		pinctrl-names = "default";
 		#sound-dai-cells = <0>;
 		system-power-controller;
@@ -679,9 +708,10 @@
 				regulator-min-microvolt = <900000>;
 				regulator-name = "vdd_logic";
 				regulator-ramp-delay = <6001>;
+				/* off in the deep sleep: BL31's ARMOFF_LOGOFF (rockchip-suspend) powers the logic domain down and
+				 * the PMU domain lives on vdda0v9_pmu, as on the vendor's boards (true sleep, 2026-10-31) */
 				regulator-state-mem {
-					regulator-on-in-suspend;
-					regulator-suspend-microvolt = <900000>;
+					regulator-off-in-suspend;
 				};
 			};
 

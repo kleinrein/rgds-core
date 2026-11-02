@@ -19,6 +19,10 @@ add_executable(test_adaptive_res adaptive_res_test.cpp)
 target_include_directories(test_adaptive_res PRIVATE ${CMAKE_SOURCE_DIR}/src)
 add_test(NAME adaptive_res COMMAND test_adaptive_res)
 
+add_executable(test_bench_recorder bench_recorder_test.cpp)
+target_include_directories(test_bench_recorder PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME bench_recorder COMMAND test_bench_recorder)
+
 add_executable(test_filter2d filter2d_test.cpp)
 target_include_directories(test_filter2d PRIVATE ${CMAKE_SOURCE_DIR}/src)
 add_test(NAME filter2d COMMAND test_filter2d)

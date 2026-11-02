@@ -704,6 +704,12 @@ class GameMenuTests(unittest.TestCase):
         self.menu.poll()
         self.assertTrue(self.menu.restart)
 
+    def test_return_without_saving_sends_the_discarding_quit_even_with_automatic_saving_on(self):
+        self.request('quit-discard')
+        self.assertEqual(self.menu.pending['action'], 'quit-discard')
+        self.assertTrue(self.menu.control.read_text().endswith(' quit-discard\n'))
+        self.assertIn('Returning home', read_fields(self.menu.status)['message'])
+
     def test_resuming_after_a_failed_restart_cancels_restart_intent(self):
         self.request('restart')
         self.result('save-failed')

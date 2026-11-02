@@ -114,6 +114,8 @@ inline std::set<std::string> cartridge_codes(const fs::path& rom, const std::str
             codes.insert(name_code(std::string(reinterpret_cast<const char*>(data + base), 21)));
             break;
         }
+    if (system == "md" && n >= 0x180 && bytes.compare(skip + 0x100, 4, "SEGA") == 0)
+        codes.insert(name_code(std::string(reinterpret_cast<const char*>(data + 0x150), 48)));
     return codes;
 }
 } // namespace dual_screen_detail
@@ -123,14 +125,16 @@ inline std::set<std::string> cartridge_codes(const fs::path& rom, const std::str
 // header, so a zipped game shows no mark. Answers are kept per path.
 inline bool dual_screen_game(const fs::path& rom, const std::string& system, const fs::path& profiles) {
     using namespace dual_screen_detail;
-    if (system == "nds") return false; // the DS has its own two screens
+    if (system == "nds" || system == "3ds") return false; // they have their own two screens
+    if (system == "psp") return false;                    // no profiles yet, and a disc is not a cartridge to read
     static std::map<fs::path, bool> known;
     auto found = known.find(rom);
     if (found != known.end()) return found->second;
     bool& result = known[rom] = false;
     const std::string ext = upper(rom.extension().string());
     if (ext == ".ZIP" || ext == ".7Z") return result;
-    if (system == "nes" || system == "snes" || system == "sms" || system == "n64") {
+    if (system == "nes" || system == "snes" || system == "sms" || system == "md" || system == "n64" || system == "zx" ||
+        system == "c64") {
         const auto& codes = profile_codes(profiles / system);
         for (const auto& code : cartridge_codes(rom, system))
             if (codes.count(code)) return result = true;

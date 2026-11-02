@@ -159,6 +159,8 @@ uint32_t controller_buttons(SDL_GameController* c) {
 // core's first frame, beside the panel's own context, and only ever drawn into the core's own framebuffer.
 SDL_Window* gpu_core_window = nullptr; // set once the panels are open, when their renderer is GL
 SDL_GLContext gpu_core_context = nullptr;
+SDL_GLContext gpu_core_share = nullptr; // the top panel's context: its textures are the core's too (Core::set_gl_target)
+bool gpu_core_shared = false;
 
 bool gpu_core_begin(int major, int minor) {
     if (!gpu_core_window) return false;
@@ -170,7 +172,15 @@ bool gpu_core_begin(int major, int minor) {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
-        gpu_core_context = SDL_GL_CreateContext(gpu_core_window);
+        if (gpu_core_share) {
+            SDL_GL_MakeCurrent(gpu_core_window, nullptr);
+            SDL_GL_MakeCurrent(gpu_core_window, gpu_core_share);
+            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+            gpu_core_context = SDL_GL_CreateContext(gpu_core_window);
+            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+            gpu_core_shared = gpu_core_context != nullptr;
+        }
+        if (!gpu_core_context) gpu_core_context = SDL_GL_CreateContext(gpu_core_window);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profile);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, old_major);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, old_minor);
@@ -179,7 +189,8 @@ bool gpu_core_begin(int major, int minor) {
             gpu_core_window = nullptr;
             return false;
         }
-        std::fprintf(stderr, "rgds-play: GLES %d.%d context for the core\n", major, minor);
+        std::fprintf(stderr, "rgds-play: GLES %d.%d context for the core%s\n", major, minor,
+                     gpu_core_shared ? ", shared with the panel" : "");
     }
     // Released first, as use_panel does: SDL's idea of the current context drifts from EGL's on the RG DS.
     SDL_GL_MakeCurrent(gpu_core_window, nullptr);
@@ -201,6 +212,16 @@ bool open_panel(Panel& p, int display, int w, int h, bool fullscreen, const char
     if (p.renderer && SDL_GetRendererInfo(p.renderer, &info) == 0 && info.name && std::strstr(info.name, "opengl"))
         p.gl = SDL_GL_GetCurrentContext(); // a new GL renderer leaves its context current
     return p.renderer != nullptr;
+}
+
+// A panel texture's name in GL, with the panel's context current; 0 when its renderer can't say.
+unsigned gl_texture_name(SDL_Texture* texture) {
+    static const auto get = reinterpret_cast<void (*)(unsigned, int*)>(SDL_GL_GetProcAddress("glGetIntegerv"));
+    if (!get || !texture || SDL_GL_BindTexture(texture, nullptr, nullptr) != 0) return 0;
+    int name = 0;
+    get(0x8069, &name); // GL_TEXTURE_BINDING_2D
+    SDL_GL_UnbindTexture(texture);
+    return unsigned(name);
 }
 
 // Two windows, one GL context each, drawn from one thread: on the RG DS (Mali,
@@ -244,6 +265,19 @@ SDL_Rect fit_rect(const SDL_Rect& area, int w, int h, bool whole) {
     return {area.x + (area.w - dw) / 2, area.y + (area.h - dh) / 2, dw, dh};
 }
 
+// The bridge's way to have a screen filter shade the game picture at whatever
+// size it is (rgds_play_screen, named once per texture): null where the bridge
+// has none, and a filter then shades only the game's whole picture.
+using NameScreen = void (*)(SDL_Texture*);
+NameScreen play_screen() {
+#ifdef __linux__
+    static auto name = reinterpret_cast<NameScreen>(dlsym(RTLD_DEFAULT, "rgds_play_screen"));
+    return name;
+#else
+    return nullptr;
+#endif
+}
+
 // Game and companion textures live on both panels (a texture belongs to one
 // renderer), so swapping the screens is a choice of what each draws.
 // The game's textures follow its picture's size: a Game Boy HUD band moving
@@ -256,6 +290,7 @@ void make_game_textures(Panel& p, int gw, int gh) {
     p.game_h = gh;
     p.game = SDL_CreateTexture(p.renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, gw, gh);
     SDL_SetTextureScaleMode(p.game, SDL_ScaleModeNearest);
+    if (NameScreen name = play_screen(); name && p.game) name(p.game);
     if (SDL_RenderTargetSupported(p.renderer)) {
         SDL_Rect dest = fit_rect(p.area, gw, gh, false);
         int k = std::max(1, (dest.w + gw - 1) / gw); // 640 wide: 3x
@@ -318,10 +353,11 @@ FrameChoice choose_frame(const std::string& name, const std::string& folder, con
     return f;
 }
 
+// drawn: the core has put this frame in the panel's texture itself (Core::set_gl_target).
 void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame, const Font& font,
-               const std::string& system) {
+               const std::string& system, bool drawn = false) {
     if (game.w != p.game_w || game.h != p.game_h) make_game_textures(p, game.w, game.h);
-    SDL_UpdateTexture(p.game, nullptr, game.px, game.stride * 4);
+    if (!drawn) SDL_UpdateTexture(p.game, nullptr, game.px, game.stride * 4);
     SDL_Rect dest = fit_rect(p.area, game.w, game.h, fit == FitInteger);
     bool sharp = fit == FitSharp, smooth = fit == FitSmooth;
     SDL_Texture* over = nullptr;
@@ -392,8 +428,8 @@ void write_brightness(const std::string& path, int percent) {
 }
 
 // The runtime's own triggers beside the control file, as the Anbernic button
-// and the home shortcut write them: ".menu" opens the game switcher, ".home"
-// saves and returns home (runtime/game_menu.py).
+// and the home shortcut write them: ".game-menu" opens the game menu, ".menu"
+// the game switcher, ".home" saves and returns home (runtime/game_menu.py).
 bool ask_runtime(const char* trigger) {
     const char* control = std::getenv("RGDS_CONTROL_FILE");
     if (!control || !*control) return false;
@@ -586,6 +622,11 @@ int main(int argc, char** argv) {
         lower.area = {0, ph, pw, ph};
     }
     if (upper.gl) gpu_core_window = upper.window;
+    // The PSP's and N64's frames go straight into the top panel's texture (Mario Kart 64's frame on the main thread:
+    // 7 ms read back, about 2 this way); RGDS_PLAY_DIRECT=0 or 1 says so for any GPU core.
+    const char* direct_env = std::getenv("RGDS_PLAY_DIRECT");
+    const bool gpu_direct = direct_env ? *direct_env == '1' : o.system == "psp" || o.system == "n64";
+    if (upper.gl && gpu_direct) gpu_core_share = upper.gl;
     Picture first = session.game();
     use_panel(upper);
     make_textures(upper, first.w, first.h, pw, ph);
@@ -643,6 +684,7 @@ int main(int argc, char** argv) {
 #endif
     int peak = 0;
     const Uint32 target_queue = Uint32(have.freq / 20) * 4; // 50 ms of stereo s16
+    const bool self_paced = o.system == "psp";
 
     // On its own on the RG DS the pad is read and grabbed directly. Under RG
     // DS Core it stays shared: the runtime watches it for Home.
@@ -875,6 +917,9 @@ int main(int argc, char** argv) {
                                       SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTY),
                                       SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_RIGHTX),
                                       SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_RIGHTY));
+        // PPSSPP keeps the game's time itself and a frame from it waits until the next is ready: holding it back here to
+        // steer the sound queue only repeats a picture, one frame in twenty in OutRun 2006's 60 fps menus.
+        if (self_paced && !held && !fast) owed = frame_seconds;
         while (owed >= frame_seconds) {
             uint32_t pressed = buttons;
             if (!inputs.empty()) {
@@ -902,7 +947,9 @@ int main(int argc, char** argv) {
                                  int(SDL_GetAudioDeviceStatus(audio)));
                     peak = 0;
                 }
-                if (n && !fast) SDL_AudioStreamPut(stream, samples.data(), int(n * 4));
+                // Nothing steers a self-paced game's queue, so what a stall leaves in it is dropped: sound on time.
+                const bool too_late = self_paced && audio && SDL_GetQueuedAudioSize(audio) > target_queue * 3;
+                if (n && !fast && !too_late) SDL_AudioStreamPut(stream, samples.data(), int(n * 4));
                 int ready;
                 while ((ready = SDL_AudioStreamAvailable(stream)) > 0) {
                     std::vector<uint8_t> out(size_t(std::min(ready, 16384)));
@@ -936,6 +983,9 @@ int main(int argc, char** argv) {
             c->set_info(second == SecondInfo);
             dock.set_reachable(second != SecondSwap);
             switch (dock.take_action()) {
+            case Dock::Action::GameMenu:
+                if (!bridged || !ask_runtime(".game-menu")) dock.report("Not available");
+                break;
             case Dock::Action::Switcher:
                 // On its own the player has no other games to switch to.
                 if (!bridged || !ask_runtime(".menu")) dock.report("Not available");
@@ -960,6 +1010,7 @@ int main(int argc, char** argv) {
             drawn_key = session.companion() ? session.companion()->visual_key() : 0;
             companion_new = true;
         }
+        static SDL_Texture* gl_target = nullptr; // the texture the core was last told to draw into
         const bool one_window = lower.renderer == upper.renderer;
         const bool shooting = !shots.empty() && session.frames() >= next_shot;
         Canvas shot_top, shot_bottom;
@@ -971,9 +1022,22 @@ int main(int argc, char** argv) {
             SDL_RenderClear(window->renderer);
             for (Panel* p : {&upper, &lower}) {
                 if (p != window && !one_window) continue;
-                if (p == &game_panel)
-                    draw_game(*p, colour.apply(session.game(shader_live())), fit, frame, session.font(), system_label);
-                else if (second != SecondOff) {
+                if (p == &game_panel) {
+                    const Picture shown = colour.apply(session.game(shader_live() && !play_screen()));
+                    const bool on_top = p == &upper && gpu_core_shared;
+                    draw_game(*p, shown, fit, frame, session.font(), system_label,
+                              on_top && session.core().drew_gl_target() && shown.w == p->game_w &&
+                                  shown.h == p->game_h);
+                    if (gpu_core_shared) {
+                        if (on_top && p->game != gl_target) {
+                            gl_target = p->game;
+                            session.core().set_gl_target(gl_texture_name(p->game), p->game_w, p->game_h);
+                        } else if (!on_top && gl_target) {
+                            gl_target = nullptr;
+                            session.core().set_gl_target(0, 0, 0);
+                        }
+                    }
+                } else if (second != SecondOff) {
                     if (companion_new) SDL_UpdateTexture(p->companion, nullptr, companion.data(), pw * 4);
                     SDL_RenderCopy(p->renderer, p->companion, nullptr, &p->area);
                 }
@@ -990,6 +1054,11 @@ int main(int argc, char** argv) {
     device_pad.close();
     session.flush();
     std::fprintf(stderr, "rgds-play: saved, %llu frames\n", (unsigned long long)session.frames());
+    // PPSSPP's teardown aborts or hangs when the game has only just started; everything is written by now.
+    if (self_paced) {
+        std::fflush(nullptr);
+        _exit(0);
+    }
     if (audio) SDL_CloseAudioDevice(audio);
     if (stream) SDL_FreeAudioStream(stream);
     if (pad) SDL_GameControllerClose(pad);

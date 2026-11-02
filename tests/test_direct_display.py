@@ -107,6 +107,7 @@ class DirectDisplayPlanTests(Fixture):
         for direct in (0, 1):
             write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(rgds_direct=direct))
             self.assertEqual(self.plan(rom)['env']['DS_LID_PULSE'], '0')
+            self.assertEqual(self.plan(rom)['env']['DS_FRAME_EDGE'], 'vblank')
 
     def test_a_chosen_screen_filter_keeps_the_renderer_sink_on_kms(self):
         # The filter is the bridge's GL pass over the renderer's game draw; the

@@ -36,6 +36,16 @@ AVAHI_XML = """<?xml version="1.0" standalone='no'?>
 # FAT card they would otherwise appear as stray "._Game.nds" files.
 MAC_CLUTTER = '/._*/.DS_Store/.Trashes/.TemporaryItems/.Spotlight-V100/.fseventsd/.apdisk/'
 
+# The handheld's address on the USB cable (usr/libexec/rgds/usb), there while the gadget is up.
+USB_HELPER = Path('/usr/libexec/rgds/usb')
+USB_OFF = Path('/data/rgds/usb-off')
+USB_INTERFACE = Path('/sys/class/net/usb0')
+USB_ADDRESS = '10.55.0.1'
+
+
+def usb_address():
+    return USB_ADDRESS if USB_INTERFACE.exists() else ''
+
 
 def process_state(pid):
     try:
@@ -201,11 +211,12 @@ class Sharing:
         return value
 
     def configure(self, ip, roots, username, guest=False, systems=()):
+        interfaces = ' '.join(dict.fromkeys(filter(None, (ip, usb_address()))))
         lines = [
             '[global]', 'server role = standalone server', 'security = user',
             'map to guest = ' + ('Bad User' if guest else 'Never'), 'server min protocol = SMB2', 'smb ports = 445',
             'server string = ' + SERVICE_NAME, 'veto files = ' + MAC_CLUTTER, 'delete veto files = yes',
-            'interfaces = ' + ip, 'bind interfaces only = yes', 'disable netbios = yes', 'load printers = no',
+            'interfaces = ' + interfaces, 'bind interfaces only = yes', 'disable netbios = yes', 'load printers = no',
             'printing = bsd', 'printcap name = /dev/null', 'unix extensions = no', 'wide links = no',
             'follow symlinks = no', 'rpc start on demand helpers = no', 'nt acl support = no', 'ea support = no'
         ]

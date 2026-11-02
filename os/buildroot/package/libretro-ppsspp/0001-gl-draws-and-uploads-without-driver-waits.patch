@@ -1,0 +1,162 @@
+GL draws and uploads without Panfrost's CPU work and waits.
+
+OutRun 2006 races on the RG DS (Mali-G52, Mesa 25.0):
+- Each indexed draw passes its range: without it Mesa's u_vbuf scans the indices on the CPU, in write-combined
+  memory, a quarter of the frame.
+- Push buffers upload unsynchronized, each frame slot guarded by its own fence: glBufferSubData made Panfrost wait
+  in panfrost_bo_wait for a third of the frame, with the emulation thread waiting behind it.
+
+--- a/Common/GPU/OpenGL/GLQueueRunner.h
++++ b/Common/GPU/OpenGL/GLQueueRunner.h
+@@ -116,6 +116,7 @@
+ 			GLint count;
+ 			GLint indexType;
+ 			GLint instances;
++			GLint maxIndex;  // for glDrawRangeElements, -1 if unknown
+ 		} draw;
+ 		struct {
+ 			const char *name;  // if null, use loc
+@@ -254,6 +255,7 @@
+ 			int size;
+ 			uint8_t *data;  // owned, delete[]-d
+ 			bool deleteData;
++			bool unsynchronized;
+ 		} buffer_subdata;
+ 		struct {
+ 			GLRTexture *texture;
+--- a/Common/GPU/OpenGL/GLRenderManager.h
++++ b/Common/GPU/OpenGL/GLRenderManager.h
+@@ -406,7 +406,7 @@
+ 	void BlitFramebuffer(GLRFramebuffer *src, GLRect2D srcRect, GLRFramebuffer *dst, GLRect2D dstRect, int aspectMask, bool filter, const char *tag);
+ 
+ 	// Takes ownership of data if deleteData = true.
+-	void BufferSubdata(GLRBuffer *buffer, size_t offset, size_t size, uint8_t *data, bool deleteData = true) {
++	void BufferSubdata(GLRBuffer *buffer, size_t offset, size_t size, uint8_t *data, bool deleteData = true, bool unsynchronized = false) {
+ 		// TODO: Maybe should be a render command instead of an init command? When possible it's better as
+ 		// an init command, that's for sure.
+ 		GLRInitStep &step = initSteps_.push_uninitialized();
+@@ -417,6 +417,7 @@
+ 		step.buffer_subdata.size = (int)size;
+ 		step.buffer_subdata.data = data;
+ 		step.buffer_subdata.deleteData = deleteData;
++		step.buffer_subdata.unsynchronized = unsynchronized;
+ 	}
+ 
+ 	// Takes ownership over the data pointer and delete[]-s it.
+@@ -766,7 +767,7 @@
+ 	}
+ 
+ 	// Would really love to have a basevertex parameter, but impossible in unextended GLES, without glDrawElementsBaseVertex, unfortunately.
+-	void DrawIndexed(GLRInputLayout *inputLayout, GLRBuffer *vertexBuffer, uint32_t vertexOffset, GLRBuffer *indexBuffer, uint32_t indexOffset, GLenum mode, int count, GLenum indexType, int instances = 1) {
++	void DrawIndexed(GLRInputLayout *inputLayout, GLRBuffer *vertexBuffer, uint32_t vertexOffset, GLRBuffer *indexBuffer, uint32_t indexOffset, GLenum mode, int count, GLenum indexType, int instances = 1, int maxIndex = -1) {
+ 		_dbg_assert_(vertexBuffer && indexBuffer && curRenderStep_ && curRenderStep_->stepType == GLRStepType::RENDER);
+ 		GLRRenderData &data = curRenderStep_->commands.push_uninitialized();
+ 		data.cmd = GLRRenderCommand::DRAW;
+@@ -779,6 +780,7 @@
+ 		data.draw.count = count;
+ 		data.draw.indexType = indexType;
+ 		data.draw.instances = instances;
++		data.draw.maxIndex = maxIndex;
+ 	}
+ 
+ 	enum { MAX_INFLIGHT_FRAMES = 3 };
+--- a/Common/GPU/OpenGL/GLRenderManager.cpp
++++ b/Common/GPU/OpenGL/GLRenderManager.cpp
+@@ -437,6 +437,8 @@
+ 
+ 	if (task.runType == GLRRunType::PRESENT) {
+ 		bool swapRequest = false;
++		if (!skipGLCalls_ && gl_extensions.GLES3 && !frameData.gpuDone)
++			frameData.gpuDone = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+ 		if (!frameData.skipSwap) {
+ 			frameTimeHistory_[frameData.frameId].queuePresent = time_now_d();
+ 			if (swapIntervalChanged_) {
+@@ -470,6 +472,13 @@
+ 	if (!frameData.hasBegun) {
+ 		frameData.hasBegun = true;
+ 
++		if (frameData.gpuDone) {
++			if (!skipGLCalls_)
++				glClientWaitSync(frameData.gpuDone, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000);
++			glDeleteSync(frameData.gpuDone);
++			frameData.gpuDone = nullptr;
++		}
++
+ 		frameData.deleter_prev.Perform(this, skipGLCalls_);
+ 		frameData.deleter_prev.Take(frameData.deleter);
+ 	}
+--- a/Common/GPU/OpenGL/GLQueueRunner.cpp
++++ b/Common/GPU/OpenGL/GLQueueRunner.cpp
+@@ -182,7 +182,17 @@
+ 		{
+ 			GLRBuffer *buffer = step.buffer_subdata.buffer;
+ 			glBindBuffer(buffer->target_, buffer->buffer_);
+-			glBufferSubData(buffer->target_, step.buffer_subdata.offset, step.buffer_subdata.size, step.buffer_subdata.data);
++			// A push buffer is only reused once its frame slot's fence has passed (GLRenderManager::Run), so the driver needs
++			// no wait of its own: Panfrost's glBufferSubData took a third of OutRun 2006's frame in panfrost_bo_wait.
++			void *to = nullptr;
++			if (step.buffer_subdata.unsynchronized && gl_extensions.GLES3)
++				to = glMapBufferRange(buffer->target_, step.buffer_subdata.offset, step.buffer_subdata.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
++			if (to) {
++				memcpy(to, step.buffer_subdata.data, step.buffer_subdata.size);
++				glUnmapBuffer(buffer->target_);
++			} else {
++				glBufferSubData(buffer->target_, step.buffer_subdata.offset, step.buffer_subdata.size, step.buffer_subdata.data);
++			}
+ 			if (step.buffer_subdata.deleteData)
+ 				delete[] step.buffer_subdata.data;
+ 			CHECK_GL_ERROR_IF_DEBUG();
+@@ -1234,7 +1244,11 @@
+ 					curElemArrayBuffer = buf;
+ 				}
+ 				if (c.draw.instances == 1) {
+-					glDrawElements(c.draw.mode, c.draw.count, c.draw.indexType, (void *)(intptr_t)c.draw.indexOffset);
++					// Without the range, Mesa (u_vbuf) scans every draw's indices on the CPU, in write-combined memory on Panfrost.
++					if (c.draw.maxIndex >= 0 && gl_extensions.GLES3)
++						glDrawRangeElements(c.draw.mode, 0, c.draw.maxIndex, c.draw.count, c.draw.indexType, (void *)(intptr_t)c.draw.indexOffset);
++					else
++						glDrawElements(c.draw.mode, c.draw.count, c.draw.indexType, (void *)(intptr_t)c.draw.indexOffset);
+ 				} else {
+ 					glDrawElementsInstanced(c.draw.mode, c.draw.count, c.draw.indexType, (void *)(intptr_t)c.draw.indexOffset, c.draw.instances);
+ 				}
+--- a/Common/GPU/OpenGL/GLMemory.cpp
++++ b/Common/GPU/OpenGL/GLMemory.cpp
+@@ -93,7 +93,7 @@
+ 		// Here we simply upload the data to the last buffer.
+ 		// Might be worth trying with size_ instead of offset_, so the driver can replace
+ 		// the whole buffer. At least if it's close.
+-		render_->BufferSubdata(buffers_[buf_].buffer, 0, offset_, buffers_[buf_].localMemory, false);
++		render_->BufferSubdata(buffers_[buf_].buffer, 0, offset_, buffers_[buf_].localMemory, false, true);
+ 	} else {
+ 		buffers_[buf_].flushOffset = offset_;
+ 	}
+--- a/Common/GPU/OpenGL/GLFrameData.h
++++ b/Common/GPU/OpenGL/GLFrameData.h
+@@ -56,6 +56,7 @@
+ 	std::mutex fenceMutex;
+ 	std::condition_variable fenceCondVar;
+ 	bool readyForFence = true;
++	GLsync gpuDone = nullptr;  // passed when the GPU has finished this slot's last frame
+ 
+ 	// Swapchain.
+ 	bool hasBegun = false;
+--- a/GPU/GLES/DrawEngineGLES.cpp
++++ b/GPU/GLES/DrawEngineGLES.cpp
+@@ -309,7 +309,7 @@
+ 			render_->DrawIndexed(inputLayout,
+ 				vertexBuffer, vertexBufferOffset,
+ 				indexBuffer, indexBufferOffset,
+-				glprim[prim], vertexCount, GL_UNSIGNED_SHORT);
++				glprim[prim], vertexCount, GL_UNSIGNED_SHORT, 1, numDecodedVerts_ - 1);
+ 		} else {
+ 			render_->Draw(
+ 				inputLayout, vertexBuffer, vertexBufferOffset,
+@@ -427,7 +427,7 @@
+ 			indexBufferOffset = (uint32_t)frameData.pushIndex->Push(inds, sizeof(uint16_t) * result.drawNumTrans, 2, &indexBuffer);
+ 			render_->DrawIndexed(
+ 				softwareInputLayout_, vertexBuffer, vertexBufferOffset, indexBuffer, indexBufferOffset,
+-				glprim[prim], result.drawNumTrans, GL_UNSIGNED_SHORT);
++				glprim[prim], result.drawNumTrans, GL_UNSIGNED_SHORT, 1, numDecodedVerts_ - 1);
+ 		} else if (result.action == SW_CLEAR) {
+ 			u32 clearColor = result.color;
+ 			float clearDepth = result.depth;

@@ -25,6 +25,30 @@ def digest(path):
     return h.hexdigest()
 
 
+def state_thumbnail(path):
+    """The 128x96 top-screen picture a DSCore state carries in its HEAD chunk, as a 24-bit BMP; None without one."""
+    with Path(path).open('rb') as f:
+        head = f.read(64 + 128 * 96 * 2)
+    word = lambda offset: int.from_bytes(head[offset:offset + 4], 'little')
+    if len(head) < 64 + 128 * 96 * 2 or head[:4] != b'DSST' or head[8:12] != b'HEAD' or (word(56), word(60)) != (128, 96):
+        return None
+    pixels = head[64:]
+    if not any(pixels): return None
+    rows = []
+    for y in range(95, -1, -1):  # BMP rows run bottom-up
+        row = bytearray()
+        for x in range(128):
+            v = pixels[(y * 128 + x) * 2] | pixels[(y * 128 + x) * 2 + 1] << 8
+            r, g, b = v >> 11, v >> 5 & 63, v & 31
+            row += bytes((b << 3 | b >> 2, g << 2 | g >> 4, r << 3 | r >> 2))
+        rows.append(bytes(row))  # 128 * 3 bytes is already a multiple of four
+    body = b''.join(rows)
+    header = b'BM' + (54 + len(body)).to_bytes(4, 'little') + bytes(4) + (54).to_bytes(4, 'little')
+    header += (40).to_bytes(4, 'little') + (128).to_bytes(4, 'little') + (96).to_bytes(4, 'little')
+    header += (1).to_bytes(2, 'little') + (24).to_bytes(2, 'little') + bytes(4) + len(body).to_bytes(4, 'little') + bytes(16)
+    return header + body
+
+
 def atomic_json(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -121,9 +145,33 @@ class SaveLibrary:
             row = value['slots'].get(str(i), {})
             out['slot_' + str(i)] = row.get('created', '')
             out['image_' + str(i)] = str(self.root / 'objects' / row['object'] / 'preview.bmp') if row else ''
+        # Row 9 is the automatic checkpoint (the canonical file): taken on exit, never a numbered slot.
+        out['slot_9'], out['image_9'] = self.auto_row()
         out['undo'] = int(bool(value.get('undo')))
         out['undo_load'] = int(bool(value.get('undo_load')))
         write_fields(self.root / 'index.ini', out, durable=False)
+
+    def auto_row(self):
+        """When the automatic checkpoint was taken, and its thumbnail as a BMP ('' when it has none)."""
+        try:
+            info = self.canonical.stat()
+        except OSError:
+            return '', ''
+        if self.canonical.is_symlink() or not 0 < info.st_size <= MAX_STATE: return '', ''
+        created = time.strftime('%Y-%m-%d %H:%M', time.localtime(info.st_mtime))
+        preview = self.root / 'auto-preview.bmp'
+        try:
+            if not preview.is_file() or preview.stat().st_mtime_ns < info.st_mtime_ns:
+                bmp = state_thumbnail(self.canonical)
+                if bmp is None:
+                    preview.unlink(missing_ok=True)
+                else:
+                    temporary = preview.with_name(preview.name + '.partial')
+                    temporary.write_bytes(bmp)
+                    temporary.replace(preview)
+        except OSError:
+            return created, ''
+        return created, str(preview) if preview.is_file() else ''
 
     def checked(self, row):
         obj = row.get('object', '')

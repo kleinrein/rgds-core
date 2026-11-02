@@ -4,14 +4,13 @@
 
 void App::centered_wrapped(SDL_Renderer* r, const std::string& value, int y, int pixels, int width, int rows,
                            const std::string& key) {
-    std::istringstream words(value);
-    std::string word, line;
+    std::string line;
     std::vector<std::string> lines;
-    while (words >> word) {
-        std::string next = line.empty() ? word : line + " " + word;
+    for (const auto& piece : line_pieces(value)) { // Japanese and Chinese have no spaces to break at
+        std::string next = line.empty() ? piece.text : line + (piece.space_before ? " " : "") + piece.text;
         if (!line.empty() && label_width(next, pixels, false) > width) {
             lines.push_back(line);
-            line = word;
+            line = piece.text;
         } else line = next;
     }
     if (!line.empty()) lines.push_back(line);
@@ -143,6 +142,7 @@ std::string App::system_row_name(int row) const {
     static const std::array<const char*, 9> names = {"Language",           "Timezone",        "Daylight saving",
                                                      "Date format",        "Time format",     "Device information",
                                                      "Updates & recovery", "Return to stock", "Touch to continue"};
+    if (row == (o.rgds_os ? 8 : 9)) return "Run setup again";
     if (row == 7 && o.rgds_os) return "Touch to continue";
     if (row == 7 && o.independent) return "Restart menu";
     return names[size_t(std::clamp(row, 0, 8))];

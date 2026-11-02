@@ -203,6 +203,11 @@ void App::poll_service(Uint32 now) {
         library_cache.invalidate_metadata();
         if (media.refresh()) library_cache.invalidate_titles();
     }
+    // New games found by the watcher: the index step has run, so fetch what is missing for them.
+    if (artwork_finished && auto_scrape_pending && worker_action == "index") {
+        auto_scrape_pending = false;
+        if (worker_ok && preferences.auto_scrape) start_worker("scrape");
+    }
     // Status files change only through workers; poll quickly while one runs.
     bool quick = worker > 0 || now - worker_finished_at < 1000 || settings.page == Page::SaveGallery ||
                  !menu_pending_token.empty();
@@ -235,8 +240,11 @@ void App::poll_service(Uint32 now) {
         update_status = std::move(update);
         dirty = true;
     }
-    if (worker <= 0 && worker_ok && worker_action == "device.update-apply" && update_status["state"] == "restarting")
+    if (worker <= 0 && worker_ok && (worker_action == "device.update-apply" || worker_action == "device.rollback") &&
+        update_status["state"] == "restarting")
         quit = true;
+    // the session takes it from here (usr/libexec/rgds/session)
+    if (worker <= 0 && worker_ok && worker_action == "device.usb-drive" && !o.preview) quit = true;
     if (shutting_down() && worker <= 0 && !worker_ok) {
         shutdown_at = 0;
         shutdown_kind.clear();

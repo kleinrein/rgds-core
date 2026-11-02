@@ -32,6 +32,15 @@ void App::action(int code) {
         filter_sheet_key(code);
         return;
     }
+    if (settings.page == Page::Welcome) {
+        welcome_action(code);
+        return;
+    }
+    if (welcome_active && code == 7) return; // setup's own pages have no way out but back into it
+    if (welcome_detour && code == 3 && (settings.page == Page::Timezone || settings.page == Page::Wifi)) {
+        welcome_detour_end();
+        return;
+    }
     if (settings.page == Page::Keyboard && edit_field == 4 && (code == 15 || code == 16)) {
         finish_edit(false);
         if (code == 15) jump_to_letter();
@@ -192,6 +201,7 @@ void App::action(int code) {
         if (settings.page == Page::QuickMenu) {
             if (code == 3 || code == 7) menu_request("resume");
             else if (code == 11) open_emulator_options();
+            else if (code == 12) return_without_saving();
             else if (code == 8 || code == 9) {
                 const std::array<int, 12> up = {0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 9},
                                           down = {1, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 11};
@@ -445,6 +455,7 @@ void App::action(int code) {
                     open_updates(Page::System);
                 } else if (settings.focus == 7 && !o.rgds_os) confirm("return-stock", Page::System);
                 else if (settings.focus == (o.rgds_os ? 7 : 8)) change_startup(0, true);
+                else if (settings.focus == (o.rgds_os ? 8 : 9)) open_welcome();
             }
         } else if (settings.page == Page::Network) {
             if (code == 2) {
@@ -488,7 +499,11 @@ void App::action(int code) {
                                                            "\nPassword: " + login["password"] +
                                                            "\nFolders: " + login["shares"] +
                                                            "\nLogin changes each time sharing is turned on.");
-                }
+                } else if (settings.focus == 7) {
+                    if (device_status["usb_supported"] == "0")
+                        service_notice = "USB data transfer is not available on this handheld.";
+                    else start_worker(device_status["usb"] == "1" ? "device.usb-off" : "device.usb-on");
+                } else if (settings.focus == 8 && device_status["usb"] == "1") start_worker("device.usb-drive");
             }
         } else if (settings.page == Page::Wifi) {
             if (code == 2) wifi_choose();
@@ -530,11 +545,15 @@ void App::action(int code) {
                                 std::clamp(std::atoi(experience["auto_update"].c_str()), 0, 2),
                                 [this](int n) { save_experience("auto_update", n); });
                 else if (settings.focus == 4) confirm("clear-cache", Page::Maintenance);
-                else if (update_status["prepared"] == "1") start_worker("device.update-discard");
-                else start_worker("device.diagnostics");
+                else if (settings.focus == 7) {
+                    if (update_stage() != UpdateStage::None) confirm("update-discard", Page::Maintenance);
+                } else start_worker("device.diagnostics");
             }
         } else if (settings.page == Page::Timezone) {
-            if (code == 2) save_timezone();
+            if (code == 2) {
+                save_timezone();
+                if (welcome_detour) welcome_detour_end();
+            }
             else if (code == 0 || code == 1) {
                 settings.focus = timezone_region_jump(settings.focus, code == 0 ? -1 : 1);
             }
@@ -584,7 +603,9 @@ void App::action(int code) {
         else if (systems_menu) {
             systems_menu = false;
             return_home();
-        } else if (!home_menu && preferences.show_systems && preferences.view == 0) open_systems();
+        } else if (!home_menu && preferences.show_systems &&
+                   (systems_origin || (home_origin == SIZE_MAX && preferences.view == 0)))
+            open_systems();
         else if (!home_menu) return_home();
     } else if (code == 4) launch();
     else if (code == 5) probe = !probe;
@@ -886,6 +907,12 @@ void App::pointer_begin(int x, int y) {
     x = point.first;
     y = point.second;
     view_motion.stop();
+    // A finger stops whatever was still coasting or settling; the page under a departing gesture keeps leaving.
+    list_motion.stop();
+    picker_motion.stop();
+    filter_motion.stop();
+    browser_motion.stop();
+    if (!page_drag.departing()) page_drag.reset();
     contact_x = x;
     contact_y = y;
     touch_tail = false;
@@ -920,12 +947,14 @@ void App::pointer_begin(int x, int y) {
         boot_touch_wait_release = true;
         return;
     }
+    if (settings.page == Page::Welcome && !picker_open) return;
     browser_list_touch = browser_rail = false;
     carousel.item_spacing = !home_menu && browse_layout() == 1 ? 158 : Carousel::spacing;
     if (picker_open && !picker_detail) {
         tap_pending = true;
         if (picker_scrollable() && y >= picker_top() + 64 && y < picker_top() + 64 + picker_height()) {
             picker_scroll_start = picker_scroll;
+            picker_motion.begin(pointer_at, picker_scroll);
             if (picker_max_scroll() > 0 && x >= 572 && x < 604) {
                 tap_pending = false;
                 picker_rail = true;
@@ -944,6 +973,7 @@ void App::pointer_begin(int x, int y) {
         filter_drag = -1;
         filter_armed = false;
         filter_scroll_start = filter_scroll;
+        filter_motion.begin(pointer_at, filter_scroll);
         filter_rail = false;
         if (filter_rail_press(x, y)) return;
         if (filter_slider_press(x, y)) return;
@@ -969,6 +999,7 @@ void App::pointer_begin(int x, int y) {
         }
         browser_list_touch = true;
         browser_scroll_start = browser_list.scroll;
+        browser_motion.begin(pointer_at, browser_list.scroll);
         tap_pending = true;
         return;
     }
@@ -1027,6 +1058,7 @@ void App::pointer_begin(int x, int y) {
             list_touch = !picker_open && list_count() > 0 && y >= list_top && y < list_top + list_height;
             sync_list();
             gesture_scroll = list_scroll;
+            list_motion.begin(pointer_at, list_scroll);
             return;
         }
     }
@@ -1056,6 +1088,7 @@ void App::pointer_move(int x, int y) {
         contact_y = y;
         dirty = true;
     }
+    page_drag_follow(x, y);
     if (edge_gesture_move(x, y)) return;
     if (!library_control_active(LibraryPress::LeftArrow, rail_left_bounds()) &&
         !library_control_active(LibraryPress::RightArrow, rail_right_bounds()))
@@ -1080,7 +1113,7 @@ void App::pointer_move(int x, int y) {
         if (std::abs(y - down_y) > 8) {
             tap_pending = false;
             const int row = picker_scroll / picker_stride();
-            scroll_picker(picker_scroll_start + down_y - y);
+            scroll_picker(picker_motion.drag(s.GetTicks(), picker_scroll_start + down_y - y, 0, picker_max_scroll()));
             if (picker_scroll / picker_stride() != row) haptic_detent();
         }
         return;
@@ -1122,8 +1155,8 @@ void App::pointer_move(int x, int y) {
     if (browser_list_touch) {
         if (std::abs(y - down_y) > 12) {
             tap_pending = false;
-            browser_list.scroll = browser_scroll_start + down_y - y;
-            browser_list.clamp(navigation_count());
+            browser_list.scroll = browser_motion.drag(s.GetTicks(), browser_scroll_start + down_y - y, 0,
+                                                      browser_list.maximum(navigation_count()));
             if (navigation_count()) {
                 if (size_t(browser_list.first()) != model.selected) haptic_detent();
                 model.selected = size_t(browser_list.first());
@@ -1138,7 +1171,7 @@ void App::pointer_move(int x, int y) {
         if (list_swipe) {
             tap_pending = false;
             const int row = list_scroll / list_stride;
-            list_scroll = std::clamp(gesture_scroll + down_y - y, 0, list_max_scroll());
+            list_scroll = list_motion.drag(s.GetTicks(), gesture_scroll + down_y - y, 0, list_max_scroll());
             if (list_scroll / list_stride != row) haptic_detent();
             dirty = true;
         }
@@ -1152,6 +1185,7 @@ void App::pointer_move(int x, int y) {
     if (carousel.dragging) {
         if (std::abs(y - down_y) > 12) carousel.moved = true;
         auto selected = carousel.drag(x, navigation_count());
+        carousel.sample(s.GetTicks());
         if (selected != navigation_selected()) {
             if (home_menu) home_selected = selected;
             else if (systems_menu) systems_selected = selected;
@@ -1198,6 +1232,12 @@ void App::pointer_end(int x, int y) {
     if (!pointer_down) return;
     edge_gesture = EdgeGesture::None;
     release_at = s.GetTicks();
+    if (page_drag.holding()) page_drag.settle(release_at); // lifted short of the gesture: the page springs back
+    if (picker_open && picker_swipe) picker_motion.release(release_at, 0, picker_max_scroll());
+    if (filter_touch && filter_sheet_active() && !filter_rail && filter_drag < 0)
+        filter_motion.release(release_at, 0, filter_max_scroll());
+    if (browser_list_touch && !tap_pending) browser_motion.release(release_at, 0, browser_list.maximum(navigation_count()));
+    if (list_touch && list_swipe) list_motion.release(release_at, 0, list_max_scroll());
     touch_tail = preferences.touch_indicator && preferences.animations;
     dirty = true;
     pointer_down = false;
@@ -1217,8 +1257,13 @@ void App::pointer_end(int x, int y) {
         boot_touch_candidate = false;
         return;
     }
+    if (settings.page == Page::Welcome && !picker_open) {
+        welcome_touch(x, y);
+        return;
+    }
     if (settings.page == Page::BootWarning) {
-        bool accept = boot_touch_candidate && !boot_touch_wait_release;
+        // leaving the USB drive takes the A key: a stray touch must not pull it from the computer
+        bool accept = boot_touch_candidate && !boot_touch_wait_release && !o.usb_drive_screen;
         boot_touch_candidate = false;
         boot_touch_wait_release = false;
         if (accept) continue_boot();
@@ -1267,7 +1312,8 @@ void App::pointer_end(int x, int y) {
     if (carousel.dragging) {
         carousel.dragging = false;
         if (carousel.moved || carousel.range) {
-            select_navigation(navigation_selected());
+            // Settles on the nearest item; only a hard flick coasts on past it.
+            select_navigation(carousel.flick_target(release_at, navigation_count()));
             return;
         }
         long raw = !home_menu && browse_layout() == 1

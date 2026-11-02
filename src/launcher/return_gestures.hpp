@@ -5,8 +5,10 @@
 void App::return_home() {
     view_route = ViewTravel::Back;
     cancel_navigation();
+    systems_menu = false; // a Home gesture from the systems carousel must not leave it shadowing Home
     home_menu = true;
-    home_selected = size_t(preferences.view) + 1;
+    // Back to the tile the library was entered from (the collection shown may have changed on the way).
+    home_selected = home_origin != SIZE_MAX ? std::min(home_origin, home_tiles() - 1) : size_t(preferences.view) + 1;
     carousel.reset(home_selected);
     selected_at = s.GetTicks();
     dirty = true;
@@ -167,7 +169,8 @@ void App::gesture_cues(SDL_Renderer* r, int y) {
 
 bool App::gestures_available() const {
     return preferences.gestures && !probe && !(chat_open && chat.view == pictochat::View::Room) && !launching &&
-           settings.page != Page::BootWarning && settings.page != Page::Controls && !o.game_menu;
+           settings.page != Page::BootWarning && settings.page != Page::Welcome && settings.page != Page::Controls &&
+           !o.game_menu;
 }
 
 bool App::edge_gesture_move(int x, int y) {
@@ -176,6 +179,8 @@ bool App::edge_gesture_move(int x, int y) {
                back = edge_gesture == EdgeGesture::Left && x - down_x >= 72 && std::abs(y - down_y) < 120;
     if (!home && !back) return false;
     edge_gesture = EdgeGesture::None;
+    const auto before = std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open,
+                                        filter_sheet_open, chat_open ? int(chat.view) : -1);
     cancel_navigation();
     brightness_drag = volume_drag = false;
     gesture_flash_at = s.GetTicks();
@@ -192,6 +197,11 @@ bool App::edge_gesture_move(int x, int y) {
         if (!home_menu) return_home();
         if (!chatting) sound_intent(MenuCue::Back);
     } else action(3);
+    // The page the finger had lifted flies away when the gesture changed the view, else springs back into place.
+    const auto after = std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open,
+                                       filter_sheet_open, chat_open ? int(chat.view) : -1);
+    if (before != after) page_drag.depart(gesture_flash_at);
+    else page_drag.settle(gesture_flash_at);
     dirty = true;
     return true;
 }

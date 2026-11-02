@@ -102,6 +102,13 @@ could not start. Your previous version was restored." That build is not offered 
 restarts after 10 s (`panic=10`); a slot that boots but never reaches the launcher is restarted by `rcS` after four
 minutes so the counter advances. `tools/own_os_push.py` arms the same trial for a developer push.
 
+**Use previous build** (Settings → Maintenance) is the same trial the other way: the build the other slot holds is
+read from that slot (its filesystem is mounted for a moment: `usr/share/rgds/active` and its `os-release`), and when
+it is bootable and not this build, `trial arm` puts it first with the running slot as `FALLBACK` and the handheld
+restarts. Should it not come up, U-Boot brings the running build back and the launcher says "The previous version
+could not start. This version was kept." The row is empty while the other slot is empty (a fresh card), holds this
+very build, or holds a downloaded update that is not yet installed.
+
 Not covered: the boot partition's own `extlinux.conf` and U-Boot are never replaced by an update (a U-Boot change is
 a card reflash, or `own_os_push.py --uboot` by hand), and the data partition is never touched, so a release must keep
 reading the previous release's userdata.

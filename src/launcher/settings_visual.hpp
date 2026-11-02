@@ -55,6 +55,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Game rumble" || title == "Rumble strength") return SettingsIcon::Controller;
     if (title == "Try a pattern") return SettingsIcon::Play;
     if (title == "Updates") return SettingsIcon::Load;
+    if (title == "Run setup again") return SettingsIcon::Refresh;
     if (title == "Network file sharing") return SettingsIcon::Wifi;
     if (title == "Play") return SettingsIcon::Play;
     if (title == "How to get the files") return SettingsIcon::Info;
@@ -192,7 +193,9 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Refresh connection") return "Check the current connection";
     if (title == "Bluetooth") return "Controllers and other Bluetooth devices";
     if (title == "Bluetooth devices") return "Find, pair and connect a nearby device";
+    if (title == "USB data transfer") return "Files and SSH by cable; charging always works";
     if (title == "Use previous build") return "Restore the last installed RGDS build";
+    if (title == "Local wireless") return "Play with another RG DS on your Wi-Fi";
     if (title == "Clear temporary cache") return "Free space while keeping your saves";
     if (title == "Save device report") return "Save a report for troubleshooting";
     if (title == "3D resolution") return "Choose native or a sharper 3D image";

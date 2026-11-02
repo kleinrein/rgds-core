@@ -100,8 +100,15 @@ public:
     // follow). A held swap kept its present lane busy, the next frame's swap
     // queued behind it, and that queueing would read as work: frames would
     // then start earlier, be held more, and the estimate run away.
-    if (wait_ns < 100'000) {
-      const double w = static_cast<double>(ready - e->start);
+    // The same queueing reaches a frame before its swap when free pacing
+    // held the previous one: the emulation thread waits for the busy lane
+    // to hand it over (queued()), so that wait is not work either.
+    // A free-running frame is learned from even when its swap was held: free
+    // pacing settles with nearly every swap held (13 ms at 2x), its start
+    // does not follow the estimate, and without these samples the work stays
+    // what the last heavy scene left and the lock never fits again.
+    if ((wait_ns < 100'000 || !e->target) && ready - e->start > e->queued) {
+      const double w = static_cast<double>(ready - e->start - e->queued);
       if (work_ema_ <= 0.0) {
         work_ema_ = w;
         work_dev_ = 0.0;
@@ -110,7 +117,14 @@ public:
         work_dev_ += (std::fabs(w - work_ema_) - work_dev_) * p_.work_alpha;
       }
     }
-    if (!e->target || !locked()) return; // a free-running frame: no tick was aimed at
+    if (!e->target || !locked()) {
+      // A free-running frame: no tick was aimed at. The band still relaxes,
+      // or the misses that dropped the lock would keep it out for good (its
+      // lead is tested against the band before it may lock again).
+      band_ *= p_.band_decay;
+      if (band_ < p_.band_min_ns) band_ = p_.band_min_ns;
+      return;
+    }
     // Its tick on this panel, and whether the flip was taken there or after.
     const double expected = tick_after(panel, static_cast<double>(e->target) - period * 0.5);
     const double at = static_cast<double>(at_ns);
@@ -221,8 +235,15 @@ public:
     e.start = start_ns;
     e.target = static_cast<u64>(target_ > 0.0 ? target_ : 0.0);
     e.late = late;
+    e.queued = 0;
     e.engaging = engaging_ > 0;
     if (engaging_ > 0) --engaging_;
+  }
+
+  // The frame begun last waited `ns` to be handed to a present thread still
+  // busy with the one before it (Display::take_lane_wait_ns()).
+  void queued(u64 ns) {
+    if (last_start_) ring_[(ring_next_ + RING - 1) % RING].queued += ns;
   }
 
   // The panel's refresh period is known and has held still: pace at it.
@@ -259,6 +280,7 @@ private:
   };
   struct Start {
     u64 start = 0, target = 0;
+    u64 queued = 0; // queued(): its wait for a busy present lane
     bool late = false, engaging = false;
   };
 

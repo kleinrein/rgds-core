@@ -1,11 +1,12 @@
 PYTHON ?= python3
-DEVICE ?= rgds.local
+# the handheld on the USB cable when it answers there, else over Wi-Fi
+DEVICE ?= $(shell $(PYTHON) tools/device_addr.py)
 VERSION_NUMBER := $(shell cat VERSION)
 THEME ?= themes/default/light.ini
 # gcc-pgo: GCC 13.3 + upstream PGO in the Lima ARM64 VM (~8% less emulation time); zig: host cross build
 ENGINE_COMPILER ?= gcc-pgo
 
-.PHONY: preview settings game-menu dev build-host build-device build-rgds-experimental build-rgds-vulkan build-samba package image push release test shot format format-check
+.PHONY: ssh preview settings game-menu dev build-host build-device build-rgds-experimental build-rgds-vulkan build-samba package image push release test shot format format-check
 build-host:
 	$(PYTHON) tools/build.py host
 build-device:
@@ -15,6 +16,8 @@ build-rgds-experimental:
 build-rgds-vulkan: build-rgds-experimental
 	$(PYTHON) tools/build_rgds_vulkan.py
 	$(PYTHON) tools/package_rgds_vulkan.py
+impeccable:
+	$(PYTHON) tools/build_impeccable.py
 preview: build-host
 	build/host/rgds-launcher --preview --watch-assets --theme "$(THEME)"
 settings: build-host
@@ -44,5 +47,7 @@ test: build-host
 	$(PYTHON) -m unittest discover -s tests -v
 	build/host/rgds-launcher --self-test
 	SDL_VIDEODRIVER=dummy build/host/rgds-launcher --preview --frames 2 --screenshot build/preview.bmp --theme themes/default/light.ini
+ssh:
+	ssh root@$(DEVICE)
 shot:
 	$(PYTHON) tools/device_shot.py --device "$(DEVICE)" $(SHOT_ARGS)

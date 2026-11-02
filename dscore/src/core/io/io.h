@@ -8,6 +8,7 @@
 #include "core/io/dsi_camera.h"
 #include "core/io/dsi_sd.h"
 #include "core/io/wifi.h"
+#include "core/io/bench_port.h"
 
 #include <array>
 #include <vector>
@@ -332,6 +333,7 @@ public:
   }
   // ARM7 0x04800000-0x0480FFFF, gated on POWCNT2 bit 1.
   Wifi wifi;
+  BenchPort bench; // RG DS: the Impeccable benchmark ROM's line to the frontend
   void set_net_driver(NetDriver* net);          // both radios; null detaches
   bool wifi_power_on_pending = false;           // unused; savestate layout
   void set_irq_line(Cpu cpu, u32 bit, bool on); // level-sensitive (GX FIFO)

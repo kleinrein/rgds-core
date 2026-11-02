@@ -65,6 +65,11 @@ public:
     // positive (libretro's convention). Only systems with a stick read them.
     virtual void set_sticks(int16_t lx, int16_t ly, int16_t rx, int16_t ry) { (void)lx, (void)ly, (void)rx, (void)ry; }
     virtual Picture picture() const = 0;
+    // A GPU-drawing core's frames straight into this GL texture of the given size, in a context shared with the core's
+    // (0: none): nothing is read back, and picture() then has only the right size. drew_gl_target answers for the
+    // latest frame; a frame that does not fit is read back as usual.
+    virtual void set_gl_target(unsigned texture, int w, int h) { (void)texture, (void)w, (void)h; }
+    virtual bool drew_gl_target() const { return false; }
     // A light gun aimed by touch (the NES Zapper): on, the second port is the gun; set_pointer aims it at a pixel
     // of picture() (-1: off the screen) with the trigger down or up. False when the system has none.
     virtual bool set_lightgun(bool on) {
@@ -81,6 +86,12 @@ public:
         return false;
     }
     virtual void set_mouse_cursor(int x, int y) { (void)x, (void)y; }
+    // A key of the system's own keyboard (libretro's RETROK_ codes) down or up, from the next frame on.
+    virtual void set_key(unsigned key, bool down) { (void)key, (void)down; }
+    // The disks of a game on several (an .m3u): how many, which is in the drive, and another put in. 0: none to swap.
+    virtual int disk_count() { return 0; }
+    virtual int disk_index() { return 0; }
+    virtual void set_disk(int index) { (void)index; }
     // How much of the last frame the cartridge's rumble motor was on, 0-1: Game
     // Boy rumble cartridges (MBC5), Game Boy Advance ones (Drill Dozer, WarioWare:
     // Twisted!). 0 for every other game, and always for a shadow.
@@ -88,6 +99,13 @@ public:
 
     virtual bool save_state(std::vector<uint8_t>& out) = 0;
     virtual bool load_state(const std::vector<uint8_t>& in) = 0;
+
+    // Bytes of the game's ROM from `offset` (fewer at its end), in the system's own order whatever the file's: an
+    // N64 dump may be stored byte-swapped. False when the player can't read them.
+    virtual bool read_rom(uint32_t offset, uint32_t size, std::vector<uint8_t>& out) {
+        (void)offset, (void)size, (void)out;
+        return false;
+    }
 
     // Side-effect-free reads of the bus (RAM, I/O as last written).
     virtual uint32_t peek(uint32_t address, int size) = 0;
@@ -211,8 +229,9 @@ OpenResult open_libretro(const std::string& library, const std::string& rom_path
                          const std::vector<uint8_t>& battery);
 
 // A GLES context for libretro cores that draw with the GPU (the N64's GLideN64). The player makes one beside its
-// panels' and the core draws into a framebuffer of its own, read back into picture() each frame, so frames, shaders
-// and states stay the same as for any other system. Without a host (play-shot, play-tests) such a core shows black.
+// panels' and the core draws into a framebuffer of its own, read back into picture() each frame (or copied by the GPU
+// into the game panel's texture: Core::set_gl_target), so frames, shaders and states stay the same as for any other
+// system. Without a host (play-shot, play-tests) such a core shows black.
 struct GlHost {
     // The core's context current, made on first use at this GLES version; false when there can be none.
     bool (*begin)(int major, int minor) = nullptr;

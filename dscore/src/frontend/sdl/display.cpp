@@ -741,7 +741,9 @@ bool Display::draw_renderer_async(Display* const ds[], int n, const u32* const f
         for (int k = 0; k < m; ++k) ++owners[k]->dropped_;
         continue;
       }
+      const auto tw = std::chrono::steady_clock::now();
       pt.wait(ls.job[next]);
+      lane_wait_ns_ += static_cast<u64>((std::chrono::steady_clock::now() - tw).count());
     }
     ls.set = next;
     // Only the screens this lane's windows show.
@@ -900,7 +902,9 @@ bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb
         for (int k = 0; k < m; ++k) ++owners[k]->dropped_;
         continue;
       }
+      const auto tw = std::chrono::steady_clock::now();
       pt.wait(ls.job[next]);
+      lane_wait_ns_ += static_cast<u64>((std::chrono::steady_clock::now() - tw).count());
     }
     ls.set = next;
     bool shown[SCREENS] = {};

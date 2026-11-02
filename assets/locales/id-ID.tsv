@@ -18,6 +18,7 @@
 A  Apply	A  Terapkan
 A  Done	A  Selesai
 A  Jump	A  Lompat
+A  Leave	A  Keluar
 A  Play	A  Main
 A  Search	A  Cari
 A 24-hour or 12-hour clock.	Jam 24 jam atau 12 jam.
@@ -77,6 +78,7 @@ Atlantic Ocean	Samudra Atlantik
 Audio is not recorded or saved.	Audio tidak direkam atau disimpan.
 Australia	Australia
 Auto-load state	Muat state otomatis
+Auto-save	Simpan otomatis
 Auto-save on exit	Simpan otomatis saat keluar
 Automatic	Otomatis
 Automatic (free)	Otomatis
@@ -128,12 +130,15 @@ Browse	Jelajahi
 Browse games	Lihat game
 Browse systems	Lihat sistem
 Browser layout	Tata letak daftar
+Bubble Gum	Permen karet
 Build, storage and device address	Build, penyimpanan, dan alamat perangkat
 Button	Tombol
 Button layout	Tata letak tombol
 Button {0}	Tombol {0}
 Buttons and the game menu shortcut	Tombol dan pintasan menu game
 Cancel	Batal
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Karosel
 Carried	Dibawa
 Cartridges	Kartrid
@@ -141,6 +146,7 @@ Change group	Ganti grup
 Changes immediately. Map a button in Controls for quick access.	Langsung berubah. Tetapkan tombol di Kontrol untuk akses cepat.
 Changing 3D threading…	Mengubah thread 3D…
 Changing speed…	Mengubah kecepatan…
+Chaos Emeralds	Zamrud Chaos
 Chat is unavailable: you can still draw	Obrolan tidak tersedia: Anda tetap bisa menggambar
 Chat Room	Ruang Obrolan
 Chat Room {0}	Ruang Obrolan {0}
@@ -191,6 +197,7 @@ Compare	Bandingkan
 Confirm	Konfirmasi
 Connect	Hubungkan
 Connect the charger before installing an update.	Sambungkan pengisi daya sebelum memasang pembaruan.
+Connect the handheld to a computer first.	Hubungkan perangkat ke komputer terlebih dahulu.
 Connect to Wi-Fi to send files from a phone or computer.	Sambungkan ke Wi-Fi untuk mengirim file dari ponsel atau komputer.
 Connected	Terhubung
 Connected.	Terhubung.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Koneksi terputus. Mencoba lagi…
 Connectivity	Konektivitas
 Continue	Lanjutkan
 Continue where you left off	Lanjutkan dari terakhir kali
+Continues	Lanjutan
 Control unavailable on this device	Kontrol tidak tersedia di perangkat ini
 Controllers and other Bluetooth devices	Kontroler dan perangkat Bluetooth lainnya
 Controls	Kontrol
@@ -219,6 +227,7 @@ Could not apply this shader.	Tidak dapat menerapkan filter ini.
 Could not apply volume	Tidak dapat menerapkan volume
 Could not bring the Wi-Fi adapter up. Try again.	Tidak dapat menyalakan adaptor Wi-Fi. Coba lagi.
 Could not change 3D threading. Your game is unchanged.	Tidak dapat mengubah thread 3D. Game tidak berubah.
+Could not change USB data transfer.	Tidak dapat mengubah transfer data USB.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	Tidak dapat memastikan koneksi Wi-Fi yang dipilih. Pindai dan coba lagi.
 Could not connect	Tidak dapat terhubung
 Could not enable lid wake	Tidak dapat mengaktifkan bangun dengan tutup
@@ -270,6 +279,7 @@ Development build	Build pengembangan
 Device address	Alamat perangkat
 Device information	Info perangkat
 Discard update	Buang pembaruan
+Disk	Disk
 Display	Tampilan
 Display FPS	FPS layar
 Done	Selesai
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Ubah
 Edit search	Ubah pencarian
 Effects volume	Volume efek
+Eject the drive on your computer when you are done	Keluarkan drive di komputer setelah selesai
 Empty slot	Slot kosong
 Emulator	Emulator
 Emulator settings	Pengaturan emulator
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	GALAT: Tidak dapat memulihkan pengaturan
 ERROR: Could not restore settings - see log	GALAT: Tidak dapat memulihkan pengaturan - lihat log
 Essences	Esensi
 Europe	Eropa
+Event	Lomba
+Events	Lomba
 Every game in this collection has artwork.	Semua game di koleksi ini sudah punya sampul.
 Exit your game before installing an update.	Keluar dari game sebelum memasang pembaruan.
 Experience	Pengalaman
@@ -341,9 +354,11 @@ Fetch missing artwork	Ambil sampul yang kurang
 Figurines	Figurin
 File sharing on. Find "RG DS" under Network.	Berbagi file aktif. Cari "RG DS" di bagian Jaringan.
 Files added	File ditambahkan
+Files and SSH by cable; charging always works	File dan SSH lewat kabel; pengisian daya selalu aktif
 Files arrived. Choose Play to start.	File sudah tiba. Pilih Main untuk memulai.
 Filter	Filter
 Filtered	Difilter
+Final	Akhir
 Find and connect to a nearby network	Temukan dan hubungkan ke jaringan terdekat
 Find, pair and connect a nearby device	Temukan, pasangkan, dan hubungkan perangkat di sekitar
 Finding games…	Mencari game…
@@ -489,6 +504,7 @@ Key {0}	Tombol {0}
 Keyboard	Keyboard
 Keys	Kunci
 Kinstone fusions	Fusi Kinstone
+Lamppost	Tiang lampu
 Language	Bahasa
 Last 4 weeks	4 minggu terakhir
 Last 7 days	7 hari terakhir
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Suara ceria saat menje
 Please keep your handheld on	Jangan matikan konsol
 Pocket green	Hijau saku
 Point and click on top	Tunjuk dan klik di atas
+Points	Poin
 Pokédex caught	Pokédex tertangkap
 Pokédex seen	Pokédex terlihat
+Popcorn	Popcorn
 PortMaster is ready	PortMaster siap
 Ports	Port
 Power	Daya
@@ -785,9 +803,11 @@ RGDS build	Build RGDS
 Rich	Detail
 Right	Kanan
 Right stick	Stik kanan
+Rings	Cincin
 Rollback simulated.	Rollback disimulasikan.
 Round	Ronde
 ROUNDED FONT UNAVAILABLE	FON BULAT TIDAK TERSEDIA
+Route	Rute
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Game Rumble Pak di DS, kartrid bergetar di Game Boy dan Game Boy Advance.
 Rumble strength	Kekuatan getaran
 Rupees	Rupee
@@ -826,7 +846,9 @@ Scene	Adegan
 Score	Skor
 Screen brightness	Kecerahan layar
 Screen colours	Warna layar
-Screen off	Layar mati
+Menu	Menu
+Switch	Ganti
+Turn off screen	Matikan layar
 screens	layar
 ScreenScraper needs project credentials and your account	ScreenScraper memerlukan kredensial proyek dan akun Anda
 Screenshot	Tangkapan layar
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Penskalaan tajam dengan warna DS.
 Sharp scaling, DS colour and Natural Vision together.	Penskalaan tajam, warna DS, dan Natural Vision sekaligus.
 Shield	Perisai
 Shift	Shift
+Shift keys stay down until the next key	Tombol Shift tetap tertekan sampai tombol berikutnya
 Shortcut action	Aksi pintasan
 Shots	Tembakan
 Show games	Tampilkan game
@@ -909,7 +932,9 @@ Spanish	Spanyol
 Spring	Pegas
 Springy menu changes with a colourful wobble	Perpindahan menu memantul dengan goyangan warna-warni
 Stable	Stabil
+Stage	Etape
 Standard	Standar
+Standings	Peringkat
 START	START
 Start	Start
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Pembaruan sistem
 Systems	Sistem
 Tap to type, or use the D-pad and A	Ketuk untuk mengetik, atau gunakan D-pad dan A
 Team	Tim
+Temper	Amarah
 Temporary game cache cleared. Saves and artwork are kept.	Cache game sementara dihapus. Simpanan dan sampul tetap ada.
 Terrain and unit	Medan dan unit
 Test	Uji
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Jaringan ini memerlukan profil peru
 This port lists no instructions.	Port ini tidak punya petunjuk.
 This request did not finish. Please try again.	Permintaan ini tidak selesai. Silakan coba lagi.
 This shader is unavailable for the current emulator.	Filter ini tidak tersedia untuk emulator saat ini.
+This stage	Etape ini
 This stock firmware has not been validated for updates.	Firmware bawaan ini belum divalidasi untuk pembaruan.
 This version failed to start. Waiting for a newer update.	Versi ini gagal dimulai. Menunggu pembaruan yang lebih baru.
 Threaded 3D	3D berthread
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	Verifikasi pembaruan gagal.
 Updates	Pembaruan
 Updates & recovery	Pembaruan & pemulihan
 Updates will be available when the release channel opens.	Pembaruan akan tersedia saat kanal rilis dibuka.
+USB data transfer	Transfer data USB
+USB data transfer is not available on this handheld.	Transfer data USB tidak tersedia di perangkat ini.
+USB data transfer off.	Transfer data USB mati.
+USB data transfer on.	Transfer data USB aktif.
+USB drive mode	Mode drive USB
 Use an additional rendering thread	Gunakan thread rendering tambahan
+Use as USB drive	Gunakan sebagai drive USB
 Use default ({0})	Gunakan default ({0})
 Use default controls	Gunakan kontrol global
 Use previous build	Gunakan build sebelumnya
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	{0} orang di dekat Anda
 {0} players	{0} pemain
 {0} settings	Pengaturan {0}
+Welcome!	Selamat datang!
+Let's get your handheld ready. It takes about a minute.	Mari siapkan perangkatmu. Hanya sekitar satu menit.
+Pick your colour	Pilih warnamu
+The menus take it on. You can change it whenever you like.	Menu akan memakainya. Kamu bisa menggantinya kapan saja.
+What's your name?	Siapa namamu?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat menampilkannya ke orang di sekitar, dan game DS memakainya sebagai nama pemilik.
+Is this the right time?	Apakah waktunya sudah benar?
+You're connected	Kamu sudah terhubung
+Connect to Wi-Fi	Hubungkan ke Wi-Fi
+For box art, updates and PictoChat. Everything else works without it.	Untuk sampul, pembaruan, dan PictoChat. Yang lain tetap berfungsi tanpanya.
+You're all set!	Semua siap!
+Play at a comfortable volume, and give your eyes and hands a break.	Bermainlah dengan volume yang nyaman, dan istirahatkan mata serta tanganmu.
+In a game, the Anbernic button opens saves, cheats and settings.	Dalam game, tombol Anbernic membuka simpanan, cheat, dan pengaturan.
+Close the lid to sleep. Your game waits for you.	Tutup penutupnya untuk tidur. Game-mu menunggu.
+Copy more games any time. They show up by themselves.	Salin game lain kapan saja. Game akan muncul sendiri.
+Skip setup	Lewati penyiapan
+Run setup again	Jalankan penyiapan lagi
+Turn on Wi-Fi	Nyalakan Wi-Fi
+Turn on USB data transfer	Nyalakan transfer data USB
+Connect to Wi-Fi first	Hubungkan ke Wi-Fi dulu
+Zoom	Zoom
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Pasang kabel USB-C lalu pilih Gunakan sebagai drive USB, atau masukkan kartu ini ke komputer. Buka drive RGDS dan salin game ke folder di roms: nds, gba, gb, gbc, nes, snes, md, dan lainnya.
+What do you want to play?	Mau main apa?
+You can change this later in Settings > Library.	Kamu bisa mengubahnya nanti di Pengaturan > Pustaka.
+A clean library with only DS games.	Pustaka rapi yang hanya berisi game DS.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation, dan lainnya, diurutkan per sistem.

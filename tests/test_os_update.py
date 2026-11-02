@@ -217,6 +217,75 @@ class StageTests(unittest.TestCase):
         self.assertEqual(json.loads((Path(self.tmp.name) / "state/update-pending.json").read_text())["phase"], "trial")
         self.assertTrue(u.restarted)
 
+    def previous_fixture(self, build="0.7.0-old-os33333333", version="0.7.0"):
+        (self.boot / "extlinux/extlinux.conf").write_text(
+            "DEFAULT a\nLABEL a\n  LINUX /a/Image.lz4\n  APPEND a\nLABEL b\n  LINUX /b/Image.lz4\n  APPEND b\n"
+        )
+        (self.boot / "b").mkdir(exist_ok=True)
+        (self.boot / "b/Image.lz4").write_bytes(b"kernel")
+        u = self.updater()
+        u.read_slots = []
+        u.slot_release = lambda slot, device: (u.read_slots.append((slot, device)), (build, version))[1]
+        return u
+
+    def test_previous_names_the_other_slots_build(self):
+        u = self.previous_fixture()
+        self.assertEqual(u.previous(), ("0.7.0-old-os33333333", "0.7.0"))
+        self.assertEqual(u.read_slots, [("b", self.device)])
+
+    def test_previous_is_nothing_without_a_bootable_other_slot(self):
+        u = self.previous_fixture()
+        (self.boot / "b/Image.lz4").unlink()
+        self.assertIsNone(u.previous())
+        (self.boot / "b/Image.lz4").write_bytes(b"kernel")
+        (self.boot / "extlinux/extlinux.conf").write_text("DEFAULT a\nLABEL a\n  LINUX /a/Image.lz4\n")
+        self.assertIsNone(u.previous())
+        self.assertEqual(u.read_slots, [])  # never mounted
+
+    def test_previous_is_nothing_for_an_empty_slot_or_this_build_or_a_staged_update(self):
+        u = self.previous_fixture()
+        u.slot_release = lambda slot, device: None
+        self.assertIsNone(u.previous())
+        u = self.previous_fixture(build=self.app.name)
+        self.assertIsNone(u.previous())
+        u = self.previous_fixture()
+        u.guard.save(Path(self.tmp.name) / "state/update-pending.json", dict(phase="staged", build="x"))
+        self.assertIsNone(u.previous())
+
+    def test_rollback_arms_the_other_slot_on_trial_and_restarts(self):
+        u = self.previous_fixture()
+        u.power_check = lambda: None
+        u.rollback()
+        self.assertIn("arm b a 0.7.0-old-os33333333 0.7.0", (Path(self.tmp.name) / "trial.log").read_text())
+        pending = json.loads((Path(self.tmp.name) / "state/update-pending.json").read_text())
+        self.assertEqual((pending["phase"], pending["slot"], pending["rollback"]), ("trial", "b", 1))
+        self.assertEqual(pending["previous"], self.app.name)
+        from fields import read_fields
+        self.assertEqual(read_fields(self.data / "update/status.ini")["state"], "restarting")
+        self.assertTrue(u.restarted)
+
+    def test_rollback_refuses_without_a_previous_build(self):
+        u = self.previous_fixture()
+        u.slot_release = lambda slot, device: None
+        with self.assertRaisesRegex(ValueError, "No previous build"):
+            u.rollback()
+        self.assertFalse((Path(self.tmp.name) / "trial.log").exists())
+
+    def test_commit_after_a_failed_rollback_says_this_version_was_kept(self):
+        u = self.updater()
+        u.guard.save(
+            Path(self.tmp.name) / "state/update-pending.json",
+            dict(phase="trial", build="0.7.0-old-os33333333", rollback=1)
+        )
+        u.guard.save(
+            Path(self.tmp.name) / "state/update-result.json", dict(state="rolled-back", build="0.7.0-old-os33333333")
+        )
+        u.commit_trial()
+        from fields import read_fields
+        status = read_fields(self.data / "update/status.ini")
+        self.assertEqual(status["state"], "rolled-back")
+        self.assertIn("This version was kept", status["message"])
+
     def test_commit_after_a_fallback_tells_the_launcher(self):
         u = self.updater()
         u.guard.save(

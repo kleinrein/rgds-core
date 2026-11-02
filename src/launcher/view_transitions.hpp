@@ -26,12 +26,13 @@ void App::move_element(uint32_t id, int& x, int& y, int width, int height, bool 
 }
 
 void App::clear_view_canvases() {
-    for (auto** texture : {&view_canvas, &view_previous, &view_presented})
+    for (auto** texture : {&view_canvas, &view_previous, &view_presented, &top_canvas, &top_previous, &gesture_canvas})
         if (*texture) {
             s.DestroyTexture(*texture);
             *texture = nullptr;
         }
-    view_snapshot_ready = view_previous_ready = false;
+    view_snapshot_ready = view_previous_ready = top_previous_ready = false;
+    page_drag.reset();
 }
 
 void App::start_view_motion(Uint32 now, ViewTravel route) {

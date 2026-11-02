@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The second screen's own controls, low-key and always at hand by touch:
-// the game's name and how long this session has run, the clock, the game
-// switcher (a tap), Return home (held for a moment, so it never happens by a
-// careless tap; the game saves first as from the menu), the screen's
+// the game's name and how long this session has run, the clock, the game menu
+// and the game switcher (a tap), Return home (held for a moment, so it never
+// happens by a careless tap; the game saves first as from the menu), the screen's
 // brightness, and turning the screen off (a touch brings it back). The same
 // screen as a port's second screen (src/launcher/port_menu.hpp).
 //
@@ -32,7 +32,7 @@ namespace play {
 
 class Dock {
 public:
-    enum class Action { None, Switcher, Home };
+    enum class Action { None, GameMenu, Switcher, Home };
     // A picture as read_bmp gives it (bytes R, G, B, A).
     struct Image {
         int w = 0, h = 0;
@@ -91,7 +91,7 @@ public:
     void system_icon(Canvas& out, const Look& look, int x, int y, int size) const;
 
     // Layout (in 640x480 units), public for tests.
-    enum class Item { None, Button, Switcher, Home, Bright, Off, Count };
+    enum class Item { None, Button, GameMenu, Switcher, Home, Bright, Off, Count };
     Box box(Item item, int w, int h) const;
 
 private:
@@ -107,7 +107,7 @@ private:
                      const std::string& name) const;
     // The status bar's battery (src/launcher/status_bar.hpp) with its top left at x, y.
     void battery(Canvas& out, const Look& look, int x, int y) const;
-    // Return home is held; the switcher only opens, so a tap does.
+    // Return home is held; the menu and the switcher only open, so a tap does.
     static bool held_item(Item item) { return item == Item::Home; }
     static constexpr uint64_t hold_ms = 1000;
     void wake();

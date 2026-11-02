@@ -16,7 +16,12 @@
 //   player_x = mem8[70] + 8               # optional: a marker, in world pixels
 //   player_y = mem8[84] + 8
 //   scale = 8                             # world pixels per map pixel (decimal)
+//   zoom = 2                              # panel pixels per map pixel at least (decimal): a
+//                                         # long level is shown around the player, larger
 //   every = 6                             # frames between pastes (decimal)
+//   lag = 1                               # the picture shows x and y of this many frames
+//                                         # ago (games that scroll the screen in the next
+//                                         # vertical blank: Sonic), up to 3
 //   name.0 = Hyrule                       # what the chip in the corner says per area
 //   name = Level                          # ... for areas without a name.N ("Level 3")
 #include "companion/companion.hpp"
@@ -29,6 +34,7 @@
 #include <climits>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
 #include <map>
 #include <sstream>
 
@@ -91,9 +97,15 @@ public:
             } else if (key == "scale") {
                 ok = parse_ints(value, v, 1) && v[0] >= 1 && v[0] <= 32;
                 if (ok) scale_ = v[0];
+            } else if (key == "zoom") {
+                ok = parse_ints(value, v, 1) && v[0] >= 1 && v[0] <= 6;
+                if (ok) zoom_ = v[0];
             } else if (key == "every") {
                 ok = parse_ints(value, v, 1) && v[0] >= 1;
                 if (ok) every_ = v[0];
+            } else if (key == "lag") {
+                ok = parse_ints(value, v, 1) && v[0] >= 0 && v[0] < int(std::size(seen_));
+                if (ok) lag_ = v[0];
             } else if (key == "when") {
                 std::string why;
                 ok = parse_condition(value, when_, why);
@@ -123,8 +135,12 @@ public:
             player_x_now_ = px;
             player_y_now_ = py;
         }
+        // Where the frame's top left is, this frame and the last few: the picture may show an older one.
+        std::move_backward(std::begin(seen_), std::end(seen_) - 1, std::end(seen_));
+        seen_[0] = {x_.eval(live), y_.eval(live), frame};
         if (frame % uint64_t(every_) || (!when_.empty() && !when_.match(live))) return;
-        paste(live);
+        if (seen_[lag_].frame + uint64_t(lag_) != frame) return; // not yet seen for that many frames in a row
+        paste(live, seen_[lag_].x, seen_[lag_].y);
     }
 
     bool shown() const override { return playing_; }
@@ -190,7 +206,7 @@ private:
         return name_.empty() ? std::string() : name_ + " " + std::to_string(area);
     }
 
-    void paste(Core& live) {
+    void paste(Core& live, long x, long y) {
         const Picture p = live.picture();
         if (!p.px || p.w <= 0 || p.h <= 0) return;
         const int nw = native_w_ ? native_w_ : p.w, nh = native_h_ ? native_h_ : p.h;
@@ -201,7 +217,17 @@ private:
         const int x0 = std::max(c.x - ox, 0), y0 = std::max(c.y - oy, 0);
         const int x1 = std::min(c.x + c.w - ox, p.w), y1 = std::min(c.y + c.h - oy, p.h);
         if (x1 - x0 < scale_ || y1 - y0 < scale_) return;
-        const long wx = x_.eval(live) + ox, wy = y_.eval(live) + oy; // the world under picture pixel 0, 0
+        // A playfield of one colour is a fade between places (QuackShot's), not a place.
+        bool uniform = true;
+        const uint32_t first = p.px[size_t(y0) * p.stride + x0] & 0xFFFFFF;
+        for (int y = y0; y < y1 && uniform; y += 8)
+            for (int x = x0; x < x1; x += 8)
+                if ((p.px[size_t(y) * p.stride + x] & 0xFFFFFF) != first) {
+                    uniform = false;
+                    break;
+                }
+        if (uniform) return;
+        const long wx = x + ox, wy = y + oy; // the world under picture pixel 0, 0
         Area& area = areas_[area_now_];
         bool changed = false;
         // Every map pixel whose block of world pixels lies wholly in the playfield.
@@ -241,7 +267,7 @@ private:
         // The whole area at the largest whole scale that fits; an area too big
         // for the panel at 1:1 follows the player (or the screen) instead.
         int zoom = std::max(1, std::min(room_w / std::max(1, bw), H / std::max(1, bh)));
-        zoom = std::min(zoom, 6);
+        zoom = std::clamp(zoom, zoom_, 6);
         const int vw = room_w / zoom, vh = H / zoom; // map pixels shown
         const int fx = has_player() ? player_x_now_ : view_x_ + view_w_ / 2;
         const int fy = has_player() ? player_y_now_ : view_y_ + view_h_ / 2;
@@ -297,7 +323,11 @@ private:
     Condition on_, when_;
     Expr x_, y_, area_, player_x_, player_y_;
     Rect crop_;
-    int native_w_ = 0, native_h_ = 0, scale_ = 4, every_ = 6;
+    int native_w_ = 0, native_h_ = 0, scale_ = 4, every_ = 6, lag_ = 0, zoom_ = 1;
+    struct Seen {
+        long x = 0, y = 0;
+        uint64_t frame = ~uint64_t(0);
+    } seen_[4];
     std::string name_;
     std::map<long, std::string> names_;
     std::map<long, Area> areas_;

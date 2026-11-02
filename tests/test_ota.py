@@ -159,6 +159,24 @@ class OTATests(unittest.TestCase):
             download.assert_called_once()
             apply.assert_not_called()
 
+    def test_cancelled_offer_is_not_reoffered_by_automatic_checks(self):
+        def checked():
+            self.updater.publish('available', 'Update available.', version='9.9', offer='9.9', received=5)
+
+        self.updater.publish('available', 'Update available.', version='9.9', offer='9.9', received=5)
+        self.updater.setup()
+        (self.updater.folder / 'abc.part').write_bytes(b'x')
+        self.updater.discard()
+        self.assertEqual(list(self.updater.folder.glob('*.part')), [])
+        with patch('emulators.core_running', return_value=False), patch.object(
+            self.updater, 'check', side_effect=checked
+        ), patch.object(self.updater, 'download') as download:
+            self.updater.auto()
+            download.assert_not_called()
+        from fields import read_fields
+        status = read_fields(self.updater.folder / 'status.ini')
+        self.assertEqual((status['state'], status['offer']), ('idle', ''))
+
     def test_automatic_checks_skip_disabled_unconfigured_and_gameplay(self):
         from fields import write_fields
         with patch.object(self.updater, 'check') as check:

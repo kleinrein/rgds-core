@@ -18,6 +18,7 @@
 A  Apply	A  Aplicar
 A  Done	A  Listo
 A  Jump	A  Ir
+A  Leave	A  Salir
 A  Play	A  Jugar
 A  Search	A  Buscar
 A 24-hour or 12-hour clock.	Un reloj de 24 o 12 horas.
@@ -77,6 +78,7 @@ Atlantic Ocean	Océano Atlántico
 Audio is not recorded or saved.	El audio no se graba ni se guarda.
 Australia	Australia
 Auto-load state	Carga automática
+Auto-save	Guardado automático
 Auto-save on exit	Guardar al salir
 Automatic	Automático
 Automatic (free)	Automático
@@ -128,12 +130,15 @@ Browse	Explorar
 Browse games	Ver juegos
 Browse systems	Ver sistemas
 Browser layout	Vista de biblioteca
+Bubble Gum	Chicle
 Build, storage and device address	Versión, almacenamiento y dirección
 Button	Botón
 Button layout	Distribución de botones
 Button {0}	Botón {0}
 Buttons and the game menu shortcut	Botones y atajo del menú del juego
 Cancel	Cancelar
+Cancel update	Cancel update
+Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
 Carousel	Carrusel
 Carried	Llevas
 Cartridges	Cartuchos
@@ -141,6 +146,7 @@ Change group	Cambiar de grupo
 Changes immediately. Map a button in Controls for quick access.	Se aplica al instante. Asigna un botón en Controles.
 Changing 3D threading…	Cambiando hilos 3D…
 Changing speed…	Cambiando velocidad…
+Chaos Emeralds	Esmeraldas del Caos
 Chat is unavailable: you can still draw	Chat no disponible: aún puedes dibujar
 Chat Room	Sala de chat
 Chat Room {0}	Sala de chat {0}
@@ -191,6 +197,7 @@ Compare	Comparar
 Confirm	Confirmar
 Connect	Conectar
 Connect the charger before installing an update.	Conecta el cargador antes de instalar una actualización.
+Connect the handheld to a computer first.	Conecta primero la consola a un ordenador.
 Connect to Wi-Fi to send files from a phone or computer.	Conéctate a una red Wi-Fi para enviar archivos desde un teléfono u ordenador.
 Connected	Conectado
 Connected.	Conectado.
@@ -200,6 +207,7 @@ Connection lost. Retrying…	Conexión perdida. Reintentando…
 Connectivity	Conectividad
 Continue	Continuar
 Continue where you left off	Continúa donde lo dejaste
+Continues	Continuaciones
 Control unavailable on this device	Control no disponible en este dispositivo
 Controllers and other Bluetooth devices	Mandos y otros dispositivos Bluetooth
 Controls	Controles
@@ -219,6 +227,7 @@ Could not apply this shader.	No se pudo aplicar este filtro.
 Could not apply volume	No se pudo aplicar el volumen
 Could not bring the Wi-Fi adapter up. Try again.	No se pudo activar el adaptador Wi-Fi. Reintenta.
 Could not change 3D threading. Your game is unchanged.	No se pudieron cambiar los hilos 3D. Juego sin cambios.
+Could not change USB data transfer.	No se pudo cambiar la transferencia de datos USB.
 Could not confirm the selected Wi-Fi connection. Scan and try again.	No se confirmó la conexión Wi-Fi. Busca y reintenta.
 Could not connect	No se pudo conectar
 Could not enable lid wake	No se pudo activar el despertar al abrir
@@ -270,6 +279,7 @@ Development build	Versión de desarrollo
 Device address	Dirección del dispositivo
 Device information	Información del dispositivo
 Discard update	Descartar actualización
+Disk	Disco
 Display	Pantalla
 Display FPS	FPS de pantalla
 Done	Listo
@@ -299,6 +309,7 @@ DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x
 Edit	Editar
 Edit search	Editar búsqueda
 Effects volume	Volumen de efectos
+Eject the drive on your computer when you are done	Expulsa la unidad en el ordenador cuando termines
 Empty slot	Ranura vacía
 Emulator	Emulador
 Emulator settings	Ajustes del emulador
@@ -317,6 +328,8 @@ ERROR: Could not restore settings	ERROR: no se pudieron restaurar los ajustes
 ERROR: Could not restore settings - see log	ERROR: ajustes no restaurados – ver registro
 Essences	Esencias
 Europe	Europa
+Event	Prueba
+Events	Pruebas
 Every game in this collection has artwork.	Todos los juegos de esta colección tienen carátula.
 Exit your game before installing an update.	Sal del juego antes de instalar una actualización.
 Experience	Experiencia
@@ -341,9 +354,11 @@ Fetch missing artwork	Descargar carátulas faltantes
 Figurines	Figuras
 File sharing on. Find "RG DS" under Network.	Compartir archivos activado. Busca "RG DS" en Red.
 Files added	Archivos añadidos
+Files and SSH by cable; charging always works	Archivos y SSH por cable; la carga siempre funciona
 Files arrived. Choose Play to start.	Los archivos han llegado. Elige Jugar para empezar.
 Filter	Filtro
 Filtered	Filtrados
+Final	Final
 Find and connect to a nearby network	Buscar y conectar una red cercana
 Find, pair and connect a nearby device	Busca, empareja y conecta un dispositivo cercano
 Finding games…	Buscando juegos…
@@ -489,6 +504,7 @@ Key {0}	Tecla {0}
 Keyboard	Teclado
 Keys	Llaves
 Kinstone fusions	Fusiones de kinestones
+Lamppost	Farola
 Language	Idioma
 Last 4 weeks	Últimas 4 semanas
 Last 7 days	Últimos 7 días
@@ -678,8 +694,10 @@ Playful sounds for browsing, choosing and starting games.	Sonidos divertidos al 
 Please keep your handheld on	Mantén la consola encendida
 Pocket green	Verde portátil
 Point and click on top	Señalar y hacer clic arriba
+Points	Puntos
 Pokédex caught	Pokédex: capturados
 Pokédex seen	Pokédex: vistos
+Popcorn	Palomitas
 PortMaster is ready	PortMaster está listo
 Ports	Ports
 Power	Energía
@@ -785,9 +803,11 @@ RGDS build	Versión de RGDS
 Rich	Detallado
 Right	Derecha
 Right stick	Palanca derecha
+Rings	Anillos
 Rollback simulated.	Restauración simulada.
 Round	Ronda
 ROUNDED FONT UNAVAILABLE	FUENTE REDONDEADA NO DISPONIBLE
+Route	Ruta
 Rumble Pak games on DS, rumble cartridges on Game Boy and Game Boy Advance.	Juegos de Rumble Pak en DS, cartuchos con vibración en Game Boy y Game Boy Advance.
 Rumble strength	Intensidad de vibración
 Rupees	Rupias
@@ -826,7 +846,9 @@ Scene	Escena
 Score	Puntos
 Screen brightness	Brillo de pantalla
 Screen colours	Colores de pantalla
-Screen off	Pantalla apagada
+Menu	Menú
+Switch	Cambiar
+Turn off screen	Apagar pantalla
 screens	pantallas
 ScreenScraper needs project credentials and your account	Carátulas
 Screenshot	Captura
@@ -871,6 +893,7 @@ Sharp scaling with the DS colour treatment.	Escalado nítido con colores de DS.
 Sharp scaling, DS colour and Natural Vision together.	Escalado nítido, colores DS y Natural Vision juntos.
 Shield	Escudo
 Shift	Mayúsculas
+Shift keys stay down until the next key	Las teclas de mayúsculas siguen pulsadas hasta la siguiente tecla
 Shortcut action	Acción del atajo
 Shots	Disparos
 Show games	Mostrar juegos
@@ -909,7 +932,9 @@ Spanish	Español
 Spring	Resorte
 Springy menu changes with a colourful wobble	Cambios de menú con rebotes de colores
 Stable	Estable
+Stage	Etapa
 Standard	Estándar
+Standings	Clasificación
 START	INICIAR
 Start	Iniciar
 Start + Anbernic	Start + Anbernic
@@ -954,6 +979,7 @@ System update	Actualización del sistema
 Systems	Sistemas
 Tap to type, or use the D-pad and A	Toca o usa la cruceta y A
 Team	Equipo
+Temper	Mal genio
 Temporary game cache cleared. Saves and artwork are kept.	Caché temporal borrada. Se conservan guardados y carátulas.
 Terrain and unit	Terreno y unidad
 Test	Probar
@@ -998,6 +1024,7 @@ This network requires an enterprise profile.	Esta red requiere un perfil empresa
 This port lists no instructions.	Este port no incluye instrucciones.
 This request did not finish. Please try again.	La solicitud no terminó. Reintenta.
 This shader is unavailable for the current emulator.	Filtro no disponible en este emulador.
+This stage	Esta etapa
 This stock firmware has not been validated for updates.	Este firmware original no se ha validado para actualizaciones.
 This version failed to start. Waiting for a newer update.	Esta versión no pudo iniciarse. Esperando una nueva actualización.
 Threaded 3D	3D multihilo
@@ -1078,7 +1105,13 @@ Update verification failed. Check for updates again.	La verificación falló. Bu
 Updates	Actualizaciones
 Updates & recovery	Actualizaciones y recuperación
 Updates will be available when the release channel opens.	Las actualizaciones estarán disponibles cuando se abra el canal.
+USB data transfer	Transferencia de datos USB
+USB data transfer is not available on this handheld.	La transferencia de datos USB no está disponible en esta consola.
+USB data transfer off.	Transferencia de datos USB desactivada.
+USB data transfer on.	Transferencia de datos USB activada.
+USB drive mode	Modo de unidad USB
 Use an additional rendering thread	Usar un hilo de renderizado adicional
+Use as USB drive	Usar como unidad USB
 Use default ({0})	Usar predeterminado ({0})
 Use default controls	Usar controles globales
 Use previous build	Usar versión anterior
@@ -1183,3 +1216,29 @@ zFast + NDS Color	zFast + NDS Color
 {0} people nearby	{0} personas cerca
 {0} players	{0} jugadores
 {0} settings	Ajustes de {0}
+Welcome!	¡Hola!
+Let's get your handheld ready. It takes about a minute.	Vamos a preparar tu consola. Tardarás un minuto.
+Pick your colour	Elige tu color
+The menus take it on. You can change it whenever you like.	Los menús lo adoptan. Puedes cambiarlo cuando quieras.
+What's your name?	¿Cómo te llamas?
+PictoChat shows it to people nearby, and DS games use it as the owner's name.	PictoChat lo muestra a la gente cercana y los juegos de DS lo usan como nombre del propietario.
+Is this the right time?	¿Es correcta la hora?
+You're connected	Estás conectado
+Connect to Wi-Fi	Conectar a Wi-Fi
+For box art, updates and PictoChat. Everything else works without it.	Para carátulas, actualizaciones y PictoChat. Todo lo demás funciona sin él.
+You're all set!	¡Todo listo!
+Play at a comfortable volume, and give your eyes and hands a break.	Juega a un volumen cómodo y da un descanso a tus ojos y manos.
+In a game, the Anbernic button opens saves, cheats and settings.	En un juego, el botón Anbernic abre partidas, trucos y ajustes.
+Close the lid to sleep. Your game waits for you.	Cierra la tapa para suspender. Tu juego te espera.
+Copy more games any time. They show up by themselves.	Copia más juegos cuando quieras. Aparecen solos.
+Skip setup	Omitir configuración
+Run setup again	Repetir configuración
+Turn on Wi-Fi	Activar Wi-Fi
+Turn on USB data transfer	Activar transferencia de datos USB
+Connect to Wi-Fi first	Conéctate primero a Wi-Fi
+Zoom	Zoom
+Connect a USB-C cable and choose Use as USB drive, or put this card in a computer. Open the RGDS drive and copy games into the folders in roms: nds, gba, gb, gbc, nes, snes, md and more.	Conecta un cable USB-C y elige Usar como unidad USB, o pon esta tarjeta en un ordenador. Abre la unidad RGDS y copia juegos en las carpetas de roms: nds, gba, gb, gbc, nes, snes, md y más.
+What do you want to play?	¿A qué quieres jugar?
+You can change this later in Settings > Library.	Puedes cambiarlo luego en Ajustes > Biblioteca.
+A clean library with only DS games.	Una biblioteca limpia solo con juegos de DS.
+DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation y más, ordenados por sistema.

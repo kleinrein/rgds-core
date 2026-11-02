@@ -14,6 +14,12 @@ rm -rf "$T/usr/share/man" "$T/usr/share/doc" "$T/usr/share/info"
 # The RTL8821CS's Bluetooth config: linux-firmware (from 2026) ships rtl8821cs_config.bin as a link to
 # rtl8761b_config.bin; the 2025 snapshot Buildroot pins has the target but not the link.
 [ -f "$T/lib/firmware/rtl_bt/rtl8761b_config.bin" ] && ln -sf rtl8761b_config.bin "$T/lib/firmware/rtl_bt/rtl8821cs_config.bin"
+# The regulatory database the kernel carries (board/rgds/firmware, linux-rgds.fragment) must be the one the
+# wireless-regdb package installs: one database, whichever way it is read
+for f in regulatory.db regulatory.db.p7s; do
+    cmp -s "$BR2_EXTERNAL_RGDS_PATH/board/rgds/firmware/$f" "$T/lib/firmware/$f" ||
+        { echo "post-build: board/rgds/firmware/$f differs from the wireless-regdb package's; refresh the copy" >&2; exit 1; }
+done
 # Bonjour (rgds.local, and "RG DS" under Network in Finder while sharing is on): file_sharing.py writes its
 # service file at runtime, so the services folder lives in /run
 rm -rf "$T/etc/avahi/services"

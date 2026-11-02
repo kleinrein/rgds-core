@@ -9,7 +9,8 @@ Buildroot image with RetroArch and the stand-alone emulators): Nintendo DS,
 Nintendo 3DS, Game Boy Advance, Game Boy Color, Game Boy, NES, Super Nintendo,
 Mega Drive, Master System, Neo Geo, Neo Geo Pocket, PC Engine, MSX,
 PlayStation, PSP, Dreamcast, Saturn, Nintendo 64, Pico-8, Arcade, DOS PC,
-Atari 2600, ColecoVision, Intellivision, Vectrex, WonderSwan and RPG Maker.
+Atari 2600, ColecoVision, Intellivision, Vectrex, WonderSwan and RPG Maker,
+and the two home computers RG DS Play adds, the ZX Spectrum and the Commodore 64.
 `src/launcher/system_icons.hpp` keeps their names, their cartridge badges and
 the folders the stock card uses (`FC`, `SFC`, `PS`, `NEOGEO`, …), so a new
 system only needs its icon and one line.
@@ -32,7 +33,7 @@ per system, 2048×2048.
 
 The generated renders the bitmaps are cut from are kept in `artwork/systems/`.
 They are the source, not a shipped asset: the handheld gets the bitmaps and the
-glyphs, not 89 MB of studio photographs.
+glyphs, not 98 MB of studio photographs.
 
 The generator paints the "transparent" background as a studio sweep or as a
 checkerboard of two flat tones, so the backdrop has to be taken off before the
@@ -61,14 +62,19 @@ hand-drawn 16×16 masks in `tools/system_pixel_art.py`: `#` is ink, `+` a
 half-tone (screens and panels), `.` empty. They are drawn at whole-pixel steps
 only, so 64, 72 and 112 px stay crisp.
 
-Each glyph is the system's most iconic object: the handheld itself for the
-handhelds, the controller for the home consoles, the cabinet for the arcade,
-the computer for DOS and RPG Maker. The grid is 16×16 (not the launcher's 12×12)
-because a system's shape needs that room to stay recognisable.
+Each glyph is the system's most iconic object, and its silhouette does the
+work: a solid body in that object's own outline, with screens as `+` and buttons
+punched out of it. So the handheld itself for the handhelds, the controller for
+most home consoles (the NES's sharp rectangle, the SNES's dog bone, the N64's
+trident), the console for the Master System and PC Engine, whose pads look like
+everyone else's, the cabinet for the arcade, the computer for DOS, MSX, the
+Spectrum and the C64, and a sword for RPG Maker, which has no hardware. The grid
+is 16×16 (not the launcher's 12×12) because a system's shape needs that room to
+stay recognisable.
 
 The two non-stock tiles follow the same rule: Ports is the cargo ship of
-PortMaster's own icon, and Homebrew is a stack of three blank cartridges, the
-thing the shelf actually holds.
+PortMaster's own icon, and Homebrew is a blank cartridge, the thing the shelf
+actually holds.
 
 `tools/build_system_icons.py` is the only writer: it turns the table into the
 launcher's masks (`src/launcher/system_icons.hpp`), one pixel-perfect SVG per
