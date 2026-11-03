@@ -20,6 +20,12 @@ DS_INCBIN(ds_vk_lean_frag_early, "lean_frag_early.spv");
 DS_INCBIN(ds_vk_lean_frag_opq, "lean_frag_opq.spv");
 DS_INCBIN(ds_vk_lean_frag_trans, "lean_frag_trans.spv");
 DS_INCBIN(ds_vk_lean_frag_trans_nd, "lean_frag_trans_nd.spv");
+DS_INCBIN(ds_vk_lean_frag_d, "lean_frag_d.spv");
+DS_INCBIN(ds_vk_lean_frag_shadow_d, "lean_frag_shadow_d.spv");
+DS_INCBIN(ds_vk_lean_frag_early_d, "lean_frag_early_d.spv");
+DS_INCBIN(ds_vk_lean_frag_opq_d, "lean_frag_opq_d.spv");
+DS_INCBIN(ds_vk_lean_frag_trans_d, "lean_frag_trans_d.spv");
+DS_INCBIN(ds_vk_lean_frag_trans_nd_d, "lean_frag_trans_nd_d.spv");
 DS_INCBIN(ds_vk_lean_resolve, "lean_resolve_frag.spv");
 DS_INCBIN(ds_vk_lean_resolve_1x, "lean_resolve_1x_frag.spv");
 DS_INCBIN(ds_vk_lean_resolve_store, "lean_resolve_store_1x_frag.spv");
@@ -53,6 +59,30 @@ Spirv shader_lean_frag_trans_nd() {
 Spirv shader_lean_frag_early() {
   return {reinterpret_cast<const u32*>(ds_vk_lean_frag_early_data),
           static_cast<size_t>(ds_vk_lean_frag_early_end - ds_vk_lean_frag_early_data)};
+}
+Spirv shader_lean_frag_d() {
+  return {reinterpret_cast<const u32*>(ds_vk_lean_frag_d_data),
+          static_cast<size_t>(ds_vk_lean_frag_d_end - ds_vk_lean_frag_d_data)};
+}
+Spirv shader_lean_frag_shadow_d() {
+  return {reinterpret_cast<const u32*>(ds_vk_lean_frag_shadow_d_data),
+          static_cast<size_t>(ds_vk_lean_frag_shadow_d_end - ds_vk_lean_frag_shadow_d_data)};
+}
+Spirv shader_lean_frag_early_d() {
+  return {reinterpret_cast<const u32*>(ds_vk_lean_frag_early_d_data),
+          static_cast<size_t>(ds_vk_lean_frag_early_d_end - ds_vk_lean_frag_early_d_data)};
+}
+Spirv shader_lean_frag_opq_d() {
+  return {reinterpret_cast<const u32*>(ds_vk_lean_frag_opq_d_data),
+          static_cast<size_t>(ds_vk_lean_frag_opq_d_end - ds_vk_lean_frag_opq_d_data)};
+}
+Spirv shader_lean_frag_trans_d() {
+  return {reinterpret_cast<const u32*>(ds_vk_lean_frag_trans_d_data),
+          static_cast<size_t>(ds_vk_lean_frag_trans_d_end - ds_vk_lean_frag_trans_d_data)};
+}
+Spirv shader_lean_frag_trans_nd_d() {
+  return {reinterpret_cast<const u32*>(ds_vk_lean_frag_trans_nd_d_data),
+          static_cast<size_t>(ds_vk_lean_frag_trans_nd_d_end - ds_vk_lean_frag_trans_nd_d_data)};
 }
 Spirv shader_lean_resolve_1x() {
   return {reinterpret_cast<const u32*>(ds_vk_lean_resolve_1x_data),

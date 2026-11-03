@@ -37,6 +37,7 @@ Lean::Stats Lean::stats(bool) { return {}; }
 } // namespace ds::gpu::vk
 #else
 
+#include "core/gpu/rgds_sample_plan.hpp"
 #include "core/gpu/vk/vk_internal.h"
 #include "core/gpu/vk/vk_shaders.h"
 
@@ -87,6 +88,10 @@ struct Lean::Impl {
   Device* dev = nullptr;
   bool msaa = false, timing = false;
   bool store_out = false; // RG DS: the resolve writes out[slot] itself (no record image or copy)
+  // RG DS: with no fog to apply, a frame needs no resolve: colour goes straight to the slot's linear image in cached
+  // memory, the record as the compositor reads it (Mario Kart's ink scene at 3x: 23.2 ms of GPU time with the resolve,
+  // 19.5 without). A fog frame takes the resolve path. DS_LEAN_RESOLVE=1: always that path.
+  bool direct = false;
   u32 width = 256, height = 192, scale = 1;
   double tick_ns = 0;
   VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
@@ -101,7 +106,8 @@ struct Lean::Impl {
   std::vector<GpuVert> host_verts;
   GpuPost host_post{};
   Buffer polys[kSlots], verts[kSlots], post[kSlots], texels, out[kSlots];
-  u32 tex_flushed = 0; // arena words already flushed to the GPU
+  std::vector<u8> nverts; // each polygon's vertex count in the slot's order (the slot's records are not for reading)
+  u32 tex_flushed = 0;    // arena words already flushed to the GPU
   struct Img {
     VkImage img = VK_NULL_HANDLE;
     VkDeviceMemory mem = VK_NULL_HANDLE;
@@ -121,10 +127,22 @@ struct Lean::Impl {
   std::mutex atlas_m; // pending copies: queued on the emulation thread, taken by submit
   std::vector<VkBufferImageCopy> atlas_pending;
   Img col_ms, ds_ms, fog_ms, res; // multisampled colour, depth/stencil and fog flag (transient); the 1x resolved record
+  struct Linear {
+    VkImage img = VK_NULL_HANDLE;
+    VkDeviceMemory mem = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+    VkFramebuffer fb = VK_NULL_HANDLE;
+    Buffer map; // the mapping, for the reader
+  };
+  Linear lin[kSlots];
+  bool slot_direct[kSlots] = {}; // the slot's frame is in lin[], not out[]
+  const Buffer& record(u32 slot) const { return slot_direct[slot] ? lin[slot].map : out[slot]; }
   VkImageView ds_depth_view = VK_NULL_HANDLE; // the depth aspect alone, for the resolve's input attachment
   VkShaderModule mod_vert = VK_NULL_HANDLE, mod_frag = VK_NULL_HANDLE, mod_frag_early = VK_NULL_HANDLE,
                  mod_frag_opq = VK_NULL_HANDLE, mod_frag_trans = VK_NULL_HANDLE, mod_frag_trans_nd = VK_NULL_HANDLE,
-                 mod_res = VK_NULL_HANDLE, mod_fs = VK_NULL_HANDLE;
+                 mod_res = VK_NULL_HANDLE, mod_fs = VK_NULL_HANDLE, mod_frag_d = VK_NULL_HANDLE,
+                 mod_frag_shadow_d = VK_NULL_HANDLE, mod_frag_early_d = VK_NULL_HANDLE, mod_frag_opq_d = VK_NULL_HANDLE,
+                 mod_frag_trans_d = VK_NULL_HANDLE, mod_frag_trans_nd_d = VK_NULL_HANDLE;
   bool nostencil = false; // DS_LEAN_NOSTENCIL=1: translucent pass B alone, always (debug)
   // RG DS, measured switches (docs/PERFORMANCE.md). DS_LEAN_HALFPX=1: the viewport
   // sits half a pixel on and the fragment stage reads its varyings at the centre
@@ -139,9 +157,9 @@ struct Lean::Impl {
   VkPipelineLayout layout = VK_NULL_HANDLE;
   VkDescriptorPool pool = VK_NULL_HANDLE;
   VkDescriptorSet set[kSlots] = {}, set_in = VK_NULL_HANDLE;
-  VkRenderPass rp = VK_NULL_HANDLE;
+  VkRenderPass rp = VK_NULL_HANDLE, rp_d = VK_NULL_HANDLE;
   VkFramebuffer fb = VK_NULL_HANDLE;
-  VkPipeline pipe[2][2][P_COUNT] = {}; // [wbuffer][depth-equal][kind]
+  VkPipeline pipe[2][2][P_COUNT] = {}, pipe_d[2][2][P_COUNT] = {}; // [wbuffer][depth-equal][kind]; d: direct frames
   VkPipeline pipe_resolve = VK_NULL_HANDLE;
   VkCommandPool cpool = VK_NULL_HANDLE;
   VkCommandBuffer cmd[kSlots] = {};
@@ -169,6 +187,17 @@ struct Lean::Impl {
       for (auto& row : wb)
         for (auto& p : row)
           if (p) a.vkDestroyPipeline(vk->dev, p, nullptr);
+    for (auto& wb : pipe_d)
+      for (auto& row : wb)
+        for (auto& p : row)
+          if (p) a.vkDestroyPipeline(vk->dev, p, nullptr);
+    for (Linear& l : lin) {
+      if (l.fb) a.vkDestroyFramebuffer(vk->dev, l.fb, nullptr);
+      if (l.view) a.vkDestroyImageView(vk->dev, l.view, nullptr);
+      if (l.img) a.vkDestroyImage(vk->dev, l.img, nullptr);
+      if (l.mem) a.vkFreeMemory(vk->dev, l.mem, nullptr);
+    }
+    if (rp_d) a.vkDestroyRenderPass(vk->dev, rp_d, nullptr);
     if (pipe_resolve) a.vkDestroyPipeline(vk->dev, pipe_resolve, nullptr);
     if (fb) a.vkDestroyFramebuffer(vk->dev, fb, nullptr);
     if (rp) a.vkDestroyRenderPass(vk->dev, rp, nullptr);
@@ -187,7 +216,8 @@ struct Lean::Impl {
     if (dsl) a.vkDestroyDescriptorSetLayout(vk->dev, dsl, nullptr);
     if (dsl_in) a.vkDestroyDescriptorSetLayout(vk->dev, dsl_in, nullptr);
     for (VkShaderModule* m :
-         {&mod_vert, &mod_frag, &mod_frag_early, &mod_frag_opq, &mod_frag_trans, &mod_frag_trans_nd, &mod_res, &mod_fs})
+         {&mod_vert, &mod_frag, &mod_frag_early, &mod_frag_opq, &mod_frag_trans, &mod_frag_trans_nd, &mod_res, &mod_fs,
+          &mod_frag_d, &mod_frag_shadow_d, &mod_frag_early_d, &mod_frag_opq_d, &mod_frag_trans_d, &mod_frag_trans_nd_d})
       if (*m) a.vkDestroyShaderModule(vk->dev, *m, nullptr);
     if (atlas_sampler) a.vkDestroySampler(vk->dev, atlas_sampler, nullptr);
     if (atlas.view) a.vkDestroyImageView(vk->dev, atlas.view, nullptr);
@@ -263,7 +293,7 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
     if (why) *why = m;
     return nullptr;
   };
-  if (scale < 1 || scale > 5) return fail_null("internal scale must be 1..5");
+  if (!rgds::valid_scale(static_cast<int>(scale))) return fail_null("internal scale must be 1..5 or 2.5x");
   static const bool timing_log = std::getenv("DS_HIRES_DEBUG") != nullptr;
   const double created_at = now_ms();
   auto mark = [&](const char* what) {
@@ -281,8 +311,8 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
   d.api = &a;
   d.dev = &dev;
   d.scale = scale;
-  d.width = 256 * scale;
-  d.height = 192 * scale;
+  d.width = 128 * rgds::half_units(scale);
+  d.height = 96 * rgds::half_units(scale);
   VkPhysicalDeviceProperties props{};
   a.vkGetPhysicalDeviceProperties(vk->phys, &props);
   if (d.width > props.limits.maxFramebufferWidth || d.height > props.limits.maxFramebufferHeight ||
@@ -299,10 +329,12 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
   // RG DS: single-sample frames resolve straight into the slot's readback
   // buffer. The copy alone cost ~7 ms of GPU time per 5x frame on PanVK.
   d.store_out = !d.msaa && dev.limits().fragment_stores && !std::getenv("DS_LEAN_COPYOUT");
+  d.direct = !d.msaa && dev.limits().dual_src && !std::getenv("DS_LEAN_RESOLVE");
 
   // Buffers.
   d.host_polys.resize(DS_MAX_POLYS);
   d.host_verts.resize(DS_MAX_VERTS);
+  d.nverts.resize(DS_MAX_POLYS);
   d.texels = dev.alloc(sizeof(u32) * kTexelWords, Access::CpuWrite);
   if (!d.texels) return fail("buffer allocation");
   for (u32 i = 0; i < Impl::kSlots; ++i) {
@@ -376,7 +408,12 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
               : d.store_out ? shader_lean_resolve_store()
                             : shader_lean_resolve_1x(),
               &d.mod_res) ||
-      !shader(shader_tri_fs(), &d.mod_fs))
+      !shader(shader_tri_fs(), &d.mod_fs) || !shader(shader_lean_frag_d(), &d.mod_frag_d) ||
+      !shader(shader_lean_frag_shadow_d(), &d.mod_frag_shadow_d) ||
+      !shader(shader_lean_frag_early_d(), &d.mod_frag_early_d) ||
+      !shader(shader_lean_frag_opq_d(), &d.mod_frag_opq_d) ||
+      !shader(shader_lean_frag_trans_d(), &d.mod_frag_trans_d) ||
+      !shader(shader_lean_frag_trans_nd_d(), &d.mod_frag_trans_nd_d))
     return fail("lean shaders rejected by the driver");
   d.nostencil = std::getenv("DS_LEAN_NOSTENCIL") && std::atoi(std::getenv("DS_LEAN_NOSTENCIL")) != 0;
   d.halfpx = std::getenv("DS_LEAN_HALFPX") && std::atoi(std::getenv("DS_LEAN_HALFPX")) != 0;
@@ -570,6 +607,61 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
     a.vkUpdateDescriptorSets(vk->dev, 3, w, 0, nullptr);
   }
 
+  // The direct frames' images. Any step the driver refuses just leaves the resolve path, for every frame.
+  auto make_linear = [&](Impl::Linear& l) {
+    VkImageCreateInfo ii{};
+    ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ii.imageType = VK_IMAGE_TYPE_2D;
+    ii.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ii.extent = {d.width, d.height, 1};
+    ii.mipLevels = 1;
+    ii.arrayLayers = 1;
+    ii.samples = VK_SAMPLE_COUNT_1_BIT;
+    ii.tiling = VK_IMAGE_TILING_LINEAR;
+    ii.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ii.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (a.vkCreateImage(vk->dev, &ii, nullptr, &l.img) != VK_SUCCESS) return false;
+    VkMemoryRequirements mr{};
+    a.vkGetImageMemoryRequirements(vk->dev, l.img, &mr);
+    const VkMemoryPropertyFlags need = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    u32 type = ~0u;
+    for (u32 t = 0; t < mp.memoryTypeCount && type == ~0u; ++t)
+      if ((mr.memoryTypeBits & (1u << t)) && (mp.memoryTypes[t].propertyFlags & need) == need) type = t;
+    if (type == ~0u) return false;
+    VkMemoryAllocateInfo ai{};
+    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    ai.allocationSize = mr.size;
+    ai.memoryTypeIndex = type;
+    void* ptr = nullptr;
+    if (a.vkAllocateMemory(vk->dev, &ai, nullptr, &l.mem) != VK_SUCCESS ||
+        a.vkBindImageMemory(vk->dev, l.img, l.mem, 0) != VK_SUCCESS ||
+        a.vkMapMemory(vk->dev, l.mem, 0, VK_WHOLE_SIZE, 0, &ptr) != VK_SUCCESS)
+      return false;
+    // The reader takes the record row-major at the internal resolution.
+    const VkImageSubresource sub{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
+    VkSubresourceLayout lay{};
+    a.vkGetImageSubresourceLayout(vk->dev, l.img, &sub, &lay);
+    if (lay.offset || lay.rowPitch != VkDeviceSize{d.width} * sizeof(u32)) return false;
+    VkImageViewCreateInfo vi{};
+    vi.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vi.image = l.img;
+    vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vi.format = ii.format;
+    vi.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    if (a.vkCreateImageView(vk->dev, &vi, nullptr, &l.view) != VK_SUCCESS) return false;
+    l.map.ptr = ptr;
+    l.map.size = mr.size;
+    l.map.memory = reinterpret_cast<u64>(l.mem);
+    return true;
+  };
+  if (d.direct) {
+    VkFormatProperties fp{};
+    a.vkGetPhysicalDeviceFormatProperties(vk->phys, VK_FORMAT_R8G8B8A8_UNORM, &fp);
+    d.direct = (fp.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0;
+  }
+  for (u32 i = 0; i < Impl::kSlots && d.direct; ++i) d.direct = make_linear(d.lin[i]);
+
   // Render pass: subpass 0 draws into the MS colour + depth/stencil, subpass 1 resolves into the 1x record.
   {
     // Attachments: 0 colour, 1 depth/stencil, 2 fog flag (all transient),
@@ -652,10 +744,38 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
     fbi.height = d.height;
     fbi.layers = 1;
     if (a.vkCreateFramebuffer(vk->dev, &fbi, nullptr, &d.fb) != VK_SUCCESS) return fail("framebuffer");
+    if (d.direct) {
+      // Colour into the linear image, kept; depth/stencil as above. One subpass: nothing follows.
+      VkAttachmentDescription dat[2] = {at[0], at[1]};
+      dat[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      dat[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+      dat[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+      VkAttachmentReference dc{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+      VkSubpassDescription dsp{};
+      dsp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+      dsp.colorAttachmentCount = 1;
+      dsp.pColorAttachments = &dc;
+      dsp.pDepthStencilAttachment = &ds0;
+      VkRenderPassCreateInfo drp{};
+      drp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+      drp.attachmentCount = 2;
+      drp.pAttachments = dat;
+      drp.subpassCount = 1;
+      drp.pSubpasses = &dsp;
+      if (a.vkCreateRenderPass(vk->dev, &drp, nullptr, &d.rp_d) != VK_SUCCESS) return fail("direct render pass");
+      for (Impl::Linear& l : d.lin) {
+        VkImageView dv[2] = {l.view, d.ds_ms.view};
+        VkFramebufferCreateInfo dfb = fbi;
+        dfb.renderPass = d.rp_d;
+        dfb.attachmentCount = 2;
+        dfb.pAttachments = dv;
+        if (a.vkCreateFramebuffer(vk->dev, &dfb, nullptr, &l.fb) != VK_SUCCESS) return fail("direct framebuffer");
+      }
+    }
   }
 
   // Pipelines: one vertex/fragment pair, the DS rules in depth, stencil and blend state.
-  auto pipeline = [&](bool wbuf, bool eq, u32 kind, VkPipeline* out) {
+  auto pipeline = [&](bool wbuf, bool eq, u32 kind, bool direct, VkPipeline* out) {
     VkPipelineShaderStageCreateInfo st[2]{};
     st[0].sType = st[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     // The mask clear is a full-screen triangle; it and the shadow prep touch the stencil only (no fragment stage).
@@ -666,10 +786,11 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
     const bool trans_pass =
         kind == P_TRANS_A || kind == P_TRANS_B || kind == P_TRANS_A_DW || kind == P_TRANS_B_DW || nd;
     st[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    st[1].module = kind == P_OPAQUE_EARLY ? d.mod_frag_early
-                   : kind == P_TRANS_OPQ  ? d.mod_frag_opq
-                   : nd                   ? d.mod_frag_trans_nd
-                   : trans_pass           ? d.mod_frag_trans
+    st[1].module = kind == P_OPAQUE_EARLY ? (direct ? d.mod_frag_early_d : d.mod_frag_early)
+                   : kind == P_TRANS_OPQ  ? (direct ? d.mod_frag_opq_d : d.mod_frag_opq)
+                   : nd                   ? (direct ? d.mod_frag_trans_nd_d : d.mod_frag_trans_nd)
+                   : trans_pass           ? (direct ? d.mod_frag_trans_d : d.mod_frag_trans)
+                   : direct               ? (kind == P_SHADOW ? d.mod_frag_shadow_d : d.mod_frag_d)
                                           : d.mod_frag;
     st[1].pName = "main";
     // Specialization constant 0 (lean.frag): DS_HALFPX, with the viewport offset below.
@@ -776,8 +897,8 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
     const bool blend = kind == P_TRANS_B || kind == P_TRANS_B_DW || kind == P_SHADOW || nd;
     if (blend) {
       cba[0].blendEnable = VK_TRUE;
-      cba[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-      cba[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      cba[0].srcColorBlendFactor = direct ? VK_BLEND_FACTOR_SRC1_ALPHA : VK_BLEND_FACTOR_SRC_ALPHA;
+      cba[0].dstColorBlendFactor = direct ? VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA : VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
       cba[0].colorBlendOp = VK_BLEND_OP_ADD;
       cba[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
       cba[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -793,7 +914,7 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
     }
     VkPipelineColorBlendStateCreateInfo cbs{};
     cbs.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    cbs.attachmentCount = 2;
+    cbs.attachmentCount = direct ? 1 : 2;
     cbs.pAttachments = cba;
     const VkDynamicState dyn = VK_DYNAMIC_STATE_STENCIL_REFERENCE;
     VkPipelineDynamicStateCreateInfo dys{};
@@ -813,7 +934,7 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
     gpi.pColorBlendState = &cbs;
     gpi.pDynamicState = &dys;
     gpi.layout = d.layout;
-    gpi.renderPass = d.rp;
+    gpi.renderPass = direct ? d.rp_d : d.rp;
     gpi.subpass = 0;
     return a.vkCreateGraphicsPipelines(vk->dev, VK_NULL_HANDLE, 1, &gpi, nullptr, out) == VK_SUCCESS;
   };
@@ -821,7 +942,9 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
   for (u32 wb = 0; wb < 2; ++wb)
     for (u32 eq = 0; eq < 2; ++eq)
       for (u32 k = 0; k < P_COUNT; ++k)
-        if (!pipeline(wb != 0, eq != 0, k, &d.pipe[wb][eq][k])) return fail("graphics pipeline");
+        if (!pipeline(wb != 0, eq != 0, k, false, &d.pipe[wb][eq][k]) ||
+            (d.direct && !pipeline(wb != 0, eq != 0, k, true, &d.pipe_d[wb][eq][k])))
+          return fail("graphics pipeline");
   mark("pipelines");
   {
     VkPipelineShaderStageCreateInfo st[2]{};
@@ -905,9 +1028,9 @@ std::unique_ptr<Lean> Lean::create(Device& dev, bool msaa, std::string* why, u32
   }
   self->ready_ = true;
   mark("ready");
-  std::fprintf(stderr, "gpu lean: %ux (%ux%u)%s, %s depth/stencil, %s\n", d.scale, d.width, d.height,
+  std::fprintf(stderr, "gpu lean: %ux (%ux%u)%s, %s depth/stencil, %s%s\n", d.scale, d.width, d.height,
                d.msaa ? " with 4x MSAA" : " (no MSAA)", d.ds_format == VK_FORMAT_D24_UNORM_S8_UINT ? "D24S8" : "D32S8",
-               d.store_out ? "direct readback" : "copy readback");
+               d.direct ? "direct frames, else " : "", d.store_out ? "store readback" : "copy readback");
   return self;
 }
 
@@ -939,7 +1062,7 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
   d.dev->flush(d.post[slot], 0, sizeof(GpuPost));
 
   GpuFrame f = fin;
-  f.scale = d.scale;
+  f.scale = d.width; // the store resolve's row length
   const bool wbuf = (f.flags & DS_FF_WBUFFER) != 0;
   GpuPoly* gpw = d.host_polys.data();
   const GpuPoly* gp = gpw;
@@ -974,6 +1097,12 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
       if (gp[k].flags & (DS_PF_TRANSLUCENT | DS_PF_SHADOW)) want((gp[k].attr >> 24) & 0x3F);
   }
   auto code_of = [&](const GpuPoly& p) -> u32 { return code[(p.attr >> 24) & 0x3F]; };
+  // A direct frame unless some pixel may carry fog: the rear plane's bit, if it is drawn at all, or a polygon's.
+  bool direct = d.direct;
+  if (direct && (f.dispcnt & 128u)) {
+    direct = !((f.clear_attr & 0x8000u) && ((f.clear_color >> 24) & 0x1F));
+    for (u32 k = 0; k < npoly && direct; ++k) direct = !(gp[k].attr & 0x8000u);
+  }
   if (std::getenv("DS_LEAN_LIST") && std::atoi(std::getenv("DS_LEAN_LIST")) != 0) { // id histogram per kind (debug)
     u32 hist[64][4] = {};
     for (u32 k = 0; k < npoly; ++k) {
@@ -1047,13 +1176,17 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
     cv[1].depthStencil.depth = wbuf ? 1.f / std::max(cz, 1.f) : std::min(1.f, cz / 16777215.f);
     cv[1].depthStencil.stencil = ca ? (S_DRAWN | code[(f.clear_attr >> 24) & 0x3F]) : 0;
     cv[2].color.float32[0] = (f.clear_attr & 0x8000) ? 1.f : 0.f; // the rear plane's fog bit
+    if (direct) { // the record itself: alpha as it is, and an undrawn pixel's word is 0
+      cv[0].color.float32[3] = static_cast<float>(ca) / 255.f;
+      if (!ca) cv[0].color.float32[0] = cv[0].color.float32[1] = cv[0].color.float32[2] = 0.f;
+    }
   }
   VkRenderPassBeginInfo rbi{};
   rbi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  rbi.renderPass = d.rp;
-  rbi.framebuffer = d.fb;
+  rbi.renderPass = direct ? d.rp_d : d.rp;
+  rbi.framebuffer = direct ? d.lin[slot].fb : d.fb;
   rbi.renderArea = {{0, 0}, {d.width, d.height}};
-  rbi.clearValueCount = d.store_out ? 3 : 4;
+  rbi.clearValueCount = direct ? 2 : d.store_out ? 3 : 4;
   rbi.pClearValues = cv;
   a.vkCmdBeginRenderPass(cb, &rbi, VK_SUBPASS_CONTENTS_INLINE);
   a.vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, d.layout, 0, 1, &d.set[slot], 0, nullptr);
@@ -1070,10 +1203,20 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
       bound = p;
     }
   };
+  // 8 fan triangles at most (10 vertices), but the vertex stage runs for each of them whether the polygon has them or
+  // not, so a draw asks for what its polygons need: nearly all of them have 3 or 4 vertices.
+  auto fan_vertices = [](u32 nv) -> u32 { return nv <= 4 ? 6 : nv <= 6 ? 12 : 24; };
   auto draw = [&](u32 first, u32 count) {
-    a.vkCmdDraw(cb, 24, count, 0, first);
-    ++draws;
-  }; // 8 fan triangles at most (10 vertices)
+    for (u32 k = first, end = first + count; k < end;) {
+      const u32 v = fan_vertices(d.nverts[k]);
+      u32 j = k + 1;
+      while (j < end && fan_vertices(d.nverts[j]) == v) ++j;
+      a.vkCmdDraw(cb, v, j - k, 0, k);
+      ++draws;
+      k = j;
+    }
+  };
+  auto& pipe_set = direct ? d.pipe_d : d.pipe;
 
   // Opaque prefix: order is free (a depth test decides), so it is redrawn
   // for the hardware: polygons that cannot fail the alpha test first, front
@@ -1097,23 +1240,28 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
     // Key: alpha-tested last, then by stencil code (one reference per run; nearly all are code 0), then near to far.
     for (u32 k = 0; k < first_ordered; ++k) {
       const bool at = (gp[k].flags & DS_PF_TEX_ALPHA) != 0, eq = (gp[k].attr & 0x4000u) != 0;
-      d.key.emplace_back(
-          (at ? (s64{1} << 40) : 0) + (eq ? (s64{1} << 38) : 0) + (s64{code_of(gp[k])} << 32) + nearest(gp[k]), k);
+      // The clipped polygons with more vertices apart too, so that they don't split the draws.
+      d.key.emplace_back((at ? (s64{1} << 40) : 0) + (eq ? (s64{1} << 38) : 0) + (s64{code_of(gp[k])} << 32) +
+                             (s64{fan_vertices(gp[k].nverts) / 12} << 30) + nearest(gp[k]),
+                         k);
     }
     std::sort(d.key.begin(), d.key.end());
     for (u32 k = 0; k < first_ordered; ++k) {
-      out_p[k] = gp[d.key[k].second];
-      if (!(out_p[k].flags & DS_PF_TEX_ALPHA)) ++n_early;
+      const GpuPoly& p = gp[d.key[k].second];
+      out_p[k] = p;
+      d.nverts[k] = static_cast<u8>(p.nverts);
+      if (!(p.flags & DS_PF_TEX_ALPHA)) ++n_early;
     }
+    auto sorted = [&](u32 k) -> const GpuPoly& { return gp[d.key[k].second]; };
     for (u32 k = 0; k < first_ordered;) {
-      const u32 c = code_of(out_p[k]);
-      const bool early = k < n_early, eq = (out_p[k].attr & 0x4000u) != 0;
+      const u32 c = code_of(sorted(k));
+      const bool early = k < n_early, eq = (sorted(k).attr & 0x4000u) != 0;
       u32 j = k + 1;
-      while (j < first_ordered && code_of(out_p[j]) == c && (j < n_early) == early &&
-             ((out_p[j].attr & 0x4000u) != 0) == eq)
+      while (j < first_ordered && code_of(sorted(j)) == c && (j < n_early) == early &&
+             ((sorted(j).attr & 0x4000u) != 0) == eq)
         ++j;
       if (!(skip & (early ? 1u : 2u))) {
-        use(d.pipe[wbuf][eq][early ? P_OPAQUE_EARLY : P_OPAQUE]);
+        use(pipe_set[wbuf][eq][early ? P_OPAQUE_EARLY : P_OPAQUE]);
         a.vkCmdSetStencilReference(cb, VK_STENCIL_FACE_FRONT_AND_BACK, S_DRAWN | c);
         draw(k, j - k);
       }
@@ -1121,6 +1269,7 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
     }
   }
   // The tail, in list order: runs of polygons that take the same passes.
+  for (u32 k = first_ordered; k < npoly; ++k) d.nverts[k] = static_cast<u8>(gp[k].nverts);
   u32 i = first_ordered;
   bool prev_mask = false, any_mask = false;
   while (i < npoly) {
@@ -1129,7 +1278,7 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
     const bool mask = (p.flags & DS_PF_SHADOW_MASK) != 0, shadow = (p.flags & DS_PF_SHADOW) != 0;
     const bool trans = (p.flags & DS_PF_TRANSLUCENT) != 0, dw = (p.attr & (1u << 11)) != 0,
                eq = (p.attr & 0x4000u) != 0;
-    VkPipeline* const pipes = d.pipe[wbuf][eq];
+    VkPipeline* const pipes = pipe_set[wbuf][eq];
     u32 j = i + 1;
     while (j < npoly) {
       const GpuPoly& q = gp[j];
@@ -1241,12 +1390,21 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
   if (npoly > first_ordered)
     std::memcpy(out_p + first_ordered, gp + first_ordered, sizeof(GpuPoly) * (npoly - first_ordered));
   if (npoly) d.dev->flush(d.polys[slot], 0, sizeof(GpuPoly) * npoly);
-  a.vkCmdNextSubpass(cb, VK_SUBPASS_CONTENTS_INLINE);
-  a.vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, d.pipe_resolve);
-  a.vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, d.layout, 1, 1, &d.set_in, 0, nullptr);
-  a.vkCmdDraw(cb, 3, 1, 0, 0);
+  if (!direct) {
+    a.vkCmdNextSubpass(cb, VK_SUBPASS_CONTENTS_INLINE);
+    a.vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, d.pipe_resolve);
+    a.vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, d.layout, 1, 1, &d.set_in, 0, nullptr);
+    a.vkCmdDraw(cb, 3, 1, 0, 0);
+  }
   a.vkCmdEndRenderPass(cb);
-  if (d.store_out) {
+  if (direct) {
+    VkMemoryBarrier cb_host{};
+    cb_host.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    cb_host.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    cb_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    a.vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1,
+                           &cb_host, 0, nullptr, 0, nullptr);
+  } else if (d.store_out) {
     VkMemoryBarrier sb{};
     sb.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     sb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -1287,6 +1445,8 @@ bool Lean::submit(u32 npoly, u32 nvert, u32 ntexels, const GpuFrame& fin) {
   d.st.queue_ms += now_ms() - t_q;
   d.st.slot_wait_ms += t_prep - t_in;
   d.st.prep_ms += t_rec - t_prep;
+  d.st.direct += direct;
+  d.slot_direct[slot] = direct;
   d.fence_live[slot] = true;
   d.submit_at[slot] = t_in;
   static const bool early_log = std::getenv("DS_HIRES_DEBUG") != nullptr;
@@ -1307,7 +1467,7 @@ static void finish_slot(Lean::Impl& d, u32 slot) {
   if (early_log && finished++ < 4)
     std::fprintf(stderr, "gpu lean: slot %u done %.1f ms after submit\n", slot, now_ms() - d.submit_at[slot]);
   d.fence_live[slot] = false;
-  d.dev->invalidate(d.out[slot], 0, sizeof(u32) * d.width * d.height);
+  d.dev->invalidate(d.record(slot), 0, sizeof(u32) * d.width * d.height);
   d.valid[slot] = true;
   if (d.timing) {
     u64 t[2] = {0, 0};
@@ -1360,7 +1520,7 @@ const u32* Lean::ready(u64 generation) {
     std::lock_guard<std::mutex> lk(d.m);
     if (!generation || generation > d.gen || d.gen - generation >= Impl::kSlots) return nullptr;
     slot = static_cast<u32>((generation - 1) % Impl::kSlots);
-    if (!d.fence_live[slot]) return d.valid[slot] ? static_cast<const u32*>(d.out[slot].ptr) : nullptr;
+    if (!d.fence_live[slot]) return d.valid[slot] ? static_cast<const u32*>(d.record(slot).ptr) : nullptr;
     fence = d.fence[slot];
   }
   // Wait unlocked: the next frame's submit must not queue behind this read.
@@ -1373,7 +1533,7 @@ const u32* Lean::ready(u64 generation) {
     ++d.st.lat_n;
     finish_slot(d, slot);
   }
-  return d.valid[slot] ? static_cast<const u32*>(d.out[slot].ptr) : nullptr;
+  return d.valid[slot] ? static_cast<const u32*>(d.record(slot).ptr) : nullptr;
 }
 
 const u32* Lean::newest_ready(bool allow_lag) {
@@ -1390,20 +1550,20 @@ const u32* Lean::newest_ready(bool allow_lag) {
   if (d.fence_live[newest] && a.vkGetFenceStatus(d.vk->dev, d.fence[newest]) == VK_SUCCESS) finish_slot(d, newest);
   if (!d.fence_live[newest]) {
     ++d.st.newest;
-    return static_cast<const u32*>(d.out[newest].ptr);
+    return static_cast<const u32*>(d.record(newest).ptr);
   }
   if (allow_lag && d.gen >= 2) {
     const u32 prev = static_cast<u32>((d.gen - 2) % Impl::kSlots);
     if (d.fence_live[prev] && a.vkGetFenceStatus(d.vk->dev, d.fence[prev]) == VK_SUCCESS) finish_slot(d, prev);
     if (!d.fence_live[prev] && d.valid[prev]) {
       ++d.st.lagged;
-      return static_cast<const u32*>(d.out[prev].ptr);
+      return static_cast<const u32*>(d.record(prev).ptr);
     }
   }
   if (allow_lag) ++d.st.stalled;
   else ++d.st.nolag;
   wait_locked(d);
-  return static_cast<const u32*>(d.out[newest].ptr);
+  return static_cast<const u32*>(d.record(newest).ptr);
 }
 
 } // namespace ds::gpu::vk

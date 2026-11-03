@@ -183,6 +183,23 @@ def serialized(method):
     return run
 
 
+# The power modes (system.ini's power=), the same for every game and system, the menu included. Clocks in the units
+# their sysfs files use, each the highest step at or under its value. RG DS, measured in docs/PERFORMANCE.md "Power
+# modes": 1608 MHz is the fastest CPU step below the 1.15 V of 1800 and 1992; the 80 C trips leave Mario Kart DS at 1992 MHz
+# for good, settling at 71 C, against a cap that moves all the time at the 70 C of the device tree. fixed: the top
+# clocks all the time, on the performance governors; otherwise the dynamic ones, whose floor keeps ramp-up out of a press.
+POWER_MODES = {
+    1: dict(cpu=(408000, 1416000), gpu=(300000000, 600000000), fixed=False, trips=None),
+    2: dict(cpu=(1104000, 1608000), gpu=(400000000, 800000000), fixed=False, trips=None),
+    3: dict(cpu=(1992000, 1992000), gpu=(800000000, 800000000), fixed=True, trips=(80000, 85000)),
+}
+BALANCED = 2
+
+
+def clock_step(frequencies, wanted):
+    return max((f for f in frequencies if f <= wanted), default=frequencies[0])
+
+
 class Hardware:
     def __init__(self, data, sysfs=Path("/sys")):
         self.sysfs = Path(sysfs)
@@ -277,6 +294,21 @@ class Hardware:
                 if dynamic and "performance" in governors:
                     result.append((minimum, maximum, governor, frequencies, dynamic, cpu_policy))
             except (OSError, ValueError):
+                continue
+        return result
+
+    def passive_trips(self):
+        """The CPU's and GPU's passive trip files, in the order they are crossed, where the kernel lets them be written."""
+        result = []
+        for zone in sorted((self.sysfs / "class/thermal").glob("thermal_zone*")):
+            try:
+                if self.read(zone / "type") not in ("cpu-thermal", "gpu-thermal"):
+                    continue
+                trips = [zone / f"trip_point_{n}_temp" for n in (0, 1)]
+                if all(self.read(zone / f"trip_point_{n}_type") == "passive"
+                       for n in (0, 1)) and all(self.writable(trip) for trip in trips):
+                    result.append(trips)
+            except OSError:
                 continue
         return result
 
@@ -378,7 +410,7 @@ class Hardware:
                 raise ValueError("Invalid hardware recovery entry")
             if path.name not in (
                 "brightness", "scaling_min_freq", "scaling_max_freq", "scaling_governor", "min_freq", "max_freq",
-                "governor", "wakeup"
+                "governor", "wakeup", "trip_point_0_temp", "trip_point_1_temp"
             ):
                 raise ValueError("Unknown hardware recovery control")
         return values
@@ -448,34 +480,51 @@ class Hardware:
     def volume(self, percent=None):
         Volume(self.journal.parent.parent).apply(percent)
 
+    def session_start(self, brightness, power=0, lid=False):
+        """What a new session applies, in one process rather than one Python start each, then the status the menu
+        shows. A control that fails leaves the others and the status, and is named as <control>_failed=1."""
+        controls = [("volume", self.volume, None)]
+        if self.backlights():
+            controls.append(("brightness", self.brightness, brightness))
+        if power > 0:
+            controls.append(("power", self.power, power))
+        if lid:
+            controls.append(("lid", self.lid, 1))
+        failed = {}
+        for name, control, value in controls:
+            try:
+                control(value)
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
+                print("System control: " + str(error), file=sys.stderr)
+                failed[name + "_failed"] = 1
+        return {**self.status(), **failed}
+
     @serialized
     def power(self, mode):
-        if mode not in range(4):
+        if mode == 0: mode = BALANCED  # settings from when there was a Stock mode
+        if mode not in POWER_MODES:
             raise ValueError("Invalid power mode")
-        if mode == 0:
-            self.restore_values(
-                {
-                    k: v
-                    for k, v in self.saved().items() if Path(k).name in
-                    ("scaling_min_freq", "scaling_max_freq", "scaling_governor", "min_freq", "max_freq", "governor")
-                }
-            )
-            return
         clocks = self.clocks()
         if not any(c[-1] for c in clocks):
             raise ValueError("Power profiles unavailable")
+        profile = POWER_MODES[mode]
         writes = []
-        for minimum, maximum, governor, frequencies, dynamic, _ in clocks:
-            index = (len(frequencies) - 1) // 2 if mode == 1 else max(0,
-                                                                      len(frequencies) -
-                                                                      2) if mode == 2 else len(frequencies) - 1
-            # Keep a low floor for dynamic modes. Performance holds the advertised ceiling.
+        for minimum, maximum, governor, frequencies, dynamic, cpu_policy in clocks:
+            floor, ceiling = profile["cpu" if cpu_policy else "gpu"]
+            ceiling = clock_step(frequencies, ceiling)
+            # The floor down first: a new ceiling may be under the old floor.
             writes += [
-                (minimum, frequencies[0]), (maximum, frequencies[index]),
-                (minimum, frequencies[index] if mode == 3 else frequencies[0]),
-                (governor, "performance" if mode == 3 else dynamic)
+                (minimum, frequencies[0]), (maximum, ceiling), (minimum, min(clock_step(frequencies, floor), ceiling)),
+                (governor, "performance" if profile["fixed"] else dynamic)
             ]
+        trips = self.passive_trips()
+        if profile["trips"]:
+            # From the top, so that the first is never over the second.
+            writes += [(trip, value) for pair in trips for trip, value in reversed(list(zip(pair, profile["trips"])))]
         self.change(writes)
+        if not profile["trips"]:
+            names = {str(trip.relative_to(self.sysfs)) for pair in trips for trip in pair}
+            self.restore_values({k: v for k, v in self.saved().items() if k in names})
 
     @serialized
     def lid(self, enabled):
@@ -624,18 +673,26 @@ class Hardware:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "command", choices=("status", "brightness", "volume", "power", "lid", "sleep", "sleep_lid", "restore")
+        "command",
+        choices=("status", "session-start", "brightness", "volume", "power", "lid", "sleep", "sleep_lid", "restore")
     )
     parser.add_argument("value", nargs="?", type=int)
     parser.add_argument("--data", required=True, type=Path)
     parser.add_argument("--menu-wake", action="store_true")
     parser.add_argument("--menu-close", action="store_true")
+    parser.add_argument("--power", type=int, default=0)
+    parser.add_argument("--lid", type=int, default=0)
     args = parser.parse_args()
     if sys.platform != "linux":
         raise ValueError("Hardware controls require Linux")
     hardware = Hardware(args.data)
     if args.command == "status":
         for key, value in hardware.status().items():
+            print(f"{key}={value}")
+    elif args.command == "session-start":
+        if args.value is None:
+            raise ValueError("Control value missing")
+        for key, value in hardware.session_start(args.value, args.power, args.lid == 1).items():
             print(f"{key}={value}")
     elif args.command in ("brightness", "volume", "power", "lid"):
         if args.value is None and args.command != "volume":

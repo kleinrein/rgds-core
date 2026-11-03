@@ -5,6 +5,7 @@ from a missing vendor mount. No firmware, BIOS or vendor OS library is imported.
 """
 import os
 import json
+from contextlib import contextmanager
 from pathlib import Path
 import shutil
 
@@ -40,7 +41,6 @@ def rocknix_joypad(name):
 
 # RG DS OS (os/buildroot): games live in data/roms/<system> on the card's RGDS partition.
 RGDS_OS_ROMS = Path('/data/roms')
-CPUFREQ_GOVERNOR = Path('/sys/devices/system/cpu/cpufreq/policy0/scaling_governor')
 RGDS_OS_POWER = Path('/usr/libexec/rgds/power')  # RG DS OS: suspend with the sleep hook's acknowledgement protocol
 
 
@@ -51,17 +51,30 @@ def rgds_os(os_release=Path('/etc/os-release')):
         return False
 
 
-def cpu_governor(name, path=CPUFREQ_GOVERNOR):
-    """RG DS OS: set the CPUs' cpufreq governor for a game (the session boots on schedutil, which ramps up late).
+@contextmanager
+def all_cpus(wanted=True):
+    """RG DS OS: what starts inside this may run on every CPU, not only the caller's.
 
-    Returns the governor it replaced, for putting back, or None where it is not ours to set (stock, or no cpufreq)."""
-    if not rgds_os(): return None
+    The session keeps the launcher and what it starts on CPUs 0-2, off the emulation core, but a game needs that core.
+    DSCore lays its threads out over the CPUs it may use: on three it pins nothing, CPU 3 idles and its real-time
+    threads crowd out its present threads (Mario Kart DS at 2x, 2 November 2026). A no-op with wanted False or on stock."""
+    if not wanted or not rgds_os():
+        yield
+        return
+    before = None
     try:
-        before = path.read_text().strip()
-        if before != name: path.write_text(name)
-        return before
+        before = os.sched_getaffinity(0)
+        os.sched_setaffinity(0, range(os.cpu_count() or 1))
     except OSError:
-        return None
+        pass
+    try:
+        yield
+    finally:
+        if before:
+            try:
+                os.sched_setaffinity(0, before)
+            except OSError:
+                pass
 
 
 def vendor_path(path):

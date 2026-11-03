@@ -7,32 +7,43 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime"))
 
 import linux_platform
-from linux_platform import cpu_governor
+from linux_platform import all_cpus
 
 
-class CpuGovernorTests(unittest.TestCase):
-    def test_sets_the_governor_on_rgds_os_and_returns_the_one_before(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            node = Path(tmp) / "scaling_governor"
-            node.write_text("schedutil\n")
-            with patch.object(linux_platform, "rgds_os", return_value=True):
-                self.assertEqual(cpu_governor("performance", node), "schedutil")
-                self.assertEqual(node.read_text(), "performance")
-                # Putting it back: the game's exit restores what the session booted with.
-                self.assertEqual(cpu_governor("schedutil", node), "performance")
-            self.assertEqual(node.read_text(), "schedutil")
+class AllCpusTests(unittest.TestCase):
+    def run_with_mask(self, rgds_os, wanted=True, fail=False):
+        mask = [{0, 1, 2}]
 
-    def test_leaves_stock_firmware_alone(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            node = Path(tmp) / "scaling_governor"
-            node.write_text("ondemand\n")
-            with patch.object(linux_platform, "rgds_os", return_value=False):
-                self.assertIsNone(cpu_governor("performance", node))
-            self.assertEqual(node.read_text(), "ondemand\n")
+        def set_mask(pid, cpus):
+            if fail: raise OSError(22, "Invalid argument")
+            mask[0] = set(cpus)
 
-    def test_missing_cpufreq_is_not_an_error(self):
-        with patch.object(linux_platform, "rgds_os", return_value=True):
-            self.assertIsNone(cpu_governor("performance", Path("/nonexistent/scaling_governor")))
+        inside = []
+        with patch.object(linux_platform, "rgds_os", return_value=rgds_os), \
+             patch.object(linux_platform.os, "sched_getaffinity", create=True, side_effect=lambda pid: set(mask[0])), \
+             patch.object(linux_platform.os, "sched_setaffinity", create=True, side_effect=set_mask), \
+             patch.object(linux_platform.os, "cpu_count", return_value=4):
+            with all_cpus(wanted):
+                inside.append(set(mask[0]))
+        return inside[0], mask[0]
+
+    def test_a_game_starts_on_every_cpu_and_the_launcher_goes_back_to_its_own(self):
+        # DSCore read "host: 3 cores" from the session's mask, pinned nothing and left CPU 3 idle.
+        self.assertEqual(self.run_with_mask(True), ({0, 1, 2, 3}, {0, 1, 2}))
+
+    def test_not_wanted_or_stock_leaves_the_mask(self):
+        self.assertEqual(self.run_with_mask(True, wanted=False), ({0, 1, 2}, {0, 1, 2}))
+        self.assertEqual(self.run_with_mask(False), ({0, 1, 2}, {0, 1, 2}))
+
+    def test_a_refused_mask_is_not_an_error(self):
+        self.assertEqual(self.run_with_mask(True, fail=True), ({0, 1, 2}, {0, 1, 2}))
+
+    def test_the_launch_uses_it_around_the_engine_only(self):
+        # RG DS Play's pinned main loop keeps its other threads on the session's CPUs; the menu helper starts after.
+        source = (Path(__file__).resolve().parents[1] / "runtime/emulators.py").read_text()
+        guard = source.index("with all_cpus('RGDS_PLAY_CPU' not in plan['env']):")
+        self.assertLess(guard, source.index("child = subprocess.Popen(", guard))
+        self.assertLess(source.index("child = subprocess.Popen(", guard), source.index("menu = GameMenu(child", guard))
 
 
 class SystemCommandTests(unittest.TestCase):

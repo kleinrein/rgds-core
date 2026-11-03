@@ -53,6 +53,7 @@ static std::atomic<int> g_rgds_adaptive{-1};
 #include <cerrno>
 #include <cstring>
 #include <deque>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <dlfcn.h>
@@ -332,6 +333,25 @@ void load_save(NDS& nds, const std::string& path) {
   }
 }
 
+// The bytes on the card before the rename, then the rename itself: without both, a power cut in the seconds after a
+// save can leave an empty file on exFAT. Games save rarely, so the fsync's stall is worth it.
+bool close_on_card(FILE* f) {
+  bool ok = std::fflush(f) == 0;
+  ok = fsync(fileno(f)) == 0 && ok;
+  return std::fclose(f) == 0 && ok;
+}
+
+bool rename_on_card(const std::string& from, const std::string& to) {
+  if (std::rename(from.c_str(), to.c_str()) != 0) return false;
+  const size_t slash = to.find_last_of('/');
+  const int dir = open(slash == std::string::npos ? "." : to.substr(0, slash).c_str(), O_RDONLY | O_DIRECTORY);
+  if (dir >= 0) {
+    fsync(dir);
+    close(dir);
+  }
+  return true;
+}
+
 void write_save(NDS& nds, const std::string& path) {
   if (!nds.cart || nds.cart->sram().empty()) return;
   // Write-then-rename: a power cut mid-write leaves the previous file.
@@ -341,9 +361,9 @@ void write_save(NDS& nds, const std::string& path) {
     std::fprintf(stderr, "save: cannot write %s\n", tmp.c_str());
     return;
   }
-  const bool ok = std::fwrite(nds.cart->sram().data(), 1, nds.cart->sram().size(), f) == nds.cart->sram().size();
-  std::fclose(f);
-  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) {
+  bool ok = std::fwrite(nds.cart->sram().data(), 1, nds.cart->sram().size(), f) == nds.cart->sram().size();
+  ok = close_on_card(f) && ok;
+  if (!ok || !rename_on_card(tmp, path)) {
     std::fprintf(stderr, "save: cannot write %s\n", path.c_str());
     return;
   }
@@ -540,9 +560,9 @@ bool save_state_file(NDS& nds, const std::string& path, const ds::sdl::Display::
     std::fprintf(stderr, "state: cannot write %s\n", tmp.c_str());
     return false;
   }
-  const bool ok = std::fwrite(w.data().data(), 1, w.data().size(), f) == w.data().size();
-  std::fclose(f);
-  if (!ok || std::rename(tmp.c_str(), path.c_str()) != 0) {
+  bool ok = std::fwrite(w.data().data(), 1, w.data().size(), f) == w.data().size();
+  ok = close_on_card(f) && ok;
+  if (!ok || !rename_on_card(tmp, path)) {
     std::fprintf(stderr, "state: cannot write %s\n", path.c_str());
     return false;
   }
@@ -1262,7 +1282,12 @@ static int run(int argc, char** argv) {
     const std::string tl = cfg.str("emu.thread_layout", "auto");
     const bool on = (tl == "on" || tl == "auto") && !std::getenv("DS_NO_THREAD_LAYOUT");
     ds::set_thread_layout(on);
-    VLOG("thread layout: %s\n", on ? "pinned" : "free");
+    // Pinning takes four CPUs of this process's own mask (host_cores.cpp), whatever its parent narrowed it to.
+    const unsigned allowed = ds::host_cores(), online = std::thread::hardware_concurrency();
+    if (on && allowed < 4 && online >= 4)
+      std::fprintf(stderr, "thread layout: this process may use %u of %u CPUs, so nothing is pinned\n", allowed,
+                   online);
+    VLOG("thread layout: %s\n", on && allowed >= 4 ? "pinned" : "free");
   }
 
   NDS nds;
@@ -1650,8 +1675,9 @@ sdl_ready:
         return 1;
       }
       const char* requested = std::getenv("RGDS_VK_SCALE");
-      const int scale = requested ? std::clamp(std::atoi(requested), 1, 5) : 1;
-      std::fprintf(stderr, "gpu3d: on; RG DS true %dx 3D (%dx%d), 640x480 panel\n", scale, 256 * scale, 192 * scale);
+      const int scale = requested ? rgds::scale_or_nearest(std::atoi(requested)) : 1;
+      const int s2 = static_cast<int>(rgds::half_units(static_cast<unsigned>(scale)));
+      std::fprintf(stderr, "gpu3d: on; RG DS true %g x 3D (%dx%d), 640x480 panel\n", s2 / 2.0, 128 * s2, 96 * s2);
       startup_stage("gpu3d ready");
     }
   }
@@ -2040,6 +2066,7 @@ sdl_ready:
     lock_params.band_max_ns = std::max(lock_params.band_ns, lock_params.band_max_ns);
   }
   ds::sdl::PhaseLock lock(lock_params);
+  int pace_frame = 0; // the frame about to run, as the lock numbered it (PhaseLock::started()); 0: it was not told
   const bool pace_display = [&] {
     const char* e = std::getenv("DS_PACE");
     std::string mode = e && *e ? e : cfg.str("video.pace", "auto");
@@ -2248,8 +2275,9 @@ sdl_ready:
       nds.run_frame();
       fb_current = true;
     }
+    // The .sav first: the launcher takes a resume point older than the .sav for out of date and starts the game fresh.
+    flush_save();
     if (!save_state_file(nds, auto_state_path(nds, session.states_dir), display.current_layout())) return;
-    flush_save(); // the .sav and the state never diverge
     if (!autosave_png) return;
     const bool beside = autosave_png_cfg == "true" || autosave_png_cfg == "1";
     std::string png = autosave_png_cfg;
@@ -2593,8 +2621,8 @@ sdl_ready:
           std::fprintf(stderr, "state: not during a replay\n");
           break;
         }
+        flush_save(); // before the state, as for the automatic one
         if (save_state_file(nds, state_path(nds, session.states_dir, state_slot), display.current_layout())) {
-          flush_save(); // the .sav and the state never diverge
           show_slot("STATE " + std::to_string(state_slot) + " SAVED");
         }
         break;
@@ -2610,6 +2638,14 @@ sdl_ready:
         if (log.writing()) {
           std::fprintf(stderr, "state: not while recording\n");
           break;
+        }
+        // A state carries the cartridge as it was, and the flush after loading writes that over the .sav.
+        flush_save();
+        if (FILE* before = std::fopen(session.sav.c_str(), "rb")) {
+          std::fclose(before);
+          std::error_code ignored;
+          std::filesystem::copy_file(session.sav, session.sav + ".before-load",
+                                     std::filesystem::copy_options::overwrite_existing, ignored);
         }
         if (load_state_file(nds, state_path(nds, session.states_dir, state_slot), loaded_layout, got_layout)) {
           apply_loaded_layout();
@@ -2644,6 +2680,9 @@ sdl_ready:
         }
         held_present_at = now - 1000;
         held_presents = 0;
+        // The held picture is no frame of the game's: its flips teach the lock nothing.
+        display.set_present_tag(0);
+        if (dual_window) display2.set_present_tag(0);
         std::fprintf(stderr, "RG DS menu: game held\n");
       }
       // Again when the menu publishes a new frame, else ~30 Hz for the HUD.
@@ -2660,6 +2699,8 @@ sdl_ready:
       holding = false;
       audio.pause(false);
       pacer.reset();
+      lock.reset();
+      pace_frame = 0;
       fs_debt_ms = 0;
       std::fprintf(stderr, "RG DS menu: game resumed (%u presents while held)\n", held_presents);
     }
@@ -2670,7 +2711,11 @@ sdl_ready:
       ds::input::apply(nds, in);
     } else {
       bool closed;
-      if (lid.poll(closed, nds.sleeping)) {
+      const bool lid_changed = lid.poll(closed, nds.sleeping);
+      // The guest wakes to the host's time: emulated time stood still while the host slept. Under
+      // DS_LID_PULSE=0 a suspend can leave the lid unchanged, so the resume itself reseeds the clock too.
+      if (lid.take_host_resumed() || (lid_changed && !closed)) nds.io.resync_rtc_clock();
+      if (lid_changed) {
         input.set_lid(closed);
         if (closed) flush_save();
       }
@@ -2810,8 +2855,9 @@ sdl_ready:
     }
     ds::sdl::Display::Target target[2] = {};
     bool scaled = false;
-    display.set_present_tag(frame_late_start ? 1 : 0);
-    if (dual_window) display2.set_present_tag(frame_late_start ? 1 : 0);
+    const int present_tag = (frame_late_start ? 1 : 0) | pace_frame << ds::sdl::KmsFlips::TAG_FRAME_SHIFT;
+    display.set_present_tag(present_tag);
+    if (dual_window) display2.set_present_tag(present_tag);
     // RG DS direct present (Display::draw_scanout_async): on a scanout tier a
     // frame goes to the panel once it is finished -- the 2x-5x compose as it
     // is, a native frame scaled on the present thread -- so no scanline
@@ -3000,7 +3046,8 @@ sdl_ready:
     }
     const Uint64 t2 = SDL_GetPerformanceCounter();
     const u64 frame_done_ns = mono_ns(); // the frame is handed to the present thread (or drawn)
-    if (const u64 queued = ds::sdl::Display::take_lane_wait_ns(); queued && pace_display) lock.queued(queued);
+    const u64 lane_wait_ns = ds::sdl::Display::take_lane_wait_ns();
+    if (lane_wait_ns && pace_display) lock.queued(lane_wait_ns);
     emu_ticks += t1 - t0;
     draw_ticks += t2 - t1;
     draw_ticks_total += t2 - t1;
@@ -3073,7 +3120,10 @@ sdl_ready:
       const double gpu_wait =
           static_cast<double>(nds.gpu.take_hires_wait_ns()) / 1e6; // this frame's, taken every frame
       if (adaptive_on && r3d.hires_active() && !(fast && ff_speed <= 0) && now_ms >= adaptive_from_ms) {
-        switch (adaptive.frame(now_ms, static_cast<double>(t2 - t0) * ticks_to_ms, frame_budget_ms, gpu_wait)) {
+        // What the frame cost, not its wait for a present thread held for the flip before it: that wait is free
+        // pacing's, and lower resolution would not shorten it.
+        const double cost_ms = static_cast<double>(t2 - t0) * ticks_to_ms - static_cast<double>(lane_wait_ns) / 1e6;
+        switch (adaptive.frame(now_ms, cost_ms, frame_budget_ms, gpu_wait)) {
         case Event::Hold:
           r3d.set_hires_hold(true);
           std::fprintf(stderr, "adaptive: native for %.1f s (%u of 30 frames over budget)\n", adaptive.hold_ms() / 1000,
@@ -3136,7 +3186,7 @@ sdl_ready:
         for (int i = 0; i < flips_n[w]; ++i) {
           const u64 samples = lock.samples();
           lock.flip(w, flips_new[w][i].at_ns, flips_new[w][i].issue_ns, flips_new[w][i].wait_ns,
-                    (flips_new[w][i].tag & 4) != 0);
+                    (flips_new[w][i].tag & 4) != 0, flips_new[w][i].tag >> ds::sdl::KmsFlips::TAG_FRAME_SHIFT);
           if (lock.samples() != samples) {
             pace_err_abs += std::fabs(lock.last_lat_ns() - lock.band_ns());
             ++pace_err_n;
@@ -3157,8 +3207,11 @@ sdl_ready:
     // The display lock holds at real-time speed only (a limiter within 3 % of
     // the panel's rate), once the panel's period has held still.
     if (lock.locked()) {
+      // Up to two refreshes of lead still beat free pacing, whose every swap is held a refresh for the flip before it
+      // (Mario Kart at 2x with a filter: start to flip 18-23 ms locked, 28-34 free, and that hold queues the next frame
+      // too). Past that the frames are too long for the lock to be worth its repeated ones.
       const double lead = lock.work_ns() + lock.band_ns();
-      if (lead > lock.period_ns() * (pace_fits ? 1.5 : 1.3)) {
+      if (lead > lock.period_ns() * (pace_fits ? 2.0 : 1.8)) {
         if (pace_fits)
           VLOG("pace: lead %.1f ms over the panel's %.1f ms; free until it shrinks\n", lead / 1e6,
                lock.period_ns() / 1e6);
@@ -3205,8 +3258,8 @@ sdl_ready:
     } else pacer.wait(scale);
     ++pace_frames;
     const u64 next_start_ns = mono_ns();
-    if (pace_display && !fast && !limiter_off)
-      lock.started(next_start_ns, frame_late_start); // free frames teach it the work too
+    // Free frames teach it the work too.
+    pace_frame = pace_display && !fast && !limiter_off ? lock.started(next_start_ns, frame_late_start) : 0;
 
     pace_ticks += SDL_GetPerformanceCounter() - t3;
     fps_pace_ticks += SDL_GetPerformanceCounter() - t3;
@@ -3237,7 +3290,7 @@ sdl_ready:
           for (int i = 0; i < flips_n[w]; ++i)
             std::fprintf(cad, "f %d %llu %llu %llu %d %llu\n", w, static_cast<ull>(flips_new[w][i].seq),
                          static_cast<ull>(flips_new[w][i].at_ns), static_cast<ull>(flips_new[w][i].issue_ns),
-                         flips_new[w][i].tag, static_cast<ull>(flips_new[w][i].wait_ns));
+                         flips_new[w][i].tag & 0xff, static_cast<ull>(flips_new[w][i].wait_ns));
         const u64 now = nds.gpu3d.swap_count();
         // DS_CADENCE_HASH=1: each screen's native picture as this frame left it, hashed at the end of the line, to
         // find the first frame that answers a press (os/banana-probe/press_to_change.py).

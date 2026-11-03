@@ -64,13 +64,15 @@ public:
   // phase-locks to these (phase_lock.h).
   // wait_ns: how long before() held that swap for the window's previous flip.
   // tag: bit 0 (after()'s tag) the frame started late; bit 2 (DrmOut's
-  // mailbox) the frame queued behind this flip was dropped at its vblank.
+  // mailbox) the frame queued behind this flip was dropped at its vblank; from
+  // TAG_FRAME_SHIFT up the frame's number for the phase lock (PhaseLock::started()).
   struct Flip {
     u64 seq = 0, at_ns = 0, issue_ns = 0;
     int tag = 0;
     u64 wait_ns = 0;
   };
   static constexpr int RING = 8;
+  static constexpr int TAG_FRAME_SHIFT = 8;
   // The slot's flips after number `after`, oldest first, at most `max` (the
   // ring keeps the last RING); returns how many were written.
   int recent(int slot, u64 after, Flip* out, int max) const;

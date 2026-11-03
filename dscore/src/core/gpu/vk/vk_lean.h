@@ -79,6 +79,7 @@ public:
     u32 lat_n = 0;
     double gap_ms = 0;
     u32 gap_n = 0;
+    u32 direct = 0; // frames with no resolve
   }; // gap: submit to the first read of that frame   // lat: submit to signal, exact from blocking waits
   Stats stats(bool reset);
 

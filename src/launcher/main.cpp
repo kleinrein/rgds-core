@@ -24,6 +24,7 @@
 #include "launcher/accent.hpp"
 #include "platform/alsa_mixer.hpp"
 #include "platform/haptics.hpp"
+#include "platform/crash_record.hpp"
 #include "platform/net_probe.hpp"
 #include "launcher/library_viewport.hpp"
 #include "launcher/media.hpp"
@@ -199,7 +200,7 @@ class App {
     Options o;
     Model model;
     bool session_initialized = false, library_ready = false, boot_displayed = false, boot_touch_candidate = false,
-         boot_touch_wait_release = false, boot_hardware_ready = false;
+         boot_touch_wait_release = false, boot_hardware_ready = false, boot_work_begun = false;
     Uint32 boot_displayed_at = 0, boot_scene_at = 0;
     std::set<SDL_Keycode> boot_blocked_keys;
     std::set<std::pair<SDL_JoystickID, Uint8>> boot_blocked_buttons;
@@ -209,7 +210,7 @@ class App {
     std::string games_signature_seen; // what the games folders looked like at the last scan (see watch_games)
     Uint32 games_checked_at = 0;
     bool auto_scrape_pending = false; // watch_games found new games: fetch their artwork once the index step ends
-    fs::path games_keep_selected; // the game to stay on after a scan that watch_games started
+    fs::path games_keep_selected;     // the game to stay on after a scan that watch_games started
     std::string games_signature() const;
     void watch_games(Uint32 now);
     std::string library_bytes;
@@ -232,6 +233,7 @@ class App {
     std::vector<SystemStats> system_stats;
     const SystemStats& system_stats_for(size_t index);
     int play_fit = 0, play_second = 0; // RG DS Play's view of the running game (play.ini)
+    int play_scale = 1;                // Tanuki3DS's internal resolution (play.ini scale), at the next launch
     std::string play_frame = "off";
     // What a system's games share until a game says otherwise (userdata/system-defaults/<system>.ini): the same
     // choices as a game's play.ini, as indexes, plus the shader (-1: the system's own screen or the library's).
@@ -239,7 +241,7 @@ class App {
         int fit = 0, second = 0, palette = 0, correction = 0, filter = -1;
         std::string frame = "off";
     };
-    SystemView play_default; // the running game's system
+    SystemView play_default;             // the running game's system
     std::string defaults_system = "gba"; // Library > System defaults: the system being edited
     bool shader_defaults = false;        // the shader picker is choosing that system's default
     mutable std::map<std::string, SystemView> system_views;
@@ -548,7 +550,7 @@ class App {
             if (!device_status.count("hb_system") || device_status.at("hb_system") != homebrew_system) return 0;
             return std::max(0, std::atoi(device_status.count("hb_count") ? device_status.at("hb_count").c_str() : "0"));
         case Page::Timezone: return int(timezones.size());
-        case Page::PlayGraphics: return play_colour_kind() ? 6 : 5;
+        case Page::PlayGraphics: return (play_colour_kind() ? 6 : 5) + (play_system() == "3ds" ? 1 : 0);
         case Page::SystemDefaults: return defaults_colour_kind() ? 6 : 5;
         default: return 0;
         }
@@ -668,6 +670,7 @@ class App {
     void stop_library_scan();
     void begin_library_scan();
     void poll_library_scan();
+    void begin_boot_work();
     void start_boot_session();
     void continue_boot();
     void snapshot_boot_input();
@@ -699,20 +702,29 @@ class App {
     std::string play_system() const;
     fs::path play_frames_folder();
     std::vector<std::string> play_frame_choices(std::string system = {}) const;
-    fs::path system_defaults_path(const std::string& system) const { return o.data / "system-defaults" / (system + ".ini"); }
+    fs::path system_defaults_path(const std::string& system) const {
+        return o.data / "system-defaults" / (system + ".ini");
+    }
     SystemView system_view(const std::string& system) const;
     void save_system_view(const std::string& system, const SystemView& view);
-    int default_shader(const std::string& system) const; // what Default draws: the system's choice, its screen, or the library's
-    int shader_current() const { return shader_defaults ? system_view(defaults_system).filter : shader_per_game ? game_preferences.filter : preferences.filter; }
+    int default_shader(
+        const std::string& system) const; // what Default draws: the system's choice, its screen, or the library's
+    int shader_current() const {
+        return shader_defaults   ? system_view(defaults_system).filter
+               : shader_per_game ? game_preferences.filter
+                                 : preferences.filter;
+    }
     std::vector<std::string> default_systems() const;
     int defaults_colour_kind() const { return defaults_system == "gb" ? 1 : defaults_system == "gbc" ? 2 : 0; }
     void system_defaults_action(int code);
     void open_system_defaults();
     void open_system_default_shader();
-    int play_graphics_row(int shown) const; // the row a shown line stands for (the colours row is only for Game Boy games)
+    int
+    play_graphics_row(int shown) const; // the row a shown line stands for (the colours row is only for Game Boy games)
     void save_play_default();
     std::string play_frame_label(const std::string& frame) const;
     void apply_play_view(int fit, int second, const std::string& frame);
+    void apply_play_scale(int scale);
     const char* play_fit_name(int fit) const;
     const char* play_second_name(int second, const std::string& system = {}) const;
     void play_graphics_action();
@@ -803,6 +815,8 @@ class App {
     void port_manager_touch(int x, int y);
     SystemPreferences system_preferences;
     bool system_configuration_loaded = false;
+    int boot_start_tries = 0, confirmed_power = 0, confirmed_lid = 0;
+    Uint32 network_after = 0; // the first network probe waits until Home has been up a moment
     Uint32 last_activity = 0, system_poll = 0, system_retry = 0, lid_poll = 0, brightness_changed = 0,
            connection_poll = 0;
     int brightness_applied = 60;
@@ -1029,7 +1043,9 @@ class App {
     // The automatic checkpoint, taken when a game is left, is the tenth row while loading from the game menu.
     // It is not a numbered slot: it cannot be saved over, deleted or exported.
     static constexpr int auto_slot = 9;
-    bool gallery_has_auto() const { return o.game_menu && gallery_mode == GalleryMode::Load && slot_occupied(auto_slot); }
+    bool gallery_has_auto() const {
+        return o.game_menu && gallery_mode == GalleryMode::Load && slot_occupied(auto_slot);
+    }
     bool slot_primary_enabled(int slot) const { return gallery_mode == GalleryMode::Save || slot_occupied(slot); }
     const char* slot_primary_name() const;
     const char* slot_hint(bool occupied) const;
@@ -1301,7 +1317,9 @@ class App {
     std::string active_graphics_name() const {
         auto found = menu_status.find("active_scale");
         if (found == menu_status.end()) return "Waiting for renderer";
-        int scale = std::clamp(std::atoi(found->second.c_str()), 1, 5);
+        int scale = std::atoi(found->second.c_str());
+        if (scale == 25) return "2.5x Vulkan / 640 x 480";
+        scale = std::clamp(scale, 1, 5);
         return scale == 1 ? "Native / software"
                           : std::to_string(scale) + "x Vulkan / " + std::to_string(scale * 256) + " x " +
                                 std::to_string(scale * 192);
@@ -1450,6 +1468,10 @@ class App {
     bool experimental_game() const;
     std::string experimental_resolution_name() const;
     void show_experimental_resolution_picker();
+    void show_power_picker() {
+        show_picker("Power mode", {power_names[0], power_names[1], power_names[2]}, system_preferences.power - 1,
+                    [this](int n) { change_system(0, n + 1 - system_preferences.power); });
+    }
     void open_shader_picker(bool per_game);
     // The system of the game a shader is picked for (Settings' default is the DS games').
     std::string shader_system = "nds";
@@ -1666,6 +1688,8 @@ class App {
     void save_dst(int value);
     void save_timezone();
     bool apply_control(int focus, const SystemPreferences& value);
+    void poll_system_status(Uint32 now);
+    void poll_control();
     void poll_brightness();
     void flush_brightness();
     void change_system(int focus, int delta, bool cycle = false);
@@ -1935,9 +1959,20 @@ class App {
     void boot_scene(SDL_Renderer* r, int y);
     void boot_top(SDL_Renderer* r, int y);
     // Setup (welcome_screen.hpp). Items are found by id: a step's own from 0, the footer's from welcome_back.
-    enum WelcomeStep { WelcomeLanguage, WelcomeColour, WelcomeName, WelcomeHome, WelcomeLibrary, WelcomeTime, WelcomeWifi, WelcomeGames, WelcomeDone };
-    static constexpr int welcome_steps = 9, welcome_back = 100, welcome_next = 101, welcome_skip = 102, welcome_mode = 20,
-                         welcome_layout = 0, welcome_ground = 10, welcome_motion = 20, welcome_face = 30, welcome_clock = 10;
+    enum WelcomeStep {
+        WelcomeLanguage,
+        WelcomeColour,
+        WelcomeName,
+        WelcomeHome,
+        WelcomeLibrary,
+        WelcomeTime,
+        WelcomeWifi,
+        WelcomeGames,
+        WelcomeDone
+    };
+    static constexpr int welcome_steps = 9, welcome_back = 100, welcome_next = 101, welcome_skip = 102,
+                         welcome_mode = 20, welcome_layout = 0, welcome_ground = 10, welcome_motion = 20,
+                         welcome_face = 30, welcome_clock = 10;
     struct WelcomeItem {
         int id;
         SDL_Rect box;
@@ -1965,7 +2000,8 @@ class App {
     SDL_Rect welcome_item_box(int id);
     void welcome_focus_ring(SDL_Renderer* r, const SDL_Rect& b, int radius);
     void welcome_chip(SDL_Renderer* r, int y, int id, const std::string& text, bool selected, bool translate = true);
-    void welcome_row(SDL_Renderer* r, int y, int id, SettingsIcon icon, const std::string& title, const std::string& value);
+    void welcome_row(SDL_Renderer* r, int y, int id, SettingsIcon icon, const std::string& title,
+                     const std::string& value);
     void welcome_system_icon(SDL_Renderer* r, const std::string& id, int x, int y, int size);
     void welcome_library_card(SDL_Renderer* r, int y, int id, const std::string& title, const std::string& note);
     void welcome_top_heading(SDL_Renderer* r, int y, const std::string& title, const std::string& body);
@@ -2718,6 +2754,7 @@ public:
             status = "Could not apply volume";
         launch_profile.mark("volume-applied");
         if (!o.boot_warning) load_system_configuration();
+        if (o.boot_startup && !o.preview && !o.usb_drive_screen) SystemControls::read_battery(hardware);
         launch_profile.mark("system-configuration-loaded");
         preferences.dark = dark_theme_file(o.theme);
         try {
@@ -3034,6 +3071,8 @@ int main(int argc, char** argv) {
         if (o.seconds < 0 || o.frames < 0) throw std::runtime_error("Frames and seconds must be nonnegative");
         std::signal(SIGTERM, on_signal);
         std::signal(SIGINT, on_signal);
+        crash::install((o.data.empty() ? fs::path("build/dev") : o.data) / "logs",
+                       o.game_menu ? "game-menu" : "launcher", o.app.filename().string());
         launch_profile.mark("arguments-ready");
         App app(std::move(o));
         int result = app.run();
@@ -3041,6 +3080,7 @@ int main(int argc, char** argv) {
         return result;
     } catch (const std::exception& e) {
         std::cerr << "RGDS: " << e.what() << std::endl;
+        crash::record_exception("exception", e.what());
         return 1;
     }
 }

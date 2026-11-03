@@ -170,8 +170,18 @@ class PlayRuntimeTests(unittest.TestCase):
             settings = data / "emulators/rgds-play/3ds/.local/share/Tanuki3DS/ctremu.ini"
             self.assertEqual(settings.read_text(), "Volume = 150")
             settings.write_text("Volume = 90")  # the owner's own settings survive the next launch
-            emulators.tanuki_plan(data, Path(tmp) / "a.cci", engine=engine)
+            plan = emulators.tanuki_plan(data, Path(tmp) / "a.cci", engine=engine)
             self.assertEqual(settings.read_text(), "Volume = 90")
+            # the internal resolution is per game, 1x unless the game's play.ini says otherwise
+            self.assertEqual(plan["env"]["RGDS_3DS_SCALE"], "1")
+            play_options.save_scale(data, rom, 2)
+            self.assertEqual(emulators.tanuki_plan(data, rom, engine=engine)["env"]["RGDS_3DS_SCALE"], "2")
+            self.assertEqual(play_options.view(data, rom)["scale"], 2)
+            play_options.save_scale(data, rom, 1)
+            self.assertEqual(emulators.tanuki_plan(data, rom, engine=engine)["env"]["RGDS_3DS_SCALE"], "1")
+            self.assertNotIn("scale", play_options.read_fields(play_options._path(data, rom)))
+            with self.assertRaises(ValueError):
+                play_options.save_scale(data, rom, 5)
 
     def test_roms_are_refused_by_the_wrong_engine(self):
         self.assertEqual(emulators.resolve_rom(self.gba, self.data, "rgds-play"), self.gba.resolve())
@@ -225,7 +235,8 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertEqual({i for i, f in places if families[f] == "Original"}, set(play_options.ORIGINAL))
         defaults = re.search(r"system_default_shader.*?shaders\[\] = \{([^}]*)\}", catalog, re.S).group(1)
         self.assertEqual(
-            [int(n) for n in defaults.split(",")], [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc", "3ds")]
+            [int(n) for n in defaults.split(",")],
+            [play_options.SYSTEM_SHADERS[s] for s in ("gba", "gb", "gbc", "3ds")]
         )
 
     def test_system_defaults_sit_between_the_built_in_view_and_a_game(self):
@@ -405,7 +416,8 @@ class PlayMenuTests(unittest.TestCase):
                 "second": "off",
                 "frame": "indigo",
                 "palette": "dmg",
-                "colour": "gbc"
+                "colour": "gbc",
+                "scale": 1
             }
         )
 

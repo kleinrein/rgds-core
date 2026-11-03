@@ -99,6 +99,8 @@ public:
 
   void schedule(EventId id, u64 at, EventFn fn, u32 param = 0);
   void cancel(EventId id);
+  // Settle this device before a register access can replace its due event.
+  void settle(EventId id);
   // schedule() overwrites a live event rather than refusing to re-arm it.
   bool armed(EventId id) const { return (armed_ & (1u << static_cast<u32>(id))) != 0; }
 

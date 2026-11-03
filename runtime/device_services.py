@@ -2,6 +2,7 @@
 screens."""
 import argparse
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -11,11 +12,26 @@ import shutil
 import signal
 import subprocess
 import sys
+import tarfile
 import time
 import uuid
 
 sys.dont_write_bytecode = True
 from library import read_fields, write_fields
+
+REPORT_FILE_LIMIT = 2 * 1024 * 1024
+# Logs name the network and the machines on it; a report does not need to.
+REPORT_PRIVATE = (
+    (re.compile(rb"(?i)(ssid[=:\s]+)('[^'\n]*'|\"[^\"\n]*\"|\S+)"), rb"\1[network]"),
+    (re.compile(rb"\b[0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}\b"), b"[mac]"),
+    (re.compile(rb"\b(?:\d{1,3}\.){3}\d{1,3}\b"), b"[address]"),
+)
+
+
+def redacted(content):
+    for pattern, replacement in REPORT_PRIVATE:
+        content = pattern.sub(replacement, content)
+    return content
 
 
 def split_terse(line):
@@ -597,7 +613,37 @@ class Services:
         safe = {key: self.fields.get(key, "") for key in ("build", "firmware", "kernel", "free_gb", "wifi_supported")}
         path = folder / f"device-{int(time.time())}.json"
         path.write_text(json.dumps(safe, indent=2) + "\n")
+        self.bundle_report(folder, path)
         self.publish(state="ready", message="Device report saved in userdata/support/.")
+
+    def bundle_report(self, folder, device):
+        """One file to send: the logs a crash leaves, without addresses or network names, the last five kept."""
+        logs, engines = self.data.parent / "logs", self.data / "logs"
+        sources = [logs / name for name in ("dmesg.txt", "hardware.txt", "boot.txt")]
+        sources += sorted(logs.glob("launcher.log*")) + sorted(engines.glob("*.log*"))
+        sources += sorted(path for path in (logs / "pstore").glob("*/*"))
+        contents = {device.name: device.read_bytes()}
+        for source in sources:
+            try:
+                if source.is_symlink() or not source.is_file(): continue
+                with source.open("rb") as stream:
+                    stream.seek(max(0, source.stat().st_size - REPORT_FILE_LIMIT))
+                    contents[source.relative_to(self.data.parent).as_posix()] = redacted(stream.read())
+            except (OSError, ValueError):
+                continue
+        if not self.preview:
+            try:
+                run = subprocess.run(["dmesg"], capture_output=True, timeout=10)
+                contents["dmesg-now.txt"] = redacted(run.stdout)
+            except (OSError, subprocess.SubprocessError):
+                pass
+        with tarfile.open(folder / (device.stem.replace("device", "report") + ".tar.gz"), "w:gz") as archive:
+            for name, content in contents.items():
+                entry = tarfile.TarInfo(name)
+                entry.size, entry.mtime = len(content), int(time.time())
+                archive.addfile(entry, io.BytesIO(content))
+        for old in sorted(folder.glob("report-*.tar.gz"), key=lambda path: path.stat().st_mtime)[:-5]:
+            old.unlink(missing_ok=True)
 
     def startup_info(self):
         fields = read_fields(self.data / 'boot.ini')

@@ -13,6 +13,11 @@ namespace ds::sdl {
 // sleep leaves the console asleep with nothing to wake it (panels off, saves
 // refused). DS_LID_PULSE=0 turns the pulse off for a host that freezes the
 // emulator over its own sleep and wants the game to carry on where it was.
+//
+// A close the switch reports lasts at least kMinClosedFrames emulated frames.
+// Hosts suspend as the lid shuts, so the open can follow the close by one
+// frame; a game still entering sleep then misses the wake and sits on a blank
+// screen. Emulated frames don't advance while the host sleeps.
 class Lid {
 public:
   static constexpr int PULSE_FRAMES = 120; // two seconds at 60 Hz
@@ -28,14 +33,25 @@ public:
   void resumed();
   bool pulsing() const { return pulse_ > 0; }
   void enable_pulse(bool on) { pulse_enabled_ = on; }
+  // Whether a host suspend has passed since the last call, pulse or no pulse.
+  bool take_host_resumed() {
+    const bool was = host_resumed_;
+    host_resumed_ = false;
+    return was;
+  }
+  void set_switch(bool closed) { closed_ = closed; } // tests: no evdev switch to read
+
+  static constexpr int kMinClosedFrames = 60;
 
 private:
   int fd_ = -1;
-  bool closed_ = false;
-  bool last_ = false; // what the previous poll() reported
+  bool closed_ = false; // the switch itself
+  bool last_ = false;   // what the previous poll() reported
   bool pulse_enabled_ = true;
-  int pulse_ = 0;   // frames left of a suspend-detected close
-  s64 skew_ns_ = 0; // last boottime - monotonic
+  bool host_resumed_ = false; // a suspend seen since take_host_resumed()
+  int hold_ = 0;              // frames a switch close must still be shown
+  int pulse_ = 0;             // frames left of a suspend-detected close
+  s64 skew_ns_ = 0;           // last boottime - monotonic
 };
 
 } // namespace ds::sdl

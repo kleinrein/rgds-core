@@ -491,6 +491,24 @@ Block* translate(JitCpu& jc, u32 key) {
     }
   }
   if (r.pos + BLOCK_MARGIN > r.cap || r.blocks_live >= MAX_BLOCKS) return nullptr; // caller resets the arena
+  {
+    const u64 f = jc.ctx->nds->frame_count;
+    if (f != r.tx_frame) {
+      r.tx_frame = f;
+      r.tx_in_frame[0] = r.tx_in_frame[1] = 0;
+    }
+    const u32 n = ++r.tx_in_frame[jc.arm9 ? 0 : 1];
+    if (n > r.tx_max) {
+      r.tx_max = n;
+      static const bool show = std::getenv("DS_JIT_TXMAX") != nullptr;
+      if (show) {
+        static bool reg =
+            (std::atexit([] { std::fprintf(stderr, "[jit] most blocks translated in a frame: %u\n", g_rt.tx_max); }),
+             true);
+        (void)reg;
+      }
+    }
+  }
   Block* b = &r.block_pool.emplace_back(Block{});
   b->key = key;
   b->owner = jc.arm9 ? 0 : 1;
@@ -654,13 +672,30 @@ static u32 warm_threshold() {
   static const u32 v = std::getenv("DS_JIT_WARM") ? static_cast<u32>(std::atoi(std::getenv("DS_JIT_WARM"))) : 1;
   return v;
 }
+// A storm: this CPU has translated more blocks this frame than any game
+// does (kStormBlocks), so it is running code it will not run again -- off in
+// memory that holds no program, a mirror at a time. Translating each block
+// for one pass cost hundreds of ms a frame on a Cortex-A55 (a real-time
+// thread is killed at 200 ms under PipeWire); for the rest of the frame a
+// block is translated only when it comes round a second time, its first
+// pass interpreted, as DS_JIT_WARM=2 does but by exact address (the warm
+// table's slots alias, and a sweep through mirrors keeps landing on warm ones).
+// DS_JIT_WARM set at all (the tests set 1: translated code only) leaves it off.
+static bool storm(JitCpu& jc) {
+  static const bool warm_set = std::getenv("DS_JIT_WARM") != nullptr;
+  if (warm_set) return false;
+  Runtime& r = g_rt;
+  const bool on = r.tx_frame == jc.ctx->nds->frame_count && r.tx_in_frame[jc.arm9 ? 0 : 1] >= Runtime::kStormBlocks;
+  if (!on && !jc.storm_seen.empty()) jc.storm_seen.clear();
+  return on;
+}
 static bool is_cold(JitCpu& jc, u32 key) {
-  if (warm_threshold() <= 1) return false;
+  if (warm_threshold() <= 1) return storm(jc) && !jc.blocks.count(key) && !jc.storm_seen.count(key);
   if (jc.blocks.count(key)) return false;
   return static_cast<u32>(jc.warm[(key >> 1) & (LUT_SIZE - 1)]) + 1 < warm_threshold();
 }
 static bool cold_after_count(JitCpu& jc, u32 key) {
-  if (warm_threshold() <= 1) return false;
+  if (warm_threshold() <= 1) return storm(jc) && !jc.blocks.count(key) && jc.storm_seen.insert(key).second;
   if (jc.blocks.count(key)) return false;
   u8& n = jc.warm[(key >> 1) & (LUT_SIZE - 1)];
   if (n < 255) ++n;

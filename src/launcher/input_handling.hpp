@@ -774,6 +774,10 @@ void App::touch(int x, int y) {
         return;
     }
     if (settings.page == Page::QuickMenu) {
+        if (hardware.power && x >= 400 && y < 78) { // the power mode in the header
+            show_power_picker();
+            return;
+        }
         if (x >= 28 && x <= 612) {
             if (y >= quick_top && y < quick_top + quick_wide_height) settings.focus = 0;
             else if (y >= quick_grid_top && y < quick_grid_top + 3 * quick_grid_pitch &&

@@ -328,10 +328,14 @@ def backup_all(data):
             ]
         ]
         roots += [data / 'emulators/rgds-play' / folder for folder in ('saves', 'states')]  # other systems
+        roots += [data / 'emulators/rgds-play' / folder for folder in ('PSP/SAVEDATA', 'PSP/PPSSPP_STATE')]
+        tanuki = data / 'emulators/rgds-play/3ds/.local/share/Tanuki3DS/3ds'
+        roots += [tanuki / 'savedata', tanuki / 'extdata', tanuki / 'sdmc']
+        roots += list((data / 'emulators/rgds-play').glob('*.mcd'))
         selected = []
         for root in roots:
             if root.exists():
-                for path in root.rglob('*'):
+                for path in [root] if root.is_file() else root.rglob('*'):
                     if path.is_file() and not path.is_symlink() and (
                         root != data / 'library' or path.suffix in ('.dss', '.sav', '.dsv', '.json')
                         or '/slots/' in str(path)

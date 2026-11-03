@@ -100,7 +100,7 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertTrue(report['picker_open'])
 
     def test_experimental_resolution_picker_persists_from_both_menus(self):
-        self.run_ui(self.row(4, 'A', 'Down', 'Down', 'Down', 'Down', 'A'), 'rgds-experimental')
+        self.run_ui(self.row(4, 'A', 'Down', 'Down', 'Down', 'Down', 'Down', 'A'), 'rgds-experimental')
         self.assertEqual(read_fields(self.game)['rgds_scale'], '5')
         fields = read_fields(self.game)
         fields['core'] = '4'
@@ -112,10 +112,16 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.run_ui(self.row(4, 'A', 'Down', 'Escape'), game_library=True)
         self.assertEqual(read_fields(self.game)['rgds_scale'], '3')
 
+    def test_resolution_picker_offers_the_panel_exact_scale(self):
+        self.run_ui(self.row(4, 'A', 'Down', 'Down', 'A'), 'rgds-experimental')
+        self.assertEqual(read_fields(self.game)['rgds_scale'], '25')
+        self.run_ui(self.row(4, 'A', 'Down', 'A'), 'rgds-experimental')  # from 2.5x, one row down is 3x
+        self.assertEqual(read_fields(self.game)['rgds_scale'], '3')
+
     def test_graphics_tile_controls_resolution_smoothing_and_returns_to_game_menu(self):
         # Resume -> Save slots -> across to the new Graphics tile.
         graphics = ['Down', 'Right', 'Right', 'A']
-        self.run_ui(graphics + ['A', 'Down', 'Down', 'Down', 'Down', 'A'], 'rgds-experimental')
+        self.run_ui(graphics + ['A', 'Down', 'Down', 'Down', 'Down', 'Down', 'A'], 'rgds-experimental')
         self.assertEqual(read_fields(self.game)['rgds_scale'], '5')
         self.run_ui(graphics + ['Down', 'A', 'Up', 'A'], 'rgds-experimental')
         self.assertEqual(read_fields(self.game)['rgds_smooth'], '0')

@@ -93,6 +93,20 @@ class ExperimentalLaunchTests(Fixture):
             os.environ['DS_ADAPTIVE'] = '0'
             self.assertEqual(emulators.launch_plan(ENGINE, self.app, self.data, rom)['env']['DS_ADAPTIVE'], '0')
 
+    def test_panel_exact_scale_reaches_the_engine_and_other_values_do_not(self):
+        rom = self.prepare()
+        engine = self.app / 'emulators' / ENGINE
+        (engine / 'rgds-experimental-vulkan').write_bytes(b'candidate')
+        (engine / 'lib').mkdir()
+        (engine / 'lib/libvulkan_panfrost.so').write_bytes(b'driver')
+        game = self.data / 'library' / game_key(rom) / 'game.ini'
+        write_fields(game, dict(core=4, rgds_scale=25))
+        env = emulators.launch_plan(ENGINE, self.app, self.data, rom)['env']
+        self.assertEqual(env['RGDS_VK_SCALE'], '25')
+        self.assertEqual(env['RGDS_ACTIVE_SCALE'], '25')
+        write_fields(game, dict(core=4, rgds_scale=6))
+        self.assertEqual(emulators.launch_plan(ENGINE, self.app, self.data, rom)['env']['RGDS_ACTIVE_SCALE'], '1')
+
     def test_2d_filter_defaults_off_and_ignores_out_of_range_values(self):
         rom = self.prepare()
         plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)

@@ -1,0 +1,513 @@
+Each render pass goes to the GPU as soon as it is issued, and per-pass timing on request.
+
+Panfrost keeps every pass's batch pending until something forces a submit, so with PPSSPP's 24 passes a frame the
+GPU idled while the CPU issued the rest of the frame. A glFlush after each render pass hands it over at once:
+OutRun 2006 on the RG DS drew 27% more frames (3284 against 2575 in the same 90 s race), its lighter road at
+17 ms a drawn frame. RGDS_GL_FLUSH_PASSES=0 restores upstream's behaviour.
+
+RGDS_GL_PASS_PROFILE=N (off by default, a measurement aid): PPSSPP's own GL profiler (timer queries around every
+step, kept off upstream after Android hangs) runs with three rotating query sets, and every N frames (300 when N
+is not a number) prints to stderr the average time of each step keyed by its position, size and command count,
+the frame's total time issuing the steps' commands, the profiler's own time in the query reads, the submission
+thread's time in the GL calls, its wait for the frame slot's fence, and one frame's step list. The CPU clock
+around each step (its "issue" time) is the useful number: on Panfrost's job-manager GPUs the timestamp job sits
+in the vertex chain of a fresh batch, so stamp deltas come out in any order and are printed signed.
+RGDS_GL_PASS_FINISH=1 drains the GPU before each end stamp; it crashed the handheld and must not be used there.
+
+flush default on
+--- a/Common/GPU/OpenGL/GLProfiler.h
++++ b/Common/GPU/OpenGL/GLProfiler.h
+@@ -2,6 +2,7 @@
+ 
+ #include <vector>
+ #include <string>
++#include <map>
+ #include <cstdint>
+ 
+ #include "Common/GPU/OpenGL/GLCommon.h"
+@@ -9,13 +10,20 @@
+ 
+ // Simple scoped based profiler for OpenGL, similar to VulkanProfiler.
+ // Uses GL_EXT_disjoint_timer_query (GLES) or GL_ARB_timer_query (desktop GL).
+-// Put the whole thing in a FrameData to allow for overlap.
++//
++// RG DS: off unless RGDS_GL_PASS_PROFILE=N is set, then every N frames (300 when N is not a number) the average GPU
++// time of each step of a frame goes to stderr, keyed by the step's position in the frame. Three sets of queries
++// rotate so that a frame's results are read three frames later, after the GPU has finished them, instead of
++// stalling the submission thread.
+ 
+ struct GLProfilerScope {
+ 	char name[52];  // to make a struct size of 64, just because
+ 	int startQueryId;
+ 	int endQueryId;
+ 	int level;
++	double cpuBegin;   // RG DS: CPU clock at Begin, when the commands were issued (End) and after the drain, in finish mode
++	double cpuIssued;
++	double cpuDone;
+ };
+ 
+ class GLProfiler {
+@@ -38,16 +46,39 @@
+ 
+ 	bool IsSupported() const { return supported_; }
+ 
++	// Frames between reports, 0 when the profiler is off.
++	static int ReportEvery();
++
+ private:
++	static const int SLOTS = 3;
++	static const int MAX_QUERY_COUNT = 512;
++
++	struct Slot {
++		std::vector<GLuint> queries;
++		std::vector<GLProfilerScope> scopes;
++		int numQueries = 0;
++		bool recorded = false;
++	};
++	struct Sum {
++		double ms = 0.0;
++		double issue = 0.0;
++		double wait = 0.0;
++		int frames = 0;
++	};
++	static bool FinishEach();
++
++	void ReadSlot(Slot &slot);
++
+ 	bool supported_ = false;
+-	bool firstFrame_ = true;
+ 	bool *enabledPtr_ = nullptr;
+ 
+-	std::vector<GLuint> queries_;
+-	std::vector<GLProfilerScope> scopes_;
+-	int numQueries_ = 0;
+-
++	Slot slots_[SLOTS];
++	int slot_ = 0;
+ 	std::vector<size_t> scopeStack_;
+ 
+-	static const int MAX_QUERY_COUNT = 1024;
++	std::map<std::string, Sum> sums_;
++	int framesSummed_ = 0;
++	double frameMs_ = 0.0;
++	double issueMs_ = 0.0;    // issue time of the top-level scopes, a frame total
++	double readMs_ = 0.0;     // the profiler's own wait in the query reads
+ };
+--- a/Common/GPU/OpenGL/GLProfiler.cpp
++++ b/Common/GPU/OpenGL/GLProfiler.cpp
+@@ -1,10 +1,13 @@
+ #include <cstdarg>
++#include <cstdio>
++#include <cstdlib>
+ 
+ #include "Common/GPU/OpenGL/GLProfiler.h"
+ #include "Common/GPU/OpenGL/GLCommon.h"
+ #include "Common/GPU/OpenGL/GLFeatures.h"
+ #include "Common/GPU/OpenGL/GLDebugLog.h"
+ #include "Common/Log.h"
++#include "Common/TimeUtil.h"
+ 
+ // For iOS, define function pointer types and variables locally since gl3stub.h
+ // content is excluded on iOS. These will remain NULL since iOS doesn't support
+@@ -27,56 +30,111 @@
+ #define GL_GPU_DISJOINT_EXT 0x8FBB
+ #endif
+ 
+-// GLCommon.h provides access to GL functions:
+-// - On GLES: function pointers from gl3stub.h, loaded via eglGetProcAddress
+-// - On desktop GL: GLEW provides the functions
++bool GLProfiler::FinishEach() {
++	static const bool finishEach = getenv("RGDS_GL_PASS_FINISH") != nullptr;
++	return finishEach;
++}
++
++int GLProfiler::ReportEvery() {
++	static int every = -1;
++	if (every < 0) {
++		const char *setting = getenv("RGDS_GL_PASS_PROFILE");
++		every = setting ? atoi(setting) : 0;
++		if (setting && every <= 0)
++			every = 300;
++	}
++	return every;
++}
+ 
+ void GLProfiler::Init() {
+ 	supported_ = false;
+-	firstFrame_ = true;
+-	numQueries_ = 0;
+-	scopes_.clear();
++	slot_ = 0;
+ 	scopeStack_.clear();
++	sums_.clear();
++	framesSummed_ = 0;
++	frameMs_ = 0.0;
++	for (Slot &slot : slots_) {
++		slot.scopes.clear();
++		slot.numQueries = 0;
++		slot.recorded = false;
++	}
+ 
+-	// NOTE: Getting a lot of hangs on Android from this, I'm disabling it entirely for now.
+-	// Will later re-enable on desktop.
+-#if 0
+-
+-	// Check for extension support
+-	// Function pointers are declared in gl3stub.h and loaded appropriately per platform
+-	if (gl_extensions.EXT_disjoint_timer_query) {
+-		// GLES path - use function pointers loaded with EXT suffix
+-		if (glQueryCounter && glGetQueryObjectui64v) {
+-			supported_ = true;
+-			INFO_LOG(Log::G3D, "GLProfiler: Using GL_EXT_disjoint_timer_query");
+-		}
+-	} else if (gl_extensions.ARB_timer_query) {
+-		// Desktop GL path - use function pointers (no suffix)
+-		if (glQueryCounter && glGetQueryObjectui64v) {
+-			supported_ = true;
+-			INFO_LOG(Log::G3D, "GLProfiler: Using GL_ARB_timer_query");
+-		}
++	// Upstream keeps the queries off (hangs seen on Android); a measurement run on the RG DS turns them on.
++	if (ReportEvery() > 0 && (gl_extensions.EXT_disjoint_timer_query || gl_extensions.ARB_timer_query) && glQueryCounter && glGetQueryObjectui64v) {
++		supported_ = true;
++		INFO_LOG(Log::G3D, "GLProfiler: timer queries on, a report every %d frames", ReportEvery());
++	} else if (ReportEvery() > 0) {
++		WARN_LOG(Log::G3D, "GLProfiler: no timer queries (disjoint %d, arb %d)", (int)gl_extensions.EXT_disjoint_timer_query, (int)gl_extensions.ARB_timer_query);
+ 	}
+-#endif
+ 
+ 	if (supported_) {
+-		// Pre-allocate query objects
+-		queries_.resize(MAX_QUERY_COUNT);
+-		glGenQueries(MAX_QUERY_COUNT, queries_.data());
++		for (Slot &slot : slots_) {
++			slot.queries.resize(MAX_QUERY_COUNT);
++			glGenQueries(MAX_QUERY_COUNT, slot.queries.data());
++		}
+ 		CHECK_GL_ERROR_IF_DEBUG();
+ 	}
+ }
+ 
+ void GLProfiler::Shutdown() {
+-	if (supported_ && !queries_.empty()) {
+-		glDeleteQueries((GLsizei)queries_.size(), queries_.data());
+-		queries_.clear();
++	if (supported_) {
++		for (Slot &slot : slots_) {
++			if (!slot.queries.empty())
++				glDeleteQueries((GLsizei)slot.queries.size(), slot.queries.data());
++			slot.queries.clear();
++			slot.scopes.clear();
++		}
+ 	}
+ 	supported_ = false;
+-	scopes_.clear();
+ 	scopeStack_.clear();
+ }
+ 
++void GLProfiler::ReadSlot(Slot &slot) {
++	double frame = 0.0;
++	for (const GLProfilerScope &scope : slot.scopes) {
++		if (scope.endQueryId == -1) {
++			WARN_LOG(Log::G3D, "Unclosed scope: %s", scope.name);
++			continue;
++		}
++		GLuint64 startTime = 0, endTime = 0;
++		glGetQueryObjectui64v(slot.queries[scope.startQueryId], GL_QUERY_RESULT, &startTime);
++		glGetQueryObjectui64v(slot.queries[scope.endQueryId], GL_QUERY_RESULT, &endTime);
++		// Signed: Panfrost's job manager writes a stamp from the vertex chain of a fresh batch, whose order against
++		// the pass's own batch is not kept, so stamp deltas can come out negative; finish mode uses the CPU clock.
++		const double ms = (double)(int64_t)(endTime - startTime) / 1000000.0;
++		Sum &sum = sums_[scope.name];
++		sum.ms += ms;
++		sum.issue += 1000.0 * (scope.cpuIssued - scope.cpuBegin);
++		sum.wait += 1000.0 * (scope.cpuDone - scope.cpuIssued);
++		sum.frames++;
++		if (scope.level == 0) {
++			frame += FinishEach() ? 1000.0 * (scope.cpuDone - scope.cpuBegin) : ms;
++			issueMs_ += 1000.0 * (scope.cpuIssued - scope.cpuBegin);
++		}
++	}
++	frameMs_ += frame;
++	framesSummed_++;
++	if (framesSummed_ >= ReportEvery()) {
++		if (FinishEach())
++			fprintf(stderr, "gl passes: %d frames, %.2f ms a frame drained, %.2f ms issuing, %.2f ms in the profiler's query reads (steps in order: avg ms issuing the commands + waiting for the GPU when present, %% of frames)\n", framesSummed_, frameMs_ / framesSummed_, issueMs_ / framesSummed_, readMs_ / framesSummed_);
++		else
++			fprintf(stderr, "gl passes: %d frames, GPU stamps %.2f ms a frame, %.2f ms issuing, %.2f ms in the profiler's query reads (steps in order: avg stamp ms + issue ms when present, %% of frames)\n", framesSummed_, frameMs_ / framesSummed_, issueMs_ / framesSummed_, readMs_ / framesSummed_);
++		for (const auto &entry : sums_) {
++			const Sum &sum = entry.second;
++			if (FinishEach())
++				fprintf(stderr, "  %7.3f issue %7.3f wait %3d%%  %s\n", sum.issue / sum.frames, sum.wait / sum.frames, sum.frames * 100 / framesSummed_, entry.first.c_str());
++			else
++				fprintf(stderr, "  %9.3f stamp %7.3f issue %3d%%  %s\n", sum.ms / sum.frames, sum.issue / sum.frames, sum.frames * 100 / framesSummed_, entry.first.c_str());
++		}
++		fflush(stderr);
++		sums_.clear();
++		framesSummed_ = 0;
++		frameMs_ = 0.0;
++		issueMs_ = 0.0;
++		readMs_ = 0.0;
++	}
++}
++
+ void GLProfiler::BeginFrame() {
+ 	if (!supported_) {
+ 		return;
+@@ -84,9 +142,12 @@
+ 
+ 	// Check if profiling is enabled
+ 	if (enabledPtr_ && !*enabledPtr_) {
+-		scopes_.clear();
++		for (Slot &slot : slots_) {
++			slot.scopes.clear();
++			slot.numQueries = 0;
++			slot.recorded = false;
++		}
+ 		scopeStack_.clear();
+-		numQueries_ = 0;
+ 		return;
+ 	}
+ 
+@@ -95,73 +156,57 @@
+ 		GLint disjoint = 0;
+ 		glGetIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
+ 		if (disjoint) {
+-			// Results are invalid, just clear and start fresh
+ 			WARN_LOG(Log::G3D, "GLProfiler: GPU disjoint detected, timing results discarded");
+-			scopes_.clear();
+-			scopeStack_.clear();
+-			numQueries_ = 0;
+-			firstFrame_ = true;
+-			return;
+-		}
+-	}
+-
+-	// Read results from previous frame (guaranteed complete now)
+-	if (numQueries_ > 0 && !firstFrame_) {
+-		static const char * const indent[4] = { "", "  ", "    ", "      " };
+-
+-		if (!scopes_.empty()) {
+-			DEBUG_LOG(Log::G3D, "OpenGL profiling events this frame:");
+-		}
+-
+-		// Log results
+-		for (auto &scope : scopes_) {
+-			if (scope.endQueryId == -1) {
+-				WARN_LOG(Log::G3D, "Unclosed scope: %s", scope.name);
+-				continue;
+-			}
+-
+-			GLuint64 startTime = 0, endTime = 0;
+-			glGetQueryObjectui64v(queries_[scope.startQueryId], GL_QUERY_RESULT, &startTime);
+-			glGetQueryObjectui64v(queries_[scope.endQueryId], GL_QUERY_RESULT, &endTime);
+-
+-			// Times are in nanoseconds, convert to milliseconds
+-			double milliseconds = (double)(endTime - startTime) / 1000000.0;
+-
+-			DEBUG_LOG(Log::G3D, "%s%s (%0.3f ms)", indent[scope.level & 3], scope.name, milliseconds);
++			for (Slot &slot : slots_)
++				slot.recorded = false;
+ 		}
+ 	}
+ 
+-	firstFrame_ = false;
+-	scopes_.clear();
++	// The oldest set was recorded three frames ago: its results are complete by now.
++	Slot &next = slots_[(slot_ + 1) % SLOTS];
++	if (next.recorded && !next.scopes.empty()) {
++		const double readStart = time_now_d();
++		ReadSlot(next);
++		readMs_ += 1000.0 * (time_now_d() - readStart);
++	}
++	next.scopes.clear();
++	next.numQueries = 0;
++	next.recorded = true;
++	slot_ = (slot_ + 1) % SLOTS;
+ 	scopeStack_.clear();
+-	numQueries_ = 0;
+ }
+ 
+ void GLProfiler::Begin(const char *fmt, ...) {
+-	if (!supported_ || (enabledPtr_ && !*enabledPtr_) || numQueries_ >= MAX_QUERY_COUNT - 1) {
++	if (!supported_ || (enabledPtr_ && !*enabledPtr_))
++		return;
++	Slot &slot = slots_[slot_];
++	if (slot.numQueries >= MAX_QUERY_COUNT - 1)
+ 		return;
+-	}
+ 
+ 	GLProfilerScope scope;
+ 	va_list args;
+ 	va_start(args, fmt);
+ 	vsnprintf(scope.name, sizeof(scope.name), fmt, args);
+ 	va_end(args);
+-	scope.startQueryId = numQueries_;
++	scope.startQueryId = slot.numQueries;
+ 	scope.endQueryId = -1;
+ 	scope.level = (int)scopeStack_.size();
++	scope.cpuBegin = time_now_d();
++	scope.cpuIssued = scope.cpuDone = scope.cpuBegin;
+ 
+-	scopeStack_.push_back(scopes_.size());
+-	scopes_.push_back(scope);
++	scopeStack_.push_back(slot.scopes.size());
++	slot.scopes.push_back(scope);
+ 
+-	glQueryCounter(queries_[numQueries_], GL_TIMESTAMP);
+-	numQueries_++;
++	glQueryCounter(slot.queries[slot.numQueries], GL_TIMESTAMP);
++	slot.numQueries++;
+ }
+ 
+ void GLProfiler::End() {
+-	if (!supported_ || (enabledPtr_ && !*enabledPtr_) || numQueries_ >= MAX_QUERY_COUNT - 1) {
++	if (!supported_ || (enabledPtr_ && !*enabledPtr_))
++		return;
++	Slot &slot = slots_[slot_];
++	if (slot.numQueries >= MAX_QUERY_COUNT - 1)
+ 		return;
+-	}
+ 
+ 	if (scopeStack_.empty()) {
+ 		WARN_LOG(Log::G3D, "GLProfiler::End called without matching Begin");
+@@ -171,9 +216,15 @@
+ 	size_t scopeId = scopeStack_.back();
+ 	scopeStack_.pop_back();
+ 
+-	GLProfilerScope &scope = scopes_[scopeId];
+-	scope.endQueryId = numQueries_;
++	GLProfilerScope &scope = slot.scopes[scopeId];
++	scope.endQueryId = slot.numQueries;
+ 
+-	glQueryCounter(queries_[numQueries_], GL_TIMESTAMP);
+-	numQueries_++;
++	// RGDS_GL_PASS_FINISH=1: the GPU drains before the end stamp, so a pass's time holds its whole fragment work
++	// (no overlap with the next pass), at the cost of the frame rate during the measurement.
++	scope.cpuIssued = time_now_d();
++	if (FinishEach())
++		glFinish();
++	scope.cpuDone = time_now_d();
++	glQueryCounter(slot.queries[slot.numQueries], GL_TIMESTAMP);
++	slot.numQueries++;
+ }
+--- a/Common/GPU/OpenGL/GLQueueRunner.cpp
++++ b/Common/GPU/OpenGL/GLQueueRunner.cpp
+@@ -685,6 +685,15 @@
+ 		profiler_.SetEnabledPtr(&frameData.profile.enabled);
+ 	}
+ 	profiler_.BeginFrame();
++	// RG DS: each pass goes to the GPU as soon as it is issued (RGDS_GL_FLUSH_PASSES=0 keeps upstream's behaviour).
++	// Panfrost otherwise holds every pass's batch until something forces a submit, so the GPU idles while the CPU
++	// issues the rest of the frame: OutRun 2006 drew 27% more frames with the flush (3284 against 2575 in 90 s).
++	static const bool flushEachPass = !(getenv("RGDS_GL_FLUSH_PASSES") && *getenv("RGDS_GL_FLUSH_PASSES") == '0');
++	// RG DS: with the pass report, one frame in every report lists its steps.
++	static int profiledFrames = 0;
++	const bool listSteps = GLProfiler::ReportEvery() > 0 && (++profiledFrames % GLProfiler::ReportEvery()) == 1;
++	if (listSteps)
++		fprintf(stderr, "gl steps of frame %d:\n", profiledFrames);
+ 
+ 	CHECK_GL_ERROR_IF_DEBUG();
+ 	size_t renderCount = 0;
+@@ -699,7 +708,7 @@
+ 		switch (step.stepType) {
+ 		case GLRStepType::RENDER:
+ 			renderCount++;
+-			profiler_.Begin("RenderPass %s", step.tag);
++			profiler_.Begin("%02d %dx%d c%d %s", (int)i, step.render.framebuffer ? step.render.framebuffer->width : targetWidth_, step.render.framebuffer ? step.render.framebuffer->height : targetHeight_, (int)step.commands.size(), step.tag);
+ 			if (IsVREnabled()) {
+ 				PreprocessStepVR(&step);
+ 				PerformRenderPass(step, renderCount == 1, renderCount == totalRenderCount, frameData.profile);
+@@ -707,24 +716,26 @@
+ 				PerformRenderPass(step, renderCount == 1, renderCount == totalRenderCount, frameData.profile);
+ 			}
+ 			profiler_.End();
++			if (flushEachPass)
++				glFlush();
+ 			break;
+ 		case GLRStepType::COPY:
+-			profiler_.Begin("Copy");
++			profiler_.Begin("%02d copy %s", (int)i, step.tag);
+ 			PerformCopy(step);
+ 			profiler_.End();
+ 			break;
+ 		case GLRStepType::BLIT:
+-			profiler_.Begin("Blit");
++			profiler_.Begin("%02d blit %s", (int)i, step.tag);
+ 			PerformBlit(step);
+ 			profiler_.End();
+ 			break;
+ 		case GLRStepType::READBACK:
+-			profiler_.Begin("Readback");
++			profiler_.Begin("%02d readback %s", (int)i, step.tag);
+ 			PerformReadback(step);
+ 			profiler_.End();
+ 			break;
+ 		case GLRStepType::READBACK_IMAGE:
+-			profiler_.Begin("ReadbackImage");
++			profiler_.Begin("%02d readback_image %s", (int)i, step.tag);
+ 			PerformReadbackImage(step);
+ 			profiler_.End();
+ 			break;
+@@ -742,6 +753,8 @@
+ 		if (frameData.profile.enabled) {
+ 			frameData.profile.passesString += StepToString(step);
+ 		}
++		if (listSteps)
++			fprintf(stderr, "  %02d %s", (int)i, StepToString(step).c_str());
+ 		if (!keepSteps) {
+ 			delete steps[i];
+ 		}
+--- a/Common/GPU/OpenGL/GLRenderManager.cpp
++++ b/Common/GPU/OpenGL/GLRenderManager.cpp
+@@ -339,6 +339,9 @@
+ 	queueRunner_.CopyFromReadbackBuffer(nullptr, w, h, Draw::DataFormat::R8G8B8A8_UNORM, destFormat, pixelStride, pixels);
+ }
+ 
++// RG DS: the submission thread's time in the wait for a frame slot's fence, for the pass report.
++static double g_rgdsFenceWait = 0.0;
++
+ void GLRenderManager::BeginFrame(bool enableProfiling) {
+ #ifdef _DEBUG
+ 	curProgram_ = nullptr;
+@@ -355,7 +358,8 @@
+ 
+ 	GLFrameData &frameData = frameData_[curFrame];
+ 	frameData.frameId = frameIdGen_;
+-	frameData.profile.enabled = enableProfiling;
++	// RG DS: RGDS_GL_PASS_PROFILE turns the per-pass GPU timing on without the UI.
++	frameData.profile.enabled = enableProfiling || GLProfiler::ReportEvery() > 0;
+ 
+ 	frameIdGen_++;
+ 	{
+@@ -473,8 +477,11 @@
+ 		frameData.hasBegun = true;
+ 
+ 		if (frameData.gpuDone) {
+-			if (!skipGLCalls_)
++			if (!skipGLCalls_) {
++				const double waitStart = time_now_d();
+ 				glClientWaitSync(frameData.gpuDone, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000);
++				g_rgdsFenceWait += time_now_d() - waitStart;
++			}
+ 			glDeleteSync(frameData.gpuDone);
+ 			frameData.gpuDone = nullptr;
+ 		}
+@@ -511,6 +518,18 @@
+ 
+ 	if (frameData.profile.enabled) {
+ 		frameData.profile.cpuEndTime = time_now_d();
++		if (GLProfiler::ReportEvery() > 0) {
++			// RG DS: the submission thread's own time in the GL calls of a frame, with the pass report.
++			static double sum = 0.0;
++			static int frames = 0;
++			sum += frameData.profile.cpuEndTime - frameData.profile.cpuStartTime;
++			if (++frames >= GLProfiler::ReportEvery()) {
++				fprintf(stderr, "gl list: %.2f ms a frame in the GL calls of the steps, %.2f ms waiting for the frame slot's fence (%d frames)\n", 1000.0 * sum / frames, 1000.0 * g_rgdsFenceWait / frames, frames);
++				sum = 0.0;
++				g_rgdsFenceWait = 0.0;
++				frames = 0;
++			}
++		}
+ 	}
+ 
+ 	if (!skipGLCalls_) {

@@ -105,6 +105,7 @@ public:
     // RG DS: fragmentStoresAndAtomics, enabled: the resolve writes the CPU's
     // readback buffer directly instead of a colour attachment and a copy.
     bool fragment_stores = false;
+    bool dual_src = false; // dual-source blending (Lean's direct frames)
     // The present extensions (set_present_extensions) and VK_KHR_swapchain are enabled.
     bool present = false;
   };

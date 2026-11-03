@@ -31,6 +31,7 @@ class SourceBuildTests(unittest.TestCase):
         self.addCleanup(patch.stopall)
         patch.object(build, "ROOT", self.root).start()
         patch.object(build.shutil, "which", return_value="compiler").start()
+        patch.object(build, "llvm_objcopy", return_value=None).start()
         patch.object(
             build.subprocess,
             "check_output",
@@ -41,6 +42,23 @@ class SourceBuildTests(unittest.TestCase):
             side_effect=lambda p, **kw:
             dict(machine="aarch64", glibc_minimum="2.17", sha256=build.digest(p), exports=sorted(build.BRIDGE_EXPORTS))
         ).start()
+
+    def test_symbols_are_kept_under_the_build_id_and_the_binary_stripped(self):
+        binary = self.root / "candidate"
+        binary.write_bytes(b"elf" + build.struct.pack("<III", 4, 20, 3) + b"GNU\0" + bytes(range(20)) + b"rest")
+        with patch.object(build.subprocess, "run") as run:
+            build.keep_symbols("objcopy", binary, "rgds-launcher")
+        identity = bytes(range(20)).hex()
+        keep, strip = [call.args[0] for call in run.call_args_list]
+        self.assertEqual(keep[:2], ["objcopy", "--only-keep-debug"])
+        self.assertTrue(keep[-1].endswith(f"dist/symbols/rgds-launcher-{identity}.debug"))
+        self.assertEqual(strip, ["objcopy", "--strip-all", str(binary)])
+
+    def test_a_binary_without_a_build_id_cannot_lose_its_symbols_quietly(self):
+        binary = self.root / "candidate"
+        binary.write_bytes(b"no note here")
+        with self.assertRaisesRegex(ValueError, "No build id"):
+            build.keep_symbols("objcopy", binary, "rgds-launcher")
 
     def assert_preserved(self):
         self.assertEqual({p.name: p.read_bytes() for p in self.directory.iterdir()}, self.original)

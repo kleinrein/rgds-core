@@ -92,8 +92,7 @@ bool App::open_setting_picker() {
             system_preferences.game_sleep, [this](int n) { change_system(8, n - system_preferences.game_sleep); });
     } else if ((settings.page == Page::Power && row == 0) || (settings.page == Page::EmulatorOptions && row == 2)) {
         if (!hardware.power) return false;
-        show_picker("Power mode", {power_names[0], power_names[1], power_names[2], power_names[3]},
-                    system_preferences.power, [this](int n) { change_system(0, n - system_preferences.power); });
+        show_power_picker();
     } else if (settings.page == Page::Power && row == 1) {
         if (!hardware.sleep) return false;
         show_picker("Menu idle sleep", {idle_name(0), idle_name(1), idle_name(2), idle_name(3), idle_name(4)},

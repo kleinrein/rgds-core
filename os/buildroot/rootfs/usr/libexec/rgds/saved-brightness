@@ -1,0 +1,19 @@
+#!/bin/sh
+# The owner's saved brightness on both panels, from system.ini, with no helper to wait for: the panels come up at full
+# brightness and the launcher's own helper is seconds away. Run by rcS once the data partition is up, and by the
+# session before a restarted launcher. Same rounding as runtime/system_controls.py.
+INI=${RGDS_SYSTEM_INI:-/data/rgds/userdata/system.ini}
+BACKLIGHTS=${RGDS_BACKLIGHTS:-/sys/class/backlight}
+[ -r "$INI" ] || exit 0
+level=
+while IFS== read -r key value || [ -n "$key" ]; do
+    [ "$key" = brightness ] && level=$value
+done < "$INI"
+case "$level" in ''|*[!0-9]*) exit 0;; esac
+[ "$level" -ge 5 ] && [ "$level" -le 100 ] || exit 0
+for b in "$BACKLIGHTS"/*; do
+    max=$(cat "$b/max_brightness" 2>/dev/null)
+    [ -n "$max" ] || continue
+    echo $(((max * level + 50) / 100)) > "$b/brightness"
+done
+exit 0

@@ -857,6 +857,19 @@ void Bus::dma_write32(Cpu cpu, u32 addr, u32 v) {
   io_write(cpu, addr, 32, v);
 }
 
+bool Bus::dma_tcm(u32 addr) const {
+  const CpuContext& c = nds_.cpu(Cpu::ARM9);
+  return addr < c.itcm_size || (addr & c.dtcm_mask) == c.dtcm_base;
+}
+// Under the DTCM window the main RAM answers a DMA; the mirror 4 MiB away is the
+// same RAM outside the window, so its page-table entry (and its code tag) serves.
+bool Bus::dmac_view(Cpu cpu, u32& addr) const {
+  if (cpu != Cpu::ARM9 || !dma_tcm(addr)) return true;
+  if ((addr >> 24) != 0x02) return false;
+  addr ^= 0x00400000;
+  return true;
+}
+
 u8 Bus::read8(Cpu cpu, u32 addr) { return static_cast<u8>(io_read(cpu, addr, 8)); }
 u16 Bus::read16(Cpu cpu, u32 addr) { return static_cast<u16>(io_read(cpu, addr, 16)); }
 u32 Bus::read32(Cpu cpu, u32 addr) { return io_read(cpu, addr, 32); }

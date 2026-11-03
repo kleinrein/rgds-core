@@ -26,7 +26,8 @@ inline GameOptions load_game_options(const fs::path& path) {
     result.threaded = integer("threaded_3d", -1, -1, 1);
     result.hires = integer("hires_3d", -1, -1, 1);
     result.frameskip = integer("frameskip", -1, -1, 3);
-    result.rgds_scale = integer("rgds_scale", 1, 1, 5);
+    result.rgds_scale = integer("rgds_scale", 1, 1, 25); // 1 to 5, or 25: 2.5x
+    if (result.rgds_scale > 5 && result.rgds_scale != 25) result.rgds_scale = 1;
     result.rgds_smooth = integer("rgds_smooth", 1, 0, 1);
     result.rgds_2d = integer("rgds_2d", 0, 0, 5);
     result.rgds_adaptive = integer("rgds_adaptive", 1, 0, 1);

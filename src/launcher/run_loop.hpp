@@ -216,6 +216,13 @@ int App::run() {
                 start_boot_session();
                 continue;
             }
+            // Behind "Touch to continue": Home is ready by the time the tap comes.
+            if (boot_displayed && !o.usb_drive_screen) {
+                begin_boot_work();
+                poll_library_scan();
+                poll_collection();
+                poll_system_status(now);
+            }
             SDL_Event wait{};
             if (wait_event(&wait, motion ? 16 : input_wake.available() ? 250 : touchscreen.available() ? 8 : 50)) {
                 event(wait);
@@ -271,37 +278,8 @@ int App::run() {
         }
         poll_brightness();
         poll_volume();
-        if (auto refreshed = system.poll_status())
-            if (refreshed->success) {
-                const auto previous = hardware;
-                auto brightness = hardware.brightness_percent, volume = hardware.volume_percent;
-                hardware = refreshed->value;
-                if (brightness_unsaved || brightness_drag || system.brightness_pending())
-                    hardware.brightness_percent = brightness;
-                if (o.preview || return_writes_pending() || volume_unsaved || volume_drag || system.volume_pending() ||
-                    volume_toast > now)
-                    hardware.volume_percent = volume;
-                if (!volume_unsaved && !system.volume_pending()) {
-                    volume_applied = hardware.volume_percent;
-                    if (volume_applied > 0) unmuted_volume = volume_applied;
-                }
-                if (o.boot_startup && !boot_hardware_ready) {
-                    boot_hardware_ready = true;
-                    if (hardware.volume) {
-                        system.request_volume(hardware.volume_percent);
-                        volume_unsaved = true;
-                    }
-                    if (hardware.brightness) {
-                        system.request_brightness(system_preferences.brightness);
-                        brightness_unsaved = true;
-                        brightness_changed = now;
-                        hardware.brightness_percent = system_preferences.brightness;
-                    }
-                    if (hardware.power && system_preferences.power > 0) system.set("power", system_preferences.power);
-                    if (hardware.lid && system_preferences.lid) system.set("lid", 1);
-                }
-                if (!same_hardware(previous, hardware)) dirty = true;
-            }
+        poll_control();
+        poll_system_status(now);
         if (!launching || launch_preview) poll_service(now);
         home_bar_settle();
         if (!o.preview && !o.game_menu && !launching && worker <= 0 && now - automatic_update_at > 60000) {
@@ -318,7 +296,8 @@ int App::run() {
         // every 15 s, every 2 s while Wi-Fi joins or looks for a saved network by itself (the status card follows it)
         const Uint32 poll =
             !device_status["wifi_joining"].empty() || device_status["wifi_looking"] == "1" ? 2000 : 15000;
-        if (!o.game_menu && !launching && worker <= 0 && (!device_loaded || now - connection_poll >= poll))
+        if (!o.game_menu && !launching && worker <= 0 && int32_t(now - network_after) >= 0 &&
+            (!device_loaded || now - connection_poll >= poll))
             refresh_network(now);
         poll_launch(now);
         poll_chat();
@@ -396,6 +375,12 @@ int App::run() {
                 dirty = true;
             }
         }
+        crash::context.page = int(settings.page);
+        crash::context.home = home_menu;
+        crash::context.games = model.games.size();
+        crash::context.all_games = all_games.size();
+        crash::context.library_ready = library_ready;
+        crash::context.collection_loading = collection_loading;
         if (dirty || o.frames) {
             ui_trace.mark(UiTrace::Assets, rendered_frames, uint32_t(settings.page));
             if (!rendered_frames) launch_profile.mark("assets-start");

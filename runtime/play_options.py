@@ -264,6 +264,9 @@ def frame_known(data, rom, frame):
 # (Settings > Library > System defaults). The same keys as a game's play.ini, plus `filter` (a shader id).
 # A game's own play.ini holds a key only where the game differs from this.
 BUILT_IN = {"fit": "sharp", "second": "companion", "frame": "off", "palette": PALETTES[0], "colour": CORRECTIONS[0]}
+# Tanuki3DS's internal resolution, per game only: 2x fits NSMB2 and 3D Land (about 7 ms of GPU a frame with
+# little pixel work), not Mario Kart 7's races. It takes effect at the next launch, so it is saved, not applied.
+SCALES = (1, 2, 3)
 
 
 def defaults_path(data, system):
@@ -298,7 +301,21 @@ def view(data, rom):
     if fields.get("frame") and frame_fits(data, system, fields["frame"]): shown["frame"] = fields["frame"]
     if fields.get("palette") in PALETTES: shown["palette"] = fields["palette"]
     if fields.get("colour") in CORRECTIONS: shown["colour"] = fields["colour"]
+    scale = fields.get("scale", "").strip()
+    shown["scale"] = int(scale) if scale.isdigit() and int(scale) in SCALES else 1
     return shown
+
+
+def save_scale(data, rom, scale):
+    """The internal resolution as a factor (the menu's play-scale:<n>); 1 means the key is dropped."""
+    if scale not in SCALES: raise ValueError("unknown scale %r" % (scale,))
+    path = _path(data, rom)
+    fields = read_fields(path)
+    fields["schema"] = 1
+    if scale == 1: fields.pop("scale", None)
+    else: fields["scale"] = str(scale)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_fields(path, fields)
 
 
 def _keep_differences(data, rom, fields, **chosen):

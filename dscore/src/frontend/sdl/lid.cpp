@@ -71,6 +71,7 @@ void Lid::close() {
 }
 
 void Lid::resumed() {
+  host_resumed_ = true;
   if (fd_ >= 0) return; // the switch reports the real hinge
   if (!pulse_enabled_) {
     std::fprintf(stderr, "lid: host resumed from suspend; the lid stays as it is\n");
@@ -84,9 +85,11 @@ bool Lid::poll(bool& closed, bool asleep) {
 #ifdef __linux__
   if (fd_ >= 0) {
     input_event ev;
-    bool any = false;
-    while (read(fd_, &ev, sizeof ev) == static_cast<ssize_t>(sizeof ev)) any = true;
-    if (any) switch_state(fd_, closed_);
+    while (read(fd_, &ev, sizeof ev) == static_cast<ssize_t>(sizeof ev)) {}
+    // Every frame, not just when an event arrived: around a host suspend the
+    // events can land out of step with the switch, and a missed open would
+    // leave the guest asleep for good.
+    switch_state(fd_, closed_);
   }
 #endif
   // No switch (or host froze before the event): clocks drifted >1s apart.
@@ -96,7 +99,9 @@ bool Lid::poll(bool& closed, bool asleep) {
   // Open once the firmware is asleep (the open edge's IRQ wakes it), or when
   // a game has ignored the hinge for the whole pulse.
   if (pulse_ > 0 && (asleep || --pulse_ == 0)) pulse_ = 0;
-  closed = closed_ || pulse_ > 0;
+  if (closed_ && !last_) hold_ = kMinClosedFrames;
+  else if (hold_ > 0) --hold_;
+  closed = closed_ || pulse_ > 0 || hold_ > 0;
   const bool changed = closed != last_;
   last_ = closed;
   return changed;

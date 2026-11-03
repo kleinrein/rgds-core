@@ -1,10 +1,11 @@
 #!/bin/sh
 # RG DS Core, straight onto both panels (KMSDRM, no compositor), with touch read from the bottom panel's
 # touchscreen. init starts this again if it ever exits. Its log: rgds/logs/launcher.log on the card (the previous
-# run's as .1).
+# five runs' as .1 to .5), ending in how the launcher exited; crash records are in rgds/userdata/logs/crashes.log.
 APP=/usr/share/rgds/releases/$(cat /usr/share/rgds/active)
 LOG=/data/rgds/logs/launcher.log
 export HOME=/root XDG_RUNTIME_DIR=/run/rgds
+/usr/libexec/rgds/saved-brightness
 # naming the render driver turns SDL2's batching off unless it is asked for (35-170 ms a panel without it)
 export SDL_VIDEODRIVER=kmsdrm SDL_KMSDRM_FIRST=DSI-2 SDL_RENDER_DRIVER=opengles2 SDL_RENDER_BATCHING=1
 export SDL_TOUCH_MOUSE_EVENTS=0 SDL_MOUSE_TOUCH_EVENTS=0 RGDS_SDL_LIBRARY=/usr/lib/libSDL2-2.0.so.0
@@ -26,6 +27,11 @@ if [ -f /run/rgds/usb-drive ]; then
     MESA_SHADER_CACHE_DIR=$UI /usr/libexec/rgds/usb drive $APP/bin/rgds-launcher --app $APP --data $UI --top-display 0 \
         --bottom-display 1 --usb-drive-screen >> /run/rgds/messages 2>&1
 fi
+i=4
+while [ $i -gt 0 ]; do
+    [ -f $LOG.$i ] && mv -f $LOG.$i $LOG.$((i + 1))
+    i=$((i - 1))
+done
 [ -f $LOG ] && mv -f $LOG $LOG.1
 # PortMaster (runtime/portmaster.py): its entry, then the ports it installs on the data partition
 mkdir -p /data/portmaster/ports
@@ -45,14 +51,22 @@ read up rest < /proc/uptime; printf '%-28s %6.2f s\n' "session: RG DS Core" "$up
 # --first-run: setup on a card that has not been used yet (setup.ini remembers)
 WARN=; grep -qx 'warning=1' /data/rgds/userdata/boot.ini 2>/dev/null && WARN=--boot-warning
 # CPU 3 is the emulation core (DSCore's thread layout pins its emulation thread there, RG DS Play its main
-# loop): the launcher and everything it starts stay on CPUs 0-2, so a game's frame is never queued behind them
+# loop): the launcher and its helpers stay on CPUs 0-2, so a game's frame is never queued behind them. A game itself
+# is started on every CPU (runtime/linux_platform.py, all_cpus): DSCore pins nothing unless it may use all four.
 PIN=; command -v taskset > /dev/null && PIN="taskset -c 0-2"
-# a slot on trial after an update is committed once the launcher has stayed up a minute ($$ is the launcher after
-# the exec; a crash and a respawn give the session a new pid). The updater commits earlier, when Home is reached.
+# a slot on trial after an update is committed once the launcher has stayed up a minute ($$ is this shell, which
+# waits for the launcher; a crash and a respawn give the session a new pid). The updater commits earlier, when Home
+# is reached.
 ( sleep 60; kill -0 $$ 2>/dev/null && /usr/libexec/rgds/trial commit ) &
-exec $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 0 --bottom-display 1 \
+$PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 0 --bottom-display 1 \
     --boot-startup --first-run $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
     --system-dir gb=/data/roms/gb \
     --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md --system-dir md=/data/roms/genesis \
     --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 --system-dir 3ds=/data/roms/3ds --system-dir psp=/data/roms/psp --system-dir ports=$APP/runtime/portmaster_files/entry \
     --system-dir ports=/data/portmaster/ports >> $LOG 2>&1
+status=$?
+# 128 + the signal when it was killed. The kernel's side goes with it: an out-of-memory kill (137) records nothing
+# itself, and GPU and card errors show here.
+read up rest < /proc/uptime
+echo "session: launcher exited, status $status, uptime $up s" >> $LOG
+[ $status -ne 0 ] && dmesg | tail -n 200 >> $LOG 2>&1

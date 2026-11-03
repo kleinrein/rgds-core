@@ -374,6 +374,27 @@ class DeviceServiceTests(unittest.TestCase):
         self.assertNotIn("private SSID", report)
         self.assertNotIn("192.168", report)
 
+    def test_device_report_bundles_crash_logs_without_private_details(self):
+        logs, engines = self.data.parent / "logs", self.data / "logs"
+        engines.mkdir(parents=True, exist_ok=True)
+        logs.mkdir(parents=True, exist_ok=True)
+        (engines / "crashes.log").write_text("=== crash ===\nkind=signal\n")
+        (logs / "launcher.log.2").write_text("joined SSID='home net' from 192.168.1.42 aa:bb:cc:dd:ee:ff\n")
+        (logs / "u-boot-before-1.bin").write_bytes(b"not for a report")
+        (logs / "wifi.conf").write_text("psk=secret")
+        for _ in range(7):
+            self.service.diagnostics()
+        import tarfile
+        archive = next((self.data / "support").glob("report-*.tar.gz"))
+        with tarfile.open(archive) as stream:
+            names = stream.getnames()
+            log = stream.extractfile("logs/launcher.log.2").read().decode()
+        self.assertTrue(any(name.endswith("crashes.log") for name in names), names)
+        self.assertFalse(any("u-boot" in name or "wifi" in name for name in names), names)
+        self.assertNotIn("home net", log)
+        self.assertNotIn("192.168", log)
+        self.assertNotIn("aa:bb", log)
+
     def test_game_filter_override_and_ui_extension_are_independent_of_base_preferences(self):
         rom = self.root / "game.nds"
         write_fields(self.data / "preferences.ini", dict(schema=1, mode="dark", font="rounded", core=0))

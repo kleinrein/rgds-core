@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import shlex
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -18,6 +19,24 @@ BRIDGE_EXPORTS = {
     "SDL_GameControllerGetButton", "SDL_GetKeyboardState", "SDL_PeepEvents", "read", "ioctl", "kill", "snd_pcm_open",
     "rgds_present_canvas", "rgds_hd_rules", "rgds_shader_live", "rgds_play_screen", "rgds_rumble"
 }
+
+
+def llvm_objcopy():
+    for name in ("llvm-objcopy", "/opt/homebrew/opt/llvm/bin/llvm-objcopy"):
+        if shutil.which(name): return name
+    return None
+
+
+def keep_symbols(objcopy, binary, name):
+    """Ship it stripped, and keep its symbols under its build id for tools/symbolize_crash.py."""
+    data = binary.read_bytes()
+    note = data.find(struct.pack("<III", 4, 20, 3) + b"GNU\0")
+    if note < 0: raise ValueError("No build id: " + name)
+    build_id = data[note + 16:note + 36].hex()
+    folder = ROOT / "dist/symbols"
+    folder.mkdir(parents=True, exist_ok=True)
+    subprocess.run([objcopy, "--only-keep-debug", str(binary), str(folder / f"{name}-{build_id}.debug")], check=True)
+    subprocess.run([objcopy, "--strip-all", str(binary)], check=True)
 
 
 def digest(path):
@@ -91,14 +110,20 @@ def build(target):
     output.parent.mkdir(parents=True, exist_ok=True)
     cmd = [os.environ.get("CXX", "clang++"), "-std=c++17", "-O3", "-Wall", "-Wextra", "-Werror"]
     env = os.environ.copy()
+    objcopy = llvm_objcopy() if target == "device" else None
     if target == "device":
         if not shutil.which("zig"):
             raise SystemExit("Zig is required for the initial AArch64 cross build.")
         # Zig supplies its static libc++ runtime itself.
         cmd = [
             "zig", "c++", "-target", "aarch64-linux-gnu.2.17", "-mcpu=cortex_a55", "-std=c++17", "-O3", "-flto",
-            "-Wall", "-Wextra", "-Werror", "-Wl,--strip-all", "-ldl"
+            "-Wall", "-Wextra", "-Werror", "-ldl"
         ]
+        # Without llvm-objcopy (brew install llvm) the build still works; its crash records stay bare addresses.
+        if objcopy: cmd += ["-g", "-fno-omit-frame-pointer", "-Wl,--build-id=sha1"]
+        else:
+            cmd += ["-Wl,--strip-all"]
+            print("llvm-objcopy not found: this build keeps no crash symbols.", flush=True)
         env["ZIG_GLOBAL_CACHE_DIR"] = str(ROOT / ".cache" / "zig")
         env["ZIG_LOCAL_CACHE_DIR"] = str(ROOT / ".cache" / "zig-local")
     elif sys.platform != "darwin":
@@ -126,6 +151,10 @@ def build(target):
             candidates[destination] = Path(candidate)
             command = cmd + extra + includes + ["-Isrc", source, "-o", candidate]
             subprocess.run(command, cwd=ROOT, env=env, check=True)
+            # Crash records name the launcher's build id. Zig 0.13 writes no build id into a shared library, so the
+            # bridge is only stripped.
+            if objcopy and destination == output: keep_symbols(objcopy, Path(candidate), destination.name)
+            elif objcopy: subprocess.run([objcopy, "--strip-all", candidate], check=True)
             commands[destination.name] = command[:-1] + [destination.name]
         if source_snapshot() != sources:
             raise ValueError("Sources changed during compilation; rebuild once edits settle")

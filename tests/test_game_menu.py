@@ -603,6 +603,49 @@ class GameMenuTests(unittest.TestCase):
         self.assertEqual(self.menu.pending['action'], 'graphics:5:1:0')
         self.assertFalse(self.menu.restart)
 
+    def test_the_panel_exact_scale_is_a_high_resolution_choice(self):
+        from library import game_key
+        self.menu.core = 'rgds-experimental'
+        self.menu.launch_hires = False
+        path = self.menu.data / 'library' / game_key(self.menu.rom) / 'game.ini'
+        write_fields(path, dict(rgds_scale=1, rgds_smooth=1, frameskip=0))
+        self.request('graphics:25:0:0', token='to-panel')
+        self.assertEqual(read_fields(path)['rgds_scale'], '25')
+        self.assertTrue(self.menu.restart)
+        self.menu.pending = None
+        self.menu.restart = False
+        self.menu.launch_hires = True
+        self.request('graphics:6:0:0', token='not-a-scale')
+        self.assertIsNone(self.menu.pending)
+        self.request('graphics:25:0:0', token='live')
+        self.assertEqual(self.menu.pending['action'], 'graphics:25:0:0')
+        self.assertFalse(self.menu.restart)
+
+    def test_internal_resolution_is_saved_for_the_next_launch_without_the_engine(self):
+        from play_options import view
+        self.menu.core = 'rgds-play'
+        self.menu.send('play-scale:2')
+        self.assertIsNone(self.menu.pending)  # nothing goes to the engine: its framebuffers are sized at start
+        self.assertEqual(view(self.menu.data, self.menu.rom)['scale'], 2)
+        self.assertEqual(read_fields(self.menu.status)['state'], 'paused')
+        self.assertIn('next time', read_fields(self.menu.status)['message'])
+        self.menu.send('play-scale:1')
+        self.assertEqual(view(self.menu.data, self.menu.rom)['scale'], 1)
+        for command in ('play-scale:0', 'play-scale:9', 'play-scale:x'):
+            self.menu.send(command)
+            self.assertEqual(read_fields(self.menu.status)['state'], 'error')
+        self.menu.core = 'drastic'
+        self.menu.send('play-scale:2')
+        self.assertEqual(read_fields(self.menu.status)['state'], 'error')
+
+    def test_internal_resolution_request_passes_the_menu_request_reader(self):
+        # The launcher's Graphics page writes game-menu.request; the reader lets only known actions through.
+        from play_options import view
+        self.menu.core = 'rgds-play'
+        self.request('play-scale:2', token='scale-1')
+        self.assertEqual(view(self.menu.data, self.menu.rom)['scale'], 2)
+        self.assertIn('next time', read_fields(self.menu.status)['message'])
+
     def test_live_graphics_rejects_malformed_and_other_engine_requests(self):
         for command in ('graphics:5:1:0', 'graphics:9:1:0', 'graphics:3:1', 'graphics:3:1:0:2'):
             self.menu.send(command)

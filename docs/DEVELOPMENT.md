@@ -319,6 +319,23 @@ after building the host launcher to exercise disabled options, picker cancel/app
 default inheritance, restart selection and failed preference writes. The tests
 drive real SDL input with temporary data; they do not launch handheld emulators.
 
+## Crash reports
+
+A launcher crash leaves a record in `userdata/logs/crashes.log`: signal or exception, frames, memory map, screen and
+game count (`src/platform/crash_record.hpp`). `rgds/logs/launcher.log` ends in the exit status, with `dmesg` after a
+failure, and the last five runs are kept. A kernel panic restarts after 5 s and rcS moves its record from RAM to
+`rgds/logs/pstore/`. A hard freeze or a power-off records nothing.
+
+Settings > Maintenance > Save device report bundles all of this into `userdata/support/report-*.tar.gz`, with network
+names and addresses removed, for a tester to send. ROM file names stay in it. To read a record:
+
+```bash
+tools/symbolize_crash.py crashes.log
+```
+
+`tools/build.py device` keeps symbols in `dist/symbols/` by build id (needs `llvm-objcopy`: `brew install llvm`). `dist/`
+is not in git, so keep that folder for every build handed to testers: a record from a lost build stays bare addresses.
+
 ## Formatting
 
 Python is laid out by yapf (`.style.yapf`), C and C++ by clang-format
@@ -348,3 +365,21 @@ the engines before packaging.
 - **Defaults.** The language preselects a timezone and clock and date formats. A new card starts on all systems; the Systems step or Library settings can narrow it to DS.
 - **The name.** `userdata/ds.ini` `nickname` is the handheld's name for DS games (`runtime/emulators.py`), under a game's own DS nickname. Setup also writes it to PictoChat's profile.
 - **Testing.** `tests/test_welcome_ui.py`. Put `step=N` in `setup.ini` to open a step directly with `--preview --boot-startup --first-run --data <folder>`.
+
+## Saves
+
+A game's own save must survive every update, engine rebuild and test run.
+
+- **Nothing an update writes touches them.** An OS update writes a root slot and its boot files; the data partition is only formatted while it is labelled `rgds-new`, on the first boot.
+- **Save history.** `runtime/save_guard.py` copies a game's saves before each launch to `userdata/save-history/<game key>/<time>` (10 copies; 3DS and PSP share `3ds` and `psp` folders) and its resume point to `<game key>/resume` (2 copies). The player's systems also keep three of their own in `saves/<system>/backups`. `python3 save_guard.py <userdata>` lists the copies, `python3 save_guard.py <userdata> restore <copy>` puts one back, keeping what it replaces.
+- **Earlier emulators.** A DS game with no DSCore save takes the newest one found beside the ROM or in a retired engine's folder. The old file stays where it is.
+- **Writes.** DSCore and the player fsync the file and the folder around the rename.
+- **Resume points across updates.** A resume point is lost when a new engine refuses it and quitting replaces it. So:
+  - DS: the state format is field by field and reads across builds. Never raise `OLDEST_READABLE_VERSION` in an update; add fields with `more()` so old states still load. `DS_STATE_FORMATS` in `runtime/emulators.py` must match (a test checks). A state the engine refuses starts the game without it.
+  - Player systems: keep a libretro core's pin unless its states are known to load across the bump. mGBA reads old states.
+  - 3DS: `src/savestate.c` in the fork stores everything field by field, kernel objects and callbacks by name, so a state survives engine rebuilds; its top comment has the rules. Format 1 states, from before this, only load in the binary that wrote them: the engine keeps them as `<state>.refused-1`. Before giving players a new engine, run `tools/tanuki3ds/state-check.sh` with the previous one and `state-diff.py`.
+  - `tools/resume_check.py` loads a resume point from every earlier release (`tests/resume-fixtures/ds`, from our own ROM) in the new DS engine, and `tools/own_os_release.py` stops if one fails. It also adds this release's to the set.
+  - Save history keeps the resume point each update found (`resume/before-<build>`, last 4 updates).
+- **Skipped resume points.** The launcher skips a DS resume point older than the `.sav`, and quitting then writes a new one, so anything that rewrites a `.sav` costs the player their place.
+- **Test runs never use the owner's `userdata`.** Pass `--data` a copy, as `os/banana-probe/real_trial.sh` does.
+

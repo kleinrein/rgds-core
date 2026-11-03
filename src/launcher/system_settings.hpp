@@ -269,10 +269,75 @@ bool App::apply_control(int focus, const SystemPreferences& value) {
         else if (focus == 4) return_brightness = value.brightness;
         return true;
     }
-    if (focus == 0) return system.set("power", value.power);
-    if (focus == 2) return system.set("lid", value.lid);
-    if (focus == 4) return system.set("brightness", value.brightness);
+    if (focus == 0) system.request_control("power", value.power);
+    else if (focus == 2) system.request_control("lid", value.lid);
+    else if (focus == 4) system.request_brightness(value.brightness);
     return true;
+}
+
+// A row's helper failed after the menu moved on: back to the last value that applied, unless a newer one is on its way.
+void App::poll_control() {
+    auto update = system.poll_control();
+    if (!update) return;
+    const bool power = update->command == "power";
+    if (update->success) {
+        (power ? confirmed_power : confirmed_lid) = update->value;
+        return;
+    }
+    if ((power ? system_preferences.power : int(system_preferences.lid)) != update->value) return;
+    if (power) system_preferences.power = confirmed_power;
+    else system_preferences.lid = confirmed_lid;
+    status = "Could not apply setting - see log";
+    dirty = true;
+    try {
+        save_system_preferences(o.system_preferences, system_preferences);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+}
+
+void App::poll_system_status(Uint32 now) {
+    auto refreshed = system.poll_status();
+    if (!refreshed) return;
+    const bool starting = o.boot_startup && !boot_hardware_ready;
+    if (!refreshed->success) {
+        if (!starting) return;
+        if (boot_start_tries++ < 2) {
+            system.request_session_start(system_preferences.brightness, system_preferences.power,
+                                         system_preferences.lid);
+            return;
+        }
+        // Nothing more to wait for: games may start, and the menu says the saved settings are not on.
+        boot_hardware_ready = true;
+        status = "Could not apply setting - see log";
+        dirty = true;
+        return;
+    }
+    const auto previous = hardware;
+    auto brightness = hardware.brightness_percent, volume = hardware.volume_percent;
+    hardware = refreshed->value;
+    if (brightness_unsaved || brightness_drag || system.brightness_pending()) hardware.brightness_percent = brightness;
+    if (o.preview || return_writes_pending() || volume_unsaved || volume_drag || system.volume_pending() ||
+        volume_toast > now)
+        hardware.volume_percent = volume;
+    if (!volume_unsaved && !system.volume_pending()) {
+        volume_applied = hardware.volume_percent;
+        if (volume_applied > 0) unmuted_volume = volume_applied;
+    }
+    if (starting) {
+        boot_hardware_ready = true; // session-start has applied the saved controls
+        system_poll = now;
+        const auto& result = refreshed->value;
+        if (!brightness_unsaved && !system.brightness_pending()) brightness_applied = result.brightness_percent;
+        if (result.brightness && result.brightness_failed) {
+            system_preferences.brightness = result.brightness_percent;
+            status = "Could not apply saved brightness";
+        } else if (result.volume && result.volume_failed) status = "Could not apply volume";
+        else if (result.power && result.power_failed) status = "Could not apply saved power mode";
+        else if (result.lid && result.lid_failed) status = "Could not enable lid wake";
+        dirty = true;
+    }
+    if (!same_hardware(previous, hardware)) dirty = true;
 }
 
 void App::poll_brightness() {
@@ -332,7 +397,7 @@ void App::change_system(int focus, int delta, bool cycle) {
         dirty = true;
         return;
     }
-    if (focus == 0) next.power = cycle ? (next.power + 1) % 4 : std::clamp(next.power + delta, 0, 3);
+    if (focus == 0) next.power = cycle ? next.power % 3 + 1 : std::clamp(next.power + delta, 1, 3);
     else if (focus == 1) next.idle = cycle ? (next.idle + 1) % 5 : std::clamp(next.idle + delta, 0, 4);
     else if (focus == 2) next.lid = cycle ? !next.lid : delta > 0;
     else if (focus == 3) next.battery_percent = cycle ? !next.battery_percent : delta > 0;
@@ -349,6 +414,10 @@ void App::change_system(int focus, int delta, bool cycle) {
         next.brightness == previous.brightness && next.battery_percent == previous.battery_percent &&
         next.dim == previous.dim && next.game_sleep == previous.game_sleep)
         return;
+    if (!system.control_pending()) {
+        confirmed_power = previous.power;
+        confirmed_lid = previous.lid;
+    }
     if (focus == 4) {
         system_preferences.brightness = next.brightness;
         if (return_writes_pending()) return_brightness = next.brightness;
@@ -368,7 +437,7 @@ void App::change_system(int focus, int delta, bool cycle) {
         system_preferences = next;
         status = o.preview ? "Saved - desktop simulation" : "Settings saved";
     } catch (const std::exception& e) {
-        if (!apply_control(focus, previous)) std::cerr << "Could not restore previous hardware setting" << std::endl;
+        apply_control(focus, previous);
         status = "Could not save settings";
         std::cerr << e.what() << std::endl;
     }

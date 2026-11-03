@@ -183,9 +183,9 @@ u32 Ndma::run_channel(Channel& c, u32 budget) {
   while (c.iter_count > 0) {
     used += unit;
     nds_.sched.dma_progress(run_base_ + used);
-    const u32 v = fill ? c.fill : src_fifo ? nds_.io.ndma_read7(c.cur_src) : bus.dma_read32(c.cpu, c.cur_src);
+    const u32 v = fill ? c.fill : src_fifo ? nds_.io.ndma_read7(c.cur_src) : bus.dmac_read32(c.cpu, c.cur_src);
     if (dst_aes) nds_.io.ndma_write7_aes(v);
-    else bus.dma_write32(c.cpu, c.cur_dst, v);
+    else bus.dmac_write32(c.cpu, c.cur_dst, v);
     c.cur_src += c.src_inc * 4;
     c.cur_dst += c.dst_inc * 4;
     c.iter_count--;

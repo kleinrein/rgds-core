@@ -88,8 +88,7 @@ void App::refresh_other_systems() {
 
 std::vector<Game> App::view_source(int view) const {
     // A search or filter looks through every game, not just the system being browsed.
-    if (view != 0 || !preferences.show_systems || discovery_active())
-        return all_games;
+    if (view != 0 || !preferences.show_systems || discovery_active()) return all_games;
     std::vector<Game> games;
     if (shown_system == "ports" && port_entry) games.push_back(*port_entry); // always first in Ports
     for (const auto& game : all_games)
@@ -215,8 +214,9 @@ void App::save_system_view(const std::string& system, const SystemView& view) {
     auto pending = fs::path(path.string() + ".pending");
     {
         std::ofstream out(pending);
-        out << "schema=1\nfit=" << play_fit_slugs[size_t(view.fit)] << "\nsecond=" << play_second_slugs[size_t(view.second)]
-            << "\nframe=" << view.frame << "\npalette=" << play::gb_palettes[view.palette].slug
+        out << "schema=1\nfit=" << play_fit_slugs[size_t(view.fit)]
+            << "\nsecond=" << play_second_slugs[size_t(view.second)] << "\nframe=" << view.frame
+            << "\npalette=" << play::gb_palettes[view.palette].slug
             << "\ncolour=" << play::gb_corrections[view.correction].slug << '\n';
         if (view.filter >= 0) out << "filter=" << view.filter << '\n';
     }
@@ -244,6 +244,7 @@ void App::load_play_view() {
     auto choices = play_frame_choices();
     play_frame = play_default.frame;
     if (std::find(choices.begin(), choices.end(), values["frame"]) != choices.end()) play_frame = values["frame"];
+    play_scale = values["scale"] == "2" ? 2 : values["scale"] == "3" ? 3 : 1;
     play_palette = play_default.palette;
     play_correction = play_default.correction;
     for (int i = 0; i < play::gb_palette_count; i++)
@@ -361,8 +362,32 @@ static std::string marked_default(Locale& locale, const std::string& name, bool 
 }
 
 int App::play_graphics_row(int shown) const {
-    // Game screen, Second screen, Bezel, Shader, [Screen colours], Save as system default
+    // Game screen, Second screen, Bezel, Shader, [Screen colours | Internal resolution (3DS)], Save as system default
+    if (play_system() == "3ds") return shown < 4 ? shown : shown == 4 ? 6 : 5;
     return shown < 4 || !play_colour_kind() ? (shown < 4 ? shown : 5) : shown == 4 ? 4 : 5;
+}
+
+void App::apply_play_scale(int scale) {
+    if (scale == play_scale) return;
+    play_scale = scale;
+    if (o.game_menu && !o.preview) {
+        menu_request("play-scale:" + std::to_string(scale));
+        return;
+    }
+    std::error_code ec;
+    fs::create_directories(play_view_path().parent_path(), ec);
+    auto pending = fs::path(play_view_path().string() + ".pending");
+    {
+        std::ofstream out(pending);
+        out << "schema=1\n";
+        if (play_fit != play_default.fit) out << "fit=" << play_fit_slugs[size_t(play_fit)] << '\n';
+        if (play_second != play_default.second) out << "second=" << play_second_slugs[size_t(play_second)] << '\n';
+        if (play_frame != play_default.frame) out << "frame=" << play_frame << '\n';
+        if (scale != 1) out << "scale=" << scale << '\n';
+    }
+    fs::rename(pending, play_view_path(), ec);
+    status = locale.text("Takes effect the next time the game starts.");
+    dirty = true;
 }
 
 void App::save_play_default() {
@@ -414,7 +439,8 @@ void App::play_graphics_action() {
             std::vector<std::string> names;
             for (int i = 0; i < play::gb_palette_count; i++)
                 names.push_back(marked_default(locale, play::gb_palettes[i].name, i == play_default.palette));
-            show_picker("Screen colours", names, play_palette, [this](int n) { apply_play_colour(n, play_correction); });
+            show_picker("Screen colours", names, play_palette,
+                        [this](int n) { apply_play_colour(n, play_correction); });
         } else {
             std::vector<std::string> names;
             for (int i = 0; i < play::gb_correction_count; i++)
@@ -424,6 +450,10 @@ void App::play_graphics_action() {
         }
         break;
     case 5: save_play_default(); break;
+    case 6:
+        show_picker("Internal resolution", {"1x", "2x", "3x"}, play_scale - 1,
+                    [this](int n) { apply_play_scale(std::clamp(n, 0, 2) + 1); });
+        break;
     default:
         // The same shader carousel as the DS engines: the bridge's pass draws GBA and Game Boy screens too.
         open_shader_picker(true);

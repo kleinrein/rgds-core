@@ -325,10 +325,10 @@ void exec_arm(CpuContext& cpu, u32 instr) {
       cpu.jump((R(cpu, 15) + static_cast<u32>(off)) | 1, true);
       return;
     }
-    if (((instr >> 24) & 0xF7) == 0x55) {
+    if (arm::is_pld(instr)) {
       charge_C(cpu);
       return;
-    } // PLD
+    }
     undefined(cpu);
     return;
   }

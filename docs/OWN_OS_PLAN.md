@@ -232,6 +232,10 @@ already (`dscore/src/core/cpu/jit/README.md`: linked branches are one instructio
 left there is the per-slice overhead and the translated code's own cost, which the README's measurements put at
 6-11 % of the process. Not a 3-5x lever; the renderer is.
 
+Correction, 2026-11-02: a game started from the launcher inherited that mask, so DSCore saw three CPUs and pinned
+nothing, with CPU 3 idle; the layout described below only held for runs started outside the session. Games now get
+every CPU back (`all_cpus` in `runtime/linux_platform.py`), see "Real launches" in `docs/PERFORMANCE.md`.
+
 **The panels' 700 ms.** The two panels were prepared one after the other inside the first modeset: regulators,
 reset and the init delay (80 ms), ninety DCS writes, then a 120 ms sleep-out wait before the panel core switched
 the backlight on. `panel-generic-dsi.c` (`early_power`, default on) now powers and resets each panel from its probe

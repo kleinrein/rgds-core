@@ -14,6 +14,13 @@
 using namespace ds;
 
 static int failures = 0;
+#define CHECK(cond)                                                                                                    \
+  do {                                                                                                                 \
+    if (!(cond)) {                                                                                                     \
+      std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond);                                             \
+      ++failures;                                                                                                      \
+    }                                                                                                                  \
+  } while (0)
 #define CHECK_EQ(a, b)                                                                                                 \
   do {                                                                                                                 \
     auto va_ = (a);                                                                                                    \
@@ -606,6 +613,45 @@ static void test_power_off() {
   CHECK_EQ(read_status1(*cold) & 0x80, 0x80u);
 }
 
+// A DMA channel is a system-bus master and the ARM9's TCM is not on that bus:
+// a copy into ITCM goes nowhere (Picross DS does this by accident, with the
+// destination left at 0), a copy out of it reads open bus, and under the DTCM
+// window the DMA reaches the main RAM the CPU cannot see.
+static void test_dma_ignores_tcm() {
+  NDS nds;
+  CpuContext& cpu9 = nds.cpu(Cpu::ARM9);
+  cpu9.cp15_itcm = 0x0000000C; // base 0, 32 KiB
+  cpu9.cp15_dtcm = 0x027C000A; // 0x027C0000, 16 KiB: the SDK layout
+  cpu9.cp15_control |= (1u << 18) | (1u << 16);
+  nds.bus.update_tcm(cpu9, true);
+  const u32 dtcm = cpu9.dtcm_base;
+  CHECK_EQ(cpu9.itcm_size, 0x8000u);
+  // Preconditions: both windows are live for the CPU.
+  w32(nds, 0x00000100, 0xAAAA5555u);
+  CHECK_EQ(r32(nds, 0x00000100), 0xAAAA5555u);
+  CHECK(dtcm != 0xFFFFFFFFu);
+  const u32 under = dtcm + 0x40, alias = (under ^ 0x00400000); // the same main RAM byte, outside the window
+  w32(nds, alias, 0x12345678u);
+  w32(nds, under, 0xDEADBEEFu); // the CPU's DTCM word
+  auto dma3 = [&](u32 src, u32 dst, u32 words) {
+    w32(nds, 0x040000D4, src);
+    w32(nds, 0x040000D8, dst);
+    w32(nds, 0x040000DC, 0x84000000u | words); // enable, 32-bit, immediate
+    nds.sched.run_until(nds.sched.now() + 4000);
+  };
+  for (u32 i = 0; i < 8; ++i) w32(nds, 0x02000000 + i * 4, 0x11111111u);
+  dma3(0x02000000, 0x00000100, 8);             // into ITCM
+  CHECK_EQ(r32(nds, 0x00000100), 0xAAAA5555u); // dropped
+  w32(nds, 0x02000100, 0x77777777u);
+  dma3(0x00000100, 0x02000100, 1);             // out of ITCM
+  CHECK_EQ(r32(nds, 0x02000100), 0u);          // open bus
+  dma3(alias, 0x02000200, 1);                  // main RAM under DTCM -> main RAM
+  CHECK_EQ(r32(nds, 0x02000200), 0x12345678u); // not the DTCM word
+  dma3(0x02000000, under, 1);                  // main RAM -> under DTCM
+  CHECK_EQ(r32(nds, under), 0xDEADBEEFu);      // the CPU's DTCM is untouched
+  CHECK_EQ(r32(nds, alias), 0x11111111u);      // the RAM beneath took it
+}
+
 int main() {
   test_div();
   test_sqrt();
@@ -619,6 +665,7 @@ int main() {
   test_firmware_override();
   test_generated_firmware();
   test_power_off();
+  test_dma_ignores_tcm();
   if (failures) {
     std::fprintf(stderr, "%d failure(s)\n", failures);
     return 1;

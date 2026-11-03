@@ -141,9 +141,9 @@
         },
         {
           "id": 21,
-          "rgba_sha256": "3f7e448a2909bb2fdb525b56ea2810bca1cbc93cfd69839b1fe6a70ee651107c",
-          "sha256": "763a25c5a381e78a019a0f9b671a295765db4c5a83866e878f44ab78462bead7",
-          "bytes": 59292
+          "rgba_sha256": "cf46482750889c70d6d44195e17c503bf8e712eb5660e0ed595d7547cfa572c3",
+          "sha256": "ce6327a45f649c1feac1b3a460afe2a3267217ec59487ad779ca06d2ed9ddf60",
+          "bytes": 62692
         },
         {
           "id": 22,
@@ -357,9 +357,9 @@
         },
         {
           "id": 21,
-          "rgba_sha256": "9319d4a34a023f55ffd6013ac71e0cff87cb1b4df286f7e73f6c88cb689a2320",
-          "sha256": "75ba5ab7477399d8bc8a4100dec94db41515024fa9ca53ce30962f85232ed6d0",
-          "bytes": 71192
+          "rgba_sha256": "3f085ff5285cb2d51cc404af46ecd07a2594ce359b5bd63765c79a519bcbd323",
+          "sha256": "67b145b00c8fc533def886472c81c7cfffe85c61b9fddcf18cf20c7d7781146b",
+          "bytes": 71292
         },
         {
           "id": 22,
@@ -573,9 +573,9 @@
         },
         {
           "id": 21,
-          "rgba_sha256": "0dd630c8c294ed8d453dffc28c4419c4ef36277b2b6823d6e34170e226f5b536",
-          "sha256": "3824a4d6cc2def4be33c42697f91e02296613d80f1478e097d021ed3ceff48a6",
-          "bytes": 64592
+          "rgba_sha256": "ace1ee266818d0feffcc91530bb0227c218ed93da84196f37b1c2f3f734db343",
+          "sha256": "cb90113f34219046debd8b87c3b3ccbada616df53417ff23bc72883c3a8a68e0",
+          "bytes": 65492
         },
         {
           "id": 22,
@@ -662,7 +662,7 @@
   "shaders": {
     "amber.dsd": "f7b1a36ba3fd7a9a7275834d0b53fd73d4c40ad771b54db38b79ba34b516ead4",
     "cool_crisp.dsd": "2d6fdab51875e932dbf59a4e3d2aa32d9d4929da863da63cad2508f619793475",
-    "ds_classic.dsd": "25dfe027036ab9edca0731c0fafabf65802adfd76982eda54dab23ee029eb7d4",
+    "ds_classic.dsd": "19dd3896c4aa148102661939edeb771f1adf33c9cd9c8b812cfd99546ef7d858",
     "ds_lite.dsd": "a5a2781d22c523fee5e60388b577921f4f213e5ce1689e663bfd158c99830162",
     "gb_screen.dsd": "8a93033172903d1c46b0e3f512daae31b123f81f7cf6af763aecb5911f87c283",
     "gba_color.dsd": "62d040b9469f212b5f752714f54507b86b2a892af0dc5751e08a1a7399771937",
@@ -701,6 +701,6 @@
     "version": "OpenGL ES 3.0 SwiftShader 4.6.6.6"
   },
   "pipeline_sha256": "a1907898780d6e734d620008c78f540a1cdcd3516208aa65b13eece225bd2712",
-  "packed_bytes": 7509460,
+  "packed_bytes": 7513860,
   "uncompressed_rgba_bytes": 129024000
 }

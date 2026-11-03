@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // DSperate - Nintendo DS emulator. Copyright (C) 2026 DSperate contributors.
 #include "core/gpu/render3d.h"
+#include "core/gpu/rgds_sample_plan.hpp"
 #include "core/gpu/vk/vk_dump.h"
 #include "core/gpu/vk/vk_lean.h"
 #include <unordered_map>
@@ -3546,11 +3547,11 @@ void Renderer3D::derive_lines(const FrameRef& f) {
       std::memory_order_relaxed);
   if (!hires) std::fill(dst, dst + 256 * 192, 0u); // the GPU frame failed: an empty layer
   else {
-    const u32 s = f.scale, o = (s - 1) / 2, pitch = 256 * s;
+    const u32 s2 = rgds::half_units(f.scale), o = (s2 - 1) / 4, pitch = 128 * s2;
     for (u32 y = 0; y < 192; ++y) {
-      const u32* src = hires + (y * s + o) * pitch + o;
+      const u32* src = hires + (y * s2 / 2 + o) * pitch + o;
       u32* d = dst + y * 256;
-      for (u32 x = 0; x < 256; ++x) d[x] = src[x * s];
+      for (u32 x = 0; x < 256; ++x) d[x] = src[x * s2 / 2];
     }
   }
   done.store(f.gpu_seq, std::memory_order_release);
@@ -3790,7 +3791,7 @@ void Renderer3D::set_aa(bool on) {
 }
 
 bool Renderer3D::set_display_scale(u32 scale, std::string* why) {
-  if (scale < 1 || scale > 5) return false;
+  if (!rgds::valid_scale(static_cast<int>(scale))) return false;
   materialize_native(); // a renderer switch must not drop this frame's native 3D
   if (scale == 1 && !gpu_on_) return true;
   if (scale > 1 && gpu_on_ && gpu_scale_ == scale) return true;
@@ -3840,7 +3841,7 @@ bool Renderer3D::set_gpu(bool on, std::string* why) {
   }
   if (!lean_) {
     const char* scale = std::getenv("RGDS_VK_SCALE");
-    gpu_scale_ = scale ? static_cast<u32>(std::clamp(std::atoi(scale), 1, 5)) : 1;
+    gpu_scale_ = scale ? static_cast<u32>(rgds::scale_or_nearest(std::atoi(scale))) : 1;
     lean_ = vk::Lean::create(*vk_dev_, aa_, &reason, gpu_scale_);
   }
   if (!lean_ || !lean_->ready()) {
@@ -3877,11 +3878,11 @@ struct GpuTrace {
     const vk::Lean::Stats st = lean.stats(true);
     std::fprintf(
         stderr,
-        "gpu3d trace: build %.2f ms/frame, submit %.2f (slot wait %.2f, prep %.2f, record %.2f, queue %.2f), compositor wait %.2f (max %.2f), waits %u/%u, refused %u; newest %u lagged %u stalled %u nolag %u; gpu %.2f ms (%u timed); latency %.2f ms (%u exact); read gap %.2f ms; %.0f draws/frame\n",
+        "gpu3d trace: build %.2f ms/frame, submit %.2f (slot wait %.2f, prep %.2f, record %.2f, queue %.2f), compositor wait %.2f (max %.2f), waits %u/%u, refused %u; newest %u lagged %u stalled %u nolag %u; gpu %.2f ms (%u timed); latency %.2f ms (%u exact); read gap %.2f ms; %.0f draws/frame; direct %u\n",
         build_ms / frames, submit_ms / frames, st.slot_wait_ms / frames, st.prep_ms / frames, st.record_ms / frames,
         st.queue_ms / frames, wait_ms / frames, wait_max, waited, frames, refused, st.newest, st.lagged, st.stalled,
         st.nolag, st.timed ? st.gpu_ms / st.timed : 0.0, st.timed, st.lat_n ? st.lat_ms / st.lat_n : 0.0, st.lat_n,
-        st.gap_n ? st.gap_ms / st.gap_n : 0.0, static_cast<double>(draws) / frames);
+        st.gap_n ? st.gap_ms / st.gap_n : 0.0, static_cast<double>(draws) / frames, st.direct);
     build_ms = submit_ms = wait_ms = wait_max = 0;
     frames = waited = refused = draws = 0;
   }

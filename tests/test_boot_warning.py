@@ -85,26 +85,66 @@ class BootWarningTests(unittest.TestCase):
                     image[offset + (row * width + 320) * 4:offset + (row * width + 320) * 4 + 3], bytes((65, 178, 239))
                 )
 
-    def test_welcome_animates_without_scanning_or_accepting_for_the_user(self):
+    def test_welcome_animates_without_accepting_for_the_user(self):
         report, _, _ = self.run_boot()
         self.assertGreater(report["frames"], 8)
         self.assertLess(report["frames"], 45, "Welcome motion is capped at 30 fps")
         self.assertEqual(report["boot_pending"], 1)
-        self.assertEqual(report["library_scan_started"], 0)
         self.assertEqual(report["render_file_reads"], 0)
+
+    def test_home_is_prepared_behind_the_warning_before_any_tap(self):
+        with tempfile.TemporaryDirectory() as folder:
+            roms = Path(folder).resolve()
+            (roms / "one.nds").write_bytes(b"local fixture")
+            report, state, _ = self.run_boot(extra=("--rom-dir", str(roms)))
+            self.assertEqual(report["boot_pending"], 1)
+            self.assertEqual(report["library_scan_started"], 1)
+            self.assertEqual(report["library_ready"], 1)
+            self.assertEqual(report["system_configuration_loaded"], 1)
+            self.assertEqual(state, '1 3 2 ""\n', "Saving state waits for the tap")
+            report, state, _ = self.run_boot("600 key A\n620 key-up A\n", extra=("--rom-dir", str(roms)))
+            self.assertEqual(report["boot_pending"], 0)
+            self.assertEqual(report["page"], 0)
+            self.assertEqual(report["library_scan_started"], 1)
+            self.assertIn(str(roms / "one.nds"), state)
+
+    def test_tap_after_the_scan_does_not_also_tap_home(self):
+        with tempfile.TemporaryDirectory() as folder:
+            roms = Path(folder).resolve()
+            (roms / "one.nds").write_bytes(b"local fixture")
+            # Where each lands is a tile on the home ready behind the warning.
+            for x, y in ((0.5, 0.55), (0.25, 0.63), (0.5, 0.7), (0.75, 0.73), (0.5, 0.9375)):
+                with self.subTest(x=x, y=y):
+                    report, state, _ = self.run_boot(
+                        f"600 finger-down {x} {y}\n620 finger-up {x} {y}\n", extra=("--rom-dir", str(roms))
+                    )
+                    self.assertEqual(report["boot_pending"], 0)
+                    self.assertEqual(report["page"], 0)
+                    self.assertIn("home 1", state)
+            report, state, _ = self.run_boot(events=[(0, 0, 0, 0)] + self.raw_tap(600), extra=("--rom-dir", str(roms)))
+            self.assertEqual(report["boot_pending"], 0)
+            self.assertEqual(report["page"], 0)
+            self.assertIn("home 1", state)
+
+    def test_usb_drive_screen_prepares_nothing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            roms = Path(folder).resolve()
+            (roms / "one.nds").write_bytes(b"local fixture")
+            report, _, _ = self.run_boot(extra=("--rom-dir", str(roms), "--usb-drive-screen"))
+            self.assertEqual(report["library_scan_started"], 0)
+            self.assertEqual(report["system_configuration_loaded"], 0)
 
     def test_reduced_motion_welcome_stays_idle(self):
         with tempfile.TemporaryDirectory() as folder:
             preferences = Path(folder) / "preferences.ini"
             preferences.write_text("schema=1\nmode=light\nfont=rounded\nanimations=0\n")
             report, _, _ = self.run_boot(extra=("--preferences", str(preferences)))
-            self.assertEqual(report["frames"], 1)
+            self.assertLessEqual(report["frames"], 2, "One more once the preparation behind it has begun, then idle")
             self.assertEqual(report["boot_pending"], 1)
 
     def test_warning_has_no_timed_auto_continue(self):
         report, _, _ = self.run_boot()
         self.assertEqual(report["boot_pending"], 1)
-        self.assertEqual(report["library_scan_started"], 0)
 
     def test_back_cannot_exit_warning_and_continue_still_works(self):
         report, _, _ = self.run_boot('20 key Escape\n40 key B\n60 joy-down 1\n80 joy-up 1\n120 key A\n140 key-up A\n')
@@ -149,7 +189,7 @@ class BootWarningTests(unittest.TestCase):
         self.assertEqual(report["font_atlases"], 5)
         self.assertEqual(report["shader_catalog_loaded"], 1)
 
-    def test_warning_does_not_read_system_preferences_before_continue(self):
+    def test_first_warning_frame_does_not_read_system_preferences(self):
         with tempfile.TemporaryDirectory() as folder:
             preferences = Path(folder) / "system.ini"
             os.mkfifo(preferences)

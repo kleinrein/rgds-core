@@ -135,11 +135,12 @@ struct JitCpu {
   // interpreted. Translating a block costs ~12 us on the A55, and a load's
   // 1000-block burst was 7 ms in one frame.
   u8 warm[LUT_SIZE] = {};
-  u8* dispatch = nullptr;            // w0 = key
-  u8* link = nullptr;                // `bl link; .word key`: patches the bl into `b block`
-  u8* fallback = nullptr;            // `bl fallback; .word instr; .word key`: interpret one instr, poll, dispatch
-  u8* branch_indirect = nullptr;     // w0 = target (bit 0 = T): updates T, charges refill, dispatches
-  u8* branch_indirect_cdi = nullptr; // same, plus LDM/POP pc's CDI charge: w1 = numD, w2 = data address
+  std::unordered_set<u32> storm_seen; // a storm's keys interpreted once this frame (runtime.cpp, storm())
+  u8* dispatch = nullptr;             // w0 = key
+  u8* link = nullptr;                 // `bl link; .word key`: patches the bl into `b block`
+  u8* fallback = nullptr;             // `bl fallback; .word instr; .word key`: interpret one instr, poll, dispatch
+  u8* branch_indirect = nullptr;      // w0 = target (bit 0 = T): updates T, charges refill, dispatches
+  u8* branch_indirect_cdi = nullptr;  // same, plus LDM/POP pc's CDI charge: w1 = numD, w2 = data address
   u8* branch_indirect_poll =
       nullptr; // same as branch_indirect, then leaves if an IRQ is now takeable (exception return)
 };
@@ -151,6 +152,13 @@ struct Runtime {
   size_t stubs_end = 0;    // arena below this is permanent
   bool stubs_fast = false; // the timing model the stubs were emitted for (g_fast_timing)
   bool need_reset = false; // reset at the next safe point
+  // Blocks translated in the frame now running, per CPU (0 ARM9, 1 ARM7):
+  // past kStormBlocks, code is running that will not run again (a CPU off in
+  // memory that holds no program), and new blocks are interpreted first.
+  static constexpr u32 kStormBlocks = 2048;
+  u64 tx_frame = ~u64{0};
+  u32 tx_in_frame[2] = {};
+  u32 tx_max = 0; // DS_JIT_TXMAX: the most in any frame, printed at exit
 
   void (*enter)(CpuContext*, const void*) = nullptr;
   u8* enter_light = nullptr;         // enter without saving x19-x28; caller must have

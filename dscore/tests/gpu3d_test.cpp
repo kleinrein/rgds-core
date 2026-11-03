@@ -142,6 +142,31 @@ static void test_mode2_matrix_cache() {
   }
 }
 
+// Matrix mode 2 (position + vector) changes the position matrix, so the clip
+// matrix must follow. Reading 0x640.. caches it clean first; a stale cache
+// would transform the next vertices with the previous object's matrix.
+static void test_clip_follows_mode2() {
+  for (u32 mode = 1; mode <= 2; ++mode) {
+    NDS nds;
+    power_on(nds);
+    w32(nds, CMD(0x10), mode);
+    w32(nds, CMD(0x15), 0);
+    CHECK_EQ(r32(nds, 0x04000670), 0u); // clip cached clean
+    w32(nds, CMD(0x1C), 0x3000);
+    w32(nds, CMD(0x1C), 0);
+    w32(nds, CMD(0x1C), 0); // translate (3,0,0)
+    CHECK_EQ(r32(nds, 0x04000670), 0x3000u);
+    // MTX_LOAD_4x3 of identity with translation x = 5.
+    const u32 m[12] = {0x1000, 0, 0, 0, 0x1000, 0, 0, 0, 0x1000, 0x5000, 0, 0};
+    for (u32 v : m) w32(nds, CMD(0x17), v);
+    CHECK_EQ(r32(nds, 0x04000670), 0x5000u);
+    // MTX_MULT_4x3 by a translation x = 1 on top of it.
+    const u32 t[12] = {0x1000, 0, 0, 0, 0x1000, 0, 0, 0, 0x1000, 0x1000, 0, 0};
+    for (u32 v : t) w32(nds, CMD(0x19), v);
+    CHECK_EQ(r32(nds, 0x04000670), 0x6000u);
+  }
+}
+
 // Orthographic projection so clip-space X/Y map directly to the screen.
 static void ortho(NDS& nds) {
   w32(nds, CMD(0x10), 0);
@@ -202,6 +227,7 @@ int main() {
   test_gxstat_swap_busy();
   test_matrix_stack();
   test_mode2_matrix_cache();
+  test_clip_follows_mode2();
   test_flat_quad();
   test_final_pass();
   if (failures) {

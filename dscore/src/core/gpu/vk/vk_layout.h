@@ -110,7 +110,7 @@ struct GpuRow {
 // Per-frame constants; pushed, not a buffer (changes every frame, small).
 struct GpuFrame {
   uint npoly;
-  uint scale;       // internal resolution multiplier (1 for P1)
+  uint scale;       // the lean path: the record's row length in pixels (1 elsewhere)
   uint dispcnt;     // DISP3DCNT: bit 3 is the blend enable the alpha blend reads
   uint alpha_ref;   // already zeroed by the engine when DISP3DCNT bit 2 is clear
   uint clear_color; // the record clear_line() fills: RGB666 + alpha << 24

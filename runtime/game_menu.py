@@ -12,7 +12,7 @@ import time
 
 from audio import EVENT, clean_environment
 from shared_audio import stop_outside_mixer
-from emulator_profiles import policy
+from emulator_profiles import RGDS_SCALES, policy
 from engines import CORES
 from shaders import supported
 from library import read_fields, write_fields, game_key
@@ -492,7 +492,8 @@ class GameMenu:
             str(self.app / "bin/rgds-launcher"), "--game-menu", "--app",
             str(self.app), "--data",
             str(self.data), "--game-core", self.core, "--game-rom",
-            str(self.rom), "--game-system", system_of(self.rom)
+            str(self.rom), "--game-system",
+            system_of(self.rom)
         ]
         if switcher_ready: command.append('--game-switcher')
         if env.get('RGDS_SESSION_PLATFORM') == 'independent' and env.get('RGDS_TOP_DISPLAY'
@@ -657,7 +658,9 @@ class GameMenu:
         if action.startswith('graphics:'):
             try:
                 scale, smooth, skip = map(int, action.split(':')[1:])
-                if self.core != 'rgds-experimental' or not (1 <= scale <= 5 and 0 <= smooth <= 1 and 0 <= skip <= 3):
+                if self.core != 'rgds-experimental' or not (
+                    scale in RGDS_SCALES and 0 <= smooth <= 1 and 0 <= skip <= 3
+                ):
                     raise ValueError()
             except ValueError:
                 self.publish('error', 'Invalid DSCore graphics setting.')
@@ -695,6 +698,21 @@ class GameMenu:
             ):
                 self.publish('error', 'Invalid colour setting for this game.')
                 return
+        if action.startswith('play-scale:'):
+            # play-scale:<n>: Tanuki3DS's internal resolution. Saved here, not sent to the engine: its framebuffers
+            # are sized at start, so it takes effect at the next launch.
+            from play_options import SCALES, save_scale
+            value = action.split(':', 1)[1]
+            if self.core != 'rgds-play' or not value.isdigit() or int(value) not in SCALES:
+                self.publish('error', 'Invalid resolution for this game.')
+                return
+            try:
+                save_scale(self.data, self.rom, int(value))
+            except OSError:
+                self.publish('error', 'Settings storage is unavailable.')
+                return
+            self.publish('paused', 'Internal resolution saved. It takes effect the next time the game starts.')
+            return
         if action.startswith('cheat:'):
             # cheat:<index>:<0|1>; DSCore and RG DS Play list their codes in emulator.control.cheats and toggle them live.
             pieces = action.split(':')
@@ -865,7 +883,7 @@ class GameMenu:
             elif action in ("ds:blow", "ds:lid") or action.startswith("slot-") or action in (
                 "save", "load", "quit", "quit-discard", "fast-forward"
             ) or action.startswith(
-                ('shader:', 'graphics:', 'play-graphics:', 'play-color:', 'filter2d:', 'cheat:')
+                ('shader:', 'graphics:', 'play-graphics:', 'play-color:', 'play-scale:', 'filter2d:', 'cheat:')
             ) or action in ('fps:0', 'fps:1', 'threaded:0', 'threaded:1', 'adaptive:0', 'adaptive:1'):
                 self.send(action)
             elif action == "force-quit":
@@ -1074,7 +1092,7 @@ class GameMenu:
         try:
             scale, mode, shader = map(int, path.read_text().split())
             path.unlink(missing_ok=True)
-            if not (1 <= scale <= 5 and 0 <= mode <= 5 and supported(self.core, shader)): return
+            if not (scale in RGDS_SCALES and 0 <= mode <= 5 and supported(self.core, shader)): return
             game = self.data / 'library' / game_key(self.rom) / 'game.ini'
             game.parent.mkdir(parents=True, exist_ok=True)
             settings = read_fields(game)
@@ -1099,7 +1117,7 @@ class GameMenu:
             scale, smooth, skip = map(int, action.split(':')[1:])
         except ValueError:
             return False
-        if self.core != 'rgds-experimental' or not (1 <= scale <= 5 and 0 <= smooth <= 1 and 0 <= skip <= 3):
+        if self.core != 'rgds-experimental' or not (scale in RGDS_SCALES and 0 <= smooth <= 1 and 0 <= skip <= 3):
             return False
         if (scale > 1) == self.launch_hires:
             return False

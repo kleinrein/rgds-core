@@ -30,6 +30,13 @@ SHADERS = {
     'lean_frag_trans.spv': ('lean.frag', ['-DDS_ALPHA_SEL=2']),
     'lean_frag_trans_nd.spv': ('lean.frag', ['-DDS_ALPHA_SEL=2',
                                              '-DDS_NODISCARD']),  # pass B without discard (DS_LEAN_NODISCARD)
+    # Direct frames (no fog to resolve); DS_DUAL where the pipeline blends, for its second source.
+    'lean_frag_d.spv': ('lean.frag', ['-DDS_DIRECT']),
+    'lean_frag_shadow_d.spv': ('lean.frag', ['-DDS_DIRECT', '-DDS_DUAL']),
+    'lean_frag_early_d.spv': ('lean.frag', ['-DDS_DIRECT', '-DDS_EARLY']),
+    'lean_frag_opq_d.spv': ('lean.frag', ['-DDS_DIRECT', '-DDS_ALPHA_SEL=1']),
+    'lean_frag_trans_d.spv': ('lean.frag', ['-DDS_DIRECT', '-DDS_DUAL', '-DDS_ALPHA_SEL=2']),
+    'lean_frag_trans_nd_d.spv': ('lean.frag', ['-DDS_DIRECT', '-DDS_DUAL', '-DDS_ALPHA_SEL=2', '-DDS_NODISCARD']),
     'lean_resolve_frag.spv': ('lean_resolve.frag', []),
     'lean_resolve_1x_frag.spv': ('lean_resolve.frag', ['-DDS_SAMPLES=1']),
     'lean_resolve_store_1x_frag.spv': ('lean_resolve.frag', ['-DDS_SAMPLES=1', '-DDS_STORE_OUT']),

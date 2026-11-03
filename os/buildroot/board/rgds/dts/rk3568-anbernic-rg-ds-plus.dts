@@ -16,6 +16,21 @@
 	chassis-type = "handset";
 	compatible = "anbernic,rg-ds-plus", "rockchip,rk3568";
 
+	/* Kernel crash records, kept in RAM through a restart (rcS moves them to the card). */
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ramoops@110000 {
+			compatible = "ramoops";
+			reg = <0x0 0x110000 0x0 0xf0000>;
+			record-size = <0x20000>;
+			console-size = <0x80000>;
+			pmsg-size = <0x50000>;
+		};
+	};
+
 	aliases {
 		mmc0 = &sdhci;
 		mmc1 = &sdmmc0;

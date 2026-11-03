@@ -7,6 +7,10 @@ add_executable(test_scheduler scheduler_test.cpp)
 target_link_libraries(test_scheduler PRIVATE dsperate_core)
 add_test(NAME scheduler COMMAND test_scheduler)
 
+add_executable(test_timer timer_test.cpp)
+target_link_libraries(test_timer PRIVATE dsperate_core)
+add_test(NAME timer COMMAND test_timer)
+
 add_executable(test_interp interp_test.cpp)
 target_link_libraries(test_interp PRIVATE dsperate_core)
 add_test(NAME interp COMMAND test_interp)

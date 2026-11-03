@@ -51,6 +51,7 @@ struct Sim {
   struct Pending {
     int panel;
     double at, swap, wait;
+    int frame = 0;
     bool dropped_behind = false;
   };
   std::deque<Pending> pending;
@@ -65,7 +66,7 @@ struct Sim {
     while (!pending.empty() && pending.front().at <= upto) {
       const Pending& f = pending.front();
       lock.flip(f.panel, static_cast<u64>(f.at), static_cast<u64>(f.swap), static_cast<u64>(f.wait),
-                report_hold && f.dropped_behind);
+                report_hold && f.dropped_behind, f.frame);
       pending.pop_front();
     }
   }
@@ -77,7 +78,7 @@ struct Sim {
     const bool late = lock.locked() && d <= now;
     const double start = d <= now ? now : d;
     if (late) ++late_starts;
-    lock.started(static_cast<u64>(start), late);
+    const int number = lock.started(static_cast<u64>(start), late);
     const double done = start + work;
     for (size_t i = 0; i < panels.size(); ++i) {
       Panel& p = panels[i];
@@ -101,7 +102,7 @@ struct Sim {
       gap[i] = p.last_flip ? at - p.last_flip : p.period;
       if (p.last_flip && gap[i] > 1.5 * p.period) ++repeats;
       p.last_flip = at;
-      pending.push_back({static_cast<int>(i), at, swap, report_hold ? wait[i] : 0.0});
+      pending.push_back({static_cast<int>(i), at, swap, report_hold ? wait[i] : 0.0, number});
     }
     now = done;
   }
@@ -422,9 +423,9 @@ int main() {
     CHECK(lock.locked());
     for (int i = 0; i < 60; ++i) {
       const u64 start = t - static_cast<u64>(17.0 * MS); // swapped 1 ms before its flip, 16 ms after its start
-      lock.started(start);
+      const int frame = lock.started(start);
       lock.queued(static_cast<u64>(6.0 * MS));
-      lock.flip(0, t, start + static_cast<u64>(16.0 * MS));
+      lock.flip(0, t, start + static_cast<u64>(16.0 * MS), 0, false, frame);
       t += static_cast<u64>(panel_period);
     }
     std::fprintf(stderr, "phase lock: queued hand-off, work mean %.3f ms (frame 10, queued 6)\n",
@@ -433,8 +434,8 @@ int main() {
   }
 
   // A band widened by misses relaxes while the lock is off as well, or the
-  // lead it is tested against (main.cpp: free over 1.5 periods, locked again
-  // under 1.3) would keep the lock out for the rest of the session.
+  // lead it is tested against (main.cpp: free over 2 periods, locked again
+  // under 1.8) would keep the lock out for the rest of the session.
   {
     PhaseLock::Params p;
     p.band_ns = 6.0 * MS;
@@ -443,8 +444,8 @@ int main() {
     for (int i = 0; i < 10; ++i, t += static_cast<u64>(panel_period)) lock.flip(0, t, 0);
     for (int i = 0; i < 60 * 60; ++i, t += static_cast<u64>(panel_period)) {
       const u64 start = t - static_cast<u64>(12.0 * MS);
-      lock.started(start); // no deadline asked: free-running
-      lock.flip(0, t, start + static_cast<u64>(9.0 * MS));
+      const int frame = lock.started(start); // no deadline asked: free-running
+      lock.flip(0, t, start + static_cast<u64>(9.0 * MS), 0, false, frame);
     }
     std::fprintf(stderr, "phase lock: free for a minute, band 6.00 -> %.2f ms\n", lock.band_ns() / MS);
     CHECK(lock.band_ns() < 3.0 * MS);
@@ -462,20 +463,83 @@ int main() {
     for (int i = 0; i < 120; ++i, t += period) { // a heavy scene, swaps not held, the work swinging 14 to 20 ms
       const u64 work = static_cast<u64>((i % 2 ? 14.0 : 20.0) * MS);
       const u64 start = t - work - static_cast<u64>(2.0 * MS);
-      lock.started(start);
-      lock.flip(0, t, start + work);
+      const int frame = lock.started(start);
+      lock.flip(0, t, start + work, 0, false, frame);
     }
     const double heavy = lock.work_ns();
     CHECK(heavy > 17.0 * MS);
     for (int i = 0; i < 300; ++i, t += period) { // light again: ready after 13 ms, held 13 more, flipped 3 ms on
       const u64 start = t - static_cast<u64>(29.0 * MS);
-      lock.started(start);
-      lock.flip(0, t, start + static_cast<u64>(26.0 * MS), static_cast<u64>(13.0 * MS));
+      const int frame = lock.started(start);
+      lock.flip(0, t, start + static_cast<u64>(26.0 * MS), static_cast<u64>(13.0 * MS), false, frame);
     }
     std::fprintf(stderr, "phase lock: free with held swaps, work %.2f -> %.2f ms (frame 13)\n", heavy / MS,
                  lock.work_ns() / MS);
     CHECK(near(lock.work_mean_ns(), 13.0 * MS, 100'000.0));
-    CHECK(lock.work_ns() + 2.5 * MS < lock.period_ns() * 1.3); // main.cpp's relock test
+    CHECK(lock.work_ns() + 2.5 * MS < lock.period_ns() * 1.8); // main.cpp's relock test
+  }
+
+  // The menu's held picture and fast forward flip with no frame the lock knows of, and those flips teach it nothing;
+  // the estimate holds over a pause and the lead still fits (one menu used to read as 1.5 s of work, and the frames
+  // after it then kept the estimate at a whole number of refreshes: lock off until quit, 2 November 2026).
+  {
+    PhaseLock lock;
+    const u64 period = static_cast<u64>(1e9 / 60.0);
+    u64 t = 1'000'000'000ull;
+    const auto free_frames = [&](int n) {
+      for (int i = 0; i < n; ++i, t += period) {
+        const u64 start = t - static_cast<u64>(29.0 * MS);
+        const int frame = lock.started(start);
+        lock.flip(0, t, start + static_cast<u64>(26.0 * MS), static_cast<u64>(13.0 * MS), false, frame);
+      }
+    };
+    for (int i = 0; i < 10; ++i, t += period) lock.flip(0, t, 0);
+    free_frames(300);
+    CHECK(near(lock.work_mean_ns(), 13.0 * MS, 100'000.0));
+    t += static_cast<u64>(3500.0 * MS);
+    for (int i = 0; i < 8; ++i, t += period * 2) lock.flip(0, t, t - static_cast<u64>(3.0 * MS));
+    std::fprintf(stderr, "phase lock: after a held picture, work %.2f ms (frame 13)\n", lock.work_mean_ns() / MS);
+    CHECK(near(lock.work_mean_ns(), 13.0 * MS, 100'000.0));
+    CHECK(lock.locked());
+    free_frames(60);
+    CHECK(near(lock.work_mean_ns(), 13.0 * MS, 100'000.0));
+    CHECK(lock.work_ns() + lock.band_ns() < lock.period_ns() * 1.8); // main.cpp's relock test
+  }
+
+  // One real stall reads as what it was, and is forgotten: the estimate has no resting place above the real work.
+  {
+    PhaseLock lock;
+    const u64 period = static_cast<u64>(1e9 / 60.0);
+    u64 t = 1'000'000'000ull;
+    for (int i = 0; i < 10; ++i, t += period) lock.flip(0, t, 0);
+    int stalled = 0;
+    for (int i = 0; i < 300; ++i, t += period) {
+      const bool stall = i == 100;
+      const u64 start = stall ? t - static_cast<u64>(1000.0 * MS) : t - static_cast<u64>(29.0 * MS);
+      const int frame = lock.started(start);
+      lock.flip(0, t, start + static_cast<u64>((stall ? 990.0 : 26.0) * MS), stall ? 0 : static_cast<u64>(13.0 * MS),
+                false, frame);
+      if (stall) stalled = static_cast<int>(lock.work_mean_ns() / MS);
+    }
+    std::fprintf(stderr, "phase lock: a 990 ms frame, work %d ms, 200 frames on %.2f ms (frame 13)\n", stalled,
+                 lock.work_mean_ns() / MS);
+    CHECK(stalled > 50);
+    CHECK(near(lock.work_mean_ns(), 13.0 * MS, 100'000.0));
+  }
+
+  // A flip whose frame number has left the ring, or that the lock never gave, is no sample.
+  {
+    PhaseLock lock;
+    const u64 period = static_cast<u64>(1e9 / 60.0);
+    u64 t = 1'000'000'000ull;
+    for (int i = 0; i < 10; ++i, t += period) lock.flip(0, t, 0);
+    const int first = lock.started(t - static_cast<u64>(12.0 * MS));
+    CHECK(first != 0);
+    for (int i = 0; i < PhaseLock::RING; ++i) CHECK(lock.started(t - static_cast<u64>(12.0 * MS)) != first);
+    const u64 samples = lock.samples();
+    lock.flip(0, t, t - static_cast<u64>(2.0 * MS), 0, false, first);
+    lock.flip(0, t + period, t + period - static_cast<u64>(2.0 * MS), 0, false, 0);
+    CHECK(lock.samples() == samples);
   }
 
   std::fprintf(stderr, "phase_lock: ok\n");

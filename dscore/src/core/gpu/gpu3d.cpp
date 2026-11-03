@@ -1956,6 +1956,13 @@ template <class S> void Gpu3D::sync_state(S& s) {
       }
     }
   }
+  // GXSTAT's busy flag must follow the restored scheduler timeline, not
+  // the later session we are replacing. Older states omit these fields.
+  if constexpr (S::reading) {
+    swap_wait_ = false;
+    swap_busy_until_ = 0;
+  }
+  s.fields(swap_wait_, swap_busy_until_);
   s.end();
   renderer_.sync_output(s);
   stack_err_ = gxstat_ & 0x8000u;

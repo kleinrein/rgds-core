@@ -233,6 +233,16 @@ public:
   void ndma_write7_aes(u32 value); // 0x04004408
 
   void request_irq(Cpu cpu, u32 bit);
+  // An IPC FIFO word the ARM9 sends reaches the ARM7 at the ARM9's send time.
+  // The ARM9 runs each slice first and the ARM7 catches up after it, so a word pushed at
+  // once was visible to the ARM7 up to a slice (2048 cycles) before it was sent. That can
+  // land inside the ARM7 SDK's SPI_Init window (PXI callbacks set before its message queue
+  // and entry ring), where a boot-time NVRAM read can be lost and the ARM9 waits forever
+  // (white screen, seen without a firmware dump). The word is held, the ARM9's slice ends
+  // at the send (yield), and Scheduler::fire_due pushes it (ipc_deliver).
+  void ipc_deliver();
+  u32 ipc9_pending_n = 0;
+  std::array<u32, 16> ipc9_pending{};
   // LCD IRQs lag their DISPSTAT flag by lcd_irq_delay ARM9 cycles so a
   // VCOUNT poll can see the match before the IRQ.
   void lcd_irq(Cpu cpu, u32 bit);
@@ -425,6 +435,11 @@ private:
 public:
   void start_rtc_clock(); // host time; also clears power-lost; survives reset()
   bool rtc_host_clock() const { return rtc_host_clock_; }
+  // Re-read the host clock into a running RTC (after the host slept, which
+  // emulated time does not see). No-op unless start_rtc_clock() was called.
+  void resync_rtc_clock() {
+    if (rtc_host_clock_) rtc_seed();
+  }
   void rtc_event();
   static void grid_rtc_event(NDS& nds, u32); // DSi interleave grid
 private:

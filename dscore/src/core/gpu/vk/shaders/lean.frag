@@ -25,8 +25,17 @@ layout(location = 3) flat in ivec4 v_tt;
 layout(location = 4) flat in ivec4 v_tm;
 layout(location = 5) flat in vec4 v_stb;
 layout(location = 6) flat in vec2 v_af;
+#ifdef DS_DIRECT
+// RG DS: a frame with no fog to apply has no resolve: this colour is the record the compositor reads, RGB666 with the
+// 5-bit alpha as it is, and only the blend needs the alpha's factor, which comes from the second source.
+layout(location = 0, index = 0) out vec4 o_col;
+#ifdef DS_DUAL
+layout(location = 0, index = 1) out vec4 o_blend;
+#endif
+#else
 layout(location = 0) out vec4 o_col;
 layout(location = 1) out float o_fog;   // the polygon's fog bit; blended with MIN so a pixel keeps fog only if every layer had it (the DS rule)
+#endif
 #if defined(DS_EARLY) || defined(DS_NODISCARD)
 // Polygons whose alpha cannot fail the test (no cut-out texture): no
 // discard, so the depth test runs before shading and overdraw costs nothing.
@@ -39,6 +48,19 @@ layout(early_fragment_tests) in;
 // plain centre interpolation already reads the DS corner sample.
 layout(constant_id = 0) const bool DS_HALFPX = false;
 
+// The fragment's colour, its alpha byte being what the blend multiplies by (below).
+void emit(vec3 c, float a, float ab) {
+#ifdef DS_DIRECT
+  o_col = vec4(c, a) / 255.0;
+#ifdef DS_DUAL
+  o_blend = vec4(0.0, 0.0, 0.0, ab / 255.0);
+#endif
+#else
+  o_col = vec4(c, ab) / 255.0;
+  o_fog = v_af.y;
+#endif
+}
+
 // A toon table entry (RGB555) as 6-bit channels: bits 1-5 of each field, +1 when non-zero.
 vec3 toon6(uint c) {
   uvec3 v = (uvec3(c << 1, c >> 4, c >> 9)) & 0x3Eu;
@@ -46,7 +68,7 @@ vec3 toon6(uint c) {
 }
 
 void main() {
-  if ((pc.f.flags & DS_FF_DEBUG_FLAT) != 0u) { o_col = vec4(31.0, 31.0, 31.0, 248.0) / 255.0; o_fog = 0.0; return; }
+  if ((pc.f.flags & DS_FF_DEBUG_FLAT) != 0u) { emit(vec3(31.0), 31.0, 248.0); return; }
   // The DS evaluates a pixel at its top-left corner; with vertices on pixel
   // corners that is half a pixel before the centre, so attributes are read
   // there. On an edge pixel the corner can lie outside the polygon and the
@@ -91,7 +113,11 @@ void main() {
   // Pass B without discard: a fragment the alpha test or the alpha-31 rule
   // would drop leaves the colour as it is (alpha 0 blends nothing in, the
   // MAX alpha keeps the destination's, and fog 1 keeps its flag under MIN).
+#ifdef DS_DIRECT
+  if (a <= float(pc.f.alpha_ref) || a == 31.0) { emit(vec3(0.0), 0.0, 0.0); return; }
+#else
   if (a <= float(pc.f.alpha_ref) || a == 31.0) { o_col = vec4(0.0); o_fog = 1.0; return; }
+#endif
 #else
   if (a <= float(pc.f.alpha_ref)) discard;
 #endif
@@ -107,6 +133,8 @@ void main() {
 #endif
   // Alpha byte: 0 stays 0 (undrawn), else (a + 1) * 8: the blend's SRC_ALPHA is (a + 1) / 32 to within 1/256.
   float ab = a == 0.0 ? 0.0 : min(255.0, (a + 1.0) * 8.0);
-  o_col = vec4(c, ab) / 255.0;
-  o_fog = v_af.y;
+#if defined(DS_DIRECT) && defined(DS_EARLY)
+  if (a == 0.0) c = vec3(0.0); // the resolve's rule: an undrawn pixel's word is 0 (only this variant has no alpha test)
+#endif
+  emit(c, a, ab);
 }

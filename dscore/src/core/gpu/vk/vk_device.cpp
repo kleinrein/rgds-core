@@ -235,17 +235,20 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   roaa.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT;
   VkPhysicalDeviceFeatures2 f2{};
   f2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-  f2.pNext = &at64;
+  const bool extended = has_atomic64_ext || has_roaa || props.apiVersion >= VK_API_VERSION_1_2;
+  if (extended) f2.pNext = &at64;
   if (has_roaa) at64.pNext = &roaa;
-  if (d.api.vkGetPhysicalDeviceFeatures2 && (has_atomic64_ext || has_roaa || props.apiVersion >= VK_API_VERSION_1_2)) {
-    d.api.vkGetPhysicalDeviceFeatures2(d.phys, &f2);
+  if (d.api.vkGetPhysicalDeviceFeatures2) d.api.vkGetPhysicalDeviceFeatures2(d.phys, &f2);
+  // RG DS: outside the check below, which PanVK on Bifrost (Vulkan 1.1, neither extension) never passed.
+  self->limits_.fragment_stores = f2.features.fragmentStoresAndAtomics;
+  self->limits_.dual_src = f2.features.dualSrcBlend;
+  if (d.api.vkGetPhysicalDeviceFeatures2 && extended) {
     self->limits_.int64_atomics = (has_atomic64_ext || props.apiVersion >= VK_API_VERSION_1_2) &&
                                   f2.features.shaderInt64 && at64.shaderBufferInt64Atomics;
     self->limits_.ordered_attachments = has_roaa && roaa.rasterizationOrderColorAttachmentAccess;
     self->limits_.msaa4 =
         f2.features.sampleRateShading &&
         (props.limits.framebufferColorSampleCounts & props.limits.framebufferDepthSampleCounts & VK_SAMPLE_COUNT_4_BIT);
-    self->limits_.fragment_stores = f2.features.fragmentStoresAndAtomics;
   }
   // DS_VK_LIST_EXT=1: what this driver actually offers.
   if (std::getenv("DS_VK_LIST_EXT")) {
@@ -302,6 +305,7 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   }
   if (self->limits_.msaa4) enf.features.sampleRateShading = VK_TRUE;
   if (self->limits_.fragment_stores) enf.features.fragmentStoresAndAtomics = VK_TRUE;
+  if (self->limits_.dual_src) enf.features.dualSrcBlend = VK_TRUE;
 
   // Two queues where the family has them: the second is the 3D raster's
   // own. The present path's jobs wait on the panel (a dma-buf still being
@@ -338,7 +342,9 @@ std::unique_ptr<Device> Device::create(std::string* why) {
   di.pQueueCreateInfos = &qi;
   di.enabledExtensionCount = static_cast<u32>(want.size());
   di.ppEnabledExtensionNames = want.empty() ? nullptr : want.data();
-  if (self->limits_.int64_atomics || self->limits_.ordered_attachments || self->limits_.msaa4) di.pNext = &enf;
+  if (self->limits_.int64_atomics || self->limits_.ordered_attachments || self->limits_.msaa4 ||
+      self->limits_.fragment_stores || self->limits_.dual_src)
+    di.pNext = &enf;
   if (d.api.vkCreateDevice(d.phys, &di, nullptr, &d.dev) != VK_SUCCESS) {
     // A priority the process may not take (VK_ERROR_NOT_PERMITTED) or a driver quirk: once more without it.
     if (!qi.pNext) return set("vkCreateDevice failed");

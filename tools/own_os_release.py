@@ -102,6 +102,8 @@ def main():
     key = args.key.expanduser()
     key_id = next((k for k, v in trust['keys'].items() if v == public_key(key)), None) if key.is_file() else None
     if not key_id: raise SystemExit(f'{key} is not one of the keys pinned in packaging/update-trust.json.')
+    # before anything goes out: an update must not cost anyone the place they stopped at
+    subprocess.run([sys.executable, str(ROOT / 'tools/resume_check.py'), '--add', args.version], check=True)
     out = ROOT / 'dist/release-os' / args.version
     out.mkdir(parents=True, exist_ok=True)
     archive, unpacked = package(build, out)

@@ -52,6 +52,7 @@ void Io::reset() {
   lcd_irq_delay = nds_.dsi ? 0 : 4;
   cpu_io[0] = CpuIo{};
   cpu_io[1] = CpuIo{};
+  ipc9_pending_n = 0;
   dispstat[0] = dispstat[1] = 0;
   vcount = 0;
   wramcnt = 0;
@@ -171,8 +172,9 @@ u16 Io::ipc_fifo_cnt_read(Cpu cpu) {
   CpuIo& me = cpu_io[ci(cpu)];
   CpuIo& them = cpu_io[ci(other(cpu))];
   u16 v = me.ipc_fifo_cnt & 0x8404;
-  if (me.fifo_out.empty()) v |= 0x0001;
-  if (me.fifo_out.full()) v |= 0x0002;
+  const u32 held = cpu == Cpu::ARM9 ? ipc9_pending_n : 0; // sent by the ARM9, not yet visible to the ARM7
+  if (me.fifo_out.empty() && !held) v |= 0x0001;
+  if (me.fifo_out.count + held >= 16) v |= 0x0002;
   if (them.fifo_out.empty()) v |= 0x0100;
   if (them.fifo_out.full()) v |= 0x0200;
   if (me.ipc_fifo_cnt & 0x4000) v |= 0x4000;
@@ -186,10 +188,12 @@ void Io::ipc_fifo_cnt_write(Cpu cpu, u16 value) {
   const bool was_recv_irq = me.ipc_fifo_cnt & 0x0400;
   if (value & 0x0008) {
     me.fifo_out.clear();
-  } // flush send FIFO
+    if (cpu == Cpu::ARM9) ipc9_pending_n = 0;
+  } // flush send FIFO (and the held words)
   if (value & 0x4000) me.ipc_fifo_cnt &= ~0x4000; // ack error
   me.ipc_fifo_cnt = (me.ipc_fifo_cnt & 0x4000) | (value & 0x8404);
-  if (!was_send_irq && (value & 0x0004) && me.fifo_out.empty()) request_irq(cpu, IRQ_IPC_SEND_EMPTY);
+  if (!was_send_irq && (value & 0x0004) && me.fifo_out.empty() && !(cpu == Cpu::ARM9 && ipc9_pending_n))
+    request_irq(cpu, IRQ_IPC_SEND_EMPTY);
   if (!was_recv_irq && (value & 0x0400) && !them.fifo_out.empty()) request_irq(cpu, IRQ_IPC_RECV);
   if (value & 0x0008) {
     if (me.ipc_fifo_cnt & 0x0004) request_irq(cpu, IRQ_IPC_SEND_EMPTY);
@@ -200,18 +204,46 @@ void Io::ipc_fifo_send(Cpu cpu, u32 value) {
   CpuIo& me = cpu_io[ci(cpu)];
   CpuIo& them = cpu_io[ci(other(cpu))];
   if (!(me.ipc_fifo_cnt & 0x8000)) return;
-  if (me.fifo_out.full()) {
+  if (me.fifo_out.count + (cpu == Cpu::ARM9 ? ipc9_pending_n : 0) >= 16) {
     me.ipc_fifo_cnt |= 0x4000;
     return;
-  }
+  } // held words count
   const bool was_empty = me.fifo_out.empty();
   static const bool log = std::getenv("DS_IPC_LOG") != nullptr;
   if (log)
     std::fprintf(stderr, "[ipcfifo] %s send %08x t=%llu frame %llu line %u pc %08x\n",
                  cpu == Cpu::ARM9 ? "arm9" : "arm7", value, (unsigned long long)nds_.sched.now(),
                  (unsigned long long)nds_.frame_count, nds_.gpu.line(), nds_.cpu(cpu).hot.regs[15]);
+  // A word sent by the running ARM9 (not by a DMA) is held and the ARM9's slice ends here;
+  // Scheduler::fire_due pushes it (ipc_deliver) once the ARM7 has caught up to the send time.
+  // DS_IPC_DEFER=0: push at once, as before.
+  static const bool defer = [] {
+    const char* e = std::getenv("DS_IPC_DEFER");
+    return !e || std::atoi(e) != 0;
+  }();
+  if (defer && cpu == Cpu::ARM9 && !nds_.dsi && !nds_.sched.in_dma() && nds_.sched.running() == &nds_.cpu(Cpu::ARM9)) {
+    ipc9_pending[ipc9_pending_n++] = value;
+    nds_.sched.yield(nds_.cpu(Cpu::ARM9));
+    return;
+  }
   me.fifo_out.push(value);
   if (was_empty && (them.ipc_fifo_cnt & 0x0400)) request_irq(other(cpu), IRQ_IPC_RECV);
+}
+
+// Move the ARM9's held IPC FIFO words into the FIFO, now that the ARM7 has caught up.
+void Io::ipc_deliver() {
+  CpuIo& me = cpu_io[0];
+  CpuIo& them = cpu_io[1];
+  for (u32 i = 0; i < ipc9_pending_n; ++i) {
+    if (me.fifo_out.full()) {
+      me.ipc_fifo_cnt |= 0x4000;
+      continue;
+    } // not reached: the send counted the held words
+    const bool was_empty = me.fifo_out.empty();
+    me.fifo_out.push(ipc9_pending[i]);
+    if (was_empty && (them.ipc_fifo_cnt & 0x0400)) request_irq(Cpu::ARM7, IRQ_IPC_RECV);
+  }
+  ipc9_pending_n = 0;
 }
 
 u32 Io::ipc_fifo_recv(Cpu cpu) {
@@ -223,7 +255,8 @@ u32 Io::ipc_fifo_recv(Cpu cpu) {
   }
   if (!(me.ipc_fifo_cnt & 0x8000)) return them.fifo_out.data[them.fifo_out.head];
   u32 v = them.fifo_out.pop();
-  if (them.fifo_out.empty() && (them.ipc_fifo_cnt & 0x0004)) request_irq(other(cpu), IRQ_IPC_SEND_EMPTY);
+  if (them.fifo_out.empty() && (them.ipc_fifo_cnt & 0x0004) && !(cpu == Cpu::ARM7 && ipc9_pending_n))
+    request_irq(other(cpu), IRQ_IPC_SEND_EMPTY);
   return v;
 }
 
@@ -277,6 +310,11 @@ void Io::timer_overflow(Cpu cpu, int idx) {
 }
 
 void Io::timer_write_control(Cpu cpu, int idx, u16 value) {
+  // A CPU may reach an overflow before the slice-end dispatcher. Fire it
+  // before this rewrite can overwrite its deadline and lose the reload/IRQ.
+  const EventId id =
+      static_cast<EventId>(static_cast<int>(cpu == Cpu::ARM9 ? EventId::Timer0 : EventId::Timer7_0) + idx);
+  nds_.sched.settle(id);
   Timer& t = cpu_io[ci(cpu)].timers[idx];
   const bool was = t.running();
   const u64 now = nds_.sched.now();
@@ -2427,6 +2465,8 @@ u8 Io::dsi_tsc_transfer(u8 value) {
 }
 
 template <class S> void Io::sync_state(S& s) {
+  if constexpr (S::reading) ipc9_pending_n = 0; // the state format has no held words
+  else if (ipc9_pending_n) ipc_deliver();       // (none at a slice boundary; pushed early if ever)
   s.begin("IO  ");
   s.fields(lcd_irq_pending, dispstat, vcount, wramcnt, vramcnt, powcnt1, powcnt2, keyinput, extkeyin, keycnt, exmemcnt,
            spicnt, spidata, arm7_bios_prot);

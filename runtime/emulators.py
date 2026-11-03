@@ -21,7 +21,7 @@ import zipfile
 sys.dont_write_bytecode = True
 from library import playtime, record_playtime
 from records import process_identity, read_record, write_record
-from emulator_profiles import section_config, flat_config, policy, game_options, display_filter, FILTERS, dsperate_input_profile
+from emulator_profiles import RGDS_SCALES, section_config, flat_config, policy, game_options, display_filter, FILTERS, dsperate_input_profile
 from library import read_fields, game_key
 from audio import VolumeWatch, capture_device
 from game_menu import GameMenu, MenuInput, SwitchGame
@@ -32,7 +32,6 @@ from hud_theme import hud_theme
 from controls import paths as control_paths
 
 from engines import CORES, DSPERATE_CORES, RETIRED
-
 
 
 def timezone_value(fields, now=None):
@@ -131,6 +130,11 @@ def same_file_content(source, destination):
             if not chunk: return True
 
 
+# OLDEST_READABLE_VERSION and FORMAT_VERSION in dscore/src/core/state/state.h: a resume point skipped here is overwritten
+# on quit, so an update must go on accepting every format its engine can read.
+DS_STATE_FORMATS = (4, 4)
+
+
 def dsperate_resume_state(data, rom, identity=None, core="dsperate"):
     """Choose the latest automatic state without rolling back a newer battery save."""
     root = data / 'emulators' / core
@@ -164,8 +168,9 @@ def dsperate_resume_state(data, rom, identity=None, core="dsperate"):
             # This verifies identity and header bounds, not full state loading.
             head_size = 52 + 128 * 96 * 2
             return (
-                state[:4] == b'DSST' and word(4) == 4 and state[8:12] == b'HEAD' and word(12) == head_size
-                and size >= 16 + head_size and (word(56), word(60)) == (128, 96) and state[16:20] == header[12:16]
+                state[:4] == b'DSST' and DS_STATE_FORMATS[0] <= word(4) <= DS_STATE_FORMATS[1]
+                and state[8:12] == b'HEAD' and word(12) == head_size and size >= 16 + head_size
+                and (word(56), word(60)) == (128, 96) and state[16:20] == header[12:16]
                 and int.from_bytes(state[20:28], 'little') == rom_identity
             )
         except OSError:
@@ -369,7 +374,8 @@ def tanuki_plan(data, rom, prepare=True, engine=TANUKI_ENGINE, identity=None, fr
     shown = view(data, identity or rom)
     own = read_fields(Path(data) / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
     shader = shader_for(
-        identity or rom, int(own) if own.lstrip('-').isdigit() else -1, 0,
+        identity or rom,
+        int(own) if own.lstrip('-').isdigit() else -1, 0,
         system_defaults(data, '3ds').get('filter', -1)
     )
     if app: env['RGDS_SHADER_DIR'] = str(Path(app) / 'emulators/shaders')
@@ -378,7 +384,8 @@ def tanuki_plan(data, rom, prepare=True, engine=TANUKI_ENGINE, identity=None, fr
         RGDS_FPS='1' if read_fields(Path(data) / 'performance.ini').get('fps') == '1' else '0',
         RGDS_3DS_VIEW=' '.join(
             str(n) for n in (FITS.index(shown['fit']), SECONDS.index(shown['second']), shader, shown['frame'])
-        )
+        ),
+        RGDS_3DS_SCALE=str(shown.get('scale', 1))
     )
     return {'command': ['nice', '-n', '-5', 'sh', str(engine / 'run.sh'), str(rom)], 'cwd': str(home), 'env': env}
 
@@ -414,7 +421,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         from play_options import shader_for, system_defaults, system_of
         own = read_fields(data / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
         filter_choice = shader_for(
-            rom, int(own) if own.lstrip('-').isdigit() else -1, filter_choice,
+            rom,
+            int(own) if own.lstrip('-').isdigit() else -1, filter_choice,
             system_defaults(data, system_of(identity or rom)).get('filter', -1)
         )
     tuning = game_options(data, identity or rom)
@@ -434,7 +442,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             scale = int(env.get('RGDS_VK_SCALE', tuning['rgds_scale']))
         except ValueError:
             scale = 1
-        scale = max(1, min(5, scale))
+        if scale not in RGDS_SCALES: scale = max(1, min(5, scale))
         env['RGDS_3D_SMOOTH'] = str(tuning['rgds_smooth'])
         env['RGDS_2D_FILTER'] = str(tuning['rgds_2d'])
         env['RGDS_ACTIVE_SCALE'] = str(scale)
@@ -504,8 +512,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     ds_wireless = {'1': 'auto', '2': 'host', '3': 'guest'}.get(ds_input.get('wireless', '0'), 'off')
     ds_nickname = ''.join(
         c for c in ds_input.get('nickname') or read_fields(data / 'ds.ini').get('nickname') or
-        ('RG DS Core' if core == 'rgds-experimental' else 'DSperate')
-        if c.isprintable()
+        ('RG DS Core' if core == 'rgds-experimental' else 'DSperate') if c.isprintable()
     )
     ds_nickname = ds_nickname.encode('utf-16-le')[:20].decode('utf-16-le', errors='ignore') or 'RG DS Core'
     env['RGDS_DS_LANGUAGE'] = str(ds_language)
@@ -826,6 +833,10 @@ def release_launcher_display(channel):
         raise OSError("Launcher closed before display handoff")
 
 
+def refused_resume(result, plan, engine_log):
+    return result == 1 and '--load-state' in plan['command'] and engine_log.state_refused > 0
+
+
 def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, display=None):
     data.mkdir(parents=True, exist_ok=True)
     marker = data / "session/core.json"
@@ -859,6 +870,8 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         from quick_resume import invalidate
         invalidate(data)
         rom = resolve_rom(rom, data, core)
+        from save_guard import protect
+        protect(data, core, rom, original_rom, build=app.name)
         plan = launch_plan(core, app, data, rom, identity=original_rom, fresh_start=fresh_start)
         engine_log.command, engine_log.cwd = list(plan["command"]), plan["cwd"]
         plan['env']['RGDS_OVERLAY_FILE'] = f'/dev/shm/rgds-menu-{os.getpid()}-{time.monotonic_ns()}.frame'
@@ -897,18 +910,20 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             inherited = menu.port_leases(plan['env'])  # RG DS OS: the top panel's DRM lease
             prepare_binds()
             preexec = enter_port
-        from linux_platform import cpu_governor
-        governor = cpu_governor('performance')  # RG DS OS: schedutil's ramp-up showed as 90 ms worst-case presses
-        child = subprocess.Popen(
-            plan["command"],
-            cwd=plan["cwd"],
-            env=plan["env"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            bufsize=0,
-            preexec_fn=preexec,
-            pass_fds=inherited
-        )
+        from linux_platform import all_cpus
+        # RG DS Play with its main loop pinned to the emulation core keeps its other threads off it, on the session's
+        # CPUs. Every other game places its own threads and needs all of them.
+        with all_cpus('RGDS_PLAY_CPU' not in plan['env']):
+            child = subprocess.Popen(
+                plan["command"],
+                cwd=plan["cwd"],
+                env=plan["env"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                bufsize=0,
+                preexec_fn=preexec,
+                pass_fds=inherited
+            )
         engine_log.start(child.stdout)
         began = time.monotonic()
         if core == 'portmaster':
@@ -947,9 +962,12 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         # Deliver the completed exit to the pause UI before closing its process.
         menu.poll()
         result = child.wait()
-        if governor: cpu_governor(governor)
         if core == 'portmaster': result = menu.port_result(result)
         if gpu_reset: return 76  # the same engine again (run() keeps the display state)
+        if refused_resume(result, plan, engine_log):
+            # DSCore stops on a --load-state it cannot read. The game must still start; the file is in the save history.
+            print(f'{core} refused the resume point; starting the game without it', file=sys.stderr, flush=True)
+            return 77
         if result:
             print(f"{core} exited with code {result}. Diagnostics: {engine_log.path}", file=sys.stderr, flush=True)
         if result == 0 and core != 'portmaster':  # quick resume reopens engines, not ports

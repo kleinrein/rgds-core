@@ -10,6 +10,9 @@ from library import game_key
 from shaders import FILTERS, SHADERS
 from controls import LOGICAL
 
+# DSCore's 3D resolution (rgds_scale): native, 2x, 25 = 2.5x (the 640x480 panel itself), 3x, 4x, 5x.
+RGDS_SCALES = (1, 2, 25, 3, 4, 5)
+
 DS_INPUT_PROFILE = {
     "keys": {
         name: "none"
@@ -90,7 +93,7 @@ def game_options(data, rom):
         filter=bounded(local, "filter", bounded(defaults, "filter", 0, 0,
                                                 len(SHADERS) - 1), -1,
                        len(SHADERS) - 1),
-        rgds_scale=bounded(local, "rgds_scale", 1, 1, 5),
+        rgds_scale=(lambda scale: scale if scale in RGDS_SCALES else 1)(bounded(local, "rgds_scale", 1, 1, 25)),
         rgds_smooth=bounded(local, "rgds_smooth", 1, 0, 1),
         rgds_2d=bounded(local, "rgds_2d", 0, 0, 5),
         rgds_adaptive=bounded(local, "rgds_adaptive", 1, 0, 1),

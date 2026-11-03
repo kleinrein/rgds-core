@@ -50,6 +50,15 @@ mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ss
     /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/genesis /data/roms/sms /data/roms/psx /data/roms/n64 /data/roms/zx /data/roms/c64 /data/roms/3ds /data/roms/psp \
     /data/rgds/bios
 mark "rcS: data ready"
+/usr/libexec/rgds/saved-brightness
+# what the last kernel crash left in RAM (ramoops in the device tree), moved to the card. Every restart leaves a
+# console-* file; only a dmesg-* one means a crash. Removing them makes room for the next.
+mount -t pstore pstore /sys/fs/pstore 2>/dev/null
+if ls /sys/fs/pstore/dmesg-* >/dev/null 2>&1; then
+    n=$(ls /data/rgds/logs/pstore 2>/dev/null | wc -l)
+    [ "$n" -lt 20 ] && mkdir -p /data/rgds/logs/pstore/$n && cp /sys/fs/pstore/* /data/rgds/logs/pstore/$n/ 2>/dev/null
+fi
+rm -f /sys/fs/pstore/* 2>/dev/null
 mount -t vfat -o ro,noatime ${DISK}p1 /boot 2>/dev/null
 # a slot switch on trial (usr/libexec/rgds/trial): a fallback U-Boot made is recorded for the launcher, and a trial
 # slot that never commits (the session commits once RG DS Core has stayed up) restarts so U-Boot's counter advances

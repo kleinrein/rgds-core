@@ -64,32 +64,24 @@ public:
   // flip; the frame itself was ready that much earlier. dropped_behind: the
   // frame queued behind this flip was dropped at its vblank (the direct KMS
   // tier's mailbox, display_drm.cpp) instead of being held for the tick
-  // after; SDL's swap holds every such frame.
-  void flip(int panel, u64 at_ns, u64 issue_ns, u64 wait_ns = 0, bool dropped_behind = false) {
+  // after; SDL's swap holds every such frame. frame: what started() returned
+  // for the frame this flip shows, 0 for a flip of no frame the lock was told
+  // of (a held picture under the menu, fast forward): it only places the grid.
+  void flip(int panel, u64 at_ns, u64 issue_ns, u64 wait_ns = 0, bool dropped_behind = false, int frame = 0) {
     if (panel < 0 || panel >= PANELS) return;
     Panel& s = panels_[panel];
     if (panel == 0 && s.last_at && at_ns > s.last_at) learn_period(at_ns - s.last_at);
     s.last_at = at_ns;
-    if (!issue_ns || at_ns <= issue_ns || period_ema_ <= 0.0) return;
-    // The frame that swapped it: of the starts before the frame was ready to
-    // swap (the swap itself may have been held past the next frame's start),
-    // the one whose start-to-ready is nearest the work learned so far. The
-    // latest start alone would be wrong for exactly the frames that matter,
-    // the long ones: the next frame has begun before they are ready.
+    if (!frame || !issue_ns || at_ns <= issue_ns || period_ema_ <= 0.0) return;
+    // The frame that swapped it, by its number. Guessing it from the times (the
+    // start nearest the work learned so far) has a false answer at every whole
+    // refresh above the real work: once a stall or a menu had put the estimate
+    // up there, each frame "confirmed" it and the lock stayed off for the rest
+    // of the run (2 November 2026).
     const u64 ready = wait_ns < issue_ns ? issue_ns - wait_ns : issue_ns;
     const Start* e = nullptr;
-    for (const Start& c : ring_) {
-      if (!c.start || c.start >= ready) continue;
-      if (!e) {
-        e = &c;
-        continue;
-      }
-      if (work_ema_ > 0.0) {
-        if (std::fabs(static_cast<double>(ready - c.start) - work_ema_) <
-            std::fabs(static_cast<double>(ready - e->start) - work_ema_))
-          e = &c;
-      } else if (c.start > e->start) e = &c;
-    }
+    for (const Start& c : ring_)
+      if (c.frame == frame && c.start && c.start < ready) e = &c;
     if (!e) return;
     const double period = period_ns();
     ++samples_;
@@ -222,8 +214,9 @@ public:
 
   // A frame began at `start_ns` (the wait ended), aiming at the target the
   // last deadline() set (none while free-running: the work is still learned
-  // from it); `late`: it began past its deadline.
-  void started(u64 start_ns, bool late = false) {
+  // from it); `late`: it began past its deadline. Returns the frame's number,
+  // for flip() (never 0, and it fits KmsFlips's tag).
+  int started(u64 start_ns, bool late = false) {
     // Back-to-back starts measure the emulation time itself.
     if (late && last_start_ && start_ns > last_start_) {
       const double gap = static_cast<double>(start_ns - last_start_);
@@ -238,6 +231,9 @@ public:
     e.queued = 0;
     e.engaging = engaging_ > 0;
     if (engaging_ > 0) --engaging_;
+    next_frame_ = next_frame_ >= 0x7fffff ? 1 : next_frame_ + 1;
+    e.frame = next_frame_;
+    return e.frame;
   }
 
   // The frame begun last waited `ns` to be handed to a present thread still
@@ -281,6 +277,7 @@ private:
   struct Start {
     u64 start = 0, target = 0;
     u64 queued = 0; // queued(): its wait for a busy present lane
+    int frame = 0;  // what started() returned for it
     bool late = false, engaging = false;
   };
 
@@ -333,6 +330,7 @@ private:
   Panel panels_[PANELS];
   Start ring_[RING];
   int ring_next_ = 0;
+  int next_frame_ = 0;
   double period_ema_ = 0.0;
   int consistent_ = 0;
   double band_;

@@ -33,5 +33,15 @@ int main() {
   off.resumed();
   CHECK(!off.pulsing());
   CHECK(!off.poll(closed) && !closed);
+  CHECK(off.take_host_resumed()); // the clock still resyncs with the pulse off
+  CHECK(!off.take_host_resumed());
+
+  Lid hinge; // a switch close and open one frame apart: the host suspended in between
+  CHECK(!hinge.poll(closed) && !closed);
+  hinge.set_switch(true);
+  CHECK(hinge.poll(closed) && closed);
+  hinge.set_switch(false);
+  for (int i = 1; i < Lid::kMinClosedFrames; ++i) CHECK(!hinge.poll(closed) && closed);
+  CHECK(hinge.poll(closed) && !closed);
   return 0;
 }

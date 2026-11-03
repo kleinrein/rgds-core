@@ -921,7 +921,7 @@ bool Display::draw_scanout_async(Display* const ds[], int n, const u32* const fb
     // before did (the pacer's catch-up after a long frame spans two).
     int tags[2] = {0, 0};
     for (int k = 0; k < m; ++k) {
-      tags[k] = owners[k]->present_tag_ | (owners[k]->prev_tag_ ? 2 : 0);
+      tags[k] = owners[k]->present_tag_ | (owners[k]->prev_tag_ & 1 ? 2 : 0);
       owners[k]->prev_tag_ = owners[k]->present_tag_;
     }
     ls.job[next] = pt.post([st, width, height, s0 = sized[0], s1 = sized[1], owners, m, t0 = tags[0], t1 = tags[1]] {
@@ -1059,8 +1059,8 @@ void Display::draw_scanout(const u32* const fb[SCREENS], u32 width, u32 height, 
     const char* e = std::getenv("DS_KMS_DROP");
     return e ? std::atoi(e) : -1;
   }();
-  out_->set_drop_if_pending(drop_env == 1 || (drop_env != 0 && tag == 0));
-  out_->set_present_tag(tag & 1); // the flip's record (KmsFlips::Flip::tag): this frame started late
+  out_->set_drop_if_pending(drop_env == 1 || (drop_env != 0 && (tag & 3) == 0));
+  out_->set_present_tag(tag & ~2); // the flip's record (KmsFlips::Flip::tag): this frame started late, and which it is
   out_->end_frame();
   if (profile) {
     const auto tp4 = std::chrono::steady_clock::now();

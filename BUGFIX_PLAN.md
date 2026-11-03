@@ -61,6 +61,10 @@ Known, not fixed:
 - `tests/test_release_polish_ui.py … test_every_main_game_menu_action_has_a_rich_icon` fails on action 8 (the game-menu tile grid now has 12 tiles). Still failing on 2026-10-26. Not touched by these changes, not checked against HEAD. Run it from inside `tests/`: from the repo root it fails earlier on `import test_visual_options`.
 - Nothing above has been run on the handheld.
 
+## UI crashes with big libraries (tester reports, 2026-11-02)
+
+- [ ] Launcher crashes "sometimes", mostly with many games; changing the power profile did not help. Not seen on the owner's handheld. Cause unknown. Crash recording is in (see "Crash reports" in `docs/DEVELOPMENT.md`): next step is a report from an affected tester. **Device check.**
+
 ## Docs (README install section)
 
 - [ ] Tell users to ignore "RG-DS-Core-..." on the releases page

@@ -33,6 +33,7 @@ inline double hd_now() {
 namespace {
 bool g_dbg_join = false, g_dbg_gpu = false, g_dbg_vramnz = false, g_dbg_skip = false;
 bool g_no_lazy = false, g_no_lag = false;
+int g_worker_delay_us = 0;
 const char* g_dump_frame = nullptr;
 void read_knobs() {
   static bool done = false;
@@ -45,6 +46,9 @@ void read_knobs() {
   g_dump_frame = std::getenv("DS_DEBUG_DUMP_FRAME");
   g_no_lazy = std::getenv("DS_DEBUG_NOLAZY") != nullptr; // every frame per-line (the lazy batch's reference)
   g_no_lag = std::getenv("DS_DEBUG_NOLAG") != nullptr;   // per-line lines never stay in flight past their HBlank
+  // Each 2D worker job starts this many us late: widens any window in which the
+  // emulation thread changes what an in-flight line reads (a race shows up every run).
+  if (const char* d = std::getenv("DS_DEBUG_WDELAY")) g_worker_delay_us = std::atoi(d);
 }
 } // namespace
 
@@ -647,7 +651,10 @@ void Gpu::on_scanline_start() {
           put(sc ? "n1" : "n0", fb_[sc].data(), fb_[sc].size() * 4);
           if (!enhanced_[sc].empty()) put(sc ? "e1" : "e0", enhanced_[sc].data(), enhanced_[sc].size() * 4);
         }
-        if (const u32* h = frame_hires()) put("h", h, size_t(256 * ref3d_.scale) * 192 * ref3d_.scale * 4);
+        if (const u32* h = frame_hires()) {
+          const size_t s2 = rgds::half_units(ref3d_.scale);
+          put("h", h, 128 * s2 * 96 * s2 * 4);
+        }
         char meta[160];
         std::snprintf(meta, sizeof meta, "enh %d %d a_screen %d scale %u gpu %d capture %d\n", int(enhanced_screen_[0]),
                       int(enhanced_screen_[1]), engine[0].screen(), ref3d_.scale, int(ref3d_.gpu), int(capture_on_));
@@ -872,6 +879,10 @@ void Gpu::on_display_fifo(u32 x) {
 // One engine's run of display lines on the worker; engine state is disjoint.
 void Gpu::worker_job(void* self) {
   Gpu& g = *static_cast<Gpu*>(self);
+  if (g_worker_delay_us) {
+    const auto t = std::chrono::steady_clock::now() + std::chrono::microseconds(g_worker_delay_us);
+    while (std::chrono::steady_clock::now() < t) {}
+  }
   for (int e = 0; e < 2; ++e)
     for (u32 l = g.job_first_[e]; l <= g.job_last_[e]; ++l) g.step_engine(e, l);
   for (u32 i = 0; i < g.bscale_n_; ++i) {
@@ -884,6 +895,10 @@ void Gpu::worker_job(void* self) {
 
 void Gpu::worker_b_job(void* self) {
   Gpu& g = *static_cast<Gpu*>(self);
+  if (g_worker_delay_us) {
+    const auto t = std::chrono::steady_clock::now() + std::chrono::microseconds(g_worker_delay_us);
+    while (std::chrono::steady_clock::now() < t) {}
+  }
   for (u32 l = g.bjob_first_; l <= g.bjob_last_; ++l) g.step_engine(1, l);
 }
 
@@ -1003,8 +1018,12 @@ void Gpu::render_ranges(u32 af, u32 al, u32 bf, u32 bl) {
     if (b_has && b_len < 24 && !parked_at_decision) prof::add(prof::C_RR_SHORT_HANDED_AWAKE, 1);
     if (b_has && b_len < 24 && parked_at_decision) prof::add(prof::C_RR_SHORT_INLINE_PARKED, 1);
   }
-  if (a_has && al == SCREEN_H - 1 && (a_len >= 24 || (!worker_.parked() && a_len >= b_len))) {
+  if (a_has && al == SCREEN_H - 1 && (a_len >= 24 || (!worker_.parked() && a_len >= b_len)) && trap_armed_ &&
+      (trap_mask_ & 1)) {
     // Run to the last display line: deferred join, engine B drawn here meanwhile.
+    // Only under the trap over A's windows: the job stays in flight through
+    // VBlank, when games stream VRAM. A per-line engine A outside a lag frame
+    // (lag dropped mid-frame) has none, so its last line is drawn and joined now.
     prof::add(prof::C_RR_DEFER_A, 1);
     hand(true, false);
     a_handed = true;
@@ -1168,7 +1187,7 @@ void Gpu::output_engine(int e, u32 line) {
 // This bounds CPU blending work even at 5x, while all native DS readbacks
 // remain on the independent native raster. 2D art retains its original grid.
 bool Gpu::set_presentation(int scale, bool smooth, std::string* why) {
-  if (scale < 1 || scale > 5) return false;
+  if (!rgds::valid_scale(scale)) return false;
   quiesce();
   // Allocate before changing the renderer, so failures keep the old picture.
   if (scale > 1) {
@@ -1421,7 +1440,8 @@ void Gpu::output_enhanced_a(Engine2D& en, u32 line, const u32* native) {
   row.screen = en.screen();
   row.scale = candidate ? ref3d_.scale : 1;
   row.xpos = nds_.gpu3d.display_xpos();
-  row.filter = presentation_smooth_ && row.scale >= 3;
+  // At 2.5x every panel pixel is one rendered pixel: nothing to filter.
+  row.filter = presentation_smooth_ && row.scale >= 3 && row.scale != rgds::kPanelScale;
   std::memcpy(row.native, native, sizeof row.native);
   u32 occupied = 0;
   if (candidate)
@@ -1493,16 +1513,16 @@ void Gpu::compose_row(const EnhancedRow& job, Engine2D* verify) {
     Engine2D::compose_3d_subline(job.plan, job.evy, job.master, no_3d, scratch, two_d);
   }
   const u32* hires = frame_hires();
-  const u32 scale = job.scale;
+  const u32 s2 = rgds::half_units(job.scale), pitch = 128 * s2;
   // Fully transparent 3D rows cannot change the native 2D result. Check
   // both rasters: a high-resolution edge can cover a native-empty pixel,
   // and a native edge can disappear at the enhanced sample positions.
   bool detail = hires != nullptr;
   if (detail && !job.native_3d) {
-    const u32 first = std::min(job.line * scale, (4 * job.y0 + 1) * scale / 10);
-    const u32 last = std::max((job.line + 1) * scale, (4 * (job.y1 - 1) + 3) * scale / 10 + 1);
-    const u32 n = SCREEN_W * scale * (last - first);
-    const u32* band = hires + first * SCREEN_W * scale;
+    const u32 first = std::min(job.line * s2 / 2, (4 * job.y0 + 1) * s2 / 20);
+    const u32 last = std::max(((job.line + 1) * s2 + 1) / 2, (4 * (job.y1 - 1) + 3) * s2 / 20 + 1);
+    const u32 n = pitch * (last - first);
+    const u32* band = hires + first * pitch;
     u32 occupied = 0;
     for (u32 x = 0; x < n; ++x) occupied |= band[x];
     detail = (occupied >> 24) != 0;
@@ -1518,7 +1538,7 @@ void Gpu::compose_row(const EnhancedRow& job, Engine2D* verify) {
   enhanced_screen_[job.screen].store(true, std::memory_order_relaxed);
   thread_local rgds::SamplePlan sample_plan;
   const bool filter = job.filter;
-  sample_plan.update(scale, job.xpos, filter);
+  sample_plan.update(job.scale, job.xpos, filter);
   u32 previous_sy = ~0u;
   alignas(16) u32 samples[SCREEN_W], composed[SCREEN_W];
   for (u32 y = job.y0; y < job.y1; ++y) {
@@ -1526,10 +1546,10 @@ void Gpu::compose_row(const EnhancedRow& job, Engine2D* verify) {
     // At 5x this is an exact 2x2 box resolve to the 640x480 panel. At
     // 3x/4x use the same four evenly spaced footprint samples. The DS
     // priority/window plan still belongs to its original 2D pixel.
-    const u32 fy0 = (4 * y + 1) * scale / 10, fy1 = (4 * y + 3) * scale / 10;
-    const u32* row0 = hires + fy0 * SCREEN_W * scale;
-    const u32* row1 = hires + fy1 * SCREEN_W * scale;
-    const u32 sy = job.line * scale + (2 * (y - job.y0) + 1) * scale / (2 * (job.y1 - job.y0));
+    const u32 fy0 = (4 * y + 1) * s2 / 20, fy1 = (4 * y + 3) * s2 / 20;
+    const u32* row0 = hires + fy0 * pitch;
+    const u32* row1 = hires + fy1 * pitch;
+    const u32 sy = job.line * s2 / 2 + (2 * (y - job.y0) + 1) * s2 / (4 * (job.y1 - job.y0));
     // Nearest sampling can select the same source row twice on a 2x
     // image. The DS layer plan is identical within this native scanline.
     if (!filter && sy == previous_sy) {
@@ -1537,11 +1557,11 @@ void Gpu::compose_row(const EnhancedRow& job, Engine2D* verify) {
       continue;
     }
     previous_sy = sy;
-    const u32* row = hires + sy * SCREEN_W * scale;
+    const u32* row = hires + sy * pitch;
     for (u32 phase = 0; phase < (PRESENT_W + SCREEN_W - 1) / SCREEN_W; ++phase) {
       // At 2x, the third panel pixel of odd DS columns samples exactly
       // the same texel as their second pixel. Reuse the composed value.
-      if (scale == 2 && phase == 2) {
+      if (s2 == 4 && phase == 2) {
         for (u32 x = 0; x < SCREEN_W / 2; ++x) dst[5 * x + 4] = composed[2 * x + 1];
         continue;
       }

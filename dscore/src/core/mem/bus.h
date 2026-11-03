@@ -88,6 +88,23 @@ public:
   void dma_write16(Cpu cpu, u32 addr, u16 v);
   void dma_write32(Cpu cpu, u32 addr, u32 v);
 
+  // The DMA controllers' view (dma.cpp, ndma.cpp). A DMA channel is a system-bus
+  // master, and the ARM9's TCM is not on that bus: ITCM addresses are open bus
+  // (reads 0, writes dropped) and the main RAM answers under the DTCM window.
+  // The dma_* above are the CPU's view -- loaders and the cheat engine poke TCM
+  // through them.
+  bool dma_tcm(u32 addr) const; // addr is inside the ARM9's ITCM or DTCM window
+  // False when nothing answers; otherwise `addr` is rewritten to the address that does.
+  bool dmac_view(Cpu cpu, u32& addr) const;
+  u16 dmac_read16(Cpu cpu, u32 addr) { return dmac_view(cpu, addr) ? dma_read16(cpu, addr) : 0; }
+  u32 dmac_read32(Cpu cpu, u32 addr) { return dmac_view(cpu, addr) ? dma_read32(cpu, addr) : 0; }
+  void dmac_write16(Cpu cpu, u32 addr, u16 v) {
+    if (dmac_view(cpu, addr)) dma_write16(cpu, addr, v);
+  }
+  void dmac_write32(Cpu cpu, u32 addr, u32 v) {
+    if (dmac_view(cpu, addr)) dma_write32(cpu, addr, v);
+  }
+
   Timing& timing() { return timing_; }
   const Timing& timing() const { return timing_; }
   void update_gba_slot_timings(); // EXMEMCNT

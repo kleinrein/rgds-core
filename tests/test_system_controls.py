@@ -114,6 +114,42 @@ class SystemControlTests(unittest.TestCase):
         status = self.hardware.status()
         self.assertEqual((status['battery'], status['charging']), (75, 1))
 
+    def test_session_start_applies_everything_in_one_process_and_reports_status(self):
+        top = self.backlight("top", 1000, 1000)
+        self.clocks()
+        self.put("class/power_supply/battery/type", "Battery")
+        self.put("class/power_supply/battery/capacity", "64")
+        status = self.hardware.session_start(40, power=0, lid=False)
+        self.assertEqual(top.read_text().strip(), "400")
+        self.assertEqual(status["brightness"], 40)
+        self.assertEqual(status["battery"], 64)
+
+    def test_session_start_reports_status_when_one_control_fails(self):
+        self.backlight("top", 1000, 1000)
+        with patch.object(Hardware, "volume", side_effect=OSError("mixer busy")):
+            status = self.hardware.session_start(50, power=9, lid=False)
+        self.assertEqual(status["brightness"], 50)
+        self.assertEqual(status["volume_failed"], 1)
+        self.assertEqual(status["power_failed"], 1)
+        self.assertNotIn("brightness_failed", status)
+        self.assertNotIn("lid_failed", self.hardware.session_start(50))
+
+    def test_saved_brightness_script_needs_no_helper(self):
+        script = Path(__file__).resolve().parents[1] / "os/buildroot/rootfs/usr/libexec/rgds/saved-brightness"
+        top = self.backlight("top", 1666, 1666)
+        bottom = self.backlight("bottom", 1666, 1666)
+        ini = self.root / "system.ini"
+        env = dict(os.environ, RGDS_SYSTEM_INI=str(ini), RGDS_BACKLIGHTS=str(self.sysfs / "class/backlight"))
+        for text, level in (
+            (None, "1666"), ("schema=1\nbrightness=garbage\n", "1666"), ("brightness=2\n", "1666"),
+            ("schema=1\npower=0\nbrightness=50\nidle=0\n", "833"), ("brightness=100", "1666")
+        ):
+            if text is not None:
+                ini.write_text(text)
+            subprocess.run(["sh", str(script)], env=env, check=True)
+            self.assertEqual(top.read_text().strip(), level, text)
+            self.assertEqual(bottom.read_text().strip(), level, text)
+
     def test_two_backlights_scale_without_blanking_and_restore_originals(self):
         top = self.backlight()
         bottom = self.backlight("bottom", 20, 13)
@@ -150,6 +186,16 @@ class SystemControlTests(unittest.TestCase):
     def test_profiles_use_advertised_frequencies_and_legal_restore_order(self):
         cpu = self.clocks()
         gpu = self.clocks("class/devfreq/fde60000.gpu", "")
+        self.put(
+            cpu.relative_to(self.sysfs) / "scaling_available_frequencies", "408000 1104000 1416000 1608000 1992000"
+        )
+        self.put(cpu.relative_to(self.sysfs) / "scaling_min_freq", "408000")
+        self.put(cpu.relative_to(self.sysfs) / "scaling_max_freq", "1992000")
+        self.put(
+            gpu.relative_to(self.sysfs) / "available_frequencies", "200000000 300000000 400000000 600000000 800000000"
+        )
+        self.put(gpu.relative_to(self.sysfs) / "min_freq", "200000000")
+        self.put(gpu.relative_to(self.sysfs) / "max_freq", "800000000")
         original_write = Path.write_text
 
         def constrained_write(path, value, *args, **kwargs):
@@ -163,17 +209,58 @@ class SystemControlTests(unittest.TestCase):
 
         with patch.object(Path, "write_text", constrained_write):
             self.hardware.power(3)
-            self.assertEqual((cpu / "scaling_min_freq").read_text().strip(), "1600")
+            self.assertEqual((cpu / "scaling_min_freq").read_text().strip(), "1992000")
+            self.assertEqual((cpu / "scaling_governor").read_text().strip(), "performance")
+            self.assertEqual((gpu / "min_freq").read_text().strip(), "800000000")
             self.hardware.power(1)
-            self.assertEqual((cpu / "scaling_max_freq").read_text().strip(), "800")
-            self.hardware.power(2)
-            self.assertEqual((gpu / "max_freq").read_text().strip(), "1200")
-            self.hardware.power(0)
+            self.assertEqual((cpu / "scaling_max_freq").read_text().strip(), "1416000")
+            self.assertEqual((cpu / "scaling_min_freq").read_text().strip(), "408000")
             self.assertEqual((cpu / "scaling_governor").read_text().strip(), "schedutil")
+            self.assertEqual((gpu / "max_freq").read_text().strip(), "600000000")
+            self.hardware.power(2)
+            self.assertEqual((cpu / "scaling_max_freq").read_text().strip(), "1608000")
+            self.assertEqual((cpu / "scaling_min_freq").read_text().strip(), "1104000")
+            self.assertEqual((gpu / "min_freq").read_text().strip(), "400000000")
+            self.hardware.power(0)  # a settings file from when there was a Stock mode: Balanced
+            self.assertEqual((cpu / "scaling_max_freq").read_text().strip(), "1608000")
             self.hardware.power(3)
             self.hardware.restore()
-        self.assertEqual((cpu / "scaling_min_freq").read_text().strip(), "400")
-        self.assertEqual((gpu / "max_freq").read_text().strip(), "1200")
+        self.assertEqual((cpu / "scaling_min_freq").read_text().strip(), "408000")
+        self.assertEqual((gpu / "max_freq").read_text().strip(), "800000000")
+
+    def trips(self, zone, kind):
+        self.put(f"class/thermal/{zone}/type", kind)
+        for n, (temperature, trip) in enumerate((("70000", "passive"), ("75000", "passive"), ("95000", "critical"))):
+            self.put(f"class/thermal/{zone}/trip_point_{n}_temp", temperature)
+            self.put(f"class/thermal/{zone}/trip_point_{n}_type", trip)
+        return self.sysfs / "class/thermal" / zone
+
+    def test_only_performance_raises_the_thermal_trips_and_leaving_it_restores_them(self):
+        self.clocks()
+        cpu, gpu = self.trips("thermal_zone0", "cpu-thermal"), self.trips("thermal_zone1", "gpu-thermal")
+        other = self.trips("thermal_zone2", "other-thermal")
+        read = lambda zone, n: (zone / f"trip_point_{n}_temp").read_text().strip()
+        self.hardware.power(2)
+        self.assertEqual((read(cpu, 0), read(gpu, 0)), ("70000", "70000"))
+        self.hardware.power(3)
+        for zone in (cpu, gpu):
+            self.assertEqual((read(zone, 0), read(zone, 1), read(zone, 2)), ("80000", "85000", "95000"))
+        self.assertEqual(read(other, 0), "70000")
+        self.hardware.power(1)
+        for zone in (cpu, gpu):
+            self.assertEqual((read(zone, 0), read(zone, 1)), ("70000", "75000"))
+        # A crash in Performance: the journal knows the device tree's trips.
+        self.hardware.power(3)
+        self.hardware.restore()
+        self.assertEqual(read(cpu, 0), "70000")
+
+    def test_a_kernel_without_writable_trips_still_takes_the_clocks(self):
+        cpu = self.clocks()
+        self.trips("thermal_zone0", "cpu-thermal")
+        writable = staticmethod(lambda path: "trip_point" not in path.name and path.is_file())
+        with patch.object(Hardware, "writable", writable):
+            self.hardware.power(3)
+        self.assertEqual((cpu / "scaling_min_freq").read_text().strip(), "1600")
 
     def test_invalid_or_unavailable_controls_never_create_journal(self):
         for method, value in (

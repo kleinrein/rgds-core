@@ -100,6 +100,42 @@ int main(int, char** argv) {
 '''
         )
 
+    def test_panel_scale_maps_every_panel_pixel_to_its_own_rendered_pixel(self):
+        self.compile_run(
+            r'''
+#include "core/gpu/rgds_sample_plan.hpp"
+#include <cassert>
+#include <cstdio>
+int main() {
+  rgds::SamplePlan plan;
+  assert(rgds::valid_scale(25) && !rgds::valid_scale(6) && !rgds::valid_scale(0) && rgds::half_units(25) == 5);
+  for (unsigned smooth = 0; smooth < 2; ++smooth) {
+    plan.update(rgds::kPanelScale, 0, smooth);
+    bool seen[640] = {};
+    for (unsigned x = 0; x < 256; ++x) {
+      const unsigned begin = x * 5 / 2, count = (x + 1) * 5 / 2 - begin;
+      for (unsigned p = 0; p < count; ++p) {
+        const auto t = plan.phase[p][x];
+        assert(t.first == begin + p && t.second == begin + p);
+        seen[begin + p] = true;
+      }
+    }
+    for (bool s : seen) assert(s);
+  }
+  // A hole past the image, and an odd scroll in range: never an address outside the 640 columns.
+  for (unsigned offset = 0; offset < 512; ++offset) {
+    plan.update(rgds::kPanelScale, offset, false);
+    for (unsigned p = 0; p < 3; ++p)
+      for (unsigned x = 0; x < 256; ++x) {
+        const auto t = plan.phase[p][x];
+        assert(t.first == rgds::SamplePlan::absent || t.first < 640);
+      }
+  }
+  std::puts("panel scale: ok");
+}
+'''
+        )
+
     def test_all_scales_scroll_offsets_and_modes_preserve_original_sample_addresses(self):
         self.compile_run(
             r'''

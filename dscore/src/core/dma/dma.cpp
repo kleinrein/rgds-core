@@ -328,7 +328,7 @@ u32 Dma::run_channel_impl(Channel& c, u32 budget) {
     if (word && a9 && c.cur_dst == 0x04000400 && c.dst_inc == 0) {
       // Run of words from one direct-mapped source page, unrolled over the page.
       if (c.src_inc == 1) {
-        const u8* p = nds_.cpu(Cpu::ARM9).page_table.read_ptr(c.cur_src);
+        const u8* p = bus.dma_tcm(c.cur_src) ? nullptr : nds_.cpu(Cpu::ARM9).page_table.read_ptr(c.cur_src);
         if (p) {
           u32 room = (mem::PAGE_SIZE - (c.cur_src & (mem::PAGE_SIZE - 1))) >> 2;
           RunCost rc = run_cost(c, true);
@@ -377,13 +377,14 @@ u32 Dma::run_channel_impl(Channel& c, u32 budget) {
         }
       }
       prof::add(prof::C_DMA_GXF_SLOW, 1);
-      nds_.gpu3d.gxfifo_dma_write(bus.dma_read32(c.cpu, c.cur_src));
+      nds_.gpu3d.gxfifo_dma_write(bus.dmac_read32(c.cpu, c.cur_src));
     } else if (word) {
       // Run of words between two direct-mapped pages: one page-table walk per
       // end per run instead of two per word; a code-tagged or trapped
       // destination stays per word.
       if (c.src_inc == 1 && c.dst_inc == 1 && c.cur_dst >= no_run_below) {
-        const u8* ps = nds_.cpu(c.cpu).page_table.read_ptr(c.cur_src);
+        const bool tcm = a9 && (bus.dma_tcm(c.cur_src) || bus.dma_tcm(c.cur_dst)); // per unit, through the DMA's view
+        const u8* ps = tcm ? nullptr : nds_.cpu(c.cpu).page_table.read_ptr(c.cur_src);
         bool code = false;
         u8* pd = ps ? nds_.cpu(c.cpu).page_table.write_ptr(c.cur_dst, &code) : nullptr;
         // Lazy-2D write trap: take it once for the run rather than per word.
@@ -456,11 +457,12 @@ u32 Dma::run_channel_impl(Channel& c, u32 budget) {
       }
       prof::add(prof::C_DMA_SLOW_W, 1);
       if (prof::heavy) prof::add(dma_zone(c.cur_dst, false), 1);
-      bus.dma_write32(c.cpu, c.cur_dst, bus.dma_read32(c.cpu, c.cur_src));
+      bus.dmac_write32(c.cpu, c.cur_dst, bus.dmac_read32(c.cpu, c.cur_src));
     } else {
       // Halfword run between two direct-mapped pages: same pattern as the word run above.
       if (c.src_inc == 1 && c.dst_inc == 1 && c.cur_dst >= no_run_below) {
-        const u8* ps = nds_.cpu(c.cpu).page_table.read_ptr(c.cur_src);
+        const bool tcm = a9 && (bus.dma_tcm(c.cur_src) || bus.dma_tcm(c.cur_dst)); // per unit, through the DMA's view
+        const u8* ps = tcm ? nullptr : nds_.cpu(c.cpu).page_table.read_ptr(c.cur_src);
         bool code = false;
         u8* pd = ps ? nds_.cpu(c.cpu).page_table.write_ptr(c.cur_dst, &code) : nullptr;
         if (ps && !pd && a9 && (c.cur_dst >> 24) == 0x06) {
@@ -529,7 +531,7 @@ u32 Dma::run_channel_impl(Channel& c, u32 budget) {
       }
       prof::add(prof::C_DMA_SLOW_H, 1);
       if (prof::heavy) prof::add(dma_zone(c.cur_dst, false), 1);
-      bus.dma_write16(c.cpu, c.cur_dst, bus.dma_read16(c.cpu, c.cur_src));
+      bus.dmac_write16(c.cpu, c.cur_dst, bus.dmac_read16(c.cpu, c.cur_src));
     }
     const u32 step = word ? 4 : 2;
     c.cur_src += c.src_inc * step;

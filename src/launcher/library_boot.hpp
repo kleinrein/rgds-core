@@ -256,23 +256,40 @@ void App::poll_library_scan() {
     dirty = true;
 }
 
-void App::start_boot_session() {
-    if (session_initialized) return;
+// After the first frame, and before any tap on "Touch to continue": the saved controls, then what Home shows.
+void App::begin_boot_work() {
+    if (boot_work_begun) return;
+    boot_work_begun = true;
     load_system_configuration();
     if (!preferences.pixel) check_fonts();
     shaders =
         load_shaders(o.app.empty() ? fs::path("assets/shaders/catalog.tsv") : o.app / "assets/shaders/catalog.tsv");
+    if (o.preview) {
+        refresh_system();
+        boot_hardware_ready = true;
+    } else
+        system.request_session_start(system_preferences.brightness, system_preferences.power, system_preferences.lid);
+    const auto shown = settings;
+    begin_library_scan();
+    settings = shown; // an empty library has loaded already, which goes to Home
+}
+
+void App::start_boot_session() {
+    if (session_initialized) return;
+    begin_boot_work();
     cancel_navigation();
     boot_touch_candidate = false;
     session_initialized = true;
     settings.page = Page::Library;
     home_menu = !o.library;
+    if (!home_menu && library_ready) library_view(preferences.view);
     selected_at = page_at = s.GetTicks();
-    if (o.preview) {
-        refresh_system();
-        boot_hardware_ready = true;
-    } else system.request_status();
-    begin_library_scan();
+    if (!o.preview) {
+        // However long the warning waited: a fresh charge now, and the periodic jobs not all at once on this first frame.
+        if (o.boot_warning) SystemControls::read_battery(hardware);
+        system_poll = automatic_update_at = selected_at;
+        network_after = selected_at + 1000;
+    }
     if (welcome_active) welcome_begin();
     dirty = true;
 }

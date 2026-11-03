@@ -12,27 +12,27 @@ uniform sampler2D u_texture;
 uniform vec4 u_texture_size;
 uniform vec2 u_target_size;
 varying vec2 v_texture_coordinate;
-// Box-filtered coverage of each subpixel stripe by one output pixel, so the
-// pattern stays clean at the handheld's 2.5x and the Plus's 4x scale.
-vec3 stripes(float x,float w){
-    vec3 lo=vec3(0.0,1.0,2.0)/3.0,hi=lo+1.0/3.0;float a=x-0.5*w,b=x+0.5*w;
-    vec3 c=clamp(min(vec3(b),hi)-max(vec3(a),lo),0.0,w)+clamp(min(vec3(b),hi-1.0)-max(vec3(a),lo-1.0),0.0,w)+clamp(min(vec3(b),hi+1.0)-max(vec3(a),lo+1.0),0.0,w);
-    return c/w;
-}
 void main(){
     vec4 pixel=texture2D(u_texture,v_texture_coordinate);
-    // A TN panel bleeds each channel into its neighbours and lifts the shadows.
-    vec3 c=pow(pixel.rgb,vec3(2.2));
-    c=mat3(0.86,0.07,0.04, 0.11,0.84,0.10, 0.03,0.09,0.86)*c;
-    c=pow(max(c,0.0),vec3(1.0/2.45));
+    // A TN panel bleeds each channel into its neighbours and lifts the shadows: to linear light (gamma 2.2), the bleed,
+    // back with gamma 2.45. Both curves as polynomials, within 4/255 of the powers at a fraction of their cost: this
+    // runs for every pixel of both screens, and the GPU is what limits the 3x and HD modes.
+    mediump vec3 x=pixel.rgb;
+    mediump vec3 c=mat3(0.86,0.07,0.04, 0.11,0.84,0.10, 0.03,0.09,0.86)*(x*x*(0.7445+0.2604*x));
+    c=sqrt(max(c,vec3(0.0)));
+    c=c*(1.5352+c*(-1.0538+c*0.5271));
     c=mix(vec3(0.045,0.05,0.06),vec3(0.92,0.94,0.96),c);
     // The grid is always the DS's own 256x192, also for high-resolution 3D.
-    vec2 cells=vec2(256.0,192.0),p=v_texture_coordinate*cells,f=fract(p);
+    vec2 cells=vec2(256.0,192.0),f=fract(v_texture_coordinate*cells);
     vec2 w=min(cells/max(u_target_size,vec2(1.0)),vec2(1.0));
-    float strength=clamp(1.0/max(w.x,w.y)-1.0,0.0,1.0);
+    mediump float strength=clamp(1.0/max(w.x,w.y)-1.0,0.0,1.0);
     vec2 edge=clamp((min(f,1.0-f)-0.07)/w+0.5,0.0,1.0);
-    float grid=mix(0.74,1.0,edge.x*edge.y);
-    vec3 stripe=1.0+0.16*(3.0*stripes(f.x,w.x)-1.0);
+    mediump float grid=mix(0.74,1.0,edge.x*edge.y);
+    // Box-filtered coverage of each subpixel stripe by one output pixel, so the
+    // pattern stays clean at the handheld's 2.5x and the Plus's 4x scale.
+    vec3 d=abs(fract(f.x+vec3(1.0/3.0,0.0,-1.0/3.0))-0.5);
+    mediump vec3 stripes=clamp((0.5*(w.x+1.0/3.0)-d)/w.x,0.0,min(1.0/(3.0*w.x),1.0));
+    mediump vec3 stripe=1.0+0.16*(3.0*stripes-1.0);
     c*=mix(vec3(1.0),grid*stripe*1.04,strength);
     pixel.rgb=clamp(c,0.0,1.0);
     gl_FragColor=pixel;

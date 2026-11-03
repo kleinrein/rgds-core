@@ -39,6 +39,13 @@ nice ninja -C SDL/build -j$J install > sdl-build.log 2>&1 || { tail -30 sdl-buil
 
 log build tanuki
 cd tanuki
+# a state stores services and scheduler events by name: one savestate.c does not know would make saving fail
+for port in $(grep -rhoE '^DECL_PORT(_ARG)?\([a-z0-9_]+' src | sed 's/.*(//' | sort -u); do
+  grep -q "PORT($port)" src/savestate.c || { echo "src/savestate.c: no entry for the service $port"; exit 1; }
+done
+for callback in $(grep -rhoE 'add_event\(&s->sched, \(SchedulerCallback\) [a-z0-9_]+' src | sed 's/.* //' | sort -u); do
+  grep -q "CALLBACK($callback," src/savestate.c || { echo "src/savestate.c: no entry for the event $callback"; exit 1; }
+done
 cat > config.mk <<EOF
 CC := clang-19
 CXX := clang++-19

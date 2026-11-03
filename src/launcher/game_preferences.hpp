@@ -50,15 +50,22 @@ bool App::experimental_game() const {
 }
 
 std::string App::experimental_resolution_name() const {
-    return game_preferences.rgds_scale == 1 ? "Native" : std::to_string(game_preferences.rgds_scale) + "x";
+    return game_preferences.rgds_scale == 1    ? "Native"
+           : game_preferences.rgds_scale == 25 ? "2.5x"
+                                               : std::to_string(game_preferences.rgds_scale) + "x";
 }
 
 void App::show_experimental_resolution_picker() {
+    static constexpr int scales[] = {1, 2, 25, 3, 4, 5};
+    int current = 0;
+    for (int n = 0; n < 6; ++n)
+        if (scales[n] == game_preferences.rgds_scale) current = n;
     show_picker("DSCore 3D resolution",
-                {"Native (fastest)", "2x sharper", "3x sharper", "4x (experimental)", "5x (experimental)"},
-                game_preferences.rgds_scale - 1, [this](int n) {
+                {"Native (fastest)", "2x sharper", "2.5x exact fit to the screen", "3x sharper", "4x (experimental)",
+                 "5x (experimental)"},
+                current, [this](int n) {
                     auto next = game_preferences;
-                    next.rgds_scale = n + 1;
+                    next.rgds_scale = scales[n];
                     apply_experimental_graphics(next);
                 });
 }

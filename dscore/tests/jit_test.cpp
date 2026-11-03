@@ -461,6 +461,11 @@ void directed() {
        false,
        {0xEE070F9A, 0xEE073F35, 0xEE070F3E, 0xE2800001},
        {5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
+      // PLD (immediate, register, negative offset) is a no-op inline; then an ALU op.
+      {Cpu::ARM9,
+       false,
+       {0xF5D0F000, 0xF7D1F002, 0xF550F004, 0xE2800001},
+       {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
       // MSR CPSR_c keeping the mode (SYS): set F, then clear it; flags field from a register and an immediate.
       {Cpu::ARM9,
        false,

@@ -14,14 +14,20 @@ struct Spirv {
   size_t bytes = 0; // vkCreateShaderModule wants a byte count
 };
 
-Spirv shader_tri_fs();             // a fullscreen triangle (the resolve subpass)
-Spirv shader_lean_vert();          // lean path (vk_lean.cpp): fans at 1x, MSAA vertex placement
-Spirv shader_lean_frag();          // ... its one fragment stage
-Spirv shader_lean_frag_early();    // ... without the alpha test (early depth test) for polygons that cannot fail it
-Spirv shader_lean_frag_opq();      // ... a translucent polygon's alpha-31 pixels only (drawn as opaque)
-Spirv shader_lean_frag_trans();    // ... its other pixels only (the translucent passes)
-Spirv shader_lean_frag_trans_nd(); // RG DS: pass B without discard (DS_LEAN_NODISCARD)
-Spirv shader_lean_resolve();       // ... and the resolve into the 3D layer record
+Spirv shader_tri_fs();               // a fullscreen triangle (the resolve subpass)
+Spirv shader_lean_vert();            // lean path (vk_lean.cpp): fans at 1x, MSAA vertex placement
+Spirv shader_lean_frag();            // ... its one fragment stage
+Spirv shader_lean_frag_early();      // ... without the alpha test (early depth test) for polygons that cannot fail it
+Spirv shader_lean_frag_opq();        // ... a translucent polygon's alpha-31 pixels only (drawn as opaque)
+Spirv shader_lean_frag_trans();      // ... its other pixels only (the translucent passes)
+Spirv shader_lean_frag_trans_nd();   // RG DS: pass B without discard (DS_LEAN_NODISCARD)
+Spirv shader_lean_frag_d();          // RG DS: direct frames, with no resolve to follow (vk_lean.cpp): the plain stage
+Spirv shader_lean_frag_shadow_d();   // ... the plain stage with the blend's second source, for shadows
+Spirv shader_lean_frag_early_d();    // ... the early-depth stage
+Spirv shader_lean_frag_opq_d();      // ... a translucent run's alpha-31 pixels
+Spirv shader_lean_frag_trans_d();    // ... its other pixels, with the second source
+Spirv shader_lean_frag_trans_nd_d(); // ... pass B without discard
+Spirv shader_lean_resolve();         // ... and the resolve into the 3D layer record
 Spirv shader_lean_resolve_1x();
 Spirv shader_lean_resolve_store(); // RG DS: single-sample resolve into the readback buffer   // ... the same over single-sample attachments (aa off)
 

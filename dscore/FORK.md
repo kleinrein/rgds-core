@@ -29,6 +29,23 @@ rebuild. Symlinks are refused, and this file must keep naming the upstream commi
 `source.tar.gz` ships the tree as `DSperate/` beside the build recipe and this file.
 `tests/test_dscore_fork.py` and `tests/test_dscore_build.py` check the tree and the build logic.
 
+## Commits taken from upstream
+
+Ported by hand from later DSperate commits; a future upstream comparison should not count these as drift.
+
+| Commit | Change |
+|---|---|
+| `be2341f` | DMA does not reach the ARM9's TCM |
+| `e4f99bc` | PLD is a no-op, not undefined |
+| `109b567` | Timer control overflow |
+| `213ddf3` | JIT: a frame translating too much interprets new code once |
+| `2b651c9` | Engine A's last line is deferred only under its VRAM trap |
+| `3aa48dc` | Save states carry the geometry busy timing (chunk grows; older states still load) |
+| `717e0a5` | ARM9 IPC FIFO words reach the ARM7 at their send time (`DS_IPC_DEFER=0` restores the old way) |
+| `2e2c77e` | Test only: DSCore already had the fix for the mode 2 clip matrix |
+| `442fdd6` | Adapted: the minimum closed time applies to switch closes; the pulse keeps its own rule |
+| `473b2a4` | Adapted: the RTC also resyncs on any host resume, since `DS_LID_PULSE=0` can leave the lid unchanged |
+
 ## Pulling upstream changes
 
 Upstream history is not carried here. To rebase onto a newer DSperate, diff

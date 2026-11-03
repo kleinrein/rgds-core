@@ -1,5 +1,7 @@
 #pragma once
 #include "launcher/model.hpp"
+#include <algorithm>
+#include <cctype>
 #include <cerrno>
 #include <chrono>
 #include <cstdlib>
@@ -23,6 +25,13 @@ struct SystemStatus {
     bool volume = false;
     int volume_percent = 25;
     bool poweroff = false;
+    // from session-start: a saved control that did not apply
+    bool brightness_failed = false, volume_failed = false, power_failed = false, lid_failed = false;
+};
+struct ControlUpdate {
+    std::string command;
+    int value;
+    bool success;
 };
 struct BrightnessUpdate {
     int value;
@@ -56,20 +65,26 @@ class SystemControls {
     bool last_volume_ok = true, prefer_volume = false;
     std::optional<int> pending_volume;
     std::optional<VolumeUpdate> completed_volume;
+    pid_t control_child = -1;
+    std::string active_control;
+    int active_control_value = 0;
+    std::vector<std::pair<std::string, int>> pending_controls;
+    std::optional<ControlUpdate> completed_control;
     Clock::time_point next_control = Clock::time_point::min();
     pid_t status_child = -1;
     int status_pipe = -1;
-    bool status_cancelled = false, status_output_failed = false;
+    bool status_cancelled = false, status_output_failed = false, status_applying = false;
     std::string status_output;
     SystemStatus cached_status;
     std::optional<SystemStatusUpdate> completed_status;
     pid_t launch(const std::string& command, std::optional<int> value, int output_fd = -1, int close_fd = -1,
-                 bool own_group = false, bool menu_close = false) {
+                 bool own_group = false, bool menu_close = false, const std::vector<std::string>& extra = {}) {
         if (app.empty() || data.empty()) return -1;
         std::vector<std::string> args = {"python3", "-B", (app / "runtime/system_controls.py").string(), command};
         if (value) args.push_back(std::to_string(*value));
         if (command == "sleep" || command == "sleep_lid") args.push_back("--menu-wake");
         if (menu_close) args.push_back("--menu-close");
+        args.insert(args.end(), extra.begin(), extra.end());
         args.push_back("--data");
         args.push_back(data.string());
         std::vector<char*> argv;
@@ -132,8 +147,13 @@ class SystemControls {
         if (last_brightness_ok) cached_status.brightness_percent = active_brightness;
         completed_brightness = BrightnessUpdate{active_brightness, last_brightness_ok, false};
     }
+    // One helper at a time, and none beside session-start: a slider's newest value must land after its saved one.
+    bool helper_busy() const {
+        return brightness_child > 0 || volume_child > 0 || control_child > 0 || status_writing();
+    }
+    bool status_writing() const { return status_applying && status_child > 0; }
     void begin_brightness() {
-        if (!pending_brightness || brightness_child > 0 || volume_child > 0) return;
+        if (!pending_brightness || helper_busy()) return;
         active_brightness = *pending_brightness;
         pending_brightness.reset();
         // Launch at most once per 80 ms, with no hardware access on the UI thread.
@@ -166,7 +186,7 @@ class SystemControls {
         completed_volume = VolumeUpdate{active_volume, last_volume_ok, false};
     }
     void begin_volume() {
-        if (!pending_volume || brightness_child > 0 || volume_child > 0) return;
+        if (!pending_volume || helper_busy()) return;
         active_volume = *pending_volume;
         pending_volume.reset();
         next_control = Clock::now() + std::chrono::milliseconds(80);
@@ -184,14 +204,41 @@ class SystemControls {
             completed_volume = VolumeUpdate{active_volume, false, false};
         }
     }
+    void collect_control(bool wait) {
+        if (control_child <= 0) return;
+        int status = 0;
+        pid_t result;
+        do {
+            result = waitpid(control_child, &status, wait ? 0 : WNOHANG);
+        } while (result < 0 && errno == EINTR);
+        if (result == 0) return;
+        control_child = -1;
+        completed_control = ControlUpdate{active_control, active_control_value,
+                                          result > 0 && WIFEXITED(status) && WEXITSTATUS(status) == 0};
+    }
+    void begin_control() {
+        if (pending_controls.empty() || helper_busy()) return;
+        active_control = pending_controls.front().first;
+        active_control_value = pending_controls.front().second;
+        pending_controls.erase(pending_controls.begin());
+        next_control = Clock::now() + std::chrono::milliseconds(80);
+        if (preview) {
+            completed_control = ControlUpdate{active_control, active_control_value, true};
+            return;
+        }
+        control_child = launch(active_control, active_control_value);
+        if (control_child < 0) completed_control = ControlUpdate{active_control, active_control_value, false};
+    }
     void collect_controls(bool wait) {
         collect_brightness(wait);
         collect_volume(wait);
+        collect_control(wait);
     }
     void begin_next_control(bool force = false) {
-        if (brightness_child > 0 || volume_child > 0 || (!force && Clock::now() < next_control)) return;
+        if (helper_busy() || (!force && Clock::now() < next_control)) return;
         if (pending_volume && (prefer_volume || !pending_brightness)) begin_volume();
-        else begin_brightness();
+        else if (pending_brightness) begin_brightness();
+        else begin_control();
     }
     static std::optional<SystemStatus> parse_status(const std::string& output) {
         SystemStatus status;
@@ -224,6 +271,10 @@ class SystemControls {
             else if (key == "volume_supported") status.volume = value == 1;
             else if (key == "volume") status.volume_percent = std::clamp(value, 0, 100);
             else if (key == "poweroff_supported") status.poweroff = value == 1;
+            else if (key == "brightness_failed") status.brightness_failed = value == 1;
+            else if (key == "volume_failed") status.volume_failed = value == 1;
+            else if (key == "power_failed") status.power_failed = value == 1;
+            else if (key == "lid_failed") status.lid_failed = value == 1;
         }
         return brightness_seen && battery_seen ? std::optional<SystemStatus>(status) : std::nullopt;
     }
@@ -234,6 +285,7 @@ class SystemControls {
         }
     }
     void cancel_status() {
+        if (status_applying) return; // session-start writes: it finishes, and its result is delivered
         completed_status.reset();
         if (status_child <= 0) return;
         // Status is read-only. Kill its group, including an outstanding mixer
@@ -265,6 +317,45 @@ class SystemControls {
         }
         close_status_pipe();
     }
+    void collect_status() {
+        if (status_child <= 0) return;
+        drain_status();
+        int status = 0;
+        pid_t result;
+        do {
+            result = waitpid(status_child, &status, WNOHANG);
+        } while (result < 0 && errno == EINTR);
+        if (result == 0) return;
+        status_child = -1;
+        drain_status();
+        close_status_pipe();
+        auto value =
+            result > 0 && WIFEXITED(status) && WEXITSTATUS(status) == 0 && !status_cancelled && !status_output_failed
+                ? parse_status(status_output)
+                : std::nullopt;
+        if (value) cached_status = *value;
+        completed_status = SystemStatusUpdate{cached_status, value.has_value()};
+        status_output.clear();
+    }
+    // A lifecycle boundary waits this long for session-start, then kills it: its writes can be repeated, and a mixer
+    // stuck on a lock must not hold up sleep or power off. A killed one is reported as failed, so it is tried again.
+    void settle_session_start(std::chrono::milliseconds limit) {
+        if (!status_writing()) return;
+        const auto end = Clock::now() + limit;
+        while (status_child > 0 && Clock::now() < end) {
+            collect_status();
+            if (status_child > 0) usleep(2000);
+        }
+        if (status_child <= 0) return;
+        kill(-status_child, SIGKILL);
+        kill(status_child, SIGKILL);
+        status_cancelled = true;
+        close_status_pipe();
+        while (status_child > 0) {
+            collect_status();
+            if (status_child > 0) usleep(1000);
+        }
+    }
 
 public:
     SystemControls(bool fake, fs::path application, fs::path userdata)
@@ -276,6 +367,8 @@ public:
             close(lid_device);
             lid_device = -1;
         }
+        settle_session_start(std::chrono::milliseconds(0));
+        status_applying = false;
         cancel_status();
         if (status_child > 0) {
             while (waitpid(status_child, nullptr, 0) < 0 && errno == EINTR) {}
@@ -297,13 +390,74 @@ public:
             if (auto value = parse_status(output)) cached_status = *value;
         return cached_status;
     }
+    // The charge as runtime/system_controls.py reads it, without a helper, for a first frame that already shows it.
+    static void read_battery(SystemStatus& status, const fs::path& sysfs = "/sys") {
+        const auto text = [](const fs::path& path) {
+            std::string value;
+            std::ifstream(path) >> value;
+            return value;
+        };
+        std::vector<fs::path> supplies;
+        std::error_code ec;
+        for (const auto& entry : fs::directory_iterator(sysfs / "class/power_supply", ec)) supplies.push_back(entry);
+        std::sort(supplies.begin(), supplies.end());
+        fs::path battery;
+        bool online = false, reported = false;
+        for (const auto& supply : supplies) {
+            const auto kind = text(supply / "type");
+            if (kind == "Battery" && battery.empty()) battery = supply;
+            else if (kind == "Mains" || kind == "Wireless" || kind.rfind("USB", 0) == 0) {
+                const auto value = text(supply / "online");
+                if (value == "0" || value == "1") {
+                    reported = true;
+                    online = online || value == "1";
+                }
+            }
+        }
+        if (battery.empty()) return;
+        const auto state = text(battery / "status");
+        const bool plugged = reported ? online : state == "Charging" || state == "Full";
+        status.charging = state == "Charging" && plugged;
+        status.external_power = plugged;
+        const auto number = [](const std::string& value) {
+            const bool digits =
+                !value.empty() && value.size() <= 12 &&
+                std::all_of(value.begin(), value.end(), [](unsigned char c) { return std::isdigit(c); });
+            return digits ? std::stoll(value) : -1LL;
+        };
+        const auto capacity = number(text(battery / "capacity"));
+        if (capacity >= 0) {
+            if (capacity <= 100) status.battery = int(capacity);
+            return;
+        }
+        // Some power-supply drivers expose counters rather than capacity.
+        for (const char* name : {"charge", "energy"}) {
+            const auto now = number(text(battery / (std::string(name) + "_now"))),
+                       full = number(text(battery / (std::string(name) + "_full")));
+            if (full > 0 && now >= 0 && now <= full) {
+                status.battery = int((now * 200 + full) / (2 * full));
+                return;
+            }
+        }
+    }
+    // A new session's saved controls and its first status, from one helper off the input thread. Nothing cancels it.
+    void request_session_start(int brightness, int power, bool lid) {
+        if (preview) return;
+        status_applying = true;
+        start_status("session-start", std::clamp(brightness, 5, 100),
+                     {"--power", std::to_string(power), "--lid", lid ? "1" : "0"});
+    }
     // Periodic status belongs off the input thread: mixer reads can take seconds.
     bool request_status() {
-        if (status_child > 0 || completed_status || brightness_pending() || volume_pending()) return false;
+        if (status_child > 0 || completed_status || brightness_pending() || volume_pending() || control_pending())
+            return false;
         if (preview) {
             completed_status = SystemStatusUpdate{cached_status, true};
             return true;
         }
+        return start_status("status", std::nullopt, {});
+    }
+    bool start_status(const std::string& command, std::optional<int> value, const std::vector<std::string>& extra) {
         int channel[2];
         if (pipe(channel) != 0) {
             completed_status = SystemStatusUpdate{cached_status, false};
@@ -318,7 +472,7 @@ public:
         }
         status_output.clear();
         status_cancelled = status_output_failed = false;
-        status_child = launch("status", std::nullopt, channel[1], channel[0], true);
+        status_child = launch(command, value, channel[1], channel[0], true, false, extra);
         close(channel[1]);
         if (status_child < 0) {
             close(channel[0]);
@@ -329,28 +483,10 @@ public:
         return true;
     }
     std::optional<SystemStatusUpdate> poll_status() {
-        if (status_child > 0) {
-            drain_status();
-            int status = 0;
-            pid_t result;
-            do {
-                result = waitpid(status_child, &status, WNOHANG);
-            } while (result < 0 && errno == EINTR);
-            if (result != 0) {
-                status_child = -1;
-                drain_status();
-                close_status_pipe();
-                auto value = result > 0 && WIFEXITED(status) && WEXITSTATUS(status) == 0 && !status_cancelled &&
-                                     !status_output_failed
-                                 ? parse_status(status_output)
-                                 : std::nullopt;
-                if (value) cached_status = *value;
-                completed_status = SystemStatusUpdate{cached_status, value.has_value()};
-                status_output.clear();
-            }
-        }
+        collect_status();
         auto result = completed_status;
         completed_status.reset();
+        if (result) status_applying = false;
         return result;
     }
     bool status_pending() const { return status_child > 0; }
@@ -397,11 +533,29 @@ public:
         return result;
     }
     bool volume_pending() const { return volume_child > 0 || pending_volume.has_value(); }
+    // Power mode or lid wake from a menu row: applied by a helper off the input thread, in order, with the newest
+    // value of a row replacing one still waiting. A failure comes back from poll_control.
+    void request_control(const std::string& command, int value) {
+        cancel_status();
+        auto found = std::find_if(pending_controls.begin(), pending_controls.end(),
+                                  [&](const auto& item) { return item.first == command; });
+        if (found != pending_controls.end()) found->second = value;
+        else pending_controls.push_back({command, value});
+    }
+    std::optional<ControlUpdate> poll_control() {
+        collect_controls(false);
+        begin_next_control();
+        auto result = completed_control;
+        completed_control.reset();
+        return result;
+    }
+    bool control_pending() const { return control_child > 0 || !pending_controls.empty(); }
     // Lifecycle boundary only: finish the newest value before suspend, starting
     // another journalled control, handing off to a game, or restoring stock.
     bool flush_controls() {
+        settle_session_start(std::chrono::seconds(3));
         cancel_status();
-        while (brightness_pending() || volume_pending()) {
+        while (brightness_pending() || volume_pending() || control_pending()) {
             collect_controls(true);
             begin_next_control(true);
         }

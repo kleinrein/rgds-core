@@ -83,7 +83,7 @@ struct Preferences {
     int extra_pictures = 2;
 };
 struct SystemPreferences {
-    int power = 0, brightness = 60, idle = 0;
+    int power = 2, brightness = 60, idle = 0;
     // dim: the panels dim after dim_seconds[dim] without input (menu and games); game_sleep: a game with no input for
     // game_sleep_minutes[game_sleep] sleeps like a closed lid (runtime/game_menu.py reads both from system.ini)
     int dim = 2, game_sleep = 0;
@@ -565,7 +565,9 @@ inline int timezone_region_jump(int index, int direction) {
     while (index > 0 && region(index - 1) == current) index--;
     return index;
 }
-inline const std::array<const char*, 4> power_names = {"Stock", "Battery saver", "Balanced", "Performance"};
+// The power modes, 1 to 3 (runtime/system_controls.py). A saved 0 was Stock, which is gone: it loads as Balanced.
+inline const std::array<const char*, 3> power_names = {"Battery saver", "Balanced", "Performance"};
+inline const char* power_name(int mode) { return power_names[size_t(std::clamp(mode, 1, 3) - 1)]; }
 inline const std::array<int, 5> idle_minutes = {0, 1, 2, 5, 10};
 inline std::string idle_name(int index) {
     return index == 0 ? "Never" : std::to_string(idle_minutes.at(index)) + " min";
@@ -714,6 +716,7 @@ inline SystemPreferences load_system_preferences(const fs::path& path) {
             pair.first != "game_sleep")
             throw std::runtime_error("Unknown system preference");
     p.power = number("power", 0, 3);
+    if (!p.power) p.power = 2;
     p.brightness = number("brightness", 5, 100);
     p.idle = number("idle", 0, 4);
     p.lid = number("lid", 0, 1);

@@ -21,10 +21,12 @@ class EngineLog:
         self.deadline = None
         self.wake_reader = self.wake_writer = None
         self.gpu_faults = 0  # "[KFAULT]" lines: PanVK GPU jobs the kernel terminated
+        self.state_refused = 0  # DSCore could not read the state it was asked to load
 
     def append(self, chunk):
         with self.lock:
             self.gpu_faults += chunk.count(b"[KFAULT]")
+            self.state_refused += chunk.count(b"state: cannot load")
             self.chunks.append(chunk)
             self.size += len(chunk)
             while self.size > self.limit:

@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # Same platform the test suite is run on day to day; nothing here builds the launcher or the engines.
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: flasher/go.mod
+          # the flasher has no dependencies, so no go.sum to key a cache on
+          cache: false
+      - name: Python syntax
+        run: git ls-files -z '*.py' | xargs -0 python -m py_compile
+      - name: Python tests
+        env:
+          PYTHONPATH: tests:runtime
+        run: |
+          # Need build/host/rgds-launcher or the fetched engines
+          needs_build='bluetooth_ui|game_info_ui|gap_closure_ui|ota_ui|release_polish_ui|shader_pixels|shader_preview_validation'
+          # Over a minute: assembles the whole compat layer
+          slow='portmaster'
+          # Already failing when CI was added (core_refinement on develop only); take a module out once it is fixed
+          known_red='companion_lint|core_refinement|game_switcher|shader_preview'
+          modules=$(ls tests | grep -E '^test_.*\.py$' | grep -vE "^test_($needs_build|$slow|$known_red)\.py$" | sed 's/\.py$//')
+          python -m unittest $modules
+      - name: Flasher vet
+        working-directory: flasher
+        run: go vet ./...
+      - name: Flasher tests
+        working-directory: flasher
+        run: go test ./...

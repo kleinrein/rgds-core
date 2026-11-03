@@ -1175,7 +1175,8 @@ void tick(bool graphics_safe = false) {
                             : nullptr;
                     bool valid =
                         std::sscanf(command.c_str(), "graphics:%d:%d:%d%c", &scale, &smooth, &skip, &extra) == 3 &&
-                        scale >= 1 && scale <= 5 && smooth >= 0 && smooth <= 1 && skip >= 0 && skip <= 3;
+                        ((scale >= 1 && scale <= 5) || scale == 25) && smooth >= 0 && smooth <= 1 && skip >= 0 &&
+                        skip <= 3;
                     if (valid && apply) {
                         pending_graphics_token = id;
                         pending_graphics_scale = scale;

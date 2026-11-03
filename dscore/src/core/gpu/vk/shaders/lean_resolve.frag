@@ -30,7 +30,7 @@ layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInputMS 
 // RG DS: the word goes straight into the frame slot's CPU-readable buffer,
 // row-major at the internal resolution (no record image, no copy).
 layout(std430, set = 0, binding = 4) writeonly buffer Out { uint out_words[]; };
-#define EMIT(w) { out_words[uint(gl_FragCoord.y) * (256u * pc.f.scale) + uint(gl_FragCoord.x)] = (w); return; }
+#define EMIT(w) { out_words[uint(gl_FragCoord.y) * pc.f.scale + uint(gl_FragCoord.x)] = (w); return; }
 #else
 layout(location = 0) out uint o_word;
 #define EMIT(w) { o_word = (w); return; }

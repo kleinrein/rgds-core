@@ -206,8 +206,8 @@ class SettingsTests(unittest.TestCase):
         # The carousel is grouped; Amber (19) is the last place.
         select_last = "".join(f"{220 + index * 40} key Right\n" for index in range(28))
         self.run_preview(
-            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n" +
-            select_last + "1500 key A\n",
+            "10 key Down\n20 key Down\n40 key Down\n60 key Down\n100 key Down\n180 key A\n" + select_last +
+            "1500 key A\n",
             extra=("--settings", "--section", "library")
         )
         self.assertIn("filter=19\n", (self.root / "ui.ini").read_text())
@@ -403,7 +403,7 @@ class SettingsTests(unittest.TestCase):
         )
         self.assertEqual(
             self.system_prefs.read_text(),
-            "schema=1\npower=2\nbrightness=60\nidle=2\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n"
+            "schema=1\npower=3\nbrightness=60\nidle=2\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n"
         )
         self.assertFalse(self.prefs.exists())
         self.assertEqual(self.state.read_text().splitlines()[0], '1 3 2 ""')
@@ -411,8 +411,23 @@ class SettingsTests(unittest.TestCase):
             "20 key A\n40 key Left\n50 key A\n60 key Escape\n100 key Escape\n140 key Escape\n",
             extra=("--settings", "--section", "power")
         )
-        self.assertIn("power=1\n", self.system_prefs.read_text())
+        self.assertIn("power=2\n", self.system_prefs.read_text())
         self.assertIn("idle=2\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n", self.system_prefs.read_text())
+
+    def test_the_game_menu_shows_the_power_mode_and_a_tap_changes_it(self):
+        self.system_prefs.write_text("schema=1\npower=2\nbrightness=60\nidle=0\nlid=0\n")
+        menu = ("--game-menu", "--game-core", "rgds-experimental")
+        # The hardware's answer comes in shortly after the menu opens.
+        self.run_preview("400 tap 520 40\n420 release\n500 key Up\n600 key A\n700 key Escape\n", extra=menu)
+        self.assertIn("power=1\n", self.system_prefs.read_text())
+        # A tap on the title is not a tap on the mode.
+        self.run_preview("400 tap 200 40\n420 release\n500 key Escape\n", extra=menu)
+        self.assertIn("power=1\n", self.system_prefs.read_text())
+
+    def test_a_saved_stock_power_mode_loads_as_balanced(self):
+        self.system_prefs.write_text("schema=1\npower=0\nbrightness=60\nidle=0\nlid=0\n")
+        self.run_preview("20 key A\n40 key Left\n60 key A\n", extra=("--settings", "--section", "power"))
+        self.assertIn("power=1\n", self.system_prefs.read_text())  # one step down from Balanced: there is no Stock
 
     def test_dim_and_game_sleep_timers_are_saved_only_when_changed(self):
         # rows 2 and 3 sit under Menu idle sleep, each with a picker; the default dim (1 min) is not written
@@ -470,7 +485,7 @@ class SettingsTests(unittest.TestCase):
         )
         self.assertEqual(
             self.system_prefs.read_text(),
-            "schema=1\npower=1\nbrightness=60\nidle=0\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n"
+            "schema=1\npower=3\nbrightness=60\nidle=0\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n"
         )
 
     def test_every_tzdata_zone_loads_and_left_right_jump_by_region(self):
@@ -508,7 +523,7 @@ class SettingsTests(unittest.TestCase):
             "schema=1\npower=0\nbrightness=60\nidle=0\nlid=0\nbattery_percent=0\ntimezone=Europe/Oslo\n"
         )
         self.run_preview("20 key A\n40 key Right\n60 key A\n", extra=("--settings", "--section", "power"))
-        self.assertIn("power=1\n", self.system_prefs.read_text())
+        self.assertIn("power=3\n", self.system_prefs.read_text())
         self.assertIn("battery_percent=0\n", self.system_prefs.read_text())
 
     def test_brightness_drag_clamps_and_release_stops_changes(self):
@@ -530,7 +545,7 @@ class SettingsTests(unittest.TestCase):
     def test_older_placeholder_power_state_opens_working_controls(self):
         self.state.write_text('1 3 2 ""\n3 1 0\n')
         self.run_preview("20 key A\n40 key Right\n50 key A\n60 key Escape\n100 key Escape\n140 key Escape\n")
-        self.assertIn("power=1\n", self.system_prefs.read_text())
+        self.assertIn("power=3\n", self.system_prefs.read_text())
 
     def test_malformed_preferences_fall_back_without_crashing(self):
         self.prefs.write_text("schema=1\nmode=corrupt\nfont=anything\n")

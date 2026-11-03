@@ -256,8 +256,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
         const bool occupied = slot_occupied(settings.focus);
         if (!media.draw(r, slots["image_" + key], {40, y + 116, 320, 240}, false))
             ui_icon(r, gallery_icon(), 200, y + 232, 70, "muted");
-        label(r, settings.focus == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(settings.focus + 1), 388,
-              y + 134, 28, "ink", 208);
+        label(r,
+              settings.focus == auto_slot ? locale.text("Auto-save")
+                                          : locale.text("Slot") + " " + std::to_string(settings.focus + 1),
+              388, y + 134, 28, "ink", 208);
         raw_label(r, core_names[gallery_core], 388, y + 185, 20, "accent", 208);
         raw_wrapped(r, occupied ? slots["slot_" + key] : locale.text("Empty slot"), 388, y + 231, 20, 208, 2);
         wrapped(r, slot_hint(occupied), 388, y + 284, 16, 208, 5);
@@ -355,7 +357,8 @@ void App::settings_top(SDL_Renderer* r, int y) {
         else if (settings.focus == 3) message = "3D rendering automatically uses worker threads.";
         else if (settings.focus == 4 && experimental_game())
             message = "Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.";
-        else if (settings.focus == 4) message = "This emulator uses native resolution. No resolution switch is available.";
+        else if (settings.focus == 4)
+            message = "This emulator uses native resolution. No resolution switch is available.";
         else if (settings.focus == 5)
             message = emulator_option_enabled(5)
                           ? "Off gives smooth motion. Skipping frames can help speed. Restart to apply."
@@ -463,15 +466,15 @@ void App::network_status_card(SDL_Renderer* r, int y) {
     std::string headline, detail, extra;
     bool translate_headline = true;
     if (busy) {
-        headline = worker_action == "device.scan"                                             ? "Looking for networks…"
-                   : worker_action == "device.wifi-on"                                        ? "Turning Wi-Fi on…"
-                   : worker_action == "device.bt-on"                                          ? "Turning Bluetooth on…"
-                   : worker_action == "device.bt-off"                                         ? "Turning Bluetooth off…"
-                   : worker_action == "device.bt-scan"                                        ? "Looking for devices…"
+        headline = worker_action == "device.scan"      ? "Looking for networks…"
+                   : worker_action == "device.wifi-on" ? "Turning Wi-Fi on…"
+                   : worker_action == "device.bt-on"   ? "Turning Bluetooth on…"
+                   : worker_action == "device.bt-off"  ? "Turning Bluetooth off…"
+                   : worker_action == "device.bt-scan" ? "Looking for devices…"
                    : worker_action == "device.bt-pair" || worker_action == "device.bt-forget" ||
                            worker_action == "device.usb-on" || worker_action == "device.usb-off"
                        ? "Working…"
-                   : worker_action == "device.homebrew-get"                                   ? "Downloading…"
+                   : worker_action == "device.homebrew-get" ? "Downloading…"
                    : worker_action == "device.wifi-off"
                        ? "Turning Wi-Fi off…"
                        : locale.text("Connecting to") + " " +
@@ -633,7 +636,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         SDL_Rect clip{20, y + list_top, 575, list_height};
         s.RenderSetClipRect(r, &clip);
         for (int i = 0; i < count; i++) {
-            if (i * list_stride - list_scroll - list_shift() + 66 < 0 || i * list_stride - list_scroll - list_shift() > list_height)
+            if (i * list_stride - list_scroll - list_shift() + 66 < 0 ||
+                i * list_stride - list_scroll - list_shift() > list_height)
                 continue;
             if (settings.page == Page::Settings)
                 list_row(r, y, i, sections[size_t(section_order[size_t(i)])].title,
@@ -642,14 +646,13 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 appearance_row(r, y, i);
             else if (settings.page == Page::ShaderPicker) {
                 int value = shader_choices[i];
-                list_row(r, y, i, shader_name(value),
-                         shader_current() == value ? "Selected" : "");
+                list_row(r, y, i, shader_name(value), shader_current() == value ? "Selected" : "");
             } else if (settings.page == Page::Power) {
                 // indexed by control id; power_rows gives the order on the page
                 const std::array<std::string, 9> names = {
                     "Power mode", "Menu idle sleep", "Sleep on lid close", "Battery percentage",  "Sleep now",
                     "Power off",  "Restart",         "Dim when idle",      "Sleep timer in games"};
-                const std::array<std::string, 9> values = {power_names[system_preferences.power],
+                const std::array<std::string, 9> values = {power_name(system_preferences.power),
                                                            idle_name(system_preferences.idle),
                                                            system_preferences.lid ? "On" : "Off",
                                                            system_preferences.battery_percent ? "On" : "Off",
@@ -665,10 +668,18 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, names[id], enabled[id] ? values[id] : "Unavailable", enabled[id]);
             } else if (settings.page == Page::LibraryOptions) {
                 // Rows 0 and 6 are retired; library_row never shows them.
-                const std::array<std::string, 12> names = {"",                  "Artwork sources", "Auto-load state",
-                                                           "Auto-save on exit", "Default shader",  "Browser layout",
-                                                           "",                  "",                "Back up all saves",
-                                                           "Systems",           "Scan for games",  "System defaults"};
+                const std::array<std::string, 12> names = {"",
+                                                           "Artwork sources",
+                                                           "Auto-load state",
+                                                           "Auto-save on exit",
+                                                           "Default shader",
+                                                           "Browser layout",
+                                                           "",
+                                                           "",
+                                                           "Back up all saves",
+                                                           "Systems",
+                                                           "Scan for games",
+                                                           "System defaults"};
                 const std::array<std::string, 12> values = {
                     "",
                     "",
@@ -690,22 +701,28 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             } else if (settings.page == Page::PlayGraphics) {
                 const bool palette = play_colour_kind() == 1;
                 const int id = play_graphics_row(i);
-                const std::array<std::string, 6> names = {"Game screen", "Second screen",       "Bezel",
-                                                          "Shader",      "Screen colours",     "Save as system default"};
+                const std::array<std::string, 7> names = {"Game screen",
+                                                          "Second screen",
+                                                          "Bezel",
+                                                          "Shader",
+                                                          "Screen colours",
+                                                          "Save as system default",
+                                                          "Internal resolution"};
                 // A choice equal to the system's default follows it: say so, and name what that is.
                 const auto shown = [&](bool follows, const std::string& name) {
                     return follows ? inherited_label(locale.text(name)) : name;
                 };
-                const std::array<std::string, 6> values = {
+                const std::array<std::string, 7> values = {
                     shown(play_fit == play_default.fit, play_fit_name(play_fit)),
                     shown(play_second == play_default.second, play_second_name(play_second, play_system())),
                     shown(play_frame == play_default.frame, play_frame_label(play_frame)),
                     game_preferences.filter < 0 ? inherited_label(shader_name(default_shader(play_system())))
                                                 : shader_name(game_preferences.filter),
-                    palette ? shown(play_palette == play_default.palette, play::gb_palettes[play_palette].name)
-                            : shown(play_correction == play_default.correction,
-                                    play::gb_corrections[play_correction].name),
-                    system_info(play_system()).badge};
+                    palette
+                        ? shown(play_palette == play_default.palette, play::gb_palettes[play_palette].name)
+                        : shown(play_correction == play_default.correction, play::gb_corrections[play_correction].name),
+                    system_info(play_system()).badge,
+                    std::to_string(play_scale) + "x"};
                 // A palette's row wears its second-lightest colour, so the choice shows at a glance.
                 const uint32_t tone = play::gb_palettes[play_palette].shade[1];
                 const Color dot{uint8_t(tone >> 16), uint8_t(tone >> 8), uint8_t(tone)};
@@ -740,13 +757,12 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, "3D resolution", experimental_resolution_name());
             else if (settings.page == Page::GameOptions) {
                 const std::array<std::string, 4> names = {"Favourite", "Shader", "Controls", "Artwork"},
-                                                 values = {
-                                                     game_preferences.favourite ? "On" : "Off",
-                                                     game_preferences.filter < 0
-                                                         ? inherited_label(shader_name(default_shader_for(
-                                                               picker_game_system().c_str(), preferences.filter)))
-                                                         : shader_name(game_preferences.filter),
-                                                     "", ""};
+                                                 values = {game_preferences.favourite ? "On" : "Off",
+                                                           game_preferences.filter < 0
+                                                               ? inherited_label(shader_name(default_shader_for(
+                                                                     picker_game_system().c_str(), preferences.filter)))
+                                                               : shader_name(game_preferences.filter),
+                                                           "", ""};
                 list_row(r, y, i, names[size_t(i)], values[size_t(i)]);
             } else if (settings.page == Page::Controls) list_row(r, y, i, controls_row_name(i), controls_row_value(i));
             else if (settings.page == Page::Sound) {
@@ -783,15 +799,16 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                              (i != 4 || preferences.menu_haptics));
             } else if (settings.page == Page::System) {
                 list_row(r, y, i, system_row_name(i),
-                         i == 0   ? locale.name()
-                         : i == 1 ? timezone_summary()
-                         : i == 2 ? dst_names.at(system_preferences.dst)
-                         : i == 3 ? date_format_names.at(system_preferences.date_format)
-                         : i == 4 ? time_format_names.at(system_preferences.time_format)
+                         i == 0                     ? locale.name()
+                         : i == 1                   ? timezone_summary()
+                         : i == 2                   ? dst_names.at(system_preferences.dst)
+                         : i == 3                   ? date_format_names.at(system_preferences.date_format)
+                         : i == 4                   ? time_format_names.at(system_preferences.time_format)
                          : i == (o.rgds_os ? 7 : 8) ? (device_status["boot_warning"] == "1" ? "On" : "Off")
-                                  : "");
+                                                    : "");
             } else if (settings.page == Page::SaveGallery)
-                list_row(r, y, i, i == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(i + 1),
+                list_row(r, y, i,
+                         i == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(i + 1),
                          slot_occupied(i) ? slots["slot_" + std::to_string(i)] : "Empty slot", slot_primary_enabled(i));
             else if (settings.page == Page::PortFiles) port_files_row(r, y, i);
             else if (settings.page == Page::Cheats) cheat_row(r, y, i);
@@ -898,7 +915,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 const std::array<std::string, 6> names = {
                     "Artwork source",
                     worker > 0 && worker_action == "scrape" ? "Stop scraping" : "Fetch missing artwork",
-                    "Review unmatched", "Game info", "Extra pictures", "Auto-fetch new games"};
+                    "Review unmatched",
+                    "Game info",
+                    "Extra pictures",
+                    "Auto-fetch new games"};
                 list_row(r, y, i, names[i],
                          i == 0   ? providers.at(preferences.artwork_provider)
                          : i == 3 ? (preferences.game_info ? "On" : "Off")
@@ -925,14 +945,14 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, i == count - 2 ? "DS controls" : "Reset state");
             else if (settings.page == Page::EmulatorOptions) {
                 int engine = active_engine();
-                const std::array<std::string, 7> names = {"Game FPS",     "Fast-forward", "Power profile",
-                                                          "Threaded 3D",  "3D resolution", "Frameskip",
+                const std::array<std::string, 7> names = {"Game FPS",      "Fast-forward",  "Power profile",
+                                                          "Threaded 3D",   "3D resolution", "Frameskip",
                                                           "Save & restart"};
                 bool enabled = emulator_option_enabled(i);
                 const std::array<std::string, 7> values = {
                     menu_status["fps"] == "1" ? "On" : "Off",
                     menu_status["fast_forward"] == "1" ? "On" : "Off",
-                    power_names[system_preferences.power],
+                    power_name(system_preferences.power),
                     engine == dscore_core ? "Automatic" : "Engine managed",
                     experimental_game() ? experimental_resolution_name() : "Native",
                     game_preferences.frameskip > 0 ? std::to_string(game_preferences.frameskip) + " frames"
@@ -973,7 +993,14 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         return;
     }
     if (settings.page == Page::QuickMenu) {
-        settings_header(r, y, "Game menu");
+        settings_header(r, y, "Game menu", 300);
+        // The power mode, in sight while playing: it decides how the game runs. Tap it to change it.
+        if (hardware.power) {
+            const std::string mode = power_name(system_preferences.power);
+            const int width = std::min(200, label_width(mode, 18));
+            ui_icon(r, SettingsIcon::Power, 612 - width - 18, y + 38, 24, "accent");
+            label(r, mode, 612 - width, y + 29, 18, "muted", width);
+        }
         bool busy = menu_status["state"] == "busy";
         const std::array<std::string, 12> names = {
             "Resume",          "Save checkpoint",
@@ -1137,20 +1164,19 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
     }
     if (settings.page == Page::Confirm) {
         settings_header(r, y, "Confirm");
-        std::string prompt = confirmation == "startup-rgds" ? "Start RG DS automatically on future boots?"
-                             : confirmation == "reboot"     ? "Restart the device?"
-                             : confirmation == "return-stock"
-                                 ? (o.independent ? "Restart the RGDS menu?" : "Return to the stock menu?")
-                             : confirmation == "wifi-off"     ? "Turn Wi-Fi off?"
-                             : confirmation == "bt-off"       ? "Turn Bluetooth off?"
-                             : confirmation == "bt-forget"    ? "Forget this device?"
-                             : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
-                             : confirmation == "poweroff"     ? "Power off your handheld?"
-                             : confirmation == "update-apply" ? "Restart and install the update?"
-                             : confirmation == "update-discard"
-                                 ? "Cancel the update? Anything already downloaded is removed."
-                             : confirmation == "rollback"     ? "Use the previous RGDS build?"
-                                                              : "Clear temporary game files?";
+        std::string prompt =
+            confirmation == "startup-rgds"   ? "Start RG DS automatically on future boots?"
+            : confirmation == "reboot"       ? "Restart the device?"
+            : confirmation == "return-stock" ? (o.independent ? "Restart the RGDS menu?" : "Return to the stock menu?")
+            : confirmation == "wifi-off"     ? "Turn Wi-Fi off?"
+            : confirmation == "bt-off"       ? "Turn Bluetooth off?"
+            : confirmation == "bt-forget"    ? "Forget this device?"
+            : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
+            : confirmation == "poweroff"     ? "Power off your handheld?"
+            : confirmation == "update-apply" ? "Restart and install the update?"
+            : confirmation == "update-discard" ? "Cancel the update? Anything already downloaded is removed."
+            : confirmation == "rollback"       ? "Use the previous RGDS build?"
+                                               : "Clear temporary game files?";
         settings_card(r, 28, y + 105, 584, 209);
         ui_icon(r, SettingsIcon::Info, 58, y + 136, 24, "accent");
         label(r, "REVIEW YOUR CHOICE", 88, y + 125, 13, "muted", 495);

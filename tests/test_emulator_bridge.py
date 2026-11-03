@@ -101,13 +101,17 @@ int main(int argc,char** argv){
    assert(graphics_switches==2 && enhanced_game_texture && state().find("state=graphics-failed")!=std::string::npos);
    command("graphics-invalid","graphics:2:1:0extra");test_time=120;SDL_PollEvent(&event);
    assert(graphics_switches==2 && state().find("state=graphics-failed")!=std::string::npos);
-   command("graphics-native","graphics:1:1:0");test_time=150;SDL_PollEvent(&event);
-   assert(graphics_switches==3 && !enhanced_game_texture);
+   command("graphics-panel","graphics:25:1:0");test_time=150;SDL_PollEvent(&event);
+   assert(graphics_switches==3 && enhanced_game_texture && state().find("state=graphics-applied")!=std::string::npos);
+   command("graphics-other","graphics:6:1:0");test_time=180;SDL_PollEvent(&event);
+   assert(graphics_switches==3 && state().find("state=graphics-failed")!=std::string::npos);
+   command("graphics-native","graphics:1:1:0");test_time=210;SDL_PollEvent(&event);
+   assert(graphics_switches==4 && !enhanced_game_texture);
    // The 2D filter waits for the same safe point and never touches the renderer.
    command("filter-1","filter2d:1");test_time=180;tick();
    assert(filter_calls==0 && !pending_filter2d_token.empty());
    test_time=210;SDL_PollEvent(&event);
-   assert(filter_calls==1 && last_filter==1 && pending_filter2d_token.empty() && graphics_switches==3);
+   assert(filter_calls==1 && last_filter==1 && pending_filter2d_token.empty() && graphics_switches==4);
    assert(state().find("token=filter-1")!=std::string::npos && state().find("state=filter2d-applied")!=std::string::npos);
    command("filter-fail","filter2d:2");test_time=240;SDL_PollEvent(&event);
    assert(filter_calls==2 && state().find("state=filter2d-failed")!=std::string::npos);

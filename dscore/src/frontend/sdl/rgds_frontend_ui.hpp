@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // RG DS Core frontend requests. All emulator UI is rendered by RGDS.
 #pragma once
+#include "core/gpu/rgds_sample_plan.hpp"
+
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -128,7 +130,8 @@ inline bool request_menu() {
 
 // Called by RGDS on the SDL/emulation thread, between emulated frames.
 extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_graphics(int scale, int smooth, int skip) {
-  if (scale < 1 || scale > 5 || smooth < 0 || smooth > 1 || skip < 0 || skip > 3 || !rgds::graphics_handler) return 0;
+  if (!rgds::valid_scale(scale) || smooth < 0 || smooth > 1 || skip < 0 || skip > 3 || !rgds::graphics_handler)
+    return 0;
   try {
     return rgds::graphics_handler(scale, smooth != 0, skip) ? 1 : 0;
   } catch (const std::exception& e) {
