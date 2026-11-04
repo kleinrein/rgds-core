@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
             const std::string name = std::string("keyboard/") + system;
             run(name, lc, true, [&](const Look& l, const Font& f) { keyboard->draw(out, l, f, 0); });
             const auto keys = targets;
-            // A Spectrum's shifts (left and second from the right on the last row), a C64's More.
+            // A Spectrum's shifts (left and second from the right on the last row), a C64's page key.
             const bool zx = std::string(system) == "zx";
             for (size_t i : zx ? std::vector<size_t>{keys.size() - 2, keys.size() - 10} : std::vector<size_t>{keys.size() - 1}) {
                 const Box& b = keys[i];

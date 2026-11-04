@@ -944,6 +944,7 @@ void start_save(bool exit_after) {
     if (saving) return;
     before = stamps();
     candidate.clear();
+    if (!state_slot.empty()) unlink((state_slot + ".skip").c_str());
     saving = true;
     quitting = exit_after;
     failed = false;
@@ -1275,6 +1276,12 @@ void tick(bool graphics_safe = false) {
     if (loading && elapsed(time, load_at) >= 600) {
         loading = false;
         answer("load-dispatched");
+    }
+    // RG DS Play with a tape still loading: no state worth keeping, so the last checkpoint stays.
+    if (saving && !state_slot.empty() && time - stamp_poll_at >= 50 && unlink((state_slot + ".skip").c_str()) == 0) {
+        saving = false;
+        if (quitting) quit_events();
+        else answer("save-failed");
     }
     if (saving && (time - stamp_poll_at >= 50 || !stamp_poll_at)) {
         stamp_poll_at = time;

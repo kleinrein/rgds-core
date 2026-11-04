@@ -12,8 +12,8 @@ struct StockSystem {
     const char* badge;
     const char* folders;
 };
-inline const std::array<StockSystem, 29>& stock_systems() {
-    static const std::array<StockSystem, 29> list = {{
+inline const std::array<StockSystem, 31>& stock_systems() {
+    static const std::array<StockSystem, 31> list = {{
     {"nds", "Nintendo DS", "DS", "NDS"},
     {"3ds", "Nintendo 3DS", "3DS", "3DS"},
     {"gba", "Game Boy Advance", "GBA", "GBA"},
@@ -36,6 +36,8 @@ inline const std::array<StockSystem, 29>& stock_systems() {
     {"arcade", "Arcade", "ARC", "ARCADE,MAME,FBNEO"},
     {"dos", "DOS PC", "DOS", "DOS,PC"},
     {"zx", "ZX Spectrum", "ZX", "ZX"},
+    {"gw", "Game & Watch", "G&W", "GW,GAMEWATCH"},
+    {"scummvm", "ScummVM", "SCUMM", "SCUMMVM"},
     {"c64", "Commodore 64", "C64", "C64"},
     {"atari", "Atari 2600", "2600", "ATARI,2600"},
     {"coleco", "ColecoVision", "COLECO", "COLECO"},
@@ -426,6 +428,40 @@ inline std::string_view system_pixel_glyph(std::string_view id) {
         ".#########+#+##."
         ".#########+#+##."
         "................"
+        "................"
+        "................";
+    if(id=="gw")return
+        "................"
+        "..############.."
+        "..#..........#.."
+        "..#.########.#.."
+        "..#.#......#.#.."
+        "..#.########.#.."
+        "..############.."
+        ".##############."
+        "..############.."
+        "..#.########.#.."
+        "..#.#......#.#.."
+        "..#.########.#.."
+        "..#..........#.."
+        "..#.+#....##.#.."
+        "..############.."
+        "................";
+    if(id=="scummvm")return
+        "................"
+        ".##############."
+        ".#............#."
+        ".#.....##.....#."
+        ".#.....#+#....#."
+        ".#.....#+++...#."
+        ".#.....#+++#..#."
+        ".#.....#++#...#."
+        ".#......##....#."
+        ".##############."
+        ".#.##.##.##.#.#."
+        ".##############."
+        ".#.##.##.##.#.#."
+        ".##############."
         "................"
         "................";
     if(id=="c64")return

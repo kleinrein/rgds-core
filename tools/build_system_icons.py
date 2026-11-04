@@ -47,6 +47,8 @@ CATALOG = [
     ('arcade', 'Arcade', 'ARC', 'ARCADE,MAME,FBNEO'),
     ('dos', 'DOS PC', 'DOS', 'DOS,PC'),
     ('zx', 'ZX Spectrum', 'ZX', 'ZX'),
+    ('gw', 'Game & Watch', 'G&W', 'GW,GAMEWATCH'),
+    ('scummvm', 'ScummVM', 'SCUMM', 'SCUMMVM'),
     ('c64', 'Commodore 64', 'C64', 'C64'),
     ('atari', 'Atari 2600', '2600', 'ATARI,2600'),
     ('coleco', 'ColecoVision', 'COLECO', 'COLECO'),

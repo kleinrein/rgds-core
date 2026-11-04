@@ -1,14 +1,19 @@
 """Exercise volume resets and hardware keys without opening host audio devices."""
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
-from audio import EVENT, Amplifier, Mixer, Volume, VolumeWatch, capture_device, clean_environment, mixer_target
+from audio import (
+    EVENT, MIC_GAIN, Amplifier, Mixer, Volume, VolumeWatch, capture_device, clean_environment, microphone_levels,
+    mixer_target
+)
 from library import read_fields
 from system_controls import Hardware
 
@@ -24,6 +29,9 @@ class FakeMixer:
     def set(self, level):
         self.writes.append(level)
         self.percent = 0 if level == 0 else 30 + round(70 * (level - 1) / 99)
+
+    def speakers(self, level):
+        self.speakers_level = level
 
 
 class AudioTests(unittest.TestCase):
@@ -196,7 +204,7 @@ class AudioTests(unittest.TestCase):
             Mixer().set(0)
             self.assertNotIn("LD_PRELOAD", clean_environment())
             self.assertNotIn("LD_LIBRARY_PATH", run.call_args.kwargs["env"])
-            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "DAC", "0%"])
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "DAC", "playback", "0%"])
 
     def test_mixer_falls_back_to_mainline_master(self):
         missing = subprocess.CompletedProcess([], 1, stdout="")
@@ -206,14 +214,14 @@ class AudioTests(unittest.TestCase):
             self.assertEqual(mixer.query(), 43)
             mixer.set(0)
             self.assertEqual(run.call_args_list[1].args[0], ["amixer", "-c", "0", "sget", "Master"])
-            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "Master", "0%"])
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "Master", "playback", "0%"])
 
     def test_mixer_follows_the_card_that_plays(self):
         # RG DS OS's RG DS Plus: the RK817 is not card 0, and the jack moves playback to it
         result = subprocess.CompletedProcess([], 0, stdout="Playback 109 [43%] [-54.12dB]")
         with patch("audio.subprocess.run", return_value=result) as run:
             Mixer(target=lambda: (1, "rk817")).set(50)
-            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "1", "sset", "DAC", "65%"])
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "1", "sset", "DAC", "playback", "65%"])
         with tempfile.TemporaryDirectory() as folder:
             route = Path(folder) / "audio-mixer"
             self.assertEqual(mixer_target(route), (0, "rk817"))
@@ -221,6 +229,48 @@ class AudioTests(unittest.TestCase):
             self.assertEqual(mixer_target(route), (2, "aw88166"))
             route.write_text("garbage")
             self.assertEqual(mixer_target(route), (0, "rk817"))
+
+    def test_mute_powers_the_amplifiers_down_and_only_the_change_is_written(self):
+        def amixer(command, **kwargs):
+            return subprocess.CompletedProcess(command, 0, stdout="  : values=off\n")
+
+        with patch("audio.subprocess.run", side_effect=amixer) as run:
+            mixer = Mixer(target=lambda: (0, "rk817"))
+            mixer.speakers(0)
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "Internal Speakers", "off"])
+            run.reset_mock()
+            mixer.speakers(0)  # the watcher's repair every 2 s spawns nothing
+            run.assert_not_called()
+            mixer.speakers(5)
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "Internal Speakers", "on"])
+            run.reset_mock()
+            mixer.speakers(50)
+            run.assert_not_called()
+
+    def test_unmuting_leaves_the_speakers_off_with_headphones_in(self):
+        def amixer(command, **kwargs):
+            # The jack is a CARD control: amixer finds nothing under the default MIXER interface.
+            found = "iface=CARD,name=Headphones Jack" in command or "sset" in command
+            return subprocess.CompletedProcess(command, 0 if found else 1, stdout="  : values=on\n" if found else "")
+
+        with patch("audio.subprocess.run", side_effect=amixer) as run:
+            Mixer(target=lambda: (0, "rk817")).speakers(50)
+            self.assertEqual(run.call_args.args[0], ["amixer", "-q", "-c", "0", "sset", "Internal Speakers", "off"])
+
+    def test_the_plus_amplifiers_have_no_speaker_pin(self):
+        with patch("audio.subprocess.run") as run:
+            Mixer(target=lambda: (1, "aw88166")).speakers(0)
+            run.assert_not_called()
+
+    def test_a_missing_amixer_does_not_stop_the_volume(self):
+        with patch("audio.subprocess.run", side_effect=FileNotFoundError("amixer")), redirect_stderr(StringIO()):
+            Mixer(target=lambda: (0, "rk817")).speakers(0)
+
+    def test_volume_passes_every_level_to_the_speakers(self):
+        self.volume.apply(0)
+        self.assertEqual(self.mixer.speakers_level, 0)
+        self.volume.apply(40)
+        self.assertEqual(self.mixer.speakers_level, 40)
 
     def test_plus_amplifiers_take_an_attenuation(self):
         def amixer(command, **kwargs):
@@ -244,6 +294,33 @@ class AudioTests(unittest.TestCase):
             self.assertEqual(capture_device(conf), "plughw:0,0")
             conf.write_text("pcm.rgds_in { type plug slave.pcm \"hw:1,0\" }\n")
             self.assertEqual(capture_device(conf), "rgds_mic")
+
+    def test_the_microphones_capture_level_is_not_read_as_the_volume(self):
+        # amixer's line for the RK817's Master on RG DS OS, with the microphone open
+        line = "  Front Left: Playback 202 [79%] [-19.75dB] Capture 255 [100%] [0.00dB]\n"
+        with patch("audio.subprocess.run", return_value=subprocess.CompletedProcess([], 0, stdout=line)):
+            self.assertEqual(Mixer(target=lambda: (0, "rk817")).query(), 79)
+
+    def test_microphone_levels_go_to_the_codec_card(self):
+        run = Mock()
+        with tempfile.TemporaryDirectory() as folder:
+            conf = Path(folder) / "audio-capture.conf"
+            microphone_levels(conf, run)  # stock: no capture file, the kernel's own controls
+            run.assert_not_called()
+            conf.write_text("pcm.rgds_in {\n    type plug\n    slave { pcm \"hw:1,0\" format S16_LE }\n}\n")
+            microphone_levels(conf, run)
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            ["amixer", "-q", "-c", "1", "cset", "name=Master Capture Volume", "255,255"],
+            ["amixer", "-q", "-c", "1", "cset", "name=Mic Capture Gain", f"{MIC_GAIN},{MIC_GAIN}"],
+        ])
+
+    def test_microphone_levels_never_stop_a_launch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            conf = Path(folder) / "audio-capture.conf"
+            conf.write_text("pcm.rgds_in { type plug slave.pcm \"hw:0,0\" }\n")
+            microphone_levels(conf, Mock(side_effect=FileNotFoundError("amixer")))
+            conf.write_text("garbage")
+            microphone_levels(conf, Mock(side_effect=AssertionError("no card, no call")))
 
     def test_unavailable_mixer_fails_before_a_game_can_start(self):
         with patch.object(self.mixer, "query", side_effect=FileNotFoundError("amixer")), \

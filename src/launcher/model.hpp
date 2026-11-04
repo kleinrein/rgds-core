@@ -40,8 +40,8 @@ struct SystemInfo {
     const char* badge; // on a game without its own artwork
     std::initializer_list<const char*> extensions;
 };
-inline const std::array<SystemInfo, 16>& systems() {
-    static const std::array<SystemInfo, 16> list = {{
+inline const std::array<SystemInfo, 18>& systems() {
+    static const std::array<SystemInfo, 18> list = {{
         {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
@@ -62,6 +62,8 @@ inline const std::array<SystemInfo, 16>& systems() {
         {"3ds", "Nintendo 3DS", "3DS", {".3ds", ".cci", ".cxi", ".3dsx"}}, // Tanuki3DS (emulators.tanuki_plan)
         // .pbp and .chd are the PlayStation's by extension, the PSP's in its own folder
         {"psp", "PlayStation Portable", "PSP", {".iso", ".cso", ".pbp", ".chd"}},
+        {"gw", "Game & Watch", "G&W", {".mgw"}}, // and other LCD games: MADrigal's simulators (gw-libretro)
+        {"scummvm", "ScummVM", "SCUMM", {}}, // a game is a folder of files: scan_system
         {"ports", "Ports", "PORT", {".sh"}}, // PortMaster ports: the scripts in its ports folder
         // not a system with games of its own: the shelves of free DS, GBA and NES homebrew (homebrew_screen.hpp)
         {"homebrew", "Homebrew", "FREE", {}},
@@ -81,6 +83,8 @@ inline std::string lower(std::string s) {
 // The system a game file is for, by its extension ("nds" for anything else, a .zip included).
 inline std::string system_for_path(const fs::path& path) {
     const std::string extension = lower(path.extension().string());
+    for (auto folder = path.parent_path(); folder.has_relative_path(); folder = folder.parent_path())
+        if (lower(folder.filename().string()) == "scummvm") return "scummvm"; // any file there is a game's
     for (const auto& s : systems())
         for (const char* e : s.extensions)
             if (extension == e) return s.id;
@@ -163,6 +167,40 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
     const auto& info = system_info(system);
     // A port's own folder holds more scripts and archives: only the top level's scripts are ports.
     const bool ports = std::string(info.id) == "ports";
+    // A ScummVM game is a folder in the games folder, named as the game; the core finds the game from any file in it.
+    if (std::string(info.id) == "scummvm") {
+        std::vector<Game> games;
+        for (const auto& root : roots) {
+            std::error_code ec;
+            if (!fs::is_directory(root, ec)) continue;
+            for (const auto& folder : fs::directory_iterator(root, fs::directory_options::skip_permission_denied, ec)) {
+                if (!folder.is_directory(ec) || folder.path().filename().string().rfind(".", 0) == 0) continue;
+                fs::path first;
+                int first_depth = 0;
+                std::error_code walk;
+                fs::recursive_directory_iterator it(folder.path(), fs::directory_options::skip_permission_denied, walk), end;
+                for (; !walk && it != end; it.increment(walk)) {
+                    const auto name = it->path().filename().string();
+                    if (!it->is_regular_file(walk) || name.rfind(".", 0) == 0) continue;
+                    // A file at the shallowest level with any (a set may unpack with a folder of its own inside),
+                    // the core looks beside it. A hook wins.
+                    const bool hook = lower(it->path().extension().string()) == ".scummvm";
+                    if (lower(first.extension().string()) == ".scummvm") continue;
+                    if (first.empty() || hook || it.depth() < first_depth ||
+                        (it.depth() == first_depth && it->path() < first)) {
+                        first = it->path();
+                        first_depth = it.depth();
+                    }
+                }
+                if (!first.empty()) {
+                    auto canonical = fs::weakly_canonical(first, ec);
+                    if (!ec) games.push_back({folder.path().filename().string(), canonical, false, info.id});
+                }
+            }
+        }
+        std::sort(games.begin(), games.end(), [](const Game& a, const Game& b) { return lower(a.title) < lower(b.title); });
+        return games;
+    }
     std::map<std::string, Game> unique;
     for (const auto& root : roots) {
         std::error_code ec;

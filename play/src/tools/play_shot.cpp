@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
         else if (a == "--no-companion") o.companion = false;
         else if (a == "--async") async = true;
         else if (a == "--drive") drive = true;
-        else if (a == "--bench") bench = true; // time each frame, drawing the companion every frame like the player
+        else if (a == "--bench") bench = true; // time each frame, drawing the companion when it changes, as the player
         else if (a == "--panel") {
             if (std::sscanf(next().c_str(), "%dx%d", &pw, &ph) != 2) return 2;
         } else {
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
             std::getline(in, arg); // the rest of the line: paths may hold spaces
             arg.erase(0, arg.find_first_not_of(" \t"));
             uint32_t buttons;
-            if (what == "shot" || what == "capture" || what == "quit" || what == "status" || what == "hudshot" ||
+            if (what == "shot" || what == "capture" || what == "quit" || what == "status" || what == "hudshot" || what == "gameshot" ||
                 what == "state-save" || what == "state-load")
                 commands.insert({frame, {what, arg}});
             else if (parse_buttons(what, buttons)) holds[frame] = buttons;
@@ -138,6 +138,8 @@ int main(int argc, char** argv) {
     }
     uint32_t buttons = 0;
     std::vector<double> emulate_ms, draw_ms;
+    uint64_t drawn_key = ~0ull;
+    long companion_draws = 0;
     auto execute = [&](const Command& c, long frame) {
         if (c.what == "capture" && s.companion()) {
             bool ok = s.companion()->capture_now(s.core());
@@ -152,6 +154,13 @@ int main(int argc, char** argv) {
             std::string why;
             bool ok = c.what == "state-save" ? s.save_state_file(c.arg, why) : s.load_state_file(c.arg, why);
             std::printf("frame %ld %s %s%s\n", frame, c.what.c_str(), ok ? "ok" : "failed: ", why.c_str());
+        } else if (c.what == "gameshot") {
+            // The core's whole picture at 1x, before any panel takes its part.
+            const Picture game = s.core().picture();
+            Canvas raw(game.w, game.h);
+            for (int y = 0; y < game.h; ++y)
+                for (int x = 0; x < game.w; ++x) raw.data()[y * game.w + x] = game.at(x, y) | 0xFF000000u;
+            write_bmp(out_dir + "/" + c.arg + ".bmp", raw);
         } else if (c.what == "hudshot") {
             // The raw HUD layer at 1x (the key colour where there is none).
             Picture hud = s.core().hud();
@@ -318,7 +327,11 @@ int main(int argc, char** argv) {
         if (bench) {
             auto t1 = std::chrono::steady_clock::now();
             draw_game(top, colour.apply(s.game()), Fit::Integer);
-            s.render_companion(bottom, look);
+            if (!s.companion() || s.companion()->visual_key() != drawn_key) {
+                s.render_companion(bottom, look);
+                drawn_key = s.companion() ? s.companion()->visual_key() : 0;
+                ++companion_draws;
+            }
             auto t2 = std::chrono::steady_clock::now();
             emulate_ms.push_back(std::chrono::duration<double, std::milli>(t1 - t0).count());
             draw_ms.push_back(std::chrono::duration<double, std::milli>(t2 - t1).count());
@@ -347,6 +360,7 @@ int main(int argc, char** argv) {
         size_t from = emulate_ms.size() > 600 ? emulate_ms.size() - 600 : 0;
         report("emulate", emulate_ms, from);
         report("draw both panels", draw_ms, from);
+        std::printf("bench companion drawn %ld times in %zu frames\n", companion_draws, draw_ms.size());
     }
     if (hash_out) std::fclose(hash_out);
     if (state_out) std::fclose(state_out);

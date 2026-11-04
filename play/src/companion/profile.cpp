@@ -283,7 +283,7 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             const bool alt_map = section.rfind("map.", 0) == 0 && section.size() > 4;
             const bool alt_view = section.rfind("view.", 0) == 0 && section.size() > 5;
             if (section != "game" && section != "companion" && section != "map" && section != "hud" &&
-                section != "party" && section != "view" && !alt_map && !alt_view)
+                section != "party" && section != "view" && section != "screens" && !alt_map && !alt_view)
                 return fail("unknown section [" + section + "]");
             if (section == "view" || alt_view) {
                 // Several views: the first in the file whose `on` holds is shown.
@@ -304,6 +304,7 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             alt = false;
             if (section == "map") out.has_map = true;
             if (section == "hud") out.has_hud = true;
+            if (section == "screens") out.has_screens = true;
             if (section == "party") out.has_party = true;
             continue;
         }
@@ -464,6 +465,35 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 if (ok) h.to_game.push_back(m);
                 else why = "expected to_game = x y w h > X Y";
             } else return fail("unknown key '" + key + "' in [hud]");
+        } else if (section == "screens") {
+            if (key == "top" || key == "bottom") {
+                auto w = words(value);
+                const bool top = key == "top";
+                ok = (w.size() == 4 || w.size() == 6) &&
+                     parse_rect(w[0] + " " + w[1] + " " + w[2] + " " + w[3], top ? out.screens.top : out.screens.bottom);
+                if (ok && w.size() == 6)
+                    ok = parse_int(w[4], top ? out.screens.top_from : out.screens.bottom_from) &&
+                         parse_int(w[5], top ? out.screens.top_to : out.screens.bottom_to);
+                if (!ok) why = "expected " + key + " = x y w h [from to]";
+            }
+            else if (key == "same") ok = parse_buttons(value, out.screens.same);
+            else if (key == "pointer") {
+                ok = value == "yes" || value == "no";
+                out.screens.pointer = value == "yes";
+            } else if (key == "stretch") ok = parse_int(value, out.screens.stretch) && out.screens.stretch >= 1;
+            else if (key == "match") {
+                auto w = words(value);
+                ok = w.size() == 2 && parse_int(w[0], out.screens.match_w) && parse_int(w[1], out.screens.match_h);
+            }
+            else if (key == "touch") {
+                auto w = words(value);
+                ScreensSpec::Zone zone;
+                ok = w.size() == 5 && parse_rect(w[0] + " " + w[1] + " " + w[2] + " " + w[3], zone.box) &&
+                     parse_buttons(w[4], zone.buttons);
+                if (ok) out.screens.touch.push_back(zone);
+                else why = "expected touch = x y w h BUTTONS";
+            }
+            else return fail("unknown key '" + key + "' in [screens]");
         } else if (section == "party") {
             auto& p = out.party;
             if (key == "format") {
@@ -490,6 +520,8 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
     if (out.codes.empty()) return fail("[game] codes is missing");
     if (out.title.empty()) return fail("[game] title is missing");
     if (out.has_hud && out.hud.on.empty()) return fail("[hud] on is missing");
+    if (out.has_screens && (out.screens.top.empty() || out.screens.bottom.empty()))
+        return fail("[screens] needs top and bottom");
     for (const auto& v : out.views)
         if (v.format.empty()) return fail("[view" + (v.name.empty() ? "" : "." + v.name) + "] format is missing");
     if (!out.views.empty()) out.view = out.views.front();

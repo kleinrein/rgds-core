@@ -199,7 +199,9 @@ menu's token to `/run/rgds/suspend-state` as `phase=pre`, writes `mem` to `/sys/
 sleep with an RTC alarm as the wake, counters and Wi-Fi back afterwards. The lid: the session exports the hall
 sensor's event node and its platform device's wakeup file (`RGDS_LID_DEV`, `RGDS_LID_WAKEUP`), which the menu's lid
 watcher and the helper's `lid()` use; the PMIC's power key, the hall sensor and the RTC are wake sources in the
-device tree. The Power page gained a Restart row (seventh, after Power off). Power off and Restart first failed silently on
+device tree. The power key itself has no system service here (stock's logind did it): `platform/power_key.hpp` at Home
+and `lid_sleep.PowerKey` in games and ports read `rk805 pwrkey`. A short press sleeps, a two-second hold saves the game
+and powers off cleanly, and the press that wakes the handheld is ignored. The Power page gained a Restart row (seventh, after Power off). Power off and Restart first failed silently on
 the handheld: the helper's `system_exit` asked stock's hand-off for an owner record that only stock's `session.py`
 writes; on RG DS OS it now runs the action itself after the same checks. The System page's Startup entry (stock's
 "Boot into" choice) is gone on RG DS OS (`RGDS_OS=1` from the session, `Options::rgds_os`). Lid sleep: the sensor is

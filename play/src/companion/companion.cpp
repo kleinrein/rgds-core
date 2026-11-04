@@ -85,6 +85,54 @@ bool map_layer_shown(Core& live, const HudSpec& h) {
 
 } // namespace
 
+uint32_t Companion::machine_buttons(uint32_t pad) {
+    if (!screens_mode() || profile_->screens.pointer) return pad;
+    if (pad & Start) pad |= L;
+    if (pad & Select) pad |= R;
+    pad &= ~uint32_t(Start | Select);
+    pad |= finger_;
+    const uint32_t same = profile_->screens.same;
+    if (pad & same) pad |= same;
+    click_frames_ = pad & ~held_ ? 3 : std::max(0, click_frames_ - 1);
+    held_ = pad;
+    return pad;
+}
+
+bool Companion::picture_matches(int w, int h) const {
+    const auto& s = profile_->screens;
+    return !menu_over_game_ && (!s.match_w || (s.match_w == w && s.match_h == h));
+}
+
+void Companion::touch_top(const Touch& t) {
+    if (!finger_core_ || !top_is_touched()) return;
+    const Rect r = picture_matches(lower_w_, lower_h_) ? profile_->screens.top : Rect{0, 0, lower_w_, lower_h_};
+    if (r.w <= 0 || r.h <= 0) return;
+    const double fit = std::min(640.0 / r.w, 480.0 / r.h);
+    const int x0 = int(640 - r.w * fit) / 2, y0 = int(480 - r.h * fit) / 2;
+    finger_core_->set_pointer(r.x + int((t.x - x0) / fit), r.y + int((t.y - y0) / fit), t.kind != Touch::Up);
+}
+
+void Companion::update_screens(Core& live) {
+    const Picture p = live.picture();
+    const Picture& q = p;
+    menu_over_game_ = live.menu_over_game();
+    lower_w_ = q.w, lower_h_ = q.h;
+    const Rect r = picture_matches(q.w, q.h) ? profile_->screens.bottom : Rect{0, 0, q.w, q.h};
+    lower_rect_ = r;
+    lower_.assign(static_cast<size_t>(r.w) * r.h, 0xFF000000u);
+    uint64_t hash = 1469598103934665603ull;
+    for (int y = std::max(0, -r.y); y < r.h && r.y + y < p.h; ++y) {
+        const int from = std::max({0, -r.x, profile_->screens.bottom_from - r.x});
+        const int to = std::min({r.w, p.w - r.x, profile_->screens.bottom_to - r.x});
+        for (int x = from; x < to; ++x) {
+            const uint32_t v = p.at(r.x + x, r.y + y) | 0xFF000000u;
+            lower_[static_cast<size_t>(y) * r.w + x] = v;
+            hash = (hash ^ v) * 1099511628211ull;
+        }
+    }
+    lower_hash_ = hash;
+}
+
 void Companion::update_strip(Core& live) {
     const HudSpec& h = profile_->hud;
     const Picture p = live.picture();
@@ -373,6 +421,21 @@ bool extend_mode7(const Core::Mode7& m, const uint8_t* oam, const std::vector<st
 } // namespace
 
 Picture Companion::compose_game(const Picture& game, bool whole) {
+    if (screens_mode()) {
+        if (!shown_ || !picture_matches(game.w, game.h)) return game; // the whole picture here
+        const Rect& r = profile_->screens.top;
+        const int keep_from = profile_->screens.top_from, keep_to = profile_->screens.top_to;
+        if (r.x >= keep_from && r.y >= 0 && r.x + r.w <= std::min(game.w, keep_to) && r.y + r.h <= game.h)
+            return {game.px + static_cast<size_t>(r.y) * game.stride + r.x, r.w, r.h, game.stride};
+        composed_.assign(static_cast<size_t>(r.w) * r.h, 0xFF000000u);
+        for (int y = std::max(0, -r.y); y < r.h && r.y + y < game.h; ++y) {
+            const int from = std::max({0, -r.x, keep_from - r.x}), to = std::min({r.w, game.w - r.x, keep_to - r.x});
+            if (to > from)
+                std::copy_n(game.px + static_cast<size_t>(r.y + y) * game.stride + r.x + from, to - from,
+                            composed_.data() + static_cast<size_t>(y) * r.w + from);
+        }
+        return {composed_.data(), r.w, r.h, r.w};
+    }
     if (strip_mode()) {
         // The band leaves the picture only where it spans it, at its top or bottom edge.
         const Rect& s = profile_->hud.strip;
@@ -556,6 +619,8 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
 void Companion::after_frame(Core& live) {
     ++frame_;
     live_ = &live;
+    finger_core_ = &live;
+    if (screens_mode()) update_screens(live);
     if (profile_ && profile_->has_hud) update_hud(live);
     if (!hud_shown_) hud_picture_.px = nullptr;
     if (party_ && frame_ % 15 == 0) {
@@ -654,6 +719,22 @@ Box Companion::switch_box(int w) const { return {w - kit::margin - 56, kit::marg
 bool Companion::touch(const Touch& t) {
     const uint64_t before = dock_.key();
     if (dock_.touch(t)) return dock_.key() != before;
+    if (screens_mode()) {
+        const Rect& r = lower_rect_.w ? lower_rect_ : profile_->screens.bottom;
+        const double fit = std::min(640.0 / r.w, 480.0 / r.h);
+        const double tall = std::min(480.0 / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
+        const int x = r.x + int((t.x - (640 - r.w * fit) / 2) / fit), y = r.y + int((t.y - (480 - r.h * tall) / 2) / tall);
+        if (profile_->screens.pointer) {
+            if (finger_core_) finger_core_->set_pointer(x, y, t.kind != Touch::Up);
+            return false;
+        }
+        finger_ = 0;
+        if (t.kind != Touch::Up)
+            for (const auto& zone : profile_->screens.touch)
+                if (x >= zone.box.x && y >= zone.box.y && x < zone.box.x + zone.box.w && y < zone.box.y + zone.box.h)
+                    finger_ |= zone.buttons;
+        return false;
+    }
     if (t.kind == Touch::Down && has_switch() && switch_box(640).contains(t.x, t.y)) {
         // The switch flips between the game's own screen (map, team) and the status board.
         alt_ = !alt_;
@@ -678,6 +759,7 @@ uint64_t Companion::visual_key() const {
 }
 
 uint64_t Companion::screen_key() const {
+    if (screens_mode()) return lower_hash_ ^ 0x1000000000000000ull;
     if (strip_mode()) return hud_shown_ ? content_key() ^ (strip_hash_ * 31) ^ 0x2000000000000000ull : content_key();
     if (hud_shown_ && !hud_covered()) return (frame_ << 1) | 0x8000000000000001ull; // the HUD is live: every frame
     return content_key();
@@ -838,6 +920,7 @@ void Companion::render_screen(Canvas& out, const Look& look, const Font& font) c
 }
 
 void Companion::render_layers(Canvas& out, const Look& look, const Font& font) const {
+    if (screens_mode()) return render_screens(out);
     if (strip_mode()) {
         View* v = shown_view();
         const bool covered = !has_current_ && v && v->covers_hud();
@@ -850,6 +933,16 @@ void Companion::render_layers(Canvas& out, const Look& look, const Font& font) c
     }
     if (!hud_covered() && render_hud(out, look)) return;
     render_content(out, look, font);
+}
+
+void Companion::render_screens(Canvas& out) const {
+    const Rect& r = lower_rect_;
+    if (lower_.empty()) return out.fill(Rgb{0, 0, 0});
+    const double fit = std::min(double(out.w()) / r.w, double(out.h()) / r.h);
+    const double tall = std::min(double(out.h()) / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
+    const int tw = std::min(out.w(), int(r.w * fit + 0.5)), th = std::min(out.h(), int(r.h * tall + 0.5));
+    out.fill(Rgb{0, 0, 0});
+    sharp_blit(out, lower_.data(), r.w, r.h, (out.w() - tw) / 2, (out.h() - th) / 2, tw, th, false, 0);
 }
 
 void Companion::render_strip_filled(Canvas& out, const Look& look) const {

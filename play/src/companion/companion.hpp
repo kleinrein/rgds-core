@@ -68,6 +68,15 @@ public:
     // Whether the second screen is shown at all. Off, the game keeps its whole
     // picture: no HUD band is cut off and no HUD is split away from it.
     void set_shown(bool shown) { shown_ = shown; }
+    // What a [screens] game gets for the pad in the player's hands: a finger on the machine's own buttons, and Start
+    // and Select as Game A and B (L and R, where the simulators keep them).
+    uint32_t machine_buttons(uint32_t pad);
+    // A finger on the top panel (its 640x480 pixels), where [screens] pointer shows the game there.
+    void touch_top(const Touch& t);
+    // A finger is this game's mouse on the top panel too.
+    bool top_is_touched() const { return profile_ && profile_->has_screens && profile_->screens.pointer; }
+    // A short click in the motor as one of the machine's buttons goes down, 0-1.
+    float machine_click() const { return click_frames_ > 0 ? 0.45f : 0; }
     // The info screen: the title card every game has before its own second screen appears, and the corner button.
     void set_info(bool info) { info_ = info; }
     bool info() const { return info_; }
@@ -88,6 +97,20 @@ private:
     void update_hud(Core& live);
     bool render_hud(Canvas& out, const Look& look) const;
     // Game Boy HUD band ([hud] strip): cut from the picture, drawn under the rest.
+    // [screens]: the panels show rectangles of one picture.
+    bool screens_mode() const { return profile_ && profile_->has_screens; }
+    void update_screens(Core& live);
+    void render_screens(Canvas& out) const;
+    std::vector<uint32_t> lower_;
+    Rect lower_rect_;              // the part of the picture lower_ holds
+    int lower_w_ = 0, lower_h_ = 0; // the picture's size
+    bool picture_matches(int w, int h) const;
+    bool menu_over_game_ = false;
+    Core* finger_core_ = nullptr;
+    uint64_t lower_hash_ = 0;
+    uint32_t finger_ = 0; // the buttons a finger holds on the machine
+    uint32_t held_ = 0;   // what the machine had last frame
+    int click_frames_ = 0;
     bool strip_mode() const { return profile_ && profile_->has_hud && !profile_->hud.strip.empty(); }
     void update_strip(Core& live);
     void render_with_strip(Canvas& out, const Look& look, const Font& font) const;

@@ -1,0 +1,36 @@
+diff --git a/gwlua/lua/compatinit.lua b/gwlua/lua/compatinit.lua
+index 03bdaf1..acdd339 100644
+--- a/gwlua/lua/compatinit.lua
++++ b/gwlua/lua/compatinit.lua
+@@ -28,7 +28,7 @@ local createhelp = function( width, height, msgs, M )
+   snes_spt.visible = false
+   snes_spt.layer = 30000
+   
+-  local text = {} for k,v in pairs(M) do print(k,v) end
++  local text = {}
+   
+   for button, pos in pairs( pos ) do
+     text[ button ] = M.render( snes_x + pos[ 1 ], snes_y + pos[ 2 ], msgs[ button ] or '', pos[ 3 ] )
+@@ -224,22 +224,6 @@ return function( background, keymap, keydown, keyup, timers, zoom, options, M )
+   local state, newstate = {}, {}
+   local zoomed = false
+ 
+-  if options then
+-    local del = {}
+-
+-    for _, option in ipairs( options ) do
+-      for button, keys in pairs( keymap ) do
+-        if keys[ 1 ] == option[ 3 ] then
+-          del[ button ] = true
+-        end
+-      end
+-    end
+-
+-    for button in pairs( del ) do
+-      keymap[ button ] = nil
+-    end
+-  end
+-
+   local msgs = {}
+   
+   for button, keys in pairs( keymap ) do

@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'runtime'))
-from lid_sleep import LidSleep
+from lid_sleep import LidSleep, PowerKey
 from game_menu import GameMenu, MenuInput
 from fields import read_fields, write_fields
 from test_game_menu import Process, Inputs
@@ -313,6 +313,151 @@ class GameLidTests(unittest.TestCase):
         menu.lid.hardware.sleep_lid.assert_called_once()
         self.assertFalse((menu.folder / 'game-menu.audio-sleep').exists())
         self.assertEqual(menu.menu.signals, [signal.SIGSTOP, signal.SIGCONT])
+
+
+# (step, seconds since the start, ready, sleep wanted): the launcher and the game runner must agree.
+POWER_KEY = [
+    ('up', 0.0, True, None),  # let go after holding it to boot: a release with no press
+    ('down', 1.0, True, None),
+    ('up', 1.1, False, None),  # a save is finishing: kept until it is ready
+    ('poll', 1.2, False, None),
+    ('poll', 1.3, True, 'sleep'),
+    ('poll', 1.4, True, None),
+    ('down', 2.0, True, None),
+    ('poll', 3.9, True, None),
+    ('poll', 4.0, True, 'poweroff'),  # held for two seconds: no need to let go
+    ('up', 4.5, True, None),  # and letting go then does not sleep as well
+    ('down', 5.0, True, None),
+    ('up', 7.0, False, None),  # the loop was busy: a hold all the same, once ready
+    ('poll', 7.1, True, 'poweroff'),
+    ('down', 8.0, True, None),
+    ('up', 8.1, True, 'sleep'),
+    ('down', 9.0, True, None),  # pressed again before the sleep began: thrown away
+    ('slept', 10.0, True, None),
+    ('down', 10.1, True, None),  # the press that woke it, reported late
+    ('poll', 13.0, True, None),  # even held: waking must not power off
+    ('up', 13.1, True, None),
+]
+QUIET_POWER_KEY = [
+    ('slept', 0.0, True, None),
+    ('down', 0.9, True, None),  # still inside the wake's quiet second, released after it
+    ('up', 1.1, True, None),
+    ('down', 1.2, True, None),
+    ('up', 1.3, True, 'sleep'),
+]
+
+
+class PowerKeyTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+
+    def test_press_sleeps_hold_powers_off_and_never_the_press_that_woke_it(self):
+        for table in (POWER_KEY, QUIET_POWER_KEY):
+            key = PowerKey(self.root / 'absent')
+            with patch('lid_sleep.time.monotonic') as clock:
+                for step, now, ready, wanted in table:
+                    clock.return_value = now
+                    if step == 'slept': key.after_sleep()
+                    elif step != 'poll': key.feed(int(step == 'down'), now)
+                    key.tick(now)
+                    self.assertEqual(key.take(ready), wanted, (step, now))
+
+    @unittest.skipUnless(shutil.which('clang++'), 'Host compiler required')
+    def test_launcher_uses_the_same_contract(self):
+        source = self.root / 'power.cpp'
+        binary = self.root / 'power'
+
+        def rows(table):
+            return ',\n'.join(
+                '{%d,%d,%d,%d}' % (
+                    'up down slept poll'.split().index(step), round(now * 1000), ready,
+                    [None, 'sleep', 'poweroff'].index(wanted)
+                ) for step, now, ready, wanted in table
+            )
+
+        source.write_text(
+            '''#include "platform/power_key.hpp"
+#include <cassert>
+template <size_t N> void run(const int (&cases)[N][4]){rgds::PowerKey key;
+ for(auto& row:cases){
+ if(row[0]==2)key.after_sleep(row[1]);else if(row[0]!=3)key.feed(row[0],row[1]);
+ key.tick(row[1]);
+ assert(key.take(row[2],row[2])==rgds::PowerPress(row[3]));}}
+int main(){const int main_cases[][4]={''' + rows(POWER_KEY) + '''};
+ const int quiet_cases[][4]={''' + rows(QUIET_POWER_KEY) + '''};
+ run(main_cases);run(quiet_cases);
+ rgds::PowerKey split;split.feed(1,0);split.tick(2000);
+ assert(split.take(true,false)==rgds::PowerPress::None);
+ assert(split.take(false,true)==rgds::PowerPress::Off);}
+'''
+        )
+        subprocess.run(
+            [
+                'clang++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I' + str(ROOT / 'src'),
+                str(source), '-o',
+                str(binary)
+            ],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        subprocess.run([str(binary)], check=True, timeout=3)
+
+    def test_events_from_the_device_and_a_game_sleeping_on_them(self):
+        child, inputs = Process(), Inputs()
+        menu = GameMenu(child, self.root / 'app', self.root / 'dscore', 'dscore', self.root / 'game.nds', {}, inputs)
+        menu.lid.hardware = Mock()
+        menu.lid.hardware.lid_closed.return_value = False
+        self.addCleanup(menu.close)
+        read, write = os.pipe()
+        self.addCleanup(os.close, write)
+        os.set_blocking(read, False)
+        menu.power_key.fd = read
+
+        def event(kind, code, value):
+            os.write(write, struct.pack('llHHi', 0, 0, kind, code, value))
+
+        event(1, 114, 1)  # another key on the same node
+        event(1, 116, 1)
+        menu.poll()
+        menu.lid.hardware.sleep.assert_not_called()
+        event(0, 3, 0)  # SYN_DROPPED: the release may be lost, never guess
+        event(1, 116, 0)
+        menu.poll()
+        menu.lid.hardware.sleep.assert_not_called()
+        event(1, 116, 1)
+        event(1, 116, 0)
+        event(1, 116, 1)  # the second press, made while it goes to sleep, is the one that woke it
+        menu.lid.hardware.sleep.side_effect = lambda: self.assertTrue(menu.paused)
+        menu.poll()
+        menu.lid.hardware.sleep.assert_called_once_with()
+        menu.lid.hardware.sleep_lid.assert_not_called()
+        self.assertFalse(menu.paused)
+        event(1, 116, 0)
+        menu.poll()
+        menu.lid.hardware.sleep.assert_called_once_with()
+
+    def test_a_held_key_saves_the_game_and_leaves_the_request_for_the_launcher(self):
+        menu = GameMenu(
+            Process(), self.root / 'app', self.root / 'dscore', 'dscore', self.root / 'game.nds', {}, Inputs()
+        )
+        menu.lid.hardware = Mock()
+        menu.lid.hardware.lid_closed.return_value = False
+        self.addCleanup(menu.close)
+        request = self.root / 'poweroff-requested'
+        menu.power_key.fd = os.pipe()[0]
+        os.set_blocking(menu.power_key.fd, False)
+        menu.power_key.armed = True
+        menu.power_key.pressed_at = time.monotonic() - 3
+        with patch('game_menu.POWEROFF_REQUEST', request), \
+                patch('game_menu.subprocess.Popen', return_value=Process()):
+            menu.poll()
+        self.assertTrue(request.exists())
+        self.assertEqual(menu.pending['action'] if isinstance(menu.pending, dict) else menu.pending, 'save-quit')
+        self.assertFalse(menu.restart)
+        menu.lid.hardware.sleep.assert_not_called()
 
 
 class WakeInputTests(unittest.TestCase):

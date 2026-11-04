@@ -58,6 +58,12 @@ public:
     virtual const char* system() const = 0; // "gba", "gb", "gbc"
     virtual std::string game_code() const = 0;
     virtual std::string header_title() const = 0;
+    // More names a profile may know the game by: a game that is a folder of files (ScummVM) by those files' names.
+    virtual std::vector<std::string> other_codes() const { return {}; }
+    // The game has quit by itself (ScummVM's Quit): nothing more will happen.
+    virtual bool finished() const { return false; }
+    // The core's own menu is over the game (ScummVM's, drawn at the game's size).
+    virtual bool menu_over_game() const { return false; }
     virtual double frame_rate() const = 0;
 
     virtual void run_frame(uint32_t buttons) = 0;
@@ -96,6 +102,10 @@ public:
     // Boy rumble cartridges (MBC5), Game Boy Advance ones (Drill Dozer, WarioWare:
     // Twisted!). 0 for every other game, and always for a shadow.
     virtual float rumble() const { return 0; }
+
+    // A game still coming in from its tape or VICE still typing LOAD: a state now wouldn't resume, so
+    // it isn't kept. Asked before a checkpoint.
+    virtual bool still_loading() const { return false; }
 
     virtual bool save_state(std::vector<uint8_t>& out) = 0;
     virtual bool load_state(const std::vector<uint8_t>& in) = 0;

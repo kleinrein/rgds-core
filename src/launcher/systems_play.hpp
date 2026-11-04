@@ -367,6 +367,17 @@ int App::play_graphics_row(int shown) const {
     return shown < 4 || !play_colour_kind() ? (shown < 4 ? shown : 5) : shown == 4 ? 4 : 5;
 }
 
+// The row's value: the saved choice, and the running game's own scale when they differ, because the
+// engine sizes its framebuffers at start and the choice reaches it only at the next launch (the game
+// menu helper inherits the engine's RGDS_3DS_SCALE).
+std::string App::play_scale_label() const {
+    std::string label = std::to_string(play_scale) + "x";
+    const char* running = o.game_menu && !o.preview ? std::getenv("RGDS_3DS_SCALE") : nullptr;
+    if (running && std::string(running) != std::to_string(play_scale))
+        label += " (" + std::string(running) + "x " + locale.text("until restart") + ")";
+    return label;
+}
+
 void App::apply_play_scale(int scale) {
     if (scale == play_scale) return;
     play_scale = scale;

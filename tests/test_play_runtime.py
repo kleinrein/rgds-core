@@ -47,6 +47,29 @@ class Inputs:
 
 
 class PlayRuntimeTests(unittest.TestCase):
+    def test_a_zipped_c64_game_boots_its_loader_disk_first(self):
+        from play_options import disk_order, unpacked_disks
+        names = ['G [Side A_ESI].d64', 'G [Side A_REM].d64', 'G [Side B_ESI].d64', 'G [Side Load_ESI].d64']
+        self.assertEqual(disk_order(names), ['G [Side Load_ESI].d64', 'G [Side A_ESI].d64', 'G [Side B_ESI].d64'])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'c64').mkdir()
+            several, single = root / 'c64/several.zip', root / 'c64/single.zip'
+            with zipfile.ZipFile(several, 'w') as archive:
+                for name in names:
+                    archive.writestr(name, name)
+            with zipfile.ZipFile(single, 'w') as archive:
+                archive.writestr('one.d64', 'one')
+            listing = unpacked_disks(several, root / 'data')
+            self.assertEqual(listing.suffix, '.m3u')
+            self.assertEqual(listing.read_text().splitlines()[0], 'G [Side Load_ESI].d64')
+            self.assertEqual((listing.parent / 'G [Side Load_ESI].d64').read_text(), 'G [Side Load_ESI].d64')
+            # the game's own writes to its disk survive the next launch
+            (listing.parent / 'G [Side A_ESI].d64').write_text('G [Side A_ES!].d64')
+            unpacked_disks(several, root / 'data')
+            self.assertEqual((listing.parent / 'G [Side A_ESI].d64').read_text(), 'G [Side A_ES!].d64')
+            self.assertEqual(unpacked_disks(single, root / 'data'), single)
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -93,6 +116,7 @@ class PlayRuntimeTests(unittest.TestCase):
             self.root / "a.tzx": "zx",
             self.root / "a.tap": "zx",
             self.root / "a.z80": "zx",
+            self.root / "a.mgw": "gw",
             self.root / "a.d64": "c64",
             self.root / "a.t64": "c64",
             self.root / "a.crt": "c64",
@@ -120,6 +144,7 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.bin"), "nds")
 
     def test_a_tape_or_disk_list_in_a_c64_folder_is_the_c64s(self):
+        self.assertEqual(play_options.system_of(self.root / "roms" / "scummvm" / "Monkey" / "MONKEY.000"), "scummvm")
         for folder in ("c64", "C64", "commodore"):
             self.assertEqual(play_options.system_of(self.root / "roms" / folder / "Game.tap"), "c64", folder)
             self.assertEqual(play_options.system_of(self.root / "roms" / folder / "Game.m3u"), "c64", folder)
@@ -143,6 +168,7 @@ class PlayRuntimeTests(unittest.TestCase):
                 self.assertEqual(play_options.LIBRETRO_CORES["n64"], "mupen64plus_next")
                 self.assertEqual(play_options.LIBRETRO_CORES["zx"], "fuse")
                 self.assertEqual(play_options.LIBRETRO_CORES["c64"], "vice_x64")
+                self.assertEqual(play_options.LIBRETRO_CORES["gw"], "gw")
                 self.assertEqual(play_options.LIBRETRO_CORES["psp"], "ppsspp")
         # Appended: the DS engines keep their stored indexes.
         self.assertEqual(emulators.CORES[:5], ("drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"))

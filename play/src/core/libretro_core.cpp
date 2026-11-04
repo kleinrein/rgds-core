@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <mutex>
@@ -22,6 +23,13 @@
 #include <unistd.h>
 
 namespace play {
+
+static std::string lower_extension(const std::string& path) {
+    const auto dot = path.rfind('.');
+    std::string ext = dot == std::string::npos ? "" : path.substr(dot);
+    for (char& c : ext) c = char(std::tolower(static_cast<unsigned char>(c)));
+    return ext;
+}
 
 class LibretroCore;
 
@@ -216,6 +224,7 @@ public:
         zx_tape_playing_ = reinterpret_cast<int (*)()>(dlsym(lib_, "tape_is_playing"));
         zx_tape_loading_ = reinterpret_cast<int (*)()>(dlsym(lib_, "loader_tape_loading"));
         zx_cpu_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "z80"));
+        overlay_visible_ = reinterpret_cast<bool (*)()>(dlsym(lib_, "retro_rgds_overlay_visible"));
         // Optional: a core without cheats just lists none.
         retro_cheat_reset_ = reinterpret_cast<decltype(retro_cheat_reset_)>(dlsym(lib_, "retro_cheat_reset"));
         retro_cheat_set_ = reinterpret_cast<decltype(retro_cheat_set_)>(dlsym(lib_, "retro_cheat_set"));
@@ -228,6 +237,10 @@ public:
         system_dir_ = system_dir;
         save_dir_ = save_dir;
         rom_path_ = rom_path;
+        zx_tape_game_ = system == "zx" && (lower_extension(rom_path) == ".tzx" || lower_extension(rom_path) == ".tap");
+        zx_tape_seen_ = zx_past_loader_ = false;
+        c64_resumed_ = false;
+        zx_quiet_frames_ = 0;
         if (system == "n64") {
             // GLideN64 at the N64's own 320 x 240 (a quarter of the drawing and the read-back of 640 x 480; the panel
             // shows it at 2x), on the dynarec and the HLE RSP. The threaded renderer: the emulation on a thread of its
@@ -240,6 +253,16 @@ public:
                           {"mupen64plus-rsp-plugin", "hle"},        {"mupen64plus-cpucore", "dynamic_recompiler"},
                           {"mupen64plus-ThreadedRenderer", "True"}, {"mupen64plus-aspect", "4:3"},
                           {"mupen64plus-43screensize", "320x240"}};
+        }
+        if (system == "scummvm") {
+            // Software drawing (the player's picture path), a finger as the pointer: tap to click, hold for the right
+            // button. These adventures are played by touch.
+            variables_ = {{"scummvm_pointer_device", "pointer"}, {"scummvm_video_hw_acceleration", "disabled"},
+                          // A and B click like the finger's tap and hold, X the game's own menu, Y skips a scene, L a
+                          // line of speech, R pauses. Start is ScummVM's menu (saving, loading, quitting).
+                          {"scummvm_mapper_a", "RETROKE_LEFT_BUTTON"}, {"scummvm_mapper_b", "RETROKE_RIGHT_BUTTON"},
+                          {"scummvm_mapper_x", "RETROK_F5"}, {"scummvm_mapper_y", "RETROK_ESCAPE"},
+                          {"scummvm_mapper_l", "RETROK_PERIOD"}, {"scummvm_mapper_r", "RETROK_SPACE"}};
         }
         if (system == "zx") {
             // A Spectrum 48K, a 128K for the tapes that need one (SpeedLock's 128K loaders reset a 128K given a
@@ -355,6 +378,16 @@ public:
     const char* system() const override { return system_.c_str(); }
     // The cartridge's CRC-32 (without a dumper's header): "CRC_3FE272FB", the same for every name a file is given.
     std::string game_code() const override { return code_; }
+    std::vector<std::string> other_codes() const override {
+        std::vector<std::string> codes;
+        if (system_ != "scummvm") return codes;
+        std::error_code error;
+        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(rom_path_).parent_path(), error))
+            codes.push_back(title_code(file.path().filename().string()));
+        return codes;
+    }
+    bool finished() const override { return finished_; }
+    bool menu_over_game() const override { return overlay_visible_ && overlay_visible_(); }
     bool read_rom(uint32_t offset, uint32_t size, std::vector<uint8_t>& out) override {
         std::ifstream in(rom_path_, std::ios::binary);
         uint8_t head[4] = {};
@@ -411,6 +444,15 @@ public:
             g_gl->end();
         } else {
             retro_run_();
+            // VICE takes a state only once it has run: one given before its first frame is lost, and with it the
+            // autostart, leaving BASIC's READY.
+            if (!pending_state_.empty()) {
+                if (retro_unserialize_(pending_state_.data(), pending_state_.size())) {
+                    c64_resumed_ = true;
+                    if (pending_disk_ >= 0 && pending_disk_ != disk_index()) set_disk(pending_disk_);
+                } else std::fputs("play: the saved state could not be loaded\n", stderr);
+                pending_state_.clear();
+            }
             // A Spectrum tape runs through at the machine's own speed (Fuse's fast load breaks SpeedLock's
             // loaders): while it loads, more of the machine's frames per frame shown, heard as silence. A game that
             // loads its stages (Out Run) leaves the tape playing while it runs, so loading is a loader reading the
@@ -419,7 +461,8 @@ public:
                 const size_t heard = audio_.size();
                 for (int i = 0; i < zx_tape_frames && zx_tape_loading(); ++i) retro_run_();
                 audio_.resize(heard);
-            }
+                zx_tape_seen_ = true, zx_quiet_frames_ = 0;
+            } else if (zx_tape_seen_ && ++zx_quiet_frames_ >= zx_settled_frames) zx_past_loader_ = true;
         }
         if (++frames_ % 60 == 0) {
             const uint64_t h = battery_hash();
@@ -487,6 +530,12 @@ public:
                 out.insert(out.end(), mouse_tag, mouse_tag + 4);
                 out.insert(out.end(), reinterpret_cast<const uint8_t*>(sum), reinterpret_cast<const uint8_t*>(sum) + 4);
             }
+            // VICE's state doesn't say which disk is in the drive.
+            if (disk_count() > 1) {
+                const int32_t disk = disk_index();
+                out.insert(out.end(), disk_tag, disk_tag + 4);
+                out.insert(out.end(), reinterpret_cast<const uint8_t*>(&disk), reinterpret_cast<const uint8_t*>(&disk) + 4);
+            }
             return true;
         });
     }
@@ -502,6 +551,11 @@ public:
     bool load_state(const std::vector<uint8_t>& given) override {
         if (given.empty()) return false;
         std::vector<uint8_t> in = given;
+        int32_t disk = -1;
+        if (in.size() > 8 && std::memcmp(in.data() + in.size() - 8, disk_tag, 4) == 0) {
+            std::memcpy(&disk, in.data() + in.size() - 4, 4);
+            in.resize(in.size() - 8);
+        }
         if (in.size() > 8 && std::memcmp(in.data() + in.size() - 8, mouse_tag, 4) == 0) {
             int16_t sum[2];
             std::memcpy(sum, in.data() + in.size() - 4, 4);
@@ -513,10 +567,21 @@ public:
             pending_state_ = in; // the auto-load comes before the first frame makes the context
             return true;
         }
+        if (loaded_ && system_ == "c64" && !frames_) {
+            pending_state_ = in, pending_disk_ = disk;
+            return true;
+        }
         const bool ok = on_gpu([&] { return retro_unserialize_(in.data(), in.size()); });
+        if (ok && disk >= 0 && disk != disk_index()) set_disk(disk);
+        if (ok) c64_resumed_ = true;
         // A state comes back with the core's own idea of what is plugged in: the gun goes back in.
         if (ok && lightgun_) retro_set_controller_port_device_(1, RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_MOUSE, 0));
+        if (ok) zx_past_loader_ = true;
         return ok;
+    }
+    bool still_loading() const override {
+        if (system_ == "c64") return !pending_state_.empty() || (!c64_resumed_ && frames_ < c64_autostart_frames);
+        return zx_tape_game_ && (!zx_past_loader_ || zx_tape_loading());
     }
 
     // Addresses as the system's CPU sees them: an NES's 0000-07FF and its cartridge RAM at 6000, a SNES's work RAM
@@ -762,9 +827,19 @@ private:
     }
     void identify() {
         std::vector<uint8_t> file = rom_;
-        if (file.empty()) {
-            std::ifstream in(rom_path_, std::ios::binary);
-            file.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+        // A ScummVM game is its folder.
+        if (system_ == "scummvm") {
+            title_ = title_code(std::filesystem::path(rom_path_).parent_path().filename().string());
+        } else if (file.empty()) {
+            // No cartridge is this big. A disc image goes by its name below: reading OutRun 2006's 633 MB ISO just for
+            // a CRC kept the screen dark for 16 s, and no profile names a disc by CRC.
+            constexpr std::uintmax_t largest_cartridge = 128 * 1024 * 1024;
+            std::error_code size_error;
+            const std::uintmax_t size = std::filesystem::file_size(rom_path_, size_error);
+            if (size_error || size <= largest_cartridge) {
+                std::ifstream in(rom_path_, std::ios::binary);
+                file.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+            }
         }
         if (!file.empty()) {
             auto [bytes, size] = cartridge_bytes(file, system_);
@@ -783,6 +858,15 @@ private:
             title_ = title_code(name);
         }
         if (code_.empty()) code_ = title_;
+    }
+    // A finger on the picture (ScummVM's games).
+    int16_t pointer(unsigned id) const {
+        switch (id) {
+        case RETRO_DEVICE_ID_POINTER_X: return aim_x_ < 0 ? -0x8000 : int16_t(aim_x_ * 0xFFFF / std::max(1, fw_) - 0x7FFF);
+        case RETRO_DEVICE_ID_POINTER_Y: return aim_y_ < 0 ? -0x8000 : int16_t(aim_y_ * 0xFFFF / std::max(1, fh_) - 0x7FFF);
+        case RETRO_DEVICE_ID_POINTER_PRESSED: return aim_down_ ? 1 : 0;
+        default: return 0;
+        }
     }
     int16_t lightgun(unsigned id) const {
         const bool aimed = aim_x_ >= 0 && aim_y_ >= 0 && aim_x_ < fw_ && aim_y_ < fh_;
@@ -925,6 +1009,7 @@ private:
             return g_active->mouse(id);
         // Whichever port the core keeps its keyboard on (Fuse: the third).
         if ((device & 0xFF) == RETRO_DEVICE_KEYBOARD) return g_active && id < g_active->keys_.size() && g_active->keys_[id];
+        if (g_active && port == 0 && (device & 0xFF) == RETRO_DEVICE_POINTER) return g_active->pointer(id);
         if (!g_active || port != 0) return 0;
         if ((device & 0xFF) == RETRO_DEVICE_ANALOG) {
             const auto& s = g_active->sticks_;
@@ -1001,6 +1086,9 @@ private:
             static_cast<retro_rumble_interface*>(data)->set_rumble_state = rumble_cb;
             return true;
         case RETRO_ENVIRONMENT_GET_INPUT_BITMASKS: return true;
+        case RETRO_ENVIRONMENT_SHUTDOWN:
+            if (g_active) g_active->finished_ = true;
+            return true;
         case RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION: *static_cast<unsigned*>(data) = 2; return true;
         case RETRO_ENVIRONMENT_GET_LANGUAGE: *static_cast<unsigned*>(data) = RETRO_LANGUAGE_ENGLISH; return true;
         case RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE: *static_cast<int*>(data) = 3; return true;
@@ -1193,18 +1281,26 @@ private:
         return zx_tape_playing_ && zx_tape_playing_() && (!zx_cpu_ || !zx_cpu_[36]);
     }
     static constexpr int zx_tape_frames = 16;
+    // A tape game counts as loaded once a loader has run and then stopped for two seconds; before the first block
+    // too it isn't one yet (the machine is still typing LOAD "").
+    static constexpr int zx_settled_frames = 120;
+    bool zx_tape_game_ = false, zx_tape_seen_ = false, zx_past_loader_ = false;
+    int zx_quiet_frames_ = 0;
     unsigned joypad_ = RETRO_DEVICE_JOYPAD; // the first port's device (SET_CONTROLLER_INFO)
     std::array<bool, RETROK_LAST> keys_{};
     retro_disk_control_callback disk_{};
     retro_keyboard_event_t keyboard_event_ = nullptr; // VICE hears its keys, Fuse reads them
     bool lightgun_ = false, aim_down_ = false, trigger_now_ = false;
     int aim_x_ = -1, aim_y_ = -1, trigger_frames_ = 0;
+    bool finished_ = false;
+    bool (*overlay_visible_)() = nullptr;
     bool mouse_ = false, mouse_left_ = false, mouse_right_ = false, settled_ = false;
     int cursor_x_ = -1, cursor_y_ = -1, guess_x_ = 128, guess_y_ = 112, goal_x_ = -1, goal_y_ = -1;
     int16_t mouse_dx_ = 0, mouse_dy_ = 0;
     int16_t sum_x_ = 0, sum_y_ = 0, sync_x_ = 0, sync_y_ = 0; // what the core has been told in all; a load's catch-up
     bool syncing_ = false;
     static constexpr uint8_t mouse_tag[4] = {'R', 'G', 'M', 'O'};
+    static constexpr uint8_t disk_tag[4] = {'R', 'G', 'D', 'K'};
     std::map<std::string, std::string> variables_;
     enum retro_pixel_format pixel_format_ = RETRO_PIXEL_FORMAT_0RGB1555;
     std::vector<uint32_t> frame_;
@@ -1225,6 +1321,10 @@ private:
     bool drew_target_ = false;
     std::vector<uint32_t> readback_;
     std::vector<uint8_t> pending_state_;
+    int pending_disk_ = -1;
+    // VICE boots and types its LOAD and RUN in about this long: a state from before it only has BASIC's READY in it.
+    static constexpr uint64_t c64_autostart_frames = 600;
+    bool c64_resumed_ = false;
     // RGDS_PLAY_PROFILE=1: every 300 frames, the core's frame (retro_run, the read-back included), the read-back alone
     // and the time from one frame's start to the next, average and worst in ms, for measuring a GPU core's speed on the
     // device.

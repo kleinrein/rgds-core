@@ -25,7 +25,7 @@ BUILDROOT_URL = 'https://github.com/buildroot/buildroot'
 BUILDROOT_VERSION = '2026.02.3'
 APT = [
     'build-essential', 'git', 'rsync', 'bc', 'cpio', 'unzip', 'file', 'wget', 'python3', 'perl', 'patch',
-    'libncurses-dev', 'xz-utils', 'bzip2'
+    'libncurses-dev', 'xz-utils', 'bzip2', 'zip'
 ]
 STAGE = ROOT / 'build/os-stage/rgds-core'
 

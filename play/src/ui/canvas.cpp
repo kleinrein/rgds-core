@@ -38,6 +38,14 @@ void Canvas::rounded_rect(int x, int y, int w, int h, int radius, Rgb c, int alp
         int dy = yy - y < radius ? radius - (yy - y) : (yy >= y + h - radius ? yy - (y + h - radius) + 1 : 0);
         for (int xx = std::max(0, x); xx < std::min(w_, x + w); ++xx) {
             int dx = xx - x < radius ? radius - (xx - x) : (xx >= x + w - radius ? xx - (x + w - radius) + 1 : 0);
+            if (!dx && alpha >= 255) {
+                // Between the corners, opaque: a plain fill (a card can be the whole panel).
+                const int end = std::min(w_, x + w - radius);
+                uint32_t* row = px_.data() + static_cast<size_t>(yy) * w_;
+                std::fill(row + xx, row + end, c.px());
+                xx = end - 1;
+                continue;
+            }
             int a = alpha;
             if (dx && dy) {
                 double d = std::sqrt(double(dx) * dx + double(dy) * dy) - radius;

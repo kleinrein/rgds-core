@@ -1,0 +1,5 @@
+config BR2_PACKAGE_LIBRETRO_GW
+	bool "libretro-gw"
+	help
+	  gw-libretro, which runs MADrigal's Game & Watch and LCD game simulators (.mgw) for RG DS Play:
+	  /usr/lib/libretro/gw_libretro.so. The simulators are the owner's own, in /data/roms/gw.

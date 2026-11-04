@@ -86,6 +86,30 @@ struct HudPanel {
     Rect from, to;
     bool trim = false;
 };
+// [screens]: one picture holding what both panels show (a Game & Watch's scan of the whole machine). Each panel shows
+// its rectangle of the picture, which may reach past its edges (black there); a finger on the second screen is a
+// finger on that part of the picture.
+struct ScreensSpec {
+    Rect top, bottom;
+    // A panel's rectangle may name columns of the picture it keeps (the rest black): `top = x y w h from to`, half
+    // of a machine that opens like a book, without the other half's edge beside it.
+    int top_from = 0, top_to = 1 << 30, bottom_from = 0, bottom_to = 1 << 30;
+    // `touch = x y w h BUTTONS`: a part of the picture (a machine's own button, on its scan) a finger presses.
+    struct Zone {
+        Rect box;
+        uint32_t buttons = 0;
+    };
+    std::vector<Zone> touch;
+    // `same = A B`: on a machine with one action button, either of the pad's is it.
+    uint32_t same = 0;
+    // `pointer = yes`: a finger is the game's mouse, on either panel (`touch` zones are for machines' buttons).
+    bool pointer = false;
+    // `match = w h`: the rectangles hold while the picture is this size; otherwise (ScummVM's own menu) both panels
+    // show it whole. `stretch = 2`: the second screen's picture this many times taller than wide scale, within the
+    // panel: a verb band is 56 rows of big targets.
+    int match_w = 0, match_h = 0, stretch = 1;
+};
+
 struct HudSpec {
     Condition on;                            // the HUD moves (racing)
     Condition keep;                          // the last HUD stays up (paused)
@@ -180,6 +204,8 @@ struct Profile {
     std::vector<MapSpec> alt_maps;
     const MapSpec& map_for(Core& live) const;
     bool has_hud = false;
+    bool has_screens = false;
+    ScreensSpec screens;
     HudSpec hud;
     bool has_party = false;
     PartySpec party;

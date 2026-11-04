@@ -288,6 +288,10 @@ int main(int argc,char** argv){
  std::ofstream(root/"states/slot.dss")<<"complete checkpoint";
  test_time=1000;tick();test_time=1700;tick();assert(state().find("state=saved")!=std::string::npos);
  std::ifstream saved(root/"auto.dss");assert(std::string(std::istreambuf_iterator<char>(saved),{})=="complete checkpoint");
+ {auto slot=root/"states/slot.dss";auto skip=slot;skip+=".skip"; // a tape still loading: nothing to keep, nor a wait for it
+  auto time=test_time;command("skip-1","save");test_time=time+200;tick();std::ofstream(skip)<<"\n";test_time=time+300;tick();
+  assert(state().find("state=save-failed")!=std::string::npos);assert(!fs::exists(skip));
+  std::ifstream kept(root/"auto.dss");assert(std::string(std::istreambuf_iterator<char>(kept),{})=="complete checkpoint");}
  command("load-1","load");test_time=1800;test_clock_step=1;tick();test_clock_step=0;assert(state().find(core=="melonds"?"state=loaded":"state=load-requested")!=std::string::npos);assert(loading==(core!="melonds"));
  test_time=2500;tick();assert(state().find(core=="melonds"?"state=loaded":"state=load-dispatched")!=std::string::npos);
  auto queued=events.size(),deferred=releases.size();

@@ -452,6 +452,7 @@ void App::reset_after_sleep() {
         if (pending.type == SDL_QUIT) quit = true;
     }
     touchscreen.discard_until_release();
+    power_key.after_sleep(s.GetTicks());
     cancel_navigation();
     brightness_drag = volume_drag = false;
     carousel.reset(navigation_selected());
@@ -517,9 +518,10 @@ void App::watch_system(Uint32 now) {
     if (o.preview || probe || o.game_menu) return;
     // RG DS OS woke from a long sleep (or with an empty battery) only to power off (usr/libexec/rgds/power); a game
     // that was asleep has saved and quit by now (runtime/game_menu.py)
-    if (hardware.poweroff && shutdown_at == 0 && now - bt_sink_poll >= 1000) {
+    if (hardware.poweroff && shutdown_at == 0 && worker_yields() && now - bt_sink_poll >= 1000) {
         std::error_code ec;
         if (fs::remove("/run/rgds/poweroff-requested", ec)) {
+            start_worker("device.poweroff");
             begin_shutdown("poweroff");
             return;
         }
@@ -545,6 +547,18 @@ void App::watch_system(Uint32 now) {
     const bool idle = dim_after > 0 && hardware.brightness && !pointer_down && now - last_activity >= dim_after;
     if (idle && !system.panels_dimmed() && !system.brightness_pending()) system.dim_panels(25);
     else if (!idle && system.panels_dimmed()) system.undim_panels();
+    const bool settled = shutdown_at == 0 && departure_action.empty();
+    const PowerPress press =
+        power_key.poll(hardware.sleep && settled, hardware.poweroff && settled && worker_yields(), now);
+    if (press == PowerPress::Sleep) {
+        sleep_now();
+        return;
+    }
+    if (press == PowerPress::Off) {
+        start_worker("device.poweroff");
+        begin_shutdown("poweroff");
+        return;
+    }
     if (now - lid_poll >= 50) {
         lid_poll = now;
         auto closed = system.lid_closed();

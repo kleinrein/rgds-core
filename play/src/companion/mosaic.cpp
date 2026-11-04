@@ -37,11 +37,13 @@
 #include <iterator>
 #include <map>
 #include <sstream>
+#include <vector>
 
 namespace play {
 namespace {
 
 constexpr int tile = 32; // map pixels a side per stored tile
+constexpr int move_every = 3; // frames between moves of the player's spot
 
 int floor_div(long a, int b) { return int(a >= 0 ? a / b : -((-a + b - 1) / b)); }
 
@@ -130,7 +132,9 @@ public:
             area_now_ = area;
             ++serial_;
         }
-        if (!player_x_.empty()) {
+        // The player's spot moves the map at most 20 times a second: each move is a whole
+        // panel to draw and upload on the thread that also runs the game.
+        if (!player_x_.empty() && frame % uint64_t(move_every) == 0) {
             const int px = floor_div(player_x_.eval(live), scale_), py = floor_div(player_y_.eval(live), scale_);
             player_x_now_ = px;
             player_y_now_ = py;
@@ -279,12 +283,33 @@ private:
         const int cw = std::min(bw, vw) * zoom, ch = std::min(bh, vh) * zoom;
         const int cx = left + (room_w - cw) / 2, cy = top + (H - ch) / 2;
         card(out, look, {cx - 6, cy - 6, cw + 12, ch + 12}, false, kit::radius);
-        for (int y = 0; y < ch; ++y) {
-            uint32_t* row = px + size_t(cy + y) * W + cx;
-            for (int x = 0; x < cw; ++x) {
-                const uint32_t v = a.at(ox + x / zoom, oy + y / zoom);
-                row[x] = v ? v : unseen;
+        // Each stored tile is looked up once per row of tiles: once per panel pixel, a
+        // big map cost the handheld more than a whole frame's time.
+        const int cols = cw / zoom, rows = ch / zoom;
+        const int first = floor_div(ox, tile), last = floor_div(ox + cols - 1, tile);
+        std::vector<const Tile*> stored(size_t(std::max(0, last - first + 1)));
+        int stored_row = INT_MIN;
+        for (int my = 0; my < rows; ++my) {
+            const int ty = floor_div(oy + my, tile), ly = oy + my - ty * tile;
+            if (ty != stored_row) {
+                stored_row = ty;
+                for (size_t i = 0; i < stored.size(); ++i) {
+                    auto t = a.tiles.find({first + int(i), ty});
+                    stored[i] = t == a.tiles.end() ? nullptr : &t->second;
+                }
             }
+            uint32_t* row = px + size_t(cy + my * zoom) * W + cx;
+            uint32_t* to = row;
+            for (int mx = ox; mx < ox + cols;) {
+                const int tx = floor_div(mx, tile), lx = mx - tx * tile, n = std::min(tile - lx, ox + cols - mx);
+                const Tile* t = stored[size_t(tx - first)];
+                for (int i = 0; i < n; ++i) {
+                    const uint32_t v = t ? t->px[ly * tile + lx + i] : 0;
+                    for (int z = 0; z < zoom; ++z) *to++ = v ? v : unseen;
+                }
+                mx += n;
+            }
+            for (int z = 1; z < zoom; ++z) std::copy(row, row + cw, row + size_t(z) * W);
         }
         // The screen in view, and the player blinking on it.
         auto to_x = [&](int mx) { return cx + (mx - ox) * zoom; };

@@ -1,0 +1,23 @@
+panfrost: parenthesize the destination in pan_cast_and_pack.
+
+The cast bound to the first operand of pan_preload_emit_varying_buffer's "varying_buffer.cpu +
+pan_size(ATTRIBUTE_BUFFER)", so the offset was scaled by the descriptor: 16 x 16 = 256 bytes instead of 16. Every
+Bifrost framebuffer preload left the end-of-prefetch descriptor unwritten, so the GPU read stale pool memory
+(DATA_INVALID_FAULT, black 32x32 tiles in OutRun 2006), and wrote 16 zero bytes past its 32-byte allocation: at the end
+of a pool BO that is the next mapping or none (SIGSEGV in pan_preload_emit_pre_frame_dcd).
+
+--- a/src/panfrost/lib/genxml/pan_pack_helpers.h
++++ b/src/panfrost/lib/genxml/pan_pack_helpers.h
+@@ -98,10 +98,10 @@
+         }))
+ 
+ #define pan_cast_and_pack(dst, T, name)                                        \
+-   pan_pack((PREFIX2(T, PACKED_T) *)dst, T, name)
++   pan_pack((PREFIX2(T, PACKED_T) *)(dst), T, name)
+ 
+ #define pan_cast_and_pack_nodefaults(dst, T, name)                             \
+-   pan_pack_nodefaults((PREFIX2(T, PACKED_T) *)dst, T, name)
++   pan_pack_nodefaults((PREFIX2(T, PACKED_T) *)(dst), T, name)
+ 
+ #define pan_unpack(src, T, name)                                               \
+    UNUSED struct PREFIX1(T) name;                                              \

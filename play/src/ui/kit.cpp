@@ -29,6 +29,15 @@ void set_target_log(std::vector<Box>* log) { target_log = log; }
 
 void backdrop(Canvas& out, const Look& look) {
     const Rgb bg = look.background, fg = look.line;
+    // The same pattern each time, under views that redraw many times a second: a copy is a fifth of the drawing.
+    thread_local Canvas kept;
+    thread_local uint64_t kept_key = 0;
+    const uint64_t key =
+        (uint64_t(bg.px()) << 32) ^ (uint64_t(fg.px()) << 2) ^ (look.grid ? 1 : 0) ^ (look.dark ? 2 : 0);
+    if (kept.w() == out.w() && kept.h() == out.h() && kept_key == key) {
+        std::copy(kept.data(), kept.data() + size_t(out.w()) * out.h(), out.data());
+        return;
+    }
     out.fill(bg);
     if (look.grid) {
         // The DS touch screen: square tiles, 20 px a side, each rule with a
@@ -42,11 +51,13 @@ void backdrop(Canvas& out, const Look& look) {
             out.fill_rect(column, 0, 1, out.h(), rule);
             out.fill_rect(column + 1, 0, 1, out.h(), edge);
         }
-        return;
+    } else {
+        const Rgb line{uint8_t((bg.r * 19 + fg.r) / 20), uint8_t((bg.g * 19 + fg.g) / 20),
+                       uint8_t((bg.b * 19 + fg.b) / 20)};
+        for (int row = 0; row < out.h(); row += 4) out.fill_rect(0, row, out.w(), 1, line);
     }
-    const Rgb line{uint8_t((bg.r * 19 + fg.r) / 20), uint8_t((bg.g * 19 + fg.g) / 20),
-                   uint8_t((bg.b * 19 + fg.b) / 20)};
-    for (int row = 0; row < out.h(); row += 4) out.fill_rect(0, row, out.w(), 1, line);
+    kept = out;
+    kept_key = key;
 }
 
 void soft_round(Canvas& out, int x, int y, int w, int h, int r, Rgb c, int alpha) {

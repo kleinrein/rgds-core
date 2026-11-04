@@ -10,7 +10,8 @@ Nintendo 3DS, Game Boy Advance, Game Boy Color, Game Boy, NES, Super Nintendo,
 Mega Drive, Master System, Neo Geo, Neo Geo Pocket, PC Engine, MSX,
 PlayStation, PSP, Dreamcast, Saturn, Nintendo 64, Pico-8, Arcade, DOS PC,
 Atari 2600, ColecoVision, Intellivision, Vectrex, WonderSwan and RPG Maker,
-and the two home computers RG DS Play adds, the ZX Spectrum and the Commodore 64.
+the two home computers RG DS Play adds (the ZX Spectrum and the Commodore 64)
+and the two RG DS Play emulates (Game & Watch and ScummVM).
 `src/launcher/system_icons.hpp` keeps their names, their cartridge badges and
 the folders the stock card uses (`FC`, `SFC`, `PS`, `NEOGEO`, …), so a new
 system only needs its icon and one line.

@@ -33,7 +33,7 @@ import time
 
 from audio import clean_environment
 from fields import write_fields
-from game_menu import GameMenu
+from game_menu import GameMenu, POWEROFF_REQUEST
 from shared_audio import mixer_holder
 
 CGROUPS = Path('/run/rgds-cgroup')
@@ -390,6 +390,13 @@ class PortMenu(GameMenu):
     def force_quit(self):
         self.stop_port()
 
+    def power_off_after_sleep(self):
+        """A port has no checkpoint to save first: it saves itself as it closes, and the launcher powers off."""
+        if not POWEROFF_REQUEST.exists() or self.child.poll() is not None: return
+        self.restart = False
+        self.switch_target = None
+        self.stop_port()
+
     def port_result(self, result):
         """A port the player closed (menu, Select+Start) came home normally."""
         return 0 if self.user_stopped else result
@@ -410,6 +417,13 @@ class PortMenu(GameMenu):
         if self.child is None: return
         if self.lid.poll(ready=self.child.poll() is None):
             self.sleep_for_lid()
+            return
+        press = self.power_key.poll(ready=self.child.poll() is None)
+        if press == 'sleep':
+            self.sleep_for_lid(lid=False)
+            return
+        if press == 'poweroff':
+            self.power_off_held()
             return
         key = self.inputs.poll()
         if isinstance(key, str) and key.startswith('fast-forward-'): key = False
@@ -481,6 +495,7 @@ class PortMenu(GameMenu):
                     pass
             finally:
                 self.keys.release()
+                self.power_key.close()
                 if self.companion is not None and self.companion.poll() is None:
                     self.companion.terminate()
                     try:

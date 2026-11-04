@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 
-from audio import capture_device
+from audio import capture_device, microphone_levels
 from records import read_record, process_identity
 
 
@@ -45,6 +45,7 @@ def run(data):
     parent = os.getppid()
     capture = None
     try:
+        microphone_levels()
         env = os.environ.copy()
         env.pop('LD_PRELOAD', None)
         env.pop('LD_LIBRARY_PATH', None)

@@ -600,6 +600,87 @@ private:
     std::vector<uint8_t> vram;
 };
 
+// A Game & Watch: one picture, a scan of the machine, shown part on each panel.
+struct FakeMachine final : Core {
+    std::vector<uint32_t> scan = std::vector<uint32_t>(100 * 200, 0xFF0000FFu);
+    FakeMachine() { std::fill(scan.begin() + 100 * 100, scan.end(), 0xFF00FF00u); }
+    const char* system() const override { return "gw"; }
+    std::string game_code() const override { return "X"; }
+    std::string header_title() const override { return "X"; }
+    double frame_rate() const override { return 60; }
+    void run_frame(uint32_t) override {}
+    Picture picture() const override { return {scan.data(), 100, 200, 100}; }
+    bool save_state(std::vector<uint8_t>&) override { return false; }
+    bool load_state(const std::vector<uint8_t>&) override { return false; }
+    uint32_t peek(uint32_t, int) override { return 0; }
+    size_t audio(int16_t*, size_t) override { return 0; }
+    unsigned audio_rate() const override { return 44100; }
+    std::vector<uint8_t> battery() const override { return {}; }
+    uint64_t battery_revision() const override { return 0; }
+    void set_layers(unsigned) override {}
+    std::unique_ptr<Core> shadow() const override { return nullptr; }
+};
+
+void test_screens() {
+    Profile p = parse_ok("[game]\ntitle = T\ncodes = X\nsystem = gw\n[screens]\ntop = 0 -10 100 75\n"
+                         "bottom = 0 100 100 75\nsame = A+B\ntouch = 0 100 50 25 L\ntouch = 50 100 50 25 B\n");
+    FakeMachine machine;
+    Companion companion(machine, &p, "T", "GAME & WATCH");
+    companion.after_frame(machine);
+    Picture top = companion.compose_game(machine.picture());
+    CHECK(top.w == 100 && top.h == 75);
+    CHECK(top.at(0, 0) == 0xFF000000u);  // above the picture: black
+    CHECK(top.at(0, 10) == 0xFF0000FFu); // the upper half
+    // Nothing held, the pad comes through with Start and Select as Game A and B.
+    CHECK(companion.machine_buttons(0) == 0);
+    CHECK(companion.machine_buttons(Start) == L);
+    CHECK(companion.machine_buttons(Select) == R);
+    // A machine with one action button: either of the pad's.
+    CHECK(companion.machine_buttons(A) == (A | B));
+    // A finger on the panel: on the part of the picture the panel shows.
+    Touch t;
+    t.x = 100;
+    t.y = 100;
+    companion.touch(t);
+    CHECK(companion.machine_buttons(0) == L);
+    t.kind = Touch::Up;
+    companion.touch(t);
+    t.kind = Touch::Down;
+    t.x = 500;
+    companion.touch(t);
+    CHECK(companion.machine_buttons(0) == (A | B));
+    CHECK(companion.machine_click() > 0); // a click in the motor as it goes down
+    t.kind = Touch::Up;
+    companion.touch(t);
+    companion.machine_buttons(0);
+    for (int i = 0; i < 4; ++i) companion.machine_buttons(0);
+    CHECK(companion.machine_click() == 0);
+    // The second screen off: the whole machine on the first.
+    companion.set_shown(false);
+    CHECK(companion.compose_game(machine.picture()).h == 200);
+    // Half a book-like machine keeps its own columns.
+    Profile q = parse_ok("[game]\ntitle = T\ncodes = X\nsystem = gw\n[screens]\ntop = -10 0 80 100 0 50\n"
+                         "bottom = 30 0 80 100 50 100\n");
+    Companion book(machine, &q, "T", "GAME & WATCH");
+    book.after_frame(machine);
+    Picture half = book.compose_game(machine.picture());
+    CHECK(half.at(9, 0) == 0xFF000000u && half.at(10, 0) == 0xFF0000FFu);
+    CHECK(half.at(59, 0) == 0xFF0000FFu && half.at(60, 0) == 0xFF000000u);
+    // A game played by finger: the rectangles only while the picture has their size, and a tall second screen.
+    Profile s = parse_ok("[game]\ntitle = T\ncodes = X\nsystem = scummvm\n[screens]\npointer = yes\nmatch = 100 200\n"
+                         "top = 0 0 100 50\nbottom = 0 50 100 50\nstretch = 2\n");
+    Companion adventure(machine, &s, "T", "SCUMMVM");
+    adventure.after_frame(machine);
+    CHECK(adventure.compose_game(machine.picture()).h == 50);
+    CHECK(adventure.machine_buttons(Start) == Start); // its pad is its own
+    CHECK(adventure.top_is_touched());
+    // Every generated layout reads.
+    ProfileLibrary lib;
+    std::vector<std::string> errors;
+    lib.load_directory(PLAY_PROFILES "/gw", errors);
+    CHECK(errors.empty());
+}
+
 void test_mode7_extend() {
     // The race goes on under the game's own rows: the stale block above it and
     // the map below it are not taken for the race.
@@ -1379,6 +1460,7 @@ int main() {
     test_game_boy();
     test_hud_strip();
     test_mode7_extend();
+    test_screens();
     test_course_view();
     test_gb_views();
     test_shipped_gb_profiles();

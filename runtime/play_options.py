@@ -6,6 +6,7 @@ started. A game's view lives in library/<key>/play.ini: the launcher rewrites
 game.ini with only the keys it knows.
 """
 from pathlib import Path
+import re
 import zipfile
 
 from fields import read_fields, write_fields
@@ -37,6 +38,10 @@ SYSTEMS = {
     "3ds": (".3ds", ".cci", ".cxi", ".3dsx"),
     # PlayStation Portable discs (PPSSPP); .pbp and .chd are the PlayStation's unless in a PSP folder: FOLDER_SYSTEMS
     "psp": (".iso", ".cso"),
+    # Game & Watch and other LCD games: MADrigal's simulators as gw-libretro packs them
+    "gw": (".mgw",),
+    # ScummVM: a game is a folder of files of any name, so only its folder says so: FOLDER_SYSTEMS
+    "scummvm": (),
 }
 # Folders that name a system for files whose extension cannot (Mega Drive dumps are mostly plain .bin, which a
 # PlayStation data track also is): the games folders under /data/roms, with the names other frontends use.
@@ -48,11 +53,14 @@ FOLDER_SYSTEMS = {
     "c64": "c64",
     "commodore": "c64",
     "commodore 64": "c64",
-    "psp": "psp"
+    "psp": "psp",
+    "scummvm": "scummvm"
 }
 # The C64's tapes are .tap like the Spectrum's, and a C64 game on several disks is listed by an .m3u like a
 # PlayStation disc set: in a C64 folder both are the C64's.
-FOLDER_EXTENSIONS = {"md": (".bin",), "c64": (".tap", ".m3u"), "psp": (".pbp", ".chd")}
+DISK_EXTENSIONS = (".d64", ".g64", ".d71", ".d81")
+ANY_FILE = ("*",)
+FOLDER_EXTENSIONS = {"md": (".bin",), "c64": (".tap", ".m3u"), "psp": (".pbp", ".chd"), "scummvm": ANY_FILE}
 # The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
 LIBRETRO_CORES = {
     "nes": "fceumm",
@@ -64,12 +72,16 @@ LIBRETRO_CORES = {
     "n64": "mupen64plus_next",
     "zx": "fuse",
     "c64": "vice_x64",
-    "psp": "ppsspp"
+    "psp": "ppsspp",
+    "gw": "gw",
+    "scummvm": "scummvm"
 }
 # A core's system folder when not the owner's BIOS folder: PPSSPP's assets come with the core and need no BIOS.
-LIBRETRO_SYSTEM_DIRS = {"psp": "/usr/share/libretro"}
+LIBRETRO_SYSTEM_DIRS = {"psp": "/usr/share/libretro", "scummvm": "/usr/share/libretro"}
 LIBRETRO_DIR = Path("/usr/lib/libretro")
 MGBA_SYSTEMS = ("gba", "gbc", "gb")
+# Systems whose core cannot save its state (gw-libretro runs Lua): no checkpoints, their scores are their own saves.
+NO_CHECKPOINTS = ("gw", "scummvm")
 
 
 def libretro_core(system):
@@ -85,7 +97,7 @@ SECONDS = ("companion", "off", "swap", "info")  # info: the second screen's own 
 # A system's own screen when a game's shader is Default (assets/shaders/catalog.tsv): GBA screen
 # (its LCD's colour and pixel gaps), Game Boy screen (the dot matrix), Game Boy Color screen (its
 # faint grid). DS games use the default from Settings.
-SYSTEM_SHADERS = {"gba": 30, "gb": 31, "gbc": 32, "3ds": 0, "psp": 0}
+SYSTEM_SHADERS = {"gba": 30, "gb": 31, "gbc": 32, "3ds": 0, "psp": 0, "gw": 0, "scummvm": 0}
 # Shader groups made for one system's screen (the "... screens" families in
 # src/platform/shader_catalog.hpp): offered, and used, only for that system's games.
 DS_SCREENS = frozenset({4, 6, 8, 9, 11, 12, 14, 21, 22})
@@ -190,7 +202,7 @@ def _system_of_folder(rom, name):
     suffix = Path(name).suffix.lower()
     for folder in rom.parents:
         system = FOLDER_SYSTEMS.get(folder.name.lower())
-        if system and suffix in FOLDER_EXTENSIONS.get(system, ()):
+        if system and (FOLDER_EXTENSIONS.get(system) == ANY_FILE or suffix in FOLDER_EXTENSIONS.get(system, ())):
             return system
     return None
 
@@ -211,6 +223,47 @@ def system_of(rom):
         except (OSError, zipfile.BadZipFile):
             pass
     return "nds"
+
+
+def disk_order(names):
+    """A C64 game's disks in the order it wants them: the one that loads it first, then the rest by name. A second
+    copy of a disk ("[Side A_REM]" beside "[Side A_ESI]", the same side from another group) only gets in the way."""
+    kept = {}
+    for name in sorted(names, key=str.lower):
+        kept.setdefault(re.sub(r"_[^_\]]+\]", "]", name).lower(), name)
+    return sorted(kept.values(), key=lambda name: not re.search(r"\b(load|boot)", name, re.I))
+
+
+def unpacked_disks(rom, data):
+    """A C64 game zipped on several disks as an .m3u in the cache: VICE takes a zip's disks by name and boots the
+    first, usually not the one that loads the game. Anything else comes back as it is."""
+    rom = Path(rom)
+    if rom.suffix.lower() != ".zip" or system_of(rom) != "c64":
+        return rom
+    try:
+        with zipfile.ZipFile(rom) as archive:
+            disks = {
+                Path(item.filename.replace("\\", "/")).name: item
+                for item in archive.infolist()
+                if not item.is_dir() and Path(item.filename).suffix.lower() in DISK_EXTENSIONS
+            }
+            if len(disks) < 2:
+                return rom
+            order = disk_order(disks)
+            folder = Path(data) / "cache" / "disks" / game_key(rom)
+            folder.mkdir(parents=True, exist_ok=True)
+            for name in order:
+                target = folder / name
+                # Kept once there: the game writes its high scores to its disk.
+                if not target.is_file() or target.stat().st_size != disks[name].file_size:
+                    pending = target.with_name(target.name + ".tmp")
+                    pending.write_bytes(archive.read(disks[name]))
+                    pending.replace(target)
+        listing = folder / (rom.stem + ".m3u")
+        listing.write_text("".join(name + "\n" for name in order))
+        return listing
+    except (OSError, zipfile.BadZipFile):
+        return rom
 
 
 def shader_fits(rom, shader):

@@ -46,6 +46,7 @@ static std::atomic<int> g_rgds_adaptive{-1};
 #include <dirent.h>
 #include <algorithm>
 #include "mic_alsa.h"
+#include "mic_queue.h"
 
 #include <SDL2/SDL.h>
 #include <sched.h>
@@ -1956,16 +1957,17 @@ sdl_ready:
   }
   ds::sdl::Lid lid;
   if (!replay) lid.open();
-  std::vector<s16> mic, mic_raw, mic_queue;
+  std::vector<s16> mic, mic_raw;
   // ADC sits well off zero; one-pole DC blocker, ~25 Hz at 32768 Hz.
   // audio.mic_gain scales what remains (default 0.25).
   double dc = 0.0;
-  // Noise gate: floor is the slowest-rising rms seen; a frame under
-  // audio.mic_gate times it (default 5, 0 = off) is sent as silence.
-  const double mic_gate = cfg.real("audio.mic_gate", 5.0);
-  double mic_floor = 1e9;
+  // audio.mic_gate: the noise gate's multiple of the floor (default 5, 0 = off).
+  ds::sdl::MicGate mic_gate(cfg.real("audio.mic_gate", 5.0));
   const double mic_gain = cfg.real("audio.mic_gain", 0.25);
-  const size_t mic_per_frame = ds::spu::Spu::SAMPLE_RATE * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ; // 547
+  constexpr size_t mic_per_frame = static_cast<u64>(ds::spu::Spu::SAMPLE_RATE) * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ;
+  static_assert(mic_per_frame == 547); // the product does not fit 32 bits: it wrapped to 35 once, gargling every game
+  ds::sdl::MicQueue mic_queue(mic_per_frame);
+  ds::sdl::MicBand mic_band(ds::spu::Spu::SAMPLE_RATE);
 
   // Wall-clock pacing when there is no audio queue to pace against.
   const double frame_ns = 1e9 * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ;
@@ -2728,24 +2730,12 @@ sdl_ready:
         else mic_raw.clear();
         for (s16& v : mic_raw) {
           dc += (v - dc) * 0.005;
-          const double y = (v - dc) * mic_gain;
+          const double y = mic_band.apply((v - dc) * mic_gain);
           v = static_cast<s16>(y > 32767 ? 32767 : (y < -32768 ? -32768 : y));
         }
-        // Capture arrives in bursts; queue and hand out a frame at a time,
-        // dropping backlog so a stall doesn't turn into latency.
-        mic_queue.insert(mic_queue.end(), mic_raw.begin(), mic_raw.end());
-        if (mic_queue.size() > mic_per_frame * 4)
-          mic_queue.erase(mic_queue.begin(), mic_queue.end() - mic_per_frame * 2);
-        const size_t take = mic_queue.size() < mic_per_frame ? mic_queue.size() : mic_per_frame;
-        mic.assign(mic_queue.begin(), mic_queue.begin() + take);
-        mic_queue.erase(mic_queue.begin(), mic_queue.begin() + take);
-        if (mic_gate > 0 && !mic.empty()) {
-          double sq = 0;
-          for (s16 v : mic) sq += double(v) * v;
-          const double rms = std::sqrt(sq / mic.size());
-          mic_floor = rms < mic_floor ? rms : mic_floor + (rms - mic_floor) * 0.002; // drops at once, creeps up
-          if (rms < mic_floor * mic_gate + 16) std::fill(mic.begin(), mic.end(), 0);
-        }
+        mic_queue.push(mic_raw);
+        mic_queue.take(mic);
+        mic_gate.apply(mic);
       }
       if (static const bool mic_log = std::getenv("DS_MIC_LOG") != nullptr; mic_log) {
         static u32 mframes = 0, mtotal = 0;

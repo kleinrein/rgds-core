@@ -4,7 +4,9 @@
 // own views and on its own when it has none. One finger at a time, so the
 // shift keys stay down until the next key has been pressed; on the Spectrum
 // the keys then show what they mean with that shift. A tap too quick for a
-// game to see still holds its key for a few frames.
+// game to see still holds its key for a few frames. Keys and tray as the
+// launcher's keyboard (keyboard_screen.hpp) draws them; the legends are each
+// machine's own: a Spectrum's keywords and red symbols, a C64's shifted signs.
 #include "companion/view.hpp"
 #include "core/core.hpp"
 #include "core/libretro/libretro.h"
@@ -27,6 +29,7 @@ struct Key {
     Kind kind = Plain;
     const char* with_symbol = nullptr; // the Spectrum's legends under each shift
     const char* with_caps = nullptr;
+    const char* top = nullptr; // printed above the main legend; with_caps when it's null
 };
 using Rows = std::vector<std::vector<Key>>;
 
@@ -52,38 +55,38 @@ const std::vector<Rows>& spectrum() {
          {"6", RETROK_6, 1, Plain, "&", down_key},
          {"7", RETROK_7, 1, Plain, "'", up_key},
          {"8", RETROK_8, 1, Plain, "(", right_key},
-         {"9", RETROK_9, 1, Plain, ")", "GRAPH"},
+         {"9", RETROK_9, 1, Plain, ")", "GRPH"},
          {"0", RETROK_0, 1, Plain, "_", "DEL"}},
-        {{"Q", RETROK_q, 1, Plain, "<="},
-         {"W", RETROK_w, 1, Plain, "<>"},
-         {"E", RETROK_e, 1, Plain, ">="},
-         {"R", RETROK_r, 1, Plain, "<"},
-         {"T", RETROK_t, 1, Plain, ">"},
-         {"Y", RETROK_y, 1, Plain, "AND"},
-         {"U", RETROK_u, 1, Plain, "OR"},
-         {"I", RETROK_i, 1, Plain, "AT"},
-         {"O", RETROK_o, 1, Plain, ";"},
-         {"P", RETROK_p, 1, Plain, "\""}},
-        {{"A", RETROK_a, 1, Plain, "STOP"},
-         {"S", RETROK_s, 1, Plain, "NOT"},
-         {"D", RETROK_d, 1, Plain, "STEP"},
-         {"F", RETROK_f, 1, Plain, "TO"},
-         {"G", RETROK_g, 1, Plain, "THEN"},
-         {"H", RETROK_h, 1, Plain, up_arrow},
-         {"J", RETROK_j, 1, Plain, "-"},
-         {"K", RETROK_k, 1, Plain, "+"},
-         {"L", RETROK_l, 1, Plain, "="},
-         {"ENTER", RETROK_RETURN}},
+        {{"Q", RETROK_q, 1, Plain, "<=", nullptr, "PLOT"},
+         {"W", RETROK_w, 1, Plain, "<>", nullptr, "DRAW"},
+         {"E", RETROK_e, 1, Plain, ">=", nullptr, "REM"},
+         {"R", RETROK_r, 1, Plain, "<", nullptr, "RUN"},
+         {"T", RETROK_t, 1, Plain, ">", nullptr, "RAND"},
+         {"Y", RETROK_y, 1, Plain, "AND", nullptr, "RET"},
+         {"U", RETROK_u, 1, Plain, "OR", nullptr, "IF"},
+         {"I", RETROK_i, 1, Plain, "AT", nullptr, "INPUT"},
+         {"O", RETROK_o, 1, Plain, ";", nullptr, "POKE"},
+         {"P", RETROK_p, 1, Plain, "\"", nullptr, "PRINT"}},
+        {{"A", RETROK_a, 1, Plain, "STOP", nullptr, "NEW"},
+         {"S", RETROK_s, 1, Plain, "NOT", nullptr, "SAVE"},
+         {"D", RETROK_d, 1, Plain, "STEP", nullptr, "DIM"},
+         {"F", RETROK_f, 1, Plain, "TO", nullptr, "FOR"},
+         {"G", RETROK_g, 1, Plain, "THEN", nullptr, "GO TO"},
+         {"H", RETROK_h, 1, Plain, up_arrow, nullptr, "GSUB"},
+         {"J", RETROK_j, 1, Plain, "-", nullptr, "LOAD"},
+         {"K", RETROK_k, 1, Plain, "+", nullptr, "LIST"},
+         {"L", RETROK_l, 1, Plain, "=", nullptr, "LET"},
+         {"ENTER", RETROK_RETURN, 1, Plain}},
         {{"CAPS", caps_shift, 1, Sticky},
-         {"Z", RETROK_z, 1, Plain, ":"},
-         {"X", RETROK_x, 1, Plain, "\xC2\xA3"},
-         {"C", RETROK_c, 1, Plain, "?"},
-         {"V", RETROK_v, 1, Plain, "/"},
-         {"B", RETROK_b, 1, Plain, "*"},
-         {"N", RETROK_n, 1, Plain, ","},
-         {"M", RETROK_m, 1, Plain, "."},
+         {"Z", RETROK_z, 1, Plain, ":", nullptr, "COPY"},
+         {"X", RETROK_x, 1, Plain, "\xC2\xA3", nullptr, "CLEAR"},
+         {"C", RETROK_c, 1, Plain, "?", nullptr, "CONT"},
+         {"V", RETROK_v, 1, Plain, "/", nullptr, "CLS"},
+         {"B", RETROK_b, 1, Plain, "*", nullptr, "BORD"},
+         {"N", RETROK_n, 1, Plain, ",", nullptr, "NEXT"},
+         {"M", RETROK_m, 1, Plain, ".", nullptr, "PAUSE"},
          {"SYM", symbol_shift, 1, Sticky},
-         {"SPC", RETROK_SPACE, 1, Plain, nullptr, "BRK"}},
+         {"SPACE", RETROK_SPACE, 1, Plain, nullptr, nullptr, "BREAK"}},
     }};
     return pages;
 }
@@ -92,15 +95,15 @@ const std::vector<Rows>& spectrum() {
 const std::vector<Rows>& commodore() {
     static const std::vector<Rows> pages = {
         {
-            {{"1", RETROK_1},
-             {"2", RETROK_2},
-             {"3", RETROK_3},
-             {"4", RETROK_4},
-             {"5", RETROK_5},
-             {"6", RETROK_6},
-             {"7", RETROK_7},
-             {"8", RETROK_8},
-             {"9", RETROK_9},
+            {{"1", RETROK_1, 1, Plain, nullptr, nullptr, "!"},
+             {"2", RETROK_2, 1, Plain, nullptr, nullptr, "\""},
+             {"3", RETROK_3, 1, Plain, nullptr, nullptr, "#"},
+             {"4", RETROK_4, 1, Plain, nullptr, nullptr, "$"},
+             {"5", RETROK_5, 1, Plain, nullptr, nullptr, "%"},
+             {"6", RETROK_6, 1, Plain, nullptr, nullptr, "&"},
+             {"7", RETROK_7, 1, Plain, nullptr, nullptr, "'"},
+             {"8", RETROK_8, 1, Plain, nullptr, nullptr, "("},
+             {"9", RETROK_9, 1, Plain, nullptr, nullptr, ")"},
              {"0", RETROK_0},
              {"DEL", RETROK_BACKSPACE}},
             {{"Q", RETROK_q},
@@ -132,12 +135,12 @@ const std::vector<Rows>& commodore() {
              {"B", RETROK_b},
              {"N", RETROK_n},
              {"M", RETROK_m},
-             {",", RETROK_COMMA},
-             {".", RETROK_PERIOD}},
+             {",", RETROK_COMMA, 1, Plain, nullptr, nullptr, "<"},
+             {".", RETROK_PERIOD, 1, Plain, nullptr, nullptr, ">"}},
             {{"C=", RETROK_LCTRL, 1, Sticky},
              {"CTRL", RETROK_TAB, 1, Sticky},
              {"SPACE", RETROK_SPACE, 7},
-             {"More", 0, 2, Page}},
+             {"F1-F7", 0, 2, Page}},
         },
         {
             {{"F1", RETROK_F1, 2}, {"F3", RETROK_F3, 2}, {"F5", RETROK_F5, 2}, {"F7", RETROK_F7, 2}, {"HOME", RETROK_HOME, 3}},
@@ -147,10 +150,10 @@ const std::vector<Rows>& commodore() {
              {"@", RETROK_LEFTBRACKET},
              {"*", RETROK_RIGHTBRACKET},
              {up_arrow, RETROK_BACKSLASH},
-             {":", RETROK_SEMICOLON},
-             {";", RETROK_QUOTE},
+             {":", RETROK_SEMICOLON, 1, Plain, nullptr, nullptr, "["},
+             {";", RETROK_QUOTE, 1, Plain, nullptr, nullptr, "]"},
              {"=", RETROK_PAGEDOWN},
-             {"/", RETROK_SLASH},
+             {"/", RETROK_SLASH, 1, Plain, nullptr, nullptr, "?"},
              {left_arrow, RETROK_BACKQUOTE}},
             {{left_key, RETROK_LEFT, 2},
              {up_key, RETROK_UP, 2},
@@ -165,7 +168,7 @@ const std::vector<Rows>& commodore() {
             {{"C=", RETROK_LCTRL, 1, Sticky},
              {"CTRL", RETROK_TAB, 1, Sticky},
              {"SPACE", RETROK_SPACE, 7},
-             {"Back", 0, 2, Page}},
+             {"ABC", 0, 2, Page}},
         },
     };
     return pages;
@@ -173,7 +176,7 @@ const std::vector<Rows>& commodore() {
 
 class Keyboard final : public View {
 public:
-    explicit Keyboard(const std::vector<Rows>& pages) : pages_(pages) {}
+    Keyboard(const std::vector<Rows>& pages, bool spectrum) : pages_(pages), spectrum_(spectrum) {}
 
     void update(Core& live, uint64_t) override {
         disks_ = live.disk_count();
@@ -241,16 +244,19 @@ public:
 
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
         backdrop(out, look);
-        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), look.tr("Keyboard"), kit::title,
-                  look.ink);
+        const std::string heading = look.tr("Keyboard");
+        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title, look.ink);
+        badge_stripes(out, kit::margin + font.measure(heading, kit::title) + kit::gap, kit::margin + kit::badge / 2);
         // A game on several disks: the next one, from here (a game asks for its other side by name, not by key).
         if (disks_ > 1) {
             const Box b = disk_box();
             touch_target(b);
-            raised(out, look, b.x, b.y, b.w, b.h, kit::radius, look.panel);
+            key_face(out, look, b, look.focus, 0);
             const std::string label = look.tr("Disk") + " " + std::to_string(disk_ + 1) + " / " + std::to_string(disks_);
-            draw_legend(out, font, font.fit(label, kit::small, b.w - 8), b, look.ink);
+            draw_legend(out, font, font.fit(label, kit::small, b.w - 8), b, look.ink, kit::small);
         }
+        out.rounded_rect(left - tray, keys_top - tray, W - 2 * left + 2 * tray, keys_bottom - keys_top + 2 * tray, 10,
+                         look.slot);
         const bool caps = is_held(caps_shift), symbol = is_held(symbol_shift);
         int index = 0;
         for (const auto& row : rows()) {
@@ -258,14 +264,13 @@ public:
             for (const Key& k : row) {
                 const Box b = box(rows(), index, column, k.span);
                 touch_target(b);
-                const bool lit = k.kind == Sticky && is_held(k.code);
-                const Rgb fill = lit ? look.accent : look.panel;
-                raised(out, look, b.x, b.y, b.w, b.h, kit::radius, fill, finger_ == encode(index, column) ? 1 : 0, true, !lit);
-                const char* legend = k.kind == Page ? nullptr : k.label;
-                if (pages_.size() == 1 && symbol && !caps && k.with_symbol) legend = k.with_symbol;
-                if (pages_.size() == 1 && caps && !symbol && k.with_caps) legend = k.with_caps;
-                const std::string text = legend ? legend : look.tr(k.label);
-                draw_legend(out, font, text, b, lit ? Look::ink_on(look.accent) : look.ink);
+                const bool lit = (k.kind == Sticky && is_held(k.code)) || k.code == RETROK_RETURN;
+                const bool down = finger_ == encode(index, column);
+                const bool plain = k.kind == Plain && k.code != RETROK_RETURN && (k.span == 1 || k.code == RETROK_SPACE);
+                const Rgb fill = lit ? look.accent : (down || !plain) ? look.focus : look.panel;
+                const int sink = down ? 2 : 0;
+                key_face(out, look, b, fill, sink);
+                draw_key(out, look, font, k, {b.x, b.y + sink, b.w, b.h}, lit ? look.on_accent : look.ink, caps, symbol);
                 column += k.span;
             }
             ++index;
@@ -278,7 +283,7 @@ public:
     }
 
 private:
-    static constexpr int W = 640, keys_top = 88, keys_bottom = 384, key_gap = 6;
+    static constexpr int W = 640, left = 18, tray = 6, keys_top = 84, keys_bottom = 388, key_gap = 5;
     static constexpr int hold_frames = 4, gap_frames = 2;
 
     const Rows& rows() const { return pages_[size_t(page_)]; }
@@ -295,9 +300,9 @@ private:
             for (const Key& k : r) n += k.span;
             units = std::max(units, n);
         }
-        const double step = double(W - 2 * kit::margin + key_gap) / units;
-        const int x = kit::margin + int(std::lround(column * step));
-        const int right = kit::margin + int(std::lround((column + span) * step)) - key_gap;
+        const double step = double(W - 2 * left + key_gap) / units;
+        const int x = left + int(std::lround(column * step));
+        const int right = left + int(std::lround((column + span) * step)) - key_gap;
         const int count = int(rows.size());
         const int high = (keys_bottom - keys_top + key_gap) / count;
         return {x, keys_top + row * high, right - x, high - key_gap};
@@ -320,7 +325,80 @@ private:
         return true;
     }
 
-    static void draw_legend(Canvas& out, const Font& font, const std::string& text, const Box& b, Rgb ink) {
+    // The launcher's key: an edge of line colour two pixels down, the face above it (sunk onto the edge when pressed).
+    static void key_face(Canvas& out, const Look& look, const Box& b, Rgb fill, int sink) {
+        out.rounded_rect(b.x, b.y + 2, b.w, b.h, 7, look.line);
+        out.rounded_rect(b.x, b.y + sink, b.w, b.h, 7, fill);
+    }
+
+    // Each machine's mark beside the heading: the Spectrum's four slanted bands, the C64's five stripes.
+    void badge_stripes(Canvas& out, int x, int cy) const {
+        if (spectrum_) {
+            static constexpr Rgb bands[] = {{216, 40, 40}, {240, 200, 40}, {60, 180, 70}, {40, 170, 220}};
+            for (int row = 0; row < 20; ++row)
+                for (int i = 0; i < 4; ++i) out.fill_rect(x + i * 8 + (19 - row), cy - 10 + row, 8, 1, bands[i]);
+        } else {
+            static constexpr Rgb bands[] = {{204, 52, 44}, {232, 124, 44}, {240, 200, 60}, {84, 168, 76}, {58, 108, 188}};
+            for (int i = 0; i < 5; ++i) out.fill_rect(x, cy - 10 + i * 4, 44, 4, bands[i]);
+        }
+    }
+
+    // A Spectrum's red, deeper on a light key.
+    static Rgb symbol_ink(const Look& look) {
+        if (look.high_contrast) return look.ink;
+        return look.dark ? Rgb{255, 150, 140} : Rgb{150, 20, 20};
+    }
+
+    void draw_key(Canvas& out, const Look& look, const Font& font, const Key& k, const Box& b, Rgb ink, bool caps,
+                  bool symbol) const {
+        // A shift down: what each key means now, alone on the key, as the Spectrum's cursor would.
+        if (spectrum_ && symbol != caps && k.kind == Plain) {
+            if (const char* now = symbol ? k.with_symbol : k.with_caps) {
+                const bool lit = k.code == RETROK_RETURN;
+                draw_legend(out, font, now, b, symbol && !lit ? symbol_ink(look) : ink);
+                return;
+            }
+        }
+        if (k.kind == Sticky && spectrum_) { // CAPS SHIFT and SYMBOL SHIFT, in two lines as on the machine
+            const bool lit = is_held(k.code);
+            const Rgb word = !lit && k.code == symbol_shift ? symbol_ink(look) : ink;
+            centred_text(out, font, k.code == symbol_shift ? "SYM" : "CAPS", b, b.y + b.h / 2 - 11, word);
+            centred_text(out, font, "SHIFT", b, b.y + b.h / 2 + 11, word);
+            return;
+        }
+        if (!spectrum_ && k.code == RETROK_LCTRL) { // the Commodore key's C= in the logo's blue and red
+            const int size = kit::body, width = font.measure("C=", size), x = b.x + (b.w - width) / 2;
+            const int y = font.centred(size, b.y + b.h / 2);
+            const bool lit = is_held(k.code), dark = look.dark;
+            font.draw(out, x, y, "C", size, lit || look.high_contrast ? ink : dark ? Rgb{160, 195, 255} : Rgb{26, 62, 140});
+            font.draw(out, x + font.measure("C", size), y, "=", size, lit ? ink : symbol_ink(look));
+            return;
+        }
+        const char* top = k.top ? k.top : k.with_caps;
+        const bool below = spectrum_ && k.with_symbol;
+        if (!top && !below) {
+            draw_legend(out, font, k.kind == Page ? look.tr(k.label) : k.label, b, ink);
+            return;
+        }
+        // The small legends in the key's top and bottom thirds, its own in the middle.
+        const Rgb faint = k.code == RETROK_RETURN ? ink : look.muted;
+        if (top) small_legend(out, font, top, b, b.y + 13, faint);
+        if (below) small_legend(out, font, k.with_symbol, b, b.y + b.h - 13, symbol_ink(look));
+        const int middle = !top ? b.y + b.h / 2 - 6 : !below ? b.y + b.h / 2 + 8 : b.y + b.h / 2;
+        draw_legend(out, font, k.label, {b.x, middle - b.h / 2, b.w, b.h}, ink);
+    }
+
+    static void centred_text(Canvas& out, const Font& font, const std::string& text, const Box& b, int cy, Rgb ink) {
+        const std::string shown = font.measure(text, kit::small) <= b.w - 2 ? text : font.fit(text, kit::small, b.w - 2);
+        font.draw(out, b.x + (b.w - font.measure(shown, kit::small)) / 2, font.centred(kit::small, cy), shown, kit::small, ink);
+    }
+
+    static void small_legend(Canvas& out, const Font& font, const std::string& text, const Box& b, int cy, Rgb ink) {
+        if (text.size() == 1 && text[0] >= arrow_left && text[0] <= printed_up) arrow(out, text[0], b.x + b.w / 2, cy, ink);
+        else centred_text(out, font, text, b, cy, ink);
+    }
+
+    static void draw_legend(Canvas& out, const Font& font, const std::string& text, const Box& b, Rgb ink, int forced = 0) {
         const int cx = b.x + b.w / 2, cy = b.y + b.h / 2;
         if (text.size() == 1 && text[0] >= arrow_left && text[0] <= printed_up) {
             arrow(out, text[0], cx, cy, ink);
@@ -328,7 +406,7 @@ private:
         }
         // One character (the pound sign is two bytes) large, words small.
         const bool one = text.size() == 1 || (text.size() == 2 && uint8_t(text[0]) >= 0x80);
-        const int size = one ? kit::title : kit::small;
+        const int size = forced ? forced : one ? kit::title : kit::small;
         const std::string shown = font.fit(text, size, b.w - 4);
         font.draw(out, cx - font.measure(shown, size) / 2, font.centred(size, cy), shown, size, ink);
     }
@@ -351,6 +429,7 @@ private:
     }
 
     const std::vector<Rows>& pages_;
+    const bool spectrum_;
     int page_ = 0, disks_ = 0, disk_ = 0;
     bool next_disk_ = false;
     int finger_ = -1; // the key under the finger, for drawing
@@ -365,8 +444,8 @@ private:
 } // namespace
 
 std::unique_ptr<View> make_keyboard(const std::string& system) {
-    if (system == "zx") return std::make_unique<Keyboard>(spectrum());
-    if (system == "c64") return std::make_unique<Keyboard>(commodore());
+    if (system == "zx") return std::make_unique<Keyboard>(spectrum(), true);
+    if (system == "c64") return std::make_unique<Keyboard>(commodore(), false);
     return nullptr;
 }
 

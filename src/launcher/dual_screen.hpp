@@ -132,9 +132,16 @@ inline bool dual_screen_game(const fs::path& rom, const std::string& system, con
     if (found != known.end()) return found->second;
     bool& result = known[rom] = false;
     const std::string ext = upper(rom.extension().string());
+    if (system == "scummvm") { // a game is its folder: a profile knows it by a file's name
+        const auto& codes = profile_codes(profiles / system);
+        std::error_code error;
+        for (const auto& file : fs::directory_iterator(rom.parent_path(), error))
+            if (codes.count(name_code(file.path().filename().string()))) return result = true;
+        return result;
+    }
     if (ext == ".ZIP" || ext == ".7Z") return result;
     if (system == "nes" || system == "snes" || system == "sms" || system == "md" || system == "n64" || system == "zx" ||
-        system == "c64") {
+        system == "c64" || system == "gw") {
         const auto& codes = profile_codes(profiles / system);
         for (const auto& code : cartridge_codes(rom, system))
             if (codes.count(code)) return result = true;

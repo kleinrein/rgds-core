@@ -23,7 +23,7 @@ from library import playtime, record_playtime
 from records import process_identity, read_record, write_record
 from emulator_profiles import RGDS_SCALES, section_config, flat_config, policy, game_options, display_filter, FILTERS, dsperate_input_profile
 from library import read_fields, game_key
-from audio import VolumeWatch, capture_device
+from audio import VolumeWatch, capture_device, microphone_levels
 from game_menu import GameMenu, MenuInput, SwitchGame
 from shaders import supported, SHADERS
 from integration import select_hooks, engine_libraries
@@ -235,12 +235,12 @@ def link_component(source, destination):
 
 def resolve_rom(rom, data, core=None):
     rom = rom.resolve(strict=True)
-    from play_options import PLAY_CORE, PORT_CORE, system_of
+    from play_options import PLAY_CORE, PORT_CORE, system_of, unpacked_disks
     if core == PORT_CORE:
         return rom  # a port's script, or the PortMaster entry
     if core == PLAY_CORE:
         if system_of(rom) == "nds": raise ValueError("RG DS Play opens Game Boy and Game Boy Advance games.")
-        return rom  # it opens .zip archives itself
+        return unpacked_disks(rom, data)  # it opens other .zip archives itself
     if system_of(rom) != "nds": raise ValueError("This game is played with RG DS Play, not a DS engine.")
     if rom.suffix.lower() in (".nds", ".dsi"):
         return rom
@@ -613,6 +613,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             )
             for folder in ("saves", "states"):
                 (root / folder).mkdir(parents=True, exist_ok=True)
+            if ds_microphone:
+                microphone_levels()
             dsperate_input_profile(
                 home, config, rom, {
                     "user": {
@@ -698,7 +700,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             command += ["--system-dir", LIBRETRO_SYSTEM_DIRS.get(system, "/data/rgds/bios")]
         # The launcher's Theme & display (and language, time format) for the second screen.
         command += ["--preferences", str(data / "preferences.ini")]
-        for system in ("gba", "gb", "nes", "snes", "sms", "md", "n64", "zx", "c64"):
+        for system in ("gba", "gb", "nes", "snes", "sms", "md", "n64", "zx", "c64", "gw", "scummvm"):
             command += ["--profiles", str(binary.parent / "profiles" / system)]
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
         command += ["--palette", shown["palette"], "--colour", shown["colour"]]

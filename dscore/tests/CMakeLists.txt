@@ -102,6 +102,10 @@ add_test(NAME phase_lock COMMAND test_phase_lock)
 
 # The settings file, likewise frontend code: the menu and the layout hotkeys
 # both rewrite single keys in it, and it had no tests at all.
+add_executable(test_mic_queue mic_queue_test.cpp)
+target_include_directories(test_mic_queue PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME mic_queue COMMAND test_mic_queue)
+
 add_executable(test_config config_test.cpp ../src/frontend/sdl/config.cpp)
 target_link_libraries(test_config PRIVATE dsperate_core)
 add_test(NAME config COMMAND test_config)

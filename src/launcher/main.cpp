@@ -2,11 +2,13 @@
 #include "../../play/src/ui/frame_styles.hpp" // the frames per system (shared with the player)
 #include "../../play/src/ui/gb_palettes.hpp"  // the Game Boy palettes and corrections (shared with the player)
 #include "platform/sdl_dynamic.hpp"
+#include "platform/canvas_fill.hpp"
 #include "platform/event_wait.hpp"
 #include "platform/wayland_role.hpp"
 #include "platform/ui_trace.hpp"
 #include "platform/system_controls.hpp"
 #include "platform/lid_sleep.hpp"
+#include "platform/power_key.hpp"
 #include "launcher/settings.hpp"
 #include "launcher/i18n.hpp"
 #include "launcher/collection_filter.hpp"
@@ -725,6 +727,7 @@ class App {
     std::string play_frame_label(const std::string& frame) const;
     void apply_play_view(int fit, int second, const std::string& frame);
     void apply_play_scale(int scale);
+    std::string play_scale_label() const;
     const char* play_fit_name(int fit) const;
     const char* play_second_name(int second, const std::string& system = {}) const;
     void play_graphics_action();
@@ -832,6 +835,7 @@ class App {
     void poll_return_controls(bool wait = false);
     void flush_return_controls();
     LidSleep lid_sleep;
+    PowerKey power_key;
     // A Bluetooth headset's address while playback goes to it (RG DS OS, /usr/libexec/rgds/bt-audio): the menu's
     // sink is reopened when it changes, so the sound follows the headset.
     std::string bt_sink;
@@ -1444,6 +1448,11 @@ class App {
     }
     void watch_menu(Uint32 now);
     void start_worker(const std::string& operation, const std::string& payload = "");
+    // start_worker would run a device operation now: nothing is running, or only what it stops for one
+    bool worker_yields() const {
+        return worker <= 0 || worker_action == "device.info" || worker_action == "device.update-auto" ||
+               worker_action == "index";
+    }
     void stop_worker();
     Uint32 worker_finished_at = 0;
     void poll_service(Uint32 now);
@@ -1582,8 +1591,8 @@ class App {
                        ? 16
                        : 60;
         if (!input_wake.available()) return touchscreen.available() || volume_keys.available() ? 8 : 50;
-        if (hold.active() || volume_keys.holding() || pointer_down || carousel.dragging || volume_drag ||
-            brightness_drag || touch_tail)
+        if (hold.active() || volume_keys.holding() || power_key.holding() || pointer_down || carousel.dragging ||
+            volume_drag || brightness_drag || touch_tail)
             return 8;
         int wait = 250;
         if (!library_ready || settings.page == Page::Microphone) wait = 16;
@@ -2338,6 +2347,10 @@ class App {
         launch_profile.mark("renderer-ready", int(surfaces.size()));
         return {w, r, s.GetWindowID(w)};
     }
+    void use_canvas_fills() {
+        for (const auto& surface : surfaces)
+            if (!surface.window && surface.bitmap) rgds::add_fill_canvas(s, surface.renderer, surface.bitmap);
+    }
     void open() {
         if (o.independent && !o.game_menu) ui_trace.open(std::getenv("RGDS_UI_TRACE"));
         s.SetMainReady();
@@ -2351,6 +2364,8 @@ class App {
         launch_profile.mark("sdl-init-done");
         if (!o.preview) {
             if (!std::getenv("RGDS_VOLUME_EXTERNAL")) volume_keys.open_devices();
+            // In a game the runner owns the key, as it owns the lid (runtime/game_menu.py).
+            if (!o.game_menu) power_key.open_device();
             const char* input = std::getenv("RGDS_TOUCH_DEV");
             if (touchscreen.open_device(input ? input : "")) {
                 // Beside a port the panel is ours alone: a touch Weston saw would take the port's focus.
@@ -2383,6 +2398,7 @@ class App {
                 }
                 surfaces.push_back({nullptr, renderer, 0, bitmap});
             }
+            use_canvas_fills();
         } else if (o.preview) {
             surfaces.push_back(create("RG DS Core preview", 0, 960, false));
             top_name = "PREVIEW TOP";
@@ -2458,6 +2474,7 @@ class App {
         flush_brightness();
         touchscreen.close_device();
         volume_keys.close_devices();
+        power_key.close_device();
         input_wake.close_all();
         hold.clear();
         pointer_down = false;

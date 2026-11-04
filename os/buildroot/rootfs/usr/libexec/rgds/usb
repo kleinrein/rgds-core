@@ -103,15 +103,29 @@ clean_mac_clutter() {
     [ -d /data/roms ] && find /data/roms \( -name '._*' -o -name .DS_Store \) -type f -exec rm -f {} +
 }
 
-drive() {
-    part=$(cat $RUN/disk)p4
+# Anything with a file open on the card keeps it mounted, and the menu has already quit for this. What it left running
+# gets a moment to finish, then is stopped: the owner asked for the drive, and coming back to the menu with no word is
+# all that giving up shows them.
+release_data() {
     sync
     tries=0
     until umount /data 2> /dev/null; do
         tries=$((tries + 1))
-        [ $tries -ge 5 ] && return 1
+        case $tries in
+        2) fuser -k -TERM -m /data > /dev/null 2>&1 ;;
+        4) fuser -k -KILL -m /data > /dev/null 2>&1 ;;
+        6)
+            echo "usb drive: /data stays busy, held by: $(fuser -m /data 2> /dev/null)" >&2
+            return 1
+            ;;
+        esac
         sleep 1
     done
+}
+
+drive() {
+    part=$(cat $RUN/disk)p4
+    release_data || return 1
     echo "$part" > $LUN/file
     rebind
     "$@" &

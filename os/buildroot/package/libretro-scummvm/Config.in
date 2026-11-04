@@ -1,0 +1,5 @@
+config BR2_PACKAGE_LIBRETRO_SCUMMVM
+	bool "libretro-scummvm"
+	help
+	  ScummVM's libretro core with its lite set of engines, for RG DS Play's adventure games in /data/roms/scummvm:
+	  /usr/lib/libretro/scummvm_libretro.so, its themes and engine data in /usr/share/libretro/scummvm.

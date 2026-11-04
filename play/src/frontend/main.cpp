@@ -648,7 +648,8 @@ int main(int argc, char** argv) {
                                                                                     : "GAME BOY ADVANCE";
     // A light-gun game is played by touching it: it starts on the touch screen.
     // A light gun or a mouse game is played on the touch screen: it starts there, a finger aims or draws.
-    const bool lightgun = session.profile() && (session.profile()->lightgun || session.profile()->mouse);
+    // So is a ScummVM game: it is played by touch, unless a profile splits it across both panels.
+    const bool lightgun = session.profile() ? session.profile()->lightgun || session.profile()->mouse : o.system == "scummvm";
     if (lightgun && second == SecondCompanion) second = SecondSwap;
     std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit), second_name(second),
                  frame.name.c_str());
@@ -723,6 +724,21 @@ int main(int argc, char** argv) {
         session.core().set_pointer(inside ? (wx - d.x) * game.w / d.w : -1, inside ? (wy - d.y) * game.h / d.h : -1,
                                    down);
     };
+    // The top panel's own touch screen (the Goodix on fe5c0000.i2c), for a game shown there and played by touch.
+    rgds::TouchDevice top_touch;
+    if (session.companion() && session.companion()->top_is_touched()) {
+        std::string device = std::getenv("RGDS_TOP_TOUCH_DEV") ? std::getenv("RGDS_TOP_TOUCH_DEV") : "";
+        std::error_code error;
+        if (device.empty())
+            for (const auto& entry : std::filesystem::directory_iterator("/sys/class/input", error)) {
+                const auto name = entry.path().filename().string();
+                std::error_code resolve_error;
+                if (name.rfind("event", 0) == 0 &&
+                    std::filesystem::canonical(entry.path() / "device", resolve_error).string().find("fe5c0000") != std::string::npos)
+                    device = "/dev/input/" + name;
+            }
+        if (!device.empty()) top_touch.open_device(device);
+    }
     rgds::TouchDevice panel_touch;
     const bool panel_touch_open =
         !bridged && panel_touch.open_device(std::getenv("RGDS_TOUCH_DEV") ? std::getenv("RGDS_TOUCH_DEV") : "");
@@ -790,8 +806,10 @@ int main(int argc, char** argv) {
                 const auto key = e.key.keysym.scancode;
                 std::string why;
                 if (key == SDL_SCANCODE_F5 && !state_slot.empty()) {
-                    // The bridge waits for this file to change, then keeps it as the checkpoint.
+                    // The bridge waits for this file to change, then keeps it as the checkpoint. A tape still
+                    // loading leaves nothing to resume: ".skip" tells it to keep the last one and go on.
                     bool ok = session.save_state_file(state_slot, why);
+                    if (!ok && session.core().still_loading()) std::ofstream(state_slot + ".skip").put('\n');
                     std::fprintf(stderr, "rgds-play: state %s%s\n",
                                  ok ? "saved to " : "not saved: ", ok ? state_slot.c_str() : why.c_str());
                 } else if (key == SDL_SCANCODE_F7 && !state_slot.empty()) {
@@ -869,6 +887,18 @@ int main(int argc, char** argv) {
             }
             if (have && session.companion()->touch(t)) drawn_key = ~0ull;
         }
+        for (const auto& point : top_touch.poll())
+            if (point.kind < 3 && session.companion())
+                session.companion()->touch_top(Touch{point.kind == 0   ? Touch::Down
+                                                     : point.kind == 1 ? Touch::Move
+                                                                       : Touch::Up,
+                                                     point.x, point.y});
+        // ScummVM's Quit: home, as the player would ask for it.
+        static bool quit_asked = false;
+        if (session.core().finished() && !quit_asked) {
+            quit_asked = true;
+            if (!bridged || !ask_runtime(".home")) quit("The game has quit");
+        }
         if (panel_touch_open && lightgun && second == SecondSwap)
             for (const auto& point : panel_touch.poll())
                 if (point.kind < 3) aim(point.x, point.y, point.kind != 2);
@@ -929,7 +959,7 @@ int main(int argc, char** argv) {
             // Off or the info screen: the game keeps its whole picture, HUD and all.
             if (session.companion()) session.companion()->set_shown(second == SecondCompanion || second == SecondSwap);
             session.frame(pressed);
-            rumble(session.core().rumble());
+            rumble(std::max(session.core().rumble(), session.companion() ? session.companion()->machine_click() : 0.f));
             owed -= frame_seconds;
             // A game can change its sound resolution (and so its rate) while it runs.
             if (stream && session.audio_rate() != stream_rate) {

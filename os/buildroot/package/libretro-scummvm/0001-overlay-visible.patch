@@ -1,0 +1,13 @@
+diff --git a/backends/platform/libretro/src/libretro-core.cpp b/backends/platform/libretro/src/libretro-core.cpp
+index 5cf037d6..34ee8a46 100644
+--- a/backends/platform/libretro/src/libretro-core.cpp
++++ b/backends/platform/libretro/src/libretro-core.cpp
+@@ -1368,3 +1368,8 @@ void retro_cheat_set(unsigned unused, bool unused1, const char *unused2) {}
+ unsigned retro_get_region(void) {
+ 	return RETRO_REGION_NTSC;
+ }
++
++/* RG DS Play: whether ScummVM's own menu is over the game, drawn at the game's size. */
++extern "C" RETRO_API bool retro_rgds_overlay_visible(void) {
++	return LIBRETRO_G_SYSTEM && LIBRETRO_G_SYSTEM->isOverlayVisible();
++}

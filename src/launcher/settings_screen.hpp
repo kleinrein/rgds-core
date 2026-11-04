@@ -722,7 +722,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                         ? shown(play_palette == play_default.palette, play::gb_palettes[play_palette].name)
                         : shown(play_correction == play_default.correction, play::gb_corrections[play_correction].name),
                     system_info(play_system()).badge,
-                    std::to_string(play_scale) + "x"};
+                    play_scale_label()};
                 // A palette's row wears its second-lightest colour, so the choice shows at a glance.
                 const uint32_t tone = play::gb_palettes[play_palette].shade[1];
                 const Color dot{uint8_t(tone >> 16), uint8_t(tone >> 8), uint8_t(tone)};

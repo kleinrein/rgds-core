@@ -32,6 +32,7 @@ def jack_device():
 
 
 AUDIO = '/usr/libexec/rgds/audio'
+VOLUME = '/data/rgds/userdata/volume.ini'
 
 
 def plus():
@@ -57,11 +58,21 @@ def speaker_card(wait):
         time.sleep(1)
 
 
+def muted():
+    """A saved volume of 0 keeps the amplifiers off (runtime/audio.py, Mixer.speakers): unplugging must not wake them."""
+    try:
+        with open(VOLUME) as f:
+            return 'volume=0' in f.read().split()
+    except OSError:
+        return False
+
+
 def speakers(on, separate):
     if separate:
         subprocess.run([AUDIO, 'route', 'speaker' if on else 'headphones'], check=False)
     else:
-        subprocess.run(['amixer', '-q', '-c', '0', 'sset', 'Internal Speakers', 'on' if on else 'off'], check=False)
+        pin = 'on' if on and not muted() else 'off'
+        subprocess.run(['amixer', '-q', '-c', '0', 'sset', 'Internal Speakers', pin], check=False)
     print('headphones: speakers', 'on' if on else 'off', file=sys.stderr, flush=True)
 
 

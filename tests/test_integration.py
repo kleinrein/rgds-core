@@ -147,6 +147,9 @@ class IntegrationTests(unittest.TestCase):
             def set(self, _level):
                 pass
 
+            def speakers(self, _level):
+                pass
+
         volume = Volume(self.data, FakeMixer())
         watcher = VolumeWatch(self.data, volume)
         watcher.handle(EVENT.pack(0, 0, 1, 115, 1), 1)

@@ -17,7 +17,7 @@ from engines import CORES
 from shaders import supported
 from library import read_fields, write_fields, game_key
 from controls import load_profile, paths as control_paths, Shortcut, FastForwardButton, evdev_source
-from lid_sleep import LidSleep
+from lid_sleep import LidSleep, PowerKey
 from idle_watch import IdleWatch, PanelDim, timers
 from linux_platform import rocknix_joypad
 from game_clocks import GameClocks
@@ -237,6 +237,7 @@ class GameMenu:
         self.direct_ready = False
         self.inputs = inputs if inputs is not None else MenuInput()
         self.lid = LidSleep(self.data)
+        self.power_key = PowerKey()
         self.idle = IdleWatch()
         self.panels = PanelDim()
         self.timers_at = float('-inf')
@@ -362,8 +363,14 @@ class GameMenu:
         # Always require a successful checkpoint, even with auto-save disabled.
         self.send('save-quit')
 
+    def keeps_no_checkpoints(self):
+        from play_options import NO_CHECKPOINTS, system_of
+        return system_of(self.rom) in NO_CHECKPOINTS
+
     def switch_checkpoint_saved(self):
         result = read_fields(Path(str(self.control) + '.result'))
+        if self.keeps_no_checkpoints():
+            return bool(self.pending and result.get('token') == self.pending['token'])
         return bool(
             self.pending and self.pending['action'] == 'save-quit' and result.get('token') == self.pending['token']
             and result.get('state') == 'saved' and self.has_checkpoint()
@@ -732,6 +739,12 @@ class GameMenu:
                 return
         if action == "quit" and self.restart:
             action = "save-quit"
+        if self.keeps_no_checkpoints():
+            if action in ("save", "load"):
+                self.publish("paused", "This game keeps no checkpoints. It has its own saves.")
+                return
+            if action in ("quit", "save-quit"):
+                action = "quit-discard"
         if action == "fast-forward" and self.core not in CORES:
             self.publish("paused", "Fast-forward is unavailable for this emulator.")
             return
@@ -784,6 +797,14 @@ class GameMenu:
         self.poll_bench()
         if self.lid.poll(ready=self.pending is None and self.child.poll() is None):
             self.sleep_for_lid()
+            return
+        press = self.power_key.poll(ready=self.pending is None and self.child.poll() is None)
+        if press == 'sleep':
+            self.panels.restore()
+            self.sleep_for_lid(lid=False)
+            return
+        if press == 'poweroff':
+            self.power_off_held()
             return
         if self.poll_idle():
             return
@@ -1164,6 +1185,15 @@ class GameMenu:
         self.switch_target = None
         self.send('save-quit')
 
+    def power_off_held(self):
+        """The power key held down: the same request a sleep's power script leaves behind."""
+        try:
+            POWEROFF_REQUEST.touch()
+        except OSError as error:
+            print('Could not request power off: ' + str(error), flush=True)
+            return
+        self.power_off_after_sleep()
+
     def sleep_for_lid(self, lid=True):
         was_paused, was_blocked = self.paused, self.block.exists()
         paused_menu = None
@@ -1186,6 +1216,7 @@ class GameMenu:
                 self.publish('error', 'Could not sleep. Reopen the lid and try again.')
         finally:
             try:
+                self.power_key.after_sleep()
                 if hasattr(self.inputs, 'discard_after_sleep'):
                     self.inputs.discard_after_sleep()
                 self.trigger.unlink(missing_ok=True)
@@ -1236,6 +1267,7 @@ class GameMenu:
         finally:
             self.release_clocks()
             self.inputs.close()
+            self.power_key.close()
             self.panels.restore()
             self.idle.close()
             if self.overlay_path: self.overlay_path.unlink(missing_ok=True)

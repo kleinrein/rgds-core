@@ -30,12 +30,34 @@ AUDIO_MIXER = Path("/run/rgds/audio-mixer")
 
 
 CAPTURE_CONF = Path("/run/rgds/audio-capture.conf")
+# RK817 "Mic Capture Gain": -18 dB + 3 dB per step, so 4 is -6 dB. The DS amplifier a game picks multiplies this again,
+# and Electroplankton's x160 clips at an eighth of full scale: at +6 dB speech peaked four times over that, harsh and thin.
+MIC_GAIN = 4
 
 
 def capture_device(conf=CAPTURE_CONF):
     """The microphone's ALSA device: RG DS OS names it (the RK817 is not card 0 on every RG DS Plus), stock has the
     codec as card 0."""
     return "rgds_mic" if conf.is_file() else "plughw:0,0"
+
+
+def microphone_levels(conf=CAPTURE_CONF, run=subprocess.run):
+    """Open the RK817's capture path on RG DS OS. Mainline's driver starts it at -95 dB, which reads as silence, and
+    nothing else sets it. Stock's kernel has neither control and sets its own, so this does nothing there."""
+    try:
+        card = re.search(r"hw:(\d+),0", conf.read_text())[1]
+    except (OSError, TypeError):
+        return
+    for control, value in (("Master Capture Volume", "255,255"), ("Mic Capture Gain", f"{MIC_GAIN},{MIC_GAIN}")):
+        try:
+            run(["amixer", "-q", "-c", card, "cset", f"name={control}", value],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                env=clean_environment(),
+                timeout=2,
+                check=False)
+        except (OSError, subprocess.SubprocessError) as error:
+            print(f"Microphone levels: {error}", file=sys.stderr, flush=True)
 
 
 def dac_percent(level):
@@ -53,13 +75,39 @@ def mixer_target(path=AUDIO_MIXER):
 
 class Mixer:
     # The stock kernel names the RK817's playback volume DAC; mainline's codec driver (RG DS OS, BananaLinux) calls
-    # the same register Master.
+    # the same register Master. Master also has a capture direction, the microphone's: a plain `sset Master N%` writes
+    # it too, and its capture percentage would read as a volume mismatch, so both calls name playback.
     CONTROLS = ("DAC", "Master")
 
     def __init__(self, target=mixer_target):
         self.control = None
         self.target = target
         self.card = None
+        self.speakers_on = None  # (card, on) as last written
+
+    def speakers(self, level):
+        """A DAC at 0 still leaves the AW87391 amplifiers on, at a fixed gain, for as long as a game holds the stream
+        open: that is the hiss in a muted game, and the menu has none only because it closes its sink when idle. Mute
+        cuts them with the "Internal Speakers" pin, which powers them down. /usr/libexec/rgds/headphones owns the same
+        pin for the jack, so the speakers only come back with nothing plugged in. The Plus's AW88166 have no such pin."""
+        card, kind = self.target()
+        state = (card, level > 0)
+        if kind != "rk817" or state == self.speakers_on:
+            return
+        amixer = dict(text=True, stderr=subprocess.DEVNULL, env=clean_environment(), timeout=2, check=False)
+        try:
+            pin = "off"
+            if level > 0:
+                jack = subprocess.run(["amixer", "-c", str(card), "cget", "iface=CARD,name=Headphones Jack"],
+                                      stdout=subprocess.PIPE,
+                                      **amixer).stdout
+                pin = "off" if "values=on" in (jack or "") else "on"
+            subprocess.run(["amixer", "-q", "-c", str(card), "sset", "Internal Speakers", pin],
+                           stdout=subprocess.DEVNULL,
+                           **amixer)
+            self.speakers_on = state
+        except (OSError, subprocess.SubprocessError) as error:
+            print(f"Speakers: {error}", file=sys.stderr, flush=True)
 
     def query(self):
         card, kind = self.target()
@@ -76,7 +124,7 @@ class Mixer:
                 env=clean_environment(),
                 timeout=2
             )
-            levels = [int(v) for v in re.findall(r"\[(\d+)%\]", result.stdout)]
+            levels = [int(v) for v in re.findall(r"Playback \d+ \[(\d+)%\]", result.stdout)]
             if result.returncode == 0 and levels:
                 self.control = control
                 return max(levels)
@@ -90,7 +138,7 @@ class Mixer:
         if not self.control or card != self.card:
             self.query()
         subprocess.run(
-            ["amixer", "-q", "-c", str(card), "sset", self.control, f"{dac_percent(level)}%"],
+            ["amixer", "-q", "-c", str(card), "sset", self.control, "playback", f"{dac_percent(level)}%"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             env=clean_environment(),
@@ -225,11 +273,13 @@ class Volume:
             expected = dac_percent(target)
             if abs(self.mixer.query() - expected) > 1:
                 self.mixer.set(target)
+            self.mixer.speakers(target)
             if saved != target:
                 try:
                     write_fields(self.path, {"schema": "1", "volume": str(target)})
                 except OSError:
                     self.mixer.set(previous)
+                    self.mixer.speakers(previous)
                     raise
                 headset_volume(target)
             return target

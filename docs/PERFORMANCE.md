@@ -568,6 +568,23 @@ advertises the two capabilities it needs (`map_unsynchronized_thread_safe`,
 the direct calls had been (64 %) with the worker at 46 % on top. Measure runs by drawn frames in the fixed 90 s,
 not by the 300-frame windows, which cover different stretches of the route once the frame rate differs.
 
+**The bug the flush woke up (4 November).** With the flush on, races crashed 4 times in 7 (SIGILL or SIGSEGV after
+40-150 s), and the owner saw the car vanish and black 32x32 tiles on the road. The kernel log had a Panfrost
+`DATA_INVALID_FAULT` on the vertex job slot just before, and a core placed the crash on the main thread in
+`pan_preload_emit_pre_frame_dcd`, under the `glFlush`. Cause: upstream Mesa's `pan_cast_and_pack(dst, ...)` does not
+parenthesize `dst`, so `varying_buffer.cpu + pan_size(ATTRIBUTE_BUFFER)` in the preload path adds 16 descriptors, not 16
+bytes. Every Bifrost preload leaves the end-of-prefetch descriptor unwritten, so the GPU reads stale pool memory, and
+writes 16 zero bytes 256 bytes into a 32-byte allocation, past the end of the BO when the pool is nearly full. Zero
+words are illegal instructions on ARM64, which may be the earlier SIGILLs: those crashes left no core. Patch
+`mesa3d-panfrost/0002` adds the parentheses. Five races of 215-240 s on the patched library, flush on: no crash, no
+fault, and no tiles in the screenshots that were scanned. Every GL core on Panfrost shares the bug and the fix.
+
+**The slow start (4 November).** A timeline of the log showed 16 s between the core finishing its load and the
+player's next line: `identify()` read the whole 633 MB ISO through a stream iterator for a CRC that only picks companion
+profiles. Files over 128 MB now go by name: the first frame came 1.5 s after launch instead of 18 s, or 2.35 s with a save state. PPSSPP's shader cache was also never written, because the player leaves
+by `_exit` and upstream's periodic save never fired in the libretro loop: patch `libretro-ppsspp/0003` saves it about
+every 4 s when it has grown, and the worst frame at the start of a race fell from about 300 ms to about 120 ms.
+
 **What is left to try, in order.** (1) The kernel options above. (2) PPSSPP's
 Vulkan backend on PanVK would remove the GL front end's share (perhaps half the thread) but not the submits:
 PanVK on this GPU also submits each pass's job chains separately. (4) Fewer passes is not in our hands: the game

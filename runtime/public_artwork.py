@@ -29,7 +29,8 @@ CATALOGS = {
     "zx": "Sinclair - ZX Spectrum",
     "c64": "Commodore - 64",
     "3ds": "Nintendo - Nintendo 3DS",
-    "psp": "Sony - PlayStation Portable"
+    "psp": "Sony - PlayStation Portable",
+    "scummvm": "ScummVM"
 }
 
 
@@ -120,6 +121,7 @@ def rom_identity(path):
     if system == "nds":
         return (system,) + rom_details(path)
     path = Path(path)
+    if system == "scummvm": return system, path.parent.name, ""  # a game is its folder
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             entries = [
@@ -362,6 +364,12 @@ class PublicClient:
 
     def artwork(self, rom, name_override=""):
         system, name, code = rom_identity(rom)
+        if system == "gw":
+            # No catalogue to ask: the simulator holds a scan of the machine itself.
+            from gw_art import cover
+            raw = cover(rom)
+            if not raw: raise NotFound("This simulator holds no picture of its machine.")
+            return raw, {"provider": "Simulator", "artwork_title": name}
         if system != "nds":
             if system not in CATALOGS: raise NotFound("There is no public cover catalog for this system.")
             if system == "3ds" and code and not name_override.strip():

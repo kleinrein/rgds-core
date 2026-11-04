@@ -4,6 +4,7 @@
 #include "launcher/system_icons.hpp"
 #include "ui/png.hpp"
 
+#include <filesystem>
 #include <cctype>
 #include <cstdio>
 
@@ -118,6 +119,9 @@ bool Session::open(const SessionOptions& o, std::string& error) {
         profile_ = profiles_.find(core_->system(), header_title_code(*rom));
     // A libretro game by its cartridge's own name (SNES) or its file's.
     if (!profile_ && rom->empty()) profile_ = profiles_.find(core_->system(), core_->header_title());
+    if (!profile_)
+        for (const auto& code : core_->other_codes())
+            if ((profile_ = profiles_.find(core_->system(), code))) break;
     if (profile_ && profile_->lightgun && !core_->set_lightgun(true))
         std::fprintf(stderr, "play: this core has no light gun for %s\n", profile_->title.c_str());
     if (profile_ && profile_->mouse) {
@@ -127,6 +131,9 @@ bool Session::open(const SessionOptions& o, std::string& error) {
             std::fprintf(stderr, "play: the cursor is not read: %s\n", why.c_str()), cursor_x_ = cursor_y_ = Expr{};
     }
     title_ = profile_ ? profile_->title : clean_title(file_stem(o.rom));
+    // A ScummVM game is its folder, whatever file names it; a profile there covers a whole family of games.
+    if (std::string(core_->system()) == "scummvm")
+        title_ = clean_title(std::filesystem::path(o.rom).parent_path().filename().string());
     // The launcher's appearance and language, so the second screen is part of RG DS.
     if (!o.preferences.empty()) look_ = load_look(o.preferences);
     else look_ = make_look(false, -1, false); // the launcher's defaults: light, its own blue
@@ -179,7 +186,7 @@ void Session::save_view() {
 
 void Session::frame(uint32_t buttons) {
     if (!cursor_x_.empty()) core_->set_mouse_cursor(int(cursor_x_.eval(*core_)), int(cursor_y_.eval(*core_)));
-    core_->run_frame(buttons);
+    core_->run_frame(companion_ ? companion_->machine_buttons(buttons) : buttons);
     ++frames_;
     if (companion_) companion_->after_frame(*core_);
     if (frames_ % 1800 == 0) save_view(); // every half minute, when it has changed
@@ -197,6 +204,10 @@ void Session::render_companion(Canvas& out, const Look& look) const {
 }
 
 bool Session::save_state_file(const std::string& path, std::string& error) {
+    if (core_->still_loading()) {
+        error = "the game is still loading";
+        return false;
+    }
     std::vector<uint8_t> state;
     if (!core_->save_state(state)) {
         error = "the emulator could not save its state";

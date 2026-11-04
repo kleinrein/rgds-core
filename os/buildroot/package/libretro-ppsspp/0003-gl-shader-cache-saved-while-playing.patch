@@ -1,0 +1,23 @@
+Save the GL shader cache while the game runs, whenever it has grown.
+
+PPSSPP writes the cache on a clean exit and every 32768 flips (9 minutes), and only when the core state happens to be
+CORE_RUNNING_CPU at that moment, which the libretro loop never showed. RG DS Play leaves with _exit because the core's
+teardown aborts just after boot, so no session ever wrote one and each launch compiled every program in the middle of
+play again. Checks about every 4 s; writing a few KB only when the program count changed.
+
+--- a/GPU/GLES/GPU_GLES.cpp
++++ b/GPU/GLES/GPU_GLES.cpp
+@@ -242,9 +242,11 @@
+ 
+ 	// Save the cache from time to time. TODO: How often? We save on exit, so shouldn't need to do this all that often.
+ 
+-	const int saveShaderCacheFrameInterval = 32767;  // power of 2 - 1. About every 10 minutes at 60fps.
+-	if (shaderCachePath_.Valid() && !(gpuStats.numFlips & saveShaderCacheFrameInterval) && coreState == CORE_RUNNING_CPU) {
++	static int hostFrames = 0;
++	static int savedPrograms = 0;
++	if (shaderCachePath_.Valid() && !(++hostFrames & 255) && shaderManagerGL_->GetNumPrograms() != savedPrograms) {
+ 		shaderManagerGL_->SaveCache(shaderCachePath_, &drawEngine_);
++		savedPrograms = shaderManagerGL_->GetNumPrograms();
+ 	}
+ 	shaderManagerGL_->DirtyLastShader();
+ 
