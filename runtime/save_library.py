@@ -13,6 +13,7 @@ import fcntl
 from library import game_key
 from fields import write_fields
 from engines import CORES
+from profiles import device_root, player_roots
 
 MAX_STATE = 128 * 1024 * 1024
 
@@ -30,7 +31,8 @@ def state_thumbnail(path):
     with Path(path).open('rb') as f:
         head = f.read(64 + 128 * 96 * 2)
     word = lambda offset: int.from_bytes(head[offset:offset + 4], 'little')
-    if len(head) < 64 + 128 * 96 * 2 or head[:4] != b'DSST' or head[8:12] != b'HEAD' or (word(56), word(60)) != (128, 96):
+    if len(head) < 64 + 128 * 96 * 2 or head[:4] != b'DSST' or head[8:12] != b'HEAD' or (word(56),
+                                                                                         word(60)) != (128, 96):
         return None
     pixels = head[64:]
     if not any(pixels): return None
@@ -45,7 +47,9 @@ def state_thumbnail(path):
     body = b''.join(rows)
     header = b'BM' + (54 + len(body)).to_bytes(4, 'little') + bytes(4) + (54).to_bytes(4, 'little')
     header += (40).to_bytes(4, 'little') + (128).to_bytes(4, 'little') + (96).to_bytes(4, 'little')
-    header += (1).to_bytes(2, 'little') + (24).to_bytes(2, 'little') + bytes(4) + len(body).to_bytes(4, 'little') + bytes(16)
+    header += (1).to_bytes(2, 'little') + (24).to_bytes(2,
+                                                        'little') + bytes(4) + len(body).to_bytes(4,
+                                                                                                  'little') + bytes(16)
     return header + body
 
 
@@ -276,7 +280,7 @@ class SaveLibrary:
                 **{k: row.get(k, '')
                    for k in ('created', 'build')}
             )
-            folder = self.data / 'exports'
+            folder = device_root(self.data) / 'exports'
             folder.mkdir(exist_ok=True)
             out = folder / (
                 game_key(self.rom) + '-' + self.core + '-slot' + str(slot + 1) + '-' + str(time.time_ns()) +
@@ -318,29 +322,30 @@ def backup_all(data):
     data = Path(data)
     with activity_lock(data):
         if core_running(data): raise ValueError('Exit your game before backing up saves.')
-        roots = [
-            data / 'library', *[
-                data / 'emulators' / engine / folder for engine, folder in [
-                    ('drastic', 'backup'), ('drastic', 'savestates'), ('dsperate', 'saves'), ('dsperate', 'states'),
-                    ('nnddss', 'User/backup'), ('nnddss', 'User/savestates'), ('melonds', 'saves'),
-                    ('melonds', 'states'), ('rgds-experimental', 'saves'), ('rgds-experimental', 'states')
+        selected = []
+        for player in player_roots(data):  # the owner's, every profile's, and any removed but not yet erased
+            roots = [
+                player / 'library', *[
+                    player / 'emulators' / engine / folder for engine, folder in [
+                        ('drastic', 'backup'), ('drastic', 'savestates'), ('dsperate', 'saves'), ('dsperate', 'states'),
+                        ('nnddss', 'User/backup'), ('nnddss', 'User/savestates'), ('melonds', 'saves'),
+                        ('melonds', 'states'), ('rgds-experimental', 'saves'), ('rgds-experimental', 'states')
+                    ]
                 ]
             ]
-        ]
-        roots += [data / 'emulators/rgds-play' / folder for folder in ('saves', 'states')]  # other systems
-        roots += [data / 'emulators/rgds-play' / folder for folder in ('PSP/SAVEDATA', 'PSP/PPSSPP_STATE')]
-        tanuki = data / 'emulators/rgds-play/3ds/.local/share/Tanuki3DS/3ds'
-        roots += [tanuki / 'savedata', tanuki / 'extdata', tanuki / 'sdmc']
-        roots += list((data / 'emulators/rgds-play').glob('*.mcd'))
-        selected = []
-        for root in roots:
-            if root.exists():
-                for path in [root] if root.is_file() else root.rglob('*'):
-                    if path.is_file() and not path.is_symlink() and (
-                        root != data / 'library' or path.suffix in ('.dss', '.sav', '.dsv', '.json')
-                        or '/slots/' in str(path)
-                    ):
-                        selected.append(path)
+            roots += [player / 'emulators/rgds-play' / folder for folder in ('saves', 'states')]  # other systems
+            roots += [player / 'emulators/rgds-play' / folder for folder in ('PSP/SAVEDATA', 'PSP/PPSSPP_STATE')]
+            tanuki = player / 'emulators/rgds-play/3ds/.local/share/Tanuki3DS/3ds'
+            roots += [tanuki / 'savedata', tanuki / 'extdata', tanuki / 'sdmc']
+            roots += list((player / 'emulators/rgds-play').glob('*.mcd'))
+            for root in roots:
+                if root.exists():
+                    for path in [root] if root.is_file() else root.rglob('*'):
+                        if path.is_file() and not path.is_symlink() and (
+                            root != player / 'library' or path.suffix in ('.dss', '.sav', '.dsv', '.json')
+                            or '/slots/' in str(path)
+                        ):
+                            selected.append(path)
         if sum(p.stat().st_size for p in selected) > shutil.disk_usage(data).free - 16 * 1024 * 1024:
             raise ValueError('Not enough space for a save backup.')
         out = data / 'exports' / ('save-backup-' + str(time.time_ns()) + '.zip')

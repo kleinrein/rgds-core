@@ -10,6 +10,7 @@ void App::load_library(std::vector<Game> games) {
             model.games.push_back({name, {}, true});
     ds_games = model.games;
     refresh_other_systems();
+    if (!o.game_menu && !active_rules.open()) model.games = all_games; // never the whole folder, for this player
     library_ready = true;
     if (!o.game_menu) {
         summary_ready = false;
@@ -291,6 +292,7 @@ void App::start_boot_session() {
         network_after = selected_at + 1000;
     }
     if (welcome_active) welcome_begin();
+    else if (profile_picker_wanted()) open_profile_picker(true);
     dirty = true;
 }
 

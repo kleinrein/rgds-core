@@ -5,10 +5,11 @@ from save_library import atomic_json, digest
 from fields import read_fields, write_fields
 from library import game_key
 from engines import CORES
+from profiles import device_root
 
 
 def config(data):
-    return read_fields(Path(data) / 'experience.ini')
+    return read_fields(device_root(data) / 'experience.ini')
 
 
 def read(path):
@@ -70,7 +71,7 @@ def consume(data):
         path.replace(data / 'resume/attempted.json')
         from save_library import sync_dir
         sync_dir(path.parent)
-    launch = data / 'session/resume-launch.ini'
+    launch = device_root(data) / 'session/resume-launch.ini'
     launch.unlink(missing_ok=True)
     if config(data).get('quick_resume') != '1' or not valid(data, c): return False
     write_fields(launch, dict(rom=c['rom'], core=c['core']))

@@ -104,6 +104,8 @@ def main():
     if not key_id: raise SystemExit(f'{key} is not one of the keys pinned in packaging/update-trust.json.')
     # before anything goes out: an update must not cost anyone the place they stopped at
     subprocess.run([sys.executable, str(ROOT / 'tools/resume_check.py'), '--add', args.version], check=True)
+    # and every save must stay where it is, whatever the handheld does with profiles
+    subprocess.run([sys.executable, '-B', str(ROOT / 'tests/test_profile_upgrade.py')], check=True)
     out = ROOT / 'dist/release-os' / args.version
     out.mkdir(parents=True, exist_ok=True)
     archive, unpacked = package(build, out)

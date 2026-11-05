@@ -10,11 +10,12 @@ import wave
 
 from audio import Volume
 from fields import read_fields
+from profiles import look_root
 
 
 def effects_volume(data):
-    fields = read_fields(Path(data) / 'preferences.ini')
-    fields.update(read_fields(Path(data) / 'ui.ini'))
+    fields = read_fields(look_root(data) / 'preferences.ini')
+    fields.update(read_fields(look_root(data) / 'ui.ini'))
     if fields.get('menu_sounds') != '1':
         return 0
     try:

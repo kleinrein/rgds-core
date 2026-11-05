@@ -40,7 +40,12 @@ void App::open_category() {
     home_origin = home_selected;
     systems_origin = false;
     if (home_selected == last_played_tile) open_last_played();
-    else if (home_selected == pictochat_tile) open_pictochat();
+    else if (home_selected == pictochat_tile) {
+        if (kid_locked() && !active_profile().allow_pictochat) {
+            status = "Not on this profile";
+            emit_sound(MenuCue::Error);
+        } else open_pictochat();
+    }
     else if (home_selected == 0) settings.open();
     else if (home_selected == 1 && preferences.show_systems) open_systems();
     else {
@@ -82,11 +87,15 @@ void App::refresh_other_systems() {
             listed_systems.push_back(info.id);
             all_games.insert(all_games.end(), games.begin(), games.end());
         }
+    catalog_games = all_games;
+    catalog_listed = listed_systems;
+    apply_visibility();
     if (std::find(listed_systems.begin(), listed_systems.end(), shown_system) == listed_systems.end())
         shown_system = "nds";
 }
 
 std::vector<Game> App::view_source(int view) const {
+    if (discovery_filter == 4) return hidden_games();
     // A search or filter looks through every game, not just the system being browsed.
     if (view != 0 || !preferences.show_systems || discovery_active()) return all_games;
     std::vector<Game> games;

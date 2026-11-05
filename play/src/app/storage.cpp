@@ -100,7 +100,8 @@ bool write_file_atomic(const std::string& path, const std::vector<uint8_t>& byte
 }
 
 bool prepare_save(const std::string& root, const std::string& system, const std::string& rom_path,
-                  const std::vector<std::string>& extra_sources, SaveSlot& out, std::string& error) {
+                  const std::vector<std::string>& extra_sources, SaveSlot& out, std::string& error,
+                  bool import_outside) {
     const std::string stem = file_stem(rom_path);
     const std::string dir = root + "/saves/" + system;
     out = SaveSlot{};
@@ -131,6 +132,7 @@ bool prepare_save(const std::string& root, const std::string& system, const std:
         }
         return true;
     }
+    if (!import_outside) return true; // a new game for this player
     std::vector<std::string> candidates;
     std::vector<std::string> dirs = {parent_directory(rom_path)};
     dirs.insert(dirs.end(), extra_sources.begin(), extra_sources.end());

@@ -379,13 +379,16 @@ French	Frans
 Friends	Vrienden
 Full colour	Volle kleuren
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
-Game Boy Advance · Black	Game Boy Advance · Zwart
-Game Boy Advance · Glacier	Game Boy Advance · Gletsjer
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Platinum	Game Boy Advance · Platina
+GBA SP · Cobalt	GBA SP · Kobalt
+GBA SP · Cobalt · Screen only	GBA SP · Kobalt · Alleen scherm
+GBA SP · Onyx	GBA SP · Onyx
+GBA SP · Onyx · Screen only	GBA SP · Onyx · Alleen scherm
+GBA SP · Platinum	GBA SP · Platina
+GBA SP · Platinum · Screen only	GBA SP · Platina · Alleen scherm
+GBA · Black	GBA · Zwart
+GBA · Glacier	GBA · Gletsjer
+GBA · Indigo	GBA · Indigo
+GBA · Platinum	GBA · Platina
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Game Boy Color-scherm
 Game Boy Color · Atomic Purple	Game Boy Color · Atoompaars
@@ -1242,3 +1245,99 @@ What do you want to play?	Wat wil je spelen?
 You can change this later in Settings > Library.	Je kunt dit later wijzigen via Instellingen > Bibliotheek.
 A clean library with only DS games.	Een opgeruimde bibliotheek met alleen DS-games.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation en meer, per systeem gesorteerd.
+Who's playing?	Wie speelt er?
+Owner	Eigenaar
+Kid	Kind
+Adult	Volwassene
+Profiles	Profielen
+Playing now	Speelt nu
+Change who's playing	Andere speler
+Add a profile	Profiel toevoegen
+Ask who's playing at startup	Bij het starten vragen wie speelt
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Iedereen die speelt heeft eigen opslagen, favorieten, speeltijd en uiterlijk.
+Who it's for	Voor wie
+Name	Naam
+DS name	DS-naam
+Colour	Kleur
+Age limit	Leeftijdsgrens
+Games with no rating	Games zonder classificatie
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Cheats
+Local wireless	Lokaal draadloos
+Set a PIN	Pincode instellen
+Change the PIN	Pincode wijzigen
+Remove the PIN	Pincode verwijderen
+None	Geen
+Set	Ingesteld
+Remove this profile	Dit profiel verwijderen
+Hidden	Verborgen
+Shown	Zichtbaar
+No limit	Geen grens
+Only games I pick	Alleen mijn keuze
+Could not change profile. Check storage.	Kan profiel niet wijzigen. Controleer de opslag.
+Switch to another profile first	Wissel eerst naar een ander profiel
+Not locked: set a PIN on the owner's profile.	Niet vergrendeld: stel een pincode in op het profiel van de eigenaar.
+Who is this profile for?	Voor wie is dit profiel?
+Own saves and look. Settings stay open.	Eigen opslagen en uiterlijk. Instellingen blijven open.
+Own saves, and a library you choose.	Eigen opslagen en een bibliotheek die jij kiest.
+A library that fits their age, and no way into the handheld's settings.	Een bibliotheek die bij de leeftijd past en geen toegang tot de instellingen.
+A second grown-up or an older child, with everything open.	Een tweede volwassene of een ouder kind, met alles open.
+Every game shows, whatever its rating.	Alle games worden getoond, ongeacht de classificatie.
+Nothing shows until you allow it, game by game or a shelf at a time.	Niets wordt getoond tot je het toestaat, per game of per plank.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Games boven deze leeftijd worden verborgen. Games zonder classificatie volgen de instelling van het profiel.
+Profile removed. A backup is in userdata/exports.	Profiel verwijderd. Er staat een back-up in userdata/exports.
+The profile could not be removed.	Het profiel kan niet worden verwijderd.
+Removed profiles erased.	Verwijderde profielen gewist.
+Removed profiles could not be erased.	Verwijderde profielen kunnen niet worden gewist.
+Erase removed profiles	Verwijderde profielen wissen
+Erase the saves of removed profiles for good? This cannot be undone.	Opslagen van verwijderde profielen definitief wissen? Dit kan niet ongedaan worden gemaakt.
+Allow all	Alles toestaan
+Always show	Altijd tonen
+Always hide	Altijd verbergen
+All	Alle
+No rating	Geen classif.
+No games here.	Hier staan geen games.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A toont alle games zonder classificatie op deze plank. Games met classificatie volgen de leeftijd.
+Nothing here is waiting for a decision.	Hier wacht niets op een beslissing.
+No age rating	Geen leeftijdsclassificatie
+You chose to show it.	Je hebt gekozen om het te tonen.
+You chose to hide it.	Je hebt gekozen om het te verbergen.
+Above this profile's age.	Boven de leeftijd van dit profiel.
+Hidden until you allow it.	Verborgen tot je het toestaat.
+Fits this profile.	Past bij dit profiel.
+A changes who sees this game: automatic, always show, always hide.	A bepaalt wie deze game ziet: automatisch, altijd tonen, altijd verbergen.
+Visible to…	Zichtbaar voor…
+Hide this game	Deze game verbergen
+Hidden games	Verborgen games
+This game is not available on this profile	Deze game is niet beschikbaar op dit profiel
+Not on this profile	Niet op dit profiel
+Locked	Vergrendeld
+PIN	Pincode
+Enter the PIN	Voer de pincode in
+Choose a PIN	Kies een pincode
+Enter it again	Voer hem nogmaals in
+This needs a grown-up.	Hier is een volwassene voor nodig.
+Those did not match. Choose a PIN.	Die kwamen niet overeen. Kies een pincode.
+That is not the PIN.	Dat is niet de pincode.
+Without one this profile is not locked. Cancel skips it.	Zonder pincode is dit profiel niet vergrendeld. Annuleren slaat dit over.
+The owner's PIN was removed.	De pincode van de eigenaar is verwijderd.
+Profile name	Profielnaam
+Remove this profile? Its saves are kept, and a backup is made first.	Dit profiel verwijderen? De opslagen blijven bewaard en eerst wordt een back-up gemaakt.
+Show every game with no rating on this shelf?	Alle games zonder classificatie op deze plank tonen?
+Star	Ster
+Heart	Hart
+Cat	Kat
+Dog	Hond
+Robot	Robot
+Rocket	Raket
+Flower	Bloem
+Ghost	Spook
+Fish	Vis
+Crown	Kroon
+Mushroom	Paddenstoel
+Rainbow	Regenboog
+{0} shown	{0} zichtbaar
+{0} above the age	{0} boven de leeftijd
+{0} with no rating	{0} zonder classificatie
+Too many tries. Wait {0} s	Te veel pogingen. Wacht {0} s

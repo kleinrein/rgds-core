@@ -379,13 +379,16 @@ French	Prancis
 Friends	Teman
 Full colour	Warna penuh
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platinum
-Game Boy Advance · Black	Game Boy Advance · Hitam
-Game Boy Advance · Glacier	Game Boy Advance · Gletser
-Game Boy Advance · Indigo	Game Boy Advance · Nila
-Game Boy Advance · Platinum	Game Boy Advance · Platinum
+GBA SP · Cobalt	GBA SP · Kobalt
+GBA SP · Cobalt · Screen only	GBA SP · Kobalt · Layar saja
+GBA SP · Onyx	GBA SP · Onyx
+GBA SP · Onyx · Screen only	GBA SP · Onyx · Layar saja
+GBA SP · Platinum	GBA SP · Platinum
+GBA SP · Platinum · Screen only	GBA SP · Platinum · Layar saja
+GBA · Black	GBA · Hitam
+GBA · Glacier	GBA · Gletser
+GBA · Indigo	GBA · Nila
+GBA · Platinum	GBA · Platinum
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Layar Game Boy Color
 Game Boy Color · Atomic Purple	Game Boy Color · Ungu atom
@@ -1242,3 +1245,99 @@ What do you want to play?	Mau main apa?
 You can change this later in Settings > Library.	Kamu bisa mengubahnya nanti di Pengaturan > Pustaka.
 A clean library with only DS games.	Pustaka rapi yang hanya berisi game DS.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation, dan lainnya, diurutkan per sistem.
+Who's playing?	Siapa yang bermain?
+Owner	Pemilik
+Kid	Anak
+Adult	Dewasa
+Profiles	Profil
+Playing now	Sedang bermain
+Change who's playing	Ganti pemain
+Add a profile	Tambah profil
+Ask who's playing at startup	Tanya pemain saat mulai
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Setiap pemain punya simpanan, favorit, waktu bermain, dan tampilan sendiri.
+Who it's for	Untuk siapa
+Name	Nama
+DS name	Nama DS
+Colour	Warna
+Age limit	Batas usia
+Games with no rating	Game tanpa rating
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Cheat
+Local wireless	Nirkabel lokal
+Set a PIN	Atur PIN
+Change the PIN	Ubah PIN
+Remove the PIN	Hapus PIN
+None	Tidak ada
+Set	Diatur
+Remove this profile	Hapus profil ini
+Hidden	Tersembunyi
+Shown	Ditampilkan
+No limit	Tanpa batas
+Only games I pick	Hanya game pilihan saya
+Could not change profile. Check storage.	Tidak dapat mengganti profil. Periksa penyimpanan.
+Switch to another profile first	Ganti ke profil lain dulu
+Not locked: set a PIN on the owner's profile.	Tidak terkunci: atur PIN di profil pemilik.
+Who is this profile for?	Untuk siapa profil ini?
+Own saves and look. Settings stay open.	Simpanan dan tampilan sendiri. Pengaturan tetap terbuka.
+Own saves, and a library you choose.	Simpanan sendiri dan pustaka pilihan Anda.
+A library that fits their age, and no way into the handheld's settings.	Pustaka sesuai usia, tanpa akses ke pengaturan perangkat.
+A second grown-up or an older child, with everything open.	Orang dewasa lain atau anak yang lebih besar, semuanya terbuka.
+Every game shows, whatever its rating.	Semua game ditampilkan, apa pun ratingnya.
+Nothing shows until you allow it, game by game or a shelf at a time.	Tidak ada yang tampil sampai Anda izinkan, per game atau per rak.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Game dengan rating di atas usia ini disembunyikan. Game tanpa rating mengikuti pengaturan profil.
+Profile removed. A backup is in userdata/exports.	Profil dihapus. Cadangan ada di userdata/exports.
+The profile could not be removed.	Profil tidak dapat dihapus.
+Removed profiles erased.	Profil yang dihapus telah dibersihkan.
+Removed profiles could not be erased.	Profil yang dihapus tidak dapat dibersihkan.
+Erase removed profiles	Bersihkan profil yang dihapus
+Erase the saves of removed profiles for good? This cannot be undone.	Hapus permanen simpanan profil yang dihapus? Ini tidak dapat dibatalkan.
+Allow all	Izinkan semua
+Always show	Selalu tampilkan
+Always hide	Selalu sembunyikan
+All	Semua
+No rating	Tanpa rating
+No games here.	Tidak ada game di sini.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A menampilkan semua game tanpa rating di rak ini. Game berating tetap mengikuti usia.
+Nothing here is waiting for a decision.	Tidak ada yang menunggu keputusan di sini.
+No age rating	Tanpa rating usia
+You chose to show it.	Anda memilih menampilkannya.
+You chose to hide it.	Anda memilih menyembunyikannya.
+Above this profile's age.	Di atas usia profil ini.
+Hidden until you allow it.	Disembunyikan sampai Anda izinkan.
+Fits this profile.	Sesuai untuk profil ini.
+A changes who sees this game: automatic, always show, always hide.	A mengubah siapa yang melihat game ini: otomatis, selalu tampilkan, selalu sembunyikan.
+Visible to…	Terlihat oleh…
+Hide this game	Sembunyikan game ini
+Hidden games	Game tersembunyi
+This game is not available on this profile	Game ini tidak tersedia di profil ini
+Not on this profile	Tidak di profil ini
+Locked	Terkunci
+PIN	PIN
+Enter the PIN	Masukkan PIN
+Choose a PIN	Pilih PIN
+Enter it again	Masukkan sekali lagi
+This needs a grown-up.	Ini perlu orang dewasa.
+Those did not match. Choose a PIN.	Tidak cocok. Pilih PIN.
+That is not the PIN.	Itu bukan PIN-nya.
+Without one this profile is not locked. Cancel skips it.	Tanpa PIN profil ini tidak terkunci. Batal untuk melewati.
+The owner's PIN was removed.	PIN pemilik telah dihapus.
+Profile name	Nama profil
+Remove this profile? Its saves are kept, and a backup is made first.	Hapus profil ini? Simpanannya disimpan, dan cadangan dibuat lebih dulu.
+Show every game with no rating on this shelf?	Tampilkan semua game tanpa rating di rak ini?
+Star	Bintang
+Heart	Hati
+Cat	Kucing
+Dog	Anjing
+Robot	Robot
+Rocket	Roket
+Flower	Bunga
+Ghost	Hantu
+Fish	Ikan
+Crown	Mahkota
+Mushroom	Jamur
+Rainbow	Pelangi
+{0} shown	{0} ditampilkan
+{0} above the age	{0} di atas usia
+{0} with no rating	{0} tanpa rating
+Too many tries. Wait {0} s	Terlalu banyak percobaan. Tunggu {0} dtk

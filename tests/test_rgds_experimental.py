@@ -52,11 +52,11 @@ class ExperimentalLaunchTests(Fixture):
         (engine / 'lib').mkdir()
         (engine / 'lib/libvulkan_panfrost.so').write_bytes(b'driver')
         write_fields(
-            self.data / 'library' / game_key(rom) / 'game.ini', dict(core=4, rgds_scale=5, rgds_smooth=0, rgds_2d=2)
+            self.data / 'library' / game_key(rom) / 'game.ini', dict(core=4, rgds_scale=5, rgds_smooth=0, rgds_2d=4)
         )
         plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)
         self.assertEqual(Path(plan['command'][0]).name, 'rgds-experimental-vulkan')
-        self.assertEqual(plan['env']['RGDS_2D_FILTER'], '2')
+        self.assertEqual(plan['env']['RGDS_2D_FILTER'], '4')
         self.assertEqual(plan['env']['RGDS_VK_SCALE'], '5')
         self.assertEqual(plan['env']['RGDS_ACTIVE_SCALE'], '5')
         self.assertEqual(plan['env']['RGDS_3D_SMOOTH'], '0')
@@ -114,6 +114,13 @@ class ExperimentalLaunchTests(Fixture):
         write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(core=4, rgds_2d=7))
         plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)
         self.assertEqual(plan['env']['RGDS_2D_FILTER'], '0')
+
+    def test_2d_modes_gone_from_the_menu_load_as_crisp(self):
+        rom = self.prepare()
+        for mode in (1, 2):
+            write_fields(self.data / 'library' / game_key(rom) / 'game.ini', dict(core=4, rgds_2d=mode))
+            plan = emulators.launch_plan(ENGINE, self.app, self.data, rom)
+            self.assertEqual(plan['env']['RGDS_2D_FILTER'], '3')
 
     def test_missing_fork_never_falls_back_to_standard(self):
         self.binary('dsperate')

@@ -253,11 +253,6 @@ int App::picker_first() const {
                       std::max(0, int(picker_options.size()) - picker_visible()));
 }
 
-bool App::picker_paged() const {
-    return !picker_detail && !picker_scrollable() && picker_title != "Jump to letter" &&
-           int(picker_options.size()) > picker_visible();
-}
-
 int App::picker_top() const {
     return picker_title == "Jump to letter" ? 32 : picker_detail ? 96 : 410 - picker_visible() * picker_stride() - 64;
 }
@@ -318,13 +313,6 @@ void App::picker_touch(int x, int y) {
         return;
     }
     if (picker_detail) return;
-    if (picker_paged() && y >= picker_top() + 16 && y < picker_top() + 56) {
-        if (x >= 480 && x < 528) picker_focus = std::max(0, picker_first() - 1);
-        else if (x >= 544 && x < 592)
-            picker_focus = std::min(int(picker_options.size()) - 1, picker_first() + 2 * picker_visible() - 1);
-        dirty = true;
-        return;
-    }
     if (picker_title == "Jump to letter") {
         if (point_in({40, 96, 364, 52}, x, y)) {
             picker_action(12);
@@ -396,17 +384,7 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
     round_rect(r, 294, top + 8, 52, 4, 2, "line");
     bool library_modal = picker_title == "Browser layout" || picker_title == "Jump to letter";
     if (library_modal) library_choice_icon(r, picker_title == "Jump to letter" ? 6 : 0, 62, top + 38, 28, "accent");
-    label(r, picker_title, library_modal ? 88 : 48, top + 24, 24, "ink",
-          picker_paged()  ? 416
-          : library_modal ? 500
-                          : 540);
-    if (picker_paged()) {
-        const bool before = picker_first() > 0, after = picker_first() + picker_visible() < int(picker_options.size());
-        secondary_button(r, 480, top + 16, 48, 40, 10, false, before);
-        secondary_button(r, 544, top + 16, 48, 40, 10, false, after);
-        triangle(r, 504, top + 30, 8, 12, before ? "accent" : "line", false);
-        triangle(r, 568, top + 30, 8, 12, after ? "accent" : "line");
-    }
+    label(r, picker_title, library_modal ? 88 : 48, top + 24, 24, "ink", library_modal ? 500 : 540);
     if (picker_detail) {
         for (int i = detail_scroll; i < std::min(int(detail_lines.size()), detail_scroll + 8); i++)
             label(r, detail_lines[i], 48, top + 68 + (i - detail_scroll) * 28, 20, "ink", 516);

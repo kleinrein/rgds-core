@@ -379,13 +379,16 @@ French	Французька
 Friends	Друзі
 Full colour	Повний колір
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Кобальт
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Онікс
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Платина
-Game Boy Advance · Black	Game Boy Advance · Чорний
-Game Boy Advance · Glacier	Game Boy Advance · Льодовик
-Game Boy Advance · Indigo	Game Boy Advance · Індиго
-Game Boy Advance · Platinum	Game Boy Advance · Платина
+GBA SP · Cobalt	GBA SP · Кобальт
+GBA SP · Cobalt · Screen only	GBA SP · Кобальт · Лише екран
+GBA SP · Onyx	GBA SP · Онікс
+GBA SP · Onyx · Screen only	GBA SP · Онікс · Лише екран
+GBA SP · Platinum	GBA SP · Платина
+GBA SP · Platinum · Screen only	GBA SP · Платина · Лише екран
+GBA · Black	GBA · Чорний
+GBA · Glacier	GBA · Льодовик
+GBA · Indigo	GBA · Індиго
+GBA · Platinum	GBA · Платина
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Екран Game Boy Color
 Game Boy Color · Atomic Purple	Game Boy Color · Атомний фіолетовий
@@ -1242,3 +1245,99 @@ What do you want to play?	У що хочете грати?
 You can change this later in Settings > Library.	Це можна змінити пізніше в розділі Налаштування > Бібліотека.
 A clean library with only DS games.	Охайна бібліотека лише з іграми DS.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation та інші, за системами.
+Who's playing?	Хто грає?
+Owner	Власник
+Kid	Дитина
+Adult	Дорослий
+Profiles	Профілі
+Playing now	Зараз грає
+Change who's playing	Змінити гравця
+Add a profile	Додати профіль
+Ask who's playing at startup	Питати під час запуску, хто грає
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Кожен гравець має власні збереження, вибране, час гри та вигляд.
+Who it's for	Для кого
+Name	Ім'я
+DS name	Ім'я DS
+Colour	Колір
+Age limit	Вікове обмеження
+Games with no rating	Ігри без рейтингу
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Чіти
+Local wireless	Локальний бездротовий зв'язок
+Set a PIN	Встановити PIN-код
+Change the PIN	Змінити PIN-код
+Remove the PIN	Видалити PIN-код
+None	Немає
+Set	Встановлено
+Remove this profile	Видалити цей профіль
+Hidden	Прихована
+Shown	Показана
+No limit	Без обмежень
+Only games I pick	Лише вибрані
+Could not change profile. Check storage.	Не вдалося змінити профіль. Перевірте пам'ять.
+Switch to another profile first	Спочатку перейдіть на інший профіль
+Not locked: set a PIN on the owner's profile.	Не заблоковано: встановіть PIN-код у профілі власника.
+Who is this profile for?	Для кого цей профіль?
+Own saves and look. Settings stay open.	Власні збереження та вигляд. Налаштування відкриті.
+Own saves, and a library you choose.	Власні збереження та бібліотека на ваш вибір.
+A library that fits their age, and no way into the handheld's settings.	Бібліотека за віком і жодного доступу до налаштувань пристрою.
+A second grown-up or an older child, with everything open.	Інший дорослий або старша дитина, усе відкрито.
+Every game shows, whatever its rating.	Показуються всі ігри з будь-яким рейтингом.
+Nothing shows until you allow it, game by game or a shelf at a time.	Нічого не показується, доки ви не дозволите: по одній грі або цілою полицею.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Ігри вище цього віку приховані. Ігри без рейтингу дотримуються налаштування профілю.
+Profile removed. A backup is in userdata/exports.	Профіль видалено. Резервна копія в userdata/exports.
+The profile could not be removed.	Не вдалося видалити профіль.
+Removed profiles erased.	Видалені профілі стерто.
+Removed profiles could not be erased.	Не вдалося стерти видалені профілі.
+Erase removed profiles	Стерти видалені профілі
+Erase the saves of removed profiles for good? This cannot be undone.	Назавжди стерти збереження видалених профілів? Це не можна скасувати.
+Allow all	Дозволити всі
+Always show	Завжди показувати
+Always hide	Завжди приховувати
+All	Усі
+No rating	Без рейтингу
+No games here.	Тут немає ігор.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A показує всі ігри без рейтингу на цій полиці. Ігри з рейтингом і далі залежать від віку.
+Nothing here is waiting for a decision.	Тут ніщо не чекає на рішення.
+No age rating	Немає вікового рейтингу
+You chose to show it.	Ви вирішили показувати її.
+You chose to hide it.	Ви вирішили приховати її.
+Above this profile's age.	Вище віку цього профілю.
+Hidden until you allow it.	Прихована, доки ви не дозволите.
+Fits this profile.	Підходить цьому профілю.
+A changes who sees this game: automatic, always show, always hide.	A змінює, хто бачить гру: автоматично, завжди показувати, завжди приховувати.
+Visible to…	Видима для…
+Hide this game	Приховати цю гру
+Hidden games	Приховані ігри
+This game is not available on this profile	Ця гра недоступна в цьому профілі
+Not on this profile	Не в цьому профілі
+Locked	Заблоковано
+PIN	PIN-код
+Enter the PIN	Введіть PIN-код
+Choose a PIN	Виберіть PIN-код
+Enter it again	Введіть ще раз
+This needs a grown-up.	Потрібен дорослий.
+Those did not match. Choose a PIN.	Коди не збіглися. Виберіть PIN-код.
+That is not the PIN.	Це неправильний PIN-код.
+Without one this profile is not locked. Cancel skips it.	Без нього профіль не заблоковано. «Скасувати» пропустить цей крок.
+The owner's PIN was removed.	PIN-код власника видалено.
+Profile name	Ім'я профілю
+Remove this profile? Its saves are kept, and a backup is made first.	Видалити цей профіль? Збереження залишаться, спочатку буде створено копію.
+Show every game with no rating on this shelf?	Показати всі ігри без рейтингу на цій полиці?
+Star	Зірка
+Heart	Серце
+Cat	Кіт
+Dog	Собака
+Robot	Робот
+Rocket	Ракета
+Flower	Квітка
+Ghost	Привид
+Fish	Риба
+Crown	Корона
+Mushroom	Гриб
+Rainbow	Веселка
+{0} shown	Показано: {0}
+{0} above the age	Вище віку: {0}
+{0} with no rating	Без рейтингу: {0}
+Too many tries. Wait {0} s	Забагато спроб. Зачекайте {0} с

@@ -22,7 +22,9 @@ std::vector<CheatCode> parse_cht(const std::string& text);
 class CheatBook {
 public:
     // Reads the game's file and its remembered choices; false (and no codes) when there is none.
-    bool load(const std::string& root, const std::string& system, const std::string& rom_path);
+    // `shared` also holds lists, for a profile reading the owner's; which are on stays under `root`.
+    bool load(const std::string& root, const std::string& system, const std::string& rom_path,
+              const std::string& shared = "");
     const std::vector<CheatCode>& codes() const { return codes_; }
     const std::string& path() const { return path_; }
     // Flips one code and remembers the choice; false for a number out of range.

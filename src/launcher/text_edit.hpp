@@ -5,14 +5,17 @@
 void App::begin_edit(int field) {
     if (field == 4) search_return = settings.page;
     edit_field = field;
-    edit_buffer = field == 5   ? (ds_settings.count("nickname") ? ds_settings["nickname"] : ds_owner_name())
-                  : field == 7 ? (ds_owner_name() == "RG DS Core" ? std::string() : ds_owner_name())
-                  : field == 4 ? search_query
-                  : field == 6 ? cheat_query
-                  : field == 0 ? username
-                  : field == 1 ? password
-                  : field == 3 ? artwork_match
-                               : "";
+    const auto* profile = edited_profile();
+    edit_buffer = field == 9 && profile    ? profile->name
+                  : field == 10 && profile ? profile->ds_name
+                  : field == 5             ? (ds_settings.count("nickname") ? ds_settings["nickname"] : ds_owner_name())
+                  : field == 7             ? (ds_owner_name() == "RG DS Core" ? std::string() : ds_owner_name())
+                  : field == 4             ? search_query
+                  : field == 6             ? cheat_query
+                  : field == 0             ? username
+                  : field == 1             ? password
+                  : field == 3             ? artwork_match
+                                           : "";
     key_row = 1;
     key_col = 1;
     key_layer = 0;
@@ -25,6 +28,39 @@ void App::begin_edit(int field) {
 }
 
 void App::finish_edit(bool commit) {
+    if (edit_field >= 8 && edit_field <= 10) {
+        const auto name = profile_clean_name(edit_buffer);
+        const int field = edit_field;
+        edit_buffer.clear();
+        s.StopTextInput();
+        settings.page = field == 8 ? Page::Profiles : Page::ProfileEdit;
+        const auto* profile = edited_profile();
+        if (commit && !name.empty() && field == 8) {
+            // Each new profile starts on a picture and a colour of its own.
+            const int number = int(profiles.profiles().size());
+            const auto id = profiles.add(name, new_profile_restricted, number % int(profile_picture_count));
+            if (id.empty()) status = "Could not save all settings. Check storage.";
+            else {
+                profile_editing = id;
+                if (const auto* added = edited_profile()) profile_set_colour(*added, (number * 5 + 2) % 16);
+                settings.page = Page::ProfileEdit;
+                settings.focus = 0;
+                if (new_profile_restricted) {
+                    new_profile_flow = true; // an age, then the games waiting for a decision
+                    open_profile_choose(ProfileChoice::Age);
+                    dirty = true;
+                    return;
+                }
+            }
+        } else if (commit && !name.empty() && field == 9 && profile) {
+            Profile changed = *profile;
+            changed.name = name;
+            if (!profiles.save(changed)) status = "Could not save all settings. Check storage.";
+        } else if (commit && !name.empty() && field == 10 && profile) profile_set_ds_name(*profile, name);
+        if (field != 8) settings.focus = profile && profile->owner() ? field - 9 : field - 8;
+        dirty = true;
+        return;
+    }
     if (edit_field == 7) {
         if (commit) save_owner_name(edit_buffer);
         edit_buffer.clear();
@@ -121,8 +157,10 @@ void App::move_edit_cursor(int direction) {
 }
 
 void App::insert_text(const std::string& value) {
-    if (edit_field == 6 && RoundedFont::codepoints(edit_buffer + value).size() > 16) return;
-    if (edit_field == 5 || edit_field == 7) {
+    if ((edit_field == 6 || edit_field == 8 || edit_field == 9) &&
+        RoundedFont::codepoints(edit_buffer + value).size() > 16)
+        return;
+    if (edit_field == 5 || edit_field == 7 || edit_field == 10) {
         auto text = edit_buffer;
         text.insert(edit_cursor, value);
         auto points = RoundedFont::codepoints(text);

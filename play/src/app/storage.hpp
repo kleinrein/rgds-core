@@ -34,8 +34,10 @@ struct SaveSlot {
 
 // Finds or imports the battery save and rotates the backups.
 // `extra_sources` are directories searched for <stem>.sav / .srm (stock RetroArch's saves).
+// `import_outside` off: a game with no save here starts new, whatever lies beside it (another player's).
 bool prepare_save(const std::string& root, const std::string& system, const std::string& rom_path,
-                  const std::vector<std::string>& extra_sources, SaveSlot& out, std::string& error);
+                  const std::vector<std::string>& extra_sources, SaveSlot& out, std::string& error,
+                  bool import_outside = true);
 
 // Writes saves on its own thread: an SD card fsync can take 100+ ms, which
 // would be a visible hitch on the game thread. Only the newest pending copy

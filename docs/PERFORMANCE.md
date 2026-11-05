@@ -277,7 +277,10 @@ frame after with it at VBlank, 24 of 24 presses each; press to the answering
 flip **74.2 ms → 52.1 ms** median. The picture is the same frame; the cost is
 the join no longer overlapping VBlank (start-to-hand-off median 9.37 → 9.55 ms,
 p95 11.5 → 13.9 in NSMB HD smooth, no more frames over 20 ms). Frameskip keeps
-the line-0 edge. Save states are taken at either edge (`Gpu::at_frame_edge`).
+the line-0 edge, including through the draw blocks between its skips
+(`SKIP_EDGE_HOLD`): cut at line 192, a draw request ended before line 215 could
+read it, so fast forward never drew a frame and the picture froze until
+release. Save states are taken at either edge (`Gpu::at_frame_edge`).
 
 **A heavy scene turned the lock off for good.** Once free, nearly every swap
 is held for the previous flip (13 ms at 2x; 0-2 of 300 flips unheld in the
@@ -585,9 +588,83 @@ profiles. Files over 128 MB now go by name: the first frame came 1.5 s after lau
 by `_exit` and upstream's periodic save never fired in the libretro loop: patch `libretro-ppsspp/0003` saves it about
 every 4 s when it has grown, and the worst frame at the start of a race fell from about 300 ms to about 120 ms.
 
-**What is left to try, in order.** (1) The kernel options above. (2) PPSSPP's
-Vulkan backend on PanVK would remove the GL front end's share (perhaps half the thread) but not the submits:
-PanVK on this GPU also submits each pass's job chains separately. (4) Fewer passes is not in our hands: the game
+**The kernel trial (5 November).** `init_on_alloc=0 init_on_free=0` on slot b's boot line, confirmed by `mem auto-init:
+heap alloc:off, heap free:off`, then four 90 s races at Performance clocks against four on the normal line, image
+0.8.0-3a23bffde9f2:
+
+| Boot line | Frames in 90 s, usual races | Slow race | Kernel CPU time, usual races |
+| --- | ---: | ---: | ---: |
+| Normal | 4130 / 4092 / 4084 | 3240 | 7.2 ms a frame |
+| Zeroing off | 4138 / 4103 / 4120 | 3280 | 6.9 ms a frame |
+
+That is 0.4 % more frames, about the spread between runs, and not worth the hardening, so the boot line went back. Kernel
+time is measured over all CPUs from `/proc/stat` and leaves out the first normal race. Each side had one slow race with a
+window near 48 ms a frame, and both sides having it rules out the options; see the next section for what it was.
+
+**Mesa with LTO and PGO (5 November).** Three builds of `libgallium`, swapped in with `LD_LIBRARY_PATH` and raced in
+rotation at Performance clocks, 90 s each. The profile came from two OutRun races on an instrumented build, with
+`-fprofile-partial-training` so that code the races never ran keeps its normal `-O2` optimization rather than being
+built for size.
+
+| Build | Frames in 90 s, usual races | Average | Slow scene | Library size |
+| --- | ---: | ---: | ---: | ---: |
+| Image (`-O2`) | 4068 / 4072 / 4065 | 4068 | 3320 / 3303 | 15.5 MB |
+| LTO alone | 4115 / 4100 | 4108 (+1.0 %) | 3202 | 15.5 MB |
+| LTO + PGO | 4149 / 4283 / 4295 / 4301 | 4257 (+4.6 %) | 3385 | 18.0 MB |
+
+The heaviest 300-frame window of a usual race fell from about 31.3 ms a frame to about 27.2 ms. A 240 s race on the
+PGO build ended without a crash, and no run had a GPU fault. Mario Kart 64 stayed at 60 fps on both, and its emulation
+went from about 1.42 to 1.33 ms a frame over three alternating 60 s runs each, so at least that game loses nothing from
+a profile trained on another. Other GL systems were not run.
+
+The slow scene is not a slowdown bug. In the one slow race whose screenshot was compared, the input script had landed
+in a different mode (yellow car on the sand in a cloud of dust, Hearts on the HUD instead of Score), with a window near
+49 ms; all the slow races have that same window. This makes race numbers bimodal: read them as usual or slow, never as
+one average. Dust over the frame may be the worst case left in this game; that has not been isolated.
+
+Traps: the player's `_exit` skips gcov's dump, so the training build needs its own dump thread. Meson splits `-Dc_args`
+on spaces or takes a list, not commas: a comma list silently loses every flag. Changing a `.gcda` does not make Ninja
+rebuild. `-Wno-missing-profile` hides an empty profile.
+
+The package builds this since 5 November (`package/mesa3d-panfrost/pgo`). On the installed image, usual races drew 4176 and
+4347 frames, the same gain, and the slow scene 3306.
+
+**PPSSPP on Vulkan (5 November): no gain.** PPSSPP's Vulkan backend ran on PanVK (Mesa 26.2.5) through a spike in the player,
+and drew the game correctly. Every Vulkan race landed in the slow scene, so that is the only fair comparison. The usual
+scene was never seen on Vulkan.
+
+| Backend, slow scene | Frames in 90 s | Main thread busy | Fragment / vertex engine |
+| --- | ---: | ---: | ---: |
+| GL, image's PGO Mesa | 3385 / 3306 | 75 % + emulation 73 % | 898 / 456 ms a second |
+| Vulkan, picture not shown | 3239 / 3227 / 3249 | 55 % + render thread 26 % | 582 / 1930 ms a second |
+| Same, GPU capped at 600 MHz | 2866 | 46 % | 590 / 2064 |
+| Vulkan, frames copied to the panel | 2855 | 53 % | 541 / 1984 |
+
+It does what it was meant to do for the CPU, which ends up with room to spare, but the GPU becomes the limit: a quarter less
+GPU clock costs 11 % of the frames, where GL lost nothing. The vertex-tiler engine is the odd one, four times GL's for the same
+game and above 1000 ms a second, so its figure counts queued jobs as well. Why PanVK spends that there is not known. Killing
+a Vulkan run also left GPU faults and a scheduler timeout in the kernel log. The spike is parked in `.cache/parked/psp-vulkan`,
+with no default-on path and nothing in any image.
+
+Also tried on GL in the same session: `ppsspp_gpu_hardware_transform=disabled` drew 2599 and 2591 frames (the emulation
+thread pegs at 97 %; on Vulkan 1852 and 1757), `ppsspp_skip_buffer_effects=enabled` shows a black screen, and
+`ppsspp_lazy_texture_caching` with `ppsspp_skip_gpu_readbacks` drew 4209 and 4220, no gain. Tanuki's Mesa 25.2.8 does
+not load by `LD_LIBRARY_PATH` (shaders fail to compile and the game hangs): it is built for another library stack.
+
+**Mesa 26.2.5 for GL (5 November): slower.** Built with the image's toolchain and libraries, carrying the BO cache patch (upstream
+has fixed the macro), plain `-O2` against 25.0.7's plain `-O2`, in rotation:
+
+| Mesa | Frames in 90 s, usual races | Slow scene | Main thread, usual race |
+| --- | ---: | ---: | ---: |
+| 25.0.7 | 4005 | 3226 / 3251 / 3176 | 75 % |
+| 26.2.5 | 3854 / 3881 | 3121 / 3215 | 90 % |
+
+Only one 25.0.7 race landed in the usual scene here (the image's earlier `-O2` races drew about 4068). The GL thread works
+harder on 26.2.5 while the GPU engines work less, and no profile was trained on it. The image stays on 25.0.7.
+
+**What is left to try, in order.** (1) A kernel without `CONFIG_DEBUG_SPINLOCK` and
+`CONFIG_SCHEDSTATS`, less promising after the trial above. (2) Finding out what PanVK spends in the vertex-tiler engine, if
+Vulkan is to be worth anything. Fewer passes is not in our hands: the game
 switches targets. A steady 30 is already there with fixed skip 1 (every window at 33 ms), and 60 everywhere needs
 the GL thread under 16.7 ms with margin, about a third off it.
 

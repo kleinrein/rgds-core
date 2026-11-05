@@ -102,7 +102,8 @@ void App::settings_footer(SDL_Renderer* r, int y) {
     if (settings.page == Page::SaveGallery) {
         if (!picker_open) {
             std::vector<KeyHint> keys{{"Y", "More"}};
-            if (slot_occupied(settings.focus) && settings.focus != auto_slot) keys.insert(keys.begin(), {"X", "Delete"});
+            if (slot_occupied(settings.focus) && settings.focus != auto_slot)
+                keys.insert(keys.begin(), {"X", "Delete"});
             key_hints(r, 320, y + 452, keys, 0, 16, 280);
         }
         if (slot_primary_enabled(settings.focus))
@@ -171,11 +172,13 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
     settings_card(r, 24 + dx, row, 566, 66, focused);
     round_rect(r, 38 + dx, row + 11, 44, 44, 12, focused && enabled ? "accent" : "slot");
     ui_icon(r,
-            settings.page == Page::SaveGallery    ? gallery_icon()
-            : settings.page == Page::ShaderPicker ? SettingsIcon::Shader
-            : settings.page == Page::Cheats       ? SettingsIcon::Spark
-            : settings.page == Page::Timezone     ? SettingsIcon::Clock
-                                                  : settings_icon_for(title),
+            settings.page == Page::SaveGallery        ? gallery_icon()
+            : settings.page == Page::ShaderPicker     ? SettingsIcon::Shader
+            : settings.page == Page::Cheats           ? SettingsIcon::Spark
+            : settings.page == Page::Timezone         ? SettingsIcon::Clock
+            : settings.page == Page::ProfileGames     ? SettingsIcon::Cartridge
+            : settings.page == Page::ProfileGameRules ? SettingsIcon::Heart
+                                                      : settings_icon_for(title),
             60 + dx, row + 33, 25, enabled ? (focused ? "on_accent" : "accent") : "muted");
     const bool toggle = switches && (value == "On" || value == "Off");
     const int dot = swatch ? 22 : 0;
@@ -185,7 +188,8 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
     const int text_width = 464 - (value_width ? value_width + 16 : 28);
     label(r, title, 98 + dx, row + 19, 24, enabled ? "ink" : "muted", text_width,
           settings.page != Page::Wifi && settings.page != Page::Bluetooth && settings.page != Page::Cheats &&
-              settings.page != Page::Homebrew && settings.page != Page::Timezone); // network and cheat names are data
+              settings.page != Page::Homebrew && settings.page != Page::Timezone &&
+              settings.page != Page::ProfileGames && settings.page != Page::ProfileGameRules); // names are data
     if (toggle) {
         draw_toggle(r, 524 + dx, row + 19, title, value == "On", enabled);
     } else if (!value.empty()) {

@@ -22,6 +22,7 @@ bool App::cheat_togglable(int row) const {
 }
 
 std::string App::cheats_note() const {
+    if (kid_locked() && !active_profile().allow_cheats) return "Not on this profile";
     if (!cheats_engine()) return "DSCore and Play only";
     if (cheat_codes.empty()) return "None for this game";
     const int on = cheats_on();

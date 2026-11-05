@@ -379,13 +379,16 @@ French	Ranska
 Friends	Ystävät
 Full colour	Täydet värit
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Koboltti
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
-Game Boy Advance · Black	Game Boy Advance · Musta
-Game Boy Advance · Glacier	Game Boy Advance · Jäätikkö
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Platinum	Game Boy Advance · Platina
+GBA SP · Cobalt	GBA SP · Koboltti
+GBA SP · Cobalt · Screen only	GBA SP · Koboltti · Vain näyttö
+GBA SP · Onyx	GBA SP · Onyx
+GBA SP · Onyx · Screen only	GBA SP · Onyx · Vain näyttö
+GBA SP · Platinum	GBA SP · Platina
+GBA SP · Platinum · Screen only	GBA SP · Platina · Vain näyttö
+GBA · Black	GBA · Musta
+GBA · Glacier	GBA · Jäätikkö
+GBA · Indigo	GBA · Indigo
+GBA · Platinum	GBA · Platina
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Game Boy Color -näyttö
 Game Boy Color · Atomic Purple	Game Boy Color · Atomivioletti
@@ -1242,3 +1245,99 @@ What do you want to play?	Mitä haluat pelata?
 You can change this later in Settings > Library.	Voit muuttaa tämän myöhemmin kohdassa Asetukset > Kirjasto.
 A clean library with only DS games.	Selkeä kirjasto, jossa on vain DS-pelejä.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation ja muita, järjestelmittäin.
+Who's playing?	Kuka pelaa?
+Owner	Omistaja
+Kid	Lapsi
+Adult	Aikuinen
+Profiles	Profiilit
+Playing now	Pelaa nyt
+Change who's playing	Vaihda pelaajaa
+Add a profile	Lisää profiili
+Ask who's playing at startup	Kysy käynnistyksessä, kuka pelaa
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Jokaisella pelaajalla on omat tallennukset, suosikit, peliajat ja ulkoasu.
+Who it's for	Kenelle
+Name	Nimi
+DS name	DS-nimi
+Colour	Väri
+Age limit	Ikäraja
+Games with no rating	Ikärajattomat pelit
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Huijauskoodit
+Local wireless	Paikallinen langaton
+Set a PIN	Aseta PIN-koodi
+Change the PIN	Vaihda PIN-koodi
+Remove the PIN	Poista PIN-koodi
+None	Ei mitään
+Set	Asetettu
+Remove this profile	Poista tämä profiili
+Hidden	Piilotettu
+Shown	Näkyvissä
+No limit	Ei rajaa
+Only games I pick	Vain valitsemani
+Could not change profile. Check storage.	Profiilia ei voitu vaihtaa. Tarkista tallennustila.
+Switch to another profile first	Vaihda ensin toiseen profiiliin
+Not locked: set a PIN on the owner's profile.	Ei lukittu: aseta PIN-koodi omistajan profiiliin.
+Who is this profile for?	Kenelle profiili on?
+Own saves and look. Settings stay open.	Omat tallennukset ja ulkoasu. Asetukset ovat auki.
+Own saves, and a library you choose.	Omat tallennukset ja valitsemasi kirjasto.
+A library that fits their age, and no way into the handheld's settings.	Ikään sopiva kirjasto, eikä pääsyä laitteen asetuksiin.
+A second grown-up or an older child, with everything open.	Toinen aikuinen tai vanhempi lapsi, kaikki on auki.
+Every game shows, whatever its rating.	Kaikki pelit näkyvät ikärajasta riippumatta.
+Nothing shows until you allow it, game by game or a shelf at a time.	Mitään ei näytetä ennen lupaasi, peli tai hylly kerrallaan.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Tätä ikää vanhemmille tarkoitetut pelit piilotetaan. Ikärajattomat noudattavat profiilin asetusta.
+Profile removed. A backup is in userdata/exports.	Profiili poistettu. Varmuuskopio on kansiossa userdata/exports.
+The profile could not be removed.	Profiilia ei voitu poistaa.
+Removed profiles erased.	Poistetut profiilit tyhjennetty.
+Removed profiles could not be erased.	Poistettuja profiileja ei voitu tyhjentää.
+Erase removed profiles	Tyhjennä poistetut profiilit
+Erase the saves of removed profiles for good? This cannot be undone.	Tyhjennetäänkö poistettujen profiilien tallennukset lopullisesti? Tätä ei voi perua.
+Allow all	Salli kaikki
+Always show	Näytä aina
+Always hide	Piilota aina
+All	Kaikki
+No rating	Ei ikärajaa
+No games here.	Täällä ei ole pelejä.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A näyttää kaikki tämän hyllyn ikärajattomat pelit. Muut noudattavat edelleen ikää.
+Nothing here is waiting for a decision.	Täällä mikään ei odota päätöstä.
+No age rating	Ei ikärajaa
+You chose to show it.	Valitsit näyttää sen.
+You chose to hide it.	Valitsit piilottaa sen.
+Above this profile's age.	Yli tämän profiilin iän.
+Hidden until you allow it.	Piilossa, kunnes sallit sen.
+Fits this profile.	Sopii tälle profiilille.
+A changes who sees this game: automatic, always show, always hide.	A vaihtaa, kuka näkee pelin: automaattinen, näytä aina, piilota aina.
+Visible to…	Näkyy…
+Hide this game	Piilota tämä peli
+Hidden games	Piilotetut pelit
+This game is not available on this profile	Peli ei ole käytettävissä tässä profiilissa
+Not on this profile	Ei tässä profiilissa
+Locked	Lukittu
+PIN	PIN-koodi
+Enter the PIN	Anna PIN-koodi
+Choose a PIN	Valitse PIN-koodi
+Enter it again	Anna se uudelleen
+This needs a grown-up.	Tähän tarvitaan aikuinen.
+Those did not match. Choose a PIN.	Ne eivät täsmänneet. Valitse PIN-koodi.
+That is not the PIN.	Tämä ei ole PIN-koodi.
+Without one this profile is not locked. Cancel skips it.	Ilman koodia profiili ei ole lukittu. Peruuta ohittaa.
+The owner's PIN was removed.	Omistajan PIN-koodi poistettiin.
+Profile name	Profiilin nimi
+Remove this profile? Its saves are kept, and a backup is made first.	Poistetaanko profiili? Tallennukset säilytetään, ja ensin tehdään varmuuskopio.
+Show every game with no rating on this shelf?	Näytetäänkö kaikki tämän hyllyn ikärajattomat pelit?
+Star	Tähti
+Heart	Sydän
+Cat	Kissa
+Dog	Koira
+Robot	Robotti
+Rocket	Raketti
+Flower	Kukka
+Ghost	Kummitus
+Fish	Kala
+Crown	Kruunu
+Mushroom	Sieni
+Rainbow	Sateenkaari
+{0} shown	{0} näkyvissä
+{0} above the age	{0} yli iän
+{0} with no rating	{0} ilman ikärajaa
+Too many tries. Wait {0} s	Liian monta yritystä. Odota {0} s

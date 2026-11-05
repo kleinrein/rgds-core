@@ -11,6 +11,10 @@ void App::home_bar_settle() {
 
 void App::home_bar_activate(int button) {
     home_bar_focus = -1;
+    if (button == 3) {
+        open_profile_picker(false);
+        return;
+    }
     if (button == 1 && update_stage() == UpdateStage::None) button = 0; // the mark left while it was focused
     if (button == 0 || button == 2) {
         settings.section = button == 0 ? 10 : 7;
@@ -27,6 +31,7 @@ bool App::home_column_move(int code) {
         if (code == 8) home_bar_focus = -1;
         else if (code == 0 || code == 1) {
             std::vector<int> buttons = {0};
+            if (profiles.enabled()) buttons.push_back(3);
             if (update_stage() != UpdateStage::None) buttons.push_back(1);
             buttons.push_back(2);
             auto at = std::find(buttons.begin(), buttons.end(), home_bar_focus);
@@ -67,6 +72,7 @@ void App::home_column_touch(int x, int y) {
             open_category();
             return;
         }
+    if (profiles.enabled() && point_in(home_bar_chip, x, y)) return home_bar_activate(3);
     if (point_in(home_bar_left, x, y)) return home_bar_activate(0);
     if (point_in(home_bar_right, x, y)) return home_bar_activate(2);
     if (point_in(home_bar_mark, x, y) && update_now()) return;
@@ -108,7 +114,9 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
                 const auto& g = summary.groups[tile.index - 1];
                 note = summary_ready ? locale.text(std::to_string(g.games) + (g.games == 1 ? " game" : " games")) : "…";
             } else if (tile.index == pictochat_tile)
-                note = locale.text(device_status["wifi_connected"] == "1" ? "Wi-Fi connected" : "Draw and chat");
+                note = locale.text(kid_locked() && !active_profile().allow_pictochat ? "Not on this profile"
+                                   : device_status["wifi_connected"] == "1"          ? "Wi-Fi connected"
+                                                                                     : "Draw and chat");
             if (!note.empty()) raw_label(r, note, bx + 80, by + b.h / 2 + 8 + sink, 14, "muted", b.w - 96);
         }
         if (selected) chat_brackets(r, bx, by + sink, b.w, b.h, theme.at("accent"), 4);
@@ -122,6 +130,17 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
         ui_icon(r, i ? SettingsIcon::Clock : SettingsIcon::Sun, b.x + b.w / 2, y + b.y + b.h / 2 + (pressed ? 2 : 0),
                 26, "accent");
         if (home_bar_focus == (i ? 2 : 0)) chat_brackets(r, b.x, y + b.y, b.w, b.h, theme.at("accent"), 4);
+    }
+    if (profiles.enabled()) {
+        // Who's playing: their picture and name, and the way to change it.
+        const SDL_Rect b = home_bar_chip;
+        const bool pressed = pointer_down && point_in(b, contact_x, contact_y) && point_in(b, down_x, down_y);
+        raised_pill(r, b.x, y + b.y, b.w, b.h, 4, theme.at(pressed ? "focus" : "panel"), pressed ? 1 : 0, true, false);
+        const auto& who = profiles.profiles()[size_t(profiles.active_index())];
+        draw_profile_tile(r, who, b.x + 8, y + b.y + 8 + (pressed ? 2 : 0), 32);
+        raw_label(r, who.name, b.x + 48, centred_label_y(who.name, 18, y + b.y + b.h / 2 + (pressed ? 2 : 0)), 18,
+                  "ink", b.w - 56);
+        if (home_bar_focus == 3) chat_brackets(r, b.x, y + b.y, b.w, b.h, theme.at("accent"), 4);
     }
     if (home_bar_focus == 1 && update_stage() != UpdateStage::None)
         chat_brackets(r, home_bar_mark.x, y + home_bar_mark.y, home_bar_mark.w, home_bar_mark.h, theme.at("accent"), 4);

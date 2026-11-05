@@ -36,6 +36,14 @@ void App::action(int code) {
         welcome_action(code);
         return;
     }
+    if (settings.page == Page::ProfilePicker) {
+        profile_picker_action(code);
+        return;
+    }
+    if (settings.page == Page::PinPad) {
+        pin_action(code);
+        return;
+    }
     if (welcome_active && code == 7) return; // setup's own pages have no way out but back into it
     if (welcome_detour && code == 3 && (settings.page == Page::Timezone || settings.page == Page::Wifi)) {
         welcome_detour_end();
@@ -93,6 +101,26 @@ void App::action(int code) {
     }
     if (settings.page == Page::Colours) {
         colours_action(code);
+        return;
+    }
+    if (settings.page == Page::Profiles) {
+        profiles_action(code);
+        return;
+    }
+    if (settings.page == Page::ProfileEdit) {
+        profile_edit_action(code);
+        return;
+    }
+    if (settings.page == Page::ProfileChoose) {
+        profile_choose_action(code);
+        return;
+    }
+    if (settings.page == Page::ProfileGames) {
+        profile_games_action(code);
+        return;
+    }
+    if (settings.page == Page::ProfileGameRules) {
+        profile_game_rules_action(code);
         return;
     }
     if (settings.page == Page::Motion) {
@@ -317,6 +345,9 @@ void App::action(int code) {
                 else if (confirmation == "startup-rgds") save_startup();
                 else if (confirmation == "bt-forget") bluetooth_forget();
                 else if (confirmation == "remove-game") remove_game();
+                else if (confirmation == "profile-remove") remove_profile();
+                else if (confirmation == "profile-erase") erase_removed_profiles();
+                else if (confirmation == "profile-allow-shelf") allow_shelf();
                 else {
                     start_worker("device." + confirmation);
                     if (confirmation == "poweroff" || confirmation == "reboot") begin_shutdown(confirmation);
@@ -428,7 +459,9 @@ void App::action(int code) {
             }
         } else if (settings.page == Page::GameOptions) {
             const int base = game_options_base();
-            if (settings.focus == base) {
+            if (settings.focus == game_visibility_row()) {
+                if (code == 2) open_game_visibility();
+            } else if (settings.focus == base) {
                 if (code == 2 && game_removable()) confirm("remove-game", Page::GameOptions);
             } else if (other_system_selected() && settings.focus == base - 1) {
             } else if (code == 0 || code == 1 || code == 2) {
@@ -562,7 +595,8 @@ void App::action(int code) {
         } else if (code == 2) {
             if (settings.page == Page::Settings && settings.section == 8) {
                 if (hardware.poweroff) confirm("poweroff", Page::Settings);
-            } else if (settings.page == Page::Settings && settings.section == 6) open_controls(false);
+            } else if (settings.page == Page::Settings && settings.section == 11) open_profiles();
+            else if (settings.page == Page::Settings && settings.section == 6) open_controls(false);
             else if (settings.page == Page::Settings && settings.section == 9) open_updates(Page::Settings);
             else if (settings.page == Page::DeviceInfo) open_device_detail();
             else {
@@ -687,8 +721,12 @@ void App::touch(int x, int y) {
         return;
     }
     if (list_count() > 0 || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
-        settings.page == Page::Homebrew || settings.page == Page::Cheats) {
+        settings.page == Page::Homebrew || settings.page == Page::Cheats || settings.page == Page::ProfileGames) {
         sync_list();
+        if (settings.page == Page::ProfileGames && profile_games_header_hit(x, y)) {
+            profile_games_header_tap(x);
+            return;
+        }
         if ((settings.page == Page::Wifi || settings.page == Page::Bluetooth) && x >= 476 && y >= 24 && y <= 66) {
             start_worker(settings.page == Page::Wifi ? "device.scan" : "device.bt-scan");
             return;
@@ -739,6 +777,22 @@ void App::touch(int x, int y) {
     }
     if (settings.page == Page::Colours) {
         colours_touch(x, y);
+        return;
+    }
+    if (settings.page == Page::ProfilePicker) {
+        profile_picker_touch(x, y);
+        return;
+    }
+    if (settings.page == Page::PinPad) {
+        pin_touch(x, y);
+        return;
+    }
+    if (settings.page == Page::Profiles) {
+        profiles_touch(x, y);
+        return;
+    }
+    if (settings.page == Page::ProfileChoose) {
+        profile_choose_touch(x, y);
         return;
     }
     if (settings.page == Page::Motion) {
@@ -1644,7 +1698,7 @@ void App::handle_input(const SDL_Event& e) {
         case SDLK_b: action(3); break;
         case SDLK_TAB:
         case SDLK_c:
-            if (!o.game_menu && !picker_open) {
+            if (!o.game_menu && !picker_open && settings.page != Page::ProfilePicker) {
                 settings.section = 2;
                 settings.page = Page::LibraryOptions;
                 settings.focus = 0;
@@ -1670,12 +1724,12 @@ void App::handle_input(const SDL_Event& e) {
             break;
         case SDLK_LEFTBRACKET:
             if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
-                settings.page == Page::Homebrew || (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Homebrew || settings.page == Page::ProfileGames || (settings.page == Page::Library && !home_menu))
                 action(13);
             break;
         case SDLK_RIGHTBRACKET:
             if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
-                settings.page == Page::Homebrew || (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Homebrew || settings.page == Page::ProfileGames || (settings.page == Page::Library && !home_menu))
                 action(14);
             break;
         case SDLK_q:
@@ -1696,7 +1750,7 @@ void App::handle_input(const SDL_Event& e) {
         }
 
         // The shoulders step shader families and the cheats tabs; elsewhere they stand in for Left/Right.
-        if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats || settings.page == Page::Homebrew) &&
+        if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats || settings.page == Page::Homebrew || settings.page == Page::ProfileGames) &&
             (e.jbutton.button == 4 || e.jbutton.button == 5)) {
             action(e.jbutton.button == 4 ? 13 : 14);
             return;
@@ -1717,7 +1771,7 @@ void App::handle_input(const SDL_Event& e) {
         else if (e.jbutton.button == 2 && (settings.page == Page::Library || settings.page == Page::ShaderPicker ||
                                            settings.page == Page::Keyboard || settings.page == Page::SaveGallery ||
                                            settings.page == Page::Maintenance || settings.page == Page::Bluetooth ||
-                                           settings.page == Page::Homebrew))
+                                           settings.page == Page::Homebrew || settings.page == Page::ProfileGames))
             action(12);
     } else if (e.type == SDL_JOYHATMOTION) {
         hold.release(2000);

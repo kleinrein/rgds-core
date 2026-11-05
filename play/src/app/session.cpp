@@ -85,7 +85,8 @@ bool Session::open(const SessionOptions& o, std::string& error) {
             error = probe.error;
             return false;
         }
-        if (!prepare_save(o.data_root, probe.core->system(), o.rom, o.save_sources, save_, error)) return false;
+        if (!prepare_save(o.data_root, probe.core->system(), o.rom, o.save_sources, save_, error, o.import_saves))
+            return false;
     } else {
         // A libretro core: the launcher names the system, and the core reads the file itself.
         if (o.system.empty()) {
@@ -93,7 +94,7 @@ bool Session::open(const SessionOptions& o, std::string& error) {
             return false;
         }
         rom = std::make_shared<const std::vector<uint8_t>>();
-        if (!prepare_save(o.data_root, o.system, o.rom, o.save_sources, save_, error)) return false;
+        if (!prepare_save(o.data_root, o.system, o.rom, o.save_sources, save_, error, o.import_saves)) return false;
     }
     auto opened = o.core_library.empty()
                       ? open_mgba(rom, inner, save_.bytes)
@@ -105,7 +106,7 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     core_ = std::move(opened.core);
     writer_ = std::make_unique<SaveWriter>(save_.path);
     data_root_ = o.data_root;
-    if (cheats_.load(o.data_root, core_->system(), o.rom)) {
+    if (cheats_.load(o.data_root, core_->system(), o.rom, o.shared_cheats)) {
         core_->apply_cheats(cheats_.codes());
         std::fprintf(stderr, "play: %zu cheats from %s\n", cheats_.codes().size(), cheats_.path().c_str());
     }
@@ -125,9 +126,11 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     if (profile_ && profile_->lightgun && !core_->set_lightgun(true))
         std::fprintf(stderr, "play: this core has no light gun for %s\n", profile_->title.c_str());
     if (profile_ && profile_->mouse) {
-        if (!core_->set_mouse(true)) std::fprintf(stderr, "play: this core has no mouse for %s\n", profile_->title.c_str());
+        if (!core_->set_mouse(true))
+            std::fprintf(stderr, "play: this core has no mouse for %s\n", profile_->title.c_str());
         std::string why;
-        if (!profile_->cursor_x.empty() && (!cursor_x_.parse(profile_->cursor_x, why) || !cursor_y_.parse(profile_->cursor_y, why)))
+        if (!profile_->cursor_x.empty() &&
+            (!cursor_x_.parse(profile_->cursor_x, why) || !cursor_y_.parse(profile_->cursor_y, why)))
             std::fprintf(stderr, "play: the cursor is not read: %s\n", why.c_str()), cursor_x_ = cursor_y_ = Expr{};
     }
     title_ = profile_ ? profile_->title : clean_title(file_stem(o.rom));

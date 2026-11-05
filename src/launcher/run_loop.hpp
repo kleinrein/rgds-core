@@ -221,6 +221,7 @@ int App::run() {
                 begin_boot_work();
                 poll_library_scan();
                 poll_collection();
+                poll_visibility();
                 poll_system_status(now);
             }
             SDL_Event wait{};
@@ -232,6 +233,7 @@ int App::run() {
         }
         poll_library_scan();
         poll_collection();
+        poll_visibility();
         poll_search_preview(now);
         if (facet_index.poll()) dirty = true;
         if (auto result = library_summary.poll()) {
@@ -241,7 +243,8 @@ int App::run() {
         }
         if (!o.game_menu && o.boot_startup && library_ready && boot_hardware_ready && !return_writes_pending() &&
             !system.volume_pending() && !system.brightness_pending() && !resume_checked &&
-            settings.page != Page::BootWarning && settings.page != Page::Welcome) {
+            settings.page != Page::BootWarning && settings.page != Page::Welcome &&
+            settings.page != Page::ProfilePicker) {
             resume_checked = true;
             auto ticket = o.data / "session/resume-launch.ini";
             auto saved = fields(ticket);
@@ -375,6 +378,7 @@ int App::run() {
                 dirty = true;
             }
         }
+        enforce_lock(now);
         crash::context.page = int(settings.page);
         crash::context.home = home_menu;
         crash::context.games = model.games.size();
@@ -460,8 +464,9 @@ int App::run() {
                << ",\"top_animation_frames\":" << top_animation_frames
                << ",\"top_fade_reversals\":" << top_fade_reversals << ",\"kinetic_frames\":" << kinetic_frames
                << ",\"gesture_frames\":" << gesture_frames << ",\"sheet_frames\":" << sheet_frames
-               << ",\"kinetics_active\":" << (list_motion.active() || picker_motion.active() || filter_motion.active() ||
-                                             browser_motion.active() || page_drag.active())
+               << ",\"kinetics_active\":"
+               << (list_motion.active() || picker_motion.active() || filter_motion.active() ||
+                   browser_motion.active() || page_drag.active())
                << ",\"home_origin\":" << (home_origin == SIZE_MAX ? -1 : int(home_origin))
                << ",\"view_animation_active\":" << view_motion.active()
                << ",\"view_canvas_failed\":" << view_canvas_failed << ',';
@@ -516,6 +521,16 @@ int App::run() {
         report << "\"home_menu\":" << home_menu << ",\"filtered_games\":" << model.games.size()
                << ",\"search_query\":" << std::quoted(search_query) << ",\"discovery_filter\":" << discovery_filter
                << ',';
+        report << "\"profile\":" << std::quoted(profiles.active())
+               << ",\"profile_count\":" << profiles.profiles().size() << ",\"profile_focus\":" << settings.focus
+               << ",\"profile_unclear\":" << profiles.active_unclear() << ",\"all_games\":" << all_games.size()
+               << ",\"catalog_games\":" << catalog_games.size() << ",\"listed_systems\":" << listed_systems.size()
+               << ",\"visibility_loading\":" << visibility_loading << ",\"games_rows\":" << games_rows.size()
+               << ",\"games_tab\":" << games_tab << ",\"recent_games\":" << summary.recent_games.size()
+               << ",\"discovery_filter\":" << discovery_filter << ",\"launching\":" << launching
+               << ",\"status\":" << std::quoted(status)
+               << ",\"pin_digits\":" << pin_digits.size() << ",\"pin_purpose\":" << int(pin_purpose)
+               << ",\"settings_unlocked\":" << settings_unlocked << ",\"chat_open\":" << chat_open << ',';
         report << "\"page\":" << int(settings.page) << ",\"boot_pending\":" << (settings.page == Page::BootWarning)
                << ",\"library_scan_started\":" << library_scan_started << ",\"library_ready\":" << library_ready
                << ",\"frames\":" << rendered_frames << ",\"metadata_reads\":" << library_cache.counters.file_reads

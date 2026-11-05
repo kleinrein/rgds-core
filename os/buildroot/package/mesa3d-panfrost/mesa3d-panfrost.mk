@@ -43,6 +43,20 @@ MESA3D_PANFROST_CONF_OPTS = \
 	-Dlibunwind=disabled \
 	-Dlmsensors=disabled \
 	-Dbuild-tests=false \
-	-Dtools=
+	-Dtools= \
+	-Db_lto=true \
+	-Db_pgo=use
+
+# A profile trained on OutRun 2006 (pgo/README.md). Code it never ran keeps its plain -O2, not built for size, so other
+# GL games lose nothing. Bump the profile with the version: Mesa's source has to match it. A generated header's absolute
+# path differs from the training build's, which GCC calls a mismatch though the counters still apply: a warning, not an error.
+MESA3D_PANFROST_PGO_FLAGS = -fprofile-partial-training -Wno-missing-profile -Wno-error=coverage-mismatch
+MESA3D_PANFROST_CFLAGS = $(TARGET_CFLAGS) $(MESA3D_PANFROST_PGO_FLAGS)
+MESA3D_PANFROST_CXXFLAGS = $(TARGET_CXXFLAGS) $(MESA3D_PANFROST_PGO_FLAGS)
+
+define MESA3D_PANFROST_UNPACK_PROFILE
+	tar -xzf $(MESA3D_PANFROST_PKGDIR)/pgo/profile-$(MESA3D_PANFROST_VERSION).tar.gz -C $(@D)/buildroot-build
+endef
+MESA3D_PANFROST_PRE_BUILD_HOOKS += MESA3D_PANFROST_UNPACK_PROFILE
 
 $(eval $(meson-package))

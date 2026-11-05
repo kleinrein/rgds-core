@@ -5,8 +5,8 @@
 // and the launcher's font, with no pictures of real consoles: the face of the
 // system's own handheld around its screen (the Game Boy, the Pocket, the
 // Game Boy Color, the Game Boy Advance and its SP, in their shell colours),
-// and the black bar (the game across the full width at the top, the system's
-// name on a black bar below).
+// and, for the Game Boy Advance, the black bar (the game across the full width
+// at the top, the name on a black bar below).
 //
 // Picture frames are PNGs the owner puts in userdata/frames/<system>/, laid
 // over the game the way RetroArch overlays are (640x480 or any size, scaled
@@ -32,8 +32,7 @@ struct FrameLayout {
 FrameLayout frame_layout(int panel_w, int panel_h, int game_w, int game_h, int style);
 
 // The whole panel for a built-in style; the game is drawn over the layout after.
-// `system` is what the bar says ("GAME BOY ADVANCE").
-void draw_frame(Canvas& out, const FrameLayout& screen, int style, const Font& font, const std::string& system);
+void draw_frame(Canvas& out, const FrameLayout& screen, int style, const Font& font);
 
 // A built-in style for `system` by its play.ini name, or -1 for any other name (a picture frame) and for
 // another system's style.

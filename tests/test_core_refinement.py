@@ -57,6 +57,21 @@ class RefinementTests(unittest.TestCase):
                 self.assertEqual(key.count('{0}'), value.count('{0}'), (language, key))
                 self.assertFalse(set(map(ord, value)) - glyphs, (language, value))
 
+    def test_the_profile_screens_are_translated_everywhere(self):
+        catalogs = ROOT / 'assets/locales'
+        languages = [line.split('\t')[0] for line in (catalogs / 'languages.tsv').read_text().splitlines()]
+        sample = (
+            "Who's playing?", 'Age limit', 'Enter the PIN', 'Allow all', 'Too many tries. Wait {0} s', '{0} shown'
+        )
+        for language in languages:
+            rows = dict(
+                line.split('\t') for line in (catalogs / (language + '.tsv')).read_text().splitlines()
+                if line and not line.startswith('#')
+            )
+            for key in sample:
+                self.assertIn(key, rows, language)
+                if language != 'en-US' and key != 'PIN': self.assertNotEqual(rows[key], key, (language, key))
+
     def test_public_cli_rejects_account_provider_and_authentication(self):
         with tempfile.TemporaryDirectory() as tmp:
             for args in [('status', '--provider', 'screenscraper'), ('login',)]:

@@ -117,10 +117,11 @@ passes `RGDS_3D_SMOOTH` only to the enhanced fork. `DS_VERIFY_HIRES=1` compares 
 against the original full layer-selection path during diagnostic runs.
 
 **2D scaling** (In-game menu → Graphics → 2D scaling, `rgds_2d`, `RGDS_2D_FILTER`) resamples
-2D art on the enhanced screen: Native pixels (default, the 2.5× nearest grid), Sharp (crisp pixels,
-about one panel pixel of blend at each seam), Smooth (bilinear) or Crisp (for pixel art: Scale2x cells,
-so stairs on diagonals and curves become slopes while interiors stay exact, area-sampled like Sharp; it
-reads one more line above, which the compose job carries as `above2`). It applies at 2×–5× only; Native 3D
+2D art on the enhanced screen. The menu offers Off (`0`, default, the 2.5× nearest grid), Crisp (`3`, for pixel art: Scale2x cells, so stairs on
+diagonals and curves become slopes while interiors stay exact, area-sampled like Sharp; it reads one more line above,
+which the compose job carries as `above2`), HD (`4`) and HD soft (`5`, HD smooth in the code and in measurements). The
+engine still has Sharp (`1`, about one panel pixel of blend at each seam) and Smooth (`2`, bilinear), but a saved `1`
+or `2` now loads as `3`. It applies at 2×–5× only; Native 3D
 and the other screen still go through the Screen filter. Composition first builds each line with the 3D
 layer removed; a panel pixel that matches it is 2D art and takes the filtered value, so 3D detail,
 including 3D under translucent 2D, keeps its high-resolution composite. Filtered rows wait one line for

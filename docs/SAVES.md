@@ -78,6 +78,13 @@ All paths below are relative to the installation's writable `userdata/` folder,
 which may be on internal storage or the game card. They are outside versioned
 application releases.
 
+The owner's saves are in `userdata/` itself. Anyone else's profile has the same
+paths under `userdata/profiles/<id>/`, starting empty: a save beside a game is
+not imported into it. Ports keep their saves in their own folders, and a game
+that writes to a loose disk image writes to that one file, so these two are
+shared by every profile. **Back up all saves** includes every profile. See
+[PROFILES.md](PROFILES.md).
+
 | Engine | Native in-game saves | Native states |
 | --- | --- | --- |
 | DSCore | `emulators/rgds-experimental/saves/<ROM basename>.sav` | `emulators/rgds-experimental/states/`, using the DS game code |

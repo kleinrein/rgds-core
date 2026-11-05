@@ -30,6 +30,7 @@ inline GameOptions load_game_options(const fs::path& path) {
     if (result.rgds_scale > 5 && result.rgds_scale != 25) result.rgds_scale = 1;
     result.rgds_smooth = integer("rgds_smooth", 1, 0, 1);
     result.rgds_2d = integer("rgds_2d", 0, 0, 5);
+    if (result.rgds_2d == 1 || result.rgds_2d == 2) result.rgds_2d = 3; // Sharp and Smooth left the menu: Crisp
     result.rgds_adaptive = integer("rgds_adaptive", 1, 0, 1);
     return result;
 }

@@ -163,7 +163,7 @@ class SaveGuardTests(unittest.TestCase):
 class SourceRuleTests(unittest.TestCase):
     def test_launch_copies_saves_before_the_engine_starts(self):
         source = (ROOT / 'runtime/emulators.py').read_text()
-        self.assertLess(source.index('protect(data, core, rom, original_rom, build=app.name)'), source.index('subprocess.Popen'))
+        self.assertLess(source.index('protect(player, core, rom, original_rom, build=app.name)'), source.index('subprocess.Popen'))
 
     def test_dscore_writes_the_save_before_the_state(self):
         # the launcher skips a resume point older than the .sav

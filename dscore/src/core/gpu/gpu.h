@@ -242,6 +242,9 @@ private:
   bool native_derive_safe() const { return derive_capture_ && !run_fifo_; }
   // Display-phase detection: signature of the last PHASE_HISTORY frames, newest last.
   static constexpr u32 PHASE_HISTORY = 8, PHASE_MAX = 4;
+  // Frames the line-0 edge outlasts a skip request: longer than a draw block (one display period at most).
+  static constexpr u8 SKIP_EDGE_HOLD = PHASE_MAX + 1;
+  u8 skip_edge_hold_ = 0;
   u32 phase_sig_[PHASE_HISTORY] = {};
   u32 phase_seen_ = 0;
   u8 phase_period_ = 1;

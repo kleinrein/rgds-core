@@ -373,6 +373,13 @@ void test_saves() {
     // Extra sources (stock RetroArch's folder) are searched after the ROM's own folder.
     make_directories(dir + "/retro");
     write(dir + "/retro/Other.srm", "stock");
+    // Another profile's first start: what lies beside the game is someone else's, and stays where it is.
+    write(roms + "/Theirs.sav", "someone-elses");
+    CHECK(prepare_save(root + "/p1", "gba", roms + "/Theirs.gba", {}, slot, e, false));
+    CHECK(slot.imported_from.empty() && slot.bytes.empty());
+    CHECK(read(roms + "/Theirs.sav") == "someone-elses");
+    CHECK(prepare_save(root + "/p1", "gba", roms + "/Theirs.gba", {}, slot, e, false));
+    CHECK(slot.bytes.empty());
     CHECK(prepare_save(root, "gba", roms + "/Other.gba", {dir + "/retro"}, slot, e));
     CHECK(slot.imported_from == dir + "/retro/Other.srm" && read(dir + "/retro/Other.srm") == "stock");
 }

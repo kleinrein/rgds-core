@@ -379,13 +379,16 @@ French	French
 Friends	Friends
 Full colour	Full colour
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platinum
-Game Boy Advance · Black	Game Boy Advance · Black
-Game Boy Advance · Glacier	Game Boy Advance · Glacier
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Platinum	Game Boy Advance · Platinum
+GBA SP · Cobalt	GBA SP · Cobalt
+GBA SP · Cobalt · Screen only	GBA SP · Cobalt · Screen only
+GBA SP · Onyx	GBA SP · Onyx
+GBA SP · Onyx · Screen only	GBA SP · Onyx · Screen only
+GBA SP · Platinum	GBA SP · Platinum
+GBA SP · Platinum · Screen only	GBA SP · Platinum · Screen only
+GBA · Black	GBA · Black
+GBA · Glacier	GBA · Glacier
+GBA · Indigo	GBA · Indigo
+GBA · Platinum	GBA · Platinum
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Game Boy Color screen
 Game Boy Color · Atomic Purple	Game Boy Color · Atomic Purple
@@ -1242,3 +1245,99 @@ What do you want to play?	What do you want to play?
 You can change this later in Settings > Library.	You can change this later in Settings > Library.
 A clean library with only DS games.	A clean library with only DS games.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation and more, sorted by system.
+Who's playing?	Who's playing?
+Owner	Owner
+Kid	Kid
+Adult	Adult
+Profiles	Profiles
+Playing now	Playing now
+Change who's playing	Change who's playing
+Add a profile	Add a profile
+Ask who's playing at startup	Ask who's playing at startup
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Everyone who plays gets their own saves, favourites and playtime, and their own look.
+Who it's for	Who it's for
+Name	Name
+DS name	DS name
+Colour	Colour
+Age limit	Age limit
+Games with no rating	Games with no rating
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Cheats
+Local wireless	Local wireless
+Set a PIN	Set a PIN
+Change the PIN	Change the PIN
+Remove the PIN	Remove the PIN
+None	None
+Set	Set
+Remove this profile	Remove this profile
+Hidden	Hidden
+Shown	Shown
+No limit	No limit
+Only games I pick	Only games I pick
+Could not change profile. Check storage.	Could not change profile. Check storage.
+Switch to another profile first	Switch to another profile first
+Not locked: set a PIN on the owner's profile.	Not locked: set a PIN on the owner's profile.
+Who is this profile for?	Who is this profile for?
+Own saves and look. Settings stay open.	Own saves and look. Settings stay open.
+Own saves, and a library you choose.	Own saves, and a library you choose.
+A library that fits their age, and no way into the handheld's settings.	A library that fits their age, and no way into the handheld's settings.
+A second grown-up or an older child, with everything open.	A second grown-up or an older child, with everything open.
+Every game shows, whatever its rating.	Every game shows, whatever its rating.
+Nothing shows until you allow it, game by game or a shelf at a time.	Nothing shows until you allow it, game by game or a shelf at a time.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.
+Profile removed. A backup is in userdata/exports.	Profile removed. A backup is in userdata/exports.
+The profile could not be removed.	The profile could not be removed.
+Removed profiles erased.	Removed profiles erased.
+Removed profiles could not be erased.	Removed profiles could not be erased.
+Erase removed profiles	Erase removed profiles
+Erase the saves of removed profiles for good? This cannot be undone.	Erase the saves of removed profiles for good? This cannot be undone.
+Allow all	Allow all
+Always show	Always show
+Always hide	Always hide
+All	All
+No rating	No rating
+No games here.	No games here.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A shows every game with no rating on this shelf. Games with a rating still follow the age.
+Nothing here is waiting for a decision.	Nothing here is waiting for a decision.
+No age rating	No age rating
+You chose to show it.	You chose to show it.
+You chose to hide it.	You chose to hide it.
+Above this profile's age.	Above this profile's age.
+Hidden until you allow it.	Hidden until you allow it.
+Fits this profile.	Fits this profile.
+A changes who sees this game: automatic, always show, always hide.	A changes who sees this game: automatic, always show, always hide.
+Visible to…	Visible to…
+Hide this game	Hide this game
+Hidden games	Hidden games
+This game is not available on this profile	This game is not available on this profile
+Not on this profile	Not on this profile
+Locked	Locked
+PIN	PIN
+Enter the PIN	Enter the PIN
+Choose a PIN	Choose a PIN
+Enter it again	Enter it again
+This needs a grown-up.	This needs a grown-up.
+Those did not match. Choose a PIN.	Those did not match. Choose a PIN.
+That is not the PIN.	That is not the PIN.
+Without one this profile is not locked. Cancel skips it.	Without one this profile is not locked. Cancel skips it.
+The owner's PIN was removed.	The owner's PIN was removed.
+Profile name	Profile name
+Remove this profile? Its saves are kept, and a backup is made first.	Remove this profile? Its saves are kept, and a backup is made first.
+Show every game with no rating on this shelf?	Show every game with no rating on this shelf?
+Star	Star
+Heart	Heart
+Cat	Cat
+Dog	Dog
+Robot	Robot
+Rocket	Rocket
+Flower	Flower
+Ghost	Ghost
+Fish	Fish
+Crown	Crown
+Mushroom	Mushroom
+Rainbow	Rainbow
+{0} shown	{0} shown
+{0} above the age	{0} above the age
+{0} with no rating	{0} with no rating
+Too many tries. Wait {0} s	Too many tries. Wait {0} s

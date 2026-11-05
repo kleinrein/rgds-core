@@ -252,6 +252,27 @@ int main(int argc,char** argv){
    assert(rgds::complete_dsperate_state(slot.string()));
    return 0;
  }
+ if(argc==4 && std::string(argv[3])=="play-slow"){
+   // RG DS Play saves on the thread that ticks the bridge: a 50 MB PSP state holds every tick for seconds, then the
+   // slot is renamed over whole. The first tick after that keeps it, however late, and the game quits.
+   assert(play_state_replace && !atomic_state_replace);
+   auto slot=root/"states/slot.dss",writing=fs::path(slot.string()+".writing");
+   std::ofstream(slot)<<"older checkpoint";
+   auto contents=[](const fs::path& path){std::ifstream file(path);return std::string(std::istreambuf_iterator<char>(file),{});};
+   // Another write still under way beside a renamed slot: no shortcut, the stability wait decides.
+   command("busy","save");test_time=30;tick();std::ofstream(root/"states/next")<<"busy checkpoint";
+   fs::rename(root/"states/next",slot);std::ofstream(writing)<<"half";
+   test_time=100;tick();assert(saving);test_time=700;tick();assert(!saving && state().find("state=saved")!=std::string::npos);
+   fs::remove(writing);
+   command("slow-quit","quit");test_time=800;tick();assert(saving && quitting);
+   std::ofstream(writing)<<"new checkpoint";fs::rename(writing,slot);
+   test_time=9000;tick();   // the first tick after an 8 s save
+   assert(!saving && !failed && state().find("token=slow-quit")!=std::string::npos && state().find("state=saved")!=std::string::npos);
+   assert(contents(root/"auto.dss")=="new checkpoint");
+   bool queued=false;for(auto& e:events)if(e.type==SDL_QUIT)queued=true;
+   assert(queued);
+   return 0;
+ }
  if(argc==4)assert(!atomic_state_replace);
  if(core=="drastic"){setenv("RGDS_TOUCH_LIBRARY","fixture",1);assert(SDL_RenderCopy(nullptr,nullptr,nullptr,nullptr)==0);assert(adapter_draws==1);}
  if(core=="dsperate" || core=="melonds"){
@@ -382,6 +403,13 @@ int main(int argc,char** argv){
                     [str(self.binary), folder, core, "atomic"], capture_output=True, text=True, timeout=5
                 )
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rgds_play_keeps_a_renamed_state_after_a_save_that_held_the_bridge(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = subprocess.run(
+                [str(self.binary), folder, "rgds-play", "play-slow"], capture_output=True, text=True, timeout=5
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_direct_present_hook_times_captures_and_overlays_the_engine_canvas(self):
         with tempfile.TemporaryDirectory() as folder:

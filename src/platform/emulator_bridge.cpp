@@ -59,7 +59,7 @@ bool independent_wayland() {
 using Stamp = std::array<long long, 5>; // mtime, ctime, size, inode, device
 std::string core, control, autostate, state_dir, state_slot, token, last_token;
 bool initialized = false, autosave = true, saving = false, quitting = false, failed = false, autoload = false;
-bool atomic_state_replace = false;
+bool atomic_state_replace = false, play_state_replace = false;
 unsigned long long opened = 0, save_at = 0, pulse_at = 0, candidate_at = 0, quit_at = 0;
 int pulse = 0;
 SDL_JoystickID joystick = 0;
@@ -477,7 +477,9 @@ bool normalize_joystick_event(SDL_Event& event) {
 }
 int saved_rumble_strength() {
     int strength = std::clamp(std::atoi(env("RGDS_RUMBLE").c_str()), 0, 100);
-    std::ifstream ui(volume_data + "/ui.ini");
+    // ui.ini is the player's and volume.ini the handheld's: one folder only for the owner.
+    const auto own_ui = env("RGDS_UI_FILE");
+    std::ifstream ui(own_ui.empty() ? volume_data + "/ui.ini" : own_ui);
     bool on = strength > 0;
     for (std::string line; std::getline(ui, line);)
         if (line == "game_rumble=0" || line == "game_rumble=1") on = line.back() == '1';
@@ -504,6 +506,9 @@ void initialize() {
                      live_shader.load());
     opened = now();
     atomic_state_replace = core == "dsperate" && !state_slot.empty() && env("RGDS_STATE_ATOMIC_REPLACE") == "1";
+    // RG DS Play writes <slot>.writing, flushes it and renames it over the slot, on the thread that runs this
+    // bridge: a big PSP state blocks every tick until it is whole, so a replaced slot is taken at once.
+    play_state_replace = core == "rgds-play" && !state_slot.empty();
     frame_stats.enabled = env("RGDS_FPS") == "1";
     stats_path = env("RGDS_FRAME_STATS");
     controls_global = env("RGDS_CONTROLS_GLOBAL");
@@ -1305,8 +1310,10 @@ void tick(bool graphics_safe = false) {
                 !before.count(fresh) || before[fresh][3] != current[fresh][3] || before[fresh][4] != current[fresh][4];
             const bool complete = atomic_state_replace && replaced && lstat((fresh + ".tmp").c_str(), &temporary) < 0 &&
                                   errno == ENOENT && rgds::complete_dsperate_state(fresh);
-            if (atomic_state_replace ? complete
-                                     : (elapsed(time, candidate_at) >= 350 && elapsed(time, save_at) >= 600)) {
+            const bool renamed = play_state_replace && replaced &&
+                                 lstat((fresh + ".writing").c_str(), &temporary) < 0 && errno == ENOENT;
+            const bool settled = elapsed(time, candidate_at) >= 350 && elapsed(time, save_at) >= 600;
+            if (atomic_state_replace ? complete : renamed || settled) {
                 std::error_code error;
                 if (!autostate.empty()) error = copy_state(candidate, autostate);
                 saving = false;

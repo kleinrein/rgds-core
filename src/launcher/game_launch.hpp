@@ -37,6 +37,12 @@ void App::launch(bool from_home) {
         return;
     }
     if (model.games.empty()) return;
+    if (!game_allowed(model.games[model.selected])) {
+        status = "This game is not available on this profile";
+        emit_sound(MenuCue::Error);
+        dirty = true;
+        return;
+    }
     // A port that still needs its owner's files shows where to send them first (port_files_screen.hpp).
     if (!resume_launch && port_needs_files(model.games[model.selected])) {
         port_files_open(model.games[model.selected]);
@@ -147,6 +153,9 @@ void App::start_launch_runner(Uint32 now) {
         std::error_code ec;
         fs::remove(o.data / "session/switcher-library.ini", ec);
     }
+    // For Who's playing? to show; nothing to anyone with one profile.
+    if (profiles.enabled())
+        std::ofstream(o.player / "last-game.txt") << library_title(model.games[model.selected].title) << '\n';
     int channel[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, channel) < 0) {
         launch_result = 127;

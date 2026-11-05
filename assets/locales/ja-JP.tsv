@@ -379,13 +379,16 @@ French	フランス語
 Friends	仲間
 Full colour	フルカラー
 Game Boy	ゲームボーイ
-Game Boy Advance SP · Cobalt	ゲームボーイアドバンスSP · コバルト
-Game Boy Advance SP · Onyx	ゲームボーイアドバンスSP · オニキス
-Game Boy Advance SP · Platinum	ゲームボーイアドバンスSP · プラチナ
-Game Boy Advance · Black	ゲームボーイアドバンス · ブラック
-Game Boy Advance · Glacier	ゲームボーイアドバンス · グレイシア
-Game Boy Advance · Indigo	ゲームボーイアドバンス · インディゴ
-Game Boy Advance · Platinum	ゲームボーイアドバンス · プラチナ
+GBA SP · Cobalt	GBA SP · コバルト
+GBA SP · Cobalt · Screen only	GBA SP · コバルト · 画面のみ
+GBA SP · Onyx	GBA SP · オニキス
+GBA SP · Onyx · Screen only	GBA SP · オニキス · 画面のみ
+GBA SP · Platinum	GBA SP · プラチナ
+GBA SP · Platinum · Screen only	GBA SP · プラチナ · 画面のみ
+GBA · Black	GBA · ブラック
+GBA · Glacier	GBA · グレイシア
+GBA · Indigo	GBA · インディゴ
+GBA · Platinum	GBA · プラチナ
 Game Boy Color	ゲームボーイカラー
 Game Boy Color screen	ゲームボーイカラーの画面
 Game Boy Color · Atomic Purple	ゲームボーイカラー · クリアパープル
@@ -1242,3 +1245,99 @@ What do you want to play?	何で遊びますか?
 You can change this later in Settings > Library.	あとで設定 > ライブラリから変更できます。
 A clean library with only DS games.	DSゲームだけのすっきりしたライブラリです。
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS、ゲームボーイ、SNES、PlayStationなどをシステムごとに並べます。
+Who's playing?	だれが遊ぶ?
+Owner	オーナー
+Kid	こども
+Adult	おとな
+Profiles	プロフィール
+Playing now	プレイ中
+Change who's playing	プレイヤーを変更
+Add a profile	プロフィールを追加
+Ask who's playing at startup	起動時にだれが遊ぶか聞く
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	遊ぶ人ごとにセーブ、お気に入り、プレイ時間、見た目を分けられます。
+Who it's for	だれ用か
+Name	名前
+DS name	DSの名前
+Colour	色
+Age limit	年齢制限
+Games with no rating	年齢区分のないゲーム
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	チート
+Local wireless	ローカル通信
+Set a PIN	PINを設定
+Change the PIN	PINを変更
+Remove the PIN	PINを解除
+None	なし
+Set	設定済み
+Remove this profile	このプロフィールを削除
+Hidden	非表示
+Shown	表示
+No limit	制限なし
+Only games I pick	選んだものだけ
+Could not change profile. Check storage.	プロフィールを変更できません。カードを確認してください。
+Switch to another profile first	先に別のプロフィールに切り替えてください
+Not locked: set a PIN on the owner's profile.	ロックされていません: オーナーのプロフィールでPINを設定してください。
+Who is this profile for?	だれのプロフィールですか?
+Own saves and look. Settings stay open.	セーブと見た目を分けます。設定は使えます。
+Own saves, and a library you choose.	セーブを分け、遊べるゲームを選べます。
+A library that fits their age, and no way into the handheld's settings.	年齢に合ったゲームだけを表示し、本体の設定は開けません。
+A second grown-up or an older child, with everything open.	もう一人のおとなや年上の子ども向け。すべて使えます。
+Every game shows, whatever its rating.	年齢区分に関係なくすべて表示します。
+Nothing shows until you allow it, game by game or a shelf at a time.	許可するまで何も表示しません。1本ずつでも棚ごとでも許可できます。
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	この年齢より上のゲームは非表示です。年齢区分のないゲームはプロフィールの設定に従います。
+Profile removed. A backup is in userdata/exports.	プロフィールを削除しました。バックアップは userdata/exports にあります。
+The profile could not be removed.	プロフィールを削除できませんでした。
+Removed profiles erased.	削除したプロフィールを消去しました。
+Removed profiles could not be erased.	削除したプロフィールを消去できませんでした。
+Erase removed profiles	削除したプロフィールを消去
+Erase the saves of removed profiles for good? This cannot be undone.	削除したプロフィールのセーブを完全に消去しますか?元に戻せません。
+Allow all	すべて許可
+Always show	常に表示
+Always hide	常に非表示
+All	すべて
+No rating	区分なし
+No games here.	ゲームはありません。
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	Aでこの棚の年齢区分のないゲームをすべて表示します。区分のあるゲームは年齢に従います。
+Nothing here is waiting for a decision.	ここに未決定のゲームはありません。
+No age rating	年齢区分なし
+You chose to show it.	表示するよう選びました。
+You chose to hide it.	非表示にするよう選びました。
+Above this profile's age.	このプロフィールの年齢を超えています。
+Hidden until you allow it.	許可するまで非表示です。
+Fits this profile.	このプロフィールに合っています。
+A changes who sees this game: automatic, always show, always hide.	Aでこのゲームを見られる人を変更: 自動、常に表示、常に非表示。
+Visible to…	表示する相手…
+Hide this game	このゲームを非表示
+Hidden games	非表示のゲーム
+This game is not available on this profile	このプロフィールでは遊べません
+Not on this profile	このプロフィールでは使えません
+Locked	ロック中
+PIN	PIN
+Enter the PIN	PINを入力
+Choose a PIN	PINを決める
+Enter it again	もう一度入力
+This needs a grown-up.	おとなの人に頼んでください。
+Those did not match. Choose a PIN.	一致しません。PINを決めてください。
+That is not the PIN.	PINが違います。
+Without one this profile is not locked. Cancel skips it.	PINがないとロックされません。キャンセルで省略できます。
+The owner's PIN was removed.	オーナーのPINを解除しました。
+Profile name	プロフィール名
+Remove this profile? Its saves are kept, and a backup is made first.	このプロフィールを削除しますか?セーブは残り、先にバックアップします。
+Show every game with no rating on this shelf?	この棚の年齢区分のないゲームをすべて表示しますか?
+Star	星
+Heart	ハート
+Cat	ねこ
+Dog	いぬ
+Robot	ロボット
+Rocket	ロケット
+Flower	花
+Ghost	おばけ
+Fish	さかな
+Crown	王冠
+Mushroom	キノコ
+Rainbow	にじ
+{0} shown	表示 {0}
+{0} above the age	年齢超過 {0}
+{0} with no rating	区分なし {0}
+Too many tries. Wait {0} s	回数が多すぎます。{0} 秒待ってください

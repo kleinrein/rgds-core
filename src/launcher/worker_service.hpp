@@ -202,6 +202,8 @@ void App::poll_service(Uint32 now) {
             artwork_result = fields(item_folder(model.selected) / "artwork-status.ini");
         library_cache.invalidate_metadata();
         if (media.refresh()) library_cache.invalidate_titles();
+        // New ratings can show or hide games on this profile. The change waits until the player is back at a list.
+        if (active_rules.needs_ratings()) visibility_changed = true;
     }
     // New games found by the watcher: the index step has run, so fetch what is missing for them.
     if (artwork_finished && auto_scrape_pending && worker_action == "index") {
@@ -250,6 +252,8 @@ void App::poll_service(Uint32 now) {
         shutdown_kind.clear();
         dirty = true;
     }
+    if (worker <= 0 && profile_removing) profile_removal_finished(worker_ok);
+    if (worker <= 0 && profile_erasing) profile_erasing_finished(worker_ok);
     if (worker <= 0 && !worker_ok && worker_action.rfind("device.", 0) == 0 && device_status["state"] != "error") {
         device_status["state"] = "error";
         device_status["message"] = "This request did not finish. Please try again.";

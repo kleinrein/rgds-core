@@ -379,13 +379,16 @@ French	Fransk
 Friends	Venner
 Full colour	Fulde farver
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobolt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platin
-Game Boy Advance · Black	Game Boy Advance · Sort
-Game Boy Advance · Glacier	Game Boy Advance · Gletsjer
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Platinum	Game Boy Advance · Platin
+GBA SP · Cobalt	GBA SP · Kobolt
+GBA SP · Cobalt · Screen only	GBA SP · Kobolt · Kun skærm
+GBA SP · Onyx	GBA SP · Onyx
+GBA SP · Onyx · Screen only	GBA SP · Onyx · Kun skærm
+GBA SP · Platinum	GBA SP · Platin
+GBA SP · Platinum · Screen only	GBA SP · Platin · Kun skærm
+GBA · Black	GBA · Sort
+GBA · Glacier	GBA · Gletsjer
+GBA · Indigo	GBA · Indigo
+GBA · Platinum	GBA · Platin
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Game Boy Color-skærm
 Game Boy Color · Atomic Purple	Game Boy Color · Atomlilla
@@ -1242,3 +1245,99 @@ What do you want to play?	Hvad vil du spille?
 You can change this later in Settings > Library.	Du kan ændre det senere under Indstillinger > Bibliotek.
 A clean library with only DS games.	Et ryddeligt bibliotek med kun DS-spil.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation og mere, sorteret efter system.
+Who's playing?	Hvem spiller?
+Owner	Ejer
+Kid	Barn
+Adult	Voksen
+Profiles	Profiler
+Playing now	Spiller nu
+Change who's playing	Skift spiller
+Add a profile	Tilføj en profil
+Ask who's playing at startup	Spørg hvem der spiller ved start
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Alle, der spiller, får deres egne gemte spil, favoritter og spilletid og deres eget udseende.
+Who it's for	Hvem den er til
+Name	Navn
+DS name	DS-navn
+Colour	Farve
+Age limit	Aldersgrænse
+Games with no rating	Spil uden aldersmærkning
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Snydekoder
+Local wireless	Lokal trådløs
+Set a PIN	Vælg en pinkode
+Change the PIN	Skift pinkoden
+Remove the PIN	Fjern pinkoden
+None	Ingen
+Set	Valgt
+Remove this profile	Fjern denne profil
+Hidden	Skjult
+Shown	Vist
+No limit	Ingen grænse
+Only games I pick	Kun spil, jeg vælger
+Could not change profile. Check storage.	Kunne ikke skifte profil. Tjek lageret.
+Switch to another profile first	Skift først til en anden profil
+Not locked: set a PIN on the owner's profile.	Ikke låst: vælg en pinkode på ejerens profil.
+Who is this profile for?	Hvem er denne profil til?
+Own saves and look. Settings stay open.	Egne gemte spil og eget udseende. Indstillinger er åbne.
+Own saves, and a library you choose.	Egne gemte spil og et bibliotek, du vælger.
+A library that fits their age, and no way into the handheld's settings.	Et bibliotek, der passer til alderen, og ingen adgang til konsollens indstillinger.
+A second grown-up or an older child, with everything open.	En anden voksen eller et ældre barn, hvor alt er åbent.
+Every game shows, whatever its rating.	Alle spil vises, uanset aldersmærkning.
+Nothing shows until you allow it, game by game or a shelf at a time.	Intet vises, før du tillader det, spil for spil eller en hylde ad gangen.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Spil over denne alder skjules. Spil uden aldersmærkning følger indstillingen på profilens side.
+Profile removed. A backup is in userdata/exports.	Profilen er fjernet. Der er en sikkerhedskopi i userdata/exports.
+The profile could not be removed.	Profilen kunne ikke fjernes.
+Removed profiles erased.	Fjernede profiler er slettet.
+Removed profiles could not be erased.	Fjernede profiler kunne ikke slettes.
+Erase removed profiles	Slet fjernede profiler
+Erase the saves of removed profiles for good? This cannot be undone.	Slet gemte spil fra fjernede profiler for altid? Det kan ikke fortrydes.
+Allow all	Tillad alle
+Always show	Vis altid
+Always hide	Skjul altid
+All	Alle
+No rating	Uden mærkning
+No games here.	Ingen spil her.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A viser alle spil uden aldersmærkning på denne hylde. Spil med mærkning følger stadig alderen.
+Nothing here is waiting for a decision.	Intet her venter på en beslutning.
+No age rating	Ingen aldersmærkning
+You chose to show it.	Du valgte at vise det.
+You chose to hide it.	Du valgte at skjule det.
+Above this profile's age.	Over denne profils alder.
+Hidden until you allow it.	Skjult, indtil du tillader det.
+Fits this profile.	Passer til denne profil.
+A changes who sees this game: automatic, always show, always hide.	A ændrer, hvem der ser spillet: automatisk, vis altid, skjul altid.
+Visible to…	Synlig for…
+Hide this game	Skjul dette spil
+Hidden games	Skjulte spil
+This game is not available on this profile	Spillet er ikke tilgængeligt på denne profil
+Not on this profile	Ikke på denne profil
+Locked	Låst
+PIN	Pinkode
+Enter the PIN	Indtast pinkoden
+Choose a PIN	Vælg en pinkode
+Enter it again	Indtast den igen
+This needs a grown-up.	Det kræver en voksen.
+Those did not match. Choose a PIN.	De var ikke ens. Vælg en pinkode.
+That is not the PIN.	Det er ikke pinkoden.
+Without one this profile is not locked. Cancel skips it.	Uden en er profilen ikke låst. Annuller springer over.
+The owner's PIN was removed.	Ejerens pinkode er fjernet.
+Profile name	Profilnavn
+Remove this profile? Its saves are kept, and a backup is made first.	Fjern denne profil? Dens gemte spil bevares, og der laves først en sikkerhedskopi.
+Show every game with no rating on this shelf?	Vis alle spil uden aldersmærkning på denne hylde?
+Star	Stjerne
+Heart	Hjerte
+Cat	Kat
+Dog	Hund
+Robot	Robot
+Rocket	Raket
+Flower	Blomst
+Ghost	Spøgelse
+Fish	Fisk
+Crown	Krone
+Mushroom	Svamp
+Rainbow	Regnbue
+{0} shown	{0} vist
+{0} above the age	{0} over alderen
+{0} with no rating	{0} uden mærkning
+Too many tries. Wait {0} s	For mange forsøg. Vent {0} sek.

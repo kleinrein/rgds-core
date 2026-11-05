@@ -20,10 +20,11 @@ import zlib
 from pathlib import Path
 
 import public_artwork as art
+from age_rating import minimum_age
 from library import read_fields, write_fields
 from scraper import ScraperError, NotFound, image_to_bmp
 
-VERSION = 1
+VERSION = 2
 GAMETDB = "https://www.gametdb.com/dstdb.zip"
 GAMETDB_3DS = "https://www.gametdb.com/3dstdb.zip"
 METADATA = "https://raw.githubusercontent.com/libretro/libretro-database/master/metadat/"
@@ -42,6 +43,8 @@ KINDS = ("info", "snap", "title")
 PICTURES = {"snap": ("Named_Snaps", "snap.bmp"), "title": ("Named_Titles", "title.bmp")}
 # Region words in Libretro file names, by the last letter of a DS/GBA game code.
 REGIONS = {"E": "USA", "J": "Japan", "K": "Korea", "D": "Germany", "F": "France", "I": "Italy", "S": "Spain"}
+# Where a list is not under the catalog's own name (the launcher's name for N64 holds one rated game).
+LIST_NAMES = {("n64", "esrb"): "Nintendo - Nintendo 64 (BigEndian)"}
 MAX_ZIP = 24 * 1024 * 1024
 BLOCK = re.compile(r'^game \(\s*$(.*?)^\)', re.M | re.S)
 
@@ -105,6 +108,13 @@ def release_text(year, month="", day=""):
     return text
 
 
+def rating_text(element):
+    """'PEGI 12', or nothing for a board named without a value: most of what GameTDB lists has none."""
+    if element is None: return ""
+    text = (element.get("type", "") + " " + element.get("value", "")).strip()
+    return text if minimum_age(text) is not None else ""
+
+
 def game_record(game):
     """One GameTDB <game> element as plain data: scalar fields plus {language: text} maps."""
     def text(tag):
@@ -132,7 +142,7 @@ def game_record(game):
         publisher=text("publisher"),
         genre=clean_genre(text("genre")),
         release=release_text(*(date.get(k) for k in ("year", "month", "day"))) if date is not None else "",
-        rating=(rating.get("type", "") + " " + rating.get("value", "")).strip() if rating is not None else "",
+        rating=rating_text(rating),
         players=max(players),
         online=1 if wifi is not None else 0,
         features=", ".join(f.text.strip() for f in (wifi.findall("feature") if wifi is not None else []) if f.text),
@@ -145,6 +155,10 @@ def game_record(game):
 def gametdb_records(source, wanted):
     """{game code: record} for the codes in `wanted`, streamed from the GameTDB zip so memory stays small."""
     found = {}
+    # The same game's other regions, by the first three letters of its code: the strictest of their ratings stands in
+    # for a release that has none of its own.
+    prefixes = {code[:3] for code in wanted}
+    strictest = {}
     with zipfile.ZipFile(source) as archive:
         names = [n for n in archive.namelist() if n.lower().endswith(".xml")]
         if not names: raise ScraperError("The game information database was unreadable.")
@@ -154,9 +168,16 @@ def gametdb_records(source, wanted):
                     if element.tag != "game": continue
                     code = (element.findtext("id") or "").strip().upper()
                     if code in wanted and code not in found: found[code] = game_record(element)
+                    if code[:3] in prefixes:
+                        text = rating_text(element.find("rating"))
+                        if text and minimum_age(text) > (minimum_age(strictest.get(code[:3])) or 0):
+                            strictest[code[:3]] = text
                     element.clear()
             except ElementTree.ParseError:
                 raise ScraperError("The game information database was unreadable.") from None
+    for code, record in found.items():
+        if not record["rating"] and code[:3] in strictest:
+            record.update(rating=strictest[code[:3]], rating_source="region")
     return found
 
 
@@ -193,7 +214,11 @@ class GameInfo:
         if force: return True
         if kind == "info" and "info" in self.kinds:
             status = read_fields(item / "info-status.ini")
-            return not (status.get("info") in ("ok", "missing") and status.get("version") == str(VERSION))
+            if status.get("info") not in ("ok", "missing"): return True
+            # An older version's entry goes again only for what this one adds, a rating: not a whole library.
+            return status.get("version") != str(VERSION) and minimum_age(
+                read_fields(item / "info.ini").get("rating")
+            ) is None
         if kind in PICTURES and kind in self.kinds:
             if (item / PICTURES[kind][1]).exists(): return False
             return read_fields(item / "info-status.ini").get(kind) != "missing"
@@ -250,12 +275,12 @@ class GameInfo:
     def table(self, system, directory):
         tables = self.lists.setdefault(system, {})
         if directory not in tables:
-            name = art.CATALOGS[system]
+            name = LIST_NAMES.get((system, directory), art.CATALOGS[system])
             url = METADATA + art.urllib.parse.quote(directory) + "/" + art.urllib.parse.quote(name) + ".dat"
             key = LISTS[directory]
-            tables[directory] = self.client.catalog(
-                "%s-%s.dat" % (system, directory), url, lambda raw, key=key: parse_dat(raw, key)
-            )
+            # A list under another name is another file in the cache, or the old one would be read for a week.
+            cached = "%s-%s%s.dat" % (system, directory, "-2" if (system, directory) in LIST_NAMES else "")
+            tables[directory] = self.client.catalog(cached, url, lambda raw, key=key: parse_dat(raw, key))
         return tables[directory]
 
     def crc_names(self, system):
@@ -291,6 +316,7 @@ class GameInfo:
                 "genre": record["genre"],
                 "release": record["release"],
                 "rating": record["rating"],
+                "rating_source": record.get("rating_source", ""),
                 "players": record["players"] or "",
                 "online": record["online"],
                 "features": record["features"],
@@ -326,6 +352,9 @@ class GameInfo:
             if value in ("", None): continue
             if key == "developer" and info.get("developer"): continue
             merged[key] = value
+        # What an earlier version kept of a rating with no value, or a borrowed one a game's own rating has replaced.
+        if minimum_age(merged.get("rating")) is None: merged.pop("rating", None)
+        if "rating" not in merged or not fields.get("rating_source"): merged.pop("rating_source", None)
         if year and not info.get("year"): merged["year"] = year
         previous = info.get("info_provider", "")
         merged["info_provider"] = provider if not previous or provider in previous else previous + ", " + provider

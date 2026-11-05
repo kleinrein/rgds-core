@@ -101,7 +101,7 @@ class SettingsInteractionTests(unittest.TestCase):
         self.assertEqual(report['page'], 1)
 
     def test_scrollbar_grab_does_not_jump_until_moved(self):
-        report = self.run_ui('30 tap 612 200\n60 release\n')
+        report = self.run_ui('30 tap 612 150\n60 release\n')
         self.assertEqual(report['list_scroll'], 0)
 
     def test_mute_cancels_held_slider_repeat_and_survives_restart(self):

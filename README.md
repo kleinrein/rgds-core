@@ -19,6 +19,7 @@
 - **Dual screen mode:** maps, HUDs and your team on the bottom panel. See [the games](#second-screen-games).
 - **One in-game menu for every system:** pause, checkpoints, cheats, game switcher, settings.
 - **Library:** covers, list or cartridges. Search, favourites, recents, play time.
+- **Profiles:** everyone who plays gets their own saves, favourites and look. A Kid profile shows games for its age and locks the settings with a PIN. [More](docs/PROFILES.md)
 - **PortMaster ports**.
 - **PictoChat:** our own Wi-Fi chat between handhelds, no Nintendo files. [More](docs/PICTOCHAT.md)
 - **Safe updates:** signed, over Wi-Fi, into a second system slot. A bad update rolls back by itself. [More](docs/OTA.md)

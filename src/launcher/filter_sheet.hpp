@@ -181,8 +181,11 @@ App::FilterLayout App::filter_layout() {
                 continue;
             }
             if (facet < 0) {
-                static const std::array<const char*, 3> played = {"Unplayed", "Played", "Missing artwork"};
-                for (int code = 1; code <= 3; code++) {
+                static const std::array<const char*, 4> played = {"Unplayed", "Played", "Missing artwork",
+                                                                  "Hidden games"};
+                // What a player has hidden, to bring back: never on a Kid profile.
+                const int chips_shown = active_rules.restricted || hidden_games().empty() ? 3 : 4;
+                for (int code = 1; code <= chips_shown; code++) {
                     FilterChip chip;
                     chip.facet = -1;
                     chip.label = locale.text(played[size_t(code - 1)]);
@@ -395,7 +398,7 @@ void App::filter_slider_drag(int x) {
     if (filter_drag < 0 || !filter_slider(filter_drag, span)) return;
     const int stops = span.high_bound - span.low_bound;
     const int value = std::clamp(span.low_bound + int(std::lround(double(x + filter_slider_grab - filter_track_left()) *
-                                                                   stops / std::max(1, filter_track_width()))),
+                                                                  stops / std::max(1, filter_track_width()))),
                                  span.low_bound, span.high_bound);
     const int before = filter_thumb == 0 ? span.low : span.high;
     filter_slider_move(filter_drag, filter_thumb, value - before);
@@ -569,13 +572,15 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
     pattern(r, y, 480, true);
     settings_header(r, y, "Filter", 300);
     // The result so far, top right; with nothing narrowed, the games of the system being browsed.
-    const size_t scope_count = discovery_active() ? 0 : view_source(0).size() - (preferences.show_systems && shown_system == "ports" && port_entry ? 1 : 0);
-    std::string count_text =
-        collection_loading ? locale.text("Finding games…")
-        : discovery_active()
-            ? locale.text(std::to_string(model.games.size()) +
-                          (model.games.size() == 1 ? " matching game" : " matching games"))
-            : locale.text(std::to_string(scope_count) + (scope_count == 1 ? " game" : " games"));
+    const size_t scope_count =
+        discovery_active()
+            ? 0
+            : view_source(0).size() - (preferences.show_systems && shown_system == "ports" && port_entry ? 1 : 0);
+    std::string count_text = collection_loading ? locale.text("Finding games…")
+                             : discovery_active()
+                                 ? locale.text(std::to_string(model.games.size()) +
+                                               (model.games.size() == 1 ? " matching game" : " matching games"))
+                                 : locale.text(std::to_string(scope_count) + (scope_count == 1 ? " game" : " games"));
     raw_label(r, count_text, 612 - std::min(240, label_width(count_text, 18, false)), y + 30, 18, "accent", 240);
 
     const int view = filter_bottom - filter_top;
@@ -597,8 +602,8 @@ void App::filter_sheet_render(SDL_Renderer* r, int y) {
     SDL_Rect clip{26, y + filter_top - 4, filter_rail_x - 28, view + 8};
     s.RenderSetClipRect(r, &clip);
     for (const auto& title : layout.titles)
-        raw_label(r, title.text, filter_inner_x, y + filter_top + title.y - filter_scroll - filter_shift() + 2, 14, "muted",
-                  400);
+        raw_label(r, title.text, filter_inner_x, y + filter_top + title.y - filter_scroll - filter_shift() + 2, 14,
+                  "muted", 400);
     for (int i = 0; i < count; i++) {
         const auto& chip = layout.chips[size_t(i)];
         const int x = filter_inner_x + chip.box.x, top = y + filter_top + chip.box.y - filter_scroll - filter_shift();

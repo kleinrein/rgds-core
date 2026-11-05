@@ -14,7 +14,7 @@ void App::open_game_options() {
 
 bool App::apply_game_preferences(const GameOptions& next, const char* message) {
     try {
-        save_game_options(item_folder(model.selected) / "game.ini", next);
+        save_game_options(player_item_folder(model.selected) / "game.ini", next);
         game_preferences = next;
         library_cache.saved_options(model.games[model.selected], next);
         if (!o.game_menu) library_summary.request(o.data, all_games);

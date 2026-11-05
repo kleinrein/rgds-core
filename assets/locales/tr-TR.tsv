@@ -379,13 +379,16 @@ French	Fransızca
 Friends	Arkadaşlar
 Full colour	Tam renk
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Oniks
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platin
-Game Boy Advance · Black	Game Boy Advance · Siyah
-Game Boy Advance · Glacier	Game Boy Advance · Buzul
-Game Boy Advance · Indigo	Game Boy Advance · Çivit
-Game Boy Advance · Platinum	Game Boy Advance · Platin
+GBA SP · Cobalt	GBA SP · Kobalt
+GBA SP · Cobalt · Screen only	GBA SP · Kobalt · Yalnızca ekran
+GBA SP · Onyx	GBA SP · Oniks
+GBA SP · Onyx · Screen only	GBA SP · Oniks · Yalnızca ekran
+GBA SP · Platinum	GBA SP · Platin
+GBA SP · Platinum · Screen only	GBA SP · Platin · Yalnızca ekran
+GBA · Black	GBA · Siyah
+GBA · Glacier	GBA · Buzul
+GBA · Indigo	GBA · Çivit
+GBA · Platinum	GBA · Platin
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Game Boy Color ekranı
 Game Boy Color · Atomic Purple	Game Boy Color · Atom moru
@@ -1242,3 +1245,99 @@ What do you want to play?	Ne oynamak istersin?
 You can change this later in Settings > Library.	Bunu daha sonra Ayarlar > Kitaplık bölümünden değiştirebilirsin.
 A clean library with only DS games.	Yalnızca DS oyunlarından oluşan sade bir kitaplık.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation ve daha fazlası, sisteme göre sıralı.
+Who's playing?	Kim oynuyor?
+Owner	Sahip
+Kid	Çocuk
+Adult	Yetişkin
+Profiles	Profiller
+Playing now	Şu an oynuyor
+Change who's playing	Oyuncuyu değiştir
+Add a profile	Profil ekle
+Ask who's playing at startup	Açılışta kimin oynadığını sor
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Her oyuncunun kendi kayıtları, favorileri, oyun süresi ve görünümü olur.
+Who it's for	Kimin için
+Name	Ad
+DS name	DS adı
+Colour	Renk
+Age limit	Yaş sınırı
+Games with no rating	Derecelendirmesiz oyunlar
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Hileler
+Local wireless	Yerel kablosuz
+Set a PIN	PIN belirle
+Change the PIN	PIN'i değiştir
+Remove the PIN	PIN'i kaldır
+None	Yok
+Set	Ayarlı
+Remove this profile	Bu profili kaldır
+Hidden	Gizli
+Shown	Görünür
+No limit	Sınır yok
+Only games I pick	Yalnızca seçtiklerim
+Could not change profile. Check storage.	Profil değiştirilemedi. Depolamayı kontrol edin.
+Switch to another profile first	Önce başka bir profile geçin
+Not locked: set a PIN on the owner's profile.	Kilitli değil: sahibin profilinde PIN belirleyin.
+Who is this profile for?	Bu profil kimin için?
+Own saves and look. Settings stay open.	Kendi kayıtları ve görünümü. Ayarlar açık kalır.
+Own saves, and a library you choose.	Kendi kayıtları ve sizin seçtiğiniz bir kitaplık.
+A library that fits their age, and no way into the handheld's settings.	Yaşa uygun bir kitaplık ve cihaz ayarlarına erişim yok.
+A second grown-up or an older child, with everything open.	Başka bir yetişkin veya daha büyük bir çocuk, her şey açık.
+Every game shows, whatever its rating.	Derecelendirmesi ne olursa olsun tüm oyunlar görünür.
+Nothing shows until you allow it, game by game or a shelf at a time.	Siz izin verene kadar hiçbir şey görünmez; oyun oyun veya raf raf.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Bu yaşın üstündeki oyunlar gizlenir. Derecelendirmesiz oyunlar profil ayarına uyar.
+Profile removed. A backup is in userdata/exports.	Profil kaldırıldı. Yedek userdata/exports içinde.
+The profile could not be removed.	Profil kaldırılamadı.
+Removed profiles erased.	Kaldırılan profiller silindi.
+Removed profiles could not be erased.	Kaldırılan profiller silinemedi.
+Erase removed profiles	Kaldırılan profilleri sil
+Erase the saves of removed profiles for good? This cannot be undone.	Kaldırılan profillerin kayıtları kalıcı olarak silinsin mi? Bu geri alınamaz.
+Allow all	Tümüne izin ver
+Always show	Her zaman göster
+Always hide	Her zaman gizle
+All	Tümü
+No rating	Derecesiz
+No games here.	Burada oyun yok.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A bu raftaki derecelendirmesiz tüm oyunları gösterir. Diğerleri yaşa uymaya devam eder.
+Nothing here is waiting for a decision.	Burada karar bekleyen bir şey yok.
+No age rating	Yaş derecesi yok
+You chose to show it.	Göstermeyi seçtiniz.
+You chose to hide it.	Gizlemeyi seçtiniz.
+Above this profile's age.	Bu profilin yaşının üstünde.
+Hidden until you allow it.	Siz izin verene kadar gizli.
+Fits this profile.	Bu profile uygun.
+A changes who sees this game: automatic, always show, always hide.	A, bu oyunu kimin göreceğini değiştirir: otomatik, her zaman göster, her zaman gizle.
+Visible to…	Kimler görür…
+Hide this game	Bu oyunu gizle
+Hidden games	Gizli oyunlar
+This game is not available on this profile	Bu oyun bu profilde kullanılamaz
+Not on this profile	Bu profilde yok
+Locked	Kilitli
+PIN	PIN
+Enter the PIN	PIN'i girin
+Choose a PIN	Bir PIN seçin
+Enter it again	Tekrar girin
+This needs a grown-up.	Bunun için bir yetişkin gerekir.
+Those did not match. Choose a PIN.	Eşleşmedi. Bir PIN seçin.
+That is not the PIN.	Bu PIN doğru değil.
+Without one this profile is not locked. Cancel skips it.	PIN olmadan bu profil kilitli olmaz. İptal atlar.
+The owner's PIN was removed.	Sahibin PIN'i kaldırıldı.
+Profile name	Profil adı
+Remove this profile? Its saves are kept, and a backup is made first.	Bu profil kaldırılsın mı? Kayıtları korunur ve önce yedek alınır.
+Show every game with no rating on this shelf?	Bu raftaki derecelendirmesiz tüm oyunlar gösterilsin mi?
+Star	Yıldız
+Heart	Kalp
+Cat	Kedi
+Dog	Köpek
+Robot	Robot
+Rocket	Roket
+Flower	Çiçek
+Ghost	Hayalet
+Fish	Balık
+Crown	Taç
+Mushroom	Mantar
+Rainbow	Gökkuşağı
+{0} shown	{0} görünür
+{0} above the age	{0} yaşın üstünde
+{0} with no rating	{0} derecesiz
+Too many tries. Wait {0} s	Çok fazla deneme. {0} sn bekleyin

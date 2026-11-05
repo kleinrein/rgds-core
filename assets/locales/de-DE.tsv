@@ -379,13 +379,16 @@ French	Französisch
 Friends	Freunde
 Full colour	Volle Farben
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Kobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platin
-Game Boy Advance · Black	Game Boy Advance · Schwarz
-Game Boy Advance · Glacier	Game Boy Advance · Gletscher
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Platinum	Game Boy Advance · Platin
+GBA SP · Cobalt	GBA SP · Kobalt
+GBA SP · Cobalt · Screen only	GBA SP · Kobalt · Nur Bildschirm
+GBA SP · Onyx	GBA SP · Onyx
+GBA SP · Onyx · Screen only	GBA SP · Onyx · Nur Bildschirm
+GBA SP · Platinum	GBA SP · Platin
+GBA SP · Platinum · Screen only	GBA SP · Platin · Nur Bildschirm
+GBA · Black	GBA · Schwarz
+GBA · Glacier	GBA · Gletscher
+GBA · Indigo	GBA · Indigo
+GBA · Platinum	GBA · Platin
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Game Boy Color-Bildschirm
 Game Boy Color · Atomic Purple	Game Boy Color · Atomic Purple
@@ -1242,3 +1245,99 @@ What do you want to play?	Was möchtest du spielen?
 You can change this later in Settings > Library.	Du kannst das später unter Einstellungen > Bibliothek ändern.
 A clean library with only DS games.	Eine aufgeräumte Bibliothek nur mit DS-Spielen.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation und mehr, nach System sortiert.
+Who's playing?	Wer spielt?
+Owner	Besitzer
+Kid	Kind
+Adult	Erwachsen
+Profiles	Profile
+Playing now	Spielt gerade
+Change who's playing	Spieler wechseln
+Add a profile	Profil hinzufügen
+Ask who's playing at startup	Beim Start fragen, wer spielt
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Alle, die spielen, haben eigene Spielstände, Favoriten, Spielzeiten und ein eigenes Aussehen.
+Who it's for	Für wen
+Name	Name
+DS name	DS-Name
+Colour	Farbe
+Age limit	Altersgrenze
+Games with no rating	Spiele ohne Einstufung
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Cheats
+Local wireless	Lokaler Funk
+Set a PIN	PIN festlegen
+Change the PIN	PIN ändern
+Remove the PIN	PIN entfernen
+None	Keine
+Set	Festgelegt
+Remove this profile	Dieses Profil entfernen
+Hidden	Ausgeblendet
+Shown	Angezeigt
+No limit	Keine Grenze
+Only games I pick	Nur ausgewählte Spiele
+Could not change profile. Check storage.	Profil konnte nicht gewechselt werden. Speicher prüfen.
+Switch to another profile first	Zuerst zu einem anderen Profil wechseln
+Not locked: set a PIN on the owner's profile.	Nicht gesperrt: PIN im Profil des Besitzers festlegen.
+Who is this profile for?	Für wen ist dieses Profil?
+Own saves and look. Settings stay open.	Eigene Spielstände und Aussehen. Einstellungen bleiben offen.
+Own saves, and a library you choose.	Eigene Spielstände und eine Bibliothek, die du auswählst.
+A library that fits their age, and no way into the handheld's settings.	Eine altersgerechte Bibliothek und kein Zugang zu den Geräteeinstellungen.
+A second grown-up or an older child, with everything open.	Ein weiterer Erwachsener oder ein älteres Kind, alles bleibt offen.
+Every game shows, whatever its rating.	Alle Spiele werden angezeigt, unabhängig von der Einstufung.
+Nothing shows until you allow it, game by game or a shelf at a time.	Nichts wird angezeigt, bis du es erlaubst, einzeln oder regalweise.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Spiele über diesem Alter werden ausgeblendet. Spiele ohne Einstufung folgen der Einstellung des Profils.
+Profile removed. A backup is in userdata/exports.	Profil entfernt. Eine Sicherung liegt in userdata/exports.
+The profile could not be removed.	Das Profil konnte nicht entfernt werden.
+Removed profiles erased.	Entfernte Profile gelöscht.
+Removed profiles could not be erased.	Entfernte Profile konnten nicht gelöscht werden.
+Erase removed profiles	Entfernte Profile löschen
+Erase the saves of removed profiles for good? This cannot be undone.	Spielstände entfernter Profile endgültig löschen? Das kann nicht rückgängig gemacht werden.
+Allow all	Alle erlauben
+Always show	Immer zeigen
+Always hide	Immer ausblenden
+All	Alle
+No rating	Ohne Einstufung
+No games here.	Keine Spiele hier.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A zeigt alle Spiele ohne Einstufung in diesem Regal. Eingestufte Spiele folgen weiter dem Alter.
+Nothing here is waiting for a decision.	Hier wartet nichts auf eine Entscheidung.
+No age rating	Keine Alterseinstufung
+You chose to show it.	Du hast es zum Anzeigen gewählt.
+You chose to hide it.	Du hast es zum Ausblenden gewählt.
+Above this profile's age.	Über dem Alter dieses Profils.
+Hidden until you allow it.	Ausgeblendet, bis du es erlaubst.
+Fits this profile.	Passt zu diesem Profil.
+A changes who sees this game: automatic, always show, always hide.	A ändert, wer dieses Spiel sieht: automatisch, immer zeigen, immer ausblenden.
+Visible to…	Sichtbar für…
+Hide this game	Dieses Spiel ausblenden
+Hidden games	Ausgeblendete Spiele
+This game is not available on this profile	Dieses Spiel ist in diesem Profil nicht verfügbar
+Not on this profile	Nicht in diesem Profil
+Locked	Gesperrt
+PIN	PIN
+Enter the PIN	PIN eingeben
+Choose a PIN	PIN wählen
+Enter it again	Noch einmal eingeben
+This needs a grown-up.	Dafür braucht es einen Erwachsenen.
+Those did not match. Choose a PIN.	Das stimmte nicht überein. PIN wählen.
+That is not the PIN.	Das ist nicht die PIN.
+Without one this profile is not locked. Cancel skips it.	Ohne PIN ist dieses Profil nicht gesperrt. Abbrechen überspringt das.
+The owner's PIN was removed.	Die PIN des Besitzers wurde entfernt.
+Profile name	Profilname
+Remove this profile? Its saves are kept, and a backup is made first.	Dieses Profil entfernen? Die Spielstände bleiben erhalten, und zuerst wird eine Sicherung erstellt.
+Show every game with no rating on this shelf?	Alle Spiele ohne Einstufung in diesem Regal anzeigen?
+Star	Stern
+Heart	Herz
+Cat	Katze
+Dog	Hund
+Robot	Roboter
+Rocket	Rakete
+Flower	Blume
+Ghost	Geist
+Fish	Fisch
+Crown	Krone
+Mushroom	Pilz
+Rainbow	Regenbogen
+{0} shown	{0} angezeigt
+{0} above the age	{0} über dem Alter
+{0} with no rating	{0} ohne Einstufung
+Too many tries. Wait {0} s	Zu viele Versuche. Warte {0} s

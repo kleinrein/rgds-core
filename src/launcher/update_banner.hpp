@@ -4,6 +4,7 @@
 // Members of App in main.cpp; included once, right after the class.
 
 App::UpdateStage App::update_stage() {
+    if (kid_locked()) return UpdateStage::None; // it downloads as set, and only the owner is asked about it
     if (o.game_menu) return UpdateStage::None;
     const std::string state = update_status["state"];
     if (update_status["prepared"] == "1") return state == "restarting" ? UpdateStage::None : UpdateStage::Ready;

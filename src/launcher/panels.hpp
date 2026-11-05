@@ -13,6 +13,12 @@ void App::top(SDL_Renderer* r, int y) {
         welcome_top(r, y);
         return;
     }
+    if (settings.page == Page::ProfilePicker) {
+        rect(r, 0, y, 640, 480, "background");
+        status_bar(r, y);
+        profile_picker_top(r, y);
+        return;
+    }
     if (o.boot_startup && !library_ready) {
         boot_scene(r, y);
         return;
@@ -167,6 +173,11 @@ void App::bottom(SDL_Renderer* r, int y) {
     }
     if (settings.page == Page::Welcome) {
         welcome_bottom(r, y);
+        return;
+    }
+    if (settings.page == Page::ProfilePicker) {
+        rect(r, 0, y, 640, 480, "background");
+        profile_picker_bottom(r, y);
         return;
     }
     if (o.boot_startup && !library_ready) {

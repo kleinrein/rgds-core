@@ -379,13 +379,16 @@ French	法语
 Friends	伙伴
 Full colour	全彩
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · 宝蓝
-Game Boy Advance SP · Onyx	Game Boy Advance SP · 深黑
-Game Boy Advance SP · Platinum	Game Boy Advance SP · 铂金
-Game Boy Advance · Black	Game Boy Advance · 黑色
-Game Boy Advance · Glacier	Game Boy Advance · 冰川
-Game Boy Advance · Indigo	Game Boy Advance · 靛蓝
-Game Boy Advance · Platinum	Game Boy Advance · 铂金
+GBA SP · Cobalt	GBA SP · 宝蓝
+GBA SP · Cobalt · Screen only	GBA SP · 宝蓝 · 仅屏幕
+GBA SP · Onyx	GBA SP · 深黑
+GBA SP · Onyx · Screen only	GBA SP · 深黑 · 仅屏幕
+GBA SP · Platinum	GBA SP · 铂金
+GBA SP · Platinum · Screen only	GBA SP · 铂金 · 仅屏幕
+GBA · Black	GBA · 黑色
+GBA · Glacier	GBA · 冰川
+GBA · Indigo	GBA · 靛蓝
+GBA · Platinum	GBA · 铂金
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Game Boy Color 屏幕
 Game Boy Color · Atomic Purple	Game Boy Color · 透明紫
@@ -1242,3 +1245,99 @@ What do you want to play?	你想玩什么?
 You can change this later in Settings > Library.	之后可以在“设置 > 游戏库”中更改。
 A clean library with only DS games.	只有 DS 游戏的简洁游戏库。
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS、Game Boy、SNES、PlayStation 等,按系统排列。
+Who's playing?	谁在玩?
+Owner	机主
+Kid	儿童
+Adult	成人
+Profiles	个人资料
+Playing now	正在玩
+Change who's playing	切换玩家
+Add a profile	添加个人资料
+Ask who's playing at startup	启动时询问谁在玩
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	每位玩家都有自己的存档、收藏、游戏时间和外观。
+Who it's for	适用对象
+Name	名称
+DS name	DS 名称
+Colour	颜色
+Age limit	年龄限制
+Games with no rating	没有分级的游戏
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	作弊码
+Local wireless	本地无线
+Set a PIN	设置 PIN
+Change the PIN	更改 PIN
+Remove the PIN	移除 PIN
+None	无
+Set	已设置
+Remove this profile	移除此个人资料
+Hidden	已隐藏
+Shown	已显示
+No limit	无限制
+Only games I pick	仅限我选的游戏
+Could not change profile. Check storage.	无法切换个人资料。请检查存储卡。
+Switch to another profile first	请先切换到其他个人资料
+Not locked: set a PIN on the owner's profile.	未锁定:请在机主的个人资料中设置 PIN。
+Who is this profile for?	这个个人资料给谁用?
+Own saves and look. Settings stay open.	独立的存档和外观。设置保持开放。
+Own saves, and a library you choose.	独立的存档,以及由您挑选的游戏库。
+A library that fits their age, and no way into the handheld's settings.	适合年龄的游戏库,且无法进入掌机设置。
+A second grown-up or an older child, with everything open.	另一位成人或年龄较大的孩子,所有功能都开放。
+Every game shows, whatever its rating.	显示所有游戏,不论分级。
+Nothing shows until you allow it, game by game or a shelf at a time.	在您允许之前不显示任何游戏,可逐个或按整个分类允许。
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	高于此年龄的游戏将被隐藏。没有分级的游戏遵循此个人资料的设置。
+Profile removed. A backup is in userdata/exports.	已移除个人资料。备份位于 userdata/exports。
+The profile could not be removed.	无法移除个人资料。
+Removed profiles erased.	已清除移除的个人资料。
+Removed profiles could not be erased.	无法清除移除的个人资料。
+Erase removed profiles	清除移除的个人资料
+Erase the saves of removed profiles for good? This cannot be undone.	要永久清除已移除个人资料的存档吗?此操作无法撤消。
+Allow all	全部允许
+Always show	始终显示
+Always hide	始终隐藏
+All	全部
+No rating	无分级
+No games here.	这里没有游戏。
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	按 A 显示此分类中所有没有分级的游戏。有分级的游戏仍按年龄限制。
+Nothing here is waiting for a decision.	这里没有等待决定的游戏。
+No age rating	无年龄分级
+You chose to show it.	您选择了显示。
+You chose to hide it.	您选择了隐藏。
+Above this profile's age.	超过此个人资料的年龄。
+Hidden until you allow it.	在您允许前保持隐藏。
+Fits this profile.	适合此个人资料。
+A changes who sees this game: automatic, always show, always hide.	按 A 更改谁能看到此游戏:自动、始终显示、始终隐藏。
+Visible to…	可见范围…
+Hide this game	隐藏此游戏
+Hidden games	已隐藏的游戏
+This game is not available on this profile	此个人资料无法使用此游戏
+Not on this profile	此个人资料不可用
+Locked	已锁定
+PIN	PIN
+Enter the PIN	输入 PIN
+Choose a PIN	选择 PIN
+Enter it again	再次输入
+This needs a grown-up.	这需要成人操作。
+Those did not match. Choose a PIN.	两次输入不一致。请选择 PIN。
+That is not the PIN.	PIN 不正确。
+Without one this profile is not locked. Cancel skips it.	没有 PIN,此个人资料不会锁定。取消可跳过。
+The owner's PIN was removed.	已移除机主的 PIN。
+Profile name	个人资料名称
+Remove this profile? Its saves are kept, and a backup is made first.	要移除此个人资料吗?存档会保留,并先创建备份。
+Show every game with no rating on this shelf?	要显示此分类中所有没有分级的游戏吗?
+Star	星星
+Heart	爱心
+Cat	猫
+Dog	狗
+Robot	机器人
+Rocket	火箭
+Flower	花朵
+Ghost	幽灵
+Fish	鱼
+Crown	皇冠
+Mushroom	蘑菇
+Rainbow	彩虹
+{0} shown	已显示 {0}
+{0} above the age	超龄 {0}
+{0} with no rating	无分级 {0}
+Too many tries. Wait {0} s	尝试次数过多。请等待 {0} 秒

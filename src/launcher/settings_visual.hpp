@@ -89,6 +89,16 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Statistics" || title == "Time format" || title == "Date format" || title == "Daylight saving")
         return SettingsIcon::Clock;
     if (title == "Power off") return SettingsIcon::Shutdown;
+    if (title == "Profiles") return SettingsIcon::Heart;
+    if (title == "Who it's for" || title == "Age limit" || title == "Games with no rating") return SettingsIcon::Key;
+    if (title == "Name" || title == "DS name") return SettingsIcon::Type;
+    if (title == "Picture") return SettingsIcon::Art;
+    if (title == "Colour") return SettingsIcon::Spark;
+    if (title == "Games" || title == "Ports" || title == "Homebrew") return SettingsIcon::Cartridge;
+    if (title == "Set a PIN" || title == "Change the PIN" || title == "Remove the PIN") return SettingsIcon::Key;
+    if (title == "Erase removed profiles") return SettingsIcon::Shutdown;
+    if (title == "Cheats" || title == "Local wireless") return SettingsIcon::Spark;
+    if (title == "Hide this game" || title == "Visible to…") return SettingsIcon::Key;
     if (title == "Remove game") return SettingsIcon::Trash;
     if (title == "Dim when idle") return SettingsIcon::Sun;
     if (title == "Sleep timer in games") return SettingsIcon::Moon;

@@ -47,15 +47,22 @@ enum class Page {
     Colours,
     Cheats,
     // Appended: page numbers are stored in the launcher's state file.
-    PlayGraphics,   // in-game Graphics for RG DS Play: game screen fit, second screen
-    GameInfo,       // the selected game's facts, description and pictures (read-only)
-    Haptics,        // Sound -> Vibration: menu haptics and game rumble, each with a strength
-    PortFiles,      // Add game files: a port's own files, sent from a phone or computer (port_files_screen.hpp)
-    DisplayOptions, // Settings > Display: brightness, animations, touch indicator, home layout, touch gestures,
-    Bluetooth,      // Connectivity > Bluetooth devices (RG DS OS); last so stored page numbers keep
-    Homebrew,       // a system's pinned Homebrew shelf: free homebrew from our curated feed (homebrew_store.py)
-    SystemDefaults, // Library > System defaults: what a system's games share until a game says otherwise
-    Welcome,        // setup on a new card, and Settings > System > Run setup again (welcome_screen.hpp)
+    PlayGraphics,     // in-game Graphics for RG DS Play: game screen fit, second screen
+    GameInfo,         // the selected game's facts, description and pictures (read-only)
+    Haptics,          // Sound -> Vibration: menu haptics and game rumble, each with a strength
+    PortFiles,        // Add game files: a port's own files, sent from a phone or computer (port_files_screen.hpp)
+    DisplayOptions,   // Settings > Display: brightness, animations, touch indicator, home layout, touch gestures,
+    Bluetooth,        // Connectivity > Bluetooth devices (RG DS OS); last so stored page numbers keep
+    Homebrew,         // a system's pinned Homebrew shelf: free homebrew from our curated feed (homebrew_store.py)
+    SystemDefaults,   // Library > System defaults: what a system's games share until a game says otherwise
+    Welcome,          // setup on a new card, and Settings > System > Run setup again (welcome_screen.hpp)
+    ProfilePicker,    // Who's playing?: at boot once there is more than one profile, and from Home
+    Profiles,         // Settings > Profiles
+    ProfileEdit,      // one profile: who it's for, names, picture, colour
+    ProfileChoose,    // Adult or Kid, a picture, a colour or an age limit
+    ProfileGames,     // a profile's games: what it sees, and approving what has no rating
+    ProfileGameRules, // one game: who sees it
+    PinPad,         // entering or choosing a PIN
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -588,7 +595,7 @@ inline std::string game_sleep_name(int index) {
 inline constexpr std::array<int, 9> power_rows = {0, 1, 7, 8, 2, 3, 4, 5, 6};
 // The root list's order. Section ids stay stable (saved state and tests use
 // them); Display (10) is listed right below Theme and Updates (9) right below System.
-inline constexpr std::array<int, 11> section_order = {0, 10, 1, 2, 3, 4, 5, 9, 6, 7, 8};
+inline constexpr std::array<int, 12> section_order = {0, 10, 1, 2, 3, 4, 5, 9, 6, 7, 11, 8};
 // Theme and Display share the appearance code: the row ids are the original combined list's.
 inline int appearance_row_id(Page page, int index) {
     static constexpr std::array<int, 6> theme = {0, 1, 2, 3, 4, 9};
@@ -656,7 +663,7 @@ struct Settings {
         }
     }
     void move(int delta) {
-        if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 10))];
+        if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 11))];
         else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 5);
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 8);
@@ -897,8 +904,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
           << "\nanimations=" << p.animations << "\nview_animations=" << p.view_animations
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
           << "\nlayout=" << p.layout << "\nartwork_provider=" << p.artwork_provider << "\ngame_info=" << p.game_info
-          << "\nauto_scrape=" << p.auto_scrape
-          << "\nextra_pictures=" << p.extra_pictures << '\n';
+          << "\nauto_scrape=" << p.auto_scrape << "\nextra_pictures=" << p.extra_pictures << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';
     extra << "high_contrast=" << p.high_contrast << '\n';

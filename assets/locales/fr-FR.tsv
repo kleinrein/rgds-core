@@ -379,13 +379,16 @@ French	Français
 Friends	Amis
 Full colour	Couleurs complètes
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalt
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Onyx
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platine
-Game Boy Advance · Black	Game Boy Advance · Noir
-Game Boy Advance · Glacier	Game Boy Advance · Glacier
-Game Boy Advance · Indigo	Game Boy Advance · Indigo
-Game Boy Advance · Platinum	Game Boy Advance · Platine
+GBA SP · Cobalt	GBA SP · Cobalt
+GBA SP · Cobalt · Screen only	GBA SP · Cobalt · Écran seul
+GBA SP · Onyx	GBA SP · Onyx
+GBA SP · Onyx · Screen only	GBA SP · Onyx · Écran seul
+GBA SP · Platinum	GBA SP · Platine
+GBA SP · Platinum · Screen only	GBA SP · Platine · Écran seul
+GBA · Black	GBA · Noir
+GBA · Glacier	GBA · Glacier
+GBA · Indigo	GBA · Indigo
+GBA · Platinum	GBA · Platine
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Écran Game Boy Color
 Game Boy Color · Atomic Purple	Game Boy Color · Violet atomique
@@ -1242,3 +1245,99 @@ What do you want to play?	À quoi voulez-vous jouer ?
 You can change this later in Settings > Library.	Vous pourrez changer cela plus tard dans Réglages > Bibliothèque.
 A clean library with only DS games.	Une bibliothèque épurée, uniquement avec des jeux DS.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation et plus, triés par système.
+Who's playing?	Qui joue ?
+Owner	Propriétaire
+Kid	Enfant
+Adult	Adulte
+Profiles	Profils
+Playing now	Joue en ce moment
+Change who's playing	Changer de joueur
+Add a profile	Ajouter un profil
+Ask who's playing at startup	Demander qui joue au démarrage
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Chaque joueur a ses sauvegardes, ses favoris, son temps de jeu et son apparence.
+Who it's for	Pour qui
+Name	Nom
+DS name	Nom DS
+Colour	Couleur
+Age limit	Limite d'âge
+Games with no rating	Jeux sans classement
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Codes de triche
+Local wireless	Sans fil local
+Set a PIN	Définir un code PIN
+Change the PIN	Changer le code PIN
+Remove the PIN	Supprimer le code PIN
+None	Aucun
+Set	Défini
+Remove this profile	Supprimer ce profil
+Hidden	Masqué
+Shown	Affiché
+No limit	Aucune limite
+Only games I pick	Seulement mes choix
+Could not change profile. Check storage.	Impossible de changer de profil. Vérifiez le stockage.
+Switch to another profile first	Passez d'abord à un autre profil
+Not locked: set a PIN on the owner's profile.	Non verrouillé : définissez un code PIN sur le profil du propriétaire.
+Who is this profile for?	Pour qui est ce profil ?
+Own saves and look. Settings stay open.	Sauvegardes et apparence propres. Réglages accessibles.
+Own saves, and a library you choose.	Sauvegardes propres et une bibliothèque que vous choisissez.
+A library that fits their age, and no way into the handheld's settings.	Une bibliothèque adaptée à son âge, sans accès aux réglages de la console.
+A second grown-up or an older child, with everything open.	Un autre adulte ou un enfant plus âgé, avec tout accessible.
+Every game shows, whatever its rating.	Tous les jeux s'affichent, quel que soit leur classement.
+Nothing shows until you allow it, game by game or a shelf at a time.	Rien ne s'affiche tant que vous ne l'autorisez pas, jeu par jeu ou par étagère.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Les jeux au-dessus de cet âge sont masqués. Ceux sans classement suivent le réglage du profil.
+Profile removed. A backup is in userdata/exports.	Profil supprimé. Une sauvegarde est dans userdata/exports.
+The profile could not be removed.	Impossible de supprimer le profil.
+Removed profiles erased.	Profils supprimés effacés.
+Removed profiles could not be erased.	Impossible d'effacer les profils supprimés.
+Erase removed profiles	Effacer les profils supprimés
+Erase the saves of removed profiles for good? This cannot be undone.	Effacer définitivement les sauvegardes des profils supprimés ? Action irréversible.
+Allow all	Tout autoriser
+Always show	Toujours afficher
+Always hide	Toujours masquer
+All	Tous
+No rating	Sans classement
+No games here.	Aucun jeu ici.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A affiche tous les jeux sans classement de cette étagère. Les jeux classés suivent toujours l'âge.
+Nothing here is waiting for a decision.	Rien n'attend de décision ici.
+No age rating	Aucun classement par âge
+You chose to show it.	Vous avez choisi de l'afficher.
+You chose to hide it.	Vous avez choisi de le masquer.
+Above this profile's age.	Au-dessus de l'âge de ce profil.
+Hidden until you allow it.	Masqué jusqu'à votre autorisation.
+Fits this profile.	Convient à ce profil.
+A changes who sees this game: automatic, always show, always hide.	A change qui voit ce jeu : automatique, toujours afficher, toujours masquer.
+Visible to…	Visible par…
+Hide this game	Masquer ce jeu
+Hidden games	Jeux masqués
+This game is not available on this profile	Ce jeu n'est pas disponible sur ce profil
+Not on this profile	Pas sur ce profil
+Locked	Verrouillé
+PIN	Code PIN
+Enter the PIN	Saisissez le code PIN
+Choose a PIN	Choisissez un code PIN
+Enter it again	Saisissez-le à nouveau
+This needs a grown-up.	Il faut un adulte.
+Those did not match. Choose a PIN.	Les codes diffèrent. Choisissez un code PIN.
+That is not the PIN.	Ce n'est pas le bon code PIN.
+Without one this profile is not locked. Cancel skips it.	Sans code, ce profil n'est pas verrouillé. Annuler pour ignorer.
+The owner's PIN was removed.	Le code PIN du propriétaire a été supprimé.
+Profile name	Nom du profil
+Remove this profile? Its saves are kept, and a backup is made first.	Supprimer ce profil ? Ses sauvegardes sont conservées et une copie est d'abord créée.
+Show every game with no rating on this shelf?	Afficher tous les jeux sans classement de cette étagère ?
+Star	Étoile
+Heart	Coeur
+Cat	Chat
+Dog	Chien
+Robot	Robot
+Rocket	Fusée
+Flower	Fleur
+Ghost	Fantôme
+Fish	Poisson
+Crown	Couronne
+Mushroom	Champignon
+Rainbow	Arc-en-ciel
+{0} shown	{0} affichés
+{0} above the age	{0} au-dessus de l'âge
+{0} with no rating	{0} sans classement
+Too many tries. Wait {0} s	Trop d'essais. Attendez {0} s

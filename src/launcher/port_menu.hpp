@@ -138,7 +138,7 @@ void App::port_trigger(const char* name) {
 
 void App::port_info_tick(Uint32 now) {
     if (port_bright < 0) {
-        auto kept = fields(o.data / "emulators/rgds-play/second-screen.ini");
+        auto kept = fields(o.player / "emulators/rgds-play/second-screen.ini");
         port_bright = kept["brightness"].empty() ? 100 : std::clamp(std::atoi(kept["brightness"].c_str()), 10, 100);
         port_began = port_touched_at = now;
         if (!model.games.empty() && fields(folder_for_game(model.games[0]) / "touch.ini")["touch"] == "1")
@@ -155,7 +155,7 @@ void App::port_info_tick(Uint32 now) {
     }
     if (port_bright_at && now - port_bright_at > 800) {
         port_bright_at = 0;
-        const auto path = o.data / "emulators/rgds-play/second-screen.ini";
+        const auto path = o.player / "emulators/rgds-play/second-screen.ini";
         const auto pending = fs::path(path.string() + ".pending");
         std::error_code ec;
         fs::create_directories(path.parent_path(), ec);

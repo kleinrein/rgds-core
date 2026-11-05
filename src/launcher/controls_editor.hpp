@@ -3,7 +3,7 @@
 // Members of App in main.cpp; included once, right after the class.
 
 fs::path App::controls_file(bool per_game) {
-    return per_game && !model.games.empty() ? item_folder(model.selected) / "controls.ini" : o.data / "controls.ini";
+    return per_game && !model.games.empty() ? player_item_folder(model.selected) / "controls.ini" : o.data / "controls.ini";
 }
 
 void App::load_controls_editor() {

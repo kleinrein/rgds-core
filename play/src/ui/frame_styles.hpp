@@ -9,7 +9,7 @@
 // console's own front around the game, as large as its rails leave room for; the kind of
 // television, monitor or cabinet its games were played on. Systems are the
 // launcher's stock system ids (src/launcher/system_icons.hpp), comma
-// separated; "" is every system (off and the black bar). The DS has its own
+// separated; "" is every system (only off). The DS has its own
 // engine and two screens, so nothing here is for it. Tanuki3DS draws the 3DS
 // lids itself (rgds_bezel_draw in tools/tanuki3ds): they are listed here for
 // the pickers, with the same slugs.
@@ -37,7 +37,7 @@ enum class FrameKind {
     Monitor, // a beige computer monitor
     Arcade,  // an arcade cabinet: a lit marquee over the screen, buttons under it
     Vectrex, // the Vectrex: its own upright black screen
-    Bar,     // the game across the top, the system's name on a black bar below
+    Bar,     // the game across the top, GAME BOY ADVANCE on a black bar below
     Ctr,     // the 3DS lid over its top screen: drawn by the 3DS engine, not by this player
     // Only the screen's own bezel, edge to edge, so the game is as large as the panel allows (3x on a Game Boy)
     DmgInner,    // the Game Boy's dark bezel: the two lines and "DOT MATRIX WITH STEREO SOUND" over the screen
@@ -108,26 +108,34 @@ inline constexpr FrameStyleInfo frame_styles[] = {
     {"gbc-screen", "gbc", "Game Boy Color · Screen only", FrameKind::BezelInner, 0x25252B, 0x1A1A1F, 3, 0x1C1C21, 0,
      0xC9CBD3, "GAME BOY COLOR", 0, 0, 0},
     // Game Boy Advance
-    {"indigo", "gba", "Game Boy Advance · Indigo", FrameKind::Agb, 0x5B4FAF, 0x3B3283, 7, 0x22222C, 0x55556A, 0xB9BBC8,
+    {"indigo", "gba", "GBA · Indigo", FrameKind::Agb, 0x5B4FAF, 0x3B3283, 7, 0x22222C, 0x55556A, 0xB9BBC8,
      "GAME BOY ADVANCE", 0, 0, 0},
-    {"glacier", "gba", "Game Boy Advance · Glacier", FrameKind::Agb, 0xB5D6EE, 0x86AFD3, 16, 0x252A34, 0x5C6678,
-     0xB9BBC8, "GAME BOY ADVANCE", 0, 0, 0},
-    {"black", "gba", "Game Boy Advance · Black", FrameKind::Agb, 0x34343A, 0x1E1E22, 5, 0x141417, 0x4A4A52, 0xB9BBC8,
+    {"glacier", "gba", "GBA · Glacier", FrameKind::Agb, 0xB5D6EE, 0x86AFD3, 16, 0x252A34, 0x5C6678, 0xB9BBC8,
      "GAME BOY ADVANCE", 0, 0, 0},
-    {"platinum", "gba", "Game Boy Advance · Platinum", FrameKind::Agb, 0xD9D9DE, 0xAEAEB6, 5, 0x2A2A31, 0x60606C,
-     0xB9BBC8, "GAME BOY ADVANCE", 0, 0, 0},
-    {"sp-cobalt", "gba", "Game Boy Advance SP · Cobalt", FrameKind::Sp, 0x3A5BB8, 0x253E86, 5, 0x33353B, 0x6B6E78,
-     0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
-    {"sp-onyx", "gba", "Game Boy Advance SP · Onyx", FrameKind::Sp, 0x36363D, 0x1E1E23, 4, 0x33353B, 0x6B6E78, 0xEEEFF3,
+    {"black", "gba", "GBA · Black", FrameKind::Agb, 0x34343A, 0x1E1E22, 5, 0x141417, 0x4A4A52, 0xB9BBC8,
+     "GAME BOY ADVANCE", 0, 0, 0},
+    {"platinum", "gba", "GBA · Platinum", FrameKind::Agb, 0xD9D9DE, 0xAEAEB6, 5, 0x2A2A31, 0x60606C, 0xB9BBC8,
+     "GAME BOY ADVANCE", 0, 0, 0},
+    {"arctic", "gba", "GBA · Arctic", FrameKind::Agb, 0xF2F3F0, 0xD4D6D3, 3, 0x22222C, 0x55556A, 0xB9BBC8,
+     "GAME BOY ADVANCE", 0, 0, 0},
+    {"fuchsia", "gba", "GBA · Fuchsia", FrameKind::Agb, 0xD8488E, 0xA82A68, 6, 0x22222C, 0x55556A, 0xB9BBC8,
+     "GAME BOY ADVANCE", 0, 0, 0},
+    {"spice", "gba", "GBA · Spice", FrameKind::Agb, 0xEE8A2A, 0xC8661A, 5, 0x22222C, 0x55556A, 0xB9BBC8,
+     "GAME BOY ADVANCE", 0, 0, 0},
+    {"sp-cobalt", "gba", "GBA SP · Cobalt", FrameKind::Sp, 0x3A5BB8, 0x253E86, 5, 0x33353B, 0x6B6E78, 0xEEEFF3,
      "GAME BOY ADVANCE SP", 0, 0, 0},
-    {"sp-platinum", "gba", "Game Boy Advance SP · Platinum", FrameKind::Sp, 0xDCDEE4, 0xA9ACB6, 3, 0x33353B, 0x6B6E78,
-     0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
-    {"sp-cobalt-screen", "gba", "Game Boy Advance SP · Cobalt · Screen only", FrameKind::SpInner, 0x3A5BB8, 0x253E86, 5,
+    {"sp-onyx", "gba", "GBA SP · Onyx", FrameKind::Sp, 0x36363D, 0x1E1E23, 4, 0x33353B, 0x6B6E78, 0xEEEFF3,
+     "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-platinum", "gba", "GBA SP · Platinum", FrameKind::Sp, 0xDCDEE4, 0xA9ACB6, 3, 0x33353B, 0x6B6E78, 0xEEEFF3,
+     "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-cobalt-screen", "gba", "GBA SP · Cobalt · Screen only", FrameKind::SpInner, 0x3A5BB8, 0x253E86, 5, 0x33353B,
+     0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-onyx-screen", "gba", "GBA SP · Onyx · Screen only", FrameKind::SpInner, 0x36363D, 0x1E1E23, 4, 0x33353B,
+     0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"sp-platinum-screen", "gba", "GBA SP · Platinum · Screen only", FrameKind::SpInner, 0xDCDEE4, 0xA9ACB6, 3,
      0x33353B, 0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
-    {"sp-onyx-screen", "gba", "Game Boy Advance SP · Onyx · Screen only", FrameKind::SpInner, 0x36363D, 0x1E1E23, 4,
-     0x33353B, 0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
-    {"sp-platinum-screen", "gba", "Game Boy Advance SP · Platinum · Screen only", FrameKind::SpInner, 0xDCDEE4,
-     0xA9ACB6, 3, 0x33353B, 0x6B6E78, 0xEEEFF3, "GAME BOY ADVANCE SP", 0, 0, 0},
+    {"bar", "gba", "Black bar", FrameKind::Bar, 0x060607, 0x060607, 0, 0, 0x1E1E24, 0xC4C4CC, "GAME BOY ADVANCE", 0, 0,
+     0},
     // Other handhelds
     {"ngpc-silver", "ngp", "Neo Geo Pocket Color · Silver", FrameKind::Ngpc, 0xCDD0D6, 0x9EA2AA, 3, 0x1C1C21, 0x4A4A55,
      0xC9CBD3, "NEOGEO POCKET COLOR", 0, 0, 0},
@@ -188,8 +196,8 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0x0E1012, 0x3A3D42, 0x4A4A4E, "", 0x5A5A5E, 0xE0302A, 0},
     {"tv-wood", "nes,sms,atari,coleco,intellivision", "Wood-grain TV", FrameKind::TvWood, 0x7A4E2A, 0x4E2F17, 0,
      0x0E1012, 0x3A3D42, 0x2A2A2C, "", 0xB9B4A8, 0xE0302A, 2},
-    {"monitor", "dos,msx,zx,c64", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42, 0x6F6858,
-     "", 0xCDC4AA, 0x4CD964, 0},
+    {"monitor", "dos,msx,zx,c64,scummvm", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42,
+     0x6F6858, "", 0xCDC4AA, 0x4CD964, 0},
     {"ctr-dark", "3ds", "3DS · Clean dark", FrameKind::Ctr, 0x15161A, 0x0F1013, 0, 0, 0, 0, "", 0, 0, 0},
     {"ctr-cosmos", "3ds", "3DS · Cosmos Black", FrameKind::Ctr, 0x34373D, 0x1E2024, 0, 0, 0, 0, "", 0, 0, 0},
     {"ctr-aqua", "3ds", "3DS · Aqua Blue", FrameKind::Ctr, 0x4FB6D6, 0x2F8FB0, 0, 0, 0, 0, "", 0, 0, 0},
@@ -197,11 +205,10 @@ inline constexpr FrameStyleInfo frame_styles[] = {
     {"ctr-pink", "3ds", "3DS · Pearl Pink", FrameKind::Ctr, 0xF6C6D4, 0xE6A4B8, 0, 0, 0, 0, "", 0, 0, 0},
     {"ctr-white", "3ds", "3DS · Pure White", FrameKind::Ctr, 0xF2F2EF, 0xD8D8D4, 0, 0, 0, 0, "", 0, 0, 0},
     {"ctr-midnight", "3ds", "3DS · Midnight Purple", FrameKind::Ctr, 0x4E3A78, 0x322450, 0, 0, 0, 0, "", 0, 0, 0},
-    {"bar", "", "Black bar", FrameKind::Bar, 0x060607, 0x060607, 0, 0, 0x1E1E24, 0xC4C4CC, "", 0, 0, 0},
 };
 inline constexpr int frame_style_count = int(sizeof(frame_styles) / sizeof(frame_styles[0]));
 
-// Whether a style is offered for a system's games ("off" and the bar always are).
+// Whether a style is offered for a system's games ("off" always is).
 constexpr bool frame_fits(const FrameStyleInfo& style, std::string_view system) {
     std::string_view list = style.system;
     if (list.empty()) return true;

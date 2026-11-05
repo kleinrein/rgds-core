@@ -55,7 +55,7 @@ edge-smoothing mode or nine-bit scroll offset changes. It preserves the DS
 transparent half of the scrolling plane and does not change guest rendering.
 
 The fork's source is `dscore/` ([FORK.md](../../../dscore/FORK.md)); edit it directly.
-**Graphics → 2D scaling** (Native pixels, Sharp, Smooth) resamples the 2D layers of the enhanced screen
+**Graphics → 2D scaling** (Off, Crisp, HD, HD soft) resamples the 2D layers of the enhanced screen
 at 2×–5×; see `docs/RGDS_VULKAN.md`. It is display only and applies live.
 
 Build from this checkout with `make build-rgds-experimental`. The build fingerprints

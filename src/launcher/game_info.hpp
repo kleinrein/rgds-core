@@ -1,4 +1,5 @@
 #pragma once
+#include "launcher/age_rating.hpp"
 #include "launcher/media.hpp"
 
 namespace rgds {
@@ -54,7 +55,7 @@ inline GameFacts load_game_facts(const fs::path& folder, const std::string& loca
     facts.publisher = info["publisher"];
     facts.genre = info["genre"];
     facts.release = info["release"];
-    facts.rating = info["rating"];
+    facts.rating = minimum_age(info["rating"]) >= 0 ? info["rating"] : "";
     facts.franchise = info["franchise"];
     facts.players = info["players"];
     facts.features = info["features"];

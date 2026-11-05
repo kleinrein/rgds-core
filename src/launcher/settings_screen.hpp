@@ -88,6 +88,12 @@ void App::settings_top(SDL_Renderer* r, int y) {
         symbol = SettingsIcon::Spark;
         break;
     case Page::Colours: colours_top(r, y); return;
+    case Page::Profiles: profiles_top(r, y); return;
+    case Page::ProfileEdit: profile_edit_top(r, y); return;
+    case Page::PinPad: pin_top(r, y); return;
+    case Page::ProfileGames: profile_games_top(r, y); return;
+    case Page::ProfileGameRules: profile_game_rules_top(r, y); return;
+    case Page::ProfileChoose: profile_choose_top(r, y); return;
     case Page::Appearance:
         title = "Theme";
         symbol = SettingsIcon::Display;
@@ -115,13 +121,15 @@ void App::settings_top(SDL_Renderer* r, int y) {
         symbol = SettingsIcon::Art;
         break;
     case Page::Keyboard:
-        title = edit_field == 7   ? "Your name"
-                : edit_field == 5 ? "DS nickname"
-                : edit_field == 2 ? "Connectivity"
-                : edit_field == 3 ? "Artwork"
-                : edit_field == 4 ? "Search"
-                : edit_field == 6 ? "Cheats"
-                                  : "ScreenScraper";
+        title = edit_field == 8 || edit_field == 9 ? "Profiles"
+                : edit_field == 10                 ? "DS name"
+                : edit_field == 7                  ? "Your name"
+                : edit_field == 5                  ? "DS nickname"
+                : edit_field == 2                  ? "Connectivity"
+                : edit_field == 3                  ? "Artwork"
+                : edit_field == 4                  ? "Search"
+                : edit_field == 6                  ? "Cheats"
+                                                   : "ScreenScraper";
         symbol = edit_field == 2   ? SettingsIcon::Wifi
                  : edit_field == 6 ? SettingsIcon::Spark
                  : edit_field == 7 ? SettingsIcon::Type
@@ -570,9 +578,11 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
     int count = list_count();
     // Pages that keep their header and controls while their list is empty.
     if (count > 0 || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
-        settings.page == Page::Homebrew || settings.page == Page::Cheats) {
+        settings.page == Page::Homebrew || settings.page == Page::Cheats || settings.page == Page::ProfileGames) {
         std::string title = settings.page == Page::Graphics || settings.page == Page::PlayGraphics ? "Graphics"
                             : settings.page == Page::SystemDefaults                                ? "System defaults"
+                            : settings.page == Page::ProfileGames                                  ? "Games"
+                            : settings.page == Page::ProfileGameRules                              ? "Visible to…"
                             : settings.page == Page::Cheats                                        ? cheats_title()
                             : settings.page == Page::Sound                                         ? "Sound"
                             : settings.page == Page::MenuSounds                                    ? "Sounds & music"
@@ -599,13 +609,17 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                             : settings.page == Page::Controls   ? "Controls"
                                                                 : "Updates & recovery";
         if (settings.page == Page::Timezone) title = timezone_title();
+        if (settings.page == Page::ProfileEdit && edited_profile()) title = edited_profile()->name;
         settings_header(r, y, title,
-                        settings.page == Page::Cheats     ? cheat_tabs_left() - 88 - 16
-                        : settings.page == Page::Homebrew ? 616 - int(homebrew_shelves().size()) * 72 - 88 - 16
-                        : settings.page == Page::Timezone ? 600 - 88
-                                                          : 475,
-                        settings.page != Page::Cheats); // group names are data
+                        settings.page == Page::Cheats         ? cheat_tabs_left() - 88 - 16
+                        : settings.page == Page::Homebrew     ? 616 - int(homebrew_shelves().size()) * 72 - 88 - 16
+                        : settings.page == Page::ProfileGames ? profile_games_tabs_left - 88 - 16
+                        : settings.page == Page::Timezone     ? 600 - 88
+                                                              : 475,
+                        settings.page != Page::Cheats && settings.page != Page::ProfileEdit); // names are data
         if (settings.page == Page::Cheats) cheat_header(r, y);
+        if (settings.page == Page::ProfileGames)
+            tab_strip(r, profile_games_tabs_left, y + 77, profile_games_tab, {"All", "Shown", "Hidden", "No rating"}, games_tab);
         if (settings.page == Page::Homebrew) {
             // the shelves as tabs, L and R between them (the Cheats page's strip)
             std::vector<std::string> names;
@@ -641,7 +655,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 continue;
             if (settings.page == Page::Settings)
                 list_row(r, y, i, sections[size_t(section_order[size_t(i)])].title,
-                         section_order[size_t(i)] == 9 ? update_badge() : "");
+                         kid_locked() && !section_open_to_kid(section_order[size_t(i)]) ? locale.text("Locked")
+                         : section_order[size_t(i)] == 9                                ? update_badge()
+                                                                                        : "");
             else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions)
                 appearance_row(r, y, i);
             else if (settings.page == Page::ShaderPicker) {
@@ -743,6 +759,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 const uint32_t tone = play::gb_palettes[view.palette].shade[1];
                 const Color dot{uint8_t(tone >> 16), uint8_t(tone >> 8), uint8_t(tone)};
                 list_row(r, y, i, names[size_t(i)], values[size_t(i)], true, palette && i == 5 ? &dot : nullptr);
+            } else if (settings.page == Page::GameOptions && i == game_visibility_row()) {
+                const bool hidden = load_visibility(o.player).count(game_key(model.games[model.selected].path)) > 0;
+                if (profiles.enabled()) list_row(r, y, i, "Visible to…", "");
+                else list_row(r, y, i, "Hide this game", hidden ? "On" : "Off");
             } else if (settings.page == Page::GameOptions && i == game_options_base())
                 list_row(r, y, i, "Remove game", ""); // only listed when game_removable()
             else if (settings.page == Page::GameOptions && other_system_selected() && i == game_options_base() - 1)
@@ -860,6 +880,12 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                              ? "Connected"
                              : (device_status[prefix + "saved"] == "1" ? "Saved · " : "") +
                                    device_status[prefix + "signal"] + "%");
+            } else if (settings.page == Page::ProfileEdit) {
+                profile_edit_row(r, y, i);
+            } else if (settings.page == Page::ProfileGames) {
+                profile_games_row(r, y, i);
+            } else if (settings.page == Page::ProfileGameRules) {
+                profile_game_rules_row(r, y, i);
             } else if (settings.page == Page::Homebrew) {
                 list_row(r, y, i, device_status["hb_" + std::to_string(i) + "_title"], homebrew_row_value(i));
             } else if (settings.page == Page::Bluetooth) {
@@ -970,6 +996,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     : !device_status["wifi_reason"].empty() ? device_status["wifi_reason"]
                                                             : "No networks found",
                     30, y + 145, 24, 560, 4);
+        if (settings.page == Page::ProfileGames && !count) {
+            if (games_reader.pending()) busy_ring(r, 320, y + 250, 26, 4);
+            else wrapped(r, "No games here.", 30, y + 145, 24, 560, 2);
+        }
         if (settings.page == Page::Homebrew && !count) {
             if (homebrew_loading()) busy_ring(r, 320, y + 250, 26, 4);
             else
@@ -1084,6 +1114,18 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         colours_screen(r, y);
         return;
     }
+    if (settings.page == Page::Profiles) {
+        profiles_screen(r, y);
+        return;
+    }
+    if (settings.page == Page::PinPad) {
+        pin_screen(r, y);
+        return;
+    }
+    if (settings.page == Page::ProfileChoose) {
+        profile_choose_screen(r, y);
+        return;
+    }
     if (settings.page == Page::Motion) {
         settings_header(r, y, "Animations");
         const std::array<std::string, 2> names = {"Interface animations", "View transitions"};
@@ -1172,11 +1214,14 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             : confirmation == "bt-off"       ? "Turn Bluetooth off?"
             : confirmation == "bt-forget"    ? "Forget this device?"
             : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
-            : confirmation == "poweroff"     ? "Power off your handheld?"
-            : confirmation == "update-apply" ? "Restart and install the update?"
-            : confirmation == "update-discard" ? "Cancel the update? Anything already downloaded is removed."
-            : confirmation == "rollback"       ? "Use the previous RGDS build?"
-                                               : "Clear temporary game files?";
+            : confirmation == "profile-remove" ? "Remove this profile? Its saves are kept, and a backup is made first."
+            : confirmation == "profile-allow-shelf" ? "Show every game with no rating on this shelf?"
+            : confirmation == "profile-erase" ? "Erase the saves of removed profiles for good? This cannot be undone."
+            : confirmation == "poweroff"            ? "Power off your handheld?"
+            : confirmation == "update-apply"        ? "Restart and install the update?"
+            : confirmation == "update-discard"      ? "Cancel the update? Anything already downloaded is removed."
+            : confirmation == "rollback"            ? "Use the previous RGDS build?"
+                                                    : "Clear temporary game files?";
         settings_card(r, 28, y + 105, 584, 209);
         ui_icon(r, SettingsIcon::Info, 58, y + 136, 24, "accent");
         label(r, "REVIEW YOUR CHOICE", 88, y + 125, 13, "muted", 495);

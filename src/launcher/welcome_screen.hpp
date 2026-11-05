@@ -129,7 +129,7 @@ void App::welcome_language_defaults() {
 
 // One name for this handheld: DS games read it from ds.ini (a game's own nickname still wins), PictoChat from its profile.
 std::string App::ds_owner_name() const {
-    auto saved = fields(o.data / "ds.ini")["nickname"];
+    auto saved = fields(o.player / "ds.ini")["nickname"];
     return saved.empty() ? "RG DS Core" : saved;
 }
 
@@ -137,8 +137,8 @@ void App::save_owner_name(std::string name) {
     while (!name.empty() && name.back() == ' ') name.pop_back();
     if (name.empty()) return;
     try {
-        fs::create_directories(o.data);
-        const auto path = o.data / "ds.ini", pending = fs::path(path.string() + ".pending");
+        fs::create_directories(o.player);
+        const auto path = o.player / "ds.ini", pending = fs::path(path.string() + ".pending");
         std::ofstream out(pending);
         out << "nickname=" << name << '\n';
         out.close();
@@ -146,7 +146,7 @@ void App::save_owner_name(std::string name) {
     } catch (const std::exception&) {
         status = "Could not save DS settings.";
     }
-    chat.load_profile(o.data.empty() ? fs::path() : o.data / "pictochat.ini", preferences.accent);
+    chat.load_profile(o.player.empty() ? fs::path() : o.player / "pictochat.ini", preferences.accent);
     chat.name = name;
     chat_save_profile();
     dirty = true;

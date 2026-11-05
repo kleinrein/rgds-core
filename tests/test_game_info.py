@@ -28,6 +28,14 @@ Win the day.</synopsis></locale>
     <wi-fi players="4"><feature>online</feature></wi-fi>
     <input players-multi-cart="2" players-single-cart="1"/>
   </game>
+  <game name="Unrated (USA)"><id>BBBE</id><locale lang="EN"><title>Unrated</title></locale>
+    <rating type="ESRB" value=""/></game>
+  <game name="Unrated (Europe)"><id>BBBP</id><locale lang="EN"><title>Unrated</title></locale>
+    <rating type="PEGI" value="7"/></game>
+  <game name="Unrated (Japan)"><id>BBBJ</id><locale lang="EN"><title>Unrated</title></locale>
+    <rating type="CERO" value="B"/></game>
+  <game name="Lonely (USA)"><id>CCCE</id><locale lang="EN"><title>Lonely</title></locale>
+    <rating type="ESRB" value=""/></game>
   <game name="Other (USA)"><id>ZZZE</id><locale lang="EN"><title>Other</title></locale></game>
 </datafile>'''
 
@@ -128,6 +136,45 @@ class GameInfoTests(unittest.TestCase):
         names = game_info.parse_dat(SERIALS.format(crc='0000ABCD'), '')
         self.assertEqual(names['0000ABCD'][0], 'Hero Saga (USA)')
 
+    def test_a_board_without_a_value_is_no_rating_and_another_region_stands_in(self):
+        records = game_info.gametdb_records(self.archive(), {'BBBE', 'CCCE', 'BBBP'})
+        # The strictest of the regions that have one: CERO B (12) over PEGI 7.
+        self.assertEqual((records['BBBE']['rating'], records['BBBE']['rating_source']), ('CERO B', 'region'))
+        # Its own rating is its own, however strict the others.
+        self.assertEqual(records['BBBP']['rating'], 'PEGI 7')
+        self.assertNotIn('rating_source', records['BBBP'])
+        # No region has one.
+        self.assertEqual(records['CCCE']['rating'], '')
+
+    def test_saving_clears_what_an_earlier_version_kept_of_a_rating(self):
+        info = game_info.GameInfo(None, ('info',))
+        write_fields(self.item / 'info.ini', {'title': 'Keep', 'rating': 'ESRB'})
+        info.save_information(self.item, {'info_title': 'T', 'rating': ''}, {}, 'GameTDB')
+        self.assertNotIn('rating', read_fields(self.item / 'info.ini'))
+        self.assertEqual(read_fields(self.item / 'info.ini')['title'], 'Keep')
+        info.save_information(self.item, {'rating': 'CERO B', 'rating_source': 'region'}, {}, 'GameTDB')
+        self.assertEqual(read_fields(self.item / 'info.ini')['rating_source'], 'region')
+        info.save_information(self.item, {'rating': 'PEGI 7'}, {}, 'GameTDB')
+        saved = read_fields(self.item / 'info.ini')
+        self.assertEqual(saved['rating'], 'PEGI 7')
+        self.assertNotIn('rating_source', saved)
+
+    def test_a_game_from_an_older_version_goes_again_only_for_a_rating(self):
+        info = game_info.GameInfo(None, ('info',))
+        write_fields(self.item / 'info-status.ini', {'info': 'ok', 'version': '1'})
+        write_fields(self.item / 'info.ini', {'rating': 'PEGI 3'})
+        self.assertFalse(info.needs(self.item, 'info', False))
+        write_fields(self.item / 'info.ini', {'rating': 'PEGI'})
+        self.assertTrue(info.needs(self.item, 'info', False))
+        write_fields(self.item / 'info-status.ini', {'info': 'missing', 'version': '1'})
+        write_fields(self.item / 'info.ini', {})
+        self.assertTrue(info.needs(self.item, 'info', False))
+        write_fields(self.item / 'info-status.ini', {'info': 'missing', 'version': str(game_info.VERSION)})
+        self.assertFalse(info.needs(self.item, 'info', False))
+
+    def test_the_n64_list_is_the_one_with_the_ratings(self):
+        self.assertEqual(game_info.LIST_NAMES[('n64', 'esrb')], 'Nintendo - Nintendo 64 (BigEndian)')
+
     def test_gametdb_records_stream_only_wanted_codes(self):
         records = game_info.gametdb_records(self.archive(), {'ABCE'})
         self.assertEqual(set(records), {'ABCE'})
@@ -155,7 +202,7 @@ class GameInfoTests(unittest.TestCase):
         self.assertEqual(saved['players'], '4')
         self.assertEqual(saved['synopsis_languages'], 'EN,FR')
         self.assertEqual((self.item / 'synopsis.EN.txt').read_text(), 'Match gems.\n\nWin the day.\n')
-        self.assertEqual(read_fields(self.item / 'info-status.ini'), {'info': 'ok', 'version': '1'})
+        self.assertEqual(read_fields(self.item / 'info-status.ini'), {'info': 'ok', 'version': '2'})
 
     def test_second_run_skips_found_and_missing_entries_but_force_retries(self):
         rom = self.ds_rom()
@@ -179,7 +226,7 @@ class GameInfoTests(unittest.TestCase):
         info.prepare([rom], lambda _: self.item)
         self.assertIn('ABCE', info.records)
         self.assertTrue((self.root / 'cache/gametdb-ds.zip').exists())
-        write_fields(self.item / 'info-status.ini', {'info': 'ok', 'version': '1'})
+        write_fields(self.item / 'info-status.ini', {'info': 'ok', 'version': '2'})
         client.requests.clear()
         game_info.GameInfo(client, ('info',)).prepare([rom], lambda _: self.item)
         self.assertEqual(client.requests, [])

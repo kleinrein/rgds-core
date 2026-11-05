@@ -17,8 +17,8 @@
 // (and ui.ini, system.ini beside it), which the second screen follows.
 // --frame: something drawn around the game (ui/frame.hpp), which then places
 // it: a built-in style of the game's own system (ui/frame_styles.hpp: dmg
-// and the Pockets for gb, the gbc-* colours, indigo ... sp-platinum for gba,
-// bar for all) or the name of a picture frame, NAME.png in --frames
+// and the Pockets for gb, the gbc-* colours, indigo ... bar for gba) or the
+// name of a picture frame, NAME.png in --frames
 // (userdata/frames/<system>). off, another system's style, or a picture that
 // cannot be read, leaves the fit to choose.
 // --palette: the handheld an original Game Boy game is shown on (dmg, pocket,
@@ -355,7 +355,7 @@ FrameChoice choose_frame(const std::string& name, const std::string& folder, con
 
 // drawn: the core has put this frame in the panel's texture itself (Core::set_gl_target).
 void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame, const Font& font,
-               const std::string& system, bool drawn = false) {
+               bool drawn = false) {
     if (game.w != p.game_w || game.h != p.game_h) make_game_textures(p, game.w, game.h);
     if (!drawn) SDL_UpdateTexture(p.game, nullptr, game.px, game.stride * 4);
     SDL_Rect dest = fit_rect(p.area, game.w, game.h, fit == FitInteger);
@@ -369,7 +369,7 @@ void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame,
         if (p.frame_key != key) {
             Canvas drawn(p.area.w, p.area.h);
             if (picture) draw_picture_frame(drawn, frame.picture);
-            else draw_frame(drawn, layout, frame.style, font, system);
+            else draw_frame(drawn, layout, frame.style, font);
             if (!p.frame)
                 p.frame = SDL_CreateTexture(p.renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, p.area.w,
                                             p.area.h);
@@ -529,6 +529,8 @@ int main(int argc, char** argv) {
         else if (a == "--system-dir") o.system_dir = next();
         else if (a == "--art") o.art_dir = next();
         else if (a == "--save-source") o.save_sources.push_back(next());
+        else if (a == "--no-save-import") o.import_saves = false;
+        else if (a == "--shared-cheats") o.shared_cheats = next();
         else if (a == "--fit") fit = parse_fit(next());
         else if (a == "--second") second = parse_second(next());
         else if (a == "--frame") frame_choice = next();
@@ -642,10 +644,6 @@ int main(int argc, char** argv) {
     Colour colour;
     colour.set(session.core(), parse_palette(palette_choice), parse_correction(colour_choice));
     if (session.companion()) session.companion()->set_colour(colour);
-    // What the black bar says: the system the game is for.
-    const std::string system_label = std::string(session.core().system()) == "gbc"  ? "GAME BOY COLOR"
-                                     : std::string(session.core().system()) == "gb" ? "GAME BOY"
-                                                                                    : "GAME BOY ADVANCE";
     // A light-gun game is played by touching it: it starts on the touch screen.
     // A light gun or a mouse game is played on the touch screen: it starts there, a finger aims or draws.
     // So is a ScummVM game: it is played by touch, unless a profile splits it across both panels.
@@ -1055,7 +1053,7 @@ int main(int argc, char** argv) {
                 if (p == &game_panel) {
                     const Picture shown = colour.apply(session.game(shader_live() && !play_screen()));
                     const bool on_top = p == &upper && gpu_core_shared;
-                    draw_game(*p, shown, fit, frame, session.font(), system_label,
+                    draw_game(*p, shown, fit, frame, session.font(),
                               on_top && session.core().drew_gl_target() && shown.w == p->game_w &&
                                   shown.h == p->game_h);
                     if (gpu_core_shared) {

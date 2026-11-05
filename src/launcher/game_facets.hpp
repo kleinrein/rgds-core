@@ -1,4 +1,5 @@
 #pragma once
+#include "launcher/age_rating.hpp"
 #include "launcher/library_cache.hpp"
 #include <array>
 #include <atomic>
@@ -94,6 +95,7 @@ inline FacetValues facet_values(const std::map<std::string, std::string>& info) 
     values.publisher = facet_field(info, "publisher");
     values.developer = facet_field(info, "developer");
     values.rating = facet_field(info, "rating");
+    if (minimum_age(values.rating) < 0) values.rating.clear();
     values.players = std::min(facet_number(facet_field(info, "players"), 3), players_cap);
     const auto release = facet_field(info, "release");
     values.year = release.size() >= 4 ? facet_number(release.substr(0, 4)) : 0;

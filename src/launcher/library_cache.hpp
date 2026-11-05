@@ -1,12 +1,13 @@
 #pragma once
 #include "launcher/asset_cache.hpp"
 #include "launcher/game_options.hpp"
+#include "launcher/profiles.hpp"
 
 namespace rgds {
 class LibraryCache {
 public:
     struct Entry {
-        fs::path folder;
+        fs::path folder, player_folder; // what is known about the game, shared; what this player did with it
         std::map<std::string, std::string> info, banner;
         GameOptions options;
         uint64_t seconds = 0, sessions = 0, used = 0;
@@ -16,7 +17,7 @@ public:
     };
 
 private:
-    fs::path data;
+    fs::path data, player;
     size_t limit;
     uint64_t clock = 0;
     std::map<std::string, Entry> entries;
@@ -46,7 +47,9 @@ private:
             counters.evictions++;
         }
         Entry value;
-        value.folder = data / "library" / game_key(game.demo ? fs::path("demo") / game.title : game.path);
+        const auto folder = game_key(game.demo ? fs::path("demo") / game.title : game.path);
+        value.folder = data / "library" / folder;
+        value.player_folder = player / "library" / folder;
         value.used = ++clock;
         return entries.emplace(std::move(key), std::move(value)).first->second;
     }
@@ -54,9 +57,10 @@ private:
 public:
     CacheCounters counters;
     explicit LibraryCache(fs::path root = {}, size_t maximum = 128)
-        : data(std::move(root)), limit(std::max<size_t>(1, maximum)) {}
+        : data(std::move(root)), player(player_root(data)), limit(std::max<size_t>(1, maximum)) {}
     void reset(const fs::path& root) {
         data = root;
+        player = player_root(data);
         clear();
     }
     void clear() {
@@ -65,6 +69,7 @@ public:
     }
     size_t size() const { return entries.size(); }
     fs::path folder(const Game& game) { return get(game).folder; }
+    fs::path player_folder(const Game& game) { return get(game).player_folder; }
     // A look without a load: the entry if it is cached, else nothing.
     const Entry* peek(const Game& game) const {
         auto found = entries.find(identity(game));
@@ -84,7 +89,7 @@ public:
     }
     Entry& stats(const Game& game, bool refresh = false) {
         auto& entry = get(game);
-        auto path = entry.folder / "stats.ini";
+        auto path = entry.player_folder / "stats.ini";
         if (refresh && entry.stats_ready && stamp(path) != entry.stats_stamp) entry.stats_ready = false;
         if (!entry.stats_ready) {
             entry.stats_stamp = stamp(path);
@@ -108,7 +113,7 @@ public:
     }
     GameOptions options(const Game& game, bool refresh = false) {
         auto& entry = get(game);
-        auto path = entry.folder / "game.ini";
+        auto path = entry.player_folder / "game.ini";
         if (refresh && entry.options_ready && stamp(path) != entry.options_stamp) entry.options_ready = false;
         if (!entry.options_ready) {
             entry.options_stamp = stamp(path);
@@ -132,7 +137,7 @@ public:
         auto& entry = get(game);
         entry.options = value;
         entry.options_ready = true;
-        entry.options_stamp = stamp(entry.folder / "game.ini");
+        entry.options_stamp = stamp(entry.player_folder / "game.ini");
     }
     void invalidate_metadata() {
         for (auto& pair : entries) {
@@ -157,11 +162,11 @@ public:
             entry.title_ready = false;
             changed = true;
         }
-        if (entry.stats_ready && stamp(entry.folder / "stats.ini") != entry.stats_stamp) {
+        if (entry.stats_ready && stamp(entry.player_folder / "stats.ini") != entry.stats_stamp) {
             entry.stats_ready = false;
             changed = true;
         }
-        if (entry.options_ready && stamp(entry.folder / "game.ini") != entry.options_stamp) {
+        if (entry.options_ready && stamp(entry.player_folder / "game.ini") != entry.options_stamp) {
             entry.options_ready = false;
             changed = true;
         }

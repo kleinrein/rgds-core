@@ -9,7 +9,7 @@ void App::ds_controls_row(SDL_Renderer* r, int y, int i) {
     int language = ds_settings.count("language") ? std::clamp(std::atoi(ds_settings["language"].c_str()), 0, 5) : 1;
     list_row(r, y, i, names[i],
              !ds_supported() ? "Engine managed"
-             : i == 5        ? wireless_names()[ds_wireless()]
+             : i == 5        ? wireless_names()[kid_locked() && !active_profile().allow_wireless ? 0 : ds_wireless()]
              : i == 4        ? (ds_settings.count("nickname") ? ds_settings["nickname"] : ds_owner_name())
              : i == 2        ? languages[language]
              : i == 3        ? (ds_settings.count("microphone") && ds_settings["microphone"] == "0") ? "Off" : "On"
@@ -29,6 +29,7 @@ void App::ds_controls_action() {
                     ds_settings.count("language") ? std::atoi(ds_settings["language"].c_str()) : 1,
                     [this](int n) { save_ds_setting("language", n); });
     else if (settings.focus == 4) begin_edit(5);
+    else if (settings.focus == 5 && kid_locked() && !active_profile().allow_wireless) status = "Not on this profile";
     else if (settings.focus == 5)
         show_picker("Local wireless", wireless_names(), ds_wireless(),
                     [this](int n) { save_ds_setting("wireless", n); });
@@ -46,7 +47,7 @@ int App::ds_wireless() {
 void App::save_ds_setting(const std::string& key, const std::string& value) {
     try {
         ds_settings[key] = value;
-        auto folder = item_folder(model.selected);
+        auto folder = player_item_folder(model.selected);
         fs::create_directories(folder);
         auto path = folder / "ds-input.ini", pending = fs::path(path.string() + ".pending");
         std::ofstream out(pending);

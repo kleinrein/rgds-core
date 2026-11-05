@@ -379,13 +379,16 @@ French	Francés
 Friends	Amigos
 Full colour	Color completo
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalto
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Ónix
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platino
-Game Boy Advance · Black	Game Boy Advance · Negro
-Game Boy Advance · Glacier	Game Boy Advance · Glaciar
-Game Boy Advance · Indigo	Game Boy Advance · Índigo
-Game Boy Advance · Platinum	Game Boy Advance · Platino
+GBA SP · Cobalt	GBA SP · Cobalto
+GBA SP · Cobalt · Screen only	GBA SP · Cobalto · Solo pantalla
+GBA SP · Onyx	GBA SP · Ónix
+GBA SP · Onyx · Screen only	GBA SP · Ónix · Solo pantalla
+GBA SP · Platinum	GBA SP · Platino
+GBA SP · Platinum · Screen only	GBA SP · Platino · Solo pantalla
+GBA · Black	GBA · Negro
+GBA · Glacier	GBA · Glaciar
+GBA · Indigo	GBA · Índigo
+GBA · Platinum	GBA · Platino
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Pantalla Game Boy Color
 Game Boy Color · Atomic Purple	Game Boy Color · Morado atómico
@@ -1242,3 +1245,99 @@ What do you want to play?	¿A qué quieres jugar?
 You can change this later in Settings > Library.	Puedes cambiarlo luego en Ajustes > Biblioteca.
 A clean library with only DS games.	Una biblioteca limpia solo con juegos de DS.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation y más, ordenados por sistema.
+Who's playing?	¿Quién juega?
+Owner	Propietario
+Kid	Niño
+Adult	Adulto
+Profiles	Perfiles
+Playing now	Jugando ahora
+Change who's playing	Cambiar de jugador
+Add a profile	Añadir un perfil
+Ask who's playing at startup	Preguntar quién juega al iniciar
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Cada jugador tiene sus propias partidas, favoritos, tiempo de juego y apariencia.
+Who it's for	Para quién
+Name	Nombre
+DS name	Nombre de DS
+Colour	Color
+Age limit	Límite de edad
+Games with no rating	Juegos sin clasificación
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Trucos
+Local wireless	Inalámbrico local
+Set a PIN	Establecer un PIN
+Change the PIN	Cambiar el PIN
+Remove the PIN	Quitar el PIN
+None	Ninguno
+Set	Establecido
+Remove this profile	Quitar este perfil
+Hidden	Oculto
+Shown	Visible
+No limit	Sin límite
+Only games I pick	Solo los que elija
+Could not change profile. Check storage.	No se pudo cambiar de perfil. Comprueba el almacenamiento.
+Switch to another profile first	Cambia primero a otro perfil
+Not locked: set a PIN on the owner's profile.	Sin bloquear: establece un PIN en el perfil del propietario.
+Who is this profile for?	¿Para quién es este perfil?
+Own saves and look. Settings stay open.	Partidas y apariencia propias. Los ajustes siguen abiertos.
+Own saves, and a library you choose.	Partidas propias y una biblioteca que eliges tú.
+A library that fits their age, and no way into the handheld's settings.	Una biblioteca adecuada a su edad y sin acceso a los ajustes de la consola.
+A second grown-up or an older child, with everything open.	Otro adulto o un niño mayor, con todo abierto.
+Every game shows, whatever its rating.	Se muestran todos los juegos, sea cual sea su clasificación.
+Nothing shows until you allow it, game by game or a shelf at a time.	No se muestra nada hasta que lo permitas, por juego o por estante.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Se ocultan los juegos por encima de esta edad. Los que no tienen clasificación siguen el ajuste del perfil.
+Profile removed. A backup is in userdata/exports.	Perfil quitado. Hay una copia en userdata/exports.
+The profile could not be removed.	No se pudo quitar el perfil.
+Removed profiles erased.	Perfiles quitados borrados.
+Removed profiles could not be erased.	No se pudieron borrar los perfiles quitados.
+Erase removed profiles	Borrar perfiles quitados
+Erase the saves of removed profiles for good? This cannot be undone.	¿Borrar para siempre las partidas de los perfiles quitados? No se puede deshacer.
+Allow all	Permitir todos
+Always show	Mostrar siempre
+Always hide	Ocultar siempre
+All	Todos
+No rating	Sin clasificar
+No games here.	No hay juegos aquí.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A muestra todos los juegos sin clasificación de este estante. Los clasificados siguen la edad.
+Nothing here is waiting for a decision.	Aquí no hay nada pendiente de decidir.
+No age rating	Sin clasificación por edad
+You chose to show it.	Elegiste mostrarlo.
+You chose to hide it.	Elegiste ocultarlo.
+Above this profile's age.	Por encima de la edad de este perfil.
+Hidden until you allow it.	Oculto hasta que lo permitas.
+Fits this profile.	Adecuado para este perfil.
+A changes who sees this game: automatic, always show, always hide.	A cambia quién ve este juego: automático, mostrar siempre, ocultar siempre.
+Visible to…	Visible para…
+Hide this game	Ocultar este juego
+Hidden games	Juegos ocultos
+This game is not available on this profile	Este juego no está disponible en este perfil
+Not on this profile	No en este perfil
+Locked	Bloqueado
+PIN	PIN
+Enter the PIN	Introduce el PIN
+Choose a PIN	Elige un PIN
+Enter it again	Introdúcelo otra vez
+This needs a grown-up.	Esto necesita a un adulto.
+Those did not match. Choose a PIN.	No coinciden. Elige un PIN.
+That is not the PIN.	Ese no es el PIN.
+Without one this profile is not locked. Cancel skips it.	Sin él este perfil no está bloqueado. Cancelar lo omite.
+The owner's PIN was removed.	Se quitó el PIN del propietario.
+Profile name	Nombre del perfil
+Remove this profile? Its saves are kept, and a backup is made first.	¿Quitar este perfil? Sus partidas se conservan y antes se hace una copia.
+Show every game with no rating on this shelf?	¿Mostrar todos los juegos sin clasificación de este estante?
+Star	Estrella
+Heart	Corazón
+Cat	Gato
+Dog	Perro
+Robot	Robot
+Rocket	Cohete
+Flower	Flor
+Ghost	Fantasma
+Fish	Pez
+Crown	Corona
+Mushroom	Seta
+Rainbow	Arcoíris
+{0} shown	{0} visibles
+{0} above the age	{0} por encima de la edad
+{0} with no rating	{0} sin clasificación
+Too many tries. Wait {0} s	Demasiados intentos. Espera {0} s

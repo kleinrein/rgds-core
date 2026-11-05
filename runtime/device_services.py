@@ -683,13 +683,18 @@ class Services:
         # BusyBox init takes the action from this process, after the check that no engine runs and the resume arming.
         from power import execute_system_action
         if action == 'poweroff':
+            from profiles import ProfileError, player_root
             from quick_resume import arm
-            arm(self.data)
+            try:
+                arm(player_root(self.data))
+            except ProfileError as error:
+                print('Quick resume was not armed: ' + str(error), file=sys.stderr)
         self.publish(state="ready", message="Restarting…" if action == "reboot" else "Powering off…")
         try:
             execute_system_action(action, self.data)
         except BaseException:
-            (self.data / 'resume/armed.json').unlink(missing_ok=True)
+            from profiles import look_root
+            (look_root(self.data) / 'resume/armed.json').unlink(missing_ok=True)
             raise
 
     def poweroff(self):

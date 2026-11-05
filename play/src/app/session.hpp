@@ -23,6 +23,8 @@ struct SessionOptions {
     std::string data_root;                 // userdata/play
     std::vector<std::string> profile_dirs; // shipped first, the player's own last
     std::vector<std::string> save_sources; // folders to import an existing save from
+    bool import_saves = true;              // off (--no-save-import): another player's save may lie beside the game
+    std::string shared_cheats;             // --shared-cheats: the owner's cheats folder, for another profile to read
     std::string font_dir;                  // assets/fonts
     std::string preferences;               // userdata/preferences.ini (and ui.ini beside it): the launcher's look
     std::string core_library;              // --core: a libretro core's .so (else mGBA for GBA, GB and GBC)

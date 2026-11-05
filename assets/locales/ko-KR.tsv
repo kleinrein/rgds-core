@@ -379,13 +379,16 @@ French	프랑스어
 Friends	동료
 Full colour	풀 컬러
 Game Boy	게임보이
-Game Boy Advance SP · Cobalt	게임보이 어드밴스 SP · 코발트
-Game Boy Advance SP · Onyx	게임보이 어드밴스 SP · 오닉스
-Game Boy Advance SP · Platinum	게임보이 어드밴스 SP · 플래티넘
-Game Boy Advance · Black	게임보이 어드밴스 · 블랙
-Game Boy Advance · Glacier	게임보이 어드밴스 · 글레이셔
-Game Boy Advance · Indigo	게임보이 어드밴스 · 인디고
-Game Boy Advance · Platinum	게임보이 어드밴스 · 플래티넘
+GBA SP · Cobalt	GBA SP · 코발트
+GBA SP · Cobalt · Screen only	GBA SP · 코발트 · 화면만
+GBA SP · Onyx	GBA SP · 오닉스
+GBA SP · Onyx · Screen only	GBA SP · 오닉스 · 화면만
+GBA SP · Platinum	GBA SP · 플래티넘
+GBA SP · Platinum · Screen only	GBA SP · 플래티넘 · 화면만
+GBA · Black	GBA · 블랙
+GBA · Glacier	GBA · 글레이셔
+GBA · Indigo	GBA · 인디고
+GBA · Platinum	GBA · 플래티넘
 Game Boy Color	게임보이 컬러
 Game Boy Color screen	게임보이 컬러 화면
 Game Boy Color · Atomic Purple	게임보이 컬러 · 클리어 퍼플
@@ -1242,3 +1245,99 @@ What do you want to play?	무엇을 플레이할까요?
 You can change this later in Settings > Library.	나중에 설정 > 라이브러리에서 바꿀 수 있습니다.
 A clean library with only DS games.	DS 게임만 있는 깔끔한 라이브러리입니다.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, 게임보이, SNES, PlayStation 등을 시스템별로 정리합니다.
+Who's playing?	누가 플레이하나요?
+Owner	소유자
+Kid	어린이
+Adult	성인
+Profiles	프로필
+Playing now	플레이 중
+Change who's playing	플레이어 변경
+Add a profile	프로필 추가
+Ask who's playing at startup	시작할 때 누가 플레이하는지 묻기
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	플레이어마다 저장 파일, 즐겨찾기, 플레이 시간, 화면 스타일을 따로 가집니다.
+Who it's for	대상
+Name	이름
+DS name	DS 이름
+Colour	색상
+Age limit	연령 제한
+Games with no rating	등급 없는 게임
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	치트
+Local wireless	로컬 무선
+Set a PIN	PIN 설정
+Change the PIN	PIN 변경
+Remove the PIN	PIN 제거
+None	없음
+Set	설정됨
+Remove this profile	이 프로필 제거
+Hidden	숨김
+Shown	표시
+No limit	제한 없음
+Only games I pick	직접 고른 게임만
+Could not change profile. Check storage.	프로필을 변경할 수 없습니다. 저장 공간을 확인하세요.
+Switch to another profile first	먼저 다른 프로필로 전환하세요
+Not locked: set a PIN on the owner's profile.	잠겨 있지 않음: 소유자 프로필에서 PIN을 설정하세요.
+Who is this profile for?	누구를 위한 프로필인가요?
+Own saves and look. Settings stay open.	저장 파일과 스타일을 따로 가집니다. 설정은 열려 있습니다.
+Own saves, and a library you choose.	저장 파일을 따로 가지고, 라이브러리는 직접 고릅니다.
+A library that fits their age, and no way into the handheld's settings.	나이에 맞는 라이브러리만 보이고 기기 설정에는 들어갈 수 없습니다.
+A second grown-up or an older child, with everything open.	다른 성인이나 나이가 많은 어린이용으로 모든 기능이 열려 있습니다.
+Every game shows, whatever its rating.	등급과 관계없이 모든 게임이 표시됩니다.
+Nothing shows until you allow it, game by game or a shelf at a time.	허용하기 전에는 아무것도 표시되지 않습니다. 게임별 또는 선반별로 허용하세요.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	이 나이를 넘는 게임은 숨겨집니다. 등급 없는 게임은 프로필 설정을 따릅니다.
+Profile removed. A backup is in userdata/exports.	프로필을 제거했습니다. 백업은 userdata/exports에 있습니다.
+The profile could not be removed.	프로필을 제거할 수 없습니다.
+Removed profiles erased.	제거한 프로필을 지웠습니다.
+Removed profiles could not be erased.	제거한 프로필을 지울 수 없습니다.
+Erase removed profiles	제거한 프로필 지우기
+Erase the saves of removed profiles for good? This cannot be undone.	제거한 프로필의 저장 파일을 영구히 지울까요? 되돌릴 수 없습니다.
+Allow all	모두 허용
+Always show	항상 표시
+Always hide	항상 숨김
+All	전체
+No rating	등급 없음
+No games here.	여기에 게임이 없습니다.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A를 누르면 이 선반의 등급 없는 게임을 모두 표시합니다. 등급 있는 게임은 나이를 따릅니다.
+Nothing here is waiting for a decision.	여기에는 결정을 기다리는 게임이 없습니다.
+No age rating	연령 등급 없음
+You chose to show it.	표시하도록 선택했습니다.
+You chose to hide it.	숨기도록 선택했습니다.
+Above this profile's age.	이 프로필의 나이를 넘습니다.
+Hidden until you allow it.	허용할 때까지 숨겨집니다.
+Fits this profile.	이 프로필에 맞습니다.
+A changes who sees this game: automatic, always show, always hide.	A로 이 게임을 볼 사람을 바꿉니다: 자동, 항상 표시, 항상 숨김.
+Visible to…	표시 대상…
+Hide this game	이 게임 숨기기
+Hidden games	숨긴 게임
+This game is not available on this profile	이 프로필에서는 이 게임을 사용할 수 없습니다
+Not on this profile	이 프로필에서 사용 불가
+Locked	잠김
+PIN	PIN
+Enter the PIN	PIN 입력
+Choose a PIN	PIN 선택
+Enter it again	다시 입력
+This needs a grown-up.	어른의 도움이 필요합니다.
+Those did not match. Choose a PIN.	일치하지 않습니다. PIN을 선택하세요.
+That is not the PIN.	PIN이 맞지 않습니다.
+Without one this profile is not locked. Cancel skips it.	PIN이 없으면 이 프로필은 잠기지 않습니다. 취소하면 건너뜁니다.
+The owner's PIN was removed.	소유자의 PIN을 제거했습니다.
+Profile name	프로필 이름
+Remove this profile? Its saves are kept, and a backup is made first.	이 프로필을 제거할까요? 저장 파일은 유지되며 먼저 백업합니다.
+Show every game with no rating on this shelf?	이 선반의 등급 없는 게임을 모두 표시할까요?
+Star	별
+Heart	하트
+Cat	고양이
+Dog	강아지
+Robot	로봇
+Rocket	로켓
+Flower	꽃
+Ghost	유령
+Fish	물고기
+Crown	왕관
+Mushroom	버섯
+Rainbow	무지개
+{0} shown	표시 {0}
+{0} above the age	나이 초과 {0}
+{0} with no rating	등급 없음 {0}
+Too many tries. Wait {0} s	시도 횟수가 너무 많습니다. {0}초 기다리세요

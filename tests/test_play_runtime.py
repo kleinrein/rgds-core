@@ -485,7 +485,8 @@ class PlayMenuTests(unittest.TestCase):
         for rom, frame, known in (
             (self.rom, "indigo", True), (self.rom, "sp-cobalt", True), (self.rom, "dmg", False), (gb, "dmg", True),
             (gb, "pocket-black", True), (gb, "indigo", False), (gb, "sp-onyx", False), (gb, "gbc-berry", False),
-            (gbc, "gbc-teal", True), (gbc, "dmg", False), (gb, "bar", True), (gbc, "off", True)
+            (gbc, "gbc-teal", True), (gbc, "dmg", False), (self.rom, "bar", True), (gb, "bar", False),
+            (gbc, "bar", False), (gbc, "off", True)
         ):
             self.assertEqual(play_options.frame_known(data, rom, frame), known, (rom.suffix, frame))
         # An old GBA frame kept for a Game Boy game falls back to off; the owner's own picture of that name is kept.

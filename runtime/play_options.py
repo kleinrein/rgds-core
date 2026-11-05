@@ -11,6 +11,7 @@ import zipfile
 
 from fields import read_fields, write_fields
 from library import game_key
+from profiles import device_root
 
 PLAY_CORE = "rgds-play"
 PORT_CORE = "portmaster"
@@ -144,12 +145,16 @@ FRAMES = {
     "glacier": "gba",
     "black": "gba",
     "platinum": "gba",
+    "arctic": "gba",
+    "fuchsia": "gba",
+    "spice": "gba",
     "sp-cobalt": "gba",
     "sp-onyx": "gba",
     "sp-platinum": "gba",
     "sp-cobalt-screen": "gba",
     "sp-onyx-screen": "gba",
     "sp-platinum-screen": "gba",
+    "bar": "gba",
     "ngpc-silver": "ngp",
     "ngpc-black": "ngp",
     "wsc-white": "wonderswan",
@@ -179,15 +184,14 @@ FRAMES = {
     "vectrex": "vectrex",
     "tv-grey": "nes,snes,md,sms,pce,neo,psx,n64,saturn,dc,msx,zx,c64",
     "tv-wood": "nes,sms,atari,coleco,intellivision",
-    "monitor": "dos,msx,zx,c64",
+    "monitor": "dos,msx,zx,c64,scummvm",
     "ctr-dark": "3ds",
     "ctr-cosmos": "3ds",
     "ctr-aqua": "3ds",
     "ctr-flame": "3ds",
     "ctr-pink": "3ds",
     "ctr-white": "3ds",
-    "ctr-midnight": "3ds",
-    "bar": ""
+    "ctr-midnight": "3ds"
 }
 
 
@@ -298,7 +302,7 @@ def _path(data, rom):
 
 def frames_folder(data, rom):
     """Where the owner's picture frames for this game's system live."""
-    return Path(data) / "frames" / system_of(rom)
+    return device_root(data) / "frames" / system_of(rom)
 
 
 def frame_fits(data, system, frame):
@@ -306,7 +310,7 @@ def frame_fits(data, system, frame):
     systems = FRAMES.get(frame)
     if systems is not None and (systems == "" or system in systems.split(",")): return True
     if not frame or len(frame) > 64 or "/" in frame or frame.startswith("."): return False
-    return (Path(data) / "frames" / system / (frame + ".png")).is_file()
+    return (device_root(data) / "frames" / system / (frame + ".png")).is_file()
 
 
 def frame_known(data, rom, frame):

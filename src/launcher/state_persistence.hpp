@@ -73,7 +73,7 @@ void App::restore_state() {
          page == int(Page::MenuSounds) || page == int(Page::Haptics) || page == int(Page::DisplayOptions) ||
          page == int(Page::Bluetooth) || page == int(Page::Homebrew)) &&
         page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
-        page != int(Page::Confirm) && section >= 0 && section <= 10 && focus >= 0 &&
+        page != int(Page::Confirm) && section >= 0 && section <= 11 && focus >= 0 &&
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
                   : page == int(Page::Maintenance)    ? 7

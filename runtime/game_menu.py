@@ -21,6 +21,7 @@ from lid_sleep import LidSleep, PowerKey
 from idle_watch import IdleWatch, PanelDim, timers
 from linux_platform import rocknix_joypad
 from game_clocks import GameClocks
+from profiles import player_root
 from collections import deque
 from typing import NamedTuple
 
@@ -203,6 +204,7 @@ class MenuInput:
 class GameMenu:
     def __init__(self, child, app, data, core, rom, environment, inputs=None):
         self.child, self.app, self.data, self.core, self.rom = child, Path(app), Path(data), core, Path(rom)
+        self.player = player_root(self.data)
         self.environment = menu_environment(environment)
         self.live = environment.get('RGDS_MENU_LIVE') == '1'
         self.restart = False
@@ -303,7 +305,7 @@ class GameMenu:
         )
 
     def checkpoint(self):
-        return self.data / "library" / game_key(self.rom) / ("auto-" + self.core + ".dss")
+        return self.player / "library" / game_key(self.rom) / ("auto-" + self.core + ".dss")
 
     def has_checkpoint(self):
         try:
@@ -618,7 +620,7 @@ class GameMenu:
 
     def vault(self):
         from save_library import SaveLibrary
-        return SaveLibrary(self.data, self.rom, self.core, self.app.name)
+        return SaveLibrary(self.player, self.rom, self.core, self.app.name)
 
     def slot_request(self, action):
         try:
@@ -691,7 +693,7 @@ class GameMenu:
             pieces, valid = action.split(':', 3), ('0', '1', '2')
             if (
                 self.core != 'rgds-play' or len(pieces) != 4 or pieces[1] not in valid
-                or pieces[2] not in valid + ('3',) or not frame_known(self.data, self.rom, pieces[3])
+                or pieces[2] not in valid + ('3',) or not frame_known(self.player, self.rom, pieces[3])
             ):
                 self.publish('error', 'Invalid graphics setting for this game.')
                 return
@@ -714,7 +716,7 @@ class GameMenu:
                 self.publish('error', 'Invalid resolution for this game.')
                 return
             try:
-                save_scale(self.data, self.rom, int(value))
+                save_scale(self.player, self.rom, int(value))
             except OSError:
                 self.publish('error', 'Settings storage is unavailable.')
                 return
@@ -767,7 +769,7 @@ class GameMenu:
             ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…"
              ) if action == "save-quit" else 'Changing speed…' if action ==
             'fast-forward' else "Saving before returning home…" if action ==
-            "quit" and policy(self.data)[1] else "Returning home…" if action in
+            "quit" and policy(self.player)[1] else "Returning home…" if action in
             ("quit", "quit-discard") else "Saving checkpoint…" if action == "save" else "Loading checkpoint…"
         )
         self.resume_engine()
@@ -977,7 +979,7 @@ class GameMenu:
                         if state in ('threaded-on', 'threaded-off'):
                             self.threaded = state == 'threaded-on'
                             try:
-                                path = self.data / 'library' / game_key(self.rom) / 'game.ini'
+                                path = self.player / 'library' / game_key(self.rom) / 'game.ini'
                                 settings = read_fields(path)
                                 settings['threaded_3d'] = int(self.threaded)
                                 write_fields(path, settings)
@@ -985,7 +987,7 @@ class GameMenu:
                                 state = 'threaded-unsaved'
                         if state in ('adaptive-on', 'adaptive-off'):
                             try:
-                                path = self.data / 'library' / game_key(self.rom) / 'game.ini'
+                                path = self.player / 'library' / game_key(self.rom) / 'game.ini'
                                 settings = read_fields(path)
                                 settings.update(rgds_adaptive=int(state == 'adaptive-on'))
                                 write_fields(path, settings)
@@ -995,7 +997,7 @@ class GameMenu:
                             mode = int(action.split(':')[1])
                             self.active_filter2d = str(mode)
                             try:
-                                path = self.data / 'library' / game_key(self.rom) / 'game.ini'
+                                path = self.player / 'library' / game_key(self.rom) / 'game.ini'
                                 settings = read_fields(path)
                                 settings.update(rgds_2d=mode)
                                 write_fields(path, settings)
@@ -1005,14 +1007,14 @@ class GameMenu:
                             try:
                                 from play_options import save_view
                                 _, fit, second, frame = action.split(':', 3)
-                                save_view(self.data, self.rom, int(fit), int(second), frame)
+                                save_view(self.player, self.rom, int(fit), int(second), frame)
                             except OSError:
                                 state = 'play-graphics-unsaved'
                         if state == 'play-color-applied':
                             try:
                                 from play_options import save_colour
                                 _, palette, correction = action.split(':')
-                                save_colour(self.data, self.rom, int(palette), int(correction))
+                                save_colour(self.player, self.rom, int(palette), int(correction))
                             except OSError:
                                 state = 'play-color-unsaved'
                         if state == 'graphics-applied':
@@ -1020,7 +1022,7 @@ class GameMenu:
                             self.active_scale = str(scale)
                             self.active_smooth = str(smooth)
                             try:
-                                path = self.data / 'library' / game_key(self.rom) / 'game.ini'
+                                path = self.player / 'library' / game_key(self.rom) / 'game.ini'
                                 settings = read_fields(path)
                                 settings.update(rgds_scale=scale, rgds_smooth=smooth, frameskip=skip)
                                 write_fields(path, settings)
@@ -1094,7 +1096,7 @@ class GameMenu:
     def park_menu_audio(self):
         """Release the UI sink before SIGSTOP, so the sleep owner can use it."""
         from sleep_sounds import effects_volume
-        if self.menu is None or self.menu.poll() is not None or not effects_volume(self.data):
+        if self.menu is None or self.menu.poll() is not None or not effects_volume(self.player):
             return False
         ready = self.folder / 'game-menu.audio-sleep.ready'
         ready.unlink(missing_ok=True)
@@ -1114,7 +1116,7 @@ class GameMenu:
             scale, mode, shader = map(int, path.read_text().split())
             path.unlink(missing_ok=True)
             if not (scale in RGDS_SCALES and 0 <= mode <= 5 and supported(self.core, shader)): return
-            game = self.data / 'library' / game_key(self.rom) / 'game.ini'
+            game = self.player / 'library' / game_key(self.rom) / 'game.ini'
             game.parent.mkdir(parents=True, exist_ok=True)
             settings = read_fields(game)
             # Always sharp: adaptive resolution would hide a slow renderer behind the native one.
@@ -1143,7 +1145,7 @@ class GameMenu:
         if (scale > 1) == self.launch_hires:
             return False
         try:
-            path = self.data / 'library' / game_key(self.rom) / 'game.ini'
+            path = self.player / 'library' / game_key(self.rom) / 'game.ini'
             settings = read_fields(path)
             settings.update(rgds_scale=scale, rgds_smooth=smooth, frameskip=skip)
             write_fields(path, settings)

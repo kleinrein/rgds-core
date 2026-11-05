@@ -4,12 +4,14 @@ A game's own save must survive anything: an engine update, a resume point that r
 test run. Nothing here is ever needed to start a game, so a failure only prints a line. Only this module deletes
 under save-history, and an older copy is deleted only once a newer one is in place.
 
-    save-history/<game key, or 3ds/psp for their shared folders>/<time>/<path under userdata>
+    save-history/<game key, or 3ds/psp for their shared folders>/<time>/<path under the player's folder>
     save-history/<game key>/resume/<time>/...                 the last resume points
     save-history/<game key>/resume/before-<build>/<time>/...  the one each update found: newer ones never push it out
 """
 import hashlib, os, shutil, sys, time
 from pathlib import Path
+
+from profiles import is_owner
 
 HISTORY = 'save-history'
 KEEP_SAVES = 10
@@ -21,8 +23,9 @@ TANUKI = 'emulators/rgds-play/3ds/.local/share/Tanuki3DS/3ds'
 SHARED = {'3ds': (TANUKI + '/savedata', TANUKI + '/extdata'), 'psp': ('emulators/rgds-play/PSP/SAVEDATA',)}
 # (folder under userdata, extension), newest wins; a RetroArch .srm can be padded, so it is the last resort
 OLD_DS_SAVES = (
-    ('emulators/drastic/backup', '.dsv'), ('emulators/dsperate/saves', '.sav'), ('emulators/nnddss/User/backup', '.sav'),
-    ('emulators/nnddss/User/backup', '.dsv'), ('emulators/melonds/saves', '.sav')
+    ('emulators/drastic/backup', '.dsv'), ('emulators/dsperate/saves', '.sav'),
+    ('emulators/nnddss/User/backup', '.sav'), ('emulators/nnddss/User/backup',
+                                               '.dsv'), ('emulators/melonds/saves', '.sav')
 )
 DESMUME_MAGIC = b'|-DESMUME SAVE-|'
 DESMUME_FOOTER = 122
@@ -108,7 +111,8 @@ def protect(data, core, rom, identity=None, build=None):
     data, rom = Path(data), Path(rom)
     identity = Path(identity or rom)
     try:
-        if core == DS: import_old_ds_save(data, rom)
+        # A save an earlier emulator left, or one beside the game, is the owner's: never another profile's first save.
+        if core == DS and is_owner(data): import_old_ds_save(data, rom)
         name, paths = game_saves(data, core, rom, identity)
         if name:
             files = [file for path in paths for file in files_under(path)]

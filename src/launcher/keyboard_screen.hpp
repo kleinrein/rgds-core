@@ -5,19 +5,19 @@
 
 void App::keyboard_screen(SDL_Renderer* r, int y) {
     settings_header(r, y,
-                    edit_field == 7   ? "Your name"
-                    : edit_field == 5 ? "DS nickname"
-                    : edit_field == 4 ? "Search games"
-                    : edit_field == 6 ? "Search cheats"
-                    : edit_field == 3 ? "Matching title"
-                    : edit_field == 0 ? "Username"
-                                      : "Password");
+                    edit_field == 8 || edit_field == 9 ? "Profile name"
+                    : edit_field == 10                 ? "DS name"
+                    : edit_field == 7                  ? "Your name"
+                    : edit_field == 5                  ? "DS nickname"
+                    : edit_field == 4                  ? "Search games"
+                    : edit_field == 6                  ? "Search cheats"
+                    : edit_field == 3                  ? "Matching title"
+                    : edit_field == 0                  ? "Username"
+                                                       : "Password");
     round_rect(r, 20, y + 91, 600, 62, 12, "accent");
     round_rect(r, 22, y + 93, 596, 58, 10, "panel");
-    std::string value = (edit_field == 0 || edit_field == 3 || edit_field == 4 || edit_field == 5 || edit_field == 6 || edit_field == 7)
-                            ? edit_buffer
-                            : std::string(RoundedFont::codepoints(edit_buffer).size(), '*');
     bool hidden = edit_field == 1 || edit_field == 2;
+    std::string value = hidden ? std::string(RoundedFont::codepoints(edit_buffer).size(), '*') : edit_buffer;
     size_t cursor = hidden ? RoundedFont::codepoints(edit_buffer.substr(0, edit_cursor)).size() : edit_cursor;
     while (cursor && label_width(value.substr(0, cursor), 24, false) > 480) {
         size_t next = 1;

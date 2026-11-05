@@ -95,7 +95,8 @@ def game_options(data, rom):
                        len(SHADERS) - 1),
         rgds_scale=(lambda scale: scale if scale in RGDS_SCALES else 1)(bounded(local, "rgds_scale", 1, 1, 25)),
         rgds_smooth=bounded(local, "rgds_smooth", 1, 0, 1),
-        rgds_2d=bounded(local, "rgds_2d", 0, 0, 5),
+        # Sharp (1) and Smooth (2) left the menu: a saved choice becomes Crisp (3).
+        rgds_2d=(lambda mode: 3 if mode in (1, 2) else mode)(bounded(local, "rgds_2d", 0, 0, 5)),
         rgds_adaptive=bounded(local, "rgds_adaptive", 1, 0, 1),
         frameskip=bounded(local, "frameskip", 0, 0, 3)
     )

@@ -169,7 +169,8 @@ void App::gesture_cues(SDL_Renderer* r, int y) {
 
 bool App::gestures_available() const {
     return preferences.gestures && !probe && !(chat_open && chat.view == pictochat::View::Room) && !launching &&
-           settings.page != Page::BootWarning && settings.page != Page::Welcome && settings.page != Page::Controls &&
+           settings.page != Page::BootWarning && settings.page != Page::Welcome && settings.page != Page::ProfilePicker &&
+           settings.page != Page::Controls &&
            !o.game_menu;
 }
 

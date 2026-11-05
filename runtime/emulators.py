@@ -28,6 +28,7 @@ from game_menu import GameMenu, MenuInput, SwitchGame
 from shaders import supported, SHADERS
 from integration import select_hooks, engine_libraries
 from engine_log import EngineLog
+from profiles import check_plan, device_root, is_owner, player_root
 from hud_theme import hud_theme
 from controls import paths as control_paths
 
@@ -240,7 +241,8 @@ def resolve_rom(rom, data, core=None):
         return rom  # a port's script, or the PortMaster entry
     if core == PLAY_CORE:
         if system_of(rom) == "nds": raise ValueError("RG DS Play opens Game Boy and Game Boy Advance games.")
-        return unpacked_disks(rom, data)  # it opens other .zip archives itself
+        # it opens other .zip archives itself; a C64 game writes high scores to its unpacked disks, so they are the player's
+        return unpacked_disks(rom, player_root(data))
     if system_of(rom) != "nds": raise ValueError("This game is played with RG DS Play, not a DS engine.")
     if rom.suffix.lower() in (".nds", ".dsi"):
         return rom
@@ -339,16 +341,29 @@ def top_display(env):
 TANUKI_ENGINE = Path('/data/rgds/engines/tanuki3ds')
 
 
+def seed_tanuki(owner_home, home):
+    """What a new profile's 3DS games need that is not a save: the per-game shader and block lists that keep them at
+    speed, and the DSP firmware. Copied, because the engine adds to its lists as it plays; only what is missing."""
+    share = '.local/share/Tanuki3DS'
+    for folder in (share + '/shaders', share + '/jit'):
+        for item in sorted((owner_home / folder).glob('*.list')):
+            copy_missing(item, home / folder / item.name)
+    firmware = share + '/3ds/sdmc/3ds/dspfirm.cdc'
+    if (owner_home / firmware).is_file(): copy_missing(owner_home / firmware, home / firmware)
+
+
 def tanuki_plan(data, rom, prepare=True, engine=TANUKI_ENGINE, identity=None, fresh_start=False, app=None):
     """Nintendo 3DS games. Tanuki3DS is SDL3, so not on the bridge; it speaks the shared menu's files itself.
 
     Its settings and the games' saves stay under userdata, as the home folder /root is RAM on RG DS OS."""
     if not (engine / 'run.sh').is_file():
         raise ValueError('No emulator for 3DS games is installed on this handheld.')
-    home = Path(data) / 'emulators/rgds-play/3ds'
+    player = player_root(data)
+    home = player / 'emulators/rgds-play/3ds'
     settings = home / '.local/share/Tanuki3DS'
     if prepare:
         settings.mkdir(parents=True, exist_ok=True)
+        if not is_owner(player): seed_tanuki(device_root(player) / 'emulators/rgds-play/3ds', home)
         if not (settings / 'ctremu.ini').is_file() and (engine / 'ctremu.ini').is_file():
             shutil.copyfile(engine / 'ctremu.ini', settings / 'ctremu.ini')
     env = base_environment()
@@ -356,10 +371,10 @@ def tanuki_plan(data, rom, prepare=True, engine=TANUKI_ENGINE, identity=None, fr
         env.pop(key, None)
     # the renderer on its own thread, each screen on its panel, the patched Mesa; main thread CPU 3, renderer CPU 2
     env.update(HOME=str(home), SPIKE_NOGUI='1', SPIKE_PANELS='1', SPIKE_PIN='1', MESA_NEW='1')
-    auto_load, auto_save = policy(data)
+    auto_load, auto_save = policy(player)
     if os.environ.get('RGDS_FORCE_AUTOLOAD') == '1': auto_load = True
     if fresh_start: auto_load = False
-    auto = Path(data) / 'library' / game_key(identity or rom) / 'auto-rgds-play.dss'
+    auto = player / 'library' / game_key(identity or rom) / 'auto-rgds-play.dss'
     env.update(
         RGDS_CORE='rgds-play',
         RGDS_CONTROL_FILE=str(Path(data) / 'session/emulator.control'),
@@ -371,16 +386,17 @@ def tanuki_plan(data, rom, prepare=True, engine=TANUKI_ENGINE, identity=None, fr
     if auto_load and auto.is_file(): env['RGDS_NATIVE_AUTOLOAD'] = '1'
     # the game's Graphics page, the volume bar and the FPS counter
     from play_options import FITS, SECONDS, shader_for, system_defaults, view
-    shown = view(data, identity or rom)
-    own = read_fields(Path(data) / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
+    shown = view(player, identity or rom)
+    own = read_fields(player / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
     shader = shader_for(
         identity or rom,
         int(own) if own.lstrip('-').isdigit() else -1, 0,
-        system_defaults(data, '3ds').get('filter', -1)
+        system_defaults(player, '3ds').get('filter', -1)
     )
     if app: env['RGDS_SHADER_DIR'] = str(Path(app) / 'emulators/shaders')
     env.update(
         RGDS_VOLUME_DATA=str(data),
+        RGDS_UI_FILE=str(player / 'ui.ini'),
         RGDS_FPS='1' if read_fields(Path(data) / 'performance.ini').get('fps') == '1' else '0',
         RGDS_3DS_VIEW=' '.join(
             str(n) for n in (FITS.index(shown['fit']), SECONDS.index(shown['second']), shader, shown['frame'])
@@ -415,17 +431,18 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             " is missing. Copy the supplied local emulator payload."
         )
     env = base_environment()
-    filter_choice = display_filter(data, identity or rom)
+    player = player_root(data)
+    filter_choice = display_filter(player, identity or rom)
     if core == 'rgds-play':
         # A game on Default gets its system's screen (GBA screen for the GBA), and never a DS screen.
         from play_options import shader_for, system_defaults, system_of
-        own = read_fields(data / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
+        own = read_fields(player / 'library' / game_key(identity or rom) / 'game.ini').get('filter', '-1').strip()
         filter_choice = shader_for(
             rom,
             int(own) if own.lstrip('-').isdigit() else -1, filter_choice,
-            system_defaults(data, system_of(identity or rom)).get('filter', -1)
+            system_defaults(player, system_of(identity or rom)).get('filter', -1)
         )
-    tuning = game_options(data, identity or rom)
+    tuning = game_options(player, identity or rom)
     display = 'wayland'
     if core == 'rgds-experimental':
         # Direct display: DSCore presents on KMS itself while Weston is stopped
@@ -501,7 +518,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # swap wait for the display, on Weston and on KMS alike.
         env['SDL_RENDER_VSYNC'] = '0'
 
-    ds_input = read_fields(data / 'library' / game_key(identity or rom) / 'ds-input.ini')
+    ds_input = read_fields(player / 'library' / game_key(identity or rom) / 'ds-input.ini')
     try:
         ds_language = int(ds_input.get('language', '1'))
     except ValueError:
@@ -510,8 +527,11 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     ds_microphone = ds_input.get('microphone', '1') != '0'
     # Local wireless (DS controls → Local wireless): DSCore's net.mode, a session with another console on the LAN
     ds_wireless = {'1': 'auto', '2': 'host', '3': 'guest'}.get(ds_input.get('wireless', '0'), 'off')
+    # A Kid profile is on no one's network unless the owner said so.
+    limits = read_fields(player / 'profile.ini')
+    if limits.get('restricted') == '1' and limits.get('wireless') != '1': ds_wireless = 'off'
     ds_nickname = ''.join(
-        c for c in ds_input.get('nickname') or read_fields(data / 'ds.ini').get('nickname') or
+        c for c in ds_input.get('nickname') or read_fields(player / 'ds.ini').get('nickname') or
         ('RG DS Core' if core == 'rgds-experimental' else 'DSperate') if c.isprintable()
     )
     ds_nickname = ds_nickname.encode('utf-16-le')[:20].decode('utf-16-le', errors='ignore') or 'RG DS Core'
@@ -522,11 +542,12 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         print(f"{SHADERS[filter_choice]['name']} is unavailable in {core}; using Off.", file=sys.stderr)
         filter_choice = 0
     env.update(RGDS_VOLUME_HELPER=str(app / "runtime/audio.py"), RGDS_VOLUME_DATA=str(data), RGDS_VOLUME_KEYS="1")
+    env['RGDS_UI_FILE'] = str(player / 'ui.ini')
     env['RGDS_SHADER'] = str(filter_choice)
     env['RGDS_FPS'] = '1' if env.get('RGDS_FPS') == '1' or read_fields(data /
                                                                        'performance.ini').get('fps') == '1' else '0'
     env['RGDS_SHADER_DIR'] = str(app / 'emulators/shaders')
-    env['RGDS_RUMBLE'] = rumble_setting(data)
+    env['RGDS_RUMBLE'] = rumble_setting(player)
     global_controls, game_controls = control_paths(data, identity or rom)
     env['RGDS_CONTROLS_GLOBAL'] = str(global_controls)
     env['RGDS_CONTROLS_FILE'] = str(game_controls)
@@ -538,7 +559,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     hooks = app / "emulators/hooks"
     selected_hooks = select_hooks(core, hooks)
     if core in DSPERATE_CORES:
-        root = data / "emulators" / core
+        root = player / "emulators" / core
         home = root / "home"
         config = root / "config.ini"
         if prepare:
@@ -546,7 +567,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             profile = app / "assets/emulator-profiles/dsperate.ini"
             if not profile.is_file(): profile = app / "emulators/dsperate.ini"
             copy_missing(profile if profile.is_file() else None, config)
-            auto_load, auto_save = policy(data)
+            auto_load, auto_save = policy(player)
             if os.environ.get("RGDS_FORCE_AUTOLOAD") == "1": auto_load = True
             if fresh_start: auto_load = False
             # An empty cheats path leaves DSCore its own lookup (beside the game, then its config folder).
@@ -646,7 +667,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # native slot cannot override disabled autoload or a newer battery save.
         command.append('--no-autoload')
         if prepare and auto_load:
-            resume = dsperate_resume_state(data, rom, identity, core)
+            resume = dsperate_resume_state(player, rom, identity, core)
             if resume is not None: command += ['--load-state', str(resume)]
         from linux_platform import independent
         if independent():
@@ -666,7 +687,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # RG DS OS has no compositor for a paused menu window: as for DSCore, the player holds its game while the
         # menu is up and the bridge draws the menu (and the switcher) over the player's own frames.
         if rgds_os(): display = 'kms'
-        root = data / "emulators/rgds-play"
+        root = player / "emulators/rgds-play"
         if prepare:
             for folder in ("home", "states"):
                 (root / folder).mkdir(parents=True, exist_ok=True)
@@ -680,8 +701,10 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # RG DS OS's ROCKNIX pad too, sticks included (the N64's control stick and C buttons)
         from portmaster import RGDS_OS_PAD
         env["SDL_GAMECONTROLLERCONFIG"] += "\n" + RGDS_OS_PAD
-        shown = view(data, identity or rom)
+        shown = view(player, identity or rom)
         command += ["--rom", str(rom), "--data", str(root), "--fonts", str(app / "assets/fonts")]
+        # A save beside the game is the owner's: another profile's first start of it is a new game.
+        if not is_owner(player): command += ["--no-save-import", "--shared-cheats", str(data / "emulators/rgds-play")]
         from linux_platform import rgds_os
         from play_options import system_of, libretro_core, LIBRETRO_SYSTEM_DIRS, MGBA_SYSTEMS
         system = system_of(identity or rom)
@@ -699,7 +722,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             command += ["--core", str(library), "--system", system]
             command += ["--system-dir", LIBRETRO_SYSTEM_DIRS.get(system, "/data/rgds/bios")]
         # The launcher's Theme & display (and language, time format) for the second screen.
-        command += ["--preferences", str(data / "preferences.ini")]
+        command += ["--preferences", str(player / "preferences.ini")]
         for system in ("gba", "gb", "nes", "snes", "sms", "md", "n64", "zx", "c64", "gw", "scummvm"):
             command += ["--profiles", str(binary.parent / "profiles" / system)]
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
@@ -711,11 +734,11 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         preload = [str(selected_hooks.bridge)]
         env["SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS"] = "0"
         env["LD_PRELOAD"] = ":".join(preload)
-        auto_load, auto_save = policy(data)
+        auto_load, auto_save = policy(player)
         if os.environ.get("RGDS_FORCE_AUTOLOAD") == "1": auto_load = True
         if fresh_start: auto_load = False
-        state_dir = data / "emulators" / core / "states"
-        auto = data / "library" / game_key(identity or rom) / ("auto-" + core + ".dss")
+        state_dir = player / "emulators" / core / "states"
+        auto = player / "library" / game_key(identity or rom) / ("auto-" + core + ".dss")
         env.update(
             RGDS_CORE="dsperate" if core in DSPERATE_CORES else core,
             RGDS_CONTROL_FILE=str(data / "session/emulator.control"),
@@ -841,6 +864,7 @@ def refused_resume(result, plan, engine_log):
 
 def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, display=None):
     data.mkdir(parents=True, exist_ok=True)
+    player = player_root(data)
     marker = data / "session/core.json"
     child = None
     volume = VolumeWatch(data)
@@ -850,7 +874,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
     original_rom = Path(rom).resolve()
     # PortMaster itself is a tool, not a game: no playtime, so it never shows in Recents or Last played.
     counted = core != 'portmaster' or not original_rom.match('*/entry/PortMaster.sh')
-    accumulated, sessions = playtime(data, original_rom)
+    accumulated, sessions = playtime(player, original_rom)
     began = None
     started = datetime.now(timezone.utc).isoformat()
 
@@ -870,17 +894,18 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             record = {"pid": os.getpid(), "start": process_identity(os.getpid()), "core": core}
             write_record(marker, record)
         from quick_resume import invalidate
-        invalidate(data)
+        invalidate(player)
         rom = resolve_rom(rom, data, core)
         from save_guard import protect
-        protect(data, core, rom, original_rom, build=app.name)
+        protect(player, core, rom, original_rom, build=app.name)
         plan = launch_plan(core, app, data, rom, identity=original_rom, fresh_start=fresh_start)
+        check_plan(plan, data, player, core)
         engine_log.command, engine_log.cwd = list(plan["command"]), plan["cwd"]
         plan['env']['RGDS_OVERLAY_FILE'] = f'/dev/shm/rgds-menu-{os.getpid()}-{time.monotonic_ns()}.frame'
         plan['env']['RGDS_FRAME_STATS'] = plan['env']['RGDS_OVERLAY_FILE'] + '.stats'
         if (app / 'assets/fonts/rounded-20.rgf').is_file():
             plan['env']['RGDS_FONT_DIR'] = str(app / 'assets/fonts')
-        hud_colours = hud_theme(app, data)
+        hud_colours = hud_theme(app, player)
         if hud_colours:
             plan['env']['RGDS_HUD_THEME'] = hud_colours
         print("Launching " + core + ": " + str(rom), flush=True)
@@ -956,7 +981,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
                 break
             if counted and time.monotonic() - checkpoint_at >= 30:
                 record_playtime(
-                    data, original_rom, accumulated + menu.played_seconds(), sessions + 1, started,
+                    player, original_rom, accumulated + menu.played_seconds(), sessions + 1, started,
                     menu.played_seconds()
                 )
                 checkpoint_at = time.monotonic()
@@ -975,7 +1000,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         if result == 0 and core != 'portmaster':  # quick resume reopens engines, not ports
             from quick_resume import record_exit
             try:
-                record_exit(data, original_rom, core, datetime.fromisoformat(started).timestamp())
+                record_exit(player, original_rom, core, datetime.fromisoformat(started).timestamp())
             except OSError as error:
                 print('Quick resume was not armed: ' + str(error), file=sys.stderr)
         switch = menu.completed_switch() if result == 0 else None
@@ -1024,7 +1049,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
             print("Volume cleanup: " + str(error), file=sys.stderr)
         try:
             if began is not None and counted:
-                record_playtime(data, original_rom, accumulated + seconds, sessions + 1, started, seconds)
+                record_playtime(player, original_rom, accumulated + seconds, sessions + 1, started, seconds)
         except OSError:
             print("Could not save playtime.", file=sys.stderr)
         finally:
@@ -1067,8 +1092,8 @@ def _run_games(core, app, data, rom, display_handoff, display):
         fresh_start = result == 77
         # 76: the same engine with another renderer (3D resolution change).
         if fresh_start or result == 76: continue
-        options = game_options(data, rom)
-        defaults = read_fields(Path(data) / 'preferences.ini')
+        options = game_options(player_root(data), rom)
+        defaults = read_fields(player_root(data) / 'preferences.ini')
         selection = options['core'] if options['core'] >= 0 else int(defaults.get('core', '4'))
         core = CORES[selection] if 0 <= selection < len(CORES) else core
         core = engine_for(rom, core)  # DSCore for DS games, RG DS Play for other systems

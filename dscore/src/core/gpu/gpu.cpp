@@ -78,6 +78,7 @@ void Gpu::reset() {
     const char* edge = std::getenv("DS_FRAME_EDGE");
     vblank_edge_ = edge && !std::strcmp(edge, "vblank");
     cut_at_vblank_ = false;
+    skip_edge_hold_ = 0;
   }
   if (hd_mode()) hd_start();
   const char* scale = std::getenv("RGDS_VK_SCALE");
@@ -673,8 +674,11 @@ void Gpu::on_scanline_start() {
     // Games read the keys and the touchscreen in VBlank and show the result in the next frame's lines, so the
     // frontend's input poll then lands just before that read, and the frame it hands over is the one answering it:
     // a refresh sooner than a frame that runs on through VBlank. The lines' batch and the compose are joined now
-    // rather than overlapping VBlank. Frameskip keeps line 0 (its request is taken at line 215 for begin_frame).
-    if (vblank_edge_ && !skip_req_ && frame_begun_) {
+    // rather than overlapping VBlank. Frameskip keeps line 0 (its request is taken at line 215 for begin_frame), and
+    // through the draw blocks between its skips: a frame cut here would stop before line 215 reads the draw request.
+    if (skip_req_) skip_edge_hold_ = SKIP_EDGE_HOLD;
+    else if (skip_edge_hold_) --skip_edge_hold_;
+    if (vblank_edge_ && !skip_req_ && !skip_edge_hold_ && frame_begun_) {
       prof::Scope j(prof::JOIN0);
       join_worker(JoinSite::Line0);
       if (pending_row_ >= 0) submit_pending_row(SCREEN_H);

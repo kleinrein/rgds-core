@@ -379,13 +379,16 @@ French	Tiếng Pháp
 Friends	Bạn bè
 Full colour	Đầy đủ màu
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Lam coban
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Mã não
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Bạch kim
-Game Boy Advance · Black	Game Boy Advance · Đen
-Game Boy Advance · Glacier	Game Boy Advance · Băng giá
-Game Boy Advance · Indigo	Game Boy Advance · Chàm
-Game Boy Advance · Platinum	Game Boy Advance · Bạch kim
+GBA SP · Cobalt	GBA SP · Lam coban
+GBA SP · Cobalt · Screen only	GBA SP · Lam coban · Chỉ màn hình
+GBA SP · Onyx	GBA SP · Mã não
+GBA SP · Onyx · Screen only	GBA SP · Mã não · Chỉ màn hình
+GBA SP · Platinum	GBA SP · Bạch kim
+GBA SP · Platinum · Screen only	GBA SP · Bạch kim · Chỉ màn hình
+GBA · Black	GBA · Đen
+GBA · Glacier	GBA · Băng giá
+GBA · Indigo	GBA · Chàm
+GBA · Platinum	GBA · Bạch kim
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Màn hình Game Boy Color
 Game Boy Color · Atomic Purple	Game Boy Color · Tím nguyên tử
@@ -1242,3 +1245,99 @@ What do you want to play?	Bạn muốn chơi gì?
 You can change this later in Settings > Library.	Bạn có thể đổi sau trong Cài đặt > Thư viện.
 A clean library with only DS games.	Thư viện gọn gàng chỉ có game DS.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation và nhiều hơn nữa, xếp theo hệ máy.
+Who's playing?	Ai đang chơi?
+Owner	Chủ máy
+Kid	Trẻ em
+Adult	Người lớn
+Profiles	Hồ sơ
+Playing now	Đang chơi
+Change who's playing	Đổi người chơi
+Add a profile	Thêm hồ sơ
+Ask who's playing at startup	Hỏi người chơi khi khởi động
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Mỗi người chơi có bản lưu, mục yêu thích, thời gian chơi và giao diện riêng.
+Who it's for	Dành cho ai
+Name	Tên
+DS name	Tên DS
+Colour	Màu
+Age limit	Giới hạn tuổi
+Games with no rating	Trò chơi chưa phân loại
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Mã gian lận
+Local wireless	Không dây cục bộ
+Set a PIN	Đặt mã PIN
+Change the PIN	Đổi mã PIN
+Remove the PIN	Xóa mã PIN
+None	Không có
+Set	Đã đặt
+Remove this profile	Xóa hồ sơ này
+Hidden	Đã ẩn
+Shown	Đang hiện
+No limit	Không giới hạn
+Only games I pick	Chỉ game tôi chọn
+Could not change profile. Check storage.	Không thể đổi hồ sơ. Hãy kiểm tra bộ nhớ.
+Switch to another profile first	Hãy đổi sang hồ sơ khác trước
+Not locked: set a PIN on the owner's profile.	Chưa khóa: hãy đặt mã PIN trên hồ sơ của chủ máy.
+Who is this profile for?	Hồ sơ này dành cho ai?
+Own saves and look. Settings stay open.	Bản lưu và giao diện riêng. Cài đặt vẫn mở.
+Own saves, and a library you choose.	Bản lưu riêng và thư viện do bạn chọn.
+A library that fits their age, and no way into the handheld's settings.	Thư viện phù hợp lứa tuổi, không vào được cài đặt của máy.
+A second grown-up or an older child, with everything open.	Một người lớn khác hoặc trẻ lớn hơn, mọi thứ đều mở.
+Every game shows, whatever its rating.	Mọi trò chơi đều hiện, bất kể phân loại.
+Nothing shows until you allow it, game by game or a shelf at a time.	Không hiện gì cho đến khi bạn cho phép, từng game hoặc từng kệ.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Trò chơi trên độ tuổi này bị ẩn. Trò chơi chưa phân loại theo cài đặt của hồ sơ.
+Profile removed. A backup is in userdata/exports.	Đã xóa hồ sơ. Bản sao lưu nằm trong userdata/exports.
+The profile could not be removed.	Không thể xóa hồ sơ.
+Removed profiles erased.	Đã xóa vĩnh viễn các hồ sơ đã gỡ.
+Removed profiles could not be erased.	Không thể xóa vĩnh viễn các hồ sơ đã gỡ.
+Erase removed profiles	Xóa vĩnh viễn hồ sơ đã gỡ
+Erase the saves of removed profiles for good? This cannot be undone.	Xóa vĩnh viễn bản lưu của các hồ sơ đã gỡ? Không thể hoàn tác.
+Allow all	Cho phép tất cả
+Always show	Luôn hiện
+Always hide	Luôn ẩn
+All	Tất cả
+No rating	Chưa phân loại
+No games here.	Không có trò chơi nào.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A hiện mọi trò chơi chưa phân loại trên kệ này. Trò chơi đã phân loại vẫn theo độ tuổi.
+Nothing here is waiting for a decision.	Không có gì ở đây chờ quyết định.
+No age rating	Chưa phân loại độ tuổi
+You chose to show it.	Bạn đã chọn hiện.
+You chose to hide it.	Bạn đã chọn ẩn.
+Above this profile's age.	Trên độ tuổi của hồ sơ này.
+Hidden until you allow it.	Bị ẩn cho đến khi bạn cho phép.
+Fits this profile.	Phù hợp với hồ sơ này.
+A changes who sees this game: automatic, always show, always hide.	A đổi người thấy trò chơi: tự động, luôn hiện, luôn ẩn.
+Visible to…	Hiện cho…
+Hide this game	Ẩn trò chơi này
+Hidden games	Trò chơi đã ẩn
+This game is not available on this profile	Trò chơi này không có trên hồ sơ này
+Not on this profile	Không có trên hồ sơ này
+Locked	Đã khóa
+PIN	Mã PIN
+Enter the PIN	Nhập mã PIN
+Choose a PIN	Chọn mã PIN
+Enter it again	Nhập lại lần nữa
+This needs a grown-up.	Cần người lớn thực hiện.
+Those did not match. Choose a PIN.	Không khớp. Hãy chọn mã PIN.
+That is not the PIN.	Đó không phải mã PIN.
+Without one this profile is not locked. Cancel skips it.	Không có PIN thì hồ sơ này không bị khóa. Hủy để bỏ qua.
+The owner's PIN was removed.	Đã xóa mã PIN của chủ máy.
+Profile name	Tên hồ sơ
+Remove this profile? Its saves are kept, and a backup is made first.	Xóa hồ sơ này? Bản lưu vẫn được giữ và sẽ sao lưu trước.
+Show every game with no rating on this shelf?	Hiện mọi trò chơi chưa phân loại trên kệ này?
+Star	Ngôi sao
+Heart	Trái tim
+Cat	Mèo
+Dog	Chó
+Robot	Rô-bốt
+Rocket	Tên lửa
+Flower	Bông hoa
+Ghost	Bóng ma
+Fish	Cá
+Crown	Vương miện
+Mushroom	Nấm
+Rainbow	Cầu vồng
+{0} shown	{0} đang hiện
+{0} above the age	{0} trên độ tuổi
+{0} with no rating	{0} chưa phân loại
+Too many tries. Wait {0} s	Thử quá nhiều lần. Đợi {0} giây

@@ -192,11 +192,11 @@ class SystemsUITests(unittest.TestCase):
         rom.write_bytes(bytes(0x150))
         menu = ('--game-menu', '--game-core', 'rgds-play', '--game-rom', str(rom))
         frame = '100 key Down\n150 key Right\n200 key Right\n300 key A\n400 key Down\n500 key Down\n600 key A\n'
-        # Off, the Game Boy and Pocket shells, then the black bar: no Game Boy Advance shells or SPs.
+        # Off, then the Game Boy and Pocket shells: no Game Boy Advance shells, SPs or black bar.
         from play_options import FRAMES
         offered = [name for name, systems in FRAMES.items() if not systems or 'gb' in systems.split(',')]
-        self.assertFalse({'indigo', 'sp-cobalt'} & set(offered))
-        for downs, chosen in ((1, 'dmg'), (offered.index('bar'), 'bar')):
+        self.assertFalse({'indigo', 'sp-cobalt', 'bar'} & set(offered))
+        for downs, chosen in ((1, 'dmg'), (len(offered) - 1, offered[-1])):
             (self.data / 'state').unlink(missing_ok=True)
             script = frame + ''.join(f'{700 + 50 * i} key Down\n' for i in range(downs)) + f'{750 + 50 * downs} key A\n'
             report = self.run_ui(script, extra=menu, seconds=2)

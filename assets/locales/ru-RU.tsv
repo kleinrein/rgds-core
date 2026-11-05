@@ -379,13 +379,16 @@ French	Французский
 Friends	Друзья
 Full colour	Полный цвет
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Кобальт
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Оникс
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Платина
-Game Boy Advance · Black	Game Boy Advance · Чёрный
-Game Boy Advance · Glacier	Game Boy Advance · Ледник
-Game Boy Advance · Indigo	Game Boy Advance · Индиго
-Game Boy Advance · Platinum	Game Boy Advance · Платина
+GBA SP · Cobalt	GBA SP · Кобальт
+GBA SP · Cobalt · Screen only	GBA SP · Кобальт · Только экран
+GBA SP · Onyx	GBA SP · Оникс
+GBA SP · Onyx · Screen only	GBA SP · Оникс · Только экран
+GBA SP · Platinum	GBA SP · Платина
+GBA SP · Platinum · Screen only	GBA SP · Платина · Только экран
+GBA · Black	GBA · Чёрный
+GBA · Glacier	GBA · Ледник
+GBA · Indigo	GBA · Индиго
+GBA · Platinum	GBA · Платина
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Экран Game Boy Color
 Game Boy Color · Atomic Purple	Game Boy Color · Атомный фиолетовый
@@ -1242,3 +1245,99 @@ What do you want to play?	Во что хотите играть?
 You can change this later in Settings > Library.	Это можно изменить позже в разделе Настройки > Библиотека.
 A clean library with only DS games.	Аккуратная библиотека только с играми DS.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation и другие, по системам.
+Who's playing?	Кто играет?
+Owner	Владелец
+Kid	Ребёнок
+Adult	Взрослый
+Profiles	Профили
+Playing now	Сейчас играет
+Change who's playing	Сменить игрока
+Add a profile	Добавить профиль
+Ask who's playing at startup	Спрашивать при запуске, кто играет
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	У каждого игрока свои сохранения, избранное, время игры и оформление.
+Who it's for	Для кого
+Name	Имя
+DS name	Имя DS
+Colour	Цвет
+Age limit	Возрастное ограничение
+Games with no rating	Игры без рейтинга
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Читы
+Local wireless	Локальная беспроводная связь
+Set a PIN	Задать PIN-код
+Change the PIN	Изменить PIN-код
+Remove the PIN	Удалить PIN-код
+None	Нет
+Set	Задан
+Remove this profile	Удалить этот профиль
+Hidden	Скрыта
+Shown	Показана
+No limit	Без ограничений
+Only games I pick	Только выбранные
+Could not change profile. Check storage.	Не удалось сменить профиль. Проверьте память.
+Switch to another profile first	Сначала выберите другой профиль
+Not locked: set a PIN on the owner's profile.	Без блокировки: задайте PIN-код в профиле владельца.
+Who is this profile for?	Для кого этот профиль?
+Own saves and look. Settings stay open.	Свои сохранения и оформление. Настройки открыты.
+Own saves, and a library you choose.	Свои сохранения и библиотека на ваш выбор.
+A library that fits their age, and no way into the handheld's settings.	Библиотека по возрасту и никакого доступа к настройкам устройства.
+A second grown-up or an older child, with everything open.	Другой взрослый или ребёнок постарше, всё открыто.
+Every game shows, whatever its rating.	Показываются все игры с любым рейтингом.
+Nothing shows until you allow it, game by game or a shelf at a time.	Ничего не показывается, пока вы не разрешите: по одной игре или целой полкой.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Игры выше этого возраста скрыты. Игры без рейтинга следуют настройке профиля.
+Profile removed. A backup is in userdata/exports.	Профиль удалён. Резервная копия в userdata/exports.
+The profile could not be removed.	Не удалось удалить профиль.
+Removed profiles erased.	Удалённые профили стёрты.
+Removed profiles could not be erased.	Не удалось стереть удалённые профили.
+Erase removed profiles	Стереть удалённые профили
+Erase the saves of removed profiles for good? This cannot be undone.	Навсегда стереть сохранения удалённых профилей? Это нельзя отменить.
+Allow all	Разрешить все
+Always show	Всегда показывать
+Always hide	Всегда скрывать
+All	Все
+No rating	Без рейтинга
+No games here.	Здесь нет игр.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A показывает все игры без рейтинга на этой полке. Игры с рейтингом по-прежнему зависят от возраста.
+Nothing here is waiting for a decision.	Здесь ничего не ждёт решения.
+No age rating	Нет возрастного рейтинга
+You chose to show it.	Вы решили показывать её.
+You chose to hide it.	Вы решили скрыть её.
+Above this profile's age.	Выше возраста этого профиля.
+Hidden until you allow it.	Скрыта, пока вы не разрешите.
+Fits this profile.	Подходит этому профилю.
+A changes who sees this game: automatic, always show, always hide.	A меняет, кто видит игру: автоматически, всегда показывать, всегда скрывать.
+Visible to…	Видна для…
+Hide this game	Скрыть эту игру
+Hidden games	Скрытые игры
+This game is not available on this profile	Эта игра недоступна в этом профиле
+Not on this profile	Не в этом профиле
+Locked	Заблокировано
+PIN	PIN-код
+Enter the PIN	Введите PIN-код
+Choose a PIN	Выберите PIN-код
+Enter it again	Введите ещё раз
+This needs a grown-up.	Нужен взрослый.
+Those did not match. Choose a PIN.	Коды не совпали. Выберите PIN-код.
+That is not the PIN.	Это неверный PIN-код.
+Without one this profile is not locked. Cancel skips it.	Без него профиль не заблокирован. «Отмена» пропустит этот шаг.
+The owner's PIN was removed.	PIN-код владельца удалён.
+Profile name	Имя профиля
+Remove this profile? Its saves are kept, and a backup is made first.	Удалить этот профиль? Сохранения останутся, сначала будет создана копия.
+Show every game with no rating on this shelf?	Показать все игры без рейтинга на этой полке?
+Star	Звезда
+Heart	Сердце
+Cat	Кошка
+Dog	Собака
+Robot	Робот
+Rocket	Ракета
+Flower	Цветок
+Ghost	Призрак
+Fish	Рыба
+Crown	Корона
+Mushroom	Гриб
+Rainbow	Радуга
+{0} shown	Показано: {0}
+{0} above the age	Выше возраста: {0}
+{0} with no rating	Без рейтинга: {0}
+Too many tries. Wait {0} s	Слишком много попыток. Подождите {0} с

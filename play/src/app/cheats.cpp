@@ -62,14 +62,21 @@ std::vector<CheatCode> parse_cht(const std::string& text) {
     return out;
 }
 
-bool CheatBook::load(const std::string& root, const std::string& system, const std::string& rom_path) {
+bool CheatBook::load(const std::string& root, const std::string& system, const std::string& rom_path,
+                     const std::string& shared) {
     codes_.clear();
     path_.clear();
     const std::string game = file_stem(rom_path);
     const std::string folder = root + "/cheats/" + system;
     memory_ = folder + "/" + game + ".on";
-    for (const std::string& candidate : {folder + "/" + game + ".cht", parent_directory(rom_path) + "/" + game + ".cht",
-                                         root + "/cheats/" + game + ".cht"})
+    std::vector<std::string> candidates = {folder + "/" + game + ".cht",
+                                           parent_directory(rom_path) + "/" + game + ".cht",
+                                           root + "/cheats/" + game + ".cht"};
+    if (!shared.empty()) { // the list is the handheld's; which are on (memory_) stays the player's
+        candidates.push_back(shared + "/cheats/" + system + "/" + game + ".cht");
+        candidates.push_back(shared + "/cheats/" + game + ".cht");
+    }
+    for (const std::string& candidate : candidates)
         if (exists(candidate)) {
             path_ = candidate;
             break;

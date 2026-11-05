@@ -33,6 +33,8 @@
 #include "launcher/game_options.hpp"
 #include "launcher/shader_preview.hpp"
 #include "launcher/library_cache.hpp"
+#include "launcher/profile_pictures.hpp"
+#include "launcher/profile_store.hpp"
 #include "launcher/game_info.hpp"
 #include "launcher/dual_screen.hpp"
 #include "launcher/pictochat_app.hpp"
@@ -152,7 +154,7 @@ static bool same_hardware(const SystemStatus& a, const SystemStatus& b) {
 struct Section {
     const char* title;
 };
-static const std::array<Section, 11> sections = {{{"Theme"},
+static const std::array<Section, 12> sections = {{{"Theme"},
                                                   {"Power"},
                                                   {"Library"},
                                                   {"Sound"},
@@ -162,7 +164,8 @@ static const std::array<Section, 11> sections = {{{"Theme"},
                                                   {"Statistics"},
                                                   {"Power off"},
                                                   {"Updates"},
-                                                  {"Display"}}};
+                                                  {"Display"},
+                                                  {"Profiles"}}};
 
 struct Options {
     bool independent = false, mainline = false;
@@ -171,6 +174,7 @@ struct Options {
          game_menu = false, game_switcher = false, port_menu = false, home = false, library = false,
          boot_warning = false, boot_startup = false, usb_drive_screen = false, first_run = false;
     int frames = 0, seconds = 0, boot_ready_fd = -1;
+    fs::path player; // the active profile's folder (launcher/profiles.hpp); data itself for the owner
     std::string top = "DSI-1", bottom = "DSI-2";
     fs::path theme, themes, screenshot, app, data, state, preferences, system_preferences, input_script, cache_report,
         touch_recording;
@@ -518,7 +522,7 @@ class App {
     static constexpr int sound_track_x = 60, sound_track_width = 504;
     int list_count() const {
         switch (settings.page) {
-        case Page::Settings: return 11;
+        case Page::Settings: return 12;
         case Page::Sound: return 5;
         case Page::MenuSounds: return 5;
         case Page::Haptics: return 5;
@@ -532,7 +536,10 @@ class App {
         case Page::Scraper: return 6;
         case Page::DeviceInfo: return 5;
         case Page::System: return o.rgds_os ? 9 : 10; // last rows: Touch to continue, Run setup again
-        case Page::GameOptions: return game_options_base() + (game_removable() ? 1 : 0);
+        case Page::GameOptions: return game_options_base() + (game_removable() ? 1 : 0) + (game_visibility_row() >= 0 ? 1 : 0);
+        case Page::ProfileEdit: return int(profile_edit_rows().size());
+        case Page::ProfileGames: return int(games_rows.size());
+        case Page::ProfileGameRules: return int(profiles.profiles().size());
         case Page::GameArtwork: return 3;
         case Page::Maintenance: return 8;
         case Page::Network: return 9;
@@ -697,7 +704,7 @@ class App {
     // A system's tile: a cartridge and its badge, drawn in the space a game's icon takes.
     void system_icon(SDL_Renderer* r, size_t index, int x, int y, int size);
     // RG DS Play's view of the running game, as the runtime stores it beside game.ini.
-    fs::path play_view_path() { return item_folder(0) / "play.ini"; }
+    fs::path play_view_path() { return player_item_folder(0) / "play.ini"; }
     void load_play_view();
     // What RG DS Play can draw around the game, by their play.ini names: its own styles for the game's system
     // (play/src/ui/frame_styles.hpp), then the owner's picture frames, userdata/frames/<system>/<name>.png.
@@ -705,7 +712,7 @@ class App {
     fs::path play_frames_folder();
     std::vector<std::string> play_frame_choices(std::string system = {}) const;
     fs::path system_defaults_path(const std::string& system) const {
-        return o.data / "system-defaults" / (system + ".ini");
+        return o.player / "system-defaults" / (system + ".ini");
     }
     SystemView system_view(const std::string& system) const;
     void save_system_view(const std::string& system, const SystemView& view);
@@ -1027,7 +1034,7 @@ class App {
     Page search_return = Page::Library;
     Uint32 automatic_update_at = 0;
     bool resume_checked = false, resume_launch = false;
-    fs::path gallery_root() { return item_folder(model.selected) / "slots" / core_ids[gallery_core]; }
+    fs::path gallery_root() { return player_item_folder(model.selected) / "slots" / core_ids[gallery_core]; }
     void save_experience(const std::string& key, int value) {
         std::ostringstream body;
         body << "{\"action\":\"settings\",\"" << key << "\":" << value << '}';
@@ -1103,7 +1110,7 @@ class App {
     void search_changed();
     void poll_search_preview(Uint32 now);
     void open_ds_controls() {
-        ds_settings = fields(item_folder(model.selected) / "ds-input.ini");
+        ds_settings = fields(player_item_folder(model.selected) / "ds-input.ini");
         ds_return = settings.page;
         settings.page = Page::DSControls;
         settings.focus = 0;
@@ -1342,12 +1349,7 @@ class App {
                      std::to_string(std::max(0, next.frameskip)));
     }
     static std::string filter2d_name(int mode) {
-        return mode == 1   ? "Sharp"
-               : mode == 2 ? "Smooth"
-               : mode == 3 ? "Crisp"
-               : mode == 4 ? "HD"
-               : mode == 5 ? "HD smooth"
-                           : "Native pixels";
+        return mode == 3 ? "Crisp" : mode == 4 ? "HD" : mode == 5 ? "HD soft" : "Off";
     }
     void apply_filter2d(int mode) {
         auto next = game_preferences;
@@ -1383,8 +1385,9 @@ class App {
             show_picker("Heavy 3D scenes (2x and above)", {"Adaptive (holds 60 fps)", "Always sharp"},
                         game_preferences.rgds_adaptive ? 0 : 1, [this](int n) { apply_adaptive(n == 0); });
         else if (settings.focus == 3)
-            show_picker("2D scaling", {"Native pixels", "Sharp", "Smooth", "Crisp", "HD", "HD smooth"},
-                        game_preferences.rgds_2d, [this](int n) { apply_filter2d(n); });
+            show_picker("2D scaling", {filter2d_name(0), filter2d_name(3), filter2d_name(4), filter2d_name(5)},
+                        game_preferences.rgds_2d ? game_preferences.rgds_2d - 2 : 0,
+                        [this](int n) { apply_filter2d(n ? n + 2 : 0); });
         else if (settings.focus == 4) {
             open_shader_picker(true);
             shader_return = Page::Graphics;
@@ -1655,6 +1658,116 @@ class App {
         const Color white{255, 255, 255}, ink{18, 24, 30};
         return contrast_ratio(white, fill) >= contrast_ratio(ink, fill) ? white : ink;
     }
+    // ---- Profiles (profiles_screen.hpp)
+    enum class ProfileChoice { Kind, Picture, Colour, Age };
+    static constexpr int profile_row_switch = -1, profile_row_add = -2, profile_row_ask = -3;
+    ProfileStore profiles;
+    ProfileChoice profile_choice = ProfileChoice::Kind;
+    std::string profile_editing;
+    Page picker_return = Page::Library;
+    bool picker_at_boot = false, look_follows_player = false, new_profile_restricted = false, profile_removing = false,
+         new_profile_flow = false, visibility_loading = false, visibility_changed = false, profile_erasing = false;
+    VisibilityRules active_rules, games_rules;
+    CatalogReader visibility_reader, games_reader;
+    std::vector<Game> catalog_games;           // before the rules; all_games is what this player sees
+    std::vector<std::string> catalog_listed;
+    struct GamesRow {
+        int entry; // in games_entries, or -1 for a shelf's own row
+        std::string shelf;
+    };
+    std::vector<CatalogReader::Entry> games_entries;
+    std::vector<GamesRow> games_rows;
+    std::string games_shelf;
+    int games_tab = 0, games_focus = 0;
+    static constexpr int profile_games_tabs_left = 232, profile_games_tab = 96; // ending at the right margin
+    enum class PinPurpose { Enter, Unlock, Set, Confirm };
+    PinPurpose pin_purpose = PinPurpose::Unlock;
+    std::string pin_digits, pin_first, pin_expected, pin_message, pin_owner_id;
+    int pin_profile = 0, pin_target_focus = 0;
+    Page pin_target_page = Page::Library, last_open_page = Page::Library;
+    bool settings_unlocked = false; // the owner's PIN was given: open until the player is back at the games
+    Uint32 pin_ticked = 0, sharing_stopped_at = 0;
+    const Profile& active_profile() const;
+    const std::string& owner_pin() const;
+    bool page_open_to_kid(Page page) const;
+    static bool section_open_to_kid(int section);
+    bool kid_locked() const;
+    void enforce_lock(Uint32 now);
+    long pin_wait_left() const;
+    void pin_note_wrong();
+    void open_pin(PinPurpose purpose, const std::string& expected, bool stop_typing = false);
+    void pin_cancel();
+    void pin_submit();
+    void pin_press(int key);
+    SDL_Rect pin_key_box(int key) const;
+    void pin_action(int code);
+    void pin_touch(int x, int y);
+    void pin_screen(SDL_Renderer* r, int y);
+    void pin_top(SDL_Renderer* r, int y);
+    const std::string& required_pin(int index) const;
+    void commit_profile(int index);
+    void apply_visibility();
+    void keep_visible_systems();
+    void poll_visibility();
+    bool game_allowed(const Game& game);
+    std::vector<Game> hidden_games() const;
+    void set_game_override(const Profile& profile, const std::string& key, const std::string& state);
+    void open_profile_games(int tab);
+    void games_rows_build();
+    int games_shelf_waiting(const std::string& shelf) const;
+    void allow_shelf();
+    void profile_games_action(int code);
+    bool profile_games_header_hit(int x, int y) const;
+    void profile_games_header_tap(int x);
+    void profile_games_row(SDL_Renderer* r, int y, int i);
+    void profile_games_top(SDL_Renderer* r, int y);
+    int game_visibility_row() const;
+    void open_game_visibility();
+    void profile_game_rules_action(int code);
+    void profile_game_rules_row(SDL_Renderer* r, int y, int i);
+    void profile_game_rules_top(SDL_Renderer* r, int y);
+    void profile_edit_focus(int row);
+    void profile_edit_row(SDL_Renderer* r, int y, int i);
+    std::string age_limit_text(int age) const;
+    void read_look();
+    void apply_profile();
+    bool profile_picker_wanted() const;
+    void open_profile_picker(bool boot);
+    SDL_Rect profile_tile_box(int index) const;
+    void draw_profile_tile(SDL_Renderer* r, const Profile& profile, int x, int y, int size);
+    void choose_profile(int index);
+    void profile_picker_action(int code);
+    void profile_picker_touch(int x, int y);
+    void profile_picker_bottom(SDL_Renderer* r, int y);
+    void profile_picker_top(SDL_Renderer* r, int y);
+    void profile_card_top(SDL_Renderer* r, int y, const Profile& profile);
+    void open_profiles();
+    std::vector<int> profiles_rows() const;
+    SDL_Rect profiles_row_box(int row) const;
+    void profiles_activate(int row);
+    void profiles_action(int code);
+    void profiles_touch(int x, int y);
+    void profiles_screen(SDL_Renderer* r, int y);
+    void profiles_top(SDL_Renderer* r, int y);
+    const Profile* edited_profile() const;
+    std::vector<int> profile_edit_rows() const;
+    void profile_edit_activate(int row);
+    void profile_edit_action(int code);
+    void profile_edit_top(SDL_Renderer* r, int y);
+    void open_profile_choose(ProfileChoice kind);
+    int profile_choice_count() const;
+    SDL_Rect profile_choice_box(int index) const;
+    void profile_set_colour(const Profile& profile, int colour);
+    void profile_set_ds_name(const Profile& profile, const std::string& name);
+    void choose_profile_option(int index);
+    void profile_choose_action(int code);
+    void profile_choose_touch(int x, int y);
+    void profile_choose_screen(SDL_Renderer* r, int y);
+    void profile_choose_top(SDL_Renderer* r, int y);
+    void remove_profile();
+    void profile_removal_finished(bool ok);
+    void erase_removed_profiles();
+    void profile_erasing_finished(bool ok);
     void colours_screen(SDL_Renderer* r, int y);
     void colours_top(SDL_Renderer* r, int y);
     // Left/Right (choice 0/1) set a row's value directly; A (choice 2)
@@ -1859,7 +1972,10 @@ class App {
     void scroll_detail_rail(int y);
     int picker_visible() const { return std::min(8, int(picker_options.size())); }
     int picker_stride() const { return std::min(52, 322 / std::max(1, picker_visible())); }
-    bool picker_scrollable() const { return !picker_detail && picker_title == "Language"; }
+    // Jump to letter is a grid; any other list too long for the sheet scrolls, with a scrollbar.
+    bool picker_scrollable() const {
+        return !picker_detail && picker_title != "Jump to letter" && int(picker_options.size()) > picker_visible();
+    }
     int picker_height() const { return picker_visible() * picker_stride(); }
     int picker_max_scroll() const;
     int picker_thumb() const;
@@ -1868,7 +1984,6 @@ class App {
     void scroll_picker(int position);
     void seek_picker(int y);
     int picker_first() const;
-    bool picker_paged() const;
     int picker_top() const;
     void picker_action(int code);
     void picker_touch(int x, int y);
@@ -1915,6 +2030,8 @@ class App {
     std::string clock();
     fs::path folder_for_game(const Game& game) { return library_cache.folder(game); }
     fs::path item_folder(size_t index) { return folder_for_game(model.games[index]); }
+    // Beside item_folder (artwork, what is known about the game): what this player did with it.
+    fs::path player_item_folder(size_t index) { return library_cache.player_folder(model.games[index]); }
     std::string game_title(size_t index);
     void warm_icon(SDL_Renderer* r, const Game& game);
     void warm_icon(SDL_Renderer* r, size_t index) { warm_icon(r, model.games[index]); }
@@ -2274,7 +2391,8 @@ class App {
                  {{340, 220, 280, 80}, pictochat_tile},
                  {{20, 320, 600, 60}, 0}}};
     }
-    static constexpr SDL_Rect home_bar_left{20, 420, 80, 48}, home_bar_right{540, 420, 80, 48},
+    static constexpr SDL_Rect home_bar_chip{108, 420, 164, 48}, home_bar_left{20, 420, 80, 48},
+                              home_bar_right{540, 420, 80, 48},
         home_bar_mark{280, 420, 80, 48};
     // Up and down walk the rows, left and right the two tiles of a row.
     int home_column_memory = 0; // the column (Games/Recents or Favourites/PictoChat) you were last in
@@ -2758,6 +2876,12 @@ public:
         if (o.data.empty()) o.data = o.preferences.parent_path();
         library_cache.reset(o.data);
         if (o.system_preferences.empty()) o.system_preferences = o.preferences.parent_path() / "system.ini";
+        // Set after system.ini, which is the handheld's: the look and language below are the player's.
+        o.player = player_root(o.data);
+        look_follows_player = o.preferences == o.data / "preferences.ini";
+        if (look_follows_player) o.preferences = o.player / "preferences.ini";
+        profiles.load(o.data);
+        if (o.boot_startup && profiles.honour_pin_reset()) status = "The owner's PIN was removed.";
         welcome_active = o.first_run && o.boot_startup && !o.usb_drive_screen && welcome_needed();
         if (welcome_active) o.boot_warning = false; // setup says what that screen says, once
         if (!o.boot_startup && (!o.game_menu || o.preview)) {
@@ -2774,16 +2898,7 @@ public:
         if (o.boot_startup && !o.preview && !o.usb_drive_screen) SystemControls::read_battery(hardware);
         launch_profile.mark("system-configuration-loaded");
         preferences.dark = dark_theme_file(o.theme);
-        try {
-            preferences = load_preferences(o.preferences);
-        } // reads ui.ini even without the base file
-        catch (const std::exception& e) {
-            std::cerr << "Preferences fallback: " << e.what() << std::endl;
-            preferences = Preferences{};
-            try {
-                load_ui_preferences(o.preferences.parent_path() / "ui.ini", preferences);
-            } catch (const std::exception&) {}
-        }
+        read_look();
         launch_profile.mark("preferences-loaded");
         locale.load(asset_path("locales"), preferences.language);
         rounded.prefer(preferences.language);
@@ -2892,6 +3007,7 @@ public:
 #include "launcher/home_screen.hpp"
 #include "launcher/library_screen.hpp"
 #include "launcher/colours_screen.hpp"
+#include "launcher/profiles_screen.hpp"
 #include "launcher/cheats_screen.hpp"
 #include "launcher/shader_screen.hpp"
 #include "launcher/controls_editor.hpp"

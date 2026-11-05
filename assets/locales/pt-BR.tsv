@@ -379,13 +379,16 @@ French	Francês
 Friends	Amigos
 Full colour	Cores completas
 Game Boy	Game Boy
-Game Boy Advance SP · Cobalt	Game Boy Advance SP · Cobalto
-Game Boy Advance SP · Onyx	Game Boy Advance SP · Ônix
-Game Boy Advance SP · Platinum	Game Boy Advance SP · Platina
-Game Boy Advance · Black	Game Boy Advance · Preto
-Game Boy Advance · Glacier	Game Boy Advance · Geleira
-Game Boy Advance · Indigo	Game Boy Advance · Índigo
-Game Boy Advance · Platinum	Game Boy Advance · Platina
+GBA SP · Cobalt	GBA SP · Cobalto
+GBA SP · Cobalt · Screen only	GBA SP · Cobalto · Só a tela
+GBA SP · Onyx	GBA SP · Ônix
+GBA SP · Onyx · Screen only	GBA SP · Ônix · Só a tela
+GBA SP · Platinum	GBA SP · Platina
+GBA SP · Platinum · Screen only	GBA SP · Platina · Só a tela
+GBA · Black	GBA · Preto
+GBA · Glacier	GBA · Geleira
+GBA · Indigo	GBA · Índigo
+GBA · Platinum	GBA · Platina
 Game Boy Color	Game Boy Color
 Game Boy Color screen	Tela do Game Boy Color
 Game Boy Color · Atomic Purple	Game Boy Color · Roxo atômico
@@ -1242,3 +1245,99 @@ What do you want to play?	O que você quer jogar?
 You can change this later in Settings > Library.	Você pode mudar isso depois em Configurações > Biblioteca.
 A clean library with only DS games.	Uma biblioteca limpa só com jogos de DS.
 DS, Game Boy, SNES, PlayStation and more, sorted by system.	DS, Game Boy, SNES, PlayStation e mais, organizados por sistema.
+Who's playing?	Quem vai jogar?
+Owner	Dono
+Kid	Criança
+Adult	Adulto
+Profiles	Perfis
+Playing now	Jogando agora
+Change who's playing	Trocar de jogador
+Add a profile	Adicionar perfil
+Ask who's playing at startup	Perguntar quem joga ao iniciar
+Everyone who plays gets their own saves, favourites and playtime, and their own look.	Cada jogador tem seus próprios saves, favoritos, tempo de jogo e visual.
+Who it's for	Para quem
+Name	Nome
+DS name	Nome no DS
+Colour	Cor
+Age limit	Limite de idade
+Games with no rating	Jogos sem classificação
+Homebrew	Homebrew
+PictoChat	PictoChat
+Cheats	Trapaças
+Local wireless	Sem fio local
+Set a PIN	Definir um PIN
+Change the PIN	Alterar o PIN
+Remove the PIN	Remover o PIN
+None	Nenhum
+Set	Definido
+Remove this profile	Remover este perfil
+Hidden	Oculto
+Shown	Visível
+No limit	Sem limite
+Only games I pick	Só os que eu escolher
+Could not change profile. Check storage.	Não foi possível trocar de perfil. Verifique o armazenamento.
+Switch to another profile first	Troque para outro perfil primeiro
+Not locked: set a PIN on the owner's profile.	Sem bloqueio: defina um PIN no perfil do dono.
+Who is this profile for?	Para quem é este perfil?
+Own saves and look. Settings stay open.	Saves e visual próprios. Configurações abertas.
+Own saves, and a library you choose.	Saves próprios e uma biblioteca que você escolhe.
+A library that fits their age, and no way into the handheld's settings.	Uma biblioteca adequada à idade, sem acesso às configurações do console.
+A second grown-up or an older child, with everything open.	Outro adulto ou uma criança mais velha, com tudo aberto.
+Every game shows, whatever its rating.	Todos os jogos aparecem, seja qual for a classificação.
+Nothing shows until you allow it, game by game or a shelf at a time.	Nada aparece até você permitir, jogo por jogo ou por prateleira.
+Games rated above this age are hidden. Games with no rating follow the setting on this profile's page.	Jogos acima desta idade ficam ocultos. Jogos sem classificação seguem o ajuste do perfil.
+Profile removed. A backup is in userdata/exports.	Perfil removido. Há um backup em userdata/exports.
+The profile could not be removed.	Não foi possível remover o perfil.
+Removed profiles erased.	Perfis removidos apagados.
+Removed profiles could not be erased.	Não foi possível apagar os perfis removidos.
+Erase removed profiles	Apagar perfis removidos
+Erase the saves of removed profiles for good? This cannot be undone.	Apagar de vez os saves dos perfis removidos? Isso não pode ser desfeito.
+Allow all	Permitir todos
+Always show	Sempre mostrar
+Always hide	Sempre ocultar
+All	Todos
+No rating	Sem classif.
+No games here.	Nenhum jogo aqui.
+A shows every game with no rating on this shelf. Games with a rating still follow the age.	A mostra todos os jogos sem classificação desta prateleira. Os classificados seguem a idade.
+Nothing here is waiting for a decision.	Nada aqui aguarda uma decisão.
+No age rating	Sem classificação etária
+You chose to show it.	Você escolheu mostrar.
+You chose to hide it.	Você escolheu ocultar.
+Above this profile's age.	Acima da idade deste perfil.
+Hidden until you allow it.	Oculto até você permitir.
+Fits this profile.	Adequado a este perfil.
+A changes who sees this game: automatic, always show, always hide.	A muda quem vê este jogo: automático, sempre mostrar, sempre ocultar.
+Visible to…	Visível para…
+Hide this game	Ocultar este jogo
+Hidden games	Jogos ocultos
+This game is not available on this profile	Este jogo não está disponível neste perfil
+Not on this profile	Não neste perfil
+Locked	Bloqueado
+PIN	PIN
+Enter the PIN	Digite o PIN
+Choose a PIN	Escolha um PIN
+Enter it again	Digite novamente
+This needs a grown-up.	Isto precisa de um adulto.
+Those did not match. Choose a PIN.	Não coincidem. Escolha um PIN.
+That is not the PIN.	Esse não é o PIN.
+Without one this profile is not locked. Cancel skips it.	Sem ele este perfil não fica bloqueado. Cancelar pula esta etapa.
+The owner's PIN was removed.	O PIN do dono foi removido.
+Profile name	Nome do perfil
+Remove this profile? Its saves are kept, and a backup is made first.	Remover este perfil? Os saves são mantidos, e um backup é feito antes.
+Show every game with no rating on this shelf?	Mostrar todos os jogos sem classificação desta prateleira?
+Star	Estrela
+Heart	Coração
+Cat	Gato
+Dog	Cachorro
+Robot	Robô
+Rocket	Foguete
+Flower	Flor
+Ghost	Fantasma
+Fish	Peixe
+Crown	Coroa
+Mushroom	Cogumelo
+Rainbow	Arco-íris
+{0} shown	{0} visíveis
+{0} above the age	{0} acima da idade
+{0} with no rating	{0} sem classificação
+Too many tries. Wait {0} s	Muitas tentativas. Aguarde {0} s

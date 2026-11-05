@@ -1,6 +1,7 @@
 """Idle-menu save management and additive experience preferences."""
 from pathlib import Path
 from fields import read_fields, write_fields
+from profiles import erase_removed, player_root, remove_profile
 from save_library import SaveLibrary, backup_all
 
 
@@ -21,13 +22,21 @@ def run(service, payload):
         path = backup_all(service.data)
         service.publish(state='ready', message='Save backup created in userdata/exports.', export=str(path))
         return
+    if action == 'profile-remove':
+        path = remove_profile(service.data, payload.get('id', ''))[0]
+        service.publish(state='ready', message='Profile removed. A backup is in userdata/exports.', export=str(path))
+        return
+    if action == 'profile-erase':
+        erase_removed(service.data)
+        service.publish(state='ready', message='Removed profiles erased.')
+        return
     from emulators import activity_lock, core_running
     with activity_lock(service.data):
         if core_running(service.data): raise ValueError('Use the in-game save gallery while a game is running.')
         rom = Path(payload['rom']).resolve()
         if not rom.is_file() or rom.suffix.lower() not in ('.nds', '.zip'):
             raise ValueError('Game file is unavailable.')
-        vault = SaveLibrary(service.data, rom, payload['core'], service.app.name)
+        vault = SaveLibrary(player_root(service.data), rom, payload['core'], service.app.name)
         slot = int(payload.get('slot', 0))
         if action == 'slots': vault.publish()
         elif action == 'export': vault.export(slot)

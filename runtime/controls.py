@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 
 from library import game_key, read_fields, write_fields
+from profiles import device_root, player_root
 
 LOGICAL = ("a", "b", "x", "y", "l", "r", "start", "select", "up", "down", "left", "right")
 SOURCES = (*LOGICAL, "l2", "r2", "l3", "r3", "none")
@@ -57,8 +58,9 @@ def evdev_source(kind, code, value=1, *, mainline=False):
 
 
 def paths(data, rom=None):
-    global_path = Path(data) / "controls.ini"
-    return global_path, Path(data) / "library" / game_key(rom) / "controls.ini" if rom else None
+    # The buttons belong to the handheld; a game's own to the player, called with either root.
+    global_path = device_root(data) / "controls.ini"
+    return global_path, player_root(data) / "library" / game_key(rom) / "controls.ini" if rom else None
 
 
 def preset(name="default"):

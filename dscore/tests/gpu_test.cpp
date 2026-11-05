@@ -7,6 +7,7 @@
 #include "core/gpu/vram_map.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 
@@ -620,8 +621,40 @@ static void test_late_capture_after_raster_skip() {
   }
 }
 
+// DS_FRAME_EDGE=vblank: a frame cut at line 192 stops before line 215 takes the
+// skip request, so a draw request that lasts one frame was overwritten unseen
+// and fast forward (skip, skip, skip, draw) never drew again.
+static void test_frameskip_draws_at_vblank_edge() {
+  setenv("DS_FRAME_EDGE", "vblank", 1);
+  {
+    NDS n;
+    n.reset();
+    n.gpu.set_frameskip_capture(false);
+    n.gpu.set_frame_skip(false);
+    for (int i = 0; i < 20; ++i) n.run_frame();
+    CHECK(n.gpu.at_frame_edge());
+    // The frontend's order: request, read what the frame about to run is, run.
+    auto drawn = [&](int skips, int draws, int cycles) {
+      int count = 0;
+      for (int i = 0; i < (skips + draws) * cycles; ++i) {
+        n.gpu.set_frame_skip(i % (skips + draws) < skips);
+        if (!n.gpu.will_skip_frame()) ++count;
+        n.run_frame();
+      }
+      return count;
+    };
+    CHECK(drawn(3, 1, 8) >= 7);  // fast forward on a game with one display phase
+    CHECK(drawn(6, 2, 8) >= 14); // a two-frame phase: both frames of each block
+    n.gpu.set_frame_skip(false);
+    for (int i = 0; i < 12; ++i) n.run_frame();
+    CHECK(!n.gpu.will_skip_frame()); // drawing again once the requests stop
+  }
+  unsetenv("DS_FRAME_EDGE");
+}
+
 int main() {
   test_late_capture_after_raster_skip();
+  test_frameskip_draws_at_vblank_edge();
   test_vram_views();
   test_text_bg_and_backdrop();
   test_sprites_and_window();

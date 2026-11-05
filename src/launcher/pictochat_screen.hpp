@@ -27,7 +27,7 @@ fs::path App::chat_helper_script() const {
 }
 
 void App::chat_save_profile() {
-    if (!o.data.empty()) chat.save_profile(o.data / "pictochat.ini");
+    if (!o.player.empty()) chat.save_profile(o.player / "pictochat.ini");
 }
 
 void App::open_pictochat() {
@@ -35,7 +35,7 @@ void App::open_pictochat() {
     cancel_navigation();
     chat_open = true;
     chat.glyphs = &chat_glyphs;
-    chat.load_profile(o.data.empty() ? fs::path() : o.data / "pictochat.ini", preferences.accent);
+    chat.load_profile(o.player.empty() ? fs::path() : o.player / "pictochat.ini", preferences.accent);
     chat.view = pictochat::View::Lobby;
     chat_focus = 0;
     chat_seen_serial = chat_slid_serial = chat.serial;

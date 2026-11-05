@@ -135,15 +135,15 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         graphics = ['Down', 'Right', 'Right', 'A']
         self.run_ui(graphics + ['A', 'Down', 'Down', 'A'], 'rgds-experimental')  # 3D resolution 3x
         scale = read_fields(self.game)['rgds_scale']
-        # Row 3 is 2D scaling: Native pixels -> Sharp, then Smooth, then back to native.
+        # Row 3 is 2D scaling: Off -> Crisp, then HD, then back to Off.
         self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
-        self.assertEqual(read_fields(self.game)['rgds_2d'], '1')
+        self.assertEqual(read_fields(self.game)['rgds_2d'], '3')
         self.assertEqual(read_fields(self.game)['rgds_scale'], scale)
         self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Down', 'A'], 'rgds-experimental')
-        self.assertEqual(read_fields(self.game)['rgds_2d'], '2')
+        self.assertEqual(read_fields(self.game)['rgds_2d'], '4')
         # Cancelling leaves the saved choice alone.
         self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Up', 'Escape', 'Escape'], 'rgds-experimental')
-        self.assertEqual(read_fields(self.game)['rgds_2d'], '2')
+        self.assertEqual(read_fields(self.game)['rgds_2d'], '4')
         self.run_ui(graphics + ['Down', 'Down', 'Down', 'A', 'Up', 'Up', 'A'], 'rgds-experimental')
         self.assertNotIn('rgds_2d', read_fields(self.game))
         self.assertEqual(read_fields(self.game)['rgds_scale'], scale)

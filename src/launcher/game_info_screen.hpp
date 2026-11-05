@@ -41,6 +41,7 @@ void App::game_info_key(int code) {
 }
 
 bool App::game_removable() const {
+    if (kid_locked()) return false;
     if (o.game_menu || model.games.empty() || model.selected >= model.games.size()) return false;
     const Game& game = model.games[model.selected];
     const std::string ext = lower(game.path.extension().string());

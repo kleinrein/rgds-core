@@ -142,7 +142,7 @@ class WelcomeTests(unittest.TestCase):
 class OwnerNameTests(unittest.TestCase):
     def test_ds_games_fall_back_to_the_owner_name_and_a_game_still_wins(self):
         source = (ROOT / 'runtime/emulators.py').read_text()
-        self.assertIn("ds_input.get('nickname') or read_fields(data / 'ds.ini').get('nickname')", source)
+        self.assertIn("ds_input.get('nickname') or read_fields(player / 'ds.ini').get('nickname')", source)
 
 
 if __name__ == '__main__':

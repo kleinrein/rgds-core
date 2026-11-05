@@ -122,7 +122,7 @@ public:
                     }
                     if (stats.seconds) by_system[game.system] += stats.seconds;
                     if (stats.sessions) {
-                        std::ifstream history(cache.folder(game) / "sessions.tsv");
+                        std::ifstream history(cache.player_folder(game) / "sessions.tsv");
                         long long began = 0, played = 0;
                         while (history >> began >> played) {
                             if (played <= 0 || began <= 0) continue;
