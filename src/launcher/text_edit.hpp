@@ -12,6 +12,7 @@ void App::begin_edit(int field) {
                   : field == 7             ? (ds_owner_name() == "RG DS Core" ? std::string() : ds_owner_name())
                   : field == 4             ? search_query
                   : field == 6             ? cheat_query
+                  : field == 11            ? games_query
                   : field == 0             ? username
                   : field == 1             ? password
                   : field == 3             ? artwork_match
@@ -67,6 +68,17 @@ void App::finish_edit(bool commit) {
         s.StopTextInput();
         settings.page = Page::Welcome;
         if (commit) welcome_enter(WelcomeHome);
+        dirty = true;
+        return;
+    }
+    if (edit_field == 11) {
+        if (commit) {
+            games_query = trimmed_query(edit_buffer);
+            games_refilter();
+        }
+        edit_buffer.clear();
+        s.StopTextInput();
+        settings.page = Page::ProfileGames;
         dirty = true;
         return;
     }

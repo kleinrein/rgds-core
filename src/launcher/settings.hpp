@@ -76,6 +76,7 @@ struct Preferences {
     int home_layout = 1, background = 1;
     bool gestures = false;
     bool show_systems = false; // Library: a Systems step between Home and the games (ui.ini)
+    bool all_games = false;    // with other systems on, Games opens every game in one list instead of the Systems step
     bool menu_music = true;
     int music_volume = 40;
     // The vibration motor: patterns in the menus, rumble in games that have it
@@ -610,6 +611,7 @@ inline int section_row(int section) {
 struct Settings {
     Page page = Page::Library;
     int section = 0, focus = 0;
+    int library_rows = 9; // Settings > Library: one more while other systems are on (Games opens)
     // Brightness and Playtime opened from Home's bottom bar: Back returns Home, not through Settings.
     bool from_home = false;
     // The row you left each page from. Back lands on it again instead of the
@@ -666,7 +668,7 @@ struct Settings {
         if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 11))];
         else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 5);
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
-        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, 8);
+        else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, library_rows - 1);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
         else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 5);
         else if (page == Page::Sound) focus = std::clamp(focus + delta, 0, 4);
@@ -802,6 +804,7 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
         else if (line == "background=plain" || line == "background=grid") result.background = line == "background=grid";
         else if (line == "gestures=0" || line == "gestures=1") result.gestures = line.back() == '1';
         else if (line == "show_systems=0" || line == "show_systems=1") result.show_systems = line.back() == '1';
+        else if (line == "all_games=0" || line == "all_games=1") result.all_games = line.back() == '1';
         else if (line == "menu_music=0" || line == "menu_music=1") result.menu_music = line.back() == '1';
         else if (line.rfind("music_volume=", 0) == 0) {
             try {
@@ -921,6 +924,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "menu_haptics=" << p.menu_haptics << "\nhaptic_strength=" << p.haptic_strength
           << "\ngame_rumble=" << p.game_rumble << "\nrumble_strength=" << p.rumble_strength << '\n';
     extra << "show_systems=" << p.show_systems << '\n';
+    extra << "all_games=" << p.all_games << '\n';
     extra.close();
     if (!extra) throw std::runtime_error("Cannot save UI preferences");
     fs::rename(draft, ui);

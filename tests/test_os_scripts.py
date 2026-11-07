@@ -109,8 +109,12 @@ class PowerSleepTest(unittest.TestCase):
         (d / 'charger/online').write_text('0\n')
         (d / 'backlight/a/brightness').write_text('180\n')
         self.wakes = d / 'wakes'
-        # each suspend takes the next line: "rtc" sleeps until the alarm, "user N" is woken by a person after N s;
-        # a line may also set the battery ("rtc 3" = the alarm, then 3 %)
+        # each suspend takes the next line: "rtc" sleeps until the alarm, "user N" is woken by the power key after
+        # N s, "open N" by the lid opening, "charger N" by the charger with the lid still shut, "fail" aborts the
+        # suspend; a line may also set the battery ("rtc 3" = the alarm, then 3 %)
+        self.interrupts = d / 'interrupts'
+        self.interrupts.write_text(' 35:          0          0          0          0  rk817  0 Edge      rk805_pwrkey_fall\n'
+                                   ' 40:          0          0          0          0  rk817  5 Edge      RTC alarm\n')
         tool(
             d / 'bin', 'suspend', f"""line=$(head -n 1 {self.wakes}); sed -i.bak 1d {self.wakes}
 now=$(cat {d}/rtc/since_epoch)
@@ -119,7 +123,11 @@ case "$1" in
 rtc) alarm=$(cat {d}/rtc/wakealarm); echo $((now + ${{alarm#+}})) > {d}/rtc/since_epoch
      [ -n "$2" ] && echo $2 > {d}/battery/capacity
      echo 255 > {d}/backlight/a/brightness ;;
-user) echo $((now + $2)) > {d}/rtc/since_epoch ;;
+user) echo $((now + $2)) > {d}/rtc/since_epoch
+      n=$(awk '/pwrkey/ {{ print $2 + 1 }}' {self.interrupts})
+      echo " 35:  $n  0  0  0  rk817  0 Edge      rk805_pwrkey_fall" > {self.interrupts} ;;
+open) echo $((now + $2)) > {d}/rtc/since_epoch; echo 0 > {d}/lid ;;
+charger) echo $((now + $2)) > {d}/rtc/since_epoch; echo 255 > {d}/backlight/a/brightness ;;
 *) exit 1 ;;
 esac
 """
@@ -150,6 +158,7 @@ esac
             RGDS_SLEEP_LOG=str(d / 'sleep.log'),
             RGDS_SUSPEND_CMD=str(d / 'bin/suspend'),
             RGDS_LID_CMD=str(d / 'bin/lid'),
+            RGDS_INTERRUPTS=str(self.interrupts),
             RGDS_SLEEP_CHECK='3600',
             RGDS_SLEEP_LIMIT='10800'
         )
@@ -200,6 +209,36 @@ esac
         code, state = self.sleep('rtc', 'user 5')
         self.assertEqual(state['wake'], 'user')
         self.assertEqual(self.wakes.read_text(), 'user 5\n')
+
+    def test_the_charger_with_the_lid_closed_sleeps_again(self):
+        # 2026-11-06: unplugged with the lid shut, the handheld woke and ran at Home until the battery was flat
+        code, state = self.sleep('charger 30', 'charger 60', 'open 5')
+        self.assertEqual((code, state['wake']), (0, 'user'))
+        self.assertEqual(self.wakes.read_text(), '')
+        self.assertEqual(self.dir.joinpath('sleep.log').read_text().count('woken with the lid closed'), 2)
+        self.assertEqual((self.dir / 'backlight/a/brightness').read_text().strip(), '180')
+
+    def test_the_power_key_wakes_a_closed_handheld(self):
+        code, state = self.sleep('charger 30', 'user 5', 'open 5')
+        self.assertEqual(state['wake'], 'user')
+        self.assertEqual(self.wakes.read_text(), 'open 5\n')
+
+    def test_without_interrupt_counts_every_wake_is_a_person(self):
+        self.interrupts.unlink()
+        code, state = self.sleep('charger 30', 'open 5')
+        self.assertEqual(self.wakes.read_text(), 'open 5\n')
+
+    def test_an_aborted_suspend_with_the_lid_closed_tries_again(self):
+        tool(self.dir / 'bin', 'sleep', ':\n')  # the 2 s pause between tries
+        code, state = self.sleep('fail', 'user 5', 'open 5')
+        self.assertEqual((code, state['result']), (0, '0'))
+        self.assertEqual(self.wakes.read_text(), 'open 5\n')
+        code, state = self.sleep('fail', 'fail', 'fail', 'open 5')
+        self.assertNotEqual(code, 0)
+        self.assertEqual(self.wakes.read_text(), 'open 5\n')
+        self.lid.write_text('0\n')
+        code, state = self.sleep('fail', 'open 5')
+        self.assertNotEqual(code, 0)
 
     def test_radios_are_powered_down_for_the_sleep_and_back_on_the_wake(self):
         # the dark wakes in between leave them down: one down, one up, however many sleeps

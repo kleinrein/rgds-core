@@ -45,7 +45,7 @@ void App::top(SDL_Renderer* r, int y) {
             }
             return;
         }
-        round_rect(r, 24, y + 366, 596, 94, 10, "panel");
+        round_rect(r, 24, y + 366, 596, 94, card_radius, "panel");
         raw_label(r, model.games.empty() ? locale.text("Game menu") : game_title(0), 40, y + 377, 24, "ink", 560);
         std::string message = menu_status["message"];
         if (message.empty())
@@ -83,8 +83,8 @@ void App::top(SDL_Renderer* r, int y) {
     }
     if (systems_menu) {
         // As Home's collections: the system and its three numbers, centred in the card.
-        round_rect(r, 22, y + 82, 596, 320, 10, "line");
-        round_rect(r, 24, y + 84, 592, 316, 8, "panel");
+        round_rect(r, 22, y + 82, 596, 320, card_radius + 2, "line");
+        round_rect(r, 24, y + 84, 592, 316, card_radius, "panel");
         system_icon(r, systems_selected, 264, y + 100, 112);
         centered(r, system_info(listed_systems[systems_selected]).name, y + 228, 2, "ink");
         if (listed_systems[systems_selected] == "homebrew") {
@@ -106,8 +106,8 @@ void App::top(SDL_Renderer* r, int y) {
         return;
     }
     if (home_menu) {
-        round_rect(r, 22, y + 82, 596, 320, 10, "line");
-        round_rect(r, 24, y + 84, 592, 316, 8, "panel");
+        round_rect(r, 22, y + 82, 596, 320, card_radius + 2, "line");
+        round_rect(r, 24, y + 84, 592, 316, card_radius, "panel");
         if (home_selected == 0) {
             category_icon(r, 0, 282, y + 162, 76);
             centered(r, "Settings", y + 261, 2, "ink");
@@ -139,8 +139,10 @@ void App::top(SDL_Renderer* r, int y) {
     }
     if (model.games.empty()) {
         label(r,
-              library_ready && !collection_loading
-                  ? (discovery_active() ? "No matching games" : preferences.view == 1 ? "No favourites yet" : "No games")
+              library_ready && !collection_loading ? (discovery_active()      ? "No matching games"
+                                                      : preferences.view == 1 ? "No favourites yet"
+                                                      : preferences.view == 2 ? "Nothing played yet"
+                                                                              : "No games")
                                                    : "Preparing the library…",
               30, y + 160, 28, "ink");
         return;
@@ -251,9 +253,7 @@ void App::bottom(SDL_Renderer* r, int y) {
         centered(r, system_info(listed_systems[systems_selected]).name, y + 56, 3, "ink");
     } else {
         // With Show all systems, All shows one system's games: name it.
-        const std::array<std::string, 3> views = {preferences.show_systems ? std::string(system_info(shown_system).name)
-                                                                           : "All games",
-                                                  "Favourites", "Recents"};
+        const std::array<std::string, 3> views = {all_view_name(), "Favourites", "Recents"};
         auto back = header.back;
         bool back_pressed = library_control_active(LibraryPress::Back, back);
         back_button(r, back.x, y + back.y, back_pressed);
@@ -305,10 +305,13 @@ void App::bottom(SDL_Renderer* r, int y) {
         label(r, "Clear filters", 368, y + 338, 20, "accent", 200);
     }
     if (favourites_empty()) {
-        favourite_badge(r, 320, y + 196, 56);
-        centered(r, "No favourites yet", y + 243, 2, "ink");
-        centered(r, "Favourite a game and it waits for you here", y + 282, 1, "muted");
-        const std::string go = preferences.show_systems ? "Browse systems" : "Browse games";
+        const bool recents = preferences.view == 2;
+        if (recents) category_icon(r, 3, 292, y + 168, 56);
+        else favourite_badge(r, 320, y + 196, 56);
+        centered(r, recents ? "Nothing played yet" : "No favourites yet", y + 243, 2, "ink");
+        centered(r, recents ? "Games you play appear here" : "Favourite a game and it waits for you here", y + 282, 1,
+                 "muted");
+        const std::string go = preferences.show_systems && !games_all_view() ? "Browse systems" : "Browse games";
         raised_pill(r, 160, y + 326, 320, 48, 12, theme.at("accent"));
         label(r, go, 320 - label_width(go, 20) / 2, y + 338, 20, "on_accent", 296);
     }
@@ -317,7 +320,8 @@ void App::bottom(SDL_Renderer* r, int y) {
         SDL_Rect clip{24, y + LibraryViewport::top, 568, LibraryViewport::height};
         s.RenderSetClipRect(r, &clip);
         for (int index = browser_list.first(); index < browser_list.last(count); index++) {
-            int row = y + LibraryViewport::top + index * LibraryViewport::stride - browser_list.scroll - browser_shift();
+            int row =
+                y + LibraryViewport::top + index * LibraryViewport::stride - browser_list.scroll - browser_shift();
             bool selected = size_t(index) == model.selected;
             SDL_Rect bounds{24, row - y, 568, 48};
             bool pressed = library_press_row == index && library_control_active(LibraryPress::Row, bounds);
@@ -399,8 +403,8 @@ void App::bottom(SDL_Renderer* r, int y) {
                                : 0,
                     row = y + 196 - lift;
                 if (index < 0 || index >= int(count)) {
-                    round_rect(r, x, row, tile_size, tile_size, 5, "line");
-                    round_rect(r, x + 2, row + 2, tile_size - 4, tile_size - 4, 3, "background");
+                    round_rect(r, x, row, tile_size, tile_size, card_radius, "line");
+                    round_rect(r, x + 2, row + 2, tile_size - 4, tile_size - 4, card_radius - 2, "background");
                     continue;
                 }
                 move_element(uint32_t(index), x, row, tile_size, tile_size, selected, LibraryViewport::top,
@@ -409,11 +413,11 @@ void App::bottom(SDL_Renderer* r, int y) {
                     start_frame(r, x, row, tile_size,
                                 home_menu || systems_menu || is_tool_entry(model.games[size_t(index)].path) ? "OPEN"
                                                                                                             : "PLAY");
-                round_rect(r, x, row + 4, tile_size, tile_size, 5, "line");
-                round_rect(r, x, row, tile_size, tile_size, 5, "line");
-                round_rect(r, x + 2, row + 2, tile_size - 4, tile_size - 4, 4, "panel");
-                rect(r, x + 9, row + 7, tile_size - 18, 1, "background");
-                rect(r, x + 10, row + tile_size - 6, tile_size - 20, 1, "slot");
+                round_rect(r, x, row + 4, tile_size, tile_size, card_radius, "line");
+                round_rect(r, x, row, tile_size, tile_size, card_radius, "line");
+                round_rect(r, x + 2, row + 2, tile_size - 4, tile_size - 4, card_radius - 2, "panel");
+                rect(r, x + 14, row + 7, tile_size - 28, 1, "background"); // the sheen and lip clear the corners
+                rect(r, x + 14, row + tile_size - 6, tile_size - 28, 1, "slot");
                 if (home_menu)
                     category_icon(r, size_t(index), x + (tile_size - icon_size) / 2, row + (tile_size - icon_size) / 2,
                                   icon_size);

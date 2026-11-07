@@ -777,20 +777,23 @@ static int rumble_play_effect(struct input_dev *dev, void *data, struct ff_effec
 	if (effect->type != FF_RUMBLE)
 		 return 0;
 
-	mutex_lock(&joypad->lock);
-	if (!joypad->rumble_enabled) {
-		mutex_unlock(&joypad->lock);
+	/*
+	 * ff-memless calls this with dev->event_lock held and interrupts off
+	 * (from the EV_FF write and from its effect timer), so it must not
+	 * sleep. Taking joypad->lock here put a sleeping mutex inside that
+	 * spinlock: whenever play_work or the poll held the mutex, the CPU
+	 * slept with the lock held and the handheld locked up. Store the
+	 * level and let play_work, which takes the mutex, apply it.
+	 */
+	if (!READ_ONCE(joypad->rumble_enabled))
 		return 0; // Ignore rumble effects if disabled
-	}
 
 	if (effect->u.rumble.strong_magnitude)
 		boosted_level = effect->u.rumble.strong_magnitude + joypad->boost_strong;
 	else
 		boosted_level = effect->u.rumble.weak_magnitude + joypad->boost_weak;
 
-	joypad->level = (u16)CLAMP(boosted_level, 0, 0xffff);
-
-	mutex_unlock(&joypad->lock);
+	WRITE_ONCE(joypad->level, (u16)CLAMP(boosted_level, 0, 0xffff));
 
 	schedule_work(&joypad->play_work);
 	return 0;

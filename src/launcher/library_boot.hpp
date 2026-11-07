@@ -45,7 +45,7 @@ void App::load_library(std::vector<Game> games) {
         home_menu = true;
         settings.page = Page::Library;
     }
-    home_selected = std::min(home_selected, home_tiles() - 1);
+    home_selected = home_fit(home_selected);
     carousel.reset(navigation_selected());
     browser_list.reveal(model.selected, model.games.size());
     theme_source = read_theme_source();

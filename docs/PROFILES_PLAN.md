@@ -421,16 +421,23 @@ last still needs their PIN at boot, and turning the question off does not skip t
   profile.
 - **Switching** reuses the return-from-game path (`finish_launch(true)`: clear the cache, re-request the summary, reload
   preferences) rather than restarting the launcher, plus a reload of theme and language. To be timed on the handheld.
+- **Pictures** (2026-11-06): twelve plain silhouettes plus twelve characters (fox to bunny), drawn smooth by
+  `tools/build_profile_avatars.py` into `assets/profiles/*.bmp` (192 px, alpha, white sticker edge); the 16 x 16 colour
+  pixel versions in `profile_pictures.hpp` stand in if a file is missing. A Kid profile wears a multicolour **Kids** mark.
 - **PIN pad** (`Page::PinPad`), shared by the picker and the locked rows.
 - **Settings → Profiles** (`Page::Profiles`, `Page::ProfileEdit`): Adult or Kid, name, DS name, picture from the pixel
   icons, colour from the 16 DS colours, Age, Unrated games, PIN, permissions, Remove.
-- **A profile's games** (`Page::ProfileGames`): every game, with its rating badge and tabs All, Visible, Hidden, No rating.
-  A cycles Automatic → Always show → Always hide.
+- **A profile's games** (`Page::ProfileGames`): every game with a tick box, its icon and its rating badge. Redone
+  2026-11-06 after the owner found the first version "horrible": A cycled Automatic → Always show → Always hide, and on the
+  Shown tab a game vanished the moment it changed. Now ticked means shown; `visibility.ini` keeps only what differs from
+  the age rule, so unticking a picked game returns it to automatic. Rows are only re-sorted when a filter changes. The
+  header has three buttons, Search (X, edit field 11), System (Y, a picker) and Showing (L/R or a picker), and the top
+  screen shows the cover (it was never requested before, so it never loaded).
 - **Creating a Kid profile ends here,** on the **No rating** tab, saying how many games wait for a decision. It can be
   left and come back to, and the games stay hidden until then.
 - **Approve a whole shelf.** Going through 111 games one at a time is too much, and 59 of the owner's are Game & Watch.
-  The tab groups by system, and **Allow all on this shelf** asks once and sets Always show for each game on it. It only
-  applies to unrated games, so it never lets through a game rated above the age.
+  The list groups by system, and a shelf's own tick box ticks every game listed under it that is not rated above the age
+  (asking first), or unticks all of them. It works on what is listed, so a search or the No rating view narrows it.
 - **Game options, on the owner's profile:** a row **Visible to…** for the same choice from a game's own page.
 - **Hiding from yourself:** the same `visibility.ini` works on any profile. With one person, Game options has **Hide this
   game**; with more, **Visible to…**. The filter sheet's **Hidden games** chip lists them, to bring them back. It is not
@@ -442,6 +449,12 @@ A new profile starts with a copy of the owner's look and with **Games opens all 
 does not need a Systems step.
 
 ## 8. Games opens all games (independent)
+
+Built 2026-11-06: `all_games` in `ui.ini`, the row **Games opens** shown under **Systems** only while other systems are
+on (so the rows below keep their place for DS-only players), new profiles get `all_games=1`. Each profile's page has
+the same choice as row 17 under Games (it also turns other systems on, since that is what it chooses between). `view_source(0)` sorts by
+title and honours `browse_system`, set by the filter sheet's **System** chips (`facet` -2); a **Systems page** chip
+(`facet` -3) reaches Ports and Homebrew. Not yet tried with a big library on the handheld. The notes below are the plan.
 
 A bool in `ui.ini`, default off, under Settings → Library, per profile once profiles exist.
 

@@ -37,9 +37,10 @@ class SystemsUITests(unittest.TestCase):
         (self.nds / 'gba').mkdir()
         (self.nds / 'gba/Stray.zip').write_bytes(b'PK')
 
-    def run_ui(self, script='', extra=(), show_systems=None, home=None, seconds=1):
+    def run_ui(self, script='', extra=(), show_systems=None, home=None, seconds=1, all_games=False):
         ui = 'schema=1\nhome_layout=carousel\nbackground=plain\n'
         if show_systems is not None: ui += f'show_systems={int(show_systems)}\n'
+        if all_games: ui += 'all_games=1\n'
         (self.data / 'ui.ini').write_text(ui)
         state = self.data / 'state'
         if home is not None: state.write_text(f'1 0 4 ""\nhome {home}\n')
@@ -126,6 +127,21 @@ class SystemsUITests(unittest.TestCase):
     def test_a_gba_game_launches_with_rgds_play(self):
         report = self.run_ui('100 key A\n200 key Right\n300 key A\n400 key A\n', show_systems=True, home=1)
         self.assertEqual(report['launching_core'], PLAY_CORE)
+
+    def test_games_can_open_every_game_in_one_list_by_title(self):
+        report = self.run_ui('100 key A\n', show_systems=True, home=1, all_games=True)
+        self.assertEqual((report['page'], report['systems_menu']), (PAGE_LIBRARY, 0))
+        self.assertEqual(report['library_count'], 5)  # three DS games and two GBA games, together
+        self.assertEqual(report['first_game'], 'Alpha')
+        # Back from the list goes Home, not through a Systems step it never showed.
+        report = self.run_ui('100 key A\n200 key B\n', show_systems=True, home=1, all_games=True)
+        self.assertEqual((report['home_menu'], report['systems_menu']), (1, 0))
+
+    def test_the_games_opens_row_appears_with_other_systems_and_is_saved(self):
+        script = '100 key Down\n200 key Down\n300 key A\n'  # Scan, Systems, then Games opens
+        report = self.run_ui(script, extra=('--settings', '--section', 'library'), show_systems=True)
+        self.assertEqual(report['page'], PAGE_LIBRARY_OPTIONS)
+        self.assertIn('all_games=1', (self.data / 'ui.ini').read_text())
 
     def test_library_setting_turns_systems_on_and_is_saved(self):
         script = '100 key Down\n200 key A\n'  # the second row of Settings > Library, under Scan for games

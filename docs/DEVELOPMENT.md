@@ -103,6 +103,33 @@ Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so 
 
 ## Refining the interface
 
+### The 2026-11-06 consistency pass
+
+- **One set of corner radii.** `App::card_radius` (14) for every card and tile (settings rows, the game switcher,
+  Home's DSi column and its clock/calendar, the carousel tiles, the upper cards), `well_radius` (12) for the icon wells
+  inside them and `control_radius` (10) for buttons and rows inside a sheet; an outline ring adds its own width. New
+  surfaces take one of these instead of a literal. The column had 4 px corners after the DSi; the owner found them
+  sharper than every menu card.
+- **Motion that starts inside a draw keeps its frames.** A list's focus glide (`sync_list`), a switch or segment
+  sliding (`micro_until`) and a sheet that just closed all begin while drawing, after the run loop's animation
+  checks. On the handheld the loop then slept up to 250 ms (`idle_wait_ms`), so the rows held still after an arrow
+  key (the likely cause of the owner's "does not scroll the first time"; reasoned from the code, not reproduced on
+  the device), switches lagged and the picker's close slide was mostly skipped. `run_loop` now looks again after the draw
+  (`motion_started`). The Mac preview never showed it: without `InputWake` it polls every 8-50 ms.
+- **Things inside a scrolling row follow the drawn row**, not `list_scroll`: the segmented pill (`segment_row`) and the
+  Sound slider band now add `list_shift()` like their card.
+- **A tap is not a drag either.** Every press on a settings page begins a `ScrollMotion` drag, but only a swipe released
+  it: after a tap (Touch to continue, a row that opens a page) the list stayed "held", `glide` refused every key and the
+  rows were drawn at the tap's position, so arrow keys moved the focus off screen until the next touch. `pointer_end`
+  now stops any motion still dragging. This was the owner's "arrows don't scroll the first time".
+- **A scrollbar grab is not a finger drag.** The Filter sheet and the pickers began a `ScrollMotion` drag before
+  noticing the press was on the rail, never released it, and drew the content at the press's offset from then on.
+- **Pickers slide as one card** from below the panel and back down on the Filter sheet's curve; the closing card used
+  to shrink from the top while its rows spilled past it, and drew its own footer over the page's.
+- **Switches** slide in 160 ms with the lit track fading in; segments take 160 ms too.
+- **Back from either side edge.** `EdgeGesture::Right` starts at x >= 630 (the scrollbars end at 628); the page drag,
+  cue bubble and fired ring are mirrored (`PageDrag::side`). Not tried on the handheld's touch panel yet.
+
 ### The 2026-11-01 motion pass
 
 Touch and transitions got physics (`src/launcher/kinetics.hpp`, driven each frame by
@@ -235,7 +262,8 @@ Touch and transitions got physics (`src/launcher/kinetics.hpp`, driven each fram
   played game on top, the categories as wide tiles, a brightness / mark / statistics bar
   below, and the DSi's clock and calendar on the upper screen. **Background** adds the
   DSi's ruled grid behind every screen. **Touch gestures** (off by default): swipe up from
-  the bottom edge for Home, in from the left edge for Back. Saved in `ui.ini` as
+  the bottom edge for Home, in from the left or right edge for Back (the right edge since 2026-11-06,
+  as on phones). Saved in `ui.ini` as
   `home_layout`, `background` and `gestures`.
 - **Settings.** System has a Time format (24-hour / 12-hour, `time_format` in
   `system.ini`) and a Daylight saving row under Timezone (Automatic follows the zone's tzdata rules; On/Off pin the

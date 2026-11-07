@@ -41,13 +41,12 @@ void App::open_category() {
     systems_origin = false;
     if (home_selected == last_played_tile) open_last_played();
     else if (home_selected == pictochat_tile) {
-        if (kid_locked() && !active_profile().allow_pictochat) {
+        if (pictochat_hidden() || (kid_locked() && !active_profile().allow_pictochat)) {
             status = "Not on this profile";
             emit_sound(MenuCue::Error);
         } else open_pictochat();
-    }
-    else if (home_selected == 0) settings.open();
-    else if (home_selected == 1 && preferences.show_systems) open_systems();
+    } else if (home_selected == 0) settings.open();
+    else if (home_selected == 1 && preferences.show_systems && !games_all_view()) open_systems();
     else {
         home_menu = false;
         library_view(int(home_selected) - 1);
@@ -96,6 +95,19 @@ void App::refresh_other_systems() {
 
 std::vector<Game> App::view_source(int view) const {
     if (discovery_filter == 4) return hidden_games();
+    if (view == 0 && games_all_view()) {
+        // Every game in one list by title (all_games runs system by system), or the one system the sheet chose.
+        std::vector<std::pair<std::string, const Game*>> sorted;
+        sorted.reserve(all_games.size());
+        for (const auto& game : all_games)
+            if (browse_system.empty() || game.system == browse_system)
+                sorted.emplace_back(lower(library_title(game.title)), &game);
+        std::stable_sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+        std::vector<Game> games;
+        games.reserve(sorted.size());
+        for (const auto& item : sorted) games.push_back(*item.second);
+        return games;
+    }
     // A search or filter looks through every game, not just the system being browsed.
     if (view != 0 || !preferences.show_systems || discovery_active()) return all_games;
     std::vector<Game> games;

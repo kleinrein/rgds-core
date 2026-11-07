@@ -220,15 +220,17 @@ class PageTests(Base):
         return TO_PROFILES + ['Down', 'Down', 'a']
 
     def to_games(self):
-        # Who it's for, Name, DS name, Picture, Colour, Age limit, Games with no rating, Games
-        return self.to_kid() + ['Down'] * 7 + ['a']
+        # Who it's for, Name, DS name, Picture, Colour, Language, Age limit, Games with no rating, Games
+        return self.to_kid() + ['Down'] * 8 + ['a']
 
     def visibility(self, folder):
         return read_fields(folder / 'visibility.ini')
 
     def test_a_new_kid_ends_on_the_games_waiting_for_a_decision(self):
         report = self.run_ui(
-            TO_PROFILES + ['Down', 'a', 'Right', 'a', 'text Ola', 'Return', 'a', 'Escape'], flags=('--settings',), seconds=4
+            TO_PROFILES + ['Down', 'a', 'Right', 'a', 'text Ola', 'Return', 'a', 'Escape'],
+            flags=('--settings',),
+            seconds=4
         )
         self.assertEqual((report['page'], report['games_tab']), (GAMES, 3))
         self.assertEqual(report['games_rows'], 3)  # a shelf, Board and Plain
@@ -245,32 +247,57 @@ class PageTests(Base):
             counts[tab] = report['games_rows']
         self.assertEqual(counts, {0: 6, 1: 2, 2: 5, 3: 3})  # with one shelf row each
 
-    def test_a_cycles_automatic_show_hide(self):
+    def test_a_ticks_a_game_and_keeps_only_what_differs_from_the_age(self):
         folder = self.kid(age=7, active=False)
-        key = self.keys['Board']  # All: the shelf, then Board, Grown, Plain, Teen, Young
+        board, young = self.keys['Board'], self.keys['Young']  # All: the shelf, then Board, Grown, Plain, Teen, Young
         self.run_ui(self.to_games() + ['Down', 'a'], flags=('--settings',), seconds=4, gap=90)
-        self.assertEqual(self.visibility(folder)[key], 'show')
+        self.assertEqual(self.visibility(folder)[board], 'show')  # no rating: hidden until ticked
         self.run_ui(self.to_games() + ['Down', 'a'], flags=('--settings',), seconds=4, gap=90)
-        self.assertEqual(self.visibility(folder)[key], 'hide')
-        self.run_ui(self.to_games() + ['Down', 'a'], flags=('--settings',), seconds=4, gap=90)
-        self.assertNotIn(key, self.visibility(folder))
+        self.assertNotIn(board, self.visibility(folder))  # unticked again: back to what the age says
+        self.run_ui(self.to_games() + ['Down'] * 5 + ['a'], flags=('--settings',), seconds=4, gap=90)
+        self.assertEqual(self.visibility(folder)[young], 'hide')  # fits the age, unticked by hand
 
-    def test_a_shelf_is_approved_at_once_for_what_has_no_rating_only(self):
+    def test_an_unticked_game_stays_in_its_place_until_a_filter_changes(self):
+        folder = self.kid(age=7, active=False)
+        report = self.run_ui(self.to_games() + [']', 'Down', 'a'], flags=('--settings',), seconds=4, gap=90)
+        self.assertEqual((report['page'], report['games_tab'], report['games_rows']), (GAMES, 1, 2))
+        self.assertEqual(self.visibility(folder)[self.keys['Young']], 'hide')
+
+    def test_a_shelf_ticks_what_fits_the_age_and_unticks_everything(self):
         folder = self.kid(age=7, active=False)
         (folder / 'visibility.ini').write_text(self.keys['Plain'] + '=hide\n')
         report = self.run_ui(self.to_games() + ['a', 'Right', 'a'], flags=('--settings',), seconds=4, gap=90)
         self.assertEqual(report['page'], GAMES)
         saved = self.visibility(folder)
-        self.assertEqual(saved[self.keys['Board']], 'show')
-        self.assertEqual(saved[self.keys['Plain']], 'hide')  # a choice already made stands
+        self.assertEqual((saved[self.keys['Board']], saved[self.keys['Plain']]), ('show', 'show'))
         for name in ('Young', 'Teen', 'Grown'):
-            self.assertNotIn(self.keys[name], saved)
+            self.assertNotIn(self.keys[name], saved)  # Young shows by its age, Teen and Grown are above it
+        # Everything that fits is ticked: the shelf's box now unticks the lot, without asking.
+        self.run_ui(self.to_games() + ['a'], flags=('--settings',), seconds=4, gap=90)
+        self.assertEqual(self.visibility(folder), {self.keys['Young']: 'hide'})
 
-    def test_a_shelf_is_not_approved_without_saying_yes(self):
+    def test_a_shelf_is_not_ticked_without_saying_yes(self):
         folder = self.kid(age=7, active=False)
         report = self.run_ui(self.to_games() + ['a', 'a'], flags=('--settings',), seconds=4, gap=90)
         self.assertEqual(report['page'], GAMES)
         self.assertFalse((folder / 'visibility.ini').exists())
+
+    def test_a_search_narrows_the_list_and_b_clears_it(self):
+        self.kid(age=7, active=False)
+        report = self.run_ui(self.to_games() + ['x', 'text pla', 'Return'], flags=('--settings',), seconds=4, gap=90)
+        self.assertEqual((report['page'], report['games_rows']), (GAMES, 2))  # the shelf and Plain
+        report = self.run_ui(
+            self.to_games() + ['x', 'text pla', 'Return', 'Escape'], flags=('--settings',), seconds=4, gap=90
+        )
+        self.assertEqual((report['page'], report['games_rows']), (GAMES, 6))
+
+    def test_one_system_can_be_chosen(self):
+        self.kid(age=7, active=False)
+        self.add_system('gba', 'Other.gba')
+        report = self.run_ui(
+            self.to_games() + ['y', 'Down', 'Down', 'a'], flags=('--settings',), seconds=5, gap=90, systems=('gba',)
+        )
+        self.assertEqual((report['page'], report['games_system'], report['games_rows']), (GAMES, 'gba', 2))
 
     def test_the_page_lists_other_systems_even_with_them_switched_off_here(self):
         self.kid(age=7, active=False)
@@ -280,21 +307,22 @@ class PageTests(Base):
 
     def test_the_age_limit_and_the_switches_are_saved(self):
         folder = self.kid(age=7, active=False)
-        report = self.run_ui(self.to_kid() + ['Down'] * 5 + ['a', 'Right', 'a'], flags=('--settings',))
+        report = self.run_ui(self.to_kid() + ['Down'] * 6 + ['a', 'Right', 'a'], flags=('--settings',))
         self.assertEqual(report['page'], EDIT)
         self.assertEqual(read_fields(folder / 'profile.ini')['age'], '8')
-        self.run_ui(self.to_kid() + ['Down'] * 6 + ['a'], flags=('--settings',))
+        self.run_ui(self.to_kid() + ['Down'] * 7 + ['a'], flags=('--settings',))
         self.assertEqual(read_fields(folder / 'profile.ini')['unrated'], 'show')
-        self.run_ui(self.to_kid() + ['Down'] * 8 + ['a'], flags=('--settings',), gap=90)
+        # ... Games, Games opens, then Ports and Homebrew
+        self.run_ui(self.to_kid() + ['Down'] * 10 + ['a'], flags=('--settings',), gap=90)
         self.assertEqual(read_fields(folder / 'profile.ini')['ports'], '1')
-        self.run_ui(self.to_kid() + ['Down'] * 9 + ['a'], flags=('--settings',), gap=90)
+        self.run_ui(self.to_kid() + ['Down'] * 11 + ['a'], flags=('--settings',), gap=90)
         self.assertEqual(read_fields(folder / 'profile.ini')['homebrew'], '1')
 
     def test_only_picked_and_no_limit_are_the_last_two_ages(self):
         folder = self.kid(age=16, active=False)  # the grid's last age, row 3 column 2
-        self.run_ui(self.to_kid() + ['Down'] * 5 + ['a', 'Right', 'a'], flags=('--settings',))
+        self.run_ui(self.to_kid() + ['Down'] * 6 + ['a', 'Right', 'a'], flags=('--settings',))
         self.assertEqual(read_fields(folder / 'profile.ini')['age'], '-2')
-        self.run_ui(self.to_kid() + ['Down'] * 5 + ['a', 'Right', 'a'], flags=('--settings',))
+        self.run_ui(self.to_kid() + ['Down'] * 6 + ['a', 'Right', 'a'], flags=('--settings',))
         self.assertEqual(read_fields(folder / 'profile.ini')['age'], '-1')
 
     def test_turning_a_kid_into_an_adult_and_back_starts_safe(self):
@@ -310,7 +338,7 @@ class PageTests(Base):
         folder = self.kid(age=7)
         # Settings > Profiles > Ola's page: to 13, and back out to the games.
         report = self.run_ui(
-            self.to_kid()[:-2] + ['Down', 'a'] + ['Down'] * 5 +
+            self.to_kid()[:-2] + ['Down', 'a'] + ['Down'] * 6 +
             ['a', 'Right', 'Right', 'Right', 'Right', 'Right', 'Right', 'a'] + ['Escape', 'Escape', 'Escape'],
             flags=('--settings',),
             seconds=5,

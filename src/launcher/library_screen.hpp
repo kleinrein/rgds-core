@@ -179,8 +179,7 @@ App::LibraryHeader App::library_header_layout() {
     // Touch target is a little wider than the shared 44 px back button.
     SDL_Rect back{left, top, back_size + 8, height};
     int category_x = back.x + back.w + gap;
-    const std::array<std::string, 3> views = {
-        preferences.show_systems ? std::string(system_info(shown_system).name) : "All games", "Favourites", "Recents"};
+    const std::array<std::string, 3> views = {all_view_name(), "Favourites", "Recents"};
     int category_width = std::clamp(label_width(views[preferences.view], 16), 64, 124);
     SDL_Rect clear{right - 44, top, 44, height};
     SDL_Rect search{category_x, top, (discovery_active() ? clear.x : right) - category_x, height};

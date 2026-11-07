@@ -30,7 +30,7 @@ def stored_pin(pin, salt='0011223344556677'):
 
 
 def pin_keys(pin, start=0):
-    """The D-pad presses that type a PIN on the pad: 1-9 in three rows, then Clear, 0, Cancel."""
+    """The D-pad presses that type a PIN on the pad: 1-9 in three rows, then Cancel, 0, Delete."""
     keys, at = [], start
     for digit in pin:
         target = 10 if digit == '0' else int(digit) - 1
@@ -234,36 +234,46 @@ class ForgottenTests(Base):
 
 @unittest.skipUnless(BINARY.exists(), 'Build host launcher first')
 class SettingPinTests(Base):
-    # Settings > Profiles, the owner's page: Name, DS name, Picture, Colour, Games, PIN
+    # Settings > Profiles, the owner's page: Name, DS name, Picture, Colour, Language, Games, Games opens, PIN
     TO_OWNER = ['Down'] * 10 + ['a', 'Down', 'a']
 
     def test_choosing_a_pin_asks_twice_and_keeps_no_digits_on_the_card(self):
         self.profiles(owner_pin='', active='owner')
-        report = self.run_ui(self.TO_OWNER + ['Down'] * 5 + ['a'] + pin_keys('2580'), seconds=4)
+        report = self.run_ui(self.TO_OWNER + ['Down'] * 7 + ['a'] + pin_keys('2580'), seconds=4)
         self.assertEqual((report['page'], report['pin_purpose']), (PIN, PIN_CONFIRM))
-        report = self.run_ui(self.TO_OWNER + ['Down'] * 5 + ['a'] + pin_keys('2580') + pin_keys('2580', 10), seconds=5)
+        report = self.run_ui(self.TO_OWNER + ['Down'] * 7 + ['a'] + pin_keys('2580') + pin_keys('2580', 10), seconds=5)
         self.assertEqual(report['page'], EDIT)
         saved = read_fields(self.data / 'profiles/index.ini')['owner_pin']
         salt, _, digest = saved.partition(':')
         self.assertEqual(stored_pin('2580', salt), saved)
         self.assertNotIn('2580', (self.data / 'profiles/index.ini').read_text())
 
+    def test_x_deletes_one_digit_and_b_one_more_before_it_leaves(self):
+        self.profiles(owner_pin='', active='owner')
+        to_pad = self.TO_OWNER + ['Down'] * 7 + ['a']
+        report = self.run_ui(to_pad + pin_keys('258') + ['x'], seconds=4)
+        self.assertEqual((report['page'], report['pin_digits']), (PIN, 2))
+        report = self.run_ui(to_pad + pin_keys('258') + ['x', 'Escape'], seconds=4)
+        self.assertEqual((report['page'], report['pin_digits']), (PIN, 1))
+        report = self.run_ui(to_pad + pin_keys('2') + ['x', 'Escape'], seconds=4)
+        self.assertEqual(report['page'], EDIT)
+
     def test_two_different_tries_start_over(self):
         self.profiles(owner_pin='', active='owner')
-        report = self.run_ui(self.TO_OWNER + ['Down'] * 5 + ['a'] + pin_keys('2580') + pin_keys('2581', 10), seconds=5)
+        report = self.run_ui(self.TO_OWNER + ['Down'] * 7 + ['a'] + pin_keys('2580') + pin_keys('2581', 10), seconds=5)
         self.assertEqual((report['page'], report['pin_purpose']), (PIN, PIN_SET))
         self.assertNotIn('owner_pin', read_fields(self.data / 'profiles/index.ini'))
 
     def test_the_same_pin_is_stored_differently_each_time(self):
         self.profiles(owner_pin='', active='owner')
-        self.run_ui(self.TO_OWNER + ['Down'] * 5 + ['a'] + pin_keys('2580') + pin_keys('2580', 10), seconds=5)
+        self.run_ui(self.TO_OWNER + ['Down'] * 7 + ['a'] + pin_keys('2580') + pin_keys('2580', 10), seconds=5)
         first = read_fields(self.data / 'profiles/index.ini')['owner_pin']
-        self.run_ui(self.TO_OWNER + ['Down'] * 5 + ['a'] + pin_keys('2580') + pin_keys('2580', 10), seconds=5)
+        self.run_ui(self.TO_OWNER + ['Down'] * 7 + ['a'] + pin_keys('2580') + pin_keys('2580', 10), seconds=5)
         self.assertNotEqual(read_fields(self.data / 'profiles/index.ini')['owner_pin'], first)
 
     def test_it_can_be_removed(self):
         self.profiles(active='owner')
-        report = self.run_ui(self.TO_OWNER + ['Down'] * 6 + ['a'], seconds=4)
+        report = self.run_ui(self.TO_OWNER + ['Down'] * 8 + ['a'], seconds=4)
         self.assertEqual(report['page'], EDIT)
         self.assertNotIn('owner_pin', read_fields(self.data / 'profiles/index.ini'))
 

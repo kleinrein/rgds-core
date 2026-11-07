@@ -171,6 +171,7 @@ struct PageDrag {
     Kind kind = Kind::None;
     Phase phase = Phase::Holding;
     double pull = 0, dx = 0, dy = 0, scale = 1, alpha = 1;
+    double side = 1; // Back: 1 when the finger came from the left edge, -1 from the right
     double from_dx = 0, from_dy = 0, from_scale = 1;
     uint32_t began = 0;
     static constexpr uint32_t depart_ms = 300, return_ms = 420;
@@ -186,8 +187,9 @@ struct PageDrag {
     }
     static double ease_out(double t) { return 1 - std::pow(1 - std::clamp(t, 0.0, 1.0), 3); }
     // The finger's pull along the gesture (px from where it touched the edge).
-    void follow(Kind which, double distance) {
+    void follow(Kind which, double distance, double direction = 1) {
         kind = which;
+        side = direction < 0 ? -1 : 1;
         phase = Phase::Holding;
         pull = std::max(0.0, distance);
         alpha = 1;
@@ -199,7 +201,7 @@ struct PageDrag {
             scale = 1 - .14 * ease_out(near / 72) - .04 * (beyond / ScrollMotion::extent);
         } else {
             const double near = std::min(pull, 72.0), beyond = ScrollMotion::band(std::max(0.0, pull - 72));
-            dx = near * .9 + beyond * .6;
+            dx = (near * .9 + beyond * .6) * side;
             dy = 0;
             scale = 1 - .03 * ease_out(near / 72);
         }
@@ -233,7 +235,7 @@ struct PageDrag {
                 scale = from_scale * (1 - .45 * e);
                 alpha = 1 - e;
             } else {
-                dx = from_dx + (660 - from_dx) * e;
+                dx = from_dx + (660 * side - from_dx) * e;
                 dy = 0;
                 scale = from_scale + (1 - from_scale) * e;
                 alpha = 1;

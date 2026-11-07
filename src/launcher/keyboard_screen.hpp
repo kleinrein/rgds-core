@@ -5,15 +5,15 @@
 
 void App::keyboard_screen(SDL_Renderer* r, int y) {
     settings_header(r, y,
-                    edit_field == 8 || edit_field == 9 ? "Profile name"
-                    : edit_field == 10                 ? "DS name"
-                    : edit_field == 7                  ? "Your name"
-                    : edit_field == 5                  ? "DS nickname"
-                    : edit_field == 4                  ? "Search games"
-                    : edit_field == 6                  ? "Search cheats"
-                    : edit_field == 3                  ? "Matching title"
-                    : edit_field == 0                  ? "Username"
-                                                       : "Password");
+                    edit_field == 8 || edit_field == 9    ? "Profile name"
+                    : edit_field == 10                    ? "DS name"
+                    : edit_field == 7                     ? "Your name"
+                    : edit_field == 5                     ? "DS nickname"
+                    : edit_field == 4 || edit_field == 11 ? "Search games"
+                    : edit_field == 6                     ? "Search cheats"
+                    : edit_field == 3                     ? "Matching title"
+                    : edit_field == 0                     ? "Username"
+                                                          : "Password");
     round_rect(r, 20, y + 91, 600, 62, 12, "accent");
     round_rect(r, 22, y + 93, 596, 58, 10, "panel");
     bool hidden = edit_field == 1 || edit_field == 2;
@@ -25,13 +25,13 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
         value.erase(0, next);
         cursor -= next;
     }
-    const bool searching = edit_field == 4 || edit_field == 6;
+    const bool searching = edit_field == 4 || edit_field == 6 || edit_field == 11;
     int x = searching ? 64 : 38;
     if (searching) search_icon(r, 43, y + 121, 22, "accent");
     raw_label(r,
-              value.empty() ? locale.text(edit_field == 4   ? "Type a game title…"
-                                          : edit_field == 6 ? "Type a cheat name…"
-                                                            : "Enter here")
+              value.empty() ? locale.text(edit_field == 4 || edit_field == 11 ? "Type a game title…"
+                                          : edit_field == 6                   ? "Type a cheat name…"
+                                                                              : "Enter here")
                             : value,
               x, y + 109, 24, value.empty() ? "muted" : "ink", 490);
     if (!edit_buffer.empty())
@@ -44,9 +44,11 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
           edit_field == 4 ? (search_preview_loading ? "Finding games…"
                                                     : locale.text(std::to_string(search_matches.size()) +
                                                                   (search_matches.size() == 1 ? " match" : " matches")))
-          : edit_field == 6 ? locale.text(std::to_string(cheat_match_count(edit_buffer)) +
-                                          (cheat_match_count(edit_buffer) == 1 ? " match" : " matches"))
-                            : "Tap to type, or use the D-pad and A",
+          : edit_field == 6  ? locale.text(std::to_string(cheat_match_count(edit_buffer)) +
+                                           (cheat_match_count(edit_buffer) == 1 ? " match" : " matches"))
+          : edit_field == 11 ? locale.text(std::to_string(games_match_count(edit_buffer)) +
+                                           (games_match_count(edit_buffer) == 1 ? " match" : " matches"))
+                             : "Tap to type, or use the D-pad and A",
           24, y + 160, 14, "muted", 580);
     draw_keyboard(r, y, keyboard_rows(), true);
 }
@@ -74,9 +76,10 @@ void App::search_keyboard_top(SDL_Renderer* r, int y) {
 std::vector<std::vector<KeyboardKey>> App::keyboard_rows() const {
     const bool room = chat_open && chat.view == pictochat::View::Room;
     return keyboard_layout(key_layer,
-                           room                                                 ? KeyboardMode::Chat
-                           : (edit_field == 4 || edit_field == 6) && !chat_open ? KeyboardMode::Search
-                                                                                : KeyboardMode::Edit,
+                           room ? KeyboardMode::Chat
+                           : (edit_field == 4 || edit_field == 6 || edit_field == 11) && !chat_open
+                               ? KeyboardMode::Search
+                               : KeyboardMode::Edit,
                            key_caps, key_accents, room && key_stamps, room ? pictochat::layout::keyboard_top : 186,
                            room ? pictochat::layout::keyboard_scale : 1.f);
 }

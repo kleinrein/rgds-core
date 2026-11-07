@@ -58,9 +58,9 @@ void App::raw_wrapped(SDL_Renderer* r, const std::string& value, int x, int y, i
 
 void App::start_frame(SDL_Renderer* r, int x, int row, int tile, const std::string& word, int band) {
     const Color accent = theme.at("accent");
-    raised_pill(r, x - 9, row - 9, tile + 18, tile + band + 17, 8, accent);
-    fill_round(r, x - 3, row - 3, tile + 6, tile + 8, 6, blend(accent, Color{0, 0, 0}, 30));
-    round_rect(r, x - 1, row - 1, tile + 2, tile + 2, 4, "panel");
+    raised_pill(r, x - 9, row - 9, tile + 18, tile + band + 17, card_radius + 6, accent);
+    fill_round(r, x - 3, row - 3, tile + 6, tile + 8, card_radius + 2, blend(accent, Color{0, 0, 0}, 30));
+    round_rect(r, x - 1, row - 1, tile + 2, tile + 2, card_radius, "panel");
     const int width = label_width(word, 20), word_y = centred_label_y(locale.text(word), 20, row + tile + 8 + band / 2);
     label_colour(r, word, x + (tile - width) / 2, word_y + 1, 20, blend(accent, Color{0, 0, 0}, 40), tile);
     label(r, word, x + (tile - width) / 2, word_y, 20, "on_accent", tile);
@@ -86,7 +86,7 @@ void App::settings_footer(SDL_Renderer* r, int y) {
     const bool pressed = footer_pressed(true), a_pressed = footer_pressed(false);
     footer_button(r, 12, y + 432, 160, "Back", "B", false, pressed);
     if (settings.page == Page::Keyboard) {
-        const bool searching = edit_field == 4 || edit_field == 6;
+        const bool searching = edit_field == 4 || edit_field == 6 || edit_field == 11;
         key_hints(r, 320, y + 452, {{"X", "Delete"}, {"Start", searching ? "Search" : "Done"}}, 0, 16, 280);
         footer_button(r, 468, y + 432, 160, searching ? "Search" : "Done", "", true, a_pressed);
         return;
@@ -157,9 +157,9 @@ void App::ui_icon(SDL_Renderer* r, SettingsIcon symbol, int x, int y, int size, 
 }
 
 void App::settings_card(SDL_Renderer* r, int x, int y, int w, int h, bool focused) {
-    round_rect(r, x, y + 3, w, h, 14, "slot");
-    round_rect(r, x, y, w, h, 14, focused ? "accent" : "panel");
-    if (focused) round_rect(r, x + 2, y + 2, w - 4, h - 4, 12, "focus");
+    round_rect(r, x, y + 3, w, h, card_radius, "slot");
+    round_rect(r, x, y, w, h, card_radius, focused ? "accent" : "panel");
+    if (focused) round_rect(r, x + 2, y + 2, w - 4, h - 4, card_radius - 2, "focus");
 }
 
 void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, const std::string& value, bool enabled,
@@ -170,7 +170,7 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
     move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
     dx -= 24;
     settings_card(r, 24 + dx, row, 566, 66, focused);
-    round_rect(r, 38 + dx, row + 11, 44, 44, 12, focused && enabled ? "accent" : "slot");
+    round_rect(r, 38 + dx, row + 11, 44, 44, well_radius, focused && enabled ? "accent" : "slot");
     ui_icon(r,
             settings.page == Page::SaveGallery        ? gallery_icon()
             : settings.page == Page::ShaderPicker     ? SettingsIcon::Shader
@@ -210,20 +210,25 @@ void App::draw_toggle(SDL_Renderer* r, int x, int y, const std::string& name, bo
     if (found == toggle_motion.end())
         found = toggle_motion.emplace(key, ToggleMotion{value, float(value), now - 100}).first;
     auto& motion = found->second;
+    // 160 ms ease-out: long enough to read as a slide on the handheld's 60 Hz panel, and the lit track fades in
+    // with the knob instead of popping on the first frame.
     auto position = [&]() {
-        float t = preferences.animations ? std::min(1.f, (now - motion.at) / 90.f) : 1.f;
-        t = 1 - (1 - t) * (1 - t);
+        float t = preferences.animations ? std::min(1.f, (now - motion.at) / 160.f) : 1.f;
+        t = 1 - (1 - t) * (1 - t) * (1 - t);
         return motion.from + (float(motion.value) - motion.from) * t;
     };
     if (motion.value != value) {
         motion.from = position();
         motion.value = value;
         motion.at = now;
-        micro_until = now + 100;
+        micro_until = std::max(micro_until, now + 170);
     }
     sunken_track(r, x, y, 44, 28, 14);
-    if (enabled && value) raised_pill(r, x + 1, y + 1, 42, 26, 13, theme.at("accent"), 0, false);
-    const int knob = x + 5 + int(14 * position());
+    const float lit = position();
+    if (enabled && lit > .02f)
+        raised_pill(r, x + 1, y + 1, 42, 26, 13,
+                    blend(theme.at("slot"), theme.at("accent"), int(std::lround(lit * 100))), 0, false);
+    const int knob = x + 5 + int(std::lround(14 * lit));
     alpha_round(r, knob, y + 7, 18, 18, 9, shadow_colour(), preferences.dark ? 90 : 40);
     round_rect(r, knob, y + 5, 18, 18, 9, "panel");
     alpha_round(r, knob + 4, y + 7, 10, 5, 2, Color{255, 255, 255}, preferences.dark ? 40 : 150);

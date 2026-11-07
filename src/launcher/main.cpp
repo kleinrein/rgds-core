@@ -458,7 +458,7 @@ class App {
     std::map<std::pair<int, std::string>, ToggleMotion> toggle_motion;
     Uint32 micro_until = 0;
     // A segmented control's lit pill glides to the new choice instead of
-    // jumping (140 ms ease-out), keyed by page and row like the switches.
+    // jumping (160 ms ease-out, as the switches), keyed by page and row like the switches.
     struct SegmentMotion {
         int value = -1;
         float from = 0;
@@ -469,7 +469,7 @@ class App {
         const auto now = s.GetTicks();
         auto& motion = segment_motion[{int(settings.page), row}];
         auto position = [&]() {
-            float t = preferences.animations ? std::min(1.f, (now - motion.at) / 140.f) : 1.f;
+            float t = preferences.animations ? std::min(1.f, (now - motion.at) / 160.f) : 1.f;
             t = 1 - (1 - t) * (1 - t) * (1 - t);
             return motion.from + (float(motion.value) - motion.from) * t;
         };
@@ -478,7 +478,7 @@ class App {
             motion.from = position();
             motion.value = value;
             motion.at = now;
-            micro_until = std::max(micro_until, now + 150);
+            micro_until = std::max(micro_until, now + 170);
         }
         return position();
     }
@@ -508,7 +508,8 @@ class App {
     // Sound and brightness: the slider's vertical span (touch and drawing agree). On Sound it is the first
     // row of the shared list, so it scrolls with it.
     std::pair<int, int> slider_band() const {
-        return settings.page == Page::Sound ? std::make_pair(list_top - list_scroll, list_top - list_scroll + 66)
+        return settings.page == Page::Sound ? std::make_pair(list_top - list_scroll - list_shift(),
+                                                             list_top - list_scroll - list_shift() + 66)
                                             : std::make_pair(163, 285);
     }
     bool slider_hit(int x, int y) const {
@@ -530,7 +531,7 @@ class App {
         case Page::GameSwitcher: return int(switch_games.size()) + (home_switcher ? 0 : 1); // in a game: Game menu
         case Page::Graphics: return 8;
         case Page::Power: return int(power_rows.size());
-        case Page::LibraryOptions: return 9;
+        case Page::LibraryOptions: return library_row_count();
         case Page::Appearance: return 6;
         case Page::DisplayOptions: return 5;
         case Page::Scraper: return 6;
@@ -567,10 +568,24 @@ class App {
     // Settings > Library: "Scan for games" (row 10) and "Show all systems" (row 9) are shown first,
     // the others in their order below them. Rows 0 (Default emulator) and 6 (DraStic backend) are
     // retired: DSCore is the only DS engine.
-    static int library_row(int shown) {
-        static constexpr int rest[] = {1, 2, 3, 4, 5, 8};
-        return shown == 0 ? 10 : shown == 1 ? 9 : shown == 2 ? 11 : rest[std::clamp(shown - 3, 0, 5)];
+    // Settings > Library, as shown: Scan, Systems, then Games opens (12) while other systems are on, then the rest.
+    int library_row(int shown) const {
+        static constexpr int rest[] = {11, 1, 2, 3, 4, 5, 8};
+        if (shown == 0) return 10;
+        if (shown == 1) return 9;
+        if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 6)];
+        return rest[std::clamp(shown - 2, 0, 6)];
     }
+    int library_row_count() const { return preferences.show_systems ? 10 : 9; }
+    // With Games opens all games: the one system the filter sheet narrowed the list to, or empty for every game.
+    std::string browse_system;
+    // The first collection's name: the system being browsed, or every game.
+    std::string all_view_name() const {
+        if (games_all_view()) return browse_system.empty() ? "All games" : std::string(system_info(browse_system).name);
+        return preferences.show_systems ? std::string(system_info(shown_system).name) : "All games";
+    }
+    // Games straight to every game, sorted by title; the Systems step stays a tile away in the filter sheet.
+    bool games_all_view() const { return preferences.show_systems && preferences.all_games; }
     int list_selected() const {
         return settings.page == Page::Settings ? section_row(settings.section) : settings.focus;
     }
@@ -617,14 +632,22 @@ class App {
     // Home tiles: Settings, Games, Favourites, Recents, then the console's PictoChat.
     static constexpr size_t home_count = 6, pictochat_tile = 4, last_played_tile = 5;
     // The carousel shows five tiles; the DSi column adds the last played game.
-    size_t home_tiles() const { return preferences.home_layout == 1 ? home_count : home_count - 1; }
+    size_t home_tiles() const {
+        return preferences.home_layout == 1 ? home_count : home_count - (pictochat_hidden() ? 2 : 1);
+    }
+    // A Kid profile without PictoChat has no tile for it; the carousel ends at Recents, the column widens Recents.
+    bool pictochat_hidden() const;
+    size_t home_fit(size_t index) const {
+        index = std::min(index, home_tiles() - 1);
+        return index == pictochat_tile && pictochat_hidden() ? 3 : index;
+    }
     size_t navigation_count() const {
         return home_menu ? home_tiles() : systems_menu ? listed_systems.size() : model.games.size();
     }
     // The library's layout; the Systems step is always the carousel.
     int browse_layout() const { return systems_menu ? 0 : preferences.layout; }
     void home_layout_changed() {
-        home_selected = std::min(home_selected, home_tiles() - 1);
+        home_selected = home_fit(home_selected);
         carousel.reset(navigation_selected());
         cancel_navigation();
     }
@@ -644,7 +667,7 @@ class App {
             select_game(index, animate);
             return;
         }
-        home_selected = std::min<size_t>(index, home_tiles() - 1);
+        home_selected = home_fit(index);
         home_bar_focus = -1;
         selected_at = s.GetTicks();
         if (animate && preferences.animations) carousel.select(home_selected, selected_at);
@@ -868,11 +891,11 @@ class App {
     bool service_loaded = false;
     std::map<std::string, std::string> service;
     bool pointer_down = false;
-    enum class EdgeGesture { None, Bottom, Left };
+    enum class EdgeGesture { None, Bottom, Left, Right }; // Back answers from either side edge, as on phones
     EdgeGesture edge_gesture = EdgeGesture::None;
     void gesture_intro();
     Uint32 gesture_flash_at = 0;
-    int gesture_flash_kind = 0;
+    int gesture_flash_kind = 0; // 0 Home, 1 Back from the left, 2 Back from the right
     // The handle at the bottom edge, the Home pill that rises with the finger,
     // the Back disc that slides in from the left, and a ring where one fired.
     void gesture_cues(SDL_Renderer* r, int y);
@@ -1087,13 +1110,14 @@ class App {
     // Starts a game from wherever the launcher is (Last played, the home switcher).
     void play_game(Game game);
     bool discovery_active() const { return !search_query.empty() || discovery_filter != 0 || discovery_facets.any(); }
-    // Favourites with nothing in it yet: the bottom screen offers a way back to the games (or the Systems step).
+    // Favourites or Recents with nothing in it yet (a new profile has played nothing): the bottom screen says why and
+    // offers a way back to the games (or the Systems step).
     bool favourites_empty() const {
-        return !home_menu && !systems_menu && preferences.view == 1 && model.games.empty() && library_ready &&
-               !collection_loading && !discovery_active();
+        return !home_menu && !systems_menu && (preferences.view == 1 || preferences.view == 2) && model.games.empty() &&
+               library_ready && !collection_loading && !discovery_active() && !visibility_loading;
     }
     void browse_from_favourites() {
-        if (preferences.show_systems) open_systems();
+        if (preferences.show_systems && !games_all_view()) open_systems();
         else library_view(0);
     }
     std::string discovery_filter_name() const;
@@ -1677,9 +1701,9 @@ class App {
     };
     std::vector<CatalogReader::Entry> games_entries;
     std::vector<GamesRow> games_rows;
-    std::string games_shelf;
+    std::string games_shelf, games_query, games_system; // the search and the one system the list is narrowed to
     int games_tab = 0, games_focus = 0;
-    static constexpr int profile_games_tabs_left = 232, profile_games_tab = 96; // ending at the right margin
+    static constexpr std::array<int, 3> games_pill_x = {212, 332, 476}; // Search, System, Showing; ending at 616
     enum class PinPurpose { Enter, Unlock, Set, Confirm };
     PinPurpose pin_purpose = PinPurpose::Unlock;
     std::string pin_digits, pin_first, pin_expected, pin_message, pin_owner_id;
@@ -1687,6 +1711,13 @@ class App {
     Page pin_target_page = Page::Library, last_open_page = Page::Library;
     bool settings_unlocked = false; // the owner's PIN was given: open until the player is back at the games
     Uint32 pin_ticked = 0, sharing_stopped_at = 0;
+    // The pad's feel: the key last pressed and when, the newest dot's pop, the shake after a wrong PIN.
+    static constexpr Uint32 pin_flash_ms = 260, pin_pop_ms = 160, pin_shake_ms = 460;
+    static constexpr int pin_key_radius = 34;
+    int pin_flash_key = -1, pin_shake_dots = 0;
+    Uint32 pin_flash_at = 0, pin_pop_at = 0, pin_shake_at = 0;
+    void pin_flash(int key);
+    void pin_shake();
     const Profile& active_profile() const;
     const std::string& owner_pin() const;
     bool page_open_to_kid(Page page) const;
@@ -1714,8 +1745,22 @@ class App {
     void set_game_override(const Profile& profile, const std::string& key, const std::string& state);
     void open_profile_games(int tab);
     void games_rows_build();
-    int games_shelf_waiting(const std::string& shelf) const;
+    bool games_match(const CatalogReader::Entry& entry, const std::string& query) const;
+    bool games_entry_visible(const CatalogReader::Entry& entry) const;
+    bool games_entry_locked(const CatalogReader::Entry& entry) const;
+    bool games_entry_fits(const CatalogReader::Entry& entry) const;
+    void games_refilter();
+    std::pair<int, int> games_shelf_counts(const std::string& shelf) const;
+    void games_set(std::map<std::string, std::string>& overrides, const CatalogReader::Entry& entry, bool show);
+    void games_save(std::map<std::string, std::string> overrides);
+    void games_toggle(int index);
+    void set_shelf(bool show);
     void allow_shelf();
+    void games_pick_system();
+    void games_pick_view();
+    int games_match_count(const std::string& query) const;
+    void profile_games_header(SDL_Renderer* r, int y);
+    void tick_box(SDL_Renderer* r, int x, int y, int size, int state, bool enabled);
     void profile_games_action(int code);
     bool profile_games_header_hit(int x, int y) const;
     void profile_games_header_tap(int x);
@@ -1735,6 +1780,8 @@ class App {
     void open_profile_picker(bool boot);
     SDL_Rect profile_tile_box(int index) const;
     void draw_profile_tile(SDL_Renderer* r, const Profile& profile, int x, int y, int size);
+    void kid_badge(SDL_Renderer* r, int centre, int bottom, int size);
+    void chosen_tick(SDL_Renderer* r, int cx, int cy);
     void choose_profile(int index);
     void profile_picker_action(int code);
     void profile_picker_touch(int x, int y);
@@ -1758,6 +1805,12 @@ class App {
     int profile_choice_count() const;
     SDL_Rect profile_choice_box(int index) const;
     void profile_set_colour(const Profile& profile, int colour);
+    void profile_change_look(const Profile& profile, const std::function<void(Preferences&)>& change);
+    std::string language_name(const std::string& id) const {
+        for (const auto& item : locale.languages())
+            if (item.first == id) return item.second;
+        return "English (US)";
+    }
     void profile_set_ds_name(const Profile& profile, const std::string& name);
     void choose_profile_option(int index);
     void profile_choose_action(int code);
@@ -1919,6 +1972,9 @@ class App {
         }
     }
     void ui_icon(SDL_Renderer* r, SettingsIcon symbol, int x, int y, int size, const std::string& key);
+    // Corner radii every screen shares: cards and tiles (lists, Home, the upper card, the carousel), the icon wells
+    // inside them, and controls (buttons, rows inside a sheet). A card's outline ring adds its own width.
+    static constexpr int card_radius = 14, well_radius = 12, control_radius = 10;
     void settings_card(SDL_Renderer* r, int x, int y, int w, int h, bool focused = false);
     void list_row(SDL_Renderer* r, int y, int index, const std::string& title, const std::string& value = "",
                   bool enabled = true, const Color* swatch = nullptr, bool switches = true);
@@ -2382,14 +2438,20 @@ class App {
         SDL_Rect box;
         size_t index;
     };
-    static std::array<HomeTile, 6> home_column_tiles() {
+    std::vector<HomeTile> home_column_tiles() const {
         // Every edge sits on a rule of the lower screen's 20 px grid (rules at 19-20, 39-40, ...).
-        return {{{{20, 20, 600, 80}, last_played_tile},
-                 {{20, 120, 280, 80}, 1},
-                 {{340, 120, 280, 80}, 2},
-                 {{20, 220, 280, 80}, 3},
-                 {{340, 220, 280, 80}, pictochat_tile},
-                 {{20, 320, 600, 60}, 0}}};
+        if (pictochat_hidden())
+            return {{{20, 20, 600, 80}, last_played_tile},
+                    {{20, 120, 280, 80}, 1},
+                    {{340, 120, 280, 80}, 2},
+                    {{20, 220, 600, 80}, 3},
+                    {{20, 320, 600, 60}, 0}};
+        return {{{20, 20, 600, 80}, last_played_tile},
+                {{20, 120, 280, 80}, 1},
+                {{340, 120, 280, 80}, 2},
+                {{20, 220, 280, 80}, 3},
+                {{340, 220, 280, 80}, pictochat_tile},
+                {{20, 320, 600, 60}, 0}};
     }
     static constexpr SDL_Rect home_bar_chip{108, 420, 164, 48}, home_bar_left{20, 420, 80, 48},
                               home_bar_right{540, 420, 80, 48},

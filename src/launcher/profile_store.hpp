@@ -19,10 +19,13 @@ namespace rgds {
 inline constexpr size_t profile_limit = 6;
 
 struct Profile {
-    std::string id, name, ds_name, last_game;
+    std::string id, name, ds_name, last_game, last_system; // last-game.txt: title, path, system (older files: title)
+    fs::path last_path;
     fs::path root;
     int picture = 0, colour = -1;
     bool restricted = false;
+    bool all_games = false; // Games opens every game in one list, not the Systems step (its ui.ini)
+    std::string language;   // its menus' language (its ui.ini); empty until read
     // Who sees what (profile_visibility.hpp). A Kid profile hides what has no rating and starts at seven.
     int age = no_age_limit;
     bool unrated_hidden = false, allow_ports = false, allow_homebrew = false;
@@ -120,10 +123,16 @@ class ProfileStore {
         try {
             load_ui_preferences(root / "ui.ini", look);
             profile.colour = look.accent;
+            profile.all_games = look.show_systems && look.all_games;
+            profile.language = look.language;
         } catch (const std::exception&) {}
         profile.ds_name = profile_fields(root / "ds.ini")["nickname"];
         std::ifstream last(root / "last-game.txt");
+        std::string path;
         std::getline(last, profile.last_game);
+        std::getline(last, path);
+        std::getline(last, profile.last_system);
+        profile.last_path = path;
         return profile;
     }
     std::map<std::string, std::string> index_fields() const {
@@ -247,6 +256,8 @@ public:
             return {};
         for (const char* file : {"preferences.ini", "ui.ini"})
             if (fs::exists(data / file, ec)) fs::copy_file(data / file, root / file, ec);
+        // A small library chosen for someone needs no Systems step: Games opens every game (the last line wins).
+        std::ofstream(root / "ui.ini", std::ios::app) << "all_games=1\n";
         std::map<std::string, std::string> values = {{"schema", "1"},
                                                      {"name", name},
                                                      {"picture", std::to_string(picture)},

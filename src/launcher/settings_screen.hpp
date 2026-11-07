@@ -128,6 +128,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
                 : edit_field == 2                  ? "Connectivity"
                 : edit_field == 3                  ? "Artwork"
                 : edit_field == 4                  ? "Search"
+                : edit_field == 11                 ? "Games"
                 : edit_field == 6                  ? "Cheats"
                                                    : "ScreenScraper";
         symbol = edit_field == 2   ? SettingsIcon::Wifi
@@ -389,6 +390,8 @@ void App::settings_top(SDL_Renderer* r, int y) {
             else if (row == 11)
                 message = "What each system's games share until a game says otherwise: bezel, screen, shader.";
             else if (row == 9) message = "Adds Game Boy and Game Boy Advance games: Games then opens a Systems page.";
+            else if (row == 12)
+                message = "All games: every game in one list, sorted by name. Y narrows it to one system.";
             else if (row == 8) message = "Copies every save and checkpoint into one zip in userdata/exports.";
             else if (row == 1) message = "Where covers and titles come from.";
         }
@@ -555,8 +558,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             int x = 24;
             bool selected = settings.focus == i;
             move_element(uint32_t(i), x, row, 566, 66, selected, list_top, list_top + list_height, 24, 590);
-            round_rect(r, x, row, 566, 66, 10, selected ? "focus" : "panel");
-            if (selected) round_rect(r, x, row + 16, 4, 34, 2, "accent");
+            settings_card(r, x, row, 566, 66, selected); // the same card as every other list
             game_icon(r, switch_games[i], x + 14, row + 9, 48);
             raw_label(r, library_title(switch_games[i].title), x + 76, row + 6, 22, "ink", 464);
             // In a game the first is the one playing; from the launcher every row is a recent game, by system.
@@ -613,13 +615,12 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         settings_header(r, y, title,
                         settings.page == Page::Cheats         ? cheat_tabs_left() - 88 - 16
                         : settings.page == Page::Homebrew     ? 616 - int(homebrew_shelves().size()) * 72 - 88 - 16
-                        : settings.page == Page::ProfileGames ? profile_games_tabs_left - 88 - 16
+                        : settings.page == Page::ProfileGames ? games_pill_x[0] - 88 - 16
                         : settings.page == Page::Timezone     ? 600 - 88
                                                               : 475,
                         settings.page != Page::Cheats && settings.page != Page::ProfileEdit); // names are data
         if (settings.page == Page::Cheats) cheat_header(r, y);
-        if (settings.page == Page::ProfileGames)
-            tab_strip(r, profile_games_tabs_left, y + 77, profile_games_tab, {"All", "Shown", "Hidden", "No rating"}, games_tab);
+        if (settings.page == Page::ProfileGames) profile_games_header(r, y);
         if (settings.page == Page::Homebrew) {
             // the shelves as tabs, L and R between them (the Cheats page's strip)
             std::vector<std::string> names;
@@ -684,7 +685,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, names[id], enabled[id] ? values[id] : "Unavailable", enabled[id]);
             } else if (settings.page == Page::LibraryOptions) {
                 // Rows 0 and 6 are retired; library_row never shows them.
-                const std::array<std::string, 12> names = {"",
+                const std::array<std::string, 13> names = {"",
                                                            "Artwork sources",
                                                            "Auto-load state",
                                                            "Auto-save on exit",
@@ -695,8 +696,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                                            "Back up all saves",
                                                            "Systems",
                                                            "Scan for games",
-                                                           "System defaults"};
-                const std::array<std::string, 12> values = {
+                                                           "System defaults",
+                                                           "Games opens"};
+                const std::array<std::string, 13> values = {
                     "",
                     "",
                     preferences.auto_load ? "On" : "Off",
@@ -712,7 +714,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     !library_ready
                         ? locale.text("Scanning…")
                         : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games")),
-                    ""};
+                    "",
+                    preferences.all_games ? "All games" : "Systems"};
                 list_row(r, y, i, names[size_t(library_row(i))], values[size_t(library_row(i))]);
             } else if (settings.page == Page::PlayGraphics) {
                 const bool palette = play_colour_kind() == 1;
@@ -998,7 +1001,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     30, y + 145, 24, 560, 4);
         if (settings.page == Page::ProfileGames && !count) {
             if (games_reader.pending()) busy_ring(r, 320, y + 250, 26, 4);
-            else wrapped(r, "No games here.", 30, y + 145, 24, 560, 2);
+            else wrapped(r, games_query.empty() ? "No games here." : "No games match. Try a shorter word.", 30, y + 145, 24, 560, 2);
         }
         if (settings.page == Page::Homebrew && !count) {
             if (homebrew_loading()) busy_ring(r, 320, y + 250, 26, 4);
@@ -1215,7 +1218,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             : confirmation == "bt-forget"    ? "Forget this device?"
             : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
             : confirmation == "profile-remove" ? "Remove this profile? Its saves are kept, and a backup is made first."
-            : confirmation == "profile-allow-shelf" ? "Show every game with no rating on this shelf?"
+            : confirmation == "profile-allow-shelf" ? "Show every game listed on this shelf? Games rated above the age stay hidden."
             : confirmation == "profile-erase" ? "Erase the saves of removed profiles for good? This cannot be undone."
             : confirmation == "poweroff"            ? "Power off your handheld?"
             : confirmation == "update-apply"        ? "Restart and install the update?"

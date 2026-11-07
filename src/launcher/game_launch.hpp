@@ -154,8 +154,12 @@ void App::start_launch_runner(Uint32 now) {
         fs::remove(o.data / "session/switcher-library.ini", ec);
     }
     // For Who's playing? to show; nothing to anyone with one profile.
-    if (profiles.enabled())
-        std::ofstream(o.player / "last-game.txt") << library_title(model.games[model.selected].title) << '\n';
+    if (profiles.enabled()) {
+        const auto& game = model.games[model.selected];
+        std::ofstream(o.player / "last-game.txt") << library_title(game.title) << '\n'
+                                                  << game.path.string() << '\n'
+                                                  << game.system << '\n';
+    }
     int channel[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, channel) < 0) {
         launch_result = 127;

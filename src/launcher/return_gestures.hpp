@@ -8,7 +8,7 @@ void App::return_home() {
     systems_menu = false; // a Home gesture from the systems carousel must not leave it shadowing Home
     home_menu = true;
     // Back to the tile the library was entered from (the collection shown may have changed on the way).
-    home_selected = home_origin != SIZE_MAX ? std::min(home_origin, home_tiles() - 1) : size_t(preferences.view) + 1;
+    home_selected = home_origin != SIZE_MAX ? home_fit(home_origin) : size_t(preferences.view) + 1;
     carousel.reset(home_selected);
     selected_at = s.GetTicks();
     dirty = true;
@@ -127,7 +127,7 @@ void App::gesture_intro() {
     show_detail(
         "Touch gestures",
         locale.text("Swipe up from the bottom edge to go Home from anywhere.") + "\n" +
-            locale.text("Swipe in from the left edge to go Back.") + "\n" +
+            locale.text("Swipe in from the left or right edge to go Back.") + "\n" +
             locale.text(
                 "A small handle at the bottom of the lower screen shows gestures are on; it rises with your finger, and a ring marks the spot when a gesture fires."));
 }
@@ -136,9 +136,11 @@ void App::gesture_cues(SDL_Renderer* r, int y) {
     if (!gestures_available()) return;
     const Uint32 now = s.GetTicks();
     const bool bottom = pointer_down && edge_gesture == EdgeGesture::Bottom,
-               left = pointer_down && edge_gesture == EdgeGesture::Left;
+               left = pointer_down && edge_gesture == EdgeGesture::Left,
+               right = pointer_down && edge_gesture == EdgeGesture::Right;
     const double pb = bottom ? std::clamp((down_y - contact_y) / 72.0, 0.0, 1.0) : 0,
-                 pl = left ? std::clamp((contact_x - down_x) / 72.0, 0.0, 1.0) : 0;
+                 pl = left ? std::clamp((contact_x - down_x) / 72.0, 0.0, 1.0) : 0,
+                 pr = right ? std::clamp((down_x - contact_x) / 72.0, 0.0, 1.0) : 0;
     {
         const int w = 72 + int(48 * pb), lift = int(26 * pb);
         alpha_round(r, 320 - w / 2, y + 471 - lift, w, 5, 2, theme.at(pb > 0 ? "accent" : "ink"),
@@ -160,9 +162,15 @@ void App::gesture_cues(SDL_Renderer* r, int y) {
         alpha_round(r, cx - 40, y + 200, 80, 80, 40, theme.at("accent"), int(250 * pl));
         if (pl > .4) ui_icon(r, SettingsIcon::Back, cx + 14, y + 240, 24, "on_accent");
     }
+    if (pr > 0) { // the same bubble, entering from the right edge; the arrow still points back
+        const int cx = 684 - int(80 * pr);
+        alpha_round(r, cx - 40, y + 200, 80, 80, 40, theme.at("accent"), int(250 * pr));
+        if (pr > .4) ui_icon(r, SettingsIcon::Back, cx - 14, y + 240, 24, "on_accent");
+    }
     if (preferences.animations && gesture_flash_at && now - gesture_flash_at < 260) {
         const double t = (now - gesture_flash_at) / 260.0;
-        feedback_arc(r, gesture_flash_kind ? 24 : 320, y + (gesture_flash_kind ? 240 : 468), int(18 + 56 * t), 0, 1,
+        feedback_arc(r, gesture_flash_kind == 2 ? 616 : gesture_flash_kind ? 24 : 320,
+                     y + (gesture_flash_kind ? 240 : 468), int(18 + 56 * t), 0, 1,
                      theme.at("accent"), int(220 * (1 - t)), 4);
     }
 }
@@ -177,7 +185,10 @@ bool App::gestures_available() const {
 bool App::edge_gesture_move(int x, int y) {
     if (edge_gesture == EdgeGesture::None) return false;
     const bool home = edge_gesture == EdgeGesture::Bottom && down_y - y >= 72 && std::abs(x - down_x) < 120,
-               back = edge_gesture == EdgeGesture::Left && x - down_x >= 72 && std::abs(y - down_y) < 120;
+               back = ((edge_gesture == EdgeGesture::Left && x - down_x >= 72) ||
+                       (edge_gesture == EdgeGesture::Right && down_x - x >= 72)) &&
+                      std::abs(y - down_y) < 120;
+    const bool from_right = edge_gesture == EdgeGesture::Right;
     if (!home && !back) return false;
     edge_gesture = EdgeGesture::None;
     const auto before = std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open,
@@ -185,7 +196,7 @@ bool App::edge_gesture_move(int x, int y) {
     cancel_navigation();
     brightness_drag = volume_drag = false;
     gesture_flash_at = s.GetTicks();
-    gesture_flash_kind = home ? 0 : 1;
+    gesture_flash_kind = home ? 0 : from_right ? 2 : 1;
     micro_until = gesture_flash_at + 270;
     if (home) {
         const bool chatting = chat_open;

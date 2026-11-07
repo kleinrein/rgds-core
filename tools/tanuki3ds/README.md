@@ -66,3 +66,24 @@ Settings the handheld needs are in `ctremu.ini`, copied to the game's home on fi
 The engine folder holds Mesa twice: `lib` is Ubuntu's, `lib2` is our build from `build-mesa.sh` (the Panfrost buffer cache keeps its buffers mapped and skips the label and madvise ioctls per reuse, and the `map_unsynchronized_thread_safe` cap is set so Mesa's glthread starts, which takes the driver's per-draw work off the renderer thread; the system `libLLVM.so.19.1` sits beside it). `run.sh` puts `lib2` first; `MESA_STOCK=1` runs Ubuntu's, `NO_GLTHREAD=1` leaves the driver thread off. Sorted out 2026-11-02 by sampling the renderer thread: the Ubuntu EGL library loads the gallium file by Ubuntu's file name, so a lone gallium library in a folder of its own (`lib3`) only ever loaded next to our own EGL library (`lib2`), and `lib2` itself held a day-older gallium build without the cap. `lib2` now carries the build with it and `lib3` is retired; check with `ls /proc/<pid>/task/*/comm` for `ctremu:gl0` threads.
 
 Test and measurement switches: `SPIKE_PROF_WORKER=1` or `SPIKE_PROF_GL=1` with `SPIKE_PROF_FROM=<frame>` sample the renderer thread or the first driver thread (`SPIKE_PROF_US` between samples) into `prof.txt` in the game's home, written at quit or on SIGTERM; `SPIKE_SKIPDRAW=1|2|4` leaves all, the lit, or the unlit draws out; `SPIKE_DIFFCHECK=1` verifies the texture shadows after each tile diff; `SPIKE_PRESENT_COPY=1` copies the screens into a present set instead of the display transfers writing it; `SPIKE_NOPRESENTTHREAD=1` presents from the renderer thread as before; `SPIKE_GPUTIME=1` turns on GPU timestamp queries, whose `gpu` figure in the stats line is the GPU timeline per frame (polling them costs the renderer thread 12%, so they are off by default), `pt a/b` frames presented and dropped by the present thread.
+
+- 2026-11-06, Radiant Historia: Perfect Chronology, launch error 139: the title has a colon and `/data` is
+  exFAT, so `3ds/savedata/<title>` could not be made and `FormatSaveData` wrote to a null file. Fix in
+  `src/services/fs.c` (forbidden characters replaced on every platform, null check on the format info file).
+  Built as pt27 (md5 7c1d3dd9), on the userdata copy the game ran 75 s at 60 fps and made
+  `savedata/Radiant Historia  Perfect Chronology`; state check against pt26 both ways 14/14 chunks same.
+  Installed 2026-11-06 14:20 UTC; pt26 kept as `ctremu.installed-1106-pt26`. `rom-run.sh` on the handheld runs any
+  game on the copy.
+
+- 2026-11-06, Super Smash Bros. stops on an NFC error: the engine had no `nfc:u`, so the stub answered the
+  event requests without handles. `src/services/nfc.c` is a reader with no amiibo in range (state, both events,
+  communication status; tag reads answer 0xc8a17600). The game's own log showed the calls: 0x03, 0x04, 0x06, 0x0f, 0x12.
+
+- 2026-11-06, Smash then crashed ~60 s in, in the JIT (register allocator, then constant propagation), always under
+  `jit_list_step`: compiling a listed block ahead of time also compiled its link targets unchecked, and those were
+  sometimes data ("unknown coprocessor cp12"). Now `jit_link_ok` allows a link ahead of time only to a compiled block
+  or a listed one whose hash matches, and blocks compiled as link targets while playing go on the list as well.
+  pt30 (md5 bba1d318): Smash 2 x 150 s to the character select at 60 fps, no crash; Mario Kart 7 race 2 x 100 s mean
+  60.00 fps, no window under 57; state check against pt27 loads and runs both ways (SVCS +1 byte, OBJS +30 bytes:
+  the NFC state and events; 12 other chunks same). Installed 2026-11-06 14:55 UTC, pt27 kept as
+  `ctremu.installed-1106-pt27`. `/tmp/sum.py` on the handheld is gone (reboot).

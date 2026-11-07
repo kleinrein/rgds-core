@@ -43,7 +43,8 @@ bool App::home_column_move(int code) {
         dirty = true;
         return true;
     }
-    static constexpr std::array<std::array<int, 2>, 4> rows = {{{5, 5}, {1, 2}, {3, 4}, {0, 0}}};
+    std::array<std::array<int, 2>, 4> rows = {{{5, 5}, {1, 2}, {3, 4}, {0, 0}}};
+    if (pictochat_hidden()) rows[2] = {3, 3}; // Recents is the whole row
     int row = 0, column = home_column_memory;
     for (int i = 0; i < 4; i++) {
         if (rows[size_t(i)][0] == int(home_selected) || rows[size_t(i)][1] == int(home_selected)) {
@@ -86,8 +87,9 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
         move_element(uint32_t(tile.index), bx, by, b.w, b.h, selected);
         const bool pressed = pointer_down && point_in(b, contact_x, contact_y) && point_in(b, down_x, down_y);
         const int sink = pressed ? 2 : 0;
-        alpha_round(r, bx, by + 3, b.w, b.h, 4, shadow_colour(), preferences.dark ? 60 : 20);
-        glossy_pill(r, bx, by + sink, b.w, b.h, 4, theme.at("panel"), pressed ? 1 : 0, false); // the brackets mark it
+        alpha_round(r, bx, by + 3, b.w, b.h, card_radius, shadow_colour(), preferences.dark ? 60 : 20);
+        glossy_pill(r, bx, by + sink, b.w, b.h, card_radius, theme.at("panel"), pressed ? 1 : 0,
+                    false); // the brackets mark it
         if (tile.index == last_played_tile) {
             const auto& group = summary.groups[0];
             if (summary_ready && group.last_game) {
@@ -95,7 +97,7 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
                 label(r, "Last played", bx + 96, by + 12 + sink, 14, "muted", 480);
                 raw_label(r, group.last_title, bx + 96, by + 34 + sink, 24, "ink", 480);
             } else {
-                round_rect(r, bx + 16, by + 8 + sink, 64, 64, 4, "slot");
+                round_rect(r, bx + 16, by + 8 + sink, 64, 64, well_radius, "slot");
                 ui_icon(r, SettingsIcon::Cartridge, bx + 48, by + 40 + sink, 32, "muted");
                 label(r, summary_ready ? "Nothing played yet" : "Preparing…", bx + 96, by + 18 + sink, 22, "muted",
                       480);
@@ -126,7 +128,8 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
     for (int i = 0; i < 2; i++) {
         const SDL_Rect b = i ? home_bar_right : home_bar_left;
         const bool pressed = pointer_down && point_in(b, contact_x, contact_y) && point_in(b, down_x, down_y);
-        raised_pill(r, b.x, y + b.y, b.w, b.h, 4, theme.at(pressed ? "focus" : "panel"), pressed ? 1 : 0, true, false);
+        raised_pill(r, b.x, y + b.y, b.w, b.h, control_radius, theme.at(pressed ? "focus" : "panel"), pressed ? 1 : 0,
+                    true, false);
         ui_icon(r, i ? SettingsIcon::Clock : SettingsIcon::Sun, b.x + b.w / 2, y + b.y + b.h / 2 + (pressed ? 2 : 0),
                 26, "accent");
         if (home_bar_focus == (i ? 2 : 0)) chat_brackets(r, b.x, y + b.y, b.w, b.h, theme.at("accent"), 4);
@@ -135,7 +138,8 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
         // Who's playing: their picture and name, and the way to change it.
         const SDL_Rect b = home_bar_chip;
         const bool pressed = pointer_down && point_in(b, contact_x, contact_y) && point_in(b, down_x, down_y);
-        raised_pill(r, b.x, y + b.y, b.w, b.h, 4, theme.at(pressed ? "focus" : "panel"), pressed ? 1 : 0, true, false);
+        raised_pill(r, b.x, y + b.y, b.w, b.h, control_radius, theme.at(pressed ? "focus" : "panel"), pressed ? 1 : 0,
+                    true, false);
         const auto& who = profiles.profiles()[size_t(profiles.active_index())];
         draw_profile_tile(r, who, b.x + 8, y + b.y + 8 + (pressed ? 2 : 0), 32);
         raw_label(r, who.name, b.x + 48, centred_label_y(who.name, 18, y + b.y + b.h / 2 + (pressed ? 2 : 0)), 18,
@@ -161,7 +165,7 @@ void App::home_column_top(SDL_Renderer* r, int y) {
     const auto now = std::time(nullptr);
     const std::tm t = *std::localtime(&now);
     // Two square cards of 272 px on the upper screen's 16 px grid: x 32 and 336, y 112..384.
-    constexpr int card = 272, card_top = 112, corner = 4;
+    constexpr int card = 272, card_top = 112, corner = card_radius;
     const int cx = 32 + card / 2, cy = y + card_top + card / 2, radius = card / 2 - 12;
     alpha_round(r, cx - card / 2, cy - card / 2 + 3, card, card, corner, shadow_colour(), preferences.dark ? 60 : 18);
     round_rect(r, cx - card / 2, cy - card / 2, card, card, corner, "line");
@@ -246,15 +250,17 @@ void App::home_column_top(SDL_Renderer* r, int y) {
         const int x = col_x(col), cell = col_x(col + 1) - x, ry = row_top(row), rh = row_top(row + 1) - ry;
         const bool today = day == t.tm_mday;
         if (today) {
-            fill_round(r, x + 3, ry + 3, cell - 5, rh - 5, 3, theme.at("panel"));
+            // In a bottom corner cell the dotted frame keeps clear of the card's rounded corner.
+            const int p = row == rows - 1 && (col == 0 || col == 6) ? 6 : 3;
+            fill_round(r, x + p, ry + p, cell - 2 * p + 1, rh - 2 * p + 1, 3, theme.at("panel"));
             const Color mark = theme.at("accent");
-            for (int d = 0; d < cell - 6; d += 3) {
-                tint_rect(r, x + 3 + d, ry + 3, 2, 2, mark);
-                tint_rect(r, x + 3 + d, ry + rh - 4, 2, 2, mark);
+            for (int d = 0; d < cell - 2 * p; d += 3) {
+                tint_rect(r, x + p + d, ry + p, 2, 2, mark);
+                tint_rect(r, x + p + d, ry + rh - p - 1, 2, 2, mark);
             }
-            for (int d = 0; d < rh - 5; d += 3) {
-                tint_rect(r, x + 3, ry + 3 + d, 2, 2, mark);
-                tint_rect(r, x + cell - 4, ry + 3 + d, 2, 2, mark);
+            for (int d = 0; d < rh - 2 * p + 1; d += 3) {
+                tint_rect(r, x + p, ry + p + d, 2, 2, mark);
+                tint_rect(r, x + cell - p - 1, ry + p + d, 2, 2, mark);
             }
         }
         const std::string n = std::to_string(day);

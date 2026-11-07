@@ -409,8 +409,15 @@ int App::run() {
         if (o.frames && frames >= o.frames) break;
         prepare_next_cover();
         SDL_Event e{};
+        // Motion that began inside the draw, after this frame's checks above: a list's focus glide (sync_list), a
+        // switch or segment sliding (micro_until), a sheet that just closed. Without this the idle wait held them
+        // still for up to 250 ms on the handheld, so they lagged and then jumped to the end.
+        const bool motion_started = list_motion.active() || picker_motion.active() || filter_motion.active() ||
+                                    browser_motion.active() || (page_drag.active() && !page_drag.holding()) ||
+                                    (preferences.animations && int32_t(micro_until - s.GetTicks()) > 0) ||
+                                    sheet_leaving();
         int wait_ms = animated || dirty                     ? 1
-                      : feedback_active                     ? 16
+                      : feedback_active || motion_started   ? 16
                       : launching && preferences.animations ? int(std::min(50u, 75u - (now - launch_at) % 75))
                                                             : idle_wait_ms(now);
         if (o.game_menu && (!menu_pending_token.empty() || menu_status["state"] == "busy"))
@@ -527,10 +534,13 @@ int App::run() {
                << ",\"catalog_games\":" << catalog_games.size() << ",\"listed_systems\":" << listed_systems.size()
                << ",\"visibility_loading\":" << visibility_loading << ",\"games_rows\":" << games_rows.size()
                << ",\"games_tab\":" << games_tab << ",\"recent_games\":" << summary.recent_games.size()
+               << ",\"games_system\":" << std::quoted(games_system) << ",\"home_selected\":" << home_selected
+               << ",\"home_tiles\":" << home_tiles()
+               << ",\"first_game\":" << std::quoted(model.games.empty() ? std::string() : model.games.front().title)
                << ",\"discovery_filter\":" << discovery_filter << ",\"launching\":" << launching
-               << ",\"status\":" << std::quoted(status)
-               << ",\"pin_digits\":" << pin_digits.size() << ",\"pin_purpose\":" << int(pin_purpose)
-               << ",\"settings_unlocked\":" << settings_unlocked << ",\"chat_open\":" << chat_open << ',';
+               << ",\"status\":" << std::quoted(status) << ",\"pin_digits\":" << pin_digits.size()
+               << ",\"pin_purpose\":" << int(pin_purpose) << ",\"settings_unlocked\":" << settings_unlocked
+               << ",\"chat_open\":" << chat_open << ',';
         report << "\"page\":" << int(settings.page) << ",\"boot_pending\":" << (settings.page == Page::BootWarning)
                << ",\"library_scan_started\":" << library_scan_started << ",\"library_ready\":" << library_ready
                << ",\"frames\":" << rendered_frames << ",\"metadata_reads\":" << library_cache.counters.file_reads

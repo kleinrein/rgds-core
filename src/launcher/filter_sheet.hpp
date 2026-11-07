@@ -142,13 +142,14 @@ App::FilterLayout App::filter_layout() {
     struct Spec {
         const char* title;
         std::vector<int> facets; // -1 played state; -2 players slider; -3 release slider; -4 collection tiles;
-                                 // -5 layout tiles; -6 search tiles; else a facet_rows() index
+                                 // -5 layout tiles; -6 search tiles; -7 systems (all games only); else a facet_rows()
+                                 // index
         size_t limit;            // chips before "More…" (0: all)
     };
-    static const std::vector<Spec> specs = {{"Collection", {-4}, 0}, {"Browser layout", {-5}, 0}, {"Search", {-6}, 0},
-                                            {"Played", {-1}, 0},     {"Genre", {0}, 10},          {"Players", {-2}, 0},
-                                            {"Released", {-3}, 0},   {"Rating", {3}, 0},          {"More", {4, 5}, 0},
-                                            {"Publisher", {1}, 8},   {"Developer", {2}, 8}};
+    static const std::vector<Spec> specs = {{"Collection", {-4}, 0}, {"System", {-7}, 0},   {"Browser layout", {-5}, 0},
+                                            {"Search", {-6}, 0},     {"Played", {-1}, 0},   {"Genre", {0}, 10},
+                                            {"Players", {-2}, 0},    {"Released", {-3}, 0}, {"Rating", {3}, 0},
+                                            {"More", {4, 5}, 0},     {"Publisher", {1}, 8}, {"Developer", {2}, 8}};
     FilterLayout layout;
     layout.loading = !facet_index.ready();
     int y = 0, section = 0;
@@ -163,6 +164,30 @@ App::FilterLayout App::filter_layout() {
                 chips.push_back(std::move(item));
                 continue;
             }
+            if (facet == -7) {
+                // Every game in one list: a chip per system narrows it, and the Systems page (Ports, Homebrew) is
+                // one more chip away.
+                if (!games_all_view()) continue;
+                std::map<std::string, int> counts;
+                for (const auto& game : all_games) counts[game.system]++;
+                for (const auto& info : systems()) {
+                    const auto found = counts.find(info.id);
+                    if (found == counts.end()) continue;
+                    FilterChip chip;
+                    chip.facet = -2;
+                    chip.value = info.id;
+                    chip.label = info.name;
+                    chip.count = found->second;
+                    chip.selected = browse_system == info.id;
+                    chips.push_back(std::move(chip));
+                }
+                FilterChip systems_page;
+                systems_page.facet = -3;
+                systems_page.label = locale.text("Systems page");
+                systems_page.more = false;
+                chips.push_back(std::move(systems_page));
+                continue;
+            }
             if (facet <= -4) {
                 // Tiles: 0-2 the collections, 3-5 the layouts, 6-8 jump, search and clear. All nine always exist, so
                 // the focused item keeps its index while the filters change.
@@ -173,7 +198,7 @@ App::FilterLayout App::filter_layout() {
                                                                      "Jump to letter", "Search games", "Clear filters"};
                     FilterChip chip;
                     chip.tile = tile;
-                    chip.label = tile == 0 && preferences.show_systems ? std::string(system_info(shown_system).name)
+                    chip.label = tile == 0 && preferences.show_systems ? locale.text(all_view_name())
                                                                        : locale.text(names[size_t(tile)]);
                     chip.selected = tile < 3 ? tile == preferences.view : tile < 6 && tile - 3 == preferences.layout;
                     chips.push_back(std::move(chip));
@@ -291,6 +316,18 @@ void App::filter_activate(const FilterChip& chip) {
     }
     if (chip.tile >= 0) {
         filter_tile(chip.tile);
+        return;
+    }
+    if (chip.facet == -3) {
+        filter_sheet_open = false;
+        open_systems();
+        return;
+    }
+    if (chip.facet == -2) {
+        browse_system = browse_system == chip.value ? "" : chip.value;
+        library_view(preferences.view);
+        facet_index.request(o.data, view_source(0)); // the genres and years of what is now listed
+        dirty = true;
         return;
     }
     if (chip.facet < 0) {
@@ -420,6 +457,9 @@ bool App::filter_rail_press(int x, int y) {
     int thumb = 0, max = 0;
     filter_rail_metrics(layout, thumb, max);
     if (max <= 0) return false;
+    // The thumb places the content directly: no finger drag to release later, or the rows kept the press's
+    // offset while the thumb moved on.
+    filter_motion.stop();
     const int view = filter_bottom - filter_top, local = y - filter_top, offset = filter_scroll * (view - thumb) / max;
     filter_grab = local >= offset && local < offset + thumb ? local - offset : thumb / 2;
     filter_rail = true;

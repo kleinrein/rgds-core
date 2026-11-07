@@ -79,6 +79,9 @@ int main(){
  page.follow(PageDrag::Kind::Back,40);assert(page.dx>0 && page.dy==0);page.settle(3000);assert(page.returning());
  for(unsigned t=3016;t<5000 && page.active();t+=16)page.update(t,1.0);
  assert(!page.active() && page.dx==0 && page.scale==1);
+ // Back from the right edge: the page follows the finger leftwards and leaves to the left.
+ PageDrag mirror;mirror.follow(PageDrag::Kind::Back,40,-1);assert(mirror.dx<0 && mirror.dy==0);
+ mirror.depart(0);mirror.update(1000,1.0);mirror.follow(PageDrag::Kind::Back,40,-1);mirror.depart(0);mirror.update(150,1.0);assert(mirror.dx<-300);
  // A relaxed pace takes longer than the normal one.
  PageDrag slow;slow.follow(PageDrag::Kind::Home,72);slow.depart(0);slow.update(250,2.8);assert(slow.active());
  PageDrag normal;normal.follow(PageDrag::Kind::Home,72);normal.depart(0);normal.update(320,1.0);assert(!normal.active());

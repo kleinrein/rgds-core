@@ -77,7 +77,7 @@ void App::restore_state() {
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
                   : page == int(Page::Maintenance)    ? 7
-                  : page == int(Page::LibraryOptions) ? 8
+                  : page == int(Page::LibraryOptions) ? 9
                   : page == int(Page::Appearance)     ? 5
                   : page == int(Page::System)         ? (o.rgds_os ? 7 : 8)
                   : page == int(Page::Wifi)      ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)

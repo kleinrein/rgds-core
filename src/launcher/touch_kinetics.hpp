@@ -5,9 +5,10 @@
 void App::page_drag_follow(int x, int y) {
     if (!preferences.animations || gesture_canvas_failed || edge_gesture == EdgeGesture::None || !pointer_down) return;
     const bool home = edge_gesture == EdgeGesture::Bottom;
-    const int pull = home ? down_y - y : x - down_x;
+    const bool right = edge_gesture == EdgeGesture::Right;
+    const int pull = home ? down_y - y : right ? down_x - x : x - down_x;
     if (pull <= 4 && !page_drag.active()) return; // a tap on the edge leaves the page still
-    page_drag.follow(home ? PageDrag::Kind::Home : PageDrag::Kind::Back, pull);
+    page_drag.follow(home ? PageDrag::Kind::Home : PageDrag::Kind::Back, pull, right ? -1 : 1);
     dirty = true;
 }
 

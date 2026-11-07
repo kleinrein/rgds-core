@@ -402,6 +402,7 @@ void App::action(int code) {
                 }
             } else if (game) library_view(preferences.view);
         } else if (code == 8 || code == 9) {
+            settings.library_rows = library_row_count();
             settings.move(code == 8 ? -1 : 1);
             if (settings.page == Page::Scraper) settings.focus = std::min(settings.focus, list_count() - 1);
         } else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions) {
@@ -446,6 +447,11 @@ void App::action(int code) {
                 refresh_other_systems();
                 summary_ready = false;
                 library_summary.request(o.data, all_games);
+                library_view(0);
+            } else if (row == 12 && (code == 0 || code == 1 || code == 2)) {
+                preferences.all_games = code == 2 ? !preferences.all_games : code == 1;
+                browse_system.clear();
+                remember_appearance();
                 library_view(0);
             } else if (row == 11 && code == 2) open_system_defaults();
             else if (row == 8 && code == 2) {
@@ -638,7 +644,7 @@ void App::action(int code) {
             systems_menu = false;
             return_home();
         } else if (!home_menu && preferences.show_systems &&
-                   (systems_origin || (home_origin == SIZE_MAX && preferences.view == 0)))
+                   (systems_origin || (home_origin == SIZE_MAX && preferences.view == 0 && !games_all_view())))
             open_systems();
         else if (!home_menu) return_home();
     } else if (code == 4) launch();
@@ -934,9 +940,10 @@ void App::pointer_begin(int x, int y) {
         touch_tail = false;
         pointer_at = s.GetTicks();
         // As elsewhere, an edge touch waits: a swipe goes Home or Back, a release where it began is a plain tap.
-        edge_gesture = gestures_available() ? (y >= 470  ? EdgeGesture::Bottom
-                                               : x <= 10 ? EdgeGesture::Left
-                                                         : EdgeGesture::None)
+        edge_gesture = gestures_available() ? (y >= 470    ? EdgeGesture::Bottom
+                                               : x <= 10   ? EdgeGesture::Left
+                                               : x >= 630  ? EdgeGesture::Right
+                                                           : EdgeGesture::None)
                                             : EdgeGesture::None;
         if (edge_gesture == EdgeGesture::None) chat_press(x, y);
         return;
@@ -976,9 +983,10 @@ void App::pointer_begin(int x, int y) {
     touch_tail = false;
     options_ready = false;
     dirty = true;
-    edge_gesture = gestures_available() ? (y >= 470  ? EdgeGesture::Bottom
-                                           : x <= 10 ? EdgeGesture::Left
-                                                     : EdgeGesture::None)
+    edge_gesture = gestures_available() ? (y >= 470    ? EdgeGesture::Bottom
+                                           : x <= 10   ? EdgeGesture::Left
+                                           : x >= 630  ? EdgeGesture::Right
+                                                       : EdgeGesture::None)
                                         : EdgeGesture::None;
     pointer_down = true;
     scroll_drag = false;
@@ -1016,6 +1024,7 @@ void App::pointer_begin(int x, int y) {
             if (picker_max_scroll() > 0 && x >= 572 && x < 604) {
                 tap_pending = false;
                 picker_rail = true;
+                picker_motion.stop(); // the thumb places the list; nothing to release
                 int local = y - picker_top() - 64, offset = picker_thumb_offset();
                 picker_grab = local >= offset && local < offset + picker_thumb() ? local - offset : picker_thumb() / 2;
                 scroll_cue_at = s.GetTicks();
@@ -1296,6 +1305,11 @@ void App::pointer_end(int x, int y) {
         filter_motion.release(release_at, 0, filter_max_scroll());
     if (browser_list_touch && !tap_pending) browser_motion.release(release_at, 0, browser_list.maximum(navigation_count()));
     if (list_touch && list_swipe) list_motion.release(release_at, 0, list_max_scroll());
+    // A press that never became a swipe (a tap, a slider, a rail, a touch that changed the page) still began a finger
+    // drag. Left held, it kept the rows at the press's position and refused every key's glide until the next touch:
+    // the arrows "did not scroll the first time".
+    for (auto* motion : {&list_motion, &picker_motion, &filter_motion, &browser_motion})
+        if (motion->dragging) motion->stop();
     touch_tail = preferences.touch_indicator && preferences.animations;
     dirty = true;
     pointer_down = false;
@@ -1719,7 +1733,8 @@ void App::handle_input(const SDL_Event& e) {
         case SDLK_x: action(11); break;
         case SDLK_y:
             if (settings.page == Page::Library || settings.page == Page::ShaderPicker ||
-                settings.page == Page::SaveGallery || settings.page == Page::Maintenance)
+                settings.page == Page::SaveGallery || settings.page == Page::Maintenance ||
+                settings.page == Page::ProfileGames)
                 action(12);
             break;
         case SDLK_LEFTBRACKET:

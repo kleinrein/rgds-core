@@ -17,6 +17,7 @@ BATTERY=${RGDS_BATTERY_DIR:-/sys/class/power_supply/battery}
 CHARGER=${RGDS_CHARGER_DIR:-/sys/class/power_supply/charger}
 BACKLIGHTS=${RGDS_BACKLIGHTS:-/sys/class/backlight}
 LED=${RGDS_SLEEP_LED:-/sys/class/leds/red:status/brightness}
+INTERRUPTS=${RGDS_INTERRUPTS:-/proc/interrupts}
 # Off until verified on hardware: the first RTC-armed test sleep on 2026-10-28 ended in a frozen handheld (cause not
 # known yet). /data/rgds/sleep-check holding a number of seconds (21600 = 6 h) turns the dark wakes on.
 CHECK=${RGDS_SLEEP_CHECK:-$(cat /data/rgds/sleep-check 2>/dev/null)}
@@ -49,6 +50,13 @@ print(b[0] & 1)' /dev/input/${e##*/} 2>/dev/null
             return
         done
     done
+}
+
+# presses of the power key so far (the PMIC's rk805_pwrkey interrupts, all CPUs), to tell a person's wake from
+# the charger's; empty when /proc/interrupts cannot be read, and then every wake counts as a person's
+power_presses() {
+    [ -r "$INTERRUPTS" ] || return 0
+    awk '/rk805_pwrkey/ { for (i = 2; i <= NF && $i ~ /^[0-9]+$/; i++) n += $i } END { print n + 0 }' "$INTERRUPTS"
 }
 
 charging() {
@@ -99,23 +107,39 @@ suspend)
     panels_save
     radios_down
     wake=user
+    tries=0
     while :; do
         due=
         if [ -n "$started" ] && [ "$CHECK" -gt 0 ]; then
             echo 0 > $RTC/wakealarm 2>/dev/null
             echo +$CHECK > $RTC/wakealarm 2>/dev/null && due=$(($(cat $RTC/since_epoch) + CHECK))
         fi
+        presses=$(power_presses)
         suspend_now
         rc=$?
-        [ $rc = 0 ] || break
-        # woken before the alarm: the lid, the power key or the charger, a person
-        now=$(cat $RTC/since_epoch 2>/dev/null)
-        [ -n "$due" ] && [ -n "$now" ] && [ "$now" -ge $((due - 2)) ] || break
+        if [ $rc != 0 ]; then
+            # a wake event on the way down (the charger pulled as the lid shut) aborts the suspend: try again
+            # while the lid stays closed, or the handheld would sit awake under it
+            tries=$((tries + 1))
+            [ $tries -lt 3 ] && [ "$(lid_closed)" = 1 ] || break
+            panels_dark
+            sleep 2
+            continue
+        fi
+        tries=0
+        # an open lid or the power key is a person; anything else that wakes a closed handheld (the RTC check,
+        # the charger going in or out, a USB cable) puts it back to sleep dark. Before 2026-11-06 only the RTC
+        # did: a charger pulled with the lid closed left it awake at Home until the battery ran out.
         [ "$(lid_closed)" = 1 ] || break
+        [ -n "$presses" ] && [ "$(power_presses)" = "$presses" ] || break
+        now=$(cat $RTC/since_epoch 2>/dev/null)
+        if [ -n "$due" ] && [ -n "$now" ] && [ "$now" -ge $((due - 2)) ]; then why='dark wake'
+        else why='woken with the lid closed'; fi
         panels_dark
         capacity=$(cat $BATTERY/capacity 2>/dev/null)
-        slept=$((now - started))
-        echo "$(date '+%F %T') dark wake: battery ${capacity:-?} %, asleep $slept s" >> "$LOG" 2>/dev/null
+        slept=0
+        [ -n "$now" ] && [ -n "$started" ] && slept=$((now - started))
+        echo "$(date '+%F %T') $why: battery ${capacity:-?} %, asleep $slept s" >> "$LOG" 2>/dev/null
         if ! charging; then
             case "$capacity" in ''|*[!0-9]*) ;; *) [ "$capacity" -le "$LOW" ] && { wake=poweroff; break; } ;; esac
             [ "$slept" -ge "$LIMIT" ] && { wake=poweroff; break; }

@@ -759,6 +759,15 @@ DDR self-refresh and the PMIC's own quiescent draw, which together are most of w
 stay opt-in (`/data/rgds/sleep-check`). One thing the day showed in passing: a handheld left awake at Home with
 the lid open drains a half battery in about four hours; there is no idle timer that sleeps it.
 
+**Charger wakes with the lid closed (2026-11-06).** The RK817's plug-in and plug-out interrupts wake the
+handheld, and only the RTC check used to send it back to sleep: on 5 November the charger came out with the lid
+shut at 21:58, the sleep journal recorded `woke_by: rk817_plug_out` with `lid_closed_after: true`, and the
+launcher ran at Home under the closed lid until the battery cut out at 06:49. The launcher's `LidSleep` sleeps
+only on a close edge, and on RG DS OS it gets no sensor generation to re-arm it, so nothing noticed. `power
+suspend` now sleeps again after every wake with the lid still closed unless the power key moved
+(`rk805_pwrkey` in `/proc/interrupts`); an unreadable count counts as a person, and an aborted suspend is
+retried twice with the lid closed. Lines in `sleep.log` say "woken with the lid closed".
+
 ### After v0: speed, picture and more systems
 
 Rule one: **measure before and after every change**, on the same scenes, on stock and on RG DS OS. The tools exist:

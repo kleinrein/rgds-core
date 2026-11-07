@@ -69,13 +69,14 @@ void App::segment_row(SDL_Renderer* r, int y, int index, const std::string& titl
     move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
     dx -= 24;
     settings_card(r, 24 + dx, row, 566, 66, focused);
-    round_rect(r, 38 + dx, row + 11, 44, 44, 12, focused ? "accent" : "slot");
+    round_rect(r, 38 + dx, row + 11, 44, 44, well_radius, focused ? "accent" : "slot");
     ui_icon(r, index == 0 ? (second ? SettingsIcon::Moon : SettingsIcon::Sun) : SettingsIcon::Type, 60 + dx, row + 33,
             25, focused ? "on_accent" : "accent");
     const auto& names = index == 0 ? mode_names : typeface_names;
+    // From the drawn row, so the pill rides along with a flick, a bounce or a glide like the rest of the card.
     auto first = segment_bounds(index, 0);
     first.x += dx;
-    first.y += y;
+    first.y = row + 17;
     label(r, title, 98 + dx, row + 19, 24, "ink", first.x - 16 - (98 + dx));
     sunken_track(r, first.x - 4, first.y - 4, first.w * 2 + 8, first.h + 8, 13);
     const float slide = segment_position(index, second ? 1 : 0);

@@ -363,24 +363,23 @@ void App::render_picker(SDL_Renderer* r, int y) {
 void App::render_picker_body(SDL_Renderer* r, int y) {
     const bool closing = !picker_open;
     if (drawing_elements && !closing) motion_hits.clear(); // The modal owns input, including its empty spaces.
-    // A sheet: it rises in and slides away when closed, both scaled by the view Speed.
-    // Input and persistence never wait for either.
+    // A sheet: it rises from below the panel and slides back down when closed, one rigid card on the same curve
+    // and Speed as the Filter sheet. Input and persistence never wait for either.
     const Uint32 now = s.GetTicks();
     float progress = !preferences.animations ? 1.f
                      : closing               ? 1.f - std::min(1.f, (now - picker_closed_at) / sheet_out_ms())
                                              : std::min(1.f, (now - picker_at) / sheet_in_ms());
     const float ease = progress * progress * progress * (progress * (6 * progress - 15) + 10);
-    int top = y + picker_top() + int(std::lround((closing ? 420 : 28) * (1 - ease)));
+    const int height = 414 - picker_top(); // the card at rest ends just above the footer
+    int top = y + picker_top() + int(std::lround((height + 24) * (1 - ease)));
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     s.SetRenderDrawColor(r, 0, 0, 0, Uint8(std::lround(92 * ease)));
     SDL_Rect shade{0, y, 640, 424};
     s.RenderFillRect(r, &shade);
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_NONE);
-    if (closing) {
-        SDL_Rect clip{0, y, 640, 424};
-        s.RenderSetClipRect(r, &clip);
-    }
-    settings_card(r, 24, top, 592, 414 - (top - y));
+    SDL_Rect sheet_clip{0, y, 640, 424}; // the footer line stays in front of a moving sheet
+    s.RenderSetClipRect(r, &sheet_clip);
+    settings_card(r, 24, top, 592, height);
     round_rect(r, 294, top + 8, 52, 4, 2, "line");
     bool library_modal = picker_title == "Browser layout" || picker_title == "Jump to letter";
     if (library_modal) library_choice_icon(r, picker_title == "Jump to letter" ? 6 : 0, 62, top + 38, 28, "accent");
@@ -393,6 +392,8 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
             draw_scrollbar(r, 582, top + 68, 224, thumb, detail_scroll * (224 - thumb) / detail_max_scroll(),
                            detail_rail, false, 30);
         }
+        s.RenderSetClipRect(r, nullptr);
+        if (closing) return; // leaving: the page's own footer shows through
         rect(r, 0, y + 424, 640, 56, "background");
         rect(r, 24, y + 424, 592, 1, "line");
         footer_button(r, 12, y + 432, 160, "Close", "B", false, footer_pressed(true));
@@ -400,16 +401,17 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
         return;
     }
     if (picker_title == "Jump to letter") {
-        raised_pill(r, 40, y + 96, 364, 52, 10, theme.at("accent"));
-        search_icon(r, 65, y + 121, 22, "on_accent");
-        key_hints(r, 92, y + 122, {{"Y", "Quick search"}}, -1, 22, 296, "on_accent", true);
-        secondary_button(r, 416, y + 96, 184, 52, 10, false, true);
-        ui_icon(r, SettingsIcon::Sliders, 439, y + 122, 24, "accent");
-        key_hints(r, 461, y + 122, {{"X", "Filter"}}, -1, 20, 130, "accent");
+        // Laid out from the card's top (32 at rest), so it all travels with the sheet.
+        raised_pill(r, 40, top + 64, 364, 52, 10, theme.at("accent"));
+        search_icon(r, 65, top + 89, 22, "on_accent");
+        key_hints(r, 92, top + 90, {{"Y", "Quick search"}}, -1, 22, 296, "on_accent", true);
+        secondary_button(r, 416, top + 64, 184, 52, 10, false, true);
+        ui_icon(r, SettingsIcon::Sliders, 439, top + 90, 24, "accent");
+        key_hints(r, 461, top + 90, {{"X", "Filter"}}, -1, 20, 130, "accent");
         if (picker_options.empty())
-            wrapped(r, "No letters to jump to. Search for another game.", 56, y + 196, 22, 528, 3);
+            wrapped(r, "No letters to jump to. Search for another game.", 56, top + 164, 22, 528, 3);
         for (int i = 0; i < int(picker_options.size()); i++) {
-            int x = 40 + (i % 7) * 80, row = y + 164 + (i / 7) * 60;
+            int x = 40 + (i % 7) * 80, row = top + 132 + (i / 7) * 60;
             if (i == picker_focus) raised_pill(r, x, row, 72, 52, 8, theme.at("accent"));
             else round_rect(r, x, row, 72, 52, 8, "focus");
             label(r, picker_options[i], x + (72 - label_width(picker_options[i], 24)) / 2,
@@ -417,7 +419,13 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
         }
     } else {
         SDL_Rect clip{40, top + 64, 564, picker_height()};
-        if (picker_scrollable()) s.RenderSetClipRect(r, &clip);
+        if (picker_scrollable()) {
+            const int bottom = std::min(clip.y + clip.h, sheet_clip.y + sheet_clip.h);
+            // Wholly below the panel's footer line: a 1 px corner nothing is drawn in (an empty rect would not clip).
+            SDL_Rect inside =
+                bottom > clip.y ? SDL_Rect{clip.x, clip.y, clip.w, bottom - clip.y} : SDL_Rect{0, y, 1, 1};
+            s.RenderSetClipRect(r, &inside);
+        }
         int end =
             std::min(int(picker_options.size()), picker_first() + picker_visible() + (picker_scrollable() ? 1 : 0));
         for (int i = picker_first(); i < end; i++) {
@@ -457,12 +465,14 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
             else ring(r, 40 + width - 29 + dx, row + (stride - 6) / 2, 8, focused ? "accent" : "line");
         }
         if (picker_scrollable()) {
-            s.RenderSetClipRect(r, nullptr);
+            s.RenderSetClipRect(r, &sheet_clip);
             if (picker_max_scroll() > 0)
                 draw_scrollbar(r, 572, top + 64, picker_height(), picker_thumb(), picker_thumb_offset(), picker_rail,
                                scroll_hover);
         }
     }
+    s.RenderSetClipRect(r, nullptr);
+    if (closing) return; // leaving: the page's own footer shows through
     rect(r, 0, y + 424, 640, 56, "background");
     rect(r, 24, y + 424, 592, 1, "line");
     footer_button(r, 12, y + 432, 160, "Cancel", "B", false, footer_pressed(true));

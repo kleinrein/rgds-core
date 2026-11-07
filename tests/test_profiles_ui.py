@@ -267,20 +267,28 @@ class ManageTests(Base):
         folder = self.add()
         self.run_ui(self.edit_page() + ['a'], settings=True)
         self.assertEqual(read_fields(folder / 'profile.ini')['restricted'], '0')
+        # A picture or a colour is applied at once and the page stays, to try another; B goes back.
         report = self.run_ui(self.edit_page() + ['Down', 'Down', 'Down', 'a', 'Right', 'a'], settings=True)
-        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 3))
+        self.assertEqual(report['page'], CHOOSE)
         self.assertEqual(read_fields(folder / 'profile.ini')['picture'], '3')
+        report = self.run_ui(
+            self.edit_page() + ['Down', 'Down', 'Down', 'a', 'Down', 'Down', 'a', 'Escape'], settings=True
+        )
+        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 3))
+        self.assertEqual(read_fields(folder / 'profile.ini')['picture'], '15')  # from 3, two rows down: in colour
         report = self.run_ui(self.edit_page() + ['Down', 'Down', 'Down', 'Down', 'a', 'Left', 'a'], settings=True)
-        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 4))
+        self.assertEqual(report['page'], CHOOSE)
         self.assertIn('accent=9', (folder / 'ui.ini').read_text())
+        report = self.run_ui(self.edit_page() + ['Down', 'Down', 'Down', 'Down', 'a', 'Escape'], settings=True)
+        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 4))
         self.assertIn('accent=2', (self.data / 'ui.ini').read_text())
 
     def test_the_owner_has_no_kind_and_cannot_be_removed(self):
         self.add()
         report = self.run_ui(self.edit_page(1) + ['Down'] * 8, settings=True)
         self.assertEqual(
-            (report['page'], report['profile_focus']), (EDIT, 5)
-        )  # Name, DS name, Picture, Colour, Games, PIN
+            (report['page'], report['profile_focus']), (EDIT, 7)
+        )  # Name, DS name, Picture, Colour, Language, Games, Games opens, PIN
         self.run_ui(self.edit_page(1) + ['Down', 'a', 'text x', 'Return'], settings=True)
         self.assertEqual(read_fields(self.data / 'ds.ini')['nickname'], 'Andreasx')
         self.run_ui(self.edit_page(1) + ['a', 'text x', 'Return'], settings=True)
@@ -313,7 +321,7 @@ class ManageTests(Base):
         save.parent.mkdir(parents=True)
         save.write_bytes(b'the child\'s')
         # The page's last row, then Confirm's second choice
-        report = self.run_ui(self.edit_page() + ['Down'] * 14 + ['a', 'Right', 'a'], settings=True, seconds=5, gap=90)
+        report = self.run_ui(self.edit_page() + ['Down'] * 16 + ['a', 'Right', 'a'], settings=True, seconds=5, gap=90)
         self.assertEqual(report['page'], PROFILES)
         self.assertFalse(folder.exists())
         removed = list((self.data / 'profiles/.removed').iterdir())
@@ -327,7 +335,7 @@ class ManageTests(Base):
 
     def test_the_one_playing_cannot_be_removed(self):
         folder = self.add(active=True)
-        report = self.run_ui(self.edit_page() + ['Down'] * 14 + ['a'], settings=True, seconds=4, gap=90)
+        report = self.run_ui(self.edit_page() + ['Down'] * 16 + ['a'], settings=True, seconds=4, gap=90)
         self.assertEqual(report['page'], EDIT)
         self.assertTrue(folder.exists())
 
@@ -338,6 +346,46 @@ class ManageTests(Base):
         self.run_ui(self.new_profile(text=('Sara',)), settings=True)
         self.assertTrue((self.data / 'profiles/p2/profile.ini').is_file())
         self.assertFalse((self.data / 'profiles/p1').exists())
+
+    def test_pictochat_leaves_home_on_a_kid_profile_without_it(self):
+        folder = self.add(active=True)
+        report = self.run_ui(['Down', 'Right'], boot=False)
+        self.assertEqual(report['profile'], 'p1')
+        self.assertNotEqual(report['home_selected'], 4)  # Recents spans the row: Right finds no PictoChat
+        report_tiles = report['home_tiles']
+        with open(folder / 'profile.ini', 'a') as file:
+            file.write('pictochat=1\n')
+        report = self.run_ui(['Down', 'Right'], boot=False)
+        self.assertEqual(report['home_selected'], 4)
+        self.assertEqual(report['home_tiles'], report_tiles)  # the column keeps its six tiles either way
+
+    def test_a_new_profiles_empty_recents_offers_the_games(self):
+        self.add(restricted=0, active=True)  # has played nothing
+        report = self.run_ui(['Down', 'a'])
+        self.assertEqual((report['profile'], report['library_view'], report['shown_games']), ('p1', 2, 0))
+        report = self.run_ui(['Down', 'a', 'a'])
+        self.assertEqual(report['library_view'], 0)
+
+    def test_games_opens_is_chosen_per_profile(self):
+        folder = self.add()
+        # Who it's for, Name, DS name, Picture, Colour, Language, Age limit, Games with no rating, Games, Games opens
+        report = self.run_ui(self.edit_page() + ['Down'] * 9 + ['a'], settings=True)
+        self.assertEqual(report['page'], EDIT)
+        look = (folder / 'ui.ini').read_text()
+        self.assertIn('all_games=1', look)
+        self.assertIn('show_systems=1', look)
+        self.assertNotIn('all_games=1', (self.data / 'ui.ini').read_text())  # the owner's stays as it was
+        self.run_ui(self.edit_page() + ['Down'] * 9 + ['a'], settings=True)
+        self.assertIn('all_games=0', (folder / 'ui.ini').read_text())
+
+    def test_language_is_chosen_per_profile(self):
+        folder = self.add()
+        # Who it's for, Name, DS name, Picture, Colour, Language; the picker's first language is English (US)
+        report = self.run_ui(self.edit_page() + ['Down'] * 5 + ['a', 'Down', 'a'], settings=True)
+        self.assertEqual(report['page'], EDIT)
+        chosen = read_fields(folder / 'ui.ini').get('language')
+        self.assertNotIn(chosen, (None, '', 'en-US'))
+        self.assertNotIn('language=' + chosen, (self.data / 'ui.ini').read_text())  # the owner's stays
 
     def test_the_rows_answer_touch(self):
         self.add()
@@ -434,8 +482,8 @@ class EraseUiTests(Base):
         (self.removed / 'Game.sav').write_bytes(b'gone')
 
     def test_it_is_the_owners_last_row_asks_first_and_cancel_is_the_default(self):
-        # Name, DS name, Picture, Colour, Games, PIN, Erase
-        rows = self.TO_OWNER + ['Down'] * 6 + ['a']
+        # Name, DS name, Picture, Colour, Language, Games, Games opens, PIN, Erase
+        rows = self.TO_OWNER + ['Down'] * 8 + ['a']
         self.assertEqual(self.run_ui(rows, settings=True, gap=90)['page'], 18)  # Page::Confirm
         self.run_ui(rows + ['a'], settings=True, gap=90)  # A on the default
         self.assertTrue(self.removed.exists())
@@ -446,7 +494,19 @@ class EraseUiTests(Base):
     def test_there_is_no_row_with_nothing_to_erase(self):
         shutil.rmtree(self.removed)
         report = self.run_ui(self.TO_OWNER + ['Down'] * 9, settings=True, gap=90)
-        self.assertEqual(report['profile_focus'], 5)  # stops at PIN
+        self.assertEqual(report['profile_focus'], 7)  # stops at PIN
+
+
+class PictureTests(unittest.TestCase):
+    def test_every_character_has_its_smooth_drawing(self):
+        files = (ROOT / 'src/launcher/profile_pictures.hpp').read_text()
+        for name in (
+            'fox', 'panda', 'frog', 'penguin', 'owl', 'bear', 'unicorn', 'dino', 'alien', 'astronaut', 'octopus',
+            'bunny'
+        ):
+            self.assertIn(f'"{name}"', files)
+            picture = (ROOT / 'assets/profiles' / (name + '.bmp')).read_bytes()
+            self.assertEqual((picture[:2], int.from_bytes(picture[28:30], 'little')), (b'BM', 32), name)  # with alpha
 
 
 @unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'Requires host C++ and SDL headers')
@@ -487,6 +547,16 @@ int main(int, char** argv) {
     const auto& ola = store.profiles()[1];
     assert(ola.id == "p1" && ola.name == "Ola" && ola.restricted && ola.picture == 3 && ola.ds_name == "Ola");
     assert(ola.root == data / "profiles/p1" && ola.colour == 2);
+    Preferences look;
+    load_ui_preferences(ola.root / "ui.ini", look);
+    assert(look.all_games && look.menu_music); // the owner's look, with Games opening every game
+    assert(profile_picture_rich(12) && !profile_picture_rich(11) && profile_palette('k') && !profile_palette('.'));
+    write(ola.root / "last-game.txt", "Kart Racers\n/roms/nds/Kart Racers.nds\nnds\n");
+    write(data / "last-game.txt", "Old Title\n"); // written by an older build: the title only
+    store.load(data);
+    assert(store.profiles()[1].last_game == "Kart Racers" && store.profiles()[1].last_system == "nds");
+    assert(store.profiles()[1].last_path == "/roms/nds/Kart Racers.nds");
+    assert(store.profiles()[0].last_game == "Old Title" && store.profiles()[0].last_path.empty());
     assert(fs::exists(data / "profiles/index.ini") && fs::exists(data / "profiles/active"));
     assert(store.active() == "owner" && player_root(data) == data);
     assert(store.select("p1") && store.active() == "p1" && player_root(data) == data / "profiles/p1");
