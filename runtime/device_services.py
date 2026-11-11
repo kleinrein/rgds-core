@@ -524,7 +524,9 @@ class Services:
             systems.append(('bios', RGDS_OS_ROMS.parent / 'rgds/bios'))
             from portmaster import Folders, installed
             if installed(): systems.append(('ports', Folders().ports))
-            Sharing(self.data, self.app).start(self.sharing_ip(), roots, guest=guest, systems=systems)
+            # The music player's songs (the session's --music-dir).
+            music = RGDS_OS_ROMS.parent / 'music'
+            Sharing(self.data, self.app).start(self.sharing_ip(), roots, guest=guest, systems=systems, music=music)
         else:
             Sharing(self.data, self.app).stop()
         self.sharing_status()

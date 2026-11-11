@@ -18,6 +18,9 @@ clear front-facing silhouettes, no text, no enclosing tile and no neon/glow.
   hand-drawn stroke. Unlike the others it is drawn by `tools/build_pictochat_icon.py`
   (original artwork, reproducible, no source PNG), in the same graphite, silver and
   medium-blue palette. Its pixel counterpart is the `Chat` glyph.
+- `music.bmp`: the home screen's Music tile (shown while Settings > Sound > Music player is on), two beamed
+  notes. Drawn by `tools/build_music_icon.py` with the PictoChat icon's own shapes and painting. Its pixel
+  counterpart is the `Music` glyph.
 
 `tools/prepare_icons.py` crops cell padding, preserves alpha and scales each image
 onto a 128×128 canvas with a 116px optical bound. The launcher preloads these BMPs

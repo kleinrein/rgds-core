@@ -54,7 +54,7 @@ void App::restore_state() {
             return;
         }
     }
-    if (file && page == int(Page::Controls) && focus >= 0 && focus <= 18) {
+    if (file && page == int(Page::Controls) && focus >= 0 && focus <= 26) {
         std::string marker, tail;
         int per_game = 0, parent = int(o.game_menu ? Page::QuickMenu : Page::Settings), saved_parent = parent;
         file >> marker >> per_game;

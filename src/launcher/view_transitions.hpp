@@ -76,7 +76,8 @@ void App::capture_view_for_input(const SDL_Event& e) {
 
 void App::sync_view_motion(Uint32 now) {
     auto key =
-        std::make_tuple(view_page(), home_menu, preferences.view, preferences.layout, systems_menu, shown_system);
+        std::make_tuple(view_page(), home_menu, preferences.view, preferences.layout, systems_menu, shown_system,
+                        music_open ? mu.tab : -1); // a music tab is a sideways step on the same level
     bool enabled = view_transitions_enabled();
     view_motion.pace = view_pace(preferences.view_speed);
     if (last_view_style != preferences.view_style) {

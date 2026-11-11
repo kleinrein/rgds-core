@@ -62,7 +62,7 @@ enum class Page {
     ProfileChoose,    // Adult or Kid, a picture, a colour or an age limit
     ProfileGames,     // a profile's games: what it sees, and approving what has no rating
     ProfileGameRules, // one game: who sees it
-    PinPad,         // entering or choosing a PIN
+    PinPad,           // entering or choosing a PIN
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -79,6 +79,10 @@ struct Preferences {
     bool all_games = false;    // with other systems on, Games opens every game in one list instead of the Systems step
     bool menu_music = true;
     int music_volume = 40;
+    // Settings > Sound > Music player: off until asked for; on, Home has a Music tile (music_screen.hpp).
+    bool music_player = false;
+    // A song keeps playing when the lid closes (the panels go dark); off, the lid sleeps as it always does.
+    bool music_lid = true;
     // The vibration motor: patterns in the menus, rumble in games that have it
     // (DS Rumble Pak, GB rumble carts, GBA rumble). Strengths are 10-100%.
     bool menu_haptics = true, game_rumble = true;
@@ -612,6 +616,7 @@ struct Settings {
     Page page = Page::Library;
     int section = 0, focus = 0;
     int library_rows = 9; // Settings > Library: one more while other systems are on (Games opens)
+    int sound_rows = 5;   // Settings > Sound: the launcher adds the music player's rows
     // Brightness and Playtime opened from Home's bottom bar: Back returns Home, not through Settings.
     bool from_home = false;
     // The row you left each page from. Back lands on it again instead of the
@@ -670,8 +675,8 @@ struct Settings {
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, library_rows - 1);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
-        else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 5);
-        else if (page == Page::Sound) focus = std::clamp(focus + delta, 0, 4);
+        else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 6);
+        else if (page == Page::Sound) focus = std::clamp(focus + delta, 0, sound_rows - 1);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
         else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 4);
         else if (page == Page::System || page == Page::Display) focus = 0;
@@ -804,6 +809,8 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
         else if (line == "background=plain" || line == "background=grid") result.background = line == "background=grid";
         else if (line == "gestures=0" || line == "gestures=1") result.gestures = line.back() == '1';
         else if (line == "show_systems=0" || line == "show_systems=1") result.show_systems = line.back() == '1';
+        else if (line == "music_player=0" || line == "music_player=1") result.music_player = line.back() == '1';
+        else if (line == "music_lid=0" || line == "music_lid=1") result.music_lid = line.back() == '1';
         else if (line == "all_games=0" || line == "all_games=1") result.all_games = line.back() == '1';
         else if (line == "menu_music=0" || line == "menu_music=1") result.menu_music = line.back() == '1';
         else if (line.rfind("music_volume=", 0) == 0) {
@@ -827,6 +834,9 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
         else if (line == "extra_pictures=0" || line == "extra_pictures=1" || line == "extra_pictures=2" ||
                  line == "extra_pictures=3")
             result.extra_pictures = line.back() - '0';
+        // 3 is ScreenScraper, saved by name: an old numeric 3 was the account source this build once removed, and
+        // without its account it is Automatic again.
+        else if (line == "artwork_provider=screenscraper") result.artwork_provider = 3;
         else if (line == "artwork_provider=0" || line == "artwork_provider=1" || line == "artwork_provider=2" ||
                  line == "artwork_provider=3")
             result.artwork_provider = line.back() == '3' ? 0 : line.back() - '0';
@@ -906,7 +916,8 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "schema=1\nmenu_sounds=" << p.menu_sounds << "\nsound_volume=" << p.sound_volume
           << "\nanimations=" << p.animations << "\nview_animations=" << p.view_animations
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
-          << "\nlayout=" << p.layout << "\nartwork_provider=" << p.artwork_provider << "\ngame_info=" << p.game_info
+          << "\nlayout=" << p.layout << "\nartwork_provider="
+          << (p.artwork_provider == 3 ? std::string("screenscraper") : std::to_string(p.artwork_provider)) << "\ngame_info=" << p.game_info
           << "\nauto_scrape=" << p.auto_scrape << "\nextra_pictures=" << p.extra_pictures << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';
@@ -924,6 +935,8 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "menu_haptics=" << p.menu_haptics << "\nhaptic_strength=" << p.haptic_strength
           << "\ngame_rumble=" << p.game_rumble << "\nrumble_strength=" << p.rumble_strength << '\n';
     extra << "show_systems=" << p.show_systems << '\n';
+    if (p.music_player) extra << "music_player=1\n";
+    if (!p.music_lid) extra << "music_lid=0\n";
     extra << "all_games=" << p.all_games << '\n';
     extra.close();
     if (!extra) throw std::runtime_error("Cannot save UI preferences");

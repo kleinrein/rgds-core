@@ -11,6 +11,7 @@ Start with the [project README](../README.md).
 | [Artwork](SCREENSCRAPER.md) | Where covers come from and how matching works |
 | [PictoChat](PICTOCHAT.md) | The home-screen chat pad: rooms, drawing, Wi-Fi, security and tests |
 | [Menu sounds](MENU_SOUNDS.md) | The optional sound palette |
+| [Music](MUSIC.md) | The optional music player: formats, screens, visualisers, equaliser, Bluetooth and the lid |
 
 ## Developing
 

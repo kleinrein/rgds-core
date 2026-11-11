@@ -367,6 +367,7 @@ Finishing the system request	Menyelesaikan permintaan sistem
 Follow your default button layout	Ikuti tata letak tombol default
 Following the default controls.	Mengikuti kontrol global.
 Follows your library shader.	Mengikuti filter pustaka.
+For games without a stick: N64 and PSP keep it	Untuk game tanpa stik: N64 dan PSP tetap memakainya
 Forget this device?	Lupakan perangkat ini?
 FPS changed for this session. Settings storage is unavailable.	FPS diubah untuk sesi ini. Penyimpanan pengaturan tidak tersedia.
 FPS counter enabled.	Penghitung FPS aktif.
@@ -450,6 +451,14 @@ Green	Hijau
 Grey	Abu-abu
 Grey TV	TV abu-abu
 Grid	Kisi
+Left stick down	Stik kiri bawah
+Left stick left	Stik kiri kiri
+Left stick right	Stik kiri kanan
+Left stick up	Stik kiri atas
+Right stick down	Stik kanan bawah
+Right stick left	Stik kanan kiri
+Right stick right	Stik kanan kanan
+Right stick up	Stik kanan atas
 h	j
 Haptic strength	Kekuatan haptik
 Health	Kesehatan
@@ -563,6 +572,7 @@ Manage builds and temporary files	Kelola build dan file sementara
 Matches your accent	Sesuai warna aksen
 Matching title	Judul yang cocok
 Matching title saved. Choose Fetch artwork.	Judul yang cocok disimpan. Pilih Ambil sampul.
+Memory card problem	Masalah kartu memori
 Menu audio is unavailable on this device.	Audio menu tidak tersedia di perangkat ini.
 Menu effects	Efek menu
 Menu haptics	Haptik menu
@@ -644,6 +654,7 @@ Not yet	Belum
 Nothing played yet	Belum ada yang dimainkan
 Nothing to load	Tidak ada yang dimuat
 Nothing to load here yet.	Belum ada yang bisa dimuat di sini.
+Nothing you change now is kept.	Perubahan yang Anda buat sekarang tidak disimpan.
 Notification	Notifikasi
 Off	Mati
 Off (smooth)	Mati (mulus)
@@ -851,6 +862,7 @@ Screen brightness	Kecerahan layar
 Screen colours	Warna layar
 Menu	Menu
 Switch	Ganti
+Turn off and check the card on a computer.	Matikan dan periksa kartu di komputer.
 Turn off screen	Matikan layar
 screens	layar
 ScreenScraper needs project credentials and your account	ScreenScraper memerlukan kredensial proyek dan akun Anda
@@ -1189,6 +1201,7 @@ Your cartridges go here	Kartrid Anda ada di sini
 Your colour	Warna Anda
 Your DS library starts here	Pustaka DS Anda dimulai di sini
 Your games and saves are not touched.	Game dan simpanan Anda tidak tersentuh.
+Your games and saves could not be read.	Game dan simpanan Anda tidak dapat dibaca.
 Your home screen after powering on	Layar beranda setelah dinyalakan
 Your journey	Perjalananmu
 Your last game will appear here	Game terakhir Anda akan muncul di sini
@@ -1323,7 +1336,10 @@ That is not the PIN.	Itu bukan PIN-nya.
 Without one this profile is not locked. Cancel skips it.	Tanpa PIN profil ini tidak terkunci. Batal untuk melewati.
 The owner's PIN was removed.	PIN pemilik telah dihapus.
 Profile name	Nama profil
-Remove this profile? Its saves are kept, and a backup is made first.	Hapus profil ini? Simpanannya disimpan, dan cadangan dibuat lebih dulu.
+Remove this profile? Its saves are kept until you erase removed profiles.	Hapus profil ini? Simpanannya tetap ada sampai kamu menghapus profil yang dihapus.
+Back up its saves first	Cadangkan simpanannya dulu
+Removing the profile…	Menghapus profil…
+Profile removed.	Profil dihapus.
 Show every game with no rating on this shelf?	Tampilkan semua game tanpa rating di rak ini?
 Star	Bintang
 Heart	Hati
@@ -1376,3 +1392,89 @@ Systems page	Halaman sistem
 Games you play appear here	Game yang kamu mainkan muncul di sini
 Swipe up from the bottom for Home, in from a side for Back	Usap ke atas dari bawah untuk Beranda, dari samping untuk Kembali
 Swipe in from the left or right edge to go Back.	Usap dari tepi kiri atau kanan untuk Kembali.
+Music	Musik
+Songs	Lagu
+Albums	Album
+Artists	Artis
+Folders	Folder
+Lists	Daftar
+Queue	Antrean
+Equaliser	Ekualiser
+Visualiser	Visualisasi
+Now playing	Sedang diputar
+Shuffle	Acak
+Shuffle all	Acak semua
+Shuffle on	Acak aktif
+Shuffle off	Acak nonaktif
+Repeat off	Ulangi nonaktif
+Repeat all	Ulangi semua
+Repeat this song	Ulangi lagu ini
+Play next	Putar berikutnya
+Plays next	Diputar berikutnya
+Add to queue	Tambahkan ke antrean
+Added to the queue	Ditambahkan ke antrean
+Remove from queue	Hapus dari antrean
+Add to favourites	Tambahkan ke favorit
+Remove from favourites	Hapus dari favorit
+Added to favourites	Ditambahkan ke favorit
+Removed from favourites	Dihapus dari favorit
+Recently added	Baru ditambahkan
+Unknown artist	Artis tidak dikenal
+Various artists	Berbagai artis
+No music yet	Belum ada musik
+Nothing here	Tidak ada apa-apa di sini
+Nothing is playing	Tidak ada yang diputar
+The queue is empty	Antrean kosong
+Looking for music…	Mencari musik…
+Add your music	Tambahkan musik Anda
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Taruh musik Anda di folder music pada kartu: lewat berbagi file, atau sebagai drive USB.
+Speakers	Speaker
+Headphones	Headphone
+Playing	Memutar
+Skip	Lewati
+Tabs	Tab
+Flat	Datar
+Larger display	Tampilan lebih besar
+Smaller display	Tampilan lebih kecil
+Music player	Pemutar musik
+Play with the lid closed	Putar dengan penutup tertutup
+{0} song	{0} lagu
+{0} songs	{0} lagu
+{0} album	{0} album
+{0} albums	{0} album
+Bass boost	Penguat bas
+Treble boost	Penguat treble
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Klasik
+Electronic	Elektronik
+Hip-hop	Hip-hop
+Acoustic	Akustik
+Vocal	Vokal
+Small speakers	Speaker kecil
+Spectrum	Spektrum
+Oscilloscope	Osiloskop
+Fire	Api
+Plasma	Plasma
+Starfield	Medan bintang
+VU meters	Meter VU
+Vectorscope	Vektorskop
+Radial spectrum	Spektrum melingkar
+Waterfall	Air terjun
+Tunnel	Terowongan
+ScreenScraper account	Akun ScreenScraper
+Not signed in	Belum masuk
+Change account	Ganti akun
+Stop scraping before signing in	Hentikan pengambilan sebelum masuk
+Stop scraping before signing out	Hentikan pengambilan sebelum keluar
+Signed in to ScreenScraper as {0}.	Masuk ke ScreenScraper sebagai {0}.
+Signed out of ScreenScraper.	Keluar dari ScreenScraper.
+Signing in to ScreenScraper	Masuk ke ScreenScraper
+Enter your ScreenScraper username and password.	Masukkan nama pengguna dan kata sandi ScreenScraper.
+ScreenScraper is not configured for this build yet.	ScreenScraper belum disiapkan di versi ini.
+Sign in to ScreenScraper first.	Masuk ke ScreenScraper dulu.
+Check your ScreenScraper login.	Periksa login ScreenScraper Anda.
+ScreenScraper did not accept this login.	ScreenScraper tidak menerima login ini.
+Your daily ScreenScraper quota has been reached.	Kuota harian ScreenScraper Anda sudah habis.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Tidak dapat menjangkau ScreenScraper. Periksa Wi-Fi lalu coba lagi.

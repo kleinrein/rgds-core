@@ -38,6 +38,7 @@
 #include "launcher/game_info.hpp"
 #include "launcher/dual_screen.hpp"
 #include "launcher/pictochat_app.hpp"
+#include "launcher/music_ui.hpp"
 #include "platform/touch.hpp"
 #include "platform/uinput_pointer.hpp"
 #include "platform/scanout_mirror.hpp"
@@ -172,7 +173,7 @@ struct Options {
     bool rgds_os = false; // RG DS OS (RGDS_OS=1 from its session): no stock firmware beside us to boot into
     bool preview = false, probe = false, allow_launch = false, watch_assets = false, settings = false,
          game_menu = false, game_switcher = false, port_menu = false, home = false, library = false,
-         boot_warning = false, boot_startup = false, usb_drive_screen = false, first_run = false;
+         boot_warning = false, boot_startup = false, usb_drive_screen = false, first_run = false, card_problem = false;
     int frames = 0, seconds = 0, boot_ready_fd = -1;
     fs::path player; // the active profile's folder (launcher/profiles.hpp); data itself for the owner
     std::string top = "DSI-1", bottom = "DSI-2";
@@ -181,6 +182,7 @@ struct Options {
     std::string mode, font, section;
     std::vector<fs::path> roots;
     std::vector<std::pair<std::string, fs::path>> system_roots; // --system-dir gba=PATH: RG DS Play's games
+    std::vector<fs::path> music_dirs;                           // --music-dir PATH: where the music player looks
     fs::path game_rom;
     std::string game_system; // from the runtime, which also looks inside a .zip and at the folder
     std::string game_core = "dsperate";
@@ -343,11 +345,25 @@ class App {
     // frame when an input arrives. Idle frames never render offscreen.
     void capture_view_for_input(const SDL_Event& e);
     bool view_canvas_failed = false, view_seen = false;
-    std::tuple<int, bool, int, int, bool, std::string> last_view;
+    std::tuple<int, bool, int, int, bool, std::string, int> last_view;
     uint64_t view_transitions = 0, view_animation_frames = 0;
     void sync_view_motion(Uint32 now);
     // PictoChat is a level of its own over the page it was opened from, so opening and closing it travels.
-    int view_page() const { return int(settings.page) + (chat_open ? 1000 : 0); }
+    // So is the music player.
+    // The music player's own pages are levels of the same stack: a library level, then the player, then the queue
+    // or the equaliser, so going in travels forward and Back travels out, as between the launcher's pages.
+    int music_view_depth() const {
+        switch (mu.view) {
+        case MusicUi::View::Browse: return int(std::min<size_t>(std::max<size_t>(mu.levels.size(), 1) - 1, 40));
+        case MusicUi::View::Player: return 50;
+        case MusicUi::View::Queue: return 60;
+        case MusicUi::View::Equaliser: return 61;
+        }
+        return 0;
+    }
+    int view_page() const {
+        return int(settings.page) + (chat_open ? 1000 : 0) + (music_open ? 2000 + music_view_depth() : 0);
+    }
     struct SoundState {
         Page page;
         bool home, picker;
@@ -520,11 +536,13 @@ class App {
     }
     // Sound is a shared list: row 0 is the volume slider itself (Left and Right only act there); under it
     // Mute (1), Test microphone (2), Sounds & music (3) and Vibration (4).
+    // The launcher adds Music player (5) and, while that is on, Play with the lid closed (6).
     static constexpr int sound_track_x = 60, sound_track_width = 504;
+    int sound_row_count() const { return o.game_menu || probe ? 5 : preferences.music_player ? 7 : 6; }
     int list_count() const {
         switch (settings.page) {
         case Page::Settings: return 12;
-        case Page::Sound: return 5;
+        case Page::Sound: return sound_row_count();
         case Page::MenuSounds: return 5;
         case Page::Haptics: return 5;
         case Page::Cheats: return int(cheat_rows.size());
@@ -534,7 +552,7 @@ class App {
         case Page::LibraryOptions: return library_row_count();
         case Page::Appearance: return 6;
         case Page::DisplayOptions: return 5;
-        case Page::Scraper: return 6;
+        case Page::Scraper: return 7;
         case Page::DeviceInfo: return 5;
         case Page::System: return o.rgds_os ? 9 : 10; // last rows: Touch to continue, Run setup again
         case Page::GameOptions: return game_options_base() + (game_removable() ? 1 : 0) + (game_visibility_row() >= 0 ? 1 : 0);
@@ -549,7 +567,7 @@ class App {
         case Page::DSControls: return 6;
         case Page::EmulatorOptions: return 9;
         case Page::ShaderPicker: return int(shader_choices.size());
-        case Page::Controls: return 19;
+        case Page::Controls: return 27;
         case Page::Wifi:
             return std::max(
                 0, std::atoi(device_status.count("network_count") ? device_status.at("network_count").c_str() : "0"));
@@ -629,17 +647,21 @@ class App {
                                  0, list_max_scroll());
         dirty = true;
     }
-    // Home tiles: Settings, Games, Favourites, Recents, then the console's PictoChat.
-    static constexpr size_t home_count = 6, pictochat_tile = 4, last_played_tile = 5;
-    // The carousel shows five tiles; the DSi column adds the last played game.
-    size_t home_tiles() const {
-        return preferences.home_layout == 1 ? home_count : home_count - (pictochat_hidden() ? 2 : 1);
-    }
+    // Home tiles: Settings, Games, Favourites, Recents, then the console's PictoChat and, when Settings > Sound >
+    // Music player is on, Music. The two optional tiles take the places after Recents in that order, so a profile
+    // without PictoChat has Music in its place (music_tile). The DSi column adds the last played game.
+    static constexpr size_t home_count = 7, pictochat_tile = 4, last_played_tile = 6;
+    size_t home_shown() const { return 4 + (pictochat_hidden() ? 0 : 1) + (music_available() ? 1 : 0); }
+    size_t home_tiles() const { return preferences.home_layout == 1 ? home_count : home_shown(); }
     // A Kid profile without PictoChat has no tile for it; the carousel ends at Recents, the column widens Recents.
     bool pictochat_hidden() const;
+    size_t music_tile() const { return pictochat_hidden() ? 4 : 5; }
+    bool pictochat_at(size_t tile) const { return tile == pictochat_tile && !pictochat_hidden(); }
+    bool music_at(size_t tile) const { return music_available() && tile == music_tile(); }
     size_t home_fit(size_t index) const {
-        index = std::min(index, home_tiles() - 1);
-        return index == pictochat_tile && pictochat_hidden() ? 3 : index;
+        if (index < home_shown()) return index;
+        if (preferences.home_layout == 1) return index == last_played_tile ? index : 3;
+        return home_shown() - 1;
     }
     size_t navigation_count() const {
         return home_menu ? home_tiles() : systems_menu ? listed_systems.size() : model.games.size();
@@ -890,6 +912,7 @@ class App {
     size_t edit_cursor = 0;
     bool service_loaded = false;
     std::map<std::string, std::string> service;
+    std::string screenscraper_user; // signed in to ScreenScraper as this (scraper/account.ini), else empty
     bool pointer_down = false;
     enum class EdgeGesture { None, Bottom, Left, Right }; // Back answers from either side edge, as on phones
     EdgeGesture edge_gesture = EdgeGesture::None;
@@ -1480,6 +1503,13 @@ class App {
         return worker <= 0 || worker_action == "device.info" || worker_action == "device.update-auto" ||
                worker_action == "index";
     }
+    // Powering off or restarting cuts any other worker short, as the system's own shutdown would, except one that
+    // writes the system itself.
+    bool worker_stops_for_shutdown() const {
+        return worker <= 0 || (worker_action != "device.update-apply" && worker_action != "device.rollback" &&
+                               worker_action != "device.poweroff" && worker_action != "device.reboot");
+    }
+    void request_shutdown(const std::string& kind);
     void stop_worker();
     Uint32 worker_finished_at = 0;
     void poll_service(Uint32 now);
@@ -1543,6 +1573,10 @@ class App {
             "Down", "Left", "Right", "L2", "R2", "Left stick", "Right stick", "Unassigned"};
         return source >= 0 && source < int(labels.size()) ? labels[source] : "Unassigned";
     }
+    // Controls rows 19-26: what each stick direction presses in systems without a stick.
+    static constexpr std::array<const char*, 8> stick_row_names = {
+        "Left stick up",  "Left stick down",  "Left stick left",  "Left stick right",
+        "Right stick up", "Right stick down", "Right stick left", "Right stick right"};
     void load_controls_editor();
     void open_controls(bool per_game, Page parent = Page::Settings);
     void close_controls();
@@ -1690,7 +1724,8 @@ class App {
     std::string profile_editing;
     Page picker_return = Page::Library;
     bool picker_at_boot = false, look_follows_player = false, new_profile_restricted = false, profile_removing = false,
-         new_profile_flow = false, visibility_loading = false, visibility_changed = false, profile_erasing = false;
+         new_profile_flow = false, visibility_loading = false, visibility_changed = false, profile_erasing = false,
+         profile_remove_backup = false; // the Back up first switch on the removal question
     VisibilityRules active_rules, games_rules;
     CatalogReader visibility_reader, games_reader;
     std::vector<Game> catalog_games;           // before the rules; all_games is what this player sees
@@ -1968,6 +2003,7 @@ class App {
         case SettingsIcon::Controller: return "controls";
         case SettingsIcon::Shutdown: return "shutdown";
         case SettingsIcon::Chat: return "pictochat";
+        case SettingsIcon::Music: return "music";
         default: return nullptr;
         }
     }
@@ -2440,18 +2476,19 @@ class App {
     };
     std::vector<HomeTile> home_column_tiles() const {
         // Every edge sits on a rule of the lower screen's 20 px grid (rules at 19-20, 39-40, ...).
-        if (pictochat_hidden())
-            return {{{20, 20, 600, 80}, last_played_tile},
-                    {{20, 120, 280, 80}, 1},
-                    {{340, 120, 280, 80}, 2},
-                    {{20, 220, 600, 80}, 3},
-                    {{20, 320, 600, 60}, 0}};
-        return {{{20, 20, 600, 80}, last_played_tile},
-                {{20, 120, 280, 80}, 1},
-                {{340, 120, 280, 80}, 2},
-                {{20, 220, 280, 80}, 3},
-                {{340, 220, 280, 80}, pictochat_tile},
-                {{20, 320, 600, 60}, 0}};
+        // Without PictoChat, Music takes its place beside Recents; with both, Music shares the last row with
+        // Settings.
+        const bool chat = !pictochat_hidden(), songs = music_available();
+        std::vector<HomeTile> tiles = {{{20, 20, 600, 80}, last_played_tile}, {{20, 120, 280, 80}, 1}, {{340, 120, 280, 80}, 2}};
+        if (chat || songs) {
+            tiles.push_back({{20, 220, 280, 80}, 3});
+            tiles.push_back({{340, 220, 280, 80}, chat ? pictochat_tile : music_tile()});
+        } else tiles.push_back({{20, 220, 600, 80}, 3});
+        if (chat && songs) {
+            tiles.push_back({{20, 320, 280, 60}, 0});
+            tiles.push_back({{340, 320, 280, 60}, music_tile()});
+        } else tiles.push_back({{20, 320, 600, 60}, 0});
+        return tiles;
     }
     static constexpr SDL_Rect home_bar_chip{108, 420, 164, 48}, home_bar_left{20, 420, 80, 48},
                               home_bar_right{540, 420, 80, 48},
@@ -2671,6 +2708,23 @@ class App {
         rounded.clear();
         media.clear();
         shader_preview.clear();
+        // Every texture dies with its renderer below. A cache that kept its pointer would find it again under the
+        // next renderer, which often gets the same address, and draw into whatever texture took the freed slot:
+        // after a game, the Music visualiser's frame overwrote the 24 px font atlas.
+        const auto drop = [&](auto& cache) {
+            for (auto& entry : cache)
+                if (entry.second) s.DestroyTexture(entry.second);
+            cache.clear();
+        };
+        drop(arc_textures);
+        drop(music_glyph_textures);
+        drop(music_display_textures);
+        drop(chat_cards);
+        drop(chat_pads);
+        drop(chat_sheets);
+        if (port_mirror_texture) s.DestroyTexture(port_mirror_texture);
+        port_mirror_texture = nullptr;
+        port_mirror_shown = false;
         for (auto* j : joysticks) s.JoystickClose(j);
         joysticks.clear();
         mainline_pads.clear();
@@ -2794,6 +2848,75 @@ class App {
     pictochat::Chat chat;
     ChatGlyphs chat_glyphs{*this, rounded};
     bool chat_open = false;
+    // ---- Music (music_screen.hpp): the player Settings > Sound > Music player adds to Home. A level of its own
+    // over Home, like PictoChat; the sound is the engine's, a process of its own (music_client.hpp).
+    MusicClient music;
+    MusicUi mu;
+    bool music_open = false, music_ready = false;
+    std::map<std::tuple<SDL_Renderer*, int, int>, SDL_Texture*> music_glyph_textures;
+    std::map<SDL_Renderer*, SDL_Texture*> music_display_textures;
+    bool music_available() const; // the setting is on, and this is the launcher itself (not a game's menu)
+    void music_setup();           // folders and what was saved, once
+    void open_music();
+    void close_music();
+    void music_pause(); // a game starts, the handheld goes to sleep
+    // True while a song plays under a closed lid (Settings > Sound > Play with the lid closed): the caller then
+    // leaves the handheld awake, and this keeps the panels dark.
+    bool music_lid_hold(std::optional<bool> closed, Uint32 now);
+    bool music_tick(Uint32 now);
+    bool music_bottom_still(Uint32 now);
+    int music_badge_phase(Uint32 now) const;
+    void music_switched();
+    int drawn_badge_phase = -1;
+    void music_badge(SDL_Renderer* r, int y, int right);
+    std::string music_home_note();
+    std::string music_time(int64_t ms) const;
+    std::string music_count(size_t count, const char* one, const char* many);
+    std::string music_format_line();
+    void music_toast(const std::string& text);
+    void music_glyph(SDL_Renderer* r, MusicGlyph glyph, int cx, int cy, int size, Color ink, int alpha = 255);
+    void music_art(SDL_Renderer* r, const std::string& key, SDL_Rect box, int radius, MusicGlyph stand_in);
+    MusicLevel& music_level();
+    void music_build(MusicLevel& level);
+    std::vector<int> music_level_tracks(const MusicLevel& level);
+    std::vector<int> music_row_tracks(const MusicRow& row);
+    void music_set_tab(int tab);
+    int music_tab_width();
+    void music_show(MusicUi::View view);
+    int music_rows();
+    int& music_focus();
+    int& music_scroll();
+    int music_max_scroll();
+    void music_move_focus(int delta);
+    void music_activate(int index);
+    void music_row_options(int index);
+    bool music_back();
+    void music_display(SDL_Renderer* r, int x, int y, int w, int h, bool curve);
+    void music_progress(SDL_Renderer* r, int x, int y, int w, int64_t position, int64_t duration, bool knob);
+    void music_top(SDL_Renderer* r, int y);
+    void music_home_top(SDL_Renderer* r, int y);
+    void music_header(SDL_Renderer* r, int y, const std::string& title, bool translate, int width);
+    void music_tool(SDL_Renderer* r, int x, int y, MusicGlyph glyph, bool pressed, bool lit);
+    void music_playing_mark(SDL_Renderer* r, int cx, int cy, Color ink);
+    void music_row(SDL_Renderer* r, int x, int top, const MusicRow& row, bool focused, bool playing, bool pressed);
+    void music_list(SDL_Renderer* r, int y, const std::vector<MusicRow>& rows, int focus, int scroll, int playing_row);
+    void music_mini(SDL_Renderer* r, int y);
+    void music_browse(SDL_Renderer* r, int y);
+    void music_queue(SDL_Renderer* r, int y);
+    void music_player(SDL_Renderer* r, int y);
+    void music_equaliser(SDL_Renderer* r, int y);
+    void music_bottom(SDL_Renderer* r, int y);
+    void music_set_gain(int band, float gain);
+    void music_step_preset(int delta);
+    void music_next_visualiser();
+    void music_choose_visualiser();
+    void music_toggle_favourite();
+    void music_action(int code);
+    int music_button_at(int x, int y);
+    void music_button(int button);
+    void music_press(int x, int y);
+    void music_drag(int x, int y);
+    void music_release(int x, int y);
     int chat_focus = 0; // the lobby row a controller would open (4 is the profile)
     int chat_shoulder = 0;
     Uint32 chat_shoulder_at = 0; // L (+1, older) or R (-1, newer) held on a controller
@@ -3065,6 +3188,7 @@ public:
 #include "launcher/run_loop.hpp"
 #include "launcher/update_banner.hpp"
 #include "launcher/pictochat_screen.hpp"
+#include "launcher/music_screen.hpp"
 #include "launcher/panels.hpp"
 #include "launcher/home_screen.hpp"
 #include "launcher/library_screen.hpp"
@@ -3189,6 +3313,8 @@ int main(int argc, char** argv) {
             else if (arg == "--library") o.library = true;
             else if (arg == "--boot-warning") o.boot_warning = true;
             else if (arg == "--usb-drive-screen") o.usb_drive_screen = o.boot_warning = true;
+            // RG DS OS: the data partition could not be mounted (usr/libexec/rgds/session)
+            else if (arg == "--card-problem") o.card_problem = o.boot_warning = true;
             else if (arg == "--boot-startup") o.boot_startup = true;
             else if (arg == "--first-run") o.first_run = true;
             else if (arg == "--boot-ready-fd") {
@@ -3211,6 +3337,7 @@ int main(int argc, char** argv) {
             else if (arg == "--theme") o.theme = value();
             else if (arg == "--screenshot") o.screenshot = value();
             else if (arg == "--rom-dir") o.roots.emplace_back(value());
+            else if (arg == "--music-dir") o.music_dirs.emplace_back(value());
             else if (arg == "--system-dir") {
                 const std::string entry = value();
                 const auto eq = entry.find('=');

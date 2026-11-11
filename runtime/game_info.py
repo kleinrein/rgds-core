@@ -209,6 +209,10 @@ class GameInfo:
         self.names = {}  # system -> {crc: No-Intro name}
         self.indexes = {}  # (system, kind) -> picture names
 
+    def supports(self, system):
+        """Whether this source has anything for a system's games."""
+        return system == "nds" or system in art.CATALOGS
+
     # --- skipping -----------------------------------------------------------------------------------------------
     def needs(self, item, kind, force):
         if force: return True
@@ -412,7 +416,7 @@ class GameInfo:
             try:
                 if system is None:
                     system, name, code = art.rom_identity(rom)
-                if system != "nds" and system not in art.CATALOGS: raise NotFound("No public catalog for this system.")
+                if not self.supports(system): raise NotFound("No public catalog for this system.")
                 if kind == "info":
                     fields, synopses, provider = self.information(rom, system, code)
                     self.save_information(item, fields, synopses, provider)

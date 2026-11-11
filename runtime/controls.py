@@ -22,6 +22,18 @@ JOYSTICK = {
     11: "r2",
     12: "r3"
 }
+# The analog sticks as buttons in systems without a stick (RG DS Play): each direction presses a logical button.
+STICK = {
+    "stick_left_up": "up",
+    "stick_left_down": "down",
+    "stick_left_left": "left",
+    "stick_left_right": "right",
+    "stick_right_up": "none",
+    "stick_right_down": "none",
+    "stick_right_left": "none",
+    "stick_right_right": "none"
+}
+STICK_TARGETS = (*LOGICAL, "none")
 MODES = ("anbernic", "start+menu", "startthenmenu")
 ACTIONS = ("menu", "home")
 
@@ -78,7 +90,8 @@ def preset(name="default"):
         **{
             "bind_" + key: value
             for key, value in mapping.items()
-        }
+        },
+        **STICK
     )
 
 
@@ -93,6 +106,8 @@ def merge(profile, fields):
     for logical in LOGICAL:
         key = "bind_" + logical
         if fields.get(key) in SOURCES: profile[key] = fields[key]
+    for key in STICK:
+        if fields.get(key) in STICK_TARGETS: profile[key] = fields[key]
     if fields.get("shortcut") in MODES: profile["shortcut"] = fields["shortcut"]
     if fields.get("shortcut_action") in ACTIONS: profile["shortcut_action"] = fields["shortcut_action"]
     if fields.get("fast_forward_button") in SOURCES: profile["fast_forward_button"] = fields["fast_forward_button"]
@@ -121,6 +136,7 @@ def save_profile(data, fields, rom=None):
             raise ValueError("Unknown control preset")
         if key.startswith("bind_") and (key[5:] not in LOGICAL or value not in SOURCES):
             raise ValueError("Unknown control binding")
+        if key in STICK and value not in STICK_TARGETS: raise ValueError("Unknown stick binding")
         if key == "shortcut" and value not in MODES: raise ValueError("Unknown menu shortcut")
         if key == "shortcut_action" and value not in ACTIONS: raise ValueError("Unknown shortcut action")
         if key == "fast_forward_button" and value not in SOURCES: raise ValueError("Unknown fast-forward button")

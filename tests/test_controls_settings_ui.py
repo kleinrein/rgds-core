@@ -93,6 +93,18 @@ class ControlsSettingsUITests(unittest.TestCase):
         self.run_ui('50 key Down\n100 key A\n', restore=True)
         self.assertEqual(self.fields(self.data / 'controls.ini')['fast_forward_mode'], 'toggle')
 
+    def test_stick_rows_step_through_buttons_and_persist(self):
+        self.state.write_text('1 0 1 ""\n25 6 19\ncontrols 0 1\n')
+        self.run_ui('50 key Right\n', restore=True)
+        fields = self.fields(self.data / 'controls.ini')
+        self.assertEqual((fields['stick_left_up'], fields['stick_left_down']), ('down', 'down'))
+        self.assertEqual(fields['stick_right_up'], 'none')
+        self.state.write_text('1 0 1 ""\n25 6 23\ncontrols 0 1\n')
+        self.run_ui('50 key Right\n100 key Down\n150 key Left\n', restore=True)
+        fields = self.fields(self.data / 'controls.ini')
+        self.assertEqual((fields['stick_right_up'], fields['stick_right_down']), ('a', 'right'))
+        self.assertEqual(fields['bind_a'], 'a')  # the buttons themselves are untouched
+
     def test_lost_focus_cancels_capture_without_assigning_a_later_button(self):
         report, _ = self.run_ui(self.to_a() + '300 focus-lost\n340 joy-down 1\n360 joy-up 1\n')
         self.assertFalse((self.data / 'controls.ini').exists())

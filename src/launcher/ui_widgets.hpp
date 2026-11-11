@@ -67,16 +67,16 @@ void App::start_frame(SDL_Renderer* r, int x, int row, int tile, const std::stri
 }
 
 std::string App::category_title(size_t index) {
-    static const std::array<std::string, home_count> titles = {"Settings", "Games",     "Favourites",
-                                                               "Recents",  "PictoChat", "Last played"};
-    return titles.at(index);
+    static const std::array<std::string, home_count> titles = {"Settings",  "Games", "Favourites", "Recents",
+                                                               "PictoChat", "Music", "Last played"};
+    return music_at(index) ? "Music" : titles.at(index);
 }
 
 void App::category_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
-    static const std::array<SettingsIcon, home_count> symbols = {SettingsIcon::Sliders, SettingsIcon::Cartridge,
-                                                                 SettingsIcon::Heart,   SettingsIcon::Clock,
-                                                                 SettingsIcon::Chat,    SettingsIcon::Play};
-    ui_icon(r, symbols.at(index), x + size / 2, y + size / 2, size, "accent");
+    static const std::array<SettingsIcon, home_count> symbols = {
+        SettingsIcon::Sliders, SettingsIcon::Cartridge, SettingsIcon::Heart, SettingsIcon::Clock,
+        SettingsIcon::Chat,    SettingsIcon::Music,     SettingsIcon::Play};
+    ui_icon(r, music_at(index) ? SettingsIcon::Music : symbols.at(index), x + size / 2, y + size / 2, size, "accent");
 }
 
 void App::settings_footer(SDL_Renderer* r, int y) {
@@ -129,7 +129,8 @@ void App::settings_footer(SDL_Renderer* r, int y) {
         : settings.page == Page::Cheats     ? (cheat_view == CheatView::Groups ? "Open" : "Toggle")
         : settings.page == Page::Settings   ? "Open"
         : settings.page == Page::DeviceInfo ? "View"
-        : settings.page == Page::Sound      ? (settings.focus >= 3            ? "Open"
+        : settings.page == Page::Sound      ? (settings.focus >= 5            ? "Toggle"
+                                               : settings.focus >= 3          ? "Open"
                                                : settings.focus == 2          ? "Test"
                                                : hardware.volume_percent == 0 ? "Unmute"
                                                                               : "Mute")

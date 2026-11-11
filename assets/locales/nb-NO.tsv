@@ -367,6 +367,7 @@ Finishing the system request	Fullfører systemhandlingen
 Follow your default button layout	Følg standardoppsettet ditt
 Following the default controls.	Bruker standardkontrollene dine.
 Follows your library shader.	Følger biblioteksfilteret ditt.
+For games without a stick: N64 and PSP keep it	For spill uten spak: N64 og PSP beholder den
 Forget this device?	Glemme denne enheten?
 FPS changed for this session. Settings storage is unavailable.	Bildefrekvensvisning endret for denne økten. Innstillingene kan ikke lagres.
 FPS counter enabled.	Bildefrekvensvisning aktivert.
@@ -450,6 +451,14 @@ Green	Grønn
 Grey	Grå
 Grey TV	Grå TV
 Grid	Rutenett
+Left stick down	Venstre spak ned
+Left stick left	Venstre spak venstre
+Left stick right	Venstre spak høyre
+Left stick up	Venstre spak opp
+Right stick down	Høyre spak ned
+Right stick left	Høyre spak venstre
+Right stick right	Høyre spak høyre
+Right stick up	Høyre spak opp
 h	t
 Haptic strength	Haptisk styrke
 Health	Helse
@@ -563,6 +572,7 @@ Manage builds and temporary files	Administrer versjoner og midlertidige filer
 Matches your accent	Følger aksentfargen
 Matching title	Tittel for bildesøk
 Matching title saved. Choose Fetch artwork.	Søketittel lagret. Velg Hent bilder.
+Memory card problem	Problem med minnekortet
 Menu audio is unavailable on this device.	Menylyd er utilgjengelig på denne enheten.
 Menu effects	Menyeffekter
 Menu haptics	Menyhaptikk
@@ -644,6 +654,7 @@ Not yet	Ikke ennå
 Nothing played yet	Ingenting spilt ennå
 Nothing to load	Ingenting å laste
 Nothing to load here yet.	Ingenting å laste her ennå.
+Nothing you change now is kept.	Ingenting du endrer nå, blir lagret.
 Notification	Varsel
 Off	Av
 Off (smooth)	Av (jevn bevegelse)
@@ -851,6 +862,7 @@ Screen brightness	Lysstyrke
 Screen colours	Skjermfarger
 Menu	Meny
 Switch	Bytt
+Turn off and check the card on a computer.	Slå av og sjekk kortet på en datamaskin.
 Turn off screen	Slå av skjermen
 screens	skjermer
 ScreenScraper needs project credentials and your account	ScreenScraper trenger prosjektnøkler og kontoen din
@@ -1189,6 +1201,7 @@ Your cartridges go here	Spillkortene dine vises her
 Your colour	Din farge
 Your DS library starts here	DS-biblioteket ditt starter her
 Your games and saves are not touched.	Spillene og lagringene dine blir ikke rørt.
+Your games and saves could not be read.	Spillene og lagringene dine kunne ikke leses.
 Your home screen after powering on	Hovedmenyen etter oppstart
 Your journey	Reisen din
 Your last game will appear here	Siste spill vises her
@@ -1323,7 +1336,10 @@ That is not the PIN.	Det er ikke PIN-koden.
 Without one this profile is not locked. Cancel skips it.	Uten en er ikke profilen låst. Avbryt hopper over.
 The owner's PIN was removed.	Eierens PIN-kode er fjernet.
 Profile name	Profilnavn
-Remove this profile? Its saves are kept, and a backup is made first.	Fjerne denne profilen? De lagrede spillene beholdes, og det tas først en sikkerhetskopi.
+Remove this profile? Its saves are kept until you erase removed profiles.	Fjerne denne profilen? De lagrede spillene beholdes til du sletter fjernede profiler.
+Back up its saves first	Ta sikkerhetskopi av lagringene først
+Removing the profile…	Fjerner profilen…
+Profile removed.	Profilen er fjernet.
 Show every game with no rating on this shelf?	Vise alle spill uten aldersmerking på denne hyllen?
 Star	Stjerne
 Heart	Hjerte
@@ -1376,3 +1392,89 @@ Systems page	Systemsiden
 Games you play appear here	Spill du spiller, vises her
 Swipe up from the bottom for Home, in from a side for Back	Sveip opp fra bunnen for Hjem, inn fra en side for Tilbake
 Swipe in from the left or right edge to go Back.	Sveip inn fra venstre eller høyre kant for å gå tilbake.
+Music	Musikk
+Songs	Sanger
+Albums	Album
+Artists	Artister
+Folders	Mapper
+Lists	Lister
+Queue	Kø
+Equaliser	Equalizer
+Visualiser	Visualisering
+Now playing	Spilles nå
+Shuffle	Tilfeldig
+Shuffle all	Alle i tilfeldig rekkefølge
+Shuffle on	Tilfeldig på
+Shuffle off	Tilfeldig av
+Repeat off	Gjenta av
+Repeat all	Gjenta alle
+Repeat this song	Gjenta denne sangen
+Play next	Spill som neste
+Plays next	Spilles som neste
+Add to queue	Legg til i køen
+Added to the queue	Lagt til i køen
+Remove from queue	Fjern fra køen
+Add to favourites	Legg til i favoritter
+Remove from favourites	Fjern fra favoritter
+Added to favourites	Lagt til i favoritter
+Removed from favourites	Fjernet fra favoritter
+Recently added	Nylig lagt til
+Unknown artist	Ukjent artist
+Various artists	Diverse artister
+No music yet	Ingen musikk ennå
+Nothing here	Ingenting her
+Nothing is playing	Ingenting spilles
+The queue is empty	Køen er tom
+Looking for music…	Leter etter musikk…
+Add your music	Legg til musikken din
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Legg musikken din i mappen music på kortet: med fildeling eller som USB-stasjon.
+Speakers	Høyttalere
+Headphones	Hodetelefoner
+Playing	Spiller
+Skip	Hopp
+Tabs	Faner
+Flat	Flat
+Larger display	Større skjerm
+Smaller display	Mindre skjerm
+Music player	Musikkspiller
+Play with the lid closed	Spill med lokket lukket
+{0} song	{0} sang
+{0} songs	{0} sanger
+{0} album	{0} album
+{0} albums	{0} album
+Bass boost	Mer bass
+Treble boost	Mer diskant
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Klassisk
+Electronic	Elektronisk
+Hip-hop	Hiphop
+Acoustic	Akustisk
+Vocal	Vokal
+Small speakers	Små høyttalere
+Spectrum	Spektrum
+Oscilloscope	Oscilloskop
+Fire	Ild
+Plasma	Plasma
+Starfield	Stjernefelt
+VU meters	VU-målere
+Vectorscope	Vektorskop
+Radial spectrum	Rundt spektrum
+Waterfall	Foss
+Tunnel	Tunnel
+ScreenScraper account	ScreenScraper-konto
+Not signed in	Ikke logget inn
+Change account	Bytt konto
+Stop scraping before signing in	Stopp skrapingen før du logger inn
+Stop scraping before signing out	Stopp skrapingen før du logger ut
+Signed in to ScreenScraper as {0}.	Logget inn på ScreenScraper som {0}.
+Signed out of ScreenScraper.	Logget ut av ScreenScraper.
+Signing in to ScreenScraper	Logger inn på ScreenScraper
+Enter your ScreenScraper username and password.	Skriv inn brukernavn og passord for ScreenScraper.
+ScreenScraper is not configured for this build yet.	ScreenScraper er ikke satt opp i denne versjonen ennå.
+Sign in to ScreenScraper first.	Logg inn på ScreenScraper først.
+Check your ScreenScraper login.	Sjekk ScreenScraper-innloggingen.
+ScreenScraper did not accept this login.	ScreenScraper godtok ikke denne innloggingen.
+Your daily ScreenScraper quota has been reached.	Den daglige ScreenScraper-kvoten er brukt opp.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Får ikke kontakt med ScreenScraper. Sjekk Wi-Fi og prøv igjen.

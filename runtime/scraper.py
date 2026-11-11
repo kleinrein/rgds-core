@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Background artwork service using public, account-free providers."""
+"""Background artwork service: the public, account-free catalogs, or ScreenScraper with your own account."""
 import argparse
 import ctypes
 import ctypes.util
@@ -76,13 +76,18 @@ def read_private(path):
 
 
 def credentials(folder, account=None):
-    app = read_private(folder / "screenscraper-app.json")
+    # This build's developer credentials: the environment, the private folder, or a file the release ships beside
+    # this script (never in the public repository: .gitignore).
+    app = read_private(folder / "screenscraper-app.json"
+                       ) or read_private(Path(__file__).with_name("screenscraper-app.json"))
     app = {
         "devid": os.environ.get("SCREENSCRAPER_DEVID", app.get("devid", "")),
         "devpassword": os.environ.get("SCREENSCRAPER_DEVPASSWORD", app.get("devpassword", ""))
     }
     if not all(isinstance(v, str) and v for v in app.values()):
         raise ScraperError("ScreenScraper is not configured for this build yet.")
+    if account is not None and not all(isinstance(account.get(k), str) and account[k] for k in ("ssid", "sspassword")):
+        raise ScraperError("Enter your ScreenScraper username and password.")
     user = account if account is not None else read_private(folder / "screenscraper-account.json")
     if not all(isinstance(user.get(k), str) and user[k] for k in ("ssid", "sspassword")):
         raise ScraperError("Sign in to ScreenScraper first.")
@@ -93,7 +98,7 @@ class Client:
     def __init__(self, auth, opener=None):
         self.auth = auth
         self.opener = opener or urllib.request.build_opener(ServiceRedirect()).open
-        self.interval = 2.0
+        self.interval = 1.0  # until the login says what this account may ask for
         self.next_request = 0.0
 
     def request(self, endpoint, params=None, media=False):
@@ -124,9 +129,9 @@ class Client:
                 431: "ScreenScraper's daily unknown-game quota has been reached.",
                 503: "ScreenScraper is temporarily unavailable."
             }
-            raise ScraperError(
-                message.get(error.code, "ScreenScraper request failed (HTTP %d)." % error.code)
-            ) from None
+            failure = ScraperError(message.get(error.code, "ScreenScraper request failed (HTTP %d)." % error.code))
+            failure.status = error.code
+            raise failure from None
         except (urllib.error.URLError, TimeoutError, OSError):
             raise ScraperError("Could not reach ScreenScraper. Check Wi-Fi and try again.") from None
         finally:
@@ -149,7 +154,7 @@ class Client:
             raise ScraperError("ScreenScraper did not accept this login.")
         try:
             quota = int(user.get("maxrequestspermin", 30))
-            self.interval = max(2.0, 60.0 / max(1, quota))
+            self.interval = 60.0 / max(1, quota)
         except (ValueError, TypeError):
             pass
         return user
@@ -441,6 +446,8 @@ def scrape(data, client, roms, force=False, extras=None):
             completed += 1
         message = "%d / %d covers available." % (cached + downloaded, total)
         if missing or failed: message += " %d unmatched, %d to retry." % (missing, failed)
+        if getattr(client, "stopped", ""):
+            message += " ScreenScraper stopped (%s) and the public catalogs did the rest." % client.stopped.rstrip(".")
         publish("done", message)
     except KeyboardInterrupt:
         publish("cancelled", "Stopped. %d / %d games checked; fetch missing artwork to continue." % (completed, total))
@@ -460,9 +467,13 @@ def scrape(data, client, roms, force=False, extras=None):
         pending.replace(folder / "report.json")
 
 
+def publish_status(path, message):
+    write_fields(path, {"state": "signing_in", "message": message}, durable=False)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("status", "scrape", "index"))
+    parser.add_argument("action", choices=("status", "scrape", "index", "login", "logout"))
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--private-dir", type=Path)
     parser.add_argument("--rom-dir", type=Path, action="append", default=[])
@@ -470,13 +481,29 @@ def main():
     parser.add_argument("--stdin", action="store_true")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--rom", type=Path, help="Fetch one game without scanning the library")
-    parser.add_argument("--provider", choices=("auto", "gametdb", "libretro"), default="auto")
+    parser.add_argument("--provider", choices=("auto", "gametdb", "libretro", "screenscraper"), default="auto")
     parser.add_argument("--extras", default="", help="Comma list of info, snap, title: game information and pictures")
     args = parser.parse_args()
     folder = args.private_dir or private_root(args.data)
     status = args.data / "scraper/status.ini"
     try:
-        if args.action == "index":
+        if args.action == "login":
+            # {"ssid": ..., "sspassword": ...} on stdin, never on the command line where ps would show it.
+            try:
+                account = json.loads(sys.stdin.read(4096) or "{}")
+            except ValueError:
+                account = {}
+            account = {k: account.get(k) for k in ("ssid", "sspassword")} if isinstance(account, dict) else {}
+            user = Client(credentials(folder, account)).login()
+            save_private(folder / "screenscraper-account.json", account)
+            name = str(user.get("id") or account["ssid"])
+            write_fields(args.data / "scraper/account.ini", {"user": name})
+            write_fields(status, {"state": "ready", "message": "Signed in to ScreenScraper as %s." % name})
+        elif args.action == "logout":
+            (folder / "screenscraper-account.json").unlink(missing_ok=True)
+            (args.data / "scraper/account.ini").unlink(missing_ok=True)
+            write_fields(status, {"state": "ready", "message": "Signed out of ScreenScraper."})
+        elif args.action == "index":
             for rom in games(args.rom_dir):
                 index_banner(args.data, rom)
         elif args.action == "status":
@@ -494,16 +521,22 @@ def main():
             (args.data / "scraper/cancel").unlink(missing_ok=True)
             from public_artwork import PublicClient
             client = PublicClient(
-                args.provider,
+                "auto" if args.provider == "screenscraper" else args.provider,
                 cache=args.data / "scraper/catalogs",
                 cancelled=lambda: (args.data / "scraper/cancel").exists()
             )
             roms = [args.rom.resolve()] if args.rom else games(args.rom_dir) + system_games(args.system_dir)
             extras = None
+            info = None
+            if args.provider == "screenscraper":
+                import screenscraper
+                publish_status(status, "Signing in to ScreenScraper")
+                client = screenscraper.open_client(credentials(folder), client)
+                info = screenscraper.ScreenScraperInfo
             if args.extras:
                 from game_info import GameInfo, parse_kinds
                 kinds = parse_kinds(args.extras)
-                extras = GameInfo(client, kinds) if kinds else None
+                extras = (info or GameInfo)(client, kinds) if kinds else None
             scrape(args.data, client, roms, args.force, extras)
         return 0
     except KeyboardInterrupt:

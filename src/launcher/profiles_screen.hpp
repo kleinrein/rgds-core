@@ -45,6 +45,8 @@ void App::apply_profile() {
         summary_ready = false;
         library_summary.request(o.data, all_games);
     }
+    if (!preferences.music_player && music_open) close_music();
+    music_switched(); // a profile with the player off stops the song another left playing
     home_selected = home_fit(home_selected);
     carousel.reset(navigation_selected());
     configure_sounds();
@@ -399,11 +401,11 @@ void App::profiles_screen(SDL_Renderer* r, int y) {
 }
 
 void App::profiles_top(SDL_Renderer* r, int y) {
-    if (profile_removing) { // the backup comes first, and takes a minute or more
+    if (profile_removing) { // a backup, when asked for, comes first
         const int top = y + top_card_y + (top_card_h - 240) / 2;
         settings_card(r, 24, top, 592, 240);
         busy_ring(r, 320, top + 90, 26, 4);
-        const char* text = "Backing up your saves…";
+        const char* text = profile_remove_backup ? "Backing up your saves…" : "Removing the profile…";
         label(r, text, 320 - label_width(locale.text(text), 20, false) / 2, top + 150, 20, "ink", 544);
         return;
     }
@@ -431,13 +433,13 @@ const Profile* App::edited_profile() const {
 std::vector<int> App::profile_edit_rows() const {
     // Who it's for 0, Name 1, DS name 2, Picture 3, Colour 4, Language 18, Age limit 6, No rating 7, Games 8, Games opens 17,
     // Ports 9,
-    // Homebrew 10, PictoChat 11, Cheats 12, Local wireless 13, PIN 14, Remove the PIN 15, Erase removed 16, Remove 5: the
-    // numbers stay, the order is what reads best.
+    // Homebrew 10, PictoChat 11, Music player 19, Cheats 12, Local wireless 13, PIN 14, Remove the PIN 15, Erase removed
+    // 16, Remove 5: the numbers stay, the order is what reads best.
     const auto* profile = edited_profile();
     std::vector<int> rows;
-    if (profile && profile->owner()) rows = {1, 2, 3, 4, 18, 8, 17, 14};
-    else if (profile && !profile->restricted) rows = {0, 1, 2, 3, 4, 18, 6, 7, 8, 17, 14};
-    else rows = {0, 1, 2, 3, 4, 18, 6, 7, 8, 17, 9, 10, 11, 12, 13, 14};
+    if (profile && profile->owner()) rows = {1, 2, 3, 4, 18, 8, 17, 14}; // the owner's own is in Settings > Sound
+    else if (profile && !profile->restricted) rows = {0, 1, 2, 3, 4, 18, 6, 7, 8, 17, 19, 14};
+    else rows = {0, 1, 2, 3, 4, 18, 6, 7, 8, 17, 9, 10, 11, 19, 12, 13, 14};
     if (profile && !profile->pin.empty()) rows.push_back(15);
     if (profile && profile->owner() && profiles.removed_count() > 0) rows.push_back(16);
     if (!profile || !profile->owner()) rows.push_back(5);
@@ -489,6 +491,15 @@ void App::profile_edit_activate(int row) {
     } else if (row == 11) {
         changed.allow_pictochat = !changed.allow_pictochat;
         save();
+    } else if (row == 19) {
+        // The profile's own Music player switch (Settings > Sound), set from here for any profile; a Kid cannot
+        // change it there.
+        const bool on = !profile->music;
+        const bool active = profile->id == profiles.active();
+        profile_change_look(*profile, [on](Preferences& look) { look.music_player = on; });
+        if (active) music_switched();
+        emit_sound(on ? MenuCue::Enable : MenuCue::Disable);
+        profile_edit_focus(19);
     } else if (row == 12) {
         changed.allow_cheats = !changed.allow_cheats;
         save();
@@ -547,7 +558,10 @@ void App::profile_edit_activate(int row) {
         if (profile->id == profiles.active()) {
             status = "Switch to another profile first";
             emit_sound(MenuCue::Error);
-        } else confirm("profile-remove", Page::ProfileEdit);
+        } else {
+            profile_remove_backup = false; // asked for each time
+            confirm("profile-remove", Page::ProfileEdit);
+        }
     }
     dirty = true;
 }
@@ -602,6 +616,7 @@ void App::profile_edit_row(SDL_Renderer* r, int y, int i) {
     case 10: list_row(r, y, i, "Homebrew", profile->allow_homebrew ? "On" : "Off"); break;
     case 11: list_row(r, y, i, "PictoChat", profile->allow_pictochat ? "On" : "Off"); break;
     case 12: list_row(r, y, i, "Cheats", profile->allow_cheats ? "On" : "Off"); break;
+    case 19: list_row(r, y, i, "Music player", profile->music ? "On" : "Off"); break;
     case 13: list_row(r, y, i, "Local wireless", profile->allow_wireless ? "On" : "Off"); break;
     case 14:
         list_row(r, y, i, profile->pin.empty() ? "Set a PIN" : "Change the PIN", profile->pin.empty() ? "None" : "Set");
@@ -876,7 +891,8 @@ void App::remove_profile() {
         return;
     }
     std::ostringstream body;
-    body << "{\"action\":\"profile-remove\",\"id\":\"" << profile_editing << "\"}";
+    body << "{\"action\":\"profile-remove\",\"id\":\"" << profile_editing
+         << "\",\"backup\":" << (profile_remove_backup ? "true" : "false") << "}";
     profile_removing = true;
     start_worker("device.library", body.str());
     settings.page = Page::Profiles;
@@ -898,7 +914,9 @@ void App::erase_removed_profiles() {
 void App::profile_removal_finished(bool ok) {
     profile_removing = false;
     profiles.load(o.data);
-    status = ok ? "Profile removed. A backup is in userdata/exports." : "The profile could not be removed.";
+    status = !ok                    ? "The profile could not be removed."
+             : profile_remove_backup ? "Profile removed. A backup is in userdata/exports."
+                                     : "Profile removed.";
     settings.focus = 0;
     dirty = true;
 }

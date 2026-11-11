@@ -124,6 +124,10 @@ BR2_PACKAGE_PYTHON3_UNICODEDATA=y
 BR2_PACKAGE_PYTHON3_SQLITE=y
 
 BR2_PACKAGE_RGDS_CORE=y
+# the music player's engine (Settings > Sound > Music player): FFmpeg reads the files (MP3, FLAC, AAC, ALAC, Opus,
+# Vorbis, WMA, APE, WavPack and the rest with its own decoders), libopenmpt adds tracker modules (MOD, XM, S3M, IT)
+BR2_PACKAGE_RGDS_MUSIC=y
+BR2_PACKAGE_LIBOPENMPT=y
 # RG DS Core is a verified release (manifest.json hashes): Buildroot must not strip it
 BR2_STRIP_EXCLUDE_DIRS="usr/share/rgds"
 

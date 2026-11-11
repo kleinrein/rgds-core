@@ -43,8 +43,12 @@ bool App::home_column_move(int code) {
         dirty = true;
         return true;
     }
-    std::array<std::array<int, 2>, 4> rows = {{{5, 5}, {1, 2}, {3, 4}, {0, 0}}};
-    if (pictochat_hidden()) rows[2] = {3, 3}; // Recents is the whole row
+    // The rows as home_column_tiles lays them out: a row with one tile names it twice.
+    const bool chat = !pictochat_hidden(), songs = music_available();
+    const int last = int(last_played_tile), extra = int(music_tile());
+    std::array<std::array<int, 2>, 4> rows = {{{last, last}, {1, 2}, {3, 3}, {0, 0}}};
+    if (chat || songs) rows[2] = {3, chat ? int(pictochat_tile) : extra};
+    if (chat && songs) rows[3] = {0, extra};
     int row = 0, column = home_column_memory;
     for (int i = 0; i < 4; i++) {
         if (rows[size_t(i)][0] == int(home_selected) || rows[size_t(i)][1] == int(home_selected)) {
@@ -105,21 +109,24 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
                     label(r, "Your last game will appear here", bx + 96, by + 48 + sink, 14, "muted", 480);
             }
         } else {
-            const int icon = tile.index == 0 ? 36 : 48;
-            category_icon(r, tile.index, bx + (tile.index == 0 ? 22 : 16), by + (b.h - icon) / 2 + sink, icon);
+            // The low tiles of the last row (Settings, and Music beside it) have a smaller icon and no second line.
+            const bool low = b.h < 80;
+            const int icon = low ? 36 : 48;
+            category_icon(r, tile.index, bx + (low ? 22 : 16), by + (b.h - icon) / 2 + sink, icon);
             const std::string title = locale.text(category_title(tile.index));
-            const bool note_row = tile.index != 0;
+            const bool note_row = !low;
             raw_label(r, title, bx + 80, centred_label_y(title, 22, by + b.h / 2 + sink - (note_row ? 9 : 0)), 22,
                       "ink", b.w - 96);
             std::string note;
             if (tile.index >= 1 && tile.index <= 3) {
                 const auto& g = summary.groups[tile.index - 1];
                 note = summary_ready ? locale.text(std::to_string(g.games) + (g.games == 1 ? " game" : " games")) : "…";
-            } else if (tile.index == pictochat_tile)
+            } else if (pictochat_at(tile.index))
                 note = locale.text(kid_locked() && !active_profile().allow_pictochat ? "Not on this profile"
                                    : device_status["wifi_connected"] == "1"          ? "Wi-Fi connected"
                                                                                      : "Draw and chat");
-            if (!note.empty()) raw_label(r, note, bx + 80, by + b.h / 2 + 8 + sink, 14, "muted", b.w - 96);
+            else if (music_at(tile.index)) note = music_home_note();
+            if (!note.empty() && note_row) raw_label(r, note, bx + 80, by + b.h / 2 + 8 + sink, 14, "muted", b.w - 96);
         }
         if (selected) chat_brackets(r, bx, by + sink, b.w, b.h, theme.at("accent"), 4);
     }

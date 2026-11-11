@@ -25,8 +25,9 @@ CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y
 # the RG DS emblem on the panel as soon as the console takes the framebuffer (about 1 s), until RG DS Core's boot
 # scene replaces it; the console's cursor is hidden on the command line (vt.global_cursor_default=0)
 CONFIG_LOGO=y
+# (external.mk copies board/rgds/boot-logo.ppm over the kernel's own logo file: no path here, which could only be
+# one computer's)
 CONFIG_LOGO_LINUX_CLUT224=y
-CONFIG_LOGO_LINUX_CLUT224_FILE="/Users/andreasrein/dev/rgds/os/buildroot/board/rgds/boot-logo.ppm"
 CONFIG_LOGO_LINUX_MONO=n
 CONFIG_LOGO_LINUX_VGA16=n
 # boot time: no debugfs (37 ms of clock entries at boot; nothing of ours reads /sys/kernel/debug). The jitter-entropy

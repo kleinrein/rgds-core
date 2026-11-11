@@ -210,7 +210,7 @@ class Sharing:
             raise ValueError('The sharing folder path is unsupported.')
         return value
 
-    def configure(self, ip, roots, username, guest=False, systems=()):
+    def configure(self, ip, roots, username, guest=False, systems=(), music=None):
         interfaces = ' '.join(dict.fromkeys(filter(None, (ip, usb_address()))))
         lines = [
             '[global]', 'server role = standalone server', 'security = user',
@@ -247,6 +247,15 @@ class Sharing:
             add('DS' if systems else 'Games', root)
         for system, root in systems:
             add(system, root)
+        # The music player's folder (docs/MUSIC.md): the one the session gives the player (RG DS OS: /data/music,
+        # made here so songs can be copied in before the player first opens), else beside the data folder.
+        if music is not None:
+            try:
+                Path(music).mkdir(exist_ok=True)
+            except OSError:
+                pass
+            add('Music', music)
+        add('Music', self.data.parent / 'music')
         for name in ('Imports', 'Exports'):
             root = self.data / name.lower()
             if root.is_symlink():
@@ -265,7 +274,7 @@ class Sharing:
         config.write_text('\n'.join(lines) + '\n')
         return config, ', '.join(name for name, _path in shares)
 
-    def start(self, ip, roots, guest=False, systems=()):
+    def start(self, ip, roots, guest=False, systems=(), music=None):
         ip = str(ipaddress.IPv4Address(ip))
         with self.locked():
             if not self.supported():
@@ -288,7 +297,7 @@ class Sharing:
                 ) from None
             username = 'root'
             password = secrets.token_hex(6)
-            config, shares = self.configure(ip, roots, username, guest, systems)
+            config, shares = self.configure(ip, roots, username, guest, systems, music)
             environment = self.environment()
             result = subprocess.run(
                 [str(self.bundle / 'bin/smbpasswd'), '-c',

@@ -472,6 +472,9 @@ void App::sleep_now(bool lid) {
     save_state();
     status = o.preview ? "Sleep simulated - press any control" : "Sleeping - use Power to wake";
     dirty = true;
+    music_pause(); // asleep is silent, and the engine lets go of the sound device before the kernel freezes it
+    mu.lid_dark = false; // sleep puts the panels' levels back itself (system.sleep)
+    mu.lid_quiet_at = 0;
     draw();
     sounds.stop();
     // The private shared PCM can survive suspend just like an engine's
@@ -518,11 +521,10 @@ void App::watch_system(Uint32 now) {
     if (o.preview || probe || o.game_menu) return;
     // RG DS OS woke from a long sleep (or with an empty battery) only to power off (usr/libexec/rgds/power); a game
     // that was asleep has saved and quit by now (runtime/game_menu.py)
-    if (hardware.poweroff && shutdown_at == 0 && worker_yields() && now - bt_sink_poll >= 1000) {
+    if (hardware.poweroff && shutdown_at == 0 && worker_stops_for_shutdown() && now - bt_sink_poll >= 1000) {
         std::error_code ec;
         if (fs::remove("/run/rgds/poweroff-requested", ec)) {
-            start_worker("device.poweroff");
-            begin_shutdown("poweroff");
+            request_shutdown("poweroff");
             return;
         }
     }
@@ -545,24 +547,27 @@ void App::watch_system(Uint32 now) {
     }
     const Uint32 dim_after = Uint32(dim_seconds[size_t(std::clamp(system_preferences.dim, 0, 4))]) * 1000;
     const bool idle = dim_after > 0 && hardware.brightness && !pointer_down && now - last_activity >= dim_after;
-    if (idle && !system.panels_dimmed() && !system.brightness_pending()) system.dim_panels(25);
+    if (mu.lid_dark) {
+        // Music under a closed lid: the panels are dark on purpose (music_lid_hold below).
+    } else if (idle && !system.panels_dimmed() && !system.brightness_pending()) system.dim_panels(25);
     else if (!idle && system.panels_dimmed()) system.undim_panels();
     const bool settled = shutdown_at == 0 && departure_action.empty();
     const PowerPress press =
-        power_key.poll(hardware.sleep && settled, hardware.poweroff && settled && worker_yields(), now);
+        power_key.poll(hardware.sleep && settled, hardware.poweroff && settled && worker_stops_for_shutdown(), now);
     if (press == PowerPress::Sleep) {
         sleep_now();
         return;
     }
     if (press == PowerPress::Off) {
-        start_worker("device.poweroff");
-        begin_shutdown("poweroff");
+        request_shutdown("poweroff");
         return;
     }
     if (now - lid_poll >= 50) {
         lid_poll = now;
         auto closed = system.lid_closed();
-        if (lid_sleep.poll(closed, system_preferences.lid && hardware.lid, system.lid_generation())) {
+        if (music_lid_hold(closed, now)) {
+            // A song is playing under the closed lid: dark panels, no sleep.
+        } else if (lid_sleep.poll(closed, system_preferences.lid && hardware.lid, system.lid_generation())) {
             sleep_now(true);
             return;
         }

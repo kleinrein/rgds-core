@@ -4,7 +4,7 @@
 // Members of App in main.cpp; included once, right after the class.
 
 void App::action(int code) {
-    if (shutting_down()) return;
+    if (shutting_down() || mu.lid_dark) return; // under a closed lid nothing is pressed on purpose
     SoundAction sound_action(*this, code);
     if (code == 0 || code == 1 || code == 8 || code == 9 || code == 3) sound_code = code;
     motion_input(code);
@@ -14,6 +14,11 @@ void App::action(int code) {
     }
     if (chat_open) {
         chat_action(code);
+        return;
+    }
+    // The music player's own keys, except while one of its option sheets is up (the picker's, below).
+    if (music_open && !picker_open) {
+        music_action(code);
         return;
     }
     brightness_drag = false;
@@ -336,6 +341,10 @@ void App::action(int code) {
         if (code == 3) {
             back_to(confirm_return);
         } else if (code == 0 || code == 1) settings.focus = code == 0 ? 0 : 1;
+        else if (code == 11 && confirmation == "profile-remove") {
+            profile_remove_backup = !profile_remove_backup;
+            emit_sound(profile_remove_backup ? MenuCue::Enable : MenuCue::Disable);
+        }
         else if (code == 2 || code == 4) {
             bool accepted = settings.focus == 1;
             settings.page = confirm_return;
@@ -348,10 +357,8 @@ void App::action(int code) {
                 else if (confirmation == "profile-remove") remove_profile();
                 else if (confirmation == "profile-erase") erase_removed_profiles();
                 else if (confirmation == "profile-allow-shelf") allow_shelf();
-                else {
-                    start_worker("device." + confirmation);
-                    if (confirmation == "poweroff" || confirmation == "reboot") begin_shutdown(confirmation);
-                }
+                else if (confirmation == "poweroff" || confirmation == "reboot") request_shutdown(confirmation);
+                else start_worker("device." + confirmation);
             }
         }
         dirty = true;
@@ -403,6 +410,7 @@ void App::action(int code) {
             } else if (game) library_view(preferences.view);
         } else if (code == 8 || code == 9) {
             settings.library_rows = library_row_count();
+            settings.sound_rows = sound_row_count();
             settings.move(code == 8 ? -1 : 1);
             if (settings.page == Page::Scraper) settings.focus = std::min(settings.focus, list_count() - 1);
         } else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions) {
@@ -422,7 +430,18 @@ void App::action(int code) {
             }
         } else if (settings.page == Page::Sound) {
             // Left and Right only move the slider while the volume row is the selected one.
-            if (code == 0 || code == 1) {
+            if (settings.focus == 5 && kid_locked()) {
+                // On a Kid profile the owner decides (Settings > Profiles).
+                status = "Not on this profile";
+                emit_sound(MenuCue::Error);
+            } else if (settings.focus >= 5 && (code == 0 || code == 1 || code == 2)) {
+                // Music player, and whether it plays on under a closed lid.
+                bool& value = settings.focus == 5 ? preferences.music_player : preferences.music_lid;
+                value = code == 2 ? !value : code == 1;
+                sound_intent(value ? MenuCue::Enable : MenuCue::Disable);
+                remember_appearance();
+                music_switched();
+            } else if (code == 0 || code == 1) {
                 if (settings.focus == 0) change_volume(hardware.volume_percent + (code == 0 ? -5 : 5));
             } else if (code == 2) {
                 if (settings.focus == 3 || settings.focus == 4) {
@@ -883,6 +902,9 @@ void App::touch(int x, int y) {
             brightness_drag = true;
             int value = std::clamp(5 + int(std::round((x - 56) * 19.0 / 528)) * 5, 5, 100);
             change_system(4, value / 5 - system_preferences.brightness / 5);
+        } else if (settings.page == Page::Confirm && confirmation == "profile-remove" && y >= 254 && y <= 314 &&
+                   x >= 28 && x <= 612) {
+            action(11); // the Back up first row
         } else if (settings.page == Page::Confirm && y >= 365 && y <= 413 && x >= 28 && x <= 612) {
             settings.focus = x >= 332 ? 1 : 0;
             action(2);
@@ -932,6 +954,7 @@ int App::cover_hit(int x, int y) {
 }
 
 void App::pointer_begin(int x, int y) {
+    if (mu.lid_dark) return; // a closed lid can rest on the lower screen
     if (chat_open) {
         view_touch_dx = view_touch_dy = 0;
         contact_x = down_x = x;
@@ -945,7 +968,25 @@ void App::pointer_begin(int x, int y) {
                                                : x >= 630  ? EdgeGesture::Right
                                                            : EdgeGesture::None)
                                             : EdgeGesture::None;
+        if (!page_drag.departing()) page_drag.reset();
         if (edge_gesture == EdgeGesture::None) chat_press(x, y);
+        return;
+    }
+    if (music_open && !picker_open) {
+        view_touch_dx = view_touch_dy = 0;
+        contact_x = down_x = x;
+        contact_y = down_y = y;
+        pointer_down = true;
+        touch_tail = false;
+        pointer_at = s.GetTicks();
+        // An edge touch waits, as everywhere: a swipe goes Home or Back, a release where it began is a plain tap.
+        edge_gesture = gestures_available() ? (y >= 470    ? EdgeGesture::Bottom
+                                               : x <= 10   ? EdgeGesture::Left
+                                               : x >= 630  ? EdgeGesture::Right
+                                                           : EdgeGesture::None)
+                                            : EdgeGesture::None;
+        if (!page_drag.departing()) page_drag.reset();
+        if (edge_gesture == EdgeGesture::None) music_press(x, y);
         return;
     }
     hold.release(4000);
@@ -1141,8 +1182,20 @@ void App::pointer_move(int x, int y) {
         if (pointer_down) {
             contact_x = x;
             contact_y = y;
+            page_drag_follow(x, y); // the page follows an edge pull, as on every other page
             if (edge_gesture != EdgeGesture::None) edge_gesture_move(x, y);
             else chat_drag(x, y);
+            dirty = true;
+        }
+        return;
+    }
+    if (music_open && !picker_open) {
+        if (pointer_down) {
+            contact_x = x;
+            contact_y = y;
+            page_drag_follow(x, y); // the page follows an edge pull, as on every other page
+            if (edge_gesture != EdgeGesture::None) edge_gesture_move(x, y);
+            else music_drag(x, y);
             dirty = true;
         }
         return;
@@ -1286,9 +1339,26 @@ void App::pointer_end(int x, int y) {
                 edge_gesture = EdgeGesture::None;
                 chat_press(down_x, down_y);
             }
+            if (page_drag.holding()) page_drag.settle(s.GetTicks()); // lifted short of the gesture: springs back
             chat_release();
             pointer_down = false;
             pointer_source = PointerSource::None;
+            dirty = true;
+        }
+        return;
+    }
+    if (music_open && !picker_open) {
+        if (pointer_down) {
+            if (edge_gesture != EdgeGesture::None) {
+                edge_gesture = EdgeGesture::None;
+                music_press(down_x, down_y);
+            }
+            if (page_drag.holding()) page_drag.settle(s.GetTicks()); // lifted short of the gesture: springs back
+            music_release(x, y);
+            pointer_down = false;
+            pointer_source = PointerSource::None;
+            release_at = s.GetTicks();
+            touch_tail = preferences.touch_indicator && preferences.animations;
             dirty = true;
         }
         return;
@@ -1513,6 +1583,10 @@ void App::handle_input(const SDL_Event& e) {
         }
         if (chat_event(e)) return;
     }
+    if (music_open && (anbernic_key || anbernic_button)) {
+        music_action(7);
+        return;
+    }
     if (!o.game_menu && session_initialized && settings.page != Page::BootWarning &&
         (anbernic_key || anbernic_button)) {
         // The Anbernic button opens the game switcher; the Home key the game search.
@@ -1712,7 +1786,7 @@ void App::handle_input(const SDL_Event& e) {
         case SDLK_b: action(3); break;
         case SDLK_TAB:
         case SDLK_c:
-            if (!o.game_menu && !picker_open && settings.page != Page::ProfilePicker) {
+            if (!o.game_menu && !picker_open && !music_open && settings.page != Page::ProfilePicker) {
                 settings.section = 2;
                 settings.page = Page::LibraryOptions;
                 settings.focus = 0;
@@ -1738,26 +1812,39 @@ void App::handle_input(const SDL_Event& e) {
                 action(12);
             break;
         case SDLK_LEFTBRACKET:
-            if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
+            if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats || music_open ||
                 settings.page == Page::Homebrew || settings.page == Page::ProfileGames || (settings.page == Page::Library && !home_menu))
                 action(13);
             break;
         case SDLK_RIGHTBRACKET:
             if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
-                settings.page == Page::Homebrew || settings.page == Page::ProfileGames || (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Homebrew || settings.page == Page::ProfileGames || music_open ||
+                (settings.page == Page::Library && !home_menu))
                 action(14);
             break;
         case SDLK_q:
-            if ((settings.page == Page::Library && !home_menu) || (settings.page == Page::Keyboard && edit_field == 4))
+            if ((settings.page == Page::Library && !home_menu) || music_open || (settings.page == Page::Keyboard && edit_field == 4))
                 action(15);
             break;
         case SDLK_e:
-            if ((settings.page == Page::Library && !home_menu) || (settings.page == Page::Keyboard && edit_field == 4))
+            if ((settings.page == Page::Library && !home_menu) || music_open || (settings.page == Page::Keyboard && edit_field == 4))
                 action(16);
             break;
         default: break;
         }
     } else if (e.type == SDL_JOYBUTTONDOWN) {
+        // The music player has its own use for all four shoulders: tabs or skipping, shuffle and repeat.
+        if (music_open && !picker_open) {
+            const int source = joystick_source(e.jbutton.button);
+            if (source == 12 || source == 13) {
+                action(source == 12 ? 15 : 16);
+                return;
+            }
+            if (e.jbutton.button == 4 || e.jbutton.button == 5) {
+                action(e.jbutton.button == 4 ? 13 : 14);
+                return;
+            }
+        }
         if (((settings.page == Page::Library && !home_menu) || (settings.page == Page::Keyboard && edit_field == 4)) &&
             (joystick_source(e.jbutton.button) == 12 || joystick_source(e.jbutton.button) == 13)) {
             action(joystick_source(e.jbutton.button) == 12 ? 15 : 16);

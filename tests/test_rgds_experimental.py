@@ -144,6 +144,23 @@ class ExperimentalLaunchTests(Fixture):
             emulators.launch_plan(ENGINE, self.app, self.data, rom)
             self.assertIn('mode = ' + mode, config.read_text())
 
+    def test_sticks_leave_dscore_buttons_to_the_bridge_and_the_right_one_stays_the_pen(self):
+        import configparser
+        import controls
+        rom = self.prepare()
+        config = self.data / 'emulators' / ENGINE / 'config.ini'
+
+        def pad():
+            parsed = configparser.ConfigParser(strict=False, interpolation=None)
+            parsed.read(config)
+            return parsed['pad']
+
+        emulators.launch_plan(ENGINE, self.app, self.data, rom)
+        self.assertEqual((pad()['stick_dpad'], pad()['stick_face'], pad()['stylus_axis']), ('none', 'none', 'right'))
+        controls.save_profile(self.data, {'stick_right_up': 'x'})
+        emulators.launch_plan(ENGINE, self.app, self.data, rom)
+        self.assertEqual(pad()['stylus_axis'], 'none')
+
     def test_native_launch_uses_the_lean_engine_and_high_resolution_uses_vulkan(self):
         rom = self.prepare()
         engine = self.app / 'emulators' / ENGINE

@@ -99,15 +99,16 @@ void App::prepare_render_assets() {
     if (preferences.rich_icons && settings.page != Page::BootWarning)
         for (auto& panel : surfaces)
             for (const char* name :
-                 {"settings", "games", "favorites", "recent",     "pictochat", "display",  "power",
-                  "library",  "sound", "wifi",      "system",     "controls",  "shutdown", "play",
-                  "save",     "load",  "shaders",   "brightness", "restart",   "home",     "artwork"}) {
+                 {"settings", "games",      "favorites", "recent",   "pictochat", "display", "power", "library",
+                  "sound",    "wifi",       "system",    "controls", "shutdown",  "play",    "save",  "load",
+                  "shaders",  "brightness", "restart",   "home",     "artwork",   "music"}) {
+                if (std::string(name) == "music" && !music_available()) continue;
                 if (settings.page == Page::GameSwitcher && std::string(name) != "settings" &&
                     std::string(name) != "games" && std::string(name) != "recent")
                     continue;
                 if (settings.page == Page::Library && std::string(name) != "settings" && std::string(name) != "games" &&
                     std::string(name) != "favorites" && std::string(name) != "recent" &&
-                    std::string(name) != "pictochat" &&
+                    std::string(name) != "pictochat" && std::string(name) != "music" &&
                     !((filter_sheet_open || (picker_open && picker_title == "Browser layout")) &&
                       std::string(name) == "artwork"))
                     continue;

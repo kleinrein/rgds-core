@@ -315,13 +315,24 @@ class ManageTests(Base):
         report = self.run_ui(TO_PROFILES + ['a', 'Right', 'a'], settings=True)
         self.assertEqual((report['page'], report['profile']), (LIBRARY, 'p1'))
 
+    def test_removing_keeps_the_saves_and_backs_up_none_unless_asked(self):
+        folder = self.add()
+        # The page's last row, then Confirm's second choice
+        report = self.run_ui(self.edit_page() + ['Down'] * 17 + ['a', 'Right', 'a'], settings=True, seconds=5, gap=90)
+        self.assertEqual(report['page'], PROFILES)
+        self.assertFalse(folder.exists())
+        self.assertEqual(len(list((self.data / 'profiles/.removed').iterdir())), 1)
+        self.assertEqual(list((self.data / 'exports').glob('save-backup-*.zip')), [])
+
     def test_removing_keeps_the_saves_and_makes_a_backup(self):
         folder = self.add()
         save = folder / 'emulators/rgds-experimental/saves/Game.sav'
         save.parent.mkdir(parents=True)
         save.write_bytes(b'the child\'s')
-        # The page's last row, then Confirm's second choice
-        report = self.run_ui(self.edit_page() + ['Down'] * 16 + ['a', 'Right', 'a'], settings=True, seconds=5, gap=90)
+        # The page's last row, X for Back up first, then Confirm's second choice
+        report = self.run_ui(
+            self.edit_page() + ['Down'] * 17 + ['a', 'x', 'Right', 'a'], settings=True, seconds=5, gap=90
+        )
         self.assertEqual(report['page'], PROFILES)
         self.assertFalse(folder.exists())
         removed = list((self.data / 'profiles/.removed').iterdir())
@@ -335,7 +346,7 @@ class ManageTests(Base):
 
     def test_the_one_playing_cannot_be_removed(self):
         folder = self.add(active=True)
-        report = self.run_ui(self.edit_page() + ['Down'] * 16 + ['a'], settings=True, seconds=4, gap=90)
+        report = self.run_ui(self.edit_page() + ['Down'] * 17 + ['a'], settings=True, seconds=4, gap=90)
         self.assertEqual(report['page'], EDIT)
         self.assertTrue(folder.exists())
 
@@ -378,6 +389,17 @@ class ManageTests(Base):
         self.run_ui(self.edit_page() + ['Down'] * 9 + ['a'], settings=True)
         self.assertIn('all_games=0', (folder / 'ui.ini').read_text())
 
+    def test_the_music_player_is_switched_per_profile(self):
+        folder = self.add()
+        # Kid: Who it's for, Name, DS name, Picture, Colour, Language, Age limit, Games with no rating, Games,
+        # Games opens, Ports, Homebrew, PictoChat, Music player
+        report = self.run_ui(self.edit_page() + ['Down'] * 13 + ['a'], settings=True, seconds=5, gap=90)
+        self.assertEqual(report['page'], EDIT)
+        self.assertIn('music_player=1', (folder / 'ui.ini').read_text())
+        self.assertNotIn('music_player=1', (self.data / 'ui.ini').read_text())  # the owner's stays as it was
+        self.run_ui(self.edit_page() + ['Down'] * 13 + ['a'], settings=True, seconds=5, gap=90)
+        self.assertNotIn('music_player=1', (folder / 'ui.ini').read_text())
+
     def test_language_is_chosen_per_profile(self):
         folder = self.add()
         # Who it's for, Name, DS name, Picture, Colour, Language; the picker's first language is English (US)
@@ -417,9 +439,32 @@ class RemoveRuntimeTests(unittest.TestCase):
         from unittest.mock import patch
         with patch('save_library.backup_all', side_effect=ValueError('Not enough space for a save backup.')):
             with self.assertRaises(ValueError):
-                remove_profile(self.data, 'p1')
+                remove_profile(self.data, 'p1', backup=True)
         self.assertTrue((self.data / 'profiles/p1').is_dir())
         self.assertFalse((self.data / 'profiles/.removed').exists())
+
+    def test_no_backup_unless_asked(self):
+        export, kept = remove_profile(self.data, 'p1')
+        self.assertIsNone(export)
+        self.assertTrue(kept.is_dir())
+        self.assertFalse((self.data / 'exports').exists())
+
+    def test_the_backup_holds_only_that_profile(self):
+        # Everyone's saves came to a gigabyte on the owner's handheld: minutes of deflating for one removal.
+        mine = self.data / 'profiles/p1/emulators/rgds-play/saves/gba/Game.sav'
+        theirs = self.data / 'emulators/rgds-play/saves/gba/Owner.sav'
+        for path in (mine, theirs):
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b'save')
+        stale = self.data / 'exports/save-backup-1.zip.pending'  # left by a power cut mid-backup
+        stale.parent.mkdir()
+        stale.write_bytes(b'half')
+        export, _ = remove_profile(self.data, 'p1', backup=True)
+        with zipfile.ZipFile(export) as archive:
+            names = archive.namelist()
+        self.assertIn('profiles/p1/emulators/rgds-play/saves/gba/Game.sav', names)
+        self.assertNotIn('emulators/rgds-play/saves/gba/Owner.sav', names)
+        self.assertFalse(stale.exists())
 
     def test_it_steps_aside_and_stays_in_every_later_backup(self):
         save = self.data / 'profiles/p1/emulators/rgds-play/saves/gba/Game.sav'

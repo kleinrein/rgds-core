@@ -319,6 +319,9 @@ void App::draw(bool screenshot) {
             if (i == 0 && chat_open && (chat.drawing || chat.view == pictochat::View::Lobby) && !view_motion.running &&
                 chat_top_signature() == chat_top_seen)
                 continue;
+            // The music player's visualiser redraws the upper screen sixty times a second; the lower one only
+            // when something on it changed.
+            if (i == 1 && music_open && !screenshot && !embedded_menu && music_bottom_still(s.GetTicks())) continue;
             if (i == 0 && !screenshot) {
                 const auto signature = top_signature(s.GetTicks());
                 if (!signature.empty() && signature == top_seen) {

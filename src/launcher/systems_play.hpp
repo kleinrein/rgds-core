@@ -40,6 +40,7 @@ void App::open_category() {
     home_origin = home_selected;
     systems_origin = false;
     if (home_selected == last_played_tile) open_last_played();
+    else if (music_at(home_selected)) open_music();
     else if (home_selected == pictochat_tile) {
         if (pictochat_hidden() || (kid_locked() && !active_profile().allow_pictochat)) {
             status = "Not on this profile";

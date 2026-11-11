@@ -30,7 +30,7 @@ from integration import select_hooks, engine_libraries
 from engine_log import EngineLog
 from profiles import check_plan, device_root, is_owner, player_root
 from hud_theme import hud_theme
-from controls import paths as control_paths
+from controls import paths as control_paths, load_profile as control_profile
 
 from engines import CORES, DSPERATE_CORES, RETIRED
 
@@ -651,7 +651,12 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                         "mic_gain": "1.0",
                         "mic_gate": "2.0"
                     }
-                }
+                },
+                # The right stick is the pen until Controls gives one of its directions a button.
+                pen_stick=all(
+                    value == "none" for key, value in control_profile(data, identity or rom).items()
+                    if key.startswith("stick_right_")
+                )
             )
         env["HOME"] = str(home)
         cwd = root

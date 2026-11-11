@@ -81,15 +81,16 @@ def player_roots(data):
     return roots
 
 
-def remove_profile(data, profile):
-    """A backup first, then the folder steps aside: nothing is erased, and every later backup still holds it."""
+def remove_profile(data, profile, backup=False):
+    """The folder steps aside: nothing is erased, and every later backup still holds it. Asked for, a backup of just
+    this profile's saves comes first. Returns (that backup or None, where the folder went)."""
     from emulators import activity_lock
     from save_library import backup_all, sync_dir
     device = device_root(data)
     folder = device / PROFILES / str(profile)
     if not PROFILE_ID.fullmatch(str(profile)) or not folder.is_dir(): raise ValueError('This profile does not exist.')
     if player_root(device) == folder: raise ValueError('Switch to another profile first.')
-    export = backup_all(device)
+    export = backup_all(device, [folder]) if backup else None
     with activity_lock(device):
         kept = device / PROFILES / REMOVED / (str(profile) + '-' + str(time.time_ns()))
         kept.parent.mkdir(parents=True, exist_ok=True)

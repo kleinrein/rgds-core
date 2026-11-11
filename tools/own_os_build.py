@@ -156,7 +156,8 @@ def native(args):
     if not args.targets:
         # Buildroot copies a local package with rsync -u, which keeps a newer leftover over an older staged file
         # (copy2 keeps the device build's dates): start RG DS Core's copy afresh every time.
-        run('make', '-C', out, 'rgds-core-dirclean', env=env)
+        # The music engine is a local package too (os/buildroot/package/rgds-music, from src/music).
+        run('make', '-C', out, 'rgds-core-dirclean', 'rgds-music-dirclean', env=env)
     run('make', '-C', out, f'-j{args.jobs}', *args.targets, env=env)
     if args.targets:
         return

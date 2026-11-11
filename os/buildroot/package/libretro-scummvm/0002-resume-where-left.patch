@@ -1,0 +1,106 @@
+RG DS Play: a ScummVM game goes on from where it was left.
+
+The core has no save states, and ScummVM autosaves only every five minutes: a
+short session left nothing. The first request to leave (a quit, or a return to the launcher) now writes the autosave (not
+where the game cannot save, nor over a save of the player's own in that slot),
+SCUMM writes it as its loop ends (it saves from the loop), and a game whose
+autosave is there loads it as it starts.
+
+diff -ru a/backends/events/default/default-events.cpp b/backends/events/default/default-events.cpp
+--- a/backends/events/default/default-events.cpp	2026-11-10 23:13:03
++++ b/backends/events/default/default-events.cpp	2026-11-11 07:52:15
+@@ -100,6 +100,12 @@
+ 	if (event.type == Common::EVENT_QUIT && (g_system->hasFeature(OSystem::kFeatureNoQuit) || (ConfMan.getBool("gui_return_to_launcher_at_exit") && g_engine && g_engine->hasFeature(Engine::kSupportsReturnToLauncher))))
+ 		event.type = Common::EVENT_RETURN_TO_LAUNCHER;
+ 
++	// RG DS Play: the first request to leave keeps where the game was (the core asks until the engine has gone,
++	// as a quit or as a return to the launcher).
++	if ((event.type == Common::EVENT_QUIT || event.type == Common::EVENT_RETURN_TO_LAUNCHER) && g_engine &&
++			!_shouldQuit && !_shouldReturnToLauncher && !_confirmExitDialogActive)
++		g_engine->saveAutosaveOnQuit();
++
+ 	switch (event.type) {
+ 	case Common::EVENT_KEYDOWN:
+ 		_modifierState = event.kbd.flags;
+diff -ru a/base/main.cpp b/base/main.cpp
+--- a/base/main.cpp	2026-11-10 23:13:03
++++ b/base/main.cpp	2026-11-10 23:13:04
+@@ -324,6 +324,19 @@
+ 	system.getEventManager()->purgeKeyboardEvents();
+ 	system.getEventManager()->purgeMouseEvents();
+ 
++	// RG DS Play: a game goes on from where it was left, if its autosave is there (written every few minutes and
++	// by Engine::saveAutosaveOnQuit) and the engine can load a save as it starts.
++	if (!ConfMan.hasKey("save_slot") && metaEngine.hasFeature(MetaEngine::kSupportsLoadingDuringStartup)) {
++		const int autoSaveSlot = metaEngine.getAutosaveSlot();
++		const SaveStateList saves = autoSaveSlot < 0 ? SaveStateList() : metaEngine.listSaves(target.c_str());
++		for (const auto &save : saves) {
++			if (save.getSaveSlot() == autoSaveSlot) {
++				ConfMan.setInt("save_slot", autoSaveSlot, Common::ConfigManager::kTransientDomain);
++				break;
++			}
++		}
++	}
++
+ 	// Run the engine
+ 	Common::Error result = engine->run();
+ 
+diff -ru a/engines/engine.cpp b/engines/engine.cpp
+--- a/engines/engine.cpp	2026-11-10 23:13:03
++++ b/engines/engine.cpp	2026-11-10 23:13:04
+@@ -701,6 +701,22 @@
+ 	_autoSaving = false;
+ }
+ 
++void Engine::saveAutosaveOnQuit() {
++	if (_autoSaving)
++		return;
++	const int autoSaveSlot = getAutosaveSlot();
++	if (autoSaveSlot < 0 || !canSaveAutosaveCurrently())
++		return;
++	const SaveStateDescriptor desc = getMetaEngine()->querySaveMetaInfos(_targetName.c_str(), autoSaveSlot);
++	if (desc.isValid() && !desc.isAutosave())
++		return;
++	_autoSaving = true;
++	if (saveGameState(autoSaveSlot, Common::convertFromU32String(_("Autosave")), true).getCode() != Common::kNoError)
++		warning("The autosave on leaving could not be written");
++	_lastAutosaveTime = _system->getMillis();
++	_autoSaving = false;
++}
++
+ void Engine::errorString(const char *buf1, char *buf2, int size) {
+ 	Common::strlcpy(buf2, buf1, size);
+ }
+diff -ru a/engines/engine.h b/engines/engine.h
+--- a/engines/engine.h	2026-11-10 23:13:03
++++ b/engines/engine.h	2026-11-10 23:13:04
+@@ -740,6 +740,14 @@
+ 	void saveAutosaveIfEnabled();
+ 
+ 	/**
++	 * RG DS Play: the autosave written as the player leaves the game, so the
++	 * next start goes on from there (base/main.cpp loads it). Nothing is
++	 * written where the game cannot save now, or over a save of the player's
++	 * own in the autosave slot. Never asks anything.
++	 */
++	void saveAutosaveOnQuit();
++
++	/**
+ 	 * Indicate whether an autosave can currently be done.
+ 	 */
+ 	virtual bool canSaveAutosaveCurrently() {
+diff -ru a/engines/scumm/scumm.cpp b/engines/scumm/scumm.cpp
+--- a/engines/scumm/scumm.cpp	2026-11-10 23:13:03
++++ b/engines/scumm/scumm.cpp	2026-11-10 23:13:04
+@@ -2947,7 +2947,10 @@
+ 		}
+ 
+ 		if (shouldQuit()) {
+-			// TODO: Maybe perform an autosave on exit?
++			// RG DS Play: SCUMM writes a save from its loop, which has just ended: the autosave asked for on
++			// leaving (Engine::saveAutosaveOnQuit) is written here.
++			if (_saveLoadFlag == 1)
++				scummLoop_handleSaveLoad();
+ 			runQuitScript();
+ 		}
+ 	}

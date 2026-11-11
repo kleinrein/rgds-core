@@ -42,6 +42,7 @@
 #include "platform/touch.hpp"
 #include "ui/gb_palettes.hpp"
 #include "frontend/evdev_pad.hpp"
+#include "frontend/stick_buttons.hpp"
 #include "ui/colour.hpp"
 #include "ui/frame.hpp"
 #include "ui/screens.hpp"
@@ -696,6 +697,30 @@ int main(int argc, char** argv) {
     // The handheld's second key device reports some buttons as letters: with
     // the RG DS pad in use (grabbed, or the runtime's mapping), keys are ignored.
     const bool keyboard = !device_pad.active() && !bridged;
+    // The sticks as buttons (Controls' stick rows), read again when the game menu's Controls page saves.
+    StickButtons stick_buttons;
+    const bool stick_as_buttons = !system_has_stick(session.core().system());
+    const char* controls_global_env = std::getenv("RGDS_CONTROLS_GLOBAL");
+    const char* controls_local_env = std::getenv("RGDS_CONTROLS_FILE");
+    const std::string controls_global = controls_global_env ? controls_global_env : "",
+                      controls_local = controls_local_env ? controls_local_env : "";
+    std::pair<std::filesystem::file_time_type, std::filesystem::file_time_type> controls_stamp{};
+    Uint32 controls_checked = 0;
+    auto reload_stick_controls = [&](bool force) {
+        if (!stick_as_buttons || (controls_global.empty() && controls_local.empty())) return;
+        const Uint32 now = SDL_GetTicks();
+        if (!force && now - controls_checked < 1000) return;
+        controls_checked = now;
+        std::error_code ignored;
+        const auto stamp = std::make_pair(std::filesystem::last_write_time(controls_global, ignored),
+                                          std::filesystem::last_write_time(controls_local, ignored));
+        if (!force && stamp == controls_stamp) return;
+        controls_stamp = stamp;
+        rgds::ControlMapping mapping;
+        mapping.load(controls_global, controls_local);
+        stick_buttons.set_targets(mapping.stick);
+    };
+    reload_stick_controls(true);
 
     Canvas companion(pw, ph);
     Look look = session.look();
@@ -910,6 +935,13 @@ int main(int argc, char** argv) {
                     if (session.companion()->touch(t)) drawn_key = ~0ull;
                 }
         uint32_t buttons = (keyboard ? keyboard_buttons(SDL_GetKeyboardState(nullptr)) : 0) | controller_buttons(pad);
+        if (pad && stick_as_buttons) {
+            reload_stick_controls(false);
+            buttons |= stick_buttons.update(SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTX),
+                                            SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTY),
+                                            SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_RIGHTX),
+                                            SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_RIGHTY));
+        }
         if (device_pad.active()) {
             bool home = false;
             buttons |= device_pad.poll(home);

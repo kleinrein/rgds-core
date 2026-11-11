@@ -590,7 +590,8 @@ public:
     }
     std::optional<unsigned long long> lid_generation() const { return lid_sequence; }
     // Idle dimming: each panel to `percent` of its current level straight through sysfs (no helper, nothing saved);
-    // undim_panels puts back exactly what was there. A dimmed level never reaches the saved brightness.
+    // undim_panels puts back exactly what was there. A dimmed level never reaches the saved brightness. 0 is dark:
+    // the music player's panels under a closed lid.
     bool panels_dimmed() const { return !dimmed_levels.empty(); }
     void dim_panels(int percent) {
         if (preview || !dimmed_levels.empty()) return;
@@ -601,7 +602,8 @@ public:
             long value = 0;
             if (!(in >> value) || value <= 1) continue;
             std::ofstream out(node);
-            if (out << std::max(1L, value * percent / 100)) dimmed_levels.emplace_back(node, value);
+            if (out << (percent > 0 ? std::max(1L, value * percent / 100) : 0L))
+                dimmed_levels.emplace_back(node, value);
         }
     }
     void undim_panels() {

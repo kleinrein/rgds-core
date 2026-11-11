@@ -30,6 +30,17 @@ class ControlProfileTests(unittest.TestCase):
         self.assertEqual(controls.load_profile(self.data, self.rom), global_profile)
         self.assertFalse((self.data / 'emulators').exists())
 
+    def test_stick_bindings_default_to_the_dpad_and_survive_other_writes(self):
+        profile = controls.load_profile(self.data)
+        self.assertEqual(profile['stick_left_up'], 'up')
+        self.assertEqual(profile['stick_right_left'], 'none')
+        controls.save_profile(self.data, {'stick_left_up': 'a', 'stick_right_right': 'r'})
+        controls.set_binding(self.data, 'a', 'b')
+        profile = controls.load_profile(self.data)
+        self.assertEqual((profile['stick_left_up'], profile['stick_right_right']), ('a', 'r'))
+        with self.assertRaises(ValueError):
+            controls.save_profile(self.data, {'stick_left_up': 'l2'})
+
     def test_capture_swaps_duplicate_assignment_and_invalid_write_preserves_file(self):
         controls.set_binding(self.data, 'a', 'b')
         profile = controls.load_profile(self.data)

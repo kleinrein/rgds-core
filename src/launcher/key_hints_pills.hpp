@@ -150,24 +150,10 @@ std::string App::system_row_name(int row) const {
 
 void App::feedback_arc(SDL_Renderer* r, int x, int y, int radius, double start, double amount, Color ink, int alpha,
                        int weight) {
-    static const auto points = []() {
-        std::array<std::pair<double, double>, 64> result{};
-        for (size_t i = 0; i < result.size(); i++) {
-            double a = (double(i) / 64 - .25) * 6.283185307;
-            result[i] = {std::cos(a), std::sin(a)};
-        }
-        return result;
-    }();
-    s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-    s.SetRenderDrawColor(r, ink.r, ink.g, ink.b, Uint8(std::clamp(alpha, 0, 255)));
-    int first = int(start * 64), count = std::clamp(int(std::ceil(amount * 64)), 0, 64);
-    for (int i = 0; i < count; i++) {
-        auto a = points[(first + i) % 64], b = points[(first + i + 1) % 64];
-        for (int w = 0; w < weight; w++)
-            s.RenderDrawLine(r, x + int(std::round(a.first * (radius + w))),
-                             y + int(std::round(a.second * (radius + w))), x + int(std::round(b.first * (radius + w))),
-                             y + int(std::round(b.second * (radius + w))));
-    }
+    // A band from radius outwards, weight pixels wide, drawn anti-aliased in one piece: stacked one-pixel circles left
+    // pinholes between them, so the rings never looked filled.
+    if (weight <= 0 || amount <= 0) return;
+    smooth_arc(r, x, y, radius + weight / 2, weight, start, amount, ink, alpha, amount < 1);
 }
 
 bool App::options_hold() const {

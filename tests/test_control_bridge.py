@@ -137,6 +137,22 @@ int main(int argc,char** argv){
  assert(SDL_PollEvent(&event)==1 && event.type==SDL_JOYBUTTONUP);
  if(core=="dsperate"){assert(!ds_touch_down);assert(SDL_PollEvent(&event)==1 && event.type==SDL_FINGERUP);}
  assert(SDL_PollEvent(&event)==0);
+ // DS games: the stick directions press what Controls gives them (the left stick is the D-pad), after the motion
+ // itself, which DSCore's pen still follows; other engines get the motion alone.
+ events.clear();delivered_controls.clear();profile("preset=default\nstick_right_right=a\n");
+ auto stick=[&](int axis,int value){SDL_Event motion{};motion.type=SDL_CONTROLLERAXISMOTION;motion.caxis.which=7;motion.caxis.axis=Uint8(axis);motion.caxis.value=Sint16(value);native_events.push_back(motion);};
+ auto next=[&](Uint32 type,int button){return SDL_PollEvent(&event)==1 && event.type==type && (button<0 || event.cbutton.button==button);};
+ const bool ds=core=="dsperate";
+ stick(SDL_CONTROLLER_AXIS_LEFTY,-32768);assert(next(SDL_CONTROLLERAXISMOTION,-1));
+ if(ds)assert(next(SDL_CONTROLLERBUTTONDOWN,SDL_CONTROLLER_BUTTON_DPAD_UP));
+ stick(SDL_CONTROLLER_AXIS_LEFTY,-15000);assert(next(SDL_CONTROLLERAXISMOTION,-1));assert(SDL_PollEvent(&event)==0);
+ stick(SDL_CONTROLLER_AXIS_LEFTY,0);assert(next(SDL_CONTROLLERAXISMOTION,-1));
+ if(ds)assert(next(SDL_CONTROLLERBUTTONUP,SDL_CONTROLLER_BUTTON_DPAD_UP));
+ stick(SDL_CONTROLLER_AXIS_RIGHTX,32767);assert(next(SDL_CONTROLLERAXISMOTION,-1));
+ if(ds)assert(next(SDL_CONTROLLERBUTTONDOWN,controller_button(0)));
+ assert(SDL_PollEvent(&event)==0);
+ profile("preset=default\n"); // a reload lets go of what the stick held
+ assert(SDL_PollEvent(&event)==0);
 }
 '''
 

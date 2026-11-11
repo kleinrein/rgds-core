@@ -4,12 +4,17 @@
 #include "launcher/system_icons.hpp"
 #include "ui/png.hpp"
 
+#include <zlib.h>
+
 #include <filesystem>
 #include <cctype>
 #include <cstdio>
+#include <cstring>
 
 namespace play {
 namespace {
+
+bool unpack_view(std::vector<uint8_t>& bytes); // below, with pack_view
 
 // "Metroid Fusion (USA)" -> "Metroid Fusion", the way the launcher shows titles.
 std::string clean_title(std::string name) {
@@ -161,11 +166,37 @@ bool Session::open(const SessionOptions& o, std::string& error) {
         companion_->dock().set_art(system, std::move(picture), std::move(cover));
         // What a view has learnt (the explored map) lives beside the save.
         std::vector<uint8_t> bytes;
-        if (companion_->view() && read_file(view_path(), bytes))
+        if (companion_->view() && read_file(view_path(), bytes) && unpack_view(bytes))
             companion_->view()->load(std::string(bytes.begin(), bytes.end()));
     }
     return true;
 }
+
+// A view's file: as the view wrote it, or "RGVZ", its size (32 bits, little-endian) and it deflated. A map made
+// from the game's picture is megabytes of mostly sky.
+namespace {
+std::vector<uint8_t> pack_view(const std::string& bytes) {
+    uLongf size = compressBound(uLong(bytes.size()));
+    std::vector<uint8_t> out(8 + size);
+    if (bytes.size() < 4096 || bytes.size() > 0x7FFFFFFF ||
+        compress2(out.data() + 8, &size, reinterpret_cast<const Bytef*>(bytes.data()), uLong(bytes.size()), 1) != Z_OK)
+        return std::vector<uint8_t>(bytes.begin(), bytes.end());
+    std::memcpy(out.data(), "RGVZ", 4);
+    for (int i = 0; i < 4; ++i) out[size_t(4 + i)] = uint8_t(bytes.size() >> (8 * i));
+    out.resize(8 + size);
+    return out;
+}
+
+bool unpack_view(std::vector<uint8_t>& bytes) {
+    if (bytes.size() < 8 || std::memcmp(bytes.data(), "RGVZ", 4) != 0) return true;
+    uLongf size = uLongf(bytes[4]) | (uLongf(bytes[5]) << 8) | (uLongf(bytes[6]) << 16) | (uLongf(bytes[7]) << 24);
+    if (size > 0x7FFFFFFF) return false;
+    std::vector<uint8_t> out(size);
+    if (uncompress(out.data(), &size, bytes.data() + 8, uLong(bytes.size() - 8)) != Z_OK || size != out.size()) return false;
+    bytes.swap(out);
+    return true;
+}
+} // namespace
 
 std::string Session::view_path() const {
     std::string path = save_.path;
@@ -182,7 +213,7 @@ void Session::save_view() {
     if (view_writer_.joinable()) view_writer_.join();
     view_writer_ = std::thread([path = view_path(), bytes = std::move(bytes)] {
         std::string error;
-        if (!write_file_atomic(path, std::vector<uint8_t>(bytes.begin(), bytes.end()), error))
+        if (!write_file_atomic(path, pack_view(bytes), error))
             std::fprintf(stderr, "play: the companion's map was not kept: %s\n", error.c_str());
     });
 }

@@ -86,6 +86,18 @@ def fit_label(template, cmdline, compatible):
     return re.sub(r'^(\s*)FDTDIR (/[ab]/)\s*$', lambda m: f'{m[1]}FDT {m[2]}{dtb}', template, flags=re.M)
 
 
+def forget_cached(path):
+    """Drop the kernel's cached copy of a file or partition that has been written and synced, so that reading it
+    again reads the card: a read-back served from the page cache agrees with what was written whatever the card
+    stored. (Linux; elsewhere, the tests on a Mac, there is nothing to drop.)"""
+    if not hasattr(os, 'posix_fadvise'): return
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_DONTNEED)
+    finally:
+        os.close(fd)
+
+
 def hash_file(path, size=None, report=None):
     h = hashlib.sha256()
     done = 0
@@ -310,6 +322,7 @@ class OsUpdater(Updater):
             out.flush()
             os.fsync(out.fileno())
         if h.hexdigest() != digest: raise ValueError('The downloaded update failed verification. Please retry.')
+        forget_cached(device)
         read_back = hash_file(
             device, size,
             lambda n: self.publish('staging', 'Checking the new system…', progress=45 + n * 90 // (size * 2))
@@ -327,6 +340,7 @@ class OsUpdater(Updater):
             new.unlink()
             raise ValueError('The downloaded update failed verification. Please retry.')
         os.replace(new, target)
+        forget_cached(target)
         if hash_file(target) != digest: raise ValueError('The new system did not write correctly. Please retry.')
 
     def remount(self, mode):

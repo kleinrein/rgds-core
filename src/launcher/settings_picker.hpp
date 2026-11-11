@@ -67,12 +67,14 @@ bool App::open_setting_picker() {
             service_notice = "Stop scraping before changing source";
             return true;
         }
-        show_picker("Artwork source", {"Automatic", "GameTDB", "Libretro"}, preferences.artwork_provider,
-                    [this](int n) {
+        show_picker("Artwork source", {"Automatic", "GameTDB", "Libretro", "ScreenScraper"},
+                    preferences.artwork_provider, [this](int n) {
                         stop_worker();
                         preferences.artwork_provider = n;
                         remember_appearance();
-                        start_worker("status");
+                        // ScreenScraper needs your own account: ask for it straight away the first time.
+                        if (n == 3 && screenscraper_user.empty()) begin_edit(0);
+                        else start_worker("status");
                     });
     } else if (settings.page == Page::Scraper && row == 4) {
         show_picker("Extra pictures", {"Off", "Screenshots", "Title screens", "Screenshots and title screens"},

@@ -1,5 +1,6 @@
 menu "RG DS OS"
 source "$BR2_EXTERNAL_RGDS_PATH/package/rgds-core/Config.in"
+source "$BR2_EXTERNAL_RGDS_PATH/package/rgds-music/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libudev-zero/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/mesa3d-panfrost/Config.in"
 source "$BR2_EXTERNAL_RGDS_PATH/package/libretro-fceumm/Config.in"

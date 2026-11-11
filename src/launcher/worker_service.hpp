@@ -98,11 +98,12 @@ void App::start_worker(const std::string& operation, const std::string& payload)
         args.push_back((o.app.empty() ? fs::current_path() : o.app).string());
         if (o.preview) args.push_back("--preview");
     } else {
-        static const std::array<const char*, 3> providers = {"auto", "gametdb", "libretro"};
+        static const std::array<const char*, 4> providers = {"auto", "gametdb", "libretro", "screenscraper"};
         args.push_back("--provider");
-        args.push_back(operation == "scrape" && settings.page == Page::GameArtwork
+        // One game's Fetch artwork asks every public source, or ScreenScraper when that is the choice.
+        args.push_back(operation == "scrape" && settings.page == Page::GameArtwork && preferences.artwork_provider != 3
                            ? "auto"
-                           : providers.at(preferences.artwork_provider));
+                           : providers.at(size_t(std::clamp(preferences.artwork_provider, 0, 3))));
         if (operation == "scrape" && settings.page == Page::GameArtwork && !model.games.empty()) {
             args.push_back("--rom");
             args.push_back(model.games[model.selected].path.string());
@@ -181,6 +182,24 @@ void App::stop_worker() {
     worker = -1;
 }
 
+// Power off and restart always go through: a worker still running is stopped first (a removal's backup leaves no
+// half-written archive, and its folder has not moved yet), unless it writes the system, which is waited for.
+// start_worker drops a request while another worker runs, so the veil only goes up once the request has started.
+void App::request_shutdown(const std::string& kind) {
+    const std::string operation = "device." + kind;
+    if (worker > 0 && worker_action != operation) {
+        if (!worker_stops_for_shutdown()) {
+            status = "Finishing the system request";
+            dirty = true;
+            return;
+        }
+        stop_worker();
+        profile_removing = profile_erasing = false;
+    }
+    if (worker <= 0) start_worker(operation);
+    if (worker > 0 && worker_action == operation) begin_shutdown(kind);
+}
+
 void App::poll_service(Uint32 now) {
     bool artwork_finished = false;
     if (worker > 0) {
@@ -216,6 +235,11 @@ void App::poll_service(Uint32 now) {
     if (now - service_poll < (quick ? 250u : 2000u)) return;
     service_poll = now;
     auto next = fields(o.data / "scraper/status.ini");
+    auto account = fields(o.data / "scraper/account.ini")["user"];
+    if (account != screenscraper_user) {
+        screenscraper_user = account;
+        dirty = true;
+    }
     if (!same_fields(next, service)) {
         service = std::move(next);
         library_cache.invalidate_metadata();

@@ -10,5 +10,17 @@ done
 hwclock -w 2>/dev/null
 dmesg > /data/rgds/logs/dmesg.txt 2>/dev/null
 sync
-umount /data 2>/dev/null || mount -o remount,ro /data
+# whatever still has a file open on the card (a game writing its last save, file sharing, a helper) gets three
+# seconds to finish and is then stopped: init runs this before it ends the other processes, and a busy card would
+# neither unmount nor go read-only, which leaves the exFAT volume marked dirty on every such shutdown
+tries=0
+until umount /data 2>/dev/null; do
+    tries=$((tries + 1))
+    case $tries in
+    6) fuser -k -TERM -m /data > /dev/null 2>&1 ;;
+    10) fuser -k -KILL -m /data > /dev/null 2>&1 ;;
+    14) mount -o remount,ro /data 2>/dev/null; break ;;
+    esac
+    sleep 0.5
+done
 sync

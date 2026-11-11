@@ -170,6 +170,19 @@ class FileSharingTests(unittest.TestCase):
         self.assertIn('[GBC]\npath = ' + str(gbc.resolve()), content)
         self.assertNotIn('[GB]', content)
 
+    def test_the_music_players_folder_is_shared_from_where_the_session_keeps_it(self):
+        # RG DS OS keeps songs in /data/music, not beside the data folder (/data/rgds/userdata): the share must
+        # follow the folder the player is given, and is made if the player has not made it yet.
+        ds, music = self.root / 'roms/nds', self.root / 'card/music'
+        ds.mkdir(parents=True)
+        music.parent.mkdir()
+        with self.sharing.locked():
+            config, shares = self.sharing.configure('192.168.1.42', [ds], 'root', music=music)
+            content = config.read_text()
+        self.assertTrue(music.is_dir())
+        self.assertEqual(shares, 'Games, Music, Imports, Exports')
+        self.assertIn('[Music]\npath = ' + str(music.resolve()), content)
+
     def test_configuration_rejects_expansion_and_newline_paths_and_symlinked_transfers(self):
         for name in ('%U', 'games\n[secret]'):
             folder = self.root / name

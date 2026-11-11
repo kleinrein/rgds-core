@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -172,6 +173,16 @@ esac
             ['sh', str(LIBEXEC / 'power'), 'suspend'], env=self.env, capture_output=True, text=True, timeout=10
         )
         state = dict(line.split('=', 1) for line in (self.dir / 'run/suspend-state').read_text().splitlines())
+        # the radios come back behind the wake (run/radios-up.pid): wait for them before reading their log
+        pending = self.dir / 'run/radios-up.pid'
+        if pending.exists():
+            pid, deadline = int(pending.read_text()), time.monotonic() + 5
+            while time.monotonic() < deadline:
+                try:
+                    os.kill(pid, 0)
+                except OSError:
+                    break
+                time.sleep(.02)
         return result.returncode, state
 
     def test_a_person_wakes_it_at_once(self):
@@ -249,12 +260,63 @@ esac
             ['net wifi-sleep', 'bluetoothctl power off', 'bluetoothctl power on', 'net wifi']
         )
 
+    def test_the_wake_is_reported_before_the_radios_are_back(self):
+        # RG DS Core waits for phase=post: a slow Wi-Fi start must not hold the controls
+        tool(self.dir / 'bin', 'net', f'[ "$1" = wifi ] && sleep 3; echo "net $*" >> {self.radio_log}\n')
+        self.wakes.write_text('user 5\n')
+        subprocess.run(['sh', str(LIBEXEC / 'power'), 'suspend'], env=self.env, timeout=10)
+        self.assertIn('phase=post', (self.dir / 'run/suspend-state').read_text())
+        self.assertNotIn('net wifi', self.radio_log.read_text().splitlines())
+        # a sleep that comes meanwhile waits for them: up, then down again, never the two at once
+        code, state = self.sleep('user 5')
+        self.assertEqual(
+            self.radio_log.read_text().splitlines(), [
+                'net wifi-sleep', 'bluetoothctl power off', 'bluetoothctl power on', 'net wifi', 'net wifi-sleep',
+                'bluetoothctl power off', 'bluetoothctl power on', 'net wifi'
+            ]
+        )
+
     def test_radios_that_were_off_stay_off(self):
         (self.dir / 'wlan0').rmdir()
         (self.dir / 'hci0').rmdir()
         code, state = self.sleep('user 5')
         self.assertEqual(state['wake'], 'user')
         self.assertFalse(self.radio_log.exists())
+
+
+class BatteryWatchTest(unittest.TestCase):
+    def test_an_empty_battery_asks_rg_ds_core_first_then_powers_off(self):
+        with tempfile.TemporaryDirectory() as folder:
+            d = Path(folder)
+            for name in ('battery', 'charger', 'run', 'bin'):
+                (d / name).mkdir()
+            (d / 'battery/capacity').write_text('2\n')
+            (d / 'battery/status').write_text('Discharging\n')
+            (d / 'charger/online').write_text('0\n')
+            # what init would do; the request must still be there when nobody took it, and gone afterwards
+            tool(d / 'bin', 'poweroff', f'ls {d}/run > {d}/at-poweroff; echo off >> {d}/at-poweroff\n')
+            env = dict(
+                os.environ,
+                RGDS_BATTERY_DIR=str(d / 'battery'),
+                RGDS_CHARGER_DIR=str(d / 'charger'),
+                RGDS_RUN=str(d / 'run'),
+                RGDS_BATTERY_LOG=str(d / 'battery.log'),
+                RGDS_POWEROFF=str(d / 'bin/poweroff'),
+                RGDS_BATTERY_INTERVAL='0.05',
+                RGDS_POWEROFF_WAIT='1'
+            )
+            process = subprocess.Popen(['sh', str(LIBEXEC / 'battery-watch')], env=env, stderr=subprocess.DEVNULL)
+            try:
+                deadline = time.monotonic() + 5
+                while not (d / 'run/poweroff-requested').exists() and time.monotonic() < deadline:
+                    time.sleep(.02)
+                self.assertTrue((d / 'run/poweroff-requested').exists())
+                self.assertFalse((d / 'at-poweroff').exists())
+                self.assertEqual(process.wait(timeout=5), 0)
+            finally:
+                process.kill()
+            self.assertEqual((d / 'at-poweroff').read_text(), 'off\n')
+            self.assertIn('powered off', (d / 'battery.log').read_text())
 
 
 if __name__ == '__main__':

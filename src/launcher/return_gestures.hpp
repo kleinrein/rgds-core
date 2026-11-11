@@ -169,17 +169,19 @@ void App::gesture_cues(SDL_Renderer* r, int y) {
     }
     if (preferences.animations && gesture_flash_at && now - gesture_flash_at < 260) {
         const double t = (now - gesture_flash_at) / 260.0;
-        feedback_arc(r, gesture_flash_kind == 2 ? 616 : gesture_flash_kind ? 24 : 320,
-                     y + (gesture_flash_kind ? 240 : 468), int(18 + 56 * t), 0, 1,
-                     theme.at("accent"), int(220 * (1 - t)), 4);
+        feedback_arc(r,
+                     gesture_flash_kind == 2 ? 616
+                     : gesture_flash_kind    ? 24
+                                             : 320,
+                     y + (gesture_flash_kind ? 240 : 468), int(18 + 56 * t), 0, 1, theme.at("accent"),
+                     int(220 * (1 - t)), 4);
     }
 }
 
 bool App::gestures_available() const {
     return preferences.gestures && !probe && !(chat_open && chat.view == pictochat::View::Room) && !launching &&
-           settings.page != Page::BootWarning && settings.page != Page::Welcome && settings.page != Page::ProfilePicker &&
-           settings.page != Page::Controls &&
-           !o.game_menu;
+           settings.page != Page::BootWarning && settings.page != Page::Welcome &&
+           settings.page != Page::ProfilePicker && settings.page != Page::Controls && !o.game_menu;
 }
 
 bool App::edge_gesture_move(int x, int y) {
@@ -191,16 +193,18 @@ bool App::edge_gesture_move(int x, int y) {
     const bool from_right = edge_gesture == EdgeGesture::Right;
     if (!home && !back) return false;
     edge_gesture = EdgeGesture::None;
-    const auto before = std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open,
-                                        filter_sheet_open, chat_open ? int(chat.view) : -1);
+    const auto before =
+        std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open, filter_sheet_open,
+                        chat_open ? int(chat.view) : -1, music_open, int(mu.view), mu.levels.size());
     cancel_navigation();
     brightness_drag = volume_drag = false;
     gesture_flash_at = s.GetTicks();
     gesture_flash_kind = home ? 0 : from_right ? 2 : 1;
     micro_until = gesture_flash_at + 270;
     if (home) {
-        const bool chatting = chat_open;
+        const bool chatting = chat_open || music_open;
         close_pictochat();
+        close_music();
         picker_open = false;
         if (settings.page != Page::Library) {
             settings.page = Page::Library;
@@ -210,8 +214,9 @@ bool App::edge_gesture_move(int x, int y) {
         if (!chatting) sound_intent(MenuCue::Back);
     } else action(3);
     // The page the finger had lifted flies away when the gesture changed the view, else springs back into place.
-    const auto after = std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open,
-                                       filter_sheet_open, chat_open ? int(chat.view) : -1);
+    const auto after =
+        std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open, filter_sheet_open,
+                        chat_open ? int(chat.view) : -1, music_open, int(mu.view), mu.levels.size());
     if (before != after) page_drag.depart(gesture_flash_at);
     else page_drag.settle(gesture_flash_at);
     dirty = true;

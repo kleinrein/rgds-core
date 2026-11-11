@@ -367,6 +367,7 @@ Finishing the system request	시스템 요청을 마무리하는 중
 Follow your default button layout	기본 버튼 배치 따르기
 Following the default controls.	공통 조작 설정을 사용 중입니다.
 Follows your library shader.	라이브러리 필터를 따릅니다.
+For games without a stick: N64 and PSP keep it	스틱이 없는 게임용: N64와 PSP는 스틱 그대로
 Forget this device?	이 기기를 삭제할까요?
 FPS changed for this session. Settings storage is unavailable.	이번 세션에만 FPS 표시를 변경했습니다. 설정을 저장할 수 없습니다.
 FPS counter enabled.	FPS를 표시합니다.
@@ -450,6 +451,14 @@ Green	초록색
 Grey	회색
 Grey TV	회색 TV
 Grid	모눈
+Left stick down	왼쪽 스틱 아래
+Left stick left	왼쪽 스틱 왼쪽
+Left stick right	왼쪽 스틱 오른쪽
+Left stick up	왼쪽 스틱 위
+Right stick down	오른쪽 스틱 아래
+Right stick left	오른쪽 스틱 왼쪽
+Right stick right	오른쪽 스틱 오른쪽
+Right stick up	오른쪽 스틱 위
 h	시간
 Haptic strength	햅틱 강도
 Health	체력
@@ -563,6 +572,7 @@ Manage builds and temporary files	빌드와 임시 파일 관리
 Matches your accent	강조 색상과 같게
 Matching title	일치하는 제목
 Matching title saved. Choose Fetch artwork.	일치하는 제목을 저장했습니다. '이미지 가져오기'를 선택하세요.
+Memory card problem	메모리 카드 문제
 Menu audio is unavailable on this device.	이 기기에서는 메뉴 소리를 쓸 수 없습니다.
 Menu effects	메뉴 효과음
 Menu haptics	메뉴 햅틱
@@ -644,6 +654,7 @@ Not yet	아직
 Nothing played yet	아직 플레이한 게임이 없습니다
 Nothing to load	불러올 데이터 없음
 Nothing to load here yet.	아직 불러올 것이 없습니다.
+Nothing you change now is kept.	지금 바꾸는 내용은 저장되지 않습니다.
 Notification	알림
 Off	끔
 Off (smooth)	끔(부드럽게)
@@ -851,6 +862,7 @@ Screen brightness	화면 밝기
 Screen colours	화면 색상
 Menu	메뉴
 Switch	전환
+Turn off and check the card on a computer.	전원을 끄고 컴퓨터에서 카드를 확인하세요.
 Turn off screen	화면 끄기
 screens	화면
 ScreenScraper needs project credentials and your account	ScreenScraper에는 프로젝트 인증 정보와 사용자 계정이 필요합니다
@@ -1189,6 +1201,7 @@ Your cartridges go here	여기에 카트리지가 표시됩니다
 Your colour	내 색
 Your DS library starts here	여기서 DS 라이브러리가 시작됩니다
 Your games and saves are not touched.	게임과 세이브 데이터는 그대로 둡니다.
+Your games and saves could not be read.	게임과 저장 데이터를 읽을 수 없습니다.
 Your home screen after powering on	전원을 켠 뒤의 홈 화면
 Your journey	나의 여정
 Your last game will appear here	마지막으로 플레이한 게임이 여기에 표시됩니다
@@ -1323,7 +1336,10 @@ That is not the PIN.	PIN이 맞지 않습니다.
 Without one this profile is not locked. Cancel skips it.	PIN이 없으면 이 프로필은 잠기지 않습니다. 취소하면 건너뜁니다.
 The owner's PIN was removed.	소유자의 PIN을 제거했습니다.
 Profile name	프로필 이름
-Remove this profile? Its saves are kept, and a backup is made first.	이 프로필을 제거할까요? 저장 파일은 유지되며 먼저 백업합니다.
+Remove this profile? Its saves are kept until you erase removed profiles.	이 프로필을 삭제할까요? 삭제한 프로필을 지울 때까지 저장 데이터는 남아 있습니다.
+Back up its saves first	먼저 저장 데이터 백업
+Removing the profile…	프로필을 삭제하는 중…
+Profile removed.	프로필을 삭제했습니다.
 Show every game with no rating on this shelf?	이 선반의 등급 없는 게임을 모두 표시할까요?
 Star	별
 Heart	하트
@@ -1376,3 +1392,89 @@ Systems page	시스템 페이지
 Games you play appear here	플레이한 게임이 여기에 표시됩니다
 Swipe up from the bottom for Home, in from a side for Back	아래에서 위로 밀면 홈, 양옆에서 밀면 뒤로
 Swipe in from the left or right edge to go Back.	왼쪽이나 오른쪽 가장자리에서 밀면 뒤로 갑니다.
+Music	음악
+Songs	노래
+Albums	앨범
+Artists	아티스트
+Folders	폴더
+Lists	목록
+Queue	대기열
+Equaliser	이퀄라이저
+Visualiser	시각화
+Now playing	지금 재생 중
+Shuffle	셔플
+Shuffle all	모두 셔플
+Shuffle on	셔플 켬
+Shuffle off	셔플 끔
+Repeat off	반복 끔
+Repeat all	모두 반복
+Repeat this song	이 노래 반복
+Play next	다음에 재생
+Plays next	다음에 재생됩니다
+Add to queue	대기열에 추가
+Added to the queue	대기열에 추가했습니다
+Remove from queue	대기열에서 제거
+Add to favourites	즐겨찾기에 추가
+Remove from favourites	즐겨찾기에서 제거
+Added to favourites	즐겨찾기에 추가했습니다
+Removed from favourites	즐겨찾기에서 제거했습니다
+Recently added	최근 추가한 노래
+Unknown artist	알 수 없는 아티스트
+Various artists	여러 아티스트
+No music yet	아직 음악이 없습니다
+Nothing here	여기에는 아무것도 없습니다
+Nothing is playing	재생 중인 노래가 없습니다
+The queue is empty	대기열이 비어 있습니다
+Looking for music…	음악을 찾는 중…
+Add your music	음악을 추가하세요
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	카드의 music 폴더에 음악을 넣으세요. 파일 공유를 쓰거나 USB 드라이브로 연결하면 됩니다.
+Speakers	스피커
+Headphones	헤드폰
+Playing	재생 중
+Skip	건너뛰기
+Tabs	탭
+Flat	플랫
+Larger display	화면 크게
+Smaller display	화면 작게
+Music player	음악 플레이어
+Play with the lid closed	덮개를 닫아도 재생
+{0} song	노래 {0}곡
+{0} songs	노래 {0}곡
+{0} album	앨범 {0}개
+{0} albums	앨범 {0}개
+Bass boost	저음 강조
+Treble boost	고음 강조
+Rock	록
+Pop	팝
+Jazz	재즈
+Classical	클래식
+Electronic	일렉트로닉
+Hip-hop	힙합
+Acoustic	어쿠스틱
+Vocal	보컬
+Small speakers	작은 스피커
+Spectrum	스펙트럼
+Oscilloscope	오실로스코프
+Fire	불꽃
+Plasma	플라스마
+Starfield	별밭
+VU meters	VU 미터
+Vectorscope	벡터스코프
+Radial spectrum	원형 스펙트럼
+Waterfall	워터폴
+Tunnel	터널
+ScreenScraper account	ScreenScraper 계정
+Not signed in	로그인하지 않음
+Change account	계정 변경
+Stop scraping before signing in	로그인하기 전에 가져오기를 중지하세요
+Stop scraping before signing out	로그아웃하기 전에 가져오기를 중지하세요
+Signed in to ScreenScraper as {0}.	{0}(으)로 ScreenScraper에 로그인했습니다.
+Signed out of ScreenScraper.	ScreenScraper에서 로그아웃했습니다.
+Signing in to ScreenScraper	ScreenScraper에 로그인하는 중
+Enter your ScreenScraper username and password.	ScreenScraper 사용자 이름과 비밀번호를 입력하세요.
+ScreenScraper is not configured for this build yet.	이 버전에는 아직 ScreenScraper가 설정되지 않았습니다.
+Sign in to ScreenScraper first.	먼저 ScreenScraper에 로그인하세요.
+Check your ScreenScraper login.	ScreenScraper 로그인 정보를 확인하세요.
+ScreenScraper did not accept this login.	ScreenScraper가 이 로그인을 받아들이지 않았습니다.
+Your daily ScreenScraper quota has been reached.	오늘의 ScreenScraper 할당량을 모두 사용했습니다.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraper에 연결할 수 없습니다. Wi-Fi를 확인한 후 다시 시도하세요.

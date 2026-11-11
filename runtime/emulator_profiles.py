@@ -33,6 +33,10 @@ DS_INPUT_PROFILE = {
         right="dpright",
         face_fix="off",
         stylus_button="rightstick",
+        # The bridge presses the buttons Controls gives the stick directions; DSCore's own stick buttons would double them.
+        stick_dpad="none",
+        stick_face="none",
+        stylus_axis="right",
         **{
             "stylus_button.alt": "none",
             "stylus_dpad": "none"
@@ -143,13 +147,15 @@ def section_config(path, updates):
         pending.unlink(missing_ok=True)
 
 
-def dsperate_input_profile(home, config, rom, extra=None):
+def dsperate_input_profile(home, config, rom, extra=None, pen_stick=True):
     """Pin owned input aliases after the native engine's per-game layers.
 
     The upstream engine merges these writable INIs after --config. Their
     unrelated tuning is retained; RGDS control profiles remain authoritative.
+    pen_stick=False: Controls gives the right stick buttons, so it stops moving the pen.
     """
     profile = {k: dict(v) for k, v in DS_INPUT_PROFILE.items()}
+    profile["pad"]["stylus_axis"] = "right" if pen_stick else "none"
     profile.update(extra or {})
     section_config(config, profile)
     native = Path(home) / ".config/dsperate/games"

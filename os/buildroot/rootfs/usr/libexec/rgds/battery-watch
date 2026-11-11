@@ -1,12 +1,16 @@
 #!/bin/sh
 # Low-battery shutdown: with no charger connected and the gauge at or under 3 % on three readings in a row
-# (a minute apart; a glitch on one reading does not count), the handheld powers off cleanly (init sends every
-# process SIGTERM: the engines save their cart RAM and states on it, the launcher its settings). Started by rcS.
+# (30 s apart; a glitch on one reading does not count), the handheld powers off cleanly. It asks RG DS Core first,
+# the way a sleep that ends on an empty battery does (poweroff-requested, usr/libexec/rgds/power): a running game
+# saves and quits in its own time, then the launcher powers off. Only if that has not happened after WAIT seconds
+# does init do it (SIGTERM to every process, which gives a large save state about a second). Started by rcS.
 B=${RGDS_BATTERY_DIR:-/sys/class/power_supply/battery}
 C=${RGDS_CHARGER_DIR:-/sys/class/power_supply/charger}
 LIMIT=${RGDS_BATTERY_LIMIT:-3}
 LOG=${RGDS_BATTERY_LOG:-/data/rgds/logs/battery.log}
 POWEROFF=${RGDS_POWEROFF:-poweroff}
+REQUEST=${RGDS_RUN:-/run/rgds}/poweroff-requested
+WAIT=${RGDS_POWEROFF_WAIT:-45}
 low=0
 while sleep "${RGDS_BATTERY_INTERVAL:-30}"; do
     cap=$(cat $B/capacity 2>/dev/null) || continue
@@ -18,6 +22,10 @@ while sleep "${RGDS_BATTERY_INTERVAL:-30}"; do
             echo "battery-watch: $cap % with no charger, powering off" >&2
             echo "$(date '+%F %T') battery $cap %: powered off" >> "$LOG" 2>/dev/null
             sync
+            : > "$REQUEST"
+            # the power-off ends this script too; still here after WAIT seconds means nobody took the request
+            sleep "$WAIT"
+            rm -f "$REQUEST"
             $POWEROFF
             exit 0
         fi

@@ -367,6 +367,7 @@ Finishing the system request	Завершение системного запр�
 Follow your default button layout	Как в раскладке по умолчанию
 Following the default controls.	Используется общее управление.
 Follows your library shader.	Как фильтр библиотеки.
+For games without a stick: N64 and PSP keep it	Для игр без стика: N64 и PSP оставляют его
 Forget this device?	Забыть это устройство?
 FPS changed for this session. Settings storage is unavailable.	FPS изменён на этот сеанс. Хранилище настроек недоступно.
 FPS counter enabled.	Счётчик FPS включён.
@@ -450,6 +451,14 @@ Green	Зелёный
 Grey	Серый
 Grey TV	Серый телевизор
 Grid	Сетка
+Left stick down	Левый стик вниз
+Left stick left	Левый стик влево
+Left stick right	Левый стик вправо
+Left stick up	Левый стик вверх
+Right stick down	Правый стик вниз
+Right stick left	Правый стик влево
+Right stick right	Правый стик вправо
+Right stick up	Правый стик вверх
 h	ч
 Haptic strength	Сила отклика
 Health	Здоровье
@@ -563,6 +572,7 @@ Manage builds and temporary files	Сборки и временные файлы
 Matches your accent	Как цвет акцента
 Matching title	Сопоставленное название
 Matching title saved. Choose Fetch artwork.	Название сохранено. Выберите «Загрузить обложки».
+Memory card problem	Проблема с картой памяти
 Menu audio is unavailable on this device.	Звук меню недоступен на этом устройстве.
 Menu effects	Эффекты меню
 Menu haptics	Отклик в меню
@@ -644,6 +654,7 @@ Not yet	Пока нет
 Nothing played yet	Пока ничего не запускалось
 Nothing to load	Нечего загружать
 Nothing to load here yet.	Здесь пока нечего загружать.
+Nothing you change now is kept.	Изменения сейчас не сохранятся.
 Notification	Уведомление
 Off	Выкл.
 Off (smooth)	Выкл. (плавно)
@@ -851,6 +862,7 @@ Screen brightness	Яркость экрана
 Screen colours	Цвета экрана
 Menu	Меню
 Switch	Сменить
+Turn off and check the card on a computer.	Выключите и проверьте карту на компьютере.
 Turn off screen	Выключить экран
 screens	экранов
 ScreenScraper needs project credentials and your account	Для ScreenScraper нужны данные проекта и ваша учётная запись
@@ -1189,6 +1201,7 @@ Your cartridges go here	Здесь будут ваши картриджи
 Your colour	Ваш цвет
 Your DS library starts here	Здесь начинается ваша библиотека DS
 Your games and saves are not touched.	Игры и сохранения не затрагиваются.
+Your games and saves could not be read.	Не удалось прочитать игры и сохранения.
 Your home screen after powering on	Главный экран после включения
 Your journey	Ваше путешествие
 Your last game will appear here	Здесь появится последняя игра
@@ -1323,7 +1336,10 @@ That is not the PIN.	Это неверный PIN-код.
 Without one this profile is not locked. Cancel skips it.	Без него профиль не заблокирован. «Отмена» пропустит этот шаг.
 The owner's PIN was removed.	PIN-код владельца удалён.
 Profile name	Имя профиля
-Remove this profile? Its saves are kept, and a backup is made first.	Удалить этот профиль? Сохранения останутся, сначала будет создана копия.
+Remove this profile? Its saves are kept until you erase removed profiles.	Удалить этот профиль? Его сохранения останутся, пока вы не сотрёте удалённые профили.
+Back up its saves first	Сначала сохранить копию
+Removing the profile…	Удаление профиля…
+Profile removed.	Профиль удалён.
 Show every game with no rating on this shelf?	Показать все игры без рейтинга на этой полке?
 Star	Звезда
 Heart	Сердце
@@ -1376,3 +1392,89 @@ Systems page	Страница систем
 Games you play appear here	Игры, в которые вы играете, появятся здесь
 Swipe up from the bottom for Home, in from a side for Back	Свайп снизу вверх — главная, сбоку — назад
 Swipe in from the left or right edge to go Back.	Свайп от левого или правого края — назад.
+Music	Музыка
+Songs	Песни
+Albums	Альбомы
+Artists	Исполнители
+Folders	Папки
+Lists	Списки
+Queue	Очередь
+Equaliser	Эквалайзер
+Visualiser	Визуализация
+Now playing	Сейчас играет
+Shuffle	Вперемешку
+Shuffle all	Все вперемешку
+Shuffle on	Вперемешку: вкл.
+Shuffle off	Вперемешку: выкл.
+Repeat off	Повтор: выкл.
+Repeat all	Повторять все
+Repeat this song	Повторять эту песню
+Play next	Играть следующей
+Plays next	Сыграет следующей
+Add to queue	Добавить в очередь
+Added to the queue	Добавлено в очередь
+Remove from queue	Убрать из очереди
+Add to favourites	Добавить в избранное
+Remove from favourites	Убрать из избранного
+Added to favourites	Добавлено в избранное
+Removed from favourites	Убрано из избранного
+Recently added	Недавно добавленные
+Unknown artist	Неизвестный исполнитель
+Various artists	Разные исполнители
+No music yet	Музыки пока нет
+Nothing here	Здесь пусто
+Nothing is playing	Ничего не играет
+The queue is empty	Очередь пуста
+Looking for music…	Поиск музыки…
+Add your music	Добавьте свою музыку
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Положите музыку в папку music на карте: через общий доступ к файлам или как на USB-диск.
+Speakers	Динамики
+Headphones	Наушники
+Playing	Играет
+Skip	Пропуск
+Tabs	Вкладки
+Flat	Ровный
+Larger display	Экран побольше
+Smaller display	Экран поменьше
+Music player	Музыкальный плеер
+Play with the lid closed	Играть с закрытой крышкой
+{0} song	{0} песня
+{0} songs	{0} песен
+{0} album	{0} альбом
+{0} albums	{0} альбомов
+Bass boost	Больше баса
+Treble boost	Больше верхов
+Rock	Рок
+Pop	Поп
+Jazz	Джаз
+Classical	Классика
+Electronic	Электроника
+Hip-hop	Хип-хоп
+Acoustic	Акустика
+Vocal	Вокал
+Small speakers	Маленькие динамики
+Spectrum	Спектр
+Oscilloscope	Осциллограф
+Fire	Огонь
+Plasma	Плазма
+Starfield	Звёздное поле
+VU meters	Стрелочные индикаторы
+Vectorscope	Векторскоп
+Radial spectrum	Круговой спектр
+Waterfall	Водопад
+Tunnel	Туннель
+ScreenScraper account	Аккаунт ScreenScraper
+Not signed in	Вход не выполнен
+Change account	Сменить аккаунт
+Stop scraping before signing in	Остановите загрузку перед входом
+Stop scraping before signing out	Остановите загрузку перед выходом
+Signed in to ScreenScraper as {0}.	Вход в ScreenScraper как {0}.
+Signed out of ScreenScraper.	Выход из ScreenScraper выполнен.
+Signing in to ScreenScraper	Вход в ScreenScraper
+Enter your ScreenScraper username and password.	Введите имя пользователя и пароль ScreenScraper.
+ScreenScraper is not configured for this build yet.	ScreenScraper ещё не настроен в этой версии.
+Sign in to ScreenScraper first.	Сначала войдите в ScreenScraper.
+Check your ScreenScraper login.	Проверьте данные входа ScreenScraper.
+ScreenScraper did not accept this login.	ScreenScraper не принял эти данные входа.
+Your daily ScreenScraper quota has been reached.	Дневная квота ScreenScraper исчерпана.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Нет связи со ScreenScraper. Проверьте Wi-Fi и повторите попытку.

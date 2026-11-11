@@ -9,6 +9,8 @@
 #include "companion/party_gb.hpp"
 #include "companion/profile.hpp"
 #include "core/libretro/libretro.h"
+#include "core/zx_machine.hpp"
+#include "frontend/stick_buttons.hpp"
 #include "companion/expr.hpp"
 #include "companion/view.hpp"
 #include "companion/dock.hpp"
@@ -1459,7 +1461,64 @@ void test_keyboard() {
     CHECK(game.disk == 1);
 }
 
+// Which Spectrum a tape gets: a 128K only for a tape that cannot do with a 48K.
+void test_zx_machine() {
+    const std::vector<uint8_t> none;
+    // Named for both machines: Fuse's own choice gave Out Run a 128K, and its loader reset the machine.
+    CHECK(!zx_tape_needs_128k("/roms/zx/Out Run (1988)(U.S. Gold)[48-128K][SpeedLock 4].tzx", none));
+    CHECK(!zx_tape_needs_128k("/roms/zx/Chase H.Q. (48K-128K).tap", none));
+    CHECK(zx_tape_needs_128k("/roms/zx/Army Moves - 128k.tzx", none));
+    CHECK(zx_tape_needs_128k("/roms/zx/Match Day II (1987)(Ocean)(128K).tzx", none));
+    CHECK(!zx_tape_needs_128k("/roms/zx/Bruce Lee - 1280 bytes free.tap", none));
+    CHECK(!zx_tape_needs_128k("/roms/128K Games/Manic Miner.tzx", none)); // the folder says nothing
+    CHECK(!zx_tape_needs_128k("/roms/zx/Manic Miner.tzx", none));
+    // A TZX's own word: hardware information (block 33) after a text block.
+    auto tzx = [](std::vector<uint8_t> blocks) {
+        std::vector<uint8_t> tape = {'Z', 'X', 'T', 'a', 'p', 'e', '!', 0x1a, 1, 20, 0x30, 2, 'h', 'i'};
+        tape.insert(tape.end(), blocks.begin(), blocks.end());
+        return tape;
+    };
+    CHECK(zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 0, 1, 3})));         // a 48K: does not run
+    CHECK(zx_tape_needs_128k("a.tzx", tzx({0x33, 2, 0, 1, 0, 0, 3, 1}))); // a 128K: uses its hardware
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 0, 3, 0})));        // a 128K: runs, and so does a 48K
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 1, 3, 1})));        // not a computer entry
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x2A, 0, 0, 0, 0})));        // "stop if 48K": a 48K game is on it
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 9, 0, 1})));           // cut short
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x10, 0, 0, 0xFF, 0xFF})));  // a data block longer than the file
+}
+
+// The sticks as buttons: the left stick is the D-pad by default, with a gap between press and release, diagonals,
+// directions bound elsewhere in controls.ini, and the systems that keep their stick.
+void test_stick_buttons() {
+    StickButtons sticks;
+    CHECK(sticks.update(0, 0, 0, 0) == 0);
+    CHECK(sticks.update(-32768, 0, 0, 0) == Left);
+    CHECK(sticks.update(32767, 32767, 0, 0) == (Right | Down));
+    CHECK(sticks.update(15000, 0, 0, 0) == Right);  // held: under the press line, over the release line
+    CHECK(sticks.update(12000, 0, 0, 0) == 0);      // let go
+    CHECK(sticks.update(15000, 0, 0, 0) == 0);      // not pressed again until past half way
+    CHECK(sticks.update(0, -20000, 0, 0) == Up);
+    CHECK(sticks.update(0, 0, 32767, -32768) == 0); // the right stick presses nothing by default
+    const std::string ini = std::string(std::getenv("TMPDIR") ? std::getenv("TMPDIR") : "/tmp") + "/play-stick.ini";
+    {
+        std::ofstream f(ini);
+        f << "schema=1\nstick_left_up=a\nstick_left_down=none\nstick_right_right=r\nstick_right_up=menu\n";
+    }
+    rgds::ControlMapping mapping;
+    mapping.load(ini);
+    std::remove(ini.c_str());
+    CHECK(mapping.stick[0] == 0 && mapping.stick[1] == rgds::control_none && mapping.stick[7] == 5);
+    CHECK(mapping.stick[4] == rgds::control_none); // not a logical button: the default stays
+    CHECK(mapping.stick[2] == 10 && mapping.stick[3] == 11);
+    sticks.set_targets(mapping.stick);
+    CHECK(sticks.update(0, -32768, 32767, 0) == (A | R));
+    CHECK(sticks.update(0, 32767, 0, 0) == 0);
+    CHECK(system_has_stick("n64") && system_has_stick("psp") && !system_has_stick("gba") && !system_has_stick("nes"));
+}
+
 int main() {
+    test_stick_buttons();
+    test_zx_machine();
     test_second_screen();
     test_colour();
     test_parsing();

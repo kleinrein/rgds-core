@@ -367,6 +367,7 @@ Finishing the system request	Sistem isteği tamamlanıyor
 Follow your default button layout	Varsayılan düğme düzenini izle
 Following the default controls.	Genel kontroller kullanılıyor.
 Follows your library shader.	Kitaplık filtrenizi izler.
+For games without a stick: N64 and PSP keep it	Çubuğu olmayan oyunlar için: N64 ve PSP onu korur
 Forget this device?	Bu cihaz unutulsun mu?
 FPS changed for this session. Settings storage is unavailable.	FPS bu oturum için değişti. Ayar depolama kullanılamıyor.
 FPS counter enabled.	FPS sayacı açık.
@@ -450,6 +451,14 @@ Green	Yeşil
 Grey	Gri
 Grey TV	Gri televizyon
 Grid	Izgara
+Left stick down	Sol çubuk aşağı
+Left stick left	Sol çubuk sol
+Left stick right	Sol çubuk sağ
+Left stick up	Sol çubuk yukarı
+Right stick down	Sağ çubuk aşağı
+Right stick left	Sağ çubuk sol
+Right stick right	Sağ çubuk sağ
+Right stick up	Sağ çubuk yukarı
 h	sa
 Haptic strength	Dokunsal güç
 Health	Sağlık
@@ -563,6 +572,7 @@ Manage builds and temporary files	Sürümleri ve geçici dosyaları yönet
 Matches your accent	Vurgu renginize uyar
 Matching title	Eşleşen ad
 Matching title saved. Choose Fetch artwork.	Eşleşen ad kaydedildi. Kapakları indir'i seçin.
+Memory card problem	Bellek kartı sorunu
 Menu audio is unavailable on this device.	Bu cihazda menü sesi kullanılamıyor.
 Menu effects	Menü efektleri
 Menu haptics	Dokunsal menü
@@ -644,6 +654,7 @@ Not yet	Henüz değil
 Nothing played yet	Henüz bir şey oynanmadı
 Nothing to load	Yüklenecek bir şey yok
 Nothing to load here yet.	Burada henüz yüklenecek bir şey yok.
+Nothing you change now is kept.	Şimdi yaptığın değişiklikler saklanmaz.
 Notification	Bildirim
 Off	Kapalı
 Off (smooth)	Kapalı (akıcı)
@@ -851,6 +862,7 @@ Screen brightness	Ekran parlaklığı
 Screen colours	Ekran renkleri
 Menu	Menü
 Switch	Değiştir
+Turn off and check the card on a computer.	Kapat ve kartı bir bilgisayarda kontrol et.
 Turn off screen	Ekranı kapat
 screens	ekran
 ScreenScraper needs project credentials and your account	ScreenScraper proje kimlik bilgileri ve hesabınızı gerektirir
@@ -1189,6 +1201,7 @@ Your cartridges go here	Kartuşlarınız burada olacak
 Your colour	Renginiz
 Your DS library starts here	DS kitaplığınız burada başlıyor
 Your games and saves are not touched.	Oyunlarınıza ve kayıtlarınıza dokunulmaz.
+Your games and saves could not be read.	Oyunların ve kayıtların okunamadı.
 Your home screen after powering on	Açılıştan sonraki ana ekranınız
 Your journey	Yolculuğun
 Your last game will appear here	Son oyununuz burada görünecek
@@ -1323,7 +1336,10 @@ That is not the PIN.	Bu PIN doğru değil.
 Without one this profile is not locked. Cancel skips it.	PIN olmadan bu profil kilitli olmaz. İptal atlar.
 The owner's PIN was removed.	Sahibin PIN'i kaldırıldı.
 Profile name	Profil adı
-Remove this profile? Its saves are kept, and a backup is made first.	Bu profil kaldırılsın mı? Kayıtları korunur ve önce yedek alınır.
+Remove this profile? Its saves are kept until you erase removed profiles.	Bu profil kaldırılsın mı? Kaldırılan profilleri silene kadar kayıtları saklanır.
+Back up its saves first	Önce kayıtları yedekle
+Removing the profile…	Profil kaldırılıyor…
+Profile removed.	Profil kaldırıldı.
 Show every game with no rating on this shelf?	Bu raftaki derecelendirmesiz tüm oyunlar gösterilsin mi?
 Star	Yıldız
 Heart	Kalp
@@ -1376,3 +1392,89 @@ Systems page	Sistemler sayfası
 Games you play appear here	Oynadığın oyunlar burada görünür
 Swipe up from the bottom for Home, in from a side for Back	Ana ekran için alttan yukarı, geri için yandan kaydırın
 Swipe in from the left or right edge to go Back.	Geri gitmek için sol veya sağ kenardan içeri kaydırın.
+Music	Müzik
+Songs	Şarkılar
+Albums	Albümler
+Artists	Sanatçılar
+Folders	Klasörler
+Lists	Listeler
+Queue	Sıra
+Equaliser	Ekolayzır
+Visualiser	Görselleştirici
+Now playing	Şimdi çalıyor
+Shuffle	Karıştır
+Shuffle all	Tümünü karıştır
+Shuffle on	Karıştırma açık
+Shuffle off	Karıştırma kapalı
+Repeat off	Tekrar kapalı
+Repeat all	Tümünü tekrarla
+Repeat this song	Bu şarkıyı tekrarla
+Play next	Sonra çal
+Plays next	Sıradaki olarak çalacak
+Add to queue	Sıraya ekle
+Added to the queue	Sıraya eklendi
+Remove from queue	Sıradan çıkar
+Add to favourites	Favorilere ekle
+Remove from favourites	Favorilerden çıkar
+Added to favourites	Favorilere eklendi
+Removed from favourites	Favorilerden çıkarıldı
+Recently added	Son eklenenler
+Unknown artist	Bilinmeyen sanatçı
+Various artists	Çeşitli sanatçılar
+No music yet	Henüz müzik yok
+Nothing here	Burada bir şey yok
+Nothing is playing	Çalan bir şey yok
+The queue is empty	Sıra boş
+Looking for music…	Müzik aranıyor…
+Add your music	Müziğinizi ekleyin
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Müziğinizi karttaki music klasörüne koyun: dosya paylaşımıyla ya da USB sürücü olarak.
+Speakers	Hoparlörler
+Headphones	Kulaklık
+Playing	Çalıyor
+Skip	Atla
+Tabs	Sekmeler
+Flat	Düz
+Larger display	Daha büyük ekran
+Smaller display	Daha küçük ekran
+Music player	Müzik çalar
+Play with the lid closed	Kapak kapalıyken çal
+{0} song	{0} şarkı
+{0} songs	{0} şarkı
+{0} album	{0} albüm
+{0} albums	{0} albüm
+Bass boost	Daha çok bas
+Treble boost	Daha çok tiz
+Rock	Rock
+Pop	Pop
+Jazz	Caz
+Classical	Klasik
+Electronic	Elektronik
+Hip-hop	Hip-hop
+Acoustic	Akustik
+Vocal	Vokal
+Small speakers	Küçük hoparlörler
+Spectrum	Spektrum
+Oscilloscope	Osiloskop
+Fire	Ateş
+Plasma	Plazma
+Starfield	Yıldız alanı
+VU meters	VU göstergeleri
+Vectorscope	Vektörskop
+Radial spectrum	Dairesel spektrum
+Waterfall	Şelale
+Tunnel	Tünel
+ScreenScraper account	ScreenScraper hesabı
+Not signed in	Giriş yapılmadı
+Change account	Hesabı değiştir
+Stop scraping before signing in	Giriş yapmadan önce indirmeyi durdurun
+Stop scraping before signing out	Çıkış yapmadan önce indirmeyi durdurun
+Signed in to ScreenScraper as {0}.	ScreenScraper'a {0} olarak giriş yapıldı.
+Signed out of ScreenScraper.	ScreenScraper'dan çıkış yapıldı.
+Signing in to ScreenScraper	ScreenScraper'a giriş yapılıyor
+Enter your ScreenScraper username and password.	ScreenScraper kullanıcı adınızı ve şifrenizi girin.
+ScreenScraper is not configured for this build yet.	ScreenScraper bu sürümde henüz ayarlanmadı.
+Sign in to ScreenScraper first.	Önce ScreenScraper'a giriş yapın.
+Check your ScreenScraper login.	ScreenScraper girişinizi kontrol edin.
+ScreenScraper did not accept this login.	ScreenScraper bu girişi kabul etmedi.
+Your daily ScreenScraper quota has been reached.	Günlük ScreenScraper kotanız doldu.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraper'a ulaşılamıyor. Wi-Fi'ı kontrol edip yeniden deneyin.

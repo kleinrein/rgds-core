@@ -316,14 +316,20 @@ class SaveLibrary:
                 self.store(slot, overwrite, temp / 'preview.bmp', temp / 'checkpoint.dss', meta)
 
 
-def backup_all(data):
-    """Explicit portable backup. Excludes ROMs, BIOS, Wi-Fi and running engines."""
+def backup_all(data, players=None):
+    """Explicit portable backup. Excludes ROMs, BIOS, Wi-Fi and running engines. players narrows it to those folders
+    (one profile's, on its removal): everyone's saves come to a gigabyte or more, minutes of deflating on the
+    handheld."""
     from emulators import activity_lock, core_running
     data = Path(data)
     with activity_lock(data):
         if core_running(data): raise ValueError('Exit your game before backing up saves.')
+        # A backup cut short by a power cut leaves its half-written archive; nothing else writes one while the lock
+        # is held.
+        for stale in (data / 'exports').glob('save-backup-*.zip.pending'):
+            stale.unlink(missing_ok=True)
         selected = []
-        for player in player_roots(data):  # the owner's, every profile's, and any removed but not yet erased
+        for player in player_roots(data) if players is None else [Path(p) for p in players]:
             roots = [
                 player / 'library', *[
                     player / 'emulators' / engine / folder for engine, folder in [

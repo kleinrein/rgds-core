@@ -367,6 +367,7 @@ Finishing the system request	Finishing the system request
 Follow your default button layout	Follow your default button layout
 Following the default controls.	Following the default controls.
 Follows your library shader.	Follows your library shader.
+For games without a stick: N64 and PSP keep it	For games without a stick: N64 and PSP keep it
 Forget this device?	Forget this device?
 FPS changed for this session. Settings storage is unavailable.	FPS changed for this session. Settings storage is unavailable.
 FPS counter enabled.	FPS counter enabled.
@@ -450,6 +451,14 @@ Green	Green
 Grey	Grey
 Grey TV	Grey TV
 Grid	Grid
+Left stick down	Left stick down
+Left stick left	Left stick left
+Left stick right	Left stick right
+Left stick up	Left stick up
+Right stick down	Right stick down
+Right stick left	Right stick left
+Right stick right	Right stick right
+Right stick up	Right stick up
 h	h
 Haptic strength	Haptic strength
 Health	Health
@@ -563,6 +572,7 @@ Manage builds and temporary files	Manage builds and temporary files
 Matches your accent	Matches your accent
 Matching title	Matching title
 Matching title saved. Choose Fetch artwork.	Matching title saved. Choose Fetch artwork.
+Memory card problem	Memory card problem
 Menu audio is unavailable on this device.	Menu audio is unavailable on this device.
 Menu effects	Menu effects
 Menu haptics	Menu haptics
@@ -644,6 +654,7 @@ Not yet	Not yet
 Nothing played yet	Nothing played yet
 Nothing to load	Nothing to load
 Nothing to load here yet.	Nothing to load here yet.
+Nothing you change now is kept.	Nothing you change now is kept.
 Notification	Notification
 Off	Off
 Off (smooth)	Off (smooth)
@@ -851,6 +862,7 @@ Screen brightness	Screen brightness
 Screen colours	Screen colours
 Menu	Menu
 Switch	Switch
+Turn off and check the card on a computer.	Turn off and check the card on a computer.
 Turn off screen	Turn off screen
 screens	screens
 ScreenScraper needs project credentials and your account	ScreenScraper needs project credentials and your account
@@ -1189,6 +1201,7 @@ Your cartridges go here	Your cartridges go here
 Your colour	Your color
 Your DS library starts here	Your DS library starts here
 Your games and saves are not touched.	Your games and saves are not touched.
+Your games and saves could not be read.	Your games and saves could not be read.
 Your home screen after powering on	Your home screen after powering on
 Your journey	Your journey
 Your last game will appear here	Your last game will appear here
@@ -1323,7 +1336,10 @@ That is not the PIN.	That is not the PIN.
 Without one this profile is not locked. Cancel skips it.	Without one this profile is not locked. Cancel skips it.
 The owner's PIN was removed.	The owner's PIN was removed.
 Profile name	Profile name
-Remove this profile? Its saves are kept, and a backup is made first.	Remove this profile? Its saves are kept, and a backup is made first.
+Remove this profile? Its saves are kept until you erase removed profiles.	Remove this profile? Its saves are kept until you erase removed profiles.
+Back up its saves first	Back up its saves first
+Removing the profile…	Removing the profile…
+Profile removed.	Profile removed.
 Show every game with no rating on this shelf?	Show every game with no rating on this shelf?
 Star	Star
 Heart	Heart
@@ -1376,3 +1392,89 @@ Systems page	Systems page
 Games you play appear here	Games you play appear here
 Swipe up from the bottom for Home, in from a side for Back	Swipe up from the bottom for Home, in from a side for Back
 Swipe in from the left or right edge to go Back.	Swipe in from the left or right edge to go Back.
+Music	Music
+Songs	Songs
+Albums	Albums
+Artists	Artists
+Folders	Folders
+Lists	Lists
+Queue	Queue
+Equaliser	Equalizer
+Visualiser	Visualizer
+Now playing	Now playing
+Shuffle	Shuffle
+Shuffle all	Shuffle all
+Shuffle on	Shuffle on
+Shuffle off	Shuffle off
+Repeat off	Repeat off
+Repeat all	Repeat all
+Repeat this song	Repeat this song
+Play next	Play next
+Plays next	Plays next
+Add to queue	Add to queue
+Added to the queue	Added to the queue
+Remove from queue	Remove from queue
+Add to favourites	Add to favorites
+Remove from favourites	Remove from favorites
+Added to favourites	Added to favorites
+Removed from favourites	Removed from favorites
+Recently added	Recently added
+Unknown artist	Unknown artist
+Various artists	Various artists
+No music yet	No music yet
+Nothing here	Nothing here
+Nothing is playing	Nothing is playing
+The queue is empty	The queue is empty
+Looking for music…	Looking for music…
+Add your music	Add your music
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Put your music in the music folder on the card: with file sharing, or as a USB drive.
+Speakers	Speakers
+Headphones	Headphones
+Playing	Playing
+Skip	Skip
+Tabs	Tabs
+Flat	Flat
+Larger display	Larger display
+Smaller display	Smaller display
+Music player	Music player
+Play with the lid closed	Play with the lid closed
+{0} song	{0} song
+{0} songs	{0} songs
+{0} album	{0} album
+{0} albums	{0} albums
+Bass boost	Bass boost
+Treble boost	Treble boost
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Classical
+Electronic	Electronic
+Hip-hop	Hip-hop
+Acoustic	Acoustic
+Vocal	Vocal
+Small speakers	Small speakers
+Spectrum	Spectrum
+Oscilloscope	Oscilloscope
+Fire	Fire
+Plasma	Plasma
+Starfield	Starfield
+VU meters	VU meters
+Vectorscope	Vectorscope
+Radial spectrum	Radial spectrum
+Waterfall	Waterfall
+Tunnel	Tunnel
+ScreenScraper account	ScreenScraper account
+Not signed in	Not signed in
+Change account	Change account
+Stop scraping before signing in	Stop scraping before signing in
+Stop scraping before signing out	Stop scraping before signing out
+Signed in to ScreenScraper as {0}.	Signed in to ScreenScraper as {0}.
+Signed out of ScreenScraper.	Signed out of ScreenScraper.
+Signing in to ScreenScraper	Signing in to ScreenScraper
+Enter your ScreenScraper username and password.	Enter your ScreenScraper username and password.
+ScreenScraper is not configured for this build yet.	ScreenScraper is not configured for this build yet.
+Sign in to ScreenScraper first.	Sign in to ScreenScraper first.
+Check your ScreenScraper login.	Check your ScreenScraper login.
+ScreenScraper did not accept this login.	ScreenScraper did not accept this login.
+Your daily ScreenScraper quota has been reached.	Your daily ScreenScraper quota has been reached.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Could not reach ScreenScraper. Check Wi-Fi and try again.

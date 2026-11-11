@@ -367,6 +367,7 @@ Finishing the system request	正在完成系统请求
 Follow your default button layout	跟随默认按键布局
 Following the default controls.	正在使用通用按键设置。
 Follows your library shader.	跟随游戏库的滤镜。
+For games without a stick: N64 and PSP keep it	用于没有摇杆的游戏：N64 和 PSP 保留摇杆
 Forget this device?	要忘记此设备吗？
 FPS changed for this session. Settings storage is unavailable.	已在本次会话中更改帧率显示。无法保存设置。
 FPS counter enabled.	已显示帧率。
@@ -450,6 +451,14 @@ Green	绿色
 Grey	灰色
 Grey TV	灰色电视
 Grid	方格
+Left stick down	左摇杆 下
+Left stick left	左摇杆 左
+Left stick right	左摇杆 右
+Left stick up	左摇杆 上
+Right stick down	右摇杆 下
+Right stick left	右摇杆 左
+Right stick right	右摇杆 右
+Right stick up	右摇杆 上
 h	小时
 Haptic strength	触感强度
 Health	体力
@@ -563,6 +572,7 @@ Manage builds and temporary files	管理版本和临时文件
 Matches your accent	与强调色一致
 Matching title	匹配的标题
 Matching title saved. Choose Fetch artwork.	已保存匹配的标题。请选择“获取封面”。
+Memory card problem	存储卡有问题
 Menu audio is unavailable on this device.	此设备无法播放菜单声音。
 Menu effects	菜单音效
 Menu haptics	菜单触感
@@ -644,6 +654,7 @@ Not yet	尚未
 Nothing played yet	还没有玩过游戏
 Nothing to load	没有可读取的存档
 Nothing to load here yet.	这里还没有可读取的内容。
+Nothing you change now is kept.	现在所做的更改不会保存。
 Notification	通知
 Off	关
 Off (smooth)	关（流畅）
@@ -851,6 +862,7 @@ Screen brightness	屏幕亮度
 Screen colours	屏幕颜色
 Menu	菜单
 Switch	切换
+Turn off and check the card on a computer.	请关机并在电脑上检查存储卡。
 Turn off screen	关闭屏幕
 screens	个画面
 ScreenScraper needs project credentials and your account	ScreenScraper 需要项目凭据和你的账号
@@ -1189,6 +1201,7 @@ Your cartridges go here	你的卡带会显示在这里
 Your colour	你的颜色
 Your DS library starts here	你的 DS 游戏库从这里开始
 Your games and saves are not touched.	不会影响你的游戏和存档。
+Your games and saves could not be read.	无法读取你的游戏和存档。
 Your home screen after powering on	开机后的主页
 Your journey	你的旅程
 Your last game will appear here	最近玩的游戏会显示在这里
@@ -1323,7 +1336,10 @@ That is not the PIN.	PIN 不正确。
 Without one this profile is not locked. Cancel skips it.	没有 PIN,此个人资料不会锁定。取消可跳过。
 The owner's PIN was removed.	已移除机主的 PIN。
 Profile name	个人资料名称
-Remove this profile? Its saves are kept, and a backup is made first.	要移除此个人资料吗?存档会保留,并先创建备份。
+Remove this profile? Its saves are kept until you erase removed profiles.	移除此档案？在你清除已移除的档案之前，它的存档都会保留。
+Back up its saves first	先备份它的存档
+Removing the profile…	正在移除档案…
+Profile removed.	档案已移除。
 Show every game with no rating on this shelf?	要显示此分类中所有没有分级的游戏吗?
 Star	星星
 Heart	爱心
@@ -1376,3 +1392,89 @@ Systems page	系统页面
 Games you play appear here	你玩过的游戏会显示在这里
 Swipe up from the bottom for Home, in from a side for Back	从底部上滑返回主页，从两侧滑入返回上一页
 Swipe in from the left or right edge to go Back.	从左侧或右侧边缘滑入即可返回。
+Music	音乐
+Songs	歌曲
+Albums	专辑
+Artists	艺人
+Folders	文件夹
+Lists	列表
+Queue	播放队列
+Equaliser	均衡器
+Visualiser	可视化
+Now playing	正在播放
+Shuffle	随机播放
+Shuffle all	全部随机播放
+Shuffle on	随机播放已开
+Shuffle off	随机播放已关
+Repeat off	循环已关
+Repeat all	全部循环
+Repeat this song	单曲循环
+Play next	下一首播放
+Plays next	将在下一首播放
+Add to queue	加入播放队列
+Added to the queue	已加入播放队列
+Remove from queue	从播放队列移除
+Add to favourites	加入收藏
+Remove from favourites	取消收藏
+Added to favourites	已加入收藏
+Removed from favourites	已取消收藏
+Recently added	最近添加
+Unknown artist	未知艺人
+Various artists	多位艺人
+No music yet	还没有音乐
+Nothing here	这里什么也没有
+Nothing is playing	没有正在播放的歌曲
+The queue is empty	播放队列是空的
+Looking for music…	正在查找音乐…
+Add your music	添加你的音乐
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	把音乐放进卡上的 music 文件夹：可以用文件共享，也可以当作 USB 盘。
+Speakers	扬声器
+Headphones	耳机
+Playing	正在播放
+Skip	跳过
+Tabs	标签
+Flat	平直
+Larger display	显示大一些
+Smaller display	显示小一些
+Music player	音乐播放器
+Play with the lid closed	合上盖子继续播放
+{0} song	{0} 首歌曲
+{0} songs	{0} 首歌曲
+{0} album	{0} 张专辑
+{0} albums	{0} 张专辑
+Bass boost	低音增强
+Treble boost	高音增强
+Rock	摇滚
+Pop	流行
+Jazz	爵士
+Classical	古典
+Electronic	电子
+Hip-hop	嘻哈
+Acoustic	原声
+Vocal	人声
+Small speakers	小扬声器
+Spectrum	频谱
+Oscilloscope	示波器
+Fire	火焰
+Plasma	等离子
+Starfield	星空
+VU meters	VU 表
+Vectorscope	矢量示波器
+Radial spectrum	环形频谱
+Waterfall	瀑布
+Tunnel	隧道
+ScreenScraper account	ScreenScraper 账户
+Not signed in	未登录
+Change account	更换账户
+Stop scraping before signing in	登录前请先停止获取
+Stop scraping before signing out	退出前请先停止获取
+Signed in to ScreenScraper as {0}.	已以 {0} 登录 ScreenScraper。
+Signed out of ScreenScraper.	已退出 ScreenScraper。
+Signing in to ScreenScraper	正在登录 ScreenScraper
+Enter your ScreenScraper username and password.	请输入 ScreenScraper 用户名和密码。
+ScreenScraper is not configured for this build yet.	此版本尚未配置 ScreenScraper。
+Sign in to ScreenScraper first.	请先登录 ScreenScraper。
+Check your ScreenScraper login.	请检查 ScreenScraper 登录信息。
+ScreenScraper did not accept this login.	ScreenScraper 未接受此登录信息。
+Your daily ScreenScraper quota has been reached.	今日的 ScreenScraper 配额已用完。
+Could not reach ScreenScraper. Check Wi-Fi and try again.	无法连接 ScreenScraper。请检查 Wi-Fi 后重试。

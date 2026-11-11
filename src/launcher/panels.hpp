@@ -27,6 +27,10 @@ void App::top(SDL_Renderer* r, int y) {
         chat_top(r, y);
         return;
     }
+    if (music_open) {
+        music_top(r, y);
+        return;
+    }
     if (o.game_menu) {
         rect(r, 0, y, 640, 480, "background");
         media.draw(r, o.data / "session/menu-background.bmp", {0, y + 48, 640, 432}, false, 70);
@@ -113,8 +117,12 @@ void App::top(SDL_Renderer* r, int y) {
             centered(r, "Settings", y + 261, 2, "ink");
             return;
         }
-        if (home_selected == pictochat_tile) {
+        if (pictochat_at(home_selected)) {
             pictochat_top(r, y);
+            return;
+        }
+        if (music_at(home_selected)) {
+            music_home_top(r, y);
             return;
         }
         // The collection and its three numbers, centred in the card.
@@ -159,6 +167,10 @@ void App::top(SDL_Renderer* r, int y) {
 void App::bottom(SDL_Renderer* r, int y) {
     if (chat_open) {
         chat_bottom(r, y);
+        return;
+    }
+    if (music_open) {
+        music_bottom(r, y);
         return;
     }
     if (o.port_menu && port_idle) {

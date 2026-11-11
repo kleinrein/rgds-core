@@ -1,8 +1,8 @@
 # Artwork sources
 
 Settings → Library → Artwork sources now defaults to **Automatic**.
-Select a source, then **Fetch missing artwork**. No developer credentials or
-player account are required for GameTDB or Libretro. The job runs in the
+Select a source, then **Fetch missing artwork**. No account is needed for
+GameTDB or Libretro; ScreenScraper asks for yours. The job runs in the
 background, can be stopped, and keeps completed downloads for offline browsing.
 
 - **GameTDB** matches the four-character game code in the DS header, including
@@ -13,6 +13,7 @@ background, can be stopped, and keeps completed downloads for offline browsing.
   sequel numbers, prefers the ROM's region and refuses ambiguous title matches.
   Unknown/homebrew titles may still have no published cover.
 - **Automatic** tries GameTDB and falls back to Libretro.
+- **ScreenScraper** uses your own screenscraper.fr account; see below.
 
 
 Only game codes or titles are requested from the public providers; ROM contents
@@ -126,9 +127,44 @@ Artwork, metadata and play history remain in `userdata/library/<game-key>/`.
 The key follows the canonical ROM path, so moving a ROM creates a different key.
 Release updates retain the existing library data.
 
-## ScreenScraper availability
+## ScreenScraper (optional, with your own account)
 
-ScreenScraper has been removed from the source picker and runtime CLI. Previous
-selections migrate to Automatic. The old adapter remains in the source tree for
-possible future use, but login/logout and provider selection are unavailable.
-Existing downloaded artwork is preserved. No account setup is needed.
+**ScreenScraper** is the fourth Artwork source. It needs a free
+[screenscraper.fr](https://www.screenscraper.fr) account: choosing it opens the
+keyboard for your username, then your password (shown as dots). The launcher
+hands both to `scraper.py login` on stdin (never on a command line), which checks
+them with ScreenScraper before keeping them in `private/screenscraper-account.json`
+(mode 0600, never in `userdata/library`). Only the username is written where the
+launcher can show it (`scraper/account.ini`). **ScreenScraper account** at the
+bottom of Artwork sources shows who is signed in and offers Change account and
+Sign out.
+
+It covers every system the launcher has (`runtime/screenscraper.py`, `SYSTEMS`
+maps them to ScreenScraper's ids). One `jeuInfos` request per game answers the
+cover, the details and the pictures together, and requests are paced to the
+account's own `maxrequestspermin` instead of a fixed two seconds, which is why it
+is quicker than the public catalogs. Only the ROM's CRC32, size and file name are
+sent: the CRC of a zipped game is read from the ZIP directory and anything over
+64 MB (PSP, 3DS, PlayStation discs) is matched by name and size, so nothing is
+unpacked or read whole. A **Matching title** uses ScreenScraper's search.
+
+- Cover: `box-2D`, the ROM's own region first (from its name or game code), then
+  world, Europe, USA, Japan; at most 384 px.
+- Game info: title, developer, publisher, genre (English), release date, the
+  first PEGI/ESRB/USK/CERO rating the profiles understand, players and every
+  synopsis language. Extra pictures: `ss` and `sstitle`.
+- A game ScreenScraper does not know falls back to the public catalogs
+  (Automatic). A refused login, a 403 or a reached daily quota stops asking
+  ScreenScraper for the rest of the run and the public catalogs finish it; the
+  summary says so.
+
+ScreenScraper also needs this build's developer credentials (`devid`,
+`devpassword`). They come from `SCREENSCRAPER_DEVID`/`SCREENSCRAPER_DEVPASSWORD`,
+`private/screenscraper-app.json`, or a `runtime/screenscraper-app.json` the release
+ships beside `scraper.py`. That file is in `.gitignore`: the public repository never
+holds them. Without them sign-in says "ScreenScraper is not configured for this
+build yet." and nothing is stored.
+
+An old `artwork_provider=3` in `ui.ini` (the account source an earlier build
+removed) still becomes Automatic; ScreenScraper is saved as
+`artwork_provider=screenscraper`.

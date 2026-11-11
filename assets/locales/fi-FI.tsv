@@ -367,6 +367,7 @@ Finishing the system request	Viimeistellään järjestelmäpyyntöä
 Follow your default button layout	Käytä oletuspainikeasettelua
 Following the default controls.	Käytetään yhteisiä ohjainasetuksia.
 Follows your library shader.	Seuraa kirjaston suodatinta.
+For games without a stick: N64 and PSP keep it	Peleihin ilman sauvaa: N64 ja PSP pitävät sen
 Forget this device?	Unohdetaanko tämä laite?
 FPS changed for this session. Settings storage is unavailable.	FPS muutettu tälle istunnolle. Asetuksia ei voi tallentaa.
 FPS counter enabled.	FPS-laskuri käytössä.
@@ -450,6 +451,14 @@ Green	Vihreä
 Grey	Harmaa
 Grey TV	Harmaa televisio
 Grid	Ruudukko
+Left stick down	Vasen sauva alas
+Left stick left	Vasen sauva vasen
+Left stick right	Vasen sauva oikea
+Left stick up	Vasen sauva ylös
+Right stick down	Oikea sauva alas
+Right stick left	Oikea sauva vasen
+Right stick right	Oikea sauva oikea
+Right stick up	Oikea sauva ylös
 h	h
 Haptic strength	Haptiikan voimakkuus
 Health	Terveys
@@ -563,6 +572,7 @@ Manage builds and temporary files	Hallitse versioita ja väliaikaisia tiedostoja
 Matches your accent	Seuraa korostusväriä
 Matching title	Hakutunniste
 Matching title saved. Choose Fetch artwork.	Hakutunniste tallennettu. Valitse Hae kansikuva.
+Memory card problem	Muistikortin ongelma
 Menu audio is unavailable on this device.	Valikkoääni ei ole käytettävissä tällä laitteella.
 Menu effects	Valikkotehosteet
 Menu haptics	Valikon haptiikka
@@ -644,6 +654,7 @@ Not yet	Ei vielä
 Nothing played yet	Ei vielä pelattu
 Nothing to load	Ei ladattavaa
 Nothing to load here yet.	Täällä ei ole vielä ladattavaa.
+Nothing you change now is kept.	Nyt tekemiäsi muutoksia ei tallenneta.
 Notification	Ilmoitus
 Off	Pois
 Off (smooth)	Pois (sulava)
@@ -851,6 +862,7 @@ Screen brightness	Näytön kirkkaus
 Screen colours	Näytön värit
 Menu	Valikko
 Switch	Vaihda
+Turn off and check the card on a computer.	Sammuta laite ja tarkista kortti tietokoneella.
 Turn off screen	Sammuta näyttö
 screens	näyttöä
 ScreenScraper needs project credentials and your account	ScreenScraper tarvitsee projektitunnukset ja käyttäjätilisi
@@ -1189,6 +1201,7 @@ Your cartridges go here	Pelikasettisi näkyvät täällä
 Your colour	Värisi
 Your DS library starts here	DS-kirjastosi alkaa tästä
 Your games and saves are not touched.	Pelisi ja tallennuksesi pysyvät koskemattomina.
+Your games and saves could not be read.	Pelejäsi ja tallennuksiasi ei voitu lukea.
 Your home screen after powering on	Kotinäyttösi virran kytkennän jälkeen
 Your journey	Matkasi
 Your last game will appear here	Viimeisin pelisi näkyy tässä
@@ -1323,7 +1336,10 @@ That is not the PIN.	Tämä ei ole PIN-koodi.
 Without one this profile is not locked. Cancel skips it.	Ilman koodia profiili ei ole lukittu. Peruuta ohittaa.
 The owner's PIN was removed.	Omistajan PIN-koodi poistettiin.
 Profile name	Profiilin nimi
-Remove this profile? Its saves are kept, and a backup is made first.	Poistetaanko profiili? Tallennukset säilytetään, ja ensin tehdään varmuuskopio.
+Remove this profile? Its saves are kept until you erase removed profiles.	Poistetaanko tämä profiili? Sen tallennukset säilyvät, kunnes tyhjennät poistetut profiilit.
+Back up its saves first	Varmuuskopioi tallennukset ensin
+Removing the profile…	Poistetaan profiilia…
+Profile removed.	Profiili poistettu.
 Show every game with no rating on this shelf?	Näytetäänkö kaikki tämän hyllyn ikärajattomat pelit?
 Star	Tähti
 Heart	Sydän
@@ -1376,3 +1392,89 @@ Systems page	Järjestelmäsivu
 Games you play appear here	Pelaamasi pelit näkyvät tässä
 Swipe up from the bottom for Home, in from a side for Back	Pyyhkäise alhaalta ylös kotiin, sivulta takaisin
 Swipe in from the left or right edge to go Back.	Pyyhkäise vasemmasta tai oikeasta reunasta sisään palataksesi.
+Music	Musiikki
+Songs	Kappaleet
+Albums	Albumit
+Artists	Artistit
+Folders	Kansiot
+Lists	Listat
+Queue	Jono
+Equaliser	Taajuuskorjain
+Visualiser	Visualisointi
+Now playing	Nyt soi
+Shuffle	Sekoita
+Shuffle all	Sekoita kaikki
+Shuffle on	Sekoitus päällä
+Shuffle off	Sekoitus pois
+Repeat off	Toisto pois
+Repeat all	Toista kaikki
+Repeat this song	Toista tätä kappaletta
+Play next	Toista seuraavaksi
+Plays next	Soi seuraavaksi
+Add to queue	Lisää jonoon
+Added to the queue	Lisätty jonoon
+Remove from queue	Poista jonosta
+Add to favourites	Lisää suosikkeihin
+Remove from favourites	Poista suosikeista
+Added to favourites	Lisätty suosikkeihin
+Removed from favourites	Poistettu suosikeista
+Recently added	Viimeksi lisätyt
+Unknown artist	Tuntematon artisti
+Various artists	Useita artisteja
+No music yet	Ei vielä musiikkia
+Nothing here	Ei mitään täällä
+Nothing is playing	Mikään ei soi
+The queue is empty	Jono on tyhjä
+Looking for music…	Etsitään musiikkia…
+Add your music	Lisää musiikkisi
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Laita musiikkisi kortin music-kansioon: tiedostonjaolla tai USB-asemana.
+Speakers	Kaiuttimet
+Headphones	Kuulokkeet
+Playing	Soi
+Skip	Ohita
+Tabs	Välilehdet
+Flat	Tasainen
+Larger display	Suurempi näyttö
+Smaller display	Pienempi näyttö
+Music player	Musiikkisoitin
+Play with the lid closed	Toista kansi suljettuna
+{0} song	{0} kappale
+{0} songs	{0} kappaletta
+{0} album	{0} albumi
+{0} albums	{0} albumia
+Bass boost	Bassokorostus
+Treble boost	Diskanttikorostus
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Klassinen
+Electronic	Elektroninen
+Hip-hop	Hiphop
+Acoustic	Akustinen
+Vocal	Laulu
+Small speakers	Pienet kaiuttimet
+Spectrum	Spektri
+Oscilloscope	Oskilloskooppi
+Fire	Tuli
+Plasma	Plasma
+Starfield	Tähtikenttä
+VU meters	VU-mittarit
+Vectorscope	Vektoriskooppi
+Radial spectrum	Pyöreä spektri
+Waterfall	Vesiputous
+Tunnel	Tunneli
+ScreenScraper account	ScreenScraper-tili
+Not signed in	Ei kirjautunut
+Change account	Vaihda tiliä
+Stop scraping before signing in	Pysäytä haku ennen kirjautumista
+Stop scraping before signing out	Pysäytä haku ennen uloskirjautumista
+Signed in to ScreenScraper as {0}.	Kirjauduttu ScreenScraperiin käyttäjänä {0}.
+Signed out of ScreenScraper.	Kirjauduttu ulos ScreenScraperista.
+Signing in to ScreenScraper	Kirjaudutaan ScreenScraperiin
+Enter your ScreenScraper username and password.	Anna ScreenScraperin käyttäjätunnus ja salasana.
+ScreenScraper is not configured for this build yet.	ScreenScraperia ei ole vielä määritetty tähän versioon.
+Sign in to ScreenScraper first.	Kirjaudu ensin ScreenScraperiin.
+Check your ScreenScraper login.	Tarkista ScreenScraper-kirjautuminen.
+ScreenScraper did not accept this login.	ScreenScraper ei hyväksynyt kirjautumista.
+Your daily ScreenScraper quota has been reached.	Päivittäinen ScreenScraper-kiintiö on täynnä.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraperiin ei saada yhteyttä. Tarkista Wi-Fi ja yritä uudelleen.

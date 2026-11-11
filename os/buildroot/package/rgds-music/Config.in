@@ -1,0 +1,11 @@
+config BR2_PACKAGE_RGDS_MUSIC
+	bool "rgds-music"
+	depends on BR2_INSTALL_LIBSTDCPP
+	select BR2_PACKAGE_FFMPEG
+	select BR2_PACKAGE_FFMPEG_SWSCALE
+	select BR2_PACKAGE_SDL2
+	help
+	  The music player's engine (src/music/engine.cpp): /usr/bin/rgds-music, which RG DS Core's launcher
+	  starts when Settings > Sound > Music player is on. Built here, against the image's own FFmpeg, rather
+	  than with the launcher: FFmpeg's structures differ between versions, so the engine is compiled against
+	  the headers of the library it will load. Tracker modules play when BR2_PACKAGE_LIBOPENMPT is on.

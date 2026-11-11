@@ -68,8 +68,18 @@ inline std::map<std::string, std::string> control_fields(const std::string& path
     }
     return result;
 }
+// The analog sticks as buttons, for systems whose pad has no stick (RG DS Play's GBA, NES, ...): each direction
+// presses one logical button, or none. Left stick up, down, left, right, then the right stick's.
+inline constexpr std::array<const char*, 8> stick_keys{"stick_left_up",    "stick_left_down",  "stick_left_left",
+                                                       "stick_left_right", "stick_right_up",   "stick_right_down",
+                                                       "stick_right_left", "stick_right_right"};
+inline constexpr std::array<int, 8> default_stick{8, 9, 10, 11, control_none, control_none, control_none, control_none};
+// A stick direction as a button: down past half way, up again under 40%, so a stick resting near the line can't chatter.
+inline constexpr int stick_press = 16384, stick_release = 13107;
+inline bool stick_direction_down(int along, bool held) { return along > (held ? stick_release : stick_press); }
 struct ControlMapping {
     std::array<int, 12> sources{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    std::array<int, 8> stick = default_stick; // a logical button (0-11) per direction, or control_none
     std::string preset = "default", shortcut = "start+menu", shortcut_action = "home";
     int fast_forward_source = 13; // R2 fast-forwards unless a preset or the user says otherwise
     std::string fast_forward_mode = "hold";
@@ -93,6 +103,12 @@ struct ControlMapping {
                 int source = physical_index(found->second);
                 if (source >= 0) sources[i] = source;
             }
+        }
+        for (int i = 0; i < 8; i++) {
+            auto found = fields.find(stick_keys[i]);
+            if (found == fields.end()) continue;
+            int target = physical_index(found->second);
+            if ((target >= 0 && target < 12) || target == control_none) stick[i] = target;
         }
         auto mode = value("shortcut");
         if (mode == "anbernic" || mode == "start+menu" || mode == "startthenmenu") shortcut = mode;

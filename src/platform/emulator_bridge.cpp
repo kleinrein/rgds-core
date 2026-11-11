@@ -110,6 +110,9 @@ std::map<SDL_JoystickID, std::array<bool, 16>> event_sources;
 std::map<SDL_JoystickID, Uint8> event_hats;
 std::map<std::pair<SDL_JoystickID, int>, bool> event_thresholds;
 std::map<std::tuple<Uint32, SDL_JoystickID, int>, SDL_Event> delivered_controls;
+// DSCore's sticks as buttons (Controls' stick rows): where each pad's sticks are, and which directions are down.
+std::map<SDL_JoystickID, std::array<int, 4>> stick_axes;
+std::map<SDL_JoystickID, std::array<bool, 8>> stick_held;
 void release_controls();
 void graphics_texture_changed(bool enhanced);
 void write_cheats(bool force = false);
@@ -160,6 +163,8 @@ void release_controls() {
     event_sources.clear();
     event_hats.clear();
     event_thresholds.clear();
+    stick_axes.clear();
+    stick_held.clear();
     delayed_start_events.clear();
 }
 thread_local bool presenting_renderer = false;
@@ -694,7 +699,43 @@ bool controller_source_down(SDL_GameController* pad, int source) {
     }
     return down;
 }
+// A stick moved in a DS game: the logical buttons its directions are bound to go down and up as controller button
+// events after it (already logical, as remap_event leaves them). The motion itself still reaches DSCore, whose pen
+// follows the right stick; its own stick-as-D-pad is off (emulator_profiles.DS_INPUT_PROFILE).
+void stick_events(const SDL_ControllerAxisEvent& motion) {
+    auto& axes = stick_axes[motion.which];
+    axes[motion.axis] = motion.value;
+    auto& held = stick_held[motion.which];
+    auto logical_down = [&](const std::array<bool, 8>& directions) {
+        unsigned mask = 0;
+        for (int d = 0; d < 8; d++) {
+            const int logical = control_mapping.stick[d];
+            if (directions[d] && logical >= 0 && logical < 12) mask |= 1u << logical;
+        }
+        return mask;
+    };
+    const unsigned before = logical_down(held);
+    const int along[8] = {-axes[1], axes[1], -axes[0], axes[0], -axes[3], axes[3], -axes[2], axes[2]};
+    for (int d = 0; d < 8; d++) held[d] = rgds::stick_direction_down(along[d], held[d]);
+    const unsigned after = logical_down(held);
+    const auto& physical = event_sources[motion.which];
+    for (int logical = 0; logical < 12; logical++) {
+        const bool was = before >> logical & 1, now_down = after >> logical & 1;
+        const int source = control_mapping.source_for(logical), button = controller_button(logical);
+        // A button the pad holds too stays down when the stick lets go of it.
+        if (was == now_down || button < 0 || (!now_down && source >= 0 && source < 16 && physical[source])) continue;
+        SDL_Event emitted{};
+        emitted.type = now_down ? SDL_CONTROLLERBUTTONDOWN : SDL_CONTROLLERBUTTONUP;
+        emitted.cbutton.which = motion.which;
+        emitted.cbutton.timestamp = motion.timestamp;
+        emitted.cbutton.button = Uint8(button);
+        emitted.cbutton.state = now_down ? SDL_PRESSED : SDL_RELEASED;
+        events.push_back(emitted);
+    }
+}
 bool remap_event(SDL_Event& event) {
+    if (event.type == SDL_CONTROLLERAXISMOTION && core == "dsperate" && event.caxis.axis <= SDL_CONTROLLER_AXIS_RIGHTY)
+        stick_events(event.caxis);
     if (event.type == SDL_CONTROLLERAXISMOTION &&
         (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT || event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)) {
         int source = event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ? 12 : 13,

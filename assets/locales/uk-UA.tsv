@@ -367,6 +367,7 @@ Finishing the system request	Завершення системного запи�
 Follow your default button layout	Як у типовій розкладці
 Following the default controls.	Використовується спільне керування.
 Follows your library shader.	Як фільтр бібліотеки.
+For games without a stick: N64 and PSP keep it	Для ігор без стіка: N64 і PSP залишають його
 Forget this device?	Забути цей пристрій?
 FPS changed for this session. Settings storage is unavailable.	FPS змінено для цього сеансу. Сховище налаштувань недоступне.
 FPS counter enabled.	Лічильник FPS увімкнено.
@@ -450,6 +451,14 @@ Green	Зелений
 Grey	Сірий
 Grey TV	Сірий телевізор
 Grid	Сітка
+Left stick down	Лівий стік вниз
+Left stick left	Лівий стік ліворуч
+Left stick right	Лівий стік праворуч
+Left stick up	Лівий стік вгору
+Right stick down	Правий стік вниз
+Right stick left	Правий стік ліворуч
+Right stick right	Правий стік праворуч
+Right stick up	Правий стік вгору
 h	год
 Haptic strength	Сила відгуку
 Health	Здоров’я
@@ -563,6 +572,7 @@ Manage builds and temporary files	Збірки й тимчасові файли
 Matches your accent	Як колір акценту
 Matching title	Зіставлена назва
 Matching title saved. Choose Fetch artwork.	Назву збережено. Виберіть «Завантажити обкладинки».
+Memory card problem	Проблема з картою пам'яті
 Menu audio is unavailable on this device.	Звук меню недоступний на цьому пристрої.
 Menu effects	Ефекти меню
 Menu haptics	Відгук у меню
@@ -644,6 +654,7 @@ Not yet	Ще ні
 Nothing played yet	Поки нічого не запускалося
 Nothing to load	Нічого завантажувати
 Nothing to load here yet.	Тут поки нічого завантажувати.
+Nothing you change now is kept.	Зміни зараз не збережуться.
 Notification	Сповіщення
 Off	Вимк.
 Off (smooth)	Вимк. (плавно)
@@ -851,6 +862,7 @@ Screen brightness	Яскравість екрана
 Screen colours	Кольори екрана
 Menu	Меню
 Switch	Змінити
+Turn off and check the card on a computer.	Вимкніть і перевірте карту на комп'ютері.
 Turn off screen	Вимкнути екран
 screens	екранів
 ScreenScraper needs project credentials and your account	Для ScreenScraper потрібні дані проєкту та ваш обліковий запис
@@ -1189,6 +1201,7 @@ Your cartridges go here	Тут будуть ваші картриджі
 Your colour	Ваш колір
 Your DS library starts here	Тут починається ваша бібліотека DS
 Your games and saves are not touched.	Ігри й збереження не змінюються.
+Your games and saves could not be read.	Не вдалося прочитати ігри та збереження.
 Your home screen after powering on	Головний екран після ввімкнення
 Your journey	Ваша подорож
 Your last game will appear here	Тут з’явиться остання гра
@@ -1323,7 +1336,10 @@ That is not the PIN.	Це неправильний PIN-код.
 Without one this profile is not locked. Cancel skips it.	Без нього профіль не заблоковано. «Скасувати» пропустить цей крок.
 The owner's PIN was removed.	PIN-код власника видалено.
 Profile name	Ім'я профілю
-Remove this profile? Its saves are kept, and a backup is made first.	Видалити цей профіль? Збереження залишаться, спочатку буде створено копію.
+Remove this profile? Its saves are kept until you erase removed profiles.	Видалити цей профіль? Його збереження лишаться, доки ви не зітрете видалені профілі.
+Back up its saves first	Спершу зробити копію
+Removing the profile…	Видалення профілю…
+Profile removed.	Профіль видалено.
 Show every game with no rating on this shelf?	Показати всі ігри без рейтингу на цій полиці?
 Star	Зірка
 Heart	Серце
@@ -1376,3 +1392,89 @@ Systems page	Сторінка систем
 Games you play appear here	Ігри, у які ви граєте, з’являться тут
 Swipe up from the bottom for Home, in from a side for Back	Свайп знизу вгору — головна, збоку — назад
 Swipe in from the left or right edge to go Back.	Свайп від лівого або правого краю — назад.
+Music	Музика
+Songs	Пісні
+Albums	Альбоми
+Artists	Виконавці
+Folders	Папки
+Lists	Списки
+Queue	Черга
+Equaliser	Еквалайзер
+Visualiser	Візуалізація
+Now playing	Зараз грає
+Shuffle	Упереміш
+Shuffle all	Усе впереміш
+Shuffle on	Упереміш: увімк.
+Shuffle off	Упереміш: вимк.
+Repeat off	Повтор: вимк.
+Repeat all	Повторювати все
+Repeat this song	Повторювати цю пісню
+Play next	Грати наступною
+Plays next	Зіграє наступною
+Add to queue	Додати до черги
+Added to the queue	Додано до черги
+Remove from queue	Прибрати з черги
+Add to favourites	Додати до улюблених
+Remove from favourites	Прибрати з улюблених
+Added to favourites	Додано до улюблених
+Removed from favourites	Прибрано з улюблених
+Recently added	Нещодавно додані
+Unknown artist	Невідомий виконавець
+Various artists	Різні виконавці
+No music yet	Музики ще немає
+Nothing here	Тут порожньо
+Nothing is playing	Нічого не грає
+The queue is empty	Черга порожня
+Looking for music…	Пошук музики…
+Add your music	Додайте свою музику
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Покладіть музику в папку music на картці: через спільний доступ до файлів або як на USB-диск.
+Speakers	Динаміки
+Headphones	Навушники
+Playing	Грає
+Skip	Пропуск
+Tabs	Вкладки
+Flat	Рівний
+Larger display	Більший екран
+Smaller display	Менший екран
+Music player	Музичний плеєр
+Play with the lid closed	Грати із закритою кришкою
+{0} song	{0} пісня
+{0} songs	{0} пісень
+{0} album	{0} альбом
+{0} albums	{0} альбомів
+Bass boost	Більше басу
+Treble boost	Більше верхів
+Rock	Рок
+Pop	Поп
+Jazz	Джаз
+Classical	Класика
+Electronic	Електроніка
+Hip-hop	Хіп-хоп
+Acoustic	Акустика
+Vocal	Вокал
+Small speakers	Маленькі динаміки
+Spectrum	Спектр
+Oscilloscope	Осцилограф
+Fire	Вогонь
+Plasma	Плазма
+Starfield	Зоряне поле
+VU meters	Стрілкові індикатори
+Vectorscope	Векторскоп
+Radial spectrum	Круговий спектр
+Waterfall	Водоспад
+Tunnel	Тунель
+ScreenScraper account	Обліковий запис ScreenScraper
+Not signed in	Вхід не виконано
+Change account	Змінити обліковий запис
+Stop scraping before signing in	Зупиніть завантаження перед входом
+Stop scraping before signing out	Зупиніть завантаження перед виходом
+Signed in to ScreenScraper as {0}.	Вхід у ScreenScraper як {0}.
+Signed out of ScreenScraper.	Вихід зі ScreenScraper виконано.
+Signing in to ScreenScraper	Вхід у ScreenScraper
+Enter your ScreenScraper username and password.	Введіть ім’я користувача та пароль ScreenScraper.
+ScreenScraper is not configured for this build yet.	ScreenScraper ще не налаштовано в цій версії.
+Sign in to ScreenScraper first.	Спершу увійдіть у ScreenScraper.
+Check your ScreenScraper login.	Перевірте дані входу ScreenScraper.
+ScreenScraper did not accept this login.	ScreenScraper не прийняв ці дані входу.
+Your daily ScreenScraper quota has been reached.	Денну квоту ScreenScraper вичерпано.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Немає зв’язку зі ScreenScraper. Перевірте Wi-Fi і спробуйте ще раз.

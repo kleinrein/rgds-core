@@ -367,6 +367,7 @@ Finishing the system request	Đang hoàn tất yêu cầu hệ thống
 Follow your default button layout	Dùng bố cục nút mặc định
 Following the default controls.	Đang dùng điều khiển chung.
 Follows your library shader.	Theo bộ lọc của thư viện.
+For games without a stick: N64 and PSP keep it	Cho trò chơi không có cần: N64 và PSP giữ nguyên
 Forget this device?	Quên thiết bị này?
 FPS changed for this session. Settings storage is unavailable.	Đã đổi FPS cho phiên này. Không thể lưu cài đặt.
 FPS counter enabled.	Đã bật bộ đếm FPS.
@@ -450,6 +451,14 @@ Green	Xanh lá
 Grey	Xám
 Grey TV	TV xám
 Grid	Lưới
+Left stick down	Cần trái xuống
+Left stick left	Cần trái trái
+Left stick right	Cần trái phải
+Left stick up	Cần trái lên
+Right stick down	Cần phải xuống
+Right stick left	Cần phải trái
+Right stick right	Cần phải phải
+Right stick up	Cần phải lên
 h	giờ
 Haptic strength	Độ mạnh xúc giác
 Health	Máu
@@ -563,6 +572,7 @@ Manage builds and temporary files	Quản lý phiên bản và tệp tạm
 Matches your accent	Theo màu nhấn
 Matching title	Tên đối chiếu
 Matching title saved. Choose Fetch artwork.	Đã lưu tên đối chiếu. Chọn Tải ảnh bìa.
+Memory card problem	Sự cố thẻ nhớ
 Menu audio is unavailable on this device.	Thiết bị này không hỗ trợ âm thanh menu.
 Menu effects	Hiệu ứng menu
 Menu haptics	Phản hồi xúc giác
@@ -644,6 +654,7 @@ Not yet	Chưa
 Nothing played yet	Chưa chơi gì
 Nothing to load	Không có gì để tải
 Nothing to load here yet.	Chưa có gì để tải ở đây.
+Nothing you change now is kept.	Những gì bạn thay đổi lúc này sẽ không được lưu.
 Notification	Thông báo
 Off	Tắt
 Off (smooth)	Tắt (mượt)
@@ -851,6 +862,7 @@ Screen brightness	Độ sáng màn hình
 Screen colours	Màu màn hình
 Menu	Menu
 Switch	Chuyển
+Turn off and check the card on a computer.	Tắt máy và kiểm tra thẻ trên máy tính.
 Turn off screen	Tắt màn hình
 screens	màn hình
 ScreenScraper needs project credentials and your account	ScreenScraper cần thông tin dự án và tài khoản của bạn
@@ -1189,6 +1201,7 @@ Your cartridges go here	Băng trò chơi của bạn ở đây
 Your colour	Màu của bạn
 Your DS library starts here	Thư viện DS bắt đầu từ đây
 Your games and saves are not touched.	Trò chơi và dữ liệu lưu của bạn không bị thay đổi.
+Your games and saves could not be read.	Không đọc được trò chơi và bản lưu của bạn.
 Your home screen after powering on	Trang chủ sau khi bật máy
 Your journey	Hành trình của bạn
 Your last game will appear here	Trò chơi gần nhất sẽ hiện ở đây
@@ -1323,7 +1336,10 @@ That is not the PIN.	Đó không phải mã PIN.
 Without one this profile is not locked. Cancel skips it.	Không có PIN thì hồ sơ này không bị khóa. Hủy để bỏ qua.
 The owner's PIN was removed.	Đã xóa mã PIN của chủ máy.
 Profile name	Tên hồ sơ
-Remove this profile? Its saves are kept, and a backup is made first.	Xóa hồ sơ này? Bản lưu vẫn được giữ và sẽ sao lưu trước.
+Remove this profile? Its saves are kept until you erase removed profiles.	Xóa hồ sơ này? Dữ liệu lưu của nó được giữ lại cho đến khi bạn xóa hẳn các hồ sơ đã gỡ.
+Back up its saves first	Sao lưu dữ liệu trước
+Removing the profile…	Đang xóa hồ sơ…
+Profile removed.	Đã xóa hồ sơ.
 Show every game with no rating on this shelf?	Hiện mọi trò chơi chưa phân loại trên kệ này?
 Star	Ngôi sao
 Heart	Trái tim
@@ -1376,3 +1392,89 @@ Systems page	Trang hệ máy
 Games you play appear here	Trò chơi bạn chơi sẽ hiện ở đây
 Swipe up from the bottom for Home, in from a side for Back	Vuốt lên từ cạnh dưới để về Trang chính, từ cạnh bên để Quay lại
 Swipe in from the left or right edge to go Back.	Vuốt từ cạnh trái hoặc phải vào để Quay lại.
+Music	Nhạc
+Songs	Bài hát
+Albums	Album
+Artists	Nghệ sĩ
+Folders	Thư mục
+Lists	Danh sách
+Queue	Hàng chờ
+Equaliser	Bộ chỉnh âm
+Visualiser	Hình ảnh hoá
+Now playing	Đang phát
+Shuffle	Trộn bài
+Shuffle all	Trộn tất cả
+Shuffle on	Bật trộn bài
+Shuffle off	Tắt trộn bài
+Repeat off	Tắt lặp lại
+Repeat all	Lặp lại tất cả
+Repeat this song	Lặp lại bài này
+Play next	Phát tiếp theo
+Plays next	Sẽ phát tiếp theo
+Add to queue	Thêm vào hàng chờ
+Added to the queue	Đã thêm vào hàng chờ
+Remove from queue	Xoá khỏi hàng chờ
+Add to favourites	Thêm vào yêu thích
+Remove from favourites	Xoá khỏi yêu thích
+Added to favourites	Đã thêm vào yêu thích
+Removed from favourites	Đã xoá khỏi yêu thích
+Recently added	Mới thêm gần đây
+Unknown artist	Nghệ sĩ không rõ
+Various artists	Nhiều nghệ sĩ
+No music yet	Chưa có nhạc
+Nothing here	Không có gì ở đây
+Nothing is playing	Không có gì đang phát
+The queue is empty	Hàng chờ trống
+Looking for music…	Đang tìm nhạc…
+Add your music	Thêm nhạc của bạn
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Chép nhạc vào thư mục music trên thẻ: qua chia sẻ tệp, hoặc như một ổ USB.
+Speakers	Loa
+Headphones	Tai nghe
+Playing	Đang phát
+Skip	Bỏ qua
+Tabs	Thẻ
+Flat	Phẳng
+Larger display	Màn hình lớn hơn
+Smaller display	Màn hình nhỏ hơn
+Music player	Trình phát nhạc
+Play with the lid closed	Phát khi đóng nắp
+{0} song	{0} bài hát
+{0} songs	{0} bài hát
+{0} album	{0} album
+{0} albums	{0} album
+Bass boost	Tăng âm trầm
+Treble boost	Tăng âm bổng
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Cổ điển
+Electronic	Điện tử
+Hip-hop	Hip-hop
+Acoustic	Mộc
+Vocal	Giọng hát
+Small speakers	Loa nhỏ
+Spectrum	Phổ âm
+Oscilloscope	Dao động ký
+Fire	Lửa
+Plasma	Plasma
+Starfield	Trời sao
+VU meters	Đồng hồ VU
+Vectorscope	Vectorscope
+Radial spectrum	Phổ hình tròn
+Waterfall	Thác nước
+Tunnel	Đường hầm
+ScreenScraper account	Tài khoản ScreenScraper
+Not signed in	Chưa đăng nhập
+Change account	Đổi tài khoản
+Stop scraping before signing in	Dừng tải trước khi đăng nhập
+Stop scraping before signing out	Dừng tải trước khi đăng xuất
+Signed in to ScreenScraper as {0}.	Đã đăng nhập ScreenScraper với tên {0}.
+Signed out of ScreenScraper.	Đã đăng xuất khỏi ScreenScraper.
+Signing in to ScreenScraper	Đang đăng nhập ScreenScraper
+Enter your ScreenScraper username and password.	Nhập tên người dùng và mật khẩu ScreenScraper.
+ScreenScraper is not configured for this build yet.	Phiên bản này chưa thiết lập ScreenScraper.
+Sign in to ScreenScraper first.	Hãy đăng nhập ScreenScraper trước.
+Check your ScreenScraper login.	Kiểm tra thông tin đăng nhập ScreenScraper.
+ScreenScraper did not accept this login.	ScreenScraper không chấp nhận thông tin đăng nhập này.
+Your daily ScreenScraper quota has been reached.	Đã hết hạn mức ScreenScraper hôm nay.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Không kết nối được ScreenScraper. Kiểm tra Wi-Fi rồi thử lại.

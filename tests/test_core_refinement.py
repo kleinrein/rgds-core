@@ -72,16 +72,27 @@ class RefinementTests(unittest.TestCase):
                 self.assertIn(key, rows, language)
                 if language != 'en-US' and key != 'PIN': self.assertNotEqual(rows[key], key, (language, key))
 
-    def test_public_cli_rejects_account_provider_and_authentication(self):
+    def test_screenscraper_login_without_build_credentials_keeps_no_password(self):
         with tempfile.TemporaryDirectory() as tmp:
-            for args in [('status', '--provider', 'screenscraper'), ('login',)]:
-                result = subprocess.run(
-                    [sys.executable, str(ROOT / 'runtime/scraper.py'), *args, '--data', tmp],
-                    capture_output=True,
-                    text=True
-                )
-                self.assertEqual(result.returncode, 2)
-            self.assertEqual(list(Path(tmp).iterdir()), [])
+            environment = {k: v for k, v in os.environ.items() if not k.startswith('SCREENSCRAPER_')}
+            run = lambda *args, stdin='': subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / 'runtime/scraper.py'), *args, '--data', tmp, '--private-dir', tmp + '/private'
+                ],
+                input=stdin,
+                capture_output=True,
+                text=True,
+                env=environment
+            )
+            self.assertEqual(run('status', '--provider', 'screenscraper').returncode, 0)
+            result = run('login', stdin='{"ssid": "player", "sspassword": "USER-SECRET"}')
+            self.assertEqual(result.returncode, 1)
+            status = (Path(tmp) / 'scraper/status.ini').read_text()
+            self.assertIn('not configured', status)
+            self.assertFalse((Path(tmp) / 'private').exists())
+            self.assertFalse((Path(tmp) / 'scraper/account.ini').exists())
+            self.assertNotIn('USER-SECRET', status + result.stdout + result.stderr)
 
     def test_summary_counts_existing_records_and_migrates_old_provider(self):
         with tempfile.TemporaryDirectory() as tmp:

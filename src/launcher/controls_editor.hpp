@@ -50,6 +50,8 @@ bool App::save_controls_editor() {
         for (int logical = 0; logical < 12; logical++)
             file << "bind_" << control_names[logical] << '=' << physical_names[edited_controls.sources[logical]]
                  << '\n';
+        for (int direction = 0; direction < 8; direction++)
+            file << stick_keys[direction] << '=' << physical_names[edited_controls.stick[direction]] << '\n';
         file.close();
         if (!file) throw std::runtime_error("Could not write controls");
         fs::rename(pending, path);
@@ -100,6 +102,7 @@ std::string App::controls_row_name(int row) {
     if (row == 16) return controls_per_game ? "Use default controls" : "Restore defaults";
     if (row == 17) return "Fast-forward button";
     if (row == 18) return "Fast-forward style";
+    if (row >= 19) return stick_row_names[std::clamp(row - 19, 0, 7)];
     return "Button " + control_title(row - 4);
 }
 
@@ -121,6 +124,7 @@ std::string App::controls_row_value(int row) {
         return control_capture && capture_logical == 12 ? "Press a button…"
                                                         : control_title(edited_controls.fast_forward_source);
     if (row == 18) return edited_controls.fast_forward_mode == "hold" ? "Hold" : "Toggle";
+    if (row >= 19) return control_title(edited_controls.stick[std::clamp(row - 19, 0, 7)]);
     return control_capture && row == capture_logical + 4 ? "Press a button…"
                                                          : control_title(edited_controls.sources[row - 4]);
 }
@@ -140,7 +144,7 @@ void App::controls_action(int code) {
         return;
     }
     if (code == 8 || code == 9) {
-        settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 18);
+        settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, 26);
         dirty = true;
         return;
     }
@@ -174,7 +178,14 @@ void App::controls_action(int code) {
         dirty = true;
         return;
     }
-    if (row == 1) {
+    if (row >= 19 && row <= 26) {
+        // A stick direction steps through the twelve buttons and Unassigned (A steps forward, as Right does).
+        int& target = edited_controls.stick[row - 19];
+        int index = target == control_none ? 12 : target;
+        index = (index + direction + 13) % 13;
+        target = index == 12 ? control_none : index;
+        controls_inherit = false;
+    } else if (row == 1) {
         const std::array<std::string, 3> names = {"default", "ab-swap", "left-handed"};
         auto found = std::find(names.begin(), names.end(), edited_controls.preset);
         int index = found == names.end() ? -1 : int(found - names.begin());

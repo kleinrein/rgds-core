@@ -367,6 +367,7 @@ Finishing the system request	システムの処理を完了しています
 Follow your default button layout	標準のボタン配置に合わせる
 Following the default controls.	共通の操作設定を使っています。
 Follows your library shader.	ライブラリのフィルターに合わせます。
+For games without a stick: N64 and PSP keep it	スティックのないゲーム用：N64とPSPはスティックのまま
 Forget this device?	このデバイスの登録を解除しますか？
 FPS changed for this session. Settings storage is unavailable.	FPSをこのセッションだけ変更しました。設定を保存できません。
 FPS counter enabled.	FPSを表示しました。
@@ -450,6 +451,14 @@ Green	グリーン
 Grey	グレー
 Grey TV	グレーのテレビ
 Grid	方眼
+Left stick down	左スティック 下
+Left stick left	左スティック 左
+Left stick right	左スティック 右
+Left stick up	左スティック 上
+Right stick down	右スティック 下
+Right stick left	右スティック 左
+Right stick right	右スティック 右
+Right stick up	右スティック 上
 h	時間
 Haptic strength	触覚の強さ
 Health	体力
@@ -563,6 +572,7 @@ Manage builds and temporary files	ビルドと一時ファイルの管理
 Matches your accent	アクセントカラーに合わせる
 Matching title	一致するタイトル
 Matching title saved. Choose Fetch artwork.	一致するタイトルを保存しました。「画像を取得」を選んでください。
+Memory card problem	メモリーカードの問題
 Menu audio is unavailable on this device.	この本体ではメニューの音を使えません。
 Menu effects	メニューの効果音
 Menu haptics	メニューの触覚
@@ -644,6 +654,7 @@ Not yet	まだ
 Nothing played yet	まだ何も遊んでいません
 Nothing to load	ロードするデータがありません
 Nothing to load here yet.	ここにはまだ読み込めるものがありません。
+Nothing you change now is kept.	今の変更は保存されません。
 Notification	通知
 Off	オフ
 Off (smooth)	オフ（なめらか）
@@ -851,6 +862,7 @@ Screen brightness	画面の明るさ
 Screen colours	画面の色
 Menu	メニュー
 Switch	切り替え
+Turn off and check the card on a computer.	電源を切り、パソコンでカードを確認してください。
 Turn off screen	画面オフ
 screens	画面
 ScreenScraper needs project credentials and your account	ScreenScraperにはプロジェクトの認証情報とあなたのアカウントが必要です
@@ -1189,6 +1201,7 @@ Your cartridges go here	ここにカートリッジが並びます
 Your colour	あなたの色
 Your DS library starts here	ここからDSライブラリが始まります
 Your games and saves are not touched.	ゲームとセーブデータには触れません。
+Your games and saves could not be read.	ゲームとセーブデータを読み込めませんでした。
 Your home screen after powering on	電源を入れたあとのホーム画面
 Your journey	あなたの旅
 Your last game will appear here	最後に遊んだゲームがここに表示されます
@@ -1323,7 +1336,10 @@ That is not the PIN.	PINが違います。
 Without one this profile is not locked. Cancel skips it.	PINがないとロックされません。キャンセルで省略できます。
 The owner's PIN was removed.	オーナーのPINを解除しました。
 Profile name	プロフィール名
-Remove this profile? Its saves are kept, and a backup is made first.	このプロフィールを削除しますか?セーブは残り、先にバックアップします。
+Remove this profile? Its saves are kept until you erase removed profiles.	このプロフィールを削除しますか？削除したプロフィールを消去するまで、セーブデータは残ります。
+Back up its saves first	先にセーブデータをバックアップ
+Removing the profile…	プロフィールを削除しています…
+Profile removed.	プロフィールを削除しました。
 Show every game with no rating on this shelf?	この棚の年齢区分のないゲームをすべて表示しますか?
 Star	星
 Heart	ハート
@@ -1376,3 +1392,89 @@ Systems page	システム画面
 Games you play appear here	遊んだゲームがここに表示されます
 Swipe up from the bottom for Home, in from a side for Back	下から上へスワイプでホーム、左右の端からスワイプで戻る
 Swipe in from the left or right edge to go Back.	左右どちらかの端からスワイプすると戻ります。
+Music	ミュージック
+Songs	曲
+Albums	アルバム
+Artists	アーティスト
+Folders	フォルダ
+Lists	リスト
+Queue	再生待ち
+Equaliser	イコライザー
+Visualiser	ビジュアライザー
+Now playing	再生中
+Shuffle	シャッフル
+Shuffle all	すべてシャッフル
+Shuffle on	シャッフル オン
+Shuffle off	シャッフル オフ
+Repeat off	リピート オフ
+Repeat all	すべてリピート
+Repeat this song	この曲をリピート
+Play next	次に再生
+Plays next	次に再生します
+Add to queue	再生待ちに追加
+Added to the queue	再生待ちに追加しました
+Remove from queue	再生待ちから外す
+Add to favourites	お気に入りに追加
+Remove from favourites	お気に入りから外す
+Added to favourites	お気に入りに追加しました
+Removed from favourites	お気に入りから外しました
+Recently added	最近追加した曲
+Unknown artist	不明なアーティスト
+Various artists	さまざまなアーティスト
+No music yet	まだ音楽がありません
+Nothing here	ここには何もありません
+Nothing is playing	再生中の曲はありません
+The queue is empty	再生待ちは空です
+Looking for music…	音楽を探しています…
+Add your music	音楽を追加しましょう
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	カードの music フォルダに音楽を入れてください。ファイル共有か、USBドライブとして使えます。
+Speakers	スピーカー
+Headphones	ヘッドホン
+Playing	再生中
+Skip	スキップ
+Tabs	タブ
+Flat	フラット
+Larger display	表示を大きく
+Smaller display	表示を小さく
+Music player	ミュージックプレーヤー
+Play with the lid closed	ふたを閉じても再生
+{0} song	{0} 曲
+{0} songs	{0} 曲
+{0} album	アルバム {0} 枚
+{0} albums	アルバム {0} 枚
+Bass boost	低音を強く
+Treble boost	高音を強く
+Rock	ロック
+Pop	ポップ
+Jazz	ジャズ
+Classical	クラシック
+Electronic	エレクトロニック
+Hip-hop	ヒップホップ
+Acoustic	アコースティック
+Vocal	ボーカル
+Small speakers	小さなスピーカー
+Spectrum	スペクトラム
+Oscilloscope	オシロスコープ
+Fire	炎
+Plasma	プラズマ
+Starfield	星空
+VU meters	VUメーター
+Vectorscope	ベクトルスコープ
+Radial spectrum	円形スペクトラム
+Waterfall	ウォーターフォール
+Tunnel	トンネル
+ScreenScraper account	ScreenScraperアカウント
+Not signed in	サインインしていません
+Change account	アカウントを変更
+Stop scraping before signing in	サインインする前に取得を止めてください
+Stop scraping before signing out	サインアウトする前に取得を止めてください
+Signed in to ScreenScraper as {0}.	{0}としてScreenScraperにサインインしました。
+Signed out of ScreenScraper.	ScreenScraperからサインアウトしました。
+Signing in to ScreenScraper	ScreenScraperにサインイン中
+Enter your ScreenScraper username and password.	ScreenScraperのユーザー名とパスワードを入力してください。
+ScreenScraper is not configured for this build yet.	このバージョンではScreenScraperがまだ設定されていません。
+Sign in to ScreenScraper first.	先にScreenScraperにサインインしてください。
+Check your ScreenScraper login.	ScreenScraperのログイン情報を確認してください。
+ScreenScraper did not accept this login.	ScreenScraperがこのログインを受け付けませんでした。
+Your daily ScreenScraper quota has been reached.	ScreenScraperの1日の上限に達しました。
+Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraperに接続できません。Wi-Fiを確認してもう一度お試しください。

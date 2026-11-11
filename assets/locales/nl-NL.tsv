@@ -367,6 +367,7 @@ Finishing the system request	Systeemverzoek afronden
 Follow your default button layout	Volg je standaardknopindeling
 Following the default controls.	Volgt je algemene besturing.
 Follows your library shader.	Volgt je bibliotheekshader.
+For games without a stick: N64 and PSP keep it	Voor games zonder stick: N64 en PSP houden hem
 Forget this device?	Dit apparaat vergeten?
 FPS changed for this session. Settings storage is unavailable.	FPS gewijzigd voor deze sessie. Instellingen kunnen niet worden opgeslagen.
 FPS counter enabled.	FPS-teller ingeschakeld.
@@ -450,6 +451,14 @@ Green	Groen
 Grey	Grijs
 Grey TV	Grijze tv
 Grid	Raster
+Left stick down	Linkerstick omlaag
+Left stick left	Linkerstick links
+Left stick right	Linkerstick rechts
+Left stick up	Linkerstick omhoog
+Right stick down	Rechterstick omlaag
+Right stick left	Rechterstick links
+Right stick right	Rechterstick rechts
+Right stick up	Rechterstick omhoog
 h	u
 Haptic strength	Haptische sterkte
 Health	Gezondheid
@@ -563,6 +572,7 @@ Manage builds and temporary files	Beheer versies en tijdelijke bestanden
 Matches your accent	Volgt je accentkleur
 Matching title	Overeenkomende titel
 Matching title saved. Choose Fetch artwork.	Overeenkomende titel opgeslagen. Kies Hoesafbeeldingen ophalen.
+Memory card problem	Probleem met de geheugenkaart
 Menu audio is unavailable on this device.	Menu-audio is niet beschikbaar op dit apparaat.
 Menu effects	Menueffecten
 Menu haptics	Menuhaptiek
@@ -644,6 +654,7 @@ Not yet	Nog niet
 Nothing played yet	Nog niets gespeeld
 Nothing to load	Niets om te laden
 Nothing to load here yet.	Hier is nog niets te laden.
+Nothing you change now is kept.	Wat je nu wijzigt, wordt niet bewaard.
 Notification	Melding
 Off	Uit
 Off (smooth)	Uit (vloeiend)
@@ -851,6 +862,7 @@ Screen brightness	Schermhelderheid
 Screen colours	Schermkleuren
 Menu	Menu
 Switch	Wissel
+Turn off and check the card on a computer.	Zet uit en controleer de kaart op een computer.
 Turn off screen	Scherm uitzetten
 screens	schermen
 ScreenScraper needs project credentials and your account	ScreenScraper vereist projectgegevens en je account
@@ -1189,6 +1201,7 @@ Your cartridges go here	Je cartridges komen hier
 Your colour	Jouw kleur
 Your DS library starts here	Je DS-bibliotheek begint hier
 Your games and saves are not touched.	Je games en opslagbestanden blijven onaangeroerd.
+Your games and saves could not be read.	Je games en opgeslagen spellen konden niet worden gelezen.
 Your home screen after powering on	Je startscherm na inschakelen
 Your journey	Jouw reis
 Your last game will appear here	Je laatste spel verschijnt hier
@@ -1323,7 +1336,10 @@ That is not the PIN.	Dat is niet de pincode.
 Without one this profile is not locked. Cancel skips it.	Zonder pincode is dit profiel niet vergrendeld. Annuleren slaat dit over.
 The owner's PIN was removed.	De pincode van de eigenaar is verwijderd.
 Profile name	Profielnaam
-Remove this profile? Its saves are kept, and a backup is made first.	Dit profiel verwijderen? De opslagen blijven bewaard en eerst wordt een back-up gemaakt.
+Remove this profile? Its saves are kept until you erase removed profiles.	Dit profiel verwijderen? De opgeslagen spellen blijven tot je verwijderde profielen wist.
+Back up its saves first	Eerst een back-up van de spellen
+Removing the profile…	Profiel verwijderen…
+Profile removed.	Profiel verwijderd.
 Show every game with no rating on this shelf?	Alle games zonder classificatie op deze plank tonen?
 Star	Ster
 Heart	Hart
@@ -1376,3 +1392,89 @@ Systems page	Systeempagina
 Games you play appear here	Games die je speelt verschijnen hier
 Swipe up from the bottom for Home, in from a side for Back	Veeg omhoog vanaf de onderkant voor Home, vanaf een zijkant voor Terug
 Swipe in from the left or right edge to go Back.	Veeg vanaf de linker- of rechterrand naar binnen om terug te gaan.
+Music	Muziek
+Songs	Nummers
+Albums	Albums
+Artists	Artiesten
+Folders	Mappen
+Lists	Lijsten
+Queue	Wachtrij
+Equaliser	Equalizer
+Visualiser	Visualisatie
+Now playing	Speelt nu
+Shuffle	Shuffle
+Shuffle all	Alles shufflen
+Shuffle on	Shuffle aan
+Shuffle off	Shuffle uit
+Repeat off	Herhalen uit
+Repeat all	Alles herhalen
+Repeat this song	Dit nummer herhalen
+Play next	Hierna afspelen
+Plays next	Wordt hierna afgespeeld
+Add to queue	Aan wachtrij toevoegen
+Added to the queue	Aan de wachtrij toegevoegd
+Remove from queue	Uit wachtrij verwijderen
+Add to favourites	Aan favorieten toevoegen
+Remove from favourites	Uit favorieten verwijderen
+Added to favourites	Aan favorieten toegevoegd
+Removed from favourites	Uit favorieten verwijderd
+Recently added	Onlangs toegevoegd
+Unknown artist	Onbekende artiest
+Various artists	Diverse artiesten
+No music yet	Nog geen muziek
+Nothing here	Niets hier
+Nothing is playing	Er speelt niets
+The queue is empty	De wachtrij is leeg
+Looking for music…	Muziek zoeken…
+Add your music	Voeg je muziek toe
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Zet je muziek in de map music op de kaart: via bestandsdeling of als USB-station.
+Speakers	Luidsprekers
+Headphones	Koptelefoon
+Playing	Speelt
+Skip	Overslaan
+Tabs	Tabbladen
+Flat	Vlak
+Larger display	Groter scherm
+Smaller display	Kleiner scherm
+Music player	Muziekspeler
+Play with the lid closed	Afspelen met gesloten klep
+{0} song	{0} nummer
+{0} songs	{0} nummers
+{0} album	{0} album
+{0} albums	{0} albums
+Bass boost	Meer bas
+Treble boost	Meer hoog
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Klassiek
+Electronic	Elektronisch
+Hip-hop	Hiphop
+Acoustic	Akoestisch
+Vocal	Zang
+Small speakers	Kleine luidsprekers
+Spectrum	Spectrum
+Oscilloscope	Oscilloscoop
+Fire	Vuur
+Plasma	Plasma
+Starfield	Sterrenveld
+VU meters	VU-meters
+Vectorscope	Vectorscoop
+Radial spectrum	Rond spectrum
+Waterfall	Waterval
+Tunnel	Tunnel
+ScreenScraper account	ScreenScraper-account
+Not signed in	Niet ingelogd
+Change account	Ander account
+Stop scraping before signing in	Stop het ophalen voordat je inlogt
+Stop scraping before signing out	Stop het ophalen voordat je uitlogt
+Signed in to ScreenScraper as {0}.	Ingelogd bij ScreenScraper als {0}.
+Signed out of ScreenScraper.	Uitgelogd bij ScreenScraper.
+Signing in to ScreenScraper	Inloggen bij ScreenScraper
+Enter your ScreenScraper username and password.	Voer je gebruikersnaam en wachtwoord voor ScreenScraper in.
+ScreenScraper is not configured for this build yet.	ScreenScraper is nog niet ingesteld in deze versie.
+Sign in to ScreenScraper first.	Log eerst in bij ScreenScraper.
+Check your ScreenScraper login.	Controleer je ScreenScraper-login.
+ScreenScraper did not accept this login.	ScreenScraper accepteerde deze login niet.
+Your daily ScreenScraper quota has been reached.	Je dagelijkse ScreenScraper-limiet is bereikt.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraper is niet bereikbaar. Controleer wifi en probeer het opnieuw.

@@ -83,10 +83,19 @@ panels_back() {
 # always on) and the Bluetooth half keeps its enable line high while an adapter is up. Both are closed for the
 # sleep: net wifi-sleep stops wpa_supplicant and powers the chip down through its SDIO host, bluetoothctl power off
 # closes the HCI, which drops the enable line. On the wake, Wi-Fi comes back from scratch (net wifi: power up,
-# probe, join, address) and the adapter is powered again, pairings kept.
+# probe, join, address) and the adapter is powered again, pairings kept. That takes seconds (the chip's power-up, the
+# join, up to 10 s for the adapter), so it runs behind the wake: the menu has its controls back first. A sleep that
+# comes while the radios are still on their way up waits for them, so nothing powers the chip down halfway.
 wifi_was=
 bt_was=
+RADIOS=$RUN/radios-up.pid
 radios_down() {
+    i=0
+    while [ -f $RADIOS ] && kill -0 "$(cat $RADIOS 2>/dev/null)" 2>/dev/null && [ $i -lt 300 ]; do
+        sleep 0.1
+        i=$((i + 1))
+    done
+    rm -f $RADIOS
     if [ -d $WLAN ]; then wifi_was=1; $NET wifi-sleep > /dev/null 2>&1; fi
     if [ -d $HCI ]; then bt_was=1; timeout 10 $BTCTL power off > /dev/null 2>&1; fi
 }
@@ -148,13 +157,17 @@ suspend)
     done
     echo 0 > $RTC/wakealarm 2>/dev/null
     panels_back
-    radios_up
     echo 0 > $LED 2>/dev/null
     if [ $wake = poweroff ]; then
         echo "$(date '+%F %T') powering off after the sleep" >> "$LOG" 2>/dev/null
         : > $RUN/poweroff-requested
     fi
     printf 'token=%s\nphase=post\nresult=%s\nwake=%s\n' "$token" "$rc" "$wake" > $state.new && mv $state.new $state
+    # after the state: RG DS Core waits for phase=post before it gives the controls back
+    if [ -n "$wifi_was$bt_was" ]; then
+        ( radios_up ) > /dev/null 2>&1 &
+        echo $! > $RADIOS
+    fi
     exit $rc;;
 *)
     echo "usage: power suspend" >&2

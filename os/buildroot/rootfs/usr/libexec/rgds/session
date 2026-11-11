@@ -27,6 +27,13 @@ if [ -f /run/rgds/usb-drive ]; then
     MESA_SHADER_CACHE_DIR=$UI /usr/libexec/rgds/usb drive $APP/bin/rgds-launcher --app $APP --data $UI --top-display 0 \
         --bottom-display 1 --usb-drive-screen >> /run/rgds/messages 2>&1
 fi
+# the card did not come back from the computer (pulled mid-write and beyond fsck): the same RAM folder and word as a
+# card that failed at boot (rcS), instead of a menu on the empty read-only mount point
+if ! mountpoint -q /data; then
+    mount -t tmpfs -o mode=0755 tmpfs /data
+    echo "the data partition could not be mounted after Use as USB drive" > /run/rgds/data-failed
+    mkdir -p /data/rgds/userdata /data/rgds/logs /data/roms/nds
+fi
 i=4
 while [ $i -gt 0 ]; do
     [ -f $LOG.$i ] && mv -f $LOG.$i $LOG.$((i + 1))
@@ -50,19 +57,27 @@ read up rest < /proc/uptime; printf '%-28s %6.2f s\n' "session: RG DS Core" "$up
 # Startup > Touch to continue (boot.ini warning=1): a start screen that waits for a tap or A
 # --first-run: setup on a card that has not been used yet (setup.ini remembers)
 WARN=; grep -qx 'warning=1' /data/rgds/userdata/boot.ini 2>/dev/null && WARN=--boot-warning
+# --card-problem: the data partition could not be mounted (rcS) and /data is a folder in memory. The start screen
+# says so, in place of the setup of a card that looks new; whoever continues gets an empty menu that keeps nothing.
+FIRST=--first-run
+[ -f /run/rgds/data-failed ] && { FIRST=; WARN=--card-problem; }
 # CPU 3 is the emulation core (DSCore's thread layout pins its emulation thread there, RG DS Play its main
 # loop): the launcher and its helpers stay on CPUs 0-2, so a game's frame is never queued behind them. A game itself
 # is started on every CPU (runtime/linux_platform.py, all_cpus): DSCore pins nothing unless it may use all four.
 PIN=; command -v taskset > /dev/null && PIN="taskset -c 0-2"
 # a slot on trial after an update is committed once the launcher has stayed up a minute ($$ is this shell, which
-# waits for the launcher; a crash and a respawn give the session a new pid). The updater commits earlier, when Home
-# is reached. Not on the log: an open file on the card keeps Use as USB drive from unmounting it for that minute.
-( sleep 60; kill -0 $$ 2>/dev/null && /usr/libexec/rgds/trial commit ) >> /run/rgds/messages 2>&1 &
+# waits for the launcher; a crash and a respawn give the session a new pid) and has drawn its first frame (the file
+# it writes, RGDS_READY_FILE): a launcher that hangs on dark panels leaves the trial open, and rcS restarts until
+# U-Boot falls back. The updater commits earlier, when Home is reached. Not on the log: an open file on the card keeps
+# Use as USB drive from unmounting it for that minute.
+export RGDS_READY_FILE=/run/rgds/launcher-ready
+rm -f $RGDS_READY_FILE
+( sleep 60; kill -0 $$ 2>/dev/null && [ -f $RGDS_READY_FILE ] && /usr/libexec/rgds/trial commit ) >> /run/rgds/messages 2>&1 &
 $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 0 --bottom-display 1 \
-    --boot-startup --first-run $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
+    --boot-startup $FIRST $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
     --system-dir gb=/data/roms/gb \
     --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md --system-dir md=/data/roms/genesis \
-    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 --system-dir 3ds=/data/roms/3ds --system-dir psp=/data/roms/psp --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry \
+    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 --system-dir 3ds=/data/roms/3ds --system-dir psp=/data/roms/psp --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
     --system-dir ports=/data/portmaster/ports >> $LOG 2>&1
 status=$?
 # 128 + the signal when it was killed. The kernel's side goes with it: an out-of-memory kill (137) records nothing

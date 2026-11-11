@@ -367,6 +367,7 @@ Finishing the system request	A concluir o pedido do sistema
 Follow your default button layout	Seguir a disposição predefinida dos botões
 Following the default controls.	A usar os controlos globais.
 Follows your library shader.	Segue o filtro da sua biblioteca.
+For games without a stick: N64 and PSP keep it	Para jogos sem manípulo: N64 e PSP mantêm-no
 Forget this device?	Esquecer este dispositivo?
 FPS changed for this session. Settings storage is unavailable.	FPS alterado nesta sessão. Não foi possível guardar as definições.
 FPS counter enabled.	Contador de FPS ativado.
@@ -450,6 +451,14 @@ Green	Verde
 Grey	Cinzento
 Grey TV	Televisor cinzento
 Grid	Grelha
+Left stick down	Manípulo esquerdo baixo
+Left stick left	Manípulo esquerdo esquerda
+Left stick right	Manípulo esquerdo direita
+Left stick up	Manípulo esquerdo cima
+Right stick down	Manípulo direito baixo
+Right stick left	Manípulo direito esquerda
+Right stick right	Manípulo direito direita
+Right stick up	Manípulo direito cima
 h	h
 Haptic strength	Intensidade tátil
 Health	Vida
@@ -563,6 +572,7 @@ Manage builds and temporary files	Gerir versões e ficheiros temporários
 Matches your accent	Segue a cor de destaque
 Matching title	Título de pesquisa
 Matching title saved. Choose Fetch artwork.	Título guardado. Escolha Transferir capa.
+Memory card problem	Problema no cartão de memória
 Menu audio is unavailable on this device.	O áudio do menu está indisponível neste dispositivo.
 Menu effects	Efeitos do menu
 Menu haptics	Resposta tátil
@@ -644,6 +654,7 @@ Not yet	Ainda não
 Nothing played yet	Ainda não jogou nada
 Nothing to load	Nada para carregar
 Nothing to load here yet.	Ainda não há nada para carregar aqui.
+Nothing you change now is kept.	Nada do que alterares agora será guardado.
 Notification	Notificação
 Off	Desativado
 Off (smooth)	Desativado (fluido)
@@ -851,6 +862,7 @@ Screen brightness	Brilho do ecrã
 Screen colours	Cores do ecrã
 Menu	Menu
 Switch	Mudar
+Turn off and check the card on a computer.	Desliga e verifica o cartão num computador.
 Turn off screen	Desligar ecrã
 screens	ecrãs
 ScreenScraper needs project credentials and your account	Capas
@@ -1189,6 +1201,7 @@ Your cartridges go here	Os seus cartuchos aparecem aqui
 Your colour	A tua cor
 Your DS library starts here	A sua biblioteca DS começa aqui
 Your games and saves are not touched.	Os teus jogos e gravações não são alterados.
+Your games and saves could not be read.	Não foi possível ler os teus jogos e gravações.
 Your home screen after powering on	O seu ecrã inicial ao ligar
 Your journey	A tua viagem
 Your last game will appear here	O último jogo aparece aqui
@@ -1323,7 +1336,10 @@ That is not the PIN.	Esse não é o PIN.
 Without one this profile is not locked. Cancel skips it.	Sem ele este perfil não fica bloqueado. Cancelar ignora este passo.
 The owner's PIN was removed.	O PIN do proprietário foi removido.
 Profile name	Nome do perfil
-Remove this profile? Its saves are kept, and a backup is made first.	Remover este perfil? Os jogos guardados são mantidos e é feita primeiro uma cópia.
+Remove this profile? Its saves are kept until you erase removed profiles.	Remover este perfil? Os jogos guardados mantêm-se até apagares os perfis removidos.
+Back up its saves first	Fazer cópia dos jogos guardados antes
+Removing the profile…	A remover o perfil…
+Profile removed.	Perfil removido.
 Show every game with no rating on this shelf?	Mostrar todos os jogos sem classificação desta prateleira?
 Star	Estrela
 Heart	Coração
@@ -1376,3 +1392,89 @@ Systems page	Página de sistemas
 Games you play appear here	Os jogos que jogar aparecem aqui
 Swipe up from the bottom for Home, in from a side for Back	Deslize de baixo para Início e a partir de um lado para Voltar
 Swipe in from the left or right edge to go Back.	Deslize a partir do rebordo esquerdo ou direito para voltar.
+Music	Música
+Songs	Músicas
+Albums	Álbuns
+Artists	Artistas
+Folders	Pastas
+Lists	Listas
+Queue	Fila
+Equaliser	Equalizador
+Visualiser	Visualizador
+Now playing	A reproduzir
+Shuffle	Aleatório
+Shuffle all	Tudo em aleatório
+Shuffle on	Aleatório ativado
+Shuffle off	Aleatório desativado
+Repeat off	Repetição desativada
+Repeat all	Repetir tudo
+Repeat this song	Repetir esta música
+Play next	Reproduzir a seguir
+Plays next	Será reproduzida a seguir
+Add to queue	Adicionar à fila
+Added to the queue	Adicionada à fila
+Remove from queue	Remover da fila
+Add to favourites	Adicionar aos favoritos
+Remove from favourites	Remover dos favoritos
+Added to favourites	Adicionada aos favoritos
+Removed from favourites	Removida dos favoritos
+Recently added	Adicionadas recentemente
+Unknown artist	Artista desconhecido
+Various artists	Vários artistas
+No music yet	Ainda não há música
+Nothing here	Nada por aqui
+Nothing is playing	Nada em reprodução
+The queue is empty	A fila está vazia
+Looking for music…	A procurar música…
+Add your music	Adicione a sua música
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Coloque a sua música na pasta music do cartão: com a partilha de ficheiros ou como unidade USB.
+Speakers	Altifalantes
+Headphones	Auscultadores
+Playing	A reproduzir
+Skip	Saltar
+Tabs	Separadores
+Flat	Plano
+Larger display	Ecrã maior
+Smaller display	Ecrã menor
+Music player	Leitor de música
+Play with the lid closed	Reproduzir com a tampa fechada
+{0} song	{0} música
+{0} songs	{0} músicas
+{0} album	{0} álbum
+{0} albums	{0} álbuns
+Bass boost	Mais graves
+Treble boost	Mais agudos
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Clássica
+Electronic	Eletrónica
+Hip-hop	Hip-hop
+Acoustic	Acústica
+Vocal	Vocal
+Small speakers	Altifalantes pequenos
+Spectrum	Espectro
+Oscilloscope	Osciloscópio
+Fire	Fogo
+Plasma	Plasma
+Starfield	Campo de estrelas
+VU meters	Medidores VU
+Vectorscope	Vectorscópio
+Radial spectrum	Espectro circular
+Waterfall	Cascata
+Tunnel	Túnel
+ScreenScraper account	Conta do ScreenScraper
+Not signed in	Sessão não iniciada
+Change account	Mudar de conta
+Stop scraping before signing in	Pare a transferência antes de iniciar sessão
+Stop scraping before signing out	Pare a transferência antes de terminar sessão
+Signed in to ScreenScraper as {0}.	Sessão iniciada no ScreenScraper como {0}.
+Signed out of ScreenScraper.	Sessão do ScreenScraper terminada.
+Signing in to ScreenScraper	A iniciar sessão no ScreenScraper
+Enter your ScreenScraper username and password.	Introduza o utilizador e a palavra-passe do ScreenScraper.
+ScreenScraper is not configured for this build yet.	O ScreenScraper ainda não está configurado nesta versão.
+Sign in to ScreenScraper first.	Inicie sessão no ScreenScraper primeiro.
+Check your ScreenScraper login.	Verifique os dados do ScreenScraper.
+ScreenScraper did not accept this login.	O ScreenScraper não aceitou estes dados.
+Your daily ScreenScraper quota has been reached.	A sua quota diária do ScreenScraper esgotou.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Não é possível contactar o ScreenScraper. Verifique o Wi-Fi e tente novamente.

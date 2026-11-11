@@ -210,6 +210,10 @@ int App::run() {
             if (dirty || o.frames) {
                 draw(!o.screenshot.empty());
                 frames++;
+                // RG DS OS: the first frame is on the panels. The session commits a slot on trial only once this is
+                // there (usr/libexec/rgds/session): a launcher that is alive but never drew is not a good update.
+                if (frames == 1)
+                    if (const char* ready = std::getenv("RGDS_READY_FILE")) std::ofstream(ready) << "1\n";
             }
             if (o.frames && frames >= o.frames) break;
             if (o.boot_startup && !o.boot_warning) {
@@ -274,7 +278,7 @@ int App::run() {
                 action(direction < 0 ? 8 : 9);
                 last_activity = now;
             } else if (direction && !picker_open && horizontal_hold_page()) {
-                if (settings.page == Page::Library) hold_navigate(direction, hold.held_for(now));
+                if (settings.page == Page::Library && !music_open) hold_navigate(direction, hold.held_for(now));
                 else action(direction < 0 ? 0 : 1);
                 last_activity = now;
             }
@@ -304,6 +308,7 @@ int App::run() {
             refresh_network(now);
         poll_launch(now);
         poll_chat();
+        const bool music_moving = music_tick(now);
         if (media.adopt()) dirty = true;
         if (launch_phase == LaunchPhase::Playing) continue;
         if (touch_tail && now - release_at >= 140) {
@@ -326,7 +331,8 @@ int App::run() {
         bool rail_animating = update_rail_feedback(now);
         const bool kinetic = kinetics_update(now) || filter_sheet_animating(now);
         bool feedback_active =
-            view_active || rail_animating || kinetic || (preferences.animations && shutting_down()) ||
+            view_active || rail_animating || kinetic ||
+            (preferences.animations && (shutting_down() || profile_removing || profile_erasing)) ||
             (o.game_menu && menu_status["state"] == "busy" && preferences.animations) ||
             (preferences.animations &&
              (network_busy() || (device_status["wifi_connected"] != "1" &&
@@ -385,6 +391,12 @@ int App::run() {
         crash::context.all_games = all_games.size();
         crash::context.library_ready = library_ready;
         crash::context.collection_loading = collection_loading;
+        // Both panels redraw for it: presenting only the upper one let the handheld's lower panel show an old
+        // frame in the middle of view transitions (2026-11-11).
+        if (const int badge = music_badge_phase(now); badge != drawn_badge_phase) {
+            drawn_badge_phase = badge;
+            dirty = true;
+        }
         if (dirty || o.frames) {
             ui_trace.mark(UiTrace::Assets, rendered_frames, uint32_t(settings.page));
             if (!rendered_frames) launch_profile.mark("assets-start");
@@ -423,6 +435,9 @@ int App::run() {
         if (o.game_menu && (!menu_pending_token.empty() || menu_status["state"] == "busy"))
             wait_ms = std::min(wait_ms, 20);
         if (chat_open) wait_ms = std::min(wait_ms, 40);
+        if (music_moving) wait_ms = std::min(wait_ms, 16);
+        else if (music_badge_phase(now) > 0) wait_ms = std::min(wait_ms, 100); // the status bar's dancing bars
+        else if (music_ready && music.alive) wait_ms = std::min(wait_ms, 250); // a song's seconds, the Home tile
         if (options_hold() && !hold_felt) wait_ms = std::min(wait_ms, std::max(1, int(600 - (now - pointer_at))));
         if (glitter) wait_ms = std::min(wait_ms, 33);
         if (banner_shown() && preferences.animations) wait_ms = std::min(wait_ms, int(banner_wait(now)));
@@ -535,12 +550,14 @@ int App::run() {
                << ",\"visibility_loading\":" << visibility_loading << ",\"games_rows\":" << games_rows.size()
                << ",\"games_tab\":" << games_tab << ",\"recent_games\":" << summary.recent_games.size()
                << ",\"games_system\":" << std::quoted(games_system) << ",\"home_selected\":" << home_selected
-               << ",\"home_tiles\":" << home_tiles()
+               << ",\"home_tiles\":" << home_tiles() << ",\"music_badge\":" << music_badge_phase(s.GetTicks())
+               << ",\"music_playing\":" << (music_ready && music.playing())
                << ",\"first_game\":" << std::quoted(model.games.empty() ? std::string() : model.games.front().title)
                << ",\"discovery_filter\":" << discovery_filter << ",\"launching\":" << launching
                << ",\"status\":" << std::quoted(status) << ",\"pin_digits\":" << pin_digits.size()
                << ",\"pin_purpose\":" << int(pin_purpose) << ",\"settings_unlocked\":" << settings_unlocked
-               << ",\"chat_open\":" << chat_open << ',';
+               << ",\"chat_open\":" << chat_open << ",\"music_open\":" << music_open
+               << ",\"music_view\":" << int(mu.view) << ",\"music_tab\":" << mu.tab << ',';
         report << "\"page\":" << int(settings.page) << ",\"boot_pending\":" << (settings.page == Page::BootWarning)
                << ",\"library_scan_started\":" << library_scan_started << ",\"library_ready\":" << library_ready
                << ",\"frames\":" << rendered_frames << ",\"metadata_reads\":" << library_cache.counters.file_reads

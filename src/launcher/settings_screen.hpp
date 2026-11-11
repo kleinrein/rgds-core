@@ -790,6 +790,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             } else if (settings.page == Page::Controls) list_row(r, y, i, controls_row_name(i), controls_row_value(i));
             else if (settings.page == Page::Sound) {
                 if (i == 0) volume_row(r, y);
+                else if (i >= 5)
+                    list_row(r, y, i, i == 5 ? "Music player" : "Play with the lid closed",
+                             (i == 5 ? preferences.music_player : preferences.music_lid) ? "On" : "Off");
                 else {
                     const bool on = i == 4 ? preferences.menu_haptics || preferences.game_rumble
                                            : preferences.menu_sounds || preferences.menu_music;
@@ -939,17 +942,19 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     "Use ROM identity"};
                 list_row(r, y, i, names[i], i == 0 ? (artwork_match.empty() ? "Automatic" : artwork_match) : "");
             } else if (settings.page == Page::Scraper) {
-                const std::array<std::string, 3> providers = {"Automatic", "GameTDB", "Libretro"};
+                const std::array<std::string, 4> providers = {"Automatic", "GameTDB", "Libretro", "ScreenScraper"};
                 const std::array<std::string, 4> pictures = {"Off", "Screenshots", "Title screens", "Both"};
-                const std::array<std::string, 6> names = {
+                const std::array<std::string, 7> names = {
                     "Artwork source",
                     worker > 0 && worker_action == "scrape" ? "Stop scraping" : "Fetch missing artwork",
                     "Review unmatched",
                     "Game info",
                     "Extra pictures",
-                    "Auto-fetch new games"};
+                    "Auto-fetch new games",
+                    "ScreenScraper account"};
                 list_row(r, y, i, names[i],
-                         i == 0   ? providers.at(preferences.artwork_provider)
+                         i == 0   ? providers.at(size_t(std::clamp(preferences.artwork_provider, 0, 3)))
+                         : i == 6 ? (screenscraper_user.empty() ? "Not signed in" : screenscraper_user)
                          : i == 3 ? (preferences.game_info ? "On" : "Off")
                          : i == 5 ? (preferences.auto_scrape ? "On" : "Off")
                          : i == 4 ? pictures.at(size_t(std::clamp(preferences.extra_pictures, 0, 3)))
@@ -1001,7 +1006,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     30, y + 145, 24, 560, 4);
         if (settings.page == Page::ProfileGames && !count) {
             if (games_reader.pending()) busy_ring(r, 320, y + 250, 26, 4);
-            else wrapped(r, games_query.empty() ? "No games here." : "No games match. Try a shorter word.", 30, y + 145, 24, 560, 2);
+            else
+                wrapped(r, games_query.empty() ? "No games here." : "No games match. Try a shorter word.", 30, y + 145,
+                        24, 560, 2);
         }
         if (settings.page == Page::Homebrew && !count) {
             if (homebrew_loading()) busy_ring(r, 320, y + 250, 26, 4);
@@ -1217,18 +1224,27 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             : confirmation == "bt-off"       ? "Turn Bluetooth off?"
             : confirmation == "bt-forget"    ? "Forget this device?"
             : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
-            : confirmation == "profile-remove" ? "Remove this profile? Its saves are kept, and a backup is made first."
-            : confirmation == "profile-allow-shelf" ? "Show every game listed on this shelf? Games rated above the age stay hidden."
-            : confirmation == "profile-erase" ? "Erase the saves of removed profiles for good? This cannot be undone."
-            : confirmation == "poweroff"            ? "Power off your handheld?"
-            : confirmation == "update-apply"        ? "Restart and install the update?"
-            : confirmation == "update-discard"      ? "Cancel the update? Anything already downloaded is removed."
-            : confirmation == "rollback"            ? "Use the previous RGDS build?"
-                                                    : "Clear temporary game files?";
+            : confirmation == "profile-remove" ? "Remove this profile? Its saves are kept until you erase removed profiles."
+            : confirmation == "profile-allow-shelf"
+                ? "Show every game listed on this shelf? Games rated above the age stay hidden."
+            : confirmation == "profile-erase"  ? "Erase the saves of removed profiles for good? This cannot be undone."
+            : confirmation == "poweroff"       ? "Power off your handheld?"
+            : confirmation == "update-apply"   ? "Restart and install the update?"
+            : confirmation == "update-discard" ? "Cancel the update? Anything already downloaded is removed."
+            : confirmation == "rollback"       ? "Use the previous RGDS build?"
+                                               : "Clear temporary game files?";
         settings_card(r, 28, y + 105, 584, 209);
         ui_icon(r, SettingsIcon::Info, 58, y + 136, 24, "accent");
         label(r, "REVIEW YOUR CHOICE", 88, y + 125, 13, "muted", 495);
-        wrapped(r, prompt, 52, y + 170, 28, 536, 3);
+        if (confirmation == "profile-remove") {
+            // A backup of this profile's saves is optional: the folder is only set aside, and erased only when asked.
+            wrapped(r, prompt, 52, y + 162, 24, 536, 3);
+            round_rect(r, 52, y + 254, 536, 1, 0, "line");
+            const int middle = y + 284, badge = key_badge(r, 52, middle, "X");
+            label(r, "Back up its saves first", 52 + badge + 12,
+                  centred_label_y(locale.text("Back up its saves first"), 20, middle), 20, "ink", 400);
+            draw_toggle(r, 588 - 44, middle - 14, "profile-remove-backup", profile_remove_backup);
+        } else wrapped(r, prompt, 52, y + 170, 28, 536, 3);
         choice(r, 28, y + 365, "Cancel", settings.focus == 0, true);
         choice(r, 332, y + 365, "Continue", settings.focus == 1, true);
         return;

@@ -367,6 +367,7 @@ Finishing the system request	Slutför systembegäran
 Follow your default button layout	Följ din standardlayout för knappar
 Following the default controls.	Följer dina globala kontroller.
 Follows your library shader.	Följer ditt biblioteksfilter.
+For games without a stick: N64 and PSP keep it	För spel utan styrspak: N64 och PSP behåller den
 Forget this device?	Glömma den här enheten?
 FPS changed for this session. Settings storage is unavailable.	FPS ändrad för denna session. Inställningar kan inte sparas.
 FPS counter enabled.	FPS-räknare aktiverad.
@@ -450,6 +451,14 @@ Green	Grön
 Grey	Grå
 Grey TV	Grå tv
 Grid	Rutnät
+Left stick down	Vänster styrspak ned
+Left stick left	Vänster styrspak vänster
+Left stick right	Vänster styrspak höger
+Left stick up	Vänster styrspak upp
+Right stick down	Höger styrspak ned
+Right stick left	Höger styrspak vänster
+Right stick right	Höger styrspak höger
+Right stick up	Höger styrspak upp
 h	tim
 Haptic strength	Haptisk styrka
 Health	Hälsa
@@ -563,6 +572,7 @@ Manage builds and temporary files	Hantera versioner och tillfälliga filer
 Matches your accent	Följer din accentfärg
 Matching title	Matchande titel
 Matching title saved. Choose Fetch artwork.	Matchande titel sparad. Välj Hämta omslag.
+Memory card problem	Problem med minneskortet
 Menu audio is unavailable on this device.	Menyljud är inte tillgängligt på den här enheten.
 Menu effects	Menyeffekter
 Menu haptics	Menyhaptik
@@ -644,6 +654,7 @@ Not yet	Inte än
 Nothing played yet	Inget spelat än
 Nothing to load	Inget att läsa in
 Nothing to load here yet.	Inget att läsa in här ännu.
+Nothing you change now is kept.	Inget du ändrar nu sparas.
 Notification	Avisering
 Off	Av
 Off (smooth)	Av (mjukt)
@@ -851,6 +862,7 @@ Screen brightness	Skärmens ljusstyrka
 Screen colours	Skärmfärger
 Menu	Meny
 Switch	Byt
+Turn off and check the card on a computer.	Stäng av och kontrollera kortet på en dator.
 Turn off screen	Stäng av skärmen
 screens	skärmar
 ScreenScraper needs project credentials and your account	ScreenScraper behöver projektuppgifter och ditt konto
@@ -1189,6 +1201,7 @@ Your cartridges go here	Dina kassetter visas här
 Your colour	Din färg
 Your DS library starts here	Ditt DS-bibliotek börjar här
 Your games and saves are not touched.	Dina spel och sparfiler rörs inte.
+Your games and saves could not be read.	Dina spel och sparfiler kunde inte läsas.
 Your home screen after powering on	Din hemskärm efter uppstart
 Your journey	Din resa
 Your last game will appear here	Ditt senaste spel visas här
@@ -1323,7 +1336,10 @@ That is not the PIN.	Det är inte pinkoden.
 Without one this profile is not locked. Cancel skips it.	Utan en är profilen inte låst. Avbryt hoppar över.
 The owner's PIN was removed.	Ägarens pinkod har tagits bort.
 Profile name	Profilnamn
-Remove this profile? Its saves are kept, and a backup is made first.	Ta bort profilen? Sparade spel behålls, och först görs en säkerhetskopia.
+Remove this profile? Its saves are kept until you erase removed profiles.	Ta bort den här profilen? Dess sparade spel behålls tills du raderar borttagna profiler.
+Back up its saves first	Säkerhetskopiera sparade spel först
+Removing the profile…	Tar bort profilen…
+Profile removed.	Profilen har tagits bort.
 Show every game with no rating on this shelf?	Visa alla spel utan åldersmärkning på hyllan?
 Star	Stjärna
 Heart	Hjärta
@@ -1376,3 +1392,89 @@ Systems page	Systemsidan
 Games you play appear here	Spel du spelar visas här
 Swipe up from the bottom for Home, in from a side for Back	Svep uppåt från botten för Hem, in från en sida för Tillbaka
 Swipe in from the left or right edge to go Back.	Svep in från vänster- eller högerkanten för att gå tillbaka.
+Music	Musik
+Songs	Låtar
+Albums	Album
+Artists	Artister
+Folders	Mappar
+Lists	Listor
+Queue	Kö
+Equaliser	Equalizer
+Visualiser	Visualisering
+Now playing	Spelas nu
+Shuffle	Blanda
+Shuffle all	Blanda alla
+Shuffle on	Blanda på
+Shuffle off	Blanda av
+Repeat off	Upprepa av
+Repeat all	Upprepa alla
+Repeat this song	Upprepa den här låten
+Play next	Spela härnäst
+Plays next	Spelas härnäst
+Add to queue	Lägg till i kön
+Added to the queue	Tillagd i kön
+Remove from queue	Ta bort från kön
+Add to favourites	Lägg till i favoriter
+Remove from favourites	Ta bort från favoriter
+Added to favourites	Tillagd i favoriter
+Removed from favourites	Borttagen från favoriter
+Recently added	Senast tillagda
+Unknown artist	Okänd artist
+Various artists	Blandade artister
+No music yet	Ingen musik än
+Nothing here	Inget här
+Nothing is playing	Inget spelas
+The queue is empty	Kön är tom
+Looking for music…	Letar efter musik…
+Add your music	Lägg till din musik
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Lägg din musik i mappen music på kortet: med fildelning eller som USB-enhet.
+Speakers	Högtalare
+Headphones	Hörlurar
+Playing	Spelar
+Skip	Hoppa
+Tabs	Flikar
+Flat	Platt
+Larger display	Större skärm
+Smaller display	Mindre skärm
+Music player	Musikspelare
+Play with the lid closed	Spela med locket stängt
+{0} song	{0} låt
+{0} songs	{0} låtar
+{0} album	{0} album
+{0} albums	{0} album
+Bass boost	Mer bas
+Treble boost	Mer diskant
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Klassiskt
+Electronic	Elektroniskt
+Hip-hop	Hiphop
+Acoustic	Akustiskt
+Vocal	Sång
+Small speakers	Små högtalare
+Spectrum	Spektrum
+Oscilloscope	Oscilloskop
+Fire	Eld
+Plasma	Plasma
+Starfield	Stjärnfält
+VU meters	VU-mätare
+Vectorscope	Vektorskop
+Radial spectrum	Runt spektrum
+Waterfall	Vattenfall
+Tunnel	Tunnel
+ScreenScraper account	ScreenScraper-konto
+Not signed in	Inte inloggad
+Change account	Byt konto
+Stop scraping before signing in	Stoppa hämtningen innan du loggar in
+Stop scraping before signing out	Stoppa hämtningen innan du loggar ut
+Signed in to ScreenScraper as {0}.	Inloggad på ScreenScraper som {0}.
+Signed out of ScreenScraper.	Utloggad från ScreenScraper.
+Signing in to ScreenScraper	Loggar in på ScreenScraper
+Enter your ScreenScraper username and password.	Ange användarnamn och lösenord för ScreenScraper.
+ScreenScraper is not configured for this build yet.	ScreenScraper är inte konfigurerat i den här versionen än.
+Sign in to ScreenScraper first.	Logga in på ScreenScraper först.
+Check your ScreenScraper login.	Kontrollera din ScreenScraper-inloggning.
+ScreenScraper did not accept this login.	ScreenScraper godkände inte inloggningen.
+Your daily ScreenScraper quota has been reached.	Din dagliga ScreenScraper-kvot är slut.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Når inte ScreenScraper. Kontrollera Wi-Fi och försök igen.

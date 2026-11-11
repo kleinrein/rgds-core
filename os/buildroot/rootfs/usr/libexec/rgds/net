@@ -63,7 +63,8 @@ wifi_off() {
 
 case $1 in
 up)
-    [ -f $OFF ] || wifi
+    # switched off: the chip powered down as the switch left it (the boot binds its host, which powers it up)
+    if [ -f $OFF ]; then chip_off; else wifi; fi
     # rgds.local; RG DS Core's file sharing adds its SMB service here
     mkdir -p /run/rgds/avahi-services
     avahi-daemon -D --no-drop-root 2> /dev/null

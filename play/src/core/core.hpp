@@ -206,6 +206,20 @@ public:
         (void)out;
         return false;
     }
+
+    // The Mega Drive's video memory as the core holds it, for a companion that draws from the tile planes instead
+    // of the picture (mosaic `source = plane`): video RAM as 16-bit words in the host's order, the 64 colours
+    // (0000BBB0GGG0RRR0), the vertical scroll words and the VDP's registers. false when the core does not export it.
+    struct MdVideo {
+        const uint16_t* vram = nullptr;  // 0x8000 words
+        const uint16_t* cram = nullptr;  // 0x40
+        const uint16_t* vsram = nullptr; // 0x40
+        const uint8_t* reg = nullptr;    // 0x20
+    };
+    virtual bool md_video(MdVideo& out) const {
+        (void)out;
+        return false;
+    }
 };
 
 // A banked address ("1C:590D": ROM bank 1C; "1:DCD7": work RAM bank 1), as

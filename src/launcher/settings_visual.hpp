@@ -45,11 +45,13 @@ enum class SettingsIcon {
     Contrast,
     Palette,
     Chat,
-    Vibrate
+    Vibrate,
+    Music
 };
 
 inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Vibration" || title == "Menu haptics" || title == "Haptic strength") return SettingsIcon::Vibrate;
+    if (title == "Music player" || title == "Play with the lid closed") return SettingsIcon::Music;
     if (title == "Mute" || title == "Unmute") return SettingsIcon::Volume;
     if (title == "Sounds & music") return SettingsIcon::Spark;
     if (title == "Game rumble" || title == "Rumble strength") return SettingsIcon::Controller;
@@ -82,9 +84,8 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
         return SettingsIcon::Volume;
     if (title == "DS controls" || title == "Close and open DS lid") return SettingsIcon::Controller;
     if (title == "DS language" || title == "Filter" || title == "Automatic updates") return SettingsIcon::Sliders;
-    if (title == "Search games" ) return SettingsIcon::Library;
-    if (title == "Scan for games")
-        return SettingsIcon::Cartridge;
+    if (title == "Search games") return SettingsIcon::Library;
+    if (title == "Scan for games") return SettingsIcon::Cartridge;
     if (title == "Library") return SettingsIcon::Library;
     if (title == "Statistics" || title == "Time format" || title == "Date format" || title == "Daylight saving")
         return SettingsIcon::Clock;
@@ -112,7 +113,8 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title.find("Theme") != std::string::npos || title.find("display") != std::string::npos)
         return SettingsIcon::Display;
     if (title.find("Controls") != std::string::npos || title.find("Button") != std::string::npos ||
-        title.find("shortcut") != std::string::npos || title.find("Remap") != std::string::npos)
+        title.find("shortcut") != std::string::npos || title.find("Remap") != std::string::npos ||
+        title.find(" stick ") != std::string::npos)
         return SettingsIcon::Controller;
     if (title.find("Power") != std::string::npos || title.find("power") != std::string::npos)
         return SettingsIcon::Power;
@@ -174,6 +176,8 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Shortcut action") return "What the shortcut opens";
     if (title == "Use default controls") return "Follow your default button layout";
     if (title == "Restore defaults") return "Return to the original button layout";
+    if (title.rfind("Left stick ", 0) == 0 || title.rfind("Right stick ", 0) == 0)
+        return "For games without a stick: N64 and PSP keep it";
     if (title == "Power mode") return "Balance battery life and speed";
     if (title == "Menu idle sleep") return "Rest after a period of inactivity";
     if (title == "Sleep on lid close") return "Close the handheld to sleep";
@@ -426,6 +430,14 @@ inline void draw_settings_icon(Sdl& s, SDL_Renderer* renderer, SettingsIcon icon
         }
         break;
     // A handheld between two zig-zag shake lines.
+    case SettingsIcon::Music:
+        line(9, 5, 9, 17);
+        line(19, 3, 19, 15);
+        line(9, 5, 19, 3);
+        line(9, 8, 19, 6);
+        circle(6.5f, 17.5f, 2.6f);
+        circle(16.5f, 15.5f, 2.6f);
+        break;
     case SettingsIcon::Vibrate:
         box(8, 3, 16, 21);
         line(11, 18, 13, 18);

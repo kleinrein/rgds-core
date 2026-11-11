@@ -118,6 +118,39 @@ int App::centred_label_y(const std::string& value, int size, int cy) {
     return cy - (bounds.first + bounds.second + 1) / 2;
 }
 
+// Music is playing: four little bars beside the clock, dancing to the low, low-mid, high-mid and top of what plays.
+// -1 hides it, 0 is a still picture (animations off), above 0 a frame number for the upper screen's redraw check.
+int App::music_badge_phase(Uint32 now) const {
+    if (!music_ready || !music.alive || !music.playing() || o.game_menu || probe) return -1;
+    return preferences.animations ? int(now / 100) + 1 : 0;
+}
+
+void App::music_badge(SDL_Renderer* r, int y, int right) {
+    const Uint32 now = s.GetTicks();
+    const bool moving = music_badge_phase(now) > 0;
+    const Color ink = theme.at("accent");
+    const int bars = 4, w = preferences.pixel ? 4 : 3, gap = 2, tall = 16, x0 = right - bars * (w + gap) + gap,
+              floor = y + 24 + tall / 2;
+    static constexpr float still[4] = {.55f, .9f, .7f, .4f};
+    for (int i = 0; i < bars; i++) {
+        float level = still[i];
+        if (moving) {
+            float heard = 0;
+            if (music.shared) {
+                // Each bar takes the loudest of its quarter of the spectrum.
+                for (int b = i * music::viz_bands / bars; b < (i + 1) * music::viz_bands / bars; b++)
+                    heard = std::max(heard, music.shared->viz.bands[b]);
+            }
+            // A little sway of its own, so a quiet passage still shows the music is on.
+            const float sway = .5f + .5f * std::sin(float(now) * .009f + float(i) * 1.9f);
+            level = std::clamp(.22f + heard * .78f * (.8f + .2f * sway) + (heard < .05f ? sway * .3f : 0), .2f, 1.f);
+        }
+        int h = std::max(3, int(std::lround(level * tall)));
+        if (preferences.pixel) h = std::max(4, h / 4 * 4); // whole dots, as the pixel style's symbols
+        tint_rect(r, x0 + i * (w + gap), floor - h, w, h, ink);
+    }
+}
+
 void App::status_bar(SDL_Renderer* r, int y) {
     sheen(r, 0, y, 640, 48, "background", 24);
     // Wi-Fi only shows while connected; the symbols after it close the gap.
@@ -153,7 +186,12 @@ void App::status_bar(SDL_Renderer* r, int y) {
     const auto& stamp = drawn_status_stamp;
     int right = hardware.battery >= 0 && system_preferences.battery_percent ? 494 : 550;
     label(r, stamp, right - label_width(stamp, 20), status_label_y(stamp, 20, y), 20, "ink", right - 180);
-    update_status_chip(r, y, right - label_width(stamp, 20) - 14);
+    int before_clock = right - label_width(stamp, 20) - 14;
+    if (music_badge_phase(s.GetTicks()) >= 0) {
+        music_badge(r, y, before_clock);
+        before_clock -= 30;
+    }
+    update_status_chip(r, y, before_clock);
     battery_icon(r, y);
     if (system_preferences.battery_percent && hardware.battery >= 0) {
         auto percent = std::to_string(hardware.battery) + "%";

@@ -26,17 +26,26 @@ hostname rgds
 ip link set lo up
 syslogd -O /run/rgds/messages -s 256 -b 1
 
-# the card we booted from: its partitions 2 and 3 are the root slots, 4 the data partition
-for u in /sys/class/block/*p2/uevent; do
+# the card we booted from: its partitions 2 and 3 are the root slots, 4 the data partition. It is the disk the root
+# filesystem is on; failing that, the one whose partition 2 is named rgds-root-a. Never a guess: the next lines
+# partition and format what is named here, and the eMMC (the factory system) must not be it. With no card found
+# there is no data partition, and the menu says so (data-failed, the session's --card-problem).
+DISK=
+root=$(mountpoint -d / 2>/dev/null)
+p=$(readlink -f "/sys/dev/block/$root" 2>/dev/null)
+case "${p##*/}" in mmcblk*p[23]) DISK=/dev/${p##*/}; DISK=${DISK%p[23]};; esac
+[ -n "$DISK" ] || for u in /sys/class/block/*p2/uevent; do
     grep -q '^PARTNAME=rgds-root-a$' "$u" 2>/dev/null || continue
     p=${u%/uevent}; DISK=/dev/${p##*/}; DISK=${DISK%p2}
 done
-[ -n "$DISK" ] || DISK=/dev/mmcblk1
+[ -n "$DISK" ] || DISK=/dev/none
 echo "$DISK" > /run/rgds/disk
 SLOT=a; grep -q 'root=PARTLABEL=rgds-root-b' /proc/cmdline && SLOT=b
 echo "$SLOT" > /run/rgds/slot
 mark "rcS: slot $SLOT"
-if [ ! -b ${DISK}p4 ]; then
+if [ ! -b "$DISK" ]; then
+    echo "rcS: the card RG DS OS booted from was not found" >> /run/rgds/messages
+elif [ ! -b ${DISK}p4 ]; then
     /usr/libexec/rgds/firstboot "$DISK"
 elif grep -q '^PARTNAME=rgds-new$' /sys/class/block/${DISK##*/}p4/uevent 2>/dev/null; then
     /usr/libexec/rgds/firstboot --format "$DISK"
@@ -54,9 +63,13 @@ mark "rcS: data ready"
 # what the last kernel crash left in RAM (ramoops in the device tree), moved to the card. Every restart leaves a
 # console-* file; only a dmesg-* one means a crash. Removing them makes room for the next.
 mount -t pstore pstore /sys/fs/pstore 2>/dev/null
+# The newest 20 are kept, numbered upwards (before 2026-11-10 the first 20 were, and later crashes were dropped).
 if ls /sys/fs/pstore/dmesg-* >/dev/null 2>&1; then
-    n=$(ls /data/rgds/logs/pstore 2>/dev/null | wc -l)
-    [ "$n" -lt 20 ] && mkdir -p /data/rgds/logs/pstore/$n && cp /sys/fs/pstore/* /data/rgds/logs/pstore/$n/ 2>/dev/null
+    P=/data/rgds/logs/pstore
+    n=$(ls $P 2>/dev/null | grep -E '^[0-9]+$' | sort -n | tail -n 1)
+    n=$((${n:--1} + 1))
+    mkdir -p $P/$n && cp /sys/fs/pstore/* $P/$n/ 2>/dev/null
+    for old in $(ls $P | grep -E '^[0-9]+$' | sort -n -r | tail -n +21); do rm -rf "$P/$old"; done
 fi
 rm -f /sys/fs/pstore/* 2>/dev/null
 mount -t vfat -o ro,noatime ${DISK}p1 /boot 2>/dev/null

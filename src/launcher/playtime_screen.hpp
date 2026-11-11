@@ -46,7 +46,9 @@ void App::smooth_arc(SDL_Renderer* r, int cx, int cy, int radius, int thickness,
     if (amount <= 0 || thickness <= 0) return;
     amount = std::min(1.0, amount);
     const int turn = 1440; // quarter-degree steps keep the cache small
-    const int from = int(std::lround(start * turn)) % turn, span = std::max(1, int(std::lround(amount * turn)));
+    // Baked from the top and turned as it is drawn: a spinner's moving start would bake a new texture every frame.
+    const double turned = (start - std::floor(start)) * 360.0;
+    const int from = 0, span = std::max(1, int(std::lround(amount * turn)));
     const auto key = std::make_tuple(r, radius, thickness, from, span, round_caps);
     auto found = arc_textures.find(key);
     SDL_Texture* texture = found == arc_textures.end() ? nullptr : found->second;
@@ -93,14 +95,21 @@ void App::smooth_arc(SDL_Renderer* r, int cx, int cy, int radius, int thickness,
             s.DestroyTexture(texture);
             texture = nullptr;
         }
-        if (texture) s.SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        if (texture) {
+            s.SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+            // Linear sampling keeps the turned edge as smooth as the baked one (SDL 2.0.12 and later).
+            using ScaleMode = int (*)(SDL_Texture*, int);
+            static const auto scale_mode = reinterpret_cast<ScaleMode>(dlsym(s.handle, "SDL_SetTextureScaleMode"));
+            if (scale_mode) scale_mode(texture, 1);
+        }
         arc_textures[key] = texture;
     }
     if (!texture) return;
     s.SetTextureColorMod(texture, ink.r, ink.g, ink.b);
     s.SetTextureAlphaMod(texture, Uint8(std::clamp(alpha, 0, 255)));
     SDL_Rect to{cx - side / 2, cy - side / 2, side, side};
-    s.RenderCopy(r, texture, nullptr, &to);
+    if (span >= turn || turned == 0) s.RenderCopy(r, texture, nullptr, &to);
+    else s.RenderCopyEx(r, texture, nullptr, &to, turned, nullptr, SDL_FLIP_NONE);
 }
 
 std::string App::playtime_days(int days) {

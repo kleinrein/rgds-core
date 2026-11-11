@@ -7,8 +7,11 @@ CONNECTED)
     stop
     udhcpc -b -t 10 -i "$1" -p /run/rgds/udhcpc.pid -s /usr/share/udhcpc/default.script > /dev/null 2>&1
     # the clock, once per boot: the RTC on this unit drifts (10 days fast under Banana)
-    [ -f /run/rgds/ntp-done ] ||
-        (ntpd -q -n -p pool.ntp.org > /dev/null 2>&1 && hwclock -w && touch /run/rgds/ntp-done) &
+    # (one at a time, the folder is the lock; ntpd -q waits for an answer for ever, so it gets a minute)
+    [ -f /run/rgds/ntp-done ] || ! mkdir /run/rgds/ntp-running 2> /dev/null || (
+        timeout 60 ntpd -q -n -p pool.ntp.org > /dev/null 2>&1 && hwclock -w && touch /run/rgds/ntp-done
+        rmdir /run/rgds/ntp-running
+    ) &
     ;;
 DISCONNECTED)
     stop

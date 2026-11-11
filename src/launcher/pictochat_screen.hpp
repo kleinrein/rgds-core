@@ -497,7 +497,7 @@ void App::chat_bottom(SDL_Renderer* r, int y) {
 }
 
 std::string App::top_signature(Uint32 now) {
-    if (settings.page != Page::Library || chat_open || o.game_menu || probe || launching || embedded_menu ||
+    if (settings.page != Page::Library || chat_open || music_open || o.game_menu || probe || launching || embedded_menu ||
         (o.boot_startup && !library_ready) || now - top_drawn_at >= 2000 || view_motion.running)
         return {};
     std::ostringstream k;
@@ -516,7 +516,7 @@ std::string App::top_signature(Uint32 now) {
       << update_status["offer"] << update_status["progress"] << int(update_stage()) << banner_frame(now) << '|'
       << device_status["wifi_connected"] << '|' << (volume_toast && now < volume_toast ? now : 0) << '|'
       << (preferences.animations && cover_motion_at && now - cover_motion_at < 110 ? now : 0) << '|'
-      << (home_menu && preferences.home_layout == 1 ? std::time(nullptr) : 0);
+      << (home_menu && preferences.home_layout == 1 ? std::time(nullptr) : 0) << '|' << music_badge_phase(now);
     if (systems_menu) {
         // The Systems card: its system and numbers (reading them here advances the slice-per-frame play totals).
         const auto& stats = system_stats_for(systems_selected);

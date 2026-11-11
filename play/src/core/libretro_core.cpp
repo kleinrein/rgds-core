@@ -5,6 +5,7 @@
 // is therefore not available for these systems.
 #include "core.hpp"
 #include "libretro/libretro.h"
+#include "zx_machine.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -218,6 +219,11 @@ public:
         // 0001-export-mode7-line-data.patch) and by the libretro buildbot's macOS one.
         mode7_lines_ = reinterpret_cast<const int16_t*>(dlsym(lib_, "LineMatrixData"));
         mode7_ppu_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "PPU"));
+        // PicoDrive's machine (pico/pico_int.h: struct Pico starts with the VDP's registers, struct PicoMem is
+        // the 68000's RAM, video RAM, the Z80's RAM, the ports, the colours and the vertical scroll), which its
+        // libretro builds export.
+        md_pico_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "Pico"));
+        md_mem_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "PicoMem"));
         // Fuse's read map (os/buildroot/package/libretro-fuse/0001-export-memory-map.patch): its memory as the Z80
         // sees it, the 128K's banks paged in.
         zx_pages_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "memory_map_read"));
@@ -236,6 +242,13 @@ public:
         system_ = system;
         system_dir_ = system_dir;
         save_dir_ = save_dir;
+        if (system == "scummvm") {
+            // ScummVM names a save by the kind of game ("monkey.s00", for the demo and the whole game alike, and
+            // SKY-VM.000 whatever the folder): each game's saves in a folder of its own, named as the game's.
+            save_dir_ += "/saves/scummvm/" + std::filesystem::path(rom_path).parent_path().filename().string();
+            std::error_code failed;
+            std::filesystem::create_directories(save_dir_, failed);
+        }
         rom_path_ = rom_path;
         zx_tape_game_ = system == "zx" && (lower_extension(rom_path) == ".tzx" || lower_extension(rom_path) == ".tap");
         zx_tape_seen_ = zx_past_loader_ = false;
@@ -265,23 +278,31 @@ public:
                           {"scummvm_mapper_l", "RETROK_PERIOD"}, {"scummvm_mapper_r", "RETROK_SPACE"}};
         }
         if (system == "zx") {
-            // A Spectrum 48K, a 128K for the tapes that need one (SpeedLock's 128K loaders reset a 128K given a
-            // 48K-and-128K tape like Out Run's), no border (256 x 192, so profiles can name rows), tapes at the
-            // machine's own speed (run_frame hurries them) and quietly.
-            variables_ = {{"fuse_machine", "Spectrum 48K"},
-                          {"fuse_auto_machine", "enabled"},
+            // A Spectrum 48K, a 128K for the tapes that need one, chosen here (zx_tape_needs_128k): Fuse's own choice
+            // gives a 128K to any tape with 128 in its name, SpeedLock's loaders reset a 128K given a 48K-and-128K
+            // tape like Out Run's, and the game never started. No border (256 x 192, so profiles can name rows),
+            // tapes at the machine's own speed (run_frame hurries them) and quietly.
+            std::vector<uint8_t> tape;
+            if (zx_tape_game_) {
+                std::ifstream in(rom_path, std::ios::binary);
+                tape.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+            }
+            const bool wants_128k = zx_tape_game_ && zx_tape_needs_128k(rom_path, tape);
+            variables_ = {{"fuse_machine", wants_128k ? "Spectrum 128K" : "Spectrum 48K"},
+                          {"fuse_auto_machine", "disabled"},
                           {"fuse_size_border", "none"},
                           {"fuse_fast_load", "disabled"},
                           {"fuse_load_sound", "disabled"},
-                          // The keys a Spectrum game's menus ask for (1 Keyboard, 2 Kempston ...; ENTER or 0 to start)
-                          // on the buttons the joystick leaves free; Select brings up Fuse's keyboard for the rest.
-                          {"fuse_joypad_x", "1"},
-                          {"fuse_joypad_y", "2"},
-                          {"fuse_joypad_l", "3"},
-                          {"fuse_joypad_r", "4"},
+                          // The pad is a Kempston joystick plus Start (Enter) and L2 (Space). No digit keys on X, Y, L, R:
+                          // games read 1-5 and 6-0 as the Sinclair and Cursor joysticks, so a shoulder button sent
+                          // Out Run's "up" (accelerate). The menus' number keys come from the second screen's keyboard.
+                          {"fuse_joypad_x", "<none>"},
+                          {"fuse_joypad_y", "<none>"},
+                          {"fuse_joypad_l", "<none>"},
+                          {"fuse_joypad_r", "<none>"},
                           {"fuse_joypad_start", "Enter"},
                           {"fuse_joypad_l2", "Space"},
-                          {"fuse_joypad_r2", "0"}};
+                          {"fuse_joypad_r2", "<none>"}};
         }
         if (system == "c64") variables_ = {{"vice_autoloadwarp", "enabled"}}; // a disk or tape loads at full speed
         // The PSP's own 480 x 272 on the JIT: every extra pixel is drawing and read-back the A55s and the Mali-G52 lack.
@@ -481,6 +502,18 @@ public:
     }
     bool drew_gl_target() const override { return drew_target_; }
 
+    bool md_video(MdVideo& out) const override {
+        // Trusted only while the core's work RAM is where that layout says it is.
+        if (system_ != "md" || !md_pico_ || !md_mem_ || !loaded_ ||
+            retro_get_memory_data_(RETRO_MEMORY_SYSTEM_RAM) != md_mem_)
+            return false;
+        out.vram = reinterpret_cast<const uint16_t*>(md_mem_ + 0x10000);
+        out.cram = reinterpret_cast<const uint16_t*>(md_mem_ + 0x22010);
+        out.vsram = reinterpret_cast<const uint16_t*>(md_mem_ + 0x22100);
+        out.reg = md_pico_;
+        return true;
+    }
+
     bool mode7(Mode7& out) const override {
         if (system_ != "snes" || !mode7_lines_ || !mode7_ppu_ || memory_size(RETRO_MEMORY_VIDEO_RAM) < 0x10000)
             return false;
@@ -571,7 +604,22 @@ public:
             pending_state_ = in, pending_disk_ = disk;
             return true;
         }
+        // A Spectrum tape game: the machine as it is, to come back to if the state turns out to hold BASIC waiting
+        // for a command and no game (zx_at_prompt): the tape then loads from its start instead.
+        std::vector<uint8_t> before;
+        if (loaded_ && zx_tape_game_ && zx_pages_) {
+            before.resize(retro_serialize_size_());
+            if (before.empty() || !retro_serialize_(before.data(), before.size())) before.clear();
+        }
         const bool ok = on_gpu([&] { return retro_unserialize_(in.data(), in.size()); });
+        if (ok && !before.empty() && zx_at_prompt()) {
+            std::fputs("play: the state holds BASIC waiting for a command and no game: not loaded\n", stderr);
+            retro_unserialize_(before.data(), before.size());
+            // Before the first frame (the auto-load) the machine has not typed its LOAD "" yet, and what was kept
+            // comes back without it: Fuse's reset opens the tape again, as the first start did.
+            if (!frames_) retro_reset_();
+            return false;
+        }
         if (ok && disk >= 0 && disk != disk_index()) set_disk(disk);
         if (ok) c64_resumed_ = true;
         // A state comes back with the core's own idea of what is plugged in: the gun goes back in.
@@ -581,7 +629,20 @@ public:
     }
     bool still_loading() const override {
         if (system_ == "c64") return !pending_state_.empty() || (!c64_resumed_ && frames_ < c64_autostart_frames);
-        return zx_tape_game_ && (!zx_past_loader_ || zx_tape_loading());
+        return zx_tape_game_ && (!zx_past_loader_ || zx_tape_loading() || zx_at_prompt());
+    }
+    // A Spectrum's BASIC waiting for a command line, as after a tape that failed to load or was stopped with BREAK:
+    // the ROM's editor has put its error handler (ED-ERROR, 107F) on the machine stack where ERR_SP (5C3D) points,
+    // and it is not a program's INPUT (FLAGX, 5C71, bit 5). While a program or LOAD runs the word there is MAIN-4
+    // (1303). Nothing to keep or to come back to: a state of it brought every later start to the same prompt.
+    bool zx_at_prompt() const {
+        if (system_ != "zx" || !zx_pages_) return false;
+        auto byte = [&](uint32_t address) -> uint32_t {
+            const uint8_t* p = byte_at(address & 0xFFFF);
+            return p ? *p : 0;
+        };
+        const uint32_t sp = byte(0x5C3D) | byte(0x5C3E) << 8;
+        return sp >= 0x4000 && (byte(sp) | byte(sp + 1) << 8) == 0x107F && !(byte(0x5C71) & 0x20);
     }
 
     // Addresses as the system's CPU sees them: an NES's 0000-07FF and its cartridge RAM at 6000, a SNES's work RAM
@@ -747,6 +808,7 @@ private:
         lib_ = nullptr;
         mode7_lines_ = nullptr;
         mode7_ppu_ = nullptr;
+        md_pico_ = md_mem_ = nullptr;
         zx_pages_ = nullptr;
         zx_tape_playing_ = nullptr;
         zx_tape_loading_ = nullptr;
@@ -1272,6 +1334,7 @@ private:
     std::vector<retro_memory_descriptor> maps_;
     const int16_t* mode7_lines_ = nullptr;
     const uint8_t* mode7_ppu_ = nullptr;
+    const uint8_t *md_pico_ = nullptr, *md_mem_ = nullptr;
     const uint8_t* zx_pages_ = nullptr;  // Fuse's memory_map_read
     int (*zx_tape_playing_)() = nullptr; // Fuse's tape_is_playing
     int (*zx_tape_loading_)() = nullptr; // our Fuse's loader_tape_loading (libretro-fuse 0002)

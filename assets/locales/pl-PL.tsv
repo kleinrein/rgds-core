@@ -367,6 +367,7 @@ Finishing the system request	Kończenie żądania systemowego
 Follow your default button layout	Zgodnie z domyślnym układem przycisków
 Following the default controls.	Używane jest wspólne sterowanie.
 Follows your library shader.	Jak filtr biblioteki.
+For games without a stick: N64 and PSP keep it	Do gier bez gałki: N64 i PSP ją zachowują
 Forget this device?	Zapomnieć to urządzenie?
 FPS changed for this session. Settings storage is unavailable.	FPS zmienione na tę sesję. Zapis ustawień jest niedostępny.
 FPS counter enabled.	Licznik FPS włączony.
@@ -450,6 +451,14 @@ Green	Zielony
 Grey	Szary
 Grey TV	Szary telewizor
 Grid	Siatka
+Left stick down	Lewa gałka w dół
+Left stick left	Lewa gałka w lewo
+Left stick right	Lewa gałka w prawo
+Left stick up	Lewa gałka w górę
+Right stick down	Prawa gałka w dół
+Right stick left	Prawa gałka w lewo
+Right stick right	Prawa gałka w prawo
+Right stick up	Prawa gałka w górę
 h	godz.
 Haptic strength	Siła haptyki
 Health	Zdrowie
@@ -563,6 +572,7 @@ Manage builds and temporary files	Wersje i pliki tymczasowe
 Matches your accent	Jak kolor akcentu
 Matching title	Dopasowany tytuł
 Matching title saved. Choose Fetch artwork.	Tytuł zapisany. Wybierz Pobierz okładki.
+Memory card problem	Problem z kartą pamięci
 Menu audio is unavailable on this device.	Dźwięk menu jest niedostępny na tym urządzeniu.
 Menu effects	Efekty menu
 Menu haptics	Haptyka menu
@@ -644,6 +654,7 @@ Not yet	Jeszcze nie
 Nothing played yet	Jeszcze nic nie grano
 Nothing to load	Nie ma czego wczytać
 Nothing to load here yet.	Na razie nie ma tu nic do wczytania.
+Nothing you change now is kept.	Żadne zmiany nie zostaną teraz zapisane.
 Notification	Powiadomienie
 Off	Wył.
 Off (smooth)	Wył. (płynnie)
@@ -851,6 +862,7 @@ Screen brightness	Jasność ekranu
 Screen colours	Kolory ekranu
 Menu	Menu
 Switch	Zmień
+Turn off and check the card on a computer.	Wyłącz konsolę i sprawdź kartę na komputerze.
 Turn off screen	Wyłącz ekran
 screens	ekranów
 ScreenScraper needs project credentials and your account	ScreenScraper wymaga danych projektu i Twojego konta
@@ -1189,6 +1201,7 @@ Your cartridges go here	Tu pojawią się Twoje kartridże
 Your colour	Twój kolor
 Your DS library starts here	Tu zaczyna się Twoja biblioteka DS
 Your games and saves are not touched.	Gry i zapisy pozostają nietknięte.
+Your games and saves could not be read.	Nie udało się odczytać gier ani zapisów.
 Your home screen after powering on	Ekran główny po włączeniu
 Your journey	Twoja podróż
 Your last game will appear here	Tu pojawi się ostatnia gra
@@ -1323,7 +1336,10 @@ That is not the PIN.	To nie jest ten PIN.
 Without one this profile is not locked. Cancel skips it.	Bez PIN-u ten profil nie jest zablokowany. Anuluj, aby pominąć.
 The owner's PIN was removed.	Usunięto PIN właściciela.
 Profile name	Nazwa profilu
-Remove this profile? Its saves are kept, and a backup is made first.	Usunąć ten profil? Zapisy zostaną zachowane, a najpierw powstanie kopia.
+Remove this profile? Its saves are kept until you erase removed profiles.	Usunąć ten profil? Jego zapisy zostaną, dopóki nie wymażesz usuniętych profili.
+Back up its saves first	Najpierw kopia zapisów
+Removing the profile…	Usuwanie profilu…
+Profile removed.	Profil usunięty.
 Show every game with no rating on this shelf?	Pokazać wszystkie gry bez oceny z tej półki?
 Star	Gwiazda
 Heart	Serce
@@ -1376,3 +1392,89 @@ Systems page	Strona systemów
 Games you play appear here	Gry, w które grasz, pojawią się tutaj
 Swipe up from the bottom for Home, in from a side for Back	Przesuń z dołu w górę — ekran główny, z boku — wstecz
 Swipe in from the left or right edge to go Back.	Przesuń od lewej lub prawej krawędzi, aby wrócić.
+Music	Muzyka
+Songs	Utwory
+Albums	Albumy
+Artists	Wykonawcy
+Folders	Foldery
+Lists	Listy
+Queue	Kolejka
+Equaliser	Korektor
+Visualiser	Wizualizacja
+Now playing	Teraz odtwarzane
+Shuffle	Losowo
+Shuffle all	Wszystko losowo
+Shuffle on	Losowo: wł.
+Shuffle off	Losowo: wył.
+Repeat off	Powtarzanie: wył.
+Repeat all	Powtarzaj wszystko
+Repeat this song	Powtarzaj ten utwór
+Play next	Odtwórz jako następny
+Plays next	Zostanie odtworzony jako następny
+Add to queue	Dodaj do kolejki
+Added to the queue	Dodano do kolejki
+Remove from queue	Usuń z kolejki
+Add to favourites	Dodaj do ulubionych
+Remove from favourites	Usuń z ulubionych
+Added to favourites	Dodano do ulubionych
+Removed from favourites	Usunięto z ulubionych
+Recently added	Ostatnio dodane
+Unknown artist	Nieznany wykonawca
+Various artists	Różni wykonawcy
+No music yet	Nie ma jeszcze muzyki
+Nothing here	Nic tu nie ma
+Nothing is playing	Nic nie jest odtwarzane
+The queue is empty	Kolejka jest pusta
+Looking for music…	Szukanie muzyki…
+Add your music	Dodaj swoją muzykę
+Put your music in the music folder on the card: with file sharing, or as a USB drive.	Umieść muzykę w folderze music na karcie: przez udostępnianie plików albo jako dysk USB.
+Speakers	Głośniki
+Headphones	Słuchawki
+Playing	Odtwarzanie
+Skip	Pomiń
+Tabs	Karty
+Flat	Płaski
+Larger display	Większy wyświetlacz
+Smaller display	Mniejszy wyświetlacz
+Music player	Odtwarzacz muzyki
+Play with the lid closed	Odtwarzaj przy zamkniętej pokrywie
+{0} song	{0} utwór
+{0} songs	{0} utworów
+{0} album	{0} album
+{0} albums	{0} albumów
+Bass boost	Więcej basu
+Treble boost	Więcej sopranów
+Rock	Rock
+Pop	Pop
+Jazz	Jazz
+Classical	Klasyczna
+Electronic	Elektroniczna
+Hip-hop	Hip-hop
+Acoustic	Akustyczna
+Vocal	Wokal
+Small speakers	Małe głośniki
+Spectrum	Widmo
+Oscilloscope	Oscyloskop
+Fire	Ogień
+Plasma	Plazma
+Starfield	Pole gwiazd
+VU meters	Wskaźniki VU
+Vectorscope	Wektoroskop
+Radial spectrum	Widmo kołowe
+Waterfall	Wodospad
+Tunnel	Tunel
+ScreenScraper account	Konto ScreenScraper
+Not signed in	Nie zalogowano
+Change account	Zmień konto
+Stop scraping before signing in	Zatrzymaj pobieranie przed zalogowaniem
+Stop scraping before signing out	Zatrzymaj pobieranie przed wylogowaniem
+Signed in to ScreenScraper as {0}.	Zalogowano do ScreenScraper jako {0}.
+Signed out of ScreenScraper.	Wylogowano z ScreenScraper.
+Signing in to ScreenScraper	Logowanie do ScreenScraper
+Enter your ScreenScraper username and password.	Wpisz nazwę użytkownika i hasło ScreenScraper.
+ScreenScraper is not configured for this build yet.	ScreenScraper nie jest jeszcze skonfigurowany w tej wersji.
+Sign in to ScreenScraper first.	Najpierw zaloguj się do ScreenScraper.
+Check your ScreenScraper login.	Sprawdź dane logowania ScreenScraper.
+ScreenScraper did not accept this login.	ScreenScraper nie przyjął tych danych logowania.
+Your daily ScreenScraper quota has been reached.	Dzienny limit ScreenScraper został wyczerpany.
+Could not reach ScreenScraper. Check Wi-Fi and try again.	Brak połączenia z ScreenScraper. Sprawdź Wi-Fi i spróbuj ponownie.

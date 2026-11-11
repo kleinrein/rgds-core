@@ -30,11 +30,15 @@ void App::configure_sounds() {
     configure_haptics();
     sounds.set_master(hardware.volume ? hardware.volume_percent : 100);
     if (!sounds.opened) sounds.opened = [this] { restore_dac_level(); };
-    sounds.configure(preferences.menu_sounds && !probe && !sleep_audio_parked && settings.page != Page::Microphone,
+    // While the music player plays, the menu keeps quiet: no cues over a song, no menu music under it, and (on a
+    // Bluetooth headset, whose stream takes one client) no second sink in the engine's way.
+    const bool song = music_ready && music.playing();
+    sounds.configure(preferences.menu_sounds && !probe && !sleep_audio_parked && settings.page != Page::Microphone &&
+                         !song,
                      preferences.sound_volume, asset_path("sounds"));
     // Music belongs to the home, library and settings; not to the in-game
     // menu, the microphone test, sleep or a launch in progress.
-    sounds.configure_music(preferences.menu_music && !probe && !o.game_menu && !sleep_audio_parked &&
+    sounds.configure_music(preferences.menu_music && !probe && !o.game_menu && !sleep_audio_parked && !song &&
                                settings.page != Page::Microphone && !launching,
                            preferences.music_volume, asset_path("music") / "menu.wav");
 }

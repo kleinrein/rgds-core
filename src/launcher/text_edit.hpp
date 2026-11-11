@@ -144,14 +144,33 @@ void App::finish_edit(bool commit) {
         dirty = true;
         return;
     }
-    if (commit) {
-        if (edit_field == 0) username = edit_buffer;
-        else password = edit_buffer;
+    // ScreenScraper sign-in: the username, then the password; the worker checks both with ScreenScraper before
+    // keeping them (scraper.py login), and the password reaches it on stdin, never on its command line.
+    if (commit && edit_field == 0 && !edit_buffer.empty()) {
+        username = edit_buffer;
+        edit_buffer.clear();
+        begin_edit(1);
+        return;
+    }
+    if (commit && edit_field == 1 && !edit_buffer.empty() && !username.empty()) {
+        std::ostringstream payload;
+        payload << "{\"ssid\":" << std::quoted(username) << ",\"sspassword\":" << std::quoted(edit_buffer) << '}';
+        if (worker > 0 && worker_action != "scrape") stop_worker();
+        if (worker > 0) service_notice = "Stop scraping before signing in";
+        else {
+            service_notice.clear();
+            start_worker("login", payload.str());
+        }
+        auto sent = payload.str();
+        std::fill(sent.begin(), sent.end(), '\0');
     }
     std::fill(edit_buffer.begin(), edit_buffer.end(), '\0');
     edit_buffer.clear();
+    std::fill(password.begin(), password.end(), '\0');
+    password.clear();
     s.StopTextInput();
     settings.page = Page::Scraper;
+    settings.focus = 6;
     dirty = true;
 }
 
@@ -208,6 +227,21 @@ void App::delete_character() {
 }
 
 void App::scraper_action() {
+    if (settings.focus == 6) {
+        if (screenscraper_user.empty()) {
+            begin_edit(0);
+            return;
+        }
+        show_picker("ScreenScraper account", {"Change account", "Sign out"}, 0, [this](int n) {
+            if (n == 0) begin_edit(0);
+            else {
+                if (worker > 0 && worker_action != "scrape") stop_worker();
+                if (worker > 0) service_notice = "Stop scraping before signing out";
+                else start_worker("logout");
+            }
+        });
+        return;
+    }
     if (settings.focus == 5) {
         preferences.auto_scrape = !preferences.auto_scrape;
         if (!preferences.auto_scrape) auto_scrape_pending = false;

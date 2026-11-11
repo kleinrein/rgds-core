@@ -26,6 +26,7 @@ struct Profile {
     bool restricted = false;
     bool all_games = false; // Games opens every game in one list, not the Systems step (its ui.ini)
     std::string language;   // its menus' language (its ui.ini); empty until read
+    bool music = false;     // its Music player switch (its ui.ini); on a Kid profile only the owner changes it
     // Who sees what (profile_visibility.hpp). A Kid profile hides what has no rating and starts at seven.
     int age = no_age_limit;
     bool unrated_hidden = false, allow_ports = false, allow_homebrew = false;
@@ -125,6 +126,7 @@ class ProfileStore {
             profile.colour = look.accent;
             profile.all_games = look.show_systems && look.all_games;
             profile.language = look.language;
+            profile.music = look.music_player;
         } catch (const std::exception&) {}
         profile.ds_name = profile_fields(root / "ds.ini")["nickname"];
         std::ifstream last(root / "last-game.txt");

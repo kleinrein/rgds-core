@@ -32,11 +32,13 @@ endef
 LINUX_POST_PATCH_HOOKS += RGDS_LINUX_DRIVERS
 # The drivers again before every kernel build: the post-patch hook runs once, at extraction, so a driver edited
 # after that (panel-generic-dsi.c on 2026-10-27) would otherwise never reach the image. cp keeps make's view right.
+# The boot logo replaces the kernel's own file (CONFIG_LOGO_LINUX_CLUT224, linux-rgds.fragment).
 # The Wi-Fi regulatory database the kernel carries (CONFIG_EXTRA_FIRMWARE, linux-rgds.fragment) comes along: the
 # kernel reads it from firmware/ in its own tree.
 define RGDS_LINUX_DRIVER_SOURCES
 	cp $(RGDS_BOARD)/kernel/panel-generic-dsi.c $(LINUX_DIR)/drivers/gpu/drm/panel/
 	cp $(RGDS_BOARD)/kernel/rocknix-singleadc-joypad.c $(RGDS_BOARD)/kernel/rocknix-joypad.h $(LINUX_DIR)/drivers/input/joystick/
+	cp $(RGDS_BOARD)/boot-logo.ppm $(LINUX_DIR)/drivers/video/logo/logo_linux_clut224.ppm
 	mkdir -p $(LINUX_DIR)/firmware
 	cp $(RGDS_BOARD)/firmware/regulatory.db $(RGDS_BOARD)/firmware/regulatory.db.p7s $(LINUX_DIR)/firmware/
 	$(RGDS_LINUX_SLEEP_CONFIG)

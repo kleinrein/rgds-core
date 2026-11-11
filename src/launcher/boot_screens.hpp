@@ -114,6 +114,15 @@ void App::boot_top(SDL_Renderer* r, int y) {
     }
     rect(r, 319, y + 98, 3, 10, "background");
     rect(r, 319, y + 111, 3, 3, "background");
+    if (o.card_problem) {
+        // The menu behind this screen runs on a folder in memory: say why the library is empty before it shows.
+        boot_caption(r, "Memory card problem", y + 150, 28, "ink");
+        rect(r, 288, y + 207, 64, 1, "line");
+        boot_caption(r, "Your games and saves could not be read.", y + 241, 20, "ink");
+        boot_caption(r, "Turn off and check the card on a computer.", y + 277, 20, "ink");
+        boot_caption(r, "Nothing you change now is kept.", y + 313, 20, "muted");
+        return;
+    }
     boot_caption(r, "Before you play", y + 150, 28, "ink");
     rect(r, 288, y + 207, 64, 1, "line");
     boot_caption(r, "Play at a comfortable volume.", y + 241, 20, "ink");
