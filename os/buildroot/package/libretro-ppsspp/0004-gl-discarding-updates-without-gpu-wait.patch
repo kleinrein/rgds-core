@@ -1,0 +1,70 @@
+GL buffer updates that discard do not wait for the GPU.
+
+OutRun 2006 races on the RG DS (Mali-G52, Mesa 25.0): the presentation quad's vertex buffer is rewritten every frame
+with UPDATE_DISCARD while the last frame's final draw still uses it. glBufferSubData made Panfrost wait in
+panfrost_bo_wait until that whole frame had left the GPU: 16 % of the GL thread's wall time by sampling. Mapping
+with GL_MAP_INVALIDATE_BUFFER_BIT gets fresh storage instead: 4585 frames in 90 s against 4334 and 4318
+(RGDS_GL_DISCARD_UPDATES=0 keeps the wait).
+
+--- a/Common/GPU/OpenGL/GLQueueRunner.h
++++ b/Common/GPU/OpenGL/GLQueueRunner.h
+@@ -256,6 +256,7 @@
+ 			uint8_t *data;  // owned, delete[]-d
+ 			bool deleteData;
+ 			bool unsynchronized;
++			bool discard;
+ 		} buffer_subdata;
+ 		struct {
+ 			GLRTexture *texture;
+--- a/Common/GPU/OpenGL/GLRenderManager.h
++++ b/Common/GPU/OpenGL/GLRenderManager.h
+@@ -406,7 +406,7 @@
+ 	void BlitFramebuffer(GLRFramebuffer *src, GLRect2D srcRect, GLRFramebuffer *dst, GLRect2D dstRect, int aspectMask, bool filter, const char *tag);
+ 
+ 	// Takes ownership of data if deleteData = true.
+-	void BufferSubdata(GLRBuffer *buffer, size_t offset, size_t size, uint8_t *data, bool deleteData = true, bool unsynchronized = false) {
++	void BufferSubdata(GLRBuffer *buffer, size_t offset, size_t size, uint8_t *data, bool deleteData = true, bool unsynchronized = false, bool discard = false) {
+ 		// TODO: Maybe should be a render command instead of an init command? When possible it's better as
+ 		// an init command, that's for sure.
+ 		GLRInitStep &step = initSteps_.push_uninitialized();
+@@ -418,6 +418,7 @@
+ 		step.buffer_subdata.data = data;
+ 		step.buffer_subdata.deleteData = deleteData;
+ 		step.buffer_subdata.unsynchronized = unsynchronized;
++		step.buffer_subdata.discard = discard;
+ 	}
+ 
+ 	// Takes ownership over the data pointer and delete[]-s it.
+--- a/Common/GPU/OpenGL/GLQueueRunner.cpp
++++ b/Common/GPU/OpenGL/GLQueueRunner.cpp
+@@ -180,6 +180,7 @@
+ 		}
+ 		case GLRInitStepType::BUFFER_SUBDATA:
+ 		{
++			static const bool discardUpdates = !(getenv("RGDS_GL_DISCARD_UPDATES") && *getenv("RGDS_GL_DISCARD_UPDATES") == '0');
+ 			GLRBuffer *buffer = step.buffer_subdata.buffer;
+ 			glBindBuffer(buffer->target_, buffer->buffer_);
+ 			// A push buffer is only reused once its frame slot's fence has passed (GLRenderManager::Run), so the driver needs
+@@ -187,6 +188,11 @@
+ 			void *to = nullptr;
+ 			if (step.buffer_subdata.unsynchronized && gl_extensions.GLES3)
+ 				to = glMapBufferRange(buffer->target_, step.buffer_subdata.offset, step.buffer_subdata.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
++			// A buffer rewritten every frame (the presentation quad) is still in the last frame's final draw: without the
++			// invalidate, Panfrost waited here for that whole frame to leave the GPU, a sixth of the GL thread's time in
++			// OutRun 2006. With it the driver hands out fresh storage (RGDS_GL_DISCARD_UPDATES=0 keeps the wait).
++			else if (step.buffer_subdata.discard && gl_extensions.GLES3 && discardUpdates)
++				to = glMapBufferRange(buffer->target_, step.buffer_subdata.offset, step.buffer_subdata.size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+ 			if (to) {
+ 				memcpy(to, step.buffer_subdata.data, step.buffer_subdata.size);
+ 				glUnmapBuffer(buffer->target_);
+--- a/Common/GPU/OpenGL/thin3d_gl.cpp
++++ b/Common/GPU/OpenGL/thin3d_gl.cpp
+@@ -1188,7 +1188,7 @@
+ 	memcpy(dataCopy, data, size);
+ 	// if (flags & UPDATE_DISCARD) we could try to orphan the buffer using glBufferData.
+ 	// But we're much better off using separate buffers per FrameData...
+-	renderManager_.BufferSubdata(buf->buffer_, offset, size, dataCopy);
++	renderManager_.BufferSubdata(buf->buffer_, offset, size, dataCopy, true, false, (flags & UPDATE_DISCARD) != 0);
+ }
+ 
+ Pipeline *OpenGLContext::CreateGraphicsPipeline(const PipelineDesc &desc, const char *tag) {
