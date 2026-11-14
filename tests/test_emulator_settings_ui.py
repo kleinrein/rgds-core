@@ -202,8 +202,9 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertEqual(self.game.read_bytes(), self.original)
 
     def test_system_defaults_page_saves_a_systems_choice_once(self):
-        # Third Library row: System defaults. Down to Game screen, open its picker, step to Smooth fill.
-        self.run_ui(['A', 'Down', 'A', 'Down', 'Down', 'A'], library=True)
+        # Fourth Library row since the regroup (Games: Scan, Systems, Browser layout; then Per system): System defaults.
+        # Down to Game screen, open its picker, step to Smooth fill.
+        self.run_ui(['Down', 'A', 'Down', 'A', 'Down', 'Down', 'A'], library=True)
         saved = read_fields(self.root / 'system-defaults' / 'gba.ini')
         self.assertEqual(saved['fit'], 'smooth')
         self.assertEqual(saved['second'], 'companion')
@@ -212,8 +213,8 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     def test_partial_ui_save_failure_reopens_picker_at_stored_layout(self):
         (self.root / 'ui.ini').write_text('schema=1\nlayout=0\n')
         (self.root / 'ui.ini.pending').mkdir()
-        # run_ui steps past Scan and Systems; System defaults is the third row, so one more Down than before.
-        report = self.run_ui(['Down'] * 5 + ['A', 'Down', 'A', 'A'], library=True)
+        # run_ui steps past Scan and Systems, onto Browser layout (the Games group's last row since the regroup).
+        report = self.run_ui(['A', 'Down', 'A', 'A'], library=True)
         self.assertTrue(report['picker_open'])
         self.assertEqual(report['picker_title'], 'Browser layout')
         self.assertEqual(report['picker_focus'], 0)

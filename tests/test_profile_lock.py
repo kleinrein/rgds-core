@@ -156,7 +156,7 @@ class EnteringTests(Base):
     def test_the_owner_once_in_goes_anywhere_without_a_pin(self):
         self.profiles(active='owner', kid_pin='9999')
         # Settings > Profiles > Change who's playing, then Ola
-        report = self.run_ui(['Down'] * 10 + ['a', 'a', 'Right', 'a'], seconds=4)
+        report = self.run_ui(['Up', 'a', 'a', 'Right', 'a'], seconds=4)
         self.assertEqual((report['page'], report['profile']), (LIBRARY, 'p1'))
 
     def test_a_kids_own_pin_stops_another_kid(self):
@@ -235,7 +235,7 @@ class ForgottenTests(Base):
 @unittest.skipUnless(BINARY.exists(), 'Build host launcher first')
 class SettingPinTests(Base):
     # Settings > Profiles, the owner's page: Name, DS name, Picture, Colour, Language, Games, Games opens, PIN
-    TO_OWNER = ['Down'] * 10 + ['a', 'Down', 'a']
+    TO_OWNER = ['Up', 'a', 'Down', 'a']  # Profiles sits above Theme, where Settings opens
 
     def test_choosing_a_pin_asks_twice_and_keeps_no_digits_on_the_card(self):
         self.profiles(owner_pin='', active='owner')
@@ -278,7 +278,7 @@ class SettingPinTests(Base):
         self.assertNotIn('owner_pin', read_fields(self.data / 'profiles/index.ini'))
 
     def test_a_new_kid_asks_for_the_owners_pin_once_and_it_can_be_skipped(self):
-        new_kid = ['Down'] * 10 + ['a', 'Down', 'a', 'Right', 'a', 'text Ola', 'Return', 'a']
+        new_kid = ['Up', 'a', 'Down', 'a', 'Right', 'a', 'text Ola', 'Return', 'a']
         report = self.run_ui(new_kid, seconds=4)
         self.assertEqual((report['page'], report['pin_purpose']), (PIN, PIN_SET))
         # Skipped: Cancel on the pad, and on to its games, with nothing locked.
@@ -289,7 +289,7 @@ class SettingPinTests(Base):
         self.assertEqual(read_fields(self.data / 'profiles/p1/profile.ini')['restricted'], '1')
 
     def test_a_new_kid_with_the_pin_given_ends_on_its_games(self):
-        new_kid = ['Down'] * 10 + ['a', 'Down', 'a', 'Right', 'a', 'text Ola', 'Return', 'a']
+        new_kid = ['Up', 'a', 'Down', 'a', 'Right', 'a', 'text Ola', 'Return', 'a']
         report = self.run_ui(new_kid + pin_keys('2580') + pin_keys('2580', 10), seconds=5)
         self.assertEqual((report['page'], report['games_tab']), (GAMES, 3))
         self.assertIn('owner_pin', read_fields(self.data / 'profiles/index.ini'))
@@ -297,17 +297,17 @@ class SettingPinTests(Base):
 
 @unittest.skipUnless(BINARY.exists(), 'Build host launcher first')
 class LockTests(Base):
-    # The root list: Theme, Display, Power, Library, Sound, Connectivity, System, Updates, Controls, Statistics, Profiles,
-    # Power off
+    # The grouped root (docs/SETTINGS_PLAN.md), counted from Theme where Settings opens: Profiles (-1, above it), Theme,
+    # Display, Sound, Library, Controls, Connectivity, Power, System, Updates, Power off. Statistics is Home's Playtime.
     def row(self, index):
-        return ['Down'] * index + ['a']
+        return (['Up'] * -index if index < 0 else ['Down'] * index) + ['a']
 
     def test_each_settings_row_is_open_or_asks(self):
         self.profiles()
         for name, index, locked in (
-            ('Theme', 0, False), ('Display', 1, False), ('Power', 2, True), ('Library', 3, True), ('Sound', 4, False),
-            ('Connectivity', 5, True), ('System', 6, True), ('Updates', 7, True), ('Controls', 8, True),
-            ('Statistics', 9, False), ('Profiles', 10, False)
+            ('Profiles', -1, False), ('Theme', 0, False), ('Display', 1, False), ('Sound', 2, False),
+            ('Library', 3, True), ('Controls', 4, True), ('Connectivity', 5, True), ('Power', 6, True),
+            ('System', 7, True), ('Updates', 8, True)
         ):
             with self.subTest(row=name):
                 report = self.run_ui(self.row(index), seconds=3)
@@ -373,7 +373,7 @@ class LockTests(Base):
     def test_managing_profiles_needs_the_pin_but_switching_does_not(self):
         self.profiles()
         # Change who's playing, Andreas, Ola, Add, the question
-        to_page = ['Down'] * 10 + ['a']
+        to_page = ['Up', 'a']
         self.assertEqual(self.run_ui(to_page + ['a'])['page'], PICKER)
         self.assertEqual(self.run_ui(to_page + ['Down', 'a'])['page'], PIN)
         self.assertEqual(self.run_ui(to_page + ['Down', 'Down', 'Down', 'a'])['page'], PIN)
@@ -386,7 +386,7 @@ class LockTests(Base):
     def test_a_grown_ups_settings_are_open_but_not_the_profiles(self):
         self.profiles(adult=True, active='p2')
         self.assertEqual(self.run_ui(self.row(3))['page'], 6)  # Library
-        report = self.run_ui(self.row(10) + ['Down', 'a'])
+        report = self.run_ui(self.row(-1) + ['Down', 'a'])
         self.assertEqual(report['page'], PIN)
 
     def test_with_no_owner_pin_a_kid_profile_is_filtered_but_not_locked(self):

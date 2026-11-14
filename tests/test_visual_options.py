@@ -53,12 +53,12 @@ class VisualOptionsTests(unittest.TestCase):
         return r, g, b
 
     def test_touch_icon_style_survives_restart_and_keeps_font(self):
-        # Icon style is the fifth row: scroll it into view, open its picker.
-        self.run_ui('10 wheel 0 -3\n20 click 300 337\n180 click 140 326\n', ('--settings', '--section', 'theme'))
+        # Icon style is the fifth row: scroll it into view, tap the option in its segmented control.
+        self.run_ui('10 wheel 0 -3\n20 click 330 337\n', ('--settings', '--section', 'theme'))
         self.assertIn('icon_style=pixel', (self.root / 'ui.ini').read_text())
         self.assertIn('font=rounded', self.prefs.read_text())
         pixel = self.run_ui(extra=('--home',))
-        self.run_ui('10 wheel 0 -3\n20 click 300 337\n180 click 140 378\n', ('--settings', '--section', 'theme'))
+        self.run_ui('10 wheel 0 -3\n20 click 500 337\n', ('--settings', '--section', 'theme'))
         self.assertIn('icon_style=rich', (self.root / 'ui.ini').read_text())
         rich = self.run_ui(extra=('--home',))
 

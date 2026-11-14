@@ -76,11 +76,11 @@ class SettingsInteractionTests(unittest.TestCase):
                     self.assertEqual(report['page'], expected)
 
     def test_touch_indicator_can_be_changed_by_touch_and_keyboard_and_persists(self):
-        # Settings > Display: Touch indicator is the third row.
-        self.run_ui('30 click 180 290\n', 'display')
+        # Settings > Display: Touch indicator is the second row (Theme took Animations and Home layout).
+        self.run_ui('30 click 180 210\n', 'display')
         self.assertIn('touch_indicator=0\n', (self.root / 'ui.ini').read_text())
         # A second run must load Off before toggling it back to On.
-        self.run_ui(''.join(f'{30+i*30} key Down\n' for i in range(2)) + '260 key A\n', 'display')
+        self.run_ui('30 key Down\n260 key A\n', 'display')
         self.assertIn('touch_indicator=1\n', (self.root / 'ui.ini').read_text())
         self.assertIn('animations=1\n', (self.root / 'ui.ini').read_text())
         self.assertNotIn('touch_indicator', (self.root / 'preferences.ini').read_text())

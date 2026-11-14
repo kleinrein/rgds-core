@@ -164,8 +164,8 @@ void App::settings_card(SDL_Renderer* r, int x, int y, int w, int h, bool focuse
 }
 
 void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, const std::string& value, bool enabled,
-                   const Color* swatch, bool switches) {
-    int row = y + list_top + index * list_stride - list_scroll - list_shift();
+                   const Color* swatch, bool switches, const std::string& note, double bar) {
+    int row = y + list_top + row_top(index) - list_scroll - list_shift();
     bool focused = index == list_selected();
     int dx = 24;
     move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
@@ -187,10 +187,19 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
                             : toggle      ? 82
                                           : std::min(224, label_width(value, 18) + (enabled ? 46 : 28) + dot);
     const int text_width = 464 - (value_width ? value_width + 16 : 28);
-    label(r, title, 98 + dx, row + 19, 24, enabled ? "ink" : "muted", text_width,
+    // A note (the root's summaries) is a second line under a smaller title; it is data, not a translation key.
+    if (!note.empty()) label(r, note, 98 + dx, row + 38, 15, focused ? "ink" : "muted", text_width, false);
+    label(r, title, 98 + dx, note.empty() ? row + 19 : row + 8, note.empty() ? 24 : 22, enabled ? "ink" : "muted",
+          text_width,
           settings.page != Page::Wifi && settings.page != Page::Bluetooth && settings.page != Page::Cheats &&
               settings.page != Page::Homebrew && settings.page != Page::Timezone &&
               settings.page != Page::ProfileGames && settings.page != Page::ProfileGameRules); // names are data
+    if (bar >= 0) {
+        // A usage gauge under the title (Device information > Free space): sunken track, lit fill for the used part.
+        const int track = std::max(40, text_width - 12), fill = int(std::lround(track * std::clamp(bar, 0., 1.)));
+        sunken_track(r, 98 + dx, row + 41, track, 12, 6);
+        if (fill > 0) raised_pill(r, 98 + dx, row + 41, std::max(12, fill), 12, 6, theme.at("accent"), 0, false);
+    }
     if (toggle) {
         draw_toggle(r, 524 + dx, row + 19, title, value == "On", enabled);
     } else if (!value.empty()) {

@@ -18,8 +18,9 @@ class OTAUITests(unittest.TestCase):
     def test_statistics_entry_and_back(self):
         self.run_ui(extra=('--settings', '--section', 'statistics'))
         self.assertIn('27 7 0', (self.root / 'state').read_text())
+        # Playtime is Home's since the settings regroup: Back returns Home (Page::Library), not to a Settings row.
         self.run_ui('200 key Escape\n', ('--settings', '--section', 'statistics'))
-        self.assertIn('1 7 0', (self.root / 'state').read_text())
+        self.assertIn('\nhome ', (self.root / 'state').read_text())
 
     def test_settings_home_tile_has_no_play_summary(self):
         data = self.run_ui('20 key Left\n40 key-up Left\n', ('--home',))
@@ -29,9 +30,10 @@ class OTAUITests(unittest.TestCase):
         )
 
     def test_updates_are_reachable_and_unconfigured_is_explicit(self):
-        script = '20 key Down\n40 key-up Down\n80 key Down\n100 key-up Down\n140 key Down\n160 key-up Down\n180 key Down\n190 key-up Down\n200 key Down\n210 key-up Down\n220 key Down\n230 key-up Down\n260 key A\n'  # Updates & recovery is the seventh System row
-        self.run_ui(script, ('--settings', '--section', 'system'))
-        self.assertIn('17 5 0', (self.root / 'state').read_text())
+        # Updates is a root row of its own (docs/SETTINGS_PLAN.md): eight rows below Theme, where Settings opens.
+        script = ''.join(f'{20 + i * 30} key Down\n{30 + i * 30} key-up Down\n' for i in range(8)) + '300 key A\n'
+        self.run_ui(script, ('--settings',))
+        self.assertIn('17 9 0', (self.root / 'state').read_text())
         self.assertIn('state=unconfigured', (self.root / 'data/update/status.ini').read_text())
 
     def test_update_progress_renders_from_async_worker(self):
@@ -129,12 +131,12 @@ else:os.execv(sys.executable,[sys.executable,*sys.argv[1:]])
         self.assertFalse(self.actions.exists() and 'update-download' in self.actions.read_text())
 
     def test_updates_is_a_root_entry_below_system(self):
-        # Section ids stay stable; Updates (9) is listed between System (5) and Controls (6).
+        # Section ids stay stable; Updates (9) is listed between System (5) and Power off (8).
         (self.root / 'state').write_text('1 0 0 ""\n1 5 0\n')
         self.run_ui('300 key Down\n340 key-up Down\n')
         self.assertIn('1 9 0', (self.root / 'state').read_text())
         self.run_ui('300 key Down\n340 key-up Down\n')
-        self.assertIn('1 6 0', (self.root / 'state').read_text())
+        self.assertIn('1 8 0', (self.root / 'state').read_text())
         (self.root / 'state').write_text('1 0 0 ""\n1 9 0\n')
         self.run_ui('300 key A\n340 key-up A\n')
         self.assertIn('17 9 0', (self.root / 'state').read_text())

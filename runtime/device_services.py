@@ -570,6 +570,7 @@ class Services:
             firmware="Simulated handheld" if self.preview else firmware,
             kernel="Preview" if self.preview else platform.release(),
             free_gb=f"{usage.free/1024**3:.1f}",
+            total_gb=f"{usage.total/1024**3:.1f}",
             previous=previous,
             previous_version=previous_version,
             state="ready",
@@ -607,6 +608,36 @@ class Services:
         if folder.is_symlink(): raise ValueError("Cache location is invalid.")
         if folder.exists(): shutil.rmtree(folder)
         self.publish(state="ready", message="Temporary game cache cleared. Saves and artwork are kept.")
+
+    def storage(self):
+        """What fills the card, per kind of content; started when the Storage view opens, never in the background."""
+        import storage_usage
+        used = None
+        if not self.preview:
+            try:
+                usage = shutil.disk_usage(storage_usage.mount_root(self.data))
+                used = usage.used
+                self.publish(storage_total=usage.total, storage_free=usage.free)
+            except OSError:
+                pass
+
+        def publish(totals, done):
+            rest = dict(totals)
+            if used is not None:
+                rest['other'] = max(rest['other'], used - sum(v for k, v in rest.items() if k != 'other'))
+            self.publish(
+                storage_state="done" if done else "scanning",
+                **{
+                    f"storage_{key}": value
+                    for key, value in rest.items()
+                }
+            )
+
+        self.publish(storage_state="scanning")
+        try:
+            storage_usage.scan(self.data, publish, self.preview)
+        except KeyboardInterrupt:
+            self.publish(storage_state="stopped")
 
     def diagnostics(self):
         self.info()
@@ -715,7 +746,7 @@ def main():
             "clear-cache", "diagnostics", "poweroff", "reboot", "startup", "startup-info", "update-info",
             "update-check", "update-download", "update-apply", "update-discard", "update-auto", "library", "bt-on",
             "bt-off", "bt-scan", "bt-pair", "bt-forget", "homebrew-browse", "homebrew-get", "usb-on", "usb-off",
-            "usb-drive"
+            "usb-drive", "storage"
         )
     )
     parser.add_argument("--app", required=True, type=Path)

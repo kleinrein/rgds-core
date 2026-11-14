@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	请检查 ScreenScraper 登录信息。
 ScreenScraper did not accept this login.	ScreenScraper 未接受此登录信息。
 Your daily ScreenScraper quota has been reached.	今日的 ScreenScraper 配额已用完。
 Could not reach ScreenScraper. Check Wi-Fi and try again.	无法连接 ScreenScraper。请检查 Wi-Fi 后重试。
+Look & sound	外观与声音
+Device	设备
+Per system	按系统
+Saves	存档
+Language & region	语言与地区
+Just you	仅你自己
+{0} profiles	{0} 个个人资料
+Buttons, shortcut and fast-forward	按键、快捷键和快进
+DS nickname	DS 名称
+Join or host	加入或创建
+Host	主机
+Sharing details	共享详情
+Graphics saved.	图形设置已保存。
+Crisp	清晰
+HD soft	HD 柔和
+Heavy 3D scenes saved.	重度 3D 场景设置已保存。
+Sharp	锐利
+Smooth (3x and above)	平滑（3x 及以上）
+Heavy 3D scenes (2x and above)	重度 3D 场景（2x 及以上）
+Adaptive (holds 60 fps)	自适应（保持 60 fps）
+Always sharp	始终锐利
+Dim when idle	空闲时变暗
+Sleep timer in games	游戏中的休眠计时
+Graphics	图形
+System defaults	系统默认设置
+Switch game	切换游戏
+Your current game is saved before switching.	切换前会保存当前游戏。
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	麦克风默认使用真实设备。吹气和合盖操作会在两秒内返回游戏。语言更改需重启后生效。本地无线可与同一 Wi-Fi 下的另一台 RG DS 对战；联机期间无法使用即时存档和快进。
+Development	开发
+Could not save	无法保存
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	真实的 3D 分辨率。3x 兼顾画质与速度，5x 为实验性。
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	平滑会按屏幕分辨率合成 3D 采样，2D 画面保持清晰。
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	自适应会用原生分辨率渲染重度 3D 场景几秒钟以保持 60 fps，在游戏中生效。
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	对 2D 画面、文字和菜单重新采样。锐利、平滑和清晰作用于 2x 及以上的 3D 屏幕。HD 和 HD 柔和会重建两块屏幕，锐利可用于任何分辨率和屏幕滤镜；HD 柔和还会平滑阴影。
+Screen filters change the final picture, including 2D artwork.	屏幕滤镜会改变最终画面，包括 2D 画面。
+Keep off for smooth motion. Skipping display frames can help demanding games.	想要流畅的动作请保持关闭。跳过显示帧可能对吃力的游戏有帮助。
+The renderer currently running. Graphics changes apply during play.	当前运行的渲染器。图形设置的更改会在游戏中生效。
+Save a checkpoint and restart with your chosen graphics settings.	保存存档点，并按所选图形设置重新启动。
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	分辨率越高，占用 GPU 越多。更改在游戏中生效；原生使用软件渲染。
+Per-game controls appear once a game is in your library.	游戏加入游戏库后，会出现每个游戏的操作设置。
+Looks through your games card again. It also runs by itself when games change.	重新扫描游戏卡，游戏变动时也会自动运行。
+What each system's games share until a game says otherwise: bezel, screen, shader.	各系统游戏共用的设置，除非某个游戏另行设定：边框、屏幕、着色器。
+Save as system default	保存为系统默认设置
+Internal resolution	内部分辨率
+Remove game	移除游戏
+Auto-fetch new games	自动获取新游戏
+Heavy 3D scenes	重度 3D 场景
+Screen filter	屏幕滤镜
+Running now	正在运行
+Smooth	平滑
+Adaptive	自适应
+Nothing on this shelf yet.	这个架子上还没有内容。
+No cheats are on. Switch one on under All or Groups.	没有开启的金手指。请在“全部”或“分组”下开启。
+Pages zoom and fade in, like the DSi menu	页面像 DSi 菜单一样缩放并淡入淡出
+Speed	速度
+Snappy	轻快
+Relaxed	舒缓
+Quick, crisp transitions	快速、清爽的过渡
+Slow, unhurried, very smooth transitions	缓慢从容、非常平滑的过渡
+Balanced for everyday use	适合日常使用的均衡效果
+Remove this game from the card? Its saves stay.	从卡中移除这个游戏？存档会保留。
+Show a start screen when the handheld turns on. Tap it or press A to continue.	开机时显示开始画面，轻触或按 A 键继续。
+Lower the screens until you press a button	调暗屏幕，直到按下按键
+Sleep a game nobody is playing	让没人玩的游戏进入休眠
+Show a start screen; tap or press A to go on	显示开始画面，轻触或按 A 键继续
+Reopen the game you powered off from	重新打开关机前的游戏
+Play with another RG DS on your Wi-Fi	与同一 Wi-Fi 下的另一台 RG DS 一起玩
+Could not save date format	无法保存日期格式
+Could not save time format	无法保存时间格式
+Could not save daylight saving	无法保存夏令时
+Using the ROM's game code and filename.	使用 ROM 的游戏代码和文件名。
+None for this game	此游戏没有
+All off	全部关闭
+Other cheats	其他金手指
+Choose a group	选择分组
+Cheats that are on	已开启的金手指
+All cheats	全部金手指
+Cheats are available when a game runs with DSCore or RG DS Play.	使用 DSCore 或 RG DS Play 运行游戏时可用金手指。
+One at a time	逐个
+No cheats match. Try a shorter word.	没有匹配的金手指。请试试更短的词。
+No cheats are on.	没有开启的金手指。
+No cheats in this group.	此分组中没有金手指。
+No description in the database.	数据库中没有说明。
+Cheats on	已开启金手指
+Groups	分组
+Try a shorter word.	请试试更短的词。
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	没有找到此游戏的金手指。请把金手指文件(RetroArch 使用的 GAME.cht)放在游戏旁边或 userdata/play/cheats 中,然后重新开始游戏。
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	没有找到此游戏的金手指。请把 Action Replay 数据库(usrcheat.dat)放在游戏旁边或 userdata/emulators/rgds-experimental/cheats 中,然后重新开始游戏。
+Search cheats	搜索金手指
+Type a cheat name…	输入金手指名称…
+{0} cheat on	已开启 {0} 个金手指
+{0} cheats on	已开启 {0} 个金手指
+{0} cheat	{0} 个金手指
+{0} cheats	{0} 个金手指
+{0} on	已开启 {0} 个
+{0} matching cheat	{0} 个匹配的金手指
+{0} matching cheats	{0} 个匹配的金手指
+Press a button or direction. Anbernic / Escape cancels.	请按下按键或方向。Anbernic / Escape 取消。
+More…	更多…
+Reading your library…	正在读取游戏库…
+Other end	另一端
+In library	在游戏库中
+The memory card is read-only	存储卡为只读
+Could not save game options	无法保存游戏选项
+Recently played	最近游玩
+Adjust volume	调节音量
+Already in your library.	已在游戏库中。
+One download at a time.	一次只能下载一个。
+One moment.	请稍候。
+Saving before switching games…	正在切换游戏前保存…
+Applying graphics…	正在应用图形设置…
+Free DS, GBA and NES games, picked for RG DS.	为 RG DS 精选的免费 DS、GBA 和 NES 游戏。
+Select Start	Select Start
+Native / software	原生 / 软件
+Before / after	之前 / 之后
+Downloading…	正在下载…
+Takes effect the next time the game starts.	下次开始游戏时生效。
+Saved as the default for {0} games.	已保存为 {0} 游戏的默认设置。
+Could not remove {0}	无法移除 {0}
+{0} removed	已移除 {0}
+Whole course	整个赛道
+Close up	近景
+Charging	正在充电
+The map draws itself as you explore	地图会随着探索逐步绘出
+The course draws itself on the first lap	赛道会在第一圈绘出
+Storage	存储空间
+Measuring…	正在测量…
+Saves & states	存档与状态
+Artwork & info	封面与信息
+Cache	缓存
+used	已用
+free	可用
+Clear cache	清除缓存
+ROMs, ports and homebrew.	ROM、移植和自制游戏。
+Save files, resume points and save states.	存档文件、续玩点和即时存档。
+Covers, screenshots and game details.	封面、截图和游戏详情。
+Your music folder.	你的音乐文件夹。
+Temporary files. Safe to clear.	临时文件，可放心清除。
+RG DS Core, its engines and settings.	RG DS Core、其引擎和设置。
+Everything else on the card, with the file system's own overhead.	卡上的其他所有内容，包括文件系统自身的开销。
+Room for more games.	可容纳更多游戏的空间。

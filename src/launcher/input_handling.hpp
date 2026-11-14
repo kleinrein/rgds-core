@@ -85,6 +85,7 @@ void App::action(int code) {
         dirty = true;
         return;
     }
+    if ((code == 0 || code == 1 || code == 2 || code == 4) && step_choice(code)) return;
     if ((code == 0 || code == 1 || code == 2 || code == 4) && open_setting_picker()) return;
     if (settings.page == Page::ShaderPicker) {
         if (code == 3) close_shader_picker();
@@ -185,7 +186,8 @@ void App::action(int code) {
         if (code == 3) back_to(Page::LibraryOptions);
         else if (code == 8 || code == 9)
             settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, list_count() - 1);
-        else if (code == 2 || code == 4 || (settings.focus == 0 && (code == 0 || code == 1))) system_defaults_action(code);
+        else if (code == 2 || code == 4 || (settings.focus == 0 && (code == 0 || code == 1)))
+            system_defaults_action(code);
         dirty = true;
         return;
     }
@@ -344,8 +346,7 @@ void App::action(int code) {
         else if (code == 11 && confirmation == "profile-remove") {
             profile_remove_backup = !profile_remove_backup;
             emit_sound(profile_remove_backup ? MenuCue::Enable : MenuCue::Disable);
-        }
-        else if (code == 2 || code == 4) {
+        } else if (code == 2 || code == 4) {
             bool accepted = settings.focus == 1;
             settings.page = confirm_return;
             settings.focus = 0;
@@ -509,11 +510,9 @@ void App::action(int code) {
                     settings.page = Page::DeviceInfo;
                     settings.focus = 0;
                     start_worker("device.info");
-                } else if (settings.focus == 6) {
-                    open_updates(Page::System);
-                } else if (settings.focus == 7 && !o.rgds_os) confirm("return-stock", Page::System);
-                else if (settings.focus == (o.rgds_os ? 7 : 8)) change_startup(0, true);
-                else if (settings.focus == (o.rgds_os ? 8 : 9)) open_welcome();
+                } else if (settings.focus == 6 && !o.rgds_os) confirm("return-stock", Page::System);
+                else if (settings.focus == (o.rgds_os ? 6 : 7)) change_startup(0, true);
+                else if (settings.focus == (o.rgds_os ? 7 : 8)) open_welcome();
             }
         } else if (settings.page == Page::Network) {
             if (code == 2) {
@@ -611,8 +610,7 @@ void App::action(int code) {
             if (code == 2) {
                 save_timezone();
                 if (welcome_detour) welcome_detour_end();
-            }
-            else if (code == 0 || code == 1) {
+            } else if (code == 0 || code == 1) {
                 settings.focus = timezone_region_jump(settings.focus, code == 0 ? -1 : 1);
             }
         } else if (settings.page == Page::Scraper) {
@@ -772,7 +770,7 @@ void App::touch(int x, int y) {
             return;
         }
         if (x >= 596 && y >= list_top && y < list_top + list_height) {
-            int thumb = std::max(54, list_height * list_height / std::max(1, list_count() * list_stride - 16));
+            int thumb = std::max(54, list_height * list_height / std::max(1, list_content()));
             int top = list_top + (list_max_scroll() ? list_scroll * (list_height - thumb) / list_max_scroll() : 0);
             scroll_grab = y >= top && y < top + thumb ? y - top : thumb / 2;
             scroll_drag = true;
@@ -782,8 +780,8 @@ void App::touch(int x, int y) {
             return;
         }
         if (x >= 24 && x < 590 && y >= list_top && y < list_top + list_height) {
-            int local = y - list_top + list_scroll, index = local / list_stride;
-            if (local % list_stride < 66 && index < list_count()) {
+            int local = y - list_top + list_scroll, index = row_at(local);
+            if (index >= 0) {
                 if (settings.page == Page::Settings) settings.section = section_order[size_t(index)];
                 else settings.focus = index;
                 if (settings.page == Page::Sound && index == 0) {
@@ -795,7 +793,15 @@ void App::touch(int x, int y) {
                 } else if (settings.page == Page::Appearance && (index == 0 || index == 3) &&
                            x >= segment_bounds(index, 0).x - 4)
                     choose_appearance(x >= segment_bounds(index, 1).x ? 1 : 0);
-                else action(2);
+                else if (auto spec = choice_spec(settings.page, index);
+                         spec && x >= choice_bounds(index, spec->names, 0).x - 4) {
+                    // A tap on a choice selects it directly; a tap on the title steps to the next one.
+                    int hit = -1;
+                    for (int option = 0; option < int(spec->names.size()); option++)
+                        if (x >= choice_bounds(index, spec->names, option).x) hit = option;
+                    if (hit >= 0 && hit != spec->value) choose_choice(settings.page, index, hit);
+                    dirty = true;
+                } else action(2);
             }
         }
         return;
@@ -963,10 +969,10 @@ void App::pointer_begin(int x, int y) {
         touch_tail = false;
         pointer_at = s.GetTicks();
         // As elsewhere, an edge touch waits: a swipe goes Home or Back, a release where it began is a plain tap.
-        edge_gesture = gestures_available() ? (y >= 470    ? EdgeGesture::Bottom
-                                               : x <= 10   ? EdgeGesture::Left
-                                               : x >= 630  ? EdgeGesture::Right
-                                                           : EdgeGesture::None)
+        edge_gesture = gestures_available() ? (y >= 470   ? EdgeGesture::Bottom
+                                               : x <= 10  ? EdgeGesture::Left
+                                               : x >= 630 ? EdgeGesture::Right
+                                                          : EdgeGesture::None)
                                             : EdgeGesture::None;
         if (!page_drag.departing()) page_drag.reset();
         if (edge_gesture == EdgeGesture::None) chat_press(x, y);
@@ -980,10 +986,10 @@ void App::pointer_begin(int x, int y) {
         touch_tail = false;
         pointer_at = s.GetTicks();
         // An edge touch waits, as everywhere: a swipe goes Home or Back, a release where it began is a plain tap.
-        edge_gesture = gestures_available() ? (y >= 470    ? EdgeGesture::Bottom
-                                               : x <= 10   ? EdgeGesture::Left
-                                               : x >= 630  ? EdgeGesture::Right
-                                                           : EdgeGesture::None)
+        edge_gesture = gestures_available() ? (y >= 470   ? EdgeGesture::Bottom
+                                               : x <= 10  ? EdgeGesture::Left
+                                               : x >= 630 ? EdgeGesture::Right
+                                                          : EdgeGesture::None)
                                             : EdgeGesture::None;
         if (!page_drag.departing()) page_drag.reset();
         if (edge_gesture == EdgeGesture::None) music_press(x, y);
@@ -1024,10 +1030,10 @@ void App::pointer_begin(int x, int y) {
     touch_tail = false;
     options_ready = false;
     dirty = true;
-    edge_gesture = gestures_available() ? (y >= 470    ? EdgeGesture::Bottom
-                                           : x <= 10   ? EdgeGesture::Left
-                                           : x >= 630  ? EdgeGesture::Right
-                                                       : EdgeGesture::None)
+    edge_gesture = gestures_available() ? (y >= 470   ? EdgeGesture::Bottom
+                                           : x <= 10  ? EdgeGesture::Left
+                                           : x >= 630 ? EdgeGesture::Right
+                                                      : EdgeGesture::None)
                                         : EdgeGesture::None;
     pointer_down = true;
     scroll_drag = false;
@@ -1150,7 +1156,7 @@ void App::pointer_begin(int x, int y) {
         }
         return;
     }
-    if (picker_open && picker_detail && y >= 164 && y < 398) {
+    if (picker_open && picker_detail && !picker_storage && y >= 164 && y < 398) {
         detail_drag = true;
         detail_rail = x >= 588;
         gesture_scroll = detail_scroll;
@@ -1320,8 +1326,7 @@ void App::pointer_move(int x, int y) {
     } else if (brightness_drag || volume_drag) {
         const int before = volume_drag ? hardware.volume_percent : system_preferences.brightness;
         if (volume_drag)
-            change_volume(
-                std::clamp(int(std::round((x - sound_track_x) * 20.0 / sound_track_width)) * 5, 0, 100));
+            change_volume(std::clamp(int(std::round((x - sound_track_x) * 20.0 / sound_track_width)) * 5, 0, 100));
         else touch(std::clamp(x, 44, 596), std::clamp(y, slider_band().first, slider_band().second));
         if ((volume_drag ? hardware.volume_percent : system_preferences.brightness) != before) haptic_detent();
     } else if (probe) {
@@ -1373,7 +1378,8 @@ void App::pointer_end(int x, int y) {
     if (picker_open && picker_swipe) picker_motion.release(release_at, 0, picker_max_scroll());
     if (filter_touch && filter_sheet_active() && !filter_rail && filter_drag < 0)
         filter_motion.release(release_at, 0, filter_max_scroll());
-    if (browser_list_touch && !tap_pending) browser_motion.release(release_at, 0, browser_list.maximum(navigation_count()));
+    if (browser_list_touch && !tap_pending)
+        browser_motion.release(release_at, 0, browser_list.maximum(navigation_count()));
     if (list_touch && list_swipe) list_motion.release(release_at, 0, list_max_scroll());
     // A press that never became a swipe (a tap, a slider, a rail, a touch that changed the page) still began a finger
     // drag. Left held, it kept the rows at the press's position and refused every key's glide until the next touch:
@@ -1813,7 +1819,8 @@ void App::handle_input(const SDL_Event& e) {
             break;
         case SDLK_LEFTBRACKET:
             if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats || music_open ||
-                settings.page == Page::Homebrew || settings.page == Page::ProfileGames || (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Homebrew || settings.page == Page::ProfileGames ||
+                (settings.page == Page::Library && !home_menu))
                 action(13);
             break;
         case SDLK_RIGHTBRACKET:
@@ -1823,11 +1830,13 @@ void App::handle_input(const SDL_Event& e) {
                 action(14);
             break;
         case SDLK_q:
-            if ((settings.page == Page::Library && !home_menu) || music_open || (settings.page == Page::Keyboard && edit_field == 4))
+            if ((settings.page == Page::Library && !home_menu) || music_open ||
+                (settings.page == Page::Keyboard && edit_field == 4))
                 action(15);
             break;
         case SDLK_e:
-            if ((settings.page == Page::Library && !home_menu) || music_open || (settings.page == Page::Keyboard && edit_field == 4))
+            if ((settings.page == Page::Library && !home_menu) || music_open ||
+                (settings.page == Page::Keyboard && edit_field == 4))
                 action(16);
             break;
         default: break;
@@ -1852,7 +1861,8 @@ void App::handle_input(const SDL_Event& e) {
         }
 
         // The shoulders step shader families and the cheats tabs; elsewhere they stand in for Left/Right.
-        if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats || settings.page == Page::Homebrew || settings.page == Page::ProfileGames) &&
+        if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats || settings.page == Page::Homebrew ||
+             settings.page == Page::ProfileGames) &&
             (e.jbutton.button == 4 || e.jbutton.button == 5)) {
             action(e.jbutton.button == 4 ? 13 : 14);
             return;

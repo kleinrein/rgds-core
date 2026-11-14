@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 
@@ -31,7 +32,8 @@ EXTRAS = (
     'tools/build_engines_gcc.py', 'tools/elf_abi.py', 'dscore/FORK.md', 'src/experimental/rgds/README.md'
 )
 OPTIONS = {
-    **base.ENGINE_OPTIONS, 'DSPERATE_VERSION': '3.0.0-rgds-experimental.1',
+    **base.ENGINE_OPTIONS,
+    'DSPERATE_VERSION': '3.0.0-rgds-experimental.1',
     'DSPERATE_TUNE': '-mcpu=cortex_a55',
     'DSPERATE_CHEEVOS': 'OFF',
     'DSPERATE_NET': 'ON'  # local wireless between handhelds (ENet); 2026-10-30
@@ -249,6 +251,22 @@ def main():
     parser.add_argument('--fetch', action='store_true', help='zig: download the pinned SDL source for the link SDK')
     args = parser.parse_args()
     if args.jobs < 1: parser.error('--jobs must be positive')
+    # The GCC build copies the whole tree into the VM and compiles it from scratch: when the published engine already
+    # passes validate_build (same dscore/ tree, options and drivers) with the same compiler and builder, keep it.
+    # RGDS_REBUILD=1 compiles anyway.
+    if not os.environ.get('RGDS_REBUILD'):
+        try:
+            record = validate_build(args.output)
+            same = record.get('compiler', 'zig') == args.compiler and (
+                args.compiler != base.gcc.COMPILER
+                or record.get('gcc', {}).get('builder_sha256') == base.digest(Path(base.gcc.__file__))
+            )
+        except (OSError, ValueError, KeyError):
+            same = False
+        if same:
+            print(f'{args.output} is up to date.', file=sys.stderr)
+            print(args.output)
+            return
     try:
         print(build(args))
     except (OSError, ValueError, subprocess.CalledProcessError) as error:

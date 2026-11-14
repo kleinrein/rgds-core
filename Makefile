@@ -6,7 +6,7 @@ THEME ?= themes/default/light.ini
 # gcc-pgo: GCC 13.3 + upstream PGO in the Lima ARM64 VM (~8% less emulation time); zig: host cross build
 ENGINE_COMPILER ?= gcc-pgo
 
-.PHONY: ssh preview settings game-menu dev build-host build-device build-rgds-experimental build-rgds-vulkan build-samba package image push release test shot format format-check
+.PHONY: ssh preview settings game-menu dev build-host build-device build-rgds-experimental build-rgds-vulkan build-samba package image push quick-push release test shot format format-check
 build-host:
 	$(PYTHON) tools/build.py host
 build-device:
@@ -35,6 +35,11 @@ package: build-device build-rgds-vulkan build-samba
 image: package
 	$(PYTHON) tools/own_os_build.py
 push:
+	$(PYTHON) tools/own_os_push.py $(DEVICE) --reboot
+# the quick device loop: launcher (skipped when unchanged) + the slot's root filesystem, no package or card images;
+# the engines, RG DS Play and the emulators come from their last builds and dist/latest. make image before a release.
+quick-push: build-device
+	$(PYTHON) tools/own_os_build.py --slot-only
 	$(PYTHON) tools/own_os_push.py $(DEVICE) --reboot
 release:
 	$(PYTHON) tools/own_os_release.py --version $(VERSION_NUMBER) $(if $(NOTES),--notes "$(NOTES)",)

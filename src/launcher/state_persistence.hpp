@@ -68,18 +68,18 @@ void App::restore_state() {
         return;
     }
     if (file && page >= 0 &&
-        (page <= int(Page::GameOptions) || page == int(Page::Statistics) ||
-         page == int(Page::Motion) || page == int(Page::Colours) ||
-         page == int(Page::MenuSounds) || page == int(Page::Haptics) || page == int(Page::DisplayOptions) ||
-         page == int(Page::Bluetooth) || page == int(Page::Homebrew)) &&
+        (page <= int(Page::GameOptions) || page == int(Page::Statistics) || page == int(Page::Motion) ||
+         page == int(Page::Colours) || page == int(Page::MenuSounds) || page == int(Page::Haptics) ||
+         page == int(Page::DisplayOptions) || page == int(Page::Bluetooth) || page == int(Page::Homebrew)) &&
         page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
         page != int(Page::Confirm) && section >= 0 && section <= 11 && focus >= 0 &&
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
                   : page == int(Page::Maintenance)    ? 7
                   : page == int(Page::LibraryOptions) ? 9
-                  : page == int(Page::Appearance)     ? 5
-                  : page == int(Page::System)         ? (o.rgds_os ? 7 : 8)
+                  : page == int(Page::Appearance)     ? 7
+                  : page == int(Page::DisplayOptions) ? 2
+                  : page == int(Page::System)         ? (o.rgds_os ? 7 : 8) - 1
                   : page == int(Page::Wifi)      ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)
                   : page == int(Page::Bluetooth) ? std::max(0, std::atoi(device_status["bt_count"].c_str()) - 1)
                   : page == int(Page::Homebrew)  ? std::max(0, std::atoi(device_status["hb_count"].c_str()) - 1)
@@ -96,8 +96,8 @@ void App::restore_state() {
                         : settings.section == 4 ? Page::Network
                                                 : Page::System;
     if (settings.page == Page::Appearance || settings.page == Page::Colours) settings.section = 0;
-    if (settings.page == Page::DisplayOptions || settings.page == Page::Display || settings.page == Page::Motion)
-        settings.section = 10;
+    if (settings.page == Page::DisplayOptions || settings.page == Page::Display) settings.section = 10;
+    if (settings.page == Page::Motion) settings.section = 0; // Theme > Animations since the 2026-11-11 regroup
     if (settings.page == Page::Display) settings.focus = 0;
     if (settings.page == Page::Sound || settings.page == Page::MenuSounds || settings.page == Page::Haptics) {
         settings.section = 3;
@@ -111,6 +111,9 @@ void App::restore_state() {
     if (settings.page == Page::Network) settings.focus = std::min(settings.focus, 8);
     if (settings.page == Page::Maintenance) settings.focus = std::min(settings.focus, 7);
     if (settings.page == Page::Statistics) settings.section = 7;
+    if (settings.page == Page::Settings &&
+        std::find(section_order.begin(), section_order.end(), settings.section) == section_order.end())
+        settings.section = section_order[0];
     if (settings.page == Page::GameOptions) {
         if (model.games.empty()) settings.page = Page::Library;
         else game_preferences = library_cache.options(model.games[model.selected]);

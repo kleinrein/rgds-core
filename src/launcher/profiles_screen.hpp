@@ -914,7 +914,7 @@ void App::erase_removed_profiles() {
 void App::profile_removal_finished(bool ok) {
     profile_removing = false;
     profiles.load(o.data);
-    status = !ok                    ? "The profile could not be removed."
+    status = !ok                     ? "The profile could not be removed."
              : profile_remove_backup ? "Profile removed. A backup is in userdata/exports."
                                      : "Profile removed.";
     settings.focus = 0;
@@ -1298,7 +1298,7 @@ void App::tick_box(SDL_Renderer* r, int x, int y, int size, int state, bool enab
 
 void App::profile_games_row(SDL_Renderer* r, int y, int i) {
     const auto& row = games_rows[size_t(i)];
-    int top = y + list_top + i * list_stride - list_scroll - list_shift();
+    int top = y + list_top + row_top(i) - list_scroll - list_shift();
     const bool focused = i == list_selected();
     int dx = 24;
     move_element(uint32_t(i), dx, top, 566, 66, focused, list_top, list_top + list_height, 20, 595);

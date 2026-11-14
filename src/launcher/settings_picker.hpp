@@ -9,7 +9,7 @@ void App::show_picker(std::string title, std::vector<std::string> options, int s
     picker_options = std::move(options);
     picker_selected = picker_focus = std::clamp(selected, 0, std::max(0, int(picker_options.size()) - 1));
     picker_apply = std::move(apply);
-    picker_detail = false;
+    picker_detail = picker_storage = false;
     picker_open = true;
     picker_scroll = 0;
     picker_motion.stop();
@@ -92,10 +92,11 @@ bool App::open_setting_picker() {
             "Sleep timer in games",
             {game_sleep_name(0), game_sleep_name(1), game_sleep_name(2), game_sleep_name(3), game_sleep_name(4)},
             system_preferences.game_sleep, [this](int n) { change_system(8, n - system_preferences.game_sleep); });
-    } else if ((settings.page == Page::Power && row == 0) || (settings.page == Page::EmulatorOptions && row == 2)) {
+    } else if ((settings.page == Page::Power && power_rows[size_t(row)] == 0) ||
+               (settings.page == Page::EmulatorOptions && row == 2)) {
         if (!hardware.power) return false;
         show_power_picker();
-    } else if (settings.page == Page::Power && row == 1) {
+    } else if (settings.page == Page::Power && power_rows[size_t(row)] == 1) {
         if (!hardware.sleep) return false;
         show_picker("Menu idle sleep", {idle_name(0), idle_name(1), idle_name(2), idle_name(3), idle_name(4)},
                     system_preferences.idle, [this](int n) { change_system(1, n - system_preferences.idle); });
@@ -160,19 +161,37 @@ bool App::open_setting_picker() {
 }
 
 std::string App::device_info_name(int row) const {
-    static const std::array<const char*, 5> names = {"RGDS build", "Stock firmware", "Kernel", "Free space",
-                                                     "Device address"};
+    static const std::array<const char*, 4> names = {"RGDS build", "Kernel", "Free space", "Device address"};
     return names.at(row);
 }
 
 std::string App::device_info_value(int row) {
-    static const std::array<const char*, 5> keys = {"build", "firmware", "kernel", "free_gb", "ip"};
+    static const std::array<const char*, 4> keys = {"build", "kernel", "free_gb", "ip"};
     auto value = device_status[keys.at(row)];
-    return value.empty() ? "Not available" : value + (row == 3 ? " GB" : "");
+    return value.empty() ? "Not available" : value + (row == 2 ? " GB" : "");
+}
+
+// Share of the data card in use, or -1 when the helper did not report a size (older status.ini).
+double App::storage_used_fraction() {
+    try {
+        const double free_gb = std::stod(device_status["free_gb"]), total_gb = std::stod(device_status["total_gb"]);
+        return total_gb > 0 ? std::clamp(1 - free_gb / total_gb, 0., 1.) : -1;
+    } catch (...) {
+        return -1;
+    }
+}
+
+std::string App::device_info_detail(int row) {
+    auto text = device_info_value(row);
+    const double used = row == 2 ? storage_used_fraction() : -1;
+    if (used >= 0)
+        text += " / " + device_status["total_gb"] + " GB · " + std::to_string(int(std::lround(used * 100))) + "%";
+    return text;
 }
 
 void App::show_detail(const std::string& title, const std::string& value) {
     picker_title = title;
+    picker_storage = false;
     std::string line;
     detail_lines.clear();
     detail_scroll = 0;
@@ -261,6 +280,10 @@ int App::picker_top() const {
 
 void App::picker_action(int code) {
     motion_input(code);
+    if (picker_storage) {
+        storage_action(code);
+        return;
+    }
     if (picker_detail) {
         if (code == 2 || code == 3 || code == 4 || code == 7) {
             picker_open = false;
@@ -312,6 +335,10 @@ void App::picker_touch(int x, int y) {
     }
     if (y < picker_top()) {
         picker_action(3);
+        return;
+    }
+    if (picker_storage) {
+        storage_touch(x, y);
         return;
     }
     if (picker_detail) return;
@@ -386,6 +413,10 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
     bool library_modal = picker_title == "Browser layout" || picker_title == "Jump to letter";
     if (library_modal) library_choice_icon(r, picker_title == "Jump to letter" ? 6 : 0, 62, top + 38, 28, "accent");
     label(r, picker_title, library_modal ? 88 : 48, top + 24, 24, "ink", library_modal ? 500 : 540);
+    if (picker_storage) {
+        render_storage(r, y, top, closing);
+        return;
+    }
     if (picker_detail) {
         for (int i = detail_scroll; i < std::min(int(detail_lines.size()), detail_scroll + 8); i++)
             label(r, detail_lines[i], 48, top + 68 + (i - detail_scroll) * 28, 20, "ink", 516);
@@ -432,7 +463,9 @@ void App::render_picker_body(SDL_Renderer* r, int y) {
             std::min(int(picker_options.size()), picker_first() + picker_visible() + (picker_scrollable() ? 1 : 0));
         for (int i = picker_first(); i < end; i++) {
             int stride = picker_stride(),
-                row = top + 64 + (picker_scrollable() ? i * stride - picker_scroll - picker_shift() : (i - picker_first()) * stride),
+                row =
+                    top + 64 +
+                    (picker_scrollable() ? i * stride - picker_scroll - picker_shift() : (i - picker_first()) * stride),
                 dx = 40, width = picker_scrollable() ? 520 : 560;
             bool focused = i == picker_focus;
             if (!picker_scrollable()) move_element(uint32_t(i + 100), dx, row, width, stride - 6, focused, 0, 424);

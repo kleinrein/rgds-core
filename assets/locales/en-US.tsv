@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Check your ScreenScraper login.
 ScreenScraper did not accept this login.	ScreenScraper did not accept this login.
 Your daily ScreenScraper quota has been reached.	Your daily ScreenScraper quota has been reached.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	Could not reach ScreenScraper. Check Wi-Fi and try again.
+Look & sound	Look & sound
+Device	Device
+Per system	Per system
+Saves	Saves
+Language & region	Language & region
+Just you	Just you
+{0} profiles	{0} profiles
+Buttons, shortcut and fast-forward	Buttons, shortcut and fast-forward
+DS nickname	DS nickname
+Join or host	Join or host
+Host	Host
+Sharing details	Sharing details
+Graphics saved.	Graphics saved.
+Crisp	Crisp
+HD soft	HD soft
+Heavy 3D scenes saved.	Heavy 3D scenes saved.
+Sharp	Sharp
+Smooth (3x and above)	Smooth (3x and above)
+Heavy 3D scenes (2x and above)	Heavy 3D scenes (2x and above)
+Adaptive (holds 60 fps)	Adaptive (holds 60 fps)
+Always sharp	Always sharp
+Dim when idle	Dim when idle
+Sleep timer in games	Sleep timer in games
+Graphics	Graphics
+System defaults	System defaults
+Switch game	Switch game
+Your current game is saved before switching.	Your current game is saved before switching.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.
+Development	Development
+Could not save	Could not save
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	True 3D resolution. 3x balances quality and speed; 5x is experimental.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.
+Screen filters change the final picture, including 2D artwork.	Screen filters change the final picture, including 2D artwork.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Keep off for smooth motion. Skipping display frames can help demanding games.
+The renderer currently running. Graphics changes apply during play.	The renderer currently running. Graphics changes apply during play.
+Save a checkpoint and restart with your chosen graphics settings.	Save a checkpoint and restart with your chosen graphics settings.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.
+Per-game controls appear once a game is in your library.	Per-game controls appear once a game is in your library.
+Looks through your games card again. It also runs by itself when games change.	Looks through your games card again. It also runs by itself when games change.
+What each system's games share until a game says otherwise: bezel, screen, shader.	What each system's games share until a game says otherwise: bezel, screen, shader.
+Save as system default	Save as system default
+Internal resolution	Internal resolution
+Remove game	Remove game
+Auto-fetch new games	Auto-fetch new games
+Heavy 3D scenes	Heavy 3D scenes
+Screen filter	Screen filter
+Running now	Running now
+Smooth	Smooth
+Adaptive	Adaptive
+Nothing on this shelf yet.	Nothing on this shelf yet.
+No cheats are on. Switch one on under All or Groups.	No cheats are on. Switch one on under All or Groups.
+Pages zoom and fade in, like the DSi menu	Pages zoom and fade in, like the DSi menu
+Speed	Speed
+Snappy	Snappy
+Relaxed	Relaxed
+Quick, crisp transitions	Quick, crisp transitions
+Slow, unhurried, very smooth transitions	Slow, unhurried, very smooth transitions
+Balanced for everyday use	Balanced for everyday use
+Remove this game from the card? Its saves stay.	Remove this game from the card? Its saves stay.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Show a start screen when the handheld turns on. Tap it or press A to continue.
+Lower the screens until you press a button	Lower the screens until you press a button
+Sleep a game nobody is playing	Sleep a game nobody is playing
+Show a start screen; tap or press A to go on	Show a start screen; tap or press A to go on
+Reopen the game you powered off from	Reopen the game you powered off from
+Play with another RG DS on your Wi-Fi	Play with another RG DS on your Wi-Fi
+Could not save date format	Could not save date format
+Could not save time format	Could not save time format
+Could not save daylight saving	Could not save daylight saving
+Using the ROM's game code and filename.	Using the ROM's game code and filename.
+None for this game	None for this game
+All off	All off
+Other cheats	Other cheats
+Choose a group	Choose a group
+Cheats that are on	Cheats that are on
+All cheats	All cheats
+Cheats are available when a game runs with DSCore or RG DS Play.	Cheats are available when a game runs with DSCore or RG DS Play.
+One at a time	One at a time
+No cheats match. Try a shorter word.	No cheats match. Try a shorter word.
+No cheats are on.	No cheats are on.
+No cheats in this group.	No cheats in this group.
+No description in the database.	No description in the database.
+Cheats on	Cheats on
+Groups	Groups
+Try a shorter word.	Try a shorter word.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.
+Search cheats	Search cheats
+Type a cheat name…	Type a cheat name…
+{0} cheat on	{0} cheat on
+{0} cheats on	{0} cheats on
+{0} cheat	{0} cheat
+{0} cheats	{0} cheats
+{0} on	{0} on
+{0} matching cheat	{0} matching cheat
+{0} matching cheats	{0} matching cheats
+Press a button or direction. Anbernic / Escape cancels.	Press a button or direction. Anbernic / Escape cancels.
+More…	More…
+Reading your library…	Reading your library…
+Other end	Other end
+In library	In library
+The memory card is read-only	The memory card is read-only
+Could not save game options	Could not save game options
+Recently played	Recently played
+Adjust volume	Adjust volume
+Already in your library.	Already in your library.
+One download at a time.	One download at a time.
+One moment.	One moment.
+Saving before switching games…	Saving before switching games…
+Applying graphics…	Applying graphics…
+Free DS, GBA and NES games, picked for RG DS.	Free DS, GBA and NES games, picked for RG DS.
+Select Start	Select Start
+Native / software	Native / software
+Before / after	Before / after
+Downloading…	Downloading…
+Takes effect the next time the game starts.	Takes effect the next time the game starts.
+Saved as the default for {0} games.	Saved as the default for {0} games.
+Could not remove {0}	Could not remove {0}
+{0} removed	{0} removed
+Whole course	Whole course
+Close up	Close up
+Charging	Charging
+The map draws itself as you explore	The map draws itself as you explore
+The course draws itself on the first lap	The course draws itself on the first lap
+Storage	Storage
+Measuring…	Measuring…
+Saves & states	Saves & states
+Artwork & info	Artwork & info
+Cache	Cache
+used	used
+free	free
+Clear cache	Clear cache
+ROMs, ports and homebrew.	ROMs, ports and homebrew.
+Save files, resume points and save states.	Save files, resume points and save states.
+Covers, screenshots and game details.	Covers, screenshots and game details.
+Your music folder.	Your music folder.
+Temporary files. Safe to clear.	Temporary files. Safe to clear.
+RG DS Core, its engines and settings.	RG DS Core, its engines and settings.
+Everything else on the card, with the file system's own overhead.	Everything else on the card, with the file system's own overhead.
+Room for more games.	Room for more games.

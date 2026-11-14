@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Verifique os dados do ScreenScraper.
 ScreenScraper did not accept this login.	O ScreenScraper não aceitou estes dados.
 Your daily ScreenScraper quota has been reached.	A sua quota diária do ScreenScraper esgotou.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	Não é possível contactar o ScreenScraper. Verifique o Wi-Fi e tente novamente.
+Look & sound	Aspeto e som
+Device	Dispositivo
+Per system	Por sistema
+Saves	Gravações
+Language & region	Idioma e região
+Just you	Só tu
+{0} profiles	{0} perfis
+Buttons, shortcut and fast-forward	Botões, atalho e avanço rápido
+DS nickname	Nome da DS
+Join or host	Juntar ou criar
+Host	Criar
+Sharing details	Detalhes da partilha
+Graphics saved.	Gráficos guardados.
+Crisp	Nítido
+HD soft	HD suave
+Heavy 3D scenes saved.	Cenas 3D pesadas guardadas.
+Sharp	Nítido
+Smooth (3x and above)	Suave (3x e acima)
+Heavy 3D scenes (2x and above)	Cenas 3D pesadas (2x e acima)
+Adaptive (holds 60 fps)	Adaptável (mantém 60 fps)
+Always sharp	Sempre nítido
+Dim when idle	Escurecer em inatividade
+Sleep timer in games	Temporizador de suspensão nos jogos
+Graphics	Gráficos
+System defaults	Predefinições do sistema
+Switch game	Mudar de jogo
+Your current game is saved before switching.	O jogo atual é guardado antes de mudar.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	O microfone real está ativado por predefinição. As ações de soprar e da tampa regressam ao jogo durante dois segundos. As alterações de idioma aplicam-se após reiniciar. O modo sem fios local joga com outra RG DS na mesma rede Wi-Fi; os estados guardados e o avanço rápido aguardam enquanto uma sessão estiver ativa.
+Development	Desenvolvimento
+Could not save	Não foi possível guardar
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Resolução 3D real. 3x equilibra qualidade e velocidade; 5x é experimental.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Suave combina amostras 3D à resolução do painel. A arte 2D mantém-se nítida.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Adaptável renderiza cenas 3D pesadas em nativo durante alguns segundos para manter 60 fps. Aplica-se durante o jogo.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Reamostra a arte 2D, o texto e os menus. Nítido, Suave e Nítido (Crisp): o ecrã 3D a 2x e acima. HD e HD suave reconstroem ambos os ecrãs, nítidos em qualquer resolução e com qualquer filtro de ecrã; HD suave também suaviza o sombreado.
+Screen filters change the final picture, including 2D artwork.	Os filtros de ecrã alteram a imagem final, incluindo a arte 2D.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Mantenha desativado para um movimento fluido. Saltar fotogramas pode ajudar em jogos exigentes.
+The renderer currently running. Graphics changes apply during play.	O motor de composição atualmente em execução. As alterações de gráficos aplicam-se durante o jogo.
+Save a checkpoint and restart with your chosen graphics settings.	Guarda um ponto de controlo e reinicia com as definições gráficas escolhidas.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Uma resolução mais alta custa tempo de GPU. As alterações aplicam-se durante o jogo; Nativa usa renderização por software.
+Per-game controls appear once a game is in your library.	Os controlos por jogo aparecem quando um jogo está na biblioteca.
+Looks through your games card again. It also runs by itself when games change.	Procura novamente no cartão de jogos. Também corre sozinho quando os jogos mudam.
+What each system's games share until a game says otherwise: bezel, screen, shader.	O que os jogos de cada sistema partilham até um jogo dizer outra coisa: moldura, ecrã, shader.
+Save as system default	Guardar como predefinição do sistema
+Internal resolution	Resolução interna
+Remove game	Remover jogo
+Auto-fetch new games	Obter novos jogos automaticamente
+Heavy 3D scenes	Cenas 3D pesadas
+Screen filter	Filtro de ecrã
+Running now	Em execução
+Smooth	Suave
+Adaptive	Adaptável
+Nothing on this shelf yet.	Ainda não há nada nesta prateleira.
+No cheats are on. Switch one on under All or Groups.	Nenhum truque está ativo. Ative um em Todos ou Grupos.
+Pages zoom and fade in, like the DSi menu	As páginas aproximam-se e esbatem-se, como no menu DSi
+Speed	Velocidade
+Snappy	Ágil
+Relaxed	Descontraído
+Quick, crisp transitions	Transições rápidas e nítidas
+Slow, unhurried, very smooth transitions	Transições lentas, calmas e muito suaves
+Balanced for everyday use	Equilibrado para o uso diário
+Remove this game from the card? Its saves stay.	Remover este jogo do cartão? Os seus ficheiros guardados permanecem.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Mostra um ecrã inicial ao ligar a consola. Toque nele ou prima A para continuar.
+Lower the screens until you press a button	Reduz a luz dos ecrãs até premir um botão
+Sleep a game nobody is playing	Suspender um jogo que ninguém está a jogar
+Show a start screen; tap or press A to go on	Mostrar um ecrã inicial; toque ou prima A para continuar
+Reopen the game you powered off from	Reabrir o jogo em que desligou
+Play with another RG DS on your Wi-Fi	Jogar com outra RG DS na sua rede Wi-Fi
+Could not save date format	Não foi possível guardar o formato da data
+Could not save time format	Não foi possível guardar o formato da hora
+Could not save daylight saving	Não foi possível guardar a hora de verão
+Using the ROM's game code and filename.	A usar o código do jogo e o nome do ficheiro da ROM.
+None for this game	Nenhum para este jogo
+All off	Tudo desligado
+Other cheats	Outros truques
+Choose a group	Escolha um grupo
+Cheats that are on	Truques ativados
+All cheats	Todos os truques
+Cheats are available when a game runs with DSCore or RG DS Play.	Os truques estão disponíveis quando um jogo corre com o DSCore ou o RG DS Play.
+One at a time	Um de cada vez
+No cheats match. Try a shorter word.	Nenhum truque corresponde. Tente uma palavra mais curta.
+No cheats are on.	Nenhum truque ativado.
+No cheats in this group.	Nenhum truque neste grupo.
+No description in the database.	Sem descrição na base de dados.
+Cheats on	Ativados
+Groups	Grupos
+Try a shorter word.	Tente uma palavra mais curta.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Não foram encontrados truques para este jogo. Coloque o ficheiro de truques (GAME.cht, como o RetroArch usa) junto ao jogo ou em userdata/play/cheats e inicie o jogo novamente.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Não foram encontrados truques para este jogo. Coloque uma base de dados Action Replay (usrcheat.dat) junto dos seus jogos ou em userdata/emulators/rgds-experimental/cheats e inicie o jogo novamente.
+Search cheats	Pesquisar truques
+Type a cheat name…	Escreva o nome de um truque…
+{0} cheat on	{0} truque ativado
+{0} cheats on	{0} truques ativados
+{0} cheat	{0} truque
+{0} cheats	{0} truques
+{0} on	{0} ativados
+{0} matching cheat	{0} truque correspondente
+{0} matching cheats	{0} truques correspondentes
+Press a button or direction. Anbernic / Escape cancels.	Prima um botão ou direção. Anbernic / Escape cancela.
+More…	Mais…
+Reading your library…	A ler a sua biblioteca…
+Other end	Outra ponta
+In library	Na biblioteca
+The memory card is read-only	O cartão de memória é só de leitura
+Could not save game options	Não foi possível guardar as opções do jogo
+Recently played	Jogados recentemente
+Adjust volume	Ajustar volume
+Already in your library.	Já está na sua biblioteca.
+One download at a time.	Uma transferência de cada vez.
+One moment.	Um momento.
+Saving before switching games…	A guardar antes de mudar de jogo…
+Applying graphics…	A aplicar gráficos…
+Free DS, GBA and NES games, picked for RG DS.	Jogos grátis de DS, GBA e NES, escolhidos para o RG DS.
+Select Start	Select Start
+Native / software	Nativo / software
+Before / after	Antes / depois
+Downloading…	A transferir…
+Takes effect the next time the game starts.	Tem efeito na próxima vez que o jogo iniciar.
+Saved as the default for {0} games.	Guardado como predefinição para jogos {0}.
+Could not remove {0}	Não foi possível remover {0}
+{0} removed	{0} removido
+Whole course	Percurso completo
+Close up	De perto
+Charging	A carregar
+The map draws itself as you explore	O mapa desenha-se à medida que explora
+The course draws itself on the first lap	O percurso desenha-se na primeira volta
+Storage	Armazenamento
+Measuring…	A medir …
+Saves & states	Jogos guardados e estados
+Artwork & info	Capas e informações
+Cache	Cache
+used	usado
+free	livre
+Clear cache	Limpar cache
+ROMs, ports and homebrew.	ROMs, ports e homebrew.
+Save files, resume points and save states.	Ficheiros de gravação, pontos de retoma e estados guardados.
+Covers, screenshots and game details.	Capas, capturas de ecrã e detalhes dos jogos.
+Your music folder.	A tua pasta de música.
+Temporary files. Safe to clear.	Ficheiros temporários. Seguro limpar.
+RG DS Core, its engines and settings.	RG DS Core, os seus motores e definições.
+Everything else on the card, with the file system's own overhead.	Tudo o resto no cartão, com a sobrecarga própria do sistema de ficheiros.
+Room for more games.	Espaço para mais jogos.

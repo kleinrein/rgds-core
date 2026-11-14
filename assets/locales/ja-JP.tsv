@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	ScreenScraperのログイン情報を確認し�
 ScreenScraper did not accept this login.	ScreenScraperがこのログインを受け付けませんでした。
 Your daily ScreenScraper quota has been reached.	ScreenScraperの1日の上限に達しました。
 Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraperに接続できません。Wi-Fiを確認してもう一度お試しください。
+Look & sound	表示とサウンド
+Device	本体
+Per system	システムごと
+Saves	セーブデータ
+Language & region	言語と地域
+Just you	あなただけ
+{0} profiles	{0} 個のプロフィール
+Buttons, shortcut and fast-forward	ボタン、ショートカット、早送り
+DS nickname	DSの名前
+Join or host	参加またはホスト
+Host	ホスト
+Sharing details	共有の詳細
+Graphics saved.	グラフィックを保存しました。
+Crisp	くっきり
+HD soft	HDソフト
+Heavy 3D scenes saved.	重い3Dシーンの設定を保存しました。
+Sharp	シャープ
+Smooth (3x and above)	スムース（3x以上）
+Heavy 3D scenes (2x and above)	重い3Dシーン（2x以上）
+Adaptive (holds 60 fps)	アダプティブ（60 fpsを維持）
+Always sharp	常にシャープ
+Dim when idle	操作がないと暗くする
+Sleep timer in games	ゲーム中のスリープタイマー
+Graphics	グラフィック
+System defaults	システム別の初期設定
+Switch game	ゲームを切り替え
+Your current game is saved before switching.	切り替える前に、いまのゲームは保存されます。
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	本物のマイクはデフォルトで有効です。息を吹きかける操作とフタの操作では、2秒間ゲームに戻ります。言語の変更は再起動後に反映されます。ローカル通信は同じWi-Fi上の別のRG DSと遊べます。通信中はセーブステートと早送りが使えません。
+Development	開発
+Could not save	保存できませんでした
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	本来の3D解像度です。3xは画質と速度のバランスがよく、5xは実験的です。
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	スムースはパネルの解像度で3Dのサンプルを合成します。2Dのアートはくっきりのままです。
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	アダプティブは重い3Dシーンを数秒間ネイティブで描画し、60 fpsを保ちます。プレイ中に反映されます。
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	2Dのアート、文字、メニューをリサンプリングします。シャープ、スムース、くっきりは2x以上の3D画面に効きます。HDとHDスムースは両方の画面を作り直し、シャープはどの解像度や画面フィルターでも使えます。HDスムースは陰影もなめらかにします。
+Screen filters change the final picture, including 2D artwork.	画面フィルターは2Dのアートを含む最終的な映像を変えます。
+Keep off for smooth motion. Skipping display frames can help demanding games.	なめらかな動きにはオフのままにします。表示フレームを飛ばすと、重いゲームが楽になることがあります。
+The renderer currently running. Graphics changes apply during play.	いま動いているレンダラーです。グラフィックの変更はプレイ中に反映されます。
+Save a checkpoint and restart with your chosen graphics settings.	チェックポイントを保存し、選んだグラフィック設定で再起動します。
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	解像度を上げるとGPUの負荷が増えます。変更はプレイ中に反映されます。等倍ではソフトウェア描画を使います。
+Per-game controls appear once a game is in your library.	ゲームがライブラリに入ると、ゲームごとの操作が表示されます。
+Looks through your games card again. It also runs by itself when games change.	ゲームカードをもう一度調べます。ゲームが変わると自動でも実行されます。
+What each system's games share until a game says otherwise: bezel, screen, shader.	ゲームで変更しない限り、各システムのゲームに共通する設定です：ベゼル、画面、シェーダー。
+Save as system default	システムの初期設定として保存
+Internal resolution	内部解像度
+Remove game	ゲームを削除
+Auto-fetch new games	新しいゲームを自動取得
+Heavy 3D scenes	重い3Dシーン
+Screen filter	画面フィルター
+Running now	実行中
+Smooth	スムース
+Adaptive	アダプティブ
+Nothing on this shelf yet.	この棚にはまだ何もありません。
+No cheats are on. Switch one on under All or Groups.	オンのチートはありません。「すべて」か「グループ」でオンにしてください。
+Pages zoom and fade in, like the DSi menu	ページがDSiメニューのようにズームしてフェードします
+Speed	速度
+Snappy	きびきび
+Relaxed	ゆったり
+Quick, crisp transitions	素早くくっきりした切り替え
+Slow, unhurried, very smooth transitions	ゆっくり落ち着いた、とてもなめらかな切り替え
+Balanced for everyday use	普段使いに合うバランスです
+Remove this game from the card? Its saves stay.	このゲームをカードから削除しますか？セーブは残ります。
+Show a start screen when the handheld turns on. Tap it or press A to continue.	本体の電源を入れたときにスタート画面を表示します。タップするかAボタンで続けます。
+Lower the screens until you press a button	ボタンを押すまで画面を暗くします
+Sleep a game nobody is playing	誰も遊んでいないゲームをスリープさせます
+Show a start screen; tap or press A to go on	スタート画面を表示し、タップかAボタンで進みます
+Reopen the game you powered off from	電源を切ったときのゲームをもう一度開きます
+Play with another RG DS on your Wi-Fi	同じWi-Fi上の別のRG DSと遊びます
+Could not save date format	日付の形式を保存できませんでした
+Could not save time format	時刻の形式を保存できませんでした
+Could not save daylight saving	夏時間を保存できませんでした
+Using the ROM's game code and filename.	ROMのゲームコードとファイル名を使用します。
+None for this game	このゲームにはなし
+All off	すべてオフ
+Other cheats	その他のチート
+Choose a group	グループを選択
+Cheats that are on	オンのチート
+All cheats	すべてのチート
+Cheats are available when a game runs with DSCore or RG DS Play.	チートはDSCoreまたはRG DS Playでゲームを実行中に使えます。
+One at a time	1つずつ
+No cheats match. Try a shorter word.	一致するチートがありません。もっと短い語を試してください。
+No cheats are on.	オンのチートはありません。
+No cheats in this group.	このグループにチートはありません。
+No description in the database.	データベースに説明がありません。
+Cheats on	オンのチート
+Groups	グループ
+Try a shorter word.	もっと短い語を試してください。
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	このゲームのチートが見つかりませんでした。チートファイル（RetroArchと同じGAME.cht）をゲームのそばか userdata/play/cheats に置き、もう一度ゲームを起動してください。
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	このゲームのチートが見つかりませんでした。Action Replayデータベース（usrcheat.dat）をゲームのそばか userdata/emulators/rgds-experimental/cheats に置き、もう一度ゲームを起動してください。
+Search cheats	チートを検索
+Type a cheat name…	チート名を入力…
+{0} cheat on	{0}件のチートがオン
+{0} cheats on	{0}件のチートがオン
+{0} cheat	{0}件のチート
+{0} cheats	{0}件のチート
+{0} on	{0}件オン
+{0} matching cheat	一致するチート{0}件
+{0} matching cheats	一致するチート{0}件
+Press a button or direction. Anbernic / Escape cancels.	ボタンか方向を押してください。Anbernic / Escapeでキャンセルします。
+More…	その他…
+Reading your library…	ライブラリを読み込み中…
+Other end	反対側の端
+In library	ライブラリ内
+The memory card is read-only	メモリーカードは読み取り専用です
+Could not save game options	ゲームオプションを保存できませんでした
+Recently played	最近プレイ
+Adjust volume	音量を調整
+Already in your library.	すでにライブラリにあります。
+One download at a time.	ダウンロードは一度に1つまでです。
+One moment.	しばらくお待ちください。
+Saving before switching games…	ゲームを切り替える前に保存中…
+Applying graphics…	グラフィックスを適用中…
+Free DS, GBA and NES games, picked for RG DS.	RG DS向けに選んだ無料のDS、GBA、NESゲーム。
+Select Start	Select Start
+Native / software	ネイティブ / ソフトウェア
+Before / after	前 / 後
+Downloading…	ダウンロード中…
+Takes effect the next time the game starts.	次回ゲームを起動したときに反映されます。
+Saved as the default for {0} games.	{0}のゲームの既定として保存しました。
+Could not remove {0}	{0}を削除できませんでした
+{0} removed	{0}を削除しました
+Whole course	コース全体
+Close up	拡大
+Charging	充電中
+The map draws itself as you explore	探索すると地図が描かれます
+The course draws itself on the first lap	最初の1周でコースが描かれます
+Storage	ストレージ
+Measuring…	測定中…
+Saves & states	セーブと状態
+Artwork & info	カバーと情報
+Cache	キャッシュ
+used	使用中
+free	空き
+Clear cache	キャッシュを消去
+ROMs, ports and homebrew.	ROM、ポート、ホームブリュー。
+Save files, resume points and save states.	セーブデータ、再開ポイント、ステートセーブ。
+Covers, screenshots and game details.	カバー、スクリーンショット、ゲームの詳細。
+Your music folder.	ミュージックフォルダ。
+Temporary files. Safe to clear.	一時ファイル。安全に消去できます。
+RG DS Core, its engines and settings.	RG DS Core、そのエンジンと設定。
+Everything else on the card, with the file system's own overhead.	カード上のその他すべて（ファイルシステム自体の管理領域を含む）。
+Room for more games.	さらにゲームを入れる余裕。

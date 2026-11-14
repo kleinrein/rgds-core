@@ -57,7 +57,6 @@ struct MusicUi {
 
     bool focus_visible = false; // the last input was a button, so the focused row wears its ring
     bool bottom_changed = true; // the lower screen needs drawing (the visualiser alone only needs the upper one)
-    uint32_t bottom_drawn_at = 0;
 
     // The visualiser: the picture, doubled and with rounded corners, as it is handed to the texture.
     Visualiser picture;

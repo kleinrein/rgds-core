@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Kontrollera din ScreenScraper-inloggning.
 ScreenScraper did not accept this login.	ScreenScraper godkände inte inloggningen.
 Your daily ScreenScraper quota has been reached.	Din dagliga ScreenScraper-kvot är slut.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	Når inte ScreenScraper. Kontrollera Wi-Fi och försök igen.
+Look & sound	Utseende och ljud
+Device	Enhet
+Per system	Per system
+Saves	Sparfiler
+Language & region	Språk och region
+Just you	Bara du
+{0} profiles	{0} profiler
+Buttons, shortcut and fast-forward	Knappar, genväg och snabbspolning
+DS nickname	DS-smeknamn
+Join or host	Anslut eller värd
+Host	Värd
+Sharing details	Delningsinformation
+Graphics saved.	Grafik sparad.
+Crisp	Skarp
+HD soft	HD mjuk
+Heavy 3D scenes saved.	Tunga 3D-scener sparade.
+Sharp	Skarp
+Smooth (3x and above)	Mjuk (3x och högre)
+Heavy 3D scenes (2x and above)	Tunga 3D-scener (2x och högre)
+Adaptive (holds 60 fps)	Adaptiv (håller 60 fps)
+Always sharp	Alltid skarp
+Dim when idle	Dämpa vid inaktivitet
+Sleep timer in games	Sovtimer i spel
+Graphics	Grafik
+System defaults	Systemstandarder
+Switch game	Byt spel
+Your current game is saved before switching.	Ditt nuvarande spel sparas innan du byter.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	Riktig mikrofon är aktiverad som standard. Blås- och lockåtgärder går tillbaka till spelet i två sekunder. Språkändringar börjar gälla efter omstart. Lokalt trådlöst spelar med en annan RG DS på samma Wi-Fi; sparade lägen och snabbspolning väntar medan en session pågår.
+Development	Utveckling
+Could not save	Kunde inte spara
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Äkta 3D-upplösning. 3x balanserar kvalitet och hastighet; 5x är experimentell.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Mjuk kombinerar 3D-sampel i panelens upplösning. 2D-grafiken förblir skarp.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Adaptiv renderar tunga 3D-scener i originalupplösning i några sekunder för att hålla 60 fps. Gäller under spelet.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Samplar om 2D-grafik, text och menyer. Skarp, Mjuk och Skarp (Crisp): 3D-skärmen vid 2x och högre. HD och HD mjuk bygger om båda skärmarna, skarpt i alla upplösningar och med alla skärmfilter; HD mjuk jämnar även ut skuggningen.
+Screen filters change the final picture, including 2D artwork.	Skärmfilter ändrar den slutliga bilden, inklusive 2D-grafiken.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Låt vara av för mjuk rörelse. Att hoppa över bilder kan hjälpa krävande spel.
+The renderer currently running. Graphics changes apply during play.	Renderaren som körs just nu. Grafikändringar gäller under spelet.
+Save a checkpoint and restart with your chosen graphics settings.	Sparar en kontrollpunkt och startar om med dina valda grafikinställningar.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Högre upplösning kostar GPU-tid. Ändringar gäller under spelet; Original använder programvarurendering.
+Per-game controls appear once a game is in your library.	Kontroller per spel visas när ett spel finns i ditt bibliotek.
+Looks through your games card again. It also runs by itself when games change.	Söker igenom spelkortet igen. Körs också automatiskt när spel ändras.
+What each system's games share until a game says otherwise: bezel, screen, shader.	Vad varje systems spel delar tills ett spel säger annat: ram, skärm, shader.
+Save as system default	Spara som systemstandard
+Internal resolution	Intern upplösning
+Remove game	Ta bort spel
+Auto-fetch new games	Hämta nya spel automatiskt
+Heavy 3D scenes	Tunga 3D-scener
+Screen filter	Skärmfilter
+Running now	Körs nu
+Smooth	Mjuk
+Adaptive	Adaptiv
+Nothing on this shelf yet.	Inget på den här hyllan än.
+No cheats are on. Switch one on under All or Groups.	Inga fusk är på. Slå på ett under Alla eller Grupper.
+Pages zoom and fade in, like the DSi menu	Sidor zoomar och tonas in, som i DSi-menyn
+Speed	Hastighet
+Snappy	Snabb
+Relaxed	Avslappnad
+Quick, crisp transitions	Snabba, skarpa övergångar
+Slow, unhurried, very smooth transitions	Långsamma, lugna, mycket mjuka övergångar
+Balanced for everyday use	Balanserat för daglig användning
+Remove this game from the card? Its saves stay.	Ta bort det här spelet från kortet? Dina sparfiler finns kvar.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Visa en startskärm när handenheten slås på. Tryck på den eller tryck på A för att fortsätta.
+Lower the screens until you press a button	Dämpa skärmarna tills du trycker på en knapp
+Sleep a game nobody is playing	Försätt ett spel som ingen spelar i vänteläge
+Show a start screen; tap or press A to go on	Visa en startskärm; tryck eller tryck på A för att gå vidare
+Reopen the game you powered off from	Öppna spelet du stängde av från igen
+Play with another RG DS on your Wi-Fi	Spela med en annan RG DS på ditt Wi-Fi
+Could not save date format	Kunde inte spara datumformat
+Could not save time format	Kunde inte spara tidsformat
+Could not save daylight saving	Kunde inte spara sommartid
+Using the ROM's game code and filename.	Använder spelets kod och ROM-filens namn.
+None for this game	Inga för det här spelet
+All off	Alla av
+Other cheats	Andra fuskkoder
+Choose a group	Välj en grupp
+Cheats that are on	Aktiva fuskkoder
+All cheats	Alla fuskkoder
+Cheats are available when a game runs with DSCore or RG DS Play.	Fuskkoder finns när ett spel körs med DSCore eller RG DS Play.
+One at a time	En i taget
+No cheats match. Try a shorter word.	Inga fuskkoder matchar. Prova ett kortare ord.
+No cheats are on.	Inga fuskkoder är på.
+No cheats in this group.	Inga fuskkoder i den här gruppen.
+No description in the database.	Ingen beskrivning i databasen.
+Cheats on	Aktiva
+Groups	Grupper
+Try a shorter word.	Prova ett kortare ord.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Inga fuskkoder hittades för det här spelet. Lägg dess fuskfil (GAME.cht, som RetroArch använder) bredvid spelet eller i userdata/play/cheats och starta sedan spelet igen.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Inga fuskkoder hittades för det här spelet. Lägg en Action Replay-databas (usrcheat.dat) bredvid dina spel eller i userdata/emulators/rgds-experimental/cheats och starta sedan spelet igen.
+Search cheats	Sök fuskkoder
+Type a cheat name…	Skriv ett fuskkodsnamn…
+{0} cheat on	{0} fuskkod på
+{0} cheats on	{0} fuskkoder på
+{0} cheat	{0} fuskkod
+{0} cheats	{0} fuskkoder
+{0} on	{0} på
+{0} matching cheat	{0} matchande fuskkod
+{0} matching cheats	{0} matchande fuskkoder
+Press a button or direction. Anbernic / Escape cancels.	Tryck på en knapp eller riktning. Anbernic / Escape avbryter.
+More…	Mer…
+Reading your library…	Läser ditt bibliotek…
+Other end	Andra änden
+In library	I biblioteket
+The memory card is read-only	Minneskortet är skrivskyddat
+Could not save game options	Kunde inte spara spelalternativ
+Recently played	Nyligen spelade
+Adjust volume	Justera volym
+Already in your library.	Finns redan i ditt bibliotek.
+One download at a time.	En nedladdning åt gången.
+One moment.	Ett ögonblick.
+Saving before switching games…	Sparar innan spelbyte…
+Applying graphics…	Tillämpar grafik…
+Free DS, GBA and NES games, picked for RG DS.	Gratis DS-, GBA- och NES-spel, utvalda för RG DS.
+Select Start	Select Start
+Native / software	Inbyggd / mjukvara
+Before / after	Före / efter
+Downloading…	Laddar ner…
+Takes effect the next time the game starts.	Gäller nästa gång spelet startas.
+Saved as the default for {0} games.	Sparat som standard för {0}-spel.
+Could not remove {0}	Kunde inte ta bort {0}
+{0} removed	{0} borttagen
+Whole course	Hela banan
+Close up	Nära
+Charging	Laddar
+The map draws itself as you explore	Kartan ritas upp när du utforskar
+The course draws itself on the first lap	Banan ritas upp under första varvet
+Storage	Lagring
+Measuring…	Mäter …
+Saves & states	Sparfiler och lägen
+Artwork & info	Omslag och info
+Cache	Cache
+used	använt
+free	ledigt
+Clear cache	Rensa cache
+ROMs, ports and homebrew.	ROM-filer, portar och homebrew.
+Save files, resume points and save states.	Sparfiler, återupptagningspunkter och sparade lägen.
+Covers, screenshots and game details.	Omslag, skärmbilder och spelinfo.
+Your music folder.	Din musikmapp.
+Temporary files. Safe to clear.	Tillfälliga filer. Säkra att rensa.
+RG DS Core, its engines and settings.	RG DS Core, dess motorer och inställningar.
+Everything else on the card, with the file system's own overhead.	Allt annat på kortet, med filsystemets egen overhead.
+Room for more games.	Plats för fler spel.

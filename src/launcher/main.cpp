@@ -443,6 +443,12 @@ class App {
     int gesture_scroll = 0, scroll_grab = 0;
     Uint32 scroll_cue_at = 0;
     bool picker_open = false, picker_detail = false, detail_drag = false, detail_rail = false;
+    // The Storage sheet (storage_view.hpp) rides the detail rails: picker_detail is true while it is up.
+    bool picker_storage = false;
+    int storage_focus = 0;
+    Uint32 storage_frame_at = 0, storage_opened_at = 0;
+    bool storage_intro = false;
+    std::array<double, 8> storage_shown{}, storage_drawn{};
     std::vector<std::string> detail_lines;
     int detail_scroll = 0;
     std::string picker_title;
@@ -524,9 +530,9 @@ class App {
     // Sound and brightness: the slider's vertical span (touch and drawing agree). On Sound it is the first
     // row of the shared list, so it scrolls with it.
     std::pair<int, int> slider_band() const {
-        return settings.page == Page::Sound ? std::make_pair(list_top - list_scroll - list_shift(),
-                                                             list_top - list_scroll - list_shift() + 66)
-                                            : std::make_pair(163, 285);
+        return settings.page == Page::Sound
+                   ? std::make_pair(list_top - list_scroll - list_shift(), list_top - list_scroll - list_shift() + 66)
+                   : std::make_pair(163, 285);
     }
     bool slider_hit(int x, int y) const {
         if (settings.page != Page::Display && settings.page != Page::Sound) return false;
@@ -541,7 +547,7 @@ class App {
     int sound_row_count() const { return o.game_menu || probe ? 5 : preferences.music_player ? 7 : 6; }
     int list_count() const {
         switch (settings.page) {
-        case Page::Settings: return 12;
+        case Page::Settings: return int(section_order.size());
         case Page::Sound: return sound_row_count();
         case Page::MenuSounds: return 5;
         case Page::Haptics: return 5;
@@ -550,12 +556,13 @@ class App {
         case Page::Graphics: return 8;
         case Page::Power: return int(power_rows.size());
         case Page::LibraryOptions: return library_row_count();
-        case Page::Appearance: return 6;
-        case Page::DisplayOptions: return 5;
+        case Page::Appearance: return 8;
+        case Page::DisplayOptions: return 3;
         case Page::Scraper: return 7;
-        case Page::DeviceInfo: return 5;
-        case Page::System: return o.rgds_os ? 9 : 10; // last rows: Touch to continue, Run setup again
-        case Page::GameOptions: return game_options_base() + (game_removable() ? 1 : 0) + (game_visibility_row() >= 0 ? 1 : 0);
+        case Page::DeviceInfo: return 4;
+        case Page::System: return o.rgds_os ? 8 : 9; // last rows: Touch to continue, Run setup again
+        case Page::GameOptions:
+            return game_options_base() + (game_removable() ? 1 : 0) + (game_visibility_row() >= 0 ? 1 : 0);
         case Page::ProfileEdit: return int(profile_edit_rows().size());
         case Page::ProfileGames: return int(games_rows.size());
         case Page::ProfileGameRules: return int(profiles.profiles().size());
@@ -587,8 +594,10 @@ class App {
     // the others in their order below them. Rows 0 (Default emulator) and 6 (DraStic backend) are
     // retired: DSCore is the only DS engine.
     // Settings > Library, as shown: Scan, Systems, then Games opens (12) while other systems are on, then the rest.
+    // Since the 2026-11-11 regroup (docs/SETTINGS_PLAN.md) the rest run Browser layout, then the per-system rows
+    // (System defaults, Default shader, Artwork sources), then saves (Auto-load, Auto-save, Back up all saves).
     int library_row(int shown) const {
-        static constexpr int rest[] = {11, 1, 2, 3, 4, 5, 8};
+        static constexpr int rest[] = {5, 11, 4, 1, 2, 3, 8};
         if (shown == 0) return 10;
         if (shown == 1) return 9;
         if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 6)];
@@ -618,7 +627,49 @@ class App {
         int count = list_count();
         settings.focus = count > 0 ? std::clamp(row, 0, count - 1) : row;
     }
-    int list_max_scroll() const { return std::max(0, list_count() * list_stride - 16 - list_height); }
+    // Group captions (docs/SETTINGS_PLAN.md): the caption drawn above `row` on the current page, "" for a plain gap
+    // between groups, nullptr when the row carries on the group above. Captions are not rows: focus never lands on
+    // them, and row numbers (focus, remembered rows, tests) are the same as without them.
+    const char* list_group(int row) const {
+        switch (settings.page) {
+        case Page::Settings: {
+            const int id = section_order[size_t(std::clamp(row, 0, int(section_order.size()) - 1))];
+            return id == 0 ? "Look & sound" : id == 2 ? "Games" : id == 4 ? "Device" : id == 8 ? "" : nullptr;
+        }
+        case Page::LibraryOptions: {
+            const int id = library_row(row);
+            return row == 0 ? "Games" : id == 11 ? "Per system" : id == 2 ? "Saves" : nullptr;
+        }
+        case Page::Power: {
+            const int id = power_rows[size_t(std::clamp(row, 0, int(power_rows.size()) - 1))];
+            return row == 0 ? "Battery" : id == 2 ? "Sleep" : id == 4 ? "" : nullptr;
+        }
+        case Page::System: return row == 0 ? "Language & region" : row == 5 ? "Device" : nullptr;
+        default: return nullptr;
+        }
+    }
+    static constexpr int group_caption = 30, group_gap = 14;
+    // A row's card top inside the list's content, captions included (index * list_stride on an ungrouped page).
+    int row_top(int row) const {
+        int top = row * list_stride;
+        for (int i = 0; i <= row; i++)
+            if (const char* group = list_group(i)) top += *group ? group_caption : group_gap;
+        return top;
+    }
+    // The row whose card holds content offset `local`, or -1 for a gap or a caption.
+    int row_at(int local) const {
+        for (int i = 0, count = list_count(); i < count; i++) {
+            const int top = row_top(i);
+            if (local < top) return -1;
+            if (local < top + 66) return i;
+        }
+        return -1;
+    }
+    int list_content() const {
+        const int count = list_count();
+        return count > 0 ? row_top(count - 1) + 66 : 0;
+    }
+    int list_max_scroll() const { return std::max(0, list_content() - list_height); }
     void sync_list() {
         if (settings.page != list_page) {
             list_page = settings.page;
@@ -629,7 +680,9 @@ class App {
         if (focus != list_focus) {
             const int before = list_scroll;
             list_focus = focus;
-            int top = focus * list_stride, bottom = top + 66;
+            // A row that opens a group brings its caption into view with it.
+            const char* group = list_group(focus);
+            int bottom = row_top(focus) + 66, top = row_top(focus) - (group && *group ? group_caption : 0);
             if (top < list_scroll) list_scroll = top;
             if (bottom > list_scroll + list_height) list_scroll = bottom - list_height;
             list_scroll = std::clamp(list_scroll, 0, list_max_scroll());
@@ -639,7 +692,7 @@ class App {
         list_scroll = std::clamp(list_scroll, 0, list_max_scroll());
     }
     void scroll_to(int y) {
-        int count = list_count(), content = count * list_stride - 16;
+        int content = list_content();
         int thumb =
             content > 0 ? std::max(54, list_height * list_height / std::max(list_height, content)) : list_height;
         list_scroll = std::clamp(int(std::round((y - list_top - scroll_grab) * double(list_max_scroll()) /
@@ -1691,6 +1744,18 @@ class App {
     static constexpr SegmentNames mode_names{"Light", "Dark"}, typeface_names{"DS rounded", "Pixel classic"};
     SDL_Rect segment_bounds(int index, int option);
     void segment_row(SDL_Renderer* r, int y, int index, const std::string& title, bool second);
+    // Inline choice rows: two or three options in a sliding segmented control instead of a picker sheet or a text
+    // value that swaps on press. Spec, drawing, hit boxes, keys and touch all come from the same table so a new
+    // choice is one entry in choice_spec() and one in choose_choice().
+    struct ChoiceSpec {
+        std::vector<std::string> names;
+        int value = 0;
+    };
+    std::optional<ChoiceSpec> choice_spec(Page page, int row);
+    void choose_choice(Page page, int row, int option);
+    bool step_choice(int code);
+    SDL_Rect choice_bounds(int index, const std::vector<std::string>& names, int option);
+    void choice_row(SDL_Renderer* r, int y, int index, const std::string& title, const ChoiceSpec& spec);
     void appearance_row(SDL_Renderer* r, int y, int i);
     static std::string accent_name(int index) {
         return index >= 0 && index < int(ds_colours.size()) ? ds_colours[size_t(index)].name : "Classic";
@@ -1728,7 +1793,7 @@ class App {
          profile_remove_backup = false; // the Back up first switch on the removal question
     VisibilityRules active_rules, games_rules;
     CatalogReader visibility_reader, games_reader;
-    std::vector<Game> catalog_games;           // before the rules; all_games is what this player sees
+    std::vector<Game> catalog_games; // before the rules; all_games is what this player sees
     std::vector<std::string> catalog_listed;
     struct GamesRow {
         int entry; // in games_entries, or -1 for a shelf's own row
@@ -2013,7 +2078,10 @@ class App {
     static constexpr int card_radius = 14, well_radius = 12, control_radius = 10;
     void settings_card(SDL_Renderer* r, int x, int y, int w, int h, bool focused = false);
     void list_row(SDL_Renderer* r, int y, int index, const std::string& title, const std::string& value = "",
-                  bool enabled = true, const Color* swatch = nullptr, bool switches = true);
+                  bool enabled = true, const Color* swatch = nullptr, bool switches = true,
+                  const std::string& note = "", double bar = -1);
+    // The root's second line for a section: what is set inside it, read at a glance (docs/SETTINGS_PLAN.md).
+    std::string section_summary(int section);
     void draw_toggle(SDL_Renderer* r, int x, int y, const std::string& name, bool value, bool enabled = true);
     void list_scrollbar(SDL_Renderer* r, int y);
     void volume_row(SDL_Renderer* r, int y);
@@ -2058,7 +2126,23 @@ class App {
     bool open_setting_picker();
     std::string device_info_name(int row) const;
     std::string device_info_value(int row);
-    void open_device_detail() { show_detail(device_info_name(settings.focus), device_info_value(settings.focus)); }
+    double storage_used_fraction();
+    double storage_bytes(int kind);
+    double storage_total_bytes();
+    Color storage_colour(int row);
+    SDL_Rect storage_row_rect(int row, int top) const;
+    void open_storage();
+    void storage_action(int code);
+    void storage_touch(int x, int y);
+    void render_storage(SDL_Renderer* r, int y, int top, bool closing);
+    void storage_top(SDL_Renderer* r, int y);
+    double storage_advance(bool closing);
+    bool storage_scanning();
+    std::string device_info_detail(int row);
+    void open_device_detail() {
+        if (settings.focus == 2) open_storage();
+        else show_detail(device_info_name(settings.focus), device_info_detail(settings.focus));
+    }
     void show_detail(const std::string& title, const std::string& value);
     int detail_max_scroll() const { return std::max(0, int(detail_lines.size()) - 8); }
     void scroll_detail_rail(int y);
@@ -2479,7 +2563,8 @@ class App {
         // Without PictoChat, Music takes its place beside Recents; with both, Music shares the last row with
         // Settings.
         const bool chat = !pictochat_hidden(), songs = music_available();
-        std::vector<HomeTile> tiles = {{{20, 20, 600, 80}, last_played_tile}, {{20, 120, 280, 80}, 1}, {{340, 120, 280, 80}, 2}};
+        std::vector<HomeTile> tiles = {
+            {{20, 20, 600, 80}, last_played_tile}, {{20, 120, 280, 80}, 1}, {{340, 120, 280, 80}, 2}};
         if (chat || songs) {
             tiles.push_back({{20, 220, 280, 80}, 3});
             tiles.push_back({{340, 220, 280, 80}, chat ? pictochat_tile : music_tile()});
@@ -2491,8 +2576,7 @@ class App {
         return tiles;
     }
     static constexpr SDL_Rect home_bar_chip{108, 420, 164, 48}, home_bar_left{20, 420, 80, 48},
-                              home_bar_right{540, 420, 80, 48},
-        home_bar_mark{280, 420, 80, 48};
+        home_bar_right{540, 420, 80, 48}, home_bar_mark{280, 420, 80, 48};
     // Up and down walk the rows, left and right the two tiles of a row.
     int home_column_memory = 0; // the column (Games/Recents or Favourites/PictoChat) you were last in
     // Down from the last row walks onto the bottom bar: 0 brightness, 1 the
@@ -2864,7 +2948,6 @@ class App {
     // leaves the handheld awake, and this keeps the panels dark.
     bool music_lid_hold(std::optional<bool> closed, Uint32 now);
     bool music_tick(Uint32 now);
-    bool music_bottom_still(Uint32 now);
     int music_badge_phase(Uint32 now) const;
     void music_switched();
     int drawn_badge_phase = -1;
@@ -3152,6 +3235,7 @@ public:
 // Out-of-line App members, split by screen.
 #include "launcher/settings_screen.hpp"
 #include "launcher/settings_picker.hpp"
+#include "launcher/storage_view.hpp"
 #include "launcher/input_handling.hpp"
 #include "launcher/status_bar.hpp"
 #include "launcher/ui_widgets.hpp"
@@ -3243,6 +3327,9 @@ static int self_test() {
 }
 int main(int argc, char** argv) {
     launch_profile.start();
+    // A headless run (the tests, screenshots) has no business making noise on the developer's speakers.
+    if (const char* video = std::getenv("SDL_VIDEODRIVER"); video && std::string(video) == "dummy")
+        setenv("SDL_AUDIODRIVER", "dummy", 0);
     try {
         if (argc > 1 && std::string(argv[1]) == "--scan-library") {
             std::vector<fs::path> roots;

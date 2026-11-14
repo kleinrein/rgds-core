@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Проверьте данные входа Scree
 ScreenScraper did not accept this login.	ScreenScraper не принял эти данные входа.
 Your daily ScreenScraper quota has been reached.	Дневная квота ScreenScraper исчерпана.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	Нет связи со ScreenScraper. Проверьте Wi-Fi и повторите попытку.
+Look & sound	Вид и звук
+Device	Устройство
+Per system	Для системы
+Saves	Сохранения
+Language & region	Язык и регион
+Just you	Только вы
+{0} profiles	Профилей: {0}
+Buttons, shortcut and fast-forward	Кнопки, сочетание и ускорение
+DS nickname	Имя DS
+Join or host	Подключиться или создать
+Host	Создать
+Sharing details	Данные сеанса
+Graphics saved.	Графика сохранена.
+Crisp	Резкое
+HD soft	HD мягкое
+Heavy 3D scenes saved.	Тяжёлые 3D-сцены сохранены.
+Sharp	Чёткое
+Smooth (3x and above)	Мягкое (3x и выше)
+Heavy 3D scenes (2x and above)	Тяжёлые 3D-сцены (2x и выше)
+Adaptive (holds 60 fps)	Адаптивное (держит 60 fps)
+Always sharp	Всегда чёткое
+Dim when idle	Затемнять при простое
+Sleep timer in games	Таймер сна в играх
+Graphics	Графика
+System defaults	Настройки системы
+Switch game	Сменить игру
+Your current game is saved before switching.	Текущая игра сохраняется перед переключением.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	Настоящий микрофон включён по умолчанию. Действия дутья и крышки возвращают в игру на две секунды. Язык меняется после перезапуска. Локальная беспроводная игра идёт с другой RG DS в той же сети Wi-Fi; сохранения состояния и перемотка вперёд недоступны, пока идёт сеанс.
+Development	Разработка
+Could not save	Не удалось сохранить
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Настоящее 3D-разрешение. 3x — баланс качества и скорости; 5x — экспериментальный режим.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	«Мягкое» объединяет 3D-выборки в разрешении панели. 2D-графика остаётся чёткой.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	«Адаптивное» рендерит тяжёлые 3D-сцены в исходном разрешении несколько секунд, чтобы держать 60 fps. Действует во время игры.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Передискретизирует 2D-графику, текст и меню. «Резкое», «Мягкое» и «Чёткое»: 3D-экран при 2x и выше. HD и HD мягкое перестраивают оба экрана, резко при любом разрешении и с любым фильтром экрана; HD мягкое ещё и сглаживает шейдинг.
+Screen filters change the final picture, including 2D artwork.	Фильтры экрана меняют итоговое изображение, включая 2D-графику.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Держите выключенным для плавного движения. Пропуск кадров может помочь в требовательных играх.
+The renderer currently running. Graphics changes apply during play.	Рендерер, который работает сейчас. Изменения графики применяются во время игры.
+Save a checkpoint and restart with your chosen graphics settings.	Сохраняет контрольную точку и перезапускает с выбранными настройками графики.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Более высокое разрешение требует времени GPU. Изменения применяются во время игры; «Исходное» использует программный рендеринг.
+Per-game controls appear once a game is in your library.	Настройки для каждой игры появятся, когда в библиотеке будет игра.
+Looks through your games card again. It also runs by itself when games change.	Снова просматривает карту с играми. Также запускается сам при изменении игр.
+What each system's games share until a game says otherwise: bezel, screen, shader.	Что общего у игр каждой системы, пока игра не задаёт своё: рамка, экран, шейдер.
+Save as system default	Сохранить как настройку системы
+Internal resolution	Внутреннее разрешение
+Remove game	Удалить игру
+Auto-fetch new games	Автозагрузка новых игр
+Heavy 3D scenes	Тяжёлые 3D-сцены
+Screen filter	Фильтр экрана
+Running now	Работает сейчас
+Smooth	Мягкое
+Adaptive	Адаптивное
+Nothing on this shelf yet.	На этой полке пока ничего нет.
+No cheats are on. Switch one on under All or Groups.	Читы не включены. Включите их во вкладке «Все» или «Группы».
+Pages zoom and fade in, like the DSi menu	Страницы приближаются и плавно проявляются, как в меню DSi
+Speed	Скорость
+Snappy	Быстрые
+Relaxed	Неспешные
+Quick, crisp transitions	Быстрые чёткие переходы
+Slow, unhurried, very smooth transitions	Медленные неторопливые очень плавные переходы
+Balanced for everyday use	Сбалансировано для повседневного использования
+Remove this game from the card? Its saves stay.	Удалить эту игру с карты? Её сохранения останутся.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Показывать стартовый экран при включении консоли. Коснитесь его или нажмите A, чтобы продолжить.
+Lower the screens until you press a button	Приглушать экраны до нажатия кнопки
+Sleep a game nobody is playing	Усыплять игру, в которую никто не играет
+Show a start screen; tap or press A to go on	Показать стартовый экран; коснитесь или нажмите A, чтобы продолжить
+Reopen the game you powered off from	Снова открыть игру, из которой вы выключили консоль
+Play with another RG DS on your Wi-Fi	Играть с другой RG DS в вашей сети Wi-Fi
+Could not save date format	Не удалось сохранить формат даты
+Could not save time format	Не удалось сохранить формат времени
+Could not save daylight saving	Не удалось сохранить летнее время
+Using the ROM's game code and filename.	Используются код игры и имя файла ROM.
+None for this game	Для этой игры нет
+All off	Все выкл.
+Other cheats	Другие читы
+Choose a group	Выберите группу
+Cheats that are on	Включённые читы
+All cheats	Все читы
+Cheats are available when a game runs with DSCore or RG DS Play.	Читы доступны, когда игра запущена через DSCore или RG DS Play.
+One at a time	По одному
+No cheats match. Try a shorter word.	Читы не найдены. Попробуйте слово покороче.
+No cheats are on.	Включённых читов нет.
+No cheats in this group.	В этой группе нет читов.
+No description in the database.	В базе нет описания.
+Cheats on	Включены
+Groups	Группы
+Try a shorter word.	Попробуйте слово покороче.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Для этой игры читы не найдены. Положите файл читов (GAME.cht, как в RetroArch) рядом с игрой или в userdata/play/cheats и запустите игру снова.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Для этой игры читы не найдены. Положите базу Action Replay (usrcheat.dat) рядом с играми или в userdata/emulators/rgds-experimental/cheats и запустите игру снова.
+Search cheats	Поиск читов
+Type a cheat name…	Введите название чита…
+{0} cheat on	Включён читов: {0}
+{0} cheats on	Включено читов: {0}
+{0} cheat	Читов: {0}
+{0} cheats	Читов: {0}
+{0} on	Включено: {0}
+{0} matching cheat	Найдено читов: {0}
+{0} matching cheats	Найдено читов: {0}
+Press a button or direction. Anbernic / Escape cancels.	Нажмите кнопку или направление. Anbernic / Escape отменяет.
+More…	Ещё…
+Reading your library…	Чтение библиотеки…
+Other end	Другой конец
+In library	В библиотеке
+The memory card is read-only	Карта памяти только для чтения
+Could not save game options	Не удалось сохранить параметры игры
+Recently played	Недавно сыгранные
+Adjust volume	Настроить громкость
+Already in your library.	Уже в вашей библиотеке.
+One download at a time.	Только одна загрузка за раз.
+One moment.	Один момент.
+Saving before switching games…	Сохранение перед сменой игры…
+Applying graphics…	Применение графики…
+Free DS, GBA and NES games, picked for RG DS.	Бесплатные игры DS, GBA и NES, подобранные для RG DS.
+Select Start	Select Start
+Native / software	Нативный / программный
+Before / after	До / после
+Downloading…	Загрузка…
+Takes effect the next time the game starts.	Вступит в силу при следующем запуске игры.
+Saved as the default for {0} games.	Сохранено по умолчанию для игр {0}.
+Could not remove {0}	Не удалось удалить: {0}
+{0} removed	Удалено: {0}
+Whole course	Вся трасса
+Close up	Крупно
+Charging	Зарядка
+The map draws itself as you explore	Карта рисуется по мере исследования
+The course draws itself on the first lap	Трасса рисуется на первом круге
+Storage	Хранилище
+Measuring…	Измерение …
+Saves & states	Сохранения и состояния
+Artwork & info	Обложки и сведения
+Cache	Кэш
+used	занято
+free	свободно
+Clear cache	Очистить кэш
+ROMs, ports and homebrew.	ROM, порты и homebrew.
+Save files, resume points and save states.	Файлы сохранений, точки возобновления и сохранённые состояния.
+Covers, screenshots and game details.	Обложки, скриншоты и сведения об играх.
+Your music folder.	Ваша папка с музыкой.
+Temporary files. Safe to clear.	Временные файлы. Их безопасно очищать.
+RG DS Core, its engines and settings.	RG DS Core, его движки и настройки.
+Everything else on the card, with the file system's own overhead.	Всё остальное на карте, включая служебные данные файловой системы.
+Room for more games.	Место для новых игр.

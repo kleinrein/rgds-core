@@ -49,7 +49,7 @@ Preview never starts an emulator. Its remembered selection/core is stored under 
 
 Open Settings with S from the desktop preview, or launch it directly with `make settings`. On device, use Select or Menu/Anbernic at home. Theme offers Light/Dark and DS rounded/Pixel classic. Touch the choice directly, or use up/down to focus a row and left/right to choose. A toggles the focused choice; B goes back. Choices apply immediately and are saved in `build/dev/preferences.ini`, or `rgds/userdata/preferences.ini` on the device. A saved colour-mode choice takes precedence over the initial `THEME` file selection; choose the matching mode in Settings to see the palette you are editing.
 
-Power and brightness have desktop simulation and device capability checks. Sound has a shared slider/mute; System has timezone, device information and local recovery. Connectivity scans and joins Wi-Fi, shows its IP address, and toggles session-scoped SMB sharing using the bundled service. Sharing details contains the address and temporary login; the desktop preview simulates the toggle without opening a server. Library offers emulator/filter defaults, automatic checkpoint preferences and ScreenScraper. X/long press opens cartridge options; Y cycles All/Favourites/Recent. Display settings can disable animations and the touch indicator independently. Display → Animations also offers optional Spring and Push transition styles. Spring keeps the playful menu motion; Push slides level pages in from the right and reveals the parent from the left on Back, with a short parallax movement. The style is saved as `view_transition_style=spring|push` in `ui.ini`; existing preferences keep Spring and the current transition toggle. Push uses three reusable 640×480 render targets, including the last displayed composition so rapid navigation can interrupt a transition without queuing input. It settles in 300 ms and returns to idle; renderers without target support use immediate navigation.
+Power and brightness have desktop simulation and device capability checks. Sound has a shared slider/mute; System has timezone, device information and local recovery. Connectivity scans and joins Wi-Fi, shows its IP address, and toggles session-scoped SMB sharing using the bundled service. Sharing details contains the address and temporary login; the desktop preview simulates the toggle without opening a server. Library offers emulator/filter defaults, automatic checkpoint preferences and ScreenScraper. X/long press opens cartridge options; Y cycles All/Favourites/Recent. Theme can turn animations off and Display the touch indicator, independently (the root and its groups are laid out in [SETTINGS_PLAN.md](SETTINGS_PLAN.md)). Theme → Animations also offers optional Spring and Push transition styles. Spring keeps the playful menu motion; Push slides level pages in from the right and reveals the parent from the left on Back, with a short parallax movement. The style is saved as `view_transition_style=spring|push` in `ui.ini`; existing preferences keep Spring and the current transition toggle. Push uses three reusable 640×480 render targets, including the last displayed composition so rapid navigation can interrupt a transition without queuing input. It settles in 300 ms and returns to idle; renderers without target support use immediate navigation.
 
 `make game-menu` opens the shared in-game screen on the desktop. It uses the same renderer and settings as home, with simulated save/load actions. `--game-core rgds-experimental|rgds-play` changes its engine label; all share the RGDS controls. Preview opens no emulator and no audio device.
 
@@ -65,6 +65,7 @@ handheld as a new image in its other slot:
 ```sh
 make image                 # tools/own_os_build.py: Buildroot in the Lima VM, after the package and engine builds
 make push                  # tools/own_os_push.py rgds.local --reboot: the inactive slot, on trial, then a restart
+make quick-push            # launcher + the slot's root filesystem only (no package, no card images), then push
 make shot                  # both panels as one PNG in build/shots/
 ```
 
@@ -80,6 +81,8 @@ Settings > Connectivity > Use as USB drive makes the data partition a real drive
 the session with the menu quit and `/data` unmounted, since a second writer would corrupt the card). Ejecting it, pulling
 the cable or pressing A on the handheld brings `/data` and the menu back, with a partition check and macOS's clutter
 files removed. SSH over the cable stays up throughout.
+
+`make quick-push` is the fast loop for launcher and runtime changes: `tools/build.py` skips an unchanged launcher, and `own_os_build.py --slot-only` builds only what a push writes and deletes the cached card images, so run `make image` (engines, package and both cards) before `make release` or after engine changes. `RGDS_REBUILD=1` forces the launcher and DS engine compiles.
 
 `own_os_build.py` stages the launcher from `build/device` and refuses one older than the tree (run
 `tools/build.py device` first), and takes runtime, themes and assets from the checkout. `own_os_push.py` arms the

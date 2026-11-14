@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Tarkista ScreenScraper-kirjautuminen.
 ScreenScraper did not accept this login.	ScreenScraper ei hyväksynyt kirjautumista.
 Your daily ScreenScraper quota has been reached.	Päivittäinen ScreenScraper-kiintiö on täynnä.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraperiin ei saada yhteyttä. Tarkista Wi-Fi ja yritä uudelleen.
+Look & sound	Ulkoasu ja ääni
+Device	Laite
+Per system	Järjestelmäkohtaiset
+Saves	Tallennukset
+Language & region	Kieli ja alue
+Just you	Vain sinä
+{0} profiles	{0} profiilia
+Buttons, shortcut and fast-forward	Painikkeet, pikanäppäin ja pikakelaus
+DS nickname	DS-nimi
+Join or host	Liity tai isännöi
+Host	Isäntä
+Sharing details	Jakamistiedot
+Graphics saved.	Grafiikka tallennettu.
+Crisp	Terävä
+HD soft	HD pehmeä
+Heavy 3D scenes saved.	Raskaat 3D-kohtaukset tallennettu.
+Sharp	Terävä
+Smooth (3x and above)	Pehmeä (3x ja ylöspäin)
+Heavy 3D scenes (2x and above)	Raskaat 3D-kohtaukset (2x ja ylöspäin)
+Adaptive (holds 60 fps)	Mukautuva (pitää 60 fps)
+Always sharp	Aina terävä
+Dim when idle	Himmennä joutilaana
+Sleep timer in games	Unajastin peleissä
+Graphics	Grafiikka
+System defaults	Järjestelmän oletukset
+Switch game	Vaihda peliä
+Your current game is saved before switching.	Nykyinen pelisi tallennetaan ennen vaihtamista.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	Oikea mikrofoni on oletuksena käytössä. Puhallus- ja kansitoiminnot palaavat peliin kahden sekunnin ajaksi. Kielen muutokset tulevat voimaan uudelleenkäynnistyksen jälkeen. Paikallinen langaton peli toimii toisen RG DS:n kanssa samassa Wi-Fi-verkossa; tallennustilat ja pikakelaus odottavat istunnon ajan.
+Development	Kehitys
+Could not save	Tallennus epäonnistui
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Aito 3D-resoluutio. 3x tasapainottaa laadun ja nopeuden; 5x on kokeellinen.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Pehmeä yhdistää 3D-näytteet paneelin resoluutiolla. 2D-grafiikka pysyy terävänä.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Mukautuva piirtää raskaat 3D-kohtaukset natiiviresoluutiolla muutaman sekunnin ajan 60 fps:n pitämiseksi. Käytössä pelatessa.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Skaalaa 2D-grafiikkaa, tekstiä ja valikoita. Terävä, Pehmeä ja Terävöitetty: 3D-näyttö 2x ja ylöspäin. HD ja HD pehmeä rakentavat molemmat näytöt uudelleen, terävästi millä tahansa resoluutiolla ja näyttösuodattimesta riippumatta; HD pehmeä pehmentää myös sävytystä.
+Screen filters change the final picture, including 2D artwork.	Näyttösuodattimet muuttavat lopullista kuvaa, 2D-grafiikka mukaan lukien.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Pidä pois päältä sulavaa liikettä varten. Näyttöruutujen ohitus voi auttaa vaativissa peleissä.
+The renderer currently running. Graphics changes apply during play.	Tällä hetkellä käytössä oleva renderöijä. Grafiikan muutokset tulevat voimaan pelatessa.
+Save a checkpoint and restart with your chosen graphics settings.	Tallenna kohta ja käynnistä uudelleen valitsemillasi grafiikka-asetuksilla.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Suurempi resoluutio vie GPU-aikaa. Muutokset tulevat voimaan pelatessa; Natiivi käyttää ohjelmistorenderöintiä.
+Per-game controls appear once a game is in your library.	Pelikohtaiset ohjaimet näkyvät, kun peli on kirjastossasi.
+Looks through your games card again. It also runs by itself when games change.	Käy pelikorttisi uudelleen läpi. Se toimii myös itsestään, kun pelit muuttuvat.
+What each system's games share until a game says otherwise: bezel, screen, shader.	Mitä kunkin järjestelmän pelit jakavat, kunnes peli toisin määrää: kehys, näyttö, suodatin.
+Save as system default	Tallenna järjestelmän oletukseksi
+Internal resolution	Sisäinen resoluutio
+Remove game	Poista peli
+Auto-fetch new games	Hae uudet pelit automaattisesti
+Heavy 3D scenes	Raskaat 3D-kohtaukset
+Screen filter	Näyttösuodatin
+Running now	Käynnissä nyt
+Smooth	Pehmeä
+Adaptive	Mukautuva
+Nothing on this shelf yet.	Tällä hyllyllä ei ole vielä mitään.
+No cheats are on. Switch one on under All or Groups.	Huijauksia ei ole päällä. Kytke jokin päälle kohdassa Kaikki tai Ryhmät.
+Pages zoom and fade in, like the DSi menu	Sivut zoomaavat ja häivyttävät kuten DSi-valikko
+Speed	Nopeus
+Snappy	Napakka
+Relaxed	Rento
+Quick, crisp transitions	Nopeat, terävät siirtymät
+Slow, unhurried, very smooth transitions	Hitaat, rauhalliset, hyvin pehmeät siirtymät
+Balanced for everyday use	Tasapainoinen arkikäyttöön
+Remove this game from the card? Its saves stay.	Poistetaanko peli kortilta? Tallennukset säilyvät.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Näytä aloitusnäyttö, kun käsikonsoli käynnistyy. Jatka napauttamalla tai painamalla A.
+Lower the screens until you press a button	Himmennä näytöt, kunnes painat painiketta
+Sleep a game nobody is playing	Nuku peli, jota kukaan ei pelaa
+Show a start screen; tap or press A to go on	Näytä aloitusnäyttö; jatka napauttamalla tai painamalla A
+Reopen the game you powered off from	Avaa uudelleen peli, josta sammutit laitteen
+Play with another RG DS on your Wi-Fi	Pelaa toisen RG DS:n kanssa Wi-Fi-verkossasi
+Could not save date format	Päivämäärämuodon tallennus epäonnistui
+Could not save time format	Aikamuodon tallennus epäonnistui
+Could not save daylight saving	Kesäajan tallennus epäonnistui
+Using the ROM's game code and filename.	Käyttää ROMin pelikoodia ja tiedostonimeä.
+None for this game	Ei yhtään tälle pelille
+All off	Kaikki pois
+Other cheats	Muut huijauskoodit
+Choose a group	Valitse ryhmä
+Cheats that are on	Päällä olevat huijauskoodit
+All cheats	Kaikki huijauskoodit
+Cheats are available when a game runs with DSCore or RG DS Play.	Huijauskoodit ovat käytettävissä, kun peli toimii DSCorella tai RG DS Playllä.
+One at a time	Yksi kerrallaan
+No cheats match. Try a shorter word.	Ei hakua vastaavia huijauskoodeja. Kokeile lyhyempää sanaa.
+No cheats are on.	Yhtään huijauskoodia ei ole päällä.
+No cheats in this group.	Ei huijauskoodeja tässä ryhmässä.
+No description in the database.	Ei kuvausta tietokannassa.
+Cheats on	Huijauskoodit päällä
+Groups	Ryhmät
+Try a shorter word.	Kokeile lyhyempää sanaa.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Tälle pelille ei löytynyt huijauskoodeja. Laita sen huijaustiedosto (GAME.cht, kuten RetroArch käyttää) pelin viereen tai kansioon userdata/play/cheats ja käynnistä peli uudelleen.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Tälle pelille ei löytynyt huijauskoodeja. Laita Action Replay -tietokanta (usrcheat.dat) pelien viereen tai kansioon userdata/emulators/rgds-experimental/cheats ja käynnistä peli uudelleen.
+Search cheats	Hae huijauskoodeja
+Type a cheat name…	Kirjoita huijauskoodin nimi…
+{0} cheat on	{0} huijauskoodi päällä
+{0} cheats on	{0} huijauskoodia päällä
+{0} cheat	{0} huijauskoodi
+{0} cheats	{0} huijauskoodia
+{0} on	{0} päällä
+{0} matching cheat	{0} vastaava huijauskoodi
+{0} matching cheats	{0} vastaavaa huijauskoodia
+Press a button or direction. Anbernic / Escape cancels.	Paina painiketta tai suuntaa. Anbernic / Escape peruu.
+More…	Lisää…
+Reading your library…	Luetaan kirjastoasi…
+Other end	Toinen pää
+In library	Kirjastossa
+The memory card is read-only	Muistikortti on vain luku -tilassa
+Could not save game options	Pelin asetuksia ei voitu tallentaa
+Recently played	Viimeksi pelatut
+Adjust volume	Säädä äänenvoimakkuutta
+Already in your library.	On jo kirjastossasi.
+One download at a time.	Yksi lataus kerrallaan.
+One moment.	Hetki.
+Saving before switching games…	Tallennetaan ennen pelin vaihtoa…
+Applying graphics…	Otetaan grafiikka käyttöön…
+Free DS, GBA and NES games, picked for RG DS.	Ilmaisia DS-, GBA- ja NES-pelejä, valittu RG DS:lle.
+Select Start	Select Start
+Native / software	Natiivi / ohjelmisto
+Before / after	Ennen / jälkeen
+Downloading…	Ladataan…
+Takes effect the next time the game starts.	Tulee voimaan, kun peli käynnistetään seuraavan kerran.
+Saved as the default for {0} games.	Tallennettu oletukseksi {0}-peleille.
+Could not remove {0}	Kohdetta {0} ei voitu poistaa
+{0} removed	{0} poistettu
+Whole course	Koko rata
+Close up	Lähikuva
+Charging	Latautuu
+The map draws itself as you explore	Kartta piirtyy itsestään, kun tutkit
+The course draws itself on the first lap	Rata piirtyy itsestään ensimmäisellä kierroksella
+Storage	Tallennustila
+Measuring…	Mitataan …
+Saves & states	Tallennukset ja tilat
+Artwork & info	Kannet ja tiedot
+Cache	Välimuisti
+used	käytetty
+free	vapaana
+Clear cache	Tyhjennä välimuisti
+ROMs, ports and homebrew.	ROMit, portit ja homebrew.
+Save files, resume points and save states.	Tallennustiedostot, jatkokohdat ja tallennetut tilat.
+Covers, screenshots and game details.	Kannet, kuvakaappaukset ja pelitiedot.
+Your music folder.	Musiikkikansiosi.
+Temporary files. Safe to clear.	Väliaikaisia tiedostoja. Turvallista tyhjentää.
+RG DS Core, its engines and settings.	RG DS Core, sen moottorit ja asetukset.
+Everything else on the card, with the file system's own overhead.	Kaikki muu kortilla, tiedostojärjestelmän oma tila mukaan lukien.
+Room for more games.	Tilaa lisää peleille.

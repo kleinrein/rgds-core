@@ -198,7 +198,8 @@ void App::push_bottom(SDL_Renderer* renderer, int y) {
 // canvas copy; nothing is ever drawn twice for a transition that may not come.
 void App::animated_top(SDL_Renderer* renderer, int y) {
     const bool enabled = view_transitions_enabled() && !view_canvas_failed && !top_canvas_failed && !embedded_menu &&
-                         !o.port_menu && !probe && settings.page != Page::BootWarning && !(o.boot_startup && !library_ready);
+                         !o.port_menu && !probe && settings.page != Page::BootWarning &&
+                         !(o.boot_startup && !library_ready);
     if (!enabled) {
         top_previous_ready = false;
         top(renderer, y);
@@ -266,7 +267,11 @@ void App::animated_top(SDL_Renderer* renderer, int y) {
 }
 
 void App::draw(bool screenshot) {
-    if (picker_was_open && !picker_open) picker_closed_at = s.GetTicks();
+    if (picker_was_open && !picker_open) {
+        picker_closed_at = s.GetTicks();
+        // Measured only while the Storage sheet is up.
+        if (picker_storage && worker > 0 && worker_action == "device.storage") stop_worker();
+    }
     picker_was_open = picker_open;
     if (filter_was_open && !filter_sheet_open) filter_closed_at = s.GetTicks();
     filter_was_open = filter_sheet_open;
@@ -319,9 +324,9 @@ void App::draw(bool screenshot) {
             if (i == 0 && chat_open && (chat.drawing || chat.view == pictochat::View::Lobby) && !view_motion.running &&
                 chat_top_signature() == chat_top_seen)
                 continue;
-            // The music player's visualiser redraws the upper screen sixty times a second; the lower one only
-            // when something on it changed.
-            if (i == 1 && music_open && !screenshot && !embedded_menu && music_bottom_still(s.GetTicks())) continue;
+            // The lower panel is presented every frame even when the music player's page is still: on the handheld a
+            // panel presented only now and then showed an old frame when a view transition (B back to Home) started
+            // presenting it at full rate again (2026-11-12).
             if (i == 0 && !screenshot) {
                 const auto signature = top_signature(s.GetTicks());
                 if (!signature.empty() && signature == top_seen) {

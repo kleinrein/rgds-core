@@ -29,7 +29,7 @@ from shaders import supported, SHADERS
 from integration import select_hooks, engine_libraries
 from engine_log import EngineLog
 from profiles import check_plan, device_root, is_owner, player_root
-from hud_theme import hud_theme
+from hud_theme import hud_theme, hud_words
 from controls import paths as control_paths, load_profile as control_profile
 
 from engines import CORES, DSPERATE_CORES, RETIRED
@@ -637,7 +637,10 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             if ds_microphone:
                 microphone_levels()
             dsperate_input_profile(
-                home, config, rom, {
+                home,
+                config,
+                rom,
+                {
                     "user": {
                         "language": ds_language,
                         "nickname": ds_nickname
@@ -913,6 +916,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         hud_colours = hud_theme(app, player)
         if hud_colours:
             plan['env']['RGDS_HUD_THEME'] = hud_colours
+        plan['env'].update(hud_words(app, player))
         print("Launching " + core + ": " + str(rom), flush=True)
         (data / "session/emulator.control").unlink(missing_ok=True)
         (data / "session/emulator.control.result").unlink(missing_ok=True)

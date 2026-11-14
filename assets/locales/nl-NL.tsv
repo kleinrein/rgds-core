@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Controleer je ScreenScraper-login.
 ScreenScraper did not accept this login.	ScreenScraper accepteerde deze login niet.
 Your daily ScreenScraper quota has been reached.	Je dagelijkse ScreenScraper-limiet is bereikt.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraper is niet bereikbaar. Controleer wifi en probeer het opnieuw.
+Look & sound	Uiterlijk en geluid
+Device	Apparaat
+Per system	Per systeem
+Saves	Opgeslagen spellen
+Language & region	Taal en regio
+Just you	Alleen jij
+{0} profiles	{0} profielen
+Buttons, shortcut and fast-forward	Knoppen, sneltoets en vooruitspoelen
+DS nickname	DS-naam
+Join or host	Meedoen of hosten
+Host	Host
+Sharing details	Deelgegevens
+Graphics saved.	Graphics opgeslagen.
+Crisp	Scherp
+HD soft	HD zacht
+Heavy 3D scenes saved.	Zware 3D-scènes opgeslagen.
+Sharp	Scherp
+Smooth (3x and above)	Zacht (3x en hoger)
+Heavy 3D scenes (2x and above)	Zware 3D-scènes (2x en hoger)
+Adaptive (holds 60 fps)	Adaptief (houdt 60 fps vast)
+Always sharp	Altijd scherp
+Dim when idle	Dimmen bij inactiviteit
+Sleep timer in games	Slaaptimer in games
+Graphics	Graphics
+System defaults	Systeemstandaarden
+Switch game	Game wisselen
+Your current game is saved before switching.	Je huidige game wordt opgeslagen voordat je wisselt.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	De echte microfoon staat standaard aan. Blaas- en klepacties brengen je twee seconden terug naar de game. Taalwijzigingen gelden na herstarten. Lokaal draadloos spelen kan met een andere RG DS op hetzelfde Wi-Fi; savestates en vooruitspoelen wachten zolang een sessie actief is.
+Development	Ontwikkeling
+Could not save	Opslaan mislukt
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Echte 3D-resolutie. 3x balanceert kwaliteit en snelheid; 5x is experimenteel.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Zacht combineert 3D-samples op de resolutie van het paneel. 2D-beeld blijft scherp.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Adaptief rendert zware 3D-scènes een paar seconden native om 60 fps vast te houden. Geldt tijdens het spelen.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Resamplet 2D-beeld, tekst en menu's. Scherp, Zacht en Helder: het 3D-scherm vanaf 2x. HD en HD zacht bouwen beide schermen opnieuw op, scherp bij elke resolutie en onder elk schermfilter; HD zacht maakt ook de schaduwen zachter.
+Screen filters change the final picture, including 2D artwork.	Schermfilters veranderen het eindbeeld, inclusief 2D-beeld.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Laat uit voor vloeiende beweging. Weergaveframes overslaan kan helpen bij veeleisende games.
+The renderer currently running. Graphics changes apply during play.	De renderer die nu draait. Wijzigingen aan graphics gelden tijdens het spelen.
+Save a checkpoint and restart with your chosen graphics settings.	Sla een checkpoint op en start opnieuw met je gekozen graphicsinstellingen.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Hogere resolutie kost GPU-tijd. Wijzigingen gelden tijdens het spelen; Native gebruikt softwarematige rendering.
+Per-game controls appear once a game is in your library.	Besturing per game verschijnt zodra een game in je bibliotheek staat.
+Looks through your games card again. It also runs by itself when games change.	Zoekt opnieuw door je gamekaart. Gebeurt ook vanzelf als games veranderen.
+What each system's games share until a game says otherwise: bezel, screen, shader.	Wat de games van elk systeem delen tot een game anders bepaalt: rand, scherm, shader.
+Save as system default	Opslaan als systeemstandaard
+Internal resolution	Interne resolutie
+Remove game	Game verwijderen
+Auto-fetch new games	Nieuwe games automatisch ophalen
+Heavy 3D scenes	Zware 3D-scènes
+Screen filter	Schermfilter
+Running now	Nu actief
+Smooth	Zacht
+Adaptive	Adaptief
+Nothing on this shelf yet.	Nog niets op deze plank.
+No cheats are on. Switch one on under All or Groups.	Geen cheats actief. Zet er een aan onder Alles of Groepen.
+Pages zoom and fade in, like the DSi menu	Pagina's zoomen en faden in, zoals het DSi-menu
+Speed	Snelheid
+Snappy	Pittig
+Relaxed	Rustig
+Quick, crisp transitions	Snelle, scherpe overgangen
+Slow, unhurried, very smooth transitions	Trage, ontspannen, heel vloeiende overgangen
+Balanced for everyday use	Gebalanceerd voor dagelijks gebruik
+Remove this game from the card? Its saves stay.	Deze game van de kaart verwijderen? Opslagen blijven bewaard.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Toon een startscherm als de handheld aangaat. Tik erop of druk op A om door te gaan.
+Lower the screens until you press a button	Verlaag de schermen tot je op een knop drukt
+Sleep a game nobody is playing	Zet een game in slaap waar niemand mee speelt
+Show a start screen; tap or press A to go on	Toon een startscherm; tik of druk op A om door te gaan
+Reopen the game you powered off from	Open de game opnieuw waarmee je afsloot
+Play with another RG DS on your Wi-Fi	Speel met een andere RG DS op je Wi-Fi
+Could not save date format	Datumnotatie opslaan mislukt
+Could not save time format	Tijdnotatie opslaan mislukt
+Could not save daylight saving	Zomertijd opslaan mislukt
+Using the ROM's game code and filename.	Gebruikt de gamecode en bestandsnaam van de ROM.
+None for this game	Geen voor deze game
+All off	Alles uit
+Other cheats	Overige cheats
+Choose a group	Kies een groep
+Cheats that are on	Cheats die aan staan
+All cheats	Alle cheats
+Cheats are available when a game runs with DSCore or RG DS Play.	Cheats zijn beschikbaar wanneer een game draait met DSCore of RG DS Play.
+One at a time	Één per keer
+No cheats match. Try a shorter word.	Geen cheats gevonden. Probeer een korter woord.
+No cheats are on.	Geen cheats actief.
+No cheats in this group.	Geen cheats in deze groep.
+No description in the database.	Geen beschrijving in de database.
+Cheats on	Cheats aan
+Groups	Groepen
+Try a shorter word.	Probeer een korter woord.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Geen cheats gevonden voor deze game. Zet het cheatbestand (GAME.cht, zoals RetroArch gebruikt) naast de game of in userdata/play/cheats en start de game opnieuw.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Geen cheats gevonden voor deze game. Zet een Action Replay-database (usrcheat.dat) naast je games of in userdata/emulators/rgds-experimental/cheats en start de game opnieuw.
+Search cheats	Cheats zoeken
+Type a cheat name…	Typ een cheatnaam…
+{0} cheat on	{0} cheat aan
+{0} cheats on	{0} cheats aan
+{0} cheat	{0} cheat
+{0} cheats	{0} cheats
+{0} on	{0} aan
+{0} matching cheat	{0} overeenkomende cheat
+{0} matching cheats	{0} overeenkomende cheats
+Press a button or direction. Anbernic / Escape cancels.	Druk op een knop of richting. Anbernic / Escape annuleert.
+More…	Meer…
+Reading your library…	Je bibliotheek lezen…
+Other end	Andere kant
+In library	In bibliotheek
+The memory card is read-only	De geheugenkaart is alleen-lezen
+Could not save game options	Kon spelopties niet opslaan
+Recently played	Onlangs gespeeld
+Adjust volume	Volume aanpassen
+Already in your library.	Staat al in je bibliotheek.
+One download at a time.	Eén download tegelijk.
+One moment.	Een ogenblik.
+Saving before switching games…	Opslaan voor het wisselen van game…
+Applying graphics…	Graphics toepassen…
+Free DS, GBA and NES games, picked for RG DS.	Gratis DS-, GBA- en NES-games, gekozen voor RG DS.
+Select Start	Select Start
+Native / software	Native / software
+Before / after	Voor / na
+Downloading…	Downloaden…
+Takes effect the next time the game starts.	Gaat in de volgende keer dat de game start.
+Saved as the default for {0} games.	Opgeslagen als standaard voor {0}-games.
+Could not remove {0}	Kon {0} niet verwijderen
+{0} removed	{0} verwijderd
+Whole course	Hele parcours
+Close up	Dichtbij
+Charging	Opladen
+The map draws itself as you explore	De kaart tekent zichzelf terwijl je verkent
+The course draws itself on the first lap	Het parcours tekent zichzelf in de eerste ronde
+Storage	Opslag
+Measuring…	Meten …
+Saves & states	Opslagen en statussen
+Artwork & info	Covers en info
+Cache	Cache
+used	gebruikt
+free	vrij
+Clear cache	Cache wissen
+ROMs, ports and homebrew.	ROM's, poorten en homebrew.
+Save files, resume points and save states.	Savebestanden, hervatpunten en savestates.
+Covers, screenshots and game details.	Covers, schermafbeeldingen en spelinfo.
+Your music folder.	Je muziekmap.
+Temporary files. Safe to clear.	Tijdelijke bestanden. Veilig te wissen.
+RG DS Core, its engines and settings.	RG DS Core, zijn engines en instellingen.
+Everything else on the card, with the file system's own overhead.	Al het andere op de kaart, met de eigen overhead van het bestandssysteem.
+Room for more games.	Ruimte voor meer games.

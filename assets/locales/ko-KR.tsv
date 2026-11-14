@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	ScreenScraper 로그인 정보를 확인하세�
 ScreenScraper did not accept this login.	ScreenScraper가 이 로그인을 받아들이지 않았습니다.
 Your daily ScreenScraper quota has been reached.	오늘의 ScreenScraper 할당량을 모두 사용했습니다.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraper에 연결할 수 없습니다. Wi-Fi를 확인한 후 다시 시도하세요.
+Look & sound	화면 및 사운드
+Device	기기
+Per system	시스템별
+Saves	세이브 데이터
+Language & region	언어 및 지역
+Just you	나만 사용
+{0} profiles	프로필 {0}개
+Buttons, shortcut and fast-forward	버튼, 단축키, 빨리 감기
+DS nickname	DS 닉네임
+Join or host	참가 또는 호스트
+Host	호스트
+Sharing details	공유 세부 정보
+Graphics saved.	그래픽을 저장했습니다.
+Crisp	선명하게
+HD soft	HD 부드럽게
+Heavy 3D scenes saved.	무거운 3D 장면 설정을 저장했습니다.
+Sharp	샤프
+Smooth (3x and above)	부드럽게 (3x 이상)
+Heavy 3D scenes (2x and above)	무거운 3D 장면 (2x 이상)
+Adaptive (holds 60 fps)	적응형 (60 fps 유지)
+Always sharp	항상 샤프
+Dim when idle	대기 중에는 어둡게
+Sleep timer in games	게임 중 절전 타이머
+Graphics	그래픽
+System defaults	시스템 기본값
+Switch game	게임 전환
+Your current game is saved before switching.	전환하기 전에 현재 게임이 저장됩니다.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	실제 마이크가 기본으로 켜져 있습니다. 입김과 덮개 동작은 2초 동안 게임으로 돌아갑니다. 언어 변경은 다시 시작한 뒤에 적용됩니다. 로컬 무선은 같은 Wi-Fi의 다른 RG DS와 함께 즐기며, 연결 중에는 세이브 스테이트와 빨리 감기를 쓸 수 없습니다.
+Development	개발
+Could not save	저장할 수 없습니다
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	진짜 3D 해상도입니다. 3x는 화질과 속도의 균형이 좋고, 5x는 실험적입니다.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	부드럽게는 패널 해상도에서 3D 샘플을 합칩니다. 2D 아트는 선명하게 유지됩니다.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	적응형은 무거운 3D 장면을 몇 초 동안 원본 해상도로 그려 60 fps를 유지합니다. 플레이 중에 적용됩니다.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	2D 아트, 텍스트, 메뉴를 다시 샘플링합니다. 샤프, 부드럽게, 선명하게는 2x 이상의 3D 화면에 적용됩니다. HD와 HD 부드럽게는 두 화면을 다시 만들며, 샤프는 어떤 해상도와 화면 필터에서도 쓸 수 있습니다. HD 부드럽게는 음영도 부드럽게 합니다.
+Screen filters change the final picture, including 2D artwork.	화면 필터는 2D 아트를 포함한 최종 화면을 바꿉니다.
+Keep off for smooth motion. Skipping display frames can help demanding games.	부드러운 움직임을 원하면 끄세요. 화면 프레임을 건너뛰면 무거운 게임에 도움이 될 수 있습니다.
+The renderer currently running. Graphics changes apply during play.	현재 실행 중인 렌더러입니다. 그래픽 변경은 플레이 중에 적용됩니다.
+Save a checkpoint and restart with your chosen graphics settings.	체크포인트를 저장하고 선택한 그래픽 설정으로 다시 시작합니다.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	해상도가 높을수록 GPU 부담이 커집니다. 변경은 플레이 중에 적용되며, 원본은 소프트웨어 렌더링을 씁니다.
+Per-game controls appear once a game is in your library.	라이브러리에 게임이 들어오면 게임별 조작이 나타납니다.
+Looks through your games card again. It also runs by itself when games change.	게임 카드를 다시 훑어봅니다. 게임이 바뀌면 자동으로도 실행됩니다.
+What each system's games share until a game says otherwise: bezel, screen, shader.	게임에서 따로 정하지 않으면 각 시스템의 게임이 함께 쓰는 설정입니다: 베젤, 화면, 셰이더.
+Save as system default	시스템 기본값으로 저장
+Internal resolution	내부 해상도
+Remove game	게임 삭제
+Auto-fetch new games	새 게임 자동 가져오기
+Heavy 3D scenes	무거운 3D 장면
+Screen filter	화면 필터
+Running now	실행 중
+Smooth	부드럽게
+Adaptive	적응형
+Nothing on this shelf yet.	이 선반에는 아직 아무것도 없습니다.
+No cheats are on. Switch one on under All or Groups.	켜진 치트가 없습니다. 전체나 그룹에서 켜세요.
+Pages zoom and fade in, like the DSi menu	페이지가 DSi 메뉴처럼 확대되며 사라집니다
+Speed	속도
+Snappy	빠릿하게
+Relaxed	느긋하게
+Quick, crisp transitions	빠르고 선명한 전환
+Slow, unhurried, very smooth transitions	느리고 여유로운, 아주 부드러운 전환
+Balanced for everyday use	일상 사용에 알맞은 균형
+Remove this game from the card? Its saves stay.	이 게임을 카드에서 삭제할까요? 세이브는 남습니다.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	휴대기기를 켤 때 시작 화면을 표시합니다. 터치하거나 A를 눌러 계속하세요.
+Lower the screens until you press a button	버튼을 누를 때까지 화면을 어둡게 합니다
+Sleep a game nobody is playing	아무도 플레이하지 않는 게임을 절전 상태로 둡니다
+Show a start screen; tap or press A to go on	시작 화면을 표시하고, 터치하거나 A를 눌러 진행합니다
+Reopen the game you powered off from	전원을 끈 시점의 게임을 다시 엽니다
+Play with another RG DS on your Wi-Fi	같은 Wi-Fi의 다른 RG DS와 함께 즐깁니다
+Could not save date format	날짜 형식을 저장할 수 없습니다
+Could not save time format	시간 형식을 저장할 수 없습니다
+Could not save daylight saving	일광 절약 시간을 저장할 수 없습니다
+Using the ROM's game code and filename.	ROM의 게임 코드와 파일 이름을 사용합니다.
+None for this game	이 게임에는 없음
+All off	모두 끄기
+Other cheats	기타 치트
+Choose a group	그룹 선택
+Cheats that are on	켜진 치트
+All cheats	모든 치트
+Cheats are available when a game runs with DSCore or RG DS Play.	치트는 게임을 DSCore 또는 RG DS Play로 실행할 때 사용할 수 있습니다.
+One at a time	하나씩
+No cheats match. Try a shorter word.	일치하는 치트가 없습니다. 더 짧은 단어를 입력해 보세요.
+No cheats are on.	켜진 치트가 없습니다.
+No cheats in this group.	이 그룹에 치트가 없습니다.
+No description in the database.	데이터베이스에 설명이 없습니다.
+Cheats on	켜진 치트
+Groups	그룹
+Try a shorter word.	더 짧은 단어를 입력해 보세요.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	이 게임의 치트를 찾을 수 없습니다. 치트 파일(RetroArch에서 쓰는 GAME.cht)을 게임 옆이나 userdata/play/cheats에 넣고 게임을 다시 시작하세요.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	이 게임의 치트를 찾을 수 없습니다. Action Replay 데이터베이스(usrcheat.dat)를 게임 옆이나 userdata/emulators/rgds-experimental/cheats에 넣고 게임을 다시 시작하세요.
+Search cheats	치트 검색
+Type a cheat name…	치트 이름 입력…
+{0} cheat on	치트 {0}개 켜짐
+{0} cheats on	치트 {0}개 켜짐
+{0} cheat	치트 {0}개
+{0} cheats	치트 {0}개
+{0} on	{0}개 켜짐
+{0} matching cheat	일치하는 치트 {0}개
+{0} matching cheats	일치하는 치트 {0}개
+Press a button or direction. Anbernic / Escape cancels.	버튼이나 방향을 누르세요. Anbernic / Escape로 취소합니다.
+More…	더 보기…
+Reading your library…	라이브러리를 읽는 중…
+Other end	반대쪽 끝
+In library	라이브러리에 있음
+The memory card is read-only	메모리 카드가 읽기 전용입니다
+Could not save game options	게임 옵션을 저장할 수 없습니다
+Recently played	최근 플레이
+Adjust volume	볼륨 조절
+Already in your library.	이미 라이브러리에 있습니다.
+One download at a time.	다운로드는 한 번에 하나씩만 가능합니다.
+One moment.	잠시만 기다려 주세요.
+Saving before switching games…	게임을 바꾸기 전에 저장하는 중…
+Applying graphics…	그래픽을 적용하는 중…
+Free DS, GBA and NES games, picked for RG DS.	RG DS용으로 고른 무료 DS, GBA, NES 게임.
+Select Start	Select Start
+Native / software	네이티브 / 소프트웨어
+Before / after	전 / 후
+Downloading…	다운로드 중…
+Takes effect the next time the game starts.	다음에 게임을 시작할 때 적용됩니다.
+Saved as the default for {0} games.	{0} 게임의 기본값으로 저장했습니다.
+Could not remove {0}	{0}을(를) 삭제할 수 없습니다
+{0} removed	{0} 삭제됨
+Whole course	코스 전체
+Close up	확대
+Charging	충전 중
+The map draws itself as you explore	탐험하면 지도가 그려집니다
+The course draws itself on the first lap	첫 바퀴에서 코스가 그려집니다
+Storage	저장 공간
+Measuring…	측정 중…
+Saves & states	저장 데이터와 상태
+Artwork & info	커버 및 정보
+Cache	캐시
+used	사용됨
+free	남음
+Clear cache	캐시 지우기
+ROMs, ports and homebrew.	ROM, 포트, 홈브루.
+Save files, resume points and save states.	저장 파일, 이어하기 지점, 저장 상태.
+Covers, screenshots and game details.	커버, 스크린샷, 게임 상세 정보.
+Your music folder.	음악 폴더.
+Temporary files. Safe to clear.	임시 파일입니다. 안전하게 지울 수 있습니다.
+RG DS Core, its engines and settings.	RG DS Core와 엔진, 설정.
+Everything else on the card, with the file system's own overhead.	카드의 나머지 전부(파일 시스템 자체의 관리 영역 포함).
+Room for more games.	더 많은 게임을 위한 공간.

@@ -5,9 +5,58 @@
 
 void App::list_scrollbar(SDL_Renderer* r, int y) {
     if (list_max_scroll() <= 0) return;
-    int thumb = std::max(54, list_height * list_height / (list_count() * list_stride - 16));
+    int thumb = std::max(54, list_height * list_height / std::max(1, list_content()));
     draw_scrollbar(r, 596, y + list_top, list_height, thumb, list_scroll * (list_height - thumb) / list_max_scroll(),
                    scroll_drag, scroll_hover);
+}
+
+std::string App::section_summary(int section) {
+    const auto on_off = [&](const std::string& name, const std::string& key) {
+        return locale.text(name) + " " + locale.text(device_status[key] == "1" ? "On" : "Off");
+    };
+    const auto join = [](const std::string& a, const std::string& b) {
+        return a.empty() ? b : b.empty() ? a : a + " · " + b;
+    };
+    switch (section) {
+    case 11:
+        return profiles.enabled()
+                   ? join(active_profile().name, locale.text(std::to_string(profiles.profiles().size()) + " profiles"))
+                   : locale.text("Just you");
+    case 0: return join(locale.text(preferences.dark ? "Dark" : "Light"), locale.text(accent_name(preferences.accent)));
+    case 10: return locale.text("Brightness") + " " + std::to_string(system_preferences.brightness) + "%";
+    case 3:
+        if (!hardware.volume) return "";
+        return hardware.volume_percent == 0
+                   ? locale.text("Muted")
+                   : locale.text("Volume") + " " + std::to_string(hardware.volume_percent) + "%";
+    case 2:
+        return !library_ready
+                   ? locale.text("Scanning…")
+                   : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games"));
+    case 6: return locale.text("Buttons, shortcut and fast-forward");
+    case 4: {
+        std::string wifi;
+        if (device_status["wifi_supported"] != "0" && !device_status["wifi"].empty())
+            wifi = device_status["wifi_connected"] == "1" && !device_status["connection"].empty()
+                       ? device_status["connection"] // a network name is data
+                       : on_off("Wi-Fi", "wifi");
+        const std::string bt =
+            device_status["bt_supported"] != "0" && !device_status["bt"].empty() ? on_off("Bluetooth", "bt") : "";
+        return join(wifi, bt);
+    }
+    case 1:
+        return join(hardware.power ? locale.text(power_name(system_preferences.power)) : "",
+                    hardware.battery >= 0 ? std::to_string(hardware.battery) + "%" : "");
+    case 5: return join(locale.name(), timezone_summary());
+    case 9: {
+        const auto automatic = experience["auto_update"];
+        return join(locale.text(update_status["channel"] == "testing" ? "Testing" : "Stable"),
+                    locale.text(automatic == "0"   ? "Off"
+                                : automatic == "2" ? "Download automatically"
+                                                   : "Check automatically"));
+    }
+    default: return "";
+    }
 }
 
 // Sound's first list row: the same card as its neighbours with the volume slider inside it.
@@ -57,6 +106,10 @@ void App::choice(SDL_Renderer* r, int x, int y, const std::string& title, bool s
 }
 
 void App::settings_top(SDL_Renderer* r, int y) {
+    if (picker_storage && settings.page == Page::DeviceInfo && (picker_open || picker_closing())) {
+        storage_top(r, y);
+        return;
+    }
     if (settings.page == Page::GameInfo) {
         game_info_top(r, y);
         return;
@@ -651,15 +704,19 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         SDL_Rect clip{20, y + list_top, 575, list_height};
         s.RenderSetClipRect(r, &clip);
         for (int i = 0; i < count; i++) {
-            if (i * list_stride - list_scroll - list_shift() + 66 < 0 ||
-                i * list_stride - list_scroll - list_shift() > list_height)
-                continue;
-            if (settings.page == Page::Settings)
-                list_row(r, y, i, sections[size_t(section_order[size_t(i)])].title,
-                         kid_locked() && !section_open_to_kid(section_order[size_t(i)]) ? locale.text("Locked")
-                         : section_order[size_t(i)] == 9                                ? update_badge()
-                                                                                        : "");
-            else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions)
+            const int top = row_top(i) - list_scroll - list_shift();
+            if (top + 66 < -group_caption || top - group_caption > list_height) continue;
+            if (const char* group = list_group(i); group && *group)
+                label(r, group, 44, y + list_top + top - 25, 15, "muted", 520);
+            if (settings.page == Page::Settings) {
+                const int id = section_order[size_t(i)];
+                const bool locked = kid_locked() && !section_open_to_kid(id);
+                list_row(r, y, i, sections[size_t(id)].title,
+                         locked    ? locale.text("Locked")
+                         : id == 9 ? update_badge()
+                                   : "",
+                         true, nullptr, true, locked ? "" : section_summary(id));
+            } else if (settings.page == Page::Appearance || settings.page == Page::DisplayOptions)
                 appearance_row(r, y, i);
             else if (settings.page == Page::ShaderPicker) {
                 int value = shader_choices[i];
@@ -823,6 +880,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                   : "",
                          (i != 1 || preferences.menu_haptics) && (i != 3 || preferences.game_rumble) &&
                              (i != 4 || preferences.menu_haptics));
+            } else if (settings.page == Page::System && choice_spec(Page::System, i)) {
+                choice_row(r, y, i, system_row_name(i), *choice_spec(Page::System, i));
             } else if (settings.page == Page::System) {
                 list_row(r, y, i, system_row_name(i),
                          i == 0                     ? locale.name()
@@ -830,7 +889,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          : i == 2                   ? dst_names.at(system_preferences.dst)
                          : i == 3                   ? date_format_names.at(system_preferences.date_format)
                          : i == 4                   ? time_format_names.at(system_preferences.time_format)
-                         : i == (o.rgds_os ? 7 : 8) ? (device_status["boot_warning"] == "1" ? "On" : "Off")
+                         : i == (o.rgds_os ? 6 : 7) ? (device_status["boot_warning"] == "1" ? "On" : "Off")
                                                     : "");
             } else if (settings.page == Page::SaveGallery)
                 list_row(r, y, i,
@@ -959,7 +1018,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          : i == 5 ? (preferences.auto_scrape ? "On" : "Off")
                          : i == 4 ? pictures.at(size_t(std::clamp(preferences.extra_pictures, 0, 3)))
                                   : "");
-            } else if (settings.page == Page::DeviceInfo) list_row(r, y, i, device_info_name(i), device_info_value(i));
+            } else if (settings.page == Page::DeviceInfo)
+                list_row(r, y, i, device_info_name(i), device_info_value(i), true, nullptr, true, i == 2 ? " " : "",
+                         i == 2 ? storage_used_fraction() : -1);
             else if (settings.page == Page::Graphics) {
                 const std::array<std::string, 8> names = {"3D resolution", "3D edge smoothing", "Heavy 3D scenes",
                                                           "2D scaling",    "Screen filter",     "Frameskip",
@@ -1224,7 +1285,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             : confirmation == "bt-off"       ? "Turn Bluetooth off?"
             : confirmation == "bt-forget"    ? "Forget this device?"
             : confirmation == "remove-game"  ? "Remove this game from the card? Its saves stay."
-            : confirmation == "profile-remove" ? "Remove this profile? Its saves are kept until you erase removed profiles."
+            : confirmation == "profile-remove"
+                ? "Remove this profile? Its saves are kept until you erase removed profiles."
             : confirmation == "profile-allow-shelf"
                 ? "Show every game listed on this shelf? Games rated above the age stay hidden."
             : confirmation == "profile-erase"  ? "Erase the saves of removed profiles for good? This cannot be undone."
@@ -1257,19 +1319,20 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
 
 std::string App::settings_tip(Page page) {
     if (page == Page::System) {
-        static const std::array<const char*, 9> tips = {
+        // Updates & recovery left this page in the 2026-11-11 regroup: Updates is a root row of its own.
+        static const std::array<const char*, 8> tips = {
             "The language for menus and messages.",
             "Set the clock to where you are.",
             "Summer time follows your timezone. Force it on or off if the clock is an hour out.",
             "How dates appear at the top of the screen.",
             "A 24-hour or 12-hour clock.",
             "Versions, free space and the network address of your handheld.",
-            "Check for updates, go back to the previous build or clear temporary files.",
             "Leave RG DS Core and go back to the stock menu.",
             "Show a start screen when the handheld turns on. Tap it or press A to continue."};
-        if (settings.focus == 7 && o.rgds_os) return tips[8];
-        if (settings.focus == 7 && o.independent) return "Restart the RGDS menu.";
-        return tips[size_t(std::clamp(settings.focus, 0, 8))];
+        if (settings.focus == 6 && o.rgds_os) return tips[7];
+        if (settings.focus == 6 && o.independent) return "Restart the RGDS menu.";
+        if (settings.focus == (o.rgds_os ? 7 : 8)) return ""; // Run setup again says it all
+        return tips[size_t(std::clamp(settings.focus, 0, 7))];
     }
     return "";
 }

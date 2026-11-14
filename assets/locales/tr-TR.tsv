@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	ScreenScraper girişinizi kontrol edin.
 ScreenScraper did not accept this login.	ScreenScraper bu girişi kabul etmedi.
 Your daily ScreenScraper quota has been reached.	Günlük ScreenScraper kotanız doldu.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	ScreenScraper'a ulaşılamıyor. Wi-Fi'ı kontrol edip yeniden deneyin.
+Look & sound	Görünüm ve ses
+Device	Cihaz
+Per system	Sisteme göre
+Saves	Kayıtlar
+Language & region	Dil ve bölge
+Just you	Yalnızca sen
+{0} profiles	{0} profil
+Buttons, shortcut and fast-forward	Düğmeler, kısayol ve hızlı ileri
+DS nickname	DS-kallenamn
+Join or host	Bli med eller vert
+Host	Vert
+Sharing details	Delingsdetaljar
+Graphics saved.	Grafikk lagra.
+Crisp	Net
+HD soft	HD mjuk
+Heavy 3D scenes saved.	Tunge 3D-scener lagra.
+Sharp	Skarp
+Smooth (3x and above)	Mjuk (3x og over)
+Heavy 3D scenes (2x and above)	Tunge 3D-scener (2x og over)
+Adaptive (holds 60 fps)	Tilpassa (held 60 fps)
+Always sharp	Alltid skarp
+Dim when idle	Dimm ved inaktivitet
+Sleep timer in games	Søvntidtakar i spel
+Graphics	Grafikk
+System defaults	Systemstandardar
+Switch game	Byt spel
+Your current game is saved before switching.	Spelet du held på med blir lagra før du byter.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	Ekte mikrofon er slått på som standard. Blås- og lokkhandlingar går tilbake til spelet i to sekund. Språkendringar trår i kraft etter omstart. Lokalt trådlaust nett speler med ein annan RG DS på same Wi-Fi; lagringspunkt og hurtigspoling ventar medan ei økt er i gang.
+Development	Utvikling
+Could not save	Kunne ikkje lagre
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Ekte 3D-oppløysing. 3x balanserer kvalitet og fart; 5x er eksperimentell.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Mjuk kombinerer 3D-sampel i panelets oppløysing. 2D-grafikk held seg skarp.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Tilpassa teiknar tunge 3D-scener i opphavleg oppløysing i nokre sekund for å halde 60 fps. Gjeld under spel.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Omsampler 2D-grafikk, tekst og menyar. Skarp, Mjuk og Skarp: 3D-skjermen frå 2x og over. HD og HD mjuk byggjer begge skjermane på nytt, skarpt i alle oppløysingar og under alle skjermfilter; HD mjuk jamnar òg ut skygging.
+Screen filters change the final picture, including 2D artwork.	Skjermfilter endrar sluttbiletet, òg 2D-grafikk.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Hald av for jamn rørsle. Å hoppe over visingsbilete kan hjelpe krevjande spel.
+The renderer currently running. Graphics changes apply during play.	Teiknemotoren som køyrer no. Grafikkendringar trår i kraft under spel.
+Save a checkpoint and restart with your chosen graphics settings.	Lagre eit sjekkpunkt og start på nytt med dei valde grafikkinnstillingane.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Høgare oppløysing kostar GPU-tid. Endringar trår i kraft under spel; Opphavleg brukar programvareteikning.
+Per-game controls appear once a game is in your library.	Kontrollar per spel dukkar opp når eit spel er i biblioteket ditt.
+Looks through your games card again. It also runs by itself when games change.	Søkjer gjennom spelkortet ditt på nytt. Køyrer òg av seg sjølv når spel endrar seg.
+What each system's games share until a game says otherwise: bezel, screen, shader.	Det spela på kvart system deler til eit spel seier noko anna: ramme, skjerm, shader.
+Save as system default	Lagre som systemstandard
+Internal resolution	Intern oppløysing
+Remove game	Fjern spel
+Auto-fetch new games	Hent nye spel automatisk
+Heavy 3D scenes	Tunge 3D-scener
+Screen filter	Skjermfilter
+Running now	Køyrer no
+Smooth	Mjuk
+Adaptive	Tilpassa
+Nothing on this shelf yet.	Ingenting på denne hylla enno.
+No cheats are on. Switch one on under All or Groups.	Ingen juks er på. Slå ein på under Alle eller Grupper.
+Pages zoom and fade in, like the DSi menu	Sider zoomar og tonar inn, som DSi-menyen
+Speed	Fart
+Snappy	Kvikk
+Relaxed	Rolig
+Quick, crisp transitions	Raske, skarpe overgangar
+Slow, unhurried, very smooth transitions	Trege, rolege, svært mjuke overgangar
+Balanced for everyday use	Balansert for daglig bruk
+Remove this game from the card? Its saves stay.	Fjerne dette spelet frå kortet? Lagringane blir verande.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Vis ein startskjerm når handhalden slår seg på. Trykk på han eller trykk A for å halde fram.
+Lower the screens until you press a button	Dimm skjermane til du trykkjer ein knapp
+Sleep a game nobody is playing	Set eit spel i dvale som ingen speler
+Show a start screen; tap or press A to go on	Vis ein startskjerm; trykk eller trykk A for å gå vidare
+Reopen the game you powered off from	Opne spelet du slo av frå igjen
+Play with another RG DS on your Wi-Fi	Spel med ein annan RG DS på Wi-Fi-et ditt
+Could not save date format	Kunne ikkje lagre datoformat
+Could not save time format	Kunne ikkje lagre tidsformat
+Could not save daylight saving	Kunne ikkje lagre sommartid
+Using the ROM's game code and filename.	Oyunun kodu ve ROM dosya adı kullanılıyor.
+None for this game	Bu oyun için yok
+All off	Hepsi kapalı
+Other cheats	Diğer hileler
+Choose a group	Bir grup seçin
+Cheats that are on	Açık hileler
+All cheats	Tüm hileler
+Cheats are available when a game runs with DSCore or RG DS Play.	Hileler, oyun DSCore veya RG DS Play ile çalışırken kullanılabilir.
+One at a time	Teker teker
+No cheats match. Try a shorter word.	Eşleşen hile yok. Daha kısa bir sözcük deneyin.
+No cheats are on.	Açık hile yok.
+No cheats in this group.	Bu grupta hile yok.
+No description in the database.	Veritabanında açıklama yok.
+Cheats on	Açık
+Groups	Gruplar
+Try a shorter word.	Daha kısa bir sözcük deneyin.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Bu oyun için hile bulunamadı. Hile dosyasını (RetroArch'ın kullandığı GAME.cht) oyunun yanına veya userdata/play/cheats içine koyun, sonra oyunu yeniden başlatın.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Bu oyun için hile bulunamadı. Bir Action Replay veritabanını (usrcheat.dat) oyunlarınızın yanına veya userdata/emulators/rgds-experimental/cheats içine koyun, sonra oyunu yeniden başlatın.
+Search cheats	Hile ara
+Type a cheat name…	Bir hile adı yazın…
+{0} cheat on	{0} hile açık
+{0} cheats on	{0} hile açık
+{0} cheat	{0} hile
+{0} cheats	{0} hile
+{0} on	{0} açık
+{0} matching cheat	{0} eşleşen hile
+{0} matching cheats	{0} eşleşen hile
+Press a button or direction. Anbernic / Escape cancels.	Bir düğmeye veya yöne basın. Anbernic / Escape iptal eder.
+More…	Daha fazla…
+Reading your library…	Kitaplığınız okunuyor…
+Other end	Diğer uç
+In library	Kitaplıkta
+The memory card is read-only	Hafıza kartı salt okunur
+Could not save game options	Oyun seçenekleri kaydedilemedi
+Recently played	Son oynananlar
+Adjust volume	Sesi ayarla
+Already in your library.	Zaten kitaplığınızda.
+One download at a time.	Aynı anda tek indirme.
+One moment.	Bir saniye.
+Saving before switching games…	Oyun değiştirmeden önce kaydediliyor…
+Applying graphics…	Grafikler uygulanıyor…
+Free DS, GBA and NES games, picked for RG DS.	RG DS için seçilmiş ücretsiz DS, GBA ve NES oyunları.
+Select Start	Select Start
+Native / software	Yerel / yazılım
+Before / after	Önce / sonra
+Downloading…	İndiriliyor…
+Takes effect the next time the game starts.	Oyun bir sonraki başlatılışında etkili olur.
+Saved as the default for {0} games.	{0} oyunları için varsayılan olarak kaydedildi.
+Could not remove {0}	{0} kaldırılamadı
+{0} removed	{0} kaldırıldı
+Whole course	Tüm parkur
+Close up	Yakın
+Charging	Şarj oluyor
+The map draws itself as you explore	Harita, keşfettikçe çizilir
+The course draws itself on the first lap	Parkur ilk turda çizilir
+Storage	Depolama
+Measuring…	Ölçülüyor …
+Saves & states	Kayıtlar ve durumlar
+Artwork & info	Kapaklar ve bilgi
+Cache	Önbellek
+used	kullanılan
+free	boş
+Clear cache	Önbelleği temizle
+ROMs, ports and homebrew.	ROM'lar, portlar ve homebrew.
+Save files, resume points and save states.	Kayıt dosyaları, devam noktaları ve kayıtlı durumlar.
+Covers, screenshots and game details.	Kapaklar, ekran görüntüleri ve oyun ayrıntıları.
+Your music folder.	Müzik klasörün.
+Temporary files. Safe to clear.	Geçici dosyalar. Temizlemek güvenlidir.
+RG DS Core, its engines and settings.	RG DS Core, motorları ve ayarları.
+Everything else on the card, with the file system's own overhead.	Kartta kalan her şey, dosya sisteminin kendi yüküyle birlikte.
+Room for more games.	Daha fazla oyun için yer.

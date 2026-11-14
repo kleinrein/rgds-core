@@ -59,11 +59,11 @@ SDL_Rect App::segment_bounds(int index, int option) {
     const auto& names = index == 0 ? mode_names : typeface_names;
     int width = std::clamp(std::max(label_width(names[0], 18), label_width(names[1], 18)) + 34, 100, 150),
         left = 574 - 2 * width - 8;
-    return {left + 4 + option * width, list_top + index * list_stride - list_scroll + 17, width, 32};
+    return {left + 4 + option * width, list_top + row_top(index) - list_scroll + 17, width, 32};
 }
 
 void App::segment_row(SDL_Renderer* r, int y, int index, const std::string& title, bool second) {
-    int row = y + list_top + index * list_stride - list_scroll - list_shift();
+    int row = y + list_top + row_top(index) - list_scroll - list_shift();
     bool focused = index == list_selected();
     int dx = 24;
     move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
@@ -92,6 +92,86 @@ void App::segment_row(SDL_Renderer* r, int y, int index, const std::string& titl
     }
 }
 
+std::optional<App::ChoiceSpec> App::choice_spec(Page page, int row) {
+    if (page == Page::System) {
+        if (row == 2) return ChoiceSpec{{dst_names.begin(), dst_names.end()}, system_preferences.dst};
+        if (row == 4)
+            return ChoiceSpec{{time_format_names.begin(), time_format_names.end()}, system_preferences.time_format};
+        return std::nullopt;
+    }
+    if (page != Page::Appearance && page != Page::DisplayOptions) return std::nullopt;
+    switch (appearance_row_id(page, row)) {
+    case 4: return ChoiceSpec{{"Simple pixel", "Rich"}, preferences.rich_icons ? 1 : 0};
+    case 8: return ChoiceSpec{{"Carousel", "Column"}, preferences.home_layout};
+    case 9: return ChoiceSpec{{"Plain", "Grid"}, preferences.background};
+    default: return std::nullopt;
+    }
+}
+
+void App::choose_choice(Page page, int row, int option) {
+    if (page == Page::System) {
+        if (row == 2) save_dst(option);
+        else if (row == 4) save_time_format(option);
+        dirty = true;
+        return;
+    }
+    switch (appearance_row_id(page, row)) {
+    case 4: preferences.rich_icons = option == 1; break;
+    case 8:
+        preferences.home_layout = option;
+        home_layout_changed();
+        break;
+    case 9: preferences.background = option; break;
+    default: return;
+    }
+    remember_appearance();
+}
+
+// Left and Right step through the options and stop at the ends; A and tap-to-confirm move on and wrap round.
+bool App::step_choice(int code) {
+    auto spec = choice_spec(settings.page, settings.focus);
+    if (!spec) return false;
+    const int count = int(spec->names.size()), at = spec->value;
+    const int next = code == 0 ? std::max(0, at - 1) : code == 1 ? std::min(count - 1, at + 1) : (at + 1) % count;
+    if (next != at) choose_choice(settings.page, settings.focus, next);
+    return true;
+}
+
+SDL_Rect App::choice_bounds(int index, const std::vector<std::string>& names, int option) {
+    int widest = 0;
+    for (auto& name : names) widest = std::max(widest, label_width(name, 18));
+    const int count = int(names.size()), width = std::clamp(widest + 30, 72, count == 2 ? 130 : 100),
+              left = 574 - count * width - 8;
+    return {left + 4 + option * width, list_top + row_top(index) - list_scroll + 17, width, 32};
+}
+
+void App::choice_row(SDL_Renderer* r, int y, int index, const std::string& title, const ChoiceSpec& spec) {
+    int row = y + list_top + row_top(index) - list_scroll - list_shift();
+    bool focused = index == list_selected();
+    int dx = 24;
+    move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
+    dx -= 24;
+    settings_card(r, 24 + dx, row, 566, 66, focused);
+    round_rect(r, 38 + dx, row + 11, 44, 44, well_radius, focused ? "accent" : "slot");
+    ui_icon(r, settings_icon_for(title), 60 + dx, row + 33, 25, focused ? "on_accent" : "accent");
+    auto first = choice_bounds(index, spec.names, 0);
+    first.x += dx;
+    first.y = row + 17;
+    const int count = int(spec.names.size());
+    label(r, title, 98 + dx, row + 19, 24, "ink", first.x - 16 - (98 + dx));
+    sunken_track(r, first.x - 4, first.y - 4, first.w * count + 8, first.h + 8, 13);
+    const float slide = segment_position(index, spec.value);
+    raised_pill(r, first.x + int(std::lround(slide * first.w)), first.y, first.w, first.h, 10, theme.at("accent"), 0,
+                false);
+    for (int option = 0; option < count; option++) {
+        SDL_Rect box{first.x + option * first.w, first.y, first.w, first.h};
+        const auto& name = spec.names[size_t(option)];
+        label(r, name, box.x + (box.w - std::min(box.w - 12, label_width(name, 18))) / 2,
+              centred_label_y(locale.text(name), 18, box.y + box.h / 2), 18,
+              std::abs(slide - option) < .5f ? "on_accent" : "ink", box.w - 12);
+    }
+}
+
 void App::appearance_row(SDL_Renderer* r, int y, int i) {
     switch (appearance_row_id(settings.page, i)) {
     case 0: segment_row(r, y, i, "Colour mode", preferences.dark); break;
@@ -102,7 +182,7 @@ void App::appearance_row(SDL_Renderer* r, int y, int i) {
     }
     case 2: list_row(r, y, i, "High contrast", preferences.high_contrast ? "On" : "Off"); break;
     case 3: segment_row(r, y, i, "Typeface", preferences.pixel); break;
-    case 4: list_row(r, y, i, "Icon style", preferences.rich_icons ? "Rich" : "Simple pixel"); break;
+    case 4: choice_row(r, y, i, "Icon style", *choice_spec(settings.page, i)); break;
     case 5: list_row(r, y, i, "Screen brightness", std::to_string(system_preferences.brightness) + "%"); break;
     // Animations opens its own page, so even "Off" is a value, not a switch.
     case 6:
@@ -115,8 +195,8 @@ void App::appearance_row(SDL_Renderer* r, int y, int i) {
                  true, nullptr, false);
         break;
     case 7: list_row(r, y, i, "Touch indicator", preferences.touch_indicator ? "On" : "Off"); break;
-    case 8: list_row(r, y, i, "Home layout", preferences.home_layout == 1 ? "Column" : "Carousel"); break;
-    case 9: list_row(r, y, i, "Background", preferences.background == 1 ? "Grid" : "Plain"); break;
+    case 8: choice_row(r, y, i, "Home layout", *choice_spec(settings.page, i)); break;
+    case 9: choice_row(r, y, i, "Background", *choice_spec(settings.page, i)); break;
     default: list_row(r, y, i, "Touch gestures", preferences.gestures ? "On" : "Off"); break;
     }
 }

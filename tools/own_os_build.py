@@ -7,7 +7,11 @@ build of the launcher on top. Then it runs Buildroot in the VM, on the VM's own 
 does not build on a case-insensitive macOS mount), and copies the image to .cache/own-os/build/rgds-os.img.gz.
 The first build takes hours (toolchain, kernel, Mesa); later ones only redo what changed.
 
-  own_os_build.py [--release dist/RGDS-<version>.zip] [--stage-only] [--reconfigure] [--jobs N] [-- make target...]
+  own_os_build.py [--release dist/RGDS-<version>.zip] [--stage-only] [--slot-only] [--reconfigure] [--jobs N]
+                  [-- make target...]
+
+--slot-only builds what tools/own_os_push.py writes (root filesystem, kernel, device trees) without the two SD card
+images, and removes the cached ones so own_os_release.py cannot pick up a card from an older build.
 """
 import argparse
 import hashlib
@@ -150,7 +154,7 @@ def native(args):
     if not (buildroot / 'Makefile').exists():
         run('git', 'clone', '-q', '--depth', '1', '--branch', BUILDROOT_VERSION, BUILDROOT_URL, buildroot)
     out = work / 'output/rgds-os'
-    env = dict(os.environ, BR2_DL_DIR=str(work / 'dl'))
+    env = dict(os.environ, BR2_DL_DIR=str(work / 'dl'), RGDS_SLOT_ONLY='1' if args.slot_only else '0')
     if not (out / '.config').exists() or args.reconfigure:
         run('make', '-C', buildroot, f'O={out}', f'BR2_EXTERNAL={ROOT/"os/buildroot"}', 'rgds_os_defconfig', env=env)
     if not args.targets:
@@ -172,13 +176,16 @@ def native(args):
     # the card for both handhelds, and the one fixed to the RG DS Plus (board/rgds/post-image.sh)
     images = [out / 'images/rgds-os.img.gz', out / 'images/rgds-os-plus.img.gz']
     for image in images:
-        shutil.copy2(image, target / image.name)
+        if args.slot_only: (target / image.name).unlink(missing_ok=True)
+        else: shutil.copy2(image, target / image.name)
     # what tools/own_os_push.py writes into a running handheld's other slot
-    for name in ('rootfs.squashfs', 'Image.lz4', 'rk3568-anbernic-rg-ds.dtb', 'rk3568-anbernic-rg-ds-plus.dtb',
-                 'extlinux.conf', 'u-boot-rockchip.bin'):
+    for name in (
+        'rootfs.squashfs', 'Image.lz4', 'rk3568-anbernic-rg-ds.dtb', 'rk3568-anbernic-rg-ds-plus.dtb', 'extlinux.conf',
+        'u-boot-rockchip.bin'
+    ):
         shutil.copy2(out / 'images' / name, target / name)
     (target / 'build-id').write_text(build + '\n')  # what own_os_push.py and own_os_release.py call this build
-    run('sha256sum', *(target / image.name for image in images))
+    if not args.slot_only: run('sha256sum', *(target / image.name for image in images))
 
 
 def main():
@@ -186,6 +193,7 @@ def main():
     parser.add_argument('--native', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--release', type=Path, help='release package with the emulators (default: dist/latest)')
     parser.add_argument('--stage-only', action='store_true')
+    parser.add_argument('--slot-only', action='store_true', help='no SD card images: what make push needs')
     parser.add_argument('--jobs', type=int, default=6)
     parser.add_argument('--reconfigure', action='store_true', help='regenerate output/rgds-os/.config')
     parser.add_argument('targets', nargs='*', help='Buildroot make targets instead of the whole image')
@@ -204,7 +212,13 @@ def main():
             ROOT / '.cache/linux-builder/lima/bin/limactl', 'shell', 'rgds-image', 'python3', '-u',
             Path(__file__).resolve(), '--native', '--jobs', args.jobs
         ]
-        run(*command, *(['--reconfigure'] if args.reconfigure else []), *args.targets, env=env)
+        run(
+            *command,
+            *(['--reconfigure'] if args.reconfigure else []),
+            *(['--slot-only'] if args.slot_only else []),
+            *args.targets,
+            env=env
+        )
         return
     native(args)
 

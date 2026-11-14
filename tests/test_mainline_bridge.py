@@ -38,6 +38,21 @@ class MainlineBridgeTests(unittest.TestCase):
                     )
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_every_console_mapping_carries_both_sticks(self):
+        # Without the axes SDL sends no stick motion: DS games lost the pen and the Controls stick rows.
+        import re
+        source = (ROOT / 'src/platform/emulator_bridge.cpp').read_text()
+        start = source.index('extern "C" SDL_bool SDL_IsGameController')
+        body = source[start:source.index('return next ? next(index) : SDL_FALSE;', start)]
+        labels = re.findall(r'",(RGDS [a-z ]+),"', body)
+        self.assertIn('RGDS mainline joypad', labels)
+        for label in labels:
+            if label == 'RGDS mainline': continue  # gpio-keys-control has no sticks
+            mapping = body[body.index(label):]
+            mapping = mapping[:mapping.index('platform:Linux')]
+            for axis in ('leftx:a0', 'lefty:a1', 'rightx:a2', 'righty:a3'):
+                self.assertIn(axis, mapping, label)
+
     def test_rocknix_joypad_on_rgds_os_moves_f_and_directions(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

@@ -4,6 +4,7 @@ The bridge draws these itself, so it is handed the launcher's palette as
 RGDS_HUD_THEME=panel,ink,muted,accent,line (RRGGBB): the user's light or dark
 mode from themes/, recoloured by the favourite colour chosen in settings.
 """
+import re
 from pathlib import Path
 
 from fields import read_fields
@@ -57,3 +58,32 @@ def hud_theme(app, data):
         return ",".join("%02x%02x%02x" % colours[key] for key in KEYS)
     except (KeyError, ValueError, OSError):
         return None
+
+
+HUD_WORDS = ("Volume", "Muted", "Fast")
+CJK_FAMILIES = {"ja": "ja", "zh": "zh", "ko": "ko"}
+
+
+def hud_words(app, data):
+    """{env name: value} for the in-game HUD's words in the launcher's language.
+
+    RGDS_HUD_VOLUME / _MUTED / _FAST carry the translations from assets/locales;
+    RGDS_HUD_FAMILY names the CJK font family (ja, zh, ko) the language needs.
+    A missing language or file leaves the English words built into the HUD.
+    """
+    env = {}
+    try:
+        language = read_fields(Path(data) / "preferences.ini").get("language", "en-US")
+        if not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4})?", language):
+            return env
+        family = CJK_FAMILIES.get(language.split("-")[0].lower())
+        if family:
+            env["RGDS_HUD_FAMILY"] = family
+        wanted = {word: "RGDS_HUD_" + word.upper() for word in HUD_WORDS}
+        for line in (Path(app) / "assets/locales" / (language + ".tsv")).read_text(encoding="utf-8").splitlines():
+            key, tab, value = line.partition("\t")
+            if tab and key in wanted and value:
+                env[wanted[key]] = value
+    except (OSError, UnicodeDecodeError):
+        pass
+    return env

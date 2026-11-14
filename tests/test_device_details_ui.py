@@ -23,8 +23,8 @@ class DeviceDetailsTests(unittest.TestCase):
         binaries = self.root / 'bin'
         binaries.mkdir()
         helper = binaries / 'python3'
-        firmware = 'Anbernic ' + ('long-firmware-identifier-' * 55) + ' END'
-        self.content = 'state=ready\nbuild=RGDS test\nfirmware=' + firmware + '\nkernel=Linux 6.1\nfree_gb=24.5\nip=192.0.2.1\n'
+        build = 'RGDS ' + ('long-build-identifier-' * 55) + ' END'
+        self.content = 'state=ready\nbuild=' + build + '\nkernel=Linux 6.1\nfree_gb=24.5\ntotal_gb=59.5\nip=192.0.2.1\n'
         (self.data / 'device').mkdir()
         (self.data / 'device/status.ini').write_text(self.content)
         helper.write_text(
@@ -37,7 +37,7 @@ class DeviceDetailsTests(unittest.TestCase):
             os.environ, SDL_VIDEODRIVER='dummy', PATH=str(binaries) + os.pathsep + os.environ.get('PATH', '')
         )
 
-    def run_ui(self, script, row=1):
+    def run_ui(self, script, row=0):
         (self.root / 'state').write_text(f'1 0 0 ""\n16 5 {row}\n')
         (self.root / 'input').write_text(script)
         result = subprocess.run(
@@ -58,7 +58,7 @@ class DeviceDetailsTests(unittest.TestCase):
         return json.loads((self.root / 'report').read_text())
 
     def test_every_information_row_opens_details_instead_of_leaving(self):
-        for row in range(5):
+        for row in range(4):
             with self.subTest(row=row):
                 report = self.run_ui('500 key A\n', row)
                 self.assertEqual(report['page'], 16)
@@ -73,7 +73,7 @@ class DeviceDetailsTests(unittest.TestCase):
         self.assertIn('16 5 1\n', (self.root / 'state').read_text())
         report = self.run_ui('500 key A\n700 click 520 452\n900 key Escape\n')
         self.assertEqual(report['page'], 9)
-        self.assertIn('9 5 4\n', (self.root / 'state').read_text())  # Device information is the fifth System row
+        self.assertIn('9 5 5\n', (self.root / 'state').read_text())  # Device information is the sixth System row
 
     def test_long_unbroken_value_can_scroll_to_its_last_line(self):
         script = '500 key A\n' + ''.join(f'{600+i*10} key Down\n' for i in range(70))

@@ -63,7 +63,7 @@ void App::load_library(std::vector<Game> games) {
                                        : o.section == "vibration" ? "sound"
                                                                   : o.section);
                 if (found == ids.end()) throw std::runtime_error("Unknown settings section");
-                settings.section = display ? 10 : int(found - ids.begin());
+                settings.section = o.section == "motion" ? 0 : display ? 10 : int(found - ids.begin());
                 settings.enter();
                 if (o.section == "brightness") settings.page = Page::Display;
                 else if (o.section == "motion") settings.page = Page::Motion;

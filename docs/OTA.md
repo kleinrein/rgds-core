@@ -67,7 +67,7 @@ nothing uploaded (done for 0.8.0 on 2026-10-28):
 When the background check (every 6 hours, 30 minutes after a failed one) finds a release, Home shows a "System
 update" banner on the upper screen and a badge on the RG DS mark. **Y** on Home (or a tap on the mark) opens Updates &
 recovery and starts the download; once it is staged, Y asks to restart and install. B returns to Home. Settings →
-System → Updates & recovery offers the same steps by hand: Check for updates, Release notes, Download update,
+Settings → Updates (its own root row since the 2026-11-11 regroup, [SETTINGS_PLAN.md](SETTINGS_PLAN.md)) offers the same steps by hand: Check for updates, Release notes, Download update,
 Restart & install, with Y in the footer as the shortcut.
 
 While it runs, the upper screen shows the release, four steps (Download, Verify, Prepare, Install), the current

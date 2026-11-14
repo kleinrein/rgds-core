@@ -209,7 +209,7 @@ extern "C" int SDL_PollEvent(SDL_Event* event){
  if(next==2 || SDL_GetTicks()-began<Uint32(100+next*40))return 0;
  *event={};event->type=next++?SDL_FINGERUP:SDL_FINGERDOWN;
  event->tfinger.windowID=top;event->tfinger.touchId=1;event->tfinger.fingerId=1;
- event->tfinger.x=200.f/640;event->tfinger.y=130.f/480;return 1;
+ event->tfinger.x=200.f/640;event->tfinger.y=240.f/480;return 1; // Theme, under Profiles
 }
 extern "C" int SDL_WaitEventTimeout(SDL_Event*,int){SDL_Delay(5);return 0;}
 '''

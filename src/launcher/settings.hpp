@@ -597,14 +597,19 @@ inline std::string game_sleep_name(int index) {
 }
 // The Power page's rows, top to bottom, as control ids (change_system and the original row numbers): the two
 // newer timers (7, 8) sit under Menu idle sleep.
-inline constexpr std::array<int, 9> power_rows = {0, 1, 7, 8, 2, 3, 4, 5, 6};
+// Since the 2026-11-11 regroup: Battery (Power mode, Battery percentage), Sleep (lid, menu idle, dim, game sleep), then
+// the actions with Power off last.
+inline constexpr std::array<int, 9> power_rows = {0, 3, 2, 1, 7, 8, 4, 6, 5};
 // The root list's order. Section ids stay stable (saved state and tests use
-// them); Display (10) is listed right below Theme and Updates (9) right below System.
-inline constexpr std::array<int, 12> section_order = {0, 10, 1, 2, 3, 4, 5, 9, 6, 7, 11, 8};
+// them). Since the 2026-11-11 regroup (docs/SETTINGS_PLAN.md): Profiles; Look & sound (Theme, Display, Sound); Games
+// (Library, Controls); Device (Connectivity, Power, System, Updates); then Power off on its own. Statistics (7) is
+// Home's Playtime and no longer listed here.
+inline constexpr std::array<int, 11> section_order = {11, 0, 10, 3, 2, 6, 4, 1, 5, 9, 8};
 // Theme and Display share the appearance code: the row ids are the original combined list's.
 inline int appearance_row_id(Page page, int index) {
-    static constexpr std::array<int, 6> theme = {0, 1, 2, 3, 4, 9};
-    static constexpr std::array<int, 5> display = {5, 6, 7, 8, 10};
+    // Theme is how the menus look and move; Display is the panel and touch (docs/SETTINGS_PLAN.md).
+    static constexpr std::array<int, 8> theme = {0, 1, 2, 3, 4, 9, 8, 6};
+    static constexpr std::array<int, 3> display = {5, 7, 10};
     return page == Page::DisplayOptions ? display.at(size_t(index)) : theme.at(size_t(index));
 }
 inline int section_row(int section) {
@@ -629,6 +634,9 @@ struct Settings {
     void open() {
         page = Page::Settings;
         focus = 0;
+        // A section the root no longer lists (Statistics, from an older state file or Home) starts at the top.
+        if (std::find(section_order.begin(), section_order.end(), section) == section_order.end())
+            section = section_order[0];
     }
     void back() {
         if (from_home && (page == Page::Display || page == Page::Statistics)) {
@@ -639,24 +647,28 @@ struct Settings {
             focus = page == Page::Haptics ? 4 : 3;
             page = Page::Sound;
         } else if (page == Page::Motion) {
-            page = Page::DisplayOptions;
-            focus = 1;
+            page = Page::Appearance;
+            section = 0;
+            focus = 7; // Animations
         } else if (page == Page::Colours) {
             page = Page::Appearance;
             focus = 1;
         } else if (page == Page::Statistics) {
-            page = Page::Settings;
-            section = 7;
+            // Playtime is Home's (its bottom bar); it is no longer a Settings row.
+            from_home = false;
+            page = Page::Library;
             focus = 0;
         } else if (page == Page::Timezone) {
             page = Page::System;
             focus = 1;
         } else if (page == Page::Maintenance) {
-            page = Page::System;
-            focus = 5;
+            // Updates lives on the root only since the 2026-11-11 regroup.
+            page = Page::Settings;
+            section = 9;
+            focus = 0;
         } else if (page == Page::DeviceInfo) {
             page = Page::System;
-            focus = 4;
+            focus = 5; // Device information
         } else if (page == Page::Display) {
             page = Page::DisplayOptions;
             focus = 0;
@@ -670,15 +682,16 @@ struct Settings {
         }
     }
     void move(int delta) {
-        if (page == Page::Settings) section = section_order[size_t(std::clamp(section_row(section) + delta, 0, 11))];
-        else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 5);
-        else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 4);
+        if (page == Page::Settings)
+            section = section_order[size_t(std::clamp(section_row(section) + delta, 0, int(section_order.size()) - 1))];
+        else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 7);
+        else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 2);
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, library_rows - 1);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
         else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 6);
         else if (page == Page::Sound) focus = std::clamp(focus + delta, 0, sound_rows - 1);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
-        else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 4);
+        else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 3);
         else if (page == Page::System || page == Page::Display) focus = 0;
     }
     void enter() {
@@ -917,8 +930,9 @@ inline void save_preferences(const fs::path& path, Preferences p) {
           << "\nanimations=" << p.animations << "\nview_animations=" << p.view_animations
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
           << "\nlayout=" << p.layout << "\nartwork_provider="
-          << (p.artwork_provider == 3 ? std::string("screenscraper") : std::to_string(p.artwork_provider)) << "\ngame_info=" << p.game_info
-          << "\nauto_scrape=" << p.auto_scrape << "\nextra_pictures=" << p.extra_pictures << '\n';
+          << (p.artwork_provider == 3 ? std::string("screenscraper") : std::to_string(p.artwork_provider))
+          << "\ngame_info=" << p.game_info << "\nauto_scrape=" << p.auto_scrape
+          << "\nextra_pictures=" << p.extra_pictures << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';
     extra << "high_contrast=" << p.high_contrast << '\n';

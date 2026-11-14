@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Kiểm tra thông tin đăng nhập ScreenScrape
 ScreenScraper did not accept this login.	ScreenScraper không chấp nhận thông tin đăng nhập này.
 Your daily ScreenScraper quota has been reached.	Đã hết hạn mức ScreenScraper hôm nay.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	Không kết nối được ScreenScraper. Kiểm tra Wi-Fi rồi thử lại.
+Look & sound	Giao diện & âm thanh
+Device	Thiết bị
+Per system	Theo hệ máy
+Saves	Bản lưu
+Language & region	Ngôn ngữ & khu vực
+Just you	Chỉ mình bạn
+{0} profiles	{0} hồ sơ
+Buttons, shortcut and fast-forward	Nút, phím tắt và tua nhanh
+DS nickname	Biệt danh DS
+Join or host	Tham gia hoặc tạo phòng
+Host	Tạo phòng
+Sharing details	Thông tin chia sẻ
+Graphics saved.	Đã lưu đồ họa.
+Crisp	Sắc nét
+HD soft	HD mềm
+Heavy 3D scenes saved.	Đã lưu cảnh 3D nặng.
+Sharp	Sắc cạnh
+Smooth (3x and above)	Mịn (từ 3x trở lên)
+Heavy 3D scenes (2x and above)	Cảnh 3D nặng (từ 2x trở lên)
+Adaptive (holds 60 fps)	Thích ứng (giữ 60 fps)
+Always sharp	Luôn sắc cạnh
+Dim when idle	Làm mờ khi không dùng
+Sleep timer in games	Hẹn giờ ngủ trong game
+Graphics	Đồ họa
+System defaults	Mặc định hệ máy
+Switch game	Đổi game
+Your current game is saved before switching.	Game hiện tại sẽ được lưu trước khi đổi.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	Micro thật được bật theo mặc định. Thao tác thổi và đóng nắp đưa bạn về game trong hai giây. Thay đổi ngôn ngữ có hiệu lực sau khi khởi động lại. Chơi không dây cục bộ với một RG DS khác trên cùng Wi-Fi; lưu trạng thái và tua nhanh sẽ chờ khi phiên đang chạy.
+Development	Phát triển
+Could not save	Không thể lưu
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Độ phân giải 3D thật. 3x cân bằng chất lượng và tốc độ; 5x là thử nghiệm.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Mịn gộp các mẫu 3D ở độ phân giải của màn hình. Hình 2D vẫn sắc nét.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Thích ứng vẽ các cảnh 3D nặng ở độ phân giải gốc trong vài giây để giữ 60 fps. Áp dụng khi đang chơi.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Lấy mẫu lại hình 2D, chữ và menu. Sắc cạnh, Mịn và Sắc nét: màn hình 3D từ 2x trở lên. HD và HD mềm dựng lại cả hai màn hình, sắc cạnh ở mọi độ phân giải và với mọi bộ lọc màn hình; HD mềm còn làm mịn đổ bóng.
+Screen filters change the final picture, including 2D artwork.	Bộ lọc màn hình thay đổi hình ảnh cuối cùng, kể cả hình 2D.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Nên tắt để chuyển động mượt. Bỏ khung hình hiển thị có thể giúp các game nặng.
+The renderer currently running. Graphics changes apply during play.	Trình kết xuất đang chạy. Thay đổi đồ họa áp dụng khi đang chơi.
+Save a checkpoint and restart with your chosen graphics settings.	Lưu một điểm kiểm tra và khởi động lại với cài đặt đồ họa đã chọn.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Độ phân giải cao tốn thời gian GPU. Thay đổi áp dụng khi đang chơi; Gốc dùng kết xuất phần mềm.
+Per-game controls appear once a game is in your library.	Điều khiển riêng cho từng game xuất hiện khi game có trong thư viện.
+Looks through your games card again. It also runs by itself when games change.	Quét lại thẻ game của bạn. Cũng tự chạy khi game thay đổi.
+What each system's games share until a game says otherwise: bezel, screen, shader.	Những gì game của mỗi hệ máy dùng chung cho đến khi game đặt khác: khung viền, màn hình, bộ lọc.
+Save as system default	Lưu làm mặc định hệ máy
+Internal resolution	Độ phân giải nội bộ
+Remove game	Xóa game
+Auto-fetch new games	Tự động tải game mới
+Heavy 3D scenes	Cảnh 3D nặng
+Screen filter	Bộ lọc màn hình
+Running now	Đang chạy
+Smooth	Mịn
+Adaptive	Thích ứng
+Nothing on this shelf yet.	Kệ này chưa có gì.
+No cheats are on. Switch one on under All or Groups.	Không có mã gian lận nào đang bật. Hãy bật một mã trong Tất cả hoặc Nhóm.
+Pages zoom and fade in, like the DSi menu	Các trang phóng to và mờ dần như menu DSi
+Speed	Tốc độ
+Snappy	Nhanh nhạy
+Relaxed	Thong thả
+Quick, crisp transitions	Chuyển cảnh nhanh, sắc nét
+Slow, unhurried, very smooth transitions	Chuyển cảnh chậm rãi, rất mượt
+Balanced for everyday use	Cân bằng cho dùng hằng ngày
+Remove this game from the card? Its saves stay.	Xóa game này khỏi thẻ? Các bản lưu vẫn còn.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Hiện màn hình khởi động khi máy bật. Chạm vào đó hoặc nhấn A để tiếp tục.
+Lower the screens until you press a button	Hạ độ sáng màn hình cho đến khi bạn nhấn nút
+Sleep a game nobody is playing	Cho game không ai chơi đi ngủ
+Show a start screen; tap or press A to go on	Hiện màn hình khởi động; chạm hoặc nhấn A để tiếp tục
+Reopen the game you powered off from	Mở lại game bạn đã tắt nguồn
+Play with another RG DS on your Wi-Fi	Chơi với một RG DS khác trên Wi-Fi của bạn
+Could not save date format	Không thể lưu định dạng ngày
+Could not save time format	Không thể lưu định dạng giờ
+Could not save daylight saving	Không thể lưu giờ mùa hè
+Using the ROM's game code and filename.	Dùng mã trò chơi và tên tệp ROM.
+None for this game	Không có cho trò chơi này
+All off	Tắt hết
+Other cheats	Mã gian lận khác
+Choose a group	Chọn một nhóm
+Cheats that are on	Mã gian lận đang bật
+All cheats	Tất cả mã gian lận
+Cheats are available when a game runs with DSCore or RG DS Play.	Mã gian lận dùng được khi trò chơi chạy bằng DSCore hoặc RG DS Play.
+One at a time	Từng cái một
+No cheats match. Try a shorter word.	Không có mã gian lận khớp. Hãy thử từ ngắn hơn.
+No cheats are on.	Không có mã gian lận nào đang bật.
+No cheats in this group.	Không có mã gian lận trong nhóm này.
+No description in the database.	Không có mô tả trong cơ sở dữ liệu.
+Cheats on	Đang bật
+Groups	Nhóm
+Try a shorter word.	Hãy thử từ ngắn hơn.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Không tìm thấy mã gian lận cho trò chơi này. Hãy đặt tệp mã gian lận (GAME.cht, như RetroArch dùng) cạnh trò chơi hoặc trong userdata/play/cheats, rồi khởi động lại trò chơi.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Không tìm thấy mã gian lận cho trò chơi này. Hãy đặt cơ sở dữ liệu Action Replay (usrcheat.dat) cạnh các trò chơi hoặc trong userdata/emulators/rgds-experimental/cheats, rồi khởi động lại trò chơi.
+Search cheats	Tìm mã gian lận
+Type a cheat name…	Nhập tên mã gian lận…
+{0} cheat on	{0} mã gian lận đang bật
+{0} cheats on	{0} mã gian lận đang bật
+{0} cheat	{0} mã gian lận
+{0} cheats	{0} mã gian lận
+{0} on	{0} đang bật
+{0} matching cheat	{0} mã gian lận khớp
+{0} matching cheats	{0} mã gian lận khớp
+Press a button or direction. Anbernic / Escape cancels.	Nhấn một nút hoặc hướng. Anbernic / Escape để hủy.
+More…	Thêm…
+Reading your library…	Đang đọc thư viện của bạn…
+Other end	Đầu kia
+In library	Trong thư viện
+The memory card is read-only	Thẻ nhớ chỉ đọc
+Could not save game options	Không thể lưu tùy chọn trò chơi
+Recently played	Chơi gần đây
+Adjust volume	Chỉnh âm lượng
+Already in your library.	Đã có trong thư viện của bạn.
+One download at a time.	Mỗi lần chỉ tải một mục.
+One moment.	Chờ một chút.
+Saving before switching games…	Đang lưu trước khi đổi trò chơi…
+Applying graphics…	Đang áp dụng đồ họa…
+Free DS, GBA and NES games, picked for RG DS.	Trò chơi DS, GBA và NES miễn phí, chọn cho RG DS.
+Select Start	Select Start
+Native / software	Gốc / phần mềm
+Before / after	Trước / sau
+Downloading…	Đang tải xuống…
+Takes effect the next time the game starts.	Có hiệu lực vào lần khởi động trò chơi tiếp theo.
+Saved as the default for {0} games.	Đã lưu làm mặc định cho trò chơi {0}.
+Could not remove {0}	Không thể xóa {0}
+{0} removed	Đã xóa {0}
+Whole course	Cả đường đua
+Close up	Cận cảnh
+Charging	Đang sạc
+The map draws itself as you explore	Bản đồ tự vẽ khi bạn khám phá
+The course draws itself on the first lap	Đường đua tự vẽ ở vòng đầu tiên
+Storage	Bộ nhớ
+Measuring…	Đang đo …
+Saves & states	Lưu game và trạng thái
+Artwork & info	Bìa và thông tin
+Cache	Bộ nhớ đệm
+used	đã dùng
+free	còn trống
+Clear cache	Xóa bộ nhớ đệm
+ROMs, ports and homebrew.	ROM, bản port và homebrew.
+Save files, resume points and save states.	Tệp lưu, điểm tiếp tục và trạng thái đã lưu.
+Covers, screenshots and game details.	Bìa, ảnh chụp màn hình và chi tiết trò chơi.
+Your music folder.	Thư mục nhạc của bạn.
+Temporary files. Safe to clear.	Tệp tạm. Xóa an toàn.
+RG DS Core, its engines and settings.	RG DS Core, các công cụ và cài đặt.
+Everything else on the card, with the file system's own overhead.	Mọi thứ còn lại trên thẻ, kể cả phần chiếm dụng của hệ thống tệp.
+Room for more games.	Chỗ cho nhiều trò chơi hơn.

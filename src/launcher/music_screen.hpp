@@ -664,18 +664,6 @@ bool App::music_tick(Uint32 now) {
     return moving;
 }
 
-// The lower screen needs no drawing this frame: only the visualiser moved, and that is on the upper one.
-bool App::music_bottom_still(Uint32 now) {
-    if (mu.bottom_changed || pointer_down || touch_tail || picker_open || picker_closing() || view_motion.active() ||
-        mu.motion.active() || page_drag.active() || int32_t(micro_until - now) > 0 || now - mu.bottom_drawn_at >= 250 ||
-        now - gesture_flash_at < 300) {
-        mu.bottom_changed = false;
-        mu.bottom_drawn_at = now;
-        return false;
-    }
-    return true;
-}
-
 // ---- the upper screen
 
 // The visualiser's display: a dark window with a bezel, the picture in big pixels. On the equaliser page it is

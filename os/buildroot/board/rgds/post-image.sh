@@ -26,5 +26,8 @@ image() {  # image <name> <extlinux.conf> <device trees>
     gzip -kf6 $1.img
     echo "SD card image: $BINARIES_DIR/$1.img(.gz)"
 }
+# own_os_build.py --slot-only (make push): a handheld's other slot needs only the root filesystem, the kernel and the
+# device trees, so the two card images and their gzip are left out
+if [ "$RGDS_SLOT_ONLY" = 1 ]; then echo "slot only: no SD card images"; exit 0; fi
 image rgds-os extlinux.conf "$DTBS"
 image rgds-os-plus extlinux-plus.conf rk3568-anbernic-rg-ds-plus

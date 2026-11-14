@@ -423,10 +423,12 @@ extern "C" SDL_bool SDL_IsGameController(int index) {
                         std::string(identifier) + ",RGDS mainline," + faces +
                         ",back:b8,guide:b16,start:b9,leftstick:b10,rightstick:b11,leftshoulder:b4,rightshoulder:b5,dpup:b12,dpdown:b13,dpleft:b14,dpright:b15,lefttrigger:b6,righttrigger:b7,platform:Linux,";
                 } else if (rocknix_joypad(label)) {
+                    // The joypad reports both sticks (ABS_X/Y, ABS_RX/RY as a0-a3); without them SDL sends DSCore
+                    // no stick motion, so neither the pen nor the Controls stick rows move anything.
                     faces = "a:b1,b:b0,x:b2,y:b3";
                     mapping =
                         std::string(identifier) + ",RGDS mainline joypad," + faces +
-                        ",back:b8,guide:b10,start:b9,leftstick:b11,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:b13,dpdown:b14,dpleft:b15,dpright:b16,lefttrigger:b6,righttrigger:b7,platform:Linux,";
+                        ",back:b8,guide:b10,start:b9,leftstick:b11,rightstick:b12,leftshoulder:b4,rightshoulder:b5,dpup:b13,dpdown:b14,dpleft:b15,dpright:b16,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b6,righttrigger:b7,platform:Linux,";
                 }
                 configured[identifier] = add(mapping.c_str()) >= 0;
             }

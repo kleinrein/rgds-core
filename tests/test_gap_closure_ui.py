@@ -100,7 +100,8 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertEqual(r['render_file_reads'], 0)
 
     def test_automatic_download_setting_is_persisted(self):
-        self.run_ui(['Down'] * 6 + ['A'] + ['Down'] * 6 + ['A', 'Down', 'A'], mode='system')
+        # Updates is the root row under System since the settings regroup: back out of System, one Down, A.
+        self.run_ui(['B', 'Down', 'A'] + ['Down'] * 6 + ['A', 'Down', 'A'], mode='system')
         self.assertEqual(read_fields(self.data / 'experience.ini')['auto_update'], '2')
 
     def test_export_import_picker_has_no_duplicate_and_lists_archive(self):
@@ -145,9 +146,10 @@ class GapClosureUiTests(unittest.TestCase):
         self.assertFalse((self.data / 'session/game-menu.request').exists())
 
     def test_microphone_test_opens_and_returns_to_sound(self):
-        r = self.run_ui(['B', 'Down', 'A', 'Down', 'Down', 'A'], mode='settings')
+        # Sound sits right above Library on the grouped root (Look & sound, then Games).
+        r = self.run_ui(['B', 'Up', 'A', 'Down', 'Down', 'A'], mode='settings')
         self.assertEqual(r['page'], 32)
-        r = self.run_ui(['B', 'Down', 'A', 'Down', 'Down', 'A', 'B'], mode='settings')
+        r = self.run_ui(['B', 'Up', 'A', 'Down', 'Down', 'A', 'B'], mode='settings')
         self.assertEqual(r['page'], 11)
 
 

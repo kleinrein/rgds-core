@@ -65,25 +65,26 @@ class Font {
         std::map<unsigned, Glyph> glyphs;
         std::vector<unsigned char> alpha;
     };
-    std::map<int, std::unique_ptr<Atlas>> atlases;
+    std::map<int, std::unique_ptr<Atlas>> atlases, extras;
     static bool read32(std::ifstream& f, int32_t& out) {
         unsigned char b[4];
         if (!f.read(reinterpret_cast<char*>(b), 4)) return false;
         out = int32_t(b[0] | (unsigned(b[1]) << 8) | (unsigned(b[2]) << 16) | (unsigned(b[3]) << 24));
         return true;
     }
-    static std::unique_ptr<Atlas> load(int size) {
+    static std::unique_ptr<Atlas> load(const std::string& family, int size) {
         const char* directory = std::getenv("RGDS_FONT_DIR");
         if (!directory || !*directory) return nullptr;
-        std::ifstream file(std::string(directory) + "/rounded-" + std::to_string(size) + ".rgf", std::ios::binary);
+        std::ifstream file(std::string(directory) + "/rounded-" + family + std::to_string(size) + ".rgf",
+                           std::ios::binary);
         char magic[4];
         if (!file.read(magic, 4) || std::string(magic, 4) != "RGF1") return nullptr;
         auto a = std::make_unique<Atlas>();
         int32_t count = 0;
         if (!read32(file, a->width) || !read32(file, a->height) || !read32(file, a->ascent) || !read32(file, count))
             return nullptr;
-        if (a->width < 1 || a->width > 1024 || a->height < 1 || a->height > 2048 || a->ascent < 0 || a->ascent > 128 ||
-            count < 0 || count > 512)
+        if (a->width < 1 || a->width > 1024 || a->height < 1 || a->height > 4096 || a->ascent < 0 || a->ascent > 128 ||
+            count < 0 || count > 8192)
             return nullptr;
         for (int i = 0; i < count; i++) {
             int32_t cp = 0;
@@ -105,16 +106,44 @@ public:
     // Baked sizes only: 16, 20, 24, 28 and 36.
     const Atlas* atlas(int size) {
         auto found = atlases.find(size);
-        if (found == atlases.end()) found = atlases.emplace(size, load(size)).first;
+        if (found == atlases.end()) found = atlases.emplace(size, load("", size)).first;
         return found->second.get();
     }
+    // The CJK family the language needs (RGDS_HUD_FAMILY), or null.
+    const Atlas* extra(int size) {
+        const char* family = std::getenv("RGDS_HUD_FAMILY");
+        if (!family || !*family) return nullptr;
+        auto found = extras.find(size);
+        if (found == extras.end()) found = extras.emplace(size, load(std::string(family) + "-", size)).first;
+        return found->second.get();
+    }
+    // The glyph for a code point: the Latin atlas first, then the CJK family.
+    std::pair<const Atlas*, const Glyph*> find(int size, unsigned cp) {
+        for (const Atlas* a : {atlas(size), extra(size)}) {
+            if (!a) continue;
+            auto it = a->glyphs.find(cp);
+            if (it != a->glyphs.end()) return {a, &it->second};
+        }
+        return {nullptr, nullptr};
+    }
+    static std::vector<unsigned> decode(const std::string& text) {
+        std::vector<unsigned> out;
+        for (size_t i = 0; i < text.size();) {
+            unsigned char c = text[i];
+            int n = c < 0x80 ? 1 : (c >> 5) == 6 ? 2 : (c >> 4) == 14 ? 3 : (c >> 3) == 30 ? 4 : 1;
+            unsigned cp = n == 1 ? c : c & (0xffu >> (n + 1));
+            for (int k = 1; k < n && i + k < text.size(); k++) cp = (cp << 6) | (text[i + k] & 0x3fu);
+            out.push_back(cp);
+            i += n;
+        }
+        return out;
+    }
     float width(int size, const std::string& text) {
-        auto* a = atlas(size);
-        if (!a) return 0;
+        if (!atlas(size)) return 0;
         float total = 0;
-        for (unsigned char c : text) {
-            auto it = a->glyphs.find(c);
-            if (it != a->glyphs.end()) total += it->second.advance / 64.0f;
+        for (unsigned cp : decode(text)) {
+            auto found = find(size, cp);
+            if (found.second) total += found.second->advance / 64.0f;
         }
         return total;
     }
@@ -166,13 +195,13 @@ struct Canvas {
             }
     }
     int text(const std::string& value, float x, int y, int size, Rgb c) {
-        auto* a = font().atlas(size);
-        if (!a) return 0;
+        if (!font().atlas(size)) return 0;
         float pen = x;
-        for (unsigned char ch : value) {
-            auto it = a->glyphs.find(ch);
-            if (it == a->glyphs.end()) continue;
-            const auto& g = it->second;
+        for (unsigned cp : Font::decode(value)) {
+            auto found = font().find(size, cp);
+            if (!found.second) continue;
+            const auto* a = found.first;
+            const auto& g = *found.second;
             const int left = int(std::lround(pen + g.left)), top = y + a->ascent + g.top;
             for (int gy = 0; gy < g.h; gy++)
                 for (int gx = 0; gx < g.w; gx++) {
@@ -192,6 +221,11 @@ inline bool even_odd(const std::vector<std::pair<float, float>>& poly, float x, 
                     poly[i].first)
             in = !in;
     return in;
+}
+// A word from the runtime's translation (RGDS_HUD_<NAME>), else the English one.
+inline std::string word(const char* name, const char* fallback) {
+    const char* value = std::getenv(name);
+    return value && *value ? value : fallback;
 }
 inline bool ready() { return font().atlas(20) && font().atlas(16); }
 
@@ -241,7 +275,8 @@ inline bool volume(unsigned char* pixels, int level) {
     const int x = 108, y = 104, w = 424, h = 82;
     canvas.card(float(x), float(y), float(w), float(h), 20);
     speaker(canvas, x + 24, y + 14, 28, level);
-    canvas.text(level ? "Volume" : "Muted", float(x + 64), y + 14, 24, p.ink);
+    canvas.text(level ? word("RGDS_HUD_VOLUME", "Volume") : word("RGDS_HUD_MUTED", "Muted"), float(x + 64), y + 14, 24,
+                p.ink);
     const std::string percent = std::to_string(level) + "%";
     canvas.text(percent, x + w - 24 - font().width(24, percent), y + 14, 24, level ? p.accent : p.muted);
     const float bx = float(x + 24), by = float(y + 57), bw = float(w - 48), bh = 10;
@@ -269,7 +304,7 @@ inline bool fast_forward(unsigned char* pixels) {
     if (!ready()) return false;
     Canvas canvas{pixels};
     auto& p = palette();
-    const float w = 34 + font().width(20, "Fast") + 30;
+    const float w = 34 + font().width(20, word("RGDS_HUD_FAST", "Fast")) + 30;
     canvas.card(24, 420, w, 38, 19);
     for (int n = 0; n < 2; n++) {
         const float x = 40 + n * 13;
@@ -277,7 +312,7 @@ inline bool fast_forward(unsigned char* pixels) {
         canvas.shape(int(x) - 1, 419 + 8, int(x) + 13, 459 - 8, p.accent,
                      [&](float px, float py) { return even_odd(triangle, px, py); });
     }
-    canvas.text("Fast", 72, 420 + 7, 20, p.ink);
+    canvas.text(word("RGDS_HUD_FAST", "Fast"), 72, 420 + 7, 20, p.ink);
     return true;
 }
 }

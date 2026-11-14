@@ -11,6 +11,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE_EXPORTS = {
@@ -66,6 +67,25 @@ def validate_build(directory):
         if digest(directory / name) != info.get("sha256"):
             raise ValueError("RGDS build changed after compilation: " + name)
     return record
+
+
+def up_to_date(target, directory, commands, sources):
+    """The last build's record names these exact sources and compile commands, and its binaries are untouched."""
+    try:
+        record = json.loads((directory / "build.json").read_text())
+    except (OSError, ValueError):
+        return False
+    if record.get("sources") != sources or record.get("commands") != commands:
+        return False
+    if target == "device" and record.get("compiler") != subprocess.check_output(["zig", "version"], text=True).strip():
+        return False
+    artifacts = record.get("artifacts", {})
+    if set(artifacts) != {Path(name).name for name in commands}:
+        return False
+    return all(
+        (directory / name).is_file() and digest(directory / name) == info.get("sha256")
+        for name, info in artifacts.items()
+    )
 
 
 def publish(candidates, record, directory):
@@ -133,29 +153,52 @@ def build(target):
     sources = source_snapshot()
     candidates = {}
     commands = {}
+    jobs = [(output, "src/launcher/main.cpp", [])]
+    if target == "device":
+        jobs.append(
+            (
+                output.parent / "librgdsbridge.so", "src/platform/emulator_bridge.cpp",
+                ["-shared", "-fPIC", "-Wl,--version-script=" + str(ROOT / "tools/bridge.exports")]
+            )
+        )
+    expected = {
+        destination.name: cmd + extra + includes + ["-Isrc", source, "-o", destination.name]
+        for destination, source, extra in jobs
+    }
+    # A make image / make push with nothing changed skips the launcher's 3-minute -O3 -flto compile.
+    # RGDS_REBUILD=1 compiles anyway.
+    if not os.environ.get("RGDS_REBUILD") and up_to_date(target, output.parent, expected, sources):
+        print(f"{output.relative_to(ROOT)} is up to date.", flush=True)
+        return
     print(f"Building {target}: {output.relative_to(ROOT)}", flush=True)
     try:
-        jobs = [(output, "src/launcher/main.cpp", [])]
-        if target == "device":
-            jobs.append(
-                (
-                    output.parent / "librgdsbridge.so", "src/platform/emulator_bridge.cpp",
-                    ["-shared", "-fPIC", "-Wl,--version-script=" + str(ROOT / "tools/bridge.exports")]
-                )
-            )
         for destination, source, extra in jobs:
             fd, candidate = tempfile.mkstemp(
                 prefix=".launcher-" if destination == output else ".bridge-", dir=output.parent
             )
             os.close(fd)
             candidates[destination] = Path(candidate)
-            command = cmd + extra + includes + ["-Isrc", source, "-o", candidate]
-            subprocess.run(command, cwd=ROOT, env=env, check=True)
+        # The launcher and the bridge compile side by side; the pair is published only if both succeed.
+        with ThreadPoolExecutor(len(jobs)) as pool:
+            futures = [
+                pool.submit(
+                    subprocess.run,
+                    cmd + extra + includes +
+                    ["-Isrc", source, "-o", str(candidates[destination])],
+                    cwd=ROOT,
+                    env=env,
+                    check=True
+                ) for destination, source, extra in jobs
+            ]
+        for future in futures:
+            future.result()
+        for destination, source, extra in jobs:
+            candidate = str(candidates[destination])
             # Crash records name the launcher's build id. Zig 0.13 writes no build id into a shared library, so the
             # bridge is only stripped.
             if objcopy and destination == output: keep_symbols(objcopy, Path(candidate), destination.name)
             elif objcopy: subprocess.run([objcopy, "--strip-all", candidate], check=True)
-            commands[destination.name] = command[:-1] + [destination.name]
+            commands[destination.name] = expected[destination.name]
         if source_snapshot() != sources:
             raise ValueError("Sources changed during compilation; rebuild once edits settle")
         record = {

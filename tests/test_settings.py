@@ -87,12 +87,12 @@ class SettingsTests(unittest.TestCase):
     def test_touch_choices_save_immediately_and_persist_on_next_launch(self):
         result = self.run_preview(
             """20 key S
-60 click 240 128
+60 click 240 240
 100 click 520 129
 140 click 500 375
 180 click 350 375
 220 click 72 452
-260 click 240 211
+260 click 240 322
 300 click 240 128
 340 click 72 452
 380 click 72 452
@@ -269,11 +269,11 @@ class SettingsTests(unittest.TestCase):
 
     def test_settings_scrollbar_reaches_system_and_footer_keeps_focus_visible(self):
         self.run_preview(
-            "20 tap 614 130\n60 drag 614 410\n100 release\n140 click 160 138\n180 click 72 452\n220 click 550 452\n",
+            "20 tap 614 130\n60 drag 614 410\n100 release\n140 click 160 200\n180 click 72 452\n220 click 550 452\n",
             extra=("--settings",)
         )
-        # At the end of the twelve-row list the first whole row is Controls (section 6, Page::Controls = 25).
-        self.assertIn("\n25 6 ", self.state.read_text(), self.state.read_text())
+        # At the end of the grouped root (docs/SETTINGS_PLAN.md) the first whole row is System (section 5, Page::System = 9).
+        self.assertIn("\n9 5 ", self.state.read_text(), self.state.read_text())
         self.assertFalse(self.system_prefs.exists())
 
     def test_in_game_shader_button_opens_options_for_the_active_engine(self):
@@ -383,18 +383,20 @@ class SettingsTests(unittest.TestCase):
 40 key Right
 60 key Right
 80 key A
-100 key Down
-120 key A
-140 key Right
-180 key Right
-200 key A
-220 key Down
-230 key Down
-240 key Down
-260 key Right
-300 key Down
-330 key Down
-340 key Return
+120 key Down
+140 key Down
+160 key Down
+180 key A
+200 key Right
+240 key Right
+260 key A
+300 key Up
+320 key Right
+360 key Down
+370 key Down
+380 key Down
+390 key Down
+400 key Return
 900 key Escape
 1100 key Escape
 1300 key Escape
@@ -430,11 +432,12 @@ class SettingsTests(unittest.TestCase):
         self.assertIn("power=1\n", self.system_prefs.read_text())  # one step down from Balanced: there is no Stock
 
     def test_dim_and_game_sleep_timers_are_saved_only_when_changed(self):
-        # rows 2 and 3 sit under Menu idle sleep, each with a picker; the default dim (1 min) is not written
+        # rows 4 and 5 (Dim when idle, Sleep timer in games) sit under Menu idle sleep in the Sleep group, each with a
+        # picker; the default dim (1 min) is not written
         self.run_preview("20 key A\n40 key Right\n60 key A\n", extra=("--settings", "--section", "power"))
         self.assertNotIn("dim=", self.system_prefs.read_text())
         self.run_preview(
-            "100 key Down\n140 key Down\n180 key A\n220 key Right\n260 key A\n300 key Down\n340 key A\n"
+            "100 key Down\n120 key Down\n140 key Down\n160 key Down\n180 key A\n220 key Right\n260 key A\n300 key Down\n340 key A\n"
             "380 key Right\n420 key Right\n460 key A\n",
             extra=("--settings", "--section", "power")
         )
@@ -443,7 +446,7 @@ class SettingsTests(unittest.TestCase):
         self.assertIn("game_sleep=2\n", saved)
         # back to the default: the line goes, the other choice stays
         self.run_preview(
-            "100 key Down\n140 key Down\n180 key A\n220 key Left\n260 key A\n",
+            "100 key Down\n120 key Down\n140 key Down\n160 key Down\n180 key A\n220 key Left\n260 key A\n",
             extra=("--settings", "--section", "power")
         )
         self.assertNotIn("dim=", self.system_prefs.read_text())

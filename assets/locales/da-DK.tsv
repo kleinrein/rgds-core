@@ -1478,3 +1478,144 @@ Check your ScreenScraper login.	Tjek dit ScreenScraper-login.
 ScreenScraper did not accept this login.	ScreenScraper godkendte ikke dette login.
 Your daily ScreenScraper quota has been reached.	Din daglige ScreenScraper-kvote er brugt op.
 Could not reach ScreenScraper. Check Wi-Fi and try again.	Kan ikke nå ScreenScraper. Tjek Wi-Fi, og prøv igen.
+Look & sound	Udseende og lyd
+Device	Enhed
+Per system	Pr. system
+Saves	Gemte spil
+Language & region	Sprog og område
+Just you	Kun dig
+{0} profiles	{0} profiler
+Buttons, shortcut and fast-forward	Knapper, genvej og fremspoling
+DS nickname	DS-kaldenavn
+Join or host	Deltag eller vær vært
+Host	Vært
+Sharing details	Delingsoplysninger
+Graphics saved.	Grafik gemt.
+Crisp	Knivskarp
+HD soft	HD blød
+Heavy 3D scenes saved.	Tunge 3D-scener gemt.
+Sharp	Skarp
+Smooth (3x and above)	Blød (3x og derover)
+Heavy 3D scenes (2x and above)	Tunge 3D-scener (2x og derover)
+Adaptive (holds 60 fps)	Adaptiv (holder 60 fps)
+Always sharp	Altid skarp
+Dim when idle	Dæmp ved inaktivitet
+Sleep timer in games	Dvaletimer i spil
+Graphics	Grafik
+System defaults	Systemstandarder
+Switch game	Skift spil
+Your current game is saved before switching.	Dit nuværende spil gemmes, før du skifter.
+Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.	Den rigtige mikrofon er slået til som standard. Blæse- og låghandlinger vender tilbage til spillet i to sekunder. Sprogændringer træder i kraft efter genstart. Lokal trådløs spiller med en anden RG DS på samme Wi-Fi; save states og fremspoling venter, mens en session kører.
+Development	Udvikling
+Could not save	Kunne ikke gemme
+True 3D resolution. 3x balances quality and speed; 5x is experimental.	Ægte 3D-opløsning. 3x giver balance mellem kvalitet og hastighed; 5x er eksperimentel.
+Smooth combines 3D samples at the panel resolution. 2D artwork stays crisp.	Blød kombinerer 3D-samples i skærmens opløsning. 2D-grafik forbliver skarp.
+Adaptive renders heavy 3D scenes at native for a few seconds to hold 60 fps. Applies during play.	Adaptiv renderer tunge 3D-scener i native opløsning i nogle sekunder for at holde 60 fps. Gælder under spil.
+Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.	Resampler 2D-grafik, tekst og menuer. Skarp, Blød og Knivskarp: 3D-skærmen ved 2x og derover. HD og HD blød genopbygger begge skærme, skarpt ved enhver opløsning og under ethvert skærmfilter; HD blød udjævner også skygger.
+Screen filters change the final picture, including 2D artwork.	Skærmfiltre ændrer det endelige billede, også 2D-grafik.
+Keep off for smooth motion. Skipping display frames can help demanding games.	Hold slået fra for jævn bevægelse. Overspringning af billeder kan hjælpe krævende spil.
+The renderer currently running. Graphics changes apply during play.	Den renderer, der kører lige nu. Grafikændringer gælder under spil.
+Save a checkpoint and restart with your chosen graphics settings.	Gem et kontrolpunkt og genstart med dine valgte grafikindstillinger.
+Higher resolution costs GPU time. Changes apply during play; Native uses software rendering.	Højere opløsning koster GPU-tid. Ændringer gælder under spil; Native bruger softwarerendering.
+Per-game controls appear once a game is in your library.	Kontroller for det enkelte spil vises, når et spil er i dit bibliotek.
+Looks through your games card again. It also runs by itself when games change.	Gennemsøger dit spilkort igen. Det kører også automatisk, når spil ændres.
+What each system's games share until a game says otherwise: bezel, screen, shader.	Det, hvert systems spil deler, indtil et spil siger andet: ramme, skærm, shader.
+Save as system default	Gem som systemstandard
+Internal resolution	Intern opløsning
+Remove game	Fjern spil
+Auto-fetch new games	Hent nye spil automatisk
+Heavy 3D scenes	Tunge 3D-scener
+Screen filter	Skærmfilter
+Running now	Kører nu
+Smooth	Blød
+Adaptive	Adaptiv
+Nothing on this shelf yet.	Ingenting på denne hylde endnu.
+No cheats are on. Switch one on under All or Groups.	Ingen snydekoder er slået til. Slå en til under Alle eller Grupper.
+Pages zoom and fade in, like the DSi menu	Sider zoomer og toner ind, som i DSi-menuen
+Speed	Hastighed
+Snappy	Adræt
+Relaxed	Afslappet
+Quick, crisp transitions	Hurtige, skarpe overgange
+Slow, unhurried, very smooth transitions	Langsomme, rolige, meget bløde overgange
+Balanced for everyday use	Afbalanceret til daglig brug
+Remove this game from the card? Its saves stay.	Fjern dette spil fra kortet? Gemte data beholdes.
+Show a start screen when the handheld turns on. Tap it or press A to continue.	Vis en startskærm, når håndholdte tændes. Tryk på den eller tryk A for at fortsætte.
+Lower the screens until you press a button	Sænk skærmene, indtil du trykker på en knap
+Sleep a game nobody is playing	Send et spil i dvale, som ingen spiller
+Show a start screen; tap or press A to go on	Vis en startskærm; tryk eller tryk A for at fortsætte
+Reopen the game you powered off from	Genåbn det spil, du slukkede fra
+Play with another RG DS on your Wi-Fi	Spil med en anden RG DS på dit Wi-Fi
+Could not save date format	Kunne ikke gemme datoformat
+Could not save time format	Kunne ikke gemme tidsformat
+Could not save daylight saving	Kunne ikke gemme sommertid
+Using the ROM's game code and filename.	Bruger spillets ROM-kode og filnavn.
+None for this game	Ingen til dette spil
+All off	Alle fra
+Other cheats	Andre snydekoder
+Choose a group	Vælg en gruppe
+Cheats that are on	Snydekoder der er til
+All cheats	Alle snydekoder
+Cheats are available when a game runs with DSCore or RG DS Play.	Snydekoder er tilgængelige, når et spil kører med DSCore eller RG DS Play.
+One at a time	Én ad gangen
+No cheats match. Try a shorter word.	Ingen snydekoder passer. Prøv et kortere ord.
+No cheats are on.	Ingen snydekoder er til.
+No cheats in this group.	Ingen snydekoder i denne gruppe.
+No description in the database.	Ingen beskrivelse i databasen.
+Cheats on	Snydekoder til
+Groups	Grupper
+Try a shorter word.	Prøv et kortere ord.
+No cheats were found for this game. Put its cheat file (GAME.cht, as RetroArch uses) beside the game or in userdata/play/cheats, then start the game again.	Der blev ikke fundet nogen snydekoder til dette spil. Læg dets snydekodefil (GAME.cht, som RetroArch bruger) ved siden af spillet eller i userdata/play/cheats, og start spillet igen.
+No cheats were found for this game. Put an Action Replay database (usrcheat.dat) beside your games or in userdata/emulators/rgds-experimental/cheats, then start the game again.	Der blev ikke fundet nogen snydekoder til dette spil. Læg en Action Replay-database (usrcheat.dat) ved siden af dine spil eller i userdata/emulators/rgds-experimental/cheats, og start spillet igen.
+Search cheats	Søg i snydekoder
+Type a cheat name…	Skriv et navn på en snydekode…
+{0} cheat on	{0} snydekode til
+{0} cheats on	{0} snydekoder til
+{0} cheat	{0} snydekode
+{0} cheats	{0} snydekoder
+{0} on	{0} til
+{0} matching cheat	{0} matchende snydekode
+{0} matching cheats	{0} matchende snydekoder
+Press a button or direction. Anbernic / Escape cancels.	Tryk på en knap eller retning. Anbernic / Escape annullerer.
+More…	Mere…
+Reading your library…	Læser dit bibliotek…
+Other end	Anden ende
+In library	I biblioteket
+The memory card is read-only	Hukommelseskortet er skrivebeskyttet
+Could not save game options	Kunne ikke gemme spilindstillinger
+Recently played	Senest spillet
+Adjust volume	Juster lydstyrke
+Already in your library.	Findes allerede i dit bibliotek.
+One download at a time.	Én download ad gangen.
+One moment.	Et øjeblik.
+Saving before switching games…	Gemmer, før der skiftes spil…
+Applying graphics…	Anvender grafik…
+Free DS, GBA and NES games, picked for RG DS.	Gratis DS-, GBA- og NES-spil, udvalgt til RG DS.
+Select Start	Select Start
+Native / software	Nativ / software
+Before / after	Før / efter
+Downloading…	Downloader…
+Takes effect the next time the game starts.	Træder i kraft, næste gang spillet starter.
+Saved as the default for {0} games.	Gemt som standard for {0}-spil.
+Could not remove {0}	Kunne ikke fjerne {0}
+{0} removed	{0} fjernet
+Whole course	Hele banen
+Close up	Tæt på
+Charging	Oplader
+The map draws itself as you explore	Kortet tegner sig selv, mens du udforsker
+The course draws itself on the first lap	Banen tegner sig selv på første omgang
+Storage	Lager
+Measuring…	Måler …
+Saves & states	Gem og tilstande
+Artwork & info	Omslag og info
+Cache	Cache
+used	brugt
+free	ledig
+Clear cache	Ryd cache
+ROMs, ports and homebrew.	ROM'er, porte og homebrew.
+Save files, resume points and save states.	Gemte spil, genoptagelsespunkter og gemte tilstande.
+Covers, screenshots and game details.	Omslag, skærmbilleder og spiloplysninger.
+Your music folder.	Din musikmappe.
+Temporary files. Safe to clear.	Midlertidige filer. Sikre at rydde.
+RG DS Core, its engines and settings.	RG DS Core, dens motorer og indstillinger.
+Everything else on the card, with the file system's own overhead.	Alt andet på kortet, med filsystemets eget overhead.
+Room for more games.	Plads til flere spil.

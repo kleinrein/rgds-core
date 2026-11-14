@@ -139,13 +139,13 @@ void App::shoulder_tab(SDL_Renderer* r, int y, bool right, const std::string& ke
 }
 
 std::string App::system_row_name(int row) const {
-    static const std::array<const char*, 9> names = {"Language",           "Timezone",        "Daylight saving",
-                                                     "Date format",        "Time format",     "Device information",
-                                                     "Updates & recovery", "Return to stock", "Touch to continue"};
-    if (row == (o.rgds_os ? 8 : 9)) return "Run setup again";
-    if (row == 7 && o.rgds_os) return "Touch to continue";
-    if (row == 7 && o.independent) return "Restart menu";
-    return names[size_t(std::clamp(row, 0, 8))];
+    static const std::array<const char*, 8> names = {"Language",        "Timezone",         "Daylight saving",
+                                                     "Date format",     "Time format",      "Device information",
+                                                     "Return to stock", "Touch to continue"};
+    if (row == (o.rgds_os ? 7 : 8)) return "Run setup again";
+    if (row == 6 && o.rgds_os) return "Touch to continue";
+    if (row == 6 && o.independent) return "Restart menu";
+    return names[size_t(std::clamp(row, 0, 7))];
 }
 
 void App::feedback_arc(SDL_Renderer* r, int x, int y, int radius, double start, double amount, Color ink, int alpha,
