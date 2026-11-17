@@ -13,7 +13,6 @@ const pub = join(site, 'public');
 // these names, so a strip of another size stops the build: check its order and captions, then
 // update the size here and the image sizes in index.astro.
 const strips = {
-  'screens.png': { width: 1800, height: 643, names: ['home', null, 'pause'] },
   'second-screen.png': { width: 1920, height: 514, names: ['pokemon', 'sma4', 'circuit', 'mk64'] },
   'library.png': { width: 1440, height: 514, names: ['cartridges', 'covers', 'list'] },
 };
@@ -39,6 +38,21 @@ for (const [file, { width: expectedWidth, height: expectedHeight, names }] of Ob
     .webp({ quality: 88 })
     .toFile(shot(name))));
 }
+
+// Full-size handheld renders (1384x1471, backdrop around the device): trim to the handheld.
+const renders = { home: 'site-home.webp', systems: 'site-systems.webp' };
+await Promise.all(Object.entries(renders).map(async ([name, file]) => {
+  const path = join(repo, 'docs/images', file);
+  const { width, height } = await sharp(path).metadata();
+  if (width !== 1384 || height !== 1471) {
+    throw new Error(`docs/images/${file} is ${width}x${height}, expected 1384x1471.`);
+  }
+  await sharp(path)
+    .extract({ left: 104, top: 104, width: 1176, height: 1264 })
+    .resize({ width: 1168 })
+    .webp({ quality: 88 })
+    .toFile(shot(name));
+}));
 
 // Link preview for social sites: 1200x630 PNG, which they all read.
 const [home, circuit] = await Promise.all(['home', 'circuit'].map((name) =>
