@@ -22,6 +22,7 @@ import os
 from pathlib import Path
 import secrets
 import socket
+import socketserver
 import sys
 import threading
 import time
@@ -213,6 +214,12 @@ class Server(ThreadingHTTPServer):
         self.busy = 0
         self.file_locks = {}
         self.lock = threading.Lock()
+
+    def server_bind(self):
+        # HTTPServer.server_bind asks socket.getfqdn() for a name nothing here uses; that reverse
+        # lookup can block for a minute without working DNS (handheld offline, CI runners).
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = 'localhost', self.server_address[1]
 
     def file_lock(self, path):
         with self.lock:

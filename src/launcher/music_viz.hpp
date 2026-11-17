@@ -801,7 +801,7 @@ private:
         hue_clock += dt * .01f;
         for (int y = 0; y < height * 7 / 10; y++)
             for (int x = (y * 7) % 13; x < width; x += 13) {
-                const uint32_t h = uint32_t(x * 73856093) ^ uint32_t(y * 19349663);
+                const uint32_t h = uint32_t(x) * 73856093u ^ uint32_t(y) * 19349663u;
                 if (h % 11 == 0) put(x, y, mix(back, bright, .25f + .35f * (.5f + .5f * std::sin(clock * 2 + float(h % 97)))));
             }
         for (int k = 0; k < 3; k++) {
@@ -877,7 +877,7 @@ private:
                 if (float(y) < horizon) {
                     const float t = float(y) / horizon;
                     colour = mix(rgb(10, 3, 38), rgb(255, 54, 152), t * t * (.85f + flash * .1f));
-                    const uint32_t star = uint32_t(x * 73856093) ^ uint32_t(y * 19349663);
+                    const uint32_t star = uint32_t(x) * 73856093u ^ uint32_t(y) * 19349663u;
                     if (t < .55f && star % 233 == 0) colour = mix(colour, bright, .6f);
                     const float d = std::hypot(float(x) - cx, float(y) - sun_y);
                     if (d < sun_r) {
