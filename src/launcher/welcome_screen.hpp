@@ -490,7 +490,10 @@ void App::welcome_top(SDL_Renderer* r, int y) {
         welcome_top_heading(r, y, "What do you want to play?", "You can change this later in Settings > Library.");
         if (!preferences.show_systems) welcome_system_icon(r, "nds", 256, y + 220, 128);
         else {
-            static const std::array<const char*, 8> ids = {"nds", "gba", "gb", "snes", "md", "psx", "n64", "3ds"};
+            // 3DS only where its engine is (the session passes its folder then): the PSP takes its place otherwise
+            const bool ctr = o.preview || std::any_of(o.system_roots.begin(), o.system_roots.end(),
+                                                      [](const auto& root) { return root.first == "3ds"; });
+            const std::array<const char*, 8> ids = {"nds", "gba", "gb", "snes", "md", "psx", "n64", ctr ? "3ds" : "psp"};
             for (int i = 0; i < 8; i++)
                 welcome_system_icon(r, ids[size_t(i)], 148 + (i % 4) * 88, y + 204 + (i / 4) * 88, 80);
         }

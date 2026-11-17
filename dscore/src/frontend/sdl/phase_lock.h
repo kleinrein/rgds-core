@@ -47,6 +47,11 @@ public:
     double band_max_ns = 8.0e6;             // nor grows above it
     double band_bump_ns = 0.5e6;            // what a missed tick adds
     double band_decay = 1.0 - 1.0 / 4096.0; // per flip; halves in ~47 s at 60 Hz
+    // A missed tick leaves a floor at the band it raised: the band decays to it and no further, and the floor itself
+    // relaxes far more slowly. Without it the band hunted: it decayed into the panel's own deadline, missed, took a
+    // step, and decayed again, one dropped frame every 5 s on the RG DS bottom panel, whose flip must be issued about
+    // 4.2 ms before its vblank (14 November 2026).
+    double floor_decay = 1.0 - 1.0 / 32768.0; // per flip; halves in ~6 min at 60 Hz
     double period_alpha = 1.0 / 32.0;       // period EMA weight
     double period_tol = 0.02;               // a gap this close to the EMA counts as consistent
     int settle_flips = 8;                   // consistent gaps before the lock is trusted
@@ -113,8 +118,7 @@ public:
       // A free-running frame: no tick was aimed at. The band still relaxes,
       // or the misses that dropped the lock would keep it out for good (its
       // lead is tested against the band before it may lock again).
-      band_ *= p_.band_decay;
-      if (band_ < p_.band_min_ns) band_ = p_.band_min_ns;
+      relax();
       return;
     }
     // Its tick on this panel, and whether the flip was taken there or after.
@@ -128,6 +132,7 @@ public:
       if (!e->late && !e->engaging && wait_ns < 500'000) {
         ++late_;
         band_ = band_ + p_.band_bump_ns < p_.band_max_ns ? band_ + p_.band_bump_ns : p_.band_max_ns;
+        if (band_ > floor_) floor_ = band_;
       }
       // Where the frames started since will land, given this flip: one that
       // is ready before the flip before it is held and takes the tick after
@@ -160,8 +165,7 @@ public:
       const double rebased = tick_after(0, prev - period * 0.5);
       if (rebased > target_) target_ = rebased;
     } else {
-      band_ *= p_.band_decay;
-      if (band_ < p_.band_min_ns) band_ = p_.band_min_ns;
+      relax();
     }
   }
 
@@ -246,6 +250,7 @@ public:
   bool locked() const { return consistent_ >= p_.settle_flips && period_ema_ > 0.0; }
   double period_ns() const { return period_ema_; }
   double band_ns() const { return band_; }
+  double band_floor_ns() const { return floor_; } // the band the last missed ticks left (relaxing)
   // Start to swap, as the deadline uses it: the mean plus work_spread deviations, capped.
   double work_ns() const {
     const double extra = work_dev_ * p_.work_spread;
@@ -326,6 +331,14 @@ private:
     if (k == 1.0) period_ema_ += (g - period_ema_) * p_.period_alpha;
   }
 
+  // A flip on time: the band relaxes towards the floor the misses left, and the floor towards the minimum.
+  void relax() {
+    floor_ *= p_.floor_decay;
+    if (floor_ < p_.band_min_ns) floor_ = p_.band_min_ns;
+    band_ *= p_.band_decay;
+    if (band_ < floor_) band_ = floor_;
+  }
+
   Params p_;
   Panel panels_[PANELS];
   Start ring_[RING];
@@ -334,6 +347,7 @@ private:
   double period_ema_ = 0.0;
   int consistent_ = 0;
   double band_;
+  double floor_ = 0.0; // relax() raises it to band_min_ns
   double work_ema_ = 0.0, work_dev_ = 0.0;
   double emu_ema_ = 0.0; // emulation time per frame, from back-to-back starts
   u64 last_start_ = 0;

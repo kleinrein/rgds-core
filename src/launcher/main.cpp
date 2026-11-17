@@ -961,6 +961,7 @@ class App {
     Uint32 input_guard_until = 0;
     std::string worker_action, username, password, edit_buffer, service_notice;
     int edit_field = 0, key_row = 0, key_col = 0, key_layer = 0;
+    bool secret_shown = false; // a password field (edit_field 1 or 2) shows its characters: L or the Show pill
     bool key_caps = false;
     size_t edit_cursor = 0;
     bool service_loaded = false;
@@ -2977,6 +2978,7 @@ class App {
     void music_display(SDL_Renderer* r, int x, int y, int w, int h, bool curve);
     void music_progress(SDL_Renderer* r, int x, int y, int w, int64_t position, int64_t duration, bool knob);
     void music_top(SDL_Renderer* r, int y);
+    void music_shoulders(SDL_Renderer* r, int y);
     void music_home_top(SDL_Renderer* r, int y);
     void music_header(SDL_Renderer* r, int y, const std::string& title, bool translate, int width);
     void music_tool(SDL_Renderer* r, int x, int y, MusicGlyph glyph, bool pressed, bool lit);

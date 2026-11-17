@@ -559,18 +559,17 @@ class Engine {
         if (!count) return;
         request(Ask::Load, std::clamp(index, 0, int(count) - 1), ms);
     }
-    void step(int direction) {
+    // `restart`: going back first rewinds a song that has played three seconds (the previous button, headset keys).
+    // The shoulder buttons name the song they go to, so theirs always moves.
+    void step(int direction, bool restart = true) {
         size_t count = 0;
         queue_at(0, &count);
         if (!count) return;
         int index = std::max(0, current.index);
-        if (direction < 0 && published_position() > 3000) return request(Ask::Seek, 0, 0);
-        index += direction;
-        if (index >= int(count)) {
-            if (repeat.load() != Repeat::All) return;
-            index = 0;
-        }
-        if (index < 0) index = repeat.load() == Repeat::All ? int(count) - 1 : 0;
+        if (direction < 0 && restart && published_position() > 3000) return request(Ask::Seek, 0, 0);
+        // A skip by hand goes round the queue: past the last song is the first, before the first is the last. Only
+        // the queue running out on its own stops at the end (unless Repeat all is on).
+        index = (index + direction + int(count)) % int(count);
         request(Ask::Load, index, 0);
         now.queue_serial++;
     }
@@ -610,6 +609,7 @@ class Engine {
         else if (verb == "stop") stop();
         else if (verb == "next") step(1);
         else if (verb == "prev") step(-1);
+        else if (verb == "back") step(-1, false);
         else if (verb == "jump") {
             int index = 0;
             words >> index;
@@ -644,9 +644,7 @@ class Engine {
             // The system volume already sets the DAC (runtime/audio.py), so the music plays at full scale on top
             // of it. A second curve here, as the menu's sounds have, left songs far quieter than games. Only the
             // lowest steps taper a little further, down to -9 dB at 1%, where the DAC's floor is still loud.
-            master.store(level == 0 ? 0.f
-                                    : level >= 25 ? 1.f
-                                                  : std::pow(10.f, -float(25 - level) / 24 * 9 / 20));
+            master.store(level == 0 ? 0.f : level >= 25 ? 1.f : std::pow(10.f, -float(25 - level) / 24 * 9 / 20));
         } else if (verb == "rescan") start_scan();
         else if (verb == "quit") stop_requested.store(true);
     }

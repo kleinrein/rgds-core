@@ -2105,6 +2105,8 @@ sdl_ready:
   // than one frame of latency.
   bool pace_fits = true;
   u64 pace_valve_mark = 0, pace_valve_late = 0, pace_free_until = 0, pace_valve_trips = 0;
+  double hires_wait_sum_ms = 0.0, hires_wait_max_ms = 0.0; // the 3D image's wait, per frame ("hires wait" at exit)
+  u64 hires_wait_frames = 0, hires_wait_over = 0;
   double pace_err_abs = 0.0; // sum of |lat - band| over locked frames with a sample, ns
   u64 pace_err_n = 0;
   u64 flip_seen[2] = {0, 0};     // newest flip number taken from each window
@@ -3109,6 +3111,12 @@ sdl_ready:
       if (adaptive_on && adaptive_from_ms < 0 && r3d.hires_active()) adaptive_from_ms = now_ms + grace_ms;
       const double gpu_wait =
           static_cast<double>(nds.gpu.take_hires_wait_ns()) / 1e6; // this frame's, taken every frame
+      if (r3d.hires_active()) {
+        hires_wait_sum_ms += gpu_wait;
+        if (gpu_wait > hires_wait_max_ms) hires_wait_max_ms = gpu_wait;
+        if (gpu_wait > 0.5) ++hires_wait_over;
+        ++hires_wait_frames;
+      }
       if (adaptive_on && r3d.hires_active() && !(fast && ff_speed <= 0) && now_ms >= adaptive_from_ms) {
         // What the frame cost, not its wait for a present thread held for the flip before it: that wait is free
         // pacing's, and lower resolution would not shorten it.
@@ -3389,6 +3397,12 @@ sdl_ready:
     VLOG("rt relief: %u of %llu frames gave time back, %.0f us each on those\n", relief_frames,
          static_cast<unsigned long long>(frames), relief_us);
   }
+  // How long composing the high-resolution rows waited for the GPU's 3D image (Gpu::frame_hires), per frame: that
+  // wait sits between the frame's display lines and the end of its emulation (15 November 2026).
+  if (hires_wait_frames)
+    std::fprintf(stderr, "hires wait: %.2f ms mean, %.2f ms max, %llu of %llu frames over 0.5 ms\n",
+                 hires_wait_sum_ms / static_cast<double>(hires_wait_frames), hires_wait_max_ms,
+                 static_cast<unsigned long long>(hires_wait_over), static_cast<unsigned long long>(hires_wait_frames));
   if (pace_display && pace_frames)
     std::fprintf(
         stderr,

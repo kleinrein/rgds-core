@@ -332,9 +332,12 @@ void App::action(int code) {
     if (settings.page == Page::Keyboard) {
         if (code == 3 || code == 7) finish_edit(false);
         else if (code == 4) finish_edit(true);
-        else if (code == 2) keyboard_choose();
-        else if (code == 11) erase_character();
+        else if (code == 2) {
+            key_focus_visible = true;
+            keyboard_choose();
+        } else if (code == 11) erase_character();
         else if (code == 12) key_layer = key_layer == 0 ? 1 : 0;
+        else if (code == 13 && (edit_field == 1 || edit_field == 2)) secret_shown = !secret_shown;
         else keyboard_move(code);
         dirty = true;
         return;
@@ -894,12 +897,18 @@ void App::touch(int x, int y) {
                 search_changed();
                 return;
             }
+            if ((edit_field == 1 || edit_field == 2) && point_in({460, 103, 104, 38}, x, y)) {
+                secret_shown = !secret_shown;
+                dirty = true;
+                return;
+            }
             auto rows = keyboard_rows();
             for (size_t row = 0; row < rows.size(); row++)
                 for (size_t col = 0; col < rows[row].size(); col++)
                     if (point_in(rows[row][col].bounds, x, y)) {
                         key_row = int(row);
                         key_col = int(col);
+                        key_focus_visible = false;
                         keyboard_choose();
                         return;
                     }
@@ -1862,7 +1871,8 @@ void App::handle_input(const SDL_Event& e) {
 
         // The shoulders step shader families and the cheats tabs; elsewhere they stand in for Left/Right.
         if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats || settings.page == Page::Homebrew ||
-             settings.page == Page::ProfileGames) &&
+             settings.page == Page::ProfileGames ||
+             (settings.page == Page::Keyboard && (edit_field == 1 || edit_field == 2))) && // L: show the password
             (e.jbutton.button == 4 || e.jbutton.button == 5)) {
             action(e.jbutton.button == 4 ? 13 : 14);
             return;

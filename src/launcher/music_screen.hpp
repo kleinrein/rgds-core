@@ -785,10 +785,42 @@ std::string App::music_format_line() {
     return line;
 }
 
+// L and R as on every other two-screen page: tabs in the upper screen's lower corners naming where each shoulder
+// goes. The library's tabs, the songs either side (round the queue), or the equaliser's presets.
+void App::music_shoulders(SDL_Renderer* r, int y) {
+    using View = MusicUi::View;
+    std::string previous, next;
+    if (mu.view == View::Equaliser) {
+        const int count = int(music::eq_presets.size()), at = music.now.eq_preset;
+        previous = locale.text(music::eq_presets[size_t(at < 0 ? count - 1 : (at + count - 1) % count)].name);
+        next = locale.text(music::eq_presets[size_t(at < 0 ? 0 : (at + 1) % count)].name);
+    } else if (mu.view == View::Browse) {
+        if (mu.levels.size() != 1 || music.library.tracks.empty()) return;
+        const int n = music_layout::tabs;
+        previous = locale.text(music_layout::tab_names[size_t((mu.tab + n - 1) % n)]);
+        next = locale.text(music_layout::tab_names[size_t((mu.tab + 1) % n)]);
+    }
+    if ((mu.view == View::Player || mu.view == View::Queue) && music.loaded() && !music.queue.empty()) {
+        const int count = int(music.queue.size()), at = std::min(int(music.now.queue_index), count - 1);
+        const auto title = [&](int place) {
+            const int track = music.queue_track(size_t(place));
+            return track >= 0 ? music.library.title(track) : MusicLibrary::stem(music.queue[size_t(place)]);
+        };
+        // Round the queue, as the engine skips: the last song's R is the first, the first song's L the last.
+        if (count > 1) {
+            previous = title((at + count - 1) % count);
+            next = title((at + 1) % count);
+        }
+    }
+    if (!previous.empty()) shoulder_tab(r, y, false, "L", previous);
+    if (!next.empty()) shoulder_tab(r, y, true, "R", next);
+}
+
 void App::music_top(SDL_Renderer* r, int y) {
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y + 48, 432);
     status_bar(r, y);
+    music_shoulders(r, y);
     const MusicLibrary& library = music.library;
     if (!music.loaded()) {
         // Nothing playing yet: what there is to play, or how to get music onto the card.
@@ -816,7 +848,7 @@ void App::music_top(SDL_Renderer* r, int y) {
                       "muted", 172);
             }
         }
-        if (!library.tracks.empty()) key_hints(r, 320, y + 432, {{"A", "Play"}, {"X", "Options"}, {"L R", "Tabs"}}, 0);
+        if (!library.tracks.empty()) key_hints(r, 320, y + 446, {{"A", "Play"}, {"X", "Options"}}, 0, 16, 300);
         return;
     }
     const int track = music.current_track();
@@ -829,18 +861,19 @@ void App::music_top(SDL_Renderer* r, int y) {
     const int64_t position = mu.seeking ? mu.seek_ms : music.now.position_ms;
     if (music.wide && !shaping) {
         // The display fills the screen; the song is a line along its lower edge.
-        music_display(r, 24, y + 64, 592, 400, false);
-        blend_rect(r, 28, y + 414, 584, 46, Color{0, 0, 0}, 120);
-        raw_label_colour(r, title, 44, y + 420, 20, Color{255, 255, 255}, 400);
+        // It stops short of the shoulder tabs along the bottom.
+        music_display(r, 24, y + 64, 592, 356, false);
+        blend_rect(r, 28, y + 370, 584, 46, Color{0, 0, 0}, 120);
+        raw_label_colour(r, title, 44, y + 376, 20, Color{255, 255, 255}, 400);
         const std::string clock = music_time(position) + " / " + music_time(music.now.duration_ms);
-        raw_label_colour(r, clock, 596 - label_width(clock, 16, false), y + 424, 16, Color{214, 220, 228}, 180);
+        raw_label_colour(r, clock, 596 - label_width(clock, 16, false), y + 380, 16, Color{214, 220, 228}, 180);
         return;
     }
-    music_display(r, 24, y + 64, 592, 280, shaping);
-    // What is playing, under the display.
-    const int card = y + 356;
-    settings_card(r, 24, card, 592, 108);
-    music_art(r, art, {34, card + 10, 88, 88}, control_radius, MusicGlyph::Note);
+    music_display(r, 24, y + 64, 592, 244, shaping);
+    // What is playing, under the display and over the shoulder tabs.
+    const int card = y + 318;
+    settings_card(r, 24, card, 592, 102);
+    music_art(r, art, {34, card + 9, 84, 84}, control_radius, MusicGlyph::Note);
     const std::string format = music_format_line();
     const int format_width = format.empty() ? 0 : label_width(format, 14, false) + 20;
     if (format_width) {
@@ -850,11 +883,11 @@ void App::music_top(SDL_Renderer* r, int y) {
     raw_label(r, title, 136, card + 8, 24, "ink", 606 - format_width - 12 - 136);
     raw_label(r, album.empty() ? artist : artist + "  ·  " + album, 136, card + 42, 16, "accent", 466);
     const std::string elapsed = music_time(position), length = music_time(music.now.duration_ms);
-    raw_label(r, elapsed, 136, card + 76, 14, "muted", 60);
-    raw_label(r, length, 606 - label_width(length, 14, false), card + 76, 14, "muted", 60);
+    raw_label(r, elapsed, 136, card + 72, 14, "muted", 60);
+    raw_label(r, length, 606 - label_width(length, 14, false), card + 72, 14, "muted", 60);
     const int bar_left = 136 + std::max(44, label_width(elapsed, 14, false) + 12),
               bar_right = 606 - std::max(44, label_width(length, 14, false) + 12);
-    music_progress(r, bar_left, card + 80, bar_right - bar_left, position, music.now.duration_ms, false);
+    music_progress(r, bar_left, card + 76, bar_right - bar_left, position, music.now.duration_ms, false);
 }
 
 // The top card on Home while the Music tile is selected (carousel layout).
@@ -985,8 +1018,7 @@ void App::music_mini(SDL_Renderer* r, int y) {
             const std::string line = locale.text("Looking for music…") + "  " + std::to_string(music.now.scan_done) +
                                      " / " + std::to_string(music.now.scan_total);
             raw_label(r, line, 616 - label_width(line, 16, false), y + 442, 16, "muted", 420);
-        } else if (!music.library.tracks.empty())
-            key_hints(r, 616, y + 452, {{"X", "Options"}, {"L R", "Tabs"}}, 1, 16, 420);
+        } else if (!music.library.tracks.empty()) key_hints(r, 616, y + 452, {{"X", "Options"}}, 1, 16, 420);
         return;
     }
     const int top = y + bar_y, track = music.current_track();
@@ -1174,8 +1206,8 @@ void App::music_player(SDL_Renderer* r, int y) {
     }
     rect(r, 24, y + 424, 592, 1, "line");
     footer_button(r, 12, y + 432, 160, "Library", "B", false, held && mu.touch_button == 40);
-    key_hints(r, 320, y + 452, {{"L R", "Skip"}, {"Y", "Visualiser"}}, 0, 16, 280);
-    footer_button(r, 468, y + 432, 160, "Queue", "", false, held && mu.touch_button == 41);
+    key_hints(r, 320, y + 452, {{"Y", "Visualiser"}}, 0, 16, 280);
+    footer_button(r, 468, y + 432, 160, "Queue", "Down", false, held && mu.touch_button == 41);
 }
 
 void App::music_equaliser(SDL_Renderer* r, int y) {
@@ -1358,7 +1390,7 @@ void App::music_action(int code) {
         } else if (code == 12) {
             if (music.loaded()) music_show(View::Player);
         } else if (code == 13 || code == 14) {
-            if (mu.view == View::Queue) music.send(code == 13 ? "prev" : "next", now);
+            if (mu.view == View::Queue) music.send(code == 13 ? "back" : "next", now);
             else if (mu.levels.size() == 1)
                 music_set_tab((mu.tab + (code == 13 ? music_layout::tabs - 1 : 1)) % music_layout::tabs);
         }
@@ -1367,7 +1399,7 @@ void App::music_action(int code) {
         if (code == 2) {
             if (music.loaded()) music.send("toggle", now);
         } else if (code == 0 || code == 1) music.send(code == 0 ? "seekby -10000" : "seekby 10000", now);
-        else if (code == 13 || code == 14) music.send(code == 13 ? "prev" : "next", now);
+        else if (code == 13 || code == 14) music.send(code == 13 ? "back" : "next", now);
         else if (code == 8) {
             music.wide = !music.wide;
             music.save_settings();

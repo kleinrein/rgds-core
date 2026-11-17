@@ -16,10 +16,10 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
                                                           : "Password");
     round_rect(r, 20, y + 91, 600, 62, 12, "accent");
     round_rect(r, 22, y + 93, 596, 58, 10, "panel");
-    bool hidden = edit_field == 1 || edit_field == 2;
+    const bool secret = edit_field == 1 || edit_field == 2, hidden = secret && !secret_shown;
     std::string value = hidden ? std::string(RoundedFont::codepoints(edit_buffer).size(), '*') : edit_buffer;
     size_t cursor = hidden ? RoundedFont::codepoints(edit_buffer.substr(0, edit_cursor)).size() : edit_cursor;
-    while (cursor && label_width(value.substr(0, cursor), 24, false) > 480) {
+    while (cursor && label_width(value.substr(0, cursor), 24, false) > (secret ? 420 : 480)) {
         size_t next = 1;
         while (next < value.size() && (static_cast<unsigned char>(value[next]) & 0xc0) == 0x80) next++;
         value.erase(0, next);
@@ -33,12 +33,18 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
                                           : edit_field == 6                   ? "Type a cheat name…"
                                                                               : "Enter here")
                             : value,
-              x, y + 109, 24, value.empty() ? "muted" : "ink", 490);
+              x, y + 109, 24, value.empty() ? "muted" : "ink", secret ? 430 : 490);
     if (!edit_buffer.empty())
         rect(r, x + label_width(value.substr(0, cursor), 24, false) + 2, y + 109, 2, 28, "accent");
     if (!edit_buffer.empty()) {
         round_rect(r, 568, y + 103, 40, 38, 10, "slot");
         label(r, "X", 582, y + 112, 18, "muted", 24);
+    }
+    if (secret) { // Show / Hide the password, left of the clear button (tap, or L)
+        const std::string word = locale.text(secret_shown ? "Hide" : "Show");
+        const int w = std::max(64, label_width(word, 16) + 24);
+        round_rect(r, 560 - w, y + 103, w, 38, 10, secret_shown ? "accent" : "slot");
+        label(r, word, 560 - w + (w - label_width(word, 16)) / 2, y + 112, 16, secret_shown ? "on_accent" : "ink", w);
     }
     label(r,
           edit_field == 4 ? (search_preview_loading ? "Finding games…"
@@ -50,7 +56,9 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
                                            (games_match_count(edit_buffer) == 1 ? " match" : " matches"))
                              : "Tap to type, or use the D-pad and A",
           24, y + 160, 14, "muted", 580);
-    draw_keyboard(r, y, keyboard_rows(), true);
+    // A tapped key only sinks while the finger is on it: drawing the focus there too lit every tapped key in solid
+    // accent, a flash jumping across the keyboard with each letter (2026-11-16). The D-pad and A bring it back.
+    draw_keyboard(r, y, keyboard_rows(), key_focus_visible);
 }
 
 void App::search_keyboard_top(SDL_Renderer* r, int y) {

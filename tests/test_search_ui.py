@@ -1,6 +1,7 @@
 """Search, cancellation and full keyboard actions through real SDL input."""
 import json
 import os
+import struct
 from pathlib import Path
 import subprocess
 import sys
@@ -28,7 +29,7 @@ class SearchUITests(unittest.TestCase):
         self.mario = self.data / "library" / game_key(self.roms / "Mario Kart DS.nds")
         write_fields(self.root / "preferences.ini", dict(schema=1, font="rounded", mode="light"))
 
-    def run_ui(self, script, **ui):
+    def run_ui(self, script, screenshot=None, **ui):
         write_fields(self.root / "ui.ini", dict(schema=1, **ui))
         (self.root / "input").write_text(script)
         report = self.root / "report.json"
@@ -41,7 +42,7 @@ class SearchUITests(unittest.TestCase):
                 str(self.root / "state"), "--input-script",
                 str(self.root / "input"), "--seconds", "2", "--cache-report",
                 str(report)
-            ],
+            ] + (["--screenshot", str(screenshot)] if screenshot else []),
             cwd=ROOT,
             env=dict(os.environ, SDL_VIDEODRIVER="dummy"),
             capture_output=True,
@@ -139,6 +140,29 @@ class SearchUITests(unittest.TestCase):
         )
         # q -> a -> z follows the staggered letter rows, past Tab/Caps/Shift.
         self.assertEqual(r["search_query"], "z")
+
+    def test_a_tapped_key_does_not_stay_lit(self):
+        def pixel(data, x, y):
+            offset = struct.unpack_from("<I", data, 10)[0]
+            width, height = struct.unpack_from("<ii", data, 18)
+            index = offset + ((height - 1 - y if height > 0 else y) * width + x) * 4
+            return tuple(data[index:index + 3])
+
+        shot = self.root / "shot.bmp"
+        # Search, then tap k: the key sinks under the finger but is not left filled with the accent afterwards, which
+        # flashed a lit key across the keyboard with every letter typed on the handheld (2026-11-16).
+        self.run_ui("100 click 270 46\n600 click 400 298\n", screenshot=shot, view_transition_style="zoom")
+        data = shot.read_bytes()
+        self.assertEqual(pixel(data, 388, 480 + 312), pixel(data, 345, 480 + 312))  # k's face as plain as j's
+        # The D-pad brings the focus back where the finger left it: k lights up again.
+        self.run_ui(
+            "100 click 270 46\n600 click 400 298\n900 key Left\n920 key-up Left\n1000 key Right\n"
+            "1020 key-up Right\n",
+            screenshot=shot,
+            view_transition_style="zoom"
+        )
+        data = shot.read_bytes()
+        self.assertNotEqual(pixel(data, 388, 480 + 312), pixel(data, 345, 480 + 312))
 
     def test_caps_keeps_letters_uppercase_without_shifting_numbers(self):
         r = self.run_ui(

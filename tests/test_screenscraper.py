@@ -172,6 +172,25 @@ class ScreenScraperTests(unittest.TestCase):
         self.assertEqual((item / "synopsis.EN.txt").read_text(), "Fast.\n")
         self.assertEqual((item / "synopsis.FR.txt").read_text(), "Rapide.\n")
 
+    def test_a_genre_word_is_listed_once(self):
+        jeu = dict(
+            JEU,
+            genres=[
+                {
+                    "noms": [{
+                        "langue": "en",
+                        "text": "Action"
+                    }]
+                }, {
+                    "noms": [{
+                        "langue": "en",
+                        "text": "Action / Adventure"
+                    }]
+                }
+            ]
+        )
+        self.assertEqual(screenscraper.information(jeu, ("eu",))[0]["genre"], "Action, Adventure")
+
     def test_unknown_game_falls_back_to_the_public_catalogs(self):
         rom = self.rom("Homebrew.md")
         public = FakePublic()

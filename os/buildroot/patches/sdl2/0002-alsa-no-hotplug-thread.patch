@@ -1,0 +1,23 @@
+From: RG DS OS
+Subject: [PATCH] ALSA: no hotplug thread
+
+SDL's ALSA backend starts a thread that lists every PCM device (snd_device_name_hint, which parses the whole ALSA
+configuration and opens each card's control device) every 5 seconds. On the RG DS that scan made DSCore's bottom
+panel miss one refresh every 5.0 s, on every scale and with or without a shader, and starved the audio stream about
+as often (6 to 8 underruns in 40 s of Mario Kart DS; 14 November 2026). Every app here opens the default device and
+the handheld has one card (headphones are routed in ALSA itself), so nothing needs the hotplug events: devices are
+still listed once when audio starts.
+
+Upstream-Status: Inappropriate [RG DS-specific]
+---
+--- a/src/audio/alsa/SDL_alsa_audio.c
++++ b/src/audio/alsa/SDL_alsa_audio.c
+@@ -28,7 +28,7 @@
+ 
+ /* without the thread, you will detect devices on startup, but will not get futher hotplug events. But that might be okay. */
+ #ifndef SDL_ALSA_HOTPLUG_THREAD
+-#define SDL_ALSA_HOTPLUG_THREAD 1
++#define SDL_ALSA_HOTPLUG_THREAD 0
+ #endif
+ 
+ /* Allow access to a raw mixing buffer */

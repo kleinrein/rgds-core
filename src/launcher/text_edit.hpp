@@ -21,6 +21,8 @@ void App::begin_edit(int field) {
     key_col = 1;
     key_layer = 0;
     key_caps = false;
+    secret_shown = false;
+    key_focus_visible = true;
     edit_cursor = edit_buffer.size();
     settings.page = Page::Keyboard;
     s.StartTextInput();

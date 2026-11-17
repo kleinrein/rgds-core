@@ -76,10 +76,16 @@ def tap(code=44):  # KEY_Z: ignored by the launcher outside text fields, but it 
 before = (stamp(top), stamp(bottom))
 with open(request, 'w') as handle:
     handle.write('shot')
-begin, woke = time.time(), False
+begin, woke, top_only = time.time(), False, None
 while True:
     if not os.path.exists(request) and stamp(top) != before[0] and stamp(bottom) != before[1]:
         break
+    # An engine that answers with the top panel alone (the 3DS engine before its 16 Nov 2026 fix, made for the save
+    # gallery) takes the request and never writes the bottom: say so instead of waiting out the timeout.
+    if mode == 'game' and not os.path.exists(request) and stamp(top) != before[0]:
+        top_only = top_only or time.time()
+        if time.time() - top_only > 1.5:
+            sys.exit('the game answered with the top screen only (its engine does not capture the bottom one)')
     if time.time() - begin > timeout:
         try:
             os.unlink(request)

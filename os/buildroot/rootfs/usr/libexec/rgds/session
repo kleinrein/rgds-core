@@ -70,6 +70,9 @@ PIN=; command -v taskset > /dev/null && PIN="taskset -c 0-2"
 # it writes, RGDS_READY_FILE): a launcher that hangs on dark panels leaves the trial open, and rcS restarts until
 # U-Boot falls back. The updater commits earlier, when Home is reached. Not on the log: an open file on the card keeps
 # Use as USB drive from unmounting it for that minute.
+# 3DS games only where the engine is: it lives on the data partition, not in the image (emulators.TANUKI_ENGINE),
+# so a handheld that has only had OTA updates has none, and its 3DS games would not start
+CTR=; [ -f /data/rgds/engines/tanuki3ds/run.sh ] && CTR=--system-dir\ 3ds=/data/roms/3ds
 export RGDS_READY_FILE=/run/rgds/launcher-ready
 rm -f $RGDS_READY_FILE
 ( sleep 60; kill -0 $$ 2>/dev/null && [ -f $RGDS_READY_FILE ] && /usr/libexec/rgds/trial commit ) >> /run/rgds/messages 2>&1 &
@@ -77,7 +80,7 @@ $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 
     --boot-startup $FIRST $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
     --system-dir gb=/data/roms/gb \
     --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md --system-dir md=/data/roms/genesis \
-    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 --system-dir 3ds=/data/roms/3ds --system-dir psp=/data/roms/psp --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
+    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 $CTR --system-dir psp=/data/roms/psp --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
     --system-dir ports=/data/portmaster/ports >> $LOG 2>&1
 status=$?
 # 128 + the signal when it was killed. The kernel's side goes with it: an out-of-memory kill (137) records nothing

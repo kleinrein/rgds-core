@@ -17,7 +17,7 @@ const strips = {
   'second-screen.png': { width: 1920, height: 514, names: ['pokemon', 'sma4', 'circuit', 'mk64'] },
   'library.png': { width: 1440, height: 514, names: ['cartridges', 'covers', 'list'] },
 };
-const systems = ['nds', '3ds', 'gba', 'gb', 'gbc', 'nes', 'snes', 'md', 'sms', 'psx', 'psp', 'n64', 'zx', 'c64', 'ports'];
+const systems = ['nds', '3ds', 'gba', 'gb', 'gbc', 'nes', 'snes', 'md', 'sms', 'psx', 'psp', 'n64', 'zx', 'c64', 'gw', 'scummvm', 'ports'];
 const shot = (name) => join(pub, 'shots', `${name}.webp`);
 
 await mkdir(join(pub, 'shots'), { recursive: true });

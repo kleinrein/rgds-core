@@ -542,6 +542,31 @@ int main() {
     CHECK(lock.samples() == samples);
   }
 
+  // A panel whose flip must be issued well before its vblank (the RG DS bottom panel: about 4.2 ms, measured 14
+  // November 2026): the band climbs past that deadline by misses, and the floor they leave keeps it there. Without
+  // the floor (floor_decay 0) the band decayed back into the deadline and missed again every ~300 frames.
+  for (const bool floor : {true, false}) {
+    PhaseLock::Params params;
+    if (!floor) params.floor_decay = 0.0;
+    PhaseLock lock(params);
+    Sim sim(lock, {Panel{1e9 / 60.0, 0.0}});
+    sim.work = 8.0 * MS;
+    sim.draw = 0.5 * MS;
+    sim.gpu = 4.2 * MS;
+    sim.run(1200);
+    const u64 late0 = lock.late();
+    const int repeats0 = sim.repeats;
+    sim.run(3000);
+    std::fprintf(stderr, "phase lock: a 4.2 ms flip deadline, %s floor: %llu late, %d repeats in 3000 frames, band %.2f ms\n",
+                 floor ? "with" : "without", static_cast<unsigned long long>(lock.late() - late0), sim.repeats - repeats0,
+                 lock.band_ns() / MS);
+    if (floor) {
+      CHECK(lock.late() - late0 <= 1);
+      CHECK(lock.band_ns() > 4.2 * MS);
+    } else
+      CHECK(lock.late() - late0 >= 5);
+  }
+
   std::fprintf(stderr, "phase_lock: ok\n");
   return 0;
 }

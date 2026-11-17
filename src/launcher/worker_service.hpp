@@ -216,6 +216,13 @@ void App::poll_service(Uint32 now) {
                 dirty = true;
         }
     }
+    // Signing in to ScreenScraper makes it the artwork source; signing out of it goes back to Automatic.
+    if (worker <= 0 && worker_finished_at == now && worker_ok &&
+        ((worker_action == "login" && preferences.artwork_provider != 3) ||
+         (worker_action == "logout" && preferences.artwork_provider == 3))) {
+        preferences.artwork_provider = worker_action == "login" ? 3 : 0;
+        remember_appearance();
+    }
     if (artwork_finished) {
         if (settings.page == Page::GameArtwork && !model.games.empty())
             artwork_result = fields(item_folder(model.selected) / "artwork-status.ini");

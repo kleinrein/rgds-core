@@ -134,7 +134,8 @@ def information(jeu, order):
         "info_title": pick(jeu.get("noms"), order),
         "developer": text_of(jeu.get("developpeur")),
         "publisher": text_of(jeu.get("editeur")),
-        "genre": clean_genre(", ".join(genres[:2])),
+        # "Action" and "Action / Adventure" are two genres there: each word once.
+        "genre": ", ".join(dict.fromkeys(clean_genre(", ".join(genres[:2])).split(", "))),
         "release": release_text(year, month, day),
         "rating": rating,
         "players": str(max(players)) if players else ""

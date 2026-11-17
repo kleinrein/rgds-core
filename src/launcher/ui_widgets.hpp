@@ -87,7 +87,9 @@ void App::settings_footer(SDL_Renderer* r, int y) {
     footer_button(r, 12, y + 432, 160, "Back", "B", false, pressed);
     if (settings.page == Page::Keyboard) {
         const bool searching = edit_field == 4 || edit_field == 6 || edit_field == 11;
-        key_hints(r, 320, y + 452, {{"X", "Delete"}, {"Start", searching ? "Search" : "Done"}}, 0, 16, 280);
+        if (edit_field == 1 || edit_field == 2) // a password: L shows or hides it
+            key_hints(r, 320, y + 452, {{"L", secret_shown ? "Hide" : "Show"}, {"X", "Delete"}}, 0, 16, 280);
+        else key_hints(r, 320, y + 452, {{"X", "Delete"}, {"Start", searching ? "Search" : "Done"}}, 0, 16, 280);
         footer_button(r, 468, y + 432, 160, searching ? "Search" : "Done", "", true, a_pressed);
         return;
     }

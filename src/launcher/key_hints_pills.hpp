@@ -285,8 +285,20 @@ void App::footer_button(SDL_Renderer* r, int x, int y, int w, const std::string&
                              centred_label_y(badge, 14, y + 20 + sink), 14, fill, 22);
         } else {
             round_rect(r, x + 13, y + 9 + sink, 22, 22, 11, "slot");
-            raw_label(r, badge, x + 13 + (22 - label_width(badge, 14, false)) / 2,
-                      centred_label_y(badge, 14, y + 20 + sink), 14, "ink", 22);
+            if (badge == "Up" || badge == "Down") {
+                // The d-pad has no letter: a chevron pointing the way, two pixels thick.
+                const int cx = x + 24, cy = y + 20 + sink, sign = badge == "Down" ? 1 : -1;
+                const Color c = theme.at("ink");
+                s.SetRenderDrawColor(r, c.r, c.g, c.b, 255);
+                for (int i = 0; i <= 5; i++) {
+                    const int row = cy - sign * 3 + sign * i;
+                    SDL_Rect left{cx - 6 + i, row, 2, 2}, right{cx + 4 - i, row, 2, 2};
+                    s.RenderFillRect(r, &left);
+                    s.RenderFillRect(r, &right);
+                }
+            } else
+                raw_label(r, badge, x + 13 + (22 - label_width(badge, 14, false)) / 2,
+                          centred_label_y(badge, 14, y + 20 + sink), 14, "ink", 22);
             tx = x + 48;
         }
     }

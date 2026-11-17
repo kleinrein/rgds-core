@@ -23,6 +23,7 @@ const views = [
 
 const features = [
   { name: 'DSCore', text: 'Crisp 3D at up to 5x. The most demanding games may slow down or show glitches.' },
+  { name: 'Profiles', text: 'Own saves, favourites and play time for everyone, and Kid profiles that show only games for their age.' },
   { name: 'A unified in-game menu', text: 'Checkpoints, cheats and game switching, consistent across every system.' },
   { name: 'Refined picture', text: 'More than 30 shaders and LCD filters to suit each game.' },
   { name: 'Dependable updates', text: 'Signed, delivered over Wi-Fi and reversed automatically if anything goes wrong.' },
@@ -30,6 +31,7 @@ const features = [
   { name: 'Simple file transfer', text: 'Copy games over Wi-Fi or USB-C, or connect it as a USB drive.' },
   { name: 'Classic computers', text: 'ZX Spectrum and Commodore 64, with a keyboard on the second screen.' },
   { name: 'PortMaster', text: 'PC games adapted for handhelds.' },
+  { name: 'Music player', text: 'Your own music from the card, from MP3 and FLAC to tracker modules.' },
   { name: 'PictoChat', text: 'Our own take on the classic: Wi-Fi chat between handhelds.' },
   { name: 'Tailored', text: 'Light and dark themes, accent colours and 22 languages.' },
 ];
@@ -37,7 +39,8 @@ const features = [
 const systems = [
   ['nds', 'Nintendo DS'], ['3ds', 'Nintendo 3DS'], ['gba', 'Game Boy Advance'], ['gb', 'Game Boy'], ['gbc', 'Game Boy Color'],
   ['nes', 'NES'], ['snes', 'SNES'], ['md', 'Mega Drive'], ['sms', 'Master System'], ['psx', 'PlayStation'],
-  ['psp', 'PlayStation Portable'], ['n64', 'Nintendo 64'], ['zx', 'ZX Spectrum'], ['c64', 'Commodore 64'], ['ports', 'Ports'],
+  ['psp', 'PlayStation Portable'], ['n64', 'Nintendo 64'], ['zx', 'ZX Spectrum'], ['c64', 'Commodore 64'], ['gw', 'Game & Watch'],
+  ['scummvm', 'ScummVM'], ['ports', 'Ports'],
 ];
 ---
 <!doctype html>
@@ -156,7 +159,7 @@ const systems = [
               <li><img src={`${base}/systems/${id}.svg`} width="48" height="48" loading="lazy" alt="" />{name}</li>
             ))}
           </ul>
-          <p class="note systems-note">Nintendo DS is on from the start. Enable the others in Settings → Library → Systems.</p>
+          <p class="note systems-note">The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
         </div>
       </section>
 
