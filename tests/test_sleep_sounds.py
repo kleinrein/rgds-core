@@ -135,6 +135,10 @@ class SleepSoundTests(unittest.TestCase):
             sdl.SDL_CloseAudioDevice.assert_called_once_with(7)
 
     def test_both_clips_finish_through_real_sdl_without_video(self):
+        try:
+            sleep_sounds.load_sdl()
+        except OSError:
+            self.skipTest('SDL2 is not installed')
         self.settings()
         with patch.dict(os.environ, SDL_AUDIODRIVER='dummy', SDL_VIDEODRIVER='unavailable-test-driver'):
             for cue in ('lid-close', 'lid-open'):

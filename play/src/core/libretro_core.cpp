@@ -303,6 +303,20 @@ public:
                           {"fuse_joypad_start", "Enter"},
                           {"fuse_joypad_l2", "Space"},
                           {"fuse_joypad_r2", "<none>"}};
+            // Out Run's keyboard scheme (Q accelerate, A brake, O/P steer, M gear) on the pad as well, beside the
+            // Kempston joystick: whichever the game's control menu is set to, the pad drives the car. The game
+            // reads only the chosen scheme, so the other is harmless.
+            std::string name = rom_path;
+            for (auto& c : name) c = char(std::tolower(static_cast<unsigned char>(c)));
+            if (name.find("out run") != std::string::npos || name.find("outrun") != std::string::npos ||
+                name.find("out_run") != std::string::npos) {
+                variables_["fuse_joypad_up"] = "q";
+                variables_["fuse_joypad_down"] = "a";
+                variables_["fuse_joypad_left"] = "o";
+                variables_["fuse_joypad_right"] = "p";
+                variables_["fuse_joypad_a"] = "q";
+                variables_["fuse_joypad_b"] = "m";
+            }
         }
         if (system == "c64") variables_ = {{"vice_autoloadwarp", "enabled"}}; // a disk or tape loads at full speed
         // The PSP's own 480 x 272 on the JIT: every extra pixel is drawing and read-back the A55s and the Mali-G52 lack.
