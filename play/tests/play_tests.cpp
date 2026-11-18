@@ -19,6 +19,7 @@
 #include "ui/colour.hpp"
 #include "ui/gb_palettes.hpp"
 
+#include <filesystem>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
@@ -541,7 +542,7 @@ public:
         fb.assign(256 * 224, rgb_to_px(0x3060A0));
         vram.assign(0x10000, 0);
         for (int i = 0; i < 0x4000; ++i) vram[size_t(i) * 2] = uint8_t(i & 1); // tiles 0 and 1 in turn
-        for (int i = 0; i < 64; ++i) vram[1 + (1 << 7) + size_t(i) * 2] = 5;    // tile 1 is colour 5
+        for (int i = 0; i < 64; ++i) vram[1 + (1 << 7) + size_t(i) * 2] = 5;   // tile 1 is colour 5
         palette.assign(256, 0);
         palette[5] = 0x7C1F;
         for (int l = 8; l < 24; ++l) set(l, 1078, 0, 0, 2099, 512, 984, 384, 770); // stale and flat
@@ -589,7 +590,8 @@ public:
         put(0x7E1017 + 0x100 * uint32_t(n), uint32_t(x * 256));
         put(0x7E101B + 0x100 * uint32_t(n), uint32_t(y * 256));
         const uint32_t o = 0x7E0420 + 4 * uint32_t(sprite);
-        ram[o] = uint8_t(map_x), ram[o + 1] = uint8_t(map_y), ram[o + 2] = uint8_t(tile), ram[o + 3] = uint8_t((tile >> 8) | (n << 1));
+        ram[o] = uint8_t(map_x), ram[o + 1] = uint8_t(map_y), ram[o + 2] = uint8_t(tile),
+        ram[o + 3] = uint8_t((tile >> 8) | (n << 1));
         ram[0x7E0420 + 512 + uint32_t(sprite) / 4] |= uint8_t(2 << (2 * (sprite & 3))); // large
         for (int t : {0, 1, 16, 17})
             for (int r = 0; r < 8; ++r) vram[size_t(0xA000 + ((tile + t) & 0xFF) * 32 + r * 2)] = 0xFF; // colour 1
@@ -599,7 +601,7 @@ public:
 
 private:
     void set(int l, int a, int b, int c, int d, int x0, int y0, int h, int v) {
-        const int16_t row[8] = {int16_t(a), int16_t(b), int16_t(c), int16_t(d),
+        const int16_t row[8] = {int16_t(a),  int16_t(b),  int16_t(c), int16_t(d),
                                 int16_t(x0), int16_t(y0), int16_t(h), int16_t(v)};
         std::copy(row, row + 8, lines.begin() + size_t(l) * 8);
     }
@@ -732,7 +734,7 @@ void test_mode7_extend() {
                 left = std::min(left, x), right = std::max(right, x);
             }
         }
-    CHECK(colours.size() == 3); // the road's two colours and one kart's
+    CHECK(colours.size() == 3);                                       // the road's two colours and one kart's
     CHECK(lowest > 120 && lowest < 180 && left < 128 && right > 128); // standing in the middle, larger than 16
     CHECK(right - left + 1 > 16);
 }
@@ -778,9 +780,9 @@ void test_course_view() {
     CHECK(green_row > 0 && red_row > green_row);
     const uint64_t whole = course->key(0);
     CHECK(course->touch({Touch::Down, 100, 100}) && course->key(0) != whole && course->covers_hud()); // close up
-    CHECK(course->touch({Touch::Down, 100, 100}) && !course->covers_hud());                          // the game's band
-    CHECK(course->touch({Touch::Down, 100, 100}) && course->covers_hud());                           // the whole course
-    race.ram[0x7E10C1] = 0x85; // the race over
+    CHECK(course->touch({Touch::Down, 100, 100}) && !course->covers_hud());                           // the game's band
+    CHECK(course->touch({Touch::Down, 100, 100}) && course->covers_hud()); // the whole course
+    race.ram[0x7E10C1] = 0x85;                                             // the race over
     course->update(race, 2);
     CHECK(!course->shown());
 }
@@ -1080,6 +1082,35 @@ void test_second_screen() {
     for (int i = 0; i < 15; ++i) c.after_frame(live); // boards read every 15 frames
     CHECK(c.has_switch() && !c.showing_alternative());
     CHECK(c.touch({Touch::Down, 640 - kit::margin - 20, kit::margin + 20}) && c.showing_alternative());
+
+    // The switch is remembered per game: the keyboard-first setting only decides a game with no memory.
+    const std::string file = (std::filesystem::temp_directory_path() / "rgds-play-second-screen-test.txt").string();
+    std::filesystem::remove(file);
+    const Touch flip{Touch::Down, 640 - kit::margin - 20, kit::margin + 20};
+    {
+        Companion first(live, &alt, "T", "GAME BOY");
+        first.remember_switch_in(file);
+        first.set_keyboard_first(true, false); // nothing remembered: the setting decides
+        for (int i = 0; i < 15; ++i) first.after_frame(live);
+        CHECK(first.showing_alternative());
+        CHECK(first.touch(flip) && !first.showing_alternative()); // the owner flips back; kept
+    }
+    {
+        Companion second(live, &alt, "T", "GAME BOY");
+        second.remember_switch_in(file);
+        second.set_keyboard_first(true, false); // remembered: the game's own choice wins
+        for (int i = 0; i < 15; ++i) second.after_frame(live);
+        CHECK(!second.showing_alternative());
+        second.set_keyboard_first(true, true); // picked in the menu: overrides and is kept
+        CHECK(second.showing_alternative());
+    }
+    {
+        Companion third(live, &alt, "T", "GAME BOY");
+        third.remember_switch_in(file);
+        for (int i = 0; i < 15; ++i) third.after_frame(live);
+        CHECK(third.showing_alternative());
+    }
+    std::filesystem::remove(file);
 }
 
 // A scrolling world 4 screens wide: the picture is the world under a camera at
@@ -1280,8 +1311,10 @@ void test_libretro_views() {
         const double a = i * 2 * M_PI / points;
         const int x = int(1000 + 400 * std::cos(a)), y = int(1000 + 400 * std::sin(a));
         put16(0x1000 + uint32_t(i) * 8, x), put16(0x1004 + uint32_t(i) * 8, y);
-        put16(0x2000 + uint32_t(i) * 8, int(1000 + 360 * std::cos(a))), put16(0x2004 + uint32_t(i) * 8, int(1000 + 360 * std::sin(a)));
-        put16(0x3000 + uint32_t(i) * 8, int(1000 + 440 * std::cos(a))), put16(0x3004 + uint32_t(i) * 8, int(1000 + 440 * std::sin(a)));
+        put16(0x2000 + uint32_t(i) * 8, int(1000 + 360 * std::cos(a))),
+            put16(0x2004 + uint32_t(i) * 8, int(1000 + 360 * std::sin(a)));
+        put16(0x3000 + uint32_t(i) * 8, int(1000 + 440 * std::cos(a))),
+            put16(0x3004 + uint32_t(i) * 8, int(1000 + 440 * std::sin(a)));
     }
     put16(0x54, 0x1000), put16(0x56, points), put16(0x50, 3000), put16(0x52, 3000);
     pathed->update(game, 0); // the player nowhere near it: the last course's path, still in memory while this one loads
@@ -1328,13 +1361,15 @@ void test_libretro_views() {
     };
     auto racer = [&](uint32_t slot, int in_use, float x, float y, int rank) {
         const uint32_t a = 0x4000 + slot * 0x10;
-        put16(a, in_use), put16(a + 2, 0), put_float(a + 4, x), put_float(a + 8, y), put16(a + 12, rank), put16(a + 14, 1);
+        put16(a, in_use), put16(a + 2, 0), put_float(a + 4, x), put_float(a + 8, y), put16(a + 12, rank),
+            put16(a + 14, 1);
     };
-    const std::string racers_ini = "[game]\ntitle = T\ncodes = AB\nsystem = n64\n[view]\nformat = trace\n"
-                                   "x = mem16[50]\ny = mem16[52]\ncourse = 1\npath = mem16[54]\npath_count = mem16[56]\n"
-                                   "width = 20\nracers = 4000 10 3\nracer_exists = 0 8000\nracer_x = 4\nracer_y = 8\n"
-                                   "racer_rank = C\nracer_lap = E\nracer_kind = 2\nlaps = 3\nfaces = 10 8 8\n"
-                                   "face.0 = 0 200\n";
+    const std::string racers_ini =
+        "[game]\ntitle = T\ncodes = AB\nsystem = n64\n[view]\nformat = trace\n"
+        "x = mem16[50]\ny = mem16[52]\ncourse = 1\npath = mem16[54]\npath_count = mem16[56]\n"
+        "width = 20\nracers = 4000 10 3\nracer_exists = 0 8000\nracer_x = 4\nracer_y = 8\n"
+        "racer_rank = C\nracer_lap = E\nracer_kind = 2\nlaps = 3\nfaces = 10 8 8\n"
+        "face.0 = 0 200\n";
     put16(0x50, 1400), put16(0x52, 1000);
     racer(0, 0x8000, 1400, 1000, 1), racer(1, 0x8000, 600, 1000, 0), racer(2, 0, 1000, 600, 2); // the third not in use
     auto magenta = [](const Canvas& c, int from_x) {
@@ -1386,7 +1421,8 @@ void test_libretro_views() {
             if (!ok) std::fprintf(stderr, "%s: %s\n", key.c_str(), e.c_str());
             // The N64 keeps its numbers big-endian: a board's num tile there says so (Mario Kart's lap read 257).
             for (const auto& [name, value] : v.values) {
-                if (p.system != "n64" || name.rfind("tile", 0) != 0 || value.find("| num ") == std::string::npos) continue;
+                if (p.system != "n64" || name.rfind("tile", 0) != 0 || value.find("| num ") == std::string::npos)
+                    continue;
                 const bool big = value.find(" big") != std::string::npos;
                 CHECK(big);
                 if (!big) std::fprintf(stderr, "%s: %s is not big-endian\n", key.c_str(), name.c_str());
@@ -1478,13 +1514,13 @@ void test_zx_machine() {
         tape.insert(tape.end(), blocks.begin(), blocks.end());
         return tape;
     };
-    CHECK(zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 0, 1, 3})));         // a 48K: does not run
+    CHECK(zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 0, 1, 3})));          // a 48K: does not run
     CHECK(zx_tape_needs_128k("a.tzx", tzx({0x33, 2, 0, 1, 0, 0, 3, 1}))); // a 128K: uses its hardware
-    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 0, 3, 0})));        // a 128K: runs, and so does a 48K
-    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 1, 3, 1})));        // not a computer entry
-    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x2A, 0, 0, 0, 0})));        // "stop if 48K": a 48K game is on it
-    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 9, 0, 1})));           // cut short
-    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x10, 0, 0, 0xFF, 0xFF})));  // a data block longer than the file
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 0, 3, 0})));         // a 128K: runs, and so does a 48K
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 1, 1, 3, 1})));         // not a computer entry
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x2A, 0, 0, 0, 0})));         // "stop if 48K": a 48K game is on it
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x33, 9, 0, 1})));            // cut short
+    CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x10, 0, 0, 0xFF, 0xFF})));   // a data block longer than the file
 }
 
 // The sticks as buttons: the left stick is the D-pad by default, with a gap between press and release, diagonals,
@@ -1494,9 +1530,9 @@ void test_stick_buttons() {
     CHECK(sticks.update(0, 0, 0, 0) == 0);
     CHECK(sticks.update(-32768, 0, 0, 0) == Left);
     CHECK(sticks.update(32767, 32767, 0, 0) == (Right | Down));
-    CHECK(sticks.update(15000, 0, 0, 0) == Right);  // held: under the press line, over the release line
-    CHECK(sticks.update(12000, 0, 0, 0) == 0);      // let go
-    CHECK(sticks.update(15000, 0, 0, 0) == 0);      // not pressed again until past half way
+    CHECK(sticks.update(15000, 0, 0, 0) == Right); // held: under the press line, over the release line
+    CHECK(sticks.update(12000, 0, 0, 0) == 0);     // let go
+    CHECK(sticks.update(15000, 0, 0, 0) == 0);     // not pressed again until past half way
     CHECK(sticks.update(0, -20000, 0, 0) == Up);
     CHECK(sticks.update(0, 0, 32767, -32768) == 0); // the right stick presses nothing by default
     const std::string ini = std::string(std::getenv("TMPDIR") ? std::getenv("TMPDIR") : "/tmp") + "/play-stick.ini";
@@ -1516,8 +1552,73 @@ void test_stick_buttons() {
     CHECK(system_has_stick("n64") && system_has_stick("psp") && !system_has_stick("gba") && !system_has_stick("nes"));
 }
 
+// The ColecoVision's and Intellivision's keypad on the touch screen: what the core is told, frame by frame.
+struct KeypadMachine final : Core {
+    std::vector<unsigned> masks;
+    const char* system() const override { return "coleco"; }
+    std::string game_code() const override { return "X"; }
+    std::string header_title() const override { return "X"; }
+    double frame_rate() const override { return 60; }
+    void run_frame(uint32_t) override {}
+    Picture picture() const override { return {}; }
+    bool save_state(std::vector<uint8_t>&) override { return false; }
+    bool load_state(const std::vector<uint8_t>&) override { return false; }
+    uint32_t peek(uint32_t, int) override { return 0; }
+    size_t audio(int16_t*, size_t) override { return 0; }
+    unsigned audio_rate() const override { return 44100; }
+    std::vector<uint8_t> battery() const override { return {}; }
+    uint64_t battery_revision() const override { return 0; }
+    void set_layers(unsigned) override {}
+    std::unique_ptr<Core> shadow() const override { return nullptr; }
+    bool set_keypad(unsigned mask) override {
+        masks.push_back(mask);
+        return true;
+    }
+};
+
+void test_touch_controllers() {
+    CHECK(!make_controller("nes"));
+    CHECK(make_controller("intellivision") && make_controller("pico"));
+    auto pad = make_controller("coleco");
+    CHECK(pad && pad->shown());
+    KeypadMachine game;
+    uint64_t frame = 0;
+    auto frames = [&](int n) {
+        while (n--) pad->update(game, ++frame);
+    };
+    const int one_x = 190, one_y = 133, two_x = 319, five_y = 223;
+    using Masks = std::vector<unsigned>;
+    // A quick tap is held four frames, then comes up.
+    pad->touch({Touch::Down, one_x, one_y});
+    pad->touch({Touch::Up, one_x, one_y});
+    frames(6);
+    CHECK((game.masks == Masks{1u << 0, 0}));
+    // The same key tapped twice inside its hold reaches the game twice, with a frame up between.
+    game.masks.clear();
+    pad->touch({Touch::Down, two_x, one_y});
+    pad->touch({Touch::Up, two_x, one_y});
+    frames(1);
+    pad->touch({Touch::Down, two_x, one_y});
+    pad->touch({Touch::Up, two_x, one_y});
+    frames(12);
+    CHECK((game.masks == Masks{1u << 1, 0, 1u << 1, 0}));
+    // Held: down as long as the finger is; sliding onto 5 moves the press, sliding off the keys lets go.
+    game.masks.clear();
+    pad->touch({Touch::Down, two_x, one_y});
+    frames(10);
+    CHECK((game.masks == Masks{1u << 1}));
+    pad->touch({Touch::Move, two_x, five_y});
+    frames(2);
+    CHECK((game.masks == Masks{1u << 1, 1u << 4}));
+    pad->touch({Touch::Move, 20, 20});
+    frames(6);
+    CHECK((game.masks == Masks{1u << 1, 1u << 4, 0}));
+    pad->touch({Touch::Up, 20, 20});
+}
+
 int main() {
     test_stick_buttons();
+    test_touch_controllers();
     test_zx_machine();
     test_second_screen();
     test_colour();

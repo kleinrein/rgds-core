@@ -306,6 +306,7 @@ DS rounded	DS afgerond
 DS screens	DS-schermen
 DSCore 3D resolution	DSCore 3D-resolutie
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: aanbevolen. Het snelst, met fixes voor klep, stylus en 3D en optionele 2x–5x 3D.
+Drawing pad	Tekenblok
 Edit	Wijzig
 Edit search	Zoekopdracht bewerken
 Effects volume	Effectvolume
@@ -451,14 +452,17 @@ Green	Groen
 Grey	Grijs
 Grey TV	Grijze tv
 Grid	Raster
+Keypad	Toetsenblok
 Left stick down	Linkerstick omlaag
 Left stick left	Linkerstick links
 Left stick right	Linkerstick rechts
 Left stick up	Linkerstick omhoog
+Page	Pagina
 Right stick down	Rechterstick omlaag
 Right stick left	Rechterstick links
 Right stick right	Rechterstick rechts
 Right stick up	Rechterstick omhoog
+Storyware	Verhalenboek
 h	u
 Haptic strength	Haptische sterkte
 Health	Gezondheid
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	Tijdelijke bestanden. Veilig te wissen.
 RG DS Core, its engines and settings.	RG DS Core, zijn engines en instellingen.
 Everything else on the card, with the file system's own overhead.	Al het andere op de kaart, met de eigen overhead van het bestandssysteem.
 Room for more games.	Ruimte voor meer games.
+Console switches	Consoleschakelaars

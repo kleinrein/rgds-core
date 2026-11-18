@@ -67,6 +67,11 @@ The Ubuntu arm64 Vulkan loader (`libvulkan1` 1.3.275.0-1build1) is Apache-2.0/MI
 its copyright notice, full license texts and the private zstd notice are in the
 engine's `lib` directory. No system driver or loader is replaced.
 
+On RG DS OS the source archives named here (`source.tar.gz`, `vulkan-source.tar.gz`, `panvk-source.tar.gz`,
+and Samba's and RG DS Play's `source.tar.gz`) are not in the image, to keep it inside the root slot. Each
+release publishes them as `RG-DS-OS-<version>-sources.tar` beside the image and the update, and the release
+folder's `SOURCES.md` lists every archive with its SHA-256.
+
 ## Menu sound assets
 
 `assets/sounds/*.wav` contains edited versions of four original source families generated with Suno v6-mini in the user’s account on 2026-10-12. Source URLs, the observed Free account plan and reproduction details are recorded in [docs/MENU_SOUNDS.md](docs/MENU_SOUNDS.md). No Nintendo audio recordings were used.

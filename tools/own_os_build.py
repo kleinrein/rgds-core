@@ -8,7 +8,11 @@ does not build on a case-insensitive macOS mount), and copies the image to .cach
 The first build takes hours (toolchain, kernel, Mesa); later ones only redo what changed.
 
   own_os_build.py [--release dist/RGDS-<version>.zip] [--stage-only] [--slot-only] [--reconfigure] [--jobs N]
-                  [-- make target...]
+                  [--no-3ds] [-- make target...]
+
+The 3DS engine (Tanuki3DS) comes from build/engines/tanuki3ds, which tools/tanuki3ds/stage_engine.py fills; the
+image goes to /usr/share/rgds/engines/tanuki3ds. Without it the build stops: 0.9.0 went out with no 3DS engine
+because it was only ever on the owner's data partition. --no-3ds builds an image without 3DS games on purpose.
 
 --slot-only builds what tools/own_os_push.py writes (root filesystem, kernel, device trees) without the two SD card
 images, and removes the cached ones so own_os_release.py cannot pick up a card from an older build.
@@ -39,7 +43,69 @@ def run(*args, **kwargs):
     return subprocess.run([str(a) for a in args], check=True, **kwargs)
 
 
-def stage(release):
+TANUKI = ROOT / 'build/engines/tanuki3ds'
+
+
+def stage_tanuki(stage_dir, skip):
+    """The 3DS engine for /usr/share/rgds/engines/tanuki3ds, exactly the files its engine.json lists."""
+    record = TANUKI / 'engine.json'
+    if skip:
+        print('warning: --no-3ds, the image has no 3DS engine and shows no 3DS games', flush=True)
+        return
+    if not record.is_file():
+        raise SystemExit(
+            'No 3DS engine staged: run tools/tanuki3ds/stage_engine.py HOST first (or --no-3ds on purpose).'
+        )
+    files = json.loads(record.read_text())['files']
+    for name, digest in files.items():
+        source = TANUKI / name
+        if not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest() != digest:
+            raise SystemExit(f'build/engines/tanuki3ds/{name} does not match engine.json: stage it again.')
+    target = stage_dir / 'engines/tanuki3ds'
+    for name in (*files, 'engine.json'):
+        (target / name).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(TANUKI / name, target / name)
+    for name in ('run.sh', 'ctremu'):
+        (target / name).chmod(0o755)
+    size = sum((TANUKI / name).stat().st_size for name in files)
+    print(f'3DS engine from build/engines/tanuki3ds ({len(files)} files, {size >> 20} MB)', flush=True)
+
+
+SOURCES = ROOT / 'build/os-stage/sources'
+
+
+def move_sources(app):
+    """The engines' and Samba's corresponding source archives (about 190 MB, already compressed) leave the image:
+    own_os_release.py publishes them as RG-DS-OS-<version>-sources.tar beside the image and the update on the same
+    release, and SOURCES.md in the release says so, with each archive's SHA-256. The root slot is 768 MiB."""
+    if SOURCES.exists():
+        shutil.rmtree(SOURCES)
+    SOURCES.mkdir(parents=True)
+    shutil.copy2(ROOT / 'THIRD_PARTY.md', app / 'THIRD_PARTY.md')  # this tree's, which says where the sources went
+    moved = {}
+    for path in sorted(app.rglob('*source.tar.gz')):
+        name = path.relative_to(app).as_posix()
+        target = SOURCES / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(path, target)
+        moved[name] = hashlib.sha256(target.read_bytes()).hexdigest()
+    version = (ROOT / 'VERSION').read_text().strip()
+    repo = (ROOT / 'packaging/release-repo.txt').read_text().strip()
+    (app / 'SOURCES.md').write_text(
+        '# Corresponding source\n\n'
+        'The complete source of the GPL, LGPL and MPL programs in this release (DSCore, RG DS Play with mGBA and its\n'
+        'libretro front end, the PanVK Vulkan driver from Mesa, Samba), with the build recipes and patches, is\n'
+        f'published with it as `RG-DS-OS-{version}-sources.tar` on https://github.com/{repo}/releases/tag/v{version}\n'
+        '(the same place as the image and the update). It holds these archives, at these paths:\n\n' +
+        ''.join(f'- `{name}` sha256 `{digest}`\n' for name, digest in moved.items()) +
+        '\nThird-party notices: THIRD_PARTY.md and each component\'s LICENSE, COPYING and NOTICE.txt.\n'
+    )
+    size = sum((SOURCES / name).stat().st_size for name in moved)
+    print(f'{len(moved)} source archives ({size >> 20} MB) moved out of the image to {SOURCES}', flush=True)
+    return moved
+
+
+def stage(release, no_3ds=False):
     launcher = ROOT / 'build/device/rgds-launcher'
     if not launcher.is_file():
         raise SystemExit('No device build: run tools/build.py device first.')
@@ -126,6 +192,7 @@ def stage(release):
     (STAGE / 'panvk').mkdir()
     shutil.copy2(driver, STAGE / 'panvk' / driver.name)
     shutil.copy2(app / 'emulators/rgds-experimental/lib/libzstd.so.1', STAGE / 'panvk/libzstd.so.1')
+    sources = move_sources(app)
     # A release of its own: emulator launches verify every file against manifest.json, and the folder is named after
     # the build (runtime/activate.py), so the image installs it as /usr/share/rgds/releases/<build>.
     manifest = json.loads((app / 'manifest.json').read_text())
@@ -139,6 +206,8 @@ def stage(release):
     manifest.update(build=build, files=files, cores=sorted(set(manifest.get('cores', [])) | {'rgds-play'}))
     (app / 'manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
     (STAGE / 'build-id').write_text(build + '\n')
+    (SOURCES / 'sources.json').write_text(json.dumps(dict(build=build, files=sources), indent=2, sort_keys=True) + '\n')
+    stage_tanuki(STAGE, no_3ds)
     print(f'staged {build} in {app} from {release.name} + this checkout', flush=True)
 
 
@@ -173,6 +242,12 @@ def native(args):
     print(f'{build} verified in the image', flush=True)
     target = ROOT / '.cache/own-os/build'
     target.mkdir(parents=True, exist_ok=True)
+    # the 3DS engine's record beside the image, which own_os_release.py asks for (0.9.0 shipped without the engine)
+    engine = out / 'target/usr/share/rgds/engines/tanuki3ds'
+    (target / 'tanuki3ds.json').unlink(missing_ok=True)
+    if not args.no_3ds:
+        if not (engine / 'run.sh').is_file(): raise SystemExit('The image has no 3DS engine.')
+        shutil.copy2(engine / 'engine.json', target / 'tanuki3ds.json')
     # the card for both handhelds, and the one fixed to the RG DS Plus (board/rgds/post-image.sh)
     images = [out / 'images/rgds-os.img.gz', out / 'images/rgds-os-plus.img.gz']
     for image in images:
@@ -196,6 +271,7 @@ def main():
     parser.add_argument('--slot-only', action='store_true', help='no SD card images: what make push needs')
     parser.add_argument('--jobs', type=int, default=6)
     parser.add_argument('--reconfigure', action='store_true', help='regenerate output/rgds-os/.config')
+    parser.add_argument('--no-3ds', action='store_true', help='build without the 3DS engine on purpose')
     parser.add_argument('targets', nargs='*', help='Buildroot make targets instead of the whole image')
     args = parser.parse_args()
     if args.native:
@@ -204,7 +280,7 @@ def main():
         release = args.release or ROOT / 'dist' / (ROOT / 'dist/latest.txt').read_text().strip()
         if release.suffix != '.zip':
             release = release.with_name(release.name + '.zip')
-        stage(release)
+        stage(release, args.no_3ds)
         if args.stage_only:
             return
         env = dict(os.environ, LIMA_HOME=str(ROOT / '.cache/linux-builder/state'))
@@ -216,6 +292,7 @@ def main():
             *command,
             *(['--reconfigure'] if args.reconfigure else []),
             *(['--slot-only'] if args.slot_only else []),
+            *(['--no-3ds'] if args.no_3ds else []),
             *args.targets,
             env=env
         )

@@ -1,0 +1,46 @@
+diff --git a/platform/libretro/libretro.c b/platform/libretro/libretro.c
+index 207350d..a120f60 100644
+--- a/platform/libretro/libretro.c
++++ b/platform/libretro/libretro.c
+@@ -2356,6 +2356,29 @@ void run_events_pico(unsigned int events)
+     PicoPicohw.pen_pos[1] |= (pico_inp_mode == 1 ? 0x2f8 : 0x1fc) + pico_pen_y;
+ }
+ 
++/* RG DS Play: the Pico's pen from a touch screen, in the 320 x 224 of a storyware page or of the pad, and the
++   page the book is open at. The core's own pen (moved by the D-pad in its pen modes) stays where it is. */
++RETRO_API void retro_rgds_pico_pen(int x, int y, int down, int storyware)
++{
++   if (x < PICO_PEN_ADJUST_X) x = PICO_PEN_ADJUST_X;
++   if (x > 319-1 - PICO_PEN_ADJUST_X) x = 319-1 - PICO_PEN_ADJUST_X;
++   if (y < PICO_PEN_ADJUST_Y) y = PICO_PEN_ADJUST_Y;
++   if (y > 223-1 - PICO_PEN_ADJUST_Y) y = 223-1 - PICO_PEN_ADJUST_Y;
++   PicoPicohw.pen_pos[0] = (down ? 0 : 0x8000) | (0x3c + x);
++   PicoPicohw.pen_pos[1] = (down ? 0 : 0x8000) | ((storyware ? 0x2f8 : 0x1fc) + y);
++}
++
++RETRO_API int retro_rgds_pico_page(void)
++{
++   return PicoPicohw.page;
++}
++
++RETRO_API void retro_rgds_pico_set_page(int page)
++{
++   if (page >= 0 && page <= 7)
++      PicoPicohw.page = page;
++}
++
+ void retro_run(void)
+ {
+    bool updated = false;
+@@ -2412,6 +2435,11 @@ void retro_run(void)
+               (1 << RETRO_DEVICE_ID_JOYPAD_START));
+        uint16_t new_ev = ev & ~pico_events;
+        pico_events = ev;
++       /* RG DS Play: the touch screen is the pen (retro_rgds_pico_pen), so the core's own pen modes, which take the
++          D-pad and redraw the pen every frame, stay off: X, Y (also the Pico's A) and START only reach the game. L and R
++          still turn the storyware's pages. */
++       new_ev &= (1 << RETRO_DEVICE_ID_JOYPAD_L) | (1 << RETRO_DEVICE_ID_JOYPAD_R);
++       pico_inp_mode = 0;
+        run_events_pico(new_ev);
+    }
+ 

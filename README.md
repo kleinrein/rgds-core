@@ -15,7 +15,7 @@
 
 - **A real OS:** Quick boot, low RAM consumption and fast game starts.
 - **DS games in DSCore:** sharp 2x-5x 3D (heavy games can glitch or slow down), 32 shaders and LCD filters, fast-forward, low input latency.
-- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System, Mega Drive, N64, PlayStation, PSP, ZX Spectrum, Commodore 64, Game & Watch and ScummVM. Nintendo 3DS is experimental.
+- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System (with Game Gear and SG-1000), Mega Drive (with Mega-CD and Sega Pico), PC Engine (with CD-ROM), N64, PlayStation, PSP, ZX Spectrum, Commodore 64, Amiga, MSX, Atari 2600, ColecoVision, Intellivision, PICO-8 (through fake-08), Game & Watch and ScummVM. Nintendo 3DS is experimental.
 - **Dual screen mode:** maps, HUDs and your team on the bottom panel. See [the games](#second-screen-games).
 - **One in-game menu for every system:** pause, checkpoints, cheats, game switcher, settings.
 - **Library:** covers, list or cartridges. Search, favourites, recents, play time, and artwork and game info fetched for you.

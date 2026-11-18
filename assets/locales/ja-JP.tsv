@@ -306,6 +306,7 @@ DS rounded	DS 丸ゴシック
 DS screens	DSの画面
 DSCore 3D resolution	DSCoreの3D解像度
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore：おすすめ。いちばん速く、ふた・タッチペン・3Dの修正入り。3Dは2x–5xにもできます。
+Drawing pad	おえかきパッド
 Edit	編集
 Edit search	検索を編集
 Effects volume	効果音の音量
@@ -451,14 +452,17 @@ Green	グリーン
 Grey	グレー
 Grey TV	グレーのテレビ
 Grid	方眼
+Keypad	キーパッド
 Left stick down	左スティック 下
 Left stick left	左スティック 左
 Left stick right	左スティック 右
 Left stick up	左スティック 上
+Page	ページ
 Right stick down	右スティック 下
 Right stick left	右スティック 左
 Right stick right	右スティック 右
 Right stick up	右スティック 上
+Storyware	ストーリーウェア
 h	時間
 Haptic strength	触覚の強さ
 Health	体力
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	一時ファイル。安全に消去できます
 RG DS Core, its engines and settings.	RG DS Core、そのエンジンと設定。
 Everything else on the card, with the file system's own overhead.	カード上のその他すべて（ファイルシステム自体の管理領域を含む）。
 Room for more games.	さらにゲームを入れる余裕。
+Console switches	本体スイッチ

@@ -234,6 +234,31 @@ def link_component(source, destination):
         pending.unlink(missing_ok=True)
 
 
+def unpacked_7z(rom, data):
+    """A DS game in a .7z, unpacked by RG DS Play (rgds-play --unpack: the image has no other 7z reader) into the
+    same cache as a zipped one's, one game kept at a time."""
+    player = Path(__file__).resolve().parent.parent / "emulators/rgds-play/rgds-play"
+    if not player.is_file(): raise ValueError("This build cannot open .7z games: unpack it or zip it instead.")
+    env = dict(os.environ)
+    env["LD_LIBRARY_PATH"] = os.pathsep.join(filter(None, (str(player.parent / "lib"), env.get("LD_LIBRARY_PATH"))))
+    try:
+        result = subprocess.run(
+            [str(player), "--unpack", str(rom),
+             str(data / "cache/roms-7z"), ".nds,.dsi"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env=env
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError("The .7z game could not be unpacked.") from error
+    game = Path(result.stdout.strip()) if result.returncode == 0 else None
+    if not game or not game.is_file():
+        message = result.stderr.strip().rpartition("rgds-play: ")[2]
+        raise ValueError(message or "The .7z game could not be unpacked.")
+    return game
+
+
 def resolve_rom(rom, data, core=None):
     rom = rom.resolve(strict=True)
     from play_options import PLAY_CORE, PORT_CORE, system_of, unpacked_disks
@@ -246,8 +271,10 @@ def resolve_rom(rom, data, core=None):
     if system_of(rom) != "nds": raise ValueError("This game is played with RG DS Play, not a DS engine.")
     if rom.suffix.lower() in (".nds", ".dsi"):
         return rom
+    if rom.suffix.lower() == ".7z":
+        return unpacked_7z(rom, data)
     if rom.suffix.lower() != ".zip":
-        raise ValueError("Choose an .nds, .dsi, or .zip game.")
+        raise ValueError("Choose an .nds, .dsi, .zip or .7z game.")
     digest = hashlib.sha256()
     # Hash, validate and extract the same open file. Renaming/replacing the ZIP
     # cannot make the cache identity come from one file and its ROM from another.
@@ -337,8 +364,14 @@ def top_display(env):
     return env.get('RGDS_TOP_DISPLAY', 'DSI-1')
 
 
-# Tanuki3DS with its own Mesa (tools/tanuki3ds), about 380 MB: on the data partition, the OS image has no room for it.
-TANUKI_ENGINE = Path('/data/rgds/engines/tanuki3ds')
+# Tanuki3DS with its own Mesa (tools/tanuki3ds): in the OS image since 0.9.1 (tools/tanuki3ds/stage_engine.py,
+# own_os_build.py), read-only. A copy on the data partition goes first: that is where a development build is installed.
+TANUKI_ENGINES = (Path('/data/rgds/engines/tanuki3ds'), Path('/usr/share/rgds/engines/tanuki3ds'))
+
+
+def tanuki_engine(engines=TANUKI_ENGINES):
+    """The 3DS engine folder to run, or None when the handheld has none."""
+    return next((engine for engine in engines if (engine / 'run.sh').is_file()), None)
 
 
 def seed_tanuki(owner_home, home):
@@ -352,11 +385,12 @@ def seed_tanuki(owner_home, home):
     if (owner_home / firmware).is_file(): copy_missing(owner_home / firmware, home / firmware)
 
 
-def tanuki_plan(data, rom, prepare=True, engine=TANUKI_ENGINE, identity=None, fresh_start=False, app=None):
+def tanuki_plan(data, rom, prepare=True, engine=None, identity=None, fresh_start=False, app=None):
     """Nintendo 3DS games. Tanuki3DS is SDL3, so not on the bridge; it speaks the shared menu's files itself.
 
     Its settings and the games' saves stay under userdata, as the home folder /root is RAM on RG DS OS."""
-    if not (engine / 'run.sh').is_file():
+    engine = engine or tanuki_engine()
+    if engine is None or not (engine / 'run.sh').is_file():
         raise ValueError('No emulator for 3DS games is installed on this handheld.')
     player = player_root(data)
     home = player / 'emulators/rgds-play/3ds'
@@ -714,7 +748,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # A save beside the game is the owner's: another profile's first start of it is a new game.
         if not is_owner(player): command += ["--no-save-import", "--shared-cheats", str(data / "emulators/rgds-play")]
         from linux_platform import rgds_os
-        from play_options import system_of, libretro_core, LIBRETRO_SYSTEM_DIRS, MGBA_SYSTEMS
+        from play_options import system_of, libretro_core, provide_system_files, LIBRETRO_SYSTEM_DIRS, MGBA_SYSTEMS
         system = system_of(identity or rom)
         # PPSSPP starts its emulation and GPU threads after the pin below and they would share its one core: the frame
         # read-back alone went from 5.3 to 11.6 ms. Mupen64Plus's threaded renderer starts its emulation thread after it
@@ -728,7 +762,9 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             if library is None:
                 raise ValueError(f"No emulator for {system} games is installed on this handheld.")
             command += ["--core", str(library), "--system", system]
-            command += ["--system-dir", LIBRETRO_SYSTEM_DIRS.get(system, "/data/rgds/bios")]
+            bios = LIBRETRO_SYSTEM_DIRS.get(system, "/data/rgds/bios")
+            if prepare: provide_system_files(system, bios)
+            command += ["--system-dir", bios]
         # The launcher's Theme & display (and language, time format) for the second screen.
         command += ["--preferences", str(player / "preferences.ini")]
         for system in ("gba", "gb", "nes", "snes", "sms", "md", "n64", "zx", "c64", "gw", "scummvm"):

@@ -306,6 +306,7 @@ DS rounded	DS 둥근 글꼴
 DS screens	DS 화면
 DSCore 3D resolution	DSCore 3D 해상도
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: 추천. 가장 빠르며 덮개·스타일러스·3D 문제를 고쳤고, 3D를 2x–5x로 높일 수도 있습니다.
+Drawing pad	그림판
 Edit	편집
 Edit search	검색어 편집
 Effects volume	효과음 음량
@@ -451,14 +452,17 @@ Green	초록색
 Grey	회색
 Grey TV	회색 TV
 Grid	모눈
+Keypad	키패드
 Left stick down	왼쪽 스틱 아래
 Left stick left	왼쪽 스틱 왼쪽
 Left stick right	왼쪽 스틱 오른쪽
 Left stick up	왼쪽 스틱 위
+Page	페이지
 Right stick down	오른쪽 스틱 아래
 Right stick left	오른쪽 스틱 왼쪽
 Right stick right	오른쪽 스틱 오른쪽
 Right stick up	오른쪽 스틱 위
+Storyware	스토리웨어
 h	시간
 Haptic strength	햅틱 강도
 Health	체력
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	임시 파일입니다. 안전하게 지울 수 
 RG DS Core, its engines and settings.	RG DS Core와 엔진, 설정.
 Everything else on the card, with the file system's own overhead.	카드의 나머지 전부(파일 시스템 자체의 관리 영역 포함).
 Room for more games.	더 많은 게임을 위한 공간.
+Console switches	본체 스위치

@@ -1,0 +1,48 @@
+diff --git a/src/libretro.c b/src/libretro.c
+index 5c135ab..5e1dbdb 100644
+--- a/src/libretro.c
++++ b/src/libretro.c
+@@ -917,6 +917,27 @@ static void process_hotspot_input(void)
+     }
+ }
+ 
++/* RG DS Play: the keypad drawn on the touch screen. Bit i of a port's mask is the key at place i on the
++   controller, read across: 1 2 3, 4 5 6, 7 8 9, Clear 0 Enter (keypadStates' own order). */
++static unsigned rgds_keypad[2];
++
++RETRO_API void retro_rgds_keypad(unsigned port, unsigned mask)
++{
++	if (port < 2)
++		rgds_keypad[port] = mask;
++}
++
++static void rgds_keypad_input(int player)
++{
++	int i;
++	for (i = 0; i < 12; i++)
++		if (rgds_keypad[player] & (1u << i))
++		{
++			setControllerInput(player, keypadStates[i]);
++			return;
++		}
++}
++
+ struct retro_game_geometry Geometry;
+ 
+ static bool libretro_supports_bitmasks = false;
+@@ -1274,6 +1295,7 @@ void retro_run(void)
+ 				showKeypad0 = false;
+ 				setControllerInput(0, getControllerState(joypad0, 0));
+ 			}
++			rgds_keypad_input(0);
+ 
+ 			// Player 2: L/R button shows keypad overlay
+ 			if(joypad1[10] | joypad1[11]) // left/right shoulder down
+@@ -1286,6 +1308,7 @@ void retro_run(void)
+ 				showKeypad1 = false;
+ 				setControllerInput(1, getControllerState(joypad1, 1));
+ 			}
++			rgds_keypad_input(1);
+ 		}
+ 		// MULTI-SCREEN MODE: Use overlay hotspot system
+ 		else

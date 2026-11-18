@@ -306,6 +306,7 @@ DS rounded	DS arrotondato
 DS screens	Schermi DS
 DSCore 3D resolution	Risoluzione 3D di DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: consigliato. Il più veloce, con correzioni per coperchio, pennino e 3D e 3D opzionale 2x–5x.
+Drawing pad	Tavoletta da disegno
 Edit	Modifica
 Edit search	Modifica ricerca
 Effects volume	Volume effetti
@@ -451,14 +452,17 @@ Green	Verde
 Grey	Grigio
 Grey TV	TV grigia
 Grid	Griglia
+Keypad	Tastierino
 Left stick down	Stick sinistro giù
 Left stick left	Stick sinistro sinistra
 Left stick right	Stick sinistro destra
 Left stick up	Stick sinistro su
+Page	Pagina
 Right stick down	Stick destro giù
 Right stick left	Stick destro sinistra
 Right stick right	Stick destro destra
 Right stick up	Stick destro su
+Storyware	Libro illustrato
 h	h
 Haptic strength	Intensità aptica
 Health	Salute
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	File temporanei. Si possono svuotare senza risch
 RG DS Core, its engines and settings.	RG DS Core, i suoi motori e le impostazioni.
 Everything else on the card, with the file system's own overhead.	Tutto il resto della scheda, con l'overhead del file system.
 Room for more games.	Spazio per altri giochi.
+Console switches	Interruttori della console

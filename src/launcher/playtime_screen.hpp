@@ -6,7 +6,7 @@
 namespace {
 // Fixed hues for the systems in the ring and the legend, readable on both themes.
 Color playtime_system_colour(const std::string& id) {
-    static const std::array<std::pair<const char*, Color>, 17> hues = {{
+    static const std::array<std::pair<const char*, Color>, 24> hues = {{
         {"nds", Color{64, 132, 246}},
         {"gba", Color{132, 94, 236}},
         {"gbc", Color{22, 176, 160}},
@@ -19,14 +19,22 @@ Color playtime_system_colour(const std::string& id) {
         {"n64", Color{46, 170, 90}},
         {"zx", Color{220, 60, 110}},
         {"c64", Color{120, 110, 220}},
+        {"coleco", Color{60, 80, 170}},
+        {"msx", Color{150, 150, 60}},
+        {"pce", Color{230, 110, 30}},
+        {"atari", Color{170, 100, 50}},
+        {"amiga", Color{200, 70, 70}},
+        {"pico8", Color{255, 0, 77}},
+        {"intellivision", Color{190, 150, 70}},
         {"gw", Color{214, 112, 44}},
         {"scummvm", Color{76, 170, 120}},
         {"3ds", Color{214, 64, 64}},
         {"psp", Color{70, 110, 210}},
         {"ports", Color{214, 120, 80}},
     }};
+    const std::string shelf = shelf_of(id); // the Mega-CD in the Mega Drive's colour, the Game Gear in the Master System's
     for (const auto& [system, colour] : hues)
-        if (id == system) return colour;
+        if (shelf == system) return colour;
     return Color{150, 150, 160};
 }
 

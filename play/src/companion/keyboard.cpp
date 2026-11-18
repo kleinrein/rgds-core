@@ -174,9 +174,183 @@ const std::vector<Rows>& commodore() {
     return pages;
 }
 
+// An MSX's keys as blueMSX reads them (its libretro.c btn_map): GRAPH is Alt, STOP End, SELECT Page Up, HOME/CLS
+// Home; the international layout's shifted legends above.
+const std::vector<Rows>& msx() {
+    static const std::vector<Rows> pages = {
+        {
+            {{"1", RETROK_1, 1, Plain, nullptr, nullptr, "!"},
+             {"2", RETROK_2, 1, Plain, nullptr, nullptr, "@"},
+             {"3", RETROK_3, 1, Plain, nullptr, nullptr, "#"},
+             {"4", RETROK_4, 1, Plain, nullptr, nullptr, "$"},
+             {"5", RETROK_5, 1, Plain, nullptr, nullptr, "%"},
+             {"6", RETROK_6, 1, Plain, nullptr, nullptr, "^"},
+             {"7", RETROK_7, 1, Plain, nullptr, nullptr, "&"},
+             {"8", RETROK_8, 1, Plain, nullptr, nullptr, "*"},
+             {"9", RETROK_9, 1, Plain, nullptr, nullptr, "("},
+             {"0", RETROK_0, 1, Plain, nullptr, nullptr, ")"},
+             {"BS", RETROK_BACKSPACE}},
+            {{"Q", RETROK_q},
+             {"W", RETROK_w},
+             {"E", RETROK_e},
+             {"R", RETROK_r},
+             {"T", RETROK_t},
+             {"Y", RETROK_y},
+             {"U", RETROK_u},
+             {"I", RETROK_i},
+             {"O", RETROK_o},
+             {"P", RETROK_p},
+             {"ESC", RETROK_ESCAPE}},
+            {{"A", RETROK_a},
+             {"S", RETROK_s},
+             {"D", RETROK_d},
+             {"F", RETROK_f},
+             {"G", RETROK_g},
+             {"H", RETROK_h},
+             {"J", RETROK_j},
+             {"K", RETROK_k},
+             {"L", RETROK_l},
+             {"RETURN", RETROK_RETURN, 2}},
+            {{"SHIFT", RETROK_LSHIFT, 2, Sticky},
+             {"Z", RETROK_z},
+             {"X", RETROK_x},
+             {"C", RETROK_c},
+             {"V", RETROK_v},
+             {"B", RETROK_b},
+             {"N", RETROK_n},
+             {"M", RETROK_m},
+             {",", RETROK_COMMA, 1, Plain, nullptr, nullptr, "<"},
+             {".", RETROK_PERIOD, 1, Plain, nullptr, nullptr, ">"}},
+            {{"CTRL", RETROK_LCTRL, 2, Sticky},
+             {"GRAPH", RETROK_LALT, 2, Sticky},
+             {"SPACE", RETROK_SPACE, 5},
+             {"F1-F5", 0, 2, Page}},
+        },
+        {
+            {{"F1", RETROK_F1, 2}, {"F2", RETROK_F2, 2}, {"F3", RETROK_F3, 2}, {"F4", RETROK_F4, 2}, {"F5", RETROK_F5, 3}},
+            {{"-", RETROK_MINUS, 1, Plain, nullptr, nullptr, "="},
+             {"^", RETROK_EQUALS, 1, Plain, nullptr, nullptr, "~"},
+             {"\\", RETROK_BACKSLASH, 1, Plain, nullptr, nullptr, "|"},
+             {"@", RETROK_BACKQUOTE, 1, Plain, nullptr, nullptr, "`"},
+             {"[", RETROK_LEFTBRACKET, 1, Plain, nullptr, nullptr, "{"},
+             {"]", RETROK_RIGHTBRACKET, 1, Plain, nullptr, nullptr, "}"},
+             {";", RETROK_SEMICOLON, 1, Plain, nullptr, nullptr, "+"},
+             {":", RETROK_QUOTE, 1, Plain, nullptr, nullptr, "*"},
+             {"/", RETROK_SLASH, 1, Plain, nullptr, nullptr, "?"},
+             {"_", RETROK_UNDERSCORE},
+             {"TAB", RETROK_TAB}},
+            {{left_key, RETROK_LEFT, 2},
+             {up_key, RETROK_UP, 2},
+             {down_key, RETROK_DOWN, 2},
+             {right_key, RETROK_RIGHT, 2},
+             {"HOME", RETROK_HOME, 3}},
+            {{"SHIFT", RETROK_LSHIFT, 2, Sticky},
+             {"STOP", RETROK_END, 2},
+             {"SELECT", RETROK_PAGEUP, 2},
+             {"INS", RETROK_INSERT, 2},
+             {"DEL", RETROK_DELETE, 1},
+             {"CAPS", RETROK_CAPSLOCK, 2}},
+            {{"CTRL", RETROK_LCTRL, 2, Sticky},
+             {"GRAPH", RETROK_LALT, 2, Sticky},
+             {"SPACE", RETROK_SPACE, 5},
+             {"ABC", 0, 2, Page}},
+        },
+    };
+    return pages;
+}
+
+// An Amiga's keys as PUAE takes them (libretro-mapper.h: positional, US): HELP is Insert, the Amiga keys Page Up and
+// Page Down.
+const std::vector<Rows>& amiga() {
+    static const std::vector<Rows> pages = {
+        {
+            {{"1", RETROK_1, 1, Plain, nullptr, nullptr, "!"},
+             {"2", RETROK_2, 1, Plain, nullptr, nullptr, "@"},
+             {"3", RETROK_3, 1, Plain, nullptr, nullptr, "#"},
+             {"4", RETROK_4, 1, Plain, nullptr, nullptr, "$"},
+             {"5", RETROK_5, 1, Plain, nullptr, nullptr, "%"},
+             {"6", RETROK_6, 1, Plain, nullptr, nullptr, "^"},
+             {"7", RETROK_7, 1, Plain, nullptr, nullptr, "&"},
+             {"8", RETROK_8, 1, Plain, nullptr, nullptr, "*"},
+             {"9", RETROK_9, 1, Plain, nullptr, nullptr, "("},
+             {"0", RETROK_0, 1, Plain, nullptr, nullptr, ")"},
+             {"BS", RETROK_BACKSPACE}},
+            {{"Q", RETROK_q},
+             {"W", RETROK_w},
+             {"E", RETROK_e},
+             {"R", RETROK_r},
+             {"T", RETROK_t},
+             {"Y", RETROK_y},
+             {"U", RETROK_u},
+             {"I", RETROK_i},
+             {"O", RETROK_o},
+             {"P", RETROK_p},
+             {"ESC", RETROK_ESCAPE}},
+            {{"A", RETROK_a},
+             {"S", RETROK_s},
+             {"D", RETROK_d},
+             {"F", RETROK_f},
+             {"G", RETROK_g},
+             {"H", RETROK_h},
+             {"J", RETROK_j},
+             {"K", RETROK_k},
+             {"L", RETROK_l},
+             {"RETURN", RETROK_RETURN, 2}},
+            {{"SHIFT", RETROK_LSHIFT, 2, Sticky},
+             {"Z", RETROK_z},
+             {"X", RETROK_x},
+             {"C", RETROK_c},
+             {"V", RETROK_v},
+             {"B", RETROK_b},
+             {"N", RETROK_n},
+             {"M", RETROK_m},
+             {",", RETROK_COMMA, 1, Plain, nullptr, nullptr, "<"},
+             {".", RETROK_PERIOD, 1, Plain, nullptr, nullptr, ">"}},
+            {{"CTRL", RETROK_LCTRL, 1, Sticky},
+             {"ALT", RETROK_LALT, 1, Sticky},
+             {"AMIGA", RETROK_PAGEUP, 2, Sticky},
+             {"SPACE", RETROK_SPACE, 5},
+             {"F1-F10", 0, 2, Page}},
+        },
+        {
+            {{"F1", RETROK_F1}, {"F2", RETROK_F2}, {"F3", RETROK_F3}, {"F4", RETROK_F4}, {"F5", RETROK_F5},
+             {"F6", RETROK_F6}, {"F7", RETROK_F7}, {"F8", RETROK_F8}, {"F9", RETROK_F9}, {"F10", RETROK_F10},
+             {"DEL", RETROK_DELETE}},
+            {{"`", RETROK_BACKQUOTE, 1, Plain, nullptr, nullptr, "~"},
+             {"-", RETROK_MINUS, 1, Plain, nullptr, nullptr, "_"},
+             {"=", RETROK_EQUALS, 1, Plain, nullptr, nullptr, "+"},
+             {"\\", RETROK_BACKSLASH, 1, Plain, nullptr, nullptr, "|"},
+             {"[", RETROK_LEFTBRACKET, 1, Plain, nullptr, nullptr, "{"},
+             {"]", RETROK_RIGHTBRACKET, 1, Plain, nullptr, nullptr, "}"},
+             {";", RETROK_SEMICOLON, 1, Plain, nullptr, nullptr, ":"},
+             {"'", RETROK_QUOTE, 1, Plain, nullptr, nullptr, "\""},
+             {"/", RETROK_SLASH, 1, Plain, nullptr, nullptr, "?"},
+             {"TAB", RETROK_TAB, 2}},
+            {{left_key, RETROK_LEFT, 2},
+             {up_key, RETROK_UP, 2},
+             {down_key, RETROK_DOWN, 2},
+             {right_key, RETROK_RIGHT, 2},
+             {"HELP", RETROK_INSERT, 3}},
+            {{"SHIFT", RETROK_LSHIFT, 2, Sticky},
+             {"RETURN", RETROK_RETURN, 2},
+             {"CAPS", RETROK_CAPSLOCK, 2},
+             {"ESC", RETROK_ESCAPE, 2},
+             {"R AMIGA", RETROK_PAGEDOWN, 3, Sticky}},
+            {{"CTRL", RETROK_LCTRL, 1, Sticky},
+             {"ALT", RETROK_LALT, 1, Sticky},
+             {"AMIGA", RETROK_PAGEUP, 2, Sticky},
+             {"SPACE", RETROK_SPACE, 5},
+             {"ABC", 0, 2, Page}},
+        },
+    };
+    return pages;
+}
+
 class Keyboard final : public View {
 public:
-    Keyboard(const std::vector<Rows>& pages, bool spectrum) : pages_(pages), spectrum_(spectrum) {}
+    enum Machine { Spectrum, Commodore, Msx, Amiga };
+    Keyboard(const std::vector<Rows>& pages, Machine machine)
+        : pages_(pages), spectrum_(machine == Spectrum), commodore_(machine == Commodore), amiga_(machine == Amiga) {}
 
     void update(Core& live, uint64_t) override {
         disks_ = live.disk_count();
@@ -331,15 +505,25 @@ private:
         out.rounded_rect(b.x, b.y + sink, b.w, b.h, 7, fill);
     }
 
-    // Each machine's mark beside the heading: the Spectrum's four slanted bands, the C64's five stripes.
+    // Each machine's mark beside the heading: the Spectrum's four slanted bands, the C64's five stripes, an MSX's
+    // function keys, the Amiga's Boing Ball.
     void badge_stripes(Canvas& out, int x, int cy) const {
         if (spectrum_) {
             static constexpr Rgb bands[] = {{216, 40, 40}, {240, 200, 40}, {60, 180, 70}, {40, 170, 220}};
             for (int row = 0; row < 20; ++row)
                 for (int i = 0; i < 4; ++i) out.fill_rect(x + i * 8 + (19 - row), cy - 10 + row, 8, 1, bands[i]);
-        } else {
+        } else if (commodore_) {
             static constexpr Rgb bands[] = {{204, 52, 44}, {232, 124, 44}, {240, 200, 60}, {84, 168, 76}, {58, 108, 188}};
             for (int i = 0; i < 5; ++i) out.fill_rect(x, cy - 10 + i * 4, 44, 4, bands[i]);
+        } else if (amiga_) {
+            // The Boing Ball's red and white checks.
+            for (int row = 0; row < 4; ++row)
+                for (int col = 0; col < 4; ++col)
+                    out.fill_rect(x + col * 5, cy - 10 + row * 5, 5, 5,
+                                  (row + col) % 2 ? Rgb{240, 240, 240} : Rgb{208, 40, 40});
+        } else {
+            // An MSX's function keys: a row of five grey bars.
+            for (int i = 0; i < 5; ++i) out.rounded_rect(x + i * 10, cy - 5, 8, 10, 2, Rgb{150, 150, 160});
         }
     }
 
@@ -366,7 +550,7 @@ private:
             centred_text(out, font, "SHIFT", b, b.y + b.h / 2 + 11, word);
             return;
         }
-        if (!spectrum_ && k.code == RETROK_LCTRL) { // the Commodore key's C= in the logo's blue and red
+        if (commodore_ && k.code == RETROK_LCTRL) { // the Commodore key's C= in the logo's blue and red
             const int size = kit::body, width = font.measure("C=", size), x = b.x + (b.w - width) / 2;
             const int y = font.centred(size, b.y + b.h / 2);
             const bool lit = is_held(k.code), dark = look.dark;
@@ -429,7 +613,7 @@ private:
     }
 
     const std::vector<Rows>& pages_;
-    const bool spectrum_;
+    const bool spectrum_, commodore_, amiga_;
     int page_ = 0, disks_ = 0, disk_ = 0;
     bool next_disk_ = false;
     int finger_ = -1; // the key under the finger, for drawing
@@ -444,8 +628,10 @@ private:
 } // namespace
 
 std::unique_ptr<View> make_keyboard(const std::string& system) {
-    if (system == "zx") return std::make_unique<Keyboard>(spectrum(), true);
-    if (system == "c64") return std::make_unique<Keyboard>(commodore(), false);
+    if (system == "zx") return std::make_unique<Keyboard>(spectrum(), Keyboard::Spectrum);
+    if (system == "c64") return std::make_unique<Keyboard>(commodore(), Keyboard::Commodore);
+    if (system == "msx") return std::make_unique<Keyboard>(msx(), Keyboard::Msx);
+    if (system == "amiga") return std::make_unique<Keyboard>(amiga(), Keyboard::Amiga);
     return nullptr;
 }
 

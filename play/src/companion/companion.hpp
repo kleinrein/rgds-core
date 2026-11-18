@@ -90,6 +90,12 @@ public:
     // when the switch (top right) is tapped, or when there is nothing else.
     View* alternative_view() const;
     bool has_switch() const;
+    // Where the switch's choice is kept (beside the game's save): the screen a game was left on comes back, so a
+    // ZX or C64 game played from the keyboard stays on it. Reads the file now.
+    void remember_switch_in(std::string path);
+    // The "keyboard first" setting: the keyboard is the screen shown, unless the game was left on the other one
+    // (`force`: the setting was just chosen, which overrides that and is remembered in its place).
+    void set_keyboard_first(bool on, bool force);
     bool showing_alternative() const;
 
 private:
@@ -102,7 +108,7 @@ private:
     void update_screens(Core& live);
     void render_screens(Canvas& out) const;
     std::vector<uint32_t> lower_;
-    Rect lower_rect_;              // the part of the picture lower_ holds
+    Rect lower_rect_;               // the part of the picture lower_ holds
     int lower_w_ = 0, lower_h_ = 0; // the picture's size
     bool picture_matches(int w, int h) const;
     bool menu_over_game_ = false;
@@ -135,7 +141,10 @@ private:
     const uint32_t* shown(const uint32_t* px, int w, int h, std::vector<uint32_t>& buffer) const;
     uint32_t shown_px(uint32_t v) const;
     bool alt_ = false;
+    std::string alt_file_;
+    bool alt_known_ = false;
     Box switch_box(int w) const;
+    void save_switch() const;
     void render_layers(Canvas& out, const Look& look, const Font& font) const;
     uint64_t main_key() const;
     bool hud_covered() const;
@@ -157,10 +166,10 @@ private:
     uint32_t hud_key_ = 0;
     unsigned hud_layers_ = 0;
     std::vector<uint32_t> hud_image_, composed_;
-    std::vector<uint8_t> strip_sprites_;               // the lower picture's sprite table (hud.extend_sprites), read each frame
+    std::vector<uint8_t> strip_sprites_; // the lower picture's sprite table (hud.extend_sprites), read each frame
     std::vector<std::array<double, 2>> strip_places_; // and the exact places of what it shows (hud.extend_places)
-    HudPicture hud_picture_; // the HUD for views that lay it out themselves
-    std::vector<Rect> drawn_; // per panel: where the HUD has drawn since it came on
+    HudPicture hud_picture_;                          // the HUD for views that lay it out themselves
+    std::vector<Rect> drawn_;                         // per panel: where the HUD has drawn since it came on
     uint64_t strip_hash_ = 0;
     // The scenery behind the HUD, drawn by a shadow copy without the HUD and sprites.
     void make_backdrop(Core& live);

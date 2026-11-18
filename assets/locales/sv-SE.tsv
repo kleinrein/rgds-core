@@ -306,6 +306,7 @@ DS rounded	DS rundad
 DS screens	DS-skärmar
 DSCore 3D resolution	DSCore 3D-upplösning
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: rekommenderas. Snabbast, med rättningar för lock, penna och 3D samt valfri 2x–5x 3D.
+Drawing pad	Ritplatta
 Edit	Ändra
 Edit search	Ändra sökning
 Effects volume	Effektvolym
@@ -451,14 +452,17 @@ Green	Grön
 Grey	Grå
 Grey TV	Grå tv
 Grid	Rutnät
+Keypad	Knappsats
 Left stick down	Vänster styrspak ned
 Left stick left	Vänster styrspak vänster
 Left stick right	Vänster styrspak höger
 Left stick up	Vänster styrspak upp
+Page	Sida
 Right stick down	Höger styrspak ned
 Right stick left	Höger styrspak vänster
 Right stick right	Höger styrspak höger
 Right stick up	Höger styrspak upp
+Storyware	Sagobok
 h	tim
 Haptic strength	Haptisk styrka
 Health	Hälsa
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	Tillfälliga filer. Säkra att rensa.
 RG DS Core, its engines and settings.	RG DS Core, dess motorer och inställningar.
 Everything else on the card, with the file system's own overhead.	Allt annat på kortet, med filsystemets egen overhead.
 Room for more games.	Plats för fler spel.
+Console switches	Konsolbrytare

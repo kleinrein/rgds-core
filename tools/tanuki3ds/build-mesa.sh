@@ -129,11 +129,23 @@ if 'rgds spike' not in s:
 PY
 grep -n "panfrost_bo_set_label(bo, label)" src/gallium/drivers/panfrost/pan_bo.c || true
 sed -i 's/^   panfrost_bo_set_label(bo, label);$/   bo->label = label; \/* rgds spike: no ioctl per reuse *\//' src/gallium/drivers/panfrost/pan_bo.c
+# Panfrost's precompiled kernels need Mesa's OpenCL compiler (mesa_clc, vtn_bindgen2, panfrost_compile), which needs
+# LLVM: built once here with LLVM, as build-time tools only, so the driver itself can go without it
+if [ ! -x build-tools/src/panfrost/clc/panfrost_compile ]; then
+  rm -rf build-tools
+  $W/venv/bin/meson setup build-tools -Dbuildtype=release -Dgallium-drivers=panfrost -Dvulkan-drivers= -Dplatforms= \
+    -Dglx=disabled -Dllvm=enabled -Dshared-llvm=enabled -Dmesa-clc=enabled -Dprecomp-compiler=enabled -Dvideo-codecs= \
+    -Dtools= -Dbuild-tests=false -Dgallium-va=disabled -Dgallium-vdpau=disabled 2>&1 | tail -3
+  nice ninja -C build-tools src/compiler/clc/mesa_clc src/compiler/spirv/vtn_bindgen2 src/panfrost/clc/panfrost_compile 2>&1 | tail -2
+fi
+export PATH=$PWD/build-tools/src/compiler/clc:$PWD/build-tools/src/compiler/spirv:$PWD/build-tools/src/panfrost/clc:$PATH
 rm -rf build
+# no LLVM (since 0.9.1): Panfrost compiles with Mesa's own Bifrost compiler, as the image's Mesa does, and LLVM with
+# its ICU data was 160 MB of the engine, too much for the OS update (runtime/ota.py MAX_PACKAGE)
 $W/venv/bin/meson setup build --prefix=/usr --libdir=lib -Dbuildtype=release -Db_ndebug=true \
   -Dc_args=-mcpu=cortex-a55 -Dcpp_args=-mcpu=cortex-a55 \
   -Dgallium-drivers=panfrost -Dvulkan-drivers= -Dplatforms= -Dglx=disabled -Degl=enabled -Dgbm=enabled -Dglvnd=enabled \
-  -Dopengl=true -Dgles1=disabled -Dgles2=enabled -Dllvm=enabled -Dshared-llvm=enabled -Dvalgrind=disabled -Dlibunwind=disabled -Dzstd=enabled \
+  -Dopengl=true -Dgles1=disabled -Dgles2=enabled -Dllvm=disabled -Dmesa-clc=system -Dprecomp-compiler=system -Dvalgrind=disabled -Dlibunwind=disabled -Dzstd=enabled \
   -Dvideo-codecs= -Dtools= -Dbuild-tests=false -Dgallium-va=disabled -Dgallium-vdpau=disabled -Dperfetto=false 2>&1 | tail -25
 nice ninja -C build -j8 2>&1 | tail -5
 DESTDIR=$W/mesa-inst nice ninja -C build install 2>&1 | tail -1

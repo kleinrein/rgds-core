@@ -306,6 +306,7 @@ DS rounded	DS yuvarlak
 DS screens	DS ekranları
 DSCore 3D resolution	DSCore 3D çözünürlüğü
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: önerilen. En hızlısı; kapak, kalem ve 3D düzeltmeleri ve isteğe bağlı 2x–5x 3D ile.
+Drawing pad	Çizim tableti
 Edit	Düzenle
 Edit search	Aramayı düzenle
 Effects volume	Efekt ses düzeyi
@@ -451,14 +452,17 @@ Green	Yeşil
 Grey	Gri
 Grey TV	Gri televizyon
 Grid	Izgara
+Keypad	Tuş takımı
 Left stick down	Sol çubuk aşağı
 Left stick left	Sol çubuk sol
 Left stick right	Sol çubuk sağ
 Left stick up	Sol çubuk yukarı
+Page	Sayfa
 Right stick down	Sağ çubuk aşağı
 Right stick left	Sağ çubuk sol
 Right stick right	Sağ çubuk sağ
 Right stick up	Sağ çubuk yukarı
+Storyware	Hikâye kitabı
 h	sa
 Haptic strength	Dokunsal güç
 Health	Sağlık
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	Geçici dosyalar. Temizlemek güvenlidir.
 RG DS Core, its engines and settings.	RG DS Core, motorları ve ayarları.
 Everything else on the card, with the file system's own overhead.	Kartta kalan her şey, dosya sisteminin kendi yüküyle birlikte.
 Room for more games.	Daha fazla oyun için yer.
+Console switches	Konsol anahtarları

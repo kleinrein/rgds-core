@@ -1,0 +1,2 @@
+# FreeIntv keeps CRLF line endings: the patch has to as well.
+*.patch -text

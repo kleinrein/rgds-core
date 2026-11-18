@@ -7,7 +7,8 @@
 writes dist/release-os/<version>/: the card image for new installs (RG-DS-OS-<version>.img.gz and its .sha256),
 RG-DS-OS-Plus-<version>.img.gz (the card fixed to the RG DS Plus, should its detection pick wrong),
 the update RG-DS-OS-<build>.zip (rootfs.squashfs, Image.lz4, the device trees, extlinux.conf and manifest.json under
-<build>/), <channel>-os.json, the feed signed with the key tools/release.py init made, and RG DS Flasher
+<build>/), <channel>-os.json, the feed signed with the key tools/release.py init made,
+RG-DS-OS-<version>-sources.tar (the corresponding source archives own_os_build.py keeps out of the image), and RG DS Flasher
 (flasher/build.sh: RG-DS-Flasher-Windows.exe, -macOS.zip and -Linux-x64; --no-flasher leaves it out). Handhelds read
 the feed from the latest GitHub release (packaging/update-trust.json's stable.json -> stable-os.json), so a release is only
 offered once it is published and marked latest. Without --upload it prints the `gh release create --draft` command;
@@ -62,6 +63,43 @@ def package(build, out):
     return archive, unpacked
 
 
+# The root slots on every card (board/rgds/genimage.cfg.in): an update cannot make them bigger, and
+# runtime/os_update.py refuses a root filesystem that does not fit, so no handheld already out there could update.
+SLOT_BYTES = 768 * 1024 * 1024
+SOURCES = ROOT / 'build/os-stage/sources'
+
+
+def fits_slot(rootfs):
+    size = rootfs.stat().st_size
+    if size > SLOT_BYTES:
+        raise SystemExit(
+            f'rootfs.squashfs is {size >> 20} MiB, larger than the {SLOT_BYTES >> 20} MiB root slot: '
+            'no handheld could install this update.'
+        )
+    return size
+
+
+def sources(build, version, out):
+    """RG-DS-OS-<version>-sources.tar: the source archives own_os_build.py moved out of the image for this build
+    (their paths and hashes are in the release's SOURCES.md)."""
+    try:
+        record = json.loads((SOURCES / 'sources.json').read_text())
+    except (OSError, ValueError):
+        raise SystemExit('No source archives staged: run tools/own_os_build.py again.') from None
+    if record.get('build') != build:
+        raise SystemExit(f'The staged sources are for {record.get("build")}, not {build}: build the image again.')
+    import tarfile
+    archive = out / f'RG-DS-OS-{version}-sources.tar'
+    with tarfile.open(archive, 'w') as tar:
+        for name, digest in sorted(record['files'].items()):
+            path = SOURCES / name
+            if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                raise SystemExit(f'{name} changed since it was staged: build the image again.')
+            tar.add(path, arcname=name)
+        tar.add(SOURCES / 'sources.json', arcname='sources.json')
+    return archive
+
+
 def flasher(out):
     """The card flasher players use instead of Etcher; it always fetches the latest release, so any build works."""
     subprocess.run([str(FLASHER / 'build.sh'), '--test'], check=True)
@@ -84,12 +122,18 @@ def main():
         '--upload', action='store_true', help='create the draft release instead of printing the command'
     )
     parser.add_argument('--no-flasher', action='store_true', help='leave RG DS Flasher out (it needs Go to build)')
+    parser.add_argument('--no-3ds', action='store_true', help='release an image built without the 3DS engine')
     args = parser.parse_args()
     if not re.fullmatch(r'\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?', args.version) or 'dev' in args.version:
         raise SystemExit(f'Use a release version such as 0.1.0, not {args.version}.')
     missing = [n for n in (*PAYLOAD, 'build-id', IMAGE, PLUS_IMAGE) if not (BUILD / n).is_file()]
     if missing:
         raise SystemExit('Missing in .cache/own-os/build: ' + ', '.join(missing) + '. Run tools/own_os_build.py.')
+    if not args.no_3ds and not (BUILD / 'tanuki3ds.json').is_file():
+        raise SystemExit(
+            'The last image has no 3DS engine: stage it (tools/tanuki3ds/stage_engine.py) and build again, '
+            'or pass --no-3ds on purpose.'
+        )
     build = (BUILD / 'build-id').read_text().strip()
     if not build.startswith(args.version + '-'):
         raise SystemExit(f'The last build is {build}: set VERSION to {args.version} and build the image again.')
@@ -106,11 +150,16 @@ def main():
     subprocess.run([sys.executable, str(ROOT / 'tools/resume_check.py'), '--add', args.version], check=True)
     # and every save must stay where it is, whatever the handheld does with profiles
     subprocess.run([sys.executable, '-B', str(ROOT / 'tests/test_profile_upgrade.py')], check=True)
+    rootfs = fits_slot(BUILD / 'rootfs.squashfs')
     out = ROOT / 'dist/release-os' / args.version
     out.mkdir(parents=True, exist_ok=True)
     archive, unpacked = package(build, out)
+    source_archive = sources(build, args.version, out)
+    print(f'rootfs.squashfs {rootfs >> 20} of {SLOT_BYTES >> 20} MiB; sources {source_archive.relative_to(ROOT)}')
     images = []
-    for source, name in ((IMAGE, f'RG-DS-OS-{args.version}.img.gz'), (PLUS_IMAGE, f'RG-DS-OS-Plus-{args.version}.img.gz')):
+    for source, name in (
+        (IMAGE, f'RG-DS-OS-{args.version}.img.gz'), (PLUS_IMAGE, f'RG-DS-OS-Plus-{args.version}.img.gz')
+    ):
         image = out / name
         shutil.copyfile(BUILD / source, image)
         digest = hashlib.sha256(image.read_bytes()).hexdigest()
@@ -142,7 +191,7 @@ def main():
     print(f'{image.relative_to(ROOT)} ({image.stat().st_size / 1048576:.0f} MiB), the card image (both handhelds)')
     notes = out / 'notes.md'
     notes.write_text(metadata['notes'])
-    files = [*images, archive, feed, *([] if args.no_flasher else flasher(out))]
+    files = [*images, archive, feed, source_archive, *([] if args.no_flasher else flasher(out))]
     command = [
         'gh', 'release', 'create', tag, '--repo', repo, '--draft', '--title', f'RG DS OS {args.version}',
         '--notes-file',

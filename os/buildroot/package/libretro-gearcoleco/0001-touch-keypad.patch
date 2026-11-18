@@ -1,0 +1,37 @@
+diff --git a/platforms/libretro/libretro.cpp b/platforms/libretro/libretro.cpp
+index 02c4072..4276d01 100644
+--- a/platforms/libretro/libretro.cpp
++++ b/platforms/libretro/libretro.cpp
+@@ -175,6 +175,20 @@ static GC_Keys keymap[] = {
+     Key_Purple
+ };
+ 
++/* RG DS Play: the keypad drawn on the touch screen. Bit i of a port's mask is the key at place i on the
++   controller, read across: 1 2 3, 4 5 6, 7 8 9, * 0 #. */
++static unsigned rgds_keypad[MAX_PADS];
++static const GC_Keys rgds_keypad_keys[12] = {
++    Keypad_1, Keypad_2, Keypad_3, Keypad_4, Keypad_5, Keypad_6,
++    Keypad_7, Keypad_8, Keypad_9, Keypad_Asterisk, Keypad_0, Keypad_Hash
++};
++
++extern "C" RETRO_API void retro_rgds_keypad(unsigned port, unsigned mask)
++{
++    if (port < MAX_PADS)
++        rgds_keypad[port] = mask;
++}
++
+ static void fallback_log(enum retro_log_level level, const char *fmt, ...)
+ {
+     (void)level;
+@@ -2188,6 +2202,11 @@ static void update_input(void)
+         }
+     }
+ 
++    for (int j = 0; j < MAX_PADS; j++)
++        for (int i = 0; i < 12; i++)
++            if (rgds_keypad[j] & (1u << i))
++                core->KeyPressed(static_cast<GC_Controllers>(j), rgds_keypad_keys[i]);
++
+     if (spinner_support > 0)
+     {
+         for (int i=0; i<2; i++)

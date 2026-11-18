@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LIBRETRO_BLUEMSX
+	bool "libretro-bluemsx"
+	help
+	  blueMSX, the MSX and MSX2 core RG DS Play loads for .rom, .mx1, .mx2,
+	  .dsk and .cas games: /usr/lib/libretro/bluemsx_libretro.so. The image
+	  carries only the free C-BIOS machines and the game databases
+	  (/usr/share/libretro/bluemsx, copied into the BIOS folder when an MSX
+	  game starts): cartridges run on C-BIOS, disks and tapes need the
+	  owner's own MSX BIOS machines there.

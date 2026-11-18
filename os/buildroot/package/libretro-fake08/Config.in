@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_FAKE08
+	bool "libretro-fake08"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  fake-08, a free PICO-8 player (MIT; an independent re-creation, not
+	  Lexaloffle's): /usr/lib/libretro/fake08_libretro.so, loaded by RG DS
+	  Play for .p8 and .p8.png carts.

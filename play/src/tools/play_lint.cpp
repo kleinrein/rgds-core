@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
 
     // The computers' keyboards, in each state with other legends: a finger on the keys isn't lint's to judge.
     for (const auto& lc : looks()) {
-        for (const char* system : {"zx", "c64"}) {
+        for (const char* system : {"zx", "c64", "msx", "amiga"}) {
             auto keyboard = make_keyboard(system);
             const std::string name = std::string("keyboard/") + system;
             run(name, lc, true, [&](const Look& l, const Font& f) { keyboard->draw(out, l, f, 0); });
@@ -243,6 +243,20 @@ int main(int argc, char** argv) {
                     keyboard->touch({Touch::Up, b.x + b.w / 2, b.y + b.h / 2});
                 }
             }
+        }
+    }
+
+    // The controllers on the touch screen: the keypads at rest and with a key down, the Pico's book and its pad.
+    for (const auto& lc : looks()) {
+        for (const char* system : {"coleco", "intellivision", "pico", "atari"}) {
+            auto controller = make_controller(system);
+            const std::string name = std::string("controller/") + system;
+            run(name, lc, true, [&](const Look& l, const Font& f) { controller->draw(out, l, f, 0); });
+            const auto boxes = targets;
+            const Box& b = boxes.back();
+            controller->touch({Touch::Down, b.x + b.w / 2, b.y + b.h / 2});
+            run(name + " down", lc, true, [&](const Look& l, const Font& f) { controller->draw(out, l, f, 0); });
+            controller->touch({Touch::Up, b.x + b.w / 2, b.y + b.h / 2});
         }
     }
 

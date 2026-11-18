@@ -286,6 +286,20 @@ class StageTests(unittest.TestCase):
         self.assertEqual(status["state"], "rolled-back")
         self.assertIn("This version was kept", status["message"])
 
+    def test_a_refused_commit_keeps_the_trial_for_the_fallback(self):
+        # trial commit refuses a release that fails verification: the slot stays on trial and nothing says "up to date"
+        self.trial.write_text(
+            "#!/bin/sh\necho \"$@\" >> \"$(dirname \"$0\")/trial.log\"\n[ \"$1\" = status ] && echo trial b\n"
+            "[ \"$1\" = commit ] && exit 1\nexit 0\n"
+        )
+        u = self.updater()
+        pending = Path(self.tmp.name) / "state/update-pending.json"
+        u.guard.save(pending, dict(phase="trial", build="0.7.1-abc-os22222222", version="0.7.1"))
+        u.commit_trial()
+        self.assertTrue(pending.exists())
+        self.assertIn("commit", (Path(self.tmp.name) / "trial.log").read_text())
+        self.assertFalse((self.data / "update/status.ini").exists())
+
     def test_commit_after_a_fallback_tells_the_launcher(self):
         u = self.updater()
         u.guard.save(

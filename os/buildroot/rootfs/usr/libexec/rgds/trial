@@ -57,6 +57,20 @@ boot)
     ;;
 commit)
     [ -f $RECORD ] && [ "$(field slot)" = "$SLOT" ] || exit 0
+    # Every file of the release, hashed against its manifest, before the slot is called good: the menu only hashes
+    # what it starts with and a game only its engine, so a slot the card stored wrongly (0.8.0's updater read its
+    # write back through the page cache) came up with a menu whose games all failed. Refused, the trial stays open:
+    # rcS restarts it and U-Boot goes back to the previous slot, which the launcher then reports. Once a boot.
+    VERIFIED=/run/rgds/release-verified
+    if [ ! -f $VERIFIED ]; then
+        BUILD=$(cat /usr/share/rgds/active)
+        if ! nice -n 19 python3 /usr/share/rgds/releases/$BUILD/runtime/activate.py verify --root /usr/share/rgds \
+            --build "$BUILD" > /dev/null; then
+            echo "trial: slot $SLOT not committed, its release failed verification" >&2
+            exit 1
+        fi
+        : > $VERIFIED
+    fi
     rw
     { grep -v -E '^FALLBACK ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
     mv $BOOT/extlinux/extlinux.conf.new $BOOT/extlinux/extlinux.conf

@@ -7,6 +7,8 @@ define RGDS_CORE_INSTALL_TARGET_CMDS
 	mkdir -p $(TARGET_DIR)/usr/share/rgds/releases
 	cp -a $(@D)/app $(TARGET_DIR)/usr/share/rgds/releases/$$(cat $(@D)/build-id)
 	cp $(@D)/build-id $(TARGET_DIR)/usr/share/rgds/active
+	rm -rf $(TARGET_DIR)/usr/share/rgds/engines
+	if [ -d $(@D)/engines ]; then cp -a $(@D)/engines $(TARGET_DIR)/usr/share/rgds/engines; fi
 	rm -rf $(TARGET_DIR)/usr/lib/rgds-panvk
 	cp -a $(@D)/panvk $(TARGET_DIR)/usr/lib/rgds-panvk
 endef

@@ -1,4 +1,6 @@
 config BR2_PACKAGE_LIBRETRO_PICODRIVE
 	bool "libretro-picodrive"
 	help
-	  PicoDrive, the Mega Drive, Master System and Game Gear core: /usr/lib/libretro/picodrive_libretro.so.
+	  PicoDrive, the Mega Drive, 32X, Mega-CD, Pico, Master System, Game Gear
+	  and SG-1000 core: /usr/lib/libretro/picodrive_libretro.so. 0001 puts the
+	  Pico's pen and storyware page on the touch screen.

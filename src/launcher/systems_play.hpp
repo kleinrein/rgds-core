@@ -191,9 +191,8 @@ void App::system_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
     if (preferences.rich_icons && size >= 24 &&
         media.draw(r, asset_path("systems/" + id + ".bmp"), {x, y, size, size}, false))
         return;
-    // Simple pixel style: the system's own 16 x 16 glyph.
-    if (!preferences.rich_icons && draw_system_pixel(s, r, id, x + size / 2, y + size / 2, size, theme.at("accent")))
-        return;
+    // Simple pixel style, or a system without a drawing yet: its own 16 x 16 glyph.
+    if (draw_system_pixel(s, r, id, x + size / 2, y + size / 2, size, theme.at("accent"))) return;
     // No artwork for this system yet: the cartridge and its badge.
     ui_icon(r, SettingsIcon::Cartridge, x + size / 2, y + size * 2 / 5, size * 5 / 8, "accent");
     const std::string badge = info.badge;
@@ -201,7 +200,9 @@ void App::system_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
 }
 
 static const std::array<std::string, 3> play_fit_slugs = {"sharp", "integer", "smooth"};
-static const std::array<std::string, 4> play_second_slugs = {"companion", "off", "swap", "info"};
+static const std::array<std::string, 5> play_second_slugs = {"companion", "off", "swap", "info", "keyboard"};
+
+static std::vector<int> play_second_order(const std::string& system);
 
 App::SystemView App::system_view(const std::string& system) const {
     auto cached = system_views.find(system);
@@ -211,7 +212,12 @@ App::SystemView App::system_view(const std::string& system) const {
     auto found = std::find(play_fit_slugs.begin(), play_fit_slugs.end(), values["fit"]);
     if (found != play_fit_slugs.end()) view.fit = int(found - play_fit_slugs.begin());
     auto second = std::find(play_second_slugs.begin(), play_second_slugs.end(), values["second"]);
-    if (second != play_second_slugs.end()) view.second = int(second - play_second_slugs.begin());
+    if (second != play_second_slugs.end()) {
+        // A choice this system does not offer (the keyboard on a system with none) is ignored, not shown as another.
+        const auto offered = play_second_order(system);
+        const int id = int(second - play_second_slugs.begin());
+        if (std::find(offered.begin(), offered.end(), id) != offered.end()) view.second = id;
+    }
     for (int i = 0; i < play::gb_palette_count; i++)
         if (values["palette"] == play::gb_palettes[i].slug) view.palette = i;
     for (int i = 0; i < play::gb_correction_count; i++)
@@ -262,7 +268,11 @@ void App::load_play_view() {
     auto found = std::find(play_fit_slugs.begin(), play_fit_slugs.end(), values["fit"]);
     if (found != play_fit_slugs.end()) play_fit = int(found - play_fit_slugs.begin());
     auto second = std::find(play_second_slugs.begin(), play_second_slugs.end(), values["second"]);
-    if (second != play_second_slugs.end()) play_second = int(second - play_second_slugs.begin());
+    if (second != play_second_slugs.end()) {
+        const auto offered = play_second_order(play_system());
+        const int id = int(second - play_second_slugs.begin());
+        if (std::find(offered.begin(), offered.end(), id) != offered.end()) play_second = id;
+    }
     auto choices = play_frame_choices();
     play_frame = play_default.frame;
     if (std::find(choices.begin(), choices.end(), values["frame"]) != choices.end()) play_frame = values["frame"];
@@ -290,9 +300,9 @@ int App::play_colour_kind() const {
 std::string App::play_system() const {
     const auto& game = model.games.at(0);
     const std::string system = game.system == "nds" ? system_for_path(game.path) : game.system;
-    // The Game Gear shares the Master System's shelf, not its bezels.
-    if (system == "sms" && lower(game.path.extension().string()) == ".gg") return "gg";
-    return system == "nds" ? "gba" : system;
+    // The Game Gear shares the Master System's shelf, not its bezels; the SG-1000, the Mega-CD and the Pico share
+    // their shelves and frames but are systems of their own to the player (runtime/play_options.py).
+    return play_subsystem(game.path, system == "nds" ? "gba" : system);
 }
 
 fs::path App::play_frames_folder() { return o.data / "frames" / play_system(); }
@@ -369,13 +379,23 @@ const char* App::play_fit_name(int fit) const {
 const char* App::play_second_name(int second, const std::string& system) const {
     // The 3DS's lower screen is the game's own: no companion and no info screen there.
     if (system == "3ds" && (second == 0 || second == 3)) return "Both screens";
-    return second == 1 ? "Off" : second == 2 ? "Swap screens" : second == 3 ? "Info screen" : "Companion";
+    return second == 1   ? "Off"
+           : second == 2 ? "Swap screens"
+           : second == 3 ? "Info screen"
+           : second == 4 ? (system == "pico"    ? "Storyware"
+                            : system == "atari" ? "Console switches"
+                            : has_touch_controller(system) ? "Keypad"
+                                                           : "Keyboard")
+                         : "Companion";
 }
 
 // The Second screen picker's order over the menu's numbers (play-graphics).
 static std::vector<int> play_second_order(const std::string& system) {
     if (system == "3ds") return {0, 1, 2};
-    return {0, 3, 1, 2}; // the info screen beside the companion
+    if (system == "zx" || system == "c64" || system == "msx" || system == "amiga")
+        return {0, 4, 3, 1, 2}; // the keyboard first, for the machines with one
+    if (has_touch_controller(system)) return {0, 4, 3, 1, 2};    // and the keypad, or the Pico's book
+    return {0, 3, 1, 2};                                           // the info screen beside the companion
 }
 
 // A picker line naming the system's default, so choosing it again means following it.

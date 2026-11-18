@@ -301,6 +301,16 @@ class AudioTests(unittest.TestCase):
         with patch("audio.subprocess.run", return_value=subprocess.CompletedProcess([], 0, stdout=line)):
             self.assertEqual(Mixer(target=lambda: (0, "rk817")).query(), 79)
 
+    def test_a_control_without_a_direction_word_is_still_the_volume(self):
+        # how amixer prints a volume control with one direction; 0.9.0 read no level from it and refused every game
+        line = "Simple mixer control 'Master',0\n  Capabilities: volume volume-joined\n  Mono: 202 [79%] [-19.75dB]\n"
+        with patch("audio.subprocess.run", return_value=subprocess.CompletedProcess([], 0, stdout=line)):
+            self.assertEqual(Mixer(target=lambda: (0, "rk817")).query(), 79)
+        capture_only = "  Mono: Capture 255 [100%] [0.00dB]\n"
+        with patch("audio.subprocess.run", return_value=subprocess.CompletedProcess([], 0, stdout=capture_only)):
+            with self.assertRaises(ValueError):
+                Mixer(target=lambda: (0, "rk817")).query()
+
     def test_microphone_levels_go_to_the_codec_card(self):
         run = Mock()
         with tempfile.TemporaryDirectory() as folder:

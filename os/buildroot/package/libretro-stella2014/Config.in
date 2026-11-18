@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_STELLA2014
+	bool "libretro-stella2014"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  Stella 2014, the Atari 2600 core RG DS Play loads for .a26 games
+	  (and .bin in an Atari folder): /usr/lib/libretro/stella2014_libretro.so.
+	  The console's switches are on the touch screen; no BIOS.

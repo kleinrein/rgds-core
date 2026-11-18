@@ -152,6 +152,10 @@ class OsUpdater(Updater):
         status = subprocess.run([str(self.trial), 'status'], capture_output=True, text=True).stdout.strip()
         if status.startswith('trial'):
             subprocess.run([str(self.trial), 'commit'], check=False)
+            # Refused (the release failed verification): the trial stays open for U-Boot's fallback, and the pending
+            # record with it, so the previous version can say the update could not start.
+            status = subprocess.run([str(self.trial), 'status'], capture_output=True, text=True).stdout.strip()
+            if status.startswith('trial'): return
         guard = self.load_guard()
         pending = guard.read(self.root / 'state/update-pending.json')
         if pending.get('phase') != 'trial': return

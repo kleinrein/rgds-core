@@ -306,6 +306,7 @@ DS rounded	DS заокруглений
 DS screens	Екрани DS
 DSCore 3D resolution	Роздільність 3D у DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: рекомендовано. Найшвидший, з виправленнями кришки, стилуса й 3D та 3D 2x–5x за бажанням.
+Drawing pad	Планшет для малювання
 Edit	Змінити
 Edit search	Змінити пошук
 Effects volume	Гучність ефектів
@@ -451,14 +452,17 @@ Green	Зелений
 Grey	Сірий
 Grey TV	Сірий телевізор
 Grid	Сітка
+Keypad	Цифрова панель
 Left stick down	Лівий стік вниз
 Left stick left	Лівий стік ліворуч
 Left stick right	Лівий стік праворуч
 Left stick up	Лівий стік вгору
+Page	Сторінка
 Right stick down	Правий стік вниз
 Right stick left	Правий стік ліворуч
 Right stick right	Правий стік праворуч
 Right stick up	Правий стік вгору
+Storyware	Книжка
 h	год
 Haptic strength	Сила відгуку
 Health	Здоров’я
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	Тимчасові файли. Їх безпеч
 RG DS Core, its engines and settings.	RG DS Core, його рушії та налаштування.
 Everything else on the card, with the file system's own overhead.	Усе інше на картці, разом зі службовими даними файлової системи.
 Room for more games.	Місце для нових ігор.
+Console switches	Перемикачі приставки

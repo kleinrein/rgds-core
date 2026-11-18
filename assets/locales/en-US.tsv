@@ -306,6 +306,7 @@ DS rounded	DS rounded
 DS screens	DS screens
 DSCore 3D resolution	DSCore 3D resolution
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.
+Drawing pad	Drawing pad
 Edit	Edit
 Edit search	Edit search
 Effects volume	Effects volume
@@ -451,14 +452,17 @@ Green	Green
 Grey	Grey
 Grey TV	Grey TV
 Grid	Grid
+Keypad	Keypad
 Left stick down	Left stick down
 Left stick left	Left stick left
 Left stick right	Left stick right
 Left stick up	Left stick up
+Page	Page
 Right stick down	Right stick down
 Right stick left	Right stick left
 Right stick right	Right stick right
 Right stick up	Right stick up
+Storyware	Storyware
 h	h
 Haptic strength	Haptic strength
 Health	Health
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	Temporary files. Safe to clear.
 RG DS Core, its engines and settings.	RG DS Core, its engines and settings.
 Everything else on the card, with the file system's own overhead.	Everything else on the card, with the file system's own overhead.
 Room for more games.	Room for more games.
+Console switches	Console switches

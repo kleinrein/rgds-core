@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_BEETLE_PCE_FAST
+	bool "libretro-beetle-pce-fast"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  Beetle PCE Fast (Mednafen), the PC Engine / TurboGrafx-16 core RG DS
+	  Play loads for .pce cards and CD-ROM discs:
+	  /usr/lib/libretro/mednafen_pce_fast_libretro.so. Cards need no BIOS;
+	  discs need the owner's syscard3.pce in the BIOS folder.

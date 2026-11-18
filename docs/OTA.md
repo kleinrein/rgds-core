@@ -100,7 +100,8 @@ counter and drops the `FALLBACK` line. Three boots without a commit and U-Boot r
 the trial slot, records `rolled-back` for that build and puts `DEFAULT` back, and the launcher shows "The update
 could not start. Your previous version was restored." That build is not offered again. A kernel that panics
 restarts after 10 s (`panic=10`); a slot that boots but never reaches the launcher is restarted by `rcS` after four
-minutes so the counter advances. `tools/own_os_push.py` arms the same trial for a developer push.
+minutes so the counter advances. `trial commit` first hashes every file of the release against its manifest
+(`activate.py verify`, once a boot): a slot the card stored wrongly is never committed and comes back the same way. `tools/own_os_push.py` arms the same trial for a developer push.
 
 **Use previous build** (Settings → Maintenance) is the same trial the other way: the build the other slot holds is
 read from that slot (its filesystem is mounted for a moment: `usr/share/rgds/active` and its `os-release`), and when

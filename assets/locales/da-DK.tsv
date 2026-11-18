@@ -306,6 +306,7 @@ DS rounded	DS afrundet
 DS screens	DS-skærme
 DSCore 3D resolution	DSCore 3D-opløsning
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: anbefalet. Hurtigst, med rettelser til låg, stylus og 3D samt valgfri 2x–5x 3D.
+Drawing pad	Tegneplade
 Edit	Rediger
 Edit search	Rediger søgning
 Effects volume	Effektlydstyrke
@@ -451,14 +452,17 @@ Green	Grøn
 Grey	Grå
 Grey TV	Grå tv
 Grid	Gitter
+Keypad	Tastatur
 Left stick down	Venstre styrepind ned
 Left stick left	Venstre styrepind venstre
 Left stick right	Venstre styrepind højre
 Left stick up	Venstre styrepind op
+Page	Side
 Right stick down	Højre styrepind ned
 Right stick left	Højre styrepind venstre
 Right stick right	Højre styrepind højre
 Right stick up	Højre styrepind op
+Storyware	Historiebog
 h	t
 Haptic strength	Haptisk styrke
 Health	Helbred
@@ -1630,3 +1634,4 @@ Temporary files. Safe to clear.	Midlertidige filer. Sikre at rydde.
 RG DS Core, its engines and settings.	RG DS Core, dens motorer og indstillinger.
 Everything else on the card, with the file system's own overhead.	Alt andet på kortet, med filsystemets eget overhead.
 Room for more games.	Plads til flere spil.
+Console switches	Konsolkontakter

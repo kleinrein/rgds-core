@@ -27,7 +27,7 @@ void App::load_library(std::vector<Game> games) {
         // Its system, for its icon and the Graphics it offers. Only the runtime knows a zipped game's or a shared
         // extension's; without it, a zipped game in RG DS Play is taken for a GBA one.
         model.games[0].system = o.game_system.empty() ? system_for_path(o.game_rom) : o.game_system;
-        if (model.games[0].system == "gg") model.games[0].system = "sms"; // on the Master System's shelf
+        model.games[0].system = shelf_of(model.games[0].system); // the Game Gear on the Master System's shelf...
         if (model.games[0].system == "nds" && o.game_core == "rgds-play") model.games[0].system = "gba";
         model.selected = 0;
         home_menu = false;

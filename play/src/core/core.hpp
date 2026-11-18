@@ -94,6 +94,28 @@ public:
     virtual void set_mouse_cursor(int x, int y) { (void)x, (void)y; }
     // A key of the system's own keyboard (libretro's RETROK_ codes) down or up, from the next frame on.
     virtual void set_key(unsigned key, bool down) { (void)key, (void)down; }
+    // The controller's keypad (ColecoVision, Intellivision), held from the next frame on: bit i is the key at place i,
+    // read across the pad (1 2 3, 4 5 6, 7 8 9, then * 0 # or Clear 0 Enter). False when the core has no such hook.
+    virtual bool set_keypad(unsigned mask) {
+        (void)mask;
+        return false;
+    }
+    // The Sega Pico's pen, in the 320 x 224 of a storyware page (storyware) or of the drawing pad, on the surface
+    // (down) or lifted; and the page the storyware book is open at, 0-6 (-1: no Pico). False without the hook.
+    virtual bool set_pico_pen(int x, int y, bool down, bool storyware) {
+        (void)x, (void)y, (void)down, (void)storyware;
+        return false;
+    }
+    virtual int pico_page() const { return -1; }
+    // Buttons a touch panel holds besides the pad's (the Atari 2600's console switches), as libretro's
+    // RETRO_DEVICE_ID_JOYPAD_* bits (L3 and R3 included, which the pad has none of). False when not a libretro core.
+    virtual bool set_panel_buttons(uint32_t retro_mask) {
+        (void)retro_mask;
+        return false;
+    }
+    virtual void set_pico_page(int page) { (void)page; }
+    // The game file the owner chose (the archive when it was packed), for pictures kept beside it.
+    virtual std::string game_file() const { return {}; }
     // The disks of a game on several (an .m3u): how many, which is in the drive, and another put in. 0: none to swap.
     virtual int disk_count() { return 0; }
     virtual int disk_index() { return 0; }
@@ -245,6 +267,12 @@ struct OpenResult {
 // Reads .gba/.gb/.gbc, or the first ROM inside a .zip or .7z.
 RomBytes read_rom(const std::string& path, std::string& error, std::string* inner_name = nullptr);
 bool is_rom_name(const std::string& name);
+// The game inside a .zip or .7z for a core that cannot open archives: the entry with the earliest of `extensions`
+// (".cue" before ".bin"), unpacked with the archive's other files (a disc's tracks) into a folder of its own under
+// `folder`. One game is kept there at a time and reused while the archive is unchanged. "" and `error` when the
+// archive holds none.
+std::string unpack_game(const std::string& archive, const std::vector<std::string>& extensions,
+                        const std::string& folder, std::string& error);
 OpenResult open_mgba(RomBytes rom, const std::string& name, const std::vector<uint8_t>& battery);
 // A libretro core (core/libretro_core.cpp): `library` is the core's .so, `system` the system id the launcher
 // knows the game by (nes, snes, md, ...), system_dir where the core finds BIOS files, save_dir its own files.

@@ -174,7 +174,8 @@ h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.35; }
   border-top: 1px solid var(--line);
 }
 .systems li { display: grid; justify-items: center; gap: 0.5rem; text-align: center; font-size: 0.875rem; line-height: 1.3; color: var(--muted); }
-.systems img { width: 48px; height: 48px; image-rendering: pixelated; }
+.systems img { width: 64px; height: 64px; object-fit: contain; }
+.systems img.pixel { image-rendering: pixelated; padding: 8px; }
 .systems-note { margin-top: 2rem; }
 
 /* Install */

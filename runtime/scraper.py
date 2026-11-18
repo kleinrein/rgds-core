@@ -171,6 +171,7 @@ def rom_identity(path):
     path = Path(path)
     crc, md5, sha1, size = 0, hashlib.md5(), hashlib.sha1(), 0
     archive = None
+    if path.suffix.lower() == ".7z": return {"romnom": path.name}  # its contents unreadable here: by name only
     if path.suffix.lower() == ".zip":
         archive = zipfile.ZipFile(path)
         games = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in (".nds", ".dsi")]
@@ -326,7 +327,7 @@ def system_games(entries):
         system, _, folder = entry.partition("=")
         root = Path(folder)
         if system not in SYSTEMS or not root.is_dir(): continue
-        suffixes = SYSTEMS[system] + FOLDER_EXTENSIONS.get(system, ()) + (".zip",)
+        suffixes = SYSTEMS[system] + FOLDER_EXTENSIONS.get(system, ()) + (".zip", ".7z")
         result.update(
             p.resolve() for p in root.rglob("*") if p.is_file() and not p.is_symlink() and p.suffix.lower() in suffixes
         )
@@ -338,7 +339,7 @@ def games(roots):
         {
             p.resolve()
             for root in roots if root.is_dir() for p in root.rglob("*")
-            if p.is_file() and not p.is_symlink() and p.suffix.lower() in (".nds", ".dsi", ".zip")
+            if p.is_file() and not p.is_symlink() and p.suffix.lower() in (".nds", ".dsi", ".zip", ".7z")
         }
     )
 

@@ -2,8 +2,16 @@
 
 The Nintendo 3DS engine: our fork [kleinrein/Tanuki3DS-rgds](https://github.com/kleinrein/Tanuki3DS-rgds), branch
 `rgds` (GPL-3.0), on [Tanuki3DS](https://github.com/burhanr13/Tanuki3DS) commit `879a1e7`, with SDL 3.2.24 and a
-patched Mesa 25.2.8. It lives on the data partition, in `/data/rgds/engines/tanuki3ds`, because it needs about 380 MB
-and the OS image has no room for it.
+patched Mesa 25.2.8. Since 0.9.1 it ships in the OS image as `/usr/share/rgds/engines/tanuki3ds` (read-only). 0.9.0
+went out without it, because it had only ever been installed by hand on the owner's data partition.
+
+- `stage_engine.py HOST` copies the engine installed on a handheld (`/data/rgds/engines/tanuki3ds`, the one played and
+  state-checked) into `build/engines/tanuki3ds` with an `engine.json` of its files; `--from FOLDER` takes a folder or
+  `tanuki-bundle.tar`. Test binaries beside it (`ctremu.ptN`, `ctremu.installed-*`) stay out.
+- `tools/own_os_build.py` stops when nothing is staged (`--no-3ds` builds without 3DS on purpose), and
+  `own_os_release.py` refuses an image built without it.
+- A copy in `/data/rgds/engines/tanuki3ds` still goes first (`emulators.tanuki_engine`): install development builds
+  there as before. Remove it to run the image's engine.
 
 Still a spike. The fork mixes real changes with test hooks (the `SPIKE_*` variables, which the launch plan also uses
 as settings):
