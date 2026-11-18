@@ -96,6 +96,7 @@ std::string App::cover_notice() {
     if (return_writes_pending()) return "Restoring settings…";
     if (o.boot_startup && (!boot_hardware_ready || system.volume_pending())) return "Preparing controls…";
     if (status.find("ERROR") != std::string::npos) return status;
+    if (!launch_refusal.empty() && status == launch_refusal) return status; // the player's words (a missing BIOS)
     return "";
 }
 

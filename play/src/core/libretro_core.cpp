@@ -168,6 +168,57 @@ std::vector<uint8_t> md_bus_image(const std::vector<uint8_t>& rom) {
     return bus;
 }
 
+// Cores that cannot start without the owner's own BIOS files: what to put where, in words for the owner (the core
+// itself only logs it and refuses the game). Empty when nothing is missing. Names are matched as the cores do.
+bool has_kickstart(const std::string& system_dir) {
+    std::error_code missing;
+    for (const auto& file : std::filesystem::directory_iterator(system_dir, missing)) {
+        std::string name = file.path().filename().string();
+        for (auto& c : name) c = char(std::tolower(static_cast<unsigned char>(c)));
+        if (name.rfind("kick", 0) == 0 || name.rfind("amiga-os-", 0) == 0 || name.find("kickstart") != std::string::npos)
+            return true;
+    }
+    return false;
+}
+
+std::string missing_bios(const std::string& system, const std::string& system_dir, const std::string& rom_path) {
+    // The Amiga: AROS, the free Kickstart PUAE carries, cannot run floppy games (they bang on the hardware as the
+    // real ROM sets it up), so a disk image without a Kickstart of the owner's gets told what to add.
+    if (system == "amiga" && !has_kickstart(system_dir)) {
+        std::string ext = std::filesystem::path(rom_path).extension().string();
+        for (auto& c : ext) c = char(std::tolower(static_cast<unsigned char>(c)));
+        if (ext == ".adf" || ext == ".adz" || ext == ".dms" || ext == ".ipf" || ext == ".zip")
+            return "Amiga games need a Kickstart ROM (kick34005.A500) in the BIOS folder";
+    }
+    struct Need {
+        const char* system;
+        const char* title;
+        std::vector<std::vector<const char*>> files; // each entry: names, any one of which will do
+        const char* detail;
+    };
+    static const Need needs[] = {
+        {"coleco", "ColecoVision", {{"colecovision.rom", "coleco.rom", "os7.u2"}}, ""},
+        {"intellivision", "Intellivision", {{"exec.bin"}, {"grom.bin"}}, ""},
+    };
+    for (const Need& need : needs) {
+        if (system != need.system) continue;
+        std::string absent;
+        for (const auto& names : need.files) {
+            bool found = false;
+            for (const char* name : names) {
+                for (const char* sub : {"", "/gearcoleco"}) {
+                    std::error_code ignored;
+                    if (std::filesystem::is_regular_file(system_dir + sub + "/" + name, ignored)) found = true;
+                }
+            }
+            if (!found) absent += (absent.empty() ? "" : ", ") + std::string(names[0]);
+        }
+        if (!absent.empty())
+            return std::string(need.title) + " needs " + absent + " in the BIOS folder";
+    }
+    return {};
+}
+
 } // namespace
 
 class LibretroCore final : public Core {
@@ -370,15 +421,7 @@ public:
         // Kickstart of the owner's in the BIOS folder, AROS, the free one PUAE carries.
         if (system == "amiga") {
             variables_ = {{"puae_analogmouse", "right"}, {"puae_mapper_select", "---"}};
-            bool kickstart = false;
-            std::error_code missing;
-            for (const auto& file : std::filesystem::directory_iterator(system_dir, missing)) {
-                std::string name = file.path().filename().string();
-                for (auto& c : name) c = char(std::tolower(static_cast<unsigned char>(c)));
-                if (name.rfind("kick", 0) == 0 || name.rfind("amiga-os-", 0) == 0 ||
-                    name.find("kickstart") != std::string::npos)
-                    kickstart = true;
-            }
+            const bool kickstart = has_kickstart(system_dir);
             if (!kickstart) variables_["puae_kickstart"] = "aros";
         }
         // The PSP's own 480 x 272 on the JIT: every extra pixel is drawing and read-back the A55s and the Mali-G52 lack.
@@ -455,6 +498,11 @@ public:
             }
             game.data = rom_.data();
             game.size = rom_.size();
+        }
+        if (const std::string need = missing_bios(system_, system_dir_, rom_path_); !need.empty()) {
+            error = need;
+            close();
+            return false;
         }
         if (!retro_load_game_(&game)) {
             error = hw_refused_ ? "This system needs a GPU context the core can use" : "The core refused the game";
@@ -1183,6 +1231,10 @@ private:
         if (g_active->system_ == "n64")
             b = (b & ~(A | B | X | Y | L | L2)) | (b & A ? B : 0) | (b & B ? Y : 0) | (b & L ? L2 : 0) |
                 (b & L2 ? L : 0);
+        // Atari 2600: one fire button. Stella reads it from RetroPad B (joystick) and Y (paddle), so on a handheld
+        // whose right-hand A is the natural thumb button, A, B, X and Y all fire; the shoulders stay the console's
+        // difficulty switches (the second screen's panel drives those as well).
+        if (g_active->system_ == "atari" && (b & (A | B | X | Y))) b |= B | Y;
         static const struct {
             unsigned id;
             uint32_t bit;

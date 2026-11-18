@@ -300,6 +300,36 @@ inline bool fps(unsigned char* pixels, double rate, bool) {
     return true;
 }
 
+// A game still waiting for its first GPU programs (Tanuki3DS builds a game's shaders on its first start, which keeps
+// the panels dark for seconds): a card in the middle of the panel with a turning arc, the launcher's spinner. `tick`
+// moves the arc on; the caller redraws about ten times a second.
+inline bool preparing(unsigned char* pixels, int tick) {
+    if (!ready()) return false;
+    Canvas canvas{pixels};
+    auto& p = palette();
+    const std::string label = word("RGDS_HUD_PREPARING", "Preparing graphics\u2026");
+    const float tw = font().width(20, label), w = 24 + 28 + 14 + tw + 26, h = 60;
+    const float x = std::round((640 - w) / 2), y = std::round((480 - h) / 2);
+    canvas.card(x, y, w, h, 30);
+    const float cx = x + 24 + 14, cy = y + h / 2, radius = 11, weight = 3.2f;
+    // the arc's start, kept in [0, 2pi): fmod of a negative angle stays negative, which filled the whole ring once
+    // the tick had passed about 5pi (three seconds in) and the arc looked frozen
+    const float pi = 3.14159265f, start = std::fmod(tick * 0.55f, 2 * pi);
+    auto ring = [&](Rgb c, bool arc) {
+        canvas.shape(int(cx - 16), int(cy - 16), int(cx + 16), int(cy + 16), c, [&](float px, float py) {
+            float dx = px - cx, dy = py - cy;
+            if (std::abs(std::hypot(dx, dy) - radius) > weight / 2) return false;
+            if (!arc) return true;
+            float a = std::fmod(std::atan2(dy, dx) - start + 4 * pi, 2 * pi); // atan2 - start > -3pi
+            return a < 1.6f * pi / 2;
+        });
+    };
+    ring(p.line, false);
+    ring(p.accent, true);
+    canvas.text(label, x + 24 + 28 + 14, int(y) + 17, 20, p.ink);
+    return true;
+}
+
 inline bool fast_forward(unsigned char* pixels) {
     if (!ready()) return false;
     Canvas canvas{pixels};

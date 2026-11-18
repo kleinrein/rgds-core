@@ -590,6 +590,9 @@ int main(int argc, char** argv) {
     set_gl_host(&gpu_core_host);
     if (!session.open(o, error)) {
         std::fprintf(stderr, "rgds-play: %s\n", error.c_str());
+        // What the launcher shows instead of "LAUNCH ERROR 1" (src/launcher/game_launch.hpp).
+        std::string written;
+        write_file_atomic(o.data_root + "/launch-message.txt", std::vector<uint8_t>(error.begin(), error.end()), written);
         return 1;
     }
     cheat_session = &session;

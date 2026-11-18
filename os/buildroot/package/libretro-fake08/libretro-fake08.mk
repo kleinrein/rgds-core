@@ -13,8 +13,11 @@ LIBRETRO_FAKE08_GIT_SUBMODULES = YES
 LIBRETRO_FAKE08_LICENSE = MIT
 LIBRETRO_FAKE08_LICENSE_FILES = LICENSE.MD
 
+# z8lua is compiled as C++ here, so Lua errors were C++ exceptions, and the first one in a cartridge (Lab Cat, 2026-11-18)
+# ended in "terminate called after throwing an instance of 'lua_longjmp*'" and a SIGABRT (launch error 134). setjmp and
+# longjmp, Lua's own way, need no unwinding through the core's frames.
 define LIBRETRO_FAKE08_BUILD_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D)/platform/libretro platform=unix CC="$(TARGET_CC)" CXX="$(TARGET_CXX)"
+	$(TARGET_MAKE_ENV) CFLAGS="-DLUA_USE_LONGJMP" CXXFLAGS="-DLUA_USE_LONGJMP" $(MAKE) -C $(@D)/platform/libretro platform=unix CC="$(TARGET_CC)" CXX="$(TARGET_CXX)"
 endef
 
 define LIBRETRO_FAKE08_INSTALL_TARGET_CMDS

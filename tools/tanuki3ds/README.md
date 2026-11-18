@@ -12,6 +12,14 @@ went out without it, because it had only ever been installed by hand on the owne
   `own_os_release.py` refuses an image built without it.
 - A copy in `/data/rgds/engines/tanuki3ds` still goes first (`emulators.tanuki_engine`): install development builds
   there as before. Remove it to run the image's engine.
+- `lib2` in the image is Mesa without LLVM (`build-mesa.sh` builds mesa_clc/panfrost_compile once with LLVM as
+  build tools, then the driver without): 1.6 GB of engine folder became 45 MB, as 0.9.0 handhelds refuse updates
+  over 512 MiB. Played on the handheld 2026-11-18 (Mario Kart 7), same speed; a new Mesa empties the shader cache once.
+- "Preparing graphics…" (2026-11-18): while nothing has been presented for 500 ms, before the first frame or while
+  the renderer waits in `prog_wait` (`g_prog_waiting`), the present thread draws `hud_style.hpp preparing()` on the
+  top panel about ten times a second (`present_preparing` in main.c, `rgds_bridge_preparing`). It must bind a vertex
+  array itself (the core context drops draws without one until the game's first frame has bound `g_pt.vao`).
+  Translated through `RGDS_HUD_PREPARING` (runtime/hud_theme.py). `SPIKE_NOPREPARING=1` turns it off.
 
 Still a spike. The fork mixes real changes with test hooks (the `SPIKE_*` variables, which the launch plan also uses
 as settings):

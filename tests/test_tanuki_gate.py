@@ -100,6 +100,18 @@ class TanukiGateTest(unittest.TestCase):
             finally:
                 own_os_build.TANUKI = real
 
+    def test_every_language_names_the_preparing_card_and_the_engine_gets_it(self):
+        from hud_theme import hud_words
+        key = 'Preparing graphics\u2026'
+        for catalog in sorted((ROOT / 'assets/locales').glob('*-*.tsv')):
+            lines = [l for l in catalog.read_text(encoding='utf-8').splitlines() if l.startswith(key + '\t')]
+            self.assertEqual(len(lines), 1, catalog.name)
+            self.assertTrue(lines[0].split('\t')[1].strip(), catalog.name)
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, 'preferences.ini').write_text('language=de-DE\n')
+            self.assertEqual(hud_words(ROOT, tmp)['RGDS_HUD_PREPARING'], 'Grafik wird vorbereitet\u2026')
+            self.assertEqual(hud_words(ROOT, tmp)['RGDS_HUD_FAST'], 'Schnell')  # the older words keep their names
+
 
 if __name__ == '__main__':
     unittest.main()

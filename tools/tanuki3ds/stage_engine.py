@@ -11,7 +11,7 @@ LLVM is left out (libLLVM*, with every library only it needed, such as ICU's 31 
 files that lib2 shadows (run.sh puts lib2 first; MESA_STOCK=1 is a test switch). A lib2 Mesa that still needs LLVM
 stops the staging. The OS update is limited to 512 MiB (runtime/ota.py MAX_PACKAGE, read by handhelds already out).
 
-Only what a game launch needs is taken: run.sh, ctremu, ctremu.ini and the egl/, lib/ and lib2/ folders. The test
+Only what a game launch needs is taken: run.sh (always tools/tanuki3ds/run.sh), ctremu, ctremu.ini and the egl/, lib/ and lib2/ folders. The test
 binaries beside the installed engine (ctremu.ptN, ctremu.installed-*, ctremu.stable ...) stay out. engine.json lists
 every file with its SHA-256; own_os_build.py refuses files that do not match it.
 
@@ -32,6 +32,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 TARGET = ROOT / 'build/engines/tanuki3ds'
 DEVICE = '/data/rgds/engines/tanuki3ds'
+RUN = ROOT / 'tools/tanuki3ds/run.sh'
 FILES = ('run.sh', 'ctremu', 'ctremu.ini')
 FOLDERS = ('egl', 'lib', 'lib2')
 JUNK = ('.DS_Store',)
@@ -138,13 +139,17 @@ def main():
     with tempfile.TemporaryDirectory(dir=ROOT / 'build') as tmp:
         tmp = Path(tmp)
         folder = unpack(pull(args.host, tmp) if args.host else args.source.resolve(), tmp)
-        if args.mesa and folder == args.source.resolve():
-            folder = Path(shutil.copytree(folder, tmp / 'copy'))
         names = sorted(p.relative_to(folder).as_posix() for p in folder.rglob('*') if p.is_file())
         keep = [n for n in names if wanted(n)]
         missing = [n for n in FILES if n not in keep]
         if missing: raise SystemExit('Not an engine folder, missing ' + ', '.join(missing))
         left = [n for n in names if n not in keep]
+        # run.sh from the repo: the handheld's copy may point at a test Mesa (MESA_DIR default lib2n while one is tried)
+        if (folder / 'run.sh').read_bytes() != RUN.read_bytes():
+            print('note: the source run.sh differs from tools/tanuki3ds/run.sh, which is the one staged')
+        if folder == (args.source.resolve() if args.source else None):
+            folder = Path(shutil.copytree(folder, tmp / 'copy'))
+        shutil.copyfile(RUN, folder / 'run.sh')
         if args.mesa:
             for name in MESA:
                 source = args.mesa / name
@@ -175,8 +180,6 @@ def main():
     print(f'staged {len(files)} files, {size >> 20} MB, ctremu md5 {engine[:8]} in {TARGET.relative_to(ROOT)}')
     if pruned: print('pruned:', ', '.join(pruned))
     if left: print('left out:', ', '.join(left[:20]) + (' ...' if len(left) > 20 else ''))
-    if (TARGET / 'run.sh').read_bytes() != (ROOT / 'tools/tanuki3ds/run.sh').read_bytes():
-        print('note: run.sh differs from tools/tanuki3ds/run.sh (the staged one is what the image gets)')
 
 
 if __name__ == '__main__':

@@ -23,6 +23,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -240,6 +241,7 @@ def native(args):
     build = (STAGE / 'build-id').read_text().strip()
     verify_release(out / 'target/usr/share/rgds/releases' / build)
     print(f'{build} verified in the image', flush=True)
+    check_cores(out)
     target = ROOT / '.cache/own-os/build'
     target.mkdir(parents=True, exist_ok=True)
     # the 3DS engine's record beside the image, which own_os_release.py asks for (0.9.0 shipped without the engine)
@@ -261,6 +263,32 @@ def native(args):
         shutil.copy2(out / 'images' / name, target / name)
     (target / 'build-id').write_text(build + '\n')  # what own_os_push.py and own_os_release.py call this build
     if not args.slot_only: run('sha256sum', *(target / image.name for image in images))
+
+
+def check_cores(out):
+    """Every libretro core the defconfig enables must be in the image.
+
+    Buildroot keeps an old output/.config (new defconfig lines are ignored without --reconfigure) and stale package
+    stamps (a core can be built yet never installed), and either way the image ships without a system's core.
+    """
+    defconfig = (ROOT / 'os/buildroot/configs/rgds_os_defconfig').read_text()
+    wanted = set(re.findall(r'^(BR2_PACKAGE_LIBRETRO_\w+)=y', defconfig, re.M))
+    config = (out / '.config').read_text()
+    stale = sorted(w for w in wanted if f'{w}=y' not in config)
+    if stale:
+        raise SystemExit(f'output/rgds-os/.config lacks {", ".join(stale)}: run with --reconfigure.')
+    absent = []
+    for option in sorted(wanted):
+        package = 'libretro-' + option.removeprefix('BR2_PACKAGE_LIBRETRO_').lower().replace('_', '-')
+        recipe = (ROOT / 'os/buildroot/package' / package / f'{package}.mk').read_text()
+        for name in re.findall(r'/usr/lib/libretro/(\w+_libretro\.so)', recipe):
+            if not (out / 'target/usr/lib/libretro' / name).is_file(): absent.append(f'{name} ({package})')
+    if absent:
+        raise SystemExit(
+            'The image lacks cores the defconfig enables: ' + ', '.join(absent) +
+            '. Run "make <package>-dirclean && make <package>" in output/rgds-os, then build again.'
+        )
+    print(f'{len(wanted)} libretro cores present in the image', flush=True)
 
 
 def main():

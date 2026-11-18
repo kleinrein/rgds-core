@@ -281,6 +281,7 @@ class App {
     LaunchPhase launch_phase = LaunchPhase::None;
     pid_t launch_child = -1;
     int launch_channel = -1, launch_result = 0;
+    std::string launch_refusal; // why the player would not start the last game, as the cover line shows it
     bool launch_cancelled = false, launch_handoff = false;
     Uint32 launch_exit_at = 0, launch_cancel_at = 0;
     double launch_exit_opacity = 1;
