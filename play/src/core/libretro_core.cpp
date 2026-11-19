@@ -168,18 +168,108 @@ std::vector<uint8_t> md_bus_image(const std::vector<uint8_t>& rom) {
     return bus;
 }
 
+// Cores that cannot start without the owner's own BIOS files: what to put where, in words for the owner (the core
+// itself only logs it and refuses the game). Empty when nothing is missing. Names are matched as the cores do.
+bool has_kickstart(const std::string& system_dir) {
+    std::error_code missing;
+    for (const auto& file : std::filesystem::directory_iterator(system_dir, missing)) {
+        std::string name = file.path().filename().string();
+        for (auto& c : name) c = char(std::tolower(static_cast<unsigned char>(c)));
+        if (name.rfind("kick", 0) == 0 || name.rfind("amiga-os-", 0) == 0 || name.find("kickstart") != std::string::npos)
+            return true;
+    }
+    return false;
+}
+
+std::string missing_bios(const std::string& system, const std::string& system_dir, const std::string& rom_path) {
+    // The Amiga: AROS, the free Kickstart PUAE carries, cannot run floppy games (they bang on the hardware as the
+    // real ROM sets it up), so a disk image without a Kickstart of the owner's gets told what to add.
+    if (system == "amiga" && !has_kickstart(system_dir)) {
+        std::string ext = std::filesystem::path(rom_path).extension().string();
+        for (auto& c : ext) c = char(std::tolower(static_cast<unsigned char>(c)));
+        if (ext == ".adf" || ext == ".adz" || ext == ".dms" || ext == ".ipf" || ext == ".zip")
+            return "Amiga games need a Kickstart ROM (kick34005.A500) in the BIOS folder";
+    }
+    struct Need {
+        const char* system;
+        const char* title;
+        std::vector<std::vector<const char*>> files; // each entry: names, any one of which will do
+        const char* detail;
+    };
+    static const Need needs[] = {
+        {"coleco", "ColecoVision", {{"colecovision.rom", "coleco.rom", "os7.u2"}}, ""},
+        {"intellivision", "Intellivision", {{"exec.bin"}, {"grom.bin"}}, ""},
+    };
+    for (const Need& need : needs) {
+        if (system != need.system) continue;
+        std::string absent;
+        for (const auto& names : need.files) {
+            bool found = false;
+            for (const char* name : names) {
+                for (const char* sub : {"", "/gearcoleco"}) {
+                    std::error_code ignored;
+                    if (std::filesystem::is_regular_file(system_dir + sub + "/" + name, ignored)) found = true;
+                }
+            }
+            if (!found) absent += (absent.empty() ? "" : ", ") + std::string(names[0]);
+        }
+        if (!absent.empty())
+            return std::string(need.title) + " needs " + absent + " in the BIOS folder";
+    }
+    return {};
+}
+
 } // namespace
 
 class LibretroCore final : public Core {
 public:
     ~LibretroCore() override { close(); }
 
-    bool open(const std::string& library, const std::string& rom_path, const std::string& system,
+    bool open(const std::string& library, const std::string& archive_path, const std::string& system,
               const std::string& system_dir, const std::string& save_dir, const std::vector<uint8_t>& battery,
               std::string& error) {
         if (g_active) {
             error = "A libretro core is already running in this process";
             return false;
+        }
+        // A zipped or 7z game: these cores read only the game itself (handed a zip, snes9x ran its bytes as a
+        // corrupt cartridge, a black screen), so the player unpacks it under its data folder first. VICE opens a
+        // C64 zip itself (play_options.unpacked_disks); the saves stay named by the archive (the session's path).
+        std::string rom_path = archive_path;
+        const std::string archive_extension = lower_extension(archive_path);
+        if ((archive_extension == ".zip" || archive_extension == ".7z") && system != "c64" && system != "scummvm" &&
+            system != "amiga") { // VICE and PUAE open their own archives (a WHDLoad set, a disk set)
+            // Each system's game files, as runtime/play_options.py's SYSTEMS and FOLDER_EXTENSIONS name them, the
+            // file a core is given first (a disc's .m3u or .cue before its tracks).
+            static const std::map<std::string, std::vector<std::string>> games = {
+                {"nes", {".nes", ".fds", ".unf", ".unif"}},
+                {"snes", {".sfc", ".smc"}},
+                {"md", {".md", ".gen", ".smd", ".32x", ".bin"}},
+                {"sms", {".sms", ".gg"}},
+                {"gg", {".gg", ".sms"}},
+                {"sg", {".sg", ".sc"}},
+                {"segacd", {".m3u", ".cue", ".chd", ".iso"}},
+                {"pico", {".md", ".bin", ".gen", ".smd"}},
+                {"coleco", {".col", ".cv", ".rom", ".bin"}},
+                {"intellivision", {".int", ".rom", ".bin"}},
+                {"msx", {".mx1", ".mx2", ".rom", ".dsk", ".cas"}},
+                {"pce", {".pce"}},
+                {"pcecd", {".m3u", ".cue", ".ccd", ".chd", ".toc"}},
+                {"atari", {".a26", ".bin"}},
+                {"pico8", {".p8", ".png"}},
+                {"psx", {".m3u", ".cue", ".chd", ".pbp"}},
+                {"n64", {".z64", ".n64", ".v64"}},
+                {"zx", {".tzx", ".tap", ".z80", ".sna", ".szx", ".dsk", ".trd", ".scl"}},
+                {"psp", {".iso", ".cso", ".pbp", ".chd"}},
+                {"gw", {".mgw"}}};
+            const auto found = games.find(system);
+            if (found == games.end()) {
+                error = "This system's games cannot be played from an archive";
+                return false;
+            }
+            rom_path = unpack_game(archive_path, found->second, save_dir + "/cache/unpacked", error);
+            if (rom_path.empty()) return false;
+            std::fprintf(stderr, "rgds-play: unpacked %s\n", rom_path.c_str());
         }
         lib_ = dlopen(library.c_str(), RTLD_NOW | RTLD_LOCAL);
         if (!lib_) {
@@ -231,6 +321,12 @@ public:
         zx_tape_loading_ = reinterpret_cast<int (*)()>(dlsym(lib_, "loader_tape_loading"));
         zx_cpu_ = reinterpret_cast<const uint8_t*>(dlsym(lib_, "z80"));
         overlay_visible_ = reinterpret_cast<bool (*)()>(dlsym(lib_, "retro_rgds_overlay_visible"));
+        // The touch screen's keypad (libretro-gearcoleco and libretro-freeintv 0001) and the Pico's pen and storyware
+        // page (libretro-picodrive 0001).
+        keypad_ = reinterpret_cast<void (*)(unsigned, unsigned)>(dlsym(lib_, "retro_rgds_keypad"));
+        pico_pen_ = reinterpret_cast<void (*)(int, int, int, int)>(dlsym(lib_, "retro_rgds_pico_pen"));
+        pico_page_ = reinterpret_cast<int (*)()>(dlsym(lib_, "retro_rgds_pico_page"));
+        pico_set_page_ = reinterpret_cast<void (*)(int)>(dlsym(lib_, "retro_rgds_pico_set_page"));
         // Optional: a core without cheats just lists none.
         retro_cheat_reset_ = reinterpret_cast<decltype(retro_cheat_reset_)>(dlsym(lib_, "retro_cheat_reset"));
         retro_cheat_set_ = reinterpret_cast<decltype(retro_cheat_set_)>(dlsym(lib_, "retro_cheat_set"));
@@ -250,6 +346,7 @@ public:
             std::filesystem::create_directories(save_dir_, failed);
         }
         rom_path_ = rom_path;
+        game_file_ = archive_path;
         zx_tape_game_ = system == "zx" && (lower_extension(rom_path) == ".tzx" || lower_extension(rom_path) == ".tap");
         zx_tape_seen_ = zx_past_loader_ = false;
         c64_resumed_ = false;
@@ -303,8 +400,30 @@ public:
                           {"fuse_joypad_start", "Enter"},
                           {"fuse_joypad_l2", "Space"},
                           {"fuse_joypad_r2", "<none>"}};
+            // Out Run's keyboard scheme (Q accelerate, A brake, O/P steer, M gear) on the pad as well, beside the
+            // Kempston joystick: whichever the game's control menu is set to, the pad drives the car. The game
+            // reads only the chosen scheme, so the other is harmless.
+            std::string name = rom_path;
+            for (auto& c : name) c = char(std::tolower(static_cast<unsigned char>(c)));
+            if (name.find("out run") != std::string::npos || name.find("outrun") != std::string::npos ||
+                name.find("out_run") != std::string::npos) {
+                variables_["fuse_joypad_up"] = "q";
+                variables_["fuse_joypad_down"] = "a";
+                variables_["fuse_joypad_left"] = "o";
+                variables_["fuse_joypad_right"] = "p";
+                variables_["fuse_joypad_a"] = "q";
+                variables_["fuse_joypad_b"] = "m";
+            }
         }
         if (system == "c64") variables_ = {{"vice_autoloadwarp", "enabled"}}; // a disk or tape loads at full speed
+        // The Amiga: the left stick (and the D-pad) is the joystick, the right one the mouse, with its buttons on L2 and
+        // R2 (PUAE's own); Select keeps no keyboard of the core's (the second screen has the Amiga's). Without a
+        // Kickstart of the owner's in the BIOS folder, AROS, the free one PUAE carries.
+        if (system == "amiga") {
+            variables_ = {{"puae_analogmouse", "right"}, {"puae_mapper_select", "---"}};
+            const bool kickstart = has_kickstart(system_dir);
+            if (!kickstart) variables_["puae_kickstart"] = "aros";
+        }
         // The PSP's own 480 x 272 on the JIT: every extra pixel is drawing and read-back the A55s and the Mali-G52 lack.
         // Two frames queued for the GPU, so the emulation and the GL calls run side by side. A frame left undrawn when
         // the game falls behind, so its speed and sound hold: OutRun 2006's races draw 24-42 fps at full speed on the
@@ -380,6 +499,11 @@ public:
             game.data = rom_.data();
             game.size = rom_.size();
         }
+        if (const std::string need = missing_bios(system_, system_dir_, rom_path_); !need.empty()) {
+            error = need;
+            close();
+            return false;
+        }
         if (!retro_load_game_(&game)) {
             error = hw_refused_ ? "This system needs a GPU context the core can use" : "The core refused the game";
             close();
@@ -409,6 +533,25 @@ public:
     }
     bool finished() const override { return finished_; }
     bool menu_over_game() const override { return overlay_visible_ && overlay_visible_(); }
+    bool set_keypad(unsigned mask) override {
+        if (!keypad_) return false;
+        keypad_(0, mask);
+        return true;
+    }
+    bool set_pico_pen(int x, int y, bool down, bool storyware) override {
+        if (system_ != "pico" || !pico_pen_) return false;
+        pico_pen_(x, y, down ? 1 : 0, storyware ? 1 : 0);
+        return true;
+    }
+    int pico_page() const override { return system_ == "pico" && pico_page_ ? pico_page_() : -1; }
+    void set_pico_page(int page) override {
+        if (system_ == "pico" && pico_set_page_) pico_set_page_(page);
+    }
+    std::string game_file() const override { return game_file_; }
+    bool set_panel_buttons(uint32_t retro_mask) override {
+        panel_ = retro_mask;
+        return true;
+    }
     bool read_rom(uint32_t offset, uint32_t size, std::vector<uint8_t>& out) override {
         std::ifstream in(rom_path_, std::ios::binary);
         uint8_t head[4] = {};
@@ -653,7 +796,7 @@ public:
     uint32_t peek(uint32_t address, int size) override {
         if (size < 1 || size > 4) return 0;
         uint32_t value = 0;
-        if (system_ == "n64" || system_ == "md") {
+        if (system_ == "n64" || system_ == "md" || system_ == "segacd" || system_ == "pico") {
             for (int i = 0; i < size; ++i) {
                 const uint8_t* p = byte_at(address + uint32_t(i));
                 value = (value << 8) | (p ? *p : 0);
@@ -869,9 +1012,9 @@ private:
             else if ((address & 0xFFFF) < 0x2000 &&
                      ((address >> 16) < 0x40 || ((address >> 16) >= 0x80 && (address >> 16) < 0xC0)))
                 offset = address & 0x1FFF; // the low 8 KiB mirrored into the system banks
-        } else if (system_ == "sms" || system_ == "gg") {
+        } else if (system_ == "sms" || system_ == "gg" || system_ == "sg") {
             if (address >= 0xC000) offset = (address - 0xC000) & 0x1FFF;
-        } else if (system_ == "md") {
+        } else if (system_ == "md" || system_ == "segacd" || system_ == "pico") {
             // PicoDrive keeps the 64 KiB (mirrored from E00000 up) as the 68000's 16-bit words in the host's
             // order: a byte is at its address ^ 1.
             if ((address & 0xFFFFFF) < 0xE00000) return nullptr;
@@ -910,7 +1053,7 @@ private:
             code_ = crc;
             if (system_ == "snes") title_ = title_code(snes_title(bytes, size));
             // A Mega Drive cartridge's overseas name (48 bytes at 150), under "SEGA" at 100.
-            if (system_ == "md" && size >= 0x180 && std::memcmp(bytes + 0x100, "SEGA", 4) == 0)
+            if ((system_ == "md" || system_ == "pico") && size >= 0x180 && std::memcmp(bytes + 0x100, "SEGA", 4) == 0)
                 title_ = title_code(std::string(reinterpret_cast<const char*>(bytes + 0x150), 48));
         }
         if (title_.empty()) {
@@ -1088,6 +1231,10 @@ private:
         if (g_active->system_ == "n64")
             b = (b & ~(A | B | X | Y | L | L2)) | (b & A ? B : 0) | (b & B ? Y : 0) | (b & L ? L2 : 0) |
                 (b & L2 ? L : 0);
+        // Atari 2600: one fire button. Stella reads it from RetroPad B (joystick) and Y (paddle), so on a handheld
+        // whose right-hand A is the natural thumb button, A, B, X and Y all fire; the shoulders stay the console's
+        // difficulty switches (the second screen's panel drives those as well).
+        if (g_active->system_ == "atari" && (b & (A | B | X | Y))) b |= B | Y;
         static const struct {
             unsigned id;
             uint32_t bit;
@@ -1098,12 +1245,14 @@ private:
                    {RETRO_DEVICE_ID_JOYPAD_A, Button::A},           {RETRO_DEVICE_ID_JOYPAD_X, Button::X},
                    {RETRO_DEVICE_ID_JOYPAD_L, Button::L},           {RETRO_DEVICE_ID_JOYPAD_R, Button::R},
                    {RETRO_DEVICE_ID_JOYPAD_L2, Button::L2},         {RETRO_DEVICE_ID_JOYPAD_R2, Button::R2}};
+        const uint32_t panel = g_active->panel_;
         if (id == RETRO_DEVICE_ID_JOYPAD_MASK) {
-            int16_t mask = 0;
+            int16_t mask = int16_t(panel & 0xFFFF);
             for (const auto& m : map)
                 if (b & m.bit) mask |= int16_t(1 << m.id);
             return mask;
         }
+        if (id < 16 && (panel & (1u << id))) return 1;
         for (const auto& m : map)
             if (m.id == id) return (b & m.bit) ? 1 : 0;
         return 0;
@@ -1357,6 +1506,12 @@ private:
     int aim_x_ = -1, aim_y_ = -1, trigger_frames_ = 0;
     bool finished_ = false;
     bool (*overlay_visible_)() = nullptr;
+    void (*keypad_)(unsigned, unsigned) = nullptr;
+    void (*pico_pen_)(int, int, int, int) = nullptr;
+    int (*pico_page_)() = nullptr;
+    void (*pico_set_page_)(int) = nullptr;
+    std::string game_file_;
+    uint32_t panel_ = 0; // a touch panel's buttons, as RETRO_DEVICE_ID_JOYPAD_* bits
     bool mouse_ = false, mouse_left_ = false, mouse_right_ = false, settled_ = false;
     int cursor_x_ = -1, cursor_y_ = -1, guess_x_ = 128, guess_y_ = 112, goal_x_ = -1, goal_y_ = -1;
     int16_t mouse_dx_ = 0, mouse_dy_ = 0;

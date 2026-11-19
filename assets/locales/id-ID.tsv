@@ -306,6 +306,7 @@ DS rounded	DS bulat
 DS screens	Layar DS
 DSCore 3D resolution	Resolusi 3D DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: disarankan. Tercepat, dengan perbaikan tutup, stylus, dan 3D serta 3D 2x–5x opsional.
+Drawing pad	Papan gambar
 Edit	Ubah
 Edit search	Ubah pencarian
 Effects volume	Volume efek
@@ -451,14 +452,17 @@ Green	Hijau
 Grey	Abu-abu
 Grey TV	TV abu-abu
 Grid	Kisi
+Keypad	Papan angka
 Left stick down	Stik kiri bawah
 Left stick left	Stik kiri kiri
 Left stick right	Stik kiri kanan
 Left stick up	Stik kiri atas
+Page	Halaman
 Right stick down	Stik kanan bawah
 Right stick left	Stik kanan kiri
 Right stick right	Stik kanan kanan
 Right stick up	Stik kanan atas
+Storyware	Buku cerita
 h	j
 Haptic strength	Kekuatan haptik
 Health	Kesehatan
@@ -723,6 +727,7 @@ Power profile	Profil daya
 Powering off…	Mematikan…
 Prepare	Siapkan
 Preparing controls…	Menyiapkan kontrol…
+Preparing graphics…	Menyiapkan grafis…
 Preparing the launcher	Menyiapkan peluncur
 Preparing the library…	Menyiapkan pustaka…
 Preparing update…	Menyiapkan pembaruan…
@@ -1630,3 +1635,4 @@ Temporary files. Safe to clear.	File sementara. Aman untuk dihapus.
 RG DS Core, its engines and settings.	RG DS Core, mesin, dan pengaturannya.
 Everything else on the card, with the file system's own overhead.	Semua yang lain di kartu, termasuk beban sistem berkas itu sendiri.
 Room for more games.	Ruang untuk lebih banyak game.
+Console switches	Sakelar konsol

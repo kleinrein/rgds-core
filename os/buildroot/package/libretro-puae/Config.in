@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_PUAE
+	bool "libretro-puae"
+	help
+	  PUAE, the Commodore Amiga core RG DS Play loads for .adf, .ipf, .hdf,
+	  .lha (WHDLoad) and .uae games: /usr/lib/libretro/puae_libretro.so.
+	  It starts on AROS, the free Kickstart replacement it carries, unless
+	  the owner puts their own Kickstart ROMs in the BIOS folder (WHDLoad
+	  and many games need those).

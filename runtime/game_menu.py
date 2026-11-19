@@ -689,11 +689,11 @@ class GameMenu:
             # play-graphics:<fit>:<second>:<frame>: RG DS Play's view (game screen fit, second screen, and a
             # frame by name: a built-in style or one of the owner's pictures in userdata/frames/<system>).
             from play_options import frame_known
-            # second: 0 companion, 1 off, 2 swap, 3 the info screen
+            # second: 0 companion, 1 off, 2 swap, 3 the info screen, 4 the keyboard first (ZX, C64)
             pieces, valid = action.split(':', 3), ('0', '1', '2')
             if (
                 self.core != 'rgds-play' or len(pieces) != 4 or pieces[1] not in valid
-                or pieces[2] not in valid + ('3',) or not frame_known(self.player, self.rom, pieces[3])
+                or pieces[2] not in valid + ('3', '4') or not frame_known(self.player, self.rom, pieces[3])
             ):
                 self.publish('error', 'Invalid graphics setting for this game.')
                 return

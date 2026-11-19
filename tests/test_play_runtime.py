@@ -109,6 +109,13 @@ class PlayRuntimeTests(unittest.TestCase):
             self.root / "a.md": "md",
             self.root / "a.sms": "sms",
             self.root / "a.gg": "gg",
+            self.root / "a.sg": "sg",
+            self.root / "a.sc": "sg",
+            self.root / "a.col": "coleco",
+            self.root / "a.int": "intellivision",
+            self.root / "a.mx2": "msx",
+            self.root / "a.cas": "msx",
+            self.root / "a.pce": "pce",
             self.root / "a.cue": "psx",
             self.root / "a.chd": "psx",
             self.root / "a.z64": "n64",
@@ -143,6 +150,51 @@ class PlayRuntimeTests(unittest.TestCase):
             self.assertEqual(play_options.engine_for(packed, "melonds"), "rgds-play")
         self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.bin"), "nds")
 
+    def test_a_7z_game_is_the_system_of_its_folder(self):
+        # Python reads no 7z: the games folder names the system (and RG DS Play unpacks it).
+        for folder, system in (
+            ("n64", "n64"), ("gb", "gb"), ("GBC", "gbc"), ("gba", "gba"), ("psp", "psp"), ("nds", "nds"),
+            ("genesis", "md"), ("snes", "snes")
+        ):
+            rom = self.root / "roms" / folder / "Game (USA).7z"
+            self.assertEqual(play_options.system_of(rom), system, folder)
+            self.assertEqual(
+                play_options.engine_for(rom, "melonds"), "rgds-play" if system != "nds" else "rgds-experimental"
+            )
+        self.assertEqual(play_options.system_of(self.root / "Game.7z"), "nds")
+        # a zip of nothing the lists know, in a PlayStation folder: that folder's
+        packed = self.root / "roms" / "psx" / "Disc.zip"
+        packed.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(packed, "w") as archive:
+            archive.writestr("Disc (Track 1).bin", b"x")
+        self.assertEqual(play_options.system_of(packed), "psx")
+
+    def test_a_ds_game_in_a_7z_is_unpacked_by_the_player(self):
+        rom = self.root / "roms" / "nds" / "Game.7z"
+        rom.parent.mkdir(parents=True, exist_ok=True)
+        rom.write_bytes(b"7z")
+        unpacked = self.root / "Game.nds"
+        unpacked.write_bytes(b"x")
+        done = type("Done", (), {"returncode": 0, "stdout": str(unpacked) + "\n", "stderr": ""})
+        player = Path(emulators.__file__).resolve().parent.parent / "emulators/rgds-play/rgds-play"
+        with patch.object(Path, "is_file", lambda p: True if p == player else Path.exists(p)), \
+             patch.object(emulators.subprocess, "run", return_value=done) as run:
+            self.assertEqual(emulators.resolve_rom(rom, self.root), unpacked)
+        command = run.call_args[0][0]
+        self.assertEqual(command[1:3], ["--unpack", str(rom.resolve())])
+        self.assertEqual(command[-1], ".nds,.dsi")
+        failed = type(
+            "Failed", (), {
+                "returncode": 1,
+                "stdout": "",
+                "stderr": "rgds-play: No game for this system inside the archive\n"
+            }
+        )
+        with patch.object(Path, "is_file", lambda p: True if p == player else Path.exists(p)), \
+             patch.object(emulators.subprocess, "run", return_value=failed):
+            with self.assertRaisesRegex(ValueError, "No game for this system"):
+                emulators.resolve_rom(rom, self.root)
+
     def test_a_tape_or_disk_list_in_a_c64_folder_is_the_c64s(self):
         self.assertEqual(play_options.system_of(self.root / "roms" / "scummvm" / "Monkey" / "MONKEY.000"), "scummvm")
         for folder in ("c64", "C64", "commodore"):
@@ -154,6 +206,89 @@ class PlayRuntimeTests(unittest.TestCase):
             self.assertEqual(play_options.system_of(self.root / "roms" / "psp" / name), "psp", name)
         self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.chd"), "psx")
 
+    def test_mega_cd_pico_coleco_and_intellivision_go_by_their_folders(self):
+        roms = self.root / "roms"
+        for folder in ("segacd", "megacd", "Mega-CD", "Sega CD"):
+            for name in ("Game.cue", "Game.chd", "Game.m3u"):
+                self.assertEqual(play_options.system_of(roms / folder / name), "segacd", (folder, name))
+        # A disc beside the Mega Drive's cartridges is a Mega-CD one; a cartridge there stays the Mega Drive's.
+        self.assertEqual(play_options.system_of(roms / "md" / "Game.cue"), "segacd")
+        self.assertEqual(play_options.system_of(roms / "md" / "Game.bin"), "md")
+        self.assertEqual(play_options.system_of(roms / "psx" / "Game.cue"), "psx")
+        for folder in ("pico", "Sega Pico"):
+            self.assertEqual(play_options.system_of(roms / folder / "Game.md"), "pico", folder)
+            self.assertEqual(play_options.system_of(roms / folder / "Game.bin"), "pico", folder)
+        self.assertEqual(play_options.system_of(roms / "coleco" / "Game.rom"), "coleco")
+        self.assertEqual(play_options.system_of(roms / "intellivision" / "Game.bin"), "intellivision")
+        for system in ("sg", "segacd", "pico"):
+            self.assertEqual(play_options.LIBRETRO_CORES[system], "picodrive")
+        self.assertEqual(play_options.LIBRETRO_CORES["coleco"], "gearcoleco")
+        self.assertEqual(play_options.LIBRETRO_CORES["intellivision"], "freeintv")
+        # Their frames are their shelves': the Mega Drive's for the Mega-CD and the Pico, the Master System's for the SG-1000.
+        self.assertIn("segacd", play_options.FRAMES["md"].split(","))
+        self.assertIn("pico", play_options.FRAMES["md"].split(","))
+        self.assertIn("sg", play_options.FRAMES["sms"].split(","))
+        self.assertEqual(play_options.FRAMES["coleco"], "coleco")
+
+    def test_msx_and_pc_engine_cd_go_by_their_folders(self):
+        roms = self.root / "roms"
+        for folder in ("msx", "MSX2"):
+            self.assertEqual(play_options.system_of(roms / folder / "Game.rom"), "msx", folder)
+            self.assertEqual(play_options.system_of(roms / folder / "Game.dsk"), "msx", folder)
+        self.assertEqual(play_options.system_of(roms / "zx" / "Game.dsk"), "zx")  # a .dsk elsewhere stays the Spectrum's
+        for folder in ("pcecd", "TurboGrafx-CD"):
+            self.assertEqual(play_options.system_of(roms / folder / "Game.cue"), "pcecd", folder)
+        self.assertEqual(play_options.system_of(roms / "pce" / "Game.chd"), "pcecd")
+        self.assertEqual(play_options.system_of(roms / "pce" / "Game.pce"), "pce")
+        self.assertEqual(play_options.system_of(roms / "pce" / "Game.ccd"), "pcecd")
+        self.assertEqual(play_options.system_of(roms / "pcecd" / "Game.iso"), "psp")  # Beetle PCE Fast reads no .iso
+
+    def test_a_zipped_disc_goes_by_its_sheet_not_its_first_track(self):
+        folder = self.root / "roms" / "md"
+        folder.mkdir(parents=True)
+        packed = folder / "Disc.zip"
+        with zipfile.ZipFile(packed, "w") as archive:
+            archive.writestr("Disc (Track 1).bin", b"\0")
+            archive.writestr("Disc.cue", 'FILE "Disc (Track 1).bin" BINARY\n')
+        self.assertEqual(play_options.system_of(packed), "segacd")
+        self.assertEqual(play_options.LIBRETRO_CORES["msx"], "bluemsx")
+        self.assertEqual(play_options.LIBRETRO_CORES["pce"], "mednafen_pce_fast")
+        self.assertEqual(play_options.LIBRETRO_CORES["pcecd"], "mednafen_pce_fast")
+        self.assertIn("pcecd", play_options.FRAMES["pce"].split(","))
+
+    def test_the_images_msx_machines_are_copied_into_the_bios_folder_without_overwriting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source, bios = Path(tmp) / "bluemsx", Path(tmp) / "bios"
+            (source / "Machines" / "MSX - C-BIOS").mkdir(parents=True)
+            (source / "Machines" / "MSX - C-BIOS" / "config.ini").write_text("image")
+            (source / "Databases").mkdir()
+            (source / "Databases" / "msxromdb.xml").write_text("image")
+            (bios / "Databases").mkdir(parents=True)
+            (bios / "Databases" / "msxromdb.xml").write_text("owner")
+            with patch.dict(play_options.SYSTEM_FILES, {"msx": source}):
+                play_options.provide_system_files("msx", bios)
+                play_options.provide_system_files("pce", bios)  # nothing to give: no error
+            self.assertEqual((bios / "Machines" / "MSX - C-BIOS" / "config.ini").read_text(), "image")
+            self.assertEqual((bios / "Databases" / "msxromdb.xml").read_text(), "owner")
+
+    def test_atari_2600_and_amiga(self):
+        roms = self.root / "roms"
+        self.assertEqual(play_options.system_of(self.root / "Game.a26"), "atari")
+        self.assertEqual(play_options.system_of(roms / "atari2600" / "Game.bin"), "atari")
+        self.assertEqual(play_options.system_of(roms / "md" / "Game.bin"), "md")
+        for name in ("Game.adf", "Game.ipf", "Game.lha", "Game.hdf"):
+            self.assertEqual(play_options.system_of(self.root / name), "amiga", name)
+        self.assertEqual(play_options.system_of(roms / "amiga" / "Game.m3u"), "amiga")
+        self.assertEqual(play_options.LIBRETRO_CORES["atari"], "stella2014")
+        self.assertEqual(play_options.LIBRETRO_CORES["amiga"], "puae")
+        self.assertIn("amiga", play_options.FRAMES["monitor"].split(","))
+
+    def test_pico8_carts_and_their_pictures(self):
+        roms = self.root / "roms"
+        self.assertEqual(play_options.system_of(self.root / "celeste.p8"), "pico8")
+        self.assertEqual(play_options.system_of(roms / "pico8" / "celeste.p8.png"), "pico8")
+        self.assertEqual(play_options.system_of(roms / "nes" / "cover.png"), "nds")  # a picture elsewhere is no cart
+
     def test_libretro_core_is_named_per_system_and_only_when_installed(self):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.object(play_options, "LIBRETRO_DIR", Path(tmp)):
@@ -164,7 +299,7 @@ class PlayRuntimeTests(unittest.TestCase):
                 for system in ("md", "sms", "gg"):
                     self.assertEqual(play_options.LIBRETRO_CORES[system], "picodrive")
                 self.assertEqual(play_options.LIBRETRO_CORES["psx"], "pcsx_rearmed")
-                self.assertNotIn("pico8", play_options.LIBRETRO_CORES)  # dropped with fake-08 (2026-10-28)
+                self.assertEqual(play_options.LIBRETRO_CORES["pico8"], "fake08")  # back 2026-11-18
                 self.assertEqual(play_options.LIBRETRO_CORES["n64"], "mupen64plus_next")
                 self.assertEqual(play_options.LIBRETRO_CORES["zx"], "fuse")
                 self.assertEqual(play_options.LIBRETRO_CORES["c64"], "vice_x64")
@@ -422,6 +557,20 @@ class PlayMenuTests(unittest.TestCase):
         self.clock += 1
         menu.poll()
 
+    def test_keyboard_first_is_a_second_screen_choice_in_the_menu_and_the_files(self):
+        self.assertEqual(play_options.SECONDS.index("keyboard"), 4)
+        menu = self.menu("rgds-play")
+        self.request(menu, "play-graphics:0:4:off")
+        self.assertEqual(menu.pending["action"], "play-graphics:0:4:off")
+        self.assertIn("play-graphics:0:4:off", menu.control.read_text())
+        # One past the last choice is still refused.
+        bad = self.menu("rgds-play")
+        self.request(bad, "play-graphics:0:5:off")
+        self.assertIsNone(bad.pending)
+        data = self.root / "data"
+        play_options.save_view(data, self.rom, 0, 4, "off")
+        self.assertEqual(play_options.view(data, self.rom)["second"], "keyboard")
+
     def test_view_change_is_saved_only_once_the_player_applied_it(self):
         menu = self.menu("rgds-play")
         view = self.root / "data/library" / game_key(self.rom) / "play.ini"
@@ -484,9 +633,9 @@ class PlayMenuTests(unittest.TestCase):
         gb, gbc = self.root / "Tetris.gb", self.root / "Wario Land 3.gbc"
         for rom, frame, known in (
             (self.rom, "indigo", True), (self.rom, "sp-cobalt", True), (self.rom, "dmg", False), (gb, "dmg", True),
-            (gb, "pocket-black", True), (gb, "indigo", False), (gb, "sp-onyx", False), (gb, "gbc-berry", False),
-            (gbc, "gbc-teal", True), (gbc, "dmg", False), (self.rom, "bar", True), (gb, "bar", False),
-            (gbc, "bar", False), (gbc, "off", True)
+            (gb, "pocket-black", True), (gb, "indigo", False), (gb, "sp-onyx", False), (gb, "gbc-berry",
+                                                                                        False), (gbc, "gbc-teal", True),
+            (gbc, "dmg", False), (self.rom, "bar", True), (gb, "bar", False), (gbc, "bar", False), (gbc, "off", True)
         ):
             self.assertEqual(play_options.frame_known(data, rom, frame), known, (rom.suffix, frame))
         # An old GBA frame kept for a Game Boy game falls back to off; the owner's own picture of that name is kept.

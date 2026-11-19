@@ -306,6 +306,7 @@ DS rounded	DS avrunda
 DS screens	DS-skjermar
 DSCore 3D resolution	DSCore 3D-oppløysing
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: tilrådd. Raskast, med rettingar for lok, penn og 3D og valfri 2x–5x 3D.
+Drawing pad	Teiknebrett
 Edit	Endre
 Edit search	Endre søk
 Effects volume	Effektvolum
@@ -451,14 +452,17 @@ Green	Grøn
 Grey	Grå
 Grey TV	Grå TV
 Grid	Rutenett
+Keypad	Taltastatur
 Left stick down	Venstre spak ned
 Left stick left	Venstre spak venstre
 Left stick right	Venstre spak høgre
 Left stick up	Venstre spak opp
+Page	Side
 Right stick down	Høgre spak ned
 Right stick left	Høgre spak venstre
 Right stick right	Høgre spak høgre
 Right stick up	Høgre spak opp
+Storyware	Forteljingsbok
 h	t
 Haptic strength	Haptisk styrke
 Health	Helse
@@ -723,6 +727,7 @@ Power profile	Straumprofil
 Powering off…	Slår av …
 Prepare	Gjer klar
 Preparing controls…	Klargjer kontrollar …
+Preparing graphics…	Klargjer grafikk …
 Preparing the launcher	Klargjer hovudmenyen
 Preparing the library…	Klargjer biblioteket …
 Preparing update…	Klargjer oppdateringa…
@@ -1630,3 +1635,4 @@ Temporary files. Safe to clear.	Mellombelse filer. Trygt å tømme.
 RG DS Core, its engines and settings.	RG DS Core, motorane og innstillingane.
 Everything else on the card, with the file system's own overhead.	Alt anna på kortet, med filsystemet sin eigen overhead.
 Room for more games.	Plass til fleire spel.
+Console switches	Konsollbrytarar

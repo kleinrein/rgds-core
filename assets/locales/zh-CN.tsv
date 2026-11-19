@@ -306,6 +306,7 @@ DS rounded	DS 圆体
 DS screens	DS 屏幕
 DSCore 3D resolution	DSCore 3D 分辨率
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore：推荐。速度最快，修复了翻盖、触控笔和 3D 问题，3D 可选 2x–5x。
+Drawing pad	绘图板
 Edit	编辑
 Edit search	编辑搜索
 Effects volume	音效音量
@@ -451,14 +452,17 @@ Green	绿色
 Grey	灰色
 Grey TV	灰色电视
 Grid	方格
+Keypad	数字键盘
 Left stick down	左摇杆 下
 Left stick left	左摇杆 左
 Left stick right	左摇杆 右
 Left stick up	左摇杆 上
+Page	页
 Right stick down	右摇杆 下
 Right stick left	右摇杆 左
 Right stick right	右摇杆 右
 Right stick up	右摇杆 上
+Storyware	故事书
 h	小时
 Haptic strength	触感强度
 Health	体力
@@ -723,6 +727,7 @@ Power profile	电源方案
 Powering off…	正在关机…
 Prepare	准备
 Preparing controls…	正在准备按键设置…
+Preparing graphics…	正在准备图形…
 Preparing the launcher	正在准备启动器
 Preparing the library…	正在准备游戏库…
 Preparing update…	正在准备更新…
@@ -1630,3 +1635,4 @@ Temporary files. Safe to clear.	临时文件，可放心清除。
 RG DS Core, its engines and settings.	RG DS Core、其引擎和设置。
 Everything else on the card, with the file system's own overhead.	卡上的其他所有内容，包括文件系统自身的开销。
 Room for more games.	可容纳更多游戏的空间。
+Console switches	主机开关

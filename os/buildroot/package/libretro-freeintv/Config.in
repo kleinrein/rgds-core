@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_FREEINTV
+	bool "libretro-freeintv"
+	help
+	  FreeIntv, the Intellivision core RG DS Play loads for .int games:
+	  /usr/lib/libretro/freeintv_libretro.so. It needs the owner's exec.bin
+	  and grom.bin in the BIOS folder. 0001 lets the player press the
+	  controller's keypad from the touch screen.

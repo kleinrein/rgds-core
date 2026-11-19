@@ -61,6 +61,8 @@ BRIEF = {
     'wonderswan': 'a WonderSwan: a slim sharp rectangle, two diamonds of buttons left of the screen, two buttons on'
     ' the right',
     'rpgmaker': 'a sword, standing for the role-playing games it makes',
+    'amiga': 'an Amiga 500: a long flat keyboard computer, wider and lower than the C64, its function keys apart on '
+    'top, the cursor keys as an inverted T beside the space bar',
     # Not a stock system: PortMaster's ports (the Ports system), drawn after PortMaster's own icon.
     'ports': "a cargo ship on the water with a crane on deck lifting a container, as in PortMaster's icon",
     # Not a stock system either: the curated free homebrew (the Homebrew system).
@@ -542,6 +544,24 @@ ART = {
         '................',
         '................',
         '................',
+        '................',
+    ],
+    'amiga': [
+        '................',
+        '................',
+        '................',
+        '................',
+        '..############..',
+        '.##############.',
+        '#.#.#.#.##.#.#.#',
+        '################',
+        '#.#.#.#.#.#.##.#',
+        '################',
+        '#.#.#.#.#.#.##.#',
+        '################',
+        '##........##.#.#',
+        '#############...',
+        '.++++++++++++++.',
         '................',
     ],
     'rpgmaker': [

@@ -10,7 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@unittest.skipUnless(shutil.which('clang++'), 'C++ required')
+@unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'C++/SDL headers required')
 class PictoChatAppTests(unittest.TestCase):
     def test_app_logic_and_end_to_end_chat_under_sanitizers(self):
         with tempfile.TemporaryDirectory() as tmp:

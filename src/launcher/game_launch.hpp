@@ -68,6 +68,10 @@ void App::launch(bool from_home) {
     sounds.fade_music();
     launch_cancelled = launch_handoff = false;
     launch_result = 0;
+    {
+        std::error_code ignored;
+        fs::remove(o.player / "emulators/rgds-play/launch-message.txt", ignored); // a refusal's words, if this one has any
+    }
     launch_drawn_head = -1;
     cancel_navigation();
     carousel.reset(model.selected);
@@ -135,7 +139,15 @@ void App::finish_launch(bool reopen) {
     }
     last_activity = s.GetTicks();
     input_guard_until = last_activity + (reopen ? 250 : 100);
+    std::string refusal; // the player's own words for why it would not start (a missing BIOS), when it left some
+    if (launch_result && !launch_cancelled) {
+        std::ifstream in(o.player / "emulators/rgds-play/launch-message.txt");
+        std::getline(in, refusal);
+        if (refusal.size() > 90) refusal.resize(90);
+    }
+    launch_refusal = refusal;
     status = launch_cancelled      ? "Launch cancelled"
+             : !refusal.empty()    ? refusal
              : launch_result == 78 ? "The memory card is read-only"
              : launch_result       ? "LAUNCH ERROR " + std::to_string(launch_result) + " - SEE LOG"
              : launch_preview      ? "PREVIEW: " + std::string(core_names[launching_core]) + " SELECTED"

@@ -306,6 +306,7 @@ DS rounded	DS arredondado
 DS screens	Ecrãs DS
 DSCore 3D resolution	Resolução 3D do DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: recomendado. O mais rápido, com correções da tampa, caneta e 3D e 3D opcional de 2x–5x.
+Drawing pad	Mesa de desenho
 Edit	Editar
 Edit search	Editar pesquisa
 Effects volume	Volume dos efeitos
@@ -451,14 +452,17 @@ Green	Verde
 Grey	Cinzento
 Grey TV	Televisor cinzento
 Grid	Grelha
+Keypad	Teclado numérico
 Left stick down	Manípulo esquerdo baixo
 Left stick left	Manípulo esquerdo esquerda
 Left stick right	Manípulo esquerdo direita
 Left stick up	Manípulo esquerdo cima
+Page	Página
 Right stick down	Manípulo direito baixo
 Right stick left	Manípulo direito esquerda
 Right stick right	Manípulo direito direita
 Right stick up	Manípulo direito cima
+Storyware	Livro de histórias
 h	h
 Haptic strength	Intensidade tátil
 Health	Vida
@@ -723,6 +727,7 @@ Power profile	Perfil de energia
 Powering off…	A desligar…
 Prepare	Preparar
 Preparing controls…	A preparar controlos…
+Preparing graphics…	A preparar gráficos…
 Preparing the launcher	A preparar o início
 Preparing the library…	A preparar biblioteca…
 Preparing update…	A preparar atualização…
@@ -1630,3 +1635,4 @@ Temporary files. Safe to clear.	Ficheiros temporários. Seguro limpar.
 RG DS Core, its engines and settings.	RG DS Core, os seus motores e definições.
 Everything else on the card, with the file system's own overhead.	Tudo o resto no cartão, com a sobrecarga própria do sistema de ficheiros.
 Room for more games.	Espaço para mais jogos.
+Console switches	Interruptores da consola

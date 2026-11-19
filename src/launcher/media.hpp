@@ -39,7 +39,7 @@ struct Banner {
 };
 inline Banner read_banner(const fs::path& path) {
     Banner result;
-    if (lower(path.extension().string()) == ".zip") return result;
+    if (is_archive(path)) return result;
     std::ifstream file(path, std::ios::binary);
     if (!file) return result;
     file.seekg(0, std::ios::end);
@@ -181,7 +181,7 @@ class Media {
         job.stamp = asset_stamp(job.path);
         if (!job.stamp.present) return;
         if (job.icon) {
-            if (lower(job.path.extension().string()) != ".zip") job.banner = read_banner(job.path);
+            if (!is_archive(job.path)) job.banner = read_banner(job.path);
             if (!job.banner.pixels.empty()) {
                 job.surface = s.CreateRGBSurfaceWithFormat(0, 32, 32, 32, SDL_PIXELFORMAT_RGBA32);
                 if (job.surface)
@@ -267,7 +267,7 @@ public:
             }
             CachedBanner value;
             value.stamp = stamp(path);
-            if (value.stamp.present && lower(path.extension().string()) != ".zip") {
+            if (value.stamp.present && !is_archive(path)) {
                 banner_reads++;
                 counters.file_reads++;
                 value.value = read_banner(path);

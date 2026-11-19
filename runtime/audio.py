@@ -125,6 +125,10 @@ class Mixer:
                 timeout=2
             )
             levels = [int(v) for v in re.findall(r"Playback \d+ \[(\d+)%\]", result.stdout)]
+            if not levels and "Capture" not in result.stdout:
+                # A control with one direction prints no direction word ("Mono: 200 [78%]"), as 0.8.0 read every
+                # control: no level here would refuse every game (emulators.py starts none without the mixer).
+                levels = [int(v) for v in re.findall(r"\[(\d+)%\]", result.stdout)]
             if result.returncode == 0 and levels:
                 self.control = control
                 return max(levels)

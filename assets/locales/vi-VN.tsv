@@ -306,6 +306,7 @@ DS rounded	DS bo tròn
 DS screens	Màn hình DS
 DSCore 3D resolution	Độ phân giải 3D của DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: khuyên dùng. Nhanh nhất, có sửa lỗi nắp, bút cảm ứng và 3D, cùng 3D 2x–5x tùy chọn.
+Drawing pad	Bảng vẽ
 Edit	Sửa
 Edit search	Sửa tìm kiếm
 Effects volume	Âm lượng hiệu ứng
@@ -451,14 +452,17 @@ Green	Xanh lá
 Grey	Xám
 Grey TV	TV xám
 Grid	Lưới
+Keypad	Bàn phím số
 Left stick down	Cần trái xuống
 Left stick left	Cần trái trái
 Left stick right	Cần trái phải
 Left stick up	Cần trái lên
+Page	Trang
 Right stick down	Cần phải xuống
 Right stick left	Cần phải trái
 Right stick right	Cần phải phải
 Right stick up	Cần phải lên
+Storyware	Sách truyện
 h	giờ
 Haptic strength	Độ mạnh xúc giác
 Health	Máu
@@ -723,6 +727,7 @@ Power profile	Cấu hình nguồn
 Powering off…	Đang tắt máy…
 Prepare	Chuẩn bị
 Preparing controls…	Đang chuẩn bị điều khiển…
+Preparing graphics…	Đang chuẩn bị đồ họa…
 Preparing the launcher	Đang chuẩn bị trình khởi chạy
 Preparing the library…	Đang chuẩn bị thư viện…
 Preparing update…	Đang chuẩn bị cập nhật…
@@ -1630,3 +1635,4 @@ Temporary files. Safe to clear.	Tệp tạm. Xóa an toàn.
 RG DS Core, its engines and settings.	RG DS Core, các công cụ và cài đặt.
 Everything else on the card, with the file system's own overhead.	Mọi thứ còn lại trên thẻ, kể cả phần chiếm dụng của hệ thống tệp.
 Room for more games.	Chỗ cho nhiều trò chơi hơn.
+Console switches	Công tắc máy

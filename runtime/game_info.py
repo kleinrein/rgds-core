@@ -75,6 +75,8 @@ def rom_crc(path):
     """CRC32 of the game inside a ROM file or a single-game ZIP (the ZIP already stores it)."""
     from play_options import SYSTEMS
     path = Path(path)
+    # The archive's own bytes would name no game; a .7z is matched by its name (public_artwork.rom_details).
+    if path.suffix.lower() == ".7z": raise NotFound("A .7z game is matched by its name.")
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             entries = [

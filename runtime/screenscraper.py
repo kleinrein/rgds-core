@@ -33,6 +33,17 @@ SYSTEMS = {
     "nds": 15,
     "3ds": 17,
     "gg": 21,
+    "segacd": 20,
+    "sg": 109,
+    "pico": 250,
+    "pico8": 234,
+    "coleco": 48,
+    "intellivision": 115,
+    "msx": 113,
+    "pce": 31,
+    "pcecd": 114,
+    "atari": 26,
+    "amiga": 64,
     "gw": 52,
     "psx": 57,
     "psp": 61,
@@ -75,6 +86,7 @@ def game_entry(path, system):
     """(file name, size, CRC32 or '') of the game itself: the one game file in a ZIP, a folder for ScummVM."""
     path = Path(path)
     if system == "scummvm": return path.parent.name, 0, ""
+    if path.suffix.lower() == ".7z": return path.name, 0, ""  # its contents unreadable here: by name only
     if path.suffix.lower() == ".zip":
         from play_options import SYSTEMS as SUFFIXES
         suffixes = {s for values in SUFFIXES.values() for s in values} | {".nds", ".dsi"}

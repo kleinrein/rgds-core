@@ -306,6 +306,7 @@ DS rounded	DS скруглённый
 DS screens	Экраны DS
 DSCore 3D resolution	Разрешение 3D в DSCore
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: рекомендуется. Самый быстрый, с исправлениями крышки, стилуса и 3D и 3D 2x–5x по желанию.
+Drawing pad	Планшет для рисования
 Edit	Изменить
 Edit search	Изменить поиск
 Effects volume	Громкость эффектов
@@ -451,14 +452,17 @@ Green	Зелёный
 Grey	Серый
 Grey TV	Серый телевизор
 Grid	Сетка
+Keypad	Цифровая панель
 Left stick down	Левый стик вниз
 Left stick left	Левый стик влево
 Left stick right	Левый стик вправо
 Left stick up	Левый стик вверх
+Page	Страница
 Right stick down	Правый стик вниз
 Right stick left	Правый стик влево
 Right stick right	Правый стик вправо
 Right stick up	Правый стик вверх
+Storyware	Книжка
 h	ч
 Haptic strength	Сила отклика
 Health	Здоровье
@@ -723,6 +727,7 @@ Power profile	Профиль питания
 Powering off…	Выключение…
 Prepare	Подготовка
 Preparing controls…	Подготовка управления…
+Preparing graphics…	Подготовка графики…
 Preparing the launcher	Подготовка лаунчера
 Preparing the library…	Подготовка библиотеки…
 Preparing update…	Подготовка обновления…
@@ -1630,3 +1635,4 @@ Temporary files. Safe to clear.	Временные файлы. Их безопа
 RG DS Core, its engines and settings.	RG DS Core, его движки и настройки.
 Everything else on the card, with the file system's own overhead.	Всё остальное на карте, включая служебные данные файловой системы.
 Room for more games.	Место для новых игр.
+Console switches	Переключатели приставки

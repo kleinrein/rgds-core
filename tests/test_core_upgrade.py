@@ -81,7 +81,7 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(catalogs[0].keys(), catalogs[1].keys())
         self.assertGreater(len(catalogs[0]), 500)
 
-    @unittest.skipUnless(shutil.which('clang++'), 'C++ required')
+    @unittest.skipUnless(shutil.which('clang++') and shutil.which('sdl2-config'), 'C++/SDL headers required')
     def test_locale_fallback_templates_and_large_collection_cancellation(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / 'test.cpp'

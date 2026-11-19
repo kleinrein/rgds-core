@@ -7,6 +7,7 @@ import ipaddress
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import signal
@@ -245,8 +246,16 @@ class Sharing:
         systems = [(str(system).upper(), root) for system, root in systems]
         for root in roots:
             add('DS' if systems else 'Games', root)
+        # A system's second and later folders (Mega Drive's genesis, segacd and pico; PC Engine's pcecd) are named
+        # after the folder, so the share list says which is which instead of MD2, MD3.
+        named = set()
         for system, root in systems:
-            add(system, root)
+            folder = re.sub(r'[^A-Za-z0-9_-]', '', Path(root).name).upper()
+            if system in named and folder and folder != system and folder not in counts:
+                add(folder, root)
+            else:
+                add(system, root)
+            if Path(root).is_dir() and not Path(root).is_symlink(): named.add(system)
         # The music player's folder (docs/MUSIC.md): the one the session gives the player (RG DS OS: /data/music,
         # made here so songs can be copied in before the player first opens), else beside the data folder.
         if music is not None:

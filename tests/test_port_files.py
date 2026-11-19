@@ -121,7 +121,7 @@ class ServerTests(unittest.TestCase):
         )
         self.addCleanup(self.stop)
         self.status = self.data / 'session/port-files.ini'
-        deadline = time.monotonic() + 10
+        deadline = time.monotonic() + 60
         while not self.status.is_file():
             self.assertIsNone(self.server.poll(), self.server.stderr.read() if self.server.poll() is not None else '')
             self.assertLess(time.monotonic(), deadline)

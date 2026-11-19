@@ -7,6 +7,7 @@ game.ini with only the keys it knows.
 """
 from pathlib import Path
 import re
+import shutil
 import zipfile
 
 from fields import read_fields, write_fields
@@ -27,6 +28,25 @@ SYSTEMS = {
     "md": (".md", ".gen", ".smd", ".32x"),  # .bin too, but only in an md folder: FOLDER_SYSTEMS
     "sms": (".sms",),
     "gg": (".gg",),
+    # SG-1000 and SC-3000 cartridges: PicoDrive, on the Master System's shelf
+    "sg": (".sg", ".sc"),
+    # Mega-CD discs and Pico cartridges are a .cue or a plain .md: only their folders say so (FOLDER_SYSTEMS)
+    "segacd": (),
+    "pico": (),
+    # ColecoVision (Gearcoleco) and Intellivision (FreeIntv); a plain .rom or .bin only in their own folders
+    "coleco": (".col", ".cv"),
+    "intellivision": (".int",),
+    # MSX and MSX2 (blueMSX): cartridges and tapes by extension; a .rom or a .dsk only in an MSX folder
+    "msx": (".mx1", ".mx2", ".cas"),
+    # PC Engine / TurboGrafx-16 cards (Beetle PCE Fast); its CD-ROM discs only in their folders, as the Mega-CD's
+    "pce": (".pce",),
+    "pcecd": (),
+    # Atari 2600 (Stella 2014); a plain .bin only in an Atari folder
+    "atari": (".a26",),
+    # Commodore Amiga (PUAE): floppies, hard disks, WHDLoad archives and configurations; an .m3u in its folder
+    "amiga": (".adf", ".adz", ".dms", ".ipf", ".hdf", ".hdz", ".lha", ".uae"),
+    # PICO-8 carts (fake-08): a .p8, or a .p8.png picture cart, which is a .png only in a PICO-8 folder
+    "pico8": (".p8",),
     # PlayStation discs by their index files only (.bin is the data track, and ambiguous)
     "psx": (".cue", ".chd", ".pbp", ".m3u"),
     # Nintendo 64: big-endian .z64, byte-swapped .v64, little-endian .n64; the core reads all three
@@ -35,7 +55,7 @@ SYSTEMS = {
     "zx": (".tzx", ".tap", ".z80", ".sna", ".szx", ".dsk", ".trd", ".scl"),
     # Commodore 64 disks, tapes, cartridges and programs (VICE); .m3u lists the disks of a game on several
     "c64": (".d64", ".g64", ".d71", ".d81", ".t64", ".crt", ".prg", ".p00", ".x64"),
-    # Nintendo 3DS: not a libretro core, Tanuki3DS from the data partition (emulators.tanuki_plan)
+    # Nintendo 3DS: not a libretro core, Tanuki3DS from the OS image (emulators.tanuki_engine)
     "3ds": (".3ds", ".cci", ".cxi", ".3dsx"),
     # PlayStation Portable discs (PPSSPP); .pbp and .chd are the PlayStation's unless in a PSP folder: FOLDER_SYSTEMS
     "psp": (".iso", ".cso"),
@@ -55,13 +75,65 @@ FOLDER_SYSTEMS = {
     "commodore": "c64",
     "commodore 64": "c64",
     "psp": "psp",
-    "scummvm": "scummvm"
+    "scummvm": "scummvm",
+    "segacd": "segacd",
+    "megacd": "segacd",
+    "mega cd": "segacd",
+    "mega-cd": "segacd",
+    "sega cd": "segacd",
+    "pico": "pico",
+    "sega pico": "pico",
+    "coleco": "coleco",
+    "colecovision": "coleco",
+    "intellivision": "intellivision",
+    "intv": "intellivision",
+    "msx": "msx",
+    "msx1": "msx",
+    "msx2": "msx",
+    "pce": "pce",
+    "pc engine": "pce",
+    "pcengine": "pce",
+    "tg16": "pce",
+    "turbografx": "pce",
+    "turbografx-16": "pce",
+    "pcecd": "pcecd",
+    "pce-cd": "pcecd",
+    "pc engine cd": "pcecd",
+    "tg16cd": "pcecd",
+    "turbografx-cd": "pcecd",
+    "atari": "atari",
+    "atari2600": "atari",
+    "atari 2600": "atari",
+    "2600": "atari",
+    "amiga": "amiga",
+    "pico8": "pico8",
+    "pico-8": "pico8",
+    "fake08": "pico8"
 }
 # The C64's tapes are .tap like the Spectrum's, and a C64 game on several disks is listed by an .m3u like a
 # PlayStation disc set: in a C64 folder both are the C64's.
 DISK_EXTENSIONS = (".d64", ".g64", ".d71", ".d81")
 ANY_FILE = ("*",)
-FOLDER_EXTENSIONS = {"md": (".bin",), "c64": (".tap", ".m3u"), "psp": (".pbp", ".chd"), "scummvm": ANY_FILE}
+# The discs each CD add-on's core reads (PicoDrive; Beetle PCE Fast reads no .iso).
+SEGACD_DISCS = (".cue", ".chd", ".m3u", ".iso")
+PCECD_DISCS = (".cue", ".chd", ".m3u", ".ccd", ".toc")
+FOLDER_EXTENSIONS = {
+    "md": (".bin",),
+    "c64": (".tap", ".m3u"),
+    "psp": (".pbp", ".chd"),
+    "scummvm": ANY_FILE,
+    "segacd": SEGACD_DISCS,
+    "pico": (".md", ".bin", ".gen", ".smd"),
+    "coleco": (".rom", ".bin"),
+    "intellivision": (".rom", ".bin"),
+    "msx": (".rom", ".dsk", ".m3u"),
+    "pcecd": PCECD_DISCS,
+    "atari": (".bin",),
+    "amiga": (".m3u",),
+    "pico8": (".png",)
+}
+# A disc in a Mega Drive folder is a Mega-CD one, in a PC Engine folder a CD-ROM one: they share those shelves.
+FOLDER_DISCS = {"md": ("segacd", SEGACD_DISCS), "pce": ("pcecd", PCECD_DISCS)}
 # The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
 LIBRETRO_CORES = {
     "nes": "fceumm",
@@ -69,6 +141,17 @@ LIBRETRO_CORES = {
     "md": "picodrive",
     "sms": "picodrive",
     "gg": "picodrive",
+    "sg": "picodrive",
+    "segacd": "picodrive",
+    "pico": "picodrive",
+    "coleco": "gearcoleco",
+    "intellivision": "freeintv",
+    "msx": "bluemsx",
+    "pce": "mednafen_pce_fast",
+    "pcecd": "mednafen_pce_fast",
+    "atari": "stella2014",
+    "amiga": "puae",
+    "pico8": "fake08",
     "psx": "pcsx_rearmed",
     "n64": "mupen64plus_next",
     "zx": "fuse",
@@ -80,6 +163,27 @@ LIBRETRO_CORES = {
 # A core's system folder when not the owner's BIOS folder: PPSSPP's assets come with the core and need no BIOS.
 LIBRETRO_SYSTEM_DIRS = {"psp": "/usr/share/libretro", "scummvm": "/usr/share/libretro"}
 LIBRETRO_DIR = Path("/usr/lib/libretro")
+# Files a core needs in the BIOS folder that the image carries (blueMSX's free C-BIOS machines and its game databases,
+# libretro-bluemsx), copied there before a game starts; the owner's own files of the same name are kept.
+SYSTEM_FILES = {"msx": Path("/usr/share/libretro/bluemsx")}
+
+
+def provide_system_files(system, bios):
+    """Copy what the image carries for system into the BIOS folder, file by file, leaving whatever is already there."""
+    source = SYSTEM_FILES.get(system)
+    if not source or not source.is_dir():
+        return
+    bios = Path(bios)
+    for path in sorted(source.rglob("*")):
+        target = bios / path.relative_to(source)
+        try:
+            if path.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            elif not target.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, target)
+        except OSError:
+            pass  # a full or read-only card: the core says what it misses
 MGBA_SYSTEMS = ("gba", "gbc", "gb")
 # Systems whose core cannot save its state (gw-libretro runs Lua): no checkpoints, their scores are their own saves.
 NO_CHECKPOINTS = ("gw", "scummvm")
@@ -94,7 +198,9 @@ def libretro_core(system):
 
 
 FITS = ("sharp", "integer", "smooth")
-SECONDS = ("companion", "off", "swap", "info")  # info: the second screen's own quiet controls
+SECONDS = (
+    "companion", "off", "swap", "info", "keyboard"
+)  # info: the second screen's own quiet controls; keyboard: ZX and C64, the keyboard first
 # A system's own screen when a game's shader is Default (assets/shaders/catalog.tsv): GBA screen
 # (its LCD's colour and pixel gaps), Game Boy screen (the dot matrix), Game Boy Color screen (its
 # faint grid). DS games use the default from Settings.
@@ -164,9 +270,9 @@ FRAMES = {
     "psp-white": "psp",
     "nes": "nes",
     "snes": "snes",
-    "md": "md",
-    "sms": "sms",
-    "pce": "pce",
+    "md": "md,segacd,pico",
+    "sms": "sms,sg",
+    "pce": "pce,pcecd",
     "neo": "neo",
     "psx": "psx",
     "n64": "n64",
@@ -178,13 +284,14 @@ FRAMES = {
     "msx": "msx",
     "zx": "zx",
     "c64": "c64",
+    "amiga": "amiga",
     "pico8": "pico8",
     "arcade": "arcade",
     "mvs": "neo",
     "vectrex": "vectrex",
-    "tv-grey": "nes,snes,md,sms,pce,neo,psx,n64,saturn,dc,msx,zx,c64",
-    "tv-wood": "nes,sms,atari,coleco,intellivision",
-    "monitor": "dos,msx,zx,c64,scummvm",
+    "tv-grey": "nes,snes,md,segacd,pico,sms,sg,pce,pcecd,neo,psx,n64,saturn,dc,msx,zx,c64",
+    "tv-wood": "nes,sms,sg,atari,coleco,intellivision,pico",
+    "monitor": "dos,msx,zx,c64,amiga,scummvm",
     "ctr-dark": "3ds",
     "ctr-cosmos": "3ds",
     "ctr-aqua": "3ds",
@@ -206,13 +313,31 @@ def _system_of_folder(rom, name):
     suffix = Path(name).suffix.lower()
     for folder in rom.parents:
         system = FOLDER_SYSTEMS.get(folder.name.lower())
+        if system in FOLDER_DISCS and suffix in FOLDER_DISCS[system][1]:
+            return FOLDER_DISCS[system][0]
         if system and (FOLDER_EXTENSIONS.get(system) == ANY_FILE or suffix in FOLDER_EXTENSIONS.get(system, ())):
             return system
     return None
 
 
+# The archives a game may be packed in. RG DS Play unpacks them for the libretro cores (unpack_game) and mGBA reads
+# both itself; a DS game in a .7z is unpacked by the player too (emulators.resolve_rom).
+ARCHIVES = (".zip", ".7z")
+
+
+def _system_of_games_folder(rom):
+    """The system whose games folder (/data/roms/n64, rgds/games/gb) holds rom, by the folder's own name."""
+    for folder in Path(rom).parents:
+        name = folder.name.lower()
+        if name == "nds": return "nds"
+        if name in SYSTEMS: return name
+        if name in FOLDER_SYSTEMS: return FOLDER_SYSTEMS[name]
+    return None
+
+
 def system_of(rom):
-    """'gba', 'gbc', 'gb', 'md', ..., or 'nds'. A .zip is the system of the game inside it."""
+    """'gba', 'gbc', 'gb', 'md', ..., or 'nds'. A .zip is the system of the game inside it; a .7z, whose names
+    Python cannot read, and a zip of nothing known go by the system folder they are in."""
     rom = Path(rom)
     system = _system_of_folder(rom, rom.name) or _system_of_name(rom.name)
     if system:
@@ -220,12 +345,16 @@ def system_of(rom):
     if rom.suffix.lower() == ".zip":
         try:
             with zipfile.ZipFile(rom) as archive:
-                for name in archive.namelist():
+                # A disc's sheet before its tracks: a zipped Mega-CD disc in a Mega Drive folder starts with a .bin.
+                sheets = (".m3u", ".cue", ".ccd", ".toc", ".chd")
+                for name in sorted(archive.namelist(), key=lambda name: Path(name).suffix.lower() not in sheets):
                     system = _system_of_folder(rom, name) or _system_of_name(name)
                     if system:
                         return system
         except (OSError, zipfile.BadZipFile):
             pass
+    if rom.suffix.lower() in ARCHIVES:
+        return _system_of_games_folder(rom) or "nds"
     return "nds"
 
 

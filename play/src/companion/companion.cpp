@@ -34,6 +34,10 @@ Companion::Companion(Core& live, const Profile* profile, std::string title, std:
         views_.push_back(std::move(keyboard));
         alternative_.push_back(true);
     }
+    if (auto controller = make_controller(live.system())) {
+        views_.push_back(std::move(controller));
+        alternative_.push_back(true);
+    }
     hud_picture_.tint = [this](uint32_t v) { return shown_px(v); };
 }
 
@@ -707,6 +711,33 @@ bool Companion::hud_covered() const {
     return !has_current_ && v && v->covers_hud();
 }
 
+void Companion::remember_switch_in(std::string path) {
+    alt_file_ = std::move(path);
+    if (std::FILE* f = std::fopen(alt_file_.c_str(), "rb")) {
+        alt_ = std::fgetc(f) == '1';
+        alt_known_ = true;
+        std::fclose(f);
+    }
+}
+
+void Companion::save_switch() const {
+    if (alt_file_.empty()) return;
+    std::FILE* f = std::fopen(alt_file_.c_str(), "wb");
+    if (!f) {
+        std::fprintf(stderr, "play: cannot keep the second screen's choice in %s\n", alt_file_.c_str());
+        return;
+    }
+    std::fputc(alt_ ? '1' : '0', f);
+    std::fclose(f);
+}
+
+void Companion::set_keyboard_first(bool on, bool force) {
+    if (!force && alt_known_) return;
+    alt_ = on;
+    alt_known_ = true;
+    if (force) save_switch();
+}
+
 bool Companion::has_switch() const { return alternative_view() && (has_current_ || shown_view() || party_shown_); }
 
 bool Companion::showing_alternative() const {
@@ -722,8 +753,10 @@ bool Companion::touch(const Touch& t) {
     if (screens_mode()) {
         const Rect& r = lower_rect_.w ? lower_rect_ : profile_->screens.bottom;
         const double fit = std::min(640.0 / r.w, 480.0 / r.h);
-        const double tall = std::min(480.0 / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
-        const int x = r.x + int((t.x - (640 - r.w * fit) / 2) / fit), y = r.y + int((t.y - (480 - r.h * tall) / 2) / tall);
+        const double tall =
+            std::min(480.0 / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
+        const int x = r.x + int((t.x - (640 - r.w * fit) / 2) / fit),
+                  y = r.y + int((t.y - (480 - r.h * tall) / 2) / tall);
         if (profile_->screens.pointer) {
             if (finger_core_) finger_core_->set_pointer(x, y, t.kind != Touch::Up);
             return false;
@@ -738,6 +771,7 @@ bool Companion::touch(const Touch& t) {
     if (t.kind == Touch::Down && has_switch() && switch_box(640).contains(t.x, t.y)) {
         // The switch flips between the game's own screen (map, team) and the status board.
         alt_ = !alt_;
+        save_switch();
         return true;
     }
     if (View* a = showing_alternative() ? alternative_view() : nullptr; a && a->touch(t)) {
@@ -939,7 +973,8 @@ void Companion::render_screens(Canvas& out) const {
     const Rect& r = lower_rect_;
     if (lower_.empty()) return out.fill(Rgb{0, 0, 0});
     const double fit = std::min(double(out.w()) / r.w, double(out.h()) / r.h);
-    const double tall = std::min(double(out.h()) / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
+    const double tall =
+        std::min(double(out.h()) / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
     const int tw = std::min(out.w(), int(r.w * fit + 0.5)), th = std::min(out.h(), int(r.h * tall + 0.5));
     out.fill(Rgb{0, 0, 0});
     sharp_blit(out, lower_.data(), r.w, r.h, (out.w() - tw) / 2, (out.h() - th) / 2, tw, th, false, 0);

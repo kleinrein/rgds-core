@@ -577,7 +577,9 @@ The owner would rather not carry ROCKNIX's drivers. Swap them one at a time on t
   release. Every download is checked against the feed's size and hash (a release file's SHA-256 or a database
   file's git blob SHA-1) before it lands in the system's folder with its cover, maker and license.
   **PICO-8 was dropped on 2026-10-28** (fake-08 is an unofficial re-creation): the libretro-fake08 package, the
-  PICO-8 system and the BBS cart browser are gone, and post-build.sh deletes the old core from the target.
+  PICO-8 system and the BBS cart browser went, and post-build.sh deleted the old core from the target.
+  **It is back since 2026-11-18** at the owner's request: libretro-fake08 at the same pin, the PICO-8 shelf
+  (`/data/roms/pico8`, `.p8` and `.p8.png` carts). The BBS cart browser stays out.
   BlocksDS homebrew is unit code 2 (DS and DSi) but carries DSiWare's title ID high (00030004), so DSCore forced DSi
   mode and refused without the DSi BIOS (launch error 2). It now starts such titles in DS mode when no DSi BIOS
   pair is installed (dsi_title_install file_runs_on_ds, frontend/sdl/main.cpp; dscore/tests/dsi_header_test.cpp).

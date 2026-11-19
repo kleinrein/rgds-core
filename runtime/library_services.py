@@ -35,7 +35,7 @@ def run(service, payload):
     with activity_lock(service.data):
         if core_running(service.data): raise ValueError('Use the in-game save gallery while a game is running.')
         rom = Path(payload['rom']).resolve()
-        if not rom.is_file() or rom.suffix.lower() not in ('.nds', '.zip'):
+        if not rom.is_file() or rom.suffix.lower() not in ('.nds', '.zip', '.7z'):
             raise ValueError('Game file is unavailable.')
         vault = SaveLibrary(player_root(service.data), rom, payload['core'], service.app.name)
         slot = int(payload.get('slot', 0))

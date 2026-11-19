@@ -16,6 +16,7 @@ When rembg is not installed the tool falls back to a colour-model matte, which
 is rougher but keeps the pipeline runnable.
 
     python3 tools/prepare_system_icons.py
+    python3 tools/prepare_system_icons.py --only amiga       # one system
     python3 tools/prepare_system_icons.py --sheet out.png   # labelled review sheet
 """
 from pathlib import Path
@@ -110,7 +111,7 @@ def sheet(path, columns=5, size=176):
     )
 
 
-def main():
+def main(only=None):
     TARGET.mkdir(parents=True, exist_ok=True)
     try:
         session = _session(system_matte.SEGMENT_MODEL)
@@ -123,6 +124,8 @@ def main():
     written = []
     for source in sorted(SOURCE.glob('*')):
         if source.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.webp'):
+            continue
+        if only and source.stem != only:
             continue
         image = Image.open(source)
         if session is None:
@@ -146,5 +149,7 @@ def main():
 if __name__ == '__main__':
     if '--sheet' in sys.argv:
         sheet(sys.argv[sys.argv.index('--sheet') + 1])
+    elif '--only' in sys.argv:
+        main(sys.argv[sys.argv.index('--only') + 1])
     else:
         main()

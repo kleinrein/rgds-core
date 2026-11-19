@@ -60,14 +60,20 @@ def hud_theme(app, data):
         return None
 
 
-HUD_WORDS = ("Volume", "Muted", "Fast")
+# locale key: the HUD's environment name (src/platform/hud_style.hpp word())
+HUD_WORDS = {
+    "Volume": "RGDS_HUD_VOLUME",
+    "Muted": "RGDS_HUD_MUTED",
+    "Fast": "RGDS_HUD_FAST",
+    "Preparing graphics\u2026": "RGDS_HUD_PREPARING"
+}
 CJK_FAMILIES = {"ja": "ja", "zh": "zh", "ko": "ko"}
 
 
 def hud_words(app, data):
     """{env name: value} for the in-game HUD's words in the launcher's language.
 
-    RGDS_HUD_VOLUME / _MUTED / _FAST carry the translations from assets/locales;
+    RGDS_HUD_VOLUME / _MUTED / _FAST / _PREPARING carry the translations from assets/locales;
     RGDS_HUD_FAMILY names the CJK font family (ja, zh, ko) the language needs.
     A missing language or file leaves the English words built into the HUD.
     """
@@ -79,7 +85,7 @@ def hud_words(app, data):
         family = CJK_FAMILIES.get(language.split("-")[0].lower())
         if family:
             env["RGDS_HUD_FAMILY"] = family
-        wanted = {word: "RGDS_HUD_" + word.upper() for word in HUD_WORDS}
+        wanted = HUD_WORDS
         for line in (Path(app) / "assets/locales" / (language + ".tsv")).read_text(encoding="utf-8").splitlines():
             key, tab, value = line.partition("\t")
             if tab and key in wanted and value:

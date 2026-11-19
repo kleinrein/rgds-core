@@ -2,7 +2,7 @@
 // rgds-play: the game on one panel, its companion on the other.
 //
 //   rgds-play --rom GAME --data DIR [--profiles DIR]... [--fonts DIR]
-//             [--save-source DIR]... [--fit sharp|integer|smooth] [--second companion|off|swap|info]
+//             [--save-source DIR]... [--fit sharp|integer|smooth] [--second companion|off|swap|info|keyboard]
 //             [--frame NAME] [--frames DIR] [--palette NAME] [--colour NAME] [--art DIR]
 //
 // --fit sharp (the default) fills the panel's width: the game is scaled up by
@@ -87,7 +87,7 @@ std::atomic<bool> stop_requested{false};
 void request_stop(int) { stop_requested = true; }
 
 enum FitMode { FitSharp = 0, FitInteger = 1, FitSmooth = 2 };
-enum SecondMode { SecondCompanion = 0, SecondOff = 1, SecondSwap = 2, SecondInfo = 3 };
+enum SecondMode { SecondCompanion = 0, SecondOff = 1, SecondSwap = 2, SecondInfo = 3, SecondKeyboard = 4 };
 
 // Asked for by the bridge from its event hook (the main thread, between
 // frames); taken up at the top of the next loop.
@@ -160,7 +160,8 @@ uint32_t controller_buttons(SDL_GameController* c) {
 // core's first frame, beside the panel's own context, and only ever drawn into the core's own framebuffer.
 SDL_Window* gpu_core_window = nullptr; // set once the panels are open, when their renderer is GL
 SDL_GLContext gpu_core_context = nullptr;
-SDL_GLContext gpu_core_share = nullptr; // the top panel's context: its textures are the core's too (Core::set_gl_target)
+SDL_GLContext gpu_core_share =
+    nullptr; // the top panel's context: its textures are the core's too (Core::set_gl_target)
 bool gpu_core_shared = false;
 
 bool gpu_core_begin(int major, int minor) {
@@ -355,8 +356,7 @@ FrameChoice choose_frame(const std::string& name, const std::string& folder, con
 }
 
 // drawn: the core has put this frame in the panel's texture itself (Core::set_gl_target).
-void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame, const Font& font,
-               bool drawn = false) {
+void draw_game(Panel& p, const Picture& game, int fit, const FrameChoice& frame, const Font& font, bool drawn = false) {
     if (game.w != p.game_w || game.h != p.game_h) make_game_textures(p, game.w, game.h);
     if (!drawn) SDL_UpdateTexture(p.game, nullptr, game.px, game.stride * 4);
     SDL_Rect dest = fit_rect(p.area, game.w, game.h, fit == FitInteger);
@@ -406,11 +406,19 @@ int parse_fit(const std::string& s) {
     return s == "integer" ? FitInteger : s == "smooth" || s == "fill" ? FitSmooth : FitSharp;
 }
 int parse_second(const std::string& s) {
-    return s == "off" ? SecondOff : s == "swap" ? SecondSwap : s == "info" ? SecondInfo : SecondCompanion;
+    return s == "off"        ? SecondOff
+           : s == "swap"     ? SecondSwap
+           : s == "info"     ? SecondInfo
+           : s == "keyboard" ? SecondKeyboard
+                             : SecondCompanion;
 }
 const char* fit_name(int f) { return f == FitInteger ? "whole pixels" : f == FitSmooth ? "smooth fill" : "sharp fill"; }
 const char* second_name(int s) {
-    return s == SecondOff ? "off" : s == SecondSwap ? "swapped" : s == SecondInfo ? "info" : "companion";
+    return s == SecondOff        ? "off"
+           : s == SecondSwap     ? "swapped"
+           : s == SecondInfo     ? "info"
+           : s == SecondKeyboard ? "keyboard"
+                                 : "companion";
 }
 
 // The dock's brightness for the second screen, kept between sessions.
@@ -468,7 +476,7 @@ bool read_panel(const Panel& p, Canvas& out) {
 // frame: a built-in style's name or a picture frame's (taken up between frames;
 // a picture that cannot be read is logged and drawn as no frame).
 extern "C" __attribute__((visibility("default"))) int rgds_play_set_graphics(int fit, int second, const char* frame) {
-    if (fit < 0 || fit > 2 || second < 0 || second > 3 || !frame || !*frame || std::strlen(frame) > 64 ||
+    if (fit < 0 || fit > 2 || second < 0 || second > 4 || !frame || !*frame || std::strlen(frame) > 64 ||
         std::strchr(frame, '/') || frame[0] == '.')
         return 0;
     {
@@ -514,6 +522,24 @@ extern "C" __attribute__((visibility("default"))) int rgds_set_cheat(int index, 
 }
 
 int main(int argc, char** argv) {
+    // rgds-play --unpack ARCHIVE FOLDER .nds,.dsi: the game in a .zip or .7z unpacked under FOLDER, its path printed
+    // (runtime/emulators.py, for a DS game in a .7z: mGBA's archive reader is the image's only one for 7z).
+    if (argc == 5 && std::string(argv[1]) == "--unpack") {
+        std::vector<std::string> extensions;
+        for (std::string list = argv[4]; !list.empty();) {
+            const size_t comma = list.find(',');
+            extensions.push_back(list.substr(0, comma));
+            list = comma == std::string::npos ? "" : list.substr(comma + 1);
+        }
+        std::string error;
+        const std::string game = play::unpack_game(argv[2], extensions, argv[3], error);
+        if (game.empty()) {
+            std::fprintf(stderr, "rgds-play: %s\n", error.c_str());
+            return 1;
+        }
+        std::printf("%s\n", game.c_str());
+        return 0;
+    }
     SessionOptions o;
     int fit = FitSharp, second = SecondCompanion;
     std::string frame_choice = "off", frames_folder, palette_choice = "default", colour_choice = "off";
@@ -564,6 +590,9 @@ int main(int argc, char** argv) {
     set_gl_host(&gpu_core_host);
     if (!session.open(o, error)) {
         std::fprintf(stderr, "rgds-play: %s\n", error.c_str());
+        // What the launcher shows instead of "LAUNCH ERROR 1" (src/launcher/game_launch.hpp).
+        std::string written;
+        write_file_atomic(o.data_root + "/launch-message.txt", std::vector<uint8_t>(error.begin(), error.end()), written);
         return 1;
     }
     cheat_session = &session;
@@ -648,7 +677,13 @@ int main(int argc, char** argv) {
     // A light-gun game is played by touching it: it starts on the touch screen.
     // A light gun or a mouse game is played on the touch screen: it starts there, a finger aims or draws.
     // So is a ScummVM game: it is played by touch, unless a profile splits it across both panels.
-    const bool lightgun = session.profile() ? session.profile()->lightgun || session.profile()->mouse : o.system == "scummvm";
+    const bool lightgun =
+        session.profile() ? session.profile()->lightgun || session.profile()->mouse : o.system == "scummvm";
+    // The keyboard first (ZX, C64): the companion, opened on the keyboard until the game's own view is switched back
+    // to (a game remembers what it was left on, so that wins at the start; picking it in the menu overrides).
+    bool keyboard_first = second == SecondKeyboard;
+    if (keyboard_first) second = SecondCompanion;
+    if (session.companion() && keyboard_first) session.companion()->set_keyboard_first(true, false);
     if (lightgun && second == SecondCompanion) second = SecondSwap;
     std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit), second_name(second),
                  frame.name.c_str());
@@ -757,7 +792,8 @@ int main(int argc, char** argv) {
                 const auto name = entry.path().filename().string();
                 std::error_code resolve_error;
                 if (name.rfind("event", 0) == 0 &&
-                    std::filesystem::canonical(entry.path() / "device", resolve_error).string().find("fe5c0000") != std::string::npos)
+                    std::filesystem::canonical(entry.path() / "device", resolve_error).string().find("fe5c0000") !=
+                        std::string::npos)
                     device = "/dev/input/" + name;
             }
         if (!device.empty()) top_touch.open_device(device);
@@ -808,7 +844,15 @@ int main(int argc, char** argv) {
         }
         if (f >= 0 || s >= 0 || !r.empty()) {
             if (f >= 0) fit = f;
-            if (s >= 0) second = s;
+            if (s >= 0) {
+                // Only choosing the keyboard, or leaving it, moves the switch: a bezel or fit change sends the
+                // unchanged second screen along and must leave what the owner flipped to alone.
+                const bool now_keyboard = s == SecondKeyboard;
+                if (now_keyboard != keyboard_first && session.companion())
+                    session.companion()->set_keyboard_first(now_keyboard, true);
+                keyboard_first = now_keyboard;
+                second = keyboard_first ? SecondCompanion : s;
+            }
             if (!r.empty() && r != frame.name) frame = choose_frame(r, frames_folder, session.core().system());
             drawn_key = ~0ull;
             std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit),

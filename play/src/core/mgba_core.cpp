@@ -20,6 +20,9 @@
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
+#include <filesystem>
+#include <fstream>
+#include <sys/stat.h>
 
 namespace play {
 namespace {
@@ -456,6 +459,88 @@ RomBytes read_rom(const std::string& path, std::string& error, std::string* inne
     }
     if (bytes.empty()) return nullptr;
     return std::make_shared<const std::vector<uint8_t>>(std::move(bytes));
+}
+
+std::string unpack_game(const std::string& archive, const std::vector<std::string>& extensions,
+                        const std::string& folder, std::string& error) {
+    namespace fs = std::filesystem;
+    struct stat info{};
+    if (stat(archive.c_str(), &info) != 0) {
+        error = "The archive could not be read";
+        return "";
+    }
+    VDir* dir = VDirOpenArchive(archive.c_str());
+    if (!dir) {
+        error = "The archive could not be opened";
+        return "";
+    }
+    std::vector<std::string> names;
+    for (VDirEntry* entry = dir->listNext(dir); entry; entry = dir->listNext(dir))
+        if (entry->type(entry) == VFS_FILE) names.push_back(entry->name(entry));
+    // A file's own name only: nothing in an archive is written outside its folder.
+    auto base = [](const std::string& name) {
+        auto slash = name.find_last_of("/\\");
+        return slash == std::string::npos ? name : name.substr(slash + 1);
+    };
+    std::string game;
+    for (const auto& wanted : extensions) {
+        for (const auto& name : names)
+            if (extension(name) == wanted && !base(name).empty() && base(name)[0] != '.') {
+                game = name;
+                break;
+            }
+        if (!game.empty()) break;
+    }
+    if (game.empty()) {
+        dir->close(dir);
+        error = "No game for this system inside the archive";
+        return "";
+    }
+    // The archive's name, size and time name its folder: a changed archive is unpacked again.
+    char key[32];
+    std::snprintf(
+        key, sizeof key, "%016zx",
+        std::hash<std::string>{}(archive + "|" + std::to_string(info.st_size) + "|" + std::to_string(info.st_mtime)));
+    const fs::path root = fs::path(folder), target = root / key, done = target / ".unpacked";
+    std::error_code fs_error;
+    if (fs::is_regular_file(done, fs_error) && fs::is_regular_file(target / base(game), fs_error)) {
+        dir->close(dir);
+        return (target / base(game)).string();
+    }
+    // Only the game being played stays unpacked: a disc is hundreds of MB on the card.
+    for (const auto& old : fs::directory_iterator(root, fs_error)) fs::remove_all(old.path(), fs_error);
+    fs::create_directories(target, fs_error);
+    std::vector<char> buffer(1 << 20);
+    // A game with its own few files (a disc's .cue and tracks) comes out whole; from a big pack only the game itself,
+    // as a solid 7z is unpacked from its start again for every file (a 180-game pack took minutes).
+    if (names.size() > 16) names = {game};
+    for (const auto& name : names) {
+        const std::string file = base(name);
+        if (file.empty() || file[0] == '.') continue;
+        VFile* vf = dir->openFile(dir, name.c_str(), O_RDONLY);
+        if (!vf) continue;
+        const fs::path out = target / file, partial = target / (file + ".partial");
+        std::ofstream to(partial, std::ios::binary);
+        bool ok = bool(to);
+        for (ssize_t n; ok && (n = vf->read(vf, buffer.data(), buffer.size())) > 0;)
+            ok = bool(to.write(buffer.data(), n));
+        vf->close(vf);
+        to.close();
+        if (!ok || !to) {
+            fs::remove_all(target, fs_error);
+            dir->close(dir);
+            error = "The game could not be unpacked (is the card full?)";
+            return "";
+        }
+        fs::rename(partial, out, fs_error);
+    }
+    dir->close(dir);
+    std::ofstream(done) << archive << '\n';
+    if (!fs::is_regular_file(target / base(game), fs_error)) {
+        error = "The game could not be unpacked";
+        return "";
+    }
+    return (target / base(game)).string();
 }
 
 OpenResult open_mgba(RomBytes rom, const std::string&, const std::vector<uint8_t>& battery) {

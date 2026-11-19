@@ -281,6 +281,7 @@ class App {
     LaunchPhase launch_phase = LaunchPhase::None;
     pid_t launch_child = -1;
     int launch_channel = -1, launch_result = 0;
+    std::string launch_refusal; // why the player would not start the last game, as the cover line shows it
     bool launch_cancelled = false, launch_handoff = false;
     Uint32 launch_exit_at = 0, launch_cancel_at = 0;
     double launch_exit_opacity = 1;
@@ -3312,6 +3313,20 @@ static int self_test() {
     Model empty;
     empty.move(-99);
     ok = ok && empty.selected == 0;
+    { // A file another system shares counts for a system only in its own folder; the player's system on a shared shelf.
+        const fs::path r = "/data/roms";
+        ok = ok && system_for_path(r / "psx/Game.cue") == "psx" && system_for_path(r / "Game.cue") == "psx" &&
+             system_for_path(r / "psp/Game.iso") == "psp" && system_for_path(r / "md/Game.bin") == "md" &&
+             system_for_path(r / "segacd/Game.cue") == "md" && system_for_path(r / "pcecd/Game.chd") == "pce" &&
+             system_for_path(r / "msx/Game.rom") == "msx" && system_for_path(r / "intellivision/Game.rom") == "intellivision" &&
+             system_for_path(r / "pce/Game.zip") == "pce" && system_for_path(r / "zx/Game.dsk") == "zx" &&
+             system_for_path(r / "nds/Game.zip") == "nds" && system_for_path(r / "pico8/Cart.p8.png") == "pico8" &&
+             system_for_path(r / "nes/cover.png") == "nds";
+        ok = ok && play_subsystem(r / "md/Game.cue", "md") == "segacd" && play_subsystem(r / "md/Game.bin", "md") == "md" &&
+             play_subsystem(r / "pico/Game.md", "md") == "pico" && play_subsystem(r / "segacd/Game.zip", "md") == "segacd" &&
+             play_subsystem(r / "pce/Game.zip", "pce") == "pce" && play_subsystem(r / "pce/Game.ccd", "pce") == "pcecd" &&
+             play_subsystem(r / "sms/Game.sg", "sms") == "sg";
+    }
     { // One IMA ADPCM block of rising nibbles must decode to a rising ramp of the declared length.
         std::vector<uint8_t> wav = {'R', 'I', 'F', 'F', 0, 0, 0,    0, 'W', 'A', 'V',  'E',  'f',  'm',
                                     't', ' ', 20,  0,   0, 0, 0x11, 0, 1,   0,   0,    0x7d, 0,    0,

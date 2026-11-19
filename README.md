@@ -5,27 +5,33 @@
   </picture>
 </p>
 
-**Our own operating system for the Anbernic RG DS.** A lightweight Linux image that boots straight into a DSi-style library in a few seconds, plays DS, GBA, Game Boy and more, and sleeps when you close the lid.
+**Our own operating system for the Anbernic RG DS.** A lightweight Linux image that boots straight into a DSi-style library in a few seconds, plays DS, GBA, Game Boy, PSP and more, and sleeps when you close the lid.
 
 ![Home screen, the Nintendo 64 shelf and a kart game's pause board, captured on an RG DS](docs/images/screens.png)
 
-> **Early release.** RG DS OS 0.8.0 is the first public image. The standard RG DS is tested; the RG DS Plus runs the same image but is still being checked ([Plus tester guide](docs/RG_DS_PLUS_TEST.md)). Details in [Status](#status).
+> **Early release.** RG DS OS 0.9.0 is the latest public image. The standard RG DS is tested; the RG DS Plus runs the same image but is still being checked ([Plus tester guide](docs/RG_DS_PLUS_TEST.md)). Details in [Status](#status).
 
 ## What you get
 
 - **A real OS:** Quick boot, low RAM consumption and fast game starts.
 - **DS games in DSCore:** sharp 2x-5x 3D (heavy games can glitch or slow down), 32 shaders and LCD filters, fast-forward, low input latency.
-- **GBA, GB and GBC in RG DS Play**, plus NES, SNES, Master System and N64.
+- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System (with Game Gear and SG-1000), Mega Drive (with Mega-CD and Sega Pico), PC Engine (with CD-ROM), N64, PlayStation, PSP, ZX Spectrum, Commodore 64, Amiga, MSX, Atari 2600, ColecoVision, Intellivision, PICO-8 (through fake-08), Game & Watch and ScummVM. Nintendo 3DS is experimental.
 - **Dual screen mode:** maps, HUDs and your team on the bottom panel. See [the games](#second-screen-games).
 - **One in-game menu for every system:** pause, checkpoints, cheats, game switcher, settings.
-- **Library:** covers, list or cartridges. Search, favourites, recents, play time.
+- **Library:** covers, list or cartridges. Search, favourites, recents, play time, and artwork and game info fetched for you.
 - **Profiles:** everyone who plays gets their own saves, favourites and look. A Kid profile shows games for its age and locks the settings with a PIN. [More](docs/PROFILES.md)
+- **Music player:** your own music from the card, MP3 and FLAC to tracker modules. [More](docs/MUSIC.md)
 - **PortMaster ports**.
 - **PictoChat:** our own Wi-Fi chat between handhelds, no Nintendo files. [More](docs/PICTOCHAT.md)
-- **Safe updates:** signed, over Wi-Fi, into a second system slot. A bad update rolls back by itself. [More](docs/OTA.md)
+- **Safe updates:** signed, over Wi-Fi, into a second system slot. A bad update rolls back by itself, and Use previous build takes you back by hand. [More](docs/OTA.md)
+- **True sleep and power modes:** the lid puts it to rest on very little power; pick a power mode to trade speed for battery and heat.
 - **Yours:** light/dark, accent colours, 22 languages, menu sounds and music.
 
 ![Cartridge, cover and list views](docs/images/library.png)
+
+![Systems on Home, with game counts and play time, and the storage overview in Device information](docs/images/systems.png)
+
+![The music player with its visualiser on the upper screen, and the profile list with a Kid profile selected](docs/images/music-profiles.png)
 
 ## Second-screen games
 
@@ -56,7 +62,7 @@ Over 50 games have profiles. Everything else shows a title card and plays as nor
 
 1. Download **RG DS Flasher** for [Windows](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Windows.exe), [macOS](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-macOS.zip) or [Linux](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Linux-x64) and open it. Put a spare microSD card (8 GB or more) in your computer, pick it and press Flash. It downloads the latest RG DS OS, writes it, checks it and ejects the card. [More about the flasher](flasher/README.md)
 2. Put the card in and power on. First boot sets up the rest of the card, then a short setup asks for your language, colour, name, Home and animations, DS or all systems, time and Wi-Fi, and shows how to add games. Every step can be skipped.
-3. Join Wi-Fi in Settings and turn on file sharing. Copy games into `roms/nds`, `roms/gba` and so on from a computer.
+3. Join Wi-Fi in Settings and turn on file sharing. Copy games into `roms/nds`, `roms/gba` and so on from a computer, over Wi-Fi, USB-C or as a USB drive.
 
 Prefer doing it by hand? Download `RG-DS-OS-<version>.img.gz` from [releases](https://github.com/kleinrein/rgds-core/releases) (it works on the RG DS and the RG DS Plus), check it against its `.sha256` and write it with [balenaEtcher](https://etcher.balena.io) or Raspberry Pi Imager. Not Rufus: its cards stay black.
 

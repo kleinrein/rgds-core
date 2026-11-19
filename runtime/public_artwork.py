@@ -25,6 +25,16 @@ CATALOGS = {
     "md": "Sega - Mega Drive - Genesis",
     "sms": "Sega - Master System - Mark III",
     "gg": "Sega - Game Gear",
+    "sg": "Sega - SG-1000",
+    "segacd": "Sega - Mega-CD - Sega CD",
+    "pico": "Sega - PICO",
+    "coleco": "Coleco - ColecoVision",
+    "intellivision": "Mattel - Intellivision",
+    "msx": "Microsoft - MSX",
+    "pce": "NEC - PC Engine - TurboGrafx 16",
+    "pcecd": "NEC - PC Engine CD - TurboGrafx-CD",
+    "atari": "Atari - 2600",
+    "amiga": "Commodore - Amiga",
     "psx": "Sony - PlayStation",
     "zx": "Sinclair - ZX Spectrum",
     "c64": "Commodore - 64",
@@ -88,6 +98,8 @@ class PublicRedirect(urllib.request.HTTPRedirectHandler):
 
 def rom_details(path):
     path = Path(path)
+    # A .7z's contents are unreadable here (no 7z reader in Python): its file name names the game.
+    if path.suffix.lower() == ".7z": return path.stem, ""
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             entries = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in (".nds", ".dsi")]
@@ -122,6 +134,7 @@ def rom_identity(path):
         return (system,) + rom_details(path)
     path = Path(path)
     if system == "scummvm": return system, path.parent.name, ""  # a game is its folder
+    if path.suffix.lower() == ".7z": return system, path.stem, ""  # by its name, as rom_details
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             entries = [

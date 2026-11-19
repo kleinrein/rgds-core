@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The analog sticks as buttons for systems whose pad has none (GBA, NES, Mega Drive, ...): each direction presses
 // the button Controls gives it (controls.ini's stick_* keys; by default the left stick is the D-pad). Systems with a
-// stick of their own (N64, PSP) and ScummVM's pointer keep the sticks as sticks.
+// stick of their own (N64, PSP), ScummVM's pointer and the Amiga's mouse keep the sticks as sticks.
 #pragma once
 #include "core/core.hpp"
 #include "platform/control_mapping.hpp"
@@ -13,7 +13,7 @@
 namespace play {
 
 inline bool system_has_stick(const std::string& system) {
-    return system == "n64" || system == "psp" || system == "scummvm";
+    return system == "n64" || system == "psp" || system == "scummvm" || system == "amiga"; // the Amiga's right stick: its mouse
 }
 
 class StickButtons {

@@ -24,5 +24,3 @@ done
 # service file at runtime, so the services folder lives in /run
 rm -rf "$T/etc/avahi/services"
 ln -sfn /run/rgds/avahi-services "$T/etc/avahi/services"
-# PICO-8 (fake-08) was dropped on 2026-10-28; Buildroot never removes a disabled package's files from the target
-rm -f "$T/usr/lib/libretro/fake08_libretro.so"

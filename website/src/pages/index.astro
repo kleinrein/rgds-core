@@ -1,6 +1,7 @@
 ---
 import '@fontsource-variable/nunito';
 import '../styles/site.css';
+import icons from '../generated/system-icons.json'; // written by scripts/shots.mjs
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const repo = 'https://github.com/kleinrein/rgds-core';
@@ -29,7 +30,7 @@ const features = [
   { name: 'Dependable updates', text: 'Signed, delivered over Wi-Fi and reversed automatically if anything goes wrong.' },
   { name: 'True sleep', text: 'Close the lid and it rests on minimal power, ready to resume where you left off.' },
   { name: 'Simple file transfer', text: 'Copy games over Wi-Fi or USB-C, or connect it as a USB drive.' },
-  { name: 'Classic computers', text: 'ZX Spectrum and Commodore 64, with a keyboard on the second screen.' },
+  { name: 'Controls on the second screen', text: 'Keyboards for the ZX Spectrum, C64, MSX and Amiga. Keypads, Atari 2600 switches and the Sega Pico’s storybook.' },
   { name: 'PortMaster', text: 'PC games adapted for handhelds.' },
   { name: 'Music player', text: 'Your own music from the card, from MP3 and FLAC to tracker modules.' },
   { name: 'PictoChat', text: 'Our own take on the classic: Wi-Fi chat between handhelds.' },
@@ -38,9 +39,10 @@ const features = [
 
 const systems = [
   ['nds', 'Nintendo DS'], ['3ds', 'Nintendo 3DS'], ['gba', 'Game Boy Advance'], ['gb', 'Game Boy'], ['gbc', 'Game Boy Color'],
-  ['nes', 'NES'], ['snes', 'SNES'], ['md', 'Mega Drive'], ['sms', 'Master System'], ['psx', 'PlayStation'],
-  ['psp', 'PlayStation Portable'], ['n64', 'Nintendo 64'], ['zx', 'ZX Spectrum'], ['c64', 'Commodore 64'], ['gw', 'Game & Watch'],
-  ['scummvm', 'ScummVM'], ['ports', 'Ports'],
+  ['nes', 'NES'], ['snes', 'SNES'], ['md', 'Mega Drive'], ['sms', 'Master System'], ['pce', 'PC Engine'],
+  ['psx', 'PlayStation'], ['psp', 'PlayStation Portable'], ['n64', 'Nintendo 64'], ['atari', 'Atari 2600'],
+  ['coleco', 'ColecoVision'], ['intellivision', 'Intellivision'], ['zx', 'ZX Spectrum'], ['c64', 'Commodore 64'],
+  ['msx', 'MSX'], ['amiga', 'Amiga'], ['pico8', 'PICO-8'], ['gw', 'Game & Watch'], ['scummvm', 'ScummVM'], ['ports', 'Ports'],
 ];
 ---
 <!doctype html>
@@ -91,7 +93,7 @@ const systems = [
             </div>
             <p class="note">Free and open source. Early release: tested on the RG DS, still being checked on the RG DS Plus.</p>
           </div>
-          <img class="hero-device" src={`${base}/shots/home.webp`} width="584" height="631" fetchpriority="high"
+          <img class="hero-device" src={`${base}/shots/home.webp`} width="584" height="628" fetchpriority="high"
             alt="RG DS showing a clock and calendar on the top screen, and the home menu with the last played game on the bottom screen." />
         </section>
 
@@ -141,8 +143,8 @@ const systems = [
       <section class="section" id="features" aria-labelledby="features-title">
         <div class="wrap">
           <div class="split">
-            <img src={`${base}/shots/pause.webp`} width="584" height="631" loading="lazy"
-              alt="Mario Kart DS paused, with Continue and Quit over the race standings on the bottom screen." />
+            <img src={`${base}/shots/systems.webp`} width="584" height="628" loading="lazy"
+              alt="RG DS showing the Nintendo DS library stats on the top screen, and the system carousel on the bottom screen." />
             <div>
               <div class="section-head">
                 <h2 id="features-title">Considered in every detail.</h2>
@@ -156,12 +158,6 @@ const systems = [
           </div>
           <ul class="systems" role="list" aria-label="Supported systems">
             {systems.map(([id, name]) => (
-<<<<<<< Updated upstream
-              <li><img src={`${base}/systems/${id}.svg`} width="48" height="48" loading="lazy" alt="" />{name}</li>
-            ))}
-          </ul>
-          <p class="note systems-note">The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
-=======
               <li>
                 <span class={id === '3ds' ? 'sys-icon exp' : 'sys-icon'}>
                   {icons[id] === 'webp'
@@ -171,7 +167,15 @@ const systems = [
                 </span>{name}{id === '3ds' && <span class="visually-hidden"> (experimental)</span>}</li>
             ))}
           </ul>
->>>>>>> Stashed changes
+          <p class="note systems-note">The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
+=======
+              <li>{icons[id] === 'webp'
+                ? <img src={`${base}/systems/${id}.webp`} width="64" height="64" loading="lazy" alt="" />
+                : <img class="pixel" src={`${base}/systems/${id}.svg`} width="64" height="64" loading="lazy" alt="" />}{name}</li>
+            ))}
+          </ul>
+          <p class="note systems-note">Mega-CD and Sega Pico games share the Mega Drive’s shelf, SG-1000 and Game Gear the Master System’s, and CD-ROM games the PC Engine’s. The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
+>>>>>>> origin/main
         </div>
       </section>
 

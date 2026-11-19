@@ -164,6 +164,7 @@ bool Session::open(const SessionOptions& o, std::string& error) {
             read_bmp(o.font_dir + "/../systems/" + system + ".bmp", picture.px, picture.w, picture.h, unread);
         if (!o.art_dir.empty()) read_bmp(o.art_dir + "/box.bmp", cover.px, cover.w, cover.h, unread);
         companion_->dock().set_art(system, std::move(picture), std::move(cover));
+        if (!o.art_dir.empty()) companion_->remember_switch_in(o.art_dir + "/second-screen.txt");
         // What a view has learnt (the explored map) lives beside the save.
         std::vector<uint8_t> bytes;
         if (companion_->view() && read_file(view_path(), bytes) && unpack_view(bytes))
@@ -192,7 +193,8 @@ bool unpack_view(std::vector<uint8_t>& bytes) {
     uLongf size = uLongf(bytes[4]) | (uLongf(bytes[5]) << 8) | (uLongf(bytes[6]) << 16) | (uLongf(bytes[7]) << 24);
     if (size > 0x7FFFFFFF) return false;
     std::vector<uint8_t> out(size);
-    if (uncompress(out.data(), &size, bytes.data() + 8, uLong(bytes.size() - 8)) != Z_OK || size != out.size()) return false;
+    if (uncompress(out.data(), &size, bytes.data() + 8, uLong(bytes.size() - 8)) != Z_OK || size != out.size())
+        return false;
     bytes.swap(out);
     return true;
 }

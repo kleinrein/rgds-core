@@ -57,9 +57,10 @@ data || { fsck.exfat -y ${DISK}p4 >/dev/null 2>&1; data; } || mount -o noatime $
 }
 mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ssh /data/roms/nds /data/roms/gba \
     /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/genesis /data/roms/sms /data/roms/psx /data/roms/n64 /data/roms/zx /data/roms/c64 /data/roms/psp /data/roms/gw /data/roms/scummvm \
+    /data/roms/segacd /data/roms/pico /data/roms/coleco /data/roms/intellivision /data/roms/msx /data/roms/pce /data/roms/pcecd /data/roms/atari /data/roms/amiga /data/roms/pico8 \
     /data/rgds/bios
-# the 3DS engine is not in the image (emulators.TANUKI_ENGINE): no 3DS folder to fill on a handheld without it
-[ -f /data/rgds/engines/tanuki3ds/run.sh ] && mkdir -p /data/roms/3ds
+# the 3DS folder where the engine is (emulators.tanuki_engine: in the image since 0.9.1, or on the data partition)
+for e in /data/rgds/engines/tanuki3ds /usr/share/rgds/engines/tanuki3ds; do [ -f $e/run.sh ] && mkdir -p /data/roms/3ds; done
 mark "rcS: data ready"
 /usr/libexec/rgds/saved-brightness
 # what the last kernel crash left in RAM (ramoops in the device tree), moved to the card. Every restart leaves a

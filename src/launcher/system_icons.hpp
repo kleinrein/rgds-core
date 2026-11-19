@@ -12,8 +12,8 @@ struct StockSystem {
     const char* badge;
     const char* folders;
 };
-inline const std::array<StockSystem, 31>& stock_systems() {
-    static const std::array<StockSystem, 31> list = {{
+inline const std::array<StockSystem, 32>& stock_systems() {
+    static const std::array<StockSystem, 32> list = {{
     {"nds", "Nintendo DS", "DS", "NDS"},
     {"3ds", "Nintendo 3DS", "3DS", "3DS"},
     {"gba", "Game Boy Advance", "GBA", "GBA"},
@@ -32,13 +32,14 @@ inline const std::array<StockSystem, 31>& stock_systems() {
     {"dc", "Dreamcast", "DC", "DC,DREAMCAST"},
     {"saturn", "Saturn", "SAT", "SATURN,SS"},
     {"n64", "Nintendo 64", "N64", "N64"},
-    {"pico8", "Pico-8", "PICO", "PICO8,FAKE08"},
+    {"pico8", "PICO-8", "P8", "PICO8,FAKE08"},
     {"arcade", "Arcade", "ARC", "ARCADE,MAME,FBNEO"},
     {"dos", "DOS PC", "DOS", "DOS,PC"},
     {"zx", "ZX Spectrum", "ZX", "ZX"},
     {"gw", "Game & Watch", "G&W", "GW,GAMEWATCH"},
     {"scummvm", "ScummVM", "SCUMM", "SCUMMVM"},
     {"c64", "Commodore 64", "C64", "C64"},
+    {"amiga", "Amiga", "AMIGA", "AMIGA"},
     {"atari", "Atari 2600", "2600", "ATARI,2600"},
     {"coleco", "ColecoVision", "COLECO", "COLECO"},
     {"intellivision", "Intellivision", "INT", "INTELLIVISION"},
@@ -480,6 +481,23 @@ inline std::string_view system_pixel_glyph(std::string_view id) {
         ".##############."
         "................"
         "................"
+        "................";
+    if(id=="amiga")return
+        "................"
+        "................"
+        "................"
+        "................"
+        "..############.."
+        ".##############."
+        "#.#.#.#.##.#.#.#"
+        "################"
+        "#.#.#.#.#.#.##.#"
+        "################"
+        "#.#.#.#.#.#.##.#"
+        "################"
+        "##........##.#.#"
+        "#############..."
+        ".++++++++++++++."
         "................";
     if(id=="atari")return
         "................"

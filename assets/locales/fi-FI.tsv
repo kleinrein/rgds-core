@@ -306,6 +306,7 @@ DS rounded	DS pyöristetty
 DS screens	DS-näytöt
 DSCore 3D resolution	DSCoren 3D-resoluutio
 DSCore: recommended. Fastest, with lid, stylus and 3D fixes and optional 2x–5x 3D.	DSCore: suositeltu. Nopein, kansi-, kynä- ja 3D-korjauksilla sekä valinnaisella 2x–5x-3D:llä.
+Drawing pad	Piirtoalusta
 Edit	Muokkaa
 Edit search	Muokkaa hakua
 Effects volume	Tehosteiden voimakkuus
@@ -451,14 +452,17 @@ Green	Vihreä
 Grey	Harmaa
 Grey TV	Harmaa televisio
 Grid	Ruudukko
+Keypad	Näppäimistö
 Left stick down	Vasen sauva alas
 Left stick left	Vasen sauva vasen
 Left stick right	Vasen sauva oikea
 Left stick up	Vasen sauva ylös
+Page	Sivu
 Right stick down	Oikea sauva alas
 Right stick left	Oikea sauva vasen
 Right stick right	Oikea sauva oikea
 Right stick up	Oikea sauva ylös
+Storyware	Satukirja
 h	h
 Haptic strength	Haptiikan voimakkuus
 Health	Terveys
@@ -723,6 +727,7 @@ Power profile	Virtaprofiili
 Powering off…	Sammutetaan…
 Prepare	Valmistele
 Preparing controls…	Valmistellaan ohjaimia…
+Preparing graphics…	Valmistellaan grafiikkaa…
 Preparing the launcher	Valmistellaan käynnistintä
 Preparing the library…	Valmistellaan kirjastoa…
 Preparing update…	Valmistellaan päivitystä…
@@ -1630,3 +1635,4 @@ Temporary files. Safe to clear.	Väliaikaisia tiedostoja. Turvallista tyhjentä�
 RG DS Core, its engines and settings.	RG DS Core, sen moottorit ja asetukset.
 Everything else on the card, with the file system's own overhead.	Kaikki muu kortilla, tiedostojärjestelmän oma tila mukaan lukien.
 Room for more games.	Tilaa lisää peleille.
+Console switches	Konsolin kytkimet
