@@ -156,10 +156,22 @@ const systems = [
           </div>
           <ul class="systems" role="list" aria-label="Supported systems">
             {systems.map(([id, name]) => (
+<<<<<<< Updated upstream
               <li><img src={`${base}/systems/${id}.svg`} width="48" height="48" loading="lazy" alt="" />{name}</li>
             ))}
           </ul>
           <p class="note systems-note">The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
+=======
+              <li>
+                <span class={id === '3ds' ? 'sys-icon exp' : 'sys-icon'}>
+                  {icons[id] === 'webp'
+                    ? <img src={`${base}/systems/${id}.webp`} width="64" height="64" loading="lazy" alt="" />
+                    : <img class="pixel" src={`${base}/systems/${id}.svg`} width="64" height="64" loading="lazy" alt="" />}
+                  {id === '3ds' && <span class="exp-badge" title="Experimental" aria-label="Experimental">β</span>}
+                </span>{name}{id === '3ds' && <span class="visually-hidden"> (experimental)</span>}</li>
+            ))}
+          </ul>
+>>>>>>> Stashed changes
         </div>
       </section>
 
