@@ -59,6 +59,9 @@ SYSTEMS = {
     "3ds": (".3ds", ".cci", ".cxi", ".3dsx"),
     # PlayStation Portable discs (PPSSPP); .pbp and .chd are the PlayStation's unless in a PSP folder: FOLDER_SYSTEMS
     "psp": (".iso", ".cso"),
+    # Dreamcast discs (Flycast): .gdi and .cdi by extension; a .chd, .cue or .m3u only in a Dreamcast folder, as the
+    # PlayStation reads those too
+    "dc": (".gdi", ".cdi"),
     # Game & Watch and other LCD games: MADrigal's simulators as gw-libretro packs them
     "gw": (".mgw",),
     # ScummVM: a game is a folder of files of any name, so only its folder says so: FOLDER_SYSTEMS
@@ -75,6 +78,8 @@ FOLDER_SYSTEMS = {
     "commodore": "c64",
     "commodore 64": "c64",
     "psp": "psp",
+    "dc": "dc",
+    "dreamcast": "dc",
     "scummvm": "scummvm",
     "segacd": "segacd",
     "megacd": "segacd",
@@ -121,6 +126,7 @@ FOLDER_EXTENSIONS = {
     "md": (".bin",),
     "c64": (".tap", ".m3u"),
     "psp": (".pbp", ".chd"),
+    "dc": (".chd", ".cue", ".m3u"),
     "scummvm": ANY_FILE,
     "segacd": SEGACD_DISCS,
     "pico": (".md", ".bin", ".gen", ".smd"),
@@ -157,6 +163,7 @@ LIBRETRO_CORES = {
     "zx": "fuse",
     "c64": "vice_x64",
     "psp": "ppsspp",
+    "dc": "flycast",
     "gw": "gw",
     "scummvm": "scummvm"
 }

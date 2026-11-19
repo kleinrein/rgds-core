@@ -19,6 +19,7 @@
 #include "ui/colour.hpp"
 #include "ui/gb_palettes.hpp"
 
+#include <array>
 #include <filesystem>
 #include <cstdio>
 #include <cstdlib>
@@ -1616,9 +1617,63 @@ void test_touch_controllers() {
     pad->touch({Touch::Up, 20, 20});
 }
 
+// A Dreamcast whose VMU shows what the test puts there.
+struct VmuMachine final : Core {
+    std::array<uint8_t, 48 * 32> dots{};
+    uint64_t drawn = 0;
+    mutable int copies = 0;
+    const char* system() const override { return "dc"; }
+    std::string game_code() const override { return "X"; }
+    std::string header_title() const override { return "X"; }
+    double frame_rate() const override { return 60; }
+    void run_frame(uint32_t) override {}
+    Picture picture() const override { return {}; }
+    bool save_state(std::vector<uint8_t>&) override { return false; }
+    bool load_state(const std::vector<uint8_t>&) override { return false; }
+    uint32_t peek(uint32_t, int) override { return 0; }
+    size_t audio(int16_t*, size_t) override { return 0; }
+    unsigned audio_rate() const override { return 44100; }
+    std::vector<uint8_t> battery() const override { return {}; }
+    uint64_t battery_revision() const override { return 0; }
+    void set_layers(unsigned) override {}
+    std::unique_ptr<Core> shadow() const override { return nullptr; }
+    uint64_t vmu_screen(uint8_t* out) const override {
+        if (out) {
+            std::copy(dots.begin(), dots.end(), out);
+            ++copies;
+        }
+        return drawn;
+    }
+};
+
+void test_vmu_screen() {
+    auto vmu = make_controller("dc");
+    VmuMachine game;
+    CHECK(vmu);
+    // Nothing on the VMU yet: the second screen keeps its other views.
+    vmu->update(game, 1);
+    CHECK(!vmu->shown() && game.copies == 0);
+    // The game draws one dot in the top left corner and one in the bottom right: shown, read once until it changes.
+    game.dots[0] = game.dots[48 * 32 - 1] = 1;
+    game.drawn = 100;
+    const uint64_t before = vmu->key(1);
+    vmu->update(game, 2);
+    vmu->update(game, 3);
+    CHECK(vmu->shown() && game.copies == 1 && vmu->key(3) != before);
+    Canvas out(640, 480);
+    Look look;
+    Font font;
+    vmu->draw(out, look, font, 3);
+    // 8 pixels a dot on a 384 x 256 LCD centred at (128, 124): the two dots dark, their neighbours the glass's ghost.
+    const uint32_t dark = Rgb{28, 40, 56}.px(), ghost = Rgb{150, 182, 165}.px();
+    CHECK(out.at(128 + 3, 124 + 3) == dark && out.at(128 + 8 + 3, 124 + 3) == ghost);
+    CHECK(out.at(128 + 47 * 8 + 3, 124 + 31 * 8 + 3) == dark && out.at(128 + 46 * 8 + 3, 124 + 31 * 8 + 3) == ghost);
+}
+
 int main() {
     test_stick_buttons();
     test_touch_controllers();
+    test_vmu_screen();
     test_zx_machine();
     test_second_screen();
     test_colour();

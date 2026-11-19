@@ -130,6 +130,8 @@ class PlayRuntimeTests(unittest.TestCase):
             self.root / "a.cci": "3ds",
             self.root / "a.iso": "psp",
             self.root / "a.cso": "psp",
+            self.root / "a.gdi": "dc",
+            self.root / "a.cdi": "dc",
             self.root / "a.3ds": "3ds",
             self.root / "a.3dsx": "3ds",
         }
@@ -205,6 +207,10 @@ class PlayRuntimeTests(unittest.TestCase):
         for name in ("Game.pbp", "Game.chd"):
             self.assertEqual(play_options.system_of(self.root / "roms" / "psp" / name), "psp", name)
         self.assertEqual(play_options.system_of(self.root / "roms" / "psx" / "Game.chd"), "psx")
+        # A Dreamcast disc's .chd, .cue or .m3u is the Dreamcast's only in its folder; a zip there too.
+        for folder in ("dc", "Dreamcast"):
+            for name in ("Game.chd", "Game.cue", "Game.m3u", "Game.zip"):
+                self.assertEqual(play_options.system_of(self.root / "roms" / folder / name), "dc", (folder, name))
 
     def test_mega_cd_pico_coleco_and_intellivision_go_by_their_folders(self):
         roms = self.root / "roms"
@@ -305,6 +311,7 @@ class PlayRuntimeTests(unittest.TestCase):
                 self.assertEqual(play_options.LIBRETRO_CORES["c64"], "vice_x64")
                 self.assertEqual(play_options.LIBRETRO_CORES["gw"], "gw")
                 self.assertEqual(play_options.LIBRETRO_CORES["psp"], "ppsspp")
+                self.assertEqual(play_options.LIBRETRO_CORES["dc"], "flycast")
         # Appended: the DS engines keep their stored indexes.
         self.assertEqual(emulators.CORES[:5], ("drastic", "dsperate", "nnddss", "melonds", "rgds-experimental"))
         self.assertEqual(emulators.CORES[5], "rgds-play")

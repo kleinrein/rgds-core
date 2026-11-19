@@ -114,6 +114,12 @@ public:
         return false;
     }
     virtual void set_pico_page(int page) { (void)page; }
+    // The screen of the memory unit (VMU) in the Dreamcast controller's first slot: 48 x 32 dots into dots (when not
+    // null), 1 where a dot is dark. Returns when the game last drew it, 0 if it never has or the core has no hook.
+    virtual uint64_t vmu_screen(uint8_t* dots) const {
+        (void)dots;
+        return 0;
+    }
     // The game file the owner chose (the archive when it was packed), for pictures kept beside it.
     virtual std::string game_file() const { return {}; }
     // The disks of a game on several (an .m3u): how many, which is in the drive, and another put in. 0: none to swap.

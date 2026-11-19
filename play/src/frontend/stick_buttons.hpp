@@ -13,7 +13,8 @@
 namespace play {
 
 inline bool system_has_stick(const std::string& system) {
-    return system == "n64" || system == "psp" || system == "scummvm" || system == "amiga"; // the Amiga's right stick: its mouse
+    return system == "n64" || system == "psp" || system == "dc" || system == "scummvm" ||
+           system == "amiga"; // the Amiga's right stick: its mouse
 }
 
 class StickButtons {

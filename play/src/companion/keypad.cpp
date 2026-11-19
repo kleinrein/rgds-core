@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The controllers the touch screen can be: the ColecoVision's and the
 // Intellivision's twelve-key keypad, the Sega Pico's storyware book and
-// drawing pad under its pen, and the Atari 2600's console switches. Each is a second screen every game of its system
+// drawing pad under its pen, the Atari 2600's console switches, and the
+// Dreamcast controller's memory unit (VMU) with its little screen. Each is a second screen every game of its system
 // gets, on the switch beside its own views and on its own when it has none.
 //
 // A keypad key is held as long as the finger is on it (games read held keys:
@@ -365,9 +366,52 @@ private:
     uint32_t sent_ = 0;
 };
 
+// The Dreamcast's VMU as it sits in the controller, its 48 x 32 screen large: what games put there (a life bar, a
+// map, a character's face) is the second screen the Dreamcast always had. Shown once the game has drawn on it; until
+// then the second screen keeps its other views (the info screen).
+class Vmu final : public View {
+public:
+    void update(Core& live, uint64_t) override {
+        const uint64_t drawn = live.vmu_screen(nullptr);
+        if (drawn == drawn_) return;
+        live.vmu_screen(dots_.data());
+        drawn_ = drawn;
+        ++revision_;
+    }
+
+    bool shown() const override { return drawn_ != 0; }
+
+    uint64_t key(uint64_t) const override { return 0x9E3779B97F4A7C15ull ^ revision_; }
+
+    void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
+        backdrop(out, look);
+        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), look.tr("VMU screen"),
+                  kit::title, look.ink);
+        // The unit's shell (the white of the first VMUs), the screen's frame, then the LCD: a dark dot as the panel
+        // draws it, an unlit one a faint ghost of it, as on the real glass.
+        constexpr int scale = 8, lcd_w = 48 * scale, lcd_h = 32 * scale;
+        const int shell_w = lcd_w + 64, shell_h = lcd_h + 64, x0 = (W - shell_w) / 2, y0 = 92;
+        out.rounded_rect(x0, y0 + 4, shell_w, shell_h, 28, look.shadow(), 120);
+        out.rounded_rect(x0, y0, shell_w, shell_h, 28, Rgb{236, 236, 232});
+        out.rounded_rect(x0 + 20, y0 + 20, lcd_w + 24, lcd_h + 24, 10, Rgb{58, 62, 70});
+        const int lx = x0 + 32, ly = y0 + 32;
+        const Rgb glass{164, 196, 178}, ghost{150, 182, 165}, dot{28, 40, 56};
+        out.fill_rect(lx, ly, lcd_w, lcd_h, glass);
+        for (int y = 0; y < 32; ++y)
+            for (int x = 0; x < 48; ++x)
+                out.fill_rect(lx + x * scale, ly + y * scale, scale - 1, scale - 1,
+                              dots_[size_t(y * 48 + x)] ? dot : ghost);
+    }
+
+private:
+    std::array<uint8_t, 48 * 32> dots_{};
+    uint64_t drawn_ = 0, revision_ = 0;
+};
+
 } // namespace
 
 std::unique_ptr<View> make_controller(const std::string& system) {
+    if (system == "dc") return std::make_unique<Vmu>();
     if (system == "atari") return std::make_unique<ConsolePanel>();
     if (system == "coleco") return std::make_unique<Keypad>(coleco_pad);
     if (system == "intellivision") return std::make_unique<Keypad>(intellivision_pad);

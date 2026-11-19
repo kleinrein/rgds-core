@@ -654,10 +654,10 @@ int main(int argc, char** argv) {
         lower.area = {0, ph, pw, ph};
     }
     if (upper.gl) gpu_core_window = upper.window;
-    // The PSP's and N64's frames go straight into the top panel's texture (Mario Kart 64's frame on the main thread:
-    // 7 ms read back, about 2 this way); RGDS_PLAY_DIRECT=0 or 1 says so for any GPU core.
+    // The PSP's, N64's and Dreamcast's frames go straight into the top panel's texture (Mario Kart 64's frame on the
+    // main thread: 7 ms read back, about 2 this way); RGDS_PLAY_DIRECT=0 or 1 says so for any GPU core.
     const char* direct_env = std::getenv("RGDS_PLAY_DIRECT");
-    const bool gpu_direct = direct_env ? *direct_env == '1' : o.system == "psp" || o.system == "n64";
+    const bool gpu_direct = direct_env ? *direct_env == '1' : o.system == "psp" || o.system == "n64" || o.system == "dc";
     if (upper.gl && gpu_direct) gpu_core_share = upper.gl;
     Picture first = session.game();
     use_panel(upper);

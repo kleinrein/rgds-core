@@ -752,8 +752,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         system = system_of(identity or rom)
         # PPSSPP starts its emulation and GPU threads after the pin below and they would share its one core: the frame
         # read-back alone went from 5.3 to 11.6 ms. Mupen64Plus's threaded renderer starts its emulation thread after it
-        # too: Mario Kart 64's first 300 frames had 42 over budget pinned, 4 not.
-        if rgds_os() and system not in ("psp", "n64"):
+        # too: Mario Kart 64's first 300 frames had 42 over budget pinned, 4 not. Flycast's SH4 thread starts there too.
+        if rgds_os() and system not in ("psp", "n64", "dc"):
             # The emulation core: the session keeps itself on CPUs 0-2, Play's main loop goes to CPU 3, real-time.
             env.setdefault("RGDS_PLAY_CPU", "3")
         if system not in MGBA_SYSTEMS:

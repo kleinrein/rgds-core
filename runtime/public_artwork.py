@@ -40,6 +40,7 @@ CATALOGS = {
     "c64": "Commodore - 64",
     "3ds": "Nintendo - Nintendo 3DS",
     "psp": "Sony - PlayStation Portable",
+    "dc": "Sega - Dreamcast",
     "scummvm": "ScummVM"
 }
 

@@ -84,7 +84,7 @@ $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 
     --system-dir intellivision=/data/roms/intellivision --system-dir msx=/data/roms/msx --system-dir pce=/data/roms/pce \
     --system-dir pce=/data/roms/pcecd --system-dir atari=/data/roms/atari --system-dir amiga=/data/roms/amiga \
     --system-dir pico8=/data/roms/pico8 \
-    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 $CTR --system-dir psp=/data/roms/psp --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
+    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 $CTR --system-dir psp=/data/roms/psp --system-dir dc=/data/roms/dc --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
     --system-dir ports=/data/portmaster/ports >> $LOG 2>&1
 status=$?
 # 128 + the signal when it was killed. The kernel's side goes with it: an out-of-memory kill (137) records nothing

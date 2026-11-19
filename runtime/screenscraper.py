@@ -47,6 +47,7 @@ SYSTEMS = {
     "gw": 52,
     "psx": 57,
     "psp": 61,
+    "dc": 23,
     "c64": 66,
     "zx": 76,
     "scummvm": 123

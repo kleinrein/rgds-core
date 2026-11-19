@@ -261,6 +261,7 @@ public:
                 {"n64", {".z64", ".n64", ".v64"}},
                 {"zx", {".tzx", ".tap", ".z80", ".sna", ".szx", ".dsk", ".trd", ".scl"}},
                 {"psp", {".iso", ".cso", ".pbp", ".chd"}},
+                {"dc", {".m3u", ".gdi", ".cdi", ".chd", ".cue"}},
                 {"gw", {".mgw"}}};
             const auto found = games.find(system);
             if (found == games.end()) {
@@ -327,6 +328,8 @@ public:
         pico_pen_ = reinterpret_cast<void (*)(int, int, int, int)>(dlsym(lib_, "retro_rgds_pico_pen"));
         pico_page_ = reinterpret_cast<int (*)()>(dlsym(lib_, "retro_rgds_pico_page"));
         pico_set_page_ = reinterpret_cast<void (*)(int)>(dlsym(lib_, "retro_rgds_pico_set_page"));
+        // The Dreamcast VMU's screen (libretro-flycast 0001).
+        vmu_ = reinterpret_cast<unsigned long long (*)(unsigned, unsigned char*)>(dlsym(lib_, "retro_rgds_vmu"));
         // Optional: a core without cheats just lists none.
         retro_cheat_reset_ = reinterpret_cast<decltype(retro_cheat_reset_)>(dlsym(lib_, "retro_cheat_reset"));
         retro_cheat_set_ = reinterpret_cast<decltype(retro_cheat_set_)>(dlsym(lib_, "retro_cheat_set"));
@@ -434,6 +437,29 @@ public:
                           {"ppsspp_inflight_frames", "Up to 2"},
                           {"ppsspp_frameskip", "1"},
                           {"ppsspp_auto_frameskip", "enabled"}};
+        // The Dreamcast at its own 640 x 480 (the RG DS panel's size, so a dot is a pixel; the Plus scales it), the
+        // SH4 on its own thread beside the drawing, a frame left undrawn only when the SH4 falls behind. Per-triangle
+        // sorting: per-pixel needs more than the Mali-G52's GLES 3.1. No anisotropic filtering (nothing to gain on PSP
+        // either) and no full framebuffer emulation (slower, and N64's framebuffer copies crashed Panfrost). The
+        // triggers are the handheld's buttons. The VMU's screen goes to the second screen, not over the game; one VMU
+        // per game, so a game's saves stay its own.
+        if (system == "dc")
+            variables_ = {{"flycast_internal_resolution", "640x480"},
+                          {"flycast_threaded_rendering", "enabled"},
+                          {"flycast_auto_skip_frame", "some"},
+                          {"flycast_alpha_sorting", "per-triangle (normal)"},
+                          {"flycast_anisotropic_filtering", "off"},
+                          {"flycast_emulate_framebuffer", "disabled"},
+                          {"flycast_texupscale", "1"},
+                          {"flycast_gdrom_fast_loading", "enabled"},
+                          {"flycast_digital_triggers", "enabled"},
+                          {"flycast_per_content_vmus", "VMU A1"},
+                          {"flycast_vmu1_screen_display", "disabled"},
+                          {"flycast_vmu2_screen_display", "disabled"},
+                          {"flycast_vmu3_screen_display", "disabled"},
+                          {"flycast_vmu4_screen_display", "disabled"},
+                          {"flycast_show_vmu_screen_settings", "disabled"},
+                          {"flycast_lightgun1_crosshair", "disabled"}};
         // RGDS_PLAY_CORE_OPTIONS="key=value;key=value": options over the player's own, for trying a core's settings.
         if (const char* extra = std::getenv("RGDS_PLAY_CORE_OPTIONS")) {
             std::string list = extra;
@@ -538,6 +564,7 @@ public:
         keypad_(0, mask);
         return true;
     }
+    uint64_t vmu_screen(uint8_t* dots) const override { return vmu_ ? vmu_(0, dots) : 0; }
     bool set_pico_pen(int x, int y, bool down, bool storyware) override {
         if (system_ != "pico" || !pico_pen_) return false;
         pico_pen_(x, y, down ? 1 : 0, storyware ? 1 : 0);
@@ -1507,6 +1534,7 @@ private:
     bool finished_ = false;
     bool (*overlay_visible_)() = nullptr;
     void (*keypad_)(unsigned, unsigned) = nullptr;
+    unsigned long long (*vmu_)(unsigned, unsigned char*) = nullptr;
     void (*pico_pen_)(int, int, int, int) = nullptr;
     int (*pico_page_)() = nullptr;
     void (*pico_set_page_)(int) = nullptr;

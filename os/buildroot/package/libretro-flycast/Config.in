@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_FLYCAST
+	bool "libretro-flycast"
+	help
+	  Flycast, the Dreamcast core RG DS Play loads for .gdi, .cdi and .chd discs:
+	  /usr/lib/libretro/flycast_libretro.so. The owner's BIOS (dc_boot.bin,
+	  dc_flash.bin) goes in /data/rgds/bios/dc; without it Flycast's own HLE BIOS
+	  boots the game.

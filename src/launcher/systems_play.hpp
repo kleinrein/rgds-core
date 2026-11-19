@@ -384,6 +384,7 @@ const char* App::play_second_name(int second, const std::string& system) const {
            : second == 3 ? "Info screen"
            : second == 4 ? (system == "pico"    ? "Storyware"
                             : system == "atari" ? "Console switches"
+                            : system == "dc"    ? "VMU screen"
                             : has_touch_controller(system) ? "Keypad"
                                                            : "Keyboard")
                          : "Companion";
@@ -395,6 +396,7 @@ static std::vector<int> play_second_order(const std::string& system) {
     if (system == "zx" || system == "c64" || system == "msx" || system == "amiga")
         return {0, 4, 3, 1, 2}; // the keyboard first, for the machines with one
     if (has_touch_controller(system)) return {0, 4, 3, 1, 2};    // and the keypad, or the Pico's book
+    if (system == "dc") return {0, 4, 3, 1, 2};                   // and the VMU's screen
     return {0, 3, 1, 2};                                           // the info screen beside the companion
 }
 

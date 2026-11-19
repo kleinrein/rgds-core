@@ -3321,7 +3321,8 @@ static int self_test() {
              system_for_path(r / "msx/Game.rom") == "msx" && system_for_path(r / "intellivision/Game.rom") == "intellivision" &&
              system_for_path(r / "pce/Game.zip") == "pce" && system_for_path(r / "zx/Game.dsk") == "zx" &&
              system_for_path(r / "nds/Game.zip") == "nds" && system_for_path(r / "pico8/Cart.p8.png") == "pico8" &&
-             system_for_path(r / "nes/cover.png") == "nds";
+             system_for_path(r / "nes/cover.png") == "nds" && system_for_path(r / "dc/Game.chd") == "dc" &&
+             system_for_path(r / "Dreamcast/Game.cue") == "dc" && system_for_path(r / "Game.gdi") == "dc";
         ok = ok && play_subsystem(r / "md/Game.cue", "md") == "segacd" && play_subsystem(r / "md/Game.bin", "md") == "md" &&
              play_subsystem(r / "pico/Game.md", "md") == "pico" && play_subsystem(r / "segacd/Game.zip", "md") == "segacd" &&
              play_subsystem(r / "pce/Game.zip", "pce") == "pce" && play_subsystem(r / "pce/Game.ccd", "pce") == "pcecd" &&

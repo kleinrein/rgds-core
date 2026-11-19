@@ -43,8 +43,8 @@ struct SystemInfo {
     std::initializer_list<const char*> extensions;
     std::initializer_list<const char*> folder_extensions = {};
 };
-inline const std::array<SystemInfo, 25>& systems() {
-    static const std::array<SystemInfo, 25> list = {{
+inline const std::array<SystemInfo, 26>& systems() {
+    static const std::array<SystemInfo, 26> list = {{
         {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
@@ -67,6 +67,7 @@ inline const std::array<SystemInfo, 25>& systems() {
          {".tap", ".m3u"}},
         {"3ds", "Nintendo 3DS", "3DS", {".3ds", ".cci", ".cxi", ".3dsx"}}, // Tanuki3DS (emulators.tanuki_plan)
         {"psp", "PlayStation Portable", "PSP", {".iso", ".cso"}, {".pbp", ".chd"}},
+        {"dc", "Dreamcast", "DC", {".gdi", ".cdi"}, {".chd", ".cue", ".m3u"}}, // Flycast
         {"coleco", "ColecoVision", "COLECO", {".col", ".cv"}, {".rom", ".bin"}},  // Gearcoleco
         {"intellivision", "Intellivision", "INT", {".int"}, {".rom", ".bin"}},    // FreeIntv
         {"msx", "MSX", "MSX", {".mx1", ".mx2", ".cas"}, {".rom", ".dsk", ".m3u"}}, // blueMSX
@@ -146,6 +147,8 @@ inline const GamesFolder* games_folder(const std::string& name) {
         {"commodore 64", "c64", ""},
         {"3ds", "3ds", ""},
         {"psp", "psp", ""},
+        {"dc", "dc", ""},
+        {"dreamcast", "dc", ""},
         {"coleco", "coleco", ""},
         {"colecovision", "coleco", ""},
         {"intellivision", "intellivision", ""},
