@@ -1,0 +1,106 @@
+# RG DS / RG DS Plus board trim on top of ROCKNIX's handheld config (docs/OWN_BSP_PLAN.md, Phase D).
+# Off: built-in code for hardware neither board has, or kernel features nothing in RG DS OS uses. Every line here
+# shrinks the kernel the U-Boot has to read (14.1 MB LZ4, ~1.5 s on 2026-11-20) and the initcalls it has to run.
+# RG DS OS has no udev/mdev: a driver built as a module only loads when something calls modprobe, so devices people
+# plug in (USB/Bluetooth pads, USB-C audio) stay built in, and the existing modules are left as they are.
+
+# filesystems: the cards are vfat/exfat, the system squashfs, data ext4/exfat; no network filesystems. Every squashfs
+# decompressor stays: PortMaster loop-mounts the runtime images it downloads, whatever they were packed with.
+CONFIG_XFS_FS=n
+CONFIG_BTRFS_FS=n
+CONFIG_NFS_FS=n
+CONFIG_NFSD=n
+CONFIG_SUNRPC=n
+CONFIG_LOCKD=n
+
+# no camera, TV, radio or video decoder in use
+CONFIG_MEDIA_SUPPORT=n
+CONFIG_MEDIA_CEC_SUPPORT=n
+
+# no SPI NOR/NAND on either board
+CONFIG_MTD=n
+
+# display: two DSI panels on VOP2; no Mali display processor, no other handhelds' panels. (DW HDMI and its audio
+# codec stay: Rockchip's DRM selects them; turning off ROCKCHIP_DW_HDMI would do it, untested on the handheld.)
+# The mainline RG DS panel (jadard) stays for Phase C.
+CONFIG_DRM_MALI_DISPLAY=n
+CONFIG_DRM_LOAD_EDID_FIRMWARE=n
+CONFIG_DRM_PANEL_ELIDA_KD35T133=n
+CONFIG_DRM_PANEL_HIMAX_HX8394=n
+CONFIG_DRM_PANEL_MAGNACHIP_D53E6EA8966=n
+CONFIG_DRM_PANEL_NEWVISION_NV3051D=n
+CONFIG_DRM_PANEL_SITRONIX_ST7701=n
+CONFIG_DRM_PANEL_SITRONIX_ST7703=n
+CONFIG_DRM_PANEL_MIPI_DBI=n
+
+# sound: RK817 codec on I2S1 (RG DS) and AW88166 on I2S3 (Plus) plus the AW87391 amps; USB-C audio stays
+CONFIG_SND_SOC_FSL_SAI=n
+CONFIG_SND_SOC_ROCKCHIP_PDM=n
+CONFIG_SND_SOC_ROCKCHIP_SPDIF=n
+CONFIG_SND_SOC_RK3288_HDMI_ANALOG=n
+CONFIG_SND_SOC_ES8316=n
+CONFIG_SND_SOC_ES8328=n
+CONFIG_SND_SOC_ES8328_I2C=n
+CONFIG_SND_SOC_ES8328_SPI=n
+CONFIG_SND_SOC_MAX98090=n
+CONFIG_SND_SOC_SPDIF=n
+CONFIG_SND_SOC_TS3A227E=n
+CONFIG_SND_SEQUENCER=n
+
+# touch: Goodix GT911 on both boards; no USB touch panels
+CONFIG_TOUCHSCREEN_ATMEL_MXT=n
+CONFIG_TOUCHSCREEN_HYNITRON_CSTXXX=n
+CONFIG_TOUCHSCREEN_USB_COMPOSITE=n
+
+# HID: keep generic plus game controllers and common keyboards/mice; drop tablets, sensor hubs and odd devices
+CONFIG_HID_WACOM=n
+CONFIG_HID_SENSOR_HUB=n
+CONFIG_HID_CP2112=n
+CONFIG_HID_NTRIG=n
+CONFIG_HID_PENMOUNT=n
+CONFIG_HID_UCLOGIC=n
+CONFIG_HID_WALTOP=n
+CONFIG_HID_ROCCAT=n
+CONFIG_HID_TIVO=n
+CONFIG_HID_THINGM=n
+CONFIG_HID_PRODIKEYS=n
+CONFIG_HID_RMI=n
+CONFIG_HID_ALPS=n
+CONFIG_HID_ELO=n
+CONFIG_HID_PLANTRONICS=n
+CONFIG_HID_LED=n
+
+# USB host: keep hubs, HID, audio, storage (plain + UAS); no mobile modems, USB Ethernet adapters or old card readers
+CONFIG_USB_NET_DRIVERS=n
+CONFIG_USB_STORAGE_REALTEK=n
+CONFIG_USB_STORAGE_DATAFAB=n
+CONFIG_USB_STORAGE_FREECOM=n
+CONFIG_USB_STORAGE_ISD200=n
+CONFIG_USB_STORAGE_USBAT=n
+CONFIG_USB_STORAGE_SDDR09=n
+CONFIG_USB_STORAGE_SDDR55=n
+CONFIG_USB_STORAGE_JUMPSHOT=n
+CONFIG_USB_STORAGE_ALAUDA=n
+CONFIG_USB_STORAGE_ONETOUCH=n
+CONFIG_USB_STORAGE_KARMA=n
+CONFIG_USB_STORAGE_ENE_UB6250=n
+CONFIG_BLK_DEV_SR=n
+CONFIG_BLK_DEV_RAM=n
+
+# networking: Wi-Fi, USB NCM and Bluetooth only; nothing in the OS uses a firewall, NAT or BPF
+CONFIG_NETFILTER=n
+CONFIG_BPF_SYSCALL=n
+
+# smaller symbol table: oops traces still name functions (CONFIG_KALLSYMS stays), just not data symbols
+CONFIG_KALLSYMS_ALL=n
+
+# Cortex-A55 has no SVE, SME, MTE, GCS or POE: code for them is dead weight on this CPU
+CONFIG_ARM64_SVE=n
+CONFIG_ARM64_SME=n
+CONFIG_ARM64_MTE=n
+CONFIG_ARM64_GCS=n
+CONFIG_ARM64_POE=n
+
+# lever 2 (a quiet emulation core): compiled in, inert until nohz_full=/rcu_nocbs= go on the command line
+CONFIG_NO_HZ_FULL=y
+CONFIG_RCU_NOCB_CPU=y

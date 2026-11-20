@@ -883,6 +883,22 @@ void draw_wide_handheld(Canvas& out, const FrameLayout& screen, const Style& s, 
                     screen.y + screen.h + name_h / 2 - 7 * u, 5 * u, 14 * u, 1, bars[i]);
         name(out, font, "SEGA", screen.x + screen.w / 2.0, font.centred(16, int(screen.y / 2 - above / 2 + 2 * u)), 16,
              4, s.bottom.r > 128 ? Rgb::hex(0x25252A) : Rgb::hex(0xE8E8EC), {});
+    } else if (s.kind == Kind::Lynx) {
+        // The Atari Lynx: the pad on the left, A over B on the right, OPTION 1 and OPTION 2 (and PAUSE) beside the
+        // screen, the speaker grille under the buttons.
+        dpad(out, left, cy, r, dark, dish, u);
+        cap(out, right + r * 0.5, cy - r * 0.55, r * 0.55, dark, u);
+        cap(out, right - r * 0.5, cy + r * 0.55, r * 0.55, dark, u);
+        name(out, font, "A", right + r * 0.5, font.centred(16, int(cy - r * 0.55)), 16, 0, Rgb::hex(0xE8E8EC), {});
+        name(out, font, "B", right - r * 0.5, font.centred(16, int(cy + r * 0.55)), 16, 0, Rgb::hex(0xE8E8EC), {});
+        for (int i = 0; i < 3; ++i)
+            rounded(out, left - 14 * u + i * 10 * u, cy + r * 1.7, 7 * u, 4 * u, 2 * u, dark);
+        for (int row = 0; row < 3; ++row)
+            for (int col = 0; col < 4; ++col)
+                if (right - 18 * u + col * 11 * u < out.w())
+                    disc(out, right - 16 * u + col * 11 * u, cy + r * 2 + row * 11 * u, 3 * u, Rgb{0, 0, 0}, 220);
+        power_light(out, left, cy - r * 1.9, u, Rgb::hex(0x4CFA7A));
+        name(out, font, s.print, screen.x + screen.w / 2.0, base, 16, 4, s.ink, {});
     } else if (s.kind == Kind::Ngpc) {
         // The clicking stick in its round well, A over B set on a slant.
         disc(out, left, cy, r * 1.05, dish, 256);
@@ -1289,10 +1305,12 @@ FrameLayout frame_layout(int panel_w, int panel_h, int game_w, int game_h, int s
         const double s = std::max(1.0, std::floor(fit * 4 + 1e-6) / 4);
         return place(s, 0, 0, panel_w, panel_h);
     }
-    if (kind == Kind::Wsc || kind == Kind::Ngpc || kind == Kind::Gg) {
+    if (kind == Kind::Wsc || kind == Kind::Ngpc || kind == Kind::Gg || kind == Kind::Lynx) {
         // Whole on the panel: the controls take the sides, the name the strip under the screen. The WonderSwan's wide
         // picture has room at 2x, the square ones at 2.75x (3x would leave no name).
-        const double s = kind == Kind::Wsc ? 2 : 2.75 * std::min(sx, sy) * 160 / std::max(160, game_w);
+        double s = kind == Kind::Wsc ? 2 : 2.75 * std::min(sx, sy) * 160 / std::max(160, game_w);
+        // A Lynx game played upright (102 x 160) by its height, in quarter steps, with the lens and the name kept.
+        if (game_h > game_w) s = std::min(s, std::floor((panel_h - 64 * sy) / game_h * 4) / 4);
         place(s, 0, 0, panel_w, 0);
         const double room = panel_h - l.h;
         l.y = int(room * (kind == Kind::Ngpc ? 0.30 : 0.42));
@@ -1355,7 +1373,8 @@ void draw_frame(Canvas& out, const FrameLayout& screen, int style, const Font& f
     case Kind::Agb: draw_agb(out, screen, s, font); break;
     case Kind::Wsc:
     case Kind::Ngpc:
-    case Kind::Gg: draw_wide_handheld(out, screen, s, font); break;
+    case Kind::Gg:
+    case Kind::Lynx: draw_wide_handheld(out, screen, s, font); break;
     case Kind::Psp: draw_psp(out, screen, s, font); break;
     case Kind::Dmg:
     case Kind::Pocket:

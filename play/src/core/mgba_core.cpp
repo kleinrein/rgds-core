@@ -279,6 +279,33 @@ public:
     }
     void poke8(uint32_t address, int bank, uint8_t value) override { core_->rawWrite8(core_, address, bank, value); }
 
+    // rcheevos's layouts (rcheevos consoleinfo.c): the GBA's internal and external work RAM then its save RAM; the
+    // Game Boy's own bus, with the Game Boy Color's work RAM banks 2-7 and the cartridge's RAM banks 1-15 after it.
+    uint32_t achievement_memory(uint32_t console, uint32_t address, uint8_t* buffer, uint32_t size) override {
+        uint32_t done = 0;
+        for (; done < size; ++done) {
+            const uint32_t a = address + done;
+            int value = -1;
+            if (console == 5) { // RC_CONSOLE_GAMEBOY_ADVANCE
+                if (a < 0x8000) value = int(core_->busRead8(core_, 0x03000000u + a));
+                else if (a < 0x48000) value = int(core_->busRead8(core_, 0x02000000u + (a - 0x8000)));
+                else if (a < 0x58000) value = int(core_->busRead8(core_, 0x0E000000u + (a - 0x48000)));
+            } else if (console == 4 || console == 6) { // RC_CONSOLE_GAMEBOY, RC_CONSOLE_GAMEBOY_COLOR
+                if (a >= 0xA000 && a < 0xC000) value = int(core_->rawRead8(core_, a, 0));
+                else if (a >= 0xD000 && a < 0xE000 && console == 6) value = int(core_->rawRead8(core_, a, 1));
+                else if (a < 0x10000) value = int(core_->busRead8(core_, a));
+                else if (a < 0x16000) {
+                    if (console == 6) value = int(core_->rawRead8(core_, 0xD000 + (a - 0x10000) % 0x1000,
+                                                                   int(2 + (a - 0x10000) / 0x1000)));
+                } else if (a < 0x34000)
+                    value = int(core_->rawRead8(core_, 0xA000 + (a - 0x16000) % 0x2000, int(1 + (a - 0x16000) / 0x2000)));
+            }
+            if (value < 0) break;
+            buffer[done] = uint8_t(value);
+        }
+        return done;
+    }
+
     size_t audio(int16_t* stereo, size_t max_frames) override {
         mAudioBuffer* audio = core_->getAudioBuffer(core_);
         return audio ? mAudioBufferRead(audio, stereo, max_frames) : 0;

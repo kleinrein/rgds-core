@@ -28,6 +28,7 @@ enum class FrameKind {
     Wsc,     // the WonderSwan Color: wide, its two pads on the left, A and B on the right
     Ngpc,    // the Neo Geo Pocket Color: wide, the stick on the left, A and B on the right
     Gg,      // the Game Gear: wide and black, the pad on the left, the 1 and 2 buttons on the right
+    Lynx,    // the Atari Lynx: wide and black, the pad on the left, A and B on the right, the Option buttons
     Psp,     // the PlayStation Portable: the game at full width, the machine's colour above and below
     Lens,    // a wide dark lens, the name under the screen, a speaker (WonderSwan)
     Sp,      // the Game Boy Advance SP: a slim lens on the clamshell's lid
@@ -146,6 +147,8 @@ inline constexpr FrameStyleInfo frame_styles[] = {
     {"wsc-blue", "wonderswan", "WonderSwan Color · Blue", FrameKind::Wsc, 0x3D6CCB, 0x24479A, 5, 0x1A1C24, 0x50607E,
      0xC7CEE0, "WONDERSWAN COLOR", 0, 0, 0},
     {"gg", "gg", "Game Gear", FrameKind::Gg, 0x2B2B30, 0x18181C, 3, 0x0B0B0D, 0x3A3A44, 0xE8E8EC, "GAME GEAR", 0, 0, 0},
+    {"lynx", "lynx", "Atari Lynx", FrameKind::Lynx, 0x2A2A2E, 0x151518, 3, 0x0B0B0D, 0x3A3A44, 0xE8E8EC, "LYNX", 0, 0,
+     0},
     {"psp-black", "psp", "PSP · Black", FrameKind::Psp, 0x1C1C1F, 0x09090A, 2, 0x0B0B0C, 0x3A3A40, 0x8A8A92, "", 0, 0,
      0},
     {"psp-white", "psp", "PSP · White", FrameKind::Psp, 0xF2F2F0, 0xD5D5D2, 2, 0x111113, 0x45454C, 0x8A8A92, "", 0, 0,
@@ -173,12 +176,20 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0xE6E6E3, 0xE86A18, 0},
     {"atari", "atari", "Atari 2600", FrameKind::Console, 0x1E1C1A, 0x0E0D0C, 3, 0x0A0A0A, 0x3A3836, 0xEDE5D2,
      "ATARI 2600", 0x6B4424, 0xC8B89A, 1},
+    // The 7800's black wedge with its silver strip, the 5200's long black case with its brushed band
+    {"atari7800", "atari7800", "Atari 7800", FrameKind::Console, 0x1E1E20, 0x0E0E10, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6,
+     "ATARI 7800", 0x8C8C92, 0xD0302A, 0},
+    {"atari5200", "atari5200", "Atari 5200", FrameKind::Console, 0x1C1C1E, 0x0C0C0D, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6,
+     "ATARI 5200", 0xA8A8AE, 0x5A5A60, 0},
     {"coleco", "coleco", "ColecoVision", FrameKind::Console, 0x1E1E20, 0x0E0E10, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6,
      "COLECOVISION", 0x55585F, 0xB8BAC2, 0},
     {"intellivision", "intellivision", "Intellivision", FrameKind::Console, 0x6E4526, 0x4A2C15, 0, 0x0E0D0C, 0x3A3836,
      0x2A1A0C, "INTELLIVISION", 0xC9A34E, 0x8C6A2A, 2},
     {"msx", "msx", "MSX", FrameKind::Console, 0x222224, 0x111113, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6, "MSX", 0x2C2C30,
      0x8C8C92, 0},
+    // An Amstrad CPC 464's dark grey case and its red, green and blue stripe (the red one here)
+    {"cpc", "cpc", "Amstrad CPC", FrameKind::Console, 0x2A2A2D, 0x161618, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6,
+     "AMSTRAD CPC", 0x3A3A3E, 0xD8302C, 0},
     {"zx", "zx", "ZX Spectrum", FrameKind::Console, 0x1E1E20, 0x0C0C0D, 3, 0x0A0A0B, 0x3C3C40, 0xE6E6E6, "ZX SPECTRUM",
      0x141416, 0x6E6E74, 0},
     {"c64", "c64", "Commodore 64", FrameKind::Console, 0xB8AD92, 0xA09479, 3, 0x1C1A18, 0x4E4A44, 0x3A322A,
@@ -187,6 +198,9 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      "AMIGA 500", 0xB9B3A2, 0xD0402A, 0},
     {"pico8", "pico8", "PICO-8", FrameKind::Console, 0x1D2B53, 0x111A35, 0, 0x000000, 0x5F574F, 0xFFF1E8, "PICO-8",
      0x7E2553, 0xFF004D, 0},
+    // The Virtual Boy's visor: black plastic, its red stripe and name (on both panels when each shows an eye)
+    {"vb", "vb", "Virtual Boy", FrameKind::Console, 0x1C1C1E, 0x0C0C0D, 3, 0x050505, 0x3A1416, 0xD8201C, "VIRTUAL BOY",
+     0x101012, 0xC8141A, 0},
     // What the games were played on
     {"arcade", "arcade", "Arcade cabinet", FrameKind::Arcade, 0x141416, 0x08080A, 3, 0x050506, 0x2A2A30, 0xFFF4D6,
      "ARCADE", 0xE0402A, 0x2A7BE0, 0},
@@ -194,11 +208,11 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0xD02A2A, 0x2A5BD0, 0},
     {"vectrex", "vectrex", "Vectrex", FrameKind::Vectrex, 0x1C1C1E, 0x0B0B0C, 3, 0x050506, 0x3C3C42, 0xEDEDED,
      "VECTREX", 0x26262A, 0x8C8C92, 0},
-    {"tv-grey", "nes,snes,md,segacd,pico,sms,sg,pce,pcecd,neo,psx,n64,saturn,dc,msx,zx,c64", "Grey TV", FrameKind::Tv, 0x9C9C9E, 0x7C7C80, 3,
+    {"tv-grey", "nes,snes,md,segacd,pico,sms,sg,pce,pcecd,neo,psx,n64,saturn,dc,msx,cpc,zx,c64,atari7800", "Grey TV", FrameKind::Tv, 0x9C9C9E, 0x7C7C80, 3,
      0x0E1012, 0x3A3D42, 0x4A4A4E, "", 0x5A5A5E, 0xE0302A, 0},
-    {"tv-wood", "nes,sms,sg,atari,coleco,intellivision,pico", "Wood-grain TV", FrameKind::TvWood, 0x7A4E2A, 0x4E2F17, 0,
+    {"tv-wood", "nes,sms,sg,atari,atari5200,coleco,intellivision,pico", "Wood-grain TV", FrameKind::TvWood, 0x7A4E2A, 0x4E2F17, 0,
      0x0E1012, 0x3A3D42, 0x2A2A2C, "", 0xB9B4A8, 0xE0302A, 2},
-    {"monitor", "dos,msx,zx,c64,amiga,scummvm", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42,
+    {"monitor", "dos,msx,cpc,zx,c64,amiga,scummvm", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42,
      0x6F6858, "", 0xCDC4AA, 0x4CD964, 0},
     {"ctr-dark", "3ds", "3DS · Clean dark", FrameKind::Ctr, 0x15161A, 0x0F1013, 0, 0, 0, 0, "", 0, 0, 0},
     {"ctr-cosmos", "3ds", "3DS · Cosmos Black", FrameKind::Ctr, 0x34373D, 0x1E2024, 0, 0, 0, 0, "", 0, 0, 0},

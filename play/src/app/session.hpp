@@ -3,6 +3,7 @@
 // screen. No windows or sound devices here, so the headless tool and the
 // tests drive exactly what the handheld runs.
 #pragma once
+#include "app/achievements.hpp"
 #include "app/cheats.hpp"
 #include "app/storage.hpp"
 #include "companion/companion.hpp"
@@ -59,6 +60,11 @@ public:
 
     // The game's cheats (a .cht file for it, if there is one), already applied to the core.
     const CheatBook& cheats() const { return cheats_; }
+
+    // RetroAchievements for this game (app/achievements.hpp), once the launcher's sign-in is given: false with
+    // `error` when the system has none or it cannot start. Evaluated after every frame from then on.
+    bool start_achievements(const AchievementOptions& options, std::string& error);
+    Achievements& achievements() { return achievements_; }
     bool set_cheat(size_t index, bool on);
 
     Core& core() { return *core_; }
@@ -81,6 +87,9 @@ private:
 
     std::thread view_writer_;
     std::unique_ptr<Core> core_;
+    RomBytes rom_;         // the cartridge as read (mGBA's systems), for RetroAchievements to identify it by
+    std::string rom_path_; // --rom
+    Achievements achievements_;
     ProfileLibrary profiles_;
     std::vector<std::string> profile_errors_;
     const Profile* profile_ = nullptr;

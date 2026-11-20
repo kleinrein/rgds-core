@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Sharp scaling with the DS color trea
 Sharp scaling, DS colour and Natural Vision together.	Sharp scaling, DS color and Natural Vision together.
 Shield	Shield
 Shift	Shift
-Shift keys stay down until the next key	Shift keys stay down until the next key
 Shortcut action	Shortcut action
 Shots	Shots
 Show games	Show games
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Everything els
 Room for more games.	Room for more games.
 Console switches	Console switches
 VMU screen	VMU screen
+3D: one eye each	3D: one eye each
+Mouse	Mouse
+RetroAchievements	RetroAchievements
+Account	Account
+RetroAchievements account	RetroAchievements account
+Achievements	Achievements
+{0} achievements	{0} achievements
+{0} points	{0} points
+1 point	1 point
+Unlocked {0}	Unlocked {0}
+Play the game once to see its achievements.	Play the game once to see its achievements.
+RetroAchievements has no achievements for this game yet.	RetroAchievements has no achievements for this game yet.
+Earn achievements from retroachievements.org while you play.	Earn achievements from retroachievements.org while you play.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Unlock achievements in your games while you play. Each game's list is in Game info.
+A free account from retroachievements.org.	A free account from retroachievements.org.
+Signing out…	Signing out…
+Wait for the current task to finish, then sign in.	Wait for the current task to finish, then sign in.
+Wait for the current task to finish, then sign out.	Wait for the current task to finish, then sign out.
+Signed in to RetroAchievements as {0}.	Signed in to RetroAchievements as {0}.
+Signed out of RetroAchievements.	Signed out of RetroAchievements.
+Enter your RetroAchievements username and password.	Enter your RetroAchievements username and password.
+Could not reach RetroAchievements. Check the connection.	Could not reach RetroAchievements. Check the connection.
+Wrong username or password.	Wrong username or password.
+RetroAchievements did not accept the sign-in.	RetroAchievements did not accept the sign-in.
+Achievement unlocked	Achievement unlocked
+Game mastered	Game mastered
+achievements	achievements
+Sign in again in Settings	Sign in again in Settings
+Could not sign in	Could not sign in
+This game file is not recognised	This game file is not recognised
+Could not load this game's achievements	Could not load this game's achievements
+No achievements yet	No achievements yet
+Every achievement unlocked	Every achievement unlocked
+Offline: unlocks are sent when back online	Offline: unlocks are sent when back online
+Back online: unlocks sent	Back online: unlocks sent
+Play Nintendo WFC games online	Play Nintendo WFC games online
+Album	Album
+Menus	Menus
+No screenshots yet	No screenshots yet
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.
+This picture is the game's cover now.	This picture is the game's cover now.
+The cover could not be changed.	The cover could not be changed.
+The screenshot could not be saved.	The screenshot could not be saved.
+Delete this screenshot?	Delete this screenshot?
+Use as the game's cover	Use as the game's cover
+Save the game behind this menu to the Album	Save the game behind this menu to the Album
+Saving the screenshot…	Saving the screenshot…
+Screenshot saved to the Album.	Screenshot saved to the Album.
+Still saving the last screenshot.	Still saving the last screenshot.
+No picture to save. Resume the game and press Menu + R.	No picture to save. Resume the game and press Menu + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Photo mode
+Leave photo mode?	Leave photo mode?
+Keep editing	Keep editing
+Leave without saving	Leave without saving
+Saved to the Album.	Saved to the Album.
+The photo could not be saved.	The photo could not be saved.
+This picture could not be opened.	This picture could not be opened.
+Pen	Pen
+Stamps	Stamps
+Frames	Frames
+Lenses	Lenses
+Date	Date
+Sepia	Sepia
+Black & white	Black & white
+Mosaic	Mosaic
+Mirror	Mirror
+Fisheye	Fisheye
+Old photo	Old photo
+Instant photo	Instant photo
+Film strip	Film strip
+Postage stamp	Postage stamp
+Rounded card	Rounded card
+Stars	Stars
+Undo	Undo
+Sound toy	Sound toy
+Record your voice and change it	Record your voice and change it
+Chipmunk	Chipmunk
+Monster	Monster
+Backwards	Backwards
+Echo	Echo
+Press Record and say hello!	Press Record and say hello!
+Then pick a voice and draw on the lower screen to bend it.	Then pick a voice and draw on the lower screen to bend it.
+Recording…	Recording…
+Press X again to stop.	Press X again to stop.
+Sound {0}	Sound {0}
+Startup sound	Startup sound
+Higher	Higher
+Lower	Lower
+Record	Record
+Stop	Stop
+Sounds	Sounds
+Record a sound first	Record a sound first
+The handheld starts quietly again	The handheld starts quietly again
+Plays when the handheld starts	Plays when the handheld starts
+Could not save the sound	Could not save the sound
+Nothing heard. Hold the handheld closer and try again.	Nothing heard. Hold the handheld closer and try again.
+This manual could not be opened	This manual could not be opened
+This page is not a scan	This page is not a scan
+This page could not be read	This page could not be read
+Giant	Giant
+Underwater	Underwater
+Choir	Choir
+8-bit	8-bit
+Telephone	Telephone
+Megaphone	Megaphone
+Cave	Cave
+Jelly	Jelly
+Scratch	Scratch
+Whisper	Whisper
+Sloth	Sloth
+Speedy	Speedy
+Dragon	Dragon
+Baby	Baby
+Opera	Opera
+Erase	Erase
+Drawing cleared	Drawing cleared
+Nothing to clear	Nothing to clear
+Press Erase again to delete this sound	Press Erase again to delete this sound
+Sound erased	Sound erased
+Send in PictoChat	Send in PictoChat
+Send to phone	Send to phone
+Connect to Wi-Fi to send pictures to a phone or computer.	Connect to Wi-Fi to send pictures to a phone or computer.
+Your picture is on the pad. Write or draw beside it, then send.	Your picture is on the pad. Write or draw beside it, then send.
+Join a room: your picture goes on the pad.	Join a room: your picture goes on the pad.

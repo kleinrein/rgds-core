@@ -360,6 +360,8 @@ class ManageTests(Base):
 
     def test_pictochat_leaves_home_on_a_kid_profile_without_it(self):
         folder = self.add(active=True)
+        with open(folder / 'ui.ini', 'a') as file:
+            file.write('sound_toy=0\n')  # no Sound toy either, so Recents spans its row
         report = self.run_ui(['Down', 'Right'], boot=False)
         self.assertEqual(report['profile'], 'p1')
         self.assertNotEqual(report['home_selected'], 4)  # Recents spans the row: Right finds no PictoChat

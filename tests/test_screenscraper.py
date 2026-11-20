@@ -211,6 +211,53 @@ class ScreenScraperTests(unittest.TestCase):
         self.assertEqual(status["state"], "done")
         self.assertIn("quota", status["message"])
 
+    def test_a_busy_service_falls_back_per_game_and_stops_after_a_run_of_failures(self):
+        roms = [self.rom("G%d.md" % i) for i in range(7)]
+        fake, public = FakeClient(failure=503), FakePublic()
+        client = screenscraper.ScreenScraperClient(fake, public)
+        scraper.scrape(self.root / "data", client, roms)
+        self.assertEqual(len(public.asked), 7)  # every game still got its public cover
+        self.assertEqual([c[0] for c in fake.calls].count("jeuInfos.php"), screenscraper.FAILURE_LIMIT)
+        self.assertTrue(client.stopped)
+
+    def test_a_zipped_dos_game_is_matched_by_its_file_name(self):
+        folder = self.games / "DOS"
+        folder.mkdir()
+        archive = folder / "Doom (1993).zip"
+        with zipfile.ZipFile(archive, "w") as z:
+            z.writestr("DOOM/DOOM.EXE", b"x")
+        name, size, crc = screenscraper.game_entry(archive, "dos")
+        self.assertEqual((name, crc), ("Doom (1993).zip", ""))
+        self.assertEqual(size, archive.stat().st_size)
+        import public_artwork
+        self.assertEqual(public_artwork.rom_identity(archive), ("dos", "Doom (1993)", ""))
+
+    def test_a_disc_index_file_is_matched_by_name_and_size_not_its_own_crc(self):
+        cue = self.rom("Crash (USA).cue", b'FILE "Crash.bin" BINARY')
+        self.assertEqual(screenscraper.game_entry(cue, "psx"), (cue.name, cue.stat().st_size, ""))
+
+    def test_odd_entries_in_a_reply_do_not_break_the_details(self):
+        jeu = dict(JEU, genres=["x", None], classifications=["x", {"type": "PEGI", "text": "3"}], synopsis=[7])
+        fields, synopses = screenscraper.information(jeu, ("eu",))
+        self.assertEqual((fields["rating"], synopses), ("PEGI 3", {}))
+
+    def test_a_system_without_catalog_lists_is_missing_once(self):
+        import game_info
+        calls = []
+
+        class Public:
+            cache = None
+
+            def catalog(self, name, url, parse):
+                calls.append(name)
+                raise scraper.NotFound("none")
+
+        info = game_info.GameInfo(Public(), ("info",))
+        for _ in range(3):
+            with self.assertRaises(scraper.NotFound):
+                info.information(self.rom("A.dsk"), "cpc", "")
+        self.assertEqual(len(calls), len(set(calls)))
+
     def test_a_matching_title_searches_by_name(self):
         rom = self.rom("sonic1.md")
         fake = FakeClient()

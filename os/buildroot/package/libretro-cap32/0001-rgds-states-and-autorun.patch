@@ -1,0 +1,253 @@
+What RG DS Play's checkpoints need from Caprice32.
+
+- A state keeps the tape's place: a trailer after the snapshot (cap32/tape.c
+  rgds_tape_state_save/_load), so a multiload tape game resumed between its loads,
+  or during one, goes on where it was. States without one still load.
+- A state load restores PPI port C: the snapshot loader wrote the PPI control word
+  after the ports, and setting a mode clears an 8255's ports, so every load lost
+  port C (the tape motor, the PSG's control lines, the keyboard row). Control
+  first now.
+- retro_rgds_loading() is true while the autorun is still typing the game's
+  command, which no state holds; RG DS Play saves no checkpoint then.
+- retro_rgds_cancel_autorun() drops a queued autorun command: a state loaded right
+  after the game starts would otherwise have RUN"... typed into the resumed game.
+
+diff --git a/cap32/slots.c b/cap32/slots.c
+index f86263e..054f7c1 100644
+--- a/cap32/slots.c
++++ b/cap32/slots.c
+@@ -396,15 +396,16 @@ int snapshot_load_mem (uint8_t *sna_buffer, uint32_t buffer_size) {
+        (continuation || sh.cpc_model == 3))
+       val |= 0x80;
+    z80_OUT_handler(port, val);
+-   // PPI
++   // PPI: the control word first, as setting a mode clears the 8255's ports; written last it emptied port C (the
++   // tape motor, the PSG's control lines, the keyboard row) after every state load (RG DS)
++   port.b.h = 0xf7; // control
++   z80_OUT_handler(port, sh.ppi_control);
+    port.b.h = 0xf4; // port A
+    z80_OUT_handler(port, sh.ppi_A);
+    port.b.h = 0xf5; // port B
+    z80_OUT_handler(port, sh.ppi_B);
+    port.b.h = 0xf6; // port C
+    z80_OUT_handler(port, sh.ppi_C);
+-   port.b.h = 0xf7; // control
+-   z80_OUT_handler(port, sh.ppi_control);
+    // PSG
+    PSG.control = PPI.portC;
+    PSG.reg_select = sh.psg_reg_select;
+diff --git a/cap32/tape.c b/cap32/tape.c
+index efa728e..ee27805 100644
+--- a/cap32/tape.c
++++ b/cap32/tape.c
+@@ -35,6 +35,9 @@
+ #include "tape.h"
+ #include "z80.h"
+ 
++#include <stdbool.h>
++#include <string.h>
++
+ #include <streams/file_stream.h>
+ #include <streams/file_stream_transforms.h>
+ 
+@@ -611,3 +614,111 @@ void Tape_Rewind(void)
+    CPC.tape_play_button = 0;
+    Tape_GetNextBlock();
+ }
++
++/* RG DS: the tape's place, kept after a state's snapshot (libretro-core.c retro_serialize), so a state taken
++ * between a game's loads (or during one) finds the tape where it was. Pointers are kept as offsets into the tape
++ * image (1 + offset, 0 for none) or into wCycleTable (0x80000000 | index); a state of another tape (another size)
++ * leaves the tape as it is. */
++#define RGDS_TAPE_MAGIC 0x50544752u /* "RGTP" */
++typedef struct {
++   uint32_t magic, image_size;
++   uint32_t ptr[5];
++   uint32_t pulse_cycles, zero_pulse, one_pulse, stage, pulse_count, data_count, bits_to_shift;
++   int32_t cycle_count;
++   uint16_t cycle_table[2];
++   uint8_t level, data, play_button, unused;
++} rgds_tape_state;
++
++static uint32_t rgds_tape_size(void)
++{
++   return pbTapeImage && pbTapeImageEnd > pbTapeImage ? (uint32_t)(pbTapeImageEnd - pbTapeImage) : 0;
++}
++
++static uint32_t rgds_tape_ptr(const void *p)
++{
++   const uint8_t *b = (const uint8_t *)p;
++   if (!p)
++      return 0;
++   if (b >= (const uint8_t *)wCycleTable && b < (const uint8_t *)(wCycleTable + 2) + 1)
++      return 0x80000000u | (uint32_t)((const uint16_t *)p - wCycleTable);
++   if (pbTapeImage && b >= pbTapeImage && b <= pbTapeImageEnd + 6)
++      return 1 + (uint32_t)(b - pbTapeImage);
++   return 0;
++}
++
++static void *rgds_tape_unptr(uint32_t v)
++{
++   if (!v)
++      return NULL;
++   if (v & 0x80000000u)
++      return wCycleTable + (v & 3);
++   return pbTapeImage + (v - 1);
++}
++
++size_t rgds_tape_state_size(void)
++{
++   return sizeof(rgds_tape_state);
++}
++
++void rgds_tape_state_save(uint8_t *out)
++{
++   rgds_tape_state s;
++   memset(&s, 0, sizeof(s));
++   s.magic = RGDS_TAPE_MAGIC;
++   s.image_size = rgds_tape_size();
++   s.ptr[0] = rgds_tape_ptr(pbTapeBlock);
++   s.ptr[1] = rgds_tape_ptr(pbTapeBlockData);
++   s.ptr[2] = rgds_tape_ptr(pwTapePulseTable);
++   s.ptr[3] = rgds_tape_ptr(pwTapePulseTableEnd);
++   s.ptr[4] = rgds_tape_ptr(pwTapePulseTablePtr);
++   s.pulse_cycles = dwTapePulseCycles;
++   s.zero_pulse = dwTapeZeroPulseCycles;
++   s.one_pulse = dwTapeOnePulseCycles;
++   s.stage = dwTapeStage;
++   s.pulse_count = dwTapePulseCount;
++   s.data_count = dwTapeDataCount;
++   s.bits_to_shift = dwTapeBitsToShift;
++   s.cycle_count = iTapeCycleCount;
++   s.cycle_table[0] = wCycleTable[0];
++   s.cycle_table[1] = wCycleTable[1];
++   s.level = bTapeLevel;
++   s.data = bTapeData;
++   s.play_button = (uint8_t)CPC.tape_play_button;
++   memcpy(out, &s, sizeof(s));
++}
++
++/* Whether data ends with a tape trailer. */
++bool rgds_tape_state_present(const uint8_t *data, size_t size)
++{
++   uint32_t magic;
++   if (size < sizeof(rgds_tape_state))
++      return false;
++   memcpy(&magic, data + size - sizeof(rgds_tape_state), sizeof(magic));
++   return magic == RGDS_TAPE_MAGIC;
++}
++
++void rgds_tape_state_load(const uint8_t *in)
++{
++   rgds_tape_state s;
++   memcpy(&s, in, sizeof(s));
++   if (s.magic != RGDS_TAPE_MAGIC || !s.image_size || s.image_size != rgds_tape_size())
++      return;
++   pbTapeBlock = (uint8_t *)rgds_tape_unptr(s.ptr[0]);
++   pbTapeBlockData = (uint8_t *)rgds_tape_unptr(s.ptr[1]);
++   pwTapePulseTable = (uint16_t *)rgds_tape_unptr(s.ptr[2]);
++   pwTapePulseTableEnd = (uint16_t *)rgds_tape_unptr(s.ptr[3]);
++   pwTapePulseTablePtr = (uint16_t *)rgds_tape_unptr(s.ptr[4]);
++   dwTapePulseCycles = s.pulse_cycles;
++   dwTapeZeroPulseCycles = s.zero_pulse;
++   dwTapeOnePulseCycles = s.one_pulse;
++   dwTapeStage = s.stage;
++   dwTapePulseCount = s.pulse_count;
++   dwTapeDataCount = s.data_count;
++   dwTapeBitsToShift = s.bits_to_shift;
++   iTapeCycleCount = s.cycle_count;
++   wCycleTable[0] = s.cycle_table[0];
++   wCycleTable[1] = s.cycle_table[1];
++   bTapeLevel = s.level;
++   bTapeData = s.data;
++   CPC.tape_play_button = s.play_button;
++}
+diff --git a/libretro/libretro-core.c b/libretro/libretro-core.c
+index 9eac322..be17814 100644
+--- a/libretro/libretro-core.c
++++ b/libretro/libretro-core.c
+@@ -1927,17 +1927,28 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info,
+    return false;
+ }
+ 
++/* RG DS: the tape's place after the snapshot (cap32/tape.c). */
++extern size_t rgds_tape_state_size(void);
++extern void rgds_tape_state_save(uint8_t *out);
++extern bool rgds_tape_state_present(const uint8_t *data, size_t size);
++extern void rgds_tape_state_load(const uint8_t *in);
++
+ size_t retro_serialize_size(void)
+ {
+-   return snapshot_size();
++   return snapshot_size() + rgds_tape_state_size();
+ }
+ 
+ bool retro_serialize(void *data, size_t size)
+ {
+    int error;
+-   error = snapshot_save_mem((uint8_t *) data, size);
++   if (size < snapshot_size() + rgds_tape_state_size())
++      return false;
++   error = snapshot_save_mem((uint8_t *) data, size - rgds_tape_state_size());
+    if(!error)
++   {
++      rgds_tape_state_save((uint8_t *) data + size - rgds_tape_state_size());
+       return true;
++   }
+ 
+    LOGI("[retro_serialize] SNA-serialized: error %d\n", error);
+    return false;
+@@ -1945,7 +1956,14 @@ bool retro_serialize(void *data, size_t size)
+ 
+ bool retro_unserialize(const void *data, size_t size)
+ {
+-   return !snapshot_load_mem((uint8_t *) data, size);
++   /* A state with the tape's place (RG DS) or one without, as older states and other frontends' are. */
++   const bool tape = rgds_tape_state_present((const uint8_t *) data, size);
++   const size_t snapshot = tape ? size - rgds_tape_state_size() : size;
++   if (snapshot_load_mem((uint8_t *) data, snapshot))
++      return false;
++   if (tape)
++      rgds_tape_state_load((const uint8_t *) data + snapshot);
++   return true;
+ }
+ 
+ void *retro_get_memory_data(unsigned id)
+diff --git a/libretro/retro_events.c b/libretro/retro_events.c
+index c0192ce..ff77f20 100644
+--- a/libretro/retro_events.c
++++ b/libretro/retro_events.c
+@@ -990,3 +990,33 @@ void ev_lightgun(unsigned port)
+    if (retro_video.screen_crop)
+       g->x += EMULATION_CROP;
+ }
++
++/* RG DS: what RG DS Play needs to know and to undo around its checkpoints. */
++extern void kbd_buf_clean(void);
++
++/**
++ * retro_rgds_loading:
++ * true while the autorun still types the game's command (RUN"... or |TAPE): a
++ * state holds no typing queue, so it would come back with half a command typed.
++ * (A tape's place is in the state: cap32/tape.c rgds_tape_state_save.)
++ **/
++bool retro_rgds_loading(void)
++{
++   return event_call == EV_AUTO;
++}
++
++/**
++ * retro_rgds_cancel_autorun:
++ * a state loaded over a game that has only just started: its autorun command,
++ * queued when the game loaded, would otherwise be typed into the resumed game.
++ **/
++void retro_rgds_cancel_autorun(void)
++{
++   if (event_call != EV_AUTO)
++      return;
++   kbd_buf_feed("");
++   kbd_buf_clean();
++   autorun_delay = EMULATION_INIT_AUTORUNDELAY;
++   wait_computer = 1;
++   ev_set(EV_JOY);
++}

@@ -6,7 +6,7 @@
 namespace {
 // Fixed hues for the systems in the ring and the legend, readable on both themes.
 Color playtime_system_colour(const std::string& id) {
-    static const std::array<std::pair<const char*, Color>, 25> hues = {{
+    static const std::array<std::pair<const char*, Color>, 32> hues = {{
         {"nds", Color{64, 132, 246}},
         {"gba", Color{132, 94, 236}},
         {"gbc", Color{22, 176, 160}},
@@ -20,10 +20,17 @@ Color playtime_system_colour(const std::string& id) {
         {"zx", Color{220, 60, 110}},
         {"c64", Color{120, 110, 220}},
         {"coleco", Color{60, 80, 170}},
+        {"pico", Color{70, 150, 220}},
         {"msx", Color{150, 150, 60}},
+        {"cpc", Color{60, 172, 80}},
         {"pce", Color{230, 110, 30}},
         {"atari", Color{170, 100, 50}},
+        {"atari7800", Color{190, 60, 50}},
+        {"atari5200", Color{150, 150, 160}},
+        {"lynx", Color{230, 150, 40}},
+        {"vb", Color{220, 20, 30}},
         {"amiga", Color{200, 70, 70}},
+        {"dos", Color{90, 160, 200}},
         {"pico8", Color{255, 0, 77}},
         {"intellivision", Color{190, 150, 70}},
         {"gw", Color{214, 112, 44}},

@@ -108,7 +108,7 @@ int main(int argc,char** argv){
  control_shortcut=rgds::ControlShortcut{};delayed_start_events.clear();fs::remove(control+".home");test_time+=500;
  button(7);button(8);assert(SDL_PollEvent(&event)==0);assert(fs::exists(control+".home"));test_time+=300;tick();assert(SDL_PollEvent(&event)==0);
  control_shortcut=rgds::ControlShortcut{};delayed_start_events.clear();fs::remove(control+".home");test_time+=500;
- button(8);assert(SDL_PollEvent(&event)==0 && !fs::exists(control+".menu"));test_time+=151;tick();assert(fs::exists(control+".menu"));
+ button(8);assert(SDL_PollEvent(&event)==0 && !fs::exists(control+".menu"));test_time+=151;tick();assert(!fs::exists(control+".menu"));test_time+=450;tick();assert(fs::exists(control+".menu")); // held: Menu + R may follow
  // A Start already delivered before a later chord gets its release before
  // the save request, including controller-event engines that cache state.
  events.clear();delivered_controls.clear();control_shortcut=rgds::ControlShortcut{};test_time+=500;

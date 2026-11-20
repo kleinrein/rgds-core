@@ -10,6 +10,7 @@
 //   6 RX, 7 switching RX reply to TX ack, 8 MP client sending reply /
 //   MP host sending ack, 9 idle.
 #include "core/io/wifi.h"
+#include "core/bios/freebios.h"
 #include "core/io/io.h"
 #include "core/nds.h"
 #include "core/state/state.h"
@@ -1495,6 +1496,7 @@ void write_txh(u8* p, int len, u8 rate) {
 } // namespace
 
 void Wifi::ap_reset() {
+  ap_.name = bios::kAccessPointSsid;
   ap_.us_counter = 0x428888000ULL; // arbitrary
   ap_.seq_no = 0x0120;
   ap_.beacon_due = false;

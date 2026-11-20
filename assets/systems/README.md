@@ -10,9 +10,12 @@ Nintendo 3DS, Game Boy Advance, Game Boy Color, Game Boy, NES, Super Nintendo,
 Mega Drive, Master System, Neo Geo, Neo Geo Pocket, PC Engine, MSX,
 PlayStation, PSP, Dreamcast, Saturn, Nintendo 64, Pico-8, Arcade, DOS PC,
 Atari 2600, ColecoVision, Intellivision, Vectrex, WonderSwan and RPG Maker,
-the home computers RG DS Play adds (the ZX Spectrum, the Commodore 64 and the Amiga)
+the home computers RG DS Play adds (the ZX Spectrum, the Commodore 64, the Amiga
+and the Amstrad CPC)
 and the two RG DS Play emulates (Game & Watch and ScummVM). The Amiga, the third
-home computer RG DS Play adds, came later and is drawn in the same family.
+home computer RG DS Play adds, came later and is drawn in the same family. The
+Virtual Boy, the Sega Pico, the Atari 7800, the Atari 5200 and the Atari Lynx
+came with the same late additions and are drawn in the family too.
 `src/launcher/system_icons.hpp` keeps their names, their cartridge badges and
 the folders the stock card uses (`FC`, `SFC`, `PS`, `NEOGEO`, …), so a new
 system only needs its icon and one line.
@@ -28,7 +31,12 @@ Generated with imagegen on 2026-10-23 as photorealistic studio product photos:
 the real hardware, on a seamless studio sweep, one camera and one lighting
 setup for the whole set, three-quarter view, no text and no logos. One picture
 per system, 2048×2048. The Amiga was rendered on 2026-11-18 from the same
-brief (`build/systems/systems_prompts.py`), so it sits in the same family.
+brief (`build/systems/systems_prompts.py`), so it sits in the same family. The
+Virtual Boy, the Sega Pico, a new DOS PC, the Amstrad CPC, the Atari 7800, the
+Atari 5200 and the Atari Lynx were rendered on 2026-11-20 from that brief as
+well: the Virtual Boy, the Sega Pico, the Amstrad CPC and the three Ataris
+had no rich icon at all before, and the DOS PC's first render stacked the CRT
+on the tower, so its brief now says the monitor stands beside it.
 
 - `<id>.bmp`: the launcher's own asset, a 128×128 32-bit BGRA bitmap with a
   116 px optical bound, written by `tools/prepare_system_icons.py`.

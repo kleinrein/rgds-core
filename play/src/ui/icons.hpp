@@ -7,7 +7,7 @@
 namespace play {
 
 // 12 x 12 glyphs: '#' ink, '+' a half-tone of it, '.' empty.
-enum class Icon { None, Save, Load, Sun, Moon, Sleep, Power, Info, Clock, Heart, Key, Touch, Check, Back, Home, Play, Sliders, Spark, Controller, Cartridge, Battery, Library, Coin, Life, Star, Treasure, Bank, Flag, Map, Gem, Sword, Bag, More, Close, Trophy, Shield };
+enum class Icon { None, Save, Load, Sun, Moon, Sleep, Power, Info, Clock, Heart, Key, Touch, Check, Back, Home, Play, Sliders, Spark, Controller, Cartridge, Battery, Library, Coin, Life, Star, Treasure, Bank, Flag, Map, Gem, Sword, Bag, More, Close, Trophy, Shield, Book };
 
 inline std::string_view icon_glyph(Icon icon) {
     switch (icon) {
@@ -362,6 +362,19 @@ inline std::string_view icon_glyph(Icon icon) {
         ".#.........."
         ".#.........."
         "###........."
+        "............";
+    case Icon::Book: return
+        "............"
+        ".###....###."
+        "#...#..#...#"
+        "#.#.#..#.#.#"
+        "#...#..#...#"
+        "#.#.#..#.#.#"
+        "#...#..#...#"
+        "#.#.#..#.#.#"
+        "#...####...#"
+        "##########.#"
+        "...........#"
         "............";
     case Icon::Map: return
         "............"

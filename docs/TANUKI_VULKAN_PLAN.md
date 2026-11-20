@@ -184,7 +184,9 @@ frame, which removes the blinking trade-off seen with the GL path.
 1. **Spike (this document).** Device, one GLSL->SPIR-V pipeline from Tanuki's shaders, an offscreen
    3DS-sized frame, per-draw CPU cost against GL, GPU engine times, dma-buf import. Done on the
    handheld; found the indexed-draw cost.
-1b. **PanVK patch: direct indexed draws with a CPU index range.** Gate for everything below.
+1b. **PanVK patch: direct indexed draws with a CPU index range.** Gate for everything below. Done:
+   `tools/engine_patches/panvk-direct-indexed.patch`, applied by `tools/build_panvk_rgds_os.py`
+   (vertex-tiler 153 -> 8.0 ms).
 2. Backend table in `gpu.c` + `renderer_vk.c` drawing NSMB2's map offscreen, compared with the GL
    picture frame by frame (`SPIKE_DUMP_AT` per-draw dump on both backends).
 3. Textures with diffs, LUT caches, ETC; framebuffers, transfers, copies; save state capture.
@@ -272,25 +274,80 @@ unless noted, 60-300 measured frames each.
   `VK_EXT_shader_object`, `VK_KHR_display` no. D24S8 is a valid attachment. Memory: one heap, a
   device-local host-visible coherent type (write-combined) and a host-cached type.
 
+### Patched PanVK: direct indexed draws (2026-11-19, later)
+
+`tools/engine_patches/panvk-direct-indexed.patch` (Mesa 26.2.x; first measured from a build in the VM at
+`~/3ds-spike/panvk-direct`, a hard-linked copy of the image's source):
+
+- `is_indirect_draw()` counts only real indirect draws.
+- With `PANVK_DIRECT_INDEXED=1` and an index buffer whose memory the app has mapped, `vkCmdDrawIndexed`
+  scans `[firstIndex, firstIndex + indexCount)` on the CPU while recording (restart indices skipped),
+  sets `vertex_range`/`raw_offset` from the min/max and points the tiler job at the indices with
+  `base_vertex_offset = -min`, as the indirect helper and Gallium do. Plain vertex + tiler jobs, no
+  write-value, min/max search or helper job. Unmapped memory or the variable unset: the stock path.
+- The renderer must write indices before recording the draw (Vulkan allows writing them up to
+  submit), which Tanuki's stream-buffer pattern does. That is why it is opt-in.
+- `PANVK_VARYING_SLAB_KB` (default 64) sets the varying pool's slab size: direct draws allocate their
+  varyings per draw, and at 64 KB a 400-draw frame spans about 40 BOs, each passed to every submit.
+
+`device_direct.sh` copies the driver to `/data/rgds/vkspike/direct` only and runs the set against
+the stock one (`ICD=...`). 400 draws, 300 frames unless noted:
+
+| | GL (glthread) | Vulkan, stock PanVK | Vulkan, direct | Vulkan, direct + 1 MB slabs |
+| --- | --- | --- | --- | --- |
+| frame wall time | 10.6 ms | 81.6 ms | 10.2 ms | **9.9 ms** |
+| GPU vertex-tiler / frame | 6.4 ms | 153 ms | 8.0 ms | 8.0 ms |
+| GPU fragment / frame | 10.5 ms | 8.8 ms | 6.8 ms | 6.7 ms |
+| process CPU / frame | 14.0 ms | 7.8 ms | 10.0 ms | **9.6 ms** |
+| busiest thread / frame | 5.7 ms (+ `gl0`) | 7.8 ms | 10.0 ms | 9.6 ms |
+| record / submit | | 7.4 / 0.43 ms | 9.1 / 1.0 ms | 9.4 / 0.43 ms |
+| 1-pixel scissor: wall, vertex-tiler | 9.9 ms, 4.4 ms | | 9.4 ms, 4.2 ms | |
+| 800 draws: wall, CPU/draw | 19.6 ms, 33 us | | 20.4 ms, 25 us | |
+
+- **Pictures**: still match GL (largest channel difference 1). `--ibuf ring` (one big index buffer)
+  costs the same as exact-size buffers now, so the over-long scan is gone too.
+- **Stability**: 50,000 frames (8.5 minutes) through the patched driver, no new panfrost faults or
+  job timeouts in dmesg (`device_direct.sh` counts only lines added during the run).
+- **CPU**: process CPU is 31% under GL's (9.6 vs 14.0 ms), but on one thread. GL splits its 14 ms
+  into 5.7 ms on the calling thread and the rest on `gl0`; Vulkan puts 9.6 ms on the recording
+  thread. Direct recording costs about 2 ms a frame (5 us a draw) more than stock's indirect
+  recording, from the per-draw varying allocations and descriptors; the 1 MB slab brings submit back
+  to 0.43 ms but not recording. Of the 24 us a draw, about 5 us is the spike's own vertex, index and
+  uniform copies, so PanVK's JM path is about 18 us a draw: it re-emits every attribute and varying
+  descriptor and both job descriptors per draw.
+
 ## Recommendation
 
-**Do not start the backend on PanVK as shipped.** The CPU side delivers what was hoped (about half
-the CPU per draw, and no driver thread), and the shader rewrite, pictures and dma-buf present all
-work. But every indexed draw costs about 370 us of GPU job-chain time on Bifrost, and 3DS games draw
-almost everything indexed: an MK7 race frame would take far longer than GL's.
+**The GPU gate is passed: go on to milestone 2, with the PanVK patch.** With direct indexed draws the
+Mali does the frame as fast as through GL (vertex-tiler 8.0 against 6.4 ms, fragment lower, frame
+wall 9.9 against 10.6 ms), the pictures match, and 8.5 minutes ran without a fault. Stock PanVK stays
+unusable for this (82 ms).
 
-Next step, about a day, and decisive: **a PanVK patch** in our own build
-(`tools/build_panvk_rgds_os.py`, applied like the DSCore patches) that gives `vkCmdDrawIndexed` a
-direct path again when the index buffer is host-mapped. Scan the indices on the CPU (as 25.0.7 and
-the GL driver do; Tanuki's main thread already knows each draw's min/max), set `vertex_range` and
-`raw_offset`, point the tiler job at the indices, and skip the min/max and indirect-helper jobs.
-`is_indirect_draw()` must stop treating indexed draws as indirect. Then rerun the spike: it needs
-vertex-tiler near GL's 6.5 ms and frame wall at or under GL's 11 ms, with no kernel faults, through
-a 10-minute run. If that holds, build milestones 2-6 (weeks: the GL renderer is 3,350 lines); expected
-gain in an MK7 race is the `gl0` thread's 0.3-0.5 of a core plus part of the renderer thread, which
-is what is lost to throttling now. If the patch cannot be made stable, stay on GL and spend the time
-on the GL-side ideas in the 3DS notes (fewer calls per draw, uploads off the draw path).
+What the backend then buys is **total CPU, not a faster critical thread**: about 4.4 ms less per
+400-draw frame (31%), and no `gl0` thread. For MK7, where heat and throttling are the limit, that is
+the point. But the 9.6 ms lands on one thread, against GL's 5.7 ms on the caller, so:
+
+- the Vulkan renderer must record on its own thread (the plan's renderer thread), never on the
+  emulation thread;
+- at 60 fps one recording thread holds about 650 such draws. MK7 fits (measured 2026-11-20 from
+  the saved GL race logs in `/data/rgds/3ds-spike/tanuki-run`, the engine's `draws` field, which is
+  draws per emulated frame averaged over each half-second stats line: 16,018 windows, about 2.2 h
+  of MK7 at 60 fps). Median 346, p95 444, p99 465, p99.9 729, max 1013; 22 windows (0.14%) over
+  650. The newest runs (`warm*`, 11-19, 720 windows) give median 420, p99 544, max 619. A typical
+  race frame is about 11 ms of recording (465 draws x 24 us), and only rare half-second bursts,
+  which look like scene changes, overrun. That leaves a margin of about 30%, so cutting the
+  per-draw cost still matters;
+- the remaining PanVK cost (about 18 us a draw of descriptor re-emission) is the next thing to cut, in
+  the same patch (reuse attribute descriptors when vertex state and range are unchanged).
+
+The patch is carried: `tools/build_panvk_rgds_os.py` applies it to the image's PanVK
+(`/usr/lib/rgds-panvk`) from the next image on. Without `PANVK_DIRECT_INDEXED` the driver behaves as
+before, so DSCore and PPSSPP are unaffected. The Vulkan backend's `run.sh` sets
+`PANVK_DIRECT_INDEXED=1 PANVK_VARYING_SLAB_KB=1024` (milestone 4). Enabling it for PPSSPP is a
+separate test (its "4x vertex-tiler" is this same path). Tested on 20 November (`docs/PERFORMANCE.md`, "PPSSPP on
+Vulkan with the patched PanVK"): +22 % frames over stock PanVK, level with GL where both reach 60 fps, 15 % less CPU a
+frame, right pictures, no faults. PPSSPP stays on GL for now.
 
 Housekeeping: the spike lives in `/data/rgds/vkspike` (128 MB, includes the old PanVK 25.0.7 used for
-the bisect); it writes nowhere else, and its Mesa cache is `/data/rgds/vkspike/mesa-cache`. Remove
-the folder when done.
+the bisect); it writes nowhere else, and its Mesa cache is `/data/rgds/vkspike/mesa-cache`. The patched driver is in
+`/data/rgds/vkspike/direct`. Remove the folder when done.

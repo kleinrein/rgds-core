@@ -228,7 +228,9 @@ struct ControlShortcut {
         return ShortcutAction::none;
     }
     ShortcutAction poll(unsigned long long time) {
-        if (menu_pending && time - pending_menu >= 150) {
+        // A Menu still held may be the start of Menu + R (a screenshot, seen by the game runner): wait for the
+        // release, at most 600 ms. The runner drops this press when R joined it.
+        if (menu_pending && time - pending_menu >= 150 && (!menu || time - pending_menu >= 600)) {
             menu_pending = false;
             return fire(false, time);
         }

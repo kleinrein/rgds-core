@@ -239,6 +239,8 @@ public:
     uint32_t serial = 0;
     double last_sent = -10;
     GlyphSource* glyphs = nullptr;
+    // A picture from the Album waiting for a room: it is put on the pad when you join one.
+    std::vector<Op> pending_picture;
 
     static int text_y(int line) { return line * 48 + 10; }
     uint8_t plain_ink() const { return uint8_t(ink == rainbow ? 0 : ink); }
@@ -410,6 +412,7 @@ public:
         status.clear();
         notice(std::string("You are in Room ") + char('A' + room));
         hello();
+        place_pending_picture();
     }
     void leave() {
         helper.write_line("LEAVE");
@@ -452,9 +455,20 @@ public:
         pad_replayed = true;
         pad_dirty = {0, 0, canvas_w, canvas_h};
     }
+    // The Album's picture onto the pad, if one waits and we are in a room.
+    void place_pending_picture() {
+        if (view != View::Room || pending_picture.empty()) return;
+        ops.insert(ops.begin(), std::move(pending_picture.front()));
+        pending_picture.clear();
+        replay();
+        status = "Your picture is on the pad. Write or draw beside it, then send.";
+    }
     void recompute_caret() {
         caret_line = 0;
         caret_x = 6;
+        // Text starts to the right of a picture at the pad's left edge.
+        for (const auto& op : ops)
+            if (op.kind == Kind::Picture && op.points[0].x < 16) caret_x = std::max(caret_x, op.points[0].x + op.w + 8);
         for (auto it = ops.rbegin(); it != ops.rend(); ++it) {
             if (it->kind != Kind::Text) continue;
             caret_line = it->points[0].y >= 48 ? 1 : 0;

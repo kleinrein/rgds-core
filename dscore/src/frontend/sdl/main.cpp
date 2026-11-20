@@ -21,6 +21,7 @@
 #include "core/cart/miniz/miniz_tdef.h"
 #if DSPERATE_NET
 #include "net/lan_mp.h"
+#include "net/slirp_driver.h"
 #endif
 #if DSPERATE_JIT
 #include "core/cpu/jit/jit.h"
@@ -42,6 +43,10 @@ static std::atomic<int> g_rgds_adaptive{-1};
 #include "kms_flips.h"
 #include "display_drm.h"
 #include "present_thread.h"
+#if DSPERATE_CHEEVOS
+#include "cheevos/cheevos_hash.h"
+#include "cheevos_session.h"
+#endif
 
 #include <dirent.h>
 #include <algorithm>
@@ -229,9 +234,19 @@ const char* kUsage =
     "                  --lan-name NAME is our player name (default: the console's nickname)\n"
     "  --internet      the game reaches the real network through the emulated access point, over a\n"
     "                  user-mode TCP/IP stack (no privileges, works on wlan0). Not with local wireless\n"
-    "  --dns WHERE     where the game looks up its servers: wiimmfi (the default: Nintendo's own\n"
-    "                  servers were switched off in 2014), host (this machine's resolver), or an address\n"
+    "  --dns WHERE     where the game looks up its servers (net.dns): wiimmfi (the default; Nintendo's own\n"
+    "                  were switched off in 2014), wiilink (WiiLink WFC), host (this machine's resolver),\n"
+    "                  or an address\n"
     "  --load-state F  start from a save state instead of booting the game\n"
+    "  --cheevos       RetroAchievements for this run (cheevos.enabled; Casual mode, needs a sign-in)\n"
+    "  --no-cheevos    off for this run, whatever the config says\n"
+    "  --cheevos-token F  sign in with the token in F (\"username\\ntoken\", or the token alone with\n"
+    "                  cheevos.username / --cheevos-user); implies --cheevos. Never a password\n"
+    "  --cheevos-user U  the account that token signs in as\n"
+    "  --cheevos-helper F  send RetroAchievements' requests through this helper script (python3 F\n"
+    "                  serve --badges DIR) instead of libcurl\n"
+    "  --cheevos-badges DIR  keep the achievements' badge pictures here\n"
+    "  --cheevos-list F  write the game's achievement list to F (for RG DS's Game info page)\n"
     "  --autosave-png F  with emu.autosave, write a PNG of both screens to F beside the auto state\n"
     "  --autoload      start from the auto slot (emu.autosave's state) when there is one\n"
     "  --no-autoload   ignore it for this run, whatever emu.autoload says\n"
@@ -984,10 +999,11 @@ static int run(int argc, char** argv) {
   const char* lan_join = nullptr;
   const char* lan_name = "RG DS Core";
   bool netplay = false;
-  bool lan_guest = false;    // net.mode = guest: join only, never host
-  bool lan_name_set = false; // --lan-name given, so nickname must not override it
-  bool internet = false;     // --internet / net.mode = internet: emulated AP reaches the real network
-  long stats_from = 0;       // frames run but left out of timing statistics
+  bool lan_guest = false;        // net.mode = guest: join only, never host
+  bool lan_name_set = false;     // --lan-name given, so nickname must not override it
+  bool internet = false;         // --internet / net.mode = internet: emulated AP reaches the real network
+  const char* dns_arg = nullptr; // --dns: where the game's server lookups go (net.dns otherwise)
+  long stats_from = 0;           // frames run but left out of timing statistics
   bool dsi_mode = false;
   const char* bios9i = nullptr;
   const char* bios7i = nullptr;
@@ -1058,9 +1074,8 @@ static int run(int argc, char** argv) {
       lan_name_set = true;
     } else if (flag("--netplay")) netplay = true; // join a session heard on the LAN, else host one
     else if (flag("--internet")) internet = true; // exclusive with local wireless
-    else if (arg("--dns")) {
-      ++i; /* No host network transport in RGDS. */
-    } else if (flag("--clear-cache")) clear_cache = true;
+    else if (arg("--dns")) dns_arg = argv[++i];
+    else if (flag("--clear-cache")) clear_cache = true;
     else if (arg("--record")) record = argv[++i];
     else if (arg("--replay")) replay = argv[++i];
     else if (arg("--save")) save_arg = argv[++i];
@@ -1102,6 +1117,16 @@ static int run(int argc, char** argv) {
     else if (flag("--preload-rom")) cli.set("cart.preload", "true");
     else if (flag("--no-preload-rom")) cli.set("cart.preload", "false");
     else if (flag("--no-gpu3d")) cli.set("video.gpu3d", "false");
+    // Taken even in a build without achievements, so the same command line starts any build.
+    else if (flag("--cheevos")) cli.set("cheevos.enabled", "true");
+    else if (flag("--no-cheevos")) cli.set("cheevos.enabled", "false");
+    else if (arg("--cheevos-token")) { // implies enabled; a later --no-cheevos still wins
+      cli.set("cheevos.token_file", argv[++i]);
+      cli.set("cheevos.enabled", "true");
+    } else if (arg("--cheevos-user")) cli.set("cheevos.username", argv[++i]);
+    else if (arg("--cheevos-helper")) cli.set("cheevos.helper", argv[++i]);
+    else if (arg("--cheevos-badges")) cli.set("cheevos.badges", argv[++i]);
+    else if (arg("--cheevos-list")) cli.set("cheevos.list", argv[++i]);
     else if (flag("--version")) {
       std::printf("RG DS Core %s (%s)\n", kDsperateVersion, kDsperateCommit);
       return 0;
@@ -1212,7 +1237,10 @@ static int run(int argc, char** argv) {
                           "emu.autoload",
                           "cheevos.enabled",
                           "cheevos.token_file",
-                          "cheevos.username"})
+                          "cheevos.username",
+                          "cheevos.helper",
+                          "cheevos.badges",
+                          "cheevos.list"})
       if (cli.has(k)) cfg.set(k, cli.str(k));
   };
   apply_cli();
@@ -1372,9 +1400,39 @@ static int run(int argc, char** argv) {
     decltype(nds)& n;
     ~TransportOff() { n.io.wifi.set_transport(nullptr); }
   } transport_off{nds};
+  // Nintendo WFC through the emulated access point: the AP's Ethernet frames go to a user-mode TCP/IP
+  // stack (net/slirp_driver.h), so a game's connections are ordinary sockets of this process -- no
+  // privileges, any host link. Its DNS lookups go to a fan-run WFC service (net.dns), which answers
+  // Nintendo's server names with its own. A stack that cannot start leaves the game playable offline.
+  std::unique_ptr<ds::net::SlirpDriver> slirp;
+  if (internet) {
+    std::string where = dns_arg ? dns_arg : cfg.str("net.dns", "wiimmfi");
+    auto dns = ds::net::SlirpDriver::Dns::Custom;
+    ds::u32 dns_addr = 0;
+    if (!ds::net::SlirpDriver::parse_dns(where, dns, dns_addr)) {
+      std::fprintf(stderr, "net.dns: \"%s\" is not wiimmfi, wiilink, host or an address; using wiimmfi\n",
+                   where.c_str());
+      where = "wiimmfi";
+      ds::net::SlirpDriver::parse_dns(where, dns, dns_addr);
+    }
+    slirp = std::make_unique<ds::net::SlirpDriver>();
+    if (!slirp->start(dns, dns_addr)) {
+      std::fprintf(stderr, "internet: %s; playing offline\n", slirp->error().c_str());
+      slirp.reset();
+    } else {
+      std::fprintf(stderr, "internet: up, servers from %s\n", where.c_str());
+      nds.io.set_net_driver(slirp.get());
+    }
+  }
+  // Unhooked before slirp goes (declared after it, so destroyed first).
+  struct NetDriverOff {
+    decltype(nds)& n;
+    ~NetDriverOff() { n.io.set_net_driver(nullptr); }
+  } net_driver_off{nds};
 #else
   if (lan_host || lan_join || netplay || lan_guest)
     std::fprintf(stderr, "lan: local wireless is not built into this engine; playing alone\n");
+  if (internet) std::fprintf(stderr, "internet: not built into this engine; playing offline\n");
 #endif
   if (!nds.bios_native)
     std::fprintf(stderr, "bios: %s, using the built-in FreeBIOS (direct boot only; timing is not Nintendo's)\n",
@@ -1472,6 +1530,15 @@ static int run(int argc, char** argv) {
         std::fprintf(stderr, "dsi: %s\n", err.c_str());
         return 2;
       }
+#if DSPERATE_CHEEVOS
+      // Run from the NAND, so no cart to hash later. Only for autoload: with --dsi-menu the player picks.
+      if (cfg.flag("cheevos.enabled", false) && !dsi_menu) {
+        const auto src = ds::cart::RomSource::from_memory(srl);
+        std::string herr;
+        if (!src || !ds::cheevos::rom_hash(*src, dsi_title, dsi_title_cheevos_hash, herr, true))
+          std::fprintf(stderr, "cheevos: cannot identify %s: %s\n", dsi_title, herr.c_str());
+      }
+#endif
       const u32 lo = static_cast<u32>(srl[0x230] | (srl[0x231] << 8) | (srl[0x232] << 16) | (srl[0x233] << 24));
       if (ds::io::nand_has_title(nds.dsi_nand, nds.bus.bios7i.get(), lo)) {
         std::fprintf(stderr, "dsi: %.4s: already installed on the NAND\n", reinterpret_cast<const char*>(&srl[0x0C]));
@@ -1513,9 +1580,15 @@ static int run(int argc, char** argv) {
     std::fprintf(stderr, "console: DSi (EXPERIMENTAL)\n");
   }
   nds.reset();
-  // Sidecar beside the dump, not written into it. None in DSi mode.
-  std::string fw_override = dsi_mode ? std::string() : cfg.str("paths.firmware_override", fw + ".ovr");
-  if (!nds.firmware_synthetic && !fw_override.empty()) {
+  // Sidecar beside the dump, not written into it. A generated firmware keeps only its Wi-Fi connection
+  // slots there (the WFC user ID a friend code comes from), beside this player's config. None in DSi mode.
+  std::string fw_override =
+      dsi_mode ? std::string()
+               : cfg.str("paths.firmware_override",
+                         nds.firmware_synthetic
+                             ? (std::filesystem::path(global_ini).parent_path() / "firmware-wifi.ovr").string()
+                             : fw + ".ovr");
+  if (!fw_override.empty()) {
     std::string err;
     if (!nds.load_firmware_override(fw_override, err)) {
       if (err != "cannot open") std::fprintf(stderr, "firmware settings: %s: %s\n", fw_override.c_str(), err.c_str());
@@ -1525,6 +1598,9 @@ static int run(int argc, char** argv) {
       std::fprintf(stderr, "firmware settings: %s -- warning: %s\n", fw_override.c_str(), err.c_str());
     }
   }
+  // What the sidecar on disk already holds; the game changing the firmware moves nds.fw_writes on.
+  ds::u32 fw_writes_saved = nds.fw_writes, fw_writes_seen = nds.fw_writes;
+  ds::u64 fw_quiet_since = 0;
   VideoSetup vs;
   if (!parse_video(cfg, vs)) return 2;
   const u32& grid = vs.grid;
@@ -2261,7 +2337,19 @@ sdl_ready:
            nds.dsi_sd.folder().c_str());
     for (const std::string& n : r.notes) std::fprintf(stderr, "dsi sd: %s\n", n.c_str());
   };
+  // Not after a DSiWare session: nothing a DSi title wrote belongs beside the DS firmware.
+  auto flush_firmware = [&] {
+    if (fw_override.empty() || nds.dsi || nds.fw_writes == fw_writes_saved || !nds.firmware_override_dirty()) return;
+    std::string err;
+    if (!nds.save_firmware_override(fw_override, err))
+      std::fprintf(stderr, "firmware settings: cannot save %s: %s\n", fw_override.c_str(), err.c_str());
+    else {
+      fw_writes_saved = nds.fw_writes;
+      std::fprintf(stderr, "firmware settings: saved to %s\n", fw_override.c_str());
+    }
+  };
   auto flush_save = [&] {
+    flush_firmware();
     if (!save_readonly && nds.cart && nds.cart->sram_dirty()) write_save(nds, session.sav);
     flush_dsi();
     flush_sd();
@@ -2537,6 +2625,42 @@ sdl_ready:
     }
     return true;
   };
+#if DSPERATE_CHEEVOS
+  // RetroAchievements, Casual mode: off unless asked for (cheevos.enabled);
+  // each failure is logged once and then ignored. Not for the firmware's menu.
+  ds::sdl::CheevosSession cheevos;
+  struct CheevosState final : CheevosStateHook {
+    ds::cheevos::Client* c = nullptr;
+    bool save(u32& game_id, std::vector<u8>& blob) override {
+      if (!c) return false;
+      game_id = c->game_id();
+      return c->serialize_progress(blob);
+    }
+  } cheevos_state;
+  // A state's achievement progress goes in once a set exists for it, before
+  // rc_client_do_frame, so the runtime never evaluates stale progress. The
+  // game id must match, or applying it is how a false unlock happens.
+  auto cheevos_apply_state = [&] {
+    if (!g_cheevos_pending.waiting) return;
+    ds::cheevos::Client& c = cheevos.client();
+    if (c.state() == ds::cheevos::State::LoadingGame || c.state() == ds::cheevos::State::SigningIn) return;
+    if (c.state() != ds::cheevos::State::Playing) {
+      g_cheevos_pending = {};
+      return;
+    }
+    const bool ok = !g_cheevos_pending.blob.empty() && g_cheevos_pending.game_id != 0 &&
+                    g_cheevos_pending.game_id == c.game_id() &&
+                    c.deserialize_progress(g_cheevos_pending.blob.data(), g_cheevos_pending.blob.size());
+    if (!ok) c.reset();
+    VLOG("cheevos: state progress %s\n", ok ? "restored" : "reset (none carried, or it did not apply)");
+    g_cheevos_pending = {};
+  };
+  if ((!boot_firmware || !dsi_title_cheevos_hash.empty()) && cheevos.begin(cfg)) {
+    cheevos_state.c = &cheevos.client();
+    g_cheevos_state = &cheevos_state;
+    cheevos.identify(nds, rom_path, dsi_title_cheevos_hash);
+  }
+#endif
   while (!input.quit() && !g_signalled && (frame_limit == 0 || frames < static_cast<u64>(frame_limit))) {
     if (frames == 120) ds::place_foreign_threads();
     SDL_Event e;
@@ -2696,6 +2820,9 @@ sdl_ready:
         held_present_at = now;
         if (present_held()) ++held_presents;
       }
+#if DSPERATE_CHEEVOS
+      cheevos.idle(nds); // sign-in, the set and unlocks already sent keep moving
+#endif
       SDL_Delay(4);
       continue;
     }
@@ -2878,9 +3005,17 @@ sdl_ready:
     const Uint64 t0 = SDL_GetPerformanceCounter();
 #if DSPERATE_NET
     if (lan) lan->process(); // the LAN's turn, once a frame, on this thread
+    if (slirp) slirp->process();
 #endif
     nds.run_frame();
     rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);
+#if DSPERATE_CHEEVOS
+    // Exactly once per emulated frame: rcheevos keeps per-frame deltas.
+    if (cheevos.on()) {
+      cheevos_apply_state();
+      cheevos.frame(nds);
+    }
+#endif
     if (nds.bus.rumble_pak) rgds::rumble_frame(std::exchange(nds.bus.rumble_moves, 0u));
     if (nds.dsi_dsp_started && !dsp_warned) {
       dsp_warned = true;
@@ -3291,7 +3426,7 @@ sdl_ready:
                          flips_new[w][i].tag & 0xff, static_cast<ull>(flips_new[w][i].wait_ns));
         const u64 now = nds.gpu3d.swap_count();
         // DS_CADENCE_HASH=1: each screen's native picture as this frame left it, hashed at the end of the line, to
-        // find the first frame that answers a press (os/banana-probe/press_to_change.py).
+        // find the first frame that answers a press (os/device-bench/press_to_change.py).
         char hashes[40] = "";
         if (static const bool hash = std::getenv("DS_CADENCE_HASH") != nullptr; hash) {
           u64 h[2];
@@ -3327,6 +3462,11 @@ sdl_ready:
         sram_quiet_since = frames;
       } else if (frames - sram_quiet_since >= 60) flush_save();
     }
+    // A WFC game writes its user ID into the firmware on the first sign-in; keep it once the writes settle.
+    if (nds.fw_writes != fw_writes_seen) {
+      fw_writes_seen = nds.fw_writes;
+      fw_quiet_since = frames;
+    } else if (nds.fw_writes != fw_writes_saved && frames - fw_quiet_since >= 60) flush_firmware();
     if (dsi_mode && nds.dsi_nand.writes != nand_exported) {
       if (nds.dsi_nand.writes != nand_writes_seen) {
         nand_writes_seen = nds.dsi_nand.writes;
@@ -3363,16 +3503,14 @@ sdl_ready:
     }
   }
 
-  autosave_now();
+  autosave_now(); // still carries the achievement progress
   flush_save();
+#if DSPERATE_CHEEVOS
+  g_cheevos_state = nullptr;
+  cheevos.end(); // the helper gets EOF and leaves; an unlock in flight has a moment to finish
+#endif
   discard_session_cache();
-  // Not after a DSiWare session: nothing a DSi title wrote belongs beside the DS firmware.
-  if (!fw_override.empty() && nds.firmware_override_dirty() && !nds.dsi) {
-    std::string err;
-    if (!nds.save_firmware_override(fw_override, err))
-      std::fprintf(stderr, "firmware settings: cannot save %s: %s\n", fw_override.c_str(), err.c_str());
-    else std::fprintf(stderr, "firmware settings: saved to %s\n", fw_override.c_str());
-  }
+  flush_firmware();
   if (fs_limit > 0)
     VLOG("frameskip (%s, limit %d): %llu of %llu frames not drawn\n", fs_adaptive ? "adaptive" : "fixed", fs_limit,
          static_cast<unsigned long long>(fs_skipped), static_cast<unsigned long long>(frames));

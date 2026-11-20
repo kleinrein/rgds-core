@@ -91,6 +91,18 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         report = self.run_ui(keys, 'rgds-experimental')
         self.assertEqual(report['picker_focus'], 1)
 
+    def test_ds_online_play_picker_writes_the_service(self):
+        path = self.game.parent / 'ds-input.ini'
+        write_fields(path, dict(nickname='Old'))
+        keys = self.row(7, 'A', *(['Down'] * 6), 'A')
+        report = self.run_ui(keys, 'rgds-experimental')
+        self.assertEqual(report['picker_title'], 'Online play')
+        self.assertEqual(report['picker_focus'], 0)
+        self.run_ui(keys + ['Right', 'Right', 'A'], 'rgds-experimental')
+        self.assertEqual(read_fields(path), dict(nickname='Old', online='2'))
+        report = self.run_ui(keys, 'rgds-experimental')
+        self.assertEqual(report['picker_focus'], 2)
+
     def test_dscore_is_the_default_and_capabilities_match_fork(self):
         report = self.run_ui([], library=True)
         self.assertEqual(report['default_core'], 4)  # the stored DSperate (1) is retired

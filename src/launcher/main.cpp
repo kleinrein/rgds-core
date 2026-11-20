@@ -1,6 +1,8 @@
 #include "launcher/model.hpp"
 #include "../../play/src/ui/frame_styles.hpp" // the frames per system (shared with the player)
 #include "../../play/src/ui/gb_palettes.hpp"  // the Game Boy palettes and corrections (shared with the player)
+#include "launcher/photo_play_sources.hpp"        // the player's canvas and console frames, for photo mode
+#include "launcher/photo_mode.hpp"
 #include "platform/sdl_dynamic.hpp"
 #include "platform/canvas_fill.hpp"
 #include "platform/event_wait.hpp"
@@ -37,7 +39,9 @@
 #include "launcher/profile_store.hpp"
 #include "launcher/game_info.hpp"
 #include "launcher/dual_screen.hpp"
+#include "launcher/manual_mark.hpp"
 #include "launcher/pictochat_app.hpp"
+#include "launcher/voice_toy_ui.hpp"
 #include "launcher/music_ui.hpp"
 #include "platform/touch.hpp"
 #include "platform/uinput_pointer.hpp"
@@ -363,7 +367,8 @@ class App {
         return 0;
     }
     int view_page() const {
-        return int(settings.page) + (chat_open ? 1000 : 0) + (music_open ? 2000 + music_view_depth() : 0);
+        return int(settings.page) + (chat_open ? 1000 : 0) + (music_open ? 2000 + music_view_depth() : 0) +
+               (vt.open ? 3000 : 0);
     }
     struct SoundState {
         Page page;
@@ -545,7 +550,9 @@ class App {
     // Mute (1), Test microphone (2), Sounds & music (3) and Vibration (4).
     // The launcher adds Music player (5) and, while that is on, Play with the lid closed (6).
     static constexpr int sound_track_x = 60, sound_track_width = 504;
-    int sound_row_count() const { return o.game_menu || probe ? 5 : preferences.music_player ? 7 : 6; }
+    int sound_row_count() const { return o.game_menu || probe ? 5 : preferences.music_player ? 8 : 7; }
+    // Settings > Sound's last row: whether Home has the Sound toy.
+    int sound_toy_row() const { return preferences.music_player ? 7 : 6; }
     int list_count() const {
         switch (settings.page) {
         case Page::Settings: return int(section_order.size());
@@ -560,6 +567,8 @@ class App {
         case Page::Appearance: return 8;
         case Page::DisplayOptions: return 3;
         case Page::Scraper: return 7;
+        case Page::Achievements: return 2;
+        case Page::Album: return int(album.size());
         case Page::DeviceInfo: return 4;
         case Page::System: return o.rgds_os ? 8 : 9; // last rows: Touch to continue, Run setup again
         case Page::GameOptions:
@@ -572,7 +581,7 @@ class App {
         case Page::Network: return 9;
         case Page::SaveGallery: return gallery_has_auto() ? 10 : 9; // row 10 is the auto-save
         case Page::PortFiles: return 3;
-        case Page::DSControls: return 6;
+        case Page::DSControls: return 7;
         case Page::EmulatorOptions: return 9;
         case Page::ShaderPicker: return int(shader_choices.size());
         case Page::Controls: return 27;
@@ -598,13 +607,14 @@ class App {
     // Since the 2026-11-11 regroup (docs/SETTINGS_PLAN.md) the rest run Browser layout, then the per-system rows
     // (System defaults, Default shader, Artwork sources), then saves (Auto-load, Auto-save, Back up all saves).
     int library_row(int shown) const {
-        static constexpr int rest[] = {5, 11, 4, 1, 2, 3, 8};
+        // RetroAchievements (13) and then Album (14) come last, in a group of their own, so no row above them moved.
+        static constexpr int rest[] = {5, 11, 4, 1, 2, 3, 8, 13, 14};
         if (shown == 0) return 10;
         if (shown == 1) return 9;
-        if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 6)];
-        return rest[std::clamp(shown - 2, 0, 6)];
+        if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 8)];
+        return rest[std::clamp(shown - 2, 0, 8)];
     }
-    int library_row_count() const { return preferences.show_systems ? 10 : 9; }
+    int library_row_count() const { return preferences.show_systems ? 12 : 11; }
     // With Games opens all games: the one system the filter sheet narrowed the list to, or empty for every game.
     std::string browse_system;
     // The first collection's name: the system being browsed, or every game.
@@ -639,13 +649,14 @@ class App {
         }
         case Page::LibraryOptions: {
             const int id = library_row(row);
-            return row == 0 ? "Games" : id == 11 ? "Per system" : id == 2 ? "Saves" : nullptr;
+            return row == 0 ? "Games" : id == 11 ? "Per system" : id == 2 ? "Saves" : id == 13 ? "" : nullptr;
         }
         case Page::Power: {
             const int id = power_rows[size_t(std::clamp(row, 0, int(power_rows.size()) - 1))];
             return row == 0 ? "Battery" : id == 2 ? "Sleep" : id == 4 ? "" : nullptr;
         }
         case Page::System: return row == 0 ? "Language & region" : row == 5 ? "Device" : nullptr;
+        case Page::Album: return album_group(row);
         default: return nullptr;
         }
     }
@@ -704,8 +715,22 @@ class App {
     // Home tiles: Settings, Games, Favourites, Recents, then the console's PictoChat and, when Settings > Sound >
     // Music player is on, Music. The two optional tiles take the places after Recents in that order, so a profile
     // without PictoChat has Music in its place (music_tile). The DSi column adds the last played game.
-    static constexpr size_t home_count = 7, pictochat_tile = 4, last_played_tile = 6;
-    size_t home_shown() const { return 4 + (pictochat_hidden() ? 0 : 1) + (music_available() ? 1 : 0); }
+    // The Sound toy (voice_toy_screen.hpp) comes after Music, so the last played game moved from 6 to 7 (the state
+    // file keeps the old numbers: see save_state).
+    static constexpr size_t home_count = 8, pictochat_tile = 4, last_played_tile = 7;
+    size_t home_shown() const {
+        return 4 + (pictochat_hidden() ? 0 : 1) + (music_available() ? 1 : 0) + (sound_toy_available() ? 1 : 0);
+    }
+    size_t toy_tile() const { return 4 + (pictochat_hidden() ? 0 : 1) + (music_available() ? 1 : 0); }
+    bool toy_at(size_t tile) const { return sound_toy_available() && tile == toy_tile(); }
+    // The tiles after Recents, in order: PictoChat, Music, Sound toy (those this profile has).
+    std::vector<size_t> home_apps() const {
+        std::vector<size_t> apps;
+        if (!pictochat_hidden()) apps.push_back(pictochat_tile);
+        if (music_available()) apps.push_back(music_tile());
+        if (sound_toy_available()) apps.push_back(toy_tile());
+        return apps;
+    }
     size_t home_tiles() const { return preferences.home_layout == 1 ? home_count : home_shown(); }
     // A Kid profile without PictoChat has no tile for it; the carousel ends at Recents, the column widens Recents.
     bool pictochat_hidden() const;
@@ -968,6 +993,13 @@ class App {
     bool service_loaded = false;
     std::map<std::string, std::string> service;
     std::string screenscraper_user; // signed in to ScreenScraper as this (scraper/account.ini), else empty
+    // RetroAchievements (Settings > Library > RetroAchievements): the account name from achievements/account.ini,
+    // the last sign-in's outcome (achievements/status.ini), and the name typed in edit field 12 while the password
+    // (field 13) is asked for. Kept apart from ScreenScraper's username/password so the two never mix.
+    std::string achievements_user, achievements_name;
+    std::map<std::string, std::string> achievements_status;
+    // The keyboard fields that hide what is typed: ScreenScraper's (1), Wi-Fi's (2) and RetroAchievements' (13).
+    bool secret_field() const { return edit_field == 1 || edit_field == 2 || edit_field == 13; }
     bool pointer_down = false;
     enum class EdgeGesture { None, Bottom, Left, Right }; // Back answers from either side edge, as on phones
     EdgeGesture edge_gesture = EdgeGesture::None;
@@ -1229,6 +1261,8 @@ class App {
     void ds_controls_action();
     std::vector<std::string> wireless_names() const;
     int ds_wireless();
+    std::vector<std::string> online_names() const;
+    int ds_online();
     void save_ds_setting(const std::string& key, int value) { save_ds_setting(key, std::to_string(value)); }
     void save_ds_setting(const std::string& key, const std::string& value);
     bool scan_stay = false; // a scan from Scan for games keeps the Library page open
@@ -1407,6 +1441,7 @@ class App {
             settings.page = Page::GameSwitcher;
             settings.focus = 0;
         } else if (settings.focus == 11) open_cheats();
+        else if (settings.focus == 12) menu_request("screenshot");
         else if (menu_status["state"] == "error") {
             settings.page = Page::LeaveGame;
             settings.focus = 0;
@@ -1645,6 +1680,7 @@ class App {
     void choose_shader();
     // The Game info page (game_info_screen.hpp): facts, description and the pictures kept for the selected game.
     GameFacts info_facts;
+    GameAchievements info_achievements; // <player>/library/<game>/achievements.tsv, written by rgds-play
     std::vector<GalleryPicture> info_pictures;
     int info_picture = 0, info_scroll = 0, info_scroll_max = 0;
     Page info_return = Page::GameArtwork;
@@ -1655,6 +1691,8 @@ class App {
     void game_info_scroll_by(int delta);
     void game_info_top(SDL_Renderer* r, int y);
     void game_info_bottom(SDL_Renderer* r, int y);
+    void game_info_achievements(SDL_Renderer* r, int at, int view_top, int view_h, int inner_x, int inner_w);
+    std::string achievement_date(long long when) const;
     // The Playtime page (playtime_screen.hpp).
     void playtime_top(SDL_Renderer* r, int y);
     void playtime_bottom(SDL_Renderer* r, int y);
@@ -1670,6 +1708,89 @@ class App {
     bool save_artwork_match(const std::string& title);
     void review_artwork();
     void game_artwork_action();
+    void open_achievements() {
+        settings.section = 2;
+        settings.library_rows = library_row_count();
+        settings.remember(Page::LibraryOptions, library_row_count() - 2);
+        settings.page = Page::Achievements;
+        settings.focus = 0;
+        service_notice.clear();
+        // Read now: the service poll may not have run yet (a deep link right after boot).
+        achievements_user = fields(o.data / "achievements/account.ini")["user"];
+        dirty = true;
+    }
+    void achievements_action(int code);
+    // Screenshots and the Album (album_screen.hpp).
+    struct AlbumShot {
+        std::string path, key, title, system, date;
+    };
+    std::vector<AlbumShot> album;
+    pid_t album_child = -1;
+    std::string album_task;
+    bool album_viewing = false, shot_requested = false;
+    Uint32 shutter_at = 0, launcher_menu_at = 0;
+    bool launcher_menu_held = false, launcher_menu_chorded = false, launcher_r_held = false;
+    fs::path album_root() const;
+    void load_album();
+    void open_album();
+    bool album_helper(const std::vector<std::string>& command, const std::string& tag);
+    void album_poll();
+    void take_launcher_screenshot();
+    void service_launcher_screenshot();
+    bool shutter_active() const;
+    void shutter_overlay(SDL_Renderer* r);
+    bool album_chord(const SDL_Event& e, bool menu_button);
+    std::string album_time(const AlbumShot& shot) const;
+    std::string album_date(const AlbumShot& shot) const;
+    fs::path album_thumb(const AlbumShot& shot) const;
+    const char* album_group(int row) const;
+    void album_action(int code);
+    void album_view();
+    void album_delete();
+    void album_more();
+    void album_screens();
+    void album_top(SDL_Renderer* r, int y);
+    void album_row(SDL_Renderer* r, int y, int i);
+    void album_warm();
+    // Photo mode (photo_screen.hpp).
+    photo::Editor photo_editor;
+    std::unique_ptr<play::Font> photo_font;
+    std::map<SDL_Renderer*, SDL_Texture*> photo_textures;
+    std::map<SDL_Renderer*, uint32_t> photo_uploaded;
+    uint32_t photo_version = 0;
+    AlbumShot photo_shot;
+    std::string photo_saved_key;
+    bool photo_lower = false, album_view_then_photo = false, photo_pen_down = false, photo_cursor_shown = false,
+         photo_touch_drawing = false;
+    int photo_cursor_x = 320, photo_cursor_y = 240;
+    void open_photo(bool lower = false);
+    void photo_begin();
+    void photo_close();
+    void photo_leave();
+    void photo_save();
+    bool photo_point(int x, int y, double& px, double& py) const;
+    int photo_option_count() const;
+    void photo_strip_press(int x);
+    void photo_step(int delta);
+    void photo_action(int code);
+    void photo_pointer(int x, int y, int phase);
+    SDL_Texture* photo_texture(SDL_Renderer* r);
+    void photo_top(SDL_Renderer* r, int y);
+    void photo_bottom(SDL_Renderer* r, int y);
+    // Album > Send to phone (runtime/album_share.py): a read-only page with every picture, while the sheet is open.
+    pid_t album_share_child = -1;
+    bool album_sharing = false;
+    std::map<std::string, std::string> album_share_status;
+    std::vector<std::string> album_share_qr;
+    std::string album_share_token;
+    Uint32 album_share_poll_at = 0;
+    void album_share_start();
+    bool album_view_then_chat = false;
+    void album_to_pictochat();
+    void album_share_stop();
+    void album_share_poll(Uint32 now);
+    void album_share_top(SDL_Renderer* r, int y);
+    void draw_qr(SDL_Renderer* r, const std::vector<std::string>& rows, int bx, int by, int box);
     void open_scraper() {
         settings.section = 2;
         settings.page = Page::Scraper;
@@ -1790,7 +1911,7 @@ class App {
     ProfileChoice profile_choice = ProfileChoice::Kind;
     std::string profile_editing;
     Page picker_return = Page::Library;
-    bool picker_at_boot = false, look_follows_player = false, new_profile_restricted = false, profile_removing = false,
+    bool picker_at_boot = false, boot_lock = false, look_follows_player = false, new_profile_restricted = false, profile_removing = false,
          new_profile_flow = false, visibility_loading = false, visibility_changed = false, profile_erasing = false,
          profile_remove_backup = false; // the Back up first switch on the removal question
     VisibilityRules active_rules, games_rules;
@@ -1879,7 +2000,9 @@ class App {
     void read_look();
     void apply_profile();
     bool profile_picker_wanted() const;
+    bool ask_overridden_by_pin() const;
     void open_profile_picker(bool boot);
+    void open_boot_screen();
     SDL_Rect profile_tile_box(int index) const;
     void draw_profile_tile(SDL_Renderer* r, const Profile& profile, int x, int y, int size);
     void kid_badge(SDL_Renderer* r, int centre, int bottom, int size);
@@ -2330,6 +2453,11 @@ class App {
     bool stage_dual = false;
     bool game_dual(size_t index);
     void dual_badge(SDL_Renderer* r, int cx, int cy, int size);
+    // An open book for games with a scanned manual RG DS Play shows on the
+    // second screen (launcher/manual_mark.hpp), on the cover's other corner.
+    bool stage_manual = false;
+    bool game_manual(size_t index);
+    void manual_badge(SDL_Renderer* r, int cx, int cy, int size);
     // Without a cover: the cartridge's own DS icon, large and crisp on the
     // same card as covers, with its title (the only place it is not repeated).
     void icon_stage(SDL_Renderer* r, int y, const std::string& developer);
@@ -2562,18 +2690,22 @@ class App {
     };
     std::vector<HomeTile> home_column_tiles() const {
         // Every edge sits on a rule of the lower screen's 20 px grid (rules at 19-20, 39-40, ...).
-        // Without PictoChat, Music takes its place beside Recents; with both, Music shares the last row with
-        // Settings.
-        const bool chat = !pictochat_hidden(), songs = music_available();
+        // The apps (PictoChat, Music, Sound toy: those shown) fill in after Recents: the first beside Recents, the
+        // others beside Settings in the last row, which holds three narrower tiles when all three are there.
+        const auto apps = home_apps();
         std::vector<HomeTile> tiles = {
             {{20, 20, 600, 80}, last_played_tile}, {{20, 120, 280, 80}, 1}, {{340, 120, 280, 80}, 2}};
-        if (chat || songs) {
+        if (!apps.empty()) {
             tiles.push_back({{20, 220, 280, 80}, 3});
-            tiles.push_back({{340, 220, 280, 80}, chat ? pictochat_tile : music_tile()});
+            tiles.push_back({{340, 220, 280, 80}, apps[0]});
         } else tiles.push_back({{20, 220, 600, 80}, 3});
-        if (chat && songs) {
+        if (apps.size() == 3) {
+            tiles.push_back({{20, 320, 160, 60}, 0});
+            tiles.push_back({{220, 320, 180, 60}, apps[1]});
+            tiles.push_back({{440, 320, 180, 60}, apps[2]});
+        } else if (apps.size() == 2) {
             tiles.push_back({{20, 320, 280, 60}, 0});
-            tiles.push_back({{340, 320, 280, 60}, music_tile()});
+            tiles.push_back({{340, 320, 280, 60}, apps[1]});
         } else tiles.push_back({{20, 320, 600, 60}, 0});
         return tiles;
     }
@@ -2805,6 +2937,7 @@ class App {
         drop(arc_textures);
         drop(music_glyph_textures);
         drop(music_display_textures);
+        drop(vt.faces);
         drop(chat_cards);
         drop(chat_pads);
         drop(chat_sheets);
@@ -2939,6 +3072,40 @@ class App {
     MusicClient music;
     MusicUi mu;
     bool music_open = false, music_ready = false;
+    // ---- Sound toy (voice_toy_screen.hpp): record a word, hear it as a chipmunk, robot or monster, draw to bend it.
+    VoiceToyUi vt;
+    bool sound_toy_available() const; // the setting is on, and this is the launcher itself (not a game's menu)
+    fs::path voice_folder() const;
+    void voice_load();
+    void voice_save_style(int slot);
+    bool voice_write_startup();
+    void voice_toast(const std::string& text);
+    void open_voice_toy();
+    void close_voice_toy();
+    void voice_pause(); // a game starts, the handheld goes to sleep
+    void voice_play();
+    void voice_set_voice(int voice);
+    void voice_set_slot(int slot);
+    void voice_clear_bend();
+    void voice_toggle_startup();
+    void voice_record_start();
+    void voice_record_stop(bool keep);
+    void voice_poll_record(Uint32 now);
+    bool voice_tick(Uint32 now);
+    void voice_face(SDL_Renderer* r, int voice, int cx, int cy, int size, float mouth);
+    void voice_outline(SDL_Renderer* r, const std::vector<float>& columns, int x, int cy, int w, int half, Color c,
+                       double played);
+    void voice_top(SDL_Renderer* r, int y);
+    void voice_home_top(SDL_Renderer* r, int y);
+    void voice_pad(SDL_Renderer* r, int y);
+    void voice_bottom(SDL_Renderer* r, int y);
+    void voice_action(int code);
+    int voice_button_at(int x, int y);
+    void voice_button(int button);
+    void voice_paint(int x, int y);
+    void voice_press(int x, int y);
+    void voice_drag(int x, int y);
+    void voice_release(int x, int y);
     std::map<std::tuple<SDL_Renderer*, int, int>, SDL_Texture*> music_glyph_textures;
     std::map<SDL_Renderer*, SDL_Texture*> music_display_textures;
     bool music_available() const; // the setting is on, and this is the launcher itself (not a game's menu)
@@ -3259,6 +3426,8 @@ public:
 #include "launcher/network_menu.hpp"
 #include "launcher/homebrew_screen.hpp"
 #include "launcher/gallery_slots.hpp"
+#include "launcher/album_screen.hpp"
+#include "launcher/photo_screen.hpp"
 #include "launcher/microphone.hpp"
 #include "launcher/switcher_search.hpp"
 #include "launcher/game_settings.hpp"
@@ -3276,6 +3445,7 @@ public:
 #include "launcher/update_banner.hpp"
 #include "launcher/pictochat_screen.hpp"
 #include "launcher/music_screen.hpp"
+#include "launcher/voice_toy_screen.hpp"
 #include "launcher/panels.hpp"
 #include "launcher/home_screen.hpp"
 #include "launcher/library_screen.hpp"
@@ -3318,13 +3488,24 @@ static int self_test() {
         ok = ok && system_for_path(r / "psx/Game.cue") == "psx" && system_for_path(r / "Game.cue") == "psx" &&
              system_for_path(r / "psp/Game.iso") == "psp" && system_for_path(r / "md/Game.bin") == "md" &&
              system_for_path(r / "segacd/Game.cue") == "md" && system_for_path(r / "pcecd/Game.chd") == "pce" &&
-             system_for_path(r / "msx/Game.rom") == "msx" && system_for_path(r / "intellivision/Game.rom") == "intellivision" &&
+             system_for_path(r / "msx/Game.rom") == "msx" &&
+             system_for_path(r / "cpc/Game.dsk") == "cpc" && system_for_path(r / "amstrad/Game.sna") == "cpc" &&
+             system_for_path(r / "Game.cdt") == "cpc" && system_for_path(r / "intellivision/Game.rom") == "intellivision" &&
              system_for_path(r / "pce/Game.zip") == "pce" && system_for_path(r / "zx/Game.dsk") == "zx" &&
              system_for_path(r / "nds/Game.zip") == "nds" && system_for_path(r / "pico8/Cart.p8.png") == "pico8" &&
              system_for_path(r / "nes/cover.png") == "nds" && system_for_path(r / "dc/Game.chd") == "dc" &&
-             system_for_path(r / "Dreamcast/Game.cue") == "dc" && system_for_path(r / "Game.gdi") == "dc";
+             system_for_path(r / "Dreamcast/Game.cue") == "dc" && system_for_path(r / "Game.gdi") == "dc" &&
+             system_for_path(r / "dos/Doom.zip") == "dos" && system_for_path(r / "MS-DOS/Game.cue") == "dos" &&
+             system_for_path(r / "Game.dosz") == "dos" && system_for_path(r / "Game.zip") == "nds" &&
+             system_for_path(r / "Game.vb") == "vb" && system_for_path(r / "Virtual Boy/Game.bin") == "vb" &&
+             system_for_path(r / "Game.a78") == "atari7800" && system_for_path(r / "atari7800/Game.bin") == "atari7800" &&
+             system_for_path(r / "Atari 5200/Game.bin") == "atari5200" && system_for_path(r / "Game.a52") == "atari5200" &&
+             system_for_path(r / "Game.lnx") == "lynx" && system_for_path(r / "lynx/Game.zip") == "lynx" &&
+             system_for_path(r / "atari2600/Game.bin") == "atari";
         ok = ok && play_subsystem(r / "md/Game.cue", "md") == "segacd" && play_subsystem(r / "md/Game.bin", "md") == "md" &&
-             play_subsystem(r / "pico/Game.md", "md") == "pico" && play_subsystem(r / "segacd/Game.zip", "md") == "segacd" &&
+             system_for_path(r / "pico/Game.md") == "pico" && system_for_path(r / "Sega Pico/Game.bin") == "pico" &&
+             system_for_path(r / "pico/Game.zip") == "pico" && system_for_path(r / "md/Game.md") == "md" &&
+             play_subsystem(r / "pico/Game.md", "pico") == "pico" && play_subsystem(r / "segacd/Game.zip", "md") == "segacd" &&
              play_subsystem(r / "pce/Game.zip", "pce") == "pce" && play_subsystem(r / "pce/Game.ccd", "pce") == "pcecd" &&
              play_subsystem(r / "sms/Game.sg", "sms") == "sg";
     }

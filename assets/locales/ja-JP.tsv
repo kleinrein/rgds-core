@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	DSの色合いでくっきり拡大�
 Sharp scaling, DS colour and Natural Vision together.	くっきり拡大、DSの色合い、Natural Visionの組み合わせ。
 Shield	盾
 Shift	シフト
-Shift keys stay down until the next key	シフトキーは次のキーまで押されたままです
 Shortcut action	ショートカットの動作
 Shots	残り弾数
 Show games	ゲームを表示
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	カード上�
 Room for more games.	さらにゲームを入れる余裕。
 Console switches	本体スイッチ
 VMU screen	VMUの画面
+3D: one eye each	3D：片目ずつ
+Mouse	マウス
+RetroAchievements	RetroAchievements
+Account	アカウント
+RetroAchievements account	RetroAchievementsアカウント
+Achievements	実績
+{0} achievements	{0} 実績
+{0} points	{0} ポイント
+1 point	1 ポイント
+Unlocked {0}	{0} に解除
+Play the game once to see its achievements.	一度遊ぶと、このゲームの実績が表示されます。
+RetroAchievements has no achievements for this game yet.	このゲームの実績はまだRetroAchievementsにありません。
+Earn achievements from retroachievements.org while you play.	遊びながらretroachievements.orgの実績を集めましょう。
+Unlock achievements in your games while you play. Each game's list is in Game info.	遊びながらゲームの実績を解除できます。各ゲームの一覧はゲーム情報にあります。
+A free account from retroachievements.org.	retroachievements.orgの無料アカウントです。
+Signing out…	ログアウト中…
+Wait for the current task to finish, then sign in.	今の作業が終わってからログインしてください。
+Wait for the current task to finish, then sign out.	今の作業が終わってからログアウトしてください。
+Signed in to RetroAchievements as {0}.	{0} としてRetroAchievementsにログインしました。
+Signed out of RetroAchievements.	RetroAchievementsからログアウトしました。
+Enter your RetroAchievements username and password.	RetroAchievementsのユーザー名とパスワードを入力してください。
+Could not reach RetroAchievements. Check the connection.	RetroAchievementsに接続できません。接続を確認してください。
+Wrong username or password.	ユーザー名またはパスワードが違います。
+RetroAchievements did not accept the sign-in.	RetroAchievementsがログインを受け付けませんでした。
+Achievement unlocked	実績を解除しました
+Game mastered	ゲームを完全制覇
+achievements	実績
+Sign in again in Settings	設定でもう一度ログインしてください
+Could not sign in	ログインできませんでした
+This game file is not recognised	このゲームファイルは認識されません
+Could not load this game's achievements	このゲームの実績を読み込めませんでした
+No achievements yet	実績はまだありません
+Every achievement unlocked	すべての実績を解除しました
+Offline: unlocks are sent when back online	オフライン：オンラインに戻ると解除が送信されます
+Back online: unlocks sent	オンラインに戻りました：解除を送信しました
+Play Nintendo WFC games online	ニンテンドーWFCのゲームをオンラインで遊ぶ
+Album	アルバム
+Menus	メニュー
+No screenshots yet	スクリーンショットはまだありません
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	ゲーム中に Menu + R を押すか、ゲームメニューの「スクリーンショット」を選びます。Menu + R はメニューでも使えます。
+This picture is the game's cover now.	この画像がゲームのカバーになりました。
+The cover could not be changed.	カバーを変更できませんでした。
+The screenshot could not be saved.	スクリーンショットを保存できませんでした。
+Delete this screenshot?	このスクリーンショットを削除しますか？
+Use as the game's cover	ゲームのカバーにする
+Save the game behind this menu to the Album	このメニューの後ろのゲーム画面をアルバムに保存
+Saving the screenshot…	スクリーンショットを保存しています…
+Screenshot saved to the Album.	スクリーンショットをアルバムに保存しました。
+Still saving the last screenshot.	前のスクリーンショットを保存中です。
+No picture to save. Resume the game and press Menu + R.	保存する画像がありません。ゲームに戻って Menu + R を押してください。
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	フォトモード
+Leave photo mode?	フォトモードを終了しますか？
+Keep editing	編集を続ける
+Leave without saving	保存せずに終了
+Saved to the Album.	アルバムに保存しました。
+The photo could not be saved.	写真を保存できませんでした。
+This picture could not be opened.	この画像を開けませんでした。
+Pen	ペン
+Stamps	スタンプ
+Frames	フレーム
+Lenses	レンズ
+Date	日付
+Sepia	セピア
+Black & white	白黒
+Mosaic	モザイク
+Mirror	ミラー
+Fisheye	魚眼
+Old photo	昔の写真
+Instant photo	インスタント写真
+Film strip	フィルム
+Postage stamp	切手
+Rounded card	角丸カード
+Stars	星
+Undo	元に戻す
+Sound toy	サウンドトイ
+Record your voice and change it	声を録音して変身させよう
+Chipmunk	リス
+Monster	モンスター
+Backwards	逆再生
+Echo	エコー
+Press Record and say hello!	録音を押して「こんにちは」と言ってね！
+Then pick a voice and draw on the lower screen to bend it.	次に声を選んで、下の画面に描いて音を曲げよう。
+Recording…	録音中…
+Press X again to stop.	もう一度Xで止めます。
+Sound {0}	サウンド {0}
+Startup sound	起動音
+Higher	高く
+Lower	低く
+Record	録音
+Stop	停止
+Sounds	サウンド
+Record a sound first	先に音を録音してね
+The handheld starts quietly again	起動音なしに戻しました
+Plays when the handheld starts	起動するときに鳴ります
+Could not save the sound	音を保存できませんでした
+Nothing heard. Hold the handheld closer and try again.	何も聞こえませんでした。本体を近づけてもう一度試してね。
+This manual could not be opened	説明書を開けませんでした
+This page is not a scan	このページはスキャン画像ではありません
+This page could not be read	このページを読み込めませんでした
+Giant	きょじん
+Underwater	水中
+Choir	合唱
+8-bit	8ビット
+Telephone	電話
+Megaphone	メガホン
+Cave	どうくつ
+Jelly	ゼリー
+Scratch	スクラッチ
+Whisper	ささやき
+Sloth	ナマケモノ
+Speedy	スピード
+Dragon	ドラゴン
+Baby	あかちゃん
+Opera	オペラ
+Erase	消去
+Drawing cleared	絵を消しました
+Nothing to clear	消すものがありません
+Press Erase again to delete this sound	もう一度「消去」を押すと音を消します
+Sound erased	音を消しました
+Send in PictoChat	PictoChatで送る
+Send to phone	スマホに送る
+Connect to Wi-Fi to send pictures to a phone or computer.	スマホやパソコンに画像を送るには Wi-Fi に接続してください。
+Your picture is on the pad. Write or draw beside it, then send.	画像をメモに貼りました。横に書いたり描いたりして送信してください。
+Join a room: your picture goes on the pad.	ルームに入ると、画像がメモに貼られます。

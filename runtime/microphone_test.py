@@ -1,4 +1,7 @@
-"""Stream physical microphone levels to the launcher; never retain audio."""
+"""Stream physical microphone levels to the launcher; never retain audio.
+
+With --record (the sound toy) it streams the sound itself instead: a line "rec", then raw mono PCM16 at 16 kHz on
+stdout for at most RECORD_SECONDS. Nothing is written to disk here; the launcher keeps what it is given."""
 import argparse
 import array
 import math
@@ -12,6 +15,8 @@ import time
 
 from audio import capture_device, microphone_levels
 from records import read_record, process_identity
+
+RECORD_SECONDS = 11  # the toy stops at 10 s; a little more so its own stop always comes first
 
 
 def levels(pcm):
@@ -29,7 +34,7 @@ def levels(pcm):
     return round((db + 60) * 100 / 60), round((peak_db + 60) * 100 / 60), round(db)
 
 
-def run(data):
+def run(data, record=False):
     owner = read_record(Path(data) / 'session/core.json')
     if owner and process_identity(owner['pid']) == owner['start']:
         print('busy', flush=True)
@@ -50,20 +55,32 @@ def run(data):
         env.pop('LD_PRELOAD', None)
         env.pop('LD_LIBRARY_PATH', None)
         capture = subprocess.Popen(
-            ['arecord', '-q', '-D', capture_device(), '-t', 'raw', '-f', 'S16_LE', '-r', '16000', '-c', '1'],
+            ['arecord', '-q', '-D',
+             capture_device(), '-t', 'raw', '-f', 'S16_LE', '-r', '16000', '-c', '1'],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             env=env
         )
         os.set_blocking(capture.stdout.fileno(), False)
         pending = b''
-        last = time.monotonic()
+        last = started = time.monotonic()
+        streaming = False
         while not stopped and os.getppid() == parent:
+            if record and time.monotonic() - started > RECORD_SECONDS:
+                break
             ready, _, _ = select.select([capture.stdout], [], [], .1)
             if ready:
                 chunk = os.read(capture.stdout.fileno(), 4096)
                 if not chunk:
                     raise OSError('Capture stopped')
+                last = time.monotonic()
+                if record:
+                    if not streaming:  # only once sound arrives, so a dead device still answers "unavailable"
+                        print('rec', flush=True)
+                        streaming = True
+                    sys.stdout.buffer.write(chunk)
+                    sys.stdout.buffer.flush()
+                    continue
                 pending += chunk
                 while len(pending) >= 1600:
                     print(*levels(pending[:1600]), flush=True)
@@ -87,8 +104,9 @@ def run(data):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data', type=Path, required=True)
+    parser.add_argument('--record', action='store_true', help='stream the sound itself (the sound toy)')
     args = parser.parse_args()
     try:
-        run(args.data)
+        run(args.data, args.record)
     except (OSError, ValueError):
         print('unavailable', flush=True)

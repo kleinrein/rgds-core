@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LIBRETRO_DOSBOX_PURE
+	bool "libretro-dosbox-pure"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  DOSBox Pure, the MS-DOS core RG DS Play loads for DOS games:
+	  /usr/lib/libretro/dosbox_pure_libretro.so. It opens a game's ZIP
+	  itself (and keeps the game's own saves beside it in a ZIP of
+	  changes), mounts CD and floppy images, and has a mouse, which the
+	  second screen's touch pad moves. No BIOS needed.

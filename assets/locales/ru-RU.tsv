@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Чёткое масштабиров�
 Sharp scaling, DS colour and Natural Vision together.	Чёткое масштабирование, цвета DS и Natural Vision вместе.
 Shield	Щит
 Shift	Shift
-Shift keys stay down until the next key	Клавиши Shift остаются нажатыми до следующей клавиши
 Shortcut action	Действие кнопки
 Shots	Выстрелы
 Show games	Показать игры
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Всё ост�
 Room for more games.	Место для новых игр.
 Console switches	Переключатели приставки
 VMU screen	Экран VMU
+3D: one eye each	3D: по глазу на экран
+Mouse	Мышь
+RetroAchievements	RetroAchievements
+Account	Аккаунт
+RetroAchievements account	Аккаунт RetroAchievements
+Achievements	Достижения
+{0} achievements	Достижения: {0}
+{0} points	Очки: {0}
+1 point	1 очко
+Unlocked {0}	Получено {0}
+Play the game once to see its achievements.	Сыграйте в игру один раз, чтобы увидеть её достижения.
+RetroAchievements has no achievements for this game yet.	У RetroAchievements пока нет достижений для этой игры.
+Earn achievements from retroachievements.org while you play.	Получайте достижения retroachievements.org во время игры.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Открывайте достижения в играх во время игры. Список для каждой игры — в разделе «Об игре».
+A free account from retroachievements.org.	Бесплатный аккаунт на retroachievements.org.
+Signing out…	Выход…
+Wait for the current task to finish, then sign in.	Дождитесь окончания текущей задачи, затем войдите.
+Wait for the current task to finish, then sign out.	Дождитесь окончания текущей задачи, затем выйдите.
+Signed in to RetroAchievements as {0}.	Вход в RetroAchievements выполнен: {0}.
+Signed out of RetroAchievements.	Выход из RetroAchievements выполнен.
+Enter your RetroAchievements username and password.	Введите имя пользователя и пароль RetroAchievements.
+Could not reach RetroAchievements. Check the connection.	Не удалось связаться с RetroAchievements. Проверьте подключение.
+Wrong username or password.	Неверное имя пользователя или пароль.
+RetroAchievements did not accept the sign-in.	RetroAchievements не принял вход.
+Achievement unlocked	Достижение получено
+Game mastered	Игра пройдена на 100%
+achievements	достижений
+Sign in again in Settings	Войдите снова в настройках
+Could not sign in	Не удалось войти
+This game file is not recognised	Этот файл игры не распознан
+Could not load this game's achievements	Не удалось загрузить достижения этой игры
+No achievements yet	Пока нет достижений
+Every achievement unlocked	Все достижения получены
+Offline: unlocks are sent when back online	Офлайн: достижения отправятся, когда появится сеть
+Back online: unlocks sent	Снова в сети: достижения отправлены
+Play Nintendo WFC games online	Играть в игры Nintendo WFC по сети
+Album	Альбом
+Menus	Меню
+No screenshots yet	Скриншотов пока нет
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	В игре нажмите Меню + R или выберите «Скриншот» в меню игры. Меню + R работает и в меню.
+This picture is the game's cover now.	Эта картинка теперь обложка игры.
+The cover could not be changed.	Не удалось сменить обложку.
+The screenshot could not be saved.	Не удалось сохранить скриншот.
+Delete this screenshot?	Удалить этот скриншот?
+Use as the game's cover	Сделать обложкой игры
+Save the game behind this menu to the Album	Сохранить в альбом игру за этим меню
+Saving the screenshot…	Сохранение скриншота…
+Screenshot saved to the Album.	Скриншот сохранён в альбом.
+Still saving the last screenshot.	Предыдущий скриншот ещё сохраняется.
+No picture to save. Resume the game and press Menu + R.	Нечего сохранять. Вернитесь в игру и нажмите Меню + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Фоторежим
+Leave photo mode?	Выйти из фоторежима?
+Keep editing	Продолжить
+Leave without saving	Выйти без сохранения
+Saved to the Album.	Сохранено в альбом.
+The photo could not be saved.	Не удалось сохранить фото.
+This picture could not be opened.	Не удалось открыть картинку.
+Pen	Перо
+Stamps	Штампы
+Frames	Рамки
+Lenses	Линзы
+Date	Дата
+Sepia	Сепия
+Black & white	Чёрно-белое
+Mosaic	Мозаика
+Mirror	Зеркало
+Fisheye	Рыбий глаз
+Old photo	Старое фото
+Instant photo	Моментальное фото
+Film strip	Плёнка
+Postage stamp	Почтовая марка
+Rounded card	Скруглённая карточка
+Stars	Звёзды
+Undo	Отменить
+Sound toy	Звуковая игрушка
+Record your voice and change it	Запиши свой голос и измени его
+Chipmunk	Бурундук
+Monster	Монстр
+Backwards	Задом наперёд
+Echo	Эхо
+Press Record and say hello!	Нажми «Записать» и скажи привет!
+Then pick a voice and draw on the lower screen to bend it.	Потом выбери голос и рисуй на нижнем экране, чтобы изогнуть его.
+Recording…	Идёт запись…
+Press X again to stop.	Нажми X ещё раз, чтобы остановить.
+Sound {0}	Звук {0}
+Startup sound	Звук запуска
+Higher	Выше
+Lower	Ниже
+Record	Записать
+Stop	Стоп
+Sounds	Звуки
+Record a sound first	Сначала запиши звук
+The handheld starts quietly again	Консоль снова включается тихо
+Plays when the handheld starts	Звучит при включении консоли
+Could not save the sound	Не удалось сохранить звук
+Nothing heard. Hold the handheld closer and try again.	Ничего не слышно. Поднеси консоль ближе и попробуй снова.
+This manual could not be opened	Не удалось открыть руководство
+This page is not a scan	Эта страница — не скан
+This page could not be read	Не удалось прочитать эту страницу
+Giant	Великан
+Underwater	Под водой
+Choir	Хор
+8-bit	8 бит
+Telephone	Телефон
+Megaphone	Мегафон
+Cave	Пещера
+Jelly	Желе
+Scratch	Скретч
+Whisper	Шёпот
+Sloth	Ленивец
+Speedy	Шустрик
+Dragon	Дракон
+Baby	Малыш
+Opera	Опера
+Erase	Стереть
+Drawing cleared	Рисунок очищен
+Nothing to clear	Нечего очищать
+Press Erase again to delete this sound	Нажми «Стереть» ещё раз, чтобы удалить звук
+Sound erased	Звук стёрт
+Send in PictoChat	Отправить в PictoChat
+Send to phone	Отправить на телефон
+Connect to Wi-Fi to send pictures to a phone or computer.	Подключитесь к Wi-Fi, чтобы отправлять картинки на телефон или компьютер.
+Your picture is on the pad. Write or draw beside it, then send.	Картинка на листке. Напишите или нарисуйте рядом и отправьте.
+Join a room: your picture goes on the pad.	Войдите в комнату: картинка появится на листке.

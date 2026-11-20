@@ -88,7 +88,7 @@ Phase 0 already points to Banana as the base.
    **tap and drag on the bottom screen for a minute** (this is the Armbian failure trigger), buttons, sound, and lid
    close/open.
 3. Hold power for 2 s to shut down (or hard power-off if it hangs). Put the card in the Mac, then run
-   `tools/own_os_card.py logs --label first-boot`.
+   `tools/own_os_card.py logs --label first-boot` (a Banana-card helper, removed since).
 4. Swap the stock card back in.
 
 **Result, 2026-10-26:** the owner flashed the card (disk4 in the Mac's reader) and booted BananaLinux v0.4.2 on their
@@ -112,8 +112,9 @@ The logs are in `build/os/banana-first-boot-20261026-204916/`:
 
 ### RG DS Core on Banana's kernel (probe, 2026-10-26)
 
-`os/banana-probe/` runs our launcher on a BananaLinux card with no compositor. `hold.sh` borrows the panels from
-Banana's menu, in RAM only. `run.sh` starts the launcher with SDL's KMSDRM driver. `trace.py` turns the launcher's
+This probe ran our launcher on a BananaLinux card with no compositor: `hold.sh` borrowed the panels from Banana's
+menu, in RAM only, and `run.sh` started the launcher with SDL's KMSDRM driver (both removed since; the rest of the
+probe's tools live on in `os/device-bench/`). `trace.py` turns the launcher's
 UiTrace marks into per-stage frame timings. `press.py` injects button presses into the joypad's evdev node.
 
 - **Both panels and touch work** through KMSDRM and GLES2 on Panfrost, with no Weston.
@@ -263,7 +264,7 @@ build.
   the interrupt placement differs): frames over budget 0.75 % and 0.83 % with the interrupts on CPU 0, 1.62 % with
   them spread over all four (p95 15.2 vs 15.7 ms, the same worst frame). Half the over-budget frames, for free.
 
-**The two panels' phase** (`os/banana-probe/vblank_phase.c`, waits for vblanks on both CRTCs without DRM master):
+**The two panels' phase** (`os/device-bench/vblank_phase.c`, waits for vblanks on both CRTCs without DRM master):
 both panels run at 60.001 Hz from the same clock, but CRTC 1's vblank sits a fixed 14.18 ms after CRTC 0's (2.5 ms
 before it), the time the first modeset took between starting the two video ports. So a frame flipped to both
 panels inside that window shows on different refreshes, and a joint atomic commit alone would not change that:
@@ -346,7 +347,7 @@ A real game is the owner's next test (`/data/roms/nes`, `snes`, `md`, `sms`).
 
 ### Engine speed on RG DS OS: the first numbers (2026-10-27)
 
-A benchmark that needs no one at the controls: `os/banana-probe/bench_record.py` drives the pad for 36 s while
+A benchmark that needs no one at the controls: `os/device-bench/bench_record.py` drives the pad for 36 s while
 DSCore records the inputs (`--record`), and `--replay` plays them back frame-exactly with `DS_FRAME_STATS=1
 --stats-from 300` (`run_game.py` takes `ARGS=`, `BIN=` and `FRESH=1`). Mario Kart DS at 2x from the owner's race
 state, 2400 measured frames, performance governor:
@@ -385,7 +386,7 @@ that work and gives 3x a filtered downscale instead of dropped pixels: the displ
 
 ### Boot chart (2026-10-27)
 
-Measured with the ARM architected counter, which runs from SoC reset (`os/banana-probe/since_reset.c` prints
+Measured with the ARM architected counter, which runs from SoC reset (`os/device-bench/since_reset.c` prints
 "before the kernel" = counter minus the kernel's uptime), U-Boot's bootstage table handed to the kernel in the device
 tree (`CONFIG_BOOTSTAGE_FDT`, read from `/proc/device-tree/bootstage`), the kernel's own timestamps and
 `/run/rgds/boot-times`.
@@ -490,7 +491,7 @@ delays and both panels prepared at once (boot chart above).
 ### Button latency in games on RG DS OS (2026-10-27)
 
 Measured as press to completed page flip (the panel's own scan-out, up to one refresh, comes on top), Mario Kart DS,
-20 presses per run: `os/banana-probe/pace_trial.sh` runs the game by hand with the bridge's `RGDS_LATENCY_TRACE`
+20 presses per run: `os/device-bench/pace_trial.sh` runs the game by hand with the bridge's `RGDS_LATENCY_TRACE`
 and DSCore's `DS_CADENCE_LOG`, `game_latency.py` presses the real pad node, and `press_to_flip.py` joins the two
 logs. The CPU governor was `performance` for all rows (the session boots on `schedutil`, whose ramp-up showed as a
 91 ms worst case; a game now switches it and puts it back, `linux_platform.cpu_governor`).
@@ -521,7 +522,7 @@ present's 2-3 ms; the next cuts are a faster engine (section 4 below) and a mid-
 
 ### Lag and whine on the probe, fixed (2026-10-26)
 
-- **Lag.** Measured with `os/banana-probe/latency.py`: a median of 195 ms from button to present, a worst case of
+- **Lag.** Measured with `os/device-bench/latency.py`: a median of 195 ms from button to present, a worst case of
   663 ms, and 2.5 fps on a held direction. The cause: mainline's RK817 driver names the playback volume `Master`,
   not `DAC`. Every first click after 3 s of quiet reopened the sink, failed to restore `DAC`, ran the synchronous
   Python helper on the UI thread, and closed the sink again. The launcher (`menu_sounds.hpp`), the bridge and
@@ -674,7 +675,7 @@ frontend did), and RG DS Core had no switch. Now:
   `core/bios/firmware_gen.cpp`; with it the host beacons, the chip reports channels 1, 7 and 13 as the game hops
   them, and the host CMD / client reply exchange runs.
 - **Verified** with two DSCore consoles playing Mario Kart DS, both driven by replayed button logs
-  (`os/banana-probe/dsin.py` writes a DSIN input log from "frame buttons" lines; the headless frontend's
+  (`os/device-bench/dsin.py` writes a DSIN input log from "frame buttons" lines; the headless frontend's
   `--dump-frames` shows the screens): Multiplayer → CREATE GROUP → NORMAL on the host, the group slot on the guest.
   On the Mac (two headless consoles, interpreter cores): both lobbies show CURRENT RACERS 2/8, 1905 of 1957 host
   commands answered by the client (the misses are frames the interpreter ran late). Handheld (host, the Vulkan engine the launcher picks at 2x, build `0.8.0-0dac2b9bab68-os601f7421`) ↔ Mac guest over the house Wi-Fi: the handheld's screen shows SEEKING OPPONENTS, the guest's lobby 2/8 with both racers; 265 beacons, 4276 host commands of which 2353 were answered in time (55 %: the reply window over real Wi-Fi is tighter than on one machine, and the interpreter-only Mac console ran 1 % of its frames late). The first two handheld runs never beaconed: the handheld's DSCore keeps its battery save under `userdata/emulators/rgds-experimental/saves/`, not beside the cartridge, so its Mario Kart licence had already been through the first-time prompts and the replayed presses landed on other screens; pinning the same save with `--save` made both consoles walk the same menus.
@@ -774,7 +775,7 @@ retried twice with the lid closed. Lines in `sleep.log` say "woken with the lid 
 
 Rule one: **measure before and after every change**, on the same scenes, on stock and on RG DS OS. The tools exist:
 DSCore's benchmark scenes (`dscore/scenes/*.dsin`) and PGO profiles (`dscore/pgo/`), the launcher's UiTrace and
-`os/banana-probe/latency.py`, and `/run/rgds/boot-times`. A "3-5x" claim is a ratio of two such numbers.
+`os/device-bench/latency.py`, and `/run/rgds/boot-times`. A "3-5x" claim is a ratio of two such numbers.
 
 **1. Boot (target: RG DS Core's menu in under 3 s from power).** Banana reaches its menu at 4.5 s. Owning init
 gives us: no udev and no initramfs (done), panels, input and GPU built in (done), Wi-Fi off the critical path

@@ -215,7 +215,9 @@ private:
 
   // ---- the emulated access point (melonDS WifiAP) ----
   struct Ap {
-    std::string name = "DSperate-AP";
+    // The SSID the generated firmware and stamp_access_point() put in the connection slot
+    // (bios::kAccessPointSsid): a WFC game scans passively and joins only a beacon carrying it.
+    std::string name = "RGDS-AP";
     u64 us_counter = 0;
     u16 seq_no = 0;
     bool beacon_due = false;

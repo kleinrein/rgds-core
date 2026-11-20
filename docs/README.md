@@ -12,6 +12,7 @@ Start with the [project README](../README.md).
 | [PictoChat](PICTOCHAT.md) | The home-screen chat pad: rooms, drawing, Wi-Fi, security and tests |
 | [Menu sounds](MENU_SOUNDS.md) | The optional sound palette |
 | [Music](MUSIC.md) | The optional music player: formats, screens, visualisers, equaliser, Bluetooth and the lid |
+| [Sound toy](SOUND_TOY.md) | Record your voice, change it into a chipmunk, robot or monster, draw to bend it, and the startup sound |
 
 ## Developing
 

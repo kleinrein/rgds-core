@@ -34,15 +34,16 @@ const features = [
   { name: 'PortMaster', text: 'PC games adapted for handhelds.' },
   { name: 'Music player', text: 'Your own music from the card, from MP3 and FLAC to tracker modules.' },
   { name: 'PictoChat', text: 'Our own take on the classic: Wi-Fi chat between handhelds.' },
-  { name: 'Tailored', text: 'Light and dark themes, accent colours and 22 languages.' },
+  { name: 'Tailored', text: 'Light and dark themes, accent colours and 23 languages.' },
 ];
 
 const systems = [
   ['nds', 'Nintendo DS'], ['3ds', 'Nintendo 3DS'], ['gba', 'Game Boy Advance'], ['gb', 'Game Boy'], ['gbc', 'Game Boy Color'],
-  ['nes', 'NES'], ['snes', 'SNES'], ['md', 'Mega Drive'], ['sms', 'Master System'], ['pce', 'PC Engine'],
-  ['psx', 'PlayStation'], ['psp', 'PlayStation Portable'], ['n64', 'Nintendo 64'], ['atari', 'Atari 2600'],
-  ['coleco', 'ColecoVision'], ['intellivision', 'Intellivision'], ['zx', 'ZX Spectrum'], ['c64', 'Commodore 64'],
-  ['msx', 'MSX'], ['amiga', 'Amiga'], ['pico8', 'PICO-8'], ['gw', 'Game & Watch'], ['scummvm', 'ScummVM'], ['ports', 'Ports'],
+  ['nes', 'NES'], ['snes', 'SNES'], ['md', 'Mega Drive'], ['sms', 'Master System'], ['pico', 'Sega Pico'],
+  ['pce', 'PC Engine'], ['psx', 'PlayStation'], ['psp', 'PlayStation Portable'], ['dc', 'Dreamcast'], ['n64', 'Nintendo 64'],
+  ['vb', 'Virtual Boy'], ['atari', 'Atari 2600'], ['coleco', 'ColecoVision'], ['intellivision', 'Intellivision'],
+  ['zx', 'ZX Spectrum'], ['c64', 'Commodore 64'], ['msx', 'MSX'], ['amiga', 'Amiga'], ['dos', 'DOS'], ['pico8', 'PICO-8'],
+  ['gw', 'Game & Watch'], ['scummvm', 'ScummVM'], ['ports', 'Ports'],
 ];
 ---
 <!doctype html>
@@ -167,15 +168,7 @@ const systems = [
                 </span>{name}{id === '3ds' && <span class="visually-hidden"> (experimental)</span>}</li>
             ))}
           </ul>
-          <p class="note systems-note">The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
-=======
-              <li>{icons[id] === 'webp'
-                ? <img src={`${base}/systems/${id}.webp`} width="64" height="64" loading="lazy" alt="" />
-                : <img class="pixel" src={`${base}/systems/${id}.svg`} width="64" height="64" loading="lazy" alt="" />}{name}</li>
-            ))}
-          </ul>
-          <p class="note systems-note">Mega-CD and Sega Pico games share the Mega Drive’s shelf, SG-1000 and Game Gear the Master System’s, and CD-ROM games the PC Engine’s. The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
->>>>>>> origin/main
+          <p class="note systems-note">Mega-CD games share the Mega Drive’s shelf, SG-1000 and Game Gear the Master System’s, and CD-ROM games the PC Engine’s. The first start asks whether you want Nintendo DS alone or every system. Change it any time in Settings → Library → Systems. Nintendo 3DS is experimental.</p>
         </div>
       </section>
 

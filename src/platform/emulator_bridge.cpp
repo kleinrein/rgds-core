@@ -493,9 +493,28 @@ int saved_rumble_strength() {
         else if (line.rfind("rumble_strength=", 0) == 0) strength = std::clamp(std::atoi(line.c_str() + 16), 10, 100);
     return on ? strength : 0;
 }
+// A screenshot's buzz, at the player's menu haptics strength (ui.ini, as the launcher's own patterns).
+void shutter_buzz() {
+    static rgds::Haptics motor;
+    static int strength = -1;
+    if (strength < 0) {
+        const auto own_ui = env("RGDS_UI_FILE");
+        std::ifstream ui(own_ui.empty() ? volume_data + "/ui.ini" : own_ui);
+        bool on = true;
+        strength = 60;
+        for (std::string line; std::getline(ui, line);)
+            if (line == "menu_haptics=0" || line == "menu_haptics=1") on = line.back() == '1';
+            else if (line.rfind("haptic_strength=", 0) == 0)
+                strength = std::clamp(std::atoi(line.c_str() + 16), 0, 100);
+        if (!on) strength = 0;
+    }
+    motor.set_strength(strength);
+    motor.play(rgds::Haptic::Save);
+}
 void initialize() {
     if (initialized) return;
     initialized = true;
+    overlay_renderer.on_shutter = shutter_buzz;
     core = env("RGDS_CORE");
     control = env("RGDS_CONTROL_FILE");
     autostate = env("RGDS_AUTOSTATE_FILE");
@@ -614,7 +633,7 @@ int logical_joystick(int button) {
 int destination_joystick(int logical) {
     return logical >= 8 && logical <= 11 && core == "drastic" ? logical + 12 : rgds::physical_button(logical);
 }
-// RGDS_LATENCY_TRACE=FILE (os/banana-probe/game_latency.py): for each button press, CLOCK_MONOTONIC microseconds
+// RGDS_LATENCY_TRACE=FILE (os/device-bench/game_latency.py): for each button press, CLOCK_MONOTONIC microseconds
 // when the engine first read it down and of the next two presents (the frame being shown and the one that read it).
 struct LatencyTrace {
     std::FILE* out = nullptr;
@@ -1645,6 +1664,13 @@ extern "C" __attribute__((visibility("default"))) void rgds_rumble(int level) {
     motor.set_strength(0);
     motor.set_rumble_strength(blocked_shared.load(std::memory_order_relaxed) ? 0 : strength);
     motor.rumble(std::clamp(level, 0, 100) / 100.f);
+}
+// An engine's notice, drawn on the lower panel for a few seconds (RetroAchievements in DSCore): kind 0 an unlocked
+// achievement with its points, 1 news, 2 a problem. Any thread; the strings are copied.
+extern "C" __attribute__((visibility("default"))) void rgds_toast(int kind, const char* title, const char* detail,
+                                                                  int points) {
+    if (!title || !*title) return;
+    overlay_renderer.toast(std::clamp(kind, 0, 2), title, detail ? detail : "", std::max(points, 0));
 }
 extern "C" __attribute__((visibility("default"))) void rgds_hd_rules(SDL_Texture* image, SDL_Texture* rules) {
     game_shader.pair_rules(image, rules);

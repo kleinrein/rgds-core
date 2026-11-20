@@ -3,17 +3,14 @@
 
   disks                      list external disks and whether flash would accept them
   flash IMAGE[.gz] DISK      write an image to a spare microSD card (asks for sudo)
-  logs [VOLUME] [--label X]  copy banana/logs from a test card into build/os/
 
 flash refuses anything that is not an external, removable disk of at most 256 GB, and anything that looks like the
 stock card (more than five partitions, or a volume with Roms/, rgds/ or MUOS/ on it): the stock card must never be
 written by this work; --erase-stock-looking lifts only that check, for a spare that once held a stock image. It asks for the disk name to be typed back before writing.
 """
 import argparse
-from datetime import datetime
 import plistlib
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 
@@ -97,20 +94,6 @@ def cmd_flash(args):
     print("Written and ejected. Swap it for the stock card only with the handheld powered off.")
 
 
-def cmd_logs(args):
-    volume = Path(args.volume) if args.volume else Path("/Volumes/BANANA")
-    source = volume / "banana" / "logs"
-    if not source.is_dir():
-        sys.exit(f"{source}: no logs (is the test card in the reader and mounted?)")
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    target = ROOT / "build" / "os" / f"banana-{args.label}-{stamp}"
-    shutil.copytree(source, target)
-    for extra in ("panel-tune.txt", "bananad.conf"):
-        if (volume / "banana" / extra).is_file():
-            shutil.copy2(volume / "banana" / extra, target / extra)
-    print(target)
-
-
 def sh(path):
     return "'" + str(path).replace("'", "'\\''") + "'"
 
@@ -125,10 +108,6 @@ def main():
     flash.add_argument("--erase-stock-looking", action="store_true")
     flash.add_argument("--keep-mounted", action="store_true")
     flash.set_defaults(run=cmd_flash)
-    logs = sub.add_parser("logs")
-    logs.add_argument("volume", nargs="?")
-    logs.add_argument("--label", default="test")
-    logs.set_defaults(run=cmd_logs)
     args = parser.parse_args()
     args.run(args)
 

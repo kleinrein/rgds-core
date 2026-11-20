@@ -18,6 +18,10 @@ namespace rgds {
 struct TouchPoint {
     int kind, x, y;
 }; // down, move, up, cancel
+// Every finger on the panel after the last complete frame, beside the one-finger stream above (which games get).
+struct TouchFinger {
+    int id, x, y;
+};
 struct TouchDecoder {
     struct Contact {
         int id = -1, x = 0, y = 0;
@@ -31,6 +35,7 @@ struct TouchDecoder {
     bool mt_seen = false, button_seen = false, button_down = false, reported = false, dropped = false,
          ignore_remaining = false;
     int primary = -1, last_x = 0, last_y = 0;
+    std::vector<TouchFinger> fingers;
     int coordinate(int value, int minimum, int maximum, int extent) const {
         return std::clamp(int((int64_t(value) - minimum) * extent / std::max<int64_t>(1, int64_t(maximum) - minimum)),
                           0, extent - 1);
@@ -42,6 +47,7 @@ struct TouchDecoder {
         current = single = Contact{};
         slots = {};
         contacts.clear();
+        fingers.clear();
         button_seen = button_down = false;
         return was ? std::vector<TouchPoint>{{3, last_x, last_y}} : std::vector<TouchPoint>{};
     }
@@ -128,6 +134,9 @@ struct TouchDecoder {
                 for (size_t i = 0; i < contacts.size(); i++) add(contacts[i], -int(i) - 2);
             } else add(current, -2);
         } else add(single, -1);
+        fingers.clear();
+        for (const auto& [id, contact] : active)
+            fingers.push_back({id, coordinate(contact.x, min_x, max_x, 640), coordinate(contact.y, min_y, max_y, 480)});
         std::vector<TouchPoint> result;
         if (reported) {
             auto found =
@@ -314,6 +323,8 @@ public:
     }
     ~TouchDevice() { close_device(); }
     bool available() const { return fd >= 0 || replaying; }
+    // Every finger down after the last poll (a pinch); poll() itself still reports one.
+    const std::vector<TouchFinger>& fingers() const { return decoder.fingers; }
     bool initially_pressed() const { return initial_down; }
     const std::string& path() const { return selected_path; }
     void discard_until_release() {

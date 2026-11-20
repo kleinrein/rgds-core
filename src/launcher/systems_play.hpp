@@ -41,6 +41,7 @@ void App::open_category() {
     systems_origin = false;
     if (home_selected == last_played_tile) open_last_played();
     else if (music_at(home_selected)) open_music();
+    else if (toy_at(home_selected)) open_voice_toy();
     else if (home_selected == pictochat_tile) {
         if (pictochat_hidden() || (kid_locked() && !active_profile().allow_pictochat)) {
             status = "Not on this profile";
@@ -300,8 +301,8 @@ int App::play_colour_kind() const {
 std::string App::play_system() const {
     const auto& game = model.games.at(0);
     const std::string system = game.system == "nds" ? system_for_path(game.path) : game.system;
-    // The Game Gear shares the Master System's shelf, not its bezels; the SG-1000, the Mega-CD and the Pico share
-    // their shelves and frames but are systems of their own to the player (runtime/play_options.py).
+    // The Game Gear shares the Master System's shelf, not its bezels; the SG-1000 and the Mega-CD share their
+    // shelves and frames but are systems of their own to the player (runtime/play_options.py).
     return play_subsystem(game.path, system == "nds" ? "gba" : system);
 }
 
@@ -383,8 +384,9 @@ const char* App::play_second_name(int second, const std::string& system) const {
            : second == 2 ? "Swap screens"
            : second == 3 ? "Info screen"
            : second == 4 ? (system == "pico"    ? "Storyware"
-                            : system == "atari" ? "Console switches"
+                            : system == "atari" || system == "atari7800" ? "Console switches"
                             : system == "dc"    ? "VMU screen"
+                            : system == "vb"    ? "3D: one eye each"
                             : has_touch_controller(system) ? "Keypad"
                                                            : "Keyboard")
                          : "Companion";
@@ -393,10 +395,12 @@ const char* App::play_second_name(int second, const std::string& system) const {
 // The Second screen picker's order over the menu's numbers (play-graphics).
 static std::vector<int> play_second_order(const std::string& system) {
     if (system == "3ds") return {0, 1, 2};
-    if (system == "zx" || system == "c64" || system == "msx" || system == "amiga")
-        return {0, 4, 3, 1, 2}; // the keyboard first, for the machines with one
+    if (system == "zx" || system == "c64" || system == "msx" || system == "cpc" || system == "amiga" ||
+        system == "dos")
+        return {0, 4, 3, 1, 2}; // the keyboard first, for the machines with one (DOS's with its mouse)
     if (has_touch_controller(system)) return {0, 4, 3, 1, 2};    // and the keypad, or the Pico's book
     if (system == "dc") return {0, 4, 3, 1, 2};                   // and the VMU's screen
+    if (system == "vb") return {0, 4, 3, 1, 2};                   // and the right eye's picture (3D)
     return {0, 3, 1, 2};                                           // the info screen beside the companion
 }
 

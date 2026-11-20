@@ -63,6 +63,9 @@ enum class Page {
     ProfileGames,     // a profile's games: what it sees, and approving what has no rating
     ProfileGameRules, // one game: who sees it
     PinPad,           // entering or choosing a PIN
+    Achievements,     // Settings > Library > RetroAchievements: the switch and the account (runtime/achievements.py)
+    Album,            // Settings > Library > Album: screenshots by game and date (album_screen.hpp, screenshots.py)
+    Photo,            // Album > Photo mode: lenses, stamps, pen, frames and a date stamp (photo_screen.hpp)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -83,6 +86,8 @@ struct Preferences {
     bool music_player = false;
     // A song keeps playing when the lid closes (the panels go dark); off, the lid sleeps as it always does.
     bool music_lid = true;
+    // Home's Sound toy tile (voice_toy_screen.hpp): on unless Settings > Sound switches it off.
+    bool sound_toy = true;
     // The vibration motor: patterns in the menus, rumble in games that have it
     // (DS Rumble Pak, GB rumble carts, GBA rumble). Strengths are 10-100%.
     bool menu_haptics = true, game_rumble = true;
@@ -93,6 +98,8 @@ struct Preferences {
     // Fetch missing artwork by itself when the folder watcher finds new games (off: only the button does).
     bool auto_scrape = false;
     int extra_pictures = 2;
+    // RetroAchievements in RG DS Play (ui.ini achievements=1): off until asked for; signing in switches it on.
+    bool achievements = false;
 };
 struct SystemPreferences {
     int power = 2, brightness = 60, idle = 0;
@@ -620,8 +627,8 @@ inline int section_row(int section) {
 struct Settings {
     Page page = Page::Library;
     int section = 0, focus = 0;
-    int library_rows = 9; // Settings > Library: one more while other systems are on (Games opens)
-    int sound_rows = 5;   // Settings > Sound: the launcher adds the music player's rows
+    int library_rows = 11; // Settings > Library: one more while other systems are on (Games opens)
+    int sound_rows = 5;    // Settings > Sound: the launcher adds the music player's rows
     // Brightness and Playtime opened from Home's bottom bar: Back returns Home, not through Settings.
     bool from_home = false;
     // The row you left each page from. Back lands on it again instead of the
@@ -672,6 +679,10 @@ struct Settings {
         } else if (page == Page::Display) {
             page = Page::DisplayOptions;
             focus = 0;
+        } else if (page == Page::Achievements || page == Page::Album) {
+            // Album is Library's last row, RetroAchievements the one above it
+            focus = library_rows - (page == Page::Album ? 1 : 2);
+            page = Page::LibraryOptions;
         } else {
             page = page == Page::Settings || page == Page::GameOptions || page == Page::Homebrew ? Page::Library
                    : page == Page::Scraper                                                       ? Page::LibraryOptions
@@ -689,6 +700,7 @@ struct Settings {
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, library_rows - 1);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
         else if (page == Page::Scraper) focus = std::clamp(focus + delta, 0, 6);
+        else if (page == Page::Achievements) focus = std::clamp(focus + delta, 0, 1);
         else if (page == Page::Sound) focus = std::clamp(focus + delta, 0, sound_rows - 1);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
         else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 3);
@@ -824,6 +836,7 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
         else if (line == "show_systems=0" || line == "show_systems=1") result.show_systems = line.back() == '1';
         else if (line == "music_player=0" || line == "music_player=1") result.music_player = line.back() == '1';
         else if (line == "music_lid=0" || line == "music_lid=1") result.music_lid = line.back() == '1';
+        else if (line == "sound_toy=0" || line == "sound_toy=1") result.sound_toy = line.back() == '1';
         else if (line == "all_games=0" || line == "all_games=1") result.all_games = line.back() == '1';
         else if (line == "menu_music=0" || line == "menu_music=1") result.menu_music = line.back() == '1';
         else if (line.rfind("music_volume=", 0) == 0) {
@@ -844,6 +857,7 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
             } catch (const std::exception&) {}
         } else if (line == "game_info=0" || line == "game_info=1") result.game_info = line.back() == '1';
         else if (line == "auto_scrape=0" || line == "auto_scrape=1") result.auto_scrape = line.back() == '1';
+        else if (line == "achievements=0" || line == "achievements=1") result.achievements = line.back() == '1';
         else if (line == "extra_pictures=0" || line == "extra_pictures=1" || line == "extra_pictures=2" ||
                  line == "extra_pictures=3")
             result.extra_pictures = line.back() - '0';
@@ -931,7 +945,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
           << "\ntouch_indicator=" << p.touch_indicator << "\nfilter=" << p.filter << "\nview=" << p.view
           << "\nlayout=" << p.layout << "\nartwork_provider="
           << (p.artwork_provider == 3 ? std::string("screenscraper") : std::to_string(p.artwork_provider))
-          << "\ngame_info=" << p.game_info << "\nauto_scrape=" << p.auto_scrape
+          << "\ngame_info=" << p.game_info << "\nauto_scrape=" << p.auto_scrape << "\nachievements=" << p.achievements
           << "\nextra_pictures=" << p.extra_pictures << '\n';
     extra << "icon_style=" << (p.rich_icons ? "rich" : "pixel") << '\n';
     extra << "accent=" << p.accent << '\n';
@@ -951,6 +965,7 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "show_systems=" << p.show_systems << '\n';
     if (p.music_player) extra << "music_player=1\n";
     if (!p.music_lid) extra << "music_lid=0\n";
+    if (!p.sound_toy) extra << "sound_toy=0\n";
     extra << "all_games=" << p.all_games << '\n';
     extra.close();
     if (!extra) throw std::runtime_error("Cannot save UI preferences");

@@ -43,17 +43,17 @@ bool App::home_column_move(int code) {
         dirty = true;
         return true;
     }
-    // The rows as home_column_tiles lays them out: a row with one tile names it twice.
-    const bool chat = !pictochat_hidden(), songs = music_available();
-    const int last = int(last_played_tile), extra = int(music_tile());
-    std::array<std::array<int, 2>, 4> rows = {{{last, last}, {1, 2}, {3, 3}, {0, 0}}};
-    if (chat || songs) rows[2] = {3, chat ? int(pictochat_tile) : extra};
-    if (chat && songs) rows[3] = {0, extra};
+    // The rows as home_column_tiles lays them out (by their top edge), each left to right.
+    std::array<std::vector<int>, 4> rows;
+    for (const auto& tile : home_column_tiles())
+        rows[size_t(std::clamp((tile.box.y - 20) / 100, 0, 3))].push_back(int(tile.index));
     int row = 0, column = home_column_memory;
     for (int i = 0; i < 4; i++) {
-        if (rows[size_t(i)][0] == int(home_selected) || rows[size_t(i)][1] == int(home_selected)) {
+        const auto& tiles = rows[size_t(i)];
+        const auto at = std::find(tiles.begin(), tiles.end(), int(home_selected));
+        if (at != tiles.end()) {
             row = i;
-            if (rows[size_t(i)][0] != rows[size_t(i)][1]) column = rows[size_t(i)][1] == int(home_selected) ? 1 : 0;
+            if (tiles.size() > 1) column = int(at - tiles.begin());
             break;
         }
     }
@@ -62,11 +62,13 @@ bool App::home_column_move(int code) {
         dirty = true;
         return true;
     }
+    const auto width = [&](int r) { return int(rows[size_t(r)].size()); };
     if (code == 8 || code == 9) row = std::clamp(row + (code == 8 ? -1 : 1), 0, 3);
-    else if (code == 0 || code == 1) column = code == 0 ? 0 : 1;
+    else if (code == 0 || code == 1) column = std::clamp(std::min(column, width(row) - 1) + (code == 0 ? -1 : 1), 0,
+                                                         std::max(0, width(row) - 1));
     else return false;
-    if (rows[size_t(row)][0] != rows[size_t(row)][1]) home_column_memory = column;
-    select_navigation(size_t(rows[size_t(row)][size_t(column)]), false);
+    if (width(row) > 1) home_column_memory = column;
+    select_navigation(size_t(rows[size_t(row)][size_t(std::clamp(column, 0, width(row) - 1))]), false);
     return true;
 }
 
@@ -109,14 +111,16 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
                     label(r, "Your last game will appear here", bx + 96, by + 48 + sink, 14, "muted", 480);
             }
         } else {
-            // The low tiles of the last row (Settings, and Music beside it) have a smaller icon and no second line.
-            const bool low = b.h < 80;
-            const int icon = low ? 36 : 48;
-            category_icon(r, tile.index, bx + (low ? 22 : 16), by + (b.h - icon) / 2 + sink, icon);
+            // The low tiles of the last row (Settings, and the apps beside it) have a smaller icon and no second
+            // line; three of them share the row with a smaller one still.
+            const bool low = b.h < 80, narrow = b.w < 200;
+            const int icon = narrow ? 32 : low ? 36 : 48, text_x = narrow ? 56 : 80, size = narrow ? 18 : 22;
+            category_icon(r, tile.index, bx + (narrow ? 14 : low ? 22 : 16), by + (b.h - icon) / 2 + sink, icon);
             const std::string title = locale.text(category_title(tile.index));
             const bool note_row = !low;
-            raw_label(r, title, bx + 80, centred_label_y(title, 22, by + b.h / 2 + sink - (note_row ? 9 : 0)), 22,
-                      "ink", b.w - 96);
+            raw_label(r, title, bx + text_x,
+                      centred_label_y(title, size, by + b.h / 2 + sink - (note_row ? 9 : 0)), size, "ink",
+                      b.w - text_x - 12);
             std::string note;
             if (tile.index >= 1 && tile.index <= 3) {
                 const auto& g = summary.groups[tile.index - 1];
@@ -126,6 +130,7 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
                                    : device_status["wifi_connected"] == "1"          ? "Wi-Fi connected"
                                                                                      : "Draw and chat");
             else if (music_at(tile.index)) note = music_home_note();
+            else if (toy_at(tile.index)) note = locale.text("Record your voice and change it");
             if (!note.empty() && note_row) raw_label(r, note, bx + 80, by + b.h / 2 + 8 + sink, 14, "muted", b.w - 96);
         }
         if (selected) chat_brackets(r, bx, by + sink, b.w, b.h, theme.at("accent"), 4);

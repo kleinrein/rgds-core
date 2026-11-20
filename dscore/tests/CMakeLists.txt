@@ -163,6 +163,12 @@ if(DSPERATE_CHEEVOS)
   add_executable(test_cheevos_client cheevos_client_test.cpp)
   target_link_libraries(test_cheevos_client PRIVATE dsperate_cheevos)
   add_test(NAME cheevos_client COMMAND test_cheevos_client)
+
+  # The helper-process transport's framing, against a fake helper (python3;
+  # skipped without one). No network.
+  add_executable(test_cheevos_helper cheevos_helper_test.cpp)
+  target_link_libraries(test_cheevos_helper PRIVATE dsperate_cheevos)
+  add_test(NAME cheevos_helper COMMAND test_cheevos_helper)
 endif()
 
 # The internet driver: the DNS rewrite's

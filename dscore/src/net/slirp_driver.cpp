@@ -187,6 +187,21 @@ SlirpDriver::SlirpDriver() = default;
 
 SlirpDriver::~SlirpDriver() { stop(); }
 
+bool SlirpDriver::parse_dns(const std::string& where, Dns& dns, u32& dns_addr) {
+  dns = Dns::Custom;
+  if (where.empty() || where == "wiimmfi") dns_addr = kWiimmfiDns;
+  else if (where == "wiilink") dns_addr = kWiiLinkDns;
+  else if (where == "host") {
+    dns = Dns::Host;
+    dns_addr = 0;
+  } else {
+    in_addr parsed{};
+    if (inet_pton(AF_INET, where.c_str(), &parsed) != 1 || parsed.s_addr == 0) return false;
+    dns_addr = ntohl(parsed.s_addr);
+  }
+  return true;
+}
+
 bool SlirpDriver::start(Dns dns, u32 dns_addr) {
   if (slirp_) return true;
   dns_ = dns;

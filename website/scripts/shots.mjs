@@ -19,8 +19,8 @@ const strips = {
   'library.png': { width: 1440, height: 514, names: ['cartridges', 'covers', 'list'] },
 };
 // The systems index.astro lists, in its order.
-const systems = ['nds', '3ds', 'gba', 'gb', 'gbc', 'nes', 'snes', 'md', 'sms', 'pce', 'psx', 'psp', 'n64', 'atari', 'coleco',
-  'intellivision', 'zx', 'c64', 'msx', 'amiga', 'pico8', 'gw', 'scummvm', 'ports'];
+const systems = ['nds', '3ds', 'gba', 'gb', 'gbc', 'nes', 'snes', 'md', 'sms', 'pico', 'pce', 'psx', 'psp', 'dc', 'n64',
+  'vb', 'atari', 'coleco', 'intellivision', 'zx', 'c64', 'msx', 'amiga', 'dos', 'pico8', 'gw', 'scummvm', 'ports'];
 const shot = (name) => join(pub, 'shots', `${name}.webp`);
 
 await mkdir(join(pub, 'shots'), { recursive: true });

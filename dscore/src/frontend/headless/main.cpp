@@ -703,7 +703,7 @@ int main(int argc, char** argv) {
             dsi_offline ? nullptr : std::shared_ptr<ds::cheevos::Backend>(ds::cheevos::make_curl_backend(http_err));
         if (http)
           fetch = [http](const std::string& url, std::vector<ds::u8>& body) {
-            const ds::cheevos::Response resp = http->perform({url, {}, {}}, "DSperate");
+            const ds::cheevos::Response resp = http->perform({url, {}, {}, {}}, "DSperate");
             if (resp.status != 200) return false;
             body.assign(resp.body.begin(), resp.body.end());
             return true;
@@ -752,7 +752,7 @@ int main(int argc, char** argv) {
     }
     std::fprintf(stderr, "warning: no ROM and no real dumps: nothing boots (FreeBIOS has no boot code)\n");
   }
-  if (fw_override && !nds.firmware_synthetic) {
+  if (fw_override) { // a generated firmware takes only its Wi-Fi slots from it
     std::string err;
     if (!nds.load_firmware_override(fw_override, err)) std::fprintf(stderr, "firmware override: %s\n", err.c_str());
     else if (!err.empty()) std::fprintf(stderr, "firmware override: warning: %s\n", err.c_str());
@@ -1103,18 +1103,11 @@ int main(int argc, char** argv) {
       return 1;
     }
     auto dns = ds::net::SlirpDriver::Dns::Custom;
-    ds::u32 dns_addr = 0xB23E2BD4; // 178.62.43.212, Wiimmfi's resolver
+    ds::u32 dns_addr = 0;
     const std::string where = dns_arg ? dns_arg : "wiimmfi";
-    if (where == "host") {
-      dns = ds::net::SlirpDriver::Dns::Host;
-      dns_addr = 0;
-    } else if (where != "wiimmfi") {
-      in_addr parsed{};
-      if (inet_pton(AF_INET, where.c_str(), &parsed) == 1) dns_addr = ntohl(parsed.s_addr);
-      else {
-        std::fprintf(stderr, "--dns: \"%s\" is not host, wiimmfi or an address\n", where.c_str());
-        return 1;
-      }
+    if (!ds::net::SlirpDriver::parse_dns(where, dns, dns_addr)) {
+      std::fprintf(stderr, "--dns: \"%s\" is not wiimmfi, wiilink, host or an address\n", where.c_str());
+      return 1;
     }
     slirp = std::make_unique<ds::net::SlirpDriver>();
     if (!slirp->start(dns, dns_addr)) {

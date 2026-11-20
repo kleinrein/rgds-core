@@ -15,7 +15,7 @@
 
 - **A real OS:** Quick boot, low RAM consumption and fast game starts.
 - **DS games in DSCore:** sharp 2x-5x 3D (heavy games can glitch or slow down), 32 shaders and LCD filters, fast-forward, low input latency.
-- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System (with Game Gear and SG-1000), Mega Drive (with Mega-CD and Sega Pico), PC Engine (with CD-ROM), N64, PlayStation, PSP, Dreamcast, ZX Spectrum, Commodore 64, Amiga, MSX, Atari 2600, ColecoVision, Intellivision, PICO-8 (through fake-08), Game & Watch and ScummVM. Nintendo 3DS is experimental.
+- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System (with Game Gear and SG-1000), Mega Drive (with Mega-CD and Sega Pico), PC Engine (with CD-ROM), N64, PlayStation, PSP, Dreamcast, ZX Spectrum, Commodore 64, Amiga, DOS (through DOSBox Pure), MSX, Amstrad CPC, Atari 2600, 5200 and 7800, Atari Lynx, Virtual Boy (red on black, or in 3D with one eye on each screen), ColecoVision, Intellivision, PICO-8 (through fake-08), Game & Watch and ScummVM. Nintendo 3DS is experimental.
 - **Dual screen mode:** maps, HUDs and your team on the bottom panel. See [the games](#second-screen-games).
 - **One in-game menu for every system:** pause, checkpoints, cheats, game switcher, settings.
 - **Library:** covers, list or cartridges. Search, favourites, recents, play time, and artwork and game info fetched for you.
@@ -23,9 +23,10 @@
 - **Music player:** your own music from the card, MP3 and FLAC to tracker modules. [More](docs/MUSIC.md)
 - **PortMaster ports**.
 - **PictoChat:** our own Wi-Fi chat between handhelds, no Nintendo files. [More](docs/PICTOCHAT.md)
+- **Sound toy:** record your voice and play it back as a chipmunk, robot, monster or backwards, draw to bend it, and make it the startup sound. [More](docs/SOUND_TOY.md)
 - **Safe updates:** signed, over Wi-Fi, into a second system slot. A bad update rolls back by itself, and Use previous build takes you back by hand. [More](docs/OTA.md)
 - **True sleep and power modes:** the lid puts it to rest on very little power; pick a power mode to trade speed for battery and heat.
-- **Yours:** light/dark, accent colours, 22 languages, menu sounds and music.
+- **Yours:** light/dark, accent colours, 23 languages, menu sounds and music.
 
 ![Cartridge, cover and list views](docs/images/library.png)
 
@@ -75,6 +76,28 @@ Prefer doing it by hand? Download `RG-DS-OS-<version>.img.gz` from [releases](ht
 - No games, BIOS files or cover art included, and no Nintendo or Anbernic files.
 - Other systems are off until you turn on Settings → Library → Systems → All systems.
 - Each engine keeps its own saves.
+
+## BIOS files
+
+Most systems run with nothing extra. A few need, or run better with, a BIOS from your own console. None are included, so you have to dump or find them yourself.
+
+**Where they go:** in one folder, `rgds/bios`, on the card's data partition next to `roms`. With file sharing on, it shows up as `bios` beside the game folders, over Wi-Fi, USB-C or as a USB drive. Copy the files in with the exact names below, with no subfolders unless the table says so. Restart the game afterwards.
+
+| System (core)                              | BIOS                                 | File name(s)                                | Notes                                                                                           |
+| ------------------------------------------ | ------------------------------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| PlayStation (PCSX ReARMed)                 | Recommended                          | `scph5501.bin` (US), `scph5500.bin` (JP), `scph5502.bin` (EU) | Without one a built-in replacement runs, but some games fail or glitch.                |
+| PC Engine CD-ROM (Beetle PCE Fast)         | **Required for discs**               | `syscard3.pce`                              | Cards (`.pce`) need nothing.                                                                    |
+| Mega-CD / Sega CD (PicoDrive)              | **Required for discs**               | `bios_CD_U.bin` (US), `bios_CD_E.bin` (EU), `bios_CD_J.bin` (JP) | Cartridge games need nothing.                                              |
+| ColecoVision (Gearcoleco)                  | **Required**                         | `colecovision.rom`                          |                                                                                                 |
+| Intellivision (FreeIntv)                   | **Required**                         | `exec.bin`, `grom.bin`                      |                                                                                                 |
+| Dreamcast (Flycast)                        | Recommended                          | `dc/dc_boot.bin`, `dc/dc_flash.bin`         | Goes in a `dc` subfolder. Without it Flycast's built-in BIOS boots most games.                  |
+| Amiga (PUAE)                               | Recommended                          | A Kickstart ROM whose name starts with `kick` or `amiga-os-` (or contains `kickstart`) | Without one it starts on the free AROS. WHDLoad sets and many games need a real Kickstart. |
+| MSX (blueMSX)                              | Disks and tapes: **required**        | The machine folders from RetroArch's blueMSX pack, copied into the folder | Cartridges run on the free C-BIOS the image supplies.                       |
+| Atari 7800 (ProSystem)                     | Optional                             | `7800 BIOS (U).rom`                         | Shows the Atari logo first.                                                                     |
+| Atari 5200 (a5200)                         | Optional                             | `5200.rom`                                  | Without it the free Altirra OS runs. A few games need the real one.                             |
+| Atari Lynx (Handy)                         | Optional                             | `lynxboot.img`                              | Without it the core starts the cartridge itself.                                                |
+
+No BIOS is needed for DS (DSCore has its own), GBA, Game Boy, NES, SNES, Master System, Mega Drive, N64, PSP, ZX Spectrum, Commodore 64, Amstrad CPC, DOS, Atari 2600, Virtual Boy, PICO-8, Game & Watch and ScummVM.
 
 ## Developing
 

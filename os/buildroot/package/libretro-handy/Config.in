@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_HANDY
+	bool "libretro-handy"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  Handy, the Atari Lynx core RG DS Play loads for .lnx games:
+	  /usr/lib/libretro/handy_libretro.so. Turns upright games itself; the
+	  owner's lynxboot.img when present, else its own start-up.

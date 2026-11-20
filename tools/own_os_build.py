@@ -231,10 +231,18 @@ def native(args):
         # Buildroot copies a local package with rsync -u, which keeps a newer leftover over an older staged file
         # (copy2 keeps the device build's dates): start RG DS Core's copy afresh every time.
         # The music engine is a local package too (os/buildroot/package/rgds-music, from src/music).
-        run('make', '-C', out, 'rgds-core-dirclean', 'rgds-music-dirclean', env=env)
+        # So is the pad daemon (os/buildroot/package/rgds-pad, from src/pad).
+        run('make', '-C', out, 'rgds-core-dirclean', 'rgds-music-dirclean', 'rgds-pad-dirclean', env=env)
+        if kernel_config_drift(out):
+            # a changed kernel fragment (board/rgds/linux-*.fragment): Buildroot only merges them when the kernel
+            # is configured, so an existing kernel build would keep the old settings without this
+            run('make', '-C', out, f'-j{args.jobs}', 'linux-reconfigure', env=env)
     run('make', '-C', out, f'-j{args.jobs}', *args.targets, env=env)
     if args.targets:
         return
+    drift = kernel_config_drift(out)
+    if drift:
+        raise SystemExit('The kernel was built without these fragment settings: ' + ', '.join(drift[:12]))
     # The image's RG DS Core must pass the check every game launch makes (runtime/activate.py).
     sys.path.insert(0, str(ROOT / 'runtime'))
     from activate import verify_release
@@ -263,6 +271,48 @@ def native(args):
         shutil.copy2(out / 'images' / name, target / name)
     (target / 'build-id').write_text(build + '\n')  # what own_os_push.py and own_os_release.py call this build
     if not args.slot_only: run('sha256sum', *(target / image.name for image in images))
+
+
+def kernel_fragments(text):
+    """The kernel config fragments rgds_os_defconfig (or an output .config) names, as paths in this checkout."""
+    found = re.search(r'^BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="([^"]*)"', text, re.M)
+    if not found:
+        return []
+    return [
+        Path(name.replace('$(BR2_EXTERNAL_RGDS_PATH)', str(ROOT / 'os/buildroot'))) for name in found.group(1).split()
+    ]
+
+
+def kernel_config_drift(out, kernel_config=None):
+    """Fragment settings the kernel's .config does not carry (empty when it matches, or before the first build).
+
+    Buildroot keeps output/.config until --reconfigure (a fragment newly listed in the defconfig is ignored, so
+    that stops the build), and merges the fragments into the kernel's .config only when the kernel is configured
+    (native() then runs linux-reconfigure). A setting Kconfig itself overrides shows up here after the build too.
+    """
+    defconfig = (ROOT / 'os/buildroot/configs/rgds_os_defconfig').read_text()
+    if kernel_fragments(defconfig) != kernel_fragments((out / '.config').read_text()):
+        raise SystemExit(
+            'output/rgds-os/.config names other kernel fragments than the defconfig: run with --reconfigure.'
+        )
+    kernel_config = kernel_config or out / 'build/linux-custom/.config'
+    if not kernel_config.is_file():
+        return []
+    have = {}
+    for line in kernel_config.read_text().splitlines():
+        if line.startswith('CONFIG_') and '=' in line:
+            name, value = line.split('=', 1)
+            have[name] = value
+    drift = []
+    for fragment in kernel_fragments(defconfig):
+        for line in fragment.read_text().splitlines():
+            if not line.startswith('CONFIG_') or '=' not in line:
+                continue
+            name, value = line.split('=', 1)
+            # "=n" and "is not set" are the same thing, as is a symbol this kernel does not have
+            if have.get(name, 'n') != value:
+                drift.append(f'{name}={value} (built: {have.get(name, "n")})')
+    return drift
 
 
 def check_cores(out):

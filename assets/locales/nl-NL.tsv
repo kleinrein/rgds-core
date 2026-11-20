@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Scherpe schaling met DS-kleurbehande
 Sharp scaling, DS colour and Natural Vision together.	Scherpe schaling, DS-kleuren en Natural Vision samen.
 Shield	Schild
 Shift	Shift
-Shift keys stay down until the next key	Shift-toetsen blijven ingedrukt tot de volgende toets
 Shortcut action	Sneltoetsactie
 Shots	Schoten
 Show games	Spellen tonen
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Al het andere 
 Room for more games.	Ruimte voor meer games.
 Console switches	Consoleschakelaars
 VMU screen	VMU-scherm
+3D: one eye each	3D: één oog per scherm
+Mouse	Muis
+RetroAchievements	RetroAchievements
+Account	Account
+RetroAchievements account	RetroAchievements-account
+Achievements	Prestaties
+{0} achievements	{0} prestaties
+{0} points	{0} punten
+1 point	1 punt
+Unlocked {0}	Ontgrendeld op {0}
+Play the game once to see its achievements.	Speel het spel één keer om de prestaties te zien.
+RetroAchievements has no achievements for this game yet.	RetroAchievements heeft nog geen prestaties voor dit spel.
+Earn achievements from retroachievements.org while you play.	Verdien prestaties van retroachievements.org terwijl je speelt.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Ontgrendel prestaties in je spellen terwijl je speelt. De lijst per spel staat in Spelinfo.
+A free account from retroachievements.org.	Een gratis account van retroachievements.org.
+Signing out…	Afmelden…
+Wait for the current task to finish, then sign in.	Wacht tot de huidige taak klaar is en meld je dan aan.
+Wait for the current task to finish, then sign out.	Wacht tot de huidige taak klaar is en meld je dan af.
+Signed in to RetroAchievements as {0}.	Aangemeld bij RetroAchievements als {0}.
+Signed out of RetroAchievements.	Afgemeld bij RetroAchievements.
+Enter your RetroAchievements username and password.	Voer je RetroAchievements-gebruikersnaam en -wachtwoord in.
+Could not reach RetroAchievements. Check the connection.	Kan RetroAchievements niet bereiken. Controleer de verbinding.
+Wrong username or password.	Onjuiste gebruikersnaam of wachtwoord.
+RetroAchievements did not accept the sign-in.	RetroAchievements heeft de aanmelding niet geaccepteerd.
+Achievement unlocked	Prestatie ontgrendeld
+Game mastered	Spel volledig voltooid
+achievements	prestaties
+Sign in again in Settings	Meld je opnieuw aan in Instellingen
+Could not sign in	Aanmelden mislukt
+This game file is not recognised	Dit spelbestand wordt niet herkend
+Could not load this game's achievements	Kan de prestaties van dit spel niet laden
+No achievements yet	Nog geen prestaties
+Every achievement unlocked	Alle prestaties ontgrendeld
+Offline: unlocks are sent when back online	Offline: ontgrendelingen worden verstuurd zodra je weer online bent
+Back online: unlocks sent	Weer online: ontgrendelingen verstuurd
+Play Nintendo WFC games online	Speel Nintendo WFC-games online
+Album	Album
+Menus	Menu's
+No screenshots yet	Nog geen schermafbeeldingen
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	Druk in een game op Menu + R, of kies Schermafbeelding in het gamemenu. Menu + R werkt ook in de menu's.
+This picture is the game's cover now.	Deze afbeelding is nu de cover van de game.
+The cover could not be changed.	De cover kon niet worden gewijzigd.
+The screenshot could not be saved.	De schermafbeelding kon niet worden opgeslagen.
+Delete this screenshot?	Deze schermafbeelding verwijderen?
+Use as the game's cover	Gebruiken als cover van de game
+Save the game behind this menu to the Album	De game achter dit menu in het album bewaren
+Saving the screenshot…	Schermafbeelding opslaan…
+Screenshot saved to the Album.	Schermafbeelding opgeslagen in het album.
+Still saving the last screenshot.	De vorige schermafbeelding wordt nog opgeslagen.
+No picture to save. Resume the game and press Menu + R.	Geen afbeelding om op te slaan. Hervat de game en druk op Menu + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Fotomodus
+Leave photo mode?	Fotomodus verlaten?
+Keep editing	Verder bewerken
+Leave without saving	Verlaten zonder opslaan
+Saved to the Album.	Opgeslagen in het album.
+The photo could not be saved.	De foto kon niet worden opgeslagen.
+This picture could not be opened.	Deze afbeelding kon niet worden geopend.
+Pen	Pen
+Stamps	Stempels
+Frames	Lijsten
+Lenses	Lenzen
+Date	Datum
+Sepia	Sepia
+Black & white	Zwart-wit
+Mosaic	Mozaïek
+Mirror	Spiegel
+Fisheye	Visoog
+Old photo	Oude foto
+Instant photo	Instantfoto
+Film strip	Filmstrook
+Postage stamp	Postzegel
+Rounded card	Afgeronde kaart
+Stars	Sterren
+Undo	Ongedaan maken
+Sound toy	Geluidsspeeltje
+Record your voice and change it	Neem je stem op en verander hem
+Chipmunk	Eekhoorn
+Monster	Monster
+Backwards	Achterstevoren
+Echo	Echo
+Press Record and say hello!	Druk op Opnemen en zeg hallo!
+Then pick a voice and draw on the lower screen to bend it.	Kies dan een stem en teken op het onderste scherm om hem te buigen.
+Recording…	Opnemen…
+Press X again to stop.	Druk nogmaals op X om te stoppen.
+Sound {0}	Geluid {0}
+Startup sound	Opstartgeluid
+Higher	Hoger
+Lower	Lager
+Record	Opnemen
+Stop	Stoppen
+Sounds	Geluiden
+Record a sound first	Neem eerst een geluid op
+The handheld starts quietly again	De console start weer stil op
+Plays when the handheld starts	Speelt af als de console start
+Could not save the sound	Kon het geluid niet opslaan
+Nothing heard. Hold the handheld closer and try again.	Niets gehoord. Houd de console dichterbij en probeer het opnieuw.
+This manual could not be opened	De handleiding kan niet worden geopend
+This page is not a scan	Deze pagina is geen scan
+This page could not be read	Deze pagina kan niet worden gelezen
+Giant	Reus
+Underwater	Onder water
+Choir	Koor
+8-bit	8-bit
+Telephone	Telefoon
+Megaphone	Megafoon
+Cave	Grot
+Jelly	Pudding
+Scratch	Scratch
+Whisper	Fluister
+Sloth	Luiaard
+Speedy	Supersnel
+Dragon	Draak
+Baby	Baby
+Opera	Opera
+Erase	Wissen
+Drawing cleared	Tekening gewist
+Nothing to clear	Niets te wissen
+Press Erase again to delete this sound	Druk nogmaals op Wissen om het geluid te verwijderen
+Sound erased	Geluid verwijderd
+Send in PictoChat	Versturen in PictoChat
+Send to phone	Naar telefoon sturen
+Connect to Wi-Fi to send pictures to a phone or computer.	Maak verbinding met wifi om afbeeldingen naar een telefoon of computer te sturen.
+Your picture is on the pad. Write or draw beside it, then send.	Je afbeelding staat op het blok. Schrijf of teken ernaast en verstuur.
+Join a room: your picture goes on the pad.	Ga een kamer in: je afbeelding komt op het blok.

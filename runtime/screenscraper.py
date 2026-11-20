@@ -40,10 +40,16 @@ SYSTEMS = {
     "coleco": 48,
     "intellivision": 115,
     "msx": 113,
+    "cpc": 65,
     "pce": 31,
     "pcecd": 114,
     "atari": 26,
+    "atari7800": 41,
+    "atari5200": 40,
+    "lynx": 28,
+    "vb": 11,
     "amiga": 64,
+    "dos": 135,
     "gw": 52,
     "psx": 57,
     "psp": 61,
@@ -54,6 +60,7 @@ SYSTEMS = {
 }
 # Bigger than this is matched by name and size: a disc's CRC means reading all of it.
 HASH_LIMIT = 64 * 1024**2
+INDEX_FILES = (".cue", ".m3u", ".m3u8", ".ccd", ".toc", ".gdi", ".chd")
 # Release words in No-Intro style names -> ScreenScraper regions.
 NAME_REGIONS = (
     ("USA", "us"), ("Europe", "eu"), ("Japan", "jp"), ("World", "wor"), ("Germany", "de"), ("France", "fr"),
@@ -80,6 +87,7 @@ FALLBACK_REGIONS = ("wor", "eu", "us", "ss", "jp")
 BOARDS = ("PEGI", "ESRB", "USK", "CERO")
 # Errors after which this run stops asking ScreenScraper and uses the public catalogs for the rest.
 STOPPING = (401, 403, 430, 431)
+FAILURE_LIMIT = 5
 PICTURE_MEDIA = {"snap": ("ss", "snap.bmp"), "title": ("sstitle", "title.bmp")}
 
 
@@ -88,6 +96,7 @@ def game_entry(path, system):
     path = Path(path)
     if system == "scummvm": return path.parent.name, 0, ""
     if path.suffix.lower() == ".7z": return path.name, 0, ""  # its contents unreadable here: by name only
+    if system == "dos" and path.suffix.lower() == ".zip": return path.name, path.stat().st_size, ""  # a zipped folder
     if path.suffix.lower() == ".zip":
         from play_options import SYSTEMS as SUFFIXES
         suffixes = {s for values in SUFFIXES.values() for s in values} | {".nds", ".dsi"}
@@ -97,7 +106,8 @@ def game_entry(path, system):
         entry = entries[0]
         return Path(entry.filename).name, entry.file_size, "%08X" % (entry.CRC & 0xffffffff)
     size = path.stat().st_size
-    if size > HASH_LIMIT: return path.name, size, ""
+    # A disc's index file (or its list) is a few hundred bytes naming the tracks: its CRC matches no game.
+    if size > HASH_LIMIT or path.suffix.lower() in INDEX_FILES: return path.name, size, ""
     return path.name, size, rom_crc(path)
 
 
@@ -125,14 +135,14 @@ def text_of(value):
 def information(jeu, order):
     """({info.ini fields}, {LANGUAGE: synopsis}) from one jeuInfos game."""
     genres = []
-    for genre in sorted(jeu.get("genres") or [], key=lambda g: str(g.get("principale", "0")) != "1"):
+    for genre in sorted([g for g in jeu.get("genres") or [] if isinstance(g, dict)], key=lambda g: str(g.get("principale", "0")) != "1"):
         names = [n for n in genre.get("noms") or [] if isinstance(n, dict)]
         english = next((n.get("text") for n in names if n.get("langue") == "en"), "")
         if english and english not in genres: genres.append(english)
     date = pick(jeu.get("dates"), order)
     year, month, day = (re.findall(r"\d+", date) + ["", "", ""])[:3]
     rating = ""
-    ratings = {str(c.get("type", "")).upper(): str(c.get("text", "")).strip() for c in jeu.get("classifications") or []}
+    ratings = {str(c.get("type", "")).upper(): str(c.get("text", "")).strip() for c in jeu.get("classifications") or [] if isinstance(c, dict)}
     for board in BOARDS:
         if minimum_age(board + " " + ratings.get(board, "")) is not None:
             rating = board + " " + ratings[board]
@@ -140,6 +150,7 @@ def information(jeu, order):
     players = [int(n) for n in re.findall(r"\d+", text_of(jeu.get("joueurs")))]
     synopses = {}
     for entry in jeu.get("synopsis") or []:
+        if not isinstance(entry, dict): continue
         language = str(entry.get("langue", "")).upper()
         if re.fullmatch(r"[A-Z]{2,3}", language) and str(entry.get("text", "")).strip():
             synopses.setdefault(language, str(entry["text"]).strip())
@@ -164,6 +175,7 @@ class ScreenScraperClient:
         self.client, self.public = client, public
         self.cache = public.cache  # GameInfo keeps its catalogs here
         self.stopped = ""  # why this run stopped asking ScreenScraper, if it did
+        self.failures = 0  # games in a row it could not answer (busy, closed, unreadable)
         self.games = {}  # (rom, matching title) -> jeu or the NotFound it gave: the cover and the details share it
 
     def login(self):
@@ -241,6 +253,7 @@ class ScreenScraperClient:
             try:
                 jeu = self.game(rom, name_override)
                 raw = self.media(jeu, "box-2D")
+                self.failures = 0
                 return raw, {
                     "provider": "ScreenScraper",
                     "provider_id": str(jeu["id"]),
@@ -248,9 +261,12 @@ class ScreenScraperClient:
                     "artwork_match": "title" if name_override.strip() else "rom"
                 }
             except NotFound:
-                pass
-            except ScraperError:
-                if not self.stopped: raise
+                self.failures = 0
+            except ScraperError as error:
+                # Busy or closed for this game: the public catalogs answer it. Several in a row mean the service is
+                # down, and the rest of the run does not wait for it.
+                self.failures += 1
+                if self.failures >= FAILURE_LIMIT and not self.stopped: self.stopped = str(error)
         return self.public.artwork(rom, name_override)
 
 
@@ -278,7 +294,7 @@ class ScreenScraperInfo(GameInfo):
     def information(self, rom, system, code):
         try:
             jeu = self.jeu(rom, self.item)
-        except NotFound:
+        except (NotFound, ScraperError):
             if system in ("nds", "3ds") or not super().supports(system): raise
             return super().information(rom, system, code)
         fields, synopses = information(jeu, jeu["_order"])

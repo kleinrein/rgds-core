@@ -77,6 +77,8 @@ class MenuInput:
         }
         self.shortcut = Shortcut(self.profile["shortcut"], self.profile["shortcut_action"])
         self.profile_at = 0
+        self.r_held = self.chorded = False
+        self.chord_at = self.chord_released = -10
         self.profile_stamp = None
         self.suppressed_keys = set()
         self.speed = FastForwardButton()
@@ -159,6 +161,20 @@ class MenuInput:
                         if change: self.actions.append(change)
                 if kind == 1 and value in (0, 1):
                     button = menu_button_action(code, 312 in self.codes[fd]) if code in self.codes[fd] else None
+                    # Menu + R (either order) takes a screenshot; R alone stays the game's.
+                    if button is None and code != self.starts[fd] and evdev_source(
+                        kind, code, value, mainline=self.mainline.get(fd, False)
+                    ) == 'r':
+                        self.r_held = value == 1
+                        if value == 1 and self.shortcut.menu:
+                            self.take_chord(now)
+                    if button == 'menu' and value == 1 and self.r_held and not self.shortcut.menu:
+                        self.shortcut.feed('menu', True, now)
+                        self.take_chord(now)
+                        continue
+                    if button == 'menu' and value == 0 and self.chorded:
+                        self.chorded = False
+                        self.chord_released = now
                     if button == 'game-menu':
                         if value == 1: self.actions.append(button)
                         continue
@@ -168,6 +184,17 @@ class MenuInput:
         action = self.shortcut.poll(now)
         if action: self.actions.append(action)
         return self.actions.popleft() if self.actions else False
+
+    def take_chord(self, now):
+        self.shortcut.chord()
+        self.chorded = True
+        if now - self.chord_at >= .5:
+            self.chord_at = now
+            self.actions.append('screenshot')
+
+    def chord_holds_menu(self, now):
+        """The bridge's own lone-Menu press that is really this chord's (it cannot see R)."""
+        return self.chorded or now - self.chord_released < .4
 
     def discard_after_sleep(self):
         # Read-and-discard, never replay presses accumulated around suspend.
@@ -255,6 +282,8 @@ class GameMenu:
         self.block = Path(str(self.control) + ".blocked")
         self.menu = None
         self.snapshot_deadline = None
+        self.shot_deadline = None
+        self.shot_worker = None
         self.paused = False
         self.pending = None
         self.sequence = 0
@@ -407,9 +436,107 @@ class GameMenu:
             self.request_speed('fast-forward-off')
         self.fast_forward = False
 
+    def screenshot(self):
+        """Menu + R while playing: one frame of both panels from the bridge (shot- token: shutter flash and buzz)."""
+        if self.menu is not None:
+            return self.screenshot_paused()
+        if self.shot_deadline is not None or self.snapshot_deadline is not None or self.child.poll() is not None:
+            return False
+        if not self.environment.get('RGDS_CONTROL_FILE'):
+            return False
+        for suffix in ('.capture-top.bmp', '.capture-bottom.bmp', '.capture-combined.bmp'):
+            Path(str(self.control) + suffix).unlink(missing_ok=True)
+        Path(str(self.control) + '.capture').write_text(f'shot-{os.getpid()}-{time.monotonic_ns()}\n')
+        # GPU engines answer within a frame or two; a panel that never presents (a one-window port) is left out.
+        self.shot_deadline = time.monotonic() + .5
+        return True
+
+    def screenshot_paused(self):
+        """The Game menu's Screenshot row: the frame the menu captured when it opened (the game behind it)."""
+        captures = {
+            name: Path(str(self.control) + '.capture-' + name + '.bmp')
+            for name in ('top', 'bottom', 'combined')
+        }
+        if not any(path.is_file() for path in captures.values()):
+            self.publish('paused', 'No picture to save. Resume the game and press Menu + R.')
+            return False
+        self.save_shot(captures, menu=True)
+        return True
+
+    def poll_shot(self):
+        if self.shot_deadline is None:
+            return
+        files = {name: Path(str(self.control) + '.capture-' + name + '.bmp') for name in ('top', 'bottom', 'combined')}
+        request = Path(str(self.control) + '.capture')
+        done = not request.exists() or files['combined'].is_file()
+        if not done and time.monotonic() < self.shot_deadline and self.child.poll() is None:
+            return
+        self.shot_deadline = None
+        request.unlink(missing_ok=True)
+        if any(path.is_file() for path in files.values()):
+            self.save_shot(files)
+        else:
+            print('RGDS screenshot: no frame arrived', file=sys.stderr, flush=True)
+
+    def save_shot(self, files, menu=False):
+        """PNG encoding (and the shutter click) off the supervisor loop; the captures are moved aside first."""
+        if self.shot_worker is not None and self.shot_worker.is_alive():
+            if menu: self.publish('paused', 'Still saving the last screenshot.')
+            return
+        taken = {}
+        for name, path in files.items():
+            if path.is_file():
+                target = self.folder / ('screenshot-' + name + '.bmp')
+                try:
+                    if menu:
+                        target.write_bytes(path.read_bytes())  # the menu's own capture stays for its backdrop
+                    else:
+                        path.replace(target)
+                    taken[name] = target
+                except OSError:
+                    pass
+        import threading
+
+        def work():
+            if not menu:
+                # The click right away, with the flash; the PNG follows.
+                try:
+                    from sleep_sounds import play
+                    play(self.data, 'shutter')
+                except Exception:  # noqa: BLE001 - a click must never break the save
+                    pass
+            try:
+                import screenshots
+                saved = screenshots.save(
+                    self.data,
+                    taken.get('top'),
+                    taken.get('bottom'),
+                    taken.get('combined'),
+                    key=game_key(self.rom),
+                    title=screenshots.title_for(self.rom),
+                    system=self.core,
+                    rom=self.rom
+                )
+                screenshots.write_index(self.data)
+                print('RGDS screenshot: ' + str(saved), flush=True)
+                if menu: self.publish('paused', 'Screenshot saved to the Album.')  # the menu plays its own cue
+            except (OSError, ValueError) as error:
+                print('RGDS screenshot: ' + str(error), file=sys.stderr, flush=True)
+                if menu: self.publish('paused', 'The screenshot could not be saved.')
+            finally:
+                for path in taken.values():
+                    path.unlink(missing_ok=True)
+
+        self.shot_worker = threading.Thread(target=work, name='screenshot', daemon=True)
+        self.shot_worker.start()
+
     def open(self):
         if self.menu is not None or self.snapshot_deadline is not None or self.child.poll() is not None:
             return
+        if self.shot_deadline is not None:
+            # The shot's frame first; the menu's own capture would remove it.
+            self.shot_deadline = 0
+            self.poll_shot()
         self.open_stages = dict(pressed=time.monotonic())
         self.stop_speed_for_menu()
         backdrop = self.folder / 'menu-background.bmp'
@@ -796,6 +923,7 @@ class GameMenu:
 
     def poll(self):
         self.poll_snapshot()
+        self.poll_shot()
         self.poll_bench()
         if self.lid.poll(ready=self.pending is None and self.child.poll() is None):
             self.sleep_for_lid()
@@ -814,6 +942,9 @@ class GameMenu:
         if isinstance(key, str) and key.startswith('fast-forward-'):
             self.request_speed(key)
             key = False
+        if key == 'screenshot':
+            if not self.pending: self.screenshot()
+            key = False
         home = self.home_trigger.exists() or key == 'home'
         if self.home_trigger.exists(): self.home_trigger.unlink(missing_ok=True)
         game_menu = self.game_menu_trigger.exists() or key == 'game-menu'
@@ -821,6 +952,10 @@ class GameMenu:
         triggered = self.trigger.exists()
         if triggered:
             self.trigger.unlink(missing_ok=True)
+            # The bridge cannot see R: its lone-Menu press that was the start of Menu + R is dropped here.
+            chord = getattr(self.inputs, 'chord_holds_menu', None)
+            if chord and chord(time.monotonic()):
+                triggered = False
         # Independent evdev and SDL paths can observe the same physical press
         # on adjacent supervisor polls. One press must toggle the menu once.
         if home and not self.pending and self.child.poll() is None:
@@ -897,6 +1032,8 @@ class GameMenu:
                 self.switch_game(action.split(':', 1)[1])
             elif action.startswith('graphics:') and not self.pending and self.renderer_restart(action):
                 pass
+            elif action == 'screenshot' and not self.pending:
+                self.screenshot_paused()
             elif action in ('restart', 'reset-state') and not self.pending:
                 self.switch_target = None
                 self.reset_state = action == 'reset-state'

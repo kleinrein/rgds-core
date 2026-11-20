@@ -97,6 +97,13 @@ public:
     // (`force`: the setting was just chosen, which overrides that and is remembered in its place).
     void set_keyboard_first(bool on, bool force);
     bool showing_alternative() const;
+    // The game's scanned manual (reader/manual.hpp), one more screen behind the switch: never shown on its own,
+    // only when the switch is turned to it. While it shows, a HUD split stays in the game picture.
+    void set_manual(std::unique_ptr<View> manual) { manual_ = std::move(manual); }
+    bool has_manual() const { return manual_ != nullptr; }
+    bool showing_manual() const;
+    // Every finger on the second screen (a pinch on the manual); true when it must be drawn again.
+    bool fingers(const std::vector<std::pair<int, int>>& down);
 
 private:
     void take(MapImage img);
@@ -141,6 +148,12 @@ private:
     const uint32_t* shown(const uint32_t* px, int w, int h, std::vector<uint32_t>& buffer) const;
     uint32_t shown_px(uint32_t v) const;
     bool alt_ = false;
+    std::unique_ptr<View> manual_;
+    bool manual_on_ = false;
+    // The screens the switch steps through (0 the game's own, 1 the alternative, 2 the manual) and the next one.
+    int screen_now() const;
+    int screen_next() const;
+    bool hud_allowed() const { return shown_ && !showing_manual(); }
     std::string alt_file_;
     bool alt_known_ = false;
     Box switch_box(int w) const;

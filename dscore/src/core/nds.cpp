@@ -12,6 +12,7 @@
 #include "core/bios/freebios.h"
 #include "core/cart/zip_cache.h"
 
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -248,8 +249,14 @@ bool NDS::write_user_settings(UserField field, const bios::UserSettings& in) {
   return true;
 }
 
+bool NDS::firmware_wifi_page(u32 offset) const {
+  const u32 user = user_settings_offset();
+  return user >= 0x400 && offset >= user - 0x400 && offset < user - 0x100; // connection slots 1-3
+}
+
 void NDS::firmware_written(u32 offset) {
-  if (firmware_synthetic) return; // nothing on disk to persist against
+  if (firmware_synthetic && !firmware_wifi_page(offset)) return; // the rest is rebuilt from the config
+  fw_writes++;
   const u32 page = offset / FW_PAGE;
   if (page >= fw_page_dirty.size() || fw_page_dirty[page]) return;
   fw_page_dirty[page] = 1;
@@ -263,10 +270,6 @@ constexpr char kFwOvrMagic[8] = {'D', 'S', 'F', 'W', 'O', 'V', 'R', '1'};
 } // namespace
 
 bool NDS::load_firmware_override(const std::string& path, std::string& err) {
-  if (firmware_synthetic) {
-    err = "generated firmware has no settings to override";
-    return false;
-  }
   std::ifstream f(path, std::ios::binary);
   if (!f) {
     err = "cannot open";
@@ -287,7 +290,8 @@ bool NDS::load_firmware_override(const std::string& path, std::string& err) {
     return false;
   }
   // Not fatal: settings pages are the same shape in every retail firmware.
-  if (head[1] != static_cast<u32>(firmware_id)) err = "made from a different firmware dump";
+  // A generated firmware's identity follows the [user] settings; only its Wi-Fi slots are kept anyway.
+  if (!firmware_synthetic && head[1] != static_cast<u32>(firmware_id)) err = "made from a different firmware dump";
   if (head[2] != FW_PAGE) {
     err = "unknown page size";
     return false;
@@ -302,10 +306,13 @@ bool NDS::load_firmware_override(const std::string& path, std::string& err) {
       err = "page out of range";
       return false;
     }
-    if (!f.read(reinterpret_cast<char*>(firmware.data() + page * FW_PAGE), FW_PAGE)) {
+    std::array<u8, FW_PAGE> bytes;
+    if (!f.read(reinterpret_cast<char*>(bytes.data()), FW_PAGE)) {
       err = "truncated";
       return false;
     }
+    if (firmware_synthetic && !firmware_wifi_page(page * FW_PAGE)) continue;
+    std::memcpy(firmware.data() + page * FW_PAGE, bytes.data(), FW_PAGE);
     firmware_written(page * FW_PAGE);
   }
   // An override may carry a real calibration from the firmware's wizard; normalise again over it.
@@ -317,10 +324,6 @@ bool NDS::load_firmware_override(const std::string& path, std::string& err) {
 
 bool NDS::save_firmware_override(const std::string& path, std::string& err) {
   if (!fw_dirty_pages) return true;
-  if (firmware_synthetic) {
-    err = "generated firmware is not persisted";
-    return false;
-  }
   const std::string tmp = path + ".tmp";
   {
     std::ofstream f(tmp, std::ios::binary | std::ios::trunc);

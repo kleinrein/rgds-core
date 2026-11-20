@@ -2,10 +2,15 @@
 // DSperate - Nintendo DS emulator. Copyright (C) 2026 DSperate contributors.
 #include "cheevos/cheevos_client.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
+#include <functional>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include <fcntl.h>
@@ -280,7 +285,12 @@ bool Client::start(std::string& err) {
   if (client_) return true;
   err.clear();
 
-  http_ = make_curl_backend(err);
+  if (!helper_.script.empty()) {
+    if (helper_.user_agent.empty()) helper_.user_agent = user_agent();
+    http_ = make_helper_backend(helper_, err);
+  } else {
+    http_ = make_curl_backend(err);
+  }
   if (!http_) {
     unavailable_ = "no HTTP support on this device (" + err + ")";
     state_ = State::Off;
@@ -321,6 +331,8 @@ void Client::shutdown() {
       std::lock_guard<std::mutex> lk(mu_);
       stop_ = true;
     }
+    // A request in flight gets a moment to finish (an unlock on its way), not its full timeout.
+    if (http_) http_->interrupt();
     cv_.notify_all();
     worker_.join();
   }
@@ -332,8 +344,10 @@ void Client::shutdown() {
   {
     std::lock_guard<std::mutex> lk(mu_);
     jobs_.clear();
+    badge_jobs_.clear();
     done_.clear();
   }
+  badges_pending_ = 0;
   http_.reset();
   state_ = State::Off;
 }
@@ -356,10 +370,11 @@ void Client::worker_loop() {
     Job job;
     {
       std::unique_lock<std::mutex> lk(mu_);
-      cv_.wait(lk, [this] { return stop_ || !jobs_.empty(); });
+      cv_.wait(lk, [this] { return stop_ || !jobs_.empty() || !badge_jobs_.empty(); });
       if (stop_) return;
-      job = std::move(jobs_.front());
-      jobs_.pop_front();
+      std::deque<Job>& from = !jobs_.empty() ? jobs_ : badge_jobs_;
+      job = std::move(from.front());
+      from.pop_front();
     }
 
     CLOG("-> %s%s\n", job.req.url.c_str(), job.req.body.empty() ? "" : " (POST)");
@@ -367,9 +382,23 @@ void Client::worker_loop() {
     CLOG("<- status %d, %zu bytes%s%s\n", res.status, res.body.size(), res.error.empty() ? "" : ", ",
          res.error.c_str());
 
+    // A backend that hands the picture back (libcurl) leaves the file to us;
+    // the helper writes it itself and answers with no body.
+    if (!job.req.save_path.empty() && res.status == 200 && !res.body.empty()) {
+      const std::string tmp = job.req.save_path + ".part";
+      if (std::FILE* f = std::fopen(tmp.c_str(), "wb")) {
+        const bool ok = std::fwrite(res.body.data(), 1, res.body.size(), f) == res.body.size();
+        if (std::fclose(f) == 0 && ok && std::rename(tmp.c_str(), job.req.save_path.c_str()) == 0) {
+        } else {
+          ::unlink(tmp.c_str());
+        }
+      }
+      res.body.clear();
+    }
+
     {
       std::lock_guard<std::mutex> lk(mu_);
-      done_.push_back(Completion{std::move(res), job.callback, job.callback_data});
+      done_.push_back(Completion{std::move(res), job.callback, job.callback_data, job.badge});
     }
   }
 }
@@ -395,6 +424,10 @@ void Client::drain_completions() {
       done = std::move(done_.front());
       done_.pop_front();
     }
+    if (done.badge) {
+      if (badges_pending_ && --badges_pending_ == 0) list_dirty_ = true; // the pictures are in: list their paths
+      continue;
+    }
     rc_api_server_response_t res{};
     res.body = done.res.body.c_str();
     res.body_length = done.res.body.size();
@@ -412,12 +445,14 @@ void Client::frame() {
   if (!client_) return;
   drain_completions();
   rc_client_do_frame(static_cast<rc_client_t*>(client_));
+  if (list_dirty_) write_list();
 }
 
 void Client::idle() {
   if (!client_) return;
   drain_completions();
   rc_client_idle(static_cast<rc_client_t*>(client_));
+  if (list_dirty_) write_list();
 }
 
 u32 Client::read(u32 address, u8* buffer, u32 num_bytes) { return mem_.read(address, buffer, num_bytes); }
@@ -542,6 +577,8 @@ void Client::on_sign_in_failed(const std::string& why) {
 
 void Client::on_game_loaded(const std::string& title, u32 id) {
   state_ = State::Playing;
+  list_dirty_ = true;
+  fetch_badges();
   post(Message::Kind::Info, title.empty() ? "Achievements loaded" : title, "achievements active");
   CLOG("game %u loaded: %s\n", id, title.c_str());
 }
@@ -549,6 +586,7 @@ void Client::on_game_loaded(const std::string& title, u32 id) {
 // No popup: nothing has gone wrong, nothing to do.
 void Client::on_empty_set(const std::string& title, u32 id) {
   state_ = State::EmptySet;
+  list_dirty_ = true; // known game, total 0
   CLOG("game %u known (%s) but has no published achievements\n", id, title.c_str());
 }
 
@@ -576,25 +614,35 @@ std::vector<Client::Achievement> Client::achievements() const {
   rc_client_achievement_list_t* list = rc_client_create_achievement_list(
       c, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE, RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
   if (!list) return out;
+  // The buckets split the set by lock state; their entries point into the
+  // set's own array, which is in RetroAchievements' display order, so sorting
+  // by address puts the set back together in that order.
+  std::vector<std::pair<const rc_client_achievement_t*, u8>> all;
   for (u32 b = 0; b < list->num_buckets; ++b) {
     const rc_client_achievement_bucket_t& bucket = list->buckets[b];
-    for (u32 i = 0; i < bucket.num_achievements; ++i) {
-      const rc_client_achievement_t* a = bucket.achievements[i];
-      if (!a || is_warning(a->id)) continue;
-      Achievement info;
-      info.title = a->title ? a->title : "";
-      info.description = a->description ? a->description : "";
-      info.progress = a->measured_progress;
-      info.id = a->id;
-      info.points = a->points;
-      // unlocked = account holds it; active = can trigger now (both true in encore).
-      info.unlocked = a->state == RC_CLIENT_ACHIEVEMENT_STATE_UNLOCKED ||
-                      (a->unlocked & RC_CLIENT_ACHIEVEMENT_UNLOCKED_SOFTCORE) != 0;
-      info.active = a->state == RC_CLIENT_ACHIEVEMENT_STATE_ACTIVE;
-      info.unsupported = a->state == RC_CLIENT_ACHIEVEMENT_STATE_DISABLED ||
-                         bucket.bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_UNSUPPORTED;
-      out.push_back(std::move(info));
-    }
+    for (u32 i = 0; i < bucket.num_achievements; ++i)
+      if (bucket.achievements[i]) all.emplace_back(bucket.achievements[i], bucket.bucket_type);
+  }
+  std::sort(all.begin(), all.end(),
+            [](const auto& x, const auto& y) { return std::less<const rc_client_achievement_t*>()(x.first, y.first); });
+  for (const auto& [a, bucket_type] : all) {
+    if (is_warning(a->id)) continue;
+    Achievement info;
+    info.title = a->title ? a->title : "";
+    info.description = a->description ? a->description : "";
+    info.progress = a->measured_progress;
+    info.badge = a->badge_name;
+    info.id = a->id;
+    info.points = a->points;
+    // unlocked = account holds it; active = can trigger now (both true in encore).
+    info.unlocked = a->state == RC_CLIENT_ACHIEVEMENT_STATE_UNLOCKED ||
+                    (a->unlocked & RC_CLIENT_ACHIEVEMENT_UNLOCKED_SOFTCORE) != 0;
+    info.active = a->state == RC_CLIENT_ACHIEVEMENT_STATE_ACTIVE;
+    info.unsupported =
+        a->state == RC_CLIENT_ACHIEVEMENT_STATE_DISABLED || bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_UNSUPPORTED;
+    info.unlock_time = info.unlocked ? static_cast<long long>(a->unlock_time) : 0;
+    info.rarity = a->rarity;
+    out.push_back(std::move(info));
   }
   rc_client_destroy_achievement_list(list);
   return out;
@@ -613,6 +661,130 @@ Client::Summary Client::summary() const {
     if (a.unsupported) ++s.unsupported;
   }
   return s;
+}
+
+// ---------------------------------------------------------------------------
+// Badges and the list file for RG DS's Game info page
+
+namespace {
+
+// Tabs and newlines would break the list's columns.
+std::string field(const std::string& in) {
+  std::string out = in;
+  for (char& ch : out)
+    if (ch == '\t' || ch == '\n' || ch == '\r') ch = ' ';
+  return out;
+}
+
+bool safe_badge_name(const std::string& name) {
+  if (name.empty() || name.size() > 32) return false;
+  for (char ch : name)
+    if (!((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '-'))
+      return false;
+  return true;
+}
+
+bool regular_file(const std::string& path) {
+  struct stat st{};
+  return ::stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0;
+}
+
+} // namespace
+
+void Client::fetch_badges() {
+  if (!client_ || badges_.empty()) return;
+  rc_client_t* c = static_cast<rc_client_t*>(client_);
+  ::mkdir(badges_.c_str(), 0755);
+  rc_client_achievement_list_t* list = rc_client_create_achievement_list(
+      c, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE, RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
+  if (!list) return;
+  std::set<std::string> asked;
+  std::vector<Job> jobs;
+  for (u32 b = 0; b < list->num_buckets; ++b) {
+    const rc_client_achievement_bucket_t& bucket = list->buckets[b];
+    for (u32 i = 0; i < bucket.num_achievements; ++i) {
+      const rc_client_achievement_t* a = bucket.achievements[i];
+      if (!a || is_warning(a->id)) continue;
+      const std::string name = a->badge_name;
+      if (!safe_badge_name(name) || !asked.insert(name).second) continue;
+      const std::string path = badges_ + "/" + name + ".png";
+      if (regular_file(path)) continue;
+      char url[512] = {};
+      if (a->badge_url && *a->badge_url) std::snprintf(url, sizeof url, "%s", a->badge_url);
+      else if (rc_client_achievement_get_image_url(a, RC_CLIENT_ACHIEVEMENT_STATE_UNLOCKED, url, sizeof url) != RC_OK)
+        continue;
+      Job job;
+      job.req.url = url;
+      job.req.save_path = path;
+      job.badge = true;
+      jobs.push_back(std::move(job));
+    }
+  }
+  rc_client_destroy_achievement_list(list);
+  if (jobs.empty()) return;
+  CLOG("fetching %zu badge pictures\n", jobs.size());
+  badges_pending_ += static_cast<u32>(jobs.size());
+  {
+    std::lock_guard<std::mutex> lk(mu_);
+    for (Job& j : jobs) badge_jobs_.push_back(std::move(j));
+  }
+  cv_.notify_one();
+}
+
+std::string Client::list_text() const {
+  if (!client_) return {};
+  if (state_ != State::Playing && state_ != State::EmptySet) return {};
+  const u32 id = game_id();
+  if (id == 0) return {};
+  const std::vector<Achievement> all = achievements();
+  u32 unlocked = 0, points = 0, points_earned = 0;
+  for (const Achievement& a : all) {
+    points += a.points;
+    if (a.unlocked) {
+      ++unlocked;
+      points_earned += a.points;
+    }
+  }
+  std::string account = username();
+  if (account.empty()) {
+    const rc_client_user_t* u = rc_client_get_user_info(static_cast<rc_client_t*>(client_));
+    if (u && u->display_name) account = u->display_name;
+  }
+  std::string out = "#rgds-achievements 1\n";
+  out += "game\t" + std::to_string(id) + "\t" + field(game_title()) + "\t" + std::to_string(unlocked) + "\t" +
+         std::to_string(all.size()) + "\t" + std::to_string(points_earned) + "\t" + std::to_string(points) + "\t" +
+         field(account) + "\t" + std::to_string(static_cast<long long>(std::time(nullptr))) + "\n";
+  for (const Achievement& a : all) {
+    char rarity[32] = "";
+    if (a.rarity >= 0 && a.rarity <= 100) std::snprintf(rarity, sizeof rarity, "%.2f", static_cast<double>(a.rarity));
+    std::string badge;
+    if (!badges_.empty() && safe_badge_name(a.badge)) {
+      const std::string path = badges_ + "/" + a.badge + ".png";
+      if (regular_file(path)) badge = path;
+    }
+    out += "ach\t" + std::to_string(a.id) + "\t" + (a.unlocked ? "1" : "0") + "\t" + std::to_string(a.points) + "\t" +
+           std::to_string(a.unlocked ? a.unlock_time : 0) + "\t" + rarity + "\t" + field(a.title) + "\t" +
+           field(a.description) + "\t" + field(badge) + "\t" + field(a.progress) + "\n";
+  }
+  return out;
+}
+
+void Client::write_list() {
+  list_dirty_ = false;
+  if (list_path_.empty()) return;
+  const std::string text = list_text();
+  if (text.empty()) return;
+  const std::string tmp = list_path_ + ".tmp";
+  std::FILE* f = std::fopen(tmp.c_str(), "wb");
+  if (!f) {
+    std::fprintf(stderr, "cheevos: cannot write %s: %s\n", tmp.c_str(), std::strerror(errno));
+    return;
+  }
+  const bool ok = std::fwrite(text.data(), 1, text.size(), f) == text.size();
+  if (std::fclose(f) != 0 || !ok || std::rename(tmp.c_str(), list_path_.c_str()) != 0) {
+    std::fprintf(stderr, "cheevos: cannot write %s: %s\n", list_path_.c_str(), std::strerror(errno));
+    ::unlink(tmp.c_str());
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -659,6 +831,7 @@ void Client::handle_event(const void* event_ptr) {
       CLOG("ignoring warning achievement %u: %s\n", e->achievement->id,
            e->achievement->title ? e->achievement->title : "");
     } else if (e->achievement) {
+      self->list_dirty_ = true;
       self->post(Message::Kind::Unlock, e->achievement->title ? e->achievement->title : "Achievement unlocked",
                  e->achievement->description ? e->achievement->description : "", e->achievement->points);
     }

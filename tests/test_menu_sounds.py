@@ -16,7 +16,7 @@ BINARY = ROOT / 'build/host/rgds-launcher'
 class SoundBankTests(unittest.TestCase):
     def test_bank_is_distinct_finite_quiet_at_boundaries_and_small(self):
         clips = list((ROOT / 'assets/sounds').glob('*.wav'))
-        self.assertEqual(len(clips), 17)
+        self.assertEqual(len(clips), 18)  # 17 menu cues and the screenshot's shutter
         hashes = set()
         total = 0
         for clip in clips:
@@ -31,7 +31,7 @@ class SoundBankTests(unittest.TestCase):
                 self.assertLess(max(map(abs, samples)), 23000)
                 total += len(raw)
                 hashes.add(hashlib.sha256(raw).digest())
-        self.assertEqual(len(hashes), 17)
+        self.assertEqual(len(hashes), 18)
         self.assertLess(total, 420000)
 
 

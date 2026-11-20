@@ -345,4 +345,46 @@ inline bool fast_forward(unsigned char* pixels) {
     canvas.text(word("RGDS_HUD_FAST", "Fast"), 72, 420 + 7, 20, p.ink);
     return true;
 }
+
+// `text` cut at a code point and ended with an ellipsis so it fits `width` pixels at `size`.
+inline std::string fit(std::string text, int size, float width) {
+    if (font().width(size, text) <= width) return text;
+    const std::string dots = "\u2026";
+    while (!text.empty() && font().width(size, text + dots) > width) {
+        while (!text.empty() && (static_cast<unsigned char>(text.back()) & 0xC0) == 0x80) text.pop_back();
+        if (!text.empty()) text.pop_back();
+    }
+    while (!text.empty() && text.back() == ' ') text.pop_back();
+    return text + dots;
+}
+
+// An engine's notice (rgds_toast), drawn on the lower panel: a card near the
+// bottom edge with a quiet header, the title and an optional detail line. Kind
+// 0 is an unlocked achievement (its points on the right), 1 news, 2 a problem.
+inline bool toast(unsigned char* pixels, int kind, const std::string& title, const std::string& detail, int points) {
+    if (!ready()) return false;
+    Canvas canvas{pixels};
+    auto& p = palette();
+    const std::string header = kind == 0 ? word("RGDS_HUD_ACHIEVEMENT_UNLOCKED", "Achievement unlocked")
+                                         : word("RGDS_HUD_RETROACHIEVEMENTS", "RetroAchievements");
+    const std::string score = kind == 0 && points > 0 ? std::to_string(points) + " " +
+                                                            word(points == 1 ? "RGDS_HUD_POINT" : "RGDS_HUD_POINTS",
+                                                                 points == 1 ? "point" : "points")
+                                                      : std::string();
+    const float pad = 22, most = 640 - 48, inner = most - 2 * pad;
+    const float score_w = score.empty() ? 0 : font().width(16, score);
+    const std::string line = fit(title, 20, inner);
+    const std::string more = detail.empty() ? std::string() : fit(detail, 16, inner);
+    float w = std::max({font().width(16, header) + (score_w > 0 ? 24 + score_w : 0), font().width(20, line),
+                        more.empty() ? 0.f : font().width(16, more)});
+    w = std::clamp(std::ceil(w + 2 * pad), 300.f, most);
+    const float h = 14 + 22 + 28 + (more.empty() ? 0 : 22) + 10;
+    const float x = std::round((640 - w) / 2), y = 480 - 24 - h;
+    canvas.card(x, y, w, h, 20);
+    canvas.text(header, x + pad, int(y) + 14, 16, p.muted);
+    if (score_w > 0) canvas.text(score, x + w - pad - score_w, int(y) + 14, 16, p.accent);
+    canvas.text(line, x + pad, int(y) + 14 + 22, 20, p.ink);
+    if (!more.empty()) canvas.text(more, x + pad, int(y) + 14 + 22 + 28, 16, p.muted);
+    return true;
+}
 }

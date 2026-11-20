@@ -79,6 +79,7 @@ void App::prepare_render_assets() {
     }
     if (home_menu && preferences.home_layout == 1 && summary.groups[0].last_game)
         for (auto& panel : surfaces) warm_icon(panel.renderer, *summary.groups[0].last_game);
+    album_warm();
     if (settings.page == Page::SaveGallery) {
         auto path = slots["image_" + std::to_string(settings.focus)];
         if (!path.empty())

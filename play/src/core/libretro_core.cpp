@@ -7,6 +7,8 @@
 #include "libretro/libretro.h"
 #include "zx_machine.hpp"
 
+#include "rc_libretro.h" // rcheevos: the system's memory as RetroAchievements reads it
+
 #include <algorithm>
 #include <chrono>
 #include <array>
@@ -175,7 +177,8 @@ bool has_kickstart(const std::string& system_dir) {
     for (const auto& file : std::filesystem::directory_iterator(system_dir, missing)) {
         std::string name = file.path().filename().string();
         for (auto& c : name) c = char(std::tolower(static_cast<unsigned char>(c)));
-        if (name.rfind("kick", 0) == 0 || name.rfind("amiga-os-", 0) == 0 || name.find("kickstart") != std::string::npos)
+        if (name.rfind("kick", 0) == 0 || name.rfind("amiga-os-", 0) == 0 ||
+            name.find("kickstart") != std::string::npos)
             return true;
     }
     return false;
@@ -213,8 +216,7 @@ std::string missing_bios(const std::string& system, const std::string& system_di
             }
             if (!found) absent += (absent.empty() ? "" : ", ") + std::string(names[0]);
         }
-        if (!absent.empty())
-            return std::string(need.title) + " needs " + absent + " in the BIOS folder";
+        if (!absent.empty()) return std::string(need.title) + " needs " + absent + " in the BIOS folder";
     }
     return {};
 }
@@ -238,7 +240,8 @@ public:
         std::string rom_path = archive_path;
         const std::string archive_extension = lower_extension(archive_path);
         if ((archive_extension == ".zip" || archive_extension == ".7z") && system != "c64" && system != "scummvm" &&
-            system != "amiga") { // VICE and PUAE open their own archives (a WHDLoad set, a disk set)
+            system != "amiga" && system != "dos") { // VICE, PUAE and DOSBox Pure open their own archives (a WHDLoad
+                                                    // set, a disk set, a DOS game's folder)
             // Each system's game files, as runtime/play_options.py's SYSTEMS and FOLDER_EXTENSIONS name them, the
             // file a core is given first (a disc's .m3u or .cue before its tracks).
             static const std::map<std::string, std::vector<std::string>> games = {
@@ -253,9 +256,14 @@ public:
                 {"coleco", {".col", ".cv", ".rom", ".bin"}},
                 {"intellivision", {".int", ".rom", ".bin"}},
                 {"msx", {".mx1", ".mx2", ".rom", ".dsk", ".cas"}},
+                {"cpc", {".m3u", ".dsk", ".cdt", ".sna", ".cpr"}},
                 {"pce", {".pce"}},
                 {"pcecd", {".m3u", ".cue", ".ccd", ".chd", ".toc"}},
                 {"atari", {".a26", ".bin"}},
+                {"atari7800", {".a78", ".bin"}},
+                {"atari5200", {".a52", ".bin"}},
+                {"lynx", {".lnx"}},
+                {"vb", {".vb", ".vboy", ".bin"}},
                 {"pico8", {".p8", ".png"}},
                 {"psx", {".m3u", ".cue", ".chd", ".pbp"}},
                 {"n64", {".z64", ".n64", ".v64"}},
@@ -328,6 +336,10 @@ public:
         pico_pen_ = reinterpret_cast<void (*)(int, int, int, int)>(dlsym(lib_, "retro_rgds_pico_pen"));
         pico_page_ = reinterpret_cast<int (*)()>(dlsym(lib_, "retro_rgds_pico_page"));
         pico_set_page_ = reinterpret_cast<void (*)(int)>(dlsym(lib_, "retro_rgds_pico_set_page"));
+        // The Amstrad CPC's autorun (libretro-cap32 0001): whether it is still typing the game's command, which no
+        // state holds, and the command to drop when a state is loaded over a game that has only just started.
+        cpc_loading_ = reinterpret_cast<bool (*)()>(dlsym(lib_, "retro_rgds_loading"));
+        cpc_cancel_autorun_ = reinterpret_cast<void (*)()>(dlsym(lib_, "retro_rgds_cancel_autorun"));
         // The Dreamcast VMU's screen (libretro-flycast 0001).
         vmu_ = reinterpret_cast<unsigned long long (*)(unsigned, unsigned char*)>(dlsym(lib_, "retro_rgds_vmu"));
         // Optional: a core without cheats just lists none.
@@ -345,6 +357,13 @@ public:
             // ScummVM names a save by the kind of game ("monkey.s00", for the demo and the whole game alike, and
             // SKY-VM.000 whatever the folder): each game's saves in a folder of its own, named as the game's.
             save_dir_ += "/saves/scummvm/" + std::filesystem::path(rom_path).parent_path().filename().string();
+            std::error_code failed;
+            std::filesystem::create_directories(save_dir_, failed);
+        }
+        if (system == "dos") {
+            // DOSBox Pure keeps what a game writes to its drive (its saves, its setup) as "<game>.pure.zip" in the
+            // save folder: all of them in a folder of their own.
+            save_dir_ += "/saves/dos";
             std::error_code failed;
             std::filesystem::create_directories(save_dir_, failed);
         }
@@ -370,12 +389,16 @@ public:
         if (system == "scummvm") {
             // Software drawing (the player's picture path), a finger as the pointer: tap to click, hold for the right
             // button. These adventures are played by touch.
-            variables_ = {{"scummvm_pointer_device", "pointer"}, {"scummvm_video_hw_acceleration", "disabled"},
+            variables_ = {{"scummvm_pointer_device", "pointer"},
+                          {"scummvm_video_hw_acceleration", "disabled"},
                           // A and B click like the finger's tap and hold, X the game's own menu, Y skips a scene, L a
                           // line of speech, R pauses. Start is ScummVM's menu (saving, loading, quitting).
-                          {"scummvm_mapper_a", "RETROKE_LEFT_BUTTON"}, {"scummvm_mapper_b", "RETROKE_RIGHT_BUTTON"},
-                          {"scummvm_mapper_x", "RETROK_F5"}, {"scummvm_mapper_y", "RETROK_ESCAPE"},
-                          {"scummvm_mapper_l", "RETROK_PERIOD"}, {"scummvm_mapper_r", "RETROK_SPACE"}};
+                          {"scummvm_mapper_a", "RETROKE_LEFT_BUTTON"},
+                          {"scummvm_mapper_b", "RETROKE_RIGHT_BUTTON"},
+                          {"scummvm_mapper_x", "RETROK_F5"},
+                          {"scummvm_mapper_y", "RETROK_ESCAPE"},
+                          {"scummvm_mapper_l", "RETROK_PERIOD"},
+                          {"scummvm_mapper_r", "RETROK_SPACE"}};
         }
         if (system == "zx") {
             // A Spectrum 48K, a 128K for the tapes that need one, chosen here (zx_tape_needs_128k): Fuse's own choice
@@ -388,21 +411,22 @@ public:
                 tape.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
             }
             const bool wants_128k = zx_tape_game_ && zx_tape_needs_128k(rom_path, tape);
-            variables_ = {{"fuse_machine", wants_128k ? "Spectrum 128K" : "Spectrum 48K"},
-                          {"fuse_auto_machine", "disabled"},
-                          {"fuse_size_border", "none"},
-                          {"fuse_fast_load", "disabled"},
-                          {"fuse_load_sound", "disabled"},
-                          // The pad is a Kempston joystick plus Start (Enter) and L2 (Space). No digit keys on X, Y, L, R:
-                          // games read 1-5 and 6-0 as the Sinclair and Cursor joysticks, so a shoulder button sent
-                          // Out Run's "up" (accelerate). The menus' number keys come from the second screen's keyboard.
-                          {"fuse_joypad_x", "<none>"},
-                          {"fuse_joypad_y", "<none>"},
-                          {"fuse_joypad_l", "<none>"},
-                          {"fuse_joypad_r", "<none>"},
-                          {"fuse_joypad_start", "Enter"},
-                          {"fuse_joypad_l2", "Space"},
-                          {"fuse_joypad_r2", "<none>"}};
+            variables_ = {
+                {"fuse_machine", wants_128k ? "Spectrum 128K" : "Spectrum 48K"},
+                {"fuse_auto_machine", "disabled"},
+                {"fuse_size_border", "none"},
+                {"fuse_fast_load", "disabled"},
+                {"fuse_load_sound", "disabled"},
+                // The pad is a Kempston joystick plus Start (Enter) and L2 (Space). No digit keys on X, Y, L, R:
+                // games read 1-5 and 6-0 as the Sinclair and Cursor joysticks, so a shoulder button sent
+                // Out Run's "up" (accelerate). The menus' number keys come from the second screen's keyboard.
+                {"fuse_joypad_x", "<none>"},
+                {"fuse_joypad_y", "<none>"},
+                {"fuse_joypad_l", "<none>"},
+                {"fuse_joypad_r", "<none>"},
+                {"fuse_joypad_start", "Enter"},
+                {"fuse_joypad_l2", "Space"},
+                {"fuse_joypad_r2", "<none>"}};
             // Out Run's keyboard scheme (Q accelerate, A brake, O/P steer, M gear) on the pad as well, beside the
             // Kempston joystick: whichever the game's control menu is set to, the pad drives the car. The game
             // reads only the chosen scheme, so the other is harmless.
@@ -419,14 +443,58 @@ public:
             }
         }
         if (system == "c64") variables_ = {{"vice_autoloadwarp", "enabled"}}; // a disk or tape loads at full speed
+        // The Amstrad CPC (Caprice32, its own ROMs: no BIOS): a 6128 that types the disk's or tape's RUN itself, tapes at
+        // full speed, quietly and with no status bar over the picture. Select keeps no combo of the core's (its menus
+        // and its keyboard over the game): the second screen has the CPC's keys. A Plus cartridge (.cpr) needs a
+        // 6128+ (the core refuses one otherwise).
+        if (system == "cpc")
+            variables_ = {{"cap32_model", lower_extension(rom_path) == ".cpr" ? "6128+" : "6128"},
+                          {"cap32_autorun", "enabled"},
+                          {"cap32_tape_fastload", "maximum"},
+                          {"cap32_combokey", "disabled"},
+                          {"cap32_statusbar", "disabled"},
+                          {"cap32_scr_crop", "disabled"}, // the whole frame: cpc_present crops it
+                          {"cap32_floppy_sound", "disabled"},
+                          {"cap32_gfx_colors", "16bit"}};
         // The Amiga: the left stick (and the D-pad) is the joystick, the right one the mouse, with its buttons on L2 and
         // R2 (PUAE's own); Select keeps no keyboard of the core's (the second screen has the Amiga's). Without a
         // Kickstart of the owner's in the BIOS folder, AROS, the free one PUAE carries.
+        // The Virtual Boy always draws both eyes, side by side with no gap (384 x 224 each), in its own red on black:
+        // picture() is the left eye, other_eye() the right one, which the player puts on the second screen for 3D. The
+        // right stick is the controller's right D-pad (Teleroboxer, Red Alarm, Jack Bros.).
+        if (system == "vb")
+            variables_ = {{"vb_3dmode", "side-by-side"},
+                          {"vb_sidebyside_separation", "0"},
+                          {"vb_color_mode", "black & red"},
+                          {"vb_anaglyph_preset", "disabled"},
+                          {"vb_right_analog_to_digital", "enabled"}};
+        // The Atari 5200 (a5200): the owner's 5200.rom when it is in the BIOS folder, else the free Altirra OS the core
+        // carries, said quietly instead of a missing-BIOS notice. The stick is analog (the left stick, as the 5200's
+        // own); the keypad is the second screen's.
+        if (system == "atari5200") {
+            std::error_code ignored;
+            const bool own = std::filesystem::is_regular_file(system_dir + "/5200.rom", ignored);
+            variables_ = {{"a5200_bios", own ? "official" : "internal"}, {"a5200_analog_device", "analog_stick"}};
+        }
+        // The Lynx (Handy): the core turns the picture itself for the games played with the Lynx held upright (their
+        // cartridge header says so), so the player just sees a tall frame. Frames go out at 60 Hz, the panel's rate.
+        // The owner's lynxboot.img is used when it is in the BIOS folder, else Handy starts the cartridge itself.
+        if (system == "lynx") variables_ = {{"handy_rot", "Auto"}, {"handy_refresh_rate", "60"}};
         if (system == "amiga") {
             variables_ = {{"puae_analogmouse", "right"}, {"puae_mapper_select", "---"}};
             const bool kickstart = has_kickstart(system_dir);
             if (!kickstart) variables_["puae_kickstart"] = "aros";
         }
+        // DOS (DOSBox Pure): the pad as Pure maps it for the game it knows (its keyb2joypad list), else the arrows and
+        // Enter, Space, Esc...; the mouse is the second screen's touch pad (move_pad_mouse), counted as motion, never
+        // as a place on the screen. No L3 menu or on-screen keyboard over the game: the second screen has the keys
+        // and the next disk. Save states without rewind; the start menu still asks which program to run, once.
+        if (system == "dos")
+            variables_ = {{"dosbox_pure_mouse_input", "virtual"},
+                          {"dosbox_pure_on_screen_keyboard", "false"},
+                          {"dosbox_pure_savestate", "on"},
+                          {"dosbox_pure_auto_mapping", "true"},
+                          {"dosbox_pure_cycles", "auto"}};
         // The PSP's own 480 x 272 on the JIT: every extra pixel is drawing and read-back the A55s and the Mali-G52 lack.
         // Two frames queued for the GPU, so the emulation and the GL calls run side by side. A frame left undrawn when
         // the game falls behind, so its speed and sound hold: OutRun 2006's races draw 24-42 fps at full speed on the
@@ -468,7 +536,10 @@ public:
                 if (end == std::string::npos) end = list.size();
                 const std::string item = list.substr(at, end - at);
                 const size_t eq = item.find('=');
-                if (eq != std::string::npos) variables_[item.substr(0, eq)] = item.substr(eq + 1);
+                if (eq != std::string::npos) {
+                    variables_[item.substr(0, eq)] = item.substr(eq + 1);
+                    std::fprintf(stderr, "play: core option %s\n", item.c_str());
+                }
                 at = end + 1;
             }
         }
@@ -540,6 +611,10 @@ public:
         retro_get_system_av_info_(&av);
         apply_av(av);
         retro_set_controller_port_device_(0, joypad_);
+        // Flycast plugs the expansion slots (the VMU in A1) only once every port has a device, as RetroArch sets
+        // them all; with port A alone the game finds no VMU and saves nothing.
+        if (system_ == "dc")
+            for (unsigned port = 1; port < 4; ++port) retro_set_controller_port_device_(port, RETRO_DEVICE_NONE);
         identify();
         restore_battery(battery);
         battery_seen_ = battery_hash();
@@ -553,7 +628,8 @@ public:
         std::vector<std::string> codes;
         if (system_ != "scummvm") return codes;
         std::error_code error;
-        for (const auto& file : std::filesystem::directory_iterator(std::filesystem::path(rom_path_).parent_path(), error))
+        for (const auto& file :
+             std::filesystem::directory_iterator(std::filesystem::path(rom_path_).parent_path(), error))
             codes.push_back(title_code(file.path().filename().string()));
         return codes;
     }
@@ -575,6 +651,21 @@ public:
         if (system_ == "pico" && pico_set_page_) pico_set_page_(page);
     }
     std::string game_file() const override { return game_file_; }
+    std::string content_path() const override { return rom_path_; }
+    // RetroAchievements reads memory as RetroArch hands it over: the core's memory maps where it gives them, else
+    // its system and save RAM, laid out by rcheevos for the console.
+    uint32_t achievement_memory(uint32_t console, uint32_t address, uint8_t* buffer, uint32_t size) override {
+        if (!loaded_) return 0;
+        if (!ra_ready_ || ra_console_ != console) {
+            if (ra_ready_) rc_libretro_memory_destroy(&ra_regions_);
+            retro_memory_map map{maps_.data(), unsigned(maps_.size())};
+            ra_ready_ = rc_libretro_memory_init(&ra_regions_, maps_.empty() ? nullptr : &map, ra_core_memory, console);
+            ra_console_ = console;
+            std::fprintf(stderr, "rgds-play: RetroAchievements memory: %u regions, %zu bytes%s\n", ra_regions_.count,
+                         ra_regions_.total_size, ra_ready_ ? "" : " (none usable)");
+        }
+        return ra_ready_ ? rc_libretro_memory_read(&ra_regions_, address, buffer, size) : 0;
+    }
     bool set_panel_buttons(uint32_t retro_mask) override {
         panel_ = retro_mask;
         return true;
@@ -605,6 +696,10 @@ public:
     void run_frame(uint32_t buttons) override {
         buttons_ = buttons;
         if (mouse_) move_mouse();
+        // The touch pad's motion since the last frame, told once.
+        pad_dx_ = int16_t(std::clamp(pad_pending_x_, -32767, 32767)),
+        pad_dy_ = int16_t(std::clamp(pad_pending_y_, -32767, 32767));
+        pad_pending_x_ = pad_pending_y_ = 0;
         trigger_now_ = trigger_frames_ > 0 || aim_down_;
         if (trigger_frames_ > 0) --trigger_frames_;
         rumble_ = 0;
@@ -664,7 +759,14 @@ public:
         }
     }
     void set_sticks(int16_t lx, int16_t ly, int16_t rx, int16_t ry) override { sticks_ = {lx, ly, rx, ry}; }
-    Picture picture() const override { return {frame_.data(), fw_, fh_, fw_}; }
+    Picture picture() const override {
+        if (stereo()) return {frame_.data(), fw_ / 2, fh_, fw_}; // the left eye
+        return {frame_.data(), fw_, fh_, fw_};
+    }
+    Picture other_eye() const override {
+        if (!stereo()) return {};
+        return {frame_.data() + fw_ / 2, fw_ / 2, fh_, fw_};
+    }
     void set_gl_target(unsigned texture, int w, int h) override {
         target_ = texture;
         target_w_ = w;
@@ -737,7 +839,8 @@ public:
             if (disk_count() > 1) {
                 const int32_t disk = disk_index();
                 out.insert(out.end(), disk_tag, disk_tag + 4);
-                out.insert(out.end(), reinterpret_cast<const uint8_t*>(&disk), reinterpret_cast<const uint8_t*>(&disk) + 4);
+                out.insert(out.end(), reinterpret_cast<const uint8_t*>(&disk),
+                           reinterpret_cast<const uint8_t*>(&disk) + 4);
             }
             return true;
         });
@@ -795,10 +898,14 @@ public:
         // A state comes back with the core's own idea of what is plugged in: the gun goes back in.
         if (ok && lightgun_) retro_set_controller_port_device_(1, RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_MOUSE, 0));
         if (ok) zx_past_loader_ = true;
+        // The CPC's autorun queued RUN"... when the game loaded: typed into the resumed game, it pressed keys there.
+        if (ok && system_ == "cpc" && cpc_cancel_autorun_) cpc_cancel_autorun_();
         return ok;
     }
     bool still_loading() const override {
         if (system_ == "c64") return !pending_state_.empty() || (!c64_resumed_ && frames_ < c64_autostart_frames);
+        // The CPC typing its autorun command, which Caprice32's states don't hold (a tape's place they do: 0001).
+        if (system_ == "cpc") return cpc_loading_ && cpc_loading_();
         return zx_tape_game_ && (!zx_past_loader_ || zx_tape_loading() || zx_at_prompt());
     }
     // A Spectrum's BASIC waiting for a command line, as after a tape that failed to load or was stopped with BREAK:
@@ -858,6 +965,22 @@ public:
         return true;
     }
     void set_mouse_cursor(int x, int y) override { cursor_x_ = x, cursor_y_ = y; }
+    // DOS's mouse from the second screen's touch pad (core.hpp).
+    bool move_pad_mouse(int dx, int dy, bool left, bool right) override {
+        if (!loaded_ || system_ != "dos") return false;
+        pad_pending_x_ += dx, pad_pending_y_ += dy;
+        pad_left_ = left, pad_right_ = right;
+        return true;
+    }
+    int16_t pad_mouse(unsigned id) const {
+        switch (id) {
+        case RETRO_DEVICE_ID_MOUSE_X: return pad_dx_;
+        case RETRO_DEVICE_ID_MOUSE_Y: return pad_dy_;
+        case RETRO_DEVICE_ID_MOUSE_LEFT: return pad_left_ ? 1 : 0;
+        case RETRO_DEVICE_ID_MOUSE_RIGHT: return pad_right_ ? 1 : 0;
+        default: return 0;
+        }
+    }
     // This frame's motion and buttons: toward the finger (or where the D-pad nudged it), the left button held only
     // once the cursor is there, so touching down doesn't draw a line from where the cursor was.
     void move_mouse() {
@@ -877,8 +1000,9 @@ public:
         };
         mouse_dx_ = int16_t(step(goal_x_, cx));
         mouse_dy_ = int16_t(step(goal_y_, cy));
-        if (!known) guess_x_ = std::clamp(guess_x_ + mouse_dx_, 0, std::max(0, fw_ - 1)),
-                    guess_y_ = std::clamp(guess_y_ + mouse_dy_, 0, std::max(0, fh_ - 1));
+        if (!known)
+            guess_x_ = std::clamp(guess_x_ + mouse_dx_, 0, std::max(0, fw_ - 1)),
+            guess_y_ = std::clamp(guess_y_ + mouse_dy_, 0, std::max(0, fh_ - 1));
         const bool there = std::abs(goal_x_ - cx) <= 2 && std::abs(goal_y_ - cy) <= 2;
         if (!finger) settled_ = false;
         else if (there) settled_ = true;
@@ -970,6 +1094,8 @@ public:
 private:
     void close() {
         if (hw_.context_type != RETRO_HW_CONTEXT_NONE) close_gpu();
+        if (ra_ready_) rc_libretro_memory_destroy(&ra_regions_);
+        ra_ready_ = false;
         if (loaded_) retro_unload_game_();
         if (inited_) retro_deinit_();
         loaded_ = inited_ = false;
@@ -983,6 +1109,8 @@ private:
         zx_tape_playing_ = nullptr;
         zx_tape_loading_ = nullptr;
         zx_cpu_ = nullptr;
+        cpc_loading_ = nullptr;
+        cpc_cancel_autorun_ = nullptr;
         if (!bus_path_.empty()) std::remove(bus_path_.c_str());
         bus_path_.clear();
         bus_.clear();
@@ -1062,7 +1190,7 @@ private:
         // A ScummVM game is its folder.
         if (system_ == "scummvm") {
             title_ = title_code(std::filesystem::path(rom_path_).parent_path().filename().string());
-        } else if (file.empty()) {
+        } else if (file.empty() && system_ != "dos") { // a DOS game goes by its name: a zipped folder, no cartridge
             // No cartridge is this big. A disc image goes by its name below: reading OutRun 2006's 633 MB ISO just for
             // a CRC kept the screen dark for 16 s, and no profile names a disc by CRC.
             constexpr std::uintmax_t largest_cartridge = 128 * 1024 * 1024;
@@ -1094,8 +1222,10 @@ private:
     // A finger on the picture (ScummVM's games).
     int16_t pointer(unsigned id) const {
         switch (id) {
-        case RETRO_DEVICE_ID_POINTER_X: return aim_x_ < 0 ? -0x8000 : int16_t(aim_x_ * 0xFFFF / std::max(1, fw_) - 0x7FFF);
-        case RETRO_DEVICE_ID_POINTER_Y: return aim_y_ < 0 ? -0x8000 : int16_t(aim_y_ * 0xFFFF / std::max(1, fh_) - 0x7FFF);
+        case RETRO_DEVICE_ID_POINTER_X:
+            return aim_x_ < 0 ? -0x8000 : int16_t(aim_x_ * 0xFFFF / std::max(1, fw_) - 0x7FFF);
+        case RETRO_DEVICE_ID_POINTER_Y:
+            return aim_y_ < 0 ? -0x8000 : int16_t(aim_y_ * 0xFFFF / std::max(1, fh_) - 0x7FFF);
         case RETRO_DEVICE_ID_POINTER_PRESSED: return aim_down_ ? 1 : 0;
         default: return 0;
         }
@@ -1201,7 +1331,8 @@ private:
         rate_ = static_cast<unsigned>(av.timing.sample_rate + 0.5);
         max_w_ = static_cast<int>(std::max(av.geometry.max_width, av.geometry.base_width));
         max_h_ = static_cast<int>(std::max(av.geometry.max_height, av.geometry.base_height));
-        resize(static_cast<int>(av.geometry.base_width), static_cast<int>(av.geometry.base_height));
+        if (system_ == "cpc") resize(cpc_crop_w, cpc_crop_h * 2); // cpc_present: the screen, its lines twice
+        else resize(static_cast<int>(av.geometry.base_width), static_cast<int>(av.geometry.base_height));
     }
     void resize(int w, int h) {
         if (w <= 0 || h <= 0) return;
@@ -1239,8 +1370,11 @@ private:
             return g_active->lightgun(id);
         if (g_active && port == 0 && g_active->mouse_ && (device & 0xFF) == RETRO_DEVICE_MOUSE)
             return g_active->mouse(id);
+        if (g_active && port == 0 && g_active->system_ == "dos" && (device & 0xFF) == RETRO_DEVICE_MOUSE)
+            return g_active->pad_mouse(id);
         // Whichever port the core keeps its keyboard on (Fuse: the third).
-        if ((device & 0xFF) == RETRO_DEVICE_KEYBOARD) return g_active && id < g_active->keys_.size() && g_active->keys_[id];
+        if ((device & 0xFF) == RETRO_DEVICE_KEYBOARD)
+            return g_active && id < g_active->keys_.size() && g_active->keys_[id];
         if (g_active && port == 0 && (device & 0xFF) == RETRO_DEVICE_POINTER) return g_active->pointer(id);
         if (!g_active || port != 0) return 0;
         if ((device & 0xFF) == RETRO_DEVICE_ANALOG) {
@@ -1262,6 +1396,16 @@ private:
         // whose right-hand A is the natural thumb button, A, B, X and Y all fire; the shoulders stay the console's
         // difficulty switches (the second screen's panel drives those as well).
         if (g_active->system_ == "atari" && (b & (A | B | X | Y))) b |= B | Y;
+        // Atari 7800: ProSystem reads button 1 from RetroPad B and 2 from A, so Y is 1 and X is 2 as well. Its X is
+        // the console's Reset and L and R its difficulty switches, held: those are the second screen's console
+        // switches, never a thumb's slip.
+        if (g_active->system_ == "atari7800") b = (b & ~(X | Y | L | R)) | (b & Y ? B : 0) | (b & X ? A : 0);
+        // Atari 5200: a5200's Fire 1 on A and Fire 2 on B, its keypad (X *, Y #, R 0 and the rest on L2, R2, L3, R3)
+        // the second screen's; L would open the core's own on-screen keypad over the game.
+        if (g_active->system_ == "atari5200") b &= ~(L | L2 | R2);
+        // Virtual Boy: Beetle VB reads the right D-pad from L2, R2, L3 and R3; that pad is the right stick here, so the
+        // handheld's L2 and R2 (fast-forward, a menu) never nudge it.
+        if (g_active->system_ == "vb") b &= ~(L2 | R2);
         static const struct {
             unsigned id;
             uint32_t bit;
@@ -1450,31 +1594,71 @@ private:
             return;
         }
         drew_target_ = false;
-        resize(static_cast<int>(w), static_cast<int>(h));
         const auto* src = static_cast<const uint8_t*>(data);
-        for (unsigned y = 0; y < h; ++y) {
-            uint32_t* dst = frame_.data() + static_cast<size_t>(y) * fw_;
-            const uint8_t* row = src + y * pitch;
-            if (pixel_format_ == RETRO_PIXEL_FORMAT_XRGB8888) {
-                const auto* p = reinterpret_cast<const uint32_t*>(row);
-                for (unsigned x = 0; x < w; ++x) dst[x] = rgb_to_px(p[x] & 0xFFFFFFu);
-            } else if (pixel_format_ == RETRO_PIXEL_FORMAT_RGB565) {
-                const auto* p = reinterpret_cast<const uint16_t*>(row);
-                for (unsigned x = 0; x < w; ++x) {
-                    const uint16_t v = p[x];
-                    const uint32_t r = ((v >> 11) & 0x1F) * 255 / 31, g = ((v >> 5) & 0x3F) * 255 / 63,
-                                   b = (v & 0x1F) * 255 / 31;
-                    dst[x] = rgb_to_px((r << 16) | (g << 8) | b);
-                }
-            } else { // 0RGB1555
-                const auto* p = reinterpret_cast<const uint16_t*>(row);
-                for (unsigned x = 0; x < w; ++x) {
-                    const uint16_t v = p[x];
-                    const uint32_t r = ((v >> 10) & 0x1F) * 255 / 31, g = ((v >> 5) & 0x1F) * 255 / 31,
-                                   b = (v & 0x1F) * 255 / 31;
-                    dst[x] = rgb_to_px((r << 16) | (g << 8) | b);
+        if (system_ == "cpc") {
+            cpc_full_.resize(static_cast<size_t>(w) * h);
+            for (unsigned y = 0; y < h; ++y)
+                convert_row(src + y * pitch, cpc_full_.data() + static_cast<size_t>(y) * w, w);
+            cpc_present(static_cast<int>(w), static_cast<int>(h));
+            return;
+        }
+        resize(static_cast<int>(w), static_cast<int>(h));
+        for (unsigned y = 0; y < h; ++y) convert_row(src + y * pitch, frame_.data() + static_cast<size_t>(y) * fw_, w);
+    }
+    void convert_row(const uint8_t* row, uint32_t* dst, unsigned w) const {
+        if (pixel_format_ == RETRO_PIXEL_FORMAT_XRGB8888) {
+            const auto* p = reinterpret_cast<const uint32_t*>(row);
+            for (unsigned x = 0; x < w; ++x) dst[x] = rgb_to_px(p[x] & 0xFFFFFFu);
+        } else if (pixel_format_ == RETRO_PIXEL_FORMAT_RGB565) {
+            const auto* p = reinterpret_cast<const uint16_t*>(row);
+            for (unsigned x = 0; x < w; ++x) {
+                const uint16_t v = p[x];
+                const uint32_t r = ((v >> 11) & 0x1F) * 255 / 31, g = ((v >> 5) & 0x3F) * 255 / 63,
+                               b = (v & 0x1F) * 255 / 31;
+                dst[x] = rgb_to_px((r << 16) | (g << 8) | b);
+            }
+        } else { // 0RGB1555
+            const auto* p = reinterpret_cast<const uint16_t*>(row);
+            for (unsigned x = 0; x < w; ++x) {
+                const uint16_t v = p[x];
+                const uint32_t r = ((v >> 10) & 0x1F) * 255 / 31, g = ((v >> 5) & 0x1F) * 255 / 31,
+                               b = (v & 0x1F) * 255 / 31;
+                dst[x] = rgb_to_px((r << 16) | (g << 8) | b);
+            }
+        }
+    }
+    // The Amstrad CPC's full frame (768 x 272: mode 2's dot width, the whole border) as the player shows it. Its
+    // lines drawn twice, so the player's square pixels give it the monitor's shape instead of a picture half as tall.
+    // Cropped to the screen with a narrow band of border (640 x 240 from 64, 21) while nothing but the border's one
+    // colour is outside that: a game drawing into the border (overscan, raster bars, a tape's loading stripes) gets the
+    // whole frame. Half a second of plain border crops again, a sixth of a second of a drawn one shows it all (a
+    // machine starting up draws a few frames of neither, which should not make the picture jump).
+    static constexpr int cpc_crop_x = 64, cpc_crop_y = 21, cpc_crop_w = 640, cpc_crop_h = 240;
+    void cpc_present(int w, int h) {
+        const uint32_t* full = cpc_full_.data();
+        bool plain = w >= cpc_crop_x + cpc_crop_w && h >= cpc_crop_y + cpc_crop_h;
+        const uint32_t border = full[0];
+        for (int y = 0; plain && y < h; ++y) {
+            const uint32_t* row = full + static_cast<size_t>(y) * w;
+            const bool inside = y >= cpc_crop_y && y < cpc_crop_y + cpc_crop_h;
+            for (int x = 0; x < w; ++x) {
+                if (inside && x == cpc_crop_x) x += cpc_crop_w;
+                if (x < w && row[x] != border) {
+                    plain = false;
+                    break;
                 }
             }
+        }
+        if (plain) cpc_drawn_ = 0, cpc_crop_ = cpc_crop_ || ++cpc_plain_ >= 30;
+        else cpc_plain_ = 0, cpc_crop_ = cpc_crop_ && ++cpc_drawn_ < 10;
+        const bool crop = cpc_crop_ && w >= cpc_crop_x + cpc_crop_w && h >= cpc_crop_y + cpc_crop_h;
+        const int x0 = crop ? cpc_crop_x : 0, y0 = crop ? cpc_crop_y : 0;
+        const int cw = crop ? cpc_crop_w : w, ch = crop ? cpc_crop_h : h;
+        resize(cw, ch * 2);
+        for (int y = 0; y < ch; ++y) {
+            uint32_t* dst = frame_.data() + static_cast<size_t>(y) * 2 * fw_;
+            std::copy_n(full + static_cast<size_t>(y0 + y) * w + x0, cw, dst);
+            std::copy_n(dst, cw, dst + fw_);
         }
     }
 
@@ -1508,6 +1692,13 @@ private:
     std::vector<uint8_t> rom_, bus_; // bus_: an image laid out as the cartridge's bus (md_bus_image)
     std::string code_, title_;       // identify()
     std::vector<retro_memory_descriptor> maps_;
+    rc_libretro_memory_regions_t ra_regions_{};
+    bool ra_ready_ = false;
+    uint32_t ra_console_ = 0;
+    static void ra_core_memory(uint32_t id, rc_libretro_core_memory_info_t* info) {
+        info->data = g_active ? static_cast<uint8_t*>(g_active->memory(id)) : nullptr;
+        info->size = g_active && info->data ? g_active->memory_size(id) : 0;
+    }
     const int16_t* mode7_lines_ = nullptr;
     const uint8_t* mode7_ppu_ = nullptr;
     const uint8_t *md_pico_ = nullptr, *md_mem_ = nullptr;
@@ -1534,6 +1725,11 @@ private:
     bool finished_ = false;
     bool (*overlay_visible_)() = nullptr;
     void (*keypad_)(unsigned, unsigned) = nullptr;
+    std::vector<uint32_t> cpc_full_; // cpc_present
+    bool cpc_crop_ = true;
+    int cpc_plain_ = 0, cpc_drawn_ = 0;
+    bool (*cpc_loading_)() = nullptr;
+    void (*cpc_cancel_autorun_)() = nullptr;
     unsigned long long (*vmu_)(unsigned, unsigned char*) = nullptr;
     void (*pico_pen_)(int, int, int, int) = nullptr;
     int (*pico_page_)() = nullptr;
@@ -1543,6 +1739,9 @@ private:
     bool mouse_ = false, mouse_left_ = false, mouse_right_ = false, settled_ = false;
     int cursor_x_ = -1, cursor_y_ = -1, guess_x_ = 128, guess_y_ = 112, goal_x_ = -1, goal_y_ = -1;
     int16_t mouse_dx_ = 0, mouse_dy_ = 0;
+    int pad_pending_x_ = 0, pad_pending_y_ = 0; // DOS's touch pad: motion not yet told, and this frame's
+    int16_t pad_dx_ = 0, pad_dy_ = 0;
+    bool pad_left_ = false, pad_right_ = false;
     int16_t sum_x_ = 0, sum_y_ = 0, sync_x_ = 0, sync_y_ = 0; // what the core has been told in all; a load's catch-up
     bool syncing_ = false;
     static constexpr uint8_t mouse_tag[4] = {'R', 'G', 'M', 'O'};
@@ -1551,6 +1750,8 @@ private:
     enum retro_pixel_format pixel_format_ = RETRO_PIXEL_FORMAT_0RGB1555;
     std::vector<uint32_t> frame_;
     int fw_ = 0, fh_ = 0;
+    // Beetle VB's frame is both eyes side by side (the options above): 768 wide.
+    bool stereo() const { return system_ == "vb" && fw_ == 768; }
     double fps_ = 60.0;
     unsigned rate_ = 48000;
     std::vector<int16_t> audio_;

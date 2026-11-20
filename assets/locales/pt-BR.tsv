@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Escala nítida com cores do DS.
 Sharp scaling, DS colour and Natural Vision together.	Escala nítida, cores DS e Natural Vision juntos.
 Shield	Escudo
 Shift	Maiúsculas
-Shift keys stay down until the next key	As teclas Shift ficam pressionadas até a próxima tecla
 Shortcut action	Ação do atalho
 Shots	Tiros
 Show games	Mostrar jogos
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Todo o resto d
 Room for more games.	Espaço para mais jogos.
 Console switches	Chaves do console
 VMU screen	Tela do VMU
+3D: one eye each	3D: um olho em cada tela
+Mouse	Mouse
+RetroAchievements	RetroAchievements
+Account	Conta
+RetroAchievements account	Conta do RetroAchievements
+Achievements	Conquistas
+{0} achievements	{0} conquistas
+{0} points	{0} pontos
+1 point	1 ponto
+Unlocked {0}	Desbloqueada em {0}
+Play the game once to see its achievements.	Jogue uma vez para ver as conquistas do jogo.
+RetroAchievements has no achievements for this game yet.	O RetroAchievements ainda não tem conquistas para este jogo.
+Earn achievements from retroachievements.org while you play.	Ganhe conquistas do retroachievements.org enquanto joga.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Desbloqueie conquistas nos seus jogos enquanto joga. A lista de cada jogo fica em Info do jogo.
+A free account from retroachievements.org.	Uma conta gratuita do retroachievements.org.
+Signing out…	Saindo…
+Wait for the current task to finish, then sign in.	Espere a tarefa atual terminar e depois entre.
+Wait for the current task to finish, then sign out.	Espere a tarefa atual terminar e depois saia.
+Signed in to RetroAchievements as {0}.	Conectado ao RetroAchievements como {0}.
+Signed out of RetroAchievements.	Você saiu do RetroAchievements.
+Enter your RetroAchievements username and password.	Digite seu nome de usuário e senha do RetroAchievements.
+Could not reach RetroAchievements. Check the connection.	Não foi possível acessar o RetroAchievements. Verifique a conexão.
+Wrong username or password.	Nome de usuário ou senha incorretos.
+RetroAchievements did not accept the sign-in.	O RetroAchievements não aceitou o login.
+Achievement unlocked	Conquista desbloqueada
+Game mastered	Jogo dominado
+achievements	conquistas
+Sign in again in Settings	Entre novamente em Configurações
+Could not sign in	Não foi possível entrar
+This game file is not recognised	Este arquivo de jogo não foi reconhecido
+Could not load this game's achievements	Não foi possível carregar as conquistas deste jogo
+No achievements yet	Ainda não há conquistas
+Every achievement unlocked	Todas as conquistas desbloqueadas
+Offline: unlocks are sent when back online	Offline: os desbloqueios serão enviados quando voltar a ficar online
+Back online: unlocks sent	Online de novo: desbloqueios enviados
+Play Nintendo WFC games online	Jogue jogos Nintendo WFC online
+Album	Álbum
+Menus	Menus
+No screenshots yet	Nenhuma captura ainda
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	No jogo, aperte Menu + R ou escolha Captura de tela no menu do jogo. Menu + R também funciona nos menus.
+This picture is the game's cover now.	Esta imagem agora é a capa do jogo.
+The cover could not be changed.	Não foi possível mudar a capa.
+The screenshot could not be saved.	Não foi possível salvar a captura.
+Delete this screenshot?	Excluir esta captura?
+Use as the game's cover	Usar como capa do jogo
+Save the game behind this menu to the Album	Salvar no álbum o jogo atrás deste menu
+Saving the screenshot…	Salvando a captura…
+Screenshot saved to the Album.	Captura salva no álbum.
+Still saving the last screenshot.	Ainda salvando a última captura.
+No picture to save. Resume the game and press Menu + R.	Nenhuma imagem para salvar. Retome o jogo e aperte Menu + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Modo foto
+Leave photo mode?	Sair do modo foto?
+Keep editing	Continuar editando
+Leave without saving	Sair sem salvar
+Saved to the Album.	Salva no álbum.
+The photo could not be saved.	Não foi possível salvar a foto.
+This picture could not be opened.	Não foi possível abrir esta imagem.
+Pen	Caneta
+Stamps	Carimbos
+Frames	Molduras
+Lenses	Lentes
+Date	Data
+Sepia	Sépia
+Black & white	Preto e branco
+Mosaic	Mosaico
+Mirror	Espelho
+Fisheye	Olho de peixe
+Old photo	Foto antiga
+Instant photo	Foto instantânea
+Film strip	Tira de filme
+Postage stamp	Selo postal
+Rounded card	Cartão arredondado
+Stars	Estrelas
+Undo	Desfazer
+Sound toy	Brinquedo de som
+Record your voice and change it	Grave sua voz e transforme-a
+Chipmunk	Esquilo
+Monster	Monstro
+Backwards	De trás pra frente
+Echo	Eco
+Press Record and say hello!	Toque em Gravar e diga oi!
+Then pick a voice and draw on the lower screen to bend it.	Depois escolha uma voz e desenhe na tela de baixo para entortá-la.
+Recording…	Gravando…
+Press X again to stop.	Pressione X de novo para parar.
+Sound {0}	Som {0}
+Startup sound	Som de início
+Higher	Mais agudo
+Lower	Mais grave
+Record	Gravar
+Stop	Parar
+Sounds	Sons
+Record a sound first	Grave um som primeiro
+The handheld starts quietly again	O console volta a iniciar em silêncio
+Plays when the handheld starts	Toca quando o console liga
+Could not save the sound	Não foi possível salvar o som
+Nothing heard. Hold the handheld closer and try again.	Nada foi ouvido. Aproxime o console e tente de novo.
+This manual could not be opened	Não foi possível abrir o manual
+This page is not a scan	Esta página não é uma digitalização
+This page could not be read	Não foi possível ler esta página
+Giant	Gigante
+Underwater	Debaixo d'água
+Choir	Coral
+8-bit	8 bits
+Telephone	Telefone
+Megaphone	Megafone
+Cave	Caverna
+Jelly	Gelatina
+Scratch	Scratch
+Whisper	Sussurro
+Sloth	Bicho-preguiça
+Speedy	Ligeirinho
+Dragon	Dragão
+Baby	Bebê
+Opera	Ópera
+Erase	Apagar
+Drawing cleared	Desenho apagado
+Nothing to clear	Nada para limpar
+Press Erase again to delete this sound	Toque em Apagar de novo para remover o som
+Sound erased	Som apagado
+Send in PictoChat	Enviar no PictoChat
+Send to phone	Enviar para o celular
+Connect to Wi-Fi to send pictures to a phone or computer.	Conecte-se ao Wi-Fi para enviar imagens a um celular ou computador.
+Your picture is on the pad. Write or draw beside it, then send.	Sua imagem está no bloco. Escreva ou desenhe ao lado e envie.
+Join a room: your picture goes on the pad.	Entre em uma sala: sua imagem vai para o bloco.

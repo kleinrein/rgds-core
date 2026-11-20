@@ -144,6 +144,19 @@ class ExperimentalLaunchTests(Fixture):
             emulators.launch_plan(ENGINE, self.app, self.data, rom)
             self.assertIn('mode = ' + mode, config.read_text())
 
+    def test_online_play_becomes_dscore_internet_mode_with_its_service(self):
+        rom = self.prepare()
+        config = self.data / 'emulators' / ENGINE / 'config.ini'
+        ini = self.data / 'library' / game_key(rom) / 'ds-input.ini'
+        for fields, mode, dns in ((dict(online='1'), 'internet', 'wiimmfi'), (dict(online='2'), 'internet', 'wiilink'),
+                                  (dict(online='1', wireless='1'), 'internet', 'wiimmfi'),
+                                  (dict(online='0', wireless='2'), 'host', 'wiimmfi'), (dict(online='7'), 'off',
+                                                                                         'wiimmfi')):
+            write_fields(ini, fields)
+            emulators.launch_plan(ENGINE, self.app, self.data, rom)
+            self.assertIn('mode = ' + mode, config.read_text(), fields)
+            self.assertIn('dns = ' + dns, config.read_text(), fields)
+
     def test_sticks_leave_dscore_buttons_to_the_bridge_and_the_right_one_stays_the_pen(self):
         import configparser
         import controls

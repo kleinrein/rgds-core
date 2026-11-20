@@ -1,6 +1,7 @@
 #pragma once
 #include "platform/sdl_dynamic.hpp"
 #include "launcher/menu_music.hpp"
+#include "launcher/voice_toy.hpp"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -80,6 +81,32 @@ class MenuAudio {
     // set_master): the DAC alone left the cues and the track sounding the
     // same at every level above mute. Ramped so a button press never clicks.
     float master_gain = 1, master_target = 1;
+    // The sound toy (voice_toy.hpp): one recording through one voice, rendered live in the callback so a curve
+    // drawn while it plays bends what is heard. It plays whether or not menu effects are on (it is what the player
+    // asked to hear). A sound asked for while the sink is shut waits in `toy_waiting` until it is open.
+    voice_toy::Player toy;
+    std::vector<float> toy_pcm, toy_waiting;
+    voice_toy::Bend toy_bend{}, toy_waiting_bend{};
+    voice_toy::Voice toy_waiting_voice = voice_toy::Voice::Normal;
+    bool toy_pending = false;
+    float toy_gain = 1;
+    std::atomic<bool> toy_sounding{false};
+    std::atomic<float> toy_progress_value{0}, toy_level_value{0};
+    void start_waiting_toy() {
+        s.LockAudioDevice(device);
+        toy_pcm.swap(toy_waiting);
+        toy_bend = toy_waiting_bend;
+        toy.start(toy_pcm, toy_waiting_voice, spec.freq);
+        toy_sounding.store(toy.active(), std::memory_order_release);
+        toy_progress_value.store(float(toy.progress()), std::memory_order_release);
+        sounding.store(true, std::memory_order_release);
+        s.UnlockAudioDevice(device);
+        toy_pending = false;
+        if (paused) {
+            s.PauseAudioDevice(device, 0);
+            paused = false;
+        }
+    }
     // Opening (and idling-out) the sink can stall for a long while inside ALSA's dmix; on the UI thread that froze
     // the menu and swallowed input. Both run on a helper while the loop keeps drawing; a cue asked for meanwhile
     // (opening or closing) waits in `pending` and plays once the sink is up, if that is within 600 ms. Handing the
@@ -186,6 +213,16 @@ class MenuAudio {
             }
             active = active || music_gain > .0005f || music_target > 0;
         }
+        if (toy.active()) {
+            toy.render(out, frames, toy_bend, toy_gain, 2, 2);
+            toy_progress_value.store(float(toy.progress()), std::memory_order_release);
+            toy_level_value.store(toy.level(), std::memory_order_release);
+            toy_sounding.store(toy.active(), std::memory_order_release);
+            active = active || toy.active();
+        } else if (toy_sounding.load(std::memory_order_relaxed)) {
+            toy_sounding.store(false, std::memory_order_release);
+            toy_level_value.store(0, std::memory_order_release);
+        }
         // Down fast (a mute never lingers), up slowly (the amplifier is still settling after an unmute).
         const float master_down = 1.f / (spec.freq * .05f), master_up = 1.f / (spec.freq * .15f);
         for (size_t i = 0; i < frames; i++) {
@@ -226,7 +263,7 @@ class MenuAudio {
         if (device) return true;
         reap(false);
         if (device) return true;
-        if (failed || (!loaded && !music_on)) return false; // music needs no cue bank
+        if (failed || (!loaded && !music_on && !toy_pending)) return false; // music and the toy need no cue bank
         if (job) return false;
         job = 1;
         job_done.store(false, std::memory_order_release);
@@ -266,6 +303,9 @@ class MenuAudio {
         tail_left = tail_right = 0;
         music_gain = music_target = 0;
         music_started = false;
+        toy.stop();
+        toy_sounding.store(false, std::memory_order_release);
+        toy_level_value.store(0, std::memory_order_release);
         sounding.store(false, std::memory_order_release);
         paused = true;
         initialized = false;
@@ -375,7 +415,7 @@ public:
             s.UnlockAudioDevice(device);
         }
         if (!on || !volume) {
-            if (!music_on) close();
+            if (!music_on && !toy_playing()) close();
             else if (device) {
                 s.LockAudioDevice(device);
                 for (auto& v : voices) v = {};
@@ -470,6 +510,12 @@ public:
     }
     void poll(Uint32 now) {
         reap(false);
+        // A toy sound waiting for the sink: open it, or start it once it is open.
+        if (toy_pending && !job) {
+            if (!device) open();
+            if (device && !job) start_waiting_toy();
+            else if (!device && !job) toy_pending = false; // the sink cannot open
+        }
         // A cue that waited out the idle close opens the sink again.
         if (pending.set && !device && !job) {
             open();
@@ -505,10 +551,13 @@ public:
             for (auto& v : voices) v = {};
             tail_left = tail_right = 0;
             music_gain = music_target = 0;
+            toy.stop();
+            toy_sounding.store(false, std::memory_order_release);
             sounding.store(false, std::memory_order_release);
             s.UnlockAudioDevice(device);
             s.PauseAudioDevice(device, 1);
         }
+        toy_pending = false;
         paused = true;
         music_started = false;
     }
@@ -516,5 +565,39 @@ public:
         release();
         enabled = false;
     }
+    // ---- the sound toy
+    // Plays `pcm` (mono, voice_toy::rate) through `voice`, from the start, replacing what the toy was playing.
+    void play_toy(const std::vector<float>& pcm, voice_toy::Voice voice, const voice_toy::Bend& bend, float gain = 1) {
+        if (pcm.size() < 2) return;
+        toy_waiting = pcm;
+        toy_waiting_voice = voice;
+        toy_waiting_bend = bend;
+        toy_gain = std::clamp(gain, 0.f, 2.f);
+        toy_pending = true;
+        failed = false; // a sink that would not open last time may now
+        reap(false);
+        if (!device && !job) open();
+        if (device && !job) start_waiting_toy();
+    }
+    // A new curve while the sound plays: heard from the next block on.
+    void bend_toy(const voice_toy::Bend& bend) {
+        if (toy_pending) toy_waiting_bend = bend;
+        if (!device) return;
+        s.LockAudioDevice(device);
+        toy_bend = bend;
+        s.UnlockAudioDevice(device);
+    }
+    void stop_toy() {
+        toy_pending = false;
+        if (!device) return;
+        s.LockAudioDevice(device);
+        toy.stop();
+        toy_sounding.store(false, std::memory_order_release);
+        toy_level_value.store(0, std::memory_order_release);
+        s.UnlockAudioDevice(device);
+    }
+    bool toy_playing() const { return toy_pending || toy_sounding.load(std::memory_order_acquire); }
+    double toy_progress() const { return toy_progress_value.load(std::memory_order_acquire); }
+    float toy_level() const { return toy_level_value.load(std::memory_order_acquire); }
 };
 }

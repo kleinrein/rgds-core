@@ -27,6 +27,12 @@ MGBA_URL = "https://github.com/mgba-emu/mgba.git"
 MGBA_COMMIT = "143adf5aa2a60c6036810b0cd72445e13d74b0e6"  # mGBA master, 23 August 2026
 MGBA_SOURCE = ROOT / ".cache/mgba-source"
 SDL_SDK = base.SDL_SDK
+# RetroAchievements' own library (MIT), compiled into the player as is.
+RCHEEVOS_URL = "https://github.com/RetroAchievements/rcheevos.git"
+RCHEEVOS_COMMIT = "1433173220a7eaede6a9ed7a18e94117be1821e0"  # v12.5.0, 13 September 2026
+RCHEEVOS_SOURCE = ROOT / ".cache/rcheevos-source"
+# 3DS decryption (aes.c, hash_encrypted.c) is for Tanuki3DS's games, which this player never runs.
+RCHEEVOS_DEFINES = ["-DRC_CLIENT_SUPPORTS_HASH", "-DRC_HASH_NO_ENCRYPTED", "-DRC_DISABLE_LUA"]
 
 # A full libmgba with every frontend and optional library off. Not LIBMGBA_ONLY:
 # that also turns zlib off, and .zip ROMs need it. The GB core stays on: Game
@@ -81,14 +87,17 @@ CORE_SOURCES = [
     "companion/automap.cpp", "companion/mosaic.cpp", "companion/grid.cpp", "companion/trace.cpp",
     "companion/course.cpp", "companion/route.cpp", "companion/keyboard.cpp", "companion/keypad.cpp", "companion/events.cpp", "companion/board.cpp", "companion/battle_gb.cpp",
     "companion/dock.cpp", "ui/canvas.cpp", "ui/screens.cpp", "ui/frame.cpp", "ui/colour.cpp", "ui/png.cpp",
-    "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp", "app/session.cpp", "app/cheats.cpp"
+    "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp", "app/session.cpp", "app/cheats.cpp",
+    "app/achievements.cpp", "reader/pages.cpp", "reader/manual.cpp", "third_party/stb_image.cpp"
 ]
 C_SOURCES = ["core/mgba_split.c", "core/mgba_gb.c"]  # mGBA's internal headers are C
 PROGRAMS = {
     "rgds-play": ("frontend/main.cpp", True),
     "play-shot": ("tools/play_shot.cpp", False),
     "play-tests": ("../tests/play_tests.cpp", False),
+    "play-achievement-tests": ("../tests/achievement_tests.cpp", False),  # RetroAchievements against a fake site
     "play-lint": ("tools/play_lint.cpp", False),  # the companion rules (docs/COMPANION.md)
+    "play-reader-tests": ("../tests/reader_tests.cpp", False),  # scanned manuals (docs/MANUALS_PLAN.md)
 }
 
 
@@ -113,6 +122,53 @@ def ensure_mgba(fetch):
     dirty = subprocess.run(["git", "-C", MGBA_SOURCE, "status", "--porcelain"], capture_output=True, text=True).stdout
     if dirty.strip():
         raise SystemExit("The mGBA checkout has local changes; the player builds from the pinned commit as is")
+
+
+def ensure_rcheevos(fetch):
+    if not (RCHEEVOS_SOURCE / ".git").is_dir():
+        if not fetch:
+            raise SystemExit("rcheevos source missing: run with --fetch")
+        run(["git", "clone", "-q", RCHEEVOS_URL, RCHEEVOS_SOURCE])
+    head = subprocess.run(["git", "-C", RCHEEVOS_SOURCE, "rev-parse", "HEAD"], capture_output=True,
+                          text=True).stdout.strip()
+    if head != RCHEEVOS_COMMIT:
+        if not fetch and head:
+            raise SystemExit(f"rcheevos is at {head[:12]}, expected {RCHEEVOS_COMMIT[:12]}: run with --fetch")
+        run(["git", "-C", RCHEEVOS_SOURCE, "fetch", "-q", "origin", RCHEEVOS_COMMIT])
+        run(["git", "-C", RCHEEVOS_SOURCE, "checkout", "-q", RCHEEVOS_COMMIT])
+    dirty = subprocess.run(["git", "-C", RCHEEVOS_SOURCE, "status", "--porcelain"], capture_output=True,
+                           text=True).stdout
+    if dirty.strip():
+        raise SystemExit("The rcheevos checkout has local changes; the player builds from the pinned commit as is")
+
+
+def rcheevos_sources():
+    src = RCHEEVOS_SOURCE / "src"
+    files = [src / "rc_client.c", src / "rc_compat.c", src / "rc_util.c", src / "rc_version.c", src / "rc_libretro.c"]
+    files += sorted((src / "rapi").glob("*.c")) + sorted((src / "rcheevos").glob("*.c"))
+    files += [src / "rhash" / n for n in ("hash.c", "hash_rom.c", "hash_disc.c", "hash_zip.c", "cdreader.c", "md5.c")]
+    return files
+
+
+def rcheevos_includes():
+    return ["-I" + str(RCHEEVOS_SOURCE / "include"), "-I" + str(RCHEEVOS_SOURCE / "src"),
+            "-I" + str(ROOT / "play/src/core/libretro"), "-DRC_CLIENT_SUPPORTS_HASH"]
+
+
+def build_rcheevos(c_compiler, out, env):
+    """rcheevos's C files into objects under out/rcheevos, several at once (its warnings are its own)."""
+    from concurrent.futures import ThreadPoolExecutor
+    folder = out / "rcheevos"
+    folder.mkdir(parents=True, exist_ok=True)
+    jobs = []
+    for source in rcheevos_sources():
+        obj = folder / (source.parent.name + "_" + source.stem + ".o")
+        jobs.append((obj, c_compiler + ["-std=gnu11", "-w", *RCHEEVOS_DEFINES, *rcheevos_includes(), "-c", source,
+                                        "-o", obj]))
+    with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+        for future in [pool.submit(run, command, env=env) for _, command in jobs]:
+            future.result()
+    return [obj for obj, _ in jobs]
 
 
 def restore_zconf():
@@ -154,6 +210,7 @@ def main():
     parser.add_argument("--only", choices=sorted(PROGRAMS), action="append", help="build just these programs")
     args = parser.parse_args()
     ensure_mgba(args.fetch)
+    ensure_rcheevos(args.fetch)
     out = ROOT / "build/play" / args.target
     out.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
@@ -185,13 +242,13 @@ def main():
         programs = [p for p in programs if p in args.only]
     common = compiler + [
         "-std=c++17", "-Wall", "-Wextra", "-Werror", *defines, "-I" + str(MGBA_SOURCE / "include"),
-        "-I" + str(mgba / "include"), "-I" + str(ROOT / "play/src"), "-I" + str(ROOT / "src")
+        "-I" + str(mgba / "include"), "-I" + str(ROOT / "play/src"), "-I" + str(ROOT / "src"), *rcheevos_includes()
     ]
     # The device's bundled zlib, for picture frames (ui/png.cpp) and mGBA's own headers (crc32.h).
     zlib_include = ["-I" + str(mgba / "zlib"), "-I" +
                     str(MGBA_SOURCE / "src/third-party/zlib")] if zlib.exists() else []
     common += zlib_include
-    sources = [ROOT / "play/src" / s for s in CORE_SOURCES]
+    sources = [ROOT / "play/src" / s for s in CORE_SOURCES] + build_rcheevos(c_compiler, out, env)
     for c_source in C_SOURCES:
         obj = out / (Path(c_source).stem + ".o")
         run(
@@ -258,6 +315,9 @@ def archive_source(output):
     entries += [
         ("mgba/" + n, MGBA_SOURCE / n) for n in sorted(listed.decode().split("\0")) if n and (MGBA_SOURCE / n).is_file()
     ]
+    listed = subprocess.run(["git", "-C", RCHEEVOS_SOURCE, "ls-files", "-z"], capture_output=True, check=True).stdout
+    entries += [("rcheevos/" + n, RCHEEVOS_SOURCE / n)
+                for n in sorted(listed.decode().split("\0")) if n and (RCHEEVOS_SOURCE / n).is_file()]
     with output.open("wb") as stream, gzip.GzipFile(fileobj=stream, mode="wb", filename="", mtime=0) as zipped:
         with tarfile.open(fileobj=zipped, mode="w") as tar:
             for name, path in entries:
@@ -280,6 +340,7 @@ def stage_payload(out):
             shutil.copy2(profile, staging / "profiles" / system.name / profile.name)
     shutil.copy2(ROOT / "LICENSE", staging / "COPYING")
     shutil.copy2(MGBA_SOURCE / "LICENSE", staging / "COPYING.mgba")
+    shutil.copy2(RCHEEVOS_SOURCE / "LICENSE", staging / "COPYING.rcheevos")
     archive_source(staging / "source.tar.gz")
     sys.path.insert(0, str(ROOT / "tools"))
     from elf_abi import inspect_elf
@@ -288,6 +349,7 @@ def stage_payload(out):
         "schema": 1,
         "engine": inspect_elf(staging / "rgds-play", "RG DS Play with pinned libmgba"),
         "mgba_commit": MGBA_COMMIT,
+        "rcheevos_commit": RCHEEVOS_COMMIT,
         "driver_sha256": digest(Path(__file__)),
         "files": files
     }
@@ -319,7 +381,8 @@ def validate_payload(directory):
         raise ValueError("RG DS Play is not an AArch64 glibc-2.17 binary")
     with tarfile.open(directory / "source.tar.gz") as source:
         names = set(source.getnames())
-        for needed in ("rgds/play/src/frontend/main.cpp", "rgds/tools/build_play.py", "mgba/LICENSE"):
+        for needed in ("rgds/play/src/frontend/main.cpp", "rgds/tools/build_play.py", "mgba/LICENSE",
+                       "rcheevos/LICENSE"):
             if needed not in names:
                 raise ValueError("RG DS Play source archive is incomplete: " + needed)
         if source.extractfile("mgba/LICENSE").read() != (directory / "COPYING.mgba").read_bytes():

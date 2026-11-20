@@ -3,13 +3,16 @@
 // Members of App in main.cpp; included once, right after the class.
 
 void App::ds_controls_row(SDL_Renderer* r, int y, int i) {
-    const std::array<std::string, 6> names = {"Blow into microphone", "Close and open DS lid", "DS language",
-                                              "Real microphone",      "DS nickname",           "Local wireless"};
+    const std::array<std::string, 7> names = {"Blow into microphone", "Close and open DS lid", "DS language",
+                                              "Real microphone",      "DS nickname",           "Local wireless",
+                                              "Online play"};
+    const bool no_network = kid_locked() && !active_profile().allow_wireless;
     const std::array<std::string, 6> languages = {"Japanese", "English", "French", "German", "Italian", "Spanish"};
     int language = ds_settings.count("language") ? std::clamp(std::atoi(ds_settings["language"].c_str()), 0, 5) : 1;
     list_row(r, y, i, names[i],
              !ds_supported() ? "Engine managed"
-             : i == 5        ? wireless_names()[kid_locked() && !active_profile().allow_wireless ? 0 : ds_wireless()]
+             : i == 6        ? online_names()[no_network ? 0 : ds_online()]
+             : i == 5        ? wireless_names()[no_network ? 0 : ds_wireless()]
              : i == 4        ? (ds_settings.count("nickname") ? ds_settings["nickname"] : ds_owner_name())
              : i == 2        ? languages[language]
              : i == 3        ? (ds_settings.count("microphone") && ds_settings["microphone"] == "0") ? "Off" : "On"
@@ -29,7 +32,9 @@ void App::ds_controls_action() {
                     ds_settings.count("language") ? std::atoi(ds_settings["language"].c_str()) : 1,
                     [this](int n) { save_ds_setting("language", n); });
     else if (settings.focus == 4) begin_edit(5);
-    else if (settings.focus == 5 && kid_locked() && !active_profile().allow_wireless) status = "Not on this profile";
+    else if (settings.focus >= 5 && kid_locked() && !active_profile().allow_wireless) status = "Not on this profile";
+    else if (settings.focus == 6)
+        show_picker("Online play", online_names(), ds_online(), [this](int n) { save_ds_setting("online", n); });
     else if (settings.focus == 5)
         show_picker("Local wireless", wireless_names(), ds_wireless(),
                     [this](int n) { save_ds_setting("wireless", n); });
@@ -39,6 +44,14 @@ void App::ds_controls_action() {
 // Local wireless (ds-input.ini wireless, DSCore's net.mode): 0 off, 1 join a session heard on the Wi-Fi or host one,
 // 2 host, 3 join only.
 std::vector<std::string> App::wireless_names() const { return {"Off", "Join or host", "Host", "Join"}; }
+
+// Online play (ds-input.ini online): 0 off, else DSCore's net.mode = internet with net.dns naming the fan-run
+// Nintendo WFC service the game's lookups go to: 1 Wiimmfi, 2 WiiLink WFC. It wins over local wireless.
+std::vector<std::string> App::online_names() const { return {"Off", "Wiimmfi", "WiiLink WFC"}; }
+
+int App::ds_online() {
+    return ds_settings.count("online") ? std::clamp(std::atoi(ds_settings["online"].c_str()), 0, 2) : 0;
+}
 
 int App::ds_wireless() {
     return ds_settings.count("wireless") ? std::clamp(std::atoi(ds_settings["wireless"].c_str()), 0, 3) : 0;

@@ -11,6 +11,7 @@ void App::open_game_info(Page back) {
     const auto folder = item_folder(model.selected);
     info_facts = load_game_facts(folder, preferences.language);
     info_pictures = gallery_pictures(folder);
+    info_achievements = load_game_achievements(player_item_folder(model.selected));
     info_picture = info_scroll = info_scroll_max = 0;
     settings.page = Page::GameInfo;
     settings.focus = 0;
@@ -188,10 +189,16 @@ void App::game_info_bottom(SDL_Renderer* r, int y) {
     const int card_top = y + (count > 1 ? 140 : 92), card_height = y + 416 - card_top;
     alpha_round(r, 26, card_top + 3, 588, card_height, 14, shadow_colour(), preferences.dark ? 60 : 18);
     round_rect(r, 24, card_top, 592, card_height, 14, "panel");
-    if (!info_facts.any()) {
+    // RetroAchievements (achievements.tsv from rgds-play): a section under the description. Without the file, a quiet
+    // line only while the player has them on and is signed in.
+    const auto& cheevos = info_achievements;
+    const bool cheevos_hint = !cheevos.known && preferences.achievements && !achievements_user.empty();
+    if (!info_facts.any() && !cheevos.known) {
         ui_icon(r, SettingsIcon::Info, 320, card_top + 90, 44, "muted");
         wrapped(r, "Turn on Game info in Settings > Library > Artwork sources, then fetch artwork.", 56, card_top + 138,
                 20, 528, 4);
+        if (cheevos_hint)
+            wrapped(r, "Play the game once to see its achievements.", 56, card_top + card_height - 52, 16, 528, 2);
         return;
     }
     const int pixels = 18, stride = 26, inner_x = 44, inner_w = 520;
@@ -221,7 +228,12 @@ void App::game_info_bottom(SDL_Renderer* r, int y) {
     const auto rows = info_facts.rows();
     const bool grid = lines.empty();
     const int grid_rows = int(rows.size() + 1) / 2, grid_h = grid_rows * 58;
-    const int content = (grid ? grid_h : int(lines.size()) * stride) + 40;
+    const int facts_h = info_facts.any() ? (grid ? grid_h : int(lines.size()) * stride) + 40 : 0;
+    static constexpr int cheevo_head = 76, cheevo_row = 70;
+    const int cheevos_h = cheevos.known && cheevos.total > 0 ? cheevo_head + int(cheevos.list.size()) * cheevo_row
+                          : cheevos.known || cheevos_hint    ? 64
+                                                             : 0;
+    const int content = facts_h + (facts_h && cheevos_h ? 16 : 0) + cheevos_h;
     const int view_top = card_top + 14, view_h = card_height - 28;
     info_scroll_max = std::max(0, content - view_h);
     info_scroll = std::clamp(info_scroll, 0, info_scroll_max);
@@ -244,10 +256,75 @@ void App::game_info_bottom(SDL_Renderer* r, int y) {
     }
     if (!info_facts.provider.empty() && at + 24 > view_top - 4 && at < view_top + view_h)
         raw_label(r, locale.text("Source") + ": " + info_facts.provider, inner_x, at + 12, 14, "muted", inner_w);
+    at = view_top - info_scroll + facts_h + (facts_h && cheevos_h ? 16 : 0);
+    if (cheevos_h) game_info_achievements(r, at, view_top, view_h, inner_x, inner_w);
     s.RenderSetClipRect(r, nullptr);
     if (info_scroll_max > 0) {
         const int thumb = std::max(40, view_h * view_h / content);
         draw_scrollbar(r, 584, view_top, view_h, thumb, info_scroll * (view_h - thumb) / info_scroll_max, false, false,
                        24);
+    }
+}
+
+// A day as the player writes dates (System > Date format), with the year: 19/11/2026, 2026-11-19.
+std::string App::achievement_date(long long when) const {
+    std::time_t time = std::time_t(when);
+    std::tm local{};
+    if (!when || !localtime_r(&time, &local)) return "";
+    std::string pattern = date_format_patterns.at(size_t(std::clamp(system_preferences.date_format, 0, 4)));
+    if (pattern.find("%Y") == std::string::npos) pattern += pattern.substr(2, 1) + "%Y";
+    char text[32];
+    return std::strftime(text, sizeof text, pattern.c_str(), &local) ? text : "";
+}
+
+// The Achievements section of the Game info card, from content offset `at` (already scrolled): a heading, the
+// totals with a bar, then one row per achievement, unlocked ones first with a filled check and their date, locked ones
+// dimmed with an empty ring. Badge pictures are PNGs and the launcher reads only BMPs, so none are drawn.
+void App::game_info_achievements(SDL_Renderer* r, int at, int view_top, int view_h, int inner_x, int inner_w) {
+    const auto& cheevos = info_achievements;
+    auto visible = [&](int top, int height) { return top + height > view_top - 4 && top < view_top + view_h; };
+    if (visible(at, 30)) label(r, "Achievements", inner_x, at, 20, "ink", inner_w);
+    if (!cheevos.known || cheevos.total <= 0) {
+        if (visible(at + 32, 24))
+            wrapped(r,
+                    cheevos.known ? "RetroAchievements has no achievements for this game yet."
+                                  : "Play the game once to see its achievements.",
+                    inner_x, at + 32, 16, inner_w, 1);
+        return;
+    }
+    const std::string summary =
+        locale.text(std::to_string(cheevos.unlocked) + " / " + std::to_string(cheevos.total) + " achievements") +
+        "  ·  " +
+        locale.text(std::to_string(cheevos.points) + " / " + std::to_string(cheevos.points_total) + " points");
+    if (visible(at + 32, 24)) raw_label(r, summary, inner_x, at + 32, 16, "muted", inner_w);
+    if (visible(at + 58, 6)) {
+        round_rect(r, inner_x, at + 58, inner_w, 6, 3, "slot");
+        const int done = inner_w * std::clamp(cheevos.unlocked, 0, cheevos.total) / cheevos.total;
+        if (done > 0) round_rect(r, inner_x, at + 58, std::max(6, done), 6, 3, "accent");
+    }
+    int row = at + 76;
+    for (const auto& a : cheevos.list) {
+        if (visible(row, 66)) {
+            const int cx = inner_x + 14, cy = row + 18;
+            if (a.unlocked) {
+                fill_round(r, cx - 14, cy - 14, 28, 28, 14, theme.at("accent"));
+                ui_icon(r, SettingsIcon::Check, cx, cy, 16, "on_accent");
+            } else {
+                round_rect(r, cx - 14, cy - 14, 28, 28, 14, "line");
+                round_rect(r, cx - 12, cy - 12, 24, 24, 12, "slot");
+            }
+            const std::string points = locale.text(a.points == 1 ? "1 point" : std::to_string(a.points) + " points");
+            const int points_w = label_width(points, 14, false);
+            const int text_x = inner_x + 40, text_w = inner_w - 40;
+            raw_label(r, points, inner_x + inner_w - points_w, row + 3, 14, a.unlocked ? "accent" : "muted", points_w);
+            raw_label(r, a.title, text_x, row, 18, a.unlocked ? "ink" : "muted", text_w - points_w - 12);
+            raw_label(r, a.description, text_x, row + 25, 14, "muted", text_w);
+            const std::string when = a.unlocked ? achievement_date(a.unlocked_at) : "";
+            if (!when.empty()) label(r, "Unlocked " + when, text_x, row + 46, 13, "accent", text_w);
+            else if (!a.unlocked && !a.progress.empty())
+                raw_label(r, a.progress, text_x, row + 46, 13, "muted", text_w);
+            if (&a != &cheevos.list.back()) round_rect(r, text_x, row + 66, text_w, 1, 0, "line");
+        }
+        row += 70;
     }
 }

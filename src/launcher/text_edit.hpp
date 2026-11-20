@@ -15,6 +15,7 @@ void App::begin_edit(int field) {
                   : field == 11            ? games_query
                   : field == 0             ? username
                   : field == 1             ? password
+                  : field == 12            ? (achievements_name.empty() ? achievements_user : achievements_name)
                   : field == 3             ? artwork_match
                                            : "";
     key_row = 1;
@@ -146,6 +147,34 @@ void App::finish_edit(bool commit) {
         dirty = true;
         return;
     }
+    // RetroAchievements sign-in: the same two steps as ScreenScraper's, in fields of their own. The password goes to
+    // achievements.py on stdin and only the token the site gives back is kept.
+    if (edit_field == 12 || edit_field == 13) {
+        if (commit && edit_field == 12 && !edit_buffer.empty()) {
+            achievements_name = edit_buffer;
+            edit_buffer.clear();
+            begin_edit(13);
+            return;
+        }
+        if (commit && edit_field == 13 && !edit_buffer.empty() && !achievements_name.empty()) {
+            std::ostringstream payload;
+            payload << "{\"user\":" << std::quoted(achievements_name) << ",\"password\":" << std::quoted(edit_buffer)
+                    << '}';
+            if (worker > 0 && (worker_action == "index" || worker_action == "status")) stop_worker();
+            if (worker > 0 && worker_action != "device.info" && worker_action != "device.update-auto")
+                service_notice = "Wait for the current task to finish, then sign in.";
+            else start_worker("achievements.login", payload.str());
+            auto sent = payload.str();
+            std::fill(sent.begin(), sent.end(), '\0');
+        }
+        std::fill(edit_buffer.begin(), edit_buffer.end(), '\0');
+        edit_buffer.clear();
+        s.StopTextInput();
+        settings.page = Page::Achievements;
+        settings.focus = 1;
+        dirty = true;
+        return;
+    }
     // ScreenScraper sign-in: the username, then the password; the worker checks both with ScreenScraper before
     // keeping them (scraper.py login), and the password reaches it on stdin, never on its command line.
     if (commit && edit_field == 0 && !edit_buffer.empty()) {
@@ -226,6 +255,31 @@ void App::delete_character() {
     edit_cursor = begin;
     search_changed();
     dirty = true;
+}
+
+// Settings > Library > RetroAchievements: row 0 the switch (A, Left/Right), row 1 the account.
+void App::achievements_action(int code) {
+    if (settings.focus == 0) {
+        if (code != 0 && code != 1 && code != 2) return;
+        preferences.achievements = code == 2 ? !preferences.achievements : code == 1;
+        sound_intent(preferences.achievements ? MenuCue::Enable : MenuCue::Disable);
+        remember_appearance();
+        return;
+    }
+    if (code != 2) return;
+    if (achievements_user.empty()) {
+        begin_edit(12);
+        return;
+    }
+    show_picker("RetroAchievements account", {"Change account", "Sign out"}, 0, [this](int n) {
+        if (n == 0) begin_edit(12);
+        else {
+            if (worker > 0 && (worker_action == "index" || worker_action == "status")) stop_worker();
+            if (worker > 0 && worker_action != "device.info" && worker_action != "device.update-auto")
+                service_notice = "Wait for the current task to finish, then sign out.";
+            else start_worker("achievements.logout");
+        }
+    });
 }
 
 void App::scraper_action() {

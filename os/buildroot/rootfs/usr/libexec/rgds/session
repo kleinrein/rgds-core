@@ -80,10 +80,12 @@ $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 
     --boot-startup $FIRST $WARN --allow-launch --rom-dir /data/roms/nds --system-dir gba=/data/roms/gba --system-dir gbc=/data/roms/gbc \
     --system-dir gb=/data/roms/gb \
     --system-dir nes=/data/roms/nes --system-dir snes=/data/roms/snes --system-dir md=/data/roms/md --system-dir md=/data/roms/genesis \
-    --system-dir md=/data/roms/segacd --system-dir md=/data/roms/pico --system-dir coleco=/data/roms/coleco \
-    --system-dir intellivision=/data/roms/intellivision --system-dir msx=/data/roms/msx --system-dir pce=/data/roms/pce \
+    --system-dir md=/data/roms/segacd --system-dir pico=/data/roms/pico --system-dir coleco=/data/roms/coleco \
+    --system-dir intellivision=/data/roms/intellivision --system-dir msx=/data/roms/msx --system-dir cpc=/data/roms/cpc --system-dir pce=/data/roms/pce \
     --system-dir pce=/data/roms/pcecd --system-dir atari=/data/roms/atari --system-dir amiga=/data/roms/amiga \
-    --system-dir pico8=/data/roms/pico8 \
+    --system-dir atari7800=/data/roms/atari7800 --system-dir atari5200=/data/roms/atari5200 --system-dir lynx=/data/roms/lynx \
+    --system-dir dos=/data/roms/dos \
+    --system-dir pico8=/data/roms/pico8 --system-dir vb=/data/roms/vb \
     --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 $CTR --system-dir psp=/data/roms/psp --system-dir dc=/data/roms/dc --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
     --system-dir ports=/data/portmaster/ports >> $LOG 2>&1
 status=$?

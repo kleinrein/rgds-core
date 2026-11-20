@@ -12,6 +12,7 @@
 #include <mutex>
 #include <chrono>
 #include <array>
+#include <deque>
 
 namespace rgds {
 // On the stock firmware emulators.py passes DSCore "--screen bottom": its upper window, on KMSDRM display 1, then
@@ -99,6 +100,33 @@ class EmulatorOverlay {
     bool fps_game = false;
     int volume_level = -1, drawn_volume = -1;
     unsigned long long volume_until = 0;
+    // Engine notices (rgds_toast, RetroAchievements in DSCore): one at a time
+    // on the lower panel, the rest waiting; none starts under the menu.
+    struct Toast {
+        int kind = 1, points = 0;
+        std::string title, detail;
+    };
+    std::deque<Toast> toasts;
+    Toast toast_now;
+    bool toast_on = false, toast_visible = false;
+    unsigned long long toast_until = 0;
+    uint32_t toast_serial = 0, drawn_toast = ~0u;
+    // A screenshot's shutter: both panels flash white and fade (shot- capture tokens).
+    static constexpr int flash_ms = 240;
+    unsigned long long flash_start = 0;
+    int drawn_flash = -1;
+    bool flash_visible = false;
+    std::string flashed_token;
+    int flash_level() {
+        if (!flash_start) return -1;
+        const auto age = clock() - flash_start;
+        if (age >= flash_ms) {
+            flash_start = 0;
+            return -1;
+        }
+        // Steps of 12 keep it to about a dozen compositions however fast the game presents.
+        return (210 - int(age * 210 / flash_ms)) / 12 * 12;
+    }
     static unsigned long long clock() {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
                    std::chrono::steady_clock::now().time_since_epoch())
@@ -110,28 +138,48 @@ class EmulatorOverlay {
         bool hud = volume_level >= 0 && clock() < volume_until;
         bool fps = fps_value >= 0 && !menu;
         bool ff = ff_active && !menu;
-        if (!menu && !hud && !fps && !ff) {
-            menu_visible = hud_visible = fps_visible = ff_visible = false;
+        if (toast_on && clock() >= toast_until) toast_on = false;
+        if (!toast_on && !menu && !toasts.empty()) {
+            toast_now = std::move(toasts.front());
+            toasts.pop_front();
+            toast_on = true;
+            toast_until = clock() + (toast_now.kind == 0 ? 4000 : 2500);
+            ++toast_serial;
+        }
+        bool toast = toast_on && !menu;
+        const int level = menu ? -1 : flash_level();
+        const bool flash = level > 0;
+        if (!menu && !hud && !fps && !ff && !toast && !flash) {
+            menu_visible = hud_visible = fps_visible = ff_visible = toast_visible = flash_visible = false;
             return false;
         }
         if (menu != menu_visible || hud != hud_visible || fps != fps_visible || ff != ff_visible ||
-            (fps && drawn_fps != fps_value) || (menu && menu_version != frame.version()) ||
-            (hud && drawn_volume != volume_level)) {
+            toast != toast_visible || flash != flash_visible || (flash && drawn_flash != level) ||
+            (toast && drawn_toast != toast_serial) || (fps && drawn_fps != fps_value) ||
+            (menu && menu_version != frame.version()) || (hud && drawn_volume != volume_level)) {
             // A plain menu already has stable owned pixels. Only a HUD needs
-            // composition, and a HUD alone has no bottom panel to copy/draw.
-            if (hud || fps || ff) {
-                composite.resize(overlay_panel_bytes * (menu ? 2 : 1));
+            // composition, and a HUD alone has no bottom panel to copy/draw;
+            // a notice is the bottom panel's.
+            if (hud || fps || ff || toast || flash) {
+                composite.resize(overlay_panel_bytes * (menu || toast || flash ? 2 : 1));
                 RGDS_PROFILE(composites, 1);
                 if (menu) std::memcpy(composite.data(), frame.panel(0), composite.size());
-                else std::fill(composite.begin(), composite.end(), 0);
+                else std::fill(composite.begin(), composite.end(), flash ? (unsigned char)level : 0);
                 if (hud) draw_volume_hud(composite.data(), volume_level);
                 if (ff) draw_fast_forward_hud(composite.data());
                 if (fps) draw_fps_hud(composite.data(), fps_value, fps_game);
+                if (toast)
+                    hud::toast(composite.data() + overlay_panel_bytes, toast_now.kind, toast_now.title,
+                               toast_now.detail, toast_now.points);
             }
             menu_visible = menu;
             hud_visible = hud;
             fps_visible = fps;
             ff_visible = ff;
+            toast_visible = toast;
+            flash_visible = flash;
+            drawn_flash = level;
+            drawn_toast = toast_serial;
             drawn_fps = fps_value;
             menu_version = frame.version();
             drawn_volume = volume_level;
@@ -140,11 +188,13 @@ class EmulatorOverlay {
         return true;
     }
     const unsigned char* pixels(int index) const {
-        return (hud_visible || fps_visible || ff_visible) ? composite.data() + index * overlay_panel_bytes
-                                                          : frame.panel(index);
+        return (hud_visible || fps_visible || ff_visible || toast_visible || flash_visible)
+                   ? composite.data() + index * overlay_panel_bytes
+                   : frame.panel(index);
     }
     bool has_panel(int index) const {
-        return menu_visible || ((hud_visible || fps_visible || ff_visible) && index == 0);
+        return menu_visible || flash_visible || ((hud_visible || fps_visible || ff_visible) && index == 0) ||
+               (toast_visible && index == 1);
     }
     void acknowledge() {
         if (menu_visible) frame.acknowledge();
@@ -165,6 +215,14 @@ class EmulatorOverlay {
     }
 
 public:
+    // The bridge's buzz for a screenshot's shutter; called with the overlay locked, from a present thread.
+    void (*on_shutter)() = nullptr;
+    // An engine's notice for the lower panel; at most a few wait their turn.
+    void toast(int kind, std::string title, std::string detail, int points) {
+        std::lock_guard<std::mutex> guard(mutex);
+        if (toasts.size() >= 6) toasts.pop_front();
+        toasts.push_back(Toast{kind, points, std::move(title), std::move(detail)});
+    }
     void fps(double value, bool game = false) {
         std::lock_guard<std::mutex> guard(mutex);
         if (fps_game != game) drawn_fps = -1;
@@ -217,6 +275,12 @@ public:
             rename((output + ".pending").c_str(), output.c_str());
             captured[index] = true;
             if (combined) captured[1] = true;
+        }
+        // A screenshot (not the menu's backdrop): the shutter shows on the first panel out, after its pixels are saved.
+        if (captured[index] && capture_token.rfind("shot-", 0) == 0 && flashed_token != capture_token) {
+            flashed_token = capture_token;
+            flash_start = clock();
+            if (on_shutter) on_shutter();
         }
         if (captured[0] && captured[1]) {
             unlink((std::string(control) + ".capture").c_str());

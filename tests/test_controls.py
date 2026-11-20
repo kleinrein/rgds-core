@@ -114,9 +114,15 @@ class ControlProfileTests(unittest.TestCase):
     def test_plain_menu_delay_and_sequence_option(self):
         shortcut = controls.Shortcut()
         shortcut.feed('menu', True, 0)
+        shortcut.feed('menu', False, .08)
         self.assertIsNone(shortcut.poll(.149))
         self.assertEqual(shortcut.poll(.151), 'menu')
         self.assertIsNone(shortcut.poll(.3))
+        # Held, Menu waits for R (Menu + R is a screenshot), opening at release or after .6 s.
+        held = controls.Shortcut()
+        held.feed('menu', True, 0)
+        self.assertIsNone(held.poll(.4))
+        self.assertEqual(held.poll(.6), 'menu')
         sequence = controls.Shortcut('startthenmenu', 'home')
         sequence.feed('start', True, 0)
         sequence.feed('start', False, .05)

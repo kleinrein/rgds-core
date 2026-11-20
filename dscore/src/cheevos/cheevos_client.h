@@ -58,7 +58,19 @@ public:
   Client(const Client&) = delete;
   Client& operator=(const Client&) = delete;
 
-  // False with a reason in `err` when there is no usable libcurl; not fatal.
+  // Before start(): requests go to this helper process instead of libcurl
+  // (RG DS OS has no libcurl). An empty script keeps libcurl.
+  void set_helper(const HelperOptions& helper) { helper_ = helper; }
+  // Before load_game(): badge pictures are kept in `dir` as <badge>.png
+  // (unlocked art), fetched once each. Empty: none are fetched.
+  void set_badges_dir(const std::string& dir) { badges_ = dir; }
+  // The game's achievement list for RG DS's Game info page, rewritten
+  // (temp + rename) when the set loads, after each unlock and once the badges
+  // are in. Never written for a dump RetroAchievements does not know.
+  void set_list_path(const std::string& path) { list_path_ = path; }
+
+  // False with a reason in `err` when there is no transport (no libcurl, or
+  // the helper cannot be found); not fatal.
   bool start(std::string& err);
   void shutdown();
 
@@ -98,18 +110,24 @@ public:
   std::vector<Message> take_messages();
 
   struct Achievement {
-    std::string title, description, progress;
+    std::string title, description, progress, badge;
     u32 id = 0, points = 0;
-    bool unlocked = false;    // the account holds it
-    bool active = false;      // armed, can trigger now (both true in encore)
-    bool unsupported = false; // a condition reads memory we do not back
+    long long unlock_time = 0; // unix seconds, 0 while locked
+    float rarity = -1;         // percent of players holding it (casual); < 0 unknown
+    bool unlocked = false;     // the account holds it
+    bool active = false;       // armed, can trigger now (both true in encore)
+    bool unsupported = false;  // a condition reads memory we do not back
   };
   struct Summary {
     u32 total = 0, unlocked = 0, active = 0, unsupported = 0;
     u32 points = 0, points_earned = 0;
   };
+  // Core achievements in the set's display order.
   std::vector<Achievement> achievements() const;
   Summary summary() const;
+  // The list file's text (format in set_list_path's file, "#rgds-achievements 1").
+  // Empty when no game is loaded.
+  std::string list_text() const;
 
   // Called by rcheevos completion callbacks; public for that reason only.
   void on_signed_in(const std::string& display_name);
@@ -126,6 +144,8 @@ public:
 
 private:
   void worker_loop();
+  void fetch_badges();
+  void write_list();
   void post(Message::Kind kind, std::string text, std::string detail = {}, u32 points = 0);
   void drain_completions();
 
@@ -133,11 +153,13 @@ private:
     Request req;
     void* callback = nullptr; // rc_client_server_callback_t
     void* callback_data = nullptr;
+    bool badge = false;
   };
   struct Completion {
     Response res;
     void* callback = nullptr;
     void* callback_data = nullptr;
+    bool badge = false;
   };
 
   void* client_ = nullptr; // rc_client_t*
@@ -152,6 +174,11 @@ private:
   mutable std::mutex mu_;
   std::condition_variable cv_;
   std::deque<Job> jobs_;
+  std::deque<Job> badge_jobs_; // behind every rcheevos request
+  HelperOptions helper_;
+  std::string badges_, list_path_;
+  u32 badges_pending_ = 0;
+  bool list_dirty_ = false;
   std::deque<Completion> done_;
   std::vector<Message> messages_;
   bool stop_ = false;

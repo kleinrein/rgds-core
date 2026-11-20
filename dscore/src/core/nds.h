@@ -160,6 +160,10 @@ struct NDS {
   bool save_firmware_override(const std::string& path, std::string& err);
   bool firmware_override_dirty() const { return fw_dirty_pages > 0; }
   void firmware_written(u32 offset); // called from the SPI page-write path
+  // A generated firmware keeps only its Wi-Fi connection slots in the sidecar: the slot a Nintendo
+  // WFC game signs in with holds its WFC user ID (the root of every friend code), written on the
+  // first connection. User settings stay the config's.
+  bool firmware_wifi_page(u32 offset) const;
   // STOP gates the system clock; the RTC and frontend audio remain alive.
   bool sleeping = false;
   void run_frame();
@@ -195,6 +199,7 @@ struct NDS {
   // the SPI write path and by a loaded override.
   std::vector<u8> fw_page_dirty;
   u32 fw_dirty_pages = 0;
+  u32 fw_writes = 0;   // firmware bytes changed this session (SPI and loaded override): a frontend saves on a change
   u64 firmware_id = 0; // identity of the pristine dump; an override names it
   // Identity of the two BIOS images in bus.bios9/bios7. A save state usually
   // restores the ARM7 mid-BIOS-routine, but the BIOS isn't part of the

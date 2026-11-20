@@ -308,7 +308,7 @@ int App::run() {
             refresh_network(now);
         poll_launch(now);
         poll_chat();
-        const bool music_moving = music_tick(now);
+        const bool toy_moving = voice_tick(now), music_moving = music_tick(now) || toy_moving;
         if (media.adopt()) dirty = true;
         if (launch_phase == LaunchPhase::Playing) continue;
         if (touch_tail && now - release_at >= 140) {
@@ -409,6 +409,10 @@ int App::run() {
                 system_poll = now;
             }
         }
+        album_poll();
+        album_share_poll(now);
+        service_launcher_screenshot();
+        if (shutter_active()) dirty = true; // the flash fades over the next frames
         if (!o.preview && fs::exists(o.data / "session/capture-request")) {
             auto previous = o.screenshot;
             o.screenshot = o.data / "session/ui-snapshot";

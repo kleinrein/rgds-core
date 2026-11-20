@@ -13,7 +13,7 @@ same chip, and reports from RK3566 handhelds, which have the same Mali-G52 and s
 | Launcher: Dreamcast shelf, `dc`/`dreamcast` folders, playtime colour, second-screen picker | Done, self-test passes |
 | Player: Flycast options, shared-texture frames, sticks kept, VMU on the second screen | Done, host-built, play-tests pass |
 | OS: `/data/roms/dc` made at boot, the session passes it to the launcher | Done, not booted |
-| Device spike | **Waiting**: the handheld was offline, and there are no Dreamcast games or BIOS on hand |
+| Device spike | **2026-11-19**: Crazy Taxi drives at **55-60 fps** on the RG DS (was ~30) after Flycast patches 0002-0003; see "Spike results" |
 
 ## Short answer
 
@@ -167,8 +167,9 @@ Staging from the Mac (core from the VM, player from `tools/build_play.py device`
 ```sh
 D=root@10.55.0.1
 ssh $D mkdir -p /data/rgds/dc-spike/runtime
-scp -O build/dc-spike/flycast_libretro.so build/play/device/rgds-play os/banana-probe/dc_spike.py os/banana-probe/session_hold.sh $D:/data/rgds/dc-spike/
+scp -O build/dc-spike/flycast_libretro.so build/play/device/rgds-play os/device-bench/dc_spike.py os/device-bench/session_hold.sh $D:/data/rgds/dc-spike/
 tar -C runtime -cf - . | ssh $D tar -C /data/rgds/dc-spike/runtime -xf -
+ssh $D 'mkdir -p /data/rgds/dc-spike/assets && cp -r /usr/share/rgds/releases/$(cat /usr/share/rgds/active)/assets/shaders /data/rgds/dc-spike/assets/'
 ```
 
 On the handheld (a userdata of its own under the spike folder, never the owner's):
@@ -184,6 +185,136 @@ clock in a shot, peak resident memory (printed at the end), GPU time from fdinfo
 threaded rendering, alpha sorting, DSP, auto frameskip, delay frame swapping, SH4 clock, `RGDS_PLAY_DIRECT`, and
 `self_paced` if sound or pacing is off. Then the launcher path (library, in-game menu, states, frames, shaders, the
 VMU screen), a `dc` bezel check, and the Plus memory figures (`mem=1G` on a trial boot line).
+
+## Spike results
+
+2026-11-19, RG DS (3 GB), image 0.9.1-0de9d393e37c-os70534dc8, Flycast 3a5267a, real `dc_boot.bin` (md5
+e10c53c2f8b90bab96ead2d368858623, no `dc_flash.bin`), player built from this checkout, default power mode.
+
+| Game | Scene | Emulated frame (`run`) | Over 16.7 ms | Shown frame | Peak resident |
+|---|---|---|---|---|---|
+| Crazy Taxi (USA), Redump `.cue` | Boot, Sega logo (first 20 s) | 8-20 ms avg, worst 118 ms | 11-49 per window | 20-30 ms avg | |
+| Crazy Taxi | "No VMU found" screen (static 2D) | 5.5-5.8 ms avg, worst 7-10 ms | 0 | 16.7-17.6 ms avg, one 33 ms frame per window | 122-124 MB |
+
+- **Memory:** 122-124 MB resident for the whole player (Flycast's 16 MB RAM + 8 MB VRAM + 2 MB ARAM included), with
+  the guest RAM on `/dev/shm` as planned. That leaves plenty on the Plus's 1 GB.
+- **Boot:** the GD-ROM image (1.2 GB `.cue`/`.bin`) starts from the exFAT card in about 20 s to the first screen;
+  shader compiles on the first run cause the slow frames above. The second run has the Mesa cache warm.
+- **Bug found and fixed:** the game said "No VMU found". Flycast plugs the expansion slots in only once every port has
+  had `retro_set_controller_port_device` (RetroArch sets all four); the player set port A only. It now sets ports
+  B-D to none for `dc` (`play/src/core/libretro_core.cpp`). Confirmed on the device: the game then says "VMU in A1
+  is in use" and offers to create its file, and the lower screen switches to the VMU view (128 MB peak over 150 s).
+- **Gameplay, Crazy Taxi driving** (scripted input `RGDS_PLAY_INPUT=os/device-bench/dc_crazy_taxi.input`: menus with B,
+  the Dreamcast's A, and Start, then R2 to drive; the road is reached ~140 s in): every frame over budget, **32.5-33.6
+  ms a frame (about 30 fps)**, 155-165 MB resident. CPU at 1.992 GHz (performance governor), GPU at 800 MHz.
+  - Per thread over 5 s of driving: the player's main thread (GL drawing) 68%, `Flycast-emu` (SH4) 65-67%, audio 4%.
+    Neither core is full: the two take turns rather than overlap, each needing ~22 ms a frame.
+  - 320x240 internal resolution gave the same 32.7 ms, so the GPU's fill rate is not the limit; the drawing cost is
+    CPU-side (driver work per draw call).
+  - `flycast_auto_skip_frame=more`, `flycast_sh4clock=160` and `flycast_threaded_rendering=disabled` each gave the same
+    32.5-32.7 ms, and the `Flycast-emu` thread still ran with threading disabled. That is suspicious: these options may
+    not have reached the core. The player now logs each `RGDS_PLAY_CORE_OPTIONS` override ("play: core option ...");
+    rerun one of them to tell "no effect" from "not applied" before drawing conclusions.
+- **Corrected after review:** the first scripted drive pressed Start into gameplay (pauses), but a clean drive and the
+  owner's own hand-played drive agree: **28-35 ms a frame, about 30 fps, so the game runs at half speed** (Crazy Taxi's
+  timer drops ~13 s per 30 s). The option overrides do reach the core (`play: core option ...` in the log); Flycast
+  keeps its emulation thread with threaded rendering off.
+- **Where the time goes** (sampling profile, `os/device-bench/rgds_prof.c` preloaded, 1 kHz CPU-time samples over 70 s
+  of driving, names from an unstripped relink of the same Flycast objects and Mesa's staging copy; report with
+  `rgds_prof_report.py --maps prof.livemaps`):
+  - The drawing thread (the player's main thread) is the limit: computing 63%, waiting on GPU fences 35%. Its CPU time:
+    **Mesa/Panfrost 64%**, Flycast's renderer 16% (`SetGPState`, TA parsing, triangle sort), libc 15% (mostly one
+    copy routine). Top function: **`u_vbuf_get_minmax_index_mapped` 10.6%**, then `panfrost_draw_vbo` 5%, then texture
+    and sampler state updates (`_mesa_update_texture_state`, `cso_set_samplers`, `set_tex_parameter*`).
+  - That is Mesa scanning each draw's index buffer on the CPU for its vertex range, because Flycast draws with
+    `glDrawElements` (no range), and doing it through `u_vbuf`, the translation path for vertex input the driver
+    doesn't take directly.
+  - The SH4 thread waits on the drawing thread half the time: SH4 JIT 63%, AICA sound ~20% (DSP 7%).
+- **Fix 1 done: `glDrawRangeElements`** (`package/libretro-flycast/0002-gles-draw-range-elements.patch`; the libretro
+  build reaches GL through libretro-common's glsm, which had no wrapper for it). Panfrost's own
+  `panfrost_get_index_buffer_bounded` was doing the scan (via `u_vbuf_get_minmax_index`) because Flycast rewrites the
+  index buffer every frame. Driving: **25-31 ms a frame, was 28.6-34.7 (about 10% faster, still ~35 fps)**; the scan
+  is gone from the profile and computing the ranges costs 1%.
+- **After fix 1, the drawing thread:** Mesa 58% (draw emission `panfrost_draw_vbo` 7%, then texture/sampler/shader
+  state updates spread over many functions: `_mesa_update_texture_state`, `cso_set_samplers`,
+  `panfrost_update_shader_variant`, `panfrost_emit_const_buf`, `st_update_*`), Flycast 20% (`SetGPState` 7%, TA
+  parsing 3%), kernel time in `ioctl` 12% (GPU job submission and buffer work, all through RG DS Core's bridge's
+  `ioctl` hook). The cost is now per-draw state churn, not one hot spot.
+- **Fix 2 done: whole-buffer uploads** (`0003-gles-whole-buffer-uploads.patch`). The drawing thread's 35% GPU wait was
+  Flycast's `GlBuffer::update` using `glBufferSubData` over the start of the vertex/index buffers: that range still
+  held last frame's data, so Panfrost's `panfrost_ptr_map` took its "Synchronized write" path (flush, then wait for the
+  GPU) on every upload. `glBufferData` each frame lets Mesa discard the whole resource (same size) or reallocate, and
+  Panfrost takes a fresh BO from its cache. **Driving: 14.9-16.8 ms a frame (4-162 of 300 over budget), was 25-31:
+  about 55-60 fps.** The drawing thread no longer waits on fences (running 71%, the rest idle in poll/futex).
+- **After fix 2:** the two threads are about even. Drawing: Mesa 53%, Flycast 21%, kernel `ioctl` 11.5%, `memcpy` 3%.
+  SH4 thread: JIT 67%, AICA sound ~17% (DSP 6.5%). Both are close to the 16.7 ms budget, so the next gains are on both
+  sides.
+- **Image builds:** patches 0002-0004 were added after the VM's Flycast build directory was made, and were applied
+  there by hand, so the image built on 2026-11-20 (0.9.1-os8974f5f1) carries a Flycast without them (installed from the
+  17:33 build of 11-19). The next image build needs `make libretro-flycast-dirclean` first (or `own_os_build.py
+  --reconfigure`) so Buildroot applies every patch in `package/libretro-flycast/`.
+- **2026-11-20 runs measured that unpatched image core by mistake:** `dc_spike.py` linked the image's
+  `/usr/lib/libretro/flycast_libretro.so` before its own copy (it only linked its own when no Flycast existed). Those runs
+  (32-34 ms, "0004 and DSP off change nothing") say nothing about the patches; fixed in the runner, to be redone.
+- **Redone 2026-11-20 with the right core** (image 0.9.1-os8974f5f1, quiet device, profiler on, 10 driving windows =
+  3000 frames each):
+
+  | Core | Emulated frame | Frames over 16.7 ms | Shown frame interval |
+  |---|---|---|---|
+  | 0001-0003 | 16.12 ms | 1072 | 21.8 ms |
+  | + 0004 (`0004-gles-skip-unchanged-poly-state.patch`) | 15.78 ms | 714 | 21.8 ms |
+  | + 0004, `flycast_enable_dsp=disabled` | 15.94 ms | 894 | 21.9 ms |
+
+  0004 cuts over-budget frames by a third; the DSP off buys nothing (the SH4 thread waits on drawing anyway), so the
+  DSP stays on. **The shown interval (21.8 ms, ~46 fps) is the real gap:** the player's main thread draws (computing
+  ~80%) and then waits in `poll` for the page flip (14-19%), so a frame that finishes a little late waits a whole
+  refresh. Kernel time in GPU job submission (`DRM_IOCTL_PANFROST_SUBMIT`, ~10 a frame at ~84 µs) is 12% of the
+  drawing thread; `WAIT_BO` dropped to 2 s per 200 s run (49 s on the unpatched core).
+- **Memory clock and bandwidth:** the RAM is LPDDR3 and already at stock's 920-924 MHz (kernel/bootloader session,
+  2026-11-20); no higher clock to try. Its 1 s DDR log over the three drives: driving at a median 1,981 MiB/s (read
+  1,614, write 374), p95 2,240, max 2,287, about 30-35% of the ~7,000 MiB/s peak and half of what is practical. Memory
+  is not the wall (a burst within a frame could still be, which 1 s averages can't show).
+- **Pacing (2026-11-20):** the profile's "frame" is retro_run to retro_run, so ~21.8 ms means the core runs ~46
+  times a second: the game itself runs at about 77% speed in the drive, not just fewer shown frames. Each loop pass
+  spends ~3-6 ms outside the core, mostly the upper panel's `SDL_RenderPresent`: SDL's KMSDRM swap first waits for the
+  previous page flip, so once a frame runs late the loop is pinned to the vblank grid (the main thread sits in `poll`
+  ~19%). Not the cause: the lower panel (presenting it only every 10th pass changed nothing, 22.1 vs 21.8 ms) and the
+  bridge (the owner's unbridged drive shows the same run + 3-6 ms). The loop's catch-up (`owed`, capped at 4 frames)
+  can't win when the core alone takes ~95% of a frame. Ways out: (a) make the core's frame cheaper (~14 ms leaves room
+  for the present), (b) a present that doesn't wait for the previous flip (drop the picture when a flip is pending and
+  keep emulating: full game speed, fewer shown frames), (c) Flycast's own frameskip deciding with the present time
+  included.
+- **The present is not the limit (2026-11-20, tested and reverted):** a player-side skip of presents while a flip
+  was probably pending changed nothing (21.7 vs 22.3 ms core interval). The main thread's 19-23% `poll` was on
+  `/dev/dri/card0` with no timeout, SDL's KMSDRM page-flip wait (`dc_polls.py`). An SDL patch that dropped the frame
+  instead of waiting (hint `SDL_KMSDRM_DROP_PENDING`) removed that wait entirely (main thread running 99%) but moved
+  the time into Flycast's frame (15.4 -> 18.8 ms) at the same 21.5 ms core interval. **The GPU needs ~21.5 ms per
+  frame in this drive**; the flip wait was only where it showed. Since 320x240 changed nothing, that GPU time is
+  geometry, tiling and per-job overhead rather than pixels. The next lever is GPU work per frame: ~10 job
+  submissions a frame (each a separate tile pass on Mali: the framebuffer stored and reloaded), and per-draw cost.
+- **Early flushes are not it:** `PAN_MESA_DEBUG=perf` over a drive logged 63 early flushes in the 3,000 driving
+  frames, all "AFBC write staging blit" (texture uploads; 2,561 over the whole run, mostly loading). Flycast already
+  merges consecutive polys with equivalent state into one strip draw (`makePrimRestartIndex`, restart index between
+  them), so the remaining draws differ in state. Next measured: half resolution again (the 11-19 test ran while the
+  upload stall hid the GPU) and per-strip translucent sorting (fewer draws than per-triangle).
+- **Next fixes, in order:** (1) and the buffer stall done, above. (The `u_vbuf` name in the first profile was Panfrost borrowing u_vbuf's
+  scan helper, not the vertex-translation path; no layout change needed.) (2) Cut redundant per-poly state in
+  `SetGPState`: skip texture binds, `glTexParameter` calls and uniform updates when they equal the previous poly's
+  (each one makes Mesa revalidate texture and sampler state). (3) Batch: consecutive polys with identical state as one
+  draw (strips joined by the restart index), the biggest lever on a per-draw-cost driver. (4) Look at the ioctl time
+  (job submits per frame: one batch, or flushes mid-frame from FBO switches?). (5) SH4 side: try
+  `flycast_enable_dsp=disabled` per game (6.5% of that thread; some games need the DSP for sound effects).
+  Re-profile after each, and test heavier games (only Crazy Taxi is on hand).
+- Test runs keep vibration off (`RGDS_RUMBLE=0` in `dc_spike.py`).
+- **VMU screen orientation:** Flycast keeps the VMU picture's rows bottom first (its own overlay draws the texture
+  flipped). The lower-screen view now flips the rows; checked against Crazy Taxi's logo from a device capture
+  (`play/src/companion/keypad.cpp`), not yet seen on the panel.
+- Spike tooling: a run of several variants goes detached on the handheld (`os/device-bench/dc_variants.sh` with `dc_threads.py`, staged into the spike folder, `setsid
+  nohup`), since the USB link dropped once mid-run and took the SSH session with it.
+- The shown-frame average above 16.7 ms with 0 emulated frames over budget points at presentation pacing (one doubled
+  vsync per window), not the emulator; compare with PSP's pacing before changing options.
+- Staging notes: `/data` is exFAT, so the runner keeps its core symlinks in `/run/rgds/dc-spike-cores`, and the spike
+  folder needs a copy of the release's `assets/shaders` beside `runtime/`.
 
 ## Sources
 

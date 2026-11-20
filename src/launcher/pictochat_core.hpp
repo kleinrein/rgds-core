@@ -24,7 +24,11 @@ struct Point {
     int16_t x = 0, y = 0;
     bool operator==(const Point& o) const { return x == o.x && y == o.y; }
 };
-enum class Kind : uint8_t { Stroke = 1, Text = 2, Stamp = 3 };
+enum class Kind : uint8_t { Stroke = 1, Text = 2, Stamp = 3, Picture = 4 };
+// A picture (an Album screenshot, Album > Send in PictoChat): at most one a message, up to 128x96 pixels, each one
+// of the inks or the paper, two pixels a byte. A message with one is format version 2; anything else stays version 1,
+// which older handhelds still read.
+constexpr int picture_w = 128, picture_h = 96, picture_paper = 8;
 // Colours 0..7 are inks; 8 is the rainbow pen, a hue that follows the stroke.
 constexpr int ink_count = 8, rainbow = 8;
 struct Op {
@@ -34,6 +38,8 @@ struct Op {
     uint8_t stamp = 0;                  // stamps
     std::vector<Point> points;          // strokes: the path; text and stamps: points[0] is the origin
     std::string text;                   // UTF-8, text only
+    uint8_t w = 0, h = 0;               // pictures: the size, and one index a pixel (an ink, or picture_paper)
+    std::vector<uint8_t> pixels;
 };
 
 constexpr uint32_t pack(unsigned r, unsigned g, unsigned b, unsigned a = 255) {
@@ -128,7 +134,9 @@ inline std::vector<uint8_t> encode(const std::vector<Op>& ops) {
     std::vector<uint8_t> out;
     size_t points = 0;
     if (ops.empty() || ops.size() > max_ops) return {};
-    out.push_back(1);
+    const auto pictures = std::count_if(ops.begin(), ops.end(), [](const Op& op) { return op.kind == Kind::Picture; });
+    if (pictures > 1) return {};
+    out.push_back(pictures ? 2 : 1);
     detail::put_varint(out, uint32_t(ops.size()));
     for (const auto& op : ops) {
         if (op.points.empty() || (op.kind != Kind::Stroke && op.points.size() != 1)) return {};
@@ -155,6 +163,18 @@ inline std::vector<uint8_t> encode(const std::vector<Op>& ops) {
             detail::put_varint(out, detail::zig(op.points[0].y));
             detail::put_varint(out, uint32_t(op.text.size()));
             out.insert(out.end(), op.text.begin(), op.text.end());
+        } else if (op.kind == Kind::Picture) {
+            if (op.w < 1 || op.w > picture_w || op.h < 1 || op.h > picture_h || op.pixels.size() != size_t(op.w) * op.h)
+                return {};
+            detail::put_varint(out, detail::zig(op.points[0].x));
+            detail::put_varint(out, detail::zig(op.points[0].y));
+            out.push_back(op.w);
+            out.push_back(op.h);
+            for (size_t i = 0; i < op.pixels.size(); i += 2) {
+                const uint8_t a = op.pixels[i], b = i + 1 < op.pixels.size() ? op.pixels[i + 1] : 0;
+                if (a > picture_paper || b > picture_paper) return {};
+                out.push_back(uint8_t(a << 4 | b));
+            }
         } else {
             if (op.colour >= ink_count || op.stamp >= stamp_count) return {};
             out.push_back(op.stamp);
@@ -172,7 +192,9 @@ inline bool decode(const uint8_t* data, size_t size, std::vector<Op>& ops) {
     ops.clear();
     if (!data || size == 0 || size > max_payload) return false;
     detail::Reader in{data, size};
-    if (in.byte() != 1) return false;
+    const uint8_t version = in.byte();
+    if (version != 1 && version != 2) return false;
+    bool picture_seen = false;
     uint32_t count = in.varint();
     if (!in.ok || count == 0 || count > max_ops) return false;
     size_t points = 0;
@@ -220,6 +242,29 @@ inline bool decode(const uint8_t* data, size_t size, std::vector<Op>& ops) {
             if (!valid_text(op.text)) return false;
             points += 1;
             op.points.push_back({int16_t(x), int16_t(y)});
+        } else if (kind == uint8_t(Kind::Picture)) {
+            // Only in version 2, and only once.
+            if (version != 2 || picture_seen) return false;
+            picture_seen = true;
+            op.kind = Kind::Picture;
+            int32_t x = in.zigzag(), y = in.zigzag();
+            op.w = in.byte();
+            op.h = in.byte();
+            if (!in.ok || !detail::in_range(x, y) || op.w < 1 || op.w > picture_w || op.h < 1 || op.h > picture_h)
+                return false;
+            const size_t count = size_t(op.w) * op.h, bytes = (count + 1) / 2;
+            if (bytes > size - in.at) return false;
+            op.pixels.resize(count);
+            for (size_t i = 0; i < count; i++) {
+                const uint8_t packed = data[in.at + i / 2], value = i % 2 ? packed & 15 : packed >> 4;
+                if (value > picture_paper) return false;
+                op.pixels[i] = value;
+            }
+            if (count % 2 && (data[in.at + bytes - 1] & 15))
+                return false; // the spare nibble is zero, as encode writes it
+            in.at += bytes;
+            points += 1;
+            op.points.push_back({int16_t(x), int16_t(y)});
         } else if (kind == uint8_t(Kind::Stamp)) {
             op.kind = Kind::Stamp;
             op.stamp = in.byte();
@@ -231,11 +276,72 @@ inline bool decode(const uint8_t* data, size_t size, std::vector<Op>& ops) {
         } else return false;
         ops.push_back(std::move(op));
     }
-    if (in.at != size) {
+    if (in.at != size || (version == 2 && !picture_seen)) {
         ops.clear();
         return false;
     }
     return true;
+}
+
+// A picture for the pad from RGBA pixels (bytes R, G, B, A; `stride` pixels a row): scaled to fit picture_w x
+// picture_h by averaging, then error-diffused onto the inks and the paper, so a game screen reads as a drawing in
+// the pad's own colours. Placed with its top-left corner at (x, y).
+inline Op make_picture(const uint32_t* src, int sw, int sh, int stride, int x, int y) {
+    Op op;
+    op.kind = Kind::Picture;
+    op.points = {{int16_t(x), int16_t(y)}};
+    if (!src || sw <= 0 || sh <= 0) return op;
+    const double scale = std::min(double(picture_w) / sw, double(picture_h) / sh);
+    const int w = std::clamp(int(sw * scale + .5), 1, picture_w), h = std::clamp(int(sh * scale + .5), 1, picture_h);
+    op.w = uint8_t(w);
+    op.h = uint8_t(h);
+    std::vector<float> rgb(size_t(w) * h * 3);
+    for (int ty = 0; ty < h; ty++)
+        for (int tx = 0; tx < w; tx++) {
+            const int x0 = tx * sw / w, x1 = std::max(x0 + 1, (tx + 1) * sw / w), y0 = ty * sh / h,
+                      y1 = std::max(y0 + 1, (ty + 1) * sh / h);
+            double r = 0, g = 0, b = 0;
+            for (int yy = y0; yy < y1; yy++)
+                for (int xx = x0; xx < x1; xx++) {
+                    const uint32_t v = src[size_t(yy) * stride + xx];
+                    r += v & 255, g += v >> 8 & 255, b += v >> 16 & 255;
+                }
+            const double n = double(x1 - x0) * (y1 - y0);
+            float* out = &rgb[(size_t(ty) * w + tx) * 3];
+            out[0] = float(r / n), out[1] = float(g / n), out[2] = float(b / n);
+        }
+    std::array<uint32_t, picture_paper + 1> palette{};
+    std::copy(inks.begin(), inks.end(), palette.begin());
+    palette[picture_paper] = paper;
+    op.pixels.resize(size_t(w) * h);
+    for (int ty = 0; ty < h; ty++)
+        for (int tx = 0; tx < w; tx++) {
+            float* c = &rgb[(size_t(ty) * w + tx) * 3];
+            int best = 0;
+            float best_d = 1e30f;
+            for (int i = 0; i <= picture_paper; i++) {
+                const float dr = c[0] - (palette[size_t(i)] & 255), dg = c[1] - (palette[size_t(i)] >> 8 & 255),
+                            db = c[2] - (palette[size_t(i)] >> 16 & 255);
+                // weighted for the eye: green matters most
+                const float d = dr * dr * .3f + dg * dg * .59f + db * db * .11f;
+                if (d < best_d) best_d = d, best = i;
+            }
+            op.pixels[size_t(ty) * w + tx] = uint8_t(best);
+            const float er = c[0] - (palette[size_t(best)] & 255), eg = c[1] - (palette[size_t(best)] >> 8 & 255),
+                        eb = c[2] - (palette[size_t(best)] >> 16 & 255);
+            auto spread = [&](int dx, int dy, float k) {
+                const int nx = tx + dx, ny = ty + dy;
+                if (nx < 0 || nx >= w || ny >= h) return;
+                float* n = &rgb[(size_t(ny) * w + nx) * 3];
+                n[0] += er * k, n[1] += eg * k, n[2] += eb * k;
+            };
+            // Floyd-Steinberg, a little softened so flat colours stay calm
+            spread(1, 0, 7 / 16.f * .85f);
+            spread(-1, 1, 3 / 16.f * .85f);
+            spread(0, 1, 5 / 16.f * .85f);
+            spread(1, 1, 1 / 16.f * .85f);
+        }
+    return op;
 }
 
 // Ramer-Douglas-Peucker: keeps the look of a hand-drawn path with far fewer points.
@@ -599,6 +705,17 @@ inline Rect paint(Canvas& canvas, const Op& op, GlyphSource* glyphs) {
         dirty = canvas.text(op.text, op.points[0].x, op.points[0].y, inks[op.colour % ink_count], *glyphs);
     else if (op.kind == Kind::Stamp)
         dirty = canvas.stamp(op.stamp, op.points[0].x, op.points[0].y, inks[op.colour % ink_count]);
+    else if (op.kind == Kind::Picture) {
+        const int x0 = op.points[0].x, y0 = op.points[0].y;
+        for (int y = 0; y < op.h; y++)
+            for (int x = 0; x < op.w; x++) {
+                const int cx = x0 + x, cy = y0 + y;
+                if (cx < 0 || cy < 0 || cx >= canvas_w || cy >= canvas_h) continue;
+                const uint8_t i = op.pixels[size_t(y) * op.w + x];
+                canvas.px[size_t(cy) * canvas_w + cx] = i < ink_count ? inks[i] : paper;
+            }
+        dirty = {std::max(0, x0), std::max(0, y0), std::min(canvas_w, x0 + op.w), std::min(canvas_h, y0 + op.h)};
+    }
     return dirty;
 }
 inline void render(Canvas& canvas, const std::vector<Op>& ops, GlyphSource* glyphs) {

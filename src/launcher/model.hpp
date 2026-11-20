@@ -43,8 +43,8 @@ struct SystemInfo {
     std::initializer_list<const char*> extensions;
     std::initializer_list<const char*> folder_extensions = {};
 };
-inline const std::array<SystemInfo, 26>& systems() {
-    static const std::array<SystemInfo, 26> list = {{
+inline const std::array<SystemInfo, 33>& systems() {
+    static const std::array<SystemInfo, 33> list = {{
         {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
@@ -52,9 +52,11 @@ inline const std::array<SystemInfo, 26>& systems() {
         // libretro systems through RG DS Play (runtime/play_options.py names the same extensions and the cores)
         {"nes", "Nintendo Entertainment System", "NES", {".nes", ".fds", ".unf", ".unif"}},
         {"snes", "Super Nintendo", "SNES", {".sfc", ".smc"}},
-        // and the Mega-CD's discs and the Pico's cartridges (play_subsystem)
+        // and the Mega-CD's discs (play_subsystem)
         {"md", "Mega Drive", "MD", {".md", ".gen", ".smd", ".32x"}, {".bin", ".cue", ".chd", ".m3u", ".iso"}},
         {"sms", "Master System", "SMS", {".sms", ".gg", ".sg", ".sc"}}, // and the Game Gear, SG-1000 and SC-3000
+        // PicoDrive: a Pico cartridge is a Mega Drive file, so only in its own folder
+        {"pico", "Sega Pico", "PICO", {}, {".md", ".bin", ".gen", ".smd"}},
         // and its CD-ROM discs (play_subsystem)
         {"pce", "PC Engine", "PCE", {".pce"}, {".cue", ".chd", ".m3u", ".ccd", ".toc"}},
         {"psx", "PlayStation", "PS", {".cue", ".chd", ".pbp", ".m3u"}},
@@ -71,8 +73,15 @@ inline const std::array<SystemInfo, 26>& systems() {
         {"coleco", "ColecoVision", "COLECO", {".col", ".cv"}, {".rom", ".bin"}},  // Gearcoleco
         {"intellivision", "Intellivision", "INT", {".int"}, {".rom", ".bin"}},    // FreeIntv
         {"msx", "MSX", "MSX", {".mx1", ".mx2", ".cas"}, {".rom", ".dsk", ".m3u"}}, // blueMSX
+        {"cpc", "Amstrad CPC", "CPC", {".cdt", ".cpr"}, {".dsk", ".sna", ".m3u"}}, // Caprice32: a .dsk/.sna in its folder
         {"atari", "Atari 2600", "2600", {".a26"}, {".bin"}},                       // Stella 2014
+        {"atari7800", "Atari 7800", "7800", {".a78"}, {".bin"}},                   // ProSystem
+        {"atari5200", "Atari 5200", "5200", {".a52"}, {".bin"}},                   // a5200
+        {"lynx", "Atari Lynx", "LYNX", {".lnx"}},                                  // Handy
+        {"vb", "Virtual Boy", "VB", {".vb", ".vboy"}, {".bin"}},                   // Beetle VB
         {"amiga", "Amiga", "AMIGA", {".adf", ".adz", ".dms", ".ipf", ".hdf", ".hdz", ".lha", ".uae"}, {".m3u"}}, // PUAE
+        // DOSBox Pure: a game's zipped folder (only in a DOS folder: a zip elsewhere is a DS game's), CD and floppy images
+        {"dos", "DOS", "DOS", {".dosz"}, {".zip", ".iso", ".cue", ".chd", ".ins", ".img", ".ima", ".vhd", ".m3u", ".m3u8"}},
         {"pico8", "PICO-8", "P8", {".p8"}, {".png"}}, // fake-08: .p8 carts, and .p8.png picture carts in its folder
         {"gw", "Game & Watch", "G&W", {".mgw"}}, // and other LCD games: MADrigal's simulators (gw-libretro)
         {"scummvm", "ScummVM", "SCUMM", {}}, // a game is a folder of files: scan_system
@@ -125,8 +134,8 @@ inline const GamesFolder* games_folder(const std::string& name) {
         {"mega cd", "md", "segacd"},
         {"mega-cd", "md", "segacd"},
         {"sega cd", "md", "segacd"},
-        {"pico", "md", "pico"},
-        {"sega pico", "md", "pico"},
+        {"pico", "pico", ""},
+        {"sega pico", "pico", ""},
         {"sms", "sms", ""},
         {"pce", "pce", ""},
         {"pc engine", "pce", ""},
@@ -156,11 +165,32 @@ inline const GamesFolder* games_folder(const std::string& name) {
         {"msx", "msx", ""},
         {"msx1", "msx", ""},
         {"msx2", "msx", ""},
+        {"cpc", "cpc", ""},
+        {"amstrad", "cpc", ""},
+        {"amstrad cpc", "cpc", ""},
+        {"amstradcpc", "cpc", ""},
         {"atari", "atari", ""},
         {"atari2600", "atari", ""},
         {"atari 2600", "atari", ""},
         {"2600", "atari", ""},
+        {"atari7800", "atari7800", ""},
+        {"atari 7800", "atari7800", ""},
+        {"7800", "atari7800", ""},
+        {"atari5200", "atari5200", ""},
+        {"atari 5200", "atari5200", ""},
+        {"5200", "atari5200", ""},
+        {"lynx", "lynx", ""},
+        {"atarilynx", "lynx", ""},
+        {"atari lynx", "lynx", ""},
+        {"vb", "vb", ""},
+        {"virtualboy", "vb", ""},
+        {"virtual boy", "vb", ""},
         {"amiga", "amiga", ""},
+        {"dos", "dos", ""},
+        {"msdos", "dos", ""},
+        {"ms-dos", "dos", ""},
+        {"pc", "dos", ""},
+        {"dosbox", "dos", ""},
         {"pico8", "pico8", ""},
         {"pico-8", "pico8", ""},
         {"fake08", "pico8", ""},
@@ -192,8 +222,8 @@ inline std::string system_for_path(const fs::path& path) {
     return "nds";
 }
 // The player's own system for a game on a shared shelf, as runtime/play_options.py's system_of has it: the Game Gear,
-// the SG-1000 and SC-3000 on the Master System's; the Mega-CD (its folder, or a disc among the Mega Drive's) and the
-// Pico (its folder) on the Mega Drive's; the CD-ROM (a disc) on the PC Engine's.
+// the SG-1000 and SC-3000 on the Master System's; the Mega-CD (its folder, or a disc among the Mega Drive's) on the
+// Mega Drive's; the CD-ROM (a disc) on the PC Engine's.
 inline std::string play_subsystem(const fs::path& path, const std::string& system) {
     const std::string ext = lower(path.extension().string());
     if (system == "sms" && ext == ".gg") return "gg";
@@ -211,13 +241,14 @@ inline std::string play_subsystem(const fs::path& path, const std::string& syste
 // The shelf a player's system is on.
 inline std::string shelf_of(const std::string& system) {
     if (system == "gg" || system == "sg") return "sms";
-    if (system == "segacd" || system == "pico") return "md";
+    if (system == "segacd") return "md";
     if (system == "pcecd") return "pce";
     return system;
 }
 // Systems whose controller the player draws on the touch screen (play/src/companion/keypad.cpp).
 inline bool has_touch_controller(const std::string& system) {
-    return system == "coleco" || system == "intellivision" || system == "pico" || system == "atari";
+    return system == "coleco" || system == "intellivision" || system == "pico" || system == "atari" ||
+           system == "atari7800" || system == "atari5200";
 }
 inline std::string library_title(std::string name) {
     // Remove recognized dump tags, retaining meaningful parenthetical titles.

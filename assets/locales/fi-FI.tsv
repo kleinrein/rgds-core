@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Terävä skaalaus DS-värikäsittely
 Sharp scaling, DS colour and Natural Vision together.	Terävä skaalaus, DS-värit ja Natural Vision yhdessä.
 Shield	Kilpi
 Shift	Vaihto
-Shift keys stay down until the next key	Vaihtonäppäimet pysyvät alhaalla seuraavaan näppäimeen
 Shortcut action	Pikavalinnan toiminto
 Shots	Laukaukset
 Show games	Näytä pelit
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Kaikki muu kor
 Room for more games.	Tilaa lisää peleille.
 Console switches	Konsolin kytkimet
 VMU screen	VMU-näyttö
+3D: one eye each	3D: silmä kummallekin näytölle
+Mouse	Hiiri
+RetroAchievements	RetroAchievements
+Account	Tili
+RetroAchievements account	RetroAchievements-tili
+Achievements	Saavutukset
+{0} achievements	{0} saavutusta
+{0} points	{0} pistettä
+1 point	1 piste
+Unlocked {0}	Avattu {0}
+Play the game once to see its achievements.	Pelaa peliä kerran nähdäksesi sen saavutukset.
+RetroAchievements has no achievements for this game yet.	RetroAchievementsissa ei ole vielä saavutuksia tälle pelille.
+Earn achievements from retroachievements.org while you play.	Ansaitse saavutuksia retroachievements.orgista pelatessasi.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Avaa saavutuksia peleissäsi pelatessasi. Kunkin pelin lista on Pelin tiedoissa.
+A free account from retroachievements.org.	Ilmainen tili osoitteesta retroachievements.org.
+Signing out…	Kirjaudutaan ulos…
+Wait for the current task to finish, then sign in.	Odota, että nykyinen tehtävä valmistuu, ja kirjaudu sitten sisään.
+Wait for the current task to finish, then sign out.	Odota, että nykyinen tehtävä valmistuu, ja kirjaudu sitten ulos.
+Signed in to RetroAchievements as {0}.	Kirjauduttu RetroAchievementsiin nimellä {0}.
+Signed out of RetroAchievements.	Kirjauduttu ulos RetroAchievementsista.
+Enter your RetroAchievements username and password.	Anna RetroAchievements-käyttäjätunnuksesi ja salasanasi.
+Could not reach RetroAchievements. Check the connection.	RetroAchievementsiin ei saatu yhteyttä. Tarkista yhteys.
+Wrong username or password.	Väärä käyttäjätunnus tai salasana.
+RetroAchievements did not accept the sign-in.	RetroAchievements ei hyväksynyt kirjautumista.
+Achievement unlocked	Saavutus avattu
+Game mastered	Peli hallittu
+achievements	saavutusta
+Sign in again in Settings	Kirjaudu uudelleen Asetuksissa
+Could not sign in	Kirjautuminen epäonnistui
+This game file is not recognised	Tätä pelitiedostoa ei tunnisteta
+Could not load this game's achievements	Pelin saavutuksia ei voitu ladata
+No achievements yet	Ei vielä saavutuksia
+Every achievement unlocked	Kaikki saavutukset avattu
+Offline: unlocks are sent when back online	Offline: avaukset lähetetään, kun yhteys palaa
+Back online: unlocks sent	Taas verkossa: avaukset lähetetty
+Play Nintendo WFC games online	Pelaa Nintendo WFC -pelejä verkossa
+Album	Albumi
+Menus	Valikot
+No screenshots yet	Ei vielä kuvakaappauksia
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	Paina pelissä Valikko + R tai valitse Kuvakaappaus pelivalikosta. Valikko + R toimii myös valikoissa.
+This picture is the game's cover now.	Tämä kuva on nyt pelin kansi.
+The cover could not be changed.	Kantta ei voitu vaihtaa.
+The screenshot could not be saved.	Kuvakaappausta ei voitu tallentaa.
+Delete this screenshot?	Poistetaanko tämä kuvakaappaus?
+Use as the game's cover	Käytä pelin kantena
+Save the game behind this menu to the Album	Tallenna tämän valikon takana oleva peli albumiin
+Saving the screenshot…	Tallennetaan kuvakaappausta…
+Screenshot saved to the Album.	Kuvakaappaus tallennettu albumiin.
+Still saving the last screenshot.	Edellistä kuvakaappausta tallennetaan yhä.
+No picture to save. Resume the game and press Menu + R.	Ei tallennettavaa kuvaa. Jatka peliä ja paina Valikko + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Kuvatila
+Leave photo mode?	Poistutaanko kuvatilasta?
+Keep editing	Jatka muokkausta
+Leave without saving	Poistu tallentamatta
+Saved to the Album.	Tallennettu albumiin.
+The photo could not be saved.	Kuvaa ei voitu tallentaa.
+This picture could not be opened.	Kuvaa ei voitu avata.
+Pen	Kynä
+Stamps	Leimat
+Frames	Kehykset
+Lenses	Linssit
+Date	Päivämäärä
+Sepia	Seepia
+Black & white	Mustavalko
+Mosaic	Mosaiikki
+Mirror	Peili
+Fisheye	Kalansilmä
+Old photo	Vanha valokuva
+Instant photo	Pikakuva
+Film strip	Filminauha
+Postage stamp	Postimerkki
+Rounded card	Pyöreä kortti
+Stars	Tähdet
+Undo	Kumoa
+Sound toy	Äänilelu
+Record your voice and change it	Äänitä äänesi ja muuta sitä
+Chipmunk	Maaorava
+Monster	Hirviö
+Backwards	Takaperin
+Echo	Kaiku
+Press Record and say hello!	Paina Äänitä ja sano hei!
+Then pick a voice and draw on the lower screen to bend it.	Valitse sitten ääni ja piirrä alanäyttöön taivuttaaksesi sitä.
+Recording…	Äänitetään…
+Press X again to stop.	Lopeta painamalla X uudelleen.
+Sound {0}	Ääni {0}
+Startup sound	Käynnistysääni
+Higher	Korkeampi
+Lower	Matalampi
+Record	Äänitä
+Stop	Pysäytä
+Sounds	Äänet
+Record a sound first	Äänitä ensin ääni
+The handheld starts quietly again	Laite käynnistyy taas hiljaa
+Plays when the handheld starts	Soi, kun laite käynnistyy
+Could not save the sound	Ääntä ei voitu tallentaa
+Nothing heard. Hold the handheld closer and try again.	Mitään ei kuulunut. Pidä laitetta lähempänä ja yritä uudelleen.
+This manual could not be opened	Ohjekirjaa ei voitu avata
+This page is not a scan	Tämä sivu ei ole skannaus
+This page could not be read	Tätä sivua ei voitu lukea
+Giant	Jättiläinen
+Underwater	Veden alla
+Choir	Kuoro
+8-bit	8-bittinen
+Telephone	Puhelin
+Megaphone	Megafoni
+Cave	Luola
+Jelly	Hyytelö
+Scratch	Scratch
+Whisper	Kuiskaus
+Sloth	Laiskiainen
+Speedy	Pikainen
+Dragon	Lohikäärme
+Baby	Vauva
+Opera	Ooppera
+Erase	Poista
+Drawing cleared	Piirros tyhjennetty
+Nothing to clear	Ei mitään tyhjennettävää
+Press Erase again to delete this sound	Poista ääni painamalla Poista uudelleen
+Sound erased	Ääni poistettu
+Send in PictoChat	Lähetä PictoChatissa
+Send to phone	Lähetä puhelimeen
+Connect to Wi-Fi to send pictures to a phone or computer.	Yhdistä Wi-Fiin, niin voit lähettää kuvia puhelimeen tai tietokoneeseen.
+Your picture is on the pad. Write or draw beside it, then send.	Kuvasi on lehtiössä. Kirjoita tai piirrä viereen ja lähetä.
+Join a room: your picture goes on the pad.	Liity huoneeseen: kuvasi tulee lehtiöön.

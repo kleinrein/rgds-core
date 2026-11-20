@@ -35,6 +35,13 @@ public:
   SlirpDriver& operator=(const SlirpDriver&) = delete;
 
   bool start(Dns dns = Dns::Host, u32 dns_addr = 0); // dns_addr: host-order IPv4, ignored unless Custom
+
+  // Where a game's server lookups go: "wiimmfi" (the default), "wiilink" (WiiLink WFC), "host" (this
+  // machine's resolver) or a dotted IPv4 address. Both fan-run services answer every Nintendo WFC name
+  // with their own servers, so choosing one is the whole of going online. False for anything else.
+  static bool parse_dns(const std::string& where, Dns& dns, u32& dns_addr);
+  static constexpr u32 kWiimmfiDns = 0xB23E2BD4; // 178.62.43.212
+  static constexpr u32 kWiiLinkDns = 0x05A1380B; // 5.161.56.11
   void stop();
   bool ok() const { return slirp_ != nullptr; }
   const std::string& error() const { return err_; }

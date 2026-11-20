@@ -238,7 +238,7 @@ a 5–6 ms one its margin can be far narrower than measured on 18 October.
 ### Input latency on RG DS OS, 30 October
 
 Measured on the handheld (RG DS OS 0.8.0, 2x, renderer sink, `DS_PACE=display`),
-25 B presses on the pad node per run with `os/banana-probe` (`game_latency.py`,
+25 B presses on the pad node per run with `os/device-bench` (`game_latency.py`,
 `press_to_flip.py`; the scratch `trial.sh` is `pace_trial.sh` with
 `DS_PRESENT_PROFILE=1`), median time from a press to the completed flip of the
 frame whose poll read it:
@@ -323,7 +323,7 @@ The owner reported horrible lag and frame rates at 2x, while the hand runs above
 looked fine. Hand runs differ from play in two ways that turned out to matter: an
 SSH shell has all four CPUs where the launcher has three, and they rarely open the
 menu. These runs go through `emulators.py launch` with the launcher's environment
-and CPU mask (`os/banana-probe/real_trial.sh`, `session_hold.sh`, `cadence_lock.py`),
+and CPU mask (`os/device-bench/real_trial.sh`, `session_hold.sh`, `cadence_lock.py`),
 from the owner's own states, 20 B presses, the real menu for 4 s, 20 more presses,
 each run started at 52 °C or below so none reached the throttle point. Median press
 to completed flip of the reading frame, before and after the menu; "dry" counts
@@ -404,7 +404,7 @@ special device tree, and leaving it puts the device tree's back.
 Why they changed. Before, Saver capped at 1104 and 400 MHz: Mario Kart DS 41 fps, OutRun 15. Balanced capped at 1800 MHz,
 the same 1.15 V as 1992, so it saved little. And every launch forced the CPU's `performance` governor whatever the mode,
 so a GBA game sat at its cap; a mode changed during a game was undone at its exit, which restored the governor from
-before. Games now keep the mode's governors (`os/banana-probe/power_trial.py`, on a data copy, on USB, one run a cell from
+before. Games now keep the mode's governors (`os/device-bench/power_trial.py`, on a data copy, on USB, one run a cell from
 about 52 °C, 25 s of the owner's save points; the current is the battery's net, so read differences, not absolutes):
 
 | Game: fps / net mA | Saver | Balanced | Performance |
@@ -645,6 +645,49 @@ GPU clock costs 11 % of the frames, where GL lost nothing. The vertex-tiler engi
 game and above 1000 ms a second, so its figure counts queued jobs as well. Why PanVK spends that there is not known. Killing
 a Vulkan run also left GPU faults and a scheduler timeout in the kernel log. The spike is parked in `.cache/parked/psp-vulkan`,
 with no default-on path and nothing in any image.
+
+**PPSSPP on Vulkan with the patched PanVK (20 November): level with GL, not ahead.** The vertex-tiler cost above turned out
+to be PanVK's indexed draws (every `vkCmdDrawIndexed` an indirect five-job chain, see `docs/TANUKI_VULKAN_PLAN.md`), which
+`tools/engine_patches/panvk-direct-indexed.patch` replaces with direct draws behind `PANVK_DIRECT_INDEXED=1`. That path reads
+the indices while the command is recorded. PPSSPP is safe with it: `DrawEngineVulkan` copies each draw's indices into
+`pushIndex_`, a persistently mapped, host-coherent VMA block (`VulkanMemory.cpp`, `vmaMapMemory`, which sets PanVK's
+`addr.host`), and only queues a render command. `VulkanQueueRunner` records the real `vkCmdDrawIndexed` later, and a block is
+reused only after its frame slot's fence.
+
+Same spike player and core as on 5 November (`/data/rgds/psp-spike/vk`, frames copied back to the panel, no shared texture
+like GL's), image 0.9.1 os8974f5f1. Stock driver is the image's `/usr/lib/rgds-panvk`; patched driver is a copy of
+`build/panvk-rgds-os/libvulkan_panfrost.so` in `/data/rgds/pspvk` with `PANVK_DIRECT_INDEXED=1 PANVK_VARYING_SLAB_KB=1024`.
+Cross route, Performance clocks, 90 s each, two rotations, each run started below 50 °C (`/data/rgds/pspvk/pv.sh`). Scenes
+told apart by the kept screenshots, since the script lands in different cars and modes:
+
+| Run | Scene (car, mode) | Frames in 90 s | Last window | Fragment / vertex-tiler | Busiest threads |
+| --- | --- | ---: | --- | ---: | --- |
+| GL | white car, Hearts | 4565 | 16.8 ms, 1 over | 992 / 504 ms a second | Main (GL) 88 %, EmuThread 78 % |
+| Vulkan, patched | yellow car, Hearts (same course and timing) | **4594** | 16.8 ms, 1 over | 905 / 1101 | Main (emu) 84 %, render 44 % |
+| Vulkan, stock | blue car, Hearts | 3033 | 37.4 ms, 300 over | 511 / 1813 | Main 58 %, render 28 % |
+| Vulkan, patched | blue car, Hearts, onto the sand | 3700 | 23.9 ms, 177 over | 555 / 810 | Main 73 %, render 36 % |
+| GL | red car, Hearts, drift | 3523 | 24.7 ms, 297 over | 599 / 350 | Main 61 %, EmuThread 66 % |
+| Vulkan, stock | black car, Score | 3055 | 36.7 ms, 300 over | 514 / 1717 | Main 59 %, render 28 % |
+
+- **Patched against stock**: same scene, +22 % frames (3700 against 3033), and the stock driver was the slowest every time.
+- **Patched against GL**: the one matched pair is level (4594 against 4565), but both sit at 60 fps in that window, so it
+  only shows that Vulkan is no longer behind. The heavy-scene runs are different scenes. Patched 3700 is above GL's heavy
+  scene from 14 November (3456 to 3510), but that is not a same-scene comparison.
+- **CPU**: in the matched pair, the whole system used 25.9 ms of CPU per drawn frame on Vulkan against 30.6 on GL (−15 %).
+  The two busiest threads add up to 128 % against 166 %.
+- **GPU**: vertex-tiler is still about twice GL's (and above 1000 ms a second, so it includes queued time). Fragment time is the same.
+- **Pictures**: right in every patched-run screenshot. Road, cars, shadows, smoke, sky and HUD look as they do on GL, with no
+  missing or stretched triangles (screens at 720, 1440, 2160 and 2880 drawn frames compared by eye; the runs are
+  different races, so no pixel diff).
+- **Faults**: no new panfrost lines in dmesg in any of the six runs (9 minutes of play, 3 of them patched). All exited 0.
+
+Recommendation: **keep PPSSPP on GL for now.** The patch removes the reason Vulkan lost (stock PanVK stays unusable) and saves
+about 15 % CPU a frame, which counts for heat. But the frame rate is level with GL where both reach 60, and better only in
+scenes that weren't measured on both. Switching also means bringing the parked Vulkan host back into the player and
+replacing its read-back copy with a zero-copy hand-off (a dma-buf into the panel's GL texture, as the Tanuki plan does),
+plus PanVK's non-conformance warning. Worth revisiting once the image's PanVK carries the patch: run GL and patched Vulkan
+from one userdata state into the same heavy scene (a saved state at the sand section), and add the zero-copy present.
+Nothing installed was changed; the test files are in `/data/rgds/pspvk` and the 5 November ones in `/data/rgds/psp-spike/vk`.
 
 Also tried on GL in the same session: `ppsspp_gpu_hardware_transform=disabled` drew 2599 and 2591 frames (the emulation
 thread pegs at 97 %; on Vulkan 1852 and 1757), `ppsspp_skip_buffer_effects=enabled` shows a black screen, and

@@ -1,0 +1,121 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] gles: skip per-poly state that didn't change
+
+SetGPState sent the trilinear alpha, palette, texture size and clip uniforms
+and the texture's anisotropy (an uncached glTexParameterf, 1.0 with anisotropy
+off) for every poly. Each call costs Mesa a lookup and re-validation on a
+per-draw-bound driver (Panfrost on the RG DS). The last values are kept per
+program and per texture, and a call is made only when the value changes.
+
+--- a/core/rend/gles/gles.h
++++ b/core/rend/gles/gles.h
+@@ -48,6 +48,11 @@
+ struct PipelineShader
+ {
+ 	GLuint program;
++	// RG DS: the per-poly uniforms as last set on this program, so an unchanged value isn't sent again.
++	float rgds_trilinear = -1.f;
++	int rgds_palette = -1;
++	float rgds_texSize[2] {};
++	float rgds_clip[4] { -1.f, -1.f, -1.f, -1.f };
+ 
+ 	GLint depth_scale;
+ 	GLint pp_ClipTest;
+@@ -454,6 +459,9 @@
+ 	}
+ 
+ 	GLuint texID = 0;   //gl texture
++	// RG DS: the anisotropy last set on texID (0: not yet), so the per-poly call is skipped when it is the same.
++	GLuint rgds_anisoTex = 0;
++	float rgds_aniso = 0.f;
+ 	// width, height, mipmap levels and internal format of the immutable storage of texID. All 0 if unknown.
+ 	std::array<int, 4> storage {};
+ 	std::string GetId() override { return std::to_string(texID); }
+--- a/core/rend/gles/gldraw.cpp
++++ b/core/rend/gles/gldraw.cpp
+@@ -9,6 +9,7 @@
+ #endif
+ 
+ #include <algorithm>
++#include <cstring>
+ #include <memory>
+ 
+ /*
+@@ -166,8 +167,12 @@
+ 								  ShaderUniforms.dithering);
+ 	
+ 	glcache.UseProgram(CurrentShader->program);
+-	if (CurrentShader->trilinear_alpha != -1)
++	// RG DS: uniforms only when they change (each glUniform makes Mesa re-emit the program's constants)
++	if (CurrentShader->trilinear_alpha != -1 && CurrentShader->rgds_trilinear != trilinear_alpha)
++	{
+ 		glUniform1f(CurrentShader->trilinear_alpha, trilinear_alpha);
++		CurrentShader->rgds_trilinear = trilinear_alpha;
++	}
+ 	if (gpuPalette != 0)
+ 	{
+ 		int paletteIndex;
+@@ -175,17 +180,33 @@
+ 			paletteIndex = gp->tcw.PalSelect << 4;
+ 		else
+ 			paletteIndex = (gp->tcw.PalSelect >> 4) << 8;
+-		glUniform1i(CurrentShader->palette_index, paletteIndex);
++		if (CurrentShader->rgds_palette != paletteIndex)
++		{
++			glUniform1i(CurrentShader->palette_index, paletteIndex);
++			CurrentShader->rgds_palette = paletteIndex;
++		}
+ 		if (gpuPalette == 2 && CurrentShader->texSize != -1)
+ 		{
+ 			float texSize[] { (float)texture->width, (float)texture->height };
+-			glUniform2fv(CurrentShader->texSize, 1, texSize);
++			if (CurrentShader->rgds_texSize[0] != texSize[0] || CurrentShader->rgds_texSize[1] != texSize[1])
++			{
++				glUniform2fv(CurrentShader->texSize, 1, texSize);
++				CurrentShader->rgds_texSize[0] = texSize[0];
++				CurrentShader->rgds_texSize[1] = texSize[1];
++			}
+ 		}
+ 	}
+ 
+ 	if (clipmode == TileClipping::Inside)
+-		glUniform4f(CurrentShader->pp_ClipTest, (float)clip_rect.origin.x, (float)clip_rect.origin.y,
+-				(float)clip_rect.bottomRight().x, (float)clip_rect.bottomRight().y);
++	{
++		const float clip[] { (float)clip_rect.origin.x, (float)clip_rect.origin.y,
++				(float)clip_rect.bottomRight().x, (float)clip_rect.bottomRight().y };
++		if (memcmp(clip, CurrentShader->rgds_clip, sizeof(clip)) != 0)
++		{
++			glUniform4f(CurrentShader->pp_ClipTest, clip[0], clip[1], clip[2], clip[3]);
++			memcpy(CurrentShader->rgds_clip, clip, sizeof(clip));
++		}
++	}
+ 
+ 	if (config::ModifierVolumes)
+ 	{
+@@ -236,16 +257,21 @@
+ 
+ 		if (gl.max_anisotropy > 1.f)
+ 		{
++			// RG DS: the anisotropy only when it changes for this texture (an uncached glTexParameterf per poly)
++			const float aniso = config::AnisotropicFiltering > 1 && !nearest_filter
++					? std::min<float>(config::AnisotropicFiltering, gl.max_anisotropy) : 1.f;
++			if (texture->rgds_anisoTex != texture->texID || texture->rgds_aniso != aniso)
++			{
++				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, aniso);
++				texture->rgds_anisoTex = texture->texID;
++				texture->rgds_aniso = aniso;
++			}
+ 			if (config::AnisotropicFiltering > 1 && !nearest_filter)
+ 			{
+-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY,
+-						std::min<float>(config::AnisotropicFiltering, gl.max_anisotropy));
+ 				// Set the recommended minification filter for best results
+ 				if (mipmapped && Type != ListType_Punch_Through)
+ 					glcache.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+ 			}
+-			else
+-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 1.f);
+ 		}
+ 	}
+ 

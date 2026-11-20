@@ -50,7 +50,9 @@ Root, top to bottom (section ids in brackets):
 - **Groups inside pages:**
   - Library: *Games* (Scan for games, Systems, Games opens, Browser layout) ·
     *Per system* (System defaults, Default shader, Artwork sources) · *Saves*
-    (Auto-load state, Auto-save on exit, Back up all saves).
+    (Auto-load state, Auto-save on exit, Back up all saves) · RetroAchievements
+    on its own after a plain gap (added 2026-11-19, last so no row moved; it
+    opens a page with the switch and the account).
   - Power: *Battery* (Power mode, Battery percentage) · *Sleep* (Sleep on lid
     close, Menu idle sleep, Dim when idle, Sleep timer in games) · actions
     (Sleep now, Restart, Power off).

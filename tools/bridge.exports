@@ -7,6 +7,7 @@
     rgds_shader_live;
     rgds_play_screen;
     rgds_rumble;
+    rgds_toast;
     ioctl;
     read;
     kill;

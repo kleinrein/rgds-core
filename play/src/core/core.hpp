@@ -71,6 +71,9 @@ public:
     // positive (libretro's convention). Only systems with a stick read them.
     virtual void set_sticks(int16_t lx, int16_t ly, int16_t rx, int16_t ry) { (void)lx, (void)ly, (void)rx, (void)ry; }
     virtual Picture picture() const = 0;
+    // A stereo system's second picture (the Virtual Boy's right eye; picture() is then the left one), the same size
+    // as picture(); px null for every other system.
+    virtual Picture other_eye() const { return {}; }
     // A GPU-drawing core's frames straight into this GL texture of the given size, in a context shared with the core's
     // (0: none): nothing is read back, and picture() then has only the right size. drew_gl_target answers for the
     // latest frame; a frame that does not fit is read back as usual.
@@ -92,6 +95,13 @@ public:
         return false;
     }
     virtual void set_mouse_cursor(int x, int y) { (void)x, (void)y; }
+    // A PC's mouse moved like a laptop's touch pad (DOS): dx, dy the finger's motion since the last call, in the
+    // second screen's pixels, given to the core as the next frame's mouse motion; the buttons held from the next frame.
+    // False when the system has no such mouse.
+    virtual bool move_pad_mouse(int dx, int dy, bool left, bool right) {
+        (void)dx, (void)dy, (void)left, (void)right;
+        return false;
+    }
     // A key of the system's own keyboard (libretro's RETROK_ codes) down or up, from the next frame on.
     virtual void set_key(unsigned key, bool down) { (void)key, (void)down; }
     // The controller's keypad (ColecoVision, Intellivision), held from the next frame on: bit i is the key at place i,
@@ -122,6 +132,14 @@ public:
     }
     // The game file the owner chose (the archive when it was packed), for pictures kept beside it.
     virtual std::string game_file() const { return {}; }
+    // The file the core itself opened (a packed game once unpacked), for RetroAchievements to identify the game by.
+    virtual std::string content_path() const { return {}; }
+    // RetroAchievements: up to `size` bytes from `address` of the system's memory as rcheevos lays it out for
+    // `console` (rc_consoles.h, rc_console_memory_regions); how many were read, 0 where nothing is there.
+    virtual uint32_t achievement_memory(uint32_t console, uint32_t address, uint8_t* buffer, uint32_t size) {
+        (void)console, (void)address, (void)buffer, (void)size;
+        return 0;
+    }
     // The disks of a game on several (an .m3u): how many, which is in the drive, and another put in. 0: none to swap.
     virtual int disk_count() { return 0; }
     virtual int disk_index() { return 0; }

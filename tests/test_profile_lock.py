@@ -149,9 +149,15 @@ class EnteringTests(Base):
 
     def test_turning_the_question_off_does_not_open_a_pin_protected_profile(self):
         self.profiles(active='owner', ask=0)
-        self.assertEqual(self.boot([])['page'], PICKER)
+        self.assertEqual(self.boot([])['page'], PIN)  # just the PIN: the picker is not asked for
+        self.assertEqual(self.boot(['b'])['page'], PICKER)  # B on that screen is "Switch profile"
         (self.data / 'profiles/active').write_text('p1\n')
         self.assertEqual(self.boot([])['page'], LIBRARY)  # a Kid with no PIN of its own boots straight in
+
+    def test_with_the_question_off_the_last_players_pin_alone_opens_their_profile(self):
+        self.profiles(active='owner', ask=0)
+        report = self.boot(pin_keys('1234'))
+        self.assertEqual((report['page'], report['profile']), (LIBRARY, 'owner'))
 
     def test_the_owner_once_in_goes_anywhere_without_a_pin(self):
         self.profiles(active='owner', kid_pin='9999')
@@ -480,6 +486,15 @@ class WirelessTests(unittest.TestCase):
         self.assertIn('mode = auto', self.mode())
         (self.kid / 'profile.ini').write_text('restricted=0\n')
         self.assertIn('mode = auto', self.mode())
+
+    def test_online_play_stays_off_on_a_kid_profile_unless_permitted(self):
+        game = self.kid / 'library' / game_key(self.rom.resolve())
+        (game / 'ds-input.ini').write_text('online=2\n')
+        (self.kid / 'profile.ini').write_text('restricted=1\n')
+        self.assertIn('mode = off', self.mode())
+        (self.kid / 'profile.ini').write_text('restricted=1\nwireless=1\n')
+        self.assertIn('mode = internet', self.mode())
+        self.assertIn('dns = wiilink', self.mode())
 
 
 @unittest.skipUnless(shutil.which('clang++'), 'Requires host C++')

@@ -14,6 +14,13 @@ mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run
 mount -t tmpfs -o mode=1777,nosuid,nodev tmpfs /tmp
 mount -t tmpfs -o mode=0700 tmpfs /root
 mkdir -p /run/rgds /var/log
+# the buttons, sticks and rumble as one game pad (src/pad/rgds-pad.c, docs/OWN_BSP_PLAN.md Phase C): mainline's input
+# drivers merged under the joypad identity everything above the kernel expects, ready before anything opens a
+# controller. Restarted if it ever stops; exit 3 means there is nothing to merge (a tree with a kernel joypad, as on
+# the RG DS Plus), and then it is left alone.
+( while :; do /usr/bin/rgds-pad 2>> /run/rgds/messages; [ $? = 3 ] && { : > /run/rgds/pad-none; break; }; sleep 1; done ) &
+i=0
+while [ ! -f /run/rgds/pad-ready ] && [ ! -f /run/rgds/pad-none ] && [ $i -lt 40 ]; do sleep 0.025; i=$((i + 1)); done
 # playback goes to the speaker until headphones or a Bluetooth headset take it (/etc/asound.conf,
 # usr/libexec/rgds/audio and bt-audio); the RG DS Plus's amplifier card may come later (the headphones watcher)
 /usr/libexec/rgds/audio setup 2>> /run/rgds/messages
@@ -57,7 +64,7 @@ data || { fsck.exfat -y ${DISK}p4 >/dev/null 2>&1; data; } || mount -o noatime $
 }
 mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ssh /data/roms/nds /data/roms/gba \
     /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/genesis /data/roms/sms /data/roms/psx /data/roms/n64 /data/roms/zx /data/roms/c64 /data/roms/psp /data/roms/dc /data/roms/gw /data/roms/scummvm \
-    /data/roms/segacd /data/roms/pico /data/roms/coleco /data/roms/intellivision /data/roms/msx /data/roms/pce /data/roms/pcecd /data/roms/atari /data/roms/amiga /data/roms/pico8 \
+    /data/roms/segacd /data/roms/pico /data/roms/coleco /data/roms/intellivision /data/roms/msx /data/roms/cpc /data/roms/pce /data/roms/pcecd /data/roms/atari /data/roms/atari7800 /data/roms/atari5200 /data/roms/lynx /data/roms/amiga /data/roms/dos /data/roms/pico8 /data/roms/vb \
     /data/rgds/bios
 # the 3DS folder where the engine is (emulators.tanuki_engine: in the image since 0.9.1, or on the data partition)
 for e in /data/rgds/engines/tanuki3ds /usr/share/rgds/engines/tanuki3ds; do [ -f $e/run.sh ] && mkdir -p /data/roms/3ds; done

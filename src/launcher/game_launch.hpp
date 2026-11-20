@@ -159,6 +159,7 @@ void App::finish_launch(bool reopen) {
 
 void App::start_launch_runner(Uint32 now) {
     music_pause(); // the game has the sound to itself
+    voice_pause();
     try {
         save_switcher_library();
     } catch (const std::exception& error) {

@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Phóng hình sắc nét với màu D
 Sharp scaling, DS colour and Natural Vision together.	Phóng hình sắc nét, màu DS và Natural Vision kết hợp.
 Shield	Khiên
 Shift	Shift
-Shift keys stay down until the next key	Phím Shift được giữ cho đến phím tiếp theo
 Shortcut action	Tác vụ phím tắt
 Shots	Lượt bắn
 Show games	Hiện game
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Mọi thứ c�
 Room for more games.	Chỗ cho nhiều trò chơi hơn.
 Console switches	Công tắc máy
 VMU screen	Màn hình VMU
+3D: one eye each	3D: mỗi màn hình một mắt
+Mouse	Chuột
+RetroAchievements	RetroAchievements
+Account	Tài khoản
+RetroAchievements account	Tài khoản RetroAchievements
+Achievements	Thành tựu
+{0} achievements	{0} thành tựu
+{0} points	{0} điểm
+1 point	1 điểm
+Unlocked {0}	Mở khóa {0}
+Play the game once to see its achievements.	Chơi game một lần để xem các thành tựu.
+RetroAchievements has no achievements for this game yet.	RetroAchievements chưa có thành tựu cho game này.
+Earn achievements from retroachievements.org while you play.	Nhận thành tựu từ retroachievements.org khi chơi.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Mở khóa thành tựu trong game khi chơi. Danh sách của từng game nằm trong Thông tin game.
+A free account from retroachievements.org.	Tài khoản miễn phí từ retroachievements.org.
+Signing out…	Đang đăng xuất…
+Wait for the current task to finish, then sign in.	Hãy đợi tác vụ hiện tại xong rồi đăng nhập.
+Wait for the current task to finish, then sign out.	Hãy đợi tác vụ hiện tại xong rồi đăng xuất.
+Signed in to RetroAchievements as {0}.	Đã đăng nhập RetroAchievements với tên {0}.
+Signed out of RetroAchievements.	Đã đăng xuất khỏi RetroAchievements.
+Enter your RetroAchievements username and password.	Nhập tên người dùng và mật khẩu RetroAchievements.
+Could not reach RetroAchievements. Check the connection.	Không thể kết nối RetroAchievements. Hãy kiểm tra kết nối.
+Wrong username or password.	Sai tên người dùng hoặc mật khẩu.
+RetroAchievements did not accept the sign-in.	RetroAchievements không chấp nhận đăng nhập.
+Achievement unlocked	Đã mở khóa thành tựu
+Game mastered	Đã chinh phục game
+achievements	thành tựu
+Sign in again in Settings	Hãy đăng nhập lại trong Cài đặt
+Could not sign in	Không thể đăng nhập
+This game file is not recognised	Không nhận ra file game này
+Could not load this game's achievements	Không thể tải thành tựu của game này
+No achievements yet	Chưa có thành tựu
+Every achievement unlocked	Đã mở khóa mọi thành tựu
+Offline: unlocks are sent when back online	Ngoại tuyến: sẽ gửi khi có mạng trở lại
+Back online: unlocks sent	Đã có mạng: đã gửi các thành tựu
+Play Nintendo WFC games online	Chơi trò chơi Nintendo WFC trực tuyến
+Album	Album
+Menus	Menu
+No screenshots yet	Chưa có ảnh chụp màn hình
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	Trong trò chơi, nhấn Menu + R hoặc chọn Ảnh chụp màn hình trong Menu trò chơi. Menu + R cũng dùng được trong các menu.
+This picture is the game's cover now.	Ảnh này giờ là bìa của trò chơi.
+The cover could not be changed.	Không thể đổi ảnh bìa.
+The screenshot could not be saved.	Không thể lưu ảnh chụp màn hình.
+Delete this screenshot?	Xóa ảnh chụp màn hình này?
+Use as the game's cover	Dùng làm bìa trò chơi
+Save the game behind this menu to the Album	Lưu trò chơi phía sau menu này vào Album
+Saving the screenshot…	Đang lưu ảnh chụp màn hình…
+Screenshot saved to the Album.	Đã lưu ảnh chụp màn hình vào Album.
+Still saving the last screenshot.	Vẫn đang lưu ảnh chụp màn hình trước.
+No picture to save. Resume the game and press Menu + R.	Không có ảnh để lưu. Tiếp tục trò chơi rồi nhấn Menu + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Chế độ ảnh
+Leave photo mode?	Rời chế độ ảnh?
+Keep editing	Tiếp tục chỉnh
+Leave without saving	Rời mà không lưu
+Saved to the Album.	Đã lưu vào Album.
+The photo could not be saved.	Không thể lưu ảnh.
+This picture could not be opened.	Không thể mở ảnh này.
+Pen	Bút
+Stamps	Con dấu
+Frames	Khung
+Lenses	Ống kính
+Date	Ngày
+Sepia	Nâu cổ
+Black & white	Đen trắng
+Mosaic	Khảm
+Mirror	Gương
+Fisheye	Mắt cá
+Old photo	Ảnh cũ
+Instant photo	Ảnh lấy liền
+Film strip	Cuộn phim
+Postage stamp	Tem thư
+Rounded card	Thẻ bo góc
+Stars	Ngôi sao
+Undo	Hoàn tác
+Sound toy	Đồ chơi âm thanh
+Record your voice and change it	Ghi âm giọng của bạn rồi biến đổi nó
+Chipmunk	Sóc chuột
+Monster	Quái vật
+Backwards	Phát ngược
+Echo	Tiếng vang
+Press Record and say hello!	Nhấn Ghi âm và nói xin chào!
+Then pick a voice and draw on the lower screen to bend it.	Sau đó chọn một giọng và vẽ trên màn hình dưới để uốn nó.
+Recording…	Đang ghi âm…
+Press X again to stop.	Nhấn X lần nữa để dừng.
+Sound {0}	Âm thanh {0}
+Startup sound	Âm thanh khởi động
+Higher	Cao hơn
+Lower	Thấp hơn
+Record	Ghi âm
+Stop	Dừng
+Sounds	Âm thanh
+Record a sound first	Hãy ghi âm trước
+The handheld starts quietly again	Máy lại khởi động trong im lặng
+Plays when the handheld starts	Phát khi máy khởi động
+Could not save the sound	Không thể lưu âm thanh
+Nothing heard. Hold the handheld closer and try again.	Không nghe thấy gì. Hãy cầm máy gần hơn và thử lại.
+This manual could not be opened	Không thể mở sách hướng dẫn
+This page is not a scan	Trang này không phải bản quét
+This page could not be read	Không thể đọc trang này
+Giant	Người khổng lồ
+Underwater	Dưới nước
+Choir	Dàn hợp xướng
+8-bit	8-bit
+Telephone	Điện thoại
+Megaphone	Loa phóng thanh
+Cave	Hang động
+Jelly	Thạch
+Scratch	Scratch
+Whisper	Thì thầm
+Sloth	Con lười
+Speedy	Siêu tốc
+Dragon	Rồng
+Baby	Em bé
+Opera	Opera
+Erase	Xóa
+Drawing cleared	Đã xóa hình vẽ
+Nothing to clear	Không có gì để xóa
+Press Erase again to delete this sound	Nhấn Xóa lần nữa để xóa âm thanh này
+Sound erased	Đã xóa âm thanh
+Send in PictoChat	Gửi qua PictoChat
+Send to phone	Gửi đến điện thoại
+Connect to Wi-Fi to send pictures to a phone or computer.	Kết nối Wi-Fi để gửi ảnh đến điện thoại hoặc máy tính.
+Your picture is on the pad. Write or draw beside it, then send.	Ảnh của bạn đã ở trên bảng. Viết hoặc vẽ bên cạnh rồi gửi.
+Join a room: your picture goes on the pad.	Vào một phòng: ảnh của bạn sẽ ở trên bảng.

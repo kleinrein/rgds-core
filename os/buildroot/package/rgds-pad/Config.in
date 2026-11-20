@@ -1,0 +1,8 @@
+config BR2_PACKAGE_RGDS_PAD
+	bool "rgds-pad"
+	help
+	  The RG DS's buttons, sticks and rumble as one game pad (src/pad/rgds-pad.c): /usr/bin/rgds-pad, which rcS
+	  starts before RG DS Core. It merges mainline's gpio-keys, adc-joystick and pwm-vibrator devices into one uinput
+	  pad with the identity ROCKNIX's joypad driver gave it, so the emulators, PortMaster and the 3DS engine see the
+	  pad they always saw (docs/OWN_BSP_PLAN.md, Phase C step 2). On a tree that still has a kernel joypad (the RG DS
+	  Plus) it exits at once.

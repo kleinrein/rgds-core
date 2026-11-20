@@ -251,8 +251,14 @@ class Shortcut:
         self.last = now
         return action
 
+    def chord(self):
+        """Menu + R took the press (a screenshot): the held Menu no longer opens the switcher."""
+        self.pending = None
+        self.latched = True
+
     def poll(self, now):
-        if self.pending is not None and now - self.pending >= .15:
+        # A Menu still held may be the start of Menu + R: wait for the release, at most .6 s.
+        if self.pending is not None and now - self.pending >= .15 and (not self.menu or now - self.pending >= .6):
             self.pending = None
             return self.fire("menu", now)
         return None

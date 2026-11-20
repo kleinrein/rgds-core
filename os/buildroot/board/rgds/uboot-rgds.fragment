@@ -69,8 +69,13 @@ CONFIG_FAT_WRITE=y
 # extlinux.conf loads (FDTDIR). No reading at all (an error) leaves the RG DS's. rgds_board and rgds_adc go on the
 # kernel's command line (rgds.detected=, rgds.adc=) for the logs and for the updater, which keeps FDTDIR only on a
 # U-Boot that sets them. A card made for one handheld (rgds-os-plus.img) names its device tree itself (FDT).
+# Then the two I/O domains the handhelds wire differently (uboot-patches/005 keeps U-Boot's io-domain driver off
+# them): vccio4 and vccio7 at 3.3 V on the RG DS, 1.8 V on the Plus, as each one's own device tree has Linux set them.
+# PMU_GRF IO_VSEL0 (0xfdc20140, 1.8 V selects) then IO_VSEL1 (0xfdc20144, 3.3 V selects), bits 4 and 7 with their
+# write-enable bits 20 and 23, in the order Linux's RK3568 io-domain code writes them. Verified on the RG DS on
+# 2026-11-20 by reading both back (VSEL0 0x40, VSEL1 0xbf before the kernel); the Plus branch is not yet tried on a Plus.
 CONFIG_ADC=y
 CONFIG_SARADC_ROCKCHIP=y
 CONFIG_CMD_ADC=y
 CONFIG_USE_PREBOOT=y
-CONFIG_PREBOOT="setenv rgds_board rgds; setenv rgds_adc none; setenv fdtfile rk3568-anbernic-rg-ds.dtb; adc single saradc@fe720000 5 rgds_adc; if test ${rgds_adc} -gt 1400000; then setenv rgds_board rgds-plus; setenv fdtfile rk3568-anbernic-rg-ds-plus.dtb; fi"
+CONFIG_PREBOOT="setenv rgds_board rgds; setenv rgds_adc none; setenv fdtfile rk3568-anbernic-rg-ds.dtb; adc single saradc@fe720000 5 rgds_adc; if test ${rgds_adc} -gt 1400000; then setenv rgds_board rgds-plus; setenv fdtfile rk3568-anbernic-rg-ds-plus.dtb; fi; if test ${rgds_board} = rgds-plus; then mw.l 0xfdc20140 0x00900090; mw.l 0xfdc20144 0x00900000; else mw.l 0xfdc20140 0x00900000; mw.l 0xfdc20144 0x00900090; fi"

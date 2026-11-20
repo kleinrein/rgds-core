@@ -569,8 +569,14 @@ void Config::write_default(const std::string& path, bool force) {
                                 # and is never written to; the username still comes from above
 # use_system_login = true       # when RG DS Core has no sign-in of its own, use the one the CFW's front
                                 # end already made.
-# toasts = true                 # show a panel at the bottom of the screen when an achievement unlocks,
-                                # and for sign-in and connection messages. Off leaves them in the log
+# helper =                      # a helper script that makes RetroAchievements' requests (python3 <helper>
+                                # serve --badges <badges>), for a system with no libcurl; --cheevos-helper
+# badges =                      # where badge pictures are kept, <badge>.png; --cheevos-badges
+# list =                        # file the game's achievement list is written to (tab separated,
+                                # "#rgds-achievements 1"); --cheevos-list
+# toasts = true                 # under RG DS, a small notice on the lower screen when an achievement
+                                # unlocks, when the set loads and when achievements stop counting
+                                # (sign-in failed, offline). Off leaves them in the log
 # encore = false                # allow achievements to be triggered again even if already achieved.
                                 # For replaying a game and watching the set unlock as it goes. Nothing
                                 # is credited twice, so this changes what RG DS Core shows, not what the

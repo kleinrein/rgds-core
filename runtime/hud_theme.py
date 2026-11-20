@@ -65,7 +65,10 @@ HUD_WORDS = {
     "Volume": "RGDS_HUD_VOLUME",
     "Muted": "RGDS_HUD_MUTED",
     "Fast": "RGDS_HUD_FAST",
-    "Preparing graphics\u2026": "RGDS_HUD_PREPARING"
+    "Preparing graphics\u2026": "RGDS_HUD_PREPARING",
+    # The bridge's RetroAchievements card (DSCore's unlocks on the lower screen)
+    "Achievement unlocked": "RGDS_HUD_ACHIEVEMENT_UNLOCKED",
+    "RetroAchievements": "RGDS_HUD_RETROACHIEVEMENTS"
 }
 CJK_FAMILIES = {"ja": "ja", "zh": "zh", "ko": "ko"}
 

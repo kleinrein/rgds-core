@@ -32,6 +32,11 @@
 // desktop, tools/play_device.py) it grabs the RG DS pad, and Home, or
 // Select+Start held for a second, saves and quits.
 //
+// RetroAchievements (app/achievements.hpp), when the launcher has it on and is signed in: --achievements ACCOUNT
+// (runtime/achievements.py's account file), --achievements-helper SCRIPT (achievements.py, run with python3 as the
+// player's way to the site), --achievements-badges DIR, --achievements-list FILE (what Game info shows). Unlocks and
+// the rest pop up on the lower screen (frontend/achievement_toast.hpp).
+//
 // For tests (tools/play_drive.py replays a race through the real player):
 // RGDS_PLAY_INPUT names a file of "FRAME BUTTONS" lines (A+LEFT, - for none)
 // that replaces the pad from that frame on, RGDS_PLAY_SHOTS a folder that gets
@@ -41,6 +46,7 @@
 #include "app/storage.hpp"
 #include "platform/touch.hpp"
 #include "ui/gb_palettes.hpp"
+#include "frontend/achievement_toast.hpp"
 #include "frontend/evdev_pad.hpp"
 #include "frontend/stick_buttons.hpp"
 #include "ui/colour.hpp"
@@ -543,6 +549,7 @@ int main(int argc, char** argv) {
     SessionOptions o;
     int fit = FitSharp, second = SecondCompanion;
     std::string frame_choice = "off", frames_folder, palette_choice = "default", colour_choice = "off";
+    std::string achievements_account, achievements_helper, achievements_badges, achievements_list;
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
         auto next = [&]() -> std::string { return i + 1 < argc ? argv[++i] : ""; };
@@ -566,6 +573,10 @@ int main(int argc, char** argv) {
         else if (a == "--colour") colour_choice = next();
         else if (a == "--swap") second = SecondSwap;
         else if (a == "--no-companion") second = SecondOff;
+        else if (a == "--achievements") achievements_account = next();
+        else if (a == "--achievements-helper") achievements_helper = next();
+        else if (a == "--achievements-badges") achievements_badges = next();
+        else if (a == "--achievements-list") achievements_list = next();
         else {
             std::fprintf(stderr, "rgds-play: unknown argument %s\n", a.c_str());
             return 2;
@@ -592,7 +603,8 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "rgds-play: %s\n", error.c_str());
         // What the launcher shows instead of "LAUNCH ERROR 1" (src/launcher/game_launch.hpp).
         std::string written;
-        write_file_atomic(o.data_root + "/launch-message.txt", std::vector<uint8_t>(error.begin(), error.end()), written);
+        write_file_atomic(o.data_root + "/launch-message.txt", std::vector<uint8_t>(error.begin(), error.end()),
+                          written);
         return 1;
     }
     cheat_session = &session;
@@ -604,6 +616,25 @@ int main(int argc, char** argv) {
         bool ok = session.load_state_file(state_slot, why);
         std::fprintf(stderr, "rgds-play: auto-load %s%s\n",
                      ok ? "from " : "skipped: ", ok ? state_slot.c_str() : why.c_str());
+    }
+    if (!achievements_account.empty()) {
+        AchievementOptions ra;
+        std::string why;
+        if (!read_achievement_account(achievements_account, ra.user, ra.token))
+            why = "no sign-in in " + achievements_account;
+        else if (achievements_helper.empty()) why = "no --achievements-helper";
+        else {
+            const char* python = std::getenv("RGDS_RA_PYTHON");
+            ra.helper = {python && *python ? python : "python3", "-B", achievements_helper, "serve"};
+            if (!achievements_badges.empty()) ra.helper.insert(ra.helper.end(), {"--badges", achievements_badges});
+            else ra.helper.insert(ra.helper.end(), {"--badges", o.data_root + "/achievements/badges"});
+            ra.badges = achievements_badges.empty() ? o.data_root + "/achievements/badges" : achievements_badges;
+            ra.list_path = achievements_list;
+            const char* version = std::getenv("RGDS_VERSION");
+            if (version && *version) ra.client_version = version;
+            session.start_achievements(ra, why);
+        }
+        if (!why.empty()) std::fprintf(stderr, "rgds-play: RetroAchievements off: %s\n", why.c_str());
     }
     std::fprintf(stderr, "rgds-play: %s %s \"%s\", companion profile: %s%s\n", session.core().system(),
                  session.core().game_code().c_str(), session.title().c_str(),
@@ -657,7 +688,8 @@ int main(int argc, char** argv) {
     // The PSP's, N64's and Dreamcast's frames go straight into the top panel's texture (Mario Kart 64's frame on the
     // main thread: 7 ms read back, about 2 this way); RGDS_PLAY_DIRECT=0 or 1 says so for any GPU core.
     const char* direct_env = std::getenv("RGDS_PLAY_DIRECT");
-    const bool gpu_direct = direct_env ? *direct_env == '1' : o.system == "psp" || o.system == "n64" || o.system == "dc";
+    const bool gpu_direct =
+        direct_env ? *direct_env == '1' : o.system == "psp" || o.system == "n64" || o.system == "dc";
     if (upper.gl && gpu_direct) gpu_core_share = upper.gl;
     Picture first = session.game();
     use_panel(upper);
@@ -666,8 +698,8 @@ int main(int argc, char** argv) {
         use_panel(lower);
         make_textures(lower, first.w, first.h, pw, ph);
     } else {
-        lower.game = upper.game;
-        lower.sharp = upper.sharp;
+        // Game textures of its own (the Virtual Boy's 3D draws a picture on each panel), the companion's shared.
+        make_game_textures(lower, first.w, first.h);
         lower.companion = upper.companion;
     }
     FrameChoice frame = choose_frame(frame_choice, frames_folder, session.core().system());
@@ -681,12 +713,16 @@ int main(int argc, char** argv) {
         session.profile() ? session.profile()->lightgun || session.profile()->mouse : o.system == "scummvm";
     // The keyboard first (ZX, C64): the companion, opened on the keyboard until the game's own view is switched back
     // to (a game remembers what it was left on, so that wins at the start; picking it in the menu overrides).
-    bool keyboard_first = second == SecondKeyboard;
-    if (keyboard_first) second = SecondCompanion;
+    // The Virtual Boy has that place on the Second screen picker for its 3D instead: the right eye on the second screen,
+    // drawn as the game is (fit, frame), so the two pictures match; the game itself is the left eye.
+    const bool stereo_game = o.system == "vb";
+    bool keyboard_first = second == SecondKeyboard && !stereo_game;
+    bool stereo = second == SecondKeyboard && stereo_game;
+    if (second == SecondKeyboard) second = SecondCompanion;
     if (session.companion() && keyboard_first) session.companion()->set_keyboard_first(true, false);
     if (lightgun && second == SecondCompanion) second = SecondSwap;
-    std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit), second_name(second),
-                 frame.name.c_str());
+    std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit),
+                 stereo ? "3d" : second_name(second), frame.name.c_str());
 
     SDL_AudioSpec want{}, have{};
     want.freq = 48000;
@@ -798,6 +834,16 @@ int main(int argc, char** argv) {
             }
         if (!device.empty()) top_touch.open_device(device);
     }
+    // A pinch on the manual: every finger on the lower panel, read beside the bridge's one-finger stream (which
+    // games and the rest of the second screen keep). Opened only for a game with a manual; nothing is grabbed.
+    rgds::TouchDevice pinch_touch;
+    if (session.companion() && session.companion()->has_manual()) {
+        const char* lower_device = std::getenv("RGDS_TOUCH_DEV");
+        if (lower_device && *lower_device && std::string(lower_device) != "none") {
+            pinch_touch.open_device(lower_device);
+            pinch_touch.hold_initial_contact();
+        }
+    }
     rgds::TouchDevice panel_touch;
     const bool panel_touch_open =
         !bridged && panel_touch.open_device(std::getenv("RGDS_TOUCH_DEV") ? std::getenv("RGDS_TOUCH_DEV") : "");
@@ -820,6 +866,8 @@ int main(int argc, char** argv) {
     const char* quit_env = std::getenv("RGDS_PLAY_QUIT_AT");
     const uint64_t quit_at = quit_env ? std::strtoull(quit_env, nullptr, 10) : 0;
     int logged_hud = 0;
+    AchievementToast toast;
+    Uint32 achievements_idle_at = 0;
     double owed = 0;
     bool fast = false;
     // While RG DS Core's menu is up (the runtime's ".blocked" beside the control file) the game holds still and
@@ -847,16 +895,17 @@ int main(int argc, char** argv) {
             if (s >= 0) {
                 // Only choosing the keyboard, or leaving it, moves the switch: a bezel or fit change sends the
                 // unchanged second screen along and must leave what the owner flipped to alone.
-                const bool now_keyboard = s == SecondKeyboard;
+                const bool now_keyboard = s == SecondKeyboard && !stereo_game;
                 if (now_keyboard != keyboard_first && session.companion())
                     session.companion()->set_keyboard_first(now_keyboard, true);
                 keyboard_first = now_keyboard;
-                second = keyboard_first ? SecondCompanion : s;
+                stereo = s == SecondKeyboard && stereo_game;
+                second = s == SecondKeyboard ? SecondCompanion : s;
             }
             if (!r.empty() && r != frame.name) frame = choose_frame(r, frames_folder, session.core().system());
             drawn_key = ~0ull;
             std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit),
-                         second_name(second), frame.name.c_str());
+                         stereo ? "3d" : second_name(second), frame.name.c_str());
         }
         if (int both = wanted_colours.exchange(-1); both >= 0) {
             const int pal = both / 16, col = both % 16;
@@ -922,7 +971,7 @@ int main(int argc, char** argv) {
                 continue;
             }
             // The second screen is the touch screen while it shows the companion or the info screen.
-            if (!session.companion() || (second != SecondCompanion && second != SecondInfo)) continue;
+            if (!session.companion() || stereo || (second != SecondCompanion && second != SecondInfo)) continue;
             Touch t;
             bool have = false;
             if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERMOTION || e.type == SDL_FINGERUP) {
@@ -969,7 +1018,7 @@ int main(int argc, char** argv) {
         if (panel_touch_open && lightgun && second == SecondSwap)
             for (const auto& point : panel_touch.poll())
                 if (point.kind < 3) aim(point.x, point.y, point.kind != 2);
-        if (panel_touch_open && session.companion() && (second == SecondCompanion || second == SecondInfo))
+        if (panel_touch_open && session.companion() && !stereo && (second == SecondCompanion || second == SecondInfo))
             for (const auto& point : panel_touch.poll())
                 if (point.kind < 3) {
                     Touch t{point.kind == 0   ? Touch::Down
@@ -978,6 +1027,13 @@ int main(int argc, char** argv) {
                             point.x, point.y};
                     if (session.companion()->touch(t)) drawn_key = ~0ull;
                 }
+        if (pinch_touch.available()) {
+            pinch_touch.poll(); // its one finger is the bridge's too: only the whole set is used here
+            std::vector<std::pair<int, int>> down;
+            for (const auto& f : pinch_touch.fingers()) down.emplace_back(f.x, f.y);
+            if (session.companion() && !stereo && second == SecondCompanion && session.companion()->fingers(down))
+                drawn_key = ~0ull;
+        }
         uint32_t buttons = (keyboard ? keyboard_buttons(SDL_GetKeyboardState(nullptr)) : 0) | controller_buttons(pad);
         if (pad && stick_as_buttons) {
             reload_stick_controls(false);
@@ -1016,6 +1072,13 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "rgds-play: %s\n", hold ? "held under the menu" : "playing again");
         }
         if (held) owed = 0;
+        // RetroAchievements: answers from the site, and rcheevos kept awake while the menu holds the game.
+        session.achievements().pump();
+        if (held && SDL_GetTicks() - achievements_idle_at > 500) {
+            achievements_idle_at = SDL_GetTicks();
+            session.achievements().idle();
+        }
+        for (AchievementNotice n; session.achievements().take_notice(n);) toast.add(std::move(n));
         if (pad)
             session.core().set_sticks(SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTX),
                                       SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTY),
@@ -1031,7 +1094,8 @@ int main(int argc, char** argv) {
                 pressed = it == inputs.begin() ? 0 : std::prev(it)->second;
             }
             // Off or the info screen: the game keeps its whole picture, HUD and all.
-            if (session.companion()) session.companion()->set_shown(second == SecondCompanion || second == SecondSwap);
+            if (session.companion())
+                session.companion()->set_shown(!stereo && (second == SecondCompanion || second == SecondSwap));
             session.frame(pressed);
             rumble(std::max(session.core().rumble(), session.companion() ? session.companion()->machine_click() : 0.f));
             owed -= frame_seconds;
@@ -1108,7 +1172,7 @@ int main(int argc, char** argv) {
         }
         Panel& game_panel = second == SecondSwap ? lower : upper;
         bool companion_new = false;
-        if (second != SecondOff &&
+        if (second != SecondOff && !stereo &&
             (session.companion() ? session.companion()->visual_key() != drawn_key : drawn_key != 0)) {
             session.render_companion(companion, look);
             drawn_key = session.companion() ? session.companion()->visual_key() : 0;
@@ -1141,10 +1205,13 @@ int main(int argc, char** argv) {
                             session.core().set_gl_target(0, 0, 0);
                         }
                     }
+                } else if (const Picture eye = stereo ? session.core().other_eye() : Picture{}; eye.px) {
+                    draw_game(*p, eye, fit, frame, session.font()); // the right eye, as the left is drawn
                 } else if (second != SecondOff) {
                     if (companion_new) SDL_UpdateTexture(p->companion, nullptr, companion.data(), pw * 4);
                     SDL_RenderCopy(p->renderer, p->companion, nullptr, &p->area);
                 }
+                if (p == &lower && toast.busy()) toast.draw(p->renderer, p->area, look, session.font(), SDL_GetTicks());
                 if (shooting) read_panel(*p, p == &upper ? shot_top : shot_bottom);
             }
             SDL_RenderPresent(window->renderer);

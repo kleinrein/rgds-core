@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_A5200
+	bool "libretro-a5200"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  a5200, the Atari 5200 core RG DS Play loads for .a52 games (and .bin in
+	  an Atari 5200 folder): /usr/lib/libretro/a5200_libretro.so. The owner's
+	  5200.rom when present, else the free Altirra OS the core carries. Patch
+	  0001 takes the keypad drawn on the touch screen.

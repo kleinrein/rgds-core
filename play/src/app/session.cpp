@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "app/session.hpp"
+#include "reader/manual.hpp"
 
 #include "launcher/system_icons.hpp"
 #include "ui/png.hpp"
@@ -109,6 +110,8 @@ bool Session::open(const SessionOptions& o, std::string& error) {
         return false;
     }
     core_ = std::move(opened.core);
+    rom_ = rom;
+    rom_path_ = o.rom;
     writer_ = std::make_unique<SaveWriter>(save_.path);
     data_root_ = o.data_root;
     if (cheats_.load(o.data_root, core_->system(), o.rom, o.shared_cheats)) {
@@ -165,6 +168,10 @@ bool Session::open(const SessionOptions& o, std::string& error) {
         if (!o.art_dir.empty()) read_bmp(o.art_dir + "/box.bmp", cover.px, cover.w, cover.h, unread);
         companion_->dock().set_art(system, std::move(picture), std::move(cover));
         if (!o.art_dir.empty()) companion_->remember_switch_in(o.art_dir + "/second-screen.txt");
+        // A scanned manual beside the ROM or in the library folder: one more screen behind the switch.
+        if (const auto manuals = find_manuals(o.rom, o.art_dir); !manuals.empty())
+            companion_->set_manual(
+                make_manual(manuals.front(), o.art_dir.empty() ? "" : o.art_dir + "/manual-place.txt"));
         // What a view has learnt (the explored map) lives beside the save.
         std::vector<uint8_t> bytes;
         if (companion_->view() && read_file(view_path(), bytes) && unpack_view(bytes))
@@ -224,6 +231,7 @@ void Session::frame(uint32_t buttons) {
     if (!cursor_x_.empty()) core_->set_mouse_cursor(int(cursor_x_.eval(*core_)), int(cursor_y_.eval(*core_)));
     core_->run_frame(companion_ ? companion_->machine_buttons(buttons) : buttons);
     ++frames_;
+    achievements_.frame();
     if (companion_) companion_->after_frame(*core_);
     if (frames_ % 1800 == 0) save_view(); // every half minute, when it has changed
     uint64_t revision = core_->battery_revision();
@@ -262,7 +270,23 @@ bool Session::load_state_file(const std::string& path, std::string& error) {
         error = "the state in " + path + " is not for this game or this version";
         return false;
     }
+    achievements_.state_loaded();
     return true;
+}
+
+bool Session::start_achievements(const AchievementOptions& options, std::string& error) {
+    // The file the core opened (a packed game once unpacked), or the cartridge mGBA holds in memory.
+    const std::string opened = core_->content_path();
+    const std::string file = opened.empty() ? rom_path_ : opened;
+    const uint32_t console = achievement_console(core_->system(), file);
+    const std::vector<uint8_t>* data = rom_ && !rom_->empty() ? rom_.get() : nullptr;
+    Core* core = core_.get();
+    return achievements_.start(
+        options, console, file, data,
+        [core, console](uint32_t address, uint8_t* buffer, uint32_t size) {
+            return core->achievement_memory(console, address, buffer, size);
+        },
+        nullptr, error);
 }
 
 void Session::flush() {

@@ -1,0 +1,17 @@
+RG DS OS: the I/O domains whose voltage differs between the RG DS and the RG DS Plus, out of U-Boot's own setting.
+U-Boot boots both handhelds with the Quartz64-A's device tree, whose rockchip-io-domain node set vccio4 to 1.8 V
+mode (the RG DS powers it from 3.3 V: 1.8 V mode on a 3.3 V rail for ~3 s of every boot, until Linux's io-domain
+driver corrected it) and vccio7 to 3.3 V mode (the RG DS Plus powers it from 1.8 V). Without these two supplies the
+driver leaves both domains alone, and uboot-rgds.fragment's preboot sets them per handheld once the SARADC has
+named it, the way each handheld's own device tree has Linux set them (docs/OWN_BSP_PLAN.md, Phase E).
+--- a/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi
++++ b/arch/arm/dts/rk3566-quartz64-a-u-boot.dtsi
+@@ -45,3 +45,8 @@
+ 	vdd-microvolts = <1800000>;
+ 	status = "okay";
+ };
++
++&pmu_io_domains {
++	/delete-property/ vccio4-supply;
++	/delete-property/ vccio7-supply;
++};

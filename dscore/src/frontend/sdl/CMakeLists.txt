@@ -18,6 +18,7 @@ add_custom_target(dsperate_version
 target_sources(dsperate PRIVATE ${_ds_version_cpp})
 add_dependencies(dsperate dsperate_version)
 if(DSPERATE_CHEEVOS)
+  target_sources(dsperate PRIVATE cheevos_session.cpp)
   target_link_libraries(dsperate PRIVATE dsperate_cheevos)
   target_compile_definitions(dsperate PRIVATE DSPERATE_CHEEVOS=1)
 endif()

@@ -42,6 +42,35 @@ void App::dual_badge(SDL_Renderer* r, int cx, int cy, int size) {
     fill_round(r, cx + sw / 5 - dot / 2, top + sh + gap + (sh - dot) / 2, dot, dot, 0, accent);
 }
 
+bool App::game_manual(size_t index) {
+    const auto& game = model.games[index];
+    return !game.demo && manual_game(game.path, game.system, item_folder(index));
+}
+
+void App::manual_badge(SDL_Renderer* r, int cx, int cy, int size) {
+    // The dual-screen badge's sibling: the same glossy accent disc in a panel
+    // ring, holding an open book (two white pages on a spine, lines of text).
+    const Color accent = theme.at("accent"), white{255, 255, 255}, ink = mix_colour(accent, white, .45);
+    alpha_round(r, cx - size / 2, cy - size / 2 + 2, size, size, size / 2, shadow_colour(), preferences.dark ? 80 : 36);
+    round_rect(r, cx - size / 2 - 2, cy - size / 2 - 2, size + 4, size + 4, size / 2 + 2, "panel");
+    glossy_pill(r, cx - size / 2, cy - size / 2, size, size, size / 2, accent);
+    // The cover shows under the pages' outer and lower edges, so the two pages read as an open book.
+    const int pw = size * 7 / 25, ph = size * 10 / 25, spine = std::max(1, size / 40), edge = std::max(2, size / 18);
+    const int top = cy - ph / 2 - edge / 2, radius = std::max(2, size / 16);
+    const Color cover = mix_colour(accent, white, .55);
+    fill_round(r, cx - pw - spine / 2 - edge, top + edge, 2 * pw + spine + 2 * edge, ph, radius, cover);
+    for (int side = 0; side < 2; ++side) {
+        const int px = side ? cx + (spine + 1) / 2 : cx - spine / 2 - pw;
+        fill_round(r, px, top, pw, ph, radius, white);
+        // Three lines of text a page, the last one short.
+        const int lh = std::max(1, size / 30), inset = std::max(2, size / 11), lw = pw - 2 * inset;
+        for (int line = 0; line < 3; ++line) {
+            const int ly = top + ph * (line + 1) / 4 - lh / 2, w = line == 2 ? lw * 3 / 5 : lw;
+            fill_round(r, px + inset, ly, w, lh, 0, ink);
+        }
+    }
+}
+
 void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
     const int size = 128, box = size + 40, left = 320 - box / 2, top = y + 118;
     const Color shade = preferences.dark ? Color{0, 0, 0} : Color{24, 40, 60};
@@ -53,6 +82,7 @@ void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
     game_icon(r, model.selected, 320 - size / 2, top + 20, size);
     if (stage_favourite) favourite_badge(r, left + box - 6, top + 6, 36);
     if (stage_dual) dual_badge(r, left + 6, top + box - 6, 44);
+    if (stage_manual) manual_badge(r, left + box - 6, top + box - 6, 44);
     centered_wrapped(r, game_title(model.selected), y + 322, 26, 560, 2, "ink");
     if (!developer.empty()) {
         int w = std::min(560, label_width(developer, 18, false));
@@ -76,6 +106,7 @@ bool App::cover_stage(SDL_Renderer* r, int y, const fs::path& path) {
     bool drawn = media.draw(r, path, box, false, Uint8(std::lround(255 * (.8 + .2 * ease))), false, 8);
     if (stage_favourite) favourite_badge(r, box.x + box.w - 4, box.y, 36);
     if (stage_dual) dual_badge(r, box.x + 4, box.y + box.h, 44);
+    if (stage_manual) manual_badge(r, box.x + box.w - 4, box.y + box.h, 44);
     // A faint glass sheen fading down from the top edge, like the DSi's shelves.
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     const int sheen = std::max(8, box.h * 2 / 5);

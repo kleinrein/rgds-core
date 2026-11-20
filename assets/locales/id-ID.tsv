@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Penskalaan tajam dengan warna DS.
 Sharp scaling, DS colour and Natural Vision together.	Penskalaan tajam, warna DS, dan Natural Vision sekaligus.
 Shield	Perisai
 Shift	Shift
-Shift keys stay down until the next key	Tombol Shift tetap tertekan sampai tombol berikutnya
 Shortcut action	Aksi pintasan
 Shots	Tembakan
 Show games	Tampilkan game
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Semua yang lai
 Room for more games.	Ruang untuk lebih banyak game.
 Console switches	Sakelar konsol
 VMU screen	Layar VMU
+3D: one eye each	3D: satu mata per layar
+Mouse	Mouse
+RetroAchievements	RetroAchievements
+Account	Akun
+RetroAchievements account	Akun RetroAchievements
+Achievements	Pencapaian
+{0} achievements	{0} pencapaian
+{0} points	{0} poin
+1 point	1 poin
+Unlocked {0}	Terbuka {0}
+Play the game once to see its achievements.	Mainkan game ini sekali untuk melihat pencapaiannya.
+RetroAchievements has no achievements for this game yet.	RetroAchievements belum punya pencapaian untuk game ini.
+Earn achievements from retroachievements.org while you play.	Raih pencapaian dari retroachievements.org saat bermain.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Buka pencapaian di game-mu saat bermain. Daftar tiap game ada di Info game.
+A free account from retroachievements.org.	Akun gratis dari retroachievements.org.
+Signing out…	Keluar…
+Wait for the current task to finish, then sign in.	Tunggu tugas saat ini selesai, lalu masuk.
+Wait for the current task to finish, then sign out.	Tunggu tugas saat ini selesai, lalu keluar.
+Signed in to RetroAchievements as {0}.	Masuk ke RetroAchievements sebagai {0}.
+Signed out of RetroAchievements.	Keluar dari RetroAchievements.
+Enter your RetroAchievements username and password.	Masukkan nama pengguna dan kata sandi RetroAchievements.
+Could not reach RetroAchievements. Check the connection.	Tidak dapat menghubungi RetroAchievements. Periksa koneksi.
+Wrong username or password.	Nama pengguna atau kata sandi salah.
+RetroAchievements did not accept the sign-in.	RetroAchievements tidak menerima proses masuk.
+Achievement unlocked	Pencapaian terbuka
+Game mastered	Game dikuasai
+achievements	pencapaian
+Sign in again in Settings	Masuk lagi di Pengaturan
+Could not sign in	Tidak dapat masuk
+This game file is not recognised	File game ini tidak dikenali
+Could not load this game's achievements	Tidak dapat memuat pencapaian game ini
+No achievements yet	Belum ada pencapaian
+Every achievement unlocked	Semua pencapaian terbuka
+Offline: unlocks are sent when back online	Offline: pencapaian dikirim saat online lagi
+Back online: unlocks sent	Online lagi: pencapaian terkirim
+Play Nintendo WFC games online	Main game Nintendo WFC secara online
+Album	Album
+Menus	Menu
+No screenshots yet	Belum ada tangkapan layar
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	Dalam game tekan Menu + R, atau pilih Tangkapan layar di Menu game. Menu + R juga berfungsi di menu.
+This picture is the game's cover now.	Gambar ini sekarang menjadi sampul game.
+The cover could not be changed.	Sampul tidak dapat diubah.
+The screenshot could not be saved.	Tangkapan layar tidak dapat disimpan.
+Delete this screenshot?	Hapus tangkapan layar ini?
+Use as the game's cover	Jadikan sampul game
+Save the game behind this menu to the Album	Simpan game di balik menu ini ke Album
+Saving the screenshot…	Menyimpan tangkapan layar…
+Screenshot saved to the Album.	Tangkapan layar disimpan ke Album.
+Still saving the last screenshot.	Masih menyimpan tangkapan layar terakhir.
+No picture to save. Resume the game and press Menu + R.	Tidak ada gambar untuk disimpan. Lanjutkan game lalu tekan Menu + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Mode foto
+Leave photo mode?	Keluar dari mode foto?
+Keep editing	Lanjut mengedit
+Leave without saving	Keluar tanpa menyimpan
+Saved to the Album.	Disimpan ke Album.
+The photo could not be saved.	Foto tidak dapat disimpan.
+This picture could not be opened.	Gambar ini tidak dapat dibuka.
+Pen	Pena
+Stamps	Stempel
+Frames	Bingkai
+Lenses	Lensa
+Date	Tanggal
+Sepia	Sepia
+Black & white	Hitam putih
+Mosaic	Mozaik
+Mirror	Cermin
+Fisheye	Mata ikan
+Old photo	Foto lama
+Instant photo	Foto instan
+Film strip	Rol film
+Postage stamp	Perangko
+Rounded card	Kartu bundar
+Stars	Bintang
+Undo	Urungkan
+Sound toy	Mainan suara
+Record your voice and change it	Rekam suaramu lalu ubah
+Chipmunk	Tupai
+Monster	Monster
+Backwards	Terbalik
+Echo	Gema
+Press Record and say hello!	Tekan Rekam dan bilang halo!
+Then pick a voice and draw on the lower screen to bend it.	Lalu pilih suara dan gambar di layar bawah untuk membengkokkannya.
+Recording…	Merekam…
+Press X again to stop.	Tekan X lagi untuk berhenti.
+Sound {0}	Suara {0}
+Startup sound	Suara pembuka
+Higher	Lebih tinggi
+Lower	Lebih rendah
+Record	Rekam
+Stop	Berhenti
+Sounds	Suara
+Record a sound first	Rekam suara dulu
+The handheld starts quietly again	Konsol kembali menyala tanpa suara
+Plays when the handheld starts	Diputar saat konsol menyala
+Could not save the sound	Suara tidak dapat disimpan
+Nothing heard. Hold the handheld closer and try again.	Tidak terdengar apa pun. Dekatkan konsol dan coba lagi.
+This manual could not be opened	Manual ini tidak dapat dibuka
+This page is not a scan	Halaman ini bukan hasil pindaian
+This page could not be read	Halaman ini tidak dapat dibaca
+Giant	Raksasa
+Underwater	Bawah air
+Choir	Paduan suara
+8-bit	8-bit
+Telephone	Telepon
+Megaphone	Megafon
+Cave	Gua
+Jelly	Jeli
+Scratch	Scratch
+Whisper	Bisikan
+Sloth	Kungkang
+Speedy	Kilat
+Dragon	Naga
+Baby	Bayi
+Opera	Opera
+Erase	Hapus
+Drawing cleared	Gambar dihapus
+Nothing to clear	Tidak ada yang dihapus
+Press Erase again to delete this sound	Tekan Hapus lagi untuk menghapus suara ini
+Sound erased	Suara dihapus
+Send in PictoChat	Kirim di PictoChat
+Send to phone	Kirim ke ponsel
+Connect to Wi-Fi to send pictures to a phone or computer.	Sambungkan ke Wi-Fi untuk mengirim gambar ke ponsel atau komputer.
+Your picture is on the pad. Write or draw beside it, then send.	Gambarmu ada di papan. Tulis atau gambar di sebelahnya, lalu kirim.
+Join a room: your picture goes on the pad.	Masuk ke ruang: gambarmu akan ada di papan.

@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_BEETLE_VB
+	bool "libretro-beetle-vb"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  Beetle VB (Mednafen), the Virtual Boy core RG DS Play loads for .vb
+	  and .vboy games (and .bin in a Virtual Boy folder):
+	  /usr/lib/libretro/mednafen_vb_libretro.so. Red on black on the
+	  upper screen, or one eye on each screen; no BIOS.

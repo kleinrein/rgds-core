@@ -497,7 +497,7 @@ void App::chat_bottom(SDL_Renderer* r, int y) {
 }
 
 std::string App::top_signature(Uint32 now) {
-    if (settings.page != Page::Library || chat_open || music_open || o.game_menu || probe || launching || embedded_menu ||
+    if (settings.page != Page::Library || chat_open || music_open || vt.open || o.game_menu || probe || launching || embedded_menu ||
         (o.boot_startup && !library_ready) || now - top_drawn_at >= 2000 || view_motion.running)
         return {};
     std::ostringstream k;

@@ -13,6 +13,10 @@
 // The Atari's panel holds Game Select and Game Reset while touched, and
 // throws the difficulty and TV type switches as the console's levers do
 // (Stella reads them as L/L2, R/R2 and L3/R3; they start at B and colour).
+// The 7800's holds Pause, Select and Reset (ProSystem's Start, Select and X)
+// and keeps its difficulty switches where they were thrown: B is L or R held,
+// A none, as ProSystem reads them; they start at A, as the core does with
+// nothing held, so the panel shown or not the game sees the same.
 //
 // The Pico's book shows the page it is open at when the owner keeps its
 // scans beside the game (PicoDrive's own names: Game_0.png ... Game_6.png,
@@ -33,7 +37,7 @@
 namespace play {
 namespace {
 
-constexpr int W = 640;
+constexpr int W = 640, H = 480;
 
 // The keys as the pad has them, read across: bit i of the core's mask.
 struct Pad {
@@ -42,6 +46,7 @@ struct Pad {
 };
 const Pad coleco_pad = {{"1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"}, {200, 40, 40}};
 const Pad intellivision_pad = {{"1", "2", "3", "4", "5", "6", "7", "8", "9", "CLEAR", "0", "ENTER"}, {201, 163, 78}};
+const Pad atari5200_pad = {{"1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"}, {168, 168, 174}};
 
 class Keypad final : public View {
 public:
@@ -66,7 +71,9 @@ public:
 
     bool shown() const override { return true; }
 
-    uint64_t key(uint64_t) const override { return 1469598103934665603ull ^ uint64_t(pressed_ + 1) ^ (uint64_t(finger_ + 1) << 8); }
+    uint64_t key(uint64_t) const override {
+        return 1469598103934665603ull ^ uint64_t(pressed_ + 1) ^ (uint64_t(finger_ + 1) << 8);
+    }
 
     bool touch(const Touch& t) override {
         const int was = finger_;
@@ -92,9 +99,10 @@ public:
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
         backdrop(out, look);
         const std::string heading = look.tr("Keypad");
-        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title, look.ink);
-        out.rounded_rect(kit::margin + font.measure(heading, kit::title) + kit::gap, kit::margin + kit::badge / 2 - 4, 44, 8,
-                         4, pad_.mark);
+        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title,
+                  look.ink);
+        out.rounded_rect(kit::margin + font.measure(heading, kit::title) + kit::gap, kit::margin + kit::badge / 2 - 4,
+                         44, 8, 4, pad_.mark);
         const Box tray = tray_box();
         out.rounded_rect(tray.x, tray.y, tray.w, tray.h, 12, look.slot);
         for (int i = 0; i < 12; ++i) {
@@ -103,12 +111,15 @@ public:
             const bool down = pressed_ == i;
             const int sink = down ? 2 : 0;
             out.rounded_rect(b.x, b.y + 2, b.w, b.h, 9, look.line);
-            out.rounded_rect(b.x, b.y + sink, b.w, b.h, 9, down ? look.accent : i >= 9 && i != 10 ? look.focus : look.panel);
+            out.rounded_rect(b.x, b.y + sink, b.w, b.h, 9,
+                             down                ? look.accent
+                             : i >= 9 && i != 10 ? look.focus
+                                                 : look.panel);
             const std::string legend = pad_.legends[size_t(i)];
             const int size = legend.size() == 1 ? kit::number : kit::small;
             const std::string shown = font.fit(legend, size, b.w - 8);
-            font.draw(out, b.x + (b.w - font.measure(shown, size)) / 2, font.centred(size, b.y + sink + b.h / 2), shown, size,
-                      down ? look.on_accent : look.ink);
+            font.draw(out, b.x + (b.w - font.measure(shown, size)) / 2, font.centred(size, b.y + sink + b.h / 2), shown,
+                      size, down ? look.on_accent : look.ink);
         }
     }
 
@@ -192,7 +203,8 @@ public:
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
         backdrop(out, look);
         const std::string heading = look.tr(on_pad_ ? "Drawing pad" : "Storyware");
-        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title, look.ink);
+        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title,
+                  look.ink);
         const Box page = page_box();
         out.rounded_rect(page.x - 6, page.y - 6, page.w + 12, page.h + 12, 12, look.slot);
         if (!picture_.empty()) out.blit(picture_.data(), page.w, page.h, page.x, page.y, 1);
@@ -235,7 +247,8 @@ private:
         return true;
     }
 
-    static void pill(Canvas& out, const Look& look, const Font& font, const Box& b, const std::string& label, bool off) {
+    static void pill(Canvas& out, const Look& look, const Font& font, const Box& b, const std::string& label,
+                     bool off) {
         touch_target(b);
         out.rounded_rect(b.x, b.y + 2, b.w, b.h, b.h / 2, look.line);
         out.rounded_rect(b.x, b.y, b.w, b.h, b.h / 2, look.focus);
@@ -315,7 +328,8 @@ public:
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
         backdrop(out, look);
         const std::string heading = look.tr("Console switches");
-        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title, look.ink);
+        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title,
+                  look.ink);
         // The console's wood grain beside the heading.
         const int mx = kit::margin + font.measure(heading, kit::title) + kit::gap;
         out.rounded_rect(mx, kit::margin + kit::badge / 2 - 6, 44, 12, 4, Rgb{110, 70, 38});
@@ -337,8 +351,8 @@ public:
             out.rounded_rect(b.x, b.y + sink, b.w, b.h, 10, on ? look.accent : look.panel);
             const int size = i <= reset ? kit::title : kit::body;
             const std::string shown = font.fit(labels[i], size, b.w - 12);
-            font.draw(out, b.x + (b.w - font.measure(shown, size)) / 2, font.centred(size, b.y + sink + b.h / 2), shown, size,
-                      on ? look.on_accent : look.ink);
+            font.draw(out, b.x + (b.w - font.measure(shown, size)) / 2, font.centred(size, b.y + sink + b.h / 2), shown,
+                      size, on ? look.on_accent : look.ink);
         }
     }
 
@@ -366,6 +380,102 @@ private:
     uint32_t sent_ = 0;
 };
 
+// The Atari 7800's console buttons and its two difficulty switches.
+class Panel7800 final : public View {
+public:
+    void update(Core& live, uint64_t) override {
+        uint32_t mask = (left_b_ ? 1u << 10 : 0) | (right_b_ ? 1u << 11 : 0); // RETRO_DEVICE_ID_JOYPAD_L, _R
+        for (int i = 0; i < buttons; ++i) {
+            Hold& h = holds_[i];
+            if (h.frames > 0) --h.frames;
+            if (h.frames > 0 || h.finger) mask |= 1u << ids[i];
+        }
+        if (mask != sent_) live.set_panel_buttons(mask);
+        sent_ = mask;
+    }
+
+    bool shown() const override { return true; }
+
+    uint64_t key(uint64_t) const override {
+        uint64_t k = 1469598103934665603ull ^ uint64_t(left_b_) ^ (uint64_t(right_b_) << 1);
+        for (int i = 0; i < buttons; ++i) k ^= uint64_t(holds_[i].finger || holds_[i].frames > 0) << (8 + i);
+        return k;
+    }
+
+    bool touch(const Touch& t) override {
+        if (t.kind == Touch::Up) {
+            bool any = false;
+            for (auto& h : holds_) any |= h.finger, h.finger = false;
+            return any;
+        }
+        if (t.kind != Touch::Down) return false;
+        for (int i = 0; i < count; ++i) {
+            if (!box(i).contains(t.x, t.y)) continue;
+            if (i < buttons) holds_[i] = {hold_frames, true};
+            if (i == left_a || i == left_b) left_b_ = i == left_b;
+            if (i == right_a || i == right_b) right_b_ = i == right_b;
+            return true;
+        }
+        return false;
+    }
+
+    void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
+        backdrop(out, look);
+        const std::string heading = look.tr("Console switches");
+        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), heading, kit::title,
+                  look.ink);
+        // The 7800's silver strip beside the heading.
+        const int mx = kit::margin + font.measure(heading, kit::title) + kit::gap;
+        out.rounded_rect(mx, kit::margin + kit::badge / 2 - 6, 44, 12, 4, Rgb{150, 150, 156});
+        out.fill_rect(mx + 4, kit::margin + kit::badge / 2, 36, 1, Rgb{208, 48, 42});
+        const bool lit[count] = {false, false, false, !left_b_, left_b_, !right_b_, right_b_};
+        static const char* const captions[] = {"LEFT DIFFICULTY", "RIGHT DIFFICULTY"};
+        for (int row = 0; row < 2; ++row) {
+            const Box b = box(left_a + row * 2);
+            font.draw(out, kit::margin, font.centred(kit::small, b.y + b.h / 2), captions[row], kit::small, look.muted);
+        }
+        for (int i = 0; i < count; ++i) {
+            const Box b = box(i);
+            touch_target(b);
+            const bool down = i < buttons && (holds_[i].finger || holds_[i].frames > 0);
+            const bool on = lit[i] || down;
+            const int sink = down ? 2 : 0;
+            out.rounded_rect(b.x, b.y + 2, b.w, b.h, 10, look.line);
+            out.rounded_rect(b.x, b.y + sink, b.w, b.h, 10, on ? look.accent : look.panel);
+            const int size = i < buttons ? kit::title : kit::body;
+            const std::string shown = font.fit(labels[i], size, b.w - 12);
+            font.draw(out, b.x + (b.w - font.measure(shown, size)) / 2, font.centred(size, b.y + sink + b.h / 2), shown,
+                      size, on ? look.on_accent : look.ink);
+        }
+    }
+
+private:
+    enum { pause, select, reset, left_a, left_b, right_a, right_b, count, buttons = left_a };
+    static constexpr int hold_frames = 6;
+    // RETRO_DEVICE_ID_JOYPAD_: START, SELECT, X
+    static constexpr unsigned ids[buttons] = {3, 2, 9};
+    static constexpr const char* labels[count] = {"PAUSE", "SELECT", "RESET", "A", "B", "A", "B"};
+
+    // Three big buttons on top, as on the console's front, then the two switches beside their names.
+    static Box box(int i) {
+        if (i < buttons) {
+            const int w = (W - 2 * kit::margin - 96 - 2 * kit::gap) / 3;
+            return {kit::margin + i * (w + kit::gap), 84, w, 96};
+        }
+        const int row = (i - left_a) / 2, side = (i - left_a) % 2, y = 220 + row * 92;
+        const int x0 = 268, w = (W - kit::margin - 96 - x0 - kit::gap) / 2;
+        return {x0 + side * (w + kit::gap), y, w, 68};
+    }
+
+    struct Hold {
+        int frames = 0;
+        bool finger = false;
+    };
+    Hold holds_[buttons];
+    bool left_b_ = false, right_b_ = false;
+    uint32_t sent_ = 0;
+};
+
 // The Dreamcast's VMU as it sits in the controller, its 48 x 32 screen large: what games put there (a life bar, a
 // map, a character's face) is the second screen the Dreamcast always had. Shown once the game has drawn on it; until
 // then the second screen keeps its other views (the info screen).
@@ -383,24 +493,24 @@ public:
 
     uint64_t key(uint64_t) const override { return 0x9E3779B97F4A7C15ull ^ revision_; }
 
-    void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
+    void draw(Canvas& out, const Look& look, const Font&, uint64_t) const override {
         backdrop(out, look);
-        font.draw(out, kit::margin, font.centred(kit::title, kit::margin + kit::badge / 2), look.tr("VMU screen"),
-                  kit::title, look.ink);
         // The unit's shell (the white of the first VMUs), the screen's frame, then the LCD: a dark dot as the panel
-        // draws it, an unlit one a faint ghost of it, as on the real glass.
+        // draws it, an unlit one a faint ghost of it, as on the real glass. No title: the VMU speaks for itself, centred.
         constexpr int scale = 8, lcd_w = 48 * scale, lcd_h = 32 * scale;
-        const int shell_w = lcd_w + 64, shell_h = lcd_h + 64, x0 = (W - shell_w) / 2, y0 = 92;
+        const int shell_w = lcd_w + 64, shell_h = lcd_h + 64, x0 = (W - shell_w) / 2, y0 = (H - shell_h) / 2;
         out.rounded_rect(x0, y0 + 4, shell_w, shell_h, 28, look.shadow(), 120);
         out.rounded_rect(x0, y0, shell_w, shell_h, 28, Rgb{236, 236, 232});
         out.rounded_rect(x0 + 20, y0 + 20, lcd_w + 24, lcd_h + 24, 10, Rgb{58, 62, 70});
         const int lx = x0 + 32, ly = y0 + 32;
         const Rgb glass{164, 196, 178}, ghost{150, 182, 165}, dot{28, 40, 56};
         out.fill_rect(lx, ly, lcd_w, lcd_h, glass);
+        // Flycast keeps the picture's rows bottom first (it draws the texture flipped: the VMU sits upside down in
+        // the pad), checked against Crazy Taxi's logo on the device.
         for (int y = 0; y < 32; ++y)
             for (int x = 0; x < 48; ++x)
                 out.fill_rect(lx + x * scale, ly + y * scale, scale - 1, scale - 1,
-                              dots_[size_t(y * 48 + x)] ? dot : ghost);
+                              dots_[size_t((31 - y) * 48 + x)] ? dot : ghost);
     }
 
 private:
@@ -413,6 +523,8 @@ private:
 std::unique_ptr<View> make_controller(const std::string& system) {
     if (system == "dc") return std::make_unique<Vmu>();
     if (system == "atari") return std::make_unique<ConsolePanel>();
+    if (system == "atari7800") return std::make_unique<Panel7800>();
+    if (system == "atari5200") return std::make_unique<Keypad>(atari5200_pad);
     if (system == "coleco") return std::make_unique<Keypad>(coleco_pad);
     if (system == "intellivision") return std::make_unique<Keypad>(intellivision_pad);
     if (system == "pico") return std::make_unique<Storyware>();

@@ -17,8 +17,9 @@ class RefinementTests(unittest.TestCase):
         languages = [line.split('\t')[0] for line in (catalogs / 'languages.tsv').read_text().splitlines()]
         self.assertTrue(
             {
-                "en-US", "nb-NO", "nn-NO", "da-DK", "sv-SE", "nl-NL", "de-DE", "fr-FR", "es-ES", "pt-BR", "it-IT",
-                "fi-FI", "pt-PT", "vi-VN", "id-ID", "pl-PL", "tr-TR", "ru-RU", "uk-UA", "ja-JP", "zh-CN", "ko-KR"
+                "en-US", "en-GB", "nb-NO", "nn-NO", "da-DK", "sv-SE", "nl-NL", "de-DE", "fr-FR", "es-ES", "pt-BR",
+                "it-IT", "fi-FI", "pt-PT", "vi-VN", "id-ID", "pl-PL", "tr-TR", "ru-RU", "uk-UA", "ja-JP", "zh-CN",
+                "ko-KR"
             }.issubset(languages)
         )
         self.assertEqual(len(languages), len(set(languages)))
@@ -70,7 +71,7 @@ class RefinementTests(unittest.TestCase):
             )
             for key in sample:
                 self.assertIn(key, rows, language)
-                if language != 'en-US' and key != 'PIN': self.assertNotEqual(rows[key], key, (language, key))
+                if not language.startswith('en-') and key != 'PIN': self.assertNotEqual(rows[key], key, (language, key))
 
     def test_screenscraper_login_without_build_credentials_keeps_no_password(self):
         with tempfile.TemporaryDirectory() as tmp:

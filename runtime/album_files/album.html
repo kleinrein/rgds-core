@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RG DS album</title>
+<style>
+:root {
+  --bg: #f4f5f8; --panel: #ffffff; --ink: #1d2230; --muted: #687087; --line: #e2e5ec;
+  --accent: #3b6df0; --accent-ink: #ffffff; --soft: #eaf0fe; --warn: #b4561b; --warn-soft: #fdf0e6;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12141a; --panel: #1b1e27; --ink: #eceef4; --muted: #9aa1b5; --line: #2b2f3b;
+    --accent: #6d93ff; --accent-ink: #0d1222; --soft: #222b45; --warn: #f0a46a; --warn-soft: #3a2a1d;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+header .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
+header h1 { font-size: 17px; margin: 0; font-weight: 650; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+header .btn { margin-left: auto; }
+main { max-width: 1180px; margin: 0 auto; padding: 16px 16px 40px; }
+h2 { font-size: 18px; margin: 22px 4px 10px; }
+h2 .count { color: var(--muted); font-weight: 500; font-size: 14px; margin-left: 6px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } }
+.shot { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+.shot button.view { border: 0; padding: 0; background: #000; cursor: zoom-in; display: block; }
+.shot img { width: 100%; display: block; image-rendering: pixelated; aspect-ratio: 4 / 3; object-fit: contain; background: #000; }
+.shot .meta { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 13px; color: var(--muted); }
+.shot .meta a { margin-left: auto; }
+.btn { white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 14px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.small { padding: 4px 10px; font-size: 13px; border-radius: 8px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+#pair { max-width: 420px; margin: 12vh auto; padding: 28px; text-align: center; }
+#pair h2 { margin: 0 0 6px; font-size: 22px; }
+#pair input { font: 600 34px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .35em; text-align: center; width: 220px; padding: 12px 0 12px .35em; margin: 18px 0 8px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--ink); }
+#pair input:focus { outline: none; border-color: var(--accent); }
+.err { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 10px 12px; }
+.muted { color: var(--muted); }
+.empty { text-align: center; padding: 60px 20px; }
+dialog { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 96vh; }
+dialog::backdrop { background: rgba(0, 0, 0, .85); }
+dialog img { max-width: 96vw; max-height: 84vh; display: block; image-rendering: pixelated; margin: 0 auto; }
+dialog .row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="mark">DS</div>
+  <h1 id="heading">Album</h1>
+  <a class="btn primary small hidden" id="all" href="/api/all.zip" download>Download all</a>
+</header>
+
+<section id="pair" class="card hidden">
+  <h2>Connect to your RG DS</h2>
+  <p class="muted">Type the four-digit code shown on the handheld's upper screen.</p>
+  <form id="pairform"><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="\d{4}" aria-label="Code"></form>
+  <p id="pairerr" class="err hidden"></p>
+</section>
+
+<main id="app" class="hidden"></main>
+
+<dialog id="viewer">
+  <img id="big" alt="">
+  <div class="row">
+    <a class="btn primary" id="save" download>Save picture</a>
+    <button class="btn" id="close" type="button">Close</button>
+  </div>
+</dialog>
+
+<script>
+const $ = (selector) => document.querySelector(selector);
+
+async function api(path, options = {}) {
+  const response = await fetch(path, Object.assign({ credentials: 'same-origin' }, options));
+  let body = {};
+  try { body = await response.json(); } catch (e) { /* empty body */ }
+  if (response.status === 401) { showPair(); throw new Error(body.error || 'Not connected'); }
+  if (!response.ok) throw new Error(body.error || response.statusText);
+  return body;
+}
+
+function showPair(message) {
+  $('#app').classList.add('hidden');
+  $('#all').classList.add('hidden');
+  $('#pair').classList.remove('hidden');
+  const err = $('#pairerr');
+  err.classList.toggle('hidden', !message);
+  err.textContent = message || '';
+  setTimeout(() => $('#code').focus(), 0);
+}
+
+async function pair(code) {
+  try {
+    await api('/api/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    $('#pair').classList.add('hidden');
+    await load();
+  } catch (error) {
+    showPair(error.message);
+  }
+}
+
+$('#pairform').addEventListener('submit', (event) => { event.preventDefault(); pair($('#code').value.trim()); });
+$('#code').addEventListener('input', (event) => { if (/^\d{4}$/.test(event.target.value)) pair(event.target.value); });
+
+function pictureUrl(id, download) {
+  return '/api/picture/' + id.split('/').map(encodeURIComponent).join('/') + (download ? '?download=1' : '');
+}
+
+function element(tag, props = {}, children = []) {
+  const node = Object.assign(document.createElement(tag), props);
+  for (const child of children) node.append(child);
+  return node;
+}
+
+function open(picture) {
+  $('#big').src = pictureUrl(picture.id);
+  $('#big').alt = picture.title + ' ' + picture.date + ' ' + picture.time;
+  $('#save').href = pictureUrl(picture.id, true);
+  $('#viewer').showModal();
+}
+$('#close').addEventListener('click', () => $('#viewer').close());
+$('#viewer').addEventListener('click', (event) => { if (event.target === $('#viewer')) $('#viewer').close(); });
+
+async function load() {
+  const data = await api('/api/album');
+  const app = $('#app');
+  app.replaceChildren();
+  if (data.device) $('#heading').textContent = 'Album on ' + data.device;
+  if (!data.pictures.length) {
+    app.append(element('div', { className: 'empty muted', textContent: 'No screenshots yet. In a game, press Menu + R.' }));
+  }
+  // Grouped by game, in the order their newest pictures come.
+  const groups = new Map();
+  for (const picture of data.pictures) {
+    if (!groups.has(picture.game)) groups.set(picture.game, { title: picture.title, pictures: [] });
+    groups.get(picture.game).pictures.push(picture);
+  }
+  for (const group of groups.values()) {
+    const heading = element('h2', { textContent: group.title });
+    heading.append(element('span', { className: 'count', textContent: String(group.pictures.length) }));
+    const grid = element('div', { className: 'grid' });
+    for (const picture of group.pictures) {
+      const image = element('img', { src: pictureUrl(picture.id), loading: 'lazy', alt: group.title + ' ' + picture.date });
+      const view = element('button', { className: 'view', type: 'button', title: 'View' }, [image]);
+      view.addEventListener('click', () => open(picture));
+      const save = element('a', { className: 'btn small', href: pictureUrl(picture.id, true), textContent: 'Save' });
+      save.setAttribute('download', '');
+      const meta = element('div', { className: 'meta' }, [picture.date + ' ' + picture.time, save]);
+      grid.append(element('div', { className: 'shot' }, [view, meta]));
+    }
+    app.append(heading, grid);
+  }
+  $('#all').classList.toggle('hidden', !data.pictures.length);
+  app.classList.remove('hidden');
+}
+
+(async () => {
+  const query = new URLSearchParams(location.search);
+  const code = query.get('c');
+  if (code) {
+    history.replaceState(null, '', location.pathname);
+    await pair(code);
+  } else {
+    load().catch((error) => { if (!$('#pair').classList.contains('hidden')) return; showPair(error.message); });
+  }
+})();
+</script>
+</body>
+</html>

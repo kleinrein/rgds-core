@@ -1,6 +1,10 @@
 #pragma once
 #include "launcher/age_rating.hpp"
 #include "launcher/media.hpp"
+#include <algorithm>
+#include <charconv>
+#include <fstream>
+#include <istream>
 
 namespace rgds {
 // What runtime/game_info.py saved for a game, read for the game info page. Everything is optional: a game
@@ -76,6 +80,82 @@ inline GameFacts load_game_facts(const fs::path& folder, const std::string& loca
         break;
     }
     return facts;
+}
+// RetroAchievements for one game, as rgds-play last wrote it to <player>/library/<game>/achievements.tsv:
+//   #rgds-achievements 1
+//   game <id> <title> <unlocked> <total> <points unlocked> <points total> <account> <written>
+//   ach <id> <unlocked 0|1> <points> <unlock time or 0> <rarity or empty> <title> <description> <badge> <progress>
+// Tab separated; line kinds this build does not know are skipped. total 0: the site knows the game but it has no
+// achievements.
+struct Achievement {
+    std::string id, title, description, rarity, badge, progress;
+    bool unlocked = false;
+    int points = 0;
+    long long unlocked_at = 0;
+};
+struct GameAchievements {
+    bool known = false; // a "game" line was read
+    std::string game_id, title, account;
+    int unlocked = 0, total = 0, points = 0, points_total = 0;
+    long long written = 0;
+    std::vector<Achievement> list; // unlocked first (latest first), then locked in the set's order
+};
+inline std::vector<std::string> split_tabs(const std::string& line) {
+    std::vector<std::string> parts;
+    for (size_t from = 0;;) {
+        const auto tab = line.find('\t', from);
+        parts.push_back(line.substr(from, tab == std::string::npos ? std::string::npos : tab - from));
+        if (tab == std::string::npos) break;
+        from = tab + 1;
+    }
+    return parts;
+}
+inline long long achievement_number(const std::string& text) {
+    long long value = 0;
+    const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
+    return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() && value >= 0 ? value : 0;
+}
+inline GameAchievements parse_achievements(std::istream& in) {
+    GameAchievements result;
+    std::string line;
+    if (!std::getline(in, line) || line.rfind("#rgds-achievements", 0) != 0) return result;
+    while (std::getline(in, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        const auto parts = split_tabs(line);
+        if (parts[0] == "game" && parts.size() >= 9) {
+            result.known = true;
+            result.game_id = parts[1];
+            result.title = parts[2];
+            result.unlocked = int(achievement_number(parts[3]));
+            result.total = int(achievement_number(parts[4]));
+            result.points = int(achievement_number(parts[5]));
+            result.points_total = int(achievement_number(parts[6]));
+            result.account = parts[7];
+            result.written = achievement_number(parts[8]);
+        } else if (parts[0] == "ach" && parts.size() >= 8 && result.list.size() < 2000) {
+            Achievement a;
+            a.id = parts[1];
+            a.unlocked = parts[2] == "1";
+            a.points = int(achievement_number(parts[3]));
+            a.unlocked_at = achievement_number(parts[4]);
+            a.rarity = parts[5];
+            a.title = parts[6];
+            a.description = parts[7];
+            if (parts.size() > 8) a.badge = parts[8];
+            if (parts.size() > 9) a.progress = parts[9];
+            result.list.push_back(std::move(a));
+        }
+    }
+    std::stable_sort(result.list.begin(), result.list.end(), [](const Achievement& a, const Achievement& b) {
+        if (a.unlocked != b.unlocked) return a.unlocked;
+        return a.unlocked && a.unlocked_at > b.unlocked_at;
+    });
+    return result;
+}
+inline GameAchievements load_game_achievements(const fs::path& player_folder) {
+    std::ifstream file(player_folder / "achievements.tsv", std::ios::binary);
+    if (!file) return {};
+    return parse_achievements(file);
 }
 // The pictures kept for a game, in gallery order: cover, title screen, screenshot. Only files that exist.
 struct GalleryPicture {

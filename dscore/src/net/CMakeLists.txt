@@ -74,6 +74,10 @@ set_target_properties(dsperate_slirp PROPERTIES C_STANDARD 99 C_EXTENSIONS ON)
 # Third-party C: not ours to fix warnings in. -w doesn't hide a missing
 # shim symbol -- that still fails the link.
 target_compile_options(dsperate_slirp PRIVATE -w)
+# On macOS slirp asks libresolv for the host's nameservers (get_dns_addr_libresolv).
+if(APPLE)
+  target_link_libraries(dsperate_slirp PUBLIC resolv)
+endif()
 
 add_library(dsperate_net STATIC
   lan_mp.cpp

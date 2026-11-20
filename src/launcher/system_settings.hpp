@@ -473,6 +473,7 @@ void App::sleep_now(bool lid) {
     status = o.preview ? "Sleep simulated - press any control" : "Sleeping - use Power to wake";
     dirty = true;
     music_pause(); // asleep is silent, and the engine lets go of the sound device before the kernel freezes it
+    voice_pause();
     mu.lid_dark = false; // sleep puts the panels' levels back itself (system.sleep)
     mu.lid_quiet_at = 0;
     draw();

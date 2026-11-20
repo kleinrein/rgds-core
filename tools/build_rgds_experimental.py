@@ -35,7 +35,9 @@ OPTIONS = {
     **base.ENGINE_OPTIONS,
     'DSPERATE_VERSION': '3.0.0-rgds-experimental.1',
     'DSPERATE_TUNE': '-mcpu=cortex_a55',
-    'DSPERATE_CHEEVOS': 'OFF',
+    # RetroAchievements (Casual): RG DS OS has no libcurl, so the runtime passes --cheevos-helper
+    # (runtime/achievements.py serve) and the requests go through python's ssl; 2026-11-19
+    'DSPERATE_CHEEVOS': 'ON',
     'DSPERATE_NET': 'ON'  # local wireless between handhelds (ENet); 2026-10-30
 }
 FILES = {'rgds-experimental', 'LICENSE', 'NOTICE.txt', 'source.tar.gz'}
@@ -211,8 +213,9 @@ def publish(source, files, args, binary, gcc_record):
             'Changes: the DSCore fork (rgds/dscore/FORK.md in source.tar.gz): portability and frame counter; single-stylus\n'
             'ownership, edge clamping, mouse/touch arbitration; capture-safe fast-forward raster skipping; lid sleep;\n'
             'RGDS-owned menus and HUD; high-resolution 3D compositor.\n' + (
-                'GCC 13.3 with upstream\'s committed PGO profile, ARM64 JIT, NEON (tools/build_engines_gcc.py); network and achievements omitted.\n'
-                if gcc_record else 'Cortex-A55 CPU target, ARM64 JIT, NEON, LTO; network and achievements omitted.\n'
+                'GCC 13.3 with upstream\'s committed PGO profile, ARM64 JIT, NEON (tools/build_engines_gcc.py); local wireless and RetroAchievements included.\n'
+                if gcc_record else
+                'Cortex-A55 CPU target, ARM64 JIT, NEON, LTO; local wireless and RetroAchievements included.\n'
             ) + 'Performance and Zelda drawing acceptance require physical RG DS testing.\n'
             'Complete modified source and build recipe: source.tar.gz.\n'
         )

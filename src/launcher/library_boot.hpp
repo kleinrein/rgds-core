@@ -53,6 +53,8 @@ void App::load_library(std::vector<Game> games) {
         settings.open();
         if (!o.section.empty()) {
             if (o.section == "scraper") open_scraper();
+            else if (o.section == "achievements") open_achievements();
+            else if (o.section == "album") open_album();
             else if (o.section == "updates") open_updates(Page::Settings);
             else {
                 static const std::array<std::string, 8> ids = {"theme",        "power",  "library",  "sound",
@@ -292,7 +294,7 @@ void App::start_boot_session() {
         network_after = selected_at + 1000;
     }
     if (welcome_active) welcome_begin();
-    else if (profile_picker_wanted()) open_profile_picker(true);
+    else if (profile_picker_wanted()) open_boot_screen();
     dirty = true;
 }
 

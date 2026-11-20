@@ -266,10 +266,11 @@ void App::menu_request(const std::string& action) {
                                  : (action.rfind("graphics:", 0) == 0 || action.rfind("filter2d:", 0) == 0 ||
                                     action.rfind("adaptive:", 0) == 0)
                                      ? "Applying graphics…"
-                                 : action.rfind("shader:", 0) == 0 ? "Applying shader…"
-                                 : action == "restart"             ? "Saving before restarting…"
+                                 : action.rfind("shader:", 0) == 0              ? "Applying shader…"
+                                 : action == "restart"                          ? "Saving before restarting…"
+                                 : action == "screenshot"                       ? "Saving the screenshot…"
                                  : action == "quit" || action == "quit-discard" ? "Returning home…"
-                                                                   : "Working…";
+                                                                                : "Working…";
     }
     dirty = true;
 }

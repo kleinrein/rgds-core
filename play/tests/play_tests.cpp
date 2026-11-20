@@ -1551,6 +1551,7 @@ void test_stick_buttons() {
     CHECK(sticks.update(0, -32768, 32767, 0) == (A | R));
     CHECK(sticks.update(0, 32767, 0, 0) == 0);
     CHECK(system_has_stick("n64") && system_has_stick("psp") && !system_has_stick("gba") && !system_has_stick("nes"));
+    CHECK(system_has_stick("atari5200") && !system_has_stick("atari7800") && !system_has_stick("lynx"));
 }
 
 // The ColecoVision's and Intellivision's keypad on the touch screen: what the core is told, frame by frame.
@@ -1580,6 +1581,7 @@ struct KeypadMachine final : Core {
 void test_touch_controllers() {
     CHECK(!make_controller("nes"));
     CHECK(make_controller("intellivision") && make_controller("pico"));
+    CHECK(make_controller("atari7800") && make_controller("atari5200") && !make_controller("lynx"));
     auto pad = make_controller("coleco");
     CHECK(pad && pad->shown());
     KeypadMachine game;
@@ -1653,8 +1655,8 @@ void test_vmu_screen() {
     // Nothing on the VMU yet: the second screen keeps its other views.
     vmu->update(game, 1);
     CHECK(!vmu->shown() && game.copies == 0);
-    // The game draws one dot in the top left corner and one in the bottom right: shown, read once until it changes.
-    game.dots[0] = game.dots[48 * 32 - 1] = 1;
+    // The game draws one dot, the first in Flycast's buffer (rows bottom first): shown, read once until it changes.
+    game.dots[0] = 1;
     game.drawn = 100;
     const uint64_t before = vmu->key(1);
     vmu->update(game, 2);
@@ -1664,10 +1666,11 @@ void test_vmu_screen() {
     Look look;
     Font font;
     vmu->draw(out, look, font, 3);
-    // 8 pixels a dot on a 384 x 256 LCD centred at (128, 124): the two dots dark, their neighbours the glass's ghost.
+    // 8 pixels a dot on a 384 x 256 LCD centred at (128, 112): that dot is the bottom left one, its neighbour and
+    // the top left the glass's ghost.
     const uint32_t dark = Rgb{28, 40, 56}.px(), ghost = Rgb{150, 182, 165}.px();
-    CHECK(out.at(128 + 3, 124 + 3) == dark && out.at(128 + 8 + 3, 124 + 3) == ghost);
-    CHECK(out.at(128 + 47 * 8 + 3, 124 + 31 * 8 + 3) == dark && out.at(128 + 46 * 8 + 3, 124 + 31 * 8 + 3) == ghost);
+    CHECK(out.at(128 + 3, 112 + 31 * 8 + 3) == dark && out.at(128 + 8 + 3, 112 + 31 * 8 + 3) == ghost);
+    CHECK(out.at(128 + 3, 112 + 3) == ghost);
 }
 
 int main() {

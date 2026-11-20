@@ -39,7 +39,7 @@ void App::configure_sounds() {
     // Music belongs to the home, library and settings; not to the in-game
     // menu, the microphone test, sleep or a launch in progress.
     sounds.configure_music(preferences.menu_music && !probe && !o.game_menu && !sleep_audio_parked && !song &&
-                               settings.page != Page::Microphone && !launching,
+                               settings.page != Page::Microphone && !launching && !vt.open,
                            preferences.music_volume, asset_path("music") / "menu.wav");
 }
 
@@ -66,7 +66,8 @@ void App::restore_dac_level() {
 bool App::emit_sound(MenuCue cue, int direction) {
     // The motor answers first and also while muted, as a phone does on silent.
     if (!probe) haptics.play(static_cast<Haptic>(cue));
-    if (probe || settings.page == Page::Microphone || (hardware.volume && hardware.volume_percent == 0)) return false;
+    if (probe || settings.page == Page::Microphone || vt.recording || (hardware.volume && hardware.volume_percent == 0))
+        return false;
     return sounds.play(cue, s.GetTicks(), direction, motion_touch ? (contact_x / 640.f - .5f) * .5f : direction * .12f);
 }
 

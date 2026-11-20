@@ -167,7 +167,7 @@ h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.35; }
 
 .systems {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 1rem;
   margin-top: clamp(2.5rem, 5vw, 4rem);
   padding-top: 2rem;
@@ -177,14 +177,10 @@ h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.35; }
 .systems img { width: 64px; height: 64px; object-fit: contain; }
 .systems img.pixel { image-rendering: pixelated; padding: 8px; }
 .systems-note { margin-top: 2rem; }
-=======
-.systems img { width: 64px; height: 64px; object-fit: contain; }
-.systems img.pixel { image-rendering: pixelated; padding: 8px; }
 .sys-icon { position: relative; display: inline-block; width: 64px; height: 64px; }
 .sys-icon.exp img { border-radius: 50%; box-shadow: 0 0 0 2px var(--accent); }
 .exp-badge { position: absolute; top: -6px; right: -8px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; line-height: 1; background: var(--accent); color: var(--on-accent); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
->>>>>>> Stashed changes
 
 /* Install */
 .install { background: var(--panel); }
@@ -219,7 +215,7 @@ h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.35; }
   .hero-device { max-width: min(100%, 34rem); margin-inline: auto; }
   .split > :first-child { order: 1; max-width: min(100%, 34rem); margin-inline: auto; }
   .facts, .shots.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .systems { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .systems { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 @media (max-width: 40rem) {

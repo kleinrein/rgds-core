@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <random>
+#include <set>
 
 using namespace rgds::pictochat;
 
@@ -290,6 +291,68 @@ int main() {
         assert(!bytes.empty() && bytes.size() < max_payload);
         std::printf("a 2400-point scribble simplified to %zu points, %zu bytes\n", scribble.points.size(),
                     bytes.size());
+    }
+    // 6. Pictures (Album > Send in PictoChat): version 2, one a message, strict, and they draw in the pad's colours.
+    {
+        std::vector<uint32_t> photo(640 * 480);
+        for (int y = 0; y < 480; y++)
+            for (int x = 0; x < 640; x++) photo[size_t(y) * 640 + x] = pack(x * 255 / 640, y * 255 / 480, 120);
+        Op picture = make_picture(photo.data(), 640, 480, 640, 2, 0);
+        assert(picture.w == picture_w && picture.h == picture_h &&
+               picture.pixels.size() == size_t(picture_w) * picture_h);
+        std::set<int> used(picture.pixels.begin(), picture.pixels.end());
+        assert(used.size() >= 4 && *used.rbegin() <= picture_paper); // a gradient dithers to several inks
+        Op text;
+        text.kind = Kind::Text;
+        text.text = "hi";
+        text.points = {{140, 10}};
+        auto bytes = encode({picture, text});
+        assert(!bytes.empty() && bytes[0] == 2 && bytes.size() < max_payload);
+        std::vector<Op> back;
+        assert(decode(bytes.data(), bytes.size(), back) && back.size() == 2 && back[0].kind == Kind::Picture &&
+               back[0].pixels == picture.pixels && back[0].points[0] == picture.points[0]);
+        // Plain messages stay version 1, which older handhelds read.
+        assert(encode({text})[0] == 1);
+        // Two pictures, a picture in version 1, version 2 without one, a bad index, a short body: all refused.
+        assert(encode({picture, picture}).empty());
+        auto v1 = bytes;
+        v1[0] = 1;
+        assert(!decode(v1.data(), v1.size(), back));
+        auto plain = encode({text});
+        plain[0] = 2;
+        assert(!decode(plain.data(), plain.size(), back));
+        Op wrong = picture;
+        wrong.pixels[7] = 9;
+        assert(encode({wrong}).empty());
+        auto bad = bytes;
+        bad[8] = 0x9f; // inside the pixels: index 9 does not exist
+        assert(!decode(bad.data(), bad.size(), back));
+        assert(!decode(bytes.data(), bytes.size() - 1, back));
+        Op odd;
+        odd.kind = Kind::Picture;
+        odd.w = 5, odd.h = 3;
+        odd.pixels.assign(15, 3);
+        odd.points = {{0, 0}};
+        auto odd_bytes = encode({odd});
+        assert(decode(odd_bytes.data(), odd_bytes.size(), back) && back[0].w == 5 && back[0].h == 3);
+        odd_bytes.back() |= 1; // the spare nibble must stay zero
+        assert(!decode(odd_bytes.data(), odd_bytes.size(), back));
+        // It paints exactly its pixels, inks or paper, nothing beyond its box.
+        Canvas pad;
+        auto dirty = paint(pad, picture, nullptr);
+        assert(dirty.x0 == 2 && dirty.y0 == 0 && dirty.x1 == 2 + picture_w && dirty.y1 == picture_h);
+        for (int y = 0; y < picture_h; y++)
+            for (int x = 0; x < picture_w; x++) {
+                const uint8_t i = picture.pixels[size_t(y) * picture_w + x];
+                assert(pad.at(2 + x, y) == (i < ink_count ? inks[i] : paper));
+            }
+        assert(pad.at(2 + picture_w + 1, 20) == Canvas::background(0, 20));
+        // Fuzzed picture messages never crash the decoder.
+        for (int round = 0; round < 3000; round++) {
+            auto copy = bytes;
+            for (int k = 0; k < 3; k++) copy[size_t(pick(0, int(copy.size()) - 1))] = uint8_t(pick(0, 255));
+            decode(copy.data(), copy.size(), back);
+        }
     }
     std::puts("pictochat core: ok");
 }

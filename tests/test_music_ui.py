@@ -73,7 +73,7 @@ class MusicUITests(unittest.TestCase):
 
     def test_off_by_default_with_no_tile_and_no_engine(self):
         report = self.run_ui(extra=('--home',))
-        self.assertEqual(report['home_tiles'], 5)  # Settings, Games, Favourites, Recents, PictoChat
+        self.assertEqual(report['home_tiles'], 6)  # Settings, Games, Favourites, Recents, PictoChat, Sound toy
         self.assertEqual(report['music_open'], 0)
         self.assertFalse((self.root / 'data/music').exists())
 
@@ -81,13 +81,13 @@ class MusicUITests(unittest.TestCase):
         # Sound: Volume, Mute, Test microphone, Sounds & music, Vibration, Music player.
         self.run_ui(keys(40, 'Down', 'Down', 'Down', 'Down', 'Down', 'A'), ('--settings', '--section', 'sound'))
         self.assertIn('music_player=1', self.ui.read_text())
-        self.assertEqual(self.run_ui(extra=('--home',))['home_tiles'], 6)
+        self.assertEqual(self.run_ui(extra=('--home',))['home_tiles'], 7)
         # With it on there is a seventh row, Play with the lid closed; off is written, on is the default.
         self.run_ui(keys(40, *['Down'] * 6, 'A'), ('--settings', '--section', 'sound'))
         self.assertIn('music_lid=0', self.ui.read_text())
         self.run_ui(keys(40, *['Down'] * 5, 'A'), ('--settings', '--section', 'sound'))
         self.assertNotIn('music_player=1', self.ui.read_text())
-        self.assertEqual(self.run_ui(extra=('--home',))['home_tiles'], 5)
+        self.assertEqual(self.run_ui(extra=('--home',))['home_tiles'], 6)
 
     def test_the_tile_opens_the_player_and_back_leaves_it(self):
         self.ui.write_text(self.ui.read_text() + 'music_player=1\n')

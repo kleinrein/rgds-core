@@ -52,7 +52,7 @@ enum class SettingsIcon {
 inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Vibration" || title == "Menu haptics" || title == "Haptic strength") return SettingsIcon::Vibrate;
     if (title == "Music player" || title == "Play with the lid closed") return SettingsIcon::Music;
-    if (title == "Mute" || title == "Unmute") return SettingsIcon::Volume;
+    if (title == "Mute" || title == "Unmute" || title == "Sound toy") return SettingsIcon::Volume;
     if (title == "Sounds & music") return SettingsIcon::Spark;
     if (title == "Game rumble" || title == "Rumble strength") return SettingsIcon::Controller;
     if (title == "Try a pattern") return SettingsIcon::Play;
@@ -70,6 +70,8 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Icon style") return SettingsIcon::Art;
     if (title == "Sharing details") return SettingsIcon::Info;
     if (title == "Game info") return SettingsIcon::Info;
+    if (title == "RetroAchievements") return SettingsIcon::Spark;
+    if (title == "Account") return SettingsIcon::Key;
     if (title == "Genre") return SettingsIcon::Spark;
     if (title == "Players") return SettingsIcon::Controller;
     if (title == "Rating") return SettingsIcon::Info;
@@ -99,6 +101,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Set a PIN" || title == "Change the PIN" || title == "Remove the PIN") return SettingsIcon::Key;
     if (title == "Erase removed profiles") return SettingsIcon::Shutdown;
     if (title == "Cheats" || title == "Local wireless") return SettingsIcon::Spark;
+    if (title == "Online play") return SettingsIcon::Wifi;
     if (title == "Hide this game" || title == "Visible to…") return SettingsIcon::Key;
     if (title == "Remove game") return SettingsIcon::Trash;
     if (title == "Dim when idle") return SettingsIcon::Sun;
@@ -210,12 +213,14 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "USB data transfer") return "Files and SSH by cable; charging always works";
     if (title == "Use previous build") return "Restore the last installed RGDS build";
     if (title == "Local wireless") return "Play with another RG DS on your Wi-Fi";
+    if (title == "Online play") return "Play Nintendo WFC games online";
     if (title == "Clear temporary cache") return "Free space while keeping your saves";
     if (title == "Save device report") return "Save a report for troubleshooting";
     if (title == "3D resolution") return "Choose native or a sharper 3D image";
     if (title == "Threaded 3D") return "Use an additional rendering thread";
     if (title == "Frameskip") return "Reduce rendering work when needed";
     if (title == "Save & restart") return "Save your checkpoint and restart";
+    if (title == "Screenshot") return "Save the game behind this menu to the Album";
     return {};
 }
 

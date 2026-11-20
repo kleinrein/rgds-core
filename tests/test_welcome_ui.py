@@ -78,8 +78,8 @@ class WelcomeTests(unittest.TestCase):
         self.assertEqual(self.setup_file(), 'step=4\n')
 
     def test_choosing_a_language_sets_time_defaults_and_advances(self):
-        # Norsk bokmål: the ninth language, at the top of the second column.
-        self.run_ui(self.keys('Right', 'a'))
+        # Norsk bokmål: the tenth language, second in the second column.
+        self.run_ui(self.keys('Right', 'Down', 'a'))
         self.assertIn('language=nb-NO', self.ini('ui.ini') + self.ini('preferences.ini'))
         self.assertIn('timezone=Europe/Oslo', self.ini('system.ini'))
         self.assertEqual(self.setup_file(), 'step=1\n')

@@ -7,6 +7,8 @@ kbase submit forever and DSCore's 2x-5x renderer freezes after its first frames.
 Mesa release recent enough to offer HOST_CACHED memory on panfrost (WB_MMAP, kernel driver 1.6), which DSCore's
 readback needs (Mesa 25.0, the image's GL driver, has none), in the Lima builder, into build/panvk-rgds-os.
 tools/own_os_build.py puts it in the image as /usr/lib/rgds-panvk, and runtime/emulators.py uses it on RG DS OS. Bifrost is not a conformant PanVK target, so it needs PAN_I_WANT_A_BROKEN_VULKAN_DRIVER=1.
+PATCHES are applied to the extracted release: tools/engine_patches/panvk-direct-indexed.patch gives JM
+vkCmdDrawIndexed a direct path behind PANVK_DIRECT_INDEXED=1 (off by default, so DSCore and PPSSPP are unchanged).
 
   build_panvk_rgds_os.py [--jobs N]
 """
@@ -30,11 +32,23 @@ OPTIONS = [
     '-Dvalgrind=disabled', '-Dzstd=disabled', '-Dxmlconfig=disabled', '-Dlibunwind=disabled'
 ]
 OUT = ROOT / 'build/panvk-rgds-os'
+PATCHES = [ROOT / 'tools/engine_patches/panvk-direct-indexed.patch']
 
 
 def run(args, **kwargs):
     print('+', ' '.join(str(a) for a in args), flush=True)
     return subprocess.run([str(a) for a in args], check=True, **kwargs)
+
+
+def apply_patches(source):
+    for patch in PATCHES:
+        quiet = dict(cwd=source, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # -f, not --batch: with --batch GNU patch ignores -R when it thinks the patch is not applied yet
+        if subprocess.run(['patch', '-p1', '-R', '--dry-run', '-f', '-s', '-i', patch], **quiet).returncode == 0:
+            continue  # already applied
+        if subprocess.run(['patch', '-p1', '--dry-run', '-f', '-s', '-i', patch], **quiet).returncode != 0:
+            raise SystemExit(f'{patch.name} does not apply to {source}.')
+        run(['patch', '-p1', '--batch', '--no-backup-if-mismatch', '-i', patch], cwd=source)
 
 
 def main():
@@ -65,6 +79,7 @@ def main():
     if not source.is_dir():
         work.mkdir(parents=True, exist_ok=True)
         run(['tar', '-xf', TARBALL, '-C', work])
+    apply_patches(source)
     meson = ROOT / '.cache/panvk-build-venv/bin/meson'
     if not meson.is_file(): raise SystemExit('Prepare the pinned Meson environment; see docs/RGDS_VULKAN.md.')
     env = dict(os.environ, CC='clang-18', CXX='clang++-18', PATH=str(meson.parent) + os.pathsep + os.environ['PATH'])

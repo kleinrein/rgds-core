@@ -1,0 +1,34 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] gles: upload the vertex and index buffers whole
+
+GlBuffer::update wrote each frame with glBufferSubData over the start of a
+buffer the GPU could still be reading (last frame's vertices). Panfrost then
+flushes and waits for the GPU before every upload ("Synchronized write"): on
+the RG DS (Mali-G52) the drawing thread spent about a third of each frame in
+that wait, and Crazy Taxi drove at ~30 fps. glBufferData lets the driver drop
+the old contents and take a fresh buffer: the same drive now runs at 55-60 fps.
+
+--- a/core/rend/gles/gles.h
++++ b/core/rend/gles/gles.h
+@@ -143,15 +143,12 @@
+ 	void update(const void *data, GLsizeiptr size)
+ 	{
+ 		bind();
+-		if (size > this->size)
+-		{
+-			glBufferData(type, size, data, usage);
+-			this->size = size;
+-		}
+-		else
+-		{
+-			glBufferSubData(type, 0, size, data);
+-		}
++		// RG DS: the whole buffer anew each frame. glBufferSubData over part of a buffer the GPU may still be reading
++		// (last frame's vertices) made Panfrost flush and wait for the GPU on every upload ("Synchronized write"):
++		// the drawing thread spent a third of each frame in that wait on the RG DS. glBufferData lets the driver
++		// discard the old contents and take a fresh buffer instead.
++		glBufferData(type, size, data, usage);
++		this->size = size;
+ 	}
+ 
+ private:

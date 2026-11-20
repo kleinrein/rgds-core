@@ -5,8 +5,12 @@ DSperate entry remains the default. This fork has its own engine ID,
 `rgds-experimental`, and its own battery saves, configuration and checkpoints.
 Choose **Game options → Emulator → DSCore**.
 
-The first build targets Cortex-A55 with ARM64 JIT, NEON and LTO. It removes
-network transport and achievement integration from the binary. It retains
+The first build targets Cortex-A55 with ARM64 JIT, NEON and LTO. It keeps
+local wireless and RetroAchievements (Casual only). RG DS OS has no libcurl, so
+the runtime passes `--cheevos-helper` and achievements' requests go through
+`runtime/achievements.py serve`; unlock notices are drawn by the RG DS bridge
+(`rgds_toast`) on the lower panel, and `--cheevos-list` writes the game's list
+for the Game info page. It retains
 normal emulated timing and full rendering during normal play; no device overclock.
 These build choices are experiments, not measured speedup claims.
 
@@ -63,6 +67,39 @@ Build from this checkout with `make build-rgds-experimental`. The build fingerpr
 makes an earlier build stale until it is rebuilt. The normal package includes the
 binary, license, notice, complete fork source and build recipe. No upstream checkout
 or patch step is involved; upstream is only the pin recorded in FORK.md.
+
+## Online play (Nintendo WFC)
+
+**DS controls → Online play** (Off, Wiimmfi, WiiLink WFC) puts a game on the
+fan-run successors of Nintendo Wi-Fi Connection. The launcher writes
+`online=1|2` to the game's `ds-input.ini`; `runtime/emulators.py` turns that
+into `[net] mode = internet` and `dns = wiimmfi|wiilink` in DSCore's
+`config.ini`. Online play wins over Local wireless (the engine runs one or
+the other). A Kid profile gets neither unless the owner allowed wireless.
+
+In the engine, the emulated access point (`io/wifi.cpp`, melonDS's WifiAP)
+hands the game's Ethernet frames to `net/slirp_driver.cpp`, a user-mode
+TCP/IP stack: the game's connections are ordinary sockets of the engine
+process, so it needs no privileges and works on any link the handheld has.
+DHCP gives the game 10.0.2.15 and DNS 10.0.2.3; queries to 10.0.2.3 are
+rewritten to the chosen service (`SlirpDriver::parse_dns`: Wiimmfi
+178.62.43.212, WiiLink WFC 5.161.56.11, or `--dns host|ADDRESS`). Both
+services answer every `nintendowifi.net` name with their own servers and
+accept the DS's SSL, so no game patch is needed.
+
+The generated firmware's connection slot 1 names the access point
+(`bios::kAccessPointSsid`, `RGDS-AP`), and the access point beacons the same
+name: a WFC game scans passively and joins only a network its settings list.
+On the first sign-in the game writes its WFC user ID (the root of every friend
+code) into that slot, so the generated firmware keeps its three Wi-Fi slots in
+`firmware-wifi.ovr` beside the player's `config.ini` (the same sidecar format a
+real dump's `.ovr` uses; the user settings still come from `[user]`). Deleting
+that file gives the console a new WFC identity and friend codes.
+
+Verified on the Mac with the headless frontend and Mario Kart DS (2026-11-19):
+first-time WFC notices, sign-in to Wiimmfi, the Regional lobby's "Searching
+for opponents", and the user ID written and kept. Not yet verified on the
+handheld or in a race against real players.
 
 ## Rebuilding the corresponding-source archive
 

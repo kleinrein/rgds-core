@@ -186,6 +186,60 @@ void test_sidecar_round_trip() {
   }
 }
 
+// A generated firmware keeps its Wi-Fi connection slots across sessions, and only them: a Nintendo WFC game
+// writes its user ID (the root of every friend code) there on the first sign-in, while the user settings
+// are rebuilt from the config each time.
+void test_generated_firmware_keeps_only_its_wifi_slots() {
+  std::remove(kOvr);
+  ds::bios::UserSettings in;
+  in.nickname = "Kart";
+  auto slot0 = [](ds::NDS& nds) { return nds.firmware.data() + nds.user_settings_offset() - 0x400; };
+  static const u8 wfc_id[6] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0x03};
+  {
+    ds::NDS nds;
+    std::string err;
+    CHECK(nds.load_bios("", "", "", in, &err));
+    CHECK(nds.firmware_synthetic);
+    CHECK(!nds.firmware_override_dirty());
+    // A settings write is not kept (the config owns those)...
+    const u32 user = nds.user_settings_offset();
+    nds.firmware[user + 2] ^= 1;
+    nds.firmware_written(user + 2);
+    CHECK(!nds.firmware_override_dirty());
+    CHECK(nds.fw_writes == 0);
+    // ...a connection slot is, as the SPI page-write path reports it.
+    const u32 at = static_cast<u32>(slot0(nds) - nds.firmware.data()) + 0xF0;
+    u8* ap = slot0(nds);
+    for (u32 i = 0; i < 6; ++i) {
+      nds.firmware[at + i] = wfc_id[i];
+      nds.firmware_written(at + i);
+    }
+    const u16 crc = ds::bios::crc16(ap, 0xFE, 0x0000); // as the game writes it, or the slot reads as erased
+    ap[0xFE] = static_cast<u8>(crc);
+    ap[0xFF] = static_cast<u8>(crc >> 8);
+    nds.firmware_written(at - 0xF0 + 0xFE);
+    nds.firmware_written(at - 0xF0 + 0xFF);
+    CHECK(nds.firmware_override_dirty());
+    CHECK(nds.fw_writes == 8);
+    CHECK(nds.save_firmware_override(kOvr, err));
+  }
+  {
+    ds::NDS nds;
+    std::string err;
+    in.nickname = "Renamed"; // a different [user]: a different image, the same slots
+    CHECK(nds.load_bios("", "", "", in, &err));
+    CHECK(std::memcmp(slot0(nds) + 0xF0, wfc_id, 6) != 0);
+    CHECK(nds.load_firmware_override(kOvr, err));
+    CHECK(err.empty()); // no "different dump" warning for a generated image
+    CHECK(std::memcmp(slot0(nds) + 0xF0, wfc_id, 6) == 0);
+    ds::bios::UserSettings now;
+    CHECK(nds.read_user_settings(now));
+    CHECK(now.nickname == "Renamed");
+    // Still the emulated access point's network in slot 1 for the game to find.
+    CHECK(std::string(reinterpret_cast<const char*>(slot0(nds) + 0x40)) == ds::bios::kAccessPointSsid);
+  }
+}
+
 } // namespace
 
 // The emulated access point goes into the first free slot of a firmware and
@@ -231,6 +285,7 @@ int main() {
   test_round_trip();
   test_one_field_at_a_time();
   test_sidecar_round_trip();
+  test_generated_firmware_keeps_only_its_wifi_slots();
   std::remove(kFw);
   std::remove(kOvr);
   std::printf("firmware: ok\n");

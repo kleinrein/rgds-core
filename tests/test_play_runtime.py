@@ -115,6 +115,8 @@ class PlayRuntimeTests(unittest.TestCase):
             self.root / "a.int": "intellivision",
             self.root / "a.mx2": "msx",
             self.root / "a.cas": "msx",
+            self.root / "a.cdt": "cpc",
+            self.root / "a.cpr": "cpc",
             self.root / "a.pce": "pce",
             self.root / "a.cue": "psx",
             self.root / "a.chd": "psx",
@@ -242,6 +244,11 @@ class PlayRuntimeTests(unittest.TestCase):
             self.assertEqual(play_options.system_of(roms / folder / "Game.rom"), "msx", folder)
             self.assertEqual(play_options.system_of(roms / folder / "Game.dsk"), "msx", folder)
         self.assertEqual(play_options.system_of(roms / "zx" / "Game.dsk"), "zx")  # a .dsk elsewhere stays the Spectrum's
+        for folder in ("cpc", "Amstrad CPC"):
+            for name in ("Game.dsk", "Game.sna", "Game.m3u"):
+                self.assertEqual(play_options.system_of(roms / folder / name), "cpc", folder + "/" + name)
+        self.assertEqual(play_options.system_of(roms / "zx" / "Game.sna"), "zx")
+        self.assertEqual(play_options.LIBRETRO_CORES["cpc"], "cap32")
         for folder in ("pcecd", "TurboGrafx-CD"):
             self.assertEqual(play_options.system_of(roms / folder / "Game.cue"), "pcecd", folder)
         self.assertEqual(play_options.system_of(roms / "pce" / "Game.chd"), "pcecd")
@@ -288,6 +295,51 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertEqual(play_options.LIBRETRO_CORES["atari"], "stella2014")
         self.assertEqual(play_options.LIBRETRO_CORES["amiga"], "puae")
         self.assertIn("amiga", play_options.FRAMES["monitor"].split(","))
+
+    def test_other_atari_systems(self):
+        roms = self.root / "roms"
+        self.assertEqual(play_options.system_of(self.root / "Ballblazer.a78"), "atari7800")
+        self.assertEqual(play_options.system_of(roms / "atari7800" / "Food Fight.bin"), "atari7800")
+        self.assertEqual(play_options.system_of(self.root / "Pac-Man.a52"), "atari5200")
+        self.assertEqual(play_options.system_of(roms / "Atari 5200" / "Qix.bin"), "atari5200")
+        self.assertEqual(play_options.system_of(self.root / "Gates of Zendocon.lnx"), "lynx")
+        self.assertEqual(play_options.system_of(roms / "lynx" / "Klax.zip"), "lynx")
+        self.assertEqual(play_options.system_of(roms / "atari2600" / "Pitfall.bin"), "atari")
+        self.assertEqual(play_options.LIBRETRO_CORES["atari7800"], "prosystem")
+        self.assertEqual(play_options.LIBRETRO_CORES["atari5200"], "a5200")
+        self.assertEqual(play_options.LIBRETRO_CORES["lynx"], "handy")
+        self.assertEqual(play_options.FRAMES["lynx"], "lynx")
+        self.assertIn("atari7800", play_options.FRAMES["tv-grey"].split(","))
+        self.assertIn("atari5200", play_options.FRAMES["tv-wood"].split(","))
+
+    def test_virtual_boy(self):
+        roms = self.root / "roms"
+        self.assertEqual(play_options.system_of(self.root / "Wario Land.vb"), "vb")
+        self.assertEqual(play_options.system_of(self.root / "Red Alarm.vboy"), "vb")
+        self.assertEqual(play_options.system_of(roms / "Virtual Boy" / "Galactic Pinball.bin"), "vb")
+        self.assertEqual(play_options.system_of(roms / "vb" / "Teleroboxer.bin"), "vb")
+        self.assertEqual(play_options.LIBRETRO_CORES["vb"], "mednafen_vb")
+        self.assertEqual(play_options.FRAMES["vb"], "vb")
+        # The 3D choice is the Second screen picker's fifth place (the keyboard's slug), as the VMU's is.
+        self.assertIn("keyboard", play_options.SECONDS)
+
+    def test_dos_games_go_by_their_folder(self):
+        roms = self.root / "roms"
+        # A DOS game is a zip of its folder (DOSBox Pure opens it), even one holding a CD's .cue or an .iso.
+        game = roms / "dos" / "Doom.zip"
+        game.parent.mkdir(parents=True)
+        with zipfile.ZipFile(game, "w") as archive:
+            archive.writestr("DOOM/GAME.CUE", "FILE")
+            archive.writestr("DOOM/DOOM.EXE", "MZ")
+        self.assertEqual(play_options.system_of(game), "dos")
+        for name in ("Game.iso", "Game.cue", "Game.img", "Game.m3u"):
+            self.assertEqual(play_options.system_of(roms / "dos" / name), "dos", name)
+        self.assertEqual(play_options.system_of(roms / "MS-DOS" / "Game.zip"), "dos")
+        self.assertEqual(play_options.system_of(self.root / "Game.dosz"), "dos")
+        self.assertEqual(play_options.system_of(roms / "psx" / "Game.cue"), "psx")  # elsewhere a .cue stays a disc
+        self.assertEqual(play_options.engine_for(game), play_options.PLAY_CORE)
+        self.assertEqual(play_options.LIBRETRO_CORES["dos"], "dosbox_pure")
+        self.assertIn("dos", play_options.FRAMES["monitor"].split(","))
 
     def test_pico8_carts_and_their_pictures(self):
         roms = self.root / "roms"

@@ -347,9 +347,23 @@ void test_custom_dns_without_an_address_falls_back() {
   CHECK(d.ok());
 }
 
+// The names a player picks a WFC service by, and what each resolves through.
+void test_parse_dns() {
+  SlirpDriver::Dns dns = SlirpDriver::Dns::Host;
+  u32 addr = 0;
+  CHECK(SlirpDriver::parse_dns("wiimmfi", dns, addr) && dns == SlirpDriver::Dns::Custom && addr == 0xB23E2BD4);
+  CHECK(SlirpDriver::parse_dns("", dns, addr) && addr == SlirpDriver::kWiimmfiDns); // the default
+  CHECK(SlirpDriver::parse_dns("wiilink", dns, addr) && dns == SlirpDriver::Dns::Custom && addr == 0x05A1380B);
+  CHECK(SlirpDriver::parse_dns("172.104.88.237", dns, addr) && addr == 0xAC6858ED);
+  CHECK(SlirpDriver::parse_dns("host", dns, addr) && dns == SlirpDriver::Dns::Host && addr == 0);
+  CHECK(!SlirpDriver::parse_dns("nintendo", dns, addr));
+  CHECK(!SlirpDriver::parse_dns("0.0.0.0", dns, addr));
+}
+
 } // namespace
 
 int main() {
+  test_parse_dns();
   test_dns_rewrite_out();
   test_dns_rewrite_round_trip();
   test_dns_rewrite_in();

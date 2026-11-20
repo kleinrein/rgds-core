@@ -310,6 +310,7 @@ void App::draw(bool screenshot) {
         shutdown_overlay(surfaces[0].renderer, 0, true);
         shutdown_overlay(surfaces[0].renderer, 480, false);
         if (!embedded_menu) volume_feedback(surfaces[0].renderer, 0);
+        if (!screenshot) shutter_overlay(surfaces[0].renderer);
         flush_panel(surfaces[0].renderer);
         if (screenshot) save(surfaces[0].renderer, o.screenshot);
         present_panel(surfaces[0].renderer);
@@ -327,7 +328,7 @@ void App::draw(bool screenshot) {
             // The lower panel is presented every frame even when the music player's page is still: on the handheld a
             // panel presented only now and then showed an old frame when a view transition (B back to Home) started
             // presenting it at full rate again (2026-11-12).
-            if (i == 0 && !screenshot) {
+            if (i == 0 && !screenshot && !shutter_active() && settings.page != Page::Photo) {
                 const auto signature = top_signature(s.GetTicks());
                 if (!signature.empty() && signature == top_seen) {
                     top_skips++;
@@ -346,6 +347,7 @@ void App::draw(bool screenshot) {
             loading_overlay(renderer, 0, i == 1);
             shutdown_overlay(renderer, 0, i == 0);
             if (i == 0 && !embedded_menu) volume_feedback(renderer, 0);
+            if (!screenshot) shutter_overlay(renderer);
             ui_trace.mark(i == 0 ? UiTrace::TopFlush : UiTrace::BottomFlush, rendered_frames, uint32_t(settings.page));
             flush_panel(renderer);
             if (screenshot) save(renderer, o.screenshot.string() + (i == 0 ? "-top.bmp" : "-bottom.bmp"));

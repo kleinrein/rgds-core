@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Ostre skalowanie z kolorami DS.
 Sharp scaling, DS colour and Natural Vision together.	Ostre skalowanie, kolory DS i Natural Vision razem.
 Shield	Tarcza
 Shift	Shift
-Shift keys stay down until the next key	Klawisze Shift pozostają wciśnięte do następnego klawisza
 Shortcut action	Akcja skrótu
 Shots	Strzały
 Show games	Pokaż gry
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Cała reszta n
 Room for more games.	Miejsce na więcej gier.
 Console switches	Przełączniki konsoli
 VMU screen	Ekran VMU
+3D: one eye each	3D: jedno oko na ekran
+Mouse	Mysz
+RetroAchievements	RetroAchievements
+Account	Konto
+RetroAchievements account	Konto RetroAchievements
+Achievements	Osiągnięcia
+{0} achievements	Osiągnięcia: {0}
+{0} points	Punkty: {0}
+1 point	1 punkt
+Unlocked {0}	Odblokowano {0}
+Play the game once to see its achievements.	Zagraj raz, aby zobaczyć osiągnięcia tej gry.
+RetroAchievements has no achievements for this game yet.	RetroAchievements nie ma jeszcze osiągnięć dla tej gry.
+Earn achievements from retroachievements.org while you play.	Zdobywaj osiągnięcia z retroachievements.org podczas gry.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Odblokowuj osiągnięcia w grach podczas gry. Lista każdej gry jest w Informacjach o grze.
+A free account from retroachievements.org.	Darmowe konto z retroachievements.org.
+Signing out…	Wylogowywanie…
+Wait for the current task to finish, then sign in.	Poczekaj na koniec bieżącego zadania, a potem się zaloguj.
+Wait for the current task to finish, then sign out.	Poczekaj na koniec bieżącego zadania, a potem się wyloguj.
+Signed in to RetroAchievements as {0}.	Zalogowano do RetroAchievements jako {0}.
+Signed out of RetroAchievements.	Wylogowano z RetroAchievements.
+Enter your RetroAchievements username and password.	Podaj nazwę użytkownika i hasło RetroAchievements.
+Could not reach RetroAchievements. Check the connection.	Brak połączenia z RetroAchievements. Sprawdź połączenie.
+Wrong username or password.	Błędna nazwa użytkownika lub hasło.
+RetroAchievements did not accept the sign-in.	RetroAchievements nie przyjęło logowania.
+Achievement unlocked	Osiągnięcie odblokowane
+Game mastered	Gra opanowana
+achievements	osiągnięć
+Sign in again in Settings	Zaloguj się ponownie w Ustawieniach
+Could not sign in	Nie udało się zalogować
+This game file is not recognised	Ten plik gry nie został rozpoznany
+Could not load this game's achievements	Nie udało się wczytać osiągnięć tej gry
+No achievements yet	Brak osiągnięć
+Every achievement unlocked	Wszystkie osiągnięcia odblokowane
+Offline: unlocks are sent when back online	Offline: odblokowania zostaną wysłane po powrocie do sieci
+Back online: unlocks sent	Znowu online: odblokowania wysłane
+Play Nintendo WFC games online	Graj w gry Nintendo WFC online
+Album	Album
+Menus	Menu
+No screenshots yet	Brak zrzutów ekranu
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	W grze naciśnij Menu + R albo wybierz Zrzut ekranu w menu gry. Menu + R działa też w menu.
+This picture is the game's cover now.	Ten obraz jest teraz okładką gry.
+The cover could not be changed.	Nie udało się zmienić okładki.
+The screenshot could not be saved.	Nie udało się zapisać zrzutu ekranu.
+Delete this screenshot?	Usunąć ten zrzut ekranu?
+Use as the game's cover	Użyj jako okładki gry
+Save the game behind this menu to the Album	Zapisz w albumie grę za tym menu
+Saving the screenshot…	Zapisywanie zrzutu ekranu…
+Screenshot saved to the Album.	Zrzut ekranu zapisany w albumie.
+Still saving the last screenshot.	Poprzedni zrzut ekranu wciąż się zapisuje.
+No picture to save. Resume the game and press Menu + R.	Brak obrazu do zapisania. Wznów grę i naciśnij Menu + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Tryb zdjęć
+Leave photo mode?	Wyjść z trybu zdjęć?
+Keep editing	Edytuj dalej
+Leave without saving	Wyjdź bez zapisywania
+Saved to the Album.	Zapisano w albumie.
+The photo could not be saved.	Nie udało się zapisać zdjęcia.
+This picture could not be opened.	Nie udało się otworzyć tego obrazu.
+Pen	Pióro
+Stamps	Stemple
+Frames	Ramki
+Lenses	Soczewki
+Date	Data
+Sepia	Sepia
+Black & white	Czarno-białe
+Mosaic	Mozaika
+Mirror	Lustro
+Fisheye	Rybie oko
+Old photo	Stare zdjęcie
+Instant photo	Zdjęcie natychmiastowe
+Film strip	Taśma filmowa
+Postage stamp	Znaczek pocztowy
+Rounded card	Zaokrąglona karta
+Stars	Gwiazdki
+Undo	Cofnij
+Sound toy	Dźwiękowa zabawka
+Record your voice and change it	Nagraj swój głos i go zmień
+Chipmunk	Wiewiórka
+Monster	Potwór
+Backwards	Od tyłu
+Echo	Echo
+Press Record and say hello!	Naciśnij Nagraj i powiedz cześć!
+Then pick a voice and draw on the lower screen to bend it.	Potem wybierz głos i rysuj na dolnym ekranie, aby go wyginać.
+Recording…	Nagrywanie…
+Press X again to stop.	Naciśnij X ponownie, aby zatrzymać.
+Sound {0}	Dźwięk {0}
+Startup sound	Dźwięk startowy
+Higher	Wyżej
+Lower	Niżej
+Record	Nagraj
+Stop	Zatrzymaj
+Sounds	Dźwięki
+Record a sound first	Najpierw nagraj dźwięk
+The handheld starts quietly again	Konsola znów uruchamia się po cichu
+Plays when the handheld starts	Gra przy uruchamianiu konsoli
+Could not save the sound	Nie udało się zapisać dźwięku
+Nothing heard. Hold the handheld closer and try again.	Nic nie słychać. Zbliż konsolę i spróbuj ponownie.
+This manual could not be opened	Nie można otworzyć instrukcji
+This page is not a scan	Ta strona nie jest skanem
+This page could not be read	Nie można odczytać tej strony
+Giant	Olbrzym
+Underwater	Pod wodą
+Choir	Chór
+8-bit	8-bit
+Telephone	Telefon
+Megaphone	Megafon
+Cave	Jaskinia
+Jelly	Galaretka
+Scratch	Scratch
+Whisper	Szept
+Sloth	Leniwiec
+Speedy	Błyskawica
+Dragon	Smok
+Baby	Bobas
+Opera	Opera
+Erase	Usuń
+Drawing cleared	Rysunek wyczyszczony
+Nothing to clear	Nie ma czego czyścić
+Press Erase again to delete this sound	Naciśnij Usuń ponownie, aby skasować dźwięk
+Sound erased	Dźwięk usunięty
+Send in PictoChat	Wyślij w PictoChat
+Send to phone	Wyślij na telefon
+Connect to Wi-Fi to send pictures to a phone or computer.	Połącz się z Wi-Fi, aby wysyłać obrazy na telefon lub komputer.
+Your picture is on the pad. Write or draw beside it, then send.	Twój obraz jest na bloczku. Napisz lub narysuj obok, a potem wyślij.
+Join a room: your picture goes on the pad.	Wejdź do pokoju: twój obraz trafi na bloczek.

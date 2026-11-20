@@ -12,11 +12,11 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
                     : edit_field == 4 || edit_field == 11 ? "Search games"
                     : edit_field == 6                     ? "Search cheats"
                     : edit_field == 3                     ? "Matching title"
-                    : edit_field == 0                     ? "Username"
+                    : edit_field == 0 || edit_field == 12 ? "Username"
                                                           : "Password");
     round_rect(r, 20, y + 91, 600, 62, 12, "accent");
     round_rect(r, 22, y + 93, 596, 58, 10, "panel");
-    const bool secret = edit_field == 1 || edit_field == 2, hidden = secret && !secret_shown;
+    const bool secret = secret_field(), hidden = secret && !secret_shown;
     std::string value = hidden ? std::string(RoundedFont::codepoints(edit_buffer).size(), '*') : edit_buffer;
     size_t cursor = hidden ? RoundedFont::codepoints(edit_buffer.substr(0, edit_cursor)).size() : edit_cursor;
     while (cursor && label_width(value.substr(0, cursor), 24, false) > (secret ? 420 : 480)) {

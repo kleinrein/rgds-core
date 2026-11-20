@@ -14,7 +14,8 @@ void App::restore_state() {
         if (row >> marker >> category && marker == "home" && category >= 0 && category < int(home_count)) {
             saved_home = true;
             home_menu = true;
-            home_selected = size_t(category);
+            // The file keeps the numbers from before the Sound toy: 6 is the last played game, 7 the toy.
+            home_selected = category == 6 ? last_played_tile : category == 7 ? 6 : size_t(category);
         }
     }
     std::ifstream file(o.state);
@@ -70,13 +71,15 @@ void App::restore_state() {
     if (file && page >= 0 &&
         (page <= int(Page::GameOptions) || page == int(Page::Statistics) || page == int(Page::Motion) ||
          page == int(Page::Colours) || page == int(Page::MenuSounds) || page == int(Page::Haptics) ||
-         page == int(Page::DisplayOptions) || page == int(Page::Bluetooth) || page == int(Page::Homebrew)) &&
+         page == int(Page::DisplayOptions) || page == int(Page::Bluetooth) || page == int(Page::Homebrew) ||
+         page == int(Page::Achievements)) &&
         page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
         page != int(Page::Confirm) && section >= 0 && section <= 11 && focus >= 0 &&
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
                   : page == int(Page::Maintenance)    ? 7
-                  : page == int(Page::LibraryOptions) ? 9
+                  : page == int(Page::LibraryOptions) ? library_row_count() - 1
+                  : page == int(Page::Achievements)   ? 1
                   : page == int(Page::Appearance)     ? 7
                   : page == int(Page::DisplayOptions) ? 2
                   : page == int(Page::System)         ? (o.rgds_os ? 7 : 8) - 1
@@ -104,6 +107,7 @@ void App::restore_state() {
         settings.focus = 0;
     }
     if (settings.page == Page::System || settings.page == Page::Timezone) settings.section = 5;
+    if (settings.page == Page::Achievements) settings.section = 2;
     if (settings.page == Page::System) {
         settings.focus = std::min(settings.focus, list_count() - 1);
         start_worker("device.startup-info");
@@ -139,7 +143,9 @@ void App::save_state() {
                  << shader_preview_split << '\n';
         if (settings.page == Page::Controls)
             file << "controls " << controls_per_game << ' ' << int(controls_return) << '\n';
-        if (home_menu && !o.game_menu) file << "home " << home_selected << '\n';
+        if (home_menu && !o.game_menu)
+            file << "home "
+                 << (home_selected == last_played_tile ? 6 : home_selected == 6 ? 7 : home_selected) << '\n';
         file.close();
         if (!file) throw std::runtime_error("Cannot save launcher state");
         fs::rename(pending, o.state);

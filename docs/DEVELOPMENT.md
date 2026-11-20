@@ -412,5 +412,5 @@ A game's own save must survive every update, engine rebuild and test run.
   - `tools/resume_check.py` loads a resume point from every earlier release (`tests/resume-fixtures/ds`, from our own ROM) in the new DS engine, and `tools/own_os_release.py` stops if one fails. It also adds this release's to the set.
   - Save history keeps the resume point each update found (`resume/before-<build>`, last 4 updates).
 - **Skipped resume points.** The launcher skips a DS resume point older than the `.sav`, and quitting then writes a new one, so anything that rewrites a `.sav` costs the player their place.
-- **Test runs never use the owner's `userdata`.** Pass `--data` a copy, as `os/banana-probe/real_trial.sh` does.
+- **Test runs never use the owner's `userdata`.** Pass `--data` a copy, as `os/device-bench/real_trial.sh` does.
 

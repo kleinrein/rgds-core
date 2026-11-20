@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Skarp skalering med DS-farger.
 Sharp scaling, DS colour and Natural Vision together.	Skarp skalering, DS-farger og naturlig bilde sammen.
 Shield	Skjold
 Shift	Skift
-Shift keys stay down until the next key	Skift-taster holdes nede til neste tast
 Shortcut action	Snarveihandling
 Shots	Skudd
 Show games	Vis spill
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Alt annet på 
 Room for more games.	Plass til flere spill.
 Console switches	Konsollbrytere
 VMU screen	VMU-skjerm
+3D: one eye each	3D: ett øye per skjerm
+Mouse	Mus
+RetroAchievements	RetroAchievements
+Account	Konto
+RetroAchievements account	RetroAchievements-konto
+Achievements	Prestasjoner
+{0} achievements	{0} prestasjoner
+{0} points	{0} poeng
+1 point	1 poeng
+Unlocked {0}	Låst opp {0}
+Play the game once to see its achievements.	Spill spillet én gang for å se prestasjonene.
+RetroAchievements has no achievements for this game yet.	RetroAchievements har ingen prestasjoner for dette spillet ennå.
+Earn achievements from retroachievements.org while you play.	Tjen prestasjoner fra retroachievements.org mens du spiller.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Lås opp prestasjoner i spillene dine mens du spiller. Listen for hvert spill står i Spillinfo.
+A free account from retroachievements.org.	En gratis konto fra retroachievements.org.
+Signing out…	Logger ut …
+Wait for the current task to finish, then sign in.	Vent til gjeldende oppgave er ferdig, og logg deretter inn.
+Wait for the current task to finish, then sign out.	Vent til gjeldende oppgave er ferdig, og logg deretter ut.
+Signed in to RetroAchievements as {0}.	Logget inn på RetroAchievements som {0}.
+Signed out of RetroAchievements.	Logget ut av RetroAchievements.
+Enter your RetroAchievements username and password.	Skriv inn brukernavnet og passordet ditt for RetroAchievements.
+Could not reach RetroAchievements. Check the connection.	Fikk ikke kontakt med RetroAchievements. Sjekk tilkoblingen.
+Wrong username or password.	Feil brukernavn eller passord.
+RetroAchievements did not accept the sign-in.	RetroAchievements godtok ikke innloggingen.
+Achievement unlocked	Prestasjon låst opp
+Game mastered	Spillet mestret
+achievements	prestasjoner
+Sign in again in Settings	Logg inn på nytt i Innstillinger
+Could not sign in	Kunne ikke logge inn
+This game file is not recognised	Denne spillfilen gjenkjennes ikke
+Could not load this game's achievements	Kunne ikke laste inn prestasjonene til dette spillet
+No achievements yet	Ingen prestasjoner ennå
+Every achievement unlocked	Alle prestasjoner låst opp
+Offline: unlocks are sent when back online	Frakoblet: opplåsinger sendes når du er på nett igjen
+Back online: unlocks sent	På nett igjen: opplåsinger sendt
+Play Nintendo WFC games online	Spill Nintendo WFC-spill på nett
+Album	Album
+Menus	Menyer
+No screenshots yet	Ingen skjermbilder ennå
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	I et spill trykker du Meny + R, eller velg Skjermbilde i spillmenyen. Meny + R virker også i menyene.
+This picture is the game's cover now.	Dette bildet er nå spillets cover.
+The cover could not be changed.	Coveret kunne ikke endres.
+The screenshot could not be saved.	Skjermbildet kunne ikke lagres.
+Delete this screenshot?	Slette dette skjermbildet?
+Use as the game's cover	Bruk som spillets cover
+Save the game behind this menu to the Album	Lagre spillet bak denne menyen i albumet
+Saving the screenshot…	Lagrer skjermbildet…
+Screenshot saved to the Album.	Skjermbilde lagret i albumet.
+Still saving the last screenshot.	Lagrer fortsatt det forrige skjermbildet.
+No picture to save. Resume the game and press Menu + R.	Ingen bilde å lagre. Fortsett spillet og trykk Meny + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Fotomodus
+Leave photo mode?	Gå ut av fotomodus?
+Keep editing	Fortsett å redigere
+Leave without saving	Gå ut uten å lagre
+Saved to the Album.	Lagret i albumet.
+The photo could not be saved.	Bildet kunne ikke lagres.
+This picture could not be opened.	Bildet kunne ikke åpnes.
+Pen	Penn
+Stamps	Stempler
+Frames	Rammer
+Lenses	Linser
+Date	Dato
+Sepia	Sepia
+Black & white	Svart-hvitt
+Mosaic	Mosaikk
+Mirror	Speil
+Fisheye	Fiskeøye
+Old photo	Gammelt bilde
+Instant photo	Polaroid
+Film strip	Filmrull
+Postage stamp	Frimerke
+Rounded card	Avrundet kort
+Stars	Stjerner
+Undo	Angre
+Sound toy	Lydleker
+Record your voice and change it	Ta opp stemmen din og forandre den
+Chipmunk	Jordekorn
+Monster	Monster
+Backwards	Baklengs
+Echo	Ekko
+Press Record and say hello!	Trykk på Ta opp og si hei!
+Then pick a voice and draw on the lower screen to bend it.	Velg så en stemme og tegn på den nedre skjermen for å bøye den.
+Recording…	Tar opp…
+Press X again to stop.	Trykk X igjen for å stoppe.
+Sound {0}	Lyd {0}
+Startup sound	Oppstartslyd
+Higher	Lysere
+Lower	Mørkere
+Record	Ta opp
+Stop	Stopp
+Sounds	Lyder
+Record a sound first	Ta opp en lyd først
+The handheld starts quietly again	Konsollen starter stille igjen
+Plays when the handheld starts	Spilles når konsollen starter
+Could not save the sound	Kunne ikke lagre lyden
+Nothing heard. Hold the handheld closer and try again.	Hørte ingenting. Hold konsollen nærmere og prøv igjen.
+This manual could not be opened	Manualen kunne ikke åpnes
+This page is not a scan	Denne siden er ikke en skanning
+This page could not be read	Denne siden kunne ikke leses
+Giant	Kjempe
+Underwater	Under vann
+Choir	Kor
+8-bit	8-bit
+Telephone	Telefon
+Megaphone	Megafon
+Cave	Grotte
+Jelly	Gelé
+Scratch	Skrap
+Whisper	Hvisk
+Sloth	Dovendyr
+Speedy	Lynrask
+Dragon	Drage
+Baby	Baby
+Opera	Opera
+Erase	Slett
+Drawing cleared	Tegningen er fjernet
+Nothing to clear	Ingenting å fjerne
+Press Erase again to delete this sound	Trykk Slett igjen for å fjerne lyden
+Sound erased	Lyden er slettet
+Send in PictoChat	Send i PictoChat
+Send to phone	Send til telefon
+Connect to Wi-Fi to send pictures to a phone or computer.	Koble til Wi-Fi for å sende bilder til en telefon eller datamaskin.
+Your picture is on the pad. Write or draw beside it, then send.	Bildet ditt er på blokken. Skriv eller tegn ved siden av, og send.
+Join a room: your picture goes on the pad.	Gå inn i et rom: bildet ditt havner på blokken.

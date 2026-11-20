@@ -103,16 +103,17 @@ void App::welcome_detour_end() {
 void App::welcome_language_defaults() {
     static const std::map<std::string, std::tuple<const char*, int, int>> regions = {
         {"en-US", {"America/New_York", 1, 1}},  {"id-ID", {"Asia/Jakarta", 0, 0}},
-        {"da-DK", {"Europe/Copenhagen", 0, 2}}, {"de-DE", {"Europe/Berlin", 0, 2}},
-        {"es-ES", {"Europe/Madrid", 0, 0}},     {"fr-FR", {"Europe/Paris", 0, 0}},
-        {"it-IT", {"Europe/Rome", 0, 0}},       {"nl-NL", {"Europe/Amsterdam", 0, 4}},
-        {"nb-NO", {"Europe/Oslo", 0, 2}},       {"nn-NO", {"Europe/Oslo", 0, 2}},
-        {"pl-PL", {"Europe/Warsaw", 0, 2}},     {"pt-BR", {"America/Sao_Paulo", 0, 0}},
-        {"pt-PT", {"Europe/Lisbon", 0, 0}},     {"fi-FI", {"Europe/Helsinki", 0, 2}},
-        {"sv-SE", {"Europe/Stockholm", 0, 3}},  {"vi-VN", {"Asia/Ho_Chi_Minh", 0, 0}},
-        {"tr-TR", {"Europe/Istanbul", 0, 2}},   {"ru-RU", {"Europe/Moscow", 0, 2}},
-        {"uk-UA", {"Europe/Kyiv", 0, 2}},       {"ja-JP", {"Asia/Tokyo", 0, 3}},
-        {"zh-CN", {"Asia/Shanghai", 0, 3}},     {"ko-KR", {"Asia/Seoul", 0, 3}},
+        {"en-GB", {"Europe/London", 0, 0}},     {"da-DK", {"Europe/Copenhagen", 0, 2}},
+        {"de-DE", {"Europe/Berlin", 0, 2}},     {"es-ES", {"Europe/Madrid", 0, 0}},
+        {"fr-FR", {"Europe/Paris", 0, 0}},      {"it-IT", {"Europe/Rome", 0, 0}},
+        {"nl-NL", {"Europe/Amsterdam", 0, 4}},  {"nb-NO", {"Europe/Oslo", 0, 2}},
+        {"nn-NO", {"Europe/Oslo", 0, 2}},       {"pl-PL", {"Europe/Warsaw", 0, 2}},
+        {"pt-BR", {"America/Sao_Paulo", 0, 0}}, {"pt-PT", {"Europe/Lisbon", 0, 0}},
+        {"fi-FI", {"Europe/Helsinki", 0, 2}},   {"sv-SE", {"Europe/Stockholm", 0, 3}},
+        {"vi-VN", {"Asia/Ho_Chi_Minh", 0, 0}},  {"tr-TR", {"Europe/Istanbul", 0, 2}},
+        {"ru-RU", {"Europe/Moscow", 0, 2}},     {"uk-UA", {"Europe/Kyiv", 0, 2}},
+        {"ja-JP", {"Asia/Tokyo", 0, 3}},        {"zh-CN", {"Asia/Shanghai", 0, 3}},
+        {"ko-KR", {"Asia/Seoul", 0, 3}},
     };
     const auto found = regions.find(preferences.language);
     if (!welcome_fresh || found == regions.end()) return;
@@ -493,7 +494,8 @@ void App::welcome_top(SDL_Renderer* r, int y) {
             // 3DS only where its engine is (the session passes its folder then): the PSP takes its place otherwise
             const bool ctr = o.preview || std::any_of(o.system_roots.begin(), o.system_roots.end(),
                                                       [](const auto& root) { return root.first == "3ds"; });
-            const std::array<const char*, 8> ids = {"nds", "gba", "gb", "snes", "md", "psx", "n64", ctr ? "3ds" : "psp"};
+            const std::array<const char*, 8> ids = {"nds", "gba", "gb",  "snes",
+                                                    "md",  "psx", "n64", ctr ? "3ds" : "psp"};
             for (int i = 0; i < 8; i++)
                 welcome_system_icon(r, ids[size_t(i)], 148 + (i % 4) * 88, y + 204 + (i / 4) * 88, 80);
         }

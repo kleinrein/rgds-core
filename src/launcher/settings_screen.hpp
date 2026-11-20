@@ -122,6 +122,14 @@ void App::settings_top(SDL_Renderer* r, int y) {
         homebrew_top(r, y);
         return;
     }
+    if (settings.page == Page::Album && album_viewing) {
+        album_top(r, y);
+        return;
+    }
+    if (settings.page == Page::Photo) {
+        photo_top(r, y);
+        return;
+    }
     // Navigation belongs on the lower panel. Keep this identity independent
     // of row focus and setting values so the upper panel stays quiet.
     std::string title = "Settings";
@@ -173,21 +181,30 @@ void App::settings_top(SDL_Renderer* r, int y) {
         title = "Artwork";
         symbol = SettingsIcon::Art;
         break;
+    case Page::Achievements:
+        title = "RetroAchievements";
+        symbol = SettingsIcon::Spark;
+        break;
+    case Page::Album:
+        title = "Album";
+        symbol = SettingsIcon::Art;
+        break;
     case Page::Keyboard:
-        title = edit_field == 8 || edit_field == 9 ? "Profiles"
-                : edit_field == 10                 ? "DS name"
-                : edit_field == 7                  ? "Your name"
-                : edit_field == 5                  ? "DS nickname"
-                : edit_field == 2                  ? "Connectivity"
-                : edit_field == 3                  ? "Artwork"
-                : edit_field == 4                  ? "Search"
-                : edit_field == 11                 ? "Games"
-                : edit_field == 6                  ? "Cheats"
-                                                   : "ScreenScraper";
-        symbol = edit_field == 2   ? SettingsIcon::Wifi
-                 : edit_field == 6 ? SettingsIcon::Spark
-                 : edit_field == 7 ? SettingsIcon::Type
-                                   : SettingsIcon::Art;
+        title = edit_field == 8 || edit_field == 9     ? "Profiles"
+                : edit_field == 10                     ? "DS name"
+                : edit_field == 7                      ? "Your name"
+                : edit_field == 5                      ? "DS nickname"
+                : edit_field == 2                      ? "Connectivity"
+                : edit_field == 3                      ? "Artwork"
+                : edit_field == 4                      ? "Search"
+                : edit_field == 11                     ? "Games"
+                : edit_field == 6                      ? "Cheats"
+                : edit_field == 12 || edit_field == 13 ? "RetroAchievements"
+                                                       : "ScreenScraper";
+        symbol = edit_field == 2                                           ? SettingsIcon::Wifi
+                 : edit_field == 6 || edit_field == 12 || edit_field == 13 ? SettingsIcon::Spark
+                 : edit_field == 7                                         ? SettingsIcon::Type
+                                                                           : SettingsIcon::Art;
         break;
     case Page::Microphone:
         title = "Test microphone";
@@ -310,6 +327,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
             : preferences.menu_haptics ? "A light tap for every move, a firmer one when you choose, open or save."
                                        : "Turn on menu haptics to feel the menus.";
         wrapped(r, note, 52, y + 284, 20, 536, 3);
+        return;
+    }
+    if (page == Page::Album) {
+        album_top(r, y);
         return;
     }
     if (page == Page::SaveGallery) {
@@ -447,10 +468,17 @@ void App::settings_top(SDL_Renderer* r, int y) {
                 message = "All games: every game in one list, sorted by name. Y narrows it to one system.";
             else if (row == 8) message = "Copies every save and checkpoint into one zip in userdata/exports.";
             else if (row == 1) message = "Where covers and titles come from.";
+            else if (row == 13) message = "Earn achievements from retroachievements.org while you play.";
         }
     } else if (page == Page::System || page == Page::Network || page == Page::Wifi || page == Page::Bluetooth ||
                page == Page::Maintenance) {
         if (device_status["state"] == "error") message = device_status["message"];
+    } else if (page == Page::Achievements) {
+        if (worker > 0 && worker_action == "achievements.login") message = "Signing in…";
+        else if (worker > 0 && worker_action == "achievements.logout") message = "Signing out…";
+        else if (!service_notice.empty()) message = service_notice;
+        else if (settings.focus == 1 || achievements_status["state"] == "error")
+            message = achievements_status["message"];
     } else if (page == Page::Scraper || page == Page::GameArtwork) {
         if (service["state"] == "scraping") message = service["completed"] + " / " + service["total"] + " games";
         else if (!service_notice.empty()) message = service_notice;
@@ -577,6 +605,19 @@ void App::network_status_card(SDL_Renderer* r, int y) {
 }
 
 void App::settings_bottom(SDL_Renderer* r, int y) {
+    if (settings.page == Page::Photo) {
+        photo_bottom(r, y);
+        return;
+    }
+    if (settings.page == Page::Album && album_viewing) {
+        // The picture's lower screen where it was taken; a single-screen picture leaves this panel dark.
+        s.SetRenderDrawColor(r, 0, 0, 0, 255);
+        SDL_Rect all{0, y, 640, 480};
+        s.RenderFillRect(r, &all);
+        media.draw(r, o.data / "session/album-view-bottom.bmp", {0, y, 640, 480});
+        key_hints(r, 320, y + 452, {{"A", "Photo mode"}, {"B", "Back"}}, 0, 16, 280);
+        return;
+    }
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y, 480, true);
     if (o.game_menu && menu_status["state"] == "busy") {
@@ -660,9 +701,11 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                             : settings.page == Page::ShaderPicker    ? "Shaders"
                             : settings.page == Page::EmulatorOptions ? "Emulator settings"
                             : (settings.page == Page::Scraper || settings.page == Page::GameArtwork) ? "Artwork"
-                            : settings.page == Page::DeviceInfo ? "Device information"
-                            : settings.page == Page::Controls   ? "Controls"
-                                                                : "Updates & recovery";
+                            : settings.page == Page::Achievements ? "RetroAchievements"
+                            : settings.page == Page::Album        ? "Album"
+                            : settings.page == Page::DeviceInfo   ? "Device information"
+                            : settings.page == Page::Controls     ? "Controls"
+                                                                  : "Updates & recovery";
         if (settings.page == Page::Timezone) title = timezone_title();
         if (settings.page == Page::ProfileEdit && edited_profile()) title = edited_profile()->name;
         settings_header(r, y, title,
@@ -742,7 +785,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, names[id], enabled[id] ? values[id] : "Unavailable", enabled[id]);
             } else if (settings.page == Page::LibraryOptions) {
                 // Rows 0 and 6 are retired; library_row never shows them.
-                const std::array<std::string, 13> names = {"",
+                const std::array<std::string, 15> names = {"",
                                                            "Artwork sources",
                                                            "Auto-load state",
                                                            "Auto-save on exit",
@@ -754,8 +797,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                                            "Systems",
                                                            "Scan for games",
                                                            "System defaults",
-                                                           "Games opens"};
-                const std::array<std::string, 13> values = {
+                                                           "Games opens",
+                                                           "RetroAchievements",
+                                                           "Album"};
+                const std::array<std::string, 15> values = {
                     "",
                     "",
                     preferences.auto_load ? "On" : "Off",
@@ -772,8 +817,14 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                         ? locale.text("Scanning…")
                         : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games")),
                     "",
-                    preferences.all_games ? "All games" : "Systems"};
-                list_row(r, y, i, names[size_t(library_row(i))], values[size_t(library_row(i))]);
+                    preferences.all_games ? "All games" : "Systems",
+                    !preferences.achievements   ? "Off"
+                    : achievements_user.empty() ? "Not signed in"
+                                                : achievements_user,
+                    ""};
+                // RetroAchievements and Album open their pages: no switch.
+                const int id = library_row(i);
+                list_row(r, y, i, names[size_t(id)], values[size_t(id)], true, nullptr, id != 13 && id != 14);
             } else if (settings.page == Page::PlayGraphics) {
                 const bool palette = play_colour_kind() == 1;
                 const int id = play_graphics_row(i);
@@ -847,6 +898,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             } else if (settings.page == Page::Controls) list_row(r, y, i, controls_row_name(i), controls_row_value(i));
             else if (settings.page == Page::Sound) {
                 if (i == 0) volume_row(r, y);
+                else if (!o.game_menu && !probe && i == sound_toy_row())
+                    list_row(r, y, i, "Sound toy", preferences.sound_toy ? "On" : "Off");
                 else if (i >= 5)
                     list_row(r, y, i, i == 5 ? "Music player" : "Play with the lid closed",
                              (i == 5 ? preferences.music_player : preferences.music_lid) ? "On" : "Off");
@@ -891,7 +944,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          : i == 4                   ? time_format_names.at(system_preferences.time_format)
                          : i == (o.rgds_os ? 6 : 7) ? (device_status["boot_warning"] == "1" ? "On" : "Off")
                                                     : "");
-            } else if (settings.page == Page::SaveGallery)
+            } else if (settings.page == Page::Album) album_row(r, y, i);
+            else if (settings.page == Page::SaveGallery)
                 list_row(r, y, i,
                          i == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(i + 1),
                          slot_occupied(i) ? slots["slot_" + std::to_string(i)] : "Empty slot", slot_primary_enabled(i));
@@ -1000,6 +1054,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     "Matching title", worker > 0 && worker_action == "scrape" ? "Stop fetching" : "Fetch artwork",
                     "Use ROM identity"};
                 list_row(r, y, i, names[i], i == 0 ? (artwork_match.empty() ? "Automatic" : artwork_match) : "");
+            } else if (settings.page == Page::Achievements) {
+                if (i == 0) list_row(r, y, i, "RetroAchievements", preferences.achievements ? "On" : "Off");
+                else list_row(r, y, i, "Account", achievements_user.empty() ? "Not signed in" : achievements_user);
             } else if (settings.page == Page::Scraper) {
                 const std::array<std::string, 4> providers = {"Automatic", "GameTDB", "Libretro", "ScreenScraper"};
                 const std::array<std::string, 4> pictures = {"Off", "Screenshots", "Title screens", "Both"};
@@ -1103,29 +1160,37 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             label(r, mode, 612 - width, y + 29, 18, "muted", width);
         }
         bool busy = menu_status["state"] == "busy";
-        const std::array<std::string, 12> names = {
+        const std::array<std::string, 13> names = {
             "Resume",          "Save checkpoint",
             "Load checkpoint", experimental_game() || active_engine() == play_core ? "Graphics" : "Shaders",
             "Emulator",        "Sound",
             "Brightness",      "Save & restart",
             "Return home",     "Controls",
-            "Game switcher",   "Cheats"};
+            "Game switcher",   "Cheats",
+            "Screenshot"};
         static const std::string port_restart = "Restart port"; // ports have no checkpoint to save first
-        const std::array<SettingsIcon, 12> symbols = {
+        const std::array<SettingsIcon, 13> symbols = {
             SettingsIcon::Play,    SettingsIcon::Save,       SettingsIcon::Load,    SettingsIcon::Shader,
             SettingsIcon::Sliders, SettingsIcon::Volume,     SettingsIcon::Sun,     SettingsIcon::Restart,
-            SettingsIcon::Home,    SettingsIcon::Controller, SettingsIcon::Library, SettingsIcon::Spark};
+            SettingsIcon::Home,    SettingsIcon::Controller, SettingsIcon::Library, SettingsIcon::Spark,
+            SettingsIcon::Art};
         // One rule for the page: wide tiles on the top and bottom rows, a 3x3 grid between them,
         // 16 px between tiles. Cheats stays muted outside DSCore or without a database entry.
-        for (int i = 0; i < 12; i++) {
+        // Resume shares the top row with Screenshot (tile 12), which sits over the grid's right column.
+        for (int i = 0; i < 13; i++) {
             const bool wide = i == 0 || i >= 10;
             int x = i == 0    ? 28
+                    : i == 12 ? 428
                     : i >= 10 ? (i == 10 ? 28 : 328)
                               : 28 + ((i - 1) % 3) * 200,
-                row = y + (i == 0    ? quick_top
-                           : i >= 10 ? quick_bottom_top
-                                     : quick_grid_top + ((i - 1) / 3) * quick_grid_pitch);
-            const int width = i == 0 ? 584 : wide ? 284 : 184, height = wide ? quick_wide_height : quick_tile_height;
+                row = y + (i == 0 || i == 12 ? quick_top
+                           : i >= 10         ? quick_bottom_top
+                                             : quick_grid_top + ((i - 1) / 3) * quick_grid_pitch);
+            const int width = i == 0    ? 384
+                              : i == 12 ? 184
+                              : wide    ? 284
+                                        : 184,
+                      height = wide ? quick_wide_height : quick_tile_height;
             bool enabled = !busy && (i != 11 || cheats_available()) && (!port_game() || port_tile(i)),
                  focused = settings.focus == i;
             move_element(uint32_t(i), x, row, width, height, focused);
@@ -1318,6 +1383,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
 }
 
 std::string App::settings_tip(Page page) {
+    if (page == Page::Achievements)
+        return settings.focus == 0
+                   ? "Unlock achievements in your games while you play. Each game's list is in Game info."
+                   : "A free account from retroachievements.org.";
     if (page == Page::System) {
         // Updates & recovery left this page in the 2026-11-11 regroup: Updates is a root row of its own.
         static const std::array<const char*, 8> tips = {

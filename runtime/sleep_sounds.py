@@ -73,7 +73,7 @@ def play(data, cue, assets=None):
     sdl = None
     initialized = False
     try:
-        if cue not in ('lid-close', 'lid-open'):
+        if cue not in ('lid-close', 'lid-open', 'shutter'):
             raise ValueError('Unknown sleep cue')
         level = effects_volume(data)
         volume = Volume(data)

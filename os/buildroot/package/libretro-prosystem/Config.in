@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_PROSYSTEM
+	bool "libretro-prosystem"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  ProSystem, the Atari 7800 core RG DS Play loads for .a78 games (and
+	  .bin in an Atari 7800 folder): /usr/lib/libretro/prosystem_libretro.so.
+	  The 7800 BIOS is optional ("7800 BIOS (U).rom" in the BIOS folder).

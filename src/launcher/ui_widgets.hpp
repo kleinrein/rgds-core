@@ -68,26 +68,29 @@ void App::start_frame(SDL_Renderer* r, int x, int row, int tile, const std::stri
 
 std::string App::category_title(size_t index) {
     static const std::array<std::string, home_count> titles = {"Settings",  "Games", "Favourites", "Recents",
-                                                               "PictoChat", "Music", "Last played"};
-    return music_at(index) ? "Music" : titles.at(index);
+                                                               "PictoChat", "Music", "Sound toy",  "Last played"};
+    return toy_at(index) ? "Sound toy" : music_at(index) ? "Music" : titles.at(index);
 }
 
 void App::category_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
     static const std::array<SettingsIcon, home_count> symbols = {
         SettingsIcon::Sliders, SettingsIcon::Cartridge, SettingsIcon::Heart, SettingsIcon::Clock,
-        SettingsIcon::Chat,    SettingsIcon::Music,     SettingsIcon::Play};
+        SettingsIcon::Chat,    SettingsIcon::Music,     SettingsIcon::Volume, SettingsIcon::Play};
+    if (toy_at(index)) return voice_face(r, 0, x + size / 2, y + size / 2, size * 6 / 5, 0);
     ui_icon(r, music_at(index) ? SettingsIcon::Music : symbols.at(index), x + size / 2, y + size / 2, size, "accent");
 }
 
 void App::settings_footer(SDL_Renderer* r, int y) {
-    if (settings.page == Page::ShaderPicker) return;
+    if (settings.page == Page::ShaderPicker || settings.page == Page::Photo ||
+        (settings.page == Page::Album && album_viewing))
+        return;
     rect(r, 0, y + 424, 640, 56, "background");
     rect(r, 24, y + 424, 592, 1, "line");
     const bool pressed = footer_pressed(true), a_pressed = footer_pressed(false);
     footer_button(r, 12, y + 432, 160, "Back", "B", false, pressed);
     if (settings.page == Page::Keyboard) {
         const bool searching = edit_field == 4 || edit_field == 6 || edit_field == 11;
-        if (edit_field == 1 || edit_field == 2) // a password: L shows or hides it
+        if (secret_field()) // a password: L shows or hides it
             key_hints(r, 320, y + 452, {{"L", secret_shown ? "Hide" : "Show"}, {"X", "Delete"}}, 0, 16, 280);
         else key_hints(r, 320, y + 452, {{"X", "Delete"}, {"Start", searching ? "Search" : "Done"}}, 0, 16, 280);
         footer_button(r, 468, y + 432, 160, searching ? "Search" : "Done", "", true, a_pressed);
@@ -101,6 +104,20 @@ void App::settings_footer(SDL_Renderer* r, int y) {
     }
     if (settings.page == Page::GameSwitcher && !home_switcher)
         key_hints(r, 320, y + 452, {{"X", "Game menu"}}, 0, 16, 280);
+    if (settings.page == Page::Album) {
+        if (album_sharing) {
+            footer_button(r, 468, y + 432, 160, "Done", "A", true, a_pressed);
+            return;
+        }
+        if (!picker_open && !album_viewing) {
+            if (album.empty()) key_hints(r, 320, y + 452, {{"Y", "More"}}, 0, 16, 280);
+            else {
+                key_hints(r, 320, y + 452, {{"X", "Delete"}, {"Y", "More"}}, 0, 16, 280);
+                footer_button(r, 468, y + 432, 160, "View", "A", true, a_pressed);
+            }
+        }
+        return;
+    }
     if (settings.page == Page::SaveGallery) {
         if (!picker_open) {
             std::vector<KeyHint> keys{{"Y", "More"}};

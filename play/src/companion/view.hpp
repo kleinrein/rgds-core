@@ -74,9 +74,9 @@ protected:
 std::unique_ptr<View> make_view(const ViewSpec& spec, std::string& error);
 // The system's own keyboard, for the home computers; null for a system without one.
 std::unique_ptr<View> make_keyboard(const std::string& system);
-// The system's own controller on the touch screen (companion/keypad.cpp): the ColecoVision's and the Intellivision's
-// keypad, the Sega Pico's storyware and pad under its pen, the Atari's switches, the Dreamcast's VMU screen; null for
-// a system without one.
+// The system's own controller on the touch screen (companion/keypad.cpp): the ColecoVision's, the Intellivision's and
+// the Atari 5200's keypad, the Sega Pico's storyware and pad under its pen, the Atari 2600's and 7800's switches, the
+// Dreamcast's VMU screen; null for a system without one.
 std::unique_ptr<View> make_controller(const std::string& system);
 
 } // namespace play

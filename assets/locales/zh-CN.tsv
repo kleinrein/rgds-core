@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	锐利缩放，DS 色彩。
 Sharp scaling, DS colour and Natural Vision together.	锐利缩放、DS 色彩与 Natural Vision 的组合。
 Shield	盾
 Shift	Shift
-Shift keys stay down until the next key	Shift 键会保持按下，直到按下一个键
 Shortcut action	快捷键功能
 Shots	剩余子弹
 Show games	显示游戏
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	卡上的其�
 Room for more games.	可容纳更多游戏的空间。
 Console switches	主机开关
 VMU screen	VMU 屏幕
+3D: one eye each	3D：每屏一只眼
+Mouse	鼠标
+RetroAchievements	RetroAchievements
+Account	账户
+RetroAchievements account	RetroAchievements 账户
+Achievements	成就
+{0} achievements	{0} 个成就
+{0} points	{0} 分
+1 point	1 分
+Unlocked {0}	解锁于 {0}
+Play the game once to see its achievements.	玩一次游戏即可看到它的成就。
+RetroAchievements has no achievements for this game yet.	RetroAchievements 还没有这个游戏的成就。
+Earn achievements from retroachievements.org while you play.	边玩边获得 retroachievements.org 的成就。
+Unlock achievements in your games while you play. Each game's list is in Game info.	边玩边解锁游戏成就。每个游戏的列表在游戏信息中。
+A free account from retroachievements.org.	retroachievements.org 的免费账户。
+Signing out…	正在退出登录…
+Wait for the current task to finish, then sign in.	请等当前任务完成后再登录。
+Wait for the current task to finish, then sign out.	请等当前任务完成后再退出登录。
+Signed in to RetroAchievements as {0}.	已用 {0} 登录 RetroAchievements。
+Signed out of RetroAchievements.	已退出 RetroAchievements。
+Enter your RetroAchievements username and password.	请输入 RetroAchievements 用户名和密码。
+Could not reach RetroAchievements. Check the connection.	无法连接 RetroAchievements。请检查网络连接。
+Wrong username or password.	用户名或密码错误。
+RetroAchievements did not accept the sign-in.	RetroAchievements 未接受登录。
+Achievement unlocked	成就已解锁
+Game mastered	游戏已完美通关
+achievements	个成就
+Sign in again in Settings	请在设置中重新登录
+Could not sign in	无法登录
+This game file is not recognised	无法识别此游戏文件
+Could not load this game's achievements	无法加载此游戏的成就
+No achievements yet	还没有成就
+Every achievement unlocked	已解锁全部成就
+Offline: unlocks are sent when back online	离线：恢复联网后会发送解锁记录
+Back online: unlocks sent	已恢复联网：解锁记录已发送
+Play Nintendo WFC games online	在线玩任天堂 WFC 游戏
+Album	相册
+Menus	菜单
+No screenshots yet	还没有截图
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	在游戏中按 Menu + R，或在游戏菜单中选择“截图”。Menu + R 在菜单中也可使用。
+This picture is the game's cover now.	这张图片现在是游戏封面。
+The cover could not be changed.	无法更改封面。
+The screenshot could not be saved.	无法保存截图。
+Delete this screenshot?	删除这张截图？
+Use as the game's cover	设为游戏封面
+Save the game behind this menu to the Album	将此菜单后面的游戏画面保存到相册
+Saving the screenshot…	正在保存截图…
+Screenshot saved to the Album.	截图已保存到相册。
+Still saving the last screenshot.	上一张截图仍在保存。
+No picture to save. Resume the game and press Menu + R.	没有可保存的画面。请回到游戏后按 Menu + R。
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	照片模式
+Leave photo mode?	退出照片模式？
+Keep editing	继续编辑
+Leave without saving	不保存并退出
+Saved to the Album.	已保存到相册。
+The photo could not be saved.	无法保存照片。
+This picture could not be opened.	无法打开这张图片。
+Pen	画笔
+Stamps	印章
+Frames	相框
+Lenses	镜头
+Date	日期
+Sepia	怀旧
+Black & white	黑白
+Mosaic	马赛克
+Mirror	镜像
+Fisheye	鱼眼
+Old photo	老照片
+Instant photo	拍立得
+Film strip	胶片
+Postage stamp	邮票
+Rounded card	圆角卡片
+Stars	星星
+Undo	撤销
+Sound toy	声音玩具
+Record your voice and change it	录下你的声音并变个样
+Chipmunk	花栗鼠
+Monster	怪兽
+Backwards	倒放
+Echo	回声
+Press Record and say hello!	按录音，说声你好！
+Then pick a voice and draw on the lower screen to bend it.	然后选一种声音，在下屏上画线来弯曲它。
+Recording…	正在录音…
+Press X again to stop.	再按 X 停止。
+Sound {0}	声音 {0}
+Startup sound	开机声音
+Higher	更高
+Lower	更低
+Record	录音
+Stop	停止
+Sounds	声音
+Record a sound first	请先录一段声音
+The handheld starts quietly again	开机时恢复安静
+Plays when the handheld starts	开机时播放
+Could not save the sound	无法保存声音
+Nothing heard. Hold the handheld closer and try again.	什么也没听到。把主机拿近一点再试一次。
+This manual could not be opened	无法打开说明书
+This page is not a scan	此页不是扫描图片
+This page could not be read	无法读取此页
+Giant	巨人
+Underwater	水下
+Choir	合唱
+8-bit	8 位
+Telephone	电话
+Megaphone	扩音器
+Cave	山洞
+Jelly	果冻
+Scratch	搓碟
+Whisper	悄悄话
+Sloth	树懒
+Speedy	飞快
+Dragon	龙
+Baby	宝宝
+Opera	歌剧
+Erase	删除
+Drawing cleared	已清除涂画
+Nothing to clear	没有可清除的内容
+Press Erase again to delete this sound	再按一次删除即可删除此声音
+Sound erased	声音已删除
+Send in PictoChat	在 PictoChat 中发送
+Send to phone	发送到手机
+Connect to Wi-Fi to send pictures to a phone or computer.	连接 Wi-Fi 后即可将图片发送到手机或电脑。
+Your picture is on the pad. Write or draw beside it, then send.	图片已放在画板上。可在旁边写字或绘画，然后发送。
+Join a room: your picture goes on the pad.	进入一个房间：图片会放到画板上。

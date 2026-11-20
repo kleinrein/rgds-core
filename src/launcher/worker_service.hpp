@@ -35,6 +35,7 @@ void App::watch_menu(Uint32 now) {
                 emit_sound(MenuCue::Save);
             else if (menu_sound_action == "load" || menu_sound_action.rfind("slot-load:", 0) == 0)
                 emit_sound(MenuCue::Load);
+            else if (menu_sound_action == "screenshot") emit_sound(MenuCue::Save); // the menu's own cue and buzz
             // The supervisor saves live graphics choices after the engine accepts them; show what it stored.
             if ((menu_sound_action.rfind("graphics:", 0) == 0 || menu_sound_action.rfind("filter2d:", 0) == 0 ||
                  menu_sound_action.rfind("adaptive:", 0) == 0) &&
@@ -80,24 +81,30 @@ void App::start_worker(const std::string& operation, const std::string& payload)
     if (worker > 0 && worker_action == "index" && operation.rfind("device.", 0) == 0) stop_worker();
     if (worker > 0) return;
     bool busy_visible = (operation != "device.info" && operation != "device.startup-info") ||
-                        settings.page == Page::Wifi ||
-                        settings.page == Page::Bluetooth || settings.page == Page::Homebrew || !service_notice.empty();
+                        settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
+                        settings.page == Page::Homebrew || !service_notice.empty();
     service_notice.clear();
     bool device = operation.rfind("device.", 0) == 0;
-    auto folder = o.data / (device ? "device" : "scraper");
+    // RetroAchievements sign-in and sign-out (achievements.py login|logout); the account JSON goes on stdin.
+    const bool achievements = operation.rfind("achievements.", 0) == 0;
+    auto folder = o.data / (device ? "device" : achievements ? "achievements" : "scraper");
     fs::create_directories(folder);
-    fs::path script = fs::path("runtime") / (device ? "device_services.py" : "scraper.py");
+    fs::path script = fs::path("runtime") / (device         ? "device_services.py"
+                                             : achievements ? "achievements.py"
+                                                            : "scraper.py");
     std::vector<std::string> args = {"python3",
                                      "-B",
                                      (o.app.empty() ? script : o.app / script).string(),
-                                     device ? operation.substr(7) : operation,
+                                     device         ? operation.substr(7)
+                                     : achievements ? operation.substr(13)
+                                                    : operation,
                                      "--data",
                                      o.data.string()};
     if (device) {
         args.push_back("--app");
         args.push_back((o.app.empty() ? fs::current_path() : o.app).string());
         if (o.preview) args.push_back("--preview");
-    } else {
+    } else if (!achievements) {
         static const std::array<const char*, 4> providers = {"auto", "gametdb", "libretro", "screenscraper"};
         args.push_back("--provider");
         // One game's Fetch artwork asks every public source, or ScreenScraper when that is the choice.
@@ -223,6 +230,12 @@ void App::poll_service(Uint32 now) {
         preferences.artwork_provider = worker_action == "login" ? 3 : 0;
         remember_appearance();
     }
+    // Signing in to RetroAchievements is asking for them: the switch goes on with it.
+    if (worker <= 0 && worker_finished_at == now && worker_ok && worker_action == "achievements.login" &&
+        !preferences.achievements) {
+        preferences.achievements = true;
+        remember_appearance();
+    }
     if (artwork_finished) {
         if (settings.page == Page::GameArtwork && !model.games.empty())
             artwork_result = fields(item_folder(model.selected) / "artwork-status.ini");
@@ -245,6 +258,16 @@ void App::poll_service(Uint32 now) {
     auto account = fields(o.data / "scraper/account.ini")["user"];
     if (account != screenscraper_user) {
         screenscraper_user = account;
+        dirty = true;
+    }
+    auto cheevos_account = fields(o.data / "achievements/account.ini")["user"];
+    if (cheevos_account != achievements_user) {
+        achievements_user = cheevos_account;
+        dirty = true;
+    }
+    auto cheevos_status = fields(o.data / "achievements/status.ini");
+    if (!same_fields(cheevos_status, achievements_status)) {
+        achievements_status = std::move(cheevos_status);
         dirty = true;
     }
     if (!same_fields(next, service)) {

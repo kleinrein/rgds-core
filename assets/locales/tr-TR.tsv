@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	DS renkleriyle keskin ölçekleme.
 Sharp scaling, DS colour and Natural Vision together.	Keskin ölçekleme, DS renkleri ve Natural Vision bir arada.
 Shield	Kalkan
 Shift	Shift
-Shift keys stay down until the next key	Shift tuşları sonraki tuşa kadar basılı kalır
 Shortcut action	Kısayol eylemi
 Shots	Atışlar
 Show games	Oyunları göster
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Kartta kalan h
 Room for more games.	Daha fazla oyun için yer.
 Console switches	Konsol anahtarları
 VMU screen	VMU ekranı
+3D: one eye each	3D: ekran başına bir göz
+Mouse	Fare
+RetroAchievements	RetroAchievements
+Account	Hesap
+RetroAchievements account	RetroAchievements hesabı
+Achievements	Başarımlar
+{0} achievements	{0} başarım
+{0} points	{0} puan
+1 point	1 puan
+Unlocked {0}	Açıldı: {0}
+Play the game once to see its achievements.	Başarımlarını görmek için oyunu bir kez oyna.
+RetroAchievements has no achievements for this game yet.	RetroAchievements'ta bu oyun için henüz başarım yok.
+Earn achievements from retroachievements.org while you play.	Oynarken retroachievements.org başarımları kazan.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Oynarken oyunlarında başarımların kilidini aç. Her oyunun listesi Oyun bilgisi'nde.
+A free account from retroachievements.org.	retroachievements.org'dan ücretsiz bir hesap.
+Signing out…	Oturum kapatılıyor…
+Wait for the current task to finish, then sign in.	Geçerli görevin bitmesini bekle, sonra oturum aç.
+Wait for the current task to finish, then sign out.	Geçerli görevin bitmesini bekle, sonra oturumu kapat.
+Signed in to RetroAchievements as {0}.	RetroAchievements'ta {0} olarak oturum açıldı.
+Signed out of RetroAchievements.	RetroAchievements oturumu kapatıldı.
+Enter your RetroAchievements username and password.	RetroAchievements kullanıcı adını ve şifreni gir.
+Could not reach RetroAchievements. Check the connection.	RetroAchievements'a ulaşılamadı. Bağlantıyı kontrol et.
+Wrong username or password.	Kullanıcı adı veya şifre yanlış.
+RetroAchievements did not accept the sign-in.	RetroAchievements oturum açmayı kabul etmedi.
+Achievement unlocked	Başarım açıldı
+Game mastered	Oyun ustalıkla bitirildi
+achievements	başarım
+Sign in again in Settings	Ayarlar'da yeniden oturum aç
+Could not sign in	Oturum açılamadı
+This game file is not recognised	Bu oyun dosyası tanınmıyor
+Could not load this game's achievements	Bu oyunun başarımları yüklenemedi
+No achievements yet	Henüz başarım yok
+Every achievement unlocked	Tüm başarımlar açıldı
+Offline: unlocks are sent when back online	Çevrimdışı: kilit açmalar tekrar çevrimiçi olunca gönderilir
+Back online: unlocks sent	Tekrar çevrimiçi: kilit açmalar gönderildi
+Play Nintendo WFC games online	Nintendo WFC oyunlarını çevrimiçi oyna
+Album	Albüm
+Menus	Menüler
+No screenshots yet	Henüz ekran görüntüsü yok
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	Oyunda Menü + R'ye basın ya da Oyun menüsünde Ekran görüntüsü'nü seçin. Menü + R menülerde de çalışır.
+This picture is the game's cover now.	Bu resim artık oyunun kapağı.
+The cover could not be changed.	Kapak değiştirilemedi.
+The screenshot could not be saved.	Ekran görüntüsü kaydedilemedi.
+Delete this screenshot?	Bu ekran görüntüsü silinsin mi?
+Use as the game's cover	Oyunun kapağı yap
+Save the game behind this menu to the Album	Bu menünün arkasındaki oyunu Albüm'e kaydet
+Saving the screenshot…	Ekran görüntüsü kaydediliyor…
+Screenshot saved to the Album.	Ekran görüntüsü Albüm'e kaydedildi.
+Still saving the last screenshot.	Son ekran görüntüsü hâlâ kaydediliyor.
+No picture to save. Resume the game and press Menu + R.	Kaydedilecek resim yok. Oyuna devam edip Menü + R'ye basın.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Fotoğraf modu
+Leave photo mode?	Fotoğraf modundan çıkılsın mı?
+Keep editing	Düzenlemeye devam et
+Leave without saving	Kaydetmeden çık
+Saved to the Album.	Albüm'e kaydedildi.
+The photo could not be saved.	Fotoğraf kaydedilemedi.
+This picture could not be opened.	Bu resim açılamadı.
+Pen	Kalem
+Stamps	Damgalar
+Frames	Çerçeveler
+Lenses	Lensler
+Date	Tarih
+Sepia	Sepya
+Black & white	Siyah beyaz
+Mosaic	Mozaik
+Mirror	Ayna
+Fisheye	Balıkgözü
+Old photo	Eski fotoğraf
+Instant photo	Anlık fotoğraf
+Film strip	Film şeridi
+Postage stamp	Posta pulu
+Rounded card	Yuvarlak kart
+Stars	Yıldızlar
+Undo	Geri al
+Sound toy	Ses oyuncağı
+Record your voice and change it	Sesini kaydet ve değiştir
+Chipmunk	Sincap
+Monster	Canavar
+Backwards	Tersten
+Echo	Yankı
+Press Record and say hello!	Kaydet'e bas ve merhaba de!
+Then pick a voice and draw on the lower screen to bend it.	Sonra bir ses seç ve bükmek için alt ekrana çiz.
+Recording…	Kaydediliyor…
+Press X again to stop.	Durdurmak için X'e yeniden bas.
+Sound {0}	Ses {0}
+Startup sound	Açılış sesi
+Higher	Daha ince
+Lower	Daha kalın
+Record	Kaydet
+Stop	Durdur
+Sounds	Sesler
+Record a sound first	Önce bir ses kaydet
+The handheld starts quietly again	Konsol yine sessiz açılır
+Plays when the handheld starts	Konsol açılırken çalar
+Could not save the sound	Ses kaydedilemedi
+Nothing heard. Hold the handheld closer and try again.	Hiçbir şey duyulmadı. Konsolu yaklaştır ve yeniden dene.
+This manual could not be opened	Kılavuz açılamadı
+This page is not a scan	Bu sayfa bir tarama değil
+This page could not be read	Bu sayfa okunamadı
+Giant	Dev
+Underwater	Su altı
+Choir	Koro
+8-bit	8-bit
+Telephone	Telefon
+Megaphone	Megafon
+Cave	Mağara
+Jelly	Jöle
+Scratch	Scratch
+Whisper	Fısıltı
+Sloth	Tembel hayvan
+Speedy	Hızlı
+Dragon	Ejderha
+Baby	Bebek
+Opera	Opera
+Erase	Sil
+Drawing cleared	Çizim temizlendi
+Nothing to clear	Temizlenecek bir şey yok
+Press Erase again to delete this sound	Sesi silmek için Sil'e yeniden bas
+Sound erased	Ses silindi
+Send in PictoChat	PictoChat'te gönder
+Send to phone	Telefona gönder
+Connect to Wi-Fi to send pictures to a phone or computer.	Telefona veya bilgisayara resim göndermek için Wi-Fi'ye bağlanın.
+Your picture is on the pad. Write or draw beside it, then send.	Resmin defterde. Yanına yaz ya da çiz, sonra gönder.
+Join a room: your picture goes on the pad.	Bir odaya gir: resmin deftere gelecek.

@@ -56,10 +56,31 @@ void App::apply_profile() {
 
 // ---- Who's playing? ------------------------------------------------------------------------------------------------
 
+// The question is off, but a PIN on whoever played last still stops startup.
+bool App::ask_overridden_by_pin() const {
+    return profiles.enabled() && !profiles.ask_at_boot() && !active_profile().pin.empty();
+}
+
 bool App::profile_picker_wanted() const {
     // A PIN on whoever played last is not to be walked past by turning the question off.
     return profiles.active_unclear() ||
            (profiles.enabled() && (profiles.ask_at_boot() || !active_profile().pin.empty()));
+}
+
+// Startup: the picker when it is asked for, or just the last player's PIN when only that PIN is why we stop. The PIN
+// screen's B goes on to the picker, for whoever is not that player.
+void App::open_boot_screen() {
+    profiles.load(o.data);
+    const bool only_pin = !profiles.active_unclear() && !profiles.ask_at_boot() && profiles.enabled() &&
+                          !active_profile().pin.empty();
+    open_profile_picker(true);
+    if (!only_pin) return;
+    const int index = profiles.active_index();
+    const auto& pin = required_pin(index);
+    if (pin.empty()) return;
+    boot_lock = true;
+    pin_profile = index;
+    open_pin(PinPurpose::Enter, pin);
 }
 
 void App::open_profile_picker(bool boot) {
@@ -175,6 +196,7 @@ void App::choose_profile(int index) {
 void App::commit_profile(int index) {
     const auto& list = profiles.profiles();
     settings_unlocked = false;
+    boot_lock = false;
     const bool changed = list[size_t(index)].id != profiles.active() || profiles.active_unclear();
     if (changed && !profiles.select(list[size_t(index)].id)) {
         status = "Could not change profile. Check storage.";
@@ -395,7 +417,10 @@ void App::profiles_screen(SDL_Renderer* r, int y) {
                                               : SettingsIcon::Power,
                     box.x + 10 + tile / 2, middle, std::min(26, tile * 2 / 3), "accent");
             label(r, title, text_x, centred_label_y(locale.text(title), text, middle), text, "ink", 440);
-            if (row == profile_row_ask) draw_toggle(r, box.x + box.w - 60, middle - 14, title, profiles.ask_at_boot());
+            if (row == profile_row_ask) {
+                draw_toggle(r, box.x + box.w - 60, middle - 14, title, profiles.ask_at_boot());
+                if (ask_overridden_by_pin()) ui_icon(r, SettingsIcon::Key, box.x + box.w - 84, middle, 18, "accent");
+            }
         }
     }
 }
@@ -417,6 +442,14 @@ void App::profiles_top(SDL_Renderer* r, int y) {
     }
     const int top = y + top_card_y + (top_card_h - 240) / 2;
     settings_card(r, 24, top, 592, 240);
+    if (row == profile_row_ask) {
+        label(r, "Ask who's playing at startup", 48, top + 30, 28, "accent", 544);
+        wrapped(r, "Show the profile picker every time the handheld starts.", 48, top + 84, 20, 544, 2);
+        if (ask_overridden_by_pin())
+            wrapped(r, "The last player has a PIN, so startup still asks for it. B on that screen switches profile.",
+                    48, top + 146, 18, 544, 3);
+        return;
+    }
     label(r, "Profiles", 48, top + 30, 28, "accent", 544);
     wrapped(r, "Everyone who plays gets their own saves, favourites and playtime, and their own look.", 48, top + 84,
             20, 544, 4);
@@ -1596,6 +1629,7 @@ void App::open_pin(PinPurpose purpose, const std::string& expected, bool stop_ty
 void App::pin_cancel() {
     pin_digits.clear();
     if (pin_purpose == PinPurpose::Enter) {
+        boot_lock = false;
         settings.page = Page::ProfilePicker;
         settings.focus = pin_profile;
     } else if (pin_purpose == PinPurpose::Unlock) {
@@ -1857,5 +1891,6 @@ void App::pin_top(SDL_Renderer* r, int y) {
     const int width = std::min(544, label_width(line, 18, false));
     if (!line.empty())
         raw_label(r, line, 320 - width / 2, top + 160, 18, shaking || !pin_message.empty() ? "ink" : "muted", 544);
-    key_hints(r, 320, top + 212, {{"A", "Type"}, {"X", "Delete"}, {"B", "Cancel"}}, 0);
+    const bool lock = boot_lock && pin_purpose == PinPurpose::Enter;
+    key_hints(r, 320, top + 212, {{"A", "Type"}, {"X", "Delete"}, {"B", lock ? "Switch profile" : "Cancel"}}, 0);
 }

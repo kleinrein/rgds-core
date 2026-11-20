@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_CAP32
+	bool "libretro-cap32"
+	help
+	  Caprice32, the Amstrad CPC core RG DS Play loads for .dsk, .sna and
+	  .m3u games in a CPC folder and .cdt tapes and .cpr Plus cartridges
+	  anywhere: /usr/lib/libretro/cap32_libretro.so. It carries the CPC's
+	  own ROMs, so no BIOS is needed.

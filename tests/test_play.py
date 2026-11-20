@@ -16,6 +16,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 SHOT = ROOT / 'build/play/host/play-shot'
 UNIT = ROOT / 'build/play/host/play-tests'
+READER = ROOT / 'build/play/host/play-reader-tests'
 
 PANEL_W, PANEL_H = 640, 480
 # The test cartridge's map (play/profiles/gba/ZRDT.ini): crop 32,24 176x112, shown 3x
@@ -288,6 +289,15 @@ class PlayEndToEnd(unittest.TestCase):
         self.assertFalse(any(r > 200 and g > 120 and b < 60 for r, g, b in top), top)
         bottom = [px(x, PANEL_H + 40) for x in range(440, 620, 2)]
         self.assertTrue(any(r > 200 and g > 120 and b < 80 for r, g, b in bottom), bottom)
+
+
+@unittest.skipUnless(READER.exists(), 'Build RG DS Play first: tools/build_play.py host')
+class ManualReader(unittest.TestCase):
+    """Scanned manuals on the second screen (docs/MANUALS_PLAN.md): PDF/CBZ/folder pages, turns, the switch."""
+    def test_reader_unit(self):
+        result = subprocess.run([str(READER)], capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(' 0 failed', result.stdout)
 
 
 if __name__ == '__main__':

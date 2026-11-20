@@ -431,7 +431,7 @@ def scrape(data, client, roms, force=False, extras=None):
                 except ScraperError as error:
                     failed += 1
                     outcome.update(state="error", message=str(error))
-                except (OSError, ValueError, zipfile.BadZipFile, RuntimeError) as error:
+                except (OSError, ValueError, zipfile.BadZipFile, RuntimeError, AttributeError, TypeError, KeyError) as error:
                     if isinstance(error, OSError) and error.errno in (errno.ENOSPC, errno.EROFS): raise
                     failed += 1
                     outcome.update(

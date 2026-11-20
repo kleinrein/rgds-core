@@ -73,10 +73,11 @@ def parse_dat(raw, key):
 
 def rom_crc(path):
     """CRC32 of the game inside a ROM file or a single-game ZIP (the ZIP already stores it)."""
-    from play_options import SYSTEMS
+    from play_options import SYSTEMS, system_of
     path = Path(path)
     # The archive's own bytes would name no game; a .7z is matched by its name (public_artwork.rom_details).
     if path.suffix.lower() == ".7z": raise NotFound("A .7z game is matched by its name.")
+    if path.suffix.lower() == ".zip" and system_of(path) == "dos": raise NotFound("A zipped DOS game is matched by its name.")
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             entries = [
@@ -286,12 +287,20 @@ class GameInfo:
             key = LISTS[directory]
             # A list under another name is another file in the cache, or the old one would be read for a week.
             cached = "%s-%s%s.dat" % (system, directory, "-2" if (system, directory) in LIST_NAMES else "")
-            tables[directory] = self.client.catalog(cached, url, lambda raw, key=key: parse_dat(raw, key))
+            try:
+                tables[directory] = self.client.catalog(cached, url, lambda raw, key=key: parse_dat(raw, key))
+            except NotFound:
+                tables[directory] = {}  # no such list for this system (CPC, DOS): asked once, not for every game
         return tables[directory]
 
     def crc_names(self, system):
         if system not in self.names:
-            raw = self.client.catalog(system + "-nointro.dat", art.serials_url(system), lambda raw: parse_dat(raw, ""))
+            try:
+                raw = self.client.catalog(
+                    system + "-nointro.dat", art.serials_url(system), lambda raw: parse_dat(raw, "")
+                )
+            except NotFound:
+                raw = {}
             self.names[system] = {crc: value[0] for crc, value in raw.items()}
         return self.names[system]
 
@@ -382,7 +391,10 @@ class GameInfo:
                 if not parser.names: raise ScraperError("The picture catalog was unreadable.")
                 return parser.names
 
-            self.indexes[key] = (base, self.client.catalog("%s-%s.html" % (system, kind), base, parse))
+            try:
+                self.indexes[key] = (base, self.client.catalog("%s-%s.html" % (system, kind), base, parse))
+            except NotFound:
+                self.indexes[key] = (base, [])
         return self.indexes[key]
 
     def picture(self, item, kind, rom, system, name, code):
@@ -430,7 +442,7 @@ class GameInfo:
             except ScraperError as error:
                 outcome[kind] = "error: " + str(error)
                 status.pop(kind, None)
-            except (OSError, ValueError, zipfile.BadZipFile):
+            except (OSError, ValueError, zipfile.BadZipFile, AttributeError, TypeError, KeyError):
                 outcome[kind] = "error: Could not read this game."
                 status.pop(kind, None)
         status["version"] = VERSION

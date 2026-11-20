@@ -136,6 +136,24 @@ def same_file_content(source, destination):
 DS_STATE_FORMATS = (4, 4)
 
 
+def achievements_signed_in(data, player):
+    """What an engine needs for RetroAchievements: the player switched it on (ui.ini achievements=1, Settings >
+    Library > RetroAchievements) and the launcher's sign-in is there. None otherwise."""
+    if read_fields(Path(player) / "ui.ini").get("achievements") != "1":
+        return None
+    from achievements import ACCOUNT, TOKEN, private_root, read_account, version
+    folder = private_root(data)
+    if not read_account(data, folder):
+        return None
+    return {
+        "account": folder / ACCOUNT,
+        "token": folder / TOKEN,
+        "helper": Path(__file__).resolve().with_name("achievements.py"),
+        "badges": Path(data) / "achievements/badges",
+        "env": {"RGDS_RA_PYTHON": sys.executable or "python3", "RGDS_VERSION": version()},
+    }
+
+
 def dsperate_resume_state(data, rom, identity=None, core="dsperate"):
     """Choose the latest automatic state without rolling back a newer battery save."""
     root = data / 'emulators' / core
@@ -563,7 +581,11 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     ds_wireless = {'1': 'auto', '2': 'host', '3': 'guest'}.get(ds_input.get('wireless', '0'), 'off')
     # A Kid profile is on no one's network unless the owner said so.
     limits = read_fields(player / 'profile.ini')
-    if limits.get('restricted') == '1' and limits.get('wireless') != '1': ds_wireless = 'off'
+    # Online play (DS controls → Online play): Nintendo WFC through a fan-run service, DSCore's net.mode = internet
+    # with net.dns naming it. Exclusive with local wireless in the engine, so it wins when both are set.
+    ds_online = {'1': 'wiimmfi', '2': 'wiilink'}.get(ds_input.get('online', '0'), '')
+    if ds_online: ds_wireless = 'internet'
+    if limits.get('restricted') == '1' and limits.get('wireless') != '1': ds_wireless, ds_online = 'off', ''
     ds_nickname = ''.join(
         c for c in ds_input.get('nickname') or read_fields(player / 'ds.ini').get('nickname') or
         ('RG DS Core' if core == 'rgds-experimental' else 'DSperate') if c.isprintable()
@@ -680,7 +702,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                         "nickname": ds_nickname
                     },
                     "net": {
-                        "mode": ds_wireless
+                        "mode": ds_wireless,
+                        "dns": ds_online or 'wiimmfi'
                     },
                     "audio": {
                         "mic": str(ds_microphone).lower(),
@@ -721,6 +744,13 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # Explicit empty CLI values also override stale native configuration
         # paths left by earlier releases that searched the stock installation.
         command += ["--bios7", "", "--bios9", "", "--firmware", ""]
+        # RetroAchievements (dscore/src/cheevos): the launcher's token, rcheevos's requests through achievements.py.
+        signed_in = achievements_signed_in(data, player)
+        if signed_in:
+            command += ["--cheevos-token", str(signed_in["token"]), "--cheevos-helper", str(signed_in["helper"]),
+                        "--cheevos-badges", str(signed_in["badges"]),
+                        "--cheevos-list", str(player / "library" / game_key(identity or rom) / "achievements.tsv")]
+            env.update(signed_in["env"])
     elif core == "rgds-play":
         # RG DS Play: every system but the DS. Its saves, states and backups
         # live under userdata/emulators/rgds-play; the view is per game (play.ini).
@@ -774,6 +804,13 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         command += ["--frames", str(frames_folder(data, rom))]
         # The game's box art from the library, for the second screen's info controls.
         command += ["--art", str(data / "library" / game_key(identity or rom))]
+        # RetroAchievements, when this player has it on and the launcher has signed in (runtime/achievements.py).
+        signed_in = achievements_signed_in(data, player)
+        if signed_in:
+            command += ["--achievements", str(signed_in["account"]), "--achievements-helper", str(signed_in["helper"]),
+                        "--achievements-badges", str(signed_in["badges"]),
+                        "--achievements-list", str(player / "library" / game_key(identity or rom) / "achievements.tsv")]
+            env.update(signed_in["env"])
     if selected_hooks.bridge:
         preload = [str(selected_hooks.bridge)]
         env["SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS"] = "0"

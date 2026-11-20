@@ -31,10 +31,16 @@ CATALOGS = {
     "coleco": "Coleco - ColecoVision",
     "intellivision": "Mattel - Intellivision",
     "msx": "Microsoft - MSX",
+    "cpc": "Amstrad - CPC",
     "pce": "NEC - PC Engine - TurboGrafx 16",
     "pcecd": "NEC - PC Engine CD - TurboGrafx-CD",
     "atari": "Atari - 2600",
+    "atari7800": "Atari - 7800",
+    "atari5200": "Atari - 5200",
+    "lynx": "Atari - Lynx",
+    "vb": "Nintendo - Virtual Boy",
     "amiga": "Commodore - Amiga",
+    "dos": "DOS",
     "psx": "Sony - PlayStation",
     "zx": "Sinclair - ZX Spectrum",
     "c64": "Commodore - 64",
@@ -136,6 +142,8 @@ def rom_identity(path):
     path = Path(path)
     if system == "scummvm": return system, path.parent.name, ""  # a game is its folder
     if path.suffix.lower() == ".7z": return system, path.stem, ""  # by its name, as rom_details
+    # A DOS game is a zip of its folder (.exe, .com, data): nothing in it says which game, the file name does.
+    if system == "dos" and path.suffix.lower() == ".zip": return system, path.stem, ""
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             entries = [
@@ -236,6 +244,8 @@ class PublicClient:
         try:
             raw = self.fetch(url)
             value = parse(raw.decode("utf-8-sig"))
+        except NotFound:
+            raise NotFound("The catalog has no list for this system.") from None  # gone, not down: no stale copy
         except (ScraperError, UnicodeError):
             if saved:
                 try:

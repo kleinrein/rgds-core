@@ -19,6 +19,7 @@ add_library(dsperate_cheevos STATIC
   cheevos_hash.cpp
   cheevos_memory.cpp
   cheevos_http.cpp
+  cheevos_helper.cpp
   cheevos_client.cpp
   ${RC_DIR}/src/rc_client.c
   ${RC_API_SOURCES}

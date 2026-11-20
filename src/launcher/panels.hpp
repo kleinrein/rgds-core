@@ -31,6 +31,10 @@ void App::top(SDL_Renderer* r, int y) {
         music_top(r, y);
         return;
     }
+    if (vt.open) {
+        voice_top(r, y);
+        return;
+    }
     if (o.game_menu) {
         rect(r, 0, y, 640, 480, "background");
         media.draw(r, o.data / "session/menu-background.bmp", {0, y + 48, 640, 432}, false, 70);
@@ -125,6 +129,10 @@ void App::top(SDL_Renderer* r, int y) {
             music_home_top(r, y);
             return;
         }
+        if (toy_at(home_selected)) {
+            voice_home_top(r, y);
+            return;
+        }
         // The collection and its three numbers, centred in the card.
         category_icon(r, home_selected, 288, y + 148, 64);
         centered(r, category_title(home_selected), y + 228, 2, "ink");
@@ -160,6 +168,7 @@ void App::top(SDL_Renderer* r, int y) {
     auto seconds = library_cache.stats(model.games[model.selected]).seconds;
     stage_favourite = game_loved(model.selected);
     stage_dual = game_dual(model.selected);
+    stage_manual = game_manual(model.selected);
     if (!cover_stage(r, y, item / "box.bmp")) icon_stage(r, y, info["developer"]);
     cover_line(r, y, seconds);
 }
@@ -171,6 +180,10 @@ void App::bottom(SDL_Renderer* r, int y) {
     }
     if (music_open) {
         music_bottom(r, y);
+        return;
+    }
+    if (vt.open) {
+        voice_bottom(r, y);
         return;
     }
     if (o.port_menu && port_idle) {

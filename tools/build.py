@@ -18,7 +18,7 @@ BRIDGE_EXPORTS = {
     "SDL_Init", "SDL_IsGameController", "SDL_RenderCopy", "SDL_RenderCopyEx", "SDL_RenderPresent", "SDL_GL_SwapWindow",
     "SDL_PollEvent", "SDL_OpenAudioDevice", "SDL_PauseAudioDevice", "SDL_JoystickGetButton",
     "SDL_GameControllerGetButton", "SDL_GetKeyboardState", "SDL_PeepEvents", "read", "ioctl", "kill", "snd_pcm_open",
-    "rgds_present_canvas", "rgds_hd_rules", "rgds_shader_live", "rgds_play_screen", "rgds_rumble"
+    "rgds_present_canvas", "rgds_hd_rules", "rgds_shader_live", "rgds_play_screen", "rgds_rumble", "rgds_toast"
 }
 
 
@@ -47,6 +47,8 @@ def digest(path):
 def source_snapshot():
     paths = [ROOT / "tools/build.py", ROOT / "tools/bridge.exports"]
     paths += [path for path in (ROOT / "src").rglob("*") if path.suffix in (".cpp", ".hpp", ".h")]
+    # The launcher draws with the player's canvas and frames (photo mode, the frame lists): play/src/ui is its source too.
+    paths += [path for path in (ROOT / "play/src/ui").glob("*") if path.suffix in (".cpp", ".hpp", ".h")]
     return {path.relative_to(ROOT).as_posix(): digest(path) for path in sorted(paths) if path.is_file()}
 
 
@@ -153,7 +155,7 @@ def build(target):
     sources = source_snapshot()
     candidates = {}
     commands = {}
-    jobs = [(output, "src/launcher/main.cpp", [])]
+    jobs = [(output, "src/launcher/main.cpp", ["-Iplay/src"])]
     if target == "device":
         jobs.append(
             (

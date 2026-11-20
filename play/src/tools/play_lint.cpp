@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
 
     // The computers' keyboards, in each state with other legends: a finger on the keys isn't lint's to judge.
     for (const auto& lc : looks()) {
-        for (const char* system : {"zx", "c64", "msx", "amiga"}) {
+        for (const char* system : {"zx", "c64", "msx", "cpc", "amiga", "dos"}) {
             auto keyboard = make_keyboard(system);
             const std::string name = std::string("keyboard/") + system;
             run(name, lc, true, [&](const Look& l, const Font& f) { keyboard->draw(out, l, f, 0); });
@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
 
     // The controllers on the touch screen: the keypads at rest and with a key down, the Pico's book and its pad.
     for (const auto& lc : looks()) {
-        for (const char* system : {"coleco", "intellivision", "pico", "atari"}) {
+        for (const char* system : {"coleco", "intellivision", "pico", "atari", "atari7800", "atari5200"}) {
             auto controller = make_controller(system);
             const std::string name = std::string("controller/") + system;
             run(name, lc, true, [&](const Look& l, const Font& f) { controller->draw(out, l, f, 0); });

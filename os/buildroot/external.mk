@@ -2,7 +2,8 @@ include $(sort $(wildcard $(BR2_EXTERNAL_RGDS_PATH)/package/*/*.mk))
 
 # The RG DS hardware layer comes from BananaLinux (MIT, LICENSE.BananaLinux), which takes it from ROCKNIX
 # (board/rgds/ROCKNIX pins the commits): the generic DSI panel driver both panels use, the ADC joypad driver, the
-# device trees with the panels retuned to 60 Hz, and ROCKNIX's kernel patches applied as ROCKNIX applies them
+# RG DS Plus's device tree, and ROCKNIX's kernel patches applied as ROCKNIX applies them. The RG DS's own device tree
+# is mainline's (dts/rk3568-anbernic-rg-ds-mainline.dtsi) with RG DS OS's differences on top (docs/OWN_BSP_PLAN.md),
 # (patch -p1 with fuzz: a few only fit that way, and Buildroot's own patch step refuses fuzz).
 RGDS_BOARD = $(BR2_EXTERNAL_RGDS_PATH)/board/rgds
 define RGDS_LINUX_ROCKNIX_PATCHES
@@ -19,7 +20,7 @@ define RGDS_LINUX_DRIVERS
 	cp $(RGDS_BOARD)/kernel/rocknix-singleadc-joypad.c $(RGDS_BOARD)/kernel/rocknix-joypad.h $(LINUX_DIR)/drivers/input/joystick/
 	grep -q rocknix-singleadc-joypad.o $(LINUX_DIR)/drivers/input/joystick/Makefile || \
 		echo 'obj-$$(CONFIG_INPUT_JOYSTICK) += rocknix-singleadc-joypad.o' >> $(LINUX_DIR)/drivers/input/joystick/Makefile
-	cp $(RGDS_BOARD)/dts/*.dts $(LINUX_DIR)/arch/arm64/boot/dts/rockchip/
+	cp $(RGDS_BOARD)/dts/*.dts $(RGDS_BOARD)/dts/*.dtsi $(LINUX_DIR)/arch/arm64/boot/dts/rockchip/
 	for p in $(sort $(wildcard $(RGDS_BOARD)/dts-patches/*.patch)); do \
 		patch -p1 -N -d $(LINUX_DIR)/arch/arm64/boot/dts/rockchip < $$p || exit 1; \
 	done
@@ -59,7 +60,7 @@ endef
 # patches re-applied (a patch already in the tree, such as 0005 on rk356x-base.dtsi, is skipped; a patch that no
 # longer fits fails the build).
 define RGDS_LINUX_DTS_REFRESH
-	cp $(RGDS_BOARD)/dts/*.dts $(LINUX_DIR)/arch/arm64/boot/dts/rockchip/
+	cp $(RGDS_BOARD)/dts/*.dts $(RGDS_BOARD)/dts/*.dtsi $(LINUX_DIR)/arch/arm64/boot/dts/rockchip/
 	for p in $(sort $(wildcard $(RGDS_BOARD)/dts-patches/*.patch)); do \
 		out=$$(patch -p1 -N -r - -d $(LINUX_DIR)/arch/arm64/boot/dts/rockchip < $$p 2>&1); rc=$$?; \
 		case "$$rc$$out" in 0*) ;; *"previously applied"*) ;; *) echo "$$(basename $$p): $$out"; exit 1;; esac; \

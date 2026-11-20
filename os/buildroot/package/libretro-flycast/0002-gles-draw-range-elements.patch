@@ -1,0 +1,129 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] gles: draw with the vertex range (glDrawRangeElements)
+
+Panfrost must know which vertices an indexed draw reads. Without a range it maps
+the index buffer back and scans it on every draw, and since this renderer
+rewrites the buffer each frame its min/max cache never hits: the scan read
+uncached GPU memory for about a tenth of the drawing thread on the RG DS
+(Mali-G52, Crazy Taxi driving). The range now comes from the same indices in
+ordinary memory, skipping primitive-restart markers; glsm gains the
+rglDrawRangeElements wrapper the libretro build needs.
+
+--- a/core/rend/gles/gldraw.cpp
++++ b/core/rend/gles/gldraw.cpp
+@@ -8,6 +8,7 @@
+ #include "vmu_xhair.h"
+ #endif
+ 
++#include <algorithm>
+ #include <memory>
+ 
+ /*
+@@ -282,6 +283,34 @@
+ 		setN2Uniforms(gp, CurrentShader, *gl.rendContext);
+ }
+ 
++// RG DS: an indexed draw with its vertex range. Without one, a driver that must know which vertices a draw reads
++// (Panfrost sizes its vertex job by it) maps the index buffer back and scans it on every draw: this renderer rewrites
++// that buffer each frame, so the driver's cache never hits and the scan reads uncached GPU memory, about a tenth of
++// the drawing thread on the RG DS (Mali-G52). The range comes from the same indices in ordinary memory.
++static void drawIndexed(GLenum mode, u32 first, u32 count)
++{
++#ifndef GLES2
++	if (gl.gl_major >= 3)
++	{
++		const u32 *idx = gl.rendContext->idx.data() + first;
++		u32 lo = ~0u, hi = 0;
++		for (u32 i = 0; i < count; i++)
++		{
++			const u32 v = idx[i];
++			if (v == ~0u)	// primitive restart
++				continue;
++			lo = std::min(lo, v);
++			hi = std::max(hi, v);
++		}
++		if (lo > hi)
++			return;
++		glDrawRangeElements(mode, lo, hi, count, gl.index_type, (GLvoid *)(gl.get_index_size() * first));
++		return;
++	}
++#endif
++	glDrawElements(mode, count, gl.index_type, (GLvoid *)(gl.get_index_size() * first));
++}
++
+ template <u32 Type, bool SortingEnabled>
+ void DrawList(const std::vector<PolyParam>& gply, int first, int count)
+ {
+@@ -302,8 +331,7 @@
+ 			// depthFunc = never
+ 			continue;
+ 		SetGPState<Type,SortingEnabled>(params);
+-		glDrawElements(GL_TRIANGLE_STRIP, params->count, gl.index_type,
+-				(GLvoid*)(gl.get_index_size() * params->first)); glCheck();
++		drawIndexed(GL_TRIANGLE_STRIP, params->first, params->count); glCheck();
+ 	}
+ }
+ 
+@@ -320,8 +348,7 @@
+ 	{
+ 		const PolyParam* params = &gl.rendContext->global_param_tr[gl.rendContext->sortedTriangles[p].polyIndex];
+ 		SetGPState<ListType_Translucent,true>(params);
+-		glDrawElements(GL_TRIANGLES, gl.rendContext->sortedTriangles[p].count, gl.index_type,
+-				(GLvoid*)(gl.get_index_size() * gl.rendContext->sortedTriangles[p].first));
++		drawIndexed(GL_TRIANGLES, gl.rendContext->sortedTriangles[p].first, gl.rendContext->sortedTriangles[p].count);
+ 	}
+ 
+ 	if (multipass && config::TranslucentPolygonDepthMask)
+@@ -349,8 +376,7 @@
+ 
+ 				SetCull(params->isp.CullMode ^ 1);
+ 
+-				glDrawElements(GL_TRIANGLES, gl.rendContext->sortedTriangles[p].count, gl.index_type,
+-						(GLvoid*)(gl.get_index_size() * gl.rendContext->sortedTriangles[p].first));
++				drawIndexed(GL_TRIANGLES, gl.rendContext->sortedTriangles[p].first, gl.rendContext->sortedTriangles[p].count);
+ 			}
+ 		}
+ 		glcache.StencilMask(0xFF);
+--- a/core/deps/libretro-common/glsm/glsm.c
++++ b/core/deps/libretro-common/glsm/glsm.c
+@@ -951,6 +951,21 @@
+    glDrawElements(mode, count, type, indices);
+ }
+ 
++/*
++ * Core in:
++ * OpenGL    : 2.0
++ * OpenGLES  : 3.0
++ */
++void rglDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type,
++      const GLvoid *indices)
++{
++#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES3)
++   glDrawRangeElements(mode, start, end, count, type, indices);
++#else
++   glDrawElements(mode, count, type, indices);
++#endif
++}
++
+ void rglCompressedTexImage2D(GLenum target, GLint level,
+       GLenum internalformat, GLsizei width, GLsizei height,
+       GLint border, GLsizei imageSize, const GLvoid *data)
+--- a/core/deps/libretro-common/include/glsm/glsmsym.h
++++ b/core/deps/libretro-common/include/glsm/glsmsym.h
+@@ -59,6 +59,7 @@
+ #define glVertexAttrib4fv           rglVertexAttrib4fv
+ #define glDrawArrays                rglDrawArrays
+ #define glDrawElements              rglDrawElements
++#define glDrawRangeElements         rglDrawRangeElements
+ #define glCompressedTexImage2D      rglCompressedTexImage2D
+ #define glBindTexture               rglBindTexture
+ #define glActiveTexture             rglActiveTexture
+@@ -271,6 +272,8 @@
+ void rglReadBuffer(GLenum mode);
+ void rglPixelStorei(GLenum pname, GLint param);
+ void rglTexCoord2f(GLfloat s, GLfloat t);
++void rglDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type,
++      const GLvoid *indices);
+ void rglDrawElements(GLenum mode, GLsizei count, GLenum type,
+                            const GLvoid * indices);
+ void rglTexStorage2D(GLenum target, GLsizei levels, GLenum internalFormat,

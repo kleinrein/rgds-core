@@ -913,7 +913,6 @@ Sharp scaling with the DS colour treatment.	Чітке масштабуванн�
 Sharp scaling, DS colour and Natural Vision together.	Чітке масштабування, кольори DS і Natural Vision разом.
 Shield	Щит
 Shift	Shift
-Shift keys stay down until the next key	Клавіші Shift залишаються натиснутими до наступної клавіші
 Shortcut action	Дія кнопки
 Shots	Постріли
 Show games	Показати ігри
@@ -1637,3 +1636,130 @@ Everything else on the card, with the file system's own overhead.	Усе інш�
 Room for more games.	Місце для нових ігор.
 Console switches	Перемикачі приставки
 VMU screen	Екран VMU
+3D: one eye each	3D: по оку на екран
+Mouse	Миша
+RetroAchievements	RetroAchievements
+Account	Обліковий запис
+RetroAchievements account	Обліковий запис RetroAchievements
+Achievements	Досягнення
+{0} achievements	Досягнення: {0}
+{0} points	Бали: {0}
+1 point	1 бал
+Unlocked {0}	Отримано {0}
+Play the game once to see its achievements.	Зіграйте в гру один раз, щоб побачити її досягнення.
+RetroAchievements has no achievements for this game yet.	RetroAchievements поки не має досягнень для цієї гри.
+Earn achievements from retroachievements.org while you play.	Отримуйте досягнення retroachievements.org під час гри.
+Unlock achievements in your games while you play. Each game's list is in Game info.	Відкривайте досягнення в іграх під час гри. Список кожної гри — у розділі «Про гру».
+A free account from retroachievements.org.	Безкоштовний обліковий запис на retroachievements.org.
+Signing out…	Вихід…
+Wait for the current task to finish, then sign in.	Дочекайтеся завершення поточного завдання, потім увійдіть.
+Wait for the current task to finish, then sign out.	Дочекайтеся завершення поточного завдання, потім вийдіть.
+Signed in to RetroAchievements as {0}.	Вхід у RetroAchievements виконано: {0}.
+Signed out of RetroAchievements.	Вихід із RetroAchievements виконано.
+Enter your RetroAchievements username and password.	Введіть ім’я користувача та пароль RetroAchievements.
+Could not reach RetroAchievements. Check the connection.	Не вдалося зв’язатися з RetroAchievements. Перевірте з’єднання.
+Wrong username or password.	Неправильне ім’я користувача або пароль.
+RetroAchievements did not accept the sign-in.	RetroAchievements не прийняв вхід.
+Achievement unlocked	Досягнення отримано
+Game mastered	Гру пройдено на 100%
+achievements	досягнень
+Sign in again in Settings	Увійдіть знову в налаштуваннях
+Could not sign in	Не вдалося увійти
+This game file is not recognised	Цей файл гри не розпізнано
+Could not load this game's achievements	Не вдалося завантажити досягнення цієї гри
+No achievements yet	Поки немає досягнень
+Every achievement unlocked	Усі досягнення отримано
+Offline: unlocks are sent when back online	Офлайн: досягнення надішлються, коли з’явиться мережа
+Back online: unlocks sent	Знову в мережі: досягнення надіслано
+Play Nintendo WFC games online	Грати в ігри Nintendo WFC у мережі
+Album	Альбом
+Menus	Меню
+No screenshots yet	Знімків екрана ще немає
+In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works in the menus too.	У грі натисніть Меню + R або виберіть «Знімок екрана» в меню гри. Меню + R працює і в меню.
+This picture is the game's cover now.	Це зображення тепер обкладинка гри.
+The cover could not be changed.	Не вдалося змінити обкладинку.
+The screenshot could not be saved.	Не вдалося зберегти знімок екрана.
+Delete this screenshot?	Видалити цей знімок екрана?
+Use as the game's cover	Зробити обкладинкою гри
+Save the game behind this menu to the Album	Зберегти в альбом гру за цим меню
+Saving the screenshot…	Збереження знімка екрана…
+Screenshot saved to the Album.	Знімок екрана збережено в альбом.
+Still saving the last screenshot.	Попередній знімок екрана ще зберігається.
+No picture to save. Resume the game and press Menu + R.	Немає що зберегти. Поверніться в гру й натисніть Меню + R.
+Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
+Switch profile	Switch profile
+Photo mode	Фоторежим
+Leave photo mode?	Вийти з фоторежиму?
+Keep editing	Продовжити
+Leave without saving	Вийти без збереження
+Saved to the Album.	Збережено в альбом.
+The photo could not be saved.	Не вдалося зберегти фото.
+This picture could not be opened.	Не вдалося відкрити зображення.
+Pen	Перо
+Stamps	Штампи
+Frames	Рамки
+Lenses	Лінзи
+Date	Дата
+Sepia	Сепія
+Black & white	Чорно-біле
+Mosaic	Мозаїка
+Mirror	Дзеркало
+Fisheye	Риб'яче око
+Old photo	Старе фото
+Instant photo	Миттєве фото
+Film strip	Плівка
+Postage stamp	Поштова марка
+Rounded card	Заокруглена картка
+Stars	Зірки
+Undo	Скасувати
+Sound toy	Звукова іграшка
+Record your voice and change it	Запиши свій голос і зміни його
+Chipmunk	Бурундук
+Monster	Монстр
+Backwards	Задом наперед
+Echo	Луна
+Press Record and say hello!	Натисни «Записати» і скажи привіт!
+Then pick a voice and draw on the lower screen to bend it.	Потім вибери голос і малюй на нижньому екрані, щоб вигнути його.
+Recording…	Триває запис…
+Press X again to stop.	Натисни X ще раз, щоб зупинити.
+Sound {0}	Звук {0}
+Startup sound	Звук запуску
+Higher	Вище
+Lower	Нижче
+Record	Записати
+Stop	Стоп
+Sounds	Звуки
+Record a sound first	Спершу запиши звук
+The handheld starts quietly again	Консоль знову вмикається тихо
+Plays when the handheld starts	Звучить під час увімкнення консолі
+Could not save the sound	Не вдалося зберегти звук
+Nothing heard. Hold the handheld closer and try again.	Нічого не чути. Піднеси консоль ближче й спробуй знову.
+This manual could not be opened	Не вдалося відкрити посібник
+This page is not a scan	Ця сторінка — не скан
+This page could not be read	Не вдалося прочитати цю сторінку
+Giant	Велетень
+Underwater	Під водою
+Choir	Хор
+8-bit	8 біт
+Telephone	Телефон
+Megaphone	Мегафон
+Cave	Печера
+Jelly	Желе
+Scratch	Скретч
+Whisper	Шепіт
+Sloth	Лінивець
+Speedy	Швидко
+Dragon	Дракон
+Baby	Малюк
+Opera	Опера
+Erase	Стерти
+Drawing cleared	Малюнок очищено
+Nothing to clear	Нічого очищати
+Press Erase again to delete this sound	Натисни «Стерти» ще раз, щоб видалити звук
+Sound erased	Звук стерто
+Send in PictoChat	Надіслати в PictoChat
+Send to phone	Надіслати на телефон
+Connect to Wi-Fi to send pictures to a phone or computer.	Підключіться до Wi-Fi, щоб надсилати зображення на телефон або комп'ютер.
+Your picture is on the pad. Write or draw beside it, then send.	Зображення на аркуші. Напишіть або намалюйте поруч і надішліть.
+Join a room: your picture goes on the pad.	Увійдіть у кімнату: зображення з'явиться на аркуші.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "companion/companion.hpp"
 #include "companion/mode7.hpp"
+#include "reader/manual.hpp"
 #include "ui/kit.hpp"
 
 #include <algorithm>
@@ -142,10 +143,10 @@ void Companion::update_strip(Core& live) {
     const Picture p = live.picture();
     const Rect& s = h.strip;
     // With the second screen off the band stays in the game picture.
-    bool on = shown_ && h.on.match(live) && s.y + s.h <= p.h && s.w <= p.w;
+    bool on = hud_allowed() && h.on.match(live) && s.y + s.h <= p.h && s.w <= p.w;
     if (!on) {
         // The last band stays up while `keep` holds (the inventory sliding in).
-        hud_shown_ = shown_ && hud_shown_ && !h.keep.empty() && h.keep.match(live);
+        hud_shown_ = hud_allowed() && hud_shown_ && !h.keep.empty() && h.keep.match(live);
         hud_on_ = false;
         return;
     }
@@ -178,7 +179,7 @@ void Companion::update_hud(Core& live) {
     }
     const HudSpec& h = profile_->hud;
     // With the second screen off the game keeps its whole HUD: nothing is split.
-    bool on = shown_ && h.on.match(live) && map_layer_shown(live, h);
+    bool on = hud_allowed() && h.on.match(live) && map_layer_shown(live, h);
     const unsigned layers = hud_layers(live, h);
     if (on && hud_on_ && layers != hud_layers_) {
         // The game moved its menus to other layers: split those from the next frame.
@@ -196,13 +197,13 @@ void Companion::update_hud(Core& live) {
         hud_on_ = on;
         hud_frames_ = 0;
         if (on) moves_ = false;
-        else hud_shown_ = shown_ && hud_shown_ && !h.keep.empty() && h.keep.match(live);
+        else hud_shown_ = hud_allowed() && hud_shown_ && !h.keep.empty() && h.keep.match(live);
         // A kept picture (the pause menu, the results) stays laid out as it was.
         if (!hud_shown_) moves_ = false;
         return;
     }
     if (!on) {
-        if (hud_shown_ && (!shown_ || h.keep.empty() || !h.keep.match(live))) hud_shown_ = false;
+        if (hud_shown_ && (!hud_allowed() || h.keep.empty() || !h.keep.match(live))) hud_shown_ = false;
         if (!hud_shown_) moves_ = false;
         return;
     }
@@ -632,6 +633,7 @@ void Companion::after_frame(Core& live) {
         party_shown_ = !party_->empty() && (profile_->party.on.empty() || profile_->party.on.match(live));
     }
     for (auto& v : views_) v->update(live, frame_);
+    if (manual_) manual_->update(live, frame_);
     dock_.set_played(frame_ / 60);
     if (!capture_) return;
     MapImage img;
@@ -714,7 +716,9 @@ bool Companion::hud_covered() const {
 void Companion::remember_switch_in(std::string path) {
     alt_file_ = std::move(path);
     if (std::FILE* f = std::fopen(alt_file_.c_str(), "rb")) {
-        alt_ = std::fgetc(f) == '1';
+        const int c = std::fgetc(f);
+        alt_ = c == '1';
+        manual_on_ = c == '2';
         alt_known_ = true;
         std::fclose(f);
     }
@@ -727,22 +731,50 @@ void Companion::save_switch() const {
         std::fprintf(stderr, "play: cannot keep the second screen's choice in %s\n", alt_file_.c_str());
         return;
     }
-    std::fputc(alt_ ? '1' : '0', f);
+    std::fputc(manual_on_ ? '2' : alt_ ? '1' : '0', f);
     std::fclose(f);
 }
 
 void Companion::set_keyboard_first(bool on, bool force) {
     if (!force && alt_known_) return;
     alt_ = on;
+    if (force) manual_on_ = false;
     alt_known_ = true;
     if (force) save_switch();
 }
 
-bool Companion::has_switch() const { return alternative_view() && (has_current_ || shown_view() || party_shown_); }
+bool Companion::has_switch() const {
+    if (screens_mode()) return false;
+    return (alternative_view() && (has_current_ || shown_view() || party_shown_)) || manual_;
+}
 
 bool Companion::showing_alternative() const {
+    if (showing_manual()) return false;
     // The alternative when chosen, or when there is nothing else to show.
     return alternative_view() && (alt_ || !(has_current_ || shown_view() || party_shown_));
+}
+
+bool Companion::showing_manual() const { return manual_ && manual_on_ && !screens_mode(); }
+
+bool Companion::fingers(const std::vector<std::pair<int, int>>& down) {
+    auto* pinch = showing_manual() && !dock_.open() ? dynamic_cast<Pinch*>(manual_.get()) : nullptr;
+    if (!pinch || !pinch->fingers(down)) return false;
+    ++touch_serial_;
+    return true;
+}
+
+int Companion::screen_now() const { return showing_manual() ? 2 : showing_alternative() ? 1 : 0; }
+
+int Companion::screen_next() const {
+    // The game's own screen (or the title card) is a stop unless the alternative stands in for it.
+    const bool main = has_current_ || shown_view() || party_shown_ || !alternative_view();
+    std::vector<int> stops;
+    if (main) stops.push_back(0);
+    if (alternative_view()) stops.push_back(1);
+    if (manual_) stops.push_back(2);
+    if (stops.empty()) return 0;
+    const auto at = std::find(stops.begin(), stops.end(), screen_now());
+    return at == stops.end() || at + 1 == stops.end() ? stops.front() : *(at + 1);
 }
 
 Box Companion::switch_box(int w) const { return {w - kit::margin - 56, kit::margin, 56, 56}; }
@@ -769,9 +801,16 @@ bool Companion::touch(const Touch& t) {
         return false;
     }
     if (t.kind == Touch::Down && has_switch() && switch_box(640).contains(t.x, t.y)) {
-        // The switch flips between the game's own screen (map, team) and the status board.
-        alt_ = !alt_;
+        // The switch steps between the game's own screen (map, team), the status board and the manual.
+        const int next = screen_next();
+        manual_on_ = next == 2;
+        if (next != 2) alt_ = next == 1;
         save_switch();
+        return true;
+    }
+    if (showing_manual()) {
+        if (!manual_->touch(t)) return dock_.key() != before;
+        ++touch_serial_;
         return true;
     }
     if (View* a = showing_alternative() ? alternative_view() : nullptr; a && a->touch(t)) {
@@ -794,12 +833,14 @@ uint64_t Companion::visual_key() const {
 
 uint64_t Companion::screen_key() const {
     if (screens_mode()) return lower_hash_ ^ 0x1000000000000000ull;
+    if (showing_manual()) return content_key();
     if (strip_mode()) return hud_shown_ ? content_key() ^ (strip_hash_ * 31) ^ 0x2000000000000000ull : content_key();
     if (hud_shown_ && !hud_covered()) return (frame_ << 1) | 0x8000000000000001ull; // the HUD is live: every frame
     return content_key();
 }
 
 uint64_t Companion::content_key() const {
+    if (showing_manual()) return manual_->key(frame_) ^ 0x0500000000000000ull ^ touch_serial_ * 0x9E37 ^ 0x77;
     if (View* a = alternative_view(); a && showing_alternative())
         return a->key(frame_) ^ 0x0400000000000000ull ^ touch_serial_ * 0x9E37 ^ (has_switch() ? 0x77 : 0);
     return main_key() ^ (has_switch() ? 0x0300000000000000ull : 0);
@@ -948,13 +989,21 @@ void Companion::render_screen(Canvas& out, const Look& look, const Font& font) c
     // The switch: what a tap brings up (the board, or back to the map or the team).
     const Box b = switch_box(out.w());
     touch_target(b);
-    raised(out, l, b.x, b.y, b.w, b.h, b.h / 2, alt_ ? l.panel : l.accent, 0);
+    // Lit on the game's own screen; its icon is where a tap goes next.
+    const bool away = screen_now() != 0;
+    raised(out, l, b.x, b.y, b.w, b.h, b.h / 2, away ? l.panel : l.accent, 0);
     const Icon back = has_current_ ? Icon::Map : party_shown_ ? Icon::Life : Icon::Back;
-    icon(out, l, alt_ ? back : Icon::Star, b.x + b.w / 2, b.y + b.h / 2, 24, alt_ ? l.accent : l.on_accent);
+    const int next = screen_next();
+    icon(out, l,
+         next == 2   ? Icon::Book
+         : next == 1 ? Icon::Star
+                     : back,
+         b.x + b.w / 2, b.y + b.h / 2, 24, away ? l.accent : l.on_accent);
 }
 
 void Companion::render_layers(Canvas& out, const Look& look, const Font& font) const {
     if (screens_mode()) return render_screens(out);
+    if (showing_manual()) return manual_->draw(out, look, font, frame_);
     if (strip_mode()) {
         View* v = shown_view();
         const bool covered = !has_current_ && v && v->covers_hud();

@@ -113,6 +113,23 @@ int App::port_files_added() {
     return std::atoi(fields(folder_for_game(port_files_game) / "port-files.ini")["files"].c_str());
 }
 
+// A QR code (rows of '0' and '1' from runtime/qr.py): dark modules on white with a four-module quiet zone, whatever
+// the theme. Also the Album's Send to phone sheet.
+void App::draw_qr(SDL_Renderer* r, const std::vector<std::string>& rows, int bx, int by, int box) {
+    const int size = int(rows.size());
+    s.SetRenderDrawColor(r, 255, 255, 255, 255);
+    SDL_Rect paper{bx, by, box, box};
+    s.RenderFillRect(r, &paper);
+    const int scale = box / (size + 8), offset = (box - scale * size) / 2;
+    s.SetRenderDrawColor(r, 0, 0, 0, 255);
+    for (int row = 0; row < size; row++)
+        for (int col = 0; col < size && col < int(rows[size_t(row)].size()); col++)
+            if (rows[size_t(row)][size_t(col)] == '1') {
+                SDL_Rect module{bx + offset + col * scale, by + offset + row * scale, scale, scale};
+                s.RenderFillRect(r, &module);
+            }
+}
+
 // The top screen: the QR code for a phone, the address and code for a computer, and what is arriving.
 void App::port_files_top(SDL_Renderer* r, int y) {
     settings_card(r, 24, y + top_card_y, 592, top_card_h);
@@ -126,20 +143,8 @@ void App::port_files_top(SDL_Renderer* r, int y) {
     if (device_status["wifi_connected"] != "1") {
         round_rect(r, bx, by, box, box, 16, "slot");
         ui_icon(r, SettingsIcon::Wifi, bx + box / 2, by + box / 2, 64, "muted");
-    } else if (size >= 21 && size <= 57) {
-        // Dark modules on white with a four-module quiet zone, whatever the theme.
-        s.SetRenderDrawColor(r, 255, 255, 255, 255);
-        SDL_Rect paper{bx, by, box, box};
-        s.RenderFillRect(r, &paper);
-        const int scale = box / (size + 8), offset = (box - scale * size) / 2;
-        s.SetRenderDrawColor(r, 0, 0, 0, 255);
-        for (int row = 0; row < size; row++)
-            for (int col = 0; col < size && col < int(port_files_qr[row].size()); col++)
-                if (port_files_qr[row][col] == '1') {
-                    SDL_Rect module{bx + offset + col * scale, by + offset + row * scale, scale, scale};
-                    s.RenderFillRect(r, &module);
-                }
-    } else {
+    } else if (size >= 21 && size <= 57) draw_qr(r, port_files_qr, bx, by, box);
+    else {
         round_rect(r, bx, by, box, box, 16, "slot");
         const std::string wait = locale.text("Starting…");
         const int ww = label_width(wait, 18, false);

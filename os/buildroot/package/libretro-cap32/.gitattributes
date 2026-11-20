@@ -1,0 +1,2 @@
+# Caprice32's tape.c and libretro-core.c keep CRLF line endings: the patch has to as well.
+*.patch -text
