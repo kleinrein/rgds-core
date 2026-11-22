@@ -90,6 +90,11 @@ h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; letter-spacing: -.2px; 
 .row[disabled] { opacity: .55; cursor: not-allowed; border-color: var(--line); background: var(--panel); }
 .row .why { color: var(--danger); }
 .rowwarn { color: var(--warn); font-size: 12.5px; margin-top: 3px; white-space: normal; }
+.rowok { color: var(--ok); font-size: 12.5px; margin-top: 3px; white-space: normal; }
+.carry { margin-top: 12px; background: var(--slot); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; display: grid; gap: 6px; text-align: left; }
+.carry label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.carry input { margin-top: 3px; accent-color: var(--ok); }
+.carry small { color: var(--muted); }
 .warn { margin-top: 12px; background: var(--warn-bg); color: var(--warn); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; }
 .note { margin-top: 14px; color: var(--muted); font-size: 13.5px; display: flex; gap: 8px; align-items: flex-start; }
 .note svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
@@ -198,6 +203,7 @@ let step = 0;             // the step the user is on while nothing runs
 let model = "rgds";
 let lastPhase = "";
 let disks = null, pick = null, diskTimer = null, confirming = false;
+let keep = true, keepGames = false; // the old system's saves come along; its games to this computer only if asked
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -235,7 +241,7 @@ function gone() {
 function current() {
   switch (st.phase) {
     case "download": case "check": return 0;
-    case "prepare": case "write": return 2;
+    case "prepare": case "backup": case "carry": case "write": return 2;
     case "verify": case "reopen": case "eject": return 3;
     case "done": return 4;
     case "error": return st.errorStep === "download" ? 0 : 2;
@@ -338,7 +344,7 @@ function viewCard() {
   if (!disks) body += `<div class="empty"><div class="spin"></div></div>`;
   else if (!disks.length) body += `<div class="empty">${ICON.insert}<b style="color:var(--ink);font-size:17px">Put the microSD card in your computer</b><span>It shows up here by itself.</span></div>`;
   else {
-    body += `<div class="list">` + disks.map(d => `<button class="row ${d.id === pick ? "on" : ""}" data-act="disk" data-id="${esc(d.id)}" ${d.problem ? "disabled" : ""}>${ICON.sd}<span class="txt"><div class="name">${esc(d.name)}</div><small>${d.problem ? `<span class="why">${esc(d.problem)}</span>` : esc([d.path, ...(d.volumes || [])].join(" · "))}</small>${d.id === pick && d.warnings ? d.warnings.map(w => `<div class="rowwarn">${esc(w)}</div>`).join("") : ""}</span><span class="size">${gb(d.size)}</span></button>`).join("") + `</div>`;
+    body += `<div class="list">` + disks.map(d => `<button class="row ${d.id === pick ? "on" : ""}" data-act="disk" data-id="${esc(d.id)}" ${d.problem ? "disabled" : ""}>${ICON.sd}<span class="txt"><div class="name">${esc(d.name)}</div><small>${d.problem ? `<span class="why">${esc(d.problem)}</span>` : esc([d.path, ...(d.volumes || [])].join(" · "))}</small>${d.id === pick && d.warnings ? d.warnings.map(w => `<div class="rowwarn">${esc(w)}</div>`).join("") : ""}${d.carry ? `<div class="rowok">${esc(cap(d.carry.source))}: ${carryLine(d.carry)}. They can come along.</div>` : ""}</span><span class="size">${gb(d.size)}</span></button>`).join("") + `</div>`;
   }
   const ok = disks && disks.some(d => d.id === pick && !d.problem);
   return [body, btn("B", "Back", "back") + btn("A", "Flash", "confirm", "primary", !ok)];
@@ -355,6 +361,13 @@ function viewFlash() {
     const ask = "";
     return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Finding the card again</h1><p>The card reader restarted. That's fine: the flasher carries on as soon as the card is back.${ask}</p></div>`, ""];
   }
+  if (ph === "backup") {
+    const body = `<h1>Keeping your saves</h1><p class="sub">Copying them from ${name} to this computer before anything is erased.</p>
+    <div class="grow"></div><div class="big" data-k="pct">0%</div>${bar()}${stats()}<div class="grow"></div>
+    <div class="note">${ICON.info}<span>Nothing has been written to the card yet.</span></div>`;
+    return [body, "", progress()];
+  }
+  if (ph === "carry") return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Putting your saves on the card</h1></div>`, ""];
   if (ph === "eject") return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Ejecting the card</h1></div>`, ""];
   const verify = ph === "verify";
   let body = `<h1>${verify ? "Final check" : "Writing the card"}</h1><p class="sub">${verify ? "Reading the whole card back once more and comparing it with the image." : `RG DS OS goes onto ${name} byte for byte, and each part is read back as it goes.`}</p>
@@ -364,6 +377,13 @@ function viewFlash() {
 }
 
 function viewDone() {
+  const c = st.carried;
+  if (c) {
+    const gamesNote = c.games ? `<p class="muted">Your games are in the backup's <b>roms</b> folder. After the first start, copy that folder onto the card (on the handheld: <b>Use as USB drive</b>) and their play time and saves find them.</p>`
+      : c.gamesLeft ? `<p class="muted">Your ${games(c.gamesLeft)} ${c.gamesLeft === 1 ? "was" : "were"} not kept. If you have them somewhere else, put them in the card's <b>roms</b> folder after the first start: their saves and play time find them there.</p>` : "";
+    return [`<div class="empty"><div class="check">${ICON.tick}</div><h1 style="color:var(--ink)">Your card is ready, saves and all</h1><p>Put it in your RG DS and power on. Setup asks to <b>Bring over</b> your saves and play time: press A.</p>${c.dsSaves ? `<p class="muted">With ${c.dsSaves} DS save${c.dsSaves === 1 ? "" : "s"} from the old system's DraStic.</p>` : ""}${gamesNote}<p class="muted" style="font-size:12.5px">A copy is kept on this computer: <a href="#" data-act="backup">${esc(c.folder)}</a></p></div>`,
+      btn("B", "Close", "quit") + btn("X", "Show backup", "backup") + btn("A", "Flash another card", "again", "primary")];
+  }
   const winNote = win() ? `<div class="note" style="text-align:left">${ICON.info}<span>Windows may ask to <b>format</b> the card when you put it back in: always choose <b>Cancel</b>. It only shows the RGDS-BOOT part; that's normal.</span></div>` : "";
   return [`<div class="empty"><div class="check">${ICON.tick}</div><h1 style="color:var(--ink)">Your card is ready</h1><p>Written, checked and ejected. Take it out, put it in your RG DS<br>and power on. The first boot sets up the rest of the card.</p>${winNote}</div>`,
     btn("B", "Close", "quit") + btn("A", "Flash another card", "again", "primary")];
@@ -382,8 +402,27 @@ function confirmDialog() {
   $("modal").innerHTML = `<div class="modal"><div class="dialog"><h1>${ICON.alert}Erase this card?</h1>
     <p>Everything on <b>${esc(d.name)}</b> (${gb(d.size)}${d.volumes && d.volumes.length ? ", " + esc(d.volumes.join(", ")) : ""}) will be erased.</p>
     ${(d.warnings || []).map(w => `<div class="warn">${esc(w)}</div>`).join("")}
+    ${d.carry ? carryChoice(d.carry) : ""}
     ${ask ? `<p class="muted">${ask}</p>` : ""}
     <div class="hints">${btn("B", "Cancel", "close")}${btn("A", "Erase and flash", "flash", "primary danger")}</div></div></div>`;
+}
+const games = n => `${n} game${n === 1 ? "" : "s"}`;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function carryLine(c) {
+  const parts = [];
+  if (c.saves) parts.push(`${c.saves} save${c.saves === 1 ? "" : "s"}`);
+  if (c.hours) parts.push(`${c.hours} h of play time`);
+  if (c.games) parts.push(games(c.games));
+  return parts.join(", ") || "settings";
+}
+// Coming from BananaOS (carry.go): the saves come along by default, the games only to this computer, on request.
+function carryChoice(c) {
+  return `<div class="carry"><b>Coming from ${esc(c.source)}?</b>
+    <label><input type="checkbox" data-act="keep" ${keep ? "checked" : ""}> Bring my saves, play time and favourites along</label>
+    <label><input type="checkbox" data-act="keepgames" ${keepGames ? "checked" : ""} ${keep && c.games ? "" : "disabled"}> Also copy my ${games(c.games)} to this computer (${gb(c.gameBytes)})</label>
+    ${c.kind === "stock" ? `<small>DS saves are on a part of the card this computer can't open: the flasher reads them while it writes.</small>` : ""}
+    <small>A copy goes to <b>RG DS backup</b> in your home folder first. Games are not put on the new card: you copy them back after its first start.</small>
+    ${c.games && !(keep && keepGames) ? `<div class="warn" style="margin-top:4px">Your ${games(c.games)} (${gb(c.gameBytes)}) ${c.games === 1 ? "is" : "are"} erased with the card. Tick the box above to keep a copy, or make sure you have ${c.games === 1 ? "it" : "them"} somewhere else.</div>` : ""}</div>`;
 }
 function closeDialog() { confirming = false; $("modal").innerHTML = ""; }
 
@@ -398,7 +437,10 @@ async function act(name, el) {
       case "back": step = 0; render(); break;
       case "confirm": confirmDialog(); break;
       case "close": closeDialog(); break;
-      case "flash": { const id = pick; closeDialog(); step = 2; await post("flash", { disk: id, confirm: id }); break; }
+      case "flash": { const id = pick, d = disks.find(x => x.id === id) || {}; closeDialog(); step = 2; await post("flash", { disk: id, confirm: id, keep: !!d.carry && keep, games: !!d.carry && keep && keepGames }); break; }
+      case "keep": keep = el.checked; if (!keep) keepGames = false; confirmDialog(); break;
+      case "keepgames": keepGames = el.checked; confirmDialog(); break;
+      case "backup": await post("backup"); break;
       case "again": step = 1; disks = null; await post("again"); break;
       case "log": await post("log"); break;
       case "quit": await post("quit"); gone(); break;

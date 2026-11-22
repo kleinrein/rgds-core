@@ -70,6 +70,24 @@ class BluetoothTests(unittest.TestCase):
         self.assertEqual((f["bt_0_name"], f["bt_0_paired"], f["bt_0_connected"]), ("Pro Controller", "1", "0"))
         self.assertEqual(f["bt_1_name"], "Living room speaker")  # the bare-address device is left out
 
+    def test_a_connected_headset_shows_its_codec(self):
+        root = Path(self.tmp.name)
+        (root / "log.connected").touch()
+        (root / "bin/bluealsactl").write_text(
+            "#!/bin/sh\n"
+            "case \"$1\" in\n"
+            "  list-pcms) printf '/org/bluealsa/hci0/dev_8C_0A_11_22_33_44/a2dpsrc/sink\\n"
+            "/org/bluealsa/hci0/dev_8C_0A_11_22_33_44/hfpag/sink\\n';;\n"
+            "  info) [ \"$2\" = /org/bluealsa/hci0/dev_8C_0A_11_22_33_44/a2dpsrc/sink ] && "
+            "printf 'Available codecs: SBC aptX aptX-HD LDAC\\nSelected codec: aptX-HD\\nSoftVolume: false\\n';;\n"
+            "esac\n"
+        )
+        (root / "bin/bluealsactl").chmod(0o755)
+        bluetooth.Bluetooth(self.services).status()
+        f = read_fields(self.services.status_file)
+        self.assertEqual((f["bt_0_name"], f["bt_0_connected"], f["bt_0_codec"]), ("Pro Controller", "1", "aptX HD"))
+        self.assertNotIn("bt_1_codec", f)
+
     def test_pair_pairs_trusts_connects_and_saves(self):
         bt = bluetooth.Bluetooth(self.services)
         bt.status()

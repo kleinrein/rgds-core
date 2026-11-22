@@ -36,6 +36,7 @@ static std::atomic<int> g_rgds_adaptive{-1};
 #include "input.h"
 #include "lid.h"
 #include "rgds_frontend_ui.hpp"
+#include "rewind_ring.h"
 #include "cpu_gov.h"
 #include "pacer.h"
 #include "phase_lock.h"
@@ -2348,7 +2349,11 @@ sdl_ready:
       std::fprintf(stderr, "firmware settings: saved to %s\n", fw_override.c_str());
     }
   };
+  // Rewind: while RG DS's menu previews an old moment, the machine holds that moment. Anything that writes the
+  // game's saves first puts back the moment the menu opened at (set with the rewind hooks below).
+  std::function<void()> rewind_guard;
   auto flush_save = [&] {
+    if (rewind_guard) rewind_guard();
     flush_firmware();
     if (!save_readonly && nds.cart && nds.cart->sram_dirty()) write_save(nds, session.sav);
     flush_dsi();
@@ -2358,6 +2363,7 @@ sdl_ready:
   // frame; false after a scanline-tier frame written straight to the panel).
   bool fb_current = false;
   auto autosave_now = [&] {
+    if (rewind_guard) rewind_guard(); // never the resume point of a moment only previewed
     // net_live: quitting would otherwise leave a state resuming a dead conversation.
     if (!autosave || save_readonly || log.writing() || net_live) return;
     // Thumbnail comes from fb_; run one more unscaled frame if stale.
@@ -2625,6 +2631,131 @@ sdl_ready:
     }
     return true;
   };
+  // Rewind (rewind_ring.h): a moment every DS_REWIND_SECONDS (2) of play, up to DS_REWIND_MB (64) of memory;
+  // DS_REWIND=0 keeps none. Not during a replay, a recording or a network session. The pictures come from what was
+  // last presented (any tier), the previews from one unscaled frame.
+  ds::sdl::RewindRing rewind;
+  if (const char* off = std::getenv("DS_REWIND"); !(off && std::strcmp(off, "0") == 0)) {
+    const char* seconds = std::getenv("DS_REWIND_SECONDS");
+    const char* mb = std::getenv("DS_REWIND_MB");
+    rewind.configure(60, seconds ? std::max(0.5, std::atof(seconds)) : 2.0,
+                     size_t(mb ? std::max(8, std::atoi(mb)) : 64) << 20);
+  }
+  u32 rewind_now = 0;
+  bool rewind_previewed = false;
+  std::vector<u32> rewind_shown;
+  const auto rewind_allowed = [&] { return rewind.enabled() && !save_readonly && !log.writing() && !net_live; };
+  const ds::sdl::RewindRing::Save rewind_save = [&](std::vector<u8>& out) {
+    ds::state::Writer w;
+    std::string err;
+    if (!nds.save_state(w, err)) return false;
+    out.swap(w.data());
+    return true;
+  };
+  const ds::sdl::RewindRing::Load rewind_load = [&](const std::vector<u8>& in) {
+    ds::state::Reader r(in.data(), in.size());
+    std::string err;
+    if (nds.load_state(r, err)) return true;
+    std::fprintf(stderr, "rewind: cannot load: %s\n", err.c_str());
+    return false;
+  };
+  // Both screens as last presented: native, or the enhanced 640x480 picture of a screen drawn at a scale.
+  const auto rewind_take = [&](bool mark) -> u32 {
+    const u32* src[2] = {held.src[0], held.src[1]};
+    int w[2] = {int(ds::SCREEN_W), int(ds::SCREEN_W)}, h[2] = {int(ds::SCREEN_H), int(ds::SCREEN_H)};
+    for (int s = 0; s < 2; ++s) {
+      if (!src[s]) src[s] = nds.gpu.framebuffer(s);
+      else if (held.enhanced && held.flags[s]) w[s] = int(held.w), h[s] = int(held.h);
+    }
+    if (mark) return rewind.mark(rewind_save, src, w, h);
+    rewind.after_frame(rewind_save, src, w, h);
+    return 0;
+  };
+  rewind_guard = [&] {
+    if (!rewind_previewed || !rewind_now) return;
+    rewind_previewed = false;
+    std::string err;
+    if (!rewind.jump(rewind_now, rewind_load, err)) std::fprintf(stderr, "rewind: back to now: %s\n", err.c_str());
+    else std::fprintf(stderr, "rewind: back to now before saving\n");
+  };
+  rgds::rewind_open_handler = [&]() -> unsigned {
+    if (!rewind_allowed()) return 0;
+    rewind_guard();
+    rewind_now = rewind_take(true);
+    rewind.protect(rewind_now);
+    std::fprintf(stderr, "rewind: opened at moment %u, %zu kept, %zu KiB\n", rewind_now, rewind.count(),
+                 rewind.bytes() >> 10);
+    return rewind_now;
+  };
+  rgds::rewind_count_handler = [&] { return int(rewind.count()); };
+  rgds::rewind_rate_handler = [&] { return rewind.rate(); };
+  rgds::rewind_moment_handler = [&](int index, rgds::RewindMoment& m) {
+    ds::sdl::RewindRing::Info info;
+    if (index < 0 || !rewind.moment(size_t(index), info)) return false;
+    m.id = info.id;
+    m.parent = info.parent;
+    m.position = info.position;
+    m.w = ds::sdl::RewindRing::thumb_w;
+    m.h = ds::sdl::RewindRing::thumb_h;
+    m.px = info.thumb;
+    return true;
+  };
+  rgds::rewind_show_handler = [&](unsigned id, int& screens, int& w, int& h, const uint32_t*& px) {
+    if (!rewind_now) return false;
+    std::string err;
+    if (!rewind.jump(id, rewind_load, err)) {
+      std::fprintf(stderr, "rewind: cannot show %u: %s\n", id, err.c_str());
+      return false;
+    }
+    rewind_previewed = id != rewind_now;
+    // One silent frame, unscaled, so the native screens hold this moment's picture.
+    ds::sdl::Display::Target none[2] = {};
+    set_scale_targets(none, false);
+    nds.run_frame();
+    fb_current = true;
+    rewind_shown.resize(size_t(2) * ds::SCREEN_W * ds::SCREEN_H);
+    for (int s = 0; s < 2; ++s) {
+      const u32* fb = nds.gpu.framebuffer(s);
+      u32* out = rewind_shown.data() + size_t(s) * ds::SCREEN_W * ds::SCREEN_H;
+      for (size_t i = 0; i < size_t(ds::SCREEN_W) * ds::SCREEN_H; ++i) {
+        const u32 c = fb[i]; // ARGB8888 to bytes R, G, B, X
+        out[i] = 0xFF000000u | (c & 0xFFu) << 16 | (c & 0xFF00u) | ((c >> 16) & 0xFFu);
+      }
+    }
+    screens = 2;
+    w = int(ds::SCREEN_W);
+    h = int(ds::SCREEN_H);
+    px = rewind_shown.data();
+    return true;
+  };
+  rgds::rewind_jump_handler = [&](unsigned id, bool play) {
+    if (!rewind_now) return false;
+    if (play) {
+      // As a checkpoint load: the .sav as it was is kept beside it, then the moment's cartridge is written.
+      rewind_guard();
+      flush_save();
+      if (FILE* before = std::fopen(session.sav.c_str(), "rb")) {
+        std::fclose(before);
+        std::error_code ignored;
+        std::filesystem::copy_file(session.sav, session.sav + ".before-rewind",
+                                   std::filesystem::copy_options::overwrite_existing, ignored);
+      }
+    }
+    std::string err;
+    if (!rewind.jump(id, rewind_load, err)) {
+      std::fprintf(stderr, "rewind: cannot jump to %u: %s\n", id, err.c_str());
+      return false;
+    }
+    rewind_previewed = false;
+    audio.clear();
+    pacer.reset();
+    fs_debt_ms = 0;
+    if (play) flush_save();
+    rewind.protect(0);
+    std::fprintf(stderr, "rewind: %s moment %u\n", play ? "playing from" : "back to", id);
+    rewind_now = 0;
+    return true;
+  };
 #if DSPERATE_CHEEVOS
   // RetroAchievements, Casual mode: off unless asked for (cheevos.enabled);
   // each failure is logged once and then ignored. Not for the firmware's menu.
@@ -2826,6 +2957,13 @@ sdl_ready:
       SDL_Delay(4);
       continue;
     }
+    if (rewind_now) {
+      // RG DS's menu let the game go while its Rewind screen showed an old moment (not through Back or Play from
+      // here): the game goes on from now, never from a moment only looked at.
+      rewind_guard();
+      rewind.protect(0);
+      rewind_now = 0;
+    }
     if (holding) {
       holding = false;
       audio.pause(false);
@@ -3009,6 +3147,7 @@ sdl_ready:
 #endif
     nds.run_frame();
     rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);
+    if (rewind_allowed()) rewind_take(false);
 #if DSPERATE_CHEEVOS
     // Exactly once per emulated frame: rcheevos keeps per-frame deltas.
     if (cheevos.on()) {

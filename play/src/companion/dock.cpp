@@ -204,12 +204,13 @@ bool Dock::moving() const {
 }
 
 Box Dock::box(Item item, int w, int h) const {
-    const int m = kit::margin, g = kit::gap, third = (w - m * 2 - g * 2) / 3;
+    const int m = kit::margin, g = kit::gap, quarter = (w - m * 2 - g * 3) / 4;
     switch (item) {
     case Item::Button: return {w - m - 56, h - m - 56, 56, 56};
-    case Item::GameMenu: return {m, 156, third, 96};
-    case Item::Switcher: return {m + third + g, 156, third, 96};
-    case Item::Home: return {w - m - third, 156, third, 96};
+    case Item::GameMenu: return {m, 156, quarter, 96};
+    case Item::Rewind: return {m + quarter + g, 156, quarter, 96};
+    case Item::Switcher: return {m + (quarter + g) * 2, 156, quarter, 96};
+    case Item::Home: return {w - m - quarter, 156, quarter, 96};
     case Item::Bright: return {m, 264, w - m * 2, 88};
     // Over the companion the button keeps its corner.
     case Item::Off: return {m, 364, w - m * 2 - (full_ ? 0 : 56 + g), 72};
@@ -247,7 +248,7 @@ bool Dock::touch(const Touch& t) {
             closed_at_ = now_ | 1;
             return true;
         }
-        for (Item item : {Item::GameMenu, Item::Switcher, Item::Home, Item::Off})
+        for (Item item : {Item::GameMenu, Item::Rewind, Item::Switcher, Item::Home, Item::Off})
             if (inside(item)) {
                 held_ = item;
                 held_at_ = now_;
@@ -272,8 +273,10 @@ bool Dock::touch(const Touch& t) {
     if (held_ != Item::None && t.kind == Touch::Move && !inside(held_)) held_ = Item::None; // slid off: cancelled
     if (t.kind == Touch::Up) {
         wake();
-        if ((held_ == Item::GameMenu || held_ == Item::Switcher) && inside(held_)) {
-            action_ = held_ == Item::GameMenu ? Action::GameMenu : Action::Switcher;
+        if ((held_ == Item::GameMenu || held_ == Item::Rewind || held_ == Item::Switcher) && inside(held_)) {
+            action_ = held_ == Item::GameMenu ? Action::GameMenu
+                      : held_ == Item::Rewind ? Action::Rewind
+                                              : Action::Switcher;
             // They open over both screens; the companion is what comes back.
             if (!full_) {
                 open_ = false;
@@ -416,7 +419,7 @@ void Dock::hold_button(Canvas& out, const Look& look, const Font& font, const Wo
     icon_badge(out, look, cx - kit::badge / 2, cy - kit::badge / 2, glyph, held);
     // The hold fills a ring round the badge; at the top, it is done.
     if (held && held_item(item)) ring(out, cx, cy, kit::badge / 2 + 7, 4, progress, look.accent);
-    // Three in a row: the name under the badge.
+    // Four in a row: the name under the badge.
     const std::string text = font.fit(words(name), kit::title, b.w - 12);
     font.draw(out, cx - font.measure(text, kit::title) / 2, font.centred(kit::title, b.y + 76 + sink), text, kit::title,
               look.ink);
@@ -493,7 +496,7 @@ void Dock::battery(Canvas& out, const Look& look, int x, int y) const {
 
 void Dock::draw_controls(Canvas& out, const Look& look, const Font& font, const Words& words) const {
     const int W = out.w(), m = kit::margin;
-    for (Item item : {Item::GameMenu, Item::Switcher, Item::Home, Item::Bright, Item::Off})
+    for (Item item : {Item::GameMenu, Item::Rewind, Item::Switcher, Item::Home, Item::Bright, Item::Off})
         touch_target(box(item, W, out.h()));
     // The game: its box art (else its system), name, system and this session's time; the clock and battery.
     const Box top{m, kit::margin, W - m * 2, 120};
@@ -528,6 +531,7 @@ void Dock::draw_controls(Canvas& out, const Look& look, const Font& font, const 
                   look.muted);
     }
     hold_button(out, look, font, words, Item::GameMenu, Icon::Controller, "Menu");
+    hold_button(out, look, font, words, Item::Rewind, Icon::Clock, "Rewind");
     hold_button(out, look, font, words, Item::Switcher, Icon::Library, "Switch");
     hold_button(out, look, font, words, Item::Home, Icon::Home, "Home");
     // Brightness: a slider, dragged.

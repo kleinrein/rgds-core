@@ -63,6 +63,7 @@ CATALOG = [
     ('vectrex', 'Vectrex', 'VECTREX', 'VECTREX'),
     ('wonderswan', 'WonderSwan', 'WS', 'WONDERSWAN,WS'),
     ('rpgmaker', 'RPG Maker', 'RPG', 'RPGMAKER,EASYRPG'),
+    ('flash', 'Flash', 'FLASH', 'FLASH,FLASHPOINT'),
 ]
 
 IDS = [entry[0] for entry in CATALOG]

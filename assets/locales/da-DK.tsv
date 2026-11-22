@@ -1763,3 +1763,165 @@ Send to phone	Send til telefon
 Connect to Wi-Fi to send pictures to a phone or computer.	Opret forbindelse til Wi-Fi for at sende billeder til en telefon eller computer.
 Your picture is on the pad. Write or draw beside it, then send.	Dit billede er på blokken. Skriv eller tegn ved siden af, og send.
 Join a room: your picture goes on the pad.	Gå ind i et rum: dit billede kommer på blokken.
+Fit (2x, borders)	Tilpas (2x, kanter)
+Fill (3x, cropped)	Udfyld (3x, beskåret)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Alle DS-pixels lige store på skærmen. Tilpas giver en kant, Udfyld beskærer kanterne. Bruges ved næste start.
+Whole pixels saved. Save & restart to use it.	Hele pixels gemt. Gem og genstart for at bruge det.
+Whole pixels saved.	Hele pixels gemt.
+B: back	B: tilbage
+Book	Bog
+Book view	Bogvisning
+Book, held sideways	Bog, holdt på siden
+Books	Bøger
+Chapter	Kapitel
+Close the book	Luk bogen
+Contents	Indhold
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Kopiér PDF, EPUB, CBZ eller mapper med sider til mappen books.
+Copy films and series into the videos folder.	Kopiér film og serier til mappen videos.
+Direction	Retning
+End of this film	Slutningen af filmen
+Fill the screen	Fyld skærmen
+Finished	Færdig
+Hold in	Hold i
+Larger	Større
+Left to right	Venstre mod højre
+Media	Medier
+No books yet	Ingen bøger endnu
+No sound in this film	Ingen lyd i denne film
+No videos yet	Ingen videoer endnu
+Original size	Original størrelse
+Paper	Papir
+Read	Læs
+Read on	Læs videre
+Reading direction	Læseretning
+Resume at	Fortsæt ved
+Right to left	Højre mod venstre
+Show below the picture	Vis under billedet
+Skip intro	Spring intro over
+Sleep at the end	Sov ved slutningen
+Sleep in	Sover om
+Sleep timer	Sleep-timer
+Smaller	Mindre
+Stand mode	Stå-tilstand
+Stretch	Stræk
+Subtitles	Undertekster
+Tap or press A to play now	Tryk, eller tryk på A, for at afspille nu
+Text size	Tekststørrelse
+The pages of this file are fixed	Siderne i denne fil er faste
+This book cannot be opened	Denne bog kan ikke åbnes
+This book has no contents list	Denne bog har ingen indholdsfortegnelse
+This film cannot be played	Denne film kan ikke afspilles
+Track	Spor
+Up next	Næste
+Videos	Videoer
+White	Hvid
+Whole picture	Hele billedet
+books, comics	bøger, tegneserier
+file	fil
+fixed	fast
+left	tilbage
+left hand	venstre hånd
+light text on dark	lys tekst på mørk
+manga	manga
+none	ingen
+one page, held normally	én side, holdt normalt
+pages	sider
+right hand	højre hånd
+two pages	to sider
+warm, for long reading	varm, til lang læsning
+Films and books	Film og bøger
+Films, books and music	Film, bøger og musik
+Bring over	Hent over
+Looking for saves from another system…	Leder efter gemte spil fra et andet system…
+Welcome over!	Velkommen over!
+Your saves and play time are in place.	Dine gemte spil og din spilletid er på plads.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher gemte dem fra dit gamle kort, før det blev slettet.
+They are on the card in the second slot.	De ligger på kortet i den anden kortplads.
+They are on the USB drive.	De ligger på USB-drevet.
+They are in the import folder on this card.	De ligger i import-mappen på dette kort.
+Coming from {0}?	Kommer du fra {0}?
+Your saves, play time and favourites can come with you.	Dine gemte spil, din spilletid og dine favoritter kan komme med.
+Bringing everything over…	Henter det hele over…
+Keep the handheld on until this is done.	Lad maskinen være tændt, til det er færdigt.
+{0} save	{0} gemt spil
+{0} saves	{0} gemte spil
+{0} resume point	{0} genoptagelsespunkt
+{0} resume points	{0} genoptagelsespunkter
+{0} hours of play time	{0} timers spilletid
+{0} favourite	{0} favorit
+{0} favourites	{0} favoritter
+{0} game on this card	{0} spil på dette kort
+{0} games on this card	{0} spil på dette kort
+{0} BIOS file	{0} BIOS-fil
+{0} BIOS files	{0} BIOS-filer
+Everything was already here.	Alt var her allerede.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} spil er stadig på din computer. Kopiér roms-mappen fra sikkerhedskopien til kortets roms-mappe (trinnet Spil viser hvordan): spilletid og gemte spil finder det dér.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} spil er stadig på din computer. Kopiér roms-mappen fra sikkerhedskopien til kortets roms-mappe (trinnet Spil viser hvordan): spilletid og gemte spil finder dem dér.
+{0} saves already here stay as they are.	{0} gemte spil, der allerede er her, forbliver som de er.
+Bring them over	Hent dem over
+Press A. Nothing here is replaced.	Tryk på A. Intet her bliver erstattet.
+Bring the games too	Hent også spillene
+Not now	Ikke nu
+Something could not be read or written. The old card was only read: try again.	Noget kunne ikke læses eller skrives. Det gamle kort blev kun læst: prøv igen.
+Coming from the stock system?	Kommer du fra standardsystemet?
+Your saves can come with you.	Dine gemte spil kan komme med.
+Snake	Slange
+Press A or a direction to start	Tryk på A eller en retning for at starte
+Press A to carry on	Tryk på A for at fortsætte
+You win!	Du vandt!
+New best!	Ny rekord!
+Game over	Spillet er slut
+Best	Bedste
+Play again	Spil igen
+With walls	Med vægge
+Classic screen	Klassisk skærm
+Walls	Vægge
+Swipe on either screen to steer	Stryg på en af skærmene for at styre
+Slower	Langsommere
+Faster	Hurtigere
+Pause	Pause
+Journal	Dagbog
+Your year	Dit år
+Your {0}	Dit {0}
+A quiet look back at your year	Et stille tilbageblik på dit år
+Days played	Dage spillet
+The game you kept coming back to	Spillet du blev ved med at vende tilbage til
+Your first screenshot	Dit første skærmbillede
+Preparing your journal…	Forbereder din dagbog…
+Your journal is empty	Din dagbog er tom
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Spil et spil, så begynder den her: hvor længe du spillede, hvad du låste op og billederne du tog.
+Played for {0}	Spillede i {0}
+1 photo	1 billede
+{0} photos	{0} billeder
+First time playing	Første gang
+First time since {0}	Første gang siden {0}
+{0} more achievements	{0} præstationer mere
+Earlier today	Tidligere i dag
+Where you left off	Hvor du slap
+Away for {0}	Væk i {0}
+Sunday	søndag
+Monday	mandag
+Tuesday	tirsdag
+Wednesday	onsdag
+Thursday	torsdag
+Friday	fredag
+Saturday	lørdag
+January	januar
+February	februar
+March	marts
+April	april
+May	maj
+June	juni
+July	juli
+August	august
+September	september
+October	oktober
+November	november
+December	december
+Birthday	Fødselsdag
+No birthday	Ingen fødselsdag
+Not set	Ikke angivet
+Happy birthday, {0}!	Tillykke med fødselsdagen, {0}!
+Last played {0}	Sidst spillet {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Farver og menumusik følger uret: varmere aftener, roligere nætter
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-spil får den at vide, som på originalen. På dagen siger konsollen hej på sin egen måde.

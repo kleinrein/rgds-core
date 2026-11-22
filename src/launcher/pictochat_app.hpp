@@ -212,6 +212,7 @@ public:
     std::string name = "RG DS";
     int colour = 11;
     bool colour_auto = true;
+    bool birthday = false;
     // where we are
     View view = View::Lobby;
     int room = 0;
@@ -411,6 +412,8 @@ public:
         stamp_armed = false;
         status.clear();
         notice(std::string("You are in Room ") + char('A' + room));
+        // The DS profile's birthday is today (the launcher sets this): a small note of our own, never sent.
+        if (birthday && !name.empty()) notice("Happy birthday, " + name + "!");
         hello();
         place_pending_picture();
     }

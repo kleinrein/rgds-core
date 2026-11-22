@@ -106,6 +106,29 @@ Additive animation/touch-indicator/filter/view choices use `userdata/ui.ini` so 
 
 ## Refining the interface
 
+### Library zoom (2026-11-22)
+
+One finger on each screen, pinched toward the hinge, zooms the library out; spreading them zooms back in.
+Level 0 is the library exactly as before, level 1 a wall of six covers a row, level 2 a dense wall of ten icons
+a row with a letter tag on the first game of each letter. Every tile travels between its place in the current
+layout and its place on the wall, unfolding outward from the focused game, so the zoom follows the fingers 1:1;
+on release it snaps to the nearest level (220 ms, small overshoot) with a haptic detent and the Open/Back sounds.
+On a wall: the D-pad moves over the grid, L/R page, B zooms in a level, A plays, a drag or flick scrolls, a tap
+picks a game (it pops) and a tap on the picked one zooms into it. Keys and taps act at once, even mid-settle.
+Pure state is `src/launcher/library_zoom.hpp` (`CrossPinch`, `LibraryZoom`, `ZoomWall`); drawing and input are
+`library_zoom_screen.hpp`. The launcher opens the top panel's own touch screen for this (the Goodix on
+`fe5c0000`, or `RGDS_TOP_TOUCH_DEV`, `none` turns it off); in `--preview` the window's upper half stands in for it,
+so input scripts pinch with two `finger-*` ids. Tests: `tests/test_library_zoom.py`.
+
+Speed: on the handheld (SDL's GLES2 renderer) every fill or copy call is a draw, and the launcher drew rounded
+shapes a pixel row at a time. A wall was some 4500 draws a frame and scrolled at a crawl. Each wall tile is now
+drawn once to a texture of its own (`zoom_sprite`, keyed by game, size, level, theme and favourite; a bounded LRU,
+at most 24 new ones a frame, redrawn when a picture it waited for arrives) and copied whole, scaled mid-morph.
+Separately, `round_rect`, `alpha_round`, `shoulder_fill`, `triangle` and the background `pattern` hand their rows to
+`SDL_RenderFillRects` as one list (same rectangles in the same order, so byte-identical pixels; the in-game menu's
+software canvases hook `RenderFillRects` too, `platform/canvas_fill.hpp`). Counted on the Mac preview with an SDL
+shim: a scrolling wall went from about 4500 to 400 draws a frame (both panels), the plain library from 2500 to 800.
+
 ### The 2026-11-06 consistency pass
 
 - **One set of corner radii.** `App::card_radius` (14) for every card and tile (settings rows, the game switcher,
@@ -396,6 +419,7 @@ the engines before packaging.
 - **Defaults.** The language preselects a timezone and clock and date formats. A new card starts on all systems; the Systems step or Library settings can narrow it to DS.
 - **The name.** `userdata/ds.ini` `nickname` is the handheld's name for DS games (`runtime/emulators.py`), under a game's own DS nickname. Setup also writes it to PictoChat's profile.
 - **Testing.** `tests/test_welcome_ui.py`. Put `step=N` in `setup.ini` to open a step directly with `--preview --boot-startup --first-run --data <folder>`.
+- **Bring over (step 1).** Coming from BananaOS, Anbernic's stock system (RG DS and RG DS Plus) or ROCKNIX. Setup starts `device_services import-scan` (`runtime/migrate.py`), and the step shows only when the scan finds something. Otherwise it is skipped both ways. It looks in three places. The first is the bundle RG DS Flasher left at the card's end, which rcS's `usr/libexec/rgds/handoff` copies to `/data/rgds/import/flasher.tar.gz` on the first boot. The second is an old card in the Plus's second slot or a USB reader (an SD or USB disk, never this card or the eMMC; mounted read-only, ext4 with `noload`). The third is a copy in `/data/import`. One A press (`import-apply`) brings in-game saves, play time (`stats.ini`), favourites (`game.ini`) and missing BIOS files. It never replaces a save, state or game that is already here. Saves, play time and BIOS files go first, then the games, so a card too small for the games still gets the rest. A bundle that won't unpack is kept as `flasher.tar.gz.bad` and not tried again. On a first boot the library index holds the one worker, so the scan waits for it (`welcome_import_pending`) rather than stopping it, and a finished copy rescans the library. Play time is added once per source (`import/done.ini`). States come over only where the old system ran the same libretro core (BananaOS's FCEUmm, Snes9x, PicoDrive, PCSX-ReArmed and Mupen64Plus-Next), as the game's resume state; DS states never do. `import-games` also copies the games, or moves them from `/data/import`. The desktop preview scans only with `RGDS_IMPORT_PREVIEW=1`; `RGDS_IMPORT_ROMS`, `_BIOS`, `_WORK` and `_FOLDER` move its folders. Tests: `tests/test_migrate.py` and the Bring over test in `tests/test_welcome_ui.py`. ROCKNIX's layout (saves beside the games, `gamelist.xml` play time) is from its documentation and has not been tried on a real ROCKNIX card. The stock system: games in `Roms/<FC|SFC|MD|PS|NDS|...>` (mapped by `STOCK_FOLDERS`, where `PICO` is PICO-8), RetroArch's saves mirrored in `saves_RA/Roms/<system>/`, standalone emulators' saves in `save/Roms/<system>/`, and DraStic's DS saves in `deep/drastic*/backup/*.dsv` on the system card's ext4 vendor partition. Partitions of one old card count as one source, so a stock card in a reader brings its games partition and its vendor partition together; a DS save with no game known (`listed=False`) still comes over. The stock menu keeps no play time or favourites, and its states stay behind (which core made them is unknown). On a two-card Plus the stock games card in slot 2 is found as it is. The layout is from setup guides and the RG DS's own card partitions; no real stock saves have been through it yet.
 
 ## Saves
 

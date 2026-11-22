@@ -58,19 +58,10 @@ static struct source keys = {.name = "gpio-keys-control", .fd = -1}, sticks = {.
 static volatile sig_atomic_t stopping;
 static int debug;
 
-/* The four stick channels as adc-joystick reports them (the RG DS tree maps channel N to these codes, raw), and the
- * pad axis each becomes: ROCKNIX's amux-channel-mapping <1 0 2 3> with ABS_RY, ABS_RX, ABS_Y, ABS_X and
- * invert-absx, -absy, -absry. */
-static const int channel_code[4] = {ABS_X, ABS_Y, ABS_RX, ABS_RY};
-static struct rgds_pad_axis axis[4] = {
-	{.code = ABS_RX, .invert = 0}, /* channel 0 */
-	{.code = ABS_RY, .invert = 1}, /* channel 1 */
-	{.code = ABS_Y, .invert = 1},  /* channel 2 */
-	{.code = ABS_X, .invert = 1},  /* channel 3 */
-};
+/* The four mux states as adc-joystick reports them, and the pad axis each becomes: rgds_pad_axes.h. */
+static const int *channel_code = rgds_pad_state_code;
+static struct rgds_pad_axis axis[4];
 static int raw[4];
-/* the sticks as the driver pairs them for the radial deadzone: channels 1 and 0, channels 2 and 3 */
-static const int pair[2][2] = {{1, 0}, {2, 3}};
 
 static int ff_map[FF_MAX_EFFECTS > 64 ? 64 : FF_MAX_EFFECTS];
 
@@ -345,7 +336,7 @@ static void set_held(unsigned long *held, int code, int down)
 static void report_sticks(int pad)
 {
 	for (int p = 0; p < 2; p++) {
-		int a = pair[p][0], b = pair[p][1];
+		int a = rgds_pad_stick_states[p][0], b = rgds_pad_stick_states[p][1];
 		if (!rgds_pad_stick(&axis[a], raw[a], &axis[b], raw[b]))
 			continue;
 		emit(pad, EV_ABS, axis[a].code, rgds_pad_report(&axis[a]));
@@ -452,6 +443,10 @@ int main(void)
 	debug = getenv("RGDS_PAD_DEBUG") != NULL;
 	for (size_t i = 0; i < sizeof ff_map / sizeof ff_map[0]; i++)
 		ff_map[i] = -1;
+	for (int i = 0; i < 4; i++) {
+		axis[i].code = rgds_pad_state_axis[i];
+		axis[i].invert = rgds_pad_state_invert[i];
+	}
 	if (kernel_joypad()) {
 		say("a kernel %s is there already: nothing to merge", NAME);
 		return 3;

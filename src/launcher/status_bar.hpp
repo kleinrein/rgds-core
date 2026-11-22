@@ -20,11 +20,13 @@ void App::horizontal_sheen(SDL_Renderer* r, int x, int y, int w, int h, const st
 
 void App::triangle(SDL_Renderer* r, int x, int y, int half, int height, const std::string& key, bool down) {
     color(r, key);
+    fill_rows.clear(); // the rows as one call, as round_rect
     for (int i = 0; i < height; i++) {
         int width = half * (height - i) / height;
         int row = down ? y + i : y + height - 1 - i;
-        s.RenderDrawLine(r, x - width, row, x + width, row);
+        fill_rows.push_back({x - width, row, 2 * width + 1, 1});
     }
+    s.RenderFillRects(r, fill_rows.data(), int(fill_rows.size()));
 }
 
 void App::battery_icon(SDL_Renderer* r, int y, int x) {

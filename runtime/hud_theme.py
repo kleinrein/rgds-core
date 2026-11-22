@@ -68,7 +68,11 @@ HUD_WORDS = {
     "Preparing graphics\u2026": "RGDS_HUD_PREPARING",
     # The bridge's RetroAchievements card (DSCore's unlocks on the lower screen)
     "Achievement unlocked": "RGDS_HUD_ACHIEVEMENT_UNLOCKED",
-    "RetroAchievements": "RGDS_HUD_RETROACHIEVEMENTS"
+    "RetroAchievements": "RGDS_HUD_RETROACHIEVEMENTS",
+    # The bridge's "Where you left off" and "Welcome back" cards (the play journal, on resume and on opening the lid)
+    "Where you left off": "RGDS_HUD_LEFT_OFF",
+    "Welcome back": "RGDS_HUD_WELCOME_BACK",
+    "Away for {0}": "RGDS_HUD_AWAY"
 }
 CJK_FAMILIES = {"ja": "ja", "zh": "zh", "ko": "ko"}
 

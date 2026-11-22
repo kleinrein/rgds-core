@@ -12,6 +12,11 @@ void App::keyboard_screen(SDL_Renderer* r, int y) {
                     : edit_field == 4 || edit_field == 11 ? "Search games"
                     : edit_field == 6                     ? "Search cheats"
                     : edit_field == 3                     ? "Matching title"
+                    : edit_field == 14                    ? "New name"
+                    : edit_field == 15                    ? "Folder name"
+                    : edit_field == 16                    ? "Server address"
+                    : edit_field == 17                    ? "User name (empty for guest)"
+                    : edit_field == 19                    ? "Folder on the server (empty for home)"
                     : edit_field == 0 || edit_field == 12 ? "Username"
                                                           : "Password");
     round_rect(r, 20, y + 91, 600, 62, 12, "accent");

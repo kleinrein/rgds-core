@@ -3,6 +3,7 @@
 #include "../../play/src/ui/gb_palettes.hpp"  // the Game Boy palettes and corrections (shared with the player)
 #include "launcher/photo_play_sources.hpp"        // the player's canvas and console frames, for photo mode
 #include "launcher/photo_mode.hpp"
+#include "launcher/rewind_play_sources.hpp" // the player's Rewind screen, for the game menu's
 #include "platform/sdl_dynamic.hpp"
 #include "platform/canvas_fill.hpp"
 #include "platform/event_wait.hpp"
@@ -22,10 +23,12 @@
 #include "launcher/pixel_text.hpp"
 #include "launcher/line_break.hpp"
 #include "launcher/kinetics.hpp"
+#include "launcher/library_zoom.hpp"
 #include "launcher/carousel.hpp"
 #include "launcher/view_motion.hpp"
 #include "launcher/menu_audio.hpp"
 #include "launcher/accent.hpp"
+#include "launcher/ds_profile.hpp"
 #include "platform/alsa_mixer.hpp"
 #include "platform/haptics.hpp"
 #include "platform/crash_record.hpp"
@@ -42,6 +45,7 @@
 #include "launcher/manual_mark.hpp"
 #include "launcher/pictochat_app.hpp"
 #include "launcher/voice_toy_ui.hpp"
+#include "launcher/snake_ui.hpp"
 #include "launcher/music_ui.hpp"
 #include "platform/touch.hpp"
 #include "platform/uinput_pointer.hpp"
@@ -60,6 +64,9 @@
 #include <functional>
 #include <sstream>
 #include <set>
+#include <unordered_map>
+#include <chrono>
+#include <cstdio>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/statvfs.h>
@@ -305,6 +312,50 @@ class App {
     int filter_shift() const { return int(std::lround(filter_motion.stretch(filter_scroll))); }
     int browser_shift() const { return int(std::lround(browser_motion.stretch(browser_list.scroll))); }
     bool kinetics_update(Uint32 now);
+    // Library zoom (library_zoom.hpp): a finger on each screen pinches the library out to a wall of games.
+    TouchDevice top_touch;
+    CrossPinch cross_pinch;
+    LibraryZoom zoom;
+    ScrollMotion zoom_motion;
+    std::array<int, LibraryZoom::deepest + 1> zoom_scroll{};
+    size_t zoom_revealed = SIZE_MAX;
+    bool zoom_owned = false, zoom_finger = false, zoom_dragged = false;
+    int zoom_down_x = 0, zoom_down_y = 0, zoom_down_scroll = 0;
+    void open_top_touch();
+    bool zoom_allowed();
+    size_t zoom_focus();
+    void zoom_centre();
+    void zoom_go(int level, Uint32 now);
+    void zoom_pinch_step(bool changed, Uint32 now);
+    void zoom_top_touch(int kind, int x, int y, Uint32 now);
+    bool zoom_bottom_touch(int kind, int x, int y, Uint32 now);
+    bool zoom_pointer(int kind, int x, int y);
+    bool zoom_action(int code);
+    bool zoom_update(Uint32 now);
+    SDL_Rect zoom_rest_rect(size_t index);
+    SDL_Rect zoom_wall_rect(int level, size_t index, int shift);
+    void zoom_tile(SDL_Renderer* r, size_t index, SDL_Rect box, bool selected, bool cover, double level);
+    bool zoom_render(SDL_Renderer* r, int y, bool prepass = false);
+    int zoom_sprite_builds = 0; // counted for RGDS_FRAME_LOG
+    void zoom_prepare();
+    // Each wall tile drawn once to a texture of its own and copied from then on (library_zoom_screen.hpp).
+    struct ZoomSprite {
+        SDL_Texture* texture = nullptr;
+        int pick = -2;      // the picture it shows (zoom_pick)
+        bool final = false; // no better picture is still on its way
+        Uint32 checked = 0;
+        uint64_t used = 0;
+    };
+    std::unordered_map<std::string, ZoomSprite> zoom_sprites;
+    uint64_t zoom_sprite_clock = 0;
+    int zoom_pick(SDL_Renderer* r, size_t index, bool cover, bool& final);
+    void zoom_paint(SDL_Renderer* r, size_t index, SDL_Rect box, bool selected, double level, int pick);
+    SDL_Texture* zoom_sprite(SDL_Renderer* r, size_t index, int size, bool cover, int level, int& budget);
+    void zoom_sprites_clear();
+    bool zoom_restored = false;
+    bool zoom_button_shown();
+    void zoom_button(SDL_Renderer* r, int y, SDL_Rect bounds);
+    void cartridge_icon(SDL_Renderer* r, const Game& game, int x, int y, int size);
     void page_drag_follow(int x, int y);
     void draw_dragged_page(SDL_Renderer* renderer, int y);
     // The upper screen travels with the lower one. Every upper frame is drawn to a canvas and copied to the panel,
@@ -368,7 +419,7 @@ class App {
     }
     int view_page() const {
         return int(settings.page) + (chat_open ? 1000 : 0) + (music_open ? 2000 + music_view_depth() : 0) +
-               (vt.open ? 3000 : 0);
+               (vt.open ? 3000 : 0) + (sn.open ? 4000 : 0);
     }
     struct SoundState {
         Page page;
@@ -517,6 +568,7 @@ class App {
         Options,
         Search,
         Clear,
+        Zoom,
         LeftArrow,
         RightArrow,
         Horizontal,
@@ -561,14 +613,16 @@ class App {
         case Page::Haptics: return 5;
         case Page::Cheats: return int(cheat_rows.size());
         case Page::GameSwitcher: return int(switch_games.size()) + (home_switcher ? 0 : 1); // in a game: Game menu
-        case Page::Graphics: return 8;
+        case Page::Graphics: return 9;
         case Page::Power: return int(power_rows.size());
         case Page::LibraryOptions: return library_row_count();
-        case Page::Appearance: return 8;
+        case Page::Appearance: return 9;
         case Page::DisplayOptions: return 3;
         case Page::Scraper: return 7;
         case Page::Achievements: return 2;
         case Page::Album: return int(album.size());
+        case Page::Journal: return journal_count();
+        case Page::Files: return int(files_rows.size());
         case Page::DeviceInfo: return 4;
         case Page::System: return o.rgds_os ? 8 : 9; // last rows: Touch to continue, Run setup again
         case Page::GameOptions:
@@ -607,14 +661,15 @@ class App {
     // Since the 2026-11-11 regroup (docs/SETTINGS_PLAN.md) the rest run Browser layout, then the per-system rows
     // (System defaults, Default shader, Artwork sources), then saves (Auto-load, Auto-save, Back up all saves).
     int library_row(int shown) const {
-        // RetroAchievements (13) and then Album (14) come last, in a group of their own, so no row above them moved.
-        static constexpr int rest[] = {5, 11, 4, 1, 2, 3, 8, 13, 14};
+        // RetroAchievements (13), Album (14) and Files (15) come last, in a group of their own, so no row above them
+        // moved.
+        static constexpr int rest[] = {5, 11, 4, 1, 2, 3, 8, 13, 14, 15};
         if (shown == 0) return 10;
         if (shown == 1) return 9;
-        if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 8)];
-        return rest[std::clamp(shown - 2, 0, 8)];
+        if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 9)];
+        return rest[std::clamp(shown - 2, 0, 9)];
     }
-    int library_row_count() const { return preferences.show_systems ? 12 : 11; }
+    int library_row_count() const { return preferences.show_systems ? 13 : 12; }
     // With Games opens all games: the one system the filter sheet narrowed the list to, or empty for every game.
     std::string browse_system;
     // The first collection's name: the system being browsed, or every game.
@@ -657,6 +712,7 @@ class App {
         }
         case Page::System: return row == 0 ? "Language & region" : row == 5 ? "Device" : nullptr;
         case Page::Album: return album_group(row);
+        case Page::Journal: return journal_group(row);
         default: return nullptr;
         }
     }
@@ -719,15 +775,15 @@ class App {
     // file keeps the old numbers: see save_state).
     static constexpr size_t home_count = 8, pictochat_tile = 4, last_played_tile = 7;
     size_t home_shown() const {
-        return 4 + (pictochat_hidden() ? 0 : 1) + (music_available() ? 1 : 0) + (sound_toy_available() ? 1 : 0);
+        return 4 + (pictochat_hidden() ? 0 : 1) + (app_slot() ? 1 : 0) + (sound_toy_available() ? 1 : 0);
     }
-    size_t toy_tile() const { return 4 + (pictochat_hidden() ? 0 : 1) + (music_available() ? 1 : 0); }
+    size_t toy_tile() const { return 4 + (pictochat_hidden() ? 0 : 1) + (app_slot() ? 1 : 0); }
     bool toy_at(size_t tile) const { return sound_toy_available() && tile == toy_tile(); }
     // The tiles after Recents, in order: PictoChat, Music, Sound toy (those this profile has).
     std::vector<size_t> home_apps() const {
         std::vector<size_t> apps;
         if (!pictochat_hidden()) apps.push_back(pictochat_tile);
-        if (music_available()) apps.push_back(music_tile());
+        if (app_slot()) apps.push_back(music_tile());
         if (sound_toy_available()) apps.push_back(toy_tile());
         return apps;
     }
@@ -736,7 +792,12 @@ class App {
     bool pictochat_hidden() const;
     size_t music_tile() const { return pictochat_hidden() ? 4 : 5; }
     bool pictochat_at(size_t tile) const { return tile == pictochat_tile && !pictochat_hidden(); }
-    bool music_at(size_t tile) const { return music_available() && tile == music_tile(); }
+    bool music_at(size_t tile) const { return music_available() && !media_available() && tile == music_tile(); }
+    // RG DS Media (media_launch.hpp) takes Music's place when it is installed: one tile, with Videos, Books and Music
+    // inside (its Music tab comes back here to the music player).
+    bool media_available() const;
+    bool media_at(size_t tile) const { return media_available() && tile == music_tile(); }
+    bool app_slot() const { return music_available() || media_available(); }
     size_t home_fit(size_t index) const {
         if (index < home_shown()) return index;
         if (preferences.home_layout == 1) return index == last_played_tile ? index : 3;
@@ -779,7 +840,8 @@ class App {
     // Home rail, sliders and the shader carousel.
     bool horizontal_hold_page() const {
         return settings.page == Page::Library || settings.page == Page::Display || settings.page == Page::Sound ||
-               settings.page == Page::ShaderPicker || settings.page == Page::Timezone;
+               settings.page == Page::ShaderPicker || settings.page == Page::Timezone ||
+               settings.page == Page::Photo; // held Left/Right keeps the drawing cursor or the strip moving
     }
     void cancel_navigation() {
         dirty = true;
@@ -999,7 +1061,7 @@ class App {
     std::string achievements_user, achievements_name;
     std::map<std::string, std::string> achievements_status;
     // The keyboard fields that hide what is typed: ScreenScraper's (1), Wi-Fi's (2) and RetroAchievements' (13).
-    bool secret_field() const { return edit_field == 1 || edit_field == 2 || edit_field == 13; }
+    bool secret_field() const { return edit_field == 1 || edit_field == 2 || edit_field == 13 || edit_field == 18; }
     bool pointer_down = false;
     enum class EdgeGesture { None, Bottom, Left, Right }; // Back answers from either side edge, as on phones
     EdgeGesture edge_gesture = EdgeGesture::None;
@@ -1442,6 +1504,13 @@ class App {
             settings.focus = 0;
         } else if (settings.focus == 11) open_cheats();
         else if (settings.focus == 12) menu_request("screenshot");
+        else if (settings.focus == 13) {
+            if (rewind_available()) open_rewind();
+            else {
+                status = "Not available";
+                emit_sound(MenuCue::Error);
+            }
+        }
         else if (menu_status["state"] == "error") {
             settings.page = Page::LeaveGame;
             settings.focus = 0;
@@ -1484,6 +1553,10 @@ class App {
         }
         menu_request("graphics:" + std::to_string(next.rgds_scale) + ":" + std::to_string(next.rgds_smooth) + ":" +
                      std::to_string(std::max(0, next.frameskip)));
+    }
+    // Graphics > Whole pixels: DSCore's video.integer_scale off, under, over.
+    static std::string integer_scale_name(int mode) {
+        return mode == 1 ? "Fit (2x, borders)" : mode == 2 ? "Fill (3x, cropped)" : "Off";
     }
     static std::string filter2d_name(int mode) {
         return mode == 3 ? "Crisp" : mode == 4 ? "HD" : mode == 5 ? "HD soft" : "Off";
@@ -1535,7 +1608,16 @@ class App {
                             next.frameskip = n;
                             apply_experimental_graphics(next);
                         });
-        else if (settings.focus == 7) menu_request("restart");
+        else if (settings.focus == 6)
+            show_picker("Whole pixels", {integer_scale_name(0), integer_scale_name(1), integer_scale_name(2)},
+                        game_preferences.integer_scale, [this](int n) {
+                            // DSCore places its screens at start: saved here, used from the next start.
+                            auto next = game_preferences;
+                            next.integer_scale = std::clamp(n, 0, 2);
+                            apply_game_preferences(next, o.game_menu ? "Whole pixels saved. Save & restart to use it."
+                                                                     : "Whole pixels saved.");
+                        });
+        else if (settings.focus == 8) menu_request("restart");
         dirty = true;
     }
     // Game FPS, Fast-forward, Power profile, Threaded 3D, 3D resolution, Frameskip, Save & restart,
@@ -1711,7 +1793,7 @@ class App {
     void open_achievements() {
         settings.section = 2;
         settings.library_rows = library_row_count();
-        settings.remember(Page::LibraryOptions, library_row_count() - 2);
+        settings.remember(Page::LibraryOptions, library_row_count() - 3);
         settings.page = Page::Achievements;
         settings.focus = 0;
         service_notice.clear();
@@ -1752,31 +1834,196 @@ class App {
     void album_top(SDL_Renderer* r, int y);
     void album_row(SDL_Renderer* r, int y, int i);
     void album_warm();
-    // Photo mode (photo_screen.hpp).
-    photo::Editor photo_editor;
+    // The play journal (journal_screen.hpp): the summary's sittings by day, the year's recap first in Dec/Jan.
+    std::vector<std::string> journal_captions; // per row: the day it starts, empty when it carries on the day above
+    void open_journal();
+    int journal_count() const;
+    bool journal_recap_row(int row) const;
+    const JournalEntryT<Game>* journal_entry(int row) const;
+    std::string journal_month(long long when, bool with_year) const;
+    std::string journal_day(long long when) const;
+    std::string journal_since(const JournalEntryT<Game>& entry) const;
+    std::string journal_detail(const JournalEntryT<Game>& entry) const;
+    void journal_refresh();
+    const char* journal_group(int row) const;
+    int journal_day_step(int delta) const;
+    void journal_action(int code);
+    void journal_open_photo(const std::string& thumb);
+    void journal_row(SDL_Renderer* r, int y, int i);
+    void journal_recap_top(SDL_Renderer* r, int y);
+    void journal_top(SDL_Renderer* r, int y);
+    void journal_warm();
+    struct LeftOff {
+        bool shown = false;
+        std::string title, when, detail;
+        fs::path frame; // last-frame.bmp when it belongs to the checkpoint the game starts on
+    };
+    LeftOff left_off; // "Where you left off" for the game being launched (prepare_left_off)
+    void prepare_left_off(const Game& game, const std::string& core);
+    std::string left_off_note() const;
+    void left_off_card(SDL_Renderer* r, int y);
+    // Files (files_screen.hpp, runtime/files.py).
+    struct FileRow {
+        std::string name;
+        bool dir = false;
+        uintmax_t size = 0;
+        std::time_t mtime = 0;
+    };
+    struct FilesRoot {
+        std::string name;
+        fs::path path;
+        std::string source, kind; // a network place's id in network/sources.ini ("+": none added yet)
+        FilesRoot() = default;
+        FilesRoot(std::string name, fs::path path, std::string source = "", std::string kind = "")
+            : name(std::move(name)), path(std::move(path)), source(std::move(source)), kind(std::move(kind)) {}
+    };
+    // Adding a network place, one step at a time (files_setup_next).
+    struct FilesSetup {
+        enum Step { None, Finding, Choosing, Host, User, Password, Key, Shares, Share, Path, Adding, Testing };
+        Step step = None;
+        std::string kind, name, host, port, user, password, share, path, key, added;
+    };
+    FilesSetup files_setup;
+    std::string files_remote, files_list_error, files_select_after, files_net_task, files_clip_source,
+        files_transfer_serial;
+    fs::path files_net_out;
+    std::vector<std::string> files_clip_remote;
+    std::vector<std::vector<std::string>> files_found;
+    std::map<std::string, std::string> files_transfer;
+    pid_t files_net_child = -1, files_queue_child = -1;
+    bool files_loading = false, files_net_waiting = false, files_queue_answered = false;
+    Uint32 files_transfer_at = 0;
+    bool files_remote_root() const;
+    fs::path files_root_named(const std::string& name) const;
+    void files_open_root(int index);
+    void files_remote_enter(const std::string& relative, const std::string& select = "");
+    std::vector<std::vector<std::string>> files_answer(const fs::path& path, std::string& error);
+    void files_net_run(std::vector<std::string> command, const std::string& task, const std::string& input = "");
+    void files_net_done();
+    std::vector<std::string> files_remote_selection() const;
+    void files_queue(const std::string& source, const std::vector<std::string>& paths, const std::string& to);
+    void files_remote_more();
+    void files_setup_begin();
+    void files_setup_next();
+    void files_show_place(const std::string& source);
+    void files_transfer_strip(SDL_Renderer* r, int y);
+    std::vector<FilesRoot> files_roots;
+    int files_root = 0;
+    fs::path files_dir, files_edit_target, files_peeked, files_peek_wanted;
+    std::vector<FileRow> files_rows;
+    std::set<std::string> files_marked;
+    std::map<std::string, int> files_memory;
+    std::vector<fs::path> files_clip;
+    bool files_clip_move = false, files_peek_picture = false, files_library_changed = false;
+    pid_t files_child = -1, files_peek_child = -1;
+    std::string files_task, files_edit_seed;
+    std::vector<std::string> files_command, files_peek_lines;
+    std::map<std::string, std::string> files_progress;
+    Uint32 files_poll_at = 0;
+    void files_setup_roots();
+    void open_files();
+    bool files_at_root() const;
+    void files_enter(const fs::path& dir, const std::string& select = "");
+    void files_load(const std::string& select = "");
+    const FileRow* files_focused() const;
+    std::vector<fs::path> files_selection() const;
+    const Game* files_game(const fs::path& path) const;
+    static std::string files_size(uintmax_t bytes);
+    void files_action(int code);
+    void files_more();
+    void files_edited(bool commit);
+    void files_run(std::vector<std::string> command, const std::string& task, bool confirmed = false);
+    void files_poll(Uint32 now);
+    void files_peek_request();
+    void files_peek_read();
+    std::string files_place() const;
+    void files_top(SDL_Renderer* r, int y);
+    SettingsIcon files_icon(const std::string& name) const;
+    SettingsIcon files_row_icon(int index) const;
+    void files_row(SDL_Renderer* r, int y, int i);
+    void files_warm();
+    // Photo mode (photo_screen.hpp). A stitched screenshot is two pages, [0] its upper screen and [1] its lower one,
+    // saved back as one stitched picture; a one-screen shot is page 0 only.
+    std::array<photo::Editor, 2> photo_editors;
+    photo::Editor& photo_editor() { return photo_editors[size_t(photo_page)]; }
     std::unique_ptr<play::Font> photo_font;
-    std::map<SDL_Renderer*, SDL_Texture*> photo_textures;
-    std::map<SDL_Renderer*, uint32_t> photo_uploaded;
-    uint32_t photo_version = 0;
+    // Textures per panel: slot 0 and 1 the pages, 2 the picture a lens, frame or undo fades away from.
+    std::map<std::pair<SDL_Renderer*, int>, SDL_Texture*> photo_textures;
+    std::map<std::pair<SDL_Renderer*, int>, uint32_t> photo_uploaded;
+    std::array<uint32_t, 3> photo_versions{};
+    uint32_t photo_version = 0; // bumped on every change: the page's own version follows it
     AlbumShot photo_shot;
     std::string photo_saved_key;
     bool photo_lower = false, album_view_then_photo = false, photo_pen_down = false, photo_cursor_shown = false,
          photo_touch_drawing = false;
-    int photo_cursor_x = 320, photo_cursor_y = 240;
+    int photo_cursor_x = 320, photo_cursor_y = 240, photo_page = 0, photo_pages = 1;
+    // Buttons: the D-pad walks the option strip (photo_slot) until Up or A takes it onto the picture (photo_on_desk),
+    // where it moves the cursor; B comes back. photo_buttons shows the highlight and hints once a button was used.
+    int photo_slot = 0, photo_slot_from = 0;
+    Uint32 photo_slot_at = 0;
+    bool photo_on_desk = false, photo_buttons = false;
+    void photo_move_slot(int delta);
+    void photo_sync_slot();
+    // Motion: when each piece began (0 = idle) and what it moves from.
+    Uint32 photo_open_at = 0, photo_tool_at = 0, photo_page_at = 0, photo_fade_at = 0, photo_save_at = 0,
+           photo_pop_at = 0, photo_trail_at = 0;
+    int photo_tool_from = 0, photo_page_from = 0, photo_fade_page = 0, photo_pop_stamp = 0, photo_pop_size = 0,
+        photo_pop_page = 0;
+    double photo_pop_x = 0, photo_pop_y = 0;
+    std::vector<uint32_t> photo_fade_px;
+    struct PhotoSpark {
+        float x, y, vx, vy, gravity, size;
+        Uint32 at, life;
+        Color colour;
+        int page;
+    };
+    std::vector<PhotoSpark> photo_sparks;
     void open_photo(bool lower = false);
     void photo_begin();
     void photo_close();
     void photo_leave();
     void photo_save();
+    bool photo_edited() const;
+    bool photo_animating() const;
+    void photo_tick(); // the run loop, every frame on Page::Photo: keeps motion drawing, ends the save
     bool photo_point(int x, int y, double& px, double& py) const;
     int photo_option_count() const;
     void photo_strip_press(int x);
     void photo_step(int delta);
     void photo_action(int code);
     void photo_pointer(int x, int y, int phase);
-    SDL_Texture* photo_texture(SDL_Renderer* r);
+    void photo_set_tool(int tool);
+    void photo_set_page(int page);
+    void photo_fade_from_here();
+    void photo_burst(double px, double py, int count, bool rainbow, Color colour);
+    void photo_stamp_at(double px, double py);
+    SDL_Texture* photo_texture(SDL_Renderer* r, int slot);
+    void photo_picture(SDL_Renderer* r, int page, const SDL_Rect& to, bool fade);
+    void photo_effects(SDL_Renderer* r, const SDL_Rect& desk, int page, Uint32 now);
     void photo_top(SDL_Renderer* r, int y);
     void photo_bottom(SDL_Renderer* r, int y);
+    // Game menu > Rewind (rewind_menu.hpp): the engine's moments on the player's own Rewind screen.
+    play::RewindScreen rewind_screen;
+    play::MomentList rewind_moments;
+    play::ShownMoment rewind_shown;
+    play::Words rewind_words;
+    play::Look rewind_look;
+    play::Canvas rewind_canvas, rewind_top_canvas;
+    std::map<std::pair<SDL_Renderer*, bool>, SDL_Texture*> rewind_textures;
+    std::map<std::pair<SDL_Renderer*, bool>, uint64_t> rewind_uploaded;
+    uint64_t rewind_top_version = 0;
+    uint32_t rewind_asked = 0, rewind_shown_id = 0;
+    bool rewind_opening = false, rewind_open_ = false;
+    std::string rewind_final, rewind_files; // the next request to send; where the engine's pictures are
+    bool rewind_available() const { return experimental_game() || active_engine() == play_core; }
+    void open_rewind();
+    void rewind_poll();
+    void rewind_action(int code);
+    void rewind_pointer(int x, int y, int phase);
+    SDL_Texture* rewind_texture(SDL_Renderer* r, bool top);
+    void rewind_draw_top(play::Canvas& out);
+    void rewind_top(SDL_Renderer* r, int y);
+    void rewind_bottom(SDL_Renderer* r, int y);
     // Album > Send to phone (runtime/album_share.py): a read-only page with every picture, while the sheet is open.
     pid_t album_share_child = -1;
     bool album_sharing = false;
@@ -1856,6 +2103,17 @@ class App {
     std::map<fs::path, std::optional<std::string>> read_theme_source();
     // The selected light/dark palette with the optional DS favourite colour.
     void select_theme();
+    // The clock the menus keep and the rest of the DS profile (ds_profile.hpp, members in ds_profile_ui.hpp).
+    DayLight day_light_applied;
+    Uint32 day_light_checked = 0;
+    std::tm clock_now() const;
+    DayLight current_day_light() const;
+    void day_light_tick(Uint32 now);
+    DsBirthday ds_birthday() const;
+    bool birthday_today() const;
+    void save_ds_birthday(const Profile& profile, DsBirthday birthday);
+    std::string birthday_text(DsBirthday birthday) const;
+    std::string month_name(int month) const; // 1-12, in the menus' language
     void reload_themes();
     void remember_appearance();
     // Theme & display uses the shared settings list, four roomy rows per
@@ -1905,7 +2163,8 @@ class App {
         return contrast_ratio(white, fill) >= contrast_ratio(ink, fill) ? white : ink;
     }
     // ---- Profiles (profiles_screen.hpp)
-    enum class ProfileChoice { Kind, Picture, Colour, Age };
+    enum class ProfileChoice { Kind, Picture, Colour, Age, Month, Day };
+    int birthday_month_choice = 1; // the month picked before the day (ProfileChoice::Day)
     static constexpr int profile_row_switch = -1, profile_row_add = -2, profile_row_ask = -3;
     ProfileStore profiles;
     ProfileChoice profile_choice = ProfileChoice::Kind;
@@ -2219,6 +2478,22 @@ class App {
     void draw_scrollbar(SDL_Renderer* r, int x, int y, int height, int thumb, int offset, bool dragging, bool hover,
                         int width = 36);
     void round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key);
+    std::vector<SDL_Rect> fill_rows; // round_rect's and alpha_round's rows, reused
+    // RGDS_FRAME_LOG=FILE: one line a second of where frame time goes (ms; average and worst), for the handheld.
+    struct FrameLog {
+        std::FILE* file = nullptr;
+        enum { Interval, Prepare, TopDraw, TopPresent, BottomDraw, BottomPresent, Count };
+        double sum[Count]{}, peak[Count]{}, last = 0, began = 0;
+        int frames = 0, top_frames = 0;
+        static double clock() {
+            return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch())
+                .count();
+        }
+        void add(int stage, double ms) {
+            sum[stage] += ms;
+            peak[stage] = std::max(peak[stage], ms);
+        }
+    } frame_log;
     // Explicit colours (DS colour tiles) reuse the themed drawing paths.
     void fill_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill);
     void label_colour(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, Color ink, int width);
@@ -2388,6 +2663,7 @@ class App {
     // Setup (welcome_screen.hpp). Items are found by id: a step's own from 0, the footer's from welcome_back.
     enum WelcomeStep {
         WelcomeLanguage,
+        WelcomeImport,
         WelcomeColour,
         WelcomeName,
         WelcomeHome,
@@ -2397,7 +2673,7 @@ class App {
         WelcomeGames,
         WelcomeDone
     };
-    static constexpr int welcome_steps = 9, welcome_back = 100, welcome_next = 101, welcome_skip = 102,
+    static constexpr int welcome_steps = 10, welcome_back = 100, welcome_next = 101, welcome_skip = 102,
                          welcome_mode = 20, welcome_layout = 0, welcome_ground = 10, welcome_motion = 20,
                          welcome_face = 30, welcome_clock = 10;
     struct WelcomeItem {
@@ -2405,6 +2681,9 @@ class App {
         SDL_Rect box;
     };
     bool welcome_active = false, welcome_fresh = false, welcome_detour = false;
+    bool welcome_import_focused = false; // the focus went to Bring them over once the scan found something
+    bool welcome_import_pending = false; // the scan waits for the worker another job holds (the first library index)
+    bool welcome_import_rescan = false;  // games may have come over, and the library index may have given way
     int welcome_step = 0, welcome_focus = welcome_next;
     Page welcome_return = Page::Library;
     bool welcome_needed();
@@ -2415,6 +2694,12 @@ class App {
     void welcome_finish();
     void welcome_detour_end();
     void welcome_language_defaults();
+    // Coming from another system (runtime/migrate.py): found by a scan when setup opens, shown only then.
+    void welcome_import_scan();
+    bool welcome_import_shown();
+    void welcome_import_poll();
+    void welcome_import_top(SDL_Renderer* r, int y);
+    void welcome_import_bottom(SDL_Renderer* r, int y);
     std::string ds_owner_name() const;
     void save_owner_name(std::string name);
     size_t welcome_game_count() const;
@@ -2446,6 +2731,14 @@ class App {
     void pictochat_top(SDL_Renderer* r, int y);
     // A heart badge for favourites, on the cover stage and on the tiles below.
     bool stage_favourite = false;
+    // Things age a little (library_screen.hpp): "Last played March 2025" on a cover untouched for a year, and a
+    // ribbon down the spine of the game played most.
+    std::string stage_aged;
+    bool stage_crowned = false;
+    std::string cover_age_note(const std::string& last_played) const;
+    bool game_most_played(size_t index) const;
+    void spine_ribbon(SDL_Renderer* r, SDL_Rect box);
+    void aged_note(SDL_Renderer* r, const std::string& note, int cx, int bottom, int width);
     bool game_loved(size_t index);
     void favourite_badge(SDL_Renderer* r, int cx, int cy, int size);
     // A small two-screens mark for games RG DS Play gives a second screen of
@@ -2487,6 +2780,7 @@ class App {
     // A key group ("A", "Start", "L R"): its badges side by side.
     int key_group(SDL_Renderer* r, int x, int cy, const std::string& keys, bool enabled = true, bool inverse = false);
     int key_hints_width(const std::vector<KeyHint>& hints, int size = 16);
+    std::vector<KeyHint> photo_hints(bool compact) const; // photo_screen.hpp: what A and B do now
     // A row of tips from x (align -1), centred on x (0) or ending at x (1),
     // centred on cy; long translations step the text down to fit `limit`.
     int key_hints(SDL_Renderer* r, int x, int cy, const std::vector<KeyHint>& hints, int align = -1, int size = 16,
@@ -2527,6 +2821,7 @@ class App {
     struct LibraryHeader {
         SDL_Rect card, back, view, options, title, search, clear;
         int category_x, category_width;
+        SDL_Rect zoom{0, 0, 0, 0}; // the zoom button at the title row's end (library_zoom_screen.hpp)
     };
     LibraryHeader library_header_layout();
     static bool point_in(SDL_Rect bounds, int x, int y) {
@@ -2788,6 +3083,8 @@ class App {
     }
     void open() {
         if (o.independent && !o.game_menu) ui_trace.open(std::getenv("RGDS_UI_TRACE"));
+        if (const char* path = std::getenv("RGDS_FRAME_LOG"); path && *path && !o.game_menu && !frame_log.file)
+            frame_log.file = std::fopen(path, "a");
         s.SetMainReady();
         s.SetHint("SDL_TOUCH_MOUSE_EVENTS", "0");
         s.SetHint("SDL_MOUSE_TOUCH_EVENTS", "0");
@@ -2809,6 +3106,7 @@ class App {
                 std::cout << "Touch: " << touchscreen.path() << " (logical 640x480; calibrated evdev range)"
                           << std::endl;
             } else std::cerr << "Direct touch unavailable; using SDL events" << std::endl;
+            if (!o.game_menu && !o.port_menu) open_top_touch();
             input_wake.open_all();
         }
         SDL_version version{};
@@ -2908,6 +3206,8 @@ class App {
         flush_volume();
         flush_brightness();
         touchscreen.close_device();
+        top_touch.close_device();
+        zoom_sprites_clear();
         volume_keys.close_devices();
         power_key.close_device();
         input_wake.close_all();
@@ -2938,6 +3238,7 @@ class App {
         drop(music_glyph_textures);
         drop(music_display_textures);
         drop(vt.faces);
+        drop(sn.textures);
         drop(chat_cards);
         drop(chat_pads);
         drop(chat_sheets);
@@ -3072,6 +3373,49 @@ class App {
     MusicClient music;
     MusicUi mu;
     bool music_open = false, music_ready = false;
+    // ---- Snake (snake_screen.hpp): the easter egg, five quick taps on the battery on Home's upper screen.
+    SnakeUi sn;
+    bool snake_available() const;
+    void snake_load();
+    void snake_save();
+    void open_snake();
+    void close_snake();
+    void snake_pause(); // a game starts, the lid closes, the handheld goes to sleep
+    void snake_sound(int kind);
+    void snake_start();
+    void snake_turn(snake::Dir d);
+    void snake_go(); // A or Start: start, pause, carry on, play again
+    void snake_set(int speed, bool walls, bool classic);
+    bool snake_tick(Uint32 now);
+    int snake_wait(Uint32 now) const;
+    void snake_demo(Uint32 now); // the ready screen's snake that plays by itself
+    void snake_hold();
+    void snake_resume();
+    float snake_progress(Uint32 now) const; // how far the last step has got on screen
+    int snake_card_ms() const;
+    void snake_burst(float x, float y, int count, Color c, float speed, float size, Uint32 now);
+    SDL_Texture* snake_texture(SDL_Renderer* r, int kind, uint32_t key);
+    void snake_disc(SDL_Renderer* r, float x, float y, float radius, Color c, int alpha);
+    void snake_fill(SDL_Renderer* r, int x, int y, int w, int h, Color c, int alpha);
+    void snake_lit(SDL_Renderer* r, int x, int y, int w, int h, int alpha);
+    void snake_apple(SDL_Renderer* r, float x, float y, float k);
+    void snake_critter(SDL_Renderer* r, float x, float y, bool left, float k, int alpha, Uint32 now);
+    void snake_body(SDL_Renderer* r, int y, float ox, float oy, Uint32 now);
+    void snake_body_lcd(SDL_Renderer* r, int y, int ox, int oy, Uint32 now);
+    void snake_dots(SDL_Renderer* r, const std::string& text, int x, int y, int dot, Color ink);
+    int snake_digits(SDL_Renderer* r, const std::string& text, int x, int y, int dot, Color ink, int alpha = 255);
+    void snake_board(SDL_Renderer* r, int y);
+    void snake_top(SDL_Renderer* r, int y);
+    void snake_bottom(SDL_Renderer* r, int y);
+    void snake_action(int code);
+    void snake_hat(int value);
+    bool snake_secret_tap(int kind, int x, int y, Uint32 now);
+    bool snake_swipe(int& ax, int& ay, int x, int y);
+    void snake_top_touch(int kind, int x, int y);
+    int snake_button_at(int x, int y);
+    void snake_press(int x, int y);
+    void snake_drag(int x, int y);
+    void snake_release(int x, int y);
     // ---- Sound toy (voice_toy_screen.hpp): record a word, hear it as a chipmunk, robot or monster, draw to bend it.
     VoiceToyUi vt;
     bool sound_toy_available() const; // the setting is on, and this is the launcher itself (not a game's menu)
@@ -3280,6 +3624,11 @@ class App {
     void cancel_launch();
     void finish_launch(bool reopen);
     void start_launch_runner(Uint32 now);
+    void start_media_runner(Uint32 now);
+    void launch_media();         // the Media tile: rgds-media on both panels, as a game is started
+    bool media_launch = false;   // the launch running is RG DS Media's
+    mutable int media_found = -1; // the program is installed (-1: not looked yet)
+    void media_home_top(SDL_Renderer* r, int y);
     void poll_launch(Uint32 now);
     void stop_launch();
     void action(int code);
@@ -3415,6 +3764,7 @@ public:
 #include "launcher/update_progress.hpp"
 #include "launcher/frame_draw.hpp"
 #include "launcher/game_launch.hpp"
+#include "launcher/media_launch.hpp"
 #include "launcher/view_transitions.hpp"
 #include "launcher/touch_kinetics.hpp"
 #include "launcher/menu_sounds.hpp"
@@ -3427,7 +3777,9 @@ public:
 #include "launcher/homebrew_screen.hpp"
 #include "launcher/gallery_slots.hpp"
 #include "launcher/album_screen.hpp"
+#include "launcher/files_screen.hpp"
 #include "launcher/photo_screen.hpp"
+#include "launcher/rewind_menu.hpp"
 #include "launcher/microphone.hpp"
 #include "launcher/switcher_search.hpp"
 #include "launcher/game_settings.hpp"
@@ -3437,6 +3789,7 @@ public:
 #include "launcher/artwork_actions.hpp"
 #include "launcher/text_edit.hpp"
 #include "launcher/appearance.hpp"
+#include "launcher/ds_profile_ui.hpp"
 #include "launcher/system_settings.hpp"
 #include "launcher/state_persistence.hpp"
 #include "launcher/boot_screens.hpp"
@@ -3446,6 +3799,7 @@ public:
 #include "launcher/pictochat_screen.hpp"
 #include "launcher/music_screen.hpp"
 #include "launcher/voice_toy_screen.hpp"
+#include "launcher/snake_screen.hpp"
 #include "launcher/panels.hpp"
 #include "launcher/home_screen.hpp"
 #include "launcher/library_screen.hpp"
@@ -3457,7 +3811,9 @@ public:
 #include "launcher/keyboard_screen.hpp"
 #include "launcher/game_info_screen.hpp"
 #include "launcher/playtime_screen.hpp"
+#include "launcher/journal_screen.hpp"
 #include "launcher/filter_sheet.hpp"
+#include "launcher/library_zoom_screen.hpp"
 
 static int self_test() {
     auto root = fs::temp_directory_path() / ("rgds-model-" + std::to_string(getpid()));
@@ -3498,9 +3854,15 @@ static int self_test() {
              system_for_path(r / "dos/Doom.zip") == "dos" && system_for_path(r / "MS-DOS/Game.cue") == "dos" &&
              system_for_path(r / "Game.dosz") == "dos" && system_for_path(r / "Game.zip") == "nds" &&
              system_for_path(r / "Game.vb") == "vb" && system_for_path(r / "Virtual Boy/Game.bin") == "vb" &&
+             system_for_path(r / "arcade/punchout.zip") == "arcade" &&
+             system_for_path(r / "Game.swf") == "flash" && system_for_path(r / "flash/Game.zip") == "flash" &&
+             system_for_path(r / "Flashpoint/Game.zip") == "flash" &&
+             system_for_path(r / "MAME/vstennis.zip") == "arcade" &&
              system_for_path(r / "Game.a78") == "atari7800" && system_for_path(r / "atari7800/Game.bin") == "atari7800" &&
              system_for_path(r / "Atari 5200/Game.bin") == "atari5200" && system_for_path(r / "Game.a52") == "atari5200" &&
              system_for_path(r / "Game.lnx") == "lynx" && system_for_path(r / "lynx/Game.zip") == "lynx" &&
+             system_for_path(r / "Game.wsc") == "wonderswan" && system_for_path(r / "WonderSwan Color/Game.zip") == "wonderswan" &&
+             system_for_path(r / "Game.ngc") == "ngp" && system_for_path(r / "ngpc/Game.zip") == "ngp" &&
              system_for_path(r / "atari2600/Game.bin") == "atari";
         ok = ok && play_subsystem(r / "md/Game.cue", "md") == "segacd" && play_subsystem(r / "md/Game.bin", "md") == "md" &&
              system_for_path(r / "pico/Game.md") == "pico" && system_for_path(r / "Sega Pico/Game.bin") == "pico" &&

@@ -130,6 +130,7 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
                                    : device_status["wifi_connected"] == "1"          ? "Wi-Fi connected"
                                                                                      : "Draw and chat");
             else if (music_at(tile.index)) note = music_home_note();
+            else if (media_at(tile.index)) note = locale.text("Films and books");
             else if (toy_at(tile.index)) note = locale.text("Record your voice and change it");
             if (!note.empty() && note_row) raw_label(r, note, bx + 80, by + b.h / 2 + 8 + sink, 14, "muted", b.w - 96);
         }

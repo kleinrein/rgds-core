@@ -80,14 +80,56 @@ void App::icon_stage(SDL_Renderer* r, int y, const std::string& developer) {
     round_rect(r, left - 1, top - 1, box + 2, box + 2, 21, "line");
     round_rect(r, left, top, box, box, 20, "panel");
     game_icon(r, model.selected, 320 - size / 2, top + 20, size);
+    if (stage_crowned) spine_ribbon(r, {left, top, box, box});
     if (stage_favourite) favourite_badge(r, left + box - 6, top + 6, 36);
     if (stage_dual) dual_badge(r, left + 6, top + box - 6, 44);
     if (stage_manual) manual_badge(r, left + box - 6, top + box - 6, 44);
+    if (!stage_aged.empty()) aged_note(r, stage_aged, 320, top + box - 10, box - 16);
     centered_wrapped(r, game_title(model.selected), y + 322, 26, 560, 2, "ink");
     if (!developer.empty()) {
         int w = std::min(560, label_width(developer, 18, false));
         raw_label(r, developer, 320 - w / 2, y + 394, 18, "muted", 560);
     }
+}
+
+// A year without it: the month it was last played, in the local calendar. Nothing for anything played since.
+std::string App::cover_age_note(const std::string& last_played) const {
+    const auto moment = LibrarySummary::utc_moment(last_played);
+    if (!moment) return "";
+    std::tm now = clock_now();
+    const std::time_t today = std::mktime(&now);
+    if (today - *moment < std::time_t(365) * 86400) return "";
+    std::tm then{};
+    if (!localtime_r(&*moment, &then)) return "";
+    return "Last played " + month_name(then.tm_mon + 1) + " " + std::to_string(then.tm_year + 1900);
+}
+
+// The one game with the most time on this profile, once it has an hour: one game, so the mark means something.
+bool App::game_most_played(size_t index) const {
+    if (!summary_ready || summary.most_played.empty() || index >= model.games.size()) return false;
+    const auto& top = summary.most_played.front();
+    const auto& game = model.games[index];
+    return top.seconds >= 3600 && !game.demo && top.game.path == game.path;
+}
+
+// A ribbon of old gold down the cover's left edge, the way a well-read book's spine wears.
+void App::spine_ribbon(SDL_Renderer* r, SDL_Rect box) {
+    const Color gold{201, 160, 72}, light = mix_colour(gold, Color{255, 255, 255}, .45),
+                                    deep = mix_colour(gold, Color{0, 0, 0}, .3);
+    const int w = 7, x = box.x + 5, top = box.y + 10, h = box.h - 20;
+    alpha_round(r, x - 1, top + 2, w + 2, h, 3, shadow_colour(), preferences.dark ? 90 : 40);
+    fill_round(r, x, top, w, h, 3, gold);
+    fill_round(r, x + 1, top + 2, 2, h - 4, 1, light);
+    fill_round(r, x + w - 2, top + 2, 1, h - 4, 0, deep);
+}
+
+// Soft on the cover: a dim glass band along its foot with the words in white.
+void App::aged_note(SDL_Renderer* r, const std::string& note, int cx, int bottom, int width) {
+    const std::string text = locale.text(note);
+    const int w = std::min(width, label_width(text, 14, false) + 24), h = 26;
+    alpha_round(r, cx - w / 2, bottom - h, w, h, h / 2, Color{12, 16, 22}, 150);
+    raw_label_colour(r, text, cx - w / 2 + 12, centred_label_y(text, 14, bottom - h / 2), 14, Color{236, 240, 244},
+                     w - 24);
 }
 
 bool App::cover_stage(SDL_Renderer* r, int y, const fs::path& path) {
@@ -104,6 +146,8 @@ bool App::cover_stage(SDL_Renderer* r, int y, const fs::path& path) {
     round_rect(r, box.x - 7, box.y - 7, box.w + 14, box.h + 14, 15, "line");
     round_rect(r, box.x - 6, box.y - 6, box.w + 12, box.h + 12, 14, "panel");
     bool drawn = media.draw(r, path, box, false, Uint8(std::lround(255 * (.8 + .2 * ease))), false, 8);
+    if (stage_crowned) spine_ribbon(r, box);
+    if (!stage_aged.empty()) aged_note(r, stage_aged, box.x + box.w / 2, box.y + box.h - 10, box.w - 110);
     if (stage_favourite) favourite_badge(r, box.x + box.w - 4, box.y, 36);
     if (stage_dual) dual_badge(r, box.x + 4, box.y + box.h, 44);
     if (stage_manual) manual_badge(r, box.x + box.w - 4, box.y + box.h, 44);
@@ -215,9 +259,13 @@ App::LibraryHeader App::library_header_layout() {
     int category_width = std::clamp(label_width(views[preferences.view], 16), 64, 124);
     SDL_Rect clear{right - 44, top, 44, height};
     SDL_Rect search{category_x, top, (discovery_active() ? clear.x : right) - category_x, height};
-    SDL_Rect title{left, 84, right - left, 30};
+    SDL_Rect title{left, 84, right - left, 30}, zoom{0, 0, 0, 0};
+    if (zoom_button_shown()) { // the zoom button takes the title row's end
+        zoom = {right - 40, 76, 52, 46};
+        title.w -= 52;
+    }
     SDL_Rect view = title;
-    return {card, back, view, options, title, search, clear, category_x, category_width};
+    return {card, back, view, options, title, search, clear, category_x, category_width, zoom};
 }
 
 bool App::library_control_active(LibraryPress control, SDL_Rect bounds) const {
@@ -381,6 +429,7 @@ void App::mark_library_press(int x, int y) {
     if (settings.page != Page::Library || picker_open || filter_sheet_open) return;
     auto header = library_header_layout();
     if (!home_menu && point_in(header.back, x, y)) library_press = LibraryPress::Back;
+    else if (!home_menu && !systems_menu && point_in(header.zoom, x, y)) library_press = LibraryPress::Zoom;
     else if (!home_menu && !systems_menu && point_in(header.view, x, y)) library_press = LibraryPress::View;
     else if (point_in(header.options, x, y)) library_press = LibraryPress::Options;
     else if (!home_menu && !systems_menu && discovery_active() && point_in(header.clear, x, y))

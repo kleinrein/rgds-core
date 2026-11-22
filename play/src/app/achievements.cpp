@@ -281,7 +281,10 @@ uint32_t achievement_console(const std::string& system, const std::string& file_
         {"atari", RC_CONSOLE_ATARI_2600},
         {"atari7800", RC_CONSOLE_ATARI_7800},
         {"lynx", RC_CONSOLE_ATARI_LYNX},
+        {"wonderswan", RC_CONSOLE_WONDERSWAN},
+        {"ngp", RC_CONSOLE_NEOGEO_POCKET},
         {"vb", RC_CONSOLE_VIRTUAL_BOY},
+        {"arcade", RC_CONSOLE_ARCADE}, // by the set's name, as RetroArch hashes an arcade game
         {"dos", RC_CONSOLE_MS_DOS},
         {"psx", RC_CONSOLE_PLAYSTATION},
         {"n64", RC_CONSOLE_NINTENDO_64},

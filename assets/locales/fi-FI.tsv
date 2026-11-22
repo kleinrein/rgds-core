@@ -1763,3 +1763,165 @@ Send to phone	Lähetä puhelimeen
 Connect to Wi-Fi to send pictures to a phone or computer.	Yhdistä Wi-Fiin, niin voit lähettää kuvia puhelimeen tai tietokoneeseen.
 Your picture is on the pad. Write or draw beside it, then send.	Kuvasi on lehtiössä. Kirjoita tai piirrä viereen ja lähetä.
 Join a room: your picture goes on the pad.	Liity huoneeseen: kuvasi tulee lehtiöön.
+Fit (2x, borders)	Sovita (2x, reunat)
+Fill (3x, cropped)	Täytä (3x, rajattu)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Jokainen DS-pikseli samankokoinen näytöllä. Sovita jättää reunan, Täytä rajaa reunat. Käytössä seuraavasta käynnistyksestä.
+Whole pixels saved. Save & restart to use it.	Kokonaiset pikselit tallennettu. Tallenna ja käynnistä uudelleen käyttääksesi.
+Whole pixels saved.	Kokonaiset pikselit tallennettu.
+B: back	B: takaisin
+Book	Kirja
+Book view	Kirjanäkymä
+Book, held sideways	Kirja, sivuttain
+Books	Kirjat
+Chapter	Luku
+Close the book	Sulje kirja
+Contents	Sisältö
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Kopioi PDF-, EPUB- tai CBZ-tiedostot tai sivukansiot books-kansioon.
+Copy films and series into the videos folder.	Kopioi elokuvat ja sarjat videos-kansioon.
+Direction	Suunta
+End of this film	Elokuvan lopussa
+Fill the screen	Täytä näyttö
+Finished	Katsottu
+Hold in	Pidä
+Larger	Suurempi
+Left to right	Vasemmalta oikealle
+Media	Media
+No books yet	Ei vielä kirjoja
+No sound in this film	Tässä elokuvassa ei ole ääntä
+No videos yet	Ei vielä videoita
+Original size	Alkuperäinen koko
+Paper	Paperi
+Read	Lue
+Read on	Jatka lukemista
+Reading direction	Lukusuunta
+Resume at	Jatka kohdasta
+Right to left	Oikealta vasemmalle
+Show below the picture	Näytä kuvan alla
+Skip intro	Ohita alkutunnari
+Sleep at the end	Lepotila lopussa
+Sleep in	Lepotila
+Sleep timer	Uniajastin
+Smaller	Pienempi
+Stand mode	Telinetila
+Stretch	Venytä
+Subtitles	Tekstitykset
+Tap or press A to play now	Napauta tai paina A toistaaksesi nyt
+Text size	Tekstin koko
+The pages of this file are fixed	Tämän tiedoston sivut ovat kiinteät
+This book cannot be opened	Tätä kirjaa ei voi avata
+This book has no contents list	Tässä kirjassa ei ole sisällysluetteloa
+This film cannot be played	Tätä elokuvaa ei voi toistaa
+Track	Raita
+Up next	Seuraavaksi
+Videos	Videot
+White	Valkoinen
+Whole picture	Koko kuva
+books, comics	kirjat, sarjakuvat
+file	tiedosto
+fixed	kiinteä
+left	jäljellä
+left hand	vasemmassa kädessä
+light text on dark	vaalea teksti tummalla
+manga	manga
+none	ei mitään
+one page, held normally	yksi sivu, tavallisesti
+pages	sivua
+right hand	oikeassa kädessä
+two pages	kaksi sivua
+warm, for long reading	lämmin, pitkään lukemiseen
+Films and books	Elokuvat ja kirjat
+Films, books and music	Elokuvat, kirjat ja musiikki
+Bring over	Tuo mukaan
+Looking for saves from another system…	Etsitään tallennuksia toisesta järjestelmästä…
+Welcome over!	Tervetuloa!
+Your saves and play time are in place.	Tallennuksesi ja peliaikasi ovat paikallaan.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher otti ne talteen vanhalta kortiltasi ennen kuin tyhjensi sen.
+They are on the card in the second slot.	Ne ovat toisessa korttipaikassa olevalla kortilla.
+They are on the USB drive.	Ne ovat USB-asemalla.
+They are in the import folder on this card.	Ne ovat tämän kortin import-kansiossa.
+Coming from {0}?	Tuletko {0}:sta?
+Your saves, play time and favourites can come with you.	Tallennuksesi, peliaikasi ja suosikkisi voivat tulla mukaan.
+Bringing everything over…	Tuodaan kaikki…
+Keep the handheld on until this is done.	Pidä laite päällä, kunnes tämä on valmis.
+{0} save	{0} tallennus
+{0} saves	{0} tallennusta
+{0} resume point	{0} jatkokohta
+{0} resume points	{0} jatkokohtaa
+{0} hours of play time	{0} tuntia peliaikaa
+{0} favourite	{0} suosikki
+{0} favourites	{0} suosikkia
+{0} game on this card	{0} peli tällä kortilla
+{0} games on this card	{0} peliä tällä kortilla
+{0} BIOS file	{0} BIOS-tiedosto
+{0} BIOS files	{0} BIOS-tiedostoa
+Everything was already here.	Kaikki oli jo täällä.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} peli on yhä tietokoneellasi. Kopioi varmuuskopion roms-kansio tämän kortin roms-kansioon (Pelit-vaihe näyttää miten): sen peliaika ja tallennukset löytävät sen sieltä.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} peliä on yhä tietokoneellasi. Kopioi varmuuskopion roms-kansio tämän kortin roms-kansioon (Pelit-vaihe näyttää miten): niiden peliajat ja tallennukset löytävät ne sieltä.
+{0} saves already here stay as they are.	{0} täällä jo olevaa tallennusta pysyy ennallaan.
+Bring them over	Tuo ne
+Press A. Nothing here is replaced.	Paina A. Mitään ei korvata.
+Bring the games too	Tuo myös pelit
+Not now	Ei nyt
+Something could not be read or written. The old card was only read: try again.	Jotain ei voitu lukea tai kirjoittaa. Vanhaa korttia vain luettiin: yritä uudelleen.
+Coming from the stock system?	Tuletko alkuperäisestä järjestelmästä?
+Your saves can come with you.	Tallennuksesi voivat tulla mukaan.
+Snake	Matopeli
+Press A or a direction to start	Aloita painamalla A:ta tai suuntaa
+Press A to carry on	Jatka painamalla A:ta
+You win!	Voitit!
+New best!	Uusi ennätys!
+Game over	Peli päättyi
+Best	Ennätys
+Play again	Pelaa uudelleen
+With walls	Seinien kanssa
+Classic screen	Klassinen näyttö
+Walls	Seinät
+Swipe on either screen to steer	Ohjaa pyyhkäisemällä kumpaa tahansa näyttöä
+Slower	Hitaammin
+Faster	Nopeammin
+Pause	Tauko
+Journal	Päiväkirja
+Your year	Vuotesi
+Your {0}	Sinun {0}
+A quiet look back at your year	Hiljainen katsaus vuoteesi
+Days played	Pelipäivät
+The game you kept coming back to	Peli, jonka pariin palasit aina
+Your first screenshot	Ensimmäinen kuvakaappauksesi
+Preparing your journal…	Valmistellaan päiväkirjaa…
+Your journal is empty	Päiväkirjasi on tyhjä
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Pelaa peliä, niin se alkaa tästä: kuinka kauan pelasit, mitä avasit ja ottamasi kuvat.
+Played for {0}	Pelattu {0}
+1 photo	1 kuva
+{0} photos	{0} kuvaa
+First time playing	Ensimmäinen kerta
+First time since {0}	Ensimmäistä kertaa sitten: {0}
+{0} more achievements	{0} saavutusta lisää
+Earlier today	Aiemmin tänään
+Where you left off	Mihin jäit
+Away for {0}	Poissa {0}
+Sunday	sunnuntai
+Monday	maanantai
+Tuesday	tiistai
+Wednesday	keskiviikko
+Thursday	torstai
+Friday	perjantai
+Saturday	lauantai
+January	tammikuu
+February	helmikuu
+March	maaliskuu
+April	huhtikuu
+May	toukokuu
+June	kesäkuu
+July	heinäkuu
+August	elokuu
+September	syyskuu
+October	lokakuu
+November	marraskuu
+December	joulukuu
+Birthday	Syntymäpäivä
+No birthday	Ei syntymäpäivää
+Not set	Ei asetettu
+Happy birthday, {0}!	Hyvää syntymäpäivää, {0}!
+Last played {0}	Viimeksi pelattu {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Värit ja valikkomusiikki seuraavat kelloa: lämpimämmät illat, hiljaisemmat yöt
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-pelit saavat sen tietää, kuten alkuperäisessä. Sinä päivänä laite tervehtii omalla tavallaan.

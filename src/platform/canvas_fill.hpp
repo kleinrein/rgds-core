@@ -82,6 +82,12 @@ inline int canvas_fill(SDL_Renderer* renderer, const SDL_Rect* box) {
     return 0;
 }
 
+inline int canvas_fill_rects(SDL_Renderer* renderer, const SDL_Rect* boxes, int count) {
+    for (int i = 0; i < count; i++)
+        if (int result = canvas_fill(renderer, boxes + i)) return result;
+    return 0;
+}
+
 // Straight lines are one-pixel fills; the panel patterns draw dozens of them.
 inline int canvas_line(SDL_Renderer* renderer, int x1, int y1, int x2, int y2) {
     if (x1 != x2 && y1 != y2) return canvas_fills.sdl_line(renderer, x1, y1, x2, y2);
@@ -108,6 +114,7 @@ inline void add_fill_canvas(Sdl& s, SDL_Renderer* renderer, SDL_Surface* surface
                 f.sdl_fill = s.RenderFillRect;
                 f.flush = s.RenderFlush;
                 s.RenderFillRect = canvas_fill;
+                s.RenderFillRects = canvas_fill_rects;
                 f.sdl_line = s.RenderDrawLine;
                 s.RenderDrawLine = canvas_line;
             }

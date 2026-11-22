@@ -71,8 +71,8 @@ bool App::profile_picker_wanted() const {
 // screen's B goes on to the picker, for whoever is not that player.
 void App::open_boot_screen() {
     profiles.load(o.data);
-    const bool only_pin = !profiles.active_unclear() && !profiles.ask_at_boot() && profiles.enabled() &&
-                          !active_profile().pin.empty();
+    const bool only_pin =
+        !profiles.active_unclear() && !profiles.ask_at_boot() && profiles.enabled() && !active_profile().pin.empty();
     open_profile_picker(true);
     if (!only_pin) return;
     const int index = profiles.active_index();
@@ -470,9 +470,10 @@ std::vector<int> App::profile_edit_rows() const {
     // 16, Remove 5: the numbers stay, the order is what reads best.
     const auto* profile = edited_profile();
     std::vector<int> rows;
-    if (profile && profile->owner()) rows = {1, 2, 3, 4, 18, 8, 17, 14}; // the owner's own is in Settings > Sound
-    else if (profile && !profile->restricted) rows = {0, 1, 2, 3, 4, 18, 6, 7, 8, 17, 19, 14};
-    else rows = {0, 1, 2, 3, 4, 18, 6, 7, 8, 17, 9, 10, 11, 19, 12, 13, 14};
+    // Birthday 20 follows the DS name: the rest of the DS profile.
+    if (profile && profile->owner()) rows = {1, 2, 20, 3, 4, 18, 8, 17, 14}; // the owner's own is in Settings > Sound
+    else if (profile && !profile->restricted) rows = {0, 1, 2, 20, 3, 4, 18, 6, 7, 8, 17, 19, 14};
+    else rows = {0, 1, 2, 20, 3, 4, 18, 6, 7, 8, 17, 9, 10, 11, 19, 12, 13, 14};
     if (profile && !profile->pin.empty()) rows.push_back(15);
     if (profile && profile->owner() && profiles.removed_count() > 0) rows.push_back(16);
     if (!profile || !profile->owner()) rows.push_back(5);
@@ -510,6 +511,7 @@ void App::profile_edit_activate(int row) {
     else if (row == 2) begin_edit(10);
     else if (row == 3) open_profile_choose(ProfileChoice::Picture);
     else if (row == 4) open_profile_choose(ProfileChoice::Colour);
+    else if (row == 20) open_profile_choose(ProfileChoice::Month);
     else if (row == 6) open_profile_choose(ProfileChoice::Age);
     else if (row == 7) {
         changed.unrated_hidden = !changed.unrated_hidden;
@@ -632,6 +634,11 @@ void App::profile_edit_row(SDL_Renderer* r, int y, int i) {
     case 0: list_row(r, y, i, "Who it's for", profile->restricted ? "Kid" : "Adult"); break;
     case 1: list_row(r, y, i, "Name", profile->name); break;
     case 2: list_row(r, y, i, "DS name", profile->ds_name); break;
+    case 20: {
+        const auto birthday = DsBirthday::parse(profile->birthday);
+        list_row(r, y, i, "Birthday", birthday.set() ? birthday_text(birthday) : locale.text("Not set"));
+        break;
+    }
     case 3: list_row(r, y, i, "Picture", std::string(profile_picture_name(profile->picture))); break;
     case 4: {
         const Color colour = profile->colour >= 0 && profile->colour < 16 ? ds_colours[size_t(profile->colour)].rgb
@@ -683,7 +690,17 @@ void App::open_profile_choose(ProfileChoice kind) {
     profile_choice = kind;
     const auto* profile = edited_profile();
     settings.page = Page::ProfileChoose;
+    const auto birthday = DsBirthday::parse(profile ? profile->birthday : "");
+    if (kind == ProfileChoice::Day) {
+        const int days = DsBirthday::days_in(birthday_month_choice);
+        settings.focus = birthday.set() && birthday.month == birthday_month_choice ? birthday.day - 1 : 0;
+        settings.focus = std::clamp(settings.focus, 0, days - 1);
+        page_at = s.GetTicks();
+        dirty = true;
+        return;
+    }
     settings.focus = kind == ProfileChoice::Kind      ? 0
+                     : kind == ProfileChoice::Month   ? (birthday.set() ? birthday.month - 1 : 0)
                      : kind == ProfileChoice::Picture ? (profile ? profile->picture : 0)
                      : kind == ProfileChoice::Age
                          ? (!profile                            ? 4
@@ -697,14 +714,20 @@ void App::open_profile_choose(ProfileChoice kind) {
 
 int App::profile_choice_count() const {
     return profile_choice == ProfileChoice::Kind      ? 2
+           : profile_choice == ProfileChoice::Month   ? 13 // the months, and no birthday
+           : profile_choice == ProfileChoice::Day     ? DsBirthday::days_in(birthday_month_choice)
            : profile_choice == ProfileChoice::Picture ? int(profile_picture_count)
                                                       : 16; // the colours; or ages 3 to 16, only picked, no limit
 }
 
 SDL_Rect App::profile_choice_box(int index) const {
     if (profile_choice == ProfileChoice::Kind) return {28 + index * 300, 130, 284, 210};
-    if (profile_choice == ProfileChoice::Colour || profile_choice == ProfileChoice::Age) return colour_tile(index);
-    return {33 + (index % 6) * 100, 96 + (index / 6) * 80, 74, 74}; // six across: 24 pictures in four rows
+    if (profile_choice == ProfileChoice::Colour || profile_choice == ProfileChoice::Age ||
+        profile_choice == ProfileChoice::Month)
+        return colour_tile(index);
+    if (profile_choice == ProfileChoice::Day)
+        return {28 + (index % 7) * 86, 102 + (index / 7) * 56, 76, 48}; // a month page
+    return {33 + (index % 6) * 100, 96 + (index / 6) * 80, 74, 74};     // six across: 24 pictures in four rows
 }
 
 void App::profile_set_colour(const Profile& profile, int colour) {
@@ -741,7 +764,7 @@ void App::profile_set_ds_name(const Profile& profile, const std::string& name) {
     } else {
         auto chat_fields = profile_fields(profile.root / "pictochat.ini");
         chat_fields["name"] = name;
-        if (!profile_write(profile.root / "ds.ini", "nickname=" + name + "\n") ||
+        if (!ds_ini_set(profile.root / "ds.ini", "nickname", name) ||
             !profile_write_fields(profile.root / "pictochat.ini", chat_fields))
             status = "Could not save DS settings.";
     }
@@ -756,6 +779,25 @@ void App::choose_profile_option(int index) {
         return;
     }
     const auto* profile = edited_profile();
+    if (profile && profile_choice == ProfileChoice::Month) {
+        if (index == 12) {
+            save_ds_birthday(*profile, {});
+            settings.page = Page::ProfileEdit;
+            profile_edit_focus(20);
+            dirty = true;
+            return;
+        }
+        birthday_month_choice = index + 1;
+        open_profile_choose(ProfileChoice::Day);
+        return;
+    }
+    if (profile && profile_choice == ProfileChoice::Day) {
+        save_ds_birthday(*profile, {birthday_month_choice, index + 1});
+        settings.page = Page::ProfileEdit;
+        profile_edit_focus(20);
+        dirty = true;
+        return;
+    }
     if (profile && profile_choice == ProfileChoice::Picture) {
         // Applied at once and the page stays, so one picture after another can be tried; B leaves.
         Profile changed = *profile;
@@ -794,8 +836,15 @@ void App::profile_choose_action(int code) {
     int& focus = settings.focus;
     const int count = profile_choice_count(), wide = profile_choice == ProfileChoice::Kind      ? 2
                                                      : profile_choice == ProfileChoice::Picture ? 6
+                                                     : profile_choice == ProfileChoice::Day     ? 7
                                                                                                 : 4;
-    if (code == 3) {
+    if (code == 3 && profile_choice == ProfileChoice::Day) {
+        open_profile_choose(ProfileChoice::Month);
+        settings.focus = birthday_month_choice - 1;
+    } else if (code == 3 && profile_choice == ProfileChoice::Month) {
+        settings.page = Page::ProfileEdit;
+        profile_edit_focus(20);
+    } else if (code == 3) {
         if (profile_choice == ProfileChoice::Kind) {
             settings.page = Page::Profiles;
             settings.focus = 0;
@@ -831,6 +880,8 @@ void App::profile_choose_screen(SDL_Renderer* r, int y) {
                     profile_choice == ProfileChoice::Kind      ? "Who is this profile for?"
                     : profile_choice == ProfileChoice::Picture ? "Picture"
                     : profile_choice == ProfileChoice::Age     ? "Age limit"
+                    : profile_choice == ProfileChoice::Month   ? "Birthday"
+                    : profile_choice == ProfileChoice::Day     ? month_name(birthday_month_choice)
                                                                : "Colour");
     const auto* profile = edited_profile();
     for (int i = 0; i < profile_choice_count(); i++) {
@@ -855,6 +906,21 @@ void App::profile_choose_screen(SDL_Renderer* r, int y) {
             shown.restricted = false; // the Kids mark belongs on the profile, not on each choice
             draw_profile_tile(r, shown, box.x, box.y, box.w);
             if (profile && profile->picture == i) chosen_tick(r, box.x + box.w - 14, box.y + 14);
+        } else if (profile_choice == ProfileChoice::Month || profile_choice == ProfileChoice::Day) {
+            const auto birthday = DsBirthday::parse(profile ? profile->birthday : "");
+            raised_pill(r, box.x, box.y, box.w, box.h, 12, theme.at("panel"));
+            const std::string text = profile_choice == ProfileChoice::Day ? std::to_string(i + 1)
+                                     : i == 12                            ? locale.text("No birthday")
+                                                                          : month_name(i + 1);
+            const int size = profile_choice == ProfileChoice::Day ? 22 : 18,
+                      width = std::min(box.w - 8, label_width(text, size, false));
+            raw_label(r, text, box.x + (box.w - width) / 2, centred_label_y(text, size, box.y + box.h / 2), size, "ink",
+                      box.w - 8);
+            const bool chosen =
+                profile_choice == ProfileChoice::Month
+                    ? (i == 12 ? !birthday.set() : birthday.set() && birthday.month == i + 1)
+                    : birthday.set() && birthday.month == birthday_month_choice && birthday.day == i + 1;
+            if (chosen) chosen_tick(r, box.x + box.w - 10, box.y + 10);
         } else if (profile_choice == ProfileChoice::Age) {
             const int age = i == 15 ? no_age_limit : i == 14 ? only_picked_games : i + 3;
             raised_pill(r, box.x, box.y, box.w, box.h, 12, theme.at("panel"));
@@ -894,6 +960,18 @@ void App::profile_choose_top(SDL_Renderer* r, int y) {
         return;
     }
     Profile shown = *profile;
+    if (profile_choice == ProfileChoice::Month || profile_choice == ProfileChoice::Day) {
+        const int top = y + top_card_y + (top_card_h - 240) / 2;
+        settings_card(r, 24, top, 592, 240);
+        const std::string heading = profile_choice == ProfileChoice::Day
+                                        ? birthday_text({birthday_month_choice, settings.focus + 1})
+                                    : settings.focus == 12 ? locale.text("No birthday")
+                                                           : month_name(settings.focus + 1);
+        raw_label(r, heading, 48, top + 30, 28, "accent", 544);
+        wrapped(r, "DS games are told it, as on the original. On the day, the handheld says hello in its own way.", 48,
+                top + 84, 20, 544, 4);
+        return;
+    }
     if (profile_choice == ProfileChoice::Age) {
         const int top = y + top_card_y + (top_card_h - 240) / 2;
         const int age = settings.focus == 15   ? no_age_limit

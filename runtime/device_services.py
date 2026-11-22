@@ -483,6 +483,56 @@ class Services:
         self.sharing_status()
         self.publish(state='ready', message='USB data transfer on.' if enabled else 'USB data transfer off.')
 
+    def bring_over(self, step):
+        """Setup's Bring over step (runtime/migrate.py): scan for an old system's files, then bring them (and with
+        "games" the games) over. The answer goes out as import_* fields."""
+        import migrate
+        paths = migrate.device_paths(self.data)
+        devices = not self.preview
+        try:
+            if step == "scan":
+                self.publish(import_found=0, import_state="scanning")
+                plan = migrate.best_plan(paths, devices)
+                if plan is None:
+                    self.publish(import_found=0, import_state="none", state="ready", message="")
+                else:
+                    self.publish(import_state="found", state="ready", message="", **plan.summary())
+                return
+            plan = migrate.best_plan(paths, devices)
+            if plan is None:
+                self.publish(import_state="done", state="ready", message="")
+                return
+            self.publish(import_state="copying", import_progress=0, state="busy", message="")
+            shown = [-1]
+
+            def progress(done, total):
+                percent = min(100, done * 100 // max(1, total))
+                if percent != shown[0]:
+                    shown[0] = percent
+                    self.publish(import_progress=percent)
+
+            result = plan.apply(step == "games", progress)
+            self.publish(
+                import_state="done",
+                state="ready",
+                message="",
+                **{
+                    "import_done_" + key: value
+                    for key, value in result.items()
+                }
+            )
+        except ValueError as error:
+            self.publish(import_state="error", state="ready", message=str(error))
+        except OSError as error:
+            print("bring over:", error, file=sys.stderr)
+            self.publish(
+                import_state="error",
+                state="ready",
+                message="Something could not be read or written. The old card was only read: try again."
+            )
+        finally:
+            if devices: migrate.unmount_all()
+
     def usb_drive(self):
         """The session gives the data partition to the computer once the menu has quit (usr/libexec/rgds/usb)."""
         if self.preview:
@@ -746,7 +796,7 @@ def main():
             "clear-cache", "diagnostics", "poweroff", "reboot", "startup", "startup-info", "update-info",
             "update-check", "update-download", "update-apply", "update-discard", "update-auto", "library", "bt-on",
             "bt-off", "bt-scan", "bt-pair", "bt-forget", "homebrew-browse", "homebrew-get", "usb-on", "usb-off",
-            "usb-drive", "storage"
+            "usb-drive", "storage", "import-scan", "import-apply", "import-games"
         )
     )
     parser.add_argument("--app", required=True, type=Path)
@@ -783,6 +833,8 @@ def main():
             getattr(service, args.action)(json.loads(sys.stdin.read(4096)))
         elif args.action in ("wifi-on", "wifi-off"):
             service.radio(args.action == "wifi-on")
+        elif args.action.startswith("import-"):
+            service.bring_over(args.action[7:])
         elif args.action in ("usb-on", "usb-off"):
             service.usb(args.action == "usb-on")
         elif args.action in ("sharing-on", "sharing-open", "sharing-off"):

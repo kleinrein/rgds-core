@@ -1065,6 +1065,9 @@ std::unique_ptr<View> make_keyboard(const std::string& system) {
     if (system == "cpc") return std::make_unique<Keyboard>(cpc(), Keyboard::Cpc);
     if (system == "amiga") return std::make_unique<Keyboard>(amiga(), Keyboard::Amiga);
     if (system == "dos") return std::make_unique<Keyboard>(pc(), Keyboard::Pc);
+    // Flash: a PC's keys for name entry and keyboard games, and the touch pad, a laptop's, for games that aim with
+    // the pointer while the game is on the top screen.
+    if (system == "flash") return std::make_unique<Keyboard>(pc(), Keyboard::Pc);
     return nullptr;
 }
 

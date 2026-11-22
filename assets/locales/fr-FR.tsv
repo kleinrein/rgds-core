@@ -1763,3 +1763,165 @@ Send to phone	Envoyer au téléphone
 Connect to Wi-Fi to send pictures to a phone or computer.	Connectez-vous au Wi-Fi pour envoyer des images à un téléphone ou un ordinateur.
 Your picture is on the pad. Write or draw beside it, then send.	Votre image est sur le bloc. Écrivez ou dessinez à côté, puis envoyez.
 Join a room: your picture goes on the pad.	Entrez dans un salon : votre image ira sur le bloc.
+Fit (2x, borders)	Ajuster (2x, bordures)
+Fill (3x, cropped)	Remplir (3x, rogné)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Chaque pixel DS a la même taille à l'écran. Ajuster laisse une bordure, Remplir rogne les bords. S'applique au prochain lancement.
+Whole pixels saved. Save & restart to use it.	Pixels entiers enregistrés. Enregistrez et redémarrez pour l'utiliser.
+Whole pixels saved.	Pixels entiers enregistrés.
+B: back	B : retour
+Book	Livre
+Book view	Vue livre
+Book, held sideways	Livre, tenu de côté
+Books	Livres
+Chapter	Chapitre
+Close the book	Fermer le livre
+Contents	Sommaire
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Copiez des PDF, EPUB, CBZ ou dossiers de pages dans le dossier books.
+Copy films and series into the videos folder.	Copiez films et séries dans le dossier videos.
+Direction	Sens
+End of this film	Fin de ce film
+Fill the screen	Remplir l'écran
+Finished	Terminé
+Hold in	Tenir de la
+Larger	Plus grand
+Left to right	De gauche à droite
+Media	Médias
+No books yet	Aucun livre pour l'instant
+No sound in this film	Pas de son dans ce film
+No videos yet	Aucune vidéo pour l'instant
+Original size	Taille d'origine
+Paper	Papier
+Read	Lire
+Read on	Reprendre
+Reading direction	Sens de lecture
+Resume at	Reprendre à
+Right to left	De droite à gauche
+Show below the picture	Afficher sous l'image
+Skip intro	Passer l'intro
+Sleep at the end	Arrêt à la fin
+Sleep in	Arrêt dans
+Sleep timer	Minuteur
+Smaller	Plus petit
+Stand mode	Mode support
+Stretch	Étirer
+Subtitles	Sous-titres
+Tap or press A to play now	Touchez ou appuyez sur A pour lire
+Text size	Taille du texte
+The pages of this file are fixed	Les pages de ce fichier sont fixes
+This book cannot be opened	Impossible d'ouvrir ce livre
+This book has no contents list	Ce livre n'a pas de sommaire
+This film cannot be played	Impossible de lire ce film
+Track	Piste
+Up next	À suivre
+Videos	Vidéos
+White	Blanc
+Whole picture	Image entière
+books, comics	livres, BD
+file	fichier
+fixed	fixe
+left	restant
+left hand	main gauche
+light text on dark	texte clair sur fond sombre
+manga	manga
+none	aucun
+one page, held normally	une page, tenu normalement
+pages	pages
+right hand	main droite
+two pages	deux pages
+warm, for long reading	chaud, pour lire longtemps
+Films and books	Films et livres
+Films, books and music	Films, livres et musique
+Bring over	Récupérer
+Looking for saves from another system…	Recherche de sauvegardes d'un autre système…
+Welcome over!	Bienvenue !
+Your saves and play time are in place.	Tes sauvegardes et ton temps de jeu sont en place.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher les a gardées de ton ancienne carte avant de l'effacer.
+They are on the card in the second slot.	Elles sont sur la carte du deuxième emplacement.
+They are on the USB drive.	Elles sont sur la clé USB.
+They are in the import folder on this card.	Elles sont dans le dossier import de cette carte.
+Coming from {0}?	Tu viens de {0} ?
+Your saves, play time and favourites can come with you.	Tes sauvegardes, ton temps de jeu et tes favoris peuvent te suivre.
+Bringing everything over…	Récupération en cours…
+Keep the handheld on until this is done.	Laisse la console allumée jusqu'à la fin.
+{0} save	{0} sauvegarde
+{0} saves	{0} sauvegardes
+{0} resume point	{0} point de reprise
+{0} resume points	{0} points de reprise
+{0} hours of play time	{0} heures de jeu
+{0} favourite	{0} favori
+{0} favourites	{0} favoris
+{0} game on this card	{0} jeu sur cette carte
+{0} games on this card	{0} jeux sur cette carte
+{0} BIOS file	{0} fichier BIOS
+{0} BIOS files	{0} fichiers BIOS
+Everything was already here.	Tout était déjà là.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} jeu est encore sur ton ordinateur. Copie le dossier roms de la sauvegarde dans le dossier roms de cette carte (l'étape Jeux explique comment) : son temps de jeu et ses sauvegardes l'y retrouveront.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} jeux sont encore sur ton ordinateur. Copie le dossier roms de la sauvegarde dans le dossier roms de cette carte (l'étape Jeux explique comment) : leur temps de jeu et leurs sauvegardes les y retrouveront.
+{0} saves already here stay as they are.	{0} sauvegardes déjà présentes restent telles quelles.
+Bring them over	Les récupérer
+Press A. Nothing here is replaced.	Appuie sur A. Rien n'est remplacé.
+Bring the games too	Récupérer aussi les jeux
+Not now	Pas maintenant
+Something could not be read or written. The old card was only read: try again.	Quelque chose n'a pas pu être lu ou écrit. L'ancienne carte a seulement été lue : réessaie.
+Coming from the stock system?	Tu viens du système d'origine ?
+Your saves can come with you.	Tes sauvegardes peuvent te suivre.
+Snake	Serpent
+Press A or a direction to start	Appuie sur A ou une direction pour commencer
+Press A to carry on	Appuie sur A pour continuer
+You win!	Gagné !
+New best!	Nouveau record !
+Game over	Partie terminée
+Best	Record
+Play again	Rejouer
+With walls	Avec des murs
+Classic screen	Écran classique
+Walls	Murs
+Swipe on either screen to steer	Glisse sur l’un des écrans pour diriger
+Slower	Plus lent
+Faster	Plus rapide
+Pause	Pause
+Journal	Journal
+Your year	Votre année
+Your {0}	Votre {0}
+A quiet look back at your year	Un regard paisible sur votre année
+Days played	Jours de jeu
+The game you kept coming back to	Le jeu auquel vous êtes toujours revenu
+Your first screenshot	Votre première capture
+Preparing your journal…	Préparation de votre journal…
+Your journal is empty	Votre journal est vide
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Jouez à un jeu et tout commence ici : votre temps de jeu, vos déblocages et vos photos.
+Played for {0}	Joué {0}
+1 photo	1 photo
+{0} photos	{0} photos
+First time playing	Première fois
+First time since {0}	Première fois depuis {0}
+{0} more achievements	{0} autres succès
+Earlier today	Plus tôt aujourd'hui
+Where you left off	Là où vous en étiez
+Away for {0}	Absent {0}
+Sunday	dimanche
+Monday	lundi
+Tuesday	mardi
+Wednesday	mercredi
+Thursday	jeudi
+Friday	vendredi
+Saturday	samedi
+January	janvier
+February	février
+March	mars
+April	avril
+May	mai
+June	juin
+July	juillet
+August	août
+September	septembre
+October	octobre
+November	novembre
+December	décembre
+Birthday	Anniversaire
+No birthday	Pas d'anniversaire
+Not set	Non défini
+Happy birthday, {0}!	Joyeux anniversaire, {0} !
+Last played {0}	Dernière partie : {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Les couleurs et la musique du menu suivent l'heure : soirées plus chaudes, nuits plus calmes
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Les jeux DS le connaissent, comme sur l'original. Ce jour-là, la console vous salue à sa façon.

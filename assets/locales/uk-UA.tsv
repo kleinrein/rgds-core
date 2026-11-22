@@ -1763,3 +1763,165 @@ Send to phone	Надіслати на телефон
 Connect to Wi-Fi to send pictures to a phone or computer.	Підключіться до Wi-Fi, щоб надсилати зображення на телефон або комп'ютер.
 Your picture is on the pad. Write or draw beside it, then send.	Зображення на аркуші. Напишіть або намалюйте поруч і надішліть.
 Join a room: your picture goes on the pad.	Увійдіть у кімнату: зображення з'явиться на аркуші.
+Fit (2x, borders)	Вписати (2x, рамка)
+Fill (3x, cropped)	Заповнити (3x, обрізка)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Усі пікселі DS одного розміру на екрані. Вписати лишає рамку, Заповнити обрізає краї. Діє з наступного запуску.
+Whole pixels saved. Save & restart to use it.	Цілі пікселі збережено. Збережіть і перезапустіть, щоб застосувати.
+Whole pixels saved.	Цілі пікселі збережено.
+B: back	B: назад
+Book	Книга
+Book view	Вигляд книги
+Book, held sideways	Книга, боком
+Books	Книги
+Chapter	Розділ
+Close the book	Закрити книгу
+Contents	Зміст
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Скопіюйте PDF, EPUB, CBZ або теки зі сторінками в теку books.
+Copy films and series into the videos folder.	Скопіюйте фільми й серіали в теку videos.
+Direction	Напрям
+End of this film	Кінець фільму
+Fill the screen	Заповнити екран
+Finished	Переглянуто
+Hold in	Тримати в
+Larger	Більше
+Left to right	Зліва направо
+Media	Медіа
+No books yet	Книг ще немає
+No sound in this film	У цьому фільмі немає звуку
+No videos yet	Відео ще немає
+Original size	Початковий розмір
+Paper	Папір
+Read	Читати
+Read on	Читати далі
+Reading direction	Напрям читання
+Resume at	Продовжити з
+Right to left	Справа наліво
+Show below the picture	Показувати під зображенням
+Skip intro	Пропустити заставку
+Sleep at the end	Сон наприкінці
+Sleep in	Сон через
+Sleep timer	Таймер сну
+Smaller	Менше
+Stand mode	Режим підставки
+Stretch	Розтягнути
+Subtitles	Субтитри
+Tap or press A to play now	Торкніться або натисніть A, щоб дивитися
+Text size	Розмір тексту
+The pages of this file are fixed	Сторінки цього файлу фіксовані
+This book cannot be opened	Не вдається відкрити цю книгу
+This book has no contents list	У цій книзі немає змісту
+This film cannot be played	Не вдається відтворити цей фільм
+Track	Доріжка
+Up next	Далі
+Videos	Відео
+White	Білий
+Whole picture	Усе зображення
+books, comics	книги, комікси
+file	файл
+fixed	фіксов.
+left	залишилось
+left hand	лівій руці
+light text on dark	світлий текст на темному
+manga	манга
+none	немає
+one page, held normally	одна сторінка, звичайно
+pages	стор.
+right hand	правій руці
+two pages	дві сторінки
+warm, for long reading	теплий, для довгого читання
+Films and books	Фільми й книги
+Films, books and music	Фільми, книги й музика
+Bring over	Перенесення
+Looking for saves from another system…	Шукаємо збереження іншої системи…
+Welcome over!	Ласкаво просимо!
+Your saves and play time are in place.	Ваші збереження і час гри на місці.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher зберіг їх зі старої картки, перш ніж стерти її.
+They are on the card in the second slot.	Вони на картці в другому слоті.
+They are on the USB drive.	Вони на USB-накопичувачі.
+They are in the import folder on this card.	Вони в теці import на цій картці.
+Coming from {0}?	Ви перейшли з {0}?
+Your saves, play time and favourites can come with you.	Ваші збереження, час гри та обране можна перенести.
+Bringing everything over…	Переносимо все…
+Keep the handheld on until this is done.	Не вимикайте пристрій, доки перенесення не завершиться.
+{0} save	Збереження: {0}
+{0} saves	Збереження: {0}
+{0} resume point	Точки продовження: {0}
+{0} resume points	Точки продовження: {0}
+{0} hours of play time	Час гри: {0} год
+{0} favourite	Обране: {0}
+{0} favourites	Обране: {0}
+{0} game on this card	Ігри на цій картці: {0}
+{0} games on this card	Ігри на цій картці: {0}
+{0} BIOS file	Файли BIOS: {0}
+{0} BIOS files	Файли BIOS: {0}
+Everything was already here.	Усе вже було тут.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	Ігор досі на комп'ютері: {0}. Скопіюйте теку roms із резервної копії до теки roms цієї картки (як — показано на кроці «Ігри»): там їх знайдуть час гри та збереження.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	Ігор досі на комп'ютері: {0}. Скопіюйте теку roms із резервної копії до теки roms цієї картки (як — показано на кроці «Ігри»): там їх знайдуть час гри та збереження.
+{0} saves already here stay as they are.	Збереження, які вже тут, залишаються як є: {0}.
+Bring them over	Перенести
+Press A. Nothing here is replaced.	Натисніть A. Нічого не буде замінено.
+Bring the games too	Перенести й ігри
+Not now	Не зараз
+Something could not be read or written. The old card was only read: try again.	Щось не вдалося прочитати або записати. Стару картку лише читали: спробуйте ще раз.
+Coming from the stock system?	Ви перейшли зі штатної системи?
+Your saves can come with you.	Ваші збереження можна перенести.
+Snake	Змійка
+Press A or a direction to start	Натисни A або напрямок, щоб почати
+Press A to carry on	Натисни A, щоб продовжити
+You win!	Перемога!
+New best!	Новий рекорд!
+Game over	Гру завершено
+Best	Рекорд
+Play again	Грати знову
+With walls	Зі стінами
+Classic screen	Класичний екран
+Walls	Стіни
+Swipe on either screen to steer	Проведи по будь-якому екрану, щоб повернути
+Slower	Повільніше
+Faster	Швидше
+Pause	Пауза
+Journal	Щоденник
+Your year	Ваш рік
+Your {0}	Ваш {0}
+A quiet look back at your year	Спокійний погляд на ваш рік
+Days played	Днів у грі
+The game you kept coming back to	Гра, до якої ви поверталися
+Your first screenshot	Ваш перший знімок екрана
+Preparing your journal…	Готуємо щоденник…
+Your journal is empty	Щоденник порожній
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Зіграйте в щось, і він почнеться тут: скільки ви грали, що відкрили і які знімки зробили.
+Played for {0}	Грали {0}
+1 photo	1 фото
+{0} photos	Фото: {0}
+First time playing	Уперше
+First time since {0}	Уперше з: {0}
+{0} more achievements	Ще досягнень: {0}
+Earlier today	Сьогодні раніше
+Where you left off	На чому ви зупинилися
+Away for {0}	Не було {0}
+Sunday	неділя
+Monday	понеділок
+Tuesday	вівторок
+Wednesday	середа
+Thursday	четвер
+Friday	пʼятниця
+Saturday	субота
+January	січень
+February	лютий
+March	березень
+April	квітень
+May	травень
+June	червень
+July	липень
+August	серпень
+September	вересень
+October	жовтень
+November	листопад
+December	грудень
+Birthday	День народження
+No birthday	Без дня народження
+Not set	Не задано
+Happy birthday, {0}!	З днем народження, {0}!
+Last played {0}	Остання гра: {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Кольори й музика меню стежать за годинником: тепліші вечори, тихіші ночі
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Його знають ігри DS, як на оригіналі. Цього дня консоль привітається по-своєму.

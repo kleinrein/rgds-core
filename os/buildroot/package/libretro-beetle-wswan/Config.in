@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_BEETLE_WSWAN
+	bool "libretro-beetle-wswan"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  Beetle WonderSwan (Mednafen), the WonderSwan and WonderSwan Color
+	  core RG DS Play loads for .ws, .wsc and .pc2 games:
+	  /usr/lib/libretro/mednafen_wswan_libretro.so. No BIOS; games made
+	  to be held upright are turned by the core.

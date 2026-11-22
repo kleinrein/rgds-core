@@ -18,6 +18,24 @@
 #define RGDS_PAD_FUZZ 32
 #define RGDS_PAD_FLAT 32
 
+/* The ABS codes adc-joystick reports for mux states 0..3 (the RG DS tree maps state N to these, raw), and the pad
+ * axis each state becomes, as ROCKNIX's driver reported it. That driver drives the mux select lines inverted against
+ * mainline's gpio-mux: its channel c sets (sel_a, sel_b) = (1,1), (1,0), (0,1), (0,0) for c = 0..3, which is mux
+ * state 3, 1, 2, 0. With its amux-channel-mapping <1 0 2 3> and report types ABS_RY, ABS_RX, ABS_Y, ABS_X (and
+ * invert-absx, -absy, -absry) that makes: state 0 -> X inverted, 1 -> RY inverted, 2 -> Y inverted, 3 -> RX. Its
+ * sticks for the radial deadzone pair its adcs 0+1 (states 1 and 3, the right stick) and 2+3 (states 2 and 0, the
+ * left). Mainline's own channel names agree (state 0 left_x, 1 right_x, 2 left_y, 3 right_y). tests/test_rgds_pad.py
+ * derives this table from the driver's switch again. */
+#define RGDS_PAD_ABS_X 0x00
+#define RGDS_PAD_ABS_Y 0x01
+#define RGDS_PAD_ABS_RX 0x03
+#define RGDS_PAD_ABS_RY 0x04
+static const int rgds_pad_state_code[4] = {RGDS_PAD_ABS_X, RGDS_PAD_ABS_Y, RGDS_PAD_ABS_RX, RGDS_PAD_ABS_RY};
+static const int rgds_pad_state_axis[4] = {RGDS_PAD_ABS_X, RGDS_PAD_ABS_RY, RGDS_PAD_ABS_Y, RGDS_PAD_ABS_RX};
+static const int rgds_pad_state_invert[4] = {1, 1, 1, 0};
+/* each stick's two mux states: right (RY, RX), left (Y, X) */
+static const int rgds_pad_stick_states[2][2] = {{1, 3}, {2, 0}};
+
 struct rgds_pad_axis {
 	int code;   /* the ABS_* code reported */
 	int invert; /* report the value negated */

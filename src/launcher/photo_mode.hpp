@@ -347,6 +347,15 @@ inline uint32_t stamp_colour(char c) {
     }
 }
 inline constexpr std::array<int, 3> stamp_scales = {3, 5, 8};
+// A stamp's main colour (its most used one apart from the outline and white): the sparkles it throws when placed.
+inline uint32_t stamp_tint(int index) {
+    std::array<int, 128> counts{};
+    for (const char* row : stamps[size_t(index)].rows)
+        for (const char* c = row; *c; c++)
+            if (*c != 'K' && *c != 'W' && *c != '.') counts[size_t(*c) & 127]++;
+    const auto most = std::max_element(counts.begin(), counts.end()) - counts.begin();
+    return counts[size_t(most)] ? stamp_colour(char(most)) : rgba(255, 255, 255);
+}
 
 // ---- Pen ------------------------------------------------------------------------------------------------------------
 inline constexpr std::array<uint32_t, 8> inks = {0xFF221C1Cu, 0xFFFFFFFFu, 0xFF4038E8u, 0xFF288CFAu,
@@ -449,6 +458,7 @@ public:
         date = false;
         edited = false;
         base_dirty_ = true;
+        revision_++;
     }
     Tool tool = Tool::Pen;
     Lens lens = Lens::Normal;
@@ -462,15 +472,17 @@ public:
         if (value == lens) return;
         lens = value;
         base_dirty_ = edited = true;
+        revision_++;
     }
     void set_frame(int value) {
         value = std::clamp(value, 0, frames() - 1);
         if (value == frame) return;
         frame = value;
         base_dirty_ = edited = true;
+        revision_++;
     }
     void set_date(bool on) {
-        if (on != date) date = on, edited = true;
+        if (on != date) date = on, edited = true, revision_++;
     }
 
     // A pen or eraser stroke from the last point to (x, y) in picture pixels; begin() starts a new one.
@@ -483,7 +495,13 @@ public:
     void stroke(double x, double y) {
         const double dx = x - last_x_, dy = y - last_y_, d = std::hypot(dx, dy);
         const double step = std::max(1.0, pen_sizes[size_t(pen_size)] * .35);
-        for (double t = step; t <= d; t += step) dab(last_x_ + dx * t / d, last_y_ + dy * t / d);
+        // The rainbow ink turns along the stroke dab by dab, not once per move.
+        const double start = stroke_length_;
+        for (double t = step; t <= d; t += step) {
+            stroke_length_ = start + t;
+            dab(last_x_ + dx * t / d, last_y_ + dy * t / d);
+        }
+        stroke_length_ = start;
         if (d >= step) {
             stroke_length_ += d;
             last_x_ = x, last_y_ = y;
@@ -499,17 +517,29 @@ public:
                 if (c) box(ink_, x0 + x * scale, y0 + y * scale, scale, scale, c);
             }
         edited = true;
+        revision_++;
+    }
+    // Clear all: every stroke and stamp at once (one undo step brings them back).
+    bool clear() {
+        if (std::all_of(ink_.begin(), ink_.end(), [](uint32_t v) { return v == 0; })) return false;
+        snapshot();
+        std::fill(ink_.begin(), ink_.end(), 0);
+        edited = true;
+        revision_++;
+        return true;
     }
     bool undo() {
         if (undo_.empty()) return false;
         ink_ = std::move(undo_.back());
         undo_.pop_back();
+        revision_++;
         return true;
     }
     bool can_undo() const { return !undo_.empty(); }
 
     // The finished picture (redone as little as possible).
     const std::vector<uint32_t>& compose() {
+        if (!base_dirty_ && composed_ == revision_) return out_;
         if (base_dirty_) {
             std::vector<uint32_t> lensed;
             apply_lens(lens, source_, lensed);
@@ -528,8 +558,11 @@ public:
         for (size_t i = 0; i < out_.size(); i++)
             if (ink_[i]) out_[i] = over(out_[i], ink_[i]);
         if (date) date_stamp(out_, date_text(year_, month_, day_, date_order));
+        composed_ = revision_;
         return out_;
     }
+    // Bumped by every change to the picture: a texture showing it is uploaded again only when this moves.
+    uint32_t revision() const { return revision_; }
     const play::Font* font = nullptr; // for the console frames' printed names
 
 private:
@@ -553,11 +586,13 @@ private:
                 p = p ? over(p, (c & 0xFFFFFFu) | uint32_t(a) << 24) : ((c & 0xFFFFFFu) | uint32_t(a) << 24);
             }
         edited = true;
+        revision_++;
     }
     std::vector<int> consoles_;
     std::vector<uint32_t> source_, base_, ink_, out_;
     std::deque<std::vector<uint32_t>> undo_;
     bool base_dirty_ = true;
+    uint32_t revision_ = 1, composed_ = 0;
     int year_ = 2026, month_ = 1, day_ = 1;
     double last_x_ = 0, last_y_ = 0, stroke_length_ = 0;
 };

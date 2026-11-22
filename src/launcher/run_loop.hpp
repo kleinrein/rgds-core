@@ -199,6 +199,8 @@ int App::run() {
         for (auto point : touchscreen.poll(now - began))
             if (!(o.port_menu && port_idle)) raw_touch(point, now);
             else if (port_info_shown()) port_touch(point, now);
+        for (auto point : top_touch.poll())
+            if (session_initialized && !(o.port_menu && port_idle)) zoom_top_touch(point.kind, point.x, point.y, now);
         if (o.port_menu && port_idle) port_info_tick(now);
         if (!session_initialized) {
             if (o.seconds && now - began >= Uint32(o.seconds) * 1000) break;
@@ -243,8 +245,10 @@ int App::run() {
         if (auto result = library_summary.poll()) {
             summary = std::move(*result);
             summary_ready = true;
+            if (settings.page == Page::Journal) journal_refresh();
             dirty = true;
         }
+        day_light_tick(now);
         if (!o.game_menu && o.boot_startup && library_ready && boot_hardware_ready && !return_writes_pending() &&
             !system.volume_pending() && !system.brightness_pending() && !resume_checked &&
             settings.page != Page::BootWarning && settings.page != Page::Welcome &&
@@ -308,7 +312,7 @@ int App::run() {
             refresh_network(now);
         poll_launch(now);
         poll_chat();
-        const bool toy_moving = voice_tick(now), music_moving = music_tick(now) || toy_moving;
+        const bool toy_moving = voice_tick(now) || snake_tick(now), music_moving = music_tick(now) || toy_moving;
         if (media.adopt()) dirty = true;
         if (launch_phase == LaunchPhase::Playing) continue;
         if (touch_tail && now - release_at >= 140) {
@@ -362,6 +366,7 @@ int App::run() {
         }
         if (banner_shown() && banner_frame(now) != drawn_banner_frame) dirty = true;
         bool list_animated = browser_list.update(now);
+        if (zoom_update(now)) dirty = true;
         const bool shader_moving = settings.page == Page::ShaderPicker && shader_carousel.update(now);
         bool animated =
             (preferences.animations && (carousel.update(now) || shader_moving || list_animated ||
@@ -400,19 +405,49 @@ int App::run() {
         if (dirty || o.frames) {
             ui_trace.mark(UiTrace::Assets, rendered_frames, uint32_t(settings.page));
             if (!rendered_frames) launch_profile.mark("assets-start");
+            const double prepare_at = FrameLog::clock();
             prepare_render_assets();
             if (!rendered_frames) launch_profile.mark("assets-ready");
+            if (frame_log.file) frame_log.add(FrameLog::Prepare, FrameLog::clock() - prepare_at);
             draw(!o.screenshot.empty());
             frames++;
+            if (frame_log.file) {
+                const double at = FrameLog::clock();
+                if (frame_log.last) frame_log.add(FrameLog::Interval, at - frame_log.last);
+                frame_log.last = at;
+                frame_log.frames++;
+                if (!frame_log.began) frame_log.began = at;
+                if (at - frame_log.began >= 1000) {
+                    static const char* names[] = {"interval", "prepare", "top", "top_present", "bottom",
+                                                  "bottom_present"};
+                    std::fprintf(frame_log.file, "t=%u frames=%d top_frames=%d page=%d zoom=%.2f tiles_built=%d",
+                                 s.GetTicks(), frame_log.frames, frame_log.top_frames, int(settings.page), zoom.level,
+                                 zoom_sprite_builds);
+                    zoom_sprite_builds = 0;
+                    for (int i = 0; i < FrameLog::Count; i++) {
+                        const int n = i == FrameLog::TopDraw || i == FrameLog::TopPresent ? frame_log.top_frames
+                                                                                            : frame_log.frames;
+                        std::fprintf(frame_log.file, " %s=%.1f/%.1f", names[i], n ? frame_log.sum[i] / n : 0.0,
+                                     frame_log.peak[i]);
+                    }
+                    std::fputc('\n', frame_log.file);
+                    std::fflush(frame_log.file);
+                    const std::FILE* keep = frame_log.file;
+                    frame_log = FrameLog{};
+                    frame_log.file = const_cast<std::FILE*>(keep);
+                }
+            }
             if (frames == 1 && o.game_menu && !o.preview) {
                 system.request_status();
                 system_poll = now;
             }
         }
         album_poll();
+        files_poll(now);
         album_share_poll(now);
         service_launcher_screenshot();
         if (shutter_active()) dirty = true; // the flash fades over the next frames
+        if (settings.page == Page::Photo) photo_tick();
         if (!o.preview && fs::exists(o.data / "session/capture-request")) {
             auto previous = o.screenshot;
             o.screenshot = o.data / "session/ui-snapshot";
@@ -439,6 +474,7 @@ int App::run() {
         if (o.game_menu && (!menu_pending_token.empty() || menu_status["state"] == "busy"))
             wait_ms = std::min(wait_ms, 20);
         if (chat_open) wait_ms = std::min(wait_ms, 40);
+        if (sn.open) wait_ms = std::min(wait_ms, snake_wait(now)); // wakes on the snake's next step, to the ms
         if (music_moving) wait_ms = std::min(wait_ms, 16);
         else if (music_badge_phase(now) > 0) wait_ms = std::min(wait_ms, 100); // the status bar's dancing bars
         else if (music_ready && music.alive) wait_ms = std::min(wait_ms, 250); // a song's seconds, the Home tile
@@ -515,6 +551,12 @@ int App::run() {
                << ",\"listed_systems\":" << listed_systems.size() << ",\"launching_core\":" << launching_core
                << ",\"library_count\":" << model.games.size() << ",\"play_fit\":" << play_fit
                << ",\"play_second\":" << play_second << ",\"play_frame\":" << std::quoted(play_frame) << ',';
+        report << "\"port_titles\":["; // the Ports shelf: ports and apps (docs/APPS.md)
+        bool first_port = true;
+        for (const auto& game : all_games)
+            if (game.system == "ports")
+                report << (std::exchange(first_port, false) ? "" : ",") << std::quoted(game.title);
+        report << "],";
         report << "\"shader_choices\":[";
         for (size_t i = 0; i < shader_choices.size(); ++i) report << (i ? "," : "") << shader_choices[i];
         report << "],";

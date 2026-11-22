@@ -1763,3 +1763,165 @@ Send to phone	Send to phone
 Connect to Wi-Fi to send pictures to a phone or computer.	Connect to Wi-Fi to send pictures to a phone or computer.
 Your picture is on the pad. Write or draw beside it, then send.	Your picture is on the pad. Write or draw beside it, then send.
 Join a room: your picture goes on the pad.	Join a room: your picture goes on the pad.
+Fit (2x, borders)	Fit (2x, borders)
+Fill (3x, cropped)	Fill (3x, cropped)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.
+Whole pixels saved. Save & restart to use it.	Whole pixels saved. Save & restart to use it.
+Whole pixels saved.	Whole pixels saved.
+B: back	B: back
+Book	Book
+Book view	Book view
+Book, held sideways	Book, held sideways
+Books	Books
+Chapter	Chapter
+Close the book	Close the book
+Contents	Contents
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Copy PDF, EPUB, CBZ or folders of pages into the books folder.
+Copy films and series into the videos folder.	Copy films and series into the videos folder.
+Direction	Direction
+End of this film	End of this film
+Fill the screen	Fill the screen
+Finished	Finished
+Hold in	Hold in
+Larger	Larger
+Left to right	Left to right
+Media	Media
+No books yet	No books yet
+No sound in this film	No sound in this film
+No videos yet	No videos yet
+Original size	Original size
+Paper	Paper
+Read	Read
+Read on	Read on
+Reading direction	Reading direction
+Resume at	Resume at
+Right to left	Right to left
+Show below the picture	Show below the picture
+Skip intro	Skip intro
+Sleep at the end	Sleep at the end
+Sleep in	Sleep in
+Sleep timer	Sleep timer
+Smaller	Smaller
+Stand mode	Stand mode
+Stretch	Stretch
+Subtitles	Subtitles
+Tap or press A to play now	Tap or press A to play now
+Text size	Text size
+The pages of this file are fixed	The pages of this file are fixed
+This book cannot be opened	This book cannot be opened
+This book has no contents list	This book has no contents list
+This film cannot be played	This film cannot be played
+Track	Track
+Up next	Up next
+Videos	Videos
+White	White
+Whole picture	Whole picture
+books, comics	books, comics
+file	file
+fixed	fixed
+left	left
+left hand	left hand
+light text on dark	light text on dark
+manga	manga
+none	none
+one page, held normally	one page, held normally
+pages	pages
+right hand	right hand
+two pages	two pages
+warm, for long reading	warm, for long reading
+Films and books	Films and books
+Films, books and music	Films, books and music
+Bring over	Bring over
+Looking for saves from another system…	Looking for saves from another system…
+Welcome over!	Welcome over!
+Your saves and play time are in place.	Your saves and play time are in place.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher kept them from your old card before it erased it.
+They are on the card in the second slot.	They are on the card in the second slot.
+They are on the USB drive.	They are on the USB drive.
+They are in the import folder on this card.	They are in the import folder on this card.
+Coming from {0}?	Coming from {0}?
+Your saves, play time and favourites can come with you.	Your saves, play time and favourites can come with you.
+Bringing everything over…	Bringing everything over…
+Keep the handheld on until this is done.	Keep the handheld on until this is done.
+{0} save	{0} save
+{0} saves	{0} saves
+{0} resume point	{0} resume point
+{0} resume points	{0} resume points
+{0} hours of play time	{0} hours of play time
+{0} favourite	{0} favourite
+{0} favourites	{0} favourites
+{0} game on this card	{0} game on this card
+{0} games on this card	{0} games on this card
+{0} BIOS file	{0} BIOS file
+{0} BIOS files	{0} BIOS files
+Everything was already here.	Everything was already here.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.
+{0} saves already here stay as they are.	{0} saves already here stay as they are.
+Bring them over	Bring them over
+Press A. Nothing here is replaced.	Press A. Nothing here is replaced.
+Bring the games too	Bring the games too
+Not now	Not now
+Something could not be read or written. The old card was only read: try again.	Something could not be read or written. The old card was only read: try again.
+Coming from the stock system?	Coming from the stock system?
+Your saves can come with you.	Your saves can come with you.
+Snake	Snake
+Press A or a direction to start	Press A or a direction to start
+Press A to carry on	Press A to carry on
+You win!	You win!
+New best!	New best!
+Game over	Game over
+Best	Best
+Play again	Play again
+With walls	With walls
+Classic screen	Classic screen
+Walls	Walls
+Swipe on either screen to steer	Swipe on either screen to steer
+Slower	Slower
+Faster	Faster
+Pause	Pause
+Journal	Journal
+Your year	Your year
+Your {0}	Your {0}
+A quiet look back at your year	A quiet look back at your year
+Days played	Days played
+The game you kept coming back to	The game you kept coming back to
+Your first screenshot	Your first screenshot
+Preparing your journal…	Preparing your journal…
+Your journal is empty	Your journal is empty
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Play a game and it starts here: how long you played, what you unlocked and the pictures you took.
+Played for {0}	Played for {0}
+1 photo	1 photo
+{0} photos	{0} photos
+First time playing	First time playing
+First time since {0}	First time since {0}
+{0} more achievements	{0} more achievements
+Earlier today	Earlier today
+Where you left off	Where you left off
+Away for {0}	Away for {0}
+Sunday	Sunday
+Monday	Monday
+Tuesday	Tuesday
+Wednesday	Wednesday
+Thursday	Thursday
+Friday	Friday
+Saturday	Saturday
+January	January
+February	February
+March	March
+April	April
+May	May
+June	June
+July	July
+August	August
+September	September
+October	October
+November	November
+December	December
+Birthday	Birthday
+No birthday	No birthday
+Not set	Not set
+Happy birthday, {0}!	Happy birthday, {0}!
+Last played {0}	Last played {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Colours and menu music follow the clock: warmer evenings, quieter nights
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS games are told it, as on the original. On the day, the handheld says hello in its own way.

@@ -52,6 +52,7 @@ type State struct {
 	RelError  string   `json:"releaseError,omitempty"`
 	Image     *Ready   `json:"image"`
 	Disk      *Disk    `json:"disk"`
+	Carried   *Carried `json:"carried,omitempty"`
 	Busy      bool     `json:"busy"`
 	Log       string   `json:"log"`
 }
@@ -282,6 +283,18 @@ func (s *server) loadRelease() {
 func (s *server) progress(phase string, done, total int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// not phases: how many DS saves the flash read off a stock card, and where their backup went (carry.go)
+	if phase == "dssaves" || strings.HasPrefix(phase, "dsbackup:") {
+		if s.st.Carried == nil { // a card nobody chose to keep anything from, rescued anyway
+			s.st.Carried = &Carried{OnCard: true}
+		}
+		if phase == "dssaves" {
+			s.st.Carried.DSSaves = int(done)
+		} else if s.st.Carried.Folder == "" {
+			s.st.Carried.Folder = strings.TrimPrefix(phase, "dsbackup:")
+		}
+		return
+	}
 	now := time.Now()
 	if phase != s.st.Phase {
 		logf("phase %s (%d/%d)", phase, done, total)
@@ -326,6 +339,8 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 		Model   string `json:"model"`
 		Disk    string `json:"disk"`
 		Confirm string `json:"confirm"`
+		Keep    bool   `json:"keep"`  // bring the old system's saves along (carry.go)
+		Games   bool   `json:"games"` // and copy its games to this computer
 		update
 	}
 	if r.Method == "POST" {
@@ -389,7 +404,18 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 		s.mu.Unlock()
 		reply(nil)
 	case name == "flash":
-		reply(s.startFlash(req.Disk, req.Confirm))
+		reply(s.startFlash(req.Disk, req.Confirm, req.Keep, req.Games))
+	case name == "backup":
+		s.mu.Lock()
+		folder := ""
+		if s.st.Carried != nil {
+			folder = s.st.Carried.Folder
+		}
+		s.mu.Unlock()
+		if folder != "" {
+			showFile(folder)
+		}
+		reply(nil)
 	case name == "log":
 		showFile(logPath())
 		reply(nil)
@@ -405,6 +431,9 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 		stop()
 	case name == "again":
 		s.mu.Lock()
+		if !s.st.Busy {
+			s.st.Carried = nil
+		}
 		if !s.st.Busy && s.st.Image != nil {
 			s.st.Phase, s.st.Error, s.st.Disk = "ready", "", nil
 		} else if !s.st.Busy {
@@ -470,7 +499,7 @@ func (s *server) prepare(modelName string) error {
 	return nil
 }
 
-func (s *server) startFlash(id, confirm string) error {
+func (s *server) startFlash(id, confirm string, keep, games bool) error {
 	if id == "" || confirm != id {
 		return errors.New("not confirmed; nothing was written")
 	}
@@ -489,8 +518,43 @@ func (s *server) startFlash(id, confirm string) error {
 		return err
 	}
 	s.mu.Lock()
-	s.st.Disk = &d
+	s.st.Disk, s.st.Carried = &d, nil
 	s.mu.Unlock()
+	if keep && d.Carry != nil {
+		// The old card's saves (and games) to this computer first, while it is still mounted; then the flash
+		// takes the bundle along. A backup that fails stops here: nothing has been written to the card yet.
+		go func() {
+			folder, bundle, err := keepCarry(d.Carry, games, s.progress)
+			if err != nil {
+				s.fail("flash", err)
+				return
+			}
+			copied := 0
+			if games {
+				copied = d.Carry.Games
+			}
+			s.mu.Lock()
+			s.st.Carried = &Carried{Folder: folder, OnCard: true, Games: copied, GamesLeft: d.Carry.Games - copied}
+			s.mu.Unlock()
+			if err := s.run(id, image, bundle); err != nil {
+				s.fail("flash", err)
+			}
+		}()
+		return nil
+	}
+	declined := ""
+	if d.Carry != nil { // its saves were offered and left unticked: the flash brings none, DS saves included
+		declined = "-"
+	}
+	if err := s.run(id, image, declined); err != nil {
+		s.idle()
+		return err
+	}
+	return nil
+}
+
+// run writes the card: here when this process may, otherwise in the elevated worker.
+func (s *server) run(id, image, carry string) error {
 	finish := func(err error) {
 		if err != nil {
 			s.fail("flash", err)
@@ -502,7 +566,7 @@ func (s *server) startFlash(id, confirm string) error {
 		s.notify()
 	}
 	if inProcess(id) {
-		go func() { finish(flash(image, id, s.progress)) }()
+		go func() { finish(flash(image, id, carry, s.progress)) }()
 		return nil
 	}
 	job := randomToken()
@@ -510,9 +574,12 @@ func (s *server) startFlash(id, confirm string) error {
 	s.job = job
 	s.mu.Unlock()
 	// This blocks while Windows shows its admin prompt, so the lock is not held here.
-	wait, err := startWorker([]string{"--worker", "--report", s.base + "api/worker/" + job, "--disk", id, "--image", image, "--log", logPath()})
+	args := []string{"--worker", "--report", s.base + "api/worker/" + job, "--disk", id, "--image", image, "--log", logPath()}
+	if carry != "" {
+		args = append(args, "--carry", carry)
+	}
+	wait, err := startWorker(args)
 	if err != nil {
-		s.idle()
 		return err
 	}
 	go func() {

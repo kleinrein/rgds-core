@@ -39,7 +39,7 @@ void App::configure_sounds() {
     // Music belongs to the home, library and settings; not to the in-game
     // menu, the microphone test, sleep or a launch in progress.
     sounds.configure_music(preferences.menu_music && !probe && !o.game_menu && !sleep_audio_parked && !song &&
-                               settings.page != Page::Microphone && !launching && !vt.open,
+                               settings.page != Page::Microphone && !launching && !vt.open && !sn.open,
                            preferences.music_volume, asset_path("music") / "menu.wav");
 }
 

@@ -1763,3 +1763,165 @@ Send to phone	휴대폰으로 보내기
 Connect to Wi-Fi to send pictures to a phone or computer.	휴대폰이나 컴퓨터로 그림을 보내려면 Wi-Fi에 연결하세요.
 Your picture is on the pad. Write or draw beside it, then send.	그림이 메모장에 있습니다. 옆에 쓰거나 그린 뒤 보내세요.
 Join a room: your picture goes on the pad.	방에 들어가면 그림이 메모장에 놓입니다.
+Fit (2x, borders)	맞춤 (2x, 테두리)
+Fill (3x, cropped)	채우기 (3x, 잘림)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	모든 DS 픽셀을 화면에서 같은 크기로 보여 줍니다. 맞춤은 테두리가 생기고 채우기는 가장자리를 자릅니다. 다음 시작부터 적용됩니다.
+Whole pixels saved. Save & restart to use it.	정수 배율을 저장했습니다. 저장 후 다시 시작하면 적용됩니다.
+Whole pixels saved.	정수 배율을 저장했습니다.
+B: back	B: 뒤로
+Book	책
+Book view	책 보기
+Book, held sideways	책, 옆으로 들기
+Books	책
+Chapter	챕터
+Close the book	책 닫기
+Contents	목차
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	PDF, EPUB, CBZ 또는 페이지 폴더를 books 폴더에 복사하세요.
+Copy films and series into the videos folder.	영화와 시리즈를 videos 폴더에 복사하세요.
+Direction	방향
+End of this film	이 영화가 끝날 때
+Fill the screen	화면 채우기
+Finished	다 봄
+Hold in	잡는 손
+Larger	크게
+Left to right	왼쪽에서 오른쪽
+Media	미디어
+No books yet	아직 책이 없습니다
+No sound in this film	이 영화에는 소리가 없습니다
+No videos yet	아직 동영상이 없습니다
+Original size	원래 크기
+Paper	종이
+Read	읽기
+Read on	이어 읽기
+Reading direction	읽는 방향
+Resume at	이어서 보기
+Right to left	오른쪽에서 왼쪽
+Show below the picture	화면 아래에 표시
+Skip intro	인트로 건너뛰기
+Sleep at the end	끝나면 절전
+Sleep in	절전까지
+Sleep timer	취침 타이머
+Smaller	작게
+Stand mode	스탠드 모드
+Stretch	늘이기
+Subtitles	자막
+Tap or press A to play now	탭하거나 A를 눌러 지금 재생
+Text size	글자 크기
+The pages of this file are fixed	이 파일의 페이지는 고정되어 있습니다
+This book cannot be opened	이 책을 열 수 없습니다
+This book has no contents list	이 책에는 목차가 없습니다
+This film cannot be played	이 영화를 재생할 수 없습니다
+Track	트랙
+Up next	다음 영상
+Videos	동영상
+White	흰색
+Whole picture	전체 화면 보기
+books, comics	책, 만화
+file	파일
+fixed	고정
+left	남음
+left hand	왼손
+light text on dark	어두운 바탕에 밝은 글자
+manga	망가
+none	없음
+one page, held normally	한 페이지, 평소대로 들기
+pages	페이지
+right hand	오른손
+two pages	두 페이지
+warm, for long reading	따뜻한 색, 오래 읽을 때
+Films and books	영화와 책
+Films, books and music	영화, 책, 음악
+Bring over	가져오기
+Looking for saves from another system…	다른 시스템의 저장 데이터를 찾는 중…
+Welcome over!	환영합니다!
+Your saves and play time are in place.	저장 데이터와 플레이 시간을 가져왔습니다.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher가 예전 카드를 지우기 전에 보관해 두었습니다.
+They are on the card in the second slot.	두 번째 슬롯의 카드에 있습니다.
+They are on the USB drive.	USB 드라이브에 있습니다.
+They are in the import folder on this card.	이 카드의 import 폴더에 있습니다.
+Coming from {0}?	{0}에서 오셨나요?
+Your saves, play time and favourites can come with you.	저장 데이터, 플레이 시간, 즐겨찾기를 가져올 수 있습니다.
+Bringing everything over…	모두 가져오는 중…
+Keep the handheld on until this is done.	끝날 때까지 기기를 켜 두세요.
+{0} save	저장 데이터 {0}개
+{0} saves	저장 데이터 {0}개
+{0} resume point	이어하기 지점 {0}개
+{0} resume points	이어하기 지점 {0}개
+{0} hours of play time	플레이 시간 {0}시간
+{0} favourite	즐겨찾기 {0}개
+{0} favourites	즐겨찾기 {0}개
+{0} game on this card	이 카드의 게임 {0}개
+{0} games on this card	이 카드의 게임 {0}개
+{0} BIOS file	BIOS 파일 {0}개
+{0} BIOS files	BIOS 파일 {0}개
+Everything was already here.	이미 모두 여기에 있었습니다.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	게임 {0}개가 아직 컴퓨터에 있습니다. 백업의 roms 폴더를 이 카드의 roms 폴더로 복사하세요(게임 단계에서 방법을 볼 수 있습니다). 플레이 시간과 저장 데이터가 그곳에서 게임을 찾습니다.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	게임 {0}개가 아직 컴퓨터에 있습니다. 백업의 roms 폴더를 이 카드의 roms 폴더로 복사하세요(게임 단계에서 방법을 볼 수 있습니다). 플레이 시간과 저장 데이터가 그곳에서 게임을 찾습니다.
+{0} saves already here stay as they are.	이미 있는 저장 데이터 {0}개는 그대로 둡니다.
+Bring them over	가져오기
+Press A. Nothing here is replaced.	A를 누르세요. 아무것도 덮어쓰지 않습니다.
+Bring the games too	게임도 가져오기
+Not now	나중에
+Something could not be read or written. The old card was only read: try again.	읽거나 쓸 수 없는 항목이 있습니다. 예전 카드는 읽기만 했습니다. 다시 시도하세요.
+Coming from the stock system?	기본 시스템에서 오셨나요?
+Your saves can come with you.	저장 데이터를 가져올 수 있습니다.
+Snake	뱀 게임
+Press A or a direction to start	A 또는 방향키를 눌러 시작
+Press A to carry on	A를 눌러 계속
+You win!	승리!
+New best!	최고 기록!
+Game over	게임 오버
+Best	최고
+Play again	다시 하기
+With walls	벽 있음
+Classic screen	클래식 화면
+Walls	벽
+Swipe on either screen to steer	아무 화면이나 밀어서 조종
+Slower	느리게
+Faster	빠르게
+Pause	일시정지
+Journal	저널
+Your year	나의 한 해
+Your {0}	나의 {0}년
+A quiet look back at your year	한 해를 조용히 돌아보기
+Days played	플레이한 날
+The game you kept coming back to	계속 돌아온 게임
+Your first screenshot	첫 스크린샷
+Preparing your journal…	저널을 준비하는 중…
+Your journal is empty	저널이 비어 있습니다
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	게임을 하면 여기서 시작됩니다: 플레이 시간, 잠금 해제한 업적, 찍은 사진.
+Played for {0}	{0} 플레이
+1 photo	사진 1장
+{0} photos	사진 {0}장
+First time playing	첫 플레이
+First time since {0}	{0} 이후 처음
+{0} more achievements	업적 {0}개 더
+Earlier today	오늘 아까
+Where you left off	마지막으로 멈춘 곳
+Away for {0}	{0} 만에
+Sunday	일요일
+Monday	월요일
+Tuesday	화요일
+Wednesday	수요일
+Thursday	목요일
+Friday	금요일
+Saturday	토요일
+January	1월
+February	2월
+March	3월
+April	4월
+May	5월
+June	6월
+July	7월
+August	8월
+September	9월
+October	10월
+November	11월
+December	12월
+Birthday	생일
+No birthday	생일 없음
+Not set	설정 안 함
+Happy birthday, {0}!	{0}님, 생일 축하해요!
+Last played {0}	마지막 플레이: {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	색과 메뉴 음악이 시계를 따라갑니다: 따뜻한 저녁, 조용한 밤
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	원래 DS처럼 DS 게임에 전달됩니다. 그날에는 기기가 나름의 방식으로 인사합니다.

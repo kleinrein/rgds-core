@@ -41,6 +41,7 @@ void App::open_category() {
     systems_origin = false;
     if (home_selected == last_played_tile) open_last_played();
     else if (music_at(home_selected)) open_music();
+    else if (media_at(home_selected)) launch_media();
     else if (toy_at(home_selected)) open_voice_toy();
     else if (home_selected == pictochat_tile) {
         if (pictochat_hidden() || (kid_locked() && !active_profile().allow_pictochat)) {
@@ -396,7 +397,7 @@ const char* App::play_second_name(int second, const std::string& system) const {
 static std::vector<int> play_second_order(const std::string& system) {
     if (system == "3ds") return {0, 1, 2};
     if (system == "zx" || system == "c64" || system == "msx" || system == "cpc" || system == "amiga" ||
-        system == "dos")
+        system == "dos" || system == "flash")
         return {0, 4, 3, 1, 2}; // the keyboard first, for the machines with one (DOS's with its mouse)
     if (has_touch_controller(system)) return {0, 4, 3, 1, 2};    // and the keypad, or the Pico's book
     if (system == "dc") return {0, 4, 3, 1, 2};                   // and the VMU's screen

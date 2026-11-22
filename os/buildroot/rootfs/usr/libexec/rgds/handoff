@@ -1,0 +1,34 @@
+#!/bin/sh
+# What RG DS Flasher kept from an old card (BananaOS: saves, states, play time, BIOS files) before it erased it.
+# The flasher writes it past the image, at the card's end: a gzip'd tar, and at the start of the card's last MiB a
+# line "RGDS-CARRY 1 <offset> <length> <sha256>" (offset on a MiB). The first boot's data partition then covers
+# that place without writing there: mkfs.exfat writes its metadata at the partition's start, sfdisk only wipes
+# known signatures, and nothing fills the partition before this runs (rcS, right after it is mounted). The bundle
+# goes to import/flasher.tar.gz once, checked; setup's Bring over step (runtime/migrate.py) unpacks it.
+# Looked for on the first boot only: handoff.done says it was.
+#   handoff <disk>
+DISK=$1
+OUT=${RGDS_HANDOFF_OUT:-/data/rgds/import}
+[ -f $OUT/handoff.done ] && exit 0
+mkdir -p $OUT || exit 0
+sectors=$(cat /sys/class/block/${DISK##*/}/size 2>/dev/null)
+case $sectors in '' | *[!0-9]*) exit 0 ;; esac
+set -- $(dd if="$DISK" bs=1048576 skip=$((sectors / 2048 - 1)) count=1 2>/dev/null | head -c 200 | head -n 1 | tr -cd 'A-Za-z0-9 -')
+if [ "$1" != RGDS-CARRY ] || [ "$2" != 1 ]; then
+    echo none > $OUT/handoff.done
+    exit 0
+fi
+off=$3 len=$4 sum=$5
+case "$off$len" in '' | *[!0-9]*) echo bad > $OUT/handoff.done; exit 0 ;; esac
+dd if="$DISK" bs=1048576 skip=$((off / 1048576)) count=$(((len + 1048575) / 1048576)) 2>/dev/null |
+    head -c "$len" > $OUT/flasher.tar.gz.part
+if [ "$(sha256sum $OUT/flasher.tar.gz.part | cut -d' ' -f1)" = "$sum" ]; then
+    mv -f $OUT/flasher.tar.gz.part $OUT/flasher.tar.gz
+    echo "$sum" > $OUT/handoff.done
+    echo "handoff: $len bytes from RG DS Flasher" >> /run/rgds/messages
+else
+    rm -f $OUT/flasher.tar.gz.part
+    echo bad > $OUT/handoff.done
+    echo "handoff: the flasher's bundle did not check out" >> /run/rgds/messages
+fi
+exit 0

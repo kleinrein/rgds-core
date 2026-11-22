@@ -264,6 +264,14 @@ class Sharing:
             except OSError:
                 pass
             add('Music', music)
+            # RG DS Media's films and books live beside the songs (docs/MEDIA_PLAN.md: /data/videos, /data/books).
+            for name in ('Videos', 'Books'):
+                folder = Path(music).parent / name.lower()
+                try:
+                    folder.mkdir(exist_ok=True)
+                except OSError:
+                    pass
+                add(name, folder)
         add('Music', self.data.parent / 'music')
         for name in ('Imports', 'Exports'):
             root = self.data / name.lower()

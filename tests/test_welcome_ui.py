@@ -19,7 +19,7 @@ class WelcomeTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.data = Path(self.temp.name).resolve()
 
-    def run_ui(self, script='', first_run=True, seconds=2):
+    def run_ui(self, script='', first_run=True, seconds=2, env=None):
         (self.data / 'input.txt').write_text(script)
         command = [
             str(BINARY), '--preview', '--boot-startup', '--data',
@@ -33,7 +33,7 @@ class WelcomeTests(unittest.TestCase):
         result = subprocess.run(
             command,
             cwd=ROOT,
-            env=dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy'),
+            env=dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy', **(env or {})),
             capture_output=True,
             text=True,
             timeout=20
@@ -82,51 +82,70 @@ class WelcomeTests(unittest.TestCase):
         self.run_ui(self.keys('Right', 'Down', 'a'))
         self.assertIn('language=nb-NO', self.ini('ui.ini') + self.ini('preferences.ini'))
         self.assertIn('timezone=Europe/Oslo', self.ini('system.ini'))
-        self.assertEqual(self.setup_file(), 'step=1\n')
+        # Bring over (step 1) shows only when an old system's files are found: none here
+        self.assertEqual(self.setup_file(), 'step=2\n')
 
     def test_the_name_reaches_ds_games_and_pictochat(self):
-        (self.data / 'setup.ini').write_text('step=2\n')
+        (self.data / 'setup.ini').write_text('step=3\n')
         self.run_ui(
             self.keys('a') + ''.join(f'{700 + i * 60} text {c}\n' for i, c in enumerate('Ada')) + '1100 key Return\n'
         )
         self.assertIn('nickname=Ada', self.ini('ds.ini'))
         self.assertIn('name=Ada', self.ini('pictochat.ini'))
-        self.assertEqual(self.setup_file(), 'step=3\n')
+        self.assertEqual(self.setup_file(), 'step=4\n')
 
     def test_home_choices_are_saved(self):
-        (self.data / 'setup.ini').write_text('step=3\n')
+        (self.data / 'setup.ini').write_text('step=4\n')
         # Next is focused: Up lands on the typeface row, Up again on Animations.
         self.run_ui(self.keys('Up', 'Up', 'Left', 'a'))
         text = self.ini('ui.ini')
         self.assertIn('view_animations=', text)
 
     def test_systems_is_a_big_choice_of_its_own(self):
-        (self.data / 'setup.ini').write_text('step=4\n')
+        (self.data / 'setup.ini').write_text('step=5\n')
         self.run_ui(self.keys('Left', 'a'))
         self.assertIn('show_systems=0', self.ini('ui.ini'))
-        self.assertEqual(self.setup_file(), 'step=5\n')
+        self.assertEqual(self.setup_file(), 'step=6\n')
 
     def test_a_new_card_shows_all_systems_unless_told_otherwise(self):
         self.run_ui()
         self.assertIn('show_systems=1', self.ini('ui.ini'))
 
     def test_coming_back_keeps_a_ds_only_choice(self):
-        (self.data / 'setup.ini').write_text('step=7\n')
+        (self.data / 'setup.ini').write_text('step=8\n')
         (self.data / 'ui.ini').write_text('schema=1\nshow_systems=0\n')
         self.run_ui()
         self.assertIn('show_systems=0', self.ini('ui.ini'))
 
     def test_timezone_is_a_detour_back_into_setup(self):
-        (self.data / 'setup.ini').write_text('step=5\n')
+        (self.data / 'setup.ini').write_text('step=6\n')
         report = self.run_ui(self.keys('Up', 'Up', 'a'))
         self.assertEqual(report['page'], TIMEZONE_PAGE)
         report = self.run_ui(self.keys('Up', 'Up', 'a', 'b'))
         self.assertEqual(report['page'], WELCOME_PAGE)
 
+    def test_an_old_systems_saves_come_over_with_one_press(self):
+        # A BananaOS card's files copied into the import folder (runtime/migrate.py finds them there)
+        old = self.data / 'import/BANANA'
+        for path, text in (
+            ('roms/nds/Kart.nds', 'N'), ('saves/nds/Kart.sav', 'save'),
+            ('banana/playstats.tsv', 'nds/Kart.nds\t2\t3600\t1700000000\n')
+        ):
+            (old / path).parent.mkdir(parents=True, exist_ok=True)
+            (old / path).write_text(text)
+        env = {'RGDS_IMPORT_PREVIEW': '1', 'RGDS_IMPORT_ROMS': str(self.data / 'roms')}
+        # Language, then Bring over: A on Bring them over
+        self.run_ui(self.keys('a') + '1600 key a\n1700 key-up a\n', seconds=4, env=env)
+        self.assertEqual(self.setup_file(), 'step=1\n')
+        self.assertEqual((self.data / 'emulators/rgds-experimental/saves/Kart.sav').read_text(), 'save')
+        status = self.ini('device/status.ini')
+        self.assertIn('import_state=done', status)
+        self.assertIn('import_done_saves=1', status)
+
     def test_touch_presses_next(self):
         report = self.run_ui('300 finger-down 0.85 0.969\n360 finger-up 0.85 0.969\n')
         self.assertEqual(report['page'], WELCOME_PAGE)
-        self.assertEqual(self.setup_file(), 'step=1\n')
+        self.assertEqual(self.setup_file(), 'step=2\n')
 
     def test_every_setup_string_is_translated_everywhere(self):
         source = (ROOT / 'src/launcher/welcome_screen.hpp').read_text()

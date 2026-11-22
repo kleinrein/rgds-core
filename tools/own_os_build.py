@@ -231,8 +231,9 @@ def native(args):
         # Buildroot copies a local package with rsync -u, which keeps a newer leftover over an older staged file
         # (copy2 keeps the device build's dates): start RG DS Core's copy afresh every time.
         # The music engine is a local package too (os/buildroot/package/rgds-music, from src/music).
-        # So is the pad daemon (os/buildroot/package/rgds-pad, from src/pad).
-        run('make', '-C', out, 'rgds-core-dirclean', 'rgds-music-dirclean', 'rgds-pad-dirclean', env=env)
+        # So is the pad daemon (os/buildroot/package/rgds-pad, from src/pad), and RG DS Media (rgds-media, play/src).
+        run('make', '-C', out, 'rgds-core-dirclean', 'rgds-music-dirclean', 'rgds-media-dirclean', 'rgds-pad-dirclean',
+            'libretro-ruffle-dirclean', env=env)
         if kernel_config_drift(out):
             # a changed kernel fragment (board/rgds/linux-*.fragment): Buildroot only merges them when the kernel
             # is configured, so an existing kernel build would keep the old settings without this
@@ -361,6 +362,9 @@ def main():
         stage(release, args.no_3ds)
         if args.stage_only:
             return
+        # The Flash core (play/ruffle) is cross-built here, not in Buildroot (its Rust is too old for Ruffle):
+        # package/libretro-ruffle installs build/ruffle. Cargo skips the work when nothing changed.
+        run(sys.executable, ROOT / 'tools/build_ruffle.py')
         env = dict(os.environ, LIMA_HOME=str(ROOT / '.cache/linux-builder/state'))
         command = [
             ROOT / '.cache/linux-builder/lima/bin/limactl', 'shell', 'rgds-image', 'python3', '-u',

@@ -586,6 +586,44 @@ The owner would rather not carry ROCKNIX's drivers. Swap them one at a time on t
   pair is installed (dsi_title_install file_runs_on_ds, frontend/sdl/main.cpp; dscore/tests/dsi_header_test.cpp).
   Game info's X removes a game file from the card; its saves stay.
 
+### Bluetooth codecs (2026-11-21)
+
+- **What the image has.** bluez-alsa 4.3.1 is built with SBC, **aptX and aptX HD** (`BR2_PACKAGE_LIBOPENAPTX`,
+  Buildroot's libopenaptx 0.2.1, GPL-3.0+) and **LDAC** (`BR2_PACKAGE_LIBLDAC`, our package
+  `os/buildroot/package/libldac`: AOSP's encoder from the EHfive/ldacBT 2.0.2.3 release tarball, Apache-2.0; the git
+  archive lacks the libldac submodule). Buildroot's bluez-alsa has no LDAC option, so `libldac.mk` appends
+  `--enable-ldac` to `BLUEZ_ALSA_CONF_OPTS` (read when configure runs, so the append after bluez-alsa's eval counts)
+  and puts libldac before bluez-alsa's configure stamp. A Buildroot output that configured bluez-alsa before this
+  needs `make bluez-alsa-dirclean` once (the Lima VM's has had it). Encoder only: AOSP has no LDAC decoder, and
+  RG DS OS is an A2DP source anyway.
+- **Turning them on.** bluealsa enables only SBC (and AAC, when built) by default, and it stops on a codec name its
+  build lacks. `bt on` reads `bluealsa --help`'s a2dp-source list and adds `-c aptX -c aptX-HD -c LDAC` for those
+  present, plus `--ldac-abr` (LDAC starts at standard quality, 660/606 kbps, and steps down when the radio is busy:
+  the RTL8821CS shares its antenna with Wi-Fi). The headset gets the first codec it also knows, in bluez-alsa's
+  order: LDAC, aptX HD, aptX, SBC.
+- **Playback path unchanged.** The PCM stays `/org/bluealsa/hci0/dev_*/a2dpsrc/sink` whatever the codec, so
+  bt-audio's watcher and the `type bluealsa` slave inside the `plug` in `/run/rgds/audio-out.conf` work as before;
+  the plug converts what a program plays to what the codec takes (S16 for aptX, S24 for aptX HD, S16/S24/S32
+  at 44.1-96 kHz for LDAC). The music engine and the media player play through ALSA and get the codec for free.
+- **The launcher shows it.** runtime/bluetooth.py publishes `bt_<n>_codec` for a connected headset (bluealsactl
+  `info <sink>`'s "Selected codec", aptX-HD shown as "aptX HD"); the Bluetooth devices page puts it on the row's
+  second line (the note slot: data, no new strings). tests/test_bluetooth.py covers the field.
+- **Size.** rootfs.squashfs 254,218,240 -> 254,275,584 bytes (+56 KiB, same staged release) for libldacBT_enc
+  (47 KiB), libldacBT_abr (10 KiB), libopenaptx (22 KiB), openaptxenc/dec (10 KiB each) and the larger bluealsa
+  (174 KiB). Nowhere near the 512 MiB OTA cap.
+- **No AAC, for the owner to decide.** `BR2_PACKAGE_FDK_AAC` would add `--enable-aac`. Fraunhofer's FDK AAC licence
+  lets anyone redistribute binaries but grants no patent licence (AAC encoders are patent-licensed through Via LA),
+  and the FSF counts it GPL-incompatible: bluealsa links GPL-2.0+ libbluetooth, so shipping it linked in the public
+  image is the problem, not the size. Debian keeps it in non-free; Fedora ships a cut-down "fdk-aac-free". AAC mostly
+  matters for AirPods and other Apple-leaning headsets, which fall back to SBC.
+- **Encoder cost on the A55** (2026-11-22, handheld over the USB cable, idle, 1.99 GHz, 40 C; one thread, CPU time
+  per second of audio): LDAC 1.4 % of a core at 44.1 kHz (high 909 / standard 606 / mobile 303 kbps, all within
+  0.1 %), 1.4-1.5 % at 48 kHz, 1.8-2.4 % at 96 kHz; aptX 3.3 %, aptX HD 3.4 % (libopenaptx is plain C, LDAC's
+  encoder is cheaper). No codec choice matters next to a game. `.cache/own-os/codec-bench/` (not in git) holds the
+  benchmark (`codec_bench`, source beside it, and the image's libldacBT and libopenaptx): copy it to /tmp and run
+  `LD_LIBRARY_PATH=. ./codec_bench 10`.
+- **Not yet tried:** a real headset with any codec (which one gets picked, sound, dropouts with Wi-Fi on).
+
 ### One card for both handhelds (2026-10-29)
 
 The same image boots the RG DS and the RG DS Plus. The tester guide is [RG_DS_PLUS_TEST.md](RG_DS_PLUS_TEST.md).

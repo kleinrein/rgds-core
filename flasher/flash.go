@@ -25,6 +25,7 @@ type Disk struct {
 	Volumes  []string `json:"volumes"`
 	Problem  string   `json:"problem,omitempty"`
 	Warnings []string `json:"warnings,omitempty"`
+	Carry    *Carry   `json:"carry,omitempty"` // an old system whose saves can come along (carry.go)
 	mounts   []string
 }
 
@@ -54,6 +55,16 @@ func finishDisks(disks []Disk) []Disk {
 			d.Problem = "Larger than 256 GB, so not a card"
 		} else if d.Size <= 0 {
 			d.Problem = "No card in this reader"
+		}
+		// BananaOS: its saves can come along, and the dialog says what happens to the games
+		if d.Carry = detectCarry(d.mounts); d.Carry != nil {
+			continue
+		}
+		for _, v := range d.Volumes {
+			if strings.EqualFold(v, "ROCKNIX") {
+				d.Warnings = append(d.Warnings, "It has ROCKNIX. Its games and saves are on a part this computer can't read: copy them off on the handheld first (ROCKNIX's network share), or keep this card and use a new one. RG DS OS can bring them over from the old card in an RG DS Plus's second slot or a USB card reader.")
+				goto next
+			}
 		}
 		for _, m := range d.mounts {
 			for _, marker := range []string{"roms", "Roms", "MUOS", "muos"} {
@@ -389,7 +400,7 @@ var errWriteProtected = errors.New("the card is write-protected: slide the lock 
 func roundUp(n int64) int64 { return (n + align - 1) &^ (align - 1) }
 
 // flash is the whole job for one card; it runs in the UI process (macOS, Linux as root) or in the worker.
-func flash(imagePath, diskID string, report reporter) error {
+func flash(imagePath, diskID, carry string, report reporter) error {
 	defer keepAwake()()
 	total, err := unpackedSize(imagePath)
 	if err != nil {
@@ -411,10 +422,39 @@ func flash(imagePath, diskID string, report reporter) error {
 		logf("open: %v", describeErr(err))
 		return err
 	}
+	// the stock system's DS saves: read off the old card's ext4 partitions now, before anything is written. A card
+	// nobody chose to keep anything from still gets them looked for: a Plus's slot 1 system card holds DraStic's
+	// saves while its games (and so what the card list recognises) are on the slot 2 card.
+	if carry == "-" { // the person unticked Bring my saves along: nothing comes
+		carry = ""
+	} else if carry == "" {
+		carry = rescueStockSaves(t, report)
+	} else {
+		withDS, err := addStockSaves(t, carry, report)
+		if err != nil {
+			logf("carry: stock DS saves: %v", err) // the rest still goes; the backup folder has what was kept
+		}
+		carry = withDS
+	}
+	// the saves kept from an old card first, past the image; checked again once the image is on (carry.go)
+	if carry != "" {
+		if err := writeCarry(t, d.Size, total, carry, report); err != nil {
+			logf("carry: %v", err)
+			t.Close()
+			return err
+		}
+	}
 	if _, err := writeImage(imagePath, t, total, report); err != nil {
 		logf("failed: %v", err)
 		t.Close()
 		return err
+	}
+	if carry != "" {
+		if err := checkCarry(t, d.Size, carry, report); err != nil {
+			logf("carry after the image: %v", err)
+			t.Close()
+			return err
+		}
 	}
 	report("eject", 0, 0)
 	if err := t.Finish(); err != nil {

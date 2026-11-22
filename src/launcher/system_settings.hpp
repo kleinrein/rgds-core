@@ -474,6 +474,7 @@ void App::sleep_now(bool lid) {
     dirty = true;
     music_pause(); // asleep is silent, and the engine lets go of the sound device before the kernel freezes it
     voice_pause();
+    snake_pause();
     mu.lid_dark = false; // sleep puts the panels' levels back itself (system.sleep)
     mu.lid_quiet_at = 0;
     draw();

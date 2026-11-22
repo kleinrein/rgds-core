@@ -1,0 +1,3 @@
+[toolchain]
+# Ruffle 0.8.0 uses library features newer than 1.92 (gc-arena: ptr_as_ref_unchecked).
+channel = "1.99.1"

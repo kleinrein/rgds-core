@@ -24,14 +24,15 @@ void App::alpha_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, C
     radius = std::clamp(radius, 0, std::min(w, h) / 2);
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     s.SetRenderDrawColor(r, fill.r, fill.g, fill.b, Uint8(std::clamp(alpha, 0, 255)));
+    auto& rows = fill_rows; // one call for every row, as round_rect
+    rows.clear();
     for (int dy = 0; dy < radius; dy++) {
         int inset = radius - int(std::sqrt(radius * radius - (radius - dy - 0.5) * (radius - dy - 0.5)));
-        SDL_Rect a{x + inset, y + dy, w - inset * 2, 1}, b{x + inset, y + h - 1 - dy, w - inset * 2, 1};
-        s.RenderFillRect(r, &a);
-        s.RenderFillRect(r, &b);
+        rows.push_back({x + inset, y + dy, w - inset * 2, 1});
+        rows.push_back({x + inset, y + h - 1 - dy, w - inset * 2, 1});
     }
-    SDL_Rect middle{x, y + radius, w, h - radius * 2};
-    s.RenderFillRect(r, &middle);
+    rows.push_back({x, y + radius, w, h - radius * 2});
+    s.RenderFillRects(r, rows.data(), int(rows.size()));
 }
 
 void App::shoulder_fill(SDL_Renderer* r, int x, int y, int w, int h, bool right, Color fill, int alpha) {
@@ -42,14 +43,15 @@ void App::shoulder_fill(SDL_Renderer* r, int x, int y, int w, int h, bool right,
     };
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     s.SetRenderDrawColor(r, fill.r, fill.g, fill.b, Uint8(std::clamp(alpha, 0, 255)));
+    fill_rows.clear();
     for (int dy = 0; dy < h; dy++) {
         const double t = std::max(0.0, (ry - dy - .5) / ry);
         const int sweep = dy < ry ? int(std::lround(rx - rx * std::sqrt(std::max(0.0, 1 - t * t)))) : 0,
                   flat = std::max(corner(small, dy), corner(small, h - 1 - dy)),
                   outer = std::max(sweep, corner(small, h - 1 - dy)), inner = flat;
-        SDL_Rect line{x + (right ? inner : outer), y + dy, w - inner - outer, 1};
-        s.RenderFillRect(r, &line);
+        fill_rows.push_back({x + (right ? inner : outer), y + dy, w - inner - outer, 1});
     }
+    s.RenderFillRects(r, fill_rows.data(), int(fill_rows.size())); // one call, as alpha_round
 }
 
 int App::key_badge_width(const std::string& key) {
@@ -228,6 +230,8 @@ void App::loading_overlay(SDL_Renderer* r, int y, bool lower) {
             s.RenderFillRect(r, &block);
         }
     }
+    // A resumed game: where it was left, on the upper panel while it starts (journal_screen.hpp).
+    if (!lower && left_off.shown && opacity > .5 && launch_phase != LaunchPhase::Exiting) left_off_card(r, y);
     if (launch_phase == LaunchPhase::Exiting && launch_handoff) {
         // Clear the library into the theme's neutral colour for handoff.
         double t = preferences.animations ? std::min(1.0, (now - launch_exit_at) / 80.0) : 1;

@@ -108,6 +108,23 @@ inline std::function<int()> cheat_count_handler, cheat_group_count_handler;
 inline std::function<bool(int, CheatEntry&)> cheat_entry_handler;
 inline std::function<bool(int, CheatGroup&)> cheat_group_handler;
 inline std::function<bool(int, bool)> cheat_set_handler;
+// Rewind (docs/TIME_TRAVEL_PLAN.md in RG DS Core): the moments the engine keeps, listed for RG DS's game menu, which
+// draws the Rewind screen. open marks a moment now and returns its id (0: none, e.g. during a replay or a network
+// session); show loads a moment and runs one silent frame, handing back its screens (bytes R, G, B, X; screens * w *
+// h pixels) for the menu to show; jump plays from a moment (play) or returns to now (the menu's Back), and ends the
+// previews. All on the emulation thread, between frames.
+struct RewindMoment {
+  unsigned id = 0, parent = 0;
+  unsigned long long position = 0;
+  int w = 0, h = 0;
+  const uint32_t* px = nullptr;
+};
+inline std::function<unsigned()> rewind_open_handler;
+inline std::function<int()> rewind_count_handler;
+inline std::function<bool(int, RewindMoment&)> rewind_moment_handler;
+inline std::function<double()> rewind_rate_handler;
+inline std::function<bool(unsigned, int&, int&, int&, const uint32_t*&)> rewind_show_handler;
+inline std::function<bool(unsigned, bool)> rewind_jump_handler;
 inline bool request_menu() {
   const char* control = std::getenv("RGDS_CONTROL_FILE");
   if (!control || !*control) {
@@ -200,4 +217,42 @@ extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_chea
     std::fprintf(stderr, "RG DS cheat: %s\n", e.what());
     return 0;
   }
+}
+
+// Rewind, called by RGDS on the SDL/emulation thread between emulated frames (the RewindMoment notes above).
+extern "C" __attribute__((used, visibility("default"))) inline unsigned rgds_rewind_open() {
+  return rgds::rewind_open_handler ? rgds::rewind_open_handler() : 0;
+}
+extern "C" __attribute__((used, visibility("default"))) inline int rgds_rewind_count() {
+  return rgds::rewind_count_handler ? rgds::rewind_count_handler() : 0;
+}
+extern "C" __attribute__((used, visibility("default"))) inline int
+rgds_rewind_moment(int index, unsigned* id, unsigned* parent, unsigned long long* position, int* w, int* h,
+                   const uint32_t** px) {
+  rgds::RewindMoment m;
+  if (!rgds::rewind_moment_handler || !rgds::rewind_moment_handler(index, m)) return 0;
+  if (id) *id = m.id;
+  if (parent) *parent = m.parent;
+  if (position) *position = m.position;
+  if (w) *w = m.w;
+  if (h) *h = m.h;
+  if (px) *px = m.px;
+  return 1;
+}
+extern "C" __attribute__((used, visibility("default"))) inline double rgds_rewind_rate() {
+  return rgds::rewind_rate_handler ? rgds::rewind_rate_handler() : 60.0;
+}
+extern "C" __attribute__((used, visibility("default"))) inline int rgds_rewind_show(unsigned id, int* screens, int* w,
+                                                                                    int* h, const uint32_t** px) {
+  int s = 0, pw = 0, ph = 0;
+  const uint32_t* p = nullptr;
+  if (!rgds::rewind_show_handler || !rgds::rewind_show_handler(id, s, pw, ph, p)) return 0;
+  if (screens) *screens = s;
+  if (w) *w = pw;
+  if (h) *h = ph;
+  if (px) *px = p;
+  return 1;
+}
+extern "C" __attribute__((used, visibility("default"))) inline int rgds_rewind_jump(unsigned id, int play) {
+  return rgds::rewind_jump_handler && rgds::rewind_jump_handler(id, play != 0) ? 1 : 0;
 }

@@ -38,7 +38,14 @@ CATALOGS = {
     "atari7800": "Atari - 7800",
     "atari5200": "Atari - 5200",
     "lynx": "Atari - Lynx",
+    # The WonderSwan's and the Neo Geo Pocket's shelves hold both machines' games; a Color one is in the Color's
+    # lists (COLOUR_LISTS)
+    "wonderswan": "Bandai - WonderSwan",
+    "wsc": "Bandai - WonderSwan Color",
+    "ngp": "SNK - Neo Geo Pocket",
+    "ngpc": "SNK - Neo Geo Pocket Color",
     "vb": "Nintendo - Virtual Boy",
+    "arcade": "MAME",
     "amiga": "Commodore - Amiga",
     "dos": "DOS",
     "psx": "Sony - PlayStation",
@@ -133,6 +140,11 @@ def ctr_code(header):
     return ""
 
 
+# A Color cartridge on a shelf shared with the first machine, by its extension: its own cover, information and
+# ScreenScraper lists.
+COLOUR_LISTS = {("wonderswan", ".wsc"): "wsc", ("ngp", ".ngc"): "ngpc", ("ngp", ".ngpc"): "ngpc"}
+
+
 def rom_identity(path):
     """(system, name, game code). Other systems' codes: the GBA header's at 0xAC, the 3DS's product code; GB has none."""
     from play_options import SYSTEMS, system_of
@@ -144,6 +156,8 @@ def rom_identity(path):
     if path.suffix.lower() == ".7z": return system, path.stem, ""  # by its name, as rom_details
     # A DOS game is a zip of its folder (.exe, .com, data): nothing in it says which game, the file name does.
     if system == "dos" and path.suffix.lower() == ".zip": return system, path.stem, ""
+    # A Flash game is a movie or a Flashpoint pack of web files: its name is the file's.
+    if system == "flash": return system, path.stem, ""
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             entries = [
@@ -154,10 +168,12 @@ def rom_identity(path):
             with archive.open(entries[0]) as stream:
                 header = stream.read(0xB0)
             name = Path(entries[0].filename).stem
+            system = COLOUR_LISTS.get((system, Path(entries[0].filename).suffix.lower()), system)
     else:
         with path.open("rb") as stream:
             header = stream.read(0x4200 if system == "3ds" else 0xB0)
         name = path.stem
+        system = COLOUR_LISTS.get((system, path.suffix.lower()), system)
     if system == "3ds": return system, name, ctr_code(header)
     code = header[0xAC:0xB0].decode("ascii", errors="replace") if system == "gba" else ""
     return system, name, code if re.fullmatch(r"[A-Z0-9]{4}", code) else ""
@@ -394,6 +410,12 @@ class PublicClient:
             raw = cover(rom)
             if not raw: raise NotFound("This simulator holds no picture of its machine.")
             return raw, {"provider": "Simulator", "artwork_title": name}
+        if system == "flash":
+            # Flashpoint's own logo (or a screenshot), copied beside the shelf by the import (flashpoint.py).
+            from flashpoint import image
+            raw = image(rom, "logo") or image(rom, "screenshot")
+            if not raw: raise NotFound("This game came without Flashpoint's pictures.")
+            return raw, {"provider": "Flashpoint", "artwork_title": name}
         if system != "nds":
             if system not in CATALOGS: raise NotFound("There is no public cover catalog for this system.")
             if system == "3ds" and code and not name_override.strip():

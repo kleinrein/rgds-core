@@ -139,6 +139,8 @@ inline bool dual_screen_game(const fs::path& rom, const std::string& system, con
             if (codes.count(name_code(file.path().filename().string()))) return result = true;
         return result;
     }
+    // An arcade set is always a .zip, known by its MAME name ("punchout").
+    if (system == "arcade") return result = profile_codes(profiles / system).count(name_code(rom.stem().string())) > 0;
     if (ext == ".ZIP" || ext == ".7Z") return result;
     if (system == "nes" || system == "snes" || system == "sms" || system == "md" || system == "n64" || system == "zx" ||
         system == "c64" || system == "gw") {

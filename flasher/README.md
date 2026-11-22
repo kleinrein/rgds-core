@@ -10,6 +10,23 @@ Puts RG DS OS on a microSD card in five steps: **Download → Pick card → Flas
 
 Everything it does is logged to `flasher.log` next to the saved image (`~/Library/Caches/RG DS Flasher/` on macOS, `%LOCALAPPDATA%\RG DS Flasher\` on Windows, `~/.cache/RG DS Flasher/` on Linux): steps, error numbers, and the disk before and after. After a failure, the UI links to it (**Show log**).
 
+## Coming from BananaOS
+
+BananaOS's card has the same shape as ours (boot, two root slots, exFAT data), so flashing erases it. Our root slots land on the start of its data partition. When the picked card has a mounted BananaOS data partition (`banana/` beside `saves/` or `roms/`), the card list says what it holds. The Erase dialog then offers **Bring my saves, play time and favourites along** (on by default) and **Also copy my games to this computer** (off). See `carry.go`.
+
+1. Before anything is written, while the card is still mounted and readable without admin rights, the flasher copies `saves/`, `states/`, `drastic/backup/`, `bios/`, `banana/playstats.tsv`, `favorites.txt` and `systems.conf` to `~/RG DS backup/BananaOS <date>/`. It adds `manifest.json`, which lists the games by name and size. With the second box ticked, it also copies `roms/`, under RG DS OS's folder names (`megadrive` becomes `md`; PortMaster's `ports` stays behind).
+2. The same files, without the games, go into a gzip'd tar (`carry.tar.gz` in the cache folder). If states push it past 512 MB, it is packed again without them; they stay in the backup.
+3. The tar goes onto the card past the image, ending on a MiB boundary just before the card's last MiB. A one-line header, `RGDS-CARRY 1 <offset> <length> <sha256>`, goes at the start of that last MiB. The bundle is written before the image and read back again after it, so a fake card that wraps around is caught either way.
+4. On the first boot, `firstboot` makes the data partition over that space. It writes only its own metadata at the partition's start; this was checked with the real `sfdisk` and `mkfs.exfat` on a loop device. Then rcS's `handoff` copies the bundle in once and checks its sha256. Setup's **Bring over** step (`runtime/migrate.py`) puts the saves and play time in place with one A press. The games go back by copying the backup's `roms` folder onto the card.
+
+## Coming from the stock system (RG DS and RG DS Plus)
+
+A card whose mounted partition has Anbernic's `Roms/` folder, with `saves_RA/`, `states_RA/`, `save/` or `Roms/NDS` beside it, is the stock system. It gets the same dialog. RetroArch's saves and states and the standalone emulators' `save/` go into the backup and the bundle; with games ticked, `Roms/` goes into the backup under RG DS OS's folder names (`SFC` becomes `snes`, `PS` becomes `psx`, `PICO` becomes `pico8`).
+
+DraStic keeps the DS saves on the system card's ext4 vendor partition (`/mnt/vendor/deep/drastic*/backup/*.dsv`), which macOS and Windows can't read. The flash reads them itself (`ext4.go`, a small read-only ext4 reader) once it has the raw card open and before anything is written. They go into the bundle and the backup folder, and the done screen counts them. Any card is looked at this way, even one nobody chose to keep anything from: on a two-card Plus the slot 1 card holds the system and these saves, while its games, which the card list recognises, are on slot 2. Unticking **Bring my saves along** stops that too. `testdata/ext4-*.img.gz` are real `mkfs.ext4` images (one modern, one without extents) for its tests.
+
+A ROCKNIX card only gets a warning. Its data is on ext4, which macOS and Windows can't read. RG DS OS can bring it over from the old card in a Plus's second slot or a USB card reader instead.
+
 ## When things go wrong
 
 - **The card reader drops the card.** Some USB readers reset now and then, mostly while reading ("device not configured"). The flasher waits for the card to come back (the one disk with the same name and size), opens it again and carries on. One authorization covers every reopen (`security authorize` holds the `sys.openfile.readwrite./dev/rdiskN` rights, and `authopen -extauth` uses them), so this needs no new password. Reads go in 256 KiB pieces on macOS: buggy readers often reset on large reads (Linux caps USB storage requests at 120 KiB for the same reason). After a reset, macOS reads the partition table again and mounts what it finds, writing to it (`.fseventsd`, the FAT dirty flag). The card has no partition table until the end, so there is nothing to mount. If the reader drops the card after the table is on, RGDS-BOOT is checked again and repaired. macOS also gets no cache-flush command: writes to `/dev/rdisk` aren't cached, and the eject flushes.

@@ -55,6 +55,8 @@ void App::load_library(std::vector<Game> games) {
             if (o.section == "scraper") open_scraper();
             else if (o.section == "achievements") open_achievements();
             else if (o.section == "album") open_album();
+            else if (o.section == "journal") open_journal();
+            else if (o.section == "files") open_files();
             else if (o.section == "updates") open_updates(Page::Settings);
             else {
                 static const std::array<std::string, 8> ids = {"theme",        "power",  "library",  "sound",

@@ -18,7 +18,7 @@ BINARY = ROOT / 'build/host/rgds-launcher'
 PICKER, PROFILES, EDIT, CHOOSE = 48, 49, 50, 51  # Page::ProfilePicker and after: stored numbers, appended
 LIBRARY = 0
 # From --settings: the Profiles row in the root list.
-TO_PROFILES = ['Down'] * 10 + ['a']
+TO_PROFILES = ['Up'] * 12 + ['a']  # Profiles is the root's first row
 
 
 class Base(unittest.TestCase):
@@ -268,31 +268,48 @@ class ManageTests(Base):
         self.run_ui(self.edit_page() + ['a'], settings=True)
         self.assertEqual(read_fields(folder / 'profile.ini')['restricted'], '0')
         # A picture or a colour is applied at once and the page stays, to try another; B goes back.
-        report = self.run_ui(self.edit_page() + ['Down', 'Down', 'Down', 'a', 'Right', 'a'], settings=True)
+        # Who it's for, Name, DS name, Birthday, Picture
+        report = self.run_ui(self.edit_page() + ['Down'] * 4 + ['a', 'Right', 'a'], settings=True)
         self.assertEqual(report['page'], CHOOSE)
         self.assertEqual(read_fields(folder / 'profile.ini')['picture'], '3')
-        report = self.run_ui(
-            self.edit_page() + ['Down', 'Down', 'Down', 'a', 'Down', 'Down', 'a', 'Escape'], settings=True
-        )
-        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 3))
+        report = self.run_ui(self.edit_page() + ['Down'] * 4 + ['a', 'Down', 'Down', 'a', 'Escape'], settings=True)
+        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 4))
         self.assertEqual(read_fields(folder / 'profile.ini')['picture'], '15')  # from 3, two rows down: in colour
-        report = self.run_ui(self.edit_page() + ['Down', 'Down', 'Down', 'Down', 'a', 'Left', 'a'], settings=True)
+        report = self.run_ui(self.edit_page() + ['Down'] * 5 + ['a', 'Left', 'a'], settings=True)
         self.assertEqual(report['page'], CHOOSE)
         self.assertIn('accent=9', (folder / 'ui.ini').read_text())
-        report = self.run_ui(self.edit_page() + ['Down', 'Down', 'Down', 'Down', 'a', 'Escape'], settings=True)
-        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 4))
+        report = self.run_ui(self.edit_page() + ['Down'] * 5 + ['a', 'Escape'], settings=True)
+        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 5))
         self.assertIn('accent=2', (self.data / 'ui.ini').read_text())
 
     def test_the_owner_has_no_kind_and_cannot_be_removed(self):
         self.add()
-        report = self.run_ui(self.edit_page(1) + ['Down'] * 8, settings=True)
+        report = self.run_ui(self.edit_page(1) + ['Down'] * 9, settings=True)
         self.assertEqual(
-            (report['page'], report['profile_focus']), (EDIT, 7)
-        )  # Name, DS name, Picture, Colour, Language, Games, Games opens, PIN
+            (report['page'], report['profile_focus']), (EDIT, 8)
+        )  # Name, DS name, Birthday, Picture, Colour, Language, Games, Games opens, PIN
         self.run_ui(self.edit_page(1) + ['Down', 'a', 'text x', 'Return'], settings=True)
         self.assertEqual(read_fields(self.data / 'ds.ini')['nickname'], 'Andreasx')
         self.run_ui(self.edit_page(1) + ['a', 'text x', 'Return'], settings=True)
         self.assertEqual(read_fields(self.data / 'profiles/index.ini')['owner_name'], 'Andreasx')
+
+    def test_a_birthday_is_a_month_then_a_day_and_keeps_the_ds_name(self):
+        self.add()
+        # The owner: Name, DS name, Birthday; March (third month), then the 15th (third row of the month, first column)
+        report = self.run_ui(
+            self.edit_page(1) + ['Down', 'Down', 'a', 'Right', 'Right', 'a', 'Down', 'Down', 'a'], settings=True
+        )
+        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 2))
+        self.assertEqual(read_fields(self.data / 'ds.ini'), {'nickname': 'Andreas', 'birthday': '03-15'})
+        # No birthday is the month page's last tile; B on the day page goes back to the months.
+        report = self.run_ui(self.edit_page(1) + ['Down', 'Down', 'a', 'a', 'Escape'], settings=True)
+        self.assertEqual(report['page'], CHOOSE)
+        self.run_ui(self.edit_page(1) + ['Down', 'Down', 'a', 'Left', 'Left'] + ['Down'] * 3 + ['a'], settings=True)
+        self.assertEqual(read_fields(self.data / 'ds.ini'), {'nickname': 'Andreas'})
+        # A name change keeps the birthday.
+        (self.data / 'ds.ini').write_text('nickname=Andreas\nbirthday=12-01\n')
+        self.run_ui(self.edit_page(1) + ['Down', 'a', 'text x', 'Return'], settings=True)
+        self.assertEqual(read_fields(self.data / 'ds.ini'), {'nickname': 'Andreasx', 'birthday': '12-01'})
 
     def test_six_is_the_limit(self):
         for i in range(1, 6):
@@ -318,7 +335,7 @@ class ManageTests(Base):
     def test_removing_keeps_the_saves_and_backs_up_none_unless_asked(self):
         folder = self.add()
         # The page's last row, then Confirm's second choice
-        report = self.run_ui(self.edit_page() + ['Down'] * 17 + ['a', 'Right', 'a'], settings=True, seconds=5, gap=90)
+        report = self.run_ui(self.edit_page() + ['Down'] * 18 + ['a', 'Right', 'a'], settings=True, seconds=5, gap=90)
         self.assertEqual(report['page'], PROFILES)
         self.assertFalse(folder.exists())
         self.assertEqual(len(list((self.data / 'profiles/.removed').iterdir())), 1)
@@ -331,7 +348,7 @@ class ManageTests(Base):
         save.write_bytes(b'the child\'s')
         # The page's last row, X for Back up first, then Confirm's second choice
         report = self.run_ui(
-            self.edit_page() + ['Down'] * 17 + ['a', 'x', 'Right', 'a'], settings=True, seconds=5, gap=90
+            self.edit_page() + ['Down'] * 18 + ['a', 'x', 'Right', 'a'], settings=True, seconds=5, gap=90
         )
         self.assertEqual(report['page'], PROFILES)
         self.assertFalse(folder.exists())
@@ -346,7 +363,7 @@ class ManageTests(Base):
 
     def test_the_one_playing_cannot_be_removed(self):
         folder = self.add(active=True)
-        report = self.run_ui(self.edit_page() + ['Down'] * 17 + ['a'], settings=True, seconds=4, gap=90)
+        report = self.run_ui(self.edit_page() + ['Down'] * 18 + ['a'], settings=True, seconds=4, gap=90)
         self.assertEqual(report['page'], EDIT)
         self.assertTrue(folder.exists())
 
@@ -381,31 +398,32 @@ class ManageTests(Base):
 
     def test_games_opens_is_chosen_per_profile(self):
         folder = self.add()
-        # Who it's for, Name, DS name, Picture, Colour, Language, Age limit, Games with no rating, Games, Games opens
-        report = self.run_ui(self.edit_page() + ['Down'] * 9 + ['a'], settings=True)
+        # Who it's for, Name, DS name, Birthday, Picture, Colour, Language, Age limit, Games with no rating, Games,
+        # Games opens
+        report = self.run_ui(self.edit_page() + ['Down'] * 10 + ['a'], settings=True)
         self.assertEqual(report['page'], EDIT)
         look = (folder / 'ui.ini').read_text()
         self.assertIn('all_games=1', look)
         self.assertIn('show_systems=1', look)
         self.assertNotIn('all_games=1', (self.data / 'ui.ini').read_text())  # the owner's stays as it was
-        self.run_ui(self.edit_page() + ['Down'] * 9 + ['a'], settings=True)
+        self.run_ui(self.edit_page() + ['Down'] * 10 + ['a'], settings=True)
         self.assertIn('all_games=0', (folder / 'ui.ini').read_text())
 
     def test_the_music_player_is_switched_per_profile(self):
         folder = self.add()
-        # Kid: Who it's for, Name, DS name, Picture, Colour, Language, Age limit, Games with no rating, Games,
+        # Kid: Who it's for, Name, DS name, Birthday, Picture, Colour, Language, Age limit, Games with no rating, Games,
         # Games opens, Ports, Homebrew, PictoChat, Music player
-        report = self.run_ui(self.edit_page() + ['Down'] * 13 + ['a'], settings=True, seconds=5, gap=90)
+        report = self.run_ui(self.edit_page() + ['Down'] * 14 + ['a'], settings=True, seconds=5, gap=90)
         self.assertEqual(report['page'], EDIT)
         self.assertIn('music_player=1', (folder / 'ui.ini').read_text())
         self.assertNotIn('music_player=1', (self.data / 'ui.ini').read_text())  # the owner's stays as it was
-        self.run_ui(self.edit_page() + ['Down'] * 13 + ['a'], settings=True, seconds=5, gap=90)
+        self.run_ui(self.edit_page() + ['Down'] * 14 + ['a'], settings=True, seconds=5, gap=90)
         self.assertNotIn('music_player=1', (folder / 'ui.ini').read_text())
 
     def test_language_is_chosen_per_profile(self):
         folder = self.add()
-        # Who it's for, Name, DS name, Picture, Colour, Language; the picker's first language is English (US)
-        report = self.run_ui(self.edit_page() + ['Down'] * 5 + ['a', 'Down', 'a'], settings=True)
+        # Who it's for, Name, DS name, Birthday, Picture, Colour, Language; the picker's first is English (US)
+        report = self.run_ui(self.edit_page() + ['Down'] * 6 + ['a', 'Down', 'a'], settings=True)
         self.assertEqual(report['page'], EDIT)
         chosen = read_fields(folder / 'ui.ini').get('language')
         self.assertNotIn(chosen, (None, '', 'en-US'))
@@ -529,8 +547,8 @@ class EraseUiTests(Base):
         (self.removed / 'Game.sav').write_bytes(b'gone')
 
     def test_it_is_the_owners_last_row_asks_first_and_cancel_is_the_default(self):
-        # Name, DS name, Picture, Colour, Language, Games, Games opens, PIN, Erase
-        rows = self.TO_OWNER + ['Down'] * 8 + ['a']
+        # Name, DS name, Birthday, Picture, Colour, Language, Games, Games opens, PIN, Erase
+        rows = self.TO_OWNER + ['Down'] * 9 + ['a']
         self.assertEqual(self.run_ui(rows, settings=True, gap=90)['page'], 18)  # Page::Confirm
         self.run_ui(rows + ['a'], settings=True, gap=90)  # A on the default
         self.assertTrue(self.removed.exists())
@@ -540,8 +558,8 @@ class EraseUiTests(Base):
 
     def test_there_is_no_row_with_nothing_to_erase(self):
         shutil.rmtree(self.removed)
-        report = self.run_ui(self.TO_OWNER + ['Down'] * 9, settings=True, gap=90)
-        self.assertEqual(report['profile_focus'], 7)  # stops at PIN
+        report = self.run_ui(self.TO_OWNER + ['Down'] * 10, settings=True, gap=90)
+        self.assertEqual(report['profile_focus'], 8)  # stops at PIN
 
 
 class PictureTests(unittest.TestCase):

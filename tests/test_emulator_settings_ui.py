@@ -191,6 +191,17 @@ class EmulatorSettingsUiTests(unittest.TestCase):
         self.assertEqual(report['page'], shader['page'])
         self.assertFalse(report['picker_open'])
 
+    def test_graphics_tile_whole_pixels_persists_for_the_next_start(self):
+        graphics = ['Down', 'Right', 'Right', 'A']
+        report = self.run_ui(graphics + ['Down'] * 6 + ['A'], 'rgds-experimental')
+        self.assertEqual(report['picker_title'], 'Whole pixels')
+        self.assertEqual(report['picker_focus'], 0)
+        self.run_ui(graphics + ['Down'] * 6 + ['A', 'Down', 'A'], 'rgds-experimental')
+        self.assertEqual(read_fields(self.game)['integer_scale'], '1')
+        self.assertEqual(read_fields(self.game)['filter'], '4')
+        self.run_ui(graphics + ['Down'] * 6 + ['A', 'Up', 'A'], 'rgds-experimental')
+        self.assertNotIn('integer_scale', read_fields(self.game))
+
     def test_unsupported_controls_do_not_open_pickers_or_write_preferences(self):
         # DSCore threads its 3D itself; RG DS Play has no 3D resolution or frameskip.
         for core, row in [('rgds-experimental', 3), ('rgds-play', 3), ('rgds-play', 4), ('rgds-play', 5)]:

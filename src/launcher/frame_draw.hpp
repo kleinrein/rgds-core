@@ -301,6 +301,7 @@ void App::draw(bool screenshot) {
             throw std::runtime_error(std::string("Panel presentation: ") + error);
     };
     if (o.preview) {
+        zoom_render(surfaces[0].renderer, 480, true);
         begin_panel(surfaces[0].renderer);
         animated_top(surfaces[0].renderer, 0);
         animated_bottom(surfaces[0].renderer, 480);
@@ -328,7 +329,7 @@ void App::draw(bool screenshot) {
             // The lower panel is presented every frame even when the music player's page is still: on the handheld a
             // panel presented only now and then showed an old frame when a view transition (B back to Home) started
             // presenting it at full rate again (2026-11-12).
-            if (i == 0 && !screenshot && !shutter_active() && settings.page != Page::Photo) {
+            if (i == 0 && !screenshot && !shutter_active() && settings.page != Page::Photo && settings.page != Page::Rewind) {
                 const auto signature = top_signature(s.GetTicks());
                 if (!signature.empty() && signature == top_seen) {
                     top_skips++;
@@ -338,6 +339,9 @@ void App::draw(bool screenshot) {
                 top_drawn_at = s.GetTicks();
             }
             ui_trace.mark(i == 0 ? UiTrace::TopDraw : UiTrace::BottomDraw, rendered_frames, uint32_t(settings.page));
+            const double drawn_from = frame_log.file ? FrameLog::clock() : 0;
+            if (i == 0) frame_log.top_frames++;
+            else if (!embedded_menu) zoom_render(renderer, 0, true); // the wall's new tiles, before the frame
             begin_panel(renderer);
             if (i == 0) animated_top(renderer, 0);
             else {
@@ -350,6 +354,8 @@ void App::draw(bool screenshot) {
             if (!screenshot) shutter_overlay(renderer);
             ui_trace.mark(i == 0 ? UiTrace::TopFlush : UiTrace::BottomFlush, rendered_frames, uint32_t(settings.page));
             flush_panel(renderer);
+            const double flushed = frame_log.file ? FrameLog::clock() : 0;
+            if (frame_log.file) frame_log.add(i == 0 ? FrameLog::TopDraw : FrameLog::BottomDraw, flushed - drawn_from);
             if (screenshot) save(renderer, o.screenshot.string() + (i == 0 ? "-top.bmp" : "-bottom.bmp"));
             if (embedded_menu) {
                 if (s.RenderReadPixels(renderer, nullptr, SDL_PIXELFORMAT_RGBA32, pixels + i * overlay_panel_bytes,
@@ -359,6 +365,8 @@ void App::draw(bool screenshot) {
                 ui_trace.mark(i == 0 ? UiTrace::TopPresent : UiTrace::BottomPresent, rendered_frames,
                               uint32_t(settings.page));
                 present_panel(renderer);
+                if (frame_log.file)
+                    frame_log.add(i == 0 ? FrameLog::TopPresent : FrameLog::BottomPresent, FrameLog::clock() - flushed);
             }
         }
         if (embedded_menu) overlay.publish();

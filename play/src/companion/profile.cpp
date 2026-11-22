@@ -477,7 +477,11 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 if (!ok) why = "expected " + key + " = x y w h [from to]";
             }
             else if (key == "same") ok = parse_buttons(value, out.screens.same);
-            else if (key == "pointer") {
+            else if (key == "pad") {
+                ok = value == "plain" || value == "machine";
+                out.screens.plain_pad = value == "plain";
+                if (!ok) why = "expected pad = plain or machine";
+            } else if (key == "pointer") {
                 ok = value == "yes" || value == "no";
                 out.screens.pointer = value == "yes";
             } else if (key == "stretch") ok = parse_int(value, out.screens.stretch) && out.screens.stretch >= 1;

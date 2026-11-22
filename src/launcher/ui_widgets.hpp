@@ -69,7 +69,7 @@ void App::start_frame(SDL_Renderer* r, int x, int row, int tile, const std::stri
 std::string App::category_title(size_t index) {
     static const std::array<std::string, home_count> titles = {"Settings",  "Games", "Favourites", "Recents",
                                                                "PictoChat", "Music", "Sound toy",  "Last played"};
-    return toy_at(index) ? "Sound toy" : music_at(index) ? "Music" : titles.at(index);
+    return toy_at(index) ? "Sound toy" : media_at(index) ? "Media" : music_at(index) ? "Music" : titles.at(index);
 }
 
 void App::category_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
@@ -77,11 +77,12 @@ void App::category_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
         SettingsIcon::Sliders, SettingsIcon::Cartridge, SettingsIcon::Heart, SettingsIcon::Clock,
         SettingsIcon::Chat,    SettingsIcon::Music,     SettingsIcon::Volume, SettingsIcon::Play};
     if (toy_at(index)) return voice_face(r, 0, x + size / 2, y + size / 2, size * 6 / 5, 0);
-    ui_icon(r, music_at(index) ? SettingsIcon::Music : symbols.at(index), x + size / 2, y + size / 2, size, "accent");
+    ui_icon(r, media_at(index) ? SettingsIcon::Play : music_at(index) ? SettingsIcon::Music : symbols.at(index),
+            x + size / 2, y + size / 2, size, "accent");
 }
 
 void App::settings_footer(SDL_Renderer* r, int y) {
-    if (settings.page == Page::ShaderPicker || settings.page == Page::Photo ||
+    if (settings.page == Page::ShaderPicker || settings.page == Page::Photo || settings.page == Page::Rewind ||
         (settings.page == Page::Album && album_viewing))
         return;
     rect(r, 0, y + 424, 640, 56, "background");
@@ -96,7 +97,19 @@ void App::settings_footer(SDL_Renderer* r, int y) {
         footer_button(r, 468, y + 432, 160, searching ? "Search" : "Done", "", true, a_pressed);
         return;
     }
-    if (settings.page == Page::Statistics || settings.page == Page::Microphone) return;
+    if (settings.page == Page::Statistics) {
+        footer_button(r, 468, y + 432, 160, "Journal", "A", true, a_pressed);
+        return;
+    }
+    if (settings.page == Page::Microphone) return;
+    if (settings.page == Page::Journal) {
+        if (journal_count() > 1) key_hints(r, 320, y + 452, {{"L R", "Day"}}, 0, 16, 200);
+        const auto* entry = journal_entry(settings.focus);
+        const bool photo = entry ? !entry->photo.empty()
+                                 : journal_recap_row(settings.focus) && !summary.journal.recap->first_photo.empty();
+        if (photo) footer_button(r, 468, y + 432, 160, "View", "A", true, a_pressed);
+        return;
+    }
     if (settings.page == Page::GameInfo) {
         if (!picker_open && info_pictures.size() > 1)
             key_hints(r, 320, y + 452, {{"L R", "Picture"}, {"A", "Next picture"}}, 0, 16, 280);
@@ -115,6 +128,18 @@ void App::settings_footer(SDL_Renderer* r, int y) {
                 key_hints(r, 320, y + 452, {{"X", "Delete"}, {"Y", "More"}}, 0, 16, 280);
                 footer_button(r, 468, y + 432, 160, "View", "A", true, a_pressed);
             }
+        }
+        return;
+    }
+    if (settings.page == Page::Files) {
+        if (files_setup.step == FilesSetup::Key) {
+            footer_button(r, 468, y + 432, 160, "Continue", "A", true, a_pressed);
+            return;
+        }
+        if (!picker_open) {
+            const auto* row = files_focused();
+            key_hints(r, 320, y + 452, {{"X", "Mark"}, {"Y", "More"}}, 0, 16, 280);
+            if (row) footer_button(r, 468, y + 432, 160, row->dir ? "Open" : "Choose", "A", true, a_pressed);
         }
         return;
     }
@@ -198,6 +223,7 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
             : settings.page == Page::Timezone         ? SettingsIcon::Clock
             : settings.page == Page::ProfileGames     ? SettingsIcon::Cartridge
             : settings.page == Page::ProfileGameRules ? SettingsIcon::Heart
+            : settings.page == Page::Files            ? files_row_icon(index)
                                                       : settings_icon_for(title),
             60 + dx, row + 33, 25, enabled ? (focused ? "on_accent" : "accent") : "muted");
     const bool toggle = switches && (value == "On" || value == "Off");
@@ -212,7 +238,8 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
           text_width,
           settings.page != Page::Wifi && settings.page != Page::Bluetooth && settings.page != Page::Cheats &&
               settings.page != Page::Homebrew && settings.page != Page::Timezone &&
-              settings.page != Page::ProfileGames && settings.page != Page::ProfileGameRules); // names are data
+              settings.page != Page::ProfileGames && settings.page != Page::ProfileGameRules &&
+              settings.page != Page::Files); // names are data
     if (bar >= 0) {
         // A usage gauge under the title (Device information > Free space): sunken track, lit fill for the used part.
         const int track = std::max(40, text_width - 12), fill = int(std::lround(track * std::clamp(bar, 0., 1.)));
@@ -284,17 +311,20 @@ void App::draw_scrollbar(SDL_Renderer* r, int x, int y, int height, int thumb, i
     }
 }
 
+// The rows of a rounded shape go to SDL as one list: on the handheld's GLES2 renderer each fill call was a draw of
+// its own, and a screen of cards, pills and badges came to thousands a frame. Same rectangles, same order, same pixels.
 void App::round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key) {
     color(r, key);
-    SDL_Rect center{x + radius, y, w - 2 * radius, h};
-    s.RenderFillRect(r, &center);
+    auto& rows = fill_rows;
+    rows.clear();
+    rows.push_back({x + radius, y, w - 2 * radius, h});
     for (int dy = 0; dy < radius; dy++) {
         int inset = radius - static_cast<int>(std::sqrt(radius * radius - (radius - dy - 0.5) * (radius - dy - 0.5)));
-        SDL_Rect a{x + inset, y + dy, w - inset * 2, 1}, b{x + inset, y + h - 1 - dy, w - inset * 2, 1};
-        s.RenderFillRect(r, &a);
-        s.RenderFillRect(r, &b);
+        rows.push_back({x + inset, y + dy, w - inset * 2, 1});
+        rows.push_back({x + inset, y + h - 1 - dy, w - inset * 2, 1});
     }
-    rect(r, x, y + radius, w, h - radius * 2, key);
+    rows.push_back({x, y + radius, w, h - radius * 2});
+    s.RenderFillRects(r, rows.data(), int(rows.size()));
 }
 
 void App::fill_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, Color fill) {

@@ -175,5 +175,9 @@ int main(int argc,char** argv){
  control_mapping.fast_forward_source=rgds::control_none;control_mapping.sources[0]=12;
  assert(SDL_JoystickGetButton(pad,0)==1);button(6);assert(SDL_PollEvent(&e)==1 && e.jbutton.button==0);
  button(1,true,2);assert(SDL_PollEvent(&e)==1 && e.jbutton.button==1); // Other pads retain their own numbering.
+ // A Dreamcast game's R2 is its own: the default R2 fast-forward stays off it (Menu + R2 fast-forwards instead).
+ setenv("RGDS_GAME_TRIGGERS","l2,r2",1);load_controls();assert(control_mapping.fast_forward_source==rgds::control_none);
+ setenv("RGDS_GAME_TRIGGERS","l2",1);load_controls();assert(control_mapping.fast_forward_source==13);
+ unsetenv("RGDS_GAME_TRIGGERS");
 }
 '''

@@ -34,6 +34,10 @@ STICK = {
     "stick_right_right": "none"
 }
 STICK_TARGETS = (*LOGICAL, "none")
+# The handheld's triggers that a system's games use as their own buttons (the Dreamcast's and PlayStation's L2/R2,
+# the Amiga mouse's buttons, the N64's L shoulder). A fast-forward button among them goes to the game, and
+# fast-forwards with Menu held (Menu + R2).
+GAME_TRIGGERS = {"dc": ("l2", "r2"), "psx": ("l2", "r2"), "amiga": ("l2", "r2"), "n64": ("l2",)}
 MODES = ("anbernic", "start+menu", "startthenmenu")
 ACTIONS = ("menu", "home")
 
@@ -171,6 +175,11 @@ def set_fast_forward(data, source, rom=None):
             if profile['bind_' + key] == source: profile['bind_' + key] = previous
     profile.update(fast_forward_button=source, preset='custom')
     return save_profile(data, profile, rom)
+
+
+def fast_forward_chorded(profile, system):
+    """True when the fast-forward button is one of the system's game triggers: Menu + that button fast-forwards."""
+    return profile.get("fast_forward_button", "none") in GAME_TRIGGERS.get(system, ())
 
 
 class FastForwardButton:

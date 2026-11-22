@@ -693,6 +693,64 @@ void test_screens() {
     CHECK(errors.empty());
 }
 
+// An arcade cabinet with two monitors, drawn by the core in one frame: Punch-Out!!'s one over the other, a Vs. dual
+// board's side by side. The first monitor blue, the second green.
+struct FakeCabinet final : Core {
+    int w, h;
+    std::vector<uint32_t> frame;
+    FakeCabinet(int width, int height, bool stacked) : w(width), h(height), frame(size_t(width) * height, 0xFF0000FFu) {
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x)
+                if (stacked ? y >= h / 2 : x >= w / 2) frame[size_t(y) * w + x] = 0xFF00FF00u;
+    }
+    const char* system() const override { return "arcade"; }
+    std::string game_code() const override { return "PUNCHOUT"; }
+    std::string header_title() const override { return "PUNCHOUT"; }
+    double frame_rate() const override { return 60; }
+    void run_frame(uint32_t) override {}
+    Picture picture() const override { return {frame.data(), w, h, w}; }
+    bool save_state(std::vector<uint8_t>&) override { return false; }
+    bool load_state(const std::vector<uint8_t>&) override { return false; }
+    uint32_t peek(uint32_t, int) override { return 0; }
+    size_t audio(int16_t*, size_t) override { return 0; }
+    unsigned audio_rate() const override { return 48000; }
+    std::vector<uint8_t> battery() const override { return {}; }
+    uint64_t battery_revision() const override { return 0; }
+    void set_layers(unsigned) override {}
+    std::unique_ptr<Core> shadow() const override { return nullptr; }
+};
+
+void test_two_monitors() {
+    ProfileLibrary lib;
+    std::vector<std::string> errors;
+    lib.load_directory(PLAY_PROFILES "/arcade", errors);
+    CHECK(errors.empty());
+    for (const char* name : {"PUNCH_OUT", "VS_DUAL"}) {
+        const bool stacked = std::string(name) == "PUNCH_OUT";
+        Profile p = parse_ok(read(std::string(PLAY_PROFILES "/arcade/") + name + ".ini").c_str());
+        FakeCabinet cabinet(stacked ? 256 : 512, stacked ? 448 : 240, stacked);
+        Companion companion(cabinet, &p, "T", "ARCADE");
+        companion.set_shown(true);
+        companion.after_frame(cabinet);
+        // The upper panel: the first monitor alone, whole.
+        const Picture top = companion.compose_game(cabinet.picture());
+        CHECK(top.w == 256 && top.h == (stacked ? 224 : 240));
+        CHECK(top.at(0, 0) == 0xFF0000FFu && top.at(255, top.h - 1) == 0xFF0000FFu);
+        // The lower panel: the second monitor, filling the panel's height as the first fills its own.
+        Canvas lower(640, 480);
+        Look look;
+        Font font;
+        companion.render(lower, look, font, Words{});
+        CHECK(px_to_rgb(lower.at(320, 240)) == 0x00FF00);
+        CHECK(px_to_rgb(lower.at(320, 2)) == 0x00FF00 && px_to_rgb(lower.at(320, 477)) == 0x00FF00);
+        // The pad is the board's own: Select is the coin, Start the start.
+        CHECK(companion.machine_buttons(Start | Select) == (Start | Select));
+        // Another size (the core's own screens): the whole picture up top.
+        FakeCabinet other(320, 240, true);
+        CHECK(companion.compose_game(other.picture()).h == 240);
+    }
+}
+
 void test_mode7_extend() {
     // The race goes on under the game's own rows: the stale block above it and
     // the map below it are not taken for the race.
@@ -1686,6 +1744,7 @@ int main() {
     test_hud_strip();
     test_mode7_extend();
     test_screens();
+    test_two_monitors();
     test_course_view();
     test_gb_views();
     test_shipped_gb_profiles();

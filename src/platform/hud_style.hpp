@@ -360,13 +360,16 @@ inline std::string fit(std::string text, int size, float width) {
 
 // An engine's notice (rgds_toast), drawn on the lower panel: a card near the
 // bottom edge with a quiet header, the title and an optional detail line. Kind
-// 0 is an unlocked achievement (its points on the right), 1 news, 2 a problem.
-inline bool toast(unsigned char* pixels, int kind, const std::string& title, const std::string& detail, int points) {
+// 0 is an unlocked achievement (its points on the right), 1 news, 2 a problem, 3 a note with its own header (the
+// play journal's "Where you left off" and "Welcome back").
+inline bool toast(unsigned char* pixels, int kind, const std::string& title, const std::string& detail, int points,
+                  const std::string& own_header = {}) {
     if (!ready()) return false;
     Canvas canvas{pixels};
     auto& p = palette();
-    const std::string header = kind == 0 ? word("RGDS_HUD_ACHIEVEMENT_UNLOCKED", "Achievement unlocked")
-                                         : word("RGDS_HUD_RETROACHIEVEMENTS", "RetroAchievements");
+    const std::string header = kind == 3   ? own_header
+                               : kind == 0 ? word("RGDS_HUD_ACHIEVEMENT_UNLOCKED", "Achievement unlocked")
+                                           : word("RGDS_HUD_RETROACHIEVEMENTS", "RetroAchievements");
     const std::string score = kind == 0 && points > 0 ? std::to_string(points) + " " +
                                                             word(points == 1 ? "RGDS_HUD_POINT" : "RGDS_HUD_POINTS",
                                                                  points == 1 ? "point" : "points")

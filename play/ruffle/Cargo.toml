@@ -1,0 +1,42 @@
+[package]
+name = "ruffle_libretro"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "Flash games for RG DS Play: Ruffle as a libretro core"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Ruffle 0.8.0 (2026-11-19). Bump all four together.
+ruffle_core = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0", features = [
+    "audio",
+    "mp3",
+    "aac",
+    "nellymoser",
+    "lzma",
+    "default_compatibility_rules",
+    "default_font",
+] }
+ruffle_render = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0" }
+ruffle_render_wgpu = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0" }
+ruffle_video_software = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0" }
+futures = "0.3.32"
+async-channel = "2.5.0"
+encoding_rs = "0.8.35"
+url = "2.5.8"
+percent-encoding = "2.3.2"
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
+tracing = "0.1.43"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4
+panic = "unwind"
+strip = "debuginfo"

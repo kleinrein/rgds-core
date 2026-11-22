@@ -2,17 +2,22 @@
 /usr/libexec/rgds/bt (docs/OWN_OS_PLAN.md, "Battery, headphones and Bluetooth").
 
 Status fields (device/status.ini, read by the launcher): bt_supported, bt (the adapter is up), bt_count and
-bt_<n>_{address,name,paired,connected}. Scanning lists what is in range and what is paired; choosing a device
+bt_<n>_{address,name,paired,connected}, plus bt_<n>_codec for a connected headset (the A2DP codec bluez-alsa
+picked with it: SBC, aptX, aptX HD or LDAC; docs/OWN_OS_PLAN.md "Bluetooth codecs"). Scanning lists what is in range and what is paired; choosing a device
 pairs, trusts and connects it (a game controller is then a joystick like any other); forgetting removes it.
 Pairings persist through `bt save` (a tar on the data partition: bluez's folders carry colons, which exFAT
 refuses)."""
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
 BT = Path('/usr/libexec/rgds/bt')
 HCI = Path('/sys/class/bluetooth/hci0')
 ADDRESS = re.compile(r'^(?:[0-9A-F]{2}:){5}[0-9A-F]{2}$')
+# a headset's A2DP sink as bluez-alsa names it (the one bt-audio plays to)
+SINK = re.compile(r'^(/org/bluealsa/hci\d+/dev_([0-9A-Fa-f_]{17})/a2dpsrc/sink)$')
+CODEC_NAMES = {'aptX-HD': 'aptX HD'}
 PREVIEW_DEVICES = [
     dict(address='8C:0A:11:22:33:44', name='Pro Controller', paired=True, connected=True),
     dict(address='AC:C1:22:33:44:55', name='Living room speaker', paired=False, connected=False),
@@ -26,6 +31,24 @@ def supported():
 def bluetoothctl(*args, timeout=15):
     result = subprocess.run(['bluetoothctl', *args], capture_output=True, text=True, timeout=timeout + 5)
     return result.stdout
+
+
+def codecs():
+    """The codec each connected headset plays with, by address: bluealsactl info's "Selected codec" line."""
+    ctl = shutil.which('bluealsactl') or shutil.which('bluealsa-cli')
+    if not ctl: return {}
+    def run(*args):
+        try:
+            return subprocess.run([ctl, *args], capture_output=True, text=True, timeout=5).stdout
+        except (OSError, subprocess.TimeoutExpired):
+            return ''
+    out = {}
+    for line in run('list-pcms').splitlines():
+        found = SINK.match(line.strip())
+        if not found: continue
+        selected = re.search(r'^Selected codec:\s*([^\s:]+)', run('info', found.group(1)), re.M)
+        if selected: out[found.group(2).replace('_', ':').upper()] = CODEC_NAMES.get(selected.group(1), selected.group(1))
+    return out
 
 
 def address_of(value):
@@ -97,6 +120,9 @@ class Bluetooth:
             # a bare address is a device that has not told its name yet: not worth a row
             if n != a
         ]
+        playing = codecs() if connected else {}
+        for entry in devices:
+            if entry['connected'] and entry['address'] in playing: entry['codec'] = playing[entry['address']]
         devices.sort(key=lambda d: (not d['connected'], not d['paired'], d['name'].lower()))
         return devices
 

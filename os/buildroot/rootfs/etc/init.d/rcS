@@ -64,11 +64,13 @@ data || { fsck.exfat -y ${DISK}p4 >/dev/null 2>&1; data; } || mount -o noatime $
 }
 mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ssh /data/roms/nds /data/roms/gba \
     /data/roms/gb /data/roms/gbc /data/roms/nes /data/roms/snes /data/roms/md /data/roms/genesis /data/roms/sms /data/roms/psx /data/roms/n64 /data/roms/zx /data/roms/c64 /data/roms/psp /data/roms/dc /data/roms/gw /data/roms/scummvm \
-    /data/roms/segacd /data/roms/pico /data/roms/coleco /data/roms/intellivision /data/roms/msx /data/roms/cpc /data/roms/pce /data/roms/pcecd /data/roms/atari /data/roms/atari7800 /data/roms/atari5200 /data/roms/lynx /data/roms/amiga /data/roms/dos /data/roms/pico8 /data/roms/vb \
+    /data/roms/segacd /data/roms/pico /data/roms/coleco /data/roms/intellivision /data/roms/msx /data/roms/cpc /data/roms/pce /data/roms/pcecd /data/roms/atari /data/roms/atari7800 /data/roms/atari5200 /data/roms/lynx /data/roms/wonderswan /data/roms/ngp /data/roms/amiga /data/roms/dos /data/roms/pico8 /data/roms/vb /data/roms/arcade /data/roms/flash \
     /data/rgds/bios
 # the 3DS folder where the engine is (emulators.tanuki_engine: in the image since 0.9.1, or on the data partition)
 for e in /data/rgds/engines/tanuki3ds /usr/share/rgds/engines/tanuki3ds; do [ -f $e/run.sh ] && mkdir -p /data/roms/3ds; done
 mark "rcS: data ready"
+# saves RG DS Flasher kept from an old card, at the end of a new one: copied in once, on the first boot
+[ -b "$DISK" ] && [ ! -f /run/rgds/data-failed ] && /usr/libexec/rgds/handoff "$DISK"
 /usr/libexec/rgds/saved-brightness
 # what the last kernel crash left in RAM (ramoops in the device tree), moved to the card. Every restart leaves a
 # console-* file; only a dmesg-* one means a crash. Removing them makes room for the next.

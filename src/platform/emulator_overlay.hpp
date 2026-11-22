@@ -13,6 +13,7 @@
 #include <chrono>
 #include <array>
 #include <deque>
+#include <ctime>
 
 namespace rgds {
 // On the stock firmware emulators.py passes DSCore "--screen bottom": its upper window, on KMSDRM display 1, then
@@ -105,6 +106,9 @@ class EmulatorOverlay {
     struct Toast {
         int kind = 1, points = 0;
         std::string title, detail;
+        std::string header;                // kind 3: the card's own header
+        unsigned ms = 0;                   // how long it stays; 0: by kind
+        unsigned long long not_before = 0; // clock() before which it waits
     };
     std::deque<Toast> toasts;
     Toast toast_now;
@@ -132,18 +136,72 @@ class EmulatorOverlay {
                    std::chrono::steady_clock::now().time_since_epoch())
             .count();
     }
+    // The play journal's cards (kind 3, the launcher's journal_screen.hpp tells the same story): "Where you left off"
+    // once a resumed game is up, from RGDS_RESUME_NOTE ("header<TAB>detail", only for a launch that lands on the
+    // automatic checkpoint, runtime/emulators.py), and "Welcome back" after the device slept two minutes or more.
+    // RGDS_GAME_TITLE names the game. Called from ready(), with the overlay locked.
+    unsigned long long notes_started = 0, asleep_checked = 0;
+    bool resume_noted = false;
+    long long asleep_base = -1;
+    static long long suspended_seconds() {
+        // The boot clock runs on through a suspend and the monotonic one does not: their gap is time asleep.
+#ifdef CLOCK_BOOTTIME
+        timespec boot{}, mono{};
+        if (clock_gettime(CLOCK_BOOTTIME, &boot) != 0 || clock_gettime(CLOCK_MONOTONIC, &mono) != 0) return -1;
+        return (long long)boot.tv_sec - (long long)mono.tv_sec;
+#else
+        return -1;
+#endif
+    }
+    static std::string away_span(long long seconds) {
+        const long long hours = seconds / 3600, minutes = (seconds / 60) % 60, days = hours / 24;
+        if (days >= 2) return std::to_string(days) + "d";
+        if (hours) return std::to_string(hours) + "h" + (minutes ? " " + std::to_string(minutes) + "m" : "");
+        return std::to_string(std::max(1LL, minutes)) + "m";
+    }
+    void journal_notes() {
+        const auto now = clock();
+        if (!notes_started) notes_started = now;
+        const char* game = std::getenv("RGDS_GAME_TITLE");
+        const std::string title = game ? game : "";
+        if (!resume_noted && now - notes_started >= 1200) {
+            resume_noted = true;
+            const char* note = std::getenv("RGDS_RESUME_NOTE");
+            if (note && *note && !title.empty()) {
+                const std::string text = note;
+                const auto tab = text.find('\t');
+                if (toasts.size() >= 6) toasts.pop_front();
+                toasts.push_back(Toast{3, 0, title, tab == std::string::npos ? std::string() : text.substr(tab + 1),
+                                       text.substr(0, tab), 4500, 0});
+            }
+        }
+        if (now - asleep_checked < 1000) return;
+        asleep_checked = now;
+        const long long asleep = suspended_seconds();
+        if (asleep < 0) return;
+        if (asleep_base >= 0 && asleep - asleep_base >= 120 && !title.empty()) {
+            std::string away = hud::word("RGDS_HUD_AWAY", "Away for {0}");
+            const auto at = away.find("{0}");
+            if (at != std::string::npos) away.replace(at, 3, away_span(asleep - asleep_base));
+            if (toasts.size() >= 6) toasts.pop_front();
+            // A moment after the wake, so the panels are lit before it starts.
+            toasts.push_back(Toast{3, 0, title, away, hud::word("RGDS_HUD_WELCOME_BACK", "Welcome back"), 4000, now + 700});
+        }
+        asleep_base = asleep;
+    }
     bool ready(bool visible) {
+        journal_notes();
         const char* path = std::getenv("RGDS_OVERLAY_FILE");
         bool menu = visible && path && frame.open(path, false) && frame.refresh();
         bool hud = volume_level >= 0 && clock() < volume_until;
         bool fps = fps_value >= 0 && !menu;
         bool ff = ff_active && !menu;
         if (toast_on && clock() >= toast_until) toast_on = false;
-        if (!toast_on && !menu && !toasts.empty()) {
+        if (!toast_on && !menu && !toasts.empty() && clock() >= toasts.front().not_before) {
             toast_now = std::move(toasts.front());
             toasts.pop_front();
             toast_on = true;
-            toast_until = clock() + (toast_now.kind == 0 ? 4000 : 2500);
+            toast_until = clock() + (toast_now.ms ? toast_now.ms : toast_now.kind == 0 ? 4000 : 2500);
             ++toast_serial;
         }
         bool toast = toast_on && !menu;
@@ -170,7 +228,7 @@ class EmulatorOverlay {
                 if (fps) draw_fps_hud(composite.data(), fps_value, fps_game);
                 if (toast)
                     hud::toast(composite.data() + overlay_panel_bytes, toast_now.kind, toast_now.title,
-                               toast_now.detail, toast_now.points);
+                               toast_now.detail, toast_now.points, toast_now.header);
             }
             menu_visible = menu;
             hud_visible = hud;
@@ -221,7 +279,7 @@ public:
     void toast(int kind, std::string title, std::string detail, int points) {
         std::lock_guard<std::mutex> guard(mutex);
         if (toasts.size() >= 6) toasts.pop_front();
-        toasts.push_back(Toast{kind, points, std::move(title), std::move(detail)});
+        toasts.push_back(Toast{kind, points, std::move(title), std::move(detail), {}, 0, 0});
     }
     void fps(double value, bool game = false) {
         std::lock_guard<std::mutex> guard(mutex);

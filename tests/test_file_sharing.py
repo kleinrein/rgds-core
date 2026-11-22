@@ -195,8 +195,11 @@ class FileSharingTests(unittest.TestCase):
             config, shares = self.sharing.configure('192.168.1.42', [ds], 'root', music=music)
             content = config.read_text()
         self.assertTrue(music.is_dir())
-        self.assertEqual(shares, 'Games, Music, Imports, Exports')
+        # RG DS Media's folders beside it, made the same way.
+        self.assertEqual(shares, 'Games, Music, Videos, Books, Imports, Exports')
         self.assertIn('[Music]\npath = ' + str(music.resolve()), content)
+        self.assertIn('[Videos]\npath = ' + str((music.parent / 'videos').resolve()), content)
+        self.assertTrue((music.parent / 'books').is_dir())
 
     def test_configuration_rejects_expansion_and_newline_paths_and_symlinked_transfers(self):
         for name in ('%U', 'games\n[secret]'):

@@ -102,6 +102,8 @@ def game_options(data, rom):
         # Sharp (1) and Smooth (2) left the menu: a saved choice becomes Crisp (3).
         rgds_2d=(lambda mode: 3 if mode in (1, 2) else mode)(bounded(local, "rgds_2d", 0, 0, 5)),
         rgds_adaptive=bounded(local, "rgds_adaptive", 1, 0, 1),
+        # Whole pixels (DSCore video.integer_scale): 0 off, 1 under (letterboxed), 2 over (cropped).
+        integer_scale=bounded(local, "integer_scale", bounded(defaults, "integer_scale", 0, 0, 2), 0, 2),
         frameskip=bounded(local, "frameskip", 0, 0, 3)
     )
 

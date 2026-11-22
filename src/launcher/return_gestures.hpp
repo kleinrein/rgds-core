@@ -202,10 +202,11 @@ bool App::edge_gesture_move(int x, int y) {
     gesture_flash_kind = home ? 0 : from_right ? 2 : 1;
     micro_until = gesture_flash_at + 270;
     if (home) {
-        const bool chatting = chat_open || music_open || vt.open;
+        const bool chatting = chat_open || music_open || vt.open || sn.open;
         close_pictochat();
         close_music();
         close_voice_toy();
+        close_snake();
         picker_open = false;
         if (settings.page != Page::Library) {
             settings.page = Page::Library;

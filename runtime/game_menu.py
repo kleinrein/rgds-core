@@ -16,7 +16,8 @@ from emulator_profiles import RGDS_SCALES, policy
 from engines import CORES
 from shaders import supported
 from library import read_fields, write_fields, game_key
-from controls import load_profile, paths as control_paths, Shortcut, FastForwardButton, evdev_source
+from controls import load_profile, paths as control_paths, Shortcut, FastForwardButton, evdev_source, \
+    fast_forward_chorded
 from lid_sleep import LidSleep, PowerKey
 from idle_watch import IdleWatch, PanelDim, timers
 from linux_platform import rocknix_joypad
@@ -83,6 +84,11 @@ class MenuInput:
         self.suppressed_keys = set()
         self.speed = FastForwardButton()
         self.speed.configure(self.profile)
+        self.system = None
+        if rom is not None:
+            from play_options import system_of
+            self.system = system_of(rom)
+        self.speed_chord = fast_forward_chorded(self.profile, self.system)
         self.actions = deque()
         self.calibrated = {}
         self.mainline = {}
@@ -127,6 +133,7 @@ class MenuInput:
                 self.profile = profile
                 change = self.speed.configure(profile)
                 if change: self.actions.append(change)
+                self.speed_chord = fast_forward_chorded(profile, self.system)
         readable, _, _ = select.select(self.descriptors, [], [], 0)
         for fd in readable:
             try:
@@ -155,10 +162,10 @@ class MenuInput:
                             change = self.speed.feed(source, source == evdev_source(kind, code, value), fd)
                             if change: self.actions.append(change)
                     elif kind == 1:
-                        change = self.speed.feed(
-                            evdev_source(kind, code, value, mainline=self.mainline.get(fd, False)), value == 1, fd
-                        )
-                        if change: self.actions.append(change)
+                        source = evdev_source(kind, code, value, mainline=self.mainline.get(fd, False))
+                        if self.speed_gate(source, value == 1, fd):
+                            change = self.speed.feed(source, value == 1, fd)
+                            if change: self.actions.append(change)
                 if kind == 1 and value in (0, 1):
                     button = menu_button_action(code, 312 in self.codes[fd]) if code in self.codes[fd] else None
                     # Menu + R (either order) takes a screenshot; R alone stays the game's.
@@ -184,6 +191,16 @@ class MenuInput:
         action = self.shortcut.poll(now)
         if action: self.actions.append(action)
         return self.actions.popleft() if self.actions else False
+
+    def speed_gate(self, source, down, device):
+        """Whether a press reaches the fast-forward button. A game trigger (Menu + R2 on the Dreamcast) fast-forwards
+        only with Menu held, and that Menu then opens nothing; a lone trigger stays the game's."""
+        if not self.speed_chord or source != self.speed.source: return True
+        if not down: return device in self.speed.held
+        if not self.shortcut.menu: return False
+        self.shortcut.chord()
+        self.chorded = True
+        return True
 
     def take_chord(self, now):
         self.shortcut.chord()
@@ -858,6 +875,18 @@ class GameMenu:
             if len(pieces) != 3 or not pieces[1].isdigit() or pieces[2] not in ('0', '1'):
                 self.publish('error', 'Invalid cheat request.')
                 return
+        if action.startswith('rewind-'):
+            # Rewind (docs/TIME_TRAVEL_PLAN.md): rewind-open lists the engine's moments beside the control file;
+            # rewind-show:<id> loads one for a look, rewind-play:<id> plays from it, rewind-back:<id> returns to now.
+            pieces = action.split(':')
+            if self.core not in ('rgds-experimental', 'rgds-play'):
+                self.publish('error', 'Rewind is available when a game runs with DSCore or RG DS Play.')
+                return
+            if not (action == 'rewind-open' or (
+                len(pieces) == 2 and pieces[0] in ('rewind-show', 'rewind-play', 'rewind-back') and pieces[1].isdigit()
+            )):
+                self.publish('error', 'Invalid rewind request.')
+                return
         if action.startswith('shader:'):
             try:
                 choice = int(action.split(':', 1)[1])
@@ -891,7 +920,9 @@ class GameMenu:
             "busy", "Saving before switching games…" if self.switch_target else
             'Changing 3D threading…' if action.startswith('threaded:') else 'Applying graphics…' if action.startswith(
                 ('graphics:', 'play-graphics:', 'play-color:', 'filter2d:', 'adaptive:')
-            ) else 'Applying shader…' if action.startswith('shader:') else 'Applying cheat…' if action.
+            ) else 'Applying shader…' if action.startswith('shader:') else '' if action.startswith(
+                'rewind-'
+            ) else 'Applying cheat…' if action.
             startswith('cheat:') else
             ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…"
              ) if action == "save-quit" else 'Changing speed…' if action ==
@@ -1043,7 +1074,7 @@ class GameMenu:
             elif action in ("ds:blow", "ds:lid") or action.startswith("slot-") or action in (
                 "save", "load", "quit", "quit-discard", "fast-forward"
             ) or action.startswith(
-                ('shader:', 'graphics:', 'play-graphics:', 'play-color:', 'play-scale:', 'filter2d:', 'cheat:')
+                ('shader:', 'graphics:', 'play-graphics:', 'play-color:', 'play-scale:', 'filter2d:', 'cheat:', 'rewind-')
             ) or action in ('fps:0', 'fps:1', 'threaded:0', 'threaded:1', 'adaptive:0', 'adaptive:1'):
                 self.send(action)
             elif action == "force-quit":
@@ -1058,6 +1089,20 @@ class GameMenu:
             result = read_fields(Path(str(self.control) + ".result"))
             if result.get("token") == self.pending["token"]:
                 state = result.get("state", "")
+                if state.startswith('rewind-'):
+                    # Rewind answers: the menu reads the moments itself; playing from a moment leaves the menu.
+                    self.pending = None
+                    if state == 'rewind-played':
+                        self.close_menu()
+                        return
+                    if not self.live: self.pause()
+                    self.publish(
+                        'error' if state in ('rewind-failed', 'rewind-unavailable') else 'paused',
+                        'This game has nothing to rewind to yet.' if state == 'rewind-unavailable' else
+                        'Could not rewind. Your game is unchanged.' if state == 'rewind-failed' else '',
+                        rewind=state
+                    )
+                    return
                 if state in ('ds-applied', 'ds-unavailable'):
                     self.pending = None
                     if state == 'ds-applied': self.close_menu()

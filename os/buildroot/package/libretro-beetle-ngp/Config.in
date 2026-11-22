@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_BEETLE_NGP
+	bool "libretro-beetle-ngp"
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  Beetle NeoPop (Mednafen), the Neo Geo Pocket and Pocket Color core
+	  RG DS Play loads for .ngp and .ngc games:
+	  /usr/lib/libretro/mednafen_ngp_libretro.so. No BIOS (the core's
+	  own start-up), the console's language set to English.

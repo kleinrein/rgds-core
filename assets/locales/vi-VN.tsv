@@ -1763,3 +1763,165 @@ Send to phone	Gửi đến điện thoại
 Connect to Wi-Fi to send pictures to a phone or computer.	Kết nối Wi-Fi để gửi ảnh đến điện thoại hoặc máy tính.
 Your picture is on the pad. Write or draw beside it, then send.	Ảnh của bạn đã ở trên bảng. Viết hoặc vẽ bên cạnh rồi gửi.
 Join a room: your picture goes on the pad.	Vào một phòng: ảnh của bạn sẽ ở trên bảng.
+Fit (2x, borders)	Vừa (2x, viền)
+Fill (3x, cropped)	Lấp đầy (3x, cắt)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Mỗi điểm ảnh DS có cùng kích thước trên màn hình. Vừa để lại viền, Lấp đầy cắt bớt mép. Áp dụng từ lần khởi động sau.
+Whole pixels saved. Save & restart to use it.	Đã lưu Điểm ảnh nguyên. Lưu và khởi động lại để dùng.
+Whole pixels saved.	Đã lưu Điểm ảnh nguyên.
+B: back	B: quay lại
+Book	Sách
+Book view	Chế độ sách
+Book, held sideways	Sách, cầm ngang
+Books	Sách
+Chapter	Chương
+Close the book	Đóng sách
+Contents	Mục lục
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Chép PDF, EPUB, CBZ hoặc thư mục trang vào thư mục books.
+Copy films and series into the videos folder.	Chép phim và loạt phim vào thư mục videos.
+Direction	Hướng
+End of this film	Hết phim này
+Fill the screen	Lấp đầy màn hình
+Finished	Đã xong
+Hold in	Cầm bằng
+Larger	Lớn hơn
+Left to right	Trái sang phải
+Media	Media
+No books yet	Chưa có sách
+No sound in this film	Phim này không có âm thanh
+No videos yet	Chưa có video
+Original size	Kích thước gốc
+Paper	Giấy
+Read	Đọc
+Read on	Đọc tiếp
+Reading direction	Hướng đọc
+Resume at	Tiếp tục tại
+Right to left	Phải sang trái
+Show below the picture	Hiện bên dưới hình
+Skip intro	Bỏ qua phần mở đầu
+Sleep at the end	Ngủ khi hết phim
+Sleep in	Ngủ sau
+Sleep timer	Hẹn giờ ngủ
+Smaller	Nhỏ hơn
+Stand mode	Chế độ dựng
+Stretch	Kéo giãn
+Subtitles	Phụ đề
+Tap or press A to play now	Chạm hoặc nhấn A để phát ngay
+Text size	Cỡ chữ
+The pages of this file are fixed	Các trang của tệp này cố định
+This book cannot be opened	Không mở được sách này
+This book has no contents list	Sách này không có mục lục
+This film cannot be played	Không phát được phim này
+Track	Rãnh
+Up next	Tiếp theo
+Videos	Video
+White	Trắng
+Whole picture	Toàn bộ hình
+books, comics	sách, truyện tranh
+file	tệp
+fixed	cố định
+left	còn lại
+left hand	tay trái
+light text on dark	chữ sáng trên nền tối
+manga	manga
+none	không có
+one page, held normally	một trang, cầm bình thường
+pages	trang
+right hand	tay phải
+two pages	hai trang
+warm, for long reading	ấm, để đọc lâu
+Films and books	Phim và sách
+Films, books and music	Phim, sách và nhạc
+Bring over	Chuyển sang
+Looking for saves from another system…	Đang tìm dữ liệu lưu từ hệ thống khác…
+Welcome over!	Chào mừng!
+Your saves and play time are in place.	Dữ liệu lưu và thời gian chơi của bạn đã sẵn sàng.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher đã giữ chúng từ thẻ cũ trước khi xóa thẻ.
+They are on the card in the second slot.	Chúng nằm trên thẻ ở khe thứ hai.
+They are on the USB drive.	Chúng nằm trên ổ USB.
+They are in the import folder on this card.	Chúng nằm trong thư mục import trên thẻ này.
+Coming from {0}?	Bạn đến từ {0}?
+Your saves, play time and favourites can come with you.	Dữ liệu lưu, thời gian chơi và mục yêu thích có thể đi cùng bạn.
+Bringing everything over…	Đang chuyển mọi thứ…
+Keep the handheld on until this is done.	Hãy để máy bật cho đến khi xong.
+{0} save	{0} bản lưu
+{0} saves	{0} bản lưu
+{0} resume point	{0} điểm chơi tiếp
+{0} resume points	{0} điểm chơi tiếp
+{0} hours of play time	{0} giờ chơi
+{0} favourite	{0} mục yêu thích
+{0} favourites	{0} mục yêu thích
+{0} game on this card	{0} trò chơi trên thẻ này
+{0} games on this card	{0} trò chơi trên thẻ này
+{0} BIOS file	{0} tệp BIOS
+{0} BIOS files	{0} tệp BIOS
+Everything was already here.	Mọi thứ đã có ở đây rồi.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} trò chơi vẫn còn trên máy tính. Hãy chép thư mục roms từ bản sao lưu vào thư mục roms của thẻ này (bước Trò chơi chỉ cách làm): thời gian chơi và bản lưu sẽ tìm thấy nó ở đó.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} trò chơi vẫn còn trên máy tính. Hãy chép thư mục roms từ bản sao lưu vào thư mục roms của thẻ này (bước Trò chơi chỉ cách làm): thời gian chơi và bản lưu sẽ tìm thấy chúng ở đó.
+{0} saves already here stay as they are.	{0} bản lưu đã có ở đây được giữ nguyên.
+Bring them over	Chuyển sang
+Press A. Nothing here is replaced.	Nhấn A. Không có gì bị thay thế.
+Bring the games too	Chuyển cả trò chơi
+Not now	Để sau
+Something could not be read or written. The old card was only read: try again.	Có thứ không đọc hoặc ghi được. Thẻ cũ chỉ được đọc: hãy thử lại.
+Coming from the stock system?	Bạn đến từ hệ thống gốc?
+Your saves can come with you.	Dữ liệu lưu của bạn có thể đi cùng bạn.
+Snake	Rắn săn mồi
+Press A or a direction to start	Nhấn A hoặc một hướng để bắt đầu
+Press A to carry on	Nhấn A để chơi tiếp
+You win!	Bạn thắng rồi!
+New best!	Kỷ lục mới!
+Game over	Kết thúc
+Best	Cao nhất
+Play again	Chơi lại
+With walls	Có tường
+Classic screen	Màn hình cổ điển
+Walls	Tường
+Swipe on either screen to steer	Vuốt trên màn hình bất kỳ để điều khiển
+Slower	Chậm hơn
+Faster	Nhanh hơn
+Pause	Tạm dừng
+Journal	Nhật ký
+Your year	Năm của bạn
+Your {0}	Năm {0} của bạn
+A quiet look back at your year	Nhìn lại năm qua thật nhẹ nhàng
+Days played	Số ngày chơi
+The game you kept coming back to	Trò chơi bạn luôn quay lại
+Your first screenshot	Ảnh chụp màn hình đầu tiên
+Preparing your journal…	Đang chuẩn bị nhật ký…
+Your journal is empty	Nhật ký của bạn đang trống
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Hãy chơi một trò và nhật ký bắt đầu tại đây: bạn đã chơi bao lâu, mở khóa gì và những bức ảnh đã chụp.
+Played for {0}	Đã chơi {0}
+1 photo	1 ảnh
+{0} photos	{0} ảnh
+First time playing	Lần đầu chơi
+First time since {0}	Lần đầu kể từ {0}
+{0} more achievements	Thêm {0} thành tích
+Earlier today	Sớm hơn hôm nay
+Where you left off	Nơi bạn dừng lại
+Away for {0}	Vắng mặt {0}
+Sunday	Chủ nhật
+Monday	Thứ hai
+Tuesday	Thứ ba
+Wednesday	Thứ tư
+Thursday	Thứ năm
+Friday	Thứ sáu
+Saturday	Thứ bảy
+January	Tháng 1
+February	Tháng 2
+March	Tháng 3
+April	Tháng 4
+May	Tháng 5
+June	Tháng 6
+July	Tháng 7
+August	Tháng 8
+September	Tháng 9
+October	Tháng 10
+November	Tháng 11
+December	Tháng 12
+Birthday	Sinh nhật
+No birthday	Không có sinh nhật
+Not set	Chưa đặt
+Happy birthday, {0}!	Chúc mừng sinh nhật, {0}!
+Last played {0}	Chơi lần cuối {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Màu sắc và nhạc menu theo đồng hồ: buổi tối ấm hơn, ban đêm yên hơn
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Trò chơi DS được biết ngày này, như máy gốc. Vào ngày đó, máy chào bạn theo cách riêng.

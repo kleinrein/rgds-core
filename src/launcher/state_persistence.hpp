@@ -80,7 +80,7 @@ void App::restore_state() {
                   : page == int(Page::Maintenance)    ? 7
                   : page == int(Page::LibraryOptions) ? library_row_count() - 1
                   : page == int(Page::Achievements)   ? 1
-                  : page == int(Page::Appearance)     ? 7
+                  : page == int(Page::Appearance)     ? 8
                   : page == int(Page::DisplayOptions) ? 2
                   : page == int(Page::System)         ? (o.rgds_os ? 7 : 8) - 1
                   : page == int(Page::Wifi)      ? std::max(0, std::atoi(device_status["network_count"].c_str()) - 1)

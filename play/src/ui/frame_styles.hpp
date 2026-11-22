@@ -212,7 +212,7 @@ inline constexpr FrameStyleInfo frame_styles[] = {
      0x0E1012, 0x3A3D42, 0x4A4A4E, "", 0x5A5A5E, 0xE0302A, 0},
     {"tv-wood", "nes,sms,sg,atari,atari5200,coleco,intellivision,pico", "Wood-grain TV", FrameKind::TvWood, 0x7A4E2A, 0x4E2F17, 0,
      0x0E1012, 0x3A3D42, 0x2A2A2C, "", 0xB9B4A8, 0xE0302A, 2},
-    {"monitor", "dos,msx,cpc,zx,c64,amiga,scummvm", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42,
+    {"monitor", "dos,msx,cpc,zx,c64,amiga,scummvm,flash", "PC monitor", FrameKind::Monitor, 0xDCD3BC, 0xC4BAA0, 3, 0x0E1012, 0x3A3D42,
      0x6F6858, "", 0xCDC4AA, 0x4CD964, 0},
     {"ctr-dark", "3ds", "3DS · Clean dark", FrameKind::Ctr, 0x15161A, 0x0F1013, 0, 0, 0, 0, "", 0, 0, 0},
     {"ctr-cosmos", "3ds", "3DS · Cosmos Black", FrameKind::Ctr, 0x34373D, 0x1E2024, 0, 0, 0, 0, "", 0, 0, 0},

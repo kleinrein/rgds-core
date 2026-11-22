@@ -43,8 +43,8 @@ struct SystemInfo {
     std::initializer_list<const char*> extensions;
     std::initializer_list<const char*> folder_extensions = {};
 };
-inline const std::array<SystemInfo, 33>& systems() {
-    static const std::array<SystemInfo, 33> list = {{
+inline const std::array<SystemInfo, 37>& systems() {
+    static const std::array<SystemInfo, 37> list = {{
         {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
@@ -78,13 +78,20 @@ inline const std::array<SystemInfo, 33>& systems() {
         {"atari7800", "Atari 7800", "7800", {".a78"}, {".bin"}},                   // ProSystem
         {"atari5200", "Atari 5200", "5200", {".a52"}, {".bin"}},                   // a5200
         {"lynx", "Atari Lynx", "LYNX", {".lnx"}},                                  // Handy
+        {"wonderswan", "WonderSwan", "WS", {".ws", ".wsc", ".pc2"}},               // Beetle WonderSwan, and the Color
+        {"ngp", "Neo Geo Pocket", "NGP", {".ngp", ".ngc", ".ngpc", ".npc"}},       // Beetle NeoPop, and the Color
         {"vb", "Virtual Boy", "VB", {".vb", ".vboy"}, {".bin"}},                   // Beetle VB
         {"amiga", "Amiga", "AMIGA", {".adf", ".adz", ".dms", ".ipf", ".hdf", ".hdz", ".lha", ".uae"}, {".m3u"}}, // PUAE
         // DOSBox Pure: a game's zipped folder (only in a DOS folder: a zip elsewhere is a DS game's), CD and floppy images
         {"dos", "DOS", "DOS", {".dosz"}, {".zip", ".iso", ".cue", ".chd", ".ins", ".img", ".ima", ".vhd", ".m3u", ".m3u8"}},
         {"pico8", "PICO-8", "P8", {".p8"}, {".png"}}, // fake-08: .p8 carts, and .p8.png picture carts in its folder
         {"gw", "Game & Watch", "G&W", {".mgw"}}, // and other LCD games: MADrigal's simulators (gw-libretro)
+        // Nintendo's two-monitor cabinets (mame2003-plus, built with only those): a set is a .zip, the system's only in
+        // an arcade folder, and only the sets of arcade_sets() are listed
+        {"arcade", "Arcade", "ARC", {}, {".zip"}},
         {"scummvm", "ScummVM", "SCUMM", {}}, // a game is a folder of files: scan_system
+        // Ruffle: a movie anywhere, a Flashpoint game pack (a .zip) only in a Flash folder
+        {"flash", "Flash", "FLASH", {".swf"}, {".zip", ".spl"}},
         {"ports", "Ports", "PORT", {".sh"}}, // PortMaster ports: the scripts in its ports folder
         // not a system with games of its own: the shelves of free DS, GBA and NES homebrew (homebrew_screen.hpp)
         {"homebrew", "Homebrew", "FREE", {}},
@@ -182,6 +189,18 @@ inline const GamesFolder* games_folder(const std::string& name) {
         {"lynx", "lynx", ""},
         {"atarilynx", "lynx", ""},
         {"atari lynx", "lynx", ""},
+        {"wonderswan", "wonderswan", ""},
+        {"wonderswan color", "wonderswan", ""},
+        {"wonderswancolor", "wonderswan", ""},
+        {"ws", "wonderswan", ""},
+        {"wsc", "wonderswan", ""},
+        {"wswan", "wonderswan", ""},
+        {"ngp", "ngp", ""},
+        {"ngpc", "ngp", ""},
+        {"neogeopocket", "ngp", ""},
+        {"neo geo pocket", "ngp", ""},
+        {"neo geo pocket color", "ngp", ""},
+        {"neogeopocketcolor", "ngp", ""},
         {"vb", "vb", ""},
         {"virtualboy", "vb", ""},
         {"virtual boy", "vb", ""},
@@ -195,6 +214,15 @@ inline const GamesFolder* games_folder(const std::string& name) {
         {"pico-8", "pico8", ""},
         {"fake08", "pico8", ""},
         {"gw", "gw", ""},
+        {"arcade", "arcade", ""},
+        {"mame", "arcade", ""},
+        {"mame2003", "arcade", ""},
+        {"mame2003-plus", "arcade", ""},
+        {"mame2003plus", "arcade", ""},
+        {"flash", "flash", ""},
+        {"adobe flash", "flash", ""},
+        {"flashpoint", "flash", ""},
+        {"swf", "flash", ""},
     };
     for (const auto& f : folders)
         if (name == f.name) return &f;
@@ -210,6 +238,7 @@ inline const GamesFolder* games_folder_of(const fs::path& path) {
 // system shares only there), else by its extension ("nds" for anything else).
 inline std::string system_for_path(const fs::path& path) {
     const std::string extension = lower(path.extension().string());
+    if (lower(path.filename().string()) == "app.ini") return "ports"; // an app (docs/APPS.md), shown among the ports
     for (auto folder = path.parent_path(); folder.has_relative_path(); folder = folder.parent_path())
         if (lower(folder.filename().string()) == "scummvm") return "scummvm"; // any file there is a game's
     if (const auto* folder = games_folder_of(path)) {
@@ -287,6 +316,23 @@ inline std::string library_title(std::string name) {
         clean = "The " + clean.substr(0, clean.size() - 5);
     return clean.empty() ? name : clean;
 }
+// An app's name for the library (docs/APPS.md): app.ini's name=, else its folder's name.
+// Read as runtime/apps.py reads it: a BOM and spaces around the key and the value do not count.
+inline std::string app_title(const fs::path& manifest) {
+    const auto trim = [](std::string text) {
+        const auto first = text.find_first_not_of(" \t\r"), last = text.find_last_not_of(" \t\r");
+        return first == std::string::npos ? std::string() : text.substr(first, last - first + 1);
+    };
+    std::ifstream file(manifest);
+    for (std::string line; std::getline(file, line);) {
+        if (line.rfind("\xEF\xBB\xBF", 0) == 0) line.erase(0, 3);
+        const auto equals = line.find('=');
+        if (equals == std::string::npos || trim(line.substr(0, equals)) != "name") continue;
+        const auto name = trim(line.substr(equals + 1));
+        if (!name.empty()) return name;
+    }
+    return manifest.parent_path().filename().string();
+}
 inline std::vector<Game> scan(const std::vector<fs::path>& roots) {
     std::map<std::string, Game> unique;
     for (const auto& root : roots) {
@@ -322,6 +368,26 @@ inline std::vector<Game> scan(const std::vector<fs::path>& roots) {
         return at == bt ? a.path.string() < b.path.string() : at < bt;
     });
     return games;
+}
+// The arcade sets the player's core runs (os/buildroot/package/libretro-mame2003-plus/two_monitors.py builds it with
+// only these boards), by their MAME names, and the games' own names. Any other set in an arcade folder is not listed:
+// the core could not start it.
+inline const std::map<std::string, std::string>& arcade_sets() {
+    static const std::map<std::string, std::string> sets = {
+        {"punchout", "Punch-Out!!"},
+        {"spnchout", "Super Punch-Out!!"},
+        {"spnchotj", "Super Punch-Out!! (Japan)"},
+        {"armwrest", "Arm Wrestling"},
+        {"vstennis", "Vs. Tennis"},
+        {"wrecking", "Vs. Wrecking Crew"},
+        {"balonfgt", "Vs. Balloon Fight"},
+        {"vsmahjng", "Vs. Mahjong (Japan)"},
+        {"vsbball", "Vs. Baseball"},
+        {"vsbballj", "Vs. Baseball (Japan, set 1)"},
+        {"vsbbalja", "Vs. Baseball (Japan, set 2)"},
+        {"iceclmrj", "Vs. Ice Climber Dual (Japan)"},
+    };
+    return sets;
 }
 // Games of one other system (RG DS Play): its extensions, and .zip and .7z archives
 // in its own folders. Not recursive into another system's folder.
@@ -367,11 +433,23 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
     for (const auto& root : roots) {
         std::error_code ec;
         if (!fs::is_directory(root, ec)) continue;
+        // The apps folder (docs/APPS.md) holds app folders only: a loose script there is not a PortMaster port.
+        auto root_name = root.lexically_normal();
+        if (root_name.filename().empty()) root_name = root_name.parent_path();
+        const bool apps_root = ports && lower(root_name.filename().string()) == "apps";
         fs::recursive_directory_iterator it(root, fs::directory_options::skip_permission_denied, ec), end;
         while (it != end) {
             auto entry = *it;
-            if (entry.is_symlink(ec) || (ports && entry.is_directory(ec))) it.disable_recursion_pending();
-            else if (entry.is_regular_file(ec)) {
+            if (entry.is_symlink(ec) || (ports && entry.is_directory(ec))) {
+                it.disable_recursion_pending();
+                // An app (docs/APPS.md): a folder of its own with an app.ini, started like a port.
+                const auto manifest = entry.path() / "app.ini";
+                if (ports && it.depth() == 0 && !entry.is_symlink(ec) && fs::is_regular_file(manifest, ec) &&
+                    entry.path().filename().string().rfind(".", 0) != 0) {
+                    auto canonical = fs::weakly_canonical(manifest, ec);
+                    if (!ec) unique[canonical.string()] = {app_title(manifest), canonical, false, info.id};
+                }
+            } else if (!apps_root && entry.is_regular_file(ec)) {
                 const auto ext = lower(entry.path().extension().string());
                 bool wanted = is_archive(entry.path()) && !ports;
                 // An extension the system shares counts here when no other system's folder claims the file.
@@ -379,11 +457,16 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
                 if (wanted && !is_archive(entry.path()) && system_for_path(entry.path()) != info.id) wanted = false;
                 // A Mega-CD folder's games are its discs: a track no sheet lists is not a Mega Drive cartridge.
                 if (wanted && play_subsystem(entry.path(), info.id) == "segacd" && ext == ".bin") wanted = false;
+                // An arcade set is a known one, a .zip by its MAME name.
+                const auto arcade_set = arcade_sets().find(lower(entry.path().stem().string()));
+                if (wanted && std::string(info.id) == "arcade" && (ext != ".zip" || arcade_set == arcade_sets().end()))
+                    wanted = false;
                 // not the AppleDouble files macOS writes beside each game on a drive it mounts
                 if (wanted && entry.path().filename().string().rfind("._", 0) != 0) {
                     auto canonical = fs::weakly_canonical(entry.path(), ec);
                     // A PICO-8 picture cart is name.p8.png: its title is the name.
-                    std::string title = entry.path().stem().string();
+                    std::string title =
+                        std::string(info.id) == "arcade" ? arcade_set->second : entry.path().stem().string();
                     if (title.size() > 3 && lower(title.substr(title.size() - 3)) == ".p8") title.resize(title.size() - 3);
                     if (!ec) unique[canonical.string()] = {title, canonical, false, info.id};
                 }

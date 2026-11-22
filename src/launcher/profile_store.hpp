@@ -20,6 +20,7 @@ inline constexpr size_t profile_limit = 6;
 
 struct Profile {
     std::string id, name, ds_name, last_game, last_system; // last-game.txt: title, path, system (older files: title)
+    std::string birthday;                                  // ds.ini birthday=MM-DD, empty for none
     fs::path last_path;
     fs::path root;
     int picture = 0, colour = -1;
@@ -75,6 +76,14 @@ inline bool profile_write_fields(const fs::path& path, const std::map<std::strin
     return profile_write(path, text);
 }
 
+// ds.ini holds the DS profile (nickname=, birthday=MM-DD): changing one keeps the others. An empty value removes it.
+inline bool ds_ini_set(const fs::path& path, const std::string& key, const std::string& value) {
+    auto values = profile_fields(path);
+    if (value.empty()) values.erase(key);
+    else values[key] = value;
+    return profile_write_fields(path, values);
+}
+
 // A name on one line, as the files hold it.
 inline std::string profile_clean_name(std::string name) {
     for (char& c : name)
@@ -128,7 +137,11 @@ class ProfileStore {
             profile.language = look.language;
             profile.music = look.music_player;
         } catch (const std::exception&) {}
-        profile.ds_name = profile_fields(root / "ds.ini")["nickname"];
+        {
+            auto ds = profile_fields(root / "ds.ini");
+            profile.ds_name = ds["nickname"];
+            profile.birthday = ds["birthday"];
+        }
         std::ifstream last(root / "last-game.txt");
         std::string path;
         std::getline(last, profile.last_game);

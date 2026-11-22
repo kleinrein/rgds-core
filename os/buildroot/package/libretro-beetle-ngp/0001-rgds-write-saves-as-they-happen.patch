@@ -1,0 +1,105 @@
+From: RG DS
+Subject: [PATCH] Write the flash save when the game writes it
+
+NeoPop wrote a game's save (the cartridge flash) only when the game was
+closed, so a power cut or a crash lost it. Half a second after the game's
+last flash write the save is written beside the old one and renamed over it.
+---
+diff --git a/libretro.c b/libretro.c
+index ef01e22..b87bed3 100644
+--- a/libretro.c
++++ b/libretro.c
+@@ -71,6 +71,7 @@ static char retro_save_directory[1024];
+ #include "mednafen/ngp/TLCS-900h/TLCS900h_registers.h"
+ #include "mednafen/ngp/Z80_interface.h"
+ #include "mednafen/ngp/interrupt.h"
++#include "mednafen/ngp/flash.h"
+ #include "mednafen/ngp/mem.h"
+ #include "mednafen/ngp/rom.h"
+ #include "mednafen/ngp/gfx.h"
+@@ -608,6 +609,9 @@ void retro_run(void)
+    for (total = 0; total < spec.SoundBufSize; )
+       total += audio_batch_cb(sound_buf + total*2, spec.SoundBufSize - total);
+ 
++   /* RG DS: the game's save written once its flash writes have settled (flash.c) */
++   if (flash_commit_countdown > 0 && --flash_commit_countdown == 0)
++      flash_commit();
+ }
+ 
+ void retro_get_system_info(struct retro_system_info *info)
+diff --git a/mednafen/ngp/flash.c b/mednafen/ngp/flash.c
+index e7b398f..7cb6250 100644
+--- a/mednafen/ngp/flash.c
++++ b/mednafen/ngp/flash.c
+@@ -57,6 +57,8 @@ typedef struct
+ /* Local Data */
+ static FlashFileBlockHeader	blocks[256];
+ static uint16_t block_count;
++/* RG DS: frames left until the save is written after the game last wrote its flash (0: nothing waiting) */
++int flash_commit_countdown;
+ 
+ void flash_optimise_blocks(void)
+ {
+@@ -185,6 +187,10 @@ void flash_write(uint32_t start_address, uint16_t length)
+    //Now we need a new flash command before the next flash write will work!
+    memory_flash_command = false;
+ 
++   /* RG DS: the save goes to its file half a second after the game's last write (the bytes of a page follow
++    * the command that registers it), not only when the game is closed: a power cut or a crash lost it. */
++   flash_commit_countdown = 30;
++
+    for (i = 0; i < block_count; i++)
+    {
+       //Got this block with enough bytes to cover it
+diff --git a/mednafen/ngp/flash.h b/mednafen/ngp/flash.h
+index 7873e10..58e56c3 100644
+--- a/mednafen/ngp/flash.h
++++ b/mednafen/ngp/flash.h
+@@ -27,6 +27,7 @@ uint8_t *make_flash_commit(int32_t *length);
+ 
+ /* Marks flash blocks for saving. */
+ void flash_write(uint32_t start_address, uint16_t length);
++extern int flash_commit_countdown;
+ void flash_optimise_blocks(void);
+ 
+ /* Stores the flash data */
+diff --git a/mednafen/ngp/system.c b/mednafen/ngp/system.c
+index 6ebfb2f..4491e9f 100644
+--- a/mednafen/ngp/system.c
++++ b/mednafen/ngp/system.c
+@@ -1,4 +1,5 @@
+ #include <stdint.h>
++#include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include "flash.h"
+@@ -37,16 +38,27 @@ bool system_io_flash_write(uint8_t *s, uint32_t len)
+    char path_str[1024];
+    RFILE *flash_fp = NULL;
+ 
++   char temp_str[1040];
++
++   /* RG DS: written beside the save, then renamed over it, so a power cut mid-write keeps the old save. */
+    MDFN_MakeFName(MDFNMKF_SAV, path_str, sizeof(path_str), 0, "flash");
+-   flash_fp = filestream_open(path_str,
++   snprintf(temp_str, sizeof(temp_str), "%s.new", path_str);
++   flash_fp = filestream_open(temp_str,
+          RETRO_VFS_FILE_ACCESS_WRITE,
+          RETRO_VFS_FILE_ACCESS_HINT_NONE);
+ 
+    if (!flash_fp)
+       return 0;
+ 
+-   filestream_write(flash_fp, s, len);
++   if (filestream_write(flash_fp, s, len) != (int64_t)len)
++   {
++      filestream_close(flash_fp);
++      filestream_delete(temp_str);
++      return 0;
++   }
+    filestream_close(flash_fp);
++   if (filestream_rename(temp_str, path_str) != 0)
++      return 0;
+ 
+    return 1;
+ }

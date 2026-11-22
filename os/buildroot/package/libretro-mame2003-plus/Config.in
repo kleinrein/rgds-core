@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LIBRETRO_MAME2003_PLUS
+	bool "libretro-mame2003-plus"
+	help
+	  mame2003-plus built with only Nintendo's two-monitor cabinets
+	  (Punch-Out!!, Super Punch-Out!!, Arm Wrestling and the Vs. dual
+	  system's games), which RG DS Play shows one monitor per screen:
+	  /usr/lib/libretro/mame2003_plus_libretro.so, a few megabytes rather
+	  than the whole core's forty. The sets are the owner's own, in
+	  /data/roms/arcade.

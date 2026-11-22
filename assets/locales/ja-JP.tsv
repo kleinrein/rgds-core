@@ -1763,3 +1763,165 @@ Send to phone	スマホに送る
 Connect to Wi-Fi to send pictures to a phone or computer.	スマホやパソコンに画像を送るには Wi-Fi に接続してください。
 Your picture is on the pad. Write or draw beside it, then send.	画像をメモに貼りました。横に書いたり描いたりして送信してください。
 Join a room: your picture goes on the pad.	ルームに入ると、画像がメモに貼られます。
+Fit (2x, borders)	合わせる（2x、ふち）
+Fill (3x, cropped)	うめる（3x、切り取り）
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	DSの画素をすべて同じ大きさで表示します。合わせるはふちが出て、うめるは端を切り取ります。次の起動から使われます。
+Whole pixels saved. Save & restart to use it.	整数倍表示を保存しました。保存して再起動すると使われます。
+Whole pixels saved.	整数倍表示を保存しました。
+B: back	B: 戻る
+Book	本
+Book view	本モード
+Book, held sideways	本、横持ち
+Books	本
+Chapter	チャプター
+Close the book	本を閉じる
+Contents	目次
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	PDF、EPUB、CBZ、またはページのフォルダーをbooksフォルダーにコピーしてください。
+Copy films and series into the videos folder.	映画やシリーズをvideosフォルダーにコピーしてください。
+Direction	方向
+End of this film	この映画の終わり
+Fill the screen	画面いっぱい
+Finished	見終わった
+Hold in	持つ手
+Larger	大きく
+Left to right	左から右
+Media	メディア
+No books yet	本はまだありません
+No sound in this film	この映画には音声がありません
+No videos yet	ビデオはまだありません
+Original size	元のサイズ
+Paper	紙
+Read	読む
+Read on	続きを読む
+Reading direction	読む方向
+Resume at	再開位置
+Right to left	右から左
+Show below the picture	映像の下に表示
+Skip intro	イントロをスキップ
+Sleep at the end	終わりでスリープ
+Sleep in	スリープまで
+Sleep timer	スリープタイマー
+Smaller	小さく
+Stand mode	スタンドモード
+Stretch	引き伸ばし
+Subtitles	字幕
+Tap or press A to play now	タップかAで今すぐ再生
+Text size	文字サイズ
+The pages of this file are fixed	このファイルのページは固定です
+This book cannot be opened	この本は開けません
+This book has no contents list	この本には目次がありません
+This film cannot be played	この映画は再生できません
+Track	トラック
+Up next	次はこちら
+Videos	ビデオ
+White	白
+Whole picture	全体を表示
+books, comics	本、コミック
+file	ファイル
+fixed	固定
+left	残り
+left hand	左手
+light text on dark	暗い背景に明るい文字
+manga	マンガ
+none	なし
+one page, held normally	1ページ、縦持ち
+pages	ページ
+right hand	右手
+two pages	2ページ
+warm, for long reading	暖色、長く読むときに
+Films and books	映画と本
+Films, books and music	映画、本、ミュージック
+Bring over	引き継ぎ
+Looking for saves from another system…	別のシステムのセーブを探しています…
+Welcome over!	ようこそ！
+Your saves and play time are in place.	セーブとプレイ時間を引き継ぎました。
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasherが古いカードを消去する前に保存しておきました。
+They are on the card in the second slot.	2番目のスロットのカードにあります。
+They are on the USB drive.	USBドライブにあります。
+They are in the import folder on this card.	このカードのimportフォルダにあります。
+Coming from {0}?	{0}から来ましたか？
+Your saves, play time and favourites can come with you.	セーブ、プレイ時間、お気に入りを引き継げます。
+Bringing everything over…	引き継いでいます…
+Keep the handheld on until this is done.	終わるまで電源を切らないでください。
+{0} save	セーブ {0}件
+{0} saves	セーブ {0}件
+{0} resume point	再開ポイント {0}件
+{0} resume points	再開ポイント {0}件
+{0} hours of play time	プレイ時間 {0}時間
+{0} favourite	お気に入り {0}件
+{0} favourites	お気に入り {0}件
+{0} game on this card	このカードのゲーム {0}本
+{0} games on this card	このカードのゲーム {0}本
+{0} BIOS file	BIOSファイル {0}個
+{0} BIOS files	BIOSファイル {0}個
+Everything was already here.	すべてすでにここにありました。
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0}本のゲームはまだパソコンにあります。バックアップのromsフォルダをこのカードのromsフォルダにコピーしてください（方法は「ゲーム」の手順にあります）。プレイ時間とセーブはそこで見つかります。
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0}本のゲームはまだパソコンにあります。バックアップのromsフォルダをこのカードのromsフォルダにコピーしてください（方法は「ゲーム」の手順にあります）。プレイ時間とセーブはそこで見つかります。
+{0} saves already here stay as they are.	すでにある{0}件のセーブはそのままです。
+Bring them over	引き継ぐ
+Press A. Nothing here is replaced.	Aを押してください。何も上書きされません。
+Bring the games too	ゲームも引き継ぐ
+Not now	あとで
+Something could not be read or written. The old card was only read: try again.	読み取りまたは書き込みができませんでした。古いカードは読み取っただけです。もう一度お試しください。
+Coming from the stock system?	標準システムから来ましたか？
+Your saves can come with you.	セーブを引き継げます。
+Snake	ヘビ
+Press A or a direction to start	Aボタンか方向キーでスタート
+Press A to carry on	Aボタンでつづける
+You win!	クリア！
+New best!	ハイスコア更新！
+Game over	ゲームオーバー
+Best	ハイスコア
+Play again	もう一度遊ぶ
+With walls	カベあり
+Classic screen	クラシック画面
+Walls	カベ
+Swipe on either screen to steer	どちらかの画面をスワイプして操作
+Slower	おそく
+Faster	はやく
+Pause	一時停止
+Journal	ジャーナル
+Your year	あなたの一年
+Your {0}	あなたの{0}年
+A quiet look back at your year	一年をそっと振り返る
+Days played	プレイした日数
+The game you kept coming back to	何度も戻ってきたゲーム
+Your first screenshot	最初のスクリーンショット
+Preparing your journal…	ジャーナルを準備中…
+Your journal is empty	ジャーナルはまだ空です
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	ゲームを遊ぶとここに記録されます：プレイ時間、解除した実績、撮った写真。
+Played for {0}	{0}プレイ
+1 photo	写真1枚
+{0} photos	写真{0}枚
+First time playing	初めてのプレイ
+First time since {0}	{0}以来のプレイ
+{0} more achievements	ほか{0}個の実績
+Earlier today	今日の先ほど
+Where you left off	前回の続きから
+Away for {0}	{0}ぶり
+Sunday	日曜日
+Monday	月曜日
+Tuesday	火曜日
+Wednesday	水曜日
+Thursday	木曜日
+Friday	金曜日
+Saturday	土曜日
+January	1月
+February	2月
+March	3月
+April	4月
+May	5月
+June	6月
+July	7月
+August	8月
+September	9月
+October	10月
+November	11月
+December	12月
+Birthday	誕生日
+No birthday	誕生日なし
+Not set	未設定
+Happy birthday, {0}!	{0}さん、誕生日おめでとう！
+Last played {0}	最後に遊んだ日：{0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	色とメニュー音楽が時刻に合わせて変わります：夕方は暖かく、夜は静かに
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	オリジナルと同じく、DSのゲームに伝えられます。当日は本体がちょっとしたあいさつをします。

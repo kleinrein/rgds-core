@@ -34,6 +34,9 @@ from controls import paths as control_paths, load_profile as control_profile
 
 from engines import CORES, DSPERATE_CORES, RETIRED
 
+# DSCore's video.integer_scale for game.ini integer_scale 0, 1 and 2 (Graphics > Whole pixels).
+INTEGER_SCALES = ('off', 'under', 'over')
+
 
 def timezone_value(fields, now=None):
     """The TZ for system.ini's timezone and dst (0 automatic, 1 forced on, 2 forced off), as the launcher sets it."""
@@ -150,7 +153,10 @@ def achievements_signed_in(data, player):
         "token": folder / TOKEN,
         "helper": Path(__file__).resolve().with_name("achievements.py"),
         "badges": Path(data) / "achievements/badges",
-        "env": {"RGDS_RA_PYTHON": sys.executable or "python3", "RGDS_VERSION": version()},
+        "env": {
+            "RGDS_RA_PYTHON": sys.executable or "python3",
+            "RGDS_VERSION": version()
+        },
     }
 
 
@@ -339,6 +345,27 @@ def resolve_rom(rom, data, core=None):
                 if temporary.exists():
                     temporary.unlink()
             return output
+
+
+def ds_firmware_user(player):
+    """The rest of the DS profile for the firmware DSCore generates: the birthday (ds.ini birthday=MM-DD) and the
+    favourite colour, which is the launcher's accent (ui.ini accent=0-15; -1, the classic blue, keeps DSCore's)."""
+    user = {}
+    try:
+        month, day = (int(part) for part in read_fields(Path(player) / 'ds.ini').get('birthday', '').split('-'))
+        if 1 <= month <= 12 and 1 <= day <= (31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)[month - 1]:
+            user.update(birthday_month=month, birthday_day=day)
+    except ValueError:
+        pass
+    # ui.ini may hold accent= more than once (appended); the last one is the one in force.
+    accent = ''
+    try:
+        for line in (Path(player) / 'ui.ini').read_text(errors='replace').splitlines():
+            if line.startswith('accent='): accent = line[7:].strip()
+    except OSError:
+        pass
+    if accent.isdigit() and int(accent) <= 15: user['colour'] = int(accent)
+    return user
 
 
 def rumble_setting(data):
@@ -591,6 +618,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         ('RG DS Core' if core == 'rgds-experimental' else 'DSperate') if c.isprintable()
     )
     ds_nickname = ds_nickname.encode('utf-16-le')[:20].decode('utf-16-le', errors='ignore') or 'RG DS Core'
+    ds_user = ds_firmware_user(player)
     env['RGDS_DS_LANGUAGE'] = str(ds_language)
     env['RGDS_MICROPHONE'] = '1' if ds_microphone else '0'
 
@@ -607,6 +635,11 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     global_controls, game_controls = control_paths(data, identity or rom)
     env['RGDS_CONTROLS_GLOBAL'] = str(global_controls)
     env['RGDS_CONTROLS_FILE'] = str(game_controls)
+    # The triggers this system's games use: the bridge hands a fast-forward button among them to the game (the menu
+    # helper fast-forwards on Menu + that button instead).
+    from controls import GAME_TRIGGERS
+    from play_options import system_of
+    env['RGDS_GAME_TRIGGERS'] = ','.join(GAME_TRIGGERS.get(system_of(identity or rom), ()))
     env['RGDS_ENGINE_BINARY'] = str(binary)
     env['RGDS_OWN_FF_HUD'] = '1' if core == 'rgds-experimental' else '0'
     env["TZ"] = timezone_value(read_fields(data / "system.ini"))
@@ -684,7 +717,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                     "video": {
                         "sink": "renderer",
                         "linear": "false",
-                        "lcd_grid": "0"
+                        "lcd_grid": "0",
+                        "integer_scale": INTEGER_SCALES[tuning.get('integer_scale', 0)]
                     }
                 }
             )
@@ -699,7 +733,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
                 {
                     "user": {
                         "language": ds_language,
-                        "nickname": ds_nickname
+                        "nickname": ds_nickname,
+                        **ds_user
                     },
                     "net": {
                         "mode": ds_wireless,
@@ -747,9 +782,13 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # RetroAchievements (dscore/src/cheevos): the launcher's token, rcheevos's requests through achievements.py.
         signed_in = achievements_signed_in(data, player)
         if signed_in:
-            command += ["--cheevos-token", str(signed_in["token"]), "--cheevos-helper", str(signed_in["helper"]),
-                        "--cheevos-badges", str(signed_in["badges"]),
-                        "--cheevos-list", str(player / "library" / game_key(identity or rom) / "achievements.tsv")]
+            command += [
+                "--cheevos-token",
+                str(signed_in["token"]), "--cheevos-helper",
+                str(signed_in["helper"]), "--cheevos-badges",
+                str(signed_in["badges"]), "--cheevos-list",
+                str(player / "library" / game_key(identity or rom) / "achievements.tsv")
+            ]
             env.update(signed_in["env"])
     elif core == "rgds-play":
         # RG DS Play: every system but the DS. Its saves, states and backups
@@ -797,7 +836,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             command += ["--system-dir", bios]
         # The launcher's Theme & display (and language, time format) for the second screen.
         command += ["--preferences", str(player / "preferences.ini")]
-        for system in ("gba", "gb", "nes", "snes", "sms", "md", "n64", "zx", "c64", "gw", "scummvm"):
+        for system in ("gba", "gb", "nes", "snes", "sms", "md", "n64", "zx", "c64", "gw", "scummvm", "arcade"):
             command += ["--profiles", str(binary.parent / "profiles" / system)]
         command += ["--fit", shown["fit"], "--second", shown["second"], "--frame", shown["frame"]]
         command += ["--palette", shown["palette"], "--colour", shown["colour"]]
@@ -807,9 +846,13 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # RetroAchievements, when this player has it on and the launcher has signed in (runtime/achievements.py).
         signed_in = achievements_signed_in(data, player)
         if signed_in:
-            command += ["--achievements", str(signed_in["account"]), "--achievements-helper", str(signed_in["helper"]),
-                        "--achievements-badges", str(signed_in["badges"]),
-                        "--achievements-list", str(player / "library" / game_key(identity or rom) / "achievements.tsv")]
+            command += [
+                "--achievements",
+                str(signed_in["account"]), "--achievements-helper",
+                str(signed_in["helper"]), "--achievements-badges",
+                str(signed_in["badges"]), "--achievements-list",
+                str(player / "library" / game_key(identity or rom) / "achievements.tsv")
+            ]
             env.update(signed_in["env"])
     if selected_hooks.bridge:
         preload = [str(selected_hooks.bridge)]
@@ -939,6 +982,33 @@ def release_launcher_display(channel):
         raise OSError("Launcher closed before display handoff")
 
 
+def keep_resume_note(plan):
+    """The launcher's "Where you left off" note (RGDS_RESUME_NOTE, drawn by the bridge once the game is up) belongs to
+    a launch that lands on the automatic checkpoint; a fresh start or a game without one says nothing."""
+    env = plan['env']
+    resumes = env.get('RGDS_NATIVE_AUTOLOAD') == '1' or '--load-state' in plan['command']
+    if not resumes: env.pop('RGDS_RESUME_NOTE', None)
+
+
+def keep_last_frame(data, player, rom, since):
+    """The frame a game was left on, kept beside its checkpoint as last-frame.bmp for the launcher's resume card.
+
+    Leaving a game always opens the shared menu first (Return home, the Home shortcut), and the menu captures the
+    upper panel as it opens: session/menu-background.bmp. A capture older than this session is not this game's.
+    """
+    source = Path(data) / 'session/menu-background.bmp'
+    try:
+        if not source.is_file() or source.stat().st_mtime < since: return None
+        target = Path(player) / 'library' / game_key(rom) / 'last-frame.bmp'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        pending = target.with_name('.last-frame.pending')
+        shutil.copyfile(source, pending)
+        pending.replace(target)
+        return target
+    except OSError:
+        return None
+
+
 def refused_resume(result, plan, engine_log):
     return result == 1 and '--load-state' in plan['command'] and engine_log.state_refused > 0
 
@@ -990,6 +1060,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         if hud_colours:
             plan['env']['RGDS_HUD_THEME'] = hud_colours
         plan['env'].update(hud_words(app, player))
+        keep_resume_note(plan)
         print("Launching " + core + ": " + str(rom), flush=True)
         (data / "session/emulator.control").unlink(missing_ok=True)
         (data / "session/emulator.control.result").unlink(missing_ok=True)
@@ -1080,6 +1151,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         if result:
             print(f"{core} exited with code {result}. Diagnostics: {engine_log.path}", file=sys.stderr, flush=True)
         if result == 0 and core != 'portmaster':  # quick resume reopens engines, not ports
+            keep_last_frame(data, player, original_rom, datetime.fromisoformat(started).timestamp())
             from quick_resume import record_exit
             try:
                 record_exit(player, original_rom, core, datetime.fromisoformat(started).timestamp())

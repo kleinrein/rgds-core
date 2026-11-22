@@ -35,6 +35,10 @@ void App::top(SDL_Renderer* r, int y) {
         voice_top(r, y);
         return;
     }
+    if (sn.open) {
+        snake_top(r, y);
+        return;
+    }
     if (o.game_menu) {
         rect(r, 0, y, 640, 480, "background");
         media.draw(r, o.data / "session/menu-background.bmp", {0, y + 48, 640, 432}, false, 70);
@@ -129,6 +133,10 @@ void App::top(SDL_Renderer* r, int y) {
             music_home_top(r, y);
             return;
         }
+        if (media_at(home_selected)) {
+            media_home_top(r, y);
+            return;
+        }
         if (toy_at(home_selected)) {
             voice_home_top(r, y);
             return;
@@ -169,6 +177,8 @@ void App::top(SDL_Renderer* r, int y) {
     stage_favourite = game_loved(model.selected);
     stage_dual = game_dual(model.selected);
     stage_manual = game_manual(model.selected);
+    stage_aged = cover_age_note(library_cache.stats(model.games[model.selected]).last_played);
+    stage_crowned = game_most_played(model.selected);
     if (!cover_stage(r, y, item / "box.bmp")) icon_stage(r, y, info["developer"]);
     cover_line(r, y, seconds);
 }
@@ -184,6 +194,10 @@ void App::bottom(SDL_Renderer* r, int y) {
     }
     if (vt.open) {
         voice_bottom(r, y);
+        return;
+    }
+    if (sn.open) {
+        snake_bottom(r, y);
         return;
     }
     if (o.port_menu && port_idle) {
@@ -318,6 +332,7 @@ void App::bottom(SDL_Renderer* r, int y) {
         if (title_pressed) round_rect(r, title.x - 8, y + title.y - 5, title.w + 16, title.h + 10, 8, "focus");
         if (!model.games.empty())
             raw_label(r, game_title(model.selected), header.title.x, y + header.title.y, 20, "ink", header.title.w);
+        if (header.zoom.w) zoom_button(r, y, header.zoom);
     }
 
     if (!home_menu && model.games.empty() && library_ready && !collection_loading && discovery_active()) {
@@ -339,6 +354,11 @@ void App::bottom(SDL_Renderer* r, int y) {
         const std::string go = preferences.show_systems && !games_all_view() ? "Browse systems" : "Browse games";
         raised_pill(r, 160, y + 326, 320, 48, 12, theme.at("accent"));
         label(r, go, 320 - label_width(go, 20) / 2, y + 338, 20, "on_accent", 296);
+    }
+    // Zoomed out by a pinch across both screens: the wall of games takes the stage (library_zoom_screen.hpp).
+    if (zoom_render(r, y)) {
+        if (picker_open || picker_closing()) render_picker(r, y);
+        return;
     }
     size_t count = navigation_count(), selection = navigation_selected();
     if (count && !home_menu && browse_layout() == 2) {

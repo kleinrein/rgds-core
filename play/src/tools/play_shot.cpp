@@ -300,6 +300,12 @@ int main(int argc, char** argv) {
                 in >> x >> y >> arg;
                 s.core().set_pointer(x, y, arg != "up");
                 std::printf("ok\n");
+            } else if (what == "stick") {
+                // stick X Y : the left stick held there (-32768..32767, right and down positive) until moved again
+                int x = 0, y = 0;
+                in >> x >> y;
+                s.core().set_sticks(int16_t(x), int16_t(y), 0, 0);
+                std::printf("ok\n");
             } else if (what == "quit") break;
             else {
                 std::getline(in, arg);

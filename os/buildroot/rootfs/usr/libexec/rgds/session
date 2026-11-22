@@ -42,10 +42,17 @@ done
 [ -f $LOG ] && mv -f $LOG $LOG.1
 # PortMaster (runtime/portmaster.py): its entry, then the ports it installs on the data partition
 mkdir -p /data/portmaster/ports
+# Apps (docs/APPS.md): folders with an app.ini, on the Ports shelf; a zip copied here is installed by the artwork
+# step below (shared as APPS over file sharing)
+mkdir -p /data/apps
 # the entry's and the ports' covers (PortMaster's icon before it is installed) and which ports still need their
 # owner's files, beside the boot at low priority: the launcher picks the covers up when Ports is opened
 nice -n 10 python3 -B $APP/runtime/portmaster.py artwork --app $APP --data /data/rgds/userdata \
     > /data/rgds/logs/portmaster-artwork.log 2>&1 &
+# Flash (runtime/flashpoint.py): a Flashpoint folder copied into roms/flash is imported once, its game packs named
+# after their games beside it (the library lists them on its next scan); nothing to do costs one directory listing
+[ -d /data/roms/flash ] && nice -n 10 python3 -B $APP/runtime/flashpoint.py scan /data/roms/flash \
+    > /data/rgds/logs/flashpoint.log 2>&1 &
 # the lid: the hall sensor's switch, and its platform device's wakeup file (sleep on lid close, wake on open)
 for e in /sys/class/input/event*; do
     case "$(cat "$e/device/name" 2>/dev/null)" in gpio-keys-hall)
@@ -84,10 +91,11 @@ $PIN $APP/bin/rgds-launcher --app $APP --data /data/rgds/userdata --top-display 
     --system-dir intellivision=/data/roms/intellivision --system-dir msx=/data/roms/msx --system-dir cpc=/data/roms/cpc --system-dir pce=/data/roms/pce \
     --system-dir pce=/data/roms/pcecd --system-dir atari=/data/roms/atari --system-dir amiga=/data/roms/amiga \
     --system-dir atari7800=/data/roms/atari7800 --system-dir atari5200=/data/roms/atari5200 --system-dir lynx=/data/roms/lynx \
-    --system-dir dos=/data/roms/dos \
+    --system-dir wonderswan=/data/roms/wonderswan --system-dir ngp=/data/roms/ngp \
+    --system-dir dos=/data/roms/dos --system-dir flash=/data/roms/flash \
     --system-dir pico8=/data/roms/pico8 --system-dir vb=/data/roms/vb \
-    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 $CTR --system-dir psp=/data/roms/psp --system-dir dc=/data/roms/dc --system-dir gw=/data/roms/gw --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
-    --system-dir ports=/data/portmaster/ports >> $LOG 2>&1
+    --system-dir sms=/data/roms/sms --system-dir psx=/data/roms/psx --system-dir n64=/data/roms/n64 --system-dir zx=/data/roms/zx --system-dir c64=/data/roms/c64 $CTR --system-dir psp=/data/roms/psp --system-dir dc=/data/roms/dc --system-dir gw=/data/roms/gw --system-dir arcade=/data/roms/arcade --system-dir scummvm=/data/roms/scummvm --system-dir ports=$APP/runtime/portmaster_files/entry --music-dir /data/music \
+    --system-dir ports=/data/portmaster/ports --system-dir ports=/data/apps >> $LOG 2>&1
 status=$?
 # 128 + the signal when it was killed. The kernel's side goes with it: an out-of-memory kill (137) records nothing
 # itself, and GPU and card errors show here.

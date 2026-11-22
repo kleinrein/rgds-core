@@ -25,6 +25,10 @@ void App::action(int code) {
         voice_action(code);
         return;
     }
+    if (sn.open) {
+        snake_action(code);
+        return;
+    }
     brightness_drag = false;
     volume_drag = false;
     last_activity = s.GetTicks();
@@ -199,8 +203,24 @@ void App::action(int code) {
         album_action(code);
         return;
     }
+    if (settings.page == Page::Journal) {
+        journal_action(code);
+        return;
+    }
+    if (settings.page == Page::Statistics && code == 2) {
+        open_journal(); // Playtime's footer button
+        return;
+    }
+    if (settings.page == Page::Files) {
+        files_action(code);
+        return;
+    }
     if (settings.page == Page::Photo) {
         photo_action(code);
+        return;
+    }
+    if (settings.page == Page::Rewind) {
+        rewind_action(code);
         return;
     }
     if (settings.page == Page::SaveGallery || settings.page == Page::DSControls) {
@@ -250,11 +270,16 @@ void App::action(int code) {
             else if (code == 11) open_emulator_options();
             else if (code == 12) return_without_saving();
             else if (code == 8 || code == 9) {
-                const std::array<int, 13> up = {0, 0, 0, 12, 1, 2, 3, 4, 5, 6, 7, 9, 12},
-                                          down = {1, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 11, 3};
+                // The top row: Resume, Rewind (13), Screenshot (12) over the grid's columns.
+                const std::array<int, 14> up = {0, 0, 13, 12, 1, 2, 3, 4, 5, 6, 7, 9, 12, 13},
+                                          down = {1, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 11, 3, 2};
                 settings.focus = (code == 8 ? up : down).at(settings.focus);
             } else if (code == 0 || code == 1) {
-                if (settings.focus == 0 || settings.focus == 12) settings.focus = code == 0 ? 0 : 12;
+                if (settings.focus == 0 || settings.focus == 12 || settings.focus == 13) {
+                    const std::array<int, 3> row = {0, 13, 12};
+                    const int at = int(std::find(row.begin(), row.end(), settings.focus) - row.begin());
+                    settings.focus = row[size_t(std::clamp(at + (code == 0 ? -1 : 1), 0, 2))];
+                }
                 else if (settings.focus >= 10) settings.focus = code == 0 ? 10 : 11;
                 else if (settings.focus != 0) {
                     int column = (settings.focus - 1) % 3;
@@ -481,6 +506,7 @@ void App::action(int code) {
             } else if (row == 1 && code == 2) open_scraper();
             else if (row == 13 && code == 2) open_achievements();
             else if (row == 14 && code == 2) open_album();
+            else if (row == 15 && code == 2) open_files();
             else if (row < 4 && row >= 2 && (code == 0 || code == 1 || code == 2)) {
                 bool& value = row == 2 ? preferences.auto_load : preferences.auto_save;
                 value = code == 2 ? !value : code == 1;
@@ -657,6 +683,7 @@ void App::action(int code) {
         dirty = true;
         return;
     }
+    if (zoom_action(code)) return; // a zoomed-out wall of games (library_zoom_screen.hpp)
     if (systems_menu && (code == 15 || code == 16)) return; // the systems carousel has nothing to jump to or search
     if (!home_menu && (code == 15 || code == 16)) {
         if (code == 15) jump_to_letter();
@@ -892,8 +919,8 @@ void App::touch(int x, int y) {
         }
         if (x >= 28 && x <= 612) {
             if (y >= quick_top && y < quick_top + quick_wide_height) {
-                if (x > 412 && x < 428) return;
-                settings.focus = x >= 428 ? 12 : 0;
+                if ((x - 28) % 200 >= 184) return; // between the tiles
+                settings.focus = x >= 428 ? 12 : x >= 228 ? 13 : 0;
             } else if (y >= quick_grid_top && y < quick_grid_top + 3 * quick_grid_pitch &&
                        (y - quick_grid_top) % quick_grid_pitch < quick_tile_height && (x - 28) % 200 < 184)
                 settings.focus = 1 + ((y - quick_grid_top) / quick_grid_pitch) * 3 + (x - 28) / 200;
@@ -963,6 +990,7 @@ void App::touch(int x, int y) {
             return x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
         };
         if (inside(header.back)) action(3);
+        else if (!systems_menu && inside(header.zoom)) zoom_go((zoom.target + 1) % (LibraryZoom::deepest + 1), s.GetTicks());
         else if (inside(header.view)) action(12);
         else if (inside(header.options)) action(11);
         else if (discovery_active() && inside(header.clear)) clear_discovery();
@@ -996,12 +1024,40 @@ int App::cover_hit(int x, int y) {
 
 void App::pointer_begin(int x, int y) {
     if (mu.lid_dark) return; // a closed lid can rest on the lower screen
+    if (zoom_pointer(0, x, y)) return;
     if (settings.page == Page::Photo && !picker_open) {
         contact_x = down_x = x;
         contact_y = down_y = y;
         pointer_down = true;
         pointer_at = s.GetTicks();
         photo_pointer(x, y, 0);
+        return;
+    }
+    if (settings.page == Page::Rewind && !picker_open) {
+        contact_x = down_x = x;
+        contact_y = down_y = y;
+        pointer_down = true;
+        pointer_at = s.GetTicks();
+        rewind_pointer(x, y, 0);
+        return;
+    }
+    if (sn.open) {
+        view_touch_dx = view_touch_dy = 0;
+        contact_x = down_x = x;
+        contact_y = down_y = y;
+        pointer_down = true;
+        touch_tail = false;
+        pointer_at = s.GetTicks();
+        // While the snake moves a swipe steers, even from an edge; otherwise the edges go Home or Back as anywhere.
+        const bool edges = gestures_available() && sn.state != SnakeUi::State::Playing;
+        edge_gesture = !edges     ? EdgeGesture::None
+                       : y >= 470 ? EdgeGesture::Bottom
+                       : x <= 10  ? EdgeGesture::Left
+                       : x >= 630 ? EdgeGesture::Right
+                                  : EdgeGesture::None;
+        if (!page_drag.departing()) page_drag.reset();
+        if (edge_gesture == EdgeGesture::None) snake_press(x, y);
+        dirty = true;
         return;
     }
     if (vt.open && !picker_open) {
@@ -1244,11 +1300,31 @@ void App::pointer_begin(int x, int y) {
 }
 
 void App::pointer_move(int x, int y) {
+    if (zoom_pointer(1, x, y)) return;
     if (settings.page == Page::Photo && !picker_open) {
         if (pointer_down) {
             contact_x = x;
             contact_y = y;
             photo_pointer(x, y, 1);
+        }
+        return;
+    }
+    if (settings.page == Page::Rewind && !picker_open) {
+        if (pointer_down) {
+            contact_x = x;
+            contact_y = y;
+            rewind_pointer(x, y, 1);
+        }
+        return;
+    }
+    if (sn.open) {
+        if (pointer_down) {
+            contact_x = x;
+            contact_y = y;
+            page_drag_follow(x, y);
+            if (edge_gesture != EdgeGesture::None) edge_gesture_move(x, y);
+            else snake_drag(x, y);
+            dirty = true;
         }
         return;
     }
@@ -1417,11 +1493,34 @@ void App::pointer_move(int x, int y) {
 }
 
 void App::pointer_end(int x, int y) {
+    if (zoom_pointer(2, x, y)) return;
+    if (settings.page == Page::Rewind && !picker_open) {
+        if (pointer_down) rewind_pointer(x, y, 2);
+        pointer_down = false;
+        pointer_source = PointerSource::None;
+        dirty = true;
+        return;
+    }
     if (settings.page == Page::Photo && !picker_open) {
         if (pointer_down) photo_pointer(x, y, 2);
         pointer_down = false;
         pointer_source = PointerSource::None;
         dirty = true;
+        return;
+    }
+    if (sn.open) {
+        if (pointer_down) {
+            if (edge_gesture != EdgeGesture::None) {
+                edge_gesture = EdgeGesture::None;
+                snake_press(down_x, down_y);
+            }
+            if (page_drag.holding()) page_drag.settle(s.GetTicks());
+            snake_release(x, y);
+            pointer_down = false;
+            pointer_source = PointerSource::None;
+            release_at = s.GetTicks();
+            dirty = true;
+        }
         return;
     }
     if (vt.open && !picker_open) {
@@ -1609,6 +1708,12 @@ void App::raw_touch(const TouchPoint& point, Uint32 now) {
                                  : point.kind == 2 ? "up"
                                                    : "cancel") +
                      " at " + std::to_string(point.x) + "," + std::to_string(point.y);
+    if (zoom_bottom_touch(point.kind, point.x, point.y, now)) { // half of a pinch across both screens
+        raw_touch_seen = true;
+        raw_touch_at = now;
+        dirty = true;
+        return;
+    }
     if (point.kind == 0) {
         if (pointer_down && pointer_source != PointerSource::Raw) return;
         pointer_source = PointerSource::Raw;
@@ -1696,6 +1801,10 @@ void App::handle_input(const SDL_Event& e) {
     }
     if (vt.open && (anbernic_key || anbernic_button)) {
         voice_action(7);
+        return;
+    }
+    if (sn.open && (anbernic_key || anbernic_button)) {
+        snake_action(7);
         return;
     }
     // Menu + R (or Print Screen on a keyboard) takes a screenshot; a lone Menu opens the switcher on release.
@@ -1921,19 +2030,22 @@ void App::handle_input(const SDL_Event& e) {
         case SDLK_y:
             if (settings.page == Page::Library || settings.page == Page::ShaderPicker ||
                 settings.page == Page::SaveGallery || settings.page == Page::Maintenance ||
-                settings.page == Page::ProfileGames || settings.page == Page::Album || settings.page == Page::Photo)
+                settings.page == Page::ProfileGames || settings.page == Page::Album || settings.page == Page::Photo ||
+                settings.page == Page::Files || sn.open)
                 action(12);
             break;
         case SDLK_LEFTBRACKET:
-            if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats || music_open ||
+            if (sn.open || settings.page == Page::ShaderPicker || settings.page == Page::Cheats || music_open ||
                 settings.page == Page::Homebrew || settings.page == Page::ProfileGames ||
-                settings.page == Page::Photo || (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Photo || settings.page == Page::Files || settings.page == Page::Rewind ||
+                (settings.page == Page::Library && !home_menu))
                 action(13);
             break;
         case SDLK_RIGHTBRACKET:
-            if (settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
+            if (sn.open || settings.page == Page::ShaderPicker || settings.page == Page::Cheats ||
                 settings.page == Page::Homebrew || settings.page == Page::ProfileGames || music_open ||
-                settings.page == Page::Photo || (settings.page == Page::Library && !home_menu))
+                settings.page == Page::Photo || settings.page == Page::Files || settings.page == Page::Rewind ||
+                (settings.page == Page::Library && !home_menu))
                 action(14);
             break;
         case SDLK_q:
@@ -1952,6 +2064,11 @@ void App::handle_input(const SDL_Event& e) {
         // The sound toy's L and R step through its six sounds.
         if (vt.open && !picker_open && (e.jbutton.button == 4 || e.jbutton.button == 5)) {
             action(e.jbutton.button == 4 ? 13 : 14);
+            return;
+        }
+        // Snake: L and R the speed, Y (button 2) Walls.
+        if (sn.open && (e.jbutton.button == 4 || e.jbutton.button == 5 || e.jbutton.button == 2)) {
+            action(e.jbutton.button == 4 ? 13 : e.jbutton.button == 5 ? 14 : 12);
             return;
         }
         // The music player has its own use for all four shoulders: tabs or skipping, shuffle and repeat.
@@ -1974,7 +2091,8 @@ void App::handle_input(const SDL_Event& e) {
 
         // The shoulders step shader families and the cheats tabs; elsewhere they stand in for Left/Right.
         if ((settings.page == Page::ShaderPicker || settings.page == Page::Cheats || settings.page == Page::Homebrew ||
-             settings.page == Page::ProfileGames || settings.page == Page::Photo ||
+             settings.page == Page::ProfileGames || settings.page == Page::Photo || settings.page == Page::Files ||
+             settings.page == Page::Rewind ||
              (settings.page == Page::Keyboard && secret_field())) && // L: show the password
             (e.jbutton.button == 4 || e.jbutton.button == 5)) {
             action(e.jbutton.button == 4 ? 13 : 14);
@@ -1993,12 +2111,17 @@ void App::handle_input(const SDL_Event& e) {
         else if (e.jbutton.button == 7) action(4);
         else if (e.jbutton.button == 8) action(7);
         else if (e.jbutton.button == 3) action(11);
-        else if (e.jbutton.button == 2 && (settings.page == Page::Library || settings.page == Page::ShaderPicker ||
-                                           settings.page == Page::Keyboard || settings.page == Page::SaveGallery ||
-                                           settings.page == Page::Maintenance || settings.page == Page::Bluetooth ||
-                                           settings.page == Page::Homebrew || settings.page == Page::ProfileGames ||
-                                           settings.page == Page::Album || settings.page == Page::Photo))
+        else if (e.jbutton.button == 2 &&
+                 (settings.page == Page::Library || settings.page == Page::ShaderPicker ||
+                  settings.page == Page::Keyboard || settings.page == Page::SaveGallery ||
+                  settings.page == Page::Maintenance || settings.page == Page::Bluetooth ||
+                  settings.page == Page::Homebrew || settings.page == Page::ProfileGames ||
+                  settings.page == Page::Album || settings.page == Page::Photo || settings.page == Page::Files))
             action(12);
+    } else if (e.type == SDL_JOYHATMOTION && sn.open) {
+        hold.release(2000);
+        hold.release(2001);
+        snake_hat(e.jhat.value); // no repeats: the snake keeps going by itself
     } else if (e.type == SDL_JOYHATMOTION) {
         hold.release(2000);
         hold.release(2001);
@@ -2091,8 +2214,16 @@ void App::handle_input(const SDL_Event& e) {
             return;
         int x = std::clamp(static_cast<int>(e.tfinger.x * 640), 0, 639),
             y = static_cast<int>(e.tfinger.y * (o.preview ? 960 : 480));
+        const int kind = e.type == SDL_FINGERDOWN ? 0 : e.type == SDL_FINGERMOTION ? 1 : 2;
         if (o.preview) {
-            if (y < 480 && !pointer_down) return;
+            // The preview's upper half stands in for the top panel's own touch screen: a second finger there is half
+            // of a library pinch. The lower finger dragged up past the hinge stays the lower finger.
+            const bool lower_finger =
+                pointer_down && pointer_source == PointerSource::SDL && e.tfinger.fingerId == active_finger;
+            if (y < 480 && !lower_finger) {
+                zoom_top_touch(kind, x, y, now);
+                return;
+            }
             y -= 480;
         }
         // KMS associates touch with the focused window, which can be the top
@@ -2100,6 +2231,9 @@ void App::handle_input(const SDL_Event& e) {
         else if (!embedded_menu && surfaces.size() < 2)
             return;
         y = std::clamp(y, 0, 479);
+        if ((kind == 0 && !pointer_down) || zoom_owned ||
+            (pointer_source == PointerSource::SDL && e.tfinger.fingerId == active_finger))
+            if (zoom_bottom_touch(kind, x, y, now)) return;
         if (e.type == SDL_FINGERDOWN) {
             if (pointer_down) return;
             if (settings.page == Page::BootWarning && e.common.timestamp &&

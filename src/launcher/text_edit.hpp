@@ -17,6 +17,7 @@ void App::begin_edit(int field) {
                   : field == 1             ? password
                   : field == 12            ? (achievements_name.empty() ? achievements_user : achievements_name)
                   : field == 3             ? artwork_match
+                  : field == 14            ? files_edit_seed
                                            : "";
     key_row = 1;
     key_col = 1;
@@ -32,6 +33,10 @@ void App::begin_edit(int field) {
 }
 
 void App::finish_edit(bool commit) {
+    if (edit_field >= 14 && edit_field <= 19) { // Files: Rename, New folder and adding a network place
+        files_edited(commit);
+        return;
+    }
     if (edit_field >= 8 && edit_field <= 10) {
         const auto name = profile_clean_name(edit_buffer);
         const int field = edit_field;

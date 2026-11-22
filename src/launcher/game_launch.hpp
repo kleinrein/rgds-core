@@ -60,6 +60,8 @@ void App::launch(bool from_home) {
     const std::string& system = model.games[model.selected].system;
     if (system == "ports") launching_core = unsigned(portmaster_core); // a PortMaster port
     else if (system != "nds") launching_core = unsigned(play_core);    // RG DS Play
+    if (launching_core == unsigned(portmaster_core)) left_off = {};
+    else prepare_left_off(model.games[model.selected], core_ids[launching_core]);
     sound_intent(MenuCue::Launch);
     launching = true;
     launch_at = s.GetTicks();
@@ -103,10 +105,14 @@ void App::cancel_launch() {
 }
 
 void App::finish_launch(bool reopen) {
+    // RG DS Media's Music tab leaves with 42: back here, into the music player.
+    const bool media_music = media_launch && launch_result == 42;
+    if (media_music) launch_result = 0;
     if (launch_channel >= 0) ::close(launch_channel);
     launch_channel = -1;
     launching = false;
     launch_phase = LaunchPhase::None;
+    left_off = {};
     if (!reopen) configure_sounds(); // a cancelled or preview launch: the music comes back
     if (reopen) {
         if (launching_core == unsigned(portmaster_core)) refresh_other_systems(); // ports added or removed
@@ -154,12 +160,21 @@ void App::finish_launch(bool reopen) {
                                    : "BACK HOME";
     if (launch_result && !launch_cancelled) emit_sound(MenuCue::Error);
     else if (reopen) emit_sound(MenuCue::Back);
+    if (media_launch) {
+        media_launch = false;
+        if (media_music && music_available()) open_music();
+    }
     dirty = true;
 }
 
 void App::start_launch_runner(Uint32 now) {
     music_pause(); // the game has the sound to itself
     voice_pause();
+    snake_pause();
+    if (media_launch) {
+        start_media_runner(now);
+        return;
+    }
     try {
         save_switcher_library();
     } catch (const std::exception& error) {
@@ -205,9 +220,15 @@ void App::start_launch_runner(Uint32 now) {
                                      "--display-handoff-fd",
                                      std::to_string(channel[1])};
     save_state();
+    // For the bridge's cards (journal_screen.hpp): the game's name, and the resume note when there is one.
+    const std::string game_title = left_off.shown ? left_off.title : library_title(model.games[model.selected].title),
+                      resume_note = left_off_note();
     launch_child = fork();
     if (launch_child == 0) {
         if (resume_launch) setenv("RGDS_FORCE_AUTOLOAD", "1", 1);
+        setenv("RGDS_GAME_TITLE", game_title.c_str(), 1);
+        if (resume_note.empty()) unsetenv("RGDS_RESUME_NOTE");
+        else setenv("RGDS_RESUME_NOTE", resume_note.c_str(), 1);
         ::close(channel[0]);
         if (fcntl(channel[1], F_SETFD, 0) < 0) _exit(127);
         std::vector<char*> argv;

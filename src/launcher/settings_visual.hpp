@@ -66,6 +66,8 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Home layout") return SettingsIcon::Home;
     if (title == "Background") return SettingsIcon::Shader;
     if (title == "Touch gestures") return SettingsIcon::Touch;
+    if (title == "Time of day") return SettingsIcon::Clock;
+    if (title == "Birthday") return SettingsIcon::Spark;
     if (title == "Accent colour" || title == "Screen colours") return SettingsIcon::Palette;
     if (title == "Icon style") return SettingsIcon::Art;
     if (title == "Sharing details") return SettingsIcon::Info;
@@ -198,6 +200,7 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Home layout") return "A carousel, or the DSi's column with your last game on top";
     if (title == "Background") return "Plain, or the DSi's ruled grid behind every screen";
     if (title == "Touch gestures") return "Swipe up from the bottom for Home, in from a side for Back";
+    if (title == "Time of day") return "Colours and menu music follow the clock: warmer evenings, quieter nights";
     if (title == "Timezone") return "Your local time and date";
     if (title == "Time format") return "24-hour or 12-hour clock";
     if (title == "Date format") return "How dates appear in the status bar";

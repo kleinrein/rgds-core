@@ -2,7 +2,7 @@
 rocknix-singleadc-joypad driver reported for the same ADC readings, so the RG DS's sticks feel the same after the
 move to mainline's input drivers (docs/OWN_BSP_PLAN.md, Phase C step 2). The header is compiled here with the host's
 C compiler and checked against a separate Python port of the driver's arithmetic (joypad_adc_check)."""
-import itertools, shutil, subprocess, tempfile, unittest
+import itertools, re, shutil, subprocess, tempfile, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,7 +43,15 @@ def driver(raw_x, raw_y, cal_x, cal_y):
 HARNESS = r'''
 #include <stdio.h>
 #include "rgds_pad_axes.h"
-int main(void) {
+int main(int argc, char **argv) {
+	(void)argv;
+	if (argc > 1) { /* the mux-state table */
+		for (int s = 0; s < 4; s++)
+			printf("%d %d %d\n", rgds_pad_state_code[s], rgds_pad_state_axis[s], rgds_pad_state_invert[s]);
+		printf("%d %d %d %d\n", rgds_pad_stick_states[0][0], rgds_pad_stick_states[0][1], rgds_pad_stick_states[1][0],
+		       rgds_pad_stick_states[1][1]);
+		return 0;
+	}
 	int rx, ry, cx, cy;
 	while (scanf("%d %d %d %d", &rx, &ry, &cx, &cy) == 4) {
 		struct rgds_pad_axis x = {0, 0, cx, 111}, y = {1, 1, cy, 222};
@@ -64,9 +72,13 @@ class PadSticksTest(unittest.TestCase):
         src = Path(cls.tmp.name, 'harness.c')
         src.write_text(HARNESS)
         cls.binary = Path(cls.tmp.name, 'harness')
-        subprocess.run(['cc', '-std=c99', '-Wall', '-Werror', '-I', str(HEADER.parent), str(src), '-o',
-                        str(cls.binary)],
-                       check=True)
+        subprocess.run(
+            ['cc', '-std=c99', '-Wall', '-Werror', '-I',
+             str(HEADER.parent),
+             str(src), '-o',
+             str(cls.binary)],
+            check=True
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -100,6 +112,38 @@ class PadSticksTest(unittest.TestCase):
             self.assertLessEqual(abs(x), MAX)
             self.assertLessEqual(abs(y), MAX)
         self.assertEqual(self.run_cases([(1023, 512, 1024, 1024)])[0].split()[:2], [str(MAX), '0'])
+
+    def test_mux_states_map_to_the_axes_rocknix_reported(self):
+        """Derived again from ROCKNIX's driver: its select switch, converted to gpio-mux states (sel_a is bit 0,
+        sel_b bit 1), its amux-channel-mapping <1 0 2 3>, report types by index and the RG DS's inversions."""
+        driver = (ROOT / 'os/buildroot/board/rgds/kernel/rocknix-singleadc-joypad.c').read_text()
+        switch = driver[driver.index('static int joypad_amux_select'):]
+        switch = switch[:switch.index('default:')]
+        cases = re.findall(r'case (\d):.*?sel_a_gpio, (\d)\);.*?sel_b_gpio, (\d)\);', switch, re.S)
+        state_of_channel = {int(c): int(a) | int(b) << 1 for c, a, b in cases}
+        self.assertEqual(len(state_of_channel), 4)
+        ABS = {'X': 0, 'Y': 1, 'RX': 3, 'RY': 4}
+        mapping = [1, 0, 2, 3]  # amux-channel-mapping in the RG DS tree for ROCKNIX's driver
+        report = ['RY', 'RX', 'Y', 'X']  # the driver's report type per adc index
+        inverted = {'X', 'Y', 'RY'}  # invert-absx, invert-absy, invert-absry
+        want_axis, want_invert = [None] * 4, [None] * 4
+        for index in range(4):
+            state = state_of_channel[mapping[index]]
+            want_axis[state] = ABS[report[index]]
+            want_invert[state] = int(report[index] in inverted)
+        want_pairs = [
+            state_of_channel[mapping[0]], state_of_channel[mapping[1]], state_of_channel[mapping[2]],
+            state_of_channel[mapping[3]]
+        ]
+        lines = subprocess.run([str(self.binary), 'table'], capture_output=True, text=True,
+                               check=True).stdout.split('\n')
+        rows = [list(map(int, line.split())) for line in lines[:4]]
+        self.assertEqual(
+            [r[0] for r in rows], [ABS['X'], ABS['Y'], ABS['RX'], ABS['RY']], 'adc-joystick axis per state'
+        )
+        self.assertEqual([r[1] for r in rows], want_axis)
+        self.assertEqual([r[2] for r in rows], want_invert)
+        self.assertEqual(list(map(int, lines[4].split())), want_pairs)
 
     def test_a_failed_read_keeps_the_last_values(self):
         self.assertEqual(self.run_cases([(0, 700, 1024, 1024), (700, 0, 1024, 1024)]), ['skip 111 222'] * 2)

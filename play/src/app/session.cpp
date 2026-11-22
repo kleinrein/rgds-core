@@ -177,6 +177,8 @@ bool Session::open(const SessionOptions& o, std::string& error) {
         if (companion_->view() && read_file(view_path(), bytes) && unpack_view(bytes))
             companion_->view()->load(std::string(bytes.begin(), bytes.end()));
     }
+    rewind_on_ = o.rewind;
+    timeline_.configure(core_->frame_rate(), Timeline::Options{});
     return true;
 }
 
@@ -228,11 +230,22 @@ void Session::save_view() {
 }
 
 void Session::frame(uint32_t buttons) {
+    // The game menu closed while it showed an old moment (not through Back or Play from here): the game goes on
+    // from now, never from a moment only looked at.
+    if (menu_now_) {
+        menu_rewind_restore();
+        timeline_.protect(0);
+        menu_now_ = 0;
+    }
     if (!cursor_x_.empty()) core_->set_mouse_cursor(int(cursor_x_.eval(*core_)), int(cursor_y_.eval(*core_)));
+    // What closed the Rewind screen (A, B) is not the game's until let go.
+    swallow_ &= buttons;
+    buttons &= ~swallow_;
     core_->run_frame(companion_ ? companion_->machine_buttons(buttons) : buttons);
     ++frames_;
     achievements_.frame();
     if (companion_) companion_->after_frame(*core_);
+    if (rewind_on_) timeline_.after_frame(*core_, core_->picture());
     if (frames_ % 1800 == 0) save_view(); // every half minute, when it has changed
     uint64_t revision = core_->battery_revision();
     if (revision != saved_revision_) {
@@ -243,11 +256,151 @@ void Session::frame(uint32_t buttons) {
 }
 
 void Session::render_companion(Canvas& out, const Look& look) const {
-    if (companion_) companion_->render(out, look, font_, words_);
+    if (rewind_.is_open()) rewind_.draw(out, look, font_, words_);
+    else if (companion_) companion_->render(out, look, font_, words_);
     else out.fill(look.background);
 }
 
+uint64_t Session::visual_key() const {
+    if (rewind_.is_open()) return rewind_.key() ^ 0x5EEDull << 48;
+    return companion_ ? companion_->visual_key() : 0;
+}
+
+bool Session::touch(const Touch& t) {
+    if (rewind_.is_open()) return rewind_.touch(t);
+    return companion_ && companion_->touch(t);
+}
+
+bool Session::open_rewind(std::string& why) {
+    if (!rewind_on_) {
+        why = "Rewind is off";
+        return false;
+    }
+    if (!timeline_.available()) {
+        why = timeline_.unavailable_reason();
+        return false;
+    }
+    const uint32_t now = timeline_.mark(*core_, core_->picture());
+    if (!now) {
+        why = timeline_.available() ? "Not now: the game is busy" : timeline_.unavailable_reason();
+        return false;
+    }
+    timeline_.protect(now);
+    shown_moment_ = now;
+    rewind_.open(timeline_, now);
+    std::fprintf(stderr, "play: rewind opened at moment %u, %zu kept, %zu KiB\n", now, timeline_.size(),
+                 timeline_.bytes() / 1024);
+    return true;
+}
+
+void Session::show_moment(uint32_t id) {
+    if (id == shown_moment_) return;
+    std::string error;
+    if (!timeline_.jump(*core_, id, error)) {
+        std::fprintf(stderr, "play: rewind: %s\n", error.c_str());
+        shown_moment_ = id; // not again for this one
+        return;
+    }
+    shown_moment_ = id;
+    // One silent frame, so the top screen shows the moment: no achievements, no frame count, no sound.
+    core_->run_frame(0);
+    int16_t discard[2048 * 2];
+    while (core_->audio(discard, 2048) == 2048) {
+    }
+}
+
+void Session::close_rewind(uint32_t id) {
+    std::string error;
+    // Exactly as the moment was taken: the preview's frame is not kept.
+    if (!timeline_.jump(*core_, id, error)) {
+        std::fprintf(stderr, "play: rewind: %s, back to now\n", error.c_str());
+        id = rewind_.now();
+        if (!timeline_.jump(*core_, id, error)) std::fprintf(stderr, "play: rewind: now: %s\n", error.c_str());
+    }
+    achievements_.state_loaded();
+    timeline_.protect(0);
+    rewind_.close();
+    shown_moment_ = 0;
+    swallow_ = pad_now_;
+    std::fprintf(stderr, "play: rewind closed at moment %u%s\n", id, id == rewind_.now() ? " (now)" : "");
+}
+
+bool Session::rewind_input(uint32_t buttons, uint64_t ms, bool animations) {
+    if (!rewind_.is_open()) return false;
+    pad_now_ = buttons;
+    rewind_.set_time(ms, animations);
+    bool changed = rewind_.pad(buttons) || rewind_.moving();
+    uint32_t target = 0;
+    switch (rewind_.take(target)) {
+    case RewindScreen::Result::Jump: close_rewind(target); return true;
+    case RewindScreen::Result::Back: close_rewind(rewind_.now()); return true;
+    case RewindScreen::Result::None: break;
+    }
+    // The top screen shows the moment once the strip rests on it: loading each one it glides past would stall.
+    if (rewind_.settled() && rewind_.chosen() != shown_moment_) show_moment(rewind_.chosen());
+    return changed;
+}
+
+uint32_t Session::menu_rewind_open() {
+    if (!rewind_on_ || !timeline_.available()) return 0;
+    if (rewind_.is_open()) close_rewind(rewind_.now()); // the dock's own screen gives way to the menu's
+    menu_rewind_restore();
+    menu_now_ = timeline_.mark(*core_, core_->picture());
+    timeline_.protect(menu_now_);
+    std::fprintf(stderr, "play: menu rewind opened at moment %u, %zu kept\n", menu_now_, timeline_.size());
+    return menu_now_;
+}
+
+bool Session::menu_rewind_show(uint32_t id, Picture& shown) {
+    if (!menu_now_) return false;
+    std::string error;
+    if (!timeline_.jump(*core_, id, error)) {
+        std::fprintf(stderr, "play: menu rewind: %s\n", error.c_str());
+        return false;
+    }
+    menu_previewed_ = id != menu_now_;
+    core_->run_frame(0);
+    int16_t discard[2048 * 2];
+    while (core_->audio(discard, 2048) == 2048) {
+    }
+    const Picture p = core_->picture();
+    if (!p.px || p.w <= 0 || p.h <= 0) {
+        shown = {};
+        return true; // loaded; nothing to read back (a GPU game): the menu keeps the small picture
+    }
+    menu_shown_.resize(size_t(p.w) * p.h);
+    for (int y = 0; y < p.h; ++y) std::copy(p.px + size_t(y) * p.stride, p.px + size_t(y) * p.stride + p.w, &menu_shown_[size_t(y) * p.w]);
+    shown = {menu_shown_.data(), p.w, p.h, p.w};
+    return true;
+}
+
+bool Session::menu_rewind_jump(uint32_t id, bool play) {
+    if (!menu_now_) return false;
+    std::string error;
+    if (!timeline_.jump(*core_, id, error)) {
+        std::fprintf(stderr, "play: menu rewind: %s\n", error.c_str());
+        return false;
+    }
+    achievements_.state_loaded();
+    timeline_.protect(0);
+    std::fprintf(stderr, "play: menu rewind: %s moment %u\n", play ? "playing from" : "back to", id);
+    menu_now_ = 0;
+    menu_previewed_ = false;
+    return true;
+}
+
+void Session::menu_rewind_restore() {
+    if (!menu_previewed_ || !menu_now_) return;
+    menu_previewed_ = false;
+    std::string error;
+    if (!timeline_.jump(*core_, menu_now_, error)) std::fprintf(stderr, "play: rewind: back to now: %s\n", error.c_str());
+    else std::fprintf(stderr, "play: rewind: back to now (a look was still in effect)\n");
+}
+
 bool Session::save_state_file(const std::string& path, std::string& error) {
+    // Never a checkpoint of a moment only looked at, nor of the Rewind screen's preview.
+    menu_rewind_restore();
+    if (rewind_.is_open()) close_rewind(rewind_.now());
     if (core_->still_loading()) {
         error = "the game is still loading";
         return false;
@@ -291,6 +444,9 @@ bool Session::start_achievements(const AchievementOptions& options, std::string&
 
 void Session::flush() {
     if (!core_ || !writer_) return;
+    // The battery as the game is now, never as a rewind preview left it.
+    menu_rewind_restore();
+    if (rewind_.is_open()) close_rewind(rewind_.now());
     save_view();
     if (view_writer_.joinable()) view_writer_.join();
     uint64_t revision = core_->battery_revision();

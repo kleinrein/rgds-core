@@ -15,6 +15,15 @@ std::map<fs::path, std::optional<std::string>> App::read_theme_source() {
 
 void App::select_theme() {
     theme = preferences.dark ? dark_theme : light_theme;
+    // The favourite colour on every surface, then the hour, then the accent settled against what they left.
+    if (preferences.accent >= 0 && preferences.accent < int(ds_colours.size()) && !preferences.high_contrast)
+        apply_colour_wash(theme, ds_colours[size_t(preferences.accent)].rgb, preferences.dark);
+    day_light_applied = preferences.time_of_day && !preferences.high_contrast ? current_day_light() : DayLight{};
+    apply_day_light(theme, day_light_applied, preferences.dark);
+    if (preferences.accent < 0 && day_light_applied.day < 1) {
+        theme["accent"] = readable_accent(theme.at("accent"), theme, preferences.dark);
+        settle_accent(theme, preferences.dark, 4.5);
+    }
     apply_accent(theme, preferences.accent, preferences.dark);
     if (preferences.high_contrast) apply_high_contrast(theme, preferences.dark);
 }
@@ -197,6 +206,7 @@ void App::appearance_row(SDL_Renderer* r, int y, int i) {
     case 7: list_row(r, y, i, "Touch indicator", preferences.touch_indicator ? "On" : "Off"); break;
     case 8: choice_row(r, y, i, "Home layout", *choice_spec(settings.page, i)); break;
     case 9: choice_row(r, y, i, "Background", *choice_spec(settings.page, i)); break;
+    case 11: list_row(r, y, i, "Time of day", preferences.time_of_day ? "On" : "Off"); break;
     default: list_row(r, y, i, "Touch gestures", preferences.gestures ? "On" : "Off"); break;
     }
 }
@@ -294,6 +304,10 @@ void App::choose_appearance(int choice) {
     case 10:
         preferences.gestures = step ? choice == 1 : !preferences.gestures;
         if (preferences.gestures) gesture_intro();
+        break;
+    case 11:
+        preferences.time_of_day = step ? choice == 1 : !preferences.time_of_day;
+        emit_sound(preferences.time_of_day ? MenuCue::Enable : MenuCue::Disable);
         break;
     default: return;
     }

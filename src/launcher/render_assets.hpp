@@ -80,6 +80,10 @@ void App::prepare_render_assets() {
     if (home_menu && preferences.home_layout == 1 && summary.groups[0].last_game)
         for (auto& panel : surfaces) warm_icon(panel.renderer, *summary.groups[0].last_game);
     album_warm();
+    journal_warm();
+    if (launching && left_off.shown && !left_off.frame.empty() && !surfaces.empty())
+        media.warm(surfaces.front().renderer, left_off.frame); // the upper panel's "Where you left off" frame
+    files_warm();
     if (settings.page == Page::SaveGallery) {
         auto path = slots["image_" + std::to_string(settings.focus)];
         if (!path.empty())
@@ -151,6 +155,7 @@ void App::prepare_render_assets() {
     for (int index = std::max(0, first); index < std::min(end, int(model.games.size())); index++)
         if (!model.games[size_t(index)].demo) library_cache.options(model.games[size_t(index)]);
     if (!model.games[model.selected].demo) library_cache.options(model.games[model.selected]);
+    zoom_prepare(); // the zoomed-out wall's titles and hearts (library_zoom_screen.hpp)
     for (size_t panel = 0; panel < surfaces.size(); panel++) {
         auto* renderer = surfaces[panel].renderer;
         // The selected cartridge is prepared in place so its cover and
@@ -194,8 +199,27 @@ void App::watch_library_assets(Uint32 now) {
     if (changed) dirty = true;
 }
 
+// Each colour's lines go to SDL as one list of one-pixel fills (on the handheld's GLES2 renderer every call was a
+// draw, some 120 a panel). Lines of one colour never overlap each other, and the colours keep their order, rows
+// before columns, so every pixel ends up as before.
 void App::pattern(SDL_Renderer* r, int y, int height, bool lower) {
     auto bg = theme.at("background"), fg = theme.at("line");
+    auto& lines = fill_rows;
+    auto row_lines = [&](int from, int step, auto keep) {
+        lines.clear();
+        for (int row = from; row < y + height; row += step)
+            if (keep(row)) lines.push_back({0, row, 640, 1});
+    };
+    auto column_lines = [&](int from, int step, auto keep) {
+        lines.clear();
+        for (int column = from; column < 640; column += step)
+            if (keep(column)) lines.push_back({column, y, 1, height});
+    };
+    auto draw = [&](Color colour) {
+        tint_colour(r, colour);
+        if (!lines.empty()) s.RenderFillRects(r, lines.data(), int(lines.size()));
+    };
+    const auto all = [](int) { return true; };
     if (preferences.background == 1 && lower) {
         // The original DS touch screen: plain square tiles, 8 DS pixels a
         // side (20 px here), each rule with a pale edge after it so the
@@ -203,20 +227,14 @@ void App::pattern(SDL_Renderer* r, int y, int height, bool lower) {
         // above, so the controls on top own the contrast.
         const Color rule = blend(bg, fg, preferences.dark ? 30 : 34),
                     edge = blend(bg, Color{255, 255, 255}, preferences.dark ? 4 : 55);
-        for (int row = y + 19; row < y + height; row += 20) {
-            tint_colour(r, rule);
-            s.RenderDrawLine(r, 0, row, 639, row);
-            if (row + 1 < y + height) {
-                tint_colour(r, edge);
-                s.RenderDrawLine(r, 0, row + 1, 639, row + 1);
-            }
-        }
-        for (int column = 19; column < 640; column += 20) {
-            tint_colour(r, rule);
-            s.RenderDrawLine(r, column, y, column, y + height - 1);
-            tint_colour(r, edge);
-            s.RenderDrawLine(r, column + 1, y, column + 1, y + height - 1);
-        }
+        row_lines(y + 19, 20, all);
+        draw(rule);
+        row_lines(y + 20, 20, [&](int row) { return row < y + height; });
+        draw(edge);
+        column_lines(19, 20, all);
+        draw(rule);
+        column_lines(20, 20, all);
+        draw(edge);
         return;
     }
     if (preferences.background == 1) {
@@ -231,32 +249,43 @@ void App::pattern(SDL_Renderer* r, int y, int height, bool lower) {
         const Color fine = shade(22), minor = shade(9), major = shade(4),
                     edge = blend(bg, preferences.dark ? Color{255, 255, 255} : Color{255, 255, 255},
                                  preferences.dark ? 5 : 60);
-        tint_colour(r, fine);
-        for (int row = y; row < y + height; row += 4)
-            if (row % 16) s.RenderDrawLine(r, 0, row, 639, row);
-        tint_colour(r, minor);
-        for (int row = y + (16 - y % 16) % 16; row < y + height; row += 16)
-            if (row % 64) s.RenderDrawLine(r, 0, row, 639, row);
-        for (int column = 16; column < 640; column += 16)
-            if (column % 64) s.RenderDrawLine(r, column, y, column, y + height - 1);
-        for (int row = y + (64 - y % 64) % 64; row < y + height; row += 64) {
-            tint_colour(r, major);
-            s.RenderDrawLine(r, 0, row, 639, row);
-            if (row + 1 < y + height) {
-                tint_colour(r, edge);
-                s.RenderDrawLine(r, 0, row + 1, 639, row + 1);
-            }
-        }
-        for (int column = 0; column < 640; column += 64) {
-            tint_colour(r, major);
-            s.RenderDrawLine(r, column, y, column, y + height - 1);
-            tint_colour(r, edge);
-            s.RenderDrawLine(r, column + 1, y, column + 1, y + height - 1);
-        }
+        row_lines(y, 4, [](int row) { return row % 16 != 0; });
+        draw(fine);
+        row_lines(y + (16 - y % 16) % 16, 16, [](int row) { return row % 64 != 0; });
+        const auto minor_rows = lines;
+        column_lines(16, 16, [](int column) { return column % 64 != 0; });
+        lines.insert(lines.begin(), minor_rows.begin(), minor_rows.end());
+        draw(minor);
+        row_lines(y + (64 - y % 64) % 64, 64, all);
+        draw(major);
+        row_lines(y + (64 - y % 64) % 64 + 1, 64, [&](int row) { return row < y + height; });
+        draw(edge);
+        column_lines(0, 64, all);
+        draw(major);
+        column_lines(1, 64, all);
+        draw(edge);
         return;
     }
-    s.SetRenderDrawColor(r, (bg.r * 19 + fg.r) / 20, (bg.g * 19 + fg.g) / 20, (bg.b * 19 + fg.b) / 20, 255);
-    for (int row = y; row < y + height; row += 4) s.RenderDrawLine(r, 0, row, 639, row);
+    row_lines(y, 4, all);
+    draw({static_cast<unsigned char>((bg.r * 19 + fg.r) / 20), static_cast<unsigned char>((bg.g * 19 + fg.g) / 20),
+          static_cast<unsigned char>((bg.b * 19 + fg.b) / 20)});
+}
+
+// The system's own cartridge, with the badge on its label (the badge shrinks to fit a small row).
+void App::cartridge_icon(SDL_Renderer* r, const Game& game, int x, int y, int size) {
+    const auto art = cartridge_art(game.system, theme.at("accent"));
+    auto at = [&](int v) { return v * size / 100; };
+    for (const auto& shape : art.shapes)
+        fill_round(r, x + at(shape.x), y + at(shape.y), std::max(1, at(shape.w)), std::max(1, at(shape.h)),
+                   at(shape.radius), shape.colour);
+    const std::string badge = system_info(game.system).badge;
+    const int room = at(art.label.w) - 4;
+    int text = 24;
+    while (text > 8 && label_width(badge, text, false) > room) text -= 2;
+    if (size >= 28)
+        raw_label_colour(r, badge, x + at(art.label.x) + (at(art.label.w) - label_width(badge, text, false)) / 2,
+                         centred_label_y(badge, text, y + at(art.label.y) + at(art.label.h) / 2), text, art.ink,
+                         at(art.label.w));
 }
 
 void App::game_icon(SDL_Renderer* r, const Game& game, int x, int y, int size, size_t index) {
@@ -280,20 +309,7 @@ void App::game_icon(SDL_Renderer* r, const Game& game, int x, int y, int size, s
             if (media.draw(r, path, fitted, false, 255, false, 4)) return;
         }
     if (!game.demo) {
-        // The system's own cartridge, with the badge on its label (the badge shrinks to fit a small row).
-        const auto art = cartridge_art(game.system, theme.at("accent"));
-        auto at = [&](int v) { return v * size / 100; };
-        for (const auto& shape : art.shapes)
-            fill_round(r, x + at(shape.x), y + at(shape.y), std::max(1, at(shape.w)), std::max(1, at(shape.h)),
-                       at(shape.radius), shape.colour);
-        const std::string badge = system_info(game.system).badge;
-        const int room = at(art.label.w) - 4;
-        int text = 24;
-        while (text > 8 && label_width(badge, text, false) > room) text -= 2;
-        if (size >= 28)
-            raw_label_colour(r, badge, x + at(art.label.x) + (at(art.label.w) - label_width(badge, text, false)) / 2,
-                             centred_label_y(badge, text, y + at(art.label.y) + at(art.label.h) / 2), text, art.ink,
-                             at(art.label.w));
+        cartridge_icon(r, game, x, y, size);
         return;
     }
     // Original preview symbols, never Nintendo artwork.

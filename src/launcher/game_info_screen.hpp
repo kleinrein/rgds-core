@@ -47,7 +47,7 @@ bool App::game_removable() const {
     const Game& game = model.games[model.selected];
     const std::string ext = lower(game.path.extension().string());
     std::error_code ec;
-    return !game.demo && !is_tool_entry(game.path) && ext != ".cue" && ext != ".m3u" && ext != ".sh" &&
+    return !game.demo && !is_tool_entry(game.path) && ext != ".cue" && ext != ".m3u" && ext != ".sh" && ext != ".ini" &&
            fs::is_regular_file(game.path, ec);
 }
 

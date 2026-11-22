@@ -1763,3 +1763,165 @@ Send to phone	Naar telefoon sturen
 Connect to Wi-Fi to send pictures to a phone or computer.	Maak verbinding met wifi om afbeeldingen naar een telefoon of computer te sturen.
 Your picture is on the pad. Write or draw beside it, then send.	Je afbeelding staat op het blok. Schrijf of teken ernaast en verstuur.
 Join a room: your picture goes on the pad.	Ga een kamer in: je afbeelding komt op het blok.
+Fit (2x, borders)	Passend (2x, randen)
+Fill (3x, cropped)	Vullend (3x, bijgesneden)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Elke DS-pixel even groot op het scherm. Passend laat een rand, Vullend snijdt de randen af. Geldt vanaf de volgende start.
+Whole pixels saved. Save & restart to use it.	Hele pixels opgeslagen. Opslaan en herstarten om het te gebruiken.
+Whole pixels saved.	Hele pixels opgeslagen.
+B: back	B: terug
+Book	Boek
+Book view	Boekweergave
+Book, held sideways	Boek, zijwaarts
+Books	Boeken
+Chapter	Hoofdstuk
+Close the book	Boek sluiten
+Contents	Inhoud
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Kopieer pdf, EPUB, CBZ of mappen met pagina's naar de map books.
+Copy films and series into the videos folder.	Kopieer films en series naar de map videos.
+Direction	Richting
+End of this film	Einde van deze film
+Fill the screen	Scherm vullen
+Finished	Klaar
+Hold in	Vasthouden met
+Larger	Groter
+Left to right	Links naar rechts
+Media	Media
+No books yet	Nog geen boeken
+No sound in this film	Geen geluid in deze film
+No videos yet	Nog geen video's
+Original size	Oorspronkelijke grootte
+Paper	Papier
+Read	Lezen
+Read on	Verder lezen
+Reading direction	Leesrichting
+Resume at	Hervatten bij
+Right to left	Rechts naar links
+Show below the picture	Onder het beeld tonen
+Skip intro	Intro overslaan
+Sleep at the end	Slaapstand aan het einde
+Sleep in	Slaapstand over
+Sleep timer	Slaaptimer
+Smaller	Kleiner
+Stand mode	Standmodus
+Stretch	Uitrekken
+Subtitles	Ondertitels
+Tap or press A to play now	Tik of druk op A om nu af te spelen
+Text size	Tekstgrootte
+The pages of this file are fixed	De pagina's van dit bestand liggen vast
+This book cannot be opened	Dit boek kan niet worden geopend
+This book has no contents list	Dit boek heeft geen inhoudsopgave
+This film cannot be played	Deze film kan niet worden afgespeeld
+Track	Spoor
+Up next	Hierna
+Videos	Video's
+White	Wit
+Whole picture	Hele beeld
+books, comics	boeken, strips
+file	bestand
+fixed	vast
+left	over
+left hand	linkerhand
+light text on dark	lichte tekst op donker
+manga	manga
+none	geen
+one page, held normally	één pagina, normaal vastgehouden
+pages	pagina's
+right hand	rechterhand
+two pages	twee pagina's
+warm, for long reading	warm, voor lang lezen
+Films and books	Films en boeken
+Films, books and music	Films, boeken en muziek
+Bring over	Overzetten
+Looking for saves from another system…	Zoeken naar opgeslagen spellen van een ander systeem…
+Welcome over!	Welkom!
+Your saves and play time are in place.	Je opgeslagen spellen en speeltijd staan klaar.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher heeft ze van je oude kaart bewaard voordat die werd gewist.
+They are on the card in the second slot.	Ze staan op de kaart in de tweede sleuf.
+They are on the USB drive.	Ze staan op de USB-schijf.
+They are in the import folder on this card.	Ze staan in de map import op deze kaart.
+Coming from {0}?	Kom je van {0}?
+Your saves, play time and favourites can come with you.	Je opgeslagen spellen, speeltijd en favorieten kunnen mee.
+Bringing everything over…	Alles wordt overgezet…
+Keep the handheld on until this is done.	Laat het apparaat aan tot dit klaar is.
+{0} save	{0} opgeslagen spel
+{0} saves	{0} opgeslagen spellen
+{0} resume point	{0} hervatpunt
+{0} resume points	{0} hervatpunten
+{0} hours of play time	{0} uur speeltijd
+{0} favourite	{0} favoriet
+{0} favourites	{0} favorieten
+{0} game on this card	{0} spel op deze kaart
+{0} games on this card	{0} spellen op deze kaart
+{0} BIOS file	{0} BIOS-bestand
+{0} BIOS files	{0} BIOS-bestanden
+Everything was already here.	Alles was er al.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} spel staat nog op je computer. Kopieer de map roms uit de back-up naar de map roms op deze kaart (de stap Spellen laat zien hoe): speeltijd en opgeslagen spellen vinden het daar.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} spellen staan nog op je computer. Kopieer de map roms uit de back-up naar de map roms op deze kaart (de stap Spellen laat zien hoe): speeltijd en opgeslagen spellen vinden ze daar.
+{0} saves already here stay as they are.	{0} opgeslagen spellen die er al zijn, blijven zoals ze zijn.
+Bring them over	Zet ze over
+Press A. Nothing here is replaced.	Druk op A. Er wordt niets vervangen.
+Bring the games too	Zet ook de spellen over
+Not now	Niet nu
+Something could not be read or written. The old card was only read: try again.	Iets kon niet worden gelezen of geschreven. De oude kaart is alleen gelezen: probeer het opnieuw.
+Coming from the stock system?	Kom je van het originele systeem?
+Your saves can come with you.	Je opgeslagen spellen kunnen mee.
+Snake	Slang
+Press A or a direction to start	Druk op A of een richting om te beginnen
+Press A to carry on	Druk op A om verder te gaan
+You win!	Gewonnen!
+New best!	Nieuw record!
+Game over	Game over
+Best	Record
+Play again	Opnieuw spelen
+With walls	Met muren
+Classic screen	Klassiek scherm
+Walls	Muren
+Swipe on either screen to steer	Veeg op een van de schermen om te sturen
+Slower	Langzamer
+Faster	Sneller
+Pause	Pauze
+Journal	Dagboek
+Your year	Jouw jaar
+Your {0}	Jouw {0}
+A quiet look back at your year	Een rustige terugblik op je jaar
+Days played	Dagen gespeeld
+The game you kept coming back to	Het spel waar je steeds naar terugkeerde
+Your first screenshot	Je eerste screenshot
+Preparing your journal…	Je dagboek wordt voorbereid…
+Your journal is empty	Je dagboek is leeg
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Speel een spel en het begint hier: hoe lang je speelde, wat je ontgrendelde en de foto's die je maakte.
+Played for {0}	{0} gespeeld
+1 photo	1 foto
+{0} photos	{0} foto's
+First time playing	Voor het eerst
+First time since {0}	Voor het eerst sinds {0}
+{0} more achievements	Nog {0} prestaties
+Earlier today	Eerder vandaag
+Where you left off	Waar je was gebleven
+Away for {0}	{0} weg
+Sunday	zondag
+Monday	maandag
+Tuesday	dinsdag
+Wednesday	woensdag
+Thursday	donderdag
+Friday	vrijdag
+Saturday	zaterdag
+January	januari
+February	februari
+March	maart
+April	april
+May	mei
+June	juni
+July	juli
+August	augustus
+September	september
+October	oktober
+November	november
+December	december
+Birthday	Verjaardag
+No birthday	Geen verjaardag
+Not set	Niet ingesteld
+Happy birthday, {0}!	Gefeliciteerd, {0}!
+Last played {0}	Laatst gespeeld {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Kleuren en menumuziek volgen de klok: warmere avonden, rustigere nachten
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-games krijgen hem te horen, zoals op het origineel. Op de dag zegt de handheld op zijn eigen manier hallo.

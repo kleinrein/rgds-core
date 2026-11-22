@@ -42,7 +42,7 @@ void App::load_album() {
 void App::open_album() {
     settings.section = 2;
     settings.library_rows = library_row_count();
-    settings.remember(Page::LibraryOptions, library_row_count() - 1);
+    settings.remember(Page::LibraryOptions, library_row_count() - 2);
     settings.page = Page::Album;
     settings.focus = 0;
     album_viewing = false;
@@ -259,7 +259,7 @@ void App::album_action(int code) {
     }
     if (code == 3) {
         back_to(Page::LibraryOptions);
-        settings.focus = library_row_count() - 1;
+        settings.focus = library_row_count() - 2;
     } else if (code == 12) album_more();
     else if (album.empty()) return;
     else if (code == 8 || code == 9)

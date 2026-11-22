@@ -88,7 +88,7 @@ CORE_SOURCES = [
     "companion/course.cpp", "companion/route.cpp", "companion/keyboard.cpp", "companion/keypad.cpp", "companion/events.cpp", "companion/board.cpp", "companion/battle_gb.cpp",
     "companion/dock.cpp", "ui/canvas.cpp", "ui/screens.cpp", "ui/frame.cpp", "ui/colour.cpp", "ui/png.cpp",
     "ui/look.cpp", "ui/kit.cpp", "ui/words.cpp", "app/storage.cpp", "app/session.cpp", "app/cheats.cpp",
-    "app/achievements.cpp", "reader/pages.cpp", "reader/manual.cpp", "third_party/stb_image.cpp"
+    "app/achievements.cpp", "app/timeline.cpp", "companion/rewind.cpp", "reader/pages.cpp", "reader/manual.cpp", "third_party/stb_image.cpp"
 ]
 C_SOURCES = ["core/mgba_split.c", "core/mgba_gb.c"]  # mGBA's internal headers are C
 PROGRAMS = {
@@ -98,6 +98,7 @@ PROGRAMS = {
     "play-achievement-tests": ("../tests/achievement_tests.cpp", False),  # RetroAchievements against a fake site
     "play-lint": ("tools/play_lint.cpp", False),  # the companion rules (docs/COMPANION.md)
     "play-reader-tests": ("../tests/reader_tests.cpp", False),  # scanned manuals (docs/MANUALS_PLAN.md)
+    "play-timeline-tests": ("../tests/timeline_tests.cpp", False),  # rewind (docs/TIME_TRAVEL_PLAN.md)
 }
 
 
@@ -268,7 +269,7 @@ def main():
         if name == "rgds-play" and args.target == "device":
             # The RG DS bridge (preloaded) finds the live graphics setter with dlsym.
             extra = ["-rdynamic"]  # keeps rgds_play_set_graphics in the dynamic symbol table
-        if name == "play-tests":
+        if name in ("play-tests", "play-timeline-tests"):
             extra = [
                 "-DPLAY_PROFILES=\"%s\"" % (ROOT / "play/profiles"),
                 "-DPLAY_FONTS=\"%s\"" % (ROOT / "assets/fonts")

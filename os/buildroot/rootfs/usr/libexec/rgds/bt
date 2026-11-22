@@ -28,7 +28,16 @@ on)
     daemon=$(command -v bluealsad || command -v bluealsa)
     if [ -n "$daemon" ] && ! pidof bluealsad bluealsa > /dev/null; then
         opts="-p a2dp-source"
-        "$daemon" --help 2>&1 | grep -q -- --multi-client && opts="$opts --multi-client"
+        help=$("$daemon" --help 2>&1)
+        echo "$help" | grep -q -- --multi-client && opts="$opts --multi-client"
+        # the codecs past SBC that this build has (aptX, aptX HD, LDAC are off unless named; a name the build lacks
+        # stops the daemon). The headset takes the first it also knows, in bluez-alsa's order: LDAC, aptX HD,
+        # aptX, SBC. LDAC at its standard 660 kbps with adaptive bit rate, which steps down when the radio is busy
+        # (the RTL8821CS shares its antenna with Wi-Fi).
+        for codec in aptX aptX-HD LDAC; do
+            echo "$help" | grep -qiE "a2dp-source:.*[[:space:],]$codec(,|\$)" && opts="$opts -c $codec"
+        done
+        echo "$help" | grep -q -- --ldac-abr && opts="$opts --ldac-abr"
         "$daemon" $opts >> $LOG 2>&1 &
         ( sleep 1; /usr/libexec/rgds/bt-audio watch >> $LOG 2>&1 ) &
     fi

@@ -312,6 +312,56 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertIn("atari7800", play_options.FRAMES["tv-grey"].split(","))
         self.assertIn("atari5200", play_options.FRAMES["tv-wood"].split(","))
 
+    def test_arcade_two_monitors(self):
+        roms = self.root / "roms"
+        for folder in ("arcade", "MAME", "mame2003-plus"):
+            self.assertEqual(play_options.system_of(roms / folder / "punchout.zip"), "arcade", folder)
+        self.assertEqual(play_options.system_of(roms / "punchout.zip"), "nds")  # a zip elsewhere is a DS game's
+        self.assertEqual(play_options.LIBRETRO_CORES["arcade"], "mame2003_plus")
+        self.assertEqual(play_options.FRAMES["arcade"], "arcade")
+        # The sets the core is built with are the ones the launcher lists and the profiles name.
+        import re
+        script = (ROOT / "os/buildroot/package/libretro-mame2003-plus/two_monitors.py").read_text()
+        start = script.index("GAMES = [")
+        games = set(re.findall(r'"([a-z0-9]+)"', script[start:script.index("]", start)]))
+        model = (ROOT / "src/launcher/model.hpp").read_text()
+        listed = model[model.index("arcade_sets() {"):model.index("return sets;")]
+        self.assertEqual(set(re.findall(r'\{"([a-z0-9]+)", "', listed)), games)
+        self.assertEqual(set(play_options.ARCADE_SETS), games)
+        codes = set()
+        for profile in (ROOT / "play/profiles/arcade").glob("*.ini"):
+            codes |= set(re.search(r"^codes = (.*)$", profile.read_text(), re.M).group(1).split())
+        self.assertEqual(codes, {g.upper() for g in games})
+
+    def test_wonderswan_and_neo_geo_pocket(self):
+        import public_artwork
+        import screenscraper
+        roms = self.root / "roms"
+        self.assertEqual(play_options.system_of(self.root / "Gunpey.ws"), "wonderswan")
+        self.assertEqual(play_options.system_of(self.root / "Final Fantasy.wsc"), "wonderswan")
+        self.assertEqual(play_options.system_of(roms / "WonderSwan Color" / "Klonoa.zip"), "wonderswan")
+        self.assertEqual(play_options.system_of(self.root / "Metal Slug 1st Mission.ngc"), "ngp")
+        self.assertEqual(play_options.system_of(self.root / "King of Fighters R-1.ngp"), "ngp")
+        self.assertEqual(play_options.system_of(roms / "ngpc" / "SNK vs Capcom.zip"), "ngp")
+        self.assertEqual(play_options.LIBRETRO_CORES["wonderswan"], "mednafen_wswan")
+        self.assertEqual(play_options.LIBRETRO_CORES["ngp"], "mednafen_ngp")
+        self.assertEqual(play_options.FRAMES["wsc-blue"], "wonderswan")
+        self.assertEqual(play_options.FRAMES["ngpc-black"], "ngp")
+        # A Color game on the shared shelf is looked up in the Color's lists, plain or zipped.
+        colour = self.root / "Card Fighters Clash.ngc"
+        colour.write_bytes(bytes(0xB0))
+        self.assertEqual(public_artwork.rom_identity(colour)[0], "ngpc")
+        mono = self.root / "Gunpey.ws"
+        mono.write_bytes(bytes(0xB0))
+        self.assertEqual(public_artwork.rom_identity(mono)[0], "wonderswan")
+        zipped = self.root / "Judgement Silversword.zip"
+        with zipfile.ZipFile(zipped, "w") as archive:
+            archive.writestr("Judgement Silversword.wsc", bytes(0xB0))
+        self.assertEqual(public_artwork.rom_identity(zipped)[0], "wsc")
+        for system in ("wonderswan", "wsc", "ngp", "ngpc"):
+            self.assertIn(system, public_artwork.CATALOGS)
+            self.assertIn(system, screenscraper.SYSTEMS)
+
     def test_virtual_boy(self):
         roms = self.root / "roms"
         self.assertEqual(play_options.system_of(self.root / "Wario Land.vb"), "vb")
@@ -340,6 +390,21 @@ class PlayRuntimeTests(unittest.TestCase):
         self.assertEqual(play_options.engine_for(game), play_options.PLAY_CORE)
         self.assertEqual(play_options.LIBRETRO_CORES["dos"], "dosbox_pure")
         self.assertIn("dos", play_options.FRAMES["monitor"].split(","))
+
+    def test_flash_movies_and_flashpoint_packs(self):
+        roms = self.root / "roms"
+        # A movie anywhere; a Flashpoint pack (a zip of web files, no game file a core knows) only in a Flash folder.
+        self.assertEqual(play_options.system_of(self.root / "Game.swf"), "flash")
+        pack = roms / "Flashpoint" / "Game.zip"
+        pack.parent.mkdir(parents=True)
+        with zipfile.ZipFile(pack, "w") as archive:
+            archive.writestr("content/www.example.com/game.swf", "FWS")
+        self.assertEqual(play_options.system_of(pack), "flash")
+        self.assertEqual(play_options.engine_for(pack), play_options.PLAY_CORE)
+        self.assertEqual(play_options.LIBRETRO_CORES["flash"], "ruffle")
+        # Ruffle saves no states: Flash games keep their own saves, so no checkpoints are asked for.
+        self.assertIn("flash", play_options.NO_CHECKPOINTS)
+        self.assertIn("flash", play_options.FRAMES["monitor"].split(","))
 
     def test_pico8_carts_and_their_pictures(self):
         roms = self.root / "roms"

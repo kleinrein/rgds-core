@@ -5,6 +5,7 @@
 // A profile's [view] names the format and the addresses it reads.
 #pragma once
 #include "companion/profile.hpp"
+#include "companion/touch.hpp"
 #include "ui/canvas.hpp"
 
 #include <functional>
@@ -27,11 +28,6 @@ struct HudPicture {
     std::function<uint32_t(uint32_t)> tint;
 };
 
-// A finger on the second screen, in its pixels.
-struct Touch {
-    enum Kind { Down, Move, Up } kind = Down;
-    int x = 0, y = 0;
-};
 
 class View {
 public:

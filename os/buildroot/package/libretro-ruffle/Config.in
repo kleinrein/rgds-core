@@ -1,0 +1,10 @@
+config BR2_PACKAGE_LIBRETRO_RUFFLE
+	bool "libretro-ruffle"
+	depends on BR2_aarch64
+	help
+	  Flash games: Ruffle (ruffle.rs, MIT/Apache-2.0) as the libretro
+	  core RG DS Play loads for .swf movies and Flashpoint game packs,
+	  /usr/lib/libretro/ruffle_libretro.so. Built from this
+	  repository's play/ruffle by tools/build_ruffle.py on the build
+	  machine (Buildroot's Rust is too old for Ruffle 0.8.0); this
+	  package installs the result. Draws with GLES through Mesa's EGL.

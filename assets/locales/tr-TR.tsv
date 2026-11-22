@@ -1763,3 +1763,165 @@ Send to phone	Telefona gönder
 Connect to Wi-Fi to send pictures to a phone or computer.	Telefona veya bilgisayara resim göndermek için Wi-Fi'ye bağlanın.
 Your picture is on the pad. Write or draw beside it, then send.	Resmin defterde. Yanına yaz ya da çiz, sonra gönder.
 Join a room: your picture goes on the pad.	Bir odaya gir: resmin deftere gelecek.
+Fit (2x, borders)	Sığdır (2x, kenarlık)
+Fill (3x, cropped)	Doldur (3x, kırpılmış)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Her DS pikseli ekranda aynı boyutta. Sığdır kenarlık bırakır, Doldur kenarları kırpar. Bir sonraki başlatmada uygulanır.
+Whole pixels saved. Save & restart to use it.	Tam pikseller kaydedildi. Kullanmak için kaydedip yeniden başlatın.
+Whole pixels saved.	Tam pikseller kaydedildi.
+B: back	B: geri
+Book	Kitap
+Book view	Kitap görünümü
+Book, held sideways	Kitap, yan tutulmuş
+Books	Kitaplar
+Chapter	Bölüm
+Close the book	Kitabı kapat
+Contents	İçindekiler
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	PDF, EPUB, CBZ dosyalarını veya sayfa klasörlerini books klasörüne kopyalayın.
+Copy films and series into the videos folder.	Filmleri ve dizileri videos klasörüne kopyalayın.
+Direction	Yön
+End of this film	Bu filmin sonu
+Fill the screen	Ekranı doldur
+Finished	Bitti
+Hold in	Tutan el
+Larger	Daha büyük
+Left to right	Soldan sağa
+Media	Medya
+No books yet	Henüz kitap yok
+No sound in this film	Bu filmde ses yok
+No videos yet	Henüz video yok
+Original size	Orijinal boyut
+Paper	Kâğıt
+Read	Oku
+Read on	Okumaya devam
+Reading direction	Okuma yönü
+Resume at	Devam noktası
+Right to left	Sağdan sola
+Show below the picture	Görüntünün altında göster
+Skip intro	Girişi atla
+Sleep at the end	Sonunda uyku
+Sleep in	Uykuya kalan
+Sleep timer	Uyku zamanlayıcı
+Smaller	Daha küçük
+Stand mode	Stant modu
+Stretch	Uzat
+Subtitles	Altyazılar
+Tap or press A to play now	Şimdi oynatmak için dokunun veya A'ya basın
+Text size	Metin boyutu
+The pages of this file are fixed	Bu dosyanın sayfaları sabit
+This book cannot be opened	Bu kitap açılamıyor
+This book has no contents list	Bu kitabın içindekiler listesi yok
+This film cannot be played	Bu film oynatılamıyor
+Track	Parça
+Up next	Sıradaki
+Videos	Videolar
+White	Beyaz
+Whole picture	Tüm görüntü
+books, comics	kitap, çizgi roman
+file	dosya
+fixed	sabit
+left	kaldı
+left hand	sol el
+light text on dark	koyu üzerine açık metin
+manga	manga
+none	yok
+one page, held normally	tek sayfa, normal tutuş
+pages	sayfa
+right hand	sağ el
+two pages	iki sayfa
+warm, for long reading	sıcak, uzun okuma için
+Films and books	Filmler ve kitaplar
+Films, books and music	Filmler, kitaplar ve müzik
+Bring over	Aktar
+Looking for saves from another system…	Başka bir sistemden kayıtlar aranıyor…
+Welcome over!	Hoş geldin!
+Your saves and play time are in place.	Kayıtların ve oyun süren yerinde.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher eski kartını silmeden önce bunları sakladı.
+They are on the card in the second slot.	İkinci yuvadaki kartta.
+They are on the USB drive.	USB sürücüde.
+They are in the import folder on this card.	Bu karttaki import klasöründe.
+Coming from {0}?	{0} sisteminden mi geliyorsun?
+Your saves, play time and favourites can come with you.	Kayıtların, oyun süren ve favorilerin seninle gelebilir.
+Bringing everything over…	Her şey aktarılıyor…
+Keep the handheld on until this is done.	Bitene kadar cihazı açık tut.
+{0} save	{0} kayıt
+{0} saves	{0} kayıt
+{0} resume point	{0} devam noktası
+{0} resume points	{0} devam noktası
+{0} hours of play time	{0} saat oyun süresi
+{0} favourite	{0} favori
+{0} favourites	{0} favori
+{0} game on this card	Bu kartta {0} oyun
+{0} games on this card	Bu kartta {0} oyun
+{0} BIOS file	{0} BIOS dosyası
+{0} BIOS files	{0} BIOS dosyası
+Everything was already here.	Her şey zaten buradaydı.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} oyun hâlâ bilgisayarında. Yedekteki roms klasörünü bu kartın roms klasörüne kopyala (Oyunlar adımı nasıl yapılacağını gösterir): oyun süresi ve kayıtları onu orada bulur.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} oyun hâlâ bilgisayarında. Yedekteki roms klasörünü bu kartın roms klasörüne kopyala (Oyunlar adımı nasıl yapılacağını gösterir): oyun süreleri ve kayıtları onları orada bulur.
+{0} saves already here stay as they are.	Zaten burada olan {0} kayıt olduğu gibi kalır.
+Bring them over	Aktar
+Press A. Nothing here is replaced.	A'ya bas. Hiçbir şeyin yerine yazılmaz.
+Bring the games too	Oyunları da aktar
+Not now	Şimdi değil
+Something could not be read or written. The old card was only read: try again.	Bir şey okunamadı veya yazılamadı. Eski kart yalnızca okundu: yeniden dene.
+Coming from the stock system?	Orijinal sistemden mi geliyorsun?
+Your saves can come with you.	Kayıtların seninle gelebilir.
+Snake	Yılan
+Press A or a direction to start	Başlamak için A'ya ya da bir yöne bas
+Press A to carry on	Devam etmek için A'ya bas
+You win!	Kazandın!
+New best!	Yeni rekor!
+Game over	Oyun bitti
+Best	En iyi
+Play again	Yeniden oyna
+With walls	Duvarlı
+Classic screen	Klasik ekran
+Walls	Duvarlar
+Swipe on either screen to steer	Yön vermek için iki ekrandan birinde kaydır
+Slower	Daha yavaş
+Faster	Daha hızlı
+Pause	Duraklat
+Journal	Günlük
+Your year	Yılın
+Your {0}	{0} yılın
+A quiet look back at your year	Yılına sakin bir bakış
+Days played	Oynanan günler
+The game you kept coming back to	Hep geri döndüğün oyun
+Your first screenshot	İlk ekran görüntün
+Preparing your journal…	Günlüğün hazırlanıyor…
+Your journal is empty	Günlüğün boş
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Bir oyun oyna, burada başlasın: ne kadar oynadığın, neler açtığın ve çektiğin fotoğraflar.
+Played for {0}	{0} oynandı
+1 photo	1 fotoğraf
+{0} photos	{0} fotoğraf
+First time playing	İlk kez
+First time since {0}	{0} ayından beri ilk kez
+{0} more achievements	{0} başarım daha
+Earlier today	Bugün daha önce
+Where you left off	Kaldığın yer
+Away for {0}	{0} uzaktaydın
+Sunday	Pazar
+Monday	Pazartesi
+Tuesday	Salı
+Wednesday	Çarşamba
+Thursday	Perşembe
+Friday	Cuma
+Saturday	Cumartesi
+January	Ocak
+February	Şubat
+March	Mart
+April	Nisan
+May	Mayıs
+June	Haziran
+July	Temmuz
+August	Ağustos
+September	Eylül
+October	Ekim
+November	Kasım
+December	Aralık
+Birthday	Doğum günü
+No birthday	Doğum günü yok
+Not set	Ayarlanmadı
+Happy birthday, {0}!	Doğum günün kutlu olsun, {0}!
+Last played {0}	Son oynanma: {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Renkler ve menü müziği saati izler: daha sıcak akşamlar, daha sessiz geceler
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Orijinalinde olduğu gibi DS oyunlarına bildirilir. O gün cihaz kendi tarzında merhaba der.

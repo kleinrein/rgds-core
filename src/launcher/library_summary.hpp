@@ -1,5 +1,6 @@
 #pragma once
 #include "launcher/collection_filter.hpp"
+#include "launcher/play_journal.hpp"
 #include <array>
 #include <ctime>
 #include <fstream>
@@ -40,6 +41,7 @@ public:
         std::vector<Game> recent_games;
         Activity activity;
         std::vector<std::pair<std::string, uint64_t>> systems; // time by system id, most first
+        JournalT<Game> journal;                                // sittings, unlocks and pictures by day (play_journal.hpp)
     };
     // Days since 1970-01-01 of a moment's local date.
     static long local_day(std::time_t moment) {
@@ -108,6 +110,10 @@ public:
                     result.activity.weekday = t.tm_wday;
                 }
                 auto& activity = result.activity;
+                // The Album's pictures by game folder, read once (screenshots.py writes album.tsv: path, key, ...).
+                std::map<std::string, std::vector<JournalShot>> album;
+                bool album_read = false;
+                std::vector<JournalSource<Game>> journal_sources;
                 for (const auto& game : request.games) {
                     if (*stop) return result;
                     auto stats = cache.stats(game);
@@ -122,10 +128,37 @@ public:
                     }
                     if (stats.seconds) by_system[game.system] += stats.seconds;
                     if (stats.sessions) {
-                        std::ifstream history(cache.player_folder(game) / "sessions.tsv");
-                        long long began = 0, played = 0;
-                        while (history >> began >> played) {
-                            if (played <= 0 || began <= 0) continue;
+                        const fs::path folder = cache.player_folder(game);
+                        if (!album_read) {
+                            album_read = true;
+                            std::ifstream index(folder.parent_path().parent_path() / "screenshots/album.tsv");
+                            for (std::string line; std::getline(index, line);) {
+                                const auto tab = line.find('\t');
+                                if (tab == std::string::npos) continue;
+                                const auto end = line.find('\t', tab + 1);
+                                const fs::path png = line.substr(0, tab);
+                                const long long at = journal::shot_time(png.filename().string());
+                                if (!at || png.extension() != ".png") continue;
+                                auto& shots = album[line.substr(tab + 1, end == std::string::npos ? end : end - tab - 1)];
+                                if (shots.size() < 2000)
+                                    shots.push_back({at, (png.parent_path() / (png.stem().string() + ".thumb.bmp")).string()});
+                            }
+                        }
+                        std::ifstream history(folder / "sessions.tsv");
+                        JournalSource<Game> source;
+                        source.game = game;
+                        source.key = folder.filename().string();
+                        source.title = cache.metadata(game).info["title"];
+                        if (source.title.empty()) source.title = library_title(game.title);
+                        source.sessions = journal::read_sessions(history);
+                        source.complete = !source.sessions.empty() && stats.sessions <= source.sessions.size();
+                        {
+                            std::ifstream unlocked(folder / "achievements.tsv");
+                            if (unlocked) source.unlocks = journal::read_unlocks(unlocked);
+                        }
+                        if (auto found = album.find(source.key); found != album.end()) source.shots = found->second;
+                        for (const auto& row : source.sessions) {
+                            const long long began = row.began, played = row.seconds;
                             activity.logged++;
                             activity.longest = std::max(activity.longest, uint64_t(played));
                             const long day = local_day(std::time_t(began));
@@ -134,6 +167,7 @@ public:
                             if (back >= 0 && back < Activity::days)
                                 activity.seconds[size_t(Activity::days - 1 - back)] += uint64_t(played);
                         }
+                        if (!source.sessions.empty()) journal_sources.push_back(std::move(source));
                     }
                     if (stats.seconds || stats.sessions) {
                         Entry entry{library_title(game.title), stats.seconds, stats.sessions, game};
@@ -167,6 +201,12 @@ public:
                     }
                 }
                 for (auto& entry : recent) result.recent_games.push_back(std::move(entry.second));
+                {
+                    // RGDS_JOURNAL_RECAP=<year> shows that year's recap whatever the date (previews, tests).
+                    const char* forced = std::getenv("RGDS_JOURNAL_RECAP");
+                    const int year = forced && *forced ? std::atoi(forced) : journal::recap_year(now);
+                    result.journal = journal::build(std::move(journal_sources), year);
+                }
                 result.systems.assign(by_system.begin(), by_system.end());
                 std::stable_sort(result.systems.begin(), result.systems.end(),
                                  [](const auto& a, const auto& b) { return a.second > b.second; });

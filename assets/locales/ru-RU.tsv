@@ -1763,3 +1763,165 @@ Send to phone	Отправить на телефон
 Connect to Wi-Fi to send pictures to a phone or computer.	Подключитесь к Wi-Fi, чтобы отправлять картинки на телефон или компьютер.
 Your picture is on the pad. Write or draw beside it, then send.	Картинка на листке. Напишите или нарисуйте рядом и отправьте.
 Join a room: your picture goes on the pad.	Войдите в комнату: картинка появится на листке.
+Fit (2x, borders)	Вписать (2x, рамка)
+Fill (3x, cropped)	Заполнить (3x, обрезка)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Все пиксели DS одного размера на экране. Вписать оставляет рамку, Заполнить обрезает края. Применяется при следующем запуске.
+Whole pixels saved. Save & restart to use it.	Целые пиксели сохранены. Сохраните и перезапустите, чтобы применить.
+Whole pixels saved.	Целые пиксели сохранены.
+B: back	B: назад
+Book	Книга
+Book view	Вид книги
+Book, held sideways	Книга, боком
+Books	Книги
+Chapter	Глава
+Close the book	Закрыть книгу
+Contents	Оглавление
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Скопируйте PDF, EPUB, CBZ или папки со страницами в папку books.
+Copy films and series into the videos folder.	Скопируйте фильмы и сериалы в папку videos.
+Direction	Порядок
+End of this film	Конец фильма
+Fill the screen	Заполнить экран
+Finished	Просмотрено
+Hold in	Держать в
+Larger	Крупнее
+Left to right	Слева направо
+Media	Медиа
+No books yet	Книг пока нет
+No sound in this film	В этом фильме нет звука
+No videos yet	Видео пока нет
+Original size	Исходный размер
+Paper	Бумага
+Read	Читать
+Read on	Читать дальше
+Reading direction	Порядок чтения
+Resume at	Продолжить с
+Right to left	Справа налево
+Show below the picture	Показывать под картинкой
+Skip intro	Пропустить заставку
+Sleep at the end	Сон в конце
+Sleep in	Сон через
+Sleep timer	Таймер сна
+Smaller	Мельче
+Stand mode	Режим подставки
+Stretch	Растянуть
+Subtitles	Субтитры
+Tap or press A to play now	Коснитесь или нажмите A, чтобы смотреть
+Text size	Размер текста
+The pages of this file are fixed	Страницы этого файла фиксированы
+This book cannot be opened	Не удаётся открыть эту книгу
+This book has no contents list	В этой книге нет оглавления
+This film cannot be played	Не удаётся воспроизвести этот фильм
+Track	Дорожка
+Up next	Далее
+Videos	Видео
+White	Белая
+Whole picture	Вся картинка
+books, comics	книги, комиксы
+file	файл
+fixed	фиксир.
+left	осталось
+left hand	левой руке
+light text on dark	светлый текст на тёмном
+manga	манга
+none	нет
+one page, held normally	одна страница, обычно
+pages	стр.
+right hand	правой руке
+two pages	две страницы
+warm, for long reading	тёплая, для долгого чтения
+Films and books	Фильмы и книги
+Films, books and music	Фильмы, книги и музыка
+Bring over	Перенос
+Looking for saves from another system…	Ищем сохранения другой системы…
+Welcome over!	Добро пожаловать!
+Your saves and play time are in place.	Ваши сохранения и время игры на месте.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher сохранил их со старой карты, прежде чем стереть её.
+They are on the card in the second slot.	Они на карте во втором слоте.
+They are on the USB drive.	Они на USB-накопителе.
+They are in the import folder on this card.	Они в папке import на этой карте.
+Coming from {0}?	Вы перешли с {0}?
+Your saves, play time and favourites can come with you.	Ваши сохранения, время игры и избранное можно перенести.
+Bringing everything over…	Переносим всё…
+Keep the handheld on until this is done.	Не выключайте устройство, пока перенос не закончится.
+{0} save	Сохранения: {0}
+{0} saves	Сохранения: {0}
+{0} resume point	Точки продолжения: {0}
+{0} resume points	Точки продолжения: {0}
+{0} hours of play time	Время игры: {0} ч
+{0} favourite	Избранное: {0}
+{0} favourites	Избранное: {0}
+{0} game on this card	Игры на этой карте: {0}
+{0} games on this card	Игры на этой карте: {0}
+{0} BIOS file	Файлы BIOS: {0}
+{0} BIOS files	Файлы BIOS: {0}
+Everything was already here.	Всё уже было здесь.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	Игр всё ещё на компьютере: {0}. Скопируйте папку roms из резервной копии в папку roms этой карты (как — показано на шаге «Игры»): там их найдут время игры и сохранения.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	Игр всё ещё на компьютере: {0}. Скопируйте папку roms из резервной копии в папку roms этой карты (как — показано на шаге «Игры»): там их найдут время игры и сохранения.
+{0} saves already here stay as they are.	Сохранения, которые уже здесь, остаются как есть: {0}.
+Bring them over	Перенести
+Press A. Nothing here is replaced.	Нажмите A. Ничего не будет заменено.
+Bring the games too	Перенести и игры
+Not now	Не сейчас
+Something could not be read or written. The old card was only read: try again.	Что-то не удалось прочитать или записать. Старая карта только читалась: попробуйте ещё раз.
+Coming from the stock system?	Вы перешли со штатной системы?
+Your saves can come with you.	Ваши сохранения можно перенести.
+Snake	Змейка
+Press A or a direction to start	Нажми A или направление, чтобы начать
+Press A to carry on	Нажми A, чтобы продолжить
+You win!	Победа!
+New best!	Новый рекорд!
+Game over	Игра окончена
+Best	Рекорд
+Play again	Играть снова
+With walls	Со стенами
+Classic screen	Классический экран
+Walls	Стены
+Swipe on either screen to steer	Проведи по любому экрану, чтобы повернуть
+Slower	Медленнее
+Faster	Быстрее
+Pause	Пауза
+Journal	Дневник
+Your year	Ваш год
+Your {0}	Ваш {0}
+A quiet look back at your year	Спокойный взгляд на ваш год
+Days played	Дней в игре
+The game you kept coming back to	Игра, к которой вы возвращались
+Your first screenshot	Ваш первый снимок экрана
+Preparing your journal…	Готовим дневник…
+Your journal is empty	Дневник пуст
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Сыграйте во что-нибудь, и он начнётся здесь: сколько вы играли, что открыли и какие снимки сделали.
+Played for {0}	Играли {0}
+1 photo	1 фото
+{0} photos	Фото: {0}
+First time playing	Впервые
+First time since {0}	Впервые с: {0}
+{0} more achievements	Ещё достижений: {0}
+Earlier today	Сегодня раньше
+Where you left off	На чём вы остановились
+Away for {0}	Не было {0}
+Sunday	воскресенье
+Monday	понедельник
+Tuesday	вторник
+Wednesday	среда
+Thursday	четверг
+Friday	пятница
+Saturday	суббота
+January	январь
+February	февраль
+March	март
+April	апрель
+May	май
+June	июнь
+July	июль
+August	август
+September	сентябрь
+October	октябрь
+November	ноябрь
+December	декабрь
+Birthday	День рождения
+No birthday	Без дня рождения
+Not set	Не задан
+Happy birthday, {0}!	С днём рождения, {0}!
+Last played {0}	Последняя игра: {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Цвета и музыка меню следуют за часами: тёплые вечера, тихие ночи
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Его узнают игры DS, как на оригинале. В этот день консоль поздоровается по-своему.

@@ -77,6 +77,10 @@ class MenuAudio {
     std::string music_file;
     double music_position = 0;
     float music_gain = 0, music_target = 0;
+    // The time of day (ds_profile.hpp): 1 plays the track as it is; lower rolls the treble off with a one-pole
+    // low-pass and brings it down a little. Moves slowly in the callback, so a change is never heard as a step.
+    std::atomic<float> music_tone_target{1};
+    float music_tone = 1, music_low = 0;
     // The volume buttons also scale everything this sink plays (see
     // set_master): the DAC alone left the cues and the track sounding the
     // same at every level above mute. Ramped so a button press never clicks.
@@ -191,6 +195,8 @@ class MenuAudio {
             const auto& pcm = track.samples;
             const double step = double(track.rate) / spec.freq;
             const float ramp = 1.f / (spec.freq * .6f);
+            const float tone_goal = music_tone_target.load(std::memory_order_relaxed),
+                        tone_ramp = 1.f / (spec.freq * 20.f); // twenty seconds end to end
             // The loop seam is a short crossfade of the tail into the head, so the wrap never steps or clicks.
             const size_t size = pcm.size(), seam = std::min(size / 4, size_t(track.rate / 20));
             for (size_t i = 0; i < frames; i++) {
@@ -206,6 +212,14 @@ class MenuAudio {
                     sample += (from_head - sample) * std::clamp(mix_in, 0.f, 1.f);
                 }
                 music_gain += std::clamp(music_target - music_gain, -ramp, ramp);
+                if (music_tone < .999f || tone_goal < .999f) {
+                    music_tone += std::clamp(tone_goal - music_tone, -tone_ramp, tone_ramp);
+                    // About 16 kHz at 1 down to 1.8 kHz at 0: a cutoff that halves an octave at a time.
+                    const float cutoff = 1800.f * std::pow(2.f, music_tone * 3.15f),
+                                k = 1.f - std::exp(-6.2831853f * cutoff / float(spec.freq));
+                    music_low += (sample - music_low) * k;
+                    sample = music_low * (.82f + .18f * music_tone);
+                } else music_low = sample;
                 const float v = sample * music_gain * .7f;
                 out[i * 2] += v;
                 out[i * 2 + 1] += v;
@@ -394,6 +408,7 @@ public:
         if (device) s.UnlockAudioDevice(device);
     }
     float master() const { return master_target; }
+    void set_music_tone(float tone) { music_tone_target.store(std::clamp(tone, 0.f, 1.f), std::memory_order_relaxed); }
     bool music_playing() const { return music_started && device; }
     size_t music_samples() const { return track_ready.load(std::memory_order_acquire) ? track.samples.size() : 0; }
     void configure(bool on, int level, const std::filesystem::path& folder) {

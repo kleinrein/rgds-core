@@ -12,8 +12,8 @@ struct StockSystem {
     const char* badge;
     const char* folders;
 };
-inline const std::array<StockSystem, 38>& stock_systems() {
-    static const std::array<StockSystem, 38> list = {{
+inline const std::array<StockSystem, 39>& stock_systems() {
+    static const std::array<StockSystem, 39> list = {{
     {"nds", "Nintendo DS", "DS", "NDS"},
     {"3ds", "Nintendo 3DS", "3DS", "3DS"},
     {"gba", "Game Boy Advance", "GBA", "GBA"},
@@ -52,6 +52,7 @@ inline const std::array<StockSystem, 38>& stock_systems() {
     {"vectrex", "Vectrex", "VECTREX", "VECTREX"},
     {"wonderswan", "WonderSwan", "WS", "WONDERSWAN,WS"},
     {"rpgmaker", "RPG Maker", "RPG", "RPGMAKER,EASYRPG"},
+    {"flash", "Flash", "FLASH", "FLASH,FLASHPOINT"},
     }};
     return list;
 }
@@ -708,6 +709,23 @@ inline std::string_view system_pixel_glyph(std::string_view id) {
         "..###.###......."
         ".###...##......."
         ".##............."
+        "................";
+    if(id=="flash")return
+        "................"
+        ".##############."
+        ".#.#.#.########."
+        ".##############."
+        ".#########..###."
+        ".########..####."
+        ".#######..#####."
+        ".######.....###."
+        ".########..####."
+        ".#######..#####."
+        ".######..######."
+        ".#####.########."
+        ".##############."
+        ".##############."
+        "................"
         "................";
     if(id=="ports")return
         "................"

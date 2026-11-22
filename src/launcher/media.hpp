@@ -100,7 +100,9 @@ class Media {
     std::map<std::pair<SDL_Renderer*, std::string>, Image> images;
     uint64_t clock = 0, texture_bytes = 0;
     // Cached misses are cheap entries; the byte budget bounds the textures.
-    static constexpr size_t image_limit = 192, banner_limit = 256;
+    // A library zoom wall looks up a few hundred small entries (thumbnails and misses) at once.
+    static constexpr size_t image_limit = 512, banner_limit = 256;
+    static constexpr int thumb_side = 112; // a wall thumbnail's longer side: ~50 KB instead of a full picture
     static constexpr uint64_t byte_limit = 16 * 1024 * 1024;
     AssetStamp stamp(const fs::path& path) {
         counters.stamp_checks++;
@@ -160,11 +162,64 @@ class Media {
         return image;
     }
     static std::string image_key(const fs::path& path, bool icon) { return (icon ? "icon:" : "art:") + path.string(); }
+    static std::string thumb_key(const fs::path& path) { return "thumb:" + path.string(); }
+    static std::string job_key(const fs::path& path, bool icon, bool thumb) {
+        return thumb ? thumb_key(path) : image_key(path, icon);
+    }
+    // The picture shrunk to fit thumb_side, averaged over each target pixel's block of source pixels. Any BMP the
+    // loader reads (1-4 bytes a pixel, palettes, masks) comes out RGBA32. Runs on the loader thread.
+    static SDL_Surface* shrink(Sdl& s, SDL_Surface* source) {
+        if (!source || source->w <= 0 || source->h <= 0) return nullptr;
+        const double scale = std::min(1.0, double(thumb_side) / std::max(source->w, source->h));
+        const int w = std::max(1, int(std::lround(source->w * scale))),
+                  h = std::max(1, int(std::lround(source->h * scale)));
+        SDL_Surface* out = s.CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_RGBA32);
+        if (!out) return nullptr;
+        const SDL_PixelFormat* f = source->format;
+        const int bpp = f->BytesPerPixel;
+        auto pixel = [&](int x, int y, unsigned& r, unsigned& g, unsigned& b, unsigned& a) {
+            const auto* at = static_cast<const unsigned char*>(source->pixels) + y * source->pitch + x * bpp;
+            uint32_t v = bpp == 1   ? at[0]
+                         : bpp == 2 ? uint32_t(at[0] | at[1] << 8)
+                         : bpp == 3 ? uint32_t(at[0] | at[1] << 8 | at[2] << 16)
+                                    : uint32_t(at[0] | at[1] << 8 | at[2] << 16 | uint32_t(at[3]) << 24);
+            if (bpp == 1 && f->palette && int(v) < f->palette->ncolors) {
+                const SDL_Color c = f->palette->colors[v];
+                r = c.r, g = c.g, b = c.b, a = 255;
+                return;
+            }
+            auto channel = [&](uint32_t mask, uint8_t shift, uint8_t loss) {
+                return mask ? (((v & mask) >> shift) << loss) & 255u : 255u;
+            };
+            r = channel(f->Rmask, f->Rshift, f->Rloss);
+            g = channel(f->Gmask, f->Gshift, f->Gloss);
+            b = channel(f->Bmask, f->Bshift, f->Bloss);
+            a = f->Amask ? channel(f->Amask, f->Ashift, f->Aloss) : 255u;
+        };
+        for (int y = 0; y < h; y++) {
+            const int y0 = y * source->h / h, y1 = std::max(y0 + 1, (y + 1) * source->h / h);
+            auto* row = static_cast<unsigned char*>(out->pixels) + y * out->pitch;
+            for (int x = 0; x < w; x++) {
+                const int x0 = x * source->w / w, x1 = std::max(x0 + 1, (x + 1) * source->w / w);
+                // Every second row and column of a big block is enough for a 112-pixel picture.
+                const int step = (x1 - x0) > 4 ? 2 : 1;
+                unsigned sum[4] = {0, 0, 0, 0}, count = 0;
+                for (int sy = y0; sy < y1; sy += step)
+                    for (int sx = x0; sx < x1; sx += step) {
+                        unsigned r, g, b, a;
+                        pixel(sx, sy, r, g, b, a);
+                        sum[0] += r, sum[1] += g, sum[2] += b, sum[3] += a, count++;
+                    }
+                for (int c = 0; c < 4; c++) row[x * 4 + c] = static_cast<unsigned char>(sum[c] / std::max(1u, count));
+            }
+        }
+        return out;
+    }
     // ---- background loading: one worker reads and decodes; textures are
     // created on the main thread when adopt() runs. ----
     struct Job {
         fs::path path;
-        bool icon = false;
+        bool icon = false, thumb = false;
         std::vector<SDL_Renderer*> renderers;
         AssetStamp stamp;
         SDL_Surface* surface = nullptr;
@@ -194,6 +249,11 @@ class Media {
             if (file) {
                 if (bmp_within_budget(file, byte_limit)) job.surface = s.LoadBMP_RW(file, 1);
                 else file->close(file);
+            }
+            if (job.thumb && job.surface) {
+                SDL_Surface* small = shrink(s, job.surface);
+                s.FreeSurface(job.surface);
+                job.surface = small;
             }
         }
     }
@@ -319,13 +379,33 @@ public:
     // Queue a load for the worker; nothing happens for a path already cached
     // or already on its way. Several renderers can share one decode.
     void request(SDL_Renderer* r, const fs::path& path, bool icon = false, bool urgent = false) {
-        auto key = image_key(path, icon);
+        request_job(r, path, icon, false, urgent);
+    }
+    // Loaded or known missing: nothing more to wait for.
+    bool known(SDL_Renderer* r, const fs::path& path, bool icon = false) const {
+        return images.count(std::make_pair(r, image_key(path, icon))) != 0;
+    }
+    // A picture shrunk for a zoomed-out library wall (thumb_side), kept beside the full one.
+    void request_thumb(SDL_Renderer* r, const fs::path& path) { request_job(r, path, false, true, false); }
+    bool thumb_ready(SDL_Renderer* r, const fs::path& path) const {
+        auto found = images.find(std::make_pair(r, thumb_key(path)));
+        return found != images.end() && found->second.texture;
+    }
+    // Known one way or the other: drawable, or a cached miss (no such file).
+    bool thumb_known(SDL_Renderer* r, const fs::path& path) const {
+        return images.count(std::make_pair(r, thumb_key(path))) != 0;
+    }
+    bool draw_thumb(SDL_Renderer* r, const fs::path& path, SDL_Rect box, int radius = 0) {
+        return draw_key(r, thumb_key(path), box, 255, false, radius);
+    }
+    void request_job(SDL_Renderer* r, const fs::path& path, bool icon, bool thumb, bool urgent) {
+        auto key = job_key(path, icon, thumb);
         if (images.count(std::make_pair(r, key))) return;
         std::lock_guard<std::mutex> lock(guard);
         if (!queued.insert(key).second) {
             auto attach = [&](auto& jobs) {
                 for (auto& job : jobs)
-                    if (job.icon == icon && job.path == path) {
+                    if (job.icon == icon && job.thumb == thumb && job.path == path) {
                         if (std::find(job.renderers.begin(), job.renderers.end(), r) == job.renderers.end())
                             job.renderers.push_back(r);
                         return true;
@@ -334,7 +414,9 @@ public:
             };
             if (!attach(finished) && attach(queue) && urgent) {
                 auto at = std::find_if(queue.begin(), queue.end(),
-                                       [&](const Job& job) { return job.icon == icon && job.path == path; });
+                                       [&](const Job& job) {
+                                           return job.icon == icon && job.thumb == thumb && job.path == path;
+                                       });
                 std::rotate(queue.begin(), at, at + 1);
             }
             return;
@@ -342,6 +424,7 @@ public:
         Job job;
         job.path = path;
         job.icon = icon;
+        job.thumb = thumb;
         job.renderers = {r};
         if (urgent) queue.push_front(std::move(job));
         else queue.push_back(std::move(job));
@@ -356,13 +439,13 @@ public:
             std::lock_guard<std::mutex> lock(guard);
             if (finished.empty()) return false;
             ready.swap(finished);
-            for (auto& job : ready) queued.erase(image_key(job.path, job.icon));
+            for (auto& job : ready) queued.erase(job_key(job.path, job.icon, job.thumb));
         }
         bool changed = false;
         for (auto& job : ready) {
             if (job.icon && job.stamp.present) remember_banner(job.path.string(), job.banner, job.stamp);
             for (auto* r : job.renderers) {
-                auto key = std::make_pair(r, image_key(job.path, job.icon));
+                auto key = std::make_pair(r, job_key(job.path, job.icon, job.thumb));
                 if (images.count(key)) continue;
                 images.emplace(std::move(key), adopt_surface(r, job.path, job.icon, job.stamp, job.surface));
                 changed = true;
@@ -427,8 +510,12 @@ public:
     }
     bool draw(SDL_Renderer* r, const fs::path& path, SDL_Rect box, bool icon = false, unsigned char alpha = 255,
               bool fill = false, int radius = 0) {
+        return draw_key(r, image_key(path, icon), box, alpha, fill, radius);
+    }
+    bool draw_key(SDL_Renderer* r, const std::string& key, SDL_Rect box, unsigned char alpha = 255, bool fill = false,
+                  int radius = 0) {
         counters.lookups++;
-        auto found = images.find(std::make_pair(r, (icon ? "icon:" : "art:") + path.string()));
+        auto found = images.find(std::make_pair(r, key));
         if (found == images.end()) return false;
         counters.hits++;
         auto& image = found->second;

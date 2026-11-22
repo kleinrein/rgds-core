@@ -1763,3 +1763,165 @@ Send to phone	Skicka till telefon
 Connect to Wi-Fi to send pictures to a phone or computer.	Anslut till Wi-Fi för att skicka bilder till en telefon eller dator.
 Your picture is on the pad. Write or draw beside it, then send.	Din bild är på blocket. Skriv eller rita bredvid och skicka.
 Join a room: your picture goes on the pad.	Gå in i ett rum: din bild hamnar på blocket.
+Fit (2x, borders)	Anpassa (2x, kanter)
+Fill (3x, cropped)	Fyll (3x, beskuren)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Alla DS-pixlar lika stora på skärmen. Anpassa ger en kant, Fyll beskär kanterna. Används vid nästa start.
+Whole pixels saved. Save & restart to use it.	Hela pixlar sparat. Spara och starta om för att använda det.
+Whole pixels saved.	Hela pixlar sparat.
+B: back	B: tillbaka
+Book	Bok
+Book view	Bokvy
+Book, held sideways	Bok, hållen på sidan
+Books	Böcker
+Chapter	Kapitel
+Close the book	Stäng boken
+Contents	Innehåll
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	Kopiera PDF, EPUB, CBZ eller mappar med sidor till mappen books.
+Copy films and series into the videos folder.	Kopiera filmer och serier till mappen videos.
+Direction	Riktning
+End of this film	Slutet av filmen
+Fill the screen	Fyll skärmen
+Finished	Klar
+Hold in	Håll i
+Larger	Större
+Left to right	Vänster till höger
+Media	Media
+No books yet	Inga böcker än
+No sound in this film	Inget ljud i den här filmen
+No videos yet	Inga videor än
+Original size	Originalstorlek
+Paper	Papper
+Read	Läs
+Read on	Läs vidare
+Reading direction	Läsriktning
+Resume at	Fortsätt vid
+Right to left	Höger till vänster
+Show below the picture	Visa under bilden
+Skip intro	Hoppa över intro
+Sleep at the end	Viloläge vid slutet
+Sleep in	Viloläge om
+Sleep timer	Insomningstimer
+Smaller	Mindre
+Stand mode	Stativläge
+Stretch	Sträck ut
+Subtitles	Undertexter
+Tap or press A to play now	Tryck eller tryck på A för att spela nu
+Text size	Textstorlek
+The pages of this file are fixed	Sidorna i den här filen är fasta
+This book cannot be opened	Den här boken kan inte öppnas
+This book has no contents list	Den här boken har ingen innehållsförteckning
+This film cannot be played	Den här filmen kan inte spelas
+Track	Spår
+Up next	Nästa
+Videos	Videor
+White	Vit
+Whole picture	Hela bilden
+books, comics	böcker, serier
+file	fil
+fixed	fast
+left	kvar
+left hand	vänster hand
+light text on dark	ljus text på mörk
+manga	manga
+none	ingen
+one page, held normally	en sida, hållen som vanligt
+pages	sidor
+right hand	höger hand
+two pages	två sidor
+warm, for long reading	varm, för lång läsning
+Films and books	Filmer och böcker
+Films, books and music	Filmer, böcker och musik
+Bring over	Flytta över
+Looking for saves from another system…	Letar efter sparade spel från ett annat system…
+Welcome over!	Välkommen över!
+Your saves and play time are in place.	Dina sparade spel och din speltid är på plats.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher sparade dem från ditt gamla kort innan det raderades.
+They are on the card in the second slot.	De finns på kortet i den andra kortplatsen.
+They are on the USB drive.	De finns på USB-enheten.
+They are in the import folder on this card.	De finns i import-mappen på det här kortet.
+Coming from {0}?	Kommer du från {0}?
+Your saves, play time and favourites can come with you.	Dina sparade spel, din speltid och dina favoriter kan följa med.
+Bringing everything over…	Flyttar över allt…
+Keep the handheld on until this is done.	Låt enheten vara på tills det är klart.
+{0} save	{0} sparat spel
+{0} saves	{0} sparade spel
+{0} resume point	{0} återupptagningspunkt
+{0} resume points	{0} återupptagningspunkter
+{0} hours of play time	{0} timmars speltid
+{0} favourite	{0} favorit
+{0} favourites	{0} favoriter
+{0} game on this card	{0} spel på det här kortet
+{0} games on this card	{0} spel på det här kortet
+{0} BIOS file	{0} BIOS-fil
+{0} BIOS files	{0} BIOS-filer
+Everything was already here.	Allt fanns redan här.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} spel finns kvar på datorn. Kopiera roms-mappen från säkerhetskopian till roms-mappen på det här kortet (steget Spel visar hur): speltid och sparade spel hittar det där.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} spel finns kvar på datorn. Kopiera roms-mappen från säkerhetskopian till roms-mappen på det här kortet (steget Spel visar hur): speltid och sparade spel hittar dem där.
+{0} saves already here stay as they are.	{0} sparade spel som redan finns här lämnas som de är.
+Bring them over	Flytta över dem
+Press A. Nothing here is replaced.	Tryck på A. Inget här ersätts.
+Bring the games too	Flytta över spelen också
+Not now	Inte nu
+Something could not be read or written. The old card was only read: try again.	Något kunde inte läsas eller skrivas. Det gamla kortet lästes bara: försök igen.
+Coming from the stock system?	Kommer du från originalsystemet?
+Your saves can come with you.	Dina sparade spel kan följa med.
+Snake	Orm
+Press A or a direction to start	Tryck på A eller en riktning för att börja
+Press A to carry on	Tryck på A för att fortsätta
+You win!	Du vann!
+New best!	Nytt rekord!
+Game over	Spelet är slut
+Best	Bästa
+Play again	Spela igen
+With walls	Med väggar
+Classic screen	Klassisk skärm
+Walls	Väggar
+Swipe on either screen to steer	Svep på någon av skärmarna för att styra
+Slower	Långsammare
+Faster	Snabbare
+Pause	Pausa
+Journal	Dagbok
+Your year	Ditt år
+Your {0}	Ditt {0}
+A quiet look back at your year	En stilla tillbakablick på ditt år
+Days played	Dagar spelade
+The game you kept coming back to	Spelet du alltid återvände till
+Your first screenshot	Din första skärmbild
+Preparing your journal…	Förbereder din dagbok…
+Your journal is empty	Din dagbok är tom
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Spela ett spel så börjar den här: hur länge du spelade, vad du låste upp och bilderna du tog.
+Played for {0}	Spelade i {0}
+1 photo	1 bild
+{0} photos	{0} bilder
+First time playing	Första gången
+First time since {0}	Första gången sedan {0}
+{0} more achievements	{0} prestationer till
+Earlier today	Tidigare i dag
+Where you left off	Där du slutade
+Away for {0}	Borta i {0}
+Sunday	söndag
+Monday	måndag
+Tuesday	tisdag
+Wednesday	onsdag
+Thursday	torsdag
+Friday	fredag
+Saturday	lördag
+January	januari
+February	februari
+March	mars
+April	april
+May	maj
+June	juni
+July	juli
+August	augusti
+September	september
+October	oktober
+November	november
+December	december
+Birthday	Födelsedag
+No birthday	Ingen födelsedag
+Not set	Inte angiven
+Happy birthday, {0}!	Grattis på födelsedagen, {0}!
+Last played {0}	Senast spelat {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Färger och menymusik följer klockan: varmare kvällar, lugnare nätter
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-spel får veta den, som på originalet. På dagen hälsar enheten på sitt eget sätt.

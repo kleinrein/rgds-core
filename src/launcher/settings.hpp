@@ -66,6 +66,9 @@ enum class Page {
     Achievements,     // Settings > Library > RetroAchievements: the switch and the account (runtime/achievements.py)
     Album,            // Settings > Library > Album: screenshots by game and date (album_screen.hpp, screenshots.py)
     Photo,            // Album > Photo mode: lenses, stamps, pen, frames and a date stamp (photo_screen.hpp)
+    Files,            // Settings > Library > Files: the card's folders (files_screen.hpp, runtime/files.py)
+    Rewind,           // Game menu > Rewind: the game's moments, Cover Flow style (rewind_menu.hpp)
+    Journal,          // Playtime > A: every sitting by day, unlocks and pictures beside it (journal_screen.hpp)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -79,6 +82,7 @@ struct Preferences {
     int home_layout = 1, background = 1;
     bool gestures = false;
     bool show_systems = false; // Library: a Systems step between Home and the games (ui.ini)
+    int library_zoom = 0;      // Library: the zoom level it was left at, 0-2 (ui.ini; library_zoom.hpp)
     bool all_games = false;    // with other systems on, Games opens every game in one list instead of the Systems step
     bool menu_music = true;
     int music_volume = 40;
@@ -88,6 +92,8 @@ struct Preferences {
     bool music_lid = true;
     // Home's Sound toy tile (voice_toy_screen.hpp): on unless Settings > Sound switches it off.
     bool sound_toy = true;
+    // Settings > Appearance > Time of day: the palette and the menu music follow the clock (ds_profile.hpp).
+    bool time_of_day = true;
     // The vibration motor: patterns in the menus, rumble in games that have it
     // (DS Rumble Pak, GB rumble carts, GBA rumble). Strengths are 10-100%.
     bool menu_haptics = true, game_rumble = true;
@@ -615,7 +621,7 @@ inline constexpr std::array<int, 11> section_order = {11, 0, 10, 3, 2, 6, 4, 1, 
 // Theme and Display share the appearance code: the row ids are the original combined list's.
 inline int appearance_row_id(Page page, int index) {
     // Theme is how the menus look and move; Display is the panel and touch (docs/SETTINGS_PLAN.md).
-    static constexpr std::array<int, 8> theme = {0, 1, 2, 3, 4, 9, 8, 6};
+    static constexpr std::array<int, 9> theme = {0, 1, 2, 3, 4, 9, 8, 6, 11};
     static constexpr std::array<int, 3> display = {5, 7, 10};
     return page == Page::DisplayOptions ? display.at(size_t(index)) : theme.at(size_t(index));
 }
@@ -679,9 +685,9 @@ struct Settings {
         } else if (page == Page::Display) {
             page = Page::DisplayOptions;
             focus = 0;
-        } else if (page == Page::Achievements || page == Page::Album) {
-            // Album is Library's last row, RetroAchievements the one above it
-            focus = library_rows - (page == Page::Album ? 1 : 2);
+        } else if (page == Page::Achievements || page == Page::Album || page == Page::Files) {
+            // Files is Library's last row, Album the one above it, RetroAchievements above that
+            focus = library_rows - (page == Page::Files ? 1 : page == Page::Album ? 2 : 3);
             page = Page::LibraryOptions;
         } else {
             page = page == Page::Settings || page == Page::GameOptions || page == Page::Homebrew ? Page::Library
@@ -695,7 +701,7 @@ struct Settings {
     void move(int delta) {
         if (page == Page::Settings)
             section = section_order[size_t(std::clamp(section_row(section) + delta, 0, int(section_order.size()) - 1))];
-        else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 7);
+        else if (page == Page::Appearance) focus = std::clamp(focus + delta, 0, 8);
         else if (page == Page::DisplayOptions) focus = std::clamp(focus + delta, 0, 2);
         else if (page == Page::LibraryOptions) focus = std::clamp(focus + delta, 0, library_rows - 1);
         else if (page == Page::Power) focus = std::clamp(focus + delta, 0, int(power_rows.size()) - 1);
@@ -834,9 +840,12 @@ inline void load_ui_preferences(const fs::path& ui, Preferences& result) {
         else if (line == "background=plain" || line == "background=grid") result.background = line == "background=grid";
         else if (line == "gestures=0" || line == "gestures=1") result.gestures = line.back() == '1';
         else if (line == "show_systems=0" || line == "show_systems=1") result.show_systems = line.back() == '1';
+        else if (line == "library_zoom=0" || line == "library_zoom=1" || line == "library_zoom=2")
+            result.library_zoom = line.back() - '0';
         else if (line == "music_player=0" || line == "music_player=1") result.music_player = line.back() == '1';
         else if (line == "music_lid=0" || line == "music_lid=1") result.music_lid = line.back() == '1';
         else if (line == "sound_toy=0" || line == "sound_toy=1") result.sound_toy = line.back() == '1';
+        else if (line == "time_of_day=0" || line == "time_of_day=1") result.time_of_day = line.back() == '1';
         else if (line == "all_games=0" || line == "all_games=1") result.all_games = line.back() == '1';
         else if (line == "menu_music=0" || line == "menu_music=1") result.menu_music = line.back() == '1';
         else if (line.rfind("music_volume=", 0) == 0) {
@@ -963,9 +972,11 @@ inline void save_preferences(const fs::path& path, Preferences p) {
     extra << "menu_haptics=" << p.menu_haptics << "\nhaptic_strength=" << p.haptic_strength
           << "\ngame_rumble=" << p.game_rumble << "\nrumble_strength=" << p.rumble_strength << '\n';
     extra << "show_systems=" << p.show_systems << '\n';
+    if (p.library_zoom) extra << "library_zoom=" << p.library_zoom << '\n';
     if (p.music_player) extra << "music_player=1\n";
     if (!p.music_lid) extra << "music_lid=0\n";
     if (!p.sound_toy) extra << "sound_toy=0\n";
+    if (!p.time_of_day) extra << "time_of_day=0\n";
     extra << "all_games=" << p.all_games << '\n';
     extra.close();
     if (!extra) throw std::runtime_error("Cannot save UI preferences");

@@ -130,6 +130,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
         photo_top(r, y);
         return;
     }
+    if (settings.page == Page::Rewind) {
+        rewind_top(r, y);
+        return;
+    }
     // Navigation belongs on the lower panel. Keep this identity independent
     // of row focus and setting values so the upper panel stays quiet.
     std::string title = "Settings";
@@ -189,6 +193,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
         title = "Album";
         symbol = SettingsIcon::Art;
         break;
+    case Page::Files:
+        title = "Files";
+        symbol = SettingsIcon::Library;
+        break;
     case Page::Keyboard:
         title = edit_field == 8 || edit_field == 9     ? "Profiles"
                 : edit_field == 10                     ? "DS name"
@@ -200,6 +208,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
                 : edit_field == 11                     ? "Games"
                 : edit_field == 6                      ? "Cheats"
                 : edit_field == 12 || edit_field == 13 ? "RetroAchievements"
+                : edit_field >= 14 && edit_field <= 19 ? "Files"
                                                        : "ScreenScraper";
         symbol = edit_field == 2                                           ? SettingsIcon::Wifi
                  : edit_field == 6 || edit_field == 12 || edit_field == 13 ? SettingsIcon::Spark
@@ -241,6 +250,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
         break;
     case Page::Statistics:
         title = "Statistics";
+        symbol = SettingsIcon::Clock;
+        break;
+    case Page::Journal:
+        title = "Journal";
         symbol = SettingsIcon::Clock;
         break;
     case Page::Controls:
@@ -333,6 +346,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
         album_top(r, y);
         return;
     }
+    if (page == Page::Files) {
+        files_top(r, y);
+        return;
+    }
     if (page == Page::SaveGallery) {
         settings_card(r, 24, y + top_card_y, 592, top_card_h);
         auto key = std::to_string(settings.focus);
@@ -376,6 +393,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
     }
     if (page == Page::Statistics) {
         playtime_top(r, y);
+        return;
+    }
+    if (page == Page::Journal) {
+        journal_top(r, y);
         return;
     }
     if (page == Page::Maintenance) {
@@ -427,9 +448,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
             "Resamples 2D art, text and menus. Sharp, Smooth and Crisp: the 3D screen at 2x and above. HD and HD smooth rebuild both screens, sharp at any resolution and under any screen filter; HD smooth also smooths shading.",
             "Screen filters change the final picture, including 2D artwork.",
             "Keep off for smooth motion. Skipping display frames can help demanding games.",
+            "Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.",
             "The renderer currently running. Graphics changes apply during play.",
             "Save a checkpoint and restart with your chosen graphics settings."};
-        message = status.empty() ? hints[std::clamp(settings.focus, 0, 7)] : status;
+        message = status.empty() ? hints[std::clamp(settings.focus, 0, 8)] : status;
     } else if (settings.page == Page::EmulatorOptions) {
         if (settings.focus == list_count() - 1)
             message = "Restart from the title screen. In-game saves and save slots are kept.";
@@ -609,6 +631,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         photo_bottom(r, y);
         return;
     }
+    if (settings.page == Page::Rewind) {
+        rewind_bottom(r, y);
+        return;
+    }
     if (settings.page == Page::Album && album_viewing) {
         // The picture's lower screen where it was taken; a single-screen picture leaves this panel dark.
         s.SetRenderDrawColor(r, 0, 0, 0, 255);
@@ -674,7 +700,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
     int count = list_count();
     // Pages that keep their header and controls while their list is empty.
     if (count > 0 || settings.page == Page::Wifi || settings.page == Page::Bluetooth ||
-        settings.page == Page::Homebrew || settings.page == Page::Cheats || settings.page == Page::ProfileGames) {
+        settings.page == Page::Homebrew || settings.page == Page::Cheats || settings.page == Page::ProfileGames ||
+        settings.page == Page::Files) {
         std::string title = settings.page == Page::Graphics || settings.page == Page::PlayGraphics ? "Graphics"
                             : settings.page == Page::SystemDefaults                                ? "System defaults"
                             : settings.page == Page::ProfileGames                                  ? "Games"
@@ -703,6 +730,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                             : (settings.page == Page::Scraper || settings.page == Page::GameArtwork) ? "Artwork"
                             : settings.page == Page::Achievements ? "RetroAchievements"
                             : settings.page == Page::Album        ? "Album"
+                            : settings.page == Page::Journal      ? "Journal"
+                            : settings.page == Page::Files        ? "Files"
                             : settings.page == Page::DeviceInfo   ? "Device information"
                             : settings.page == Page::Controls     ? "Controls"
                                                                   : "Updates & recovery";
@@ -785,7 +814,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, names[id], enabled[id] ? values[id] : "Unavailable", enabled[id]);
             } else if (settings.page == Page::LibraryOptions) {
                 // Rows 0 and 6 are retired; library_row never shows them.
-                const std::array<std::string, 15> names = {"",
+                const std::array<std::string, 16> names = {"",
                                                            "Artwork sources",
                                                            "Auto-load state",
                                                            "Auto-save on exit",
@@ -799,8 +828,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                                            "System defaults",
                                                            "Games opens",
                                                            "RetroAchievements",
-                                                           "Album"};
-                const std::array<std::string, 15> values = {
+                                                           "Album",
+                                                           "Files"};
+                const std::array<std::string, 16> values = {
                     "",
                     "",
                     preferences.auto_load ? "On" : "Off",
@@ -821,10 +851,11 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     !preferences.achievements   ? "Off"
                     : achievements_user.empty() ? "Not signed in"
                                                 : achievements_user,
+                    "",
                     ""};
-                // RetroAchievements and Album open their pages: no switch.
+                // RetroAchievements, Album and Files open their pages: no switch.
                 const int id = library_row(i);
-                list_row(r, y, i, names[size_t(id)], values[size_t(id)], true, nullptr, id != 13 && id != 14);
+                list_row(r, y, i, names[size_t(id)], values[size_t(id)], true, nullptr, id < 13);
             } else if (settings.page == Page::PlayGraphics) {
                 const bool palette = play_colour_kind() == 1;
                 const int id = play_graphics_row(i);
@@ -945,6 +976,8 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          : i == (o.rgds_os ? 6 : 7) ? (device_status["boot_warning"] == "1" ? "On" : "Off")
                                                     : "");
             } else if (settings.page == Page::Album) album_row(r, y, i);
+            else if (settings.page == Page::Journal) journal_row(r, y, i);
+            else if (settings.page == Page::Files) files_row(r, y, i);
             else if (settings.page == Page::SaveGallery)
                 list_row(r, y, i,
                          i == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(i + 1),
@@ -1016,7 +1049,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          working                                      ? "Working…"
                          : device_status[prefix + "connected"] == "1" ? "Connected"
                          : device_status[prefix + "paired"] == "1"    ? "Paired"
-                                                                      : "");
+                                                                      : "",
+                         true, nullptr, true,
+                         // a connected headset's codec (SBC, aptX, aptX HD, LDAC) under its name
+                         device_status[prefix + "connected"] == "1" ? device_status[prefix + "codec"] : "");
             } else if (settings.page == Page::Timezone) {
                 const std::string zone = timezones[size_t(i)];
                 const auto offset = offset_text(zone_offset(zone));
@@ -1079,10 +1115,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, device_info_name(i), device_info_value(i), true, nullptr, true, i == 2 ? " " : "",
                          i == 2 ? storage_used_fraction() : -1);
             else if (settings.page == Page::Graphics) {
-                const std::array<std::string, 8> names = {"3D resolution", "3D edge smoothing", "Heavy 3D scenes",
+                const std::array<std::string, 9> names = {"3D resolution", "3D edge smoothing", "Heavy 3D scenes",
                                                           "2D scaling",    "Screen filter",     "Frameskip",
-                                                          "Running now",   "Save & restart"};
-                const std::array<std::string, 8> values = {experimental_resolution_name(),
+                                                          "Whole pixels",  "Running now",       "Save & restart"};
+                const std::array<std::string, 9> values = {experimental_resolution_name(),
                                                            game_preferences.rgds_smooth ? "Smooth" : "Sharp",
                                                            game_preferences.rgds_adaptive ? "Adaptive" : "Always sharp",
                                                            filter2d_name(game_preferences.rgds_2d),
@@ -1090,9 +1126,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                                                            game_preferences.frameskip > 0
                                                                ? std::to_string(game_preferences.frameskip) + " frames"
                                                                : "Off (smooth)",
+                                                           integer_scale_name(game_preferences.integer_scale),
                                                            active_graphics_name(),
                                                            ""};
-                list_row(r, y, i, names[i], values[i], i != 6);
+                list_row(r, y, i, names[i], values[i], i != 7);
             } else if (settings.page == Page::EmulatorOptions && i >= count - 2)
                 list_row(r, y, i, i == count - 2 ? "DS controls" : "Reset state");
             else if (settings.page == Page::EmulatorOptions) {
@@ -1160,38 +1197,39 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             label(r, mode, 612 - width, y + 29, 18, "muted", width);
         }
         bool busy = menu_status["state"] == "busy";
-        const std::array<std::string, 13> names = {
+        const std::array<std::string, 14> names = {
             "Resume",          "Save checkpoint",
             "Load checkpoint", experimental_game() || active_engine() == play_core ? "Graphics" : "Shaders",
             "Emulator",        "Sound",
             "Brightness",      "Save & restart",
             "Return home",     "Controls",
             "Game switcher",   "Cheats",
-            "Screenshot"};
+            "Screenshot",      "Rewind"};
         static const std::string port_restart = "Restart port"; // ports have no checkpoint to save first
-        const std::array<SettingsIcon, 13> symbols = {
+        const std::array<SettingsIcon, 14> symbols = {
             SettingsIcon::Play,    SettingsIcon::Save,       SettingsIcon::Load,    SettingsIcon::Shader,
             SettingsIcon::Sliders, SettingsIcon::Volume,     SettingsIcon::Sun,     SettingsIcon::Restart,
             SettingsIcon::Home,    SettingsIcon::Controller, SettingsIcon::Library, SettingsIcon::Spark,
-            SettingsIcon::Art};
+            SettingsIcon::Art,     SettingsIcon::Clock};
         // One rule for the page: wide tiles on the top and bottom rows, a 3x3 grid between them,
         // 16 px between tiles. Cheats stays muted outside DSCore or without a database entry.
-        // Resume shares the top row with Screenshot (tile 12), which sits over the grid's right column.
-        for (int i = 0; i < 13; i++) {
+        // The top row is Resume, Rewind (tile 13) and Screenshot (tile 12), over the grid's three columns.
+        for (int i = 0; i < 14; i++) {
             const bool wide = i == 0 || i >= 10;
             int x = i == 0    ? 28
+                    : i == 13 ? 228
                     : i == 12 ? 428
                     : i >= 10 ? (i == 10 ? 28 : 328)
                               : 28 + ((i - 1) % 3) * 200,
-                row = y + (i == 0 || i == 12 ? quick_top
+                row = y + (i == 0 || i == 12 || i == 13 ? quick_top
                            : i >= 10         ? quick_bottom_top
                                              : quick_grid_top + ((i - 1) / 3) * quick_grid_pitch);
-            const int width = i == 0    ? 384
-                              : i == 12 ? 184
+            const int width = i == 0 || i == 12 || i == 13 ? 184
                               : wide    ? 284
                                         : 184,
                       height = wide ? quick_wide_height : quick_tile_height;
-            bool enabled = !busy && (i != 11 || cheats_available()) && (!port_game() || port_tile(i)),
+            bool enabled = !busy && (i != 11 || cheats_available()) && (i != 13 || rewind_available()) &&
+                           (!port_game() || port_tile(i)),
                  focused = settings.focus == i;
             move_element(uint32_t(i), x, row, width, height, focused);
             settings_card(r, x, row, width, height, focused);

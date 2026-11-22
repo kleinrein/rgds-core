@@ -50,6 +50,10 @@ SYSTEMS = {
     "atari7800": (".a78",),
     "atari5200": (".a52",),
     "lynx": (".lnx",),
+    # The Bandai WonderSwan and WonderSwan Color (Beetle WonderSwan), Pocket Challenge V2 cartridges too; the Neo Geo
+    # Pocket and Pocket Color (Beetle NeoPop)
+    "wonderswan": (".ws", ".wsc", ".pc2"),
+    "ngp": (".ngp", ".ngc", ".ngpc", ".npc"),
     # Virtual Boy (Beetle VB); a plain .bin only in a Virtual Boy folder
     "vb": (".vb", ".vboy"),
     # Commodore Amiga (PUAE): floppies, hard disks, WHDLoad archives and configurations; an .m3u in its folder
@@ -78,6 +82,11 @@ SYSTEMS = {
     "gw": (".mgw",),
     # ScummVM: a game is a folder of files of any name, so only its folder says so: FOLDER_SYSTEMS
     "scummvm": (),
+    # Arcade sets (mame2003-plus, built with only the two-monitor cabinets) are a .zip like any game in an archive,
+    # so only their folder says so: FOLDER_SYSTEMS
+    "arcade": (),
+    # Flash games (Ruffle): a movie anywhere; a Flashpoint game pack is a .zip only in a Flash folder
+    "flash": (".swf",),
 }
 # Folders that name a system for files whose extension cannot (Mega Drive dumps are mostly plain .bin, which a
 # PlayStation data track also is): the games folders under /data/roms, with the names other frontends use.
@@ -135,6 +144,18 @@ FOLDER_SYSTEMS = {
     "lynx": "lynx",
     "atarilynx": "lynx",
     "atari lynx": "lynx",
+    "wonderswan": "wonderswan",
+    "wonderswan color": "wonderswan",
+    "wonderswancolor": "wonderswan",
+    "ws": "wonderswan",
+    "wsc": "wonderswan",
+    "wswan": "wonderswan",
+    "ngp": "ngp",
+    "ngpc": "ngp",
+    "neogeopocket": "ngp",
+    "neo geo pocket": "ngp",
+    "neo geo pocket color": "ngp",
+    "neogeopocketcolor": "ngp",
     "vb": "vb",
     "virtualboy": "vb",
     "virtual boy": "vb",
@@ -146,7 +167,16 @@ FOLDER_SYSTEMS = {
     "dosbox": "dos",
     "pico8": "pico8",
     "pico-8": "pico8",
-    "fake08": "pico8"
+    "fake08": "pico8",
+    "arcade": "arcade",
+    "mame": "arcade",
+    "mame2003": "arcade",
+    "mame2003-plus": "arcade",
+    "mame2003plus": "arcade",
+    "flash": "flash",
+    "adobe flash": "flash",
+    "flashpoint": "flash",
+    "swf": "flash"
 }
 # The C64's tapes are .tap like the Spectrum's, and a C64 game on several disks is listed by an .m3u like a
 # PlayStation disc set: in a C64 folder both are the C64's.
@@ -175,8 +205,18 @@ FOLDER_EXTENSIONS = {
     "amiga": (".m3u",),
     # A zip first: a DOS game's folder may hold a .cue or an .iso that would make it a PlayStation or PSP game.
     "dos": (".zip", ".iso", ".cue", ".chd", ".ins", ".img", ".ima", ".vhd", ".m3u", ".m3u8"),
-    "pico8": (".png",)
+    "pico8": (".png",),
+    "arcade": (".zip",),
+    # Flashpoint's game zips (content/<host>/...) and folders of a game's files zipped up
+    "flash": (".zip", ".spl")
 }
+# The arcade sets the core is built with (os/buildroot/package/libretro-mame2003-plus/two_monitors.py), by their
+# MAME names: the launcher lists only these (src/launcher/model.hpp arcade_sets) and only these come over from an old
+# card's MAME folder (migrate.py), not a collection of thousands this core cannot run.
+ARCADE_SETS = (
+    "punchout", "spnchout", "spnchotj", "armwrest", "vstennis", "wrecking", "balonfgt", "vsmahjng", "vsbball",
+    "vsbballj", "vsbbalja", "iceclmrj"
+)
 # A disc in a Mega Drive folder is a Mega-CD one, in a PC Engine folder a CD-ROM one: they share those shelves.
 FOLDER_DISCS = {"md": ("segacd", SEGACD_DISCS), "pce": ("pcecd", PCECD_DISCS)}
 # The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
@@ -199,6 +239,8 @@ LIBRETRO_CORES = {
     "atari7800": "prosystem",
     "atari5200": "a5200",
     "lynx": "handy",
+    "wonderswan": "mednafen_wswan",
+    "ngp": "mednafen_ngp",
     "vb": "mednafen_vb",
     "amiga": "puae",
     "dos": "dosbox_pure",
@@ -210,7 +252,9 @@ LIBRETRO_CORES = {
     "psp": "ppsspp",
     "dc": "flycast",
     "gw": "gw",
-    "scummvm": "scummvm"
+    "scummvm": "scummvm",
+    "arcade": "mame2003_plus",
+    "flash": "ruffle"
 }
 # A core's system folder when not the owner's BIOS folder: PPSSPP's assets come with the core and need no BIOS.
 LIBRETRO_SYSTEM_DIRS = {"psp": "/usr/share/libretro", "scummvm": "/usr/share/libretro"}
@@ -238,7 +282,8 @@ def provide_system_files(system, bios):
             pass  # a full or read-only card: the core says what it misses
 MGBA_SYSTEMS = ("gba", "gbc", "gb")
 # Systems whose core cannot save its state (gw-libretro runs Lua): no checkpoints, their scores are their own saves.
-NO_CHECKPOINTS = ("gw", "scummvm")
+# Ruffle (Flash) has no save states: Flash games keep their own saves (SharedObjects).
+NO_CHECKPOINTS = ("gw", "scummvm", "flash")
 
 
 def libretro_core(system):
@@ -348,7 +393,7 @@ FRAMES = {
     "vectrex": "vectrex",
     "tv-grey": "nes,snes,md,segacd,pico,sms,sg,pce,pcecd,neo,psx,n64,saturn,dc,msx,cpc,zx,c64,atari7800",
     "tv-wood": "nes,sms,sg,atari,atari5200,coleco,intellivision,pico",
-    "monitor": "dos,msx,cpc,zx,c64,amiga,scummvm",
+    "monitor": "dos,msx,cpc,zx,c64,amiga,scummvm,flash",
     "ctr-dark": "3ds",
     "ctr-cosmos": "3ds",
     "ctr-aqua": "3ds",

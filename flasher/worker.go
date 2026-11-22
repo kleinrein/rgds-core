@@ -8,7 +8,7 @@ import (
 )
 
 // runWorker is the elevated half (macOS, Windows, Linux): it writes the card and posts its progress to the UI process.
-func runWorker(report, disk, image string) int {
+func runWorker(report, disk, image, carry string) int {
 	post := func(u update) {
 		body, _ := json.Marshal(u)
 		for try := 0; try < 3; try++ {
@@ -21,8 +21,8 @@ func runWorker(report, disk, image string) int {
 		}
 	}
 	var last time.Time
-	err := flash(image, disk, func(phase string, done, total int64) {
-		if phase != "write" && phase != "verify" || time.Since(last) > 150*time.Millisecond || done == total {
+	err := flash(image, disk, carry, func(phase string, done, total int64) {
+		if phase != "write" && phase != "verify" && phase != "carry" || time.Since(last) > 150*time.Millisecond || done == total {
 			last = time.Now()
 			post(update{Phase: phase, Done: done, Total: total})
 		}

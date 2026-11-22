@@ -214,7 +214,7 @@ class GameInfo:
 
     def supports(self, system):
         """Whether this source has anything for a system's games."""
-        return system == "nds" or system in art.CATALOGS
+        return system in ("nds", "flash") or system in art.CATALOGS
 
     # --- skipping -----------------------------------------------------------------------------------------------
     def needs(self, item, kind, force):
@@ -307,6 +307,12 @@ class GameInfo:
     # --- information ----------------------------------------------------------------------------------------------
     def information(self, rom, system, code):
         """({info.ini fields}, {language: synopsis}, provider) for one game."""
+        if system == "flash":
+            # What the Flashpoint import wrote beside the game (flashpoint.py); a loose movie has nothing.
+            from flashpoint import information
+            found = information(rom)
+            if not found: raise NotFound("No Flashpoint details for this game.")
+            return found[0], found[1], "Flashpoint"
         if system in ("nds", "3ds"):
             if self.records_error: raise ScraperError(self.records_error)
             record = (self.records if system == "nds" else self.records_3ds).get(code)
@@ -398,6 +404,12 @@ class GameInfo:
         return self.indexes[key]
 
     def picture(self, item, kind, rom, system, name, code):
+        if system == "flash":
+            from flashpoint import image
+            raw = image(rom, "screenshot") if kind == "snap" else None
+            if not raw: raise NotFound("No Flashpoint picture of this kind.")
+            image_to_bmp(raw, item / PICTURES[kind][1])
+            return
         base, index = self.index(system, kind)
         info = read_fields(item / "info.ini")
         override = read_fields(item / "artwork.ini").get("match_title", "").strip()

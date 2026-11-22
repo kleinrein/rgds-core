@@ -246,6 +246,7 @@ void App::chat_set_colour(int chip) {
 }
 
 void App::chat_join(int room) {
+    chat.birthday = birthday_today();
     chat.join(room);
     chat_scroll = 0;
     chat_slid_serial = chat.serial;
@@ -497,8 +498,9 @@ void App::chat_bottom(SDL_Renderer* r, int y) {
 }
 
 std::string App::top_signature(Uint32 now) {
-    if (settings.page != Page::Library || chat_open || music_open || vt.open || o.game_menu || probe || launching || embedded_menu ||
-        (o.boot_startup && !library_ready) || now - top_drawn_at >= 2000 || view_motion.running)
+    if (settings.page != Page::Library || chat_open || music_open || vt.open || sn.open || o.game_menu || probe ||
+        launching || embedded_menu || (o.boot_startup && !library_ready) || now - top_drawn_at >= 2000 ||
+        view_motion.running)
         return {};
     std::ostringstream k;
     const auto accent = theme.at("accent"), background = theme.at("background");

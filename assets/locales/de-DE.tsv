@@ -1763,3 +1763,165 @@ Send to phone	An Handy senden
 Connect to Wi-Fi to send pictures to a phone or computer.	Verbinde dich mit WLAN, um Bilder an ein Handy oder einen Computer zu senden.
 Your picture is on the pad. Write or draw beside it, then send.	Dein Bild ist auf dem Block. Schreib oder mal daneben und sende.
 Join a room: your picture goes on the pad.	Betritt einen Raum: Dein Bild kommt auf den Block.
+Fit (2x, borders)	Einpassen (2x, Rand)
+Fill (3x, cropped)	Füllen (3x, beschnitten)
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	Jedes DS-Pixel gleich groß auf dem Bildschirm. Einpassen lässt einen Rand, Füllen schneidet die Ränder ab. Gilt ab dem nächsten Start.
+Whole pixels saved. Save & restart to use it.	Ganze Pixel gespeichert. Speichern und neu starten, um es zu nutzen.
+Whole pixels saved.	Ganze Pixel gespeichert.
+B: back	B: zurück
+Book	Buch
+Book view	Buchansicht
+Book, held sideways	Buch, quer gehalten
+Books	Bücher
+Chapter	Kapitel
+Close the book	Buch schließen
+Contents	Inhalt
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	PDF, EPUB, CBZ oder Ordner mit Seiten in den Ordner books kopieren.
+Copy films and series into the videos folder.	Filme und Serien in den Ordner videos kopieren.
+Direction	Richtung
+End of this film	Ende dieses Films
+Fill the screen	Bild füllen
+Finished	Beendet
+Hold in	Halten mit
+Larger	Größer
+Left to right	Links nach rechts
+Media	Medien
+No books yet	Noch keine Bücher
+No sound in this film	Kein Ton in diesem Film
+No videos yet	Noch keine Videos
+Original size	Originalgröße
+Paper	Papier
+Read	Lesen
+Read on	Weiterlesen
+Reading direction	Leserichtung
+Resume at	Fortsetzen bei
+Right to left	Rechts nach links
+Show below the picture	Unter dem Bild zeigen
+Skip intro	Intro überspringen
+Sleep at the end	Am Ende aus
+Sleep in	Aus in
+Sleep timer	Ausschalt-Timer
+Smaller	Kleiner
+Stand mode	Standmodus
+Stretch	Strecken
+Subtitles	Untertitel
+Tap or press A to play now	Tippen oder A drücken, um jetzt abzuspielen
+Text size	Textgröße
+The pages of this file are fixed	Die Seiten dieser Datei sind fest
+This book cannot be opened	Dieses Buch kann nicht geöffnet werden
+This book has no contents list	Dieses Buch hat kein Inhaltsverzeichnis
+This film cannot be played	Dieser Film kann nicht abgespielt werden
+Track	Spur
+Up next	Als Nächstes
+Videos	Videos
+White	Weiß
+Whole picture	Ganzes Bild
+books, comics	Bücher, Comics
+file	Datei
+fixed	fest
+left	übrig
+left hand	linker Hand
+light text on dark	helle Schrift auf dunkel
+manga	Manga
+none	keins
+one page, held normally	eine Seite, normal gehalten
+pages	Seiten
+right hand	rechter Hand
+two pages	zwei Seiten
+warm, for long reading	warm, für langes Lesen
+Films and books	Filme und Bücher
+Films, books and music	Filme, Bücher und Musik
+Bring over	Übernehmen
+Looking for saves from another system…	Suche nach Spielständen von einem anderen System…
+Welcome over!	Willkommen!
+Your saves and play time are in place.	Deine Spielstände und Spielzeiten sind da.
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher hat sie von deiner alten Karte gesichert, bevor er sie gelöscht hat.
+They are on the card in the second slot.	Sie sind auf der Karte im zweiten Steckplatz.
+They are on the USB drive.	Sie sind auf dem USB-Laufwerk.
+They are in the import folder on this card.	Sie sind im Import-Ordner dieser Karte.
+Coming from {0}?	Du kommst von {0}?
+Your saves, play time and favourites can come with you.	Deine Spielstände, Spielzeiten und Favoriten können mitkommen.
+Bringing everything over…	Alles wird übernommen…
+Keep the handheld on until this is done.	Lass das Gerät an, bis es fertig ist.
+{0} save	{0} Spielstand
+{0} saves	{0} Spielstände
+{0} resume point	{0} Fortsetzungspunkt
+{0} resume points	{0} Fortsetzungspunkte
+{0} hours of play time	{0} Stunden Spielzeit
+{0} favourite	{0} Favorit
+{0} favourites	{0} Favoriten
+{0} game on this card	{0} Spiel auf dieser Karte
+{0} games on this card	{0} Spiele auf dieser Karte
+{0} BIOS file	{0} BIOS-Datei
+{0} BIOS files	{0} BIOS-Dateien
+Everything was already here.	Es war schon alles da.
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} Spiel ist noch auf deinem Computer. Kopiere den Ordner roms aus der Sicherung in den Ordner roms dieser Karte (der Schritt Spiele zeigt, wie): Spielzeit und Spielstände finden es dort.
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} Spiele sind noch auf deinem Computer. Kopiere den Ordner roms aus der Sicherung in den Ordner roms dieser Karte (der Schritt Spiele zeigt, wie): Spielzeiten und Spielstände finden sie dort.
+{0} saves already here stay as they are.	{0} Spielstände, die schon hier sind, bleiben, wie sie sind.
+Bring them over	Übernehmen
+Press A. Nothing here is replaced.	Drücke A. Hier wird nichts ersetzt.
+Bring the games too	Auch die Spiele übernehmen
+Not now	Nicht jetzt
+Something could not be read or written. The old card was only read: try again.	Etwas konnte nicht gelesen oder geschrieben werden. Die alte Karte wurde nur gelesen: versuche es noch einmal.
+Coming from the stock system?	Du kommst vom Originalsystem?
+Your saves can come with you.	Deine Spielstände können mitkommen.
+Snake	Snake
+Press A or a direction to start	Drücke A oder eine Richtung zum Starten
+Press A to carry on	Drücke A zum Weiterspielen
+You win!	Gewonnen!
+New best!	Neuer Rekord!
+Game over	Spiel vorbei
+Best	Rekord
+Play again	Nochmal spielen
+With walls	Mit Wänden
+Classic screen	Klassischer Bildschirm
+Walls	Wände
+Swipe on either screen to steer	Wische auf einem der Bildschirme zum Lenken
+Slower	Langsamer
+Faster	Schneller
+Pause	Pause
+Journal	Tagebuch
+Your year	Dein Jahr
+Your {0}	Dein {0}
+A quiet look back at your year	Ein stiller Rückblick auf dein Jahr
+Days played	Gespielte Tage
+The game you kept coming back to	Das Spiel, zu dem du immer zurückkamst
+Your first screenshot	Dein erster Screenshot
+Preparing your journal…	Dein Tagebuch wird vorbereitet…
+Your journal is empty	Dein Tagebuch ist leer
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	Spiel ein Spiel, dann beginnt es hier: wie lange du gespielt hast, was du freigeschaltet hast und deine Bilder.
+Played for {0}	{0} gespielt
+1 photo	1 Foto
+{0} photos	{0} Fotos
+First time playing	Zum ersten Mal
+First time since {0}	Zum ersten Mal seit {0}
+{0} more achievements	{0} weitere Erfolge
+Earlier today	Heute früher
+Where you left off	Wo du aufgehört hast
+Away for {0}	{0} weg
+Sunday	Sonntag
+Monday	Montag
+Tuesday	Dienstag
+Wednesday	Mittwoch
+Thursday	Donnerstag
+Friday	Freitag
+Saturday	Samstag
+January	Januar
+February	Februar
+March	März
+April	April
+May	Mai
+June	Juni
+July	Juli
+August	August
+September	September
+October	Oktober
+November	November
+December	Dezember
+Birthday	Geburtstag
+No birthday	Kein Geburtstag
+Not set	Nicht festgelegt
+Happy birthday, {0}!	Alles Gute zum Geburtstag, {0}!
+Last played {0}	Zuletzt gespielt {0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	Farben und Menümusik folgen der Uhr: wärmere Abende, ruhigere Nächte
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-Spiele erfahren ihn, wie beim Original. An dem Tag grüßt dich der Handheld auf seine Art.

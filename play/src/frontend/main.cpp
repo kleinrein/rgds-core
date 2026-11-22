@@ -502,6 +502,53 @@ extern "C" __attribute__((visibility("default"))) int rgds_play_set_color(int pa
     return 1;
 }
 
+// Rewind, called by the bridge as for DSCore's (rgds_rewind_* in its frontend, docs/TIME_TRAVEL_PLAN.md): the game
+// menu's Rewind screen lists the session's moments, has one loaded for a look, then plays from one or goes back.
+extern "C" __attribute__((visibility("default"))) unsigned rgds_rewind_open() {
+    Session* s = cheat_session.load();
+    return s ? s->menu_rewind_open() : 0;
+}
+extern "C" __attribute__((visibility("default"))) int rgds_rewind_count() {
+    Session* s = cheat_session.load();
+    return s ? int(s->timeline().size()) : 0;
+}
+extern "C" __attribute__((visibility("default"))) int rgds_rewind_moment(int index, unsigned* id, unsigned* parent,
+                                                                         unsigned long long* position, int* w, int* h,
+                                                                         const uint32_t** px) {
+    Session* s = cheat_session.load();
+    if (!s || index < 0) return 0;
+    const auto ids = s->timeline().ids();
+    if (size_t(index) >= ids.size()) return 0;
+    const Moment* m = s->timeline().find(ids[size_t(index)]);
+    if (!m) return 0;
+    if (id) *id = m->id;
+    if (parent) *parent = m->parent;
+    if (position) *position = m->position;
+    if (w) *w = m->thumb.w;
+    if (h) *h = m->thumb.h;
+    if (px) *px = m->thumb.px.empty() ? nullptr : m->thumb.px.data();
+    return 1;
+}
+extern "C" __attribute__((visibility("default"))) double rgds_rewind_rate() {
+    Session* s = cheat_session.load();
+    return s ? s->timeline().frame_rate() : 60.0;
+}
+extern "C" __attribute__((visibility("default"))) int rgds_rewind_show(unsigned id, int* screens, int* w, int* h,
+                                                                       const uint32_t** px) {
+    Session* s = cheat_session.load();
+    Picture shown;
+    if (!s || !s->menu_rewind_show(id, shown) || !shown.px) return 0;
+    if (screens) *screens = 1;
+    if (w) *w = shown.w;
+    if (h) *h = shown.h;
+    if (px) *px = shown.px;
+    return 1;
+}
+extern "C" __attribute__((visibility("default"))) int rgds_rewind_jump(unsigned id, int play) {
+    Session* s = cheat_session.load();
+    return s && s->menu_rewind_jump(id, play != 0) ? 1 : 0;
+}
+
 // Cheats, called by the bridge as for DSCore's (rgds_cheat_* in its frontend): from its event hook on the main
 // thread between frames, so a switch is applied to the core before the call returns. Codes have no groups here.
 extern "C" __attribute__((visibility("default"))) int rgds_cheat_count() {
@@ -547,6 +594,7 @@ int main(int argc, char** argv) {
         return 0;
     }
     SessionOptions o;
+    if (const char* rewind = std::getenv("RGDS_PLAY_REWIND"); rewind && std::string(rewind) == "0") o.rewind = false;
     int fit = FitSharp, second = SecondCompanion;
     std::string frame_choice = "off", frames_folder, palette_choice = "default", colour_choice = "off";
     std::string achievements_account, achievements_helper, achievements_badges, achievements_list;
@@ -708,9 +756,9 @@ int main(int argc, char** argv) {
     if (session.companion()) session.companion()->set_colour(colour);
     // A light-gun game is played by touching it: it starts on the touch screen.
     // A light gun or a mouse game is played on the touch screen: it starts there, a finger aims or draws.
-    // So is a ScummVM game: it is played by touch, unless a profile splits it across both panels.
-    const bool lightgun =
-        session.profile() ? session.profile()->lightgun || session.profile()->mouse : o.system == "scummvm";
+    // So is a ScummVM game or a Flash game: played by touch, unless a profile splits it across both panels.
+    const bool lightgun = session.profile() ? session.profile()->lightgun || session.profile()->mouse
+                                            : o.system == "scummvm" || o.system == "flash";
     // The keyboard first (ZX, C64): the companion, opened on the keyboard until the game's own view is switched back
     // to (a game remembers what it was left on, so that wins at the start; picking it in the menu overrides).
     // The Virtual Boy has that place on the Second screen picker for its 3D instead: the right eye on the second screen,
@@ -818,9 +866,21 @@ int main(int argc, char** argv) {
         session.core().set_pointer(inside ? (wx - d.x) * game.w / d.w : -1, inside ? (wy - d.y) * game.h / d.h : -1,
                                    down);
     };
+    // The same for the top panel's own touch screen: a game played by touch, left on the top screen (the second
+    // screen keeping the keyboard or the touch pad), is still aimed at with a finger there.
+    auto aim_top = [&](int x, int y, bool down) {
+        const SDL_Rect& d = upper.game_dest;
+        const Picture game = session.core().picture();
+        if (d.w <= 0 || d.h <= 0 || game.w <= 0 || game.h <= 0) return;
+        const int wx = upper.area.x + x * upper.area.w / std::max(1, pw),
+                  wy = upper.area.y + y * upper.area.h / std::max(1, ph);
+        const bool inside = wx >= d.x && wy >= d.y && wx < d.x + d.w && wy < d.y + d.h;
+        session.core().set_pointer(inside ? (wx - d.x) * game.w / d.w : -1, inside ? (wy - d.y) * game.h / d.h : -1,
+                                   down);
+    };
     // The top panel's own touch screen (the Goodix on fe5c0000.i2c), for a game shown there and played by touch.
     rgds::TouchDevice top_touch;
-    if (session.companion() && session.companion()->top_is_touched()) {
+    if ((session.companion() && session.companion()->top_is_touched()) || lightgun) {
         std::string device = std::getenv("RGDS_TOP_TOUCH_DEV") ? std::getenv("RGDS_TOP_TOUCH_DEV") : "";
         std::error_code error;
         if (device.empty())
@@ -970,6 +1030,20 @@ int main(int argc, char** argv) {
                 }
                 continue;
             }
+            if (lightgun && upper.window &&
+                (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP ||
+                 (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK))) &&
+                e.button.which != SDL_TOUCH_MOUSEID && e.button.windowID == SDL_GetWindowID(upper.window)) {
+                // A desktop's mouse on the top panel: the finger on the top touch screen, for a touch game left there.
+                const int mx = e.type == SDL_MOUSEMOTION ? e.motion.x : e.button.x,
+                          my = e.type == SDL_MOUSEMOTION ? e.motion.y : e.button.y;
+                const SDL_Rect& a = upper.area;
+                if (mx >= a.x && my >= a.y && mx < a.x + a.w && my < a.y + a.h) {
+                    aim_top((mx - a.x) * pw / std::max(1, a.w), (my - a.y) * ph / std::max(1, a.h),
+                            e.type != SDL_MOUSEBUTTONUP);
+                    continue;
+                }
+            }
             // The second screen is the touch screen while it shows the companion or the info screen.
             if (!session.companion() || stereo || (second != SecondCompanion && second != SecondInfo)) continue;
             Touch t;
@@ -1001,10 +1075,11 @@ int main(int argc, char** argv) {
                 t.y = (my - lower.area.y) * ph / std::max(1, lower.area.h);
                 have = t.y >= 0 && t.y < ph;
             }
-            if (have && session.companion()->touch(t)) drawn_key = ~0ull;
+            if (have && session.touch(t)) drawn_key = ~0ull;
         }
         for (const auto& point : top_touch.poll())
-            if (point.kind < 3 && session.companion())
+            if (point.kind < 3 && lightgun && second != SecondSwap) aim_top(point.x, point.y, point.kind != 2);
+            else if (point.kind < 3 && session.companion())
                 session.companion()->touch_top(Touch{point.kind == 0   ? Touch::Down
                                                      : point.kind == 1 ? Touch::Move
                                                                        : Touch::Up,
@@ -1025,13 +1100,14 @@ int main(int argc, char** argv) {
                             : point.kind == 1 ? Touch::Move
                                               : Touch::Up,
                             point.x, point.y};
-                    if (session.companion()->touch(t)) drawn_key = ~0ull;
+                    if (session.touch(t)) drawn_key = ~0ull;
                 }
         if (pinch_touch.available()) {
             pinch_touch.poll(); // its one finger is the bridge's too: only the whole set is used here
             std::vector<std::pair<int, int>> down;
             for (const auto& f : pinch_touch.fingers()) down.emplace_back(f.x, f.y);
-            if (session.companion() && !stereo && second == SecondCompanion && session.companion()->fingers(down))
+            if (session.companion() && !stereo && second == SecondCompanion && !session.rewinding() &&
+                session.companion()->fingers(down))
                 drawn_key = ~0ull;
         }
         uint32_t buttons = (keyboard ? keyboard_buttons(SDL_GetKeyboardState(nullptr)) : 0) | controller_buttons(pad);
@@ -1063,13 +1139,19 @@ int main(int argc, char** argv) {
         }
         // After a stall (a pause or a lid sleep stops the process), don't race.
         if (owed > frame_seconds * (fast ? 8 : 4)) owed = frame_seconds;
-        if (const bool hold = !menu_block.empty() && access(menu_block.c_str(), F_OK) == 0; hold != held) {
+        // The Rewind screen holds the game the same way, and takes the pad.
+        if (session.rewinding() && session.rewind_input(buttons, SDL_GetTicks(), look.animations)) drawn_key = ~0ull;
+        if (const bool hold = (!menu_block.empty() && access(menu_block.c_str(), F_OK) == 0) || session.rewinding();
+            hold != held) {
             held = hold;
             if (audio) {
                 if (hold) SDL_ClearQueuedAudio(audio);
                 SDL_PauseAudioDevice(audio, hold ? 1 : 0);
             }
-            std::fprintf(stderr, "rgds-play: %s\n", hold ? "held under the menu" : "playing again");
+            std::fprintf(stderr, "rgds-play: %s\n",
+                         !hold                ? "playing again"
+                         : session.rewinding() ? "held for rewind"
+                                               : "held under the menu");
         }
         if (held) owed = 0;
         // RetroAchievements: answers from the site, and rcheevos kept awake while the menu holds the game.
@@ -1154,6 +1236,12 @@ int main(int argc, char** argv) {
             case Dock::Action::GameMenu:
                 if (!bridged || !ask_runtime(".game-menu")) dock.report("Not available");
                 break;
+            case Dock::Action::Rewind: {
+                std::string why;
+                if (session.open_rewind(why)) drawn_key = ~0ull;
+                else dock.report(why);
+                break;
+            }
             case Dock::Action::Switcher:
                 // On its own the player has no other games to switch to.
                 if (!bridged || !ask_runtime(".menu")) dock.report("Not available");
@@ -1173,9 +1261,9 @@ int main(int argc, char** argv) {
         Panel& game_panel = second == SecondSwap ? lower : upper;
         bool companion_new = false;
         if (second != SecondOff && !stereo &&
-            (session.companion() ? session.companion()->visual_key() != drawn_key : drawn_key != 0)) {
+            ((session.companion() || session.rewinding()) ? session.visual_key() != drawn_key : drawn_key != 0)) {
             session.render_companion(companion, look);
-            drawn_key = session.companion() ? session.companion()->visual_key() : 0;
+            drawn_key = session.visual_key();
             companion_new = true;
         }
         static SDL_Texture* gl_target = nullptr; // the texture the core was last told to draw into

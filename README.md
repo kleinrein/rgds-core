@@ -15,7 +15,7 @@
 
 - **A real OS:** Quick boot, low RAM consumption and fast game starts.
 - **DS games in DSCore:** sharp 2x-5x 3D (heavy games can glitch or slow down), 32 shaders and LCD filters, fast-forward, low input latency.
-- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System (with Game Gear and SG-1000), Mega Drive (with Mega-CD and Sega Pico), PC Engine (with CD-ROM), N64, PlayStation, PSP, Dreamcast, ZX Spectrum, Commodore 64, Amiga, DOS (through DOSBox Pure), MSX, Amstrad CPC, Atari 2600, 5200 and 7800, Atari Lynx, Virtual Boy (red on black, or in 3D with one eye on each screen), ColecoVision, Intellivision, PICO-8 (through fake-08), Game & Watch and ScummVM. Nintendo 3DS is experimental.
+- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System (with Game Gear and SG-1000), Mega Drive (with Mega-CD and Sega Pico), PC Engine (with CD-ROM), N64, PlayStation, PSP, Dreamcast, ZX Spectrum, Commodore 64, Amiga, DOS (through DOSBox Pure), MSX, Amstrad CPC, Atari 2600, 5200 and 7800, Atari Lynx, WonderSwan (and Color), Neo Geo Pocket (and Color), Virtual Boy (red on black, or in 3D with one eye on each screen), ColecoVision, Intellivision, PICO-8 (through fake-08), Game & Watch, Nintendo's two-monitor arcade cabinets (Punch-Out!!, Super Punch-Out!! and the Vs. dual games, one monitor per screen) ScummVM and Flash games (through Ruffle, with Flashpoint Archive packs imported). Nintendo 3DS is experimental.
 - **Dual screen mode:** maps, HUDs and your team on the bottom panel. See [the games](#second-screen-games).
 - **One in-game menu for every system:** pause, checkpoints, cheats, game switcher, settings.
 - **Library:** covers, list or cartridges. Search, favourites, recents, play time, and artwork and game info fetched for you.
@@ -97,7 +97,7 @@ Most systems run with nothing extra. A few need, or run better with, a BIOS from
 | Atari 5200 (a5200)                         | Optional                             | `5200.rom`                                  | Without it the free Altirra OS runs. A few games need the real one.                             |
 | Atari Lynx (Handy)                         | Optional                             | `lynxboot.img`                              | Without it the core starts the cartridge itself.                                                |
 
-No BIOS is needed for DS (DSCore has its own), GBA, Game Boy, NES, SNES, Master System, Mega Drive, N64, PSP, ZX Spectrum, Commodore 64, Amstrad CPC, DOS, Atari 2600, Virtual Boy, PICO-8, Game & Watch and ScummVM.
+No BIOS is needed for DS (DSCore has its own), GBA, Game Boy, NES, SNES, Master System, Mega Drive, N64, PSP, ZX Spectrum, Commodore 64, Amstrad CPC, DOS, Atari 2600, WonderSwan, Neo Geo Pocket, Virtual Boy, PICO-8, Game & Watch, the two-monitor arcade games, ScummVM and Flash.
 
 ## Developing
 

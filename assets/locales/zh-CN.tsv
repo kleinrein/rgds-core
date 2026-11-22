@@ -1763,3 +1763,165 @@ Send to phone	发送到手机
 Connect to Wi-Fi to send pictures to a phone or computer.	连接 Wi-Fi 后即可将图片发送到手机或电脑。
 Your picture is on the pad. Write or draw beside it, then send.	图片已放在画板上。可在旁边写字或绘画，然后发送。
 Join a room: your picture goes on the pad.	进入一个房间：图片会放到画板上。
+Fit (2x, borders)	适合（2x，边框）
+Fill (3x, cropped)	填满（3x，裁切）
+Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.	每个 DS 像素在屏幕上大小相同。适合会留出边框，填满会裁切边缘。下次启动时生效。
+Whole pixels saved. Save & restart to use it.	已保存整数倍像素。保存并重启后使用。
+Whole pixels saved.	已保存整数倍像素。
+B: back	B：返回
+Book	书
+Book view	书本视图
+Book, held sideways	书本，横握
+Books	书籍
+Chapter	章节
+Close the book	合上书
+Contents	目录
+Copy PDF, EPUB, CBZ or folders of pages into the books folder.	将 PDF、EPUB、CBZ 或页面文件夹复制到 books 文件夹。
+Copy films and series into the videos folder.	将电影和剧集复制到 videos 文件夹。
+Direction	方向
+End of this film	本片结束时
+Fill the screen	填满屏幕
+Finished	已看完
+Hold in	握持手
+Larger	更大
+Left to right	从左到右
+Media	媒体
+No books yet	还没有书
+No sound in this film	此影片没有声音
+No videos yet	还没有视频
+Original size	原始大小
+Paper	纸张
+Read	阅读
+Read on	继续阅读
+Reading direction	阅读方向
+Resume at	继续于
+Right to left	从右到左
+Show below the picture	显示在画面下方
+Skip intro	跳过片头
+Sleep at the end	结束时休眠
+Sleep in	休眠倒计时
+Sleep timer	睡眠定时
+Smaller	更小
+Stand mode	支架模式
+Stretch	拉伸
+Subtitles	字幕
+Tap or press A to play now	轻触或按 A 立即播放
+Text size	文字大小
+The pages of this file are fixed	此文件的页面是固定的
+This book cannot be opened	无法打开此书
+This book has no contents list	此书没有目录
+This film cannot be played	无法播放此影片
+Track	轨道
+Up next	接下来
+Videos	视频
+White	白色
+Whole picture	完整画面
+books, comics	书籍、漫画
+file	文件
+fixed	固定
+left	剩余
+left hand	左手
+light text on dark	深色背景浅色文字
+manga	漫画
+none	无
+one page, held normally	单页，正常握持
+pages	页
+right hand	右手
+two pages	双页
+warm, for long reading	暖色，适合长时间阅读
+Films and books	电影和书籍
+Films, books and music	电影、书籍和音乐
+Bring over	迁移
+Looking for saves from another system…	正在查找其他系统的存档…
+Welcome over!	欢迎！
+Your saves and play time are in place.	你的存档和游戏时间已就位。
+RG DS Flasher kept them from your old card before it erased it.	RG DS Flasher 在清除旧卡之前保留了它们。
+They are on the card in the second slot.	它们在第二个卡槽的卡上。
+They are on the USB drive.	它们在 USB 驱动器上。
+They are in the import folder on this card.	它们在这张卡的 import 文件夹中。
+Coming from {0}?	来自 {0}？
+Your saves, play time and favourites can come with you.	你的存档、游戏时间和收藏可以一起带过来。
+Bringing everything over…	正在迁移…
+Keep the handheld on until this is done.	完成前请保持设备开启。
+{0} save	{0} 个存档
+{0} saves	{0} 个存档
+{0} resume point	{0} 个继续点
+{0} resume points	{0} 个继续点
+{0} hours of play time	{0} 小时游戏时间
+{0} favourite	{0} 个收藏
+{0} favourites	{0} 个收藏
+{0} game on this card	这张卡上有 {0} 个游戏
+{0} games on this card	这张卡上有 {0} 个游戏
+{0} BIOS file	{0} 个 BIOS 文件
+{0} BIOS files	{0} 个 BIOS 文件
+Everything was already here.	所有内容都已经在这里了。
+{0} game is still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): its play time and saves find it there.	{0} 个游戏仍在你的电脑上。把备份中的 roms 文件夹复制到这张卡的 roms 文件夹（“游戏”步骤有说明）：游戏时间和存档会在那里找到它。
+{0} games are still on your computer. Copy the roms folder from the backup to this card's roms folder (the Games step shows how): their play time and saves find them there.	{0} 个游戏仍在你的电脑上。把备份中的 roms 文件夹复制到这张卡的 roms 文件夹（“游戏”步骤有说明）：游戏时间和存档会在那里找到它们。
+{0} saves already here stay as they are.	已有的 {0} 个存档保持不变。
+Bring them over	迁移
+Press A. Nothing here is replaced.	按 A。不会替换任何内容。
+Bring the games too	也迁移游戏
+Not now	以后再说
+Something could not be read or written. The old card was only read: try again.	有内容无法读取或写入。旧卡只被读取过：请重试。
+Coming from the stock system?	来自原厂系统？
+Your saves can come with you.	你的存档可以一起带过来。
+Snake	贪吃蛇
+Press A or a direction to start	按 A 或方向键开始
+Press A to carry on	按 A 继续
+You win!	你赢了！
+New best!	新纪录！
+Game over	游戏结束
+Best	最高分
+Play again	再玩一次
+With walls	有墙
+Classic screen	经典屏幕
+Walls	墙壁
+Swipe on either screen to steer	在任一屏幕上滑动来转向
+Slower	更慢
+Faster	更快
+Pause	暂停
+Journal	日志
+Your year	你的一年
+Your {0}	你的 {0}
+A quiet look back at your year	静静回顾你的一年
+Days played	游玩天数
+The game you kept coming back to	你一再回来玩的游戏
+Your first screenshot	你的第一张截图
+Preparing your journal…	正在准备你的日志…
+Your journal is empty	你的日志还是空的
+Play a game and it starts here: how long you played, what you unlocked and the pictures you took.	玩一款游戏，日志就从这里开始：玩了多久、解锁了什么、拍了哪些照片。
+Played for {0}	游玩 {0}
+1 photo	1 张照片
+{0} photos	{0} 张照片
+First time playing	第一次游玩
+First time since {0}	自{0}以来第一次
+{0} more achievements	还有 {0} 个成就
+Earlier today	今天早些时候
+Where you left off	上次停下的地方
+Away for {0}	离开了 {0}
+Sunday	星期日
+Monday	星期一
+Tuesday	星期二
+Wednesday	星期三
+Thursday	星期四
+Friday	星期五
+Saturday	星期六
+January	一月
+February	二月
+March	三月
+April	四月
+May	五月
+June	六月
+July	七月
+August	八月
+September	九月
+October	十月
+November	十一月
+December	十二月
+Birthday	生日
+No birthday	无生日
+Not set	未设置
+Happy birthday, {0}!	{0}，生日快乐！
+Last played {0}	上次游玩：{0}
+Colours and menu music follow the clock: warmer evenings, quieter nights	颜色和菜单音乐随时间变化：傍晚更温暖，夜晚更安静
+DS games are told it, as on the original. On the day, the handheld says hello in its own way.	和原版一样，DS 游戏会知道这一天。到了那天，掌机会用自己的方式向你问好。

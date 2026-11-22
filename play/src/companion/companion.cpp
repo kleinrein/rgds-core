@@ -91,7 +91,7 @@ bool map_layer_shown(Core& live, const HudSpec& h) {
 } // namespace
 
 uint32_t Companion::machine_buttons(uint32_t pad) {
-    if (!screens_mode() || profile_->screens.pointer) return pad;
+    if (!screens_mode() || profile_->screens.pointer || profile_->screens.plain_pad) return pad;
     if (pad & Start) pad |= L;
     if (pad & Select) pad |= R;
     pad &= ~uint32_t(Start | Select);

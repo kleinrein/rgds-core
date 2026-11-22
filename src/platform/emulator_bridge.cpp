@@ -511,6 +511,16 @@ void shutter_buzz() {
     motor.set_strength(strength);
     motor.play(rgds::Haptic::Save);
 }
+// RGDS_GAME_TRIGGERS: the triggers the game's system uses as its own buttons (the Dreamcast's L2 and R2). A
+// fast-forward button among them stays the game's; the menu helper fast-forwards on Menu + that button.
+void load_controls() {
+    control_mapping.load(controls_global, controls_local);
+    auto triggers = "," + env("RGDS_GAME_TRIGGERS") + ",";
+    int source = control_mapping.fast_forward_source;
+    if ((source == 12 && triggers.find(",l2,") != std::string::npos) ||
+        (source == 13 && triggers.find(",r2,") != std::string::npos))
+        control_mapping.fast_forward_source = rgds::control_none;
+}
 void initialize() {
     if (initialized) return;
     initialized = true;
@@ -539,7 +549,7 @@ void initialize() {
     stats_path = env("RGDS_FRAME_STATS");
     controls_global = env("RGDS_CONTROLS_GLOBAL");
     controls_local = env("RGDS_CONTROLS_FILE");
-    control_mapping.load(controls_global, controls_local);
+    load_controls();
     control_shortcut.mode = control_mapping.shortcut;
     control_shortcut.action = control_mapping.shortcut_action;
     volume_data = env("RGDS_VOLUME_DATA");
@@ -610,7 +620,7 @@ void refresh_controls() {
     }
     if (next != controls_stamp || !control_mapping.preset.size()) {
         release_controls();
-        control_mapping.load(controls_global, controls_local);
+        load_controls();
         controls_stamp = next;
         control_shortcut.mode = control_mapping.shortcut;
         control_shortcut.action = control_mapping.shortcut_action;
@@ -1141,6 +1151,76 @@ void write_cheats(bool force) {
     file.close();
     rename(pending.c_str(), path.c_str());
 }
+// Rewind (docs/TIME_TRAVEL_PLAN.md): the engine's moments (rgds_rewind_* in DSCore and RG DS Play) written beside the
+// control file for the game menu's Rewind screen, in play/src/app/moments.hpp's format. All between frames, here.
+void write_file_atomic_bytes(const std::string& path, const std::string& bytes) {
+    const std::string pending = path + ".pending";
+    {
+        std::ofstream file(pending, std::ios::binary | std::ios::trunc);
+        file.write(bytes.data(), std::streamsize(bytes.size()));
+    }
+    rename(pending.c_str(), path.c_str());
+}
+void put32(std::string& out, uint32_t v) {
+    for (int i = 0; i < 4; i++) out.push_back(char((v >> (8 * i)) & 0xFF));
+}
+// Where the pictures go: RAM on RG DS OS (/run/rgds), beside the control file elsewhere (moments.hpp).
+std::string rewind_files() {
+    struct stat st{};
+    if (stat("/run/rgds", &st) == 0 && S_ISDIR(st.st_mode) && access("/run/rgds", W_OK) == 0) return "/run/rgds/rewind";
+    return control + ".rewind";
+}
+bool write_rewind(unsigned now_id) {
+    static auto count_fn = reinterpret_cast<int (*)()>(dlsym(RTLD_DEFAULT, "rgds_rewind_count"));
+    static auto rate_fn = reinterpret_cast<double (*)()>(dlsym(RTLD_DEFAULT, "rgds_rewind_rate"));
+    static auto moment_fn = reinterpret_cast<int (*)(int, unsigned*, unsigned*, unsigned long long*, int*, int*,
+                                                     const uint32_t**)>(dlsym(RTLD_DEFAULT, "rgds_rewind_moment"));
+    if (control.empty() || !count_fn || !moment_fn) return false;
+    const int count = std::max(0, count_fn());
+    std::ostringstream list;
+    const std::string files = rewind_files();
+    list << "now=" << now_id << "\nrate=" << (rate_fn ? rate_fn() : 60.0) << "\nfiles=" << files << "\ncount=" << count
+         << '\n';
+    std::string thumbs = "RGRW";
+    put32(thumbs, uint32_t(count));
+    for (int i = 0; i < count; i++) {
+        unsigned id = 0, parent = 0;
+        unsigned long long position = 0;
+        int w = 0, h = 0;
+        const uint32_t* px = nullptr;
+        if (!moment_fn(i, &id, &parent, &position, &w, &h, &px)) {
+            w = h = 0;
+            px = nullptr;
+        }
+        list << "moment_" << i << '=' << id << ' ' << parent << ' ' << position << '\n';
+        if (!px || w <= 0 || h <= 0 || w > 1024 || h > 1024) w = h = 0;
+        put32(thumbs, id);
+        put32(thumbs, uint32_t(w));
+        put32(thumbs, uint32_t(h));
+        if (w && h) thumbs.append(reinterpret_cast<const char*>(px), size_t(w) * size_t(h) * 4);
+    }
+    // The pictures first: the list's arrival is what the menu waits on.
+    write_file_atomic_bytes(files + ".thumbs", thumbs);
+    write_file_atomic_bytes(control + ".rewind", list.str());
+    return true;
+}
+bool write_rewind_shown(unsigned id) {
+    static auto show_fn =
+        reinterpret_cast<int (*)(unsigned, int*, int*, int*, const uint32_t**)>(dlsym(RTLD_DEFAULT, "rgds_rewind_show"));
+    int screens = 0, w = 0, h = 0;
+    const uint32_t* px = nullptr;
+    if (control.empty() || !show_fn || !show_fn(id, &screens, &w, &h, &px) || !px || screens < 1 || screens > 2 ||
+        w <= 0 || h <= 0 || w > 2048 || h > 2048)
+        return false;
+    std::string out = "RGRS";
+    put32(out, id);
+    put32(out, uint32_t(screens));
+    put32(out, uint32_t(w));
+    put32(out, uint32_t(h));
+    out.append(reinterpret_cast<const char*>(px), size_t(screens) * size_t(w) * size_t(h) * 4);
+    write_file_atomic_bytes(rewind_files() + ".shown", out);
+    return true;
+}
 void tick(bool graphics_safe = false) {
     initialize();
     if (core.empty() || !on_event_thread()) return;
@@ -1305,6 +1385,29 @@ void tick(bool graphics_safe = false) {
                         write_cheats(true);
                         answer(on ? "cheat-on" : "cheat-off");
                     } else answer("cheat-failed");
+                } else if (command == "rewind-open") {
+                    // The menu's Rewind screen: a moment now, then every moment kept, listed beside the control file.
+                    auto open_fn = reinterpret_cast<unsigned (*)()>(dlsym(RTLD_DEFAULT, "rgds_rewind_open"));
+                    const unsigned now_id = open_fn ? open_fn() : 0;
+                    answer(now_id && write_rewind(now_id) ? "rewind-ready" : "rewind-unavailable");
+                } else if (command.rfind("rewind-show:", 0) == 0 || command.rfind("rewind-play:", 0) == 0 ||
+                           command.rfind("rewind-back:", 0) == 0) {
+                    // rewind-show:<id> loads a moment for a look (its screens to <control>.rewind.shown);
+                    // rewind-play:<id> plays from it; rewind-back:<id> returns to now (the id rewind-open gave).
+                    const size_t colon = command.find(':');
+                    char* end = nullptr;
+                    const unsigned long id = std::strtoul(command.c_str() + colon + 1, &end, 10);
+                    const bool valid = end && !*end && id > 0 && id < 0xFFFFFFFFul;
+                    const std::string verb = command.substr(0, colon);
+                    if (verb == "rewind-show") answer(valid && write_rewind_shown(unsigned(id)) ? "rewind-shown"
+                                                                                                : "rewind-failed");
+                    else {
+                        auto jump_fn = reinterpret_cast<int (*)(unsigned, int)>(dlsym(RTLD_DEFAULT, "rgds_rewind_jump"));
+                        const bool play = verb == "rewind-play";
+                        answer(valid && jump_fn && jump_fn(unsigned(id), play ? 1 : 0)
+                                   ? (play ? "rewind-played" : "rewind-back")
+                                   : "rewind-failed");
+                    }
                 } else if (command == "fast-forward") {
                     if (!set_fast_forward(!fast_forward)) answer("fast-forward-unavailable");
                     else answer(fast_forward ? "fast-forward-on" : "fast-forward-off");

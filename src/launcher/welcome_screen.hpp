@@ -43,6 +43,7 @@ void App::open_welcome() {
     welcome_fresh = false;
     welcome_return = settings.page;
     settings.page = Page::Welcome;
+    welcome_import_scan();
     welcome_enter(0);
 }
 
@@ -57,11 +58,15 @@ void App::welcome_begin() {
         remember_appearance();
         refresh_other_systems();
     }
+    welcome_import_scan();
     welcome_enter(welcome_step);
 }
 
 void App::welcome_enter(int step, ViewTravel route) {
     welcome_step = std::clamp(step, 0, welcome_steps - 1);
+    // Bring over is a step only when there is something to bring.
+    if (welcome_step == WelcomeImport && !welcome_import_shown())
+        welcome_step = route == ViewTravel::Back ? WelcomeLanguage : WelcomeColour;
     welcome_focus = welcome_next;
     if (welcome_step == WelcomeLanguage) {
         const auto& languages = locale.languages();
@@ -69,6 +74,9 @@ void App::welcome_enter(int step, ViewTravel route) {
             if (languages[i].first == preferences.language) welcome_focus = int(i);
     } else if (welcome_step == WelcomeColour) welcome_focus = preferences.accent >= 0 ? preferences.accent : 16;
     else if (welcome_step == WelcomeName) welcome_focus = 0;
+    else if (welcome_step == WelcomeImport && device_status["import_found"] == "1" &&
+             device_status["import_state"] != "done")
+        welcome_focus = 0;
     else if (welcome_step == WelcomeLibrary) welcome_focus = preferences.show_systems ? 1 : 0;
     else if (welcome_step == WelcomeWifi && device_status["wifi_connected"] != "1" &&
              device_status["wifi_supported"] != "0")
@@ -139,11 +147,7 @@ void App::save_owner_name(std::string name) {
     if (name.empty()) return;
     try {
         fs::create_directories(o.player);
-        const auto path = o.player / "ds.ini", pending = fs::path(path.string() + ".pending");
-        std::ofstream out(pending);
-        out << "nickname=" << name << '\n';
-        out.close();
-        if (out) fs::rename(pending, path);
+        if (!ds_ini_set(o.player / "ds.ini", "nickname", name)) status = "Could not save DS settings.";
     } catch (const std::exception&) {
         status = "Could not save DS settings.";
     }
@@ -179,6 +183,13 @@ std::vector<App::WelcomeItem> App::welcome_items() {
         add(welcome_mode + 1, {324, 306, 288, 52});
         break;
     case WelcomeName: add(0, {60, 150, 520, 76}); break;
+    case WelcomeImport:
+        if (device_status["import_found"] == "1" && device_status["import_state"] != "copying" &&
+            device_status["import_state"] != "done") {
+            add(0, {28, 252, 584, 72});
+            if (std::atoll(device_status["import_games_copy"].c_str()) > 0) add(1, {28, 336, 584, 72});
+        }
+        break;
     case WelcomeLibrary:
         add(0, {28, 70, 284, 340});
         add(1, {328, 70, 284, 340});
@@ -275,7 +286,16 @@ void App::welcome_activate(int id) {
         preferences.language = locale.languages().at(size_t(id)).first;
         remember_appearance();
         welcome_language_defaults();
-        welcome_enter(WelcomeColour);
+        welcome_enter(WelcomeImport);
+        break;
+    case WelcomeImport:
+        if (worker > 0 && worker_action == "device.info") stop_worker();
+        // the library index gives way to a device request (start_worker), and runs again with the next scan
+        if (worker > 0 && worker_action != "index") break;
+        device_status["import_state"] = "copying";
+        device_status["import_progress"] = "0";
+        welcome_import_rescan = true;
+        start_worker(id == 1 ? "device.import-games" : "device.import-apply");
         break;
     case WelcomeColour:
         if (id <= 16) {
@@ -470,6 +490,7 @@ void App::welcome_top(SDL_Renderer* r, int y) {
         centered_wrapped(r, locale.text("Let's get your handheld ready. It takes about a minute."), y + 296, 20, 520, 2,
                          "muted");
         break;
+    case WelcomeImport: welcome_import_top(r, y); break;
     case WelcomeColour: {
         welcome_top_heading(r, y, "Pick your colour", "The menus take it on. You can change it whenever you like.");
         const Color accent = theme.at("accent");
@@ -543,7 +564,7 @@ void App::welcome_bottom(SDL_Renderer* r, int y) {
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y, 480, true);
     static const std::array<const char*, welcome_steps> titles = {
-        "Language", "Accent colour", "Your name", "Home", "Systems", "Time", "Wi-Fi", "Games", "Done"};
+        "Language", "Bring over", "Accent colour", "Your name", "Home", "Systems", "Time", "Wi-Fi", "Games", "Done"};
     label(r, titles[size_t(welcome_step)], 24, y + 18, 24, "ink", 420);
     auto caption = [&](const std::string& text, int row) {
         const std::string value = locale.text(text);
@@ -557,6 +578,7 @@ void App::welcome_bottom(SDL_Renderer* r, int y) {
                          false);
         break;
     }
+    case WelcomeImport: welcome_import_bottom(r, y); break;
     case WelcomeColour:
         for (int i = 0; i < 16; i++) {
             const SDL_Rect b = welcome_item_box(i);
@@ -657,7 +679,149 @@ void App::welcome_bottom(SDL_Renderer* r, int y) {
         footer_button(r, 12, y + 432, 160, "Back", "B", false, footer_pressed(true));
     }
     if (welcome_focus == welcome_next) welcome_focus_ring(r, {468, y + 432, 160, 40}, 12);
-    footer_button(r, 468, y + 432, 160, welcome_step == WelcomeDone ? "Start" : "Next",
+    const bool not_now = welcome_step == WelcomeImport && device_status["import_found"] == "1" &&
+                         device_status["import_state"] != "done" && device_status["import_state"] != "copying";
+    footer_button(r, 468, y + 432, 160,
+                  welcome_step == WelcomeDone ? "Start"
+                  : not_now                   ? "Not now"
+                                              : "Next",
                   welcome_focus == welcome_next ? "A" : "", true, footer_pressed(false));
     if (picker_open || picker_closing()) render_picker(r, y);
+}
+
+// Bring over: the scan (device_services import-scan, runtime/migrate.py) starts with setup; its answer is in
+// device_status as import_* fields. The desktop preview has no old cards: RGDS_IMPORT_PREVIEW=1 scans its folders.
+void App::welcome_import_scan() {
+    if (o.preview && !std::getenv("RGDS_IMPORT_PREVIEW")) return;
+    device_status["import_found"] = "";
+    device_status["import_state"] = "scanning";
+    welcome_import_focused = false;
+    // One worker at a time: a first boot is indexing its library as setup opens. The scan waits for it rather than
+    // stopping it (start_worker would), and welcome_import_poll starts it once the worker is free.
+    welcome_import_pending = worker > 0 && worker_action != "device.info" && worker_action != "device.update-auto";
+    if (!welcome_import_pending) start_worker("device.import-scan");
+}
+
+bool App::welcome_import_shown() {
+    if (welcome_import_pending || (worker > 0 && worker_action == "device.import-scan")) return true;
+    const std::string state = device_status["import_state"];
+    return device_status["import_found"] == "1" || state == "copying" || state == "done" ||
+           (state == "error" && (worker_action == "device.import-apply" || worker_action == "device.import-games"));
+}
+
+// From poll_service: a scan that found nothing moves on by itself; a finished copy puts the focus on Next.
+void App::welcome_import_poll() {
+    if (welcome_import_pending && (!welcome_active || worker <= 0)) {
+        welcome_import_pending = false;
+        if (welcome_active) start_worker("device.import-scan");
+    }
+    if (welcome_import_rescan && worker <= 0) {
+        // the same scan as a copy noticed on Home: new games in, and the index the copy stopped runs again
+        welcome_import_rescan = false;
+        rescan_games(true);
+    }
+    if (settings.page != Page::Welcome || !welcome_active || welcome_step != WelcomeImport) return;
+    if (!welcome_import_shown()) welcome_enter(WelcomeColour);
+    else if (device_status["import_state"] == "found" && !welcome_import_focused) {
+        welcome_import_focused = true;
+        if (welcome_focus == welcome_next) welcome_focus = 0;
+        dirty = true;
+    } else if (device_status["import_state"] == "done" && welcome_focus != welcome_next &&
+               welcome_focus != welcome_back && welcome_focus != welcome_skip) {
+        welcome_focus = welcome_next;
+        dirty = true;
+    }
+}
+
+void App::welcome_import_top(SDL_Renderer* r, int y) {
+    const std::string source = device_status["import_source"], place = device_status["import_place"];
+    if (device_status["import_found"] != "1") {
+        boot_caption(r, "Looking for saves from another system…", y + 200, 24, "ink");
+        return;
+    }
+    if (device_status["import_state"] == "done") {
+        welcome_top_heading(r, y, "Welcome over!", "Your saves and play time are in place.");
+        ui_icon(r, SettingsIcon::Check, 320, y + 290, 72, "accent");
+        return;
+    }
+    const std::string where = place == "flasher" ? "RG DS Flasher kept them from your old card before it erased it."
+                              : place == "slot"  ? "They are on the card in the second slot."
+                              : place == "usb"   ? "They are on the USB drive."
+                                                 : "They are in the import folder on this card.";
+    // the stock system keeps no play time or favourites, and "Coming from the stock system?" is its own sentence
+    const bool stock = device_status["import_kind"] == "stock";
+    boot_caption(r, locale.text(stock ? "Coming from the stock system?" : "Coming from " + source + "?"), y + 72, 36,
+                 "ink");
+    const std::string what =
+        stock ? "Your saves can come with you." : "Your saves, play time and favourites can come with you.";
+    centered_wrapped(r, locale.text(what) + " " + locale.text(where), y + 128, 20, 540, 3, "muted");
+    welcome_system_icon(r, "nds", 256, y + 230, 128);
+}
+
+void App::welcome_import_bottom(SDL_Renderer* r, int y) {
+    auto count = [&](const char* key) { return std::atoll(device_status[key].c_str()); };
+    const std::string state = device_status["import_state"];
+    if (device_status["import_found"] != "1" && state != "error") {
+        busy_ring(r, 320, y + 220, 28, 6);
+        return;
+    }
+    if (state == "copying") {
+        const int progress = std::clamp(int(count("import_progress")), 0, 100);
+        boot_caption(r, "Bringing everything over…", y + 160, 24, "ink");
+        fill_round(r, 60, y + 220, 520, 16, 8, theme.at("slot"));
+        if (progress > 0) fill_round(r, 60, y + 220, std::max(16, 520 * progress / 100), 16, 8, theme.at("accent"));
+        centered_wrapped(r, locale.text("Keep the handheld on until this is done."), y + 260, 16, 540, 2, "muted");
+        return;
+    }
+    if (state == "error") {
+        wrapped(r, device_status["message"], 28, y + 80, 20, 584, 4);
+        return;
+    }
+    // What there is, or what came: one line each, only what is not zero.
+    const bool done = state == "done";
+    std::vector<std::pair<SettingsIcon, std::string>> lines;
+    auto line = [&](SettingsIcon icon, long long n, const char* one, const char* many) {
+        if (n > 0) lines.push_back({icon, locale.text(std::to_string(n) + " " + (n == 1 ? one : many))});
+    };
+    line(SettingsIcon::Load, count(done ? "import_done_saves" : "import_saves"), "save", "saves");
+    line(SettingsIcon::Load, count(done ? "import_done_states" : "import_states"), "resume point", "resume points");
+    const std::string hours = device_status["import_hours"];
+    if (count(done ? "import_done_played" : "import_played") > 0)
+        lines.push_back({SettingsIcon::Clock, locale.text(hours + " hours of play time")});
+    line(SettingsIcon::Heart, count(done ? "import_done_favourites" : "import_favourites"), "favourite", "favourites");
+    line(SettingsIcon::Cartridge, count(done ? "import_done_games" : "import_games_here"), "game on this card",
+         "games on this card");
+    line(SettingsIcon::Cartridge, count(done ? "import_done_bios" : "import_bios"), "BIOS file", "BIOS files");
+    const int rows = std::min(int(lines.size()), done ? 6 : 4);
+    for (int i = 0; i < rows; i++) {
+        const int row = y + 64 + i * 44;
+        ui_icon(r, lines[size_t(i)].first, 56, row + 18, 26, "accent");
+        raw_label(r, lines[size_t(i)].second, 88, centred_label_y(lines[size_t(i)].second, 20, row + 18), 20, "ink",
+                  520);
+    }
+    if (lines.empty()) wrapped(r, "Everything was already here.", 28, y + 80, 20, 584, 2);
+    const long long away = count("import_games_away");
+    if (done && away > 0) {
+        // The flasher left the games on the computer: they go back in the roms folder, as they were.
+        const std::string note = locale.text(
+            std::to_string(away) +
+            (away == 1 ? " game is still on your computer. Copy the roms folder from the backup to this card's roms "
+                         "folder (the Games step shows how): its play time and saves find it there."
+                       : " games are still on your computer. Copy the roms folder from the backup to this card's "
+                         "roms folder (the Games step shows how): their play time and saves find them there."));
+        wrapped(r, note, 28, y + 64 + rows * 44 + 12, 16, 584, 4);
+    }
+    if (done) return;
+    if (count("import_kept") > 0)
+        wrapped(r, locale.text(std::to_string(count("import_kept")) + " saves already here stay as they are."), 28,
+                y + 228, 16, 584, 1);
+    welcome_row(r, y, 0, SettingsIcon::Load, "Bring them over", locale.text("Press A. Nothing here is replaced."));
+    if (count("import_games_copy") > 0) {
+        char size[32];
+        const double bytes = double(count("import_games_bytes"));
+        if (bytes >= 1e9) std::snprintf(size, sizeof size, "%.1f GB", bytes / 1e9);
+        else std::snprintf(size, sizeof size, "%.0f MB", std::max(1.0, bytes / 1e6));
+        welcome_row(r, y, 1, SettingsIcon::Cartridge, "Bring the games too",
+                    locale.text(std::to_string(count("import_games_copy")) + " games") + ", " + size);
+    }
 }

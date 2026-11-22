@@ -99,6 +99,30 @@ class ControlProfileTests(unittest.TestCase):
         self.assertIsNone(speed.feed('l2', False))
         self.assertEqual(speed.feed('l2', True), 'fast-forward-toggle')
 
+    def test_game_trigger_fast_forward_needs_menu(self):
+        from game_menu import MenuInput
+        profile = controls.preset()
+        self.assertTrue(controls.fast_forward_chorded(profile, 'dc'))
+        self.assertFalse(controls.fast_forward_chorded(profile, 'n64'))  # the N64's R2 is no game button
+        self.assertFalse(controls.fast_forward_chorded(profile, 'gba'))
+        inputs = MenuInput.__new__(MenuInput)
+        inputs.shortcut, inputs.speed, inputs.chorded = controls.Shortcut(), controls.FastForwardButton(), False
+        inputs.speed.configure(profile)
+        inputs.speed_chord = True
+        self.assertFalse(inputs.speed_gate('r2', True, 1))  # R2 alone accelerates in Crazy Taxi
+        self.assertFalse(inputs.speed_gate('r2', False, 1))
+        self.assertTrue(inputs.speed_gate('a', True, 1))
+        inputs.shortcut.feed('menu', True, 0)
+        self.assertTrue(inputs.speed_gate('r2', True, 1))
+        self.assertTrue(inputs.chorded)  # the held Menu opens nothing
+        self.assertIsNone(inputs.shortcut.poll(1))
+        self.assertEqual(inputs.speed.feed('r2', True, 1), 'fast-forward-on')
+        inputs.shortcut.feed('menu', False, .1)
+        self.assertTrue(inputs.speed_gate('r2', False, 1))  # Menu let go first still ends it
+        self.assertEqual(inputs.speed.feed('r2', False, 1), 'fast-forward-off')
+        inputs.speed_chord = False
+        self.assertTrue(inputs.speed_gate('r2', True, 1))
+
     def test_shortcut_chord_works_in_both_orders_and_requires_release(self):
         for first, second in (('start', 'menu'), ('menu', 'start')):
             shortcut = controls.Shortcut()

@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBLDAC
+	bool "libldac"
+	depends on BR2_PACKAGE_BLUEZ_ALSA
+	help
+	  AOSP's LDAC encoder (libldacBT_enc, Apache-2.0) with its adaptive bit rate helper (libldacBT_abr), as
+	  EHfive/ldacBT builds them. With it bluez-alsa sends LDAC to headphones that take it (this package's .mk
+	  adds --enable-ldac to bluez-alsa). Encoder only: AOSP ships no LDAC decoder.
+	  https://github.com/EHfive/ldacBT

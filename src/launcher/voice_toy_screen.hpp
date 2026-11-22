@@ -412,7 +412,10 @@ bool App::voice_tick(Uint32 now) {
         vt.startup_played = true;
         // Played even with the tile hidden: the sound is the player's own choice, made on purpose. Mute is mute.
         int rate = 0;
-        const auto sound = voice_toy::read_wav(voice_folder() / "startup.wav", &rate);
+        // On the DS profile's birthday a chime of its own instead (ds_profile.hpp), with menu effects on.
+        const bool birthday = birthday_today() && preferences.menu_sounds;
+        const auto sound = birthday ? (rate = voice_toy::rate, birthday_chime(voice_toy::rate))
+                                    : voice_toy::read_wav(voice_folder() / "startup.wav", &rate);
         if (rate == voice_toy::rate && !sound.empty() && !(hardware.volume && hardware.volume_percent == 0)) {
             sounds.set_master(hardware.volume ? hardware.volume_percent : 100);
             sounds.play_toy(sound, voice_toy::Voice::Normal, voice_toy::Bend{});

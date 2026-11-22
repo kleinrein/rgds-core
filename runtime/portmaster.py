@@ -364,9 +364,12 @@ def compat(folders=None, status=None):
 
 
 def launch_plan(app, data, rom, env, prepare=True, folders=None):
-    """emulators.launch_plan for the portmaster engine: a port script, or the PortMaster entry."""
+    """emulators.launch_plan for the portmaster engine: a port script, an app (runtime/apps.py), or the PortMaster
+    entry."""
     folders = folders or Folders()
     app, rom = Path(app), Path(rom)
+    import apps
+    if apps.is_app(rom): return apps.launch_plan(app, data, rom, env, prepare=prepare)
     status_path = Path(data) / 'session/port-status.ini'
     if prepare and not is_entry(app, rom) and rom.suffix.lower() == '.sh' and installed(folders):
         compat(folders, Status(status_path))
@@ -625,6 +628,13 @@ def main():
         # At boot (RG DS OS's session): the entry's and the ports' covers, and which ports need their files.
         print('PortMaster artwork: %d made' % artwork(args.app, args.data, folders))
         notes(args.data, folders)
+        # Apps (docs/APPS.md) share the Ports shelf: zips waiting in the apps folder, then their covers.
+        import apps
+        try:
+            installed = apps.install_pending(app=args.app)
+            print('Apps: %d installed, %d covers made' % (len(installed), apps.artwork(args.data)))
+        except OSError as error:
+            print('Apps: ' + str(error), file=sys.stderr)
         return 0
     if args.action == 'status':
         print(json.dumps({'root': str(folders.root), 'installed': installed(folders), 'version': version(folders)}))

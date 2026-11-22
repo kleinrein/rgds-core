@@ -6,6 +6,7 @@ struct GameOptions {
     int core = -1, filter = -1;
     bool favourite = false;
     int threaded = -1, hires = -1, frameskip = -1, rgds_scale = 1, rgds_smooth = 1, rgds_2d = 0, rgds_adaptive = 1;
+    int integer_scale = 0; // DSCore video.integer_scale: 0 off, 1 under (2x, letterboxed), 2 over (3x, cropped)
 };
 inline GameOptions load_game_options(const fs::path& path) {
     auto values = fields(path);
@@ -32,6 +33,7 @@ inline GameOptions load_game_options(const fs::path& path) {
     result.rgds_2d = integer("rgds_2d", 0, 0, 5);
     if (result.rgds_2d == 1 || result.rgds_2d == 2) result.rgds_2d = 3; // Sharp and Smooth left the menu: Crisp
     result.rgds_adaptive = integer("rgds_adaptive", 1, 0, 1);
+    result.integer_scale = integer("integer_scale", 0, 0, 2);
     return result;
 }
 inline void save_game_options(const fs::path& path, GameOptions value) {
@@ -45,6 +47,7 @@ inline void save_game_options(const fs::path& path, GameOptions value) {
     if (!value.rgds_smooth) file << "rgds_smooth=0\n";
     if (value.rgds_2d > 0) file << "rgds_2d=" << value.rgds_2d << '\n';
     if (!value.rgds_adaptive) file << "rgds_adaptive=0\n";
+    if (value.integer_scale > 0) file << "integer_scale=" << value.integer_scale << '\n';
     file.close();
     if (!file) throw std::runtime_error("Could not save game options");
     fs::rename(pending, path);

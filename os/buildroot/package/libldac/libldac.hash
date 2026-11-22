@@ -1,0 +1,3 @@
+# the v2.0.2.3 release asset (with the libldac submodule)
+sha256  4bd8eece78bb5c1361fab95743e7100506e2408a25c4a592a0f8d349746dc5b4  ldacBT-2.0.2.3.tar.gz
+sha256  c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4  libldac/LICENSE

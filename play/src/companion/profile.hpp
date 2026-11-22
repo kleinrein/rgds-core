@@ -104,6 +104,9 @@ struct ScreensSpec {
     uint32_t same = 0;
     // `pointer = yes`: a finger is the game's mouse, on either panel (`touch` zones are for machines' buttons).
     bool pointer = false;
+    // `pad = plain`: the pad reaches the game as it is (an arcade board's coin and start), not as a machine's buttons
+    // (`pad = machine`, the default: Start and Select are a Game & Watch's L and R).
+    bool plain_pad = false;
     // `match = w h`: the rectangles hold while the picture is this size; otherwise (ScummVM's own menu) both panels
     // show it whole. `stretch = 2`: the second screen's picture this many times taller than wide scale, within the
     // panel: a verb band is 56 rows of big targets.

@@ -281,6 +281,7 @@ void App::poll_service(Uint32 now) {
         device_status = std::move(device);
         dirty = true;
     }
+    welcome_import_poll();
     experience = fields(o.data / "experience.ini");
     if (!experience.count("auto_update")) experience["auto_update"] = "1";
     if (settings.page == Page::SaveGallery && !model.games.empty()) {

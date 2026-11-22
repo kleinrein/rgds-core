@@ -240,8 +240,9 @@ public:
         std::string rom_path = archive_path;
         const std::string archive_extension = lower_extension(archive_path);
         if ((archive_extension == ".zip" || archive_extension == ".7z") && system != "c64" && system != "scummvm" &&
-            system != "amiga" && system != "dos") { // VICE, PUAE and DOSBox Pure open their own archives (a WHDLoad
-                                                    // set, a disk set, a DOS game's folder)
+            system != "amiga" && system != "dos" && system != "arcade" && system != "flash") {
+            // VICE, PUAE, DOSBox Pure, MAME and Ruffle open their own archives (a WHDLoad set, a disk set, a DOS
+            // game's folder, an arcade board's ROMs, a Flashpoint game's web files)
             // Each system's game files, as runtime/play_options.py's SYSTEMS and FOLDER_EXTENSIONS name them, the
             // file a core is given first (a disc's .m3u or .cue before its tracks).
             static const std::map<std::string, std::vector<std::string>> games = {
@@ -263,6 +264,8 @@ public:
                 {"atari7800", {".a78", ".bin"}},
                 {"atari5200", {".a52", ".bin"}},
                 {"lynx", {".lnx"}},
+                {"wonderswan", {".ws", ".wsc", ".pc2"}},
+                {"ngp", {".ngp", ".ngc", ".ngpc", ".npc"}},
                 {"vb", {".vb", ".vboy", ".bin"}},
                 {"pico8", {".p8", ".png"}},
                 {"psx", {".m3u", ".cue", ".chd", ".pbp"}},
@@ -360,6 +363,12 @@ public:
             std::error_code failed;
             std::filesystem::create_directories(save_dir_, failed);
         }
+        if (system == "flash") {
+            // Ruffle keeps a Flash game's own saves (SharedObjects, .sol) in a folder named as the game, under here.
+            save_dir_ += "/saves/flash";
+            std::error_code failed;
+            std::filesystem::create_directories(save_dir_, failed);
+        }
         if (system == "dos") {
             // DOSBox Pure keeps what a game writes to its drive (its saves, its setup) as "<game>.pure.zip" in the
             // save folder: all of them in a folder of their own.
@@ -443,6 +452,14 @@ public:
             }
         }
         if (system == "c64") variables_ = {{"vice_autoloadwarp", "enabled"}}; // a disk or tape loads at full speed
+        // Arcade (mame2003-plus, built with only the two-monitor cabinets): straight into the game, no MAME screens
+        // over it. Punch-Out!! draws its two monitors one over the other (256 x 448), a Vs. dual board side by side
+        // (512 x 240): play/profiles/arcade puts each on its own panel.
+        if (system == "arcade")
+            variables_ = {
+                {"mame2003-plus_skip_disclaimer", "enabled"},    {"mame2003-plus_skip_warnings", "enabled"},
+                {"mame2003-plus_display_setup", "disabled"},     {"mame2003-plus_input_interface", "retropad"},
+                {"mame2003-plus_core_sys_subfolder", "enabled"}, {"mame2003-plus_core_save_subfolder", "enabled"}};
         // The Amstrad CPC (Caprice32, its own ROMs: no BIOS): a 6128 that types the disk's or tape's RUN itself, tapes at
         // full speed, quietly and with no status bar over the picture. Select keeps no combo of the core's (its menus
         // and its keyboard over the game): the second screen has the CPC's keys. A Plus cartridge (.cpr) needs a
@@ -480,6 +497,27 @@ public:
         // cartridge header says so), so the player just sees a tall frame. Frames go out at 60 Hz, the panel's rate.
         // The owner's lynxboot.img is used when it is in the BIOS folder, else Handy starts the cartridge itself.
         if (system == "lynx") variables_ = {{"handy_rot", "Auto"}, {"handy_refresh_rate", "60"}};
+        // The WonderSwan (Beetle WonderSwan, no BIOS): a game made to be held upright says so in its cartridge's footer
+        // (bit 0 of the fourth byte from the end), and the core turns its picture and the pad with it: the D-pad is
+        // then the Y pad the game moves with, the face buttons the X pad, A and B on L and R. Select turns nothing
+        // (the core's own toggle). Frames at 60 Hz, the panel's rate (the core drops every fifth of the 75).
+        if (system == "wonderswan") {
+            std::ifstream in(rom_path, std::ios::binary | std::ios::ate);
+            const std::streamoff size = in ? std::streamoff(in.tellg()) : 0;
+            char flags = 0;
+            if (size >= 16) {
+                in.seekg(size - 4);
+                in.read(&flags, 1);
+            }
+            variables_ = {{"wswan_rotate_display", (flags & 1) ? "portrait" : "landscape"},
+                          {"wswan_rotate_keymap", "auto"},
+                          {"wswan_60hz_mode", "enabled"},
+                          {"wswan_mono_palette", "wonderswan"},
+                          {"wswan_gfx_colors", "16bit"}};
+        }
+        // The Neo Geo Pocket (Beetle NeoPop, no BIOS: its own start-up): the console set to English, which the games'
+        // menus and text follow. A is the pad's B (the lower, left button, as on the Pocket), B its A, Option Start.
+        if (system == "ngp") variables_ = {{"ngp_language", "english"}};
         if (system == "amiga") {
             variables_ = {{"puae_analogmouse", "right"}, {"puae_mapper_select", "---"}};
             const bool kickstart = has_kickstart(system_dir);
@@ -965,9 +1003,9 @@ public:
         return true;
     }
     void set_mouse_cursor(int x, int y) override { cursor_x_ = x, cursor_y_ = y; }
-    // DOS's mouse from the second screen's touch pad (core.hpp).
+    // DOS's and Flash's mouse from the second screen's touch pad (core.hpp).
     bool move_pad_mouse(int dx, int dy, bool left, bool right) override {
-        if (!loaded_ || system_ != "dos") return false;
+        if (!loaded_ || (system_ != "dos" && system_ != "flash")) return false;
         pad_pending_x_ += dx, pad_pending_y_ += dy;
         pad_left_ = left, pad_right_ = right;
         return true;
@@ -1190,7 +1228,8 @@ private:
         // A ScummVM game is its folder.
         if (system_ == "scummvm") {
             title_ = title_code(std::filesystem::path(rom_path_).parent_path().filename().string());
-        } else if (file.empty() && system_ != "dos") { // a DOS game goes by its name: a zipped folder, no cartridge
+        } else if (file.empty() && system_ != "dos" && system_ != "arcade") { // a DOS game and an arcade set go by
+                                                                               // their names: no cartridge
             // No cartridge is this big. A disc image goes by its name below: reading OutRun 2006's 633 MB ISO just for
             // a CRC kept the screen dark for 16 s, and no profile names a disc by CRC.
             constexpr std::uintmax_t largest_cartridge = 128 * 1024 * 1024;
@@ -1370,7 +1409,8 @@ private:
             return g_active->lightgun(id);
         if (g_active && port == 0 && g_active->mouse_ && (device & 0xFF) == RETRO_DEVICE_MOUSE)
             return g_active->mouse(id);
-        if (g_active && port == 0 && g_active->system_ == "dos" && (device & 0xFF) == RETRO_DEVICE_MOUSE)
+        if (g_active && port == 0 && (g_active->system_ == "dos" || g_active->system_ == "flash") &&
+            (device & 0xFF) == RETRO_DEVICE_MOUSE)
             return g_active->pad_mouse(id);
         // Whichever port the core keeps its keyboard on (Fuse: the third).
         if ((device & 0xFF) == RETRO_DEVICE_KEYBOARD)
